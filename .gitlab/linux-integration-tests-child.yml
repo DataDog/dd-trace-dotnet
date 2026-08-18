@@ -53,3 +53,7 @@
   id_tokens:
     DD_STS_OIDC_TOKEN:
       aud: dd-sts
+
+.linux-integration-test-arm64:
+  extends: .linux-integration-test-x64
+  tags: ["docker-in-docker:arm64"]

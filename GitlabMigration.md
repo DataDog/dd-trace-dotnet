@@ -1,6 +1,6 @@
 # GitLab CI migration plan and findings
 
-Last updated: 2026-08-15
+Last updated: 2026-08-18
 
 ## Purpose
 
@@ -34,9 +34,9 @@ CI is split across Azure DevOps and GitLab.
 
 - `.azure-pipelines/ultimate-pipeline.yml` contains the full build and test matrix. As of this update, it is 5,693 lines with 80 top-level stages.
 - Azure DevOps covers Windows, Linux x64 and ARM64, glibc and musl, macOS, unit tests, integration tests, smoke tests, profiler tests, packaging, and publishing.
-- GitLab currently runs the Windows build and native unit tests in one producer job, followed by a NUKE-generated Windows managed-unit-test child pipeline, packaging/publishing work, and benchmarks.
+- GitLab runs generated managed-unit-test matrices on Windows, Linux x64, Linux ARM64, and macOS; generated integration-test matrices cover Windows and Linux x64, with the first Linux ARM64 integration matrix now implemented for validation. Packaging/publishing work and benchmarks continue to run alongside the migration jobs.
 - Existing GitLab jobs import Azure artifacts through `.gitlab/download-single-step-artifacts.sh` and `.gitlab/download-serverless-artifacts.sh`.
-- The proposed `.gitlab/ci/` Phase 1 files do not exist yet.
+- The implementation uses generated child configurations under `.gitlab/generated` and reusable child templates under `.gitlab` instead of the originally proposed `.gitlab/ci/` layout.
 
 The long-term goal is to host the entire build and test pipeline in GitLab, remove the cross-CI artifact handoff, and retire Azure DevOps only after an extended period of demonstrated parity.
 
@@ -229,7 +229,9 @@ The Git-metadata follow-up showed that supplying `SourceRevisionId` and `Reposit
 
 The jobs retain test results, tracer and CI Visibility logs, dumps, and snapshot output; obtain a short-lived API key through dd-sts; and run `CheckBuildLogsForErrors` after the tests. The Debian/glibc framework matrix is green. The initial Alpine/musl `net10.0` run passed 1,223 tests and exposed two variants of `XUnitImpactedTests.GitBranchBasedImpactDetection`. The detailed failure showed that the test's temporary commit lacked an author identity, not that impacted-test detection was incompatible with Alpine. The test now supplies an invocation-local Git identity, records the original commit, and restores either the original branch or detached HEAD before deleting its temporary branch. This keeps the test enabled and prevents one theory case from leaking its branch into the next.
 
-The generated Linux matrix now adds Azure-shaped ASM, Docker-dependent, and Debugger coverage on both Debian/glibc and Alpine/musl. Each selected TFM gets ordinary Tracer and ASM cells, Docker dependency groups 1 and 2, and portable-PDB Debugger cells with optimized and unoptimized builds. Docker cells install the Compose plugin in the approved Docker CLI job image, reuse `docker-compose.yml`, and always collect dependency logs and remove the per-job Compose project. These new cells run unconditionally during initial validation; reproducing Azure's area-change gating is a follow-up optimization.
+The generated Linux matrix now adds Azure-shaped ASM, Docker-dependent, and Debugger coverage on both Debian/glibc and Alpine/musl. Each selected TFM gets ordinary Tracer and ASM cells, Docker dependency groups 1 and 2, and portable-PDB Debugger cells with optimized and unoptimized builds. Docker cells install Docker Compose v1 in the approved Docker CLI job image, reuse `docker-compose.yml`, and always collect dependency logs and remove the per-job Compose project. These new cells run unconditionally during initial validation; reproducing Azure's area-change gating is a follow-up optimization.
+
+Linux ARM64 integration coverage now follows the same generated-child-pipeline model on `docker-in-docker:arm64`. Debian/glibc and Alpine/musl cells consume ARM64 tracer, profiler, and universal loader/wrapper producers. Every selected ARM64 TFM gets Tracer, ASM, the dedicated Azure-compatible ARM64 Docker dependency set, and optimized/unoptimized Debugger cells. The ordinary pipeline generates four sample jobs and forty integration jobs; thorough pipelines expand from the ARM64 framework source of truth. This first implementation is pending CI validation. The Alpine tester image also bounds each `dotnet-install` runtime download to five minutes and retries it up to three times, preventing a stalled download from consuming the complete 90-minute job timeout.
 
 The initial Windows integration-test slice follows the same generated-child-pipeline pattern. `GenerateGitlabWindowsIntegrationTestsPipeline` uses the Windows framework selection from NUKE and emits x64 Tracer and ASM jobs for every selected TFM, plus portable-PDB Debugger jobs with optimized and unoptimized builds. The IIS matrix starts with the Azure-compatible `net48` x64 Tracer and ASM cells and remains separate because it mutates machine state. The content-addressed Windows build image now derives from Microsoft's .NET Framework ASP.NET image, which adds the IIS role while preserving the build toolchain used by every other Windows job. Image-affecting changes automatically build and publish their new hash in the `.pre` stage before any consumer can inspect it; otherwise the image builder remains an optional manual job. Windows sample producers participate in stage ordering rather than declaring `needs: []`, so they cannot race a required image publication. Each child combines the parent `build` and `build-samples-standalone` artifacts, installs an end-of-life runtime on demand when required, and invokes the matching NUKE build/run targets inside that image. The first launch stopped before entering the container because the PowerShell wrapper passed `--rm` directly to the Docker client instead of invoking `docker run --rm`; both the test and build-log-validation invocations now include the required `run` command. The next run reached `CompileIntegrationTests` and confirmed another shared-workspace assumption: Windows normally builds with `--no-restore`, but the GitLab consumer does not receive `project.assets.json` from the Azure-style build workspace. Windows integration projects therefore restore on demand in GitLab, matching the existing Linux GitLab behavior, while Azure retains `--no-restore`. Docker-dependent Windows tests, Azure Functions, regression, and x86 coverage remain follow-up dimensions. Results, CI Visibility logs, tracer logs, dumps, snapshots, and debugger approvals are retained, and build logs are validated even when the test invocation fails. The new ASM, Debugger, and IIS cells run unconditionally during initial validation; Azure-style change gating is still pending.
 
@@ -650,7 +652,7 @@ Current initial implementation:
 - Linux x64 integration jobs use `docker-in-docker:amd64`, reuse `docker-compose.yml`, and cover both glibc and musl across the NUKE-selected frameworks.
 - Tracer, ASM, two Docker dependency groups, and optimized/unoptimized Debugger cells are generated as separate jobs.
 - Windows x64 generates Tracer, ASM, and optimized/unoptimized Debugger cells; IIS is a separate `net48` Tracer/ASM slice because it mutates machine state.
-- ARM64 integration coverage remains pending.
+- Linux ARM64 integration coverage is implemented for Debian and Alpine, including Tracer, ASM, Docker-dependent, and optimized/unoptimized Debugger cells; first-run validation is pending.
 - Keep Windows Azure Functions tests separate.
 - Add macOS integration tests per supported framework.
 - Mirror profiler integration tests on Windows and Linux.
