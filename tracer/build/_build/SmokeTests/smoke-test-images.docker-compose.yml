@@ -56,13 +56,13 @@ services:
   aspnet-8_0-bookworm-slim:
     image: mcr.microsoft.com/dotnet/aspnet:8.0-bookworm-slim@sha256:b0beb9cc1dee1c1b0749796110d4734292071b814207ad0d4f40611f7db04f7b
   aspnet-8_0-jammy:
-    image: mcr.microsoft.com/dotnet/aspnet:8.0-jammy@sha256:e297e0c11c7b60b4a6f424cd42981fba04e25b8e88a9b45bfe5f4a3f11c15a74
+    image: mcr.microsoft.com/dotnet/aspnet:8.0-jammy@sha256:5cf54628c4787d69758be84a0644e74f404b93ee343e2e82c4c33e558b7a10e4
   aspnet-8_0-jammy-chiseled:
     image: mcr.microsoft.com/dotnet/aspnet:8.0-jammy-chiseled@sha256:ddbf85dbace8b4e75cb84682c21e0cc5c56ce3331d922b19803d85f2b94b5e71
   aspnet-8_0-jammy-chiseled-composite:
     image: mcr.microsoft.com/dotnet/aspnet:8.0-jammy-chiseled-composite@sha256:fd933726937d4f19659dfe283ac6789a5004b9b4aef3571d220d68783121ac1e
   aspnet-8_0-windowsservercore-ltsc2022:
-    image: mcr.microsoft.com/dotnet/aspnet:8.0-windowsservercore-ltsc2022@sha256:7250b7f616ee099f96a8908b4ca4f49d5e48a24c4b89a6b084dc47de400066d7
+    image: mcr.microsoft.com/dotnet/aspnet:8.0-windowsservercore-ltsc2022@sha256:86b1e33056f5a12632f201dd065250cc9b2d67b9dd4c5b61783d62eb23e26e93
   aspnet-9_0-alpine3_20:
     image: mcr.microsoft.com/dotnet/aspnet:9.0-alpine3.20@sha256:bc0050c8c9beaf382941d074ef1b522551015b55199e061f4930639953ab9a42
   aspnet-9_0-alpine3_20-composite:
@@ -76,7 +76,7 @@ services:
   aspnet-9_0-noble-chiseled-composite:
     image: mcr.microsoft.com/dotnet/aspnet:9.0-noble-chiseled-composite@sha256:360f9f25c6a34cec8880bc54ae187a7014f8d385293c59198d1cb5f3419a43b4
   aspnet-9_0-windowsservercore-ltsc2022:
-    image: mcr.microsoft.com/dotnet/aspnet:9.0-windowsservercore-ltsc2022@sha256:ea5222d4a8129ad94485b9aba689c176071913c0d9db1ba81cd2993f463e18a1
+    image: mcr.microsoft.com/dotnet/aspnet:9.0-windowsservercore-ltsc2022@sha256:53daa73637fa3771903650ce75587dd2b5c565627cec58be1e443d83eec044ef
   aspnet-10_0-alpine3_22:
     image: mcr.microsoft.com/dotnet/aspnet:10.0-alpine3.22@sha256:e0fd89188698106364ea47cd6bbedc1fdea99363766932a1f4c256c87631ec53
   aspnet-10_0-alpine3_22-composite:
@@ -94,7 +94,7 @@ services:
   aspnet-10_0-resolute-chiseled-composite:
     image: mcr.microsoft.com/dotnet/aspnet:10.0-resolute-chiseled-composite@sha256:760967fbd08b0ed5e9edd232eb8caf74d669f09e52c9bf725708a914d1488a75
   aspnet-10_0-windowsservercore-ltsc2022:
-    image: mcr.microsoft.com/dotnet/aspnet:10.0-windowsservercore-ltsc2022@sha256:ff58ea9af7378478a712bff4066f74365c8ef9c0d5cae2bd3f1a4f6e2eb29af9
+    image: mcr.microsoft.com/dotnet/aspnet:10.0-windowsservercore-ltsc2022@sha256:7f33ece4210fc2e14b294060fd803cc390bb11f3ba1eedd1bb53ddcd3db657ec
 
   # mcr.microsoft.com/dotnet/framework/aspnet
   framework-aspnet-4_8-windowsservercore-ltsc2022:
@@ -116,7 +116,7 @@ services:
   sdk-8_0-alpine3_18:
     image: mcr.microsoft.com/dotnet/sdk:8.0-alpine3.18@sha256:b16fdc4c48d4627bd5c4e8e569f1cc295b8cda938a29ead7d2df981d410a4175
   sdk-8_0-jammy:
-    image: mcr.microsoft.com/dotnet/sdk:8.0-jammy@sha256:6fb934a479e8b211ff40d9a3a16e7fb341e41a852041a9303a788bb4d34c5fd9
+    image: mcr.microsoft.com/dotnet/sdk:8.0-jammy@sha256:69e1a90423c48ec970374a72023afdaf30b2cfde0665ae6210fd82a306289256
   sdk-9_0-alpine3_20:
     image: mcr.microsoft.com/dotnet/sdk:9.0-alpine3.20@sha256:823a26bb53762a51795dbcdcf67659360d6f62823f5a83dc380cbef226d4ded3
   sdk-9_0-bookworm-slim:
