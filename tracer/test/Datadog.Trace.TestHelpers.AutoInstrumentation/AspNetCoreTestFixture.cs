@@ -49,6 +49,16 @@ namespace Datadog.Trace.TestHelpers
 
         public int HttpPort { get; private set; }
 
+        /// <summary>
+        /// Gets the ddapm test-agent session the application under test exports OTLP to, for suites
+        /// that use <c>OTEL_TRACES_EXPORTER=otlp</c>. Owned by the fixture rather than by each test
+        /// case, because the fixture starts one process shared by every test case, and that process's
+        /// <c>OTEL_EXPORTER_OTLP_HEADERS</c> (which carries the session token) is fixed for its whole
+        /// lifetime -- a token generated per test case would stop matching what the running process
+        /// actually sends after the first one.
+        /// </summary>
+        internal OtlpTestAgentSession OtlpSession { get; } = new();
+
         public void SetOutput(ITestOutputHelper output)
         {
             lock (_outputLock)
