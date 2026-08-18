@@ -137,22 +137,35 @@ partial class Build : NukeBuild
 
             """);
 
+        var targetPlatforms = new[] { "x64", "x86" };
         foreach (var framework in frameworkList)
         {
-            AppendWindowsJob($"integration-tests-windows-x64:{framework}:tracer", framework, "integration", TracerArea);
-            AppendWindowsJob($"integration-tests-windows-x64:{framework}:asm", framework, "integration", AsmArea);
-
-            foreach (var optimize in new[] { true, false })
+            foreach (var targetPlatform in targetPlatforms)
             {
-                var optimization = optimize ? "optimized" : "unoptimized";
-                AppendWindowsJob($"integration-tests-windows-debugger-x64:{framework}:{optimization}", framework, "debugger", null, optimize);
+                AppendWindowsJob($"integration-tests-windows-{targetPlatform}:{framework}:tracer", framework, targetPlatform, "integration", TracerArea);
+                AppendWindowsJob($"integration-tests-windows-{targetPlatform}:{framework}:asm", framework, targetPlatform, "integration", AsmArea);
+
+                // These combinations fail in Azure because the x86 apphost is unavailable.
+                if (targetPlatform == "x86" && (framework.Equals(TargetFramework.NETCOREAPP3_1) || framework.Equals(TargetFramework.NET6_0)))
+                {
+                    continue;
+                }
+
+                foreach (var optimize in new[] { true, false })
+                {
+                    var optimization = optimize ? "optimized" : "unoptimized";
+                    AppendWindowsJob($"integration-tests-windows-debugger-{targetPlatform}:{framework}:{optimization}", framework, targetPlatform, "debugger", null, optimize);
+                }
             }
         }
 
         if (frameworkList.Contains(TargetFramework.NET48))
         {
-            AppendWindowsJob("integration-tests-windows-iis-x64:net48:tracer", TargetFramework.NET48, "iis", TracerArea);
-            AppendWindowsJob("integration-tests-windows-iis-x64:net48:asm", TargetFramework.NET48, "iis", AsmArea);
+            foreach (var targetPlatform in targetPlatforms)
+            {
+                AppendWindowsJob($"integration-tests-windows-iis-{targetPlatform}:net48:tracer", TargetFramework.NET48, targetPlatform, "iis", TracerArea);
+                AppendWindowsJob($"integration-tests-windows-iis-{targetPlatform}:net48:asm", TargetFramework.NET48, targetPlatform, "iis", AsmArea);
+            }
         }
 
         var outputDirectory = RootDirectory / ".gitlab" / "generated";
@@ -161,12 +174,13 @@ partial class Build : NukeBuild
         File.WriteAllText(outputPath, yaml.ToString());
         Logger.Information("Generated GitLab Windows integration-test child pipeline at {Path}", outputPath);
 
-        void AppendWindowsJob(string name, TargetFramework framework, string testSuite, string area, bool? optimize = null)
+        void AppendWindowsJob(string name, TargetFramework framework, string targetPlatform, string testSuite, string area, bool? optimize = null)
         {
             yaml.AppendLine($"\"{name}\":");
-            yaml.AppendLine("  extends: .windows-integration-test-x64");
+            yaml.AppendLine("  extends: .windows-integration-test");
             yaml.AppendLine("  variables:");
             yaml.AppendLine($"    FRAMEWORK: \"{framework}\"");
+            yaml.AppendLine($"    TARGET_PLATFORM: \"{targetPlatform}\"");
             yaml.AppendLine($"    TEST_SUITE: \"{testSuite}\"");
             if (area is not null)
             {

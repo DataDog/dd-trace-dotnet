@@ -886,7 +886,7 @@ unit-tests-windows:
   variables:
     PARENT_PIPELINE_ID: $CI_PIPELINE_ID
 
-integration-tests-windows-x64:
+integration-tests-windows:
   except:
     variables:
       - $DEPLOY_TO_REL_ENV == "true"

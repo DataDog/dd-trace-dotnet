@@ -31,6 +31,11 @@ if (-not $env:DD_LOGGER_DD_API_KEY) {
 
 $testSuite = if ($env:TEST_SUITE) { $env:TEST_SUITE } else { 'integration' }
 $area = if ($env:AREA) { $env:AREA } else { $null }
+$targetPlatform = if ($env:TARGET_PLATFORM) { $env:TARGET_PLATFORM } else { 'x64' }
+if ($targetPlatform -notin @('x64', 'x86')) {
+    throw "Unsupported Windows target platform '$targetPlatform'"
+}
+
 $testFilter = $null
 
 switch ($testSuite) {
@@ -79,7 +84,7 @@ $commonDockerArguments = @(
     '-e', "DD_LOGGER_DD_TAGS=test.configuration.job:$env:CI_JOB_NAME",
     '-e', 'IncludeTestsRequiringDocker=false',
     '-e', 'IncludeAllTestFrameworks=true',
-    '-e', 'TargetPlatform=x64',
+    '-e', "TargetPlatform=$targetPlatform",
     '-e', 'enable_crash_dumps=true',
     '-e', "SourceRevisionId=$env:CI_COMMIT_SHA",
     '-e', 'RepositoryUrl=https://github.com/DataDog/dd-trace-dotnet.git',
@@ -120,8 +125,8 @@ if ($area) {
     $commonDockerArguments += @('-e', "Area=$area")
 }
 
-Write-Output "Building and running Windows x64 $testSuite tests for $env:FRAMEWORK (area=$area)"
-$testCommand = "reg add HKLM\SYSTEM\CurrentControlSet\Control\FileSystem /v LongPathsEnabled /t REG_DWORD /d 1 /f && powershell -NoProfile -ExecutionPolicy Bypass -File c:\mnt\.gitlab\install-windows-test-runtime.ps1 -Framework $env:FRAMEWORK -IncludeAspNetCore && c:\entrypoint.bat $nukeTargets --framework $env:FRAMEWORK --TargetPlatform x64 --IncludeAllTestFrameworks true $nukeArguments --NugetPackageDirectory c:\mnt\packages"
+Write-Output "Building and running Windows $targetPlatform $testSuite tests for $env:FRAMEWORK (area=$area)"
+$testCommand = "reg add HKLM\SYSTEM\CurrentControlSet\Control\FileSystem /v LongPathsEnabled /t REG_DWORD /d 1 /f && powershell -NoProfile -ExecutionPolicy Bypass -File c:\mnt\.gitlab\install-windows-test-runtime.ps1 -Framework $env:FRAMEWORK -Architecture $targetPlatform -IncludeAspNetCore && c:\entrypoint.bat $nukeTargets --framework $env:FRAMEWORK --TargetPlatform $targetPlatform --IncludeAllTestFrameworks true $nukeArguments --NugetPackageDirectory c:\mnt\packages"
 
 & docker run @commonDockerArguments --entrypoint cmd.exe $windowsBuildImage /d /s /c $testCommand
 $testExitCode = $LASTEXITCODE
