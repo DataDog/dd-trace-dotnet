@@ -59,7 +59,7 @@ public class NativeValidationHelper
         
         Version FindMaxGlibcVersion(AbsolutePath libraryPath, IEnumerable<string> allowedSymbols)
         {
-            var output = Nm.Value($"--with-symbol-versions -D {libraryPath} ", logOutput: false).Select(x => x.Text).ToList();
+            var output = Nm.Value($"--with-symbol-versions -D {libraryPath} ").Select(x => x.Text).ToList();
 
             // Gives output similar to this:
             // 0000000000170498 T SetGitMetadataForApplication
@@ -90,7 +90,7 @@ public class NativeValidationHelper
 
     public void ValidateNativeSymbols(AbsolutePath libraryPath, string snapshotNamePrefix)
     {
-        var output = Nm.Value($"-D {libraryPath}", logOutput: false).Select(x => x.Text).ToList();
+        var output = Nm.Value($"-D {libraryPath}").Select(x => x.Text).ToList();
 
         // Gives output similar to this:
         // 0000000000006bc8 D DdDotnetFolder
@@ -116,7 +116,7 @@ public class NativeValidationHelper
         //
         // We only care about the Undefined symbols - we don't want to accidentally add more of them
 
-        Logger.Debug("Read {SymbolCount} dynamic symbols from {LibraryPath}", output.Count, libraryPath);
+        Logger.Debug("NM output: {Output}", string.Join(Environment.NewLine, output));
 
         var symbols = output
                      .Select(x => x.Trim())
@@ -199,7 +199,7 @@ public class NativeValidationHelper
                                 "If the new symbols are safe to add, update the snapshot file at {VerifiedPath} with the " +
                                 "new values", libraryName, verifiedPath);
 
-            return true;
+            return false;
         }
     }
 }
