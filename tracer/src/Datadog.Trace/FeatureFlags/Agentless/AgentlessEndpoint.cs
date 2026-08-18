@@ -6,14 +6,17 @@
 #nullable enable
 
 using System;
+using System.Diagnostics.CodeAnalysis;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace.FeatureFlags.Agentless;
 
 /// <summary>
-/// The agentless endpoint, derived from the Datadog site or a custom base URL.
+/// The agentless endpoint, derived from the Datadog site or a custom base URL. A class rather
+/// than a struct so that "no endpoint" is <c>null</c> instead of a default instance whose
+/// non-nullable <see cref="Uri"/> is null; it is built once per process, so the allocation is free.
 /// </summary>
-internal readonly struct AgentlessEndpoint
+internal sealed class AgentlessEndpoint
 {
     /// <summary>
     /// Canonical rules-based server path, appended to the managed CDN host and to custom base
@@ -54,12 +57,12 @@ internal readonly struct AgentlessEndpoint
     /// <param name="site">The Datadog site, for example <c>datadoghq.com</c>.</param>
     /// <param name="env">The configured environment, or <c>null</c>.</param>
     /// <param name="baseUrl">The configured endpoint override, or <c>null</c>.</param>
-    /// <param name="endpoint">The resulting endpoint.</param>
+    /// <param name="endpoint">The resulting endpoint, or <c>null</c> when none could be built.</param>
     /// <param name="error">Why the configured base URL was rejected. Never contains the URL, which may carry credentials.</param>
     /// <returns><c>true</c> when an endpoint could be built.</returns>
-    public static bool TryCreate(string? site, string? env, string? baseUrl, out AgentlessEndpoint endpoint, out string? error)
+    public static bool TryCreate(string? site, string? env, string? baseUrl, [NotNullWhen(true)] out AgentlessEndpoint? endpoint, out string? error)
     {
-        endpoint = default;
+        endpoint = null;
         error = null;
 
         var configured = baseUrl?.Trim();

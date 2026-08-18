@@ -23,36 +23,23 @@ public class AgentlessEndpointTests
     [InlineData("ddog-gov.com", "https://ufc-server.ff-cdn.ddog-gov.com" + DefaultPath)] // govcloud
     public void DerivesManagedEndpointFromSite(string site, string expected)
     {
-        AgentlessEndpoint.TryCreate(site, env: null, baseUrl: null, out var endpoint, out var error)
-            .Should().BeTrue();
-        error.Should().BeNull();
+        var endpoint = Create(site);
+
         endpoint.IsManaged.Should().BeTrue();
         endpoint.Uri.ToString().Should().Be(expected);
     }
 
     [Fact]
     public void AddsDdEnvWhenEnvIsConfigured()
-    {
-        AgentlessEndpoint.TryCreate("datadoghq.com", env: "production", baseUrl: null, out var endpoint, out _)
-            .Should().BeTrue();
-        endpoint.Uri.Query.Should().Be("?dd_env=production");
-    }
+        => Create("datadoghq.com", env: "production").Uri.Query.Should().Be("?dd_env=production");
 
     [Fact]
     public void DoesNotAddDdEnvWhenEnvIsNull()
-    {
-        AgentlessEndpoint.TryCreate("datadoghq.com", env: null, baseUrl: null, out var endpoint, out _)
-            .Should().BeTrue();
-        endpoint.Uri.Query.Should().BeEmpty();
-    }
+        => Create("datadoghq.com").Uri.Query.Should().BeEmpty();
 
     [Fact]
     public void EscapesDdEnvValue()
-    {
-        AgentlessEndpoint.TryCreate("datadoghq.com", env: "my env&test", baseUrl: null, out var endpoint, out _)
-            .Should().BeTrue();
-        endpoint.Uri.Query.Should().Be("?dd_env=my%20env%26test");
-    }
+        => Create("datadoghq.com", env: "my env&test").Uri.Query.Should().Be("?dd_env=my%20env%26test");
 
     [Theory]
     [InlineData("https://flags.example.com", "https://flags.example.com" + DefaultPath)]
@@ -61,9 +48,8 @@ public class AgentlessEndpointTests
     [InlineData("https://flags.example.com/ufc?custom=query", "https://flags.example.com/ufc?custom=query")]
     public void CustomEndpointReceivesCanonicalPathForOriginOnly(string baseUrl, string expected)
     {
-        AgentlessEndpoint.TryCreate("datadoghq.com", env: null, baseUrl: baseUrl, out var endpoint, out var error)
-            .Should().BeTrue();
-        error.Should().BeNull();
+        var endpoint = Create("datadoghq.com", baseUrl: baseUrl);
+
         endpoint.IsManaged.Should().BeFalse();
         endpoint.Uri.ToString().Should().Be(expected);
     }
@@ -71,11 +57,7 @@ public class AgentlessEndpointTests
     [Theory]
     [InlineData("http://localhost:8080/ufc")] // http accepted for custom endpoints
     public void CustomEndpointAcceptsHttp(string baseUrl)
-    {
-        AgentlessEndpoint.TryCreate("datadoghq.com", env: null, baseUrl: baseUrl, out var endpoint, out var error)
-            .Should().BeTrue();
-        endpoint.IsManaged.Should().BeFalse();
-    }
+        => Create("datadoghq.com", baseUrl: baseUrl).IsManaged.Should().BeFalse();
 
     [Theory]
     [InlineData("ftp://flags.example.com", "The configured Feature Flags agentless URL must use HTTP or HTTPS")]
@@ -86,6 +68,7 @@ public class AgentlessEndpointTests
         AgentlessEndpoint.TryCreate("datadoghq.com", env: null, baseUrl: baseUrl, out var endpoint, out var error)
             .Should().BeFalse();
         error.Should().Be(expectedError);
+        endpoint.Should().BeNull();
     }
 
     [Fact]
@@ -94,6 +77,7 @@ public class AgentlessEndpointTests
         AgentlessEndpoint.TryCreate(site: null, env: null, baseUrl: null, out var endpoint, out var error)
             .Should().BeFalse();
         error.Should().Be("No Datadog site is configured");
+        endpoint.Should().BeNull();
     }
 
     [Fact]
@@ -102,6 +86,7 @@ public class AgentlessEndpointTests
         AgentlessEndpoint.TryCreate("   ", env: null, baseUrl: null, out var endpoint, out var error)
             .Should().BeFalse();
         error.Should().Be("No Datadog site is configured");
+        endpoint.Should().BeNull();
     }
 
     [Theory]
@@ -113,6 +98,7 @@ public class AgentlessEndpointTests
         AgentlessEndpoint.TryCreate(site, env: null, baseUrl: null, out var endpoint, out var error)
             .Should().BeFalse();
         error.Should().Be("The configured Datadog site is not valid");
+        endpoint.Should().BeNull();
     }
 
     [Fact]
@@ -123,5 +109,18 @@ public class AgentlessEndpointTests
             .Should().BeFalse();
         error.Should().NotContain("user");
         error.Should().NotContain("pass");
+    }
+
+    // Builds an endpoint that is expected to be valid, and returns it as non-nullable so the
+    // assertions can read it directly. Throwing rather than asserting keeps the compiler's nullable
+    // analysis satisfied without a null-forgiving operator, which would let an assertion be
+    // silently skipped if the endpoint were ever null.
+    private static AgentlessEndpoint Create(string? site, string? env = null, string? baseUrl = null)
+    {
+        AgentlessEndpoint.TryCreate(site, env, baseUrl, out var endpoint, out var error)
+            .Should().BeTrue();
+        error.Should().BeNull();
+
+        return endpoint ?? throw new InvalidOperationException("TryCreate reported success without producing an endpoint.");
     }
 }
