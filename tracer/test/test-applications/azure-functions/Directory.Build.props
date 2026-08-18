@@ -16,6 +16,10 @@
 
   </PropertyGroup>
 
+  <ItemGroup>
+    <Compile Include="$(MSBuildThisFileDirectory)AzureFunctionsTestHelpers.cs" />
+  </ItemGroup>
+
   <Import Project="..\Samples.Shared\Samples.Shared.projitems" Label="Shared" />
 
   <!-- Ensure that we don't reference Datadog.Trace directly (unless explicitly handled) -->
