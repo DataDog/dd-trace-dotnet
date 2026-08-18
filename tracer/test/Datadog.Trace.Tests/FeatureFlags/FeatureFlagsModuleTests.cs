@@ -207,6 +207,71 @@ public class FeatureFlagsModuleTests
         module.FirstConfigReceived.IsCompleted.Should().BeFalse();
     }
 
+    [Fact]
+    public void Activate_WhenCalledConcurrently_SubscribesOnce()
+    {
+        var rcmManager = new MockRcmSubscriptionManager();
+        using var module = FeatureFlagsModule.Create(CreateSettings(), rcmManager);
+
+        // Activation claims its flag and completes its setup atomically, so a second caller cannot
+        // subscribe a second time, nor observe the module as activated while setup is still running.
+        const int callers = 16;
+        using var start = new Barrier(callers);
+        Parallel.For(
+            0,
+            callers,
+            _ =>
+            {
+                start.SignalAndWait();
+                module!.Activate();
+            });
+
+        rcmManager.ProductKeys.Should().ContainSingle().Which.Should().Be(RcmProducts.FfeFlags);
+    }
+
+    [Fact]
+    public void Activate_AfterDispose_DoesNotSubscribe()
+    {
+        var rcmManager = new MockRcmSubscriptionManager();
+        var module = FeatureFlagsModule.Create(CreateSettings(), rcmManager);
+
+        module!.Dispose();
+        module.Activate();
+
+        // Disposal has already run its unsubscribe, so a subscription registered afterwards would
+        // never be removed, leaving a billed delivery path active for the rest of the process.
+        rcmManager.HasAnySubscription.Should().BeFalse();
+        rcmManager.ProductKeys.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void Dispose_AfterSubscribing_Unsubscribes()
+    {
+        var rcmManager = new MockRcmSubscriptionManager();
+        var module = FeatureFlagsModule.Create(CreateSettings(), rcmManager);
+
+        module!.Activate();
+        rcmManager.HasAnySubscription.Should().BeTrue();
+
+        module.Dispose();
+
+        rcmManager.HasAnySubscription.Should().BeFalse();
+    }
+
+    [Fact]
+    public void GetExposureApi_AfterDispose_DoesNotCreateOne()
+    {
+        var module = FeatureFlagsModule.Create(CreateSettings(), new MockRcmSubscriptionManager());
+
+        module!.GetExposureApi().Should().NotBeNull();
+
+        module.Dispose();
+
+        // An exposure API created after disposal would keep its send loop running for the rest of
+        // the process, because nothing disposes it.
+        module.GetExposureApi().Should().BeNull();
+    }
+
     private static TracerSettings CreateSettings(params (string Key, string Value)[] settings)
     {
         var collection = new NameValueCollection
