@@ -10,6 +10,8 @@ using System.Diagnostics;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
 using Datadog.Trace.AppSec.WafEncoding;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Telemetry;
+using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.AppSec.Waf;
@@ -108,6 +110,19 @@ internal sealed class Context : IContext
         }
     }
 
+    /// <summary>
+    /// Reports a WAF run that failed before ddwaf_run could be reached, so the error is ours rather
+    /// than the WAF's. Lifecycle failures (a disposed WAF or context) are deliberately not reported:
+    /// they aren't WAF errors, and counting them would drown the metric in shutdown races.
+    /// </summary>
+    private static void RecordBindingError(bool isRasp)
+    {
+        if (!isRasp)
+        {
+            TelemetryFactory.Metrics.RecordCountWafError(MetricTags.WafError.BindingError);
+        }
+    }
+
     private bool ShouldRunWith(IDatadogSecurity security, UserEventsState.UserRecord? previousUserRecord, string? value, string address, bool fromSdk)
     {
         if (value is null || !security.AddressEnabled(address))
@@ -172,6 +187,7 @@ internal sealed class Context : IContext
             if (ephemeral ? addressData is not { Count: > 0 } : addressData is null)
             {
                 Log.Error("The WAF was called without any address data");
+                RecordBindingError(isRasp);
                 return null;
             }
 
@@ -190,6 +206,7 @@ internal sealed class Context : IContext
                 if (subcontextHandle == IntPtr.Zero)
                 {
                     Log.Error("WAF ddwaf_subcontext_init failed, the ephemeral run was skipped");
+                    RecordBindingError(isRasp);
                     args.Dispose();
 
                     // nothing ran, so don't let this call's wall clock leak into the aggregated runtime

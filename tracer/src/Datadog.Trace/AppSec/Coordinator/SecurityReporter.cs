@@ -1,4 +1,4 @@
-// <copyright file="SecurityReporter.cs" company="Datadog">
+﻿// <copyright file="SecurityReporter.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -136,32 +136,65 @@ internal sealed partial class SecurityReporter
         }
     }
 
-    internal static void RecordWafTelemetry(IResult? result)
+    internal static void RecordWafTelemetry(IResult? result, bool isRasp)
+        => RecordWafTelemetry(result, isRasp, TelemetryFactory.Metrics);
+
+    internal static void RecordWafTelemetry(IResult? result, bool isRasp, IMetricsTelemetryCollector metrics)
     {
         if (result is null)
         {
+            // The WAF was never run, so the request wasn't analysed. waf.error is reported by whoever
+            // failed to run it, as it needs to distinguish a real failure from a disposed WAF/context.
             return;
         }
 
         if (result.Timeout)
         {
-            TelemetryFactory.Metrics.RecordCountWafRequests(
+            // A timeout is explicitly not a WAF error
+            metrics.RecordCountWafRequests(
                 result.Truncated ? MetricTags.WafAnalysis.WafTimeoutTruncated : MetricTags.WafAnalysis.WafTimeout);
+        }
+        else if (!isRasp && result.ReturnCode < WafReturnCode.Ok)
+        {
+            // waf.requests and waf.error both describe non-RASP runs, so a failed RASP evaluation is
+            // classified below as if it had succeeded, exactly as it was before waf_error existed.
+            // RASP failures are reported separately by rasp.error.
+            metrics.RecordCountWafRequests(
+                result.Truncated ? MetricTags.WafAnalysis.WafErrorTruncated : MetricTags.WafAnalysis.WafError);
+            RecordWafError(metrics, result.ReturnCode);
         }
         else if (result.ShouldBlock)
         {
-            TelemetryFactory.Metrics.RecordCountWafRequests(
+            metrics.RecordCountWafRequests(
                 result.Truncated ? MetricTags.WafAnalysis.RuleTriggeredAndBlockedTruncated : MetricTags.WafAnalysis.RuleTriggeredAndBlocked);
         }
         else if (result.ShouldReportSecurityResult)
         {
-            TelemetryFactory.Metrics.RecordCountWafRequests(
+            metrics.RecordCountWafRequests(
                 result.Truncated ? MetricTags.WafAnalysis.RuleTriggeredTruncated : MetricTags.WafAnalysis.RuleTriggered);
         }
         else
         {
-            TelemetryFactory.Metrics.RecordCountWafRequests(
+            metrics.RecordCountWafRequests(
                 result.Truncated ? MetricTags.WafAnalysis.NormalTruncated : MetricTags.WafAnalysis.Normal);
+        }
+    }
+
+    private static void RecordWafError(IMetricsTelemetryCollector metrics, WafReturnCode returnCode)
+    {
+        // Unknown negative codes are skipped rather than mislabelled: a new ddwaf error code requires
+        // adding it to WafReturnCode and to MetricTags.WafError.
+        switch (returnCode)
+        {
+            case WafReturnCode.ErrorInternal:
+                metrics.RecordCountWafError(MetricTags.WafError.Internal);
+                break;
+            case WafReturnCode.ErrorInvalidObject:
+                metrics.RecordCountWafError(MetricTags.WafError.InvalidObject);
+                break;
+            case WafReturnCode.ErrorInvalidArgument:
+                metrics.RecordCountWafError(MetricTags.WafError.InvalidArgument);
+                break;
         }
     }
 

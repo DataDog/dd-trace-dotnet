@@ -74,10 +74,16 @@ internal readonly partial struct SecurityCoordinator
                          : additiveContext.Run(args, _security.Settings.WafTimeoutMicroSeconds);
 
             SetErrorInformation(isRasp, result);
-            SecurityReporter.RecordWafTelemetry(result);
+            SecurityReporter.RecordWafTelemetry(result, isRasp);
         }
         catch (Exception ex) when (ex is not BlockException)
         {
+            if (result is null && !isRasp)
+            {
+                // The WAF never ran, so this is our fault rather than ddwaf_run's
+                TelemetryFactory.Metrics.RecordCountWafError(MetricTags.WafError.BindingError);
+            }
+
             var stringBuilder = StringBuilderCache.Acquire();
             foreach (var kvp in args)
             {
@@ -140,7 +146,7 @@ internal readonly partial struct SecurityCoordinator
                 result = additiveContext.Run(userAddresses, _security.Settings.WafTimeoutMicroSeconds);
                 SetErrorInformation(false, result);
                 additiveContext.CommitUserRuns(userAddresses, fromSdk);
-                SecurityReporter.RecordWafTelemetry(result);
+                SecurityReporter.RecordWafTelemetry(result, isRasp: false);
 
                 if (_localRootSpan.Context.TraceContext is not null)
                 {
@@ -150,6 +156,12 @@ internal readonly partial struct SecurityCoordinator
         }
         catch (Exception ex) when (ex is not BlockException)
         {
+            if (result is null)
+            {
+                // The WAF never ran, so this is our fault rather than ddwaf_run's
+                TelemetryFactory.Metrics.RecordCountWafError(MetricTags.WafError.BindingError);
+            }
+
             if (addresses is not null)
             {
                 var stringBuilder = StringBuilderCache.Acquire();
