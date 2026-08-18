@@ -112,6 +112,7 @@ const shared::WSTRING instrumentation_type_name = WStr("Datadog.Trace.ClrProfile
 
 const shared::WSTRING libdatadog_common_nativemethods_type = WStr("Datadog.Trace.LibDatadog.NativeInterop+Common");
 const shared::WSTRING libdatadog_libraryconfig_nativemethods_type = WStr("Datadog.Trace.LibDatadog.NativeInterop+LibraryConfig");
+const shared::WSTRING libdatadog_otel_thread_context_nativemethods_type = WStr("Datadog.Trace.LibDatadog.NativeInterop+OtelThreadContext");
 
 const shared::WSTRING calltargetstate_type_name = WStr("Datadog.Trace.ClrProfiler.CallTarget.CallTargetState");
 const shared::WSTRING calltargetstate_skipmethodbody_function_name = WStr("GetSkipMethodBody");

@@ -1,6 +1,8 @@
 extern alias DatadogTraceManual;
 
+using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using BenchmarkDotNet.Attributes;
 using Datadog.Trace;
 using Datadog.Trace.Agent.DiscoveryService;
@@ -9,8 +11,10 @@ using Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Extens
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Proxies;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Tracer;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.ContinuousProfiler;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.LibDatadog.OtelThreadContext;
 using Datadog.Trace.Telemetry;
 using BindingFlags = System.Reflection.BindingFlags;
 using Tracer = Datadog.Trace.Tracer;
@@ -28,20 +32,36 @@ namespace Benchmarks.Trace
     public class SpanBenchmark
     {
         private Tracer _tracer;
+        private Tracer _otelThreadContextTracer;
         private ManualTracer _manualTracer;
 
         [GlobalSetup]
         public void GlobalSetup()
         {
-            var settings = TracerSettings.Create(new()
-            {
-                { ConfigurationKeys.StartupDiagnosticLogEnabled, false },
-                { ConfigurationKeys.TraceEnabled, false },
-                { ConfigurationKeys.AgentFeaturePollingEnabled, false },
-                { ConfigurationKeys.Telemetry.Enabled, false },
-            });
+            var disabledScopeManager = new AsyncLocalScopeManager(
+                new DisabledContextTracker(),
+                OtelThreadContextPublisher.Disabled);
+            _tracer = new Tracer(
+                CreateSettings(otelThreadContextEnabled: false),
+                new DummyAgentWriter(),
+                sampler: null,
+                scopeManager: disabledScopeManager,
+                statsd: null,
+                telemetry: NullTelemetryController.Instance,
+                discoveryService: NullDiscoveryService.Instance);
 
-            _tracer = new Tracer(settings, new DummyAgentWriter(), null, null, null, telemetry: NullTelemetryController.Instance, NullDiscoveryService.Instance);
+            // The benchmark host is not auto-instrumented, so inject the native-call seam to isolate the managed callback and encoding cost.
+            var otelScopeManager = new AsyncLocalScopeManager(
+                new DisabledContextTracker(),
+                new OtelThreadContextPublisher(new BenchmarkOtelThreadContextNativeMethods()));
+            _otelThreadContextTracer = new Tracer(
+                CreateSettings(otelThreadContextEnabled: true),
+                new DummyAgentWriter(),
+                sampler: null,
+                scopeManager: otelScopeManager,
+                statsd: null,
+                telemetry: NullTelemetryController.Instance,
+                discoveryService: NullDiscoveryService.Instance);
 
             // Create the manual integration
             Dictionary<string, object> manualSettings = new();
@@ -60,6 +80,7 @@ namespace Benchmarks.Trace
         public void GlobalCleanup()
         {
             _tracer.TracerManager.ShutdownAsync().GetAwaiter().GetResult();
+            _otelThreadContextTracer.TracerManager.ShutdownAsync().GetAwaiter().GetResult();
         }
 
         // /// <summary>
@@ -104,6 +125,18 @@ namespace Benchmarks.Trace
         }
 
         /// <summary>
+        /// Starts and finishes a scope while the OTel thread-context managed path is enabled.
+        /// </summary>
+        [Benchmark]
+        public void StartFinishScopeWithOtelThreadContext()
+        {
+            using (Scope scope = _otelThreadContextTracer.StartActiveInternal("operation"))
+            {
+                scope.Span.SetTraceSamplingPriority(SamplingPriority.UserReject);
+            }
+        }
+
+        /// <summary>
         /// Starts and finishes two scopes in the same trace benchmark
         /// </summary>
         [Benchmark]
@@ -113,6 +146,82 @@ namespace Benchmarks.Trace
             scope1.Span.SetTraceSamplingPriority(SamplingPriority.UserReject);
 
             using var scope2 = _tracer.StartActiveInternal("operation2");
+        }
+
+        /// <summary>
+        /// Starts and finishes nested scopes while the OTel thread-context managed path is enabled.
+        /// </summary>
+        [Benchmark]
+        public void StartFinishTwoScopesWithOtelThreadContext()
+        {
+            using var scope1 = _otelThreadContextTracer.StartActiveInternal("operation1");
+            scope1.Span.SetTraceSamplingPriority(SamplingPriority.UserReject);
+
+            using var scope2 = _otelThreadContextTracer.StartActiveInternal("operation2");
+        }
+
+        /// <summary>
+        /// Starts and finishes a scope across an asynchronous context switch.
+        /// </summary>
+        [Benchmark]
+        public async Task StartFinishScopeAcrossAsyncContext()
+        {
+            using var scope = _tracer.StartActiveInternal("operation");
+            await Task.Yield();
+            scope.Span.SetTraceSamplingPriority(SamplingPriority.UserReject);
+        }
+
+        /// <summary>
+        /// Starts and finishes a scope across an asynchronous context switch while the OTel thread-context managed path is enabled.
+        /// </summary>
+        [Benchmark]
+        public async Task StartFinishScopeAcrossAsyncContextWithOtelThreadContext()
+        {
+            using var scope = _otelThreadContextTracer.StartActiveInternal("operation");
+            await Task.Yield();
+            scope.Span.SetTraceSamplingPriority(SamplingPriority.UserReject);
+        }
+
+        private static TracerSettings CreateSettings(bool otelThreadContextEnabled)
+        {
+            return TracerSettings.Create(new()
+            {
+                { ConfigurationKeys.StartupDiagnosticLogEnabled, false },
+                { ConfigurationKeys.TraceEnabled, false },
+                { ConfigurationKeys.AgentFeaturePollingEnabled, false },
+                { ConfigurationKeys.Telemetry.Enabled, false },
+                { ConfigurationKeys.OpenTelemetry.OtelThreadContextEnabled, otelThreadContextEnabled },
+            });
+        }
+
+        private sealed class DisabledContextTracker : IContextTracker
+        {
+            public bool IsEnabled => false;
+
+            public void Set(ulong localRootSpanId, ulong spanId)
+            {
+            }
+
+            public void SetEndpoint(ulong localRootSpanId, string endpoint)
+            {
+            }
+
+            public void Reset()
+            {
+            }
+        }
+
+        private sealed class BenchmarkOtelThreadContextNativeMethods : IOtelThreadContextNativeMethods
+        {
+            public void Update(ReadOnlySpan<byte> traceId, ReadOnlySpan<byte> spanId, ReadOnlySpan<byte> localRootSpanId)
+            {
+            }
+
+            public IntPtr Detach() => new(1);
+
+            public void Free(IntPtr context)
+            {
+            }
         }
     }
 }

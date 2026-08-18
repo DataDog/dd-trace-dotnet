@@ -113,6 +113,12 @@ namespace Samples.Console_
                     return;
                 }
 
+                if (string.Equals(args[0], "otel-thread-context", StringComparison.OrdinalIgnoreCase))
+                {
+                    await OtelThreadContextTest.RunAsync();
+                    return;
+                }
+
                 if (string.Equals(args[0], "echo", StringComparison.OrdinalIgnoreCase))
                 {
                     Console.WriteLine("Ready");

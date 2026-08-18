@@ -6,13 +6,27 @@
 using System.Threading;
 using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.ContinuousProfiler;
-using Datadog.Trace.Logging;
+using Datadog.Trace.LibDatadog.OtelThreadContext;
 
 namespace Datadog.Trace
 {
     internal sealed class AsyncLocalScopeManager : IScopeManager, IScopeRawAccess
     {
-        private readonly AsyncLocal<Scope> _activeScope = CreateScope();
+        private readonly IContextTracker _contextTracker;
+        private readonly IOtelThreadContextPublisher _otelThreadContextPublisher;
+        private readonly AsyncLocal<Scope> _activeScope;
+
+        public AsyncLocalScopeManager()
+            : this(Profiler.Instance.ContextTracker, OtelThreadContextPublisher.Disabled)
+        {
+        }
+
+        internal AsyncLocalScopeManager(IContextTracker contextTracker, IOtelThreadContextPublisher otelThreadContextPublisher)
+        {
+            _contextTracker = contextTracker;
+            _otelThreadContextPublisher = otelThreadContextPublisher;
+            _activeScope = CreateScope();
+        }
 
         public Scope Active
         {
@@ -55,9 +69,9 @@ namespace Datadog.Trace
             DistributedTracer.Instance.SetSpanContext(scope.Span.Context.Parent as SpanContext);
         }
 
-        private static AsyncLocal<Scope> CreateScope()
+        private AsyncLocal<Scope> CreateScope()
         {
-            if (Profiler.Instance.ContextTracker.IsEnabled)
+            if (_contextTracker.IsEnabled || _otelThreadContextPublisher.IsEnabled)
             {
                 return new AsyncLocal<Scope>(OnScopeChanged);
             }
@@ -65,15 +79,18 @@ namespace Datadog.Trace
             return new AsyncLocal<Scope>();
         }
 
-        private static void OnScopeChanged(AsyncLocalValueChangedArgs<Scope> obj)
+        private void OnScopeChanged(AsyncLocalValueChangedArgs<Scope> obj)
         {
             if (obj.CurrentValue == null)
             {
-                Profiler.Instance.ContextTracker.Reset();
+                _contextTracker.Reset();
+                _otelThreadContextPublisher.Reset();
             }
             else
             {
-                Profiler.Instance.ContextTracker.Set(obj.CurrentValue.Span.RootSpanId, obj.CurrentValue.Span.SpanId);
+                var span = obj.CurrentValue.Span;
+                _contextTracker.Set(span.RootSpanId, span.SpanId);
+                _otelThreadContextPublisher.Set(span);
             }
         }
     }
