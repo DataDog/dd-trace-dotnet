@@ -590,6 +590,9 @@ namespace Datadog.Trace.Debugger.Snapshots
                 case NotCapturedReason.redactedIdent:
                 case NotCapturedReason.redactedType:
                     break;
+                default:
+                    DebuggerGuardrailMetrics.MarkCaptureIncomplete(ref incompleteReasons, MetricTags.DebuggerCaptureIncompleteReason.Other);
+                    break;
             }
 
             WriteNotCapturedReason(writer, Enum.GetName(typeof(NotCapturedReason), notCapturedReason));
