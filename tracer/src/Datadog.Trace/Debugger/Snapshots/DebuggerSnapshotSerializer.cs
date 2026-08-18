@@ -15,6 +15,7 @@ using System.Threading;
 using Datadog.Trace.Debugger.Expressions;
 using Datadog.Trace.Debugger.Helpers;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Utilities;
 
@@ -39,18 +40,19 @@ namespace Datadog.Trace.Debugger.Snapshots
             Type type,
             string name,
             JsonWriter jsonWriter,
-            CaptureLimitInfo limitInfo)
+            CaptureLimitInfo limitInfo,
+            ref uint incompleteReasons)
         {
             using var cts = CreateCancellationTimeout();
             var collectionsBeingSerialized = new HashSet<object>(ObjectReferenceEqualityComparer.Instance);
-            SerializeInternal(source, type, jsonWriter, cts, currentDepth: 0, name, fieldsOnly: false, limitInfo, collectionsBeingSerialized);
+            SerializeInternal(source, type, jsonWriter, cts, currentDepth: 0, name, fieldsOnly: false, limitInfo, collectionsBeingSerialized, ref incompleteReasons);
         }
 
-        public static void SerializeStaticFields(Type declaringType, JsonTextWriter jsonWriter, CaptureLimitInfo limitInfo)
+        public static void SerializeStaticFields(Type declaringType, JsonTextWriter jsonWriter, CaptureLimitInfo limitInfo, ref uint incompleteReasons)
         {
             using var cts = CreateCancellationTimeout();
             var collectionsBeingSerialized = new HashSet<object>(ObjectReferenceEqualityComparer.Instance);
-            WriteFields(null, declaringType, jsonWriter, cts, currentDepth: 0, writeStaticFields: true, limitInfo, collectionsBeingSerialized);
+            WriteFields(null, declaringType, jsonWriter, cts, currentDepth: 0, writeStaticFields: true, limitInfo, collectionsBeingSerialized, ref incompleteReasons);
         }
 
         private static bool SerializeInternal(
@@ -62,18 +64,20 @@ namespace Datadog.Trace.Debugger.Snapshots
             string variableName,
             bool fieldsOnly,
             CaptureLimitInfo limitInfo,
-            HashSet<object> collectionsBeingSerialized)
+            HashSet<object> collectionsBeingSerialized,
+            ref uint incompleteReasons)
         {
             try
             {
                 if (Redaction.Instance.ShouldRedact(variableName, type, out var redactionReason))
                 {
-                    WriteRedactedValue(jsonWriter, type, variableName, redactionReason);
+                    WriteRedactedValue(jsonWriter, type, variableName, redactionReason, ref incompleteReasons);
                     return true;
                 }
 
                 if (source is UnreachableLocal unreachable)
                 {
+                    DebuggerGuardrailMetrics.MarkCaptureIncomplete(ref incompleteReasons, MetricTags.DebuggerCaptureIncompleteReason.Other);
                     jsonWriter.WritePropertyName(variableName);
                     jsonWriter.WriteStartObject();
                     jsonWriter.WritePropertyName("type");
@@ -92,7 +96,7 @@ namespace Datadog.Trace.Debugger.Snapshots
                     }
 
                     jsonWriter.WriteStartObject();
-                    SerializeEnumerable(source, type, jsonWriter, enumerable, enumerableInfo, currentDepth, cts, limitInfo, collectionsBeingSerialized);
+                    SerializeEnumerable(source, type, jsonWriter, enumerable, enumerableInfo, currentDepth, cts, limitInfo, collectionsBeingSerialized, ref incompleteReasons);
                     jsonWriter.WriteEndObject();
 
                     return true;
@@ -107,11 +111,13 @@ namespace Datadog.Trace.Debugger.Snapshots
                     variableName,
                     fieldsOnly,
                     limitInfo,
-                    collectionsBeingSerialized);
+                    collectionsBeingSerialized,
+                    ref incompleteReasons);
             }
             catch (Exception e)
             {
                 Log.Error(e, "Error serializing object {VariableName} Depth={CurrentDepth} FieldsOnly={FieldsOnly}", variableName, currentDepth, fieldsOnly);
+                DebuggerGuardrailMetrics.MarkCaptureIncomplete(ref incompleteReasons, MetricTags.DebuggerCaptureIncompleteReason.RuntimeError);
             }
 
             return false;
@@ -126,7 +132,8 @@ namespace Datadog.Trace.Debugger.Snapshots
             string variableName,
             bool fieldsOnly,
             CaptureLimitInfo limitInfo,
-            HashSet<object> collectionsBeingSerialized)
+            HashSet<object> collectionsBeingSerialized,
+            ref uint incompleteReasons)
         {
             var objectOpened = false;
 
@@ -134,20 +141,21 @@ namespace Datadog.Trace.Debugger.Snapshots
             {
                 if (!fieldsOnly)
                 {
-                    objectOpened = WriteTypeAndValue(source, type, jsonWriter, variableName, limitInfo);
+                    objectOpened = WriteTypeAndValue(source, type, jsonWriter, variableName, limitInfo, ref incompleteReasons);
                 }
 
-                SerializeInstanceFieldsInternal(source, type, jsonWriter, cts, currentDepth, limitInfo, collectionsBeingSerialized);
+                SerializeInstanceFieldsInternal(source, type, jsonWriter, cts, currentDepth, limitInfo, collectionsBeingSerialized, ref incompleteReasons);
                 return true;
             }
             catch (OperationCanceledException)
             {
-                WriteNotCapturedReason(jsonWriter, NotCapturedReason.timeout);
+                WriteNotCapturedReason(jsonWriter, NotCapturedReason.timeout, ref incompleteReasons);
                 return false;
             }
             catch (Exception e)
             {
                 Log.Error(e, "Error serializing object {VariableName} Depth={CurrentDepth} FieldsOnly={FieldsOnly}", variableName, currentDepth, fieldsOnly);
+                DebuggerGuardrailMetrics.MarkCaptureIncomplete(ref incompleteReasons, MetricTags.DebuggerCaptureIncompleteReason.RuntimeError);
                 return false;
             }
             finally
@@ -164,7 +172,8 @@ namespace Datadog.Trace.Debugger.Snapshots
             Type type,
             JsonWriter jsonWriter,
             string variableName,
-            CaptureLimitInfo limitInfo)
+            CaptureLimitInfo limitInfo,
+            ref uint incompleteReasons)
         {
             var opened = false;
 
@@ -187,8 +196,15 @@ namespace Datadog.Trace.Debugger.Snapshots
             {
                 jsonWriter.WritePropertyName("value");
                 var stringValue = source.ToString();
-                var stringValueTruncated = stringValue?.Length < limitInfo.MaxLength ? stringValue : stringValue?.Substring(0, limitInfo.MaxLength);
-                jsonWriter.WriteValue(stringValueTruncated);
+                if (stringValue is not null && stringValue.Length > limitInfo.MaxLength)
+                {
+                    DebuggerGuardrailMetrics.MarkCaptureIncomplete(ref incompleteReasons, MetricTags.DebuggerCaptureIncompleteReason.StringLength);
+                    jsonWriter.WriteValue(stringValue.Substring(0, limitInfo.MaxLength));
+                }
+                else
+                {
+                    jsonWriter.WriteValue(stringValue);
+                }
             }
 
             return opened;
@@ -201,7 +217,8 @@ namespace Datadog.Trace.Debugger.Snapshots
             CancellationTokenSource cts,
             int currentDepth,
             CaptureLimitInfo limitInfo,
-            HashSet<object> collectionsBeingSerialized)
+            HashSet<object> collectionsBeingSerialized,
+            ref uint incompleteReasons)
         {
             if (Redaction.IsSafeToCallToString(type) || source == null)
             {
@@ -210,25 +227,25 @@ namespace Datadog.Trace.Debugger.Snapshots
 
             if (currentDepth >= limitInfo.MaxReferenceDepth)
             {
-                WriteNotCapturedReason(jsonWriter, NotCapturedReason.depth);
+                WriteNotCapturedReason(jsonWriter, NotCapturedReason.depth, ref incompleteReasons);
                 return;
             }
 
-            WriteFields(source, type, jsonWriter, cts, currentDepth, writeStaticFields: false, limitInfo, collectionsBeingSerialized);
+            WriteFields(source, type, jsonWriter, cts, currentDepth, writeStaticFields: false, limitInfo, collectionsBeingSerialized, ref incompleteReasons);
         }
 
-        private static void WriteFields(object source, Type type, JsonWriter jsonWriter, CancellationTokenSource cts, int currentDepth, bool writeStaticFields, CaptureLimitInfo limitInfo, HashSet<object> collectionsBeingSerialized)
+        private static void WriteFields(object source, Type type, JsonWriter jsonWriter, CancellationTokenSource cts, int currentDepth, bool writeStaticFields, CaptureLimitInfo limitInfo, HashSet<object> collectionsBeingSerialized, ref uint incompleteReasons)
         {
             var selector = SnapshotSerializerFieldsAndPropsSelector.CreateDeepClonerFieldsAndPropsSelector(type);
             var fields = selector.GetFieldsAndProps(type, source, cts);
-            WriteFieldsInternal(source, jsonWriter, cts, currentDepth, fields.Where(f => IsStatic(f) == writeStaticFields), writeStaticFields ? "staticFields" : "fields", limitInfo, collectionsBeingSerialized);
+            WriteFieldsInternal(source, jsonWriter, cts, currentDepth, fields.Where(f => IsStatic(f) == writeStaticFields), writeStaticFields ? "staticFields" : "fields", limitInfo, collectionsBeingSerialized, ref incompleteReasons);
         }
 
         private static bool IsStatic(MemberInfo arg) =>
             (arg is FieldInfo fieldInfo && fieldInfo.IsStatic) ||
             (arg is PropertyInfo propertyInfo && propertyInfo.GetMethod.IsStatic);
 
-        private static void WriteFieldsInternal(object source, JsonWriter jsonWriter, CancellationTokenSource cts, int currentDepth, IEnumerable<MemberInfo> fields, string fieldsObjectName, CaptureLimitInfo limitInfo, HashSet<object> collectionsBeingSerialized)
+        private static void WriteFieldsInternal(object source, JsonWriter jsonWriter, CancellationTokenSource cts, int currentDepth, IEnumerable<MemberInfo> fields, string fieldsObjectName, CaptureLimitInfo limitInfo, HashSet<object> collectionsBeingSerialized, ref uint incompleteReasons)
         {
             int index = 0;
             var isFieldCountReached = false;
@@ -242,11 +259,16 @@ namespace Datadog.Trace.Debugger.Snapshots
                     break;
                 }
 
-                if (!TryGetValue(field, source, out var value, out var type, out var notCapturedReason))
+                if (!TryGetValue(field, source, out var value, out var type, out var notCapturedReason, out var runtimeError))
                 {
+                    if (runtimeError)
+                    {
+                        DebuggerGuardrailMetrics.MarkCaptureIncomplete(ref incompleteReasons, MetricTags.DebuggerCaptureIncompleteReason.RuntimeError);
+                    }
+
                     if (notCapturedReason.HasValue)
                     {
-                        WriteNotCapturedMember(jsonWriter, fieldOrPropertyName, type, notCapturedReason.Value, ref index, fieldsObjectName);
+                        WriteNotCapturedMember(jsonWriter, fieldOrPropertyName, type, notCapturedReason.Value, ref index, fieldsObjectName, ref incompleteReasons);
                     }
 
                     continue;
@@ -268,7 +290,8 @@ namespace Datadog.Trace.Debugger.Snapshots
                     fieldOrPropertyName,
                     fieldsOnly: false,
                     limitInfo,
-                    collectionsBeingSerialized);
+                    collectionsBeingSerialized,
+                    ref incompleteReasons);
 
                 if (!serialized)
                 {
@@ -283,11 +306,11 @@ namespace Datadog.Trace.Debugger.Snapshots
 
             if (isFieldCountReached)
             {
-                WriteNotCapturedReason(jsonWriter, NotCapturedReason.fieldCount);
+                WriteNotCapturedReason(jsonWriter, NotCapturedReason.fieldCount, ref incompleteReasons);
             }
         }
 
-        private static void WriteNotCapturedMember(JsonWriter jsonWriter, string memberName, Type type, NotCapturedReason notCapturedReason, ref int index, string fieldsObjectName)
+        private static void WriteNotCapturedMember(JsonWriter jsonWriter, string memberName, Type type, NotCapturedReason notCapturedReason, ref int index, string fieldsObjectName, ref uint incompleteReasons)
         {
             if (index == 0)
             {
@@ -300,7 +323,7 @@ namespace Datadog.Trace.Debugger.Snapshots
             jsonWriter.WriteStartObject();
             jsonWriter.WritePropertyName("type");
             jsonWriter.WriteValue(type.Name);
-            WriteNotCapturedReason(jsonWriter, notCapturedReason);
+            WriteNotCapturedReason(jsonWriter, notCapturedReason, ref incompleteReasons);
             jsonWriter.WriteEndObject();
         }
 
@@ -313,7 +336,8 @@ namespace Datadog.Trace.Debugger.Snapshots
             int currentDepth,
             CancellationTokenSource cts,
             CaptureLimitInfo limitInfo,
-            HashSet<object> collectionsBeingSerialized)
+            HashSet<object> collectionsBeingSerialized,
+            ref uint incompleteReasons)
         {
             if (currentDepth >= limitInfo.MaxReferenceDepth)
             {
@@ -324,7 +348,7 @@ namespace Datadog.Trace.Debugger.Snapshots
                 jsonWriter.WritePropertyName(enumerableInfo.IsDictionary ? "entries" : "elements");
                 jsonWriter.WriteStartArray();
                 jsonWriter.WriteEndArray();
-                WriteNotCapturedReason(jsonWriter, NotCapturedReason.depth);
+                WriteNotCapturedReason(jsonWriter, NotCapturedReason.depth, ref incompleteReasons);
                 return;
             }
 
@@ -337,7 +361,7 @@ namespace Datadog.Trace.Debugger.Snapshots
                 jsonWriter.WritePropertyName(enumerableInfo.IsDictionary ? "entries" : "elements");
                 jsonWriter.WriteStartArray();
                 jsonWriter.WriteEndArray();
-                WriteNotCapturedReason(jsonWriter, NotCapturedReason.depth);
+                WriteNotCapturedReason(jsonWriter, NotCapturedReason.depth, ref incompleteReasons);
                 return;
             }
 
@@ -381,6 +405,7 @@ namespace Datadog.Trace.Debugger.Snapshots
                     catch (InvalidOperationException e)
                     {
                         Log.Error(e, "Error serializing enumerable when calling MoveNext. Error={Error}. Depth={CurrentDepth}", e.Message, property1: currentDepth);
+                        DebuggerGuardrailMetrics.MarkCaptureIncomplete(ref incompleteReasons, MetricTags.DebuggerCaptureIncompleteReason.RuntimeError);
                         break;
                     }
 
@@ -392,6 +417,7 @@ namespace Datadog.Trace.Debugger.Snapshots
                     catch (InvalidOperationException e)
                     {
                         Log.Error(e, "Error serializing enumerable when calling Current. Error={Error}. Depth={CurrentDepth}", e.Message, property1: currentDepth);
+                        DebuggerGuardrailMetrics.MarkCaptureIncomplete(ref incompleteReasons, MetricTags.DebuggerCaptureIncompleteReason.RuntimeError);
                         break;
                     }
 
@@ -404,7 +430,7 @@ namespace Datadog.Trace.Debugger.Snapshots
                     bool serialized;
                     if (enumerableInfo.IsDictionary)
                     {
-                        serialized = SerializeKeyValuePair(current, jsonWriter, cts, currentDepth, limitInfo, collectionsBeingSerialized);
+                        serialized = SerializeKeyValuePair(current, jsonWriter, cts, currentDepth, limitInfo, collectionsBeingSerialized, ref incompleteReasons);
                     }
                     else
                     {
@@ -417,7 +443,8 @@ namespace Datadog.Trace.Debugger.Snapshots
                             variableName: null,
                             fieldsOnly: false,
                             limitInfo,
-                            collectionsBeingSerialized);
+                            collectionsBeingSerialized,
+                            ref incompleteReasons);
                     }
 
                     if (!serialized)
@@ -450,14 +477,20 @@ namespace Datadog.Trace.Debugger.Snapshots
             catch (InvalidOperationException e)
             {
                 Log.Error(e, "Error serializing enumerable: Enumerator initialization failed. Collection may have been modified.");
+                DebuggerGuardrailMetrics.MarkCaptureIncomplete(ref incompleteReasons, MetricTags.DebuggerCaptureIncompleteReason.RuntimeError);
             }
             catch (OperationCanceledException e)
             {
-                Log.Error(e, "Error serializing enumerable: Operation was canceled during enumeration setup.");
+                Log.Error(e, "Error serializing enumerable: Operation was canceled during enumeration.");
+                var reason = cts.IsCancellationRequested
+                                 ? MetricTags.DebuggerCaptureIncompleteReason.Timeout
+                                 : MetricTags.DebuggerCaptureIncompleteReason.RuntimeError;
+                DebuggerGuardrailMetrics.MarkCaptureIncomplete(ref incompleteReasons, reason);
             }
             catch (Exception e)
             {
                 Log.Error(e, "Error serializing enumerable: {Error} Depth={CurrentDepth}", e.Message, property1: currentDepth);
+                DebuggerGuardrailMetrics.MarkCaptureIncomplete(ref incompleteReasons, MetricTags.DebuggerCaptureIncompleteReason.RuntimeError);
             }
             finally
             {
@@ -473,7 +506,7 @@ namespace Datadog.Trace.Debugger.Snapshots
                 // Write not captured reason AFTER closing the array (property must be at object level, not array level)
                 if (notCapturedReason.HasValue)
                 {
-                    WriteNotCapturedReason(jsonWriter, notCapturedReason.Value);
+                    WriteNotCapturedReason(jsonWriter, notCapturedReason.Value, ref incompleteReasons);
                 }
 
                 if (enumerator is IDisposable disposable)
@@ -489,7 +522,8 @@ namespace Datadog.Trace.Debugger.Snapshots
             CancellationTokenSource cts,
             int currentDepth,
             CaptureLimitInfo limitInfo,
-            HashSet<object> collectionsBeingSerialized)
+            HashSet<object> collectionsBeingSerialized,
+            ref uint incompleteReasons)
         {
             var descriptor = GetDictionaryEntryDescriptor(current.GetType());
             jsonWriter.WriteStartArray();
@@ -499,23 +533,23 @@ namespace Datadog.Trace.Debugger.Snapshots
             var value = descriptor.GetValue(current);
             var valueType = value?.GetType() ?? descriptor.ValueType;
 
-            bool serializedKey = SerializeInternal(key, keyType, jsonWriter, cts, currentDepth, variableName: null, fieldsOnly: false, limitInfo, collectionsBeingSerialized);
+            bool serializedKey = SerializeInternal(key, keyType, jsonWriter, cts, currentDepth, variableName: null, fieldsOnly: false, limitInfo, collectionsBeingSerialized, ref incompleteReasons);
             bool serializedValue;
             if (key is string keyName && Redaction.Instance.IsRedactedKeyword(keyName))
             {
-                WriteRedactedValue(jsonWriter, valueType, variableName: null, redactionReason: RedactionReason.Identifier);
+                WriteRedactedValue(jsonWriter, valueType, variableName: null, redactionReason: RedactionReason.Identifier, ref incompleteReasons);
                 serializedValue = true;
             }
             else
             {
-                serializedValue = SerializeInternal(value, valueType, jsonWriter, cts, currentDepth, variableName: null, fieldsOnly: false, limitInfo, collectionsBeingSerialized);
+                serializedValue = SerializeInternal(value, valueType, jsonWriter, cts, currentDepth, variableName: null, fieldsOnly: false, limitInfo, collectionsBeingSerialized, ref incompleteReasons);
             }
 
             jsonWriter.WriteEndArray();
             return serializedKey && serializedValue;
         }
 
-        private static void WriteRedactedValue(JsonWriter jsonWriter, Type type, string variableName, RedactionReason redactionReason)
+        private static void WriteRedactedValue(JsonWriter jsonWriter, Type type, string variableName, RedactionReason redactionReason, ref uint incompleteReasons)
         {
             if (variableName != null)
             {
@@ -527,12 +561,37 @@ namespace Datadog.Trace.Debugger.Snapshots
             jsonWriter.WriteStartObject();
             jsonWriter.WritePropertyName("type");
             jsonWriter.WriteValue(type.Name);
-            WriteNotCapturedReason(jsonWriter, notCapturedReason);
+            WriteNotCapturedReason(jsonWriter, notCapturedReason, ref incompleteReasons);
             jsonWriter.WriteEndObject();
         }
 
-        private static void WriteNotCapturedReason(JsonWriter writer, NotCapturedReason notCapturedReason)
+        private static void WriteNotCapturedReason(JsonWriter writer, NotCapturedReason notCapturedReason, ref uint incompleteReasons)
         {
+            switch (notCapturedReason)
+            {
+                case NotCapturedReason.timeout:
+                    DebuggerGuardrailMetrics.MarkCaptureIncomplete(ref incompleteReasons, MetricTags.DebuggerCaptureIncompleteReason.Timeout);
+                    break;
+                case NotCapturedReason.depth:
+                    DebuggerGuardrailMetrics.MarkCaptureIncomplete(ref incompleteReasons, MetricTags.DebuggerCaptureIncompleteReason.Depth);
+                    break;
+                case NotCapturedReason.fieldCount:
+                    DebuggerGuardrailMetrics.MarkCaptureIncomplete(ref incompleteReasons, MetricTags.DebuggerCaptureIncompleteReason.FieldCount);
+                    break;
+                case NotCapturedReason.collectionSize:
+                    DebuggerGuardrailMetrics.MarkCaptureIncomplete(ref incompleteReasons, MetricTags.DebuggerCaptureIncompleteReason.CollectionSize);
+                    break;
+                case NotCapturedReason.typeInitializer:
+                    // Skipped to avoid running a customer type initializer, so the capture really is incomplete.
+                    DebuggerGuardrailMetrics.MarkCaptureIncomplete(ref incompleteReasons, MetricTags.DebuggerCaptureIncompleteReason.Other);
+                    break;
+
+                // Redaction is intended behaviour, not an incomplete capture.
+                case NotCapturedReason.redactedIdent:
+                case NotCapturedReason.redactedType:
+                    break;
+            }
+
             WriteNotCapturedReason(writer, Enum.GetName(typeof(NotCapturedReason), notCapturedReason));
         }
 
@@ -552,14 +611,15 @@ namespace Datadog.Trace.Debugger.Snapshots
 
         internal static bool TryGetValue(MemberInfo fieldOrProp, object source, out object value, [NotNullWhen(true)] out Type type)
         {
-            return TryGetValue(fieldOrProp, source, out value, out type, out _);
+            return TryGetValue(fieldOrProp, source, out value, out type, out _, out _);
         }
 
-        private static bool TryGetValue(MemberInfo fieldOrProp, object source, out object value, [NotNullWhen(true)] out Type type, out NotCapturedReason? notCapturedReason)
+        private static bool TryGetValue(MemberInfo fieldOrProp, object source, out object value, [NotNullWhen(true)] out Type type, out NotCapturedReason? notCapturedReason, out bool runtimeError)
         {
             value = null;
             type = null;
             notCapturedReason = null;
+            runtimeError = false;
             try
             {
                 switch (fieldOrProp)
@@ -667,6 +727,7 @@ namespace Datadog.Trace.Debugger.Snapshots
             }
             catch (Exception e)
             {
+                runtimeError = true;
                 Log.Error(e, nameof(DebuggerSnapshotSerializer) + "." + nameof(TryGetValue) + ": Can't get value of {Member} from {Source}", GetMemberInfo(fieldOrProp), source?.GetType().FullName);
             }
 
