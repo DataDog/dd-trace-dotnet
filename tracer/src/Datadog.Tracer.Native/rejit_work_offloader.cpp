@@ -33,6 +33,7 @@ RejitWorkOffloader::RejitWorkOffloader(ICorProfilerInfo7* pInfo) :
     m_offloader_queue_thread(std::make_unique<std::thread>([this] 
         {
             Threads::SetNativeThreadName(WStr("DD_rejit"));
+            Threads::RaiseThreadPriorityAboveNormal();
             EnqueueThreadLoop(this);
         }))
 {
