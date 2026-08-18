@@ -141,6 +141,7 @@ open
 opendir
 pipe2
 poll
+posix_fadvise
 pow
 prctl
 pthread_attr_destroy
