@@ -81,6 +81,13 @@ partial class Build : NukeBuild
            .Executes(() => WriteGitlabLinuxIntegrationTestsPipeline(
                 GetLinuxX64IntegrationTestPlatformMatrix(IncludeAllTestFrameworks)));
 
+    Target GenerateGitlabLinuxArm64IntegrationTestsPipeline
+        => _ => _
+           .Unlisted()
+           .Executes(() => WriteGitlabLinuxIntegrationTestsPipeline(
+                GetLinuxArm64IntegrationTestPlatformMatrix(IncludeAllTestFrameworks),
+                isArm64: true));
+
     Target GenerateGitlabWindowsIntegrationTestsPipeline
         => _ => _
            .Unlisted()
@@ -263,7 +270,8 @@ partial class Build : NukeBuild
     }
 
     void WriteGitlabLinuxIntegrationTestsPipeline(
-        IEnumerable<(TargetFramework Framework, string BaseImage, string ArtifactSuffix)> configurations)
+        IEnumerable<(TargetFramework Framework, string BaseImage, string ArtifactSuffix)> configurations,
+        bool isArm64 = false)
     {
         var configurationList = configurations.ToList();
         var yaml = new StringBuilder(
@@ -290,13 +298,21 @@ partial class Build : NukeBuild
         {
             var sampleJob = $"build-samples-multi-version:{framework}";
             var producerSuffix = baseImage == "alpine" ? "-musl" : string.Empty;
+            var architecture = isArm64 ? "arm64" : "x64";
 
             AppendLinuxJob($"integration-tests-{artifactSuffix}:{framework}:tracer", "integration", TracerArea);
             AppendLinuxJob($"integration-tests-{artifactSuffix}:{framework}:asm", "integration", AsmArea);
 
-            foreach (var dockerGroup in new[] { 1, 2 })
+            if (isArm64)
             {
-                AppendLinuxJob($"integration-tests-{artifactSuffix}:{framework}:docker-group-{dockerGroup}", "docker", dockerGroup: dockerGroup);
+                AppendLinuxJob($"integration-tests-{artifactSuffix}:{framework}:docker", "docker");
+            }
+            else
+            {
+                foreach (var dockerGroup in new[] { 1, 2 })
+                {
+                    AppendLinuxJob($"integration-tests-{artifactSuffix}:{framework}:docker-group-{dockerGroup}", "docker", dockerGroup: dockerGroup);
+                }
             }
 
             foreach (var optimize in new[] { true, false })
@@ -308,18 +324,19 @@ partial class Build : NukeBuild
             void AppendLinuxJob(string name, string testSuite, string area = null, int? dockerGroup = null, bool? optimize = null)
             {
                 yaml.AppendLine($"\"{name}\":");
-                yaml.AppendLine("  extends: .linux-integration-test-x64");
+                yaml.AppendLine($"  extends: .linux-integration-test-{architecture}");
                 yaml.AppendLine("  needs:");
                 yaml.AppendLine($"    - job: \"{sampleJob}\"");
                 yaml.AppendLine("      artifacts: true");
-                AppendParentArtifactNeed($"build-linux-tracer-x64{producerSuffix}");
-                AppendParentArtifactNeed($"build-linux-profiler-x64{producerSuffix}");
-                AppendParentArtifactNeed("build-linux-universal-x64");
+                AppendParentArtifactNeed($"build-linux-tracer-{architecture}{producerSuffix}");
+                AppendParentArtifactNeed($"build-linux-profiler-{architecture}{producerSuffix}");
+                AppendParentArtifactNeed($"build-linux-universal-{architecture}");
                 AppendParentArtifactNeed("build-samples-standalone");
                 yaml.AppendLine("  variables:");
                 yaml.AppendLine($"    FRAMEWORK: \"{framework}\"");
                 yaml.AppendLine($"    BASE_IMAGE: \"{baseImage}\"");
                 yaml.AppendLine($"    ARTIFACT_SUFFIX: \"{artifactSuffix}\"");
+                yaml.AppendLine($"    TARGET_ARCHITECTURE: \"{architecture}\"");
                 yaml.AppendLine($"    TEST_SUITE: \"{testSuite}\"");
                 if (area is not null)
                 {
@@ -347,9 +364,9 @@ partial class Build : NukeBuild
 
         var outputDirectory = RootDirectory / ".gitlab" / "generated";
         Directory.CreateDirectory(outputDirectory);
-        var outputPath = outputDirectory / "linux-integration-tests.yml";
+        var outputPath = outputDirectory / (isArm64 ? "linux-arm64-integration-tests.yml" : "linux-integration-tests.yml");
         File.WriteAllText(outputPath, yaml.ToString());
-        Logger.Information("Generated GitLab Linux integration-test child pipeline at {Path}", outputPath);
+        Logger.Information("Generated GitLab Linux {Architecture} integration-test child pipeline at {Path}", isArm64 ? "ARM64" : "x64", outputPath);
     }
 
     IEnumerable<(TargetFramework Framework, string BaseImage, string ArtifactSuffix)> GetLinuxX64IntegrationTestPlatformMatrix(
@@ -364,6 +381,27 @@ partial class Build : NukeBuild
         foreach (var framework in GetTestingFrameworks(
                      PlatformFamily.Linux,
                      isArm64: false,
+                     includeAllFrameworks: includeAllFrameworks))
+        {
+            foreach (var (baseImage, artifactSuffix) in baseImages)
+            {
+                yield return (framework, baseImage, artifactSuffix);
+            }
+        }
+    }
+
+    IEnumerable<(TargetFramework Framework, string BaseImage, string ArtifactSuffix)> GetLinuxArm64IntegrationTestPlatformMatrix(
+        bool includeAllFrameworks)
+    {
+        var baseImages = new[]
+        {
+            (BaseImage: "debian", ArtifactSuffix: "linux-arm64"),
+            (BaseImage: "alpine", ArtifactSuffix: "linux-musl-arm64"),
+        };
+
+        foreach (var framework in GetTestingFrameworks(
+                     PlatformFamily.Linux,
+                     isArm64: true,
                      includeAllFrameworks: includeAllFrameworks))
         {
             foreach (var (baseImage, artifactSuffix) in baseImages)

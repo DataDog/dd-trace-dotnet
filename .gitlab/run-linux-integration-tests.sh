@@ -8,6 +8,7 @@ include_minor_package_versions=false
 include_all_test_frameworks=true
 test_suite="${TEST_SUITE:-integration}"
 area="${AREA:-Tracer}"
+target_architecture="${TARGET_ARCHITECTURE:-x64}"
 if [ "${perform_comprehensive_testing:-false}" = "true" ]; then
   include_minor_package_versions=true
 fi
@@ -31,13 +32,13 @@ if [ -n "${CI_COMMIT_REF_NAME:-}" ] && [ -z "$(git branch --show-current)" ]; th
   git checkout -B "$CI_COMMIT_REF_NAME" "$CI_COMMIT_SHA"
 fi
 
-# Azure publishes the universal loader/wrapper from linux-musl-x64 and
+# Azure publishes the universal loader/wrapper from the musl build and
 # downloads it into the target runtime folder. Recreate that merge for the
-# glibc job after GitLab downloads the independent producer artifacts. The
-# Alpine job already uses linux-musl-x64 as its target folder.
+# glibc job after GitLab downloads the independent producer artifacts.
+universal_artifact_suffix="linux-musl-${target_architecture}"
 mkdir -p "artifacts/monitoring-home/${ARTIFACT_SUFFIX}" artifacts/build_data/infra_logs
-if [ "$ARTIFACT_SUFFIX" != "linux-musl-x64" ]; then
-  cp -a artifacts/monitoring-home/linux-musl-x64/. "artifacts/monitoring-home/${ARTIFACT_SUFFIX}/"
+if [ "$ARTIFACT_SUFFIX" != "$universal_artifact_suffix" ]; then
+  cp -a "artifacts/monitoring-home/${universal_artifact_suffix}/." "artifacts/monitoring-home/${ARTIFACT_SUFFIX}/"
 fi
 
 echo "Building ${BASE_IMAGE} integration-test image for ${FRAMEWORK}"
@@ -87,11 +88,13 @@ case "$test_suite" in
     filter=""
     if [ "$test_suite" = "docker" ]; then
       include_docker=true
-      if [ -z "${DOCKER_GROUP:-}" ]; then
+      if [ "$target_architecture" = "x64" ] && [ -z "${DOCKER_GROUP:-}" ]; then
         echo "DOCKER_GROUP is required for Docker integration tests" >&2
         exit 1
       fi
-      filter="DockerGroup=${DOCKER_GROUP}"
+      if [ "$target_architecture" = "x64" ]; then
+        filter="DockerGroup=${DOCKER_GROUP}"
+      fi
     fi
 
     echo "Building ${test_suite} integration tests for ${FRAMEWORK} (area=${area}, filter=${filter})"
@@ -239,7 +242,7 @@ case "$test_suite" in
       exit 1
     fi
 
-    compose_project="dd-trace-${CI_JOB_ID}-g${DOCKER_GROUP}"
+    compose_project="dd-trace-${CI_JOB_ID}-${target_architecture}${DOCKER_GROUP:+-g${DOCKER_GROUP}}"
     cleanup_compose()
     {
       compose -p "$compose_project" logs || true
@@ -247,10 +250,8 @@ case "$test_suite" in
     }
     trap cleanup_compose EXIT HUP INT TERM
 
-    export COMPOSE_PROFILES="group${DOCKER_GROUP}"
     export baseImage="$BASE_IMAGE"
     export framework="$FRAMEWORK"
-    export Filter="DockerGroup=${DOCKER_GROUP}"
     export IncludeAllTestFrameworks="$include_all_test_frameworks"
     export IncludeMinorPackageVersions="$include_minor_package_versions"
     export TestAllPackageVersions=true
@@ -260,7 +261,18 @@ case "$test_suite" in
     export DD_LOGGER_DD_TAGS="test.configuration.job:${CI_JOB_NAME}"
 
     postgres_host_argument=""
-    if [ "$DOCKER_GROUP" = "1" ]; then
+    if [ "$target_architecture" = "arm64" ]; then
+      dependency_service="StartDependencies.ARM64"
+      integration_service="IntegrationTests.ARM64"
+      export Filter=""
+    else
+      dependency_service="StartDependencies.Group${DOCKER_GROUP}"
+      integration_service="IntegrationTests"
+      export COMPOSE_PROFILES="group${DOCKER_GROUP}"
+      export Filter="DockerGroup=${DOCKER_GROUP}"
+    fi
+
+    if [ "$target_architecture" = "x64" ] && [ "$DOCKER_GROUP" = "1" ]; then
       # The GitLab Docker runner does not consistently publish the postgres
       # service alias on the Compose network. Start it explicitly and provide
       # a deterministic hosts entry to the waiter and integration-test containers.
@@ -275,13 +287,13 @@ case "$test_suite" in
       postgres_host_argument="--add-host=postgres:${postgres_ip}"
     fi
 
-    echo "Starting Docker dependency group ${DOCKER_GROUP}"
+    echo "Starting Docker dependencies for ${target_architecture}"
     # Deliberately leave postgres_host_argument unquoted: it is either empty or
     # one complete Compose argument.
     # shellcheck disable=SC2086
-    compose -p "$compose_project" run --rm $postgres_host_argument "StartDependencies.Group${DOCKER_GROUP}"
+    compose -p "$compose_project" run --rm $postgres_host_argument "$dependency_service"
 
-    echo "Running Docker dependency group ${DOCKER_GROUP} integration tests for ${FRAMEWORK}"
+    echo "Running Docker-dependent ${target_architecture} integration tests for ${FRAMEWORK}"
     # shellcheck disable=SC2086
     compose -p "$compose_project" run --rm \
       $postgres_host_argument \
@@ -320,7 +332,7 @@ case "$test_suite" in
       -e CI_MERGE_REQUEST_DIFF_BASE_SHA \
       -e CI_MERGE_REQUEST_TARGET_BRANCH_NAME \
       -e CI_MERGE_REQUEST_IID \
-      IntegrationTests || test_exit_code=$?
+      "$integration_service" || test_exit_code=$?
 
     cleanup_compose
     trap - EXIT HUP INT TERM
