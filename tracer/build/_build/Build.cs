@@ -465,7 +465,8 @@ partial class Build : NukeBuild
             DotNetBuild(x => x
                 .SetProjectFile(Solution.GetProject(Projects.DdTrace))
                 .When(!IsGitlab, settings => settings.EnableNoRestore())
-                // GitLab builds only the artifact consumed by the current test TFM. The runner does not target .NET Framework, so net48 uses net8.0.
+                // GitLab builds the artifact referenced by the current integration-test TFM.
+                // The runner does not target .NET Framework, so net48 uses net8.0.
                 .When(IsGitlab && Framework is not null, settings => settings.SetFramework(Framework == TargetFramework.NET48 ? TargetFramework.NET8_0 : Framework))
                 .EnableNoDependencies()
                 .SetConfiguration(BuildConfiguration)
@@ -474,6 +475,22 @@ partial class Build : NukeBuild
                 .SetProperty("PackageOutputPath", ArtifactsDirectory / "nuget" / "dd-trace")
                 .SetProperty("BuildStandalone", "false")
                 .SetProcessEnvironmentVariable("MSBUILDDISABLENODEREUSE", "1"));
+
+            if (IsGitlab && Framework is not null && Framework != TargetFramework.NET8_0 && Framework != TargetFramework.NET48)
+            {
+                // GlobalCoverageMemoryTests exercises the production runner layout, which is
+                // intentionally published for net8.0 independently of the test TFM.
+                DotNetBuild(x => x
+                    .SetProjectFile(Solution.GetProject(Projects.DdTrace))
+                    .SetFramework(TargetFramework.NET8_0)
+                    .EnableNoDependencies()
+                    .SetConfiguration(BuildConfiguration)
+                    .SetNoWarnDotNetCore3()
+                    .SetDDEnvironmentVariables("dd-trace-dotnet-runner-tool")
+                    .SetProperty("PackageOutputPath", ArtifactsDirectory / "nuget" / "dd-trace")
+                    .SetProperty("BuildStandalone", "false")
+                    .SetProcessEnvironmentVariable("MSBUILDDISABLENODEREUSE", "1"));
+            }
         });
 
     Target PackRunnerToolNuget => _ => _
