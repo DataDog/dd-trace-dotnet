@@ -4,8 +4,10 @@
 // </copyright>
 
 using System;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.OpenTelemetry;
 using Datadog.Trace.Tagging;
+using Datadog.Trace.Util.Http;
 using FluentAssertions;
 using Xunit;
 
@@ -13,6 +15,12 @@ namespace Datadog.Trace.Tests.OpenTelemetry;
 
 public class HttpSemanticConventionsTests
 {
+    private static readonly QueryStringManager QueryStringManager = new(
+        reportQueryString: true,
+        timeout: 30_000,
+        maxSizeBeforeObfuscation: 5000,
+        pattern: TracerSettingsConstants.DefaultObfuscationQueryStringRegex);
+
     public static TheoryData<string> AllKnownMethods() =>
         new() { "CONNECT", "DELETE", "GET", "HEAD", "OPTIONS", "PATCH", "POST", "PUT", "QUERY", "TRACE" };
 
@@ -108,7 +116,32 @@ public class HttpSemanticConventionsTests
     [Fact]
     public void GetNetworkProtocolVersion_ReturnsNullWhenThereIsNoResponse()
     {
-        HttpSemanticConventions.GetNetworkProtocolVersion(null).Should().BeNull();
+        HttpSemanticConventions.GetNetworkProtocolVersion((Version)null).Should().BeNull();
+    }
+
+    [Theory]
+    // The protocols we expect a server to report, in the "HTTP/1.1" form both System.Web (through
+    // the SERVER_PROTOCOL variable) and ASP.NET Core (through HttpRequest.Protocol) use. Note that
+    // the minor version is only reported for HTTP/1.x
+    [InlineData("HTTP/1.0", "1.0")]
+    [InlineData("HTTP/1.1", "1.1")]
+    [InlineData("HTTP/2", "2")]
+    [InlineData("HTTP/2.0", "2")]
+    [InlineData("HTTP/3", "3")]
+    [InlineData("HTTP/3.0", "3")]
+
+    // A version we don't know about is still reported, without the protocol name
+    [InlineData("HTTP/1.2", "1.2")]
+    [InlineData("http/1.1", "1.1")]
+
+    // Nothing to report, rather than something the conventions don't describe
+    [InlineData(null, null)]
+    [InlineData("", null)]
+    [InlineData("SPDY/3", null)]
+    [InlineData("1.1", null)]
+    public void GetNetworkProtocolVersion_ReportsTheVersionWithoutTheProtocolName(string protocol, string expected)
+    {
+        HttpSemanticConventions.GetNetworkProtocolVersion(protocol).Should().Be(expected);
     }
 
     [Theory]
@@ -186,4 +219,180 @@ public class HttpSemanticConventionsTests
     {
         HttpSemanticConventions.GetNetworkProtocolVersion(new Version(major, minor, build, revision)).Should().Be(expected);
     }
+
+    [Theory]
+    // "{method} {target}" when the request matched a route
+    [InlineData("GET", "/users/{id}", "GET /users/{id}")]
+    [InlineData("POST", "{controller}/{action}/{id}", "POST {controller}/{action}/{id}")]
+
+    // Just "{method}" when it didn't. Note that we must not fall back to the URI path, as that
+    // would make the span name high-cardinality.
+    [InlineData("GET", null, "GET")]
+    [InlineData("GET", "", "GET")]
+
+    // An unrecognized method is reported as "_OTHER", but the span name says "HTTP"
+    [InlineData("_OTHER", "/users/{id}", "HTTP /users/{id}")]
+    [InlineData("_OTHER", null, "HTTP")]
+    public void GetServerResourceName_IsMethodAndRoute(string requestMethod, string route, string expected)
+    {
+        HttpSemanticConventions.GetServerResourceName(requestMethod, route).Should().Be(expected);
+    }
+
+    [Theory]
+    [InlineData("get", "GET")]
+    [InlineData("FOO", "HTTP")]
+    [InlineData(null, "HTTP")]
+    public void GetServerResourceNameFromRawMethod_NormalizesTheMethod(string httpMethod, string expected)
+    {
+        HttpSemanticConventions.GetServerResourceNameFromRawMethod(httpMethod).Should().Be(expected);
+    }
+
+    [Theory]
+    // A Host header with a port
+    [InlineData("example.com:8080", "example.com", 8080)]
+    [InlineData("127.0.0.1:5000", "127.0.0.1", 5000)]
+    [InlineData("[::1]:5000", "::1", 5000)]
+
+    // A Host header without a port: the client used the scheme's default, and guessing which one
+    // would be wrong when the request went through a proxy, so no port is reported
+    [InlineData("example.com", "example.com", null)]
+    [InlineData("[::1]", "::1", null)]
+
+    // An unparseable port is dropped, but it is still a port: it must not end up in the address,
+    // which the Host header lets the client set to anything
+    [InlineData("example.com:", "example.com", null)]
+    [InlineData("example.com:not-a-port", "example.com", null)]
+    [InlineData("example.com:99999", "example.com", null)]
+    [InlineData("[::1]:", "::1", null)]
+
+    // An unterminated bracket is a malformed address rather than a "host:port" pair, so splitting it
+    // at a colon would report half an IPv6 address
+    [InlineData("[::1", "[::1", null)]
+
+    // The specification only allows "server.port" alongside "server.address"
+    [InlineData(":8080", null, null)]
+    public void SetServerAddressAndPort_SplitsTheHostHeader(string hostHeader, string expectedAddress, int? expectedPort)
+    {
+        var tags = new WebTags();
+
+        HttpSemanticConventions.SetServerAddressAndPort(tags, hostHeader, requestUri: null);
+
+        tags.ServerAddress.Should().Be(expectedAddress);
+        tags.ServerPort.Should().Be(expectedPort);
+    }
+
+    [Fact]
+    public void SetServerAddressAndPort_FallsBackToTheRequestUriWithoutAHostHeader()
+    {
+        var tags = new WebTags();
+
+        HttpSemanticConventions.SetServerAddressAndPort(tags, hostHeader: null, new Uri("https://example.com/users/1"));
+
+        tags.ServerAddress.Should().Be("example.com");
+        tags.ServerPort.Should().Be(443);
+    }
+
+    [Fact]
+    public void SetServerAddressAndPort_ReportsNothingWhenThereIsNeither()
+    {
+        var tags = new WebTags();
+
+        HttpSemanticConventions.SetServerAddressAndPort(tags, hostHeader: string.Empty, requestUri: null);
+
+        tags.ServerAddress.Should().BeNull();
+        tags.ServerPort.Should().BeNull();
+    }
+
+    [Fact]
+    public void SetHttpServerRequestValues_SplitsTheUrlAndObfuscatesTheQuery()
+    {
+        var span = CreateSpan();
+        var tags = new WebTags();
+        var uri = new Uri("https://localhost:8080/store/checkout?token=SECRET&page=2");
+
+        HttpSemanticConventions.SetHttpServerRequestValues(span, tags, resourceName: null, "GET", userAgent: null, protocol: "HTTP/1.1", hostHeader: "localhost:8080", uri, QueryStringManager);
+
+        tags.HttpMethod.Should().Be("GET");
+        tags.HttpRequestMethodOriginal.Should().BeNull();
+        tags.NetworkProtocolVersion.Should().Be("1.1");
+        tags.UrlScheme.Should().Be("https");
+        tags.UrlPath.Should().Be("/store/checkout");
+
+        // The leading '?' belongs to "url.full", not to "url.query"
+        tags.UrlQuery.Should().Be("<redacted>&page=2");
+        tags.ServerAddress.Should().Be("localhost");
+        tags.ServerPort.Should().Be(8080);
+
+        // OpenTelemetry replaces these with the attributes above
+        tags.HttpUrl.Should().BeNull();
+        tags.HttpRequestHeadersHost.Should().BeNull();
+    }
+
+    [Fact]
+    public void SetHttpServerRequestValues_OmitsTheQueryWhenThereIsNone()
+    {
+        var span = CreateSpan();
+        var tags = new WebTags();
+
+        HttpSemanticConventions.SetHttpServerRequestValues(span, tags, resourceName: null, "GET", userAgent: null, protocol: "HTTP/1.1", hostHeader: "localhost", new Uri("http://localhost/ping"), QueryStringManager);
+
+        tags.UrlPath.Should().Be("/ping");
+        tags.UrlQuery.Should().BeNull();
+    }
+
+    [Fact]
+    public void SetHttpServerRequestValues_OmitsTheProtocolVersionWhenTheHostDoesNotReportIt()
+    {
+        var span = CreateSpan();
+        var tags = new WebTags();
+
+        HttpSemanticConventions.SetHttpServerRequestValues(span, tags, resourceName: null, "GET", userAgent: null, protocol: null, hostHeader: "localhost", new Uri("http://localhost/ping"), QueryStringManager);
+
+        tags.NetworkProtocolVersion.Should().BeNull();
+    }
+
+    [Theory]
+    // Reported verbatim when it is already canonical
+    [InlineData("GET", "GET", null)]
+
+    // A non-canonical casing is reported as canonical
+    [InlineData("get", "GET", null)]
+
+    // An unrecognized method becomes "_OTHER", and the original is kept
+    [InlineData("FOO", "_OTHER", "FOO")]
+    public void SetHttpServerRequestValues_RecordsTheOriginalMethodOnlyWhenItDiffers(string httpMethod, string expectedMethod, string expectedOriginal)
+    {
+        var span = CreateSpan();
+        var tags = new WebTags();
+
+        HttpSemanticConventions.SetHttpServerRequestValues(span, tags, resourceName: null, httpMethod, userAgent: null, protocol: null, hostHeader: null, requestUri: null, QueryStringManager);
+
+        tags.HttpMethod.Should().Be(expectedMethod);
+        tags.HttpRequestMethodOriginal.Should().Be(expectedOriginal);
+    }
+
+    [Fact]
+    public void SetHttpRoute_KeepsTheFirstRoute()
+    {
+        var span = CreateSpan();
+
+        HttpSemanticConventions.SetHttpRoute(span, "/users/{id}");
+        HttpSemanticConventions.SetHttpRoute(span, "/something/else");
+
+        span.GetTag(Tags.HttpRoute).Should().Be("/users/{id}");
+    }
+
+    [Fact]
+    public void SetHttpRoute_IgnoresAnEmptyRoute()
+    {
+        var span = CreateSpan();
+
+        HttpSemanticConventions.SetHttpRoute(span, null);
+        HttpSemanticConventions.SetHttpRoute(span, string.Empty);
+
+        span.GetTag(Tags.HttpRoute).Should().BeNull();
+    }
+
+    private static Span CreateSpan()
+        => new Span(new SpanContext(null, new TraceContext(Tracer.Instance), serviceName: null), DateTimeOffset.UtcNow, new WebTags());
 }
