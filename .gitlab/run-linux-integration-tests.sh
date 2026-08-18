@@ -227,8 +227,13 @@ case "$test_suite" in
     # postgres alias issue is handled explicitly below.
     if ! command -v docker-compose >/dev/null 2>&1; then
       echo "Installing Docker Compose v1"
-      apt-get update
-      apt-get install --yes --no-install-recommends docker-compose
+      # The EC2 regional Ubuntu mirror occasionally stalls or returns 503s. Use
+      # the canonical mirror and let APT retry transient downloads instead of
+      # spending most of the job timeout on a single failed install.
+      sed -i 's|http://us-east-1.ec2.archive.ubuntu.com/ubuntu|http://archive.ubuntu.com/ubuntu|g' /etc/apt/sources.list
+      apt-get -o Acquire::Retries=5 -o Acquire::http::Timeout=30 update
+      apt-get -o Acquire::Retries=5 -o Acquire::http::Timeout=30 \
+        install --yes --no-install-recommends docker-compose
       rm -rf /var/lib/apt/lists/*
     fi
 
