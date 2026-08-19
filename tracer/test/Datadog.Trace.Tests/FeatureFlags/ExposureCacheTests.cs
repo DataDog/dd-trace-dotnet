@@ -182,4 +182,59 @@ public partial class ExposureCacheTests
 
         Assert.Equal(size, cache.Size);
     }
+
+    [Fact]
+    public void AppearingSerialIdIsNotDeduplicated()
+    {
+        var cache = new ExposureCache(5);
+
+        Assert.True(cache.Add(CreateSerialIdEvent(null)));
+        Assert.True(cache.Add(CreateSerialIdEvent(340132)));
+        Assert.False(cache.Add(CreateSerialIdEvent(340132)));
+        Assert.Equal(1, cache.Size);
+    }
+
+    [Fact]
+    public void ChangingSerialIdIsNotDeduplicated()
+    {
+        var cache = new ExposureCache(5);
+
+        Assert.True(cache.Add(CreateSerialIdEvent(340132)));
+        Assert.True(cache.Add(CreateSerialIdEvent(340133)));
+        Assert.True(cache.Add(CreateSerialIdEvent(340132)));
+        Assert.Equal(1, cache.Size);
+    }
+
+    [Fact]
+    public void DisappearingSerialIdIsNotDeduplicated()
+    {
+        var cache = new ExposureCache(5);
+
+        Assert.True(cache.Add(CreateSerialIdEvent(340132)));
+        Assert.True(cache.Add(CreateSerialIdEvent(null)));
+        Assert.False(cache.Add(CreateSerialIdEvent(null)));
+        Assert.Equal(1, cache.Size);
+    }
+
+    [Fact]
+    public void SerialIdOfZeroDoesNotMatchAnAbsentSerialId()
+    {
+        var cache = new ExposureCache(5);
+
+        Assert.True(cache.Add(CreateSerialIdEvent(null)));
+        Assert.True(cache.Add(CreateSerialIdEvent(0)));
+        Assert.False(cache.Add(CreateSerialIdEvent(0)));
+        Assert.Equal(1, cache.Size);
+    }
+
+    private static ExposureEvent CreateSerialIdEvent(long? serialId)
+    {
+        return new ExposureEvent(
+            new DateTimeOffset(DateTime.Now).ToUnixTimeMilliseconds(),
+            new Trace.FeatureFlags.Exposure.Model.Allocation("allocation"),
+            new Trace.FeatureFlags.Exposure.Model.Flag("flag"),
+            new Trace.FeatureFlags.Exposure.Model.Variant("variant"),
+            new Subject("subject", new Dictionary<string, object?>()),
+            serialId);
+    }
 }

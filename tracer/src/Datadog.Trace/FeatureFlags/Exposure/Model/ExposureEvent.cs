@@ -8,7 +8,16 @@
 using System;
 using System.Collections.Generic;
 using System.Security.Cryptography.X509Certificates;
+using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.FeatureFlags.Exposure.Model;
 
-internal readonly record struct ExposureEvent(long Timestamp, Allocation Allocation, Flag Flag, Variant Variant, Subject Subject);
+// The serializer includes nulls globally, but the intake reads an absent serial id and an explicit
+// null differently, so this one property has to omit itself instead.
+internal readonly record struct ExposureEvent(
+    long Timestamp,
+    Allocation Allocation,
+    Flag Flag,
+    Variant Variant,
+    Subject Subject,
+    [property: JsonProperty(NullValueHandling = NullValueHandling.Ignore)] long? SerialId = null);
