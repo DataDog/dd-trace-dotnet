@@ -468,6 +468,11 @@ partial class Build : NukeBuild
                 // GitLab builds the artifact referenced by the current integration-test TFM.
                 // The runner does not target .NET Framework, so net48 uses net8.0.
                 .When(IsGitlab && Framework is not null, settings => settings.SetFramework(Framework == TargetFramework.NET48 ? TargetFramework.NET8_0 : Framework))
+                // The runner is managed and must be loadable by both x86 and x64 test hosts.
+                // Set both properties because the Windows producer can provide an inherited
+                // x64 PlatformTarget independently of the MSBuild Platform configuration.
+                .SetTargetPlatformAnyCPU()
+                .SetProperty("PlatformTarget", "AnyCPU")
                 .EnableNoDependencies()
                 .SetConfiguration(BuildConfiguration)
                 .SetNoWarnDotNetCore3()
@@ -483,6 +488,8 @@ partial class Build : NukeBuild
                 DotNetBuild(x => x
                     .SetProjectFile(Solution.GetProject(Projects.DdTrace))
                     .SetFramework(TargetFramework.NET8_0)
+                    .SetTargetPlatformAnyCPU()
+                    .SetProperty("PlatformTarget", "AnyCPU")
                     .EnableNoDependencies()
                     .SetConfiguration(BuildConfiguration)
                     .SetNoWarnDotNetCore3()
