@@ -41,6 +41,21 @@ ENV LOCALDB_VERSION="2022" \
 COPY install_localdb.ps1 .
 RUN powershell -Command .\install_localdb.ps1 -Version $ENV:LOCALDB_VERSION -Sha256 $ENV:LOCALDB_SHA256 -Url $ENV:LOCALDB_DOWNLOAD_URL
 
+# Install MSMQ for the .NET Framework MSMQ integration tests.
+COPY install_msmq.ps1 .
+RUN powershell -Command .\install_msmq.ps1
+
+# Install a matched headless Chrome and ChromeDriver for the Selenium CI Visibility tests.
+# Versions and download links are published by the Chrome for Testing project.
+ENV CHROME_VERSION="151.0.7922.77" \
+    CHROME_DOWNLOAD_URL="https://storage.googleapis.com/chrome-for-testing-public/151.0.7922.77/win64/chrome-headless-shell-win64.zip" \
+    CHROME_SHA256="24F22654F82ABD4FF7DEFCE511AE84EBCD7A6C4845AEFA516E0C53E3AF615ECD" \
+    CHROMEDRIVER_DOWNLOAD_URL="https://storage.googleapis.com/chrome-for-testing-public/151.0.7922.77/win64/chromedriver-win64.zip" \
+    CHROMEDRIVER_SHA256="ED5189D0A048FCBC16CCC6ED45B47D4E78A79184A23E2FC12A3F804F3242B7C8"
+
+COPY install_chrome.ps1 .
+RUN powershell -Command .\install_chrome.ps1 -Version $ENV:CHROME_VERSION -ChromeUrl $ENV:CHROME_DOWNLOAD_URL -ChromeSha256 $ENV:CHROME_SHA256 -ChromeDriverUrl $ENV:CHROMEDRIVER_DOWNLOAD_URL -ChromeDriverSha256 $ENV:CHROMEDRIVER_SHA256
+
 # Install WIX
 ENV WIX_VERSION="3.11.2" \
     WIX_SHA256="32bb76c478fcb356671d4aaf006ad81ca93eea32c22a9401b168fc7471feccd2"
