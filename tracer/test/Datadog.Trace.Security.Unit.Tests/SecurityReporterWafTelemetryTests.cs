@@ -14,6 +14,7 @@ using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
 using FluentAssertions;
+using Moq;
 using Xunit;
 
 namespace Datadog.Trace.Security.Unit.Tests;
@@ -32,7 +33,7 @@ public class SecurityReporterWafTelemetryTests
     [MemberData(nameof(ErrorCodes))]
     public async Task GivenAFailedWafRun_WhenTheTelemetryIsRecorded_ThenBothWafErrorAndWafRequestsAreReported(int returnCode, string expectedErrorTag)
     {
-        var metrics = await RecordAsync(new MockResult(returnCode), isRasp: false);
+        var metrics = await RecordAsync(CreateResult(returnCode), isRasp: false);
 
         metrics.Should().ContainSingle(m => m.Name == "waf.error")
                .Which.Tags.Should().Contain(expectedErrorTag);
@@ -46,7 +47,7 @@ public class SecurityReporterWafTelemetryTests
     [InlineData(-1)]
     public async Task GivenAFailedRaspRun_WhenTheTelemetryIsRecorded_ThenNeitherWafErrorNorTheWafRequestsTagIsSet(int returnCode)
     {
-        var metrics = await RecordAsync(new MockResult(returnCode), isRasp: true);
+        var metrics = await RecordAsync(CreateResult(returnCode), isRasp: true);
 
         metrics.Should().NotContain(m => m.Name == "waf.error");
         metrics.Should().ContainSingle(m => m.Name == "waf.requests")
@@ -56,7 +57,7 @@ public class SecurityReporterWafTelemetryTests
     [Fact]
     public async Task GivenAFailedTruncatedWafRun_WhenTheTelemetryIsRecorded_ThenTheTruncatedTagIsUsed()
     {
-        var metrics = await RecordAsync(new MockResult(-3, truncated: true), isRasp: false);
+        var metrics = await RecordAsync(CreateResult(-3, truncated: true), isRasp: false);
 
         metrics.Should().ContainSingle(m => m.Name == "waf.requests")
                .Which.Tags.Should().Contain("waf_error:true").And.Contain("input_truncated:true");
@@ -65,7 +66,7 @@ public class SecurityReporterWafTelemetryTests
     [Fact]
     public async Task GivenATimedOutWafRun_WhenTheTelemetryIsRecorded_ThenItIsNotReportedAsAnError()
     {
-        var metrics = await RecordAsync(new MockResult(0, timeout: true), isRasp: false);
+        var metrics = await RecordAsync(CreateResult(0, timeout: true), isRasp: false);
 
         metrics.Should().NotContain(m => m.Name == "waf.error");
         metrics.Should().ContainSingle(m => m.Name == "waf.requests")
@@ -75,7 +76,7 @@ public class SecurityReporterWafTelemetryTests
     [Fact]
     public async Task GivenASuccessfulWafRun_WhenTheTelemetryIsRecorded_ThenNoErrorIsReported()
     {
-        var metrics = await RecordAsync(new MockResult(0), isRasp: false);
+        var metrics = await RecordAsync(CreateResult(0), isRasp: false);
 
         metrics.Should().NotContain(m => m.Name == "waf.error");
         metrics.Should().ContainSingle(m => m.Name == "waf.requests")
@@ -102,53 +103,12 @@ public class SecurityReporterWafTelemetryTests
             ?? [];
     }
 
-    private class MockResult : IResult
+    private static IResult CreateResult(int returnCode, bool timeout = false, bool truncated = false)
     {
-        public MockResult(int returnCode, bool timeout = false, bool truncated = false)
-        {
-            ReturnCode = (WafReturnCode)returnCode;
-            Timeout = timeout;
-            Truncated = truncated;
-        }
-
-        public WafReturnCode ReturnCode { get; }
-
-        public bool Timeout { get; }
-
-        public bool Truncated { get; }
-
-        public bool ShouldBlock => false;
-
-        public bool ShouldReportSecurityResult => false;
-
-        public Dictionary<string, object?>? BlockInfo => throw new System.NotImplementedException();
-
-        public Dictionary<string, object?>? RedirectInfo => throw new System.NotImplementedException();
-
-        public Dictionary<string, object?>? SendStackInfo => throw new System.NotImplementedException();
-
-        public IReadOnlyCollection<object>? Data => throw new System.NotImplementedException();
-
-        public Dictionary<string, object?>? Actions => throw new System.NotImplementedException();
-
-        public ulong AggregatedTotalRuntime => throw new System.NotImplementedException();
-
-        public ulong AggregatedTotalRuntimeWithBindings => throw new System.NotImplementedException();
-
-        public ulong AggregatedTotalRuntimeRasp => throw new System.NotImplementedException();
-
-        public ulong AggregatedTotalRuntimeWithBindingsRasp => throw new System.NotImplementedException();
-
-        public uint RaspRuleEvaluations => throw new System.NotImplementedException();
-
-        public Dictionary<string, object?>? ExtractSchemaDerivatives => throw new System.NotImplementedException();
-
-        public Dictionary<string, object?>? FingerprintDerivatives => throw new System.NotImplementedException();
-
-        public Dictionary<string, object?>? WafSpanAttributes => throw new System.NotImplementedException();
-
-        public bool Keep => throw new System.NotImplementedException();
-
-        public bool HasKeep => throw new System.NotImplementedException();
+        var result = new Mock<IResult>();
+        result.SetupGet(x => x.ReturnCode).Returns((WafReturnCode)returnCode);
+        result.SetupGet(x => x.Timeout).Returns(timeout);
+        result.SetupGet(x => x.Truncated).Returns(truncated);
+        return result.Object;
     }
 }

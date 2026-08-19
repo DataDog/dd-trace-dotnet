@@ -5,8 +5,11 @@
 
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
+using System.Globalization;
 using System.Linq;
 using System.Reflection;
+using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Processors;
@@ -43,6 +46,9 @@ public class TelemetryMetricExtensionsTests
 
     public static IEnumerable<object[]> IntegrationIds
         => IntegrationRegistry.Ids.Values.Select(x => new object[] { x });
+
+    public static IEnumerable<object[]> WafReturnCodes
+        => GetEnums<WafReturnCode>().Select(x => new object[] { (int)x });
 
     [Theory]
     [MemberData(nameof(AllEnums))]
@@ -95,6 +101,37 @@ public class TelemetryMetricExtensionsTests
            .OnlyHaveUniqueItems();
     }
 
+    [Theory]
+    [MemberData(nameof(WafReturnCodes))]
+    public void MustHaveMetricTagForEveryWafErrorCode(int returnCode)
+    {
+        var tag = ((WafReturnCode)returnCode).ToWafErrorTag();
+
+        if (returnCode < (int)WafReturnCode.Ok)
+        {
+            tag.Should().NotBeNull("every WAF error code should map to a metric tag. Add a new entry to WafReturnCodeExtensions");
+            GetWafErrorCode(tag!.Value).Should().Be(returnCode, "the waf_error tag should report the ddwaf_run return code");
+        }
+        else
+        {
+            tag.Should().BeNull("only failed WAF runs are reported by appsec.waf.error");
+        }
+    }
+
+    [Fact]
+    public void MustHaveWafErrorCodeForEveryMetricTag()
+    {
+        var mapped = GetEnums<WafReturnCode>()
+                    .Select(x => x.ToWafErrorTag())
+                    .Where(x => x.HasValue)
+                    .Select(x => x!.Value);
+
+        GetEnums<MetricTags.WafError>()
+           .Except(new[] { MetricTags.WafError.BindingError })
+           .Should()
+           .BeSubsetOf(mapped, "every WAF error tag except the binding error should be reachable from a WafReturnCode");
+    }
+
     [Fact]
     public void MustHaveValidTagsForEveryPublicApi()
     {
@@ -141,6 +178,18 @@ public class TelemetryMetricExtensionsTests
                .OnlyContain(x => x.ToLowerInvariant() == x || (allowDebuggerGuardrailTags && DebuggerGuardrailCamelCaseTags.Contains(x)), "should use lowercase unless the debugger contract requires camelCase")
                .And.OnlyContain(x => x.Trim() == x, "should not have any whitespace")
                .And.OnlyContain(x => TraceUtil.NormalizeTag(x) == x || (allowDebuggerGuardrailTags && DebuggerGuardrailCamelCaseTags.Contains(x)), "should match the normalized version unless the debugger contract requires camelCase");
+
+    private static int GetWafErrorCode(MetricTags.WafError tag)
+    {
+        const string prefix = "waf_error:";
+        var description = typeof(MetricTags.WafError)
+                         .GetField(tag.ToString())!
+                         .GetCustomAttribute<DescriptionAttribute>()!
+                         .Description;
+
+        var value = description.Split(';').Single(x => x.StartsWith(prefix, StringComparison.Ordinal));
+        return int.Parse(value.Substring(prefix.Length), CultureInfo.InvariantCulture);
+    }
 
     private static IEnumerable<T> GetEnums<T>()
         => Enum.GetValues(typeof(T)).Cast<T>();

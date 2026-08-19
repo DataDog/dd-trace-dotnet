@@ -155,7 +155,11 @@ internal sealed partial class SecurityReporter
         {
             metrics.RecordCountWafRequests(
                 result.Truncated ? MetricTags.WafAnalysis.WafErrorTruncated : MetricTags.WafAnalysis.WafError);
-            RecordWafError(metrics, result.ReturnCode);
+
+            if (result.ReturnCode.ToWafErrorTag() is { } wafError)
+            {
+                metrics.RecordCountWafError(wafError);
+            }
         }
         else if (result.ShouldBlock)
         {
@@ -171,22 +175,6 @@ internal sealed partial class SecurityReporter
         {
             metrics.RecordCountWafRequests(
                 result.Truncated ? MetricTags.WafAnalysis.NormalTruncated : MetricTags.WafAnalysis.Normal);
-        }
-    }
-
-    private static void RecordWafError(IMetricsTelemetryCollector metrics, WafReturnCode returnCode)
-    {
-        switch (returnCode)
-        {
-            case WafReturnCode.ErrorInternal:
-                metrics.RecordCountWafError(MetricTags.WafError.Internal);
-                break;
-            case WafReturnCode.ErrorInvalidObject:
-                metrics.RecordCountWafError(MetricTags.WafError.InvalidObject);
-                break;
-            case WafReturnCode.ErrorInvalidArgument:
-                metrics.RecordCountWafError(MetricTags.WafError.InvalidArgument);
-                break;
         }
     }
 
