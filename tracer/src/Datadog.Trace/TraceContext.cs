@@ -190,16 +190,6 @@ namespace Datadog.Trace
             lock (_rootSpan)
             {
                 _openSpans++;
-
-                if (_openSpans == 1 && _segmentClosed)
-                {
-                    _segmentClosed = false;
-
-                    if (_rootSpan.Type != SpanTypes.Web)
-                    {
-                        _appSecRequestContext?.ReopenAdditiveContext();
-                    }
-                }
             }
         }
 

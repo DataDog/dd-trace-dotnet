@@ -193,15 +193,6 @@ internal partial class AppSecRequestContext
         }
     }
 
-    internal void ReopenAdditiveContext()
-    {
-        lock (_contextSync)
-        {
-            _context = null;
-            _isAdditiveContextDisposed = false;
-        }
-    }
-
     internal IContext? GetOrCreateAdditiveContext(Security security)
     {
         lock (_contextSync)

@@ -74,9 +74,9 @@ public class AppSecContextTests : WafLibraryRequiredTest
     }
 
     [Theory]
-    [InlineData(SpanTypes.Custom, true)]
-    [InlineData(SpanTypes.Web, false)]
-    public async Task GivenAClosedTraceSegment_WhenALateSpanReopensIt_ThenOnlyANonWebTraceGetsANewWafContext(string spanType, bool expectedContext)
+    [InlineData(SpanTypes.Custom)]
+    [InlineData(SpanTypes.Web)]
+    public async Task GivenAClosedTraceSegment_WhenALateSpanIsAdded_ThenTheWafContextStaysDisposed(string spanType)
     {
         await using var tracer = TracerHelper.Create(new());
         using var security = new AppSec.Security(waf: CreateWaf().Waf);
@@ -91,7 +91,7 @@ public class AppSecContextTests : WafLibraryRequiredTest
         appSecContext.GetOrCreateAdditiveContext(security).Should().BeNull();
 
         using var lateTestScope = (Scope)tracer.StartActive("test.late", new SpanCreationSettings { Parent = capturedParent });
-        (appSecContext.GetOrCreateAdditiveContext(security) is not null).Should().Be(expectedContext);
+        appSecContext.GetOrCreateAdditiveContext(security).Should().BeNull();
     }
 
     [Fact]
@@ -108,9 +108,9 @@ public class AppSecContextTests : WafLibraryRequiredTest
     }
 
     [Theory]
-    [InlineData(SpanTypes.Custom, true)]
-    [InlineData(SpanTypes.Web, false)]
-    public async Task GivenAClosedTraceSegment_WhenALateSpanUsesAppSecForTheFirstTime_ThenOnlyANonWebTraceGetsAWafContext(string spanType, bool expectedContext)
+    [InlineData(SpanTypes.Custom)]
+    [InlineData(SpanTypes.Web)]
+    public async Task GivenAClosedTraceSegment_WhenALateSpanUsesAppSecForTheFirstTime_ThenNoWafContextIsHandedOut(string spanType)
     {
         await using var tracer = TracerHelper.Create(new());
         using var security = new AppSec.Security(waf: CreateWaf().Waf);
@@ -123,7 +123,7 @@ public class AppSecContextTests : WafLibraryRequiredTest
         using var lateTestScope = (Scope)tracer.StartActive("test.late", new SpanCreationSettings { Parent = capturedParent });
         var appSecContext = lateTestScope.Span.Context.TraceContext.AppSecRequestContext;
 
-        (appSecContext.GetOrCreateAdditiveContext(security) is not null).Should().Be(expectedContext);
+        appSecContext.GetOrCreateAdditiveContext(security).Should().BeNull();
     }
 
     [InlineData(-2, -2, -1, 0, -2, -1)]
