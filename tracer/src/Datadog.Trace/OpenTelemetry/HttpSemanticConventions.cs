@@ -152,6 +152,8 @@ namespace Datadog.Trace.OpenTelemetry
 
             if (tags is not null)
             {
+                tags.HttpUserAgent = userAgent;
+
                 GetRequestMethodAttributeValues(originalMethod, out string httpRequestMethod, out string? httpRequestMethodOriginal);
                 tags.HttpMethod = httpRequestMethod;
                 tags.HttpRequestMethodOriginal = httpRequestMethodOriginal;
