@@ -3950,15 +3950,14 @@ stages:
         & .azure-pipelines/steps/invoke-gitlab-windows-signing.ps1 `
           -AzureBuildId '$(Build.BuildId)' `
           -AzureSourceVersion '$(Build.SourceVersion)' `
+          -AzureSourceBranch '$(Build.SourceBranch)' `
           -AzureArtifactName 'windows-signing-input' `
           -MonitoringHome '$(monitoringHome)' `
-          -GitLabTriggerToken $env:GITLAB_WINDOWS_SIGNING_TRIGGER_TOKEN `
-          -GitLabReadToken $env:GITLAB_WINDOWS_SIGNING_READ_TOKEN
+          -GitLabApiToken $env:GITLAB_WINDOWS_SIGNING_API_TOKEN
       displayName: Sign Windows artifacts in GitLab
       condition: and(succeeded(), eq(variables.isMainOrReleaseBranch, true), ne(variables['Build.Reason'], 'Schedule'))
       env:
-        GITLAB_WINDOWS_SIGNING_TRIGGER_TOKEN: $(GITLAB_WINDOWS_SIGNING_TRIGGER_TOKEN)
-        GITLAB_WINDOWS_SIGNING_READ_TOKEN: $(GITLAB_WINDOWS_SIGNING_READ_TOKEN)
+        GITLAB_WINDOWS_SIGNING_API_TOKEN: $(GITLAB_WINDOWS_SIGNING_API_TOKEN)
 
     - script: tracer\build.cmd CreateBundleHome BuildBundleNuget BuildAzureFunctionsNuget BuildRunnerTool PackRunnerToolNuget BuildStandaloneTool BuildBenchmarkNuget
       displayName: Build tools and pack NuGet packages (Bundle, AzureFunctions, Benchmark)

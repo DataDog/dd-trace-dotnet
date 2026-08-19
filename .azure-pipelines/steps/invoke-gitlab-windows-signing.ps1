@@ -4,14 +4,13 @@ param(
     [Parameter(Mandatory = $true)]
     [string] $AzureSourceVersion,
     [Parameter(Mandatory = $true)]
+    [string] $AzureSourceBranch,
+    [Parameter(Mandatory = $true)]
     [string] $AzureArtifactName,
     [Parameter(Mandatory = $true)]
     [string] $MonitoringHome,
     [Parameter(Mandatory = $true)]
-    [string] $GitLabTriggerToken,
-    [Parameter(Mandatory = $true)]
-    [string] $GitLabReadToken,
-    [string] $GitLabRef = 'master'
+    [string] $GitLabApiToken
 )
 
 Set-StrictMode -Version Latest
@@ -26,54 +25,75 @@ if (-not (Test-Path -LiteralPath $MonitoringHome -PathType Container)) {
     throw "Monitoring home '$MonitoringHome' does not exist."
 }
 
-if ([string]::IsNullOrWhiteSpace($GitLabTriggerToken) -or [string]::IsNullOrWhiteSpace($GitLabReadToken)) {
-    throw 'GitLab signing tokens are not configured.'
+if ([string]::IsNullOrWhiteSpace($GitLabApiToken)) {
+    throw 'The GitLab signing API token is not configured.'
 }
 
 $gitLabApiBase = 'https://gitlab.ddbuild.io/api/v4'
 $gitLabProject = 'DataDog%2Fdd-trace-dotnet'
-$triggerUri = "$gitLabApiBase/projects/$gitLabProject/trigger/pipeline"
-$triggerBody = @{
-    token = $GitLabTriggerToken
-    ref = $GitLabRef
-    'variables[AZURE_WINDOWS_SIGNING]' = 'true'
-    'variables[AZURE_BUILD_ID]' = $AzureBuildId
-    'variables[AZURE_SOURCE_VERSION]' = $AzureSourceVersion
-    'variables[AZURE_ARTIFACT_NAME]' = $AzureArtifactName
-}
-
-$pipeline = Invoke-RestMethod -Uri $triggerUri -Method Post -Body $triggerBody
-$pipelineId = [string] $pipeline.id
-if ($pipelineId -notmatch '^\d+$') {
-    throw 'GitLab did not return a valid pipeline ID.'
-}
-
-Write-Output "Triggered GitLab Windows signing pipeline ${pipelineId}: $($pipeline.web_url)"
-
-$headers = @{ 'PRIVATE-TOKEN' = $GitLabReadToken }
-$pipelineUri = "$gitLabApiBase/projects/$gitLabProject/pipelines/$pipelineId"
+$headers = @{ 'PRIVATE-TOKEN' = $GitLabApiToken }
+$gitLabRef = $AzureSourceBranch -replace '^refs/heads/', ''
+$encodedRef = [Uri]::EscapeDataString($gitLabRef)
+$pipelinesUri = "$gitLabApiBase/projects/$gitLabProject/pipelines?sha=$AzureSourceVersion&ref=$encodedRef&per_page=20&order_by=id&sort=desc"
 $deadline = [DateTime]::UtcNow.AddMinutes(30)
+$pipeline = $null
+$signingJob = $null
 
 do {
-    Start-Sleep -Seconds 15
-    $pipeline = Invoke-RestMethod -Uri $pipelineUri -Headers $headers -Method Get
-    $status = [string] $pipeline.status
-    Write-Output "GitLab signing pipeline $pipelineId status: $status"
-
-    if ($status -in @('failed', 'canceled', 'skipped', 'manual')) {
-        throw "GitLab signing pipeline $pipelineId finished with status '$status': $($pipeline.web_url)"
+    $pipelines = Invoke-RestMethod -Uri $pipelinesUri -Headers $headers -Method Get
+    $pipeline = $pipelines | Select-Object -First 1
+    if ($null -ne $pipeline) {
+        $pipelineId = [string] $pipeline.id
+        $pipelineUri = "$gitLabApiBase/projects/$gitLabProject/pipelines/$pipelineId"
+        $jobs = Invoke-RestMethod -Uri "$pipelineUri/jobs?per_page=100" -Headers $headers -Method Get
+        $signingJob = $jobs | Where-Object { $_.name -eq 'sign-azure-windows-artifacts' } | Select-Object -First 1
     }
 
     if ([DateTime]::UtcNow -ge $deadline) {
-        throw "Timed out waiting for GitLab signing pipeline ${pipelineId}: $($pipeline.web_url)"
+        throw "Timed out waiting for the GitLab signing job for commit $AzureSourceVersion on '$gitLabRef'."
+    }
+
+    if ($null -eq $signingJob) {
+        Write-Output "Waiting for the GitLab signing job for commit $AzureSourceVersion on '$gitLabRef'."
+        Start-Sleep -Seconds 15
+    }
+} while ($null -eq $signingJob)
+
+if ([string] $signingJob.status -ne 'manual') {
+    throw "GitLab signing job $($signingJob.id) is '$($signingJob.status)', expected 'manual'. Each Azure build must use a fresh GitLab pipeline."
+}
+
+$playBody = @{
+    job_variables_attributes = @(
+        @{ key = 'AZURE_BUILD_ID'; value = $AzureBuildId },
+        @{ key = 'AZURE_SOURCE_VERSION'; value = $AzureSourceVersion },
+        @{ key = 'AZURE_ARTIFACT_NAME'; value = $AzureArtifactName }
+    )
+} | ConvertTo-Json -Depth 4
+
+$signingJob = Invoke-RestMethod `
+    -Uri "$gitLabApiBase/projects/$gitLabProject/jobs/$($signingJob.id)/play" `
+    -Headers $headers `
+    -Method Post `
+    -ContentType 'application/json' `
+    -Body $playBody
+
+Write-Output "Started GitLab signing job $($signingJob.id): $($signingJob.web_url)"
+
+do {
+    Start-Sleep -Seconds 15
+    $signingJob = Invoke-RestMethod -Uri "$gitLabApiBase/projects/$gitLabProject/jobs/$($signingJob.id)" -Headers $headers -Method Get
+    $status = [string] $signingJob.status
+    Write-Output "GitLab signing job $($signingJob.id) status: $status"
+
+    if ($status -in @('failed', 'canceled', 'skipped', 'manual')) {
+        throw "GitLab signing job $($signingJob.id) finished with status '$status': $($signingJob.web_url)"
+    }
+
+    if ([DateTime]::UtcNow -ge $deadline) {
+        throw "Timed out waiting for GitLab signing job $($signingJob.id): $($signingJob.web_url)"
     }
 } while ($status -ne 'success')
-
-$jobs = Invoke-RestMethod -Uri "$pipelineUri/jobs?scope[]=success&per_page=100" -Headers $headers -Method Get
-$signingJob = $jobs | Where-Object { $_.name -eq 'sign-azure-windows-artifacts' } | Select-Object -First 1
-if ($null -eq $signingJob) {
-    throw "Successful signing job was not found in GitLab pipeline $pipelineId."
-}
 
 $tempRoot = Join-Path ([System.IO.Path]::GetTempPath()) "dd-trace-signing-$AzureBuildId-$pipelineId"
 $artifactZip = Join-Path $tempRoot 'gitlab-artifacts.zip'
