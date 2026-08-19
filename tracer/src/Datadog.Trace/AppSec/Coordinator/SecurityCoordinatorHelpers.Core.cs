@@ -69,13 +69,9 @@ internal static class SecurityCoordinatorHelpers
         }
     }
 
-    /// <summary>
-    /// Last chance to run the WAF against the response for servers where the response start hook doesn't
-    /// exist, like HTTP.sys: without it the real response status never reaches the WAF. The response is
-    /// already on the wire by now, so a block action can only be reported, not applied.
-    /// A response that hasn't started yet is left to the hook, which still gets to run after the pipeline
-    /// and can block, unless the server is known not to have one.
-    /// </summary>
+    // Last chance to send the response status on servers with no response start hook, like HTTP.sys. The
+    // response is already on the wire, so a block can only be reported. A response that hasn't started is
+    // left to the hook, which runs after the pipeline and can still block.
     internal static void CheckResponseAtRequestEnd(this in SecurityCoordinator securityCoordinator, HttpContext httpContext)
     {
         try
@@ -107,11 +103,8 @@ internal static class SecurityCoordinatorHelpers
         }
     }
 
-    /// <summary>
-    /// Only HTTP.sys is checked here, and only positively: FireOnStarting is instrumented for Kestrel and
-    /// IIS, and any other server is left with the previous behaviour rather than risking that this runs
-    /// before a hook that would have been able to block.
-    /// </summary>
+    // Only HTTP.sys, and only positively: any other server keeps the previous behaviour rather than
+    // risking that this runs before a hook that would have been able to block.
     internal static bool HasNoResponseStartHook(string? responseFeatureTypeName) =>
         responseFeatureTypeName?.StartsWith("Microsoft.AspNetCore.Server.HttpSys.", StringComparison.Ordinal) == true;
 
