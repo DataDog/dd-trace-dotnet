@@ -27,7 +27,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
     /// <summary>
     /// Shared harness for HTTP server suites hosted by <c>AspNetCoreTestFixture</c> (a Kestrel
     /// process) and exported over OTLP to the ddapm test-agent. Mirrors
-    /// <c>OpenTelemetryAspNetTestBase</c>, which does the same for IIS-hosted .NET Framework samples;
+    /// <c>OtlpAspNetTestBase</c>, which does the same for IIS-hosted .NET Framework samples;
     /// both build on the fixture-agnostic <see cref="OtlpTestAgentSession"/>, since none of the
     /// session/isolation/normalization plumbing depends on how the application under test was
     /// started.
@@ -43,7 +43,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
 
         /// <summary>
         /// Attributes whose values depend on the machine, the socket, or the checkout path rather than
-        /// on the request. See the identical list in <c>OpenTelemetryAspNetTestBase</c>.
+        /// on the request. See the identical list in <c>OtlpAspNetTestBase</c>.
         /// </summary>
         private static readonly string[] UnstableAttributeKeys =
         {
