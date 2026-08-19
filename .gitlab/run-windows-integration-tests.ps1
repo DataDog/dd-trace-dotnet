@@ -40,9 +40,9 @@ $testFilter = $null
 
 switch ($testSuite) {
     'integration' {
-        # LocalDB, MSMQ, Chrome, IIS, and Docker dependencies are covered by
-        # dedicated jobs or remain unavailable in the Windows build container.
-        $testFilter = '(RunOnWindows=True)&(LoadFromGAC!=True)&(IIS!=True)&(IISExpress!=True)&(Category!=AzureFunctions)&(SkipInCI!=True)&(RequiresDockerDependency!=true)&(RequiresLocalDb!=True)&(RequiresMsmq!=True)&(RequiresChrome!=True)'
+        # LocalDB, IIS, and Docker dependencies are covered by dedicated jobs.
+        # MSMQ and headless Chrome are available in the Windows build image.
+        $testFilter = '(RunOnWindows=True)&(LoadFromGAC!=True)&(IIS!=True)&(IISExpress!=True)&(Category!=AzureFunctions)&(SkipInCI!=True)&(RequiresDockerDependency!=true)&(RequiresLocalDb!=True)'
         if ($area -eq 'ASM') {
             # These ASM tests do not declare their LocalDB/IIS requirements as
             # traits, so keep them out of the dependency-free Windows slice.
@@ -82,6 +82,9 @@ $commonDockerArguments = @(
     '-e', 'AWS_NETWORKING=true',
     '-e', 'NUGET_CERT_REVOCATION_MODE=offline',
     '-e', 'NUGET_ENABLE_EXPERIMENTAL_HTTP_RETRY=true',
+    '-e', 'SAMPLES_SELENIUM_CHROME_BINARY=c:\devtools\chrome\chrome-headless-shell-win64\chrome-headless-shell.exe',
+    '-e', 'SAMPLES_SELENIUM_CHROMEDRIVER_DIRECTORY=c:\devtools\chromedriver\chromedriver-win64',
+    '-e', 'SAMPLES_SELENIUM_HEADLESS=true',
     '-e', 'DD_LOGGER_ENABLED=true',
     '-e', 'DD_LOGGER_DD_API_KEY',
     '-e', 'DD_LOGGER_DD_SERVICE=dd-trace-dotnet',
@@ -131,7 +134,13 @@ if ($area) {
 }
 
 Write-Output "Building and running Windows $targetPlatform $testSuite tests for $env:FRAMEWORK (area=$area)"
-$dependencySetup = if ($testSuite -eq 'localdb') { 'powershell -NoProfile -ExecutionPolicy Bypass -File c:\mnt\.gitlab\initialize-localdb.ps1 && ' } else { '' }
+$dependencySetup = if ($testSuite -eq 'localdb') {
+    'powershell -NoProfile -ExecutionPolicy Bypass -File c:\mnt\.gitlab\initialize-localdb.ps1 && '
+} elseif ($testSuite -eq 'integration' -and $area -eq 'Tracer' -and $env:FRAMEWORK -eq 'net48') {
+    'powershell -NoProfile -ExecutionPolicy Bypass -File c:\mnt\.gitlab\initialize-msmq.ps1 && '
+} else {
+    ''
+}
 $testCommand = "reg add HKLM\SYSTEM\CurrentControlSet\Control\FileSystem /v LongPathsEnabled /t REG_DWORD /d 1 /f && powershell -NoProfile -ExecutionPolicy Bypass -File c:\mnt\.gitlab\install-windows-test-runtime.ps1 -Framework $env:FRAMEWORK -Architecture $targetPlatform -IncludeAspNetCore && $dependencySetup" + "c:\entrypoint.bat $nukeTargets --framework $env:FRAMEWORK --TargetPlatform $targetPlatform --IncludeAllTestFrameworks true $nukeArguments --NugetPackageDirectory c:\mnt\packages"
 
 & docker run @commonDockerArguments --entrypoint cmd.exe $windowsBuildImage /d /s /c $testCommand
