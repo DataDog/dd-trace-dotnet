@@ -24,19 +24,27 @@ namespace Datadog.Trace.FeatureFlags
     {
         internal static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(FeatureFlagsModule));
 
+        // Activation, disposal and exposure-API creation all mutate the same state from different
+        // threads, so they share one lock rather than individual interlocked flags: a flag set
+        // before its accompanying setup completes lets a concurrent caller observe a half-activated
+        // module, and a disposal interleaved with activation leaks the delivery path it started.
+        private readonly object _stateLock = new();
+
         private readonly FeatureFlagsSettings _settings;
         private readonly bool _isRemoteConfigurationAvailable;
-        private readonly Lazy<ExposureApi> _exposureApi;
+        private readonly Func<ExposureApi> _exposureApiFactory;
         private readonly bool _spanEnrichmentEnabled;
-        private readonly IRcmSubscriptionManager? _rcmSubscriptionManager;
+        private readonly IRcmSubscriptionManager _rcmSubscriptionManager;
         private readonly TaskCompletionSource<bool> _firstConfigReceived = new(TaskCreationOptions.RunContinuationsAsynchronously);
         private ISubscription? _rcmSubscription;
 
         private Action? _onNewConfigEventHander;
         private FeatureFlagsEvaluator? _evaluator;
         private AgentlessConfigurationSource? _agentlessSource;
-        private int _activated;
-        private int _disposed;
+        private ExposureApi? _exposureApi;
+        private string? _deliveryUnavailableReason;
+        private bool _activated;
+        private bool _disposed;
         private bool _deliveryStarted;
 
         internal FeatureFlagsModule(TracerSettings settings, IRcmSubscriptionManager rcmSubscriptionManager)
@@ -44,7 +52,7 @@ namespace Datadog.Trace.FeatureFlags
             _settings = settings.FeatureFlags;
             _isRemoteConfigurationAvailable = settings.IsRemoteConfigurationAvailable;
             _spanEnrichmentEnabled = settings.IsSpanEnrichmentEnabled;
-            _exposureApi = new Lazy<ExposureApi>(() => new ExposureApi(settings));
+            _exposureApiFactory = () => new ExposureApi(settings);
             _rcmSubscriptionManager = rcmSubscriptionManager;
 
             Log.Debug<FeatureFlagsSource>("FeatureFlagsModule ENABLED with source {Source}", _settings.Source);
@@ -69,21 +77,37 @@ namespace Datadog.Trace.FeatureFlags
 
         public void Dispose()
         {
-            if (Interlocked.CompareExchange(ref _disposed, 1, 0) != 0)
+            ISubscription? subscription;
+            AgentlessConfigurationSource? agentlessSource;
+            ExposureApi? exposureApi;
+
+            lock (_stateLock)
             {
-                return;
+                if (_disposed)
+                {
+                    return;
+                }
+
+                _disposed = true;
+
+                subscription = _rcmSubscription;
+                agentlessSource = _agentlessSource;
+                exposureApi = _exposureApi;
+
+                _rcmSubscription = null;
+                _agentlessSource = null;
+                Volatile.Write(ref _exposureApi, null);
             }
 
-            if (_rcmSubscriptionManager is not null && _rcmSubscription is not null)
+            // Released the lock first: disposal is not state mutation, and holding it here would
+            // block an activation or an exposure for the duration.
+            if (subscription is not null)
             {
-                _rcmSubscriptionManager.Unsubscribe(_rcmSubscription);
+                _rcmSubscriptionManager.Unsubscribe(subscription);
             }
 
-            Interlocked.Exchange(ref _agentlessSource, null)?.Dispose();
-            if (_exposureApi.IsValueCreated)
-            {
-                _exposureApi.Value.Dispose();
-            }
+            agentlessSource?.Dispose();
+            exposureApi?.Dispose();
         }
 
         /// <summary>
@@ -92,55 +116,70 @@ namespace Datadog.Trace.FeatureFlags
         /// </summary>
         internal void Activate()
         {
-            if (Interlocked.CompareExchange(ref _activated, 1, 0) != 0)
+            AgentlessConfigurationSource? sourceToStart = null;
+
+            lock (_stateLock)
             {
-                return;
+                if (_activated || _disposed)
+                {
+                    return;
+                }
+
+                _activated = true;
+
+                switch (_settings.Source)
+                {
+                    case FeatureFlagsSource.RemoteConfig:
+                        // Remote Configuration subscription is deferred to activation so that merely
+                        // enabling Feature Flags does not start a billed RC subscription.
+                        if (!_isRemoteConfigurationAvailable)
+                        {
+                            Log.Warning("Feature Flags are configured to use the Remote Configuration source, but Remote Configuration is not available. No flag configuration will be received.");
+                            _deliveryUnavailableReason = "the Remote Configuration source is selected, but Remote Configuration is not available in this environment";
+                            break;
+                        }
+
+                        var ffeProduct = new FfeProduct(configs => ApplyConfigurations(configs));
+                        _rcmSubscription = new Subscription(ffeProduct.UpdateFromRcm, RcmProducts.FfeFlags);
+                        _rcmSubscriptionManager.SubscribeToChanges(_rcmSubscription);
+                        _rcmSubscriptionManager.SetCapability(RcmCapabilitiesIndices.FfeFlagConfigurationRules, true);
+                        _deliveryStarted = true;
+                        Log.Debug("FeatureFlagsModule::Activate -> Remote Configuration source subscribed");
+                        break;
+                    case FeatureFlagsSource.Agentless:
+                        // Polling is billable, so it starts here rather than at construction.
+                        var source = AgentlessConfigurationSource.Create(_settings, ApplyConfiguration);
+                        if (source is null)
+                        {
+                            // Create logs the specific reason, which may name configuration the
+                            // message must not repeat back to the application.
+                            _deliveryUnavailableReason = "the agentless source could not be started, see the Datadog logs for the reason";
+                            break;
+                        }
+
+                        _agentlessSource = source;
+                        sourceToStart = source;
+                        _deliveryStarted = true;
+                        break;
+                }
             }
 
-            switch (_settings.Source)
-            {
-                case FeatureFlagsSource.RemoteConfig:
-                    // Remote Configuration subscription is deferred to activation so that merely
-                    // enabling Feature Flags does not start a billed RC subscription.
-                    if (!_isRemoteConfigurationAvailable)
-                    {
-                        Log.Warning("Feature Flags are configured to use the Remote Configuration source, but Remote Configuration is not available. No flag configuration will be received.");
-                        break;
-                    }
-
-                    var ffeProduct = new FfeProduct(configs => ApplyConfigurations(configs));
-                    _rcmSubscription = new Subscription(ffeProduct.UpdateFromRcm, RcmProducts.FfeFlags);
-                    _rcmSubscriptionManager!.SubscribeToChanges(_rcmSubscription!);
-                    _rcmSubscriptionManager.SetCapability(RcmCapabilitiesIndices.FfeFlagConfigurationRules, true);
-                    _deliveryStarted = true;
-                    Log.Debug("FeatureFlagsModule::Activate -> Remote Configuration source subscribed");
-                    break;
-                case FeatureFlagsSource.Agentless:
-                    // Polling is billable, so it starts here rather than at construction.
-                    var source = AgentlessConfigurationSource.Create(_settings, ApplyConfiguration);
-                    if (source is null)
-                    {
-                        break;
-                    }
-
-                    Interlocked.Exchange(ref _agentlessSource, source);
-                    if (Volatile.Read(ref _disposed) == 1)
-                    {
-                        // Disposed while we were creating it.
-                        Interlocked.Exchange(ref _agentlessSource, null)?.Dispose();
-                        break;
-                    }
-
-                    source.Start();
-                    _deliveryStarted = true;
-                    break;
-            }
+            // Start() issues the first request on the calling thread up to its first await, so it runs
+            // outside the lock: holding it across a network request would block Dispose(). A Dispose()
+            // that interleaves here has already cancelled the source's shutdown token, which makes the
+            // poll loop exit before its first request.
+            sourceToStart?.Start();
         }
 
         /// <summary>
         /// Activates delivery and waits for the first configuration, so that a provider reported as
-        /// ready can resolve flags. Never throws on timeout: delivery being slow is transient, while
-        /// initialization typically runs at application startup where an exception is fatal.
+        /// ready can resolve flags.
+        /// <para>
+        /// Returns without throwing when the wait times out, because delivery being slow is transient:
+        /// the configuration still arrives later and promotes the provider. Throws
+        /// <see cref="FeatureFlagsDeliveryUnavailableException"/> when no source could start at all,
+        /// which is permanent for the life of the process and must not be reported as a ready provider.
+        /// </para>
         /// </summary>
         internal async Task InitializeAsync(CancellationToken cancellationToken)
         {
@@ -151,12 +190,24 @@ namespace Datadog.Trace.FeatureFlags
                 return;
             }
 
-            // When activation could not start any delivery source (for example, agentless without
-            // an API key), waiting would only delay startup for a configuration that will never
-            // arrive. The provider stays not-ready, which is the correct state.
-            if (!_deliveryStarted)
+            // Read under the lock so a concurrent activation is seen through, rather than reporting no
+            // delivery because its source had not finished starting.
+            bool deliveryStarted;
+            string? deliveryUnavailableReason;
+            lock (_stateLock)
             {
-                return;
+                deliveryStarted = _deliveryStarted;
+                deliveryUnavailableReason = _deliveryUnavailableReason;
+            }
+
+            // When activation could not start any delivery source (for example, agentless without an
+            // API key), no configuration can ever arrive, so waiting would only delay startup.
+            // Returning instead would report the provider as usable while every evaluation keeps
+            // returning its default, so the failure is raised: the SDK turns it into an error status
+            // and an error event without taking the application down.
+            if (!deliveryStarted)
+            {
+                throw new FeatureFlagsDeliveryUnavailableException(deliveryUnavailableReason);
             }
 
             using var timeoutCancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
@@ -253,7 +304,39 @@ namespace Datadog.Trace.FeatureFlags
 
         private void ReportExposure(in ExposureEvent exposure)
         {
-            _exposureApi.Value.SendExposure(exposure);
+            // Nothing would ever dispose an API created after disposal, leaving its send loop running
+            // for the rest of the process, so exposures are dropped from that point on.
+            GetExposureApi()?.SendExposure(exposure);
+        }
+
+        // Created on first use because most applications never evaluate a flag, and under the lock
+        // because the evaluation path races disposal. Only the very first exposure takes the lock:
+        // afterwards the field is read directly, keeping the evaluation path lock-free. Internal so
+        // tests can assert the disposal behaviour without starting a send loop.
+        internal ExposureApi? GetExposureApi()
+        {
+            var exposureApi = Volatile.Read(ref _exposureApi);
+            if (exposureApi is not null)
+            {
+                return exposureApi;
+            }
+
+            lock (_stateLock)
+            {
+                if (_disposed)
+                {
+                    return null;
+                }
+
+                exposureApi = _exposureApi;
+                if (exposureApi is null)
+                {
+                    exposureApi = _exposureApiFactory();
+                    Volatile.Write(ref _exposureApi, exposureApi);
+                }
+
+                return exposureApi;
+            }
         }
     }
 }
