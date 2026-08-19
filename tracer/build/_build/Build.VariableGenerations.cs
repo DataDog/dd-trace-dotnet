@@ -151,10 +151,13 @@ partial class Build : NukeBuild
                     continue;
                 }
 
-                foreach (var optimize in new[] { true, false })
+                foreach (var debugType in new[] { "portable", "full" })
                 {
-                    var optimization = optimize ? "optimized" : "unoptimized";
-                    AppendWindowsJob($"integration-tests-windows-debugger-{targetPlatform}:{framework}:{optimization}", framework, targetPlatform, "debugger", null, optimize);
+                    foreach (var optimize in new[] { true, false })
+                    {
+                        var optimization = optimize ? "optimized" : "unoptimized";
+                        AppendWindowsJob($"integration-tests-windows-debugger-{targetPlatform}:{framework}:{debugType}:{optimization}", framework, targetPlatform, "debugger", null, optimize, debugType);
+                    }
                 }
             }
         }
@@ -176,7 +179,7 @@ partial class Build : NukeBuild
         File.WriteAllText(outputPath, yaml.ToString());
         Logger.Information("Generated GitLab Windows integration-test child pipeline at {Path}", outputPath);
 
-        void AppendWindowsJob(string name, TargetFramework framework, string targetPlatform, string testSuite, string area, bool? optimize = null)
+        void AppendWindowsJob(string name, TargetFramework framework, string targetPlatform, string testSuite, string area, bool? optimize = null, string debugType = null)
         {
             yaml.AppendLine($"\"{name}\":");
             yaml.AppendLine("  extends: .windows-integration-test");
@@ -192,6 +195,11 @@ partial class Build : NukeBuild
             if (optimize is not null)
             {
                 yaml.AppendLine($"    OPTIMIZE: \"{optimize.Value.ToString().ToLowerInvariant()}\"");
+            }
+
+            if (debugType is not null)
+            {
+                yaml.AppendLine($"    DEBUG_TYPE: \"{debugType}\"");
             }
         }
     }
