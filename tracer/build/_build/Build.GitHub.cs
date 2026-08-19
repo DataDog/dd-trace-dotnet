@@ -1352,18 +1352,7 @@ partial class Build
             var fileName = Path.GetFileName(fileUrl);
             var destinationFile = outDir / fileName;
 
-            Console.WriteLine($"Downloading {fileUrl} to {destinationFile}...");
-            var response = await client.GetAsync(fileUrl);
-
-            if (!response.IsSuccessStatusCode)
-            {
-                throw new Exception($"Error downloading GitLab artifacts: {response.StatusCode}:{response.ReasonPhrase}");
-            }
-
-            await using (var file = File.Create(destinationFile))
-            {
-                await response.Content.CopyToAsync(file);
-            }
+            await DownloadFileWithRetry(client, fileUrl, destinationFile, "Error downloading GitLab artifacts");
             Console.WriteLine($"{fileName} downloaded");
         }
     }
@@ -1382,22 +1371,44 @@ partial class Build
             var signedUrl = $"{awsUri}signed-nuget-packages/{name}";
             var signedFile = signedDir / name;
 
-            Console.WriteLine($"Downloading {signedUrl} to {signedFile}...");
-            var response = await client.GetAsync(signedUrl);
-            if (!response.IsSuccessStatusCode)
-            {
-                throw new Exception(
-                    $"Error downloading Authenticode-signed NuGet package from {signedUrl}: {response.StatusCode}:{response.ReasonPhrase}. " +
-                    "Check that the 'sign-nuget-packages' GitLab job ran (and published) this package for this commit.");
-            }
-
-            await using (var file = File.Create(signedFile))
-            {
-                await response.Content.CopyToAsync(file);
-            }
+            await DownloadFileWithRetry(
+                client,
+                signedUrl,
+                signedFile,
+                $"Error downloading Authenticode-signed NuGet package '{name}'. Check that the 'sign-nuget-packages' GitLab job ran (and published) this package for this commit");
 
             File.Copy(signedFile, unsignedFile, overwrite: true);
             Console.WriteLine($"Replaced {name} with the Authenticode-signed copy from {signedUrl}");
+        }
+    }
+
+    // GitLab's artifacts are served from S3 via a plain HTTPS GET (see the callers), which
+    // occasionally flakes transiently. Retry a few times with backoff before giving up.
+    static async Task DownloadFileWithRetry(HttpClient client, string url, AbsolutePath destinationFile, string errorContext, int maxAttempts = 3)
+    {
+        for (var attempt = 1; ; attempt++)
+        {
+            try
+            {
+                Console.WriteLine($"Downloading {url} to {destinationFile} (attempt {attempt}/{maxAttempts})...");
+                var response = await client.GetAsync(url);
+                if (!response.IsSuccessStatusCode)
+                {
+                    throw new Exception($"{errorContext}: {response.StatusCode}:{response.ReasonPhrase}");
+                }
+
+                await using (var file = File.Create(destinationFile))
+                {
+                    await response.Content.CopyToAsync(file);
+                }
+
+                return;
+            }
+            catch (Exception ex) when (attempt < maxAttempts)
+            {
+                Console.WriteLine($"Attempt {attempt}/{maxAttempts} to download {url} failed ({ex.Message}), retrying in {attempt}s...");
+                await Task.Delay(TimeSpan.FromSeconds(attempt));
+            }
         }
     }
 
