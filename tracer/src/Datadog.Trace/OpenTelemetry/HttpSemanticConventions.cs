@@ -154,6 +154,7 @@ namespace Datadog.Trace.OpenTelemetry
                 var requestMethod = NormalizeRequestMethod(originalMethod);
 
                 tags.HttpMethod = requestMethod;
+                tags.HttpUserAgent = userAgent;
                 tags.HttpRequestMethodOriginal = GetRequestMethodOriginal(originalMethod, requestMethod);
                 tags.NetworkProtocolVersion = GetNetworkProtocolVersion(protocol);
 
