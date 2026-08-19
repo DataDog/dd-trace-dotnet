@@ -1,4 +1,4 @@
-﻿{
+{
   "resourceSpans": [
     {
       "resource": {
@@ -86,6 +86,12 @@
                   "key": "http.response.status_code",
                   "value": {
                     "intValue": "200"
+                  }
+                },
+                {
+                  "key": "network.protocol.version",
+                  "value": {
+                    "stringValue": "1.1"
                   }
                 },
                 {

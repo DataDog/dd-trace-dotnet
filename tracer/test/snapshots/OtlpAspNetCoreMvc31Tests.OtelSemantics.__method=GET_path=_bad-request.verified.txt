@@ -1,4 +1,4 @@
-﻿{
+{
   "resourceSpans": [
     {
       "resource": {
@@ -146,6 +146,12 @@
                   "key": "http.route",
                   "value": {
                     "stringValue": "bad-request"
+                  }
+                },
+                {
+                  "key": "network.protocol.version",
+                  "value": {
+                    "stringValue": "1.1"
                   }
                 },
                 {
