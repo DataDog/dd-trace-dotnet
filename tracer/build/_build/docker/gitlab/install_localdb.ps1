@@ -32,8 +32,25 @@ if (-not $installerPath) {
 }
 
 Write-Host -ForegroundColor Green "Installing SQL Server Express LocalDB $Version"
-$installer = Start-Process msiexec.exe -ArgumentList @('/i', $installerPath, '/quiet', '/norestart') -Wait -PassThru
+$logPath = "$PSScriptRoot\localdb-install.log"
+$installerArguments = @(
+    '/i',
+    $installerPath,
+    '/quiet',
+    '/norestart',
+    'IACCEPTSQLLOCALDBLICENSETERMS=YES',
+    'SKIPPENDINGREBOOTCHECK=1',
+    'REBOOT=ReallySuppress',
+    '/l*v',
+    $logPath
+)
+$installer = Start-Process msiexec.exe -ArgumentList $installerArguments -Wait -PassThru
 if ($installer.ExitCode -notin @(0, 3010)) {
+    if (Test-Path -LiteralPath $logPath -PathType Leaf) {
+        Write-Host 'Last 200 lines from the SQL Server Express LocalDB installer log:'
+        Get-Content -LiteralPath $logPath -Tail 200
+    }
+
     throw "SQL Server Express LocalDB installer exited with code $($installer.ExitCode)."
 }
 
@@ -47,4 +64,5 @@ $localDbToolsPath = Split-Path -Parent $executable
 
 Remove-Item -LiteralPath $bootstrapper
 Remove-Item -LiteralPath $mediaPath -Recurse
+Remove-Item -LiteralPath $logPath
 Write-Host -ForegroundColor Green "Done installing SQL Server Express LocalDB $Version"
