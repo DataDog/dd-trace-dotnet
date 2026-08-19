@@ -28,6 +28,11 @@ public class TestSuite(ITestOutputHelper output) : IDisposable
             options.AddArgument("--headless");
             options.AddArgument("--no-sandbox");
             options.AddArgument("--disable-gpu");
+            // Avoid relying on the DevToolsActivePort file when Chrome runs in
+            // an isolated Windows container. The named pipe is created by
+            // ChromeDriver before Chrome starts, so startup does not depend on
+            // the container's temporary profile filesystem.
+            options.AddArgument("--remote-debugging-pipe");
         }
 
         var chromeDriverDirectory = Environment.GetEnvironmentVariable("SAMPLES_SELENIUM_CHROMEDRIVER_DIRECTORY");
