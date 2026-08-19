@@ -242,7 +242,7 @@ namespace Datadog.Trace.AspNet
                     securityCoordinator.Reporter.ReportWafInitInfoOnce(security.WafInitResult);
 
                     // request args
-                    var args = securityCoordinator.CollectRequestArgsForWaf();
+                    var args = securityCoordinator.GetBasicRequestArgsForWaf();
 
                     // body args
                     if (httpRequest.ContentType?.IndexOf("application/x-www-form-urlencoded", StringComparison.InvariantCultureIgnoreCase) >= 0)

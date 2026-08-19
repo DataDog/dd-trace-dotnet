@@ -274,13 +274,11 @@ internal readonly partial struct SecurityCoordinator
 
     internal object? GetPathParams() => ObjectExtractor.Extract(_httpTransport.Context.Request.RequestContext.RouteData.Values);
 
-    /// <summary>
-    /// Builds the address set for the end of the request, where the response status is finally known.
-    /// The request addresses are only included if BeginRequest didn't already supply them.
-    /// </summary>
+    // The WAF context keeps the request addresses BeginRequest already sent, so this only carries what
+    // wasn't available back then.
     internal Dictionary<string, object> GetEndRequestArgsForWaf()
     {
-        var args = CollectRequestArgsForWaf();
+        var args = new Dictionary<string, object>(3);
 
         if (_httpTransport.StatusCode is { } statusCode)
         {
@@ -292,9 +290,8 @@ internal readonly partial struct SecurityCoordinator
             args[AddressesConstants.RequestPathParams] = pathParams;
         }
 
-        // ASP.NET puts its session cookie in Request.Cookies as soon as the session id is read, which is
-        // what this call itself does, so the cookies of a request that arrived without any are only
-        // available here. They have to be sent again for the session fingerprint to be built out of them.
+        // ASP.NET adds its session cookie to Request.Cookies only once the session id is read, so a request
+        // that arrived without cookies has them just here, and the session fingerprint needs them.
         if (ExtractCookiesFromRequest(_httpTransport.Context.Request) is { } cookies)
         {
             args[AddressesConstants.RequestCookies] = cookies;

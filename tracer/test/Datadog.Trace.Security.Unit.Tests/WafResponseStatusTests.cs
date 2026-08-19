@@ -37,11 +37,22 @@ public class WafResponseStatusTests : WafLibraryRequiredTest
         using var waf = CreateWaf().Waf;
         using var context = waf.CreateContext();
 
-        // the request-phase address set carries HttpContext.Response.StatusCode, still 200 at that point;
-        // re-supplying a persistent address replaces it and re-marks it as new, so the value does not latch
+        // re-supplying a persistent address replaces it and re-marks it as new, so 200 does not latch
         context.Run(RequestArgs(status: "200"), TimeoutMicroSeconds).Should().NotBeNull();
 
         MatchedRules(context.Run(ResponseArgs("404"), TimeoutMicroSeconds)).Should().Contain(ScannerRule);
+    }
+
+    [Fact]
+    public void GivenAScannerRequest_WhenTheStatusIsSentTwice_ThenTheRuleMatchesOnce()
+    {
+        using var waf = CreateWaf().Waf;
+        using var context = waf.CreateContext();
+
+        context.Run(RequestArgs(status: null), TimeoutMicroSeconds).Should().NotBeNull();
+        MatchedRules(context.Run(new Dictionary<string, object> { { AddressesConstants.ResponseStatus, "404" } }, TimeoutMicroSeconds)).Should().Contain(ScannerRule);
+
+        MatchedRules(context.Run(ResponseArgs("404"), TimeoutMicroSeconds)).Should().NotContain(ScannerRule);
     }
 
     [Fact]
