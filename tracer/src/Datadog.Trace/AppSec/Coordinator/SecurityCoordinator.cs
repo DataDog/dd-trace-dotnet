@@ -52,11 +52,8 @@ internal readonly partial struct SecurityCoordinator
         return args.Count > 0 ? RunWaf(args, lastTime) : null;
     }
 
-    /// <summary>
-    /// Returns the request address set the first time it is called for a request, and an empty set
-    /// afterwards, so that a second run doesn't pay for re-evaluating every request rule. The context
-    /// check comes first so the addresses aren't marked as sent when there is no store to keep them.
-    /// </summary>
+    // Returns the request addresses once per request, an empty set afterwards. The context check comes
+    // first so they aren't marked as sent when there is no store to keep them.
     internal Dictionary<string, object> CollectRequestArgsForWaf() =>
         _appsecRequestContext.GetOrCreateAdditiveContext(_security) is not null && _appsecRequestContext.ShouldSendRequestAddresses()
             ? GetBasicRequestArgsForWaf()
