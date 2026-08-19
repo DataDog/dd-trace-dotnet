@@ -57,6 +57,11 @@ switch ($testSuite) {
         $nukeTargets = 'Restore BuildAspNetIntegrationTests RunWindowsTracerIisIntegrationTests'
         $nukeArguments = ''
     }
+    'localdb' {
+        $testFilter = '(RunOnWindows=True)&(RequiresLocalDb=True)&(SkipInCI!=True)'
+        $nukeTargets = 'CompileTrimmingSamples BuildIntegrationTests RunIntegrationTests'
+        $nukeArguments = '--IncludeTestsRequiringDocker false'
+    }
     'debugger' {
         $optimize = if ($env:OPTIMIZE) { $env:OPTIMIZE } else { 'true' }
         $nukeTargets = 'BuildDebuggerIntegrationTests RunDebuggerIntegrationTests'
@@ -126,7 +131,8 @@ if ($area) {
 }
 
 Write-Output "Building and running Windows $targetPlatform $testSuite tests for $env:FRAMEWORK (area=$area)"
-$testCommand = "reg add HKLM\SYSTEM\CurrentControlSet\Control\FileSystem /v LongPathsEnabled /t REG_DWORD /d 1 /f && powershell -NoProfile -ExecutionPolicy Bypass -File c:\mnt\.gitlab\install-windows-test-runtime.ps1 -Framework $env:FRAMEWORK -Architecture $targetPlatform -IncludeAspNetCore && c:\entrypoint.bat $nukeTargets --framework $env:FRAMEWORK --TargetPlatform $targetPlatform --IncludeAllTestFrameworks true $nukeArguments --NugetPackageDirectory c:\mnt\packages"
+$dependencySetup = if ($testSuite -eq 'localdb') { 'powershell -NoProfile -ExecutionPolicy Bypass -File c:\mnt\.gitlab\initialize-localdb.ps1 && ' } else { '' }
+$testCommand = "reg add HKLM\SYSTEM\CurrentControlSet\Control\FileSystem /v LongPathsEnabled /t REG_DWORD /d 1 /f && powershell -NoProfile -ExecutionPolicy Bypass -File c:\mnt\.gitlab\install-windows-test-runtime.ps1 -Framework $env:FRAMEWORK -Architecture $targetPlatform -IncludeAspNetCore && $dependencySetup" + "c:\entrypoint.bat $nukeTargets --framework $env:FRAMEWORK --TargetPlatform $targetPlatform --IncludeAllTestFrameworks true $nukeArguments --NugetPackageDirectory c:\mnt\packages"
 
 & docker run @commonDockerArguments --entrypoint cmd.exe $windowsBuildImage /d /s /c $testCommand
 $testExitCode = $LASTEXITCODE

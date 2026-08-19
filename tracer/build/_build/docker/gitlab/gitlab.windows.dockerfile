@@ -33,6 +33,14 @@ ENV IISEXPRESS_VERSION="10.0.2001" \
 COPY install_iisexpress.ps1 .
 RUN powershell -Command .\install_iisexpress.ps1 -Version $ENV:IISEXPRESS_VERSION -Sha256 $ENV:IISEXPRESS_SHA256 -Url $ENV:IISEXPRESS_DOWNLOAD_URL
 
+# Install SQL Server Express LocalDB for the .NET Framework SQL integration tests.
+ENV LOCALDB_VERSION="2022" \
+    LOCALDB_SHA256="36E0EC2AC3DD60F496C99CE44722C629209EA7302A2CE9CBFD1E42A73510D7B6" \
+    LOCALDB_DOWNLOAD_URL="https://download.microsoft.com/download/5/1/4/5145fe04-4d30-4b85-b0d1-39533663a2f1/SQL2022-SSEI-Expr.exe"
+
+COPY install_localdb.ps1 .
+RUN powershell -Command .\install_localdb.ps1 -Version $ENV:LOCALDB_VERSION -Sha256 $ENV:LOCALDB_SHA256 -Url $ENV:LOCALDB_DOWNLOAD_URL
+
 # Install WIX
 ENV WIX_VERSION="3.11.2" \
     WIX_SHA256="32bb76c478fcb356671d4aaf006ad81ca93eea32c22a9401b168fc7471feccd2"
