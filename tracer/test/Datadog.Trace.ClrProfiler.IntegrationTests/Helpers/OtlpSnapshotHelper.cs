@@ -162,11 +162,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Helpers
             {
                 if (attribute["value"] is JObject value)
                 {
-                    // The port arrives as an int on client spans and as a double on server spans,
-                    // so overwrite whichever value kind is present. Always writing a string keeps
-                    // http/json and http/protobuf rendering identically, as the timestamps above do.
-                    // TODO: Fix this up when implementing HTTP server spans as they should always
-                    // be emitted as ints from our instrumentation once implemented.
                     foreach (var property in value.Properties())
                     {
                         property.Value = "00000";
