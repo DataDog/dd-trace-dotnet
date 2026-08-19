@@ -64,8 +64,13 @@ switch ($testSuite) {
     }
     'debugger' {
         $optimize = if ($env:OPTIMIZE) { $env:OPTIMIZE } else { 'true' }
+        $debugType = if ($env:DEBUG_TYPE) { $env:DEBUG_TYPE } else { 'portable' }
+        if ($debugType -notin @('portable', 'full')) {
+            throw "Unsupported debugger PDB type '$debugType'"
+        }
+
         $nukeTargets = 'BuildDebuggerIntegrationTests RunDebuggerIntegrationTests'
-        $nukeArguments = "--DebugType portable --Optimize $optimize"
+        $nukeArguments = "--DebugType $debugType --Optimize $optimize"
     }
     default {
         throw "Unknown Windows integration test suite '$testSuite'"

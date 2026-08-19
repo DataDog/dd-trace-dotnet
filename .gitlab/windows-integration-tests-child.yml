@@ -17,7 +17,7 @@
   artifacts:
     when: always
     expire_in: 2 weeks
-    name: "integration-tests-windows-$TARGET_PLATFORM-$FRAMEWORK-$TEST_SUITE-$AREA$OPTIMIZE"
+    name: "integration-tests-windows-$TARGET_PLATFORM-$FRAMEWORK-$TEST_SUITE-$AREA$DEBUG_TYPE$OPTIMIZE"
     paths:
       - artifacts/build_data/results
       - artifacts/build_data/logs
