@@ -165,19 +165,13 @@ internal sealed partial class AppSecRequestContext
 
 internal partial class AppSecRequestContext
 {
-    // dedicated lock: this state is disjoint from what _sync guards, and _sync is held
-    // during MessagePack/JSON serialization in CloseWebSpan, while DisposeAdditiveContext
-    // runs under the trace segment lock
+    // dedicated lock: _sync is held while CloseWebSpan serializes
     private readonly object _contextSync = new();
 
     private bool _isAdditiveContextDisposed;
 
     private IContext? _context;
 
-    /// <summary>
-    /// Creates an instance that will never hand out a WAF context, for traces where the WAF must not run anymore
-    /// </summary>
-    /// <returns>an instance whose additive context is already disposed</returns>
     internal static AppSecRequestContext CreateWithDisposedAdditiveContext()
         => new() { _isAdditiveContextDisposed = true };
 
