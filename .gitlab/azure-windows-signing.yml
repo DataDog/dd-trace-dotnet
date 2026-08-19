@@ -1,0 +1,24 @@
+stages:
+  - sign
+
+variables:
+  WINDOWS_BUILD_IMAGE_BASE: "registry.ddbuild.io/ci/dd-trace-dotnet/dd-trace-dotnet-docker-build"
+
+sign-azure-windows-artifacts:
+  stage: sign
+  timeout: 30m
+  tags: ["windows-v2:2022"]
+  hooks:
+    pre_get_sources_script:
+      - git config --system core.longpaths true
+  rules:
+    - if: '$AZURE_WINDOWS_SIGNING == "true"'
+  script:
+    - .gitlab/sign-azure-windows-artifacts.ps1
+  artifacts:
+    expire_in: 1 day
+    paths:
+      - .gitlab/azure-windows-signing-output
+  id_tokens:
+    CI_IDENTITIES_GITLAB_ID_TOKEN:
+      aud: ci-identities
