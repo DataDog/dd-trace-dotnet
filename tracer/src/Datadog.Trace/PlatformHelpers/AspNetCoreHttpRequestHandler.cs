@@ -261,6 +261,7 @@ namespace Datadog.Trace.PlatformHelpers
                 if (security.AppsecEnabled)
                 {
                     var securityCoordinator = SecurityCoordinator.Get(security, span, new SecurityCoordinator.HttpTransport(httpContext));
+                    securityCoordinator.CheckResponseAtRequestEnd(httpContext);
                     securityCoordinator.Reporter.AddResponseHeadersToSpan();
                 }
 
