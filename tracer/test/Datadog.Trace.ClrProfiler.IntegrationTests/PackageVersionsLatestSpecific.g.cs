@@ -991,21 +991,21 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "13.9.16" },
                 new object[] { "14.3.1" },
                 new object[] { "15.1.17" },
-                new object[] { "16.6.0" },
+                new object[] { "16.6.1" },
 #endif
 #if NET9_0
                 new object[] { "11.3.8" },
                 new object[] { "13.9.16" },
                 new object[] { "14.3.1" },
                 new object[] { "15.1.17" },
-                new object[] { "16.6.0" },
+                new object[] { "16.6.1" },
 #endif
 #if NET10_0
                 new object[] { "11.3.8" },
                 new object[] { "13.9.16" },
                 new object[] { "14.3.1" },
                 new object[] { "15.1.17" },
-                new object[] { "16.6.0" },
+                new object[] { "16.6.1" },
 #endif
 #endif
             };
@@ -2473,52 +2473,52 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "2.1.0" },
                 new object[] { "4.7.15" },
                 new object[] { "5.5.1" },
-                new object[] { "6.1.4" },
+                new object[] { "6.2.0" },
 #endif
 #if NETCOREAPP2_1
                 new object[] { "4.7.15" },
                 new object[] { "5.5.1" },
-                new object[] { "6.1.4" },
+                new object[] { "6.2.0" },
 #endif
 #if NETCOREAPP3_0
                 new object[] { "4.7.15" },
                 new object[] { "5.5.1" },
-                new object[] { "6.1.4" },
+                new object[] { "6.2.0" },
 #endif
 #if NETCOREAPP3_1
                 new object[] { "4.7.15" },
                 new object[] { "5.5.1" },
-                new object[] { "6.1.4" },
+                new object[] { "6.2.0" },
 #endif
 #if NET5_0
                 new object[] { "4.7.15" },
                 new object[] { "5.5.1" },
-                new object[] { "6.1.4" },
+                new object[] { "6.2.0" },
 #endif
 #if NET6_0
                 new object[] { "4.7.15" },
                 new object[] { "5.5.1" },
-                new object[] { "6.1.4" },
+                new object[] { "6.2.0" },
 #endif
 #if NET7_0
                 new object[] { "4.7.15" },
                 new object[] { "5.5.1" },
-                new object[] { "6.1.4" },
+                new object[] { "6.2.0" },
 #endif
 #if NET8_0
                 new object[] { "4.7.15" },
                 new object[] { "5.5.1" },
-                new object[] { "6.1.4" },
+                new object[] { "6.2.0" },
 #endif
 #if NET9_0
                 new object[] { "4.7.15" },
                 new object[] { "5.5.1" },
-                new object[] { "6.1.4" },
+                new object[] { "6.2.0" },
 #endif
 #if NET10_0
                 new object[] { "4.7.15" },
                 new object[] { "5.5.1" },
-                new object[] { "6.1.4" },
+                new object[] { "6.2.0" },
 #endif
 #endif
             };

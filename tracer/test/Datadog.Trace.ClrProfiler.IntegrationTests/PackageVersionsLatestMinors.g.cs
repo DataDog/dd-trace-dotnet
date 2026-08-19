@@ -2168,7 +2168,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "16.3.0" },
                 new object[] { "16.4.0" },
                 new object[] { "16.5.1" },
-                new object[] { "16.6.0" },
+                new object[] { "16.6.1" },
 #endif
 #if NET9_0
                 new object[] { "11.0.9" },
@@ -2220,7 +2220,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "16.3.0" },
                 new object[] { "16.4.0" },
                 new object[] { "16.5.1" },
-                new object[] { "16.6.0" },
+                new object[] { "16.6.1" },
 #endif
 #if NET10_0
                 new object[] { "11.0.9" },
@@ -2272,7 +2272,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "16.3.0" },
                 new object[] { "16.4.0" },
                 new object[] { "16.5.1" },
-                new object[] { "16.6.0" },
+                new object[] { "16.6.1" },
 #endif
 #endif
             };
@@ -7194,6 +7194,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "5.5.1" },
                 new object[] { "6.0.7" },
                 new object[] { "6.1.4" },
+                new object[] { "6.2.0" },
 #endif
 #if NETCOREAPP2_1
                 new object[] { "4.5.11" },
@@ -7207,6 +7208,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "5.5.1" },
                 new object[] { "6.0.7" },
                 new object[] { "6.1.4" },
+                new object[] { "6.2.0" },
 #endif
 #if NETCOREAPP3_0
                 new object[] { "4.5.11" },
@@ -7220,6 +7222,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "5.5.1" },
                 new object[] { "6.0.7" },
                 new object[] { "6.1.4" },
+                new object[] { "6.2.0" },
 #endif
 #if NETCOREAPP3_1
                 new object[] { "4.5.11" },
@@ -7233,6 +7236,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "5.5.1" },
                 new object[] { "6.0.7" },
                 new object[] { "6.1.4" },
+                new object[] { "6.2.0" },
 #endif
 #if NET5_0
                 new object[] { "4.5.11" },
@@ -7246,6 +7250,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "5.5.1" },
                 new object[] { "6.0.7" },
                 new object[] { "6.1.4" },
+                new object[] { "6.2.0" },
 #endif
 #if NET6_0
                 new object[] { "4.5.11" },
@@ -7259,6 +7264,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "5.5.1" },
                 new object[] { "6.0.7" },
                 new object[] { "6.1.4" },
+                new object[] { "6.2.0" },
 #endif
 #if NET7_0
                 new object[] { "4.5.11" },
@@ -7272,6 +7278,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "5.5.1" },
                 new object[] { "6.0.7" },
                 new object[] { "6.1.4" },
+                new object[] { "6.2.0" },
 #endif
 #if NET8_0
                 new object[] { "4.5.11" },
@@ -7285,6 +7292,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "5.5.1" },
                 new object[] { "6.0.7" },
                 new object[] { "6.1.4" },
+                new object[] { "6.2.0" },
 #endif
 #if NET9_0
                 new object[] { "4.5.11" },
@@ -7298,6 +7306,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "5.5.1" },
                 new object[] { "6.0.7" },
                 new object[] { "6.1.4" },
+                new object[] { "6.2.0" },
 #endif
 #if NET10_0
                 new object[] { "4.5.11" },
@@ -7311,6 +7320,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "5.5.1" },
                 new object[] { "6.0.7" },
                 new object[] { "6.1.4" },
+                new object[] { "6.2.0" },
 #endif
 #endif
             };
