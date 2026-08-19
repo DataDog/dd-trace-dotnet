@@ -152,7 +152,7 @@ namespace Datadog.Trace.PlatformHelpers
                     resourceName: resourceName,
                     originalMethod: request.Method,
                     userAgent: userAgent,
-                    protocol: null,
+                    protocol: request.Protocol,
                     scheme: request.Scheme,
                     host: request.Host.Host,
                     port: request.Host.Port,
