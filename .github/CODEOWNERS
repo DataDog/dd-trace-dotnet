@@ -3,9 +3,9 @@
 # Order is important! The last matching pattern takes the most precedence.
 
 
-# NOTE: it is intentional that we do not have a bare * pattern
-#       this is to prevent the introduction of unowned files by requiring
-#       their inclusion in CODEOWNERS at PR time
+# NOTE: it is intentional that we do not have a bare * pattern.
+#       This keeps paths without an explicit owner rule unowned so merge rules can block them.
+#       Root-level files are still owned by @DataDog/apm-dotnet via the /* rule below.
 
 # Repository root files
 /*                                        @DataDog/apm-dotnet
