@@ -1,9 +1,9 @@
-// <copyright file="OtlpAspNetCoreTestBase.cs" company="Datadog">
+// <copyright file="OtlpAspNetTestBase.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-#if NETCOREAPP
+#if NETFRAMEWORK
 
 using System;
 using System.Collections.Generic;
@@ -22,19 +22,25 @@ using VerifyXunit;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
+namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
     /// <summary>
-    /// Shared harness for HTTP server suites hosted by <c>AspNetCoreTestFixture</c> (a Kestrel
-    /// process) and exported over OTLP to the ddapm test-agent. Mirrors
-    /// <c>OtlpAspNetTestBase</c>, which does the same for IIS-hosted .NET Framework samples;
-    /// both build on the fixture-agnostic <see cref="OtlpTestAgentSession"/>, since none of the
-    /// session/isolation/normalization plumbing depends on how the application under test was
-    /// started. Derived suites carry <c>[Collection(nameof(TestAgentOtlpCollection))]</c> because the
-    /// session is shared with every other OTLP test reading from the same test agent.
+    /// Shared harness for the .NET Framework HTTP server coverage of the OpenTelemetry HTTP Semantic
+    /// Conventions, using a sample hosted in IIS Express and exported over OTLP to the ddapm
+    /// test-agent. Mirrors <c>OtlpAspNetCoreTestBase</c>, which does the same for the .NET Core
+    /// samples hosted by <c>AspNetCoreTestFixture</c>; both build on the fixture-agnostic
+    /// <see cref="OtlpTestAgentSession"/>, since none of the session/isolation plumbing depends on how
+    /// the application under test was started. Derived suites carry
+    /// <c>[Collection(nameof(TestAgentOtlpCollection))]</c> because the session is shared with every
+    /// other OTLP test reading from the same test agent.
+    /// <para>
+    /// Derived suites are snapshotted under both semantics, so the pair of snapshots is the diff
+    /// between the Datadog defaults and the OpenTelemetry conventions for the same request. This
+    /// intentionally only covers OTLP export, which is where the RFC requires typed attribute values.
+    /// </para>
     /// </summary>
     [UsesVerify]
-    public abstract class OtlpAspNetCoreTestBase : TestHelper, IClassFixture<AspNetCoreTestFixture>, IAsyncLifetime
+    public abstract class OtlpAspNetTestBase : TestHelper, IClassFixture<IisFixture>, IAsyncLifetime
     {
         /// <summary>
         /// Temporary property used to carry each span's real start time through normalization and
@@ -44,139 +50,92 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
 
         /// <summary>
         /// Attributes whose values depend on the machine, the socket, or the checkout path rather than
-        /// on the request. See the identical list in <c>OtlpAspNetTestBase</c>.
+        /// on the request. Normalized whichever value kind they arrive as, in the same way
+        /// <see cref="OtlpSnapshotHelper.NormalizeSpans"/> normalizes <c>server.port</c>. The exception
+        /// type and message are deliberately left alone: only the stack trace is unstable.
+        /// <para>
+        /// The <c>client.*</c> and <c>network.peer.*</c> keys are only emitted when client-IP
+        /// collection is enabled, but are listed here so that enabling it doesn't turn into a snapshot
+        /// that changes per run.
+        /// </para>
         /// </summary>
         private static readonly string[] UnstableAttributeKeys =
-        {
+        [
             "client.address",
             "client.port",
             "error.stack",
             "exception.stacktrace",
             "network.peer.address",
             "network.peer.port",
-        };
+        ];
 
-        protected OtlpAspNetCoreTestBase(string sampleName, AspNetCoreTestFixture fixture, ITestOutputHelper output, bool enableRouteTemplateResourceNames, bool openTelemetrySemanticsEnabled)
-            : this(sampleName, fixture, output, enableRouteTemplateResourceNames ? AspNetCoreFeatureFlags.RouteTemplateResourceNames : AspNetCoreFeatureFlags.None, openTelemetrySemanticsEnabled)
+        protected OtlpAspNetTestBase(IisFixture iisFixture, ITestOutputHelper output, string testName, bool openTelemetrySemanticsEnabled)
+            : base("AspNetMvc5", @"test\test-applications\aspnet", output)
         {
-        }
-
-        protected OtlpAspNetCoreTestBase(string sampleName, AspNetCoreTestFixture fixture, ITestOutputHelper output, AspNetCoreFeatureFlags flags, bool openTelemetrySemanticsEnabled)
-            : base(sampleName, output)
-        {
-            Flags = flags;
             OpenTelemetrySemanticsEnabled = openTelemetrySemanticsEnabled;
+            TestName = testName + (openTelemetrySemanticsEnabled ? ".OtelSemantics" : ".DatadogSemantics");
 
             SetServiceVersion("1.0.0");
 
             // The OpenTelemetry conventions require the low-cardinality route template in
             // "http.route", which is only tracked when route-template resource names are enabled and
             // route-template expansion is not.
-            SetEnvironmentVariable(ConfigurationKeys.FeatureFlags.RouteTemplateResourceNamesEnabled, (flags == AspNetCoreFeatureFlags.RouteTemplateResourceNames).ToString());
-            SetEnvironmentVariable(ConfigurationKeys.FeatureFlags.SingleSpanAspNetCoreEnabled, (flags == AspNetCoreFeatureFlags.SingleSpan).ToString());
+            SetEnvironmentVariable(ConfigurationKeys.FeatureFlags.RouteTemplateResourceNamesEnabled, "true");
             SetEnvironmentVariable(ConfigurationKeys.ExpandRouteTemplatesEnabled, "false");
 
             SetEnvironmentVariable("DD_TRACE_OTEL_SEMANTICS_ENABLED", openTelemetrySemanticsEnabled.ToString());
 
             // OTEL_TRACES_EXPORTER=otlp is what makes the Datadog SDK emit OTLP instead of msgpack.
             // Everything else is left at its default dd-trace-dotnet value.
-            ConfigureOtlpExport(fixture.OtlpSession);
+            ConfigureOtlpExport(iisFixture.OtlpSession);
 
-            Fixture = fixture;
-            Fixture.SetOutput(output);
+            Fixture = iisFixture;
+            Fixture.ShutdownPath = "/home/shutdown";
         }
 
-        protected AspNetCoreTestFixture Fixture { get; }
-
-        /// <summary>
-        /// Gets the ASP.NET Core feature flags the suite runs with.
-        /// </summary>
-        protected AspNetCoreFeatureFlags Flags { get; }
+        protected IisFixture Fixture { get; }
 
         protected bool OpenTelemetrySemanticsEnabled { get; }
 
         /// <summary>
-        /// Gets a value indicating whether an <c>aspnet_core_mvc.request</c> child span accompanies
-        /// the server span, which derived suites need in order to know how many spans to expect. Only
-        /// the route-template resource names feature flag produces one, and OTel semantics collapses
-        /// the pair back into a single server span.
+        /// Gets the prefix of the snapshot file names, which also identifies the suite.
         /// </summary>
-        protected bool ProducesMvcChildSpan
-            => Flags == AspNetCoreFeatureFlags.RouteTemplateResourceNames && !OpenTelemetrySemanticsEnabled;
+        protected string TestName { get; }
 
         /// <summary>
-        /// Gets or sets the prefix of the snapshot file names, which also identifies the suite.
-        /// </summary>
-        protected string TestName { get; set; }
-
-        /// <summary>
-        /// Gets the path hit once per test case to confirm the app is up. The spans it produces are
+        /// Gets the path hit once per test case to confirm the site is up. The spans it produces are
         /// discarded before each test case runs.
         /// </summary>
-        protected virtual string WarmupPath => "/alive-check";
-
-        /// <summary>
-        /// The smallest set of requests that reaches every HTTP server span requirement in the
-        /// OpenTelemetry HTTP semantic conventions RFC. The rows are (method, path, status code,
-        /// whether an endpoint handled the request rather than middleware short-circuiting it);
-        /// each suite turns that last column into a span count of its own, because what an endpoint
-        /// is - an MVC action or a minimal-API delegate - differs per sample application.
-        /// </summary>
-        public static TheoryData<string, string, int, bool> Data() => new()
-        {
-            // The baseline attribute set (http.request.method, url.path, url.scheme,
-            // http.response.status_code, server.address, server.port, user_agent.original,
-            // client.address, network.peer.address), with the low-cardinality route retained in
-            // http.route, a "{method} {http.route}" span name, and no url.query.
-            { "GET", "/api/delay/0", 200, true },
-
-            // url.query is reported when the request carries a query string.
-            { "GET", "/api/delay/0?id=1", 200, true },
-
-            // ...and its sensitive values are obfuscated first.
-            { "GET", "/api/delay/0?token=SUPER-SECRET-TOKEN-VALUE", 200, true },
-
-            // Answered by middleware before routing runs, so there is no http.route: the span name
-            // has to be the bare method, never the URI path.
-            { "GET", "/ping", 200, false },
-
-            // A method outside RFC 9110 is reported as _OTHER, with the verb the client sent kept in
-            // http.request.method_original, and the span name falls back to "HTTP".
-            { "FOO", "/ping", 200, false },
-
-            // 3xx is not an error.
-            { "GET", "/status-code/302", 302, true },
-
-            // 4xx is not an error on a server span, unlike on a client span.
-            { "GET", "/status-code/400", 400, true },
-
-            // 5xx is an error, with no exception involved.
-            { "GET", "/status-code/500", 500, true },
-
-            // An unhandled exception is an error too, and is recorded as an exception span event.
-            { "GET", "/bad-request", 500, true },
-        };
+        protected virtual string WarmupPath => "/home/index";
 
         public async Task InitializeAsync()
         {
             if (!await Fixture.OtlpSession.CheckAvailabilityAsync(Output))
             {
-                // Don't pay for starting the sample app for a test that is about to skip.
+                // Don't pay for starting IIS Express (and installing into the GAC) for a test that is
+                // about to skip.
                 return;
             }
 
-            // sendHealthCheck: false because AspNetCoreTestFixture's own health check waits for a
-            // span to reach the mock agent, and OTEL_TRACES_EXPORTER=otlp sends traces to the ddapm
-            // test-agent instead. Warm the app up with our own request and discard its spans afterwards.
-            await Fixture.TryStartApp(this, sendHealthCheck: false);
+            // sendHealthCheck: false because IisFixture's own health check waits for a span to reach
+            // the mock agent, and OTEL_TRACES_EXPORTER=otlp sends traces to the ddapm test-agent
+            // instead. Warm the site up with our own request and discard its spans afterwards.
+            await Fixture.TryStartIis(this, IisAppType.AspNetIntegrated, sendHealthCheck: false);
             await WarmUpApplicationAsync();
         }
 
-        public Task DisposeAsync()
-        {
-            Fixture.SetOutput(null);
-            return Task.CompletedTask;
-        }
+        public Task DisposeAsync() => Task.CompletedTask;
+
+        /// <summary>
+        /// Gets the value of a span attribute as a string, whichever value kind it was reported as,
+        /// or <c>null</c> when the span doesn't carry the attribute.
+        /// </summary>
+        /// <param name="span">The span to read.</param>
+        /// <param name="key">The attribute key.</param>
+        internal static string GetAttribute(JToken span, string key)
+            => span.SelectTokens($"$.attributes[?(@.key == '{key}')].value.*")
+                   .Select(v => v.ToString())
+                   .FirstOrDefault();
 
         /// <summary>
         /// Sends one request and returns the spans the server produced for it, in the order they were
@@ -217,21 +176,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
                           .DisableRequireUniquePrefix();
         }
 
-        protected virtual string GetTestName(string testName)
-        {
-            if (OpenTelemetrySemanticsEnabled)
-            {
-                return testName + ".OtelSemantics";
-            }
-
-            return testName + ".DatadogSemantics" + Flags switch
-            {
-                AspNetCoreFeatureFlags.RouteTemplateResourceNames => ".WithFF",
-                AspNetCoreFeatureFlags.SingleSpan => ".SingleSpan",
-                _ => ".NoFF",
-            };
-        }
-
         /// <summary>
         /// Overwrites the value of an attribute, whichever value kind it arrived as, wherever it
         /// appears (on a span or on one of its events). A text scrubber can't reach the value through
@@ -254,12 +198,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
 
         private async Task<JToken> SendRequestAndCollectSpansAsync(string httpMethod, string path, int statusCode, int expectedSpanCount)
         {
+            // The IIS integration-test job doesn't filter on RequiresDockerDependency the way the
+            // other jobs do, so it would run this test without a test-agent to export OTLP to.
             Skip.IfNot(Fixture.OtlpSession.IsAvailable, $"The ddapm test-agent is not reachable at {Fixture.OtlpSession.TracesUrl}.");
 
             var names = OtlpFieldNames.For(isJson: false);
 
-            // The application under test outlives each test case, so drop everything the previous
-            // case and the warm-up request produced first.
+            // Unlike the console-application OTLP tests, the application under test outlives each
+            // test case, so drop everything the previous case and the warm-up request produced first.
             await Fixture.OtlpSession.ClearSessionWhenQuietAsync(Output);
 
             // Captured before the request is sent, so it is a lower bound for every span the server
@@ -283,7 +229,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
 
             OtlpSnapshotHelper.NormalizeResourceAttributes(tracesRequests, names);
             OtlpSnapshotHelper.NormalizeSpans(tracesRequests, names, applicationStartTimeUnixNano);
-            OtlpSnapshotHelper.NormalizeCodeOriginAttributes(tracesRequests);
 
             foreach (var key in UnstableAttributeKeys)
             {
@@ -292,8 +237,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
 
             OtlpSnapshotHelper.SortSpanAttributes(tracesRequests);
 
-            // Sort chronologically first so the snapshot mirrors the nesting the server produced, then
-            // by name/path/JSON to keep ties stable across runs.
+            // Sort chronologically first so the snapshot mirrors the nesting the server produced (the
+            // aspnet.request span, then the framework span inside it), then by name/path/JSON to keep
+            // ties stable across runs.
             var merged = OtlpSnapshotHelper.MergeDatadogRequests(
                 tracesRequests,
                 names,
@@ -312,41 +258,55 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
 
         private async Task SendRequestAsync(string httpMethod, string path, HttpStatusCode expectedStatusCode)
         {
-            var request = Fixture.CreateRequest(new HttpMethod(httpMethod), path);
-            var statusCode = await Fixture.SendHttpRequest(request);
-            statusCode.Should().Be(expectedStatusCode);
+            using var httpClient = new HttpClient();
+
+            // disable tracing for this HttpClient request
+            httpClient.DefaultRequestHeaders.Add(HttpHeaderNames.TracingEnabled, "false");
+
+            // Pinned so "user_agent.original" is stable in the snapshots
+            httpClient.DefaultRequestHeaders.Add(HttpHeaderNames.UserAgent, "testhelper");
+
+            var url = $"http://localhost:{Fixture.HttpPort}{Fixture.VirtualApplicationPath}{path}";
+            using var request = CreateHttpRequestMessage(new HttpMethod(httpMethod), url, DateTimeOffset.UtcNow);
+            using var response = await httpClient.SendAsync(request);
+            var content = await response.Content.ReadAsStringAsync();
+            Output.WriteLine($"[http] {httpMethod} {url} -> {response.StatusCode} {content}");
+            response.StatusCode.Should().Be(expectedStatusCode);
         }
 
         /// <summary>
-        /// Sends requests until the app responds, because AspNetCoreTestFixture was started without
-        /// its own health check and so only waited for the port to be bound, not for the app to
-        /// finish starting.
+        /// Sends requests until the site responds, because IisFixture was started without its own
+        /// health check and so only waited for the port to be bound, not for ASP.NET to compile and
+        /// start the application.
         /// </summary>
         private async Task WarmUpApplicationAsync()
         {
+            var url = $"http://localhost:{Fixture.HttpPort}{Fixture.VirtualApplicationPath}{WarmupPath}";
+            using var httpClient = new HttpClient { Timeout = TimeSpan.FromSeconds(30) };
+            httpClient.DefaultRequestHeaders.Add(HttpHeaderNames.TracingEnabled, "false");
+
             var deadline = DateTime.UtcNow.AddSeconds(60);
 
             while (true)
             {
                 try
                 {
-                    var request = Fixture.CreateRequest(HttpMethod.Get, WarmupPath);
-                    var statusCode = await Fixture.SendHttpRequest(request);
-                    if (statusCode == HttpStatusCode.OK)
+                    using var response = await httpClient.GetAsync(url);
+                    if (response.StatusCode == HttpStatusCode.OK)
                     {
                         return;
                     }
 
-                    Output.WriteLine($"[webserver] warm-up request to {WarmupPath} returned {statusCode}");
+                    Output.WriteLine($"[webserver] warm-up request to {url} returned {response.StatusCode}");
                 }
                 catch (Exception ex)
                 {
-                    Output.WriteLine($"[webserver] warm-up request to {WarmupPath} failed: {ex.Message}");
+                    Output.WriteLine($"[webserver] warm-up request to {url} failed: {ex.Message}");
                 }
 
                 if (DateTime.UtcNow >= deadline)
                 {
-                    throw new InvalidOperationException($"Couldn't verify the application is ready to receive requests at {WarmupPath}.");
+                    throw new InvalidOperationException($"Couldn't verify the application is ready to receive requests at {url}.");
                 }
 
                 await Task.Delay(500);
