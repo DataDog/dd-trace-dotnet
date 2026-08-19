@@ -161,6 +161,8 @@ partial class Build : NukeBuild
 
         if (frameworkList.Contains(TargetFramework.NET48))
         {
+            AppendWindowsJob("integration-tests-windows-localdb-x64:net48:tracer", TargetFramework.NET48, "x64", "localdb", TracerArea);
+
             foreach (var targetPlatform in targetPlatforms)
             {
                 AppendWindowsJob($"integration-tests-windows-iis-{targetPlatform}:net48:tracer", TargetFramework.NET48, targetPlatform, "iis", TracerArea);
