@@ -7,7 +7,6 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Waf;
-using Datadog.Trace.Configuration;
 using Datadog.Trace.Security.Unit.Tests.Utils;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.TestHelpers.TestTracer;
@@ -24,8 +23,7 @@ public class AppSecContextTests : WafLibraryRequiredTest
     [InlineData(SpanTypes.Custom)]
     public async Task GivenAWafContext_WhenTheLocalRootSpanCloses_ThenItIsDisposed(string spanType)
     {
-        var settings = TracerSettings.Create(new Dictionary<string, object>());
-        await using var tracer = TracerHelper.Create(settings);
+        await using var tracer = TracerHelper.Create(new());
         using var security = new AppSec.Security(waf: CreateWaf().Waf);
 
         AppSecRequestContext appSecContext;
@@ -42,8 +40,7 @@ public class AppSecContextTests : WafLibraryRequiredTest
     [Fact]
     public async Task GivenAWafContextOnANonWebSpan_WhenTheRootClosesBeforeItsChildren_ThenItSurvivesUntilTheyClose()
     {
-        var settings = TracerSettings.Create(new Dictionary<string, object>());
-        await using var tracer = TracerHelper.Create(settings);
+        await using var tracer = TracerHelper.Create(new());
         using var security = new AppSec.Security(waf: CreateWaf().Waf);
 
         var rootTestScope = (Scope)tracer.StartActive("test.trace");
@@ -62,8 +59,7 @@ public class AppSecContextTests : WafLibraryRequiredTest
     [Fact]
     public async Task GivenAWafContextOnAWebSpan_WhenTheRootClosesBeforeItsChildren_ThenItIsDisposed()
     {
-        var settings = TracerSettings.Create(new Dictionary<string, object>());
-        await using var tracer = TracerHelper.Create(settings);
+        await using var tracer = TracerHelper.Create(new());
         using var security = new AppSec.Security(waf: CreateWaf().Waf);
 
         var rootTestScope = (Scope)tracer.StartActive("test.trace");
@@ -82,8 +78,7 @@ public class AppSecContextTests : WafLibraryRequiredTest
     [InlineData(SpanTypes.Web, false)]
     public async Task GivenAClosedTraceSegment_WhenALateSpanReopensIt_ThenOnlyANonWebTraceGetsANewWafContext(string spanType, bool expectedContext)
     {
-        var settings = TracerSettings.Create(new Dictionary<string, object>());
-        await using var tracer = TracerHelper.Create(settings);
+        await using var tracer = TracerHelper.Create(new());
         using var security = new AppSec.Security(waf: CreateWaf().Waf);
 
         var rootTestScope = (Scope)tracer.StartActive("test.trace");
@@ -100,10 +95,9 @@ public class AppSecContextTests : WafLibraryRequiredTest
     }
 
     [Fact]
-    public async Task GivenAClosedTraceSegment_WhenTheAppSecContextIsCreatedAfterwards_ThenNoWafContextIsHandedOut()
+    public async Task GivenAClosedTraceSegmentWithNoLateSpan_WhenTheAppSecContextIsCreatedAfterwards_ThenNoWafContextIsHandedOut()
     {
-        var settings = TracerSettings.Create(new Dictionary<string, object>());
-        await using var tracer = TracerHelper.Create(settings);
+        await using var tracer = TracerHelper.Create(new());
         using var security = new AppSec.Security(waf: CreateWaf().Waf);
 
         var rootTestScope = (Scope)tracer.StartActive("test.trace");
@@ -113,22 +107,23 @@ public class AppSecContextTests : WafLibraryRequiredTest
         traceContext.AppSecRequestContext.GetOrCreateAdditiveContext(security).Should().BeNull();
     }
 
-    [Fact]
-    public async Task GivenAFinishedWebSpan_WhenALateSpanUsesAppSecForTheFirstTime_ThenNoWafContextIsHandedOut()
+    [Theory]
+    [InlineData(SpanTypes.Custom, true)]
+    [InlineData(SpanTypes.Web, false)]
+    public async Task GivenAClosedTraceSegment_WhenALateSpanUsesAppSecForTheFirstTime_ThenOnlyANonWebTraceGetsAWafContext(string spanType, bool expectedContext)
     {
-        var settings = TracerSettings.Create(new Dictionary<string, object>());
-        await using var tracer = TracerHelper.Create(settings);
+        await using var tracer = TracerHelper.Create(new());
         using var security = new AppSec.Security(waf: CreateWaf().Waf);
 
         var rootTestScope = (Scope)tracer.StartActive("test.trace");
-        rootTestScope.Span.Type = SpanTypes.Web;
+        rootTestScope.Span.Type = spanType;
         var capturedParent = rootTestScope.Span.Context;
         rootTestScope.Dispose();
 
         using var lateTestScope = (Scope)tracer.StartActive("test.late", new SpanCreationSettings { Parent = capturedParent });
         var appSecContext = lateTestScope.Span.Context.TraceContext.AppSecRequestContext;
 
-        appSecContext.GetOrCreateAdditiveContext(security).Should().BeNull();
+        (appSecContext.GetOrCreateAdditiveContext(security) is not null).Should().Be(expectedContext);
     }
 
     [InlineData(-2, -2, -1, 0, -2, -1)]
@@ -137,8 +132,7 @@ public class AppSecContextTests : WafLibraryRequiredTest
     [Theory]
     public async Task GivenAQuery_WhenWAFError_ThenSpanHasErrorTags(int raspErrorCode, int wafErrorCode, int wafErrorCode2, int wafTimeouts, int? expectedRaspErrorCode, int? expectedWafErrorCode)
     {
-        var settings = TracerSettings.Create(new Dictionary<string, object>());
-        await using var tracer = TracerHelper.Create(settings);
+        await using var tracer = TracerHelper.Create(new());
         var rootTestScope = (Scope)tracer.StartActive("test.trace");
 
         var appSecContext = rootTestScope.Span.Context.TraceContext.AppSecRequestContext;

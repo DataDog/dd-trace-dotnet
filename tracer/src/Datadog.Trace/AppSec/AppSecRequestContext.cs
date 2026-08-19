@@ -175,6 +175,13 @@ internal partial class AppSecRequestContext
     private IContext? _context;
 
     /// <summary>
+    /// Creates an instance that will never hand out a WAF context, for traces where the WAF must not run anymore
+    /// </summary>
+    /// <returns>an instance whose additive context is already disposed</returns>
+    internal static AppSecRequestContext CreateWithDisposedAdditiveContext()
+        => new() { _isAdditiveContextDisposed = true };
+
+    /// <summary>
     /// Disposes the WAF's context stored in HttpContext.Items[]. If it doesn't exist, nothing happens, no crash
     /// </summary>
     internal void DisposeAdditiveContext()

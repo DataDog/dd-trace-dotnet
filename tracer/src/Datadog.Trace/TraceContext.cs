@@ -136,25 +136,20 @@ namespace Datadog.Trace
         [MethodImpl(MethodImplOptions.NoInlining)]
         private AppSecRequestContext CreateAppSecRequestContext()
         {
-            var created = new AppSecRequestContext();
-
             if (_rootSpan is not { } rootSpan)
             {
-                Interlocked.CompareExchange(ref _appSecRequestContext, created, null);
-                return _appSecRequestContext!;
+                var created = new AppSecRequestContext();
+                return Interlocked.CompareExchange(ref _appSecRequestContext, created, null) ?? created;
             }
 
             lock (rootSpan)
             {
-                if (_segmentClosed || (rootSpan.Type == SpanTypes.Web && rootSpan.IsFinished))
-                {
-                    created.DisposeAdditiveContext();
-                }
+                var created = _segmentClosed || (rootSpan.Type == SpanTypes.Web && rootSpan.IsFinished)
+                                  ? AppSecRequestContext.CreateWithDisposedAdditiveContext()
+                                  : new AppSecRequestContext();
 
-                Interlocked.CompareExchange(ref _appSecRequestContext, created, null);
+                return Interlocked.CompareExchange(ref _appSecRequestContext, created, null) ?? created;
             }
-
-            return _appSecRequestContext!;
         }
 
         /// <summary>
@@ -235,7 +230,7 @@ namespace Datadog.Trace
                         }
                     }
 
-                    _appSecRequestContext?.CloseWebSpan(span);
+                    Volatile.Read(ref _appSecRequestContext)?.CloseWebSpan(span);
                 }
             }
 
