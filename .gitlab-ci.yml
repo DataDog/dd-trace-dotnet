@@ -221,11 +221,6 @@ build:
       aud: ci-identities
 
 publish:
-  only:
-    - master
-    - main
-    - /^hotfix.*$/
-    - /^release.*$/
   except:
     variables:
       - $DEPLOY_TO_REL_ENV == "true"
