@@ -1,6 +1,6 @@
 # GitLab CI migration plan and findings
 
-Last updated: 2026-08-18
+Last updated: 2026-08-19
 
 ## Purpose
 
@@ -34,7 +34,7 @@ CI is split across Azure DevOps and GitLab.
 
 - `.azure-pipelines/ultimate-pipeline.yml` contains the full build and test matrix. As of this update, it is 5,693 lines with 80 top-level stages.
 - Azure DevOps covers Windows, Linux x64 and ARM64, glibc and musl, macOS, unit tests, integration tests, smoke tests, profiler tests, packaging, and publishing.
-- GitLab runs generated managed-unit-test matrices on Windows, Linux x64, Linux ARM64, and macOS; generated integration-test matrices cover Windows and Linux x64, with the first Linux ARM64 integration matrix now implemented for validation. Packaging/publishing work and benchmarks continue to run alongside the migration jobs.
+- GitLab runs generated managed-unit-test matrices on Windows, Linux x64, Linux ARM64, and macOS. Generated integration-test matrices now cover Windows x64/x86 and Linux x64/ARM64, with glibc and musl coverage on Linux. Packaging/publishing work and benchmarks continue to run alongside the migration jobs.
 - Existing GitLab jobs import Azure artifacts through `.gitlab/download-single-step-artifacts.sh` and `.gitlab/download-serverless-artifacts.sh`.
 - The implementation uses generated child configurations under `.gitlab/generated` and reusable child templates under `.gitlab` instead of the originally proposed `.gitlab/ci/` layout.
 
@@ -231,9 +231,13 @@ The jobs retain test results, tracer and CI Visibility logs, dumps, and snapshot
 
 The generated Linux matrix now adds Azure-shaped ASM, Docker-dependent, and Debugger coverage on both Debian/glibc and Alpine/musl. Each selected TFM gets ordinary Tracer and ASM cells, Docker dependency groups 1 and 2, and portable-PDB Debugger cells with optimized and unoptimized builds. Docker cells install Docker Compose v1 in the approved Docker CLI job image, reuse `docker-compose.yml`, and always collect dependency logs and remove the per-job Compose project. These new cells run unconditionally during initial validation; reproducing Azure's area-change gating is a follow-up optimization.
 
-Linux ARM64 integration coverage now follows the same generated-child-pipeline model on `docker-in-docker:arm64`. Debian/glibc and Alpine/musl cells consume ARM64 tracer, profiler, and universal loader/wrapper producers. Every selected ARM64 TFM gets Tracer, ASM, the dedicated Azure-compatible ARM64 Docker dependency set, and optimized/unoptimized Debugger cells. The ordinary pipeline generates four sample jobs and forty integration jobs; thorough pipelines expand from the ARM64 framework source of truth. This first implementation is pending CI validation. The Alpine tester image also bounds each `dotnet-install` runtime download to five minutes and retries it up to three times, preventing a stalled download from consuming the complete 90-minute job timeout.
+Linux ARM64 integration coverage follows the same generated-child-pipeline model on `docker-in-docker:arm64`. Debian/glibc and Alpine/musl cells consume ARM64 tracer, profiler, and universal loader/wrapper producers. Every selected ARM64 TFM gets Tracer, ASM, the dedicated Azure-compatible ARM64 Docker dependency set, and optimized/unoptimized Debugger cells. The ordinary pipeline generates four sample jobs and forty integration jobs; thorough pipelines expand from the ARM64 framework source of truth. The matrix has completed successfully in GitLab. The Alpine tester image also bounds each `dotnet-install` runtime download to five minutes and retries it up to three times, preventing a stalled download from consuming the complete 90-minute job timeout.
 
-The initial Windows integration-test slice follows the same generated-child-pipeline pattern. `GenerateGitlabWindowsIntegrationTestsPipeline` uses the Windows framework selection from NUKE and emits x64 Tracer and ASM jobs for every selected TFM, plus portable-PDB Debugger jobs with optimized and unoptimized builds. The IIS matrix starts with the Azure-compatible `net48` x64 Tracer and ASM cells and remains separate because it mutates machine state. The content-addressed Windows build image now derives from Microsoft's .NET Framework ASP.NET image, which adds the IIS role while preserving the build toolchain used by every other Windows job. Image-affecting changes automatically build and publish their new hash in the `.pre` stage before any consumer can inspect it; otherwise the image builder remains an optional manual job. Windows sample producers participate in stage ordering rather than declaring `needs: []`, so they cannot race a required image publication. Each child combines the parent `build` and `build-samples-standalone` artifacts, installs an end-of-life runtime on demand when required, and invokes the matching NUKE build/run targets inside that image. The first launch stopped before entering the container because the PowerShell wrapper passed `--rm` directly to the Docker client instead of invoking `docker run --rm`; both the test and build-log-validation invocations now include the required `run` command. The next run reached `CompileIntegrationTests` and confirmed another shared-workspace assumption: Windows normally builds with `--no-restore`, but the GitLab consumer does not receive `project.assets.json` from the Azure-style build workspace. Windows integration projects therefore restore on demand in GitLab, matching the existing Linux GitLab behavior, while Azure retains `--no-restore`. Docker-dependent Windows tests, Azure Functions, regression, and x86 coverage remain follow-up dimensions. Results, CI Visibility logs, tracer logs, dumps, snapshots, and debugger approvals are retained, and build logs are validated even when the test invocation fails. The new ASM, Debugger, and IIS cells run unconditionally during initial validation; Azure-style change gating is still pending.
+The Windows integration-test slice follows the same generated-child-pipeline pattern. `GenerateGitlabWindowsIntegrationTestsPipeline` uses the Windows framework selection from NUKE and emits x64 and x86 Tracer and ASM jobs for every selected TFM. Debugger coverage now spans both architectures, portable and full PDBs, and optimized and unoptimized builds; matching Azure, the x86 `netcoreapp3.1` and `net6.0` Debugger combinations are omitted because their apphosts are unavailable. The IIS matrix contains separate `net48` x64 and x86 Tracer and ASM cells because it mutates machine state, and LocalDB uses a dedicated `net48` x64 Tracer cell.
+
+The content-addressed Windows build image derives from Microsoft's .NET Framework ASP.NET image and now includes IIS, SQL Server Express LocalDB, MSMQ, Chrome for Testing, and the matching ChromeDriver while preserving the common build toolchain. Regular `net48` Tracer cells initialize MSMQ, and supported x64 .NET Core cells can run Selenium tests against headless Chrome. Image-affecting changes automatically build and publish their new hash in the `.pre` stage before any consumer can inspect it; otherwise the image builder remains an optional manual job. Windows sample producers participate in stage ordering rather than declaring `needs: []`, so they cannot race a required image publication. Each child combines the parent `build` and `build-samples-standalone` artifacts, installs an end-of-life runtime on demand when required, restores integration projects in the GitLab consumer workspace, and invokes the matching NUKE build/run targets inside the image. Results, CI Visibility logs, tracer logs, dumps, snapshots, and debugger approvals are retained, and build logs are validated even when the test invocation fails.
+
+The dependency-expanded pipeline validated LocalDB, MSMQ, IIS, x86, and ASM coverage. All 28 Windows Debugger cells also passed, including x64/x86, portable/full PDB, and optimized/unoptimized variants. Selenium still cannot create a ChromeDriver session inside the Windows Server Core container, including after retries and switching to the DevTools pipe. It is isolated from the regular Tracer cells and retained as one non-blocking `net10.0` diagnostic job with verbose ChromeDriver logs, avoiding three identical failures while preserving evidence for the remaining container investigation. Docker-dependent Windows tests, Azure Functions, and regression tests remain follow-up dimensions. ASM, Debugger, IIS, and dependency-specific cells currently run without Azure-style area-change gating while the matrix is being validated.
 
 Linux managed unit tests use the same generated child-pipeline architecture as Windows. `GenerateGitlabLinuxUnitTestsPipeline` reads `GetTestingFrameworks(PlatformFamily.Linux)` and emits paired x64 glibc and musl jobs for every selected TFM: six jobs (`netcoreapp3.1`, `net9.0`, and `net10.0` on both libc variants) for a normal merge request and sixteen jobs for a thorough run. Existing `unit-tests-linux-x64:*` names remain the Debian/glibc cells; `unit-tests-linux-musl-x64:*` cells use Alpine.
 
@@ -645,19 +649,21 @@ No separate Phase 2 is currently required. Managed and native unit tests are par
 
 ## Phase 3: integration tests
 
-Add `.gitlab/ci/test-integration.yml`.
+The implementation uses the generated child pipelines and reusable templates under `.gitlab` described above rather than a single `.gitlab/ci/test-integration.yml` file.
 
-Current initial implementation:
+Current implementation:
 
 - Linux x64 integration jobs use `docker-in-docker:amd64`, reuse `docker-compose.yml`, and cover both glibc and musl across the NUKE-selected frameworks.
-- Tracer, ASM, two Docker dependency groups, and optimized/unoptimized Debugger cells are generated as separate jobs.
-- Windows x64 generates Tracer, ASM, and optimized/unoptimized Debugger cells; IIS is a separate `net48` Tracer/ASM slice because it mutates machine state.
-- Linux ARM64 integration coverage is implemented for Debian and Alpine, including Tracer, ASM, Docker-dependent, and optimized/unoptimized Debugger cells; first-run validation is pending.
-- Keep Windows Azure Functions tests separate.
+- Tracer, ASM, two Docker dependency groups, and portable-PDB optimized/unoptimized Debugger cells are generated as separate Linux jobs.
+- Windows x64 and x86 generate Tracer and ASM cells. Debugger cells cover portable/full PDBs and optimized/unoptimized builds on both architectures, subject to the Azure-compatible x86 framework exclusions.
+- Windows IIS runs in separate `net48` x64/x86 Tracer and ASM cells. LocalDB has a dedicated `net48` x64 cell and MSMQ runs in eligible regular Tracer cells. Chrome is retained in one non-blocking `net10.0` diagnostic cell until its Windows-container startup issue is resolved.
+- Linux ARM64 integration coverage is validated for Debian and Alpine, including Tracer, ASM, Docker-dependent, and optimized/unoptimized Debugger cells.
+- Windows Docker-dependent, Azure Functions, and regression coverage remain pending.
+- Keep Windows Azure Functions tests as a separate follow-up suite.
 - Add macOS integration tests per supported framework.
 - Mirror profiler integration tests on Windows and Linux.
 
-The proposed coarse matrix favors fewer, longer jobs to reduce shared-runner contention. Measure real durations before committing to it. Split by area only where a job approaches its timeout or becomes too costly to retry.
+The generated per-framework, per-platform matrix favors failure isolation. Continue measuring durations and split further only where a job approaches its timeout or becomes too costly to retry.
 
 ## Phase 3.5: packaging
 

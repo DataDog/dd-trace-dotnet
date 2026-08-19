@@ -40,9 +40,9 @@ $testFilter = $null
 
 switch ($testSuite) {
     'integration' {
-        # LocalDB, IIS, and Docker dependencies are covered by dedicated jobs.
-        # MSMQ and headless Chrome are available in the Windows build image.
-        $testFilter = '(RunOnWindows=True)&(LoadFromGAC!=True)&(IIS!=True)&(IISExpress!=True)&(Category!=AzureFunctions)&(SkipInCI!=True)&(RequiresDockerDependency!=true)&(RequiresLocalDb!=True)'
+        # LocalDB, IIS, Chrome, and Docker dependencies are covered by dedicated jobs.
+        # MSMQ is available in the Windows build image.
+        $testFilter = '(RunOnWindows=True)&(LoadFromGAC!=True)&(IIS!=True)&(IISExpress!=True)&(Category!=AzureFunctions)&(SkipInCI!=True)&(RequiresDockerDependency!=true)&(RequiresLocalDb!=True)&(RequiresChrome!=True)'
         if ($area -eq 'ASM') {
             # These ASM tests do not declare their LocalDB/IIS requirements as
             # traits, so keep them out of the dependency-free Windows slice.
@@ -59,6 +59,11 @@ switch ($testSuite) {
     }
     'localdb' {
         $testFilter = '(RunOnWindows=True)&(RequiresLocalDb=True)&(SkipInCI!=True)'
+        $nukeTargets = 'CompileTrimmingSamples BuildIntegrationTests RunIntegrationTests'
+        $nukeArguments = '--IncludeTestsRequiringDocker false'
+    }
+    'selenium' {
+        $testFilter = '(RunOnWindows=True)&(RequiresChrome=True)&(SkipInCI!=True)'
         $nukeTargets = 'CompileTrimmingSamples BuildIntegrationTests RunIntegrationTests'
         $nukeArguments = '--IncludeTestsRequiringDocker false'
     }
@@ -90,6 +95,7 @@ $commonDockerArguments = @(
     '-e', 'SAMPLES_SELENIUM_CHROME_BINARY=c:\devtools\chrome\chrome-headless-shell-win64\chrome-headless-shell.exe',
     '-e', 'SAMPLES_SELENIUM_CHROMEDRIVER_DIRECTORY=c:\devtools\chromedriver\chromedriver-win64',
     '-e', 'SAMPLES_SELENIUM_HEADLESS=true',
+    '-e', 'SAMPLES_SELENIUM_LOG_DIRECTORY=c:\mnt\artifacts\build_data\infra_logs\selenium',
     '-e', 'DD_LOGGER_ENABLED=true',
     '-e', 'DD_LOGGER_DD_API_KEY',
     '-e', 'DD_LOGGER_DD_SERVICE=dd-trace-dotnet',
