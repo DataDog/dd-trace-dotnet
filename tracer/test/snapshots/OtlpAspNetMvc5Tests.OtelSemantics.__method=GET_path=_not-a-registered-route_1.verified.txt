@@ -111,6 +111,12 @@
                   "value": {
                     "stringValue": "http"
                   }
+                },
+                {
+                  "key": "user_agent.original",
+                  "value": {
+                    "stringValue": "testhelper"
+                  }
                 }
               ]
             }
