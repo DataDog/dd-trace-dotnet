@@ -40,7 +40,7 @@ internal static class FeatureFlagsSdk
     /// tracer alone must not do it.
     /// </summary>
     /// <param name="cancellationToken"> Cancellation token supplied by OpenFeature </param>
-    /// <returns> A task that completes once configuration has arrived, or the initialization timeout has elapsed </returns>
+    /// <returns> A task that completes once configuration has arrived or the initialization timeout has elapsed, and that faults when no source could start delivery at all </returns>
     [MethodImpl(MethodImplOptions.NoInlining)]
     public static Task InitializeAsync(CancellationToken cancellationToken) => Task.CompletedTask;
 

@@ -42,6 +42,7 @@ namespace Datadog.Trace.FeatureFlags
         private FeatureFlagsEvaluator? _evaluator;
         private AgentlessConfigurationSource? _agentlessSource;
         private ExposureApi? _exposureApi;
+        private string? _deliveryUnavailableReason;
         private bool _activated;
         private bool _disposed;
         private bool _deliveryStarted;
@@ -134,6 +135,7 @@ namespace Datadog.Trace.FeatureFlags
                         if (!_isRemoteConfigurationAvailable)
                         {
                             Log.Warning("Feature Flags are configured to use the Remote Configuration source, but Remote Configuration is not available. No flag configuration will be received.");
+                            _deliveryUnavailableReason = "the Remote Configuration source is selected, but Remote Configuration is not available in this environment";
                             break;
                         }
 
@@ -149,6 +151,9 @@ namespace Datadog.Trace.FeatureFlags
                         var source = AgentlessConfigurationSource.Create(_settings, ApplyConfiguration);
                         if (source is null)
                         {
+                            // Create logs the specific reason, which may name configuration the
+                            // message must not repeat back to the application.
+                            _deliveryUnavailableReason = "the agentless source could not be started, see the Datadog logs for the reason";
                             break;
                         }
 
@@ -168,8 +173,13 @@ namespace Datadog.Trace.FeatureFlags
 
         /// <summary>
         /// Activates delivery and waits for the first configuration, so that a provider reported as
-        /// ready can resolve flags. Never throws on timeout: delivery being slow is transient, while
-        /// initialization typically runs at application startup where an exception is fatal.
+        /// ready can resolve flags.
+        /// <para>
+        /// Returns without throwing when the wait times out, because delivery being slow is transient:
+        /// the configuration still arrives later and promotes the provider. Throws
+        /// <see cref="FeatureFlagsDeliveryUnavailableException"/> when no source could start at all,
+        /// which is permanent for the life of the process and must not be reported as a ready provider.
+        /// </para>
         /// </summary>
         internal async Task InitializeAsync(CancellationToken cancellationToken)
         {
@@ -180,20 +190,24 @@ namespace Datadog.Trace.FeatureFlags
                 return;
             }
 
-            // When activation could not start any delivery source (for example, agentless without
-            // an API key), waiting would only delay startup for a configuration that will never
-            // arrive. The provider stays not-ready, which is the correct state. Read under the lock
-            // so a concurrent activation is seen through, rather than skipping the wait because its
-            // source had not finished starting.
+            // Read under the lock so a concurrent activation is seen through, rather than reporting no
+            // delivery because its source had not finished starting.
             bool deliveryStarted;
+            string? deliveryUnavailableReason;
             lock (_stateLock)
             {
                 deliveryStarted = _deliveryStarted;
+                deliveryUnavailableReason = _deliveryUnavailableReason;
             }
 
+            // When activation could not start any delivery source (for example, agentless without an
+            // API key), no configuration can ever arrive, so waiting would only delay startup.
+            // Returning instead would report the provider as usable while every evaluation keeps
+            // returning its default, so the failure is raised: the SDK turns it into an error status
+            // and an error event without taking the application down.
             if (!deliveryStarted)
             {
-                return;
+                throw new FeatureFlagsDeliveryUnavailableException(deliveryUnavailableReason);
             }
 
             using var timeoutCancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);

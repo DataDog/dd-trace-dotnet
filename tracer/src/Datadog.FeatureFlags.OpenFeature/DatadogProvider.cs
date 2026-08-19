@@ -75,9 +75,15 @@ public sealed class DatadogProvider : global::OpenFeature.FeatureProvider, IDisp
 
     /// <summary>
     /// Starts flag configuration delivery and waits for the first configuration, so that a ready
-    /// provider can actually resolve flags. It returns normally when the wait times out instead of
-    /// throwing: slow delivery is transient, and initialization commonly runs at startup, where an
-    /// exception would take the application down.
+    /// provider can actually resolve flags.
+    /// <para>
+    /// It returns normally when the wait times out, because slow delivery is transient and the
+    /// configuration still arrives afterwards. It faults when no source could start delivery at all,
+    /// which leaves the provider unable to resolve anything for the rest of the process: OpenFeature
+    /// then marks this provider as errored instead of ready, and evaluations keep returning their
+    /// default values. The exception does not reach the application, because OpenFeature handles it
+    /// while setting the provider.
+    /// </para>
     /// </summary>
     /// <param name="context"> Evaluation context </param>
     /// <param name="cancellationToken"> Async cancellation token </param>
