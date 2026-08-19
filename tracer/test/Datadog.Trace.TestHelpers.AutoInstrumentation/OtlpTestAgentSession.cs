@@ -55,11 +55,13 @@ namespace Datadog.Trace.TestHelpers
 
         /// <summary>
         /// How long the session has to stay empty after being cleared before we accept that nothing
-        /// else is in flight. Needs to comfortably exceed the exporter's flush interval.
+        /// else is in flight. Needs to comfortably exceed the exporter's flush interval, including on
+        /// contended ARM64 CI runners where a batch export can lag well past the exporter's nominal
+        /// flush interval.
         /// </summary>
-        private const int QuietPeriodMs = 2_000;
+        private const int QuietPeriodMs = 5_000;
 
-        private const int MaxQuietAttempts = 5;
+        private const int MaxQuietAttempts = 6;
 
         /// <summary>
         /// How long to keep polling for the telemetry a test case is waiting on. Generous because a
