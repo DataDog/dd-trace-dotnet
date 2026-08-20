@@ -29,14 +29,25 @@ internal sealed class AgentlessEndpoint
     /// </summary>
     internal const string ManagedHostPrefix = "ufc-server.ff-cdn.";
 
-    private AgentlessEndpoint(Uri uri, bool isManaged)
+    /// <summary>
+    /// The query parameter carrying the environment to request configuration for.
+    /// </summary>
+    internal const string EnvParameterName = "dd_env";
+
+    // Set when the configured base URL already carries dd_env. The operator chose that value
+    // deliberately, so it is left alone rather than duplicated or overwritten.
+    private readonly bool _pinsEnv;
+
+    private AgentlessEndpoint(Uri uri, bool isManaged, bool pinsEnv)
     {
         Uri = uri;
         IsManaged = isManaged;
+        _pinsEnv = pinsEnv;
     }
 
     /// <summary>
-    /// Gets the endpoint URI.
+    /// Gets the endpoint URI, without the environment. Use <see cref="BuildRequestUri"/> to get the
+    /// URI to request.
     /// </summary>
     public Uri Uri { get; }
 
@@ -50,17 +61,19 @@ internal sealed class AgentlessEndpoint
     /// <summary>
     /// Builds the endpoint. Without a custom <paramref name="baseUrl"/> the managed Datadog CDN
     /// endpoint is derived from the (lowercased) site, so staging and government sites resolve
-    /// with no allowlist, and <c>dd_env</c> is added only when an environment is configured.
-    /// A custom base URL that is an origin receives the canonical path; one that carries a path
-    /// is used verbatim.
+    /// with no allowlist. A custom base URL that is an origin receives the canonical path; one that
+    /// carries a path is used verbatim.
+    /// <para>
+    /// The environment is not part of the endpoint: it can be changed in code while the application
+    /// runs, so it is applied per request by <see cref="BuildRequestUri"/> instead.
+    /// </para>
     /// </summary>
     /// <param name="site">The Datadog site, for example <c>datadoghq.com</c>.</param>
-    /// <param name="env">The configured environment, or <c>null</c>.</param>
     /// <param name="baseUrl">The configured endpoint override, or <c>null</c>.</param>
     /// <param name="endpoint">The resulting endpoint, or <c>null</c> when none could be built.</param>
     /// <param name="error">Why the configured base URL was rejected. Never contains the URL, which may carry credentials.</param>
     /// <returns><c>true</c> when an endpoint could be built.</returns>
-    public static bool TryCreate(string? site, string? env, string? baseUrl, [NotNullWhen(true)] out AgentlessEndpoint? endpoint, out string? error)
+    public static bool TryCreate(string? site, string? baseUrl, [NotNullWhen(true)] out AgentlessEndpoint? endpoint, out string? error)
     {
         endpoint = null;
         error = null;
@@ -92,12 +105,7 @@ internal sealed class AgentlessEndpoint
                 return false;
             }
 
-            if (!StringUtil.IsNullOrEmpty(env))
-            {
-                managedUri = new UriBuilder(managedUri) { Query = "dd_env=" + Uri.EscapeDataString(env) }.Uri;
-            }
-
-            endpoint = new AgentlessEndpoint(managedUri, isManaged: true);
+            endpoint = new AgentlessEndpoint(managedUri, isManaged: true, pinsEnv: false);
             return true;
         }
 
@@ -129,7 +137,60 @@ internal sealed class AgentlessEndpoint
             custom = new UriBuilder(custom) { Path = DefaultPath }.Uri;
         }
 
-        endpoint = new AgentlessEndpoint(custom, isManaged: false);
+        endpoint = new AgentlessEndpoint(custom, isManaged: false, pinsEnv: HasEnvParameter(custom.Query));
         return true;
+    }
+
+    /// <summary>
+    /// Returns the URI to request configuration for <paramref name="env"/>. The environment is
+    /// added as a query parameter rather than baked into the endpoint, because it can change while
+    /// the application runs.
+    /// <para>
+    /// Any query the configured base URL already carries is kept: it may hold credentials or routing
+    /// the operator needs. An endpoint that already pins <c>dd_env</c> is returned unchanged.
+    /// </para>
+    /// </summary>
+    /// <param name="env">The current environment, or <c>null</c> when none is configured.</param>
+    /// <returns>The URI to request.</returns>
+    public Uri BuildRequestUri(string? env)
+    {
+        if (_pinsEnv || StringUtil.IsNullOrEmpty(env))
+        {
+            return Uri;
+        }
+
+        var parameter = EnvParameterName + "=" + Uri.EscapeDataString(env);
+        var builder = new UriBuilder(Uri);
+
+        // The getter returns the query with its leading "?", and the setter keeps one that is
+        // already there, so an existing query can be extended without trimming it first. A URL
+        // ending in a bare "?" reports an empty query, which the length check treats as no query.
+        builder.Query = builder.Query.Length > 1 ? builder.Query + "&" + parameter : parameter;
+        return builder.Uri;
+    }
+
+    /// <summary>
+    /// Reports whether a query string already carries a <c>dd_env</c> parameter. Matching the name
+    /// alone would also hit a value such as <c>?next=dd_env</c>, so the surrounding delimiters are
+    /// checked too.
+    /// </summary>
+    private static bool HasEnvParameter(string query)
+    {
+        var index = query.IndexOf(EnvParameterName, StringComparison.OrdinalIgnoreCase);
+        while (index >= 0)
+        {
+            var preceding = index == 0 ? '?' : query[index - 1];
+            var followingIndex = index + EnvParameterName.Length;
+            var following = followingIndex < query.Length ? query[followingIndex] : '\0';
+
+            if (preceding is '?' or '&' && following is '=' or '&' or '\0')
+            {
+                return true;
+            }
+
+            index = query.IndexOf(EnvParameterName, index + 1, StringComparison.OrdinalIgnoreCase);
+        }
+
+        return false;
     }
 }
