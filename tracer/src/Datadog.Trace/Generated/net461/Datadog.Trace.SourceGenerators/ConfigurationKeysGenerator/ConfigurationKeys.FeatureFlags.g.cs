@@ -40,9 +40,10 @@ internal static partial class ConfigurationKeys
 
         /// <summary>
         /// Configuration key for selecting where flag configuration is loaded from.
-        /// Supported values are <c>agentless</c> (direct HTTP delivery, the default) and
-        /// <c>remote_config</c> (delivery through the Datadog Agent's Remote Configuration).
-        /// Any other value disables Feature Flags, which fails closed and contacts nothing.
+        /// Supported values are <c>agentless</c> (direct HTTP delivery, the default),
+        /// <c>remote_config</c> (delivery through the Datadog Agent's Remote Configuration)
+        /// and <c>offline</c>, which disables Feature Flags and contacts nothing.
+        /// Any other value is rejected and the default applies.
         /// </summary>
         public const string FeatureFlagsConfigurationSource = "DD_FEATURE_FLAGS_CONFIGURATION_SOURCE";
 

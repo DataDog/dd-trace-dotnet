@@ -153,9 +153,9 @@ internal sealed class FeatureFlagsSettings
 
     /// <summary>
     /// Converts a configured source name to a <see cref="FeatureFlagsSource"/>. A blank value is
-    /// treated as unset so the default applies, and an unrecognised one fails closed: it resolves
-    /// to <see cref="FeatureFlagsSource.Disabled"/> rather than falling back to a billed delivery
-    /// path, which is why it is reported as a successful conversion.
+    /// treated as unset, and an unrecognised one is reported as a parsing failure so that it shows
+    /// up as rejected in configuration telemetry rather than as a value nobody configured. Both
+    /// fall back to the default, which is what an unset key would have selected anyway.
     /// </summary>
     private static ParsingResult<FeatureFlagsSource> ConvertSource(string? value)
     {
@@ -171,7 +171,7 @@ internal sealed class FeatureFlagsSettings
             return ParsingResult<FeatureFlagsSource>.Success(source);
         }
 
-        return ParsingResult<FeatureFlagsSource>.Success(FeatureFlagsSource.Disabled);
+        return ParsingResult<FeatureFlagsSource>.Failure();
     }
 
     private static bool TryMatch(string value, out FeatureFlagsSource source)
