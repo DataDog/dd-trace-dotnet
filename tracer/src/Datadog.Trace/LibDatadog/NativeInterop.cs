@@ -31,12 +31,6 @@ internal static class NativeInterop
     {
         [DllImport(DllName, EntryPoint = "ddog_otel_thread_ctx_update")]
         internal static extern void Update(byte* traceId, byte* spanId, byte* localRootSpanId);
-
-        [DllImport(DllName, EntryPoint = "ddog_otel_thread_ctx_detach")]
-        internal static extern IntPtr Detach();
-
-        [DllImport(DllName, EntryPoint = "ddog_otel_thread_ctx_free")]
-        internal static extern void Free(IntPtr context);
     }
 
     internal static class LibraryConfig

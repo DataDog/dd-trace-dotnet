@@ -36,19 +36,8 @@ namespace Datadog.Trace
     internal class TracerManagerFactory
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<TracerManagerFactory>();
-        private readonly Func<TracerSettings, IOtelThreadContextPublisher> _otelThreadContextPublisherFactory;
 
         public static readonly TracerManagerFactory Instance = new();
-
-        public TracerManagerFactory()
-            : this(OtelThreadContextPublisher.Create)
-        {
-        }
-
-        internal TracerManagerFactory(Func<TracerSettings, IOtelThreadContextPublisher> otelThreadContextPublisherFactory)
-        {
-            _otelThreadContextPublisherFactory = otelThreadContextPublisherFactory;
-        }
 
         /// <summary>
         /// The primary factory method, called by <see cref="TracerManager"/>,
@@ -58,12 +47,12 @@ namespace Datadog.Trace
         {
             // TODO: If relevant settings have not changed, continue using existing statsd/agent writer/runtime metrics etc
             // If reusing the runtime metrics/statsd, need to propagate the new value of DD_TAGS from dynamic config
-            var scopeManager = previous?.ScopeManager;
             var tracer = CreateTracerManager(
                 settings,
                 agentWriter: null,
                 sampler: null,
-                scopeManager: scopeManager, // reuse to preserve AsyncLocal identity and active scopes
+                // Scope propagation settings are startup-only, so reuse the manager to preserve AsyncLocal identity and active scopes
+                scopeManager: previous?.ScopeManager,
                 statsd: null, // For now, let's continue to always create a new StatsD instance
                 runtimeMetrics: previous?.RuntimeMetrics,
                 logSubmissionManager: previous?.DirectLogSubmission,
@@ -75,11 +64,6 @@ namespace Datadog.Trace
                 tracerFlareManager: null,
                 spanEventsManager: null,
                 featureFlags: null);
-
-            if (scopeManager is AsyncLocalScopeManager asyncLocalScopeManager)
-            {
-                asyncLocalScopeManager.UpdateOtelThreadContextPublisher(_otelThreadContextPublisherFactory(tracer.Settings));
-            }
 
             tracer.Settings.Manager.SubscribeToChanges(changes =>
             {
@@ -152,7 +136,7 @@ namespace Datadog.Trace
                 discoveryService is NullDiscoveryService ? null : discoveryService.SetCurrentConfigStateHash,
                 discoveryService,
                 telemetrySettings);
-            scopeManager ??= new AsyncLocalScopeManager(Profiler.Instance.ContextTracker, _otelThreadContextPublisherFactory(settings));
+            scopeManager ??= new AsyncLocalScopeManager(OtelThreadContextPublisher.Create(settings));
 
             var gitMetadataTagsProvider = GetGitMetadataTagsProvider(settings, settings.Manager.InitialMutableSettings, scopeManager, telemetry);
             logSubmissionManager = DirectLogSubmissionManager.Create(

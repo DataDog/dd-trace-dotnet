@@ -8,7 +8,6 @@ extern alias DatadogTrace;
 #nullable enable
 
 using System;
-using System.Collections.Generic;
 using Datadog.Trace.LibDatadog.OtelThreadContext;
 using Datadog.Trace.Tests.Util;
 using FluentAssertions;
@@ -55,8 +54,6 @@ public class OtelThreadContextPublisherTests
         nativeMethods.TraceId.Should().Equal(new byte[TraceId.Size]);
         nativeMethods.SpanId.Should().Equal(new byte[sizeof(ulong)]);
         nativeMethods.LocalRootSpanId.Should().Equal(new byte[sizeof(ulong)]);
-        nativeMethods.DetachCalls.Should().Be(0);
-        nativeMethods.FreedContexts.Should().BeEmpty();
     }
 
     [Fact]
@@ -72,7 +69,6 @@ public class OtelThreadContextPublisherTests
 
         publisher.IsEnabled.Should().BeFalse();
         nativeMethods.UpdateCalls.Should().Be(1);
-        nativeMethods.DetachCalls.Should().Be(0);
     }
 
     [Theory]
@@ -94,7 +90,6 @@ public class OtelThreadContextPublisherTests
         publisher.Set(CreateChildSpan());
         publisher.Reset();
         nativeMethods.UpdateCalls.Should().Be(expectedEnabled ? 2 : 0);
-        nativeMethods.DetachCalls.Should().Be(0);
     }
 
     private static Span CreateChildSpan()
@@ -119,8 +114,6 @@ public class OtelThreadContextPublisherTests
     {
         public int UpdateCalls { get; private set; }
 
-        public int DetachCalls { get; private set; }
-
         public byte[]? TraceId { get; private set; }
 
         public byte[]? SpanId { get; private set; }
@@ -128,10 +121,6 @@ public class OtelThreadContextPublisherTests
         public byte[]? LocalRootSpanId { get; private set; }
 
         public Exception? UpdateException { get; init; }
-
-        public IntPtr DetachedContext { get; init; }
-
-        public List<IntPtr> FreedContexts { get; } = [];
 
 #if NETFRAMEWORK || NETCOREAPP2_1 || NETCOREAPP3_0
         public void Update(DatadogTrace::System.ReadOnlySpan<byte> traceId, DatadogTrace::System.ReadOnlySpan<byte> spanId, DatadogTrace::System.ReadOnlySpan<byte> localRootSpanId)
@@ -148,17 +137,6 @@ public class OtelThreadContextPublisherTests
             TraceId = traceId.ToArray();
             SpanId = spanId.ToArray();
             LocalRootSpanId = localRootSpanId.ToArray();
-        }
-
-        public IntPtr Detach()
-        {
-            DetachCalls++;
-            return DetachedContext;
-        }
-
-        public void Free(IntPtr context)
-        {
-            FreedContexts.Add(context);
         }
     }
 }

@@ -1,3 +1,4 @@
+extern alias DatadogTrace;
 extern alias DatadogTraceManual;
 
 using System;
@@ -11,7 +12,6 @@ using Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Extens
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Proxies;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Tracer;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.ContinuousProfiler;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.LibDatadog.OtelThreadContext;
@@ -38,9 +38,7 @@ namespace Benchmarks.Trace
         [GlobalSetup]
         public void GlobalSetup()
         {
-            var disabledScopeManager = new AsyncLocalScopeManager(
-                new DisabledContextTracker(),
-                OtelThreadContextPublisher.Disabled);
+            var disabledScopeManager = new AsyncLocalScopeManager();
             _tracer = new Tracer(
                 CreateSettings(otelThreadContextEnabled: false),
                 new DummyAgentWriter(),
@@ -52,7 +50,6 @@ namespace Benchmarks.Trace
 
             // The benchmark host is not auto-instrumented, so inject the native-call seam to isolate the managed callback and encoding cost.
             var otelScopeManager = new AsyncLocalScopeManager(
-                new DisabledContextTracker(),
                 new OtelThreadContextPublisher(new BenchmarkOtelThreadContextNativeMethods()));
             _otelThreadContextTracer = new Tracer(
                 CreateSettings(otelThreadContextEnabled: true),
@@ -194,32 +191,13 @@ namespace Benchmarks.Trace
             });
         }
 
-        private sealed class DisabledContextTracker : IContextTracker
-        {
-            public bool IsEnabled => false;
-
-            public void Set(ulong localRootSpanId, ulong spanId)
-            {
-            }
-
-            public void SetEndpoint(ulong localRootSpanId, string endpoint)
-            {
-            }
-
-            public void Reset()
-            {
-            }
-        }
-
         private sealed class BenchmarkOtelThreadContextNativeMethods : IOtelThreadContextNativeMethods
         {
+#if NETFRAMEWORK || NETCOREAPP2_1 || NETCOREAPP3_0
+            public void Update(DatadogTrace::System.ReadOnlySpan<byte> traceId, DatadogTrace::System.ReadOnlySpan<byte> spanId, DatadogTrace::System.ReadOnlySpan<byte> localRootSpanId)
+#else
             public void Update(ReadOnlySpan<byte> traceId, ReadOnlySpan<byte> spanId, ReadOnlySpan<byte> localRootSpanId)
-            {
-            }
-
-            public IntPtr Detach() => new(1);
-
-            public void Free(IntPtr context)
+#endif
             {
             }
         }

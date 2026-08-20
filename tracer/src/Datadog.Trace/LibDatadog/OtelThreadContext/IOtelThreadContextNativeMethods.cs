@@ -12,8 +12,4 @@ namespace Datadog.Trace.LibDatadog.OtelThreadContext;
 internal interface IOtelThreadContextNativeMethods
 {
     void Update(ReadOnlySpan<byte> traceId, ReadOnlySpan<byte> spanId, ReadOnlySpan<byte> localRootSpanId);
-
-    IntPtr Detach();
-
-    void Free(IntPtr context);
 }

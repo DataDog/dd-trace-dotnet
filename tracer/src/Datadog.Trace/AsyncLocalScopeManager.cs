@@ -12,23 +12,22 @@ namespace Datadog.Trace
 {
     internal sealed class AsyncLocalScopeManager : IScopeManager, IScopeRawAccess
     {
-        private readonly IContextTracker _contextTracker;
-        private readonly bool _primaryScopeChangeNotificationsEnabled;
-        private readonly AsyncLocal<Scope> _activeScope;
-        private IOtelThreadContextPublisher _otelThreadContextPublisher;
-        private AsyncLocal<Scope> _otelNotificationScope;
+        private readonly AsyncLocal<Scope> _activeScope = CreateScope();
+        private readonly IOtelThreadContextPublisher _otelThreadContextPublisher;
+        private readonly AsyncLocal<Scope> _otelScope;
 
         public AsyncLocalScopeManager()
-            : this(Profiler.Instance.ContextTracker, OtelThreadContextPublisher.Disabled)
+            : this(OtelThreadContextPublisher.Disabled)
         {
         }
 
-        internal AsyncLocalScopeManager(IContextTracker contextTracker, IOtelThreadContextPublisher otelThreadContextPublisher)
+        internal AsyncLocalScopeManager(IOtelThreadContextPublisher otelThreadContextPublisher)
         {
-            _contextTracker = contextTracker;
             _otelThreadContextPublisher = otelThreadContextPublisher;
-            _primaryScopeChangeNotificationsEnabled = contextTracker.IsEnabled || otelThreadContextPublisher.IsEnabled;
-            _activeScope = CreateScope();
+            if (otelThreadContextPublisher.IsEnabled)
+            {
+                _otelScope = new AsyncLocal<Scope>(OnOtelScopeChanged);
+            }
         }
 
         public Scope Active
@@ -37,7 +36,10 @@ namespace Datadog.Trace
             private set
             {
                 _activeScope.Value = value;
-                SyncOtelNotificationScope(value);
+                if (_otelScope is not null)
+                {
+                    _otelScope.Value = value;
+                }
             }
         }
 
@@ -76,9 +78,9 @@ namespace Datadog.Trace
             DistributedTracer.Instance.SetSpanContext(scope.Span.Context.Parent as SpanContext);
         }
 
-        private AsyncLocal<Scope> CreateScope()
+        private static AsyncLocal<Scope> CreateScope()
         {
-            if (_primaryScopeChangeNotificationsEnabled)
+            if (Profiler.Instance.ContextTracker.IsEnabled)
             {
                 return new AsyncLocal<Scope>(OnScopeChanged);
             }
@@ -86,86 +88,27 @@ namespace Datadog.Trace
             return new AsyncLocal<Scope>();
         }
 
-        internal void UpdateOtelThreadContextPublisher(IOtelThreadContextPublisher publisher)
-        {
-            var previousPublisher = Volatile.Read(ref _otelThreadContextPublisher);
-            if (!publisher.IsEnabled)
-            {
-                var resetByNotificationScope = !_primaryScopeChangeNotificationsEnabled && SyncOtelNotificationScope(scope: null);
-                if (!resetByNotificationScope)
-                {
-                    previousPublisher.Reset();
-                }
-
-                Volatile.Write(ref _otelThreadContextPublisher, publisher);
-                return;
-            }
-
-            Volatile.Write(ref _otelThreadContextPublisher, publisher);
-            if (_primaryScopeChangeNotificationsEnabled)
-            {
-                PublishOtelScope(Active, publisher);
-                return;
-            }
-
-            EnsureOtelNotificationScope();
-            var active = Active;
-            var publishedByNotificationScope = SyncOtelNotificationScope(active);
-            if (!publishedByNotificationScope && active != null)
-            {
-                publisher.Set(active.Span);
-            }
-        }
-
-        private void OnScopeChanged(AsyncLocalValueChangedArgs<Scope> obj)
+        private static void OnScopeChanged(AsyncLocalValueChangedArgs<Scope> obj)
         {
             if (obj.CurrentValue == null)
             {
-                _contextTracker.Reset();
-                Volatile.Read(ref _otelThreadContextPublisher).Reset();
+                Profiler.Instance.ContextTracker.Reset();
             }
             else
             {
-                var span = obj.CurrentValue.Span;
-                _contextTracker.Set(span.RootSpanId, span.SpanId);
-                Volatile.Read(ref _otelThreadContextPublisher).Set(span);
+                Profiler.Instance.ContextTracker.Set(obj.CurrentValue.Span.RootSpanId, obj.CurrentValue.Span.SpanId);
             }
         }
 
         private void OnOtelScopeChanged(AsyncLocalValueChangedArgs<Scope> obj)
         {
-            PublishOtelScope(obj.CurrentValue, Volatile.Read(ref _otelThreadContextPublisher));
-        }
-
-        private void EnsureOtelNotificationScope()
-        {
-            if (Volatile.Read(ref _otelNotificationScope) == null)
+            if (obj.CurrentValue == null)
             {
-                Volatile.Write(ref _otelNotificationScope, new AsyncLocal<Scope>(OnOtelScopeChanged));
-            }
-        }
-
-        private bool SyncOtelNotificationScope(Scope scope)
-        {
-            var notificationScope = Volatile.Read(ref _otelNotificationScope);
-            if (notificationScope != null && notificationScope.Value != scope)
-            {
-                notificationScope.Value = scope;
-                return true;
-            }
-
-            return false;
-        }
-
-        private void PublishOtelScope(Scope scope, IOtelThreadContextPublisher publisher)
-        {
-            if (scope == null)
-            {
-                publisher.Reset();
+                _otelThreadContextPublisher.Reset();
             }
             else
             {
-                publisher.Set(scope.Span);
+                _otelThreadContextPublisher.Set(obj.CurrentValue.Span);
             }
         }
     }

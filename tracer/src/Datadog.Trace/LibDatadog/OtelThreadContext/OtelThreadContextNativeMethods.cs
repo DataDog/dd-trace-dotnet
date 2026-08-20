@@ -26,8 +26,4 @@ internal sealed class OtelThreadContextNativeMethods : IOtelThreadContextNativeM
             }
         }
     }
-
-    public IntPtr Detach() => NativeInterop.OtelThreadContext.Detach();
-
-    public void Free(IntPtr context) => NativeInterop.OtelThreadContext.Free(context);
 }
