@@ -36,7 +36,7 @@ internal sealed class FeatureFlagsSettings
 
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(FeatureFlagsSettings));
 
-    public FeatureFlagsSettings(IConfigurationSource? source, IConfigurationTelemetry telemetry, string? env)
+    public FeatureFlagsSettings(IConfigurationSource? source, IConfigurationTelemetry telemetry)
     {
         source ??= NullConfigurationSource.Instance;
         var config = new ConfigurationBuilder(source, telemetry);
@@ -96,13 +96,12 @@ internal sealed class FeatureFlagsSettings
                   .Value);
 
         // DD_SITE and DD_API_KEY are not extracted on TracerSettings, so they are read here as the
-        // other product settings do (TelemetrySettings, DirectLogSubmissionSettings). DD_ENV is
-        // passed in, because TracerSettings also honours the "env" entry of DD_TAGS and re-reading
-        // the key alone would disagree with the rest of the tracer.
+        // other product settings do (TelemetrySettings, DirectLogSubmissionSettings). DD_ENV is not
+        // read at all: it can be changed in code while the application runs, so the delivery source
+        // takes the current value per request rather than capturing one here.
         Site = config
               .WithKeys(ConfigurationKeys.Site)
               .AsString(DefaultSite, static site => !StringUtil.IsNullOrWhiteSpace(site));
-        Env = env;
         ApiKey = config.WithKeys(ConfigurationKeys.ApiKey).AsRedactedString();
 
         var initializationTimeoutMs = config
@@ -133,11 +132,6 @@ internal sealed class FeatureFlagsSettings
     public string Site { get; }
 
     /// <summary>
-    /// Gets the configured environment, sent to the agentless endpoint as <c>dd_env</c>.
-    /// </summary>
-    public string? Env { get; }
-
-    /// <summary>
     /// Gets the API key, required by the managed agentless endpoint.
     /// </summary>
     public string? ApiKey { get; }
@@ -159,9 +153,9 @@ internal sealed class FeatureFlagsSettings
 
     /// <summary>
     /// Converts a configured source name to a <see cref="FeatureFlagsSource"/>. A blank value is
-    /// treated as unset so the default applies, and an unrecognised one fails closed: it resolves
-    /// to <see cref="FeatureFlagsSource.Disabled"/> rather than falling back to a billed delivery
-    /// path, which is why it is reported as a successful conversion.
+    /// treated as unset, and an unrecognised one is reported as a parsing failure so that it shows
+    /// up as rejected in configuration telemetry rather than as a value nobody configured. Both
+    /// fall back to the default, which is what an unset key would have selected anyway.
     /// </summary>
     private static ParsingResult<FeatureFlagsSource> ConvertSource(string? value)
     {
@@ -177,7 +171,7 @@ internal sealed class FeatureFlagsSettings
             return ParsingResult<FeatureFlagsSource>.Success(source);
         }
 
-        return ParsingResult<FeatureFlagsSource>.Success(FeatureFlagsSource.Disabled);
+        return ParsingResult<FeatureFlagsSource>.Failure();
     }
 
     private static bool TryMatch(string value, out FeatureFlagsSource source)

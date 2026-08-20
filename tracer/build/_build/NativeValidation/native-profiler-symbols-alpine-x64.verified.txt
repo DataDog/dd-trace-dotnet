@@ -22,8 +22,9 @@ ddog_crasht_CrashInfo_upload_to_endpoint
 ddog_crasht_CrashInfoBuilder_build
 ddog_crasht_CrashInfoBuilder_new
 ddog_crasht_CrashInfoBuilder_with_kind
+ddog_crasht_CrashInfoBuilder_with_message
 ddog_crasht_CrashInfoBuilder_with_metadata
-ddog_crasht_CrashInfoBuilder_with_os_info
+ddog_crasht_CrashInfoBuilder_with_os_info_this_machine
 ddog_crasht_CrashInfoBuilder_with_proc_info
 ddog_crasht_CrashInfoBuilder_with_sig_info
 ddog_crasht_CrashInfoBuilder_with_thread
@@ -35,6 +36,7 @@ ddog_crasht_StackFrame_with_build_id_type
 ddog_crasht_StackFrame_with_function
 ddog_crasht_StackFrame_with_ip
 ddog_crasht_StackFrame_with_module_base_address
+ddog_crasht_StackFrame_with_path
 ddog_crasht_StackFrame_with_relative_address
 ddog_crasht_StackFrame_with_sp
 ddog_crasht_StackFrame_with_symbol_address
@@ -52,12 +54,10 @@ ddog_prof_Endpoint_agent
 ddog_prof_Endpoint_agentless
 ddog_prof_Exporter_drop
 ddog_prof_Exporter_new
-ddog_prof_Exporter_Request_build
-ddog_prof_Exporter_Request_drop
-ddog_prof_Exporter_send
-ddog_prof_Exporter_Slice_File_empty
+ddog_prof_Exporter_send_blocking
 ddog_prof_Profile_add
 ddog_prof_Profile_add_endpoint_count
+ddog_prof_Profile_add_upscaling_rule_poisson
 ddog_prof_Profile_add_upscaling_rule_proportional
 ddog_prof_Profile_drop
 ddog_prof_Profile_new
@@ -100,6 +100,7 @@ gethostname
 getline
 getpagesize
 getpid
+getrlimit
 gettimeofday
 getuid
 getwc
@@ -144,6 +145,8 @@ pipe2
 poll
 pow
 prctl
+pthread_attr_destroy
+pthread_attr_getstack
 pthread_cond_broadcast
 pthread_cond_destroy
 pthread_cond_init
@@ -152,6 +155,7 @@ pthread_cond_timedwait
 pthread_cond_wait
 pthread_create
 pthread_detach
+pthread_getattr_np
 pthread_getspecific
 pthread_join
 pthread_key_create
@@ -165,8 +169,10 @@ pthread_mutexattr_init
 pthread_mutexattr_settype
 pthread_once
 pthread_rwlock_rdlock
+pthread_rwlock_tryrdlock
 pthread_rwlock_unlock
 pthread_rwlock_wrlock
+pthread_self
 pthread_setspecific
 pthread_sigmask
 ptrace
@@ -187,7 +193,9 @@ sigaddset
 sigemptyset
 sigfillset
 sigismember
+siglongjmp
 sigprocmask
+sigsetjmp
 snprintf
 socket
 sprintf
@@ -227,6 +235,7 @@ tolower
 toupper
 towlower
 towupper
+uname
 ungetc
 ungetwc
 unsetenv
