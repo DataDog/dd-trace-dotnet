@@ -8,16 +8,19 @@
 using System;
 using System.Collections.Generic;
 using System.Security.Cryptography.X509Certificates;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.FeatureFlags.Exposure.Model;
 
-// The serializer includes nulls globally, but the intake reads an absent serial id and an explicit
-// null differently, so this one property has to omit itself instead.
 internal readonly record struct ExposureEvent(
     long Timestamp,
     Allocation Allocation,
     Flag Flag,
     Variant Variant,
     Subject Subject,
-    [property: JsonProperty(NullValueHandling = NullValueHandling.Ignore)] long? SerialId = null);
+    long? SerialId = null)
+{
+    // The serializer includes nulls globally, but the intake reads an absent serial id and an
+    // explicit null differently. A JsonProperty named argument cannot do this: the enum lives in
+    // this assembly, which AttributeTests forbids.
+    public bool ShouldSerializeSerialId() => SerialId.HasValue;
+}
