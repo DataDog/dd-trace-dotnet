@@ -13,7 +13,7 @@ stages:
 
 include:
   - local: .gitlab/one-pipeline.locked.yml
-  - project: 'DataDog/llm-validation-platform'
+  - project: 'ddoghq/llm-validation-platform'
     ref: 0f48ca35f0b3dfd19d5c0dc9f92aa977c99bebbf   # v0.1.1 (immutable SHA; a tag could be retargeted)
     file: '/ci/llm-validation.gitlab-ci.yml'
   # MIGRATION TOUCHPOINT (GitHub org / GitLab group split):
@@ -43,6 +43,7 @@ variables:
 
 "llm validation":
   variables:
+    LLMVAL_PLATFORM_PROJECT: "ddoghq/llm-validation-platform"
     LLMVAL_PLATFORM_REF: "0f48ca35f0b3dfd19d5c0dc9f92aa977c99bebbf"   # v0.1.1 (must match include ref above)
 
 build-windows-ci-image:
