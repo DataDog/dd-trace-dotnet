@@ -255,12 +255,17 @@ publish:
                 throw "Error uploading artifacts to S3"
               }
 
-              aws s3 cp signed-out/nuget/ s3://dd-windowsfilter/builds/tracer/${CI_COMMIT_SHA}/signed-nuget-packages/ --recursive --region us-east-1 --exclude "*" --include "*.nupkg" --grants read=uri=http://acs.amazonaws.com/groups/global/AllUsers full=id=3a6e02b08553fd157ae3fb918945dd1eaae5a1aa818940381ef07a430cf25732
-              If ($LASTEXITCODE -eq 0) {
-                return
+              aws s3 cp artifacts-out/nuget/ s3://dd-windowsfilter/builds/tracer/${CI_COMMIT_SHA}/signed-nuget-packages/ --recursive --region us-east-1 --exclude "*" --include "*.nupkg" --grants read=uri=http://acs.amazonaws.com/groups/global/AllUsers full=id=3a6e02b08553fd157ae3fb918945dd1eaae5a1aa818940381ef07a430cf25732
+              if ($LASTEXITCODE -ne 0) {
+                throw "Error uploading build-signed NuGet packages to S3"
               }
 
-              throw "Error uploading signed NuGet packages to S3"
+              aws s3 cp signed-out/nuget/ s3://dd-windowsfilter/builds/tracer/${CI_COMMIT_SHA}/signed-nuget-packages/ --recursive --region us-east-1 --exclude "*" --include "*.nupkg" --grants read=uri=http://acs.amazonaws.com/groups/global/AllUsers full=id=3a6e02b08553fd157ae3fb918945dd1eaae5a1aa818940381ef07a430cf25732
+              if ($LASTEXITCODE -ne 0) {
+                throw "Error uploading signed NuGet packages to S3"
+              }
+
+              return;
           } catch {
               $msg = $Error[0].Exception.Message
               Write-Output "Encountered error during while publishing to S3. Error Message is $msg."
@@ -303,7 +308,7 @@ sign-nuget-packages:
   needs:
     - job: build
       optional: true
-      artifacts: true
+      artifacts: false # only needed for timing reasons
     - job: download-nuget-packages-to-sign
       artifacts: true
   hooks:
@@ -321,12 +326,6 @@ sign-nuget-packages:
       New-Item -ItemType Directory -Force -Path "build-out\$env:CI_JOB_ID\nuget" | Out-Null
       New-Item -ItemType Directory -Force -Path "build-out\$env:CI_JOB_ID\packages-to-sign" | Out-Null
       Copy-Item packages-to-sign\*.nupkg "build-out\$env:CI_JOB_ID\packages-to-sign\" -Force
-      if (Test-Path artifacts-out\nuget) {
-        Copy-Item artifacts-out\nuget\*.nupkg "build-out\$env:CI_JOB_ID\nuget\" -Force
-        Write-Output "Seeded $((Get-ChildItem artifacts-out\nuget\*.nupkg).Count) already-signed package(s) from the build job"
-      } else {
-        Write-Warning "artifacts-out\nuget not found - the 'build' job did not run for this pipeline (e.g. a tag or reliability-env pipeline). Only the 3 Azure-built packages will be signed."
-      }
     - |
       docker run --rm `
         -v "$(Get-Location):c:\mnt" `
