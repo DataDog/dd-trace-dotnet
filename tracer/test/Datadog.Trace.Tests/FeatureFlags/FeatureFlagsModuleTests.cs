@@ -76,13 +76,16 @@ public class FeatureFlagsModuleTests
     }
 
     [Fact]
-    public void IsReady_WhenRemoteConfigurationIsDisabled_ReturnsTrue()
+    public void IsReady_WhenRemoteConfigurationIsDisabled_ReturnsFalse()
     {
+        // When RC is disabled, IsReady() returns false because no evaluator will ever be
+        // installed. InitializeAsync detects this via IsAvailable() and throws
+        // ProviderFatalException rather than waiting 30s to timeout.
         var rcmManager = new MockRcmSubscriptionManager();
         var settings = CreateSettings(remoteConfigurationEnabled: false);
         var module = new FeatureFlagsModule(settings, rcmManager);
 
-        module.IsReady().Should().BeTrue();
+        module.IsReady().Should().BeFalse();
     }
 
     private static TracerSettings CreateSettings(bool remoteConfigurationEnabled = true)
