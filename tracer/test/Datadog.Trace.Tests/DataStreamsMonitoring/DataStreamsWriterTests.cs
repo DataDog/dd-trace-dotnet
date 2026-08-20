@@ -77,7 +77,7 @@ public class DataStreamsWriterTests
         TriggerSupportUpdate(discovery, isSupported: true);
 
         writer.AddTransaction(new DataStreamsTransactionInfo("id", 1, "checkpoint"));
-        await api.WaitForCount(1, 30_000);
+        await api.WaitForSend(30_000);
 
         HasOneOrTwoPoints(api);
         await writer.DisposeAsync();
@@ -329,7 +329,7 @@ public class DataStreamsWriterTests
 
         writer.Add(CreateStatsPoint());
 
-        await api.WaitForCount(1, 30_000);
+        await api.WaitForSend(30_000);
 
         HasOneOrTwoPoints(api);
 
@@ -534,15 +534,6 @@ public class DataStreamsWriterTests
             if (completedTask != _firstSend.Task)
             {
                 throw new TimeoutException($"Data streams API was not called within {timeoutMs}ms");
-            }
-        }
-
-        public async Task WaitForCount(int count, int timeoutMs)
-        {
-            var end = DateTime.UtcNow.AddMilliseconds(timeoutMs);
-            while (Sent.Count < count && DateTime.UtcNow < end)
-            {
-                await Task.Delay(100);
             }
         }
     }
