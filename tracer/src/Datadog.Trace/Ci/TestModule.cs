@@ -81,6 +81,7 @@ public sealed class TestModule
                 CIProvider = sessionSpanTags.CIProvider,
                 CIPipelineId = sessionSpanTags.CIPipelineId,
                 CIPipelineName = sessionSpanTags.CIPipelineName,
+                CIPipelineDisplayName = sessionSpanTags.CIPipelineDisplayName,
                 CIPipelineNumber = sessionSpanTags.CIPipelineNumber,
                 CIPipelineUrl = sessionSpanTags.CIPipelineUrl,
                 CIJobName = sessionSpanTags.CIJobName,
@@ -180,8 +181,8 @@ public sealed class TestModule
             }
         }
 
-        // Check if Intelligent Test Runner has skippable tests and set the flag according to that
-        tags.TestsSkipped = _testOptimization.SkippableFeature?.HasSkippableTests() == true ? "true" : "false";
+        // The final skipped flag is based on actual ITR skips and is updated when the module closes.
+        tags.TestsSkipped = "false";
 
         var span = Tracer.Instance.StartSpan(
             string.IsNullOrEmpty(framework) ? "test_module" : $"{framework!.ToLowerInvariant()}.test_module",
@@ -406,34 +407,35 @@ public sealed class TestModule
         // Update status
         Tags.Status ??= TestTags.StatusPass;
 
+        // Only out-of-process test modules without ITR publish this intermediate percentage.
+        // Normal customer sessions rely on the final session snapshot and must not materialize
+        // the full global model once per module.
         if (_testOptimization.Settings.CodeCoverageEnabled == true &&
-            CoverageReporter.Handler is DefaultWithGlobalCoverageEventHandler coverageHandler &&
-            coverageHandler.GetCodeCoveragePercentage() is { } globalCoverage)
+            !_testOptimization.Settings.IntelligentTestRunnerEnabled &&
+            _fakeSession is not null &&
+            CoverageReporter.Handler is DefaultWithGlobalCoverageEventHandler coverageHandler)
         {
-            // We only report global code coverage if ITR is disabled and we are in a fake session (like the internal testlogger scenario)
-            // For a normal customer session we never report the percentage of total lines on modules
-            if (!_testOptimization.Settings.IntelligentTestRunnerEnabled && _fakeSession is not null)
+            var snapshotResult = coverageHandler.AcquireGlobalCoverageSnapshot();
+            if (snapshotResult.Status == GlobalCoverageSnapshotStatus.Success && snapshotResult.Snapshot is { } snapshot)
             {
-                // Adds the global code coverage percentage to the module
-                var codeCoveragePercentage = globalCoverage.GetTotalPercentage();
-                SetTag(CodeCoverageTags.PercentageOfTotalLines, codeCoveragePercentage);
-                _fakeSession.SetTag(CodeCoverageTags.PercentageOfTotalLines, codeCoveragePercentage);
-            }
-
-            // If the code coverage path environment variable is set, we store the json file
-            if (!string.IsNullOrWhiteSpace(_testOptimization.Settings.CodeCoveragePath))
-            {
-                var codeCoveragePath = Path.Combine(_testOptimization.Settings.CodeCoveragePath, $"coverage-{DateTime.Now:yyyy-MM-dd_HH_mm_ss}-{Guid.NewGuid():n}.json");
-                try
+                using (snapshot)
                 {
-                    using var fStream = File.OpenWrite(codeCoveragePath);
-                    using var sWriter = new StreamWriter(fStream, Encoding.UTF8, 4096, false);
-                    using var jsonWriter = new JsonTextWriter(sWriter) { ArrayPool = JsonArrayPool.Shared };
-                    JsonSerializer.Create().Serialize(jsonWriter, globalCoverage);
-                }
-                catch (Exception ex)
-                {
-                    _testOptimization.Log.Error(ex, "Error writing global code coverage.");
+                    var globalCoverage = snapshot.Model;
+                    try
+                    {
+                        coverageHandler.TryCommit(
+                            snapshot,
+                            () =>
+                            {
+                                var codeCoveragePercentage = globalCoverage.GetTotalPercentage();
+                                SetTag(CodeCoverageTags.PercentageOfTotalLines, codeCoveragePercentage);
+                                _fakeSession.SetTag(CodeCoverageTags.PercentageOfTotalLines, codeCoveragePercentage);
+                            });
+                    }
+                    catch (Exception ex)
+                    {
+                        _testOptimization.Log.Error(ex, "Error writing global code coverage.");
+                    }
                 }
             }
         }
@@ -457,13 +459,7 @@ public sealed class TestModule
         }
         else
         {
-            span.SetTag(IntelligentTestRunnerTags.TestsSkipped, _testOptimization.SkippableFeature?.HasSkippableTests() == true ? "true" : "false");
-            if (_testOptimization.SkippableFeature?.HasSkippableTests() == true)
-            {
-                // If we detect a module with tests being skipped, we ensure we also have the session tag set
-                // if not we don't affect the session tag (other modules could have skipped tests)
-                TrySetSessionTag(IntelligentTestRunnerTags.TestsSkipped, "true");
-            }
+            span.SetTag(IntelligentTestRunnerTags.TestsSkipped, "false");
         }
 
         if (_testOptimization.Settings.CodeCoverageEnabled.HasValue)

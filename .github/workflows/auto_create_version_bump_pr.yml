@@ -43,16 +43,12 @@ jobs:
           }
 
       - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ steps.select_branch.outputs.ref }}
+          persist-credentials: false
 
-      - name: "Configure Git Credentials"
-        run: |
-          git config user.name "${{ github.actor }}"
-          git config user.email "${{ github.actor }}@users.noreply.github.com"
-
-      - uses: actions/setup-dotnet@9a946fdbd5fb07b82b2f5a4466058b876ab72bb2 # v5.3.0
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
           global-json-file: global.json
 
@@ -77,12 +73,12 @@ jobs:
 
       - name: Create Pull Request
         id: pr
-        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
+        uses: ./.github/actions/create-signed-pull-request
         with:
           token: ${{ steps.octo-sts.outputs.token }}
           branch: "version-bump-${{steps.versions.outputs.full_version}}"
           commit-message: "[Version Bump] ${{steps.versions.outputs.full_version}}"
-          delete-branch: true
+          base: ${{ steps.select_branch.outputs.ref }}
           title: "[Version Bump] ${{steps.versions.outputs.full_version}}"
           reviewers: "DataDog/apm-dotnet"
           body: "${{steps.changes.outputs.release_notes}}"

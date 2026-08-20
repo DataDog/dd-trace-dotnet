@@ -69,7 +69,11 @@ namespace Samples.StackExchangeRedis
                 RunCommands(new TupleList<string, Func<object>>
                 {
                     { "PING", () => db.PingAsync(CommandFlags.DemandMaster).Result },
+#if (STACKEXCHANGEREDIS_3_1_0)
+                    { "PING_SLAVE", () => db.PingAsync(CommandFlags.DemandReplica).Result },
+#else
                     { "PING_SLAVE", () => db.PingAsync(CommandFlags.DemandSlave).Result },
+#endif
                     { "INCR", () => db.StringIncrement($"{prefix}INCR") },
                     { "INCR", () => db.StringIncrement($"{prefix}INCR", 1.25) },
                     { "GET", () => db.StringGet($"{prefix}INCR") },

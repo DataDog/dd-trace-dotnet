@@ -16,6 +16,7 @@
       http.request.headers.host: localhost:00000,
       http.request.headers.x-datadog-endpoint-scan: scan-uuid-1,
       http.request.headers.x-datadog-security-test: test-uuid-2,
+      http.response.headers.content-type: text/html; charset=utf-8,
       http.route: {controller=home}/{action=index}/{id?},
       http.status_code: 200,
       http.url: http://localhost:00000/,

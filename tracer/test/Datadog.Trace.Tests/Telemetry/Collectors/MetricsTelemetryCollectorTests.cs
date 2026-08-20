@@ -1,4 +1,4 @@
-// <copyright file="MetricsTelemetryCollectorTests.cs" company="Datadog">
+﻿// <copyright file="MetricsTelemetryCollectorTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -106,6 +106,7 @@ public class MetricsTelemetryCollectorTests
         collector.RecordCountLogCreated(MetricTags.LogLevel.Debug, 3);
         collector.RecordCountWafInit(MetricTags.WafStatus.Success, 4);
         collector.RecordCountWafRequests(MetricTags.WafAnalysis.Normal, 5);
+        collector.RecordCountWafError(MetricTags.WafError.BindingError, 7);
         collector.RecordCountRaspRuleEval(MetricTags.RaspRuleType.Lfi, 5);
         collector.RecordCountRaspRuleMatch(MetricTags.RaspRuleTypeMatch.LfiSuccess, 3);
         collector.RecordCountRaspTimeout(MetricTags.RaspRuleType.Lfi, 2);
@@ -252,7 +253,16 @@ public class MetricsTelemetryCollectorTests
                 Metric = Count.WafRequests.GetName(),
                 Points = new[] { new { Value = 5 } },
                 Type = TelemetryMetricType.Count,
-                Tags = new[] { expectedWafTag, expectedRulesetTag, "rule_triggered:false", "request_blocked:false", "waf_timeout:false", "block_failure:false", "rate_limited:false", "input_truncated:false" },
+                Tags = new[] { expectedWafTag, expectedRulesetTag, "rule_triggered:false", "request_blocked:false", "waf_timeout:false", "block_failure:false", "rate_limited:false", "input_truncated:false", "waf_error:false" },
+                Common = true,
+                Namespace = NS.ASM,
+            },
+            new
+            {
+                Metric = Count.WafError.GetName(),
+                Points = new[] { new { Value = 7 } },
+                Type = TelemetryMetricType.Count,
+                Tags = new[] { expectedWafTag, expectedRulesetTag, "waf_error:-127" },
                 Common = true,
                 Namespace = NS.ASM,
             },
@@ -703,6 +713,54 @@ public class MetricsTelemetryCollectorTests
                .ContainSingle(x => x.Metric == Count.SpanFinished.GetName())
                .Which.Points.Should()
                .NotBeEmpty(); // we expect ~10 points, but don't assert that number to avoid flakiness
+        await collector.DisposeAsync();
+    }
+
+    [Fact]
+    public async Task DebuggerMemoryPressureMetrics_AreAggregated()
+    {
+        var collector = new MetricsTelemetryCollector(Timeout.InfiniteTimeSpan);
+
+        collector.RecordCountDebuggerMemoryPressureTransitions(MetricTags.DebuggerMemoryPressureState.Enter, MetricTags.DebuggerMemoryPressureTrigger.Memory);
+        collector.RecordCountDebuggerMemoryPressureTransitions(MetricTags.DebuggerMemoryPressureState.Exit, MetricTags.DebuggerMemoryPressureTrigger.None);
+        collector.RecordCountDebuggerMemoryPressureDisabled(MetricTags.DebuggerMemoryPressureDisabledReason.NoSignals);
+        collector.RecordCountDebuggerMemoryPressureMemoryUsagePct(MetricTags.DebuggerMemoryPressureState.Enter, MetricTags.DebuggerMemoryPressureMemoryBucket.GreaterThanOrEqual90);
+        collector.RecordCountDebuggerMemoryPressureGcActivity(MetricTags.DebuggerMemoryPressureState.Enter, MetricTags.DebuggerMemoryPressureGcBucket.From2To5);
+        collector.RecordCountDebuggerMemoryPressureDuration(MetricTags.DebuggerMemoryPressureDurationBucket.From1To5Seconds);
+        collector.AggregateMetrics();
+
+        var metrics = collector.GetMetrics();
+
+        metrics.Metrics.Should().Contain(x =>
+            x.Metric == Count.DebuggerMemoryPressureTransitions.GetName() &&
+            x.Tags != null &&
+            Enumerable.SequenceEqual(x.Tags, new[] { "state:enter", "trigger:memory" }) &&
+            x.Points.Single().Value == 1);
+        metrics.Metrics.Should().Contain(x =>
+            x.Metric == Count.DebuggerMemoryPressureTransitions.GetName() &&
+            x.Tags != null &&
+            Enumerable.SequenceEqual(x.Tags, new[] { "state:exit", "trigger:none" }) &&
+            x.Points.Single().Value == 1);
+        metrics.Metrics.Should().Contain(x =>
+            x.Metric == Count.DebuggerMemoryPressureDisabled.GetName() &&
+            x.Tags != null &&
+            Enumerable.SequenceEqual(x.Tags, new[] { "reason:no_signals" }) &&
+            x.Points.Single().Value == 1);
+        metrics.Metrics.Should().Contain(x =>
+            x.Metric == Count.DebuggerMemoryPressureMemoryUsagePct.GetName() &&
+            x.Tags != null &&
+            Enumerable.SequenceEqual(x.Tags, new[] { "state:enter", "bucket:gte_90" }) &&
+            x.Points.Single().Value == 1);
+        metrics.Metrics.Should().Contain(x =>
+            x.Metric == Count.DebuggerMemoryPressureGcActivity.GetName() &&
+            x.Tags != null &&
+            Enumerable.SequenceEqual(x.Tags, new[] { "state:enter", "bucket:2_5" }) &&
+            x.Points.Single().Value == 1);
+        metrics.Metrics.Should().Contain(x =>
+            x.Metric == Count.DebuggerMemoryPressureDuration.GetName() &&
+            x.Tags != null &&
+            Enumerable.SequenceEqual(x.Tags, new[] { "bucket:1_5s" }) &&
+            x.Points.Single().Value == 1);
         await collector.DisposeAsync();
     }
 }

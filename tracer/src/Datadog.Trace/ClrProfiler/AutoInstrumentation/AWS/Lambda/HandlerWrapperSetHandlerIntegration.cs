@@ -27,7 +27,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Lambda;
     ReturnTypeName = ClrNames.Void,
     ParameterTypeNames = new[] { "Amazon.Lambda.RuntimeSupport.LambdaBootstrapHandler" },
     MinimumVersion = "1.4.0",
-    MaximumVersion = "1.*.*",
+    MaximumVersion = "2.*.*",
     IntegrationName = IntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]

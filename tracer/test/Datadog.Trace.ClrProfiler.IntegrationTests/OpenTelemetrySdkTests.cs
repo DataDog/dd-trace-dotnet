@@ -6,9 +6,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net.Http;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Datadog.Trace.ClrProfiler.IntegrationTests.Helpers;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.TestHelpers;
@@ -25,6 +25,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     [Trait("RequiresDockerDependency", "true")]
     [Trait("DockerGroup", "1")]
     [UsesVerify]
+    [Collection(nameof(TestAgentOtlpCollection))]
     public class OpenTelemetrySdkTests : TracingIntegrationTest
     {
         private static readonly string CustomServiceName = "CustomServiceName";
@@ -76,46 +77,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             "network.protocol.name"
         };
 
-        // Single source of truth for translating an OTLP http/protobuf payload (rendered as JSON
-        // by the test agent with snake_case field names and string-form enum values) to the
-        // OTLP http/json shape (camelCase field names, integer enum values). When a new OTLP
-        // field or enum reaches the serializer, add the mapping here.
-        private static readonly (string From, string To)[] ProtobufToJsonFieldNameMappings =
-        {
-            ("\"resource_spans\"",        "\"resourceSpans\""),
-            ("\"scope_spans\"",           "\"scopeSpans\""),
-            ("\"trace_id\"",              "\"traceId\""),
-            ("\"span_id\"",               "\"spanId\""),
-            ("\"parent_span_id\"",        "\"parentSpanId\""),
-            ("\"start_time_unix_nano\"",  "\"startTimeUnixNano\""),
-            ("\"end_time_unix_nano\"",    "\"endTimeUnixNano\""),
-            ("\"time_unix_nano\"",        "\"timeUnixNano\""),
-            ("\"string_value\"",          "\"stringValue\""),
-            ("\"double_value\"",          "\"doubleValue\""),
-            ("\"int_value\"",             "\"intValue\""),
-            ("\"bool_value\"",            "\"boolValue\""),
-            ("\"array_value\"",           "\"arrayValue\""),
-        };
-
-        private static readonly (string From, string To)[] ProtobufToJsonEnumMappings =
-        {
-            ("\"kind\": \"SPAN_KIND_INTERNAL\"", "\"kind\": 1"),
-            ("\"kind\": \"SPAN_KIND_SERVER\"",   "\"kind\": 2"),
-            ("\"kind\": \"SPAN_KIND_CLIENT\"",   "\"kind\": 3"),
-            ("\"kind\": \"SPAN_KIND_PRODUCER\"", "\"kind\": 4"),
-            ("\"kind\": \"SPAN_KIND_CONSUMER\"", "\"kind\": 5"),
-            ("\"code\": \"STATUS_CODE_UNSET\"",  "\"code\": 0"),
-            ("\"code\": \"STATUS_CODE_OK\"",     "\"code\": 1"),
-            ("\"code\": \"STATUS_CODE_ERROR\"",  "\"code\": 2"),
-        };
-
         private readonly Regex _versionRegex = new(@"telemetry.sdk.version: (0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)");
         private readonly Regex _timeUnixNanoRegex = new(@"time_unix_nano"":([0-9]{10}[0-9]+)");
         private readonly Regex _exceptionStacktraceRegex = new(@"exception.stacktrace"":""System.ArgumentException: Example argument exception.*"",""");
         private readonly Regex _exceptionStacktraceOtlpRegex = new(@"string_value"": ""System.ArgumentException: Example argument exception.*""");
         private readonly Regex _exceptionStacktraceOtlpJsonRegex = new(@"stringValue"": ""System.ArgumentException: Example argument exception.*""");
-        private readonly Regex _traceIdRegex = new(@"^([a-fA-F0-9]{32})$");
-        private readonly Regex _spanIdRegex = new(@"^([a-fA-F0-9]{16})$");
 
         public OpenTelemetrySdkTests(ITestOutputHelper output)
             : base("OpenTelemetrySdk", output)
@@ -144,11 +110,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             foreach (var packageVersion in PackageVersions.OpenTelemetry)
             {
                 // Reduce CI flake by only testing the Datadog SDK. We can test the OTel SDK manually if needed.
-                // yield return [packageVersion[0], "false", "true", "http/protobuf", false];
-                yield return [packageVersion[0], "true", "false", "http/json", false];
-                yield return [packageVersion[0], "true", "false", "http/json", true];
-                yield return [packageVersion[0], "true", "false", "http/protobuf", false];
-                yield return [packageVersion[0], "true", "false", "http/protobuf", true];
+                // yield return [packageVersion[0], "false", "true", "http/protobuf", false, false];
+                yield return [packageVersion[0], "true", "false", "http/json", false, false];
+                yield return [packageVersion[0], "true", "false", "http/json", true, false];
+                yield return [packageVersion[0], "true", "false", "http/protobuf", false, false];
+                yield return [packageVersion[0], "true", "false", "http/protobuf", true, false];
+                yield return [packageVersion[0], "true", "false", "http/json", false, true];
+                yield return [packageVersion[0], "true", "false", "http/json", true, true];
+                yield return [packageVersion[0], "true", "false", "http/protobuf", false, true];
+                yield return [packageVersion[0], "true", "false", "http/protobuf", true, true];
             }
         }
 
@@ -267,9 +237,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [SkippableTheory]
         [Trait("Category", "EndToEnd")]
         [MemberData(nameof(GetOtlpTracesTestData))]
-        public async Task SubmitsOtlpTraces(string packageVersion, string datadogTracesEnabled, string otelTracesEnabled, string protocol, bool useAgentHostBackup)
+        public async Task SubmitsOtlpTraces(string packageVersion, string datadogTracesEnabled, string otelTracesEnabled, string protocol, bool useAgentHostBackup, bool openTelemetrySemanticsEnabled)
         {
             SetServiceVersion("1.0.x"); // We need this to be consistent with the in-code 1.0.x version set in the OTel SDK builder
+            SetEnvironmentVariable("DD_TRACE_OTEL_SEMANTICS_ENABLED", openTelemetrySemanticsEnabled.ToString());
 
             var parsedVersion = Version.Parse(!string.IsNullOrEmpty(packageVersion) ? packageVersion : "1.13.1");
             var runtimeMajor = Environment.Version.Major;
@@ -284,12 +255,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 _ => string.Empty
             };
 
-            snapshotName = otelTracesEnabled.Equals("true") ? $"_OTELv{snapshotName}" : $"{snapshotName}_DD";
+            snapshotName = otelTracesEnabled.Equals("true") ? $"_OTELv{snapshotName}" : $"{snapshotName}_DD{(openTelemetrySemanticsEnabled ? "_OtelSemantics" : string.Empty)}";
 
-            var testAgentHost = Environment.GetEnvironmentVariable("TEST_AGENT_HOST") ?? "localhost";
+            var testAgentHost = Environment.GetEnvironmentVariable("TEST_AGENT_HOST") ?? "127.0.0.1";
             var otlpPort = protocol == "grpc" ? 4317 : 4318;
 
-            await ClearTestAgentSession(testAgentHost);
+            await OtlpSnapshotHelper.ClearTestAgentSessionAsync(testAgentHost);
 
             // This is the key configuration that is set differently from previous test cases:
             // OTEL_TRACES_EXPORTER=otlp enables the DD SDK to emit traces (and trace stats) via OTLP
@@ -325,201 +296,29 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion ?? "1.13.1"))
             {
-                using var httpClient = new System.Net.Http.HttpClient();
-                var tracesResponse = await httpClient.GetAsync($"http://{testAgentHost}:4318/test/session/traces");
-                tracesResponse.EnsureSuccessStatusCode();
-
-                var tracesJson = await tracesResponse.Content.ReadAsStringAsync();
-                var tracesRequests = JToken.Parse(tracesJson);
+                // The sample exports traces during shutdown, so there can be a brief delay
+                // between process exit and the data appearing in the test-agent. Poll with
+                // retries to avoid a race, matching the pattern used by SubmitsOtlpMetrics
+                // and SubmitsOtlpLogs.
+                var tracesRequests = await OtlpSnapshotHelper.WaitForTestAgentDataAsync($"http://{testAgentHost}:4318/test/session/traces");
 
                 tracesRequests.Should().NotBeNullOrEmpty();
 
                 // Normalize the data in resource attributes and spans
-                var resourceSpansKey = isJson ? "resourceSpans" : "resource_spans";
-                var scopeSpansKey = isJson ? "scopeSpans" : "scope_spans";
-                var stringValueKey = isJson ? "stringValue" : "string_value";
-                var traceIdKey = isJson ? "traceId" : "trace_id";
-                var spanIdKey = isJson ? "spanId" : "span_id";
-                var parentSpanIdKey = isJson ? "parentSpanId" : "parent_span_id";
-                var startTimeUnixNanoKey = isJson ? "startTimeUnixNano" : "start_time_unix_nano";
-                var endTimeUnixNanoKey = isJson ? "endTimeUnixNano" : "end_time_unix_nano";
-                var timeUnixNanoKey = isJson ? "timeUnixNano" : "time_unix_nano";
-
-                foreach (var attribute in tracesRequests.SelectTokens("$..resource.attributes[?(@.key == 'telemetry.sdk.version')]"))
-                {
-                    attribute["value"]![stringValueKey] = "sdk-version";
-                }
-
-                foreach (var attribute in tracesRequests.SelectTokens("$..resource.attributes[?(@.key == 'telemetry.sdk.name')]"))
-                {
-                    attribute["value"]![stringValueKey] = "sdk-name";
-                }
-
-                foreach (var attribute in tracesRequests.SelectTokens("$..resource.attributes[?(@.key == 'git.commit.sha')]"))
-                {
-                    attribute["value"]![stringValueKey] = "normalized-git-commit-sha";
-                }
-
-                foreach (var span in tracesRequests.SelectTokens("$..spans[*]"))
-                {
-                    static string ToHexString(byte[] bytes, int length)
-                    {
-                        bytes.Length.Should().Be(length);
-
-                        var traceId = new byte[length * 2];
-                        for (int i = 0; i < length; i++)
-                        {
-                            traceId[2 * i] = (byte)(bytes[i] >> 4);         // high 4 bits
-                            traceId[(2 * i) + 1] = (byte)(bytes[i] & 0x0F); // low 4 bits
-                        }
-
-                        // Convert each nibble (0-15) to its hex character
-                        var result = new char[length * 2];
-                        for (int i = 0; i < length * 2; i++)
-                        {
-                            result[i] = (char)(traceId[i] < 10 ? '0' + traceId[i] : 'a' + traceId[i] - 10);
-                        }
-
-                        return new string(result);
-                    }
-
-                    static string ToTraceId(byte[] bytes) => ToHexString(bytes, 16);
-
-                    static string ToSpanId(byte[] bytes) => ToHexString(bytes, 8);
-
-                    // Parse unstable information from the span
-                    string traceIdData = isJson ? span[traceIdKey].ToString()
-                                                : ToTraceId(Convert.FromBase64String(span[traceIdKey].ToString()));
-                    string spanIdData = isJson ? span[spanIdKey].ToString()
-                                                : ToSpanId(Convert.FromBase64String(span[spanIdKey].ToString()));
-                    var spanStartTimeUnixNano = long.Parse(span[startTimeUnixNanoKey].ToString());
-                    var spanEndTimeUnixNano = long.Parse(span[endTimeUnixNanoKey].ToString());
-
-                    // Add strong assertions on unstable span information
-                    spanStartTimeUnixNano.Should().BeGreaterThanOrEqualTo(applicationStartTimeUnixNano);
-                    spanEndTimeUnixNano.Should().BeGreaterThanOrEqualTo(spanStartTimeUnixNano);
-                    traceIdData.Should().MatchRegex(_traceIdRegex);
-                    spanIdData.Should().MatchRegex(_spanIdRegex);
-                    if (span[parentSpanIdKey] != null)
-                    {
-                        string parentSpanIdData = isJson ? span[parentSpanIdKey]?.ToString()
-                                                        : ToSpanId(Convert.FromBase64String(span[parentSpanIdKey].ToString()));
-                        parentSpanIdData.Should().MatchRegex(_spanIdRegex);
-                    }
-
-                    // Normalize the unstable span information for our snapshots
-                    span[startTimeUnixNanoKey] = "0";
-                    span[endTimeUnixNanoKey] = "0";
-                    span[traceIdKey] = "normalized-trace-id";
-                    span[spanIdKey] = "normalized-span-id";
-                    if (span[parentSpanIdKey] != null)
-                    {
-                        span[parentSpanIdKey] = "normalized-parent-span-id";
-                    }
-                }
-
-                foreach (var attribute in tracesRequests.SelectTokens("$..spans[*].attributes[?(@.key == 'otel.trace_id')]"))
-                {
-                    attribute["value"]![stringValueKey] = "normalized-otel-trace-id";
-                }
-
-                foreach (var link in tracesRequests.SelectTokens("$..links[*]"))
-                {
-                    if (isJson)
-                    {
-                        link[traceIdKey].ToString().Should().MatchRegex(_traceIdRegex);
-                        link[spanIdKey].ToString().Should().MatchRegex(_spanIdRegex);
-                    }
-                    else
-                    {
-                        // We need to emit each byte as a character, so use ASCII encoding
-                        // var decodedTraceId = System.Text.Encoding.ASCII.GetString(Convert.FromBase64String(link[traceIdKey].ToString()));
-                        // var decodedSpanId = System.Text.Encoding.ASCII.GetString(Convert.FromBase64String(link[spanIdKey].ToString()));
-                        // decodedTraceId.Should().MatchRegex(_traceIdRegex);
-                        // decodedSpanId.Should().MatchRegex(_spanIdRegex);
-                    }
-
-                    link[traceIdKey] = "normalized-trace-id";
-                    link[spanIdKey] = "normalized-span-id";
-                }
-
-                foreach (var @event in tracesRequests.SelectTokens("$..events[*]"))
-                {
-                    ((JObject)@event).Remove(timeUnixNanoKey);
-                    ((JObject)@event).AddFirst(new JProperty(timeUnixNanoKey, "0"));
-                }
+                var names = OtlpFieldNames.For(isJson);
+                OtlpSnapshotHelper.NormalizeResourceAttributes(tracesRequests, names);
+                OtlpSnapshotHelper.NormalizeSpans(tracesRequests, names, applicationStartTimeUnixNano);
 
                 // For the Datadog SDK, perform more sanitization
                 string finalJson;
                 if (datadogTracesEnabled.Equals("true"))
                 {
-                    // First, for the DD SDK, assert that the resource attributes for all requests are identical
-                    // This is analogous to DD_SERVICE, DD_VERSION, DD_ENV, etc. that define
-                    // metadata for the telemetry at an application and host level.
-                    // This is different for OTel SDK application since the in-app code uses the SDK to create a
-                    // 2nd, completely distinct, Traces SDK instance
-
-                    JToken previousResourceAttributes = null;
-                    foreach (var tracesRequest in tracesRequests)
-                    {
-                        tracesRequest[resourceSpansKey].Should().HaveCount(1);
-                        var resourceAttributes = tracesRequest[resourceSpansKey][0]["resource"]["attributes"];
-
-                        if (previousResourceAttributes == null)
-                        {
-                            previousResourceAttributes = resourceAttributes;
-                        }
-                        else
-                        {
-                            JToken.DeepEquals(previousResourceAttributes, resourceAttributes).Should().BeTrue();
-                            previousResourceAttributes = resourceAttributes;
-                        }
-                    }
-
-                    // Next, assert that we only have a singular InstrumentationScope in each request.
-                    // In OpenTelemetry, an InstrumentationScope is a way to group spans by the library that produced them.
-                    // We should be respecting this for each library/ActivitySource, but right now the DD SDK doesn't
-                    // keep track of that information, so consolidate them into one single, empty InstrumentationScope.
-                    // TODO: Properly track spans per instrumentation scope.
-                    JArray firstSpans = null;
-                    foreach (var tracesRequest in tracesRequests)
-                    {
-                        tracesRequest[resourceSpansKey][0][scopeSpansKey].Should().HaveCount(1);
-                        var spans = tracesRequest[resourceSpansKey][0][scopeSpansKey][0]["spans"] as JArray;
-
-                        if (firstSpans == null)
-                        {
-                            firstSpans = spans;
-                        }
-                        else
-                        {
-                            foreach (var span in spans)
-                            {
-                                firstSpans.Add(span);
-                            }
-                        }
-                    }
-
-                    // Now re-order and trim down to one single request
-                    // This means the output is not a true 1:1 mapping of the input spans, but it's good enough for now
-                    // and will make the results stable.
-                    // Also, sort the spans by name to stabilize
-                    var sortedSpans = new JArray(firstSpans.OrderBy(s => s["name"]!.ToString()));
-                    tracesRequests[0][resourceSpansKey][0][scopeSpansKey][0]["spans"] = sortedSpans;
-                    finalJson = tracesRequests[0].ToString(Formatting.Indented);
+                    finalJson = OtlpSnapshotHelper.MergeDatadogRequests(tracesRequests, names)
+                                                  .ToString(Formatting.Indented);
                 }
                 else
                 {
-                    // Sort the spans by name to stabilize
-                    foreach (var scopeSpan in tracesRequests.SelectTokens($"$..{scopeSpansKey}[*]"))
-                    {
-                        if (scopeSpan["spans"] is JArray spansArray)
-                        {
-                            var sorted = new JArray(spansArray.OrderBy(s => s["name"]?.ToString()));
-                            scopeSpan["spans"] = sorted;
-                        }
-                    }
-
+                    OtlpSnapshotHelper.SortSpansPerScope(tracesRequests, names);
                     finalJson = tracesRequests.ToString(Formatting.Indented);
                 }
 
@@ -530,7 +329,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 // Add scrubbers only for http/protobuf
                 if (protocol == "http/protobuf")
                 {
-                    AddProtobufToJsonScrubbers(settings);
+                    OtlpSnapshotHelper.AddProtobufToJsonScrubbers(settings);
                 }
 
                 var fileName = $"{nameof(OpenTelemetrySdkTests)}.SubmitsOtlpTraces{snapshotName}";
@@ -563,7 +362,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             var testAgentHost = Environment.GetEnvironmentVariable("TEST_AGENT_HOST") ?? "localhost";
             var otlpPort = protocol == "grpc" ? 4317 : 4318;
 
-            await ClearTestAgentSession(testAgentHost);
+            await OtlpSnapshotHelper.ClearTestAgentSessionAsync(testAgentHost);
 
             SetEnvironmentVariable("DD_ENV", string.Empty);
             SetEnvironmentVariable("DD_SERVICE", string.Empty);
@@ -597,7 +396,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion ?? "1.13.1"))
             {
-                var metricsData = await WaitForTestAgentData($"http://{testAgentHost}:4318/test/session/metrics");
+                var metricsData = await OtlpSnapshotHelper.WaitForTestAgentDataAsync($"http://{testAgentHost}:4318/test/session/metrics");
                 metricsData.Should().NotBeNullOrEmpty();
 
                 foreach (var attribute in metricsData.SelectTokens("$..resource.attributes[?(@.key == 'telemetry.sdk.version')]"))
@@ -643,7 +442,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             SkipOn.Platform(SkipOn.PlatformValue.MacOs);
             var testAgentHost = Environment.GetEnvironmentVariable("TEST_AGENT_HOST") ?? "localhost";
 
-            await ClearTestAgentSession(testAgentHost);
+            await OtlpSnapshotHelper.ClearTestAgentSessionAsync(testAgentHost);
 
             SetEnvironmentVariable("DD_RUNTIME_METRICS_ENABLED", "true");
             SetEnvironmentVariable("DD_METRICS_OTEL_ENABLED", "true");
@@ -656,7 +455,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             using var agent = EnvironmentHelper.GetMockAgent(useStatsD: true);
             using (await RunSampleAndWaitForExit(agent))
             {
-                var metricsData = await WaitForTestAgentData($"http://{testAgentHost}:4318/test/session/metrics");
+                var metricsData = await OtlpSnapshotHelper.WaitForTestAgentDataAsync($"http://{testAgentHost}:4318/test/session/metrics");
                 metricsData.Should().NotBeNullOrEmpty();
 
                 // Deduplicate metrics across multiple export intervals, keeping one per metric name
@@ -730,7 +529,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             var testAgentHost = Environment.GetEnvironmentVariable("TEST_AGENT_HOST") ?? "localhost";
             var otlpPort = protocol == "grpc" ? 4317 : 4318;
 
-            await ClearTestAgentSession(testAgentHost);
+            await OtlpSnapshotHelper.ClearTestAgentSessionAsync(testAgentHost);
 
             SetEnvironmentVariable("DD_ENV", "testing");
             SetEnvironmentVariable("DD_SERVICE", "OtlpLogsService");
@@ -767,7 +566,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             {
                 var endTimeNanoseconds = DateTimeOffset.UtcNow.ToUnixTimeNanoseconds();
 
-                var logsData = await WaitForTestAgentData($"http://{testAgentHost}:4318/test/session/logs");
+                var logsData = await OtlpSnapshotHelper.WaitForTestAgentDataAsync($"http://{testAgentHost}:4318/test/session/logs");
                 logsData.Should().NotBeNullOrEmpty();
                 logsData.SelectTokens("$..log_records[*]").Should().AllSatisfy(logRecord =>
                 {
@@ -874,69 +673,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         }
 #endif
 
-        /// <summary>
-        /// Clears the test-agent session, retrying if the agent is not yet ready.
-        /// Ensures the OTLP HTTP endpoint is accepting connections before tests proceed.
-        /// </summary>
-        private static async Task ClearTestAgentSession(string testAgentHost, int maxRetries = 5, int delayMs = 1000)
-        {
-            using var httpClient = new HttpClient { Timeout = TimeSpan.FromSeconds(5) };
-            var url = $"http://{testAgentHost}:4318/test/session/clear";
-
-            for (var attempt = 1; attempt <= maxRetries; attempt++)
-            {
-                try
-                {
-                    var response = await httpClient.GetAsync(url);
-                    response.EnsureSuccessStatusCode();
-                    return;
-                }
-                catch (Exception) when (attempt < maxRetries)
-                {
-                    await Task.Delay(delayMs);
-                }
-            }
-
-            // Final attempt -- let it throw if it fails
-            var finalResponse = await httpClient.GetAsync(url);
-            finalResponse.EnsureSuccessStatusCode();
-        }
-
-        /// <summary>
-        /// Polls the test-agent for data until non-empty results are returned or timeout is reached.
-        /// The sample app exports data during shutdown, so there can be a brief delay
-        /// between process exit and data appearing in the test-agent. The timeout is generous
-        /// because first-time gRPC connections (TCP+HTTP/2+TLS handshake) plus tracer shutdown
-        /// flushing can stack up on slower CI runners.
-        /// </summary>
-        private static async Task<JToken> WaitForTestAgentData(string url, int timeoutSeconds = 60, int pollIntervalMs = 500)
-        {
-            using var httpClient = new HttpClient { Timeout = TimeSpan.FromSeconds(10) };
-            var deadline = DateTime.UtcNow.AddSeconds(timeoutSeconds);
-
-            while (DateTime.UtcNow < deadline)
-            {
-                var response = await httpClient.GetAsync(url);
-                response.EnsureSuccessStatusCode();
-
-                var json = await response.Content.ReadAsStringAsync();
-                var data = JToken.Parse(json);
-
-                if (data.HasValues)
-                {
-                    return data;
-                }
-
-                await Task.Delay(pollIntervalMs);
-            }
-
-            // Final attempt -- return whatever we get so the caller's assertion shows the actual value
-            var finalResponse = await httpClient.GetAsync(url);
-            finalResponse.EnsureSuccessStatusCode();
-            var finalJson = await finalResponse.Content.ReadAsStringAsync();
-            return JToken.Parse(finalJson);
-        }
-
         private static string GetSuffix(string packageVersion)
         {
             // The snapshots are only different in .NET Core 2.1 - .NET 5 with package version 1.0.1
@@ -963,19 +699,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
 
             return string.Empty;
-        }
-
-        private static void AddProtobufToJsonScrubbers(VerifyTests.VerifySettings settings)
-        {
-            foreach (var (from, to) in ProtobufToJsonFieldNameMappings)
-            {
-                settings.AddSimpleScrubber(from, to);
-            }
-
-            foreach (var (from, to) in ProtobufToJsonEnumMappings)
-            {
-                settings.AddSimpleScrubber(from, to);
-            }
         }
     }
 }

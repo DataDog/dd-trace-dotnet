@@ -1,5 +1,5 @@
-﻿Template:
-Segments: 
+Template:
+Segments:
 
 {
     "index": [
@@ -9,8 +9,7 @@ Segments:
         0
     ]
 }
-Expressions: 
-(
+Expressions: (
     scopeMember,
     scopeMember,
     scopeMember,
@@ -50,10 +49,10 @@ Expressions:
     var $dd_el_result = (((DebuggerExpressionLanguageTests.TestStruct.NestedObject)CustomArrayLocal[0]) == null)
         ? "null"
         : {
-            fieldsArray = ((DebuggerExpressionLanguageTests.TestStruct.NestedObject)CustomArrayLocal[0])
-                .GetType()
-                .GetFields(
-                    BindingFlags.DeclaredOnly | BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic)
+            fieldsArray = ProbeExpressionParser<string>
+                .GetSafeFieldsForDump(
+                    ((DebuggerExpressionLanguageTests.TestStruct.NestedObject)CustomArrayLocal[0]).GetType().GetFields(
+                        BindingFlags.DeclaredOnly | BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic))
                 .OrderBy(fieldInfo => fieldInfo.MetadataToken)
                 .ToArray();
             fieldValues = new StringBuilder();
@@ -64,7 +63,8 @@ Expressions:
                 {
                     fieldValues.Append(
                         ProbeExpressionParser<string>.DumpObject(
-                            fieldsArray[index].GetValue(
+                            ProbeExpressionParser<string>.GetFieldValueForDump(
+                                fieldsArray[index],
                                 (object)((DebuggerExpressionLanguageTests.TestStruct.NestedObject)CustomArrayLocal[0])),
                             fieldsArray[index].FieldType,
                             fieldsArray[index].Name,
@@ -92,4 +92,4 @@ Expressions:
 
     return $dd_el_result;
 }
-Result: The result of the expression is: ParentProtectedStaticMember=Hello from parent protected static member, _parentPrivateMember=Hello from parent private member, _circleRef=Datadog.Trace.Tests.Debugger.DebuggerExpressionLanguageTests+TestStruct+NestedObject, _timeSpan=00:00:00, {[one, 1], [two, 2], [three, 3], ...}, ...
+Result: The result of the expression is: _parentPrivateMember=Hello from parent private member, _circleRef=Datadog.Trace.Tests.Debugger.DebuggerExpressionLanguageTests+TestStruct+NestedObject, _timeSpan=00:00:00, {[one, 1], [two, 2], [three, 3], ...}, _ienumerable=System.Collections.Generic.IEnumerable`1[[System.Int32, Culture=neutral]], ...

@@ -267,6 +267,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                                 case "My Custom 3|1: CustomMultipleResultsTestMethodAttributeTest":
                                 case "My Custom 3|2: CustomMultipleResultsTestMethodAttributeTest":
                                     AssertTargetSpanEqual(targetSpan, TestTags.Status, TestTags.StatusPass);
+                                    AssertTargetSpanEqual(
+                                        targetSpan,
+                                        TestTags.Parameters,
+                                        $"{{\"metadata\":{{\"test_name\":\"{targetSpan.Tags[TestTags.Name]}\"}},\"arguments\":{{}}}}");
                                     break;
                             }
 

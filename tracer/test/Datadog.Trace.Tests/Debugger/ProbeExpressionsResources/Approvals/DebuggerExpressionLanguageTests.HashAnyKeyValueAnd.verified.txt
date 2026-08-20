@@ -1,4 +1,4 @@
-﻿Condition:
+Condition:
 Json:
 {
   "any": [
@@ -58,10 +58,43 @@ Expression: (
     var StringArg = (string)scopeMemberArray[18].Value;
     var CollectionArg = (List<string>)scopeMemberArray[19].Value;
     var NestedObjectArg = (DebuggerExpressionLanguageTests.TestStruct.NestedObject)scopeMemberArray[20].Value;
-    var $dd_el_result = DictionaryLocal.Any(
-        stringStringKeyValuePair => (stringStringKeyValuePair.Key == "hello") && (ProbeExpressionParser<bool>.ShouldRedactDictionaryKey(stringStringKeyValuePair.Key)
-            ? false
-            : stringStringKeyValuePair.Value == "world"));
+    var $dd_el_result =
+    {
+        KeyValuePair<string, string> stringStringKeyValuePair;
+        var enumerable = (IEnumerable<KeyValuePair<string, string>>)DictionaryLocal;
+        var enumerator = enumerable.GetEnumerator();
+        var anyResult = false;
+        try
+        {
+            while (true)
+            {
+                if (!enumerator.MoveNext())
+                {
+                    break;
+                }
+
+                stringStringKeyValuePair = enumerator.Current;
+
+                if ((stringStringKeyValuePair.Key == "hello") &&
+                    (ProbeExpressionParser<bool>.ShouldRedactDictionaryKey(stringStringKeyValuePair.Key)
+                        ? false
+                        : stringStringKeyValuePair.Value == "world"))
+                {
+                    anyResult = true;
+                    break;
+                }
+            }
+        }
+        finally
+        {
+            if (enumerator != null)
+            {
+                enumerator.Dispose();
+            }
+        }
+
+        return anyResult;
+    };
 
     return $dd_el_result;
 }

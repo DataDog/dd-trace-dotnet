@@ -5,6 +5,7 @@
 
 #nullable enable
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.Reflection;
 using System.Threading.Tasks;
 using Datadog.Trace.AppSec;
@@ -242,6 +243,53 @@ namespace Datadog.Trace.Security.Unit.Tests
             rootTestScope.Span.Context.TraceContext.SamplingPriority.Should().Be(SamplingPriorityValues.AutoKeep);
         }
 
+#if !NETFRAMEWORK
+        [Fact]
+        public async Task AddResponseHeadersToSpan_WithNoSecurityEvent_AlwaysAddsContentTypeAndContentLength()
+        {
+            var settings = TracerSettings.Create(new Dictionary<string, object>());
+            await using var tracer = TracerHelper.Create(settings);
+            var rootTestScope = (Scope)tracer.StartActive("test.trace");
+            var transport = new StubResponseHeadersTransport(new NameValueCollection
+            {
+                { "content-type", "application/json" },
+                { "content-length", "42" },
+                { "Content-Encoding", "gzip" },
+                { "Content-Language", "en" },
+            });
+
+            new SecurityReporter(rootTestScope.Span, transport, isRoot: true).AddResponseHeadersToSpan();
+
+            rootTestScope.Span.GetTag("http.response.headers.content-type").Should().Be("application/json");
+            rootTestScope.Span.GetTag("http.response.headers.content-length").Should().Be("42");
+            rootTestScope.Span.GetTag("http.response.headers.content-encoding").Should().BeNull();
+            rootTestScope.Span.GetTag("http.response.headers.content-language").Should().BeNull();
+        }
+
+        [Fact]
+        public async Task AddResponseHeadersToSpan_WithSecurityEvent_AddsAllResponseHeaders()
+        {
+            var settings = TracerSettings.Create(new Dictionary<string, object>());
+            await using var tracer = TracerHelper.Create(settings);
+            var rootTestScope = (Scope)tracer.StartActive("test.trace");
+            rootTestScope.Span.SetTag(Tags.AppSecEvent, "true");
+            var transport = new StubResponseHeadersTransport(new NameValueCollection
+            {
+                { "content-type", "application/json" },
+                { "content-length", "42" },
+                { "Content-Encoding", "gzip" },
+                { "Content-Language", "en" },
+            });
+
+            new SecurityReporter(rootTestScope.Span, transport, isRoot: true).AddResponseHeadersToSpan();
+
+            rootTestScope.Span.GetTag("http.response.headers.content-type").Should().Be("application/json");
+            rootTestScope.Span.GetTag("http.response.headers.content-length").Should().Be("42");
+            rootTestScope.Span.GetTag("http.response.headers.content-encoding").Should().Be("gzip");
+            rootTestScope.Span.GetTag("http.response.headers.content-language").Should().Be("en");
+        }
+#endif
+
         private static void AssertTraceTaggingAttributes(IResult result, string expectedAgentPrefix)
         {
             result.WafSpanAttributes.Should().NotBeNullOrEmpty("trace-tagging rule should populate span attributes");
@@ -314,6 +362,34 @@ namespace Datadog.Trace.Security.Unit.Tests
             result.Should().NotBeNull();
             result!.Timeout.Should().BeFalse();
             return result;
+        }
+
+        private sealed class StubResponseHeadersTransport : HttpTransportBase
+        {
+            private readonly NameValueCollection _responseHeaders;
+
+            public StubResponseHeadersTransport(NameValueCollection responseHeaders)
+            {
+                _responseHeaders = responseHeaders;
+            }
+
+            public override HttpContext Context => throw new System.NotImplementedException();
+
+            internal override bool IsBlocked => false;
+
+            internal override int? StatusCode => null;
+
+            internal override IDictionary<string, object>? RouteData => null;
+
+            internal override bool ReportedExternalWafsRequestHeaders { get; set; }
+
+            internal override IHeadersCollection? GetRequestHeaders() => null;
+
+            internal override IHeadersCollection GetResponseHeaders() => new NameValueHeadersCollection(_responseHeaders);
+
+            internal override void MarkBlocked()
+            {
+            }
         }
 
         private sealed class NoopHttpTransport : HttpTransportBase

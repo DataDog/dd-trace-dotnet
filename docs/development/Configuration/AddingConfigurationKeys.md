@@ -45,14 +45,19 @@ ConfigurationKeys.ProductName.cs. Without a product name, the keys will go in th
 **Required fields (mandatory):**
 - `implementation`: The implementation identifier
   - `A` being the default one, it needs to match the registry implementation with the same type and default values
+- `scope`: Declares which runtime components read this variable. Valid values:
+  - `managed` — read only by managed (C#) code; a `ConfigurationKeys.*` constant is generated
+  - `native` — read only by native (C++) code; **no C# constant is generated**, but the entry is required in this registry for coverage tracking
+  - `managed, native` — read by both; a C# constant is generated
 - `type`: The type of the configuration value (for example `string`, `boolean`, `int`, `decimal`)
 - `default`: The default value applied by the tracer when the env var is not set. Use `null` if there is no default.
+- `documentation`: XML documentation for the key (supports `<see>`, `<seealso>`, `<c>` tags; do **not** include `<summary>` tags). Required for all entries — the source generator emits a build error (DDSG0008) when missing.
 
 **Optional fields:**
 - `product`: Groups the key into a product-specific partial class (e.g., `OpenTelemetry`)
 - `aliases`: A list of fallback environment variable names checked in order when the primary key is not found
-- `const_name`: Overrides the auto-generated PascalCase constant name (useful for backward compatibility)
-- `documentation`: XML documentation for the key (supports `<see>`, `<seealso>`, `<c>` tags; do **not** include `<summary>` tags)
+- `const_name`: Overrides the auto-generated constant name (useful for backward compatibility). For `managed`, the default is PascalCase.
+- `sensitive`: Marks a value for redaction in configuration telemetry. Use `true` whenever the configured value should not be recorded, including structured values that may contain sensitive data. The value must be `true` or `false` (case-insensitive); any other value is a YAML parse error.
 
 These fields are mandatory to keep the configuration registry complete and to ensure consistent behavior and documentation across products.
 
@@ -62,6 +67,7 @@ version: '2'
 supportedConfigurations:
   DD_TRACE_SAMPLE_RATE:
   - implementation: A
+    scope: managed
     type: decimal
     default: null
     documentation: |-
@@ -69,6 +75,7 @@ supportedConfigurations:
       Value should be between 0.0 and 1.0.
   OTEL_EXPORTER_OTLP_TIMEOUT:
   - implementation: A
+    scope: managed
     type: int
     default: null
     product: OpenTelemetry
@@ -89,6 +96,7 @@ Configuration keys can have **aliases** that are checked in order of appearance 
 supportedConfigurations:
   OTEL_EXPORTER_OTLP_LOGS_TIMEOUT:
   - implementation: A
+    scope: managed
     type: int
     default: null
     product: OpenTelemetry
@@ -125,6 +133,7 @@ If you need to explicitly control the constant name (e.g., for backward compatib
 supportedConfigurations:
   DD_YOUR_CUSTOM_KEY:
   - implementation: A
+    scope: managed
     type: string
     default: null
     const_name: YourPreferredConstantName
@@ -173,9 +182,22 @@ The codebase includes Roslyn analyzers that enforce the use of configuration key
 
 - **`ConfigurationBuilderWithKeysAnalyzer`** - Enforces that `ConfigurationBuilder.WithKeys()` method calls only accept string constants from `ConfigurationKeys` or `PlatformKeys` classes, not hardcoded strings or variables.
 
+For keys marked `sensitive: true`, the analyzer also enforces telemetry redaction at compile time. Read a string through `AsRedactedString()` or `AsRedactedStringResult()`. Use `AsRedactedDictionaryResult()` for dictionary-valued settings, or `AsStringResult(..., recordValue: false)` when the explicit `false` is a compile-time constant. Other accessors and storing the intermediate `WithKeys()` result are rejected because they could record the value.
+
+```csharp
+var apiKey = config.WithKeys(ConfigurationKeys.ApiKey).AsRedactedString();
+var result = config.WithKeys(ConfigurationKeys.ApiKey)
+                   .AsStringResult(validator: null, converter: null, recordValue: false);
+var headers = config.WithKeys(ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsHeaders)
+                    .AsRedactedDictionaryResult(separator: '=');
+```
+
+Aliases use the normal `WithKeys()` fallback chain. When a key marked for redaction falls back to an alias, the selected value remains redacted because the redacted accessor records no value in telemetry.
+
 ##### Diagnostic rules:
 - **DD0007**: Triggers when hardcoded string literals are used instead of configuration key constants
 - **DD0008**: Triggers when variables or expressions are used instead of configuration key constants
+- **DD0015**: Triggers when a configuration key marked for telemetry redaction is not read through `AsRedactedString`, `AsRedactedStringResult`, `AsRedactedDictionaryResult`, or `AsStringResult` with compile-time `recordValue: false`
 
 #### 2. EnvironmentGetEnvironmentVariableAnalyzer
 
@@ -198,33 +220,13 @@ The codebase includes Roslyn analyzers that enforce the use of configuration key
 
 These analyzers help prevent typos and ensure consistency across the codebase by enforcing compile-time validation of configuration keys.
 
-### 6. Add to Telemetry Normalization Rules
-
-Configuration keys are reported in telemetry with normalized names. Add your key to the normalization rules:
-
-**File:** `tracer/test/Datadog.Trace.Tests/Telemetry/config_norm_rules.json`
-
-```json
-{
-  "YOUR_ENV_VAR_NAME": "normalized_telemetry_name"
-}
-```
-
-**Example:**
-```json
-{
-  "OTEL_EXPORTER_OTLP_LOGS_TIMEOUT": "otel_exporter_otlp_logs_timeout"
-}
-```
-
-**Important:** The `config_norm_rules.json` file is a copy from the [dd-go repository](https://github.com/DataDog/dd-go). After updating this file locally, you must also submit a PR to update the canonical version in the dd-go repository to keep the normalization rules synchronized across all Datadog tracers.
-
-### 7. Test Your Changes
+### 6. Test Your Changes
 
 1. **Verify generation:** Check that your key appears in the generated files
-2. **Telemetry tests:** Ensure telemetry normalization tests pass in `tracer/test/Datadog.Trace.Tests/Telemetry/`
-3. **Integration tests:** Test the configuration key in real scenarios where it's used
-4. **Documentation:** Verify the `documentation` field renders correctly in the generated XML docs
+2. **Integration tests:** Test the configuration key in real scenarios where it's used
+3. **Documentation:** Verify the `documentation` field renders correctly in the generated XML docs
+
+> **Note:** Configuration keys are reported in telemetry with their raw names; the Datadog backend handles normalization, so there is no local normalization rules file to update.
 
 ## Configuration Key Organization
 
@@ -236,6 +238,7 @@ Use the `product` field to organize related keys into nested classes:
 supportedConfigurations:
   OTEL_EXPORTER_OTLP_ENDPOINT:
   - implementation: A
+    scope: managed
     type: string
     default: null
     product: OpenTelemetry
@@ -265,6 +268,7 @@ Generates: `ConfigurationKeys.OpenTelemetry.ExporterOtlpEndpoint`
 supportedConfigurations:
   DD_TRACE_SAMPLE_RATE:
   - implementation: A
+    scope: managed
     type: decimal
     default: null
     documentation: |-
@@ -286,6 +290,7 @@ var rate = source.GetDouble(ConfigurationKeys.GlobalSamplingRate);
 supportedConfigurations:
   OTEL_EXPORTER_OTLP_LOGS_TIMEOUT:
   - implementation: A
+    scope: managed
     type: int
     default: null
     product: OpenTelemetry
@@ -298,6 +303,7 @@ supportedConfigurations:
       <seealso cref="Datadog.Trace.Configuration.TracerSettings.OtlpLogsTimeoutMs"/>
   OTEL_EXPORTER_OTLP_TIMEOUT:
   - implementation: A
+    scope: managed
     type: int
     default: null
     product: OpenTelemetry
@@ -320,6 +326,7 @@ var timeout = source.GetInt32(ConfigurationKeys.OpenTelemetry.ExporterOtlpLogsTi
 supportedConfigurations:
   DD_TRACE_128_BIT_TRACEID_GENERATION_ENABLED:
   - implementation: A
+    scope: managed
     type: boolean
     default: 'true'
     product: FeatureFlags
@@ -353,13 +360,6 @@ dotnet build tracer/src/Datadog.Trace/Datadog.Trace.csproj
 3. Build succeeded without errors
 4. Looking in the correct namespace/product class
 
-### Telemetry tests failing
-
-**Check:**
-1. Added key to `config_norm_rules.json`
-2. Normalized name matches `telemetry_name` in JSON
-3. All tests in `tracer/test/Datadog.Trace.Tests/Telemetry/` pass
-
 ### Documentation not appearing
 
 **Check:**
@@ -381,5 +381,4 @@ dotnet build tracer/src/Datadog.Trace/Datadog.Trace.csproj
   - `tracer/src/Datadog.Trace.SourceGenerators/Configuration/ConfigurationKeysGenerator.cs` - Generates configuration key constants
   - `tracer/src/Datadog.Trace.SourceGenerators/Configuration/ConfigKeyAliasesSwitcherGenerator.cs` - Generates alias resolution logic
 - **Configuration source:** `tracer/src/Datadog.Trace/Configuration/supported-configurations.yaml` - Single source of truth for all configuration keys, aliases, constant name overrides, and documentation
-- **Telemetry rules:** `tracer/test/Datadog.Trace.Tests/Telemetry/config_norm_rules.json`
 - **Generated output:** `tracer/src/Datadog.Trace/Generated/<tfm>/Datadog.Trace.SourceGenerators/`

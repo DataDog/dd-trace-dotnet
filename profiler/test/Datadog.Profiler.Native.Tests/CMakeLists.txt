@@ -18,15 +18,20 @@ if (IS_ALPINE)
 endif()
 
 if (RUN_ASAN)
-    add_compile_options(-g -fsanitize=address -fno-omit-frame-pointer)
+    add_compile_options(-g -fsanitize=address -fno-omit-frame-pointer -DDD_SANITIZERS)
 endif()
 
 if (RUN_UBSAN)
-    add_compile_options(-fsanitize=undefined -g -fno-omit-frame-pointer -fno-sanitize-recover=all)
+    add_compile_options(-fsanitize=undefined -g -fno-omit-frame-pointer -fno-sanitize-recover=all -DDD_SANITIZERS)
 endif()
 
 if (RUN_TSAN)
-    add_compile_options(-fsanitize=thread -g -fno-omit-frame-pointer -DDD_SANITIZERS)
+    # DD_SANITIZE_THREAD (distinct from the general DD_SANITIZERS flag shared
+    # with ASAN/UBSAN) gates TSAN-only annotations (see SpinningMutex.hpp /
+    # ReaderWriterSpinningMutex.hpp) that call into libtsan's __tsan_mutex_* API.
+    # Those symbols only exist when actually linked with -fsanitize=thread, so
+    # this must NOT be defined under ASAN/UBSAN-only builds.
+    add_compile_options(-fsanitize=thread -g -fno-omit-frame-pointer -DDD_SANITIZERS -DDD_SANITIZE_THREAD)
 endif()
 
 if(ISLINUX)

@@ -196,6 +196,12 @@ internal sealed class GitInfo : IGitInfo
         {
             try
             {
+                var gitFilePath = Path.Combine(dirInfo.FullName, ".git");
+                if (File.Exists(gitFilePath))
+                {
+                    return dirInfo;
+                }
+
                 var gitDirectories = dirInfo.GetDirectories(".git");
                 if (gitDirectories.Length > 0)
                 {

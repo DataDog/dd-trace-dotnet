@@ -33,6 +33,8 @@
       http.client_ip: 127.0.0.1,
       http.method: POST,
       http.request.headers.host: localhost:00000,
+      http.response.headers.content-length: 4,
+      http.response.headers.content-type: application/json; charset=utf-8,
       http.route: api/home/empty-model,
       http.status_code: 200,
       http.url: http://localhost:00000/api/home/empty-model,
@@ -41,6 +43,13 @@
       network.client.ip: ::1,
       runtime-id: Guid_1,
       span.kind: server,
+      _dd.code_origin.frames.0.column: 0,
+      _dd.code_origin.frames.0.file: tracer\test\test-applications\security\aspnet\Samples.Security.WebApi\Controllers\HomeController.cs,
+      _dd.code_origin.frames.0.index: 0,
+      _dd.code_origin.frames.0.line: 0,
+      _dd.code_origin.frames.0.method: EmptyModel,
+      _dd.code_origin.frames.0.type: Samples.Security.WebApi.Controllers.HomeController,
+      _dd.code_origin.type: entry,
       _dd.runtime_family: dotnet
     },
     Metrics: {

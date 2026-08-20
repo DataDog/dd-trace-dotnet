@@ -7,6 +7,7 @@
 #include "Configuration.h"
 #include "EnvironmentHelper.h"
 #include "EnvironmentVariables.h"
+#include "IHeapSnapshotManager.h"
 #include "OpSysTools.h"
 
 #include "shared/src/native-src/string.h"
@@ -1397,6 +1398,56 @@ TEST_F(ConfigurationTest, CheckForceHttpSamplingIsEnabledIfEnvVarIsEnabled)
     ASSERT_THAT(configuration.ForceHttpSampling(), expectedValue);
 }
 
+// Mirrors Configuration::DefaultLibrariesInfoCacheStartTimeout, which is private
+#if defined(DD_SANITIZERS)
+static constexpr auto ExpectedDefaultLibrariesInfoCacheStartTimeout = 10s;
+#else
+static constexpr auto ExpectedDefaultLibrariesInfoCacheStartTimeout = 2s;
+#endif
+
+#if defined(DD_SANITIZERS)
+TEST_F(ConfigurationTest, CheckLibrariesInfoCacheStartTimeoutWhenEnvVarNotSetUnderSanitizers)
+{
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.GetLibrariesInfoCacheStartTimeout(), 10s);
+}
+#else
+TEST_F(ConfigurationTest, CheckLibrariesInfoCacheStartTimeoutWhenEnvVarNotSet)
+{
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.GetLibrariesInfoCacheStartTimeout(), 2s);
+}
+#endif
+
+TEST_F(ConfigurationTest, CheckLibrariesInfoCacheStartTimeoutWhenEnvVarIsCorrectlySet)
+{
+    // Deliberately not one of the defaults, so the test fails if the env var is ignored
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::LibrariesInfoCacheStartTimeout, WStr("4200"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.GetLibrariesInfoCacheStartTimeout(), 4200ms);
+}
+
+TEST_F(ConfigurationTest, CheckLibrariesInfoCacheStartTimeoutIsDefaultWhenEnvVarIsNotParsable)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::LibrariesInfoCacheStartTimeout, WStr("not_an_int"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.GetLibrariesInfoCacheStartTimeout(), ExpectedDefaultLibrariesInfoCacheStartTimeout);
+}
+
+TEST_F(ConfigurationTest, CheckLibrariesInfoCacheStartTimeoutIsDefaultWhenEnvVarIsZero)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::LibrariesInfoCacheStartTimeout, WStr("0"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.GetLibrariesInfoCacheStartTimeout(), ExpectedDefaultLibrariesInfoCacheStartTimeout);
+}
+
+TEST_F(ConfigurationTest, CheckLibrariesInfoCacheStartTimeoutIsDefaultWhenEnvVarIsNegative)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::LibrariesInfoCacheStartTimeout, WStr("-5000"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.GetLibrariesInfoCacheStartTimeout(), ExpectedDefaultLibrariesInfoCacheStartTimeout);
+}
+
 TEST_F(ConfigurationTest, CheckWaitHandleProfilingIsDisabledByDefault)
 {
     auto configuration = Configuration{};
@@ -1435,6 +1486,26 @@ TEST_F(ConfigurationTest, CheckHeapSnapshotIsDisabledIfEnvVarSetToFalse)
     EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::HeapSnapshotEnabled, WStr("0"));
     auto configuration = Configuration{};
     ASSERT_THAT(configuration.IsHeapSnapshotEnabled(), false);
+}
+
+TEST_F(ConfigurationTest, CheckHeapSnapshotSkipTraversalIsDisabledByDefault)
+{
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.IsHeapSnapshotSkipTraversal(), false);
+}
+
+TEST_F(ConfigurationTest, CheckHeapSnapshotSkipTraversalIsEnabledIfEnvVarSetToTrue)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::HeapSnapshotSkipTraversal, WStr("1"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.IsHeapSnapshotSkipTraversal(), true);
+}
+
+TEST_F(ConfigurationTest, CheckHeapSnapshotSkipTraversalIsDisabledIfEnvVarSetToFalse)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::HeapSnapshotSkipTraversal, WStr("0"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.IsHeapSnapshotSkipTraversal(), false);
 }
 
 TEST_F(ConfigurationTest, CheckHeapHandleLimitIfNoValue)
@@ -1522,5 +1593,68 @@ TEST_F(ConfigurationTest, CheckIfUseManagedCodeCacheUsesDefaultWhenVariableIsNot
 #else
     ASSERT_FALSE(configuration.UseManagedCodeCache());
 #endif
+}
+
+TEST_F(ConfigurationTest, CheckReferenceTreeFormatDefaultsToBinaryWhenVariableIsNotSet)
+{
+    unsetenv(EnvironmentVariables::HeapSnapshotReferenceTreeFormat);
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.GetReferenceTreeFormat(), ReferenceTreeFormat_Binary);
+}
+
+TEST_F(ConfigurationTest, CheckReferenceTreeFormatIsBinaryWhenEnvVarSetToBinary)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::HeapSnapshotReferenceTreeFormat, WStr("1"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.GetReferenceTreeFormat(), ReferenceTreeFormat_Binary);
+}
+
+TEST_F(ConfigurationTest, CheckReferenceTreeFormatIsJsonWhenEnvVarSetToJson)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::HeapSnapshotReferenceTreeFormat, WStr("2"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.GetReferenceTreeFormat(), ReferenceTreeFormat_Json);
+}
+
+TEST_F(ConfigurationTest, CheckReferenceTreeFormatIsBinaryAndJsonWhenEnvVarSetToThree)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::HeapSnapshotReferenceTreeFormat, WStr("3"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.GetReferenceTreeFormat(), ReferenceTreeFormat_Binary | ReferenceTreeFormat_Json);
+}
+
+TEST_F(ConfigurationTest, CheckReferenceTreeFormatFallsBackToBinaryWhenEnvVarSetToZero)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::HeapSnapshotReferenceTreeFormat, WStr("0"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.GetReferenceTreeFormat(), ReferenceTreeFormat_Binary);
+}
+
+TEST_F(ConfigurationTest, CheckReferenceTreeFormatFallsBackToBinaryWhenEnvVarSetToInvalidBit)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::HeapSnapshotReferenceTreeFormat, WStr("4"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.GetReferenceTreeFormat(), ReferenceTreeFormat_Binary);
+}
+
+TEST_F(ConfigurationTest, CheckReferenceTreeFormatFallsBackToBinaryWhenEnvVarHasValidAndInvalidBits)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::HeapSnapshotReferenceTreeFormat, WStr("5"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.GetReferenceTreeFormat(), ReferenceTreeFormat_Binary);
+}
+
+TEST_F(ConfigurationTest, CheckReferenceTreeFormatFallsBackToBinaryWhenEnvVarSetToLargeValue)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::HeapSnapshotReferenceTreeFormat, WStr("255"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.GetReferenceTreeFormat(), ReferenceTreeFormat_Binary);
+}
+
+TEST_F(ConfigurationTest, CheckReferenceTreeFormatFallsBackToBinaryWhenEnvVarSetToEmptyString)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::HeapSnapshotReferenceTreeFormat, WStr(""));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.GetReferenceTreeFormat(), ReferenceTreeFormat_Binary);
 }
 

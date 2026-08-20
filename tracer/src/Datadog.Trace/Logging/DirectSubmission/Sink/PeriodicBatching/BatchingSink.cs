@@ -7,6 +7,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Util;
@@ -70,7 +71,9 @@ namespace Datadog.Trace.Logging.DirectSubmission.Sink.PeriodicBatching
                         _log.Error(t.Exception, "Error in flush task");
                         _disableSinkAction?.Invoke();
                     },
-                    TaskContinuationOptions.OnlyOnFaulted);
+                    CancellationToken.None,
+                    TaskContinuationOptions.OnlyOnFaulted,
+                    TaskScheduler.Default);
             }
             else
             {

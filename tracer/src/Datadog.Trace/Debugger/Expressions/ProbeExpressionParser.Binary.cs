@@ -93,18 +93,23 @@ internal sealed partial class ProbeExpressionParser<T>
             left = ParseTree(reader, parameters, itParameter);
             if (left.Type == ProbeExpressionParserHelper.UndefinedValueType)
             {
-                return ReturnDefaultValueExpression();
+                return RedactDictionaryUndefinedOperation(left);
             }
 
             right = ParseTree(reader, parameters, itParameter);
             if (right.Type == ProbeExpressionParserHelper.UndefinedValueType)
             {
-                return ReturnDefaultValueExpression();
+                return RedactDictionaryUndefinedOperation(right);
             }
 
             if (left.Type == typeof(string) && right.Type == typeof(string))
             {
-                return RedactDictionaryBinaryOperation(left, right, StringLexicographicComparison(left, right, operand));
+                return RedactDictionaryBinaryOperation(
+                    left,
+                    right,
+                    Expression.Block(
+                        BudgetCheck(),
+                        StringLexicographicComparison(left, right, operand)));
             }
 
             HandleDurationBinaryOperation(ref left, ref right);

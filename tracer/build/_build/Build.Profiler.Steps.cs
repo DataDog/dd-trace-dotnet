@@ -918,6 +918,7 @@ partial class Build
                 { "DD_INTERNAL_PROFILING_DEBUG_INFO_ENABLED", "1" },
                 { "DD_INTERNAL_GC_THREADS_CPUTIME_ENABLED", "1" },
                 { "DD_PROFILING_MANAGED_ACTIVATION_ENABLED", "0" },  // disable StableConfig (i.e. don't wait for the tracer to set the configuration)
+                { "DD_INTERNAL_PROFILING_LIBRARIES_CACHE_START_TIMEOUT", "10000" }, // 10 seconds to avoid flakiness in CI
             };
 
         if (IsArm64)

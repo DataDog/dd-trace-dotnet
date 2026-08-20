@@ -24,8 +24,8 @@ namespace Datadog.Trace.Tagging
         [Tag(Trace.Tags.HttpUrl)]
         public string HttpUrl { get; set; }
 
-        [Tag(Trace.Tags.HttpStatusCode)]
-        public string HttpStatusCode { get; set; }
+        [Tag(Trace.Tags.HttpStatusCode, OtelName = Trace.Tags.HttpResponseStatusCode)]
+        public int? HttpStatusCode { get; set; }
 
         [Tag(Trace.Tags.NetworkClientIp)]
         public string NetworkClientIp { get; set; }

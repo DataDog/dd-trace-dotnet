@@ -232,7 +232,6 @@ src/Datadog.Trace/DataStreamsMonitoring/Transport/DataStreamsTransportStrategy.c
 src/Datadog.Trace/DataStreamsMonitoring/Utils/BinaryPrimitivesHelper.cs
 src/Datadog.Trace/Debugger/Configurations/Trie.cs
 src/Datadog.Trace/Debugger/Expressions/CaptureInfo.cs
-src/Datadog.Trace/Debugger/Expressions/CompiledExpression.cs
 src/Datadog.Trace/Debugger/Expressions/Enums.cs
 src/Datadog.Trace/Debugger/Expressions/MethodScopeMembers.cs
 src/Datadog.Trace/Debugger/Expressions/ProbeExpressionParser.Binary.cs
@@ -240,7 +239,6 @@ src/Datadog.Trace/Debugger/Expressions/ProbeExpressionParser.Collection.cs
 src/Datadog.Trace/Debugger/Expressions/ProbeExpressionParser.cs
 src/Datadog.Trace/Debugger/Expressions/ProbeExpressionParser.Dump.cs
 src/Datadog.Trace/Debugger/Expressions/ProbeExpressionParser.General.cs
-src/Datadog.Trace/Debugger/Expressions/ProbeExpressionParser.String.cs
 src/Datadog.Trace/Debugger/Expressions/ProbeExpressionParser.Unary.cs
 src/Datadog.Trace/Debugger/Expressions/ProbeExpressionParserHelper.cs
 src/Datadog.Trace/Debugger/Expressions/ProbeExpressionsProcessor.cs
@@ -311,7 +309,6 @@ src/Datadog.Trace/Telemetry/Transports/TelemetryTransportStrategy.cs
 src/Datadog.Trace/Util/Http/HttpRequestExtensions.Core.cs
 src/Datadog.Trace/Util/Http/QueryStringManager.cs
 src/Datadog.Trace/AppSec/Waf/Initialization/LibraryLocationHelper.cs
-src/Datadog.Trace/AppSec/Waf/NativeBindings/DdwafConfigStruct.cs
 src/Datadog.Trace/AppSec/Waf/NativeBindings/DDWAF_OBJ_TYPE.cs
 src/Datadog.Trace/AppSec/Waf/NativeBindings/NativeLibrary.cs
 src/Datadog.Trace/AppSec/Waf/NativeBindings/ReducedRegistryAccess.cs

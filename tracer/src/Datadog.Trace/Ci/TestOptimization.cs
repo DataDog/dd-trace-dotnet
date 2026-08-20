@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Ci.CiEnvironment;
 using Datadog.Trace.Ci.Configuration;
+using Datadog.Trace.Ci.Coverage;
 using Datadog.Trace.Ci.Net;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
@@ -549,6 +550,15 @@ internal sealed class TestOptimization : ITestOptimization
             await testModule.CloseAsync().ConfigureAwait(false);
         }
 
+        try
+        {
+            CoverageReporter.FinalizeGlobalCoverage();
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "TestOptimization: Error finalizing global code coverage during shutdown.");
+        }
+
         foreach (var testSession in TestSession.ActiveTestSessions)
         {
             if (exception is not null)
@@ -619,7 +629,7 @@ internal sealed class TestOptimization : ITestOptimization
                 KnownTestsFeature = TestOptimizationKnownTestsFeature.Create(settings, remoteSettings, client);
                 EarlyFlakeDetectionFeature = TestOptimizationEarlyFlakeDetectionFeature.Create(settings, remoteSettings, KnownTestsFeature);
                 ImpactedTestsDetectionFeature = TestOptimizationImpactedTestsDetectionFeature.Create(settings, remoteSettings, CIValues);
-                SkippableFeature = TestOptimizationSkippableFeature.Create(settings, remoteSettings, client);
+                SkippableFeature = TestOptimizationSkippableFeature.Create(settings, remoteSettings, client, this);
                 TestManagementFeature = TestOptimizationTestManagementFeature.Create(settings, remoteSettings, client);
 
                 if (settings.CodeCoverageEnabled == null && remoteSettings.CodeCoverage.HasValue)
@@ -671,7 +681,7 @@ internal sealed class TestOptimization : ITestOptimization
         KnownTestsFeature = TestOptimizationKnownTestsFeature.Create(settings, remoteSettings, client);
         EarlyFlakeDetectionFeature = TestOptimizationEarlyFlakeDetectionFeature.Create(settings, remoteSettings, KnownTestsFeature);
         ImpactedTestsDetectionFeature = TestOptimizationImpactedTestsDetectionFeature.Create(settings, remoteSettings, environmentValues);
-        SkippableFeature = TestOptimizationSkippableFeature.Create(settings, remoteSettings, client);
+        SkippableFeature = TestOptimizationSkippableFeature.Create(settings, remoteSettings, client, this);
         TestManagementFeature = TestOptimizationTestManagementFeature.Create(settings, remoteSettings, client);
     }
 }

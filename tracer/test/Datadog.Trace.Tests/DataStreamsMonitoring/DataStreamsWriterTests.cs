@@ -86,10 +86,18 @@ public class DataStreamsWriterTests
     [Fact]
     public async Task WhenSupported_TriggersEarlyFlush_WhenTransactionsExceedThreshold()
     {
+        // The periodic timer never fires (int.MaxValue), so the only thing that can request a
+        // flush here is the transaction byte-threshold check in the writer's processing loop.
+        // That loop runs on a dedicated (LongRunning) thread, so observing the flush *request*
+        // is deterministic and does not depend on the thread pool that drives the actual send.
+        // Asserting on api.Sent would instead race a (potentially starved) thread pool.
         var bucketDuration = int.MaxValue; // timer will never fire
         var api = new StubApi();
         var writer = CreateWriter(api, out var discovery, bucketDuration);
         TriggerSupportUpdate(discovery, isSupported: true);
+
+        var flushRequested = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        writer.FlushRequested += () => flushRequested.TrySetResult(true);
 
         var id = new string('x', 512);
         var byteCount = new DataStreamsTransactionInfo(id, 0L, "cp").GetByteCount();
@@ -100,8 +108,8 @@ public class DataStreamsWriterTests
             writer.AddTransaction(new DataStreamsTransactionInfo(id, (long)i, "cp"));
         }
 
-        await api.WaitForCount(1, 30_000);
-        api.Sent.Should().NotBeEmpty();
+        var requested = await Task.WhenAny(flushRequested.Task, Task.Delay(30_000)) == flushRequested.Task;
+        requested.Should().BeTrue("crossing the transaction byte threshold should request an early flush");
 
         await writer.DisposeAsync();
     }

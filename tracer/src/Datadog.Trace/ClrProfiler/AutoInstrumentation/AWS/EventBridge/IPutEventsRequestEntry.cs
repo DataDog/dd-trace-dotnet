@@ -15,6 +15,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.EventBridge
     {
         string? Detail { get; set; }
 
+        string? DetailType { get; }
+
         string? EventBusName { get; }
     }
 }

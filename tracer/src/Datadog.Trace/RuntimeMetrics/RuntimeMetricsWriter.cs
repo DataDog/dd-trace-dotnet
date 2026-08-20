@@ -131,7 +131,7 @@ namespace Datadog.Trace.RuntimeMetrics
 #if NETFRAMEWORK
             // This delay is set to infinite in tests, so don't start the loop in that case
             _pushEventsTask = delay != Timeout.InfiniteTimeSpan
-                                  ? Task.Factory.StartNew(PushEventsLoop, TaskCreationOptions.LongRunning)
+                                  ? Task.Factory.StartNew(PushEventsLoop, CancellationToken.None, TaskCreationOptions.LongRunning, TaskScheduler.Default)
                                   : Task.CompletedTask;
 #else
             _timer = new Timer(_ => PushEvents(), null, delay, Timeout.InfiniteTimeSpan);

@@ -12,6 +12,7 @@ using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.IntegrationTests.Helpers;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
+using FluentAssertions;
 using VerifyXunit;
 using Xunit;
 using Xunit.Abstractions;
@@ -87,6 +88,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 _ => throw new InvalidOperationException("Unknown binding " + binding),
             };
 
+            if (useOtelClientInstrumentation)
+            {
+                expectedSpanCount += binding == "Custom" ? 7 : 13;
+            }
+
             using var telemetry = this.ConfigureTelemetry();
             int wcfPort = 8585;
 
@@ -96,9 +102,18 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 var spans = await agent.WaitForSpansAsync(expectedSpanCount);
                 ValidateIntegrationSpans(spans.Where(s => s.Type == SpanTypes.Web), metadataSchemaVersion, expectedServiceName: "Samples.Wcf", isExternalSpan: false);
 
+                IReadOnlyCollection<MockSpan> spansToVerify = spans;
+                if (!enableNewWcfInstrumentation)
+                {
+                    // The legacy instrumentation does not reactivate the WCF scope for the asynchronous programming
+                    // model End callback, so these test spans may be parented or top-level depending on callback timing.
+                    spans.Count(s => s.Name == "EndServerAsyncAdd").Should().Be(5);
+                    spansToVerify = spans.Where(s => s.Name != "EndServerAsyncAdd").ToList();
+                }
+
                 var settings = VerifyHelper.GetSpanVerifierSettings(metadataSchemaVersion, binding, enableNewWcfInstrumentation, enableWcfObfuscation, useOtelClientInstrumentation);
 
-                await VerifyHelper.VerifySpans(spans, settings)
+                await VerifyHelper.VerifySpans(spansToVerify, settings)
                                   .UseMethodName("_");
 
                 // The custom binding doesn't trigger the integration

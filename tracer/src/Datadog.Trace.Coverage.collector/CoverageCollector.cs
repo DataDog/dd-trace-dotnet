@@ -252,6 +252,12 @@ namespace Datadog.Trace.Coverage.Collector
                     var version = typeof(Instrumentation).Assembly.GetName().Version?.ToString();
                     foreach (var depsJsonPath in Directory.EnumerateFiles(directory, "*.deps.json", SearchOption.TopDirectoryOnly))
                     {
+                        if (AssemblyProcessor.IsIgnoredAssemblyDependencyManifest(Path.GetFileName(depsJsonPath)))
+                        {
+                            _logger?.Debug($"Skipping dependency manifest for ignored assembly: {depsJsonPath}");
+                            continue;
+                        }
+
                         try
                         {
                             var json = JObject.Parse(File.ReadAllText(depsJsonPath));

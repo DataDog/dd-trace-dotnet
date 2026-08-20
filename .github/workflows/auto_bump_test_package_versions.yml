@@ -9,6 +9,7 @@ on:
 jobs:
   bump_package_versions:
     runs-on: windows-latest
+    environment: version-bump-env
     permissions:
       actions: read # read secrets
       id-token: write # Required for dd-octo-sts authentication
@@ -27,9 +28,11 @@ jobs:
           policy: self.auto_bump_test_package_versions.create-pr
 
       - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
-      - uses: actions/setup-dotnet@9a946fdbd5fb07b82b2f5a4466058b876ab72bb2 # v5.3.0
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
           global-json-file: global.json
 
@@ -52,15 +55,13 @@ jobs:
 
       - name: Create Pull Request
         id: pr
-        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
+        uses: ./.github/actions/create-signed-pull-request
         with:
           token: ${{ steps.octo-sts.outputs.token }}
           branch: "bot/test-package-versions-bump"
           commit-message: "[Test Package Versions Bump]"
-          delete-branch: true
           base: master
           title: "[Test Package Versions Bump] Updating package versions "
-          milestone: "${{steps.rename.outputs.milestone}}"
           labels: "area:dependabot,area:test-apps,dependencies"
           body: |
             Updates the package versions for integration tests. See below for a summary of the changes.
@@ -69,7 +70,7 @@ jobs:
 
       - name: Send Slack notification about generating failure
         if: failure()
-        uses: slackapi/slack-github-action@45a88b9581bfab2566dc881e2cd66d334e621e2c # v3.0.3
+        uses: slackapi/slack-github-action@dcb1066f776dd043e64d0e8ba94ca15cc7e1875d # v4.0.0
         with:
           # This data can be any valid JSON from a previous step in the GitHub Action
           payload: |
@@ -77,4 +78,4 @@ jobs:
               "github_url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}",
             }
         env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBOOK_URL_GENERATEPACKAGEVERSIONS }}
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL_GENERATEPACKAGEVERSIONS }}

@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.Util;
 using FluentAssertions;
@@ -18,6 +19,17 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
     [Collection(nameof(ConsoleTestsCollection))]
     public class ConfigureCiCommandTests(ITestOutputHelper output)
     {
+        private static readonly string[] RunScopedBackfillEnvironmentVariables =
+        [
+            ConfigurationKeys.CIVisibility.TestOptimizationRunId,
+            ConfigurationKeys.CIVisibility.TestSessionCommand,
+            ConfigurationKeys.CIVisibility.TestSessionWorkingDirectory,
+            ConfigurationKeys.CIVisibilityItrCoverageBackfillActualSkip,
+            ConfigurationKeys.CIVisibilityItrCoverageBackfillCommand,
+            ConfigurationKeys.CIVisibilityItrCoverageBackfillPath,
+            ConfigurationKeys.CIVisibilityItrCoverageBackfillRunFolder
+        ];
+
         [SkippableTheory]
         [Trait("RunOnWindows", "True")]
         [InlineData("azp", @"##vso\[task.setvariable variable=(?<name>[A-Z1-9_]+);\](?<value>.*)")]
@@ -32,44 +44,56 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
             var commandLine = $"ci configure {ciProviderName} --dd-env TestEnv --dd-service TestService --dd-version TestVersion --tracer-home TestTracerHome --agent-url {agentUrl}";
 
             string envKeyWithFilePathNewValue = null;
-            if (!string.IsNullOrEmpty(envKeyWithFilePath))
+            if (!StringUtil.IsNullOrEmpty(envKeyWithFilePath))
             {
                 envKeyWithFilePathNewValue = Path.GetTempFileName();
                 EnvironmentHelpers.SetEnvironmentVariable(envKeyWithFilePath, envKeyWithFilePathNewValue);
             }
 
-            using var console = ConsoleHelper.Redirect();
-
-            var result = Program.Main(commandLine.Split(' '));
-
-            result.Should().Be(0);
-
-            var environmentVariables = new Dictionary<string, string>();
-
-            IEnumerable<string> lines = Array.Empty<string>();
-            if (!string.IsNullOrEmpty(envKeyWithFilePathNewValue))
+            var originalRunScopedBackfillEnvironment = SetStaleRunScopedBackfillEnvironment();
+            try
             {
-                lines = File.ReadAllLines(envKeyWithFilePathNewValue);
-            }
-            else
-            {
-                lines = console.ReadLines();
-            }
+                using var console = ConsoleHelper.Redirect();
 
-            foreach (var line in lines)
-            {
-                var match = Regex.Match(line, pattern);
-                if (match.Success)
+                var result = Program.Main(commandLine.Split(' '));
+
+                result.Should().Be(0);
+
+                var environmentVariables = new Dictionary<string, string>();
+
+                IEnumerable<string> lines = Array.Empty<string>();
+                if (!StringUtil.IsNullOrEmpty(envKeyWithFilePathNewValue))
                 {
-                    environmentVariables.Add(match.Groups["name"].Value, match.Groups["value"].Value);
+                    lines = File.ReadAllLines(envKeyWithFilePathNewValue);
+                }
+                else
+                {
+                    lines = console.ReadLines();
+                }
+
+                foreach (var line in lines)
+                {
+                    var match = Regex.Match(line, pattern);
+                    if (match.Success)
+                    {
+                        environmentVariables.Add(match.Groups["name"].Value, match.Groups["value"].Value);
+                    }
+                }
+
+                environmentVariables.Should().Contain("DD_ENV", "TestEnv");
+                environmentVariables.Should().Contain("DD_SERVICE", "TestService");
+                environmentVariables.Should().Contain("DD_VERSION", "TestVersion");
+                environmentVariables.Should().Contain("DD_DOTNET_TRACER_HOME", Path.GetFullPath("TestTracerHome"));
+                environmentVariables.Should().Contain("DD_TRACE_AGENT_URL", agentUrl);
+                foreach (var environmentVariable in RunScopedBackfillEnvironmentVariables)
+                {
+                    environmentVariables.Should().NotContainKey(environmentVariable);
                 }
             }
-
-            environmentVariables.Should().Contain("DD_ENV", "TestEnv");
-            environmentVariables.Should().Contain("DD_SERVICE", "TestService");
-            environmentVariables.Should().Contain("DD_VERSION", "TestVersion");
-            environmentVariables.Should().Contain("DD_DOTNET_TRACER_HOME", Path.GetFullPath("TestTracerHome"));
-            environmentVariables.Should().Contain("DD_TRACE_AGENT_URL", agentUrl);
+            finally
+            {
+                RestoreEnvironment(originalRunScopedBackfillEnvironment);
+            }
         }
 
         [SkippableTheory]
@@ -106,12 +130,37 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
             }
             finally
             {
-                // Restore all environment variables
                 // Clear all environment variables
+                foreach (string envKey in Environment.GetEnvironmentVariables().Keys)
+                {
+                    Environment.SetEnvironmentVariable(envKey, null);
+                }
+
+                // Restore all environment variables
                 foreach (string envKey in originalEnvVars.Keys)
                 {
                     Environment.SetEnvironmentVariable(envKey, (string)originalEnvVars[envKey]);
                 }
+            }
+        }
+
+        private static Dictionary<string, string> SetStaleRunScopedBackfillEnvironment()
+        {
+            var originalEnvironment = new Dictionary<string, string>();
+            foreach (var environmentVariable in RunScopedBackfillEnvironmentVariables)
+            {
+                originalEnvironment[environmentVariable] = Environment.GetEnvironmentVariable(environmentVariable);
+                EnvironmentHelpers.SetEnvironmentVariable(environmentVariable, "stale-run-scoped-value");
+            }
+
+            return originalEnvironment;
+        }
+
+        private static void RestoreEnvironment(Dictionary<string, string> originalEnvironment)
+        {
+            foreach (var environmentVariable in originalEnvironment)
+            {
+                EnvironmentHelpers.SetEnvironmentVariable(environmentVariable.Key, environmentVariable.Value);
             }
         }
     }

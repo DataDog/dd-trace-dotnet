@@ -63,14 +63,6 @@ public static class NUnitWorkItemPerformWorkIntegration
                 NUnitIntegration.SetTestSuiteTo(item, module.GetOrCreateSuite(item.FullName));
                 break;
             case "TestMethod":
-                if (NUnitIntegration.ShouldSkip(item, out _, out _))
-                {
-                    var testMethod = item.Method?.MethodInfo;
-                    Common.Log.Debug("NUnitWorkItemPerformWorkIntegration: Test skipped by test skipping feature: {Class}.{Name}", testMethod?.DeclaringType?.FullName, testMethod?.Name);
-                    item.RunState = RunState.Ignored;
-                    item.Properties.Set(NUnitIntegration.SkipReasonKey, IntelligentTestRunnerTags.SkippedByReason);
-                }
-
                 // Getting test management properties
                 var testOptimization = TestOptimization.Instance;
                 TestOptimizationClient.TestManagementResponseTestPropertiesAttributes? testManagementProperties = null;
@@ -92,10 +84,40 @@ public static class NUnitWorkItemPerformWorkIntegration
                     }
                 }
 
+                if (CanApplyItrSkip(item, testManagementProperties) &&
+                    NUnitIntegration.ShouldSkip(item, out _, out _, out var skippableTest))
+                {
+                    var testMethod = item.Method?.MethodInfo;
+                    Common.Log.Debug("NUnitWorkItemPerformWorkIntegration: Test skipped by test skipping feature: {Class}.{Name}", testMethod?.DeclaringType?.FullName, testMethod?.Name);
+                    item.RunState = RunState.Ignored;
+                    item.Properties.Set(NUnitIntegration.SkipReasonKey, IntelligentTestRunnerTags.SkippedByReason);
+                    var module = NUnitIntegration.GetTestModuleFrom(item);
+                    if (skippableTest is { } matchedSkippableTest)
+                    {
+                        Common.RecordTestSkipCoverageBackfill(matchedSkippableTest, module?.Tags.Bundle ?? module?.Tags.Module);
+                    }
+                    else
+                    {
+                        Common.RecordTestSkipCoverageBackfill(module?.Tags.Bundle ?? module?.Tags.Module);
+                    }
+                }
+
                 break;
         }
 
         return CallTargetState.GetDefault();
+    }
+
+    /// <summary>
+    /// Gets whether the work item can be converted into an ITR skip by this integration.
+    /// </summary>
+    /// <param name="item">NUnit test item about to be executed.</param>
+    /// <param name="testManagementProperties">Optional Datadog test-management properties for this test.</param>
+    /// <returns><c>true</c> when NUnit would otherwise execute the test and no test-management skip decision has already been applied.</returns>
+    internal static bool CanApplyItrSkip(ITest item, TestOptimizationClient.TestManagementResponseTestPropertiesAttributes? testManagementProperties)
+    {
+        return item.RunState == RunState.Runnable &&
+               Common.CanApplyItrSkip(testManagementProperties);
     }
 
     private static void WriteDebugInfo(IWorkItem workItem)

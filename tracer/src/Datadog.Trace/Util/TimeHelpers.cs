@@ -12,4 +12,7 @@ internal static class TimeHelpers
 
     public static long NanosecondsToMilliseconds(long nanoseconds)
         => nanoseconds / 1_000_000;
+
+    public static double NanosecondsToSeconds(long nanoseconds)
+        => nanoseconds / 1_000_000_000.0;
 }

@@ -9,6 +9,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent.DiscoveryService;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.EventBridge;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNS;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS;
@@ -503,6 +504,19 @@ public class DataStreamsManagerTests
         produce2.Should().BeSameAs(produce1);
         consume2.Should().BeSameAs(consume1);
         consume1.Should().NotBeSameAs(produce1);
+    }
+
+    [Fact]
+    public void GetOrCreateEdgeTags_EventBridge_ReturnsExpectedTagsAndCachesByEventBusAndDetailType()
+    {
+        var dsm = GetDataStreamManager(true, out _);
+        var key = new EventBridgeEdgeTagCacheKey("event-bus-1", "detail-type-1");
+
+        var first = dsm.GetOrCreateEdgeTags(key, static k => ["direction:out", $"exchange:{k.EventBusName}", $"topic:{k.DetailType}", "type:eventbridge"]);
+        var second = dsm.GetOrCreateEdgeTags(key, static k => ["direction:out", $"exchange:{k.EventBusName}", $"topic:{k.DetailType}", "type:eventbridge"]);
+
+        second.Should().BeSameAs(first);
+        first.Should().Equal("direction:out", "exchange:event-bus-1", "topic:detail-type-1", "type:eventbridge");
     }
 
     [Fact]

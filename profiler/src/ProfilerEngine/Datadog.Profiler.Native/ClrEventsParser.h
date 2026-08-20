@@ -20,6 +20,7 @@
 #include "IGarbageCollectionsListener.h"
 #include "IGCSuspensionsListener.h"
 #include "IGCDumpListener.h"
+#include "IConfiguration.h"
 
 #include "../../../../shared/src/native-src/string.h"
 #include "assert.h"
@@ -54,6 +55,8 @@ const int EVENT_SW_STACK = 82;
 // events sent during heap dumps
 const int EVENT_GC_BULK_NODE = 18;
 const int EVENT_GC_BULK_EDGE = 19;
+const int EVENT_GC_BULK_ROOT_EDGE = 16;
+const int EVENT_GC_BULK_ROOT_STATIC_VAR = 38;
 
 
 #define LONG_LENGTH 1024
@@ -295,6 +298,7 @@ public:
         IAllocationsListener* pAllocationListener,
         IContentionListener* pContentionListener,
         IGCSuspensionsListener* pGCSuspensionsListener,
+        IConfiguration* pConfiguration,
         IGCDumpListener* pGCDumpListener
         );
 
@@ -359,6 +363,7 @@ private:
     IGCSuspensionsListener* _pGCSuspensionsListener = nullptr;
     std::vector<IGarbageCollectionsListener*> _pGarbageCollectionsListeners;
     IGCDumpListener* _pGCDumpListener = nullptr;
+    bool _skipReferenceChain = false;
 
     template <typename... Args>
     void LogGcEvent(Args const&... args);

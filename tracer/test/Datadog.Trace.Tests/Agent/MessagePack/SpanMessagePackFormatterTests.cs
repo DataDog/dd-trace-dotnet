@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -88,8 +89,8 @@ public class SpanMessagePackFormatterTests
             actual.Error.Should().Be(expected.Error ? (byte)0x1 : (byte)0x0);
             actual.ParentId.Should().Be(expected.Context.ParentId);
 
-            var tagsProcessor = new TagsProcessor<string>(actual.Tags);
-            expected.Tags.EnumerateTags(ref tagsProcessor);
+            var tagsProcessor = new TagsProcessor(actual.Tags);
+            expected.Tags.EnumerateTags(ref tagsProcessor, expected.OpenTelemetrySemanticsEnabled);
 
             // runtime-id and language are added during serialization
             if (actual.ParentId == null)
@@ -111,7 +112,7 @@ public class SpanMessagePackFormatterTests
                 }
             }
 
-            var metricsProcessor = new TagsProcessor<double>(actual.Metrics);
+            var metricsProcessor = new MetricsProcessor(actual.Metrics);
             expected.Tags.EnumerateMetrics(ref metricsProcessor);
 
             // process-id and _dd.top_level are added during serialization
@@ -223,7 +224,7 @@ public class SpanMessagePackFormatterTests
         var discoveryService = new DiscoveryServiceMock();
         var mockApi = new MockApi();
         var settings = TracerSettings.Create(new());
-        var agentWriter = new AgentWriter(mockApi, statsAggregator: null, statsd: TestStatsdManager.NoOp, automaticFlush: false);
+        var agentWriter = AgentWriterHelper.CreateWithManualFlush(mockApi);
         await using var tracer = TracerHelper.Create(settings, agentWriter, sampler: null, scopeManager: null, statsd: null,  NullTelemetryController.Instance, discoveryService: discoveryService);
 
         tracer.TracerManager.Start();
@@ -452,7 +453,7 @@ public class SpanMessagePackFormatterTests
     {
         var mockApi = new MockApi();
         var settings = TracerSettings.Create(new() { { ConfigurationKeys.FeatureFlags.TraceId128BitGenerationEnabled, generate128BitTraceId } });
-        var agentWriter = new AgentWriter(mockApi, statsAggregator: null, statsd: TestStatsdManager.NoOp, automaticFlush: false);
+        var agentWriter = AgentWriterHelper.CreateWithManualFlush(mockApi);
         await using var tracer = TracerHelper.Create(settings, agentWriter, sampler: null, scopeManager: null, statsd: null, NullTelemetryController.Instance, NullDiscoveryService.Instance);
 
         using (_ = tracer.StartActive("root"))
@@ -493,7 +494,7 @@ public class SpanMessagePackFormatterTests
     {
         var mockApi = new MockApi();
         var settings = TracerSettings.Create(new() { { ConfigurationKeys.FeatureFlags.TraceId128BitGenerationEnabled, false } });
-        var agentWriter = new AgentWriter(mockApi, statsAggregator: null, statsd: TestStatsdManager.NoOp, automaticFlush: false);
+        var agentWriter = AgentWriterHelper.CreateWithManualFlush(mockApi);
         await using var tracer = TracerHelper.Create(settings, agentWriter, sampler: null, scopeManager: null, statsd: null, NullTelemetryController.Instance, NullDiscoveryService.Instance);
 
         using (var scope = tracer.StartActiveInternal("root"))
@@ -635,7 +636,7 @@ public class SpanMessagePackFormatterTests
             { ConfigurationKeys.PropagateProcessTags, propagateProcessTags.ToString() },
             { ConfigurationKeys.ServiceName, "test-service" }
         });
-        var agentWriter = new AgentWriter(mockApi, statsAggregator: null, statsd: TestStatsdManager.NoOp, automaticFlush: false);
+        var agentWriter = AgentWriterHelper.CreateWithManualFlush(mockApi);
         await using var tracer = TracerHelper.Create(settings, agentWriter, sampler: null, scopeManager: null, statsd: null, NullTelemetryController.Instance, NullDiscoveryService.Instance);
 
         using (_ = tracer.StartActive("root"))
@@ -682,21 +683,91 @@ public class SpanMessagePackFormatterTests
         }
     }
 
-    private readonly struct TagsProcessor<T> : IItemProcessor<T>
+    [Fact]
+    public async Task ApmDisabled_WritesApmEnabledZero_OnAllSpans()
     {
-        private readonly Dictionary<string, T> _expectedTags;
+        // When APM tracing is disabled, "_dd.apm.enabled":0 must be written to EVERY span
+        // (not just service-entry spans), so the backend flags every span in the trace correctly.
+        var settings = TracerSettings.Create(new() { { ConfigurationKeys.ApmTracingEnabled, false } });
+        await using var tracer = TracerHelper.Create(settings);
+        var traceContext = new TraceContext(tracer);
 
-        public TagsProcessor(IEnumerable<KeyValuePair<string, T>> expectedTags)
+        // local root, service A -> service-entry span
+        var rootContext = new SpanContext(null, traceContext, "service-A");
+        var root = new Span(rootContext, DateTimeOffset.UtcNow);
+        root.OperationName = "root";
+
+        // child in the SAME service A -> not a service-entry span
+        var sameServiceContext = new SpanContext(rootContext, traceContext, "service-A");
+        var sameService = new Span(sameServiceContext, DateTimeOffset.UtcNow);
+        sameService.OperationName = "same-service-child";
+
+        // child in a DIFFERENT service B -> service-entry span
+        var otherServiceContext = new SpanContext(rootContext, traceContext, "service-B");
+        var otherService = new Span(otherServiceContext, DateTimeOffset.UtcNow);
+        otherService.OperationName = "other-service-child";
+
+        foreach (var span in new[] { root, sameService, otherService })
+        {
+            span.SetDuration(TimeSpan.FromSeconds(1));
+        }
+
+        var traceChunk = new TraceChunkModel(new SpanCollection(new[] { root, sameService, otherService }));
+        var formatter = SpanFormatterResolver.Instance.GetFormatter<TraceChunkModel>();
+        byte[] bytes = [];
+
+        var length = formatter.Serialize(ref bytes, 0, traceChunk, SpanFormatterResolver.Instance);
+        var result = global::MessagePack.MessagePackSerializer.Deserialize<MockSpan[]>(new ArraySegment<byte>(bytes, 0, length));
+
+        result.Should().HaveCount(3);
+
+        // every span gets the tag, regardless of whether it is a service-entry span
+        foreach (var span in result)
+        {
+            span.GetMetric("_dd.apm.enabled").Should().Be(0d);
+        }
+    }
+
+    private readonly struct TagsProcessor : IItemProcessor<string>, IItemProcessor<int>
+    {
+        private readonly Dictionary<string, string> _expectedTags;
+
+        public TagsProcessor(IEnumerable<KeyValuePair<string, string>> expectedTags)
         {
             _expectedTags = expectedTags.ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
         }
 
-        public IEnumerable<KeyValuePair<string, T>> Remaining => _expectedTags;
+        public IEnumerable<KeyValuePair<string, string>> Remaining => _expectedTags;
 
-        public void Process(TagItem<T> item)
+        public void Process(TagItem<string> item)
+            => Assert(item.Key, item.Value);
+
+        // int-backed tags are serialized as strings, so compare against the string representation
+        public void Process(TagItem<int> item)
+            => Assert(item.Key, item.Value.ToString(CultureInfo.InvariantCulture));
+
+        private void Assert(string key, string value)
         {
-            _expectedTags.Should().Contain(new KeyValuePair<string, T>(item.Key, item.Value));
-            _expectedTags.Remove(item.Key);
+            _expectedTags.Should().Contain(new KeyValuePair<string, string>(key, value));
+            _expectedTags.Remove(key);
+        }
+    }
+
+    private readonly struct MetricsProcessor : IItemProcessor<double>
+    {
+        private readonly Dictionary<string, double> _expectedMetrics;
+
+        public MetricsProcessor(IEnumerable<KeyValuePair<string, double>> expectedMetrics)
+        {
+            _expectedMetrics = expectedMetrics.ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
+        }
+
+        public IEnumerable<KeyValuePair<string, double>> Remaining => _expectedMetrics;
+
+        public void Process(TagItem<double> item)
+        {
+            _expectedMetrics.Should().Contain(new KeyValuePair<string, double>(item.Key, item.Value));
+            _expectedMetrics.Remove(item.Key);
         }
     }
 }

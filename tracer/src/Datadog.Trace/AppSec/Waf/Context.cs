@@ -10,10 +10,15 @@ using System.Diagnostics;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
 using Datadog.Trace.AppSec.WafEncoding;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Telemetry;
+using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.AppSec.Waf;
 
+/// <summary>
+/// Context type using the underlying native library here: https://github.com/DataDog/libddwaf/blob/7a17b8d31b491e329f10eae20b07a619910aa888/src/context.hpp#L147
+/// </summary>
 internal sealed class Context : IContext
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<Context>();
@@ -29,6 +34,7 @@ internal sealed class Context : IContext
     private readonly IWafLibraryInvoker _wafLibraryInvoker;
     private readonly IEncoder _encoder;
     private readonly UserEventsState _userEventsState = new();
+
     private bool _disposed;
     private ulong _totalRuntimeOverRuns;
 
@@ -58,10 +64,10 @@ internal sealed class Context : IContext
     }
 
     public IResult? Run(IDictionary<string, object> addressData, ulong timeoutMicroSeconds)
-        => RunInternal(addressData, null, timeoutMicroSeconds);
+        => RunInternal(addressData, false, timeoutMicroSeconds);
 
     public IResult? RunWithEphemeral(IDictionary<string, object> ephemeralAddressData, ulong timeoutMicroSeconds, bool isRasp)
-        => RunInternal(null, ephemeralAddressData, timeoutMicroSeconds, isRasp);
+        => RunInternal(ephemeralAddressData, true, timeoutMicroSeconds, isRasp);
 
     public Dictionary<string, object> FilterAddresses(IDatadogSecurity security, string? userId = null, string? userLogin = null, string? userSessionId = null, bool fromSdk = false)
     {
@@ -104,6 +110,14 @@ internal sealed class Context : IContext
         }
     }
 
+    private static void RecordBindingError(bool isRasp)
+    {
+        if (!isRasp)
+        {
+            TelemetryFactory.Metrics.RecordCountWafError(MetricTags.WafError.BindingError);
+        }
+    }
+
     private bool ShouldRunWith(IDatadogSecurity security, UserEventsState.UserRecord? previousUserRecord, string? value, string address, bool fromSdk)
     {
         if (value is null || !security.AddressEnabled(address))
@@ -122,7 +136,15 @@ internal sealed class Context : IContext
         return differentValue && (fromSdk || !previousValueFromSdk);
     }
 
-    private unsafe Result? RunInternal(IDictionary<string, object>? persistentAddressData, IDictionary<string, object>? ephemeralAddressData, ulong timeoutMicroSeconds, bool isRasp = false)
+    /// <summary>
+    /// Runs the WAF over one batch of addresses.
+    /// </summary>
+    /// <param name="addressData">the addresses to evaluate</param>
+    /// <param name="ephemeral">when true the batch is evaluated in its own subcontext, so that its side
+    /// effects don't outlive the call; this is what RASP relies on</param>
+    /// <param name="timeoutMicroSeconds">the WAF budget for this run</param>
+    /// <param name="isRasp">whether this run should be reported as a RASP run</param>
+    private unsafe Result? RunInternal(IDictionary<string, object>? addressData, bool ephemeral, ulong timeoutMicroSeconds, bool isRasp = false)
     {
         DdwafObjectStruct retNative = default;
 
@@ -134,18 +156,17 @@ internal sealed class Context : IContext
 
         if (Log.IsEnabled(LogEventLevel.Debug))
         {
-            var persistentParameters = persistentAddressData == null ? string.Empty : Encoder.FormatArgs(persistentAddressData);
-            var ephemeralParameters = ephemeralAddressData == null ? string.Empty : Encoder.FormatArgs(ephemeralAddressData);
+            var parameters = addressData == null ? string.Empty : Encoder.FormatArgs(addressData);
             Log.Debug(
-                "DDAS-0010-00: Executing AppSec In-App WAF with parameters: persistent: {PersistentParameters}, ephemeral: {EphemeralParameters}",
-                persistentParameters,
-                ephemeralParameters);
+                "DDAS-0010-00: Executing AppSec In-App WAF with {Kind} parameters: {Parameters}",
+                ephemeral ? "ephemeral" : "persistent",
+                parameters);
         }
 
         // not restart because it's the total runtime over runs, and we run several * during request
         _stopwatch.Start();
         WafReturnCode code;
-        bool truncated = false;
+        bool truncated;
         lock (_stopwatch)
         {
             if (_disposed)
@@ -154,48 +175,70 @@ internal sealed class Context : IContext
                 return null;
             }
 
-            // NOTE: the WAF must be called with either pwPersistentArgs or pwEphemeralArgs (or both) pointing to
-            // a valid structure. Failure to do so, results in a WAF error. It doesn't makes sense to propagate this
-            // error.
-            // Calling _encoder.Encode(null) results in a null object that will cause the WAF to error
-            // The WAF can be called with an empty dictionary (though we should avoid doing this).
-
-            DdwafObjectStruct pwPersistentArgs = default;
-            DdwafObjectStruct pwEphemeralArgsValue = default;
-
-            if (persistentAddressData is not null)
+            // NOTE: the WAF must be called with a valid map. Calling _encoder.Encode(null) results in an
+            // invalid object that will cause the WAF to error, and it doesn't make sense to propagate that
+            // error. The WAF can be called with an empty dictionary (though we should avoid doing this),
+            // but an empty ephemeral batch is pointless so it is rejected like it was before subcontexts.
+            if (ephemeral ? addressData is not { Count: > 0 } : addressData is null)
             {
-                var persistentArgs = _encoder.Encode(persistentAddressData, applySafetyLimits: true);
-                pwPersistentArgs = persistentArgs.ResultDdwafObject;
-                _encodeResults.Add(persistentArgs);
-                truncated |= persistentArgs.Truncated;
-            }
-
-            // pwEphemeralArgs follow a different lifecycle and should be disposed immediately
-            using var ephemeralArgs = ephemeralAddressData is { Count: > 0 }
-                                          ? _encoder.Encode(ephemeralAddressData, applySafetyLimits: true)
-                                          : null;
-
-            if (persistentAddressData is null && ephemeralArgs is null)
-            {
-                Log.Error("Both pwPersistentArgs and pwEphemeralArgs are null");
+                Log.Error("The WAF was called without any address data");
+                RecordBindingError(isRasp);
                 return null;
             }
 
-            if (ephemeralArgs is not null)
-            {
-                // WARNING: Don't use ref here, we need to make a copy because ephemeralArgs is on the heap
-                pwEphemeralArgsValue = ephemeralArgs.ResultDdwafObject;
-                truncated |= ephemeralArgs.Truncated;
-            }
+            var args = _encoder.Encode(addressData!, applySafetyLimits: true);
+            truncated = args.Truncated;
 
-            // WARNING: DO NOT DISPOSE pwPersistentArgs until the end of this class's lifecycle, i.e in the dispose. Otherwise waf might crash with fatal exception.
-            code = _waf.Run(_contextHandle, persistentAddressData != null ? &pwPersistentArgs : null, ephemeralArgs != null ? &pwEphemeralArgsValue : null, ref retNative, timeoutMicroSeconds);
+            // WARNING: Don't use ref here, we need to make a copy because args is on the heap
+            var argsValue = args.ResultDdwafObject;
+
+            if (ephemeral)
+            {
+                // One subcontext per ephemeral batch. Its evaluation caches are what makes a rule report
+                // its match only once, so a subcontext shared by every RASP call of a request would
+                // silently swallow all matches but the first one.
+                var subcontextHandle = _waf.SubcontextInit(_contextHandle);
+                if (subcontextHandle == IntPtr.Zero)
+                {
+                    Log.Error("WAF ddwaf_subcontext_init failed, the ephemeral run was skipped");
+                    RecordBindingError(isRasp);
+                    args.Dispose();
+
+                    // nothing ran, so don't let this call's wall clock leak into the aggregated runtime
+                    _stopwatch.Stop();
+                    return null;
+                }
+
+                try
+                {
+                    code = _waf.SubcontextEval(subcontextHandle, &argsValue, ref retNative, timeoutMicroSeconds);
+                }
+                finally
+                {
+                    // the subcontext is the only reader of this batch, so once it is gone the input
+                    // buffers can be released instead of piling up for the whole request
+                    _wafLibraryInvoker.SubcontextDestroy(subcontextHandle);
+                    args.Dispose();
+                }
+            }
+            else
+            {
+                // WARNING: DO NOT DISPOSE the encoded arguments until the end of this class's lifecycle,
+                // i.e. in Dispose. libddwaf is given a null allocator on evaluation, so it never copies
+                // nor frees the input: those buffers have to outlive the context that reads them,
+                // otherwise the waf might crash with a fatal exception. They don't need to be pinned, as
+                // behind the scenes they are heap allocated pointers (through waf helpers via the legacy
+                // encoder or manually HC allocs via the new encoder).
+                _encodeResults.Add(args);
+                code = _waf.ContextEval(_contextHandle, &argsValue, ref retNative, timeoutMicroSeconds);
+            }
         }
 
         _stopwatch.Stop();
         var result = new Result(ref retNative, code, ref _totalRuntimeOverRuns, (ulong)(_stopwatch.Elapsed.TotalMilliseconds * 1000), isRasp, truncated);
-        _wafLibraryInvoker.ObjectFree(ref retNative);
+
+        // the result was allocated by the WAF with the output allocator given to ddwaf_context_init, which is the default one
+        _wafLibraryInvoker.ObjectDestroy(ref retNative);
 
         if (Log.IsEnabled(LogEventLevel.Debug))
         {
@@ -220,13 +263,15 @@ internal sealed class Context : IContext
 
             _disposed = true;
 
+            // destroy the consumer of our input buffers first: the context reads the memory owned by
+            // _encodeResults, which is why that one is released last
+            _wafLibraryInvoker.ContextDestroy(_contextHandle);
+
             // WARNING do not move this above, this should only be disposed in the end of the context's life
             foreach (var encodeResult in _encodeResults)
             {
                 encodeResult.Dispose();
             }
-
-            _wafLibraryInvoker.ContextDestroy(_contextHandle);
         }
     }
 

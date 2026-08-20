@@ -57,9 +57,26 @@ namespace Datadog.Trace
         public const string HttpUrl = "http.url";
 
         /// <summary>
+        /// The OpenTelemetry semantic convention absolute URL of an HTTP request
+        /// </summary>
+        public const string UrlFull = "url.full";
+
+        /// <summary>
         /// The method of an HTTP request
         /// </summary>
         public const string HttpMethod = "http.method";
+
+        /// <summary>
+        /// The OpenTelemetry semantic convention method of an HTTP request. The method is reported in its canonical uppercase form.
+        /// Unrecognized methods are reported as <c>_OTHER</c>.
+        /// </summary>
+        public const string HttpRequestMethod = "http.request.method";
+
+        /// <summary>
+        /// The original method of an HTTP request. Only set when it differs (case-sensitive) from
+        /// the value reported in <see cref="HttpRequestMethod"/>.
+        /// </summary>
+        public const string HttpRequestMethodOriginal = "http.request.method_original";
 
         /// <summary>
         /// The host of an HTTP request
@@ -70,6 +87,11 @@ namespace Datadog.Trace
         /// The status code of an HTTP response
         /// </summary>
         public const string HttpStatusCode = "http.status_code";
+
+        /// <summary>
+        /// The OpenTelemetry semantic convention status code of an HTTP response
+        /// </summary>
+        public const string HttpResponseStatusCode = "http.response.status_code";
 
         /// <summary>
         /// The error message of an exception
@@ -149,6 +171,16 @@ namespace Datadog.Trace
         /// The server address for the remote service.
         /// </summary>
         public const string ServerAddress = "server.address";
+
+        /// <summary>
+        /// The server port for the remote service.
+        /// </summary>
+        public const string ServerPort = "server.port";
+
+        /// <summary>
+        /// The version of the protocol used for the exchange, e.g. "1.1" or "2".
+        /// </summary>
+        public const string NetworkProtocolVersion = "network.protocol.version";
 
         /// <summary>
         /// The size of the message.

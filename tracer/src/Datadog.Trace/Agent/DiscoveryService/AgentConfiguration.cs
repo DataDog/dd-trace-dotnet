@@ -29,7 +29,8 @@ internal sealed record AgentConfiguration
         bool? spanEvents,
         List<string>? peerTags = null,
         int obfuscationVersion = 0,
-        AgentTraceFilterConfig? traceFilterConfig = null)
+        AgentTraceFilterConfig? traceFilterConfig = null,
+        List<string>? featureFlags = null)
     {
         ConfigurationEndpoint = configurationEndpoint;
         DebuggerEndpoint = debuggerEndpoint;
@@ -49,6 +50,7 @@ internal sealed record AgentConfiguration
         PeerTags = peerTags;
         ObfuscationVersion = obfuscationVersion;
         TraceFilterConfig = traceFilterConfig ?? AgentTraceFilterConfig.Empty;
+        FeatureFlags = featureFlags;
     }
 
     public string? ConfigurationEndpoint { get; }
@@ -98,4 +100,6 @@ internal sealed record AgentConfiguration
     public int ObfuscationVersion { get; }
 
     public AgentTraceFilterConfig TraceFilterConfig { get; }
+
+    public List<string>? FeatureFlags { get; }
 }

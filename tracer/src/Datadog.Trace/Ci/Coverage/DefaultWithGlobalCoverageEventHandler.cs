@@ -1,172 +1,430 @@
-﻿// <copyright file="DefaultWithGlobalCoverageEventHandler.cs" company="Datadog">
+// <copyright file="DefaultWithGlobalCoverageEventHandler.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+
 #nullable enable
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.Reflection;
-using Datadog.Trace.Ci.CiEnvironment;
-using Datadog.Trace.Ci.Coverage.Metadata;
-using Datadog.Trace.Ci.Coverage.Models.Global;
-using Datadog.Trace.Ci.Coverage.Util;
+using System.Threading;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Util;
-using Datadog.Trace.Util.Json;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
-using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.Ci.Coverage;
 
 internal sealed class DefaultWithGlobalCoverageEventHandler : DefaultCoverageEventHandler
 {
-    private readonly List<CoverageContextContainer> _coverages = new();
+    private readonly object _lifecycleGate = new();
+    private readonly GlobalCoverageAccumulator _accumulator;
+    private readonly GlobalCoverageOutputManager _outputManager;
+    private int _inFlightStarts;
+    private int _activeContexts;
+    private int _inFlightSnapshots;
+    private LifecycleState _state;
+    private Action<bool>? _sealCompleted;
+    private bool _sealStarted;
+    private bool _sealRequested;
+    private bool _sealedComplete;
 
-    protected override void OnSessionStart(CoverageContextContainer context)
+    public DefaultWithGlobalCoverageEventHandler(
+        GlobalCoverageAccumulatorLimits? limits = null,
+        string? configuredOutputDirectory = null,
+        Func<string>? runIdProvider = null)
     {
-        if (context is not null)
-        {
-            lock (_coverages)
-            {
-                _coverages.Add(context);
-            }
-
-            base.OnSessionStart(context);
-        }
+        _accumulator = new GlobalCoverageAccumulator(limits);
+        _outputManager = new GlobalCoverageOutputManager(
+            configuredOutputDirectory,
+            Environment.CurrentDirectory,
+            runIdProvider ?? (() => TestOptimization.Instance.RunId));
     }
 
-    public void Clear()
+    private enum AdmissionState
     {
-        lock (_coverages)
-        {
-            foreach (var coverage in _coverages)
-            {
-                coverage.Clear();
-            }
-
-            _coverages.Clear();
-        }
+        Starting,
+        Active,
+        Released,
     }
 
-    public unsafe GlobalCoverageInfo GetCodeCoveragePercentage()
+    private enum LifecycleState
     {
+        Running,
+        Completing,
+        Sealed,
+    }
+
+    public GlobalCoverageSnapshotResult AcquireGlobalCoverageSnapshot()
+    {
+        var admission = new SnapshotAdmission(this);
+        lock (_lifecycleGate)
+        {
+            if (_state != LifecycleState.Running)
+            {
+                return GlobalCoverageSnapshotResult.Suppressed(_accumulator.FailureReason);
+            }
+
+            _inFlightSnapshots++;
+        }
+
         try
         {
-            lock (_coverages)
+            var result = _accumulator.AcquireSnapshot(GlobalContainer, admission.Release);
+            if (result.Status != GlobalCoverageSnapshotStatus.Success)
             {
-                var sw = RefStopwatch.Create();
-                var globalCoverage = new GlobalCoverageInfo();
-
-                IEnumerable<ModuleValue> GetModuleValues()
-                {
-                    var globalContainer = GlobalContainer.CloseContext();
-                    foreach (var moduleValue in globalContainer)
-                    {
-                        yield return moduleValue;
-                    }
-
-                    foreach (var coverageContextContainer in _coverages)
-                    {
-                        var container = coverageContextContainer.CloseContext();
-                        foreach (var moduleValue in container)
-                        {
-                            yield return moduleValue;
-                        }
-                    }
-                }
-
-                var componentCoverageInfos = new Dictionary<Module, ComponentCoverageInfo>();
-                var fileCoverageInfos = new Dictionary<FileCoverageMetadata, FileCoverageInfo>();
-
-                var fileBitmapBuffer = stackalloc byte[512];
-                foreach (var moduleValue in GetModuleValues())
-                {
-                    var module = moduleValue.Module;
-                    if (!componentCoverageInfos.TryGetValue(module, out var componentCoverageInfo))
-                    {
-                        componentCoverageInfo = new ComponentCoverageInfo(module.Name);
-                        globalCoverage.Components.Add(componentCoverageInfo);
-                        componentCoverageInfos[module] = componentCoverageInfo;
-                    }
-
-                    foreach (var moduleFile in moduleValue.Metadata.Files)
-                    {
-                        if (!fileCoverageInfos.TryGetValue(moduleFile, out var fileCoverageInfo))
-                        {
-                            fileCoverageInfo = new FileCoverageInfo(moduleFile.Path)
-                            {
-                                ExecutableBitmap = moduleFile.Bitmap
-                            };
-
-                            componentCoverageInfo.Files.Add(fileCoverageInfo);
-                            fileCoverageInfos[moduleFile] = fileCoverageInfo;
-                        }
-
-                        var fileBitmapLastExecutableLine = moduleFile.LastExecutableLine;
-                        var fileBitmapSize = FileBitmap.GetSize(fileBitmapLastExecutableLine);
-                        using var fileBitmap = fileBitmapSize <= 512 ? new FileBitmap(fileBitmapBuffer, fileBitmapSize) : new FileBitmap(new byte[fileBitmapSize]);
-                        if (moduleValue.Metadata.CoverageMode == 0)
-                        {
-                            var filesLines = (byte*)moduleValue.FilesLines + moduleFile.Offset;
-                            for (var i = 0; i < fileBitmapLastExecutableLine; i++)
-                            {
-                                if (filesLines[i] == 1)
-                                {
-                                    fileBitmap.Set(i + 1);
-                                }
-                            }
-                        }
-                        else if (moduleValue.Metadata.CoverageMode == 1)
-                        {
-                            var filesLines = (int*)moduleValue.FilesLines + moduleFile.Offset;
-                            for (var i = 0; i < fileBitmapLastExecutableLine; i++)
-                            {
-                                if (filesLines[i] == 1)
-                                {
-                                    fileBitmap.Set(i + 1);
-                                }
-                            }
-                        }
-
-                        if (fileBitmap.HasActiveBits())
-                        {
-                            if (fileCoverageInfo.ExecutedBitmap is null)
-                            {
-                                fileCoverageInfo.ExecutedBitmap = fileBitmap.GetInternalArrayOrToArrayAndDispose();
-                            }
-                            else
-                            {
-                                using var currentExecutedBitmap = new FileBitmap(fileCoverageInfo.ExecutedBitmap);
-                                fileCoverageInfo.ExecutedBitmap = FileBitmap.Or(fileBitmap, currentExecutedBitmap, true).GetInternalArrayOrToArrayAndDispose();
-                            }
-                        }
-                    }
-                }
-
-                if (Log.IsEnabled(LogEventLevel.Debug))
-                {
-                    Log.Debug("Global Coverage payload: {Payload}", JsonHelper.SerializeObject(globalCoverage));
-                }
-
-                // Clean coverages
-                Clear();
-
-                Log.Information("Total time to calculate global coverage: {TotalMilliseconds}ms", sw.ElapsedMilliseconds);
-                return globalCoverage;
+                admission.Release();
             }
+
+            return result;
         }
-        catch (Exception ex)
+        catch
         {
-            TelemetryFactory.Metrics.RecordCountCIVisibilityCodeCoverageErrors();
-            Log.Error(ex, "Error processing the global coverage data.");
+            admission.Release();
             throw;
         }
     }
 
-    protected override void OnClearContext(CoverageContextContainer context)
+    public bool TryCommit(GlobalCoverageSnapshot snapshot, Action action)
+        => _accumulator.TryCommit(snapshot, action);
+
+    public bool RegisterCollectorOutputDirectory(string directory)
     {
-        // None we need to keep all context to calculate the global coverage later
+        var registered = _outputManager.RegisterCollectorAndFreeze(directory);
+        if (!registered)
+        {
+            _accumulator.Suppress(GlobalCoverageFailureReason.OutputCommitFailed);
+        }
+
+        return registered;
+    }
+
+    public bool FinalizeAndSeal(Action<bool>? onCompleted = null)
+    {
+        var completeNow = false;
+        bool? completed = null;
+        lock (_lifecycleGate)
+        {
+            if (_state == LifecycleState.Sealed)
+            {
+                completed = _sealedComplete;
+            }
+            else
+            {
+                if (onCompleted is not null)
+                {
+                    _sealCompleted += onCompleted;
+                }
+
+                _sealRequested = true;
+                _state = LifecycleState.Completing;
+                completeNow = HasNoAdmissionsUnderLock();
+            }
+        }
+
+        if (completed is { } completedValue)
+        {
+            InvokeSealCompleted(onCompleted, completedValue);
+            return completedValue;
+        }
+
+        if (completeNow)
+        {
+            CompleteSeal();
+        }
+
+        lock (_lifecycleGate)
+        {
+            return _state == LifecycleState.Sealed && _sealedComplete;
+        }
+    }
+
+    protected override object? OnSessionFinished(
+        CoverageContextContainer context,
+        IReadOnlyList<ModuleValue> modules,
+        out bool deferCompletion)
+    {
+        // Only contexts that can still have a cached raw pointer need a second, final capture.
+        // The normal path keeps the existing single capture and immediate merge.
+        deferCompletion = context.HasActiveExecutionContexts;
+        var merged = false;
+        try
+        {
+            var testCoverage = ProcessSessionFinished(modules, out var moduleCoverage);
+            if (!deferCompletion)
+            {
+                merged = _accumulator.TryMerge(moduleCoverage) != GlobalCoverageMergeResult.BecameSuppressedIncomplete;
+            }
+
+            return testCoverage;
+        }
+        catch
+        {
+            if (!merged)
+            {
+                _accumulator.Suppress(GlobalCoverageFailureReason.PerTestProcessingFailed);
+            }
+
+            throw;
+        }
+    }
+
+    protected override void OnDeferredSessionFinished(IReadOnlyList<ModuleValue> modules)
+    {
+        if (_accumulator.IsSuppressed)
+        {
+            return;
+        }
+
+        try
+        {
+            _accumulator.TryMerge(CaptureModuleCoverage(modules));
+        }
+        catch (Exception ex)
+        {
+            TelemetryFactory.Metrics.RecordCountCIVisibilityCodeCoverageErrors();
+            Log.Error(ex, "Error processing deferred coverage data.");
+            _accumulator.Suppress(GlobalCoverageFailureReason.PerTestProcessingFailed);
+        }
+    }
+
+    protected override bool TryBeginSessionStartAdmission(out CoverageContextAdmission admission)
+    {
+        var rejected = false;
+        lock (_lifecycleGate)
+        {
+            if (_state == LifecycleState.Sealed)
+            {
+                ThrowHelper.ThrowInvalidOperationException("A coverage session cannot start after the test session has ended.");
+            }
+
+            if (_state == LifecycleState.Completing)
+            {
+                rejected = true;
+            }
+            else
+            {
+                _inFlightStarts++;
+            }
+        }
+
+        if (rejected)
+        {
+            _accumulator.Suppress(GlobalCoverageFailureReason.StartFailed);
+            admission = CoverageContextAdmission.Noop;
+            return false;
+        }
+
+        if (!_outputManager.EnsureConfiguredAndFreeze())
+        {
+            _accumulator.Suppress(GlobalCoverageFailureReason.OutputCommitFailed);
+        }
+
+        admission = new GlobalCoverageAdmission(this);
+        return true;
+    }
+
+    protected override void MarkGlobalCoverageIncomplete(GlobalCoverageFailureReason reason)
+        => _accumulator.Suppress(reason);
+
+    private void CommitAdmission(GlobalCoverageAdmission admission)
+    {
+        lock (_lifecycleGate)
+        {
+            if (admission.TryTransition(AdmissionState.Starting, AdmissionState.Active))
+            {
+                _inFlightStarts--;
+                _activeContexts++;
+            }
+        }
+    }
+
+    private void FailAdmission(GlobalCoverageAdmission admission, GlobalCoverageFailureReason reason)
+    {
+        var completeNow = false;
+        lock (_lifecycleGate)
+        {
+            var previous = admission.ReleaseState();
+            if (previous == AdmissionState.Starting)
+            {
+                _inFlightStarts--;
+            }
+            else if (previous == AdmissionState.Active)
+            {
+                _activeContexts--;
+            }
+            else
+            {
+                return;
+            }
+
+            completeNow = _sealRequested && HasNoAdmissionsUnderLock();
+        }
+
+        _accumulator.Suppress(reason);
+        if (completeNow)
+        {
+            CompleteSeal();
+        }
+    }
+
+    private void ReleaseAdmission(GlobalCoverageAdmission admission)
+    {
+        var completeNow = false;
+        lock (_lifecycleGate)
+        {
+            if (admission.ReleaseState() == AdmissionState.Active)
+            {
+                _activeContexts--;
+                completeNow = _sealRequested && HasNoAdmissionsUnderLock();
+            }
+        }
+
+        if (completeNow)
+        {
+            CompleteSeal();
+        }
+    }
+
+    private void ReleaseSnapshotAdmission()
+    {
+        var completeNow = false;
+        lock (_lifecycleGate)
+        {
+            if (_inFlightSnapshots > 0)
+            {
+                _inFlightSnapshots--;
+                completeNow = _sealRequested && HasNoAdmissionsUnderLock();
+            }
+        }
+
+        if (completeNow)
+        {
+            CompleteSeal();
+        }
+    }
+
+    private bool HasNoAdmissionsUnderLock()
+        => _inFlightStarts == 0 && _activeContexts == 0 && _inFlightSnapshots == 0;
+
+    private void CompleteSeal()
+    {
+        lock (_lifecycleGate)
+        {
+            if (_state != LifecycleState.Completing || _sealStarted || !HasNoAdmissionsUnderLock())
+            {
+                return;
+            }
+
+            _sealStarted = true;
+        }
+
+        LogContextDiagnostics(_accumulator.AcceptedContextCount);
+        var complete = TryPublishFinalSnapshot(out var failureException);
+        if (!complete)
+        {
+            // Sealing is single-shot, so report the terminal failure here instead of logging each
+            // lower-level attempt and producing duplicate diagnostics for the same coverage run.
+            TelemetryFactory.Metrics.RecordCountCIVisibilityCodeCoverageErrors();
+            failureException ??= _outputManager.FailureException;
+            var failureReason = _accumulator.FailureReason;
+            if (failureException is not null)
+            {
+                Log.Error<GlobalCoverageFailureReason>(failureException, "Global code coverage could not be finalized. Reason: {FailureReason}.", failureReason);
+            }
+            else
+            {
+                Log.Error<GlobalCoverageFailureReason>("Global code coverage could not be finalized. Reason: {FailureReason}.", failureReason);
+            }
+        }
+
+        Action<bool>? callback;
+        lock (_lifecycleGate)
+        {
+            _sealedComplete = complete;
+            _state = LifecycleState.Sealed;
+            callback = _sealCompleted;
+            _sealCompleted = null;
+        }
+
+        InvokeSealCompleted(callback, complete);
+
+        ModuleValue.LogNativeMemoryDiagnostics(DomainMetadata.Instance.ProcessId);
+    }
+
+    private bool TryPublishFinalSnapshot(out Exception? failureException)
+    {
+        failureException = null;
+        try
+        {
+            var result = _accumulator.AcquireSnapshot(GlobalContainer);
+            if (result.Status != GlobalCoverageSnapshotStatus.Success || result.Snapshot is not { } snapshot)
+            {
+                return false;
+            }
+
+            using (snapshot)
+            {
+                if (!_accumulator.TryFinalizeSnapshot(snapshot, () => _outputManager.TryPublish(snapshot.Model)))
+                {
+                    _accumulator.Suppress(GlobalCoverageFailureReason.OutputCommitFailed);
+                    return false;
+                }
+
+                return true;
+            }
+        }
+        catch (Exception ex)
+        {
+            failureException = ex;
+            _accumulator.Suppress(GlobalCoverageFailureReason.SnapshotFailed);
+            return false;
+        }
+    }
+
+    private void InvokeSealCompleted(Action<bool>? callback, bool complete)
+    {
+        try
+        {
+            callback?.Invoke(complete);
+        }
+        catch
+        {
+            // Publication callbacks must not replace failures from the test lifecycle.
+        }
+    }
+
+    private sealed class GlobalCoverageAdmission : CoverageContextAdmission
+    {
+        private readonly DefaultWithGlobalCoverageEventHandler _owner;
+        private int _state;
+
+        public GlobalCoverageAdmission(DefaultWithGlobalCoverageEventHandler owner) => _owner = owner;
+
+        public override void CommitInstalled() => _owner.CommitAdmission(this);
+
+        public override void FailStart(GlobalCoverageFailureReason reason) => _owner.FailAdmission(this, reason);
+
+        public override void Release() => _owner.ReleaseAdmission(this);
+
+        public bool TryTransition(AdmissionState expected, AdmissionState next)
+            => Interlocked.CompareExchange(ref _state, (int)next, (int)expected) == (int)expected;
+
+        public AdmissionState ReleaseState()
+            => (AdmissionState)Interlocked.Exchange(ref _state, (int)AdmissionState.Released);
+    }
+
+    private sealed class SnapshotAdmission
+    {
+        private readonly DefaultWithGlobalCoverageEventHandler _owner;
+        private int _released;
+
+        public SnapshotAdmission(DefaultWithGlobalCoverageEventHandler owner) => _owner = owner;
+
+        public void Release()
+        {
+            if (Interlocked.CompareExchange(ref _released, 1, 0) == 0)
+            {
+                _owner.ReleaseSnapshotAdmission();
+            }
+        }
     }
 }

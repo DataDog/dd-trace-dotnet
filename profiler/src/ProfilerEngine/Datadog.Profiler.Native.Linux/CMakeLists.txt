@@ -2,7 +2,7 @@
 # Project definition
 # ******************************************************
 
-project("Datadog.Profiler.Native.Linux" VERSION 3.46.0)
+project("Datadog.Profiler.Native.Linux" VERSION 3.52.0)
 
 option(RUN_ASAN "Build with Clang Undefined-Behavior Sanitizer" OFF)
 option(RUN_UBSAN "Build with Clang Undefined-Behavior Sanitizer" OFF)
@@ -48,7 +48,12 @@ if (RUN_UBSAN)
 endif()
 
 if (RUN_TSAN)
-    add_compile_options(-fsanitize=thread -g -fno-omit-frame-pointer -DDD_SANITIZERS)
+    # DD_SANITIZE_THREAD (distinct from the general DD_SANITIZERS flag shared
+    # with ASAN/UBSAN) gates TSAN-only annotations (see SpinningMutex.hpp /
+    # ReaderWriterSpinningMutex.hpp) that call into libtsan's __tsan_mutex_* API.
+    # Those symbols only exist when actually linked with -fsanitize=thread, so
+    # this must NOT be defined under ASAN/UBSAN-only builds.
+    add_compile_options(-fsanitize=thread -g -fno-omit-frame-pointer -DDD_SANITIZERS -DDD_SANITIZE_THREAD)
 endif()
 
 if(ISLINUX)

@@ -16,6 +16,9 @@ namespace Datadog.Trace.Iast;
 
 internal readonly struct Location
 {
+    // Both Windows ('\') and Unix ('/') separators, because PDBs produced on one OS may be read on another.
+    private static readonly char[] PathSeparators = ['/', '\\'];
+
     internal readonly StackTrace? _stack = null;
 
     public Location(string method)
@@ -23,7 +26,7 @@ internal readonly struct Location
         var index = method.LastIndexOf("::", StringComparison.Ordinal);
         if (index >= 0)
         {
-            Path = method.Substring(0, length: index);
+            Class = method.Substring(0, length: index);
             var bracketIndex = method.IndexOf("(", startIndex: index + 2, StringComparison.Ordinal);
             Method = bracketIndex > 0
                          ? method.Substring(index + 2, length: bracketIndex - index - 2)
@@ -38,10 +41,11 @@ internal readonly struct Location
     public Location(StackFrame? stackFrame, StackTrace? stack, string? stackId, ulong? spanId)
     {
         var method = stackFrame?.GetMethod();
-        Path = method?.DeclaringType?.FullName;
+        Class = method?.DeclaringType?.FullName;
         Method = method?.Name;
         var line = stackFrame?.GetFileLineNumber();
         Line = line > 0 ? line : null;
+        Path = GetFileName(stackFrame?.GetFileName());
 
         SpanId = spanId == 0 ? null : spanId;
 
@@ -51,7 +55,7 @@ internal readonly struct Location
 
     internal Location(string? typeName, string? methodName, int? line, ulong? spanId) // For testing purposes only
     {
-        this.Path = typeName;
+        this.Class = typeName;
         this.Method = methodName;
         Line = line > 0 ? line : null;
 
@@ -62,6 +66,8 @@ internal readonly struct Location
 
     public string? Path { get; }
 
+    public string? Class { get; }
+
     public string? Method { get; }
 
     public int? Line { get; }
@@ -71,7 +77,21 @@ internal readonly struct Location
     public override int GetHashCode()
     {
         // We do not calculate the hash including the spanId nor the line
-        return IastUtils.GetHashCode(Path, Method);
+        return IastUtils.GetHashCode(Class, Method);
+    }
+
+    // Extracts the file name from a path, handling both Windows ('\') and Unix ('/') separators.
+    // We can't rely on System.IO.Path.GetFileName here because it only recognizes the current OS
+    // separator, so a Windows path read on Unix (from a Windows-built PDB) would leak the full path.
+    private static string? GetFileName(string? filePath)
+    {
+        if (string.IsNullOrEmpty(filePath))
+        {
+            return null;
+        }
+
+        var separatorIndex = filePath!.LastIndexOfAny(PathSeparators);
+        return separatorIndex >= 0 ? filePath.Substring(separatorIndex + 1) : filePath;
     }
 
     internal void ReportStack(Span? span)

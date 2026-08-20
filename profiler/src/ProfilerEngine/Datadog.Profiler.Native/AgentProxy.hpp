@@ -36,14 +36,14 @@ public:
         ddog_prof_Exporter_drop(&_exporter);
     }
 
-    Success Send(ddog_prof_EncodedProfile* profile, Tags tags, std::vector<std::pair<std::string, std::string>> files, std::string metadata, std::string info, std::string processTags)
+    Success Send(ddog_prof_EncodedProfile* profile, Tags tags, std::vector<std::pair<std::string, std::vector<uint8_t>>> files, std::string metadata, std::string info, std::string processTags)
     {
         std::vector<ddog_prof_Exporter_File> to_compress_files;
         to_compress_files.reserve(files.size());
 
         for (auto& [filename, content] : files)
         {
-            ddog_Slice_U8 fileSlice{reinterpret_cast<const uint8_t*>(content.c_str()), content.size()};
+            ddog_Slice_U8 fileSlice{content.data(), content.size()};
             to_compress_files.push_back({to_char_slice(filename), fileSlice});
         }
 

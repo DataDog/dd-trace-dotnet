@@ -16,12 +16,19 @@
 #include "ServiceBase.h"
 #include "MetricsRegistry.h"
 #include "ProxyMetric.h"
+#include "InlineVTCache.h"
+#include "SnapshotCooldown.h"
 
 #include "corprof.h"
 
 // forward declarations
+class CoreLibModuleProvider;
 class IThreadsCpuManager;
 class INativeThreadList;
+class IRuntimeInfo;
+class TypeReferenceTree;
+class ReferenceChainTraverser;
+struct RootInfo;
 
 using namespace std::chrono_literals;
 
@@ -55,9 +62,11 @@ public:
         IConfiguration* pConfiguration,
         ICorProfilerInfo12* pProfilerInfo,
         IFrameStore* pFrameStore,
+        CoreLibModuleProvider* pCoreLibModuleProvider,
         IThreadsCpuManager* pThreadsCpuManager,
         MetricsRegistry& metricsRegistry,
-        INativeThreadList* pNativeThreadList);
+        INativeThreadList* pNativeThreadList,
+        IRuntimeInfo* pRuntimeInfo);
 
     // Inherited via IHeapSnapshotManager
     void SetRuntimeSessionParameters(uint64_t keywords, uint32_t verbosity) override;
@@ -65,6 +74,13 @@ public:
 
     // used for debugging purpose
     std::string GetHeapSnapshotText();
+
+    // Called from ModuleUnloadStarted: the types met during a dump are inspected after it,
+    // so their ClassIDs must not be trusted once the module defining them is gone.
+    void OnModuleUnloaded();
+
+    // Reference tree output (separate from histogram)
+    std::vector<FileEntry> GetAndClearReferenceTreeContent() override;
 
     ~HeapSnapshotManager();
 
@@ -109,6 +125,13 @@ protected:
         uint32_t index,
         uint32_t count,
         GCBulkEdgeValue* pEdges) override;
+    void OnBulkRootEdges(
+        uint32_t index,
+        uint32_t count,
+        GCBulkRootEdgeValue* pRoots) override;
+    void OnBulkRootStaticVar(
+        const GCBulkRootStaticVarValue& root,
+        const WCHAR* fieldName) override;
 
     // Inherited via ServiceBase
     bool StartImpl() override;
@@ -142,10 +165,21 @@ private:
     void CleanupSession();
     void StartAsyncSnapshotIfNeeded();
 
+    // Inspects the types met during the last traversal: MUST NOT be called while a dump is
+    // in progress because it may load types (see InlineVTCache::ResolvePendingTypes).
+    void ResolvePendingInlineValueTypes();
+
+    // Logs (once) the detected runtime type/version and whether it falls within
+    // the range the GCDesc reader has been validated against. This is a soft
+    // signal for diagnostics only; it never disables the feature.
+    void LogRuntimeVersionRangeOnce();
+
 private:
-    std::chrono::minutes _heapDumpInterval;
+    std::chrono::seconds _heapDumpInterval;
     std::chrono::milliseconds _snapshotCheckInterval;
     uint32_t _memPressureThreshold;
+    uint32_t _referenceTreeFormat;
+    bool _delayFirstSnapshot;
     uint64_t _runtimeSessionKeywords;
     uint32_t _runtimeSessionVerbosity;
 
@@ -161,11 +195,13 @@ private:
     std::shared_ptr<ProxyMetric> _heapSnapshotDurationMetric;
     std::shared_ptr<ProxyMetric> _heapSnapshotObjectCountMetric;
     std::shared_ptr<ProxyMetric> _heapSnapshotTotalSizeMetric;
+    std::shared_ptr<ProxyMetric> _heapSnapshotTraversalFaultsMetric;
 
     ICorProfilerInfo12* _pCorProfilerInfo;
     IFrameStore* _pFrameStore;
     IThreadsCpuManager* _pThreadsCpuManager;
     INativeThreadList* _pNativeThreadList;
+    IRuntimeInfo* _pRuntimeInfo;
 
     std::unique_ptr<std::thread> _pLoopThread;
     DWORD _loopThreadOsId;
@@ -195,10 +231,43 @@ private:
     // mutable to allow locking in const methods (e.g., GetMemorySize, LogMemoryBreakdown)
     mutable std::recursive_mutex _histogramLock;
 
+    // Reference chain tracking
+    std::unique_ptr<TypeReferenceTree> _typeReferenceTree;
+    std::unique_ptr<ReferenceChainTraverser> _pReferenceChainTraverser;
+
+    // Set to true once the GCDesc reader fails its runtime self-test during a dump,
+    // or once memory access faults exhaust the budget on several consecutive dumps.
+    // When set, subsequent dumps skip reference-chain traversal entirely (no
+    // traverser is created) while the class histogram continues to work.
+    bool _gcDescDisabled = false;
+
+    // Transient platform capability signal, kept separate from _gcDescDisabled:
+    // Linux may retry signal-handler installation at the next dump.
+    bool _faultGuardUnavailable = false;
+
+    // Consecutive dumps whose traversal was cut short by memory access faults.
+    // A single bad dump is treated as transient; a run of them is not.
+    static constexpr uint32_t MaxConsecutiveFaultyDumps = 3;
+    uint32_t _consecutiveFaultyDumps = 0;
+
+    // Fault count from the most recent dump's traversal, surfaced as a metric.
+    uint32_t _lastTraversalFaultCount = 0;
+
+    // Ensures the runtime version range diagnostic is logged at most once.
+    bool _runtimeVersionLogged = false;
+
+    // Persisted across heap dumps to avoid re-inspecting types for inline VT fields.
+    std::unique_ptr<InlineVTCache> _pInlineVTCache;
+
+    // Persisted across dumps to pre-size the visited set, avoiding repeated Grow() calls.
+    size_t _visitedSetHighWatermark = 512;
+
     std::chrono::nanoseconds _startTimestamp;
 
     // timestamp of the last heap snapshot
     std::chrono::nanoseconds _lastTimestamp;
+
+    SnapshotCooldown _snapshotCooldown;
 
     // TODO: see if we should also try to detect old heap size growth before triggering a heap snapshot
     uint64_t _lastOldHeapSize; // gen2 + loh + poh

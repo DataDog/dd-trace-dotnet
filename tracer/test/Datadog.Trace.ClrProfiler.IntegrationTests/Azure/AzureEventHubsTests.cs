@@ -19,6 +19,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure
     [Trait("RequiresDockerDependency", "true")]
     [Trait("DockerGroup", "2")]
     [Trait("Category", "ArmUnsupported")]
+    [Collection(AzureMessagingEmulatorTestsCollection.Name)]
     public class AzureEventHubsTests : TracingIntegrationTest
     {
         public AzureEventHubsTests(ITestOutputHelper output)
@@ -58,7 +59,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure
             using (var agent = EnvironmentHelper.GetMockAgent())
             using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
             {
-                var spans = await agent.WaitForSpansAsync(5, timeoutInMilliseconds: 30000, assertExpectedCount: false);
+                var spans = await agent.WaitForSpansAsync(5, timeoutInMilliseconds: 30000, failOnTimeout: false);
 
                 using var s = new AssertionScope();
 
@@ -101,7 +102,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure
             using (var agent = EnvironmentHelper.GetMockAgent())
             using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
             {
-                var spans = await agent.WaitForSpansAsync(2, timeoutInMilliseconds: 30000, assertExpectedCount: false);
+                var spans = await agent.WaitForSpansAsync(2, timeoutInMilliseconds: 30000, failOnTimeout: false);
 
                 using var s = new AssertionScope();
 
@@ -137,7 +138,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure
             using (var agent = EnvironmentHelper.GetMockAgent())
             using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
             {
-                var spans = await agent.WaitForSpansAsync(2, timeoutInMilliseconds: 30000, assertExpectedCount: false);
+                var spans = await agent.WaitForSpansAsync(2, timeoutInMilliseconds: 30000, failOnTimeout: false);
 
                 using var s = new AssertionScope();
 
@@ -174,7 +175,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure
             using (var agent = EnvironmentHelper.GetMockAgent())
             using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
             {
-                var spans = await agent.WaitForSpansAsync(2, timeoutInMilliseconds: 30000, assertExpectedCount: false);
+                var spans = await agent.WaitForSpansAsync(2, timeoutInMilliseconds: 30000, failOnTimeout: false);
 
                 using var s = new AssertionScope();
 
@@ -213,7 +214,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure
             using (var agent = EnvironmentHelper.GetMockAgent())
             using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
             {
-                var spans = await agent.WaitForSpansAsync(5, timeoutInMilliseconds: 30000, assertExpectedCount: false);
+                var spans = await agent.WaitForSpansAsync(5, timeoutInMilliseconds: 30000, failOnTimeout: false);
 
                 using var s = new AssertionScope();
 
@@ -255,7 +256,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure
             using (var agent = EnvironmentHelper.GetMockAgent())
             using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
             {
-                var spans = await agent.WaitForSpansAsync(2, timeoutInMilliseconds: 30000, assertExpectedCount: false);
+                var spans = await agent.WaitForSpansAsync(2, timeoutInMilliseconds: 30000, failOnTimeout: false);
 
                 using var s = new AssertionScope();
 
@@ -298,7 +299,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure
                 using (var agent = EnvironmentHelper.GetMockAgent())
                 using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
                 {
-                    var spans = await agent.WaitForSpansAsync(1, timeoutInMilliseconds: 1000, assertExpectedCount: false);
+                    var spans = await agent.WaitForSpansAsync(1, timeoutInMilliseconds: 1000, failOnTimeout: false);
                     spans.Should().BeEmpty($"Expected no spans when DD_TRACE_AZUREEVENTHUBS_ENABLED is false for test mode {testMode}");
                 }
             }

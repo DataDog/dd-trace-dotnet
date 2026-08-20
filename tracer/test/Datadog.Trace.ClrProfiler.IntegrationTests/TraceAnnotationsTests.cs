@@ -78,7 +78,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [SkippableFact]
         public async Task SubmitTraces()
         {
-            const int expectedSpanCount = 58;
+            const int expectedSpanCount = 68;
             var ddTraceMethodsString = string.Empty;
 
             foreach (var type in TestTypes)

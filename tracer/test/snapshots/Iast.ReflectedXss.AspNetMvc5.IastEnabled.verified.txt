@@ -18,6 +18,10 @@
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server,
+      _dd.code_origin.frames.0.index: 0,
+      _dd.code_origin.frames.0.method: ReflectedXss,
+      _dd.code_origin.frames.0.type: Samples.Security.AspNetCore5.Controllers.IastController,
+      _dd.code_origin.type: entry,
       _dd.iast.enabled: 1,
       _dd.iast.json:
 {
@@ -27,7 +31,8 @@
       "hash": -2097573301,
       "location": {
         "spanId": XXX,
-        "path": "ASP._Page_Views_Iast_ReflectedXss_cshtml",
+        "path": "ReflectedXss.cshtml",
+        "class": "ASP._Page_Views_Iast_ReflectedXss_cshtml",
         "method": "Execute",
         "line": XXX
       },

@@ -109,7 +109,7 @@ private:
     std::unique_ptr<ClrEventsParser> _parser;
 
     // injected logger
-    std::unique_ptr<ProfilerLogger> _logger;
+    std::shared_ptr<ProfilerLogger> _logger;
 
     // responsible for receiving ETW events from the Windows Agent
     std::unique_ptr<EtwEventsHandler> _eventsHandler;

@@ -178,7 +178,9 @@ public:
         SignalHandlerForTest::_instance = std::make_unique<SignalHandlerForTest>();
         inside_wrapped_functions = 0;
 
-        _librariesInfoCache = std::make_unique<LibrariesInfoCache>(MemoryResourceManager::GetDefault());
+        auto [configuration, mockConfiguration] = CreateConfiguration();
+        _configuration = std::move(configuration);
+        _librariesInfoCache = std::make_unique<LibrariesInfoCache>(_configuration.get(), MemoryResourceManager::GetDefault(), _metricsRegistry);
         _librariesInfoCache->Start();
     }
 
@@ -365,6 +367,8 @@ private:
     std::future<void> _callbackCalledFuture;
     std::unique_ptr<WorkerThread> _workerThread;
     std::unique_ptr<LibrariesInfoCache> _librariesInfoCache;
+    std::unique_ptr<IConfiguration> _configuration;
+    MetricsRegistry _metricsRegistry;
 #ifdef ARM64
     std::unique_ptr<ManagedCodeCache> _pManagedCodeCache;
 #endif

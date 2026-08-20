@@ -17,6 +17,7 @@ using Datadog.Trace.Ci;
 using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ContinuousProfiler;
+using Datadog.Trace.FeatureFlags;
 using Datadog.Trace.Iast;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Sampling;
@@ -35,12 +36,19 @@ namespace Datadog.Trace
         private SpanCollection _spans;
         private int _openSpans;
 
+        private bool _segmentClosed;
+
         private IastRequestContext? _iastRequestContext;
         private AppSecRequestContext? _appSecRequestContext;
+
+        // Lazily created on the first feature-flag evaluation for this trace; null until then, so
+        // traces that never evaluate a flag pay nothing. State dies with the TraceContext.
+        private SpanEnrichmentState? _featureFlagEnrichment;
 
         // _rootSpan was chosen in #4125 to be the lock that protects
         // * _spans
         // * _openSpans
+        // * _segmentClosed
         // although it's a nullable field, the _rootSpan must always be set before operations on
         // _spans take place, so it's okay to use it as a lock key
         // even though we need to override the nullable warnings in some places.
@@ -114,21 +122,54 @@ namespace Datadog.Trace
         internal AppSecRequestContext AppSecRequestContext
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get
-            {
-                if (Volatile.Read(ref _appSecRequestContext) is null)
-                {
-                    Interlocked.CompareExchange(ref _appSecRequestContext, new(), null);
-                }
-
-                return _appSecRequestContext!;
-            }
+            get => Volatile.Read(ref _appSecRequestContext) ?? CreateAppSecRequestContext();
         }
 
         internal bool WafExecuted { get; set; }
 
+        /// <summary> Gets the feature-flag span-enrichment state for this trace, or null if no flag has been evaluated. </summary>
+        internal SpanEnrichmentState? FeatureFlagEnrichment => Volatile.Read(ref _featureFlagEnrichment);
+
         internal static TraceContext? GetTraceContext(in SpanCollection spans)
             => spans.FirstSpan?.Context.TraceContext;
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private AppSecRequestContext CreateAppSecRequestContext()
+        {
+            if (_rootSpan is not { } rootSpan)
+            {
+                var created = new AppSecRequestContext();
+                return Interlocked.CompareExchange(ref _appSecRequestContext, created, null) ?? created;
+            }
+
+            lock (rootSpan)
+            {
+                var created = _segmentClosed || (rootSpan.Type == SpanTypes.Web && rootSpan.IsFinished)
+                                  ? AppSecRequestContext.CreateWithDisposedAdditiveContext()
+                                  : new AppSecRequestContext();
+
+                return Interlocked.CompareExchange(ref _appSecRequestContext, created, null) ?? created;
+            }
+        }
+
+        /// <summary>
+        /// Gets the feature-flag span-enrichment state for this trace (created on first use), or null
+        /// when span enrichment is disabled.
+        /// </summary>
+        internal SpanEnrichmentState? GetOrCreateFeatureFlagEnrichment()
+        {
+            if (!Tracer.Settings.IsSpanEnrichmentEnabled)
+            {
+                return null;
+            }
+
+            if (Volatile.Read(ref _featureFlagEnrichment) is null)
+            {
+                Interlocked.CompareExchange(ref _featureFlagEnrichment, new(), null);
+            }
+
+            return _featureFlagEnrichment;
+        }
 
         internal void EnableIastInRequest()
         {
@@ -179,11 +220,7 @@ namespace Datadog.Trace
                         }
                     }
 
-                    if (_appSecRequestContext is not null)
-                    {
-                        _appSecRequestContext.CloseWebSpan(span);
-                        _appSecRequestContext.DisposeAdditiveContext();
-                    }
+                    Volatile.Read(ref _appSecRequestContext)?.CloseWebSpan(span);
                 }
             }
 
@@ -192,6 +229,8 @@ namespace Datadog.Trace
             {
                 ExtraServicesProvider.Instance.AddService(span.ServiceName);
             }
+
+            var disposeAdditiveContext = span.IsRootSpan && span.Type == SpanTypes.Web;
 
             lock (_rootSpan!)
             {
@@ -202,6 +241,8 @@ namespace Datadog.Trace
                 {
                     spansToWrite = _spans;
                     _spans = default;
+                    _segmentClosed = true;
+                    disposeAdditiveContext = true;
                     TelemetryFactory.Metrics.RecordCountTraceSegmentsClosed();
                 }
                 else if (TestOptimization.Instance.IsRunning && span.IsCiVisibilitySpan())
@@ -229,6 +270,11 @@ namespace Datadog.Trace
                     // Therefore, we bypass the resize logic and immediately allocate the array to its maximum size
                     _spans = new SpanCollection(spansToWrite.Count);
                     TelemetryFactory.Metrics.RecordCountTracePartialFlush(MetricTags.PartialFlushReason.LargeTrace);
+                }
+
+                if (disposeAdditiveContext)
+                {
+                    _appSecRequestContext?.DisposeAdditiveContext();
                 }
             }
 

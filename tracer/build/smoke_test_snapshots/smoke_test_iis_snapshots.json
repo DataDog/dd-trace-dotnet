@@ -114,6 +114,7 @@
         "span.kind": "server",
         "http.method": "GET",
         "http.request.headers.host": "localhost:5000",
+        "http.response.headers.content-type": "text/plain; charset=utf-8",
         "http.url": "http://localhost:5000/api/values",
         "http.status_code": "200",
         "network.client.ip": "::1",

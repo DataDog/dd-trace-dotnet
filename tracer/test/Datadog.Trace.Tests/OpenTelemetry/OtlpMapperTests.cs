@@ -11,11 +11,14 @@ using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.MessagePack;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.FeatureFlags;
 using Datadog.Trace.OpenTelemetry;
 using Datadog.Trace.OpenTelemetry.Common;
+using Datadog.Trace.Sampling;
 using Datadog.Trace.TestHelpers.TestTracer;
 using Datadog.Trace.Tests.Util;
 using FluentAssertions;
+using Moq;
 using Xunit;
 
 namespace Datadog.Trace.Tests.OpenTelemetry;
@@ -154,7 +157,7 @@ public class OtlpMapperTests
     }
 
     [Fact]
-    public void EmitAttributesFromSpan_EmitsServiceName()
+    public void EmitAttributesFromSpan_EmitsDatadogAttributes()
     {
         var span = CreateSpan();
 
@@ -162,39 +165,23 @@ public class OtlpMapperTests
         OtlpMapper.EmitAttributesFromSpan(kv => attributes.Add(kv), CreateSpanModel(span), limit: 128);
 
         attributes.Should().Contain(kv => kv.Key == "service.name" && (string)kv.Value! == span.ServiceName);
-    }
-
-    [Fact]
-    public void EmitAttributesFromSpan_EmitsResourceName()
-    {
-        var span = CreateSpan();
-
-        var attributes = new List<KeyValue>();
-        OtlpMapper.EmitAttributesFromSpan(kv => attributes.Add(kv), CreateSpanModel(span), limit: 128);
-
         attributes.Should().Contain(kv => kv.Key == "resource.name" && (string)kv.Value! == span.ResourceName);
-    }
-
-    [Fact]
-    public void EmitAttributesFromSpan_EmitsOperationName()
-    {
-        var span = CreateSpan();
-
-        var attributes = new List<KeyValue>();
-        OtlpMapper.EmitAttributesFromSpan(kv => attributes.Add(kv), CreateSpanModel(span), limit: 128);
-
         attributes.Should().Contain(kv => kv.Key == "operation.name" && (string)kv.Value! == span.OperationName);
+        attributes.Should().Contain(kv => kv.Key == "span.type" && (string)kv.Value! == span.Type);
     }
 
     [Fact]
-    public void EmitAttributesFromSpan_EmitsSpanType()
+    public void EmitAttributesFromSpan_DoesNotEmitDatadogAttributes_WhenOpenTelemetrySemanticsEnabled()
     {
-        var span = CreateSpan();
+        var span = CreateSpan(openTelemetrySemanticsEnabled: true);
 
         var attributes = new List<KeyValue>();
         OtlpMapper.EmitAttributesFromSpan(kv => attributes.Add(kv), CreateSpanModel(span), limit: 128);
 
-        attributes.Should().Contain(kv => kv.Key == "span.type" && (string)kv.Value! == span.Type);
+        attributes.Should().NotContain(kv => kv.Key == "service.name");
+        attributes.Should().NotContain(kv => kv.Key == "resource.name");
+        attributes.Should().NotContain(kv => kv.Key == "operation.name");
+        attributes.Should().NotContain(kv => kv.Key == "span.type");
     }
 
     [Fact]
@@ -330,12 +317,130 @@ public class OtlpMapperTests
         attributes.Should().Contain(kv => kv.Key == "other.tag" && (string)kv.Value! == "should-be-kept");
     }
 
-    private static Span CreateSpan(string? origin = null)
+    [Theory]
+    [InlineData("error.msg")]
+    [InlineData("error.stack")]
+    [InlineData("otel.status_code")]
+    [InlineData("otel.status_description")]
+    [InlineData("span.kind")]
+    [InlineData("service.name")]
+    [InlineData("service.version")]
+    [InlineData("service.instance.id")]
+    [InlineData("component")]
+    [InlineData("http-client-handler-type")]
+    public void EmitAttributesFromSpan_DoesNotEmitOtelSemanticsRestrictedTag_WhenOpenTelemetrySemanticsEnabled(string tagKey)
+    {
+        var span = CreateSpan(openTelemetrySemanticsEnabled: true);
+        span.SetTag(tagKey, "some-value");
+
+        var attributes = new List<KeyValue>();
+        OtlpMapper.EmitAttributesFromSpan(kv => attributes.Add(kv), CreateSpanModel(span), limit: 128);
+
+        attributes.Should().NotContain(kv => kv.Key == tagKey, because: $"'{tagKey}' must not be emitted as a span attribute when OTel trace compatibility is enabled");
+    }
+
+    [Theory]
+    [InlineData("error.msg")]
+    [InlineData("error.stack")]
+    [InlineData("otel.library.name")]
+    [InlineData("otel.library.version")]
+    [InlineData("otel.status_code")]
+    [InlineData("otel.status_description")]
+    [InlineData("otel.trace_id")]
+    [InlineData("span.kind")]
+    [InlineData("service.name")]
+    [InlineData("service.version")]
+    [InlineData("service.instance.id")]
+    [InlineData("component")]
+    [InlineData("http-client-handler-type")]
+    public void EmitAttributesFromSpan_EmitsOtelSemanticsRestrictedTag_WhenOpenTelemetrySemanticsDisabled(string tagKey)
+    {
+        var span = CreateSpan();
+        span.SetTag(tagKey, "some-value");
+
+        var attributes = new List<KeyValue>();
+        OtlpMapper.EmitAttributesFromSpan(kv => attributes.Add(kv), CreateSpanModel(span), limit: 128);
+
+        attributes.Should().Contain(kv => kv.Key == tagKey, because: $"'{tagKey}' should be emitted as a span attribute when OTel trace compatibility is disabled");
+    }
+
+    [Fact]
+    public async Task EmitAttributesFromSpan_EmitsFeatureFlagEnrichment_OnLocalRoot()
+    {
+        // Regression: ffe_* enrichment is produced at serialization time (not stored on span.Tags),
+        // and OTLP export bypasses SpanMessagePackFormatter. Without OtlpMapper emitting these too,
+        // OTLP-exported traces would silently drop all feature-flag enrichment.
+        var settings = TracerSettings.Create(new() { { ConfigurationKeys.FeatureFlags.SpanEnrichmentEnabled, "true" } });
+        await using var tracer = TracerHelper.Create(settings, new Mock<IAgentWriter>().Object, new Mock<ITraceSampler>().Object);
+
+        var scope = (Scope)tracer.StartActive("root-op");
+        var span = scope.Span;
+
+        var enrichment = span.Context.TraceContext!.GetOrCreateFeatureFlagEnrichment()!;
+        enrichment.AddSerialId(100);
+        enrichment.AddSubject("user-123", 100);
+        enrichment.AddDefault("my-flag", "fallback-value");
+        span.Finish();
+
+        // Main TraceChunkModel constructor so IsLocalRoot is derived from TraceContext.RootSpan.
+        var spanModel = new TraceChunkModel(new SpanCollection(new[] { span })).GetSpanModel(0);
+        spanModel.IsLocalRoot.Should().BeTrue();
+
+        var attributes = new List<KeyValue>();
+        OtlpMapper.EmitAttributesFromSpan(kv => attributes.Add(kv), spanModel, limit: 128);
+
+        attributes.Should().Contain(kv => kv.Key == SpanEnrichmentState.TagFlagsEnc && (string)kv.Value! == "ZA==");
+        attributes.Should().Contain(kv => kv.Key == SpanEnrichmentState.TagSubjectsEnc);
+        attributes.Should().Contain(kv => kv.Key == SpanEnrichmentState.TagRuntimeDefaults && (string)kv.Value! == "{\"my-flag\":\"fallback-value\"}");
+    }
+
+    [Fact]
+    public async Task EmitAttributesFromSpan_ReservesEnrichmentSlots_WhenSpanTagsExceedLimit()
+    {
+        // ffe_* enrichment must be prioritized over arbitrary customer span tags: a heavily-tagged
+        // local root that hits the OTLP attribute limit must still carry enrichment (the MessagePack
+        // path has no such limit, so dropping it here would diverge). Emitting ffe_* before the span
+        // tags reserves their slots. OTEL-semantics mode skips the service/operation/etc. block, so
+        // with no origin/last_parent set the three ffe_* attributes are emitted first, deterministically.
+        var settings = TracerSettings.Create(new()
+        {
+            { ConfigurationKeys.FeatureFlags.SpanEnrichmentEnabled, "true" },
+            { ConfigurationKeys.OpenTelemetry.OtelSemanticsEnabled, "true" },
+        });
+        await using var tracer = TracerHelper.Create(settings, new Mock<IAgentWriter>().Object, new Mock<ITraceSampler>().Object);
+
+        var scope = (Scope)tracer.StartActive("root-op");
+        var span = scope.Span;
+        for (var i = 0; i < 5; i++)
+        {
+            span.SetTag($"customer.tag.{i}", "v");
+        }
+
+        var enrichment = span.Context.TraceContext!.GetOrCreateFeatureFlagEnrichment()!;
+        enrichment.AddSerialId(100);
+        enrichment.AddSubject("user-123", 100);
+        enrichment.AddDefault("my-flag", "fallback-value");
+        span.Finish();
+
+        var spanModel = new TraceChunkModel(new SpanCollection(new[] { span })).GetSpanModel(0);
+
+        var attributes = new List<KeyValue>();
+        // limit 3 = exactly the three ffe_* slots; every customer tag must then spill.
+        var dropped = OtlpMapper.EmitAttributesFromSpan(kv => attributes.Add(kv), spanModel, limit: 3);
+
+        attributes.Should().Contain(kv => kv.Key == SpanEnrichmentState.TagFlagsEnc);
+        attributes.Should().Contain(kv => kv.Key == SpanEnrichmentState.TagSubjectsEnc);
+        attributes.Should().Contain(kv => kv.Key == SpanEnrichmentState.TagRuntimeDefaults);
+        attributes.Should().NotContain(kv => kv.Key.StartsWith("customer.tag."));
+        dropped.Should().BeGreaterOrEqualTo(5, "the five customer tags all spill once the three enrichment slots are taken");
+    }
+
+    private static Span CreateSpan(string? origin = null, bool openTelemetrySemanticsEnabled = false)
     {
         var traceContext = new TraceContext(new StubDatadogTracer());
         traceContext.Origin = origin;
         var spanContext = new SpanContext(parent: null, traceContext, serviceName: null);
-        return new Span(spanContext, DateTimeOffset.UtcNow);
+        return new Span(spanContext, DateTimeOffset.UtcNow, tags: null, openTelemetrySemanticsEnabled: openTelemetrySemanticsEnabled);
     }
 
     private static SpanModel CreateSpanModel(Span span)

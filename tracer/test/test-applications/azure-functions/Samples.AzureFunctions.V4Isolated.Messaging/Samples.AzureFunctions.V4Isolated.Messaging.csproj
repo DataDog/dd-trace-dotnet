@@ -1,0 +1,59 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFrameworks>net6.0;net7.0;net8.0;net9.0;net10.0</TargetFrameworks>
+    <AzureFunctionsVersion>v4</AzureFunctionsVersion>
+    <OutputType>Exe</OutputType>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <NoWarn>$(NoWarn);NU1510</NoWarn>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Azure.Messaging.EventHubs" Version="5.11.5" />
+    <PackageReference Include="Azure.Messaging.ServiceBus" Version="7.18.1" />
+    <PackageReference Include="Microsoft.Azure.Functions.Worker" Version="2.2.0" />
+    <PackageReference Include="Microsoft.Azure.Functions.Worker.Extensions.EventHubs" Version="6.5.0" />
+    <PackageReference Include="Microsoft.Azure.Functions.Worker.Extensions.Http" Version="3.3.0" />
+    <PackageReference Include="Microsoft.Azure.Functions.Worker.Extensions.ServiceBus" Version="5.22.0" />
+    <PackageReference Include="Microsoft.Azure.Functions.Worker.Sdk" Version="2.0.5" />
+    <PackageReference Include="System.Diagnostics.DiagnosticSource" Version="8.0.1" />
+  </ItemGroup>
+
+  <!-- Core Tools loads WebJobs extensions from .azurefunctions, so the generated WorkerExtensions project
+       should carry its net8 Microsoft.Extensions.* dependencies instead of assuming the isolated app's
+       target framework or the Core Tools host provides them. -->
+  <Target Name="SetAzureFunctionsWorkerExtensionBuildProperties" BeforeTargets="_FunctionsPreBuild">
+    <PropertyGroup>
+      <_FunctionsExtensionCommonProps>$(_FunctionsExtensionCommonProps);DisableTransitiveFrameworkReferences=true</_FunctionsExtensionCommonProps>
+    </PropertyGroup>
+  </Target>
+
+  <Target Name="CopyAzureFunctionsWorkerExtensionConfigurationAssemblies" AfterTargets="_FunctionsExtensionAssignTargetPaths">
+    <ItemGroup>
+      <_AzureFunctionsWorkerExtensionConfigurationAssembly Include="$(_FunctionsExtensionsOutputPath)\Microsoft.Extensions.Configuration.dll" />
+      <_AzureFunctionsWorkerExtensionConfigurationAssembly Include="$(_FunctionsExtensionsOutputPath)\Microsoft.Extensions.Configuration.Abstractions.dll" />
+      <_AzureFunctionsWorkerExtensionConfigurationAssembly Include="$(_FunctionsExtensionsOutputPath)\Microsoft.Extensions.Configuration.Binder.dll" />
+      <_AzureFunctionsWorkerExtensionConfigurationAssembly Include="$(_FunctionsExtensionsOutputPath)\Microsoft.Extensions.Primitives.dll" />
+      <_NoneWithTargetPath
+        Include="@(_AzureFunctionsWorkerExtensionConfigurationAssembly)"
+        TargetPath="$(_FunctionsExtensionsDirectory)/%(Filename)%(Extension)"
+        CopyToOutputDirectory="PreserveNewest"
+        CopyToPublishDirectory="PreserveNewest" />
+    </ItemGroup>
+
+    <Error
+      Condition="!Exists('%(_AzureFunctionsWorkerExtensionConfigurationAssembly.Identity)')"
+      Text="Missing Azure Functions worker extension dependency: %(_AzureFunctionsWorkerExtensionConfigurationAssembly.Identity)" />
+  </Target>
+
+  <ItemGroup>
+    <None Update="host.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="local.settings.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>Never</CopyToPublishDirectory>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Using Include="System.Threading.ExecutionContext" Alias="ExecutionContext" />
+  </ItemGroup>
+</Project>

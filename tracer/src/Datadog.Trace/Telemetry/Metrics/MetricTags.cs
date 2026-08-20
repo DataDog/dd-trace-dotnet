@@ -79,9 +79,11 @@ internal static class MetricTags
     {
         [Description("reason:p0_drop")] P0Drop,
         [Description("reason:overfull_buffer")] OverfullBuffer,
+        [Description("reason:trace_too_large")] TraceTooLarge,
         [Description("reason:serialization_error")] SerializationError,
         [Description("reason:api_error")] ApiError,
         [Description("reason:trace_filter")] TraceFilter,
+        [Description("reason:buffer_locked")] BufferLocked,
     }
 
     internal enum StatusCode
@@ -186,6 +188,109 @@ internal static class MetricTags
         [Description("component_name:iast")] Iast,
         [Description("component_name:iast_derived")] IastDerived,
         [Description("component_name:iast_aspects")] IastAspects,
+    }
+
+    internal enum DebuggerMemoryPressureState
+    {
+        [Description("state:enter")] Enter,
+        [Description("state:exit")] Exit,
+    }
+
+    internal enum DebuggerMemoryPressureTrigger
+    {
+        [Description("trigger:none")] None,
+        [Description("trigger:memory")] Memory,
+        [Description("trigger:gc")] Gc,
+        [Description("trigger:both")] Both,
+    }
+
+    internal enum DebuggerMemoryPressureDisabledReason
+    {
+        [Description("reason:no_signals")] NoSignals,
+        [Description("reason:error")] Error,
+    }
+
+    internal enum DebuggerMemoryPressureMemoryBucket
+    {
+        [Description("bucket:lt_70")] LessThan70,
+        [Description("bucket:70_80")] From70To80,
+        [Description("bucket:80_85")] From80To85,
+        [Description("bucket:85_90")] From85To90,
+        [Description("bucket:gte_90")] GreaterThanOrEqual90,
+    }
+
+    internal enum DebuggerMemoryPressureGcBucket
+    {
+        [Description("bucket:lt_1")] LessThan1,
+        [Description("bucket:1_2")] From1To2,
+        [Description("bucket:2_5")] From2To5,
+        [Description("bucket:gte_5")] GreaterThanOrEqual5,
+    }
+
+    internal enum DebuggerMemoryPressureDurationBucket
+    {
+        [Description("bucket:lt_1s")] LessThan1Second,
+        [Description("bucket:1_5s")] From1To5Seconds,
+        [Description("bucket:5_30s")] From5To30Seconds,
+        [Description("bucket:gte_30s")] GreaterThanOrEqual30Seconds,
+    }
+
+    internal enum DebuggerEventType
+    {
+        [Description("event_type:snapshot")] Snapshot = 0,
+        [Description("event_type:log")] Log = 1,
+        [Description("event_type:metric")] Metric = 2,
+        [Description("event_type:span")] Span = 3,
+    }
+
+    internal enum DebuggerCaptureEventType
+    {
+        [Description("event_type:snapshot")] Snapshot = 0,
+        [Description("event_type:log")] Log = 1,
+    }
+
+    internal enum DebuggerEventsSkippedReason
+    {
+        [Description("reason:rateLimitGlobal")] RateLimitGlobal = 0,
+        [Description("reason:rateLimitProbe")] RateLimitProbe = 1,
+
+        /// <summary>
+        /// The event was skipped because probe evaluation exceeded its time limit before capture began.
+        /// </summary>
+        [Description("reason:evaluationTimeout")] EvaluationTimeout = 2,
+    }
+
+    internal enum DebuggerEventsDroppedReason
+    {
+        /// <summary>
+        /// The captured event was discarded because the debugger upload queue was full.
+        /// </summary>
+        [Description("reason:queueFull")] QueueFull = 0,
+
+        /// <summary>
+        /// The captured event exceeded the 1 MB intake payload limit and was discarded.
+        /// </summary>
+        [Description("reason:payloadTooLarge")] PayloadTooLarge = 1,
+    }
+
+    internal enum DebuggerCaptureIncompleteReason
+    {
+        [Description("reason:runtimeError")] RuntimeError = 0,
+
+        /// <summary>
+        /// Capture exceeded its time limit, so the partial event was retained.
+        /// </summary>
+        [Description("reason:timeout")] Timeout = 1,
+        [Description("reason:depth")] Depth = 2,
+        [Description("reason:fieldCount")] FieldCount = 3,
+        [Description("reason:collectionSize")] CollectionSize = 4,
+        [Description("reason:stringLength")] StringLength = 5,
+
+        /// <summary>
+        /// The event exceeded the 1 MB intake payload limit, so capture was trimmed and the partial event was retained.
+        /// </summary>
+        [Description("reason:payloadTooLarge")] PayloadTooLarge = 6,
+        [Description("reason:other")] Other = 7,
     }
 
     internal enum IntegrationName
@@ -298,15 +403,26 @@ internal static class MetricTags
         // Note the initial 'waf_version'. This is an optimisation to avoid multiple array allocations
         // It is replaced with the "real" waf_version at runtime
         // CAUTION: waf_version should aways be placed in first position
-        [Description("waf_version;event_rules_version;rule_triggered:false;request_blocked:false;waf_timeout:false;block_failure:false;rate_limited:false;input_truncated:false")]Normal,
-        [Description("waf_version;event_rules_version;rule_triggered:true;request_blocked:false;waf_timeout:false;block_failure:false;rate_limited:false;input_truncated:false")]RuleTriggered,
-        [Description("waf_version;event_rules_version;rule_triggered:true;request_blocked:true;waf_timeout:false;block_failure:false;rate_limited:false;input_truncated:false")]RuleTriggeredAndBlocked,
-        [Description("waf_version;event_rules_version;rule_triggered:false;request_blocked:false;waf_timeout:true;block_failure:false;rate_limited:false;input_truncated:false")]WafTimeout,
+        [Description("waf_version;event_rules_version;rule_triggered:false;request_blocked:false;waf_timeout:false;block_failure:false;rate_limited:false;input_truncated:false;waf_error:false")]Normal,
+        [Description("waf_version;event_rules_version;rule_triggered:true;request_blocked:false;waf_timeout:false;block_failure:false;rate_limited:false;input_truncated:false;waf_error:false")]RuleTriggered,
+        [Description("waf_version;event_rules_version;rule_triggered:true;request_blocked:true;waf_timeout:false;block_failure:false;rate_limited:false;input_truncated:false;waf_error:false")]RuleTriggeredAndBlocked,
+        [Description("waf_version;event_rules_version;rule_triggered:false;request_blocked:false;waf_timeout:true;block_failure:false;rate_limited:false;input_truncated:false;waf_error:false")]WafTimeout,
         // Input truncated
-        [Description("waf_version;event_rules_version;rule_triggered:false;request_blocked:false;waf_timeout:false;block_failure:false;rate_limited:false;input_truncated:true")] NormalTruncated,
-        [Description("waf_version;event_rules_version;rule_triggered:true;request_blocked:false;waf_timeout:false;block_failure:false;rate_limited:false;input_truncated:true")] RuleTriggeredTruncated,
-        [Description("waf_version;event_rules_version;rule_triggered:true;request_blocked:true;waf_timeout:false;block_failure:false;rate_limited:false;input_truncated:true")] RuleTriggeredAndBlockedTruncated,
-        [Description("waf_version;event_rules_version;rule_triggered:false;request_blocked:false;waf_timeout:true;block_failure:false;rate_limited:false;input_truncated:true")] WafTimeoutTruncated,
+        [Description("waf_version;event_rules_version;rule_triggered:false;request_blocked:false;waf_timeout:false;block_failure:false;rate_limited:false;input_truncated:true;waf_error:false")] NormalTruncated,
+        [Description("waf_version;event_rules_version;rule_triggered:true;request_blocked:false;waf_timeout:false;block_failure:false;rate_limited:false;input_truncated:true;waf_error:false")] RuleTriggeredTruncated,
+        [Description("waf_version;event_rules_version;rule_triggered:true;request_blocked:true;waf_timeout:false;block_failure:false;rate_limited:false;input_truncated:true;waf_error:false")] RuleTriggeredAndBlockedTruncated,
+        [Description("waf_version;event_rules_version;rule_triggered:false;request_blocked:false;waf_timeout:true;block_failure:false;rate_limited:false;input_truncated:true;waf_error:false")] WafTimeoutTruncated,
+        [Description("waf_version;event_rules_version;rule_triggered:false;request_blocked:false;waf_timeout:false;block_failure:false;rate_limited:false;input_truncated:false;waf_error:true")] WafError,
+        [Description("waf_version;event_rules_version;rule_triggered:false;request_blocked:false;waf_timeout:false;block_failure:false;rate_limited:false;input_truncated:true;waf_error:true")] WafErrorTruncated,
+    }
+
+    public enum WafError
+    {
+        // CAUTION: waf_version should aways be placed in first position
+        [Description("waf_version;event_rules_version;waf_error:-127")] BindingError,
+        [Description("waf_version;event_rules_version;waf_error:-3")] Internal,
+        [Description("waf_version;event_rules_version;waf_error:-2")] InvalidObject,
+        [Description("waf_version;event_rules_version;waf_error:-1")] InvalidArgument,
     }
 
     public enum WafStatus
@@ -430,6 +546,41 @@ internal static class MetricTags
     {
         [Description("encoding:protobuf")] Protobuf,
         [Description("encoding:json")] Json,
+    }
+
+    // Note that these tags need to remain in sync with StatsCardinalityReporter.StatsdTags.Tags
+    // (both order and values)
+    [EnumExtensions]
+    internal enum CollapsedStatsFields
+    {
+        [Description("")] None,
+        [Description("collapsed:whole_key")] WholeKey,
+
+        [Description("collapsed:resource")] Resource,
+        [Description("collapsed:http_endpoint")] HttpEndpoint,
+        [Description("collapsed:peer_tags")] PeerTags,
+        [Description("collapsed:additional_metric_tags")] AdditionalMetricTags,
+
+        [Description("collapsed:resource;collapsed:http_endpoint")] ResourceAndHttpEndpoint,
+        [Description("collapsed:resource;collapsed:peer_tags")] ResourceAndPeerTags,
+        [Description("collapsed:resource;collapsed:additional_metric_tags")] ResourceAndAdditionalMetricTags,
+
+        [Description("collapsed:http_endpoint;collapsed:peer_tags")] HttpEndpointAndPeerTags,
+        [Description("collapsed:http_endpoint;collapsed:additional_metric_tags")] HttpEndpointAndAdditionalMetricTags,
+        [Description("collapsed:peer_tags;collapsed:additional_metric_tags")] PeerTagsAndAdditionalMetricTags,
+
+        [Description("collapsed:resource;collapsed:http_endpoint;collapsed:peer_tags")] ResourceAndHttpEndpointAndPeerTags,
+        [Description("collapsed:resource;collapsed:http_endpoint;collapsed:additional_metric_tags")] ResourceAndHttpEndpointAndAdditionalMetricTags,
+        [Description("collapsed:resource;collapsed:peer_tags;collapsed:additional_metric_tags")] ResourceAndPeerTagsAndAdditionalMetricTags,
+        [Description("collapsed:http_endpoint;collapsed:peer_tags;collapsed:additional_metric_tags")] HttpEndpointAndPeerTagsAndAdditionalMetricTags,
+
+        [Description("collapsed:resource;collapsed:http_endpoint;collapsed:peer_tags;collapsed:additional_metric_tags")] ResourceAndHttpEndpointAndPeerTagsAndAdditionalMetricTags,
+    }
+
+    internal enum OversizedStatsFields
+    {
+        [Description("")] None,
+        [Description("oversized:additional_metric_tags")] AdditionalMetricTags,
     }
 
     public enum CIVisibilityTestFramework

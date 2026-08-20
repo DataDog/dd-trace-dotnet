@@ -1,4 +1,4 @@
-// <copyright file="SecurityReporter.cs" company="Datadog">
+﻿// <copyright file="SecurityReporter.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -66,6 +66,8 @@ internal sealed partial class SecurityReporter
         { "X-SigSci-Tags", string.Empty },
     };
 
+    private static readonly Dictionary<string, string?> AlwaysResponseHeaders = new() { { "content-length", string.Empty }, { "content-type", string.Empty } };
+
     private static readonly Dictionary<string, string?> ResponseHeaders = new() { { "content-length", string.Empty }, { "content-type", string.Empty }, { "Content-Encoding", string.Empty }, { "Content-Language", string.Empty } };
     private readonly HttpTransportBase _httpTransport;
     private readonly Span _span;
@@ -93,7 +95,17 @@ internal sealed partial class SecurityReporter
     {
         if (_span.IsAppsecEvent())
         {
-            AddResponseHeaderTags();
+            var route = _span.GetTag(Tags.AspNetCoreRoute) ?? _span.GetTag(Tags.AspNetRoute);
+            if (route != null)
+            {
+                _span.SetTag(Tags.HttpEndpoint, route);
+            }
+        }
+
+        if (CanAccessHeaders)
+        {
+            var headers = _span.IsAppsecEvent() ? ResponseHeaders : AlwaysResponseHeaders;
+            AddHeaderTags(_span, _httpTransport.GetResponseHeaders(), headers, SpanContextPropagator.HttpResponseHeadersTagPrefix);
         }
     }
 
@@ -124,7 +136,10 @@ internal sealed partial class SecurityReporter
         }
     }
 
-    internal static void RecordWafTelemetry(IResult? result)
+    internal static void RecordWafTelemetry(IResult? result, bool isRasp)
+        => RecordWafTelemetry(result, isRasp, TelemetryFactory.Metrics);
+
+    internal static void RecordWafTelemetry(IResult? result, bool isRasp, IMetricsTelemetryCollector metrics)
     {
         if (result is null)
         {
@@ -133,22 +148,32 @@ internal sealed partial class SecurityReporter
 
         if (result.Timeout)
         {
-            TelemetryFactory.Metrics.RecordCountWafRequests(
+            metrics.RecordCountWafRequests(
                 result.Truncated ? MetricTags.WafAnalysis.WafTimeoutTruncated : MetricTags.WafAnalysis.WafTimeout);
+        }
+        else if (!isRasp && result.ReturnCode < WafReturnCode.Ok)
+        {
+            metrics.RecordCountWafRequests(
+                result.Truncated ? MetricTags.WafAnalysis.WafErrorTruncated : MetricTags.WafAnalysis.WafError);
+
+            if (result.ReturnCode.ToWafErrorTag() is { } wafError)
+            {
+                metrics.RecordCountWafError(wafError);
+            }
         }
         else if (result.ShouldBlock)
         {
-            TelemetryFactory.Metrics.RecordCountWafRequests(
+            metrics.RecordCountWafRequests(
                 result.Truncated ? MetricTags.WafAnalysis.RuleTriggeredAndBlockedTruncated : MetricTags.WafAnalysis.RuleTriggeredAndBlocked);
         }
         else if (result.ShouldReportSecurityResult)
         {
-            TelemetryFactory.Metrics.RecordCountWafRequests(
+            metrics.RecordCountWafRequests(
                 result.Truncated ? MetricTags.WafAnalysis.RuleTriggeredTruncated : MetricTags.WafAnalysis.RuleTriggered);
         }
         else
         {
-            TelemetryFactory.Metrics.RecordCountWafRequests(
+            metrics.RecordCountWafRequests(
                 result.Truncated ? MetricTags.WafAnalysis.NormalTruncated : MetricTags.WafAnalysis.Normal);
         }
     }
@@ -338,17 +363,15 @@ internal sealed partial class SecurityReporter
 
     internal void AddResponseHeaderTags()
     {
-        TryAddEndPoint();
-        var headers = CanAccessHeaders ? _httpTransport.GetResponseHeaders() : new NameValueHeadersCollection(new NameValueCollection());
-        AddHeaderTags(_span, headers, ResponseHeaders, SpanContextPropagator.HttpResponseHeadersTagPrefix);
-    }
-
-    private void TryAddEndPoint()
-    {
         var route = _span.GetTag(Tags.AspNetCoreRoute) ?? _span.GetTag(Tags.AspNetRoute);
         if (route != null)
         {
             _span.SetTag(Tags.HttpEndpoint, route);
+        }
+
+        if (CanAccessHeaders)
+        {
+            AddHeaderTags(_span, _httpTransport.GetResponseHeaders(), ResponseHeaders, SpanContextPropagator.HttpResponseHeadersTagPrefix);
         }
     }
 }

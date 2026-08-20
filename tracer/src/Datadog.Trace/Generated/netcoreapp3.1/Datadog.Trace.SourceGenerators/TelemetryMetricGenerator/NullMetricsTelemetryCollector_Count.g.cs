@@ -96,6 +96,10 @@ internal sealed partial class NullMetricsTelemetryCollector
     {
     }
 
+    public void RecordCountStatsCollapsedSpans(Datadog.Trace.Telemetry.Metrics.MetricTags.CollapsedStatsFields tag1, Datadog.Trace.Telemetry.Metrics.MetricTags.OversizedStatsFields tag2, int increment = 1)
+    {
+    }
+
     public void RecordCountOpenTelemetryConfigHiddenByDatadogConfig(Datadog.Trace.Telemetry.Metrics.MetricTags.DatadogConfiguration tag1, Datadog.Trace.Telemetry.Metrics.MetricTags.OpenTelemetryConfiguration tag2, int increment = 1)
     {
     }
@@ -156,6 +160,38 @@ internal sealed partial class NullMetricsTelemetryCollector
     {
     }
 
+    public void RecordCountDebuggerMemoryPressureTransitions(Datadog.Trace.Telemetry.Metrics.MetricTags.DebuggerMemoryPressureState tag1, Datadog.Trace.Telemetry.Metrics.MetricTags.DebuggerMemoryPressureTrigger tag2, int increment = 1)
+    {
+    }
+
+    public void RecordCountDebuggerMemoryPressureDisabled(Datadog.Trace.Telemetry.Metrics.MetricTags.DebuggerMemoryPressureDisabledReason tag, int increment = 1)
+    {
+    }
+
+    public void RecordCountDebuggerMemoryPressureMemoryUsagePct(Datadog.Trace.Telemetry.Metrics.MetricTags.DebuggerMemoryPressureState tag1, Datadog.Trace.Telemetry.Metrics.MetricTags.DebuggerMemoryPressureMemoryBucket tag2, int increment = 1)
+    {
+    }
+
+    public void RecordCountDebuggerMemoryPressureGcActivity(Datadog.Trace.Telemetry.Metrics.MetricTags.DebuggerMemoryPressureState tag1, Datadog.Trace.Telemetry.Metrics.MetricTags.DebuggerMemoryPressureGcBucket tag2, int increment = 1)
+    {
+    }
+
+    public void RecordCountDebuggerMemoryPressureDuration(Datadog.Trace.Telemetry.Metrics.MetricTags.DebuggerMemoryPressureDurationBucket tag, int increment = 1)
+    {
+    }
+
+    public void RecordCountDebuggerEventsSkipped(Datadog.Trace.Telemetry.Metrics.MetricTags.DebuggerEventsSkippedReason tag1, Datadog.Trace.Telemetry.Metrics.MetricTags.DebuggerEventType tag2, int increment = 1)
+    {
+    }
+
+    public void RecordCountDebuggerEventsDropped(Datadog.Trace.Telemetry.Metrics.MetricTags.DebuggerEventsDroppedReason tag1, Datadog.Trace.Telemetry.Metrics.MetricTags.DebuggerCaptureEventType tag2, int increment = 1)
+    {
+    }
+
+    public void RecordCountDebuggerCaptureIncomplete(Datadog.Trace.Telemetry.Metrics.MetricTags.DebuggerCaptureEventType tag1, Datadog.Trace.Telemetry.Metrics.MetricTags.DebuggerCaptureIncompleteReason tag2, int increment = 1)
+    {
+    }
+
     public void RecordCountWafInit(Datadog.Trace.Telemetry.Metrics.MetricTags.WafStatus tag, int increment = 1)
     {
     }
@@ -169,6 +205,10 @@ internal sealed partial class NullMetricsTelemetryCollector
     }
 
     public void RecordCountInputTruncated(Datadog.Trace.Telemetry.Metrics.MetricTags.TruncationReason tag, int increment = 1)
+    {
+    }
+
+    public void RecordCountWafError(Datadog.Trace.Telemetry.Metrics.MetricTags.WafError tag, int increment = 1)
     {
     }
 

@@ -17,8 +17,10 @@ internal abstract class SkipTestMethodExecutor
 {
     private readonly object _arrayInstance;
     private readonly string _skipReason;
+    private readonly bool _recordCoverageBackfillSkip;
+    private readonly SkippableTest? _skippableTest;
 
-    protected SkipTestMethodExecutor(Assembly assembly, string skipReason)
+    protected SkipTestMethodExecutor(Assembly assembly, string skipReason, bool recordCoverageBackfillSkip = false, SkippableTest? skippableTest = null)
     {
         var testResultType = assembly.GetType("Microsoft.VisualStudio.TestTools.UnitTesting.TestResult", throwOnError: true)!;
         var array = Array.CreateInstance(testResultType, 1);
@@ -31,6 +33,8 @@ internal abstract class SkipTestMethodExecutor
         array.SetValue(result, 0);
         _arrayInstance = array;
         _skipReason = skipReason;
+        _recordCoverageBackfillSkip = recordCoverageBackfillSkip;
+        _skippableTest = skippableTest;
     }
 
     protected void ProcessTestMethod(object testMethod)
@@ -45,10 +49,23 @@ internal abstract class SkipTestMethodExecutor
                 test.GetTags().FinalStatus = TestTags.StatusSkip;
                 test.Close(TestStatus.Skip, TimeSpan.Zero, _skipReason);
             }
+
+            if (_recordCoverageBackfillSkip)
+            {
+                if (_skippableTest is { } skippableTest)
+                {
+                    MsTestIntegration.RecordTestSkipCoverageBackfill(testMethodInfo, skippableTest);
+                }
+                else
+                {
+                    MsTestIntegration.RecordTestSkipCoverageBackfill(testMethodInfo);
+                }
+            }
         }
     }
 
-    internal sealed class SyncImpl(Assembly assembly, string skipReason) : SkipTestMethodExecutor(assembly, skipReason)
+    internal sealed class SyncImpl(Assembly assembly, string skipReason, bool recordCoverageBackfillSkip = false, SkippableTest? skippableTest = null)
+        : SkipTestMethodExecutor(assembly, skipReason, recordCoverageBackfillSkip, skippableTest)
     {
         [DuckReverseMethod(Name = "Execute", ParameterTypeNames = ["Microsoft.VisualStudio.TestTools.UnitTesting.ITestMethod"])]
         public object Execute(object testMethod)
@@ -58,7 +75,8 @@ internal abstract class SkipTestMethodExecutor
         }
     }
 
-    internal sealed class AsyncImpl(Assembly assembly, string skipReason) : SkipTestMethodExecutor(assembly, skipReason)
+    internal sealed class AsyncImpl(Assembly assembly, string skipReason, bool recordCoverageBackfillSkip = false, SkippableTest? skippableTest = null)
+        : SkipTestMethodExecutor(assembly, skipReason, recordCoverageBackfillSkip, skippableTest)
     {
         private object? _resultInstance;
 

@@ -954,7 +954,8 @@ void DebuggerProbesInstrumentationRequester::ModuleLoadFinished_AddMetadataToMod
                                                                        isImplementStateMAchineInterface);
         if (FAILED(hr))
         {
-            Logger::Warn(
+            // Non-TypeRef interface tokens are handled as "not IAsyncStateMachine"; remaining failures are diagnostic only.
+            Logger::Debug(
                 "DebuggerProbesInstrumentationRequester::ModuleLoadFinished_AddMetadataToModule: failed in call to "
                 "DebuggerMethodRewriter::IsTypeImplementIAsyncStateMachine");
             continue;

@@ -6,6 +6,7 @@
 #nullable enable
 
 using System;
+using System.Diagnostics.Tracing;
 
 namespace Datadog.Trace.Vendors.OpenTelemetry.Exporter.OpenTelemetryProtocol.Implementation
 {
@@ -17,6 +18,8 @@ namespace Datadog.Trace.Vendors.OpenTelemetry.Exporter.OpenTelemetryProtocol.Imp
     internal sealed class OpenTelemetryProtocolExporterEventSource
     {
         public static OpenTelemetryProtocolExporterEventSource Log { get; } = new OpenTelemetryProtocolExporterEventSource();
+
+        public bool IsEnabled(EventLevel level, EventKeywords keywords) => false;
 
         public void FailedToReachCollector(Uri endpoint, Exception ex)
         {

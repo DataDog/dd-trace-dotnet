@@ -91,10 +91,67 @@ Expression: (
     var StringArg = (string)scopeMemberArray[18].Value;
     var CollectionArg = (List<string>)scopeMemberArray[19].Value;
     var NestedObjectArg = (DebuggerExpressionLanguageTests.TestStruct.NestedObject)scopeMemberArray[20].Value;
-    var $dd_el_result = (this.String.Length > 2) && ((CollectionLocal.Count > 2) || CollectionLocal
-        .Where(string1 => string1.Length > 4)
-        .ToList()
-        .Any(string2 => string2 == "hello"));
+    var $dd_el_result = (this.String.Length > 2) && ((CollectionLocal.Count > 2) ||
+    {
+        string @string, iterator2;
+        var enumerable2 = (IEnumerable<string>)CollectionLocal;
+        var enumerator2 = enumerable2.GetEnumerator();
+        var filterResult = new List<string>();
+        try
+        {
+            while (true)
+            {
+                if (!enumerator2.MoveNext())
+                {
+                    break;
+                }
+
+                iterator2 = enumerator2.Current;
+
+                if (iterator2.Length > 4)
+                {
+                    filterResult.Add(iterator2);
+                }
+            }
+        }
+        finally
+        {
+            if (enumerator2 != null)
+            {
+                enumerator2.Dispose();
+            }
+        }
+        var enumerable = (IEnumerable<string>)filterResult;
+        var enumerator = enumerable.GetEnumerator();
+        var anyResult = false;
+        try
+        {
+            while (true)
+            {
+                if (!enumerator.MoveNext())
+                {
+                    break;
+                }
+
+                @string = enumerator.Current;
+
+                if (@string == "hello")
+                {
+                    anyResult = true;
+                    break;
+                }
+            }
+        }
+        finally
+        {
+            if (enumerator != null)
+            {
+                enumerator.Dispose();
+            }
+        }
+
+        return anyResult;
+    });
 
     return $dd_el_result;
 }

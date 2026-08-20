@@ -21,14 +21,13 @@ using Microsoft.CodeAnalysis.Text;
 [Generator]
 public class ConfigKeyAliasesSwitcherGenerator : IIncrementalGenerator
 {
-    private const string SupportedConfigurationsFileName = "supported-configurations.yaml";
     private const string ClassName = "ConfigKeyAliasesSwitcher";
 
     /// <inheritdoc />
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
         var additionalText = context.AdditionalTextsProvider
-                                    .Where(static file => Path.GetFileName(file.Path).Equals(SupportedConfigurationsFileName, StringComparison.OrdinalIgnoreCase))
+                                    .Where(static file => Path.GetFileName(file.Path).Equals(Constants.SupportedConfigurationsFileName, StringComparison.OrdinalIgnoreCase))
                                     .WithTrackingName(TrackingNames.ConfigurationKeysAdditionalText);
 
         var yamlContent = additionalText
@@ -105,9 +104,9 @@ public class ConfigKeyAliasesSwitcherGenerator : IIncrementalGenerator
         var aliases = new Dictionary<string, string[]>();
         foreach (var kvp in parsedData.Configurations)
         {
-            if (kvp.Value.Aliases is { Length: > 0 })
+            if (kvp.Value.Aliases.Count > 0)
             {
-                aliases[kvp.Key] = kvp.Value.Aliases;
+                aliases[kvp.Key] = kvp.Value.Aliases.AsArray()!;
             }
         }
 

@@ -36,7 +36,7 @@ namespace Samples
         private static readonly MethodInfo? ExtractMethod = SpanContextExtractorType?.GetMethod("Extract", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static);
         private static readonly MethodInfo? InjectMethod = SpanContextInjectorType?.GetMethod("Inject", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static);
         private static readonly MethodInfo? SetParent = SpanCreationSettingsType?.GetProperty("Parent")?.SetMethod;
-        private static readonly MethodInfo? ForceFlushAsyncMethod = TracerType?.GetMethod("ForceFlushAsync", BindingFlags.Public | BindingFlags.Instance);
+        private static readonly MethodInfo? FlushAsyncMethod = TracerType?.GetMethod("FlushAsync", BindingFlags.Public | BindingFlags.Instance);
         private static readonly MethodInfo? ActiveScopeProperty = TracerType?.GetProperty("ActiveScope")?.GetMethod;
         private static readonly MethodInfo? ConfigureMethod = TracerType?.GetMethod("Configure");
         private static readonly MethodInfo? TraceIdProperty = SpanContextType?.GetProperty("TraceId")?.GetMethod;
@@ -47,7 +47,7 @@ namespace Samples
         private static readonly MethodInfo? SetServiceNameProperty = SpanType?.GetProperty("ServiceName", BindingFlags.NonPublic | BindingFlags.Instance)?.SetMethod;
         private static readonly MethodInfo? SetResourceNameProperty = SpanType?.GetProperty("ResourceName", BindingFlags.NonPublic | BindingFlags.Instance)?.SetMethod;
         private static readonly MethodInfo? SetTagMethod = SpanType?.GetMethod("SetTag", BindingFlags.NonPublic | BindingFlags.Instance);
-        private static readonly MethodInfo? SetExceptionMethod = SpanType?.GetMethod("SetException", BindingFlags.NonPublic | BindingFlags.Instance);
+        private static readonly MethodInfo? SetExceptionMethod = SpanType?.GetMethod("SetException", BindingFlags.NonPublic | BindingFlags.Instance, null, new[] { typeof(Exception) }, null);
         private static readonly MethodInfo? FromDefaultSourcesMethod = TracerSettingsType?.GetMethod("FromDefaultSources", BindingFlags.Public | BindingFlags.Static);
         private static readonly MethodInfo? SetServiceName = TracerSettingsType?.GetProperty("ServiceName")?.SetMethod;
         private static readonly MethodInfo? GetMetricMethod = SpanType?.GetMethod("GetMetric", BindingFlags.NonPublic | BindingFlags.Instance);
@@ -273,13 +273,13 @@ namespace Samples
 
         public static Task ForceTracerFlushAsync()
         {
-            if (GetTracerInstance is null || ForceFlushAsyncMethod is null)
+            if (GetTracerInstance is null || FlushAsyncMethod is null)
             {
                 return Task.CompletedTask;
             }
 
             var tracer = GetTracerInstance.Invoke(null, Array.Empty<object>());
-            return (Task?)ForceFlushAsyncMethod.Invoke(tracer, Array.Empty<object>()) ?? Task.CompletedTask;
+            return (Task?)FlushAsyncMethod.Invoke(tracer, Array.Empty<object>()) ?? Task.CompletedTask;
         }
 
         public static IDisposable GetActiveScope()
@@ -435,7 +435,7 @@ namespace Samples
 
         public static List<KeyValuePair<string, string>> GetDatadogEnvironmentVariables()
         {
-            var prefixes = new[] { "COR_", "CORECLR_", "DD_", "DATADOG_" };
+            var prefixes = new[] { "COR_", "CORECLR_" };
 
             var envVars = from envVar in Environment.GetEnvironmentVariables().Cast<DictionaryEntry>()
                           from prefix in prefixes

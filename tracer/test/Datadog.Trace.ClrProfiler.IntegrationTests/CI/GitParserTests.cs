@@ -158,6 +158,16 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             }
         }
 
+        [SkippableFact]
+        public void GitInfoCurrentReadsCurrentCheckoutMetadata()
+        {
+            var gitInfo = GitInfo.GetCurrent();
+
+            gitInfo.Commit.Should().NotBeNullOrEmpty();
+            gitInfo.Repository.Should().NotBeNullOrEmpty();
+            gitInfo.SourceRoot.Should().NotBeNullOrEmpty();
+        }
+
         public class TestItem : IXunitSerializable
         {
             public TestItem()

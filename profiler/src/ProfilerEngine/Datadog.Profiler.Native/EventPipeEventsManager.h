@@ -19,6 +19,7 @@ class IContentionListener;
 class IGCSuspensionsListener;
 class IGarbageCollectionsListener;
 class INetworkListener;
+class IConfiguration;
 
 class EventPipeEventsManager
 {
@@ -28,6 +29,7 @@ public:
                            IContentionListener* pContentionListener,
                            IGCSuspensionsListener* pGCSuspensionsListener,
                            INetworkListener* pNetworkListener,
+                           IConfiguration* pConfiguration,
                            IGCDumpListener* pGCDumpListener);
     void Register(IGarbageCollectionsListener* pGarbageCollectionsListener);
     void ParseEvent(EVENTPIPE_PROVIDER provider,

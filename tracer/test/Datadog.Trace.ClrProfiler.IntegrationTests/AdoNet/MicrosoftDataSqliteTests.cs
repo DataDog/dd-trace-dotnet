@@ -8,7 +8,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.IntegrationTests.Helpers;
@@ -51,6 +50,17 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
                 return;
             }
 #endif
+
+            if (EnvironmentTools.IsLinux()
+             && !EnvironmentHelper.IsAlpine()
+             && GetRequiredGlibcVersion(packageVersion) is { } requiredGlibc
+             && EnvironmentTools.GetGlibcVersion() is { } hostGlibc
+             && hostGlibc < requiredGlibc)
+            {
+                throw new SkipException($"Skipping as this Microsoft.Data.Sqlite version requires glibc >= {requiredGlibc} " +
+                                  $"(via SQLitePCLRaw.lib.e_sqlite3), but the host only has glibc {hostGlibc}");
+            }
+
             const int expectedSpanCount = 105;
             const string dbType = "sqlite";
             const string expectedOperationName = dbType + ".query";
@@ -106,6 +116,23 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             Assert.NotEmpty(spans);
             spans.Where(s => s.Name.Equals(expectedOperationName)).Should().BeEmpty();
             await telemetry.AssertIntegrationDisabledAsync(IntegrationId.Sqlite);
+        }
+
+        private static Version GetRequiredGlibcVersion(string rawPackageVersion)
+        {
+            if (string.IsNullOrEmpty(rawPackageVersion))
+            {
+                return null;
+            }
+
+            var packageVersion = new Version(rawPackageVersion);
+            return packageVersion switch
+            {
+                { Major: 8 } when packageVersion >= new Version(8, 0, 30) => new(2, 33),
+                { Major: 9 } when packageVersion >= new Version(9, 0, 19) => new(2, 33),
+                { Major: 10 } when packageVersion >= new Version(10, 0, 11) => new(2, 33),
+                _ => null,
+            };
         }
     }
 }
