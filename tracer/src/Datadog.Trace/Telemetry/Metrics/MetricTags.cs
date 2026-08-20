@@ -470,6 +470,50 @@ internal static class MetricTags
         [Description("waf_version;event_rules_version;block:irrelevant;rule_type:command_injection;rule_variant:exec")] CommandInjectionExecIrrelevant = 14,
     }
 
+    public enum RaspError
+    {
+        // CAUTION: waf_version should aways be placed in first position
+        [Description("waf_version;event_rules_version;waf_error:-127;rule_type:lfi")] LfiBindingError = 0,
+        [Description("waf_version;event_rules_version;waf_error:-127;rule_type:ssrf")] SsrfBindingError = 1,
+        [Description("waf_version;event_rules_version;waf_error:-127;rule_type:sql_injection")] SQlIBindingError = 2,
+        [Description("waf_version;event_rules_version;waf_error:-127;rule_type:command_injection;rule_variant:shell")] CommandInjectionShellBindingError = 3,
+        [Description("waf_version;event_rules_version;waf_error:-127;rule_type:command_injection;rule_variant:exec")] CommandInjectionExecBindingError = 4,
+        [Description("waf_version;event_rules_version;waf_error:-3;rule_type:lfi")] LfiInternal = 5,
+        [Description("waf_version;event_rules_version;waf_error:-3;rule_type:ssrf")] SsrfInternal = 6,
+        [Description("waf_version;event_rules_version;waf_error:-3;rule_type:sql_injection")] SQlIInternal = 7,
+        [Description("waf_version;event_rules_version;waf_error:-3;rule_type:command_injection;rule_variant:shell")] CommandInjectionShellInternal = 8,
+        [Description("waf_version;event_rules_version;waf_error:-3;rule_type:command_injection;rule_variant:exec")] CommandInjectionExecInternal = 9,
+        [Description("waf_version;event_rules_version;waf_error:-2;rule_type:lfi")] LfiInvalidObject = 10,
+        [Description("waf_version;event_rules_version;waf_error:-2;rule_type:ssrf")] SsrfInvalidObject = 11,
+        [Description("waf_version;event_rules_version;waf_error:-2;rule_type:sql_injection")] SQlIInvalidObject = 12,
+        [Description("waf_version;event_rules_version;waf_error:-2;rule_type:command_injection;rule_variant:shell")] CommandInjectionShellInvalidObject = 13,
+        [Description("waf_version;event_rules_version;waf_error:-2;rule_type:command_injection;rule_variant:exec")] CommandInjectionExecInvalidObject = 14,
+        [Description("waf_version;event_rules_version;waf_error:-1;rule_type:lfi")] LfiInvalidArgument = 15,
+        [Description("waf_version;event_rules_version;waf_error:-1;rule_type:ssrf")] SsrfInvalidArgument = 16,
+        [Description("waf_version;event_rules_version;waf_error:-1;rule_type:sql_injection")] SQlIInvalidArgument = 17,
+        [Description("waf_version;event_rules_version;waf_error:-1;rule_type:command_injection;rule_variant:shell")] CommandInjectionShellInvalidArgument = 18,
+        [Description("waf_version;event_rules_version;waf_error:-1;rule_type:command_injection;rule_variant:exec")] CommandInjectionExecInvalidArgument = 19,
+    }
+
+    /// <summary>
+    /// Tags for rasp.rule.skipped. Unlike the other RASP metrics this one carries neither waf_version
+    /// nor event_rules_version: the evaluation is skipped before the WAF is reached, so there isn't
+    /// necessarily a WAF instance to report a version for.
+    /// </summary>
+    public enum RaspRuleTypeSkipped
+    {
+        [Description("reason:after-request;rule_type:lfi")] LfiAfterRequest = 0,
+        [Description("reason:after-request;rule_type:ssrf")] SsrfAfterRequest = 1,
+        [Description("reason:after-request;rule_type:sql_injection")] SQlIAfterRequest = 2,
+        [Description("reason:after-request;rule_type:command_injection;rule_variant:shell")] CommandInjectionShellAfterRequest = 3,
+        [Description("reason:after-request;rule_type:command_injection;rule_variant:exec")] CommandInjectionExecAfterRequest = 4,
+        [Description("reason:out-of-request;rule_type:lfi")] LfiOutOfRequest = 5,
+        [Description("reason:out-of-request;rule_type:ssrf")] SsrfOutOfRequest = 6,
+        [Description("reason:out-of-request;rule_type:sql_injection")] SQlIOutOfRequest = 7,
+        [Description("reason:out-of-request;rule_type:command_injection;rule_variant:shell")] CommandInjectionShellOutOfRequest = 8,
+        [Description("reason:out-of-request;rule_type:command_injection;rule_variant:exec")] CommandInjectionExecOutOfRequest = 9,
+    }
+
     public enum TruncationReason
     {
         [Description("truncation_reason:string_too_long")]StringTooLong = 1,
