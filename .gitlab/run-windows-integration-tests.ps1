@@ -305,7 +305,7 @@ Write-Output "Building and running Windows $targetPlatform $testSuite tests for 
 $dependencySetup = if ($testSuite -eq 'localdb') {
     'powershell -NoProfile -ExecutionPolicy Bypass -File c:\mnt\.gitlab\initialize-localdb.ps1 && '
 } elseif ($testSuite -eq 'azure-functions') {
-    'set "PATH=C:\Program Files\Microsoft\Azure Functions Core Tools;C:\Program Files (x86)\Microsoft SDKs\Azure\Storage Emulator;%PATH%" && powershell -NoProfile -ExecutionPolicy Bypass -File c:\mnt\.gitlab\initialize-azure-functions.ps1 && '
+    'set "PATH=C:\Program Files\Microsoft\Azure Functions Core Tools;%PATH%" && powershell -NoProfile -ExecutionPolicy Bypass -File c:\mnt\.gitlab\initialize-azure-functions.ps1 && '
 } elseif ($testSuite -eq 'integration' -and $area -eq 'Tracer' -and $env:FRAMEWORK -eq 'net48') {
     'powershell -NoProfile -ExecutionPolicy Bypass -File c:\mnt\.gitlab\initialize-msmq.ps1 && '
 } else {
