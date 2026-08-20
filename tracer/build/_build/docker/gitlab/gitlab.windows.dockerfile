@@ -53,8 +53,6 @@ COPY install_azure_functions_tools.ps1 install_azure_storage_emulator.ps1 ./
 RUN powershell -Command .\install_azure_functions_tools.ps1 -Version $ENV:AZURE_FUNCTIONS_CORE_TOOLS_VERSION -Url $ENV:AZURE_FUNCTIONS_CORE_TOOLS_DOWNLOAD_URL
 RUN .\install_azure_storage_emulator.ps1 -Version $ENV:AZURE_STORAGE_EMULATOR_VERSION -Url $ENV:AZURE_STORAGE_EMULATOR_DOWNLOAD_URL
 
-ENV PATH="C:\Program Files\Microsoft\Azure Functions Core Tools;C:\Program Files (x86)\Microsoft SDKs\Azure\Storage Emulator;${PATH}"
-
 # Install MSMQ for the .NET Framework MSMQ integration tests.
 COPY install_msmq.ps1 .
 RUN powershell -Command .\install_msmq.ps1
