@@ -86,14 +86,175 @@ public class AsyncLocalScopeManagerOtelTests
         var scopeManager = new AsyncLocalScopeManager(contextTracker, publisher);
         var (rootSpan, _) = CreateSpans();
         var rootScope = scopeManager.Activate(rootSpan, finishOnClose: false);
+        var workerThreadId = 0;
 
         await Task.Run(() =>
         {
+            workerThreadId = Environment.CurrentManagedThreadId;
             scopeManager.Active.Should().BeSameAs(rootScope);
-            publisher.GetCurrentSpan(Environment.CurrentManagedThreadId).Should().BeSameAs(rootSpan);
+            publisher.GetCurrentSpan(workerThreadId).Should().BeSameAs(rootSpan);
         });
 
         scopeManager.Close(rootScope);
+    }
+
+    [Fact]
+    public void ExecutionContextRestorationClearsSameWorkerThread()
+    {
+        var contextTracker = new RecordingContextTracker();
+        var publisher = new RecordingPublisher();
+        var scopeManager = new AsyncLocalScopeManager(contextTracker, publisher);
+        var (rootSpan, _) = CreateSpans();
+        var rootScope = scopeManager.Activate(rootSpan, finishOnClose: false);
+        var executionContext = ExecutionContext.Capture()
+                            ?? throw new InvalidOperationException("Could not capture the active execution context.");
+        var workerThreadId = 0;
+        Exception? workerException = null;
+
+        var thread = new Thread(() =>
+        {
+            try
+            {
+                ExecutionContext.Run(
+                    executionContext,
+                    _ =>
+                    {
+                        workerThreadId = Environment.CurrentManagedThreadId;
+                        scopeManager.Active.Should().BeSameAs(rootScope);
+                        publisher.GetCurrentSpan(workerThreadId).Should().BeSameAs(rootSpan);
+                    },
+                    state: null);
+
+                publisher.GetCurrentSpan(workerThreadId).Should().BeNull();
+                publisher.GetResetCount(workerThreadId).Should().Be(1);
+            }
+            catch (Exception ex)
+            {
+                workerException = ex;
+            }
+        });
+
+        using (ExecutionContext.SuppressFlow())
+        {
+            thread.Start();
+        }
+
+        thread.Join();
+
+        if (workerException is not null)
+        {
+            throw new InvalidOperationException("The worker thread assertion failed.", workerException);
+        }
+
+        scopeManager.Close(rootScope);
+    }
+
+    [Fact]
+    public void LateEnablePublishesActiveScopeAndMirrorsFutureChanges()
+    {
+        var contextTracker = new RecordingContextTracker(isEnabled: false);
+        var disabledPublisher = new RecordingPublisher(isEnabled: false);
+        var enabledPublisher = new RecordingPublisher();
+        var scopeManager = new AsyncLocalScopeManager(contextTracker, disabledPublisher);
+        var (rootSpan, _) = CreateSpans();
+
+        var rootScope = scopeManager.Activate(rootSpan, finishOnClose: false);
+        scopeManager.UpdateOtelThreadContextPublisher(enabledPublisher);
+        scopeManager.Close(rootScope);
+
+        disabledPublisher.Sets.Should().BeEmpty();
+        disabledPublisher.ResetCount.Should().Be(0);
+        enabledPublisher.Sets.Should().ContainSingle().Which.Should().BeSameAs(rootSpan);
+        enabledPublisher.ResetCount.Should().Be(1);
+    }
+
+    [Fact]
+    public async Task LateEnablePublishesExecutionContextTransitions()
+    {
+        var contextTracker = new RecordingContextTracker(isEnabled: false);
+        var disabledPublisher = new RecordingPublisher(isEnabled: false);
+        var enabledPublisher = new RecordingPublisher();
+        var scopeManager = new AsyncLocalScopeManager(contextTracker, disabledPublisher);
+        var (rootSpan, _) = CreateSpans();
+        var rootScope = scopeManager.Activate(rootSpan, finishOnClose: false);
+        var workerThreadId = 0;
+
+        scopeManager.UpdateOtelThreadContextPublisher(enabledPublisher);
+        await Task.Run(() =>
+        {
+            workerThreadId = Environment.CurrentManagedThreadId;
+            scopeManager.Active.Should().BeSameAs(rootScope);
+            enabledPublisher.GetCurrentSpan(workerThreadId).Should().BeSameAs(rootSpan);
+        });
+
+        scopeManager.Close(rootScope);
+    }
+
+    [Fact]
+    public void DisableClearsAndSuppressesFurtherPublication()
+    {
+        var contextTracker = new RecordingContextTracker(isEnabled: false);
+        var disabledPublisher = new RecordingPublisher(isEnabled: false);
+        var enabledPublisher = new RecordingPublisher();
+        var scopeManager = new AsyncLocalScopeManager(contextTracker, disabledPublisher);
+        var (rootSpan, childSpan) = CreateSpans();
+
+        var rootScope = scopeManager.Activate(rootSpan, finishOnClose: false);
+        scopeManager.UpdateOtelThreadContextPublisher(enabledPublisher);
+        scopeManager.UpdateOtelThreadContextPublisher(disabledPublisher);
+
+        var childScope = scopeManager.Activate(childSpan, finishOnClose: false);
+        scopeManager.Close(childScope);
+        scopeManager.Close(rootScope);
+
+        enabledPublisher.Sets.Should().ContainSingle().Which.Should().BeSameAs(rootSpan);
+        enabledPublisher.ResetCount.Should().Be(1);
+        disabledPublisher.Sets.Should().BeEmpty();
+        disabledPublisher.ResetCount.Should().Be(0);
+    }
+
+    [Fact]
+    public void DisableThenReEnableDoesNotDuplicateNotifications()
+    {
+        var contextTracker = new RecordingContextTracker(isEnabled: false);
+        var disabledPublisher = new RecordingPublisher(isEnabled: false);
+        var firstEnabledPublisher = new RecordingPublisher();
+        var secondEnabledPublisher = new RecordingPublisher();
+        var scopeManager = new AsyncLocalScopeManager(contextTracker, disabledPublisher);
+        var (rootSpan, childSpan) = CreateSpans();
+
+        var rootScope = scopeManager.Activate(rootSpan, finishOnClose: false);
+        scopeManager.UpdateOtelThreadContextPublisher(firstEnabledPublisher);
+        scopeManager.UpdateOtelThreadContextPublisher(disabledPublisher);
+        scopeManager.UpdateOtelThreadContextPublisher(secondEnabledPublisher);
+
+        var childScope = scopeManager.Activate(childSpan, finishOnClose: false);
+        scopeManager.Close(childScope);
+        scopeManager.Close(rootScope);
+
+        firstEnabledPublisher.Sets.Should().ContainSingle().Which.Should().BeSameAs(rootSpan);
+        firstEnabledPublisher.ResetCount.Should().Be(1);
+        secondEnabledPublisher.Sets.Should().Equal(rootSpan, childSpan, rootSpan);
+        secondEnabledPublisher.ResetCount.Should().Be(1);
+    }
+
+    [Fact]
+    public void RawScopeRestorePublishesThroughLateEnabledPublisher()
+    {
+        var contextTracker = new RecordingContextTracker(isEnabled: false);
+        var disabledPublisher = new RecordingPublisher(isEnabled: false);
+        var enabledPublisher = new RecordingPublisher();
+        var scopeManager = new AsyncLocalScopeManager(contextTracker, disabledPublisher);
+        var (rootSpan, _) = CreateSpans();
+        var rawAccess = (IScopeRawAccess)scopeManager;
+        var scope = new Scope(parent: null, span: rootSpan, scopeManager: scopeManager, finishOnClose: false);
+
+        scopeManager.UpdateOtelThreadContextPublisher(enabledPublisher);
+        rawAccess.Active = scope;
+        rawAccess.Active = null;
+
+        enabledPublisher.Sets.Should().ContainSingle().Which.Should().BeSameAs(rootSpan);
+        enabledPublisher.ResetCount.Should().Be(1);
     }
 
     private static (Span RootSpan, Span ChildSpan) CreateSpans()
@@ -150,6 +311,7 @@ public class AsyncLocalScopeManagerOtelTests
     private sealed class RecordingPublisher : IOtelThreadContextPublisher
     {
         private readonly Dictionary<int, Span?> _currentSpans = [];
+        private readonly Dictionary<int, int> _resetCounts = [];
         private int _resetCount;
 
         public RecordingPublisher(bool isEnabled = true)
@@ -165,6 +327,11 @@ public class AsyncLocalScopeManagerOtelTests
 
         public void Set(Span span)
         {
+            if (!IsEnabled)
+            {
+                return;
+            }
+
             lock (_currentSpans)
             {
                 Sets.Add(span);
@@ -174,9 +341,16 @@ public class AsyncLocalScopeManagerOtelTests
 
         public void Reset()
         {
+            if (!IsEnabled)
+            {
+                return;
+            }
+
+            var managedThreadId = Environment.CurrentManagedThreadId;
             lock (_currentSpans)
             {
-                _currentSpans[Environment.CurrentManagedThreadId] = null;
+                _currentSpans[managedThreadId] = null;
+                _resetCounts[managedThreadId] = GetResetCount(managedThreadId) + 1;
             }
 
             Interlocked.Increment(ref _resetCount);
@@ -187,6 +361,14 @@ public class AsyncLocalScopeManagerOtelTests
             lock (_currentSpans)
             {
                 return _currentSpans.TryGetValue(managedThreadId, out var span) ? span : null;
+            }
+        }
+
+        public int GetResetCount(int managedThreadId)
+        {
+            lock (_currentSpans)
+            {
+                return _resetCounts.TryGetValue(managedThreadId, out var count) ? count : 0;
             }
         }
     }

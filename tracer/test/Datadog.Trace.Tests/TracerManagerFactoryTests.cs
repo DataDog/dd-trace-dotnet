@@ -4,13 +4,16 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.IO;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.ContinuousProfiler;
 using Datadog.Trace.DataStreamsMonitoring;
+using Datadog.Trace.LibDatadog.OtelThreadContext;
 using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.Logging.TracerFlare;
 using Datadog.Trace.PlatformHelpers;
@@ -21,6 +24,7 @@ using Datadog.Trace.Telemetry;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.TestHelpers.PlatformHelpers;
 using Datadog.Trace.TestHelpers.Stats;
+using Datadog.Trace.Tests.Util;
 using Datadog.Trace.Vendors.StatsdClient;
 using FluentAssertions;
 using Moq;
@@ -128,13 +132,35 @@ public class TracerManagerFactoryTests : IAsyncLifetime
         }
     }
 
-    private static TracerManager CreateTracerManager(TracerSettings settings)
+    [Fact]
+    public async Task ReusedScopeManagerUpdatesOtelThreadContextPublisher()
+    {
+        var firstPublisher = new RecordingPublisher(isEnabled: false);
+        var secondPublisher = new RecordingPublisher();
+        var scopeManager = new AsyncLocalScopeManager(new DisabledContextTracker(), firstPublisher);
+        var previousManager = CreateTracerManager(CreateSettings(otelThreadContextEnabled: false), scopeManager);
+        var factory = new TracerManagerFactory(_ => secondPublisher);
+
+        _manager = factory.CreateTracerManager(CreateSettings(otelThreadContextEnabled: true), previousManager);
+        await previousManager.ShutdownAsync();
+
+        _manager.ScopeManager.Should().BeSameAs(scopeManager);
+        var scope = scopeManager.Activate(CreateSpan(), finishOnClose: false);
+        scopeManager.Close(scope);
+
+        firstPublisher.Sets.Should().BeEmpty();
+        firstPublisher.ResetCount.Should().Be(0);
+        secondPublisher.Sets.Should().ContainSingle();
+        secondPublisher.ResetCount.Should().Be(1);
+    }
+
+    private static TracerManager CreateTracerManager(TracerSettings settings, IScopeManager scopeManager = null)
     {
         return new TracerManagerFactory().CreateTracerManager(
             settings,
             Mock.Of<IAgentWriter>(),
             Mock.Of<ITraceSampler>(),
-            Mock.Of<IScopeManager>(),
+            scopeManager ?? Mock.Of<IScopeManager>(),
             new TestStatsdManager(Mock.Of<IDogStatsd>()),
             BuildRuntimeMetrics(),
             BuildLogSubmissionManager(),
@@ -173,5 +199,74 @@ public class TracerManagerFactoryTests : IAsyncLifetime
         }
 
         return new NameValueConfigurationSource(config);
+    }
+
+    private static TracerSettings CreateSettings(bool otelThreadContextEnabled)
+    {
+        return new TracerSettings(
+            CreateConfigurationSource(
+                (ConfigurationKeys.OpenTelemetry.OtelThreadContextEnabled, otelThreadContextEnabled.ToString()),
+                (ConfigurationKeys.StartupDiagnosticLogEnabled, false.ToString())));
+    }
+
+    private static Span CreateSpan()
+    {
+        var traceContext = new TraceContext(new StubDatadogTracer());
+        var spanContext = new SpanContext(
+            parent: null,
+            traceContext: traceContext,
+            serviceName: "service",
+            traceId: new TraceId(0x0123456789ABCDEF, 0xFEDCBA9876543210),
+            spanId: 123);
+        var span = new Span(spanContext, DateTimeOffset.UtcNow);
+        traceContext.AddSpan(span);
+        return span;
+    }
+
+    private sealed class DisabledContextTracker : IContextTracker
+    {
+        public bool IsEnabled => false;
+
+        public void Set(ulong localRootSpanId, ulong spanId)
+        {
+        }
+
+        public void SetEndpoint(ulong localRootSpanId, string endpoint)
+        {
+        }
+
+        public void Reset()
+        {
+        }
+    }
+
+    private sealed class RecordingPublisher : IOtelThreadContextPublisher
+    {
+        public RecordingPublisher(bool isEnabled = true)
+        {
+            IsEnabled = isEnabled;
+        }
+
+        public bool IsEnabled { get; }
+
+        public List<Span> Sets { get; } = [];
+
+        public int ResetCount { get; private set; }
+
+        public void Set(Span span)
+        {
+            if (IsEnabled)
+            {
+                Sets.Add(span);
+            }
+        }
+
+        public void Reset()
+        {
+            if (IsEnabled)
+            {
+                ResetCount++;
+            }
+        }
     }
 }

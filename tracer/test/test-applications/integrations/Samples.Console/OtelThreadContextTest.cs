@@ -32,10 +32,11 @@ namespace Samples.Console_
                 throw new PlatformNotSupportedException("The OpenTelemetry thread context test requires a 64-bit Linux process.");
             }
 
+            IntPtr rootRecord;
             using (var rootScope = SampleHelpers.CreateScope("otel.thread-context.root"))
             {
                 var expectedRoot = ExpectedContext.FromScope(rootScope);
-                var rootRecord = AssertCurrentContext("root", expectedRoot);
+                rootRecord = AssertCurrentContext("root", expectedRoot);
 
                 using (var nestedScope = SampleHelpers.CreateScope("otel.thread-context.nested"))
                 {
@@ -51,7 +52,16 @@ namespace Samples.Console_
                 AssertCurrentContext("async-restored", expectedRoot);
             }
 
-            AssertDetached();
+            AssertCleared("cleared", rootRecord);
+
+            using (var reusedScope = SampleHelpers.CreateScope("otel.thread-context.reused"))
+            {
+                var expectedReused = ExpectedContext.FromScope(reusedScope);
+                var reusedRecord = AssertCurrentContext("reused", expectedReused);
+                AssertEqual(rootRecord, reusedRecord, "Opening another scope after reset allocated a new thread context record.");
+            }
+
+            AssertCleared("cleared-again", rootRecord);
             System.Console.WriteLine("OTEL_THREAD_CONTEXT_TEST_OK");
 #else
             await Task.CompletedTask;
@@ -82,14 +92,26 @@ namespace Samples.Console_
             return record;
         }
 
-        private static void AssertDetached()
+        private static void AssertCleared(string scenario, IntPtr expectedRecord)
         {
-            if (GetCurrentRecord() != IntPtr.Zero)
+            var record = GetCurrentRecord();
+            if (record == IntPtr.Zero)
             {
-                throw new InvalidOperationException("The OpenTelemetry thread context remained attached after the final scope closed.");
+                throw new InvalidOperationException($"{scenario}: the OpenTelemetry thread context was detached instead of cleared in place.");
             }
 
-            System.Console.WriteLine("OTEL_THREAD_CONTEXT_DETACHED_OK");
+            AssertEqual(expectedRecord, record, $"{scenario}: clearing the OpenTelemetry thread context changed the record.");
+            AssertEqual((byte)1, Marshal.ReadByte(record, ValidOffset), $"{scenario}: the cleared context record was not valid.");
+            AssertEqual(new byte[TraceIdSize], ReadBytes(record, TraceIdOffset, TraceIdSize), $"{scenario}: trace id was not cleared.");
+            AssertEqual(new byte[SpanIdSize], ReadBytes(record, SpanIdOffset, SpanIdSize), $"{scenario}: span id was not cleared.");
+
+            var attributesSize = (ushort)Marshal.ReadInt16(record, AttributesSizeOffset);
+            AssertEqual((ushort)18, attributesSize, $"{scenario}: unexpected cleared attribute payload size.");
+            AssertEqual((byte)0, Marshal.ReadByte(record, AttributesOffset), $"{scenario}: local-root attribute key index mismatch.");
+            AssertEqual((byte)16, Marshal.ReadByte(record, AttributesOffset + 1), $"{scenario}: local-root attribute length mismatch.");
+            AssertEqual("0000000000000000", ReadAscii(record, AttributesOffset + 2, 16), $"{scenario}: local-root span id was not cleared.");
+
+            System.Console.WriteLine($"OTEL_THREAD_CONTEXT_{scenario.ToUpperInvariant()}_OK");
         }
 
         private static IntPtr GetCurrentRecord()

@@ -104,13 +104,13 @@ internal sealed class OtelThreadContextPublisher : IOtelThreadContextPublisher
             return;
         }
 
+        Span<byte> traceId = stackalloc byte[TraceId.Size];
+        traceId.Clear();
+        var spanId = traceId.Slice(0, SpanIdSize);
+
         try
         {
-            var context = _nativeMethods.Detach();
-            if (context != IntPtr.Zero)
-            {
-                _nativeMethods.Free(context);
-            }
+            _nativeMethods.Update(traceId, spanId, spanId);
         }
         catch (Exception ex)
         {

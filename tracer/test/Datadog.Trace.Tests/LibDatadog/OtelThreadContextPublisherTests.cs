@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+extern alias DatadogTrace;
+
 #nullable enable
 
 using System;
@@ -41,22 +43,20 @@ public class OtelThreadContextPublisherTests
         nativeMethods.LocalRootSpanId.Should().Equal(0xFF, 0xEE, 0xDD, 0xCC, 0xBB, 0xAA, 0x99, 0x88);
     }
 
-    [Theory]
-    [InlineData(0, 0)]
-    [InlineData(42, 1)]
-    public void ResetFreesDetachedContextExactlyOnce(int detachedContext, int expectedFreeCalls)
+    [Fact]
+    public void ResetClearsContextInPlaceWithZeroIds()
     {
-        var nativeMethods = new RecordingNativeMethods { DetachedContext = new IntPtr(detachedContext) };
+        var nativeMethods = new RecordingNativeMethods();
         var publisher = new OtelThreadContextPublisher(nativeMethods);
 
         publisher.Reset();
 
-        nativeMethods.DetachCalls.Should().Be(1);
-        nativeMethods.FreedContexts.Should().HaveCount(expectedFreeCalls);
-        if (expectedFreeCalls == 1)
-        {
-            nativeMethods.FreedContexts.Should().ContainSingle().Which.Should().Be(new IntPtr(detachedContext));
-        }
+        nativeMethods.UpdateCalls.Should().Be(1);
+        nativeMethods.TraceId.Should().Equal(new byte[TraceId.Size]);
+        nativeMethods.SpanId.Should().Equal(new byte[sizeof(ulong)]);
+        nativeMethods.LocalRootSpanId.Should().Equal(new byte[sizeof(ulong)]);
+        nativeMethods.DetachCalls.Should().Be(0);
+        nativeMethods.FreedContexts.Should().BeEmpty();
     }
 
     [Fact]
@@ -93,8 +93,8 @@ public class OtelThreadContextPublisherTests
         publisher.IsEnabled.Should().Be(expectedEnabled);
         publisher.Set(CreateChildSpan());
         publisher.Reset();
-        nativeMethods.UpdateCalls.Should().Be(expectedEnabled ? 1 : 0);
-        nativeMethods.DetachCalls.Should().Be(expectedEnabled ? 1 : 0);
+        nativeMethods.UpdateCalls.Should().Be(expectedEnabled ? 2 : 0);
+        nativeMethods.DetachCalls.Should().Be(0);
     }
 
     private static Span CreateChildSpan()
@@ -133,7 +133,11 @@ public class OtelThreadContextPublisherTests
 
         public List<IntPtr> FreedContexts { get; } = [];
 
+#if NETFRAMEWORK || NETCOREAPP2_1 || NETCOREAPP3_0
+        public void Update(DatadogTrace::System.ReadOnlySpan<byte> traceId, DatadogTrace::System.ReadOnlySpan<byte> spanId, DatadogTrace::System.ReadOnlySpan<byte> localRootSpanId)
+#else
         public void Update(ReadOnlySpan<byte> traceId, ReadOnlySpan<byte> spanId, ReadOnlySpan<byte> localRootSpanId)
+#endif
         {
             UpdateCalls++;
             if (UpdateException is not null)
