@@ -46,6 +46,7 @@ namespace Datadog.Trace.Debugger.Snapshots
         private string? _snapshotId;
         private ObjectPool<MethodScopeMembers, MethodScopeMembersParameters> _scopeMembersPool;
         private bool _omitCaptureData;
+        private uint _incompleteReasons;
 
         // Track opened JSON containers explicitly to avoid using JsonWriter.Path (allocations + heuristic parsing).
         // This class is on the hot path, so these flags should stay extremely cheap.
@@ -112,6 +113,8 @@ namespace Datadog.Trace.Debugger.Snapshots
         internal MethodScopeMembers? MethodScopeMembers { get; private set; }
 
         internal ProbeProcessor.ProbeProcessorState? ProbeProcessorState { get; }
+
+        internal uint IncompleteReasons => _incompleteReasons;
 
         internal bool ProbeHasCondition { get; }
 
@@ -267,6 +270,7 @@ namespace Datadog.Trace.Debugger.Snapshots
 
         internal void Initialize()
         {
+            _incompleteReasons = 0;
             JsonWriter.WriteStartObject();
             StartDebugger();
             StartSnapshot();
@@ -540,11 +544,11 @@ namespace Datadog.Trace.Debugger.Snapshots
 
             if (info.IsAsyncCapture())
             {
-                DebuggerSnapshotSerializer.SerializeStaticFields(info.AsyncCaptureInfo.KickoffInvocationTargetType, JsonWriter, _limitInfo);
+                DebuggerSnapshotSerializer.SerializeStaticFields(info.AsyncCaptureInfo.KickoffInvocationTargetType, JsonWriter, _limitInfo, ref _incompleteReasons);
             }
             else
             {
-                DebuggerSnapshotSerializer.SerializeStaticFields(info.InvocationTargetType, JsonWriter, _limitInfo);
+                DebuggerSnapshotSerializer.SerializeStaticFields(info.InvocationTargetType, JsonWriter, _limitInfo, ref _incompleteReasons);
             }
         }
 
@@ -557,7 +561,7 @@ namespace Datadog.Trace.Debugger.Snapshots
 
             StartLocalsOrArgsIfNeeded("arguments");
             // in case TArg is object and we have the concrete type, use it
-            DebuggerSnapshotSerializer.Serialize(value, type ?? typeof(TArg), name, JsonWriter, _limitInfo);
+            DebuggerSnapshotSerializer.Serialize(value, type ?? typeof(TArg), name, JsonWriter, _limitInfo, ref _incompleteReasons);
         }
 
         internal void CaptureLocal<TLocal>(TLocal value, string name, Type? type = null)
@@ -569,7 +573,7 @@ namespace Datadog.Trace.Debugger.Snapshots
 
             StartLocalsOrArgsIfNeeded("locals");
             // in case TLocal is object and we have the concrete type, use it
-            DebuggerSnapshotSerializer.Serialize(value, type ?? typeof(TLocal), name, JsonWriter, _limitInfo);
+            DebuggerSnapshotSerializer.Serialize(value, type ?? typeof(TLocal), name, JsonWriter, _limitInfo, ref _incompleteReasons);
         }
 
         internal void CaptureCaptureExpressions(ref ExpressionEvaluationResult evaluationResult)
@@ -592,7 +596,7 @@ namespace Datadog.Trace.Debugger.Snapshots
             for (int i = 0; i < captureExpressionCount; i++)
             {
                 var captureExpression = captureExpressions[i];
-                DebuggerSnapshotSerializer.Serialize(captureExpression.Value, captureExpression.Type, captureExpression.Name, JsonWriter, captureExpression.CaptureLimitInfo);
+                DebuggerSnapshotSerializer.Serialize(captureExpression.Value, captureExpression.Type, captureExpression.Name, JsonWriter, captureExpression.CaptureLimitInfo, ref _incompleteReasons);
             }
 
             JsonWriter.WriteEndObject();

@@ -12,11 +12,13 @@ using Datadog.Trace.Debugger.Expressions;
 using Datadog.Trace.Debugger.Instrumentation.Collections;
 using Datadog.Trace.Debugger.RateLimiting;
 using Datadog.Trace.Debugger.Snapshots;
+using Datadog.Trace.Tests.Telemetry;
 using Newtonsoft.Json.Linq;
 using Xunit;
 
 namespace Datadog.Trace.Tests.Debugger;
 
+[Collection(nameof(TelemetryFactoryTests))]
 public class ProbeProcessorTests
 {
     private const int TestMaxEvaluationTimeInMilliseconds = 30_000;
@@ -287,6 +289,7 @@ public class ProbeProcessorTests
     [Fact]
     public void TryBeginProcess_UnconditionalSnapshotProbe_SamplesGlobalBeforePerProbe()
     {
+        using var metricsScope = DebuggerGuardrailMetricTestHelpers.OverrideMetrics(out var collector);
         var globalRateLimiter = new GlobalRateLimiterMock(false);
         var perProbeSampler = new TestAdaptiveSampler(true);
         var probe = CreateLogProbe("snapshot-probe", captureSnapshot: true);
@@ -300,11 +303,13 @@ public class ProbeProcessorTests
         Assert.Equal(1, globalRateLimiter.ShouldSampleCallCount);
         Assert.Equal("snapshot-probe", globalRateLimiter.LastProbeId);
         Assert.Equal(0, perProbeSampler.SampleCalls);
+        collector.AssertHasCount("events.skipped", "reason:rateLimitGlobal", "event_type:snapshot");
     }
 
     [Fact]
     public void TryBeginProcess_UnconditionalSnapshotProbe_CalibratesGlobalSamplerWhenPerProbeRejects()
     {
+        using var metricsScope = DebuggerGuardrailMetricTestHelpers.OverrideMetrics(out var collector);
         var globalRateLimiter = new GlobalRateLimiterMock(true);
         var perProbeSampler = new TestAdaptiveSampler(false);
         var probe = CreateLogProbe("snapshot-probe", captureSnapshot: true);
@@ -318,6 +323,7 @@ public class ProbeProcessorTests
         Assert.Equal(1, globalRateLimiter.ShouldSampleCallCount);
         Assert.Equal("snapshot-probe", globalRateLimiter.LastProbeId);
         Assert.Equal(1, perProbeSampler.SampleCalls);
+        collector.AssertHasCount("events.skipped", "reason:rateLimitProbe", "event_type:snapshot");
     }
 
     [Fact]
@@ -401,6 +407,48 @@ public class ProbeProcessorTests
         Assert.NotNull(snapshotCreator);
         Assert.Equal(0, globalRateLimiter.ShouldSampleCallCount);
         Assert.Equal(1, perProbeSampler.SampleCalls);
+    }
+
+    [Fact]
+    public void TryBeginProcess_UnconditionalLogProbe_RecordsRateLimitProbeSkip()
+    {
+        using var metricsScope = DebuggerGuardrailMetricTestHelpers.OverrideMetrics(out var collector);
+        var globalRateLimiter = new GlobalRateLimiterMock(false);
+        var perProbeSampler = new TestAdaptiveSampler(false);
+        var probe = CreateLogProbe("log-probe", captureSnapshot: false);
+        var processor = CreateProbeProcessor(probe, globalRateLimiter);
+        var probeData = new ProbeData(probe.Id, perProbeSampler, processor);
+
+        Assert.False(processor.TryBeginProcess(in probeData, out _));
+
+        collector.AssertHasCount("events.skipped", "reason:rateLimitProbe", "event_type:log");
+    }
+
+    [Fact]
+    public void Process_EvaluationTimeout_FailsOpenOnceThenRecordsSkipped()
+    {
+        using var metricsScope = DebuggerGuardrailMetricTestHelpers.OverrideMetrics(out var collector);
+        var probe = CreateConditionalLogProbe("timeout-probe", @"{ ""eq"": [1, 1] }", captureSnapshot: true);
+        var processor = new ProbeProcessor(probe, maxEvaluationTimeInMilliseconds: 0, new GlobalRateLimiterMock(true));
+        var sampler = new TestAdaptiveSampler(true);
+        var probeData = new ProbeData(probe.Id, sampler, processor);
+        using var firstSnapshotCreator = CreateSnapshotCreator(processor, in probeData);
+        var firstCaptureInfo = CreateAsyncEvaluateCaptureInfo();
+
+        var firstResult = processor.Process(ref firstCaptureInfo, firstSnapshotCreator, in probeData);
+
+        // The first event survives so the snapshot can carry the evaluation error to the customer.
+        Assert.True(firstResult);
+        collector.AssertDoesNotHave("events.skipped");
+
+        using var secondSnapshotCreator = CreateSnapshotCreator(processor, in probeData);
+        var secondCaptureInfo = CreateAsyncEvaluateCaptureInfo();
+
+        var secondResult = processor.Process(ref secondCaptureInfo, secondSnapshotCreator, in probeData);
+
+        // Further timeout diagnostics in the five-minute window are skipped.
+        Assert.False(secondResult);
+        collector.AssertHasCount("events.skipped", "reason:evaluationTimeout", "event_type:snapshot");
     }
 
     private static ProbeProcessor CreateConditionalProbeProcessor()

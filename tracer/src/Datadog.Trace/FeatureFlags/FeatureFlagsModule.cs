@@ -31,6 +31,10 @@ namespace Datadog.Trace.FeatureFlags
         private readonly object _stateLock = new();
 
         private readonly FeatureFlagsSettings _settings;
+
+        // The agentless source targets flags by environment, which customers can change in code
+        // after startup, so it needs the manager rather than a captured value.
+        private readonly TracerSettings.SettingsManager _settingsManager;
         private readonly bool _isRemoteConfigurationAvailable;
         private readonly Func<ExposureApi> _exposureApiFactory;
         private readonly bool _spanEnrichmentEnabled;
@@ -50,6 +54,7 @@ namespace Datadog.Trace.FeatureFlags
         internal FeatureFlagsModule(TracerSettings settings, IRcmSubscriptionManager rcmSubscriptionManager)
         {
             _settings = settings.FeatureFlags;
+            _settingsManager = settings.Manager;
             _isRemoteConfigurationAvailable = settings.IsRemoteConfigurationAvailable;
             _spanEnrichmentEnabled = settings.IsSpanEnrichmentEnabled;
             _exposureApiFactory = () => new ExposureApi(settings);
@@ -148,7 +153,7 @@ namespace Datadog.Trace.FeatureFlags
                         break;
                     case FeatureFlagsSource.Agentless:
                         // Polling is billable, so it starts here rather than at construction.
-                        var source = AgentlessConfigurationSource.Create(_settings, ApplyConfiguration);
+                        var source = AgentlessConfigurationSource.Create(_settings, _settingsManager, ApplyConfiguration);
                         if (source is null)
                         {
                             // Create logs the specific reason, which may name configuration the

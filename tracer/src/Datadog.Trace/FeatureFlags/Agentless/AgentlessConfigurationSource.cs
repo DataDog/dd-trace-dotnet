@@ -13,6 +13,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.Transports;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.FeatureFlags.Rcm.Model;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
@@ -42,7 +43,7 @@ internal sealed class AgentlessConfigurationSource : IDisposable
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(AgentlessConfigurationSource));
 
     private readonly IApiRequestFactory _requestFactory;
-    private readonly Uri _endpoint;
+    private readonly AgentlessEndpoint _endpoint;
     private readonly TimeSpan _pollInterval;
     private readonly TimeSpan _requestTimeout;
     private readonly Func<ServerConfiguration, bool> _applyConfiguration;
@@ -52,18 +53,26 @@ internal sealed class AgentlessConfigurationSource : IDisposable
 
     // Only ever touched from the poll loop.
     private readonly HashSet<string> _loggedFailureCategories = new();
+
+    // Written by the settings-change callback, read by the poll loop.
+    private string? _environment;
+    private IDisposable? _environmentSubscription;
+
+    // Only ever touched from the poll loop.
     private bool _malformedPayloadLogged;
     private bool _applyFailureLogged;
     private string? _etag;
+    private Uri? _etagUri;
 
     private int _started;
 
     internal AgentlessConfigurationSource(
-        Uri endpoint,
+        AgentlessEndpoint endpoint,
         IApiRequestFactory requestFactory,
         TimeSpan pollInterval,
         TimeSpan requestTimeout,
         Func<ServerConfiguration, bool> applyConfiguration,
+        string? environment = null,
         Func<TimeSpan, CancellationToken, Task>? waitAsync = null)
     {
         _endpoint = endpoint;
@@ -71,6 +80,7 @@ internal sealed class AgentlessConfigurationSource : IDisposable
         _pollInterval = pollInterval;
         _requestTimeout = requestTimeout;
         _applyConfiguration = applyConfiguration;
+        _environment = environment;
         _waitAsync = waitAsync ?? Task.Delay;
     }
 
@@ -79,9 +89,12 @@ internal sealed class AgentlessConfigurationSource : IDisposable
     /// not a URL, or the managed endpoint without an API key. Polling anyway would only produce
     /// failures every interval.
     /// </summary>
-    public static AgentlessConfigurationSource? Create(FeatureFlagsSettings settings, Func<ServerConfiguration, bool> applyConfiguration)
+    public static AgentlessConfigurationSource? Create(
+        FeatureFlagsSettings settings,
+        TracerSettings.SettingsManager manager,
+        Func<ServerConfiguration, bool> applyConfiguration)
     {
-        if (!AgentlessEndpoint.TryCreate(settings.Site, settings.Env, settings.AgentlessBaseUrl, out var endpoint, out var error))
+        if (!AgentlessEndpoint.TryCreate(settings.Site, settings.AgentlessBaseUrl, out var endpoint, out var error))
         {
             Log.Error("Feature Flags agentless source is unavailable: {Error}", error);
             return null;
@@ -93,13 +106,33 @@ internal sealed class AgentlessConfigurationSource : IDisposable
             return null;
         }
 
-        return new AgentlessConfigurationSource(
-            endpoint.Uri,
+        var source = new AgentlessConfigurationSource(
+            endpoint,
             CreateRequestFactory(endpoint, settings),
             settings.PollInterval,
             settings.RequestTimeout,
-            applyConfiguration);
+            applyConfiguration,
+            manager.InitialMutableSettings.Environment);
+
+        // The environment is tracked rather than captured: customers can change it in code while
+        // the application runs, and flags are targeted per environment. Only the value is stored
+        // here, so that the poll loop stays the only thing that touches the request state.
+        source._environmentSubscription = manager.SubscribeToChanges(changes =>
+        {
+            if (changes.UpdatedMutable is { } mutable)
+            {
+                source.UpdateEnvironment(mutable.Environment);
+            }
+        });
+
+        return source;
     }
+
+    /// <summary>
+    /// Records the environment to request configuration for. Applied by the poll loop on its next
+    /// request, so a change never disturbs a request already in flight.
+    /// </summary>
+    internal void UpdateEnvironment(string? environment) => Volatile.Write(ref _environment, environment);
 
     /// <summary>
     /// Starts polling. Idempotent.
@@ -172,6 +205,7 @@ internal sealed class AgentlessConfigurationSource : IDisposable
         // from applying its result by the shutdown check in PollAsync.
         try
         {
+            _environmentSubscription?.Dispose();
             _shutdown.Cancel();
         }
         catch (Exception ex)
@@ -207,6 +241,8 @@ internal sealed class AgentlessConfigurationSource : IDisposable
             headers.Add(new(TelemetryConstants.ApiKeyHeader, settings.ApiKey!));
         }
 
+        // The endpoint is only the factory's default: both transports honour the URI passed to
+        // Create, which is what carries the current environment.
 #if NETCOREAPP
         return new HttpClientRequestFactory(endpoint.Uri, headers.ToArray(), timeout: settings.RequestTimeout);
 #else
@@ -273,7 +309,21 @@ internal sealed class AgentlessConfigurationSource : IDisposable
     {
         try
         {
-            var request = _requestFactory.Create(_endpoint);
+            // The environment is applied per request rather than baked into the endpoint, because
+            // it can be changed in code after startup.
+            var uri = _endpoint.BuildRequestUri(Volatile.Read(ref _environment));
+
+            // An ETag only identifies the configuration served for the URI it came from. Sending it
+            // against a different environment would earn a 304 and pin the process to the previous
+            // environment's flags, with no way back.
+            if (_etagUri is not null && uri != _etagUri)
+            {
+                _etag = null;
+            }
+
+            _etagUri = uri;
+
+            var request = _requestFactory.Create(uri);
             if (_etag is { } etag)
             {
                 request.AddHeader("If-None-Match", etag);
