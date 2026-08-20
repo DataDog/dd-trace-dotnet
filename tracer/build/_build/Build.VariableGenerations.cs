@@ -175,9 +175,9 @@ partial class Build : NukeBuild
 
         if (frameworkList.Contains(TargetFramework.NET10_0))
         {
-            // Chrome currently hangs while creating a WebDriver session inside
-            // the Windows Server Core container. Keep one diagnostic cell while
-            // preventing three identical failures from obscuring the core matrix.
+            // Chrome requires Windows components that are absent from Server Core,
+            // so this cell runs directly on the Windows runner with checkout-local tools.
+            // Keep it non-blocking until the host execution path is validated in GitLab.
             AppendWindowsJob("integration-tests-windows-selenium-x64:net10.0:tracer", TargetFramework.NET10_0, "x64", "selenium", TracerArea, allowFailure: true);
         }
 

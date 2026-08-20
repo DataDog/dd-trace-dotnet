@@ -63,8 +63,10 @@ switch ($testSuite) {
         $nukeArguments = '--IncludeTestsRequiringDocker false'
     }
     'selenium' {
-        $testFilter = '(RunOnWindows=True)&(RequiresChrome=True)&(SkipInCI!=True)'
-        $nukeTargets = 'CompileTrimmingSamples BuildIntegrationTests RunIntegrationTests'
+        $testFilter = '(RunOnWindows=True)&(RequiresChrome=True)&(SkipInCI!=True)&(RequiresDockerDependency!=true)'
+        # The Selenium sample is supplied by build-samples-standalone, so the
+        # trimming-sample build is not required for this focused job.
+        $nukeTargets = 'BuildIntegrationTests'
         $nukeArguments = '--IncludeTestsRequiringDocker false'
     }
     'debugger' {
@@ -92,10 +94,6 @@ $commonDockerArguments = @(
     '-e', 'AWS_NETWORKING=true',
     '-e', 'NUGET_CERT_REVOCATION_MODE=offline',
     '-e', 'NUGET_ENABLE_EXPERIMENTAL_HTTP_RETRY=true',
-    '-e', 'SAMPLES_SELENIUM_CHROME_BINARY=c:\devtools\chrome\chrome-headless-shell-win64\chrome-headless-shell.exe',
-    '-e', 'SAMPLES_SELENIUM_CHROMEDRIVER_DIRECTORY=c:\devtools\chromedriver\chromedriver-win64',
-    '-e', 'SAMPLES_SELENIUM_HEADLESS=true',
-    '-e', 'SAMPLES_SELENIUM_LOG_DIRECTORY=c:\mnt\artifacts\build_data\infra_logs\selenium',
     '-e', 'DD_LOGGER_ENABLED=true',
     '-e', 'DD_LOGGER_DD_API_KEY',
     '-e', 'DD_LOGGER_DD_SERVICE=dd-trace-dotnet',
@@ -142,6 +140,156 @@ if ($testFilter) {
 
 if ($area) {
     $commonDockerArguments += @('-e', "Area=$area")
+}
+
+if ($testSuite -eq 'selenium') {
+    if ($env:FRAMEWORK -ne 'net10.0' -or $targetPlatform -ne 'x64') {
+        throw 'The host Selenium job currently supports only net10.0 on x64'
+    }
+
+    $repositoryRoot = (Get-Location).Path
+    $dotnetRoot = Join-Path $repositoryRoot '.dotnet'
+    $dotnetCliHome = Join-Path $repositoryRoot '.dotnet_cli_home'
+    $toolRoot = Join-Path $repositoryRoot "artifacts\build_data\selenium-tools-$env:CI_JOB_ID"
+    $chromeRoot = Join-Path $toolRoot 'chrome'
+    $chromeDriverRoot = Join-Path $toolRoot 'chromedriver'
+    $seleniumTempRoot = Join-Path $toolRoot 'temp'
+    $seleniumLogRoot = Join-Path $repositoryRoot 'artifacts\build_data\infra_logs\selenium'
+    $packagesRoot = Join-Path $repositoryRoot 'packages'
+    $toolContainer = $null
+
+    New-Item -ItemType Directory -Force $dotnetRoot, $dotnetCliHome, $chromeRoot, $chromeDriverRoot, $seleniumTempRoot, $seleniumLogRoot, $packagesRoot | Out-Null
+
+    # Keep the SDK and all CLI state in the checkout because Windows runners are
+    # shared and persistent. The installation script is also used by container jobs.
+    $env:DOTNET_ROOT = $dotnetRoot
+    $env:DOTNET_CLI_HOME = $dotnetCliHome
+    $env:NUGET_PACKAGES = $packagesRoot
+    $env:PATH = "$dotnetRoot;$env:PATH"
+
+    & powershell.exe -NoProfile -ExecutionPolicy Bypass -File .gitlab/install-windows-test-runtime.ps1 `
+        -Framework $env:FRAMEWORK `
+        -Architecture $targetPlatform `
+        -InstallDir $dotnetRoot `
+        -IncludeAspNetCore `
+        -InstallSdk
+    if ($LASTEXITCODE -ne 0) {
+        throw "Checkout-local .NET SDK installation exited with code $LASTEXITCODE"
+    }
+
+    try {
+        # Build in the image, which contains the established NuGet credentials and
+        # toolchain. Only the already-built test process runs on the full host OS.
+        $buildCommand = "reg add HKLM\SYSTEM\CurrentControlSet\Control\FileSystem /v LongPathsEnabled /t REG_DWORD /d 1 /f && powershell -NoProfile -ExecutionPolicy Bypass -File c:\mnt\.gitlab\install-windows-test-runtime.ps1 -Framework $env:FRAMEWORK -Architecture $targetPlatform -IncludeAspNetCore && c:\entrypoint.bat $nukeTargets --framework $env:FRAMEWORK --TargetPlatform $targetPlatform --IncludeAllTestFrameworks true $nukeArguments --NugetPackageDirectory c:\mnt\packages"
+        & docker run @commonDockerArguments --entrypoint cmd.exe $windowsBuildImage /d /s /c $buildCommand
+        $buildExitCode = $LASTEXITCODE
+        if ($buildExitCode -ne 0) {
+            # Preserve the usual validation diagnostics even when compilation fails.
+            & docker run @commonDockerArguments $windowsBuildImage CheckBuildLogsForErrors --NugetPackageDirectory c:\mnt\packages
+            throw "Windows $testSuite build for $env:FRAMEWORK exited with code $buildExitCode"
+        }
+
+        # Reuse the exact, checksum-verified Chrome and ChromeDriver versions from
+        # the content-addressed build image without trying to run Chrome in Server Core.
+        $toolContainer = (& docker create --entrypoint cmd.exe $windowsBuildImage /d /c exit 0 | Select-Object -Last 1).Trim()
+        if ($LASTEXITCODE -ne 0 -or -not $toolContainer) {
+            throw "Could not create a temporary container from $windowsBuildImage"
+        }
+
+        & docker cp "${toolContainer}:C:\devtools\chrome\chrome-headless-shell-win64\." $chromeRoot
+        if ($LASTEXITCODE -ne 0) {
+            throw 'Could not copy Chrome from the Windows build image'
+        }
+
+        & docker cp "${toolContainer}:C:\devtools\chromedriver\chromedriver-win64\." $chromeDriverRoot
+        if ($LASTEXITCODE -ne 0) {
+            throw 'Could not copy ChromeDriver from the Windows build image'
+        }
+
+        $chromeExecutable = Join-Path $chromeRoot 'chrome-headless-shell.exe'
+        $chromeDriverExecutable = Join-Path $chromeDriverRoot 'chromedriver.exe'
+        if (-not (Test-Path -LiteralPath $chromeExecutable -PathType Leaf)) {
+            throw "Chrome was not copied to '$chromeExecutable'"
+        }
+
+        if (-not (Test-Path -LiteralPath $chromeDriverExecutable -PathType Leaf)) {
+            throw "ChromeDriver was not copied to '$chromeDriverExecutable'"
+        }
+
+        $env:CI = 'true'
+        $env:WINDOWS_BUILDER = 'true'
+        $env:NUGET_CERT_REVOCATION_MODE = 'offline'
+        $env:NUGET_ENABLE_EXPERIMENTAL_HTTP_RETRY = 'true'
+        $env:SAMPLES_SELENIUM_CHROME_BINARY = $chromeExecutable
+        $env:SAMPLES_SELENIUM_CHROMEDRIVER_DIRECTORY = $chromeDriverRoot
+        $env:SAMPLES_SELENIUM_HEADLESS = 'true'
+        $env:SAMPLES_SELENIUM_LOG_DIRECTORY = $seleniumLogRoot
+        $env:TEMP = $seleniumTempRoot
+        $env:TMP = $seleniumTempRoot
+        $env:DD_LOGGER_ENABLED = 'true'
+        $env:DD_LOGGER_DD_SERVICE = 'dd-trace-dotnet'
+        $env:DD_LOGGER_DD_TRACE_LOG_PATH = Join-Path $repositoryRoot 'artifacts\build_data\infra_logs\integration-ci-visibility.log'
+        $env:DD_LOGGER_DD_TAGS = "test.configuration.job:$env:CI_JOB_NAME"
+        $env:IncludeTestsRequiringDocker = 'false'
+        $env:IncludeAllTestFrameworks = 'true'
+        $env:TargetPlatform = 'X64'
+        $env:enable_crash_dumps = 'true'
+        $env:SourceRevisionId = $env:CI_COMMIT_SHA
+        $env:RepositoryUrl = 'https://github.com/DataDog/dd-trace-dotnet.git'
+        $env:Filter = $testFilter
+        $env:Area = $area
+        $env:MonitoringHomeDirectory = Join-Path $repositoryRoot 'artifacts\monitoring-home'
+        $env:USE_FULL_TEST_CONFIG = 'True'
+        $env:DD_TRACE_LOG_DIRECTORY = Join-Path $repositoryRoot 'artifacts\build_data\logs'
+        $env:DD_LOGGER_BUILD_SOURCESDIRECTORY = $repositoryRoot
+        $env:DD_CIVISIBILITY_CODE_COVERAGE_SNK_FILEPATH = Join-Path $repositoryRoot 'Datadog.Trace.snk'
+        $env:COMPlus_DbgEnableMiniDump = '1'
+        $env:COMPlus_DbgMiniDumpType = '2'
+        $env:COMPlus_EnableCrashReport = '1'
+
+        $effectiveFilter = $testFilter
+        if ($area) {
+            $effectiveFilter = "($effectiveFilter)&(Area=$area)"
+        }
+
+        $testProject = Join-Path $repositoryRoot 'tracer\test\Datadog.Trace.ClrProfiler.IntegrationTests\Datadog.Trace.ClrProfiler.IntegrationTests.csproj'
+        $resultsDirectory = Join-Path $repositoryRoot 'artifacts\build_data\results\Datadog.Trace.ClrProfiler.IntegrationTests'
+        New-Item -ItemType Directory -Force $resultsDirectory, $env:DD_TRACE_LOG_DIRECTORY | Out-Null
+
+        Write-Output "Running Windows $targetPlatform $testSuite tests directly on the runner for $env:FRAMEWORK (area=$area)"
+        $dotnetExecutable = Join-Path $dotnetRoot 'dotnet.exe'
+        & $dotnetExecutable test $testProject `
+            --configuration Release `
+            --framework $env:FRAMEWORK `
+            --filter $effectiveFilter `
+            --logger trx `
+            --no-build `
+            --no-restore `
+            --results-directory $resultsDirectory `
+            --settings (Join-Path $repositoryRoot 'tracer\test\test.settings') `
+            /property:Platform=AnyCPU
+        $testExitCode = $LASTEXITCODE
+
+        & docker run @commonDockerArguments $windowsBuildImage CheckBuildLogsForErrors --NugetPackageDirectory c:\mnt\packages
+        $logCheckExitCode = $LASTEXITCODE
+
+        if ($testExitCode -ne 0) {
+            throw "Windows $testSuite tests for $env:FRAMEWORK exited with code $testExitCode"
+        }
+
+        if ($logCheckExitCode -ne 0) {
+            throw "Build-log validation exited with code $logCheckExitCode"
+        }
+    }
+    finally {
+        if ($toolContainer) {
+            & docker rm --force $toolContainer | Out-Null
+        }
+
+        Remove-Item -LiteralPath $toolRoot -Recurse -Force -ErrorAction SilentlyContinue
+    }
+
+    return
 }
 
 Write-Output "Building and running Windows $targetPlatform $testSuite tests for $env:FRAMEWORK (area=$area)"

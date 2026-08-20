@@ -30,15 +30,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI;
 [UsesVerify]
 public class SeleniumTests : TestingFrameworkEvpTest
 {
-    private readonly GacFixture _gacFixture;
-
     public SeleniumTests(ITestOutputHelper output)
-        : base("Selenium", output)
+        : base("Selenium", output, setupGac: false)
     {
         SetServiceName("xunit-selenium-tests");
         SetServiceVersion("1.0.0");
-        _gacFixture = new GacFixture();
-        _gacFixture.AddAssembliesToGac();
     }
 
     [SkippableTheory]
@@ -182,11 +178,6 @@ public class SeleniumTests : TestingFrameworkEvpTest
 
         // check if we received code coverage information at session level
         codeCoverageReceived.Value.Should().BeTrue();
-    }
-
-    public override void Dispose()
-    {
-        _gacFixture.RemoveAssembliesFromGac();
     }
 }
 

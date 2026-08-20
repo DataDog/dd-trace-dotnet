@@ -29,7 +29,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI;
 
 public abstract class TestingFrameworkEvpTest : TestHelper
 {
-    private readonly GacFixture _gacFixture;
+    private readonly GacFixture? _gacFixture;
 
     protected TestingFrameworkEvpTest(string sampleAppName, string samplePathOverrides, ITestOutputHelper output)
         : base(sampleAppName, samplePathOverrides, output)
@@ -47,12 +47,15 @@ public abstract class TestingFrameworkEvpTest : TestHelper
         _gacFixture.AddAssembliesToGac();
     }
 
-    protected TestingFrameworkEvpTest(string sampleAppName, ITestOutputHelper output)
+    protected TestingFrameworkEvpTest(string sampleAppName, ITestOutputHelper output, bool setupGac = true)
         : base(sampleAppName, output)
     {
         SetCIEnvironmentValues();
-        _gacFixture = new GacFixture();
-        _gacFixture.AddAssembliesToGac();
+        if (setupGac)
+        {
+            _gacFixture = new GacFixture();
+            _gacFixture.AddAssembliesToGac();
+        }
     }
 
     protected TestingFrameworkEvpTest(EnvironmentHelper environmentHelper, ITestOutputHelper output)
@@ -67,7 +70,7 @@ public abstract class TestingFrameworkEvpTest : TestHelper
 
     public override void Dispose()
     {
-        _gacFixture.RemoveAssembliesFromGac();
+        _gacFixture?.RemoveAssembliesFromGac();
     }
 
     protected static bool IsMacOS()
