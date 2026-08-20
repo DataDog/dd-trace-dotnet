@@ -7,6 +7,7 @@
 
 using System;
 using System.Diagnostics.CodeAnalysis;
+using Datadog.Trace.Processors;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace.FeatureFlags.Agentless;
@@ -154,12 +155,22 @@ internal sealed class AgentlessEndpoint
     /// <returns>The URI to request.</returns>
     public Uri BuildRequestUri(string? env)
     {
-        if (_pinsEnv || StringUtil.IsNullOrEmpty(env))
+        if (_pinsEnv)
         {
             return Uri;
         }
 
-        var parameter = EnvParameterName + "=" + Uri.EscapeDataString(env);
+        // Normalized the same way the tracer normalizes it before tagging spans, so that flag
+        // targeting and span tags agree on what the environment is. It also bounds the value at 200
+        // characters, which keeps a misconfigured environment from producing an unusable URL.
+        // A value that normalizes to nothing is treated as no environment at all.
+        var normalized = TraceUtil.NormalizeTag(env);
+        if (StringUtil.IsNullOrEmpty(normalized))
+        {
+            return Uri;
+        }
+
+        var parameter = EnvParameterName + "=" + Uri.EscapeDataString(normalized);
         var builder = new UriBuilder(Uri);
 
         // The getter returns the query with its leading "?", and the setter keeps one that is

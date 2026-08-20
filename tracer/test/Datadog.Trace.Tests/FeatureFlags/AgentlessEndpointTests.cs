@@ -40,12 +40,32 @@ public class AgentlessEndpointTests
     [Theory]
     [InlineData(null)]
     [InlineData("")]
+    [InlineData("   ")]
+    // The tracer's tag normalization requires a leading letter, so a value that is entirely digits
+    // normalizes away. Spans are tagged the same way, so no environment is reported either.
+    [InlineData("2024")]
     public void DoesNotAddDdEnvWhenEnvIsNotConfigured(string? env)
         => Create("datadoghq.com").BuildRequestUri(env).Query.Should().BeEmpty();
 
+    [Theory]
+    // Normalized exactly as the tracer normalizes the environment before tagging spans: lowercased,
+    // with runs of unsupported characters collapsed to a single underscore.
+    [InlineData("Production", "production")]
+    [InlineData("Prod EU", "prod_eu")]
+    [InlineData("  staging  ", "staging")]
+    [InlineData("my env&test", "my_env_test")]
+    public void NormalizesDdEnvValue(string env, string expected)
+        => Create("datadoghq.com").BuildRequestUri(env).Query.Should().Be("?dd_env=" + expected);
+
     [Fact]
     public void EscapesDdEnvValue()
-        => Create("datadoghq.com").BuildRequestUri("my env&test").Query.Should().Be("?dd_env=my%20env%26test");
+        // "/" survives normalization but cannot be carried unescaped in a query value.
+        => Create("datadoghq.com").BuildRequestUri("team/a").Query.Should().Be("?dd_env=team%2Fa");
+
+    [Fact]
+    public void TruncatesAnOverlongDdEnvValue()
+        => Create("datadoghq.com").BuildRequestUri(new string('a', 500))
+                                  .Query.Should().Be("?dd_env=" + new string('a', 200));
 
     [Fact]
     public void KeepsTheQueryConfiguredOnACustomEndpoint()
