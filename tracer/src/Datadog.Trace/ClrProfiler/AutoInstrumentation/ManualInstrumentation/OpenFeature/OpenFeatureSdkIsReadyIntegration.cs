@@ -12,7 +12,7 @@ using Datadog.Trace.Configuration;
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.OpenFeature;
 
 /// <summary>
-/// System.Boolean Datadog.Trace.FeatureFlags.FeatureFlagsSdk::IsReady() calltarget instrumentation
+/// System.Boolean Datadog.FeatureFlags.OpenFeature.FeatureFlagsSdk::IsReady() calltarget instrumentation
 /// </summary>
 [InstrumentMethod(
     AssemblyName = "Datadog.FeatureFlags.OpenFeature",

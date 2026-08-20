@@ -62,11 +62,11 @@ namespace Datadog.Trace.FeatureFlags
 
         internal void RegisterOnNewConfigEventHandler(Action? onNewConfig)
         {
-            _onNewConfigEventHander = onNewConfig;
+            Volatile.Write(ref _onNewConfigEventHander, onNewConfig);
 
             if (Volatile.Read(ref _evaluator) is not null)
             {
-                _onNewConfigEventHander?.Invoke();
+                onNewConfig?.Invoke();
             }
         }
 
