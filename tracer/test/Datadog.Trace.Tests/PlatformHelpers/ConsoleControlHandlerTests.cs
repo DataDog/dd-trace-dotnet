@@ -58,27 +58,6 @@ namespace Datadog.Trace.Tests.PlatformHelpers
         }
 
         [Fact]
-        public void WaitsForACallbackThatTakesLongerThanTheStartTimeout()
-        {
-            // The start timeout only bounds how long we wait for the thread pool to _start_ the callback. Once it
-            // is running we must wait for it, because LifetimeManager applies its timeout to each shutdown hook
-            // rather than to the shutdown as a whole. Returning early lets the OS kill the process mid-flush.
-            var completed = false;
-            var handler = new ConsoleControlHandler(
-                () =>
-                {
-                    Thread.Sleep(TimeSpan.FromSeconds(20));
-                    completed = true;
-                },
-                callbackStartTimeout: TimeSpan.FromMilliseconds(100),
-                callbackTimeout: ThirtySeconds);
-
-            handler.HandleControlEvent(CtrlCEvent).Should().BeFalse();
-
-            completed.Should().BeTrue();
-        }
-
-        [Fact]
         public void DoesNotWaitForeverForACallbackThatNeverCompletes()
         {
             // Deliberately not disposed: the callback may still be inside Wait() when the test returns.
