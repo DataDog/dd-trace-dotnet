@@ -30,7 +30,7 @@ public class AgentlessConfigurationSourceTests
                                     "environment": { "name": "production" }, "flags": {} } } }
         """;
 
-    private static readonly Uri Endpoint = new("https://ufc-server.ff-cdn.datadoghq.com/api/v2/feature-flagging/config/rules-based/server");
+    private const string EndpointUrl = "https://ufc-server.ff-cdn.datadoghq.com/api/v2/feature-flagging/config/rules-based/server";
 
     [Fact]
     public async Task AppliesConfigurationFromA200()
@@ -62,6 +62,37 @@ public class AgentlessConfigurationSourceTests
         factory.RequestsSent.Should().HaveCount(2);
         factory.RequestsSent[1].ExtraHeaders.Should().ContainKey("If-None-Match");
         factory.RequestsSent[1].ExtraHeaders["If-None-Match"].Should().Be("\"ufc-v1\"");
+    }
+
+    [Fact]
+    public async Task RequestsTheConfiguredEnvironment()
+    {
+        var applied = new List<ServerConfiguration>();
+        var factory = new TestRequestFactory(uri => new TestApiRequest(uri, responseContent: Body));
+        using var source = CreateSource(factory, applied, environment: "production");
+
+        await source.PollAsync();
+
+        factory.RequestsSent[0].Endpoint.Should().Be(new Uri(EndpointUrl + "?dd_env=production"));
+    }
+
+    [Fact]
+    public async Task DropsTheEtagWhenTheEnvironmentChanges()
+    {
+        var applied = new List<ServerConfiguration>();
+        var factory = new TestRequestFactory(
+            uri => new TestApiRequest(uri, responseContent: Body, responseHeaders: new() { { "ETag", "\"ufc-v1\"" } }));
+        using var source = CreateSource(factory, applied, environment: "production");
+
+        await source.PollAsync();
+
+        // The ETag identifies production's configuration, so it must not be sent against staging:
+        // a 304 would pin the process to production's flags with no way back.
+        source.UpdateEnvironment("staging");
+        await source.PollAsync();
+
+        factory.RequestsSent[1].Endpoint.Should().Be(new Uri(EndpointUrl + "?dd_env=staging"));
+        factory.RequestsSent[1].ExtraHeaders.Should().NotContainKey("If-None-Match");
     }
 
     [Fact]
@@ -211,9 +242,12 @@ public class AgentlessConfigurationSourceTests
         factory.RequestsSent.Should().HaveCount(3);
     }
 
-    private static AgentlessConfigurationSource CreateSource(TestRequestFactory factory, List<ServerConfiguration> applied)
+    private static AgentlessConfigurationSource CreateSource(
+        TestRequestFactory factory,
+        List<ServerConfiguration> applied,
+        string? environment = null)
         => new(
-            Endpoint,
+            CreateEndpoint(),
             factory,
             TimeSpan.FromSeconds(30),
             TimeSpan.FromSeconds(5),
@@ -222,7 +256,14 @@ public class AgentlessConfigurationSourceTests
                 applied.Add(configuration);
                 return true;
             },
+            environment,
             NoWait);
+
+    private static AgentlessEndpoint CreateEndpoint()
+    {
+        AgentlessEndpoint.TryCreate("datadoghq.com", baseUrl: null, out var endpoint, out _).Should().BeTrue();
+        return endpoint ?? throw new InvalidOperationException("TryCreate reported success without producing an endpoint.");
+    }
 
     private static Task NoWait(TimeSpan delay, CancellationToken cancellationToken) => Task.CompletedTask;
 
