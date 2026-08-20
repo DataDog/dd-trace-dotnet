@@ -305,7 +305,13 @@ Write-Output "Building and running Windows $targetPlatform $testSuite tests for 
 $dependencySetup = if ($testSuite -eq 'localdb') {
     'powershell -NoProfile -ExecutionPolicy Bypass -File c:\mnt\.gitlab\initialize-localdb.ps1 && '
 } elseif ($testSuite -eq 'azure-functions') {
-    'set "PATH=C:\Program Files\Microsoft\Azure Functions Core Tools;%PATH%" && powershell -NoProfile -ExecutionPolicy Bypass -File c:\mnt\.gitlab\initialize-azure-functions.ps1 && '
+    $legacyRuntimeSetup = if ($env:FRAMEWORK -eq 'net6.0') {
+        'powershell -NoProfile -ExecutionPolicy Bypass -File c:\mnt\.gitlab\install-windows-test-runtime.ps1 -Framework netcoreapp3.1 -Architecture x64 && '
+    } else {
+        ''
+    }
+
+    $legacyRuntimeSetup + 'set "PATH=C:\Program Files\Microsoft\Azure Functions Core Tools;%PATH%" && powershell -NoProfile -ExecutionPolicy Bypass -File c:\mnt\.gitlab\initialize-azure-functions.ps1 && '
 } elseif ($testSuite -eq 'integration' -and $area -eq 'Tracer' -and $env:FRAMEWORK -eq 'net48') {
     'powershell -NoProfile -ExecutionPolicy Bypass -File c:\mnt\.gitlab\initialize-msmq.ps1 && '
 } else {
