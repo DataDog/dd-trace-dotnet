@@ -70,7 +70,7 @@ namespace Datadog.Trace.FeatureFlags
 
         internal bool IsReady()
         {
-            return !_isRemoteConfigurationAvailable || Volatile.Read(ref _evaluator) is not null;
+            return _isRemoteConfigurationAvailable && Volatile.Read(ref _evaluator) is not null;
         }
 
         internal Evaluation Evaluate(string flagKey, ValueType resultType, object? defaultValue, string targetingKey, IDictionary<string, object?>? attributes)

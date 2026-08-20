@@ -66,6 +66,12 @@ public sealed class DatadogProvider : global::OpenFeature.FeatureProvider, IDisp
             return Task.CompletedTask;
         }
 
+        if (!FeatureFlagsSdk.IsAvailable())
+        {
+            var message = "Datadog tracer is not instrumented. Feature Flags cannot initialize. Ensure the Datadog automatic instrumentation agent is configured.";
+            throw new ProviderFatalException(message, new InvalidOperationException(message));
+        }
+
         return WaitForInitialConfig(cancellationToken);
     }
 

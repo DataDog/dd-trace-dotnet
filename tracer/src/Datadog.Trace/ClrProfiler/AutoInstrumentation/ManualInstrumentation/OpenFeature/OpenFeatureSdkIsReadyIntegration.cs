@@ -30,6 +30,6 @@ public sealed class OpenFeatureSdkIsReadyIntegration
     internal static CallTargetReturn<bool> OnMethodEnd<TTarget>(bool returnValue, Exception? exception, in CallTargetState state)
     {
         var featureFlags = TracerManager.Instance.FeatureFlags;
-        return new CallTargetReturn<bool>(featureFlags is null || featureFlags.IsReady());
+        return new CallTargetReturn<bool>(featureFlags?.IsReady() ?? false);
     }
 }
