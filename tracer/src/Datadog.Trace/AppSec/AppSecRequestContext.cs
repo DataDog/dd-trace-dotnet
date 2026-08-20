@@ -165,33 +165,45 @@ internal sealed partial class AppSecRequestContext
 
 internal partial class AppSecRequestContext
 {
+    // dedicated lock: _sync is held while CloseWebSpan serializes
+    private readonly object _contextSync = new();
+
     private bool _isAdditiveContextDisposed;
 
     private IContext? _context;
+
+    internal static AppSecRequestContext CreateWithDisposedAdditiveContext()
+        => new() { _isAdditiveContextDisposed = true };
 
     /// <summary>
     /// Disposes the WAF's context stored in HttpContext.Items[]. If it doesn't exist, nothing happens, no crash
     /// </summary>
     internal void DisposeAdditiveContext()
     {
-        _context?.Dispose();
-        _isAdditiveContextDisposed = true;
+        lock (_contextSync)
+        {
+            _context?.Dispose();
+            _isAdditiveContextDisposed = true;
+        }
     }
 
     internal IContext? GetOrCreateAdditiveContext(Security security)
     {
-        if (_isAdditiveContextDisposed)
+        lock (_contextSync)
         {
-            Log.Debug("Additive context was requested when already disposed");
-            return null;
-        }
+            if (_isAdditiveContextDisposed)
+            {
+                Log.Debug("Additive context was requested when already disposed");
+                return null;
+            }
 
-        if (_context is not null)
-        {
+            if (_context is not null)
+            {
+                return _context;
+            }
+
+            _context = security.CreateAdditiveContext();
             return _context;
         }
-
-        _context = security.CreateAdditiveContext();
-        return _context;
     }
 }
