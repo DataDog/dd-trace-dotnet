@@ -25,7 +25,7 @@ namespace Datadog.Trace.Tests.PlatformHelpers
         public void InvokesTheCallbackForCtrlCAndCtrlBreak(int controlType)
         {
             var invocations = 0;
-            var handler = new ConsoleControlHandler(() => Interlocked.Increment(ref invocations), ThirtySeconds);
+            var handler = new ConsoleControlHandler(() => Interlocked.Increment(ref invocations), ThirtySeconds, ThirtySeconds);
 
             handler.HandleControlEvent(controlType).Should().BeFalse();
 
@@ -41,7 +41,7 @@ namespace Datadog.Trace.Tests.PlatformHelpers
         public void IgnoresEventsThatCancelKeyPressWouldNotHaveRaised(int controlType)
         {
             var invocations = 0;
-            var handler = new ConsoleControlHandler(() => Interlocked.Increment(ref invocations), ThirtySeconds);
+            var handler = new ConsoleControlHandler(() => Interlocked.Increment(ref invocations), ThirtySeconds, ThirtySeconds);
 
             handler.HandleControlEvent(controlType).Should().BeFalse();
 
@@ -52,15 +52,60 @@ namespace Datadog.Trace.Tests.PlatformHelpers
         public void DoesNotPropagateExceptionsFromTheCallback()
         {
             // An exception escaping into the native caller would tear the process down.
-            var handler = new ConsoleControlHandler(() => throw new InvalidOperationException("Expected"), ThirtySeconds);
+            var handler = new ConsoleControlHandler(() => throw new InvalidOperationException("Expected"), ThirtySeconds, ThirtySeconds);
 
             handler.HandleControlEvent(CtrlCEvent).Should().BeFalse();
         }
 
         [Fact]
+        public void WaitsForACallbackThatTakesLongerThanTheStartTimeout()
+        {
+            // The start timeout only bounds how long we wait for the thread pool to _start_ the callback. Once it
+            // is running we must wait for it, because LifetimeManager applies its timeout to each shutdown hook
+            // rather than to the shutdown as a whole. Returning early lets the OS kill the process mid-flush.
+            var completed = false;
+            var handler = new ConsoleControlHandler(
+                () =>
+                {
+                    Thread.Sleep(TimeSpan.FromSeconds(20));
+                    completed = true;
+                },
+                callbackStartTimeout: TimeSpan.FromMilliseconds(100),
+                callbackTimeout: ThirtySeconds);
+
+            handler.HandleControlEvent(CtrlCEvent).Should().BeFalse();
+
+            completed.Should().BeTrue();
+        }
+
+        [Fact]
+        public void DoesNotWaitForeverForACallbackThatNeverCompletes()
+        {
+            // Deliberately not disposed: the callback may still be inside Wait() when the test returns.
+            var release = new ManualResetEventSlim(false);
+
+            try
+            {
+                var handler = new ConsoleControlHandler(
+                    () => release.Wait(),
+                    callbackStartTimeout: TimeSpan.FromMilliseconds(100),
+                    callbackTimeout: TimeSpan.FromMilliseconds(500));
+
+                handler.HandleControlEvent(CtrlCEvent).Should().BeFalse();
+            }
+            finally
+            {
+                // Don't leave the thread pool thread blocked once the test is over
+                release.Set();
+                release.Wait();
+                release.Dispose();
+            }
+        }
+
+        [Fact]
         public void UnregisterIsIdempotent()
         {
-            var handler = ConsoleControlHandler.TryRegister(() => { }, ThirtySeconds);
+            var handler = ConsoleControlHandler.TryRegister(() => { });
             handler.Should().NotBeNull();
 
             handler.Unregister();

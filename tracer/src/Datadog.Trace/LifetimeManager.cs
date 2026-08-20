@@ -81,7 +81,7 @@ namespace Datadog.Trace
             // process with exit code 0xE0434352 - if anything in the process has reset the console control handler
             // list via AllocConsole / FreeConsole / AttachConsole etc. Register the Win32 handler directly instead,
             // similar to how .NET Core does. See ConsoleControlHandler for details.
-            _consoleControlHandler = ConsoleControlHandler.TryRegister(() => RunShutdownTasks(), TaskTimeout);
+            _consoleControlHandler = ConsoleControlHandler.TryRegister(() => RunShutdownTasks());
 #else
             try
             {

@@ -1,6 +1,7 @@
 ﻿#if NETFRAMEWORK
 
 using System;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Reflection;
@@ -12,6 +13,14 @@ namespace Samples.Console_;
 
 public class ConsoleCtrlHandlerHelper
 {
+    /// <summary>
+    /// The exit code the child uses when it survives its sleep, i.e. the control event never took effect. Must
+    /// match StillAliveExitCode in the ConsoleControlHandlerTests integration test, which asserts the child did
+    /// _not_ exit this way - returning from Main would run the same shutdown hooks from ProcessExit, so without
+    /// this the test cannot tell "the handler worked" from "the event never arrived".
+    /// </summary>
+    private const int StillAliveExitCode = 42;
+
     /// <summary>
     /// Scenarios for the System.Console.ControlCHooker crash (exit code 0xE0434352) that the tracer used to
     /// trigger by subscribing to Console.CancelKeyPress. See Datadog.Trace.PlatformHelpers.ConsoleControlHandler.
@@ -88,7 +97,9 @@ public class ConsoleCtrlHandlerHelper
         Console.WriteLine($"Ctrl+Break harness starting, profiler attached: {SampleHelpers.IsProfilerAttached()}");
         Console.Out.Flush();
 
-        ResetConsoleCtrlHandlerList();
+        // A harness that failed to take its own console cannot deliver a control event to the child, and would
+        // silently prove nothing, so fail loudly here.
+        ResetConsoleCtrlHandlerList(throwOnFailure: true);
 
         // Registered *after* the transition, so it survives it. Returning true means "handled", which is how the
         // harness stays alive to report the child's exit code while the child is terminated.
@@ -121,9 +132,22 @@ public class ConsoleCtrlHandlerHelper
                 throw new TimeoutException("The child process never signalled that the tracer was initialized.");
             }
 
-            SafeWriteLine($"GenerateConsoleCtrlEvent(CTRL_BREAK_EVENT) = {GenerateConsoleCtrlEvent(CtrlBreakEvent, 0)}");
+            var sent = GenerateConsoleCtrlEvent(CtrlBreakEvent, 0);
+            var sendError = Marshal.GetLastWin32Error();
+            SafeWriteLine($"GenerateConsoleCtrlEvent(CTRL_BREAK_EVENT) = {sent} (Win32 {sendError})");
 
-            if (!child.WaitForExit(60_000))
+            if (!sent)
+            {
+                // Without the event the child just sleeps out its timeout and exits normally, running the very
+                // same shutdown hooks from ProcessExit - so the test would pass without proving anything.
+                TryKill(child);
+                SafeWriteLine(output.ToString());
+                throw new Win32Exception(sendError, "GenerateConsoleCtrlEvent(CTRL_BREAK_EVENT) failed");
+            }
+
+            // Comfortably longer than the child's own sleep, so that a child which was never killed is reported
+            // as an unexpected exit code rather than as a timeout here.
+            if (!child.WaitForExit(90_000))
             {
                 TryKill(child);
                 SafeWriteLine(output.ToString());
@@ -161,6 +185,11 @@ public class ConsoleCtrlHandlerHelper
         // We expect to be killed well before this elapses.
         Thread.Sleep(TimeSpan.FromSeconds(60));
         Console.WriteLine("Still alive: the control event was never delivered");
+        Console.Out.Flush();
+
+        // Exit with a sentinel instead of returning: returning from Main runs the same shutdown hooks from
+        // ProcessExit, so the exit code is the only thing that can tell this apart from the handler working.
+        Environment.Exit(StillAliveExitCode);
     }
 
     private static string ReadyFileFor(string markerFile) => markerFile + ".ready";
@@ -222,7 +251,7 @@ public class ConsoleCtrlHandlerHelper
     /// original pipe handle, and the pipe itself is unaffected by either call.
     /// </para>
     /// </summary>
-    private static void ResetConsoleCtrlHandlerList()
+    private static void ResetConsoleCtrlHandlerList(bool throwOnFailure = false)
     {
         var freed = FreeConsole();
         var freeError = Marshal.GetLastWin32Error();
@@ -233,6 +262,12 @@ public class ConsoleCtrlHandlerHelper
 
         if (!freed && !allocated)
         {
+            if (throwOnFailure)
+            {
+                throw new InvalidOperationException(
+                    $"Neither FreeConsole() (Win32 {freeError}) nor AllocConsole() (Win32 {allocError}) succeeded, so the handler list was NOT reset and this scenario proves nothing");
+            }
+
             SafeWriteLine("WARNING: neither call succeeded, so the handler list was NOT reset and this scenario proves nothing");
         }
     }

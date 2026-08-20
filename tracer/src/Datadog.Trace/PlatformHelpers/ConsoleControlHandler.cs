@@ -24,21 +24,29 @@ internal sealed class ConsoleControlHandler : CriticalFinalizerObject
     private const int CtrlCEvent = 0;
     private const int CtrlBreakEvent = 1;
 
+    // How long we wait for the thread pool to _start_ running the callback, mirrors BCL, detects maxed-out thread pool
+    private static readonly TimeSpan DefaultCallbackStartTimeout = TimeSpan.FromSeconds(30);
+
+    // .NET Core waits forever, but we want to have a well-defined (conservative) max lifetime here for safety, s
+    private static readonly TimeSpan DefaultCallbackTimeout = TimeSpan.FromMinutes(2);
+
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<ConsoleControlHandler>();
 
     // Assigned once in the constructor and never replaced, so the delegate (and the native marshalling stub
     // generated for it) stays rooted for exactly as long as the native registration lives.
     private readonly NativeMethods.HandlerRoutine _routine;
     private readonly Action _onControlEvent;
-    private readonly TimeSpan _timeout;
+    private readonly TimeSpan _callbackStartTimeout;
+    private readonly TimeSpan _callbackTimeout;
 
     private int _state;
 
     [TestingAndPrivateOnly]
-    internal ConsoleControlHandler(Action onControlEvent, TimeSpan timeout)
+    internal ConsoleControlHandler(Action onControlEvent, TimeSpan callbackStartTimeout, TimeSpan callbackTimeout)
     {
         _onControlEvent = onControlEvent;
-        _timeout = timeout;
+        _callbackStartTimeout = callbackStartTimeout;
+        _callbackTimeout = callbackTimeout;
         _routine = HandleControlEvent;
     }
 
@@ -56,13 +64,12 @@ internal sealed class ConsoleControlHandler : CriticalFinalizerObject
     /// Ctrl+C or Ctrl+Break.
     /// </summary>
     /// <param name="onControlEvent">The callback to run. It is invoked on a thread pool thread.</param>
-    /// <param name="timeout">How long to wait for <paramref name="onControlEvent"/> to complete.</param>
     /// <returns>The registration, or <c>null</c> if the handler could not be registered.</returns>
-    public static ConsoleControlHandler? TryRegister(Action onControlEvent, TimeSpan timeout)
+    public static ConsoleControlHandler? TryRegister(Action onControlEvent)
     {
         try
         {
-            var handler = new ConsoleControlHandler(onControlEvent, timeout);
+            var handler = new ConsoleControlHandler(onControlEvent, DefaultCallbackStartTimeout, DefaultCallbackTimeout);
             return handler.TryRegisterCore() ? handler : null;
         }
         catch (Exception ex)
@@ -99,19 +106,23 @@ internal sealed class ConsoleControlHandler : CriticalFinalizerObject
             // The OS invokes console control handlers on a dedicated thread whose stack is very small on 64-bit
             // Windows, which is why the BCL's ControlCHooker.BreakEvent hands the work to the thread pool and
             // waits for it to finish. Do the same.
-            var completed = new ManualResetEventSlim(false);
+            var state = new CallbackState();
 
-            if (ThreadPool.QueueUserWorkItem(_ => RunCallback(completed)))
+            if (ThreadPool.QueueUserWorkItem(_ => RunCallback(state)))
             {
-                // Deliberately not disposed: a worker that finishes after we time out would throw
-                // ObjectDisposedException on a thread pool thread. LifetimeManager._shutdownComplete
-                // is left to the GC for the same reason.
-                completed.Wait(_timeout);
+                // A two-phase wait, same as System.Console.BreakEvent does. The first phase detects thread pool
+                // starvation and our item not running at all, so just accept that we can't flush
+                if (!state.Wait(_callbackStartTimeout) && state.Started)
+                {
+                    // Once the callback is running we want to let it finish, so timeout is just to catch
+                    // degenerate cases
+                    state.Wait(_callbackTimeout);
+                }
             }
             else
             {
                 // Couldn't reach the thread pool, so run it here and accept the smaller stack.
-                RunCallback(completed);
+                RunCallback(state);
             }
         }
         catch
@@ -133,8 +144,9 @@ internal sealed class ConsoleControlHandler : CriticalFinalizerObject
         // Publish "an add is in flight" _before_ the P/Invoke. An AppDomain unload finalizes every finalizable
         // object in the domain, reachable or not, so the critical finalizer can run while this thread is still
         // parked inside SetConsoleCtrlHandler - and that park can be long, because the add contends for the OS
-        // console critical section, which is held for the whole of a control handler dispatch (up to _timeout in
-        // our own handler). UnregisterCore has to be able to tell that case apart from "nothing to remove".
+        // console critical section, which is held for the whole of a control handler dispatch (in our own handler,
+        // for as long as the shutdown hooks take). UnregisterCore has to be able to tell that case apart from
+        // "nothing to remove".
         Interlocked.Exchange(ref _state, State.Registering);
 
         bool added;
@@ -227,10 +239,11 @@ internal sealed class ConsoleControlHandler : CriticalFinalizerObject
         }
     }
 
-    private void RunCallback(ManualResetEventSlim completed)
+    private void RunCallback(CallbackState state)
     {
         try
         {
+            state.MarkStarted();
             _onControlEvent();
         }
         catch (Exception ex)
@@ -239,7 +252,7 @@ internal sealed class ConsoleControlHandler : CriticalFinalizerObject
         }
         finally
         {
-            completed.Set();
+            state.SetCompleted();
         }
     }
 
@@ -269,6 +282,24 @@ internal sealed class ConsoleControlHandler : CriticalFinalizerObject
         // A removal was requested while the add was still in flight, so the registering thread must
         // do the removal itself after adding.
         public const int UnregisterRequested = 3;
+    }
+
+    private sealed class CallbackState
+    {
+        // Deliberately not disposed: a worker that finishes after we stop waiting would throw
+        // ObjectDisposedException on a thread pool thread, so we leave it to the GC.
+        // LifetimeManager._shutdownComplete has a similar pattern.
+        private readonly ManualResetEventSlim _completed = new(false);
+
+        private bool _started;
+
+        public bool Started => Volatile.Read(ref _started);
+
+        public bool Wait(TimeSpan timeout) => _completed.Wait(timeout);
+
+        public void MarkStarted() => Volatile.Write(ref _started, true);
+
+        public void SetCompleted() => _completed.Set();
     }
 }
 #endif
