@@ -15,7 +15,7 @@ namespace Datadog.Trace.Debugger.Sink
 {
     internal sealed class BatchUploader : IBatchUploader
     {
-        private const int MaxSinglePayloadSize = 1 * 1024 * 1024;
+        internal const int MaxSinglePayloadSize = 1 * 1024 * 1024;
         private const int MaxTotalPayloadSize = 5 * 1024 * 1024;
         private const int InitialBuilderSizeBytes = 10 * 1024;
         internal const int InitialPayloadSizeBytes = 100 * 1024;
@@ -69,7 +69,7 @@ namespace Datadog.Trace.Debugger.Sink
             foreach (var payload in payloads)
             {
                 var payloadSize = Encoding.UTF8.GetByteCount(payload);
-                if (payloadSize >= MaxSinglePayloadSize)
+                if (IsSinglePayloadTooLarge(payloadSize))
                 {
                     Log.Warning("Big payload detected, skipping");
                     continue;
@@ -97,6 +97,8 @@ namespace Datadog.Trace.Debugger.Sink
 
             yield return FinalizeBatch(totalBatchSize);
         }
+
+        internal static bool IsSinglePayloadTooLarge(int payloadSize, int maxPayloadSize = MaxSinglePayloadSize) => payloadSize >= maxPayloadSize;
 
         private ArraySegment<byte> FinalizeBatch(int totalBatchSize)
         {

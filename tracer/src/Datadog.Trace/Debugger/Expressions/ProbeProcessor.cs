@@ -20,6 +20,7 @@ using Datadog.Trace.Debugger.Snapshots;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 using Datadog.Trace.SourceGenerators;
+using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.Debugger.Expressions
@@ -139,10 +140,17 @@ namespace Datadog.Trace.Debugger.Expressions
             // Global-first matches Java; it can affect per-probe fairness and may be improved later.
             if (probeInfo.ProbeType == ProbeType.Snapshot && !_globalRateLimiter.ShouldSampleSnapshot(probeInfo.ProbeId))
             {
+                DebuggerGuardrailMetrics.RecordEventsSkipped(probeInfo.ProbeType, MetricTags.DebuggerEventsSkippedReason.RateLimitGlobal);
                 return false;
             }
 
-            return sampler.Sample();
+            if (!sampler.Sample())
+            {
+                DebuggerGuardrailMetrics.RecordEventsSkipped(probeInfo.ProbeType, MetricTags.DebuggerEventsSkippedReason.RateLimitProbe);
+                return false;
+            }
+
+            return true;
         }
 
         public bool Process<TCapture>(ref CaptureInfo<TCapture> info, IDebuggerSnapshotCreator inSnapshotCreator, in ProbeData probeData)
@@ -330,6 +338,20 @@ namespace Datadog.Trace.Debugger.Expressions
 
         private ExpressionEvaluationResult Evaluate(ProbeProcessorState state, ProbeInfo probeInfo, DebuggerSnapshotCreator snapshotCreator, out bool shouldStopCapture, IAdaptiveSampler sampler)
         {
+            var evaluationResult = EvaluateCore(state, probeInfo, snapshotCreator, out shouldStopCapture, sampler);
+
+            // An exceeded time budget fails open: the event is still emitted with its evaluation errors so the
+            // customer can see why the probe is too slow. Only report it as skipped when the event is dropped.
+            if (shouldStopCapture && evaluationResult.EvaluationBudget.TimedOut)
+            {
+                DebuggerGuardrailMetrics.RecordEventsSkipped(probeInfo.ProbeType, MetricTags.DebuggerEventsSkippedReason.EvaluationTimeout);
+            }
+
+            return evaluationResult;
+        }
+
+        private ExpressionEvaluationResult EvaluateCore(ProbeProcessorState state, ProbeInfo probeInfo, DebuggerSnapshotCreator snapshotCreator, out bool shouldStopCapture, IAdaptiveSampler sampler)
+        {
             ExpressionEvaluationResult evaluationResult = default;
             shouldStopCapture = false;
             var captureExpressionsEvaluated = false;
@@ -352,9 +374,15 @@ namespace Datadog.Trace.Debugger.Expressions
             catch (Exception e)
             {
                 Log.Error(e, "Failed to evaluate expression for probe: {ProbeId}", probeInfo.ProbeId);
+                var evaluationTimedOut = e is EvaluationTimeBudgetExceededException || evaluationResult.EvaluationBudget.TimedOut;
                 if (evaluationResult.IsNull())
                 {
                     evaluationResult = new ExpressionEvaluationResult();
+                }
+
+                if (evaluationTimedOut)
+                {
+                    evaluationResult.EvaluationBudget.MarkTimedOut();
                 }
 
                 evaluationResult.Errors ??= new List<EvaluationError>();
@@ -619,7 +647,7 @@ namespace Datadog.Trace.Debugger.Expressions
                     if (!probeInfo.IsFullSnapshot)
                     {
                         var snapshot = snapshotCreator.FinalizeMethodSnapshot(probeInfo.ProbeId, probeInfo.ProbeVersion, ref info);
-                        DebuggerManager.Instance.DynamicInstrumentation?.AddSnapshot(probeInfo, snapshot);
+                        DebuggerManager.Instance.DynamicInstrumentation?.AddSnapshot(probeInfo, snapshot, snapshotCreator.IncompleteReasons);
                         break;
                     }
 
@@ -644,7 +672,7 @@ namespace Datadog.Trace.Debugger.Expressions
                     if (!probeInfo.IsFullSnapshot)
                     {
                         var snapshot = snapshotCreator.FinalizeMethodSnapshot(probeInfo.ProbeId, probeInfo.ProbeVersion, ref info);
-                        DebuggerManager.Instance.DynamicInstrumentation?.AddSnapshot(probeInfo, snapshot);
+                        DebuggerManager.Instance.DynamicInstrumentation?.AddSnapshot(probeInfo, snapshot, snapshotCreator.IncompleteReasons);
                         break;
                     }
 
@@ -677,7 +705,7 @@ namespace Datadog.Trace.Debugger.Expressions
                         }
 
                         var snapshot = snapshotCreator.FinalizeMethodSnapshot(probeInfo.ProbeId, probeInfo.ProbeVersion, ref info);
-                        DebuggerManager.Instance.DynamicInstrumentation?.AddSnapshot(probeInfo, snapshot);
+                        DebuggerManager.Instance.DynamicInstrumentation?.AddSnapshot(probeInfo, snapshot, snapshotCreator.IncompleteReasons);
                         snapshotCreator.Stop();
                         break;
                     }
@@ -722,7 +750,7 @@ namespace Datadog.Trace.Debugger.Expressions
                     }
 
                     var snapshot = snapshotCreator.FinalizeLineSnapshot(probeInfo.ProbeId, probeInfo.ProbeVersion, ref info);
-                    DebuggerManager.Instance.DynamicInstrumentation?.AddSnapshot(probeInfo, snapshot);
+                    DebuggerManager.Instance.DynamicInstrumentation?.AddSnapshot(probeInfo, snapshot, snapshotCreator.IncompleteReasons);
                     snapshotCreator.Stop();
                     break;
 

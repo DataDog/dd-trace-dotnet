@@ -889,10 +889,10 @@ namespace Datadog.Trace.Configuration
 
             Manager = new(source, this, telemetry, errorLog);
 
-            // Created after the manager so the environment can be taken from the initial mutable
-            // settings, which also honour the "env" entry of DD_TAGS. It is captured once, so a
-            // later dynamic-configuration change to "env" does not move the agentless endpoint.
-            FeatureFlags = new FeatureFlagsSettings(source, telemetry, Manager.InitialMutableSettings.Environment);
+            // The environment is deliberately not passed in: it can be changed in code after
+            // startup, so the delivery source subscribes to the manager and applies the current
+            // value per request instead of capturing one here.
+            FeatureFlags = new FeatureFlagsSettings(source, telemetry);
 
             // OTLP span metrics require OTLP trace export (see TracerManagerFactory.GetAgentWriter).
             // Force to false otherwise, even if explicitly requested.

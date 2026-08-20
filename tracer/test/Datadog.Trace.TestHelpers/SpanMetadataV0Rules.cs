@@ -45,6 +45,13 @@ namespace Datadog.Trace.TestHelpers
             .Tags(s => s
                 .IsOptional("http.client_ip")
                 .IsOptional("network.client.ip")
+                .IsOptional("_dd.code_origin.type")
+                .IsOptional("_dd.code_origin.frames.0.index")
+                .IsOptional("_dd.code_origin.frames.0.method")
+                .IsOptional("_dd.code_origin.frames.0.type")
+                .IsOptional("_dd.code_origin.frames.0.file")
+                .IsOptional("_dd.code_origin.frames.0.line")
+                .IsOptional("_dd.code_origin.frames.0.column")
                 .IsPresent("http.method")
                 .IsPresent("http.request.headers.host")
                 .IsOptional("http.route")
