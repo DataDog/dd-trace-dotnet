@@ -1,7 +1,10 @@
 $ErrorActionPreference = 'Stop'
 
 $func = Get-Command 'func.exe' -ErrorAction Stop
-$storageEmulator = Get-Command 'AzureStorageEmulator.exe' -ErrorAction Stop
+$storageEmulator = "${env:ProgramFiles(x86)}\Microsoft SDKs\Azure\Storage Emulator\AzureStorageEmulator.exe"
+if (-not (Test-Path -LiteralPath $storageEmulator -PathType Leaf)) {
+    throw "Azure Storage Emulator was not found at '$storageEmulator'."
+}
 
 $versionOutput = @(& $func.Source --version)
 $versionExitCode = $LASTEXITCODE
@@ -15,7 +18,7 @@ Write-Output "Azure Functions Core Tools: $($funcVersion.Trim())"
 $started = $false
 for ($attempt = 1; $attempt -le 5; $attempt++) {
     Write-Output "Starting Azure Storage Emulator (attempt $attempt of 5)"
-    & $storageEmulator.Source start
+    & $storageEmulator start
     if ($LASTEXITCODE -eq 0) {
         $started = $true
         break
@@ -30,7 +33,7 @@ if (-not $started) {
     throw 'Azure Storage Emulator could not be started after 5 attempts.'
 }
 
-& $storageEmulator.Source status
+& $storageEmulator status
 if ($LASTEXITCODE -ne 0) {
     throw "AzureStorageEmulator.exe exited with code $LASTEXITCODE while reporting its status."
 }
