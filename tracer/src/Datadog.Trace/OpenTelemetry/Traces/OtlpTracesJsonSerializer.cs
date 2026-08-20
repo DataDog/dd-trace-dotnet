@@ -469,11 +469,12 @@ internal sealed class OtlpTracesJsonSerializer : ISpanBufferSerializer
         writer.WriteValue(spanModel.Span.Context.RawSpanId);
 
         // traceState (optional)
-        // if (!string.IsNullOrEmpty(spanModel.Span.TraceState))
-        // {
-        //     writer.WritePropertyName("traceState");
-        //     writer.WriteValue(spanModel.Span.TraceState);
-        // }
+        var otelTraceState = spanModel.Span.Context.OtelTraceState;
+        if (!StringUtil.IsNullOrEmpty(otelTraceState))
+        {
+            writer.WritePropertyName("traceState");
+            writer.WriteValue("ot=" + otelTraceState);
+        }
 
         // parentSpanId (optional) - encoded as hex string in JSON
         if (spanModel.Span.Context.ParentId is ulong parentId && parentId > 0)
