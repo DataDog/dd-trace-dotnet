@@ -30,20 +30,19 @@ public class AerospikeFixture : ContainerFixture
         // pinning to a known good version because the latest version
         // (6.3.0.5 at time of issue) causes 'Server memory error' and flake
         // Keep syncronized image version with docker-compose.yml
-        var container = new ContainerBuilder()
-                       .WithImage("aerospike/aerospike-server:6.2.0.6")
+        var container = new ContainerBuilder("aerospike/aerospike-server:6.2.0.6")
                        .WithPortBinding(AerospikePort, true)
                        .WithCreateParameterModifier(p =>
-                        {
-                            p.HostConfig ??= new HostConfig();
-                            p.HostConfig.Ulimits = new List<Ulimit>
+                       {
+                           p.HostConfig ??= new HostConfig();
+                           p.HostConfig.Ulimits = new List<Ulimit>
                             {
                                 // Aerospike requires a minimum of 15000 file descriptors, otherwise it'll fail to start
                                 // Some versions of dockerengine set a lower limit (1024)
                                 new Ulimit { Name = "nofile", Soft = 15000, Hard = 15000 }
                             };
-                        })
-                       .WithWaitStrategy(Wait.ForUnixContainer().UntilPortIsAvailable(AerospikePort))
+                       })
+                       .WithWaitStrategy(Wait.ForUnixContainer().UntilInternalTcpPortIsAvailable(AerospikePort))
                        .Build();
 
         await container.StartAsync();
