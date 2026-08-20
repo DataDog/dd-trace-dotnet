@@ -181,6 +181,21 @@ partial class Build : NukeBuild
             AppendWindowsJob("integration-tests-windows-selenium-x64:net10.0:tracer", TargetFramework.NET10_0, "x64", "selenium", TracerArea, allowFailure: true);
         }
 
+        // Match Azure's dedicated Windows Azure Functions matrix. These jobs are
+        // always emitted because the specialized suite intentionally covers every
+        // supported Functions TFM, independently of the regular thorough-test matrix.
+        foreach (var framework in new[]
+                 {
+                     TargetFramework.NET6_0,
+                     TargetFramework.NET7_0,
+                     TargetFramework.NET8_0,
+                     TargetFramework.NET9_0,
+                     TargetFramework.NET10_0,
+                 })
+        {
+            AppendWindowsJob($"integration-tests-windows-azure-functions-x64:{framework}", framework, "x64", "azure-functions", null);
+        }
+
         var outputDirectory = RootDirectory / ".gitlab" / "generated";
         Directory.CreateDirectory(outputDirectory);
         var outputPath = outputDirectory / "windows-integration-tests.yml";

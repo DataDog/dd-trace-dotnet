@@ -69,6 +69,15 @@ switch ($testSuite) {
         $nukeTargets = 'BuildIntegrationTests'
         $nukeArguments = '--IncludeTestsRequiringDocker false'
     }
+    'azure-functions' {
+        if ($targetPlatform -ne 'x64' -or $env:FRAMEWORK -notin @('net6.0', 'net7.0', 'net8.0', 'net9.0', 'net10.0')) {
+            throw "The Windows Azure Functions suite does not support $targetPlatform $env:FRAMEWORK"
+        }
+
+        $testFilter = '(RunOnWindows=True)&(Category=AzureFunctions)&(SkipInCI!=True)'
+        $nukeTargets = 'BuildAndRunWindowsAzureFunctionsTests'
+        $nukeArguments = ''
+    }
     'debugger' {
         $optimize = if ($env:OPTIMIZE) { $env:OPTIMIZE } else { 'true' }
         $debugType = if ($env:DEBUG_TYPE) { $env:DEBUG_TYPE } else { 'portable' }
@@ -295,6 +304,8 @@ if ($testSuite -eq 'selenium') {
 Write-Output "Building and running Windows $targetPlatform $testSuite tests for $env:FRAMEWORK (area=$area)"
 $dependencySetup = if ($testSuite -eq 'localdb') {
     'powershell -NoProfile -ExecutionPolicy Bypass -File c:\mnt\.gitlab\initialize-localdb.ps1 && '
+} elseif ($testSuite -eq 'azure-functions') {
+    'powershell -NoProfile -ExecutionPolicy Bypass -File c:\mnt\.gitlab\initialize-azure-functions.ps1 && '
 } elseif ($testSuite -eq 'integration' -and $area -eq 'Tracer' -and $env:FRAMEWORK -eq 'net48') {
     'powershell -NoProfile -ExecutionPolicy Bypass -File c:\mnt\.gitlab\initialize-msmq.ps1 && '
 } else {
