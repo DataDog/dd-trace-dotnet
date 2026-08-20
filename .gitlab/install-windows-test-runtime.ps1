@@ -7,7 +7,9 @@ param (
 
     [string]$InstallDir,
 
-    [switch]$IncludeAspNetCore
+    [switch]$IncludeAspNetCore,
+
+    [switch]$InstallSdk
 )
 
 $ErrorActionPreference = 'Stop'
@@ -23,13 +25,14 @@ $channel = switch ($Framework) {
     'net5.0' { '5.0' }
     'net6.0' { '6.0' }
     'net7.0' { '7.0' }
-    'net8.0' { if ($Architecture -eq 'x86') { '8.0' } else { $null } }
-    'net9.0' { if ($Architecture -eq 'x86') { '9.0' } else { $null } }
-    'net10.0' { if ($Architecture -eq 'x86') { '10.0' } else { $null } }
+    'net8.0' { '8.0' }
+    'net9.0' { '9.0' }
+    'net10.0' { '10.0' }
     default { $null }
 }
 
-$installScript = Join-Path $env:TEMP 'dotnet-install.ps1'
+$installScriptSuffix = if ($env:CI_JOB_ID) { $env:CI_JOB_ID } else { $PID }
+$installScript = Join-Path $env:TEMP "dd-trace-dotnet-$installScriptSuffix-dotnet-install.ps1"
 $installScriptUrl = 'https://raw.githubusercontent.com/dotnet/install-scripts/2bdc7f2c6e00d60be57f552b8a8aab71512dbcb2/src/dotnet-install.ps1'
 $dotnetExecutable = Join-Path $InstallDir 'dotnet.exe'
 $globalJsonPath = Join-Path $PSScriptRoot '..\global.json'
@@ -39,11 +42,11 @@ $installedRuntimes = if (Test-Path $dotnetExecutable) { & $dotnetExecutable --li
 $sdkPattern = "^$([regex]::Escape($sdkVersion)) \["
 $runtimePattern = if ($channel) { "^Microsoft\.NETCore\.App $([regex]::Escape($channel))\." } else { $null }
 $aspNetCorePattern = if ($channel) { "^Microsoft\.AspNetCore\.App $([regex]::Escape($channel))\." } else { $null }
-$installSdk = $Architecture -eq 'x86' -and -not ($installedSdks -match $sdkPattern)
+$shouldInstallSdk = ($InstallSdk -or $Architecture -eq 'x86') -and -not ($installedSdks -match $sdkPattern)
 $installRuntime = $channel -and -not ($installedRuntimes -match $runtimePattern)
 $installAspNetCore = $channel -and $IncludeAspNetCore -and -not ($installedRuntimes -match $aspNetCorePattern)
 
-if (-not $installSdk -and -not $installRuntime -and -not $installAspNetCore) {
+if (-not $shouldInstallSdk -and -not $installRuntime -and -not $installAspNetCore) {
     Write-Host "The required .NET $Architecture SDK and runtimes are already installed for $Framework."
     exit 0
 }
@@ -51,7 +54,7 @@ if (-not $installSdk -and -not $installRuntime -and -not $installAspNetCore) {
 (New-Object System.Net.WebClient).DownloadFile($installScriptUrl, $installScript)
 
 try {
-    if ($installSdk) {
+    if ($shouldInstallSdk) {
         Write-Host "Installing the .NET $sdkVersion $Architecture SDK..."
         & $installScript -Architecture $Architecture -Version $sdkVersion -InstallDir $InstallDir -NoPath
 
@@ -59,6 +62,11 @@ try {
         if ($LASTEXITCODE -ne 0 -or -not ($installedSdks -match $sdkPattern)) {
             throw "Failed to install the .NET $sdkVersion $Architecture SDK"
         }
+
+        # Installing the SDK can also satisfy the runtime requirements below.
+        $installedRuntimes = & $dotnetExecutable --list-runtimes
+        $installRuntime = $channel -and -not ($installedRuntimes -match $runtimePattern)
+        $installAspNetCore = $channel -and $IncludeAspNetCore -and -not ($installedRuntimes -match $aspNetCorePattern)
     }
 
     if ($installRuntime) {
