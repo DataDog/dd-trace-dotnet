@@ -172,6 +172,21 @@ internal partial class AppSecRequestContext
 
     private IContext? _context;
 
+    /// <summary>
+    /// Gets a value indicating whether the WAF context has already been disposed, which means the
+    /// request has ended and no further WAF call can be made for it.
+    /// </summary>
+    internal bool IsAdditiveContextDisposed
+    {
+        get
+        {
+            lock (_contextSync)
+            {
+                return _isAdditiveContextDisposed;
+            }
+        }
+    }
+
     internal static AppSecRequestContext CreateWithDisposedAdditiveContext()
         => new() { _isAdditiveContextDisposed = true };
 
