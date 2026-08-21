@@ -8,7 +8,6 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Threading;
 using System.Threading.Channels;
@@ -61,7 +60,6 @@ public sealed class DatadogProvider : global::OpenFeature.FeatureProvider, IDisp
         _onNewConfig = onNewConfig;
     }
 
-    [DoesNotReturn]
     private static void ThrowInitialConfigTimeout()
     {
         var message = $"Timed out after {InitialConfigTimeoutSeconds} seconds waiting for initial Datadog Feature Flags configuration from Remote Configuration.";
