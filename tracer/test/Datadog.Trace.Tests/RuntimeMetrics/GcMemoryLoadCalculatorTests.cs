@@ -137,6 +137,11 @@ public class GcMemoryLoadCalculatorTests
         }
     }
 
+
+    // AppContext.SetData is public at runtime on every supported TFM, but the net6.0 (and earlier) reference
+    // assemblies used to compile this project don't declare it - only GetData, which the product code under test
+    // relies on - so a direct call fails to compile for those TargetFrameworks specifically.
+#if NET7_0_OR_GREATER
     [Fact]
     public void ReadHasConfiguredHighMemoryLoadPercent_NoConfig_ReturnsFalse()
     {
@@ -209,13 +214,19 @@ public class GcMemoryLoadCalculatorTests
             ClearAppContextData();
         }
     }
-
-    private static void ClearAppContextData() => AppContext.SetData("System.GC.HighMemoryPercent", null);
+#endif
 
     // Mirrors how the GC encodes a percentage into bytes (compute_memory_settings, src/coreclr/gc/init.cpp as of
     // writing - see the pinned source reference on GcMemoryLoadCalculator.EightyGiBBytesAt90Percent):
     // `(uint64_t)(pct / 100 * total_physical_mem)`. Each test builds inputs the same way the runtime would, then
     // asserts we decode the original percentage back.
     private static long AsBytes(long total, double percent) => (long)((percent / 100.0) * total);
+
+    // AppContext.SetData is public at runtime on every supported TFM, but the net6.0 (and earlier) reference
+    // assemblies used to compile this project don't declare it. Below net7.0, nothing in this test binary can
+    // set the value in the first place, so clearing it is a no-op.
+#if NET7_0_OR_GREATER
+    private static void ClearAppContextData() => AppContext.SetData("System.GC.HighMemoryPercent", null);
+#endif
 }
 #endif
