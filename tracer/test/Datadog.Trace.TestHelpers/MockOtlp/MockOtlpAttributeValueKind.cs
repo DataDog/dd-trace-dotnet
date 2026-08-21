@@ -10,6 +10,11 @@ namespace Datadog.Trace.TestHelpers.MockOtlp;
 /// </summary>
 public enum MockOtlpAttributeValueKind
 {
+    /// <summary>
+    /// No oneof member was set on the wire (an explicitly empty <c>AnyValue</c>, or a <c>KeyValue</c>
+    /// with no <c>Value</c> at all).
+    /// </summary>
+    Empty,
     String,
     Bool,
     Int,

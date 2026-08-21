@@ -16,6 +16,8 @@ namespace Datadog.Trace.TestHelpers.MockOtlp;
 /// </summary>
 public sealed class MockOtlpAttributeValue
 {
+    internal static readonly MockOtlpAttributeValue Empty = new(MockOtlpAttributeValueKind.Empty, value: null);
+
     private readonly object _value;
 
     private MockOtlpAttributeValue(MockOtlpAttributeValueKind kind, object value)
@@ -42,8 +44,14 @@ public sealed class MockOtlpAttributeValue
 
     internal static MockOtlpAttributeValue Create(AnyValue value)
     {
+        if (value is null)
+        {
+            return Empty;
+        }
+
         return value.ValueCase switch
         {
+            AnyValue.ValueOneofCase.None => Empty,
             AnyValue.ValueOneofCase.StringValue => new MockOtlpAttributeValue(MockOtlpAttributeValueKind.String, value.StringValue),
             AnyValue.ValueOneofCase.BoolValue => new MockOtlpAttributeValue(MockOtlpAttributeValueKind.Bool, value.BoolValue),
             AnyValue.ValueOneofCase.IntValue => new MockOtlpAttributeValue(MockOtlpAttributeValueKind.Int, value.IntValue),

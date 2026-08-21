@@ -113,12 +113,8 @@ public class MockHttpRequest
     {
         public string GetValue(string name)
         {
-            foreach (var value in GetValues(name))
-            {
-                return value;
-            }
-
-            return null;
+            TryGetValue(name, out var value);
+            return value;
         }
 
         public bool TryGetValue(string name, out string value)

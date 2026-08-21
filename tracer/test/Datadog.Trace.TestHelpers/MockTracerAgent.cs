@@ -182,51 +182,18 @@ namespace Datadog.Trace.TestHelpers
             bool returnAllOperations = false,
             bool failOnTimeout = true)
         {
-            var deadline = DateTime.UtcNow.AddMilliseconds(timeoutInMilliseconds);
-            var minimumOffset = (minDateTime ?? DateTimeOffset.MinValue).ToUnixTimeNanoseconds();
-
-            IImmutableList<MockSpan> relevantSpans = ImmutableList<MockSpan>.Empty;
-
-            while (DateTime.UtcNow < deadline)
-            {
-                relevantSpans =
-                    Spans
-                       .Where(s =>
-                        {
-                            if (!SpanFilters.All(shouldReturn => shouldReturn(s)))
-                            {
-                                return false;
-                            }
-
-                            if (s.Start < minimumOffset)
-                            {
-                                // if the Start of the span is before the expected
-                                // we check if is caused by the precision of the TraceClock optimization.
-                                // So, if the difference is greater than 16 milliseconds (max accuracy error) we discard the span
-                                if (minimumOffset - s.Start > 16000000)
-                                {
-                                    return false;
-                                }
-                            }
-
-                            return true;
-                        })
-                       .ToImmutableList();
-
-                if (relevantSpans.Count(s => operationName == null || s.Name == operationName) >= count)
-                {
-                    break;
-                }
-
-                await Task.Delay(250);
-            }
-
-            if (failOnTimeout)
-            {
-                relevantSpans.Count(s => operationName is null || s.Name == operationName)
-                             .Should()
-                             .BeGreaterThanOrEqualTo(count, "because the requested spans should be received before the timeout");
-            }
+            var relevantSpans = await WaitForSpansCoreAsync(
+                () => Spans,
+                s => SpanFilters.All(shouldReturn => shouldReturn(s)),
+                s => s.Start,
+                s => s.Name,
+                count,
+                timeoutInMilliseconds,
+                operationName,
+                minDateTime,
+                returnAllOperations,
+                failOnTimeout,
+                "because the requested spans should be received before the timeout");
 
             foreach (var headers in TraceRequestHeaders)
             {
@@ -259,14 +226,6 @@ namespace Datadog.Trace.TestHelpers
                     });
             }
 
-            if (!returnAllOperations)
-            {
-                relevantSpans =
-                    relevantSpans
-                       .Where(s => operationName == null || s.Name == operationName)
-                       .ToImmutableList();
-            }
-
             return relevantSpans;
         }
 
@@ -288,49 +247,18 @@ namespace Datadog.Trace.TestHelpers
             bool returnAllOperations = false,
             bool failOnTimeout = true)
         {
-            var deadline = DateTime.UtcNow.AddMilliseconds(timeoutInMilliseconds);
-            var minimumOffset = (ulong)Math.Max(0, (minDateTime ?? DateTimeOffset.MinValue).ToUnixTimeNanoseconds());
-
-            IImmutableList<MockOtlpSpan> relevantSpans = ImmutableList<MockOtlpSpan>.Empty;
-
-            while (DateTime.UtcNow < deadline)
-            {
-                relevantSpans =
-                    OtlpSpans
-                       .Where(s =>
-                        {
-                            if (!OtlpSpanFilters.All(shouldReturn => shouldReturn(s)))
-                            {
-                                return false;
-                            }
-
-                            if (s.StartTimeUnixNano < minimumOffset)
-                            {
-                                // allow for clock-precision slack, same tolerance as WaitForSpansAsync
-                                if (minimumOffset - s.StartTimeUnixNano > 16000000)
-                                {
-                                    return false;
-                                }
-                            }
-
-                            return true;
-                        })
-                       .ToImmutableList();
-
-                if (relevantSpans.Count(s => operationName == null || s.Name == operationName) >= count)
-                {
-                    break;
-                }
-
-                await Task.Delay(250);
-            }
-
-            if (failOnTimeout)
-            {
-                relevantSpans.Count(s => operationName is null || s.Name == operationName)
-                             .Should()
-                             .BeGreaterThanOrEqualTo(count, "because the requested OTLP spans should be received before the timeout");
-            }
+            var relevantSpans = await WaitForSpansCoreAsync(
+                () => OtlpSpans,
+                s => OtlpSpanFilters.All(shouldReturn => shouldReturn(s)),
+                s => (long)s.StartTimeUnixNano,
+                s => s.Name,
+                count,
+                timeoutInMilliseconds,
+                operationName,
+                minDateTime,
+                returnAllOperations,
+                failOnTimeout,
+                "because the requested OTLP spans should be received before the timeout");
 
             foreach (var headers in OtlpTraceRequestHeaders)
             {
@@ -340,14 +268,6 @@ namespace Datadog.Trace.TestHelpers
                     headers,
                     "Content-Type",
                     header => header.StartsWith("application/json") || header.StartsWith("application/x-protobuf"));
-            }
-
-            if (!returnAllOperations)
-            {
-                relevantSpans =
-                    relevantSpans
-                       .Where(s => operationName == null || s.Name == operationName)
-                       .ToImmutableList();
             }
 
             return relevantSpans;
@@ -1240,6 +1160,84 @@ namespace Datadog.Trace.TestHelpers
                     throw;
                 }
             }
+        }
+
+        /// <summary>
+        /// Shared polling loop behind <see cref="WaitForSpansAsync"/> and <see cref="WaitForOtlpSpansAsync"/>:
+        /// polls <paramref name="getSpans"/> every 250ms until at least <paramref name="count"/> matching
+        /// spans (by <paramref name="operationName"/>) are found or the timeout elapses. Spans that started
+        /// before <paramref name="minDateTime"/> are discarded, with the same 16ms clock-precision
+        /// tolerance both callers relied on before this was shared.
+        /// </summary>
+        private async Task<IImmutableList<TSpan>> WaitForSpansCoreAsync<TSpan>(
+            Func<IImmutableList<TSpan>> getSpans,
+            Func<TSpan, bool> passesFilters,
+            Func<TSpan, long> getStartUnixNano,
+            Func<TSpan, string> getName,
+            int count,
+            int timeoutInMilliseconds,
+            string operationName,
+            DateTimeOffset? minDateTime,
+            bool returnAllOperations,
+            bool failOnTimeout,
+            string timeoutBecauseMessage)
+        {
+            var deadline = DateTime.UtcNow.AddMilliseconds(timeoutInMilliseconds);
+            var minimumOffset = (minDateTime ?? DateTimeOffset.MinValue).ToUnixTimeNanoseconds();
+
+            IImmutableList<TSpan> relevantSpans = ImmutableList<TSpan>.Empty;
+
+            while (DateTime.UtcNow < deadline)
+            {
+                relevantSpans =
+                    getSpans()
+                       .Where(s =>
+                        {
+                            if (!passesFilters(s))
+                            {
+                                return false;
+                            }
+
+                            var start = getStartUnixNano(s);
+                            if (start < minimumOffset)
+                            {
+                                // if the Start of the span is before the expected
+                                // we check if is caused by the precision of the TraceClock optimization.
+                                // So, if the difference is greater than 16 milliseconds (max accuracy error) we discard the span
+                                if (minimumOffset - start > 16000000)
+                                {
+                                    return false;
+                                }
+                            }
+
+                            return true;
+                        })
+                       .ToImmutableList();
+
+                if (relevantSpans.Count(s => operationName is null || getName(s) == operationName) >= count)
+                {
+                    break;
+                }
+
+                await Task.Delay(250);
+            }
+
+            if (failOnTimeout)
+            {
+                relevantSpans.Count(s => operationName is null || getName(s) == operationName)
+                             .Should()
+                             .BeGreaterThanOrEqualTo(count, timeoutBecauseMessage);
+            }
+
+            if (!returnAllOperations)
+            {
+                relevantSpans =
+                    relevantSpans
+                       .Where(s => operationName is null || getName(s) == operationName)
+                       .ToImmutableList();
+            }
+
+            return relevantSpans;
         }
 
         private void AssertHeader(

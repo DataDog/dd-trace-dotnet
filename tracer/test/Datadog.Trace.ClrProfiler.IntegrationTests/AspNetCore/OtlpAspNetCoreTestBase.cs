@@ -285,7 +285,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
                 if (scopeSpan["spans"] is JArray spans)
                 {
                     scopeSpan["spans"] = new JArray(
-                        spans.Where(s => relevantSpanIds.Contains(HexString.ToHexString(Convert.FromBase64String(s["spanId"]!.ToString())))));
+                        spans.Where(s => relevantSpanIds.Contains(HexString.ToHexString(Convert.FromBase64String(s[names.SpanId]!.ToString())))));
                 }
             }
 

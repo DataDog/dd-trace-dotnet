@@ -40,10 +40,12 @@ internal static class MockOtlpJsonIdNormalizer
                         && property.Value.Value<string>() is { Length: > 0 } hex)
                     {
                         var bytes = new byte[hex.Length / 2];
-                        if (HexString.TryParseBytes(hex, bytes))
+                        if (!HexString.TryParseBytes(hex, bytes))
                         {
-                            property.Value = new JValue(Convert.ToBase64String(bytes));
+                            throw new FormatException($"OTLP JSON property '{property.Name}' is not a well-formed hex string: '{hex}'.");
                         }
+
+                        property.Value = new JValue(Convert.ToBase64String(bytes));
                     }
                     else
                     {
