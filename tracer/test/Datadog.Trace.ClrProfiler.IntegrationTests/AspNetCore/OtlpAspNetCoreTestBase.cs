@@ -15,9 +15,11 @@ using Datadog.Trace.ClrProfiler.IntegrationTests.Helpers;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.Util;
+using Datadog.Trace.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 using FluentAssertions;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
+using Google.Protobuf;
 using VerifyXunit;
 using Xunit;
 using Xunit.Abstractions;
@@ -26,11 +28,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
 {
     /// <summary>
     /// Shared harness for HTTP server suites hosted by <c>AspNetCoreTestFixture</c> (a Kestrel
-    /// process) and exported over OTLP to the ddapm test-agent. Mirrors
-    /// <c>OpenTelemetryAspNetTestBase</c>, which does the same for IIS-hosted .NET Framework samples;
-    /// both build on the fixture-agnostic <see cref="OtlpTestAgentSession"/>, since none of the
-    /// session/isolation/normalization plumbing depends on how the application under test was
-    /// started.
+    /// process) and exported over OTLP to the in-process <c>MockTracerAgent</c> that the fixture
+    /// already runs for Datadog-protocol traces. Mirrors <c>OpenTelemetryAspNetTestBase</c>, which
+    /// does the same for IIS-hosted .NET Framework samples. Test-case isolation works exactly like
+    /// the non-OTLP AspNetCore suites: <see cref="MockTracerAgent.WaitForOtlpSpansAsync"/> filters by
+    /// a <c>minDateTime</c> captured right before each request, rather than clearing any shared state.
     /// </summary>
     [UsesVerify]
     public abstract class OtlpAspNetCoreTestBase : TestHelper, IClassFixture<AspNetCoreTestFixture>, IAsyncLifetime
@@ -68,21 +70,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
 
             SetServiceVersion("1.0.0");
 
-            // Set RouteTemplateResourceNamesEnabled and SingleSpanAspNetCoreEnabled according to the test configuration, which will affect how spans under Datadog semantics are named and structured.
-            // Under OpenTelemetry semantics, TracerSettings force-enables both, so there should be no changes to the resulting spans.
+            // The OpenTelemetry conventions require the low-cardinality route template in
+            // "http.route", which is only tracked when route-template resource names are enabled and
+            // route-template expansion is not.
             SetEnvironmentVariable(ConfigurationKeys.FeatureFlags.RouteTemplateResourceNamesEnabled, (flags == AspNetCoreFeatureFlags.RouteTemplateResourceNames).ToString());
             SetEnvironmentVariable(ConfigurationKeys.FeatureFlags.SingleSpanAspNetCoreEnabled, (flags == AspNetCoreFeatureFlags.SingleSpan).ToString());
+            SetEnvironmentVariable(ConfigurationKeys.ExpandRouteTemplatesEnabled, "false");
 
             SetEnvironmentVariable("DD_TRACE_OTEL_SEMANTICS_ENABLED", openTelemetrySemanticsEnabled.ToString());
-
-            // Registers the empty route template and the pre-routing path rewrite that the last two
-            // rows of Data() exercise. Only this harness asks for them, so the sample applications'
-            // pipelines are unchanged for every other suite.
-            SetEnvironmentVariable("ADD_ROUTE_EDGE_CASES", "1");
-
-            // OTEL_TRACES_EXPORTER=otlp is what makes the Datadog SDK emit OTLP instead of msgpack.
-            // Everything else is left at its default dd-trace-dotnet value.
-            ConfigureOtlpExport(fixture.OtlpSession);
 
             Fixture = fixture;
             Fixture.SetOutput(output);
@@ -157,41 +152,29 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
 
             // An unhandled exception is an error too, and is recorded as an exception span event.
             { "GET", "/bad-request", 500, true },
-
-            // -- ASP.NET Core route edge cases --
-
-            // A route template that matches the application root is stored by ASP.NET Core as the
-            // empty string, which must be reported as "/" rather than verbatim - otherwise
-            // http.route is an empty attribute and the span name has a trailing space.
-            { "GET", "/", 200, true },
-
-            // Middleware rewrote the path before routing ran, so the endpoint that matched is not the
-            // one the request arrived on. It is still the endpoint that served the request, so it is
-            // the route to report.
-            { "GET", "/rewrite-me", 200, true },
-
-            // The application is mounted under a path base, which routing strips before matching.
-            // http.route is reported without the path base, aligning with built-in ASP.NET Core and OTel .NET instrumentation.
-            { "GET", "/path-base/api/delay/0", 200, true },
         };
 
-        /// <summary>
-        /// xUnit runs this once per test case, since it builds a fresh instance of the test class for
-        /// each one, so the actual startup goes through the fixture's once-per-class instance.
-        /// The result is that only the first test case needs to pay for the availability check and the warm-up.
-        /// </summary>
-        public Task InitializeAsync()
-            => Fixture.EnsureInitializedAsync(StartApplicationAsync);
+        public async Task InitializeAsync()
+        {
+            // sendHealthCheck: false because AspNetCoreTestFixture's own health check waits for a
+            // span to reach the mock agent over the Datadog protocol, but OTEL_TRACES_EXPORTER=otlp
+            // makes the sample export OTLP instead. Warm the app up with our own request below and
+            // discard its spans afterwards.
+            //
+            // onAgentCreated points the sample's OTLP export at this test's MockTracerAgent instance
+            // -- it has to run here, once the agent (and its port) exists, rather than in the
+            // constructor: TryStartApp creates a fresh Agent (and port) per launch attempt.
+            await Fixture.TryStartApp(
+                this,
+                sendHealthCheck: false,
+                onAgentCreated: agent => ConfigureOtlpExport($"http://127.0.0.1:{agent.Port}/v1/traces"));
+            await WarmUpApplicationAsync();
+        }
 
-        public async Task DisposeAsync()
+        public Task DisposeAsync()
         {
             Fixture.SetOutput(null);
-
-            // Clear the session at the end of the test to avoid leaking spans between test cases.
-            if (Fixture.OtlpSession.IsAvailable)
-            {
-                await Fixture.OtlpSession.ClearSessionAsync();
-            }
+            return Task.CompletedTask;
         }
 
         /// <summary>
@@ -270,23 +253,41 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
 
         private async Task<JToken> SendRequestAndCollectSpansAsync(string httpMethod, string path, int statusCode, int expectedSpanCount)
         {
-            Skip.IfNot(Fixture.OtlpSession.IsAvailable, $"The ddapm test-agent is not reachable at {Fixture.OtlpSession.TracesUrl}.");
+            var names = OtlpFieldNames.For(isJson: true);
 
-            var names = OtlpFieldNames.For(isJson: false);
-
-            // DisposeAsync already clears after every case, but clear again to ensure that
-            // spans still in-flight due to a previous failure do not leak into the next test case
-            await Fixture.OtlpSession.ClearSessionAsync();
-
-            // Captured before the request is sent, so it is a lower bound for every span the server
-            // creates while handling it.
-            var testStartTimeUnixNano = DateTimeOffset.UtcNow.ToUnixTimeNanoseconds();
+            // Captured before the request is sent: a lower bound for every span the server creates
+            // while handling it, and the isolation boundary against the warm-up request and every
+            // other test case sharing this fixture's MockTracerAgent -- the same pattern
+            // AspNetCoreTestFixture.WaitForSpans uses for the Datadog protocol.
+            var now = DateTimeOffset.UtcNow;
+            var applicationStartTimeUnixNano = now.ToUnixTimeNanoseconds();
 
             await SendRequestAsync(httpMethod, path, (HttpStatusCode)statusCode);
 
-            var tracesRequests = await Fixture.OtlpSession.WaitForSpansAsync(expectedSpanCount, testStartTimeUnixNano, names.StartTimeUnixNano);
-            tracesRequests.Should().NotBeNullOrEmpty();
-            OtlpTestAgentSession.CountSpans(tracesRequests).Should().Be(expectedSpanCount);
+            var otlpSpans = await Fixture.Agent.WaitForOtlpSpansAsync(expectedSpanCount, minDateTime: now, returnAllOperations: true);
+            otlpSpans.Should().NotBeNullOrEmpty();
+            otlpSpans.Count.Should().Be(expectedSpanCount);
+
+            // WaitForOtlpSpansAsync only returns the matching spans, not the requests (export
+            // batches) they arrived in, but the snapshot pipeline below needs the whole
+            // resource/scope envelope. Recover it by keeping only the requests that produced one of
+            // the matched spans, then trim every scope down to just those spans -- a batch can also
+            // carry other spans (e.g. a warm-up request's) that WaitForOtlpSpansAsync already
+            // filtered out of otlpSpans but which are still sitting in the raw envelope.
+            var relevantSpanIds = otlpSpans.Select(s => s.SpanId).ToHashSet();
+            var tracesRequests = new JArray(
+                Fixture.Agent.OtlpTraceRequests
+                       .Where(r => r.Spans.Any(s => relevantSpanIds.Contains(s.SpanId)))
+                       .Select(r => JToken.Parse(JsonFormatter.Default.Format(r.Raw))));
+
+            foreach (var scopeSpan in tracesRequests.SelectTokens($"$..{names.ScopeSpans}[*]"))
+            {
+                if (scopeSpan["spans"] is JArray spans)
+                {
+                    scopeSpan["spans"] = new JArray(
+                        spans.Where(s => relevantSpanIds.Contains(HexString.ToHexString(Convert.FromBase64String(s["spanId"]!.ToString())))));
+                }
+            }
 
             // Stash the real start time on each span so that the chronological ordering below survives
             // both NormalizeSpans, which replaces startTimeUnixNano with a fixed placeholder, and
@@ -298,7 +299,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
             }
 
             OtlpSnapshotHelper.NormalizeResourceAttributes(tracesRequests, names);
-            OtlpSnapshotHelper.NormalizeSpans(tracesRequests, names, testStartTimeUnixNano);
+            OtlpSnapshotHelper.NormalizeSpans(tracesRequests, names, applicationStartTimeUnixNano);
             OtlpSnapshotHelper.NormalizeCodeOriginAttributes(tracesRequests);
 
             foreach (var key in UnstableAttributeKeys)
@@ -331,30 +332,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
             var request = Fixture.CreateRequest(new HttpMethod(httpMethod), path);
             var statusCode = await Fixture.SendHttpRequest(request);
             statusCode.Should().Be(expectedStatusCode);
-        }
-
-        /// <summary>
-        /// Brings up the application the whole test class shares. Runs once per class, through
-        /// <see cref="AspNetCoreTestFixture.EnsureInitializedAsync"/>, so it reads the environment
-        /// variables the first test case's constructor set - which is also why it can't be a fixture
-        /// <c>InitializeAsync</c>, as those are not set until a test class instance exists.
-        /// </summary>
-        private async Task StartApplicationAsync()
-        {
-            if (!await Fixture.OtlpSession.CheckAvailabilityAsync(Output))
-            {
-                // Don't pay for starting the sample app for a test that is about to skip.
-                return;
-            }
-
-            // sendHealthCheck: false because AspNetCoreTestFixture's own health check waits for a
-            // span to reach the mock agent, and OTEL_TRACES_EXPORTER=otlp sends traces to the ddapm
-            // test-agent instead. Warm the app up with our own request and discard its spans afterwards.
-            await Fixture.TryStartApp(this, sendHealthCheck: false);
-            await WarmUpApplicationAsync();
-
-            // Clear the session so the warm-up request is not returned in the next test case.
-            await Fixture.OtlpSession.ClearSessionWhenQuietAsync(Output);
         }
 
         /// <summary>
