@@ -8,7 +8,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
-using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using Datadog.Trace.TestHelpers;
@@ -31,8 +30,6 @@ namespace Datadog.Trace.Security.IntegrationTests
         protected const string MainIp = "86.242.244.246";
         protected const string Prefix = "Security.";
         private const string XffHeader = "X-FORWARDED-FOR";
-        private static readonly Type MetaStructHelperType = Type.GetType("Datadog.Trace.AppSec.Rasp.MetaStructHelper, Datadog.Trace");
-        private static readonly MethodInfo MetaStructByteArrayToObject = MetaStructHelperType.GetMethod("ByteArrayToObject", BindingFlags.Public | BindingFlags.Static);
         protected string _testName;
         private readonly HttpClient _httpClient;
         private readonly CookieContainer _cookieContainer;

@@ -498,13 +498,6 @@ namespace Datadog.Trace
             return this;
         }
 
-        internal Span SetMetaStruct(string key, byte[] value)
-        {
-            Tags.SetMetaStruct(key, value);
-
-            return this;
-        }
-
         internal void ResetStartTime()
         {
             StartTime = Context.TraceContext.Clock.UtcNow;

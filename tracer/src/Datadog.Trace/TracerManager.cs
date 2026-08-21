@@ -23,7 +23,6 @@ using Datadog.Trace.Util;
 using Datadog.Trace.Util.Http;
 using Datadog.Trace.Util.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
-using Datadog.Trace.Vendors.StatsdClient;
 
 namespace Datadog.Trace
 {

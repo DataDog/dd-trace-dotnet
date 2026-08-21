@@ -5,8 +5,6 @@
 
 #nullable enable
 
-using Datadog.Trace.Vendors.dnlib.IO;
-
 namespace Datadog.Trace.Iast;
 
 internal readonly struct IastModuleResponse

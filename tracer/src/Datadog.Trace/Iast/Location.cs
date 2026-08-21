@@ -6,18 +6,12 @@
 #nullable enable
 
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
-using Datadog.Trace.AppSec.Rasp;
 
 namespace Datadog.Trace.Iast;
 
 internal readonly struct Location
 {
-    private const int DefaultMaxStackTraceDepthTopPercent = 75;
-    private const int DefaultMaxStackTraces = 2;
-
     internal readonly StackTrace? _stack = null;
 
     public Location(string method)
@@ -74,20 +68,5 @@ internal readonly struct Location
     {
         // We do not calculate the hash including the spanId nor the line
         return IastUtils.GetHashCode(Path, Method);
-    }
-
-    internal void ReportStack(Span? span)
-    {
-        if (span is not null && StackId is not null && _stack is not null && _stack.FrameCount > 0)
-        {
-            var maxDepth = Iast.Instance.Settings.MaxStackTraceDepth;
-#pragma warning disable CS8620 // Argument cannot be used for parameter due to differences in the nullability of reference types. Some TFMs (pre net 6) don't have null annotations
-            var stack = StackReporter.GetStack(maxDepth, DefaultMaxStackTraceDepthTopPercent, StackId, _stack.GetFrames());
-#pragma warning restore CS8620 // Argument cannot be used for parameter due to differences in the nullability of reference types.
-            if (stack is not null)
-            {
-                span.Context.TraceContext?.AppSecRequestContext.AddVulnerabilityStackTrace(stack, DefaultMaxStackTraces);
-            }
-        }
     }
 }

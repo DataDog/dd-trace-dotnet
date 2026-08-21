@@ -403,16 +403,23 @@ namespace Datadog.Trace.SourceGenerators.Helpers
 
             public override int GetHashCode()
             {
-                var hash = HashCode.Combine(Key, Product, Documentation, ConstName);
-                if (Aliases is not null)
+                unchecked
                 {
-                    foreach (var alias in Aliases)
+                    var hash = 17;
+                    hash = (hash * 31) + Key.GetHashCode();
+                    hash = (hash * 31) + (Product?.GetHashCode() ?? 0);
+                    hash = (hash * 31) + (Documentation?.GetHashCode() ?? 0);
+                    hash = (hash * 31) + (ConstName?.GetHashCode() ?? 0);
+                    if (Aliases is not null)
                     {
-                        hash = HashCode.Combine(hash, alias);
+                        foreach (var alias in Aliases)
+                        {
+                            hash = (hash * 31) + alias.GetHashCode();
+                        }
                     }
-                }
 
-                return hash;
+                    return hash;
+                }
             }
         }
 
@@ -473,25 +480,28 @@ namespace Datadog.Trace.SourceGenerators.Helpers
 
             public override int GetHashCode()
             {
-                var hash = new HashCode();
-                hash.Add(Configurations.Count);
-                foreach (var kvp in Configurations.OrderBy(x => x.Key))
+                unchecked
                 {
-                    hash.Add(kvp.Key);
-                    hash.Add(kvp.Value);
-                }
-
-                if (Deprecations is not null)
-                {
-                    hash.Add(Deprecations.Count);
-                    foreach (var kvp in Deprecations.OrderBy(x => x.Key))
+                    var hash = 17;
+                    hash = (hash * 31) + Configurations.Count;
+                    foreach (var kvp in Configurations.OrderBy(x => x.Key))
                     {
-                        hash.Add(kvp.Key);
-                        hash.Add(kvp.Value);
+                        hash = (hash * 31) + kvp.Key.GetHashCode();
+                        hash = (hash * 31) + kvp.Value.GetHashCode();
                     }
-                }
 
-                return hash.ToHashCode();
+                    if (Deprecations is not null)
+                    {
+                        hash = (hash * 31) + Deprecations.Count;
+                        foreach (var kvp in Deprecations.OrderBy(x => x.Key))
+                        {
+                            hash = (hash * 31) + kvp.Key.GetHashCode();
+                            hash = (hash * 31) + kvp.Value.GetHashCode();
+                        }
+                    }
+
+                    return hash;
+                }
             }
         }
     }

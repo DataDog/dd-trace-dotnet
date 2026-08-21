@@ -15,7 +15,6 @@ using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Util;
-using Datadog.Trace.Vendors.StatsdClient;
 
 namespace Datadog.Trace
 {

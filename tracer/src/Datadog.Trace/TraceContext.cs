@@ -9,9 +9,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
-using System.Runtime.CompilerServices;
 using System.Threading;
-using Datadog.Trace.AppSec;
 using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Iast;
@@ -30,7 +28,6 @@ namespace Datadog.Trace
         private int _openSpans;
 
         private IastRequestContext? _iastRequestContext;
-        private AppSecRequestContext? _appSecRequestContext;
 
         // _rootSpan was chosen in #4125 to be the lock that protects
         // * _spans
@@ -103,21 +100,6 @@ namespace Datadog.Trace
 
         /// <summary> Gets the IAST context </summary>
         internal IastRequestContext? IastRequestContext => _iastRequestContext;
-
-        /// <summary> Gets the AppSec context </summary>
-        internal AppSecRequestContext AppSecRequestContext
-        {
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get
-            {
-                if (Volatile.Read(ref _appSecRequestContext) is null)
-                {
-                    Interlocked.CompareExchange(ref _appSecRequestContext, new(), null);
-                }
-
-                return _appSecRequestContext!;
-            }
-        }
 
         internal void EnableIastInRequest()
         {

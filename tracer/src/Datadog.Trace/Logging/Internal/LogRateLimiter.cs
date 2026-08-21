@@ -100,7 +100,7 @@ namespace Datadog.Trace.Logging
 
             public override int GetHashCode()
             {
-                return HashCode.Combine(FilePath, LineNo);
+                return HashCodeBuilder.Combine(FilePath, LineNo);
             }
         }
     }

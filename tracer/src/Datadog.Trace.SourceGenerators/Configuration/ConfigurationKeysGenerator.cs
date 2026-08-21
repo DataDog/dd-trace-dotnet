@@ -13,7 +13,6 @@ using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.SourceGenerators.Helpers;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Text;
-using HashCode = System.HashCode;
 
 /// <summary>
 /// Source generator that reads supported-configurations.yaml and generates ConfigurationKeys
@@ -343,7 +342,19 @@ public class ConfigurationKeysGenerator : IIncrementalGenerator
 
         public override bool Equals(object? obj) => obj is ConfigEntry other && Equals(other);
 
-        public override int GetHashCode() => HashCode.Combine(Key, Documentation, Product, DeprecationMessage, ConstName);
+        public override int GetHashCode()
+        {
+            unchecked
+            {
+                var hash = 17;
+                hash = (hash * 31) + Key.GetHashCode();
+                hash = (hash * 31) + Documentation.GetHashCode();
+                hash = (hash * 31) + Product.GetHashCode();
+                hash = (hash * 31) + (DeprecationMessage?.GetHashCode() ?? 0);
+                hash = (hash * 31) + (ConstName?.GetHashCode() ?? 0);
+                return hash;
+            }
+        }
     }
 
     private sealed class ConfigurationData : IEquatable<ConfigurationData>
@@ -395,17 +406,20 @@ public class ConfigurationKeysGenerator : IIncrementalGenerator
 
         public override int GetHashCode()
         {
-            var hash = new HashCode();
-            hash.Add(Configurations.Count);
-
-            // Hash configuration keys and values in sorted order for determinism
-            foreach (var kvp in Configurations.OrderBy(x => x.Key))
+            unchecked
             {
-                hash.Add(kvp.Key);
-                hash.Add(kvp.Value);
-            }
+                var hash = 17;
+                hash = (hash * 31) + Configurations.Count;
 
-            return hash.ToHashCode();
+                // Hash configuration keys and values in sorted order for determinism
+                foreach (var kvp in Configurations.OrderBy(x => x.Key))
+                {
+                    hash = (hash * 31) + kvp.Key.GetHashCode();
+                    hash = (hash * 31) + kvp.Value.GetHashCode();
+                }
+
+                return hash;
+            }
         }
     }
 }

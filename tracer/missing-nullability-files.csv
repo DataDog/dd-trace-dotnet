@@ -59,7 +59,6 @@ src/Datadog.Trace/DiagnosticListeners/IDiagnosticManager.cs
 src/Datadog.Trace/DiagnosticListeners/RouteEndpoint.cs
 src/Datadog.Trace/ExtensionMethods/DictionaryExtensions.cs
 src/Datadog.Trace/ExtensionMethods/DoubleExtensions.cs
-src/Datadog.Trace/ExtensionMethods/MessagePackBinaryExtensions.cs
 src/Datadog.Trace/ExtensionMethods/NameValueCollectionExtensions.cs
 src/Datadog.Trace/ExtensionMethods/SpanExtensions.cs
 src/Datadog.Trace/ExtensionMethods/TimeExtensions.cs

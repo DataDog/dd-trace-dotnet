@@ -257,20 +257,23 @@ public class ConfigKeyAliasesSwitcherGenerator : IIncrementalGenerator
 
         public override int GetHashCode()
         {
-            var hash = new System.HashCode();
-            hash.Add(Aliases.Count);
-
-            // Include content in hash for proper change detection
-            foreach (var kvp in Aliases.OrderBy(x => x.Key))
+            unchecked
             {
-                hash.Add(kvp.Key);
-                foreach (var alias in kvp.Value.OrderBy(x => x))
-                {
-                    hash.Add(alias);
-                }
-            }
+                var hash = 17;
+                hash = (hash * 31) + Aliases.Count;
 
-            return hash.ToHashCode();
+                // Include content in hash for proper change detection
+                foreach (var kvp in Aliases.OrderBy(x => x.Key))
+                {
+                    hash = (hash * 31) + kvp.Key.GetHashCode();
+                    foreach (var alias in kvp.Value.OrderBy(x => x))
+                    {
+                        hash = (hash * 31) + alias.GetHashCode();
+                    }
+                }
+
+                return hash;
+            }
         }
     }
 }

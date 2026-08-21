@@ -30,7 +30,6 @@ namespace Datadog.Trace.Iast;
 
 internal static partial class IastModule
 {
-    public const string IastMetaStructKey = "iast";
     public const string HeaderInjectionEvidenceSeparator = ": ";
     private const string OperationNameStackTraceLeak = "stacktrace_leak";
     private const string OperationNameWeakHash = "weak_hashing";
@@ -665,8 +664,6 @@ internal static partial class IastModule
                 traceContext?.Tags.EnableTraceSources(TraceSources.Asm);
 
                 traceContext?.IastRequestContext?.AddVulnerability(vulnerability);
-                vulnerability.Location?.ReportStack(currentSpan);
-
                 return IastModuleResponse.Vulnerable;
             }
             else
@@ -716,7 +713,6 @@ internal static partial class IastModule
         span.Type = SpanTypes.IastVulnerability;
         traceContext?.SetSamplingPriority(SamplingPriorityValues.UserKeep, SamplingMechanism.Asm);
         traceContext?.Tags.EnableTraceSources(TraceSources.Asm);
-        vulnerability.Location?.ReportStack(span);
         VulnerabilityReporter.Report(vulnerability, traceContext?.RootSpan ?? span);
 
         if (closeAfterCreation)

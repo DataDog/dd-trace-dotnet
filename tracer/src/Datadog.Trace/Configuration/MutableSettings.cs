@@ -488,7 +488,7 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
     public override int GetHashCode()
     {
         // we can't easily include the collections in the hash code
-        var hashCode = new HashCode();
+        var hashCode = new HashCodeBuilder();
         hashCode.Add(TraceEnabled);
         hashCode.Add(CustomSamplingRules);
         hashCode.Add(CustomSamplingRulesIsRemote);

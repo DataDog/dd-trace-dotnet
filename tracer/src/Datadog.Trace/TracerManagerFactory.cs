@@ -13,7 +13,6 @@ using Datadog.Trace.Logging.TracerFlare;
 using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Util;
-using Datadog.Trace.Vendors.StatsdClient;
 
 namespace Datadog.Trace
 {

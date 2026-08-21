@@ -82,7 +82,7 @@ internal readonly record struct TraceId(ulong Upper, ulong Lower) : IComparable<
     }
 
     [Pure]
-    public override int GetHashCode() => HashCode.Combine(Lower, Upper);
+    public override int GetHashCode() => HashCodeBuilder.Combine(Lower, Upper);
 
     [Pure]
     public override string ToString()

@@ -8,6 +8,7 @@
 using System;
 using System.Collections.Generic;
 using Datadog.Trace.Configuration.Telemetry;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Configuration
 {
@@ -134,7 +135,7 @@ namespace Datadog.Trace.Configuration
         /// <inheritdoc/>
         public override int GetHashCode()
         {
-            return HashCode.Combine(IntegrationName, Enabled, AnalyticsEnabled, AnalyticsSampleRate);
+            return HashCodeBuilder.Combine(IntegrationName, Enabled, AnalyticsEnabled, AnalyticsSampleRate);
         }
     }
 }
