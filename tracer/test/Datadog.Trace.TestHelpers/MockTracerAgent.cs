@@ -23,13 +23,16 @@ using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.HttpOverStreams;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.TestHelpers.DataStreamsMonitoring;
+using Datadog.Trace.TestHelpers.MockOtlp;
 using Datadog.Trace.TestHelpers.Stats;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 using FluentAssertions;
+using Google.Protobuf;
 using HttpMultipartParser;
 using MessagePack; // use nuget MessagePack to deserialize
+using OpenTelemetry.Proto.Collector.Trace.V1;
 using Xunit.Abstractions;
 
 namespace Datadog.Trace.TestHelpers
@@ -51,6 +54,8 @@ namespace Datadog.Trace.TestHelpers
         public event EventHandler<EventArgs<MockHttpRequest>> RequestReceived;
 
         public event EventHandler<EventArgs<IList<IList<MockSpan>>>> RequestDeserialized;
+
+        public event EventHandler<EventArgs<MockOtlpTraceRequest>> OtlpRequestDeserialized;
 
         public event EventHandler<EventArgs<MockClientStatsPayload>> StatsDeserialized;
 
@@ -83,6 +88,16 @@ namespace Datadog.Trace.TestHelpers
 
         public IImmutableList<NameValueCollection> TraceRequestHeaders { get; private set; } = ImmutableList<NameValueCollection>.Empty;
 
+        public IImmutableList<MockOtlpTraceRequest> OtlpTraceRequests { get; private set; } = ImmutableList<MockOtlpTraceRequest>.Empty;
+
+        public IImmutableList<MockOtlpSpan> OtlpSpans { get; private set; } = ImmutableList<MockOtlpSpan>.Empty;
+
+        public IImmutableList<NameValueCollection> OtlpTraceRequestHeaders { get; private set; } = ImmutableList<NameValueCollection>.Empty;
+
+        public IImmutableList<MockOtlpRawRequest> OtlpMetricsRequests { get; private set; } = ImmutableList<MockOtlpRawRequest>.Empty;
+
+        public IImmutableList<MockOtlpRawRequest> OtlpLogsRequests { get; private set; } = ImmutableList<MockOtlpRawRequest>.Empty;
+
         public IImmutableList<(Dictionary<string, string> Headers, MultipartFormDataParser Form)> TracerFlareRequests { get; private set; } = ImmutableList<(Dictionary<string, string> Headers, MultipartFormDataParser Form)>.Empty;
 
         public IImmutableList<string> Snapshots { get; private set; } = ImmutableList<string>.Empty;
@@ -112,6 +127,11 @@ namespace Datadog.Trace.TestHelpers
         /// Gets or sets a value indicating whether to skip deserialization of traces.
         /// </summary>
         public bool ShouldDeserializeTraces { get; set; } = true;
+
+        /// <summary>
+        /// Gets or sets a value indicating whether to skip deserialization of OTLP traces.
+        /// </summary>
+        public bool ShouldDeserializeOtlpTraces { get; set; } = true;
 
         public static TcpUdpAgent Create(ITestOutputHelper output, int? port = null, int retries = 5, bool useStatsd = false, bool doNotBindPorts = false, int? requestedStatsDPort = null, bool useTelemetry = true, AgentConfiguration agentConfiguration = null)
             => new TcpUdpAgent(port, retries, useStatsd, doNotBindPorts, requestedStatsDPort, useTelemetry) { Output = output, Configuration = agentConfiguration ?? new() };
@@ -232,6 +252,84 @@ namespace Datadog.Trace.TestHelpers
 
                         return true;
                     });
+            }
+
+            if (!returnAllOperations)
+            {
+                relevantSpans =
+                    relevantSpans
+                       .Where(s => operationName == null || s.Name == operationName)
+                       .ToImmutableList();
+            }
+
+            return relevantSpans;
+        }
+
+        /// <summary>
+        /// Wait for the given number of OTLP spans to appear.
+        /// </summary>
+        /// <param name="count">The minimum number of spans to wait for.</param>
+        /// <param name="timeoutInMilliseconds">The timeout</param>
+        /// <param name="operationName">The span name we're testing for</param>
+        /// <param name="minDateTime">Minimum time to check for spans from</param>
+        /// <param name="returnAllOperations">When true, returns every span regardless of operation name</param>
+        /// <param name="failOnTimeout">When true, fails if the requested number of spans is not received before the timeout.</param>
+        /// <returns>The list of spans.</returns>
+        public async Task<IImmutableList<MockOtlpSpan>> WaitForOtlpSpansAsync(
+            int count,
+            int timeoutInMilliseconds = 20000,
+            string operationName = null,
+            DateTimeOffset? minDateTime = null,
+            bool returnAllOperations = false,
+            bool failOnTimeout = true)
+        {
+            var deadline = DateTime.UtcNow.AddMilliseconds(timeoutInMilliseconds);
+            var minimumOffset = (ulong)Math.Max(0, (minDateTime ?? DateTimeOffset.MinValue).ToUnixTimeNanoseconds());
+
+            IImmutableList<MockOtlpSpan> relevantSpans = ImmutableList<MockOtlpSpan>.Empty;
+
+            while (DateTime.UtcNow < deadline)
+            {
+                relevantSpans =
+                    OtlpSpans
+                       .Where(s =>
+                        {
+                            if (s.StartTimeUnixNano < minimumOffset)
+                            {
+                                // allow for clock-precision slack, same tolerance as WaitForSpansAsync
+                                if (minimumOffset - s.StartTimeUnixNano > 16000000)
+                                {
+                                    return false;
+                                }
+                            }
+
+                            return true;
+                        })
+                       .ToImmutableList();
+
+                if (relevantSpans.Count(s => operationName == null || s.Name == operationName) >= count)
+                {
+                    break;
+                }
+
+                await Task.Delay(250);
+            }
+
+            if (failOnTimeout)
+            {
+                relevantSpans.Count(s => operationName is null || s.Name == operationName)
+                             .Should()
+                             .BeGreaterThanOrEqualTo(count, "because the requested OTLP spans should be received before the timeout");
+            }
+
+            foreach (var headers in OtlpTraceRequestHeaders)
+            {
+                // OTLP has no equivalent of X-Datadog-Trace-Count, so we only assert the transport's
+                // Content-Type is one of the two encodings this mock agent supports.
+                AssertHeader(
+                    headers,
+                    "Content-Type",
+                    header => header.StartsWith("application/json") || header.StartsWith("application/x-protobuf"));
             }
 
             if (!returnAllOperations)
@@ -497,6 +595,11 @@ namespace Datadog.Trace.TestHelpers
             RequestDeserialized?.Invoke(this, new EventArgs<IList<IList<MockSpan>>>(traces));
         }
 
+        protected virtual void OnOtlpRequestDeserialized(MockOtlpTraceRequest request)
+        {
+            OtlpRequestDeserialized?.Invoke(this, new EventArgs<MockOtlpTraceRequest>(request));
+        }
+
         protected virtual void OnStatsDeserialized(MockClientStatsPayload stats)
         {
             StatsDeserialized?.Invoke(this, new EventArgs<MockClientStatsPayload>(stats));
@@ -576,6 +679,23 @@ namespace Datadog.Trace.TestHelpers
                 HandlePotentialSymbolDbData(request);
                 responseType = MockTracerResponseType.SymbolDb;
             }
+            else if (request.PathAndQuery.StartsWith("/v1/traces"))
+            {
+                if (HandlePotentialOtlpTraces(request) is { } otlpResponse)
+                {
+                    return otlpResponse;
+                }
+
+                responseType = MockTracerResponseType.Traces;
+            }
+            else if (request.PathAndQuery.StartsWith("/v1/metrics"))
+            {
+                HandleOtlpRawSignal(request, isMetrics: true);
+            }
+            else if (request.PathAndQuery.StartsWith("/v1/logs"))
+            {
+                HandleOtlpRawSignal(request, isMetrics: false);
+            }
             else
             {
                 HandlePotentialTraces(request);
@@ -633,6 +753,113 @@ namespace Datadog.Trace.TestHelpers
                     throw;
                 }
             }
+        }
+
+        /// <summary>
+        /// Decodes an OTLP/HTTP <c>/v1/traces</c> request, in either JSON or protobuf, based on its
+        /// <c>Content-Type</c>. Returns the protocol-correct <see cref="MockTracerResponse"/> to send
+        /// back, or <c>null</c> if there was nothing to process (so the caller falls back to the
+        /// default response).
+        /// </summary>
+        private MockTracerResponse HandlePotentialOtlpTraces(MockHttpRequest request)
+        {
+            if (!ShouldDeserializeOtlpTraces || request.ContentLength is null or < 1)
+            {
+                return null;
+            }
+
+            var contentType = request.Headers.GetValue("Content-Type");
+            var body = request.ReadStreamBody();
+
+            ExportTraceServiceRequest exportRequest;
+            try
+            {
+                if (contentType is not null && contentType.StartsWith("application/x-protobuf"))
+                {
+                    exportRequest = ExportTraceServiceRequest.Parser.ParseFrom(body);
+                }
+                else if (contentType is not null && contentType.StartsWith("application/json"))
+                {
+                    var json = MockOtlpJsonIdNormalizer.NormalizeHexIdsToBase64(Encoding.UTF8.GetString(body));
+                    exportRequest = JsonParser.Default.Parse<ExportTraceServiceRequest>(json);
+                }
+                else
+                {
+                    return new MockTracerResponse($"{{\"error\":\"Unsupported Content-Type for OTLP traces: '{contentType}'. Expected application/json or application/x-protobuf.\"}}", 400);
+                }
+            }
+            catch (Exception ex)
+            {
+                var message = ex.Message.ToLowerInvariant();
+
+                if (message.Contains("beyond the end of the stream"))
+                {
+                    // Accept call is likely interrupted by a dispose
+                    // Swallow the exception and let the test finish
+                    return null;
+                }
+
+                throw;
+            }
+
+            var otlpRequest = MockOtlpTraceRequest.Create(exportRequest);
+            OnOtlpRequestDeserialized(otlpRequest);
+
+            lock (this)
+            {
+                // we only need to lock when replacing the collections,
+                // not when reading them because they are immutable
+                OtlpTraceRequests = OtlpTraceRequests.Add(otlpRequest);
+                OtlpSpans = OtlpSpans.AddRange(otlpRequest.Spans);
+                OtlpTraceRequestHeaders = OtlpTraceRequestHeaders.Add(ToHeaderCollection(request));
+            }
+
+            return contentType.StartsWith("application/x-protobuf")
+                       ? new MockTracerResponse(string.Empty, 200) { ContentType = "application/x-protobuf" }
+                       : new MockTracerResponse("{}", 200) { ContentType = "application/json" };
+        }
+
+        /// <summary>
+        /// Captures the raw body of an OTLP/HTTP <c>/v1/metrics</c> or <c>/v1/logs</c> request without
+        /// decoding it, so it never reaches the MessagePack decoder and so tests can still assert it
+        /// was received.
+        /// </summary>
+        private void HandleOtlpRawSignal(MockHttpRequest request, bool isMetrics)
+        {
+            if (request.ContentLength is null or < 1)
+            {
+                return;
+            }
+
+            var body = request.ReadStreamBody();
+            var contentType = request.Headers.GetValue("Content-Type");
+            var rawRequest = new MockOtlpRawRequest(body, ToHeaderCollection(request), contentType);
+
+            lock (this)
+            {
+                if (isMetrics)
+                {
+                    OtlpMetricsRequests = OtlpMetricsRequests.Add(rawRequest);
+                }
+                else
+                {
+                    OtlpLogsRequests = OtlpLogsRequests.Add(rawRequest);
+                }
+            }
+        }
+
+        private NameValueCollection ToHeaderCollection(MockHttpRequest request)
+        {
+            var headerCollection = new NameValueCollection();
+            foreach (var header in request.Headers)
+            {
+                foreach (var value in header.Value)
+                {
+                    headerCollection.Add(header.Key, value);
+                }
+            }
+
+            return headerCollection;
         }
 
         private void HandlePotentialTelemetryData(MockHttpRequest request)
