@@ -10,14 +10,18 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Datadog.Trace.Debugger;
+using Datadog.Trace.Debugger.Expressions;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
+using Datadog.Trace.Tests.Telemetry;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using Xunit;
 
 namespace Datadog.Trace.Tests.Telemetry.Collectors;
 
+[Collection(nameof(TelemetryFactoryTests))]
 public class DebuggerGuardrailTelemetryTests
 {
     private static readonly string[] SkippedEventTypeTags = ["event_type:snapshot", "event_type:log", "event_type:metric", "event_type:span"];
@@ -80,6 +84,32 @@ public class DebuggerGuardrailTelemetryTests
         }
 
         await collector.DisposeAsync();
+    }
+
+    [Fact]
+    public async Task RecordEventsSkipped_EmitsOnlyCaptureEventTypes()
+    {
+        var collector = new MetricsTelemetryCollector(Timeout.InfiniteTimeSpan);
+        var previous = TelemetryFactory.SetMetricsForTesting(collector);
+        try
+        {
+            DebuggerGuardrailMetrics.RecordEventsSkipped(ProbeType.Metric, MetricTags.DebuggerEventsSkippedReason.RateLimitProbe);
+            DebuggerGuardrailMetrics.RecordEventsSkipped(ProbeType.SpanDecoration, MetricTags.DebuggerEventsSkippedReason.RateLimitGlobal);
+            DebuggerGuardrailMetrics.RecordEventsSkipped(ProbeType.Snapshot, MetricTags.DebuggerEventsSkippedReason.RateLimitProbe);
+            DebuggerGuardrailMetrics.RecordEventsSkipped(ProbeType.Log, MetricTags.DebuggerEventsSkippedReason.RateLimitProbe);
+
+            collector.AggregateMetrics();
+            var metrics = collector.GetMetrics().Metrics!;
+
+            GetTagCombinations(metrics, "events.skipped")
+               .Should()
+               .BeEquivalentTo(["reason:rateLimitProbe;event_type:snapshot", "reason:rateLimitProbe;event_type:log"]);
+        }
+        finally
+        {
+            TelemetryFactory.SetMetricsForTesting(previous);
+            await collector.DisposeAsync();
+        }
     }
 
     private static T[] GetEnumValues<T>()

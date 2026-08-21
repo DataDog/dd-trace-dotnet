@@ -276,6 +276,11 @@ internal enum Count
     [TelemetryMetric<MetricTags.TruncationReason>("waf.input_truncated", isCommon: true, NS.ASM)] InputTruncated,
 
     /// <summary>
+    /// Number of errors returned by a call to ddwaf_run, tagged by the ddwaf_run return code
+    /// </summary>
+    [TelemetryMetric<MetricTags.WafError>("waf.error", isCommon: true, NS.ASM)] WafError,
+
+    /// <summary>
     /// Counts the number of times a rule type is evaluated.
     /// </summary>
     [TelemetryMetric<RaspRuleType>("rasp.rule.eval", isCommon: true, NS.ASM)] RaspRuleEval,
