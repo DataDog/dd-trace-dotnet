@@ -55,6 +55,41 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             EnvironmentHelper.EnableDefaultTransport();
             await RunTest();
         }
+
+        [SkippableFact]
+        [Trait("Category", "EndToEnd")]
+        [Trait("RunOnWindows", "True")]
+        [Trait("SupportsInstrumentationVerification", "True")]
+        public async Task DiagnosticsMetricsApiMemoryLoad_StaysWithinValidRange_UnderGcHardLimit()
+        {
+            // DOTNET_GCHeapHardLimitPercent (parsed as hex, so "19" == 0x19 == 25%) sets
+            // gc_heap::heap_hard_limit != 0 (similar to a memory-limited container).
+            SetEnvironmentVariable(ConfigurationKeys.RuntimeMetricsDiagnosticsMetricsApiEnabled, "1");
+            SetEnvironmentVariable("DOTNET_GCHeapHardLimitPercent", "19");
+            EnvironmentHelper.EnableDefaultTransport();
+
+            using var agent = EnvironmentHelper.GetMockAgent(useStatsD: true);
+            using var processResult = await RunSampleAndWaitForExit(agent);
+            var requests = agent.StatsdRequests;
+            requests.Should().NotBeEmpty();
+
+            var metrics = requests.SelectMany(x => x.Split('\n')).ToList();
+            var memoryLoadSamples = metrics
+                                    .Where(m => m.StartsWith(MetricsNames.GcMemoryLoad + ":", StringComparison.Ordinal))
+                                    .Select(
+                                         m =>
+                                         {
+                                             var separator = m.IndexOf(':');
+                                             var endIndex = m.IndexOf('|', separator + 1);
+                                             return double.Parse(m.Substring(separator + 1, endIndex - separator - 1));
+                                         })
+                                    .ToList();
+
+            memoryLoadSamples.Should().NotBeEmpty();
+            memoryLoadSamples.Should().OnlyContain(v => v > 0 && v <= 100);
+
+            agent.Exceptions.Should().BeEmpty();
+        }
 #endif
 
         [SkippableFact]

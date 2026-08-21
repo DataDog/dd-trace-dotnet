@@ -20,6 +20,7 @@ using Datadog.Trace.DogStatsd;
 using Datadog.Trace.RuntimeMetrics;
 using Datadog.Trace.TestHelpers.Stats;
 using Datadog.Trace.Vendors.StatsdClient;
+using FluentAssertions;
 using Moq;
 using Xunit;
 using Range = Moq.Range;
@@ -43,7 +44,10 @@ public class DiagnosticMetricsRuntimeMetricsListenerTests
 
         // some metrics are only recorded the _second_ time this is called, to avoid skewing the results at the start, so we just check for a couple
         statsd.Verify(s => s.Gauge(MetricsNames.Gen0HeapSize, It.IsAny<double>(), 1, null), Times.Once);
-        statsd.Verify(s => s.Gauge(MetricsNames.GcMemoryLoad, It.IsInRange(0d, 100, Range.Inclusive), It.IsAny<double>(), null), Times.AtLeastOnce);
+
+        var expectedMemoryLoad = GcMemoryLoadCalculator.TryGetMemoryLoadPercentage(GC.GetGCMemoryInfo());
+        expectedMemoryLoad.Should().NotBeNull();
+        statsd.Verify(s => s.Gauge(MetricsNames.GcMemoryLoad, expectedMemoryLoad!.Value, It.IsAny<double>(), null), Times.AtLeastOnce);
     }
 
     [Fact]
