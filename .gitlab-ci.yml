@@ -1,5 +1,6 @@
 stages:
   - build
+  - test
   - package
   - sign-nuget
   - publish-artifacts
@@ -28,6 +29,18 @@ include:
 variables:
   DOTNET_PACKAGE_VERSION:
     description: "Used by the package stage when triggered manually"
+  run_all_test_frameworks:
+    value: "false"
+    options:
+      - "false"
+      - "true"
+    description: "Run generated unit and integration tests against all supported target frameworks."
+  perform_comprehensive_testing:
+    value: "false"
+    options:
+      - "false"
+      - "true"
+    description: "Include minor package versions in multi-version sample builds."
   REPO_NOTIFICATION_CHANNEL: "#apm-dotnet-bots"
   # GitLab org for internal cross-repo references - parameterized for org migration resilience
   GITLAB_GROUP: DataDog
@@ -48,10 +61,16 @@ variables:
     LLMVAL_PLATFORM_REF: "0f48ca35f0b3dfd19d5c0dc9f92aa977c99bebbf"   # v0.1.1 (must match include ref above)
 
 build-windows-ci-image:
-  stage: build
+  stage: .pre
   timeout: 2h
   tags: ["windows-v2:2022"]
-  when: manual
+  rules:
+    - changes:
+        - .gitlab-ci.yml
+        - tracer/build/_build/docker/gitlab/**/*
+      when: on_success
+    - when: manual
+      allow_failure: true
   hooks:
     pre_get_sources_script:
       - git config --system core.longpaths true
@@ -88,6 +107,513 @@ build-windows-ci-image:
   id_tokens:
     CI_IDENTITIES_GITLAB_ID_TOKEN:
       aud: ci-identities
+
+generate-unit-tests-pipelines:
+  except:
+    variables:
+      - $DEPLOY_TO_REL_ENV == "true"
+      - $CI_COMMIT_TAG
+  stage: build
+  timeout: 15m
+  tags: ["windows-v2:2022"]
+  hooks:
+    pre_get_sources_script:
+      - git config --system core.longpaths true
+  script:
+    - |
+      $hash = & tracer/build/_build/docker/gitlab/compute-image-hash.ps1
+      if ($LASTEXITCODE -ne 0 -or $hash -notmatch '^[0-9a-f]{12}$') {
+        throw "compute-image-hash.ps1 did not produce a valid hash (exit=$LASTEXITCODE, output='$hash')"
+      }
+      $env:WINDOWS_BUILD_IMAGE = "${env:WINDOWS_BUILD_IMAGE_BASE}:${hash}"
+
+      docker manifest inspect $env:WINDOWS_BUILD_IMAGE
+      if ($LASTEXITCODE -ne 0) {
+        throw "Windows build image not found at $env:WINDOWS_BUILD_IMAGE"
+      }
+
+      $targetBranch = if ($env:CI_MERGE_REQUEST_TARGET_BRANCH_NAME) {
+        $env:CI_MERGE_REQUEST_TARGET_BRANCH_NAME
+      } else {
+        $env:CI_DEFAULT_BRANCH
+      }
+
+      if (-not $targetBranch) {
+        throw "Unable to determine the target branch for GitLab matrix generation"
+      }
+
+      # Mirror NUKE's thorough-testing checks before passing the decision to the
+      # focused child-pipeline generator in the Windows image.
+      git fetch --no-tags origin "+refs/heads/${targetBranch}:refs/remotes/origin/${targetBranch}"
+      if ($LASTEXITCODE -ne 0) {
+        throw "Failed to fetch target branch '$targetBranch' for matrix generation"
+      }
+
+      $changedFiles = @(git diff --name-only "origin/${targetBranch}...HEAD")
+      if ($LASTEXITCODE -ne 0) {
+        throw "Failed to find changes relative to '$targetBranch' for matrix generation"
+      }
+
+      $hasIntegrationChanges = $changedFiles | Where-Object {
+        $path = $_.Replace('\', '/')
+        $path -like "tracer/src/Datadog.Trace/Generated/*/Datadog.Trace.SourceGenerators/Datadog.Trace.SourceGenerators.InstrumentationDefinitions.InstrumentationDefinitionsGenerator*" `
+          -or $path -like "tracer/src/Datadog.Trace/Generated/*/Datadog.Trace.SourceGenerators/AspectsDefinitionsGenerator*" `
+          -or $path -like "tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/*" `
+          -or $path -like "tracer/src/Datadog.Trace/Iast/Aspects/*"
+      }
+      $snapshotChangeCount = @($changedFiles | Where-Object { $_ -like "*verified.txt" }).Count
+
+      $forceAllFrameworks = $env:run_all_test_frameworks -eq "true" -or $env:RUN_ALL_TEST_FRAMEWORKS -eq "true"
+      $isMainlineBranch = $env:CI_COMMIT_BRANCH -in @("master", "main") `
+                       -or $env:CI_COMMIT_BRANCH -like "release/*" `
+                       -or $env:CI_COMMIT_BRANCH -like "hotfix/*"
+      $includeAllFrameworks = $forceAllFrameworks `
+                           -or ($isMainlineBranch -and $env:CI_PIPELINE_SOURCE -ne "schedule") `
+                           -or [bool]$hasIntegrationChanges `
+                           -or $snapshotChangeCount -gt 100
+
+      Write-Output "Generating unit-test and integration-test child pipelines (target=$targetBranch, includeAll=$includeAllFrameworks)"
+      docker run --rm -m 20480M `
+        -v "$(Get-Location):c:\mnt" `
+        -e CI=true `
+        -e CI_JOB_ID=${CI_JOB_ID} `
+        -e CI_COMMIT_BRANCH `
+        -e CI_MERGE_REQUEST_SOURCE_BRANCH_NAME `
+        -e CI_PROJECT_NAME `
+        -e CI_JOB_NAME_SLUG `
+        -e AWS_NETWORKING=true `
+        -e WINDOWS_BUILDER=true `
+        -e NUGET_CERT_REVOCATION_MODE=offline `
+        -e CI_IDENTITIES_GITLAB_ID_TOKEN `
+        --entrypoint cmd.exe `
+        $env:WINDOWS_BUILD_IMAGE `
+        /d /s /c `
+        "c:\entrypoint.bat GenerateGitlabWindowsUnitTestsPipeline GenerateGitlabLinuxUnitTestsPipeline GenerateGitlabLinuxArm64UnitTestsPipeline GenerateGitlabMacosUnitTestsPipeline GenerateGitlabLinuxIntegrationTestsPipeline GenerateGitlabLinuxArm64IntegrationTestsPipeline GenerateGitlabWindowsIntegrationTestsPipeline --IncludeAllTestFrameworks $includeAllFrameworks"
+      if ($LASTEXITCODE -ne 0) {
+        throw "GitLab child-pipeline generation exited with code $LASTEXITCODE"
+      }
+  artifacts:
+    expire_in: 2 weeks
+    paths:
+      - .gitlab/generated/windows-unit-tests.yml
+      - .gitlab/generated/linux-unit-tests.yml
+      - .gitlab/generated/linux-arm64-unit-tests.yml
+      - .gitlab/generated/macos-unit-tests.yml
+      - .gitlab/generated/linux-integration-tests.yml
+      - .gitlab/generated/linux-arm64-integration-tests.yml
+      - .gitlab/generated/windows-integration-tests.yml
+  id_tokens:
+    CI_IDENTITIES_GITLAB_ID_TOKEN:
+      aud: ci-identities
+
+.build-linux-tracer:
+  except:
+    variables:
+      - $DEPLOY_TO_REL_ENV == "true"
+      - $CI_COMMIT_TAG
+  stage: build
+  # Approved Docker CLI image also used by dd-trace-java image-building jobs.
+  image: 486234852809.dkr.ecr.us-east-1.amazonaws.com/docker:27.3.1
+  timeout: 90m
+  needs: []
+  variables:
+    DOCKER_BUILDKIT: "1"
+  script:
+    - |
+      set -eu
+
+      managed_image="dd-trace-dotnet/${MANAGED_BASE_IMAGE}-builder:${CI_JOB_ID}"
+      native_image="dd-trace-dotnet/${NATIVE_BASE_IMAGE}-builder:${CI_JOB_ID}"
+
+      echo "Building ${MANAGED_BASE_IMAGE} .NET ${MANAGED_DOTNET_SDK_VERSION} builder image"
+      docker build \
+        --build-arg "DOTNETSDK_VERSION=${MANAGED_DOTNET_SDK_VERSION}" \
+        --tag "$managed_image" \
+        --target builder \
+        --file "tracer/build/_build/docker/${MANAGED_BASE_IMAGE}.dockerfile" \
+        tracer/build/_build
+
+      if [ "$NATIVE_BASE_IMAGE" = "$MANAGED_BASE_IMAGE" ] && [ "$NATIVE_DOTNET_SDK_VERSION" = "$MANAGED_DOTNET_SDK_VERSION" ]; then
+        native_image="$managed_image"
+      else
+        echo "Building ${NATIVE_BASE_IMAGE} .NET ${NATIVE_DOTNET_SDK_VERSION} native builder image"
+        docker build \
+          --build-arg "DOTNETSDK_VERSION=${NATIVE_DOTNET_SDK_VERSION}" \
+          --tag "$native_image" \
+          --target builder \
+          --file "tracer/build/_build/docker/${NATIVE_BASE_IMAGE}.dockerfile" \
+          tracer/build/_build
+      fi
+
+      run_nuke() {
+        image="$1"
+        shift
+
+        docker run --rm \
+          --cap-add=SYS_PTRACE \
+          --mount "type=bind,source=${CI_PROJECT_DIR},target=/project" \
+          --env NugetPackageDirectory=/project/packages \
+          --env artifacts=/project/artifacts/output \
+          --env CI=true \
+          --env CI_JOB_ID \
+          --env CI_PROJECT_NAME \
+          --env CI_JOB_NAME_SLUG \
+          --env CI_COMMIT_SHA \
+          --env CI_COMMIT_BRANCH \
+          --env DD_LOGGER_DD_API_KEY \
+          --env NUKE_TELEMETRY_OPTOUT=1 \
+          --env NUGET_ENABLE_EXPERIMENTAL_HTTP_RETRY=true \
+          "$image" \
+          dotnet /build/bin/Debug/_build.dll "$@"
+      }
+
+      run_nuke "$managed_image" Clean CompileManagedLoader
+      if [ "$RUN_NATIVE_TESTS" = "true" ]; then
+        run_nuke "$native_image" BuildNativeTracerHome CompileTracerNativeTests RunTracerNativeTests
+      else
+        run_nuke "$native_image" BuildNativeTracerHome
+      fi
+      run_nuke "$managed_image" BuildManagedTracerHome ExtractDebugInfoLinux ValidateNativeTracerGlibcCompatibility
+  artifacts:
+    when: always
+    expire_in: 2 weeks
+    paths:
+      - artifacts/bin
+      - artifacts/monitoring-home
+      - artifacts/native-symbols
+      - artifacts/obj/**/ref/**/*
+      - artifacts/obj/**/refint/**/*
+      - artifacts/obj/Datadog.Trace.Tools.dd_dotnet/**/apphost
+      - artifacts/build_data/tests
+      - artifacts/build_data/logs
+      - artifacts/build_data/dumps
+    reports:
+      junit:
+        - artifacts/build_data/tests/*.xml
+
+build-linux-tracer-x64:
+  extends: .build-linux-tracer
+  tags: ["docker-in-docker:amd64"]
+  variables:
+    MANAGED_BASE_IMAGE: debian
+    MANAGED_DOTNET_SDK_VERSION: "10.0.100"
+    NATIVE_BASE_IMAGE: centos7
+    NATIVE_DOTNET_SDK_VERSION: "7.0.306"
+    RUN_NATIVE_TESTS: "true"
+
+build-linux-tracer-x64-musl:
+  extends: .build-linux-tracer
+  tags: ["docker-in-docker:amd64"]
+  variables:
+    MANAGED_BASE_IMAGE: alpine
+    MANAGED_DOTNET_SDK_VERSION: "10.0.100"
+    NATIVE_BASE_IMAGE: alpine
+    NATIVE_DOTNET_SDK_VERSION: "10.0.100"
+    RUN_NATIVE_TESTS: "true"
+
+build-linux-tracer-arm64:
+  extends: .build-linux-tracer
+  tags: ["docker-in-docker:arm64"]
+  variables:
+    MANAGED_BASE_IMAGE: debian
+    MANAGED_DOTNET_SDK_VERSION: "10.0.100"
+    NATIVE_BASE_IMAGE: debian
+    NATIVE_DOTNET_SDK_VERSION: "10.0.100"
+    RUN_NATIVE_TESTS: "false"
+
+build-linux-tracer-arm64-musl:
+  extends: .build-linux-tracer
+  tags: ["docker-in-docker:arm64"]
+  variables:
+    MANAGED_BASE_IMAGE: alpine
+    MANAGED_DOTNET_SDK_VERSION: "10.0.100"
+    NATIVE_BASE_IMAGE: alpine
+    NATIVE_DOTNET_SDK_VERSION: "10.0.100"
+    RUN_NATIVE_TESTS: "false"
+
+.build-linux-profiler:
+  except:
+    variables:
+      - $DEPLOY_TO_REL_ENV == "true"
+      - $CI_COMMIT_TAG
+  stage: build
+  image: 486234852809.dkr.ecr.us-east-1.amazonaws.com/docker:27.3.1
+  timeout: 90m
+  needs: []
+  variables:
+    DOCKER_BUILDKIT: "1"
+  script:
+    - |
+      set -eu
+
+      native_image="dd-trace-dotnet/${NATIVE_BASE_IMAGE}-profiler-builder:${CI_JOB_ID}"
+      validation_image="dd-trace-dotnet/${VALIDATION_BASE_IMAGE}-profiler-validator:${CI_JOB_ID}"
+
+      echo "Building ${NATIVE_BASE_IMAGE} .NET ${NATIVE_DOTNET_SDK_VERSION} profiler builder image"
+      docker build \
+        --build-arg "DOTNETSDK_VERSION=${NATIVE_DOTNET_SDK_VERSION}" \
+        --tag "$native_image" \
+        --target builder \
+        --file "tracer/build/_build/docker/${NATIVE_BASE_IMAGE}.dockerfile" \
+        tracer/build/_build
+
+      if [ "$NATIVE_BASE_IMAGE" = "$VALIDATION_BASE_IMAGE" ] && [ "$NATIVE_DOTNET_SDK_VERSION" = "$VALIDATION_DOTNET_SDK_VERSION" ]; then
+        validation_image="$native_image"
+      else
+        echo "Building ${VALIDATION_BASE_IMAGE} .NET ${VALIDATION_DOTNET_SDK_VERSION} profiler validation image"
+        docker build \
+          --build-arg "DOTNETSDK_VERSION=${VALIDATION_DOTNET_SDK_VERSION}" \
+          --tag "$validation_image" \
+          --target builder \
+          --file "tracer/build/_build/docker/${VALIDATION_BASE_IMAGE}.dockerfile" \
+          tracer/build/_build
+      fi
+
+      run_nuke() {
+        image="$1"
+        shift
+
+        docker run --rm \
+          --cap-add=SYS_PTRACE \
+          --mount "type=bind,source=${CI_PROJECT_DIR},target=/project" \
+          --env NugetPackageDirectory=/project/packages \
+          --env artifacts=/project/artifacts/output \
+          --env CI=true \
+          --env CI_JOB_ID \
+          --env CI_PROJECT_NAME \
+          --env CI_JOB_NAME_SLUG \
+          --env CI_COMMIT_SHA \
+          --env CI_COMMIT_BRANCH \
+          --env DD_LOGGER_DD_API_KEY \
+          --env NUKE_TELEMETRY_OPTOUT=1 \
+          --env NUGET_ENABLE_EXPERIMENTAL_HTTP_RETRY=true \
+          "$image" \
+          dotnet /build/bin/Debug/_build.dll "$@"
+      }
+
+      if [ "$RUN_NATIVE_TESTS" = "true" ]; then
+        run_nuke "$native_image" \
+          Clean BuildProfilerHome CompileNativeWrapper \
+          CompileProfilerNativeTests RunProfilerNativeTests \
+          CompileNativeWrapperNativeTests RunNativeWrapperNativeTests \
+          CompileNativeLoaderNativeTests RunNativeLoaderNativeTests
+      else
+        run_nuke "$native_image" Clean BuildProfilerHome
+      fi
+      run_nuke "$validation_image" ExtractDebugInfoLinux ValidateNativeProfilerGlibcCompatibility
+  artifacts:
+    when: always
+    expire_in: 2 weeks
+    paths:
+      - artifacts/monitoring-home
+      - artifacts/native-symbols
+      - artifacts/build_data/logs
+      - artifacts/build_data/dumps
+      - profiler/build_data/tests
+    reports:
+      junit:
+        - profiler/build_data/tests/*.xml
+
+build-linux-profiler-x64:
+  extends: .build-linux-profiler
+  tags: ["docker-in-docker:amd64"]
+  variables:
+    NATIVE_BASE_IMAGE: centos7
+    NATIVE_DOTNET_SDK_VERSION: "7.0.306"
+    VALIDATION_BASE_IMAGE: debian
+    VALIDATION_DOTNET_SDK_VERSION: "10.0.100"
+    RUN_NATIVE_TESTS: "true"
+
+build-linux-profiler-x64-musl:
+  extends: .build-linux-profiler
+  tags: ["docker-in-docker:amd64"]
+  variables:
+    NATIVE_BASE_IMAGE: alpine
+    NATIVE_DOTNET_SDK_VERSION: "10.0.100"
+    VALIDATION_BASE_IMAGE: alpine
+    VALIDATION_DOTNET_SDK_VERSION: "10.0.100"
+    RUN_NATIVE_TESTS: "true"
+
+build-linux-profiler-arm64:
+  extends: .build-linux-profiler
+  tags: ["docker-in-docker:arm64"]
+  variables:
+    NATIVE_BASE_IMAGE: debian
+    NATIVE_DOTNET_SDK_VERSION: "10.0.100"
+    VALIDATION_BASE_IMAGE: debian
+    VALIDATION_DOTNET_SDK_VERSION: "10.0.100"
+    RUN_NATIVE_TESTS: "false"
+
+build-linux-profiler-arm64-musl:
+  extends: .build-linux-profiler
+  tags: ["docker-in-docker:arm64"]
+  variables:
+    NATIVE_BASE_IMAGE: alpine
+    NATIVE_DOTNET_SDK_VERSION: "10.0.100"
+    VALIDATION_BASE_IMAGE: alpine
+    VALIDATION_DOTNET_SDK_VERSION: "10.0.100"
+    RUN_NATIVE_TESTS: "false"
+
+build-linux-universal-x64:
+  except:
+    variables:
+      - $DEPLOY_TO_REL_ENV == "true"
+      - $CI_COMMIT_TAG
+  stage: build
+  image: 486234852809.dkr.ecr.us-east-1.amazonaws.com/docker:27.3.1
+  tags: ["docker-in-docker:amd64"]
+  timeout: 60m
+  needs: []
+  variables:
+    DOCKER_BUILDKIT: "1"
+    UNIVERSAL_DOTNET_SDK_VERSION: "7.0.306"
+  script:
+    - |
+      set -eu
+
+      universal_image="dd-trace-dotnet/universal-builder:${CI_JOB_ID}"
+      echo "Building universal .NET ${UNIVERSAL_DOTNET_SDK_VERSION} builder image"
+      docker build \
+        --build-arg "DOTNETSDK_VERSION=${UNIVERSAL_DOTNET_SDK_VERSION}" \
+        --tag "$universal_image" \
+        --target builder \
+        --file tracer/build/_build/docker/universal.dockerfile \
+        tracer/build/_build
+
+      docker run --rm \
+        --cap-add=SYS_PTRACE \
+        --mount "type=bind,source=${CI_PROJECT_DIR},target=/project" \
+        --env NugetPackageDirectory=/project/packages \
+        --env artifacts=/project/artifacts/output \
+        --env CI=true \
+        --env CI_JOB_ID \
+        --env CI_PROJECT_NAME \
+        --env CI_JOB_NAME_SLUG \
+        --env CI_COMMIT_SHA \
+        --env CI_COMMIT_BRANCH \
+        --env NUKE_TELEMETRY_OPTOUT=1 \
+        --env NUGET_ENABLE_EXPERIMENTAL_HTTP_RETRY=true \
+        "$universal_image" \
+        dotnet /build/bin/Debug/_build.dll \
+        Clean BuildNativeLoader BuildNativeWrapper ExtractDebugInfoLinux ValidateNativeLoaderSnapshotTestsLinux
+  artifacts:
+    when: always
+    expire_in: 2 weeks
+    paths:
+      - artifacts/monitoring-home/linux-musl-x64
+      - artifacts/native-symbols/linux-musl-x64
+      - artifacts/build_data/logs
+      - artifacts/build_data/dumps
+
+build-linux-universal-arm64:
+  except:
+    variables:
+      - $DEPLOY_TO_REL_ENV == "true"
+      - $CI_COMMIT_TAG
+  stage: build
+  image: 486234852809.dkr.ecr.us-east-1.amazonaws.com/docker:27.3.1
+  tags: ["docker-in-docker:arm64"]
+  timeout: 60m
+  needs: []
+  variables:
+    DOCKER_BUILDKIT: "1"
+    UNIVERSAL_DOTNET_SDK_VERSION: "7.0.306"
+  script:
+    - |
+      set -eu
+
+      universal_image="dd-trace-dotnet/universal-arm64-builder:${CI_JOB_ID}"
+      echo "Building ARM64 universal .NET ${UNIVERSAL_DOTNET_SDK_VERSION} builder image"
+      docker build \
+        --build-arg "DOTNETSDK_VERSION=${UNIVERSAL_DOTNET_SDK_VERSION}" \
+        --tag "$universal_image" \
+        --target builder \
+        --file tracer/build/_build/docker/universal.dockerfile \
+        tracer/build/_build
+
+      docker run --rm \
+        --cap-add=SYS_PTRACE \
+        --mount "type=bind,source=${CI_PROJECT_DIR},target=/project" \
+        --env NugetPackageDirectory=/project/packages \
+        --env artifacts=/project/artifacts/output \
+        --env CI=true \
+        --env CI_JOB_ID \
+        --env CI_PROJECT_NAME \
+        --env CI_JOB_NAME_SLUG \
+        --env CI_COMMIT_SHA \
+        --env CI_COMMIT_BRANCH \
+        --env NUKE_TELEMETRY_OPTOUT=1 \
+        --env NUGET_ENABLE_EXPERIMENTAL_HTTP_RETRY=true \
+        "$universal_image" \
+        dotnet /build/bin/Debug/_build.dll \
+        Clean BuildNativeLoader BuildNativeWrapper ExtractDebugInfoLinux ValidateNativeLoaderSnapshotTestsLinux
+  artifacts:
+    when: always
+    expire_in: 2 weeks
+    paths:
+      - artifacts/monitoring-home/linux-musl-arm64
+      - artifacts/native-symbols/linux-musl-arm64
+      - artifacts/build_data/logs
+      - artifacts/build_data/dumps
+
+.macos-amd64:
+  tags: ["macos:sonoma-amd64"]
+  variables:
+    DOTNET_SDK_VERSION: "10.0.100"
+    DOTNET_CLI_HOME: "$CI_PROJECT_DIR/.dotnet_cli_home"
+    NUGET_PACKAGES: "$CI_PROJECT_DIR/packages"
+    NUGET_ENABLE_EXPERIMENTAL_HTTP_RETRY: "true"
+    NUKE_TELEMETRY_OPTOUT: "1"
+  before_script:
+    - |
+      set -eu
+      export DOTNET_ROOT="${CI_PROJECT_DIR}/.dotnet"
+      export PATH="${DOTNET_ROOT}:${PATH}"
+      mkdir -p "$DOTNET_ROOT" "$DOTNET_CLI_HOME" "$NUGET_PACKAGES"
+
+      dotnet_install_script="${TMPDIR:-/tmp}/dd-trace-dotnet-${CI_JOB_ID}-dotnet-install.sh"
+      trap 'rm -f "$dotnet_install_script"' EXIT
+      if ! curl --fail --silent --show-error --location --retry 5 \
+          --output "$dotnet_install_script" \
+          https://github.com/dotnet/install-scripts/raw/2bdc7f2c6e00d60be57f552b8a8aab71512dbcb2/src/dotnet-install.sh \
+          || ! bash -n "$dotnet_install_script"; then
+        rm -f "$dotnet_install_script"
+        curl --fail --silent --show-error --location --retry 5 \
+          --output "$dotnet_install_script" \
+          https://dot.net/v1/dotnet-install.sh
+        bash -n "$dotnet_install_script"
+      fi
+      bash "$dotnet_install_script" \
+        --version "$DOTNET_SDK_VERSION" \
+        --install-dir "$DOTNET_ROOT" \
+        --no-path
+      dotnet --info
+
+build-macos-tracer-amd64:
+  extends: .macos-amd64
+  except:
+    variables:
+      - $DEPLOY_TO_REL_ENV == "true"
+      - $CI_COMMIT_TAG
+  stage: build
+  timeout: 1h
+  needs: []
+  script:
+    # Azure builds these pieces in two jobs and merges their artifacts. The GitLab
+    # PoC keeps the same targets in one workspace and publishes the combined result.
+    - ./tracer/build.sh Clean CreateRequiredDirectories CompileManagedLoader BuildNativeTracerHome --NugetPackageDirectory "$NUGET_PACKAGES"
+    - ./tracer/build.sh BuildManagedTracerHome BuildNativeLoader --skip CreateTrimmingFile --NugetPackageDirectory "$NUGET_PACKAGES"
+  artifacts:
+    when: always
+    expire_in: 2 weeks
+    paths:
+      - artifacts/bin
+      - artifacts/monitoring-home
+      - artifacts/obj/**/ref/**/*
+      - artifacts/obj/**/refint/**/*
+      - artifacts/obj/Datadog.Trace.Tools.dd_dotnet/**/apphost
+      - artifacts/build_data/logs
+      - artifacts/build_data/dumps
 
 build:
   except:
@@ -193,7 +719,8 @@ build:
         -e CI_PROJECT_NAME `
         -e CI_JOB_NAME_SLUG `
         $env:WINDOWS_BUILD_IMAGE `
-        Info Clean BuildTracerHome BuildProfilerHome BuildNativeLoader BuildDdDotnet PublishFleetInstaller PackageTracerHome ZipSymbols SignDlls SignMsi DownloadWinSsiTelemetryForwarder
+        Info Clean BuildTracerHome BuildProfilerHome BuildNativeLoader BuildDdDotnet `
+        --NugetPackageDirectory c:\mnt\packages
       $buildExitCode = $LASTEXITCODE
 
       Wait-Job $statsJob -Timeout 15 | Out-Null
@@ -207,18 +734,299 @@ build:
       if ($buildExitCode -ne 0) {
         throw "Docker build container exited with code $buildExitCode"
       }
+    - |
+      # Run the native tests against the outputs from the build above, matching the
+      # Azure pipeline's build-then-test flow in a shared working directory.
+      docker run --rm -m 20480M `
+        -v "$(Get-Location):c:\mnt" `
+        -e CI_JOB_ID=${CI_JOB_ID} `
+        -e ENABLE_MULTIPROCESSOR_COMPILATION=true `
+        -e CL_MPCount=16 `
+        -e WINDOWS_BUILDER=true `
+        -e AWS_NETWORKING=true `
+        -e NUGET_CERT_REVOCATION_MODE=offline `
+        -e DD_LOGGER_DD_API_KEY `
+        -e CI_IDENTITIES_GITLAB_ID_TOKEN `
+        -e CI_PROJECT_NAME `
+        -e CI_JOB_NAME_SLUG `
+        $env:WINDOWS_BUILD_IMAGE `
+        CompileTracerNativeTests RunTracerNativeTests `
+        CompileNativeLoaderNativeTests RunNativeLoaderNativeTests `
+        CompileProfilerNativeTests RunProfilerNativeTests `
+        --NugetPackageDirectory c:\mnt\packages
+      if ($LASTEXITCODE -ne 0) {
+        throw "Native test container exited with code $LASTEXITCODE"
+      }
+    - |
+      # Package and sign only after the native tests pass so the release outputs are
+      # produced from the successfully tested build state.
+      docker run --rm -m 20480M `
+        -v "$(Get-Location):c:\mnt" `
+        -e CI_JOB_ID=${CI_JOB_ID} `
+        -e ENABLE_MULTIPROCESSOR_COMPILATION=true `
+        -e CL_MPCount=16 `
+        -e WINDOWS_BUILDER=true `
+        -e AWS_NETWORKING=true `
+        -e SIGN_WINDOWS=true `
+        -e NUGET_CERT_REVOCATION_MODE=offline `
+        -e CI_IDENTITIES_GITLAB_ID_TOKEN `
+        -e CI_PROJECT_NAME `
+        -e CI_JOB_NAME_SLUG `
+        $env:WINDOWS_BUILD_IMAGE `
+        PublishFleetInstaller PackageTracerHome ZipSymbols SignDlls SignMsi DownloadWinSsiTelemetryForwarder `
+        --NugetPackageDirectory c:\mnt\packages
+      if ($LASTEXITCODE -ne 0) {
+        throw "Docker packaging container exited with code $LASTEXITCODE"
+      }
     - mkdir artifacts-out
     - xcopy /e/s build-out\${CI_JOB_ID}\*.* artifacts-out
     - remove-item -recurse -force build-out\${CI_JOB_ID}
     - get-childitem build-out
     - get-childitem artifacts-out
   artifacts:
+    when: always
     expire_in: 2 weeks
     paths:
     - artifacts-out
+    # Inputs consumed by the parallel managed unit-test jobs. Each job restores its
+    # own MSBuild obj files and builds only its requested test target framework.
+    - artifacts/bin
+    - artifacts/monitoring-home
+    # `dotnet build --no-dependencies` resolves project references through these
+    # intermediate reference assemblies, not through the final binaries above.
+    - artifacts/obj/**/ref/**/*
+    - artifacts/obj/**/refint/**/*
+    # The dd_dotnet tests also copy the producer-built executable host.
+    - artifacts/obj/Datadog.Trace.Tools.dd_dotnet/**/apphost.exe
+    - artifacts/build_data/tests
+    - artifacts/build_data/dumps
+    - profiler/build_data/tests
+    reports:
+      junit:
+        - artifacts/build_data/tests/*.xml
+        - profiler/build_data/tests/*.xml
   id_tokens:
     CI_IDENTITIES_GITLAB_ID_TOKEN:
       aud: ci-identities
+
+.windows-sample-build:
+  except:
+    variables:
+      - $DEPLOY_TO_REL_ENV == "true"
+      - $CI_COMMIT_TAG
+  stage: build
+  timeout: 60m
+  tags: ["windows-v2:2022"]
+  hooks:
+    pre_get_sources_script:
+      - git config --system core.longpaths true
+  before_script:
+    - |
+      $hash = & tracer/build/_build/docker/gitlab/compute-image-hash.ps1
+      if ($LASTEXITCODE -ne 0 -or $hash -notmatch '^[0-9a-f]{12}$') {
+        throw "compute-image-hash.ps1 did not produce a valid hash (exit=$LASTEXITCODE, output='$hash')"
+      }
+
+      $env:WINDOWS_BUILD_IMAGE = "${env:WINDOWS_BUILD_IMAGE_BASE}:${hash}"
+      docker manifest inspect $env:WINDOWS_BUILD_IMAGE
+      if ($LASTEXITCODE -ne 0) {
+        throw "Windows build image not found at $env:WINDOWS_BUILD_IMAGE"
+      }
+
+build-samples-standalone:
+  extends: .windows-sample-build
+  script:
+    - |
+      $sampleName = $env:IntegrationTestSampleName
+      docker run --rm -m 20480M `
+        -v "$(Get-Location):c:\mnt" `
+        -e CI_JOB_ID=${CI_JOB_ID} `
+        -e CI=true `
+        -e CI_PROJECT_NAME `
+        -e CI_JOB_NAME_SLUG `
+        -e CI_COMMIT_SHA `
+        -e CI_COMMIT_BRANCH `
+        -e GITLAB_CI `
+        -e "SourceRevisionId=$env:CI_COMMIT_SHA" `
+        -e "RepositoryUrl=https://github.com/DataDog/dd-trace-dotnet.git" `
+        -e WINDOWS_BUILDER=true `
+        -e AWS_NETWORKING=true `
+        -e NUGET_CERT_REVOCATION_MODE=offline `
+        -e NUGET_ENABLE_EXPERIMENTAL_HTTP_RETRY=true `
+        -e "SampleName=$sampleName" `
+        $env:WINDOWS_BUILD_IMAGE `
+        CreateRequiredDirectories CompileSamples `
+        --NugetPackageDirectory c:\mnt\packages
+      if ($LASTEXITCODE -ne 0) {
+        throw "Standalone sample build exited with code $LASTEXITCODE"
+      }
+  artifacts:
+    when: always
+    expire_in: 2 weeks
+    name: samples-standalone
+    paths:
+      - artifacts/bin
+      - artifacts/build_data/logs
+      - artifacts/build_data/dumps
+
+unit-tests-windows:
+  except:
+    variables:
+      - $DEPLOY_TO_REL_ENV == "true"
+      - $CI_COMMIT_TAG
+  stage: test
+  needs:
+    - job: build
+      artifacts: false
+    - job: generate-unit-tests-pipelines
+      artifacts: false
+  trigger:
+    include:
+      - artifact: .gitlab/generated/windows-unit-tests.yml
+        job: generate-unit-tests-pipelines
+    strategy: depend
+  variables:
+    PARENT_PIPELINE_ID: $CI_PIPELINE_ID
+
+integration-tests-windows:
+  except:
+    variables:
+      - $DEPLOY_TO_REL_ENV == "true"
+      - $CI_COMMIT_TAG
+  stage: test
+  needs:
+    - job: build
+      artifacts: false
+    - job: build-samples-standalone
+      artifacts: false
+    - job: generate-unit-tests-pipelines
+      artifacts: false
+  trigger:
+    include:
+      - artifact: .gitlab/generated/windows-integration-tests.yml
+        job: generate-unit-tests-pipelines
+    strategy: depend
+  variables:
+    PARENT_PIPELINE_ID: $CI_PIPELINE_ID
+
+unit-tests-linux-x64:
+  except:
+    variables:
+      - $DEPLOY_TO_REL_ENV == "true"
+      - $CI_COMMIT_TAG
+  stage: test
+  needs:
+    - job: build-linux-tracer-x64
+      artifacts: false
+    - job: build-linux-tracer-x64-musl
+      artifacts: false
+    - job: generate-unit-tests-pipelines
+      artifacts: false
+  trigger:
+    include:
+      - artifact: .gitlab/generated/linux-unit-tests.yml
+        job: generate-unit-tests-pipelines
+    strategy: depend
+  variables:
+    PARENT_PIPELINE_ID: $CI_PIPELINE_ID
+
+integration-tests-linux-x64:
+  except:
+    variables:
+      - $DEPLOY_TO_REL_ENV == "true"
+      - $CI_COMMIT_TAG
+  stage: test
+  needs:
+    - job: build-linux-tracer-x64
+      artifacts: false
+    - job: build-linux-tracer-x64-musl
+      artifacts: false
+    - job: build-linux-profiler-x64
+      artifacts: false
+    - job: build-linux-profiler-x64-musl
+      artifacts: false
+    - job: build-linux-universal-x64
+      artifacts: false
+    - job: build-samples-standalone
+      artifacts: false
+    - job: generate-unit-tests-pipelines
+      artifacts: false
+  trigger:
+    include:
+      - artifact: .gitlab/generated/linux-integration-tests.yml
+        job: generate-unit-tests-pipelines
+    strategy: depend
+  variables:
+    PARENT_PIPELINE_ID: $CI_PIPELINE_ID
+
+integration-tests-linux-arm64:
+  except:
+    variables:
+      - $DEPLOY_TO_REL_ENV == "true"
+      - $CI_COMMIT_TAG
+  stage: test
+  needs:
+    - job: build-linux-tracer-arm64
+      artifacts: false
+    - job: build-linux-tracer-arm64-musl
+      artifacts: false
+    - job: build-linux-profiler-arm64
+      artifacts: false
+    - job: build-linux-profiler-arm64-musl
+      artifacts: false
+    - job: build-linux-universal-arm64
+      artifacts: false
+    - job: build-samples-standalone
+      artifacts: false
+    - job: generate-unit-tests-pipelines
+      artifacts: false
+  trigger:
+    include:
+      - artifact: .gitlab/generated/linux-arm64-integration-tests.yml
+        job: generate-unit-tests-pipelines
+    strategy: depend
+  variables:
+    PARENT_PIPELINE_ID: $CI_PIPELINE_ID
+
+unit-tests-linux-arm64:
+  except:
+    variables:
+      - $DEPLOY_TO_REL_ENV == "true"
+      - $CI_COMMIT_TAG
+  stage: test
+  needs:
+    - job: build-linux-tracer-arm64
+      artifacts: false
+    - job: build-linux-tracer-arm64-musl
+      artifacts: false
+    - job: generate-unit-tests-pipelines
+      artifacts: false
+  trigger:
+    include:
+      - artifact: .gitlab/generated/linux-arm64-unit-tests.yml
+        job: generate-unit-tests-pipelines
+    strategy: depend
+  variables:
+    PARENT_PIPELINE_ID: $CI_PIPELINE_ID
+
+unit-tests-macos-amd64:
+  except:
+    variables:
+      - $DEPLOY_TO_REL_ENV == "true"
+      - $CI_COMMIT_TAG
+  stage: test
+  needs:
+    - job: build-macos-tracer-amd64
+      artifacts: false
+    - job: generate-unit-tests-pipelines
+      artifacts: false
+  trigger:
+    include:
+      - artifact: .gitlab/generated/macos-unit-tests.yml
+        job: generate-unit-tests-pipelines
+    strategy: depend
+  variables:
+    PARENT_PIPELINE_ID: $CI_PIPELINE_ID
 
 publish:
   only:

@@ -17,6 +17,7 @@ using Xunit.Abstractions;
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
 {
     [Collection("IisTests")]
+    [Trait("IISExpress", "True")]
     public class AspNetCoreIisMvc30TestsInProcess : AspNetCoreIisMvc30Tests
     {
         public AspNetCoreIisMvc30TestsInProcess(IisFixture fixture, ITestOutputHelper output)
@@ -26,6 +27,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
     }
 
     [Collection("IisTests")]
+    [Trait("IISExpress", "True")]
     public class AspNetCoreIisMvc30TestsInProcessWithFeatureFlag : AspNetCoreIisMvc30Tests
     {
         public AspNetCoreIisMvc30TestsInProcessWithFeatureFlag(IisFixture fixture, ITestOutputHelper output)
@@ -35,6 +37,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
     }
 
     [Collection("IisTests")]
+    [Trait("IISExpress", "True")]
     public class AspNetCoreIisMvc30TestsOutOfProcess : AspNetCoreIisMvc30Tests
     {
         public AspNetCoreIisMvc30TestsOutOfProcess(IisFixture fixture, ITestOutputHelper output)
@@ -44,6 +47,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
     }
 
     [Collection("IisTests")]
+    [Trait("IISExpress", "True")]
     public class AspNetCoreIisMvc30TestsOutOfProcessWithFeatureFlag : AspNetCoreIisMvc30Tests
     {
         public AspNetCoreIisMvc30TestsOutOfProcessWithFeatureFlag(IisFixture fixture, ITestOutputHelper output)

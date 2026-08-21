@@ -304,6 +304,7 @@ namespace Datadog.Trace.TestHelpers
                 {
                     _ when path.StartsWith(@"D:/a/1/s/") => path.Substring(9),
                     _ when path.StartsWith(@"D:/a/_work/1/s/") => path.Substring(15),
+                    _ when path.StartsWith(@"c:/mnt/", StringComparison.OrdinalIgnoreCase) => path.Substring(7),
                     _ when Environment.GetEnvironmentVariable("BUILD_REPOSITORY_LOCALPATH") is { Length: > 0 } x
                         && path.StartsWith(x) => path.Substring(x.Length),
                     _ => path,

@@ -5,7 +5,10 @@
 # docker build -f gitlab.windows.dockerfile --tag datadog/dd-trace-dotnet-docker-build:dotnet10 .
 # docker push datadog/dd-trace-dotnet-docker-build:dotnet10
 
-ARG BASE_IMAGE=mcr.microsoft.com/dotnet/framework/runtime:4.8-windowsservercore-ltsc2022
+# The ASP.NET image is the .NET Framework runtime image with IIS enabled. The
+# GitLab build image also runs the full-IIS integration-test slice, matching
+# the IIS role available on Azure's Windows test workers.
+ARG BASE_IMAGE=mcr.microsoft.com/dotnet/framework/aspnet:4.8-windowsservercore-ltsc2022
 FROM ${BASE_IMAGE}
 SHELL ["powershell", "-Command", "$ErrorActionPreference = 'Stop'; $ProgressPreference = 'SilentlyContinue';"]
 
@@ -21,6 +24,49 @@ ENV VSBUILDTOOLS_VERSION="17.14.36310.24" \
 # Install VS
 COPY install_vstudio.ps1 .
 RUN powershell -Command .\install_vstudio.ps1 -Version $ENV:VSBUILDTOOLS_VERSION -Sha256 $ENV:VSBUILDTOOLS_SHA256 -InstallRoot $ENV:VSBUILDTOOLS_INSTALL_ROOT $ENV:VSBUILDTOOLS_DOWNLOAD_URL
+
+# IIS Express is not included in the Visual Studio Build Tools workload.
+ENV IISEXPRESS_VERSION="10.0.2001" \
+    IISEXPRESS_SHA256="18304FE8A65E397C65FE77C6E73B0ACB1556E8ED7EC9C94678DD42FA7AC1671F" \
+    IISEXPRESS_DOWNLOAD_URL="https://download.microsoft.com/download/c/e/8/ce8d18f5-d4c0-45b5-b531-adecd637a1aa/iisexpress_amd64_en-US.msi"
+
+COPY install_iisexpress.ps1 .
+RUN powershell -Command .\install_iisexpress.ps1 -Version $ENV:IISEXPRESS_VERSION -Sha256 $ENV:IISEXPRESS_SHA256 -Url $ENV:IISEXPRESS_DOWNLOAD_URL
+
+# Install SQL Server Express LocalDB for the .NET Framework SQL integration tests.
+ENV LOCALDB_VERSION="2022" \
+    LOCALDB_SHA256="36E0EC2AC3DD60F496C99CE44722C629209EA7302A2CE9CBFD1E42A73510D7B6" \
+    LOCALDB_DOWNLOAD_URL="https://download.microsoft.com/download/5/1/4/5145fe04-4d30-4b85-b0d1-39533663a2f1/SQL2022-SSEI-Expr.exe"
+
+COPY install_localdb.ps1 .
+RUN powershell -Command .\install_localdb.ps1 -Version $ENV:LOCALDB_VERSION -Sha256 $ENV:LOCALDB_SHA256 -Url $ENV:LOCALDB_DOWNLOAD_URL
+
+# Install the same pinned Azure Functions Core Tools and Storage Emulator used
+# by the Azure Windows integration-test stage. Both are needed by the dedicated
+# Azure Functions matrix, and remain isolated inside each ephemeral test container.
+ENV AZURE_FUNCTIONS_CORE_TOOLS_VERSION="4.0.6280" \
+    AZURE_FUNCTIONS_CORE_TOOLS_DOWNLOAD_URL="https://github.com/Azure/azure-functions-core-tools/releases/download/4.0.6280/func-cli-4.0.6280-x64.msi" \
+    AZURE_STORAGE_EMULATOR_VERSION="5.10" \
+    AZURE_STORAGE_EMULATOR_DOWNLOAD_URL="https://go.microsoft.com/fwlink/?clcid=0x409&linkid=717179"
+
+COPY install_azure_functions_tools.ps1 install_azure_storage_emulator.ps1 ./
+RUN powershell -Command .\install_azure_functions_tools.ps1 -Version $ENV:AZURE_FUNCTIONS_CORE_TOOLS_VERSION -Url $ENV:AZURE_FUNCTIONS_CORE_TOOLS_DOWNLOAD_URL
+RUN .\install_azure_storage_emulator.ps1 -Version $ENV:AZURE_STORAGE_EMULATOR_VERSION -Url $ENV:AZURE_STORAGE_EMULATOR_DOWNLOAD_URL
+
+# Install MSMQ for the .NET Framework MSMQ integration tests.
+COPY install_msmq.ps1 .
+RUN powershell -Command .\install_msmq.ps1
+
+# Install a matched headless Chrome and ChromeDriver for the Selenium CI Visibility tests.
+# Versions and download links are published by the Chrome for Testing project.
+ENV CHROME_VERSION="151.0.7922.77" \
+    CHROME_DOWNLOAD_URL="https://storage.googleapis.com/chrome-for-testing-public/151.0.7922.77/win64/chrome-headless-shell-win64.zip" \
+    CHROME_SHA256="24F22654F82ABD4FF7DEFCE511AE84EBCD7A6C4845AEFA516E0C53E3AF615ECD" \
+    CHROMEDRIVER_DOWNLOAD_URL="https://storage.googleapis.com/chrome-for-testing-public/151.0.7922.77/win64/chromedriver-win64.zip" \
+    CHROMEDRIVER_SHA256="ED5189D0A048FCBC16CCC6ED45B47D4E78A79184A23E2FC12A3F804F3242B7C8"
+
+COPY install_chrome.ps1 .
+RUN powershell -Command .\install_chrome.ps1 -Version $ENV:CHROME_VERSION -ChromeUrl $ENV:CHROME_DOWNLOAD_URL -ChromeSha256 $ENV:CHROME_SHA256 -ChromeDriverUrl $ENV:CHROMEDRIVER_DOWNLOAD_URL -ChromeDriverSha256 $ENV:CHROMEDRIVER_SHA256
 
 # Install WIX
 ENV WIX_VERSION="3.11.2" \
