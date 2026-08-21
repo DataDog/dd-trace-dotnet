@@ -1,8 +1,9 @@
 stages:
   - build
   - test
-  - publish
   - package
+  - sign-nuget
+  - publish-artifacts
   - shared-pipeline-build
   - shared-pipeline-test
   - shared-pipeline-publish
