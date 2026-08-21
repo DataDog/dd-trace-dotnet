@@ -10,7 +10,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
-using Datadog.Trace.Activity.DuckTypes;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Shared;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Proxy;
 using Datadog.Trace.ClrProfiler.CallTarget;
@@ -23,7 +22,6 @@ using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
 using Datadog.Trace.Util.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
-using Datadog.Trace.Vendors.Serilog.Events;
 
 #nullable enable
 
@@ -269,16 +267,23 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                         case "EventHub" when tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId.AzureEventHubs):
                             extractedContext = ExtractPropagatedContextFromMessaging(functionContext, "Properties", "PropertiesArray").MergeBaggageInto(Baggage.Current);
                             break;
+
+                        case "DurableOrchestration":
+                        case "DurableActivity":
+                        case "DurableEntity":
+                            // Durable Functions don't carry the trace context in the trigger binding. Instead, the
+                            // Functions host propagates a W3C traceparent via FunctionContext.TraceContext. On the
+                            // Durable Task Scheduler backend this traceparent is consistent for the whole
+                            // orchestration, so using it as the parent keeps orchestration/activity/entity
+                            // invocations on the originating trace (the storage backend does not propagate it reliably).
+                            extractedContext = ExtractPropagatedContextFromWorkerTraceContext(functionContext).MergeBaggageInto(Baggage.Current);
+                            break;
                     }
 
                     break;
                 }
 
                 var functionName = functionContext.FunctionDefinition.Name;
-                if (triggerType is "DurableOrchestration" or "DurableActivity")
-                {
-                    LogDurableInvocationTraceContext(functionContext, functionName ?? "unknown", triggerType, tracer);
-                }
 
                 if (tracer.InternalActiveScope == null)
                 {
@@ -470,138 +475,46 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
         }
 
         /// <summary>
-        /// Logs worker, Activity, active-scope, and trigger-metadata trace context for Durable orchestrator/activity
-        /// invocations. Enable with <c>DD_TRACE_DEBUG=1</c>.
+        /// Extracts the W3C trace context (traceparent/tracestate) that the Functions host propagates via
+        /// <see cref="IFunctionContext.TraceContext"/>. Durable Functions do not carry the trace context in the
+        /// trigger binding, so this is the only place the parent context is available. On the Durable Task Scheduler
+        /// backend the traceparent is consistent for the whole orchestration, so using it as the parent keeps the
+        /// orchestration, activity, and entity invocations on the originating trace.
         /// </summary>
-        private static void LogDurableInvocationTraceContext<T>(T functionContext, string functionName, string triggerType, Tracer tracer)
+        private static PropagationContext ExtractPropagatedContextFromWorkerTraceContext<T>(T functionContext)
             where T : IFunctionContext
         {
-            if (!Log.IsEnabled(LogEventLevel.Debug))
-            {
-                return;
-            }
-
             try
             {
-                TryGetWorkerTraceContextHeaders(functionContext, out var workerTraceParent, out var workerTraceState);
-
-                var activityId = "(none)";
-                var activityTraceId = "(none)";
-                var activitySpanId = "(none)";
-                var activityParentSpanId = "(none)";
-                var activityTraceState = "(none)";
-
-                var activity = global::System.Diagnostics.Activity.Current;
-                if (activity is not null)
+                if (functionContext.TraceContext is not { } rawTraceContext
+                 || !rawTraceContext.TryDuckCast<IWorkerTraceContext>(out var traceContext)
+                 || StringUtil.IsNullOrEmpty(traceContext.TraceParent))
                 {
-                    activityId = activity.Id ?? "(null)";
-                    if (activity.TryDuckCast<IW3CActivity>(out var w3cActivity))
+                    return default;
+                }
+
+                return Tracer.Instance.TracerManager.SpanContextPropagator.Extract(
+                    traceContext,
+                    static (ctx, name) =>
                     {
-                        activityTraceId = w3cActivity.TraceId ?? "(null)";
-                        activitySpanId = w3cActivity.SpanId ?? "(null)";
-                        activityParentSpanId = w3cActivity.RawParentSpanId ?? "(null)";
-                        activityTraceState = w3cActivity.TraceStateString ?? "(null)";
-                    }
-                }
+                        if (name.Equals("traceparent", StringComparison.OrdinalIgnoreCase))
+                        {
+                            return new[] { ctx.TraceParent };
+                        }
 
-                var activeScopeTraceId = "(none)";
-                var activeScopeSpanId = "(none)";
-                if (tracer.InternalActiveScope?.Span.Context is SpanContext activeContext)
-                {
-                    activeScopeTraceId = activeContext.RawTraceId;
-                    activeScopeSpanId = activeContext.RawSpanId;
-                }
+                        if (name.Equals("tracestate", StringComparison.OrdinalIgnoreCase))
+                        {
+                            return new[] { ctx.TraceState };
+                        }
 
-                var activitySummary =
-                    $"Id={activityId}, TraceId={activityTraceId}, SpanId={activitySpanId}, ParentSpanId={activityParentSpanId}, TraceState={activityTraceState}";
-                var triggerMetadataTraceContext = GetDurableTriggerMetadataTraceContextSummary(functionContext);
-
-                Log.Debug(
-                    "Durable Functions trace context [{TriggerType} {FunctionName}] worker: TraceParent={WorkerTraceParent}, TraceState={WorkerTraceState}",
-                    triggerType,
-                    functionName,
-                    workerTraceParent,
-                    workerTraceState);
-
-                Log.Debug(
-                    "Durable Functions trace context [{TriggerType} {FunctionName}] {ActivitySummary}; active scope TraceId={ActiveScopeTraceId}, SpanId={ActiveScopeSpanId}",
-                    triggerType,
-                    functionName,
-                    activitySummary,
-                    activeScopeTraceId,
-                    activeScopeSpanId);
-
-                Log.Debug(
-                    "Durable Functions trace context [{TriggerType} {FunctionName}] trigger metadata: {TriggerMetadataTraceContext}",
-                    triggerType,
-                    functionName,
-                    triggerMetadataTraceContext);
+                        return Enumerable.Empty<string?>();
+                    });
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Error logging Durable Functions trace context for {FunctionName}", functionName);
+                Log.Error(ex, "Error extracting propagated context from worker TraceContext");
+                return default;
             }
-        }
-
-        private static void TryGetWorkerTraceContextHeaders<T>(T functionContext, out string traceParent, out string traceState)
-            where T : IFunctionContext
-        {
-            traceParent = "(null)";
-            traceState = "(null)";
-
-            if (functionContext.TraceContext is null)
-            {
-                return;
-            }
-
-            if (functionContext.TraceContext.TryDuckCast<IWorkerTraceContext>(out var traceCtx))
-            {
-                traceParent = traceCtx.TraceParent ?? "(null)";
-                traceState = traceCtx.TraceState ?? "(null)";
-            }
-        }
-
-        private static string GetDurableTriggerMetadataTraceContextSummary<T>(T functionContext)
-            where T : IFunctionContext
-        {
-            var bindingsFeature = GetFeatureFromContext<T, FunctionBindingsFeatureStruct>(
-                functionContext,
-                "Microsoft.Azure.Functions.Worker.Context.Features.IFunctionBindingsFeature");
-
-            if (!bindingsFeature.HasValue)
-            {
-                return "(bindings feature unavailable)";
-            }
-
-            var triggerMetadata = bindingsFeature.Value.TriggerMetadata;
-            if (triggerMetadata is null)
-            {
-                return "(trigger metadata null)";
-            }
-
-            foreach (var key in new[] { "traceparent", "TraceParent", "ParentTraceContext", "parentTraceContext", "distributedTraceContext" })
-            {
-                if (triggerMetadata.TryGetValue(key, out var value) && value is not null)
-                {
-                    return $"{key}={FormatTraceContextLogValue(value)}";
-                }
-            }
-
-            return "(no trace context keys in trigger metadata)";
-        }
-
-        private static string FormatTraceContextLogValue(object value)
-        {
-            var text = value.ToString() ?? string.Empty;
-            const int maxLength = 512;
-            if (text.Length <= maxLength)
-            {
-                return text;
-            }
-
-#pragma warning disable CA1845 // Substring required for netstandard2.0
-            return text.Substring(0, maxLength) + "...";
-#pragma warning restore CA1845
         }
 
         private static TFeature? GetFeatureFromContext<T, TFeature>(T context, string featureTypeName)
