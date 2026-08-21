@@ -219,6 +219,28 @@ build:
     CI_IDENTITIES_GITLAB_ID_TOKEN:
       aud: ci-identities
 
+sign-azure-windows-artifacts:
+  stage: build
+  timeout: 30m
+  tags: ["windows-v2:2022"]
+  needs: []
+  allow_failure: true
+  hooks:
+    pre_get_sources_script:
+      - git config --system core.longpaths true
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "master" || $CI_COMMIT_BRANCH == "main" || $CI_COMMIT_BRANCH =~ /^release\/.+/ || $CI_COMMIT_BRANCH =~ /^hotfix\/.+/'
+      when: manual
+  script:
+    - .gitlab/sign-azure-windows-artifacts.ps1
+  artifacts:
+    expire_in: 1 day
+    paths:
+      - .gitlab/azure-windows-signing-output
+  id_tokens:
+    CI_IDENTITIES_GITLAB_ID_TOKEN:
+      aud: ci-identities
+
 publish:
   only:
     - master
@@ -357,8 +379,8 @@ benchmark-serverless:
   needs:
     - benchmark-serverless-trigger
   script:
-    - curl -OL "https://binaries.ddbuild.io/dd-source/authanywhere/LATEST/authanywhere-linux-amd64" 
-    - mv "authanywhere-linux-amd64" /bin/authanywhere 
+    - curl -OL "https://binaries.ddbuild.io/dd-source/authanywhere/LATEST/authanywhere-linux-amd64"
+    - mv "authanywhere-linux-amd64" /bin/authanywhere
     - chmod +x /bin/authanywhere
     - BTI_CI_API_TOKEN=$(authanywhere --audience rapid-devex-ci)
     - >-
@@ -456,7 +478,7 @@ validate_supported_configurations_v2_local_file:
   variables:
     LOCAL_CONFIG_PATH: $SUPPORTED_CONFIG_PATH
     BACKFILLED: true
-  
+
 update_central_configurations_version_range_v2:
   extends: .update_central_configurations_version_range_v2
   variables:

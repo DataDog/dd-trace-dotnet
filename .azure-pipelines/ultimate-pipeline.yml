@@ -3928,6 +3928,37 @@ stages:
         artifact: linux-universal-home-linux-arm64
         path: $(monitoringHome)/linux-musl-arm64
 
+    # Temporary bridge while release packaging is still in Azure but Windows code
+    # signing is only available through GitLab CI identities.
+    - task: CopyFiles@2
+      displayName: Prepare Windows signing input
+      condition: and(succeeded(), eq(variables.isMainOrReleaseBranch, true), ne(variables['Build.Reason'], 'Schedule'))
+      inputs:
+        SourceFolder: $(monitoringHome)
+        Contents: |
+          win-x86/**
+          win-x64/**
+        TargetFolder: $(Build.ArtifactStagingDirectory)/windows-signing-input
+        CleanTargetFolder: true
+
+    - publish: $(Build.ArtifactStagingDirectory)/windows-signing-input
+      displayName: Upload Windows signing input
+      artifact: windows-signing-input
+      condition: and(succeeded(), eq(variables.isMainOrReleaseBranch, true), ne(variables['Build.Reason'], 'Schedule'))
+
+    - powershell: |
+        & .azure-pipelines/steps/invoke-gitlab-windows-signing.ps1 `
+          -AzureBuildId '$(Build.BuildId)' `
+          -AzureSourceVersion '$(Build.SourceVersion)' `
+          -AzureSourceBranch '$(Build.SourceBranch)' `
+          -AzureArtifactName 'windows-signing-input' `
+          -MonitoringHome '$(monitoringHome)' `
+          -GitLabApiToken $env:GITLAB_WINDOWS_SIGNING_API_TOKEN
+      displayName: Sign Windows artifacts in GitLab
+      condition: and(succeeded(), eq(variables.isMainOrReleaseBranch, true), ne(variables['Build.Reason'], 'Schedule'))
+      env:
+        GITLAB_WINDOWS_SIGNING_API_TOKEN: $(GITLAB_WINDOWS_SIGNING_API_TOKEN)
+
     - script: tracer\build.cmd CreateBundleHome BuildBundleNuget BuildAzureFunctionsNuget BuildRunnerTool PackRunnerToolNuget BuildStandaloneTool BuildBenchmarkNuget
       displayName: Build tools and pack NuGet packages (Bundle, AzureFunctions, Benchmark)
       env:

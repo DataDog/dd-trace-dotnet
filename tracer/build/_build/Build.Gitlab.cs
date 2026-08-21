@@ -22,6 +22,9 @@ using Logger = Serilog.Log;
 
 partial class Build
 {
+    [Parameter("Directory containing Windows artifacts to Authenticode-sign")]
+    readonly AbsolutePath WindowsSigningDirectory;
+
     Target DownloadWinSsiTelemetryForwarder => _ => _
        .Description("Downloads the telemetry forwarder executable used by SSI ")
        .Unlisted()
@@ -69,6 +72,26 @@ partial class Build
                                                   .Concat(ArtifactsDirectory.GlobFiles("**/dd-dotnet"));
             var dlls = homeDlls.Concat(dllsInBin).Concat(waf).Concat(ddDotnet);
             SignFiles(dlls.ToList());
+        });
+
+    Target SignWindowsArtifacts => _ => _
+       .Description("Authenticode-sign an externally produced Windows artifact directory")
+       .Unlisted()
+       .Requires(() => IsWin)
+       .Requires(() => WindowsSigningDirectory)
+       .Executes(() =>
+        {
+            var files = WindowsSigningDirectory
+                       .GlobFiles("**/Datadog*.dll", "**/ddwaf.dll", "**/datadog_profiling_ffi.dll")
+                       .Distinct()
+                       .ToList();
+
+            if (files.Count == 0)
+            {
+                throw new Exception($"No Windows binaries to sign were found in {WindowsSigningDirectory}");
+            }
+
+            SignFiles(files);
         });
 
     Target SignMsi => _ => _
