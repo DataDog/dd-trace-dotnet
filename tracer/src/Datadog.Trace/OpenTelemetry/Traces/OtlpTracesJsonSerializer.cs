@@ -438,6 +438,9 @@ internal sealed class OtlpTracesJsonSerializer : ISpanBufferSerializer
 
     internal void WriteSpans(JsonTextWriter writer, in TraceChunkModel traceChunk, bool emitStartingComma)
     {
+        var otelTraceState = traceChunk.SpanCount > 0 ? traceChunk.GetSpanModel(0).Span.Context.OtelTraceState : null;
+        var otlpTraceState = StringUtil.IsNullOrEmpty(otelTraceState) ? null : "ot=" + otelTraceState;
+
         for (var i = 0; i < traceChunk.SpanCount; i++)
         {
             // If we are emitting a starting comma, then our JSON writer is re-entrant and the state is not
@@ -452,14 +455,20 @@ internal sealed class OtlpTracesJsonSerializer : ISpanBufferSerializer
             // or if its parent can also be found in the same chunk, so we use SpanModel
             // to pass that information to the serializer
             var spanModel = traceChunk.GetSpanModel(i);
-            WriteSpan(writer, spanModel);
+            WriteSpan(writer, spanModel, otlpTraceState);
         }
     }
 
-    internal void WriteSpan(JsonTextWriter writer, SpanModel spanModel)
+    internal void WriteSpan(JsonTextWriter writer, SpanModel spanModel, string? otlpTraceState = null)
     {
         static Action<KeyValue> WriteKeyValue(JsonTextWriter writer)
             => keyValue => OtlpTracesJsonSerializer.WriteKeyValue(writer, keyValue);
+
+        if (otlpTraceState is null)
+        {
+            var otelTraceState = spanModel.Span.Context.OtelTraceState;
+            otlpTraceState = StringUtil.IsNullOrEmpty(otelTraceState) ? null : "ot=" + otelTraceState;
+        }
 
         writer.WriteStartObject();
 
@@ -472,11 +481,10 @@ internal sealed class OtlpTracesJsonSerializer : ISpanBufferSerializer
         writer.WriteValue(spanModel.Span.Context.RawSpanId);
 
         // traceState (optional)
-        var otelTraceState = spanModel.Span.Context.OtelTraceState;
-        if (!StringUtil.IsNullOrEmpty(otelTraceState))
+        if (otlpTraceState is not null)
         {
             writer.WritePropertyName("traceState");
-            writer.WriteValue("ot=" + otelTraceState);
+            writer.WriteValue(otlpTraceState);
         }
 
         // parentSpanId (optional) - encoded as hex string in JSON
