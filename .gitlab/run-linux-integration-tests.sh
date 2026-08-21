@@ -230,7 +230,10 @@ case "$test_suite" in
       # The EC2 regional Ubuntu mirror occasionally stalls or returns 503s. Use
       # the canonical mirror and let APT retry transient downloads instead of
       # spending most of the job timeout on a single failed install.
-      sed -i 's|http://us-east-1.ec2.archive.ubuntu.com/ubuntu|http://archive.ubuntu.com/ubuntu|g' /etc/apt/sources.list
+      sed -i \
+        -e 's|http://us-east-1.ec2.archive.ubuntu.com/ubuntu|http://archive.ubuntu.com/ubuntu|g' \
+        -e 's|http://us-east-1.ec2.ports.ubuntu.com/ubuntu-ports|http://ports.ubuntu.com/ubuntu-ports|g' \
+        /etc/apt/sources.list
       apt-get -o Acquire::Retries=5 -o Acquire::http::Timeout=30 update
       apt-get -o Acquire::Retries=5 -o Acquire::http::Timeout=30 \
         install --yes --no-install-recommends docker-compose
