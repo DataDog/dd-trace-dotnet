@@ -1,0 +1,43 @@
+name: "Create System Test docker base images (master)"
+on:
+  # This GitHub Action is invoked automatically from the main Azure DevOps
+  # build when building the main branch (a snapshot). It is launched from
+  # Azure DevOps instead of using a GitHub event, as it requires the assets
+  # that are created by the Azure DevOps build. The build only produces
+  # snapshots, not releases.
+  #
+  # This workflow runs in the `publish-debug-symbols-env` protected environment so it
+  # can use AZURE_DEVOPS_TOKEN for authenticated (higher rate-limit) artifact downloads.
+  # It's only dispatched from branches allowed to deploy to that environment (i.e. master).
+  # See create-system-test-docker-base-images-pr.yml for the PR equivalent, which has no
+  # access to that environment and downloads artifacts anonymously instead.
+  workflow_dispatch:
+    inputs:
+      azdo_build_id:
+        description: 'The specific AzDo build from which the release artifacts will be downloaded.'
+        required: true
+
+      branch_name:
+        description: 'Branch name for tagging (optional). If provided, tags as branch name instead of latest_snapshot'
+        required: false
+
+jobs:
+  build-and-publish-base-image:
+    runs-on: ubuntu-latest
+    environment: publish-debug-symbols-env
+    permissions:
+      contents: read
+      packages: write # pushing to ghcr.io
+    steps:
+    - name: Checkout
+      uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      with:
+        fetch-depth: 0
+
+    - uses: ./.github/actions/create-system-test-docker-base-images
+      name: 'Create system test docker images'
+      with:
+        azdo_build_id: "${{ github.event.inputs.azdo_build_id }}"
+        branch_name: "${{ github.event.inputs.branch_name }}"
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        azure_devops_token: ${{ secrets.AZURE_DEVOPS_TOKEN }}
