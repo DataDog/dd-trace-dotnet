@@ -442,9 +442,18 @@ namespace Datadog.Trace
                         rv = th > 0 ? th - 1 : 0;
                     }
 
-                    // Rate-limiter demotion removes th in the same rewrite.
-                    _otelTraceState = OtelTraceStateHelpers.SetRvTh(_otelTraceState, rv, didSample && SamplingPriorityValues.IsDrop(p) ? null : th);
-                    _containsLocallyGeneratedOtelRandomValue = true;
+                    var rateLimiterRejected = didSample && SamplingPriorityValues.IsDrop(p);
+                    if (rateLimiterRejected)
+                    {
+                        var inheritedRv = _containsLocallyGeneratedOtelRandomValue ? null : OtelTraceStateHelpers.ExtractRv(_otelTraceState);
+                        _otelTraceState = OtelTraceStateHelpers.SetRvTh(_otelTraceState, inheritedRv ?? rv, th: null);
+                        _containsLocallyGeneratedOtelRandomValue = inheritedRv is null;
+                    }
+                    else
+                    {
+                        _otelTraceState = OtelTraceStateHelpers.SetRvTh(_otelTraceState, rv, th);
+                        _containsLocallyGeneratedOtelRandomValue = true;
+                    }
                 }
             }
             else if (mechanism is Sampling.SamplingMechanism.Manual or Sampling.SamplingMechanism.Asm)
