@@ -75,6 +75,19 @@ public class MockOtlpTraceDecodingTests
     }
 
     [Fact]
+    public async Task JsonDecode_WithBase64Ids_ProducesSameSpanAsProtobuf()
+    {
+        using var agent = MockTracerAgent.Create(_output);
+        var json = JsonFormatter.Default.Format(CreateExportRequest());
+
+        var response = await PostAsync(agent, "/v1/traces", Encoding.UTF8.GetBytes(json), "application/json");
+
+        response.StatusCode.Should().Be(System.Net.HttpStatusCode.OK);
+        var span = agent.OtlpSpans.Should().ContainSingle().Subject;
+        AssertDecodedSpan(span);
+    }
+
+    [Fact]
     public async Task GzipCompressedBody_DecodesCorrectly()
     {
         using var agent = MockTracerAgent.Create(_output);

@@ -255,7 +255,9 @@ namespace Datadog.Trace.TestHelpers
                 count,
                 timeoutInMilliseconds,
                 operationName,
-                minDateTime,
+                // OTLP timestamps are unsigned, so zero is the earliest possible timestamp.
+                // DateTimeOffset.MinValue cannot be represented in Unix nanoseconds without overflowing.
+                minDateTime ?? DateTimeOffset.UnixEpoch,
                 returnAllOperations,
                 failOnTimeout,
                 "because the requested OTLP spans should be received before the timeout");
