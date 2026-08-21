@@ -123,7 +123,14 @@ RUN if [ "$(uname -m)" = "x86_64" ]; \
 ARG AZURE_FUNCTIONS_CORE_TOOLS_VERSION=4.11.0
 
 RUN if [ "$(uname -m)" = "x86_64" ]; \
-    then curl -fsSL "https://github.com/Azure/azure-functions-core-tools/releases/download/${AZURE_FUNCTIONS_CORE_TOOLS_VERSION}/Azure.Functions.Cli.linux-x64.${AZURE_FUNCTIONS_CORE_TOOLS_VERSION}.zip" --output azure-functions-core-tools.zip \
+    then attempt=1; \
+        until curl -fsSL --connect-timeout 30 "https://github.com/Azure/azure-functions-core-tools/releases/download/${AZURE_FUNCTIONS_CORE_TOOLS_VERSION}/Azure.Functions.Cli.linux-x64.${AZURE_FUNCTIONS_CORE_TOOLS_VERSION}.zip" --output azure-functions-core-tools.zip; do \
+            if [ "$attempt" -ge 5 ]; then exit 1; fi; \
+            echo "Azure Functions Core Tools download failed; retrying (attempt $((attempt + 1))/5)" >&2; \
+            rm -f azure-functions-core-tools.zip; \
+            sleep $((attempt * 5)); \
+            attempt=$((attempt + 1)); \
+        done \
         && mkdir -p /opt/azure-functions-core-tools \
         && unzip -q azure-functions-core-tools.zip -d /opt/azure-functions-core-tools \
         && chmod +x /opt/azure-functions-core-tools/func \
