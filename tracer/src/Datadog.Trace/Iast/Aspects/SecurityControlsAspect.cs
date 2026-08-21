@@ -23,11 +23,11 @@ namespace Datadog.Trace.Iast.Aspects;
 public sealed class SecurityControlsAspect
 {
     /// <summary>
-    /// String.Trim aspect
+    /// MarkAsSecure
     /// </summary>
     /// <param name="target"> string base instance </param>
     /// <param name="mark"> secure mark to add to the object, if tainted </param>
-    /// <returns> String.Trim() </returns>
+    /// <returns> target </returns>
     public static object? MarkAsSecure(object? target, uint mark)
     {
         try

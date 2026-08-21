@@ -91,8 +91,7 @@
     <None Include="$(DotNetRuntimeFiles)" />
 
     <!-- We use Unsafe.IsNullRef() which was added in .NET 5 -->
-    <Compile Include="Vendors/System.Runtime.CompilerServices.Unsafe/Unsafe.cs"
-        Condition="!$([MSBuild]::IsTargetFrameworkCompatible($(TargetFramework), 'net5.0'))" />
+    <Compile Include="Vendors/System.Runtime.CompilerServices.Unsafe/Unsafe.cs" Condition="!$([MSBuild]::IsTargetFrameworkCompatible($(TargetFramework), 'net5.0'))" />
   </ItemGroup>
 
   <ItemGroup>
@@ -100,6 +99,10 @@
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </AdditionalFiles>
     <AdditionalFiles Include="..\..\..\BannedSymbols.txt" Link="BannedSymbols.txt" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Generated\net461\Datadog.Trace.SourceGenerators\TelemetryMetricGenerator\" />
   </ItemGroup>
 
   <!-- Below this point is reserved for vendor items -->

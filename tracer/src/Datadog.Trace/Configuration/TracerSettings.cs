@@ -32,29 +32,15 @@ namespace Datadog.Trace.Configuration
 
         private readonly Lazy<string> _fallbackApplicationName;
 
-        [TestingOnly]
-        internal TracerSettings()
-            : this(null, new OverrideErrorLog())
-        {
-        }
-
-        [TestingOnly]
-        internal TracerSettings(IConfigurationSource? source)
-        : this(source, new OverrideErrorLog())
-        {
-        }
-
         /// <summary>
         /// Initializes a new instance of the <see cref="TracerSettings"/> class.
         /// The "main" constructor for <see cref="TracerSettings"/> that should be used internally in the library.
         /// </summary>
         /// <param name="source">The configuration source. If <c>null</c> is provided, uses <see cref="NullConfigurationSource"/> </param>
-        /// <param name="errorLog">Used to record cases where telemetry is overridden </param>
-        internal TracerSettings(IConfigurationSource? source, OverrideErrorLog errorLog)
+        internal TracerSettings(IConfigurationSource? source)
         {
             var commaSeparator = Separators.Comma;
             source ??= NullConfigurationSource.Instance;
-            ErrorLog = errorLog;
             var config = new ConfigurationBuilder(source);
 
             ExperimentalFeaturesEnabled = config
@@ -92,10 +78,7 @@ namespace Datadog.Trace.Configuration
                                                   value => string.Equals(value, "true", StringComparison.OrdinalIgnoreCase)
                                                                ? ParsingResult<bool>.Success(result: false)
                                                                : ParsingResult<bool>.Failure());
-            IsActivityListenerEnabled = config
-                                       .WithKeys(ConfigurationKeys.FeatureFlags.OpenTelemetryEnabled)
-                                       .AsBoolResult()
-                                       .OverrideWith(in otelActivityListenerEnabled, ErrorLog, defaultValue: false);
+            IsActivityListenerEnabled = false;
 
             PeerServiceTagsEnabled = config
                .WithKeys(ConfigurationKeys.PeerServiceDefaultsEnabled)
@@ -141,15 +124,6 @@ namespace Datadog.Trace.Configuration
             var runtimeMetricsEnabledResult = config
                                              .WithKeys(ConfigurationKeys.RuntimeMetricsEnabled)
                                              .AsBoolResult();
-
-            if (runtimeMetricsEnabledResult.ConfigurationResult.IsPresent && otelExporterResult.ConfigurationResult.IsPresent)
-            {
-                ErrorLog.LogDuplicateConfiguration(ConfigurationKeys.RuntimeMetricsEnabled, ConfigurationKeys.OpenTelemetry.MetricsExporter);
-            }
-            else if (otelExporterResult.ConfigurationResult is { IsPresent: true, IsValid: false })
-            {
-                ErrorLog.LogInvalidConfiguration(ConfigurationKeys.OpenTelemetry.MetricsExporter);
-            }
 
 #if NET6_0_OR_GREATER
             var defaultRuntimeMetrics = true;
@@ -336,11 +310,6 @@ namespace Datadog.Trace.Configuration
                 _ => true // Default to otlp per spec
             };
 
-            if (otelLogsExporterResult.ConfigurationResult is { IsPresent: true, IsValid: false })
-            {
-                ErrorLog.LogInvalidConfiguration(ConfigurationKeys.OpenTelemetry.LogsExporter);
-            }
-
             OpenTelemetryLogsEnabled = config
                                     .WithKeys(ConfigurationKeys.FeatureFlags.OpenTelemetryLogsEnabled)
                                     .AsBool(defaultValue: false);
@@ -459,19 +428,9 @@ namespace Datadog.Trace.Configuration
                                  validator: injectionValidator, // invalid individual values are rejected later
                                  converter: otelConverter);
 
-            PropagationStyleInject = config
-               .WithKeys(ConfigurationKeys.PropagationStyleInject)
-               .GetAsClassResult(
-                    validator: injectionValidator, // invalid individual values are rejected later
-                    converter: style => TrimSplitString(style, commaSeparator))
-               .OverrideWith(in otelPropagation, ErrorLog, getDefaultPropagationHeaders);
+            PropagationStyleInject = new string[1];
 
-            PropagationStyleExtract = config
-                                     .WithKeys(ConfigurationKeys.PropagationStyleExtract)
-                                     .GetAsClassResult(
-                                          validator: injectionValidator, // invalid individual values are rejected later
-                                          converter: style => TrimSplitString(style, commaSeparator))
-                                     .OverrideWith(in otelPropagation, ErrorLog, getDefaultPropagationHeaders);
+            PropagationStyleExtract = new string[1];
 
             PropagationExtractFirstOnly = config
                                          .WithKeys(ConfigurationKeys.PropagationExtractFirstOnly)
@@ -646,14 +605,12 @@ namespace Datadog.Trace.Configuration
             // We create a lazy here because this is kind of expensive, and we want to avoid calling it if we can
             _fallbackApplicationName = new(() => ApplicationNameHelpers.GetFallbackApplicationName(this));
 
-            Manager = new(source, this, errorLog);
+            Manager = new(source, this);
         }
 
         internal HashSet<string> ExperimentalFeaturesEnabled { get; }
 
         internal bool PropagateProcessTags { get; }
-
-        internal OverrideErrorLog ErrorLog { get; }
 
         internal string FallbackApplicationName => _fallbackApplicationName.Value;
 
@@ -1146,7 +1103,7 @@ namespace Datadog.Trace.Configuration
             !IsRunningInGCPFunctions;
 
         internal static TracerSettings FromDefaultSourcesInternal()
-            => new(GlobalConfigurationSource.Instance, new OverrideErrorLog());
+            => new(GlobalConfigurationSource.Instance);
 
         internal static ReadOnlyDictionary<string, string>? TrimConfigKeysValues(ConfigurationBuilder.HasKeys key)
         {

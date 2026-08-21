@@ -244,9 +244,6 @@
     <Compile Include="..\Datadog.Trace\Vendors\MessagePack\StringEncoding.cs">
       <Link>MessagePack\StringEncoding.cs</Link>
     </Compile>
-    <Compile Update="TelemetryMetric\Sources.Attributes.cs">
-      <DependentUpon>Sources.cs</DependentUpon>
-    </Compile>
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="3.11.0" PrivateAssets="all" />

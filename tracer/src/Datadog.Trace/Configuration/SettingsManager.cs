@@ -30,9 +30,9 @@ public sealed partial record TracerSettings
 
         private SettingChanges? _latest;
 
-        public SettingsManager(IConfigurationSource source, TracerSettings tracerSettings, OverrideErrorLog errorLog)
+        public SettingsManager(IConfigurationSource source, TracerSettings tracerSettings)
         {
-            InitialMutableSettings = MutableSettings.CreateInitialMutableSettings(source, errorLog, tracerSettings);
+            InitialMutableSettings = MutableSettings.CreateInitialMutableSettings(source, tracerSettings);
             _tracerSettings = tracerSettings;
         }
 
@@ -148,13 +148,11 @@ public sealed partial record TracerSettings
             var current = _latest;
             var currentMutable = current?.UpdatedMutable ?? current?.PreviousMutable ?? InitialMutableSettings;
 
-            var overrideErrorLog = new OverrideErrorLog();
             var newMutableSettings = MutableSettings.CreateUpdatedMutableSettings(
                 dynamicConfigSource,
                 manualSource,
                 initialSettings,
-                _tracerSettings,
-                overrideErrorLog);
+                _tracerSettings);
 
             var isSameMutableSettings = currentMutable.Equals(newMutableSettings);
 

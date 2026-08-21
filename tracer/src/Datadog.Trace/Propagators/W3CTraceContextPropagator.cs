@@ -1,4 +1,4 @@
-﻿// <copyright file="W3CTraceContextPropagator.cs" company="Datadog">
+// <copyright file="W3CTraceContextPropagator.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -126,8 +126,6 @@ namespace Datadog.Trace.Propagators
                 // nothing to inject
                 return;
             }
-
-            TelemetryFactory.Metrics.RecordCountContextHeaderStyleInjected(MetricTags.ContextHeaderStyle.TraceContext);
 
             var traceparent = CreateTraceParentHeader(spanContext);
             carrierSetter.Set(carrier, TraceParentHeaderName, traceparent);
@@ -328,7 +326,6 @@ namespace Datadog.Trace.Propagators
                 rawTraceId: rawTraceId,
                 rawParentId: rawSpanId);
 
-            TelemetryFactory.Metrics.RecordCountContextHeaderStyleExtracted(MetricTags.ContextHeaderStyle.TraceContext);
             return true;
         }
 
@@ -661,7 +658,6 @@ namespace Datadog.Trace.Propagators
 
             context = new PropagationContext(spanContext, baggage: null);
 
-            TelemetryFactory.Metrics.RecordCountContextHeaderStyleExtracted(MetricTags.ContextHeaderStyle.TraceContext);
             return true;
         }
 

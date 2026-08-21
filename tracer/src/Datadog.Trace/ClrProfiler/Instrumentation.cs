@@ -91,7 +91,6 @@ namespace Datadog.Trace.ClrProfiler
                         InstrumentationCategory enabledCategories = InstrumentationCategory.Tracing;
                         var defs = NativeMethods.InitEmbeddedCallTargetDefinitions(enabledCategories, ConfigTelemetryData.TargetFramework);
                         Log.Information<int>("The profiler has been initialized with {Count} definitions.", defs);
-                        TelemetryFactory.Metrics.RecordGaugeInstrumentations(MetricTags.InstrumentationComponent.CallTarget, defs);
 
                         var iastEnabled = Iast.Iast.Instance.Settings.Enabled;
 
@@ -106,7 +105,6 @@ namespace Datadog.Trace.ClrProfiler
                         Log.Error(ex, "Error sending definitions to native library");
                     }
 
-                    TelemetryFactory.Metrics.RecordDistributionSharedInitTime(MetricTags.InitializationComponent.CallTargetDefsPinvoke, sw.ElapsedMilliseconds);
                     sw.Restart();
 
                     InitializeTracer(ref sw);
@@ -115,8 +113,6 @@ namespace Datadog.Trace.ClrProfiler
                 LifetimeManager.Instance.AddShutdownTask(RunShutdown);
 
                 Log.Debug("Initialization finished.");
-
-                TelemetryFactory.Metrics.RecordDistributionSharedInitTime(MetricTags.InitializationComponent.Total, swTotal.ElapsedMilliseconds);
             }
             catch (Exception ex)
             {
@@ -263,7 +259,6 @@ namespace Datadog.Trace.ClrProfiler
                 Log.Debug("Tracer.Instance is null after InitializeNoNativeParts was invoked");
             }
 
-            TelemetryFactory.Metrics.RecordDistributionSharedInitTime(MetricTags.InitializationComponent.Managed, sw.ElapsedMilliseconds);
             sw.Restart();
         }
 
@@ -289,7 +284,6 @@ namespace Datadog.Trace.ClrProfiler
                     Log.Error(ex, "Error initializing TraceMethods instrumentation");
                 }
 
-                TelemetryFactory.Metrics.RecordDistributionSharedInitTime(MetricTags.InitializationComponent.TraceMethodsPinvoke, sw.ElapsedMilliseconds);
                 sw.Restart();
             }
         }
@@ -336,7 +330,6 @@ namespace Datadog.Trace.ClrProfiler
         internal static void EnableTracerInstrumentations(InstrumentationCategory categories, Stopwatch sw = null)
         {
             var defs = NativeMethods.EnableCallTargetDefinitions((uint)categories);
-            TelemetryFactory.Metrics.RecordGaugeInstrumentations(MetricTags.InstrumentationComponent.CallTarget, defs);
             EnableCallSiteInstrumentations(categories, sw);
         }
 
@@ -350,11 +343,9 @@ namespace Datadog.Trace.ClrProfiler
 
                 var aspects = NativeMethods.InitEmbeddedCallSiteDefinitions(categories, ConfigTelemetryData.TargetFramework);
                 Log.Information<int>("IAST: {Aspects} Callsite Dataflow Aspects added to the profiler.", aspects);
-                TelemetryFactory.Metrics.RecordGaugeInstrumentations(MetricTags.InstrumentationComponent.IastAspects, aspects);
 
                 if (sw != null)
                 {
-                    TelemetryFactory.Metrics.RecordDistributionSharedInitTime(MetricTags.InitializationComponent.Iast, sw.ElapsedMilliseconds);
                     sw.Restart();
                 }
             }

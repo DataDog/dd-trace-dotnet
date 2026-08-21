@@ -47,7 +47,6 @@ namespace Datadog.Trace
 
         private readonly IDisposable _settingSubscription;
         private PerTraceSettings _perTraceSettings;
-        private volatile bool _isClosing;
 
         public TracerManager(
             TracerSettings settings,
@@ -63,7 +62,7 @@ namespace Datadog.Trace
             Settings = settings;
             ScopeManager = scopeManager;
             GitMetadataTagsProvider = gitMetadataTagsProvider;
-            Telemetry = telemetry;
+            Telemetry = telemetry ?? NullTelemetryController.Instance;
             QueryStringManager = new(settings.QueryStringReportingEnabled, settings.ObfuscationQueryStringRegexTimeout, settings.QueryStringReportingSize, settings.ObfuscationQueryStringRegex);
 
             DynamicConfigurationManager = dynamicConfigurationManager;
@@ -154,8 +153,6 @@ namespace Datadog.Trace
 
             if (oldManager is not null)
             {
-                // Clean up the old TracerManager instance
-                oldManager._isClosing = true;
                 // Fire and forget
                 _ = CleanUpOldTracerManager(oldManager, newManager);
             }
@@ -224,245 +221,6 @@ namespace Datadog.Trace
             catch (Exception ex)
             {
                 Log.Error(ex, "Error cleaning up old tracer manager");
-            }
-        }
-
-        private static async Task WriteDiagnosticLog(TracerManager instance, MutableSettings mutableSettings)
-        {
-            try
-            {
-                if (instance._isClosing)
-                {
-                    return;
-                }
-
-                string agentError = null;
-                var instanceSettings = instance.Settings;
-
-                var stringWriter = new StringWriter();
-
-                using (var writer = new JsonTextWriter(stringWriter) { ArrayPool = JsonArrayPool.Shared })
-                {
-                    void WriteDictionary(IReadOnlyDictionary<string, string> dictionary)
-                    {
-                        writer.WriteStartArray();
-
-                        if (dictionary is not null)
-                        {
-                            foreach (var kvp in dictionary)
-                            {
-                                writer.WriteValue($"{kvp.Key}:{kvp.Value}");
-                            }
-                        }
-
-                        writer.WriteEndArray();
-                    }
-
-                    // ReSharper disable MethodHasAsyncOverload
-                    writer.WriteStartObject();
-
-                    writer.WritePropertyName("date");
-                    writer.WriteValue(DateTime.Now);
-
-                    writer.WritePropertyName("os_name");
-                    writer.WriteValue(FrameworkDescription.Instance.OSPlatform);
-
-                    writer.WritePropertyName("os_version");
-                    writer.WriteValue(Environment.OSVersion.ToString());
-
-                    writer.WritePropertyName("version");
-                    writer.WriteValue(TracerConstants.AssemblyVersion);
-
-                    writer.WritePropertyName("native_tracer_version");
-                    writer.WriteValue(Instrumentation.GetNativeTracerVersion());
-
-                    writer.WritePropertyName("platform");
-                    writer.WriteValue(FrameworkDescription.Instance.ProcessArchitecture);
-
-                    writer.WritePropertyName("lang");
-                    writer.WriteValue(FrameworkDescription.Instance.Name);
-
-                    writer.WritePropertyName("lang_version");
-                    writer.WriteValue(FrameworkDescription.Instance.ProductVersion);
-
-                    writer.WritePropertyName("env");
-                    writer.WriteValue(mutableSettings.Environment);
-
-                    writer.WritePropertyName("enabled");
-                    writer.WriteValue(mutableSettings.TraceEnabled);
-
-                    writer.WritePropertyName("service");
-                    writer.WriteValue(mutableSettings.DefaultServiceName);
-
-                    writer.WritePropertyName("debug");
-                    writer.WriteValue(GlobalSettings.Instance.DebugEnabled);
-
-                    writer.WritePropertyName("health_checks_enabled");
-                    writer.WriteValue(mutableSettings.TracerMetricsEnabled);
-
-#pragma warning disable 618 // App analytics is deprecated, but still used
-                    writer.WritePropertyName("analytics_enabled");
-                    writer.WriteValue(mutableSettings.AnalyticsEnabled);
-#pragma warning restore 618
-
-                    writer.WritePropertyName("sample_rate");
-                    writer.WriteValue(mutableSettings.GlobalSamplingRate);
-
-                    writer.WritePropertyName("sampling_rules");
-                    writer.WriteValue(mutableSettings.CustomSamplingRules);
-
-                    writer.WritePropertyName("tags");
-                    WriteDictionary(mutableSettings.GlobalTags);
-
-                    writer.WritePropertyName("log_injection_enabled");
-                    writer.WriteValue(mutableSettings.LogsInjectionEnabled);
-
-                    writer.WritePropertyName("disabled_integrations");
-                    writer.WriteStartArray();
-
-                    // In contrast to 1.x, this only shows _known_ integrations, but
-                    // lists them whether they were explicitly disabled with
-                    // DD_DISABLED_INTEGRATIONS, DD_TRACE_{0}_ENABLED, DD_{0}_ENABLED,
-                    // or manually in code.
-                    foreach (var integration in mutableSettings.Integrations.Settings)
-                    {
-                        if (integration.Enabled == false)
-                        {
-                            writer.WriteValue(integration.IntegrationName);
-                        }
-                    }
-
-                    writer.WriteEndArray();
-
-                    writer.WritePropertyName("routetemplate_resourcenames_enabled");
-                    writer.WriteValue(instanceSettings.RouteTemplateResourceNamesEnabled);
-
-                    writer.WritePropertyName("routetemplate_expansion_enabled");
-                    writer.WriteValue(instanceSettings.ExpandRouteTemplatesEnabled);
-
-                    writer.WritePropertyName("querystring_reporting_enabled");
-                    writer.WriteValue(instanceSettings.QueryStringReportingEnabled);
-
-                    writer.WritePropertyName("obfuscation_querystring_regex_timeout");
-                    writer.WriteValue(instanceSettings.ObfuscationQueryStringRegexTimeout);
-
-                    writer.WritePropertyName("obfuscation_querystring_size");
-                    writer.WriteValue(instanceSettings.QueryStringReportingSize);
-
-                    if (string.Compare(instanceSettings.ObfuscationQueryStringRegex, TracerSettingsConstants.DefaultObfuscationQueryStringRegex, StringComparison.Ordinal) != 0)
-                    {
-                        writer.WritePropertyName("obfuscation_querystring_regex");
-                        writer.WriteValue(instanceSettings.ObfuscationQueryStringRegex);
-                    }
-
-                    writer.WritePropertyName("partialflush_enabled");
-                    writer.WriteValue(instanceSettings.PartialFlushEnabled);
-
-                    writer.WritePropertyName("partialflush_minspans");
-                    writer.WriteValue(instanceSettings.PartialFlushMinSpans);
-
-                    writer.WritePropertyName("runtime_id");
-                    writer.WriteValue(Tracer.RuntimeId);
-
-                    writer.WritePropertyName("agent_reachable");
-                    writer.WriteValue(agentError == null);
-
-                    writer.WritePropertyName("agent_error");
-                    writer.WriteValue(agentError ?? string.Empty);
-
-                    writer.WritePropertyName("iast_enabled");
-                    writer.WriteValue(Datadog.Trace.Iast.Iast.Instance.Settings.Enabled);
-
-                    writer.WritePropertyName("iast_deduplication_enabled");
-                    writer.WriteValue(Datadog.Trace.Iast.Iast.Instance.Settings.DeduplicationEnabled);
-
-                    writer.WritePropertyName("iast_weak_hash_algorithms");
-                    writer.WriteValue(Datadog.Trace.Iast.Iast.Instance.Settings.WeakHashAlgorithms);
-
-                    writer.WritePropertyName("iast_weak_cipher_algorithms");
-                    writer.WriteValue(Datadog.Trace.Iast.Iast.Instance.Settings.WeakCipherAlgorithms);
-
-                    writer.WritePropertyName("direct_logs_submission_enabled_integrations");
-                    writer.WriteStartArray();
-
-                    writer.WriteEndArray();
-
-                    writer.WritePropertyName("exporter_settings_warning");
-                    writer.WriteStartArray();
-
-                    writer.WriteEndArray();
-
-                    writer.WritePropertyName("dd_trace_methods");
-                    writer.WriteValue(instanceSettings.TraceMethods);
-
-                    writer.WritePropertyName("activity_listener_enabled");
-                    writer.WriteValue(instanceSettings.IsActivityListenerEnabled);
-
-                    writer.WritePropertyName("bypass_http_request_url_caching_enabled");
-                    writer.WriteValue(instanceSettings.BypassHttpRequestUrlCachingEnabled);
-
-                    writer.WritePropertyName("inject_context_into_stored_procedures_enabled");
-                    writer.WriteValue(instanceSettings.InjectContextIntoStoredProceduresEnabled);
-
-                    writer.WritePropertyName("span_sampling_rules");
-                    writer.WriteValue(instanceSettings.SpanSamplingRules);
-
-                    writer.WritePropertyName("stats_computation_enabled");
-                    writer.WriteValue(instanceSettings.StatsComputationEnabled);
-
-                    writer.WritePropertyName("dbm_propagation_mode");
-                    writer.WriteValue(instanceSettings.DbmPropagationMode.ToString());
-
-                    writer.WritePropertyName("remote_configuration_available");
-                    writer.WriteValue(instanceSettings.IsRemoteConfigurationAvailable);
-
-                    writer.WritePropertyName("header_tags");
-                    WriteDictionary(mutableSettings.HeaderTags);
-
-                    writer.WritePropertyName("service_mapping");
-                    WriteDictionary(mutableSettings.ServiceNameMappings);
-
-                    writer.WritePropertyName("trace_propagation_style_extract_first_only");
-                    writer.WriteValue(instanceSettings.PropagationExtractFirstOnly);
-
-                    writer.WritePropertyName("tracer_datadog_json_configuration_filepaths");
-                    writer.WriteValue(string.Join(";", instanceSettings.JsonConfigurationFilePaths));
-
-                    writer.WritePropertyName("trace_propagation_behavior_extract");
-                    writer.WriteValue(instanceSettings.PropagationBehaviorExtract);
-
-                    writer.WritePropertyName("trace_propagation_style_inject");
-                    writer.WriteStartArray();
-
-                    foreach (var warning in instanceSettings.PropagationStyleInject)
-                    {
-                        writer.WriteValue(warning);
-                    }
-
-                    writer.WriteEndArray();
-
-                    writer.WritePropertyName("trace_propagation_style_extract");
-                    writer.WriteStartArray();
-
-                    foreach (var warning in instanceSettings.PropagationStyleExtract)
-                    {
-                        writer.WriteValue(warning);
-                    }
-
-                    writer.WriteEndArray();
-
-                    writer.WriteEndObject();
-                    // ReSharper restore MethodHasAsyncOverload
-                }
-
-                Log.Information("DATADOG TRACER CONFIGURATION - {Configuration}", stringWriter.ToString());
-                OverrideErrorLog.Instance.ProcessAndClearActions(Log, TelemetryFactory.Metrics); // global errors, only logged once
-                instanceSettings.ErrorLog.ProcessAndClearActions(Log, TelemetryFactory.Metrics);
-                mutableSettings.ErrorLog.ProcessAndClearActions(Log, TelemetryFactory.Metrics);
-            }
-            catch (Exception ex)
-            {
-                Log.Warning(ex, "DATADOG TRACER DIAGNOSTICS - Error fetching configuration");
             }
         }
 

@@ -240,7 +240,6 @@ namespace Datadog.Trace
         /// <returns>The newly created span</returns>
         ISpan IDatadogOpenTracingTracer.StartSpan(string operationName, ISpanContext parent, string serviceName, DateTimeOffset? startTime, bool ignoreActiveScope)
         {
-            TelemetryFactory.Metrics.RecordCountSpanCreated(MetricTags.IntegrationName.OpenTracing);
             if (ignoreActiveScope && parent == null)
             {
                 // don't set the span's parent,
@@ -301,7 +300,6 @@ namespace Datadog.Trace
                     // Create a new TraceContext (this will start a new trace) and initialize
                     // it with the propagated values (sampling priority, origin, tags, W3C trace state, etc).
                     traceContext = new TraceContext(this, propagatedTags);
-                    TelemetryFactory.Metrics.RecordCountTraceSegmentCreated(MetricTags.TraceContinuation.Continued);
 
                     samplingPriority ??= DistributedTracer.Instance.GetSamplingPriority();
                     traceContext.SetSamplingPriority(samplingPriority);
@@ -322,7 +320,6 @@ namespace Datadog.Trace
                 // a user-defined ISpanContext implementation, or null (no parent). we don't have a TraceContext,
                 // so create a new one (this will start a new trace).
                 traceContext = new TraceContext(this, tags: null);
-                TelemetryFactory.Metrics.RecordCountTraceSegmentCreated(MetricTags.TraceContinuation.New);
 
                 // in a version-mismatch scenario, try to get the sampling priority from the "other" tracer
                 var samplingPriority = DistributedTracer.Instance.GetSamplingPriority();

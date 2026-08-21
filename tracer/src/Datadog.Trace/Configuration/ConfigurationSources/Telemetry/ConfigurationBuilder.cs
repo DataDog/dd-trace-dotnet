@@ -634,28 +634,6 @@ internal readonly struct ConfigurationBuilder(IConfigurationSource source)
             return defaultValue.Result;
         }
 
-        public T? OverrideWith(in ClassConfigurationResultWithKey<T> otelConfig, IConfigurationOverrideHandler overrideHandler)
-            => CalculateOverrides(in otelConfig, overrideHandler, defaultValue: null);
-
-        public T OverrideWith(in ClassConfigurationResultWithKey<T> otelConfig, IConfigurationOverrideHandler overrideHandler, DefaultResult<T> defaultValue)
-            => CalculateOverrides(in otelConfig, overrideHandler, defaultValue);
-
-        public T OverrideWith(in ClassConfigurationResultWithKey<T> otelConfig, IConfigurationOverrideHandler overrideHandler, Func<DefaultResult<T>> getDefaultValue)
-        {
-            if (overrideHandler.TryHandleOverrides(Key, ConfigurationResult, otelConfig.Key, otelConfig.ConfigurationResult, out var overridden))
-            {
-                return overridden;
-            }
-
-            if (ConfigurationResult is { Result: { } ddResult, IsValid: true })
-            {
-                return ddResult;
-            }
-
-            var defaultValue = getDefaultValue();
-            return defaultValue.Result;
-        }
-
         [return: NotNullIfNotNull(nameof(defaultValue))]
         private T? CalculateOverrides(in ClassConfigurationResultWithKey<T> otelConfig, IConfigurationOverrideHandler overrideHandler, DefaultResult<T>? defaultValue)
         {

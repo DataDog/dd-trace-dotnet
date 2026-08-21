@@ -1,4 +1,4 @@
-﻿// <copyright file="ManualInstrumentationConfigurationSource.cs" company="Datadog">
+// <copyright file="ManualInstrumentationConfigurationSource.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -36,11 +36,6 @@ internal sealed class ManualInstrumentationConfigurationSource : ManualInstrumen
         var result = base.TryGetValue(key, out value);
         if (result)
         {
-            if (GetTelemetryKey(key) is { } telemetryKey)
-            {
-                TelemetryFactory.Metrics.Record(telemetryKey);
-            }
-
             if (value is not null)
             {
                 value = RemapResult(key, value);

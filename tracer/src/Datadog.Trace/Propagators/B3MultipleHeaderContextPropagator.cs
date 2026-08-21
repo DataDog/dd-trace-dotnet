@@ -1,4 +1,4 @@
-﻿// <copyright file="B3MultipleHeaderContextPropagator.cs" company="Datadog">
+// <copyright file="B3MultipleHeaderContextPropagator.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -48,8 +48,6 @@ namespace Datadog.Trace.Propagators
                 return;
             }
 
-            TelemetryFactory.Metrics.RecordCountContextHeaderStyleInjected(MetricTags.ContextHeaderStyle.B3Multi);
-
             CreateHeaders(spanContext, out var traceId, out var spanId, out var sampled);
 
             carrierSetter.Set(carrier, TraceId, traceId);
@@ -80,7 +78,6 @@ namespace Datadog.Trace.Propagators
             var spanContext = new SpanContext(traceId, parentId, samplingPriority, serviceName: null, null, rawTraceId, rawSpanId, isRemote: true);
             context = new PropagationContext(spanContext, baggage: null);
 
-            TelemetryFactory.Metrics.RecordCountContextHeaderStyleExtracted(MetricTags.ContextHeaderStyle.B3Multi);
             return true;
         }
 

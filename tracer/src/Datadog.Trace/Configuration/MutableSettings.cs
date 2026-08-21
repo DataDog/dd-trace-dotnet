@@ -58,7 +58,6 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
         ReadOnlyDictionary<string, string> serviceNameMappings,
         string? gitRepositoryUrl,
         string? gitCommitSha,
-        OverrideErrorLog errorLog,
         bool propagateProcessTags)
     {
         IsInitialSettings = isInitialSettings;
@@ -88,7 +87,6 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
         ServiceNameMappings = serviceNameMappings;
         GitRepositoryUrl = gitRepositoryUrl;
         GitCommitSha = gitCommitSha;
-        ErrorLog = errorLog;
         ProcessTags = propagateProcessTags ? new ProcessTags(!string.IsNullOrWhiteSpace(serviceName), defaultServiceName) : null;
     }
 
@@ -257,8 +255,6 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
 
     // Infra
     internal bool IsInitialSettings { get; }
-
-    internal OverrideErrorLog ErrorLog { get; }
 
     /// <summary>
     /// Gets the process tags instance including the service_name.user_defined tag.
@@ -573,14 +569,12 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
     /// <param name="manualSource">The <see cref="IConfigurationSource"/> for manual configuration</param>
     /// <param name="initialSettings">The initial mutable settings created from static sources </param>
     /// <param name="tracerSettings">The global <see cref="TracerSettings"/> object</param>
-    /// <param name="errorLog">The <see cref="OverrideErrorLog"/> for recording errors in configuration</param>
     /// <returns>The <see cref="MutableSettings"/> updated images</returns>
     public static MutableSettings CreateUpdatedMutableSettings(
         IConfigurationSource dynamicSource,
         ManualInstrumentationConfigurationSourceBase manualSource,
         MutableSettings initialSettings, // Might be the "real" initial mutable settings or the "null" version
-        TracerSettings tracerSettings,
-        OverrideErrorLog errorLog)
+        TracerSettings tracerSettings)
     {
         // For most configs we can do "combined" config where dynamic config has higher precedence
         var config = new ConfigurationBuilder(new CompositeConfigurationSource([dynamicSource, manualSource]));
@@ -738,7 +732,6 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
             serviceNameMappings: serviceNameMappings,
             gitRepositoryUrl: gitRepositoryUrl,
             gitCommitSha: gitCommitSha,
-            errorLog: errorLog,
             propagateProcessTags: tracerSettings.PropagateProcessTags);
 
         static ReadOnlyDictionary<string, string> GetHeaderTagsResult(
@@ -796,12 +789,10 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
     /// Create an instance of <see cref="MutableSettings"/> based on static source
     /// </summary>
     /// <param name="source">The global, static, <see cref="IConfigurationSource"/></param>
-    /// <param name="errorLog">The <see cref="OverrideErrorLog"/> for recording errors in configuration</param>
     /// <param name="tracerSettings">The global <see cref="TracerSettings"/> object</param>
     /// <returns>The initial, static settings. These are fixed for the lifetime of the application</returns>
     public static MutableSettings CreateInitialMutableSettings(
         IConfigurationSource source,
-        OverrideErrorLog errorLog,
         TracerSettings tracerSettings)
     {
         var config = new ConfigurationBuilder(source);
@@ -814,82 +805,7 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
                       .WithKeys(ConfigurationKeys.OpenTelemetry.ResourceAttributes)
                       .AsDictionaryResult(separator: '=');
 
-        Dictionary<string, string>? globalTags;
-        if (tracerSettings.ExperimentalFeaturesEnabled.Contains("DD_TAGS"))
-        {
-            // New behavior: If ExperimentalFeaturesEnabled configures DD_TAGS, we want to change DD_TAGS parsing to do the following:
-            // 1. If a comma is in the value, split on comma as before. Otherwise, split on space
-            // 2. Key-value pairs with empty values are allowed, instead of discarded
-            // 3. Key-value pairs without values (i.e. no `:` separator) are allowed and treated as key-value pairs with empty values, instead of discarded
-            Func<string, IDictionary<string, string>> updatedTagsParser = (data) =>
-            {
-                var dictionary = new ConcurrentDictionary<string, string>();
-                if (string.IsNullOrWhiteSpace(data))
-                {
-                    // return empty collection
-                    return dictionary;
-                }
-
-                char[] separatorChars = data.Contains(',') ? [','] : [' '];
-                var entries = data.Split(separatorChars, StringSplitOptions.RemoveEmptyEntries);
-
-                foreach (var entry in entries)
-                {
-                    // we need Trim() before looking forthe separator so we can skip entries with no key
-                    // (that is, entries with a leading separator, like "<empty or whitespace>:value")
-                    var trimmedEntry = entry.Trim();
-                    if (trimmedEntry.Length == 0 || trimmedEntry[0] == ':')
-                    {
-                        continue;
-                    }
-
-                    var separatorIndex = trimmedEntry.IndexOf(':');
-                    if (separatorIndex < 0)
-                    {
-                        // entries with no separator are allowed (e.g. key1 and key3 in "key1, key2:value2, key3"),
-                        // it's a key with no value.
-                        var key = trimmedEntry;
-                        dictionary[key] = string.Empty;
-                    }
-                    else if (separatorIndex > 0)
-                    {
-                        // if a separator is present with no value, we take the value to be empty (e.g. "key1:, key2: ").
-                        // note we already did Trim() on the entire entry, so the key portion only needs TrimEnd().
-                        var key = trimmedEntry.Substring(0, separatorIndex).TrimEnd();
-                        var value = trimmedEntry.Substring(separatorIndex + 1).Trim();
-                        dictionary[key] = value;
-                    }
-                }
-
-                return dictionary;
-            };
-
-            globalTags = config
-                        .WithKeys(ConfigurationKeys.GlobalTags)
-                        .AsDictionaryResult(parser: updatedTagsParser)
-                        .OverrideWith(
-                             RemapOtelTags(in otelTags),
-                             errorLog,
-                             () => new DefaultResult<IDictionary<string, string>>(new Dictionary<string, string>(), string.Empty))
-
-                         // Filter out tags with empty keys, and trim whitespace
-                        .Where(kvp => !string.IsNullOrWhiteSpace(kvp.Key))
-                        .ToDictionary(kvp => kvp.Key.Trim(), kvp => kvp.Value?.Trim() ?? string.Empty);
-        }
-        else
-        {
-            globalTags = config
-                        .WithKeys(ConfigurationKeys.GlobalTags)
-                        .AsDictionaryResult()
-                        .OverrideWith(
-                             RemapOtelTags(in otelTags),
-                             errorLog,
-                             () => new DefaultResult<IDictionary<string, string>>(new Dictionary<string, string>(), string.Empty))
-
-                         // Filter out tags with empty keys or empty values, and trim whitespace
-                        .Where(kvp => !string.IsNullOrWhiteSpace(kvp.Key) && !string.IsNullOrWhiteSpace(kvp.Value))
-                        .ToDictionary(kvp => kvp.Key.Trim(), kvp => kvp.Value.Trim());
-        }
+        Dictionary<string, string>? globalTags = new();
 
         var environment = config
                          .WithKeys(ConfigurationKeys.Environment)
@@ -901,8 +817,7 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
         var otelServiceName = config.WithKeys(ConfigurationKeys.OpenTelemetry.ServiceName).AsStringResult();
         var serviceName = config
                          .WithKeys(ConfigurationKeys.ServiceName)
-                         .AsStringResult()
-                         .OverrideWith(in otelServiceName, errorLog);
+                         .AsString();
 
         // DD_SERVICE has precedence over DD_TAGS
         serviceName = GetExplicitSettingOrTag(serviceName, globalTags, Tags.Service);
@@ -937,13 +852,7 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
                                                            : ParsingResult<bool>.Failure());
         var traceEnabled = config
                           .WithKeys(ConfigurationKeys.TraceEnabled)
-                          .AsBoolResult()
-                          .OverrideWith(in otelTraceEnabled, errorLog, defaultValue: true);
-
-        if (tracerSettings.AzureAppServiceMetadata?.IsUnsafeToTrace == true)
-        {
-            traceEnabled = false;
-        }
+                          .AsBool();
 
         var disabledIntegrationNamesArray = config.WithKeys(ConfigurationKeys.DisabledIntegrations)
                                                   .AsString()
@@ -986,15 +895,6 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
 
         var customSamplingRules = config.WithKeys(ConfigurationKeys.CustomSamplingRules).AsString();
 
-        var globalSamplingRate = BuildSampleRate(errorLog, in config);
-
-        // We need to record a default value for configuration reporting
-        // However, we need to keep GlobalSamplingRateInternal null because it changes the behavior of the tracer in subtle ways
-        // (= we don't run the sampler at all if it's null, so it changes the tagging of the spans, and it's enforced by system tests)
-        if (globalSamplingRate is null)
-        {
-        }
-
         var startupDiagnosticLogEnabled = config.WithKeys(ConfigurationKeys.StartupDiagnosticLogEnabled).AsBool(defaultValue: true);
 
         var kafkaCreateConsumerScopeEnabled = config
@@ -1020,10 +920,10 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
 
         return new MutableSettings(
             isInitialSettings: true,
-            traceEnabled: traceEnabled,
+            traceEnabled: traceEnabled ?? true,
             customSamplingRules: customSamplingRules,
             customSamplingRulesIsRemote: false, // Can't be remote as these are static sources
-            globalSamplingRate: globalSamplingRate,
+            100,
             logsInjectionEnabled: logsInjectionEnabled,
             globalTags: new(globalTags),
             headerTags: headerTags,
@@ -1044,7 +944,6 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
             serviceNameMappings: serviceNameMappings,
             gitRepositoryUrl: gitRepositoryUrl,
             gitCommitSha: gitCommitSha,
-            errorLog: errorLog,
             propagateProcessTags: tracerSettings.PropagateProcessTags);
     }
 
@@ -1056,13 +955,11 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
     public static MutableSettings CreateWithoutDefaultSources(TracerSettings tracerSettings)
         => CreateInitialMutableSettings(
             NullConfigurationSource.Instance,
-            new OverrideErrorLog(),
             tracerSettings);
 
     public static MutableSettings CreateForTesting(TracerSettings tracerSettings, Dictionary<string, object?> settings)
         => CreateInitialMutableSettings(
             new DictionaryConfigurationSource(settings.ToDictionary(x => x.Key, x => x.Value?.ToString()!)),
-            new OverrideErrorLog(),
             tracerSettings);
 
     private static ConfigurationBuilder.ClassConfigurationResultWithKey<IDictionary<string, string>> RemapOtelTags(
@@ -1091,89 +988,6 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
         }
 
         return original;
-    }
-
-    private static double? BuildSampleRate(OverrideErrorLog log, in ConfigurationBuilder config)
-    {
-        // The "overriding" is complex, so we can't use the usual `OverrideWith()` approach
-        var ddSampleRate = config.WithKeys(ConfigurationKeys.GlobalSamplingRate).AsDoubleResult();
-        var otelSampleType = config.WithKeys(ConfigurationKeys.OpenTelemetry.TracesSampler).AsStringResult();
-        var otelSampleRate = config.WithKeys(ConfigurationKeys.OpenTelemetry.TracesSamplerArg).AsDoubleResult();
-        var otlpTracesExporter = config.WithKeys(ConfigurationKeys.OpenTelemetry.TracesExporter).AsStringResult();
-
-        double? ddResult = ddSampleRate.ConfigurationResult.IsValid ? ddSampleRate.ConfigurationResult.Result : null;
-
-        // more complex, so can't use built-in `Merge()` support
-        if (ddSampleRate.ConfigurationResult.IsPresent)
-        {
-            if (otelSampleType.ConfigurationResult.IsPresent)
-            {
-                log.LogDuplicateConfiguration(ddSampleRate.Key, otelSampleType.Key);
-            }
-
-            if (otelSampleRate.ConfigurationResult.IsPresent)
-            {
-                log.LogDuplicateConfiguration(ddSampleRate.Key, otelSampleRate.Key);
-            }
-        }
-        else if (otelSampleType.ConfigurationResult is { IsValid: true, Result: { } samplerName })
-        {
-            const string parentbasedAlwaysOn = "parentbased_always_on";
-            const string parentbasedAlwaysOff = "parentbased_always_off";
-            const string parentbasedTraceidratio = "parentbased_traceidratio";
-
-            string? supportedSamplerName = samplerName switch
-            {
-                parentbasedAlwaysOn => parentbasedAlwaysOn,
-                "always_on" => parentbasedAlwaysOn,
-                parentbasedAlwaysOff => parentbasedAlwaysOff,
-                "always_off" => parentbasedAlwaysOff,
-                parentbasedTraceidratio => parentbasedTraceidratio,
-                "traceidratio" => parentbasedTraceidratio,
-                _ => null,
-            };
-
-            if (supportedSamplerName is null)
-            {
-                log.EnqueueAction((log, _) =>
-                {
-                    log.Warning(
-                        "OpenTelemetry configuration {OpenTelemetryConfiguration}={OpenTelemetryValue} is not supported. Using default configuration.",
-                        otelSampleType.Key,
-                        samplerName);
-                });
-                return ddResult;
-            }
-
-            if (!string.Equals(samplerName, supportedSamplerName, StringComparison.OrdinalIgnoreCase))
-            {
-                log.LogUnsupportedConfiguration(otelSampleType.Key, samplerName, supportedSamplerName);
-            }
-
-            var openTelemetrySampleRateResult = supportedSamplerName switch
-            {
-                parentbasedAlwaysOn => ConfigurationResult<double>.Valid(1.0),
-                parentbasedAlwaysOff => ConfigurationResult<double>.Valid(0.0),
-                parentbasedTraceidratio => otelSampleRate.ConfigurationResult,
-                _ => ConfigurationResult<double>.ParseFailure(),
-            };
-
-            if (openTelemetrySampleRateResult is { Result: { } sampleRateResult, IsValid: true })
-            {
-                return sampleRateResult;
-            }
-
-            log.LogInvalidConfiguration(otelSampleRate.Key);
-        }
-
-        if (!ddSampleRate.ConfigurationResult.IsPresent &&
-                otlpTracesExporter.ConfigurationResult is { IsValid: true, Result: { } exporter }
-                 && string.Equals(exporter, "otlp", StringComparison.OrdinalIgnoreCase))
-        {
-            return 1.0;
-        }
-
-        return ddResult;
     }
 
     private static string? GetExplicitSettingOrTag(

@@ -484,8 +484,6 @@ namespace Datadog.Trace
                 {
                     WriteCloseDebugMessage();
                 }
-
-                TelemetryFactory.Metrics.RecordCountSpanFinished();
             }
         }
 

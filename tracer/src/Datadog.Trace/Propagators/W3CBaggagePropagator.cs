@@ -1,4 +1,4 @@
-﻿// <copyright file="W3CBaggagePropagator.cs" company="Datadog">
+// <copyright file="W3CBaggagePropagator.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -66,7 +66,6 @@ internal sealed class W3CBaggagePropagator : IContextInjector, IContextExtractor
         if (!string.IsNullOrWhiteSpace(headerValue))
         {
             carrierSetter.Set(carrier, BaggageHeaderName, headerValue);
-            TelemetryFactory.Metrics.RecordCountContextHeaderStyleInjected(MetricTags.ContextHeaderStyle.Baggage);
         }
     }
 
@@ -89,7 +88,6 @@ internal sealed class W3CBaggagePropagator : IContextInjector, IContextExtractor
         if (baggage is { Count: > 0 })
         {
             context = new PropagationContext(spanContext: null, baggage);
-            TelemetryFactory.Metrics.RecordCountContextHeaderStyleExtracted(MetricTags.ContextHeaderStyle.Baggage);
             return true;
         }
 
@@ -272,7 +270,6 @@ internal sealed class W3CBaggagePropagator : IContextInjector, IContextExtractor
                 // separatorPosition == -1: no '=' character found, e.g. "foo"
                 // separatorPosition == 0: key is empty, e.g. "=value" or "="
                 // separatorPosition == span.Length - 1: value is empty, e.g. "key=" or "="
-                TelemetryFactory.Metrics.RecordCountContextHeaderMalformed(MetricTags.ContextHeaderMalformed.Baggage);
                 return null;
             }
 
@@ -281,7 +278,6 @@ internal sealed class W3CBaggagePropagator : IContextInjector, IContextExtractor
             if (key.Length == 0)
             {
                 // key was whitespace only. invalid format, ignore entire header.
-                TelemetryFactory.Metrics.RecordCountContextHeaderMalformed(MetricTags.ContextHeaderMalformed.Baggage);
                 return null;
             }
 
@@ -294,7 +290,6 @@ internal sealed class W3CBaggagePropagator : IContextInjector, IContextExtractor
             {
                 // invalid, ';' character was found before the value token, e.g. "key;=value" or ";="
                 // invalid format, ignore entire header.
-                TelemetryFactory.Metrics.RecordCountContextHeaderMalformed(MetricTags.ContextHeaderMalformed.Baggage);
                 return null;
             }
 
@@ -307,7 +302,6 @@ internal sealed class W3CBaggagePropagator : IContextInjector, IContextExtractor
             if (value.Length == 0)
             {
                 // value was whitespace only. invalid format, ignore entire header.
-                TelemetryFactory.Metrics.RecordCountContextHeaderMalformed(MetricTags.ContextHeaderMalformed.Baggage);
                 return null;
             }
 
@@ -350,7 +344,6 @@ internal sealed class W3CBaggagePropagator : IContextInjector, IContextExtractor
                 // reached the item count limit, stop adding items
                 CancellationRequested = true;
 
-                TelemetryFactory.Metrics.RecordCountContextHeaderTruncated(MetricTags.ContextHeaderTruncationReason.BaggageItemCountExceeded);
                 return;
             }
 
@@ -373,8 +366,6 @@ internal sealed class W3CBaggagePropagator : IContextInjector, IContextExtractor
                 // by restoring the previous string length and stop adding more items
                 _sb.Length = currentLength;
                 CancellationRequested = true;
-
-                TelemetryFactory.Metrics.RecordCountContextHeaderTruncated(MetricTags.ContextHeaderTruncationReason.BaggageByteCountExceeded);
             }
         }
 

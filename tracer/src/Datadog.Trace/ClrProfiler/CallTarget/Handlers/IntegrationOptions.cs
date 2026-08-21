@@ -54,7 +54,6 @@ internal static class IntegrationOptions<TIntegration, TTarget>
             Log.Warning("DuckTypeException has been detected, the integration <{TIntegration}, {TTarget}> will be disabled.", typeof(TIntegration), typeof(TTarget));
             if (_integrationId.Value is { } integrationId)
             {
-                TelemetryFactory.Metrics.RecordCountSharedIntegrationsError(integrationId.GetMetricTag(), MetricTags.InstrumentationError.DuckTyping);
                 Tracer.Instance.TracerManager.Telemetry.IntegrationDisabledDueToError(integrationId, nameof(DuckTypeException));
             }
 
@@ -65,7 +64,6 @@ internal static class IntegrationOptions<TIntegration, TTarget>
             Log.Warning("CallTargetInvokerException has been detected, the integration <{TIntegration}, {TTarget}> will be disabled.", typeof(TIntegration), typeof(TTarget));
             if (_integrationId.Value is { } integrationId)
             {
-                TelemetryFactory.Metrics.RecordCountSharedIntegrationsError(integrationId.GetMetricTag(), MetricTags.InstrumentationError.Invoker);
                 Tracer.Instance.TracerManager.Telemetry.IntegrationDisabledDueToError(integrationId, nameof(CallTargetInvokerException));
             }
 
@@ -82,18 +80,10 @@ internal static class IntegrationOptions<TIntegration, TTarget>
                 typeof(TTarget));
             if (_integrationId.Value is { } integrationId)
             {
-                TelemetryFactory.Metrics.RecordCountSharedIntegrationsError(integrationId.GetMetricTag(), MetricTags.InstrumentationError.MissingMember);
                 Tracer.Instance.TracerManager.Telemetry.IntegrationDisabledDueToError(integrationId, nameof(MissingMemberException));
             }
 
             _disableIntegration = true;
-        }
-        else
-        {
-            if (_integrationId.Value is { } integrationId)
-            {
-                TelemetryFactory.Metrics.RecordCountSharedIntegrationsError(integrationId.GetMetricTag(), MetricTags.InstrumentationError.Execution);
-            }
         }
     }
 

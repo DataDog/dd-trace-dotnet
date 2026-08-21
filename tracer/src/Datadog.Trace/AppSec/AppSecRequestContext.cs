@@ -12,21 +12,9 @@ namespace Datadog.Trace.AppSec;
 
 internal sealed class AppSecRequestContext
 {
-    private const string StackKey = "_dd.stack";
     private const string VulnerabilityStackKey = "vulnerability";
     private readonly object _sync = new();
     private Dictionary<string, List<Dictionary<string, object>>>? _stackTraces;
-
-    internal void CloseWebSpan(Span span)
-    {
-        lock (_sync)
-        {
-            if (_stackTraces?.Count > 0)
-            {
-                span.SetMetaStruct(StackKey, MetaStructHelper.ObjectToByteArray(_stackTraces));
-            }
-        }
-    }
 
     internal void AddVulnerabilityStackTrace(Dictionary<string, object> stackTrace, int maxStackTraces)
     {

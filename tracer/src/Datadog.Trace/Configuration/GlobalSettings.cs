@@ -25,10 +25,8 @@ namespace Datadog.Trace.Configuration
         /// using the specified <see cref="IConfigurationSource"/> to initialize values.
         /// </summary>
         /// <param name="source">The <see cref="IConfigurationSource"/> to use when retrieving configuration values.</param>
-        /// <param name="overrideHandler">Records any errors </param>
         internal GlobalSettings(
-            IConfigurationSource source,
-            IConfigurationOverrideHandler overrideHandler)
+            IConfigurationSource source)
         {
             var builder = new ConfigurationBuilder(source);
 
@@ -41,8 +39,7 @@ namespace Datadog.Trace.Configuration
 
             DebugEnabled = builder
                                   .WithKeys(ConfigurationKeys.DebugEnabled)
-                                  .AsBoolResult()
-                                  .OverrideWith(in otelConfig, overrideHandler, false);
+                                  .AsBool(false);
 
             DiagnosticSourceEnabled = builder
                                      .WithKeys(ConfigurationKeys.DiagnosticSourceEnabled)
@@ -90,6 +87,6 @@ namespace Datadog.Trace.Configuration
         }
 
         private static GlobalSettings CreateFromDefaultSources()
-            => new(GlobalConfigurationSource.Instance, OverrideErrorLog.Instance);
+            => new(GlobalConfigurationSource.Instance);
     }
 }

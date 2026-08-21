@@ -60,7 +60,6 @@ namespace Datadog.Trace
             }
 
             serviceRemappingHash ??= new ServiceRemappingHash(settings.Manager.InitialMutableSettings.ProcessTags?.SerializedTags);
-            telemetry ??= CreateTelemetryController();
 
             sampler ??= GetSampler(settings);
             scopeManager ??= new AsyncLocalScopeManager();
@@ -73,7 +72,7 @@ namespace Datadog.Trace
             return CreateTracerManagerFrom(
                 settings,
                 scopeManager,
-                telemetry,
+                null,
                 gitMetadataTagsProvider,
                 sampler,
                 GetSpanSampler(settings),
@@ -81,9 +80,6 @@ namespace Datadog.Trace
                 tracerFlareManager,
                 serviceRemappingHash);
         }
-
-        protected virtual ITelemetryController CreateTelemetryController()
-            => TelemetryFactory.Instance.CreateTelemetryController();
 
         protected virtual IGitMetadataTagsProvider GetGitMetadataTagsProvider(TracerSettings settings, MutableSettings initialMutableSettings, IScopeManager scopeManager, ITelemetryController telemetry)
         {

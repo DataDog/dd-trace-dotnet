@@ -1,4 +1,4 @@
-﻿// <copyright file="ManualInstrumentationLegacyConfigurationSource.cs" company="Datadog">
+// <copyright file="ManualInstrumentationLegacyConfigurationSource.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -37,11 +37,6 @@ internal sealed class ManualInstrumentationLegacyConfigurationSource : ManualIns
         var result = TryGetSpecialCase(Dictionary, key, out value) || base.TryGetValue(key, out value);
         if (result)
         {
-            if (GetTelemetryKey(key) is { } telemetryKey)
-            {
-                TelemetryFactory.Metrics.Record(telemetryKey);
-            }
-
             if (value is not null)
             {
                 value = RemapResult(key, value);
@@ -84,21 +79,18 @@ internal sealed class ManualInstrumentationLegacyConfigurationSource : ManualIns
             {
                 if (enabledIntegration.HasValue && enabledChanged)
                 {
-                    TelemetryFactory.Metrics.Record(PublicApiUsage.IntegrationSettings_Enabled_Set);
                     value = enabled;
                     return true;
                 }
 
                 if (analyticsIntegration.HasValue && analyticsEnabledChanged)
                 {
-                    TelemetryFactory.Metrics.Record(PublicApiUsage.IntegrationSettings_AnalyticsEnabled_Set);
                     value = analyticsEnabled;
                     return true;
                 }
 
                 if (sampleRateIntegration.HasValue && analyticsSampleRateChanged)
                 {
-                    TelemetryFactory.Metrics.Record(PublicApiUsage.IntegrationSettings_AnalyticsSampleRate_Set);
                     value = analyticsSampleRate;
                     return true;
                 }

@@ -95,6 +95,8 @@ internal static class StringModuleImpl
             {
                 return result;
             }
+
+            PropagationModuleImpl.OnStringSubSequence(self, beginIndex, result, result.Length);
         }
         catch (Exception err)
         {
@@ -117,6 +119,8 @@ internal static class StringModuleImpl
             {
                 return result;
             }
+
+            PropagationModuleImpl.OnStringSubSequence(self, beginIndex, result, result.Length);
         }
         catch (Exception err)
         {

@@ -1,4 +1,4 @@
-﻿// <copyright file="DatadogSerilogLogger.cs" company="Datadog">
+// <copyright file="DatadogSerilogLogger.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -296,7 +296,6 @@ namespace Datadog.Trace.Logging
         {
             try
             {
-                TelemetryFactory.Metrics.RecordCountLogCreated(LevelToTag(level));
                 if (_rateLimiter.ShouldLog(sourceFile, sourceLine, out var skipCount))
                 {
                     IDisposable? logContext = null;
@@ -328,16 +327,6 @@ namespace Datadog.Trace.Logging
             {
                 WriteToStdErr(exception, messageTemplate, args);
             }
-
-            static MetricTags.LogLevel LevelToTag(LogEventLevel logLevel)
-                => logLevel switch
-                {
-                    LogEventLevel.Verbose => MetricTags.LogLevel.Debug,
-                    LogEventLevel.Debug => MetricTags.LogLevel.Debug,
-                    LogEventLevel.Information => MetricTags.LogLevel.Information,
-                    LogEventLevel.Warning => MetricTags.LogLevel.Warning,
-                    _ => MetricTags.LogLevel.Error,
-                };
 
             static void WriteToStdErr(Exception? e, string template, object?[] objects)
             {

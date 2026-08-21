@@ -1,4 +1,4 @@
-﻿// <copyright file="B3SingleHeaderContextPropagator.cs" company="Datadog">
+// <copyright file="B3SingleHeaderContextPropagator.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -38,7 +38,6 @@ namespace Datadog.Trace.Propagators
                 return;
             }
 
-            TelemetryFactory.Metrics.RecordCountContextHeaderStyleInjected(MetricTags.ContextHeaderStyle.B3SingleHeader);
             var header = CreateHeader(spanContext);
             carrierSetter.Set(carrier, B3, header);
         }
@@ -142,7 +141,6 @@ namespace Datadog.Trace.Propagators
 
                 context = new PropagationContext(spanContext, baggage: null);
 
-                TelemetryFactory.Metrics.RecordCountContextHeaderStyleExtracted(MetricTags.ContextHeaderStyle.B3SingleHeader);
                 return true;
             }
 

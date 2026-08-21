@@ -159,11 +159,6 @@ namespace Datadog.Trace
                             IastRequestContext.AddIastDisabledFlagToSpan(span);
                         }
                     }
-
-                    if (_appSecRequestContext is not null)
-                    {
-                        _appSecRequestContext.CloseWebSpan(span);
-                    }
                 }
             }
 

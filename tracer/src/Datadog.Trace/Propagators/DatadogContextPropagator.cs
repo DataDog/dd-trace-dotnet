@@ -1,4 +1,4 @@
-﻿// <copyright file="DatadogContextPropagator.cs" company="Datadog">
+// <copyright file="DatadogContextPropagator.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -34,7 +34,6 @@ namespace Datadog.Trace.Propagators
                 return;
             }
 
-            TelemetryFactory.Metrics.RecordCountContextHeaderStyleInjected(MetricTags.ContextHeaderStyle.Datadog);
             var invariantCulture = CultureInfo.InvariantCulture;
 
             // x-datadog-trace-id only supports 64-bit trace ids, truncate by using TraceId128.Lower
@@ -90,7 +89,6 @@ namespace Datadog.Trace.Propagators
 
             context = new PropagationContext(spanContext, baggage: null);
 
-            TelemetryFactory.Metrics.RecordCountContextHeaderStyleExtracted(MetricTags.ContextHeaderStyle.Datadog);
             return true;
         }
 
