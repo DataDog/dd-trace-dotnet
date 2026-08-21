@@ -100,12 +100,11 @@ download_azure_artifact() {
           local buildStatus
           buildStatus=$(echo "$response" | jq -r '.message // "Artifact not yet available"')
           echo "  Status: ${buildStatus} (elapsed: ${STARTED}s / ${ARTIFACT_TIMEOUT}s)"
-      fi
 
-      sleep "$ARTIFACT_POLL_INTERVAL"
-      (( STARTED += ARTIFACT_POLL_INTERVAL ))
+          sleep "$ARTIFACT_POLL_INTERVAL"
+          (( STARTED += ARTIFACT_POLL_INTERVAL ))
+      fi
   done
-  (( STARTED < ARTIFACT_TIMEOUT ))
 
   if [ -z "${downloadUrl}" ]; then
     echo "ERROR: No downloadUrl found after 40 minutes for artifact '$artifactName' (commit '$CI_COMMIT_SHA' on branch 'refs/heads/$CI_COMMIT_BRANCH')"
