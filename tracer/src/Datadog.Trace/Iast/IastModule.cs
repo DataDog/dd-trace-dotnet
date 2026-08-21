@@ -26,9 +26,6 @@ using Datadog.Trace.Iast.Settings;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.Tagging;
-using Datadog.Trace.VendoredMicrosoftCode.System;
-using static Datadog.Trace.Configuration.ConfigurationKeys;
-using static Datadog.Trace.Telemetry.Metrics.MetricTags;
 
 namespace Datadog.Trace.Iast;
 
@@ -718,7 +715,6 @@ internal static partial class IastModule
 
         var traceContext = span.Context.TraceContext;
         span.Type = SpanTypes.IastVulnerability;
-        tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(integrationId);
         traceContext?.SetSamplingPriority(SamplingPriorityValues.UserKeep, SamplingMechanism.Asm);
         traceContext?.Tags.EnableTraceSources(TraceSources.Asm);
         vulnerability.Location?.ReportStack(span);

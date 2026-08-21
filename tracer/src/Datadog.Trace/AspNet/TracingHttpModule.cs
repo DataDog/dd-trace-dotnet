@@ -38,11 +38,6 @@ namespace Datadog.Trace.AspNet
         private static bool _canReadHttpResponseHeaders = true;
 
         private readonly string _httpContextScopeKey;
-
-        /// <summary>
-        /// This key is only present when inferred proxy spans are enabled AND necessary proxy headers were present.
-        /// </summary>
-        /// <see cref="ConfigurationKeys.FeatureFlags.InferredProxySpansEnabled"/>
         private readonly string _httpContextProxyScopeKey;
         private readonly string _requestOperationName;
 
@@ -212,8 +207,6 @@ namespace Datadog.Trace.AspNet
 
                 httpContext.Items[_httpContextScopeKey] = scope;
                 shouldDisposeScope = false;
-
-                tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
 
                 var iastInstance = Iast.Iast.Instance;
                 if (iastInstance.Settings.Enabled && iastInstance.OverheadController.AcquireRequest())

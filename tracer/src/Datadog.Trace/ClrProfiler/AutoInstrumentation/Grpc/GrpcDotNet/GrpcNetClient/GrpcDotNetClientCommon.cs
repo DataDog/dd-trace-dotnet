@@ -75,8 +75,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcDotNet.GrpcNetC
                     var metadata = new MetadataHeadersCollection(grpcCall.Options.Headers);
                     span.SetHeaderTags(metadata, settings.GrpcTags, defaultTagPrefix: GrpcCommon.RequestMetadataTagPrefix);
                 }
-
-                tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId.Grpc);
             }
             catch (Exception ex)
             {

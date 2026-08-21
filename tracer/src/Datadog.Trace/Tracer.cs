@@ -14,7 +14,6 @@ using Datadog.Trace.Logging.TracerFlare;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Tagging;
-using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.StatsdClient;
@@ -48,8 +47,8 @@ namespace Datadog.Trace
         /// Note that this API does NOT replace the global Tracer instance.
         /// The <see cref="TracerManager"/> created will be scoped specifically to this instance.
         /// </summary>
-        internal Tracer(TracerSettings settings, ITraceSampler sampler, IScopeManager scopeManager, ITelemetryController telemetry = null, ServiceRemappingHash serviceRemappingHash = null)
-            : this(TracerManagerFactory.Instance.CreateTracerManager(settings, sampler, scopeManager, telemetry: telemetry ?? NullTelemetryController.Instance, dynamicConfigurationManager: null, tracerFlareManager: null, serviceRemappingHash: serviceRemappingHash))
+        internal Tracer(TracerSettings settings, ITraceSampler sampler, IScopeManager scopeManager, ServiceRemappingHash serviceRemappingHash = null)
+            : this(TracerManagerFactory.Instance.CreateTracerManager(settings, sampler, scopeManager, dynamicConfigurationManager: null, tracerFlareManager: null, serviceRemappingHash: serviceRemappingHash))
         {
         }
 
@@ -342,12 +341,6 @@ namespace Datadog.Trace
             return context;
         }
 
-        /// <remarks>
-        /// When calling this method from an integration, ensure you call
-        /// <c>Tracer.Instance.TracerManager.Telemetry.IntegrationGenerateSpan</c> so that the integration is recorded,
-        /// and the span count metric is incremented. Alternatively, if this is not being called from an
-        /// automatic integration, call <c>TelemetryFactory.Metrics.RecordCountSpanCreated()</c> directory instead.
-        /// </remarks>
         internal Scope StartActiveInternal(string operationName, ISpanContext parent = null, string serviceName = null, string serviceNameSource = null, DateTimeOffset? startTime = null, bool finishOnClose = true, ITags tags = null, IEnumerable<SpanLink> links = null)
         {
             var span = StartSpan(operationName, tags, parent, serviceName, serviceNameSource, startTime, links: links);
@@ -355,12 +348,6 @@ namespace Datadog.Trace
             return TracerManager.ScopeManager.Activate(span, finishOnClose);
         }
 
-        /// <remarks>
-        /// When calling this method from an integration, and _not_ discarding the span, ensure you call
-        /// <c>Tracer.Instance.TracerManager.Telemetry.IntegrationGenerateSpan</c> so that the integration is recorded,
-        /// and the span count metric is incremented. Alternatively, if this is not being called from an
-        /// automatic integration, call <c>TelemetryFactory.Metrics.RecordCountSpanCreated()</c> directly instead.
-        /// </remarks>
         internal Span StartSpan(string operationName, ITags tags = null, ISpanContext parent = null, string serviceName = null, string serviceNameSource = null, DateTimeOffset? startTime = null, TraceId traceId = default, ulong spanId = 0, string rawTraceId = null, string rawSpanId = null, bool addToTraceContext = true, IEnumerable<SpanLink> links = null)
         {
             var spanContext = CreateSpanContext(parent, serviceName, traceId, spanId, rawTraceId, rawSpanId, serviceNameSource);

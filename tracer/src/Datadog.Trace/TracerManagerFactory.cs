@@ -13,7 +13,6 @@ using Datadog.Trace.Logging.TracerFlare;
 using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.SourceGenerators;
-using Datadog.Trace.Telemetry;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.StatsdClient;
 
@@ -36,7 +35,6 @@ namespace Datadog.Trace
                 settings,
                 sampler: null,
                 scopeManager: previous?.ScopeManager, // no configuration, so can always use the same one
-                telemetry: null,
                 dynamicConfigurationManager: null,
                 tracerFlareManager: null);
 
@@ -47,7 +45,6 @@ namespace Datadog.Trace
             TracerSettings settings,
             ITraceSampler sampler,
             IScopeManager scopeManager,
-            ITelemetryController telemetry,
             IDynamicConfigurationManager dynamicConfigurationManager,
             ITracerFlareManager tracerFlareManager,
             ServiceRemappingHash serviceRemappingHash = null)
@@ -64,7 +61,7 @@ namespace Datadog.Trace
             sampler ??= GetSampler(settings);
             scopeManager ??= new AsyncLocalScopeManager();
 
-            var gitMetadataTagsProvider = GetGitMetadataTagsProvider(settings, settings.Manager.InitialMutableSettings, scopeManager, telemetry);
+            var gitMetadataTagsProvider = GetGitMetadataTagsProvider(settings, settings.Manager.InitialMutableSettings, scopeManager);
 
             dynamicConfigurationManager ??= new NullDynamicConfigurationManager();
             tracerFlareManager ??= new NullTracerFlareManager();
@@ -72,7 +69,6 @@ namespace Datadog.Trace
             return CreateTracerManagerFrom(
                 settings,
                 scopeManager,
-                null,
                 gitMetadataTagsProvider,
                 sampler,
                 GetSpanSampler(settings),
@@ -81,7 +77,7 @@ namespace Datadog.Trace
                 serviceRemappingHash);
         }
 
-        protected virtual IGitMetadataTagsProvider GetGitMetadataTagsProvider(TracerSettings settings, MutableSettings initialMutableSettings, IScopeManager scopeManager, ITelemetryController telemetry)
+        protected virtual IGitMetadataTagsProvider GetGitMetadataTagsProvider(TracerSettings settings, MutableSettings initialMutableSettings, IScopeManager scopeManager)
         {
             return new GitMetadataTagsProvider(settings, initialMutableSettings);
         }
@@ -89,7 +85,6 @@ namespace Datadog.Trace
         protected virtual TracerManager CreateTracerManagerFrom(
             TracerSettings settings,
             IScopeManager scopeManager,
-            ITelemetryController telemetry,
             IGitMetadataTagsProvider gitMetadataTagsProvider,
             ITraceSampler traceSampler,
             ISpanSampler spanSampler,
@@ -97,7 +92,7 @@ namespace Datadog.Trace
             ITracerFlareManager tracerFlareManager,
             ServiceRemappingHash serviceRemappingHash)
         {
-            return new TracerManager(settings, scopeManager, telemetry, gitMetadataTagsProvider, traceSampler, spanSampler, dynamicConfigurationManager, tracerFlareManager, serviceRemappingHash);
+            return new TracerManager(settings, scopeManager, gitMetadataTagsProvider, traceSampler, spanSampler, dynamicConfigurationManager, tracerFlareManager, serviceRemappingHash);
         }
 
         protected virtual ITraceSampler GetSampler(TracerSettings settings)

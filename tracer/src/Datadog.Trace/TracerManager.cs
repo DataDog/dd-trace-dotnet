@@ -20,7 +20,6 @@ using Datadog.Trace.Processors;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.SourceGenerators;
-using Datadog.Trace.Telemetry;
 using Datadog.Trace.Util;
 using Datadog.Trace.Util.Http;
 using Datadog.Trace.Util.Json;
@@ -51,7 +50,6 @@ namespace Datadog.Trace
         public TracerManager(
             TracerSettings settings,
             IScopeManager scopeManager,
-            ITelemetryController telemetry,
             IGitMetadataTagsProvider gitMetadataTagsProvider,
             ITraceSampler traceSampler,
             ISpanSampler spanSampler,
@@ -62,7 +60,6 @@ namespace Datadog.Trace
             Settings = settings;
             ScopeManager = scopeManager;
             GitMetadataTagsProvider = gitMetadataTagsProvider;
-            Telemetry = telemetry ?? NullTelemetryController.Instance;
             QueryStringManager = new(settings.QueryStringReportingEnabled, settings.ObfuscationQueryStringRegexTimeout, settings.QueryStringReportingSize, settings.ObfuscationQueryStringRegex);
 
             DynamicConfigurationManager = dynamicConfigurationManager;
@@ -121,8 +118,6 @@ namespace Datadog.Trace
 
         public ITagProcessor[] TagProcessors { get; }
 
-        public ITelemetryController Telemetry { get; }
-
         public IDynamicConfigurationManager DynamicConfigurationManager { get; }
 
         public ITracerFlareManager TracerFlareManager { get; }
@@ -177,7 +172,6 @@ namespace Datadog.Trace
         internal void Start()
         {
             // Must be idempotent and thread safe
-            Telemetry?.Start();
             DynamicConfigurationManager.Start();
             TracerFlareManager.Start();
         }
@@ -275,12 +269,6 @@ namespace Datadog.Trace
                     instance.DynamicConfigurationManager.Dispose();
                     Log.Debug("Disposing TracerFlareManager");
                     instance.TracerFlareManager.Dispose();
-
-                    Log.Debug("Disposing Telemetry");
-                    if (instance.Telemetry is { })
-                    {
-                        await instance.Telemetry.DisposeAsync().ConfigureAwait(false);
-                    }
 
                     Log.Debug("Finished waiting for disposals.");
                 }

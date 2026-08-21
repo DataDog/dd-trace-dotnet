@@ -153,7 +153,6 @@ namespace Datadog.Trace.PlatformHelpers
             }
 
             tags.SetAnalyticsSampleRate(_integrationId, tracer.CurrentTraceSettings.Settings, enabledWithGlobalSetting: true);
-            tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(_integrationId);
 
             return scope;
         }

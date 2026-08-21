@@ -77,7 +77,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
                 scope = tracer.StartActiveInternal(OperationName, serviceName: serviceName, serviceNameSource: serviceNameSource, tags: tags);
                 scope.Span.ResourceName = filename;
                 scope.Span.Type = SpanTypes.System;
-                tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
             }
             catch (Exception ex)
             {

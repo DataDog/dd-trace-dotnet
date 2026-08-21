@@ -48,7 +48,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcDotNet.GrpcAspN
                 var span = scope.Span;
                 span.Type = SpanTypes.Grpc;
                 span.ResourceName = method.FullName;
-                tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId.Grpc);
             }
             catch (Exception ex)
             {

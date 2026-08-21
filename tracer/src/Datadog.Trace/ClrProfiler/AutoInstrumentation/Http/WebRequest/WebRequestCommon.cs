@@ -135,7 +135,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.WebRequest
                         var headers = request.Headers.Wrap();
                         tracer.TracerManager.SpanContextPropagator.Inject(context, headers);
 
-                        tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
                         return new CallTargetState(scope);
                     }
                 }

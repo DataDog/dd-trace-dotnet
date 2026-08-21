@@ -120,8 +120,6 @@ src/Datadog.Trace/Tagging/TagItem.cs
 src/Datadog.Trace/Tagging/TraceAnnotationTags.cs
 src/Datadog.Trace/Tagging/WcfTags.cs
 src/Datadog.Trace/Tagging/WebTags.cs
-src/Datadog.Trace/Telemetry/ITelemetryController.cs
-src/Datadog.Trace/Telemetry/NullTelemetryController.cs
 src/Datadog.Trace/Telemetry/TelemetryConstants.cs
 src/Datadog.Trace/Util/ArrayBuilder.cs
 src/Datadog.Trace/Util/ArraySlice.cs

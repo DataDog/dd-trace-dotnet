@@ -87,7 +87,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client
                 }
 
                 GrpcCommon.RecordFinalStatus(span, receivedStatus.StatusCode, receivedStatus.Detail, receivedStatus.DebugException);
-                tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId.Grpc);
             }
             catch (Exception ex)
             {

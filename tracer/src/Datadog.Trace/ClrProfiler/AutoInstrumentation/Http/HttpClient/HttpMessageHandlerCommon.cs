@@ -50,7 +50,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient
                     var context = new PropagationContext(scope.Span.Context, Baggage.Current);
                     tracer.TracerManager.SpanContextPropagator.Inject(context, new HttpHeadersCollection(headers));
 
-                    tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(implementationIntegrationId ?? integrationId);
                     return new CallTargetState(scope);
                 }
             }
