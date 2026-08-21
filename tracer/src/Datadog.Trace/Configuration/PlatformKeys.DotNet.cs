@@ -33,4 +33,18 @@ internal static partial class PlatformKeys
     /// Program data folder
     /// </summary>
     public const string ProgramData = "ProgramData";
+
+    /// <summary>
+    /// Sets the GC's "high memory load" threshold percent (clamped to 99 by the runtime). Parsed as
+    /// <b>hexadecimal</b> by the runtime (see <c>GCToEEInterface::GetIntConfigValue</c>), and takes precedence
+    /// over the <c>System.GC.HighMemoryPercent</c> runtimeconfig knob, which is parsed using C-style base
+    /// detection (<c>0x</c>/<c>0X</c> prefix for hexadecimal, a leading <c>0</c> for octal, otherwise decimal -
+    /// see <c>Configuration::GetKnobULONGLONGValue</c>).
+    /// </summary>
+    public const string DotNetGCHighMemPercent = "DOTNET_GCHighMemPercent";
+
+    /// <summary>
+    /// Legacy alias for <see cref="DotNetGCHighMemPercent"/>, also parsed as hexadecimal.
+    /// </summary>
+    public const string ComPlusGCHighMemPercent = "COMPlus_GCHighMemPercent";
 }
