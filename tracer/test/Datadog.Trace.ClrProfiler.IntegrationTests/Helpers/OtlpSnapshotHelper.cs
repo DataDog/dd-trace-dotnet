@@ -101,7 +101,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Helpers
         /// <param name="applicationStartTimeUnixNano">The time the sample application was started, used as a lower bound for span timestamps.</param>
         public static void NormalizeSpans(JToken tracesRequests, OtlpFieldNames names, long applicationStartTimeUnixNano)
         {
-            var isJson = names.IsJson;
             var stringValueKey = names.StringValue;
             var traceIdKey = names.TraceId;
             var spanIdKey = names.SpanId;
@@ -112,11 +111,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Helpers
 
             foreach (var span in tracesRequests.SelectTokens("$..spans[*]"))
             {
-                // Parse unstable information from the span
-                string traceIdData = isJson ? span[traceIdKey]!.ToString()
-                                            : ToTraceId(Convert.FromBase64String(span[traceIdKey]!.ToString()));
-                string spanIdData = isJson ? span[spanIdKey]!.ToString()
-                                            : ToSpanId(Convert.FromBase64String(span[spanIdKey]!.ToString()));
+                // Parse unstable information from the span. IDs are always base64 here: this JToken
+                // tree comes from Google.Protobuf's JsonFormatter, which always renders bytes fields
+                // as base64 regardless of which wire encoding (JSON or protobuf) the request arrived
+                // in -- names.IsJson only selects field-name casing, not ID encoding.
+                string traceIdData = ToTraceId(Convert.FromBase64String(span[traceIdKey]!.ToString()));
+                string spanIdData = ToSpanId(Convert.FromBase64String(span[spanIdKey]!.ToString()));
                 var spanStartTimeUnixNano = long.Parse(span[startTimeUnixNanoKey]!.ToString());
                 var spanEndTimeUnixNano = long.Parse(span[endTimeUnixNanoKey]!.ToString());
 
@@ -127,8 +127,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Helpers
                 spanIdData.Should().MatchRegex(SpanIdRegex);
                 if (span[parentSpanIdKey] is not null)
                 {
-                    string? parentSpanIdData = isJson ? span[parentSpanIdKey]?.ToString()
-                                                      : ToSpanId(Convert.FromBase64String(span[parentSpanIdKey]!.ToString()));
+                    string parentSpanIdData = ToSpanId(Convert.FromBase64String(span[parentSpanIdKey]!.ToString()));
                     parentSpanIdData.Should().MatchRegex(SpanIdRegex);
                 }
 
@@ -176,11 +175,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Helpers
 
             foreach (var link in tracesRequests.SelectTokens("$..links[*]"))
             {
-                if (isJson)
-                {
-                    link[traceIdKey]!.ToString().Should().MatchRegex(TraceIdRegex);
-                    link[spanIdKey]!.ToString().Should().MatchRegex(SpanIdRegex);
-                }
+                ToTraceId(Convert.FromBase64String(link[traceIdKey]!.ToString())).Should().MatchRegex(TraceIdRegex);
+                ToSpanId(Convert.FromBase64String(link[spanIdKey]!.ToString())).Should().MatchRegex(SpanIdRegex);
 
                 link[traceIdKey] = "normalized-trace-id";
                 link[spanIdKey] = "normalized-span-id";

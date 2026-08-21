@@ -14,9 +14,6 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
 {
-    [Trait("RequiresDockerDependency", "true")]
-    [Trait("DockerGroup", "1")]
-    [Collection(nameof(TestAgentOtlpCollection))]
     public class OtlpAspNetCoreMvc31TestsCallTarget : OtlpAspNetCoreMvc31Tests
     {
         public OtlpAspNetCoreMvc31TestsCallTarget(AspNetCoreTestFixture fixture, ITestOutputHelper output)
@@ -25,9 +22,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
         }
     }
 
-    [Trait("RequiresDockerDependency", "true")]
-    [Trait("DockerGroup", "1")]
-    [Collection(nameof(TestAgentOtlpCollection))]
     public class OtlpAspNetCoreMvc31TestsCallTargetWithFeatureFlag : OtlpAspNetCoreMvc31Tests
     {
         public OtlpAspNetCoreMvc31TestsCallTargetWithFeatureFlag(AspNetCoreTestFixture fixture, ITestOutputHelper output)
@@ -36,9 +30,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
         }
     }
 
-    [Trait("RequiresDockerDependency", "true")]
-    [Trait("DockerGroup", "1")]
-    [Collection(nameof(TestAgentOtlpCollection))]
     public class OtlpAspNetCoreMvc31TestsCallTargetWithOpenTelemetrySemantics : OtlpAspNetCoreMvc31Tests
     {
         public OtlpAspNetCoreMvc31TestsCallTargetWithOpenTelemetrySemantics(AspNetCoreTestFixture fixture, ITestOutputHelper output)
@@ -47,9 +38,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
         }
     }
 
-    [Trait("RequiresDockerDependency", "true")]
-    [Trait("DockerGroup", "1")]
-    [Collection(nameof(TestAgentOtlpCollection))]
     public class OtlpAspNetCoreMvc31TestsCallTargetWithFeatureFlagWithOpenTelemetrySemantics : OtlpAspNetCoreMvc31Tests
     {
         public OtlpAspNetCoreMvc31TestsCallTargetWithFeatureFlagWithOpenTelemetrySemantics(AspNetCoreTestFixture fixture, ITestOutputHelper output)
@@ -59,9 +47,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
     }
 
 #if NET6_0_OR_GREATER
-    [Trait("RequiresDockerDependency", "true")]
-    [Trait("DockerGroup", "1")]
-    [Collection(nameof(TestAgentOtlpCollection))]
     public class OtlpAspNetCoreMvc31TestsCallTargetSingleSpan : OtlpAspNetCoreMvc31Tests
     {
         public OtlpAspNetCoreMvc31TestsCallTargetSingleSpan(AspNetCoreTestFixture fixture, ITestOutputHelper output)
@@ -70,9 +55,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
         }
     }
 
-    [Trait("RequiresDockerDependency", "true")]
-    [Trait("DockerGroup", "1")]
-    [Collection(nameof(TestAgentOtlpCollection))]
     public class OtlpAspNetCoreMvc31TestsCallTargetSingleSpanWithOpenTelemetrySemantics : OtlpAspNetCoreMvc31Tests
     {
         public OtlpAspNetCoreMvc31TestsCallTargetSingleSpanWithOpenTelemetrySemantics(AspNetCoreTestFixture fixture, ITestOutputHelper output)

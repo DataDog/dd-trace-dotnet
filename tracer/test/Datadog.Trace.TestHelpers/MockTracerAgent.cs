@@ -78,6 +78,11 @@ namespace Datadog.Trace.TestHelpers
         /// </summary>
         public List<Func<MockSpan, bool>> SpanFilters { get; } = new();
 
+        /// <summary>
+        /// Gets the filters used to filter out OTLP spans we don't want to look at for a test.
+        /// </summary>
+        public List<Func<MockOtlpSpan, bool>> OtlpSpanFilters { get; } = new();
+
         public ConcurrentBag<Exception> Exceptions { get; private set; } = new ConcurrentBag<Exception>();
 
         public IImmutableList<MockSpan> Spans { get; private set; } = ImmutableList<MockSpan>.Empty;
@@ -294,6 +299,11 @@ namespace Datadog.Trace.TestHelpers
                     OtlpSpans
                        .Where(s =>
                         {
+                            if (!OtlpSpanFilters.All(shouldReturn => shouldReturn(s)))
+                            {
+                                return false;
+                            }
+
                             if (s.StartTimeUnixNano < minimumOffset)
                             {
                                 // allow for clock-precision slack, same tolerance as WaitForSpansAsync

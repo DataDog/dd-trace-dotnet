@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
@@ -14,6 +15,7 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Datadog.Trace.TestHelpers.MockOtlp;
 using Xunit.Abstractions;
 
 namespace Datadog.Trace.TestHelpers
@@ -49,16 +51,6 @@ namespace Datadog.Trace.TestHelpers
 
         public int HttpPort { get; private set; }
 
-        /// <summary>
-        /// Gets the ddapm test-agent session the application under test exports OTLP to, for suites
-        /// that use <c>OTEL_TRACES_EXPORTER=otlp</c>. Owned by the fixture rather than by each test
-        /// case, because the fixture starts one process shared by every test case, and that process's
-        /// <c>OTEL_EXPORTER_OTLP_HEADERS</c> (which carries the session token) is fixed for its whole
-        /// lifetime -- a token generated per test case would stop matching what the running process
-        /// actually sends after the first one.
-        /// </summary>
-        internal OtlpTestAgentSession OtlpSession { get; } = new();
-
         public void SetOutput(ITestOutputHelper output)
         {
             lock (_outputLock)
@@ -82,7 +74,7 @@ namespace Datadog.Trace.TestHelpers
         /// <param name="useTelemetry">use telemetry</param>
         /// <exception cref="Exception">exception, dont timeout</exception>
         /// <returns>Awaits the Response to the alive check</returns>
-        public async Task TryStartApp(TestHelper helper, bool? enableSecurity = null, string externalRulesFile = null, bool sendHealthCheck = true, string packageVersion = "", MockTracerAgent.AgentConfiguration agentConfiguration = null, bool useTelemetry = false)
+        public async Task TryStartApp(TestHelper helper, bool? enableSecurity = null, string externalRulesFile = null, bool sendHealthCheck = true, string packageVersion = "", MockTracerAgent.AgentConfiguration agentConfiguration = null, bool useTelemetry = false, Action<MockTracerAgent.TcpUdpAgent> onAgentCreated = null)
         {
             if (Process is not null)
             {
@@ -97,6 +89,7 @@ namespace Datadog.Trace.TestHelpers
                 var initialAgentPort = TcpPortProvider.GetOpenPort();
 
                 Agent = MockTracerAgent.Create(_currentOutput, initialAgentPort, agentConfiguration: agentConfiguration, useTelemetry: useTelemetry);
+                onAgentCreated?.Invoke(Agent);
                 WriteToOutput($"Starting aspnetcore sample, agentPort: {Agent.Port}");
                 Process = await helper.StartSample(Agent, arguments: null, packageVersion: packageVersion, aspNetCorePort: 0, enableSecurity: enableSecurity, externalRulesFile: externalRulesFile);
 
@@ -176,6 +169,7 @@ namespace Datadog.Trace.TestHelpers
                 }
 
                 Agent.SpanFilters.Add(IsNotServerLifeCheck);
+                Agent.OtlpSpanFilters.Add(IsNotServerLifeCheckOtlp);
                 return;
             }
         }
@@ -397,6 +391,29 @@ namespace Datadog.Trace.TestHelpers
             if (url != null && (url.Contains("alive-check") || url.Contains("shutdown")))
             {
                 return false;
+            }
+
+            return true;
+        }
+
+        private bool IsNotServerLifeCheckOtlp(MockOtlpSpan span)
+        {
+            if (span.Name != null && (span.Name.Contains("alive-check") || span.Name.Contains("shutdown")))
+            {
+                return false;
+            }
+
+            foreach (var key in new[] { "url.path", "http.url", "http.target" })
+            {
+                var attribute = span.Attributes.FirstOrDefault(a => a.Key == key);
+                if (attribute?.Value.Kind == MockOtlpAttributeValueKind.String)
+                {
+                    var value = attribute.Value.StringValue;
+                    if (value != null && (value.Contains("alive-check") || value.Contains("shutdown")))
+                    {
+                        return false;
+                    }
+                }
             }
 
             return true;
