@@ -1,0 +1,30 @@
+<Directives xmlns="http://schemas.microsoft.com/netfx/2013/01/metadata">
+  <Application>
+    <!--
+      ClrMD 4.0's NuGet package ships netstandard2.0 and net10.0 builds.
+      For dd-dotnet targeting net7.0/net8.0/net9.0, NuGet resolves to the netstandard2.0
+      build which uses LegacyDacDataTargetWrapper (the #else branch of a compile-time #if).
+      That wrapper creates delegate instances for COM vtable callbacks, requiring marshalling
+      stubs that the NativeAOT compiler cannot discover statically.
+
+      These delegates implement the frozen ICLRDataTarget COM interface used by the legacy DAC.
+      Newer runtimes (.NET 9+) use cDAC instead and never hit this path.
+    -->
+    <Assembly Name="Microsoft.Diagnostics.Runtime">
+      <Type Name="Microsoft.Diagnostics.Runtime.DacInterface.LegacyDacDataTargetWrapper+GetMetadataDelegate" MarshalDelegate="Required All" />
+      <Type Name="Microsoft.Diagnostics.Runtime.DacInterface.LegacyDacDataTargetWrapper+GetMachineTypeDelegate" MarshalDelegate="Required All" />
+      <Type Name="Microsoft.Diagnostics.Runtime.DacInterface.LegacyDacDataTargetWrapper+GetPointerSizeDelegate" MarshalDelegate="Required All" />
+      <Type Name="Microsoft.Diagnostics.Runtime.DacInterface.LegacyDacDataTargetWrapper+GetImageBaseDelegate" MarshalDelegate="Required All" />
+      <Type Name="Microsoft.Diagnostics.Runtime.DacInterface.LegacyDacDataTargetWrapper+ReadVirtualDelegate" MarshalDelegate="Required All" />
+      <Type Name="Microsoft.Diagnostics.Runtime.DacInterface.LegacyDacDataTargetWrapper+WriteVirtualDelegate" MarshalDelegate="Required All" />
+      <Type Name="Microsoft.Diagnostics.Runtime.DacInterface.LegacyDacDataTargetWrapper+GetTLSValueDelegate" MarshalDelegate="Required All" />
+      <Type Name="Microsoft.Diagnostics.Runtime.DacInterface.LegacyDacDataTargetWrapper+SetTLSValueDelegate" MarshalDelegate="Required All" />
+      <Type Name="Microsoft.Diagnostics.Runtime.DacInterface.LegacyDacDataTargetWrapper+GetCurrentThreadIDDelegate" MarshalDelegate="Required All" />
+      <Type Name="Microsoft.Diagnostics.Runtime.DacInterface.LegacyDacDataTargetWrapper+GetThreadContextDelegate" MarshalDelegate="Required All" />
+      <Type Name="Microsoft.Diagnostics.Runtime.DacInterface.LegacyDacDataTargetWrapper+SetThreadContextDelegate" MarshalDelegate="Required All" />
+      <Type Name="Microsoft.Diagnostics.Runtime.DacInterface.LegacyDacDataTargetWrapper+RequestDelegate" MarshalDelegate="Required All" />
+      <Type Name="Microsoft.Diagnostics.Runtime.DacInterface.LegacyDacDataTargetWrapper+GetRuntimeBaseDelegate" MarshalDelegate="Required All" />
+      <Type Name="Microsoft.Diagnostics.Runtime.DacInterface.LegacyDacDataTargetWrapper+GetContractLocatorDelegate" MarshalDelegate="Required All" />
+    </Assembly>
+  </Application>
+</Directives>
