@@ -75,6 +75,11 @@ namespace Datadog.Trace.FeatureFlags
             return _isRemoteConfigurationAvailable && Volatile.Read(ref _evaluator) is not null;
         }
 
+        // Diagnostic helpers — temporary, remove when root cause identified.
+        internal bool IsRemoteConfigurationAvailable() => _isRemoteConfigurationAvailable;
+
+        internal bool HasEvaluator() => Volatile.Read(ref _evaluator) is not null;
+
         internal Evaluation Evaluate(string flagKey, ValueType resultType, object? defaultValue, string targetingKey, IDictionary<string, object?>? attributes)
         {
             var evaluator = Volatile.Read(ref _evaluator);

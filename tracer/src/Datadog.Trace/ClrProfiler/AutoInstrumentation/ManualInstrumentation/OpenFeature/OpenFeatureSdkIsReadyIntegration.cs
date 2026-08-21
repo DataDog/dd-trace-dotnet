@@ -30,6 +30,14 @@ public sealed class OpenFeatureSdkIsReadyIntegration
     internal static CallTargetReturn<bool> OnMethodEnd<TTarget>(bool returnValue, Exception? exception, in CallTargetState state)
     {
         var featureFlags = TracerManager.Instance.FeatureFlags;
-        return new CallTargetReturn<bool>(featureFlags?.IsReady() ?? false);
+        var result = featureFlags?.IsReady() ?? false;
+        // Diagnostic: written to stderr so the integration test can see it without affecting stdout assertions.
+        System.Console.Error.WriteLine($"[FFE-DBG] IsReadyIntegration: featureFlags={(featureFlags is null ? "NULL" : "present")}, IsReady={result}");
+        if (featureFlags is not null)
+        {
+            System.Console.Error.WriteLine($"[FFE-DBG] IsReadyIntegration: IsRemoteConfigAvailable={featureFlags.IsRemoteConfigurationAvailable()}, HasEvaluator={featureFlags.HasEvaluator()}");
+        }
+
+        return new CallTargetReturn<bool>(result);
     }
 }
