@@ -95,6 +95,8 @@ namespace Datadog.Profiler.SmokeTests
             runner.EnvironmentHelper.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "1");
             runner.EnvironmentHelper.SetVariable(EnvironmentVariables.MemoryFootprintEnabled, "1");
             runner.RunAndCheck();
+
+            CpuProfilerHelper.SkipIfTimerCreateWasDowngraded(runner.EnvironmentHelper.LogDir);
         }
 
         [Trait("Category", "LinuxOnly")]
@@ -106,6 +108,8 @@ namespace Datadog.Profiler.SmokeTests
             runner.EnvironmentHelper.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "1");
             runner.EnvironmentHelper.SetVariable(EnvironmentVariables.MemoryFootprintEnabled, "1");
             runner.RunAndCheck();
+
+            CpuProfilerHelper.SkipIfTimerCreateWasDowngraded(runner.EnvironmentHelper.LogDir);
         }
 
         [Trait("Category", "LinuxOnly")]
@@ -117,6 +121,8 @@ namespace Datadog.Profiler.SmokeTests
             runner.EnvironmentHelper.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "1");
             runner.EnvironmentHelper.SetVariable(EnvironmentVariables.MemoryFootprintEnabled, "1");
             runner.RunAndCheck();
+
+            CpuProfilerHelper.SkipIfTimerCreateWasDowngraded(runner.EnvironmentHelper.LogDir);
         }
 
         [Trait("Category", "LinuxOnly")]
@@ -128,6 +134,8 @@ namespace Datadog.Profiler.SmokeTests
             runner.EnvironmentHelper.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "1");
             runner.EnvironmentHelper.SetVariable(EnvironmentVariables.MemoryFootprintEnabled, "1");
             runner.RunAndCheck();
+
+            CpuProfilerHelper.SkipIfTimerCreateWasDowngraded(runner.EnvironmentHelper.LogDir);
         }
 
         [TestAppFact("Samples.Computer01")]

@@ -2892,6 +2892,18 @@ stages:
         apiKey: $(DD_LOGGER_DD_API_KEY)
         retryCountForRunCommand: 3
 
+    # 64 signal queue slots is far below what timer_create-based CPU profiling asks for, so the
+    # profiler must fall back to the manual one. Not 0: the runtime itself needs real-time signals
+    # to suspend threads, and those are the ones that actually fail when the queue is full.
+    - template: steps/run-in-docker.yml
+      parameters:
+        baseImage: $(baseImage)
+        useNativeSdkVersion: $(useNativeSdkVersion)
+        command: "BuildAndRunProfilerSigPendingLimitTests"
+        extraArgs: "--ulimit sigpending=64:64"
+        apiKey: $(DD_LOGGER_DD_API_KEY)
+        retryCountForRunCommand: 3
+
     - script: |
         docker-compose -f docker-compose.yml -p $(DockerComposeProjectName) \
           run --rm StartDependencies.Profiler
@@ -2998,6 +3010,17 @@ stages:
         baseImage: $(baseImage)
         command: "BuildAndRunProfilerCpuLimitTests"
         extraArgs: "--cpus 0.5 --env CONTAINER_CPUS=0.5"
+        apiKey: $(DD_LOGGER_DD_API_KEY)
+        retryCountForRunCommand: 3
+
+    # 64 signal queue slots is far below what timer_create-based CPU profiling asks for, so the
+    # profiler must fall back to the manual one. Not 0: the runtime itself needs real-time signals
+    # to suspend threads, and those are the ones that actually fail when the queue is full.
+    - template: steps/run-in-docker.yml
+      parameters:
+        baseImage: $(baseImage)
+        command: "BuildAndRunProfilerSigPendingLimitTests"
+        extraArgs: "--ulimit sigpending=64:64"
         apiKey: $(DD_LOGGER_DD_API_KEY)
         retryCountForRunCommand: 3
 

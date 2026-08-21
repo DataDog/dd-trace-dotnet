@@ -126,7 +126,7 @@ Configuration::Configuration()
         );
     _httpRequestDurationThreshold = ExtractHttpRequestDurationThreshold();
     _forceHttpSampling = GetEnvironmentValue(EnvironmentVariables::ForceHttpSampling, false);
-    _cpuProfilerType = GetEnvironmentValue(EnvironmentVariables::CpuProfilerType, DefaultCpuProfilerType);
+    _cpuProfilerType = ExtractCpuProfilerType(_isCpuProfilingEnabled, OpSysTools::GetAvailableSignalQueueSlots());
     _isWaitHandleProfilingEnabled = GetEnvironmentValue(EnvironmentVariables::WaitHandleProfilingEnabled, false);
     _isHeapSnapshotEnabled = GetEnvironmentValue(EnvironmentVariables::HeapSnapshotEnabled, false);
     _isHeapSnapshotSkipTraversal = GetEnvironmentValue(EnvironmentVariables::HeapSnapshotSkipTraversal, false);
@@ -526,6 +526,36 @@ std::chrono::milliseconds Configuration::ExtractCpuProfilingInterval(std::chrono
     // for CI-Visibility we allow it to be less
     auto interval = GetEnvironmentValue(EnvironmentVariables::CpuProfilingInterval, DefaultCpuProfilingInterval);
     return std::max(interval, minimum);
+}
+
+CpuProfilerType Configuration::ExtractCpuProfilerType(bool isCpuProfilingEnabled, std::optional<std::uint64_t> availableSignalQueueSlots)
+{
+    auto cpuProfilerType = GetEnvironmentValue(EnvironmentVariables::CpuProfilerType, DefaultCpuProfilerType);
+
+#ifdef LINUX
+    // Every timer_create timer holds a signal queue slot for its whole lifetime, and the kernel
+    // accounts those slots per real user id: the budget is shared with all the other processes
+    // running as the same user. Without enough headroom for this process' threads, timer creation
+    // fails and those threads silently produce no CPU sample. The manual profiler is a safe
+    // destination because it relies on a standard signal, which the kernel keeps delivering (minus
+    // its siginfo) once the queue is full.
+    if (isCpuProfilingEnabled &&
+        cpuProfilerType == CpuProfilerType::TimerCreate &&
+        availableSignalQueueSlots.has_value() &&
+        availableSignalQueueSlots.value() < MinimumFreeSignalQueueSlots)
+    {
+        Log::Warn("Only ", availableSignalQueueSlots.value(), " signal queue slots are available out of the ",
+                  MinimumFreeSignalQueueSlots, " required (see RLIMIT_SIGPENDING). ",
+                  "Falling back to the manual CPU profiler.");
+
+        return CpuProfilerType::ManualCpuTime;
+    }
+#else
+    (void)isCpuProfilingEnabled;
+    (void)availableSignalQueueSlots;
+#endif
+
+    return cpuProfilerType;
 }
 
 std::chrono::nanoseconds Configuration::ExtractCpuWallTimeSamplingRate(int minimum)
