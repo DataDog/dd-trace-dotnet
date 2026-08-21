@@ -243,12 +243,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             HttpClientIntegrationType httpClientIntegrationType,
             string metadataSchemaVersion)
         {
-            const int requestCount = 2 // Unary  (sync + async)
-                                    + 1 // 1 server streaming
-                                    + 1 // 1 client streaming
-                                    + 1 // 1 both streaming
-                                    + 1 // Deadline exceeded (async)
-                                    + (4 * 2); // 4 Error types (sync + async)
+            var requestCount = 2 // Unary (sync + async)
+                             + 1 // 1 server streaming
+                             + 1 // 1 client streaming
+                             + 1 // 1 both streaming
+                             + 1 // Deadline exceeded (async)
+                             + (4 * 2) // 4 Error types (sync + async)
+                             + (_usesAspNetCore ? 2 : 0); // Invalid content type + deadline exceeded (sync), GrpcDotNet only
 
             // Get between 3 and 5 spans per request:
             // (grpc + http) outbound + (grpc + aspnetcore) inbound
@@ -298,7 +299,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             {
                 using (processResult = await RunSampleAndWaitForExit(agent, packageVersion: packageVersion, aspNetCorePort: 0))
                 {
-                    var spans = await agent.WaitForSpansAsync(totalExpectedSpans, 500, assertExpectedCount: false);
+                    var spans = await agent.WaitForSpansAsync(totalExpectedSpans, 500, failOnTimeout: false);
 
                     using var scope = new AssertionScope();
 
