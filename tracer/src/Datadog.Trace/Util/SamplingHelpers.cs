@@ -41,8 +41,10 @@ namespace Datadog.Trace.Util
                 return false;
             }
 
-            return (id * KnuthFactor) <= (rate * ulong.MaxValue);
+            return ComputeKnuthHash(id) <= (rate * ulong.MaxValue);
         }
+
+        internal static ulong ComputeKnuthHash(ulong id) => id * KnuthFactor;
 
         internal static bool IsKeptBySamplingPriority(in SpanCollection trace)
         {
