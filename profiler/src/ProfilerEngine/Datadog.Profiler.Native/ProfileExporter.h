@@ -31,11 +31,8 @@ class ISsiManager;
 class IHeapSnapshotManager;
 class IGcSettingsProvider;
 
-namespace libdatadog {
-class Exporter;
-class Profile;
-class Tags;
-} // namespace libdatadog
+class PprofBuilder;
+class AgentHttpExporter;
 
 class ProfileExporter : public IExporter
 {
@@ -77,7 +74,7 @@ private:
         ~ProfileInfo();
 
     public:
-        std::unique_ptr<libdatadog::Profile> profile;
+        std::unique_ptr<PprofBuilder> profile;
         std::int32_t samplesCount;
         std::int32_t exportsCount;
         std::mutex lock;
@@ -94,18 +91,19 @@ private:
         std::lock_guard<std::mutex> _lockGuard;
     };
 
-    static libdatadog::Tags CreateFixedTags(IConfiguration* configuration, IRuntimeInfo* runtimeInfo, IEnabledProfilers* enabledProfilers);
+    static tags CreateFixedTags(IConfiguration* configuration, IRuntimeInfo* runtimeInfo, IEnabledProfilers* enabledProfilers);
 
-    std::unique_ptr<libdatadog::Exporter> CreateExporter(IConfiguration* configuration, libdatadog::Tags tags);
-    std::unique_ptr<libdatadog::Profile> CreateProfile(std::string serviceName);
+    std::unique_ptr<AgentHttpExporter> CreateExporter(IConfiguration* configuration, tags tags);
+    std::unique_ptr<PprofBuilder> CreateProfile(std::string serviceName);
 
-    void AddProcessSamples(libdatadog::Profile* profile, std::list<std::shared_ptr<Sample>> const& samples);
-    void Add(libdatadog::Profile* profile, std::shared_ptr<Sample> const& sample);
+    void AddProcessSamples(PprofBuilder* profile, std::list<std::shared_ptr<Sample>> const& samples);
+    void Add(PprofBuilder* profile, std::shared_ptr<Sample> const& sample);
 
     ProfileInfoScope GetOrCreateInfo(std::string_view runtimeId);
 
-    static void AddUpscalingRules(libdatadog::Profile* profile, std::vector<UpscalingInfo> const& upscalingInfos);
-    static void AddUpscalingPoissonRules(libdatadog::Profile* profile, std::vector<UpscalingPoissonInfo> const& upscalingInfos);
+    static void AddUpscalingRules(PprofBuilder* profile, std::vector<UpscalingInfo> const& upscalingInfos);
+    static void AddUpscalingPoissonRules(PprofBuilder* profile, std::vector<UpscalingPoissonInfo> const& upscalingInfos);
+    static bool ParseHttpUrl(std::string const& url, std::string& host, int& port, std::string& path);
     static fs::path CreatePprofOutputPath(IConfiguration* configuration);
 
     std::string CreateMetricsFileContent() const;
@@ -168,7 +166,7 @@ private:
     std::vector<IUpscalePoissonProvider*> _upscaledPoissonProviders;
     std::vector<ISamplesProvider*> _processSamplesProviders;
     IMetadataProvider* _metadataProvider;
-    std::unique_ptr<libdatadog::Exporter> _exporter;
+    std::unique_ptr<AgentHttpExporter> _exporter;
     IConfiguration* _configuration;
     IRuntimeInfo* _runtimeInfo;
     ISsiManager* _ssiManager;
