@@ -26,6 +26,10 @@
 
 #include "iast/dataflow.h"
 
+#ifdef LINUX
+#include <dlfcn.h>
+#endif
+
 #ifdef MACOS
 #include <mach-o/dyld.h>
 #include <mach-o/getsect.h>
@@ -37,6 +41,8 @@ namespace trace
 {
 
     CorProfiler* profiler = nullptr;
+
+    std::string GetLibDatadogFilePath();
 
 //
 // ICorProfilerCallback methods
@@ -188,6 +194,10 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
                        COR_PRF_MONITOR_MODULE_LOADS | COR_PRF_MONITOR_ASSEMBLY_LOADS | COR_PRF_MONITOR_APPDOMAIN_LOADS |
                        COR_PRF_ENABLE_REJIT;
 
+#ifdef LINUX
+    event_mask |= COR_PRF_MONITOR_THREADS;
+#endif
+
     if (!EnableInlining())
     {
         Logger::Info("JIT Inlining is disabled.");
@@ -280,11 +290,26 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
     }
 
     // we're in!
+#ifdef LINUX
+    InitializeOtelThreadContextCleanup();
+#endif
+
     Logger::Info("Current module filepath: ", currentModuleFileName);
     Logger::Info("Instrumentation attached.");
     this->info_->AddRef();
     is_attached_.store(true);
     profiler = this;
+    return S_OK;
+}
+
+HRESULT STDMETHODCALLTYPE CorProfiler::ThreadDestroyed(ThreadID thread_id)
+{
+    (void) thread_id;
+
+#ifdef LINUX
+    CleanupOtelThreadContext();
+#endif
+
     return S_OK;
 }
 
@@ -660,6 +685,51 @@ std::string GetLibDatadogFilePath()
     return libdatadog_file_path.string();
 }
 
+#ifdef LINUX
+void CorProfiler::InitializeOtelThreadContextCleanup()
+{
+    auto libdatadog_file_path = GetLibDatadogFilePath();
+    std::error_code ec;
+    if (!fs::exists(libdatadog_file_path, ec))
+    {
+        return;
+    }
+
+    libdatadog_handle_ = dlopen(libdatadog_file_path.c_str(), RTLD_LOCAL | RTLD_LAZY);
+    if (libdatadog_handle_ == nullptr)
+    {
+        Logger::Warn("Unable to load libdatadog for OpenTelemetry thread context cleanup: ", dlerror());
+        return;
+    }
+
+    otel_thread_context_detach_ = reinterpret_cast<OtelThreadContextDetach>(
+        dlsym(libdatadog_handle_, "ddog_otel_thread_ctx_detach"));
+    otel_thread_context_free_ = reinterpret_cast<OtelThreadContextFree>(
+        dlsym(libdatadog_handle_, "ddog_otel_thread_ctx_free"));
+
+    if (otel_thread_context_detach_ == nullptr || otel_thread_context_free_ == nullptr)
+    {
+        Logger::Warn("Unable to resolve libdatadog functions for OpenTelemetry thread context cleanup.");
+        otel_thread_context_detach_ = nullptr;
+        otel_thread_context_free_ = nullptr;
+    }
+}
+
+void CorProfiler::CleanupOtelThreadContext()
+{
+    if (otel_thread_context_detach_ == nullptr || otel_thread_context_free_ == nullptr)
+    {
+        return;
+    }
+
+    auto* context = otel_thread_context_detach_();
+    if (context != nullptr)
+    {
+        otel_thread_context_free_(context);
+    }
+}
+#endif
+
 HRESULT CorProfiler::TryRejitModule(ModuleID module_id, std::vector<ModuleID>& modules)
 {
     const auto& module_info = GetModuleInfo(this->info_, module_id);
@@ -841,6 +911,7 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id, std::vector<ModuleID>& m
             auto libdatadog_filepath = shared::ToWSTRING(libdatadog_library_path);
             RewritingPInvokeMaps(module_metadata, libdatadog_common_nativemethods_type, libdatadog_filepath);
             RewritingPInvokeMaps(module_metadata, libdatadog_libraryconfig_nativemethods_type, libdatadog_filepath);
+            RewritingPInvokeMaps(module_metadata, libdatadog_otel_thread_context_nativemethods_type, libdatadog_filepath);
         }
         else
         {
@@ -868,7 +939,7 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id, std::vector<ModuleID>& m
             RewritingPInvokeMaps(module_metadata, native_loader_nativemethods_type, native_loader_file_path);
         }
 
-        // with StableConfig, the env vars cannot be used any more so just check if the profiler binary file is present 
+        // with StableConfig, the env vars cannot be used any more so just check if the profiler binary file is present
         auto profiler_library_path = shared::GetEnvironmentValue(WStr("DD_INTERNAL_PROFILING_NATIVE_ENGINE_PATH"));
         if (!profiler_library_path.empty() && fs::exists(profiler_library_path))
         {

@@ -3272,6 +3272,14 @@ supportedConfigurations:
       Configuration key for specifying a timeout in milliseconds to the execution of the query string obfuscation regex
       Default value is 200ms
       <seealso cref="Datadog.Trace.Configuration.TracerSettings.ObfuscationQueryStringRegexTimeout"/>
+  DD_TRACE_OTEL_CTX_ENABLED:
+  - implementation: A
+    scope: managed
+    type: boolean
+    default: 'false'
+    product: OpenTelemetry
+    const_name: OtelThreadContextEnabled
+    documentation: Enables publishing the active trace and span identifiers using the OpenTelemetry thread context protocol.
   DD_TRACE_OTEL_ENABLED:
   - implementation: B
     scope: managed

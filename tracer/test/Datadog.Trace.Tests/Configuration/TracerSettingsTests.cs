@@ -126,6 +126,16 @@ namespace Datadog.Trace.Tests.Configuration
         }
 
         [Theory]
+        [MemberData(nameof(BooleanTestCases), false)]
+        public void OtelThreadContextEnabled(string value, bool expected)
+        {
+            var source = CreateConfigurationSource((ConfigurationKeys.OpenTelemetry.OtelThreadContextEnabled, value));
+            var settings = new TracerSettings(source);
+
+            settings.OtelThreadContextEnabled.Should().Be(expected);
+        }
+
+        [Theory]
         [InlineData("key1:value1,key2:value2", new[] { "key1:value1", "key2:value2" })]
         [InlineData("key1 :value1,invalid,key2: value2", new[] { "key1:value1", "key2:value2" })]
         [InlineData("invalid", new string[0])]

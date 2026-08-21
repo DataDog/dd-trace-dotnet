@@ -64,7 +64,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\..\src\Datadog.Trace.BenchmarkDotNet\Datadog.Trace.BenchmarkDotNet.csproj" />
     <ProjectReference Include="..\..\..\src\Datadog.Trace.Manual\Datadog.Trace.Manual.csproj" Aliases="DatadogTraceManual" />
-    <ProjectReference Include="..\..\..\src\Datadog.Trace\Datadog.Trace.csproj" />
+    <ProjectReference Include="..\..\..\src\Datadog.Trace\Datadog.Trace.csproj" Aliases="global,DatadogTrace" />
   </ItemGroup>
 
   <ItemGroup Condition=" '$(TargetFrameworkIdentifier)' != '.NETFramework' AND '$(TargetFramework)' != 'netcoreapp2.1' AND '$(TargetFramework)' != 'netcoreapp3.0' ">
