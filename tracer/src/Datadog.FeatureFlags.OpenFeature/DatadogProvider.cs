@@ -14,6 +14,7 @@ using System.Threading.Channels;
 using System.Threading.Tasks;
 using OpenFeature;
 using OpenFeature.Constant;
+using OpenFeature.Error;
 using OpenFeature.Model;
 
 namespace Datadog.FeatureFlags.OpenFeature;
@@ -23,8 +24,11 @@ namespace Datadog.FeatureFlags.OpenFeature;
 /// </summary>
 public sealed class DatadogProvider : global::OpenFeature.FeatureProvider, IDisposable
 {
+    private const int InitialConfigTimeoutSeconds = 30;
+    private static readonly TimeSpan InitialConfigTimeout = TimeSpan.FromSeconds(InitialConfigTimeoutSeconds);
     private static Action? _onNewConfig = null;
     private readonly Metadata _metadata = new Metadata("datadog-openfeature-provider");
+    private readonly TaskCompletionSource<bool> _initialConfigReceived = new(TaskCreationOptions.RunContinuationsAsynchronously);
 #if NET6_0_OR_GREATER
     private readonly FlagEvalMetricsHook _metricsHook;
 #endif
@@ -56,10 +60,46 @@ public sealed class DatadogProvider : global::OpenFeature.FeatureProvider, IDisp
         _onNewConfig = onNewConfig;
     }
 
+    private static void ThrowInitialConfigTimeout()
+    {
+        var message = $"Timed out after {InitialConfigTimeoutSeconds} seconds waiting for initial Datadog Feature Flags configuration from Remote Configuration.";
+        throw new ProviderNotReadyException(message, new TimeoutException(message));
+    }
+
+    /// <inheritdoc />
+    public override Task InitializeAsync(EvaluationContext context, CancellationToken cancellationToken)
+    {
+        var isReady = FeatureFlagsSdk.IsReady();
+        var isAvailable = FeatureFlagsSdk.IsAvailable();
+        // Diagnostic: stderr so it appears in CI logs without affecting stdout assertions.
+        System.Console.Error.WriteLine($"[FFE-DBG] InitializeAsync: IsReady={isReady}, IsAvailable={isAvailable}");
+
+        if (isReady)
+        {
+            System.Console.Error.WriteLine("[FFE-DBG] InitializeAsync: returning CompletedTask (already ready)");
+            return Task.CompletedTask;
+        }
+
+        if (!isAvailable)
+        {
+            System.Console.Error.WriteLine("[FFE-DBG] InitializeAsync: throwing ProviderFatalException (not available)");
+            var message = "Datadog tracer is not instrumented. Feature Flags cannot initialize. Ensure the Datadog automatic instrumentation agent is configured.";
+            throw new ProviderFatalException(message, new InvalidOperationException(message));
+        }
+
+        System.Console.Error.WriteLine("[FFE-DBG] InitializeAsync: entering WaitForInitialConfig");
+        return WaitForInitialConfig(cancellationToken);
+    }
+
     private void SignalGeneralUpdate()
     {
         try
         {
+            if (FeatureFlagsSdk.IsReady())
+            {
+                _initialConfigReceived.TrySetResult(true);
+            }
+
             _onNewConfig?.Invoke();
 
             // You don't have to provide specific flag keys
@@ -71,6 +111,39 @@ public sealed class DatadogProvider : global::OpenFeature.FeatureProvider, IDisp
             EventChannel.Writer.TryWrite((object)payload);
         }
         catch { }
+    }
+
+    private async Task WaitForInitialConfig(CancellationToken cancellationToken)
+    {
+        using var timeoutCts = new CancellationTokenSource();
+        var timeoutTask = Task.Delay(InitialConfigTimeout, timeoutCts.Token);
+
+        Task completedTask;
+        if (!cancellationToken.CanBeCanceled)
+        {
+            completedTask = await Task.WhenAny(_initialConfigReceived.Task, timeoutTask).ConfigureAwait(false);
+        }
+        else
+        {
+            var cancellationCompletionSource = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            using var cancellationRegistration = cancellationToken.Register(
+                state => ((TaskCompletionSource<bool>)state!).TrySetResult(true),
+                cancellationCompletionSource);
+            completedTask = await Task.WhenAny(_initialConfigReceived.Task, timeoutTask, cancellationCompletionSource.Task).ConfigureAwait(false);
+            if (completedTask == cancellationCompletionSource.Task)
+            {
+                timeoutCts.Cancel();
+                cancellationToken.ThrowIfCancellationRequested();
+            }
+        }
+
+        if (completedTask == timeoutTask)
+        {
+            ThrowInitialConfigTimeout();
+        }
+
+        timeoutCts.Cancel();
+        await _initialConfigReceived.Task.ConfigureAwait(false);
     }
 
     /// <summary> Gets provider metadata </summary>

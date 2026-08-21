@@ -26,6 +26,7 @@ namespace Datadog.Trace.FeatureFlags
         private readonly ISubscription _rcmSubscription;
         private readonly FfeProduct _ffeProduct;
         private readonly ExposureApi _exposureApi;
+        private readonly bool _isRemoteConfigurationAvailable;
         private readonly bool _spanEnrichmentEnabled;
 
         private Action? _onNewConfigEventHander;
@@ -37,6 +38,7 @@ namespace Datadog.Trace.FeatureFlags
             _spanEnrichmentEnabled = settings.IsSpanEnrichmentEnabled;
             _rcmSubscriptionManager = rcmSubscriptionManager;
             _exposureApi = new ExposureApi(settings);
+            _isRemoteConfigurationAvailable = settings.IsRemoteConfigurationAvailable;
             _ffeProduct = new FfeProduct(UpdateRemoteConfig);
             _rcmSubscription = new Subscription(_ffeProduct.UpdateFromRcm, RcmProducts.FfeFlags);
             _rcmSubscriptionManager.SubscribeToChanges(_rcmSubscription!);
@@ -60,8 +62,23 @@ namespace Datadog.Trace.FeatureFlags
 
         internal void RegisterOnNewConfigEventHandler(Action? onNewConfig)
         {
-            _onNewConfigEventHander = onNewConfig;
+            Volatile.Write(ref _onNewConfigEventHander, onNewConfig);
+
+            if (Volatile.Read(ref _evaluator) is not null)
+            {
+                onNewConfig?.Invoke();
+            }
         }
+
+        internal bool IsReady()
+        {
+            return _isRemoteConfigurationAvailable && Volatile.Read(ref _evaluator) is not null;
+        }
+
+        // Diagnostic helpers — temporary, remove when root cause identified.
+        internal bool IsRemoteConfigurationAvailable() => _isRemoteConfigurationAvailable;
+
+        internal bool HasEvaluator() => Volatile.Read(ref _evaluator) is not null;
 
         internal Evaluation Evaluate(string flagKey, ValueType resultType, object? defaultValue, string targetingKey, IDictionary<string, object?>? attributes)
         {
@@ -79,6 +96,8 @@ namespace Datadog.Trace.FeatureFlags
         private void UpdateRemoteConfig(List<KeyValuePair<string, ServerConfiguration>> list)
         {
             Log.Debug<int>("FeatureFlagsModule::UpdateRemoteConfig -> New config received. {Count}", list.Count);
+            // Diagnostic: stderr so CI logs capture it regardless of stdout capture.
+            System.Console.Error.WriteLine($"[FFE-DBG] UpdateRemoteConfig: count={list.Count}, time={System.DateTimeOffset.UtcNow:HH:mm:ss.fff}, handlerNull={_onNewConfigEventHander is null}");
             try
             {
                 // Feed configs to the rules evaluator
@@ -93,6 +112,7 @@ namespace Datadog.Trace.FeatureFlags
                     Interlocked.Exchange(ref _evaluator, null);
                 }
 
+                System.Console.Error.WriteLine($"[FFE-DBG] UpdateRemoteConfig: after exchange, HasEvaluator={Volatile.Read(ref _evaluator) is not null}, invoking handler={_onNewConfigEventHander is not null}");
                 _onNewConfigEventHander?.Invoke();
             }
             catch (Exception ex)
