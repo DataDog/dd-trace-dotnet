@@ -392,15 +392,13 @@ std::unique_ptr<SamplesEnumerator> MemoryBreakdownProvider::GetSamples()
         auto sample = std::make_shared<Sample>(std::chrono::nanoseconds(0), std::string_view{}, 8);
         sample->AddValue(static_cast<int64_t>(memoryBreakdown), _memoryBreakdownOffset);
 
-        // Frames: parent-first (root -> group -> leaf).
-        sample->AddFrame({membreakdown::Module, membreakdown::Root, "", 0});
-
+        // Frames are emitted leaf-first: pprof/libdatadog treats locations[0] as the leaf and the last
+        // location as the root. So each sample is built as leaf -> group, with the common Root frame
+        // appended after the switch.
         switch (leaf.source)
         {
             case Source::Managed:
             {
-                sample->AddFrame({membreakdown::Module, membreakdown::Managed, "", 0});
-
                 std::string_view leafFrame = membreakdown::GcHeap;
                 if (leaf.kind == NativeHeapKind::GCHeapSegment && leaf.generation >= 0 && leaf.generation <= 4)
                 {
@@ -427,6 +425,7 @@ std::unique_ptr<SamplesEnumerator> MemoryBreakdownProvider::GetSamples()
                     leafFrame = membreakdown::GcBook;
                 }
                 sample->AddFrame({membreakdown::Module, leafFrame, "", 0});
+                sample->AddFrame({membreakdown::Module, membreakdown::Managed, "", 0});
 
                 sample->AddLabel(StringLabel{MemorySourceLabel, SourceManaged});
                 if (leaf.kind == NativeHeapKind::GCHeapSegment && leaf.generation >= 0 && leaf.generation <= 4)
@@ -440,8 +439,6 @@ std::unique_ptr<SamplesEnumerator> MemoryBreakdownProvider::GetSamples()
 
             case Source::ClrNative:
             {
-                sample->AddFrame({membreakdown::Module, membreakdown::ClrNative, "", 0});
-
                 std::string_view leafFrame = membreakdown::Code;
                 const NativeHeapGroup group = GroupOf(leaf.kind);
                 if (group == NativeHeapGroup::Loader)
@@ -453,6 +450,7 @@ std::unique_ptr<SamplesEnumerator> MemoryBreakdownProvider::GetSamples()
                     leafFrame = membreakdown::Vsd;
                 }
                 sample->AddFrame({membreakdown::Module, leafFrame, "", 0});
+                sample->AddFrame({membreakdown::Module, membreakdown::ClrNative, "", 0});
 
                 sample->AddLabel(StringLabel{MemorySourceLabel, SourceClrNative});
                 sample->AddLabel(StringLabel{RegionGroupLabel, ToString(group)});
@@ -463,12 +461,12 @@ std::unique_ptr<SamplesEnumerator> MemoryBreakdownProvider::GetSamples()
 
             case Source::Image:
             {
-                sample->AddFrame({membreakdown::Module, membreakdown::Modules, "", 0});
                 if (!leaf.moduleName.empty())
                 {
                     _frameStrings.push_back(std::string("|lm: |ns: |ct: |cg: |fn:") + leaf.moduleName + " |fg: |sg:");
                     sample->AddFrame({membreakdown::Module, _frameStrings.back(), "", 0});
                 }
+                sample->AddFrame({membreakdown::Module, membreakdown::Modules, "", 0});
                 sample->AddLabel(StringLabel{MemorySourceLabel, SourceImage});
                 if (!leaf.moduleName.empty())
                 {
@@ -479,13 +477,13 @@ std::unique_ptr<SamplesEnumerator> MemoryBreakdownProvider::GetSamples()
 
             case Source::MappedFile:
             {
-                sample->AddFrame({membreakdown::Module, membreakdown::MappedFiles, "", 0});
                 if (!leaf.moduleName.empty())
                 {
                     _frameStrings.push_back(std::string("|lm: |ns: |ct: |cg: |fn:") + leaf.moduleName + " |fg: |sg:");
                     sample->AddFrame({membreakdown::Module, _frameStrings.back(), "", 0});
                     sample->AddLabel(StringLabel{MappedFileLabel, leaf.moduleName});
                 }
+                sample->AddFrame({membreakdown::Module, membreakdown::MappedFiles, "", 0});
                 sample->AddLabel(StringLabel{MemorySourceLabel, SourceMappedFile});
                 break;
             }
@@ -508,6 +506,9 @@ std::unique_ptr<SamplesEnumerator> MemoryBreakdownProvider::GetSamples()
                 sample->AddLabel(StringLabel{MemorySourceLabel, SourcePrivate});
                 break;
         }
+
+        // Root frame is common to every sample and must be the deepest (last) frame.
+        sample->AddFrame({membreakdown::Module, membreakdown::Root, "", 0});
 
 #ifdef LINUX
         if (leaf.rssEstimated)

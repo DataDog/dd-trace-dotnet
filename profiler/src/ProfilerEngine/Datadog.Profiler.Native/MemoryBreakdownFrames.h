@@ -6,8 +6,9 @@
 #include <string_view>
 
 // Static synthetic frame strings for the memory-breakdown flamegraph. Same "|lm: |ns: |ct: |cg:
-// |fn:<name> |fg: |sg:" encoding as GCBaseRawSample. Frames are added parent-first
-// (Root -> group -> leaf), mirroring GCBaseRawSample::BuildCallStack.
+// |fn:<name> |fg: |sg:" encoding as GCBaseRawSample. Frames are emitted leaf-first
+// (leaf -> group -> Root), matching the pprof/libdatadog convention where locations[0] is the leaf
+// and the last location is the root.
 //
 // Dynamic frames (per-module / per-file) are built at runtime into the provider's backing store; only
 // the fixed levels live here.

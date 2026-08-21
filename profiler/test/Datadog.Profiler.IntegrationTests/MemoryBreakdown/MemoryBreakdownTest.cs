@@ -127,9 +127,11 @@ namespace Datadog.Profiler.IntegrationTests.MemoryBreakdown
 
             foreach (var (stack, labels, _) in samples)
             {
-                // every memory sample is rooted at "Process Memory"
+                // Frames are emitted leaf-first (pprof convention: locations[0] is the leaf, the last
+                // location is the root), so every memory sample must end with the "Process Memory" root.
                 var functions = Enumerable.Range(0, stack.FramesCount).Select(i => stack[i].Function).ToList();
-                Assert.Contains("Process Memory", functions);
+                Assert.True(functions.Count > 0, "memory sample has no frames");
+                Assert.Equal("Process Memory", functions[functions.Count - 1]);
 
                 foreach (var fn in functions)
                 {

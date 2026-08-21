@@ -118,6 +118,20 @@ bool FrameContains(const std::shared_ptr<Sample>& s, std::string_view needle)
     return false;
 }
 
+// Index of the first frame whose name contains needle, or -1 if none.
+int FrameIndex(const std::shared_ptr<Sample>& s, std::string_view needle)
+{
+    auto const& stack = s->GetCallstack();
+    for (size_t i = 0; i < stack.size(); ++i)
+    {
+        if (stack[i].Frame.find(needle) != std::string_view::npos)
+        {
+            return static_cast<int>(i);
+        }
+    }
+    return -1;
+}
+
 int64_t MemoryBreakdown(const std::shared_ptr<Sample>& s)
 {
     return s->GetValues()[MemoryBreakdownIndex];
@@ -289,6 +303,53 @@ TEST(MemoryBreakdownProviderTest, ManagedGenerationFramesAndLabels)
         }
         EXPECT_TRUE(found) << "missing frame " << e.frame;
     }
+}
+
+TEST(MemoryBreakdownProviderTest, FramesAreEmittedLeafFirst)
+{
+    // pprof/libdatadog convention: locations[0] is the leaf and the last location is the root.
+    // Every memory sample must therefore end with the "Process Memory" root frame, and a managed
+    // generation sample must be ordered leaf (gen) -> group (Managed Heap) -> root (Process Memory).
+    auto map = BuildScenarioMap();
+    FakeClrNativeHeapSnapshot snapshot(BuildScenarioHeaps(), /*available*/ true, "dac", map.get());
+
+    SampleValueTypeProvider valueTypeProvider;
+    MetricsRegistry registry;
+    MemoryBreakdownProvider provider(valueTypeProvider, &snapshot, registry);
+
+    auto samples = Collect(provider.GetSamples().get());
+    ASSERT_FALSE(samples.empty());
+
+    // The root frame is common to every sample and must be the deepest (last) frame.
+    for (const auto& s : samples)
+    {
+        auto const& stack = s->GetCallstack();
+        ASSERT_FALSE(stack.empty());
+        EXPECT_NE(stack.back().Frame.find("fn:Process Memory "), std::string_view::npos)
+            << "last frame must be the Process Memory root";
+    }
+
+    // Find the gen0 sample and assert its leaf -> group -> root ordering.
+    bool checkedGen0 = false;
+    for (const auto& s : samples)
+    {
+        const int gen0 = FrameIndex(s, "fn:gen0 ");
+        if (gen0 < 0)
+        {
+            continue;
+        }
+        checkedGen0 = true;
+
+        const int group = FrameIndex(s, "fn:Managed Heap (GC) ");
+        const int root = FrameIndex(s, "fn:Process Memory ");
+
+        ASSERT_GE(group, 0);
+        ASSERT_GE(root, 0);
+        EXPECT_LT(gen0, group) << "leaf (gen0) must come before its group";
+        EXPECT_LT(group, root) << "group must come before the root";
+        EXPECT_EQ(gen0, 0) << "leaf must be at index 0";
+    }
+    EXPECT_TRUE(checkedGen0) << "no gen0 sample to validate ordering";
 }
 
 TEST(MemoryBreakdownProviderTest, ClrNativeLeafHasGroupAndKindLabels)
