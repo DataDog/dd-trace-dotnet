@@ -373,7 +373,7 @@ namespace Datadog.Trace.Agent
             // Based on https://github.com/DataDog/datadog-agent/blob/ce22e11ee71e55be717b9d9a3f8f3d7721a9c6d7/pkg/trace/stats/aggregation.go
             var spanKind = (span.Tags is InstrumentationTags t ? t.SpanKind : span.GetTag(Tags.SpanKind)) ?? string.Empty;
             var isTraceRoot = span.Context.ParentId is null or 0;
-            var httpMethod = span.GetTag(Tags.HttpMethod) ?? string.Empty;
+            var httpMethod = span.GetHttpMethod() ?? string.Empty;
             var httpEndpoint = span.GetTag(Tags.HttpRoute) ?? string.Empty;
 
             // Normalize service source to match trace serialization behavior:

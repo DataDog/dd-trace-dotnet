@@ -56,7 +56,7 @@ namespace Datadog.Trace.OpenTelemetry
 
             // "http.request.method_original" is only set when it differs from "http.request.method", ignoring case.
             // Always assigned, as some integrations call this method more than once for the same span.
-            tags.HttpRequestMethodOriginal = requestMethod == OtherRequestMethod ? httpMethod : null;
+            tags.HttpRequestMethodOriginal = GetRequestMethodOriginal(httpMethod, requestMethod);
 
             // The span name is "{method} {target}", but there is no low-cardinality target available
             // for HTTP client spans until we support "url.template", so we only use the method.
@@ -72,10 +72,55 @@ namespace Datadog.Trace.OpenTelemetry
         }
 
         /// <summary>
+        /// Sets the span name and the request tags of an HTTP server span, using the OpenTelemetry
+        /// HTTP semantic conventions. This is the OpenTelemetry-semantics counterpart of
+        /// <see cref="ExtensionMethods.SpanExtensions.DecorateWebServerSpan"/>: callers must use
+        /// exactly one of the two for a given span, never both.
+        /// </summary>
+        /// <param name="span">The HTTP server span.</param>
+        /// <param name="tags">The tags of <paramref name="span"/>.</param>
+        /// <param name="resourceName">The resource name to assign to <paramref name="span"/>.</param>
+        /// <param name="originalMethod">The HTTP method as reported by the framework, before normalization.</param>
+        /// <param name="userAgent">The value of the "User-Agent" request header.</param>
+        /// <param name="scheme">The request scheme, e.g. <c>https</c>.</param>
+        /// <param name="host">The server host, without the port.</param>
+        /// <param name="port">The server port, if known.</param>
+        /// <param name="pathBase">The application path base, already URI-encoded.</param>
+        /// <param name="path">The request path, already URI-encoded.</param>
+        /// <param name="queryString">The raw query string, including the leading '?' if present.</param>
+        /// <param name="queryStringManager">Used to truncate and obfuscate the query string.</param>
+        internal static void SetHttpServerRequestValues(
+            Span span,
+            WebTags tags,
+            string? resourceName,
+            string? originalMethod,
+            string? userAgent,
+            string? scheme,
+            string? host,
+            int? port,
+            string? pathBase,
+            string? path,
+            string? queryString,
+            QueryStringManager? queryStringManager)
+        {
+            span.Type = SpanTypes.Web;
+            span.ResourceName = resourceName?.Trim();
+
+            var requestMethod = NormalizeRequestMethod(originalMethod);
+
+            tags.HttpMethod = requestMethod;
+            tags.HttpUserAgent = userAgent;
+            tags.HttpRequestMethodOriginal = GetRequestMethodOriginal(originalMethod, requestMethod);
+
+            SetHttpServerUrlTags(tags, scheme, host, port, pathBase, path, queryString, queryStringManager);
+        }
+
+        /// <summary>
         /// Gets the value to report in "server.address" for <paramref name="host"/>. Same as
-        /// <see cref="HttpRequestUtils.GetNormalizedHost"/>, except that the brackets
-        /// <see cref="Uri.Host"/> puts around IPv6 addresses (for example, "[::1]") are stripped, as
-        /// OpenTelemetry expects the address itself. The brackets are only kept in "url.full".
+        /// <see cref="HttpRequestUtils.GetNormalizedHost"/>, except that the brackets that
+        /// <see cref="Uri.Host"/> and ASP.NET Core's HostString.Host put around IPv6
+        /// addresses (for example, "[::1]") are stripped, as OpenTelemetry expects the address
+        /// itself. The brackets are only kept in "url.full".
         /// </summary>
         internal static string? GetServerAddress(string? host)
         {
@@ -113,6 +158,55 @@ namespace Datadog.Trace.OpenTelemetry
                 tags.NetworkProtocolVersion = GetNetworkProtocolVersion(protocolVersion);
             }
         }
+
+        /// <summary>
+        /// Sets the OpenTelemetry URL and server attributes for an HTTP server span from the individual
+        /// request components, so no URL parsing is required.
+        /// </summary>
+        /// <param name="tags">The span tags.</param>
+        /// <param name="scheme">The request scheme, e.g. <c>https</c>.</param>
+        /// <param name="host">The server host, without the port.</param>
+        /// <param name="port">The server port, if known.</param>
+        /// <param name="pathBase">The application path base, already URI-encoded.</param>
+        /// <param name="path">The request path, already URI-encoded.</param>
+        /// <param name="queryString">The raw query string, including the leading '?' if present.</param>
+        /// <param name="queryStringManager">Used to truncate and obfuscate the query string.</param>
+        internal static void SetHttpServerUrlTags(
+            WebTags tags,
+            string? scheme,
+            string? host,
+            int? port,
+            string? pathBase,
+            string? path,
+            string? queryString,
+            QueryStringManager? queryStringManager)
+        {
+            tags.UrlScheme = scheme;
+            tags.UrlPath = StringUtil.IsNullOrEmpty(pathBase) ? path : pathBase + path;
+
+            var query = queryStringManager?.TruncateAndObfuscate(queryString) ?? queryString;
+            if (!StringUtil.IsNullOrEmpty(query))
+            {
+                // url.query excludes the leading '?'
+                tags.UrlQuery = query[0] == '?' ? query.Substring(1) : query;
+            }
+
+            if (!StringUtil.IsNullOrEmpty(host))
+            {
+                tags.ServerAddress = GetServerAddress(host);
+
+                // server.port is only set when server.address is set
+                tags.ServerPort = port;
+            }
+        }
+
+        /// <summary>
+        /// Calculates the value to report in <c>http.request.method_original</c> when the original method differs from the normalized one.
+        /// </summary>
+        /// <param name="originalMethod">The request method as reported by the framework.</param>
+        /// <param name="normalizedMethod">The normalized value written to <c>http.request.method</c>.</param>
+        internal static string? GetRequestMethodOriginal(string? originalMethod, string normalizedMethod)
+            => normalizedMethod == OtherRequestMethod ? originalMethod : null;
 
         /// <summary>
         /// Gets the value to report in "network.protocol.version" for the protocol version of a
