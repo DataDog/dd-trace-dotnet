@@ -50,6 +50,17 @@ supportedConfigurations:
       Configuration key to disable polling the /info endpoint in the trace agent for feature discovery.
       Default value is true (polling enabled).
       <seealso cref="TracerSettings.AgentFeaturePollingEnabled"/>
+  DD_AGENTLESS_ENABLED:
+  - implementation: A
+    scope: managed, native
+    type: boolean
+    default: 'false'
+    const_name: AgentlessEnabled
+    documentation: |-
+      Global switch for sending supported product data directly to Datadog intake instead of through the local Agent.
+      When explicitly set, this value takes precedence over supported product-specific agentless settings.
+      Existing product-specific settings may be used as compatibility fallbacks when this key is not set.
+      Default value is false (disabled).
   DD_API_KEY:
   - implementation: A
     scope: managed, native
