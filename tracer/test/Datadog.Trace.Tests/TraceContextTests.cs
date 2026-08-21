@@ -296,7 +296,7 @@ namespace Datadog.Trace.Tests
         }
 
         [Fact]
-        public void SetSamplingPriority_RateLimiterDemotesKeep_StripsThButKeepsRv()
+        public void SetSamplingPriority_RateLimiterDemotesKeep_ClearsLocallyGeneratedOtelTraceState()
         {
             var traceContext = TraceContextTestHelpers.CreateTraceContextWithRootSpan(traceIdLower: 0xfff972474538efff);
 
@@ -307,11 +307,11 @@ namespace Datadog.Trace.Tests
                 limiterRate: 0.05f,
                 sample: true);
 
-            traceContext.OtelTraceState.Should().Be("rv:ef284ace7a91e1");
+            traceContext.OtelTraceState.Should().BeNull();
         }
 
         [Fact]
-        public void TraceSampler_LimiterDemotesKeep_ErasesThOnTraceContext_ViaGetOrMakeSamplingDecision()
+        public void TraceSampler_LimiterDemotesKeep_ClearsOtelTraceState_ViaGetOrMakeSamplingDecision()
         {
             var builder = new TraceSampler.Builder(new TracerRateLimiter(maxTracesPerInterval: 0, intervalMilliseconds: null));
             builder.RegisterRule(new GlobalSamplingRateRule(1.0f));
@@ -324,7 +324,24 @@ namespace Datadog.Trace.Tests
 
             traceContext.GetOrMakeSamplingDecision();
 
-            traceContext.OtelTraceState.Should().Be("rv:ef284ace7a91e1");
+            traceContext.OtelTraceState.Should().BeNull();
+        }
+
+        [Fact]
+        public void SetSamplingPriority_RateLimiterDemotesKeep_PreservesInheritedOtelTraceState()
+        {
+            const string inboundOtelTraceState = "rv:ef284ace7a91e1;th:e6666666666668";
+            var traceContext = TraceContextTestHelpers.CreateTraceContextWithRootSpan(traceIdLower: 0xfff972474538efff);
+            traceContext.OtelTraceState = inboundOtelTraceState;
+
+            traceContext.SetSamplingPriority(
+                priority: SamplingPriorityValues.UserReject,
+                mechanism: SamplingMechanism.LocalTraceSamplingRule,
+                rate: 0.1f,
+                limiterRate: 0.05f,
+                sample: true);
+
+            traceContext.OtelTraceState.Should().Be(inboundOtelTraceState);
         }
 
         [Theory]
