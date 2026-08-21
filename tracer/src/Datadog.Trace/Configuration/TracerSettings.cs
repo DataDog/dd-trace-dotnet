@@ -763,9 +763,6 @@ namespace Datadog.Trace.Configuration
                 DisabledAdoNetCommandTypes.UnionWith(userSplit);
             }
 
-            IsFlaggingProviderEnabled = config.WithKeys(ConfigurationKeys.FeatureFlags.FlaggingProviderEnabled)
-                                                       .AsBool(false);
-
             IsSpanEnrichmentEnabled = config.WithKeys(ConfigurationKeys.FeatureFlags.SpanEnrichmentEnabled)
                                                        .AsBool(false);
 
@@ -1497,12 +1494,7 @@ namespace Datadog.Trace.Configuration
         internal HashSet<string> DisabledAdoNetCommandTypes { get; }
 
         /// <summary>
-        /// Gets a value indicating whether remote Feature Flags Provider is enabled
-        /// </summary>
-        internal bool IsFlaggingProviderEnabled { get; }
-
-        /// <summary>
-        /// Gets a value indicating whether APM span enrichment is enabled; see <see cref="IsFlaggingProviderEnabled"/>.
+        /// Gets a value indicating whether APM span enrichment is enabled; see <see cref="FeatureFlags"/>.
         /// </summary>
         internal bool IsSpanEnrichmentEnabled { get; }
 

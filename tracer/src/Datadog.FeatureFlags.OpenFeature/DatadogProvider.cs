@@ -33,6 +33,8 @@ public sealed class DatadogProvider : global::OpenFeature.FeatureProvider, IDisp
     // nothing is allocated/registered when the feature is disabled.
     private readonly SpanEnrichmentHook? _spanEnrichmentHook;
 
+    private int _readySignalled;
+
     /// <summary> Initializes a new instance of the <see cref="DatadogProvider"/> class. </summary>
     public DatadogProvider()
     {
@@ -62,16 +64,78 @@ public sealed class DatadogProvider : global::OpenFeature.FeatureProvider, IDisp
         {
             _onNewConfig?.Invoke();
 
-            // You don't have to provide specific flag keys
-            var payload = new ProviderEventPayload
+            // The first configuration is what makes this provider usable, and only a ready event
+            // promotes it: initialization reports an error when no delivery source could start, and
+            // OpenFeature keeps that status until told otherwise. Later configurations are changes,
+            // which deliberately leave the status alone.
+            if (Interlocked.CompareExchange(ref _readySignalled, 1, 0) == 0)
             {
-                Message = "A backend update occurred, but specific changes are unknown."
-            };
+                SignalReady();
+                return;
+            }
 
-            EventChannel.Writer.TryWrite((object)payload);
+            // Specific flag keys are unknown, so this payload only reports that something changed.
+            // An event already queued says exactly the same thing, which is why a full channel is
+            // left alone: the notification is on its way regardless.
+            EventChannel.Writer.TryWrite(CreatePayload(ProviderEventTypes.ProviderConfigurationChanged, "A backend update occurred, but specific changes are unknown."));
         }
         catch { }
     }
+
+    private void SignalReady()
+    {
+        var payload = CreatePayload(ProviderEventTypes.ProviderReady, "Feature flag configuration was received.");
+
+        if (EventChannel.Writer.TryWrite(payload))
+        {
+            return;
+        }
+
+        // Unlike a change notification, this one cannot be dropped: losing it would leave the provider
+        // reported as errored for the rest of the process even though it can now resolve flags. The
+        // channel holds a single item, so waiting for room happens in the background rather than on the
+        // thread applying the configuration. Only ever one such write exists, because it is signalled once.
+        _ = WriteWhenRoomAvailableAsync(payload);
+    }
+
+    private async Task WriteWhenRoomAvailableAsync(ProviderEventPayload payload)
+    {
+        try
+        {
+            await EventChannel.Writer.WriteAsync(payload).ConfigureAwait(false);
+        }
+        catch
+        {
+            // The channel is completed when the provider is replaced or the SDK shuts down, at which
+            // point this provider's status no longer matters.
+        }
+    }
+
+    private ProviderEventPayload CreatePayload(ProviderEventTypes type, string message)
+        => new ProviderEventPayload
+        {
+            Type = type,
+            Message = message,
+            ProviderName = _metadata.Name,
+        };
+
+    /// <summary>
+    /// Starts flag configuration delivery and waits for the first configuration, so that a ready
+    /// provider can actually resolve flags.
+    /// <para>
+    /// It returns normally when the wait times out, because slow delivery is transient and the
+    /// configuration still arrives afterwards. It faults when no source could start delivery at all,
+    /// which leaves the provider unable to resolve anything for the rest of the process: OpenFeature
+    /// then marks this provider as errored instead of ready, and evaluations keep returning their
+    /// default values. The exception does not reach the application, because OpenFeature handles it
+    /// while setting the provider.
+    /// </para>
+    /// </summary>
+    /// <param name="context"> Evaluation context </param>
+    /// <param name="cancellationToken"> Async cancellation token </param>
+    /// <returns> A task that completes when initialization is complete </returns>
+    public override Task InitializeAsync(EvaluationContext context, CancellationToken cancellationToken = default)
+        => FeatureFlagsSdk.InitializeAsync(cancellationToken);
 
     /// <summary> Gets provider metadata </summary>
     /// <returns> Returns provider metadata </returns>
