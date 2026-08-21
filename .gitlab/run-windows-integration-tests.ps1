@@ -40,7 +40,7 @@ $testFilter = $null
 
 switch ($testSuite) {
     'integration' {
-        # LocalDB, IIS, Chrome, and Docker dependencies are covered by dedicated jobs.
+        # LocalDB, GAC/IIS, Chrome, and Docker dependencies are covered by dedicated jobs.
         # MSMQ is available in the Windows build image.
         $testFilter = '(RunOnWindows=True)&(LoadFromGAC!=True)&(IIS!=True)&(IISExpress!=True)&(Category!=AzureFunctions)&(SkipInCI!=True)&(RequiresDockerDependency!=true)&(RequiresLocalDb!=True)&(RequiresChrome!=True)'
         if ($area -eq 'ASM') {
@@ -52,6 +52,9 @@ switch ($testSuite) {
         $nukeArguments = '--IncludeTestsRequiringDocker false'
     }
     'iis' {
+        # This suite mirrors Azure's integration_tests_windows_iis stage. Despite
+        # the historical name, the NUKE target selects LoadFromGAC=True and runs
+        # the GAC-backed ASP.NET tests in both tracer and security projects.
         # The ASP.NET projects use packages.config. Restore them explicitly because
         # GitLab jobs do not download Azure's pre-restored working-directory artifact.
         $nukeTargets = 'Restore BuildAspNetIntegrationTests RunWindowsTracerIisIntegrationTests'
@@ -167,7 +170,10 @@ if ($testSuite -eq 'selenium') {
     $packagesRoot = Join-Path $repositoryRoot 'packages'
     $toolContainer = $null
 
-    New-Item -ItemType Directory -Force $dotnetRoot, $dotnetCliHome, $chromeRoot, $chromeDriverRoot, $seleniumTempRoot, $seleniumLogRoot, $packagesRoot | Out-Null
+    # Leave the browser destinations absent: on Windows, `docker cp` can copy a
+    # directory to a new destination, while the Unix-style `directory\.` source
+    # syntax is rejected by the Windows Docker daemon.
+    New-Item -ItemType Directory -Force $dotnetRoot, $dotnetCliHome, $seleniumTempRoot, $seleniumLogRoot, $packagesRoot | Out-Null
 
     # Keep the SDK and all CLI state in the checkout because Windows runners are
     # shared and persistent. The installation script is also used by container jobs.
@@ -205,12 +211,12 @@ if ($testSuite -eq 'selenium') {
             throw "Could not create a temporary container from $windowsBuildImage"
         }
 
-        & docker cp "${toolContainer}:C:\devtools\chrome\chrome-headless-shell-win64\." $chromeRoot
+        & docker cp "${toolContainer}:C:\devtools\chrome\chrome-headless-shell-win64" $chromeRoot
         if ($LASTEXITCODE -ne 0) {
             throw 'Could not copy Chrome from the Windows build image'
         }
 
-        & docker cp "${toolContainer}:C:\devtools\chromedriver\chromedriver-win64\." $chromeDriverRoot
+        & docker cp "${toolContainer}:C:\devtools\chromedriver\chromedriver-win64" $chromeDriverRoot
         if ($LASTEXITCODE -ne 0) {
             throw 'Could not copy ChromeDriver from the Windows build image'
         }

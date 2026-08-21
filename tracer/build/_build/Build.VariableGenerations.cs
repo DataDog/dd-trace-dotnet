@@ -166,6 +166,8 @@ partial class Build : NukeBuild
         {
             AppendWindowsJob("integration-tests-windows-localdb-x64:net48:tracer", TargetFramework.NET48, "x64", "localdb", TracerArea);
 
+            // Match Azure's historically named IIS matrix. RunWindowsTracerIisIntegrationTests
+            // selects LoadFromGAC=True, so these cells are the dedicated GAC/IIS suite.
             foreach (var targetPlatform in targetPlatforms)
             {
                 AppendWindowsJob($"integration-tests-windows-iis-{targetPlatform}:net48:tracer", TargetFramework.NET48, targetPlatform, "iis", TracerArea);
