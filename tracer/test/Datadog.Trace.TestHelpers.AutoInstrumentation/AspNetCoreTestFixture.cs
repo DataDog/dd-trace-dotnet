@@ -398,7 +398,7 @@ namespace Datadog.Trace.TestHelpers
 
         private bool IsNotServerLifeCheckOtlp(MockOtlpSpan span)
         {
-            if (span.Name != null && (span.Name.Contains("alive-check") || span.Name.Contains("shutdown")))
+            if (span.Name is not null && (span.Name.Contains("alive-check") || span.Name.Contains("shutdown")))
             {
                 return false;
             }
@@ -409,7 +409,7 @@ namespace Datadog.Trace.TestHelpers
                 if (attribute?.Value.Kind == MockOtlpAttributeValueKind.String)
                 {
                     var value = attribute.Value.StringValue;
-                    if (value != null && (value.Contains("alive-check") || value.Contains("shutdown")))
+                    if (value is not null && (value.Contains("alive-check") || value.Contains("shutdown")))
                     {
                         return false;
                     }
