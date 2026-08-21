@@ -76,11 +76,10 @@ public class FeatureFlagsModuleTests
     }
 
     [Fact]
-    public void IsReady_WhenRemoteConfigurationIsDisabled_ReturnsFalse()
+    public void IsReady_WhenNoEvaluatorInstalled_ReturnsFalse()
     {
-        // When RC is disabled, IsReady() returns false because no evaluator will ever be
-        // installed. InitializeAsync detects this via IsAvailable() and throws
-        // ProviderFatalException rather than waiting 30s to timeout.
+        // IsReady() depends only on evaluator presence, not on RC availability flag.
+        // When RC is disabled, no evaluator ever arrives, so IsReady() returns false.
         var rcmManager = new MockRcmSubscriptionManager();
         var settings = CreateSettings(remoteConfigurationEnabled: false);
         var module = new FeatureFlagsModule(settings, rcmManager);
