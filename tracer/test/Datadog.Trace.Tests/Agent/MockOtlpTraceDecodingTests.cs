@@ -21,7 +21,10 @@ using OpenTelemetry.Proto.Common.V1;
 using OpenTelemetry.Proto.Resource.V1;
 using Xunit;
 using Xunit.Abstractions;
+using OtlpResourceSpans = OpenTelemetry.Proto.Trace.V1.ResourceSpans;
+using OtlpScopeSpans = OpenTelemetry.Proto.Trace.V1.ScopeSpans;
 using OtlpSpan = OpenTelemetry.Proto.Trace.V1.Span;
+using OtlpStatus = OpenTelemetry.Proto.Trace.V1.Status;
 using OtlpStatusCode = OpenTelemetry.Proto.Trace.V1.Status.Types.StatusCode;
 
 namespace Datadog.Trace.Tests.Agent;
@@ -184,15 +187,15 @@ public class MockOtlpTraceDecodingTests
         span.Events.Add(new OtlpSpan.Types.Event { Name = "exception", TimeUnixNano = 1_500_000_000UL });
         span.Events[0].Attributes.Add(new KeyValue { Key = "exception.message", Value = new AnyValue { StringValue = "boom" } });
         span.Links.Add(new OtlpSpan.Types.Link { TraceId = ByteStringFromHex(TraceIdHex), SpanId = ByteStringFromHex(SpanIdHex) });
-        span.Status = new global::OpenTelemetry.Proto.Trace.V1.Status { Code = OtlpStatusCode.Ok, Message = "ok" };
+        span.Status = new OtlpStatus { Code = OtlpStatusCode.Ok, Message = "ok" };
 
-        var scopeSpans = new global::OpenTelemetry.Proto.Trace.V1.ScopeSpans
+        var scopeSpans = new OtlpScopeSpans
         {
             Scope = new InstrumentationScope { Name = "test-scope", Version = "1.0.0" },
         };
         scopeSpans.Spans.Add(span);
 
-        var resourceSpans = new global::OpenTelemetry.Proto.Trace.V1.ResourceSpans
+        var resourceSpans = new OtlpResourceSpans
         {
             Resource = new Resource(),
         };
