@@ -66,6 +66,10 @@ partial class Build
     AbsolutePath WindowsTracerHomeZip => ArtifactsDirectory / "windows-tracer-home.zip";
     AbsolutePath WindowsSymbolsZip => ArtifactsDirectory / "windows-native-symbols.zip";
     AbsolutePath OsxTracerHomeZip => ArtifactsDirectory / "macOS-tracer-home.zip";
+    // Input of SignNuGetPackageContents (Build.Gitlab.cs) - pre-built .nupkg files (downloaded from
+    // Azure DevOps by GitLab CI) whose contents should be Authenticode signed. The caller is
+    // responsible for placing the packages here before invoking the target.
+    AbsolutePath NuGetPackagesToSignDirectory => ArtifactsDirectory / "packages-to-sign";
     AbsolutePath BuildDataDirectory => BuildArtifactsDirectory / "build_data";
     AbsolutePath MsbuildDebugPath => TestLogsDirectory / "msbuild";
     AbsolutePath TestLogsDirectory => BuildDataDirectory / "logs";

@@ -48,15 +48,18 @@ namespace DatadogDebugger.Util
             }
         }
 
-        public static string Prune(string snapshot, int maxTargetedSize, int minLevel)
+        internal static string Prune(string snapshot, int maxTargetedSize, int minLevel, out bool inputIsTooLarge)
         {
             if (snapshot is null)
             {
+                inputIsTooLarge = false;
                 return snapshot;
             }
 
-            var delta = Encoding.UTF8.GetByteCount(snapshot) - maxTargetedSize;
-            if (delta <= 0)
+            // BatchUploader rejects payloads at the limit, so pruning must produce a payload strictly below it.
+            var delta = Encoding.UTF8.GetByteCount(snapshot) - maxTargetedSize + 1;
+            inputIsTooLarge = delta > 0;
+            if (!inputIsTooLarge)
             {
                 return snapshot;
             }

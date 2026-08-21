@@ -851,7 +851,7 @@ namespace Datadog.Trace.Debugger
             }
         }
 
-        internal void AddSnapshot(ProbeInfo probe, string snapshot)
+        internal void AddSnapshot(ProbeInfo probe, string snapshot, uint incompleteReasons)
         {
             if (IsDisposed)
             {
@@ -860,22 +860,22 @@ namespace Datadog.Trace.Debugger
 
             if (!probe.IsFullSnapshot)
             {
-                AddLog(probe, snapshot);
+                AddLog(probe, snapshot, incompleteReasons);
                 return;
             }
 
-            _snapshotUploader.Add(probe.ProbeId, snapshot);
+            _snapshotUploader.Add(probe.ProbeId, snapshot, incompleteReasons);
             SetProbeStatusToEmitting(probe);
         }
 
-        internal void AddLog(ProbeInfo probe, string log)
+        internal void AddLog(ProbeInfo probe, string log, uint incompleteReasons)
         {
             if (IsDisposed)
             {
                 return;
             }
 
-            _logUploader.Add(probe.ProbeId, log);
+            _logUploader.Add(probe.ProbeId, log, incompleteReasons);
             SetProbeStatusToEmitting(probe);
         }
 

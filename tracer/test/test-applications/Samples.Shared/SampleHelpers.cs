@@ -28,7 +28,10 @@ namespace Samples
         private static readonly Type? EventTrackingSdk = Type.GetType("Datadog.Trace.AppSec.EventTrackingSdk, Datadog.Trace");
         private static readonly Type? SpanExtensionsType = Type.GetType("Datadog.Trace.SpanExtensions, Datadog.Trace");
         public static readonly Type? IpcClientType = Type.GetType("Datadog.Trace.Ci.Ipc.IpcClient, Datadog.Trace");
+        public static readonly Type? LifetimeManagerType = Type.GetType("Datadog.Trace.LifetimeManager, Datadog.Trace");
         private static readonly PropertyInfo? GetTracerManagerProperty = TracerType?.GetProperty("TracerManager", BindingFlags.NonPublic | BindingFlags.Instance);
+        private static readonly PropertyInfo? LifetimeManagerInstanceProperty = LifetimeManagerType?.GetProperty("Instance", BindingFlags.Public | BindingFlags.Static);
+        private static readonly MethodInfo? LifetimeManagerAddShutdownTask = LifetimeManagerType?.GetMethod("AddShutdownTask", BindingFlags.Public | BindingFlags.Instance);
         private static readonly MethodInfo? GetNativeTracerVersionMethod = InstrumentationType?.GetMethod("GetNativeTracerVersion");
         private static readonly MethodInfo? GetTracerInstance = TracerType?.GetProperty("Instance", BindingFlags.Public | BindingFlags.Static | BindingFlags.FlattenHierarchy)?.GetMethod;
         private static readonly MethodInfo? StartActiveMethod = TracerType?.GetMethod("StartActive", types: new[] { typeof(string) });
@@ -552,6 +555,19 @@ namespace Samples
         public static void RunCommand(string cmd, string? args = null)
         {
             RunCommandMethod?.Invoke(null, new object?[] { cmd, args });
+        }
+
+        public static bool AddLifetimeManagerTask(Action<Exception> task)
+        {
+            var instance = LifetimeManagerInstanceProperty?.GetValue(null);
+            if (instance is null || LifetimeManagerAddShutdownTask is null)
+            {
+                return false;
+            }
+
+            LifetimeManagerAddShutdownTask.Invoke(instance, new object[] { task });
+            return true;
+
         }
 
         private class NoOpDisposable : IDisposable
