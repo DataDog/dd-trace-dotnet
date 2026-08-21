@@ -137,7 +137,6 @@ public class GcMemoryLoadCalculatorTests
         }
     }
 
-
     // AppContext.SetData is public at runtime on every supported TFM, but the net6.0 (and earlier) reference
     // assemblies used to compile this project don't declare it - only GetData, which the product code under test
     // relies on - so a direct call fails to compile for those TargetFrameworks specifically.
