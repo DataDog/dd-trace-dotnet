@@ -75,6 +75,9 @@ internal sealed class OtlpTracesProtobufSerializer : ISpanBufferSerializer
         // Initialize the temporary buffer to the initial size deemed best by the OpenTelemetry .NET SDK
         MessagePackBinary.EnsureCapacity(ref bytes, temporaryBufferOffset, Math.Min(InitialBufferSize, maxSize));
 
+        var otelTraceState = traceChunk.SpanCount > 0 ? traceChunk.GetSpanModel(0).Span.Context.OtelTraceState : null;
+        var otlpTraceState = StringUtil.IsNullOrEmpty(otelTraceState) ? null : "ot=" + otelTraceState;
+
         // Snapshot length-position fields before mutating them, so we can roll back on overflow.
         int savedResourceSpansLengthPos = _resourceSpansLengthPos;
         int savedScopeSpansLengthPos = _scopeSpansLengthPos;
@@ -116,7 +119,7 @@ internal sealed class OtlpTracesProtobufSerializer : ISpanBufferSerializer
                 for (var i = 0; i < traceChunk.SpanCount; i++)
                 {
                     var spanModel = traceChunk.GetSpanModel(i);
-                    writePosition = WriteSpan(bytes, writePosition, in spanModel);
+                    writePosition = WriteSpan(bytes, writePosition, in spanModel, otlpTraceState);
                 }
 
                 var bytesWritten = writePosition - temporaryBufferOffset;
@@ -436,7 +439,7 @@ internal sealed class OtlpTracesProtobufSerializer : ISpanBufferSerializer
         return writePosition + SpanIdSize;
     }
 
-    private int WriteSpan(byte[] bytes, int writePosition, in SpanModel spanModel)
+    private int WriteSpan(byte[] bytes, int writePosition, in SpanModel spanModel, string? otlpTraceState)
     {
         writePosition = ProtobufSerializer.WriteTag(bytes, writePosition, ScopeSpans_Span, ProtobufWireType.LEN);
         int spanLengthPos = writePosition;
@@ -449,10 +452,9 @@ internal sealed class OtlpTracesProtobufSerializer : ISpanBufferSerializer
         writePosition = WriteSpanIdField(bytes, writePosition, Span_Span_Id, spanModel.Span.SpanId);
 
         // trace_state (field 3, string)
-        var otelTraceState = spanModel.Span.Context.OtelTraceState;
-        if (!StringUtil.IsNullOrEmpty(otelTraceState))
+        if (otlpTraceState is not null)
         {
-            writePosition = ProtobufSerializer.WriteStringWithTag(bytes, writePosition, Span_Trace_State, "ot=" + otelTraceState);
+            writePosition = ProtobufSerializer.WriteStringWithTag(bytes, writePosition, Span_Trace_State, otlpTraceState);
         }
 
         // parent_span_id (field 4, LEN, 8 bytes) — only if parent exists and is non-zero
