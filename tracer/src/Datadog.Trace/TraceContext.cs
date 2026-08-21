@@ -16,7 +16,6 @@ using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Iast;
 using Datadog.Trace.Logging;
-using Datadog.Trace.Sampling;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Telemetry;
@@ -198,17 +197,8 @@ namespace Datadog.Trace
                 return SamplingPriorityValues.Default;
             }
 
-            var samplingDecision = CurrentTraceSettings?.TraceSampler is { } sampler
-                                       ? sampler.MakeSamplingDecision(span)
-                                       : SamplingDecision.Default;
-
-            SetSamplingPriority(
-                samplingDecision.Priority,
-                samplingDecision.Mechanism,
-                samplingDecision.Rate,
-                samplingDecision.LimiterRate);
-
-            return samplingDecision.Priority;
+            SetSamplingPriority(SamplingPriorityValues.Default);
+            return SamplingPriorityValues.Default;
         }
 
         public void SetSamplingPriority(
@@ -243,17 +233,6 @@ namespace Datadog.Trace
                 // do not set SamplingMechanism = null because that would allow changing the mechanism later,
                 // which is not allowed.
                 Tags.RemoveTag(Trace.Tags.Propagated.DecisionMaker);
-            }
-
-            // set Knuth sampling rate as a propagated tag for agent and rule-based sampling.
-            // use TryAddTag to preserve the original rate, consistent with AppliedSamplingRate ??= rate above.
-            if (rate is { } samplingRate && mechanism is Sampling.SamplingMechanism.AgentRate
-                                                      or Sampling.SamplingMechanism.LocalTraceSamplingRule
-                                                      or Sampling.SamplingMechanism.RemoteAdaptiveSamplingRule
-                                                      or Sampling.SamplingMechanism.RemoteUserSamplingRule)
-            {
-                // format with up to 6 decimal digits, no trailing zeros (per RFC)
-                Tags.TryAddTag(Trace.Tags.Propagated.KnuthSamplingRate, samplingRate.ToString("0.######", CultureInfo.InvariantCulture));
             }
 
             if (notifyDistributedTracer)

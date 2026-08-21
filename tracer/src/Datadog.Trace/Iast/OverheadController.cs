@@ -1,4 +1,4 @@
-﻿// <copyright file="OverheadController.cs" company="Datadog">
+// <copyright file="OverheadController.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -6,7 +6,7 @@
 using System;
 using Datadog.Trace.Logging;
 
-namespace Datadog.Trace.Sampling;
+namespace Datadog.Trace.Iast;
 
 internal sealed class OverheadController
 {
@@ -16,13 +16,6 @@ internal sealed class OverheadController
     private int _executedRequests;
     private int _availableRequests;
 
-    /// <summary>
-    /// Initializes a new instance of the <see cref="OverheadController"/> class.
-    /// For testing only.
-    /// Note that this API does NOT replace the global OverheadController instance on security and iast instances.
-    /// </summary>
-    /// <param name="maxConcurrentRequest">The max concurrent request number></param>
-    /// <param name="samplingParameter">The sampling parameter in percentage, not as decimal, but 5, 10 %...></param>
     internal OverheadController(int maxConcurrentRequest, int samplingParameter)
     {
         _maxConcurrentRequests = maxConcurrentRequest;

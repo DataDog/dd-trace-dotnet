@@ -11,7 +11,6 @@ using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging.TracerFlare;
-using Datadog.Trace.Sampling;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Telemetry.Metrics;
@@ -47,8 +46,8 @@ namespace Datadog.Trace
         /// Note that this API does NOT replace the global Tracer instance.
         /// The <see cref="TracerManager"/> created will be scoped specifically to this instance.
         /// </summary>
-        internal Tracer(TracerSettings settings, ITraceSampler sampler, IScopeManager scopeManager, ServiceRemappingHash serviceRemappingHash = null)
-            : this(TracerManagerFactory.Instance.CreateTracerManager(settings, sampler, scopeManager, dynamicConfigurationManager: null, tracerFlareManager: null, serviceRemappingHash: serviceRemappingHash))
+        internal Tracer(TracerSettings settings, IScopeManager scopeManager, ServiceRemappingHash serviceRemappingHash = null)
+            : this(TracerManagerFactory.Instance.CreateTracerManager(settings, scopeManager, dynamicConfigurationManager: null, tracerFlareManager: null, serviceRemappingHash: serviceRemappingHash))
         {
         }
 

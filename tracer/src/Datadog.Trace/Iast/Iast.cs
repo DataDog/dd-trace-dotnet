@@ -10,7 +10,6 @@ using System.Threading;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Iast.Settings;
 using Datadog.Trace.Logging;
-using Datadog.Trace.Sampling;
 
 namespace Datadog.Trace.Iast;
 

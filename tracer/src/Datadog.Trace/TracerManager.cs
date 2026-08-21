@@ -18,7 +18,6 @@ using Datadog.Trace.Logging.TracerFlare;
 using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Processors;
 using Datadog.Trace.Propagators;
-using Datadog.Trace.Sampling;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Util;
 using Datadog.Trace.Util.Http;
@@ -51,8 +50,6 @@ namespace Datadog.Trace
             TracerSettings settings,
             IScopeManager scopeManager,
             IGitMetadataTagsProvider gitMetadataTagsProvider,
-            ITraceSampler traceSampler,
-            ISpanSampler spanSampler,
             IDynamicConfigurationManager dynamicConfigurationManager,
             ITracerFlareManager tracerFlareManager,
             ServiceRemappingHash serviceRemappingHash)
@@ -80,7 +77,7 @@ namespace Datadog.Trace
             void UpdatePerTraceSettings(MutableSettings mutableSettings)
             {
                 var schema = new NamingSchema(settings.MetadataSchemaVersion, settings.PeerServiceTagsEnabled, settings.RemoveClientServiceNamesEnabled, mutableSettings.DefaultServiceName, mutableSettings.ServiceNameMappings, settings.PeerServiceNameMappings);
-                Interlocked.Exchange(ref _perTraceSettings, new(traceSampler, spanSampler, schema, mutableSettings));
+                Interlocked.Exchange(ref _perTraceSettings, new(schema, mutableSettings));
             }
         }
 

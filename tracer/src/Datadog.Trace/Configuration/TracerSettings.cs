@@ -15,7 +15,6 @@ using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Logging;
 using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Propagators;
-using Datadog.Trace.Sampling;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Util;
@@ -318,25 +317,6 @@ namespace Datadog.Trace.Configuration
 
             // We should also be writing telemetry for OTEL_LOGS_EXPORTER similar to OTEL_METRICS_EXPORTER, but we don't have a corresponding Datadog config
             // When we do, we can insert that here
-            CustomSamplingRulesFormat = config.WithKeys(ConfigurationKeys.CustomSamplingRulesFormat)
-                                              .GetAs(
-                                                   defaultValue: new DefaultResult<string>(SamplingRulesFormat.Glob, "glob"),
-                                                   converter: value =>
-                                                   {
-                                                       // We intentionally report invalid values as "valid" in the converter,
-                                                       // because we don't want to automatically fall back to the
-                                                       // default value.
-                                                       if (!SamplingRulesFormat.IsValid(value, out var normalizedFormat))
-                                                       {
-                                                           Log.Warning(
-                                                               "{ConfigurationKey} configuration of {ConfigurationValue} is invalid. Ignoring all trace sampling rules.",
-                                                               ConfigurationKeys.CustomSamplingRulesFormat,
-                                                               value);
-                                                       }
-
-                                                       return normalizedFormat;
-                                                   },
-                                                   validator: null);
             SpanSamplingRules = config.WithKeys(ConfigurationKeys.SpanSamplingRules).AsString();
 
             TraceBufferSize = config
@@ -760,16 +740,9 @@ namespace Datadog.Trace.Configuration
         internal string[] DisabledActivitySources { get; }
 
         /// <summary>
-        /// Gets a value indicating the format for custom trace sampling rules ("regex" or "glob").
-        /// If the value is not recognized, trace sampling rules are disabled.
+        /// Gets the configured span sampling rules. Retained for configuration compatibility;
+        /// local IAST analysis does not apply these rules.
         /// </summary>
-        /// <seealso cref="ConfigurationKeys.CustomSamplingRulesFormat"/>
-        internal string CustomSamplingRulesFormat { get; }
-
-        /// <summary>
-        /// Gets a value indicating span sampling rules.
-        /// </summary>
-        /// <seealso cref="ConfigurationKeys.SpanSamplingRules"/>
         internal string? SpanSamplingRules { get; }
 
         /// <summary>

@@ -8,7 +8,6 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using Datadog.Trace.Configuration.Schema;
-using Datadog.Trace.Sampling;
 
 namespace Datadog.Trace.Configuration
 {
@@ -16,24 +15,17 @@ namespace Datadog.Trace.Configuration
     {
         private readonly ConcurrentDictionary<string, string> _serviceNameCache = new();
 
-        public PerTraceSettings(ITraceSampler? traceSampler, ISpanSampler? spanSampler, NamingSchema schema, MutableSettings mutableSettings)
+        public PerTraceSettings(NamingSchema schema, MutableSettings mutableSettings)
         {
-            TraceSampler = traceSampler;
-            SpanSampler = spanSampler;
             Schema = schema;
-            HasResourceBasedSamplingRule = (traceSampler?.HasResourceBasedSamplingRule ?? false) || (spanSampler?.HasResourceBasedSamplingRule ?? false);
             Settings = mutableSettings;
         }
-
-        public ITraceSampler? TraceSampler { get; }
-
-        public ISpanSampler? SpanSampler { get; }
 
         public IReadOnlyDictionary<string, string> ServiceNames => Settings.ServiceNameMappings;
 
         public NamingSchema Schema { get; }
 
-        public bool HasResourceBasedSamplingRule { get; }
+        public bool HasResourceBasedSamplingRule => false;
 
         public MutableSettings Settings { get; }
 

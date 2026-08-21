@@ -835,7 +835,7 @@ namespace Datadog.Trace
         {
             /// <summary>
             /// Tag used to propagate the sampling mechanism used to make a sampling decision.
-            /// See <see cref="Datadog.Trace.Sampling.SamplingMechanism"/>.
+            /// See <see cref="SamplingMechanism"/>.
             /// </summary>
             /// <remarks>
             /// This tag was originally meant to carry the name of the service that made the sampling decision,
