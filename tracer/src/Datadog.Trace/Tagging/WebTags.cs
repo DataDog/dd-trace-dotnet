@@ -54,6 +54,11 @@ namespace Datadog.Trace.Tagging
         [Tag(Trace.Tags.HttpStatusCode, OtelName = Trace.Tags.HttpResponseStatusCode)]
         public int? HttpStatusCode { get; set; }
 
+        // OpenTelemetry-only: the version of the protocol the request arrived over, without the
+        // protocol name, so an HTTP/1.1 request is reported as "1.1".
+        [Tag(Trace.Tags.NetworkProtocolVersion)]
+        public string NetworkProtocolVersion { get; set; }
+
         [Tag(Trace.Tags.NetworkClientIp, OtelName = Trace.Tags.NetworkPeerAddress)]
         public string NetworkClientIp { get; set; }
 
