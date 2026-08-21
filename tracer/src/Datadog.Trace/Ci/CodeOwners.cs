@@ -14,15 +14,21 @@ using System.Text.RegularExpressions;
 namespace Datadog.Trace.Ci
 {
     /// <summary>
-    /// A feature‑complete, allocation‑conscious CODEOWNERS parser that supports both GitHub and GitLab
-    /// semantics (sections, exclusions, optional sections, approval counts, role owners, globstar, etc.).
+    /// A CODEOWNERS parser that follows the GitHub and GitLab specifications: last matching rule wins,
+    /// rooted and unrooted (globstar-relative) paths, directory and wildcard patterns, globstars (**),
+    /// inline comments (GitHub), sections with default owners, optional sections, approval counts,
+    /// role owners (@@role) and exclusion patterns (GitLab). Matching is case-sensitive.
     /// Usage:
     ///   var owners = new CodeOwners(pathToFile, CodeOwners.Platform.GitLab).Match("src/app/Program.cs");
     ///   // owners is an IEnumerable{string} of unique owners that apply to that file.
     /// </summary>
     internal sealed class CodeOwners
     {
-        private readonly IReadOnlyList<Section> _sections;
+        // Upper bound for any single glob evaluation: protects the process from pathological
+        // patterns in huge CODEOWNERS files. Timed-out rules are treated as non-matching.
+        private static readonly TimeSpan RegexTimeout = TimeSpan.FromSeconds(3);
+
+        private readonly List<Section> _sections;
         private readonly Platform _platform;
 
         public CodeOwners(string filePath, Platform platform)
@@ -44,10 +50,36 @@ namespace Datadog.Trace.Ci
         {
             var owners = new HashSet<string>(StringComparer.Ordinal);
             var normalizedPath = path.IndexOf('\\') >= 0 ? path.Replace('\\', '/') : path;
+            if (normalizedPath.Length == 0 || normalizedPath[0] != '/')
+            {
+                // Rooted patterns are anchored to the repository root, so ensure a leading slash.
+                normalizedPath = "/" + normalizedPath;
+            }
 
+            if (_platform == Platform.GitHub)
+            {
+                // GitHub has no sections: the whole file is a single ordered rule set where
+                // the last matching pattern takes precedence over all previous ones.
+                for (var i = _sections.Count - 1; i >= 0; i--)
+                {
+                    if (_sections[i].TryMatchGitHub(normalizedPath, out var sectionOwners))
+                    {
+                        foreach (var o in sectionOwners)
+                        {
+                            owners.Add(o);
+                        }
+
+                        break;
+                    }
+                }
+
+                return owners;
+            }
+
+            // GitLab evaluates each section independently and combines their owners.
             foreach (var section in _sections)
             {
-                if (section.TryMatch(normalizedPath, _platform, out var sectionOwners))
+                if (section.TryMatchGitLab(normalizedPath, out var sectionOwners))
                 {
                     foreach (var o in sectionOwners)
                     {
@@ -69,7 +101,7 @@ namespace Datadog.Trace.Ci
             foreach (var line in lines)
             {
                 lineNo++;
-                var raw = line.TrimEnd();
+                var raw = line.Trim();
                 if (raw.Length == 0)
                 {
                     continue;
@@ -143,6 +175,9 @@ namespace Datadog.Trace.Ci
             // Temporary sentinel for ** that we restore after dealing with single *.
             rx = rx.Replace("\\*\\*", "§§DOUBLESTAR§§");
             rx = rx.Replace("\\*", "[^/]*"); // single‑level wildcard
+            // A slash right after ** means it can match zero or more intermediate directories:
+            // `a/**/b` must also match `a/b`.
+            rx = rx.Replace("§§DOUBLESTAR§§/", "(?:.*/)?");
             rx = rx.Replace("§§DOUBLESTAR§§", ".*"); // multi‑level wildcard
             rx = rx.Replace("\\?", "."); // single char
 
@@ -163,7 +198,7 @@ namespace Datadog.Trace.Ci
             }
 
             rx += "$";
-            return new Regex(rx, RegexOptions.Compiled | RegexOptions.CultureInvariant);
+            return new Regex(rx, RegexOptions.Compiled | RegexOptions.CultureInvariant, RegexTimeout);
         }
 
 #pragma warning disable SA1201
@@ -220,19 +255,45 @@ namespace Datadog.Trace.Ci
 
             public void Seal() => _cache = _entries.AsEnumerable().Reverse().ToArray();
 
-            public bool TryMatch(string path, Platform platform, out IEnumerable<string> owners)
+            /// <summary>
+            /// GitHub evaluation: exclusion rules are unsupported and ignored, section default owners don't
+            /// exist, and the caller stops at the first (i.e. last in file order) matching rule.
+            /// </summary>
+            public bool TryMatchGitHub(string path, [NotNullWhen(true)] out IEnumerable<string>? owners)
             {
-                owners = [];
                 var rules = _cache ?? [];
 
                 foreach (var rule in rules)
                 {
-                    // GitHub doesn’t support exclusion rules. Keep them parse‑able but ignore when evaluating.
-                    if (rule.IsExclusion && platform == Platform.GitHub)
+                    // GitHub doesn't support exclusion rules. Keep them parse‑able but ignore when evaluating.
+                    if (rule.IsExclusion || !rule.Match(path))
                     {
                         continue;
                     }
 
+                    owners = rule.Owners;
+                    return true;
+                }
+
+                owners = null;
+                return false;
+            }
+
+            /// <summary>
+            /// GitLab evaluation: rules are evaluated in file order within the section; the last matching
+            /// entry wins, an exclusion exempts the path for the whole section (later rules cannot
+            /// re-include it), and entries without owners inherit the section default owners.
+            /// </summary>
+            public bool TryMatchGitLab(string path, [NotNullWhen(true)] out IEnumerable<string>? owners)
+            {
+                var rules = _cache ?? [];
+                string[]? matchedOwners = null;
+                var excluded = false;
+
+                // The cache holds the entries in reverse file order, so walk it backwards.
+                for (var i = rules.Length - 1; i >= 0; i--)
+                {
+                    var rule = rules[i];
                     if (!rule.Match(path))
                     {
                         continue;
@@ -240,33 +301,39 @@ namespace Datadog.Trace.Ci
 
                     if (rule.IsExclusion)
                     {
-                        // Excluded for this section; stop evaluating this section.
-                        return false;
+                        // Exclusions are terminal for the section: later rules cannot re-include the path.
+                        excluded = true;
+                        break;
                     }
 
-                    owners = rule.Owners.Length > 0 ? rule.Owners : DefaultOwners;
-                    return owners.Any();
+                    if (!excluded)
+                    {
+                        matchedOwners = rule.Owners.Length > 0 ? rule.Owners : DefaultOwners;
+                    }
                 }
 
-                if (DefaultOwners.Length > 0)
+                if (excluded || matchedOwners is null || matchedOwners.Length == 0)
                 {
-                    owners = DefaultOwners;
-                    return true;
+                    owners = null;
+                    return false;
                 }
 
-                return false;
+                owners = matchedOwners;
+                return true;
             }
         }
 
         private sealed class Entry
         {
             private readonly Regex _regex;
+            private readonly bool _isDirectoryPattern;
 
-            private Entry(Regex regex, bool exclusion, string[] owners)
+            private Entry(Regex regex, bool exclusion, string[] owners, bool isDirectoryPattern)
             {
                 _regex = regex;
                 IsExclusion = exclusion;
                 Owners = owners;
+                _isDirectoryPattern = isDirectoryPattern;
             }
 
             public bool IsExclusion { get; }
@@ -321,10 +388,59 @@ namespace Datadog.Trace.Ci
 
                 // 5. Compile the glob
                 var rx = CompileGlob(patternToken);
-                return new Entry(rx, isExclusion, owners);
+                // GitHub owns the contents of directories matched by wildcard-free patterns (e.g.
+                // `**/logs`); GitLab requires an explicit trailing slash for directory ownership.
+                var isDirectoryPattern = platform == Platform.GitHub && IsDirectoryPattern(patternToken);
+                return new Entry(rx, isExclusion, owners, isDirectoryPattern);
             }
 
-            public bool Match(string path) => _regex.IsMatch(path);
+            private static bool IsDirectoryPattern(string patternToken)
+            {
+                var lastSegmentStart = patternToken.LastIndexOf('/');
+                var lastSegment = lastSegmentStart >= 0 ? patternToken.Substring(lastSegmentStart + 1) : patternToken;
+                return lastSegment.Length > 0 &&
+                       lastSegment.IndexOf('*') < 0 &&
+                       lastSegment.IndexOf('?') < 0;
+            }
+
+            public bool Match(string path)
+            {
+                if (IsMatch(path))
+                {
+                    return true;
+                }
+
+                // Patterns whose last segment is wildcard-free also own everything inside a matched
+                // directory (e.g. `**/logs` owns `/build/logs/error.txt`), while wildcard segments like
+                // `docs/*` match individual entries only.
+                return _isDirectoryPattern && MatchesAncestor(path);
+            }
+
+            private bool MatchesAncestor(string path)
+            {
+                for (var i = path.IndexOf('/', 1); i > 0 && i < path.Length - 1; i = path.IndexOf('/', i + 1))
+                {
+                    if (IsMatch(path.Substring(0, i)))
+                    {
+                        return true;
+                    }
+                }
+
+                return false;
+            }
+
+            private bool IsMatch(string input)
+            {
+                try
+                {
+                    return _regex.IsMatch(input);
+                }
+                catch (RegexMatchTimeoutException)
+                {
+                    // A pathological pattern must never hang the process: treat it as non-matching.
+                    return false;
+                }
+            }
         }
     }
 }

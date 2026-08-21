@@ -44,13 +44,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
         [InlineData(@"unexistent\path\test.cs", "[\"@global-owner1\",\"@global-owner2\"]")]
         [InlineData(@"apps\test.cs", "[\"@octocat\"]")]
         [InlineData(@"\docs\test.cs", "[\"@doctocat\"]")]
-        [InlineData(@"docs\getting-started.md", "[\"docs@example.com\"]")]
+        [InlineData(@"docs\getting-started.md", "[\"@doctocat\"]")] // docs/* vs /docs/ precedence
         [InlineData(@"\scripts\artifacts\value.js", "[\"@doctocat\",\"@octocat\"]")]
         [InlineData(@"\apps\github", null)]
         [InlineData(@"\x\logs\error.txt", "[\"@octo-org/octocats\"]")]
         // New GitHub quirks
         [InlineData("/x/logs/error.txt", "[\"@octo-org/octocats\"]")] // **/logs pattern
-        [InlineData("docs/getting-started.md", "[\"docs@example.com\"]")] // docs/* pattern
+        // Rooted patterns match regardless of a leading slash, so the later `/docs/` rule
+        // (last match wins) takes precedence over the earlier `docs/*` rule.
+        [InlineData("docs/getting-started.md", "[\"@doctocat\"]")] // docs/* vs /docs/ precedence
         public void CheckGithubCodeOwners(string value, string expected)
         {
             var match = _githubCodeOwners.Match(value);

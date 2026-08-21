@@ -28,8 +28,10 @@ internal abstract class CIEnvironmentValues
     private static readonly Lazy<CIEnvironmentValues> LazyInstance = new(Create);
     private static readonly Regex BranchOrTagsRegex = new(@"^refs\/heads\/tags\/(.*)|refs\/heads\/(.*)|refs\/tags\/(.*)|refs\/(.*)|origin\/tags\/(.*)|origin\/(.*)$", RegexOptions.Compiled);
     private static readonly StringComparer CodeOwnersSearchComparer = FrameworkDescription.Instance.IsWindows()
-                                                                          ? StringComparer.OrdinalIgnoreCase
-                                                                          : StringComparer.Ordinal;
+                                                                 ? StringComparer.OrdinalIgnoreCase
+                                                                 : StringComparer.Ordinal;
+
+    private static readonly char[] ForwardSlashCharacters = { '/' };
 
     private readonly object _codeOwnersLock = new();
     private readonly HashSet<string> _codeOwnersSearchStarts = new(CodeOwnersSearchComparer);
@@ -611,10 +613,10 @@ internal abstract class CIEnvironmentValues
         else
         {
             // For relative paths, enforce that they stay within the CODEOWNERS root.
-            // Relative paths must stay within the codeowners root; otherwise we skip.
+            // Relative paths must stay within the codeowners root; otherwise we try to anchor them.
             if (!TryResolvePathWithinBase(sourceFilePath, codeOwnersRoot, out var resolvedPath))
             {
-                return false;
+                return TryAnchorPathToCodeOwnersRoot(sourceFilePath, codeOwnersRoot, out codeOwnersRelativePath);
             }
 
             absolutePath = resolvedPath;
@@ -630,11 +632,54 @@ internal abstract class CIEnvironmentValues
             relativePath.StartsWith("../", StringComparison.Ordinal) ||
             relativePath.StartsWith("..\\", StringComparison.Ordinal))
         {
-            return false;
+            return TryAnchorPathToCodeOwnersRoot(sourceFilePath, codeOwnersRoot, out codeOwnersRelativePath);
         }
 
         codeOwnersRelativePath = relativePath;
         return true;
+    }
+
+    private static bool TryAnchorPathToCodeOwnersRoot(string sourceFilePath, string codeOwnersRoot, [NotNullWhen(true)] out string? codeOwnersRelativePath)
+    {
+        // Compiler-recorded paths can be relative to a different base directory than the current
+        // workspace (e.g. "../../../_/tracer/test/SampleTests.cs" on CI agents). When strict
+        // resolution fails, anchor the path by finding the longest suffix that exists under the
+        // CODEOWNERS root, independently of the CI provider layout that produced the prefix.
+        codeOwnersRelativePath = null;
+        if (StringUtil.IsNullOrWhiteSpace(sourceFilePath) || Path.IsPathRooted(sourceFilePath))
+        {
+            // Only relative paths recorded against a foreign base directory are anchored; absolute
+            // paths pointing outside the repository must not be re-anchored into it.
+            return false;
+        }
+
+        var normalizedPath = sourceFilePath.Replace('\\', '/');
+        var segments = normalizedPath.Split(ForwardSlashCharacters, StringSplitOptions.RemoveEmptyEntries);
+        if (segments.Length < 2)
+        {
+            // Never anchor bare file names: too easy to match an unrelated file.
+            return false;
+        }
+
+        // Skip leading "." / ".." navigation segments: they belong to the foreign base directory.
+        var start = 0;
+        while (start < segments.Length && (segments[start] == "." || segments[start] == ".."))
+        {
+            start++;
+        }
+
+        for (var i = start; i < segments.Length - 1; i++)
+        {
+            var candidateSuffix = string.Join(Path.DirectorySeparatorChar.ToString(), segments, i, segments.Length - i);
+            var candidatePath = Path.Combine(codeOwnersRoot, candidateSuffix);
+            if (!Path.IsPathRooted(candidateSuffix) && File.Exists(candidatePath))
+            {
+                codeOwnersRelativePath = string.Join("/", segments, i, segments.Length - i);
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private string MakeRelativePath(string? basePath, string absolutePath, bool useOSSeparator)

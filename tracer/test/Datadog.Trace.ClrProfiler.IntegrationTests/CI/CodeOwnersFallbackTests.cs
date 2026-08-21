@@ -251,6 +251,125 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             Assert.Null(ciValues.CodeOwners);
         }
 
+        [SkippableFact]
+        public void AnchorsForeignRelativePathsToCodeOwnersRoot()
+        {
+            using var tempDirectory = new TemporaryDirectory();
+            var repoRoot = tempDirectory.RootPath;
+            var srcDir = Path.Combine(repoRoot, "tracer", "test");
+            Directory.CreateDirectory(srcDir);
+            var sourceFile = Path.Combine(srcDir, "SpanBenchmark.cs");
+            File.WriteAllText(Path.Combine(repoRoot, "CODEOWNERS"), "* @global\n/tracer/test/ @owner\n");
+            File.WriteAllText(sourceFile, "class SpanBenchmark {}");
+
+            var env = new Dictionary<string, string>
+            {
+                [PlatformKeys.Ci.GitHub.Sha] = CommitSha,
+                [PlatformKeys.Ci.GitHub.Workspace] = repoRoot,
+                [PlatformKeys.Ci.GitHub.Repository] = "DataDog/dd-trace-dotnet",
+            };
+
+            var ciValues = CIEnvironmentValues.Create(env);
+
+            // Paths recorded against a foreign base directory (e.g. "../../../_/..." on CI agents)
+            // must be anchored back to a repository-relative path.
+            var foreignRelativePath = "../../../_/tracer/test/SpanBenchmark.cs";
+            Assert.True(ciValues.TryGetCodeOwnersRelativePath(foreignRelativePath, false, out var codeOwnersRelativePath));
+            Assert.Equal("tracer/test/SpanBenchmark.cs", codeOwnersRelativePath);
+
+            var owners = ciValues.CodeOwners!.Match("/" + codeOwnersRelativePath).OrderBy(o => o).ToArray();
+            Assert.Equal(new[] { "@owner" }, owners);
+        }
+
+        [SkippableFact]
+        public void MakeRelativePathFromSourceRootWithFallbackNormalizesForeignPrefixes()
+        {
+            using var tempDirectory = new TemporaryDirectory();
+            var repoRoot = tempDirectory.RootPath;
+            var srcDir = Path.Combine(repoRoot, "tracer", "test");
+            Directory.CreateDirectory(srcDir);
+            var sourceFile = Path.Combine(srcDir, "SpanBenchmark.cs");
+            File.WriteAllText(Path.Combine(repoRoot, "CODEOWNERS"), "* @global\n/tracer/test/ @owner\n");
+            File.WriteAllText(sourceFile, "class SpanBenchmark {}");
+
+            var env = new Dictionary<string, string>
+            {
+                [PlatformKeys.Ci.GitHub.Sha] = CommitSha,
+                [PlatformKeys.Ci.GitHub.Workspace] = repoRoot,
+                [PlatformKeys.Ci.GitHub.Repository] = "DataDog/dd-trace-dotnet",
+            };
+
+            var ciValues = CIEnvironmentValues.Create(env);
+
+            var relative = ciValues.MakeRelativePathFromSourceRootWithFallback("../../../_/tracer/test/SpanBenchmark.cs", false);
+            Assert.Equal("tracer/test/SpanBenchmark.cs", relative);
+        }
+
+        [SkippableFact]
+        public void DoesNotAnchorForeignPathsWhenSuffixDoesNotExistUnderRoot()
+        {
+            using var repoDirectory = new TemporaryDirectory();
+            using var externalDirectory = new TemporaryDirectory();
+
+            var repoRoot = repoDirectory.RootPath;
+            Directory.CreateDirectory(Path.Combine(repoRoot, "src"));
+            File.WriteAllText(Path.Combine(repoRoot, "CODEOWNERS"), "* @owner\n/src/ @src-owner\n");
+            File.WriteAllText(Path.Combine(repoRoot, "src", "SpanBenchmark.cs"), "class SpanBenchmark {}");
+
+            var externalFile = Path.Combine(externalDirectory.RootPath, "other", "SpanBenchmark.cs");
+            Directory.CreateDirectory(Path.GetDirectoryName(externalFile)!);
+            File.WriteAllText(externalFile, "class SpanBenchmark {}");
+
+            var env = new Dictionary<string, string>
+            {
+                [PlatformKeys.Ci.GitHub.Sha] = CommitSha,
+                [PlatformKeys.Ci.GitHub.Workspace] = repoRoot,
+                [PlatformKeys.Ci.GitHub.Repository] = "DataDog/dd-trace-dotnet",
+            };
+
+            var ciValues = CIEnvironmentValues.Create(env);
+
+            // A foreign path whose suffix does not exist under the repository must not be re-anchored.
+            Assert.False(ciValues.TryGetCodeOwnersRelativePath("../other/SpanBenchmark.cs", false, out _));
+        }
+
+        [SkippableFact]
+        public void AnchorsAzurePipelinesCompilerRecordedPaths()
+        {
+            // Reproduces the reported CI Visibility issue: on Azure Pipelines agents, compiler-recorded
+            // source paths are relative to a foreign base directory (e.g.
+            // "../../../../../../_/tracer/test/Datadog.Trace.DuckTyping.Tests/ExceptionsTests.cs"),
+            // which made every test span lose its test.codeowners tag once the CODEOWNERS rules were
+            // changed back to rooted patterns.
+            using var tempDirectory = new TemporaryDirectory();
+            var repoRoot = tempDirectory.RootPath;
+            var sourceDir = Path.Combine(repoRoot, "tracer", "test", "Datadog.Trace.DuckTyping.Tests");
+            Directory.CreateDirectory(sourceDir);
+            var sourceFile = Path.Combine(sourceDir, "ExceptionsTests.cs");
+            Directory.CreateDirectory(Path.Combine(repoRoot, ".github"));
+            File.WriteAllText(Path.Combine(repoRoot, ".github", "CODEOWNERS"), "/tracer/test/ @DataDog/tracing-dotnet\n");
+            File.WriteAllText(sourceFile, "// test");
+
+            var env = new Dictionary<string, string>
+            {
+                [PlatformKeys.Ci.Azure.TFBuild] = "True",
+                [PlatformKeys.Ci.Azure.SystemTeamFoundationServerUri] = "https://dev.azure.com/datadoghq/",
+                [PlatformKeys.Ci.Azure.BuildSourcesDirectory] = repoRoot,
+                [PlatformKeys.Ci.Azure.BuildSourceVersion] = CommitSha,
+                [PlatformKeys.Ci.Azure.BuildRepositoryUri] = "https://github.com/DataDog/dd-trace-dotnet",
+            };
+
+            var ciValues = CIEnvironmentValues.Create(env);
+            Assert.NotNull(ciValues.CodeOwners);
+
+            var foreignRelativePath = "../../../../../../_/tracer/test/Datadog.Trace.DuckTyping.Tests/ExceptionsTests.cs";
+            var relative = ciValues.MakeRelativePathFromSourceRootWithFallback(foreignRelativePath, false);
+            Assert.Equal("tracer/test/Datadog.Trace.DuckTyping.Tests/ExceptionsTests.cs", relative);
+
+            var owners = ciValues.CodeOwners!.Match("/" + relative).OrderBy(o => o).ToArray();
+            Assert.Equal(new[] { "@DataDog/tracing-dotnet" }, owners);
+        }
+
         private sealed class TemporaryDirectory : IDisposable
         {
             public TemporaryDirectory()
