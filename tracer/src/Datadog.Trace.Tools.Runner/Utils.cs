@@ -13,6 +13,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Xml;
@@ -513,19 +514,9 @@ namespace Datadog.Trace.Tools.Runner
             {
                 // Due to:
                 // https://developercommunity.visualstudio.com/t/vsotasksetvariable-contains-logging-command-keywor/1249340#T-N1253996
-                // We try to use reduce the length of the path using a temporary folder.
-                var tempFolder = Path.Combine(Path.GetTempPath(), "dd");
-                if (tempFolder.Length < tracerHome.Length)
-                {
-                    try
-                    {
-                        CopyFilesRecursively(tracerHome, tempFolder);
-                        tracerHome = tempFolder;
-                    }
-                    catch
-                    {
-                    }
-                }
+                // ReducePathLength used to copy into a fixed temp directory. Keep the same path-shortening behavior,
+                // but only through a validated user-local cache so a co-tenant cannot pre-create the destination.
+                tracerHome = TracerHomeCache.GetOrCreateCachedTracerHomeIfShorter(tracerHome);
             }
 
             string tracerMsBuild = FileExists(Path.Combine(tracerHome, "netstandard2.0", "Datadog.Trace.MSBuild.dll"));
@@ -971,21 +962,6 @@ namespace Datadog.Trace.Tools.Runner
                 }
 
                 return true;
-            }
-        }
-
-        private static void CopyFilesRecursively(string sourcePath, string targetPath)
-        {
-            // Now Create all of the directories
-            foreach (var dirPath in Directory.GetDirectories(sourcePath, "*", SearchOption.AllDirectories))
-            {
-                Directory.CreateDirectory(dirPath.Replace(sourcePath, targetPath));
-            }
-
-            // Copy all the files & Replaces any files with the same name
-            foreach (var newPath in Directory.GetFiles(sourcePath, "*.*", SearchOption.AllDirectories))
-            {
-                File.Copy(newPath, newPath.Replace(sourcePath, targetPath), true);
             }
         }
 
