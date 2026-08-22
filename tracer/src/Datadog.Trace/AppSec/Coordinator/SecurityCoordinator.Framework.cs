@@ -274,6 +274,32 @@ internal readonly partial struct SecurityCoordinator
 
     internal object? GetPathParams() => ObjectExtractor.Extract(_httpTransport.Context.Request.RequestContext.RouteData.Values);
 
+    // The WAF context keeps the request addresses BeginRequest already sent, so this only carries what
+    // wasn't available back then.
+    internal Dictionary<string, object> GetEndRequestArgsForWaf()
+    {
+        var args = new Dictionary<string, object>(3);
+
+        if (_httpTransport.StatusCode is { } statusCode)
+        {
+            args[AddressesConstants.ResponseStatus] = statusCode.ToString();
+        }
+
+        if (GetPathParams() is { } pathParams)
+        {
+            args[AddressesConstants.RequestPathParams] = pathParams;
+        }
+
+        // ASP.NET adds its session cookie to Request.Cookies only once the session id is read, so a request
+        // that arrived without cookies has them just here, and the session fingerprint needs them.
+        if (ExtractCookiesFromRequest(_httpTransport.Context.Request) is { } cookies)
+        {
+            args[AddressesConstants.RequestCookies] = cookies;
+        }
+
+        return args;
+    }
+
     /// <summary>
     /// Framework can do it all at once, but framework only unfortunately
     /// </summary>
@@ -449,10 +475,9 @@ internal readonly partial struct SecurityCoordinator
             }
         }
 
-        var dict = new Dictionary<string, object>(capacity: 7)
+        var dict = new Dictionary<string, object>(capacity: 6)
         {
             { AddressesConstants.RequestMethod, request.HttpMethod },
-            { AddressesConstants.ResponseStatus, request.RequestContext.HttpContext.Response.StatusCode.ToString() },
             { AddressesConstants.RequestClientIp, _localRootSpan.GetTag(Tags.HttpClientIp) ?? _localRootSpan.GetTag(Tags.NetworkClientIp) }
         };
 

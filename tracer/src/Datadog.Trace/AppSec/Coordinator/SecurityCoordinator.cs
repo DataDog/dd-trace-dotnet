@@ -42,9 +42,24 @@ internal readonly partial struct SecurityCoordinator
 
     public IResult? Scan(bool lastTime = false)
     {
-        var args = GetBasicRequestArgsForWaf();
-        return RunWaf(args, lastTime);
+        var args = CollectRequestArgsForWaf();
+
+        if (lastTime && _httpTransport.StatusCode is { } statusCode)
+        {
+            args[AddressesConstants.ResponseStatus] = statusCode.ToString();
+        }
+
+        return args.Count > 0 ? RunWaf(args, lastTime) : null;
     }
+
+    // Returns the request addresses once per request, an empty set afterwards. The context check comes
+    // first so they aren't marked as sent when there is no store to keep them.
+    internal Dictionary<string, object> CollectRequestArgsForWaf() =>
+        _appsecRequestContext.GetOrCreateAdditiveContext(_security) is not null && _appsecRequestContext.ShouldSendRequestAddresses()
+            ? GetBasicRequestArgsForWaf()
+            : new Dictionary<string, object>(3);
+
+    internal bool ShouldScanResponse() => _appsecRequestContext.ShouldScanResponse();
 
     public IResult? RunWaf(Dictionary<string, object> args, bool lastWafCall = false, bool runWithEphemeral = false, bool isRasp = false, string? sessionId = null)
     {

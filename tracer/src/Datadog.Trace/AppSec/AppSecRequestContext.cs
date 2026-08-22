@@ -7,6 +7,7 @@
 
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Threading;
 using Datadog.Trace.AppSec.Rasp;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.Logging;
@@ -170,10 +171,29 @@ internal partial class AppSecRequestContext
 
     private bool _isAdditiveContextDisposed;
 
+    private int _requestAddressesSent;
+
+    private int _responseScanned;
+
     private IContext? _context;
 
     internal static AppSecRequestContext CreateWithDisposedAdditiveContext()
         => new() { _isAdditiveContextDisposed = true };
+
+    /// <summary>
+    /// The WAF keeps the addresses it was given for the whole life of the context, so the request address
+    /// set only has to be supplied once: a later run of the same request re-evaluates the rules and
+    /// processors that need them against the values already stored. Returns true only for the first
+    /// caller, which is the one that has to supply them.
+    /// </summary>
+    internal bool ShouldSendRequestAddresses() => Interlocked.CompareExchange(ref _requestAddressesSent, 1, 0) == 0;
+
+    /// <summary>
+    /// Returns true only for the first caller, which is the one that has to send the response addresses.
+    /// The response start hook only exists for Kestrel and IIS, so every other server relies on the
+    /// end of request fallback, which is also what covers a response that never started.
+    /// </summary>
+    internal bool ShouldScanResponse() => Interlocked.CompareExchange(ref _responseScanned, 1, 0) == 0;
 
     /// <summary>
     /// Disposes the WAF's context stored in HttpContext.Items[]. If it doesn't exist, nothing happens, no crash
