@@ -9,6 +9,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.IntegrationTests.Helpers;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.TestHelpers.AutoInstrumentation.Containers;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using Xunit;
@@ -22,9 +23,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure
     [Collection(AzureMessagingEmulatorTestsCollection.Name)]
     public class AzureEventHubsTests : TracingIntegrationTest
     {
-        public AzureEventHubsTests(ITestOutputHelper output)
+        public AzureEventHubsTests(ITestOutputHelper output, AzureEventHubsFixture eventHubsFixture)
             : base("AzureEventHubs", output)
         {
+            ConfigureContainers(eventHubsFixture);
         }
 
         public static IEnumerable<object[]> GetEnabledConfig()
