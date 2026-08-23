@@ -35,10 +35,6 @@ namespace Datadog.Trace.Ci
             @"^\s*(\^)?\[(?<name>.*?)\](?:\[(?<cnt>[\s\d]*)\])?(?<defaults>\s*[@\w.\-/\s]*)?",
             RegexOptions.Compiled | RegexOptions.CultureInvariant);
 
-        private static readonly Regex StrictSectionHeaderRegex = new(
-            @"^\^?\[[^\]]+\](?:\[\d+\])?(?:\s+[@\w.\-/\s]+)?$",
-            RegexOptions.Compiled | RegexOptions.CultureInvariant);
-
         private static readonly Regex GitLabRoleReferenceRegex = new(
             @"(?<![\w@])@@(?:developer|maintainer|owner)s?(?=\s|$)",
             RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.IgnoreCase);
@@ -248,7 +244,7 @@ namespace Datadog.Trace.Ci
             var name = m.Groups["name"].Value.Trim();
             hasDiagnostics = platform == Platform.GitHub ||
                              name.Length == 0 ||
-                             !StrictSectionHeaderRegex.IsMatch(raw);
+                             !IsStrictSectionHeader(raw);
 
             var approvals = 0;
             if (m.Groups["cnt"].Success)
@@ -275,6 +271,74 @@ namespace Datadog.Trace.Ci
 
         private static bool IsUnparsableSectionHeader(string raw)
             => raw.StartsWith("[", StringComparison.Ordinal) || raw.StartsWith("^[", StringComparison.Ordinal);
+
+        private static bool IsStrictSectionHeader(string raw)
+        {
+            var index = raw[0] == '^' ? 1 : 0;
+            if (index >= raw.Length || raw[index] != '[')
+            {
+                return false;
+            }
+
+            var nameStart = ++index;
+            while (index < raw.Length && raw[index] != ']')
+            {
+                index++;
+            }
+
+            if (index == nameStart || index >= raw.Length)
+            {
+                return false;
+            }
+
+            index++;
+            if (index < raw.Length && raw[index] == '[')
+            {
+                var approvalStart = ++index;
+                while (index < raw.Length && char.IsDigit(raw[index]))
+                {
+                    index++;
+                }
+
+                if (index == approvalStart || index >= raw.Length || raw[index] != ']')
+                {
+                    return false;
+                }
+
+                index++;
+            }
+
+            if (index == raw.Length)
+            {
+                return true;
+            }
+
+            if (!char.IsWhiteSpace(raw[index]))
+            {
+                return false;
+            }
+
+            for (; index < raw.Length; index++)
+            {
+                if (!IsStrictSectionOwnerCharacter(raw[index]))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        private static bool IsStrictSectionOwnerCharacter(char character)
+        {
+            if (char.IsLetterOrDigit(character) || char.IsWhiteSpace(character) || character is '@' or '.' or '-' or '/')
+            {
+                return true;
+            }
+
+            var category = CharUnicodeInfo.GetUnicodeCategory(character);
+            return category is UnicodeCategory.NonSpacingMark or UnicodeCategory.ConnectorPunctuation;
+        }
 
         /// <summary>
         /// Compiles a CODEOWNERS-style glob into a deterministic matcher.

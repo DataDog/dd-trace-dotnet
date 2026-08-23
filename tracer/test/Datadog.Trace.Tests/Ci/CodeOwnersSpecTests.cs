@@ -626,6 +626,26 @@ public class CodeOwnersSpecTests
     }
 
     [SkippableFact]
+    public void LongMalformedGitLabSectionHeadersHaveBoundedParsingCost()
+    {
+        var malformedHeader = "[Docs] " + new string(' ', 1_000_000) + "!\n";
+        var path = WriteTemporaryCodeOwners(malformedHeader);
+        try
+        {
+            var stopwatch = Stopwatch.StartNew();
+            var codeOwners = new CodeOwners(path, CodeOwners.Platform.GitLab);
+            stopwatch.Stop();
+
+            stopwatch.Elapsed.Should().BeLessThan(TestTimeout, "section validation must scan malformed headers without regex backtracking");
+            codeOwners.ParsingDiagnosticsCount.Should().Be(1);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [SkippableFact]
     public void DuplicateOwnersAreDeduplicatedOnceInStableOrder()
     {
         var codeOwners = Create("*.cs @first @second @first @third @second\n", CodeOwners.Platform.GitHub);

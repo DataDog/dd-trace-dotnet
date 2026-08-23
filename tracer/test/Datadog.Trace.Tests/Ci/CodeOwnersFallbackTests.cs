@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Security;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Ci.CiEnvironment;
@@ -437,9 +438,79 @@ public class CodeOwnersFallbackTests
         Assert.Empty(owners);
         Assert.Null(ciValues.CodeOwners);
 
-        utcNow += CIEnvironmentValues.CodeOwnersLoadFailureRetryDelay;
+        utcNow += CIEnvironmentValues.CodeOwnersSearchRetryDelay;
         ciValues.MakeRelativePathFromSourceRootWithFallback(sourceFile, false, out owners!);
         Assert.Equal(["@owner"], owners);
+        Assert.NotNull(ciValues.CodeOwners);
+    }
+
+    [SkippableFact]
+    public void SecurityExceptionReadingFailureMetadataDoesNotEscape()
+    {
+        Skip.If(Path.DirectorySeparatorChar != '\\', "FileShare.None deterministically blocks a second reader on Windows.");
+
+        using var tempDirectory = new TemporaryDirectory();
+        var repoRoot = tempDirectory.RootPath;
+        Directory.CreateDirectory(Path.Combine(repoRoot, ".git"));
+        var sourceDirectory = Path.Combine(repoRoot, "src");
+        Directory.CreateDirectory(sourceDirectory);
+        var sourceFile = Path.Combine(sourceDirectory, "Test.cs");
+        File.WriteAllText(sourceFile, string.Empty);
+        var codeOwnersPath = Path.Combine(repoRoot, "CODEOWNERS");
+        File.WriteAllText(codeOwnersPath, "*.cs @owner\n");
+        var ciValues = new TestCIEnvironmentValues(sourceRoot: null, workspacePath: repoRoot);
+        var metadataReads = 0;
+        ciValues.BeforeCodeOwnersFileMetadataRead = path =>
+        {
+            Assert.Equal(codeOwnersPath, path);
+            metadataReads++;
+            throw new SecurityException("Simulated restricted filesystem metadata access.");
+        };
+
+        string[]? owners = null;
+        using (new FileStream(codeOwnersPath, FileMode.Open, FileAccess.Read, FileShare.None))
+        {
+            var exception = Record.Exception(() => ciValues.MakeRelativePathFromSourceRootWithFallback(sourceFile, false, out owners!));
+
+            Assert.Null(exception);
+            Assert.Empty(owners!);
+            Assert.Null(ciValues.CodeOwners);
+        }
+
+        // Both failure caching and the workspace retry must handle restricted metadata access.
+        Assert.Equal(2, metadataReads);
+    }
+
+    [SkippableFact]
+    public void NegativeFallbackCacheExpiresAndDiscoversNewCodeOwners()
+    {
+        using var tempDirectory = new TemporaryDirectory();
+        var repoRoot = tempDirectory.RootPath;
+        Directory.CreateDirectory(Path.Combine(repoRoot, ".git"));
+        var sourceDirectory = Path.Combine(repoRoot, "src");
+        Directory.CreateDirectory(sourceDirectory);
+        var sourceFile = Path.Combine(sourceDirectory, "Test.cs");
+        File.WriteAllText(sourceFile, string.Empty);
+        var ciValues = new TestCIEnvironmentValues(sourceRoot: null, workspacePath: repoRoot);
+        var utcNow = DateTime.UtcNow;
+        var searches = 0;
+        ciValues.CodeOwnersUtcNowProvider = () => utcNow;
+        ciValues.CodeOwnersFallbackSearchStarting = () => searches++;
+
+        ciValues.MakeRelativePathFromSourceRootWithFallback(sourceFile, false, out var initialOwners);
+        Assert.Empty(initialOwners);
+        Assert.Equal(1, searches);
+
+        File.WriteAllText(Path.Combine(repoRoot, "CODEOWNERS"), "*.cs @new-owner\n");
+        ciValues.MakeRelativePathFromSourceRootWithFallback(sourceFile, false, out var cachedOwners);
+        Assert.Empty(cachedOwners);
+        Assert.Equal(1, searches);
+
+        utcNow += CIEnvironmentValues.CodeOwnersSearchRetryDelay;
+        ciValues.MakeRelativePathFromSourceRootWithFallback(sourceFile, false, out var discoveredOwners);
+
+        Assert.Equal(["@new-owner"], discoveredOwners);
+        Assert.Equal(2, searches);
         Assert.NotNull(ciValues.CodeOwners);
     }
 

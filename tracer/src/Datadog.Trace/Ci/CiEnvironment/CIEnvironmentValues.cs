@@ -11,6 +11,7 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Security;
 using System.Text.RegularExpressions;
 using System.Threading;
 using Datadog.Trace.Ci.Tags;
@@ -26,7 +27,7 @@ internal abstract class CIEnvironmentValues
 {
     private const int CodeOwnersSearchCacheLimit = 256;
     internal const string RepositoryUrlPattern = @"((http|git|ssh|http(s)|file|\/?)|(git@[\w\.\-]+))(:(\/\/)?)([\w\.@\:/\-~]+)(\.git)?(\/)?";
-    internal static readonly TimeSpan CodeOwnersLoadFailureRetryDelay = TimeSpan.FromSeconds(30);
+    internal static readonly TimeSpan CodeOwnersSearchRetryDelay = TimeSpan.FromSeconds(30);
     protected static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(CIEnvironmentValues));
     private static readonly Lazy<CIEnvironmentValues> LazyInstance = new(Create);
     private static readonly Regex BranchOrTagsRegex = new(@"^refs\/heads\/tags\/(.*)|refs\/heads\/(.*)|refs\/tags\/(.*)|refs\/(.*)|origin\/tags\/(.*)|origin\/(.*)$", RegexOptions.Compiled);
@@ -143,6 +144,8 @@ internal abstract class CIEnvironmentValues
     internal Action? BeforeCodeOwnersFallbackLock { get; set; }
 
     internal Action? CodeOwnersFallbackSearchStarting { get; set; }
+
+    internal Action<string>? BeforeCodeOwnersFileMetadataRead { get; set; }
 
     internal Func<DateTime>? CodeOwnersUtcNowProvider { get; set; }
 
@@ -458,17 +461,18 @@ internal abstract class CIEnvironmentValues
         }
     }
 
-    private static CodeOwnersFileMetadata GetCodeOwnersFileMetadata(string path)
+    private CodeOwnersFileMetadata GetCodeOwnersFileMetadata(string path)
     {
         try
         {
+            BeforeCodeOwnersFileMetadataRead?.Invoke(path);
             var file = new FileInfo(path);
             file.Refresh();
             return file.Exists
                        ? new CodeOwnersFileMetadata(exists: true, file.Length, file.LastWriteTimeUtc.Ticks)
                        : default;
         }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or SecurityException)
         {
             return default;
         }
@@ -1020,13 +1024,14 @@ internal abstract class CIEnvironmentValues
         }
 
         var entry = node.Value;
-        if (entry.FailedCodeOwnersPath is null)
+        if (GetCodeOwnersUtcNow() >= entry.RetryAfterUtc)
         {
-            return true;
+            RemoveCodeOwnersSearchCacheEntry(node);
+            return false;
         }
 
-        var metadataUnchanged = entry.FileMetadata.Equals(GetCodeOwnersFileMetadata(entry.FailedCodeOwnersPath));
-        if (metadataUnchanged && GetCodeOwnersUtcNow() < entry.RetryAfterUtc)
+        if (entry.FailedCodeOwnersPath is null ||
+            entry.FileMetadata.Equals(GetCodeOwnersFileMetadata(entry.FailedCodeOwnersPath)))
         {
             return true;
         }
@@ -1054,7 +1059,7 @@ internal abstract class CIEnvironmentValues
             searchCacheKey,
             failedCodeOwnersPath,
             failedCodeOwnersPath is null ? default : GetCodeOwnersFileMetadata(failedCodeOwnersPath),
-            failedCodeOwnersPath is null ? DateTime.MaxValue : GetCodeOwnersUtcNow().Add(CodeOwnersLoadFailureRetryDelay));
+            GetCodeOwnersUtcNow().Add(CodeOwnersSearchRetryDelay));
         var node = _codeOwnersSearchCacheOrder.AddLast(entry);
         _codeOwnersSearchCache.Add(searchCacheKey, node);
     }
