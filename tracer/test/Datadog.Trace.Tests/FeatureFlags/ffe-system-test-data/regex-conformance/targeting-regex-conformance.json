@@ -1,0 +1,1065 @@
+{
+  "schema": "datadog.ffe.targeting-regex-conformance/v1",
+  "schemaVersion": 1,
+  "contractVersion": "targeting-regex-v2",
+  "semantics": {
+    "acceptedSyntax": "The portable intersection exercised by accepted cases, not every construct accepted by an individual engine.",
+    "engines": [
+      "RE2JS 1.2.2 using normalizedPattern",
+      "Go regexp using normalizedPattern",
+      "Rust regex 1.12 using rawPattern",
+      "Rust regex-syntax and regex-automata using rawPattern"
+    ],
+    "matchMode": "unanchored search unless the pattern contains anchors",
+    "nativeCompileFailureEvaluationResult": false,
+    "normalization": "For the inline flag groups exercised below, remove only the u flag and preserve the tested i, m, and s flags. Remove an empty global group and replace an empty scoped group with a non-capturing group.",
+    "contract": "accepted or rejected is the portable authoring decision. It is separate from native engine compilation.",
+    "expectedCompile": "The common native compile result. It is null when engines disagree; engineExpectations then records each result.",
+    "expectedMatch": "The common unanchored evaluation result. It is null when engines disagree or there is no portable match result.",
+    "engineExpectations": "When present, records native Go, RE2JS, Rust rules-based, and Rust rkyv compile and match observations. Match is null when that engine cannot compile the pattern."
+  },
+  "portableSyntax": {
+    "accepted": [
+      "literals and escaped literals",
+      "dot",
+      "start and end anchors",
+      "alternation",
+      "capturing and non-capturing groups",
+      "positive and negated character classes without a leading literal closing bracket",
+      "star, plus, optional, and counted quantifiers",
+      "Unicode literals",
+      "case-insensitive, multiline, dot-all, and standalone normalized Unicode inline flags"
+    ],
+    "rejected": [
+      "malformed expressions",
+      "positive and negative lookahead",
+      "positive and negative lookbehind",
+      "numeric and named backreferences",
+      "octal escapes and quoted-literal escapes that are not accepted consistently",
+      "Perl shorthand classes and word boundaries with ASCII versus Unicode semantic differences",
+      "unsupported byte escapes",
+      "Rust-only character class set operators and nested non-POSIX character classes",
+      "inline Unicode flag forms whose raw Rust meaning differs from normalized Go and browser syntax",
+      "named capture groups",
+      "POSIX character classes",
+      "Unicode property character classes",
+      "combined or scoped Unicode inline flags",
+      "character classes with a leading literal closing bracket",
+      "atomic groups",
+      "possessive quantifiers"
+    ]
+  },
+  "cases": [
+    {
+      "id": "accepted-literal-unanchored-match",
+      "description": "A literal searches within a larger string.",
+      "category": "literal",
+      "contract": "accepted",
+      "rawPattern": "datadog",
+      "normalizedPattern": "datadog",
+      "expectedCompile": true,
+      "input": "visit datadoghq.com",
+      "expectedMatch": true
+    },
+    {
+      "id": "accepted-literal-unanchored-no-match",
+      "description": "A valid literal can compile without matching the input.",
+      "category": "literal",
+      "contract": "accepted",
+      "rawPattern": "datadog",
+      "normalizedPattern": "datadog",
+      "expectedCompile": true,
+      "input": "example.com",
+      "expectedMatch": false
+    },
+    {
+      "id": "accepted-escaped-literal-dot-no-match",
+      "description": "An escaped dot is a literal dot, not any character.",
+      "category": "escape",
+      "contract": "accepted",
+      "rawPattern": "datadoghq\\.com",
+      "normalizedPattern": "datadoghq\\.com",
+      "expectedCompile": true,
+      "input": "datadoghqXcom",
+      "expectedMatch": false
+    },
+    {
+      "id": "accepted-dot-match",
+      "description": "Dot matches one non-newline character.",
+      "category": "dot",
+      "contract": "accepted",
+      "rawPattern": "d.g",
+      "normalizedPattern": "d.g",
+      "expectedCompile": true,
+      "input": "dog",
+      "expectedMatch": true
+    },
+    {
+      "id": "accepted-anchors-full-match",
+      "description": "Start and end anchors require a full-string match.",
+      "category": "anchors",
+      "contract": "accepted",
+      "rawPattern": "^foo$",
+      "normalizedPattern": "^foo$",
+      "expectedCompile": true,
+      "input": "foo",
+      "expectedMatch": true
+    },
+    {
+      "id": "accepted-anchors-reject-substring",
+      "description": "Anchors prevent a substring-only match.",
+      "category": "anchors",
+      "contract": "accepted",
+      "rawPattern": "^foo$",
+      "normalizedPattern": "^foo$",
+      "expectedCompile": true,
+      "input": "prefix foo suffix",
+      "expectedMatch": false
+    },
+    {
+      "id": "accepted-alternation-capturing-group",
+      "description": "Alternation inside a capturing group is portable.",
+      "category": "alternation",
+      "contract": "accepted",
+      "rawPattern": "^(cat|dog)$",
+      "normalizedPattern": "^(cat|dog)$",
+      "expectedCompile": true,
+      "input": "dog",
+      "expectedMatch": true
+    },
+    {
+      "id": "accepted-non-capturing-group",
+      "description": "A non-capturing group is portable.",
+      "category": "group",
+      "contract": "accepted",
+      "rawPattern": "^(?:cat|dog)$",
+      "normalizedPattern": "^(?:cat|dog)$",
+      "expectedCompile": true,
+      "input": "cat",
+      "expectedMatch": true
+    },
+    {
+      "id": "rejected-python-style-named-group",
+      "description": "Python-style named captures are not accepted consistently by shipped SDK evaluators.",
+      "category": "named-group",
+      "contract": "rejected",
+      "rawPattern": "^(?P<word>[[:alpha:]]+)$",
+      "normalizedPattern": "^(?P<word>[[:alpha:]]+)$",
+      "expectedCompile": true,
+      "input": "Dog",
+      "expectedMatch": true
+    },
+    {
+      "id": "rejected-js-style-named-group",
+      "description": "JS-style named captures are not evaluated consistently by shipped SDK evaluators.",
+      "category": "named-group",
+      "contract": "rejected",
+      "rawPattern": "^(?<word>[[:alpha:]]+)$",
+      "normalizedPattern": "^(?<word>[[:alpha:]]+)$",
+      "expectedCompile": true,
+      "input": "Dog",
+      "expectedMatch": true
+    },
+    {
+      "id": "accepted-escaped-octal-like-literal",
+      "description": "A doubled backslash followed by digits is literal text, not an octal escape.",
+      "category": "literal-escape",
+      "contract": "accepted",
+      "rawPattern": "^\\\\123$",
+      "normalizedPattern": "^\\\\123$",
+      "expectedCompile": true,
+      "input": "\\123",
+      "expectedMatch": true
+    },
+    {
+      "id": "accepted-escaped-shorthand-like-literal",
+      "description": "A doubled backslash followed by d is literal text, not a digit shorthand.",
+      "category": "literal-escape",
+      "contract": "accepted",
+      "rawPattern": "^\\\\d$",
+      "normalizedPattern": "^\\\\d$",
+      "expectedCompile": true,
+      "input": "\\d",
+      "expectedMatch": true
+    },
+    {
+      "id": "accepted-escaped-quoted-literal-like-text",
+      "description": "A doubled backslash before Q is literal text, not the start of a quoted-literal escape.",
+      "category": "literal-escape",
+      "contract": "accepted",
+      "rawPattern": "^\\\\Qfoo$",
+      "normalizedPattern": "^\\\\Qfoo$",
+      "expectedCompile": true,
+      "input": "\\Qfoo",
+      "expectedMatch": true
+    },
+    {
+      "id": "accepted-escaped-named-group-punctuation",
+      "description": "Escaped punctuation that spells (?< is literal text, not a named capture.",
+      "category": "literal-escape",
+      "contract": "accepted",
+      "rawPattern": "^\\(\\?<$",
+      "normalizedPattern": "^\\(\\?<$",
+      "expectedCompile": true,
+      "input": "(?<",
+      "expectedMatch": true
+    },
+    {
+      "id": "accepted-named-group-punctuation-in-character-class",
+      "description": "The characters (?< inside a character class are literals.",
+      "category": "character-class",
+      "contract": "accepted",
+      "rawPattern": "^[(?<]+$",
+      "normalizedPattern": "^[(?<]+$",
+      "expectedCompile": true,
+      "input": "(?<",
+      "expectedMatch": true
+    },
+    {
+      "id": "accepted-escaped-shorthand-in-character-class",
+      "description": "A doubled backslash before d inside a character class is literal syntax, not a digit shorthand.",
+      "category": "character-class",
+      "contract": "accepted",
+      "rawPattern": "^[\\\\d]$",
+      "normalizedPattern": "^[\\\\d]$",
+      "expectedCompile": true,
+      "input": "d",
+      "expectedMatch": true
+    },
+    {
+      "id": "accepted-escaped-boundary-in-character-class",
+      "description": "A doubled backslash before b inside a character class is literal syntax, not a word boundary.",
+      "category": "character-class",
+      "contract": "accepted",
+      "rawPattern": "^[\\\\b]$",
+      "normalizedPattern": "^[\\\\b]$",
+      "expectedCompile": true,
+      "input": "b",
+      "expectedMatch": true
+    },
+    {
+      "id": "accepted-positive-character-class",
+      "description": "A positive character class is portable.",
+      "category": "character-class",
+      "contract": "accepted",
+      "rawPattern": "^[A-Z][0-9]$",
+      "normalizedPattern": "^[A-Z][0-9]$",
+      "expectedCompile": true,
+      "input": "Q7",
+      "expectedMatch": true
+    },
+    {
+      "id": "accepted-negated-character-class",
+      "description": "A negated character class is portable.",
+      "category": "character-class",
+      "contract": "accepted",
+      "rawPattern": "^[^0-9]+$",
+      "normalizedPattern": "^[^0-9]+$",
+      "expectedCompile": true,
+      "input": "alpha",
+      "expectedMatch": true
+    },
+    {
+      "id": "accepted-star-quantifier",
+      "description": "The star quantifier accepts zero repetitions.",
+      "category": "quantifier",
+      "contract": "accepted",
+      "rawPattern": "^ab*c$",
+      "normalizedPattern": "^ab*c$",
+      "expectedCompile": true,
+      "input": "ac",
+      "expectedMatch": true
+    },
+    {
+      "id": "accepted-plus-quantifier-no-match",
+      "description": "The plus quantifier requires one or more repetitions.",
+      "category": "quantifier",
+      "contract": "accepted",
+      "rawPattern": "^ab+c$",
+      "normalizedPattern": "^ab+c$",
+      "expectedCompile": true,
+      "input": "ac",
+      "expectedMatch": false
+    },
+    {
+      "id": "accepted-optional-quantifier",
+      "description": "The optional quantifier accepts a missing character.",
+      "category": "quantifier",
+      "contract": "accepted",
+      "rawPattern": "^colou?r$",
+      "normalizedPattern": "^colou?r$",
+      "expectedCompile": true,
+      "input": "color",
+      "expectedMatch": true
+    },
+    {
+      "id": "accepted-comma-counted-quantifier",
+      "description": "A comma inside a counted quantifier remains part of one regex value.",
+      "category": "quantifier",
+      "contract": "accepted",
+      "rawPattern": "a{1,3}",
+      "normalizedPattern": "a{1,3}",
+      "expectedCompile": true,
+      "input": "caaad",
+      "expectedMatch": true
+    },
+    {
+      "id": "rejected-posix-alpha-class",
+      "description": "POSIX character classes are not evaluated consistently by shipped SDK evaluators.",
+      "category": "posix-class",
+      "contract": "rejected",
+      "rawPattern": "^[[:alpha:]]+$",
+      "normalizedPattern": "^[[:alpha:]]+$",
+      "expectedCompile": true,
+      "input": "Alpha",
+      "expectedMatch": true
+    },
+    {
+      "id": "rejected-unicode-letter-class",
+      "description": "Unicode property character classes are not evaluated consistently by shipped SDK evaluators.",
+      "category": "unicode-class",
+      "contract": "rejected",
+      "rawPattern": "^\\p{L}+$",
+      "normalizedPattern": "^\\p{L}+$",
+      "expectedCompile": true,
+      "input": "mañana",
+      "expectedMatch": true
+    },
+    {
+      "id": "accepted-unicode-literal-unanchored",
+      "description": "Unicode literal text is portable with unanchored search.",
+      "category": "unicode-literal",
+      "contract": "accepted",
+      "rawPattern": "mañana",
+      "normalizedPattern": "mañana",
+      "expectedCompile": true,
+      "input": "hasta mañana!",
+      "expectedMatch": true
+    },
+    {
+      "id": "accepted-inline-case-insensitive",
+      "description": "The case-insensitive inline flag is portable.",
+      "category": "inline-flag",
+      "contract": "accepted",
+      "rawPattern": "(?i)^alice$",
+      "normalizedPattern": "(?i)^alice$",
+      "expectedCompile": true,
+      "input": "ALICE",
+      "expectedMatch": true
+    },
+    {
+      "id": "accepted-inline-multiline",
+      "description": "The multiline inline flag changes anchors to line boundaries.",
+      "category": "inline-flag",
+      "contract": "accepted",
+      "rawPattern": "(?m)^second$",
+      "normalizedPattern": "(?m)^second$",
+      "expectedCompile": true,
+      "input": "first\nsecond\nthird",
+      "expectedMatch": true
+    },
+    {
+      "id": "accepted-inline-dot-all",
+      "description": "The dot-all inline flag lets dot match a newline.",
+      "category": "inline-flag",
+      "contract": "accepted",
+      "rawPattern": "(?s)^a.b$",
+      "normalizedPattern": "(?s)^a.b$",
+      "expectedCompile": true,
+      "input": "a\nb",
+      "expectedMatch": true
+    },
+    {
+      "id": "accepted-inline-unicode-global-normalized",
+      "description": "A global Unicode flag is redundant and removed for Go and RE2JS.",
+      "category": "normalization",
+      "contract": "accepted",
+      "rawPattern": "(?u)foo",
+      "normalizedPattern": "foo",
+      "expectedCompile": true,
+      "input": "seafood",
+      "expectedMatch": true
+    },
+    {
+      "id": "rejected-inline-unicode-combined-normalized",
+      "description": "Combined Unicode inline flags are not normalized consistently by shipped SDK evaluators.",
+      "category": "normalization",
+      "contract": "rejected",
+      "rawPattern": "(?iu)^alice$",
+      "normalizedPattern": "(?i)^alice$",
+      "expectedCompile": true,
+      "input": "ALICE",
+      "expectedMatch": true
+    },
+    {
+      "id": "rejected-inline-unicode-scoped-normalized",
+      "description": "Scoped Unicode inline flags are not normalized consistently by shipped SDK evaluators.",
+      "category": "normalization",
+      "contract": "rejected",
+      "rawPattern": "(?u:^mañana$)",
+      "normalizedPattern": "(?:^mañana$)",
+      "expectedCompile": true,
+      "input": "mañana",
+      "expectedMatch": true
+    },
+    {
+      "id": "rejected-inline-unicode-scoped-combined-normalized",
+      "description": "Combined scoped Unicode inline flags are not normalized consistently by shipped SDK evaluators.",
+      "category": "normalization",
+      "contract": "rejected",
+      "rawPattern": "(?iu:^alice$)",
+      "normalizedPattern": "(?i:^alice$)",
+      "expectedCompile": true,
+      "input": "ALICE",
+      "expectedMatch": true
+    },
+    {
+      "id": "accepted-single-ampersand-in-character-class",
+      "description": "A single ampersand in an ordinary character class is literal text, not a Rust set-intersection operator.",
+      "category": "character-class",
+      "contract": "accepted",
+      "rawPattern": "^[a&]+$",
+      "normalizedPattern": "^[a&]+$",
+      "expectedCompile": true,
+      "input": "&",
+      "expectedMatch": true
+    },
+    {
+      "id": "accepted-single-tilde-in-character-class",
+      "description": "A single tilde in an ordinary character class is literal text, not a Rust set-symmetric-difference operator.",
+      "category": "character-class",
+      "contract": "accepted",
+      "rawPattern": "^[a~]+$",
+      "normalizedPattern": "^[a~]+$",
+      "expectedCompile": true,
+      "input": "~",
+      "expectedMatch": true
+    },
+    {
+      "id": "accepted-single-hyphen-in-character-class",
+      "description": "A trailing single hyphen in a character class is literal text, not a Rust set-difference operator.",
+      "category": "character-class",
+      "contract": "accepted",
+      "rawPattern": "^[a-]+$",
+      "normalizedPattern": "^[a-]+$",
+      "expectedCompile": true,
+      "input": "-",
+      "expectedMatch": true
+    },
+    {
+      "id": "accepted-range-in-character-class",
+      "description": "An ordinary character range remains part of the portable contract.",
+      "category": "character-class",
+      "contract": "accepted",
+      "rawPattern": "^[a-z]+$",
+      "normalizedPattern": "^[a-z]+$",
+      "expectedCompile": true,
+      "input": "range",
+      "expectedMatch": true
+    },
+    {
+      "id": "rejected-leading-closing-bracket-in-character-class",
+      "description": "A leading literal closing bracket in a character class is not evaluated consistently by shipped SDK evaluators.",
+      "category": "character-class",
+      "contract": "rejected",
+      "rawPattern": "^[]a]+$",
+      "normalizedPattern": "^[]a]+$",
+      "expectedCompile": true,
+      "input": "]",
+      "expectedMatch": true
+    },
+    {
+      "id": "rejected-leading-closing-bracket-in-negated-character-class",
+      "description": "A leading literal closing bracket in a negated character class is not evaluated consistently by shipped SDK evaluators.",
+      "category": "character-class",
+      "contract": "rejected",
+      "rawPattern": "^[^]a]+$",
+      "normalizedPattern": "^[^]a]+$",
+      "expectedCompile": true,
+      "input": "b",
+      "expectedMatch": true
+    },
+    {
+      "id": "rejected-rust-character-class-intersection",
+      "description": "Double ampersand is a set-intersection operator in Rust but literal class text in Go and RE2JS.",
+      "category": "character-class-dialect",
+      "contract": "rejected",
+      "rawPattern": "^[a-z&&b-z]+$",
+      "normalizedPattern": "^[a-z&&b-z]+$",
+      "expectedCompile": true,
+      "input": "&",
+      "expectedMatch": null,
+      "engineExpectations": {
+        "go": { "compile": true, "match": true },
+        "re2js": { "compile": true, "match": true },
+        "rustRulesBased": { "compile": true, "match": false },
+        "rustRkyv": { "compile": true, "match": false }
+      }
+    },
+    {
+      "id": "rejected-rust-character-class-intersection-after-leading-closing-bracket",
+      "description": "A leading closing bracket stays inside the class; the later double ampersand is a Rust intersection operator but literal class text in Go and RE2JS.",
+      "category": "character-class-dialect",
+      "contract": "rejected",
+      "rawPattern": "^[]a&&b]+$",
+      "normalizedPattern": "^[]a&&b]+$",
+      "expectedCompile": true,
+      "input": "&",
+      "expectedMatch": null,
+      "engineExpectations": {
+        "go": { "compile": true, "match": true },
+        "re2js": { "compile": true, "match": true },
+        "rustRulesBased": { "compile": true, "match": false },
+        "rustRkyv": { "compile": true, "match": false }
+      }
+    },
+    {
+      "id": "rejected-rust-character-class-intersection-after-leading-closing-bracket-in-negated-class",
+      "description": "A leading closing bracket after negation stays inside the class; Rust complements an empty intersection while Go and RE2JS treat ampersands as excluded literals.",
+      "category": "character-class-dialect",
+      "contract": "rejected",
+      "rawPattern": "^[^]a&&b]+$",
+      "normalizedPattern": "^[^]a&&b]+$",
+      "expectedCompile": true,
+      "input": "&",
+      "expectedMatch": null,
+      "engineExpectations": {
+        "go": { "compile": true, "match": false },
+        "re2js": { "compile": true, "match": false },
+        "rustRulesBased": { "compile": true, "match": true },
+        "rustRkyv": { "compile": true, "match": true }
+      }
+    },
+    {
+      "id": "rejected-rust-character-class-symmetric-difference",
+      "description": "Double tilde is a set-symmetric-difference operator in Rust but literal class text in Go and RE2JS.",
+      "category": "character-class-dialect",
+      "contract": "rejected",
+      "rawPattern": "^[a-z~~b-z]+$",
+      "normalizedPattern": "^[a-z~~b-z]+$",
+      "expectedCompile": true,
+      "input": "~",
+      "expectedMatch": null,
+      "engineExpectations": {
+        "go": { "compile": true, "match": true },
+        "re2js": { "compile": true, "match": true },
+        "rustRulesBased": { "compile": true, "match": false },
+        "rustRkyv": { "compile": true, "match": false }
+      }
+    },
+    {
+      "id": "rejected-rust-character-class-difference",
+      "description": "Double hyphen is a set-difference operator in Rust but literal class text in Go and RE2JS.",
+      "category": "character-class-dialect",
+      "contract": "rejected",
+      "rawPattern": "^[a-z--b-z]+$",
+      "normalizedPattern": "^[a-z--b-z]+$",
+      "expectedCompile": true,
+      "input": "-",
+      "expectedMatch": null,
+      "engineExpectations": {
+        "go": { "compile": true, "match": true },
+        "re2js": { "compile": true, "match": true },
+        "rustRulesBased": { "compile": true, "match": false },
+        "rustRkyv": { "compile": true, "match": false }
+      }
+    },
+    {
+      "id": "rejected-rust-nested-character-class",
+      "description": "Rust treats a nested class as a union, while Go and RE2JS parse the same bytes with different match behavior.",
+      "category": "character-class-dialect",
+      "contract": "rejected",
+      "rawPattern": "^[a-z[0-9]]+$",
+      "normalizedPattern": "^[a-z[0-9]]+$",
+      "expectedCompile": true,
+      "input": "5",
+      "expectedMatch": null,
+      "engineExpectations": {
+        "go": { "compile": true, "match": false },
+        "re2js": { "compile": true, "match": false },
+        "rustRulesBased": { "compile": true, "match": true },
+        "rustRkyv": { "compile": true, "match": true }
+      }
+    },
+    {
+      "id": "rejected-inline-flag-token-in-character-class",
+      "description": "The raw class contains a literal u, but current Go and browser normalization removes it as if it were an inline flag.",
+      "category": "normalization-dialect",
+      "contract": "rejected",
+      "rawPattern": "^[(?iu)]+$",
+      "normalizedPattern": "^[(?i)]+$",
+      "expectedCompile": true,
+      "input": "u",
+      "expectedMatch": null,
+      "engineExpectations": {
+        "go": { "compile": true, "match": false },
+        "re2js": { "compile": true, "match": false },
+        "rustRulesBased": { "compile": true, "match": true },
+        "rustRkyv": { "compile": true, "match": true }
+      }
+    },
+    {
+      "id": "rejected-malformed-inline-unicode-flags",
+      "description": "The raw Rust flag group is malformed, while current Go and browser normalization removes it and accepts the remaining literal.",
+      "category": "normalization-dialect",
+      "contract": "rejected",
+      "rawPattern": "(?u-)foo",
+      "normalizedPattern": "foo",
+      "expectedCompile": null,
+      "input": "foo",
+      "expectedMatch": null,
+      "engineExpectations": {
+        "go": { "compile": true, "match": true },
+        "re2js": { "compile": true, "match": true },
+        "rustRulesBased": { "compile": false, "match": null },
+        "rustRkyv": { "compile": false, "match": null }
+      }
+    },
+    {
+      "id": "rejected-disabled-unicode-scoped-class",
+      "description": "Rust rejects a Unicode class inside a Unicode-disabled scope, while normalization removes the disabling flag and accepts it.",
+      "category": "normalization-dialect",
+      "contract": "rejected",
+      "rawPattern": "(?-u:\\p{L}+)",
+      "normalizedPattern": "(?:\\p{L}+)",
+      "expectedCompile": null,
+      "input": "ñ",
+      "expectedMatch": null,
+      "engineExpectations": {
+        "go": { "compile": true, "match": true },
+        "re2js": { "compile": true, "match": true },
+        "rustRulesBased": { "compile": false, "match": null },
+        "rustRkyv": { "compile": false, "match": null }
+      }
+    },
+    {
+      "id": "rejected-disabled-unicode-global-class",
+      "description": "Rust rejects a Unicode class after Unicode is disabled globally, while normalization removes the disabling flag and accepts it.",
+      "category": "normalization-dialect",
+      "contract": "rejected",
+      "rawPattern": "(?-u)\\p{L}+",
+      "normalizedPattern": "\\p{L}+",
+      "expectedCompile": null,
+      "input": "ñ",
+      "expectedMatch": null,
+      "engineExpectations": {
+        "go": { "compile": true, "match": true },
+        "re2js": { "compile": true, "match": true },
+        "rustRulesBased": { "compile": false, "match": null },
+        "rustRkyv": { "compile": false, "match": null }
+      }
+    },
+    {
+      "id": "rejected-disabled-unicode-negated-class",
+      "description": "Rust rejects a broad negated class inside a Unicode-disabled scope, while normalization removes the disabling flag and accepts it.",
+      "category": "normalization-dialect",
+      "contract": "rejected",
+      "rawPattern": "(?-u:[^a])",
+      "normalizedPattern": "(?:[^a])",
+      "expectedCompile": null,
+      "input": "ñ",
+      "expectedMatch": null,
+      "engineExpectations": {
+        "go": { "compile": true, "match": true },
+        "re2js": { "compile": true, "match": true },
+        "rustRulesBased": { "compile": false, "match": null },
+        "rustRkyv": { "compile": false, "match": null }
+      }
+    },
+    {
+      "id": "rejected-octal-escape",
+      "description": "Octal escapes are accepted by Go and RE2JS but disabled by default in Rust, so they are outside the portable contract.",
+      "category": "dialect-escape",
+      "contract": "rejected",
+      "rawPattern": "\\123",
+      "normalizedPattern": "\\123",
+      "expectedCompile": null,
+      "input": "S",
+      "expectedMatch": null,
+      "engineExpectations": {
+        "go": { "compile": true, "match": true },
+        "re2js": { "compile": true, "match": true },
+        "rustRulesBased": { "compile": false, "match": null },
+        "rustRkyv": { "compile": false, "match": null }
+      }
+    },
+    {
+      "id": "rejected-quoted-literal-escape",
+      "description": "Quoted-literal escapes are accepted by Go and RE2JS but rejected by Rust, so they are outside the portable contract.",
+      "category": "dialect-escape",
+      "contract": "rejected",
+      "rawPattern": "\\Qfoo.bar\\E",
+      "normalizedPattern": "\\Qfoo.bar\\E",
+      "expectedCompile": null,
+      "input": "foo.bar",
+      "expectedMatch": null,
+      "engineExpectations": {
+        "go": { "compile": true, "match": true },
+        "re2js": { "compile": true, "match": true },
+        "rustRulesBased": { "compile": false, "match": null },
+        "rustRkyv": { "compile": false, "match": null }
+      }
+    },
+    {
+      "id": "rejected-byte-escape",
+      "description": "The byte escape is unsupported by the targeting regex engines and falls through to native compiler rejection.",
+      "category": "dialect-escape",
+      "contract": "rejected",
+      "rawPattern": "\\C",
+      "normalizedPattern": "\\C",
+      "expectedCompile": false,
+      "input": "A",
+      "expectedMatch": false
+    },
+    {
+      "id": "rejected-digit-shorthand-unicode-divergence",
+      "description": "Digit shorthand is ASCII-oriented in Go and RE2JS but Unicode-aware in Rust.",
+      "category": "semantic-shorthand",
+      "contract": "rejected",
+      "rawPattern": "^\\d+$",
+      "normalizedPattern": "^\\d+$",
+      "expectedCompile": true,
+      "input": "٣",
+      "expectedMatch": null,
+      "engineExpectations": {
+        "go": { "compile": true, "match": false },
+        "re2js": { "compile": true, "match": false },
+        "rustRulesBased": { "compile": true, "match": true },
+        "rustRkyv": { "compile": true, "match": true }
+      }
+    },
+    {
+      "id": "rejected-negated-digit-shorthand-unicode-divergence",
+      "description": "Negated digit shorthand is ASCII-oriented in Go and RE2JS but Unicode-aware in Rust.",
+      "category": "semantic-shorthand",
+      "contract": "rejected",
+      "rawPattern": "^\\D+$",
+      "normalizedPattern": "^\\D+$",
+      "expectedCompile": true,
+      "input": "٣",
+      "expectedMatch": null,
+      "engineExpectations": {
+        "go": { "compile": true, "match": true },
+        "re2js": { "compile": true, "match": true },
+        "rustRulesBased": { "compile": true, "match": false },
+        "rustRkyv": { "compile": true, "match": false }
+      }
+    },
+    {
+      "id": "rejected-space-shorthand-unicode-divergence",
+      "description": "Space shorthand excludes non-breaking space in Go and RE2JS but includes it in Rust.",
+      "category": "semantic-shorthand",
+      "contract": "rejected",
+      "rawPattern": "^\\s+$",
+      "normalizedPattern": "^\\s+$",
+      "expectedCompile": true,
+      "input": " ",
+      "expectedMatch": null,
+      "engineExpectations": {
+        "go": { "compile": true, "match": false },
+        "re2js": { "compile": true, "match": false },
+        "rustRulesBased": { "compile": true, "match": true },
+        "rustRkyv": { "compile": true, "match": true }
+      }
+    },
+    {
+      "id": "rejected-negated-space-shorthand-unicode-divergence",
+      "description": "Negated space shorthand includes non-breaking space in Go and RE2JS but excludes it in Rust.",
+      "category": "semantic-shorthand",
+      "contract": "rejected",
+      "rawPattern": "^\\S+$",
+      "normalizedPattern": "^\\S+$",
+      "expectedCompile": true,
+      "input": " ",
+      "expectedMatch": null,
+      "engineExpectations": {
+        "go": { "compile": true, "match": true },
+        "re2js": { "compile": true, "match": true },
+        "rustRulesBased": { "compile": true, "match": false },
+        "rustRkyv": { "compile": true, "match": false }
+      }
+    },
+    {
+      "id": "rejected-word-shorthand-unicode-divergence",
+      "description": "Word shorthand excludes a non-ASCII letter in Go and RE2JS but includes it in Rust.",
+      "category": "semantic-shorthand",
+      "contract": "rejected",
+      "rawPattern": "^\\w+$",
+      "normalizedPattern": "^\\w+$",
+      "expectedCompile": true,
+      "input": "ñ",
+      "expectedMatch": null,
+      "engineExpectations": {
+        "go": { "compile": true, "match": false },
+        "re2js": { "compile": true, "match": false },
+        "rustRulesBased": { "compile": true, "match": true },
+        "rustRkyv": { "compile": true, "match": true }
+      }
+    },
+    {
+      "id": "rejected-negated-word-shorthand-unicode-divergence",
+      "description": "Negated word shorthand includes a non-ASCII letter in Go and RE2JS but excludes it in Rust.",
+      "category": "semantic-shorthand",
+      "contract": "rejected",
+      "rawPattern": "^\\W+$",
+      "normalizedPattern": "^\\W+$",
+      "expectedCompile": true,
+      "input": "ñ",
+      "expectedMatch": null,
+      "engineExpectations": {
+        "go": { "compile": true, "match": true },
+        "re2js": { "compile": true, "match": true },
+        "rustRulesBased": { "compile": true, "match": false },
+        "rustRkyv": { "compile": true, "match": false }
+      }
+    },
+    {
+      "id": "rejected-word-boundary-unicode-divergence",
+      "description": "Word boundary is ASCII-oriented in Go and RE2JS but Unicode-aware in Rust.",
+      "category": "semantic-boundary",
+      "contract": "rejected",
+      "rawPattern": "\\bñ\\b",
+      "normalizedPattern": "\\bñ\\b",
+      "expectedCompile": true,
+      "input": "ñ",
+      "expectedMatch": null,
+      "engineExpectations": {
+        "go": { "compile": true, "match": false },
+        "re2js": { "compile": true, "match": false },
+        "rustRulesBased": { "compile": true, "match": true },
+        "rustRkyv": { "compile": true, "match": true }
+      }
+    },
+    {
+      "id": "rejected-negated-word-boundary-unicode-divergence",
+      "description": "Negated word boundary is ASCII-oriented in Go and RE2JS but Unicode-aware in Rust.",
+      "category": "semantic-boundary",
+      "contract": "rejected",
+      "rawPattern": "^\\Bñ\\B$",
+      "normalizedPattern": "^\\Bñ\\B$",
+      "expectedCompile": true,
+      "input": "ñ",
+      "expectedMatch": null,
+      "engineExpectations": {
+        "go": { "compile": true, "match": true },
+        "re2js": { "compile": true, "match": true },
+        "rustRulesBased": { "compile": true, "match": false },
+        "rustRkyv": { "compile": true, "match": false }
+      }
+    },
+    {
+      "id": "rejected-digit-shorthand-in-character-class",
+      "description": "Digit shorthand keeps the same ASCII versus Unicode semantic difference inside a character class.",
+      "category": "semantic-shorthand",
+      "contract": "rejected",
+      "rawPattern": "^[\\d]$",
+      "normalizedPattern": "^[\\d]$",
+      "expectedCompile": true,
+      "input": "٣",
+      "expectedMatch": null,
+      "engineExpectations": {
+        "go": { "compile": true, "match": false },
+        "re2js": { "compile": true, "match": false },
+        "rustRulesBased": { "compile": true, "match": true },
+        "rustRkyv": { "compile": true, "match": true }
+      }
+    },
+    {
+      "id": "rejected-boundary-escape-in-character-class",
+      "description": "The boundary escape is not accepted consistently inside a character class.",
+      "category": "semantic-boundary",
+      "contract": "rejected",
+      "rawPattern": "^[\\b]$",
+      "normalizedPattern": "^[\\b]$",
+      "expectedCompile": false,
+      "input": "b",
+      "expectedMatch": false
+    },
+    {
+      "id": "rejected-unclosed-character-class",
+      "description": "Malformed character classes are not authorable and fail closed.",
+      "category": "malformed",
+      "contract": "rejected",
+      "rawPattern": "[",
+      "normalizedPattern": "[",
+      "expectedCompile": false,
+      "input": "anything",
+      "expectedMatch": false
+    },
+    {
+      "id": "rejected-dangling-quantifier",
+      "description": "A quantifier without an expression is malformed and fails closed.",
+      "category": "malformed",
+      "contract": "rejected",
+      "rawPattern": "*foo",
+      "normalizedPattern": "*foo",
+      "expectedCompile": false,
+      "input": "foo",
+      "expectedMatch": false
+    },
+    {
+      "id": "rejected-positive-lookahead",
+      "description": "Positive lookahead is outside the portable syntax contract.",
+      "category": "lookaround",
+      "contract": "rejected",
+      "rawPattern": "foo(?=bar)",
+      "normalizedPattern": "foo(?=bar)",
+      "expectedCompile": false,
+      "input": "foobar",
+      "expectedMatch": false
+    },
+    {
+      "id": "rejected-negative-lookahead",
+      "description": "Negative lookahead is outside the portable syntax contract.",
+      "category": "lookaround",
+      "contract": "rejected",
+      "rawPattern": "foo(?!bar)",
+      "normalizedPattern": "foo(?!bar)",
+      "expectedCompile": false,
+      "input": "foobaz",
+      "expectedMatch": false
+    },
+    {
+      "id": "rejected-positive-lookbehind",
+      "description": "Positive lookbehind is outside the portable syntax contract.",
+      "category": "lookaround",
+      "contract": "rejected",
+      "rawPattern": "(?<=foo)bar",
+      "normalizedPattern": "(?<=foo)bar",
+      "expectedCompile": false,
+      "input": "foobar",
+      "expectedMatch": false
+    },
+    {
+      "id": "rejected-negative-lookbehind",
+      "description": "Negative lookbehind is outside the portable syntax contract.",
+      "category": "lookaround",
+      "contract": "rejected",
+      "rawPattern": "(?<!foo)bar",
+      "normalizedPattern": "(?<!foo)bar",
+      "expectedCompile": false,
+      "input": "bazbar",
+      "expectedMatch": false
+    },
+    {
+      "id": "rejected-numeric-backreference",
+      "description": "Numeric backreferences are outside the portable syntax contract.",
+      "category": "backreference",
+      "contract": "rejected",
+      "rawPattern": "(a)\\1",
+      "normalizedPattern": "(a)\\1",
+      "expectedCompile": false,
+      "input": "aa",
+      "expectedMatch": false
+    },
+    {
+      "id": "rejected-digit-prefixed-named-group",
+      "description": "Go and RE2JS accept a digit-prefixed capture name, but both Rust evaluators reject it.",
+      "category": "named-group-dialect",
+      "contract": "rejected",
+      "rawPattern": "^(?P<1>a)$",
+      "normalizedPattern": "^(?P<1>a)$",
+      "expectedCompile": null,
+      "input": "a",
+      "expectedMatch": null,
+      "engineExpectations": {
+        "go": {
+          "compile": true,
+          "match": true
+        },
+        "re2js": {
+          "compile": true,
+          "match": true
+        },
+        "rustRulesBased": {
+          "compile": false,
+          "match": null
+        },
+        "rustRkyv": {
+          "compile": false,
+          "match": null
+        }
+      }
+    },
+    {
+      "id": "rejected-duplicate-named-group",
+      "description": "Go accepts a duplicate capture name, but RE2JS and both Rust evaluators reject it.",
+      "category": "named-group-dialect",
+      "contract": "rejected",
+      "rawPattern": "^(?P<word>a)(?<word>b)$",
+      "normalizedPattern": "^(?P<word>a)(?<word>b)$",
+      "expectedCompile": null,
+      "input": "ab",
+      "expectedMatch": null,
+      "engineExpectations": {
+        "go": {
+          "compile": true,
+          "match": true
+        },
+        "re2js": {
+          "compile": false,
+          "match": null
+        },
+        "rustRulesBased": {
+          "compile": false,
+          "match": null
+        },
+        "rustRkyv": {
+          "compile": false,
+          "match": null
+        }
+      }
+    },
+    {
+      "id": "rejected-named-backreference",
+      "description": "Named backreferences and named capture groups are outside the portable syntax contract.",
+      "category": "backreference",
+      "contract": "rejected",
+      "rawPattern": "(?P<word>a)\\k<word>",
+      "normalizedPattern": "(?P<word>a)\\k<word>",
+      "expectedCompile": false,
+      "input": "aa",
+      "expectedMatch": false
+    },
+    {
+      "id": "rejected-atomic-group",
+      "description": "Atomic groups are outside the portable syntax contract.",
+      "category": "group",
+      "contract": "rejected",
+      "rawPattern": "(?>foo)",
+      "normalizedPattern": "(?>foo)",
+      "expectedCompile": false,
+      "input": "foo",
+      "expectedMatch": false
+    },
+    {
+      "id": "rejected-possessive-quantifier",
+      "description": "Possessive quantifiers are outside the portable syntax contract.",
+      "category": "quantifier",
+      "contract": "rejected",
+      "rawPattern": "a++",
+      "normalizedPattern": "a++",
+      "expectedCompile": null,
+      "input": "aaa",
+      "expectedMatch": null,
+      "engineExpectations": {
+        "go": {
+          "compile": false,
+          "match": null
+        },
+        "re2js": {
+          "compile": false,
+          "match": null
+        },
+        "rustRulesBased": {
+          "compile": true,
+          "match": true
+        },
+        "rustRkyv": {
+          "compile": true,
+          "match": true
+        }
+      }
+    }
+  ]
+}

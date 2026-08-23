@@ -14,20 +14,6 @@
     "variationType": "STRING"
   },
   {
-    "description": "Semver requires all three core components.",
-    "attributes": {
-      "app_version": "1.2"
-    },
-    "defaultValue": "unknown",
-    "flag": "semver-comparison-test",
-    "result": {
-      "reason": "DEFAULT",
-      "value": "unknown"
-    },
-    "targetingKey": "short-version",
-    "variationType": "STRING"
-  },
-  {
     "description": "Semver does not accept a v prefix.",
     "attributes": {
       "app_version": "v1.2.3"
@@ -109,6 +95,146 @@
       "value": "unknown"
     },
     "targetingKey": "non-ascii-prerelease",
+    "variationType": "STRING"
+  },
+  {
+    "description": "An empty string is not a valid SemVer version.",
+    "attributes": {
+      "app_version": ""
+    },
+    "defaultValue": "unknown",
+    "flag": "semver-comparison-test",
+    "result": {
+      "reason": "DEFAULT",
+      "value": "unknown"
+    },
+    "targetingKey": "empty-string",
+    "variationType": "STRING"
+  },
+  {
+    "description": "A leading zero in the minor core component is rejected.",
+    "attributes": {
+      "app_version": "1.02.3"
+    },
+    "defaultValue": "unknown",
+    "flag": "semver-comparison-test",
+    "result": {
+      "reason": "DEFAULT",
+      "value": "unknown"
+    },
+    "targetingKey": "minor-leading-zero",
+    "variationType": "STRING"
+  },
+  {
+    "description": "A leading zero in the patch core component is rejected.",
+    "attributes": {
+      "app_version": "1.2.03"
+    },
+    "defaultValue": "unknown",
+    "flag": "semver-comparison-test",
+    "result": {
+      "reason": "DEFAULT",
+      "value": "unknown"
+    },
+    "targetingKey": "patch-leading-zero",
+    "variationType": "STRING"
+  },
+  {
+    "description": "A trailing prerelease delimiter with no identifiers is rejected.",
+    "attributes": {
+      "app_version": "1.2.3-"
+    },
+    "defaultValue": "unknown",
+    "flag": "semver-comparison-test",
+    "result": {
+      "reason": "DEFAULT",
+      "value": "unknown"
+    },
+    "targetingKey": "empty-prerelease",
+    "variationType": "STRING"
+  },
+  {
+    "description": "A trailing build delimiter with no identifiers is rejected.",
+    "attributes": {
+      "app_version": "1.2.3+"
+    },
+    "defaultValue": "unknown",
+    "flag": "semver-comparison-test",
+    "result": {
+      "reason": "DEFAULT",
+      "value": "unknown"
+    },
+    "targetingKey": "empty-build",
+    "variationType": "STRING"
+  },
+  {
+    "description": "Underscores are not permitted in prerelease identifiers.",
+    "attributes": {
+      "app_version": "1.2.3-alpha_1"
+    },
+    "defaultValue": "unknown",
+    "flag": "semver-comparison-test",
+    "result": {
+      "reason": "DEFAULT",
+      "value": "unknown"
+    },
+    "targetingKey": "underscore-prerelease",
+    "variationType": "STRING"
+  },
+  {
+    "description": "More than one build metadata delimiter is rejected.",
+    "attributes": {
+      "app_version": "1.2.3-alpha+build+other"
+    },
+    "defaultValue": "unknown",
+    "flag": "semver-comparison-test",
+    "result": {
+      "reason": "DEFAULT",
+      "value": "unknown"
+    },
+    "targetingKey": "multiple-build-delimiters",
+    "variationType": "STRING"
+  },
+  {
+    "description": "Leading whitespace is not accepted by the SemVer parser.",
+    "attributes": {
+      "app_version": " 1.2.3"
+    },
+    "defaultValue": "unknown",
+    "flag": "semver-comparison-test",
+    "result": {
+      "reason": "DEFAULT",
+      "value": "unknown"
+    },
+    "targetingKey": "leading-whitespace",
+    "variationType": "STRING"
+  },
+  {
+    "description": "Trailing whitespace is not accepted by the SemVer parser.",
+    "attributes": {
+      "app_version": "1.2.3 "
+    },
+    "defaultValue": "unknown",
+    "flag": "semver-comparison-test",
+    "result": {
+      "reason": "DEFAULT",
+      "value": "unknown"
+    },
+    "targetingKey": "trailing-whitespace",
+    "variationType": "STRING"
+  },
+  {
+    "description": "A non-string attribute (JSON number) does not match any SemVer condition and falls through to the default rather than erroring.",
+    "attributes": {
+      "app_version": 1.2
+    },
+    "defaultValue": "unknown",
+    "flag": "semver-comparison-test",
+    "result": {
+      "reason": "DEFAULT",
+      "value": "unknown"
+    },
+    "targetingKey": "non-string-attribute",
     "variationType": "STRING"
   },
   {
