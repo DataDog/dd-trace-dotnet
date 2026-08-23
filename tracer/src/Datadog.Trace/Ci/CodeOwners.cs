@@ -166,8 +166,10 @@ namespace Datadog.Trace.Ci
         /// <summary>
         /// Converts a CODEOWNERS ‑style glob into a Regex.
         /// Supports **, *, ?, /‑rooted, and trailing / semantics.
+        /// When <paramref name="includeDescendants"/> is set, a direct match also owns every
+        /// descendant path in a single evaluation instead of testing each ancestor separately.
         /// </summary>
-        private static Regex CompileGlob(string pattern)
+        private static Regex CompileGlob(string pattern, bool includeDescendants)
         {
             // Escape regex metachars first.
             var rx = Regex.Escape(pattern);
@@ -197,7 +199,7 @@ namespace Datadog.Trace.Ci
                 rx = "(^|.*/)" + rx;
             }
 
-            rx += "$";
+            rx += includeDescendants ? "(?:/.*)?$" : "$";
             return new Regex(rx, RegexOptions.Compiled | RegexOptions.CultureInvariant, RegexTimeout);
         }
 
@@ -306,10 +308,7 @@ namespace Datadog.Trace.Ci
                         break;
                     }
 
-                    if (!excluded)
-                    {
-                        matchedOwners = rule.Owners.Length > 0 ? rule.Owners : DefaultOwners;
-                    }
+                    matchedOwners = rule.Owners.Length > 0 ? rule.Owners : DefaultOwners;
                 }
 
                 if (excluded || matchedOwners is null || matchedOwners.Length == 0)
@@ -326,11 +325,13 @@ namespace Datadog.Trace.Ci
         private sealed class Entry
         {
             private readonly Regex _regex;
+            private readonly Regex _descendantsRegex;
             private readonly bool _isDirectoryPattern;
 
-            private Entry(Regex regex, bool exclusion, string[] owners, bool isDirectoryPattern)
+            private Entry(Regex regex, Regex descendantsRegex, bool exclusion, string[] owners, bool isDirectoryPattern)
             {
                 _regex = regex;
+                _descendantsRegex = descendantsRegex;
                 IsExclusion = exclusion;
                 Owners = owners;
                 _isDirectoryPattern = isDirectoryPattern;
@@ -386,12 +387,15 @@ namespace Datadog.Trace.Ci
                 var ownersSegment = tokens.Length > 1 ? string.Join(" ", tokens.Skip(1)) : string.Empty;
                 var owners = OwnerTokenizer.Tokenize(ownersSegment).ToArray();
 
-                // 5. Compile the glob
-                var rx = CompileGlob(patternToken);
                 // GitHub owns the contents of directories matched by wildcard-free patterns (e.g.
                 // `**/logs`); GitLab requires an explicit trailing slash for directory ownership.
                 var isDirectoryPattern = platform == Platform.GitHub && IsDirectoryPattern(patternToken);
-                return new Entry(rx, isExclusion, owners, isDirectoryPattern);
+
+                // 5. Compile the glob
+                var rx = CompileGlob(patternToken, includeDescendants: false);
+                // The descendants variant is only evaluated when _isDirectoryPattern is true.
+                var rxDirectories = isDirectoryPattern ? CompileGlob(patternToken, includeDescendants: true) : rx;
+                return new Entry(rx, rxDirectories, isExclusion, owners, isDirectoryPattern);
             }
 
             private static bool IsDirectoryPattern(string patternToken)
@@ -405,35 +409,23 @@ namespace Datadog.Trace.Ci
 
             public bool Match(string path)
             {
-                if (IsMatch(path))
+                if (IsMatch(_regex, path))
                 {
                     return true;
                 }
 
                 // Patterns whose last segment is wildcard-free also own everything inside a matched
                 // directory (e.g. `**/logs` owns `/build/logs/error.txt`), while wildcard segments like
-                // `docs/*` match individual entries only.
-                return _isDirectoryPattern && MatchesAncestor(path);
+                // `docs/*` match individual entries only. The descendant variant of the glob accepts any
+                // path below a direct match in a single evaluation.
+                return _isDirectoryPattern && IsMatch(_descendantsRegex, path);
             }
 
-            private bool MatchesAncestor(string path)
-            {
-                for (var i = path.IndexOf('/', 1); i > 0 && i < path.Length - 1; i = path.IndexOf('/', i + 1))
-                {
-                    if (IsMatch(path.Substring(0, i)))
-                    {
-                        return true;
-                    }
-                }
-
-                return false;
-            }
-
-            private bool IsMatch(string input)
+            private static bool IsMatch(Regex regex, string input)
             {
                 try
                 {
-                    return _regex.IsMatch(input);
+                    return regex.IsMatch(input);
                 }
                 catch (RegexMatchTimeoutException)
                 {

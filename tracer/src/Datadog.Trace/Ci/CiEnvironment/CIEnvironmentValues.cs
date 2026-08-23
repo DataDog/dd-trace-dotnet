@@ -672,7 +672,7 @@ internal abstract class CIEnvironmentValues
         {
             var candidateSuffix = string.Join(Path.DirectorySeparatorChar.ToString(), segments, i, segments.Length - i);
             var candidatePath = Path.Combine(codeOwnersRoot, candidateSuffix);
-            if (!Path.IsPathRooted(candidateSuffix) && File.Exists(candidatePath))
+            if (File.Exists(candidatePath))
             {
                 codeOwnersRelativePath = string.Join("/", segments, i, segments.Length - i);
                 return true;
