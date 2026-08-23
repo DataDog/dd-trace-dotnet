@@ -347,6 +347,26 @@ public class CodeOwnersSpecTests
     }
 
     [SkippableFact]
+    public void QuestionMarkDoesNotMatchSlash()
+    {
+        var codeOwners = Create("a?c @segment\n", CodeOwners.Platform.GitHub);
+        Match(codeOwners, "/abc").Should().Equal(["@segment"]);
+        Match(codeOwners, "/aXc").Should().Equal(["@segment"]);
+        Match(codeOwners, "/a/c").Should().BeEmpty();
+    }
+
+    [SkippableFact]
+    public void DoubleStarIsGlobstarOnlyAsAWholeSegment()
+    {
+        var codeOwners = Create("foo**bar @stars\n**/index.md @index\n", CodeOwners.Platform.GitHub);
+        // Adjacent asterisks inside a segment are two single-level wildcards, not a globstar.
+        Match(codeOwners, "/fooXbar").Should().Equal(["@stars"]);
+        Match(codeOwners, "/foo/x/bar").Should().BeEmpty();
+        Match(codeOwners, "/docs/index.md").Should().Equal(["@index"]);
+        Match(codeOwners, "/index.md").Should().Equal(["@index"]);
+    }
+
+    [SkippableFact]
     public void DescendantMatchingIsStableAcrossRepeatedCalls()
     {
         // The descendant glob variant is compiled lazily on first use and cached; repeated matches

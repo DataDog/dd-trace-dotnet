@@ -282,6 +282,33 @@ public class CodeOwnersFallbackTests
     }
 
     [SkippableFact]
+    public void AnchoredPathRespectsUseOSSeparator()
+    {
+        using var tempDirectory = new TemporaryDirectory();
+        var repoRoot = tempDirectory.RootPath;
+        var srcDir = Path.Combine(repoRoot, "tracer", "test");
+        Directory.CreateDirectory(srcDir);
+        File.WriteAllText(Path.Combine(repoRoot, "CODEOWNERS"), "* @global\n");
+        File.WriteAllText(Path.Combine(srcDir, "SpanBenchmark.cs"), "class SpanBenchmark {}");
+
+        var env = new Dictionary<string, string>
+        {
+            [PlatformKeys.Ci.GitHub.Sha] = CommitSha,
+            [PlatformKeys.Ci.GitHub.Workspace] = repoRoot,
+            [PlatformKeys.Ci.GitHub.Repository] = "DataDog/dd-trace-dotnet",
+        };
+
+        var ciValues = CIEnvironmentValues.Create(env);
+        var foreignRelativePath = "../../../_/tracer/test/SpanBenchmark.cs";
+
+        Assert.True(ciValues.TryGetCodeOwnersRelativePath(foreignRelativePath, useOSSeparator: false, out var forwardSlashPath));
+        Assert.Equal("tracer/test/SpanBenchmark.cs", forwardSlashPath);
+
+        Assert.True(ciValues.TryGetCodeOwnersRelativePath(foreignRelativePath, useOSSeparator: true, out var osPath));
+        Assert.Equal(Path.Combine("tracer", "test", "SpanBenchmark.cs"), osPath);
+    }
+
+    [SkippableFact]
     public void MakeRelativePathFromSourceRootWithFallbackNormalizesForeignPrefixes()
     {
         using var tempDirectory = new TemporaryDirectory();

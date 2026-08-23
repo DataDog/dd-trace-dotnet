@@ -125,10 +125,8 @@ namespace Datadog.Trace.Ci
             var current = Section.CreateUnnamed();
             sections.Add(current);
 
-            var lineNo = 0;
             foreach (var line in lines)
             {
-                lineNo++;
                 var raw = line.Trim();
                 if (raw.Length == 0)
                 {
@@ -149,7 +147,7 @@ namespace Datadog.Trace.Ci
                     continue;
                 }
 
-                var entry = Entry.Parse(raw, platform, lineNo);
+                var entry = Entry.Parse(raw, platform);
                 if (entry is not null)
                 {
                     current.Add(entry);
@@ -203,14 +201,25 @@ namespace Datadog.Trace.Ci
             // Escape regex metachars first.
             var rx = Regex.Escape(pattern);
 
-            // Temporary sentinel for ** that we restore after dealing with single *.
-            rx = rx.Replace("\\*\\*", "§§DOUBLESTAR§§");
+            // ** is a globstar only as a whole path segment (git / GitHub / GitLab). `foo**bar`
+            // is two regular asterisks and must not cross directories. After Regex.Escape a
+            // whole-segment ** is the token "\\*\\*".
+            var segments = rx.Split('/');
+            for (var i = 0; i < segments.Length; i++)
+            {
+                if (segments[i] == "\\*\\*")
+                {
+                    segments[i] = "§§DOUBLESTAR§§";
+                }
+            }
+
+            rx = string.Join("/", segments);
             rx = rx.Replace("\\*", "[^/]*"); // single‑level wildcard
             // A slash right after ** means it can match zero or more intermediate directories:
             // `a/**/b` must also match `a/b`.
             rx = rx.Replace("§§DOUBLESTAR§§/", "(?:.*/)?");
             rx = rx.Replace("§§DOUBLESTAR§§", ".*"); // multi‑level wildcard
-            rx = rx.Replace("\\?", "."); // single char
+            rx = rx.Replace("\\?", "[^/]"); // single char within a path segment
 
             if (pattern.EndsWith("/"))
             {
@@ -224,8 +233,8 @@ namespace Datadog.Trace.Ci
             }
             else
             {
-                // Allowed anywhere in repo tree; use non‑capturing look‑behind to avoid double counting.
-                rx = "(^|.*/)" + rx;
+                // Allowed anywhere in repo tree.
+                rx = "(?:^|.*/)" + rx;
             }
 
             rx += includeDescendants ? "(?:/.*)?$" : "$";
@@ -373,7 +382,7 @@ namespace Datadog.Trace.Ci
 
             public string[] Owners { get; }
 
-            public static Entry? Parse(string raw, Platform platform, int lineNo)
+            public static Entry? Parse(string raw, Platform platform)
             {
                 // Strip inline comments for GitHub. GitLab treats everything after # as data (inline comments unsupported).
                 var idxHash = raw.IndexOf('#');

@@ -616,7 +616,7 @@ internal abstract class CIEnvironmentValues
             // Relative paths must stay within the codeowners root; otherwise we try to anchor them.
             if (!TryResolvePathWithinBase(sourceFilePath, codeOwnersRoot, out var resolvedPath))
             {
-                return TryAnchorPathToCodeOwnersRoot(sourceFilePath, codeOwnersRoot, out codeOwnersRelativePath);
+                return TryAnchorPathToCodeOwnersRoot(sourceFilePath, codeOwnersRoot, useOSSeparator, out codeOwnersRelativePath);
             }
 
             absolutePath = resolvedPath;
@@ -632,14 +632,14 @@ internal abstract class CIEnvironmentValues
             relativePath.StartsWith("../", StringComparison.Ordinal) ||
             relativePath.StartsWith("..\\", StringComparison.Ordinal))
         {
-            return TryAnchorPathToCodeOwnersRoot(sourceFilePath, codeOwnersRoot, out codeOwnersRelativePath);
+            return TryAnchorPathToCodeOwnersRoot(sourceFilePath, codeOwnersRoot, useOSSeparator, out codeOwnersRelativePath);
         }
 
         codeOwnersRelativePath = relativePath;
         return true;
     }
 
-    private static bool TryAnchorPathToCodeOwnersRoot(string sourceFilePath, string codeOwnersRoot, [NotNullWhen(true)] out string? codeOwnersRelativePath)
+    private static bool TryAnchorPathToCodeOwnersRoot(string sourceFilePath, string codeOwnersRoot, bool useOSSeparator, [NotNullWhen(true)] out string? codeOwnersRelativePath)
     {
         // Compiler-recorded paths can be relative to a different base directory than the current
         // workspace (e.g. "../../../_/tracer/test/SampleTests.cs" on CI agents). When strict
@@ -684,7 +684,8 @@ internal abstract class CIEnvironmentValues
             var candidatePath = Path.Combine(codeOwnersRoot, candidateSuffix);
             if (File.Exists(candidatePath))
             {
-                codeOwnersRelativePath = string.Join("/", segments, i, segments.Length - i);
+                var separator = useOSSeparator ? Path.DirectorySeparatorChar.ToString() : "/";
+                codeOwnersRelativePath = string.Join(separator, segments, i, segments.Length - i);
                 return true;
             }
         }
