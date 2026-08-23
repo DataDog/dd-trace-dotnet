@@ -49,7 +49,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
         [InlineData(@"\apps\github", null)]
         [InlineData(@"\x\logs\error.txt", "[\"@octo-org/octocats\"]")]
         // New GitHub quirks
-        [InlineData("/x/logs/error.txt", "[\"@octo-org/octocats\"]")] // **/logs pattern
+        [InlineData("/x/logs/error.txt", "[\"@octo-org/octocats\"]")] // matches the `*.txt` rule at any depth
         // Rooted patterns match regardless of a leading slash, so the later `/docs/` rule
         // (last match wins) takes precedence over the earlier `docs/*` rule.
         [InlineData("docs/getting-started.md", "[\"@doctocat\"]")] // docs/* vs /docs/ precedence
