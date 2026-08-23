@@ -251,7 +251,7 @@ namespace Datadog.Trace.Ci
 
                 foreach (var token in segment.Split([' ', '\t'], StringSplitOptions.RemoveEmptyEntries))
                 {
-                    if (token.StartsWith("@@") || token.StartsWith("@") || token.Contains("@"))
+                    if (token.Contains('@'))
                     {
                         yield return token;
                     }
