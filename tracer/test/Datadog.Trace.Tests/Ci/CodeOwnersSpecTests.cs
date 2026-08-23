@@ -8,6 +8,7 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using Datadog.Trace.Ci;
 using FluentAssertions;
@@ -461,7 +462,7 @@ public class CodeOwnersSpecTests
     [SkippableFact]
     public void OwnerExtractionRejectsImpossibleGithubReferencesAndCanonicalizesGitLabReferences()
     {
-        var github = Create("* @fallback\n*.cs @!\n*.fs user@example.\n*.vb (@valid)\n*.ts @bad_owner\n*.go @org/team/nested\n", CodeOwners.Platform.GitHub);
+        var github = Create("* @fallback\n*.cs @!\n*.fs user@example.\n*.vb (@valid)\n*.ts @bad+owner\n*.go @org/team/nested\n", CodeOwners.Platform.GitHub);
         Match(github, "/file.cs").Should().Equal(["@fallback"]);
         Match(github, "/file.fs").Should().Equal(["@fallback"]);
         Match(github, "/file.vb").Should().Equal(["@fallback"]);
@@ -475,6 +476,26 @@ public class CodeOwnersSpecTests
         Match(gitlab, "/file.txt").Should().Equal(["docs@example"]);
         Match(gitlab, "/file.go").Should().Equal(["@group/nested-team"]);
         gitlab.ParsingDiagnosticsCount.Should().Be(1, "only the token without an extractable reference is malformed");
+    }
+
+    [SkippableFact]
+    public void GithubAcceptsEnterpriseManagedUserNames()
+    {
+        var codeOwners = Create("*.cs @mona-cat_octo\n*.fs @octo_admin\n", CodeOwners.Platform.GitHub);
+
+        Match(codeOwners, "/file.cs").Should().Equal(["@mona-cat_octo"]);
+        Match(codeOwners, "/file.fs").Should().Equal(["@octo_admin"]);
+        codeOwners.ParsingDiagnosticsCount.Should().Be(0);
+    }
+
+    [SkippableFact]
+    public void GitLabNamespaceReferencesMayEndWithHyphens()
+    {
+        var codeOwners = Create("*.cs @team-\n*.fs (@group-/subgroup-)\n", CodeOwners.Platform.GitLab);
+
+        Match(codeOwners, "/file.cs").Should().Equal(["@team-"]);
+        Match(codeOwners, "/file.fs").Should().Equal(["@group-/subgroup-"]);
+        codeOwners.ParsingDiagnosticsCount.Should().Be(0);
     }
 
     [SkippableFact]
@@ -584,6 +605,27 @@ public class CodeOwnersSpecTests
     }
 
     [SkippableFact]
+    public void LongMalformedGitLabOwnerTokensHaveBoundedParsingCost()
+    {
+        var malformedOwner = new string('x', 1_000_000);
+        var path = WriteTemporaryCodeOwners("*.cs " + malformedOwner + "\n");
+        try
+        {
+            var stopwatch = Stopwatch.StartNew();
+            var codeOwners = new CodeOwners(path, CodeOwners.Platform.GitLab);
+            stopwatch.Stop();
+
+            stopwatch.Elapsed.Should().BeLessThan(TimeSpan.FromSeconds(2), "reference extraction uses bounded deterministic scans");
+            Match(codeOwners, "/file.cs").Should().BeEmpty();
+            codeOwners.ParsingDiagnosticsCount.Should().Be(1);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [SkippableFact]
     public void DuplicateOwnersAreDeduplicatedOnceInStableOrder()
     {
         var codeOwners = Create("*.cs @first @second @first @third @second\n", CodeOwners.Platform.GitHub);
@@ -614,6 +656,33 @@ public class CodeOwnersSpecTests
         {
             File.Delete(path);
         }
+    }
+
+    [SkippableFact]
+    public void GithubIgnoresCodeOwnersFilesOverThreeMegabytesOnly()
+    {
+        var belowLimit = WriteTemporaryCodeOwnersWithLength(CodeOwners.GitHubMaximumFileSizeBytes - 1);
+        var aboveLimit = WriteTemporaryCodeOwnersWithLength(CodeOwners.GitHubMaximumFileSizeBytes + 1);
+        try
+        {
+            Match(new CodeOwners(belowLimit, CodeOwners.Platform.GitHub), "/file.cs").Should().Equal(["@owner"]);
+            Match(new CodeOwners(aboveLimit, CodeOwners.Platform.GitHub), "/file.cs").Should().BeEmpty();
+            Match(new CodeOwners(aboveLimit, CodeOwners.Platform.GitLab), "/file.cs").Should().Equal(["@owner"]);
+        }
+        finally
+        {
+            File.Delete(belowLimit);
+            File.Delete(aboveLimit);
+        }
+    }
+
+    [SkippableFact]
+    public void TryLoadReturnsFalseWhenCodeOwnersDisappearsBeforeOpening()
+    {
+        var missingPath = Path.Combine(Path.GetTempPath(), "dd-codeowners-missing-" + Guid.NewGuid().ToString("N"));
+
+        CodeOwners.TryLoad(missingPath, CodeOwners.Platform.GitHub, out var codeOwners).Should().BeFalse();
+        codeOwners.Should().BeNull();
     }
 
     [SkippableFact]
@@ -810,6 +879,16 @@ public class CodeOwnersSpecTests
     {
         var path = Path.Combine(Path.GetTempPath(), "dd-codeowners-spec-" + Guid.NewGuid().ToString("N"));
         File.WriteAllText(path, content);
+        return path;
+    }
+
+    private static string WriteTemporaryCodeOwnersWithLength(long length)
+    {
+        var path = Path.Combine(Path.GetTempPath(), "dd-codeowners-sized-" + Guid.NewGuid().ToString("N"));
+        var prefix = Encoding.ASCII.GetBytes("*.cs @owner\n#");
+        using var stream = new FileStream(path, FileMode.CreateNew, FileAccess.Write, FileShare.None);
+        stream.Write(prefix, 0, prefix.Length);
+        stream.SetLength(length);
         return path;
     }
 

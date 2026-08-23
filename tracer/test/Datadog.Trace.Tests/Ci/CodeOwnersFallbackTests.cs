@@ -405,6 +405,37 @@ public class CodeOwnersFallbackTests
     }
 
     [SkippableFact]
+    public void LockedCodeOwnersDoesNotBreakFallbackPathResolution()
+    {
+        Skip.If(Path.DirectorySeparatorChar != '\\', "FileShare.None deterministically blocks a second reader on Windows.");
+
+        using var tempDirectory = new TemporaryDirectory();
+        var repoRoot = tempDirectory.RootPath;
+        Directory.CreateDirectory(Path.Combine(repoRoot, ".git"));
+        var sourceDirectory = Path.Combine(repoRoot, "src");
+        Directory.CreateDirectory(sourceDirectory);
+        var sourceFile = Path.Combine(sourceDirectory, "Test.cs");
+        File.WriteAllText(sourceFile, "class Test {}");
+        var codeOwnersPath = Path.Combine(repoRoot, "CODEOWNERS");
+        File.WriteAllText(codeOwnersPath, "*.cs @owner\n");
+        var ciValues = new TestCIEnvironmentValues(sourceRoot: null, workspacePath: repoRoot);
+
+        string[]? owners = null;
+        using (new FileStream(codeOwnersPath, FileMode.Open, FileAccess.Read, FileShare.None))
+        {
+            var exception = Record.Exception(() => ciValues.MakeRelativePathFromSourceRootWithFallback(sourceFile, false, out owners!));
+
+            Assert.Null(exception);
+            Assert.Empty(owners!);
+            Assert.Null(ciValues.CodeOwners);
+        }
+
+        ciValues.MakeRelativePathFromSourceRootWithFallback(sourceFile, false, out owners!);
+        Assert.Equal(["@owner"], owners);
+        Assert.NotNull(ciValues.CodeOwners);
+    }
+
+    [SkippableFact]
     public void AnchorsForeignRelativePathsToCodeOwnersRoot()
     {
         using var tempDirectory = new TemporaryDirectory();
@@ -682,8 +713,9 @@ public class CodeOwnersFallbackTests
 
         using var setupEntered = new ManualResetEventSlim(initialState: false);
         using var continueSetup = new ManualResetEventSlim(initialState: false);
-        using var matchStarted = new ManualResetEventSlim(initialState: false);
+        using var reloadWaitReached = new ManualResetEventSlim(initialState: false);
         var ciValues = new BlockingReloadCIEnvironmentValues(firstRepository.RootPath);
+        ciValues.BeforeCodeOwnersReloadWait = reloadWaitReached.Set;
         ciValues.Reload();
         const string foreignSourcePath = "../../layoutA/src/SpanBenchmark.cs";
 
@@ -696,17 +728,11 @@ public class CodeOwnersFallbackTests
         Task? matchTask = null;
         string? secondRelativePath = null;
         string[]? secondOwners = null;
-        var completedDuringReload = false;
         try
         {
             Assert.True(setupEntered.Wait(TestTimeout), "reload did not enter its controlled Setup phase");
-            matchTask = Task.Run(() =>
-            {
-                matchStarted.Set();
-                secondRelativePath = ciValues.MakeRelativePathFromSourceRootWithFallback(foreignSourcePath, false, out secondOwners);
-            });
-            Assert.True(matchStarted.Wait(TestTimeout), "snapshot reader did not start");
-            completedDuringReload = matchTask.Wait(TimeSpan.FromMilliseconds(250));
+            matchTask = Task.Run(() => secondRelativePath = ciValues.MakeRelativePathFromSourceRootWithFallback(foreignSourcePath, false, out secondOwners));
+            Assert.True(reloadWaitReached.Wait(TestTimeout), "snapshot reader did not reach the active-reload wait");
         }
         finally
         {
@@ -716,7 +742,6 @@ public class CodeOwnersFallbackTests
         Assert.True(reloadTask.Wait(TestTimeout), "reload must complete after Setup is released");
         Assert.NotNull(matchTask);
         Assert.True(matchTask!.Wait(TestTimeout), "snapshot reader must not deadlock after reload");
-        Assert.False(completedDuringReload, "the reader must not observe partially reloaded state");
         Assert.Equal("src/SpanBenchmark.cs", secondRelativePath);
         Assert.Equal(["@second"], secondOwners);
     }
@@ -737,8 +762,9 @@ public class CodeOwnersFallbackTests
 
         using var setupEntered = new ManualResetEventSlim(initialState: false);
         using var continueSetup = new ManualResetEventSlim(initialState: false);
-        using var matchStarted = new ManualResetEventSlim(initialState: false);
+        using var reloadWaitReached = new ManualResetEventSlim(initialState: false);
         var ciValues = new BlockingReloadCIEnvironmentValues(firstRepository.RootPath);
+        ciValues.BeforeCodeOwnersReloadWait = reloadWaitReached.Set;
         ciValues.Reload();
 
         ciValues.PrepareBlockedReload(secondRepository.RootPath, setupEntered, continueSetup);
@@ -746,17 +772,11 @@ public class CodeOwnersFallbackTests
         Task? matchTask = null;
         string? relativePath = null;
         string[]? owners = null;
-        var completedDuringReload = false;
         try
         {
             Assert.True(setupEntered.Wait(TestTimeout), "reload did not enter its controlled Setup phase");
-            matchTask = Task.Run(() =>
-            {
-                matchStarted.Set();
-                relativePath = ciValues.MakeRelativePathFromSourceRootWithFallback(secondSource, false, out owners);
-            });
-            Assert.True(matchStarted.Wait(TestTimeout), "snapshot reader did not start");
-            completedDuringReload = matchTask.Wait(TimeSpan.FromMilliseconds(250));
+            matchTask = Task.Run(() => relativePath = ciValues.MakeRelativePathFromSourceRootWithFallback(secondSource, false, out owners));
+            Assert.True(reloadWaitReached.Wait(TestTimeout), "snapshot reader did not reach the active-reload wait");
         }
         finally
         {
@@ -766,7 +786,6 @@ public class CodeOwnersFallbackTests
         Assert.True(reloadTask.Wait(TestTimeout), "reload must complete after Setup is released");
         Assert.NotNull(matchTask);
         Assert.True(matchTask!.Wait(TestTimeout), "snapshot reader must not deadlock after reload");
-        Assert.False(completedDuringReload, "the reader must wait for the SourceRoot transition");
         Assert.Equal("src/SpanBenchmark.cs", relativePath);
         Assert.Empty(owners!);
         Assert.Null(ciValues.CodeOwners);
@@ -800,9 +819,10 @@ public class CodeOwnersFallbackTests
         var secondSource = CreateRepository(secondRepository.RootPath, "@second");
         using var setupEntered = new ManualResetEventSlim(initialState: false);
         using var continueSetup = new ManualResetEventSlim(initialState: false);
-        using var fallbackStarted = new ManualResetEventSlim(initialState: false);
+        using var fallbackLockReached = new ManualResetEventSlim(initialState: false);
 
         var ciValues = new BlockingReloadCIEnvironmentValues(firstRepository.RootPath);
+        ciValues.BeforeCodeOwnersFallbackLock = fallbackLockReached.Set;
         ciValues.Reload();
         Assert.True(ciValues.TryGetCodeOwnersRelativePath(firstSource, false, out _));
 
@@ -810,19 +830,15 @@ public class CodeOwnersFallbackTests
         var reloadTask = Task.Run(ciValues.Reload);
         Task? fallbackTask = null;
         var fallbackResult = false;
-        var completedDuringReload = false;
         try
         {
             Assert.True(setupEntered.Wait(TestTimeout), "reload did not enter its controlled Setup phase");
             fallbackTask = Task.Run(() =>
             {
-                fallbackStarted.Set();
                 fallbackResult = ciValues.TryGetCodeOwnersRelativePath(secondSource, false, out var relativePath) &&
                                  relativePath == "src/SpanBenchmark.cs";
             });
-            Assert.True(fallbackStarted.Wait(TestTimeout), "fallback task did not start");
-
-            completedDuringReload = fallbackTask.Wait(TimeSpan.FromMilliseconds(250));
+            Assert.True(fallbackLockReached.Wait(TestTimeout), "fallback lookup did not reach the serialized discovery lock");
         }
         finally
         {
@@ -833,7 +849,6 @@ public class CodeOwnersFallbackTests
         Assert.NotNull(fallbackTask);
         Assert.True(fallbackTask!.Wait(TestTimeout), "fallback lookup must not deadlock after reload");
 
-        Assert.False(completedDuringReload);
         Assert.True(fallbackResult);
         Assert.Equal(secondRepository.RootPath, ciValues.CodeOwnersRoot);
         Assert.Equal(["@second"], ciValues.CodeOwners!.Match("/src/SpanBenchmark.cs"));

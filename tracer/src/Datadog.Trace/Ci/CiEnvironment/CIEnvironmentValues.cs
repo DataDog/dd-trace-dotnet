@@ -134,6 +134,12 @@ internal abstract class CIEnvironmentValues
 
     internal string? CodeOwnersRoot => Volatile.Read(ref _codeOwnersState)?.Root;
 
+    // Test-only synchronization hooks. They are null in production and run only on the uncommon
+    // paths that wait for an active reload or perform fallback discovery.
+    internal Action? BeforeCodeOwnersReloadWait { get; set; }
+
+    internal Action? BeforeCodeOwnersFallbackLock { get; set; }
+
     public Dictionary<string, string?>? VariablesToBypass { get; protected set; }
 
     public MetricTags.CIVisibilityTestSessionProvider MetricTag { get; protected set; } = MetricTags.CIVisibilityTestSessionProvider.Unsupported;
@@ -586,7 +592,7 @@ internal abstract class CIEnvironmentValues
             if (TryGetCodeOwnersPath(SourceRoot!, platform, logLookup: true, out var codeOwnersPath))
             {
                 Log.Information("CODEOWNERS file found: {Path}", codeOwnersPath);
-                PublishCodeOwners(codeOwnersPath, platform, SourceRoot!);
+                TryPublishCodeOwners(codeOwnersPath, platform, SourceRoot!);
             }
         }
     }
@@ -640,6 +646,7 @@ internal abstract class CIEnvironmentValues
             var reloadVersion = Volatile.Read(ref _environmentReloadVersion);
             if ((reloadVersion & 1) != 0)
             {
+                BeforeCodeOwnersReloadWait?.Invoke();
                 lock (_codeOwnersLock)
                 {
                 }
@@ -883,6 +890,7 @@ internal abstract class CIEnvironmentValues
             return;
         }
 
+        BeforeCodeOwnersFallbackLock?.Invoke();
         lock (_codeOwnersLock)
         {
             if (Volatile.Read(ref _codeOwnersState) is not null)
@@ -921,6 +929,8 @@ internal abstract class CIEnvironmentValues
             return false;
         }
 
+        var searchStartKey = directoryInfo.FullName;
+
         // Limit cache growth to avoid unbounded memory in large test suites.
         if (_codeOwnersSearchStarts.Count >= CodeOwnersSearchCacheLimit)
         {
@@ -928,7 +938,7 @@ internal abstract class CIEnvironmentValues
         }
 
         // Skip repeated lookups for the same starting directory.
-        if (!_codeOwnersSearchStarts.Add(directoryInfo.FullName))
+        if (!_codeOwnersSearchStarts.Add(searchStartKey))
         {
             return false;
         }
@@ -948,8 +958,15 @@ internal abstract class CIEnvironmentValues
             {
                 if (isRepositoryBoundary)
                 {
-                    PublishFallbackCodeOwners(codeOwnersPath, platform, directoryInfo.FullName);
-                    return true;
+                    if (PublishFallbackCodeOwners(codeOwnersPath, platform, directoryInfo.FullName))
+                    {
+                        return true;
+                    }
+
+                    // I/O failures can be transient (for example an editor replacing the file).
+                    // Do not cache them as a permanent negative lookup.
+                    _codeOwnersSearchStarts.Remove(searchStartKey);
+                    return false;
                 }
 
                 nearestCodeOwnersPath ??= codeOwnersPath;
@@ -968,23 +985,33 @@ internal abstract class CIEnvironmentValues
 
         if (nearestCodeOwnersPath is not null && nearestCodeOwnersRoot is not null)
         {
-            PublishFallbackCodeOwners(nearestCodeOwnersPath, platform, nearestCodeOwnersRoot);
-            return true;
+            if (PublishFallbackCodeOwners(nearestCodeOwnersPath, platform, nearestCodeOwnersRoot))
+            {
+                return true;
+            }
+
+            _codeOwnersSearchStarts.Remove(searchStartKey);
         }
 
         return false;
     }
 
-    private void PublishFallbackCodeOwners(string codeOwnersPath, CodeOwners.Platform platform, string root)
+    private bool PublishFallbackCodeOwners(string codeOwnersPath, CodeOwners.Platform platform, string root)
     {
         Log.Information("CODEOWNERS file found using fallback search: {Path}", codeOwnersPath);
-        PublishCodeOwners(codeOwnersPath, platform, root);
+        return TryPublishCodeOwners(codeOwnersPath, platform, root);
     }
 
-    private void PublishCodeOwners(string codeOwnersPath, CodeOwners.Platform platform, string root)
+    private bool TryPublishCodeOwners(string codeOwnersPath, CodeOwners.Platform platform, string root)
     {
-        var state = new CodeOwnersState(new CodeOwners(codeOwnersPath, platform), root, platform);
+        if (!CodeOwners.TryLoad(codeOwnersPath, platform, out var parser))
+        {
+            return false;
+        }
+
+        var state = new CodeOwnersState(parser, root, platform);
         Volatile.Write(ref _codeOwnersState, state);
+        return true;
     }
 
     private CodeOwners.Platform GetCodeOwnersPlatform()

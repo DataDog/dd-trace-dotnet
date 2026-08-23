@@ -7,8 +7,10 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Security;
 using System.Text;
 using System.Text.RegularExpressions;
 using Datadog.Trace.Logging;
@@ -26,6 +28,8 @@ namespace Datadog.Trace.Ci
     /// </summary>
     internal sealed class CodeOwners
     {
+        internal const long GitHubMaximumFileSizeBytes = 3 * 1024 * 1024;
+
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<CodeOwners>();
         private static readonly Regex SectionHeaderRegex = new(
             @"^\s*(\^)?\[(?<name>.*?)\](?:\[(?<cnt>[\s\d]*)\])?(?<defaults>\s*[@\w.\-/\s]*)?",
@@ -33,10 +37,6 @@ namespace Datadog.Trace.Ci
 
         private static readonly Regex StrictSectionHeaderRegex = new(
             @"^\^?\[[^\]]+\](?:\[\d+\])?(?:\s+[@\w.\-/\s]+)?$",
-            RegexOptions.Compiled | RegexOptions.CultureInvariant);
-
-        private static readonly Regex GitLabEmailReferenceRegex = new(
-            @"[^@\s]{1,100}@[^@\s]{1,255}(?<!\W)",
             RegexOptions.Compiled | RegexOptions.CultureInvariant);
 
         private static readonly Regex GitLabRoleReferenceRegex = new(
@@ -54,6 +54,16 @@ namespace Datadog.Trace.Ci
             }
 
             _platform = platform;
+            if (platform == Platform.GitHub && new FileInfo(filePath).Length > GitHubMaximumFileSizeBytes)
+            {
+                _sections = [];
+                Log.Warning<long, string>(
+                    "GitHub CODEOWNERS file exceeds the {MaximumSize} byte limit and will be ignored: {Path}",
+                    GitHubMaximumFileSizeBytes,
+                    filePath);
+                return;
+            }
+
             _sections = Parse(File.ReadLines(filePath), platform, out var parsingDiagnosticsCount);
             ParsingDiagnosticsCount = parsingDiagnosticsCount;
             if (parsingDiagnosticsCount > 0)
@@ -66,6 +76,21 @@ namespace Datadog.Trace.Ci
         }
 
         internal int ParsingDiagnosticsCount { get; }
+
+        internal static bool TryLoad(string filePath, Platform platform, [NotNullWhen(true)] out CodeOwners? codeOwners)
+        {
+            try
+            {
+                codeOwners = new CodeOwners(filePath, platform);
+                return true;
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or SecurityException)
+            {
+                Log.Warning(ex, "Unable to load CODEOWNERS file; ownership matching will be skipped: {Path}", filePath);
+                codeOwners = null;
+                return false;
+            }
+        }
 
         /// <summary>
         /// Returns the complete, de‑duplicated owner set that applies to <paramref name="path"/>.
@@ -409,7 +434,7 @@ namespace Datadog.Trace.Ci
             private static bool ExtractGitLabOwners(string token, List<string> owners, HashSet<string> uniqueOwners)
             {
                 // Keep the overwhelmingly common canonical forms allocation-light.
-                if (IsValidNamespaceReference(token) || IsValidGitLabRole(token) || IsWholeGitLabEmailReference(token))
+                if (IsValidNamespaceReference(token) || IsValidGitLabRole(token))
                 {
                     AddUnique(owners, uniqueOwners, token);
                     return true;
@@ -434,16 +459,18 @@ namespace Datadog.Trace.Ci
                     foundReference = true;
                 }
 
-                var emailMatches = GitLabEmailReferenceRegex.Matches(token);
-                for (var i = 0; i < emailMatches.Count; i++)
+                searchStart = 0;
+                while (TryExtractGitLabEmailReference(token, searchStart, out var emailStart, out var emailEnd, out searchStart))
                 {
-                    var emailMatch = emailMatches[i];
+                    var email = emailStart == 0 && emailEnd == token.Length
+                                    ? token
+                                    : token.Substring(emailStart, emailEnd - emailStart);
                     // GitLab's permissive email expression can overlap a namespace reference
                     // (for example "(@team"). Such a value cannot resolve as an email, while
                     // the namespace extracted independently can resolve, so keep only the latter.
-                    if (!ContainsNamespaceReference(emailMatch.Value))
+                    if (!ContainsNamespaceReference(email))
                     {
-                        AddUnique(owners, uniqueOwners, emailMatch.Value);
+                        AddUnique(owners, uniqueOwners, email);
                         foundReference = true;
                     }
                 }
@@ -505,7 +532,7 @@ namespace Datadog.Trace.Ci
                 for (var i = start; i < end; i++)
                 {
                     var character = value[i];
-                    if (!IsAsciiLetterOrDigit(character) && character != '-')
+                    if (!IsAsciiLetterOrDigit(character) && character is not '-' and not '_')
                     {
                         return false;
                     }
@@ -606,10 +633,60 @@ namespace Datadog.Trace.Ci
                 => TryExtractEmailReference(token, out var reference) &&
                    reference.Length == token.Length;
 
-            private static bool IsWholeGitLabEmailReference(string token)
+            private static bool TryExtractGitLabEmailReference(
+                string token,
+                int searchStart,
+                out int referenceStart,
+                out int referenceEnd,
+                out int nextSearchStart)
             {
-                var match = GitLabEmailReferenceRegex.Match(token);
-                return match.Success && match.Index == 0 && match.Length == token.Length;
+                for (var atIndex = token.IndexOf('@', searchStart); atIndex >= 0; atIndex = token.IndexOf('@', atIndex + 1))
+                {
+                    var localStart = atIndex - 1;
+                    var localLength = 0;
+                    while (localStart >= searchStart &&
+                           localLength < 100 &&
+                           token[localStart] != '@' &&
+                           !char.IsWhiteSpace(token[localStart]))
+                    {
+                        localStart--;
+                        localLength++;
+                    }
+
+                    localStart++;
+                    if (localLength == 0)
+                    {
+                        continue;
+                    }
+
+                    var domainEnd = atIndex + 1;
+                    var domainLimit = Math.Min(token.Length, domainEnd + 255);
+                    var lastWordEnd = -1;
+                    while (domainEnd < domainLimit && token[domainEnd] != '@' && !char.IsWhiteSpace(token[domainEnd]))
+                    {
+                        if (IsRegexWordCharacter(token[domainEnd]))
+                        {
+                            lastWordEnd = domainEnd + 1;
+                        }
+
+                        domainEnd++;
+                    }
+
+                    if (lastWordEnd <= atIndex + 1)
+                    {
+                        continue;
+                    }
+
+                    referenceStart = localStart;
+                    referenceEnd = lastWordEnd;
+                    nextSearchStart = lastWordEnd;
+                    return true;
+                }
+
+                referenceStart = -1;
+                referenceEnd = -1;
+                nextSearchStart = token.Length;
+                return false;
             }
 
             private static bool TryExtractEmailReference(string token, [NotNullWhen(true)] out string? reference)
@@ -666,7 +743,7 @@ namespace Datadog.Trace.Ci
                 => IsNamespaceStart(character) || character == '-';
 
             private static bool IsNamespaceEnd(char character)
-                => IsAsciiLetterOrDigit(character) || character == '_';
+                => IsAsciiLetterOrDigit(character) || character is '_' or '-';
 
             private static bool IsEmailLocalCharacter(char character)
                 => IsAsciiLetterOrDigit(character) || ".!#$%&'*+/=?^_`{|}~-".IndexOf(character) >= 0;
@@ -676,6 +753,17 @@ namespace Datadog.Trace.Ci
 
             private static bool IsWordCharacter(char character)
                 => char.IsLetterOrDigit(character) || character == '_';
+
+            private static bool IsRegexWordCharacter(char character)
+            {
+                if (char.IsLetterOrDigit(character))
+                {
+                    return true;
+                }
+
+                var category = CharUnicodeInfo.GetUnicodeCategory(character);
+                return category is UnicodeCategory.NonSpacingMark or UnicodeCategory.ConnectorPunctuation;
+            }
 
             private static bool IsAsciiLetterOrDigit(char character)
                 => character is >= 'a' and <= 'z' or >= 'A' and <= 'Z' or >= '0' and <= '9';
