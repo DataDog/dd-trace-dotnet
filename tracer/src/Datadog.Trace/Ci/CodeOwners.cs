@@ -48,7 +48,12 @@ namespace Datadog.Trace.Ci
         /// </summary>
         public IEnumerable<string> Match(string path)
         {
-            var owners = new HashSet<string>(StringComparer.Ordinal);
+            if (path is null)
+            {
+                // No callers pass null today, but normalizing here keeps the API safe to use.
+                return [];
+            }
+
             var normalizedPath = path.IndexOf('\\') >= 0 ? path.Replace('\\', '/') : path;
 
             // Rooted patterns are anchored to the repository root, so collapse any leading slashes:
@@ -63,27 +68,51 @@ namespace Datadog.Trace.Ci
                 {
                     if (_sections[i].TryMatchGitHub(normalizedPath, out var sectionOwners))
                     {
-                        foreach (var o in sectionOwners)
-                        {
-                            owners.Add(o);
-                        }
-
-                        break;
+                        return DeduplicateOwners(sectionOwners);
                     }
                 }
 
-                return owners;
+                return [];
             }
 
             // GitLab evaluates each section independently and combines their owners.
+            // The set is allocated lazily because most paths match at most one section.
+            HashSet<string>? owners = null;
             foreach (var section in _sections)
             {
                 if (section.TryMatchGitLab(normalizedPath, out var sectionOwners))
                 {
+                    owners ??= new HashSet<string>(StringComparer.Ordinal);
                     foreach (var o in sectionOwners)
                     {
                         owners.Add(o);
                     }
+                }
+            }
+
+            return owners ?? [];
+        }
+
+        private static IEnumerable<string> DeduplicateOwners(string[] owners)
+        {
+            // Owner lists are tiny (typically a single entry), so scan for duplicates first and skip
+            // the HashSet allocation entirely in the common case.
+            for (var i = 0; i < owners.Length; i++)
+            {
+                for (var j = 0; j < i; j++)
+                {
+                    if (!string.Equals(owners[i], owners[j], StringComparison.Ordinal))
+                    {
+                        continue;
+                    }
+
+                    var unique = new HashSet<string>(StringComparer.Ordinal);
+                    foreach (var owner in owners)
+                    {
+                        unique.Add(owner);
+                    }
+
+                    return unique;
                 }
             }
 
@@ -261,7 +290,7 @@ namespace Datadog.Trace.Ci
             /// GitHub evaluation: exclusion rules are unsupported and ignored, section default owners don't
             /// exist, and the caller stops at the first (i.e. last in file order) matching rule.
             /// </summary>
-            public bool TryMatchGitHub(string path, [NotNullWhen(true)] out IEnumerable<string>? owners)
+            public bool TryMatchGitHub(string path, [NotNullWhen(true)] out string[]? owners)
             {
                 var rules = _cache ?? [];
 
@@ -286,7 +315,7 @@ namespace Datadog.Trace.Ci
             /// entry wins, an exclusion exempts the path for the whole section (later rules cannot
             /// re-include it), and entries without owners inherit the section default owners.
             /// </summary>
-            public bool TryMatchGitLab(string path, [NotNullWhen(true)] out IEnumerable<string>? owners)
+            public bool TryMatchGitLab(string path, [NotNullWhen(true)] out string[]? owners)
             {
                 var rules = _cache ?? [];
                 string[]? matchedOwners = null;

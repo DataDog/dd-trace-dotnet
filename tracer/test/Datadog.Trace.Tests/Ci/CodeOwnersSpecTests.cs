@@ -339,6 +339,14 @@ public class CodeOwnersSpecTests
     }
 
     [SkippableFact]
+    public void NullPathReturnsNoOwners()
+    {
+        // Defensive: a null path must not throw and simply has no owners.
+        var codeOwners = Create("* @global\n", CodeOwners.Platform.GitHub);
+        Match(codeOwners, null!).Should().BeEmpty();
+    }
+
+    [SkippableFact]
     public void DescendantMatchingIsStableAcrossRepeatedCalls()
     {
         // The descendant glob variant is compiled lazily on first use and cached; repeated matches
