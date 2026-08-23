@@ -292,7 +292,9 @@ namespace Datadog.Trace.Ci
                 string[]? matchedOwners = null;
                 var excluded = false;
 
-                // The cache holds the entries in reverse file order, so walk it backwards.
+                // The cache holds entries in reverse file order, so iterating from the end evaluates
+                // rules in file order: each match overwrites the previous one, leaving the last
+                // matching rule's owners.
                 for (var i = rules.Length - 1; i >= 0; i--)
                 {
                     var rule = rules[i];
