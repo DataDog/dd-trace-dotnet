@@ -17,6 +17,8 @@ namespace Datadog.Trace.Tests.Ci;
 
 public class CodeOwnersRepositoryTests
 {
+    private static readonly HashSet<string> BuildOutputDirectories = new(StringComparer.OrdinalIgnoreCase) { "bin", "obj" };
+
     [SkippableFact]
     public void EveryTestFileHasAnOwner()
     {
@@ -35,7 +37,7 @@ public class CodeOwnersRepositoryTests
                 continue;
             }
 
-            foreach (var file in Directory.EnumerateFiles(fullRoot, "*", SearchOption.AllDirectories))
+            foreach (var file in EnumerateRepositoryFiles(fullRoot))
             {
                 var relativePath = file.Substring(repoRoot!.Length + 1).Replace('\\', '/');
                 totalFiles++;
@@ -48,6 +50,34 @@ public class CodeOwnersRepositoryTests
 
         totalFiles.Should().BeGreaterThan(0, "expected to find test files in the repository");
         unownedFiles.Should().BeEmpty("every test file should be owned by at least one team in .github/CODEOWNERS");
+    }
+
+    [SkippableFact]
+    public void RepositoryFileEnumerationSkipsBuildOutputs()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "dd-codeowners-enumeration-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            Directory.CreateDirectory(Path.Combine(root, "src", "nested"));
+            Directory.CreateDirectory(Path.Combine(root, "bin", "Debug"));
+            Directory.CreateDirectory(Path.Combine(root, "src", "obj", "Debug"));
+            File.WriteAllText(Path.Combine(root, "Source.cs"), string.Empty);
+            File.WriteAllText(Path.Combine(root, "src", "nested", "Nested.cs"), string.Empty);
+            File.WriteAllText(Path.Combine(root, "bin", "Debug", "Generated.dll"), string.Empty);
+            File.WriteAllText(Path.Combine(root, "src", "obj", "Debug", "Generated.cs"), string.Empty);
+
+            EnumerateRepositoryFiles(root)
+               .Select(path => path.Substring(root.Length + 1).Replace('\\', '/'))
+               .Should()
+               .BeEquivalentTo(["Source.cs", "src/nested/Nested.cs"]);
+        }
+        finally
+        {
+            if (Directory.Exists(root))
+            {
+                Directory.Delete(root, recursive: true);
+            }
+        }
     }
 
     [SkippableTheory]
@@ -120,5 +150,30 @@ public class CodeOwnersRepositoryTests
         }
 
         return null;
+    }
+
+    private static IEnumerable<string> EnumerateRepositoryFiles(string root)
+    {
+        var pending = new Stack<string>();
+        pending.Push(root);
+
+        while (pending.Count > 0)
+        {
+            var directory = pending.Pop();
+            foreach (var file in Directory.EnumerateFiles(directory))
+            {
+                yield return file;
+            }
+
+            foreach (var child in Directory.EnumerateDirectories(directory))
+            {
+                var name = Path.GetFileName(child);
+                if (!BuildOutputDirectories.Contains(name) &&
+                    (File.GetAttributes(child) & FileAttributes.ReparsePoint) == 0)
+                {
+                    pending.Push(child);
+                }
+            }
+        }
     }
 }

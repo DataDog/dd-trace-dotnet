@@ -36,7 +36,7 @@ public class CodeOwnersTests
     [InlineData("apps/test.cs", "[\"@octocat\"]")]
     [InlineData("/example/apps/test.cs", "[\"@octocat\"]")]
     [InlineData("/docs/test.cs", "[\"@doctocat\"]")]
-    [InlineData("/examples/docs/test.cs", "[\"docs@example.com\"]")]
+    [InlineData("/examples/docs/test.cs", "[\"@global-owner1\",\"@global-owner2\"]")]
     [InlineData("/src/vendor/match.go", "[\"docs@example.com\"]")]
     [InlineData("/examples/docs/inside/test.cs", "[\"@global-owner1\",\"@global-owner2\"]")]
     [InlineData("/component/path/test.js", "[\"@js-owner\"]")]
@@ -48,6 +48,7 @@ public class CodeOwnersTests
     [InlineData(@"unexistent\path\test.cs", "[\"@global-owner1\",\"@global-owner2\"]")]
     [InlineData(@"apps\test.cs", "[\"@octocat\"]")]
     [InlineData(@"\docs\test.cs", "[\"@doctocat\"]")]
+    [InlineData(@"\examples\docs\test.cs", "[\"@global-owner1\",\"@global-owner2\"]")]
     [InlineData(@"docs\getting-started.md", "[\"@doctocat\"]")] // docs/* vs /docs/ precedence
     [InlineData(@"\scripts\artifacts\value.js", "[\"@doctocat\",\"@octocat\"]")]
     [InlineData(@"\apps\github", null)]
