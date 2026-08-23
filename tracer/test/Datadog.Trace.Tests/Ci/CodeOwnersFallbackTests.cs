@@ -419,6 +419,8 @@ public class CodeOwnersFallbackTests
         var codeOwnersPath = Path.Combine(repoRoot, "CODEOWNERS");
         File.WriteAllText(codeOwnersPath, "*.cs @owner\n");
         var ciValues = new TestCIEnvironmentValues(sourceRoot: null, workspacePath: repoRoot);
+        var utcNow = DateTime.UtcNow;
+        ciValues.CodeOwnersUtcNowProvider = () => utcNow;
 
         string[]? owners = null;
         using (new FileStream(codeOwnersPath, FileMode.Open, FileAccess.Read, FileShare.None))
@@ -430,9 +432,101 @@ public class CodeOwnersFallbackTests
             Assert.Null(ciValues.CodeOwners);
         }
 
+        // The file is readable again, but an unchanged failure is held during the backoff window.
+        ciValues.MakeRelativePathFromSourceRootWithFallback(sourceFile, false, out owners!);
+        Assert.Empty(owners);
+        Assert.Null(ciValues.CodeOwners);
+
+        utcNow += CIEnvironmentValues.CodeOwnersLoadFailureRetryDelay;
         ciValues.MakeRelativePathFromSourceRootWithFallback(sourceFile, false, out owners!);
         Assert.Equal(["@owner"], owners);
         Assert.NotNull(ciValues.CodeOwners);
+    }
+
+    [SkippableFact]
+    public void NegativeFallbackCacheIsSharedByRepositoryBoundaryBeyondItsCapacity()
+    {
+        using var tempDirectory = new TemporaryDirectory();
+        var repoRoot = tempDirectory.RootPath;
+        Directory.CreateDirectory(Path.Combine(repoRoot, ".git"));
+        var ciValues = new TestCIEnvironmentValues(sourceRoot: null, workspacePath: repoRoot);
+        var searches = 0;
+        ciValues.CodeOwnersFallbackSearchStarting = () => searches++;
+        var sourceFiles = new List<string>();
+
+        for (var i = 0; i <= 256; i++)
+        {
+            var sourceDirectory = Path.Combine(repoRoot, "project" + i, "src");
+            Directory.CreateDirectory(sourceDirectory);
+            var sourceFile = Path.Combine(sourceDirectory, "Test.cs");
+            File.WriteAllText(sourceFile, string.Empty);
+            sourceFiles.Add(sourceFile);
+            Assert.False(ciValues.TryGetCodeOwnersRelativePath(sourceFile, false, out _));
+        }
+
+        foreach (var sourceFile in sourceFiles.AsEnumerable().Reverse())
+        {
+            Assert.False(ciValues.TryGetCodeOwnersRelativePath(sourceFile, false, out _));
+        }
+
+        Assert.Equal(1, searches);
+    }
+
+    [SkippableFact]
+    public void ChangedCodeOwnersRetriesBeforeLoadFailureBackoffExpires()
+    {
+        Skip.If(Path.DirectorySeparatorChar != '\\', "FileShare.None deterministically blocks a second reader on Windows.");
+
+        using var tempDirectory = new TemporaryDirectory();
+        var repoRoot = tempDirectory.RootPath;
+        Directory.CreateDirectory(Path.Combine(repoRoot, ".git"));
+        var sourceDirectory = Path.Combine(repoRoot, "src");
+        Directory.CreateDirectory(sourceDirectory);
+        var sourceFile = Path.Combine(sourceDirectory, "Test.cs");
+        File.WriteAllText(sourceFile, string.Empty);
+        var codeOwnersPath = Path.Combine(repoRoot, "CODEOWNERS");
+        File.WriteAllText(codeOwnersPath, "*.cs @old\n");
+        var ciValues = new TestCIEnvironmentValues(sourceRoot: null, workspacePath: repoRoot);
+        var utcNow = DateTime.UtcNow;
+        ciValues.CodeOwnersUtcNowProvider = () => utcNow;
+
+        using (new FileStream(codeOwnersPath, FileMode.Open, FileAccess.Read, FileShare.None))
+        {
+            ciValues.MakeRelativePathFromSourceRootWithFallback(sourceFile, false, out var owners);
+            Assert.Empty(owners);
+        }
+
+        File.WriteAllText(codeOwnersPath, "*.cs @replacement-owner\n");
+        ciValues.MakeRelativePathFromSourceRootWithFallback(sourceFile, false, out var changedOwners);
+
+        Assert.Equal(["@replacement-owner"], changedOwners);
+        Assert.NotNull(ciValues.CodeOwners);
+    }
+
+    [SkippableFact]
+    public void FallbackCacheEvictsOnlyTheOldestRepositoryAtCapacity()
+    {
+        using var tempDirectory = new TemporaryDirectory();
+        var ciValues = new TestCIEnvironmentValues(sourceRoot: null, workspacePath: null);
+        var searches = 0;
+        ciValues.CodeOwnersFallbackSearchStarting = () => searches++;
+        var sourceFiles = new List<string>();
+
+        for (var i = 0; i <= 256; i++)
+        {
+            var repository = Path.Combine(tempDirectory.RootPath, "repo" + i);
+            Directory.CreateDirectory(Path.Combine(repository, ".git"));
+            var sourceFile = Path.Combine(repository, "src", "Test.cs");
+            sourceFiles.Add(sourceFile);
+            Assert.False(ciValues.TryGetCodeOwnersRelativePath(sourceFile, false, out _));
+        }
+
+        Assert.Equal(257, searches);
+        Assert.False(ciValues.TryGetCodeOwnersRelativePath(sourceFiles[1], false, out _));
+        Assert.True(searches == 257, "the second-oldest entry must survive a single FIFO eviction");
+
+        Assert.False(ciValues.TryGetCodeOwnersRelativePath(sourceFiles[0], false, out _));
+        Assert.True(searches == 258, "only the oldest entry should have been evicted");
     }
 
     [SkippableFact]

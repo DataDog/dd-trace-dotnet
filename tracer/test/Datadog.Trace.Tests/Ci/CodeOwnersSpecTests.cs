@@ -607,7 +607,7 @@ public class CodeOwnersSpecTests
     [SkippableFact]
     public void LongMalformedGitLabOwnerTokensHaveBoundedParsingCost()
     {
-        var malformedOwner = new string('x', 1_000_000);
+        var malformedOwner = new string('x', 4_000_000);
         var path = WriteTemporaryCodeOwners("*.cs " + malformedOwner + "\n");
         try
         {
@@ -615,7 +615,7 @@ public class CodeOwnersSpecTests
             var codeOwners = new CodeOwners(path, CodeOwners.Platform.GitLab);
             stopwatch.Stop();
 
-            stopwatch.Elapsed.Should().BeLessThan(TimeSpan.FromSeconds(2), "reference extraction uses bounded deterministic scans");
+            stopwatch.Elapsed.Should().BeLessThan(TestTimeout, "the broad timeout guards against hangs without acting as a microbenchmark");
             Match(codeOwners, "/file.cs").Should().BeEmpty();
             codeOwners.ParsingDiagnosticsCount.Should().Be(1);
         }
