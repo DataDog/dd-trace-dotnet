@@ -127,7 +127,8 @@ namespace Datadog.Trace.Ci
                 }
             }
 
-            // Last‑rule precedence: iterate rules in reverse order at run‑time without additional copies.
+            // Reverse the entries of every section so the last rule in the file is evaluated first
+            // at match time, without additional copies.
             foreach (var s in sections)
             {
                 s.Seal();
