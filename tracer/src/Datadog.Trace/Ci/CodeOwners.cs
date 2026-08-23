@@ -50,11 +50,10 @@ namespace Datadog.Trace.Ci
         {
             var owners = new HashSet<string>(StringComparer.Ordinal);
             var normalizedPath = path.IndexOf('\\') >= 0 ? path.Replace('\\', '/') : path;
-            if (normalizedPath.Length == 0 || normalizedPath[0] != '/')
-            {
-                // Rooted patterns are anchored to the repository root, so ensure a leading slash.
-                normalizedPath = "/" + normalizedPath;
-            }
+
+            // Rooted patterns are anchored to the repository root, so collapse any leading slashes:
+            // "", "/", and "//C:/file" all normalize to a single rooted form.
+            normalizedPath = "/" + normalizedPath.TrimStart('/');
 
             if (_platform == Platform.GitHub)
             {
@@ -327,13 +326,14 @@ namespace Datadog.Trace.Ci
         private sealed class Entry
         {
             private readonly Regex _regex;
-            private readonly Regex _descendantsRegex;
+            private readonly string _patternToken;
             private readonly bool _isDirectoryPattern;
+            private Regex? _descendantsRegex;
 
-            private Entry(Regex regex, Regex descendantsRegex, bool exclusion, string[] owners, bool isDirectoryPattern)
+            private Entry(Regex regex, string patternToken, bool exclusion, string[] owners, bool isDirectoryPattern)
             {
                 _regex = regex;
-                _descendantsRegex = descendantsRegex;
+                _patternToken = patternToken;
                 IsExclusion = exclusion;
                 Owners = owners;
                 _isDirectoryPattern = isDirectoryPattern;
@@ -395,9 +395,7 @@ namespace Datadog.Trace.Ci
 
                 // 5. Compile the glob
                 var rx = CompileGlob(patternToken, includeDescendants: false);
-                // The descendants variant is only evaluated when _isDirectoryPattern is true.
-                var rxDirectories = isDirectoryPattern ? CompileGlob(patternToken, includeDescendants: true) : rx;
-                return new Entry(rx, rxDirectories, isExclusion, owners, isDirectoryPattern);
+                return new Entry(rx, patternToken, isExclusion, owners, isDirectoryPattern);
             }
 
             private static bool IsDirectoryPattern(string patternToken)
@@ -407,20 +405,6 @@ namespace Datadog.Trace.Ci
                 return lastSegment.Length > 0 &&
                        lastSegment.IndexOf('*') < 0 &&
                        lastSegment.IndexOf('?') < 0;
-            }
-
-            public bool Match(string path)
-            {
-                if (IsMatch(_regex, path))
-                {
-                    return true;
-                }
-
-                // Patterns whose last segment is wildcard-free also own everything inside a matched
-                // directory (e.g. `**/logs` owns `/build/logs/error.txt`), while wildcard segments like
-                // `docs/*` match individual entries only. The descendant variant of the glob accepts any
-                // path below a direct match in a single evaluation.
-                return _isDirectoryPattern && IsMatch(_descendantsRegex, path);
             }
 
             private static bool IsMatch(Regex regex, string input)
@@ -434,6 +418,27 @@ namespace Datadog.Trace.Ci
                     // A pathological pattern must never hang the process: treat it as non-matching.
                     return false;
                 }
+            }
+
+            public bool Match(string path)
+            {
+                if (IsMatch(_regex, path))
+                {
+                    return true;
+                }
+
+                // Patterns whose last segment is wildcard-free also own everything inside a matched
+                // directory (e.g. `**/logs` owns `/build/logs/error.txt`), while wildcard segments like
+                // `docs/*` match individual entries only. The descendant variant of the glob accepts any
+                // path below a direct match in a single evaluation.
+                return _isDirectoryPattern && IsMatch(LazyGetDescendantsRegex(), path);
+            }
+
+            private Regex LazyGetDescendantsRegex()
+            {
+                // Compiled lazily because most rules never need the descendant variant. The race of two
+                // threads compiling simultaneously is benign: both produce identical regexes.
+                return _descendantsRegex ??= CompileGlob(_patternToken, includeDescendants: true);
             }
         }
     }

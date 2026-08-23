@@ -668,6 +668,16 @@ internal abstract class CIEnvironmentValues
             start++;
         }
 
+        // Never anchor paths with interior navigation segments: their resolution depends on the
+        // unknown base directory and would produce malformed repository-relative paths.
+        for (var i = start; i < segments.Length; i++)
+        {
+            if (segments[i] == "." || segments[i] == "..")
+            {
+                return false;
+            }
+        }
+
         for (var i = start; i < segments.Length - 1; i++)
         {
             var candidateSuffix = string.Join(Path.DirectorySeparatorChar.ToString(), segments, i, segments.Length - i);

@@ -327,6 +327,32 @@ public class CodeOwnersSpecTests
         patchFiles.Should().HaveCount(5);
     }
 
+    [SkippableFact]
+    public void MultipleLeadingSlashesAreNormalized()
+    {
+        // Callers prepend "/" to relative paths; a path that already contains leading slashes (or is
+        // empty) must still normalize to a single rooted form instead of failing to match.
+        var codeOwners = Create("*.md @md\n/docs/ @doctocat\n", CodeOwners.Platform.GitHub);
+        Match(codeOwners, "//docs/getting-started.md").Should().Equal(["@doctocat"]);
+        Match(codeOwners, "/docs/getting-started.md").Should().Equal(["@doctocat"]);
+        Match(codeOwners, string.Empty).Should().BeEmpty();
+    }
+
+    [SkippableFact]
+    public void DescendantMatchingIsStableAcrossRepeatedCalls()
+    {
+        // The descendant glob variant is compiled lazily on first use and cached; repeated matches
+        // must keep returning the same results (e.g. no recompilation or caching regression).
+        var codeOwners = Create("**/logs @octocat\n", CodeOwners.Platform.GitHub);
+        for (var i = 0; i < 3; i++)
+        {
+            Match(codeOwners, "/build/logs/error.txt").Should().Equal(["@octocat"]);
+            Match(codeOwners, "/build/logs/nested/error.txt").Should().Equal(["@octocat"]);
+            Match(codeOwners, "/catalog/data.tmp").Should().BeEmpty();
+            Match(codeOwners, "/logs").Should().Equal(["@octocat"]);
+        }
+    }
+
     private static CodeOwners Create(string content, CodeOwners.Platform platform)
     {
         var path = Path.Combine(Path.GetTempPath(), "dd-codeowners-spec-" + Guid.NewGuid().ToString("N"));
