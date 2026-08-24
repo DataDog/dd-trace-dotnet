@@ -853,28 +853,58 @@ namespace Datadog.Trace.Coverage.Collector
                 throw new InvalidOperationException($"Rewritten symbols were not created at '{stagedSymbolsPath}'.");
             }
 
-            var symbolsReplaced = false;
             try
             {
                 replaceFile(stagedSymbolsPath, symbolsPath, symbolsBackupPath);
-                symbolsReplaced = true;
                 replaceFile(stagedAssemblyPath, assemblyFilePath, assemblyBackupPath);
             }
             catch (Exception publicationException)
             {
-                if (symbolsReplaced)
+                var assemblyRollbackException = TryRestoreBackup(assemblyBackupPath, assemblyFilePath, replaceFile);
+                var symbolsRollbackException = TryRestoreBackup(symbolsBackupPath, symbolsPath, replaceFile);
+                if (assemblyRollbackException is not null || symbolsRollbackException is not null)
                 {
-                    try
+                    var exceptions = new List<Exception> { publicationException };
+                    if (assemblyRollbackException is not null)
                     {
-                        replaceFile(symbolsBackupPath, symbolsPath, null);
+                        exceptions.Add(assemblyRollbackException);
                     }
-                    catch (Exception rollbackException)
+
+                    if (symbolsRollbackException is not null)
                     {
-                        throw new AggregateException("Failed to publish the rewritten assembly and to restore its original symbols.", publicationException, rollbackException);
+                        exceptions.Add(symbolsRollbackException);
                     }
+
+                    throw new AggregateException("Failed to publish the rewritten assembly and to restore its original files.", exceptions);
                 }
 
                 throw;
+            }
+        }
+
+        private static Exception? TryRestoreBackup(string backupPath, string targetPath, Action<string, string, string?> replaceFile)
+        {
+            if (!File.Exists(backupPath))
+            {
+                return null;
+            }
+
+            try
+            {
+                if (File.Exists(targetPath))
+                {
+                    replaceFile(backupPath, targetPath, null);
+                }
+                else
+                {
+                    File.Move(backupPath, targetPath);
+                }
+
+                return null;
+            }
+            catch (Exception exception)
+            {
+                return exception;
             }
         }
 

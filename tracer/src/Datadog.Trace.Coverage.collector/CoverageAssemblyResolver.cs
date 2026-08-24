@@ -12,6 +12,7 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Threading;
 using Datadog.Trace.Ci.Coverage;
+using Datadog.Trace.FeatureFlags;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 using Mono.Cecil;
 
@@ -463,7 +464,7 @@ internal sealed class CoverageAssemblyResolver : BaseAssemblyResolver
 
         private static string? FindCompatibleFrameworkDirectory(string sharedFrameworkRoot, string frameworkName, string requestedVersionText)
         {
-            if (!TryParseRuntimeVersion(requestedVersionText, out var requestedVersion, out _))
+            if (!TryParseRuntimeVersion(requestedVersionText, out var requestedVersion, out var requestedSemanticVersion))
             {
                 return null;
             }
@@ -480,16 +481,15 @@ internal sealed class CoverageAssemblyResolver : BaseAssemblyResolver
                                 .Select(path => new
                                 {
                                     Path = path,
-                                    Parsed = TryParseRuntimeVersion(Path.GetFileName(path), out var version, out var isPrerelease),
+                                    Parsed = TryParseRuntimeVersion(Path.GetFileName(path), out var version, out var semanticVersion),
                                     Version = version,
-                                    IsPrerelease = isPrerelease
+                                    SemanticVersion = semanticVersion
                                 })
                                 .Where(candidate => candidate.Parsed &&
                                                     candidate.Version.Major == requestedVersion.Major &&
                                                     candidate.Version.Minor == requestedVersion.Minor &&
-                                                    candidate.Version >= requestedVersion)
-                                .OrderByDescending(candidate => candidate.Version)
-                                .ThenBy(candidate => candidate.IsPrerelease)
+                                                    candidate.SemanticVersion.CompareTo(requestedSemanticVersion) >= 0)
+                                .OrderByDescending(candidate => candidate.SemanticVersion)
                                 .Select(candidate => candidate.Path)
                                 .FirstOrDefault();
             }
@@ -503,12 +503,11 @@ internal sealed class CoverageAssemblyResolver : BaseAssemblyResolver
             }
         }
 
-        private static bool TryParseRuntimeVersion(string versionText, out Version version, out bool isPrerelease)
+        private static bool TryParseRuntimeVersion(string versionText, out Version version, out SemanticVersion semanticVersion)
         {
             var suffixIndex = versionText.IndexOf('-');
-            isPrerelease = suffixIndex >= 0;
-            var numericVersion = isPrerelease ? versionText.Substring(0, suffixIndex) : versionText;
-            return Version.TryParse(numericVersion, out version!);
+            var numericVersion = suffixIndex >= 0 ? versionText.Substring(0, suffixIndex) : versionText;
+            return Version.TryParse(numericVersion, out version!) && SemanticVersion.TryParse(versionText, out semanticVersion);
         }
 
         private readonly struct FrameworkReference

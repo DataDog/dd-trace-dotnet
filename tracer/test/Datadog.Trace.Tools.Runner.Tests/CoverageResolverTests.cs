@@ -151,6 +151,28 @@ public class CoverageResolverTests
     }
 
     /// <summary>
+    /// Verifies that an older prerelease framework is not considered compatible with a newer requested prerelease.
+    /// </summary>
+    [Fact]
+    public void ResolveAssemblyDoesNotRollBackToOlderPrereleaseFramework()
+    {
+        using var directory = TemporaryDirectory.Create();
+        var outputDirectory = Path.Combine(directory.Path, "output");
+        var sharedFrameworkRoot = Path.Combine(directory.Path, "shared");
+        var frameworkDirectory = Path.Combine(sharedFrameworkRoot, "Microsoft.AspNetCore.App", "11.0.0-preview.6");
+        Directory.CreateDirectory(outputDirectory);
+        Directory.CreateDirectory(frameworkDirectory);
+        _ = CreateAssembly(frameworkDirectory, "SharedFrameworkDependency", new Version(11, 0, 0, 6));
+        File.WriteAllText(Path.Combine(outputDirectory, "Repro.Tests.runtimeconfig.json"), CreateRuntimeConfig("framework", "Microsoft.AspNetCore.App", "11.0.0-preview.8"));
+        var targetPath = Path.Combine(outputDirectory, "Repro.Library.dll");
+        using var resolver = new CoverageAssemblyResolver(new ConsoleCollectorLogger(), targetPath, sharedFrameworkRoot);
+
+        var action = () => resolver.Resolve(new AssemblyNameReference("SharedFrameworkDependency", new Version(11, 0, 0, 0)));
+
+        action.Should().Throw<AssemblyResolutionException>();
+    }
+
+    /// <summary>
     /// Verifies the Windows failure mode from issue 8592: resolved dependency handles are released.
     /// </summary>
     [SkippableFact]
@@ -335,10 +357,12 @@ public class CoverageResolverTests
     }
 
     /// <summary>
-    /// Verifies that replacing the PDB is rolled back when publishing the DLL fails.
+    /// Verifies that both original files are restored when publishing the DLL reports a failure after replacement.
     /// </summary>
-    [Fact]
-    public void WriteTargetAssemblyPublicationFailureRestoresOriginalFiles()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void WriteTargetAssemblyPublicationFailureRestoresOriginalFiles(bool replacementWasPublished)
     {
         using var directory = TemporaryDirectory.Create();
         var assemblyPath = CopyCoverageFixture(directory.Path);
@@ -355,7 +379,13 @@ public class CoverageResolverTests
             replaceCallCount++;
             if (replaceCallCount == 2)
             {
-                throw new IOException("Injected DLL publication failure.");
+                File.Move(destination, backup!);
+                if (replacementWasPublished)
+                {
+                    File.Move(source, destination);
+                }
+
+                throw new IOException("Injected DLL publication failure during replacement.");
             }
 
             File.Replace(source, destination, backup);
