@@ -48,7 +48,9 @@ switch ($testSuite) {
             # traits, so keep them out of the dependency-free Windows slice.
             $testFilter += '&(FullyQualifiedName!~IIS)&(FullyQualifiedName!=Datadog.Trace.Security.IntegrationTests.Iast.IastInstrumentationUnitTests.TestInstrumentedUnitTests)'
         }
-        $nukeTargets = 'CompileTrimmingSamples BuildIntegrationTests RunIntegrationTests'
+        # Match Azure's regular Windows cells by building and running the
+        # Windows regression tests alongside the main integration suite.
+        $nukeTargets = 'CompileTrimmingSamples BuildIntegrationTests BuildWindowsRegressionTests RunIntegrationTests'
         $nukeArguments = '--IncludeTestsRequiringDocker false'
     }
     'iis' {
@@ -328,11 +330,27 @@ $testCommand = "reg add HKLM\SYSTEM\CurrentControlSet\Control\FileSystem /v Long
 & docker run @commonDockerArguments --entrypoint cmd.exe $windowsBuildImage /d /s /c $testCommand
 $testExitCode = $LASTEXITCODE
 
+$regressionExitCode = 0
+if ($testExitCode -eq 0 -and $testSuite -eq 'integration') {
+    # Run this separately because the regular GitLab jobs have an explicit
+    # integration filter. RunWindowsRegressionTests must instead receive the
+    # default regression selection that Azure uses.
+    $regressionFilter = '(Category=Smoke)&(LoadFromGAC!=True)&(Category!=AzureFunctions)&(SkipInCI!=True)'
+    $regressionCommand = "reg add HKLM\SYSTEM\CurrentControlSet\Control\FileSystem /v LongPathsEnabled /t REG_DWORD /d 1 /f && powershell -NoProfile -ExecutionPolicy Bypass -File c:\mnt\.gitlab\install-windows-test-runtime.ps1 -Framework $env:FRAMEWORK -Architecture $targetPlatform -IncludeAspNetCore && $dependencySetup" + "set `"Filter=$regressionFilter`" && c:\entrypoint.bat RunWindowsRegressionTests --framework $env:FRAMEWORK --TargetPlatform $targetPlatform --IncludeAllTestFrameworks true --NugetPackageDirectory c:\mnt\packages"
+
+    & docker run @commonDockerArguments --entrypoint cmd.exe $windowsBuildImage /d /s /c $regressionCommand
+    $regressionExitCode = $LASTEXITCODE
+}
+
 & docker run @commonDockerArguments $windowsBuildImage CheckBuildLogsForErrors --NugetPackageDirectory c:\mnt\packages
 $logCheckExitCode = $LASTEXITCODE
 
 if ($testExitCode -ne 0) {
     throw "Windows $testSuite tests for $env:FRAMEWORK exited with code $testExitCode"
+}
+
+if ($regressionExitCode -ne 0) {
+    throw "Windows regression tests for $env:FRAMEWORK exited with code $regressionExitCode"
 }
 
 if ($logCheckExitCode -ne 0) {
