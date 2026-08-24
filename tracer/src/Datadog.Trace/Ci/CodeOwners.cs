@@ -1026,6 +1026,9 @@ namespace Datadog.Trace.Ci
 
         private sealed class SegmentPattern
         {
+            private const int MaximumPatternLength = 1_024;
+            private const int MaximumMatchSteps = 65_536;
+
             private readonly SegmentToken[] _tokens;
 
             private SegmentPattern(SegmentToken[] tokens)
@@ -1035,6 +1038,14 @@ namespace Datadog.Trace.Ci
 
             public static bool TryCompile(string pattern, Platform platform, [NotNullWhen(true)] out SegmentPattern? segment)
             {
+                // Repository path components are short, so larger segment patterns cannot provide
+                // useful ownership matches and can make wildcard retries disproportionately costly.
+                if (pattern.Length > MaximumPatternLength)
+                {
+                    segment = null;
+                    return false;
+                }
+
                 var tokens = new List<SegmentToken>(pattern.Length);
                 for (var i = 0; i < pattern.Length; i++)
                 {
@@ -1097,9 +1108,16 @@ namespace Datadog.Trace.Ci
                 var pathIndex = start;
                 var starTokenIndex = -1;
                 var starPathIndex = -1;
+                var remainingSteps = MaximumMatchSteps;
 
                 while (pathIndex < end)
                 {
+                    if (remainingSteps-- == 0)
+                    {
+                        // Bound adversarial star/suffix retries in the instrumented process.
+                        return false;
+                    }
+
                     if (tokenIndex < _tokens.Length && _tokens[tokenIndex].IsStar)
                     {
                         starTokenIndex = tokenIndex++;
@@ -1142,15 +1160,12 @@ namespace Datadog.Trace.Ci
                 var contentStart = openingBracket + 1;
                 var negated = contentStart < pattern.Length && pattern[contentStart] is '!' or '^';
                 var atomStart = negated ? contentStart + 1 : contentStart;
-                var searchStart = atomStart;
-
-                // A closing bracket immediately after the optional negation is a literal member.
-                if (searchStart < pattern.Length && pattern[searchStart] == ']')
+                if (atomStart < pattern.Length && pattern[atomStart] == ']')
                 {
-                    searchStart++;
+                    return CharacterClassParseResult.Invalid;
                 }
 
-                for (var i = searchStart; i < pattern.Length; i++)
+                for (var i = atomStart; i < pattern.Length; i++)
                 {
                     if (pattern[i] == '\\' && i + 1 < pattern.Length)
                     {

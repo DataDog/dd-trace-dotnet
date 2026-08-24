@@ -304,6 +304,8 @@ public class CodeOwnersFallbackTests
     [SkippableTheory]
     [InlineData("https://gitlab.com/DataDog/dd-trace-dotnet.git")]
     [InlineData("git@gitlab.com:DataDog/dd-trace-dotnet.git")]
+    [InlineData("https://gitlab.example.com/DataDog/dd-trace-dotnet.git")]
+    [InlineData("git@gitlab.example.com:DataDog/dd-trace-dotnet.git")]
     public void UsesRepositoryHostToSelectCodeOwnersPlatform(string repositoryUrl)
     {
         using var tempDirectory = new TemporaryDirectory();
@@ -322,6 +324,27 @@ public class CodeOwnersFallbackTests
         var ciValues = CIEnvironmentValues.Create(env);
 
         Assert.Equal("jenkins", ciValues.Provider);
+        Assert.Equal(["@gitlab-owner"], ciValues.CodeOwners!.Match("/file.cs"));
+    }
+
+    [SkippableFact]
+    public void UsesGitLabSpecificLocationWhenRepositoryHostIsUnknown()
+    {
+        using var tempDirectory = new TemporaryDirectory();
+        var repoRoot = tempDirectory.RootPath;
+        Directory.CreateDirectory(Path.Combine(repoRoot, ".gitlab"));
+        File.WriteAllText(Path.Combine(repoRoot, ".gitlab", "CODEOWNERS"), "[Section] @gitlab-owner\n*.cs\n");
+
+        var env = new Dictionary<string, string>
+        {
+            [PlatformKeys.Ci.Jenkins.Url] = "https://jenkins.example.com",
+            [PlatformKeys.Ci.Jenkins.GitUrl] = "https://source.example.com/DataDog/dd-trace-dotnet.git",
+            [PlatformKeys.Ci.Jenkins.GitCommit] = CommitSha,
+            [PlatformKeys.Ci.Jenkins.Workspace] = repoRoot,
+        };
+
+        var ciValues = CIEnvironmentValues.Create(env);
+
         Assert.Equal(["@gitlab-owner"], ciValues.CodeOwners!.Match("/file.cs"));
     }
 

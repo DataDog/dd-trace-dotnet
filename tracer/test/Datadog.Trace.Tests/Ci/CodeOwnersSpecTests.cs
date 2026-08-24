@@ -345,6 +345,17 @@ public class CodeOwnersSpecTests
     }
 
     [SkippableFact]
+    public void GitLabCharacterClassesCannotStartWithClosingBracket()
+    {
+        var codeOwners = Create("* @fallback\nfile[]a].txt @positive\nfile[!]].txt @negated\n", CodeOwners.Platform.GitLab);
+
+        codeOwners.ParsingDiagnosticsCount.Should().Be(2);
+        Match(codeOwners, "/filea.txt").Should().Equal(["@fallback"]);
+        Match(codeOwners, "/file].txt").Should().Equal(["@fallback"]);
+        Match(codeOwners, "/filex.txt").Should().Equal(["@fallback"]);
+    }
+
+    [SkippableFact]
     public void GitLabBackslashEscapesGlobMetacharactersAndOrdinaryCharacters()
     {
         var content = """
@@ -594,6 +605,26 @@ public class CodeOwnersSpecTests
         {
             concurrentMatch.Result.Should().Equal(["@global"]);
         }
+    }
+
+    [SkippableFact]
+    public void OverlongSegmentPatternIsRejectedBeforeMatching()
+    {
+        var pathologicalPattern = "*" + new string('a', 1_024) + "b";
+        var codeOwners = Create("* @global\n" + pathologicalPattern + " @slow\n", CodeOwners.Platform.GitHub);
+
+        codeOwners.ParsingDiagnosticsCount.Should().Be(1);
+        Match(codeOwners, "/" + new string('a', 2_000) + "c").Should().Equal(["@global"]);
+    }
+
+    [SkippableFact]
+    public void SegmentWildcardMatchingStopsAtWorkLimit()
+    {
+        var repeatedSuffixPattern = "*" + new string('a', 256) + "b";
+        var codeOwners = Create("* @global\n" + repeatedSuffixPattern + " @slow\n", CodeOwners.Platform.GitHub);
+
+        codeOwners.ParsingDiagnosticsCount.Should().Be(0, "the rule is valid and bounded at match time");
+        Match(codeOwners, "/" + new string('a', 2_000) + "b").Should().Equal(["@global"]);
     }
 
     [SkippableFact]

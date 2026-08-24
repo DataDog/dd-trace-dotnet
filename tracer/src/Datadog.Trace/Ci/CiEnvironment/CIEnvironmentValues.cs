@@ -467,7 +467,7 @@ internal abstract class CIEnvironmentValues
             }
         }
 
-        if (string.Equals(host, "gitlab.com", StringComparison.OrdinalIgnoreCase))
+        if (IsGitLabHost(host))
         {
             platform = CodeOwners.Platform.GitLab;
             return true;
@@ -481,6 +481,11 @@ internal abstract class CIEnvironmentValues
 
         return false;
     }
+
+    private static bool IsGitLabHost(string? host)
+        => string.Equals(host, "gitlab.com", StringComparison.OrdinalIgnoreCase) ||
+           (host?.StartsWith("gitlab.", StringComparison.OrdinalIgnoreCase) ?? false) ||
+           (host?.IndexOf(".gitlab.", StringComparison.OrdinalIgnoreCase) >= 0);
 
     private static IEnumerable<string> GetCodeOwnersPaths(string sourceRoot, CodeOwners.Platform platform)
     {
@@ -653,7 +658,7 @@ internal abstract class CIEnvironmentValues
         // **********
         if (!string.IsNullOrEmpty(SourceRoot))
         {
-            var platform = GetCodeOwnersPlatform();
+            var platform = GetCodeOwnersPlatform(SourceRoot);
             if (TryGetCodeOwnersPath(SourceRoot!, platform, logLookup: true, out var codeOwnersPath))
             {
                 Log.Information("CODEOWNERS file found: {Path}", codeOwnersPath);
@@ -1025,7 +1030,7 @@ internal abstract class CIEnvironmentValues
 
             // Search order: source file path (most specific), then workspace root.
             // Prefer a source-file-anchored search before falling back to the workspace root.
-            var platform = GetCodeOwnersPlatform();
+            var platform = GetCodeOwnersPlatform(SourceRoot ?? WorkspacePath);
             if (TryLoadCodeOwnersFromAncestor(sourceFilePath, platform, WorkspacePath))
             {
                 return;
@@ -1195,14 +1200,33 @@ internal abstract class CIEnvironmentValues
         return true;
     }
 
-    private CodeOwners.Platform GetCodeOwnersPlatform()
+    private CodeOwners.Platform GetCodeOwnersPlatform(string? sourceRoot)
     {
         if (TryGetCodeOwnersPlatformFromRepository(Repository, out var platform))
         {
             return platform;
         }
 
-        return GetType().Name.Contains("GitlabEnvironmentValues") ? CodeOwners.Platform.GitLab : CodeOwners.Platform.GitHub;
+        if (string.Equals(Provider, "gitlab", StringComparison.Ordinal) || GetType().Name.Contains("Gitlab"))
+        {
+            return CodeOwners.Platform.GitLab;
+        }
+
+        if (string.Equals(Provider, "github", StringComparison.Ordinal) || GetType().Name.Contains("Github"))
+        {
+            return CodeOwners.Platform.GitHub;
+        }
+
+        if (!StringUtil.IsNullOrEmpty(sourceRoot) &&
+            File.Exists(Path.Combine(sourceRoot!, ".gitlab", "CODEOWNERS")) &&
+            !File.Exists(Path.Combine(sourceRoot!, ".github", "CODEOWNERS")))
+        {
+            // A platform-specific location is the only reliable signal for self-managed GitLab
+            // instances whose host name does not identify the product.
+            return CodeOwners.Platform.GitLab;
+        }
+
+        return CodeOwners.Platform.GitHub;
     }
 
     private readonly struct CodeOwnersFileMetadata : IEquatable<CodeOwnersFileMetadata>
