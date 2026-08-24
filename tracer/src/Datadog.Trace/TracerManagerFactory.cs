@@ -9,7 +9,6 @@ using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.ConfigurationSources;
 using Datadog.Trace.Logging;
-using Datadog.Trace.Logging.TracerFlare;
 using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Util;
@@ -32,8 +31,7 @@ namespace Datadog.Trace
             var tracer = CreateTracerManager(
                 settings,
                 scopeManager: previous?.ScopeManager, // no configuration, so can always use the same one
-                dynamicConfigurationManager: null,
-                tracerFlareManager: null);
+                dynamicConfigurationManager: null);
 
             return tracer;
         }
@@ -42,7 +40,6 @@ namespace Datadog.Trace
             TracerSettings settings,
             IScopeManager scopeManager,
             IDynamicConfigurationManager dynamicConfigurationManager,
-            ITracerFlareManager tracerFlareManager,
             ServiceRemappingHash serviceRemappingHash = null)
         {
             settings ??= TracerSettings.FromDefaultSourcesInternal();
@@ -59,14 +56,12 @@ namespace Datadog.Trace
             var gitMetadataTagsProvider = GetGitMetadataTagsProvider(settings, settings.Manager.InitialMutableSettings, scopeManager);
 
             dynamicConfigurationManager ??= new NullDynamicConfigurationManager();
-            tracerFlareManager ??= new NullTracerFlareManager();
 
             return CreateTracerManagerFrom(
                 settings,
                 scopeManager,
                 gitMetadataTagsProvider,
                 dynamicConfigurationManager,
-                tracerFlareManager,
                 serviceRemappingHash);
         }
 
@@ -80,10 +75,9 @@ namespace Datadog.Trace
             IScopeManager scopeManager,
             IGitMetadataTagsProvider gitMetadataTagsProvider,
             IDynamicConfigurationManager dynamicConfigurationManager,
-            ITracerFlareManager tracerFlareManager,
             ServiceRemappingHash serviceRemappingHash)
         {
-            return new TracerManager(settings, scopeManager, gitMetadataTagsProvider, dynamicConfigurationManager, tracerFlareManager, serviceRemappingHash);
+            return new TracerManager(settings, scopeManager, gitMetadataTagsProvider, dynamicConfigurationManager, serviceRemappingHash);
         }
     }
 }

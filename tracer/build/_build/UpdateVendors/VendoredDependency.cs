@@ -186,13 +186,6 @@ namespace UpdateVendors
                 transform: filePath => RewriteCsFileWithStandardTransform(filePath, originalNamespace: "System.Runtime", AddNullableDirectiveTransform, AddIgnoreNullabilityWarningDisablePragma));
 
             Add(
-                libraryName: "ICSharpCode.SharpZipLib",
-                version: "1.3.3",
-                downloadUrl: "https://github.com/icsharpcode/SharpZipLib/archive/refs/tags/v1.3.3.zip",
-                pathToSrc: new[] { "SharpZipLib-1.3.3", "src", "ICSharpCode.SharpZipLib" },
-                transform: filePath => RewriteCsFileWithStandardTransform(filePath, originalNamespace: "ICSharpCode.SharpZipLib", AddIfNetFramework));
-            
-            Add(
                 libraryName: "OpenTelemetry.Exporter.OpenTelemetryProtocol",
                 version: "core-1.13.1",
                 downloadUrl: "https://github.com/open-telemetry/opentelemetry-dotnet/archive/refs/tags/core-1.13.1.zip",
@@ -283,11 +276,6 @@ namespace UpdateVendors
         private static string AddIfNetcoreapp31OrGreater(string filePath, string content)
         {
             return "#if NETCOREAPP3_1_OR_GREATER" + Environment.NewLine + content + Environment.NewLine + "#endif";
-        }
-
-        private static string AddIfNetFramework(string filePath, string content)
-        {
-            return "#if NETFRAMEWORK" + Environment.NewLine + content + Environment.NewLine + "#endif";
         }
 
         private static string AddNullableDirectiveTransform(string filePath, string content)
@@ -402,13 +390,6 @@ namespace UpdateVendors
                             }
 
                             builder.Replace("#if NETSTANDARD || NETFRAMEWORK\n        [System.Runtime.CompilerServices.MethodImpl", "#if NETSTANDARD || NETFRAMEWORK || NETCOREAPP\n        [System.Runtime.CompilerServices.MethodImpl");
-                        }
-
-                        // Special SharpZipLib processing
-                        if (originalNamespace.StartsWith("ICSharpCode"))
-                        {
-                            builder.Replace("#if NET45", "#if NETFRAMEWORK");
-                            builder.Replace("using static ICSharpCode.SharpZipLib", "using static Datadog.Trace.Vendors.ICSharpCode.SharpZipLib");
                         }
 
                         // Debugger.Break() is a dangerous method that may crash the process. We don't

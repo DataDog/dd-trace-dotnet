@@ -14,7 +14,6 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Schema;
 using Datadog.Trace.Logging;
-using Datadog.Trace.Logging.TracerFlare;
 using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Processors;
 using Datadog.Trace.Propagators;
@@ -50,7 +49,6 @@ namespace Datadog.Trace
             IScopeManager scopeManager,
             IGitMetadataTagsProvider gitMetadataTagsProvider,
             IDynamicConfigurationManager dynamicConfigurationManager,
-            ITracerFlareManager tracerFlareManager,
             ServiceRemappingHash serviceRemappingHash)
         {
             Settings = settings;
@@ -59,7 +57,6 @@ namespace Datadog.Trace
             QueryStringManager = new(settings.QueryStringReportingEnabled, settings.ObfuscationQueryStringRegexTimeout, settings.QueryStringReportingSize, settings.ObfuscationQueryStringRegex);
 
             DynamicConfigurationManager = dynamicConfigurationManager;
-            TracerFlareManager = tracerFlareManager;
 
             ServiceRemappingHash = serviceRemappingHash;
 
@@ -116,8 +113,6 @@ namespace Datadog.Trace
 
         public IDynamicConfigurationManager DynamicConfigurationManager { get; }
 
-        public ITracerFlareManager TracerFlareManager { get; }
-
         public PerTraceSettings PerTraceSettings => Volatile.Read(ref _perTraceSettings);
 
         public SpanContextPropagator SpanContextPropagator { get; }
@@ -169,7 +164,6 @@ namespace Datadog.Trace
         {
             // Must be idempotent and thread safe
             DynamicConfigurationManager.Start();
-            TracerFlareManager.Start();
         }
 
         /// <summary>
@@ -196,17 +190,10 @@ namespace Datadog.Trace
                     oldManager.DynamicConfigurationManager.Dispose();
                 }
 
-                var tracerFlareManagerReplaced = false;
-                if (oldManager.TracerFlareManager != newManager.TracerFlareManager && oldManager.TracerFlareManager is not null)
-                {
-                    tracerFlareManagerReplaced = true;
-                    oldManager.TracerFlareManager.Dispose();
-                }
-
                 Log.Information(
                     exception: null,
-                    "Replaced global instances. AgentWriter: {AgentWriterReplaced}, Discovery: {DiscoveryReplaced}, DynamicConfigurationManager: {DynamicConfigurationManagerReplaced}, TracerFlareManager {TracerFlareManagerReplaced}",
-                    new object[] { agentWriterReplaced, discoveryReplaced, dynamicConfigurationManagerReplaced, tracerFlareManagerReplaced });
+                    "Replaced global instances. AgentWriter: {AgentWriterReplaced}, Discovery: {DiscoveryReplaced}, DynamicConfigurationManager: {DynamicConfigurationManagerReplaced}",
+                    new object[] { agentWriterReplaced, discoveryReplaced, dynamicConfigurationManagerReplaced });
             }
             catch (Exception ex)
             {
@@ -263,8 +250,6 @@ namespace Datadog.Trace
                     instance._settingSubscription.Dispose();
                     Log.Debug("Disposing DynamicConfigurationManager");
                     instance.DynamicConfigurationManager.Dispose();
-                    Log.Debug("Disposing TracerFlareManager");
-                    instance.TracerFlareManager.Dispose();
 
                     Log.Debug("Finished waiting for disposals.");
                 }
