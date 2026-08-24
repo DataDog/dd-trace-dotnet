@@ -153,19 +153,21 @@ public class GcMemoryLoadCalculatorTests
 
     [Theory]
     [InlineData(PlatformKeys.DotNetGCHighMemPercent, "50")]
-    [InlineData(PlatformKeys.DotNetGCHighMemPercent, "")]
     [InlineData(PlatformKeys.ComPlusGCHighMemPercent, "50")]
+    [InlineData(PlatformKeys.DotNetGCHighMemPercent, "0")]
+    [InlineData(PlatformKeys.ComPlusGCHighMemPercent, "0")]
+    [InlineData(PlatformKeys.DotNetGCHighMemPercent, " ")]
+    [InlineData(PlatformKeys.ComPlusGCHighMemPercent, " ")]
+    // Below net9.0, Environment.SetEnvironmentVariable(name, "") deletes the variable instead of
+    // setting it to an empty value, on every platform .NET runs on (not just Windows), so we can't
+    // construct a "present but empty" env var there. net9.0 changed this: empty strings
+    // are now persisted everywhere - so on net9.0+ this case runs for real.
+#if NET9_0_OR_GREATER
+    [InlineData(PlatformKeys.DotNetGCHighMemPercent, "")]
     [InlineData(PlatformKeys.ComPlusGCHighMemPercent, "")]
+#endif
     public void ReadHasConfiguredHighMemoryLoadPercent_ComPlusEnvVarSet_ReturnsTrue(string envVar, string value)
     {
-        if (value.Length == 0 && FrameworkDescription.Instance.IsWindows())
-        {
-            // On Windows, Environment.SetEnvironmentVariable(name, "") deletes the variable instead of setting it
-            // to an empty value (Win32 SetEnvironmentVariable semantics), so we can't construct a "present but
-            // empty" env var this way on this platform.
-            return;
-        }
-
         ClearAppContextData();
         Environment.SetEnvironmentVariable(envVar, value);
 
