@@ -5,12 +5,14 @@
 
 using System;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Threading;
 using Datadog.Trace.Coverage.Collector;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using Mono.Cecil;
+using Mono.Cecil.Cil;
 using Xunit;
 
 namespace Datadog.Trace.Tools.Runner.Tests;
@@ -51,6 +53,100 @@ public class CoverageResolverTests
         var second = resolver.Resolve(assemblyName);
 
         second.Should().BeSameAs(first);
+    }
+
+    /// <summary>
+    /// Verifies that dependencies supplied by a declared shared framework can be resolved outside the test output directory.
+    /// </summary>
+    [Fact]
+    public void ResolveAssemblyFromDeclaredSharedFrameworkSucceeds()
+    {
+        using var directory = TemporaryDirectory.Create();
+        var outputDirectory = Path.Combine(directory.Path, "output");
+        var sharedFrameworkRoot = Path.Combine(directory.Path, "shared");
+        var olderFrameworkDirectory = Path.Combine(sharedFrameworkRoot, "Microsoft.AspNetCore.App", "10.0.8");
+        var latestFrameworkDirectory = Path.Combine(sharedFrameworkRoot, "Microsoft.AspNetCore.App", "10.0.10-servicing.1");
+        Directory.CreateDirectory(outputDirectory);
+        Directory.CreateDirectory(olderFrameworkDirectory);
+        Directory.CreateDirectory(latestFrameworkDirectory);
+        _ = CreateAssembly(olderFrameworkDirectory, "SharedFrameworkDependency", new Version(10, 0, 8, 0));
+        var dependencyPath = CreateAssembly(latestFrameworkDirectory, "SharedFrameworkDependency", new Version(10, 0, 10, 0));
+        const string RuntimeConfig = """
+                                     {
+                                       "runtimeOptions": {
+                                         "frameworks": [
+                                           { "name": "Microsoft.NETCore.App", "version": "10.0.0" },
+                                           { "name": "Microsoft.AspNetCore.App", "version": "10.0.0" }
+                                         ]
+                                       }
+                                     }
+                                     """;
+        var runtimeConfigPath = Path.Combine(outputDirectory, "Repro.Tests.runtimeconfig.json");
+        File.WriteAllText(Path.Combine(outputDirectory, "Malformed.runtimeconfig.json"), "{");
+        File.WriteAllText(runtimeConfigPath, RuntimeConfig);
+        var targetPath = Path.Combine(outputDirectory, "Repro.Library.dll");
+        var assemblyName = new AssemblyNameReference("SharedFrameworkDependency", new Version(10, 0, 0, 0));
+
+        using (var resolver = new CoverageAssemblyResolver(new ConsoleCollectorLogger(), targetPath, sharedFrameworkRoot))
+        {
+            var assembly = resolver.Resolve(assemblyName);
+            assembly.Name.Version.Should().Be(new Version(10, 0, 10, 0));
+        }
+
+        if (EnvironmentTools.IsWindows())
+        {
+            AssertCanOpenExclusively(dependencyPath);
+        }
+
+        File.Delete(runtimeConfigPath);
+        using var cachedResolver = new CoverageAssemblyResolver(new ConsoleCollectorLogger(), targetPath, sharedFrameworkRoot);
+        cachedResolver.Resolve(assemblyName).Name.Version.Should().Be(new Version(10, 0, 10, 0));
+    }
+
+    /// <summary>
+    /// Verifies all runtimeconfig framework declaration shapes used by the host.
+    /// </summary>
+    [Theory]
+    [InlineData("framework")]
+    [InlineData("includedFrameworks")]
+    public void ResolveAssemblySupportsRuntimeConfigFrameworkShape(string propertyName)
+    {
+        using var directory = TemporaryDirectory.Create();
+        var outputDirectory = Path.Combine(directory.Path, "output");
+        var sharedFrameworkRoot = Path.Combine(directory.Path, "shared");
+        var frameworkDirectory = Path.Combine(sharedFrameworkRoot, "Microsoft.AspNetCore.App", "10.0.8");
+        Directory.CreateDirectory(outputDirectory);
+        Directory.CreateDirectory(frameworkDirectory);
+        _ = CreateAssembly(frameworkDirectory, "SharedFrameworkDependency", new Version(10, 0, 8, 0));
+        File.WriteAllText(Path.Combine(outputDirectory, "Repro.Tests.runtimeconfig.json"), CreateRuntimeConfig(propertyName, "Microsoft.AspNetCore.App", "10.0.0"));
+        var targetPath = Path.Combine(outputDirectory, "Repro.Library.dll");
+        using var resolver = new CoverageAssemblyResolver(new ConsoleCollectorLogger(), targetPath, sharedFrameworkRoot);
+
+        var assembly = resolver.Resolve(new AssemblyNameReference("SharedFrameworkDependency", new Version(10, 0, 0, 0)));
+
+        assembly.Name.Version.Should().Be(new Version(10, 0, 8, 0));
+    }
+
+    /// <summary>
+    /// Verifies that installed frameworks are not probed unless a runtimeconfig declares them.
+    /// </summary>
+    [Fact]
+    public void ResolveAssemblyDoesNotProbeUndeclaredSharedFramework()
+    {
+        using var directory = TemporaryDirectory.Create();
+        var outputDirectory = Path.Combine(directory.Path, "output");
+        var sharedFrameworkRoot = Path.Combine(directory.Path, "shared");
+        var frameworkDirectory = Path.Combine(sharedFrameworkRoot, "Microsoft.AspNetCore.App", "10.0.8");
+        Directory.CreateDirectory(outputDirectory);
+        Directory.CreateDirectory(frameworkDirectory);
+        _ = CreateAssembly(frameworkDirectory, "SharedFrameworkDependency", new Version(10, 0, 8, 0));
+        File.WriteAllText(Path.Combine(outputDirectory, "Repro.Tests.runtimeconfig.json"), CreateRuntimeConfig("framework", "Microsoft.NETCore.App", "10.0.0"));
+        var targetPath = Path.Combine(outputDirectory, "Repro.Library.dll");
+        using var resolver = new CoverageAssemblyResolver(new ConsoleCollectorLogger(), targetPath, sharedFrameworkRoot);
+
+        var action = () => resolver.Resolve(new AssemblyNameReference("SharedFrameworkDependency", new Version(10, 0, 0, 0)));
+
+        action.Should().Throw<AssemblyResolutionException>();
     }
 
     /// <summary>
@@ -182,6 +278,84 @@ public class CoverageResolverTests
     }
 
     /// <summary>
+    /// Verifies that a Cecil write failure cannot damage the original assembly or symbols.
+    /// </summary>
+    [Fact]
+    public void WriteTargetAssemblyFailurePreservesOriginalFiles()
+    {
+        using var directory = TemporaryDirectory.Create();
+        var assemblyPath = CopyCoverageFixture(directory.Path);
+        var symbolsPath = Path.ChangeExtension(assemblyPath, ".pdb");
+        var originalAssembly = File.ReadAllBytes(assemblyPath);
+        var originalSymbols = File.ReadAllBytes(symbolsPath);
+        using var resolver = CreateResolver(directory.Path);
+        using var assembly = AssemblyProcessor.ReadTargetAssembly(assemblyPath, resolver);
+
+        AddOptionalParameterWithUnresolvableEnum(assembly.MainModule);
+
+        var action = () => AssemblyProcessor.WriteTargetAssembly(assembly, assemblyPath, strongNameKeyBlob: null);
+
+        action.Should().Throw<AssemblyResolutionException>();
+        File.ReadAllBytes(assemblyPath).Should().Equal(originalAssembly);
+        File.ReadAllBytes(symbolsPath).Should().Equal(originalSymbols);
+        using var unchangedAssembly = AssemblyDefinition.ReadAssembly(assemblyPath, new ReaderParameters { ReadSymbols = true });
+        unchangedAssembly.Name.Name.Should().Be("CoverageRewriterAssembly");
+        Directory.GetFiles(directory.Path).Select(Path.GetFileName).Should().BeEquivalentTo("CoverageRewriterAssembly.dll", "CoverageRewriterAssembly.pdb");
+    }
+
+    /// <summary>
+    /// Verifies that a successful staged write publishes readable matching assembly and symbol files.
+    /// </summary>
+    [Fact]
+    public void WriteTargetAssemblySuccessPublishesRewrittenFiles()
+    {
+        using var directory = TemporaryDirectory.Create();
+        var assemblyPath = CopyCoverageFixture(directory.Path);
+        using var resolver = CreateResolver(directory.Path);
+        using var assembly = AssemblyProcessor.ReadTargetAssembly(assemblyPath, resolver);
+        assembly.MainModule.Types.Add(new TypeDefinition("CoverageRewriterAssembly", "AddedByTest", Mono.Cecil.TypeAttributes.Public | Mono.Cecil.TypeAttributes.Class, assembly.MainModule.TypeSystem.Object));
+
+        AssemblyProcessor.WriteTargetAssembly(assembly, assemblyPath, strongNameKeyBlob: null);
+
+        using var rewrittenAssembly = AssemblyDefinition.ReadAssembly(assemblyPath, new ReaderParameters { ReadSymbols = true });
+        rewrittenAssembly.MainModule.GetType("CoverageRewriterAssembly.AddedByTest").Should().NotBeNull();
+        Directory.GetFiles(directory.Path).Select(Path.GetFileName).Should().BeEquivalentTo("CoverageRewriterAssembly.dll", "CoverageRewriterAssembly.pdb");
+    }
+
+    /// <summary>
+    /// Verifies that replacing the PDB is rolled back when publishing the DLL fails.
+    /// </summary>
+    [Fact]
+    public void WriteTargetAssemblyPublicationFailureRestoresOriginalFiles()
+    {
+        using var directory = TemporaryDirectory.Create();
+        var assemblyPath = CopyCoverageFixture(directory.Path);
+        var symbolsPath = Path.ChangeExtension(assemblyPath, ".pdb");
+        var originalAssembly = File.ReadAllBytes(assemblyPath);
+        var originalSymbols = File.ReadAllBytes(symbolsPath);
+        using var resolver = CreateResolver(directory.Path);
+        using var assembly = AssemblyProcessor.ReadTargetAssembly(assemblyPath, resolver);
+        assembly.MainModule.Types.Add(new TypeDefinition("CoverageRewriterAssembly", "AddedByTest", Mono.Cecil.TypeAttributes.Public | Mono.Cecil.TypeAttributes.Class, assembly.MainModule.TypeSystem.Object));
+        var replaceCallCount = 0;
+
+        var action = () => AssemblyProcessor.WriteTargetAssembly(assembly, assemblyPath, strongNameKeyBlob: null, (source, destination, backup) =>
+        {
+            replaceCallCount++;
+            if (replaceCallCount == 2)
+            {
+                throw new IOException("Injected DLL publication failure.");
+            }
+
+            File.Replace(source, destination, backup);
+        });
+
+        action.Should().Throw<IOException>();
+        File.ReadAllBytes(assemblyPath).Should().Equal(originalAssembly);
+        File.ReadAllBytes(symbolsPath).Should().Equal(originalSymbols);
+        Directory.GetFiles(directory.Path).Select(Path.GetFileName).Should().BeEquivalentTo("CoverageRewriterAssembly.dll", "CoverageRewriterAssembly.pdb");
+    }
+
+    /// <summary>
     /// Verifies that multiple dependency reads for the same path can proceed together.
     /// </summary>
     [Fact]
@@ -236,12 +410,38 @@ public class CoverageResolverTests
         return resolver;
     }
 
+    private static void AddOptionalParameterWithUnresolvableEnum(ModuleDefinition module)
+    {
+        var missingAssembly = new AssemblyNameReference("Missing.Enums", new Version(1, 0, 0, 0));
+        module.AssemblyReferences.Add(missingAssembly);
+        var missingEnum = new TypeReference("Missing.Enums", "MissingEnum", module, missingAssembly, true);
+        var method = new MethodDefinition("MethodWithMissingEnumDefault", Mono.Cecil.MethodAttributes.Public | Mono.Cecil.MethodAttributes.Static, module.TypeSystem.Void);
+        method.Parameters.Add(new ParameterDefinition("value", Mono.Cecil.ParameterAttributes.Optional | Mono.Cecil.ParameterAttributes.HasDefault, missingEnum) { Constant = 0 });
+        method.Body.Instructions.Add(Instruction.Create(OpCodes.Ret));
+        module.Types.First(type => type.Name != "<Module>").Methods.Add(method);
+    }
+
     private static string CopyCoverageFixture(string directory, string fileName = "CoverageRewriterAssembly.dll")
     {
         var targetPath = Path.Combine(directory, fileName);
         File.Copy("CoverageRewriterAssembly.dll", targetPath, overwrite: true);
         File.Copy("CoverageRewriterAssembly.pdb", Path.ChangeExtension(targetPath, ".pdb"), overwrite: true);
         return targetPath;
+    }
+
+    private static string CreateAssembly(string directory, string assemblyName, Version version)
+    {
+        var assemblyPath = Path.Combine(directory, assemblyName + ".dll");
+        using var assembly = AssemblyDefinition.CreateAssembly(new AssemblyNameDefinition(assemblyName, version), assemblyName, ModuleKind.Dll);
+        assembly.Write(assemblyPath);
+        return assemblyPath;
+    }
+
+    private static string CreateRuntimeConfig(string propertyName, string frameworkName, string version)
+    {
+        var framework = $"{{ \"name\": \"{frameworkName}\", \"version\": \"{version}\" }}";
+        var value = propertyName == "framework" ? framework : $"[{framework}]";
+        return $"{{ \"runtimeOptions\": {{ \"{propertyName}\": {value} }} }}";
     }
 
     private static Exception CaptureExceptionFromThread(ThreadStart action)

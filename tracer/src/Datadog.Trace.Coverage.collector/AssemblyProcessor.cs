@@ -744,7 +744,7 @@ namespace Datadog.Trace.Coverage.Collector
                     var tracerAssemblyLocation = CopyRequiredAssemblies(assemblyDefinition, tracerTarget);
                     assemblyResolver.SetTracerAssemblyLocation(tracerAssemblyLocation);
 
-                    WriteTargetAssembly(assemblyDefinition, _assemblyFilePath, _strongNameKeyBlob);
+                    WriteTargetAssembly(assemblyDefinition, _assemblyFilePath, _strongNameKeyBlob, _logger);
                 }
 
                 _logger.Debug($"Done: {_assemblyFilePath} [Modified:{isDirty}]");
@@ -783,13 +783,107 @@ namespace Datadog.Trace.Coverage.Collector
         /// <param name="assemblyFilePath">The assembly path to overwrite.</param>
         /// <param name="strongNameKeyBlob">The optional strong-name key used when rewriting signed assemblies.</param>
         internal static void WriteTargetAssembly(AssemblyDefinition assemblyDefinition, string assemblyFilePath, byte[]? strongNameKeyBlob)
+            => WriteTargetAssembly(assemblyDefinition, assemblyFilePath, strongNameKeyBlob, (source, destination, backup) => File.Replace(source, destination, backup), logger: null);
+
+        private static void WriteTargetAssembly(AssemblyDefinition assemblyDefinition, string assemblyFilePath, byte[]? strongNameKeyBlob, ICollectorLogger logger)
+            => WriteTargetAssembly(assemblyDefinition, assemblyFilePath, strongNameKeyBlob, (source, destination, backup) => File.Replace(source, destination, backup), logger);
+
+        internal static void WriteTargetAssembly(AssemblyDefinition assemblyDefinition, string assemblyFilePath, byte[]? strongNameKeyBlob, Action<string, string, string?> replaceFile)
+            => WriteTargetAssembly(assemblyDefinition, assemblyFilePath, strongNameKeyBlob, replaceFile, logger: null);
+
+        private static void WriteTargetAssembly(AssemblyDefinition assemblyDefinition, string assemblyFilePath, byte[]? strongNameKeyBlob, Action<string, string, string?> replaceFile, ICollectorLogger? logger)
         {
             using var assemblyLock = CoverageAssemblyPathLock.EnterWrite(assemblyFilePath);
-            assemblyDefinition.Write(assemblyFilePath, new WriterParameters
+            var assemblyDirectory = Path.GetDirectoryName(assemblyFilePath) ?? string.Empty;
+            var assemblyFileName = Path.GetFileNameWithoutExtension(assemblyFilePath);
+            var stagingBasePath = Path.Combine(assemblyDirectory, $".{assemblyFileName}.{Guid.NewGuid():N}");
+            var stagedAssemblyPath = stagingBasePath + ".tmp.dll";
+            var stagedSymbolsPath = Path.ChangeExtension(stagedAssemblyPath, ".pdb");
+            var assemblyBackupPath = stagingBasePath + ".backup.dll";
+            var symbolsBackupPath = stagingBasePath + ".backup.pdb";
+            var symbolsPath = Path.ChangeExtension(assemblyFilePath, ".pdb");
+            var published = false;
+
+            try
             {
-                WriteSymbols = true,
-                StrongNameKeyBlob = strongNameKeyBlob
-            });
+                assemblyDefinition.Write(stagedAssemblyPath, new WriterParameters
+                {
+                    WriteSymbols = true,
+                    StrongNameKeyBlob = strongNameKeyBlob
+                });
+
+                using (AssemblyDefinition.ReadAssembly(stagedAssemblyPath, new ReaderParameters { ReadSymbols = true, InMemory = true }))
+                {
+                }
+
+                ReplaceTargetFiles(stagedAssemblyPath, stagedSymbolsPath, assemblyFilePath, symbolsPath, assemblyBackupPath, symbolsBackupPath, replaceFile);
+                published = true;
+            }
+            finally
+            {
+                TryDeleteStagedFile(stagedAssemblyPath, logger);
+                TryDeleteStagedFile(stagedSymbolsPath, logger);
+                if (published)
+                {
+                    TryDeleteStagedFile(assemblyBackupPath, logger);
+                    TryDeleteStagedFile(symbolsBackupPath, logger);
+                }
+            }
+        }
+
+        private static void ReplaceTargetFiles(
+            string stagedAssemblyPath,
+            string stagedSymbolsPath,
+            string assemblyFilePath,
+            string symbolsPath,
+            string assemblyBackupPath,
+            string symbolsBackupPath,
+            Action<string, string, string?> replaceFile)
+        {
+            if (!File.Exists(stagedSymbolsPath))
+            {
+                throw new InvalidOperationException($"Rewritten symbols were not created at '{stagedSymbolsPath}'.");
+            }
+
+            var symbolsReplaced = false;
+            try
+            {
+                replaceFile(stagedSymbolsPath, symbolsPath, symbolsBackupPath);
+                symbolsReplaced = true;
+                replaceFile(stagedAssemblyPath, assemblyFilePath, assemblyBackupPath);
+            }
+            catch (Exception publicationException)
+            {
+                if (symbolsReplaced)
+                {
+                    try
+                    {
+                        replaceFile(symbolsBackupPath, symbolsPath, null);
+                    }
+                    catch (Exception rollbackException)
+                    {
+                        throw new AggregateException("Failed to publish the rewritten assembly and to restore its original symbols.", publicationException, rollbackException);
+                    }
+                }
+
+                throw;
+            }
+        }
+
+        private static void TryDeleteStagedFile(string filePath, ICollectorLogger? logger)
+        {
+            try
+            {
+                if (File.Exists(filePath))
+                {
+                    File.Delete(filePath);
+                }
+            }
+            catch (Exception ex)
+            {
+                // Staging cleanup must not hide a rewrite or publication failure.
+                logger?.Warning($"Failed to remove coverage rewrite transaction file '{filePath}': {ex}");
+            }
         }
 
         internal static bool IsIgnoredAssembly(string? assemblyFileName)
