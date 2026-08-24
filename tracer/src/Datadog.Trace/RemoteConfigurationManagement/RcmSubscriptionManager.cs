@@ -318,7 +318,7 @@ internal sealed class RcmSubscriptionManager : IRcmSubscriptionManager
             Log.Debug("Received Remote Configuration response {ResponseDescription}.", description);
         }
 
-        System.Console.Error.WriteLine($"[FFE-DBG] RcmSubscriptionManager::ProcessResponse. ClientConfigs=[{string.Join(",", response.ClientConfigs ?? System.Linq.Enumerable.Empty<string>())}], ProductKeys=[{string.Join(",", ProductKeys)}]");
+        System.Console.Error.WriteLine($"[FFE-DBG] RcmSubscriptionManager::ProcessResponse. ClientConfigs=[{string.Join(",", response.ClientConfigs ?? new System.Collections.Generic.List<string>())}], ProductKeys=[{string.Join(",", ProductKeys)}]");
         var signed = response.Targets?.Signed?.Targets;
 
         Dictionary<string, List<RemoteConfiguration>>? configByProducts = null;
