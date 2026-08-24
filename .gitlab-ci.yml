@@ -293,6 +293,10 @@ download-nuget-packages-to-sign:
       optional: true
       artifacts: false
   rules:
+    - if: $DOTNET_PACKAGE_VERSION
+      when: never
+    - if: $CI_COMMIT_TAG
+      when: never      # We don't need to build/publish when building a release tag
     - when: on_success # Artifacts come from the Azure pipeline, but as we already depend on build, we already have a delayed start
   script:
     - .gitlab/download-nuget-packages-to-sign.sh
@@ -305,6 +309,12 @@ sign-nuget-packages:
   stage: sign-nuget
   timeout: 15m
   tags: ["windows-v2:2022"]
+  rules:
+    - if: $DOTNET_PACKAGE_VERSION
+      when: never
+    - if: $CI_COMMIT_TAG
+      when: never      # We don't need to build/publish when building a release tag
+    - when: on_success
   needs:
     - job: build
       optional: true
