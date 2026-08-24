@@ -9,8 +9,10 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Datadog.Trace.ClrProfiler.IntegrationTests.Helpers;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.TestHelpers.AutoInstrumentation.Containers;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using VerifyXunit;
@@ -21,6 +23,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
     [Trait("RequiresDockerDependency", "true")]
     [Trait("DockerGroup", "2")]
+    [Collection(MongoDbCollection.Name)]
     [UsesVerify]
     public class MongoDbTests : TracingIntegrationTest
     {
@@ -28,11 +31,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         private static readonly Regex ObjectIdRegex = new(@"ObjectId\("".*?""\)");
         private static readonly Regex OIdRegex = new("""\{\s*"\$oid" : "[0-9a-f]+" \}""");
         private static readonly Regex Base64Regex = new("""base64"\s*:\s*"[a-zA-Z0-9+\\]+=*",""");
+        private readonly MongoDbFixture _mongoDbFixture;
 
-        public MongoDbTests(ITestOutputHelper output)
+        public MongoDbTests(ITestOutputHelper output, MongoDbFixture mongoDbFixture)
             : base("MongoDB", output)
         {
+            _mongoDbFixture = mongoDbFixture;
             SetServiceVersion("1.0.0");
+            ConfigureContainers(mongoDbFixture);
         }
 
         public static IEnumerable<object[]> GetEnabledConfig()
@@ -81,8 +87,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 // normalise between running directly against localhost and against mongo container
                 settings.AddSimpleScrubber("out.host: localhost", "out.host: mongo");
                 settings.AddSimpleScrubber("out.host: mongo_arm64", "out.host: mongo");
+                settings.AddSimpleScrubber($"out.host: {_mongoDbFixture.Host}", "out.host: mongo");
+                settings.AddSimpleScrubber($"out.port: {_mongoDbFixture.Port}", "out.port: 27017");
                 settings.AddSimpleScrubber("peer.service: localhost", "peer.service: mongo");
                 settings.AddSimpleScrubber("peer.service: mongo_arm64", "peer.service: mongo");
+                settings.AddSimpleScrubber($"peer.service: {_mongoDbFixture.Host}", "peer.service: mongo");
                 // In some package versions, aggregate queries have an ID, others don't
                 settings.AddSimpleScrubber("\"$group\" : { \"_id\" : null, \"n\"", "\"$group\" : { \"_id\" : 1, \"n\"");
                 // In 2.19, The explain query includes { "$expr" : true }, whereas in earlier versions it doesn't

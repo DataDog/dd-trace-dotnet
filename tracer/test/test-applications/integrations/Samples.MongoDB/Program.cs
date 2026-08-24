@@ -19,6 +19,11 @@ namespace Samples.MongoDB
             return Environment.GetEnvironmentVariable("MONGO_HOST") ?? "localhost";
         }
 
+        private static string Port()
+        {
+            return Environment.GetEnvironmentVariable("MONGO_PORT") ?? "27017";
+        }
+
         public static void Main(string[] args)
         {
             Console.WriteLine($"Profiler attached: {SampleHelpers.IsProfilerAttached()}");
@@ -56,7 +61,7 @@ namespace Samples.MongoDB
 
             using (var mainScope = _sampleHelpers.CreateScope("Main()"))
             {
-                var connectionString = $"mongodb://{Host()}:27017";
+                var connectionString = $"mongodb://{Host()}:{Port()}";
                 var client = new MongoClient(connectionString);
                 var database = client.GetDatabase("test-db");
                 var collection = database.GetCollection<BsonDocument>("employees");
