@@ -98,6 +98,16 @@ public class CodeOwnersSpecTests
     }
 
     [SkippableFact]
+    public void GitlabGlobstarBeforeTrailingSlashMatchesImmediateAndNestedChildren()
+    {
+        var codeOwners = Create("/archive/**/ @owner\n", CodeOwners.Platform.GitLab);
+
+        Match(codeOwners, "/archive").Should().BeEmpty();
+        Match(codeOwners, "/archive/file.txt").Should().Equal(["@owner"]);
+        Match(codeOwners, "/archive/deep/file.txt").Should().Equal(["@owner"]);
+    }
+
+    [SkippableFact]
     public void GithubRootedVersusUnrootedPatterns()
     {
         // Unrooted patterns match anywhere in the repository, rooted ones only at the repository root

@@ -498,13 +498,12 @@ internal abstract partial class CIEnvironmentValues
 
             // Search order: source file path (most specific), then workspace root.
             // Prefer a source-file-anchored search before falling back to the workspace root.
-            var platform = GetCodeOwnersPlatform(SourceRoot ?? WorkspacePath);
-            if (TryLoadCodeOwnersFromAncestor(sourceFilePath, platform, WorkspacePath))
+            if (TryLoadCodeOwnersFromAncestor(sourceFilePath, WorkspacePath))
             {
                 return;
             }
 
-            TryLoadCodeOwnersFromAncestor(WorkspacePath, platform, basePath: null);
+            TryLoadCodeOwnersFromAncestor(WorkspacePath, basePath: null);
         }
     }
 
@@ -513,10 +512,9 @@ internal abstract partial class CIEnvironmentValues
     /// stopping at the nearest Git boundary; repeated start locations are cached.
     /// </summary>
     /// <param name="startPath">The source file or directory path from which to start.</param>
-    /// <param name="platform">The platform semantics used to locate and parse CODEOWNERS.</param>
     /// <param name="basePath">The absolute base used to resolve a relative <paramref name="startPath"/>.</param>
     /// <returns><c>true</c> when a CODEOWNERS file is found and loaded; otherwise, <c>false</c>.</returns>
-    private bool TryLoadCodeOwnersFromAncestor(string? startPath, CodeOwners.Platform platform, string? basePath)
+    private bool TryLoadCodeOwnersFromAncestor(string? startPath, string? basePath)
     {
         var startDirectory = GetCodeOwnersSearchStart(startPath, basePath);
         if (StringUtil.IsNullOrEmpty(startDirectory))
@@ -550,6 +548,7 @@ internal abstract partial class CIEnvironmentValues
         // Walk parent directories until we find CODEOWNERS or hit a git boundary.
         while (directoryInfo != null)
         {
+            var platform = GetCodeOwnersPlatform(directoryInfo.FullName);
             if (TryGetCodeOwnersPath(directoryInfo.FullName, platform, logLookup: false, out var codeOwnersPath))
             {
                 Log.Information("CODEOWNERS file found using fallback search: {Path}", codeOwnersPath);

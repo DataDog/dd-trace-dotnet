@@ -234,13 +234,15 @@ namespace Datadog.Trace.Ci
 
                 for (var i = firstSegment; i < lastSegment; i++)
                 {
+                    // A trailing slash adds a separate descendant globstar, so the preceding ** is not terminal.
+                    var isTerminalSegment = i == lastSegment - 1 && !hasTrailingSlash;
                     if (rawSegments[i] == "**" &&
-                        !(platform == Platform.GitLab && i == lastSegment - 1))
+                        !(platform == Platform.GitLab && isTerminalSegment))
                     {
                         // On GitHub, a final /** must match at least one child segment.
                         // On GitLab, a final ** works like * inside the last segment.
                         // A middle ** can match zero or more segments on both platforms.
-                        AddGlobStar(segments, requiresSegment: i == lastSegment - 1);
+                        AddGlobStar(segments, requiresSegment: isTerminalSegment);
                     }
                     else if (SegmentPattern.TryCompile(rawSegments[i], platform, out var segment))
                     {

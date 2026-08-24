@@ -265,6 +265,34 @@ public class CodeOwnersFallbackTests
     }
 
     [SkippableFact]
+    public void DetectsGitLabPlatformAtAncestorRepositoryRoot()
+    {
+        using var tempDirectory = new TemporaryDirectory();
+        var repoRoot = tempDirectory.RootPath;
+        var sourceRoot = Path.Combine(repoRoot, "src");
+        var sourceFile = Path.Combine(sourceRoot, "SpanBenchmark.cs");
+        Directory.CreateDirectory(Path.Combine(repoRoot, ".git"));
+        Directory.CreateDirectory(Path.Combine(repoRoot, ".gitlab"));
+        Directory.CreateDirectory(sourceRoot);
+        File.WriteAllText(Path.Combine(repoRoot, ".gitlab", "CODEOWNERS"), "[Section] @gitlab-owner\n*.cs\n");
+        File.WriteAllText(sourceFile, "class SpanBenchmark {}");
+
+        var env = new Dictionary<string, string>
+        {
+            [PlatformKeys.Ci.Jenkins.Url] = "https://jenkins.example.com",
+            [PlatformKeys.Ci.Jenkins.GitUrl] = "https://source.example.com/DataDog/dd-trace-dotnet.git",
+            [PlatformKeys.Ci.Jenkins.GitCommit] = CommitSha,
+            [PlatformKeys.Ci.Jenkins.Workspace] = sourceRoot,
+        };
+
+        var ciValues = CIEnvironmentValues.Create(env);
+        var relative = ciValues.MakeRelativePathFromSourceRootWithFallback(sourceFile, false);
+
+        Assert.Equal("src/SpanBenchmark.cs", relative);
+        Assert.Equal(["@gitlab-owner"], ciValues.CodeOwners!.Match("/" + relative));
+    }
+
+    [SkippableFact]
     public void DoesNotMatchCodeOwnersForFileOutsideRoot()
     {
         using var repoDirectory = new TemporaryDirectory();
