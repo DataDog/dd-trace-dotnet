@@ -9,7 +9,6 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.IO;
-using System.Linq;
 using System.Security;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -18,13 +17,7 @@ using Datadog.Trace.Logging;
 namespace Datadog.Trace.Ci
 {
     /// <summary>
-    /// A CODEOWNERS parser that follows the GitHub and GitLab specifications: last matching rule wins,
-    /// rooted and unrooted (globstar-relative) paths, directory and wildcard patterns, globstars (**),
-    /// inline comments (GitHub), sections with default owners, optional sections, approval counts,
-    /// role owners (@@role) and exclusion patterns (GitLab). Matching is case-sensitive.
-    /// Usage:
-    ///   var owners = new CodeOwners(pathToFile, CodeOwners.Platform.GitLab).Match("src/app/Program.cs");
-    ///   // owners is an IEnumerable{string} of unique owners that apply to that file.
+    /// Parses and matches GitHub and GitLab CODEOWNERS files.
     /// </summary>
     internal sealed class CodeOwners
     {
@@ -168,7 +161,6 @@ namespace Datadog.Trace.Ci
                     currentDefaultOwners = newSection.DefaultOwners;
                     if (namedSections is not null && namedSections.TryGetValue(newSection.Name, out var existingSection))
                     {
-                        existingSection.MergeMetadata(newSection);
                         current = existingSection;
                     }
                     else
@@ -265,7 +257,7 @@ namespace Datadog.Trace.Ci
             // after a malformed suffix (for example an extra ']') must never leak into defaults.
             var defaults = OwnerTokenizer.Tokenize(m.Groups["defaults"].Value, platform, out var allDefaultsValid);
             hasDiagnostics |= !allDefaultsValid;
-            section = new Section(name, required, approvals, defaults);
+            section = new Section(name, defaults);
             return true;
         }
 
@@ -340,15 +332,6 @@ namespace Datadog.Trace.Ci
             return category is UnicodeCategory.NonSpacingMark or UnicodeCategory.ConnectorPunctuation;
         }
 
-        /// <summary>
-        /// Compiles a CODEOWNERS-style glob into a deterministic matcher.
-        /// Supports **, *, ?, rooted paths, and trailing slash semantics.
-        /// Both platforms support escaped literals; GitLab additionally supports shell-style character classes.
-        /// Matching is deterministic and bounded by the pattern and path lengths, without regex backtracking.
-        /// </summary>
-        private static GlobPattern? CompileGlob(string pattern, Platform platform, bool includeDescendants)
-            => GlobPattern.Compile(pattern, platform, includeDescendants);
-
 #pragma warning disable SA1201
         public enum Platform
 #pragma warning restore SA1201
@@ -362,69 +345,6 @@ namespace Datadog.Trace.Ci
             NotAClass,
             Success,
             Invalid
-        }
-
-        private enum SegmentTokenType
-        {
-            Literal,
-            AnyCharacter,
-            Star,
-            CharacterClass
-        }
-
-        private readonly struct SegmentToken
-        {
-            private readonly SegmentTokenType _type;
-            private readonly char _literal;
-            private readonly GlobCharacterClass? _characterClass;
-
-            private SegmentToken(SegmentTokenType type, char literal = default, GlobCharacterClass? characterClass = null)
-            {
-                _type = type;
-                _literal = literal;
-                _characterClass = characterClass;
-            }
-
-            public static SegmentToken Star { get; } = new(SegmentTokenType.Star);
-
-            public static SegmentToken AnyCharacter { get; } = new(SegmentTokenType.AnyCharacter);
-
-            public bool IsStar => _type == SegmentTokenType.Star;
-
-            public static SegmentToken Literal(char value) => new(SegmentTokenType.Literal, literal: value);
-
-            public static SegmentToken CharacterClass(GlobCharacterClass value) => new(SegmentTokenType.CharacterClass, characterClass: value);
-
-            public bool Matches(char value)
-                => _type == SegmentTokenType.AnyCharacter ||
-                   (_type == SegmentTokenType.Literal && value == _literal) ||
-                   (_type == SegmentTokenType.CharacterClass && _characterClass!.Matches(value));
-        }
-
-        private readonly struct CharacterClassAtom
-        {
-            public CharacterClassAtom(char value, bool escaped)
-            {
-                Value = value;
-                Escaped = escaped;
-            }
-
-            public char Value { get; }
-
-            public bool Escaped { get; }
-        }
-
-        private readonly struct CharacterRange
-        {
-            public CharacterRange(char start, char end)
-            {
-                Start = start;
-                End = end;
-            }
-
-            public char Start { get; }
-
-            public char End { get; }
         }
 
         private readonly struct GlobPathSegment
@@ -493,12 +413,48 @@ namespace Datadog.Trace.Ci
             }
 
             private static bool IsValidGitHubOwner(string token)
-                => IsValidGitHubNamespaceReference(token) || IsWholeEmailReference(token);
+            {
+                if (token.Length > 1 && token[0] == '@' && token[1] != '@')
+                {
+                    var slash = token.IndexOf('/');
+                    return slash < 0
+                               ? IsValidGitHubIdentifier(token, 1, token.Length)
+                               : token.IndexOf('/', slash + 1) < 0 &&
+                                 IsValidGitHubIdentifier(token, 1, slash) &&
+                                 IsValidGitHubIdentifier(token, slash + 1, token.Length);
+                }
+
+                var at = token.IndexOf('@');
+                if (at is < 1 or > 100 ||
+                    token.Length - at - 1 is < 1 or > 255 ||
+                    token.IndexOf('@', at + 1) >= 0)
+                {
+                    return false;
+                }
+
+                for (var i = 0; i < at; i++)
+                {
+                    if (!IsEmailLocalCharacter(token[i]))
+                    {
+                        return false;
+                    }
+                }
+
+                for (var i = at + 1; i < token.Length; i++)
+                {
+                    if (!IsAsciiLetterOrDigit(token[i]) && token[i] is not '.' and not '-' and not '_')
+                    {
+                        return false;
+                    }
+                }
+
+                return IsAsciiLetterOrDigit(token[token.Length - 1]) || token[token.Length - 1] == '_';
+            }
 
             private static bool ExtractGitLabOwners(string token, List<string> owners, HashSet<string> uniqueOwners)
             {
                 // Keep the overwhelmingly common canonical forms allocation-light.
-                if (IsValidNamespaceReference(token) || IsValidGitLabRole(token))
+                if (IsWholeNamespaceReference(token) || IsValidGitLabRole(token))
                 {
                     AddUnique(owners, uniqueOwners, token);
                     return true;
@@ -508,9 +464,9 @@ namespace Datadog.Trace.Ci
                 // the entire token verbatim (for example "(@team)" becomes "@team").
                 var foundReference = false;
                 var searchStart = 0;
-                string? reference;
-                while (TryExtractNamespaceReference(token, searchStart, out reference, out searchStart))
+                while (TryFindNamespaceReference(token, searchStart, out var referenceStart, out var referenceEnd, out searchStart))
                 {
+                    var reference = token.Substring(referenceStart, referenceEnd - referenceStart);
                     AddUnique(owners, uniqueOwners, reference);
                     foundReference = true;
                 }
@@ -543,7 +499,7 @@ namespace Datadog.Trace.Ci
             }
 
             private static bool ContainsNamespaceReference(string value)
-                => TryExtractNamespaceReference(value, 0, out _, out _);
+                => TryFindNamespaceReference(value, 0, out _, out _, out _);
 
             private static bool IsValidGitLabRole(string token)
             {
@@ -561,29 +517,8 @@ namespace Datadog.Trace.Ci
                        role.Equals("owners", StringComparison.OrdinalIgnoreCase);
             }
 
-            private static bool IsValidNamespaceReference(string token)
-                => token.Length > 1 &&
-                   token[0] == '@' &&
-                   token[1] != '@' &&
-                   IsValidNamespace(token, 1, token.Length);
-
-            private static bool IsValidGitHubNamespaceReference(string token)
-            {
-                if (token.Length <= 1 || token[0] != '@' || token[1] == '@')
-                {
-                    return false;
-                }
-
-                var slash = token.IndexOf('/');
-                if (slash < 0)
-                {
-                    return IsValidGitHubIdentifier(token, 1, token.Length);
-                }
-
-                return token.IndexOf('/', slash + 1) < 0 &&
-                       IsValidGitHubIdentifier(token, 1, slash) &&
-                       IsValidGitHubIdentifier(token, slash + 1, token.Length);
-            }
+            private static bool IsWholeNamespaceReference(string token)
+                => TryFindNamespaceReference(token, 0, out var start, out var end, out _) && start == 0 && end == token.Length;
 
             private static bool IsValidGitHubIdentifier(string value, int start, int end)
             {
@@ -612,34 +547,11 @@ namespace Datadog.Trace.Ci
                 return true;
             }
 
-            private static bool IsValidNamespace(string value, int start, int end)
-            {
-                var segmentStart = start;
-                for (var i = start; i < end; i++)
-                {
-                    var character = value[i];
-                    if (character == '/')
-                    {
-                        if (i == segmentStart || !IsNamespaceEnd(value[i - 1]))
-                        {
-                            return false;
-                        }
-
-                        segmentStart = i + 1;
-                    }
-                    else if ((i == segmentStart && !IsNamespaceStart(character)) || !IsNamespaceCharacter(character))
-                    {
-                        return false;
-                    }
-                }
-
-                return segmentStart < end && IsNamespaceEnd(value[end - 1]);
-            }
-
-            private static bool TryExtractNamespaceReference(
+            private static bool TryFindNamespaceReference(
                 string token,
                 int searchStart,
-                [NotNullWhen(true)] out string? reference,
+                out int referenceStart,
+                out int referenceEnd,
                 out int nextSearchStart)
             {
                 for (var atIndex = token.IndexOf('@', searchStart); atIndex >= 0; atIndex = token.IndexOf('@', atIndex + 1))
@@ -682,20 +594,18 @@ namespace Datadog.Trace.Ci
 
                     if (lastValidEnd > atIndex + 1)
                     {
-                        reference = token.Substring(atIndex, lastValidEnd - atIndex);
+                        referenceStart = atIndex;
+                        referenceEnd = lastValidEnd;
                         nextSearchStart = lastValidEnd;
                         return true;
                     }
                 }
 
-                reference = null;
+                referenceStart = -1;
+                referenceEnd = -1;
                 nextSearchStart = token.Length;
                 return false;
             }
-
-            private static bool IsWholeEmailReference(string token)
-                => TryExtractEmailReference(token, out var reference) &&
-                   reference.Length == token.Length;
 
             private static bool TryExtractGitLabEmailReference(
                 string token,
@@ -753,53 +663,6 @@ namespace Datadog.Trace.Ci
                 return false;
             }
 
-            private static bool TryExtractEmailReference(string token, [NotNullWhen(true)] out string? reference)
-            {
-                for (var atIndex = token.IndexOf('@'); atIndex >= 0; atIndex = token.IndexOf('@', atIndex + 1))
-                {
-                    if (atIndex == 0)
-                    {
-                        continue;
-                    }
-
-                    var localStart = atIndex - 1;
-                    while (localStart >= 0 && IsEmailLocalCharacter(token[localStart]))
-                    {
-                        localStart--;
-                    }
-
-                    localStart++;
-                    var localLength = atIndex - localStart;
-                    if (localLength is < 1 or > 100)
-                    {
-                        continue;
-                    }
-
-                    var domainEnd = atIndex + 1;
-                    var lastValidDomainEnd = -1;
-                    while (domainEnd < token.Length && IsEmailDomainCharacter(token[domainEnd]))
-                    {
-                        if (IsWordCharacter(token[domainEnd]))
-                        {
-                            lastValidDomainEnd = domainEnd + 1;
-                        }
-
-                        domainEnd++;
-                    }
-
-                    if (lastValidDomainEnd <= atIndex + 1 || lastValidDomainEnd - atIndex - 1 > 255)
-                    {
-                        continue;
-                    }
-
-                    reference = token.Substring(localStart, lastValidDomainEnd - localStart);
-                    return true;
-                }
-
-                reference = null;
-                return false;
-            }
-
             private static bool IsNamespaceStart(char character)
                 => IsAsciiLetterOrDigit(character) || character is '_' or '.';
 
@@ -811,9 +674,6 @@ namespace Datadog.Trace.Ci
 
             private static bool IsEmailLocalCharacter(char character)
                 => IsAsciiLetterOrDigit(character) || ".!#$%&'*+/=?^_`{|}~-".IndexOf(character) >= 0;
-
-            private static bool IsEmailDomainCharacter(char character)
-                => IsAsciiLetterOrDigit(character) || character is '.' or '-' or '_';
 
             private static bool IsWordCharacter(char character)
                 => char.IsLetterOrDigit(character) || character == '_';
@@ -1029,53 +889,39 @@ namespace Datadog.Trace.Ci
             private const int MaximumPatternLength = 1_024;
             private const int MaximumMatchSteps = 65_536;
 
-            private readonly SegmentToken[] _tokens;
+            private readonly string _pattern;
+            private readonly Platform _platform;
 
-            private SegmentPattern(SegmentToken[] tokens)
+            private SegmentPattern(string pattern, Platform platform)
             {
-                _tokens = tokens;
+                _pattern = pattern;
+                _platform = platform;
             }
 
             public static bool TryCompile(string pattern, Platform platform, [NotNullWhen(true)] out SegmentPattern? segment)
             {
-                // Repository path components are short, so larger segment patterns cannot provide
-                // useful ownership matches and can make wildcard retries disproportionately costly.
                 if (pattern.Length > MaximumPatternLength)
                 {
                     segment = null;
                     return false;
                 }
 
-                var tokens = new List<SegmentToken>(pattern.Length);
                 for (var i = 0; i < pattern.Length; i++)
                 {
                     var character = pattern[i];
                     if (character == '\\')
                     {
-                        // Both gitignore-style GitHub patterns and GitLab File.fnmatch patterns use
-                        // a backslash to escape the following character. A trailing backslash is invalid.
                         if (i + 1 >= pattern.Length)
                         {
                             segment = null;
                             return false;
                         }
 
-                        tokens.Add(SegmentToken.Literal(pattern[++i]));
-                    }
-                    else if (character == '*')
-                    {
-                        if (tokens.Count == 0 || !tokens[tokens.Count - 1].IsStar)
-                        {
-                            tokens.Add(SegmentToken.Star);
-                        }
-                    }
-                    else if (character == '?')
-                    {
-                        tokens.Add(SegmentToken.AnyCharacter);
+                        i++;
                     }
                     else if (platform == Platform.GitLab && character == '[')
                     {
-                        var result = TryParseCharacterClass(pattern, i, out var closingBracket, out var characterClass);
+                        var result = TryParseCharacterClass(pattern, i, default, evaluate: false, out var closingBracket, out _);
                         if (result == CharacterClassParseResult.Invalid)
                         {
                             segment = null;
@@ -1084,79 +930,25 @@ namespace Datadog.Trace.Ci
 
                         if (result == CharacterClassParseResult.Success)
                         {
-                            tokens.Add(SegmentToken.CharacterClass(characterClass!));
                             i = closingBracket;
                         }
-                        else
-                        {
-                            tokens.Add(SegmentToken.Literal(character));
-                        }
-                    }
-                    else
-                    {
-                        tokens.Add(SegmentToken.Literal(character));
                     }
                 }
 
-                segment = new SegmentPattern(tokens.ToArray());
+                segment = new SegmentPattern(pattern, platform);
                 return true;
-            }
-
-            public bool IsMatch(string path, int start, int end)
-            {
-                var tokenIndex = 0;
-                var pathIndex = start;
-                var starTokenIndex = -1;
-                var starPathIndex = -1;
-                var remainingSteps = MaximumMatchSteps;
-
-                while (pathIndex < end)
-                {
-                    if (remainingSteps-- == 0)
-                    {
-                        // Bound adversarial star/suffix retries in the instrumented process.
-                        return false;
-                    }
-
-                    if (tokenIndex < _tokens.Length && _tokens[tokenIndex].IsStar)
-                    {
-                        starTokenIndex = tokenIndex++;
-                        starPathIndex = pathIndex;
-                        continue;
-                    }
-
-                    if (tokenIndex < _tokens.Length && _tokens[tokenIndex].Matches(path[pathIndex]))
-                    {
-                        tokenIndex++;
-                        pathIndex++;
-                        continue;
-                    }
-
-                    if (starTokenIndex < 0)
-                    {
-                        return false;
-                    }
-
-                    tokenIndex = starTokenIndex + 1;
-                    pathIndex = ++starPathIndex;
-                }
-
-                while (tokenIndex < _tokens.Length && _tokens[tokenIndex].IsStar)
-                {
-                    tokenIndex++;
-                }
-
-                return tokenIndex == _tokens.Length;
             }
 
             private static CharacterClassParseResult TryParseCharacterClass(
                 string pattern,
                 int openingBracket,
+                char value,
+                bool evaluate,
                 out int closingBracket,
-                [NotNullWhen(true)] out GlobCharacterClass? characterClass)
+                out bool matches)
             {
                 closingBracket = -1;
-                characterClass = null;
+                matches = false;
                 var contentStart = openingBracket + 1;
                 var negated = contentStart < pattern.Length && pattern[contentStart] is '!' or '^';
                 var atomStart = negated ? contentStart + 1 : contentStart;
@@ -1183,70 +975,139 @@ namespace Datadog.Trace.Ci
                     return CharacterClassParseResult.NotAClass;
                 }
 
-                var atoms = new List<CharacterClassAtom>();
-                for (var i = atomStart; i < closingBracket; i++)
-                {
-                    if (pattern[i] == '\\' && i + 1 < closingBracket)
-                    {
-                        atoms.Add(new CharacterClassAtom(pattern[++i], escaped: true));
-                    }
-                    else
-                    {
-                        atoms.Add(new CharacterClassAtom(pattern[i], escaped: false));
-                    }
-                }
-
-                if (atoms.Count == 0)
+                if (atomStart == closingBracket)
                 {
                     return CharacterClassParseResult.Invalid;
                 }
 
-                var ranges = new List<CharacterRange>(atoms.Count);
-                for (var i = 0; i < atoms.Count; i++)
+                var atomIndex = atomStart;
+                while (atomIndex < closingBracket)
                 {
-                    if (i + 2 < atoms.Count && atoms[i + 1].Value == '-' && !atoms[i + 1].Escaped)
+                    var rangeStart = ReadCharacterClassAtom(pattern, ref atomIndex, closingBracket, out _);
+                    var lookahead = atomIndex;
+                    var separatorEscaped = false;
+                    var separator = lookahead < closingBracket
+                                        ? ReadCharacterClassAtom(pattern, ref lookahead, closingBracket, out separatorEscaped)
+                                        : default;
+                    if (separator == '-' && !separatorEscaped && lookahead < closingBracket)
                     {
-                        if (atoms[i].Value > atoms[i + 2].Value)
+                        var rangeEnd = ReadCharacterClassAtom(pattern, ref lookahead, closingBracket, out _);
+                        if (rangeStart > rangeEnd)
                         {
                             return CharacterClassParseResult.Invalid;
                         }
 
-                        ranges.Add(new CharacterRange(atoms[i].Value, atoms[i + 2].Value));
-                        i += 2;
+                        if (evaluate && value >= rangeStart && value <= rangeEnd)
+                        {
+                            matches = true;
+                        }
+
+                        atomIndex = lookahead;
                     }
-                    else
+                    else if (evaluate && value == rangeStart)
                     {
-                        ranges.Add(new CharacterRange(atoms[i].Value, atoms[i].Value));
+                        matches = true;
                     }
                 }
 
-                characterClass = new GlobCharacterClass(negated, ranges.ToArray());
+                matches = negated ? !matches : matches;
                 return CharacterClassParseResult.Success;
             }
-        }
 
-        private sealed class GlobCharacterClass
-        {
-            private readonly bool _negated;
-            private readonly CharacterRange[] _ranges;
-
-            public GlobCharacterClass(bool negated, CharacterRange[] ranges)
+            private static char ReadCharacterClassAtom(
+                string pattern,
+                ref int index,
+                int closingBracket,
+                out bool escaped)
             {
-                _negated = negated;
-                _ranges = ranges;
+                escaped = pattern[index] == '\\' && index + 1 < closingBracket;
+                if (escaped)
+                {
+                    index++;
+                }
+
+                return pattern[index++];
             }
 
-            public bool Matches(char value)
+            public bool IsMatch(string path, int start, int end)
             {
-                foreach (var range in _ranges)
+                var patternIndex = 0;
+                var pathIndex = start;
+                var starPatternIndex = -1;
+                var starPathIndex = -1;
+                var remainingSteps = MaximumMatchSteps;
+
+                while (pathIndex < end)
                 {
-                    if (value >= range.Start && value <= range.End)
+                    if (remainingSteps-- == 0)
                     {
-                        return !_negated;
+                        return false;
+                    }
+
+                    if (patternIndex < _pattern.Length && _pattern[patternIndex] == '*')
+                    {
+                        do
+                        {
+                            patternIndex++;
+                        }
+                        while (patternIndex < _pattern.Length && _pattern[patternIndex] == '*');
+
+                        starPatternIndex = patternIndex;
+                        starPathIndex = pathIndex;
+                        continue;
+                    }
+
+                    if (TryMatchToken(patternIndex, path[pathIndex], out var nextPatternIndex))
+                    {
+                        patternIndex = nextPatternIndex;
+                        pathIndex++;
+                        continue;
+                    }
+
+                    if (starPatternIndex < 0)
+                    {
+                        return false;
+                    }
+
+                    patternIndex = starPatternIndex;
+                    pathIndex = ++starPathIndex;
+                }
+
+                while (patternIndex < _pattern.Length && _pattern[patternIndex] == '*')
+                {
+                    patternIndex++;
+                }
+
+                return patternIndex == _pattern.Length;
+            }
+
+            private bool TryMatchToken(int patternIndex, char value, out int nextPatternIndex)
+            {
+                if (patternIndex >= _pattern.Length)
+                {
+                    nextPatternIndex = patternIndex;
+                    return false;
+                }
+
+                var token = _pattern[patternIndex];
+                if (token == '\\')
+                {
+                    nextPatternIndex = patternIndex + 2;
+                    return _pattern[patternIndex + 1] == value;
+                }
+
+                if (_platform == Platform.GitLab && token == '[')
+                {
+                    var result = TryParseCharacterClass(_pattern, patternIndex, value, evaluate: true, out var closingBracket, out var matches);
+                    if (result == CharacterClassParseResult.Success)
+                    {
+                        nextPatternIndex = closingBracket + 1;
+                        return matches;
                     }
                 }
 
-                return _negated;
+                nextPatternIndex = patternIndex + 1;
+                return token == '?' || token == value;
             }
         }
 
@@ -1256,23 +1117,17 @@ namespace Datadog.Trace.Ci
             private Entry[]? _cache;
             private bool _replaceDuplicatePatterns;
 
-            public Section(string name, bool required, int approvalCount, string[] defaultOwners)
+            public Section(string name, string[] defaultOwners)
             {
                 Name = name;
-                Required = required;
-                ApprovalCount = approvalCount;
                 DefaultOwners = defaultOwners.Length == 0 ? [] : defaultOwners;
             }
 
             public string Name { get; }
 
-            public bool Required { get; private set; }
-
-            public int ApprovalCount { get; private set; }
-
             public string[] DefaultOwners { get; }
 
-            public static Section CreateUnnamed() => new(string.Empty, required: true, approvalCount: 0, defaultOwners: []);
+            public static Section CreateUnnamed() => new(string.Empty, []);
 
             public void Add(Entry entry, bool replaceDuplicatePattern)
             {
@@ -1280,46 +1135,23 @@ namespace Datadog.Trace.Ci
                 _entries.Add(entry);
             }
 
-            public void MergeMetadata(Section other)
-            {
-                // Duplicate GitLab sections are combined case-insensitively. The most restrictive
-                // requirement wins; matching defaults remain attached to entries from each header.
-                Required |= other.Required;
-                ApprovalCount = Math.Max(ApprovalCount, other.ApprovalCount);
-            }
-
             public void Seal()
             {
-                if (_replaceDuplicatePatterns)
+                var seenPatterns = _replaceDuplicatePatterns ? new HashSet<string>(StringComparer.Ordinal) : null;
+                var cache = new List<Entry>(_entries.Count);
+                for (var i = _entries.Count - 1; i >= 0; i--)
                 {
-                    // GitLab replaces duplicate normalized patterns and moves the replacement to
-                    // the end. Build the reverse-order cache in one pass instead of repeatedly
-                    // removing from the middle of the list.
-                    var seenPatterns = new HashSet<string>(StringComparer.Ordinal);
-                    var cache = new List<Entry>(_entries.Count);
-                    for (var i = _entries.Count - 1; i >= 0; i--)
+                    var entry = _entries[i];
+                    if (seenPatterns is null || seenPatterns.Add(entry.PatternKey))
                     {
-                        var entry = _entries[i];
-                        if (seenPatterns.Add(entry.PatternKey))
-                        {
-                            cache.Add(entry);
-                        }
+                        cache.Add(entry);
                     }
-
-                    _cache = cache.ToArray();
-                }
-                else
-                {
-                    _cache = _entries.AsEnumerable().Reverse().ToArray();
                 }
 
+                _cache = cache.ToArray();
                 _entries.Clear();
             }
 
-            /// <summary>
-            /// GitHub evaluation: exclusion rules are unsupported and ignored, section default owners don't
-            /// exist, and the caller stops at the first (i.e. last in file order) matching rule.
-            /// </summary>
             public bool TryMatchGitHub(string path, [NotNullWhen(true)] out string[]? owners)
             {
                 var rules = _cache ?? [];
@@ -1339,23 +1171,13 @@ namespace Datadog.Trace.Ci
                 return false;
             }
 
-            /// <summary>
-            /// GitLab evaluation: rules are evaluated in file order within the section; the last matching
-            /// entry wins, an exclusion exempts the path for the whole section (later rules cannot
-            /// re-include it), and entries without owners inherit the section default owners.
-            /// </summary>
             public bool TryMatchGitLab(string path, [NotNullWhen(true)] out string[]? owners)
             {
                 var rules = _cache ?? [];
                 string[]? matchedOwners = null;
-                var excluded = false;
 
-                // The cache holds entries in reverse file order, so iterating from the end evaluates
-                // rules in file order: each match overwrites the previous one, leaving the last
-                // matching rule's owners.
-                for (var i = rules.Length - 1; i >= 0; i--)
+                foreach (var rule in rules)
                 {
-                    var rule = rules[i];
                     if (!rule.Match(path))
                     {
                         continue;
@@ -1363,15 +1185,14 @@ namespace Datadog.Trace.Ci
 
                     if (rule.IsExclusion)
                     {
-                        // Exclusions are terminal for the section: later rules cannot re-include the path.
-                        excluded = true;
-                        break;
+                        owners = null;
+                        return false;
                     }
 
-                    matchedOwners = rule.Owners;
+                    matchedOwners ??= rule.Owners;
                 }
 
-                if (excluded || matchedOwners is null || matchedOwners.Length == 0)
+                if (matchedOwners is null || matchedOwners.Length == 0)
                 {
                     owners = null;
                     return false;
@@ -1405,12 +1226,9 @@ namespace Datadog.Trace.Ci
                 hasDiagnostics = false;
                 if (platform == Platform.GitHub && raw.StartsWith("\\#"))
                 {
-                    // GitHub does not support escaping a leading #; the line is invalid, not a
-                    // literal pattern beginning with #.
                     return null;
                 }
 
-                // Strip inline comments for GitHub. GitLab treats everything after # as data (inline comments unsupported).
                 var idxHash = platform == Platform.GitHub ? FindUnescapedCharacter(raw, '#') : -1;
                 var effective = idxHash >= 0 && platform == Platform.GitHub ? raw.Substring(0, idxHash).TrimEnd() : raw;
                 if (string.IsNullOrWhiteSpace(effective))
@@ -1418,14 +1236,11 @@ namespace Datadog.Trace.Ci
                     return null;
                 }
 
-                // 2. Tokenise on unescaped whitespace. Both platforms support escaped literals
-                // in patterns; owner tokens themselves are not unescaped.
                 string patternToken;
                 string ownersSegment;
                 bool hasExplicitOwners;
                 SplitEscapedEntry(effective, out patternToken, out ownersSegment, out hasExplicitOwners);
 
-                // 3. Pattern & exclusion
                 var isExclusion = platform == Platform.GitLab && patternToken.StartsWith("!");
                 if (isExclusion)
                 {
@@ -1434,8 +1249,6 @@ namespace Datadog.Trace.Ci
 
                 if (platform == Platform.GitHub && IsUnsupportedGitHubPattern(patternToken))
                 {
-                    // GitHub skips invalid CODEOWNERS lines instead of interpreting unsupported
-                    // gitignore constructs as literal file names.
                     return null;
                 }
 
@@ -1444,7 +1257,6 @@ namespace Datadog.Trace.Ci
                     return null;
                 }
 
-                // 4. Owners. GitLab exclusions deliberately ignore any trailing owner text.
                 string[] owners;
                 var allOwnersValid = true;
                 if (isExclusion)
@@ -1459,7 +1271,6 @@ namespace Datadog.Trace.Ci
                 hasDiagnostics = !allOwnersValid;
                 if (platform == Platform.GitHub && hasDiagnostics)
                 {
-                    // GitHub skips a whole rule containing a malformed owner token.
                     return null;
                 }
 
@@ -1470,8 +1281,6 @@ namespace Datadog.Trace.Ci
 
                 if (platform == Platform.GitLab && !isExclusion && owners.Length == 0)
                 {
-                    // GitLab keeps an ownerless rule because it can intentionally auto-approve a
-                    // path, but reports the missing owner as a parsing diagnostic.
                     hasDiagnostics = true;
                 }
 
@@ -1479,8 +1288,7 @@ namespace Datadog.Trace.Ci
                 // `**/logs`); GitLab requires an explicit trailing slash for directory ownership.
                 var isDirectoryPattern = platform == Platform.GitHub && IsDirectoryPattern(patternToken);
 
-                // 5. Compile the glob
-                var glob = CompileGlob(patternToken, platform, includeDescendants: isDirectoryPattern);
+                var glob = GlobPattern.Compile(patternToken, platform, includeDescendants: isDirectoryPattern);
                 if (glob is null)
                 {
                     return null;
