@@ -14,6 +14,7 @@ target_dir=artifacts
 mkdir -p $target_dir
 
 if [ -n "$CI_COMMIT_TAG" ] && [ -n "$CI_COMMIT_SHA" ]; then
+  # Release pipeline
   echo "Downloading artifacts from Azure"
   curl --location --fail \
     --output $target_dir/serverless-artifacts.zip \
@@ -27,11 +28,10 @@ if [ -n "$CI_COMMIT_TAG" ] && [ -n "$CI_COMMIT_SHA" ]; then
   exit 0
 fi
 
+# Standard build pipeline
 artifactName="serverless-artifacts"
 
-buildId=""
-resolve_azure_build_id
-download_azure_artifact "$buildId" "$artifactName" "$target_dir"
+download_azure_artifacts_from_one_build "$target_dir" "$artifactName"
 flatten_azure_artifact "$target_dir" "$artifactName"
 
 ls -l $target_dir

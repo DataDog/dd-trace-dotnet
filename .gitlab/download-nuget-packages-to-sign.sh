@@ -21,15 +21,7 @@ target_dir=packages-to-sign
 mkdir -p $target_dir
 
 artifactNames=("runner-dotnet-tool" "bundle-nuget-package" "azurefunctions-nuget-package")
-
-buildId=""
-resolve_azure_build_id
-
-# Download each artifact in turn. They're all produced by the same Azure DevOps build's
-# `dotnet_tool` stage, but stages finish at different times, so each gets its own poll loop.
-for artifactName in "${artifactNames[@]}"; do
-  download_azure_artifact "$buildId" "$artifactName" "$target_dir"
-done
+download_azure_artifacts_from_one_build "$target_dir" "${artifactNames[@]}"
 
 # Flatten every .nupkg found (regardless of which artifact/subfolder it came from) directly into
 # $target_dir, so the sign-nuget-packages job can copy it straight into ArtifactsDirectory/"packages-to-sign".

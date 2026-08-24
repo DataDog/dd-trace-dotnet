@@ -10,6 +10,7 @@ target_dir=artifacts
 mkdir -p $target_dir
 
 if [ -n "$CI_COMMIT_TAG" ] || [ -n "$DOTNET_PACKAGE_VERSION" ]; then
+  # Release pipeline
   echo "Downloading artifacts from Github"
   VERSION=${DOTNET_PACKAGE_VERSION:-${CI_COMMIT_TAG##v}} # Use DOTNET_PACKAGE_VERSION if it exists, otherwise use CI_COMMIT_TAG without the v
 
@@ -46,11 +47,10 @@ if [ -n "$CI_COMMIT_TAG" ] || [ -n "$DOTNET_PACKAGE_VERSION" ]; then
   exit 0
 fi
 
+# Standard build pipeline
 artifactName="ssi-artifacts"
 
-buildId=""
-resolve_azure_build_id
-download_azure_artifact "$buildId" "$artifactName" "$target_dir"
+download_azure_artifacts_from_one_build "$target_dir" "$artifactName"
 flatten_azure_artifact "$target_dir" "$artifactName"
 
 ls -l $target_dir
