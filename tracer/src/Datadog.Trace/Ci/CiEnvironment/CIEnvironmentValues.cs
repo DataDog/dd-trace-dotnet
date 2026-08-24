@@ -749,6 +749,16 @@ internal abstract class CIEnvironmentValues
             codeOwnersRoot = resolvedRoot;
         }
 
+        // Azure Pipelines may build on Windows and run the resulting assemblies in a Linux
+        // container. In that case PDB paths use the Windows build-agent checkout prefix, which
+        // cannot be resolved directly by the current OS. Re-anchor only recognized Azure checkout
+        // layouts, and only when the complete repository-relative suffix exists under this root.
+        if (TryAnchorAzurePipelinesCompilerPath(sourceFilePath, codeOwnersRoot, useOSSeparator, out codeOwnersRelativePath))
+        {
+            parser = codeOwnersState.Parser;
+            return true;
+        }
+
         // Only match when the source file can be resolved under the CODEOWNERS root.
         string absolutePath;
         if (Path.IsPathRooted(sourceFilePath) || Uri.TryCreate(sourceFilePath, UriKind.Absolute, out _))
@@ -796,6 +806,56 @@ internal abstract class CIEnvironmentValues
         codeOwnersRelativePath = relativePath;
         parser = codeOwnersState.Parser;
         return true;
+    }
+
+    private bool TryAnchorAzurePipelinesCompilerPath(
+        string sourceFilePath,
+        string codeOwnersRoot,
+        bool useOSSeparator,
+        [NotNullWhen(true)] out string? codeOwnersRelativePath)
+    {
+        codeOwnersRelativePath = null;
+        if (!string.Equals(Provider, "azurepipelines", StringComparison.Ordinal) ||
+            StringUtil.IsNullOrWhiteSpace(sourceFilePath) ||
+            sourceFilePath.StartsWith("file:", StringComparison.OrdinalIgnoreCase) ||
+            (Uri.TryCreate(sourceFilePath, UriKind.Absolute, out var uri) && !uri.IsFile))
+        {
+            return false;
+        }
+
+        var segments = sourceFilePath.Replace('\\', '/').Split(ForwardSlashCharacters, StringSplitOptions.RemoveEmptyEntries);
+        for (var i = 2; i < segments.Length - 2; i++)
+        {
+            if (!segments[i].Equals("s", StringComparison.OrdinalIgnoreCase) ||
+                !int.TryParse(segments[i - 1], NumberStyles.None, CultureInfo.InvariantCulture, out _) ||
+                !(segments[i - 2].Equals("a", StringComparison.OrdinalIgnoreCase) ||
+                  segments[i - 2].Equals("work", StringComparison.OrdinalIgnoreCase) ||
+                  segments[i - 2].Equals("_work", StringComparison.OrdinalIgnoreCase)))
+            {
+                continue;
+            }
+
+            var suffixStart = i + 1;
+            for (var j = suffixStart; j < segments.Length; j++)
+            {
+                if (segments[j] is "." or "..")
+                {
+                    return false;
+                }
+            }
+
+            var candidateSuffix = string.Join(Path.DirectorySeparatorChar.ToString(), segments, suffixStart, segments.Length - suffixStart);
+            if (!TryResolvePathWithinBase(candidateSuffix, codeOwnersRoot, out var candidatePath) || !File.Exists(candidatePath))
+            {
+                return false;
+            }
+
+            var separator = useOSSeparator ? Path.DirectorySeparatorChar.ToString() : "/";
+            codeOwnersRelativePath = string.Join(separator, segments, suffixStart, segments.Length - suffixStart);
+            return true;
+        }
+
+        return false;
     }
 
     private bool TryAnchorPathToCodeOwnersRoot(string sourceFilePath, string codeOwnersRoot, bool useOSSeparator, [NotNullWhen(true)] out string? codeOwnersRelativePath)

@@ -746,6 +746,82 @@ public class CodeOwnersFallbackTests
         Assert.Equal(new[] { "@DataDog/tracing-dotnet" }, owners);
     }
 
+    [SkippableTheory]
+    [InlineData(@"D:\a\_work\1\s\tracer\test\Datadog.Trace.DuckTyping.Tests\ExceptionsTests.cs")]
+    [InlineData(@"D:\a\1\s\tracer\test\Datadog.Trace.DuckTyping.Tests\ExceptionsTests.cs")]
+    [InlineData("/home/vsts/work/1/s/tracer/test/Datadog.Trace.DuckTyping.Tests/ExceptionsTests.cs")]
+    public void AnchorsAzurePipelinesCompilerPathsFromAnotherOperatingSystem(string compilerPath)
+    {
+        using var tempDirectory = new TemporaryDirectory();
+        var repoRoot = tempDirectory.RootPath;
+        var sourceDir = Path.Combine(repoRoot, "tracer", "test", "Datadog.Trace.DuckTyping.Tests");
+        Directory.CreateDirectory(sourceDir);
+        Directory.CreateDirectory(Path.Combine(repoRoot, ".github"));
+        File.WriteAllText(Path.Combine(repoRoot, ".github", "CODEOWNERS"), "/tracer/test/ @DataDog/tracing-dotnet\n");
+        File.WriteAllText(Path.Combine(sourceDir, "ExceptionsTests.cs"), "// test");
+
+        var env = new Dictionary<string, string>
+        {
+            [PlatformKeys.Ci.Azure.TFBuild] = "True",
+            [PlatformKeys.Ci.Azure.BuildSourcesDirectory] = repoRoot,
+            [PlatformKeys.Ci.Azure.BuildSourceVersion] = CommitSha,
+            [PlatformKeys.Ci.Azure.BuildRepositoryUri] = "https://github.com/DataDog/dd-trace-dotnet",
+        };
+
+        var ciValues = CIEnvironmentValues.Create(env);
+        var relative = ciValues.MakeRelativePathFromSourceRootWithFallback(compilerPath, false, out var owners);
+
+        Assert.Equal("tracer/test/Datadog.Trace.DuckTyping.Tests/ExceptionsTests.cs", relative);
+        Assert.Equal(["@DataDog/tracing-dotnet"], owners);
+    }
+
+    [SkippableFact]
+    public void DoesNotAnchorAzureStyleAbsolutePathsForOtherProviders()
+    {
+        using var tempDirectory = new TemporaryDirectory();
+        var repoRoot = tempDirectory.RootPath;
+        var sourceDir = Path.Combine(repoRoot, "src");
+        Directory.CreateDirectory(sourceDir);
+        File.WriteAllText(Path.Combine(repoRoot, "CODEOWNERS"), "/src/ @owner\n");
+        File.WriteAllText(Path.Combine(sourceDir, "SpanBenchmark.cs"), "// test");
+
+        var env = new Dictionary<string, string>
+        {
+            [PlatformKeys.Ci.GitHub.Sha] = CommitSha,
+            [PlatformKeys.Ci.GitHub.Workspace] = repoRoot,
+            [PlatformKeys.Ci.GitHub.Repository] = "DataDog/dd-trace-dotnet",
+        };
+
+        var ciValues = CIEnvironmentValues.Create(env);
+
+        Assert.False(ciValues.TryGetCodeOwnersRelativePath(@"D:\a\_work\1\s\src\SpanBenchmark.cs", false, out _));
+    }
+
+    [SkippableTheory]
+    [InlineData("file:///D:/a/_work/1/s/src/SpanBenchmark.cs")]
+    [InlineData("https://example.com/a/_work/1/s/src/SpanBenchmark.cs")]
+    public void DoesNotAnchorUrisThatResembleAzureCheckoutPaths(string sourcePath)
+    {
+        using var tempDirectory = new TemporaryDirectory();
+        var repoRoot = tempDirectory.RootPath;
+        var sourceDir = Path.Combine(repoRoot, "src");
+        Directory.CreateDirectory(sourceDir);
+        File.WriteAllText(Path.Combine(repoRoot, "CODEOWNERS"), "/src/ @owner\n");
+        File.WriteAllText(Path.Combine(sourceDir, "SpanBenchmark.cs"), "// test");
+
+        var env = new Dictionary<string, string>
+        {
+            [PlatformKeys.Ci.Azure.TFBuild] = "True",
+            [PlatformKeys.Ci.Azure.BuildSourcesDirectory] = repoRoot,
+            [PlatformKeys.Ci.Azure.BuildSourceVersion] = CommitSha,
+            [PlatformKeys.Ci.Azure.BuildRepositoryUri] = "https://github.com/DataDog/dd-trace-dotnet",
+        };
+
+        var ciValues = CIEnvironmentValues.Create(env);
+
+        Assert.False(ciValues.TryGetCodeOwnersRelativePath(sourcePath, false, out _));
+    }
+
     [SkippableFact]
     public void DoesNotAnchorPathsWithInteriorNavigationSegments()
     {
@@ -908,6 +984,7 @@ public class CodeOwnersFallbackTests
         Assert.NotNull(matchTask);
         Assert.True(matchTask!.Wait(TestTimeout), "snapshot reader must not deadlock after reload");
         Assert.Equal("src/SpanBenchmark.cs", secondRelativePath);
+        Assert.NotNull(secondOwners);
         Assert.Equal(["@second"], secondOwners);
     }
 

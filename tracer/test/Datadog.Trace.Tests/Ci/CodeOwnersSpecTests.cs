@@ -73,19 +73,28 @@ public class CodeOwnersSpecTests
         Match(codeOwners, "/docs/build-app/troubleshooting.md").Should().Equal(["@doctocat"]);
     }
 
-    [SkippableTheory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public void DirectoryAndTerminalGlobstarPatternsRequireDescendants(bool useGitLab)
+    [SkippableFact]
+    public void GithubDirectoryAndTerminalGlobstarPatternsRequireDescendants()
     {
-        var platform = useGitLab ? CodeOwners.Platform.GitLab : CodeOwners.Platform.GitHub;
-        var codeOwners = Create("/docs/ @directory\n/archive/** @globstar\n", platform);
+        var codeOwners = Create("/docs/ @directory\n/archive/** @globstar\n", CodeOwners.Platform.GitHub);
 
         Match(codeOwners, "/docs").Should().BeEmpty("a trailing slash only denotes a directory and its contents");
         Match(codeOwners, "/docs/file.txt").Should().Equal(["@directory"]);
         Match(codeOwners, "/archive").Should().BeEmpty("a terminal /** means content inside the directory");
         Match(codeOwners, "/archive/file.txt").Should().Equal(["@globstar"]);
         Match(codeOwners, "/archive/deep/file.txt").Should().Equal(["@globstar"]);
+    }
+
+    [SkippableFact]
+    public void GitlabTerminalGlobstarMatchesOnePathSegment()
+    {
+        var terminalGlobstar = Create("/archive/** @single-segment\n", CodeOwners.Platform.GitLab);
+        var recursiveGlobstar = Create("/archive/**/* @recursive\n", CodeOwners.Platform.GitLab);
+
+        Match(terminalGlobstar, "/archive").Should().BeEmpty();
+        Match(terminalGlobstar, "/archive/file.txt").Should().Equal(["@single-segment"]);
+        Match(terminalGlobstar, "/archive/deep/file.txt").Should().BeEmpty();
+        Match(recursiveGlobstar, "/archive/deep/file.txt").Should().Equal(["@recursive"]);
     }
 
     [SkippableFact]
@@ -858,12 +867,18 @@ public class CodeOwnersSpecTests
     [SkippableFact]
     public void DoubleStarIsGlobstarOnlyAsAWholeSegment()
     {
-        var codeOwners = Create("foo**bar @stars\n**/index.md @index\n", CodeOwners.Platform.GitHub);
+        var inSegment = Create("foo**bar @stars\n", CodeOwners.Platform.GitHub);
+        var slashAfterSegment = Create("/foo**/bar @component-stars\n", CodeOwners.Platform.GitHub);
+        var globstar = Create("**/index.md @index\n", CodeOwners.Platform.GitHub);
+
         // Adjacent asterisks inside a segment are two single-level wildcards, not a globstar.
-        Match(codeOwners, "/fooXbar").Should().Equal(["@stars"]);
-        Match(codeOwners, "/foo/x/bar").Should().BeEmpty();
-        Match(codeOwners, "/docs/index.md").Should().Equal(["@index"]);
-        Match(codeOwners, "/index.md").Should().Equal(["@index"]);
+        Match(inSegment, "/fooXbar").Should().Equal(["@stars"]);
+        Match(slashAfterSegment, "/foo/bar").Should().Equal(["@component-stars"]);
+        Match(slashAfterSegment, "/fooX/bar").Should().Equal(["@component-stars"]);
+        Match(slashAfterSegment, "/foobar").Should().BeEmpty("the slash after an in-segment double star remains required");
+        Match(slashAfterSegment, "/foo/x/bar").Should().BeEmpty("in-segment stars cannot cross a directory boundary");
+        Match(globstar, "/docs/index.md").Should().Equal(["@index"]);
+        Match(globstar, "/index.md").Should().Equal(["@index"]);
     }
 
     [SkippableFact]

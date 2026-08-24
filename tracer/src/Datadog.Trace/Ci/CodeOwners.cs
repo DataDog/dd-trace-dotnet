@@ -862,10 +862,13 @@ namespace Datadog.Trace.Ci
 
                 for (var i = firstSegment; i < lastSegment; i++)
                 {
-                    if (rawSegments[i] == "**")
+                    if (rawSegments[i] == "**" &&
+                        !(platform == Platform.GitLab && i == lastSegment - 1))
                     {
                         // A terminal /** means contents below the preceding directory and must
-                        // consume at least one path segment. Middle globstars may consume none.
+                        // consume at least one path segment on GitHub. GitLab delegates matching
+                        // to File.fnmatch, where a terminal ** behaves like * within one segment.
+                        // Middle globstars may consume none on both platforms.
                         AddGlobStar(segments, requiresSegment: i == lastSegment - 1);
                     }
                     else if (SegmentPattern.TryCompile(rawSegments[i], platform, out var segment))
