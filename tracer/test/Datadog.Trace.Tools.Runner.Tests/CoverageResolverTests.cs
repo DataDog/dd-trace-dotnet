@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -314,11 +315,22 @@ public class CoverageResolverTests
         using var resolver = CreateResolver(directory.Path);
         using var assembly = AssemblyProcessor.ReadTargetAssembly(assemblyPath, resolver);
         assembly.MainModule.Types.Add(new TypeDefinition("CoverageRewriterAssembly", "AddedByTest", Mono.Cecil.TypeAttributes.Public | Mono.Cecil.TypeAttributes.Class, assembly.MainModule.TypeSystem.Object));
+        var transactionPaths = new List<string>();
 
-        AssemblyProcessor.WriteTargetAssembly(assembly, assemblyPath, strongNameKeyBlob: null);
+        AssemblyProcessor.WriteTargetAssembly(assembly, assemblyPath, strongNameKeyBlob: null, (source, destination, backup) =>
+        {
+            transactionPaths.Add(source);
+            if (backup is not null)
+            {
+                transactionPaths.Add(backup);
+            }
+
+            File.Replace(source, destination, backup);
+        });
 
         using var rewrittenAssembly = AssemblyDefinition.ReadAssembly(assemblyPath, new ReaderParameters { ReadSymbols = true });
         rewrittenAssembly.MainModule.GetType("CoverageRewriterAssembly.AddedByTest").Should().NotBeNull();
+        transactionPaths.Where(CoverageCollector.HasAssemblyExtension).Should().BeEmpty();
         Directory.GetFiles(directory.Path).Select(Path.GetFileName).Should().BeEquivalentTo("CoverageRewriterAssembly.dll", "CoverageRewriterAssembly.pdb");
     }
 

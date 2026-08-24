@@ -176,8 +176,7 @@ namespace Datadog.Trace.Coverage.Collector
                         return;
                     }
 
-                    var extension = Path.GetExtension(file).ToLowerInvariant();
-                    if (extension is ".dll" or ".exe" or "")
+                    if (HasAssemblyExtension(file))
                     {
                         if (File.Exists(Path.Combine(path, fileWithoutExtension + ".pdb")) || File.Exists(Path.Combine(path, fileWithoutExtension + ".PDB")))
                         {
@@ -343,6 +342,12 @@ namespace Datadog.Trace.Coverage.Collector
             {
                 _logger?.Debug("CoverageCollector.Test session context cannot be found, skipping IPC client and sending injection tags");
             }
+        }
+
+        internal static bool HasAssemblyExtension(string filePath)
+        {
+            var extension = Path.GetExtension(filePath).ToLowerInvariant();
+            return extension is ".dll" or ".exe" or "";
         }
 
         /// <inheritdoc />

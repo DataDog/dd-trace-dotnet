@@ -797,10 +797,11 @@ namespace Datadog.Trace.Coverage.Collector
             var assemblyDirectory = Path.GetDirectoryName(assemblyFilePath) ?? string.Empty;
             var assemblyFileName = Path.GetFileNameWithoutExtension(assemblyFilePath);
             var stagingBasePath = Path.Combine(assemblyDirectory, $".{assemblyFileName}.{Guid.NewGuid():N}");
-            var stagedAssemblyPath = stagingBasePath + ".tmp.dll";
+            // Keep transaction files on the target volume for File.Replace, but do not let the collector identify them as assemblies.
+            var stagedAssemblyPath = stagingBasePath + ".tmp";
             var stagedSymbolsPath = Path.ChangeExtension(stagedAssemblyPath, ".pdb");
-            var assemblyBackupPath = stagingBasePath + ".backup.dll";
-            var symbolsBackupPath = stagingBasePath + ".backup.pdb";
+            var assemblyBackupPath = stagingBasePath + ".assembly.backup";
+            var symbolsBackupPath = stagingBasePath + ".symbols.backup";
             var symbolsPath = Path.ChangeExtension(assemblyFilePath, ".pdb");
             var published = false;
 
@@ -812,9 +813,7 @@ namespace Datadog.Trace.Coverage.Collector
                     StrongNameKeyBlob = strongNameKeyBlob
                 });
 
-                using (AssemblyDefinition.ReadAssembly(stagedAssemblyPath, new ReaderParameters { ReadSymbols = true, InMemory = true }))
-                {
-                }
+                ValidateStagedAssemblyAndSymbols(stagedAssemblyPath);
 
                 ReplaceTargetFiles(stagedAssemblyPath, stagedSymbolsPath, assemblyFilePath, symbolsPath, assemblyBackupPath, symbolsBackupPath, replaceFile);
                 published = true;
@@ -828,6 +827,15 @@ namespace Datadog.Trace.Coverage.Collector
                     TryDeleteStagedFile(assemblyBackupPath, logger);
                     TryDeleteStagedFile(symbolsBackupPath, logger);
                 }
+            }
+        }
+
+        private static void ValidateStagedAssemblyAndSymbols(string stagedAssemblyPath)
+        {
+            using var stagedAssembly = AssemblyDefinition.ReadAssembly(stagedAssemblyPath, new ReaderParameters { ReadSymbols = true, InMemory = true });
+            if (!stagedAssembly.MainModule.HasSymbols)
+            {
+                throw new InvalidOperationException($"Rewritten symbols could not be read from '{Path.ChangeExtension(stagedAssemblyPath, ".pdb")}'.");
             }
         }
 
