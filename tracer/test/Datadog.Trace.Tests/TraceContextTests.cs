@@ -282,6 +282,23 @@ namespace Datadog.Trace.Tests
         }
 
         [Fact]
+        public void SetSamplingPriority_OtlpTraceExportWithoutW3CInjection_DerivesOtelTraceState()
+        {
+            var settings = TracerSettings.Create(new()
+            {
+                { ConfigurationKeys.PropagationStyleInject, ContextPropagationHeaderStyle.Datadog },
+                { ConfigurationKeys.OpenTelemetry.TracesExporter, "otlp" },
+            });
+            var traceContext = new TraceContext(new StubDatadogTracer(settings));
+            var spanContext = new SpanContext(parent: SpanContext.None, traceContext, serviceName: null, traceId: (TraceId)1, spanId: RandomIdGenerator.Shared.NextSpanId());
+            traceContext.AddSpan(new Span(spanContext, DateTimeOffset.UtcNow));
+
+            traceContext.SetSamplingPriority(SamplingPriorityValues.UserKeep, SamplingMechanism.LocalTraceSamplingRule, rate: 0.1f, sample: true);
+
+            traceContext.OtelTraceState.Should().NotBeNull();
+        }
+
+        [Fact]
         public void SetSamplingPriority_ImprecisionClamp_ForcesAgreementWithDdDecision()
         {
             // The Datadog decision and the 56-bit OTel representation can land on
