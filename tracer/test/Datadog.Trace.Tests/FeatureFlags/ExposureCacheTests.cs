@@ -202,6 +202,9 @@ public partial class ExposureCacheTests
         Assert.True(cache.Add(CreateSerialIdEvent(340132)));
         Assert.True(cache.Add(CreateSerialIdEvent(340133)));
         Assert.True(cache.Add(CreateSerialIdEvent(340132)));
+
+        // The three events share one flag and subject, so they share one cache key. Each Add
+        // replaces the stored value rather than adding an entry.
         Assert.Equal(1, cache.Size);
     }
 
