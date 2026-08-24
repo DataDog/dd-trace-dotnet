@@ -417,27 +417,6 @@ namespace Datadog.Trace.Propagators
             return true;
         }
 
-        internal static void SplitTraceStateValues(string header, out string? ddValues, out string? additionalValues)
-        {
-            // header format: "[*,]dd=s:1;o:rum;t.dm:-4;t.usr.id:12345[,*]"
-
-            if (string.IsNullOrWhiteSpace(header))
-            {
-                ddValues = null;
-                additionalValues = null;
-                return;
-            }
-
-            SplitTraceStateValues(
-                header.AsSpan().Trim(),
-                out var ddValueSegment,
-                out var precedingMembers,
-                out var succeedingMembers,
-                out var hasDdValues);
-            ddValues = hasDdValues ? ddValueSegment.ToString() : null;
-            additionalValues = GetAdditionalValues(precedingMembers, succeedingMembers);
-        }
-
         private static void SplitTraceStateValues(
             ReadOnlySpan<char> header,
             out ReadOnlySpan<char> ddValues,
