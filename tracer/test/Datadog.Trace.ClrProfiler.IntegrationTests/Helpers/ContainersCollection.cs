@@ -83,6 +83,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Helpers
     {
         public const string Name = "Couchbase";
     }
+
+    [CollectionDefinition(Name, DisableParallelization = true)]
+    public class CosmosDbVnextCollection : ICollectionFixture<CosmosDbVnextFixture>
+    {
+        public const string Name = "CosmosDbVnext";
+    }
 }
 
 #pragma warning restore SA1649 // File name should match first type name

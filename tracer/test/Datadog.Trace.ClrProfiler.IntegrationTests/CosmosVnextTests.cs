@@ -7,8 +7,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Datadog.Trace.ClrProfiler.IntegrationTests.Helpers;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.TestHelpers.AutoInstrumentation.Containers;
 using FluentAssertions;
 using VerifyTests;
 using VerifyXunit;
@@ -19,15 +21,19 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
     [Trait("RequiresDockerDependency", "true")]
     [Trait("DockerGroup", "2")]
+    [Collection(CosmosDbVnextCollection.Name)]
     [UsesVerify]
     public class CosmosVnextTests : TracingIntegrationTest, IAsyncLifetime
     {
         private const string ExpectedOperationName = "cosmosdb.query";
+        private readonly CosmosDbVnextFixture _cosmosDbFixture;
 
-        public CosmosVnextTests(ITestOutputHelper output)
+        public CosmosVnextTests(ITestOutputHelper output, CosmosDbVnextFixture cosmosDbFixture)
             : base("CosmosDb.Vnext", output)
         {
+            _cosmosDbFixture = cosmosDbFixture;
             SetServiceVersion("1.0.0");
+            ConfigureContainers(cosmosDbFixture);
         }
 
         public static IEnumerable<object[]> GetEnabledConfig()
@@ -113,14 +119,16 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         public Task DisposeAsync() => Task.CompletedTask;
 
-        private static VerifySettings ApplyCosmosDbScrubbers(VerifySettings settings)
+        private VerifySettings ApplyCosmosDbScrubbers(VerifySettings settings)
         {
+            settings.AddSimpleScrubber($"out.host: {_cosmosDbFixture.Endpoint}/", "out.host: https://cosmosdb-emulator:8081/");
+            settings.AddSimpleScrubber($"out.host: https://{_cosmosDbFixture.Host}:00000/", "out.host: https://cosmosdb-emulator:8081/");
             settings.AddSimpleScrubber("out.host: https://localhost:00000/", "out.host: https://cosmosdb-emulator:8081/");
-            settings.AddSimpleScrubber("out.host: https://cosmosdb-emulator_arm64:8081/", "out.host: https://cosmosdb-emulator:8081/");
             settings.AddSimpleScrubber("out.host: localhost", "out.host: cosmosdb-emulator");
-            settings.AddSimpleScrubber("out.host: cosmosdb-emulator_arm64", "out.host: cosmosdb-emulator");
+            settings.AddSimpleScrubber($"out.host: {_cosmosDbFixture.Host}", "out.host: cosmosdb-emulator");
+            settings.AddSimpleScrubber($"out.port: {_cosmosDbFixture.Port}", "out.port: 8081");
             settings.AddSimpleScrubber("peer.service: localhost", "peer.service: cosmosdb-emulator");
-            settings.AddSimpleScrubber("peer.service: cosmosdb-emulator_arm64", "peer.service: cosmosdb-emulator");
+            settings.AddSimpleScrubber($"peer.service: {_cosmosDbFixture.Host}", "peer.service: cosmosdb-emulator");
             settings.AddRegexScrubber(new(@"http\.useragent: cosmos-netstandard-sdk\/[^\,]+", VerifyHelper.RegOptions), "http.useragent: cosmos-netstandard-sdk/3.0.0|3.0.0|00|arch|os|runtime|");
             return settings;
         }
