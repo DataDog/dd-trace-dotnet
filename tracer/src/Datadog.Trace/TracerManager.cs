@@ -15,7 +15,6 @@ using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Schema;
 using Datadog.Trace.Logging;
 using Datadog.Trace.PlatformHelpers;
-using Datadog.Trace.Processors;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Util;
@@ -106,10 +105,6 @@ namespace Datadog.Trace
 
         /// Gets the global <see cref="QueryStringManager"/> instance.
         public QueryStringManager QueryStringManager { get; }
-
-        public ITraceProcessor[] TraceProcessors { get; }
-
-        public ITagProcessor[] TagProcessors { get; }
 
         public IDynamicConfigurationManager DynamicConfigurationManager { get; }
 

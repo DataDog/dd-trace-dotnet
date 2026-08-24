@@ -59,9 +59,7 @@ internal sealed class MetricAttribute : System.Attribute
         public static string CreateTagsList(StringBuilder sb, TagListGenerator.TagList tagList)
         {
             sb.Append(Constants.FileHeader);
-            sb.Append(@"using Datadog.Trace.Processors;
-using Datadog.Trace.Tagging;
-using System;
+            sb.Append(@"using System;
 
 namespace ");
             sb.Append(tagList.Namespace)
@@ -73,77 +71,8 @@ namespace ");
               .Append(
                    @"
     {");
-            if (tagList.MetricProperties.HasValues())
-            {
-                foreach (var property in tagList.MetricProperties)
-                {
-                    var tagByteArray = string.Join(", ", MessagePackHelper.GetValueInRawMessagePackIEnumerable(property.TagValue));
-
-                    sb.Append(
-                           @"
-        // ")
-                      .Append(property.PropertyName)
-                      .Append(@"Bytes = MessagePack.Serialize(""")
-                      .Append(property.TagValue)
-                      .Append(@""");");
-
-                    sb.Append(
-                           @"
-#if NETCOREAPP
-        private static ReadOnlySpan<byte> ")
-                      .Append(property.PropertyName)
-                      .Append(@"Bytes => new byte[] { ")
-                      .Append(tagByteArray)
-                      .Append(@" };")
-                      .Append(
-                           @"
-#else
-        private static readonly byte[] ")
-                      .Append(property.PropertyName)
-                      .Append(@"Bytes = new byte[] { ")
-                      .Append(tagByteArray)
-                      .Append(@" };")
-                      .Append(
-                           @"
-#endif");
-                }
-            }
-
             if (tagList.TagProperties.HasValues())
             {
-                foreach (var property in tagList.TagProperties)
-                {
-                    var tagByteArray = string.Join(", ", MessagePackHelper.GetValueInRawMessagePackIEnumerable(property.TagValue));
-
-                    sb.Append(
-                           @"
-        // ")
-                      .Append(property.PropertyName)
-                      .Append(@"Bytes = MessagePack.Serialize(""")
-                      .Append(property.TagValue)
-                      .Append(@""");");
-
-                    sb.Append(
-                           @"
-#if NETCOREAPP
-        private static ReadOnlySpan<byte> ")
-                      .Append(property.PropertyName)
-                      .Append(@"Bytes => new byte[] { ")
-                      .Append(tagByteArray)
-                      .Append(@" };")
-                      .Append(
-                           @"
-#else
-        private static readonly byte[] ")
-                      .Append(property.PropertyName)
-                      .Append(@"Bytes = new byte[] { ")
-                      .Append(tagByteArray)
-                      .Append(@" };")
-                      .Append(
-                           @"
-#endif");
-                }
-
                 sb.Append(
                     @"
 
@@ -227,31 +156,6 @@ namespace ");
                     base.SetTag(key, value);
                     break;
             }
-        }
-
-        public override void EnumerateTags<TProcessor>(ref TProcessor processor)
-        {
-            ");
-                foreach (var property in tagList.TagProperties)
-                {
-                    sb.Append(@"if (")
-                      .Append(property.PropertyName)
-                      .Append(@" is not null)
-            {
-                processor.Process(new TagItem<string>(""")
-                      .Append(property.TagValue)
-                      .Append(@""", ")
-                      .Append(property.PropertyName)
-                      .Append(@", ")
-                      .Append(property.PropertyName)
-                      .Append(@"Bytes));
-            }
-
-            ");
-                }
-
-                sb.Append(
-                    @"base.EnumerateTags(ref processor);
         }
 
         protected override void WriteAdditionalTags(System.Text.StringBuilder sb)
@@ -368,31 +272,6 @@ namespace ");
                     base.SetMetric(key, value);
                     break;
             }
-        }
-
-        public override void EnumerateMetrics<TProcessor>(ref TProcessor processor)
-        {
-            ");
-                foreach (var property in tagList.MetricProperties)
-                {
-                    sb.Append(@"if (")
-                      .Append(property.PropertyName)
-                      .Append(@" is not null)
-            {
-                processor.Process(new TagItem<double>(""")
-                      .Append(property.TagValue)
-                      .Append(@""", ")
-                      .Append(property.PropertyName)
-                      .Append(@".Value, ")
-                      .Append(property.PropertyName)
-                      .Append(@"Bytes));
-            }
-
-            ");
-                }
-
-                sb.Append(
-                    @"base.EnumerateMetrics(ref processor);
         }
 
         protected override void WriteAdditionalMetrics(System.Text.StringBuilder sb)

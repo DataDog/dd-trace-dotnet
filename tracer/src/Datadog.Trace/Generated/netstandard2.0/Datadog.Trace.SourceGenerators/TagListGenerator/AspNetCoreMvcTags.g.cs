@@ -6,56 +6,12 @@
 
 #nullable enable
 
-using Datadog.Trace.Processors;
-using Datadog.Trace.Tagging;
 using System;
 
 namespace Datadog.Trace.Tagging
 {
     partial class AspNetCoreMvcTags
     {
-        // SpanKindBytes = MessagePack.Serialize("span.kind");
-#if NETCOREAPP
-        private static ReadOnlySpan<byte> SpanKindBytes => new byte[] { 169, 115, 112, 97, 110, 46, 107, 105, 110, 100 };
-#else
-        private static readonly byte[] SpanKindBytes = new byte[] { 169, 115, 112, 97, 110, 46, 107, 105, 110, 100 };
-#endif
-        // InstrumentationNameBytes = MessagePack.Serialize("component");
-#if NETCOREAPP
-        private static ReadOnlySpan<byte> InstrumentationNameBytes => new byte[] { 169, 99, 111, 109, 112, 111, 110, 101, 110, 116 };
-#else
-        private static readonly byte[] InstrumentationNameBytes = new byte[] { 169, 99, 111, 109, 112, 111, 110, 101, 110, 116 };
-#endif
-        // AspNetCoreControllerBytes = MessagePack.Serialize("aspnet_core.controller");
-#if NETCOREAPP
-        private static ReadOnlySpan<byte> AspNetCoreControllerBytes => new byte[] { 182, 97, 115, 112, 110, 101, 116, 95, 99, 111, 114, 101, 46, 99, 111, 110, 116, 114, 111, 108, 108, 101, 114 };
-#else
-        private static readonly byte[] AspNetCoreControllerBytes = new byte[] { 182, 97, 115, 112, 110, 101, 116, 95, 99, 111, 114, 101, 46, 99, 111, 110, 116, 114, 111, 108, 108, 101, 114 };
-#endif
-        // AspNetCoreActionBytes = MessagePack.Serialize("aspnet_core.action");
-#if NETCOREAPP
-        private static ReadOnlySpan<byte> AspNetCoreActionBytes => new byte[] { 178, 97, 115, 112, 110, 101, 116, 95, 99, 111, 114, 101, 46, 97, 99, 116, 105, 111, 110 };
-#else
-        private static readonly byte[] AspNetCoreActionBytes = new byte[] { 178, 97, 115, 112, 110, 101, 116, 95, 99, 111, 114, 101, 46, 97, 99, 116, 105, 111, 110 };
-#endif
-        // AspNetCoreAreaBytes = MessagePack.Serialize("aspnet_core.area");
-#if NETCOREAPP
-        private static ReadOnlySpan<byte> AspNetCoreAreaBytes => new byte[] { 176, 97, 115, 112, 110, 101, 116, 95, 99, 111, 114, 101, 46, 97, 114, 101, 97 };
-#else
-        private static readonly byte[] AspNetCoreAreaBytes = new byte[] { 176, 97, 115, 112, 110, 101, 116, 95, 99, 111, 114, 101, 46, 97, 114, 101, 97 };
-#endif
-        // AspNetCorePageBytes = MessagePack.Serialize("aspnet_core.page");
-#if NETCOREAPP
-        private static ReadOnlySpan<byte> AspNetCorePageBytes => new byte[] { 176, 97, 115, 112, 110, 101, 116, 95, 99, 111, 114, 101, 46, 112, 97, 103, 101 };
-#else
-        private static readonly byte[] AspNetCorePageBytes = new byte[] { 176, 97, 115, 112, 110, 101, 116, 95, 99, 111, 114, 101, 46, 112, 97, 103, 101 };
-#endif
-        // AspNetCoreRouteBytes = MessagePack.Serialize("aspnet_core.route");
-#if NETCOREAPP
-        private static ReadOnlySpan<byte> AspNetCoreRouteBytes => new byte[] { 177, 97, 115, 112, 110, 101, 116, 95, 99, 111, 114, 101, 46, 114, 111, 117, 116, 101 };
-#else
-        private static readonly byte[] AspNetCoreRouteBytes = new byte[] { 177, 97, 115, 112, 110, 101, 116, 95, 99, 111, 114, 101, 46, 114, 111, 117, 116, 101 };
-#endif
 
         public override string? GetTag(string key)
         {
@@ -99,46 +55,6 @@ namespace Datadog.Trace.Tagging
                     base.SetTag(key, value);
                     break;
             }
-        }
-
-        public override void EnumerateTags<TProcessor>(ref TProcessor processor)
-        {
-            if (SpanKind is not null)
-            {
-                processor.Process(new TagItem<string>("span.kind", SpanKind, SpanKindBytes));
-            }
-
-            if (InstrumentationName is not null)
-            {
-                processor.Process(new TagItem<string>("component", InstrumentationName, InstrumentationNameBytes));
-            }
-
-            if (AspNetCoreController is not null)
-            {
-                processor.Process(new TagItem<string>("aspnet_core.controller", AspNetCoreController, AspNetCoreControllerBytes));
-            }
-
-            if (AspNetCoreAction is not null)
-            {
-                processor.Process(new TagItem<string>("aspnet_core.action", AspNetCoreAction, AspNetCoreActionBytes));
-            }
-
-            if (AspNetCoreArea is not null)
-            {
-                processor.Process(new TagItem<string>("aspnet_core.area", AspNetCoreArea, AspNetCoreAreaBytes));
-            }
-
-            if (AspNetCorePage is not null)
-            {
-                processor.Process(new TagItem<string>("aspnet_core.page", AspNetCorePage, AspNetCorePageBytes));
-            }
-
-            if (AspNetCoreRoute is not null)
-            {
-                processor.Process(new TagItem<string>("aspnet_core.route", AspNetCoreRoute, AspNetCoreRouteBytes));
-            }
-
-            base.EnumerateTags(ref processor);
         }
 
         protected override void WriteAdditionalTags(System.Text.StringBuilder sb)

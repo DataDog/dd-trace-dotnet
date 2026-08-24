@@ -9,8 +9,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.Processors;
 using Datadog.Trace.SourceGenerators;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace;
 
@@ -79,9 +79,9 @@ internal sealed class ProcessTags
             return;
         }
 
-        // TraceUtil.NormalizeTag does almost exactly what we want, except it allows ':',
+        // ProcessTagNormalizer.Normalize does almost exactly what we want, except it allows ':',
         // which we don't want because we use it as a key/value separator.
-        var normalizedValue = TraceUtil.NormalizeTag(value).Replace(oldChar: ':', newChar: '_');
+        var normalizedValue = ProcessTagNormalizer.Normalize(value).Replace(oldChar: ':', newChar: '_');
         tags.Add($"{key}:{normalizedValue}");
     }
 

@@ -1,5 +1,3 @@
-src/Datadog.Trace/AgentHttpHeaderNames.cs
-src/Datadog.Trace/AgentProcessManager.cs
 src/Datadog.Trace/AspNetCoreAvailabilityChecker.cs
 src/Datadog.Trace/AssemblyInfo.cs
 src/Datadog.Trace/AsyncLocalScopeManager.cs
@@ -70,24 +68,11 @@ src/Datadog.Trace/Headers/HeadersCollectionAdapter.cs
 src/Datadog.Trace/Headers/IHeadersCollection.cs
 src/Datadog.Trace/Headers/NameValueHeadersCollection.cs
 src/Datadog.Trace/Headers/WebHeadersCollection.cs
-src/Datadog.Trace/HttpOverStreams/DatadogHttpRequestException.cs
-src/Datadog.Trace/HttpOverStreams/DatadogHttpValues.cs
-src/Datadog.Trace/HttpOverStreams/HttpHeaderHelperBase.cs
-src/Datadog.Trace/HttpOverStreams/HttpHeaders.cs
-src/Datadog.Trace/HttpOverStreams/HttpMessage.cs
-src/Datadog.Trace/HttpOverStreams/HttpRequest.cs
-src/Datadog.Trace/HttpOverStreams/HttpResponse.cs
-src/Datadog.Trace/HttpOverStreams/IHttpContent.cs
 src/Datadog.Trace/Iast/ITaintedMap.cs
 src/Datadog.Trace/Iast/OverheadController.cs
 src/Datadog.Trace/Iast/SourceType.cs
 src/Datadog.Trace/PlatformHelpers/AspNetCoreHttpRequestHandler.cs
 src/Datadog.Trace/PlatformHelpers/ServiceFabric.cs
-src/Datadog.Trace/Processors/ITagProcessor.cs
-src/Datadog.Trace/Processors/NormalizerTraceProcessor.cs
-src/Datadog.Trace/Processors/TraceUtil.cs
-src/Datadog.Trace/Processors/TruncatorTagsProcessor.cs
-src/Datadog.Trace/Processors/TruncatorTraceProcessor.cs
 src/Datadog.Trace/ServiceFabric/ServiceRemotingConstants.cs
 src/Datadog.Trace/Tagging/AerospikeTags.cs
 src/Datadog.Trace/Tagging/AspNetCoreEndpointTags.cs
@@ -101,7 +86,6 @@ src/Datadog.Trace/Tagging/CouchbaseTags.cs
 src/Datadog.Trace/Tagging/GrpcTags.cs
 src/Datadog.Trace/Tagging/HttpTags.cs
 src/Datadog.Trace/Tagging/IHasStatusCode.cs
-src/Datadog.Trace/Tagging/IItemProcessor.cs
 src/Datadog.Trace/Tagging/InstrumentationTags.cs
 src/Datadog.Trace/Tagging/ITags.cs
 src/Datadog.Trace/Tagging/KafkaTags.cs
@@ -109,7 +93,6 @@ src/Datadog.Trace/Tagging/MsmqTags.cs
 src/Datadog.Trace/Tagging/RabbitMQTags.cs
 src/Datadog.Trace/Tagging/RemotingTags.cs
 src/Datadog.Trace/Tagging/SqlTags.cs
-src/Datadog.Trace/Tagging/TagItem.cs
 src/Datadog.Trace/Tagging/TraceAnnotationTags.cs
 src/Datadog.Trace/Tagging/WcfTags.cs
 src/Datadog.Trace/Tagging/WebTags.cs
@@ -121,6 +104,7 @@ src/Datadog.Trace/Util/Clock.cs
 src/Datadog.Trace/Util/DomainMetadata.cs
 src/Datadog.Trace/Util/IClock.cs
 src/Datadog.Trace/Util/IRandomIdGenerator.cs
+src/Datadog.Trace/Util/ProcessTagNormalizer.cs
 src/Datadog.Trace/Util/RandomIdGenerator.Net6.cs
 src/Datadog.Trace/Util/RuntimeId.cs
 src/Datadog.Trace/Util/SamplingHelpers.cs

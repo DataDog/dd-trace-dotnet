@@ -6,38 +6,12 @@
 
 #nullable enable
 
-using Datadog.Trace.Processors;
-using Datadog.Trace.Tagging;
 using System;
 
 namespace Datadog.Trace.Tagging
 {
     partial class AspNetCoreSingleSpanTags
     {
-        // InstrumentationNameBytes = MessagePack.Serialize("component");
-#if NETCOREAPP
-        private static ReadOnlySpan<byte> InstrumentationNameBytes => new byte[] { 169, 99, 111, 109, 112, 111, 110, 101, 110, 116 };
-#else
-        private static readonly byte[] InstrumentationNameBytes = new byte[] { 169, 99, 111, 109, 112, 111, 110, 101, 110, 116 };
-#endif
-        // AspNetCoreRouteBytes = MessagePack.Serialize("aspnet_core.route");
-#if NETCOREAPP
-        private static ReadOnlySpan<byte> AspNetCoreRouteBytes => new byte[] { 177, 97, 115, 112, 110, 101, 116, 95, 99, 111, 114, 101, 46, 114, 111, 117, 116, 101 };
-#else
-        private static readonly byte[] AspNetCoreRouteBytes = new byte[] { 177, 97, 115, 112, 110, 101, 116, 95, 99, 111, 114, 101, 46, 114, 111, 117, 116, 101 };
-#endif
-        // AspNetCoreEndpointBytes = MessagePack.Serialize("aspnet_core.endpoint");
-#if NETCOREAPP
-        private static ReadOnlySpan<byte> AspNetCoreEndpointBytes => new byte[] { 180, 97, 115, 112, 110, 101, 116, 95, 99, 111, 114, 101, 46, 101, 110, 100, 112, 111, 105, 110, 116 };
-#else
-        private static readonly byte[] AspNetCoreEndpointBytes = new byte[] { 180, 97, 115, 112, 110, 101, 116, 95, 99, 111, 114, 101, 46, 101, 110, 100, 112, 111, 105, 110, 116 };
-#endif
-        // HttpRouteBytes = MessagePack.Serialize("http.route");
-#if NETCOREAPP
-        private static ReadOnlySpan<byte> HttpRouteBytes => new byte[] { 170, 104, 116, 116, 112, 46, 114, 111, 117, 116, 101 };
-#else
-        private static readonly byte[] HttpRouteBytes = new byte[] { 170, 104, 116, 116, 112, 46, 114, 111, 117, 116, 101 };
-#endif
 
         public override string? GetTag(string key)
         {
@@ -69,31 +43,6 @@ namespace Datadog.Trace.Tagging
                     base.SetTag(key, value);
                     break;
             }
-        }
-
-        public override void EnumerateTags<TProcessor>(ref TProcessor processor)
-        {
-            if (InstrumentationName is not null)
-            {
-                processor.Process(new TagItem<string>("component", InstrumentationName, InstrumentationNameBytes));
-            }
-
-            if (AspNetCoreRoute is not null)
-            {
-                processor.Process(new TagItem<string>("aspnet_core.route", AspNetCoreRoute, AspNetCoreRouteBytes));
-            }
-
-            if (AspNetCoreEndpoint is not null)
-            {
-                processor.Process(new TagItem<string>("aspnet_core.endpoint", AspNetCoreEndpoint, AspNetCoreEndpointBytes));
-            }
-
-            if (HttpRoute is not null)
-            {
-                processor.Process(new TagItem<string>("http.route", HttpRoute, HttpRouteBytes));
-            }
-
-            base.EnumerateTags(ref processor);
         }
 
         protected override void WriteAdditionalTags(System.Text.StringBuilder sb)

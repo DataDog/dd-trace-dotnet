@@ -18,7 +18,6 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
     public sealed partial class Startup
     {
         private const string AssemblyName = "Datadog.Trace, Version=3.42.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb";
-        private const string AzureAppServicesSiteExtensionKey = "DD_AZURE_APP_SERVICES"; // only set when using the AAS site extension
         private const string TracerHomePathKey = "DD_DOTNET_TRACER_HOME";
 
         private static int _startupCtorInitialized;
@@ -97,16 +96,6 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
 #endif
 
                 const string methodName = "Initialize";
-                var usingAasSiteExtension = envVars.GetBooleanEnvironmentVariable(AzureAppServicesSiteExtensionKey) ?? false;
-
-                if (usingAasSiteExtension)
-                {
-                    // With V3, pretty much all scenarios require the trace-agent and dogstatsd, so we enable them by default
-                    const string processManagerTypeName = "Datadog.Trace.AgentProcessManager";
-                    StartupLogger.Log("Invoking {0}.{1}() to start external processes.", processManagerTypeName, methodName);
-                    TryInvokeManagedMethod(processManagerTypeName, methodName, "Datadog.Trace.AgentProcessManagerLoader");
-                }
-
                 // We need to initialize the managed tracer regardless of whether tracing is enabled
                 // because other products rely on it
                 const string instrumentationTypeName = "Datadog.Trace.ClrProfiler.Instrumentation";

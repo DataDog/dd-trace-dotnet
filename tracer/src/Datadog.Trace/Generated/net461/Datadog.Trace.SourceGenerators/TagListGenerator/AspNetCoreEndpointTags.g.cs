@@ -6,20 +6,12 @@
 
 #nullable enable
 
-using Datadog.Trace.Processors;
-using Datadog.Trace.Tagging;
 using System;
 
 namespace Datadog.Trace.Tagging
 {
     partial class AspNetCoreEndpointTags
     {
-        // AspNetCoreEndpointBytes = MessagePack.Serialize("aspnet_core.endpoint");
-#if NETCOREAPP
-        private static ReadOnlySpan<byte> AspNetCoreEndpointBytes => new byte[] { 180, 97, 115, 112, 110, 101, 116, 95, 99, 111, 114, 101, 46, 101, 110, 100, 112, 111, 105, 110, 116 };
-#else
-        private static readonly byte[] AspNetCoreEndpointBytes = new byte[] { 180, 97, 115, 112, 110, 101, 116, 95, 99, 111, 114, 101, 46, 101, 110, 100, 112, 111, 105, 110, 116 };
-#endif
 
         public override string? GetTag(string key)
         {
@@ -41,16 +33,6 @@ namespace Datadog.Trace.Tagging
                     base.SetTag(key, value);
                     break;
             }
-        }
-
-        public override void EnumerateTags<TProcessor>(ref TProcessor processor)
-        {
-            if (AspNetCoreEndpoint is not null)
-            {
-                processor.Process(new TagItem<string>("aspnet_core.endpoint", AspNetCoreEndpoint, AspNetCoreEndpointBytes));
-            }
-
-            base.EnumerateTags(ref processor);
         }
 
         protected override void WriteAdditionalTags(System.Text.StringBuilder sb)

@@ -6,44 +6,12 @@
 
 #nullable enable
 
-using Datadog.Trace.Processors;
-using Datadog.Trace.Tagging;
 using System;
 
 namespace Datadog.Trace.Tagging
 {
     partial class OpenTelemetryTags
     {
-        // SpanKindBytes = MessagePack.Serialize("span.kind");
-#if NETCOREAPP
-        private static ReadOnlySpan<byte> SpanKindBytes => new byte[] { 169, 115, 112, 97, 110, 46, 107, 105, 110, 100 };
-#else
-        private static readonly byte[] SpanKindBytes = new byte[] { 169, 115, 112, 97, 110, 46, 107, 105, 110, 100 };
-#endif
-        // OtelTraceIdBytes = MessagePack.Serialize("otel.trace_id");
-#if NETCOREAPP
-        private static ReadOnlySpan<byte> OtelTraceIdBytes => new byte[] { 173, 111, 116, 101, 108, 46, 116, 114, 97, 99, 101, 95, 105, 100 };
-#else
-        private static readonly byte[] OtelTraceIdBytes = new byte[] { 173, 111, 116, 101, 108, 46, 116, 114, 97, 99, 101, 95, 105, 100 };
-#endif
-        // OtelLibraryNameBytes = MessagePack.Serialize("otel.library.name");
-#if NETCOREAPP
-        private static ReadOnlySpan<byte> OtelLibraryNameBytes => new byte[] { 177, 111, 116, 101, 108, 46, 108, 105, 98, 114, 97, 114, 121, 46, 110, 97, 109, 101 };
-#else
-        private static readonly byte[] OtelLibraryNameBytes = new byte[] { 177, 111, 116, 101, 108, 46, 108, 105, 98, 114, 97, 114, 121, 46, 110, 97, 109, 101 };
-#endif
-        // OtelLibraryVersionBytes = MessagePack.Serialize("otel.library.version");
-#if NETCOREAPP
-        private static ReadOnlySpan<byte> OtelLibraryVersionBytes => new byte[] { 180, 111, 116, 101, 108, 46, 108, 105, 98, 114, 97, 114, 121, 46, 118, 101, 114, 115, 105, 111, 110 };
-#else
-        private static readonly byte[] OtelLibraryVersionBytes = new byte[] { 180, 111, 116, 101, 108, 46, 108, 105, 98, 114, 97, 114, 121, 46, 118, 101, 114, 115, 105, 111, 110 };
-#endif
-        // OtelStatusCodeBytes = MessagePack.Serialize("otel.status_code");
-#if NETCOREAPP
-        private static ReadOnlySpan<byte> OtelStatusCodeBytes => new byte[] { 176, 111, 116, 101, 108, 46, 115, 116, 97, 116, 117, 115, 95, 99, 111, 100, 101 };
-#else
-        private static readonly byte[] OtelStatusCodeBytes = new byte[] { 176, 111, 116, 101, 108, 46, 115, 116, 97, 116, 117, 115, 95, 99, 111, 100, 101 };
-#endif
 
         public override string? GetTag(string key)
         {
@@ -81,36 +49,6 @@ namespace Datadog.Trace.Tagging
                     base.SetTag(key, value);
                     break;
             }
-        }
-
-        public override void EnumerateTags<TProcessor>(ref TProcessor processor)
-        {
-            if (SpanKind is not null)
-            {
-                processor.Process(new TagItem<string>("span.kind", SpanKind, SpanKindBytes));
-            }
-
-            if (OtelTraceId is not null)
-            {
-                processor.Process(new TagItem<string>("otel.trace_id", OtelTraceId, OtelTraceIdBytes));
-            }
-
-            if (OtelLibraryName is not null)
-            {
-                processor.Process(new TagItem<string>("otel.library.name", OtelLibraryName, OtelLibraryNameBytes));
-            }
-
-            if (OtelLibraryVersion is not null)
-            {
-                processor.Process(new TagItem<string>("otel.library.version", OtelLibraryVersion, OtelLibraryVersionBytes));
-            }
-
-            if (OtelStatusCode is not null)
-            {
-                processor.Process(new TagItem<string>("otel.status_code", OtelStatusCode, OtelStatusCodeBytes));
-            }
-
-            base.EnumerateTags(ref processor);
         }
 
         protected override void WriteAdditionalTags(System.Text.StringBuilder sb)

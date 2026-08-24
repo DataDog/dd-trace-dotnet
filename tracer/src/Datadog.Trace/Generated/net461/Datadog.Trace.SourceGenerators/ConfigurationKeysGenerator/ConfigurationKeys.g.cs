@@ -78,16 +78,6 @@ internal static partial class ConfigurationKeys
     public const string DisabledIntegrations = "DD_DISABLED_INTEGRATIONS";
 
     /// <summary>
-    /// Configuration key for arguments to pass to the DogStatsD process.
-    /// </summary>
-    public const string DogStatsDArgs = "DD_DOGSTATSD_ARGS";
-
-    /// <summary>
-    /// Configuration key for when a standalone instance of DogStatsD needs to be started.
-    /// </summary>
-    public const string DogStatsDPath = "DD_DOGSTATSD_PATH";
-
-    /// <summary>
     /// It indicates the home directory of the Datadog tracer.
     /// On Windows, it is often set to the installation path, such as C:\Program Files\Datadog\.NET Tracer.
     /// On Linux/Docker, it is typically set to /opt/datadog.
@@ -251,16 +241,6 @@ internal static partial class ConfigurationKeys
     /// </summary>
     /// <seealso cref="Datadog.Trace.Configuration.MutableSettings.GlobalTags"/>
     public const string GlobalTags = "DD_TAGS";
-
-    /// <summary>
-    /// Configuration key for arguments to pass to the Trace Agent process.
-    /// </summary>
-    public const string TraceAgentArgs = "DD_TRACE_AGENT_ARGS";
-
-    /// <summary>
-    /// Configuration key for when a standalone instance of the Trace Agent needs to be started.
-    /// </summary>
-    public const string TraceAgentPath = "DD_TRACE_AGENT_PATH";
 
     /// <summary>
     /// Configuration key for enabling or disabling default Analytics.

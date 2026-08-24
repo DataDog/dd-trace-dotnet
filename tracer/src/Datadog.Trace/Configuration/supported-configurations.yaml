@@ -473,18 +473,6 @@ supportedConfigurations:
       Default is empty (all integrations are enabled).
       Supports multiple values separated with semi-colons.
       <seealso cref="Datadog.Trace.Configuration.MutableSettings.DisabledIntegrationNames"/>
-  DD_DOGSTATSD_ARGS:
-  - implementation: A
-    type: string
-    default: null
-    const_name: DogStatsDArgs
-    documentation: Configuration key for arguments to pass to the DogStatsD process.
-  DD_DOGSTATSD_PATH:
-  - implementation: A
-    type: string
-    default: null
-    const_name: DogStatsDPath
-    documentation: Configuration key for when a standalone instance of DogStatsD needs to be started.
   DD_DOTNET_TRACER_HOME:
   - implementation: A
     type: string
@@ -1561,18 +1549,6 @@ supportedConfigurations:
     product: OpenTelemetry
     const_name: ActivityListenerEnabled
     documentation: Configuration key to enable or disable the ActivityListener.
-  DD_TRACE_AGENT_ARGS:
-  - implementation: A
-    type: string
-    default: null
-    const_name: TraceAgentArgs
-    documentation: Configuration key for arguments to pass to the Trace Agent process.
-  DD_TRACE_AGENT_PATH:
-  - implementation: A
-    type: string
-    default: null
-    const_name: TraceAgentPath
-    documentation: Configuration key for when a standalone instance of the Trace Agent needs to be started.
   DD_TRACE_ANALYTICS_ENABLED:
   - implementation: B
     type: boolean

@@ -6,74 +6,12 @@
 
 #nullable enable
 
-using Datadog.Trace.Processors;
-using Datadog.Trace.Tagging;
 using System;
 
 namespace Datadog.Trace.Tagging
 {
     partial class CosmosDbTags
     {
-        // SpanKindBytes = MessagePack.Serialize("span.kind");
-#if NETCOREAPP
-        private static ReadOnlySpan<byte> SpanKindBytes => new byte[] { 169, 115, 112, 97, 110, 46, 107, 105, 110, 100 };
-#else
-        private static readonly byte[] SpanKindBytes = new byte[] { 169, 115, 112, 97, 110, 46, 107, 105, 110, 100 };
-#endif
-        // InstrumentationNameBytes = MessagePack.Serialize("component");
-#if NETCOREAPP
-        private static ReadOnlySpan<byte> InstrumentationNameBytes => new byte[] { 169, 99, 111, 109, 112, 111, 110, 101, 110, 116 };
-#else
-        private static readonly byte[] InstrumentationNameBytes = new byte[] { 169, 99, 111, 109, 112, 111, 110, 101, 110, 116 };
-#endif
-        // DbTypeBytes = MessagePack.Serialize("db.type");
-#if NETCOREAPP
-        private static ReadOnlySpan<byte> DbTypeBytes => new byte[] { 167, 100, 98, 46, 116, 121, 112, 101 };
-#else
-        private static readonly byte[] DbTypeBytes = new byte[] { 167, 100, 98, 46, 116, 121, 112, 101 };
-#endif
-        // ContainerIdBytes = MessagePack.Serialize("cosmosdb.container");
-#if NETCOREAPP
-        private static ReadOnlySpan<byte> ContainerIdBytes => new byte[] { 178, 99, 111, 115, 109, 111, 115, 100, 98, 46, 99, 111, 110, 116, 97, 105, 110, 101, 114 };
-#else
-        private static readonly byte[] ContainerIdBytes = new byte[] { 178, 99, 111, 115, 109, 111, 115, 100, 98, 46, 99, 111, 110, 116, 97, 105, 110, 101, 114 };
-#endif
-        // DatabaseIdBytes = MessagePack.Serialize("db.name");
-#if NETCOREAPP
-        private static ReadOnlySpan<byte> DatabaseIdBytes => new byte[] { 167, 100, 98, 46, 110, 97, 109, 101 };
-#else
-        private static readonly byte[] DatabaseIdBytes = new byte[] { 167, 100, 98, 46, 110, 97, 109, 101 };
-#endif
-        // HostBytes = MessagePack.Serialize("out.host");
-#if NETCOREAPP
-        private static ReadOnlySpan<byte> HostBytes => new byte[] { 168, 111, 117, 116, 46, 104, 111, 115, 116 };
-#else
-        private static readonly byte[] HostBytes = new byte[] { 168, 111, 117, 116, 46, 104, 111, 115, 116 };
-#endif
-        // ResponseStatusCodeBytes = MessagePack.Serialize("db.response.status_code");
-#if NETCOREAPP
-        private static ReadOnlySpan<byte> ResponseStatusCodeBytes => new byte[] { 183, 100, 98, 46, 114, 101, 115, 112, 111, 110, 115, 101, 46, 115, 116, 97, 116, 117, 115, 95, 99, 111, 100, 101 };
-#else
-        private static readonly byte[] ResponseStatusCodeBytes = new byte[] { 183, 100, 98, 46, 114, 101, 115, 112, 111, 110, 115, 101, 46, 115, 116, 97, 116, 117, 115, 95, 99, 111, 100, 101 };
-#endif
-        // ResponseSubStatusCodeBytes = MessagePack.Serialize("cosmosdb.response.sub_status_code");
-#if NETCOREAPP
-        private static ReadOnlySpan<byte> ResponseSubStatusCodeBytes => new byte[] { 217, 33, 99, 111, 115, 109, 111, 115, 100, 98, 46, 114, 101, 115, 112, 111, 110, 115, 101, 46, 115, 117, 98, 95, 115, 116, 97, 116, 117, 115, 95, 99, 111, 100, 101 };
-#else
-        private static readonly byte[] ResponseSubStatusCodeBytes = new byte[] { 217, 33, 99, 111, 115, 109, 111, 115, 100, 98, 46, 114, 101, 115, 112, 111, 110, 115, 101, 46, 115, 117, 98, 95, 115, 116, 97, 116, 117, 115, 95, 99, 111, 100, 101 };
-#endif
-        // UserAgentBytes = MessagePack.Serialize("http.useragent");
-#if NETCOREAPP
-        private static ReadOnlySpan<byte> UserAgentBytes => new byte[] { 174, 104, 116, 116, 112, 46, 117, 115, 101, 114, 97, 103, 101, 110, 116 };
-#else
-        private static readonly byte[] UserAgentBytes = new byte[] { 174, 104, 116, 116, 112, 46, 117, 115, 101, 114, 97, 103, 101, 110, 116 };
-#endif
-        // ConnectionModeBytes = MessagePack.Serialize("cosmosdb.connection.mode");
-#if NETCOREAPP
-        private static ReadOnlySpan<byte> ConnectionModeBytes => new byte[] { 184, 99, 111, 115, 109, 111, 115, 100, 98, 46, 99, 111, 110, 110, 101, 99, 116, 105, 111, 110, 46, 109, 111, 100, 101 };
-#else
-        private static readonly byte[] ConnectionModeBytes = new byte[] { 184, 99, 111, 115, 109, 111, 115, 100, 98, 46, 99, 111, 110, 110, 101, 99, 116, 105, 111, 110, 46, 109, 111, 100, 101 };
-#endif
 
         public override string? GetTag(string key)
         {
@@ -127,61 +65,6 @@ namespace Datadog.Trace.Tagging
                     base.SetTag(key, value);
                     break;
             }
-        }
-
-        public override void EnumerateTags<TProcessor>(ref TProcessor processor)
-        {
-            if (SpanKind is not null)
-            {
-                processor.Process(new TagItem<string>("span.kind", SpanKind, SpanKindBytes));
-            }
-
-            if (InstrumentationName is not null)
-            {
-                processor.Process(new TagItem<string>("component", InstrumentationName, InstrumentationNameBytes));
-            }
-
-            if (DbType is not null)
-            {
-                processor.Process(new TagItem<string>("db.type", DbType, DbTypeBytes));
-            }
-
-            if (ContainerId is not null)
-            {
-                processor.Process(new TagItem<string>("cosmosdb.container", ContainerId, ContainerIdBytes));
-            }
-
-            if (DatabaseId is not null)
-            {
-                processor.Process(new TagItem<string>("db.name", DatabaseId, DatabaseIdBytes));
-            }
-
-            if (Host is not null)
-            {
-                processor.Process(new TagItem<string>("out.host", Host, HostBytes));
-            }
-
-            if (ResponseStatusCode is not null)
-            {
-                processor.Process(new TagItem<string>("db.response.status_code", ResponseStatusCode, ResponseStatusCodeBytes));
-            }
-
-            if (ResponseSubStatusCode is not null)
-            {
-                processor.Process(new TagItem<string>("cosmosdb.response.sub_status_code", ResponseSubStatusCode, ResponseSubStatusCodeBytes));
-            }
-
-            if (UserAgent is not null)
-            {
-                processor.Process(new TagItem<string>("http.useragent", UserAgent, UserAgentBytes));
-            }
-
-            if (ConnectionMode is not null)
-            {
-                processor.Process(new TagItem<string>("cosmosdb.connection.mode", ConnectionMode, ConnectionModeBytes));
-            }
-
-            base.EnumerateTags(ref processor);
         }
 
         protected override void WriteAdditionalTags(System.Text.StringBuilder sb)
