@@ -28,6 +28,8 @@ internal abstract partial class CIEnvironmentValues
 
     internal string? CodeOwnersRoot { get; private set; }
 
+    // Returns the source-root-relative path when possible, falling back to the CODEOWNERS root
+    // for compiler paths that were recorded relative to a different CI workspace.
     internal string MakeRelativePathFromSourceRootWithFallback(string sourceFilePath, bool useOSSeparator = true)
     {
         var sourceRelativePath = MakeRelativePathFromSourceRoot(sourceFilePath, useOSSeparator);
@@ -36,6 +38,8 @@ internal abstract partial class CIEnvironmentValues
                    : sourceRelativePath;
     }
 
+    // Resolves a source path to a safe repository-relative path that can be matched against the
+    // loaded CODEOWNERS file, discovering the file lazily when necessary.
     internal bool TryGetCodeOwnersRelativePath(string sourceFilePath, bool useOSSeparator, [NotNullWhen(true)] out string? codeOwnersRelativePath)
     {
         codeOwnersRelativePath = null;
@@ -115,6 +119,8 @@ internal abstract partial class CIEnvironmentValues
         return true;
     }
 
+    // Resolves a candidate source path and returns the directory from which an ancestor
+    // CODEOWNERS search should start, without falling back to the current working directory.
     private static string? GetCodeOwnersSearchStart(string? path, string? basePath)
     {
         if (StringUtil.IsNullOrWhiteSpace(path))
@@ -155,12 +161,15 @@ internal abstract partial class CIEnvironmentValues
         }
     }
 
+    // Detects a repository boundary represented by either a .git directory or a worktree .git file.
     private static bool HasGitDirectory(string path)
     {
         var gitPath = Path.Combine(path, ".git");
         return Directory.Exists(gitPath) || File.Exists(gitPath);
     }
 
+    // Anchors a relative path to an absolute base directory and rejects rooted inputs or traversal
+    // that would escape that base.
     private static bool TryResolvePathWithinBase(string relativePath, string basePath, [NotNullWhen(true)] out string? absolutePath)
     {
         absolutePath = null;
@@ -213,6 +222,8 @@ internal abstract partial class CIEnvironmentValues
         return false;
     }
 
+    // Probes the platform-specific CODEOWNERS locations in priority order and returns the first
+    // existing file.
     private static bool TryGetCodeOwnersPath(string sourceRoot, CodeOwners.Platform platform, bool logLookup, [NotNullWhen(true)] out string? codeOwnersPath)
     {
         foreach (var path in GetCodeOwnersPaths(sourceRoot, platform))
@@ -233,6 +244,7 @@ internal abstract partial class CIEnvironmentValues
         return false;
     }
 
+    // Infers the CODEOWNERS dialect from standard repository URLs and SCP-style SSH URLs.
     private static bool TryGetCodeOwnersPlatformFromRepository(string? repository, out CodeOwners.Platform platform)
     {
         platform = default;
@@ -272,11 +284,14 @@ internal abstract partial class CIEnvironmentValues
         return false;
     }
 
+    // Recognizes gitlab.com and common self-managed GitLab host naming conventions.
     private static bool IsGitLabHost(string? host)
         => string.Equals(host, "gitlab.com", StringComparison.OrdinalIgnoreCase) ||
            (host?.StartsWith("gitlab.", StringComparison.OrdinalIgnoreCase) ?? false) ||
            (host?.IndexOf(".gitlab.", StringComparison.OrdinalIgnoreCase) >= 0);
 
+    // Enumerates the supported CODEOWNERS locations in the order defined by each platform,
+    // including all known locations when the platform value is unknown.
     private static IEnumerable<string> GetCodeOwnersPaths(string sourceRoot, CodeOwners.Platform platform)
     {
         if (platform == CodeOwners.Platform.GitHub)
@@ -303,6 +318,7 @@ internal abstract partial class CIEnvironmentValues
         }
     }
 
+    // Clears the loaded parser, its repository root, and cached fallback search locations.
     private void ResetCodeOwners()
     {
         CodeOwners = null;
@@ -313,6 +329,7 @@ internal abstract partial class CIEnvironmentValues
         }
     }
 
+    // Performs the initial CODEOWNERS lookup at SourceRoot using the detected platform semantics.
     private void LoadCodeOwners()
     {
         if (!StringUtil.IsNullOrEmpty(SourceRoot))
@@ -330,6 +347,8 @@ internal abstract partial class CIEnvironmentValues
         }
     }
 
+    // Re-anchors an unresolved relative compiler path by selecting the longest file suffix that
+    // exists below the CODEOWNERS root; absolute, ambiguous, and traversing paths are rejected.
     private bool TryAnchorPathToCodeOwnersRoot(string sourceFilePath, string codeOwnersRoot, bool useOSSeparator, [NotNullWhen(true)] out string? codeOwnersRelativePath)
     {
         // Compiler-recorded paths can be relative to a different base directory than the current
@@ -400,6 +419,8 @@ internal abstract partial class CIEnvironmentValues
         return false;
     }
 
+    // Lazily discovers CODEOWNERS from the source path or workspace when the initial SourceRoot
+    // lookup did not load one, while serializing concurrent fallback attempts.
     private void EnsureCodeOwnersFromFallback(string? sourceFilePath)
     {
         if (CodeOwners is not null)
@@ -426,6 +447,8 @@ internal abstract partial class CIEnvironmentValues
         }
     }
 
+    // Walks ancestors from a resolved start directory, loading the first CODEOWNERS file and
+    // stopping at the nearest Git boundary; repeated start locations are cached.
     private bool TryLoadCodeOwnersFromAncestor(string? startPath, CodeOwners.Platform platform, string? basePath)
     {
         var startDirectory = GetCodeOwnersSearchStart(startPath, basePath);
@@ -484,6 +507,8 @@ internal abstract partial class CIEnvironmentValues
         return false;
     }
 
+    // Selects the CODEOWNERS dialect from repository host, CI provider, or platform-specific file
+    // placement, defaulting to GitHub when no reliable GitLab signal exists.
     private CodeOwners.Platform GetCodeOwnersPlatform(string? sourceRoot)
     {
         if (TryGetCodeOwnersPlatformFromRepository(Repository, out var platform))
