@@ -36,6 +36,7 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
         public const string IisFullTrust = "IIS site is running in a full trust environment, without code access security (CAS).";
 
         public const string TracingWithBundleProfilerPath = "Check failing with Datadog.Trace.Bundle Nuget, related documentation: https://docs.datadoghq.com/tracing/trace_collection/dd_libraries/dotnet-core/?tab=nuget#install-the-tracer";
+        public const string AzureAppServiceHomeNotSet = "Unable to determine the Azure App Service HOME directory (the HOME environment variable is not set). Assuming D:\\home, but bundle detection may fail if the site is deployed to a different drive.";
         public const string TracingWithInstallerWindowsNetFramework = "Installer/MSI related documentation: https://docs.datadoghq.com/tracing/trace_collection/dd_libraries/dotnet-framework?tab=windows#install-the-tracer";
         public const string TracingWithInstallerWindowsNetCore = "Installer/MSI related documentation: https://docs.datadoghq.com/tracing/trace_collection/dd_libraries/dotnet-core/?tab=windows#install-the-tracer";
         public const string TracingWithInstallerLinux = "Installer related documentation: https://docs.datadoghq.com/tracing/trace_collection/dd_libraries/dotnet-core?tab=linux#install-the-tracer";
