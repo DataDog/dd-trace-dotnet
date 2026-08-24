@@ -443,6 +443,45 @@ internal abstract class CIEnvironmentValues
         return false;
     }
 
+    private static bool TryGetCodeOwnersPlatformFromRepository(string? repository, out CodeOwners.Platform platform)
+    {
+        platform = default;
+        if (StringUtil.IsNullOrWhiteSpace(repository))
+        {
+            return false;
+        }
+
+        string? host = null;
+        if (Uri.TryCreate(repository, UriKind.Absolute, out var repositoryUri) && !StringUtil.IsNullOrEmpty(repositoryUri.Host))
+        {
+            host = repositoryUri.Host;
+        }
+        else
+        {
+            // Handle SCP-style SSH URLs such as git@gitlab.com:group/project.git.
+            var hostStart = repository!.IndexOf('@') + 1;
+            var hostEnd = repository.IndexOf(':', hostStart);
+            if (hostStart > 0 && hostEnd > hostStart)
+            {
+                host = repository.Substring(hostStart, hostEnd - hostStart);
+            }
+        }
+
+        if (string.Equals(host, "gitlab.com", StringComparison.OrdinalIgnoreCase))
+        {
+            platform = CodeOwners.Platform.GitLab;
+            return true;
+        }
+
+        if (string.Equals(host, "github.com", StringComparison.OrdinalIgnoreCase))
+        {
+            platform = CodeOwners.Platform.GitHub;
+            return true;
+        }
+
+        return false;
+    }
+
     private static IEnumerable<string> GetCodeOwnersPaths(string sourceRoot, CodeOwners.Platform platform)
     {
         if (platform == CodeOwners.Platform.GitHub)
@@ -824,7 +863,7 @@ internal abstract class CIEnvironmentValues
         }
 
         var segments = sourceFilePath.Replace('\\', '/').Split(ForwardSlashCharacters, StringSplitOptions.RemoveEmptyEntries);
-        for (var i = 2; i < segments.Length - 2; i++)
+        for (var i = 2; i < segments.Length - 1; i++)
         {
             if (!segments[i].Equals("s", StringComparison.OrdinalIgnoreCase) ||
                 !int.TryParse(segments[i - 1], NumberStyles.None, CultureInfo.InvariantCulture, out _) ||
@@ -1157,7 +1196,14 @@ internal abstract class CIEnvironmentValues
     }
 
     private CodeOwners.Platform GetCodeOwnersPlatform()
-        => GetType().Name.Contains("GitlabEnvironmentValues") ? CodeOwners.Platform.GitLab : CodeOwners.Platform.GitHub;
+    {
+        if (TryGetCodeOwnersPlatformFromRepository(Repository, out var platform))
+        {
+            return platform;
+        }
+
+        return GetType().Name.Contains("GitlabEnvironmentValues") ? CodeOwners.Platform.GitLab : CodeOwners.Platform.GitHub;
+    }
 
     private readonly struct CodeOwnersFileMetadata : IEquatable<CodeOwnersFileMetadata>
     {

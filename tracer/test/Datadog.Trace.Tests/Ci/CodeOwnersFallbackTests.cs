@@ -301,6 +301,30 @@ public class CodeOwnersFallbackTests
         Assert.Null(gitlabValues.CodeOwners);
     }
 
+    [SkippableTheory]
+    [InlineData("https://gitlab.com/DataDog/dd-trace-dotnet.git")]
+    [InlineData("git@gitlab.com:DataDog/dd-trace-dotnet.git")]
+    public void UsesRepositoryHostToSelectCodeOwnersPlatform(string repositoryUrl)
+    {
+        using var tempDirectory = new TemporaryDirectory();
+        var repoRoot = tempDirectory.RootPath;
+        Directory.CreateDirectory(Path.Combine(repoRoot, ".gitlab"));
+        File.WriteAllText(Path.Combine(repoRoot, ".gitlab", "CODEOWNERS"), "[Section] @gitlab-owner\n*.cs\n");
+
+        var env = new Dictionary<string, string>
+        {
+            [PlatformKeys.Ci.Jenkins.Url] = "https://jenkins.example.com",
+            [PlatformKeys.Ci.Jenkins.GitUrl] = repositoryUrl,
+            [PlatformKeys.Ci.Jenkins.GitCommit] = CommitSha,
+            [PlatformKeys.Ci.Jenkins.Workspace] = repoRoot,
+        };
+
+        var ciValues = CIEnvironmentValues.Create(env);
+
+        Assert.Equal("jenkins", ciValues.Provider);
+        Assert.Equal(["@gitlab-owner"], ciValues.CodeOwners!.Match("/file.cs"));
+    }
+
     [SkippableFact]
     public void DoesNotMatchCodeOwnersForFileOutsideRoot()
     {
@@ -747,18 +771,19 @@ public class CodeOwnersFallbackTests
     }
 
     [SkippableTheory]
-    [InlineData(@"D:\a\_work\1\s\tracer\test\Datadog.Trace.DuckTyping.Tests\ExceptionsTests.cs")]
-    [InlineData(@"D:\a\1\s\tracer\test\Datadog.Trace.DuckTyping.Tests\ExceptionsTests.cs")]
-    [InlineData("/home/vsts/work/1/s/tracer/test/Datadog.Trace.DuckTyping.Tests/ExceptionsTests.cs")]
-    public void AnchorsAzurePipelinesCompilerPathsFromAnotherOperatingSystem(string compilerPath)
+    [InlineData(@"D:\a\_work\1\s\tracer\test\Datadog.Trace.DuckTyping.Tests\ExceptionsTests.cs", "tracer/test/Datadog.Trace.DuckTyping.Tests/ExceptionsTests.cs")]
+    [InlineData(@"D:\a\1\s\tracer\test\Datadog.Trace.DuckTyping.Tests\ExceptionsTests.cs", "tracer/test/Datadog.Trace.DuckTyping.Tests/ExceptionsTests.cs")]
+    [InlineData("/home/vsts/work/1/s/tracer/test/Datadog.Trace.DuckTyping.Tests/ExceptionsTests.cs", "tracer/test/Datadog.Trace.DuckTyping.Tests/ExceptionsTests.cs")]
+    [InlineData(@"D:\a\1\s\Program.cs", "Program.cs")]
+    public void AnchorsAzurePipelinesCompilerPathsFromAnotherOperatingSystem(string compilerPath, string expectedRelativePath)
     {
         using var tempDirectory = new TemporaryDirectory();
         var repoRoot = tempDirectory.RootPath;
-        var sourceDir = Path.Combine(repoRoot, "tracer", "test", "Datadog.Trace.DuckTyping.Tests");
-        Directory.CreateDirectory(sourceDir);
+        var sourceFile = Path.Combine(repoRoot, expectedRelativePath.Replace('/', Path.DirectorySeparatorChar));
+        Directory.CreateDirectory(Path.GetDirectoryName(sourceFile)!);
         Directory.CreateDirectory(Path.Combine(repoRoot, ".github"));
-        File.WriteAllText(Path.Combine(repoRoot, ".github", "CODEOWNERS"), "/tracer/test/ @DataDog/tracing-dotnet\n");
-        File.WriteAllText(Path.Combine(sourceDir, "ExceptionsTests.cs"), "// test");
+        File.WriteAllText(Path.Combine(repoRoot, ".github", "CODEOWNERS"), $"/{expectedRelativePath} @DataDog/tracing-dotnet\n");
+        File.WriteAllText(sourceFile, "// test");
 
         var env = new Dictionary<string, string>
         {
@@ -771,7 +796,7 @@ public class CodeOwnersFallbackTests
         var ciValues = CIEnvironmentValues.Create(env);
         var relative = ciValues.MakeRelativePathFromSourceRootWithFallback(compilerPath, false, out var owners);
 
-        Assert.Equal("tracer/test/Datadog.Trace.DuckTyping.Tests/ExceptionsTests.cs", relative);
+        Assert.Equal(expectedRelativePath, relative);
         Assert.Equal(["@DataDog/tracing-dotnet"], owners);
     }
 
