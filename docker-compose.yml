@@ -425,6 +425,7 @@ services:
       - artifacts=/project/${relativeArtifacts:-artifacts/output}
       - framework=${framework:-netcoreapp3.1}
       - Filter=${Filter:- } #optional
+      - IntegrationTestPartitionFilter=${IntegrationTestPartitionFilter:- } #optional
       - SampleName=${SampleName:- } #optional
       - baseImage=${baseImage:-default}
       - CodeCoverageEnabled=${CodeCoverageEnabled:-false}

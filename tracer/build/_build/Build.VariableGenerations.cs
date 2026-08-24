@@ -374,12 +374,18 @@ partial class Build : NukeBuild
                         }
                         else
                         {
-                            var areas = new[] { TracerArea, AsmArea };
-                            foreach (var area in areas)
+                            var partitions = new[]
+                            {
+                                (name: TracerArea, area: TracerArea, filter: "Category!=TestIntegrations"),
+                                (name: "CIVisibility", area: TracerArea, filter: "Category=TestIntegrations"),
+                                (name: AsmArea, area: AsmArea, filter: string.Empty),
+                            };
+
+                            foreach (var (name, area, filter) in partitions)
                             {
                                 if (ShouldBeIncluded(area))
                                 {
-                                    matrix.Add($"{baseImage}_{framework}_{area}", new { publishTargetFramework = framework, baseImage = baseImage, artifactSuffix = artifactSuffix, area = area });
+                                    matrix.Add($"{baseImage}_{framework}_{name}", new { publishTargetFramework = framework, baseImage = baseImage, artifactSuffix = artifactSuffix, area = area, integrationTestPartitionFilter = filter });
                                 }
                             }
                         }

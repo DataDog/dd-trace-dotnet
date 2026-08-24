@@ -1857,7 +1857,8 @@ partial class Build
         .Executes(() =>
         {
             var isDebugRun = IsDebugRun();
-            var filter = AddAreaFilter(GetFilter());
+            var parallelFilter = AddAreaFilter(AddIntegrationTestPartitionFilter(Filter));
+            var filter = AddAreaFilter(AddIntegrationTestPartitionFilter(GetFilter()));
 
             try
             {
@@ -1883,8 +1884,8 @@ partial class Build
                     .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
                     .SetProcessEnvironmentVariable("USE_FULL_TEST_CONFIG", RequiresThoroughTesting().ToString())
                     .SetLogsDirectory(TestLogsDirectory)
-                    // Don't apply a custom filter to these tests, they should all be able to be run
-                    .When(!string.IsNullOrWhiteSpace(AddAreaFilter(Filter)), c => c.SetFilter(AddAreaFilter(Filter)))
+                    // Don't apply the default platform filters to these tests; apply only explicit filters
+                    .When(!string.IsNullOrWhiteSpace(parallelFilter), c => c.SetFilter(parallelFilter))
                     .When(TestAllPackageVersions, o => o.SetProcessEnvironmentVariable("TestAllPackageVersions", "true"))
                     .When(CodeCoverageEnabled, ConfigureCodeCoverage)
                     .CombineWith(parallelJobs, (s, project) => s
@@ -1942,6 +1943,21 @@ partial class Build
                 return filter;
             }
         });
+
+    private string AddIntegrationTestPartitionFilter(string filter)
+    {
+        if (string.IsNullOrWhiteSpace(IntegrationTestPartitionFilter))
+        {
+            return filter;
+        }
+
+        if (string.IsNullOrWhiteSpace(filter))
+        {
+            return $"({IntegrationTestPartitionFilter})";
+        }
+
+        return $"({filter})&({IntegrationTestPartitionFilter})";
+    }
 
     private string AddAreaFilter(string filter)
     {
