@@ -8,6 +8,7 @@
     Type: db,
     Tags: {
       component: Couchbase,
+      couchbase.operation.bucket: default,
       couchbase.operation.code: Delete,
       couchbase.operation.key: my-document-key,
       db.couchbase.seed.nodes: couchbase,
@@ -35,6 +36,7 @@
     Error: 1,
     Tags: {
       component: Couchbase,
+      couchbase.operation.bucket: default,
       couchbase.operation.code: Delete,
       couchbase.operation.key: does-not-exist,
       db.couchbase.seed.nodes: couchbase,
@@ -62,6 +64,7 @@
     Type: db,
     Tags: {
       component: Couchbase,
+      couchbase.operation.bucket: default,
       couchbase.operation.code: Get,
       couchbase.operation.key: my-document-key,
       db.couchbase.seed.nodes: couchbase,
