@@ -9,11 +9,8 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.IO;
-using System.Linq;
 using System.Runtime.CompilerServices;
-using System.Security;
 using System.Text.RegularExpressions;
-using System.Threading;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Telemetry.Metrics;
@@ -27,22 +24,18 @@ internal abstract class CIEnvironmentValues
 {
     private const int CodeOwnersSearchCacheLimit = 256;
     internal const string RepositoryUrlPattern = @"((http|git|ssh|http(s)|file|\/?)|(git@[\w\.\-]+))(:(\/\/)?)([\w\.@\:/\-~]+)(\.git)?(\/)?";
-    internal static readonly TimeSpan CodeOwnersSearchRetryDelay = TimeSpan.FromSeconds(30);
     protected static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(CIEnvironmentValues));
     private static readonly Lazy<CIEnvironmentValues> LazyInstance = new(Create);
     private static readonly Regex BranchOrTagsRegex = new(@"^refs\/heads\/tags\/(.*)|refs\/heads\/(.*)|refs\/tags\/(.*)|refs\/(.*)|origin\/tags\/(.*)|origin\/(.*)$", RegexOptions.Compiled);
     private static readonly StringComparer CodeOwnersSearchComparer = FrameworkDescription.Instance.IsWindows()
-                                                                 ? StringComparer.OrdinalIgnoreCase
-                                                                 : StringComparer.Ordinal;
+                                                                          ? StringComparer.OrdinalIgnoreCase
+                                                                          : StringComparer.Ordinal;
 
     private static readonly char[] ForwardSlashCharacters = { '/' };
 
     private readonly object _codeOwnersLock = new();
-    private readonly Dictionary<string, LinkedListNode<CodeOwnersSearchCacheEntry>> _codeOwnersSearchCache = new(CodeOwnersSearchComparer);
-    private readonly LinkedList<CodeOwnersSearchCacheEntry> _codeOwnersSearchCacheOrder = new();
+    private readonly HashSet<string> _codeOwnersSearchStarts = new(CodeOwnersSearchComparer);
 
-    private CodeOwnersState? _codeOwnersState;
-    private int _environmentReloadVersion;
     private string? _gitSearchFolder;
 
     public static CIEnvironmentValues Instance => LazyInstance.Value;
@@ -133,21 +126,9 @@ internal abstract class CIEnvironmentValues
 
     public string? HeadMessage { get; protected set; }
 
-    public CodeOwners? CodeOwners => Volatile.Read(ref _codeOwnersState)?.Parser;
+    public CodeOwners? CodeOwners { get; protected set; }
 
-    internal string? CodeOwnersRoot => Volatile.Read(ref _codeOwnersState)?.Root;
-
-    // Test-only synchronization hooks. They are null in production and run only on the uncommon
-    // paths that wait for an active reload or perform fallback discovery.
-    internal Action? BeforeCodeOwnersReloadWait { get; set; }
-
-    internal Action? BeforeCodeOwnersFallbackLock { get; set; }
-
-    internal Action? CodeOwnersFallbackSearchStarting { get; set; }
-
-    internal Action<string>? BeforeCodeOwnersFileMetadataRead { get; set; }
-
-    internal Func<DateTime>? CodeOwnersUtcNowProvider { get; set; }
+    internal string? CodeOwnersRoot { get; private set; }
 
     public Dictionary<string, string?>? VariablesToBypass { get; protected set; }
 
@@ -326,51 +307,6 @@ internal abstract class CIEnvironmentValues
         return Directory.Exists(gitPath) || File.Exists(gitPath);
     }
 
-    private static string? GetCodeOwnersSearchBoundary(DirectoryInfo startDirectory, string? workspacePath)
-    {
-        // A real git boundary takes precedence, including when the CI workspace points at a
-        // subdirectory of the checkout.
-        for (var current = startDirectory; current is not null; current = current.Parent)
-        {
-            if (HasGitDirectory(current.FullName))
-            {
-                return current.FullName;
-            }
-        }
-
-        if (StringUtil.IsNullOrWhiteSpace(workspacePath) || !Path.IsPathRooted(workspacePath))
-        {
-            return null;
-        }
-
-        try
-        {
-            var fullWorkspacePath = Path.GetFullPath(workspacePath!);
-            var fullStartPath = Path.GetFullPath(startDirectory.FullName);
-            if (CodeOwnersSearchComparer.Equals(fullStartPath, fullWorkspacePath))
-            {
-                return fullWorkspacePath;
-            }
-
-            var workspaceWithSeparator = fullWorkspacePath;
-            if (!workspaceWithSeparator.EndsWith(Path.DirectorySeparatorChar.ToString(), StringComparison.Ordinal) &&
-                !workspaceWithSeparator.EndsWith(Path.AltDirectorySeparatorChar.ToString(), StringComparison.Ordinal))
-            {
-                workspaceWithSeparator += Path.DirectorySeparatorChar;
-            }
-
-            var comparison = FrameworkDescription.Instance.IsWindows()
-                                 ? StringComparison.OrdinalIgnoreCase
-                                 : StringComparison.Ordinal;
-            return fullStartPath.StartsWith(workspaceWithSeparator, comparison) ? fullWorkspacePath : null;
-        }
-        catch (Exception ex)
-        {
-            Log.Debug(ex, "Error resolving CODEOWNERS workspace boundary from '{Path}'", workspacePath);
-            return null;
-        }
-    }
-
     private static bool TryResolvePathWithinBase(string relativePath, string basePath, [NotNullWhen(true)] out string? absolutePath)
     {
         absolutePath = null;
@@ -505,23 +441,6 @@ internal abstract class CIEnvironmentValues
         }
     }
 
-    private CodeOwnersFileMetadata GetCodeOwnersFileMetadata(string path)
-    {
-        try
-        {
-            BeforeCodeOwnersFileMetadataRead?.Invoke(path);
-            var file = new FileInfo(path);
-            file.Refresh();
-            return file.Exists
-                       ? new CodeOwnersFileMetadata(exists: true, file.Length, file.LastWriteTimeUtc.Ticks)
-                       : default;
-        }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or SecurityException)
-        {
-            return default;
-        }
-    }
-
     public void DecorateSpan(Span span)
     {
         if (span == null)
@@ -579,25 +498,6 @@ internal abstract class CIEnvironmentValues
 
     protected void ReloadEnvironmentData()
     {
-        // Reload changes the source root and its CODEOWNERS parser as one logical state transition.
-        // Serialize the complete transition with fallback discovery so neither can publish state
-        // derived from a root that the other operation is replacing.
-        lock (_codeOwnersLock)
-        {
-            Interlocked.Increment(ref _environmentReloadVersion);
-            try
-            {
-                ReloadEnvironmentDataCore();
-            }
-            finally
-            {
-                Interlocked.Increment(ref _environmentReloadVersion);
-            }
-        }
-    }
-
-    private void ReloadEnvironmentDataCore()
-    {
         // **********
         // Setup variables
         // **********
@@ -626,8 +526,12 @@ internal abstract class CIEnvironmentValues
         CommitterDate = null;
         Message = null;
         SourceRoot = null;
-        Volatile.Write(ref _codeOwnersState, null);
-        ClearCodeOwnersSearchCache();
+        CodeOwners = null;
+        CodeOwnersRoot = null;
+        lock (_codeOwnersLock)
+        {
+            _codeOwnersSearchStarts.Clear();
+        }
 
         Setup(string.IsNullOrEmpty(_gitSearchFolder) ? GitInfo.GetCurrent() : GitInfo.GetFrom(_gitSearchFolder!));
 
@@ -662,7 +566,11 @@ internal abstract class CIEnvironmentValues
             if (TryGetCodeOwnersPath(SourceRoot!, platform, logLookup: true, out var codeOwnersPath))
             {
                 Log.Information("CODEOWNERS file found: {Path}", codeOwnersPath);
-                TryPublishCodeOwners(codeOwnersPath, platform, SourceRoot!);
+                if (CodeOwners.TryLoad(codeOwnersPath, platform, out var parser))
+                {
+                    CodeOwners = parser;
+                    CodeOwnersRoot = SourceRoot;
+                }
             }
         }
     }
@@ -704,59 +612,16 @@ internal abstract class CIEnvironmentValues
     }
 
     internal string MakeRelativePathFromSourceRootWithFallback(string sourceFilePath, bool useOSSeparator = true)
-        => MakeRelativePathFromSourceRootWithFallback(sourceFilePath, useOSSeparator, out _);
-
-    internal string MakeRelativePathFromSourceRootWithFallback(string sourceFilePath, bool useOSSeparator, out string[] codeOwners)
     {
-        // The normal path stays lock-free. A version change makes the operation retry, while an
-        // active reload waits on the same lock used for the state transition. This ensures that
-        // SourceRoot, the relative path, and CODEOWNERS all come from one completed reload.
-        while (true)
-        {
-            var reloadVersion = Volatile.Read(ref _environmentReloadVersion);
-            if ((reloadVersion & 1) != 0)
-            {
-                BeforeCodeOwnersReloadWait?.Invoke();
-                lock (_codeOwnersLock)
-                {
-                }
-
-                continue;
-            }
-
-            var sourceRelativePath = MakeRelativePathFromSourceRoot(sourceFilePath, useOSSeparator);
-            string result;
-            string[] matchedOwners;
-            if (TryGetCodeOwnersRelativePath(sourceFilePath, useOSSeparator, out var codeOwnersRelativePath, out var parser))
-            {
-                result = codeOwnersRelativePath;
-                matchedOwners = parser.Match("/" + codeOwnersRelativePath).ToArray();
-            }
-            else
-            {
-                result = sourceRelativePath;
-                matchedOwners = [];
-            }
-
-            if (reloadVersion == Volatile.Read(ref _environmentReloadVersion))
-            {
-                codeOwners = matchedOwners;
-                return result;
-            }
-        }
+        var sourceRelativePath = MakeRelativePathFromSourceRoot(sourceFilePath, useOSSeparator);
+        return TryGetCodeOwnersRelativePath(sourceFilePath, useOSSeparator, out var codeOwnersRelativePath)
+                   ? codeOwnersRelativePath
+                   : sourceRelativePath;
     }
 
     internal bool TryGetCodeOwnersRelativePath(string sourceFilePath, bool useOSSeparator, [NotNullWhen(true)] out string? codeOwnersRelativePath)
-        => TryGetCodeOwnersRelativePath(sourceFilePath, useOSSeparator, out codeOwnersRelativePath, out _);
-
-    private bool TryGetCodeOwnersRelativePath(
-        string sourceFilePath,
-        bool useOSSeparator,
-        [NotNullWhen(true)] out string? codeOwnersRelativePath,
-        [NotNullWhen(true)] out CodeOwners? parser)
     {
         codeOwnersRelativePath = null;
-        parser = null;
 
         if (StringUtil.IsNullOrWhiteSpace(sourceFilePath))
         {
@@ -767,13 +632,12 @@ internal abstract class CIEnvironmentValues
         // Ensure CODEOWNERS is loaded (or discovered via fallback) before attempting normalization.
         EnsureCodeOwnersFromFallback(sourceFilePath);
 
-        var codeOwnersState = Volatile.Read(ref _codeOwnersState);
-        if (codeOwnersState is null || StringUtil.IsNullOrWhiteSpace(codeOwnersState.Root))
+        if (CodeOwners is null || StringUtil.IsNullOrWhiteSpace(CodeOwnersRoot))
         {
             return false;
         }
 
-        var codeOwnersRoot = codeOwnersState.Root;
+        var codeOwnersRoot = CodeOwnersRoot!;
         if (!Path.IsPathRooted(codeOwnersRoot))
         {
             // If SourceRoot was relative, re-anchor to WorkspacePath before matching.
@@ -785,7 +649,7 @@ internal abstract class CIEnvironmentValues
 
             // Require a CODEOWNERS file at the resolved root to avoid mismatched roots.
             // Avoid mixing CODEOWNERS content from one root with a different resolved root.
-            if (!TryGetCodeOwnersPath(resolvedRoot, codeOwnersState.Platform, logLookup: false, out _))
+            if (!TryGetCodeOwnersPath(resolvedRoot, GetCodeOwnersPlatform(resolvedRoot), logLookup: false, out _))
             {
                 return false;
             }
@@ -793,13 +657,8 @@ internal abstract class CIEnvironmentValues
             codeOwnersRoot = resolvedRoot;
         }
 
-        // Azure Pipelines may build on Windows and run the resulting assemblies in a Linux
-        // container. In that case PDB paths use the Windows build-agent checkout prefix, which
-        // cannot be resolved directly by the current OS. Re-anchor only recognized Azure checkout
-        // layouts, and only when the complete repository-relative suffix exists under this root.
-        if (TryAnchorAzurePipelinesCompilerPath(sourceFilePath, codeOwnersRoot, useOSSeparator, out codeOwnersRelativePath))
+        if (TryAnchorPathToCodeOwnersRoot(sourceFilePath, codeOwnersRoot, useOSSeparator, out codeOwnersRelativePath))
         {
-            parser = codeOwnersState.Parser;
             return true;
         }
 
@@ -816,13 +675,7 @@ internal abstract class CIEnvironmentValues
             // Relative paths must stay within the codeowners root; otherwise we try to anchor them.
             if (!TryResolvePathWithinBase(sourceFilePath, codeOwnersRoot, out var resolvedPath))
             {
-                var anchored = TryAnchorPathToCodeOwnersRoot(sourceFilePath, codeOwnersRoot, useOSSeparator, out codeOwnersRelativePath);
-                if (anchored)
-                {
-                    parser = codeOwnersState.Parser;
-                }
-
-                return anchored;
+                return false;
             }
 
             absolutePath = resolvedPath;
@@ -838,68 +691,11 @@ internal abstract class CIEnvironmentValues
             relativePath.StartsWith("../", StringComparison.Ordinal) ||
             relativePath.StartsWith("..\\", StringComparison.Ordinal))
         {
-            var anchored = TryAnchorPathToCodeOwnersRoot(sourceFilePath, codeOwnersRoot, useOSSeparator, out codeOwnersRelativePath);
-            if (anchored)
-            {
-                parser = codeOwnersState.Parser;
-            }
-
-            return anchored;
-        }
-
-        codeOwnersRelativePath = relativePath;
-        parser = codeOwnersState.Parser;
-        return true;
-    }
-
-    private bool TryAnchorAzurePipelinesCompilerPath(
-        string sourceFilePath,
-        string codeOwnersRoot,
-        bool useOSSeparator,
-        [NotNullWhen(true)] out string? codeOwnersRelativePath)
-    {
-        codeOwnersRelativePath = null;
-        if (!string.Equals(Provider, "azurepipelines", StringComparison.Ordinal) ||
-            StringUtil.IsNullOrWhiteSpace(sourceFilePath) ||
-            sourceFilePath.StartsWith("file:", StringComparison.OrdinalIgnoreCase) ||
-            (Uri.TryCreate(sourceFilePath, UriKind.Absolute, out var uri) && !uri.IsFile))
-        {
             return false;
         }
 
-        var segments = sourceFilePath.Replace('\\', '/').Split(ForwardSlashCharacters, StringSplitOptions.RemoveEmptyEntries);
-        for (var i = 2; i < segments.Length - 1; i++)
-        {
-            if (!segments[i].Equals("s", StringComparison.OrdinalIgnoreCase) ||
-                !int.TryParse(segments[i - 1], NumberStyles.None, CultureInfo.InvariantCulture, out _) ||
-                !(segments[i - 2].Equals("a", StringComparison.OrdinalIgnoreCase) ||
-                  segments[i - 2].Equals("work", StringComparison.OrdinalIgnoreCase) ||
-                  segments[i - 2].Equals("_work", StringComparison.OrdinalIgnoreCase)))
-            {
-                continue;
-            }
-
-            var suffixStart = i + 1;
-            for (var j = suffixStart; j < segments.Length; j++)
-            {
-                if (segments[j] is "." or "..")
-                {
-                    return false;
-                }
-            }
-
-            var candidateSuffix = string.Join(Path.DirectorySeparatorChar.ToString(), segments, suffixStart, segments.Length - suffixStart);
-            if (!TryResolvePathWithinBase(candidateSuffix, codeOwnersRoot, out var candidatePath) || !File.Exists(candidatePath))
-            {
-                return false;
-            }
-
-            var separator = useOSSeparator ? Path.DirectorySeparatorChar.ToString() : "/";
-            codeOwnersRelativePath = string.Join(separator, segments, suffixStart, segments.Length - suffixStart);
-            return true;
-        }
-
-        return false;
+        codeOwnersRelativePath = relativePath;
+        return true;
     }
 
     private bool TryAnchorPathToCodeOwnersRoot(string sourceFilePath, string codeOwnersRoot, bool useOSSeparator, [NotNullWhen(true)] out string? codeOwnersRelativePath)
@@ -909,43 +705,69 @@ internal abstract class CIEnvironmentValues
         // resolution fails, anchor the path by finding the longest suffix that exists under the
         // CODEOWNERS root, independently of the CI provider layout that produced the prefix.
         codeOwnersRelativePath = null;
-        if (StringUtil.IsNullOrWhiteSpace(sourceFilePath) ||
-            Path.IsPathRooted(sourceFilePath) ||
-            Uri.TryCreate(sourceFilePath, UriKind.Absolute, out _))
+        if (StringUtil.IsNullOrWhiteSpace(sourceFilePath))
         {
-            // Only relative paths recorded against a foreign base directory are anchored; absolute
-            // paths pointing outside the repository must not be re-anchored into it.
             return false;
         }
 
         var normalizedPath = sourceFilePath.Replace('\\', '/');
-        var pathWithoutForeignPrefix = normalizedPath;
-        while (pathWithoutForeignPrefix.StartsWith("../", StringComparison.Ordinal) ||
-               pathWithoutForeignPrefix.StartsWith("./", StringComparison.Ordinal))
-        {
-            var prefixLength = pathWithoutForeignPrefix.StartsWith("../", StringComparison.Ordinal) ? 3 : 2;
-            pathWithoutForeignPrefix = pathWithoutForeignPrefix.Substring(prefixLength);
-        }
-
-        if (Path.IsPathRooted(pathWithoutForeignPrefix) || Uri.TryCreate(pathWithoutForeignPrefix, UriKind.Absolute, out _))
-        {
-            // A drive, UNC path, Unix root, or URI embedded after navigation segments is still
-            // absolute. Reject the whole source path instead of matching a shorter local suffix.
-            return false;
-        }
-
         var segments = normalizedPath.Split(ForwardSlashCharacters, StringSplitOptions.RemoveEmptyEntries);
-        if (segments.Length < 2)
+        var start = -1;
+
+        // Azure may build on one OS and run tests on another. Its checkout marker gives us an
+        // unambiguous repository-relative suffix even when the recorded path is absolute here.
+        if (string.Equals(Provider, "azurepipelines", StringComparison.Ordinal) &&
+            !sourceFilePath.StartsWith("file:", StringComparison.OrdinalIgnoreCase) &&
+            (!Uri.TryCreate(sourceFilePath, UriKind.Absolute, out var uri) || uri.IsFile))
         {
-            // Never anchor bare file names: too easy to match an unrelated file.
-            return false;
+            for (var i = 2; i < segments.Length - 1; i++)
+            {
+                if (segments[i].Equals("s", StringComparison.OrdinalIgnoreCase) &&
+                    int.TryParse(segments[i - 1], NumberStyles.None, CultureInfo.InvariantCulture, out _) &&
+                    (segments[i - 2].Equals("a", StringComparison.OrdinalIgnoreCase) ||
+                     segments[i - 2].Equals("work", StringComparison.OrdinalIgnoreCase) ||
+                     segments[i - 2].Equals("_work", StringComparison.OrdinalIgnoreCase)))
+                {
+                    start = i + 1;
+                    break;
+                }
+            }
         }
 
-        // Skip leading "." / ".." navigation segments: they belong to the foreign base directory.
-        var start = 0;
-        while (start < segments.Length && (segments[start] == "." || segments[start] == ".."))
+        var isAzureCheckoutPath = start >= 0;
+        if (!isAzureCheckoutPath)
         {
-            start++;
+            if (Path.IsPathRooted(sourceFilePath) || Uri.TryCreate(sourceFilePath, UriKind.Absolute, out _))
+            {
+                return false;
+            }
+
+            var pathWithoutForeignPrefix = normalizedPath;
+            while (pathWithoutForeignPrefix.StartsWith("../", StringComparison.Ordinal) ||
+                   pathWithoutForeignPrefix.StartsWith("./", StringComparison.Ordinal))
+            {
+                var prefixLength = pathWithoutForeignPrefix.StartsWith("../", StringComparison.Ordinal) ? 3 : 2;
+                pathWithoutForeignPrefix = pathWithoutForeignPrefix.Substring(prefixLength);
+            }
+
+            if (Path.IsPathRooted(pathWithoutForeignPrefix) || Uri.TryCreate(pathWithoutForeignPrefix, UriKind.Absolute, out _))
+            {
+                // Reject absolute paths hidden after leading navigation segments.
+                return false;
+            }
+
+            if (segments.Length < 2)
+            {
+                // Never anchor bare file names: too easy to match an unrelated file.
+                return false;
+            }
+
+            // Leading navigation segments belong to the compiler's foreign base directory.
+            start = 0;
+            while (start < segments.Length && (segments[start] == "." || segments[start] == ".."))
+            {
+                start++;
+            }
         }
 
         // Never anchor paths with interior navigation segments: their resolution depends on the
@@ -958,7 +780,8 @@ internal abstract class CIEnvironmentValues
             }
         }
 
-        for (var i = start; i < segments.Length - 1; i++)
+        var lastStart = isAzureCheckoutPath ? start + 1 : segments.Length - 1;
+        for (var i = start; i < lastStart; i++)
         {
             var candidateSuffix = string.Join(Path.DirectorySeparatorChar.ToString(), segments, i, segments.Length - i);
             if (TryResolvePathWithinBase(candidateSuffix, codeOwnersRoot, out var candidatePath) && File.Exists(candidatePath))
@@ -1015,15 +838,14 @@ internal abstract class CIEnvironmentValues
 
     private void EnsureCodeOwnersFromFallback(string? sourceFilePath)
     {
-        if (Volatile.Read(ref _codeOwnersState) is not null)
+        if (CodeOwners is not null)
         {
             return;
         }
 
-        BeforeCodeOwnersFallbackLock?.Invoke();
         lock (_codeOwnersLock)
         {
-            if (Volatile.Read(ref _codeOwnersState) is not null)
+            if (CodeOwners is not null)
             {
                 return;
             }
@@ -1036,7 +858,7 @@ internal abstract class CIEnvironmentValues
                 return;
             }
 
-            TryLoadCodeOwnersFromAncestor(WorkspacePath, platform, WorkspacePath);
+            TryLoadCodeOwnersFromAncestor(WorkspacePath, platform, basePath: null);
         }
     }
 
@@ -1059,145 +881,43 @@ internal abstract class CIEnvironmentValues
             return false;
         }
 
-        var repositoryBoundary = GetCodeOwnersSearchBoundary(directoryInfo, basePath);
-        var searchCacheKey = repositoryBoundary ?? directoryInfo.FullName;
-        if (ShouldSkipCodeOwnersSearch(searchCacheKey))
+        // Limit cache growth to avoid unbounded memory in large test suites.
+        if (_codeOwnersSearchStarts.Count >= CodeOwnersSearchCacheLimit)
+        {
+            _codeOwnersSearchStarts.Clear();
+        }
+
+        // Skip repeated lookups for the same starting directory.
+        if (!_codeOwnersSearchStarts.Add(directoryInfo.FullName))
         {
             return false;
         }
 
-        CodeOwnersFallbackSearchStarting?.Invoke();
-        string? nearestCodeOwnersPath = null;
-        string? nearestCodeOwnersRoot = null;
-
-        // When a repository boundary exists, only its repository-level CODEOWNERS locations are
-        // valid. If git metadata is unavailable, a containing workspace is the safest boundary.
-        // Retain the nearest candidate solely when neither boundary can be discovered.
+        // Walk parent directories until we find CODEOWNERS or hit a git boundary.
         while (directoryInfo != null)
         {
-            var isRepositoryBoundary = repositoryBoundary is not null &&
-                                       CodeOwnersSearchComparer.Equals(directoryInfo.FullName, repositoryBoundary);
             if (TryGetCodeOwnersPath(directoryInfo.FullName, platform, logLookup: false, out var codeOwnersPath))
             {
-                if (isRepositoryBoundary)
+                Log.Information("CODEOWNERS file found using fallback search: {Path}", codeOwnersPath);
+                if (CodeOwners.TryLoad(codeOwnersPath, platform, out var parser))
                 {
-                    if (PublishFallbackCodeOwners(codeOwnersPath, platform, directoryInfo.FullName))
-                    {
-                        return true;
-                    }
-
-                    CacheCodeOwnersLoadFailure(searchCacheKey, codeOwnersPath);
-                    return false;
+                    CodeOwners = parser;
+                    CodeOwnersRoot = directoryInfo.FullName;
+                    return true;
                 }
 
-                nearestCodeOwnersPath ??= codeOwnersPath;
-                nearestCodeOwnersRoot ??= directoryInfo.FullName;
+                return false;
             }
 
-            if (isRepositoryBoundary)
+            if (HasGitDirectory(directoryInfo.FullName))
             {
-                // A nested CODEOWNERS candidate is not valid for this repository. Do not fall
-                // through to it when the actual repository root has no CODEOWNERS file.
-                CacheCodeOwnersSearch(searchCacheKey, failedCodeOwnersPath: null);
-                return false;
+                break;
             }
 
             directoryInfo = directoryInfo.Parent;
         }
 
-        if (nearestCodeOwnersPath is not null && nearestCodeOwnersRoot is not null)
-        {
-            if (PublishFallbackCodeOwners(nearestCodeOwnersPath, platform, nearestCodeOwnersRoot))
-            {
-                return true;
-            }
-
-            CacheCodeOwnersLoadFailure(searchCacheKey, nearestCodeOwnersPath);
-            return false;
-        }
-
-        CacheCodeOwnersSearch(searchCacheKey, failedCodeOwnersPath: null);
         return false;
-    }
-
-    private bool ShouldSkipCodeOwnersSearch(string searchCacheKey)
-    {
-        if (!_codeOwnersSearchCache.TryGetValue(searchCacheKey, out var node))
-        {
-            return false;
-        }
-
-        var entry = node.Value;
-        if (GetCodeOwnersUtcNow() >= entry.RetryAfterUtc)
-        {
-            RemoveCodeOwnersSearchCacheEntry(node);
-            return false;
-        }
-
-        if (entry.FailedCodeOwnersPath is null ||
-            entry.FileMetadata.Equals(GetCodeOwnersFileMetadata(entry.FailedCodeOwnersPath)))
-        {
-            return true;
-        }
-
-        RemoveCodeOwnersSearchCacheEntry(node);
-        return false;
-    }
-
-    private void CacheCodeOwnersLoadFailure(string searchCacheKey, string codeOwnersPath)
-        => CacheCodeOwnersSearch(searchCacheKey, codeOwnersPath);
-
-    private void CacheCodeOwnersSearch(string searchCacheKey, string? failedCodeOwnersPath)
-    {
-        if (_codeOwnersSearchCache.TryGetValue(searchCacheKey, out var existingNode))
-        {
-            RemoveCodeOwnersSearchCacheEntry(existingNode);
-        }
-
-        while (_codeOwnersSearchCache.Count >= CodeOwnersSearchCacheLimit)
-        {
-            RemoveCodeOwnersSearchCacheEntry(_codeOwnersSearchCacheOrder.First!);
-        }
-
-        var entry = new CodeOwnersSearchCacheEntry(
-            searchCacheKey,
-            failedCodeOwnersPath,
-            failedCodeOwnersPath is null ? default : GetCodeOwnersFileMetadata(failedCodeOwnersPath),
-            GetCodeOwnersUtcNow().Add(CodeOwnersSearchRetryDelay));
-        var node = _codeOwnersSearchCacheOrder.AddLast(entry);
-        _codeOwnersSearchCache.Add(searchCacheKey, node);
-    }
-
-    private void RemoveCodeOwnersSearchCacheEntry(LinkedListNode<CodeOwnersSearchCacheEntry> node)
-    {
-        _codeOwnersSearchCache.Remove(node.Value.Key);
-        _codeOwnersSearchCacheOrder.Remove(node);
-    }
-
-    private void ClearCodeOwnersSearchCache()
-    {
-        _codeOwnersSearchCache.Clear();
-        _codeOwnersSearchCacheOrder.Clear();
-    }
-
-    private DateTime GetCodeOwnersUtcNow() => CodeOwnersUtcNowProvider?.Invoke() ?? DateTime.UtcNow;
-
-    private bool PublishFallbackCodeOwners(string codeOwnersPath, CodeOwners.Platform platform, string root)
-    {
-        Log.Information("CODEOWNERS file found using fallback search: {Path}", codeOwnersPath);
-        return TryPublishCodeOwners(codeOwnersPath, platform, root);
-    }
-
-    private bool TryPublishCodeOwners(string codeOwnersPath, CodeOwners.Platform platform, string root)
-    {
-        if (!CodeOwners.TryLoad(codeOwnersPath, platform, out var parser))
-        {
-            return false;
-        }
-
-        var state = new CodeOwnersState(parser, root, platform);
-        Volatile.Write(ref _codeOwnersState, state);
-        return true;
     }
 
     private CodeOwners.Platform GetCodeOwnersPlatform(string? sourceRoot)
@@ -1227,78 +947,5 @@ internal abstract class CIEnvironmentValues
         }
 
         return CodeOwners.Platform.GitHub;
-    }
-
-    private readonly struct CodeOwnersFileMetadata : IEquatable<CodeOwnersFileMetadata>
-    {
-        public CodeOwnersFileMetadata(bool exists, long length, long lastWriteTimeUtcTicks)
-        {
-            Exists = exists;
-            Length = length;
-            LastWriteTimeUtcTicks = lastWriteTimeUtcTicks;
-        }
-
-        public bool Exists { get; }
-
-        public long Length { get; }
-
-        public long LastWriteTimeUtcTicks { get; }
-
-        public bool Equals(CodeOwnersFileMetadata other)
-            => Exists == other.Exists &&
-               Length == other.Length &&
-               LastWriteTimeUtcTicks == other.LastWriteTimeUtcTicks;
-
-        public override bool Equals(object? obj) => obj is CodeOwnersFileMetadata other && Equals(other);
-
-        public override int GetHashCode()
-        {
-            unchecked
-            {
-                var hashCode = Exists ? 1 : 0;
-                hashCode = (hashCode * 397) ^ Length.GetHashCode();
-                hashCode = (hashCode * 397) ^ LastWriteTimeUtcTicks.GetHashCode();
-                return hashCode;
-            }
-        }
-    }
-
-    private sealed class CodeOwnersSearchCacheEntry
-    {
-        public CodeOwnersSearchCacheEntry(
-            string key,
-            string? failedCodeOwnersPath,
-            CodeOwnersFileMetadata fileMetadata,
-            DateTime retryAfterUtc)
-        {
-            Key = key;
-            FailedCodeOwnersPath = failedCodeOwnersPath;
-            FileMetadata = fileMetadata;
-            RetryAfterUtc = retryAfterUtc;
-        }
-
-        public string Key { get; }
-
-        public string? FailedCodeOwnersPath { get; }
-
-        public CodeOwnersFileMetadata FileMetadata { get; }
-
-        public DateTime RetryAfterUtc { get; }
-    }
-
-    private sealed class CodeOwnersState
-    {
-        public CodeOwnersState(CodeOwners parser, string root, CodeOwners.Platform platform)
-        {
-            Parser = parser;
-            Root = root;
-            Platform = platform;
-        }
-
-        public CodeOwners Parser { get; }
-
-        public string Root { get; }
-
-        public CodeOwners.Platform Platform { get; }
     }
 }
