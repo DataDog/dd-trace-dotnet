@@ -11,8 +11,14 @@ namespace Datadog.Trace.Ci
 {
     internal sealed partial class CodeOwners
     {
+        /// <summary>
+        /// Reads and validates the owner list from a GitHub rule.
+        /// </summary>
         private static class GitHubOwnerTokenizer
         {
+            /// <summary>
+            /// Splits the owner text, removes duplicates, and reports invalid owners.
+            /// </summary>
             public static string[] TokenizeGitHub(string segment, out bool allValid)
             {
                 if (string.IsNullOrWhiteSpace(segment))
@@ -39,6 +45,9 @@ namespace Datadog.Trace.Ci
                 return owners.Count == 0 ? [] : owners.ToArray();
             }
 
+            /// <summary>
+            /// Adds an owner once while keeping the original order.
+            /// </summary>
             private static void AddUnique(List<string> owners, HashSet<string> uniqueOwners, string owner)
             {
                 if (uniqueOwners.Add(owner))
@@ -47,8 +56,12 @@ namespace Datadog.Trace.Ci
                 }
             }
 
+            /// <summary>
+            /// Checks whether a token is a valid GitHub user, team, or email address.
+            /// </summary>
             private static bool IsValidGitHubOwner(string token)
             {
+                // GitHub users and teams use @user or @organization/team.
                 if (token.Length > 1 && token[0] == '@' && token[1] != '@')
                 {
                     var slash = token.IndexOf('/');
@@ -59,6 +72,7 @@ namespace Datadog.Trace.Ci
                                  IsValidGitHubIdentifier(token, slash + 1, token.Length);
                 }
 
+                // Any other owner must be a valid email address.
                 var at = token.IndexOf('@');
                 if (at is < 1 or > 100 ||
                     token.Length - at - 1 is < 1 or > 255 ||
@@ -86,6 +100,9 @@ namespace Datadog.Trace.Ci
                 return IsAsciiLetterOrDigit(token[token.Length - 1]) || token[token.Length - 1] == '_';
             }
 
+            /// <summary>
+            /// Checks one GitHub user, organization, or team name inside a token.
+            /// </summary>
             private static bool IsValidGitHubIdentifier(string value, int start, int end)
             {
                 if (start >= end || !IsAsciiLetterOrDigit(value[start]) || !IsAsciiLetterOrDigit(value[end - 1]))
@@ -113,17 +130,29 @@ namespace Datadog.Trace.Ci
                 return true;
             }
 
+            /// <summary>
+            /// Checks whether a character is allowed before the at sign in an email address.
+            /// </summary>
             private static bool IsEmailLocalCharacter(char character)
                 => IsAsciiLetterOrDigit(character) || ".!#$%&'*+/=?^_`{|}~-".IndexOf(character) >= 0;
 
+            /// <summary>
+            /// Checks whether a character is an ASCII letter or digit.
+            /// </summary>
             private static bool IsAsciiLetterOrDigit(char character)
                 => character is >= 'a' and <= 'z' or >= 'A' and <= 'Z' or >= '0' and <= '9';
         }
 
+        /// <summary>
+        /// Stores GitHub rules in last-match-first order.
+        /// </summary>
         private sealed class GitHubDocument : Document
         {
             private readonly Entry[] _rules;
 
+            /// <summary>
+            /// Initializes a new instance of the <see cref="GitHubDocument"/> class from compiled rules.
+            /// </summary>
             private GitHubDocument(Entry[] rules)
             {
                 _rules = rules;
@@ -131,6 +160,9 @@ namespace Datadog.Trace.Ci
 
             public static GitHubDocument Empty { get; } = new([]);
 
+            /// <summary>
+            /// Parses valid GitHub rules and counts invalid lines.
+            /// </summary>
             public static GitHubDocument Parse(IEnumerable<string> lines, out int parsingDiagnosticsCount)
             {
                 parsingDiagnosticsCount = 0;
@@ -155,10 +187,14 @@ namespace Datadog.Trace.Ci
                     }
                 }
 
+                // GitHub uses the last matching rule, so search the rules from bottom to top.
                 rules.Reverse();
                 return new GitHubDocument(rules.ToArray());
             }
 
+            /// <summary>
+            /// Returns the owners from the last GitHub rule that matches the path.
+            /// </summary>
             public override IEnumerable<string> Match(string path)
             {
                 foreach (var rule in _rules)
@@ -175,6 +211,9 @@ namespace Datadog.Trace.Ci
 
         private sealed partial class Entry
         {
+            /// <summary>
+            /// Parses one GitHub rule and compiles its path pattern.
+            /// </summary>
             public static Entry? ParseGitHub(string raw)
             {
                 if (raw.StartsWith("\\#"))
@@ -213,6 +252,9 @@ namespace Datadog.Trace.Ci
                 return new Entry(glob, patternToken, exclusion: false, owners);
             }
 
+            /// <summary>
+            /// Finds a character that is not escaped with a backslash.
+            /// </summary>
             private static int FindUnescapedCharacter(string value, char character)
             {
                 for (var i = 0; i < value.Length; i++)
@@ -230,6 +272,9 @@ namespace Datadog.Trace.Ci
                 return -1;
             }
 
+            /// <summary>
+            /// Rejects pattern features that GitHub CODEOWNERS does not support.
+            /// </summary>
             private static bool IsUnsupportedGitHubPattern(string patternToken)
             {
                 if (patternToken.StartsWith("!"))
@@ -257,6 +302,9 @@ namespace Datadog.Trace.Ci
                 return false;
             }
 
+            /// <summary>
+            /// Checks whether the final path segment names a directory without wildcards.
+            /// </summary>
             private static bool IsDirectoryPattern(string patternToken)
             {
                 var lastSegmentStart = patternToken.LastIndexOf('/');

@@ -23,6 +23,9 @@ namespace Datadog.Trace.Ci
             @"(?<![\w@])@@(?:developer|maintainer|owner)s?(?=\s|$)",
             RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.IgnoreCase);
 
+        /// <summary>
+        /// Parses a GitLab section header, its name, and its default owners.
+        /// </summary>
         private static bool TryParseGitLabSectionHeader(
             string raw,
             [NotNullWhen(true)] out GitLabSection? section,
@@ -60,17 +63,22 @@ namespace Datadog.Trace.Ci
 
             hasDiagnostics |= !required && approvals > 0;
 
-            // Only parse the owner span recognized by GitLab's permissive header grammar. Text
-            // after a malformed suffix (for example an extra ']') must never leak into defaults.
+            // Use only the owner text matched by the header. Ignore text after a bad suffix.
             var defaults = GitLabOwnerTokenizer.TokenizeGitLab(m.Groups["defaults"].Value, out var allDefaultsValid);
             hasDiagnostics |= !allDefaultsValid;
             section = new GitLabSection(name, defaults);
             return true;
         }
 
+        /// <summary>
+        /// Checks whether a line looks like a section header but could not be parsed.
+        /// </summary>
         private static bool IsUnparsableSectionHeader(string raw)
             => raw.StartsWith("[", StringComparison.Ordinal) || raw.StartsWith("^[", StringComparison.Ordinal);
 
+        /// <summary>
+        /// Checks whether a section header follows GitLab's strict syntax.
+        /// </summary>
         private static bool IsStrictSectionHeader(string raw)
         {
             var index = raw[0] == '^' ? 1 : 0;
@@ -128,6 +136,9 @@ namespace Datadog.Trace.Ci
             return true;
         }
 
+        /// <summary>
+        /// Checks whether a character is allowed in the owner part of a section header.
+        /// </summary>
         private static bool IsStrictSectionOwnerCharacter(char character)
         {
             if (char.IsLetterOrDigit(character) || char.IsWhiteSpace(character) || character is '@' or '.' or '-' or '/')
@@ -139,8 +150,14 @@ namespace Datadog.Trace.Ci
             return category is UnicodeCategory.NonSpacingMark or UnicodeCategory.ConnectorPunctuation;
         }
 
+        /// <summary>
+        /// Finds GitLab users, groups, roles, and emails inside owner text.
+        /// </summary>
         private static class GitLabOwnerTokenizer
         {
+            /// <summary>
+            /// Extracts valid owners, removes duplicates, and reports text without a valid owner.
+            /// </summary>
             public static string[] TokenizeGitLab(string segment, out bool allValid)
             {
                 if (string.IsNullOrWhiteSpace(segment))
@@ -163,6 +180,9 @@ namespace Datadog.Trace.Ci
                 return owners.Count == 0 ? [] : owners.ToArray();
             }
 
+            /// <summary>
+            /// Adds an owner once while keeping the original order.
+            /// </summary>
             private static void AddUnique(List<string> owners, HashSet<string> uniqueOwners, string owner)
             {
                 if (uniqueOwners.Add(owner))
@@ -171,17 +191,19 @@ namespace Datadog.Trace.Ci
                 }
             }
 
+            /// <summary>
+            /// Finds every valid GitLab owner reference inside one token.
+            /// </summary>
             private static bool ExtractGitLabOwners(string token, List<string> owners, HashSet<string> uniqueOwners)
             {
-                // Keep the overwhelmingly common canonical forms allocation-light.
+                // Handle common complete references without extra parsing.
                 if (IsWholeNamespaceReference(token) || IsValidGitLabRole(token))
                 {
                     AddUnique(owners, uniqueOwners, token);
                     return true;
                 }
 
-                // GitLab extracts references from surrounding punctuation instead of returning
-                // the entire token verbatim (for example "(@team)" becomes "@team").
+                // GitLab accepts references inside punctuation, such as "(@team)".
                 var foundReference = false;
                 var searchStart = 0;
                 while (TryFindNamespaceReference(token, searchStart, out var referenceStart, out var referenceEnd, out searchStart))
@@ -205,9 +227,7 @@ namespace Datadog.Trace.Ci
                     var email = emailStart == 0 && emailEnd == token.Length
                                     ? token
                                     : token.Substring(emailStart, emailEnd - emailStart);
-                    // GitLab's permissive email expression can overlap a namespace reference
-                    // (for example "(@team"). Such a value cannot resolve as an email, while
-                    // the namespace extracted independently can resolve, so keep only the latter.
+                    // Do not add an email when the same text contains a valid group reference.
                     if (!ContainsNamespaceReference(email))
                     {
                         AddUnique(owners, uniqueOwners, email);
@@ -218,9 +238,15 @@ namespace Datadog.Trace.Ci
                 return foundReference;
             }
 
+            /// <summary>
+            /// Checks whether text contains a GitLab user or group reference.
+            /// </summary>
             private static bool ContainsNamespaceReference(string value)
                 => TryFindNamespaceReference(value, 0, out _, out _, out _);
 
+            /// <summary>
+            /// Checks whether a token is one of GitLab's supported role references.
+            /// </summary>
             private static bool IsValidGitLabRole(string token)
             {
                 if (!token.StartsWith("@@", StringComparison.Ordinal) || token.Length <= 2)
@@ -237,9 +263,15 @@ namespace Datadog.Trace.Ci
                        role.Equals("owners", StringComparison.OrdinalIgnoreCase);
             }
 
+            /// <summary>
+            /// Checks whether the full token is one GitLab user or group reference.
+            /// </summary>
             private static bool IsWholeNamespaceReference(string token)
                 => TryFindNamespaceReference(token, 0, out var start, out var end, out _) && start == 0 && end == token.Length;
 
+            /// <summary>
+            /// Finds the next GitLab user or group reference starting at the requested position.
+            /// </summary>
             private static bool TryFindNamespaceReference(
                 string token,
                 int searchStart,
@@ -247,6 +279,7 @@ namespace Datadog.Trace.Ci
                 out int referenceEnd,
                 out int nextSearchStart)
             {
+                // Find each @ and reject it when the characters around it make it part of another word.
                 for (var atIndex = token.IndexOf('@', searchStart); atIndex >= 0; atIndex = token.IndexOf('@', atIndex + 1))
                 {
                     nextSearchStart = atIndex + 1;
@@ -258,6 +291,7 @@ namespace Datadog.Trace.Ci
                         continue;
                     }
 
+                    // Read slash-separated namespace parts and remember the last valid end.
                     var segmentStart = atIndex + 1;
                     var lastValidEnd = -1;
                     for (var i = segmentStart; i < token.Length; i++)
@@ -300,6 +334,9 @@ namespace Datadog.Trace.Ci
                 return false;
             }
 
+            /// <summary>
+            /// Finds the next email-like owner reference while enforcing GitLab's length limits.
+            /// </summary>
             private static bool TryExtractGitLabEmailReference(
                 string token,
                 int searchStart,
@@ -309,6 +346,7 @@ namespace Datadog.Trace.Ci
             {
                 for (var atIndex = token.IndexOf('@', searchStart); atIndex >= 0; atIndex = token.IndexOf('@', atIndex + 1))
                 {
+                    // Read the local part backwards from @.
                     var localStart = atIndex - 1;
                     var localLength = 0;
                     while (localStart >= searchStart &&
@@ -326,6 +364,7 @@ namespace Datadog.Trace.Ci
                         continue;
                     }
 
+                    // Read the domain forwards and keep the last valid word character.
                     var domainEnd = atIndex + 1;
                     var domainLimit = Math.Min(token.Length, domainEnd + 255);
                     var lastWordEnd = -1;
@@ -356,18 +395,33 @@ namespace Datadog.Trace.Ci
                 return false;
             }
 
+            /// <summary>
+            /// Checks whether a character can start a GitLab namespace segment.
+            /// </summary>
             private static bool IsNamespaceStart(char character)
                 => IsAsciiLetterOrDigit(character) || character is '_' or '.';
 
+            /// <summary>
+            /// Checks whether a character can appear inside a GitLab namespace segment.
+            /// </summary>
             private static bool IsNamespaceCharacter(char character)
                 => IsNamespaceStart(character) || character == '-';
 
+            /// <summary>
+            /// Checks whether a character can end a GitLab namespace segment.
+            /// </summary>
             private static bool IsNamespaceEnd(char character)
                 => IsAsciiLetterOrDigit(character) || character is '_' or '-';
 
+            /// <summary>
+            /// Checks whether a character is a Unicode word character used as a left boundary.
+            /// </summary>
             private static bool IsWordCharacter(char character)
                 => char.IsLetterOrDigit(character) || character == '_';
 
+            /// <summary>
+            /// Applies the Unicode word-character rules used by GitLab's email parser.
+            /// </summary>
             private static bool IsRegexWordCharacter(char character)
             {
                 if (char.IsLetterOrDigit(character))
@@ -379,23 +433,36 @@ namespace Datadog.Trace.Ci
                 return category is UnicodeCategory.NonSpacingMark or UnicodeCategory.ConnectorPunctuation;
             }
 
+            /// <summary>
+            /// Checks whether a character is an ASCII letter or digit.
+            /// </summary>
             private static bool IsAsciiLetterOrDigit(char character)
                 => character is >= 'a' and <= 'z' or >= 'A' and <= 'Z' or >= '0' and <= '9';
         }
 
+        /// <summary>
+        /// Stores GitLab rules grouped into independent sections.
+        /// </summary>
         private sealed class GitLabDocument : Document
         {
             private readonly GitLabSection[] _sections;
 
+            /// <summary>
+            /// Initializes a new instance of the <see cref="GitLabDocument"/> class from parsed sections.
+            /// </summary>
             private GitLabDocument(GitLabSection[] sections)
             {
                 _sections = sections;
             }
 
+            /// <summary>
+            /// Parses GitLab sections and rules and counts invalid input.
+            /// </summary>
             public static GitLabDocument Parse(IEnumerable<string> lines, out int parsingDiagnosticsCount)
             {
                 parsingDiagnosticsCount = 0;
                 var sections = new List<GitLabSection>();
+                // Rules before the first header belong to the unnamed section.
                 var current = GitLabSection.CreateUnnamed();
                 var currentDefaultOwners = current.DefaultOwners;
                 var namedSections = new Dictionary<string, GitLabSection>(StringComparer.OrdinalIgnoreCase);
@@ -419,6 +486,7 @@ namespace Datadog.Trace.Ci
                         currentDefaultOwners = newSection.DefaultOwners;
                         if (namedSections.TryGetValue(newSection.Name, out var existingSection))
                         {
+                            // Repeated section names add rules to the first section with that name.
                             current = existingSection;
                         }
                         else
@@ -433,16 +501,14 @@ namespace Datadog.Trace.Ci
 
                     if (IsUnparsableSectionHeader(raw))
                     {
-                        // GitLab reports malformed header-like lines and skips them rather than
-                        // reinterpreting them as path patterns.
+                        // A malformed header is invalid and must not become a path rule.
                         parsingDiagnosticsCount++;
                         continue;
                     }
 
                     if (raw[0] == '#')
                     {
-                        // GitLab parses owners inside comments for its MR widget, but comments do
-                        // not bind those owners to a path and therefore do not affect matching.
+                        // Comments do not assign owners to paths.
                         continue;
                     }
 
@@ -462,6 +528,7 @@ namespace Datadog.Trace.Ci
                     }
                 }
 
+                // Finish each section after all repeated definitions have been joined.
                 foreach (var section in sections)
                 {
                     section.Seal();
@@ -470,10 +537,12 @@ namespace Datadog.Trace.Ci
                 return new GitLabDocument(sections.ToArray());
             }
 
+            /// <summary>
+            /// Matches each section separately and combines the owners from every matching section.
+            /// </summary>
             public override IEnumerable<string> Match(string path)
             {
-                // GitLab evaluates each section independently and combines their owners.
-                // The set is allocated lazily because most paths match at most one section.
+                // Create the set only after the first section matches.
                 HashSet<string>? owners = null;
                 foreach (var section in _sections)
                 {
@@ -491,11 +560,17 @@ namespace Datadog.Trace.Ci
             }
         }
 
+        /// <summary>
+        /// Stores the rules and default owners for one GitLab section.
+        /// </summary>
         private sealed class GitLabSection
         {
             private readonly List<Entry> _entries = new();
             private Entry[]? _cache;
 
+            /// <summary>
+            /// Initializes a new instance of the <see cref="GitLabSection"/> class.
+            /// </summary>
             public GitLabSection(string name, string[] defaultOwners)
             {
                 Name = name;
@@ -506,14 +581,24 @@ namespace Datadog.Trace.Ci
 
             public string[] DefaultOwners { get; }
 
+            /// <summary>
+            /// Creates the section used for rules before the first named header.
+            /// </summary>
             public static GitLabSection CreateUnnamed() => new(string.Empty, []);
 
+            /// <summary>
+            /// Adds a parsed rule to this section.
+            /// </summary>
             public void Add(Entry entry) => _entries.Add(entry);
 
+            /// <summary>
+            /// Prepares the section for matching by keeping the last rule for each exact pattern.
+            /// </summary>
             public void Seal()
             {
                 var seenPatterns = new HashSet<string>(StringComparer.Ordinal);
                 var cache = new List<Entry>(_entries.Count);
+                // Walk backwards because later rules replace earlier rules with the same pattern.
                 for (var i = _entries.Count - 1; i >= 0; i--)
                 {
                     var entry = _entries[i];
@@ -527,6 +612,9 @@ namespace Datadog.Trace.Ci
                 _entries.Clear();
             }
 
+            /// <summary>
+            /// Returns the owners selected by this section, unless a matching exclusion removes the path.
+            /// </summary>
             public bool TryMatch(string path, [NotNullWhen(true)] out string[]? owners)
             {
                 var rules = _cache ?? [];
@@ -541,10 +629,12 @@ namespace Datadog.Trace.Ci
 
                     if (rule.IsExclusion)
                     {
+                        // An exclusion applies only to this section.
                         owners = null;
                         return false;
                     }
 
+                    // Rules are stored last-first, so the first normal match wins.
                     matchedOwners ??= rule.Owners;
                 }
 
@@ -561,6 +651,9 @@ namespace Datadog.Trace.Ci
 
         private sealed partial class Entry
         {
+            /// <summary>
+            /// Parses one GitLab rule, applies section defaults, and compiles its path pattern.
+            /// </summary>
             public static Entry? ParseGitLab(string raw, string[] defaultOwners, out bool hasDiagnostics)
             {
                 hasDiagnostics = false;
@@ -585,6 +678,7 @@ namespace Datadog.Trace.Ci
 
                 if (!isExclusion && !hasExplicitOwners && defaultOwners.Length > 0)
                 {
+                    // A rule without owners inherits the current section defaults.
                     owners = defaultOwners;
                 }
 
@@ -602,6 +696,9 @@ namespace Datadog.Trace.Ci
                 return new Entry(glob, NormalizeGitLabPatternKey(patternToken), isExclusion, owners);
             }
 
+            /// <summary>
+            /// Normalizes equivalent GitLab patterns so later duplicates can replace earlier ones.
+            /// </summary>
             private static string NormalizeGitLabPatternKey(string patternToken)
             {
                 if (patternToken == "*")
@@ -614,6 +711,9 @@ namespace Datadog.Trace.Ci
                 return normalized.EndsWith("/") ? normalized + "**/*" : normalized;
             }
 
+            /// <summary>
+            /// Removes GitLab escapes for a leading hash and for whitespace.
+            /// </summary>
             private static string NormalizeGitLabEscapes(string patternToken)
             {
                 StringBuilder? builder = null;

@@ -24,6 +24,9 @@ namespace Datadog.Trace.Ci
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<CodeOwners>();
         private readonly Document _document;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="CodeOwners"/> class and loads the selected platform rules.
+        /// </summary>
         public CodeOwners(string filePath, Platform platform)
         {
             if (string.IsNullOrEmpty(filePath))
@@ -61,6 +64,9 @@ namespace Datadog.Trace.Ci
 
         internal int ParsingDiagnosticsCount { get; }
 
+        /// <summary>
+        /// Tries to load a CODEOWNERS file and handles file access errors.
+        /// </summary>
         internal static bool TryLoad(string filePath, Platform platform, [NotNullWhen(true)] out CodeOwners? codeOwners)
         {
             try
@@ -84,7 +90,7 @@ namespace Datadog.Trace.Ci
         {
             if (path is null)
             {
-                // No callers pass null today, but normalizing here keeps the API safe to use.
+                // Returning no owners keeps this method safe if a caller passes null.
                 return [];
             }
 
@@ -98,6 +104,9 @@ namespace Datadog.Trace.Ci
         }
 
 #pragma warning disable SA1201
+        /// <summary>
+        /// Identifies the CODEOWNERS syntax to use.
+        /// </summary>
         public enum Platform
 #pragma warning restore SA1201
         {
@@ -112,10 +121,16 @@ namespace Datadog.Trace.Ci
             Invalid
         }
 
+        /// <summary>
+        /// Represents either one path segment pattern or a globstar that can consume directories.
+        /// </summary>
         private readonly struct GlobPathSegment
         {
             private readonly SegmentPattern? _segment;
 
+            /// <summary>
+            /// Initializes a new instance of the <see cref="GlobPathSegment"/> struct.
+            /// </summary>
             private GlobPathSegment(SegmentPattern? segment, bool isGlobStar, bool requiresSegment)
             {
                 _segment = segment;
@@ -127,28 +142,52 @@ namespace Datadog.Trace.Ci
 
             public bool RequiresSegment { get; }
 
+            /// <summary>
+            /// Creates a globstar that consumes zero or more path segments, or at least one when required.
+            /// </summary>
             public static GlobPathSegment GlobStar(bool requiresSegment) => new(null, isGlobStar: true, requiresSegment: requiresSegment);
 
+            /// <summary>
+            /// Wraps a normal compiled segment pattern.
+            /// </summary>
             public static GlobPathSegment Pattern(SegmentPattern segment) => new(segment, isGlobStar: false, requiresSegment: false);
 
+            /// <summary>
+            /// Checks whether this normal segment pattern matches the selected part of a path.
+            /// </summary>
             public bool Matches(string path, int start, int end) => _segment!.IsMatch(path, start, end);
         }
 
+        /// <summary>
+        /// Matches a full repository path by combining normal segment patterns and globstars.
+        /// </summary>
         private sealed class GlobPattern
         {
             private readonly GlobPathSegment[] _segments;
 
+            /// <summary>
+            /// Initializes a new instance of the <see cref="GlobPattern"/> class from compiled segments.
+            /// </summary>
             private GlobPattern(GlobPathSegment[] segments)
             {
                 _segments = segments;
             }
 
+            /// <summary>
+            /// Compiles a pattern with GitHub rules.
+            /// </summary>
             public static GlobPattern? CompileGitHub(string pattern, bool includeDescendants)
                 => Compile(pattern, Platform.GitHub, includeDescendants);
 
+            /// <summary>
+            /// Compiles a pattern with GitLab rules.
+            /// </summary>
             public static GlobPattern? CompileGitLab(string pattern)
                 => Compile(pattern, Platform.GitLab, includeDescendants: false);
 
+            /// <summary>
+            /// Splits a pattern into path segments and compiles each segment with the selected platform rules.
+            /// </summary>
             private static GlobPattern? Compile(string pattern, Platform platform, bool includeDescendants)
             {
                 var rawSegments = SplitPattern(pattern, out var firstSeparator, out var hasTrailingSlash);
@@ -172,10 +211,9 @@ namespace Datadog.Trace.Ci
                     if (rawSegments[i] == "**" &&
                         !(platform == Platform.GitLab && i == lastSegment - 1))
                     {
-                        // A terminal /** means contents below the preceding directory and must
-                        // consume at least one path segment on GitHub. GitLab delegates matching
-                        // to File.fnmatch, where a terminal ** behaves like * within one segment.
-                        // Middle globstars may consume none on both platforms.
+                        // On GitHub, a final /** must match at least one child segment.
+                        // On GitLab, a final ** works like * inside the last segment.
+                        // A middle ** can match zero or more segments on both platforms.
                         AddGlobStar(segments, requiresSegment: i == lastSegment - 1);
                     }
                     else if (SegmentPattern.TryCompile(rawSegments[i], platform, out var segment))
@@ -184,22 +222,24 @@ namespace Datadog.Trace.Ci
                     }
                     else
                     {
-                        // Invalid shell character classes invalidate only their own entry.
+                        // Ignore the full rule when one segment is invalid.
                         return null;
                     }
                 }
 
                 if (hasTrailingSlash || includeDescendants)
                 {
-                    // A trailing slash denotes a directory, so it cannot match a same-named file.
-                    // Descendant expansion inferred for GitHub patterns remains optional because
-                    // the base pattern itself may denote either a file or a directory.
+                    // A trailing slash means a directory and must match a child path.
+                    // A plain GitHub directory name may also be a file, so its child match is optional.
                     AddGlobStar(segments, requiresSegment: hasTrailingSlash);
                 }
 
                 return new GlobPattern(segments.ToArray());
             }
 
+            /// <summary>
+            /// Splits a pattern on path separators while keeping escaped characters inside their segment.
+            /// </summary>
             private static string[] SplitPattern(string pattern, out int firstSeparator, out bool hasTrailingSlash)
             {
                 var segments = new List<string>();
@@ -215,7 +255,7 @@ namespace Datadog.Trace.Ci
                         var escapedCharacter = pattern[i + 1];
                         if (escapedCharacter != '/')
                         {
-                            // Preserve non-separator escapes for SegmentPattern to compile.
+                            // Keep this escape so SegmentPattern can process it.
                             segment.Append(character);
                             segment.Append(escapedCharacter);
                             i++;
@@ -223,8 +263,7 @@ namespace Datadog.Trace.Ci
                             continue;
                         }
 
-                        // An escaped slash is still the path separator in gitignore-style globs;
-                        // consume the escape before splitting so it cannot leave a trailing '\\'.
+                        // An escaped slash is still a path separator.
                         i++;
                     }
                     else if (character != '/')
@@ -244,6 +283,9 @@ namespace Datadog.Trace.Ci
                 return segments.ToArray();
             }
 
+            /// <summary>
+            /// Matches path segments from left to right and lets the latest globstar consume more segments when needed.
+            /// </summary>
             public bool IsMatch(string path)
             {
                 var patternIndex = 0;
@@ -305,11 +347,14 @@ namespace Datadog.Trace.Ci
                 return patternIndex == _segments.Length;
             }
 
+            /// <summary>
+            /// Adds a globstar and merges it with the previous one when they are next to each other.
+            /// </summary>
             private static void AddGlobStar(List<GlobPathSegment> segments, bool requiresSegment)
             {
                 if (segments.Count > 0 && segments[segments.Count - 1].IsGlobStar)
                 {
-                    // zero-or-more followed by one-or-more (or vice versa) is one-or-more.
+                    // Adjacent globstars become one. If either needs a segment, the result does too.
                     if (requiresSegment && !segments[segments.Count - 1].RequiresSegment)
                     {
                         segments[segments.Count - 1] = GlobPathSegment.GlobStar(requiresSegment: true);
@@ -321,16 +366,25 @@ namespace Datadog.Trace.Ci
                 segments.Add(GlobPathSegment.GlobStar(requiresSegment));
             }
 
+            /// <summary>
+            /// Finds the end of the current path segment.
+            /// </summary>
             private static int GetSegmentEnd(string path, int segmentStart)
             {
                 var separator = path.IndexOf('/', segmentStart);
                 return separator >= 0 ? separator : path.Length;
             }
 
+            /// <summary>
+            /// Returns the start of the next path segment, or -1 when there is no next segment.
+            /// </summary>
             private static int GetNextSegmentStart(string path, int segmentEnd)
                 => segmentEnd < path.Length - 1 ? segmentEnd + 1 : -1;
         }
 
+        /// <summary>
+        /// Matches one path segment using literals, escapes, wildcards, and GitLab character classes.
+        /// </summary>
         private sealed class SegmentPattern
         {
             private const int MaximumPatternLength = 1_024;
@@ -339,12 +393,18 @@ namespace Datadog.Trace.Ci
             private readonly string _pattern;
             private readonly Platform _platform;
 
+            /// <summary>
+            /// Initializes a new instance of the <see cref="SegmentPattern"/> class.
+            /// </summary>
             private SegmentPattern(string pattern, Platform platform)
             {
                 _pattern = pattern;
                 _platform = platform;
             }
 
+            /// <summary>
+            /// Validates one segment and compiles it when its syntax and size are safe.
+            /// </summary>
             public static bool TryCompile(string pattern, Platform platform, [NotNullWhen(true)] out SegmentPattern? segment)
             {
                 if (pattern.Length > MaximumPatternLength)
@@ -386,6 +446,9 @@ namespace Datadog.Trace.Ci
                 return true;
             }
 
+            /// <summary>
+            /// Parses a GitLab character class and optionally checks whether it contains a character.
+            /// </summary>
             private static CharacterClassParseResult TryParseCharacterClass(
                 string pattern,
                 int openingBracket,
@@ -397,6 +460,7 @@ namespace Datadog.Trace.Ci
                 closingBracket = -1;
                 matches = false;
                 var contentStart = openingBracket + 1;
+                // GitLab allows ! or ^ after [ to negate the class.
                 var negated = contentStart < pattern.Length && pattern[contentStart] is '!' or '^';
                 var atomStart = negated ? contentStart + 1 : contentStart;
                 if (atomStart < pattern.Length && pattern[atomStart] == ']')
@@ -404,6 +468,7 @@ namespace Datadog.Trace.Ci
                     return CharacterClassParseResult.Invalid;
                 }
 
+                // Find the first closing bracket that is not escaped.
                 for (var i = atomStart; i < pattern.Length; i++)
                 {
                     if (pattern[i] == '\\' && i + 1 < pattern.Length)
@@ -428,6 +493,7 @@ namespace Datadog.Trace.Ci
                 }
 
                 var atomIndex = atomStart;
+                // Each item is either one character or a start-end range.
                 while (atomIndex < closingBracket)
                 {
                     var rangeStart = ReadCharacterClassAtom(pattern, ref atomIndex, closingBracket, out _);
@@ -461,6 +527,9 @@ namespace Datadog.Trace.Ci
                 return CharacterClassParseResult.Success;
             }
 
+            /// <summary>
+            /// Reads one literal or escaped character from a character class.
+            /// </summary>
             private static char ReadCharacterClassAtom(
                 string pattern,
                 ref int index,
@@ -476,6 +545,9 @@ namespace Datadog.Trace.Ci
                 return pattern[index++];
             }
 
+            /// <summary>
+            /// Matches one path segment and backtracks only to the latest star when a token fails.
+            /// </summary>
             public bool IsMatch(string path, int start, int end)
             {
                 var patternIndex = 0;
@@ -488,11 +560,13 @@ namespace Datadog.Trace.Ci
                 {
                     if (remainingSteps-- == 0)
                     {
+                        // Stop malformed patterns from using too much CPU.
                         return false;
                     }
 
                     if (patternIndex < _pattern.Length && _pattern[patternIndex] == '*')
                     {
+                        // First let the star match zero characters.
                         do
                         {
                             patternIndex++;
@@ -516,6 +590,7 @@ namespace Datadog.Trace.Ci
                         return false;
                     }
 
+                    // Retry the latest star after letting it consume one more character.
                     patternIndex = starPatternIndex;
                     pathIndex = ++starPathIndex;
                 }
@@ -528,6 +603,9 @@ namespace Datadog.Trace.Ci
                 return patternIndex == _pattern.Length;
             }
 
+            /// <summary>
+            /// Matches one pattern token against one path character.
+            /// </summary>
             private bool TryMatchToken(int patternIndex, char value, out int nextPatternIndex)
             {
                 if (patternIndex >= _pattern.Length)
@@ -558,15 +636,27 @@ namespace Datadog.Trace.Ci
             }
         }
 
+        /// <summary>
+        /// Defines how one platform evaluates its parsed rules.
+        /// </summary>
         private abstract class Document
         {
+            /// <summary>
+            /// Returns the owners that apply to a normalized repository path.
+            /// </summary>
             public abstract IEnumerable<string> Match(string path);
         }
 
+        /// <summary>
+        /// Stores one compiled CODEOWNERS rule.
+        /// </summary>
         private sealed partial class Entry
         {
             private readonly GlobPattern _glob;
 
+            /// <summary>
+            /// Initializes a new instance of the <see cref="Entry"/> class with a compiled pattern and owners.
+            /// </summary>
             private Entry(GlobPattern glob, string patternKey, bool exclusion, string[] owners)
             {
                 _glob = glob;
@@ -581,6 +671,9 @@ namespace Datadog.Trace.Ci
 
             public string PatternKey { get; }
 
+            /// <summary>
+            /// Splits a rule at its first unescaped whitespace into the pattern and owner text.
+            /// </summary>
             private static void SplitEscapedEntry(string entry, out string pattern, out string owners, out bool hasExplicitOwners)
             {
                 var patternEnd = entry.Length;
@@ -602,6 +695,9 @@ namespace Datadog.Trace.Ci
                 hasExplicitOwners = owners.Length > 0;
             }
 
+            /// <summary>
+            /// Checks whether this rule matches a normalized repository path.
+            /// </summary>
             public bool Match(string path) => _glob.IsMatch(path);
         }
     }
