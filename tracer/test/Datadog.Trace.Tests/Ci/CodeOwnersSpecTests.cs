@@ -167,6 +167,16 @@ public class CodeOwnersSpecTests
     }
 
     [SkippableFact]
+    public void GitLabSectionSyntaxDoesNotScopeGitHubRules()
+    {
+        var codeOwners = Create("*.js @first\n[Docs] @ignored\n*.md @docs\n*.js @second\n", CodeOwners.Platform.GitHub);
+
+        Match(codeOwners, "/x/y.js").Should().Equal(["@second"]);
+        Match(codeOwners, "/README.md").Should().Equal(["@docs"]);
+        codeOwners.ParsingDiagnosticsCount.Should().Be(1);
+    }
+
+    [SkippableFact]
     public void GlobstarMatchesZeroDirectories()
     {
         var codeOwners = Create("/db/**/index.md @index-docs\n/docs/**/*.md @markdown-docs\n", CodeOwners.Platform.GitLab);

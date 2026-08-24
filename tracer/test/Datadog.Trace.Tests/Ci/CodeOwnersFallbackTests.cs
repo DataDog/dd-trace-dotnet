@@ -491,61 +491,13 @@ public class CodeOwnersFallbackTests
     }
 
     [SkippableTheory]
-    [InlineData(@"D:\a\_work\1\s\tracer\test\Datadog.Trace.DuckTyping.Tests\ExceptionsTests.cs", "tracer/test/Datadog.Trace.DuckTyping.Tests/ExceptionsTests.cs")]
-    [InlineData(@"D:\a\1\s\tracer\test\Datadog.Trace.DuckTyping.Tests\ExceptionsTests.cs", "tracer/test/Datadog.Trace.DuckTyping.Tests/ExceptionsTests.cs")]
-    [InlineData("/home/vsts/work/1/s/tracer/test/Datadog.Trace.DuckTyping.Tests/ExceptionsTests.cs", "tracer/test/Datadog.Trace.DuckTyping.Tests/ExceptionsTests.cs")]
-    [InlineData(@"D:\a\1\s\Program.cs", "Program.cs")]
-    public void AnchorsAzurePipelinesCompilerPathsFromAnotherOperatingSystem(string compilerPath, string expectedRelativePath)
-    {
-        using var tempDirectory = new TemporaryDirectory();
-        var repoRoot = tempDirectory.RootPath;
-        var sourceFile = Path.Combine(repoRoot, expectedRelativePath.Replace('/', Path.DirectorySeparatorChar));
-        Directory.CreateDirectory(Path.GetDirectoryName(sourceFile)!);
-        Directory.CreateDirectory(Path.Combine(repoRoot, ".github"));
-        File.WriteAllText(Path.Combine(repoRoot, ".github", "CODEOWNERS"), $"/{expectedRelativePath} @DataDog/tracing-dotnet\n");
-        File.WriteAllText(sourceFile, "// test");
-
-        var env = new Dictionary<string, string>
-        {
-            [PlatformKeys.Ci.Azure.TFBuild] = "True",
-            [PlatformKeys.Ci.Azure.BuildSourcesDirectory] = repoRoot,
-            [PlatformKeys.Ci.Azure.BuildSourceVersion] = CommitSha,
-            [PlatformKeys.Ci.Azure.BuildRepositoryUri] = "https://github.com/DataDog/dd-trace-dotnet",
-        };
-
-        var ciValues = CIEnvironmentValues.Create(env);
-        var relative = ciValues.MakeRelativePathFromSourceRootWithFallback(compilerPath, false);
-
-        Assert.Equal(expectedRelativePath, relative);
-        Assert.Equal(["@DataDog/tracing-dotnet"], ciValues.CodeOwners!.Match("/" + relative));
-    }
-
-    [SkippableFact]
-    public void DoesNotAnchorAzureStyleAbsolutePathsForOtherProviders()
-    {
-        using var tempDirectory = new TemporaryDirectory();
-        var repoRoot = tempDirectory.RootPath;
-        var sourceDir = Path.Combine(repoRoot, "src");
-        Directory.CreateDirectory(sourceDir);
-        File.WriteAllText(Path.Combine(repoRoot, "CODEOWNERS"), "/src/ @owner\n");
-        File.WriteAllText(Path.Combine(sourceDir, "SpanBenchmark.cs"), "// test");
-
-        var env = new Dictionary<string, string>
-        {
-            [PlatformKeys.Ci.GitHub.Sha] = CommitSha,
-            [PlatformKeys.Ci.GitHub.Workspace] = repoRoot,
-            [PlatformKeys.Ci.GitHub.Repository] = "DataDog/dd-trace-dotnet",
-        };
-
-        var ciValues = CIEnvironmentValues.Create(env);
-
-        Assert.False(ciValues.TryGetCodeOwnersRelativePath(@"D:\a\_work\1\s\src\SpanBenchmark.cs", false, out _));
-    }
-
-    [SkippableTheory]
+    [InlineData(@"D:\a\_work\1\s\src\SpanBenchmark.cs")]
+    [InlineData(@"D:\a\1\s\src\SpanBenchmark.cs")]
+    [InlineData("/home/vsts/work/1/s/src/SpanBenchmark.cs")]
+    [InlineData("/tmp/work/1/s/src/SpanBenchmark.cs")]
     [InlineData("file:///D:/a/_work/1/s/src/SpanBenchmark.cs")]
     [InlineData("https://example.com/a/_work/1/s/src/SpanBenchmark.cs")]
-    public void DoesNotAnchorUrisThatResembleAzureCheckoutPaths(string sourcePath)
+    public void DoesNotAnchorAbsoluteAzurePipelinesPathsWithMatchingRepositorySuffix(string sourcePath)
     {
         using var tempDirectory = new TemporaryDirectory();
         var repoRoot = tempDirectory.RootPath;

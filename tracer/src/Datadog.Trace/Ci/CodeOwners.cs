@@ -32,8 +32,7 @@ namespace Datadog.Trace.Ci
             @"(?<![\w@])@@(?:developer|maintainer|owner)s?(?=\s|$)",
             RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.IgnoreCase);
 
-        private readonly List<Section> _sections;
-        private readonly Platform _platform;
+        private readonly Document _document;
 
         public CodeOwners(string filePath, Platform platform)
         {
@@ -42,10 +41,9 @@ namespace Datadog.Trace.Ci
                 throw new ArgumentNullException(nameof(filePath));
             }
 
-            _platform = platform;
             if (platform == Platform.GitHub && new FileInfo(filePath).Length > GitHubMaximumFileSizeBytes)
             {
-                _sections = [];
+                _document = GitHubDocument.Empty;
                 Log.Warning<long, string>(
                     "GitHub CODEOWNERS file exceeds the {MaximumSize} byte limit and will be ignored: {Path}",
                     GitHubMaximumFileSizeBytes,
@@ -53,7 +51,14 @@ namespace Datadog.Trace.Ci
                 return;
             }
 
-            _sections = Parse(File.ReadLines(filePath), platform, out var parsingDiagnosticsCount);
+            int parsingDiagnosticsCount;
+            _document = platform switch
+            {
+                Platform.GitHub => GitHubDocument.Parse(File.ReadLines(filePath), out parsingDiagnosticsCount),
+                Platform.GitLab => GitLabDocument.Parse(File.ReadLines(filePath), out parsingDiagnosticsCount),
+                _ => throw new ArgumentOutOfRangeException(nameof(platform)),
+            };
+
             ParsingDiagnosticsCount = parsingDiagnosticsCount;
             if (parsingDiagnosticsCount > 0)
             {
@@ -99,125 +104,12 @@ namespace Datadog.Trace.Ci
             // "", "/", and "//C:/file" all normalize to a single rooted form.
             normalizedPath = "/" + normalizedPath.TrimStart('/');
 
-            if (_platform == Platform.GitHub)
-            {
-                // GitHub has no sections: the whole file is a single ordered rule set where
-                // the last matching pattern takes precedence over all previous ones.
-                for (var i = _sections.Count - 1; i >= 0; i--)
-                {
-                    if (_sections[i].TryMatchGitHub(normalizedPath, out var sectionOwners))
-                    {
-                        return sectionOwners;
-                    }
-                }
-
-                return [];
-            }
-
-            // GitLab evaluates each section independently and combines their owners.
-            // The set is allocated lazily because most paths match at most one section.
-            HashSet<string>? owners = null;
-            foreach (var section in _sections)
-            {
-                if (section.TryMatchGitLab(normalizedPath, out var sectionOwners))
-                {
-                    owners ??= new HashSet<string>(StringComparer.Ordinal);
-                    foreach (var o in sectionOwners)
-                    {
-                        owners.Add(o);
-                    }
-                }
-            }
-
-            return owners ?? [];
+            return _document.Match(normalizedPath);
         }
 
-        private static List<Section> Parse(IEnumerable<string> lines, Platform platform, out int parsingDiagnosticsCount)
-        {
-            parsingDiagnosticsCount = 0;
-            var sections = new List<Section>();
-            var current = Section.CreateUnnamed();
-            var currentDefaultOwners = current.DefaultOwners;
-            Dictionary<string, Section>? namedSections = platform == Platform.GitLab
-                                                              ? new Dictionary<string, Section>(StringComparer.OrdinalIgnoreCase)
-                                                              : null;
-            sections.Add(current);
-
-            foreach (var line in lines)
-            {
-                var raw = line.Trim();
-                if (raw.Length == 0)
-                {
-                    continue;
-                }
-
-                if (TryParseSectionHeader(raw, platform, out var newSection, out var sectionHasDiagnostics))
-                {
-                    if (sectionHasDiagnostics)
-                    {
-                        parsingDiagnosticsCount++;
-                    }
-
-                    currentDefaultOwners = newSection.DefaultOwners;
-                    if (namedSections is not null && namedSections.TryGetValue(newSection.Name, out var existingSection))
-                    {
-                        current = existingSection;
-                    }
-                    else
-                    {
-                        current = newSection;
-                        sections.Add(current);
-                        namedSections?.Add(current.Name, current);
-                    }
-
-                    continue;
-                }
-
-                if (platform == Platform.GitLab && IsUnparsableSectionHeader(raw))
-                {
-                    // GitLab reports malformed header-like lines and skips them rather than
-                    // reinterpreting them as path patterns.
-                    parsingDiagnosticsCount++;
-                    continue;
-                }
-
-                if (raw[0] == '#')
-                {
-                    // Comment line. GitLab parses owners found inside comments so they appear in MR widget,
-                    // but those owners are not bound to any path pattern, so we ignore them for matching.
-                    continue;
-                }
-
-                var entry = Entry.Parse(raw, platform, currentDefaultOwners, out var entryHasDiagnostics);
-                if (entry is not null)
-                {
-                    if (entryHasDiagnostics)
-                    {
-                        parsingDiagnosticsCount++;
-                    }
-
-                    current.Add(entry, replaceDuplicatePattern: platform == Platform.GitLab);
-                }
-                else
-                {
-                    parsingDiagnosticsCount++;
-                }
-            }
-
-            // Reverse the entries of every section so the last rule in the file is evaluated first
-            // at match time, without additional copies.
-            foreach (var s in sections)
-            {
-                s.Seal();
-            }
-
-            return sections;
-        }
-
-        private static bool TryParseSectionHeader(
+        private static bool TryParseGitLabSectionHeader(
             string raw,
-            Platform platform,
-            [NotNullWhen(true)] out Section? section,
+            [NotNullWhen(true)] out GitLabSection? section,
             out bool hasDiagnostics)
         {
             // Accepted forms:
@@ -234,8 +126,7 @@ namespace Datadog.Trace.Ci
 
             var required = !m.Groups[1].Success; // ^ prefix => optional section
             var name = m.Groups["name"].Value.Trim();
-            hasDiagnostics = platform == Platform.GitHub ||
-                             name.Length == 0 ||
+            hasDiagnostics = name.Length == 0 ||
                              !IsStrictSectionHeader(raw);
 
             var approvals = 0;
@@ -255,9 +146,9 @@ namespace Datadog.Trace.Ci
 
             // Only parse the owner span recognized by GitLab's permissive header grammar. Text
             // after a malformed suffix (for example an extra ']') must never leak into defaults.
-            var defaults = OwnerTokenizer.Tokenize(m.Groups["defaults"].Value, platform, out var allDefaultsValid);
+            var defaults = OwnerTokenizer.TokenizeGitLab(m.Groups["defaults"].Value, out var allDefaultsValid);
             hasDiagnostics |= !allDefaultsValid;
-            section = new Section(name, defaults);
+            section = new GitLabSection(name, defaults);
             return true;
         }
 
@@ -371,7 +262,7 @@ namespace Datadog.Trace.Ci
 
         private static class OwnerTokenizer
         {
-            public static string[] Tokenize(string segment, Platform platform, out bool allValid)
+            public static string[] TokenizeGitHub(string segment, out bool allValid)
             {
                 if (string.IsNullOrWhiteSpace(segment))
                 {
@@ -384,18 +275,33 @@ namespace Datadog.Trace.Ci
                 allValid = true;
                 foreach (var token in segment.Split([' ', '\t'], StringSplitOptions.RemoveEmptyEntries))
                 {
-                    if (platform == Platform.GitHub)
+                    if (IsValidGitHubOwner(token))
                     {
-                        if (IsValidGitHubOwner(token))
-                        {
-                            AddUnique(owners, uniqueOwners, token);
-                        }
-                        else
-                        {
-                            allValid = false;
-                        }
+                        AddUnique(owners, uniqueOwners, token);
                     }
-                    else if (!ExtractGitLabOwners(token, owners, uniqueOwners))
+                    else
+                    {
+                        allValid = false;
+                    }
+                }
+
+                return owners.Count == 0 ? [] : owners.ToArray();
+            }
+
+            public static string[] TokenizeGitLab(string segment, out bool allValid)
+            {
+                if (string.IsNullOrWhiteSpace(segment))
+                {
+                    allValid = true;
+                    return [];
+                }
+
+                var owners = new List<string>();
+                var uniqueOwners = new HashSet<string>(StringComparer.Ordinal);
+                allValid = true;
+                foreach (var token in segment.Split([' ', '\t'], StringSplitOptions.RemoveEmptyEntries))
+                {
+                    if (!ExtractGitLabOwners(token, owners, uniqueOwners))
                     {
                         allValid = false;
                     }
@@ -702,7 +608,13 @@ namespace Datadog.Trace.Ci
                 _segments = segments;
             }
 
-            public static GlobPattern? Compile(string pattern, Platform platform, bool includeDescendants)
+            public static GlobPattern? CompileGitHub(string pattern, bool includeDescendants)
+                => Compile(pattern, Platform.GitHub, includeDescendants);
+
+            public static GlobPattern? CompileGitLab(string pattern)
+                => Compile(pattern, Platform.GitLab, includeDescendants: false);
+
+            private static GlobPattern? Compile(string pattern, Platform platform, bool includeDescendants)
             {
                 var rawSegments = SplitPattern(pattern, out var firstSeparator, out var hasTrailingSlash);
                 var rooted = (rawSegments.Length > 0 && rawSegments[0].Length == 0) ||
@@ -1111,13 +1023,178 @@ namespace Datadog.Trace.Ci
             }
         }
 
-        private sealed class Section
+        private abstract class Document
+        {
+            public abstract IEnumerable<string> Match(string path);
+        }
+
+        private sealed class GitHubDocument : Document
+        {
+            private readonly Entry[] _rules;
+
+            private GitHubDocument(Entry[] rules)
+            {
+                _rules = rules;
+            }
+
+            public static GitHubDocument Empty { get; } = new([]);
+
+            public static GitHubDocument Parse(IEnumerable<string> lines, out int parsingDiagnosticsCount)
+            {
+                parsingDiagnosticsCount = 0;
+                var rules = new List<Entry>();
+
+                foreach (var line in lines)
+                {
+                    var raw = line.Trim();
+                    if (raw.Length == 0 || raw[0] == '#')
+                    {
+                        continue;
+                    }
+
+                    var entry = Entry.ParseGitHub(raw);
+                    if (entry is null)
+                    {
+                        parsingDiagnosticsCount++;
+                    }
+                    else
+                    {
+                        rules.Add(entry);
+                    }
+                }
+
+                rules.Reverse();
+                return new GitHubDocument(rules.ToArray());
+            }
+
+            public override IEnumerable<string> Match(string path)
+            {
+                foreach (var rule in _rules)
+                {
+                    if (rule.Match(path))
+                    {
+                        return rule.Owners;
+                    }
+                }
+
+                return [];
+            }
+        }
+
+        private sealed class GitLabDocument : Document
+        {
+            private readonly GitLabSection[] _sections;
+
+            private GitLabDocument(GitLabSection[] sections)
+            {
+                _sections = sections;
+            }
+
+            public static GitLabDocument Parse(IEnumerable<string> lines, out int parsingDiagnosticsCount)
+            {
+                parsingDiagnosticsCount = 0;
+                var sections = new List<GitLabSection>();
+                var current = GitLabSection.CreateUnnamed();
+                var currentDefaultOwners = current.DefaultOwners;
+                var namedSections = new Dictionary<string, GitLabSection>(StringComparer.OrdinalIgnoreCase);
+                sections.Add(current);
+
+                foreach (var line in lines)
+                {
+                    var raw = line.Trim();
+                    if (raw.Length == 0)
+                    {
+                        continue;
+                    }
+
+                    if (TryParseGitLabSectionHeader(raw, out var newSection, out var sectionHasDiagnostics))
+                    {
+                        if (sectionHasDiagnostics)
+                        {
+                            parsingDiagnosticsCount++;
+                        }
+
+                        currentDefaultOwners = newSection.DefaultOwners;
+                        if (namedSections.TryGetValue(newSection.Name, out var existingSection))
+                        {
+                            current = existingSection;
+                        }
+                        else
+                        {
+                            current = newSection;
+                            sections.Add(current);
+                            namedSections.Add(current.Name, current);
+                        }
+
+                        continue;
+                    }
+
+                    if (IsUnparsableSectionHeader(raw))
+                    {
+                        // GitLab reports malformed header-like lines and skips them rather than
+                        // reinterpreting them as path patterns.
+                        parsingDiagnosticsCount++;
+                        continue;
+                    }
+
+                    if (raw[0] == '#')
+                    {
+                        // GitLab parses owners inside comments for its MR widget, but comments do
+                        // not bind those owners to a path and therefore do not affect matching.
+                        continue;
+                    }
+
+                    var entry = Entry.ParseGitLab(raw, currentDefaultOwners, out var entryHasDiagnostics);
+                    if (entry is null)
+                    {
+                        parsingDiagnosticsCount++;
+                    }
+                    else
+                    {
+                        if (entryHasDiagnostics)
+                        {
+                            parsingDiagnosticsCount++;
+                        }
+
+                        current.Add(entry);
+                    }
+                }
+
+                foreach (var section in sections)
+                {
+                    section.Seal();
+                }
+
+                return new GitLabDocument(sections.ToArray());
+            }
+
+            public override IEnumerable<string> Match(string path)
+            {
+                // GitLab evaluates each section independently and combines their owners.
+                // The set is allocated lazily because most paths match at most one section.
+                HashSet<string>? owners = null;
+                foreach (var section in _sections)
+                {
+                    if (section.TryMatch(path, out var sectionOwners))
+                    {
+                        owners ??= new HashSet<string>(StringComparer.Ordinal);
+                        foreach (var owner in sectionOwners)
+                        {
+                            owners.Add(owner);
+                        }
+                    }
+                }
+
+                return owners ?? [];
+            }
+        }
+
+        private sealed class GitLabSection
         {
             private readonly List<Entry> _entries = new();
             private Entry[]? _cache;
-            private bool _replaceDuplicatePatterns;
 
-            public Section(string name, string[] defaultOwners)
+            public GitLabSection(string name, string[] defaultOwners)
             {
                 Name = name;
                 DefaultOwners = defaultOwners.Length == 0 ? [] : defaultOwners;
@@ -1127,22 +1204,18 @@ namespace Datadog.Trace.Ci
 
             public string[] DefaultOwners { get; }
 
-            public static Section CreateUnnamed() => new(string.Empty, []);
+            public static GitLabSection CreateUnnamed() => new(string.Empty, []);
 
-            public void Add(Entry entry, bool replaceDuplicatePattern)
-            {
-                _replaceDuplicatePatterns |= replaceDuplicatePattern;
-                _entries.Add(entry);
-            }
+            public void Add(Entry entry) => _entries.Add(entry);
 
             public void Seal()
             {
-                var seenPatterns = _replaceDuplicatePatterns ? new HashSet<string>(StringComparer.Ordinal) : null;
+                var seenPatterns = new HashSet<string>(StringComparer.Ordinal);
                 var cache = new List<Entry>(_entries.Count);
                 for (var i = _entries.Count - 1; i >= 0; i--)
                 {
                     var entry = _entries[i];
-                    if (seenPatterns is null || seenPatterns.Add(entry.PatternKey))
+                    if (seenPatterns.Add(entry.PatternKey))
                     {
                         cache.Add(entry);
                     }
@@ -1152,26 +1225,7 @@ namespace Datadog.Trace.Ci
                 _entries.Clear();
             }
 
-            public bool TryMatchGitHub(string path, [NotNullWhen(true)] out string[]? owners)
-            {
-                var rules = _cache ?? [];
-
-                foreach (var rule in rules)
-                {
-                    if (!rule.Match(path))
-                    {
-                        continue;
-                    }
-
-                    owners = rule.Owners;
-                    return true;
-                }
-
-                owners = null;
-                return false;
-            }
-
-            public bool TryMatchGitLab(string path, [NotNullWhen(true)] out string[]? owners)
+            public bool TryMatch(string path, [NotNullWhen(true)] out string[]? owners)
             {
                 var rules = _cache ?? [];
                 string[]? matchedOwners = null;
@@ -1221,16 +1275,15 @@ namespace Datadog.Trace.Ci
 
             public string PatternKey { get; }
 
-            public static Entry? Parse(string raw, Platform platform, string[] defaultOwners, out bool hasDiagnostics)
+            public static Entry? ParseGitHub(string raw)
             {
-                hasDiagnostics = false;
-                if (platform == Platform.GitHub && raw.StartsWith("\\#"))
+                if (raw.StartsWith("\\#"))
                 {
                     return null;
                 }
 
-                var idxHash = platform == Platform.GitHub ? FindUnescapedCharacter(raw, '#') : -1;
-                var effective = idxHash >= 0 && platform == Platform.GitHub ? raw.Substring(0, idxHash).TrimEnd() : raw;
+                var idxHash = FindUnescapedCharacter(raw, '#');
+                var effective = idxHash >= 0 ? raw.Substring(0, idxHash).TrimEnd() : raw;
                 if (string.IsNullOrWhiteSpace(effective))
                 {
                     return null;
@@ -1238,18 +1291,37 @@ namespace Datadog.Trace.Ci
 
                 string patternToken;
                 string ownersSegment;
-                bool hasExplicitOwners;
-                SplitEscapedEntry(effective, out patternToken, out ownersSegment, out hasExplicitOwners);
+                SplitEscapedEntry(effective, out patternToken, out ownersSegment, out _);
 
-                var isExclusion = platform == Platform.GitLab && patternToken.StartsWith("!");
+                if (patternToken.Length == 0 || IsUnsupportedGitHubPattern(patternToken))
+                {
+                    return null;
+                }
+
+                var owners = OwnerTokenizer.TokenizeGitHub(ownersSegment, out var allOwnersValid);
+                if (!allOwnersValid)
+                {
+                    return null;
+                }
+
+                var glob = GlobPattern.CompileGitHub(patternToken, includeDescendants: IsDirectoryPattern(patternToken));
+                if (glob is null)
+                {
+                    return null;
+                }
+
+                return new Entry(glob, patternToken, exclusion: false, owners);
+            }
+
+            public static Entry? ParseGitLab(string raw, string[] defaultOwners, out bool hasDiagnostics)
+            {
+                hasDiagnostics = false;
+                SplitEscapedEntry(raw, out var patternToken, out var ownersSegment, out var hasExplicitOwners);
+
+                var isExclusion = patternToken.StartsWith("!");
                 if (isExclusion)
                 {
                     patternToken = patternToken.Substring(1, patternToken.Length - 1);
-                }
-
-                if (platform == Platform.GitHub && IsUnsupportedGitHubPattern(patternToken))
-                {
-                    return null;
                 }
 
                 if (patternToken.Length == 0)
@@ -1257,45 +1329,29 @@ namespace Datadog.Trace.Ci
                     return null;
                 }
 
-                string[] owners;
                 var allOwnersValid = true;
-                if (isExclusion)
-                {
-                    owners = [];
-                }
-                else
-                {
-                    owners = OwnerTokenizer.Tokenize(ownersSegment, platform, out allOwnersValid);
-                }
+                var owners = isExclusion
+                                 ? []
+                                 : OwnerTokenizer.TokenizeGitLab(ownersSegment, out allOwnersValid);
+                hasDiagnostics = !isExclusion && !allOwnersValid;
 
-                hasDiagnostics = !allOwnersValid;
-                if (platform == Platform.GitHub && hasDiagnostics)
-                {
-                    return null;
-                }
-
-                if (platform == Platform.GitLab && !isExclusion && !hasExplicitOwners && defaultOwners.Length > 0)
+                if (!isExclusion && !hasExplicitOwners && defaultOwners.Length > 0)
                 {
                     owners = defaultOwners;
                 }
 
-                if (platform == Platform.GitLab && !isExclusion && owners.Length == 0)
+                if (!isExclusion && owners.Length == 0)
                 {
                     hasDiagnostics = true;
                 }
 
-                // GitHub owns the contents of directories matched by wildcard-free patterns (e.g.
-                // `**/logs`); GitLab requires an explicit trailing slash for directory ownership.
-                var isDirectoryPattern = platform == Platform.GitHub && IsDirectoryPattern(patternToken);
-
-                var glob = GlobPattern.Compile(patternToken, platform, includeDescendants: isDirectoryPattern);
+                var glob = GlobPattern.CompileGitLab(patternToken);
                 if (glob is null)
                 {
                     return null;
                 }
 
-                var patternKey = platform == Platform.GitLab ? NormalizeGitLabPatternKey(patternToken) : patternToken;
-                return new Entry(glob, patternKey, isExclusion, owners);
+                return new Entry(glob, NormalizeGitLabPatternKey(patternToken), isExclusion, owners);
             }
 
             private static void SplitEscapedEntry(string entry, out string pattern, out string owners, out bool hasExplicitOwners)

@@ -712,62 +712,36 @@ internal abstract class CIEnvironmentValues
 
         var normalizedPath = sourceFilePath.Replace('\\', '/');
         var segments = normalizedPath.Split(ForwardSlashCharacters, StringSplitOptions.RemoveEmptyEntries);
-        var start = -1;
-
-        // Azure may build on one OS and run tests on another. Its checkout marker gives us an
-        // unambiguous repository-relative suffix even when the recorded path is absolute here.
-        if (string.Equals(Provider, "azurepipelines", StringComparison.Ordinal) &&
-            !sourceFilePath.StartsWith("file:", StringComparison.OrdinalIgnoreCase) &&
-            (!Uri.TryCreate(sourceFilePath, UriKind.Absolute, out var uri) || uri.IsFile))
+        if (Path.IsPathRooted(sourceFilePath) || Uri.TryCreate(sourceFilePath, UriKind.Absolute, out _))
         {
-            for (var i = 2; i < segments.Length - 1; i++)
-            {
-                if (segments[i].Equals("s", StringComparison.OrdinalIgnoreCase) &&
-                    int.TryParse(segments[i - 1], NumberStyles.None, CultureInfo.InvariantCulture, out _) &&
-                    (segments[i - 2].Equals("a", StringComparison.OrdinalIgnoreCase) ||
-                     segments[i - 2].Equals("work", StringComparison.OrdinalIgnoreCase) ||
-                     segments[i - 2].Equals("_work", StringComparison.OrdinalIgnoreCase)))
-                {
-                    start = i + 1;
-                    break;
-                }
-            }
+            return false;
         }
 
-        var isAzureCheckoutPath = start >= 0;
-        if (!isAzureCheckoutPath)
+        var pathWithoutForeignPrefix = normalizedPath;
+        while (pathWithoutForeignPrefix.StartsWith("../", StringComparison.Ordinal) ||
+               pathWithoutForeignPrefix.StartsWith("./", StringComparison.Ordinal))
         {
-            if (Path.IsPathRooted(sourceFilePath) || Uri.TryCreate(sourceFilePath, UriKind.Absolute, out _))
-            {
-                return false;
-            }
+            var prefixLength = pathWithoutForeignPrefix.StartsWith("../", StringComparison.Ordinal) ? 3 : 2;
+            pathWithoutForeignPrefix = pathWithoutForeignPrefix.Substring(prefixLength);
+        }
 
-            var pathWithoutForeignPrefix = normalizedPath;
-            while (pathWithoutForeignPrefix.StartsWith("../", StringComparison.Ordinal) ||
-                   pathWithoutForeignPrefix.StartsWith("./", StringComparison.Ordinal))
-            {
-                var prefixLength = pathWithoutForeignPrefix.StartsWith("../", StringComparison.Ordinal) ? 3 : 2;
-                pathWithoutForeignPrefix = pathWithoutForeignPrefix.Substring(prefixLength);
-            }
+        if (Path.IsPathRooted(pathWithoutForeignPrefix) || Uri.TryCreate(pathWithoutForeignPrefix, UriKind.Absolute, out _))
+        {
+            // Reject absolute paths hidden after leading navigation segments.
+            return false;
+        }
 
-            if (Path.IsPathRooted(pathWithoutForeignPrefix) || Uri.TryCreate(pathWithoutForeignPrefix, UriKind.Absolute, out _))
-            {
-                // Reject absolute paths hidden after leading navigation segments.
-                return false;
-            }
+        if (segments.Length < 2)
+        {
+            // Never anchor bare file names: too easy to match an unrelated file.
+            return false;
+        }
 
-            if (segments.Length < 2)
-            {
-                // Never anchor bare file names: too easy to match an unrelated file.
-                return false;
-            }
-
-            // Leading navigation segments belong to the compiler's foreign base directory.
-            start = 0;
-            while (start < segments.Length && (segments[start] == "." || segments[start] == ".."))
-            {
-                start++;
-            }
+        // Leading navigation segments belong to the compiler's foreign base directory.
+        var start = 0;
+        while (start < segments.Length && (segments[start] == "." || segments[start] == ".."))
+        {
+            start++;
         }
 
         // Never anchor paths with interior navigation segments: their resolution depends on the
@@ -780,8 +754,7 @@ internal abstract class CIEnvironmentValues
             }
         }
 
-        var lastStart = isAzureCheckoutPath ? start + 1 : segments.Length - 1;
-        for (var i = start; i < lastStart; i++)
+        for (var i = start; i < segments.Length - 1; i++)
         {
             var candidateSuffix = string.Join(Path.DirectorySeparatorChar.ToString(), segments, i, segments.Length - i);
             if (TryResolvePathWithinBase(candidateSuffix, codeOwnersRoot, out var candidatePath) && File.Exists(candidatePath))
