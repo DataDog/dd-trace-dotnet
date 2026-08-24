@@ -68,12 +68,9 @@ public class CoverageResolverTests
         var outputDirectory = Path.Combine(directory.Path, "output");
         var sharedFrameworkRoot = Path.Combine(directory.Path, "shared");
         var stableFrameworkDirectory = Path.Combine(sharedFrameworkRoot, "Microsoft.AspNetCore.App", "10.0.8");
-        var prereleaseFrameworkDirectory = Path.Combine(sharedFrameworkRoot, "Microsoft.AspNetCore.App", "10.0.10-servicing.1");
         Directory.CreateDirectory(outputDirectory);
         Directory.CreateDirectory(stableFrameworkDirectory);
-        Directory.CreateDirectory(prereleaseFrameworkDirectory);
         var dependencyPath = CreateAssembly(stableFrameworkDirectory, "SharedFrameworkDependency", new Version(10, 0, 0, 0));
-        _ = CreateAssembly(prereleaseFrameworkDirectory, "SharedFrameworkDependency", new Version(10, 0, 0, 0));
         const string RuntimeConfig = """
                                      {
                                        "runtimeOptions": {
@@ -149,10 +146,12 @@ public class CoverageResolverTests
     }
 
     /// <summary>
-    /// Verifies that explicit prerelease roll-forward can select a newer prerelease over a stable patch.
+    /// Verifies stable and explicit prerelease roll-forward framework selection.
     /// </summary>
-    [Fact]
-    public void SharedFrameworkDiscoveryHonorsPrereleaseRollForward()
+    [Theory]
+    [InlineData(false, "10.0.8")]
+    [InlineData(true, "10.0.10-servicing.1")]
+    public void SharedFrameworkDiscoveryHonorsPrereleaseRollForward(bool rollForwardToPrerelease, string expectedVersion)
     {
         using var directory = TemporaryDirectory.Create();
         var outputDirectory = Path.Combine(directory.Path, "output");
@@ -167,9 +166,9 @@ public class CoverageResolverTests
         var directories = CoverageAssemblyResolver.SharedFrameworkLocator.DiscoverSharedFrameworkDirectories(
             outputDirectory,
             [sharedFrameworkRoot],
-            rollForwardToPrerelease: true);
+            rollForwardToPrerelease);
 
-        directories.Should().Equal(prereleaseFrameworkDirectory);
+        directories.Should().Equal(Path.Combine(sharedFrameworkRoot, "Microsoft.AspNetCore.App", expectedVersion));
     }
 
     /// <summary>
