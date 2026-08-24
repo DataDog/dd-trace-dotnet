@@ -234,7 +234,7 @@ public class CodeOwnersFallbackTests
     }
 
     [SkippableFact]
-    public void GitHubUsesOfficialCodeOwnersLocationPriority()
+    public void GitHubProviderUsesOfficialCodeOwnersLocationPriority()
     {
         using var tempDirectory = new TemporaryDirectory();
         var repoRoot = tempDirectory.RootPath;
@@ -243,7 +243,7 @@ public class CodeOwnersFallbackTests
         File.WriteAllText(Path.Combine(repoRoot, ".github", "CODEOWNERS"), "* @github-directory\n");
         File.WriteAllText(Path.Combine(repoRoot, "CODEOWNERS"), "* @repository-root\n");
         File.WriteAllText(Path.Combine(repoRoot, "docs", "CODEOWNERS"), "* @docs-directory\n");
-        var ciValues = new ReloadingGithubEnvironmentValues(repoRoot);
+        var ciValues = new ReloadingEnvironmentValues(repoRoot, "github");
 
         ciValues.Reload();
         Assert.Equal(["@github-directory"], ciValues.CodeOwners!.Match("/file.cs"));
@@ -258,7 +258,7 @@ public class CodeOwnersFallbackTests
     }
 
     [SkippableFact]
-    public void GitLabUsesOfficialCodeOwnersLocationPriority()
+    public void GitLabProviderUsesOfficialCodeOwnersLocationPriority()
     {
         using var tempDirectory = new TemporaryDirectory();
         var repoRoot = tempDirectory.RootPath;
@@ -267,7 +267,7 @@ public class CodeOwnersFallbackTests
         File.WriteAllText(Path.Combine(repoRoot, "CODEOWNERS"), "* @repository-root\n");
         File.WriteAllText(Path.Combine(repoRoot, "docs", "CODEOWNERS"), "* @docs-directory\n");
         File.WriteAllText(Path.Combine(repoRoot, ".gitlab", "CODEOWNERS"), "* @gitlab-directory\n");
-        var ciValues = new ReloadingGitlabEnvironmentValues(repoRoot);
+        var ciValues = new ReloadingEnvironmentValues(repoRoot, "gitlab");
 
         ciValues.Reload();
         Assert.Equal(["@repository-root"], ciValues.CodeOwners!.Match("/file.cs"));
@@ -287,7 +287,7 @@ public class CodeOwnersFallbackTests
         using var githubDirectory = new TemporaryDirectory();
         Directory.CreateDirectory(Path.Combine(githubDirectory.RootPath, ".gitlab"));
         File.WriteAllText(Path.Combine(githubDirectory.RootPath, ".gitlab", "CODEOWNERS"), "* @gitlab-only\n");
-        var githubValues = new ReloadingGithubEnvironmentValues(githubDirectory.RootPath);
+        var githubValues = new ReloadingEnvironmentValues(githubDirectory.RootPath, "github");
 
         githubValues.Reload();
         Assert.Null(githubValues.CodeOwners);
@@ -295,7 +295,7 @@ public class CodeOwnersFallbackTests
         using var gitlabDirectory = new TemporaryDirectory();
         Directory.CreateDirectory(Path.Combine(gitlabDirectory.RootPath, ".github"));
         File.WriteAllText(Path.Combine(gitlabDirectory.RootPath, ".github", "CODEOWNERS"), "* @github-only\n");
-        var gitlabValues = new ReloadingGitlabEnvironmentValues(gitlabDirectory.RootPath);
+        var gitlabValues = new ReloadingEnvironmentValues(gitlabDirectory.RootPath, "gitlab");
 
         gitlabValues.Reload();
         Assert.Null(gitlabValues.CodeOwners);
@@ -1092,7 +1092,7 @@ public class CodeOwnersFallbackTests
         File.WriteAllText(sourceFile, string.Empty);
         File.WriteAllText(Path.Combine(repoRoot, "CODEOWNERS"), "* @fallback\nfile[z-a].txt @invalid\n");
 
-        var ciValues = new TestGitlabEnvironmentValues(sourceRoot: null, workspacePath: repoRoot);
+        var ciValues = new TestCIEnvironmentValues(sourceRoot: null, workspacePath: repoRoot, provider: "gitlab");
 
         Assert.True(ciValues.TryGetCodeOwnersRelativePath(sourceFile, false, out var relativePath));
         Assert.Equal("src/file.txt", relativePath);
@@ -1182,10 +1182,11 @@ public class CodeOwnersFallbackTests
 
     private sealed class TestCIEnvironmentValues : CIEnvironmentValues
     {
-        public TestCIEnvironmentValues(string? sourceRoot, string? workspacePath)
+        public TestCIEnvironmentValues(string? sourceRoot, string? workspacePath, string? provider = null)
         {
             SourceRoot = sourceRoot;
             WorkspacePath = workspacePath;
+            Provider = provider;
         }
 
         protected override void Setup(IGitInfo gitInfo)
@@ -1193,26 +1194,15 @@ public class CodeOwnersFallbackTests
         }
     }
 
-    private sealed class TestGitlabEnvironmentValues : CIEnvironmentValues
-    {
-        public TestGitlabEnvironmentValues(string? sourceRoot, string? workspacePath)
-        {
-            SourceRoot = sourceRoot;
-            WorkspacePath = workspacePath;
-        }
-
-        protected override void Setup(IGitInfo gitInfo)
-        {
-        }
-    }
-
-    private abstract class ReloadingEnvironmentValues : CIEnvironmentValues
+    private sealed class ReloadingEnvironmentValues : CIEnvironmentValues
     {
         private readonly string _sourceRoot;
+        private readonly string _provider;
 
-        protected ReloadingEnvironmentValues(string sourceRoot)
+        public ReloadingEnvironmentValues(string sourceRoot, string provider)
         {
             _sourceRoot = sourceRoot;
+            _provider = provider;
         }
 
         public void Reload() => ReloadEnvironmentData();
@@ -1221,22 +1211,7 @@ public class CodeOwnersFallbackTests
         {
             SourceRoot = _sourceRoot;
             WorkspacePath = _sourceRoot;
-        }
-    }
-
-    private sealed class ReloadingGithubEnvironmentValues : ReloadingEnvironmentValues
-    {
-        public ReloadingGithubEnvironmentValues(string sourceRoot)
-            : base(sourceRoot)
-        {
-        }
-    }
-
-    private sealed class ReloadingGitlabEnvironmentValues : ReloadingEnvironmentValues
-    {
-        public ReloadingGitlabEnvironmentValues(string sourceRoot)
-            : base(sourceRoot)
-        {
+            Provider = _provider;
         }
     }
 

@@ -1207,12 +1207,12 @@ internal abstract class CIEnvironmentValues
             return platform;
         }
 
-        if (string.Equals(Provider, "gitlab", StringComparison.Ordinal) || GetType().Name.Contains("Gitlab"))
+        if (string.Equals(Provider, "gitlab", StringComparison.Ordinal))
         {
             return CodeOwners.Platform.GitLab;
         }
 
-        if (string.Equals(Provider, "github", StringComparison.Ordinal) || GetType().Name.Contains("Github"))
+        if (string.Equals(Provider, "github", StringComparison.Ordinal))
         {
             return CodeOwners.Platform.GitHub;
         }
