@@ -21,6 +21,7 @@ namespace Datadog.Trace.Ci
     {
         internal const long GitHubMaximumFileSizeBytes = 3 * 1024 * 1024;
 
+        private static readonly char[] OwnerSeparators = [' ', '\t'];
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<CodeOwners>();
         private readonly Document _document;
 
@@ -34,6 +35,8 @@ namespace Datadog.Trace.Ci
                 throw new ArgumentNullException(nameof(filePath));
             }
 
+            // GitHub ignores CODEOWNERS files larger than 3 MB.
+            // https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners#codeowners-file-size
             if (platform == Platform.GitHub && new FileInfo(filePath).Length > GitHubMaximumFileSizeBytes)
             {
                 _document = GitHubDocument.Empty;
@@ -102,6 +105,23 @@ namespace Datadog.Trace.Ci
 
             return _document.Match(normalizedPath);
         }
+
+        /// <summary>
+        /// Adds an owner once while keeping the original order.
+        /// </summary>
+        private static void AddUniqueOwner(List<string> owners, HashSet<string> uniqueOwners, string owner)
+        {
+            if (uniqueOwners.Add(owner))
+            {
+                owners.Add(owner);
+            }
+        }
+
+        /// <summary>
+        /// Checks whether a character is an ASCII letter or digit.
+        /// </summary>
+        private static bool IsAsciiLetterOrDigit(char character)
+            => character is >= 'a' and <= 'z' or >= 'A' and <= 'Z' or >= '0' and <= '9';
 
 #pragma warning disable SA1201
         /// <summary>
@@ -176,12 +196,18 @@ namespace Datadog.Trace.Ci
             /// <summary>
             /// Compiles a pattern with GitHub rules.
             /// </summary>
+            /// <remarks>
+            /// See <see href="https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners#codeowners-syntax">GitHub CODEOWNERS syntax</see>.
+            /// </remarks>
             public static GlobPattern? CompileGitHub(string pattern, bool includeDescendants)
                 => Compile(pattern, Platform.GitHub, includeDescendants);
 
             /// <summary>
             /// Compiles a pattern with GitLab rules.
             /// </summary>
+            /// <remarks>
+            /// See <see href="https://docs.gitlab.com/user/project/codeowners/reference/#path-matching">GitLab CODEOWNERS path matching</see>.
+            /// </remarks>
             public static GlobPattern? CompileGitLab(string pattern)
                 => Compile(pattern, Platform.GitLab, includeDescendants: false);
 

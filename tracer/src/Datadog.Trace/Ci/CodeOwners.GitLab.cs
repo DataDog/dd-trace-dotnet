@@ -169,7 +169,7 @@ namespace Datadog.Trace.Ci
                 var owners = new List<string>();
                 var uniqueOwners = new HashSet<string>(StringComparer.Ordinal);
                 allValid = true;
-                foreach (var token in segment.Split([' ', '\t'], StringSplitOptions.RemoveEmptyEntries))
+                foreach (var token in segment.Split(OwnerSeparators, StringSplitOptions.RemoveEmptyEntries))
                 {
                     if (!ExtractGitLabOwners(token, owners, uniqueOwners))
                     {
@@ -181,17 +181,6 @@ namespace Datadog.Trace.Ci
             }
 
             /// <summary>
-            /// Adds an owner once while keeping the original order.
-            /// </summary>
-            private static void AddUnique(List<string> owners, HashSet<string> uniqueOwners, string owner)
-            {
-                if (uniqueOwners.Add(owner))
-                {
-                    owners.Add(owner);
-                }
-            }
-
-            /// <summary>
             /// Finds every valid GitLab owner reference inside one token.
             /// </summary>
             private static bool ExtractGitLabOwners(string token, List<string> owners, HashSet<string> uniqueOwners)
@@ -199,7 +188,7 @@ namespace Datadog.Trace.Ci
                 // Handle common complete references without extra parsing.
                 if (IsWholeNamespaceReference(token) || IsValidGitLabRole(token))
                 {
-                    AddUnique(owners, uniqueOwners, token);
+                    AddUniqueOwner(owners, uniqueOwners, token);
                     return true;
                 }
 
@@ -209,7 +198,7 @@ namespace Datadog.Trace.Ci
                 while (TryFindNamespaceReference(token, searchStart, out var referenceStart, out var referenceEnd, out searchStart))
                 {
                     var reference = token.Substring(referenceStart, referenceEnd - referenceStart);
-                    AddUnique(owners, uniqueOwners, reference);
+                    AddUniqueOwner(owners, uniqueOwners, reference);
                     foundReference = true;
                 }
 
@@ -217,7 +206,7 @@ namespace Datadog.Trace.Ci
                 for (var i = 0; i < roleMatches.Count; i++)
                 {
                     var roleMatch = roleMatches[i];
-                    AddUnique(owners, uniqueOwners, roleMatch.Value);
+                    AddUniqueOwner(owners, uniqueOwners, roleMatch.Value);
                     foundReference = true;
                 }
 
@@ -230,7 +219,7 @@ namespace Datadog.Trace.Ci
                     // Do not add an email when the same text contains a valid group reference.
                     if (!ContainsNamespaceReference(email))
                     {
-                        AddUnique(owners, uniqueOwners, email);
+                        AddUniqueOwner(owners, uniqueOwners, email);
                         foundReference = true;
                     }
                 }
@@ -432,17 +421,14 @@ namespace Datadog.Trace.Ci
                 var category = CharUnicodeInfo.GetUnicodeCategory(character);
                 return category is UnicodeCategory.NonSpacingMark or UnicodeCategory.ConnectorPunctuation;
             }
-
-            /// <summary>
-            /// Checks whether a character is an ASCII letter or digit.
-            /// </summary>
-            private static bool IsAsciiLetterOrDigit(char character)
-                => character is >= 'a' and <= 'z' or >= 'A' and <= 'Z' or >= '0' and <= '9';
         }
 
         /// <summary>
         /// Stores GitLab rules grouped into independent sections.
         /// </summary>
+        /// <remarks>
+        /// See <see href="https://docs.gitlab.com/user/project/codeowners/reference/#sections">GitLab CODEOWNERS section rules</see>.
+        /// </remarks>
         private sealed class GitLabDocument : Document
         {
             private readonly GitLabSection[] _sections;
@@ -615,6 +601,9 @@ namespace Datadog.Trace.Ci
             /// <summary>
             /// Returns the owners selected by this section, unless a matching exclusion removes the path.
             /// </summary>
+            /// <remarks>
+            /// See <see href="https://docs.gitlab.com/user/project/codeowners/reference/#exclusion-patterns">GitLab CODEOWNERS exclusion rules</see>.
+            /// </remarks>
             public bool TryMatch(string path, [NotNullWhen(true)] out string[]? owners)
             {
                 var rules = _cache ?? [];

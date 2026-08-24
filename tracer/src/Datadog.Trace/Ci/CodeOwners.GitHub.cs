@@ -30,11 +30,11 @@ namespace Datadog.Trace.Ci
                 var owners = new List<string>();
                 var uniqueOwners = new HashSet<string>(StringComparer.Ordinal);
                 allValid = true;
-                foreach (var token in segment.Split([' ', '\t'], StringSplitOptions.RemoveEmptyEntries))
+                foreach (var token in segment.Split(OwnerSeparators, StringSplitOptions.RemoveEmptyEntries))
                 {
                     if (IsValidGitHubOwner(token))
                     {
-                        AddUnique(owners, uniqueOwners, token);
+                        AddUniqueOwner(owners, uniqueOwners, token);
                     }
                     else
                     {
@@ -43,17 +43,6 @@ namespace Datadog.Trace.Ci
                 }
 
                 return owners.Count == 0 ? [] : owners.ToArray();
-            }
-
-            /// <summary>
-            /// Adds an owner once while keeping the original order.
-            /// </summary>
-            private static void AddUnique(List<string> owners, HashSet<string> uniqueOwners, string owner)
-            {
-                if (uniqueOwners.Add(owner))
-                {
-                    owners.Add(owner);
-                }
             }
 
             /// <summary>
@@ -135,17 +124,14 @@ namespace Datadog.Trace.Ci
             /// </summary>
             private static bool IsEmailLocalCharacter(char character)
                 => IsAsciiLetterOrDigit(character) || ".!#$%&'*+/=?^_`{|}~-".IndexOf(character) >= 0;
-
-            /// <summary>
-            /// Checks whether a character is an ASCII letter or digit.
-            /// </summary>
-            private static bool IsAsciiLetterOrDigit(char character)
-                => character is >= 'a' and <= 'z' or >= 'A' and <= 'Z' or >= '0' and <= '9';
         }
 
         /// <summary>
         /// Stores GitHub rules in last-match-first order.
         /// </summary>
+        /// <remarks>
+        /// See <see href="https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners#codeowners-syntax">GitHub CODEOWNERS syntax and precedence</see>.
+        /// </remarks>
         private sealed class GitHubDocument : Document
         {
             private readonly Entry[] _rules;
