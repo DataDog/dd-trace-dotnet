@@ -8,6 +8,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Reflection.PortableExecutable;
+using System.Runtime.Versioning;
 using System.Threading;
 using Datadog.Trace.Coverage.Collector;
 using Datadog.Trace.TestHelpers;
@@ -70,8 +72,8 @@ public class CoverageResolverTests
         Directory.CreateDirectory(outputDirectory);
         Directory.CreateDirectory(olderFrameworkDirectory);
         Directory.CreateDirectory(latestFrameworkDirectory);
-        _ = CreateAssembly(olderFrameworkDirectory, "SharedFrameworkDependency", new Version(10, 0, 8, 0));
-        var dependencyPath = CreateAssembly(latestFrameworkDirectory, "SharedFrameworkDependency", new Version(10, 0, 10, 0));
+        _ = CreateAssembly(olderFrameworkDirectory, "SharedFrameworkDependency", new Version(10, 0, 0, 0));
+        var dependencyPath = CreateAssembly(latestFrameworkDirectory, "SharedFrameworkDependency", new Version(10, 0, 0, 0));
         const string RuntimeConfig = """
                                      {
                                        "runtimeOptions": {
@@ -91,7 +93,7 @@ public class CoverageResolverTests
         using (var resolver = new CoverageAssemblyResolver(new ConsoleCollectorLogger(), targetPath, sharedFrameworkRoot))
         {
             var assembly = resolver.Resolve(assemblyName);
-            assembly.Name.Version.Should().Be(new Version(10, 0, 10, 0));
+            assembly.MainModule.FileName.Should().Be(dependencyPath);
         }
 
         if (EnvironmentTools.IsWindows())
@@ -101,7 +103,25 @@ public class CoverageResolverTests
 
         File.Delete(runtimeConfigPath);
         using var cachedResolver = new CoverageAssemblyResolver(new ConsoleCollectorLogger(), targetPath, sharedFrameworkRoot);
-        cachedResolver.Resolve(assemblyName).Name.Version.Should().Be(new Version(10, 0, 10, 0));
+        cachedResolver.Resolve(assemblyName).MainModule.FileName.Should().Be(dependencyPath);
+    }
+
+    /// <summary>
+    /// Verifies that shared frameworks can be found when the collector itself is hosted by .NET Framework.
+    /// </summary>
+    [Fact]
+    public void SharedFrameworkRootsUseDotnetRootOutsideCoreClr()
+    {
+        using var directory = TemporaryDirectory.Create();
+        var dotnetRoot = Path.Combine(directory.Path, "dotnet");
+        var sharedFrameworkRoot = Path.Combine(dotnetRoot, "shared");
+        Directory.CreateDirectory(sharedFrameworkRoot);
+
+        var roots = CoverageAssemblyResolver.SharedFrameworkLocator.GetSharedFrameworkRoots(
+            Path.Combine(directory.Path, "mscorlib.dll"),
+            name => name == "DOTNET_ROOT" ? dotnetRoot : null);
+
+        roots.Should().Equal(sharedFrameworkRoot);
     }
 
     /// <summary>
@@ -118,14 +138,40 @@ public class CoverageResolverTests
         var frameworkDirectory = Path.Combine(sharedFrameworkRoot, "Microsoft.AspNetCore.App", "10.0.8");
         Directory.CreateDirectory(outputDirectory);
         Directory.CreateDirectory(frameworkDirectory);
-        _ = CreateAssembly(frameworkDirectory, "SharedFrameworkDependency", new Version(10, 0, 8, 0));
+        _ = CreateAssembly(frameworkDirectory, "SharedFrameworkDependency", new Version(10, 0, 0, 0));
         File.WriteAllText(Path.Combine(outputDirectory, "Repro.Tests.runtimeconfig.json"), CreateRuntimeConfig(propertyName, "Microsoft.AspNetCore.App", "10.0.0"));
         var targetPath = Path.Combine(outputDirectory, "Repro.Library.dll");
         using var resolver = new CoverageAssemblyResolver(new ConsoleCollectorLogger(), targetPath, sharedFrameworkRoot);
 
         var assembly = resolver.Resolve(new AssemblyNameReference("SharedFrameworkDependency", new Version(10, 0, 0, 0)));
 
-        assembly.Name.Version.Should().Be(new Version(10, 0, 8, 0));
+        assembly.Name.Version.Should().Be(new Version(10, 0, 0, 0));
+    }
+
+    /// <summary>
+    /// Verifies that a candidate from one runtimeconfig cannot satisfy a different requested assembly identity.
+    /// </summary>
+    [Fact]
+    public void ResolveAssemblySkipsSharedFrameworkCandidateWithDifferentIdentity()
+    {
+        using var directory = TemporaryDirectory.Create();
+        var outputDirectory = Path.Combine(directory.Path, "output");
+        var sharedFrameworkRoot = Path.Combine(directory.Path, "shared");
+        var net8FrameworkDirectory = Path.Combine(sharedFrameworkRoot, "Microsoft.AspNetCore.App", "8.0.10");
+        var net9FrameworkDirectory = Path.Combine(sharedFrameworkRoot, "Microsoft.AspNetCore.App", "9.0.10");
+        Directory.CreateDirectory(outputDirectory);
+        Directory.CreateDirectory(net8FrameworkDirectory);
+        Directory.CreateDirectory(net9FrameworkDirectory);
+        _ = CreateAssembly(net8FrameworkDirectory, "SharedFrameworkDependency", new Version(8, 0, 0, 0));
+        _ = CreateAssembly(net9FrameworkDirectory, "SharedFrameworkDependency", new Version(9, 0, 0, 0));
+        File.WriteAllText(Path.Combine(outputDirectory, "A.runtimeconfig.json"), CreateRuntimeConfig("framework", "Microsoft.AspNetCore.App", "8.0.0"));
+        File.WriteAllText(Path.Combine(outputDirectory, "B.runtimeconfig.json"), CreateRuntimeConfig("framework", "Microsoft.AspNetCore.App", "9.0.0"));
+        var targetPath = Path.Combine(outputDirectory, "Repro.Library.dll");
+        using var resolver = new CoverageAssemblyResolver(new ConsoleCollectorLogger(), targetPath, sharedFrameworkRoot);
+
+        var assembly = resolver.Resolve(new AssemblyNameReference("SharedFrameworkDependency", new Version(9, 0, 0, 0)));
+
+        assembly.Name.Version.Should().Be(new Version(9, 0, 0, 0));
     }
 
     /// <summary>
@@ -324,6 +370,7 @@ public class CoverageResolverTests
         using var unchangedAssembly = AssemblyDefinition.ReadAssembly(assemblyPath, new ReaderParameters { ReadSymbols = true });
         unchangedAssembly.Name.Name.Should().Be("CoverageRewriterAssembly");
         Directory.GetFiles(directory.Path).Select(Path.GetFileName).Should().BeEquivalentTo("CoverageRewriterAssembly.dll", "CoverageRewriterAssembly.pdb");
+        Directory.GetDirectories(directory.Path).Should().BeEmpty();
     }
 
     /// <summary>
@@ -338,10 +385,16 @@ public class CoverageResolverTests
         using var assembly = AssemblyProcessor.ReadTargetAssembly(assemblyPath, resolver);
         assembly.MainModule.Types.Add(new TypeDefinition("CoverageRewriterAssembly", "AddedByTest", Mono.Cecil.TypeAttributes.Public | Mono.Cecil.TypeAttributes.Class, assembly.MainModule.TypeSystem.Object));
         var transactionPaths = new List<string>();
+        string stagedAssemblyPath = null;
 
         AssemblyProcessor.WriteTargetAssembly(assembly, assemblyPath, strongNameKeyBlob: null, (source, destination, backup) =>
         {
             transactionPaths.Add(source);
+            if (destination == assemblyPath)
+            {
+                stagedAssemblyPath = source;
+            }
+
             if (backup is not null)
             {
                 transactionPaths.Add(backup);
@@ -352,9 +405,41 @@ public class CoverageResolverTests
 
         using var rewrittenAssembly = AssemblyDefinition.ReadAssembly(assemblyPath, new ReaderParameters { ReadSymbols = true });
         rewrittenAssembly.MainModule.GetType("CoverageRewriterAssembly.AddedByTest").Should().NotBeNull();
+        Path.GetFileName(stagedAssemblyPath).Should().Be(Path.GetFileName(assemblyPath));
+        (stagedAssemblyPath.Length - assemblyPath.Length).Should().BeLessOrEqualTo(20);
         transactionPaths.Where(CoverageCollector.HasAssemblyExtension).Should().BeEmpty();
         Directory.GetFiles(directory.Path).Select(Path.GetFileName).Should().BeEquivalentTo("CoverageRewriterAssembly.dll", "CoverageRewriterAssembly.pdb");
+        Directory.GetDirectories(directory.Path).Should().BeEmpty();
+
+        using var stream = File.OpenRead(assemblyPath);
+        using var peReader = new PEReader(stream);
+        var codeViewEntry = peReader.ReadDebugDirectory().Single(entry => entry.Type == DebugDirectoryEntryType.CodeView);
+        var codeViewData = peReader.ReadCodeViewDebugDirectoryData(codeViewEntry);
+        Path.GetFileName(codeViewData.Path).Should().Be(Path.GetFileName(Path.ChangeExtension(assemblyPath, ".pdb")));
     }
+
+#if NET7_0_OR_GREATER
+    /// <summary>
+    /// Verifies that replacing the assembly does not drop Unix mode bits from the original file.
+    /// </summary>
+    [SkippableFact]
+    [UnsupportedOSPlatform("windows")]
+    public void WriteTargetAssemblyPreservesUnixMode()
+    {
+        SkipOn.Platform(SkipOn.PlatformValue.Windows);
+
+        using var directory = TemporaryDirectory.Create();
+        var assemblyPath = CopyCoverageFixture(directory.Path, "CoverageRewriterAssembly");
+        var expectedMode = UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute | UnixFileMode.GroupRead;
+        File.SetUnixFileMode(assemblyPath, expectedMode);
+        using var resolver = CreateResolver(directory.Path);
+        using var assembly = AssemblyProcessor.ReadTargetAssembly(assemblyPath, resolver);
+
+        AssemblyProcessor.WriteTargetAssembly(assembly, assemblyPath, strongNameKeyBlob: null);
+
+        File.GetUnixFileMode(assemblyPath).Should().Be(expectedMode);
+    }
+#endif
 
     /// <summary>
     /// Verifies that both original files are restored when publishing the DLL reports a failure after replacement.
@@ -395,6 +480,7 @@ public class CoverageResolverTests
         File.ReadAllBytes(assemblyPath).Should().Equal(originalAssembly);
         File.ReadAllBytes(symbolsPath).Should().Equal(originalSymbols);
         Directory.GetFiles(directory.Path).Select(Path.GetFileName).Should().BeEquivalentTo("CoverageRewriterAssembly.dll", "CoverageRewriterAssembly.pdb");
+        Directory.GetDirectories(directory.Path).Should().BeEmpty();
     }
 
     /// <summary>

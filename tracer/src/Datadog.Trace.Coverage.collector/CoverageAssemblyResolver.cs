@@ -119,6 +119,12 @@ internal sealed class CoverageAssemblyResolver : BaseAssemblyResolver
         base.Dispose(disposing);
     }
 
+    private static bool AssemblyNamesMatch(AssemblyNameReference requestedName, AssemblyNameDefinition candidateName)
+        => string.Equals(requestedName.Name, candidateName.Name, StringComparison.OrdinalIgnoreCase) &&
+           requestedName.Version == candidateName.Version &&
+           string.Equals(requestedName.Culture ?? string.Empty, candidateName.Culture ?? string.Empty, StringComparison.OrdinalIgnoreCase) &&
+           (requestedName.PublicKeyToken ?? []).SequenceEqual(candidateName.PublicKeyToken ?? []);
+
     private AssemblyDefinition ResolveAndCache(AssemblyNameReference name)
     {
         var tracerAssemblyName = TracerAssembly.GetName();
@@ -133,7 +139,7 @@ internal sealed class CoverageAssemblyResolver : BaseAssemblyResolver
             return assemblyFromSearchDirectory;
         }
 
-        var assemblyFromSharedFramework = ResolveFromDirectories(name, GetSharedFrameworkDirectories());
+        var assemblyFromSharedFramework = ResolveFromDirectories(name, GetSharedFrameworkDirectories(), requireMatchingIdentity: true);
         if (assemblyFromSharedFramework is not null)
         {
             return assemblyFromSharedFramework;
@@ -160,7 +166,7 @@ internal sealed class CoverageAssemblyResolver : BaseAssemblyResolver
     private AssemblyDefinition? ResolveFromSearchDirectories(AssemblyNameReference name)
         => ResolveFromDirectories(name, GetSearchDirectoryCandidates());
 
-    private AssemblyDefinition? ResolveFromDirectories(AssemblyNameReference name, IEnumerable<string> directories)
+    private AssemblyDefinition? ResolveFromDirectories(AssemblyNameReference name, IEnumerable<string> directories, bool requireMatchingIdentity = false)
     {
         var extensions = name.IsWindowsRuntime ? WindowsRuntimeAssemblyExtensions : ManagedAssemblyExtensions;
         foreach (var directory in directories)
@@ -176,7 +182,14 @@ internal sealed class CoverageAssemblyResolver : BaseAssemblyResolver
 
                 try
                 {
-                    return ReadAndCache(name.FullName, path);
+                    var assembly = ReadAssembly(path);
+                    if (requireMatchingIdentity && !AssemblyNamesMatch(name, assembly.Name))
+                    {
+                        assembly.Dispose();
+                        continue;
+                    }
+
+                    return CacheAssembly(name.FullName, assembly);
                 }
                 catch (BadImageFormatException)
                 {
@@ -195,19 +208,22 @@ internal sealed class CoverageAssemblyResolver : BaseAssemblyResolver
             return [];
         }
 
-        var sharedFrameworkRoot = _sharedFrameworkRoot ?? SharedFrameworkLocator.TryGetSharedFrameworkRoot();
-        if (string.IsNullOrEmpty(sharedFrameworkRoot) || !Directory.Exists(sharedFrameworkRoot))
+        var sharedFrameworkRoots = (_sharedFrameworkRoot is null ? SharedFrameworkLocator.GetSharedFrameworkRoots() : [_sharedFrameworkRoot])
+                                  .Where(Directory.Exists)
+                                  .Select(Path.GetFullPath)
+                                  .Distinct(PathComparer)
+                                  .ToArray();
+        if (sharedFrameworkRoots.Length == 0)
         {
             return [];
         }
 
         var outputDirectory = Path.GetFullPath(_preferredSearchDirectory);
-        sharedFrameworkRoot = Path.GetFullPath(sharedFrameworkRoot);
-        var cacheKey = outputDirectory + "\0" + sharedFrameworkRoot;
+        var cacheKey = outputDirectory + "\0" + string.Join("\0", sharedFrameworkRoots);
         return SharedFrameworkDirectories.GetOrAdd(
                                               cacheKey,
                                               _ => new Lazy<string[]>(
-                                                  () => SharedFrameworkLocator.DiscoverSharedFrameworkDirectories(outputDirectory, sharedFrameworkRoot),
+                                                  () => SharedFrameworkLocator.DiscoverSharedFrameworkDirectories(outputDirectory, sharedFrameworkRoots),
                                                   LazyThreadSafetyMode.ExecutionAndPublication))
                                          .Value;
     }
@@ -229,10 +245,12 @@ internal sealed class CoverageAssemblyResolver : BaseAssemblyResolver
     }
 
     private AssemblyDefinition ReadAndCache(string requestedFullName, string assemblyPath)
+        => CacheAssembly(requestedFullName, ReadAssembly(assemblyPath));
+
+    private AssemblyDefinition ReadAssembly(string assemblyPath)
     {
         using var assemblyLock = CoverageAssemblyPathLock.EnterRead(assemblyPath);
-        var assembly = AssemblyDefinition.ReadAssembly(assemblyPath, CreateDependencyReaderParameters());
-        return CacheAssembly(requestedFullName, assembly);
+        return AssemblyDefinition.ReadAssembly(assemblyPath, CreateDependencyReaderParameters());
     }
 
     private AssemblyDefinition CacheAssembly(string requestedFullName, AssemblyDefinition assembly)
@@ -350,9 +368,11 @@ internal sealed class CoverageAssemblyResolver : BaseAssemblyResolver
         }
     }
 
-    private static class SharedFrameworkLocator
+    internal static class SharedFrameworkLocator
     {
-        public static string[] DiscoverSharedFrameworkDirectories(string outputDirectory, string sharedFrameworkRoot)
+        private static readonly string[] DotnetRootEnvironmentVariables = ["DOTNET_ROOT", "DOTNET_ROOT_X64", "DOTNET_ROOT_X86", "DOTNET_ROOT_ARM64", "DOTNET_ROOT(x86)"];
+
+        public static string[] DiscoverSharedFrameworkDirectories(string outputDirectory, IEnumerable<string> sharedFrameworkRoots)
         {
             var directories = new List<string>();
             var seenDirectories = new HashSet<string>(PathComparer);
@@ -360,10 +380,13 @@ internal sealed class CoverageAssemblyResolver : BaseAssemblyResolver
             {
                 foreach (var framework in ReadFrameworkReferences(runtimeConfigPath))
                 {
-                    var frameworkDirectory = FindCompatibleFrameworkDirectory(sharedFrameworkRoot, framework.Name, framework.Version);
-                    if (frameworkDirectory is not null && seenDirectories.Add(frameworkDirectory))
+                    foreach (var sharedFrameworkRoot in sharedFrameworkRoots)
                     {
-                        directories.Add(frameworkDirectory);
+                        var frameworkDirectory = FindCompatibleFrameworkDirectory(sharedFrameworkRoot, framework.Name, framework.Version);
+                        if (frameworkDirectory is not null && seenDirectories.Add(frameworkDirectory))
+                        {
+                            directories.Add(frameworkDirectory);
+                        }
                     }
                 }
             }
@@ -371,20 +394,73 @@ internal sealed class CoverageAssemblyResolver : BaseAssemblyResolver
             return directories.ToArray();
         }
 
-        public static string? TryGetSharedFrameworkRoot()
+        public static string[] GetSharedFrameworkRoots()
+            => GetSharedFrameworkRoots(typeof(object).Assembly.Location, Environment.GetEnvironmentVariable);
+
+        internal static string[] GetSharedFrameworkRoots(string coreLibraryPath, Func<string, string?> getEnvironmentVariable)
         {
-            var coreLibraryPath = typeof(object).Assembly.Location;
-            if (!string.Equals(Path.GetFileName(coreLibraryPath), "System.Private.CoreLib.dll", StringComparison.OrdinalIgnoreCase))
+            var roots = new List<string>();
+            var seenRoots = new HashSet<string>(PathComparer);
+
+            if (string.Equals(Path.GetFileName(coreLibraryPath), "System.Private.CoreLib.dll", StringComparison.OrdinalIgnoreCase))
             {
-                return null;
+                var versionDirectory = Path.GetDirectoryName(coreLibraryPath);
+                var frameworkDirectory = versionDirectory is null ? null : Path.GetDirectoryName(versionDirectory);
+                var sharedFrameworkRoot = frameworkDirectory is null ? null : Path.GetDirectoryName(frameworkDirectory);
+                AddSharedFrameworkRoot(sharedFrameworkRoot, roots, seenRoots);
             }
 
-            var versionDirectory = Path.GetDirectoryName(coreLibraryPath);
-            var frameworkDirectory = versionDirectory is null ? null : Path.GetDirectoryName(versionDirectory);
-            var sharedFrameworkRoot = frameworkDirectory is null ? null : Path.GetDirectoryName(frameworkDirectory);
-            return sharedFrameworkRoot is not null && string.Equals(Path.GetFileName(sharedFrameworkRoot), "shared", StringComparison.OrdinalIgnoreCase)
-                       ? sharedFrameworkRoot
-                       : null;
+            foreach (var variableName in DotnetRootEnvironmentVariables)
+            {
+                AddDotnetInstallRoot(getEnvironmentVariable(variableName), roots, seenRoots);
+            }
+
+            var dotnetHostPath = getEnvironmentVariable("DOTNET_HOST_PATH");
+            if (!string.IsNullOrEmpty(dotnetHostPath))
+            {
+                AddDotnetInstallRoot(Path.GetDirectoryName(dotnetHostPath), roots, seenRoots);
+            }
+
+            if (getEnvironmentVariable("PATH") is { Length: > 0 } path)
+            {
+                foreach (var pathEntry in path.Split(Path.PathSeparator))
+                {
+                    AddDotnetInstallRoot(pathEntry, roots, seenRoots);
+                }
+            }
+
+            return roots.ToArray();
+        }
+
+        private static void AddDotnetInstallRoot(string? dotnetInstallRoot, List<string> roots, HashSet<string> seenRoots)
+        {
+            try
+            {
+                if (!string.IsNullOrEmpty(dotnetInstallRoot))
+                {
+                    AddSharedFrameworkRoot(Path.Combine(dotnetInstallRoot, "shared"), roots, seenRoots);
+                }
+            }
+            catch (Exception ex) when (ex is ArgumentException or IOException or NotSupportedException or UnauthorizedAccessException)
+            {
+                // Ignore malformed or inaccessible environment candidates and keep probing other roots.
+            }
+        }
+
+        private static void AddSharedFrameworkRoot(string? sharedFrameworkRoot, List<string> roots, HashSet<string> seenRoots)
+        {
+            if (string.IsNullOrEmpty(sharedFrameworkRoot) ||
+                !string.Equals(Path.GetFileName(sharedFrameworkRoot), "shared", StringComparison.OrdinalIgnoreCase) ||
+                !Directory.Exists(sharedFrameworkRoot))
+            {
+                return;
+            }
+
+            sharedFrameworkRoot = Path.GetFullPath(sharedFrameworkRoot);
+            if (seenRoots.Add(sharedFrameworkRoot))
+            {
+                roots.Add(sharedFrameworkRoot);
+            }
         }
 
         private static IEnumerable<string> GetRuntimeConfigPaths(string outputDirectory)

@@ -346,6 +346,12 @@ namespace Datadog.Trace.Coverage.Collector
 
         internal static bool HasAssemblyExtension(string filePath)
         {
+            if (Path.GetDirectoryName(filePath) is { } directory &&
+                Path.GetFileName(directory).StartsWith(AssemblyProcessor.TransactionDirectoryPrefix, StringComparison.Ordinal))
+            {
+                return false;
+            }
+
             var extension = Path.GetExtension(filePath).ToLowerInvariant();
             return extension is ".dll" or ".exe" or "";
         }
