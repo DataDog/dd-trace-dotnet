@@ -24,7 +24,7 @@ namespace Datadog.Trace.Debugger
         public const int DefaultMaxEvaluationTimeInMilliseconds = 50;
         public const int DefaultMaxNumberOfItemsInCollectionToCopy = 100;
         public const int DefaultMaxNumberOfFieldsToCopy = 20;
-        public const int DefaultMaxStringLength = 1000;
+        public const int DefaultMaxStringLength = 255;
         public const int DefaultMaxProbesPerType = 0;
 
         private const int MinAllowedEvaluationTimeInMilliseconds = 10;

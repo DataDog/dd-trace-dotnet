@@ -26,6 +26,8 @@ internal static class EndpointDetector
     private const MethodAttributes InvalidMethodAttributes = MethodAttributes.Static | MethodAttributes.SpecialName | MethodAttributes.RTSpecialName;
     private const string MvcNamespace = "Microsoft.AspNetCore.Mvc";
     private const string MvcRoutingNamespace = "Microsoft.AspNetCore.Mvc.Routing";
+    private const string SystemWebMvcNamespace = "System.Web.Mvc";
+    private const string SystemWebHttpNamespace = "System.Web.Http";
     private const string RazorPagesNamespace = "Microsoft.AspNetCore.Mvc.RazorPages";
     private const string SignalRNamespace = "Microsoft.AspNetCore.SignalR";
     private const string CompilerServicesNamespace = "System.Runtime.CompilerServices";
@@ -34,6 +36,8 @@ internal static class EndpointDetector
     {
         None,
         Controller,
+        // System.Web MVC/Web API controllers, including WebApiCompatShim on CoreCLR
+        SystemWebController,
         PageModel,
         SignalRHub,
         CompilerGenerated
@@ -43,6 +47,7 @@ internal static class EndpointDetector
     {
         ControllerAttribute,
         ActionAttribute,
+        SystemWebControllerNonActionAttribute,
         NoHandlerAttribute,
         CompilerGeneratedAttribute
     }
@@ -50,6 +55,8 @@ internal static class EndpointDetector
     private enum KnownBaseTypeSet
     {
         Controller,
+        AspNetFrameworkController,
+        WebApiCompatController,
         PageModel,
         SignalRHub
     }
@@ -102,26 +109,7 @@ internal static class EndpointDetector
                     continue;
                 }
 
-                if (endpointType == EndpointTypeKind.Controller && HasAttributeFromSet(methodDef.GetCustomAttributes(), metadataReader, KnownNameSet.ActionAttribute))
-                {
-                    consumer.OnEndpointMethodToken(metadataReader.GetToken(methodHandle));
-                    continue;
-                }
-
-                if (endpointType == EndpointTypeKind.PageModel && IsPageModelHandler(methodDef, metadataReader))
-                {
-                    consumer.OnEndpointMethodToken(metadataReader.GetToken(methodHandle));
-                    continue;
-                }
-
-                if (endpointType == EndpointTypeKind.SignalRHub)
-                {
-                    consumer.OnEndpointMethodToken(metadataReader.GetToken(methodHandle));
-                    continue;
-                }
-
-                // minimal API endpoints
-                if (endpointType == EndpointTypeKind.CompilerGenerated && MightBeEndpoint(methodDef, metadataReader))
+                if (IsEndpointMethod(endpointType, methodDef, metadataReader))
                 {
                     consumer.OnEndpointMethodToken(metadataReader.GetToken(methodHandle));
                 }
@@ -141,6 +129,54 @@ internal static class EndpointDetector
                (attributes & InvalidMethodAttributes) == 0;
     }
 
+#if NETFRAMEWORK
+    private static bool IsEndpointMethod(EndpointTypeKind endpointType, MethodDefinition methodDef, MetadataReader reader)
+    {
+        return endpointType == EndpointTypeKind.SystemWebController &&
+               !HasAttributeFromSet(methodDef.GetCustomAttributes(), reader, KnownNameSet.SystemWebControllerNonActionAttribute);
+    }
+
+    private static EndpointTypeKind ClassifyType(TypeDefinition typeDef, MetadataReader reader)
+    {
+        var baseTypeHandle = typeDef.BaseType;
+        while (!baseTypeHandle.IsNil)
+        {
+            if (BaseTypeMatchesAny(baseTypeHandle, reader, KnownBaseTypeSet.AspNetFrameworkController))
+            {
+                return EndpointTypeKind.SystemWebController;
+            }
+
+            if (baseTypeHandle.Kind != HandleKind.TypeDefinition)
+            {
+                break;
+            }
+
+            baseTypeHandle = reader.GetTypeDefinition((TypeDefinitionHandle)baseTypeHandle).BaseType;
+        }
+
+        return EndpointTypeKind.None;
+    }
+#else
+    private static bool IsEndpointMethod(EndpointTypeKind endpointType, MethodDefinition methodDef, MetadataReader reader)
+    {
+        switch (endpointType)
+        {
+            case EndpointTypeKind.Controller:
+                return HasAttributeFromSet(methodDef.GetCustomAttributes(), reader, KnownNameSet.ActionAttribute);
+            case EndpointTypeKind.SystemWebController:
+                return !HasAttributeFromSet(methodDef.GetCustomAttributes(), reader, KnownNameSet.SystemWebControllerNonActionAttribute);
+            case EndpointTypeKind.PageModel:
+                return IsPageModelHandler(methodDef, reader);
+            case EndpointTypeKind.SignalRHub:
+                return true;
+            case EndpointTypeKind.CompilerGenerated:
+                // minimal API endpoints
+                return MightBeEndpoint(methodDef, reader);
+            default:
+                return false;
+        }
+    }
+
     private static EndpointTypeKind ClassifyType(TypeDefinition typeDef, MetadataReader reader)
     {
         var typeAttributes = typeDef.GetCustomAttributes();
@@ -157,6 +193,13 @@ internal static class EndpointDetector
             if (BaseTypeMatchesAny(baseTypeHandle, reader, KnownBaseTypeSet.Controller))
             {
                 return EndpointTypeKind.Controller;
+            }
+
+            // WebApiCompatShim exposes System.Web.Http.ApiController and applies Web API action conventions,
+            // so these controllers must also be detected on CoreCLR.
+            if (BaseTypeMatchesAny(baseTypeHandle, reader, KnownBaseTypeSet.WebApiCompatController))
+            {
+                return EndpointTypeKind.SystemWebController;
             }
 
             if (fallbackType == EndpointTypeKind.None)
@@ -192,6 +235,7 @@ internal static class EndpointDetector
 
         return isCompilerGenerated ? EndpointTypeKind.CompilerGenerated : EndpointTypeKind.None;
     }
+#endif
 
     private static bool HasAttributeFromSet(CustomAttributeHandleCollection attributes, MetadataReader reader, KnownNameSet nameSet)
     {
@@ -387,6 +431,12 @@ internal static class EndpointDetector
                        (comparer.Equals(namespaceHandle, MvcRoutingNamespace) &&
                         comparer.Equals(nameHandle, "HttpMethodAttribute"));
 
+            case KnownNameSet.SystemWebControllerNonActionAttribute:
+                return (comparer.Equals(namespaceHandle, SystemWebMvcNamespace) ||
+                        comparer.Equals(namespaceHandle, SystemWebHttpNamespace) ||
+                        comparer.Equals(namespaceHandle, MvcNamespace)) &&
+                       comparer.Equals(nameHandle, "NonActionAttribute");
+
             case KnownNameSet.NoHandlerAttribute:
                 return comparer.Equals(namespaceHandle, RazorPagesNamespace) &&
                        comparer.Equals(nameHandle, "NonHandlerAttribute");
@@ -409,6 +459,17 @@ internal static class EndpointDetector
                 return comparer.Equals(namespaceHandle, MvcNamespace) &&
                        (comparer.Equals(nameHandle, "Controller") ||
                         comparer.Equals(nameHandle, "ControllerBase"));
+
+            case KnownBaseTypeSet.AspNetFrameworkController:
+                return (comparer.Equals(namespaceHandle, SystemWebMvcNamespace) &&
+                        (comparer.Equals(nameHandle, "Controller") ||
+                         comparer.Equals(nameHandle, "ControllerBase"))) ||
+                       (comparer.Equals(namespaceHandle, SystemWebHttpNamespace) &&
+                        comparer.Equals(nameHandle, "ApiController"));
+
+            case KnownBaseTypeSet.WebApiCompatController:
+                return comparer.Equals(namespaceHandle, SystemWebHttpNamespace) &&
+                       comparer.Equals(nameHandle, "ApiController");
 
             case KnownBaseTypeSet.PageModel:
                 return comparer.Equals(namespaceHandle, RazorPagesNamespace) &&

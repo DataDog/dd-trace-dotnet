@@ -7,7 +7,6 @@ abort
 atexit
 bcmp
 btowc
-ceil
 clock_gettime
 close
 dl_iterate_phdr

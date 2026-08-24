@@ -208,6 +208,10 @@ internal sealed partial class NullMetricsTelemetryCollector
     {
     }
 
+    public void RecordCountWafError(Datadog.Trace.Telemetry.Metrics.MetricTags.WafError tag, int increment = 1)
+    {
+    }
+
     public void RecordCountRaspRuleEval(Datadog.Trace.Telemetry.Metrics.MetricTags.RaspRuleType tag, int increment = 1)
     {
     }
