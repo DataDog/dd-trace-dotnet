@@ -67,13 +67,13 @@ public class CoverageResolverTests
         using var directory = TemporaryDirectory.Create();
         var outputDirectory = Path.Combine(directory.Path, "output");
         var sharedFrameworkRoot = Path.Combine(directory.Path, "shared");
-        var olderFrameworkDirectory = Path.Combine(sharedFrameworkRoot, "Microsoft.AspNetCore.App", "10.0.8");
-        var latestFrameworkDirectory = Path.Combine(sharedFrameworkRoot, "Microsoft.AspNetCore.App", "10.0.10-servicing.1");
+        var stableFrameworkDirectory = Path.Combine(sharedFrameworkRoot, "Microsoft.AspNetCore.App", "10.0.8");
+        var prereleaseFrameworkDirectory = Path.Combine(sharedFrameworkRoot, "Microsoft.AspNetCore.App", "10.0.10-servicing.1");
         Directory.CreateDirectory(outputDirectory);
-        Directory.CreateDirectory(olderFrameworkDirectory);
-        Directory.CreateDirectory(latestFrameworkDirectory);
-        _ = CreateAssembly(olderFrameworkDirectory, "SharedFrameworkDependency", new Version(10, 0, 0, 0));
-        var dependencyPath = CreateAssembly(latestFrameworkDirectory, "SharedFrameworkDependency", new Version(10, 0, 0, 0));
+        Directory.CreateDirectory(stableFrameworkDirectory);
+        Directory.CreateDirectory(prereleaseFrameworkDirectory);
+        var dependencyPath = CreateAssembly(stableFrameworkDirectory, "SharedFrameworkDependency", new Version(10, 0, 0, 0));
+        _ = CreateAssembly(prereleaseFrameworkDirectory, "SharedFrameworkDependency", new Version(10, 0, 0, 0));
         const string RuntimeConfig = """
                                      {
                                        "runtimeOptions": {
@@ -122,6 +122,54 @@ public class CoverageResolverTests
             name => name == "DOTNET_ROOT" ? dotnetRoot : null);
 
         roots.Should().Equal(sharedFrameworkRoot);
+    }
+
+    /// <summary>
+    /// Verifies that an explicitly configured target runtime is searched before the collector runtime.
+    /// </summary>
+    [Theory]
+    [InlineData("DOTNET_HOST_PATH")]
+    [InlineData("DOTNET_ROOT")]
+    public void SharedFrameworkRootsPreferConfiguredTargetRuntime(string variableName)
+    {
+        using var directory = TemporaryDirectory.Create();
+        var targetDotnetRoot = Path.Combine(directory.Path, "target-dotnet");
+        var targetSharedFrameworkRoot = Path.Combine(targetDotnetRoot, "shared");
+        var collectorSharedFrameworkRoot = Path.Combine(directory.Path, "collector-dotnet", "shared");
+        var coreLibraryPath = Path.Combine(collectorSharedFrameworkRoot, "Microsoft.NETCore.App", "10.0.0", "System.Private.CoreLib.dll");
+        Directory.CreateDirectory(targetSharedFrameworkRoot);
+        Directory.CreateDirectory(collectorSharedFrameworkRoot);
+        var configuredPath = variableName == "DOTNET_HOST_PATH" ? Path.Combine(targetDotnetRoot, "dotnet") : targetDotnetRoot;
+
+        var roots = CoverageAssemblyResolver.SharedFrameworkLocator.GetSharedFrameworkRoots(
+            coreLibraryPath,
+            name => name == variableName ? configuredPath : null);
+
+        roots.Should().Equal(targetSharedFrameworkRoot, collectorSharedFrameworkRoot);
+    }
+
+    /// <summary>
+    /// Verifies that explicit prerelease roll-forward can select a newer prerelease over a stable patch.
+    /// </summary>
+    [Fact]
+    public void SharedFrameworkDiscoveryHonorsPrereleaseRollForward()
+    {
+        using var directory = TemporaryDirectory.Create();
+        var outputDirectory = Path.Combine(directory.Path, "output");
+        var sharedFrameworkRoot = Path.Combine(directory.Path, "shared");
+        var stableFrameworkDirectory = Path.Combine(sharedFrameworkRoot, "Microsoft.AspNetCore.App", "10.0.8");
+        var prereleaseFrameworkDirectory = Path.Combine(sharedFrameworkRoot, "Microsoft.AspNetCore.App", "10.0.10-servicing.1");
+        Directory.CreateDirectory(outputDirectory);
+        Directory.CreateDirectory(stableFrameworkDirectory);
+        Directory.CreateDirectory(prereleaseFrameworkDirectory);
+        File.WriteAllText(Path.Combine(outputDirectory, "Repro.Tests.runtimeconfig.json"), CreateRuntimeConfig("framework", "Microsoft.AspNetCore.App", "10.0.0"));
+
+        var directories = CoverageAssemblyResolver.SharedFrameworkLocator.DiscoverSharedFrameworkDirectories(
+            outputDirectory,
+            [sharedFrameworkRoot],
+            rollForwardToPrerelease: true);
+
+        directories.Should().Equal(prereleaseFrameworkDirectory);
     }
 
     /// <summary>

@@ -219,11 +219,12 @@ internal sealed class CoverageAssemblyResolver : BaseAssemblyResolver
         }
 
         var outputDirectory = Path.GetFullPath(_preferredSearchDirectory);
-        var cacheKey = outputDirectory + "\0" + string.Join("\0", sharedFrameworkRoots);
+        var rollForwardToPrerelease = SharedFrameworkLocator.RollForwardToPrerelease();
+        var cacheKey = outputDirectory + "\0" + string.Join("\0", sharedFrameworkRoots) + "\0" + (rollForwardToPrerelease ? "1" : "0");
         return SharedFrameworkDirectories.GetOrAdd(
                                               cacheKey,
                                               _ => new Lazy<string[]>(
-                                                  () => SharedFrameworkLocator.DiscoverSharedFrameworkDirectories(outputDirectory, sharedFrameworkRoots),
+                                                  () => SharedFrameworkLocator.DiscoverSharedFrameworkDirectories(outputDirectory, sharedFrameworkRoots, rollForwardToPrerelease),
                                                   LazyThreadSafetyMode.ExecutionAndPublication))
                                          .Value;
     }
@@ -372,7 +373,7 @@ internal sealed class CoverageAssemblyResolver : BaseAssemblyResolver
     {
         private static readonly string[] DotnetRootEnvironmentVariables = ["DOTNET_ROOT", "DOTNET_ROOT_X64", "DOTNET_ROOT_X86", "DOTNET_ROOT_ARM64", "DOTNET_ROOT(x86)"];
 
-        public static string[] DiscoverSharedFrameworkDirectories(string outputDirectory, IEnumerable<string> sharedFrameworkRoots)
+        public static string[] DiscoverSharedFrameworkDirectories(string outputDirectory, IEnumerable<string> sharedFrameworkRoots, bool rollForwardToPrerelease)
         {
             var directories = new List<string>();
             var seenDirectories = new HashSet<string>(PathComparer);
@@ -382,7 +383,7 @@ internal sealed class CoverageAssemblyResolver : BaseAssemblyResolver
                 {
                     foreach (var sharedFrameworkRoot in sharedFrameworkRoots)
                     {
-                        var frameworkDirectory = FindCompatibleFrameworkDirectory(sharedFrameworkRoot, framework.Name, framework.Version);
+                        var frameworkDirectory = FindCompatibleFrameworkDirectory(sharedFrameworkRoot, framework.Name, framework.Version, rollForwardToPrerelease);
                         if (frameworkDirectory is not null && seenDirectories.Add(frameworkDirectory))
                         {
                             directories.Add(frameworkDirectory);
@@ -402,12 +403,10 @@ internal sealed class CoverageAssemblyResolver : BaseAssemblyResolver
             var roots = new List<string>();
             var seenRoots = new HashSet<string>(PathComparer);
 
-            if (string.Equals(Path.GetFileName(coreLibraryPath), "System.Private.CoreLib.dll", StringComparison.OrdinalIgnoreCase))
+            var dotnetHostPath = getEnvironmentVariable("DOTNET_HOST_PATH");
+            if (!string.IsNullOrEmpty(dotnetHostPath))
             {
-                var versionDirectory = Path.GetDirectoryName(coreLibraryPath);
-                var frameworkDirectory = versionDirectory is null ? null : Path.GetDirectoryName(versionDirectory);
-                var sharedFrameworkRoot = frameworkDirectory is null ? null : Path.GetDirectoryName(frameworkDirectory);
-                AddSharedFrameworkRoot(sharedFrameworkRoot, roots, seenRoots);
+                AddDotnetInstallRoot(Path.GetDirectoryName(dotnetHostPath), roots, seenRoots);
             }
 
             foreach (var variableName in DotnetRootEnvironmentVariables)
@@ -415,10 +414,12 @@ internal sealed class CoverageAssemblyResolver : BaseAssemblyResolver
                 AddDotnetInstallRoot(getEnvironmentVariable(variableName), roots, seenRoots);
             }
 
-            var dotnetHostPath = getEnvironmentVariable("DOTNET_HOST_PATH");
-            if (!string.IsNullOrEmpty(dotnetHostPath))
+            if (string.Equals(Path.GetFileName(coreLibraryPath), "System.Private.CoreLib.dll", StringComparison.OrdinalIgnoreCase))
             {
-                AddDotnetInstallRoot(Path.GetDirectoryName(dotnetHostPath), roots, seenRoots);
+                var versionDirectory = Path.GetDirectoryName(coreLibraryPath);
+                var frameworkDirectory = versionDirectory is null ? null : Path.GetDirectoryName(versionDirectory);
+                var sharedFrameworkRoot = frameworkDirectory is null ? null : Path.GetDirectoryName(frameworkDirectory);
+                AddSharedFrameworkRoot(sharedFrameworkRoot, roots, seenRoots);
             }
 
             if (getEnvironmentVariable("PATH") is { Length: > 0 } path)
@@ -431,6 +432,9 @@ internal sealed class CoverageAssemblyResolver : BaseAssemblyResolver
 
             return roots.ToArray();
         }
+
+        internal static bool RollForwardToPrerelease()
+            => string.Equals(Environment.GetEnvironmentVariable("DOTNET_ROLL_FORWARD_TO_PRERELEASE"), "1", StringComparison.Ordinal);
 
         private static void AddDotnetInstallRoot(string? dotnetInstallRoot, List<string> roots, HashSet<string> seenRoots)
         {
@@ -538,7 +542,7 @@ internal sealed class CoverageAssemblyResolver : BaseAssemblyResolver
             return true;
         }
 
-        private static string? FindCompatibleFrameworkDirectory(string sharedFrameworkRoot, string frameworkName, string requestedVersionText)
+        private static string? FindCompatibleFrameworkDirectory(string sharedFrameworkRoot, string frameworkName, string requestedVersionText, bool rollForwardToPrerelease)
         {
             if (!TryParseRuntimeVersion(requestedVersionText, out var requestedVersion, out var requestedSemanticVersion))
             {
@@ -553,19 +557,22 @@ internal sealed class CoverageAssemblyResolver : BaseAssemblyResolver
 
             try
             {
+                var preferStable = requestedVersionText.IndexOf('-') < 0 && !rollForwardToPrerelease;
                 return Directory.EnumerateDirectories(frameworkRoot)
                                 .Select(path => new
                                 {
                                     Path = path,
                                     Parsed = TryParseRuntimeVersion(Path.GetFileName(path), out var version, out var semanticVersion),
                                     Version = version,
-                                    SemanticVersion = semanticVersion
+                                    SemanticVersion = semanticVersion,
+                                    IsPrerelease = Path.GetFileName(path).IndexOf('-') >= 0
                                 })
                                 .Where(candidate => candidate.Parsed &&
                                                     candidate.Version.Major == requestedVersion.Major &&
                                                     candidate.Version.Minor == requestedVersion.Minor &&
                                                     candidate.SemanticVersion.CompareTo(requestedSemanticVersion) >= 0)
-                                .OrderByDescending(candidate => candidate.SemanticVersion)
+                                .OrderBy(candidate => preferStable && candidate.IsPrerelease)
+                                .ThenByDescending(candidate => candidate.SemanticVersion)
                                 .Select(candidate => candidate.Path)
                                 .FirstOrDefault();
             }
