@@ -278,6 +278,35 @@ namespace Datadog.Trace.TestHelpers
         }
 
         /// <summary>
+        /// Wait for the given number of OTLP spans to appear, and return the <see cref="MockOtlpTraceRequest"/>s
+        /// that produced them instead of a flat span list, preserving the resource/scope envelope for
+        /// callers that need it (e.g. re-serializing to OTLP JSON for a snapshot). Each returned request
+        /// is trimmed to only the spans that passed <see cref="WaitForOtlpSpansAsync"/>'s filters -- a
+        /// single export batch can also carry spans that were filtered out (e.g. a warm-up request's).
+        /// </summary>
+        /// <param name="count">The minimum number of spans to wait for.</param>
+        /// <param name="timeoutInMilliseconds">The timeout</param>
+        /// <param name="operationName">The span name we're testing for</param>
+        /// <param name="minDateTime">Minimum time to check for spans from</param>
+        /// <param name="failOnTimeout">When true, fails if the requested number of spans is not received before the timeout.</param>
+        /// <returns>The trace requests that contained a matching span, each trimmed to just those spans.</returns>
+        public async Task<IImmutableList<MockOtlpTraceRequest>> WaitForOtlpTraceRequestsAsync(
+            int count,
+            int timeoutInMilliseconds = 20000,
+            string operationName = null,
+            DateTimeOffset? minDateTime = null,
+            bool failOnTimeout = true)
+        {
+            var relevantSpans = await WaitForOtlpSpansAsync(count, timeoutInMilliseconds, operationName, minDateTime, returnAllOperations: true, failOnTimeout);
+            var relevantSpanIds = relevantSpans.Select(s => s.SpanId).ToHashSet();
+
+            return OtlpTraceRequests
+                  .Where(r => r.Spans.Any(s => relevantSpanIds.Contains(s.SpanId)))
+                  .Select(r => TrimOtlpTraceRequestToSpans(r, relevantSpanIds))
+                  .ToImmutableList();
+        }
+
+        /// <summary>
         /// Wait for the telemetry condition to be satisfied.
         /// Note that the first telemetry that satisfies the condition is returned
         /// To retrieve all telemetry received, use <see cref="Telemetry"/>
@@ -1164,6 +1193,30 @@ namespace Datadog.Trace.TestHelpers
                     throw;
                 }
             }
+        }
+
+        /// <summary>
+        /// Clones <paramref name="request"/>'s underlying protobuf message and removes every span whose
+        /// (hex) ID isn't in <paramref name="relevantSpanIds"/>, so a batch that also carried filtered-out
+        /// spans (e.g. a warm-up request's) doesn't leak them into the trimmed result.
+        /// </summary>
+        private MockOtlpTraceRequest TrimOtlpTraceRequestToSpans(MockOtlpTraceRequest request, HashSet<string> relevantSpanIds)
+        {
+            var raw = request.Raw.Clone();
+
+            foreach (var resourceSpans in raw.ResourceSpans)
+            {
+                foreach (var scopeSpans in resourceSpans.ScopeSpans)
+                {
+                    var keptSpans = scopeSpans.Spans
+                                               .Where(s => relevantSpanIds.Contains(HexString.ToHexString(s.SpanId.ToByteArray())))
+                                               .ToList();
+                    scopeSpans.Spans.Clear();
+                    scopeSpans.Spans.AddRange(keptSpans);
+                }
+            }
+
+            return MockOtlpTraceRequest.Create(raw);
         }
 
         /// <summary>

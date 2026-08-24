@@ -15,7 +15,6 @@ using Datadog.Trace.ClrProfiler.IntegrationTests.Helpers;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.TestHelpers;
-using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 using FluentAssertions;
@@ -23,6 +22,9 @@ using Google.Protobuf;
 using VerifyXunit;
 using Xunit;
 using Xunit.Abstractions;
+
+// See the identical comment in OtlpSnapshotHelper.cs.
+using OtlpSpan = OpenTelemetry.Proto.Trace.V1.Span;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
 {
@@ -37,12 +39,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
     [UsesVerify]
     public abstract class OtlpAspNetCoreTestBase : TestHelper, IClassFixture<AspNetCoreTestFixture>, IAsyncLifetime
     {
-        /// <summary>
-        /// Temporary property used to carry each span's real start time through normalization and
-        /// merging, so the spans can still be ordered chronologically afterwards.
-        /// </summary>
-        private const string StartTimeKey = "__startTimeUnixNano";
-
         /// <summary>
         /// Attributes whose values depend on the machine, the socket, or the checkout path rather than
         /// on the request. See the identical list in <c>OpenTelemetryAspNetTestBase</c>.
@@ -264,39 +260,21 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
 
             await SendRequestAsync(httpMethod, path, (HttpStatusCode)statusCode);
 
-            var otlpSpans = await Fixture.Agent.WaitForOtlpSpansAsync(expectedSpanCount, minDateTime: now, returnAllOperations: true);
-            otlpSpans.Should().NotBeNullOrEmpty();
-            otlpSpans.Count.Should().Be(expectedSpanCount);
+            var relevantRequests = await Fixture.Agent.WaitForOtlpTraceRequestsAsync(expectedSpanCount, minDateTime: now);
+            relevantRequests.Should().NotBeNullOrEmpty();
+            relevantRequests.Sum(r => r.Spans.Count).Should().Be(expectedSpanCount);
 
-            // WaitForOtlpSpansAsync only returns the matching spans, not the requests (export
-            // batches) they arrived in, but the snapshot pipeline below needs the whole
-            // resource/scope envelope. Recover it by keeping only the requests that produced one of
-            // the matched spans, then trim every scope down to just those spans -- a batch can also
-            // carry other spans (e.g. a warm-up request's) that WaitForOtlpSpansAsync already
-            // filtered out of otlpSpans but which are still sitting in the raw envelope.
-            var relevantSpanIds = otlpSpans.Select(s => s.SpanId).ToHashSet();
-            var tracesRequests = new JArray(
-                Fixture.Agent.OtlpTraceRequests
-                       .Where(r => r.Spans.Any(s => relevantSpanIds.Contains(s.SpanId)))
-                       .Select(r => JToken.Parse(JsonFormatter.Default.Format(r.Raw))));
+            // Merge and sort on the typed protobuf model first, while span start times are still
+            // real -- NormalizeSpans (below) replaces them with a fixed placeholder, so this ordering
+            // has to happen before it runs rather than needing a stashed copy of the real value.
+            var mergedRequest = OtlpSnapshotHelper.MergeMockOtlpTraceRequests(
+                relevantRequests,
+                spans => spans.OrderBy(s => s.StartTimeUnixNano)
+                              .ThenBy(s => s.Name ?? string.Empty, StringComparer.Ordinal)
+                              .ThenBy(s => OtlpSnapshotHelper.GetAttributeStringValue(s, "url.path", "http.url") ?? string.Empty, StringComparer.Ordinal)
+                              .ThenBy(s => JsonFormatter.Default.Format(s), StringComparer.Ordinal));
 
-            foreach (var scopeSpan in tracesRequests.SelectTokens($"$..{names.ScopeSpans}[*]"))
-            {
-                if (scopeSpan["spans"] is JArray spans)
-                {
-                    scopeSpan["spans"] = new JArray(
-                        spans.Where(s => relevantSpanIds.Contains(HexString.ToHexString(Convert.FromBase64String(s[names.SpanId]!.ToString())))));
-                }
-            }
-
-            // Stash the real start time on each span so that the chronological ordering below survives
-            // both NormalizeSpans, which replaces startTimeUnixNano with a fixed placeholder, and
-            // MergeDatadogRequests, which clones the tokens as it re-parents the spans of every
-            // subsequent export into the first one. The property is removed again before returning.
-            foreach (var span in tracesRequests.SelectTokens("$..spans[*]"))
-            {
-                ((JObject)span)[StartTimeKey] = span[names.StartTimeUnixNano]!.ToString();
-            }
+            var tracesRequests = JToken.Parse(JsonFormatter.Default.Format(mergedRequest));
 
             OtlpSnapshotHelper.NormalizeResourceAttributes(tracesRequests, names);
             OtlpSnapshotHelper.NormalizeSpans(tracesRequests, names, applicationStartTimeUnixNano);
@@ -309,22 +287,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
 
             OtlpSnapshotHelper.SortSpanAttributes(tracesRequests);
 
-            // Sort chronologically first so the snapshot mirrors the nesting the server produced, then
-            // by name/path/JSON to keep ties stable across runs.
-            var merged = OtlpSnapshotHelper.MergeDatadogRequests(
-                tracesRequests,
-                names,
-                spans => spans.OrderBy(s => long.Parse(s[StartTimeKey]!.ToString()))
-                              .ThenBy(s => s["name"]?.ToString() ?? string.Empty, StringComparer.Ordinal)
-                              .ThenBy(s => OtlpSnapshotHelper.GetAttributeStringValue(s, names, "url.path", "http.url") ?? string.Empty, StringComparer.Ordinal)
-                              .ThenBy(s => s.ToString(Formatting.None), StringComparer.Ordinal));
-
-            foreach (var span in merged.SelectTokens("$..spans[*]"))
-            {
-                ((JObject)span).Remove(StartTimeKey);
-            }
-
-            return merged;
+            return tracesRequests;
         }
 
         private async Task SendRequestAsync(string httpMethod, string path, HttpStatusCode expectedStatusCode)
