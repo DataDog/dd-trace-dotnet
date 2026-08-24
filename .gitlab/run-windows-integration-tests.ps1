@@ -336,9 +336,22 @@ if ($testExitCode -eq 0 -and $testSuite -eq 'integration') {
     # integration filter. RunWindowsRegressionTests must instead receive the
     # default regression selection that Azure uses.
     $regressionFilter = '(Category=Smoke)&(LoadFromGAC!=True)&(Category!=AzureFunctions)&(SkipInCI!=True)'
-    $regressionCommand = "reg add HKLM\SYSTEM\CurrentControlSet\Control\FileSystem /v LongPathsEnabled /t REG_DWORD /d 1 /f && powershell -NoProfile -ExecutionPolicy Bypass -File c:\mnt\.gitlab\install-windows-test-runtime.ps1 -Framework $env:FRAMEWORK -Architecture $targetPlatform -IncludeAspNetCore && $dependencySetup" + "set `"Filter=$regressionFilter`" && c:\entrypoint.bat RunWindowsRegressionTests --framework $env:FRAMEWORK --TargetPlatform $targetPlatform --IncludeAllTestFrameworks true --NugetPackageDirectory c:\mnt\packages"
+    $regressionDockerArguments = @()
+    for ($i = 0; $i -lt $commonDockerArguments.Count; $i++) {
+        if ($commonDockerArguments[$i] -eq '-e' -and
+            $i + 1 -lt $commonDockerArguments.Count -and
+            $commonDockerArguments[$i + 1] -like 'Filter=*') {
+            $i++
+            continue
+        }
 
-    & docker run @commonDockerArguments --entrypoint cmd.exe $windowsBuildImage /d /s /c $regressionCommand
+        $regressionDockerArguments += $commonDockerArguments[$i]
+    }
+
+    $regressionDockerArguments += @('-e', "Filter=$regressionFilter")
+    $regressionCommand = "reg add HKLM\SYSTEM\CurrentControlSet\Control\FileSystem /v LongPathsEnabled /t REG_DWORD /d 1 /f && powershell -NoProfile -ExecutionPolicy Bypass -File c:\mnt\.gitlab\install-windows-test-runtime.ps1 -Framework $env:FRAMEWORK -Architecture $targetPlatform -IncludeAspNetCore && $dependencySetup" + "c:\entrypoint.bat RunWindowsRegressionTests --framework $env:FRAMEWORK --TargetPlatform $targetPlatform --IncludeAllTestFrameworks true --NugetPackageDirectory c:\mnt\packages"
+
+    & docker run @regressionDockerArguments --entrypoint cmd.exe $windowsBuildImage /d /s /c $regressionCommand
     $regressionExitCode = $LASTEXITCODE
 }
 
