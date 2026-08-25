@@ -322,8 +322,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Helpers
 
             // Now re-order and trim down to one single request. This means the output is not a true
             // 1:1 mapping of the input spans, but it's good enough for now and will make the results
-            // stable. Also, sort the spans by name to stabilize.
-            sortSpans ??= spans => spans.OrderBy(s => s.Name, StringComparer.Ordinal);
+            // stable. Also, sort the spans by name to stabilize. Deliberately not StringComparer.Ordinal:
+            // the culture-aware default comparer is what the original JToken-based implementation used
+            // (a bare `OrderBy(s => s["name"])`), and switching to ordinal reorders names that differ
+            // only by the case of a leading letter (e.g. "SomeSpan" vs. "some.name"), which would
+            // otherwise look like a real span-identity mismatch against existing snapshots.
+            sortSpans ??= spans => spans.OrderBy(s => s.Name);
 
             var merged = requests[0].Raw.Clone();
             var mergedSpans = merged.ResourceSpans[0].ScopeSpans[0].Spans;
