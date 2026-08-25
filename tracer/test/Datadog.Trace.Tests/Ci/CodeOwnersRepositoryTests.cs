@@ -9,33 +9,29 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 using Datadog.Trace.Ci.CodeOwnership;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.Util;
 using FluentAssertions;
-using VerifyXunit;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace Datadog.Trace.Tests.Ci;
 
-[UsesVerify]
 public class CodeOwnersRepositoryTests
 {
-    private const int MaxListedFiles = 5;
+    private readonly ITestOutputHelper _output;
 
-    public CodeOwnersRepositoryTests()
+    public CodeOwnersRepositoryTests(ITestOutputHelper output)
     {
-        VerifyHelper.InitializeGlobalSettings();
+        _output = output;
     }
 
-    [SkippableFact]
-    public Task TracerTestFilesHaveExpectedOwners()
-        => VerifyTestFileOwnership("tracer/test");
-
-    [SkippableFact]
-    public Task ProfilerTestFilesHaveExpectedOwners()
-        => VerifyTestFileOwnership("profiler/test");
+    [SkippableTheory]
+    [InlineData("tracer/test")]
+    [InlineData("profiler/test")]
+    public void EveryTrackedCSharpTestFileHasAnOwner(string testRoot)
+        => ValidateTestFileOwnership(testRoot, _output);
 
     [SkippableTheory]
     [InlineData("/docs/development/AzureFunctions.md", new[] { "@DataDog/tracing-dotnet", "@DataDog/apm-serverless", "@DataDog/serverless-azure-and-gcp" })]
@@ -53,16 +49,20 @@ public class CodeOwnersRepositoryTests
         codeOwners.Match(path).OrderBy(o => o).Should().Equal(expected.OrderBy(o => o));
     }
 
-    private static async Task VerifyTestFileOwnership(string testRoot)
+    private static void ValidateTestFileOwnership(string testRoot, ITestOutputHelper output)
     {
         var repoRoot = GetRepositoryRoot();
         Skip.If(repoRoot is null, "Could not locate the repository root");
 
         var codeOwners = new CodeOwners(Path.Combine(repoRoot!, ".github", "CODEOWNERS"), CodeOwners.Dialect.GitHub);
+        var trackedFiles = GetTrackedCSharpFiles(repoRoot!, testRoot).OrderBy(path => path, StringComparer.Ordinal).ToArray();
         var unownedFiles = new List<string>();
-        var filesByOwnerSet = new Dictionary<string, List<string>>(StringComparer.Ordinal);
+        var report = new StringBuilder();
+        report.Append("CODEOWNERS report for ").AppendLine(testRoot);
+        report.Append("Tracked C# files: ").Append(trackedFiles.Length).AppendLine();
+        report.AppendLine();
 
-        foreach (var relativePath in GetTrackedCSharpFiles(repoRoot!, testRoot).OrderBy(path => path, StringComparer.Ordinal))
+        foreach (var relativePath in trackedFiles)
         {
             var owners = codeOwners.Match("/" + relativePath).OrderBy(owner => owner, StringComparer.Ordinal).ToArray();
             if (owners.Length == 0)
@@ -70,36 +70,23 @@ public class CodeOwnersRepositoryTests
                 unownedFiles.Add(relativePath);
             }
 
-            var ownerSet = owners.Length == 0 ? "<none>" : string.Join(", ", owners);
-            if (!filesByOwnerSet.TryGetValue(ownerSet, out var files))
-            {
-                files = [];
-                filesByOwnerSet.Add(ownerSet, files);
-            }
-
-            files.Add(relativePath);
+            report.Append(relativePath)
+                  .Append(" => ")
+                  .AppendLine(owners.Length == 0 ? "<none>" : string.Join(", ", owners));
         }
 
-        filesByOwnerSet.Should().NotBeEmpty("expected to find C# test files in the repository");
-        unownedFiles.Should().BeEmpty("every test file should be owned by at least one team in .github/CODEOWNERS");
-        var ownership = new StringBuilder();
-        foreach (var ownerGroup in filesByOwnerSet.OrderBy(pair => pair.Key, StringComparer.Ordinal))
+        var reportPath = Path.GetTempFileName();
+        var reportContents = report.ToString();
+        File.WriteAllText(reportPath, reportContents, Encoding.UTF8);
+
+        if (trackedFiles.Length == 0 || unownedFiles.Count > 0)
         {
-            if (ownerGroup.Value.Count <= MaxListedFiles)
-            {
-                ownership.Append(ownerGroup.Key).AppendLine(":");
-                foreach (var file in ownerGroup.Value)
-                {
-                    ownership.Append("  ").AppendLine(file);
-                }
-            }
-            else
-            {
-                ownership.Append(ownerGroup.Key).Append(" => ").Append(ownerGroup.Value.Count).AppendLine(" files");
-            }
+            output.WriteLine($"Full CODEOWNERS report: {reportPath}");
+            output.WriteLine(reportContents);
         }
 
-        await Verifier.Verify(ownership.ToString());
+        trackedFiles.Should().NotBeEmpty("expected to find tracked C# test files in the repository");
+        unownedFiles.Should().BeEmpty("every tracked C# test file should be owned by at least one team in .github/CODEOWNERS");
     }
 
     private static string? GetRepositoryRoot()
