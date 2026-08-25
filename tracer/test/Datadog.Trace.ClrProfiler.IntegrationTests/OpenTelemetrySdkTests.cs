@@ -83,6 +83,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         private readonly Regex _exceptionStacktraceRegex = new(@"exception.stacktrace"":""System.ArgumentException: Example argument exception.*"",""");
         private readonly Regex _exceptionStacktraceOtlpRegex = new(@"string_value"": ""System.ArgumentException: Example argument exception.*""");
         private readonly Regex _exceptionStacktraceOtlpJsonRegex = new(@"stringValue"": ""System.ArgumentException: Example argument exception.*""");
+
+        // Google.Protobuf's JsonFormatter renders a whole-number double as e.g. "1" rather than "1.0"
+        // -- a different (but equally valid) textual representation of the same double value than
+        // the rendering the existing snapshots were captured against.
+        // The atomic group (?>...) is required: without it, a value that already has a decimal point
+        // (e.g. "404.0") backtracks -- \d+ gives back a digit to satisfy the lookahead, matching "40"
+        // instead of failing outright, and corrupting the value into "40.04.0".
+        private readonly Regex _wholeNumberDoubleValueRegex = new(@"""doubleValue"": (-?(?>\d+))(?!\.\d)");
         private readonly OtlpTestAgentSession _otlpSession = new();
 
         public OpenTelemetrySdkTests(ITestOutputHelper output)
@@ -318,12 +326,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 var settings = VerifyHelper.GetSpanVerifierSettings();
                 settings.AddRegexScrubber(_exceptionStacktraceOtlpRegex, @"string_value"": ""System.ArgumentException: Example argument exception""");
                 settings.AddRegexScrubber(_exceptionStacktraceOtlpJsonRegex, @"stringValue"": ""System.ArgumentException: Example argument exception""");
+                settings.AddRegexScrubber(_wholeNumberDoubleValueRegex, @"""doubleValue"": $1.0");
 
-                // Add scrubbers only for http/protobuf
-                if (protocol == "http/protobuf")
-                {
-                    OtlpSnapshotHelper.AddProtobufToJsonScrubbers(settings);
-                }
+                // Unlike the pre-migration code, this no longer depends on which wire protocol the
+                // sample used: MockTracerAgent always re-serializes via Google.Protobuf's JsonFormatter
+                // regardless of how the request arrived, so the enum-as-string/int mismatch this
+                // scrubber corrects for shows up on every row now, not just http/protobuf ones.
+                OtlpSnapshotHelper.AddProtobufToJsonScrubbers(settings);
 
                 var fileName = $"{nameof(OpenTelemetrySdkTests)}.SubmitsOtlpTraces{snapshotName}";
 
