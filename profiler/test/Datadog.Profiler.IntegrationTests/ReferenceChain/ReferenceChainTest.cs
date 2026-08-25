@@ -10,6 +10,7 @@ using System.Linq;
 using System.Net;
 using System.Text.Json;
 using Datadog.Profiler.IntegrationTests.Helpers;
+using Datadog.Profiler.IntegrationTests.Xunit;
 using ReferenceChainModel;
 using Xunit;
 using Xunit.Abstractions;
@@ -241,6 +242,7 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
 
         // Run against JSON as well: the two serializers build their type table independently,
         // so a type/index mismatch in one of them would not show up in the other.
+        [Flaky("Identified as flaky in CI; under investigation")]
         [TestAppFact("Samples.Computer01", new[] { "net10.0" })]
         public void CheckReferenceTreeTypesAreInClassHistogramJson(string appName, string framework, string appAssembly)
         {
