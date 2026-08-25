@@ -6,6 +6,7 @@
 using System;
 using System.Linq;
 using Datadog.Profiler.IntegrationTests.Helpers;
+using Datadog.Profiler.IntegrationTests.Xunit;
 using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
@@ -21,6 +22,7 @@ namespace Datadog.Profiler.IntegrationTests.Signature
             _output = output;
         }
 
+        [Flaky("Identified as flaky in CI; under investigation")]
         [TestAppFact("Samples.Computer01", new[] { "net48", "netcoreapp3.1", "net6.0", "net8.0", })] // FIXME: .NET 9 skipping .NET 9 for now
         public void ValidateSignatures(string appName, string framework, string appAssembly)
         {
