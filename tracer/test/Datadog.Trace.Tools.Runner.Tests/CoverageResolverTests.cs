@@ -104,6 +104,25 @@ public class CoverageResolverTests
     }
 
     /// <summary>
+    /// Verifies that the resolver follows the shared framework selected for the current test process.
+    /// </summary>
+    [SkippableFact]
+    public void ResolveAssemblyFromCurrentSharedFrameworkSucceeds()
+    {
+        var coreLibraryPath = typeof(object).Assembly.Location;
+        Skip.IfNot(
+            string.Equals(Path.GetFileName(coreLibraryPath), "System.Private.CoreLib.dll", StringComparison.OrdinalIgnoreCase),
+            "The current test process does not use a .NET shared framework.");
+        var targetPath = typeof(CoverageResolverTests).Assembly.Location;
+        using var resolver = new CoverageAssemblyResolver(new ConsoleCollectorLogger(), targetPath);
+        var assemblyName = AssemblyNameReference.Parse(typeof(object).Assembly.FullName);
+
+        var assembly = resolver.Resolve(assemblyName);
+
+        Path.GetFullPath(assembly.MainModule.FileName).Should().Be(Path.GetFullPath(coreLibraryPath));
+    }
+
+    /// <summary>
     /// Verifies that shared frameworks can be found when the collector itself is hosted by .NET Framework.
     /// </summary>
     [Fact]
@@ -114,7 +133,7 @@ public class CoverageResolverTests
         var sharedFrameworkRoot = Path.Combine(dotnetRoot, "shared");
         Directory.CreateDirectory(sharedFrameworkRoot);
 
-        var roots = CoverageAssemblyResolver.SharedFrameworkLocator.GetSharedFrameworkRoots(
+        var roots = SharedFrameworkLocator.GetSharedFrameworkRoots(
             Path.Combine(directory.Path, "mscorlib.dll"),
             name => name == "DOTNET_ROOT" ? dotnetRoot : null);
 
@@ -138,7 +157,7 @@ public class CoverageResolverTests
         Directory.CreateDirectory(collectorSharedFrameworkRoot);
         var configuredPath = variableName == "DOTNET_HOST_PATH" ? Path.Combine(targetDotnetRoot, "dotnet") : targetDotnetRoot;
 
-        var roots = CoverageAssemblyResolver.SharedFrameworkLocator.GetSharedFrameworkRoots(
+        var roots = SharedFrameworkLocator.GetSharedFrameworkRoots(
             coreLibraryPath,
             name => name == variableName ? configuredPath : null);
 
@@ -163,7 +182,7 @@ public class CoverageResolverTests
         Directory.CreateDirectory(prereleaseFrameworkDirectory);
         File.WriteAllText(Path.Combine(outputDirectory, "Repro.Tests.runtimeconfig.json"), CreateRuntimeConfig("framework", "Microsoft.AspNetCore.App", "10.0.0"));
 
-        var directories = CoverageAssemblyResolver.SharedFrameworkLocator.DiscoverSharedFrameworkDirectories(
+        var directories = SharedFrameworkLocator.DiscoverDirectories(
             outputDirectory,
             [sharedFrameworkRoot],
             rollForwardToPrerelease);
@@ -431,12 +450,12 @@ public class CoverageResolverTests
         using var resolver = CreateResolver(directory.Path);
         using var assembly = AssemblyProcessor.ReadTargetAssembly(assemblyPath, resolver);
         assembly.MainModule.Types.Add(new TypeDefinition("CoverageRewriterAssembly", "AddedByTest", Mono.Cecil.TypeAttributes.Public | Mono.Cecil.TypeAttributes.Class, assembly.MainModule.TypeSystem.Object));
-        var transactionPaths = new List<string>();
+        var stagingPaths = new List<string>();
         string stagedAssemblyPath = null;
 
         AssemblyProcessor.WriteTargetAssembly(assembly, assemblyPath, strongNameKeyBlob: null, (source, destination, backup) =>
         {
-            transactionPaths.Add(source);
+            stagingPaths.Add(source);
             if (destination == assemblyPath)
             {
                 stagedAssemblyPath = source;
@@ -444,7 +463,7 @@ public class CoverageResolverTests
 
             if (backup is not null)
             {
-                transactionPaths.Add(backup);
+                stagingPaths.Add(backup);
             }
 
             File.Replace(source, destination, backup);
@@ -454,7 +473,7 @@ public class CoverageResolverTests
         rewrittenAssembly.MainModule.GetType("CoverageRewriterAssembly.AddedByTest").Should().NotBeNull();
         Path.GetFileName(stagedAssemblyPath).Should().Be(Path.GetFileName(assemblyPath));
         (stagedAssemblyPath.Length - assemblyPath.Length).Should().BeLessOrEqualTo(20);
-        transactionPaths.Where(CoverageCollector.HasAssemblyExtension).Should().BeEmpty();
+        stagingPaths.Where(CoverageCollector.HasAssemblyExtension).Should().BeEmpty();
         Directory.GetFiles(directory.Path).Select(Path.GetFileName).Should().BeEquivalentTo("CoverageRewriterAssembly.dll", "CoverageRewriterAssembly.pdb");
         Directory.GetDirectories(directory.Path).Should().BeEmpty();
 

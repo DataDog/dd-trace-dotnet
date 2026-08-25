@@ -4,16 +4,12 @@
 // </copyright>
 
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
-using System.Threading;
 using Datadog.Trace.Ci.Coverage;
-using Datadog.Trace.FeatureFlags;
-using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 using Mono.Cecil;
 
 namespace Datadog.Trace.Coverage.Collector;
@@ -25,10 +21,8 @@ internal sealed class CoverageAssemblyResolver : BaseAssemblyResolver
 {
     private static readonly Assembly TracerAssembly = typeof(CoverageReporter).Assembly;
     private static readonly StringComparison PathComparison = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
-    private static readonly StringComparer PathComparer = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal;
     private static readonly string[] ManagedAssemblyExtensions = [".exe", ".dll"];
     private static readonly string[] WindowsRuntimeAssemblyExtensions = [".winmd", ".dll"];
-    private static readonly ConcurrentDictionary<string, Lazy<string[]>> SharedFrameworkDirectories = new(PathComparer);
     private readonly Dictionary<string, AssemblyDefinition> _cache = new(StringComparer.Ordinal);
     private readonly ICollectorLogger _logger;
     private readonly string _assemblyFilePath;
@@ -139,7 +133,8 @@ internal sealed class CoverageAssemblyResolver : BaseAssemblyResolver
             return assemblyFromSearchDirectory;
         }
 
-        var assemblyFromSharedFramework = ResolveFromDirectories(name, GetSharedFrameworkDirectories(), requireMatchingIdentity: true);
+        var sharedFrameworkDirectories = SharedFrameworkLocator.GetDirectories(_preferredSearchDirectory, _sharedFrameworkRoot);
+        var assemblyFromSharedFramework = ResolveFromDirectories(name, sharedFrameworkDirectories, requireMatchingIdentity: true);
         if (assemblyFromSharedFramework is not null)
         {
             return assemblyFromSharedFramework;
@@ -164,9 +159,9 @@ internal sealed class CoverageAssemblyResolver : BaseAssemblyResolver
     }
 
     private AssemblyDefinition? ResolveFromSearchDirectories(AssemblyNameReference name)
-        => ResolveFromDirectories(name, GetSearchDirectoryCandidates());
+        => ResolveFromDirectories(name, GetSearchDirectoryCandidates(), requireMatchingIdentity: false);
 
-    private AssemblyDefinition? ResolveFromDirectories(AssemblyNameReference name, IEnumerable<string> directories, bool requireMatchingIdentity = false)
+    private AssemblyDefinition? ResolveFromDirectories(AssemblyNameReference name, IEnumerable<string> directories, bool requireMatchingIdentity)
     {
         var extensions = name.IsWindowsRuntime ? WindowsRuntimeAssemblyExtensions : ManagedAssemblyExtensions;
         foreach (var directory in directories)
@@ -199,34 +194,6 @@ internal sealed class CoverageAssemblyResolver : BaseAssemblyResolver
         }
 
         return null;
-    }
-
-    private IEnumerable<string> GetSharedFrameworkDirectories()
-    {
-        if (string.IsNullOrEmpty(_preferredSearchDirectory))
-        {
-            return [];
-        }
-
-        var sharedFrameworkRoots = (_sharedFrameworkRoot is null ? SharedFrameworkLocator.GetSharedFrameworkRoots() : [_sharedFrameworkRoot])
-                                  .Where(Directory.Exists)
-                                  .Select(Path.GetFullPath)
-                                  .Distinct(PathComparer)
-                                  .ToArray();
-        if (sharedFrameworkRoots.Length == 0)
-        {
-            return [];
-        }
-
-        var outputDirectory = Path.GetFullPath(_preferredSearchDirectory);
-        var rollForwardToPrerelease = SharedFrameworkLocator.RollForwardToPrerelease();
-        var cacheKey = outputDirectory + "\0" + string.Join("\0", sharedFrameworkRoots) + "\0" + (rollForwardToPrerelease ? "1" : "0");
-        return SharedFrameworkDirectories.GetOrAdd(
-                                              cacheKey,
-                                              _ => new Lazy<string[]>(
-                                                  () => SharedFrameworkLocator.DiscoverSharedFrameworkDirectories(outputDirectory, sharedFrameworkRoots, rollForwardToPrerelease),
-                                                  LazyThreadSafetyMode.ExecutionAndPublication))
-                                         .Value;
     }
 
     private IEnumerable<string> GetSearchDirectoryCandidates()
@@ -366,244 +333,6 @@ internal sealed class CoverageAssemblyResolver : BaseAssemblyResolver
         if (_disposed)
         {
             throw new ObjectDisposedException(nameof(CoverageAssemblyResolver));
-        }
-    }
-
-    internal static class SharedFrameworkLocator
-    {
-        private static readonly string[] DotnetRootEnvironmentVariables = ["DOTNET_ROOT", "DOTNET_ROOT_X64", "DOTNET_ROOT_X86", "DOTNET_ROOT_ARM64", "DOTNET_ROOT(x86)"];
-
-        public static string[] DiscoverSharedFrameworkDirectories(string outputDirectory, IEnumerable<string> sharedFrameworkRoots, bool rollForwardToPrerelease)
-        {
-            var directories = new List<string>();
-            var seenDirectories = new HashSet<string>(PathComparer);
-            foreach (var runtimeConfigPath in GetRuntimeConfigPaths(outputDirectory))
-            {
-                foreach (var framework in ReadFrameworkReferences(runtimeConfigPath))
-                {
-                    foreach (var sharedFrameworkRoot in sharedFrameworkRoots)
-                    {
-                        var frameworkDirectory = FindCompatibleFrameworkDirectory(sharedFrameworkRoot, framework.Name, framework.Version, rollForwardToPrerelease);
-                        if (frameworkDirectory is not null && seenDirectories.Add(frameworkDirectory))
-                        {
-                            directories.Add(frameworkDirectory);
-                        }
-                    }
-                }
-            }
-
-            return directories.ToArray();
-        }
-
-        public static string[] GetSharedFrameworkRoots()
-            => GetSharedFrameworkRoots(typeof(object).Assembly.Location, Environment.GetEnvironmentVariable);
-
-        internal static string[] GetSharedFrameworkRoots(string coreLibraryPath, Func<string, string?> getEnvironmentVariable)
-        {
-            var roots = new List<string>();
-            var seenRoots = new HashSet<string>(PathComparer);
-
-            var dotnetHostPath = getEnvironmentVariable("DOTNET_HOST_PATH");
-            if (!string.IsNullOrEmpty(dotnetHostPath))
-            {
-                AddDotnetInstallRoot(Path.GetDirectoryName(dotnetHostPath), roots, seenRoots);
-            }
-
-            foreach (var variableName in DotnetRootEnvironmentVariables)
-            {
-                AddDotnetInstallRoot(getEnvironmentVariable(variableName), roots, seenRoots);
-            }
-
-            if (string.Equals(Path.GetFileName(coreLibraryPath), "System.Private.CoreLib.dll", StringComparison.OrdinalIgnoreCase))
-            {
-                var versionDirectory = Path.GetDirectoryName(coreLibraryPath);
-                var frameworkDirectory = versionDirectory is null ? null : Path.GetDirectoryName(versionDirectory);
-                var sharedFrameworkRoot = frameworkDirectory is null ? null : Path.GetDirectoryName(frameworkDirectory);
-                AddSharedFrameworkRoot(sharedFrameworkRoot, roots, seenRoots);
-            }
-
-            if (getEnvironmentVariable("PATH") is { Length: > 0 } path)
-            {
-                foreach (var pathEntry in path.Split(Path.PathSeparator))
-                {
-                    AddDotnetInstallRoot(pathEntry, roots, seenRoots);
-                }
-            }
-
-            return roots.ToArray();
-        }
-
-        internal static bool RollForwardToPrerelease()
-            => string.Equals(Environment.GetEnvironmentVariable("DOTNET_ROLL_FORWARD_TO_PRERELEASE"), "1", StringComparison.Ordinal);
-
-        private static void AddDotnetInstallRoot(string? dotnetInstallRoot, List<string> roots, HashSet<string> seenRoots)
-        {
-            try
-            {
-                if (!string.IsNullOrEmpty(dotnetInstallRoot))
-                {
-                    AddSharedFrameworkRoot(Path.Combine(dotnetInstallRoot, "shared"), roots, seenRoots);
-                }
-            }
-            catch (Exception ex) when (ex is ArgumentException or IOException or NotSupportedException or UnauthorizedAccessException)
-            {
-                // Ignore malformed or inaccessible environment candidates and keep probing other roots.
-            }
-        }
-
-        private static void AddSharedFrameworkRoot(string? sharedFrameworkRoot, List<string> roots, HashSet<string> seenRoots)
-        {
-            if (string.IsNullOrEmpty(sharedFrameworkRoot) ||
-                !string.Equals(Path.GetFileName(sharedFrameworkRoot), "shared", StringComparison.OrdinalIgnoreCase) ||
-                !Directory.Exists(sharedFrameworkRoot))
-            {
-                return;
-            }
-
-            sharedFrameworkRoot = Path.GetFullPath(sharedFrameworkRoot);
-            if (seenRoots.Add(sharedFrameworkRoot))
-            {
-                roots.Add(sharedFrameworkRoot);
-            }
-        }
-
-        private static IEnumerable<string> GetRuntimeConfigPaths(string outputDirectory)
-        {
-            try
-            {
-                return Directory.EnumerateFiles(outputDirectory, "*.runtimeconfig.json", SearchOption.TopDirectoryOnly)
-                                .OrderBy(path => path, PathComparer)
-                                .ToArray();
-            }
-            catch (IOException)
-            {
-                return [];
-            }
-            catch (UnauthorizedAccessException)
-            {
-                return [];
-            }
-        }
-
-        private static IEnumerable<FrameworkReference> ReadFrameworkReferences(string runtimeConfigPath)
-        {
-            JObject runtimeConfig;
-            try
-            {
-                runtimeConfig = JObject.Parse(File.ReadAllText(runtimeConfigPath));
-            }
-            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or Datadog.Trace.Vendors.Newtonsoft.Json.JsonException)
-            {
-                yield break;
-            }
-
-            if (runtimeConfig["runtimeOptions"] is not JObject runtimeOptions)
-            {
-                yield break;
-            }
-
-            if (TryReadFrameworkReference(runtimeOptions["framework"], out var framework))
-            {
-                yield return framework;
-            }
-
-            foreach (var propertyName in new[] { "frameworks", "includedFrameworks" })
-            {
-                if (runtimeOptions[propertyName] is not JArray frameworks)
-                {
-                    continue;
-                }
-
-                foreach (var frameworkToken in frameworks)
-                {
-                    if (TryReadFrameworkReference(frameworkToken, out framework))
-                    {
-                        yield return framework;
-                    }
-                }
-            }
-        }
-
-        private static bool TryReadFrameworkReference(JToken? token, out FrameworkReference framework)
-        {
-            framework = default;
-            if (token is not JObject frameworkObject ||
-                frameworkObject["name"]?.Value<string>() is not { Length: > 0 } name ||
-                frameworkObject["version"]?.Value<string>() is not { Length: > 0 } version ||
-                Path.IsPathRooted(name) ||
-                name is "." or ".." ||
-                name.IndexOf(Path.DirectorySeparatorChar) >= 0 ||
-                name.IndexOf(Path.AltDirectorySeparatorChar) >= 0)
-            {
-                return false;
-            }
-
-            framework = new FrameworkReference(name, version);
-            return true;
-        }
-
-        private static string? FindCompatibleFrameworkDirectory(string sharedFrameworkRoot, string frameworkName, string requestedVersionText, bool rollForwardToPrerelease)
-        {
-            if (!TryParseRuntimeVersion(requestedVersionText, out var requestedVersion, out var requestedSemanticVersion))
-            {
-                return null;
-            }
-
-            var frameworkRoot = Path.Combine(sharedFrameworkRoot, frameworkName);
-            if (!Directory.Exists(frameworkRoot))
-            {
-                return null;
-            }
-
-            try
-            {
-                var preferStable = requestedVersionText.IndexOf('-') < 0 && !rollForwardToPrerelease;
-                return Directory.EnumerateDirectories(frameworkRoot)
-                                .Select(path => new
-                                {
-                                    Path = path,
-                                    Parsed = TryParseRuntimeVersion(Path.GetFileName(path), out var version, out var semanticVersion),
-                                    Version = version,
-                                    SemanticVersion = semanticVersion,
-                                    IsPrerelease = Path.GetFileName(path).IndexOf('-') >= 0
-                                })
-                                .Where(candidate => candidate.Parsed &&
-                                                    candidate.Version.Major == requestedVersion.Major &&
-                                                    candidate.Version.Minor == requestedVersion.Minor &&
-                                                    candidate.SemanticVersion.CompareTo(requestedSemanticVersion) >= 0)
-                                .OrderBy(candidate => preferStable && candidate.IsPrerelease)
-                                .ThenByDescending(candidate => candidate.SemanticVersion)
-                                .Select(candidate => candidate.Path)
-                                .FirstOrDefault();
-            }
-            catch (IOException)
-            {
-                return null;
-            }
-            catch (UnauthorizedAccessException)
-            {
-                return null;
-            }
-        }
-
-        private static bool TryParseRuntimeVersion(string versionText, out Version version, out SemanticVersion semanticVersion)
-        {
-            var suffixIndex = versionText.IndexOf('-');
-            var numericVersion = suffixIndex >= 0 ? versionText.Substring(0, suffixIndex) : versionText;
-            return Version.TryParse(numericVersion, out version!) && SemanticVersion.TryParse(versionText, out semanticVersion);
-        }
-
-        private readonly struct FrameworkReference
-        {
-            public FrameworkReference(string name, string version)
-            {
-                Name = name;
-                Version = version;
-            }
-
-            public string Name { get; }
-
-            public string Version { get; }
         }
     }
 }

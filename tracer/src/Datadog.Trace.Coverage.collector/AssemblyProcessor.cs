@@ -29,7 +29,7 @@ namespace Datadog.Trace.Coverage.Collector
 {
     internal class AssemblyProcessor
     {
-        internal const string TransactionDirectoryPrefix = ".ddc-";
+        internal const string StagingDirectoryPrefix = ".ddc-";
 
         private static readonly string? ExcludeFromCodeCoverageAttributeFullName = typeof(ExcludeFromCodeCoverageAttribute).FullName;
         private static readonly string? AvoidCoverageAttributeFullName = typeof(AvoidCoverageAttribute).FullName;
@@ -796,14 +796,14 @@ namespace Datadog.Trace.Coverage.Collector
         private static void WriteTargetAssembly(AssemblyDefinition assemblyDefinition, string assemblyFilePath, byte[]? strongNameKeyBlob, Action<string, string, string?> replaceFile, ICollectorLogger? logger)
         {
             using var assemblyLock = CoverageAssemblyPathLock.EnterWrite(assemblyFilePath);
-            var assemblyDirectory = Path.GetDirectoryName(assemblyFilePath) ?? string.Empty;
-            var transactionDirectory = Path.Combine(assemblyDirectory, TransactionDirectoryPrefix + Guid.NewGuid().ToString("N").Substring(0, 12));
-            // Keep transaction files on the target volume for File.Replace and use the final basenames for Cecil's symbol metadata.
-            Directory.CreateDirectory(transactionDirectory);
-            var stagedAssemblyPath = Path.Combine(transactionDirectory, Path.GetFileName(assemblyFilePath));
+            var targetDirectory = Path.GetDirectoryName(assemblyFilePath) ?? string.Empty;
+            var stagingDirectory = Path.Combine(targetDirectory, StagingDirectoryPrefix + Path.GetRandomFileName());
+            // File.Replace requires the same volume, and Cecil writes the PDB basename into the assembly.
+            Directory.CreateDirectory(stagingDirectory);
+            var stagedAssemblyPath = Path.Combine(stagingDirectory, Path.GetFileName(assemblyFilePath));
             var stagedSymbolsPath = Path.ChangeExtension(stagedAssemblyPath, ".pdb");
-            var assemblyBackupPath = Path.Combine(transactionDirectory, ".assembly.backup");
-            var symbolsBackupPath = Path.Combine(transactionDirectory, ".symbols.backup");
+            var assemblyBackupPath = Path.Combine(stagingDirectory, ".assembly.backup");
+            var symbolsBackupPath = Path.Combine(stagingDirectory, ".symbols.backup");
             var symbolsPath = Path.ChangeExtension(assemblyFilePath, ".pdb");
             var published = false;
 
@@ -832,7 +832,7 @@ namespace Datadog.Trace.Coverage.Collector
                     TryDeleteStagedFile(symbolsBackupPath, logger);
                 }
 
-                TryDeleteTransactionDirectory(transactionDirectory, logger);
+                TryDeleteStagingDirectory(stagingDirectory, logger);
             }
         }
 
@@ -925,12 +925,11 @@ namespace Datadog.Trace.Coverage.Collector
             }
             catch (Exception ex)
             {
-                // Staging cleanup must not hide a rewrite or publication failure.
-                logger?.Warning($"Failed to remove coverage rewrite transaction file '{filePath}': {ex}");
+                logger?.Warning($"Failed to remove coverage rewrite staging file '{filePath}': {ex}");
             }
         }
 
-        private static void TryDeleteTransactionDirectory(string directoryPath, ICollectorLogger? logger)
+        private static void TryDeleteStagingDirectory(string directoryPath, ICollectorLogger? logger)
         {
             try
             {
@@ -941,8 +940,7 @@ namespace Datadog.Trace.Coverage.Collector
             }
             catch (Exception ex)
             {
-                // Staging cleanup must not hide a rewrite or publication failure.
-                logger?.Warning($"Failed to remove coverage rewrite transaction directory '{directoryPath}': {ex}");
+                logger?.Warning($"Failed to remove coverage rewrite staging directory '{directoryPath}': {ex}");
             }
         }
 
