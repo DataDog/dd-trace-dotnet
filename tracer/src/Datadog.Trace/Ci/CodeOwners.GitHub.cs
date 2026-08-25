@@ -11,9 +11,6 @@ namespace Datadog.Trace.Ci
 {
     internal sealed partial class CodeOwners
     {
-        /// <summary>
-        /// Reads and validates the owner list from a GitHub rule.
-        /// </summary>
         private static class GitHubOwnerTokenizer
         {
             /// <summary>
@@ -45,9 +42,6 @@ namespace Datadog.Trace.Ci
                 return owners.Count == 0 ? [] : owners.ToArray();
             }
 
-            /// <summary>
-            /// Checks whether a token is a valid GitHub user, team, or email address.
-            /// </summary>
             private static bool IsValidGitHubOwner(string token)
             {
                 // GitHub users and teams use @user or @organization/team.
@@ -80,21 +74,18 @@ namespace Datadog.Trace.Ci
 
                 for (var i = at + 1; i < token.Length; i++)
                 {
-                    if (!IsAsciiLetterOrDigit(token[i]) && token[i] is not '.' and not '-' and not '_')
+                    if (!char.IsAsciiLetterOrDigit(token[i]) && token[i] is not '.' and not '-' and not '_')
                     {
                         return false;
                     }
                 }
 
-                return IsAsciiLetterOrDigit(token[token.Length - 1]) || token[token.Length - 1] == '_';
+                return char.IsAsciiLetterOrDigit(token[token.Length - 1]) || token[token.Length - 1] == '_';
             }
 
-            /// <summary>
-            /// Checks one GitHub user, organization, or team name inside a token.
-            /// </summary>
             private static bool IsValidGitHubIdentifier(string value, int start, int end)
             {
-                if (start >= end || !IsAsciiLetterOrDigit(value[start]) || !IsAsciiLetterOrDigit(value[end - 1]))
+                if (start >= end || !char.IsAsciiLetterOrDigit(value[start]) || !char.IsAsciiLetterOrDigit(value[end - 1]))
                 {
                     return false;
                 }
@@ -103,7 +94,7 @@ namespace Datadog.Trace.Ci
                 for (var i = start; i < end; i++)
                 {
                     var character = value[i];
-                    if (!IsAsciiLetterOrDigit(character) && character is not '-' and not '_')
+                    if (!char.IsAsciiLetterOrDigit(character) && character is not '-' and not '_')
                     {
                         return false;
                     }
@@ -119,11 +110,8 @@ namespace Datadog.Trace.Ci
                 return true;
             }
 
-            /// <summary>
-            /// Checks whether a character is allowed before the at sign in an email address.
-            /// </summary>
             private static bool IsEmailLocalCharacter(char character)
-                => IsAsciiLetterOrDigit(character) || ".!#$%&'*+/=?^_`{|}~-".IndexOf(character) >= 0;
+                => char.IsAsciiLetterOrDigit(character) || ".!#$%&'*+/=?^_`{|}~-".IndexOf(character) >= 0;
         }
 
         /// <summary>
@@ -132,27 +120,24 @@ namespace Datadog.Trace.Ci
         /// <remarks>
         /// See <see href="https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners#codeowners-syntax">GitHub CODEOWNERS syntax and precedence</see>.
         /// </remarks>
-        private sealed class GitHubDocument : Document
+        private sealed class GitHubRuleSet : RuleSet
         {
-            private readonly Entry[] _rules;
+            private readonly Rule[] _rules;
 
-            /// <summary>
-            /// Initializes a new instance of the <see cref="GitHubDocument"/> class from compiled rules.
-            /// </summary>
-            private GitHubDocument(Entry[] rules)
+            private GitHubRuleSet(Rule[] rules)
             {
                 _rules = rules;
             }
 
-            public static GitHubDocument Empty { get; } = new([]);
+            public static GitHubRuleSet Empty { get; } = new([]);
 
             /// <summary>
             /// Parses valid GitHub rules and counts invalid lines.
             /// </summary>
-            public static GitHubDocument Parse(IEnumerable<string> lines, out int parsingDiagnosticsCount)
+            public static GitHubRuleSet Parse(IEnumerable<string> lines, out int parsingDiagnosticsCount)
             {
                 parsingDiagnosticsCount = 0;
-                var rules = new List<Entry>();
+                var rules = new List<Rule>();
 
                 foreach (var line in lines)
                 {
@@ -162,20 +147,20 @@ namespace Datadog.Trace.Ci
                         continue;
                     }
 
-                    var entry = Entry.ParseGitHub(raw);
-                    if (entry is null)
+                    var rule = Rule.ParseGitHub(raw);
+                    if (rule is null)
                     {
                         parsingDiagnosticsCount++;
                     }
                     else
                     {
-                        rules.Add(entry);
+                        rules.Add(rule);
                     }
                 }
 
                 // GitHub uses the last matching rule, so search the rules from bottom to top.
                 rules.Reverse();
-                return new GitHubDocument(rules.ToArray());
+                return new GitHubRuleSet(rules.ToArray());
             }
 
             /// <summary>
@@ -195,28 +180,28 @@ namespace Datadog.Trace.Ci
             }
         }
 
-        private sealed partial class Entry
+        private sealed partial class Rule
         {
             /// <summary>
             /// Parses one GitHub rule and compiles its path pattern.
             /// </summary>
-            public static Entry? ParseGitHub(string raw)
+            public static Rule? ParseGitHub(string raw)
             {
                 if (raw.StartsWith("\\#"))
                 {
                     return null;
                 }
 
-                var idxHash = FindUnescapedCharacter(raw, '#');
-                var effective = idxHash >= 0 ? raw.Substring(0, idxHash).TrimEnd() : raw;
-                if (string.IsNullOrWhiteSpace(effective))
+                var commentStart = FindUnescapedCharacter(raw, '#');
+                var ruleText = commentStart >= 0 ? raw.Substring(0, commentStart).TrimEnd() : raw;
+                if (string.IsNullOrWhiteSpace(ruleText))
                 {
                     return null;
                 }
 
                 string patternToken;
                 string ownersSegment;
-                SplitEscapedEntry(effective, out patternToken, out ownersSegment, out _);
+                SplitRule(ruleText, out patternToken, out ownersSegment, out _);
 
                 if (patternToken.Length == 0 || IsUnsupportedGitHubPattern(patternToken))
                 {
@@ -235,12 +220,9 @@ namespace Datadog.Trace.Ci
                     return null;
                 }
 
-                return new Entry(glob, patternToken, exclusion: false, owners);
+                return new Rule(glob, patternToken, exclusion: false, owners);
             }
 
-            /// <summary>
-            /// Finds a character that is not escaped with a backslash.
-            /// </summary>
             private static int FindUnescapedCharacter(string value, char character)
             {
                 for (var i = 0; i < value.Length; i++)
@@ -258,9 +240,6 @@ namespace Datadog.Trace.Ci
                 return -1;
             }
 
-            /// <summary>
-            /// Rejects pattern features that GitHub CODEOWNERS does not support.
-            /// </summary>
             private static bool IsUnsupportedGitHubPattern(string patternToken)
             {
                 if (patternToken.StartsWith("!"))
@@ -288,9 +267,6 @@ namespace Datadog.Trace.Ci
                 return false;
             }
 
-            /// <summary>
-            /// Checks whether the final path segment names a directory without wildcards.
-            /// </summary>
             private static bool IsDirectoryPattern(string patternToken)
             {
                 var lastSegmentStart = patternToken.LastIndexOf('/');

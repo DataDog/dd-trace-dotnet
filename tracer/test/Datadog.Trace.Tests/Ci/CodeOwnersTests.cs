@@ -26,8 +26,8 @@ public class CodeOwnersTests
             "CI",
             "Data");
 
-        _githubCodeOwners = new CodeOwners(Path.Combine(ciDataFolder, "CODEOWNERS_GITHUB"), CodeOwners.Platform.GitHub);
-        _gitlabCodeOwners = new CodeOwners(Path.Combine(ciDataFolder, "CODEOWNERS_GITLAB"), CodeOwners.Platform.GitLab);
+        _githubCodeOwners = new CodeOwners(Path.Combine(ciDataFolder, "CODEOWNERS_GITHUB"), CodeOwners.Dialect.GitHub);
+        _gitlabCodeOwners = new CodeOwners(Path.Combine(ciDataFolder, "CODEOWNERS_GITLAB"), CodeOwners.Dialect.GitLab);
     }
 
     [SkippableTheory]

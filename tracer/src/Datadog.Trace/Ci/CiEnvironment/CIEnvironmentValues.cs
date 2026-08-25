@@ -19,12 +19,13 @@ namespace Datadog.Trace.Ci.CiEnvironment;
 
 // ReSharper disable once InconsistentNaming
 
-internal abstract partial class CIEnvironmentValues
+internal abstract class CIEnvironmentValues
 {
     internal const string RepositoryUrlPattern = @"((http|git|ssh|http(s)|file|\/?)|(git@[\w\.\-]+))(:(\/\/)?)([\w\.@\:/\-~]+)(\.git)?(\/)?";
     protected static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(CIEnvironmentValues));
     private static readonly Lazy<CIEnvironmentValues> LazyInstance = new(Create);
     private static readonly Regex BranchOrTagsRegex = new(@"^refs\/heads\/tags\/(.*)|refs\/heads\/(.*)|refs\/tags\/(.*)|refs\/(.*)|origin\/tags\/(.*)|origin\/(.*)$", RegexOptions.Compiled);
+    private CodeOwnersResolver? _codeOwnersResolver;
     private string? _gitSearchFolder;
 
     public static CIEnvironmentValues Instance => LazyInstance.Value;
@@ -118,6 +119,8 @@ internal abstract partial class CIEnvironmentValues
     public Dictionary<string, string?>? VariablesToBypass { get; protected set; }
 
     public MetricTags.CIVisibilityTestSessionProvider MetricTag { get; protected set; } = MetricTags.CIVisibilityTestSessionProvider.Unsupported;
+
+    internal bool HasCodeOwners => _codeOwnersResolver?.HasCodeOwners == true;
 
     public static CIEnvironmentValues Create()
     {
@@ -331,8 +334,6 @@ internal abstract partial class CIEnvironmentValues
         CommitterDate = null;
         Message = null;
         SourceRoot = null;
-        ResetCodeOwners();
-
         Setup(StringUtil.IsNullOrEmpty(_gitSearchFolder) ? GitInfo.GetCurrent() : GitInfo.GetFrom(_gitSearchFolder));
 
         // **********
@@ -357,7 +358,7 @@ internal abstract partial class CIEnvironmentValues
             Repository = Repository.Replace(uriRepository.UserInfo, string.Empty);
         }
 
-        LoadCodeOwners();
+        _codeOwnersResolver = new CodeOwnersResolver(SourceRoot, WorkspacePath, Repository, Provider);
     }
 
     protected abstract void Setup(IGitInfo gitInfo);
@@ -393,47 +394,18 @@ internal abstract partial class CIEnvironmentValues
 
     public string MakeRelativePathFromSourceRoot(string absolutePath, bool useOSSeparator = true)
     {
-        return MakeRelativePath(SourceRoot, absolutePath, useOSSeparator);
+        return RepositorySourcePathResolver.MakeRelativePath(SourceRoot, absolutePath, useOSSeparator);
     }
 
-    private string MakeRelativePath(string? basePath, string absolutePath, bool useOSSeparator)
+    /// <summary>
+    /// Resolves a compiler source path and the CODEOWNERS entries that match it.
+    /// </summary>
+    /// <param name="sourceFilePath">The compiler-recorded source file path.</param>
+    /// <param name="useOSSeparator">Whether to use the current operating system's directory separator.</param>
+    /// <returns>The normalized source path and matching owners.</returns>
+    internal SourceOwnership ResolveSourceOwnership(string sourceFilePath, bool useOSSeparator = true)
     {
-        var pivotFolder = basePath;
-        if (StringUtil.IsNullOrEmpty(pivotFolder))
-        {
-            return absolutePath;
-        }
-
-        if (StringUtil.IsNullOrEmpty(absolutePath))
-        {
-            return pivotFolder;
-        }
-
-        try
-        {
-            // Use Uri to normalize and compute the relative path across OS separators.
-            var folderSeparator = Path.DirectorySeparatorChar;
-            if (pivotFolder![pivotFolder.Length - 1] != folderSeparator)
-            {
-                pivotFolder += folderSeparator;
-            }
-
-            var pivotFolderUri = new Uri(pivotFolder);
-            var absolutePathUri = new Uri(absolutePath);
-            var relativeUri = pivotFolderUri.MakeRelativeUri(absolutePathUri);
-            if (useOSSeparator)
-            {
-                return Uri.UnescapeDataString(
-                    relativeUri.ToString().Replace('/', folderSeparator));
-            }
-
-            return Uri.UnescapeDataString(relativeUri.ToString());
-        }
-        catch (Exception ex)
-        {
-            Log.Warning(ex, "Error creating a relative path for '{AbsolutePath}' from '{BasePath}'", absolutePath, pivotFolder);
-        }
-
-        return absolutePath;
+        return _codeOwnersResolver?.Resolve(sourceFilePath, useOSSeparator)
+            ?? new SourceOwnership(MakeRelativePathFromSourceRoot(sourceFilePath, useOSSeparator), [], isRepositoryRelative: false);
     }
 }

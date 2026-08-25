@@ -1,0 +1,24 @@
+﻿@DataDog/apm-dotnet, @DataDog/ci-app-libraries-dotnet => 65 files
+@DataDog/apm-idm-dotnet, @DataDog/asm-dotnet, @DataDog/tracing-dotnet => 30 files
+@DataDog/apm-idm-dotnet, @DataDog/tracing-dotnet => 387 files
+@DataDog/apm-sdk-capabilities-dotnet, @DataDog/data-streams-monitoring, @DataDog/tracing-dotnet:
+  tracer/test/Datadog.Trace.Tests/ManualInstrumentation/DataStreamsInstrumentationTests.cs
+@DataDog/apm-sdk-capabilities-dotnet, @DataDog/tracing-dotnet => 16 files
+@DataDog/apm-serverless, @DataDog/serverless-aws, @DataDog/tracing-dotnet:
+  tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/AWS/AwsLambdaTests.cs
+  tracer/test/Datadog.Trace.TestHelpers/MockLambdaExtension.cs
+  tracer/test/Datadog.Trace.Tests/Configuration/TracerSettingsAwsLambdaTests.cs
+  tracer/test/Datadog.Trace.Tests/LambdaCommonTests.cs
+  tracer/test/Datadog.Trace.Tests/LambdaRequestBuilderTests.cs
+@DataDog/apm-serverless, @DataDog/serverless-azure-and-gcp, @DataDog/tracing-dotnet => 22 files
+@DataDog/asm-dotnet => 329 files
+@DataDog/asm-dotnet, @DataDog/tracing-dotnet => 21 files
+@DataDog/ci-app-libraries-dotnet => 15 files
+@DataDog/data-streams-monitoring, @DataDog/tracing-dotnet => 37 files
+@DataDog/debugger-dotnet => 265 files
+@DataDog/feature-flagging-and-experimentation-sdk, @DataDog/tracing-dotnet => 12 files
+@DataDog/profiling-dotnet, @DataDog/tracing-dotnet:
+  tracer/test/Datadog.Trace.Tests/ContinuousProfiler/ContextTrackerTests.cs
+  tracer/test/Datadog.Trace.Tests/ContinuousProfiler/ProfilerAvailabilityHelperTests.cs
+  tracer/test/Datadog.Trace.Tests/ContinuousProfiler/ProfilerSettingsTests.cs
+@DataDog/tracing-dotnet => 1158 files

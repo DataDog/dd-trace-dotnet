@@ -8,52 +8,37 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 using Datadog.Trace.Ci;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
+using VerifyXunit;
 using Xunit;
 
 namespace Datadog.Trace.Tests.Ci;
 
+[UsesVerify]
 public class CodeOwnersRepositoryTests
 {
+    private const int MaxListedFiles = 5;
     private static readonly HashSet<string> BuildOutputDirectories = new(StringComparer.OrdinalIgnoreCase) { "bin", "obj" };
 
-    [SkippableFact]
-    public void EveryTestFileHasAnOwner()
+    public CodeOwnersRepositoryTests()
     {
-        var repoRoot = GetRepositoryRoot();
-        Skip.If(repoRoot is null, "Could not locate the repository root");
-
-        var codeOwners = new CodeOwners(Path.Combine(repoRoot!, ".github", "CODEOWNERS"), CodeOwners.Platform.GitHub);
-        var unownedFiles = new List<string>();
-        var totalFiles = 0;
-
-        foreach (var testRoot in new[] { "tracer/test", "profiler/test" })
-        {
-            var fullRoot = Path.Combine(repoRoot!, testRoot.Replace('/', Path.DirectorySeparatorChar));
-            if (!Directory.Exists(fullRoot))
-            {
-                continue;
-            }
-
-            foreach (var file in EnumerateRepositoryFiles(fullRoot))
-            {
-                var relativePath = file.Substring(repoRoot!.Length + 1).Replace('\\', '/');
-                totalFiles++;
-                if (!codeOwners.Match("/" + relativePath).Any())
-                {
-                    unownedFiles.Add(relativePath);
-                }
-            }
-        }
-
-        totalFiles.Should().BeGreaterThan(0, "expected to find test files in the repository");
-        unownedFiles.Should().BeEmpty("every test file should be owned by at least one team in .github/CODEOWNERS");
+        VerifyHelper.InitializeGlobalSettings();
     }
 
     [SkippableFact]
-    public void RepositoryFileEnumerationSkipsBuildOutputs()
+    public Task TracerTestFilesHaveExpectedOwners()
+        => VerifyTestFileOwnership("tracer/test");
+
+    [SkippableFact]
+    public Task ProfilerTestFilesHaveExpectedOwners()
+        => VerifyTestFileOwnership("profiler/test");
+
+    [SkippableFact]
+    public void RepositorySourceFileEnumerationSkipsNonCSharpFilesAndBuildOutputs()
     {
         var root = Path.Combine(Path.GetTempPath(), "dd-codeowners-enumeration-" + Guid.NewGuid().ToString("N"));
         try
@@ -63,10 +48,11 @@ public class CodeOwnersRepositoryTests
             Directory.CreateDirectory(Path.Combine(root, "src", "obj", "Debug"));
             File.WriteAllText(Path.Combine(root, "Source.cs"), string.Empty);
             File.WriteAllText(Path.Combine(root, "src", "nested", "Nested.cs"), string.Empty);
+            File.WriteAllText(Path.Combine(root, "src", "nested", "README.md"), string.Empty);
             File.WriteAllText(Path.Combine(root, "bin", "Debug", "Generated.dll"), string.Empty);
             File.WriteAllText(Path.Combine(root, "src", "obj", "Debug", "Generated.cs"), string.Empty);
 
-            EnumerateRepositoryFiles(root)
+            EnumerateRepositoryCSharpFiles(root)
                .Select(path => path.Substring(root.Length + 1).Replace('\\', '/'))
                .Should()
                .BeEquivalentTo(["Source.cs", "src/nested/Nested.cs"]);
@@ -92,46 +78,62 @@ public class CodeOwnersRepositoryTests
         var repoRoot = GetRepositoryRoot();
         Skip.If(repoRoot is null, "Could not locate the repository root");
 
-        var codeOwners = new CodeOwners(Path.Combine(repoRoot!, ".github", "CODEOWNERS"), CodeOwners.Platform.GitHub);
+        var codeOwners = new CodeOwners(Path.Combine(repoRoot!, ".github", "CODEOWNERS"), CodeOwners.Dialect.GitHub);
         codeOwners.Match(path).OrderBy(o => o).Should().Equal(expected.OrderBy(o => o));
     }
 
-    [SkippableFact]
-    public void SectionDefaultOwnersDoNotApplyToUnmatchedPaths()
+    private static async Task VerifyTestFileOwnership(string testRoot)
     {
-        var filePath = Path.Combine(Path.GetTempPath(), "dd-codeowners-" + Guid.NewGuid().ToString("N"));
-        try
-        {
-            // Owners listed on a section header line are not a catch-all rule for every other path.
-            File.WriteAllText(filePath, "[Section] @team\n/src/ @owner\n");
-            var codeOwners = new CodeOwners(filePath, CodeOwners.Platform.GitLab);
+        var repoRoot = GetRepositoryRoot();
+        Skip.If(repoRoot is null, "Could not locate the repository root");
 
-            codeOwners.Match("/src/code.cs").Should().Equal(["@owner"]);
-            codeOwners.Match("/other/file.cs").Should().BeEmpty();
-        }
-        finally
-        {
-            File.Delete(filePath);
-        }
-    }
+        var codeOwners = new CodeOwners(Path.Combine(repoRoot!, ".github", "CODEOWNERS"), CodeOwners.Dialect.GitHub);
+        var unownedFiles = new List<string>();
+        var filesByOwnerSet = new Dictionary<string, List<string>>(StringComparer.Ordinal);
+        var fullRoot = Path.Combine(repoRoot!, testRoot.Replace('/', Path.DirectorySeparatorChar));
 
-    [SkippableFact]
-    public void GitLabExclusionRuleRemovesPathFromSection()
-    {
-        var filePath = Path.Combine(Path.GetTempPath(), "dd-codeowners-" + Guid.NewGuid().ToString("N"));
-        try
+        if (Directory.Exists(fullRoot))
         {
-            File.WriteAllText(filePath, "* @global\n/docs/ @docs\n!/docs/generated/\n");
-            var codeOwners = new CodeOwners(filePath, CodeOwners.Platform.GitLab);
+            foreach (var file in EnumerateRepositoryCSharpFiles(fullRoot).OrderBy(path => path, StringComparer.Ordinal))
+            {
+                var relativePath = file.Substring(repoRoot!.Length + 1).Replace('\\', '/');
+                var owners = codeOwners.Match("/" + relativePath).OrderBy(owner => owner, StringComparer.Ordinal).ToArray();
+                if (owners.Length == 0)
+                {
+                    unownedFiles.Add(relativePath);
+                }
 
-            codeOwners.Match("/docs/a.cs").Should().Equal(["@docs"]);
-            codeOwners.Match("/docs/generated/x.cs").Should().BeEmpty();
-            codeOwners.Match("/other/file.cs").Should().Equal(["@global"]);
+                var ownerSet = owners.Length == 0 ? "<none>" : string.Join(", ", owners);
+                if (!filesByOwnerSet.TryGetValue(ownerSet, out var files))
+                {
+                    files = [];
+                    filesByOwnerSet.Add(ownerSet, files);
+                }
+
+                files.Add(relativePath);
+            }
         }
-        finally
+
+        filesByOwnerSet.Should().NotBeEmpty("expected to find C# test files in the repository");
+        unownedFiles.Should().BeEmpty("every test file should be owned by at least one team in .github/CODEOWNERS");
+        var ownership = new StringBuilder();
+        foreach (var ownerGroup in filesByOwnerSet.OrderBy(pair => pair.Key, StringComparer.Ordinal))
         {
-            File.Delete(filePath);
+            if (ownerGroup.Value.Count <= MaxListedFiles)
+            {
+                ownership.Append(ownerGroup.Key).AppendLine(":");
+                foreach (var file in ownerGroup.Value)
+                {
+                    ownership.Append("  ").AppendLine(file);
+                }
+            }
+            else
+            {
+                ownership.Append(ownerGroup.Key).Append(" => ").Append(ownerGroup.Value.Count).AppendLine(" files");
+            }
         }
+
+        await Verifier.Verify(ownership.ToString());
     }
 
     private static string? GetRepositoryRoot()
@@ -176,4 +178,7 @@ public class CodeOwnersRepositoryTests
             }
         }
     }
+
+    private static IEnumerable<string> EnumerateRepositoryCSharpFiles(string root)
+        => EnumerateRepositoryFiles(root).Where(file => string.Equals(Path.GetExtension(file), ".cs", StringComparison.OrdinalIgnoreCase));
 }

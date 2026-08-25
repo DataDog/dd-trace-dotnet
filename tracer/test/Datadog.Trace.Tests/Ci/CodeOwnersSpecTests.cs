@@ -36,20 +36,37 @@ public class CodeOwnersSpecTests
 
     private static readonly TimeSpan TestTimeout = TimeSpan.FromSeconds(10);
 
-    [SkippableFact]
-    public void GithubInlineCommentsAndEmailOwners()
+    public enum TestDialect
     {
-        var codeOwners = Create("*       @global-owner1 @global-owner2\n*.js    @js-owner #This is an inline comment.\n*.go docs@example.com\n", CodeOwners.Platform.GitHub);
-        Match(codeOwners, "/app.js").Should().Equal(["@js-owner"]);
-        Match(codeOwners, "/app.go").Should().Equal(["docs@example.com"]);
-        Match(codeOwners, "/file.rb").Should().Equal(["@global-owner1", "@global-owner2"]);
+        GitHub,
+        GitLab
+    }
+
+    [SkippableTheory]
+    [InlineData("/app.js", new[] { "@js-owner" })]
+    [InlineData("/app.go", new[] { "docs@example.com" })]
+    [InlineData("/file.rb", new[] { "@global-owner1", "@global-owner2" })]
+    public void GithubInlineCommentsAndEmailOwners(string path, string[] expectedOwners)
+    {
+        var file = """
+            *       @global-owner1 @global-owner2
+            *.js    @js-owner #This is an inline comment.
+            *.go    docs@example.com
+
+            """;
+        Match(Create(file, CodeOwners.Dialect.GitHub), path).Should().Equal(expectedOwners);
     }
 
     [SkippableFact]
     public void GithubRootedDirectoryPatternMatchesSubdirectoriesOnlyAtRoot()
     {
         // "/build/logs/" owns the root build/logs directory and all its subdirectories
-        var codeOwners = Create("/build/logs/ @doctocat\n", CodeOwners.Platform.GitHub);
+        var codeOwners = Create(
+            """
+            /build/logs/ @doctocat
+
+            """,
+            CodeOwners.Dialect.GitHub);
         Match(codeOwners, "/build/logs/build-app/error.txt").Should().Equal(["@doctocat"]);
         Match(codeOwners, "/build/logs/error.txt").Should().Equal(["@doctocat"]);
         Match(codeOwners, "/x/build/logs/error.txt").Should().BeEmpty();
@@ -60,7 +77,13 @@ public class CodeOwnersSpecTests
     {
         // `docs/*` matches files like `docs/getting-started.md` but not deeper nested files like
         // `docs/build-app/troubleshooting.md`
-        var codeOwners = Create("* @global\ndocs/* docs@example.com\n", CodeOwners.Platform.GitHub);
+        var codeOwners = Create(
+            """
+            *      @global
+            docs/* docs@example.com
+
+            """,
+            CodeOwners.Dialect.GitHub);
         Match(codeOwners, "/docs/getting-started.md").Should().Equal(["docs@example.com"]);
         Match(codeOwners, "/docs/build-app/troubleshooting.md").Should().Equal(["@global"]);
     }
@@ -68,7 +91,13 @@ public class CodeOwnersSpecTests
     [SkippableFact]
     public void GithubDirectoryPatternOwnsEverythingUnderneath()
     {
-        var codeOwners = Create("* @global\n/docs/ @doctocat\n", CodeOwners.Platform.GitHub);
+        var codeOwners = Create(
+            """
+            *      @global
+            /docs/ @doctocat
+
+            """,
+            CodeOwners.Dialect.GitHub);
         Match(codeOwners, "/docs/getting-started.md").Should().Equal(["@doctocat"]);
         Match(codeOwners, "/docs/build-app/troubleshooting.md").Should().Equal(["@doctocat"]);
     }
@@ -76,7 +105,13 @@ public class CodeOwnersSpecTests
     [SkippableFact]
     public void GithubDirectoryAndTerminalGlobstarPatternsRequireDescendants()
     {
-        var codeOwners = Create("/docs/ @directory\n/archive/** @globstar\n", CodeOwners.Platform.GitHub);
+        var codeOwners = Create(
+            """
+            /docs/      @directory
+            /archive/** @globstar
+
+            """,
+            CodeOwners.Dialect.GitHub);
 
         Match(codeOwners, "/docs").Should().BeEmpty("a trailing slash only denotes a directory and its contents");
         Match(codeOwners, "/docs/file.txt").Should().Equal(["@directory"]);
@@ -88,8 +123,18 @@ public class CodeOwnersSpecTests
     [SkippableFact]
     public void GitlabTerminalGlobstarMatchesOnePathSegment()
     {
-        var terminalGlobstar = Create("/archive/** @single-segment\n", CodeOwners.Platform.GitLab);
-        var recursiveGlobstar = Create("/archive/**/* @recursive\n", CodeOwners.Platform.GitLab);
+        var terminalGlobstar = Create(
+            """
+            /archive/** @single-segment
+
+            """,
+            CodeOwners.Dialect.GitLab);
+        var recursiveGlobstar = Create(
+            """
+            /archive/**/* @recursive
+
+            """,
+            CodeOwners.Dialect.GitLab);
 
         Match(terminalGlobstar, "/archive").Should().BeEmpty();
         Match(terminalGlobstar, "/archive/file.txt").Should().Equal(["@single-segment"]);
@@ -100,52 +145,67 @@ public class CodeOwnersSpecTests
     [SkippableFact]
     public void GitlabGlobstarBeforeTrailingSlashMatchesImmediateAndNestedChildren()
     {
-        var codeOwners = Create("/archive/**/ @owner\n", CodeOwners.Platform.GitLab);
+        var codeOwners = Create(
+            """
+            /archive/**/ @owner
+
+            """,
+            CodeOwners.Dialect.GitLab);
 
         Match(codeOwners, "/archive").Should().BeEmpty();
         Match(codeOwners, "/archive/file.txt").Should().Equal(["@owner"]);
         Match(codeOwners, "/archive/deep/file.txt").Should().Equal(["@owner"]);
     }
 
-    [SkippableFact]
-    public void GithubRootedVersusUnrootedPatterns()
+    [SkippableTheory]
+    [InlineData("/apps/ @root-apps", "/apps/a.go", new[] { "@root-apps" })]
+    [InlineData("/apps/ @root-apps", "/x/apps/a.go", new string[] { })]
+    [InlineData("apps/ @anywhere", "/x/apps/a.go", new[] { "@anywhere" })]
+    public void GithubRootedVersusUnrootedPatterns(string rule, string path, string[] expectedOwners)
     {
         // Unrooted patterns match anywhere in the repository, rooted ones only at the repository root
-        Match(Create("/apps/ @root-apps\n", CodeOwners.Platform.GitHub), "/apps/a.go").Should().Equal(["@root-apps"]);
-        Match(Create("/apps/ @root-apps\n", CodeOwners.Platform.GitHub), "/x/apps/a.go").Should().BeEmpty();
-        Match(Create("apps/ @anywhere\n", CodeOwners.Platform.GitHub), "/x/apps/a.go").Should().Equal(["@anywhere"]);
+        Match(Create(rule, CodeOwners.Dialect.GitHub), path).Should().Equal(expectedOwners);
     }
 
-    [SkippableFact]
-    public void GithubPatternsWithMiddleSlashAreRootedWhileGitLabPatternsRemainRelative()
+    [SkippableTheory]
+    [InlineData(TestDialect.GitHub, "/docs/a.md", new[] { "@docs" })]
+    [InlineData(TestDialect.GitHub, "/examples/docs/a.md", new[] { "@global" })]
+    [InlineData(TestDialect.GitHub, "/a/b", new[] { "@globstar" })]
+    [InlineData(TestDialect.GitHub, "/a/x/b", new[] { "@globstar" })]
+    [InlineData(TestDialect.GitHub, "/x/a/b", new[] { "@global" })]
+    [InlineData(TestDialect.GitHub, "/x/apps/a.md", new[] { "@apps" })]
+    [InlineData(TestDialect.GitHub, "/x/logs/a.md", new[] { "@logs" })]
+    [InlineData(TestDialect.GitLab, "/docs/a.md", new[] { "@docs" })]
+    [InlineData(TestDialect.GitLab, "/examples/docs/a.md", new[] { "@docs" })]
+    [InlineData(TestDialect.GitLab, "/x/a/b", new[] { "@globstar" })]
+    public void PatternsWithMiddleSlashFollowDialectSemantics(TestDialect dialect, string path, string[] expectedOwners)
     {
-        const string content = "* @global\ndocs/* @docs\na/**/b @globstar\napps/ @apps\n**/logs @logs\n";
+        const string file = """
+            *        @global
+            docs/*   @docs
+            a/**/b   @globstar
+            apps/    @apps
+            **/logs  @logs
 
-        var github = Create(content, CodeOwners.Platform.GitHub);
-        Match(github, "/docs/a.md").Should().Equal(["@docs"]);
-        Match(github, "/examples/docs/a.md").Should().Equal(["@global"]);
-        Match(github, "/a/b").Should().Equal(["@globstar"]);
-        Match(github, "/a/x/b").Should().Equal(["@globstar"]);
-        Match(github, "/x/a/b").Should().Equal(["@global"]);
-        Match(github, "/x/apps/a.md").Should().Equal(["@apps"]);
-        Match(github, "/x/logs/a.md").Should().Equal(["@logs"]);
-
-        var gitlab = Create(content, CodeOwners.Platform.GitLab);
-        Match(gitlab, "/docs/a.md").Should().Equal(["@docs"]);
-        Match(gitlab, "/examples/docs/a.md").Should().Equal(["@docs"]);
-        Match(gitlab, "/x/a/b").Should().Equal(["@globstar"]);
+            """;
+        Match(Create(file, ToCodeOwnersDialect(dialect)), path).Should().Equal(expectedOwners);
     }
 
-    [SkippableFact]
-    public void GithubGlobstarDirectoryPatternOwnsDirectoryContents()
+    [SkippableTheory]
+    [InlineData("/build/logs/error.txt", new[] { "@octocat" })]
+    [InlineData("/deeply/nested/logs/x.txt", new[] { "@octocat" })]
+    [InlineData("/logs", new[] { "@octocat" })]
+    [InlineData("/catalog/data.tmp", new[] { "@temp-team" })]
+    public void GithubGlobstarDirectoryPatternOwnsDirectoryContents(string path, string[] expectedOwners)
     {
         // `**/logs` owns any file in a logs directory such as `/build/logs`, `/scripts/logs`,
         // and `/deeply/nested/logs`
-        var codeOwners = Create("**/logs @octocat\n*.tmp @temp-team\n", CodeOwners.Platform.GitHub);
-        Match(codeOwners, "/build/logs/error.txt").Should().Equal(["@octocat"]);
-        Match(codeOwners, "/deeply/nested/logs/x.txt").Should().Equal(["@octocat"]);
-        Match(codeOwners, "/logs").Should().Equal(["@octocat"]);
-        Match(codeOwners, "/catalog/data.tmp").Should().Equal(["@temp-team"]); // no partial segment matches
+        var file = """
+            **/logs @octocat
+            *.tmp   @temp-team
+
+            """;
+        Match(Create(file, CodeOwners.Dialect.GitHub), path).Should().Equal(expectedOwners);
     }
 
     [SkippableFact]
@@ -153,7 +213,15 @@ public class CodeOwnersSpecTests
     {
         // Example from the GitHub documentation: `/apps/github` has no owners, so any change inside
         // it can be made with the approval of any user with write access (i.e. it is unowned).
-        var codeOwners = Create("* @global-owner1 @global-owner2\n*.go docs@example.com\n/apps/ @octocat\n/apps/github\n", CodeOwners.Platform.GitHub);
+        var codeOwners = Create(
+            """
+            *            @global-owner1 @global-owner2
+            *.go         docs@example.com
+            /apps/       @octocat
+            /apps/github
+
+            """,
+            CodeOwners.Dialect.GitHub);
         Match(codeOwners, "/apps/github").Should().BeEmpty();
         Match(codeOwners, "/apps/github/proj/main.go").Should().BeEmpty();
         Match(codeOwners, "/other.go").Should().Equal(["docs@example.com"]);
@@ -162,7 +230,13 @@ public class CodeOwnersSpecTests
     [SkippableFact]
     public void PathsAreCaseSensitive()
     {
-        var codeOwners = Create("Readme.MD @docs\n*.Txt @txt\n", CodeOwners.Platform.GitHub);
+        var codeOwners = Create(
+            """
+            Readme.MD @docs
+            *.Txt     @txt
+
+            """,
+            CodeOwners.Dialect.GitHub);
         Match(codeOwners, "/readme.md").Should().BeEmpty();
         Match(codeOwners, "/Readme.MD").Should().Equal(["@docs"]);
         Match(codeOwners, "/a.txt").Should().BeEmpty();
@@ -172,14 +246,28 @@ public class CodeOwnersSpecTests
     [SkippableFact]
     public void LastMatchingRuleWinsGloballyForGitHub()
     {
-        var codeOwners = Create("*.js @first\n*.js @second\n", CodeOwners.Platform.GitHub);
+        var codeOwners = Create(
+            """
+            *.js @first
+            *.js @second
+
+            """,
+            CodeOwners.Dialect.GitHub);
         Match(codeOwners, "/x/y.js").Should().Equal(["@second"]);
     }
 
     [SkippableFact]
     public void GitLabSectionSyntaxDoesNotScopeGitHubRules()
     {
-        var codeOwners = Create("*.js @first\n[Docs] @ignored\n*.md @docs\n*.js @second\n", CodeOwners.Platform.GitHub);
+        var codeOwners = Create(
+            """
+            *.js          @first
+            [Docs]        @ignored
+            *.md          @docs
+            *.js          @second
+
+            """,
+            CodeOwners.Dialect.GitHub);
 
         Match(codeOwners, "/x/y.js").Should().Equal(["@second"]);
         Match(codeOwners, "/README.md").Should().Equal(["@docs"]);
@@ -189,7 +277,13 @@ public class CodeOwnersSpecTests
     [SkippableFact]
     public void GlobstarMatchesZeroDirectories()
     {
-        var codeOwners = Create("/db/**/index.md @index-docs\n/docs/**/*.md @markdown-docs\n", CodeOwners.Platform.GitLab);
+        var codeOwners = Create(
+            """
+            /db/**/index.md @index-docs
+            /docs/**/*.md   @markdown-docs
+
+            """,
+            CodeOwners.Dialect.GitLab);
         Match(codeOwners, "/db/index.md").Should().Equal(["@index-docs"]);
         Match(codeOwners, "/db/v2/index.md").Should().Equal(["@index-docs"]);
         Match(codeOwners, "/docs/index.md").Should().Equal(["@markdown-docs"]);
@@ -201,7 +295,12 @@ public class CodeOwnersSpecTests
     public void RelativePathsMatchAtAnyDepth()
     {
         // GitLab: paths without a leading slash are treated as globstar paths and match at any depth
-        var codeOwners = Create("internal/README.md @user4\n", CodeOwners.Platform.GitLab);
+        var codeOwners = Create(
+            """
+            internal/README.md @user4
+
+            """,
+            CodeOwners.Dialect.GitLab);
         Match(codeOwners, "/internal/README.md").Should().Equal(["@user4"]);
         Match(codeOwners, "/docs/api/internal/README.md").Should().Equal(["@user4"]);
         Match(codeOwners, "/docs/README.md").Should().BeEmpty();
@@ -210,10 +309,25 @@ public class CodeOwnersSpecTests
     [SkippableFact]
     public void GitLabSectionsAreEvaluatedIndependentlyAndCombined()
     {
-        var codeOwners = Create(GitlabSectionsExample, CodeOwners.Platform.GitLab);
+        var codeOwners = Create(GitlabSectionsExample, CodeOwners.Dialect.GitLab);
         // The last matching entry in each section is used, and all sections are combined
         Match(codeOwners, "/README.md").Should().Equal(["@admin", "@user1", "@user2", "@user3"]);
         Match(codeOwners, "/internal/README.md").Should().Equal(["@admin", "@user3", "@user4"]);
+    }
+
+    [SkippableFact]
+    public void GitLabSectionDefaultsApplyOnlyAfterARuleMatches()
+    {
+        var codeOwners = Create(
+            """
+            [Section] @team
+            /src/ @owner
+
+            """,
+            CodeOwners.Dialect.GitLab);
+
+        Match(codeOwners, "/src/code.cs").Should().Equal(["@owner"]);
+        Match(codeOwners, "/other/file.cs").Should().BeEmpty();
     }
 
     [SkippableFact]
@@ -225,7 +339,7 @@ public class CodeOwnersSpecTests
             model/db/
             config/db/database-setup.md @docs-team
             """;
-        var codeOwners = Create(content, CodeOwners.Platform.GitLab);
+        var codeOwners = Create(content, CodeOwners.Dialect.GitLab);
 
         Match(codeOwners, "/model/db/schema.rb").Should().Equal(["@agarcia", "@database-team"]);
         Match(codeOwners, "/config/db/database-setup.md").Should().Equal(["@docs-team"]);
@@ -236,7 +350,17 @@ public class CodeOwnersSpecTests
     [SkippableFact]
     public void OptionalSectionsAndApprovalCountsDoNotAffectMatching()
     {
-        var codeOwners = Create("^[Go]\n*.go @go-owner\n[Big][5]\nbig/ @big-owner\n[Team] @default-team\nteam/\n", CodeOwners.Platform.GitLab);
+        var codeOwners = Create(
+            """
+            ^[Go]
+            *.go @go-owner
+            [Big][5]
+            big/ @big-owner
+            [Team] @default-team
+            team/
+
+            """,
+            CodeOwners.Dialect.GitLab);
         Match(codeOwners, "/x.go").Should().Equal(["@go-owner"]);
         Match(codeOwners, "/big/file.txt").Should().Equal(["@big-owner"]);
         Match(codeOwners, "/team/file.txt").Should().Equal(["@default-team"]); // inherits section defaults
@@ -245,7 +369,12 @@ public class CodeOwnersSpecTests
     [SkippableFact]
     public void RoleOwnersAreKeptAsOwners()
     {
-        var codeOwners = Create("/config/setup.yml @@maintainer\n", CodeOwners.Platform.GitLab);
+        var codeOwners = Create(
+            """
+            /config/setup.yml @@maintainer
+
+            """,
+            CodeOwners.Dialect.GitLab);
         Match(codeOwners, "/config/setup.yml").Should().Equal(["@@maintainer"]);
     }
 
@@ -254,7 +383,14 @@ public class CodeOwnersSpecTests
     {
         // Example from the GitLab documentation: once a path is excluded, later rules in the same
         // section cannot re-include it.
-        var codeOwners = Create("* @default-owner\n!*.rb\n/special/*.rb @ruby-owner\n", CodeOwners.Platform.GitLab);
+        var codeOwners = Create(
+            """
+            *             @default-owner
+            !*.rb
+            /special/*.rb @ruby-owner
+
+            """,
+            CodeOwners.Dialect.GitLab);
         Match(codeOwners, "/special/foo.rb").Should().BeEmpty();
         Match(codeOwners, "/code.rb").Should().BeEmpty();
         Match(codeOwners, "/other.txt").Should().Equal(["@default-owner"]);
@@ -273,7 +409,7 @@ public class CodeOwnersSpecTests
             [Config]
             /config/ @ops-team
             """;
-        var codeOwners = Create(content, CodeOwners.Platform.GitLab);
+        var codeOwners = Create(content, CodeOwners.Dialect.GitLab);
 
         Match(codeOwners, "/config/routes.rb").Should().Equal(["@ops-team"]);
         Match(codeOwners, "/lib/foo.rb").Should().Equal(["@ruby-team"]);
@@ -283,16 +419,27 @@ public class CodeOwnersSpecTests
     [SkippableFact]
     public void InlineCommentsAreUnsupportedInGitLab()
     {
-        var codeOwners = Create("*.rb @ruby-owner # note to self\n", CodeOwners.Platform.GitLab);
+        var codeOwners = Create(
+            """
+            *.rb @ruby-owner # note to self
+
+            """,
+            CodeOwners.Dialect.GitLab);
         Match(codeOwners, "/a.rb").Should().Equal(["@ruby-owner"]);
     }
 
     [SkippableFact]
     public void CommentLinesWithLeadingWhitespaceAreIgnored()
     {
-        foreach (var platform in new[] { CodeOwners.Platform.GitHub, CodeOwners.Platform.GitLab })
+        foreach (var dialect in new[] { CodeOwners.Dialect.GitHub, CodeOwners.Dialect.GitLab })
         {
-            var codeOwners = Create("   # indented comment\n   *.md @md-owner\n", platform);
+            var codeOwners = Create(
+                """
+                   # indented comment
+                   *.md @md-owner
+
+                """,
+                dialect);
             Match(codeOwners, "/a.md").Should().Equal(["@md-owner"]);
             // The indented comment must not be parsed as a "#" pattern entry
             Match(codeOwners, "/#").Should().BeEmpty();
@@ -302,7 +449,13 @@ public class CodeOwnersSpecTests
     [SkippableFact]
     public void DirectoryPatternsMatchWithWindowsSeparators()
     {
-        var codeOwners = Create("**/logs @octocat\n/build/logs/ @doctocat\n", CodeOwners.Platform.GitHub);
+        var codeOwners = Create(
+            """
+            **/logs     @octocat
+            /build/logs/ @doctocat
+
+            """,
+            CodeOwners.Dialect.GitHub);
         Match(codeOwners, @"\build\logs\error.txt").Should().Equal(["@doctocat"]);
         Match(codeOwners, @"\scripts\logs\x.txt").Should().Equal(["@octocat"]);
     }
@@ -311,36 +464,75 @@ public class CodeOwnersSpecTests
     public void DuplicateEntriesUseLastWithinSection()
     {
         // "If an entry is duplicated in a section, the last entry is used"
-        var codeOwners = Create("README.md @old\nREADME.md @new\n", CodeOwners.Platform.GitLab);
+        var codeOwners = Create(
+            """
+            README.md @old
+            README.md @new
+
+            """,
+            CodeOwners.Dialect.GitLab);
         Match(codeOwners, "/README.md").Should().Equal(["@new"]);
     }
 
     [SkippableFact]
     public void GitLabLastDuplicatePatternReplacesEarlierEntriesIncludingExclusions()
     {
-        var exactDuplicates = Create("[Ruby]\n*.rb @old\n!*.rb\n*.rb @new\n", CodeOwners.Platform.GitLab);
+        var exactDuplicates = Create(
+            """
+            [Ruby]
+            *.rb @old
+            !*.rb
+            *.rb @new
+
+            """,
+            CodeOwners.Dialect.GitLab);
         Match(exactDuplicates, "/model.rb").Should().Equal(["@new"]);
 
         // GitLab normalizes these spellings to the same pattern key before replacing duplicates.
-        var normalizedDuplicates = Create("* @old\n!/**/*\n* @new\n", CodeOwners.Platform.GitLab);
+        var normalizedDuplicates = Create(
+            """
+            * @old
+            !/**/*
+            * @new
+
+            """,
+            CodeOwners.Dialect.GitLab);
         Match(normalizedDuplicates, "/nested/file.cs").Should().Equal(["@new"]);
     }
 
     [SkippableFact]
     public void GitLabDuplicateNormalizationUnescapesLeadingHashBeforeReplacement()
     {
-        var laterOwner = Create("!#file\n\\#file @new\n", CodeOwners.Platform.GitLab);
+        var laterOwner = Create(
+            """
+            !#file
+            \#file @new
+
+            """,
+            CodeOwners.Dialect.GitLab);
         Match(laterOwner, "/#file").Should().Equal(["@new"]);
 
-        var laterExclusion = Create("\\#file @old\n!#file\n", CodeOwners.Platform.GitLab);
+        var laterExclusion = Create(
+            """
+            \#file @old
+            !#file
+
+            """,
+            CodeOwners.Dialect.GitLab);
         Match(laterExclusion, "/#file").Should().BeEmpty();
     }
 
     [SkippableFact]
     public void GitLabCharacterClassesSupportSetsRangesAndNegationWithoutCrossingDirectories()
     {
-        var content = "digit[0-9].txt @digit\nletter[ab].txt @letter\nnon-digit[!0-9].txt @non-digit\npath[!x]file @same-segment\n";
-        var codeOwners = Create(content, CodeOwners.Platform.GitLab);
+        var content = """
+            digit[0-9].txt     @digit
+            letter[ab].txt     @letter
+            non-digit[!0-9].txt @non-digit
+            path[!x]file       @same-segment
+
+            """;
+        var codeOwners = Create(content, CodeOwners.Dialect.GitLab);
 
         Match(codeOwners, "/digit7.txt").Should().Equal(["@digit"]);
         Match(codeOwners, "/digitx.txt").Should().BeEmpty();
@@ -354,9 +546,15 @@ public class CodeOwnersSpecTests
     [SkippableFact]
     public void GitLabMalformedCharacterClassesCannotAbortParserInitialization()
     {
-        var content = "* @fallback\nfile[z-a].txt @invalid-range\nbroken\\\nfile[---!].txt @punctuation\n";
+        var content = """
+            *               @fallback
+            file[z-a].txt   @invalid-range
+            broken\
+            file[---!].txt  @punctuation
 
-        var codeOwners = Create(content, CodeOwners.Platform.GitLab);
+            """;
+
+        var codeOwners = Create(content, CodeOwners.Dialect.GitLab);
 
         codeOwners.ParsingDiagnosticsCount.Should().Be(2, "invalid rules should produce one aggregated parsing diagnostic count");
         Match(codeOwners, "/filex.txt").Should().Equal(["@fallback"]);
@@ -367,7 +565,14 @@ public class CodeOwnersSpecTests
     [SkippableFact]
     public void GitLabCharacterClassesCannotStartWithClosingBracket()
     {
-        var codeOwners = Create("* @fallback\nfile[]a].txt @positive\nfile[!]].txt @negated\n", CodeOwners.Platform.GitLab);
+        var codeOwners = Create(
+            """
+            *              @fallback
+            file[]a].txt   @positive
+            file[!]].txt   @negated
+
+            """,
+            CodeOwners.Dialect.GitLab);
 
         codeOwners.ParsingDiagnosticsCount.Should().Be(2);
         Match(codeOwners, "/filea.txt").Should().Equal(["@fallback"]);
@@ -385,7 +590,7 @@ public class CodeOwnersSpecTests
             bracket[\]].txt @closing-bracket
             hyphen[\-].txt @hyphen
             """;
-        var codeOwners = Create(content, CodeOwners.Platform.GitLab);
+        var codeOwners = Create(content, CodeOwners.Dialect.GitLab);
 
         Match(codeOwners, "/file?.txt").Should().Equal(["@question"]);
         Match(codeOwners, "/fileX.txt").Should().BeEmpty();
@@ -407,7 +612,7 @@ public class CodeOwnersSpecTests
             middle\#hash.txt @hash
             trailing\
             """;
-        var codeOwners = Create(content, CodeOwners.Platform.GitHub);
+        var codeOwners = Create(content, CodeOwners.Dialect.GitHub);
 
         Match(codeOwners, "/literal*.txt").Should().Equal(["@star"]);
         Match(codeOwners, "/literal-value.txt").Should().BeEmpty();
@@ -422,8 +627,13 @@ public class CodeOwnersSpecTests
     [SkippableFact]
     public void WhitespaceOnlyGitLabSectionHeaderStartsInvalidNamedSection()
     {
-        var content = "[Docs] @docs\n[   ] @blank\nREADME.md\n";
-        var codeOwners = Create(content, CodeOwners.Platform.GitLab);
+        var content = """
+            [Docs] @docs
+            [   ]  @blank
+            README.md
+
+            """;
+        var codeOwners = Create(content, CodeOwners.Dialect.GitLab);
 
         Match(codeOwners, "/README.md").Should().Equal(["@blank"]);
         Match(codeOwners, "/guide.md").Should().BeEmpty();
@@ -433,8 +643,12 @@ public class CodeOwnersSpecTests
     [SkippableFact]
     public void UnparsableGitLabSectionHeaderIsSkippedInsteadOfBecomingPattern()
     {
-        var content = "* @global\n[Broken\n";
-        var codeOwners = Create(content, CodeOwners.Platform.GitLab);
+        var content = """
+            * @global
+            [Broken
+
+            """;
+        var codeOwners = Create(content, CodeOwners.Dialect.GitLab);
 
         Match(codeOwners, "/[Broken").Should().Equal(["@global"]);
         codeOwners.ParsingDiagnosticsCount.Should().Be(1);
@@ -443,11 +657,23 @@ public class CodeOwnersSpecTests
     [SkippableFact]
     public void GitLabMalformedSectionSuffixCannotLeakDefaultOwners()
     {
-        var extraBracket = Create("[Docs]] @leaked\nREADME.md\n", CodeOwners.Platform.GitLab);
+        var extraBracket = Create(
+            """
+            [Docs]] @leaked
+            README.md
+
+            """,
+            CodeOwners.Dialect.GitLab);
         Match(extraBracket, "/README.md").Should().BeEmpty();
         extraBracket.ParsingDiagnosticsCount.Should().Be(2, "the malformed header and ownerless entry are diagnosed independently");
 
-        var invalidApproval = Create("[Docs][x] @leaked\nREADME.md\n", CodeOwners.Platform.GitLab);
+        var invalidApproval = Create(
+            """
+            [Docs][x] @leaked
+            README.md
+
+            """,
+            CodeOwners.Dialect.GitLab);
         Match(invalidApproval, "/README.md").Should().BeEmpty();
         invalidApproval.ParsingDiagnosticsCount.Should().Be(2);
     }
@@ -455,7 +681,13 @@ public class CodeOwnersSpecTests
     [SkippableFact]
     public void GitLabPermissiveSectionParsingKeepsOnlyTheRecognizedOwnerSpan()
     {
-        var codeOwners = Create("[Docs][2]@owner\nREADME.md\n", CodeOwners.Platform.GitLab);
+        var codeOwners = Create(
+            """
+            [Docs][2]@owner
+            README.md
+
+            """,
+            CodeOwners.Dialect.GitLab);
 
         Match(codeOwners, "/README.md").Should().Equal(["@owner"]);
         codeOwners.ParsingDiagnosticsCount.Should().Be(1, "the missing whitespace is diagnosed without discarding recognized defaults");
@@ -470,7 +702,12 @@ public class CodeOwnersSpecTests
     [InlineData("@@OwNeRs")]
     public void GitLabRecognizedRolesAreKeptAsOwners(string role)
     {
-        var codeOwners = Create("*.cs " + role + "\n", CodeOwners.Platform.GitLab);
+        var codeOwners = Create(
+            $"""
+            *.cs {role}
+
+            """,
+            CodeOwners.Dialect.GitLab);
 
         Match(codeOwners, "/file.cs").Should().Equal([role]);
     }
@@ -478,21 +715,41 @@ public class CodeOwnersSpecTests
     [SkippableFact]
     public void GitLabUnknownRolesAreIgnored()
     {
-        var codeOwners = Create("*.cs @@banana @valid\n", CodeOwners.Platform.GitLab);
+        var codeOwners = Create(
+            """
+            *.cs @@banana @valid
+
+            """,
+            CodeOwners.Dialect.GitLab);
 
         Match(codeOwners, "/file.cs").Should().Equal(["@valid"]);
         codeOwners.ParsingDiagnosticsCount.Should().Be(1, "the invalid role was discarded from an otherwise valid rule");
     }
 
     [SkippableFact]
-    public void OwnerValidationFollowsPlatformRulesAndDoesNotApplyDefaultsToMalformedExplicitOwners()
+    public void OwnerValidationFollowsDialectRulesAndDoesNotApplyDefaultsToMalformedExplicitOwners()
     {
-        var github = Create("* @global\n*.cs docs@\n*.fs @@maintainer\n", CodeOwners.Platform.GitHub);
+        var github = Create(
+            """
+            *     @global
+            *.cs  docs@
+            *.fs  @@maintainer
+
+            """,
+            CodeOwners.Dialect.GitHub);
         Match(github, "/file.cs").Should().Equal(["@global"]);
         Match(github, "/file.fs").Should().Equal(["@global"]);
         github.ParsingDiagnosticsCount.Should().Be(2, "GitHub rejects each complete rule that contains an invalid owner");
 
-        var gitlab = Create("[Docs] @default malformed@\n*.md malformed@ @valid\nREADME.md malformed@\nGUIDE.md\n", CodeOwners.Platform.GitLab);
+        var gitlab = Create(
+            """
+            [Docs] @default malformed@
+            *.md malformed@ @valid
+            README.md malformed@
+            GUIDE.md
+
+            """,
+            CodeOwners.Dialect.GitLab);
         Match(gitlab, "/other.md").Should().Equal(["@valid"]);
         Match(gitlab, "/README.md").Should().BeEmpty();
         Match(gitlab, "/GUIDE.md").Should().Equal(["@default"]);
@@ -502,7 +759,17 @@ public class CodeOwnersSpecTests
     [SkippableFact]
     public void OwnerExtractionRejectsImpossibleGithubReferencesAndCanonicalizesGitLabReferences()
     {
-        var github = Create("* @fallback\n*.cs @!\n*.fs user@example.\n*.vb (@valid)\n*.ts @bad+owner\n*.go @org/team/nested\n", CodeOwners.Platform.GitHub);
+        var github = Create(
+            """
+            *     @fallback
+            *.cs  @!
+            *.fs  user@example.
+            *.vb  (@valid)
+            *.ts  @bad+owner
+            *.go  @org/team/nested
+
+            """,
+            CodeOwners.Dialect.GitHub);
         Match(github, "/file.cs").Should().Equal(["@fallback"]);
         Match(github, "/file.fs").Should().Equal(["@fallback"]);
         Match(github, "/file.vb").Should().Equal(["@fallback"]);
@@ -510,7 +777,15 @@ public class CodeOwnersSpecTests
         Match(github, "/file.go").Should().Equal(["@fallback"]);
         github.ParsingDiagnosticsCount.Should().Be(5);
 
-        var gitlab = Create("*.cs @! @good\n*.md (@docs)\n*.txt docs@example.\n*.go @group/nested-team\n", CodeOwners.Platform.GitLab);
+        var gitlab = Create(
+            """
+            *.cs  @! @good
+            *.md  (@docs)
+            *.txt docs@example.
+            *.go  @group/nested-team
+
+            """,
+            CodeOwners.Dialect.GitLab);
         Match(gitlab, "/file.cs").Should().Equal(["@good"]);
         Match(gitlab, "/file.md").Should().Equal(["@docs"]);
         Match(gitlab, "/file.txt").Should().Equal(["docs@example"]);
@@ -521,7 +796,13 @@ public class CodeOwnersSpecTests
     [SkippableFact]
     public void GithubAcceptsEnterpriseManagedUserNames()
     {
-        var codeOwners = Create("*.cs @mona-cat_octo\n*.fs @octo_admin\n", CodeOwners.Platform.GitHub);
+        var codeOwners = Create(
+            """
+            *.cs @mona-cat_octo
+            *.fs @octo_admin
+
+            """,
+            CodeOwners.Dialect.GitHub);
 
         Match(codeOwners, "/file.cs").Should().Equal(["@mona-cat_octo"]);
         Match(codeOwners, "/file.fs").Should().Equal(["@octo_admin"]);
@@ -531,7 +812,13 @@ public class CodeOwnersSpecTests
     [SkippableFact]
     public void GitLabNamespaceReferencesMayEndWithHyphens()
     {
-        var codeOwners = Create("*.cs @team-\n*.fs (@group-/subgroup-)\n", CodeOwners.Platform.GitLab);
+        var codeOwners = Create(
+            """
+            *.cs @team-
+            *.fs (@group-/subgroup-)
+
+            """,
+            CodeOwners.Dialect.GitLab);
 
         Match(codeOwners, "/file.cs").Should().Equal(["@team-"]);
         Match(codeOwners, "/file.fs").Should().Equal(["@group-/subgroup-"]);
@@ -541,8 +828,13 @@ public class CodeOwnersSpecTests
     [SkippableFact]
     public void GitLabReferenceExtractionScansNamesRolesAndEmailsIndependently()
     {
-        var content = "*.cs docs@example.com,@alice\n*.fs alice@example.com!alias\n*.vb (@@maintainer\n";
-        var codeOwners = Create(content, CodeOwners.Platform.GitLab);
+        var content = """
+            *.cs docs@example.com,@alice
+            *.fs alice@example.com!alias
+            *.vb (@@maintainer
+
+            """;
+        var codeOwners = Create(content, CodeOwners.Dialect.GitLab);
 
         Match(codeOwners, "/file.cs").Should().Equal(["@alice", "docs@example.com"]);
         Match(codeOwners, "/file.fs").Should().Equal(["alice@example.com!alias"]);
@@ -553,7 +845,12 @@ public class CodeOwnersSpecTests
     [SkippableFact]
     public void GitLabExclusionsIgnoreOwnerTextForDiagnostics()
     {
-        var codeOwners = Create("!*.cs definitely-not-an-owner\n", CodeOwners.Platform.GitLab);
+        var codeOwners = Create(
+            """
+            !*.cs definitely-not-an-owner
+
+            """,
+            CodeOwners.Dialect.GitLab);
 
         Match(codeOwners, "/file.cs").Should().BeEmpty();
         codeOwners.ParsingDiagnosticsCount.Should().Be(0);
@@ -562,23 +859,33 @@ public class CodeOwnersSpecTests
     [SkippableFact]
     public void GitLabOwnerlessEntriesAreDiagnosedWithoutChangingMatchingSemantics()
     {
-        var codeOwners = Create("*.md\n", CodeOwners.Platform.GitLab);
+        var codeOwners = Create(
+            """
+            *.md
+
+            """,
+            CodeOwners.Dialect.GitLab);
 
         Match(codeOwners, "/README.md").Should().BeEmpty();
         codeOwners.ParsingDiagnosticsCount.Should().Be(1);
     }
 
     [SkippableTheory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public void EscapedSlashesRemainPathSeparators(bool useGitLab)
+    [InlineData(TestDialect.GitHub)]
+    [InlineData(TestDialect.GitLab)]
+    public void EscapedSlashesRemainPathSeparators(TestDialect dialect)
     {
-        var platform = useGitLab ? CodeOwners.Platform.GitLab : CodeOwners.Platform.GitHub;
-        var codeOwners = Create("dir\\/file.txt @file\ndocs\\/ @docs\n", platform);
+        var codeOwners = Create(
+            """
+            dir\/file.txt @file
+            docs\/        @docs
+
+            """,
+            ToCodeOwnersDialect(dialect));
 
         Match(codeOwners, "/dir/file.txt").Should().Equal(["@file"]);
         Match(codeOwners, "/docs/guide.md").Should().Equal(["@docs"]);
-        if (useGitLab)
+        if (dialect == TestDialect.GitLab)
         {
             Match(codeOwners, "/nested/dir/file.txt").Should().Equal(["@file"]);
         }
@@ -593,7 +900,13 @@ public class CodeOwnersSpecTests
     [SkippableFact]
     public void FormerGlobstarSentinelTextIsMatchedLiterally()
     {
-        var codeOwners = Create("* @global\n§§DOUBLESTAR§§ @literal\n", CodeOwners.Platform.GitHub);
+        var codeOwners = Create(
+            """
+            *              @global
+            §§DOUBLESTAR§§ @literal
+
+            """,
+            CodeOwners.Dialect.GitHub);
 
         Match(codeOwners, "/§§DOUBLESTAR§§").Should().Equal(["@literal"]);
         Match(codeOwners, "/anything-else").Should().Equal(["@global"]);
@@ -603,7 +916,13 @@ public class CodeOwnersSpecTests
     public void PathologicalPatternMatchingIsDeterministicBoundedAndThreadSafe()
     {
         var pathologicalPattern = string.Concat(Enumerable.Repeat("*a", 32)) + "b";
-        var codeOwners = Create("* @global\n" + pathologicalPattern + " @slow\n", CodeOwners.Platform.GitHub);
+        var codeOwners = Create(
+            $"""
+            * @global
+            {pathologicalPattern} @slow
+
+            """,
+            CodeOwners.Dialect.GitHub);
         var nonMatchingPath = "/" + new string('a', 2_000) + "c";
         var matchingPath = "/" + new string('a', 32) + "b";
 
@@ -631,7 +950,13 @@ public class CodeOwnersSpecTests
     public void OverlongSegmentPatternIsRejectedBeforeMatching()
     {
         var pathologicalPattern = "*" + new string('a', 1_024) + "b";
-        var codeOwners = Create("* @global\n" + pathologicalPattern + " @slow\n", CodeOwners.Platform.GitHub);
+        var codeOwners = Create(
+            $"""
+            * @global
+            {pathologicalPattern} @slow
+
+            """,
+            CodeOwners.Dialect.GitHub);
 
         codeOwners.ParsingDiagnosticsCount.Should().Be(1);
         Match(codeOwners, "/" + new string('a', 2_000) + "c").Should().Equal(["@global"]);
@@ -641,7 +966,13 @@ public class CodeOwnersSpecTests
     public void SegmentWildcardMatchingStopsAtWorkLimit()
     {
         var repeatedSuffixPattern = "*" + new string('a', 256) + "b";
-        var codeOwners = Create("* @global\n" + repeatedSuffixPattern + " @slow\n", CodeOwners.Platform.GitHub);
+        var codeOwners = Create(
+            $"""
+            * @global
+            {repeatedSuffixPattern} @slow
+
+            """,
+            CodeOwners.Dialect.GitHub);
 
         codeOwners.ParsingDiagnosticsCount.Should().Be(0, "the rule is valid and bounded at match time");
         Match(codeOwners, "/" + new string('a', 2_000) + "b").Should().Equal(["@global"]);
@@ -652,7 +983,12 @@ public class CodeOwnersSpecTests
     {
         const int ownerCount = 5_000;
         var owners = string.Join(" ", Enumerable.Range(0, ownerCount).Select(i => "@owner" + i));
-        var codeOwners = Create("*.cs " + owners + "\n", CodeOwners.Platform.GitHub);
+        var codeOwners = Create(
+            $"""
+            *.cs {owners}
+
+            """,
+            CodeOwners.Dialect.GitHub);
 
         var stopwatch = Stopwatch.StartNew();
         for (var i = 0; i < 20; i++)
@@ -668,11 +1004,11 @@ public class CodeOwnersSpecTests
     public void LongMalformedGitLabOwnerTokensHaveBoundedParsingCost()
     {
         var malformedOwner = new string('x', 4_000_000);
-        var path = WriteTemporaryCodeOwners("*.cs " + malformedOwner + "\n");
+        var path = WriteTemporaryCodeOwners($"""*.cs {malformedOwner}""");
         try
         {
             var stopwatch = Stopwatch.StartNew();
-            var codeOwners = new CodeOwners(path, CodeOwners.Platform.GitLab);
+            var codeOwners = new CodeOwners(path, CodeOwners.Dialect.GitLab);
             stopwatch.Stop();
 
             stopwatch.Elapsed.Should().BeLessThan(TestTimeout, "the broad timeout guards against hangs without acting as a microbenchmark");
@@ -693,7 +1029,7 @@ public class CodeOwnersSpecTests
         try
         {
             var stopwatch = Stopwatch.StartNew();
-            var codeOwners = new CodeOwners(path, CodeOwners.Platform.GitLab);
+            var codeOwners = new CodeOwners(path, CodeOwners.Dialect.GitLab);
             stopwatch.Stop();
 
             stopwatch.Elapsed.Should().BeLessThan(TestTimeout, "section validation must scan malformed headers without regex backtracking");
@@ -708,7 +1044,12 @@ public class CodeOwnersSpecTests
     [SkippableFact]
     public void DuplicateOwnersAreDeduplicatedOnceInStableOrder()
     {
-        var codeOwners = Create("*.cs @first @second @first @third @second\n", CodeOwners.Platform.GitHub);
+        var codeOwners = Create(
+            """
+            *.cs @first @second @first @third @second
+
+            """,
+            CodeOwners.Dialect.GitHub);
 
         codeOwners.Match("/file.cs").Should().Equal(["@first", "@second", "@third"]);
     }
@@ -725,7 +1066,7 @@ public class CodeOwnersSpecTests
         try
         {
             var stopwatch = Stopwatch.StartNew();
-            var codeOwners = new CodeOwners(path, CodeOwners.Platform.GitLab);
+            var codeOwners = new CodeOwners(path, CodeOwners.Dialect.GitLab);
             stopwatch.Stop();
 
             stopwatch.Elapsed.Should().BeLessThan(TestTimeout, "duplicate replacement is a single reverse pass instead of repeated List.Remove calls");
@@ -745,9 +1086,9 @@ public class CodeOwnersSpecTests
         var aboveLimit = WriteTemporaryCodeOwnersWithLength(CodeOwners.GitHubMaximumFileSizeBytes + 1);
         try
         {
-            Match(new CodeOwners(belowLimit, CodeOwners.Platform.GitHub), "/file.cs").Should().Equal(["@owner"]);
-            Match(new CodeOwners(aboveLimit, CodeOwners.Platform.GitHub), "/file.cs").Should().BeEmpty();
-            Match(new CodeOwners(aboveLimit, CodeOwners.Platform.GitLab), "/file.cs").Should().Equal(["@owner"]);
+            Match(new CodeOwners(belowLimit, CodeOwners.Dialect.GitHub), "/file.cs").Should().Equal(["@owner"]);
+            Match(new CodeOwners(aboveLimit, CodeOwners.Dialect.GitHub), "/file.cs").Should().BeEmpty();
+            Match(new CodeOwners(aboveLimit, CodeOwners.Dialect.GitLab), "/file.cs").Should().Equal(["@owner"]);
         }
         finally
         {
@@ -761,15 +1102,21 @@ public class CodeOwnersSpecTests
     {
         var missingPath = Path.Combine(Path.GetTempPath(), "dd-codeowners-missing-" + Guid.NewGuid().ToString("N"));
 
-        CodeOwners.TryLoad(missingPath, CodeOwners.Platform.GitHub, out var codeOwners).Should().BeFalse();
+        CodeOwners.TryLoad(missingPath, CodeOwners.Dialect.GitHub, out var codeOwners).Should().BeFalse();
         codeOwners.Should().BeNull();
     }
 
     [SkippableFact]
     public void GitLabDuplicateSectionsAreCombinedCaseInsensitively()
     {
-        var content = "[Docs]\n*.md @old\n[DOCS]\nREADME.md @new\n";
-        var codeOwners = Create(content, CodeOwners.Platform.GitLab);
+        var content = """
+            [Docs]
+            *.md @old
+            [DOCS]
+            README.md @new
+
+            """;
+        var codeOwners = Create(content, CodeOwners.Dialect.GitLab);
 
         Match(codeOwners, "/README.md").Should().Equal(["@new"]);
         Match(codeOwners, "/guide.md").Should().Equal(["@old"]);
@@ -778,8 +1125,15 @@ public class CodeOwnersSpecTests
     [SkippableFact]
     public void GitLabDuplicateSectionExclusionsAreStickyAcrossOccurrences()
     {
-        var content = "[Ruby]\n*.rb @ruby-team\n[RUBY]\n!/config/**/*.rb\n/config/routes.rb @ops\n";
-        var codeOwners = Create(content, CodeOwners.Platform.GitLab);
+        var content = """
+            [Ruby]
+            *.rb @ruby-team
+            [RUBY]
+            !/config/**/*.rb
+            /config/routes.rb @ops
+
+            """;
+        var codeOwners = Create(content, CodeOwners.Dialect.GitLab);
 
         Match(codeOwners, "/lib/model.rb").Should().Equal(["@ruby-team"]);
         Match(codeOwners, "/config/routes.rb").Should().BeEmpty();
@@ -788,8 +1142,14 @@ public class CodeOwnersSpecTests
     [SkippableFact]
     public void GitLabDuplicateSectionDefaultsApplyToEntriesUnderEachHeader()
     {
-        var content = "[Docs] @old-default\n*.md\n[DOCS] @new-default\nREADME.md\n";
-        var codeOwners = Create(content, CodeOwners.Platform.GitLab);
+        var content = """
+            [Docs] @old-default
+            *.md
+            [DOCS] @new-default
+            README.md
+
+            """;
+        var codeOwners = Create(content, CodeOwners.Dialect.GitLab);
 
         Match(codeOwners, "/guide.md").Should().Equal(["@old-default"]);
         Match(codeOwners, "/README.md").Should().Equal(["@new-default"]);
@@ -798,8 +1158,14 @@ public class CodeOwnersSpecTests
     [SkippableFact]
     public void UnsupportedGithubSyntaxIsIgnored()
     {
-        var content = "* @global\n!secret.txt @negation\nfile[0].cs @range\n\\#hash.txt @hash\n";
-        var codeOwners = Create(content, CodeOwners.Platform.GitHub);
+        var content = """
+            * @global
+            !secret.txt @negation
+            file[0].cs @range
+            \#hash.txt @hash
+
+            """;
+        var codeOwners = Create(content, CodeOwners.Dialect.GitHub);
 
         Match(codeOwners, "/!secret.txt").Should().Equal(["@global"]);
         Match(codeOwners, "/file[0].cs").Should().Equal(["@global"]);
@@ -830,7 +1196,7 @@ public class CodeOwnersSpecTests
             # Actions
             /internal/command/jsonplan/action_invocations.go @hashicorp/team-tf-actions @hashicorp/terraform-core
             """;
-        var codeOwners = Create(content, CodeOwners.Platform.GitHub);
+        var codeOwners = Create(content, CodeOwners.Dialect.GitHub);
 
         Match(codeOwners, "/main.go").Should().Equal(["@hashicorp/terraform-core"]);
         // Several teams on one line
@@ -862,7 +1228,7 @@ public class CodeOwnersSpecTests
             ^[Frontend dependency patches] @markrian @xanf @thutterer
             /patches/
             """;
-        var codeOwners = Create(content, CodeOwners.Platform.GitLab);
+        var codeOwners = Create(content, CodeOwners.Dialect.GitLab);
 
         // The bare `*` entry has no owners and inherits the [Maintainers] section defaults
         Match(codeOwners, "/random/path.txt")
@@ -892,7 +1258,13 @@ public class CodeOwnersSpecTests
     {
         // Callers prepend "/" to relative paths; a path that already contains leading slashes (or is
         // empty) must still normalize to a single rooted form instead of failing to match.
-        var codeOwners = Create("*.md @md\n/docs/ @doctocat\n", CodeOwners.Platform.GitHub);
+        var codeOwners = Create(
+            """
+            *.md   @md
+            /docs/ @doctocat
+
+            """,
+            CodeOwners.Dialect.GitHub);
         Match(codeOwners, "//docs/getting-started.md").Should().Equal(["@doctocat"]);
         Match(codeOwners, "/docs/getting-started.md").Should().Equal(["@doctocat"]);
         Match(codeOwners, string.Empty).Should().BeEmpty();
@@ -902,14 +1274,24 @@ public class CodeOwnersSpecTests
     public void NullPathReturnsNoOwners()
     {
         // Defensive: a null path must not throw and simply has no owners.
-        var codeOwners = Create("* @global\n", CodeOwners.Platform.GitHub);
+        var codeOwners = Create(
+            """
+            * @global
+
+            """,
+            CodeOwners.Dialect.GitHub);
         Match(codeOwners, null!).Should().BeEmpty();
     }
 
     [SkippableFact]
     public void QuestionMarkDoesNotMatchSlash()
     {
-        var codeOwners = Create("a?c @segment\n", CodeOwners.Platform.GitHub);
+        var codeOwners = Create(
+            """
+            a?c @segment
+
+            """,
+            CodeOwners.Dialect.GitHub);
         Match(codeOwners, "/abc").Should().Equal(["@segment"]);
         Match(codeOwners, "/aXc").Should().Equal(["@segment"]);
         Match(codeOwners, "/a/c").Should().BeEmpty();
@@ -918,9 +1300,24 @@ public class CodeOwnersSpecTests
     [SkippableFact]
     public void DoubleStarIsGlobstarOnlyAsAWholeSegment()
     {
-        var inSegment = Create("foo**bar @stars\n", CodeOwners.Platform.GitHub);
-        var slashAfterSegment = Create("/foo**/bar @component-stars\n", CodeOwners.Platform.GitHub);
-        var globstar = Create("**/index.md @index\n", CodeOwners.Platform.GitHub);
+        var inSegment = Create(
+            """
+            foo**bar @stars
+
+            """,
+            CodeOwners.Dialect.GitHub);
+        var slashAfterSegment = Create(
+            """
+            /foo**/bar @component-stars
+
+            """,
+            CodeOwners.Dialect.GitHub);
+        var globstar = Create(
+            """
+            **/index.md @index
+
+            """,
+            CodeOwners.Dialect.GitHub);
 
         // Adjacent asterisks inside a segment are two single-level wildcards, not a globstar.
         Match(inSegment, "/fooXbar").Should().Equal(["@stars"]);
@@ -937,7 +1334,12 @@ public class CodeOwnersSpecTests
     {
         // Direct directory matches and descendants share one deterministic glob; repeated calls
         // must preserve both forms without recompilation or an ancestor walk.
-        var codeOwners = Create("**/logs @octocat\n", CodeOwners.Platform.GitHub);
+        var codeOwners = Create(
+            """
+            **/logs @octocat
+
+            """,
+            CodeOwners.Dialect.GitHub);
         for (var i = 0; i < 3; i++)
         {
             Match(codeOwners, "/build/logs/error.txt").Should().Equal(["@octocat"]);
@@ -947,19 +1349,11 @@ public class CodeOwnersSpecTests
         }
     }
 
-    private static CodeOwners Create(string content, CodeOwners.Platform platform)
-    {
-        var path = WriteTemporaryCodeOwners(content);
+    private static CodeOwners Create(string content, CodeOwners.Dialect dialect)
+        => CodeOwners.Parse(content.Replace("\r\n", "\n").Split('\n'), dialect);
 
-        try
-        {
-            return new CodeOwners(path, platform);
-        }
-        finally
-        {
-            File.Delete(path);
-        }
-    }
+    private static CodeOwners.Dialect ToCodeOwnersDialect(TestDialect dialect)
+        => dialect == TestDialect.GitLab ? CodeOwners.Dialect.GitLab : CodeOwners.Dialect.GitHub;
 
     private static string WriteTemporaryCodeOwners(string content)
     {

@@ -7,7 +7,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using Datadog.Trace.Ci.CiEnvironment;
 using Datadog.Trace.Configuration;
 using Xunit;
@@ -17,6 +16,29 @@ namespace Datadog.Trace.Tests.Ci;
 [Collection(nameof(EnvironmentVariablesTestCollection))]
 public class CodeOwnersFallbackTests
 {
+    private const string GlobalAndSourceOwners = """
+        *     @global
+        /src/ @owner
+
+        """;
+
+    private const string GitLabSectionOwner = """
+        [Section] @gitlab-owner
+        *.cs
+
+        """;
+
+    private const string OwnerAndSourceOwners = """
+        *     @owner
+        /src/ @src-owner
+
+        """;
+
+    private const string OwnerOnly = """
+        * @owner
+
+        """;
+
     private const string CommitSha = "3245605c3d1edc67226d725799ee969c71f7632b";
 
     [SkippableFact]
@@ -27,7 +49,7 @@ public class CodeOwnersFallbackTests
         var srcDir = Path.Combine(repoRoot, "src");
         Directory.CreateDirectory(srcDir);
         var sourceFile = Path.Combine(srcDir, "SpanBenchmark.cs");
-        File.WriteAllText(Path.Combine(repoRoot, "CODEOWNERS"), "* @global\n/src/ @owner\n");
+        File.WriteAllText(Path.Combine(repoRoot, "CODEOWNERS"), GlobalAndSourceOwners);
         File.WriteAllText(sourceFile, "class SpanBenchmark {}");
 
         var env = new Dictionary<string, string>
@@ -38,12 +60,10 @@ public class CodeOwnersFallbackTests
         };
 
         var ciValues = CIEnvironmentValues.Create(env);
-        var relative = ciValues.MakeRelativePathFromSourceRootWithFallback(sourceFile, false);
+        var ownership = ciValues.ResolveSourceOwnership(sourceFile, useOSSeparator: false);
 
-        Assert.Equal("src/SpanBenchmark.cs", relative);
-
-        var owners = ciValues.CodeOwners!.Match("/" + relative).OrderBy(o => o).ToArray();
-        Assert.Equal(new[] { "@owner" }, owners);
+        Assert.Equal("src/SpanBenchmark.cs", ownership.RepositoryRelativePath);
+        Assert.Equal(["@owner"], ownership.MatchingOwners);
     }
 
     [SkippableFact]
@@ -55,7 +75,7 @@ public class CodeOwnersFallbackTests
         Directory.CreateDirectory(Path.Combine(repoRoot, ".git"));
         Directory.CreateDirectory(srcDir);
         var sourceFile = Path.Combine(srcDir, "SpanBenchmark.cs");
-        File.WriteAllText(Path.Combine(repoRoot, "CODEOWNERS"), "* @global\n/src/ @owner\n");
+        File.WriteAllText(Path.Combine(repoRoot, "CODEOWNERS"), GlobalAndSourceOwners);
         File.WriteAllText(sourceFile, "class SpanBenchmark {}");
 
         var env = new Dictionary<string, string>
@@ -66,12 +86,10 @@ public class CodeOwnersFallbackTests
         };
 
         var ciValues = CIEnvironmentValues.Create(env);
-        var relative = ciValues.MakeRelativePathFromSourceRootWithFallback(sourceFile, false);
+        var ownership = ciValues.ResolveSourceOwnership(sourceFile, useOSSeparator: false);
 
-        Assert.Equal("src/SpanBenchmark.cs", relative);
-
-        var owners = ciValues.CodeOwners!.Match("/" + relative).OrderBy(o => o).ToArray();
-        Assert.Equal(new[] { "@owner" }, owners);
+        Assert.Equal("src/SpanBenchmark.cs", ownership.RepositoryRelativePath);
+        Assert.Equal(["@owner"], ownership.MatchingOwners);
     }
 
     [SkippableFact]
@@ -82,7 +100,7 @@ public class CodeOwnersFallbackTests
         var srcDir = Path.Combine(repoRoot, "src");
         Directory.CreateDirectory(srcDir);
         var sourceFile = Path.Combine(srcDir, "SpanBenchmark.cs");
-        File.WriteAllText(Path.Combine(repoRoot, "CODEOWNERS"), "* @owner\n");
+        File.WriteAllText(Path.Combine(repoRoot, "CODEOWNERS"), OwnerOnly);
         File.WriteAllText(sourceFile, "class SpanBenchmark {}");
 
         var env = new Dictionary<string, string>
@@ -96,10 +114,10 @@ public class CodeOwnersFallbackTests
         try
         {
             var ciValues = CIEnvironmentValues.Create(env);
-            var relative = ciValues.MakeRelativePathFromSourceRootWithFallback("src/SpanBenchmark.cs", false);
+            var ownership = ciValues.ResolveSourceOwnership("src/SpanBenchmark.cs", useOSSeparator: false);
 
-            Assert.Equal("src/SpanBenchmark.cs", relative);
-            Assert.Null(ciValues.CodeOwners);
+            Assert.Equal("src/SpanBenchmark.cs", ownership.RepositoryRelativePath);
+            Assert.False(ciValues.HasCodeOwners);
         }
         finally
         {
@@ -117,7 +135,7 @@ public class CodeOwnersFallbackTests
         var srcDir = Path.Combine(repoRoot, "src");
         Directory.CreateDirectory(srcDir);
         var sourceFile = Path.Combine(srcDir, "SpanBenchmark.cs");
-        File.WriteAllText(Path.Combine(repoRoot, "CODEOWNERS"), "* @global\n/src/ @owner\n");
+        File.WriteAllText(Path.Combine(repoRoot, "CODEOWNERS"), GlobalAndSourceOwners);
         File.WriteAllText(sourceFile, "class SpanBenchmark {}");
 
         var otherRoot = otherDirectory.RootPath;
@@ -134,19 +152,17 @@ public class CodeOwnersFallbackTests
         };
 
         var ciValues = CIEnvironmentValues.Create(env);
-        var otherRelative = ciValues.MakeRelativePathFromSourceRootWithFallback(otherFile, false);
+        var otherOwnership = ciValues.ResolveSourceOwnership(otherFile, useOSSeparator: false);
 
-        Assert.Equal("src/Other.cs", otherRelative);
-        Assert.Null(ciValues.CodeOwners);
+        Assert.Equal("src/Other.cs", otherOwnership.RepositoryRelativePath);
+        Assert.False(ciValues.HasCodeOwners);
 
-        var relative = ciValues.MakeRelativePathFromSourceRootWithFallback(sourceFile, false);
+        var ownership = ciValues.ResolveSourceOwnership(sourceFile, useOSSeparator: false);
 
-        Assert.Equal("src/SpanBenchmark.cs", relative);
-        Assert.NotNull(ciValues.CodeOwners);
-
-        Assert.True(ciValues.TryGetCodeOwnersRelativePath(sourceFile, false, out var codeOwnersRelativePath));
-        var owners = ciValues.CodeOwners!.Match("/" + codeOwnersRelativePath).OrderBy(o => o).ToArray();
-        Assert.Equal(new[] { "@owner" }, owners);
+        Assert.Equal("src/SpanBenchmark.cs", ownership.RepositoryRelativePath);
+        Assert.True(ownership.IsRepositoryRelative);
+        Assert.True(ciValues.HasCodeOwners);
+        Assert.Equal(["@owner"], ownership.MatchingOwners);
     }
 
     [SkippableFact]
@@ -156,21 +172,21 @@ public class CodeOwnersFallbackTests
         var repoRoot = tempDirectory.RootPath;
         Directory.CreateDirectory(Path.Combine(repoRoot, ".github"));
         Directory.CreateDirectory(Path.Combine(repoRoot, "docs"));
-        File.WriteAllText(Path.Combine(repoRoot, ".github", "CODEOWNERS"), "* @github-directory\n");
-        File.WriteAllText(Path.Combine(repoRoot, "CODEOWNERS"), "* @repository-root\n");
-        File.WriteAllText(Path.Combine(repoRoot, "docs", "CODEOWNERS"), "* @docs-directory\n");
+        File.WriteAllText(Path.Combine(repoRoot, ".github", "CODEOWNERS"), """* @github-directory""");
+        File.WriteAllText(Path.Combine(repoRoot, "CODEOWNERS"), """* @repository-root""");
+        File.WriteAllText(Path.Combine(repoRoot, "docs", "CODEOWNERS"), """* @docs-directory""");
         var ciValues = new ReloadingEnvironmentValues(repoRoot, "github");
 
         ciValues.Reload();
-        Assert.Equal(["@github-directory"], ciValues.CodeOwners!.Match("/file.cs"));
+        Assert.Equal(["@github-directory"], ResolveOwners(ciValues, "file.cs"));
 
         File.Delete(Path.Combine(repoRoot, ".github", "CODEOWNERS"));
         ciValues.Reload();
-        Assert.Equal(["@repository-root"], ciValues.CodeOwners!.Match("/file.cs"));
+        Assert.Equal(["@repository-root"], ResolveOwners(ciValues, "file.cs"));
 
         File.Delete(Path.Combine(repoRoot, "CODEOWNERS"));
         ciValues.Reload();
-        Assert.Equal(["@docs-directory"], ciValues.CodeOwners!.Match("/file.cs"));
+        Assert.Equal(["@docs-directory"], ResolveOwners(ciValues, "file.cs"));
     }
 
     [SkippableFact]
@@ -180,41 +196,41 @@ public class CodeOwnersFallbackTests
         var repoRoot = tempDirectory.RootPath;
         Directory.CreateDirectory(Path.Combine(repoRoot, "docs"));
         Directory.CreateDirectory(Path.Combine(repoRoot, ".gitlab"));
-        File.WriteAllText(Path.Combine(repoRoot, "CODEOWNERS"), "* @repository-root\n");
-        File.WriteAllText(Path.Combine(repoRoot, "docs", "CODEOWNERS"), "* @docs-directory\n");
-        File.WriteAllText(Path.Combine(repoRoot, ".gitlab", "CODEOWNERS"), "* @gitlab-directory\n");
+        File.WriteAllText(Path.Combine(repoRoot, "CODEOWNERS"), """* @repository-root""");
+        File.WriteAllText(Path.Combine(repoRoot, "docs", "CODEOWNERS"), """* @docs-directory""");
+        File.WriteAllText(Path.Combine(repoRoot, ".gitlab", "CODEOWNERS"), """* @gitlab-directory""");
         var ciValues = new ReloadingEnvironmentValues(repoRoot, "gitlab");
 
         ciValues.Reload();
-        Assert.Equal(["@repository-root"], ciValues.CodeOwners!.Match("/file.cs"));
+        Assert.Equal(["@repository-root"], ResolveOwners(ciValues, "file.cs"));
 
         File.Delete(Path.Combine(repoRoot, "CODEOWNERS"));
         ciValues.Reload();
-        Assert.Equal(["@docs-directory"], ciValues.CodeOwners!.Match("/file.cs"));
+        Assert.Equal(["@docs-directory"], ResolveOwners(ciValues, "file.cs"));
 
         File.Delete(Path.Combine(repoRoot, "docs", "CODEOWNERS"));
         ciValues.Reload();
-        Assert.Equal(["@gitlab-directory"], ciValues.CodeOwners!.Match("/file.cs"));
+        Assert.Equal(["@gitlab-directory"], ResolveOwners(ciValues, "file.cs"));
     }
 
     [SkippableFact]
-    public void CodeOwnersDiscoveryIgnoresOtherPlatformSpecificLocations()
+    public void CodeOwnersDiscoveryIgnoresLocationsFromTheOtherDialect()
     {
         using var githubDirectory = new TemporaryDirectory();
         Directory.CreateDirectory(Path.Combine(githubDirectory.RootPath, ".gitlab"));
-        File.WriteAllText(Path.Combine(githubDirectory.RootPath, ".gitlab", "CODEOWNERS"), "* @gitlab-only\n");
+        File.WriteAllText(Path.Combine(githubDirectory.RootPath, ".gitlab", "CODEOWNERS"), """* @gitlab-only""");
         var githubValues = new ReloadingEnvironmentValues(githubDirectory.RootPath, "github");
 
         githubValues.Reload();
-        Assert.Null(githubValues.CodeOwners);
+        Assert.False(githubValues.HasCodeOwners);
 
         using var gitlabDirectory = new TemporaryDirectory();
         Directory.CreateDirectory(Path.Combine(gitlabDirectory.RootPath, ".github"));
-        File.WriteAllText(Path.Combine(gitlabDirectory.RootPath, ".github", "CODEOWNERS"), "* @github-only\n");
+        File.WriteAllText(Path.Combine(gitlabDirectory.RootPath, ".github", "CODEOWNERS"), """* @github-only""");
         var gitlabValues = new ReloadingEnvironmentValues(gitlabDirectory.RootPath, "gitlab");
 
         gitlabValues.Reload();
-        Assert.Null(gitlabValues.CodeOwners);
+        Assert.False(gitlabValues.HasCodeOwners);
     }
 
     [SkippableTheory]
@@ -222,12 +238,12 @@ public class CodeOwnersFallbackTests
     [InlineData("git@gitlab.com:DataDog/dd-trace-dotnet.git")]
     [InlineData("https://gitlab.example.com/DataDog/dd-trace-dotnet.git")]
     [InlineData("git@gitlab.example.com:DataDog/dd-trace-dotnet.git")]
-    public void UsesRepositoryHostToSelectCodeOwnersPlatform(string repositoryUrl)
+    public void UsesRepositoryHostToSelectCodeOwnersDialect(string repositoryUrl)
     {
         using var tempDirectory = new TemporaryDirectory();
         var repoRoot = tempDirectory.RootPath;
         Directory.CreateDirectory(Path.Combine(repoRoot, ".gitlab"));
-        File.WriteAllText(Path.Combine(repoRoot, ".gitlab", "CODEOWNERS"), "[Section] @gitlab-owner\n*.cs\n");
+        File.WriteAllText(Path.Combine(repoRoot, ".gitlab", "CODEOWNERS"), GitLabSectionOwner);
 
         var env = new Dictionary<string, string>
         {
@@ -240,7 +256,7 @@ public class CodeOwnersFallbackTests
         var ciValues = CIEnvironmentValues.Create(env);
 
         Assert.Equal("jenkins", ciValues.Provider);
-        Assert.Equal(["@gitlab-owner"], ciValues.CodeOwners!.Match("/file.cs"));
+        Assert.Equal(["@gitlab-owner"], ResolveOwners(ciValues, "file.cs"));
     }
 
     [SkippableFact]
@@ -249,7 +265,7 @@ public class CodeOwnersFallbackTests
         using var tempDirectory = new TemporaryDirectory();
         var repoRoot = tempDirectory.RootPath;
         Directory.CreateDirectory(Path.Combine(repoRoot, ".gitlab"));
-        File.WriteAllText(Path.Combine(repoRoot, ".gitlab", "CODEOWNERS"), "[Section] @gitlab-owner\n*.cs\n");
+        File.WriteAllText(Path.Combine(repoRoot, ".gitlab", "CODEOWNERS"), GitLabSectionOwner);
 
         var env = new Dictionary<string, string>
         {
@@ -261,11 +277,11 @@ public class CodeOwnersFallbackTests
 
         var ciValues = CIEnvironmentValues.Create(env);
 
-        Assert.Equal(["@gitlab-owner"], ciValues.CodeOwners!.Match("/file.cs"));
+        Assert.Equal(["@gitlab-owner"], ResolveOwners(ciValues, "file.cs"));
     }
 
     [SkippableFact]
-    public void DetectsGitLabPlatformAtAncestorRepositoryRoot()
+    public void DetectsGitLabDialectAtAncestorRepositoryRoot()
     {
         using var tempDirectory = new TemporaryDirectory();
         var repoRoot = tempDirectory.RootPath;
@@ -274,7 +290,7 @@ public class CodeOwnersFallbackTests
         Directory.CreateDirectory(Path.Combine(repoRoot, ".git"));
         Directory.CreateDirectory(Path.Combine(repoRoot, ".gitlab"));
         Directory.CreateDirectory(sourceRoot);
-        File.WriteAllText(Path.Combine(repoRoot, ".gitlab", "CODEOWNERS"), "[Section] @gitlab-owner\n*.cs\n");
+        File.WriteAllText(Path.Combine(repoRoot, ".gitlab", "CODEOWNERS"), GitLabSectionOwner);
         File.WriteAllText(sourceFile, "class SpanBenchmark {}");
 
         var env = new Dictionary<string, string>
@@ -286,10 +302,10 @@ public class CodeOwnersFallbackTests
         };
 
         var ciValues = CIEnvironmentValues.Create(env);
-        var relative = ciValues.MakeRelativePathFromSourceRootWithFallback(sourceFile, false);
+        var ownership = ciValues.ResolveSourceOwnership(sourceFile, useOSSeparator: false);
 
-        Assert.Equal("src/SpanBenchmark.cs", relative);
-        Assert.Equal(["@gitlab-owner"], ciValues.CodeOwners!.Match("/" + relative));
+        Assert.Equal("src/SpanBenchmark.cs", ownership.RepositoryRelativePath);
+        Assert.Equal(["@gitlab-owner"], ownership.MatchingOwners);
     }
 
     [SkippableFact]
@@ -299,7 +315,7 @@ public class CodeOwnersFallbackTests
         using var externalDirectory = new TemporaryDirectory();
 
         var repoRoot = repoDirectory.RootPath;
-        File.WriteAllText(Path.Combine(repoRoot, "CODEOWNERS"), "* @owner\n");
+        File.WriteAllText(Path.Combine(repoRoot, "CODEOWNERS"), OwnerOnly);
 
         var externalFile = Path.Combine(externalDirectory.RootPath, "SpanBenchmark.cs");
         File.WriteAllText(externalFile, "class SpanBenchmark {}");
@@ -313,8 +329,10 @@ public class CodeOwnersFallbackTests
 
         var ciValues = CIEnvironmentValues.Create(env);
 
-        Assert.NotNull(ciValues.CodeOwners);
-        Assert.False(ciValues.TryGetCodeOwnersRelativePath(externalFile, false, out _));
+        var ownership = ciValues.ResolveSourceOwnership(externalFile, useOSSeparator: false);
+
+        Assert.True(ciValues.HasCodeOwners);
+        Assert.False(ownership.IsRepositoryRelative);
     }
 
     [SkippableFact]
@@ -322,7 +340,7 @@ public class CodeOwnersFallbackTests
     {
         using var repoDirectory = new TemporaryDirectory();
         var repoRoot = repoDirectory.RootPath;
-        File.WriteAllText(Path.Combine(repoRoot, "CODEOWNERS"), "* @global\n");
+        File.WriteAllText(Path.Combine(repoRoot, "CODEOWNERS"), """* @global""");
 
         var env = new Dictionary<string, string>
         {
@@ -338,13 +356,11 @@ public class CodeOwnersFallbackTests
         Directory.CreateDirectory(Path.GetDirectoryName(sourceFile)!);
         File.WriteAllText(sourceFile, "class Snapshot {}");
 
-        var relative = ciValues.MakeRelativePathFromSourceRootWithFallback(sourceFile, false);
+        var ownership = ciValues.ResolveSourceOwnership(sourceFile, useOSSeparator: false);
 
-        Assert.StartsWith("..", relative, StringComparison.Ordinal);
-        Assert.False(ciValues.TryGetCodeOwnersRelativePath(sourceFile, false, out _));
-
-        var owners = ciValues.CodeOwners!.Match("/" + relative).OrderBy(o => o).ToArray();
-        Assert.Equal(new[] { "@global" }, owners);
+        Assert.StartsWith("..", ownership.RepositoryRelativePath, StringComparison.Ordinal);
+        Assert.False(ownership.IsRepositoryRelative);
+        Assert.Equal(["@global"], ownership.MatchingOwners);
     }
 
     [SkippableFact]
@@ -355,17 +371,20 @@ public class CodeOwnersFallbackTests
         var srcDir = Path.Combine(repoRoot, "tracer", "test", "benchmarks", "Benchmarks.Trace");
         Directory.CreateDirectory(srcDir);
         var sourceFile = Path.Combine(srcDir, "SpanBenchmark.cs");
-        File.WriteAllText(Path.Combine(repoRoot, "CODEOWNERS"), "* @global\n/tracer/test/benchmarks/Benchmarks.Trace/ @owner\n");
+        const string codeOwnersFile = """
+            *                                          @global
+            /tracer/test/benchmarks/Benchmarks.Trace/  @owner
+
+            """;
+        File.WriteAllText(Path.Combine(repoRoot, "CODEOWNERS"), codeOwnersFile);
         File.WriteAllText(sourceFile, "class SpanBenchmark {}");
 
         var ciValues = new TestCIEnvironmentValues("/go/src/github.com/DataDog/apm-reliability/dd-trace-dotnet", repoRoot);
-        var relative = ciValues.MakeRelativePathFromSourceRootWithFallback(sourceFile, false);
+        var ownership = ciValues.ResolveSourceOwnership(sourceFile, useOSSeparator: false);
 
-        Assert.Equal("tracer/test/benchmarks/Benchmarks.Trace/SpanBenchmark.cs", relative);
-
-        Assert.True(ciValues.TryGetCodeOwnersRelativePath(sourceFile, false, out var codeOwnersRelativePath));
-        var owners = ciValues.CodeOwners!.Match("/" + codeOwnersRelativePath).OrderBy(o => o).ToArray();
-        Assert.Equal(new[] { "@owner" }, owners);
+        Assert.Equal("tracer/test/benchmarks/Benchmarks.Trace/SpanBenchmark.cs", ownership.RepositoryRelativePath);
+        Assert.True(ownership.IsRepositoryRelative);
+        Assert.Equal(["@owner"], ownership.MatchingOwners);
     }
 
     [SkippableFact]
@@ -377,7 +396,7 @@ public class CodeOwnersFallbackTests
         var repoRoot = repoDirectory.RootPath;
         Directory.CreateDirectory(Path.Combine(repoRoot, ".git"));
         var outsideRoot = outsideDirectory.RootPath;
-        File.WriteAllText(Path.Combine(outsideRoot, "CODEOWNERS"), "* @owner\n");
+        File.WriteAllText(Path.Combine(outsideRoot, "CODEOWNERS"), OwnerOnly);
         File.WriteAllText(Path.Combine(outsideRoot, "SpanBenchmark.cs"), "class SpanBenchmark {}");
 
         var outsideFolderName = Path.GetFileName(outsideRoot);
@@ -392,8 +411,10 @@ public class CodeOwnersFallbackTests
 
         var ciValues = CIEnvironmentValues.Create(env);
 
-        Assert.False(ciValues.TryGetCodeOwnersRelativePath(relativeSourcePath, false, out _));
-        Assert.Null(ciValues.CodeOwners);
+        var ownership = ciValues.ResolveSourceOwnership(relativeSourcePath, useOSSeparator: false);
+
+        Assert.False(ownership.IsRepositoryRelative);
+        Assert.False(ciValues.HasCodeOwners);
     }
 
     [SkippableFact]
@@ -404,7 +425,12 @@ public class CodeOwnersFallbackTests
         var srcDir = Path.Combine(repoRoot, "tracer", "test");
         Directory.CreateDirectory(srcDir);
         var sourceFile = Path.Combine(srcDir, "SpanBenchmark.cs");
-        File.WriteAllText(Path.Combine(repoRoot, "CODEOWNERS"), "* @global\n/tracer/test/ @owner\n");
+        const string codeOwnersFile = """
+            *             @global
+            /tracer/test/ @owner
+
+            """;
+        File.WriteAllText(Path.Combine(repoRoot, "CODEOWNERS"), codeOwnersFile);
         File.WriteAllText(sourceFile, "class SpanBenchmark {}");
 
         var env = new Dictionary<string, string>
@@ -419,11 +445,11 @@ public class CodeOwnersFallbackTests
         // Paths recorded against a foreign base directory (e.g. "../../../_/..." on CI agents)
         // must be anchored back to a repository-relative path.
         var foreignRelativePath = "../../../_/tracer/test/SpanBenchmark.cs";
-        Assert.True(ciValues.TryGetCodeOwnersRelativePath(foreignRelativePath, false, out var codeOwnersRelativePath));
-        Assert.Equal("tracer/test/SpanBenchmark.cs", codeOwnersRelativePath);
+        var ownership = ciValues.ResolveSourceOwnership(foreignRelativePath, useOSSeparator: false);
 
-        var owners = ciValues.CodeOwners!.Match("/" + codeOwnersRelativePath).OrderBy(o => o).ToArray();
-        Assert.Equal(new[] { "@owner" }, owners);
+        Assert.True(ownership.IsRepositoryRelative);
+        Assert.Equal("tracer/test/SpanBenchmark.cs", ownership.RepositoryRelativePath);
+        Assert.Equal(["@owner"], ownership.MatchingOwners);
     }
 
     [SkippableFact]
@@ -433,7 +459,7 @@ public class CodeOwnersFallbackTests
         var repoRoot = tempDirectory.RootPath;
         var srcDir = Path.Combine(repoRoot, "tracer", "test");
         Directory.CreateDirectory(srcDir);
-        File.WriteAllText(Path.Combine(repoRoot, "CODEOWNERS"), "* @global\n");
+        File.WriteAllText(Path.Combine(repoRoot, "CODEOWNERS"), """* @global""");
         File.WriteAllText(Path.Combine(srcDir, "SpanBenchmark.cs"), "class SpanBenchmark {}");
 
         var env = new Dictionary<string, string>
@@ -446,11 +472,13 @@ public class CodeOwnersFallbackTests
         var ciValues = CIEnvironmentValues.Create(env);
         var foreignRelativePath = "../../../_/tracer/test/SpanBenchmark.cs";
 
-        Assert.True(ciValues.TryGetCodeOwnersRelativePath(foreignRelativePath, useOSSeparator: false, out var forwardSlashPath));
-        Assert.Equal("tracer/test/SpanBenchmark.cs", forwardSlashPath);
+        var forwardSlashOwnership = ciValues.ResolveSourceOwnership(foreignRelativePath, useOSSeparator: false);
+        Assert.True(forwardSlashOwnership.IsRepositoryRelative);
+        Assert.Equal("tracer/test/SpanBenchmark.cs", forwardSlashOwnership.RepositoryRelativePath);
 
-        Assert.True(ciValues.TryGetCodeOwnersRelativePath(foreignRelativePath, useOSSeparator: true, out var osPath));
-        Assert.Equal(Path.Combine("tracer", "test", "SpanBenchmark.cs"), osPath);
+        var osOwnership = ciValues.ResolveSourceOwnership(foreignRelativePath, useOSSeparator: true);
+        Assert.True(osOwnership.IsRepositoryRelative);
+        Assert.Equal(Path.Combine("tracer", "test", "SpanBenchmark.cs"), osOwnership.RepositoryRelativePath);
     }
 
     [SkippableFact]
@@ -461,7 +489,7 @@ public class CodeOwnersFallbackTests
 
         var repoRoot = repoDirectory.RootPath;
         Directory.CreateDirectory(Path.Combine(repoRoot, "src"));
-        File.WriteAllText(Path.Combine(repoRoot, "CODEOWNERS"), "* @owner\n/src/ @src-owner\n");
+        File.WriteAllText(Path.Combine(repoRoot, "CODEOWNERS"), OwnerAndSourceOwners);
         File.WriteAllText(Path.Combine(repoRoot, "src", "SpanBenchmark.cs"), "class SpanBenchmark {}");
 
         var externalFile = Path.Combine(externalDirectory.RootPath, "other", "SpanBenchmark.cs");
@@ -478,7 +506,8 @@ public class CodeOwnersFallbackTests
         var ciValues = CIEnvironmentValues.Create(env);
 
         // A foreign path whose suffix does not exist under the repository must not be re-anchored.
-        Assert.False(ciValues.TryGetCodeOwnersRelativePath("../other/SpanBenchmark.cs", false, out _));
+        var ownership = ciValues.ResolveSourceOwnership("../other/SpanBenchmark.cs", useOSSeparator: false);
+        Assert.False(ownership.IsRepositoryRelative);
     }
 
     [SkippableFact]
@@ -495,7 +524,7 @@ public class CodeOwnersFallbackTests
         Directory.CreateDirectory(sourceDir);
         var sourceFile = Path.Combine(sourceDir, "ExceptionsTests.cs");
         Directory.CreateDirectory(Path.Combine(repoRoot, ".github"));
-        File.WriteAllText(Path.Combine(repoRoot, ".github", "CODEOWNERS"), "/tracer/test/ @DataDog/tracing-dotnet\n");
+        File.WriteAllText(Path.Combine(repoRoot, ".github", "CODEOWNERS"), """/tracer/test/ @DataDog/tracing-dotnet""");
         File.WriteAllText(sourceFile, "// test");
 
         var env = new Dictionary<string, string>
@@ -508,14 +537,13 @@ public class CodeOwnersFallbackTests
         };
 
         var ciValues = CIEnvironmentValues.Create(env);
-        Assert.NotNull(ciValues.CodeOwners);
-
         var foreignRelativePath = "../../../../../../_/tracer/test/Datadog.Trace.DuckTyping.Tests/ExceptionsTests.cs";
-        var relative = ciValues.MakeRelativePathFromSourceRootWithFallback(foreignRelativePath, false);
-        Assert.Equal("tracer/test/Datadog.Trace.DuckTyping.Tests/ExceptionsTests.cs", relative);
+        var ownership = ciValues.ResolveSourceOwnership(foreignRelativePath, useOSSeparator: false);
 
-        var owners = ciValues.CodeOwners!.Match("/" + relative).OrderBy(o => o).ToArray();
-        Assert.Equal(new[] { "@DataDog/tracing-dotnet" }, owners);
+        Assert.True(ciValues.HasCodeOwners);
+        Assert.True(ownership.IsRepositoryRelative);
+        Assert.Equal("tracer/test/Datadog.Trace.DuckTyping.Tests/ExceptionsTests.cs", ownership.RepositoryRelativePath);
+        Assert.Equal(["@DataDog/tracing-dotnet"], ownership.MatchingOwners);
     }
 
     [SkippableTheory]
@@ -531,7 +559,7 @@ public class CodeOwnersFallbackTests
         var repoRoot = tempDirectory.RootPath;
         var sourceDir = Path.Combine(repoRoot, "src");
         Directory.CreateDirectory(sourceDir);
-        File.WriteAllText(Path.Combine(repoRoot, "CODEOWNERS"), "/src/ @owner\n");
+        File.WriteAllText(Path.Combine(repoRoot, "CODEOWNERS"), """/src/ @owner""");
         File.WriteAllText(Path.Combine(sourceDir, "SpanBenchmark.cs"), "// test");
 
         var env = new Dictionary<string, string>
@@ -544,7 +572,8 @@ public class CodeOwnersFallbackTests
 
         var ciValues = CIEnvironmentValues.Create(env);
 
-        Assert.False(ciValues.TryGetCodeOwnersRelativePath(sourcePath, false, out _));
+        var ownership = ciValues.ResolveSourceOwnership(sourcePath, useOSSeparator: false);
+        Assert.False(ownership.IsRepositoryRelative);
     }
 
     [SkippableFact]
@@ -554,7 +583,7 @@ public class CodeOwnersFallbackTests
         var repoRoot = tempDirectory.RootPath;
         var srcDir = Path.Combine(repoRoot, "src");
         Directory.CreateDirectory(srcDir);
-        File.WriteAllText(Path.Combine(repoRoot, "CODEOWNERS"), "* @owner\n/src/ @src-owner\n");
+        File.WriteAllText(Path.Combine(repoRoot, "CODEOWNERS"), OwnerAndSourceOwners);
         File.WriteAllText(Path.Combine(srcDir, "SpanBenchmark.cs"), "class SpanBenchmark {}");
 
         var env = new Dictionary<string, string>
@@ -568,7 +597,8 @@ public class CodeOwnersFallbackTests
 
         // An interior navigation segment depends on the unknown base directory where the path was
         // recorded; anchoring it would produce a malformed repository-relative path.
-        Assert.False(ciValues.TryGetCodeOwnersRelativePath("../other/src/../src/SpanBenchmark.cs", false, out _));
+        var ownership = ciValues.ResolveSourceOwnership("../other/src/../src/SpanBenchmark.cs", useOSSeparator: false);
+        Assert.False(ownership.IsRepositoryRelative);
     }
 
     [SkippableTheory]
@@ -583,7 +613,7 @@ public class CodeOwnersFallbackTests
         var repoRoot = tempDirectory.RootPath;
         var srcDir = Path.Combine(repoRoot, "src");
         Directory.CreateDirectory(srcDir);
-        File.WriteAllText(Path.Combine(repoRoot, "CODEOWNERS"), "* @owner\n/src/ @src-owner\n");
+        File.WriteAllText(Path.Combine(repoRoot, "CODEOWNERS"), OwnerAndSourceOwners);
         File.WriteAllText(Path.Combine(srcDir, "SpanBenchmark.cs"), "class SpanBenchmark {}");
 
         var env = new Dictionary<string, string>
@@ -595,8 +625,12 @@ public class CodeOwnersFallbackTests
 
         var ciValues = CIEnvironmentValues.Create(env);
 
-        Assert.False(ciValues.TryGetCodeOwnersRelativePath(sourceFilePath, false, out _));
+        var ownership = ciValues.ResolveSourceOwnership(sourceFilePath, useOSSeparator: false);
+        Assert.False(ownership.IsRepositoryRelative);
     }
+
+    private static string[] ResolveOwners(CIEnvironmentValues ciValues, string sourcePath)
+        => ciValues.ResolveSourceOwnership(sourcePath, useOSSeparator: false).MatchingOwners;
 
     private sealed class TemporaryDirectory : IDisposable
     {
@@ -626,15 +660,23 @@ public class CodeOwnersFallbackTests
 
     private sealed class TestCIEnvironmentValues : CIEnvironmentValues
     {
+        private readonly string? _sourceRoot;
+        private readonly string? _workspacePath;
+        private readonly string? _provider;
+
         public TestCIEnvironmentValues(string? sourceRoot, string? workspacePath, string? provider = null)
         {
-            SourceRoot = sourceRoot;
-            WorkspacePath = workspacePath;
-            Provider = provider;
+            _sourceRoot = sourceRoot;
+            _workspacePath = workspacePath;
+            _provider = provider;
+            ReloadEnvironmentData();
         }
 
         protected override void Setup(IGitInfo gitInfo)
         {
+            SourceRoot = _sourceRoot;
+            WorkspacePath = _workspacePath;
+            Provider = _provider;
         }
     }
 
