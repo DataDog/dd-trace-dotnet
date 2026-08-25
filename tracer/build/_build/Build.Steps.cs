@@ -1857,8 +1857,6 @@ partial class Build
         .Executes(() =>
         {
             var isDebugRun = IsDebugRun();
-            var parallelFilter = AddAreaFilter(AddIntegrationTestPartitionFilter(Filter));
-            var filter = AddAreaFilter(AddIntegrationTestPartitionFilter(GetFilter()));
 
             try
             {
@@ -1870,46 +1868,14 @@ partial class Build
                         _ => true,
                     });
 
-                DotNetTest(config => config
-                    .SetDotnetPath(TargetPlatform)
-                    .SetConfiguration(BuildConfiguration)
-                    .SetTargetPlatformAnyCPU()
-                    .SetFramework(Framework)
-                    //.WithMemoryDumpAfter(timeoutInMinutes: 30)
-                    .EnableCrashDumps()
-                    .EnableNoRestore()
-                    .EnableNoBuild()
-                    .SetTestTargetPlatform(TargetPlatform)
-                    .SetIsDebugRun(isDebugRun)
-                    .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
-                    .SetProcessEnvironmentVariable("USE_FULL_TEST_CONFIG", RequiresThoroughTesting().ToString())
-                    .SetLogsDirectory(TestLogsDirectory)
-                    // Don't apply the default platform filters to these tests; apply only explicit filters
-                    .When(!string.IsNullOrWhiteSpace(parallelFilter), c => c.SetFilter(parallelFilter))
-                    .When(TestAllPackageVersions, o => o.SetProcessEnvironmentVariable("TestAllPackageVersions", "true"))
-                    .When(CodeCoverageEnabled, ConfigureCodeCoverage)
+                // These projects should only be narrowed by explicitly configured filters
+                DotNetTest(config => ConfigureIntegrationTestRun(config, baseFilter: Filter)
                     .CombineWith(parallelJobs, (s, project) => s
                         .EnableTrxLogOutput(GetResultsDirectory(project))
                         .WithDatadogLogger()
                         .SetProjectFile(project)), degreeOfParallelism: 4);
 
-                DotNetTest(config => config
-                    .SetDotnetPath(TargetPlatform)
-                    .SetConfiguration(BuildConfiguration)
-                    .SetTargetPlatformAnyCPU()
-                    .SetFramework(Framework)
-                    //.WithMemoryDumpAfter(timeoutInMinutes: 30)
-                    .EnableCrashDumps()
-                    .EnableNoRestore()
-                    .EnableNoBuild()
-                    .SetTestTargetPlatform(TargetPlatform)
-                    .SetIsDebugRun(isDebugRun)
-                    .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
-                    .SetProcessEnvironmentVariable("USE_FULL_TEST_CONFIG", RequiresThoroughTesting().ToString())
-                    .SetLogsDirectory(TestLogsDirectory)
-                    .When(!string.IsNullOrWhiteSpace(filter), c => c.SetFilter(filter))
-                    .When(TestAllPackageVersions, o => o.SetProcessEnvironmentVariable("TestAllPackageVersions", "true"))
-                    .When(CodeCoverageEnabled, ConfigureCodeCoverage)
+                DotNetTest(config => ConfigureIntegrationTestRun(config, baseFilter: GetIntegrationTestFilter())
                     .CombineWith(ClrProfilerIntegrationTests, (s, project) => s
                         .EnableTrxLogOutput(GetResultsDirectory(project))
                         .WithDatadogLogger()
@@ -1920,7 +1886,31 @@ partial class Build
                 CopyDumpsToBuildData();
             }
 
-            string GetFilter()
+            DotNetTestSettings ConfigureIntegrationTestRun(DotNetTestSettings config, string baseFilter)
+            {
+                var filter = AddAreaFilter(AddIntegrationTestPartitionFilter(baseFilter));
+
+                return config
+                      .SetDotnetPath(TargetPlatform)
+                      .SetConfiguration(BuildConfiguration)
+                      .SetTargetPlatformAnyCPU()
+                      .SetFramework(Framework)
+                      //.WithMemoryDumpAfter(timeoutInMinutes: 30)
+                      .EnableCrashDumps()
+                      .EnableNoRestore()
+                      .EnableNoBuild()
+                      .SetTestTargetPlatform(TargetPlatform)
+                      .SetIsDebugRun(isDebugRun)
+                      .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
+                      .SetProcessEnvironmentVariable("USE_FULL_TEST_CONFIG", RequiresThoroughTesting().ToString())
+                      .SetLogsDirectory(TestLogsDirectory)
+                      .When(!string.IsNullOrWhiteSpace(filter), c => c.SetFilter(filter))
+                      .When(TestAllPackageVersions, o => o.SetProcessEnvironmentVariable("TestAllPackageVersions", "true"))
+                      .When(CodeCoverageEnabled, ConfigureCodeCoverage);
+            }
+
+            // Selects tests for the current OS, architecture, Docker dependency setup, and CI eligibility
+            string GetIntegrationTestFilter()
             {
                 var dockerFilter = IncludeTestsRequiringDocker switch
                 {
