@@ -292,6 +292,15 @@ namespace Datadog.Trace.Agent
         }
 
         /// <summary>
+        /// Swaps the active buffer, so that a test can set up a buffer that holds traces but is
+        /// neither active nor full. In production that state is only produced by a
+        /// <see cref="SpanBuffer.WriteStatus.Locked"/> write.
+        /// </summary>
+        [TestingOnly]
+        internal void SwapActiveBufferForTests()
+            => Volatile.Write(ref _activeBuffer, _activeBuffer == _frontBuffer ? _backBuffer : _frontBuffer);
+
+        /// <summary>
         /// Asks the flush loop to flush both buffers, and waits for that flush to complete. Buffers are
         /// only ever flushed by the flush loop, so at most one payload is in flight at a time.
         /// Concurrent requests share a single flush pass.
@@ -359,11 +368,11 @@ namespace Datadog.Trace.Agent
 
                     // Once serialization has stopped, nothing new can be written to the buffers
                     isFinalPass = _serializationTask.IsCompleted;
-                    var flushAllBuffers = flushRequest is not null;
+                    var hasFlushRequest = flushRequest is not null;
 
-                    if (flushAllBuffers || isFinalPass || _backgroundFlushEnabled)
+                    if (hasFlushRequest || isFinalPass || _backgroundFlushEnabled)
                     {
-                        await FlushBuffers(flushAllBuffers: flushAllBuffers || isFinalPass).ConfigureAwait(false);
+                        await FlushBuffers().ConfigureAwait(false);
                     }
 
                     flushRequest?.TrySetResult(true);
@@ -396,24 +405,20 @@ namespace Datadog.Trace.Agent
         }
 
         /// <summary>
-        /// Flush the active buffer, and the fallback buffer if full.
+        /// Flushes both buffers, oldest traces first.
         /// </summary>
-        /// <param name="flushAllBuffers">If set to true, then flush the back buffer even if not full</param>
         /// <returns>Async operation</returns>
-        private async Task FlushBuffers(bool flushAllBuffers = false)
+        private async Task FlushBuffers()
         {
             try
             {
                 var activeBuffer = Volatile.Read(ref _activeBuffer);
                 var fallbackBuffer = activeBuffer == _frontBuffer ? _backBuffer : _frontBuffer;
 
-                // First, flush the back buffer if full
-                if (fallbackBuffer.IsFull || flushAllBuffers)
-                {
-                    await FlushBuffer(fallbackBuffer).ConfigureAwait(false);
-                }
-
-                // Then, flush the main buffer
+                // The fallback buffer holds the older traces. The read above can go stale
+                // if the serialization thread swaps while we are sending, but as that
+                // only changes which is flushed first, it's fine.
+                await FlushBuffer(fallbackBuffer).ConfigureAwait(false);
                 await FlushBuffer(activeBuffer).ConfigureAwait(false);
             }
             catch (Exception ex)

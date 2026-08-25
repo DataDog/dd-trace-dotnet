@@ -375,6 +375,31 @@ namespace Datadog.Trace.Tests.Agent
         }
 
         [Fact]
+        public async Task FlushesAFallbackBufferThatIsNotFull()
+        {
+            // A Locked write swaps away from a buffer that holds traces but was never marked full.
+            // Nothing else will ever empty that buffer, so a flush has to pick it up regardless of
+            // whether it is full.
+            var api = new MockApi();
+            var agent = AgentWriterHelper.CreateWithManualFlush(api);
+
+            WriteTraceAndWait(agent, CreateTraceChunk(1));
+
+            agent.SwapActiveBufferForTests();
+
+            agent.ActiveBuffer.Should().BeSameAs(agent.BackBuffer);
+            agent.FrontBuffer.IsFull.Should().BeFalse();
+            agent.FrontBuffer.TraceCount.Should().Be(1);
+
+            await agent.FlushTracesAsync();
+
+            api.Traces.Should().HaveCount(1);
+            agent.FrontBuffer.IsEmpty.Should().BeTrue();
+
+            await agent.FlushAndCloseAsync();
+        }
+
+        [Fact]
         public async Task DropTraces()
         {
             // Traces should be dropped when both buffers are full
