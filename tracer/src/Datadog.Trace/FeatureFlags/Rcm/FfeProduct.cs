@@ -31,7 +31,6 @@ internal sealed class FfeProduct
     public ApplyDetails[] UpdateFromRcm(Dictionary<string, List<RemoteConfiguration>> configsByProduct, Dictionary<string, List<RemoteConfigurationPath>>? removedConfigsByProduct)
     {
         Log.Debug("FfeProduct::UpdateFromRcm -> Processing new config...");
-        System.Console.Error.WriteLine($"[FFE-DBG] FfeProduct::UpdateFromRcm called. configsByProduct keys=[{string.Join(",", configsByProduct.Keys)}], removedKeys=[{(removedConfigsByProduct == null ? "null" : string.Join(",", removedConfigsByProduct.Keys))}]");
         List<ApplyDetails> res = new List<ApplyDetails>();
         bool apply = false;
 

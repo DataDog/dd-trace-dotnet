@@ -210,7 +210,6 @@ internal sealed class RcmSubscriptionManager : IRcmSubscriptionManager
         try
         {
             var response = await TrySendRequest(rcmTracer, callback).ConfigureAwait(false);
-            System.Console.Error.WriteLine($"[FFE-DBG] SendRequest: response={(response == null ? "null" : "non-null")}, Targets={(response?.Targets == null ? "null" : "non-null")}, Signed={(response?.Targets?.Signed == null ? "null" : "non-null")}, ClientConfigs={(response?.ClientConfigs?.Count ?? -1)}");
             if (response is null)
             {
                 return;
@@ -319,7 +318,6 @@ internal sealed class RcmSubscriptionManager : IRcmSubscriptionManager
             Log.Debug("Received Remote Configuration response {ResponseDescription}.", description);
         }
 
-        System.Console.Error.WriteLine($"[FFE-DBG] RcmSubscriptionManager::ProcessResponse. ClientConfigs=[{string.Join(",", response.ClientConfigs ?? new System.Collections.Generic.List<string>())}], ProductKeys=[{string.Join(",", ProductKeys)}]");
         var signed = response.Targets?.Signed?.Targets;
 
         Dictionary<string, List<RemoteConfiguration>>? configByProducts = null;

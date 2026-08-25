@@ -72,22 +72,18 @@ public sealed class DatadogProvider : global::OpenFeature.FeatureProvider, IDisp
         var isReady = FeatureFlagsSdk.IsReady();
         var isAvailable = FeatureFlagsSdk.IsAvailable();
         // Diagnostic: stderr so it appears in CI logs without affecting stdout assertions.
-        System.Console.Error.WriteLine($"[FFE-DBG] InitializeAsync: IsReady={isReady}, IsAvailable={isAvailable}");
 
         if (isReady)
         {
-            System.Console.Error.WriteLine("[FFE-DBG] InitializeAsync: returning CompletedTask (already ready)");
             return Task.CompletedTask;
         }
 
         if (!isAvailable)
         {
-            System.Console.Error.WriteLine("[FFE-DBG] InitializeAsync: throwing ProviderFatalException (not available)");
             var message = "Datadog tracer is not instrumented. Feature Flags cannot initialize. Ensure the Datadog automatic instrumentation agent is configured.";
             throw new ProviderFatalException(message, new InvalidOperationException(message));
         }
 
-        System.Console.Error.WriteLine("[FFE-DBG] InitializeAsync: entering WaitForInitialConfig");
         return WaitForInitialConfig(cancellationToken);
     }
 

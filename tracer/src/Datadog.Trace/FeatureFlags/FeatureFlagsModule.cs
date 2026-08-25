@@ -75,11 +75,6 @@ namespace Datadog.Trace.FeatureFlags
             return _isRemoteConfigurationAvailable && Volatile.Read(ref _evaluator) is not null;
         }
 
-        // Diagnostic helpers — temporary, remove when root cause identified.
-        internal bool IsRemoteConfigurationAvailable() => _isRemoteConfigurationAvailable;
-
-        internal bool HasEvaluator() => Volatile.Read(ref _evaluator) is not null;
-
         internal Evaluation Evaluate(string flagKey, ValueType resultType, object? defaultValue, string targetingKey, IDictionary<string, object?>? attributes)
         {
             var evaluator = Volatile.Read(ref _evaluator);
@@ -97,7 +92,6 @@ namespace Datadog.Trace.FeatureFlags
         {
             Log.Debug<int>("FeatureFlagsModule::UpdateRemoteConfig -> New config received. {Count}", list.Count);
             // Diagnostic: stderr so CI logs capture it regardless of stdout capture.
-            System.Console.Error.WriteLine($"[FFE-DBG] UpdateRemoteConfig: count={list.Count}, time={System.DateTimeOffset.UtcNow:HH:mm:ss.fff}, handlerNull={_onNewConfigEventHander is null}");
             try
             {
                 // Feed configs to the rules evaluator
@@ -112,7 +106,6 @@ namespace Datadog.Trace.FeatureFlags
                     Interlocked.Exchange(ref _evaluator, null);
                 }
 
-                System.Console.Error.WriteLine($"[FFE-DBG] UpdateRemoteConfig: after exchange, HasEvaluator={Volatile.Read(ref _evaluator) is not null}, invoking handler={_onNewConfigEventHander is not null}");
                 _onNewConfigEventHander?.Invoke();
             }
             catch (Exception ex)
