@@ -152,14 +152,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
 
         public async Task InitializeAsync()
         {
-            // sendHealthCheck: false because AspNetCoreTestFixture's own health check waits for a
-            // span to reach the mock agent over the Datadog protocol, but OTEL_TRACES_EXPORTER=otlp
-            // makes the sample export OTLP instead. Warm the app up with our own request below and
-            // discard its spans afterwards.
-            //
-            // onAgentCreated points the sample's OTLP export at this test's MockTracerAgent instance
-            // -- it has to run here, once the agent (and its port) exists, rather than in the
-            // constructor: TryStartApp creates a fresh Agent (and port) per launch attempt.
+            // sendHealthCheck: false -- the fixture's health check waits for a Datadog-protocol span,
+            // but this sample exports OTLP; warm up with our own request below instead.
+            // onAgentCreated runs here (not the constructor) since TryStartApp creates a fresh agent
+            // and port per launch attempt.
             await Fixture.TryStartApp(
                 this,
                 sendHealthCheck: false,
