@@ -659,6 +659,26 @@ TEST_F(ConfigurationTest, CheckGarbageCollectionProfilingIsDisabledIfEnvVarSetTo
     ASSERT_THAT(configuration.IsGarbageCollectionProfilingEnabled(), false);
 }
 
+TEST_F(ConfigurationTest, CheckGcLifecycleEventsProcessingIsNotSkippedByDefault)
+{
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.IsGcLifecycleEventsProcessingSkipped(), false);
+}
+
+TEST_F(ConfigurationTest, CheckGcLifecycleEventsProcessingIsSkippedIfEnvVarSetToTrue)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::GcLifecycleEventsSkipProcessing, WStr("1"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.IsGcLifecycleEventsProcessingSkipped(), true);
+}
+
+TEST_F(ConfigurationTest, CheckGcLifecycleEventsProcessingIsNotSkippedIfEnvVarSetToFalse)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::GcLifecycleEventsSkipProcessing, WStr("0"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.IsGcLifecycleEventsProcessingSkipped(), false);
+}
+
 TEST_F(ConfigurationTest, CheckHeapProfilingIsDisabledByDefault)
 {
     auto configuration = Configuration{};

@@ -57,6 +57,7 @@ Configuration::Configuration()
     _isAllocationProfilingEnabled = GetEnvironmentValue(EnvironmentVariables::AllocationProfilingEnabled, false, true);
     _isContentionProfilingEnabled = GetContention();
     _isGarbageCollectionProfilingEnabled = GetEnvironmentValue(EnvironmentVariables::GCProfilingEnabled, true, true);
+    _isGcLifecycleEventsProcessingSkipped = GetEnvironmentValue(EnvironmentVariables::GcLifecycleEventsSkipProcessing, false);
     _isHeapProfilingEnabled = GetEnvironmentValue(EnvironmentVariables::HeapProfilingEnabled, false, true);
     _uploadPeriod = ExtractUploadInterval();
     _userTags = ExtractUserTags();
@@ -224,6 +225,11 @@ bool Configuration::IsContentionProfilingEnabled() const
 bool Configuration::IsGarbageCollectionProfilingEnabled() const
 {
     return _isGarbageCollectionProfilingEnabled;
+}
+
+bool Configuration::IsGcLifecycleEventsProcessingSkipped() const
+{
+    return _isGcLifecycleEventsProcessingSkipped;
 }
 
 bool Configuration::IsGcThreadsCpuTimeEnabled() const
