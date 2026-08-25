@@ -260,9 +260,9 @@ public sealed class Test
                 static suiteTags => suiteTags.SourceFile,
                 static (suiteTags, value) => suiteTags.SourceFile = value);
 
-            if (sourceOwnership.MatchingOwners.Length > 0)
+            if (sourceOwnership.CodeOwnersTag is { } codeOwnersTag)
             {
-                SetCodeOwnersOnTags(tags, Suite.Tags, sourceOwnership.MatchingOwners);
+                SetCodeOwnersOnTags(tags, Suite.Tags, sourceOwnership.MatchingOwners, codeOwnersTag);
             }
         }
     }
@@ -323,9 +323,12 @@ public sealed class Test
         }
     }
 
-    internal static void SetCodeOwnersOnTags(TestSpanTags testTags, TestSuiteSpanTags suiteTags, IEnumerable<string> codeOwners)
+    internal static void SetCodeOwnersOnTags(TestSpanTags testTags, TestSuiteSpanTags suiteTags, string[] codeOwners)
+        => SetCodeOwnersOnTags(testTags, suiteTags, codeOwners, "[\"" + string.Join("\",\"", codeOwners) + "\"]");
+
+    private static void SetCodeOwnersOnTags(TestSpanTags testTags, TestSuiteSpanTags suiteTags, string[] codeOwners, string codeOwnersTag)
     {
-        testTags.CodeOwners = "[\"" + string.Join("\",\"", codeOwners) + "\"]";
+        testTags.CodeOwners = codeOwnersTag;
         if (StringUtil.IsNullOrEmpty(suiteTags.CodeOwners))
         {
             suiteTags.CodeOwners = testTags.CodeOwners;

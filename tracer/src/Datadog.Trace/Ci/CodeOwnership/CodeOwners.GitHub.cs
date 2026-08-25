@@ -7,7 +7,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace Datadog.Trace.Ci
+namespace Datadog.Trace.Ci.CodeOwnership
 {
     internal sealed partial class CodeOwners
     {
@@ -57,8 +57,9 @@ namespace Datadog.Trace.Ci
 
                 // Any other owner must be a valid email address.
                 var at = token.IndexOf('@');
-                if (at is < 1 or > 100 ||
-                    token.Length - at - 1 is < 1 or > 255 ||
+                var domainLength = token.Length - at - 1;
+                if (at < 1 || at > 100 ||
+                    domainLength < 1 || domainLength > 255 ||
                     token.IndexOf('@', at + 1) >= 0)
                 {
                     return false;
@@ -166,7 +167,7 @@ namespace Datadog.Trace.Ci
             /// <summary>
             /// Returns the owners from the last GitHub rule that matches the path.
             /// </summary>
-            public override IEnumerable<string> Match(string path)
+            public override string[] Match(string path)
             {
                 foreach (var rule in _rules)
                 {
@@ -199,9 +200,7 @@ namespace Datadog.Trace.Ci
                     return null;
                 }
 
-                string patternToken;
-                string ownersSegment;
-                SplitRule(ruleText, out patternToken, out ownersSegment, out _);
+                SplitRule(ruleText, out var patternToken, out var ownersSegment, out _);
 
                 if (patternToken.Length == 0 || IsUnsupportedGitHubPattern(patternToken))
                 {
@@ -220,7 +219,7 @@ namespace Datadog.Trace.Ci
                     return null;
                 }
 
-                return new Rule(glob, patternToken, exclusion: false, owners);
+                return new Rule(glob, patternKey: null, exclusion: false, owners);
             }
 
             private static int FindUnescapedCharacter(string value, char character)
@@ -269,20 +268,19 @@ namespace Datadog.Trace.Ci
 
             private static bool IsDirectoryPattern(string patternToken)
             {
-                var lastSegmentStart = patternToken.LastIndexOf('/');
-                var lastSegment = lastSegmentStart >= 0 ? patternToken.Substring(lastSegmentStart + 1) : patternToken;
-                if (lastSegment.Length == 0)
+                var lastSegmentStart = patternToken.LastIndexOf('/') + 1;
+                if (lastSegmentStart == patternToken.Length)
                 {
                     return false;
                 }
 
-                for (var i = 0; i < lastSegment.Length; i++)
+                for (var i = lastSegmentStart; i < patternToken.Length; i++)
                 {
-                    if (lastSegment[i] == '\\' && i + 1 < lastSegment.Length)
+                    if (patternToken[i] == '\\' && i + 1 < patternToken.Length)
                     {
                         i++;
                     }
-                    else if (lastSegment[i] is '*' or '?')
+                    else if (patternToken[i] is '*' or '?')
                     {
                         return false;
                     }

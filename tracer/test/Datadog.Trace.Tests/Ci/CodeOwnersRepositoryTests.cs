@@ -10,7 +10,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Datadog.Trace.Ci;
+using Datadog.Trace.Ci.CodeOwnership;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using VerifyXunit;
@@ -71,8 +71,8 @@ public class CodeOwnersRepositoryTests
     // `**/` must also match zero directories: a file directly under tracer/test/ still matches /tracer/test/**/*Lambda*
     [InlineData("/tracer/test/FooLambdaTests.cs", new[] { "@DataDog/tracing-dotnet", "@DataDog/apm-serverless", "@DataDog/serverless-aws" })]
     // Rooted patterns must match paths passed without a leading slash too
-    [InlineData("tracer/src/Datadog.Trace/Ci/CodeOwners.cs", new[] { "@DataDog/ci-app-libraries-dotnet", "@DataDog/apm-dotnet" })]
-    [InlineData("/tracer/src/Datadog.Trace/Ci/CodeOwners.cs", new[] { "@DataDog/ci-app-libraries-dotnet", "@DataDog/apm-dotnet" })]
+    [InlineData("tracer/src/Datadog.Trace/Ci/CodeOwnership/CodeOwners.cs", new[] { "@DataDog/ci-app-libraries-dotnet", "@DataDog/apm-dotnet" })]
+    [InlineData("/tracer/src/Datadog.Trace/Ci/CodeOwnership/CodeOwners.cs", new[] { "@DataDog/ci-app-libraries-dotnet", "@DataDog/apm-dotnet" })]
     public void RepositoryCodeOwnersMatchesExpectedTeams(string path, string[] expected)
     {
         var repoRoot = GetRepositoryRoot();

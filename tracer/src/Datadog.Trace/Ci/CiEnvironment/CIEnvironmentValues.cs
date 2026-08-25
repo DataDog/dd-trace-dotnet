@@ -10,6 +10,7 @@ using System.Globalization;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
+using Datadog.Trace.Ci.CodeOwnership;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Telemetry.Metrics;

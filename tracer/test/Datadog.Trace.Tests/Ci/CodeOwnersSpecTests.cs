@@ -10,7 +10,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Datadog.Trace.Ci;
+using Datadog.Trace.Ci.CodeOwnership;
 using FluentAssertions;
 using Xunit;
 

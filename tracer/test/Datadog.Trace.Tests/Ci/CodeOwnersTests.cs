@@ -5,7 +5,7 @@
 
 using System.IO;
 using System.Linq;
-using Datadog.Trace.Ci;
+using Datadog.Trace.Ci.CodeOwnership;
 using Datadog.Trace.TestHelpers;
 using Xunit;
 

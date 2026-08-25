@@ -6,65 +6,35 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
 
-namespace Datadog.Trace.Ci.CiEnvironment;
+namespace Datadog.Trace.Ci.CodeOwnership;
 
 /// <summary>
 /// Finds and loads the CODEOWNERS file that applies to the current repository.
 /// </summary>
 internal sealed class CodeOwnersFileLocator
 {
-    private const int SearchCacheLimit = 256;
-
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<CodeOwnersFileLocator>();
-    private readonly object _lock = new();
-    private readonly HashSet<string> _searchedDirectories = new(StringComparer.Ordinal);
     private readonly string? _provider;
     private readonly string? _repository;
-    private readonly string? _workspacePath;
-    private volatile LocatedCodeOwners? _locatedFile;
 
     internal CodeOwnersFileLocator(string? sourceRoot, string? workspacePath, string? repository, string? provider)
     {
-        _workspacePath = workspacePath;
         _repository = repository;
         _provider = provider;
-        _locatedFile = TryLoadFromRoot(sourceRoot, logLookup: true, isFallback: false);
+        LocatedFile = FindFromAncestors(sourceRoot, workspacePath) ??
+                      FindFromAncestors(workspacePath, basePath: null);
     }
-
-    internal bool HasCodeOwners => _locatedFile is not null;
 
     /// <summary>
-    /// Returns the loaded CODEOWNERS file, searching from the source path and workspace when needed.
+    /// Gets the CODEOWNERS file found when the test session was initialized.
     /// </summary>
-    internal LocatedCodeOwners? Find(string? sourceFilePath)
-    {
-        if (_locatedFile is not null)
-        {
-            return _locatedFile;
-        }
+    internal LocatedCodeOwners? LocatedFile { get; }
 
-        lock (_lock)
-        {
-            if (_locatedFile is not null)
-            {
-                return _locatedFile;
-            }
-
-            _locatedFile = FindFromAncestor(sourceFilePath, _workspacePath) ??
-                           FindFromAncestor(_workspacePath, basePath: null);
-            return _locatedFile;
-        }
-    }
-
-    internal bool HasCodeOwnersFile(string root, CodeOwners.Dialect dialect)
-        => TryGetCodeOwnersPath(root, dialect, logLookup: false, out _);
-
-    private LocatedCodeOwners? FindFromAncestor(string? startPath, string? basePath)
+    private LocatedCodeOwners? FindFromAncestors(string? startPath, string? basePath)
     {
         var startDirectory = RepositorySourcePathResolver.GetSearchStart(startPath, basePath);
         if (StringUtil.IsNullOrEmpty(startDirectory))
@@ -83,19 +53,9 @@ internal sealed class CodeOwnersFileLocator
             return null;
         }
 
-        if (_searchedDirectories.Count >= SearchCacheLimit)
-        {
-            _searchedDirectories.Clear();
-        }
-
-        if (!_searchedDirectories.Add(directory.FullName))
-        {
-            return null;
-        }
-
         while (directory is not null)
         {
-            var locatedFile = TryLoadFromRoot(directory.FullName, logLookup: false, isFallback: true);
+            var locatedFile = TryLoadFromRepositoryRoot(directory.FullName);
             if (locatedFile is not null)
             {
                 return locatedFile;
@@ -112,38 +72,28 @@ internal sealed class CodeOwnersFileLocator
         return null;
     }
 
-    private LocatedCodeOwners? TryLoadFromRoot(string? root, bool logLookup, bool isFallback)
+    private LocatedCodeOwners? TryLoadFromRepositoryRoot(string root)
     {
-        if (StringUtil.IsNullOrEmpty(root))
-        {
-            return null;
-        }
-
         var dialect = DetectDialect(root);
-        if (!TryGetCodeOwnersPath(root, dialect, logLookup, out var codeOwnersPath))
+        var codeOwnersPath = FindCodeOwnersPath(root, dialect);
+        if (codeOwnersPath is null)
         {
             return null;
         }
 
-        if (isFallback)
-        {
-            Log.Information("CODEOWNERS file found using fallback search: {Path}", codeOwnersPath);
-        }
-        else
-        {
-            Log.Information("CODEOWNERS file found: {Path}", codeOwnersPath);
-        }
+        Log.Information("CODEOWNERS file found: {Path}", codeOwnersPath);
 
         return CodeOwners.TryLoad(codeOwnersPath, dialect, out var rules)
-                   ? new LocatedCodeOwners(rules, root, dialect)
+                   ? new LocatedCodeOwners(rules, root)
                    : null;
     }
 
-    private CodeOwners.Dialect DetectDialect(string? root)
+    private CodeOwners.Dialect DetectDialect(string root)
     {
-        if (TryGetDialectFromRepository(_repository, out var dialect))
+        var repositoryDialect = GetDialectFromRepository(_repository);
+        if (repositoryDialect.HasValue)
         {
-            return dialect;
+            return repositoryDialect.Value;
         }
 
         if (string.Equals(_provider, "gitlab", StringComparison.Ordinal))
@@ -156,8 +106,7 @@ internal sealed class CodeOwnersFileLocator
             return CodeOwners.Dialect.GitHub;
         }
 
-        if (!StringUtil.IsNullOrEmpty(root) &&
-            File.Exists(Path.Combine(root, ".gitlab", "CODEOWNERS")) &&
+        if (File.Exists(Path.Combine(root, ".gitlab", "CODEOWNERS")) &&
             !File.Exists(Path.Combine(root, ".github", "CODEOWNERS")))
         {
             // The GitLab-only location identifies self-managed instances whose host does not.
@@ -168,12 +117,11 @@ internal sealed class CodeOwnersFileLocator
     }
 
 #pragma warning disable SA1204
-    private static bool TryGetDialectFromRepository(string? repository, out CodeOwners.Dialect dialect)
+    private static CodeOwners.Dialect? GetDialectFromRepository(string? repository)
     {
-        dialect = default;
         if (StringUtil.IsNullOrWhiteSpace(repository))
         {
-            return false;
+            return null;
         }
 
         string? host = null;
@@ -194,17 +142,15 @@ internal sealed class CodeOwnersFileLocator
 
         if (IsGitLabHost(host))
         {
-            dialect = CodeOwners.Dialect.GitLab;
-            return true;
+            return CodeOwners.Dialect.GitLab;
         }
 
         if (string.Equals(host, "github.com", StringComparison.OrdinalIgnoreCase))
         {
-            dialect = CodeOwners.Dialect.GitHub;
-            return true;
+            return CodeOwners.Dialect.GitHub;
         }
 
-        return false;
+        return null;
     }
 
     private static bool IsGitLabHost(string? host)
@@ -218,24 +164,17 @@ internal sealed class CodeOwnersFileLocator
         return Directory.Exists(gitPath) || File.Exists(gitPath);
     }
 
-    private static bool TryGetCodeOwnersPath(string root, CodeOwners.Dialect dialect, bool logLookup, [NotNullWhen(true)] out string? codeOwnersPath)
+    private static string? FindCodeOwnersPath(string root, CodeOwners.Dialect dialect)
     {
         foreach (var path in GetCodeOwnersPaths(root, dialect))
         {
-            if (logLookup)
-            {
-                Log.Debug("Looking for CODEOWNERS file in: {Path}", path);
-            }
-
             if (File.Exists(path))
             {
-                codeOwnersPath = path;
-                return true;
+                return path;
             }
         }
 
-        codeOwnersPath = null;
-        return false;
+        return null;
     }
 
     /// <remarks>
@@ -261,17 +200,14 @@ internal sealed class CodeOwnersFileLocator
 
     internal sealed class LocatedCodeOwners
     {
-        internal LocatedCodeOwners(CodeOwners rules, string root, CodeOwners.Dialect dialect)
+        internal LocatedCodeOwners(CodeOwners rules, string repositoryRoot)
         {
             Rules = rules;
-            Root = root;
-            Dialect = dialect;
+            RepositoryRoot = repositoryRoot;
         }
 
         internal CodeOwners Rules { get; }
 
-        internal string Root { get; }
-
-        internal CodeOwners.Dialect Dialect { get; }
+        internal string RepositoryRoot { get; }
     }
 }

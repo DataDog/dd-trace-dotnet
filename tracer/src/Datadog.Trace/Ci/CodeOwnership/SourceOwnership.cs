@@ -6,7 +6,7 @@
 
 using Datadog.Trace.SourceGenerators;
 
-namespace Datadog.Trace.Ci.CiEnvironment;
+namespace Datadog.Trace.Ci.CodeOwnership;
 
 internal readonly struct SourceOwnership
 {
@@ -14,12 +14,18 @@ internal readonly struct SourceOwnership
     {
         RepositoryRelativePath = repositoryRelativePath;
         MatchingOwners = matchingOwners;
+        CodeOwnersTag = matchingOwners.Length == 0 ? null : "[\"" + string.Join("\",\"", matchingOwners) + "\"]";
         IsRepositoryRelative = isRepositoryRelative;
     }
 
     internal string RepositoryRelativePath { get; }
 
     internal string[] MatchingOwners { get; }
+
+    /// <summary>
+    /// Gets the serialized owner list shared by test and suite tags.
+    /// </summary>
+    internal string? CodeOwnersTag { get; }
 
     [TestingAndPrivateOnly]
     internal bool IsRepositoryRelative { get; }

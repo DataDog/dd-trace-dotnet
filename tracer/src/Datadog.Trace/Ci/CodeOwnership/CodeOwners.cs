@@ -13,7 +13,7 @@ using System.Text;
 using Datadog.Trace.Logging;
 using Datadog.Trace.SourceGenerators;
 
-namespace Datadog.Trace.Ci
+namespace Datadog.Trace.Ci.CodeOwnership
 {
     /// <summary>
     /// Parses and matches GitHub and GitLab CODEOWNERS files.
@@ -29,6 +29,7 @@ namespace Datadog.Trace.Ci
         /// <summary>
         /// Initializes a new instance of the <see cref="CodeOwners"/> class and loads the selected dialect rules.
         /// </summary>
+        [TestingAndPrivateOnly]
         public CodeOwners(string filePath, Dialect dialect)
         {
             if (string.IsNullOrEmpty(filePath))
@@ -103,22 +104,34 @@ namespace Datadog.Trace.Ci
             };
 
         /// <summary>
-        /// Returns the complete, de‑duplicated owner set that applies to <paramref name="path"/>.
-        /// Callers can post‑process the set depending on dialect‑specific approval rules.
+        /// Returns the owners that apply to <paramref name="path"/> using the selected provider's precedence rules.
         /// </summary>
-        public IEnumerable<string> Match(string path)
+        public string[] Match(string path)
         {
             if (path is null)
             {
-                // Returning no owners keeps this method safe if a caller passes null.
                 return [];
             }
 
             var normalizedPath = path.IndexOf('\\') >= 0 ? path.Replace('\\', '/') : path;
 
-            // Rooted patterns are anchored to the repository root, so collapse any leading slashes:
-            // "", "/", and "//C:/file" all normalize to a single rooted form.
-            normalizedPath = "/" + normalizedPath.TrimStart('/');
+            // Rooted patterns are anchored to the repository root. Keep an already-normalized path
+            // unchanged, and collapse multiple leading slashes only when needed.
+            var leadingSeparatorCount = 0;
+            while (leadingSeparatorCount < normalizedPath.Length && normalizedPath[leadingSeparatorCount] == '/')
+            {
+                leadingSeparatorCount++;
+            }
+
+            if (leadingSeparatorCount == 0)
+            {
+                normalizedPath = "/" + normalizedPath;
+            }
+            else if (leadingSeparatorCount > 1)
+            {
+                // Start one character before the content to keep exactly one leading slash.
+                normalizedPath = normalizedPath.Substring(leadingSeparatorCount - 1);
+            }
 
             return _rules.Match(normalizedPath);
         }
@@ -149,44 +162,37 @@ namespace Datadog.Trace.Ci
             Invalid
         }
 
-        private enum GlobPathSegmentKind
-        {
-            Pattern,
-            GlobStar,
-            RequiredGlobStar
-        }
-
         private readonly struct GlobPathSegment
         {
             private readonly SegmentPattern? _segment;
+            private readonly bool _requiresSegment;
 
-            private GlobPathSegment(SegmentPattern? segment, GlobPathSegmentKind kind)
+            private GlobPathSegment(SegmentPattern? segment, bool requiresSegment)
             {
                 _segment = segment;
-                Kind = kind;
+                _requiresSegment = requiresSegment;
             }
 
-            public GlobPathSegmentKind Kind { get; }
+            public bool IsGlobStar => _segment is null;
 
-            public bool IsGlobStar => Kind is GlobPathSegmentKind.GlobStar or GlobPathSegmentKind.RequiredGlobStar;
-
-            public bool RequiresSegment => Kind == GlobPathSegmentKind.RequiredGlobStar;
+            public bool RequiresSegment => _requiresSegment;
 
             /// <summary>
             /// Creates a globstar that consumes zero or more path segments, or at least one when required.
             /// </summary>
             public static GlobPathSegment GlobStar(bool requiresSegment)
-                => new(null, requiresSegment ? GlobPathSegmentKind.RequiredGlobStar : GlobPathSegmentKind.GlobStar);
+                => new(null, requiresSegment);
 
             /// <summary>
             /// Wraps a normal compiled segment pattern.
             /// </summary>
-            public static GlobPathSegment Pattern(SegmentPattern segment) => new(segment, GlobPathSegmentKind.Pattern);
+            public static GlobPathSegment Pattern(SegmentPattern segment) => new(segment, requiresSegment: false);
 
             /// <summary>
             /// Checks whether this normal segment pattern matches the selected part of a path.
             /// </summary>
-            public bool Matches(string path, int start, int end) => _segment!.IsMatch(path, start, end);
+            public bool Matches(string path, int start, int end)
+                => _segment is not null && _segment.IsMatch(path, start, end);
         }
 
         private sealed class GlobPattern
@@ -665,17 +671,18 @@ namespace Datadog.Trace.Ci
             /// <summary>
             /// Returns the owners that apply to a normalized repository path.
             /// </summary>
-            public abstract IEnumerable<string> Match(string path);
+            public abstract string[] Match(string path);
         }
 
         private sealed partial class Rule
         {
             private readonly GlobPattern _glob;
+            private string? _patternKey;
 
-            private Rule(GlobPattern glob, string patternKey, bool exclusion, string[] owners)
+            private Rule(GlobPattern glob, string? patternKey, bool exclusion, string[] owners)
             {
                 _glob = glob;
-                PatternKey = patternKey;
+                _patternKey = patternKey;
                 IsExclusion = exclusion;
                 Owners = owners;
             }
@@ -684,7 +691,15 @@ namespace Datadog.Trace.Ci
 
             public string[] Owners { get; }
 
-            public string PatternKey { get; }
+            /// <summary>
+            /// Returns the GitLab pattern key and releases the parser-only reference.
+            /// </summary>
+            public string GetPatternKeyAndRelease()
+            {
+                var patternKey = _patternKey;
+                _patternKey = null;
+                return patternKey ?? throw new InvalidOperationException("Only GitLab rules have a pattern key.");
+            }
 
             private static void SplitRule(string entry, out string pattern, out string owners, out bool hasExplicitOwners)
             {

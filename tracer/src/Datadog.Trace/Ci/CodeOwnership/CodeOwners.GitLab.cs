@@ -11,12 +11,12 @@ using System.Globalization;
 using System.Text;
 using System.Text.RegularExpressions;
 
-namespace Datadog.Trace.Ci
+namespace Datadog.Trace.Ci.CodeOwnership
 {
     internal sealed partial class CodeOwners
     {
         private static readonly Regex SectionHeaderRegex = new(
-            @"^\s*(\^)?\[(?<name>.*?)\](?:\[(?<cnt>[\s\d]*)\])?(?<defaults>\s*[@\w.\-/\s]*)?",
+            @"^\s*(\^)?\[(?<name>.*?)\](?:\[(?<approvals>[\s\d]*)\])?(?<defaults>\s*[@\w.\-/\s]*)?",
             RegexOptions.Compiled | RegexOptions.CultureInvariant);
 
         private static readonly Regex GitLabRoleReferenceRegex = new(
@@ -40,17 +40,19 @@ namespace Datadog.Trace.Ci
                 return false;
             }
 
-            var isRequired = !headerMatch.Groups[1].Success; // ^ prefix => optional section
+            var isOptional = headerMatch.Groups[1].Success; // ^ prefix => optional section
             var name = headerMatch.Groups["name"].Value.Trim();
             hasDiagnostics = name.Length == 0 ||
                              !IsStrictSectionHeader(raw);
 
-            var requiredApprovals = 0;
-            if (headerMatch.Groups["cnt"].Success)
+            if (headerMatch.Groups["approvals"].Success)
             {
-                if (int.TryParse(headerMatch.Groups["cnt"].Value, out var approvalCount))
+                if (int.TryParse(headerMatch.Groups["approvals"].Value, out var approvalCount))
                 {
-                    requiredApprovals = approvalCount;
+                    if (isOptional && approvalCount > 0)
+                    {
+                        hasDiagnostics = true;
+                    }
                 }
                 else
                 {
@@ -58,11 +60,13 @@ namespace Datadog.Trace.Ci
                 }
             }
 
-            hasDiagnostics |= !isRequired && requiredApprovals > 0;
-
             // Use only the owner text matched by the header. Ignore text after a bad suffix.
             var defaults = GitLabOwnerTokenizer.TokenizeGitLab(headerMatch.Groups["defaults"].Value, out var allDefaultsValid);
-            hasDiagnostics |= !allDefaultsValid;
+            if (!allDefaultsValid)
+            {
+                hasDiagnostics = true;
+            }
+
             section = new GitLabSection(name, defaults);
             return true;
         }
@@ -181,7 +185,7 @@ namespace Datadog.Trace.Ci
                 {
                     AddUniqueOwner(owners, uniqueOwners, reference.GetValue(token));
                     foundReference = true;
-                    searchStart = reference.NextSearchStart;
+                    searchStart = reference.End;
                 }
 
                 var roleMatches = GitLabRoleReferenceRegex.Matches(token);
@@ -203,7 +207,7 @@ namespace Datadog.Trace.Ci
                         foundReference = true;
                     }
 
-                    searchStart = emailReference.NextSearchStart;
+                    searchStart = emailReference.End;
                 }
 
                 return foundReference;
@@ -274,7 +278,7 @@ namespace Datadog.Trace.Ci
 
                     if (lastValidEnd > atIndex + 1)
                     {
-                        reference = new OwnerReference(atIndex, lastValidEnd, lastValidEnd);
+                        reference = new OwnerReference(atIndex, lastValidEnd);
                         return true;
                     }
                 }
@@ -324,7 +328,7 @@ namespace Datadog.Trace.Ci
                         continue;
                     }
 
-                    reference = new OwnerReference(localStart, lastWordEnd, lastWordEnd);
+                    reference = new OwnerReference(localStart, lastWordEnd);
                     return true;
                 }
 
@@ -357,18 +361,15 @@ namespace Datadog.Trace.Ci
 
             private readonly struct OwnerReference
             {
-                internal OwnerReference(int start, int end, int nextSearchStart)
+                internal OwnerReference(int start, int end)
                 {
                     Start = start;
                     End = end;
-                    NextSearchStart = nextSearchStart;
                 }
 
                 internal int Start { get; }
 
                 internal int End { get; }
-
-                internal int NextSearchStart { get; }
 
                 internal string GetValue(string token)
                     => Start == 0 && End == token.Length ? token : token.Substring(Start, End - Start);
@@ -398,10 +399,10 @@ namespace Datadog.Trace.Ci
                 parsingDiagnosticsCount = 0;
                 var sections = new List<GitLabSection>();
                 // Rules before the first header belong to the unnamed section.
-                var current = GitLabSection.CreateUnnamed();
-                var currentDefaultOwners = current.DefaultOwners;
+                var currentSection = GitLabSection.CreateUnnamed();
+                var activeDefaultOwners = currentSection.DefaultOwners;
                 var namedSections = new Dictionary<string, GitLabSection>(StringComparer.OrdinalIgnoreCase);
-                sections.Add(current);
+                sections.Add(currentSection);
 
                 foreach (var line in lines)
                 {
@@ -418,17 +419,17 @@ namespace Datadog.Trace.Ci
                             parsingDiagnosticsCount++;
                         }
 
-                        currentDefaultOwners = newSection.DefaultOwners;
+                        activeDefaultOwners = newSection.DefaultOwners;
                         if (namedSections.TryGetValue(newSection.Name, out var existingSection))
                         {
                             // Repeated section names add rules to the first section with that name.
-                            current = existingSection;
+                            currentSection = existingSection;
                         }
                         else
                         {
-                            current = newSection;
-                            sections.Add(current);
-                            namedSections.Add(current.Name, current);
+                            currentSection = newSection;
+                            sections.Add(currentSection);
+                            namedSections.Add(currentSection.Name, currentSection);
                         }
 
                         continue;
@@ -447,7 +448,7 @@ namespace Datadog.Trace.Ci
                         continue;
                     }
 
-                    var rule = Rule.ParseGitLab(raw, currentDefaultOwners, out var ruleHasDiagnostics);
+                    var rule = Rule.ParseGitLab(raw, activeDefaultOwners, out var ruleHasDiagnostics);
                     if (rule is null)
                     {
                         parsingDiagnosticsCount++;
@@ -459,14 +460,14 @@ namespace Datadog.Trace.Ci
                             parsingDiagnosticsCount++;
                         }
 
-                        current.Add(rule);
+                        currentSection.AddRule(rule);
                     }
                 }
 
                 // Finish each section after all repeated definitions have been joined.
                 foreach (var section in sections)
                 {
-                    section.BuildMatchOrder();
+                    section.FinishParsing();
                 }
 
                 return new GitLabRuleSet(sections.ToArray());
@@ -475,30 +476,47 @@ namespace Datadog.Trace.Ci
             /// <summary>
             /// Matches each section separately and combines the owners from every matching section.
             /// </summary>
-            public override IEnumerable<string> Match(string path)
+            public override string[] Match(string path)
             {
-                // Create the set only after the first section matches.
-                HashSet<string>? owners = null;
+                string[]? singleSectionOwners = null;
+                HashSet<string>? combinedOwners = null;
                 foreach (var section in _sections)
                 {
-                    if (section.TryMatch(path, out var sectionOwners))
+                    if (!section.TryMatch(path, out var sectionOwners))
                     {
-                        owners ??= new HashSet<string>(StringComparer.Ordinal);
-                        foreach (var owner in sectionOwners)
-                        {
-                            owners.Add(owner);
-                        }
+                        continue;
+                    }
+
+                    if (singleSectionOwners is null)
+                    {
+                        singleSectionOwners = sectionOwners;
+                        continue;
+                    }
+
+                    // Most files match a single section. Allocate a set only when owners from
+                    // multiple sections must be combined and de-duplicated.
+                    combinedOwners ??= new HashSet<string>(singleSectionOwners, StringComparer.Ordinal);
+                    foreach (var owner in sectionOwners)
+                    {
+                        combinedOwners.Add(owner);
                     }
                 }
 
-                return owners ?? [];
+                if (combinedOwners is null)
+                {
+                    return singleSectionOwners ?? [];
+                }
+
+                var owners = new string[combinedOwners.Count];
+                combinedOwners.CopyTo(owners);
+                return owners;
             }
         }
 
         private sealed class GitLabSection
         {
-            private readonly List<Rule> _rules = new();
-            private Rule[]? _rulesInMatchOrder;
+            private List<Rule>? _rulesDuringParsing = new();
+            private Rule[] _matchingRules = [];
 
             /// <summary>
             /// Initializes a new instance of the <see cref="GitLabSection"/> class.
@@ -509,9 +527,9 @@ namespace Datadog.Trace.Ci
                 DefaultOwners = defaultOwners.Length == 0 ? [] : defaultOwners;
             }
 
-            public string Name { get; }
+            public string Name { get; private set; }
 
-            public string[] DefaultOwners { get; }
+            public string[] DefaultOwners { get; private set; }
 
             /// <summary>
             /// Creates the section used for rules before the first named header.
@@ -521,27 +539,45 @@ namespace Datadog.Trace.Ci
             /// <summary>
             /// Adds a parsed rule to this section.
             /// </summary>
-            public void Add(Rule rule) => _rules.Add(rule);
+            public void AddRule(Rule rule)
+            {
+                if (_rulesDuringParsing is null)
+                {
+                    throw new InvalidOperationException("Rules cannot be added after parsing has finished.");
+                }
+
+                _rulesDuringParsing.Add(rule);
+            }
 
             /// <summary>
             /// Prepares the section for matching by keeping the last rule for each exact pattern.
             /// </summary>
-            public void BuildMatchOrder()
+            public void FinishParsing()
             {
-                var seenPatterns = new HashSet<string>(StringComparer.Ordinal);
-                var cache = new List<Rule>(_rules.Count);
-                // Walk backwards because later rules replace earlier rules with the same pattern.
-                for (var i = _rules.Count - 1; i >= 0; i--)
+                var parsedRules = _rulesDuringParsing;
+                if (parsedRules is null)
                 {
-                    var rule = _rules[i];
-                    if (seenPatterns.Add(rule.PatternKey))
+                    throw new InvalidOperationException("The section has already finished parsing.");
+                }
+
+                var seenPatterns = new HashSet<string>(StringComparer.Ordinal);
+                var matchingRules = new List<Rule>(parsedRules.Count);
+                // Walk backwards because later rules replace earlier rules with the same pattern.
+                for (var i = parsedRules.Count - 1; i >= 0; i--)
+                {
+                    var rule = parsedRules[i];
+                    if (seenPatterns.Add(rule.GetPatternKeyAndRelease()))
                     {
-                        cache.Add(rule);
+                        matchingRules.Add(rule);
                     }
                 }
 
-                _rulesInMatchOrder = cache.ToArray();
-                _rules.Clear();
+                _matchingRules = matchingRules.ToArray();
+
+                // Names, defaults, pattern keys, and the original rule list are only needed while parsing.
+                _rulesDuringParsing = null;
+                Name = string.Empty;
+                DefaultOwners = [];
             }
 
             /// <summary>
@@ -552,10 +588,9 @@ namespace Datadog.Trace.Ci
             /// </remarks>
             public bool TryMatch(string path, [NotNullWhen(true)] out string[]? owners)
             {
-                var rules = _rulesInMatchOrder ?? [];
                 string[]? matchedOwners = null;
 
-                foreach (var rule in rules)
+                foreach (var rule in _matchingRules)
                 {
                     if (!rule.Match(path))
                     {
@@ -605,11 +640,16 @@ namespace Datadog.Trace.Ci
                     return null;
                 }
 
-                var allOwnersValid = true;
-                var owners = isExclusion
-                                 ? []
-                                 : GitLabOwnerTokenizer.TokenizeGitLab(ownersSegment, out allOwnersValid);
-                hasDiagnostics = !isExclusion && !allOwnersValid;
+                string[] owners;
+                if (isExclusion)
+                {
+                    owners = [];
+                }
+                else
+                {
+                    owners = GitLabOwnerTokenizer.TokenizeGitLab(ownersSegment, out var allOwnersValid);
+                    hasDiagnostics = !allOwnersValid;
+                }
 
                 if (!isExclusion && !hasExplicitOwners && defaultOwners.Length > 0)
                 {
@@ -649,8 +689,8 @@ namespace Datadog.Trace.Ci
                 var copyStart = 0;
                 for (var i = 0; i + 1 < patternToken.Length; i++)
                 {
-                    var unescape = i == 0 && patternToken[i] == '\\' && patternToken[i + 1] == '#';
-                    unescape |= patternToken[i] == '\\' && char.IsWhiteSpace(patternToken[i + 1]);
+                    var unescape = (i == 0 && patternToken[i] == '\\' && patternToken[i + 1] == '#') ||
+                                   (patternToken[i] == '\\' && char.IsWhiteSpace(patternToken[i + 1]));
                     if (!unescape)
                     {
                         continue;

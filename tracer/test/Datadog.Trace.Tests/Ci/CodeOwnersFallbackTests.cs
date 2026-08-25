@@ -42,7 +42,7 @@ public class CodeOwnersFallbackTests
     private const string CommitSha = "3245605c3d1edc67226d725799ee969c71f7632b";
 
     [SkippableFact]
-    public void UsesFallbackRootWhenSourceRootIsDifferent()
+    public void UsesWorkspaceRootWhenSourceRootIsDifferent()
     {
         using var tempDirectory = new TemporaryDirectory();
         var repoRoot = tempDirectory.RootPath;
@@ -52,14 +52,7 @@ public class CodeOwnersFallbackTests
         File.WriteAllText(Path.Combine(repoRoot, "CODEOWNERS"), GlobalAndSourceOwners);
         File.WriteAllText(sourceFile, "class SpanBenchmark {}");
 
-        var env = new Dictionary<string, string>
-        {
-            [PlatformKeys.Ci.GitHub.Sha] = CommitSha,
-            [PlatformKeys.Ci.GitHub.Workspace] = Path.Combine(repoRoot, "other"),
-            [PlatformKeys.Ci.GitHub.Repository] = "DataDog/dd-trace-dotnet",
-        };
-
-        var ciValues = CIEnvironmentValues.Create(env);
+        var ciValues = new TestCIEnvironmentValues(Path.Combine(repoRoot, "other"), repoRoot, "github");
         var ownership = ciValues.ResolveSourceOwnership(sourceFile, useOSSeparator: false);
 
         Assert.Equal("src/SpanBenchmark.cs", ownership.RepositoryRelativePath);
@@ -78,14 +71,7 @@ public class CodeOwnersFallbackTests
         File.WriteAllText(Path.Combine(repoRoot, "CODEOWNERS"), GlobalAndSourceOwners);
         File.WriteAllText(sourceFile, "class SpanBenchmark {}");
 
-        var env = new Dictionary<string, string>
-        {
-            [PlatformKeys.Ci.GitHub.Sha] = CommitSha,
-            [PlatformKeys.Ci.GitHub.Workspace] = srcDir,
-            [PlatformKeys.Ci.GitHub.Repository] = "DataDog/dd-trace-dotnet",
-        };
-
-        var ciValues = CIEnvironmentValues.Create(env);
+        var ciValues = CreateGitHubEnvironmentForWorkspace(srcDir);
         var ownership = ciValues.ResolveSourceOwnership(sourceFile, useOSSeparator: false);
 
         Assert.Equal("src/SpanBenchmark.cs", ownership.RepositoryRelativePath);
@@ -126,43 +112,26 @@ public class CodeOwnersFallbackTests
     }
 
     [SkippableFact]
-    public void AllowsFallbackRetryWithDifferentStartPath()
+    public void CodeOwnersDecisionDoesNotChangeAfterInitialization()
     {
         using var repoDirectory = new TemporaryDirectory();
-        using var otherDirectory = new TemporaryDirectory();
-
         var repoRoot = repoDirectory.RootPath;
         var srcDir = Path.Combine(repoRoot, "src");
         Directory.CreateDirectory(srcDir);
         var sourceFile = Path.Combine(srcDir, "SpanBenchmark.cs");
-        File.WriteAllText(Path.Combine(repoRoot, "CODEOWNERS"), GlobalAndSourceOwners);
         File.WriteAllText(sourceFile, "class SpanBenchmark {}");
 
-        var otherRoot = otherDirectory.RootPath;
-        var otherSrcDir = Path.Combine(otherRoot, "src");
-        Directory.CreateDirectory(otherSrcDir);
-        var otherFile = Path.Combine(otherSrcDir, "Other.cs");
-        File.WriteAllText(otherFile, "class Other {}");
-
-        var env = new Dictionary<string, string>
-        {
-            [PlatformKeys.Ci.GitHub.Sha] = CommitSha,
-            [PlatformKeys.Ci.GitHub.Workspace] = otherRoot,
-            [PlatformKeys.Ci.GitHub.Repository] = "DataDog/dd-trace-dotnet",
-        };
-
-        var ciValues = CIEnvironmentValues.Create(env);
-        var otherOwnership = ciValues.ResolveSourceOwnership(otherFile, useOSSeparator: false);
-
-        Assert.Equal("src/Other.cs", otherOwnership.RepositoryRelativePath);
+        var ciValues = CreateGitHubEnvironmentForWorkspace(repoRoot);
         Assert.False(ciValues.HasCodeOwners);
 
+        // A test session makes one CODEOWNERS decision during initialization.
+        File.WriteAllText(Path.Combine(repoRoot, "CODEOWNERS"), GlobalAndSourceOwners);
         var ownership = ciValues.ResolveSourceOwnership(sourceFile, useOSSeparator: false);
 
         Assert.Equal("src/SpanBenchmark.cs", ownership.RepositoryRelativePath);
-        Assert.True(ownership.IsRepositoryRelative);
-        Assert.True(ciValues.HasCodeOwners);
-        Assert.Equal(["@owner"], ownership.MatchingOwners);
+        Assert.False(ownership.IsRepositoryRelative);
+        Assert.False(ciValues.HasCodeOwners);
+        Assert.Empty(ownership.MatchingOwners);
     }
 
     [SkippableFact]
@@ -320,14 +289,7 @@ public class CodeOwnersFallbackTests
         var externalFile = Path.Combine(externalDirectory.RootPath, "SpanBenchmark.cs");
         File.WriteAllText(externalFile, "class SpanBenchmark {}");
 
-        var env = new Dictionary<string, string>
-        {
-            [PlatformKeys.Ci.GitHub.Sha] = CommitSha,
-            [PlatformKeys.Ci.GitHub.Workspace] = repoRoot,
-            [PlatformKeys.Ci.GitHub.Repository] = "DataDog/dd-trace-dotnet",
-        };
-
-        var ciValues = CIEnvironmentValues.Create(env);
+        var ciValues = CreateGitHubEnvironmentForWorkspace(repoRoot);
 
         var ownership = ciValues.ResolveSourceOwnership(externalFile, useOSSeparator: false);
 
@@ -342,14 +304,7 @@ public class CodeOwnersFallbackTests
         var repoRoot = repoDirectory.RootPath;
         File.WriteAllText(Path.Combine(repoRoot, "CODEOWNERS"), """* @global""");
 
-        var env = new Dictionary<string, string>
-        {
-            [PlatformKeys.Ci.GitHub.Sha] = CommitSha,
-            [PlatformKeys.Ci.GitHub.Workspace] = repoRoot,
-            [PlatformKeys.Ci.GitHub.Repository] = "DataDog/dd-trace-dotnet",
-        };
-
-        var ciValues = CIEnvironmentValues.Create(env);
+        var ciValues = CreateGitHubEnvironmentForWorkspace(repoRoot);
 
         var externalRoot = Path.Combine(Path.GetTempPath(), "dd-ci-outside-" + Guid.NewGuid().ToString("N"));
         var sourceFile = Path.Combine(externalRoot, "tracer", "test", "Snapshots", "Snapshot.cs");
@@ -402,14 +357,7 @@ public class CodeOwnersFallbackTests
         var outsideFolderName = Path.GetFileName(outsideRoot);
         var relativeSourcePath = Path.Combine("..", outsideFolderName, "SpanBenchmark.cs");
 
-        var env = new Dictionary<string, string>
-        {
-            [PlatformKeys.Ci.GitHub.Sha] = CommitSha,
-            [PlatformKeys.Ci.GitHub.Workspace] = repoRoot,
-            [PlatformKeys.Ci.GitHub.Repository] = "DataDog/dd-trace-dotnet",
-        };
-
-        var ciValues = CIEnvironmentValues.Create(env);
+        var ciValues = CreateGitHubEnvironmentForWorkspace(repoRoot);
 
         var ownership = ciValues.ResolveSourceOwnership(relativeSourcePath, useOSSeparator: false);
 
@@ -417,8 +365,10 @@ public class CodeOwnersFallbackTests
         Assert.False(ciValues.HasCodeOwners);
     }
 
-    [SkippableFact]
-    public void AnchorsForeignRelativePathsToCodeOwnersRoot()
+    [SkippableTheory]
+    [InlineData("../../../_/tracer/test/SpanBenchmark.cs")]
+    [InlineData("../../../_/tracer//test/SpanBenchmark.cs")]
+    public void AnchorsForeignRelativePathsToCodeOwnersRoot(string foreignRelativePath)
     {
         using var tempDirectory = new TemporaryDirectory();
         var repoRoot = tempDirectory.RootPath;
@@ -433,23 +383,18 @@ public class CodeOwnersFallbackTests
         File.WriteAllText(Path.Combine(repoRoot, "CODEOWNERS"), codeOwnersFile);
         File.WriteAllText(sourceFile, "class SpanBenchmark {}");
 
-        var env = new Dictionary<string, string>
-        {
-            [PlatformKeys.Ci.GitHub.Sha] = CommitSha,
-            [PlatformKeys.Ci.GitHub.Workspace] = repoRoot,
-            [PlatformKeys.Ci.GitHub.Repository] = "DataDog/dd-trace-dotnet",
-        };
-
-        var ciValues = CIEnvironmentValues.Create(env);
+        var ciValues = CreateGitHubEnvironmentForWorkspace(repoRoot);
 
         // Paths recorded against a foreign base directory (e.g. "../../../_/..." on CI agents)
         // must be anchored back to a repository-relative path.
-        var foreignRelativePath = "../../../_/tracer/test/SpanBenchmark.cs";
         var ownership = ciValues.ResolveSourceOwnership(foreignRelativePath, useOSSeparator: false);
+        var repeatedOwnership = ciValues.ResolveSourceOwnership(foreignRelativePath, useOSSeparator: false);
 
         Assert.True(ownership.IsRepositoryRelative);
         Assert.Equal("tracer/test/SpanBenchmark.cs", ownership.RepositoryRelativePath);
         Assert.Equal(["@owner"], ownership.MatchingOwners);
+        Assert.Equal("[\"@owner\"]", ownership.CodeOwnersTag);
+        Assert.Same(ownership.CodeOwnersTag, repeatedOwnership.CodeOwnersTag);
     }
 
     [SkippableFact]
@@ -462,14 +407,7 @@ public class CodeOwnersFallbackTests
         File.WriteAllText(Path.Combine(repoRoot, "CODEOWNERS"), """* @global""");
         File.WriteAllText(Path.Combine(srcDir, "SpanBenchmark.cs"), "class SpanBenchmark {}");
 
-        var env = new Dictionary<string, string>
-        {
-            [PlatformKeys.Ci.GitHub.Sha] = CommitSha,
-            [PlatformKeys.Ci.GitHub.Workspace] = repoRoot,
-            [PlatformKeys.Ci.GitHub.Repository] = "DataDog/dd-trace-dotnet",
-        };
-
-        var ciValues = CIEnvironmentValues.Create(env);
+        var ciValues = CreateGitHubEnvironmentForWorkspace(repoRoot);
         var foreignRelativePath = "../../../_/tracer/test/SpanBenchmark.cs";
 
         var forwardSlashOwnership = ciValues.ResolveSourceOwnership(foreignRelativePath, useOSSeparator: false);
@@ -496,14 +434,7 @@ public class CodeOwnersFallbackTests
         Directory.CreateDirectory(Path.GetDirectoryName(externalFile)!);
         File.WriteAllText(externalFile, "class SpanBenchmark {}");
 
-        var env = new Dictionary<string, string>
-        {
-            [PlatformKeys.Ci.GitHub.Sha] = CommitSha,
-            [PlatformKeys.Ci.GitHub.Workspace] = repoRoot,
-            [PlatformKeys.Ci.GitHub.Repository] = "DataDog/dd-trace-dotnet",
-        };
-
-        var ciValues = CIEnvironmentValues.Create(env);
+        var ciValues = CreateGitHubEnvironmentForWorkspace(repoRoot);
 
         // A foreign path whose suffix does not exist under the repository must not be re-anchored.
         var ownership = ciValues.ResolveSourceOwnership("../other/SpanBenchmark.cs", useOSSeparator: false);
@@ -586,14 +517,7 @@ public class CodeOwnersFallbackTests
         File.WriteAllText(Path.Combine(repoRoot, "CODEOWNERS"), OwnerAndSourceOwners);
         File.WriteAllText(Path.Combine(srcDir, "SpanBenchmark.cs"), "class SpanBenchmark {}");
 
-        var env = new Dictionary<string, string>
-        {
-            [PlatformKeys.Ci.GitHub.Sha] = CommitSha,
-            [PlatformKeys.Ci.GitHub.Workspace] = repoRoot,
-            [PlatformKeys.Ci.GitHub.Repository] = "DataDog/dd-trace-dotnet",
-        };
-
-        var ciValues = CIEnvironmentValues.Create(env);
+        var ciValues = CreateGitHubEnvironmentForWorkspace(repoRoot);
 
         // An interior navigation segment depends on the unknown base directory where the path was
         // recorded; anchoring it would produce a malformed repository-relative path.
@@ -616,14 +540,7 @@ public class CodeOwnersFallbackTests
         File.WriteAllText(Path.Combine(repoRoot, "CODEOWNERS"), OwnerAndSourceOwners);
         File.WriteAllText(Path.Combine(srcDir, "SpanBenchmark.cs"), "class SpanBenchmark {}");
 
-        var env = new Dictionary<string, string>
-        {
-            [PlatformKeys.Ci.GitHub.Sha] = CommitSha,
-            [PlatformKeys.Ci.GitHub.Workspace] = repoRoot,
-            [PlatformKeys.Ci.GitHub.Repository] = "DataDog/dd-trace-dotnet",
-        };
-
-        var ciValues = CIEnvironmentValues.Create(env);
+        var ciValues = CreateGitHubEnvironmentForWorkspace(repoRoot);
 
         var ownership = ciValues.ResolveSourceOwnership(sourceFilePath, useOSSeparator: false);
         Assert.False(ownership.IsRepositoryRelative);
@@ -631,6 +548,14 @@ public class CodeOwnersFallbackTests
 
     private static string[] ResolveOwners(CIEnvironmentValues ciValues, string sourcePath)
         => ciValues.ResolveSourceOwnership(sourcePath, useOSSeparator: false).MatchingOwners;
+
+    private static CIEnvironmentValues CreateGitHubEnvironmentForWorkspace(string workspace)
+        => CIEnvironmentValues.Create(new Dictionary<string, string>
+        {
+            [PlatformKeys.Ci.GitHub.Sha] = CommitSha,
+            [PlatformKeys.Ci.GitHub.Workspace] = workspace,
+            [PlatformKeys.Ci.GitHub.Repository] = "DataDog/dd-trace-dotnet",
+        });
 
     private sealed class TemporaryDirectory : IDisposable
     {
