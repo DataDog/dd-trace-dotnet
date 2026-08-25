@@ -723,9 +723,7 @@ partial class Build
             }
 
             // Connect to Azure DevOps Services
-            var connection = new VssConnection(
-                new Uri(AzureDevopsOrganisation),
-                new VssBasicCredential(string.Empty, AzureDevopsToken));
+            var connection = CreateAzureDevopsConnection();
 
             // Get an Azure devops client
             using var buildHttpClient = connection.GetClient<BuildHttpClient>();
@@ -891,9 +889,7 @@ partial class Build
             EnsureExistingDirectory(downloadDirectory);
             EnsureExistingDirectory(packageExtractionDirectory);
 
-            using var connection = new VssConnection(
-                new Uri(AzureDevopsOrganisation),
-                new VssBasicCredential(string.Empty, AzureDevopsToken));
+            using var connection = CreateAzureDevopsConnection();
 
             using var client = connection.GetClient<BuildHttpClient>();
 

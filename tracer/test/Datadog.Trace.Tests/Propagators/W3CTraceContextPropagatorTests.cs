@@ -383,6 +383,9 @@ namespace Datadog.Trace.Tests.Propagators
         [InlineData("dd=s:2;o:rum;p:0123456789abcdef;t.dm:-4;t.usr.id:12345,key3=value3,key4=value4", 2, "rum", "_dd.p.dm=-4,_dd.p.usr.id=12345", "key3=value3,key4=value4", "0123456789abcdef")]
         // both sides
         [InlineData("key1=value1,key2=value2,dd=s:2;o:rum;p:0123456789abcdef;t.dm:-4;t.usr.id:12345,key3=value3,key4=value4", 2, "rum", "_dd.p.dm=-4,_dd.p.usr.id=12345", "key1=value1,key2=value2,key3=value3,key4=value4", "0123456789abcdef")]
+        // empty members
+        [InlineData(",dd=s:2", 2, null, null, null, ZeroLastParentId)]
+        [InlineData("dd=s:2,", 2, null, null, null, ZeroLastParentId)]
         public void ParseTraceState(string header, int? samplingPriority, string origin, string propagatedTags, string additionalValues, string lastParent)
         {
             var traceState = W3CTraceContextPropagator.ParseTraceState(header);
