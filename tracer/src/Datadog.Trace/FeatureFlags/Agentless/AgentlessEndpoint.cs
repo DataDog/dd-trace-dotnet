@@ -173,10 +173,11 @@ internal sealed class AgentlessEndpoint
         var parameter = EnvParameterName + "=" + Uri.EscapeDataString(normalized);
         var builder = new UriBuilder(Uri);
 
-        // The getter returns the query with its leading "?", and the setter keeps one that is
-        // already there, so an existing query can be extended without trimming it first. A URL
-        // ending in a bare "?" reports an empty query, which the length check treats as no query.
-        builder.Query = builder.Query.Length > 1 ? builder.Query + "&" + parameter : parameter;
+        // The getter returns the query with its leading "?", while the setter prepends one of its
+        // own on .NET Framework, so the existing query is trimmed before it is extended. A URL
+        // ending in a bare "?" reports a query of "?", which the length check treats as no query.
+        var existing = builder.Query;
+        builder.Query = existing.Length > 1 ? existing.TrimStart('?') + "&" + parameter : parameter;
         return builder.Uri;
     }
 
