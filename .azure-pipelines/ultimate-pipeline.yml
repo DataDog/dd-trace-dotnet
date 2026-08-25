@@ -23,17 +23,14 @@ pr:
     include:
       - '*' # default
   paths:
+    include:
+      - '**'
+      # CODEOWNERS is consumed by tracer tests, so changes must run the pipeline.
+      - .github/CODEOWNERS
     exclude:
       - .azure-pipelines/noop-pipeline.yml
       - .gitignore
-      # CODEOWNERS is intentionally not excluded because it is consumed by tracer tests.
-      - .github/actions/
-      - .github/chainguard/
-      - .github/ISSUE_TEMPLATE/
-      - .github/workflows/
-      - .github/dependabot.yml
-      - .github/labeller.yml
-      - .github/pull_request_template.md
+      - .github/
       - .claude/
       - .devcontainer/
       - .vscode/
