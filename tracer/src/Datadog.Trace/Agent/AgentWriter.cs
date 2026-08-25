@@ -412,6 +412,25 @@ namespace Datadog.Trace.Agent
         {
             try
             {
+                // Report drop counts
+                var droppedTracesTooLarge = Interlocked.Exchange(ref _droppedTracesTooLarge, 0);
+                var droppedTracesBufferFull = Interlocked.Exchange(ref _droppedTracesBufferFull, 0);
+                var droppedTracesBufferFullAndLocked = Interlocked.Exchange(ref _droppedTracesBufferFullAndLocked, 0);
+                var droppedTracesBuffersLocked = Interlocked.Exchange(ref _droppedTracesBuffersLocked, 0);
+
+                if (droppedTracesTooLarge > 0 || droppedTracesBufferFull > 0 || droppedTracesBufferFullAndLocked > 0 || droppedTracesBuffersLocked > 0)
+                {
+                    Log.Warning(
+                        "Traces were dropped since the last flush operation: {TooLargeCount} exceeded the trace buffer limit of {MaxBufferSize} bytes, {BuffersFullCount} found both buffers full, {BufferFullAndLockedCount} found one buffer full and the other unavailable while being flushed, and {BuffersLockedCount} found both buffers unavailable while being flushed.",
+                        [
+                            droppedTracesTooLarge,
+                            _frontBuffer.MaxBufferSize,
+                            droppedTracesBufferFull,
+                            droppedTracesBufferFullAndLocked,
+                            droppedTracesBuffersLocked
+                        ]);
+                }
+
                 var activeBuffer = Volatile.Read(ref _activeBuffer);
                 var fallbackBuffer = activeBuffer == _frontBuffer ? _backBuffer : _frontBuffer;
 
@@ -459,25 +478,6 @@ namespace Datadog.Trace.Agent
                         statsd.Increment(TracerMetricNames.Queue.DequeuedTraces, payload.TraceCount);
                         statsd.Increment(TracerMetricNames.Queue.DequeuedSpans, payload.SpanCount);
                     }
-                }
-
-                var droppedTracesTooLarge = Interlocked.Exchange(ref _droppedTracesTooLarge, 0);
-                var droppedTracesBufferFull = Interlocked.Exchange(ref _droppedTracesBufferFull, 0);
-                var droppedTracesBufferFullAndLocked = Interlocked.Exchange(ref _droppedTracesBufferFullAndLocked, 0);
-                var droppedTracesBuffersLocked = Interlocked.Exchange(ref _droppedTracesBuffersLocked, 0);
-
-                if (droppedTracesTooLarge > 0 || droppedTracesBufferFull > 0 || droppedTracesBufferFullAndLocked > 0 || droppedTracesBuffersLocked > 0)
-                {
-                    Log.Warning(
-                        "Traces were dropped since the last flush operation: {TooLargeCount} exceeded the trace buffer limit of {MaxBufferSize} bytes, {BuffersFullCount} found both buffers full, {BufferFullAndLockedCount} found one buffer full and the other unavailable while being flushed, and {BuffersLockedCount} found both buffers unavailable while being flushed.",
-                        new object?[]
-                        {
-                            droppedTracesTooLarge,
-                            _frontBuffer.MaxBufferSize,
-                            droppedTracesBufferFull,
-                            droppedTracesBufferFullAndLocked,
-                            droppedTracesBuffersLocked,
-                        });
                 }
 
                 if (payload.TraceCount > 0)
