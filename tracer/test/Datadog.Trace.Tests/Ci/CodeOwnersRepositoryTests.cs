@@ -12,6 +12,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Datadog.Trace.Ci.CodeOwnership;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.Util;
 using FluentAssertions;
 using VerifyXunit;
 using Xunit;
@@ -22,7 +23,6 @@ namespace Datadog.Trace.Tests.Ci;
 public class CodeOwnersRepositoryTests
 {
     private const int MaxListedFiles = 5;
-    private static readonly HashSet<string> BuildOutputDirectories = new(StringComparer.OrdinalIgnoreCase) { "bin", "obj" };
 
     public CodeOwnersRepositoryTests()
     {
@@ -36,35 +36,6 @@ public class CodeOwnersRepositoryTests
     [SkippableFact]
     public Task ProfilerTestFilesHaveExpectedOwners()
         => VerifyTestFileOwnership("profiler/test");
-
-    [SkippableFact]
-    public void RepositorySourceFileEnumerationSkipsNonCSharpFilesAndBuildOutputs()
-    {
-        var root = Path.Combine(Path.GetTempPath(), "dd-codeowners-enumeration-" + Guid.NewGuid().ToString("N"));
-        try
-        {
-            Directory.CreateDirectory(Path.Combine(root, "src", "nested"));
-            Directory.CreateDirectory(Path.Combine(root, "bin", "Debug"));
-            Directory.CreateDirectory(Path.Combine(root, "src", "obj", "Debug"));
-            File.WriteAllText(Path.Combine(root, "Source.cs"), string.Empty);
-            File.WriteAllText(Path.Combine(root, "src", "nested", "Nested.cs"), string.Empty);
-            File.WriteAllText(Path.Combine(root, "src", "nested", "README.md"), string.Empty);
-            File.WriteAllText(Path.Combine(root, "bin", "Debug", "Generated.dll"), string.Empty);
-            File.WriteAllText(Path.Combine(root, "src", "obj", "Debug", "Generated.cs"), string.Empty);
-
-            EnumerateRepositoryCSharpFiles(root)
-               .Select(path => path.Substring(root.Length + 1).Replace('\\', '/'))
-               .Should()
-               .BeEquivalentTo(["Source.cs", "src/nested/Nested.cs"]);
-        }
-        finally
-        {
-            if (Directory.Exists(root))
-            {
-                Directory.Delete(root, recursive: true);
-            }
-        }
-    }
 
     [SkippableTheory]
     [InlineData("/docs/development/AzureFunctions.md", new[] { "@DataDog/tracing-dotnet", "@DataDog/apm-serverless", "@DataDog/serverless-azure-and-gcp" })]
@@ -90,28 +61,23 @@ public class CodeOwnersRepositoryTests
         var codeOwners = new CodeOwners(Path.Combine(repoRoot!, ".github", "CODEOWNERS"), CodeOwners.Dialect.GitHub);
         var unownedFiles = new List<string>();
         var filesByOwnerSet = new Dictionary<string, List<string>>(StringComparer.Ordinal);
-        var fullRoot = Path.Combine(repoRoot!, testRoot.Replace('/', Path.DirectorySeparatorChar));
 
-        if (Directory.Exists(fullRoot))
+        foreach (var relativePath in GetTrackedCSharpFiles(repoRoot!, testRoot).OrderBy(path => path, StringComparer.Ordinal))
         {
-            foreach (var file in EnumerateRepositoryCSharpFiles(fullRoot).OrderBy(path => path, StringComparer.Ordinal))
+            var owners = codeOwners.Match("/" + relativePath).OrderBy(owner => owner, StringComparer.Ordinal).ToArray();
+            if (owners.Length == 0)
             {
-                var relativePath = file.Substring(repoRoot!.Length + 1).Replace('\\', '/');
-                var owners = codeOwners.Match("/" + relativePath).OrderBy(owner => owner, StringComparer.Ordinal).ToArray();
-                if (owners.Length == 0)
-                {
-                    unownedFiles.Add(relativePath);
-                }
-
-                var ownerSet = owners.Length == 0 ? "<none>" : string.Join(", ", owners);
-                if (!filesByOwnerSet.TryGetValue(ownerSet, out var files))
-                {
-                    files = [];
-                    filesByOwnerSet.Add(ownerSet, files);
-                }
-
-                files.Add(relativePath);
+                unownedFiles.Add(relativePath);
             }
+
+            var ownerSet = owners.Length == 0 ? "<none>" : string.Join(", ", owners);
+            if (!filesByOwnerSet.TryGetValue(ownerSet, out var files))
+            {
+                files = [];
+                filesByOwnerSet.Add(ownerSet, files);
+            }
+
+            files.Add(relativePath);
         }
 
         filesByOwnerSet.Should().NotBeEmpty("expected to find C# test files in the repository");
@@ -154,31 +120,23 @@ public class CodeOwnersRepositoryTests
         return null;
     }
 
-    private static IEnumerable<string> EnumerateRepositoryFiles(string root)
+    private static IEnumerable<string> GetTrackedCSharpFiles(string repositoryRoot, string testRoot)
     {
-        var pending = new Stack<string>();
-        pending.Push(root);
+        var git = ProcessHelpers.RunCommand(
+            new ProcessHelpers.Command(
+                "git",
+                $"-c safe.directory=* ls-files -z -- {testRoot}",
+                repositoryRoot,
+                outputEncoding: Encoding.UTF8,
+                errorEncoding: Encoding.UTF8,
+                useWhereIsIfFileNotFound: true,
+                timeout: TimeSpan.FromSeconds(30)));
 
-        while (pending.Count > 0)
-        {
-            var directory = pending.Pop();
-            foreach (var file in Directory.EnumerateFiles(directory))
-            {
-                yield return file;
-            }
+        git.Should().NotBeNull("git is required to enumerate the repository files");
+        git!.ExitCode.Should().Be(0, git.Error);
 
-            foreach (var child in Directory.EnumerateDirectories(directory))
-            {
-                var name = Path.GetFileName(child);
-                if (!BuildOutputDirectories.Contains(name) &&
-                    (File.GetAttributes(child) & FileAttributes.ReparsePoint) == 0)
-                {
-                    pending.Push(child);
-                }
-            }
-        }
+        return git.Output
+                  .Split(['\0'], StringSplitOptions.RemoveEmptyEntries)
+                  .Where(path => string.Equals(Path.GetExtension(path), ".cs", StringComparison.OrdinalIgnoreCase));
     }
-
-    private static IEnumerable<string> EnumerateRepositoryCSharpFiles(string root)
-        => EnumerateRepositoryFiles(root).Where(file => string.Equals(Path.GetExtension(file), ".cs", StringComparison.OrdinalIgnoreCase));
 }
