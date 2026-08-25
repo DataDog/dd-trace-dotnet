@@ -39,6 +39,7 @@ namespace BuggyBits
         UseResultProperty = 2048, // using Result property instead of GetAwaiter().GetResult()
         ShortLived = 4096,      // short lived threads
         EndpointProfiling = 8192, // lightweight CPU work for endpoint profiling tests
+        Allocations = 16384, // allocate configured arrays
     }
 
     public class Program
@@ -53,12 +54,12 @@ namespace BuggyBits
 
             EnvironmentInfo.PrintDescriptionToConsole();
 
-            ParseCommandLine(args, out _disableLogs, out var timeout, out var iterations, out var scenario, out var nbIdleThreads);
+            ParseCommandLine(args, out _disableLogs, out var timeout, out var iterations, out var scenario, out var nbIdleThreads, out var allocationCount, out var allocationSize);
 
             using (var host = CreateHostBuilder(args).Build())
             {
                 var cts = new CancellationTokenSource();
-                using (var selfInvoker = new SelfInvoker(cts.Token, scenario, nbIdleThreads, _disableLogs))
+                using (var selfInvoker = new SelfInvoker(cts.Token, scenario, nbIdleThreads, allocationCount, allocationSize, _disableLogs))
                 {
                     await host.StartAsync();
 
@@ -144,13 +145,15 @@ namespace BuggyBits
                     }
                 });
 
-        private static void ParseCommandLine(string[] args, out bool disableLogs, out TimeSpan timeout, out int iterations, out Scenario scenario, out int nbIdleThreads)
+        private static void ParseCommandLine(string[] args, out bool disableLogs, out TimeSpan timeout, out int iterations, out Scenario scenario, out int nbIdleThreads, out int allocationCount, out int allocationSize)
         {
             // by default, need interactive action to exit and string.Concat scenario
             timeout = TimeSpan.MinValue;
             iterations = 0;
             scenario = Scenario.StringConcat;
             nbIdleThreads = 0;
+            allocationCount = 360_000;
+            allocationSize = 64;
             disableLogs = false;
 
             for (int i = 0; i < args.Length; i++)
@@ -208,6 +211,28 @@ namespace BuggyBits
                     if (nbThreadsArgument >= args.Length || !int.TryParse(args[nbThreadsArgument], out nbIdleThreads))
                     {
                         throw new InvalidOperationException($"Invalid or missing count after --with-idle-threads");
+                    }
+                }
+                else
+                if ("--allocation-count".Equals(arg, StringComparison.OrdinalIgnoreCase))
+                {
+                    var allocationCountArgument = i + 1;
+                    if (allocationCountArgument >= args.Length ||
+                        !int.TryParse(args[allocationCountArgument], out allocationCount) ||
+                        allocationCount <= 0)
+                    {
+                        throw new InvalidOperationException("Invalid or missing positive count after --allocation-count");
+                    }
+                }
+                else
+                if ("--allocation-size".Equals(arg, StringComparison.OrdinalIgnoreCase))
+                {
+                    var allocationSizeArgument = i + 1;
+                    if (allocationSizeArgument >= args.Length ||
+                        !int.TryParse(args[allocationSizeArgument], out allocationSize) ||
+                        allocationSize <= 0)
+                    {
+                        throw new InvalidOperationException("Invalid or missing positive size after --allocation-size");
                     }
                 }
             }
