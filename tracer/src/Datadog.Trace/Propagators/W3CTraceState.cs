@@ -18,7 +18,7 @@ internal readonly struct W3CTraceState
     // format is "_dd.p.key1:value1;_dd.p.key2:value2"
     public readonly string? PropagatedTags;
 
-    // the string left in "tracestate" after removing "dd=*" and "ot=*"
+    // the string left in "tracestate" after removing "dd=*"
     public readonly string? AdditionalValues;
 
     /// <summary>

@@ -1,4 +1,4 @@
-﻿// <copyright file="SpanContext.cs" company="Datadog">
+﻿﻿// <copyright file="SpanContext.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -271,7 +271,7 @@ namespace Datadog.Trace
         /// <summary>
         /// Gets or sets additional key/value pairs from an upstream "tracestate" W3C header that we will propagate downstream.
         /// This value will _not_ include the "dd" key, which is parsed out into other individual values
-        /// (e.g. sampling priority, origin, propagates tags, etc).
+        /// (e.g. sampling priority, origin, propagates tags, etc), but may include the "ot" key.
         /// </summary>
         internal string AdditionalW3CTraceState
         {
