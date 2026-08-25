@@ -84,14 +84,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         private readonly Regex _exceptionStacktraceOtlpRegex = new(@"string_value"": ""System.ArgumentException: Example argument exception.*""");
         private readonly Regex _exceptionStacktraceOtlpJsonRegex = new(@"stringValue"": ""System.ArgumentException: Example argument exception.*""");
 
-        // Google.Protobuf's JsonFormatter renders a whole-number double as e.g. "1" rather than "1.0"
-        // -- a different (but equally valid) textual representation of the same double value than
-        // the rendering the existing snapshots were captured against. Not data loss: doubles with a
-        // genuine fractional part (e.g. 1.5) already match the snapshots without this scrubber: only
-        // the trailing ".0" on whole numbers is ever missing, never any actual precision.
-        // The atomic group (?>...) is required: without it, a value that already has a decimal point
-        // (e.g. "404.0") backtracks -- \d+ gives back a digit to satisfy the lookahead, matching "40"
-        // instead of failing outright, and corrupting the value into "40.04.0".
+        // JsonFormatter renders whole-number doubles as "1" instead of "1.0" (no precision lost --
+        // fractional values already match without this scrubber). Atomic group (?>...) is required:
+        // otherwise "404.0" backtracks \d+ to "40" to satisfy the lookahead, corrupting it to "40.04.0".
         private readonly Regex _wholeNumberDoubleValueRegex = new(@"""doubleValue"": (-?(?>\d+))(?!\.\d)");
         private readonly OtlpTestAgentSession _otlpSession = new();
 

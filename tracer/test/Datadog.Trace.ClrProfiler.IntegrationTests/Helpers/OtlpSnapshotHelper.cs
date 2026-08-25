@@ -18,9 +18,7 @@ using OpenTelemetry.Proto.Common.V1;
 using OpenTelemetry.Proto.Resource.V1;
 using VerifyTests;
 
-// Datadog.Trace.Span (the real, internal tracer span type) shadows the unqualified "Span" name from
-// OpenTelemetry.Proto.Trace.V1, since Datadog.Trace is an ancestor namespace of this file's and
-// ancestor-namespace members take priority over using-directive imports.
+// Aliased: unqualified "Span" would resolve to Datadog.Trace.Span, an ancestor-namespace member.
 using OtlpSpan = OpenTelemetry.Proto.Trace.V1.Span;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.Helpers
@@ -123,10 +121,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Helpers
 
             foreach (var span in tracesRequests.SelectTokens("$..spans[*]"))
             {
-                // Parse unstable information from the span. IDs are always base64 here: this JToken
-                // tree comes from Google.Protobuf's JsonFormatter, which always renders bytes fields
-                // as base64 regardless of which wire encoding (JSON or protobuf) the request arrived
-                // in -- names.IsJson only selects field-name casing, not ID encoding.
+                // IDs are always base64 here: JsonFormatter renders bytes fields as base64 regardless
+                // of wire encoding -- names.IsJson only selects field-name casing, not ID encoding.
                 string traceIdData = ToTraceId(Convert.FromBase64String(span[traceIdKey]!.ToString()));
                 string spanIdData = ToSpanId(Convert.FromBase64String(span[spanIdKey]!.ToString()));
                 var spanStartTimeUnixNano = long.Parse(span[startTimeUnixNanoKey]!.ToString());
@@ -270,12 +266,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Helpers
         }
 
         /// <summary>
-        /// Collapses every captured request into one. Asserts first that each request carries
-        /// identical resource attributes and a single instrumentation scope, which holds for the
-        /// Datadog SDK because it emits one application-level resource and does not yet track spans
-        /// per instrumentation scope. Works on the underlying protobuf model directly (protobuf
-        /// messages implement field-by-field value equality), so callers merge and sort before ever
-        /// converting to JSON, rather than after.
+        /// Collapses every captured request into the first one. Asserts first that each request
+        /// carries identical resource attributes and a single instrumentation scope, which holds for
+        /// the Datadog SDK because it emits one application-level resource and does not yet track
+        /// spans per instrumentation scope. Works on the underlying protobuf model directly, so
+        /// callers merge and sort before ever converting to JSON, rather than after.
         /// </summary>
         /// <param name="requests">The trace requests to merge. Must be non-empty.</param>
         /// <param name="sortSpans">Orders the merged spans. Defaults to ordering by span name.</param>
@@ -286,11 +281,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Helpers
         {
             requests.Should().NotBeEmpty();
 
-            // First, for the DD SDK, assert that the resource attributes for all requests are
-            // identical. This is analogous to DD_SERVICE, DD_VERSION, DD_ENV, etc. that define
-            // metadata for the telemetry at an application and host level. This is different for OTel
-            // SDK applications since the in-app code uses the SDK to create a 2nd, completely
-            // distinct, Traces SDK instance.
+            // All requests must share one resource (DD_SERVICE, DD_VERSION, DD_ENV, etc.) -- true for
+            // the DD SDK, not for OTel SDK apps, which run a second, distinct Traces SDK instance.
             Resource? previousResource = null;
             foreach (var request in requests)
             {
@@ -307,11 +299,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Helpers
                 }
             }
 
-            // Next, assert that we only have a singular InstrumentationScope in each request.
-            // In OpenTelemetry, an InstrumentationScope is a way to group spans by the library that
-            // produced them. We should be respecting this for each library/ActivitySource, but right
-            // now the DD SDK doesn't keep track of that information, so consolidate them into one
-            // single, empty InstrumentationScope.
+            // The DD SDK doesn't yet track spans per instrumentation scope, so there's only one to merge.
             // TODO: Properly track spans per instrumentation scope.
             var allSpans = new List<OtlpSpan>();
             foreach (var request in requests)
@@ -320,13 +308,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Helpers
                 allSpans.AddRange(request.Raw.ResourceSpans[0].ScopeSpans[0].Spans);
             }
 
-            // Now re-order and trim down to one single request. This means the output is not a true
-            // 1:1 mapping of the input spans, but it's good enough for now and will make the results
-            // stable. Also, sort the spans by name to stabilize. Deliberately not StringComparer.Ordinal:
-            // the culture-aware default comparer is what the original JToken-based implementation used
-            // (a bare `OrderBy(s => s["name"])`), and switching to ordinal reorders names that differ
-            // only by the case of a leading letter (e.g. "SomeSpan" vs. "some.name"), which would
-            // otherwise look like a real span-identity mismatch against existing snapshots.
+            // Not StringComparer.Ordinal: matches main's culture-aware OrderBy, since ordinal would
+            // reorder names differing only by leading-letter case and break existing snapshots.
             sortSpans ??= spans => spans.OrderBy(s => s.Name);
 
             var merged = requests[0].Raw.Clone();
