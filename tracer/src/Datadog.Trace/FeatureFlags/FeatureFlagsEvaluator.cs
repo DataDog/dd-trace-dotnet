@@ -720,7 +720,7 @@ namespace Datadog.Trace.FeatureFlags
 
             if (doLog)
             {
-                DispatchExposure(flagKey, evaluation, evalTime, context);
+                DispatchExposure(flagKey, evaluation, evalTime, context, split.SerialId);
             }
 
             return evaluation;
@@ -744,7 +744,8 @@ namespace Datadog.Trace.FeatureFlags
             string flagKey,
             Evaluation evaluation,
             DateTime evalTime,
-            EvaluationContext? context)
+            EvaluationContext? context,
+            long? serialId)
         {
             var allocationKey = AllocationKey(evaluation);
             var variantKey = evaluation.Variant;
@@ -759,7 +760,8 @@ namespace Datadog.Trace.FeatureFlags
                 new Exposure.Model.Allocation(allocationKey),
                 new Exposure.Model.Flag(flagKey),
                 new Exposure.Model.Variant(variantKey),
-                new Exposure.Model.Subject(context?.TargetingKey ?? string.Empty, FlattenContext(context)));
+                new Exposure.Model.Subject(context?.TargetingKey ?? string.Empty, FlattenContext(context)),
+                serialId);
 
             _onExposureEvent?.Invoke(in evt);
         }

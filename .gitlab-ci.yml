@@ -1,7 +1,8 @@
 stages:
   - build
-  - publish
   - package
+  - sign-nuget
+  - publish-artifacts
   - shared-pipeline-build
   - shared-pipeline-test
   - shared-pipeline-publish
@@ -13,7 +14,7 @@ stages:
 
 include:
   - local: .gitlab/one-pipeline.locked.yml
-  - project: 'DataDog/llm-validation-platform'
+  - project: 'ddoghq/llm-validation-platform'
     ref: 0f48ca35f0b3dfd19d5c0dc9f92aa977c99bebbf   # v0.1.1 (immutable SHA; a tag could be retargeted)
     file: '/ci/llm-validation.gitlab-ci.yml'
   # MIGRATION TOUCHPOINT (GitHub org / GitLab group split):
@@ -43,6 +44,7 @@ variables:
 
 "llm validation":
   variables:
+    LLMVAL_PLATFORM_PROJECT: "ddoghq/llm-validation-platform"
     LLMVAL_PLATFORM_REF: "0f48ca35f0b3dfd19d5c0dc9f92aa977c99bebbf"   # v0.1.1 (must match include ref above)
 
 build-windows-ci-image:
@@ -228,10 +230,13 @@ publish:
     variables:
       - $DEPLOY_TO_REL_ENV == "true"
       - $CI_COMMIT_TAG # We don't need to build/publish when building a release tag
-  stage: publish
+  stage: publish-artifacts
   tags: ["windows-v2:2022"]
-  dependencies:
-    - build
+  needs:
+    - job: build
+      artifacts: true
+    - job: sign-nuget-packages
+      artifacts: true
   hooks:
     pre_get_sources_script:
       - git config --system core.longpaths true
@@ -246,11 +251,21 @@ publish:
           try {
               # The grants option at the end is used to allow public access on the files we upload as the acls only aren't enough.
               aws s3 cp artifacts-out/ s3://dd-windowsfilter/builds/tracer/${CI_COMMIT_SHA} --recursive --region us-east-1 --exclude "*" --include "*.zip" --include "*.msi" --include "telemetry_forwarder.exe" --grants read=uri=http://acs.amazonaws.com/groups/global/AllUsers full=id=3a6e02b08553fd157ae3fb918945dd1eaae5a1aa818940381ef07a430cf25732
-              If ($LASTEXITCODE -eq 0) {
-                return
+              if ($LASTEXITCODE -ne 0) {
+                throw "Error uploading artifacts to S3"
               }
 
-              throw "Error uploading artifacts to S3"
+              aws s3 cp artifacts-out/nuget/ s3://dd-windowsfilter/builds/tracer/${CI_COMMIT_SHA}/signed-nuget-packages/ --recursive --region us-east-1 --exclude "*" --include "*.nupkg" --grants read=uri=http://acs.amazonaws.com/groups/global/AllUsers full=id=3a6e02b08553fd157ae3fb918945dd1eaae5a1aa818940381ef07a430cf25732
+              if ($LASTEXITCODE -ne 0) {
+                throw "Error uploading build-signed NuGet packages to S3"
+              }
+
+              aws s3 cp signed-out/nuget/ s3://dd-windowsfilter/builds/tracer/${CI_COMMIT_SHA}/signed-nuget-packages/ --recursive --region us-east-1 --exclude "*" --include "*.nupkg" --grants read=uri=http://acs.amazonaws.com/groups/global/AllUsers full=id=3a6e02b08553fd157ae3fb918945dd1eaae5a1aa818940381ef07a430cf25732
+              if ($LASTEXITCODE -ne 0) {
+                throw "Error uploading signed NuGet packages to S3"
+              }
+
+              return;
           } catch {
               $msg = $Error[0].Exception.Message
               Write-Output "Encountered error during while publishing to S3. Error Message is $msg."
@@ -268,6 +283,76 @@ publish:
     CI_IDENTITIES_GITLAB_ID_TOKEN:
       aud: ci-identities
 
+download-nuget-packages-to-sign:
+  stage: package
+  image: registry.ddbuild.io/images/ci/images:1.2.6
+  timeout: 1h
+  tags: [ "arch:amd64" ]
+  needs:
+    - job: build
+      optional: true
+      artifacts: false
+  rules:
+    - when: on_success # Artifacts come from the Azure pipeline, but as we already depend on build, we already have a delayed start
+  script:
+    - .gitlab/download-nuget-packages-to-sign.sh
+  artifacts:
+    expire_in: 2 weeks
+    paths:
+      - packages-to-sign
+
+sign-nuget-packages:
+  stage: sign-nuget
+  timeout: 15m
+  tags: ["windows-v2:2022"]
+  needs:
+    - job: build
+      optional: true
+      artifacts: false # only needed for timing reasons
+    - job: download-nuget-packages-to-sign
+      artifacts: true
+  hooks:
+    pre_get_sources_script:
+      - git config --system core.longpaths true
+  script:
+    - if (Test-Path signed-out) { remove-item -recurse -force signed-out }
+    - |
+      $hash = & tracer/build/_build/docker/gitlab/compute-image-hash.ps1
+      if ($LASTEXITCODE -ne 0 -or $hash -notmatch '^[0-9a-f]{12}$') {
+        throw "compute-image-hash.ps1 did not produce a valid hash (exit=$LASTEXITCODE, output='$hash')"
+      }
+      $env:WINDOWS_BUILD_IMAGE = "${env:WINDOWS_BUILD_IMAGE_BASE}:${hash}"
+    - |
+      New-Item -ItemType Directory -Force -Path "build-out\$env:CI_JOB_ID\nuget" | Out-Null
+      New-Item -ItemType Directory -Force -Path "build-out\$env:CI_JOB_ID\packages-to-sign" | Out-Null
+      Copy-Item packages-to-sign\*.nupkg "build-out\$env:CI_JOB_ID\packages-to-sign\" -Force
+    - |
+      docker run --rm `
+        -v "$(Get-Location):c:\mnt" `
+        -e CI_JOB_ID=$env:CI_JOB_ID `
+        -e WINDOWS_BUILDER=true `
+        -e AWS_NETWORKING=true `
+        -e SIGN_WINDOWS=true `
+        -e NUGET_CERT_REVOCATION_MODE=offline `
+        -e CI_IDENTITIES_GITLAB_ID_TOKEN `
+        -e CI_PROJECT_NAME `
+        -e CI_JOB_NAME_SLUG `
+        $env:WINDOWS_BUILD_IMAGE `
+        SignNuGetPackageContents
+      if ($LASTEXITCODE -ne 0) {
+        throw "Docker sign-nuget-packages container exited with code $LASTEXITCODE"
+      }
+    - New-Item -ItemType Directory -Force -Path signed-out\nuget | Out-Null
+    - Copy-Item "build-out\$env:CI_JOB_ID\nuget\*.nupkg" signed-out\nuget\ -Force
+    - remove-item -recurse -force "build-out\$env:CI_JOB_ID"
+    - get-childitem signed-out\nuget
+  artifacts:
+    expire_in: 2 weeks
+    paths:
+      - signed-out
+  id_tokens:
+    CI_IDENTITIES_GITLAB_ID_TOKEN:
+      aud: ci-identities
 
 download-single-step-artifacts:
   stage: package

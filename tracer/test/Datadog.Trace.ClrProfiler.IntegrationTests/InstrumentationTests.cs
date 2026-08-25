@@ -99,7 +99,7 @@ namespace Foo
 
             return;
 
-            Task<string> RunDotnet(string arguments) => RunDotnetCommand(workingDir, agent, arguments);
+            Task<string> RunDotnet(string arguments) => RunDotnetCommandWithSigSegvRetry(workingDir, agent, arguments);
         }
 
         [SkippableTheory]
@@ -139,7 +139,7 @@ namespace Foo
 
             return;
 
-            Task<string> RunDotnet(string arguments) => RunDotnetCommand(workingDir, agent, arguments);
+            Task<string> RunDotnet(string arguments) => RunDotnetCommandWithSigSegvRetry(workingDir, agent, arguments);
         }
 
         [SkippableTheory]
@@ -178,7 +178,7 @@ namespace Foo
 
             return;
 
-            Task<string> RunDotnet(string arguments) => RunDotnetCommand(workingDir, agent, arguments);
+            Task<string> RunDotnet(string arguments) => RunDotnetCommandWithSigSegvRetry(workingDir, agent, arguments);
         }
 
         [SkippableFact]
@@ -192,12 +192,12 @@ namespace Foo
 
             using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
 
-            var logDir = await RunDotnet("new xunit -n instrumentation_test -o . --no-restore");
+            var logDir = await RunDotnetCommandWithSigSegvRetry(workingDir, agent, "new xunit -n instrumentation_test -o . --no-restore");
             AssertNotInstrumented(agent, logDir);
 
             // this _should_ be instrumented so we expect managed data.
             // we also expect telemetry, but we end the app so quickly there's a risk of flake
-            logDir = await RunDotnet("test");
+            logDir = await RunDotnetCommand(workingDir, agent, "test");
 
             using var scope = new AssertionScope();
             var allFiles = Directory.GetFiles(logDir);
@@ -214,8 +214,6 @@ namespace Foo
             agent.Telemetry.Should().NotBeEmpty();
 
             return;
-
-            Task<string> RunDotnet(string arguments) => RunDotnetCommand(workingDir, agent, arguments);
         }
 #endif
 
@@ -671,6 +669,19 @@ namespace Foo
             // Disable .NET CLI telemetry to prevent extra HTTP spans
             SetEnvironmentVariable("DOTNET_CLI_TELEMETRY_OPTOUT", "1");
             return RunCommand(workingDirectory, mockTracerAgent, "dotnet", arguments);
+        }
+
+        private async Task<string> RunDotnetCommandWithSigSegvRetry(string workingDirectory, MockTracerAgent mockTracerAgent, string arguments)
+        {
+            try
+            {
+                return await RunDotnetCommand(workingDirectory, mockTracerAgent, arguments);
+            }
+            catch (ExitCodeException ex) when (ex.ActualExitCode == 139)
+            {
+                Output.WriteLine($"dotnet {arguments} exited with SIGSEGV (139). Retrying once.");
+                return await RunDotnetCommand(workingDirectory, mockTracerAgent, arguments);
+            }
         }
 
         private async Task<string> RunCommand(string workingDirectory, MockTracerAgent mockTracerAgent, string exe, string arguments = null)
