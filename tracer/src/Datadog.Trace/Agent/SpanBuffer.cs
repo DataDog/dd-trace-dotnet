@@ -27,9 +27,11 @@ namespace Datadog.Trace.Agent
 
         public SpanBuffer(int maxBufferSize, ISpanBufferSerializer serializer)
         {
-            if (maxBufferSize < serializer.HeaderSize)
+            var minimumSize = serializer.HeaderSize + serializer.TrailerSize;
+
+            if (maxBufferSize < minimumSize)
             {
-                ThrowHelper.ThrowArgumentException($"Buffer size should be at least {serializer.HeaderSize}", nameof(maxBufferSize));
+                ThrowHelper.ThrowArgumentException($"Buffer size should be at least {minimumSize}", nameof(maxBufferSize));
             }
 
             _maxBufferSize = maxBufferSize;
@@ -104,7 +106,7 @@ namespace Datadog.Trace.Agent
                     return WriteStatus.Overflow;
                 }
 
-                if (!EnsureCapacity(size + _offset))
+                if (!EnsureCapacity(size + _offset + _serializer.TrailerSize))
                 {
                     if (TraceCount == 0)
                     {
