@@ -365,8 +365,9 @@ internal static class DelegateInstrumentation
 
                 // *
                 // If the original task throws an exception we rethrow it here.
+                // A synchronous exception is already being propagated by the wrapper.
                 // *
-                if (exception != null)
+                if (originalTask != null && exception != null)
                 {
                     ExceptionDispatchInfo.Capture(exception).Throw();
                 }
@@ -420,8 +421,9 @@ internal static class DelegateInstrumentation
 
                 // *
                 // If the original task throws an exception we rethrow it here.
+                // A synchronous exception is already being propagated by the wrapper.
                 // *
-                if (exception != null)
+                if (originalTask != null && exception != null)
                 {
                     ExceptionDispatchInfo.Capture(exception).Throw();
                 }

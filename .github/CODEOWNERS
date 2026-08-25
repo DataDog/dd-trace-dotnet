@@ -26,7 +26,11 @@
 /tools/                                   @DataDog/apm-dotnet
 
 # Tracer
-/tracer/                                  @DataDog/tracing-dotnet
+# FIXME: Keep this unrooted e.g., tracer/ instead of /tracer/
+#       As there appears to be a bug with CI Visibility that causes files
+#       to be listed as ../../../_/tracer/test/ which the rooted version doesn't match on.
+#       We need to update the test logger to fix this.
+tracer/                                   @DataDog/tracing-dotnet
 /tracer/build/                            @DataDog/apm-dotnet
 
 # IDM
