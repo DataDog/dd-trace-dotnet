@@ -371,6 +371,12 @@ namespace Datadog.Trace.TestHelpers
             SetEnvironmentVariable(ConfigurationKeys.ObfuscationQueryStringRegex, string.Empty);
         }
 
+        /// <summary>
+        /// Sets an environment variable on the sample app, overriding any default the test harness sets.
+        /// Pass a <c>null</c> <paramref name="value"/> to unset the variable instead.
+        /// </summary>
+        /// <param name="key">The name of the environment variable.</param>
+        /// <param name="value">The value, or <c>null</c> to unset the variable.</param>
         public void SetEnvironmentVariable(string key, string value)
         {
             EnvironmentHelper.CustomEnvironmentVariables[key] = value;

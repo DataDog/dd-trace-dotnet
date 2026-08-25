@@ -188,7 +188,8 @@ namespace Datadog.Trace.TestHelpers
                 "OTEL_METRICS_EXPORTER",
                 "OTEL_LOGS_EXPORTER",
                 "OTEL_EXPORTER_OTLP_PROTOCOL",
-                "OTEL_RESOURCE_ATTRIBUTES"
+                "OTEL_RESOURCE_ATTRIBUTES",
+                "OTEL_DOTNET_AUTO_HOME"
             };
 
             foreach (string variable in environmentVariables)
@@ -329,7 +330,16 @@ namespace Datadog.Trace.TestHelpers
 
             foreach (var key in CustomEnvironmentVariables.Keys)
             {
-                environmentVariables[key] = CustomEnvironmentVariables[key];
+                var value = CustomEnvironmentVariables[key];
+
+                if (value is null)
+                {
+                    environmentVariables.Remove(key);
+                }
+                else
+                {
+                    environmentVariables[key] = value;
+                }
             }
         }
 
