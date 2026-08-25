@@ -125,6 +125,16 @@ namespace Samples.Console_
                     Thread.Sleep(Timeout.Infinite);
                     return;
                 }
+
+                if (args[0].StartsWith("console-ctrl", StringComparison.OrdinalIgnoreCase))
+                {
+#if NETFRAMEWORK
+                    ConsoleCtrlHandlerHelper.RunConsoleCtrlScenario(args[0]);
+                    return;
+#else
+                    throw new NotSupportedException($"'{args[0]}' only applies to .NET Framework, where System.Console.ControlCHooker exists.");
+#endif
+                }
             }
         }
 
