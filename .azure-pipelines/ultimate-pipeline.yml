@@ -4490,42 +4490,26 @@ stages:
           displayName: Write description of assets
 
         - bash: |
-            az storage blob upload-batch \
-              --destination "$(AZURE_STORAGE_CONTAINER_NAME)" \
-              --destination-path "$(Build.SourceVersion)" \
-              --source "$(Build.ArtifactStagingDirectory)"
-          displayName: Upload blobs to Azure
-          condition: >
-            and(
-              succeeded(),
-              ne(variables['push_artifacts_to_azure_storage'], 'false'),
-              or(
-                eq(variables['push_artifacts_to_azure_storage'], 'true'),
-                eq(variables.isMainOrReleaseBranch, true)
-              )
-            )
-          env:
-            AZURE_STORAGE_ACCOUNT: $(AZURE_STORAGE_ACCOUNT_NAME)
-            AZURE_STORAGE_SAS_TOKEN: $(AZURE_STORAGE_SHARED_ACCESS_TOKEN)
+            ls "$(Build.ArtifactStagingDirectory)" > index.txt
+            echo "$(Build.SourceVersion)" > sha.txt
+            echo "$(tracer_version)" > version.txt
+          displayName: Write index.txt, sha.txt, and version.txt
 
-        - bash: ls "$(Build.ArtifactStagingDirectory)" > index.txt
-          displayName: Write file list to index.txt
+        # Upload to legacy storage
+        - template: steps/upload-artifacts-to-azure-storage.yml
+          parameters:
+            name: apmdotnetci
+            accountVariable: AZURE_STORAGE_ACCOUNT_NAME
+            containerVariable: AZURE_STORAGE_CONTAINER_NAME
+            sasTokenVariable: AZURE_STORAGE_SHARED_ACCESS_TOKEN
 
-        - bash: echo "$(Build.SourceVersion)" > sha.txt
-          displayName: Write commit hash to sha.txt
-
-        - bash: echo "$(tracer_version)" > version.txt
-          displayName: Write tracer version number to version.txt
-
-        - bash: |
-            az storage blob upload --container-name "$(AZURE_STORAGE_CONTAINER_NAME)" --file "index.txt" --name "index.txt" --overwrite true
-            az storage blob upload --container-name "$(AZURE_STORAGE_CONTAINER_NAME)" --file "sha.txt" --name "sha.txt" --overwrite true
-            az storage blob upload --container-name "$(AZURE_STORAGE_CONTAINER_NAME)" --file "version.txt" --name "version.txt" --overwrite true
-          displayName: Upload indexes to Azure
-          condition: and(succeeded(), eq(variables.isMainBranch, true))
-          env:
-            AZURE_STORAGE_ACCOUNT: $(AZURE_STORAGE_ACCOUNT_NAME)
-            AZURE_STORAGE_SAS_TOKEN: $(AZURE_STORAGE_SHARED_ACCESS_TOKEN)
+        # Upload to new storage
+        - template: steps/upload-artifacts-to-azure-storage.yml
+          parameters:
+            name: apmdotnetbuildstorage
+            accountVariable: AZURE_BUILD_STORAGE_ACCOUNT_NAME
+            containerVariable: AZURE_BUILD_STORAGE_CONTAINER_NAME
+            sasTokenVariable: AZURE_BUILD_STORAGE_SHARED_ACCESS_TOKEN
 
 # Only run these on merges to master and PRs with the docker_image_artifacts label
 - stage: upload_container_images
