@@ -16,6 +16,7 @@ using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 using FluentAssertions;
 using FluentAssertions.Execution;
+using Google.Protobuf;
 using VerifyXunit;
 using Xunit;
 using Xunit.Abstractions;
@@ -245,7 +246,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             var parsedVersion = Version.Parse(!string.IsNullOrEmpty(packageVersion) ? packageVersion : "1.13.1");
             var runtimeMajor = Environment.Version.Major;
-            var isJson = protocol == "http/json" && datadogTracesEnabled.Equals("true");
 
             var snapshotName = otelTracesEnabled switch
             {
@@ -258,10 +258,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             snapshotName = otelTracesEnabled.Equals("true") ? $"_OTELv{snapshotName}" : $"{snapshotName}_DD{(openTelemetrySemanticsEnabled ? "_OtelSemantics" : string.Empty)}";
 
-            // Establishes this token as a real ddapm test-agent session, so that
-            // /test/session/traces only ever returns requests sent after this point.
-            await _otlpSession.StartSessionAsync();
-
             // This is the key configuration that is set differently from previous test cases:
             // OTEL_TRACES_EXPORTER=otlp enables the DD SDK to emit traces (and trace stats) via OTLP
             SetEnvironmentVariable("OTEL_TRACES_EXPORTER", datadogTracesEnabled == "true" ? "otlp" : "none");
@@ -273,51 +269,48 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             SetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENABLED", otelTracesEnabled);
             SetEnvironmentVariable("OTEL_EXPORTER_OTLP_PROTOCOL", protocol);
-            if (useAgentHostBackup)
-            {
-                SetEnvironmentVariable("DD_AGENT_HOST", _otlpSession.TestAgentHost);
-            }
-            else
-            {
-                SetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENDPOINT", _otlpSession.GetExporterEndpoint(protocol));
-            }
 
             var applicationStartTimeUnixNano = DateTimeOffset.UtcNow.ToUnixTimeNanoseconds();
             using var agent = EnvironmentHelper.GetMockAgent();
-            // When DD_AGENT_HOST=test-agent is set above, it also redirects the APM trace agent
-            // URL via the DD_TRACE_AGENT_HOSTNAME alias (the primary key wins). That points APM
-            // traces at test-agent:<mock-agent-port>, which does not exist, so AgentWriter
-            // retries fill the tracer's shutdown window and can starve the DirectLogSubmission
-            // final flush. Pin the APM URL back to the in-process MockAgent.
-            if (useAgentHostBackup && agent is MockTracerAgent.TcpUdpAgent tcpAgent)
+            var agentPort = ((MockTracerAgent.TcpUdpAgent)agent).Port;
+
+            // useAgentHostBackup previously routed OTLP export via DD_AGENT_HOST against the Docker
+            // ddapm-test-agent; against the in-process MockTracerAgent, both paths point at the same
+            // place, so both env vars just target this agent's own /v1/traces endpoint.
+            if (useAgentHostBackup)
             {
-                SetEnvironmentVariable("DD_TRACE_AGENT_URL", $"http://127.0.0.1:{tcpAgent.Port}");
+                SetEnvironmentVariable("DD_AGENT_HOST", "127.0.0.1");
+                SetEnvironmentVariable("DD_TRACE_AGENT_PORT", agentPort.ToString());
+                SetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENDPOINT", $"http://127.0.0.1:{agentPort}");
+            }
+            else
+            {
+                SetEnvironmentVariable("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", $"http://127.0.0.1:{agentPort}/v1/traces");
             }
 
             using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion ?? "1.13.1"))
             {
-                // The sample exports traces during shutdown, so there can be a brief delay
-                // between process exit and the data appearing in the test-agent. Poll with
-                // retries to avoid a race, matching the pattern used by SubmitsOtlpMetrics
-                // and SubmitsOtlpLogs.
-                var tracesRequests = await _otlpSession.WaitForTracesAsync();
+                var relevantRequests = await agent.WaitForOtlpTraceRequestsAsync(count: 1);
+                relevantRequests.Should().NotBeNullOrEmpty();
 
-                tracesRequests.Should().NotBeNullOrEmpty();
-
-                // Normalize the data in resource attributes and spans
-                var names = OtlpFieldNames.For(isJson);
-                OtlpSnapshotHelper.NormalizeResourceAttributes(tracesRequests, names);
-                OtlpSnapshotHelper.NormalizeSpans(tracesRequests, names, applicationStartTimeUnixNano);
-
-                // For the Datadog SDK, perform more sanitization
+                var names = OtlpFieldNames.For(isJson: true);
+                JToken tracesRequests;
                 string finalJson;
+
+                // For the Datadog SDK, merge into a single request and perform more sanitization.
                 if (datadogTracesEnabled.Equals("true"))
                 {
-                    finalJson = OtlpSnapshotHelper.MergeDatadogRequests(tracesRequests, names)
-                                                  .ToString(Formatting.Indented);
+                    var merged = OtlpSnapshotHelper.MergeDatadogRequests(relevantRequests);
+                    tracesRequests = JToken.Parse(JsonFormatter.Default.Format(merged));
+                    OtlpSnapshotHelper.NormalizeResourceAttributes(tracesRequests, names);
+                    OtlpSnapshotHelper.NormalizeSpans(tracesRequests, names, applicationStartTimeUnixNano);
+                    finalJson = tracesRequests.ToString(Formatting.Indented);
                 }
                 else
                 {
+                    tracesRequests = new JArray(relevantRequests.Select(r => JToken.Parse(JsonFormatter.Default.Format(r.Raw))));
+                    OtlpSnapshotHelper.NormalizeResourceAttributes(tracesRequests, names);
+                    OtlpSnapshotHelper.NormalizeSpans(tracesRequests, names, applicationStartTimeUnixNano);
                     OtlpSnapshotHelper.SortSpansPerScope(tracesRequests, names);
                     finalJson = tracesRequests.ToString(Formatting.Indented);
                 }

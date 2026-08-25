@@ -267,7 +267,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
             // Merge and sort on the typed protobuf model first, while span start times are still
             // real -- NormalizeSpans (below) replaces them with a fixed placeholder, so this ordering
             // has to happen before it runs rather than needing a stashed copy of the real value.
-            var mergedRequest = OtlpSnapshotHelper.MergeMockOtlpTraceRequests(
+            var mergedRequest = OtlpSnapshotHelper.MergeDatadogRequests(
                 relevantRequests,
                 spans => spans.OrderBy(s => s.StartTimeUnixNano)
                               .ThenBy(s => s.Name ?? string.Empty, StringComparer.Ordinal)

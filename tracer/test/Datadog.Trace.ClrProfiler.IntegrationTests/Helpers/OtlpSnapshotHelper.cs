@@ -27,11 +27,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Helpers
 {
     /// <summary>
     /// Shapes OTLP payloads into something a snapshot can be compared against: normalizing what
-    /// changes per run, merging exports, and ordering spans and attributes. The JToken-based members
-    /// below are the original implementation, written for the raw JSON the Docker ddapm-test-agent
-    /// returns, and are kept for suites still reading from it (e.g. <c>OpenTelemetrySdkTests</c>). The
-    /// typed members further down are their counterparts for suites reading from the in-process
-    /// <c>MockTracerAgent</c>'s typed OTLP model instead.
+    /// changes per run, merging exports, and ordering spans and attributes. Normalization (below)
+    /// still operates on the final JSON representation, since it has to write placeholder text into
+    /// fields (e.g. trace/span IDs) whose real protobuf types can't hold arbitrary strings. Merging
+    /// operates on the typed <c>MockOtlp</c> model instead, before that JSON is ever produced, since
+    /// merging/sorting doesn't have that constraint and the typed model is easier to work with.
     /// </summary>
     internal static class OtlpSnapshotHelper
     {
@@ -235,80 +235,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Helpers
         }
 
         /// <summary>
-        /// Collapses every captured request into the first one. Asserts first that each request
-        /// carries identical resource attributes and a single instrumentation scope, which holds for
-        /// the Datadog SDK because it emits one application-level resource and does not yet track
-        /// spans per instrumentation scope.
-        /// </summary>
-        /// <param name="tracesRequests">The captured OTLP requests.</param>
-        /// <param name="names">The field-name casing to use.</param>
-        /// <param name="sortSpans">Orders the merged spans. Defaults to ordering by span name.</param>
-        /// <returns>The single merged request.</returns>
-        public static JToken MergeDatadogRequests(
-            JToken tracesRequests,
-            OtlpFieldNames names,
-            Func<IEnumerable<JToken>, IEnumerable<JToken>>? sortSpans = null)
-        {
-            var resourceSpansKey = names.ResourceSpans;
-            var scopeSpansKey = names.ScopeSpans;
-
-            // First, for the DD SDK, assert that the resource attributes for all requests are identical
-            // This is analogous to DD_SERVICE, DD_VERSION, DD_ENV, etc. that define
-            // metadata for the telemetry at an application and host level.
-            // This is different for OTel SDK application since the in-app code uses the SDK to create a
-            // 2nd, completely distinct, Traces SDK instance
-            JToken? previousResourceAttributes = null;
-            foreach (var tracesRequest in tracesRequests)
-            {
-                tracesRequest[resourceSpansKey].Should().HaveCount(1);
-                var resourceAttributes = tracesRequest[resourceSpansKey]![0]!["resource"]!["attributes"];
-
-                if (previousResourceAttributes is null)
-                {
-                    previousResourceAttributes = resourceAttributes;
-                }
-                else
-                {
-                    JToken.DeepEquals(previousResourceAttributes, resourceAttributes).Should().BeTrue();
-                    previousResourceAttributes = resourceAttributes;
-                }
-            }
-
-            // Next, assert that we only have a singular InstrumentationScope in each request.
-            // In OpenTelemetry, an InstrumentationScope is a way to group spans by the library that produced them.
-            // We should be respecting this for each library/ActivitySource, but right now the DD SDK doesn't
-            // keep track of that information, so consolidate them into one single, empty InstrumentationScope.
-            // TODO: Properly track spans per instrumentation scope.
-            JArray? firstSpans = null;
-            foreach (var tracesRequest in tracesRequests)
-            {
-                tracesRequest[resourceSpansKey]![0]![scopeSpansKey].Should().HaveCount(1);
-                var spans = tracesRequest[resourceSpansKey]![0]![scopeSpansKey]![0]!["spans"] as JArray;
-
-                if (firstSpans is null)
-                {
-                    firstSpans = spans;
-                }
-                else
-                {
-                    foreach (var span in spans!)
-                    {
-                        firstSpans.Add(span);
-                    }
-                }
-            }
-
-            // Now re-order and trim down to one single request
-            // This means the output is not a true 1:1 mapping of the input spans, but it's good enough for now
-            // and will make the results stable.
-            // Also, sort the spans by name to stabilize
-            sortSpans ??= spans => spans.OrderBy(s => s["name"]!.ToString());
-            var sortedSpans = new JArray(sortSpans(firstSpans!));
-            tracesRequests[0]![resourceSpansKey]![0]![scopeSpansKey]![0]!["spans"] = sortedSpans;
-            return tracesRequests[0]!;
-        }
-
-        /// <summary>
         /// Sorts spans by name within each scope, leaving the request structure intact. Used when the
         /// payload comes from a real OTel SDK, which emits genuinely distinct instrumentation scopes.
         /// </summary>
@@ -324,67 +250,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Helpers
                     scopeSpan["spans"] = sorted;
                 }
             }
-        }
-
-        /// <summary>
-        /// Returns the string value of the first attribute matching any of <paramref name="keys"/>,
-        /// or null when the span carries none of them. Accepts several keys because a tag's name
-        /// changes with the semantic conventions in play, for example http.url versus url.full.
-        /// </summary>
-        /// <param name="span">The span to read from.</param>
-        /// <param name="names">The field-name casing to use.</param>
-        /// <param name="keys">The attribute keys to look for, in priority order.</param>
-        /// <returns>The attribute value, or null when the span has none of the keys.</returns>
-        public static string? GetAttributeStringValue(JToken span, OtlpFieldNames names, params string[] keys)
-        {
-            if (span["attributes"] is not JArray attributes)
-            {
-                return null;
-            }
-
-            foreach (var key in keys)
-            {
-                foreach (var attribute in attributes)
-                {
-                    if (attribute["key"]?.ToString() == key)
-                    {
-                        return attribute["value"]?[names.StringValue]?.ToString();
-                    }
-                }
-            }
-
-            return null;
-        }
-
-        /// <summary>
-        /// Sets a string attribute on a span, appending it when the span does not already have it.
-        /// </summary>
-        /// <param name="span">The span to modify.</param>
-        /// <param name="names">The field-name casing to use.</param>
-        /// <param name="key">The attribute key.</param>
-        /// <param name="value">The attribute value.</param>
-        public static void SetAttributeStringValue(JToken span, OtlpFieldNames names, string key, string value)
-        {
-            if (span["attributes"] is not JArray attributes)
-            {
-                attributes = new JArray();
-                ((JObject)span)["attributes"] = attributes;
-            }
-
-            foreach (var attribute in attributes)
-            {
-                if (attribute["key"]?.ToString() == key)
-                {
-                    attribute["value"] = new JObject { [names.StringValue] = value };
-                    return;
-                }
-            }
-
-            attributes.Add(new JObject
-            {
-                ["key"] = key,
-                ["value"] = new JObject { [names.StringValue] = value },
-            });
         }
 
         /// <summary>
@@ -405,25 +270,27 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Helpers
         }
 
         /// <summary>
-        /// Typed counterpart to <see cref="MergeDatadogRequests"/>: merges multiple already-decoded
-        /// OTLP trace requests (see <see cref="MockTracerAgent.WaitForOtlpTraceRequestsAsync"/>) into
-        /// one, working on the underlying protobuf model instead of parsed JSON. Kept alongside the
-        /// JToken-based helper above for suites that only have raw JSON to work with (e.g. those still
-        /// reading from the Docker ddapm-test-agent).
+        /// Collapses every captured request into one. Asserts first that each request carries
+        /// identical resource attributes and a single instrumentation scope, which holds for the
+        /// Datadog SDK because it emits one application-level resource and does not yet track spans
+        /// per instrumentation scope. Works on the underlying protobuf model directly (protobuf
+        /// messages implement field-by-field value equality), so callers merge and sort before ever
+        /// converting to JSON, rather than after.
         /// </summary>
         /// <param name="requests">The trace requests to merge. Must be non-empty.</param>
         /// <param name="sortSpans">Orders the merged spans. Defaults to ordering by span name.</param>
         /// <returns>A clone of the first request's message, with every span merged into its resource/scope.</returns>
-        public static ExportTraceServiceRequest MergeMockOtlpTraceRequests(
+        public static ExportTraceServiceRequest MergeDatadogRequests(
             IReadOnlyList<MockOtlpTraceRequest> requests,
             Func<IEnumerable<OtlpSpan>, IEnumerable<OtlpSpan>>? sortSpans = null)
         {
             requests.Should().NotBeEmpty();
 
-            // As in MergeDatadogRequests: for the DD SDK, every request should carry identical
-            // resource attributes (DD_SERVICE, DD_VERSION, DD_ENV, etc. at the application/host
-            // level). Protobuf messages implement field-by-field value equality, so this is a
-            // straightforward Equals rather than the JToken.DeepEquals the JSON version needs.
+            // First, for the DD SDK, assert that the resource attributes for all requests are
+            // identical. This is analogous to DD_SERVICE, DD_VERSION, DD_ENV, etc. that define
+            // metadata for the telemetry at an application and host level. This is different for OTel
+            // SDK applications since the in-app code uses the SDK to create a 2nd, completely
+            // distinct, Traces SDK instance.
             Resource? previousResource = null;
             foreach (var request in requests)
             {
@@ -440,8 +307,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Helpers
                 }
             }
 
-            // As in MergeDatadogRequests: assert a single InstrumentationScope per request (the DD
-            // SDK doesn't yet track spans per instrumentation scope), then collect every span.
+            // Next, assert that we only have a singular InstrumentationScope in each request.
+            // In OpenTelemetry, an InstrumentationScope is a way to group spans by the library that
+            // produced them. We should be respecting this for each library/ActivitySource, but right
+            // now the DD SDK doesn't keep track of that information, so consolidate them into one
+            // single, empty InstrumentationScope.
+            // TODO: Properly track spans per instrumentation scope.
             var allSpans = new List<OtlpSpan>();
             foreach (var request in requests)
             {
@@ -449,6 +320,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Helpers
                 allSpans.AddRange(request.Raw.ResourceSpans[0].ScopeSpans[0].Spans);
             }
 
+            // Now re-order and trim down to one single request. This means the output is not a true
+            // 1:1 mapping of the input spans, but it's good enough for now and will make the results
+            // stable. Also, sort the spans by name to stabilize.
             sortSpans ??= spans => spans.OrderBy(s => s.Name, StringComparer.Ordinal);
 
             var merged = requests[0].Raw.Clone();
@@ -459,7 +333,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Helpers
         }
 
         /// <summary>
-        /// Typed counterpart to <see cref="GetAttributeStringValue(JToken, OtlpFieldNames, string[])"/>.
+        /// Returns the string value of the first attribute matching any of <paramref name="keys"/>,
+        /// or null when the span carries none of them. Accepts several keys because a tag's name
+        /// changes with the semantic conventions in play, for example http.url versus url.full.
         /// </summary>
         /// <param name="span">The span to read from.</param>
         /// <param name="keys">The attribute keys to look for, in priority order.</param>
