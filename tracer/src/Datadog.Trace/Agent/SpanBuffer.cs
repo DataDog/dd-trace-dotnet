@@ -25,6 +25,7 @@ namespace Datadog.Trace.Agent
 
         private byte[] _buffer;
         private int _offset;
+        private int _traceCount;
 
         public SpanBuffer(int maxBufferSize, ISpanBufferSerializer serializer)
         {
@@ -49,7 +50,7 @@ namespace Datadog.Trace.Agent
             Locked = 3
         }
 
-        public int TraceCount { get; private set; }
+        public int TraceCount => Volatile.Read(ref _traceCount);
 
         public int SpanCount { get; private set; }
 
@@ -75,7 +76,7 @@ namespace Datadog.Trace.Agent
         internal ArraySegment<byte> RawData => new(_buffer, 0, _offset);
 
         [TestingOnly]
-        internal bool IsEmpty => !IsFull && TraceCount == 0 && SpanCount == 0 && _offset == _serializer.HeaderSize;
+        internal bool IsEmpty => !IsFull && _traceCount == 0 && SpanCount == 0 && _offset == _serializer.HeaderSize;
 
         public WriteStatus TryWrite(in SpanCollection spans, ref byte[] temporaryBuffer, int? samplingPriority = null)
         {
@@ -101,7 +102,7 @@ namespace Datadog.Trace.Agent
                 // to get the other values we need (sampling priority, origin, trace tags, etc) for now.
                 // the idea is that as we refactor further, we can pass more than just the spans,
                 // and these values can come directly from the trace context.
-                var traceChunk = new TraceChunkModel(in spans, samplingPriority, isFirstChunkInPayload: TraceCount == 0);
+                var traceChunk = new TraceChunkModel(in spans, samplingPriority, isFirstChunkInPayload: _traceCount == 0);
 
                 // We don't know what the serialized size of the payload will be,
                 // so we need to write to a temporary buffer first
@@ -117,7 +118,7 @@ namespace Datadog.Trace.Agent
                 // the payload in Detach doesn't grow the array while the lock is held.
                 if (!EnsureCapacity(size + _offset + _serializer.TrailerSize))
                 {
-                    if (TraceCount == 0)
+                    if (_traceCount == 0)
                     {
                         // The trace cannot fit in an empty buffer
                         return WriteStatus.Overflow;
@@ -130,7 +131,7 @@ namespace Datadog.Trace.Agent
                 Buffer.BlockCopy(temporaryBuffer, 0, _buffer, _offset, size);
 
                 _offset += size;
-                TraceCount++;
+                _traceCount++;
                 SpanCount += traceChunk.SpanCount;
 
                 return WriteStatus.Success;
@@ -161,22 +162,22 @@ namespace Datadog.Trace.Agent
         {
             lock (_syncRoot)
             {
-                if (TraceCount == 0)
+                if (_traceCount == 0)
                 {
                     // Nothing to send, so don't consume the caller's replacement array
                     return default;
                 }
 
                 // Use a fixed-size header
-                _serializer.WriteHeader(ref _buffer, 0, TraceCount);
+                _serializer.WriteHeader(ref _buffer, 0, _traceCount);
                 int addedBytes = _serializer.FinishBody(ref _buffer, _offset, _maxBufferSize);
                 _offset += addedBytes;
 
-                var payload = new Payload(new ArraySegment<byte>(_buffer, 0, count: _offset), TraceCount, SpanCount);
+                var payload = new Payload(new ArraySegment<byte>(_buffer, 0, count: _offset), _traceCount, SpanCount);
 
                 _buffer = replacement;
                 _offset = _serializer.HeaderSize;
-                TraceCount = 0;
+                _traceCount = 0;
                 SpanCount = 0;
                 IsFull = false;
 

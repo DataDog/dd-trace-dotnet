@@ -448,6 +448,12 @@ namespace Datadog.Trace.Agent
 
         private async Task FlushBuffer(SpanBuffer buffer)
         {
+            if (buffer.TraceCount == 0)
+            {
+                // Nothing to send
+                return;
+            }
+
             // Make sure the replacement array is big enough before taking the buffer's lock.
             // This deliberately happens outside the critical section so that the serialization thread
             // never waits on an allocation.
