@@ -210,6 +210,7 @@ internal sealed class RcmSubscriptionManager : IRcmSubscriptionManager
         try
         {
             var response = await TrySendRequest(rcmTracer, callback).ConfigureAwait(false);
+            System.Console.Error.WriteLine($"[FFE-DBG] SendRequest: response={(response == null ? "null" : "non-null")}, Targets={(response?.Targets == null ? "null" : "non-null")}, Signed={(response?.Targets?.Signed == null ? "null" : "non-null")}, ClientConfigs={(response?.ClientConfigs?.Count ?? -1)}");
             if (response is null)
             {
                 return;
