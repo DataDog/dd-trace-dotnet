@@ -11,7 +11,6 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.FeatureFlags.Agentless;
@@ -265,7 +264,7 @@ public class AgentlessConfigurationSourceTests
         return endpoint ?? throw new InvalidOperationException("TryCreate reported success without producing an endpoint.");
     }
 
-    private static Task NoWait(TimeSpan delay, CancellationToken cancellationToken) => Task.CompletedTask;
+    private static Task NoWait(TimeSpan delay) => Task.CompletedTask;
 
     private class ThrowingApiRequest(Uri endpoint) : TestApiRequest(endpoint)
     {
