@@ -85,14 +85,18 @@ internal sealed class AgentlessEndpoint
                 return false;
             }
 
-            // A site accidentally set to e.g. "https://datadoghq.com" would produce a host like
-            // "ufc-server.ff-cdn.https://datadoghq.com", which Uri.TryCreate accepts as valid
-            // (treating the "//" as a path separator), so it is caught here. Whitespace and invalid
-            // ports need no check: Uri.TryCreate does reject those inside a host.
-            if (trimmedSite.Contains("://"))
+            // The site is concatenated into a host, so every character that can change what a URL means
+            // has to be rejected before that happens. "@" is the dangerous one: it would make the rest of
+            // the value the real host, and the API key would be sent there. "/", "?" and "#" would start a
+            // path, query or fragment, and ":" a port or a scheme. Uri.TryCreate accepts several of these,
+            // so it cannot be relied on to catch them. The other tracers reject the same set.
+            foreach (var character in trimmedSite)
             {
-                error = "The configured Datadog site is not valid";
-                return false;
+                if (char.IsWhiteSpace(character) || character is '/' or '?' or '#' or '@' or ':')
+                {
+                    error = "The configured Datadog site is not valid";
+                    return false;
+                }
             }
 
             var managedHost = ManagedHostPrefix + trimmedSite.ToLowerInvariant();

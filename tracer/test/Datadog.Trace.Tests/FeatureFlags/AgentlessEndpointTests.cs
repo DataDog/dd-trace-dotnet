@@ -134,6 +134,12 @@ public class AgentlessEndpointTests
     [InlineData("https://datadoghq.com")] // user accidentally includes the scheme
     [InlineData("data dog hq.com")] // internal spaces
     [InlineData("datadoghq.com:99999")] // invalid port
+    // "@" would end the userinfo and make the remainder the real host, so the request, and with it
+    // the API key, would go to a host the operator never named.
+    [InlineData("datadoghq.com@attacker.example")]
+    [InlineData("datadoghq.com/../evil")] // a path escapes the host
+    [InlineData("datadoghq.com?x=1")] // a query escapes the host
+    [InlineData("datadoghq.com#f")] // a fragment escapes the host
     public void RejectsMalformedSiteWithoutThrowing(string site)
     {
         AgentlessEndpoint.TryCreate(site, baseUrl: null, out var endpoint, out var error)
