@@ -341,6 +341,12 @@ internal sealed class RepositorySourcePathResolver
         RootPathInfo root,
         [NotNullWhen(true)] out string? absolutePath)
     {
+        if (IsPathRootedCrossPlatform(relativePath))
+        {
+            absolutePath = null;
+            return false;
+        }
+
         var resolvedPath = Path.GetFullPath(Path.Combine(root.FullPath, relativePath));
         if (!resolvedPath.StartsWith(root.FullPathWithSeparator, root.PathComparison) &&
             !string.Equals(resolvedPath, root.FullPath, root.PathComparison))
