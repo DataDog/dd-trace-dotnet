@@ -26,11 +26,11 @@ internal static class UfcConfigurationParser
     /// which is the document the evaluator consumes. A raw UFC document is rejected, including from
     /// a custom endpoint, so that every source agrees on one wire format.
     /// </summary>
-    /// <param name="body">The response body.</param>
+    /// <param name="body">The response body. Read straight from the response, so it never has to be held as a string.</param>
     /// <param name="configuration">The parsed configuration.</param>
     /// <param name="error">Why the payload was rejected.</param>
     /// <returns><c>true</c> when the payload matches the contract.</returns>
-    public static bool TryParse(string? body, [NotNullWhen(true)] out ServerConfiguration? configuration, out string? error)
+    public static bool TryParse(TextReader body, [NotNullWhen(true)] out ServerConfiguration? configuration, out string? error)
     {
         configuration = null;
         error = null;
@@ -38,11 +38,10 @@ internal static class UfcConfigurationParser
         JToken payload;
         try
         {
-            using var stringReader = new StringReader(body ?? string.Empty);
-
             // Timestamps stay strings: the model carries createdAt verbatim, and letting Newtonsoft
-            // turn it into a date would also make the type check below fail.
-            using var jsonReader = new JsonTextReader(stringReader) { DateParseHandling = DateParseHandling.None };
+            // turn it into a date would also make the type check below fail. The reader belongs to
+            // the caller, which owns the response it came from.
+            using var jsonReader = new JsonTextReader(body) { DateParseHandling = DateParseHandling.None, CloseInput = false };
             payload = JToken.ReadFrom(jsonReader);
         }
         catch (Exception)

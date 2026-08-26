@@ -339,41 +339,48 @@ internal sealed class AgentlessConfigurationSource : IDisposable
                     t => { try { using var r = t.Result; } catch { } },
                     TaskContinuationOptions.None);
 
-                return new PollResult(statusCode: null, etag: null, body: null, error: new TimeoutException($"Feature Flags agentless request timed out after {_requestTimeout.TotalSeconds}s"));
+                return new PollResult(statusCode: null, etag: null, configuration: null, parseError: null, error: new TimeoutException($"Feature Flags agentless request timed out after {_requestTimeout.TotalSeconds}s"));
             }
 
             using var response = await getTask.ConfigureAwait(false);
 #endif
 
-            // Only a 200 carries configuration; other bodies are never decoded as one.
-            var body = response.StatusCode == 200 ? await ReadBodyAsync(response).ConfigureAwait(false) : null;
-            return new PollResult(response.StatusCode, response.GetHeader("ETag"), body, error: null);
+            // Only a 200 carries configuration; other bodies are never decoded as one. The payload
+            // is parsed here, while the response is still open, so it never has to be held as a
+            // string. A payload that does not parse is reported, not thrown: it is not retryable.
+            ServerConfiguration? configuration = null;
+            string? parseError = null;
+
+            if (response.StatusCode == 200)
+            {
+                using var stream = await response.GetStreamAsync().ConfigureAwait(false);
+
+                using var decompressed =
+                    response.GetContentEncodingType() == ContentEncodingType.GZip
+                        ? new GZipStream(stream, CompressionMode.Decompress, leaveOpen: true)
+                        : null;
+
+                // Every parameter has to be given to reach leaveOpen. A byte order mark is not
+                // expected, and letting one be detected would override the declared encoding.
+                using var reader = new StreamReader(
+                    decompressed ?? stream,
+                    response.GetCharsetEncoding(),
+                    detectEncodingFromByteOrderMarks: false,
+                    bufferSize: 1024, // the default
+                    leaveOpen: true);
+
+                if (UfcConfigurationParser.TryParse(reader, out var parsed, out parseError))
+                {
+                    configuration = parsed;
+                }
+            }
+
+            return new PollResult(response.StatusCode, response.GetHeader("ETag"), configuration, parseError, error: null);
         }
         catch (Exception ex)
         {
-            return new PollResult(statusCode: null, etag: null, body: null, error: ex);
+            return new PollResult(statusCode: null, etag: null, configuration: null, parseError: null, error: ex);
         }
-    }
-
-    private async Task<string> ReadBodyAsync(IApiResponse response)
-    {
-        using var stream = await response.GetStreamAsync().ConfigureAwait(false);
-
-        using var decompressed =
-            response.GetContentEncodingType() == ContentEncodingType.GZip
-                ? new GZipStream(stream, CompressionMode.Decompress, leaveOpen: true)
-                : null;
-
-        // Every parameter has to be given to reach leaveOpen. A byte order mark is not expected, and
-        // letting one be detected would override the encoding the response declared.
-        using var reader = new StreamReader(
-            decompressed ?? stream,
-            response.GetCharsetEncoding(),
-            detectEncodingFromByteOrderMarks: false,
-            bufferSize: 1024, // the default
-            leaveOpen: true);
-
-        return await reader.ReadToEndAsync().ConfigureAwait(false);
     }
 
     private void Apply(in PollResult result)
@@ -391,12 +398,12 @@ internal sealed class AgentlessConfigurationSource : IDisposable
                 return;
         }
 
-        if (!UfcConfigurationParser.TryParse(result.Body, out var configuration, out var error))
+        if (result.Configuration is not { } configuration)
         {
             if (!_malformedPayloadLogged)
             {
                 _malformedPayloadLogged = true;
-                Log.Error("Feature Flags agentless endpoint returned an unusable payload: {Error}", error);
+                Log.Error("Feature Flags agentless endpoint returned an unusable payload: {Error}", result.ParseError);
             }
 
             return;
@@ -452,13 +459,15 @@ internal sealed class AgentlessConfigurationSource : IDisposable
         }
     }
 
-    internal readonly struct PollResult(int? statusCode, string? etag, string? body, Exception? error)
+    internal readonly struct PollResult(int? statusCode, string? etag, ServerConfiguration? configuration, string? parseError, Exception? error)
     {
         public int? StatusCode { get; } = statusCode;
 
         public string? ETag { get; } = etag;
 
-        public string? Body { get; } = body;
+        public ServerConfiguration? Configuration { get; } = configuration;
+
+        public string? ParseError { get; } = parseError;
 
         public Exception? Error { get; } = error;
     }
