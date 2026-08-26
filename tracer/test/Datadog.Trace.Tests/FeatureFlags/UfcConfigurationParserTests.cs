@@ -80,8 +80,6 @@ public class UfcConfigurationParserTests
     [InlineData("""{ "data": { "type": "universal-flag-configuration", "attributes": { "format": "SERVER", "environment": { "name": "prod" }, "flags": {} } } }""")]
     // Missing environment
     [InlineData("""{ "data": { "type": "universal-flag-configuration", "attributes": { "format": "SERVER", "createdAt": "x", "flags": {} } } }""")]
-    // environment.name is not a string
-    [InlineData("""{ "data": { "type": "universal-flag-configuration", "attributes": { "format": "SERVER", "createdAt": "x", "environment": { "name": 123 }, "flags": {} } } }""")]
     // Missing flags
     [InlineData("""{ "data": { "type": "universal-flag-configuration", "attributes": { "format": "SERVER", "createdAt": "x", "environment": { "name": "prod" } } } }""")]
     // flags is not an object
@@ -109,6 +107,20 @@ public class UfcConfigurationParserTests
         configuration!.Flags.Should().NotBeNull();
         configuration!.Flags!.Should().ContainKey("test-flag");
         configuration!.Flags!["test-flag"].Enabled.Should().BeTrue();
+    }
+
+    [Fact]
+    public void AcceptsANumericEnvironmentName()
+    {
+        // The attributes are deserialized straight from the reader, so a scalar of the wrong type is
+        // coerced rather than rejected. The environment name is an opaque string to us, so a number
+        // read as its digits is harmless: the request it targets would not have matched anyway.
+        var body = """{ "data": { "type": "universal-flag-configuration", "attributes": { "format": "SERVER", "createdAt": "x", "environment": { "name": 123 }, "flags": {} } } }""";
+
+        Parse(body, out var configuration, out var error).Should().BeTrue();
+
+        error.Should().BeNull();
+        configuration!.Environment!.Name.Should().Be("123");
     }
 
     // The parser reads the response stream directly, so a body under test is handed to it as a reader.
