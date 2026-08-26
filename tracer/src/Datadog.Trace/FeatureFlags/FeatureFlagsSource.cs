@@ -13,9 +13,11 @@ namespace Datadog.Trace.FeatureFlags;
 internal enum FeatureFlagsSource
 {
     /// <summary>
-    /// Feature Flags are disabled: no configuration is loaded, and neither delivery path is contacted.
+    /// Nothing is contacted and no configuration is loaded, so evaluations return the caller's
+    /// default value. Named after the <c>offline</c> value that selects it: it is a source rather
+    /// than an off switch, because it is reserved for serving configuration supplied at startup.
     /// </summary>
-    Disabled,
+    Offline,
 
     /// <summary>
     /// Configuration is fetched over HTTP, without the Datadog Agent.

@@ -23,10 +23,10 @@ public class FeatureFlagsSettingsTests
     // Nothing configured: agentless is the default.
     [InlineData(null, null, null, FeatureFlagsSource.Agentless)]
     // The stable kill switch wins over everything, including a legacy opt-in and an explicit source.
-    [InlineData("false", null, null, FeatureFlagsSource.Disabled)]
-    [InlineData("false", null, "true", FeatureFlagsSource.Disabled)]
-    [InlineData("false", "agentless", null, FeatureFlagsSource.Disabled)]
-    [InlineData("false", "remote_config", null, FeatureFlagsSource.Disabled)]
+    [InlineData("false", null, null, FeatureFlagsSource.Offline)]
+    [InlineData("false", null, "true", FeatureFlagsSource.Offline)]
+    [InlineData("false", "agentless", null, FeatureFlagsSource.Offline)]
+    [InlineData("false", "remote_config", null, FeatureFlagsSource.Offline)]
     // Enabling explicitly does not imply the historical Remote Configuration source.
     [InlineData("true", null, null, FeatureFlagsSource.Agentless)]
     // An explicit source wins over the legacy key, in both directions.
@@ -34,7 +34,7 @@ public class FeatureFlagsSettingsTests
     [InlineData(null, "remote_config", "false", FeatureFlagsSource.RemoteConfig)]
     // The legacy key grandfathers existing adopters, who opted in when RC was the only source.
     [InlineData(null, null, "true", FeatureFlagsSource.RemoteConfig)]
-    [InlineData(null, null, "false", FeatureFlagsSource.Disabled)]
+    [InlineData(null, null, "false", FeatureFlagsSource.Offline)]
     // An explicit new-key value takes precedence over the legacy key, so a stale legacy disable
     // does not silently keep Feature Flags off during migration.
     [InlineData("true", null, "false", FeatureFlagsSource.Agentless)]
@@ -44,15 +44,15 @@ public class FeatureFlagsSettingsTests
     [InlineData(null, "invalid", null, FeatureFlagsSource.Agentless)]
     [InlineData(null, "invalid", "true", FeatureFlagsSource.RemoteConfig)]
     // "offline" is a reserved, recognised fail-closed sentinel (not an unrecognised value).
-    [InlineData(null, "offline", null, FeatureFlagsSource.Disabled)]
-    [InlineData(null, "offline", "true", FeatureFlagsSource.Disabled)]
+    [InlineData(null, "offline", null, FeatureFlagsSource.Offline)]
+    [InlineData(null, "offline", "true", FeatureFlagsSource.Offline)]
     public void ResolvesSource(string? enabled, string? source, string? legacyEnabled, object expected)
     {
         var expectedSource = (FeatureFlagsSource)expected;
         var settings = CreateSettings(enabled, source, legacyEnabled);
 
         settings.Source.Should().Be(expectedSource);
-        settings.Enabled.Should().Be(expectedSource != FeatureFlagsSource.Disabled);
+        settings.Enabled.Should().Be(expectedSource != FeatureFlagsSource.Offline);
     }
 
     [Theory]

@@ -32,8 +32,8 @@ internal sealed class FeatureFlagsSettings
     // one language the caller's default value while the others still return a real one.
     internal const int DefaultInitializationTimeoutMs = 30_000;
 
-    // An interval above this is indistinguishable from "never poll" and is more likely a
-    // misconfiguration (for example milliseconds passed as seconds) than an intent.
+    // One hour. An interval above this is more likely a misconfiguration (for example milliseconds
+    // passed as seconds) than an intent, and the other tracers cap it at the same value.
     private const int MaxPollIntervalSeconds = 3600;
 
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(FeatureFlagsSettings));
@@ -68,10 +68,10 @@ internal sealed class FeatureFlagsSettings
         // adopters onto Remote Configuration, and everything else defaults to agentless.
         DefaultResult<FeatureFlagsSource> defaultSource = enabled switch
         {
-            false => new(FeatureFlagsSource.Disabled, OfflineSourceName),
+            false => new(FeatureFlagsSource.Offline, OfflineSourceName),
             null when legacyEnabled is not null => legacyEnabled.Value
                                                        ? new(FeatureFlagsSource.RemoteConfig, RemoteConfigSourceName)
-                                                       : new(FeatureFlagsSource.Disabled, OfflineSourceName),
+                                                       : new(FeatureFlagsSource.Offline, OfflineSourceName),
             _ => new(FeatureFlagsSource.Agentless, AgentlessSourceName),
         };
 
@@ -114,14 +114,14 @@ internal sealed class FeatureFlagsSettings
     }
 
     /// <summary>
-    /// Gets the resolved delivery source. <see cref="FeatureFlagsSource.Disabled"/> means nothing is contacted.
+    /// Gets the resolved delivery source. <see cref="FeatureFlagsSource.Offline"/> means nothing is contacted.
     /// </summary>
     public FeatureFlagsSource Source { get; }
 
     /// <summary>
     /// Gets a value indicating whether Feature Flags are enabled at all.
     /// </summary>
-    public bool Enabled => Source != FeatureFlagsSource.Disabled;
+    public bool Enabled => Source != FeatureFlagsSource.Offline;
 
     /// <summary>
     /// Gets the configured override for the agentless endpoint, or <c>null</c> to derive it from the site.
@@ -193,11 +193,11 @@ internal sealed class FeatureFlagsSettings
         // "offline" is a reserved fail-closed sentinel: the provider is intentionally off.
         if (string.Equals(value, OfflineSourceName, StringComparison.OrdinalIgnoreCase))
         {
-            source = FeatureFlagsSource.Disabled;
+            source = FeatureFlagsSource.Offline;
             return true;
         }
 
-        source = FeatureFlagsSource.Disabled;
+        source = FeatureFlagsSource.Offline;
         return false;
     }
 }
