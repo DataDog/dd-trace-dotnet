@@ -3158,16 +3158,16 @@ supportedConfigurations:
       Enables Feature Flags Provider (Experimental).
       Default value is <c>false</c> (disabled).
   DD_EXPERIMENTAL_FLAGGING_PROVIDER_INITIALIZATION_TIMEOUT_MS:
-  - implementation: B
+  - implementation: A
     scope: managed
     type: int
-    default: '10000'
+    default: '30000'
     product: FeatureFlags
     const_name: FlaggingProviderInitializationTimeoutMs
     documentation: |-
       Configuration key for how long, in milliseconds, provider initialization waits for the first
       flag configuration to arrive before returning.
-      Default value is <c>10000</c> (10 seconds).
+      Default value is <c>30000</c> (30 seconds), matching the other tracers.
       Initialization does not fail when the timeout expires: the provider stays not-ready, evaluations
       return the caller's default value, and the provider becomes ready when configuration arrives.
   DD_FEATURE_FLAGS_ENABLED:
