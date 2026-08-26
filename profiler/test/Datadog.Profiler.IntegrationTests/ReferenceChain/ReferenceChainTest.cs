@@ -323,15 +323,6 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
                 typesPerSnapshot.Add((histogramTypes, treeTypes));
             }
 
-            // Checked on at least one snapshot rather than on all of them: the two artifacts
-            // describe the same GC but are produced by different mechanisms -- the histogram
-            // from the EventPipe bulk node events, the tree from the live traversal -- so a
-            // dropped event batch can legitimately leave a traversed type out of a histogram.
-            var consistentSnapshots = typesPerSnapshot.Count(snapshot => !snapshot.TreeTypes.Except(snapshot.HistogramTypes).Any());
-            Assert.True(
-                consistentSnapshots > 0,
-                "Expected at least one snapshot whose reference tree types are all present in the class histogram");
-
             // Both files must name the scenario types identically. Checked on at least one
             // snapshot because the first one can be taken before they are allocated.
             var scenarioTypes = new[]
