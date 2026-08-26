@@ -56,8 +56,9 @@ internal sealed class AgentlessConfigurationSource : IDisposable
     // Only ever touched from the poll loop.
     private readonly HashSet<string> _loggedFailureCategories = new();
 
-    // Written by the settings-change callback, read by the poll loop.
-    private string? _environment;
+    // Written by the settings-change callback, read by the poll loop. The URI is stored rather than
+    // the environment it carries, so it is only built when the environment changes.
+    private Uri _requestUri;
     private IDisposable? _environmentSubscription;
 
     // Only ever touched from the poll loop.
@@ -82,7 +83,7 @@ internal sealed class AgentlessConfigurationSource : IDisposable
         _pollInterval = pollInterval;
         _requestTimeout = requestTimeout;
         _applyConfiguration = applyConfiguration;
-        _environment = environment;
+        _requestUri = endpoint.BuildRequestUri(environment);
         _waitAsync = waitAsync ?? Task.Delay;
     }
 
@@ -117,8 +118,8 @@ internal sealed class AgentlessConfigurationSource : IDisposable
             manager.InitialMutableSettings.Environment);
 
         // The environment is tracked rather than captured: customers can change it in code while
-        // the application runs, and flags are targeted per environment. Only the value is stored
-        // here, so that the poll loop stays the only thing that touches the request state.
+        // the application runs, and flags are targeted per environment. Only the request URI is
+        // stored here, so that the poll loop stays the only thing that touches the request state.
         source._environmentSubscription = manager.SubscribeToChanges(changes =>
         {
             if (changes.UpdatedMutable is { } mutable)
@@ -131,10 +132,11 @@ internal sealed class AgentlessConfigurationSource : IDisposable
     }
 
     /// <summary>
-    /// Records the environment to request configuration for. Applied by the poll loop on its next
-    /// request, so a change never disturbs a request already in flight.
+    /// Records the environment to request configuration for, as the URI that carries it. Picked up
+    /// by the poll loop on its next request, so a change never disturbs a request already in flight.
     /// </summary>
-    internal void UpdateEnvironment(string? environment) => Volatile.Write(ref _environment, environment);
+    internal void UpdateEnvironment(string? environment)
+        => Volatile.Write(ref _requestUri, _endpoint.BuildRequestUri(environment));
 
     /// <summary>
     /// Starts polling. Idempotent.
@@ -300,9 +302,9 @@ internal sealed class AgentlessConfigurationSource : IDisposable
     {
         try
         {
-            // The environment is applied per request rather than baked into the endpoint, because
-            // it can be changed in code after startup.
-            var uri = _endpoint.BuildRequestUri(Volatile.Read(ref _environment));
+            // Read per request rather than captured, because the environment it carries can be
+            // changed in code after startup.
+            var uri = Volatile.Read(ref _requestUri);
 
             // An ETag only identifies the configuration served for the URI it came from. Sending it
             // against a different environment would earn a 304 and pin the process to the previous
