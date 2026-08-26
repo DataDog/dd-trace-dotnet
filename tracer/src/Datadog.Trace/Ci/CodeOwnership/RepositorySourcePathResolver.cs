@@ -29,7 +29,7 @@ internal sealed class RepositorySourcePathResolver
         => MakeRelativePath(_sourceRoot, sourceFilePath, useOSSeparator);
 
     /// <summary>
-    /// Resolves the source path below the repository root, including paths recorded from another CI workspace.
+    /// Resolves the source path below the repository root, including relative paths recorded from another CI workspace.
     /// </summary>
     internal bool TryMakeRepositoryRelative(string sourceFilePath, string repositoryRoot, bool useOSSeparator, [NotNullWhen(true)] out string? relativePath)
     {

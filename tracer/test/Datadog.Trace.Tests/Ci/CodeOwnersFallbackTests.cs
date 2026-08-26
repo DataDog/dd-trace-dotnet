@@ -79,6 +79,26 @@ public class CodeOwnersFallbackTests
     }
 
     [SkippableFact]
+    public void UsesGitRootInsteadOfNestedCodeOwnersFile()
+    {
+        using var tempDirectory = new TemporaryDirectory();
+        var repoRoot = tempDirectory.RootPath;
+        var srcDir = Path.Combine(repoRoot, "src");
+        Directory.CreateDirectory(Path.Combine(repoRoot, ".git"));
+        Directory.CreateDirectory(srcDir);
+        var sourceFile = Path.Combine(srcDir, "SpanBenchmark.cs");
+        File.WriteAllText(Path.Combine(repoRoot, "CODEOWNERS"), "* @repository-owner");
+        File.WriteAllText(Path.Combine(srcDir, "CODEOWNERS"), "* @nested-owner");
+        File.WriteAllText(sourceFile, "class SpanBenchmark {}");
+
+        var ciValues = CreateGitHubEnvironmentForWorkspace(srcDir);
+        var ownership = ciValues.ResolveSourceOwnership(sourceFile, useOSSeparator: false);
+
+        Assert.Equal("src/SpanBenchmark.cs", ownership.RepositoryRelativePath);
+        Assert.Equal(["@repository-owner"], ownership.MatchingOwners);
+    }
+
+    [SkippableFact]
     public void DoesNotUseCurrentDirectoryForRelativeSourceFile()
     {
         using var tempDirectory = new TemporaryDirectory();
@@ -295,10 +315,12 @@ public class CodeOwnersFallbackTests
 
         Assert.True(ciValues.HasCodeOwners);
         Assert.False(ownership.IsRepositoryRelative);
+        Assert.Empty(ownership.MatchingOwners);
+        Assert.Null(ownership.CodeOwnersTag);
     }
 
     [SkippableFact]
-    public void KeepsSourceRootMatchWhenFallbackCannotResolve()
+    public void DoesNotMatchCodeOwnersWhenFallbackCannotResolve()
     {
         using var repoDirectory = new TemporaryDirectory();
         var repoRoot = repoDirectory.RootPath;
@@ -315,7 +337,8 @@ public class CodeOwnersFallbackTests
 
         Assert.StartsWith("..", ownership.RepositoryRelativePath, StringComparison.Ordinal);
         Assert.False(ownership.IsRepositoryRelative);
-        Assert.Equal(["@global"], ownership.MatchingOwners);
+        Assert.Empty(ownership.MatchingOwners);
+        Assert.Null(ownership.CodeOwnersTag);
     }
 
     [SkippableFact]
