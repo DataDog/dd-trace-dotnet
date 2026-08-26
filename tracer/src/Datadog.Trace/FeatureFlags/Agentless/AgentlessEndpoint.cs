@@ -85,16 +85,17 @@ internal sealed class AgentlessEndpoint
                 return false;
             }
 
-            var managedHost = ManagedHostPrefix + trimmedSite.ToLowerInvariant();
             // A site accidentally set to e.g. "https://datadoghq.com" would produce a host like
-            // "ufc-server.ff-cdn.https://datadoghq.com" which Uri.TryCreate accepts as valid
-            // (treating the "//" as a path separator). Catch it explicitly; whitespace and
-            // invalid ports are already rejected by TryCreate.
-            if (managedHost.Contains("://"))
+            // "ufc-server.ff-cdn.https://datadoghq.com", which Uri.TryCreate accepts as valid
+            // (treating the "//" as a path separator), so it is caught here. Whitespace and invalid
+            // ports need no check: Uri.TryCreate does reject those inside a host.
+            if (trimmedSite.Contains("://"))
             {
                 error = "The configured Datadog site is not valid";
                 return false;
             }
+
+            var managedHost = ManagedHostPrefix + trimmedSite.ToLowerInvariant();
 
             if (!Uri.TryCreate($"https://{managedHost}{DefaultPath}", UriKind.Absolute, out var managedUri))
             {
@@ -106,7 +107,8 @@ internal sealed class AgentlessEndpoint
             return true;
         }
 
-        // A URL with internal whitespace is malformed, and Uri parsing is lenient enough to accept it.
+        // Uri parsing rejects whitespace inside a host, but accepts it in a path or query, so a
+        // URL carrying it there is malformed and has to be caught explicitly.
         foreach (var character in configured)
         {
             if (char.IsWhiteSpace(character))

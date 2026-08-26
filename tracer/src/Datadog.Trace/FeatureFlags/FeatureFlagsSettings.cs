@@ -61,17 +61,17 @@ internal sealed class FeatureFlagsSettings
 #pragma warning restore 618
         }
 
-        // The source is resolved in a single read so configuration telemetry reports the value we
-        // actually use. Shared across tracers, so the precedence is deliberate: the stable kill
+        // The source key is read once, with every other outcome expressed as its default, so
+        // configuration telemetry reports the one value we act on rather than one entry per
+        // candidate key. Shared across tracers, so the precedence is deliberate: the stable kill
         // switch wins over everything (expressed as a validator that rejects any configured value),
         // an explicit source wins over the legacy key, the legacy key grandfathers existing
         // adopters onto Remote Configuration, and everything else defaults to agentless.
-        DefaultResult<FeatureFlagsSource> defaultSource = enabled switch
+        DefaultResult<FeatureFlagsSource> defaultSource = (enabled, legacyEnabled) switch
         {
-            false => new(FeatureFlagsSource.Offline, OfflineSourceName),
-            null when legacyEnabled is not null => legacyEnabled.Value
-                                                       ? new(FeatureFlagsSource.RemoteConfig, RemoteConfigSourceName)
-                                                       : new(FeatureFlagsSource.Offline, OfflineSourceName),
+            (false, _) => new(FeatureFlagsSource.Offline, OfflineSourceName),
+            (null, true) => new(FeatureFlagsSource.RemoteConfig, RemoteConfigSourceName),
+            (null, false) => new(FeatureFlagsSource.Offline, OfflineSourceName),
             _ => new(FeatureFlagsSource.Agentless, AgentlessSourceName),
         };
 
@@ -166,9 +166,7 @@ internal sealed class FeatureFlagsSettings
             return ParsingResult<FeatureFlagsSource>.Failure();
         }
 
-        // Compared without allocating. A value with surrounding whitespace is trimmed only once the
-        // direct comparisons have failed, so the common path stays allocation-free.
-        if (TryMatch(value, out var source) || TryMatch(value.Trim(), out source))
+        if (TryMatch(value.Trim(), out var source))
         {
             return ParsingResult<FeatureFlagsSource>.Success(source);
         }
