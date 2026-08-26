@@ -74,12 +74,13 @@ public class ProcessBasicChecksTests : ConsoleTestHelper
 
     [SkippableTheory]
     [Trait("RunOnWindows", "True")]
-    [InlineData(@"D:\home\site\wwwroot\datadog\win-x64\Datadog.Trace.ClrProfiler.Native.dll")]
-    [InlineData(@"D:\home\site\wwwroot\datadog\win-x86\Datadog.Trace.ClrProfiler.Native.dll")]
-    public void DetectsBundleInAzureAppServiceRootOnWindowsWhenMainModuleIsDotnet(string profilerPath)
+    [InlineData(@"datadog\win-x64\Datadog.Trace.ClrProfiler.Native.dll")]
+    [InlineData(@"datadog\win-x86\Datadog.Trace.ClrProfiler.Native.dll")]
+    public void DetectsBundleInAzureAppServiceRootOnWindowsWhenMainModuleIsDotnet(string relativeProfilerPath)
     {
         SkipOn.AllExcept(SkipOn.PlatformValue.Windows);
 
+        var profilerPath = Path.Combine(ProcessBasicCheck.AzureAppServiceRootPath, relativeProfilerPath);
         var environmentVariables = new Dictionary<string, string>
         {
             ["WEBSITE_SITE_NAME"] = "app",

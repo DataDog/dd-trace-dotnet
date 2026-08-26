@@ -27,7 +27,7 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
         // instance was provisioned, so the drive letter must not be hardcoded. See
         // https://github.com/projectkudu/kudu/wiki/Understanding-the-Azure-App-Service-file-system
         internal static readonly string AzureAppServiceRootPath = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
-            ? Path.Combine(Environment.GetEnvironmentVariable("HOME") ?? @"D:\home", "site", "wwwroot")
+            ? Path.Combine(Environment.GetEnvironmentVariable("HOME") ?? @"C:\home", "site", "wwwroot")
             : "/home/site/wwwroot";
 
         public static bool Run(ProcessInfo process, IRegistryService? registryService = null)
