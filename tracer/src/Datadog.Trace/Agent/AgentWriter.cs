@@ -292,6 +292,15 @@ namespace Datadog.Trace.Agent
         }
 
         /// <summary>
+        /// Swaps the active buffer, so that a test can set up a buffer that holds traces but is
+        /// neither active nor full. In production that state is only produced by a
+        /// <see cref="SpanBuffer.WriteStatus.Locked"/> write.
+        /// </summary>
+        [TestingOnly]
+        internal void SwapActiveBufferForTests()
+            => Volatile.Write(ref _activeBuffer, _activeBuffer == _frontBuffer ? _backBuffer : _frontBuffer);
+
+        /// <summary>
         /// Asks the flush loop to flush both buffers, and waits for that flush to complete. Buffers are
         /// only ever flushed by the flush loop, so at most one payload is in flight at a time.
         /// Concurrent requests share a single flush pass.
@@ -359,11 +368,11 @@ namespace Datadog.Trace.Agent
 
                     // Once serialization has stopped, nothing new can be written to the buffers
                     isFinalPass = _serializationTask.IsCompleted;
-                    var flushAllBuffers = flushRequest is not null;
+                    var hasFlushRequest = flushRequest is not null;
 
-                    if (flushAllBuffers || isFinalPass || _backgroundFlushEnabled)
+                    if (hasFlushRequest || isFinalPass || _backgroundFlushEnabled)
                     {
-                        await FlushBuffers(flushAllBuffers: flushAllBuffers || isFinalPass).ConfigureAwait(false);
+                        await FlushBuffers().ConfigureAwait(false);
                     }
 
                     flushRequest?.TrySetResult(true);
@@ -396,24 +405,39 @@ namespace Datadog.Trace.Agent
         }
 
         /// <summary>
-        /// Flush the active buffer, and the fallback buffer if full.
+        /// Flushes both buffers, oldest traces first.
         /// </summary>
-        /// <param name="flushAllBuffers">If set to true, then flush the back buffer even if not full</param>
         /// <returns>Async operation</returns>
-        private async Task FlushBuffers(bool flushAllBuffers = false)
+        private async Task FlushBuffers()
         {
             try
             {
+                // Report drop counts
+                var droppedTracesTooLarge = Interlocked.Exchange(ref _droppedTracesTooLarge, 0);
+                var droppedTracesBufferFull = Interlocked.Exchange(ref _droppedTracesBufferFull, 0);
+                var droppedTracesBufferFullAndLocked = Interlocked.Exchange(ref _droppedTracesBufferFullAndLocked, 0);
+                var droppedTracesBuffersLocked = Interlocked.Exchange(ref _droppedTracesBuffersLocked, 0);
+
+                if (droppedTracesTooLarge > 0 || droppedTracesBufferFull > 0 || droppedTracesBufferFullAndLocked > 0 || droppedTracesBuffersLocked > 0)
+                {
+                    Log.Warning(
+                        "Traces were dropped since the last flush operation: {TooLargeCount} exceeded the trace buffer limit of {MaxBufferSize} bytes, {BuffersFullCount} found both buffers full, {BufferFullAndLockedCount} found one buffer full and the other unavailable while being flushed, and {BuffersLockedCount} found both buffers unavailable while being flushed.",
+                        [
+                            droppedTracesTooLarge,
+                            _frontBuffer.MaxBufferSize,
+                            droppedTracesBufferFull,
+                            droppedTracesBufferFullAndLocked,
+                            droppedTracesBuffersLocked
+                        ]);
+                }
+
                 var activeBuffer = Volatile.Read(ref _activeBuffer);
                 var fallbackBuffer = activeBuffer == _frontBuffer ? _backBuffer : _frontBuffer;
 
-                // First, flush the back buffer if full
-                if (fallbackBuffer.IsFull || flushAllBuffers)
-                {
-                    await FlushBuffer(fallbackBuffer).ConfigureAwait(false);
-                }
-
-                // Then, flush the main buffer
+                // The fallback buffer holds the older traces. The read above can go stale
+                // if the serialization thread swaps while we are sending, but as that
+                // only changes which is flushed first, it's fine.
+                await FlushBuffer(fallbackBuffer).ConfigureAwait(false);
                 await FlushBuffer(activeBuffer).ConfigureAwait(false);
             }
             catch (Exception ex)
@@ -424,6 +448,12 @@ namespace Datadog.Trace.Agent
 
         private async Task FlushBuffer(SpanBuffer buffer)
         {
+            if (buffer.TraceCount == 0)
+            {
+                // Nothing to send
+                return;
+            }
+
             // Make sure the replacement array is big enough before taking the buffer's lock.
             // This deliberately happens outside the critical section so that the serialization thread
             // never waits on an allocation.
@@ -454,25 +484,6 @@ namespace Datadog.Trace.Agent
                         statsd.Increment(TracerMetricNames.Queue.DequeuedTraces, payload.TraceCount);
                         statsd.Increment(TracerMetricNames.Queue.DequeuedSpans, payload.SpanCount);
                     }
-                }
-
-                var droppedTracesTooLarge = Interlocked.Exchange(ref _droppedTracesTooLarge, 0);
-                var droppedTracesBufferFull = Interlocked.Exchange(ref _droppedTracesBufferFull, 0);
-                var droppedTracesBufferFullAndLocked = Interlocked.Exchange(ref _droppedTracesBufferFullAndLocked, 0);
-                var droppedTracesBuffersLocked = Interlocked.Exchange(ref _droppedTracesBuffersLocked, 0);
-
-                if (droppedTracesTooLarge > 0 || droppedTracesBufferFull > 0 || droppedTracesBufferFullAndLocked > 0 || droppedTracesBuffersLocked > 0)
-                {
-                    Log.Warning(
-                        "Traces were dropped since the last flush operation: {TooLargeCount} exceeded the trace buffer limit of {MaxBufferSize} bytes, {BuffersFullCount} found both buffers full, {BufferFullAndLockedCount} found one buffer full and the other unavailable while being flushed, and {BuffersLockedCount} found both buffers unavailable while being flushed.",
-                        new object?[]
-                        {
-                            droppedTracesTooLarge,
-                            _frontBuffer.MaxBufferSize,
-                            droppedTracesBufferFull,
-                            droppedTracesBufferFullAndLocked,
-                            droppedTracesBuffersLocked,
-                        });
                 }
 
                 if (payload.TraceCount > 0)
