@@ -52,7 +52,6 @@ internal sealed class AgentlessConfigurationSource : IDisposable
     // Not a CancellationTokenSource: cancellation throws, and an exception on the shutdown path can
     // crash the runtime, so shutdown is signalled by completing a task instead.
     private readonly TaskCompletionSource<bool> _shutdown = new(TaskCreationOptions.RunContinuationsAsynchronously);
-    private readonly Random _random = new();
 
     // Only ever touched from the poll loop.
     private readonly HashSet<string> _loggedFailureCategories = new();
@@ -290,11 +289,7 @@ internal sealed class AgentlessConfigurationSource : IDisposable
                           ? Clamp(_pollInterval.TotalSeconds / 6, FirstRetryMin, FirstRetryMax)
                           : Clamp(_pollInterval.TotalSeconds / 3, SecondRetryMin, SecondRetryMax);
 
-        double jitter;
-        lock (_random)
-        {
-            jitter = 1 - RetryJitter + (_random.NextDouble() * RetryJitter * 2);
-        }
+        var jitter = 1 - RetryJitter + (ThreadSafeRandom.Shared.NextDouble() * RetryJitter * 2);
 
         return TimeSpan.FromSeconds(Math.Max(MinRetryDelay.TotalSeconds, seconds * jitter));
 
