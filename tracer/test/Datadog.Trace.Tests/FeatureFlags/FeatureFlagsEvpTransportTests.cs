@@ -40,17 +40,6 @@ public class FeatureFlagsEvpTransportTests
     }
 
     [Theory]
-    [InlineData("", "rijn_RZwTDmWjELXeEmMEb0eIIegKayGGUPNsuJweEPhlXi5")]
-    [InlineData("padding-171", "rijn_053ybBRXypQt9AC6UIlqH1YCFYSV1rQl8HCDIcBZs3D")]
-    [InlineData("!@#$%^𐍈한€हИ£", "rijn_eFLHeyLxwaiNs2hY16pjkjNjVSHWRgf2rlveKc8YA1K")]
-    [InlineData("secret", "rijn_amLaG4Pd6h6t9VtJna81k744P1DYxGHzIJ6ECO3OOMj")]
-    [InlineData("system-tests-mock-api-key", "rijn_Fc1Sxm6lPHiKU1IdWeNqpcVZiiW3C2LXJLqQp670sFU")]
-    public void ApiKeyFingerprint_MatchesCanonicalVectors(string apiKey, string expected)
-    {
-        ApiKeyFingerprint.Create(apiKey).Should().Be(expected).And.HaveLength(48);
-    }
-
-    [Theory]
     [InlineData(FeatureFlagsEvpTransport.EventPlatformProxyV4)]
     [InlineData(FeatureFlagsEvpTransport.EventPlatformProxyV2)]
     public async Task Discovery_SelectsAdvertisedLocalRoute(string proxyEndpoint)
@@ -189,14 +178,13 @@ public class FeatureFlagsEvpTransportTests
     }
 
     [Fact]
-    public void DirectCredentialsAndFingerprintAreIsolatedFromLocalHeaders()
+    public void DirectCredentialsAreIsolatedFromLocalHeaders()
     {
         var headers = FeatureFlagsEvpTransport.GetDirectHeaders("test-api-key").ToDictionary(x => x.Key, x => x.Value);
 
         headers.Should().Contain("DD-API-KEY", "test-api-key");
-        headers.Should().Contain(FeatureFlagsEvpTransport.ApiKeyFingerprintHeader, "rijn_i8Jug5ocjALL7JZiV1a8HzXqkwDRKcE7hK9IouPQwio");
         EventPlatformHeaderHelper.Instance.DefaultHeaders
-                                 .Should().NotContain(pair => pair.Key == "DD-API-KEY" || pair.Key == FeatureFlagsEvpTransport.ApiKeyFingerprintHeader);
+                                 .Should().NotContain(pair => pair.Key == "DD-API-KEY");
     }
 
     [Fact]

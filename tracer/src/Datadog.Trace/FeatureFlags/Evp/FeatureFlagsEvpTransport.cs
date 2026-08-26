@@ -35,7 +35,6 @@ internal sealed class FeatureFlagsEvpTransport : IDisposable
     internal const string ExposureIntakePath = "api/v2/exposures";
     internal const string EventPlatformProxyV4 = "evp_proxy/v4";
     internal const string EventPlatformProxyV2 = "evp_proxy/v2";
-    internal const string ApiKeyFingerprintHeader = "DD-API-KEY-FINGERPRINT";
 
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(FeatureFlagsEvpTransport));
 
@@ -101,7 +100,6 @@ internal sealed class FeatureFlagsEvpTransport : IDisposable
     internal static KeyValuePair<string, string>[] GetDirectHeaders(string apiKey) =>
     [
         new(TelemetryConstants.ApiKeyHeader, apiKey),
-        new(ApiKeyFingerprintHeader, ApiKeyFingerprint.Create(apiKey)),
         new(TelemetryConstants.ClientLibraryLanguageHeader, TracerConstants.Language),
         new(TelemetryConstants.ClientLibraryVersionHeader, TracerConstants.ThreePartVersion),
     ];
