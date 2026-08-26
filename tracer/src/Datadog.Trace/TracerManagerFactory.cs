@@ -189,7 +189,7 @@ namespace Datadog.Trace
                 }
             }
 
-            featureFlags = FeatureFlagsModule.Create(settings, RcmSubscriptionManager.Instance);
+            featureFlags = FeatureFlagsModule.Create(settings, RcmSubscriptionManager.Instance, discoveryService);
 
             return CreateTracerManagerFrom(
                 settings,
