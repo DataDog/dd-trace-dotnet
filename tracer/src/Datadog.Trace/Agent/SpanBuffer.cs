@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 using System.Threading;
 using Datadog.Trace.Agent.MessagePack;
@@ -22,7 +24,6 @@ namespace Datadog.Trace.Agent
         private readonly int _maxBufferSize;
 
         private byte[] _buffer;
-        private bool _locked;
         private int _offset;
 
         public SpanBuffer(int maxBufferSize, ISpanBufferSerializer serializer)
@@ -48,20 +49,6 @@ namespace Datadog.Trace.Agent
             Locked = 3
         }
 
-        public ArraySegment<byte> Data
-        {
-            get
-            {
-                if (!_locked)
-                {
-                    // Sanity check - headers are written when the buffer is locked
-                    ThrowHelper.ThrowInvalidOperationException("Data was extracted from the buffer without locking");
-                }
-
-                return new ArraySegment<byte>(_buffer, 0, _offset);
-            }
-        }
-
         public int TraceCount { get; private set; }
 
         public int SpanCount { get; private set; }
@@ -70,11 +57,25 @@ namespace Datadog.Trace.Agent
 
         internal int MaxBufferSize => _maxBufferSize;
 
+        /// <summary>
+        /// Gets the length of the array currently backing the buffer, so that callers of
+        /// <see cref="Detach"/> can size the replacement array without holding the lock.
+        /// Read without synchronization: the serialization thread may replace the array at any
+        /// time, but both the old and the new reference are valid arrays, so the worst case is a
+        /// replacement that is one growth generation behind and grows on its next write.
+        /// </summary>
+        internal int CurrentLength => _buffer.Length;
+
+        /// <summary>
+        /// Gets the raw contents of the buffer, without finalizing the payload. Only useful for
+        /// asserting on what a write did or didn't put in the buffer; production code takes the
+        /// payload from <see cref="Detach"/> instead.
+        /// </summary>
         [TestingOnly]
-        internal bool IsLocked => _locked;
+        internal ArraySegment<byte> RawData => new(_buffer, 0, _offset);
 
         [TestingOnly]
-        internal bool IsEmpty => !_locked && !IsFull && TraceCount == 0 && SpanCount == 0 && _offset == _serializer.HeaderSize;
+        internal bool IsEmpty => !IsFull && TraceCount == 0 && SpanCount == 0 && _offset == _serializer.HeaderSize;
 
         public WriteStatus TryWrite(in SpanCollection spans, ref byte[] temporaryBuffer, int? samplingPriority = null)
         {
@@ -82,11 +83,17 @@ namespace Datadog.Trace.Agent
 
             try
             {
-                Monitor.TryEnter(_syncRoot, ref lockTaken);
+                // Wait, rather than giving up immediately as this used to. Flushing doesn't
+                // hold the buffer across a network send, so contention should be very small
+                // and waiting it out costs nothing. The bounded timeout only exists so
+                // that a pathological holder can never stall the serialization thread for good.
+                const int lockTimeoutMs = 100;
+                Monitor.TryEnter(_syncRoot, lockTimeoutMs, ref lockTaken);
 
-                if (!lockTaken || _locked)
+                if (!lockTaken)
                 {
-                    // A flush operation is in progress
+                    // This should be very rare, and only happen in pathological/overload cases where
+                    // the flushing thread is rescheduled in the middle of the lock()
                     return WriteStatus.Locked;
                 }
 
@@ -106,6 +113,8 @@ namespace Datadog.Trace.Agent
                     return WriteStatus.Overflow;
                 }
 
+                // Reserve room for whatever FinishBody will append, which ensures
+                // the payload in Detach doesn't grow the array while the lock is held.
                 if (!EnsureCapacity(size + _offset + _serializer.TrailerSize))
                 {
                     if (TraceCount == 0)
@@ -135,34 +144,43 @@ namespace Datadog.Trace.Agent
             }
         }
 
-        public bool Lock()
+        /// <summary>
+        /// Finalizes the current payload and hands it to the caller, swapping
+        /// <paramref name="replacement"/> in as the new backing array so that the buffer is
+        /// immediately writable again, minimizing the duration the buffer is locked.
+        /// </summary>
+        /// <param name="replacement">
+        /// The array to write into from now on. Only consumed if there was something to detach.
+        /// Must not be the array currently backing the buffer.
+        /// </param>
+        /// <returns>
+        /// The detached payload, or <c>default</c> if the buffer held no traces, in which case
+        /// <paramref name="replacement"/> is unused.
+        /// </returns>
+        public Payload Detach(byte[] replacement)
         {
             lock (_syncRoot)
             {
-                if (_locked)
+                if (TraceCount == 0)
                 {
-                    return false;
+                    // Nothing to send, so don't consume the caller's replacement array
+                    return default;
                 }
 
                 // Use a fixed-size header
                 _serializer.WriteHeader(ref _buffer, 0, TraceCount);
                 int addedBytes = _serializer.FinishBody(ref _buffer, _offset, _maxBufferSize);
                 _offset += addedBytes;
-                _locked = true;
 
-                return true;
-            }
-        }
+                var payload = new Payload(new ArraySegment<byte>(_buffer, 0, count: _offset), TraceCount, SpanCount);
 
-        public void Clear()
-        {
-            lock (_syncRoot)
-            {
+                _buffer = replacement;
                 _offset = _serializer.HeaderSize;
                 TraceCount = 0;
                 SpanCount = 0;
                 IsFull = false;
-                _locked = false;
+
+                return payload;
             }
         }
 
@@ -200,6 +218,25 @@ namespace Datadog.Trace.Agent
             _buffer = newBuffer;
 
             return true;
+        }
+
+        public readonly struct Payload
+        {
+            public readonly ArraySegment<byte> Data;
+            public readonly int TraceCount;
+            public readonly int SpanCount;
+
+            public Payload(ArraySegment<byte> data, int traceCount, int spanCount)
+            {
+                Data = data;
+                TraceCount = traceCount;
+                SpanCount = spanCount;
+            }
+
+            /// <summary>
+            /// Gets the detached array, or <c>null</c> if there was nothing to detach.
+            /// </summary>
+            public byte[]? Array => Data.Array;
         }
     }
 }
