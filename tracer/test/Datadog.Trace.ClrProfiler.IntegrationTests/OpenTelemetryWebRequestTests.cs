@@ -67,8 +67,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             var relevantRequests = await agent.WaitForOtlpTraceRequestsAsync(count: 1);
             relevantRequests.Should().NotBeNullOrEmpty();
 
-            // Merge and sort on the typed protobuf model first, while span start times are still
-            // real -- NormalizeSpans (below) replaces them with a fixed placeholder.
+            // Sort by actual start time before NormalizeSpans (below) overwrites it with a placeholder.
             var mergedRequest = OtlpSnapshotHelper.MergeDatadogRequests(
                 relevantRequests,
                 spans => spans.OrderBy(s => s.StartTimeUnixNano)
