@@ -67,35 +67,20 @@ public class AgentlessEndpointTests
         => Create("datadoghq.com").BuildRequestUri(new string('a', 500))
                                   .Query.Should().Be("?dd_env=" + new string('a', 200));
 
-    [Fact]
-    public void KeepsTheQueryConfiguredOnACustomEndpoint()
-    {
-        // The query may carry credentials or routing the operator needs, so dd_env is appended to it
-        // rather than replacing it.
-        var endpoint = Create("datadoghq.com", baseUrl: "https://flags.example.com/ufc?token=abc");
-
-        endpoint.BuildRequestUri("production").Query.Should().Be("?token=abc&dd_env=production");
-    }
-
     [Theory]
+    // A configured base URL is opaque: the operator may have scoped it themselves, and it may carry
+    // credentials or routing, so it is requested exactly as written. Java, JS, Go and Python all
+    // treat a custom endpoint the same way.
+    [InlineData("https://flags.example.com/ufc")]
+    [InlineData("https://flags.example.com/ufc?token=abc")]
     [InlineData("https://flags.example.com/ufc?dd_env=staging")]
     [InlineData("https://flags.example.com/ufc?token=abc&dd_env=staging")]
-    public void LeavesACustomEndpointThatAlreadyPinsDdEnvAlone(string baseUrl)
+    public void DoesNotAddDdEnvToACustomEndpoint(string baseUrl)
     {
-        var endpoint = Create("datadoghq.com", baseUrl: baseUrl);
+        var endpoint = Create("datadoghq.com", baseUrl);
 
         endpoint.BuildRequestUri("production").Should().Be(endpoint.Uri);
     }
-
-    [Fact]
-    public void AddsDdEnvToACustomEndpointWithoutAQuery()
-        => Create("datadoghq.com", baseUrl: "https://flags.example.com/ufc")
-          .BuildRequestUri("production").Query.Should().Be("?dd_env=production");
-
-    [Fact]
-    public void DoesNotMistakeAQueryValueForAPinnedDdEnv()
-        => Create("datadoghq.com", baseUrl: "https://flags.example.com/ufc?next=dd_env")
-          .BuildRequestUri("production").Query.Should().Be("?next=dd_env&dd_env=production");
 
     [Theory]
     [InlineData("https://flags.example.com", "https://flags.example.com" + DefaultPath)]

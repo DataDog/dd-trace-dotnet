@@ -31,19 +31,15 @@ internal sealed class AgentlessEndpoint
     internal const string ManagedHostPrefix = "ufc-server.ff-cdn.";
 
     /// <summary>
-    /// The query parameter carrying the environment to request configuration for.
+    /// The query parameter carrying the environment to request configuration for. Added to the
+    /// managed endpoint only.
     /// </summary>
     internal const string EnvParameterName = "dd_env";
 
-    // Set when the configured base URL already carries dd_env. The operator chose that value
-    // deliberately, so it is left alone rather than duplicated or overwritten.
-    private readonly bool _pinsEnv;
-
-    private AgentlessEndpoint(Uri uri, bool isManaged, bool pinsEnv)
+    private AgentlessEndpoint(Uri uri, bool isManaged)
     {
         Uri = uri;
         IsManaged = isManaged;
-        _pinsEnv = pinsEnv;
     }
 
     /// <summary>
@@ -62,8 +58,8 @@ internal sealed class AgentlessEndpoint
     /// <summary>
     /// Builds the endpoint. Without a custom <paramref name="baseUrl"/> the managed Datadog CDN
     /// endpoint is derived from the (lowercased) site, so staging and government sites resolve
-    /// with no allowlist. A custom base URL that is an origin receives the canonical path; one that
-    /// carries a path is used verbatim.
+    /// with no allowlist, and is the only endpoint <c>dd_env</c> is added to. A custom base URL that
+    /// is an origin receives the canonical path; one that carries a path is used verbatim.
     /// <para>
     /// The environment is not part of the endpoint: it can be changed in code while the application
     /// runs, so it is applied per request by <see cref="BuildRequestUri"/> instead.
@@ -106,7 +102,7 @@ internal sealed class AgentlessEndpoint
                 return false;
             }
 
-            endpoint = new AgentlessEndpoint(managedUri, isManaged: true, pinsEnv: false);
+            endpoint = new AgentlessEndpoint(managedUri, isManaged: true);
             return true;
         }
 
@@ -138,7 +134,7 @@ internal sealed class AgentlessEndpoint
             custom = new UriBuilder(custom) { Path = DefaultPath }.Uri;
         }
 
-        endpoint = new AgentlessEndpoint(custom, isManaged: false, pinsEnv: HasEnvParameter(custom.Query));
+        endpoint = new AgentlessEndpoint(custom, isManaged: false);
         return true;
     }
 
@@ -147,15 +143,16 @@ internal sealed class AgentlessEndpoint
     /// added as a query parameter rather than baked into the endpoint, because it can change while
     /// the application runs.
     /// <para>
-    /// Any query the configured base URL already carries is kept: it may hold credentials or routing
-    /// the operator needs. An endpoint that already pins <c>dd_env</c> is returned unchanged.
+    /// A configured base URL is opaque: it is requested exactly as the operator wrote it, since it
+    /// may hold credentials, routing, or a scope of its own. Only the managed endpoint carries
+    /// <c>dd_env</c>, which matches the other tracers.
     /// </para>
     /// </summary>
     /// <param name="env">The current environment, or <c>null</c> when none is configured.</param>
     /// <returns>The URI to request.</returns>
     public Uri BuildRequestUri(string? env)
     {
-        if (_pinsEnv)
+        if (!IsManaged)
         {
             return Uri;
         }
@@ -179,30 +176,5 @@ internal sealed class AgentlessEndpoint
         var existing = builder.Query;
         builder.Query = existing.Length > 1 ? existing.TrimStart('?') + "&" + parameter : parameter;
         return builder.Uri;
-    }
-
-    /// <summary>
-    /// Reports whether a query string already carries a <c>dd_env</c> parameter. Matching the name
-    /// alone would also hit a value such as <c>?next=dd_env</c>, so the surrounding delimiters are
-    /// checked too.
-    /// </summary>
-    private static bool HasEnvParameter(string query)
-    {
-        var index = query.IndexOf(EnvParameterName, StringComparison.OrdinalIgnoreCase);
-        while (index >= 0)
-        {
-            var preceding = index == 0 ? '?' : query[index - 1];
-            var followingIndex = index + EnvParameterName.Length;
-            var following = followingIndex < query.Length ? query[followingIndex] : '\0';
-
-            if (preceding is '?' or '&' && following is '=' or '&' or '\0')
-            {
-                return true;
-            }
-
-            index = query.IndexOf(EnvParameterName, index + 1, StringComparison.OrdinalIgnoreCase);
-        }
-
-        return false;
     }
 }
