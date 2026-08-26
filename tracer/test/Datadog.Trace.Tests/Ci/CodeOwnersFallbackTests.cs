@@ -503,11 +503,11 @@ public class CodeOwnersFallbackTests
     [SkippableTheory]
     [InlineData(@"D:\a\_work\1\s\src\SpanBenchmark.cs")]
     [InlineData(@"D:\a\1\s\src\SpanBenchmark.cs")]
+    [InlineData("D:/a/_work/1/s/src/SpanBenchmark.cs")]
     [InlineData("/home/vsts/work/1/s/src/SpanBenchmark.cs")]
     [InlineData("/tmp/work/1/s/src/SpanBenchmark.cs")]
     [InlineData("file:///D:/a/_work/1/s/src/SpanBenchmark.cs")]
-    [InlineData("https://example.com/a/_work/1/s/src/SpanBenchmark.cs")]
-    public void DoesNotAnchorAbsoluteAzurePipelinesPathsWithMatchingRepositorySuffix(string sourcePath)
+    public void AnchorsRelocatedCompilerPathsWithMatchingRepositorySuffix(string sourcePath)
     {
         using var tempDirectory = new TemporaryDirectory();
         var repoRoot = tempDirectory.RootPath;
@@ -527,7 +527,9 @@ public class CodeOwnersFallbackTests
         var ciValues = CIEnvironmentValues.Create(env);
 
         var ownership = ciValues.ResolveSourceOwnership(sourcePath, useOSSeparator: false);
-        Assert.False(ownership.IsRepositoryRelative);
+        Assert.True(ownership.IsRepositoryRelative);
+        Assert.Equal("src/SpanBenchmark.cs", ownership.RepositoryRelativePath);
+        Assert.Equal(["@owner"], ownership.MatchingOwners);
     }
 
     [SkippableFact]
@@ -549,12 +551,11 @@ public class CodeOwnersFallbackTests
     }
 
     [SkippableTheory]
-    [InlineData("file:///outside/src/SpanBenchmark.cs")]
     [InlineData("https://example.com/src/SpanBenchmark.cs")]
     [InlineData("../../C:/outside/src/SpanBenchmark.cs")]
     [InlineData("../..//outside/src/SpanBenchmark.cs")]
     [InlineData(@"..\..\\server\share\src\SpanBenchmark.cs")]
-    public void DoesNotAnchorAbsoluteOrEmbeddedRootedPathsWithMatchingRepositorySuffix(string sourceFilePath)
+    public void DoesNotAnchorNonFileUrisOrEmbeddedRootedPaths(string sourceFilePath)
     {
         using var tempDirectory = new TemporaryDirectory();
         var repoRoot = tempDirectory.RootPath;
