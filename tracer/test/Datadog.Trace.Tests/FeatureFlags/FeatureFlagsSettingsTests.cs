@@ -39,10 +39,11 @@ public class FeatureFlagsSettingsTests
     // does not silently keep Feature Flags off during migration.
     [InlineData("true", null, "false", FeatureFlagsSource.Agentless)]
     [InlineData("true", null, "true", FeatureFlagsSource.Agentless)]
-    // An unrecognised source is a parsing failure, reported as such in configuration telemetry, so
-    // the key behaves as if it were unset rather than resolving to a value nobody configured.
-    [InlineData(null, "invalid", null, FeatureFlagsSource.Agentless)]
-    [InlineData(null, "invalid", "true", FeatureFlagsSource.RemoteConfig)]
+    // An unrecognised source fails closed, and does so before the legacy key is considered: starting
+    // billed delivery off a typo is worse than delivering nothing. Java and JS resolve it the same
+    // way, and the system-tests parametric suite asserts no request is made.
+    [InlineData(null, "invalid", null, FeatureFlagsSource.Offline)]
+    [InlineData(null, "invalid", "true", FeatureFlagsSource.Offline)]
     // "offline" is a reserved, recognised fail-closed sentinel (not an unrecognised value).
     [InlineData(null, "offline", null, FeatureFlagsSource.Offline)]
     [InlineData(null, "offline", "true", FeatureFlagsSource.Offline)]

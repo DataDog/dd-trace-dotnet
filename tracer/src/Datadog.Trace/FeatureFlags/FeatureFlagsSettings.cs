@@ -65,8 +65,9 @@ internal sealed class FeatureFlagsSettings
         // configuration telemetry reports the one value we act on rather than one entry per
         // candidate key. Shared across tracers, so the precedence is deliberate: the stable kill
         // switch wins over everything (expressed as a validator that rejects any configured value),
-        // an explicit source wins over the legacy key, the legacy key grandfathers existing
-        // adopters onto Remote Configuration, and everything else defaults to agentless.
+        // an explicit source wins over the legacy key (an unrecognised one fails closed, so a typo
+        // never starts billed delivery), the legacy key grandfathers existing adopters onto Remote
+        // Configuration, and everything else defaults to agentless.
         // Not a tuple pattern: net461 has no System.ValueTuple, so (enabled, legacyEnabled) switch
         // does not compile there.
         DefaultResult<FeatureFlagsSource> defaultSource = enabled switch
@@ -158,9 +159,8 @@ internal sealed class FeatureFlagsSettings
 
     /// <summary>
     /// Converts a configured source name to a <see cref="FeatureFlagsSource"/>. A blank value is
-    /// treated as unset, and an unrecognised one is reported as a parsing failure so that it shows
-    /// up as rejected in configuration telemetry rather than as a value nobody configured. Both
-    /// fall back to the default, which is what an unset key would have selected anyway.
+    /// treated as unset and falls back to the default, which is what an absent key would have
+    /// selected anyway. An unrecognised value fails closed instead: nothing is contacted.
     /// </summary>
     private static ParsingResult<FeatureFlagsSource> ConvertSource(string? value)
     {
@@ -174,7 +174,14 @@ internal sealed class FeatureFlagsSettings
             return ParsingResult<FeatureFlagsSource>.Success(source);
         }
 
-        return ParsingResult<FeatureFlagsSource>.Failure();
+        // A value nobody recognises fails closed rather than falling back to agentless: guessing a
+        // billed delivery path from a typo is worse than delivering nothing. Shared across tracers,
+        // and asserted by the system-tests parametric suite.
+        Log.Warning<string>(
+            "Unsupported Feature Flags configuration source {Source}. No configuration will be delivered.",
+            value);
+
+        return ParsingResult<FeatureFlagsSource>.Success(FeatureFlagsSource.Offline);
     }
 
     private static bool TryMatch(string value, out FeatureFlagsSource source)
