@@ -68,8 +68,7 @@ internal sealed class FeatureFlagsSettings
         // an explicit source wins over the legacy key (an unrecognised one fails closed, so a typo
         // never starts billed delivery), the legacy key grandfathers existing adopters onto Remote
         // Configuration, and everything else defaults to agentless.
-        // Not a tuple pattern: net461 has no System.ValueTuple, so (enabled, legacyEnabled) switch
-        // does not compile there.
+        // net461 has no System.ValueTuple, so a tuple pattern over both values does not compile.
         DefaultResult<FeatureFlagsSource> defaultSource = enabled switch
         {
             false => new(FeatureFlagsSource.Offline, OfflineSourceName),
@@ -169,9 +168,22 @@ internal sealed class FeatureFlagsSettings
             return ParsingResult<FeatureFlagsSource>.Failure();
         }
 
-        if (TryMatch(value.Trim(), out var source))
+        var trimmed = value.Trim();
+
+        if (string.Equals(trimmed, AgentlessSourceName, StringComparison.OrdinalIgnoreCase))
         {
-            return ParsingResult<FeatureFlagsSource>.Success(source);
+            return ParsingResult<FeatureFlagsSource>.Success(FeatureFlagsSource.Agentless);
+        }
+
+        if (string.Equals(trimmed, RemoteConfigSourceName, StringComparison.OrdinalIgnoreCase))
+        {
+            return ParsingResult<FeatureFlagsSource>.Success(FeatureFlagsSource.RemoteConfig);
+        }
+
+        // "offline" is a reserved sentinel: the provider is intentionally off.
+        if (string.Equals(trimmed, OfflineSourceName, StringComparison.OrdinalIgnoreCase))
+        {
+            return ParsingResult<FeatureFlagsSource>.Success(FeatureFlagsSource.Offline);
         }
 
         // A value nobody recognises fails closed rather than falling back to agentless: guessing a
@@ -182,30 +194,5 @@ internal sealed class FeatureFlagsSettings
             value);
 
         return ParsingResult<FeatureFlagsSource>.Success(FeatureFlagsSource.Offline);
-    }
-
-    private static bool TryMatch(string value, out FeatureFlagsSource source)
-    {
-        if (string.Equals(value, AgentlessSourceName, StringComparison.OrdinalIgnoreCase))
-        {
-            source = FeatureFlagsSource.Agentless;
-            return true;
-        }
-
-        if (string.Equals(value, RemoteConfigSourceName, StringComparison.OrdinalIgnoreCase))
-        {
-            source = FeatureFlagsSource.RemoteConfig;
-            return true;
-        }
-
-        // "offline" is a reserved fail-closed sentinel: the provider is intentionally off.
-        if (string.Equals(value, OfflineSourceName, StringComparison.OrdinalIgnoreCase))
-        {
-            source = FeatureFlagsSource.Offline;
-            return true;
-        }
-
-        source = FeatureFlagsSource.Offline;
-        return false;
     }
 }
