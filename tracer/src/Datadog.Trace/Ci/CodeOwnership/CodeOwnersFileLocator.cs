@@ -91,7 +91,7 @@ internal sealed class CodeOwnersFileLocator
     }
 
     private LocatedCodeOwners? TryLoadFromExplicitRoot(string? root)
-        => StringUtil.IsNullOrEmpty(root) ? null : TryLoadFromRepositoryRoot(root!);
+        => StringUtil.IsNullOrEmpty(root) ? null : TryLoadFromRepositoryRoot(root);
 
     private CodeOwners.Dialect DetectDialect(string root)
     {
