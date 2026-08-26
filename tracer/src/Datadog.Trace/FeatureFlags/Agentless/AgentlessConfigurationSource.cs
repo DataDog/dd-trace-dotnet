@@ -28,6 +28,8 @@ namespace Datadog.Trace.FeatureFlags.Agentless;
 /// </summary>
 internal sealed class AgentlessConfigurationSource : IDisposable
 {
+    internal const string ApiKeyFingerprintHeader = "DD-API-KEY-FINGERPRINT";
+
     private const int MaxAttempts = 3;
     private const double RetryJitter = 0.2;
 
@@ -222,6 +224,19 @@ internal sealed class AgentlessConfigurationSource : IDisposable
     private static ApiWebRequestFactory CreateRequestFactory(AgentlessEndpoint endpoint, FeatureFlagsSettings settings)
 #endif
     {
+        var headers = CreateRequestHeaders(endpoint, settings);
+
+        // The endpoint is only the factory's default: both transports honour the URI passed to
+        // Create, which is what carries the current environment.
+#if NETCOREAPP
+        return new HttpClientRequestFactory(endpoint.Uri, headers, timeout: settings.RequestTimeout);
+#else
+        return new ApiWebRequestFactory(endpoint.Uri, headers, timeout: settings.RequestTimeout);
+#endif
+    }
+
+    internal static KeyValuePair<string, string>[] CreateRequestHeaders(AgentlessEndpoint endpoint, FeatureFlagsSettings settings)
+    {
         var headers = new List<KeyValuePair<string, string>>
         {
             // The endpoint serves gzip, and neither transport decompresses for us.
@@ -239,15 +254,10 @@ internal sealed class AgentlessConfigurationSource : IDisposable
             // A custom endpoint is left to report its own authentication failure rather than
             // having the Datadog credential sent to it.
             headers.Add(new(TelemetryConstants.ApiKeyHeader, settings.ApiKey!));
+            headers.Add(new(ApiKeyFingerprintHeader, ApiKeyFingerprint.Create(settings.ApiKey!)));
         }
 
-        // The endpoint is only the factory's default: both transports honour the URI passed to
-        // Create, which is what carries the current environment.
-#if NETCOREAPP
-        return new HttpClientRequestFactory(endpoint.Uri, headers.ToArray(), timeout: settings.RequestTimeout);
-#else
-        return new ApiWebRequestFactory(endpoint.Uri, headers.ToArray(), timeout: settings.RequestTimeout);
-#endif
+        return headers.ToArray();
     }
 
     private static bool IsRetryable(in PollResult result)

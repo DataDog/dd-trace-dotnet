@@ -8,7 +8,7 @@
 using System;
 using Datadog.Trace.Util;
 
-namespace Datadog.Trace.FeatureFlags.Evp;
+namespace Datadog.Trace.FeatureFlags.Agentless;
 
 internal static class ApiKeyFingerprint
 {

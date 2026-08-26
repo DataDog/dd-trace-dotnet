@@ -5,7 +5,7 @@
 
 #nullable enable
 
-using Datadog.Trace.FeatureFlags.Evp;
+using Datadog.Trace.FeatureFlags.Agentless;
 using FluentAssertions;
 using Xunit;
 

@@ -7,6 +7,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
@@ -14,8 +15,11 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
+using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.FeatureFlags.Agentless;
 using Datadog.Trace.FeatureFlags.Rcm.Model;
+using Datadog.Trace.Telemetry;
 using Datadog.Trace.TestHelpers.TransportHelpers;
 using FluentAssertions;
 using Xunit;
@@ -31,6 +35,37 @@ public class AgentlessConfigurationSourceTests
         """;
 
     private const string EndpointUrl = "https://ufc-server.ff-cdn.datadoghq.com/api/v2/feature-flagging/config/rules-based/server";
+
+    [Fact]
+    public void AddsApiKeyAndFingerprintToManagedRequests()
+    {
+        var settings = CreateTracerSettings(apiKey: "system-tests-mock-api-key").FeatureFlags;
+        var headers = AgentlessConfigurationSource.CreateRequestHeaders(CreateEndpoint(), settings);
+
+        headers.Should().ContainSingle(header => header.Key == TelemetryConstants.ApiKeyHeader)
+               .Which.Value.Should().Be("system-tests-mock-api-key");
+        headers.Should().ContainSingle(header => header.Key == "DD-API-KEY-FINGERPRINT")
+               .Which.Value.Should().Be("rijn_Fc1Sxm6lPHiKU1IdWeNqpcVZiiW3C2LXJLqQp670sFU");
+    }
+
+    [Fact]
+    public void DoesNotSendApiKeyOrFingerprintToCustomEndpoint()
+    {
+        var settings = CreateTracerSettings(apiKey: "system-tests-mock-api-key", baseUrl: "https://flags.example.com/ufc").FeatureFlags;
+        var endpoint = CreateEndpoint(settings.Site, settings.AgentlessBaseUrl);
+        var headers = AgentlessConfigurationSource.CreateRequestHeaders(endpoint, settings);
+
+        headers.Should().NotContain(header => header.Key == TelemetryConstants.ApiKeyHeader);
+        headers.Should().NotContain(header => header.Key == "DD-API-KEY-FINGERPRINT");
+    }
+
+    [Fact]
+    public void DoesNotCreateManagedSourceWithoutApiKey()
+    {
+        var settings = CreateTracerSettings(apiKey: null);
+
+        AgentlessConfigurationSource.Create(settings.FeatureFlags, settings.Manager, _ => true).Should().BeNull();
+    }
 
     [Fact]
     public async Task AppliesConfigurationFromA200()
@@ -259,10 +294,26 @@ public class AgentlessConfigurationSourceTests
             environment,
             NoWait);
 
-    private static AgentlessEndpoint CreateEndpoint()
+    private static AgentlessEndpoint CreateEndpoint(string site = "datadoghq.com", string? baseUrl = null)
     {
-        AgentlessEndpoint.TryCreate("datadoghq.com", baseUrl: null, out var endpoint, out _).Should().BeTrue();
+        AgentlessEndpoint.TryCreate(site, baseUrl, out var endpoint, out _).Should().BeTrue();
         return endpoint ?? throw new InvalidOperationException("TryCreate reported success without producing an endpoint.");
+    }
+
+    private static TracerSettings CreateTracerSettings(string? apiKey, string? baseUrl = null)
+    {
+        var collection = new NameValueCollection();
+        if (apiKey is not null)
+        {
+            collection[ConfigurationKeys.ApiKey] = apiKey;
+        }
+
+        if (baseUrl is not null)
+        {
+            collection[ConfigurationKeys.FeatureFlags.FeatureFlagsConfigurationSourceAgentlessBaseUrl] = baseUrl;
+        }
+
+        return new TracerSettings(new NameValueConfigurationSource(collection), NullConfigurationTelemetry.Instance);
     }
 
     private static Task NoWait(TimeSpan delay, CancellationToken cancellationToken) => Task.CompletedTask;
