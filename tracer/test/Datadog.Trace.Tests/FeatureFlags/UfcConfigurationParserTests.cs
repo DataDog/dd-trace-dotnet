@@ -6,6 +6,7 @@
 #nullable enable
 
 using System.Collections.Generic;
+using System.IO;
 using Datadog.Trace.FeatureFlags.Agentless;
 using Datadog.Trace.FeatureFlags.Rcm.Model;
 using FluentAssertions;
@@ -29,7 +30,7 @@ public class UfcConfigurationParserTests
     [Fact]
     public void ParsesValidEnvelope()
     {
-        UfcConfigurationParser.TryParse(ValidEnvelope, out var configuration, out var error)
+        Parse(ValidEnvelope, out var configuration, out var error)
             .Should().BeTrue();
 
         error.Should().BeNull();
@@ -45,7 +46,7 @@ public class UfcConfigurationParserTests
     [InlineData("{ \"data\": ")]
     public void RejectsMalformedJson(string? body)
     {
-        UfcConfigurationParser.TryParse(body, out var configuration, out var error).Should().BeFalse();
+        Parse(body, out var configuration, out var error).Should().BeFalse();
 
         configuration.Should().BeNull();
         error.Should().Be("Malformed UFC payload");
@@ -66,7 +67,7 @@ public class UfcConfigurationParserTests
     [InlineData("""{ "data": { "type": [1, 2], "attributes": { "format": "SERVER", "createdAt": "x", "environment": { "name": "prod" }, "flags": {} } } }""")]
     public void RejectsInvalidEnvelope(string body)
     {
-        UfcConfigurationParser.TryParse(body, out var configuration, out var error).Should().BeFalse();
+        Parse(body, out var configuration, out var error).Should().BeFalse();
 
         configuration.Should().BeNull();
         error.Should().Be("Expected a JSON:API Universal Flag Configuration resource");
@@ -87,7 +88,7 @@ public class UfcConfigurationParserTests
     [InlineData("""{ "data": { "type": "universal-flag-configuration", "attributes": { "format": "SERVER", "createdAt": "x", "environment": { "name": "prod" }, "flags": [] } } }""")]
     public void RejectsInvalidAttributes(string body)
     {
-        UfcConfigurationParser.TryParse(body, out var configuration, out var error).Should().BeFalse();
+        Parse(body, out var configuration, out var error).Should().BeFalse();
 
         configuration.Should().BeNull();
         error.Should().Be("Expected a Universal Flag Configuration v1 object");
@@ -103,10 +104,17 @@ public class UfcConfigurationParserTests
                                         "flags": { "test-flag": { "key": "test-flag", "enabled": true, "variationType": "BOOLEAN" } } } } }
             """;
 
-        UfcConfigurationParser.TryParse(body, out var configuration, out _).Should().BeTrue();
+        Parse(body, out var configuration, out _).Should().BeTrue();
 
         configuration!.Flags.Should().NotBeNull();
         configuration!.Flags!.Should().ContainKey("test-flag");
         configuration!.Flags!["test-flag"].Enabled.Should().BeTrue();
+    }
+
+    // The parser reads the response stream directly, so a body under test is handed to it as a reader.
+    private static bool Parse(string? body, out ServerConfiguration? configuration, out string? error)
+    {
+        using var reader = new StringReader(body ?? string.Empty);
+        return UfcConfigurationParser.TryParse(reader, out configuration, out error);
     }
 }
