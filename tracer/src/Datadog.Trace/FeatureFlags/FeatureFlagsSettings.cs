@@ -28,7 +28,9 @@ internal sealed class FeatureFlagsSettings
 
     internal const int DefaultPollIntervalSeconds = 30;
     internal const int DefaultRequestTimeoutSeconds = 5;
-    internal const int DefaultInitializationTimeoutMs = 10_000;
+    // Matches the Go, Java and Node tracers, so the same slow first configuration does not give
+    // one language the caller's default value while the others still return a real one.
+    internal const int DefaultInitializationTimeoutMs = 30_000;
 
     // An interval above this is indistinguishable from "never poll" and is more likely a
     // misconfiguration (for example milliseconds passed as seconds) than an intent.
