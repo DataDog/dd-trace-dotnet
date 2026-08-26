@@ -6,6 +6,7 @@
 using System;
 using System.Linq;
 using Datadog.Profiler.IntegrationTests.Helpers;
+using Datadog.Profiler.IntegrationTests.Xunit;
 using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
@@ -21,16 +22,33 @@ namespace Datadog.Profiler.IntegrationTests.Signature
             _output = output;
         }
 
+        // On Linux/ARM64 the unwinder sometimes yields a single Unknown-Frame-Type frame instead of the
+        // full managed stack. When that happens, retry the whole run to get a complete stack.
+        private const string UnknownFrameType =
+            "|lm:Unknown-Assembly |ns: |ct:Unknown-Type |cg: |fn:Unknown-Frame-Type |fg: |sg:(?)";
+
+        [Flaky("On Linux/ARM64 the unwinder sometimes yields a single Unknown-Frame-Type frame; retry to get a full stack")]
         [TestAppFact("Samples.Computer01", new[] { "net48", "netcoreapp3.1", "net6.0", "net8.0", })] // FIXME: .NET 9 skipping .NET 9 for now
         public void ValidateSignatures(string appName, string framework, string appAssembly)
         {
             CheckExceptionsInProfiles(framework, GetExceptionSamples(appName, framework, appAssembly));
         }
 
+        [Flaky("On Linux/ARM64 the unwinder sometimes yields a single Unknown-Frame-Type frame; retry to get a full stack")]
         [TestAppFact("Samples.Computer01", new[] { "net48", "netcoreapp3.1", "net6.0", "net8.0", })] // FIXME: .NET 9 skipping .NET 9 for now
         public void ValidateAsyncStateMachineSignatures(string appName, string framework, string appAssembly)
         {
             CheckAsyncStateMachineFrames(GetExceptionSamples(appName, framework, appAssembly));
+        }
+
+        // On Linux/ARM64, the unwinder can degrade to a single "Unknown-Frame-Type" placeholder frame.
+        // In that case we prefer retrying the run (via the Flaky attribute) over accepting a useless stack.
+        private static bool IsArm64DegradedStack(StackTrace actualStack)
+        {
+            return Environment.OSVersion.Platform == PlatformID.Unix
+                && EnvironmentHelper.GetPlatform() == "ARM64"
+                && actualStack.FramesCount == 1
+                && actualStack[0].ToString() == UnknownFrameType;
         }
 
         private (string Type, string Message, long Count, StackTrace Stacktrace)[] GetExceptionSamples(string appName, string framework, string appAssembly)
@@ -49,6 +67,12 @@ namespace Datadog.Profiler.IntegrationTests.Signature
 
         private static void CheckAsyncStateMachineFrames((string Type, string Message, long Count, StackTrace Stacktrace)[] exceptionSamples)
         {
+            if (exceptionSamples.Any(sample => IsArm64DegradedStack(sample.Stacktrace)))
+            {
+                // Fail so ProfilerTestCase retries the whole run on Linux/ARM64 (see Flaky attribute).
+                Assert.Fail("Linux/ARM64 produced a single Unknown-Frame-Type frame; retrying to get a full stack.");
+            }
+
             // A state machine is a type nested in the type declaring the async method: the generic
             // parameter of Start<TStateMachine> must carry its namespace and its enclosing type, exactly
             // like the signature already does. The frame is AsyncMethodBuilderCore.Start on .NET Core
@@ -151,6 +175,13 @@ namespace Datadog.Profiler.IntegrationTests.Signature
             {
                 sample.Message.Should().Be("IOE - False");
                 sample.Type.Should().Be("System.InvalidOperationException");
+
+                if (IsArm64DegradedStack(sample.Stacktrace))
+                {
+                    // Fail so ProfilerTestCase retries the whole run on Linux/ARM64 (see Flaky attribute).
+                    Assert.Fail("Linux/ARM64 produced a single Unknown-Frame-Type frame; retrying to get a full stack.");
+                }
+
                 Assert.True(sample.Stacktrace.EndWith(stack, out var stackEndWithMessage), stackEndWithMessage);
             }
         }
