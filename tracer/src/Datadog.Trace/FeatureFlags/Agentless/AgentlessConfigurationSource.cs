@@ -146,10 +146,9 @@ internal sealed class AgentlessConfigurationSource : IDisposable
             return;
         }
 
-        // Deliberately not wrapped in Task.Run: this is called from provider initialization, which
-        // is waiting for the first configuration, so the first request should go out on the calling
-        // thread rather than queue behind whatever else is on the thread pool.
-        _ = RunAsync().ContinueWith(t => Log.Error(t.Exception, "Feature Flags agentless poll loop failed"), TaskContinuationOptions.OnlyOnFaulted);
+        // The loop runs on the thread pool, so nothing of it happens on the caller's thread. Nothing
+        // ever awaits it either, so a fault is observed here or not at all.
+        _ = Task.Run(RunAsync).ContinueWith(t => Log.Error(t.Exception, "Feature Flags agentless poll loop failed"), TaskContinuationOptions.OnlyOnFaulted);
     }
 
     /// <summary>
