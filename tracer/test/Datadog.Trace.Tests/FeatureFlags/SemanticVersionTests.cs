@@ -17,6 +17,9 @@ public class SemanticVersionTests
     [InlineData("18.0.0.0.0.0", "18.0.0.0.0.1", -1)]
     [InlineData("18.0.0.0.0.1", "18.0.0.0.0.0", 1)]
     [InlineData("18.0.0.0.0.0", "18.0.0.0.0", 0)]
+    [InlineData("18.0.0.0.0.0", "18.0.0", 0)]
+    [InlineData("18.0.0.0.0.0", "18.0.0.0", 0)]
+    [InlineData("18.0.0.0.0.0", "18", 0)]
     public void CompareToSupportsSixOrMoreCoreComponents(string left, string right, int expected)
     {
         SemanticVersion.TryParse(left, out var leftVersion).Should().BeTrue();
