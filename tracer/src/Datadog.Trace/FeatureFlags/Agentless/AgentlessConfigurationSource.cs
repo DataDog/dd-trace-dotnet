@@ -56,10 +56,11 @@ internal sealed class AgentlessConfigurationSource : IDisposable
     // Only ever touched from the poll loop.
     private readonly HashSet<string> _loggedFailureCategories = new();
 
+    private readonly IDisposable? _environmentSubscription;
+
     // Written by the settings-change callback, read by the poll loop. The URI is stored rather than
     // the environment it carries, so it is only built when the environment changes.
     private Uri _requestUri;
-    private IDisposable? _environmentSubscription;
 
     // Only ever touched from the poll loop.
     private bool _malformedPayloadLogged;
@@ -76,6 +77,7 @@ internal sealed class AgentlessConfigurationSource : IDisposable
         TimeSpan requestTimeout,
         Func<ServerConfiguration, bool> applyConfiguration,
         string? environment = null,
+        TracerSettings.SettingsManager? settingsManager = null,
         Func<TimeSpan, Task>? waitAsync = null)
     {
         _endpoint = endpoint;
@@ -85,6 +87,17 @@ internal sealed class AgentlessConfigurationSource : IDisposable
         _applyConfiguration = applyConfiguration;
         _requestUri = endpoint.BuildRequestUri(environment);
         _waitAsync = waitAsync ?? Task.Delay;
+
+        // Subscribed last, so every field the callback touches is already set. The environment is
+        // tracked rather than captured: customers can change it in code while the application runs,
+        // and flags are targeted per environment.
+        _environmentSubscription = settingsManager?.SubscribeToChanges(changes =>
+        {
+            if (changes.UpdatedMutable is { } mutable)
+            {
+                UpdateEnvironment(mutable.Environment);
+            }
+        });
     }
 
     /// <summary>
@@ -109,26 +122,14 @@ internal sealed class AgentlessConfigurationSource : IDisposable
             return null;
         }
 
-        var source = new AgentlessConfigurationSource(
+        return new AgentlessConfigurationSource(
             endpoint,
             CreateRequestFactory(endpoint, settings),
             settings.PollInterval,
             settings.RequestTimeout,
             applyConfiguration,
-            manager.InitialMutableSettings.Environment);
-
-        // The environment is tracked rather than captured: customers can change it in code while
-        // the application runs, and flags are targeted per environment. Only the request URI is
-        // stored here, so that the poll loop stays the only thing that touches the request state.
-        source._environmentSubscription = manager.SubscribeToChanges(changes =>
-        {
-            if (changes.UpdatedMutable is { } mutable)
-            {
-                source.UpdateEnvironment(mutable.Environment);
-            }
-        });
-
-        return source;
+            manager.InitialMutableSettings.Environment,
+            manager);
     }
 
     /// <summary>
@@ -199,6 +200,10 @@ internal sealed class AgentlessConfigurationSource : IDisposable
         }
 
         Apply(in result);
+
+        // A failure with no status code never reached the endpoint, so it is worth another attempt.
+        static bool IsRetryable(in PollResult result)
+            => result.StatusCode is not { } status || status is 408 or 429 or (>= 500 and <= 599);
     }
 
     public void Dispose()
@@ -253,9 +258,6 @@ internal sealed class AgentlessConfigurationSource : IDisposable
         return new ApiWebRequestFactory(endpoint.Uri, headers.ToArray(), timeout: settings.RequestTimeout);
 #endif
     }
-
-    private static bool IsRetryable(in PollResult result)
-        => result.StatusCode is not { } status || status is 408 or 429 or (>= 500 and <= 599);
 
     private async Task RunAsync()
     {
