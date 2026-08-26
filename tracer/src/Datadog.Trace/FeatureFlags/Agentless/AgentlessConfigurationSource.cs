@@ -356,23 +356,23 @@ internal sealed class AgentlessConfigurationSource : IDisposable
 
     private async Task<string> ReadBodyAsync(IApiResponse response)
     {
-        var stream = await response.GetStreamAsync().ConfigureAwait(false);
-        GZipStream? decompressed = null;
+        using var stream = await response.GetStreamAsync().ConfigureAwait(false);
 
-        try
-        {
-            if (response.GetContentEncodingType() == ContentEncodingType.GZip)
-            {
-                decompressed = new GZipStream(stream, CompressionMode.Decompress);
-            }
+        using var decompressed =
+            response.GetContentEncodingType() == ContentEncodingType.GZip
+                ? new GZipStream(stream, CompressionMode.Decompress, leaveOpen: true)
+                : null;
 
-            using var reader = new StreamReader(decompressed ?? stream, response.GetCharsetEncoding());
-            return await reader.ReadToEndAsync().ConfigureAwait(false);
-        }
-        finally
-        {
-            decompressed?.Dispose();
-        }
+        // Every parameter has to be given to reach leaveOpen. A byte order mark is not expected, and
+        // letting one be detected would override the encoding the response declared.
+        using var reader = new StreamReader(
+            decompressed ?? stream,
+            response.GetCharsetEncoding(),
+            detectEncodingFromByteOrderMarks: false,
+            bufferSize: 1024, // the default
+            leaveOpen: true);
+
+        return await reader.ReadToEndAsync().ConfigureAwait(false);
     }
 
     private Task ApplyAsync(PollResult result)
