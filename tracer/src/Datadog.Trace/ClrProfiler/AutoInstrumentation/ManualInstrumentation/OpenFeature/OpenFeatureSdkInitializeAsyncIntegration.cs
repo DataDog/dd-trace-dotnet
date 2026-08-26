@@ -39,8 +39,10 @@ public sealed class OpenFeatureSdkInitializeAsyncIntegration
             return new CallTargetReturn<Task>(returnValue);
         }
 
-        // Delivery only starts here, because requesting configuration is billable, and the tracer
-        // must not start until application code adopts the provider.
+        // Agentless polling only starts here, because those requests go straight to Datadog and are
+        // billable, so the tracer must not start them until application code adopts the provider. The
+        // Remote Configuration source is already subscribed by then; this call waits for its first
+        // configuration.
         if (TracerManager.Instance.FeatureFlags is { } featureFlags)
         {
             var cancellationToken = state.State is CancellationToken token ? token : default;
