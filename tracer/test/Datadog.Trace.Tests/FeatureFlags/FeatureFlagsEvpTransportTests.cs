@@ -40,9 +40,11 @@ public class FeatureFlagsEvpTransportTests
     }
 
     [Theory]
-    [InlineData(FeatureFlagsEvpTransport.EventPlatformProxyV4)]
-    [InlineData(FeatureFlagsEvpTransport.EventPlatformProxyV2)]
-    public async Task Discovery_SelectsAdvertisedLocalRoute(string proxyEndpoint)
+    [InlineData(FeatureFlagsEvpTransport.EventPlatformProxyV4, FeatureFlagsEvpTransport.ExposureIntakePath)]
+    [InlineData(FeatureFlagsEvpTransport.EventPlatformProxyV4, FeatureFlagsEvpTransport.FlagEvaluationIntakePath)]
+    [InlineData(FeatureFlagsEvpTransport.EventPlatformProxyV2, FeatureFlagsEvpTransport.ExposureIntakePath)]
+    [InlineData(FeatureFlagsEvpTransport.EventPlatformProxyV2, FeatureFlagsEvpTransport.FlagEvaluationIntakePath)]
+    public async Task Discovery_SelectsAdvertisedLocalRoute(string proxyEndpoint, string intakePath)
     {
         var local = CreateFactory("http://agent:8126/");
         var direct = CreateFactory("https://event-platform-intake.datadoghq.com/");
@@ -51,10 +53,10 @@ public class FeatureFlagsEvpTransportTests
 
         discovery.TriggerChange(eventPlatformProxyEndpoint: proxyEndpoint);
 
-        await transport.SendAsync(new object(), SerializerSettings);
+        await transport.SendAsync(new object(), intakePath, SerializerSettings);
 
         local.RequestsSent.Should().ContainSingle()
-             .Which.Endpoint.AbsolutePath.Should().Be($"/{proxyEndpoint}/{FeatureFlagsEvpTransport.ExposureIntakePath}");
+             .Which.Endpoint.AbsolutePath.Should().Be($"/{proxyEndpoint}/{intakePath}");
         direct.RequestsSent.Should().BeEmpty();
     }
 
@@ -67,15 +69,17 @@ public class FeatureFlagsEvpTransportTests
         using var transport = CreateTransport(local, direct, discovery);
 
         discovery.TriggerChange(eventPlatformProxyEndpoint: "v0.4/traces");
-        await transport.SendAsync(new object(), SerializerSettings);
+        await transport.SendAsync(new object(), FeatureFlagsEvpTransport.ExposureIntakePath, SerializerSettings);
 
         // A late discovery result must not move a writer after it selected direct for a batch.
         discovery.TriggerChange(eventPlatformProxyEndpoint: FeatureFlagsEvpTransport.EventPlatformProxyV4);
-        await transport.SendAsync(new object(), SerializerSettings);
+        await transport.SendAsync(new object(), FeatureFlagsEvpTransport.FlagEvaluationIntakePath, SerializerSettings);
 
         local.RequestsSent.Should().BeEmpty();
         direct.RequestsSent.Should().HaveCount(2);
-        direct.RequestsSent.Should().OnlyContain(r => r.Endpoint.AbsolutePath == $"/{FeatureFlagsEvpTransport.ExposureIntakePath}");
+        direct.RequestsSent.Select(r => r.Endpoint.AbsolutePath).Should().Equal(
+            $"/{FeatureFlagsEvpTransport.ExposureIntakePath}",
+            $"/{FeatureFlagsEvpTransport.FlagEvaluationIntakePath}");
     }
 
     [Fact]
@@ -86,7 +90,7 @@ public class FeatureFlagsEvpTransportTests
         var discovery = new DiscoveryServiceMock();
         using var transport = new FeatureFlagsEvpTransport(FeatureFlagsSource.RemoteConfig, local, direct, discovery);
 
-        await transport.SendAsync(new object(), SerializerSettings);
+        await transport.SendAsync(new object(), FeatureFlagsEvpTransport.ExposureIntakePath, SerializerSettings);
 
         local.RequestsSent.Should().ContainSingle()
              .Which.Endpoint.AbsolutePath.Should().Be($"/{FeatureFlagsEvpTransport.EventPlatformProxyV2}/{FeatureFlagsEvpTransport.ExposureIntakePath}");
@@ -103,8 +107,8 @@ public class FeatureFlagsEvpTransportTests
         var direct = CreateFactory("https://event-platform-intake.datadoghq.com/");
         using var transport = CreateTransport(local, direct, initialLocalProxyEndpoint: FeatureFlagsEvpTransport.EventPlatformProxyV4);
 
-        await transport.SendAsync(new object(), SerializerSettings);
-        await transport.SendAsync(new object(), SerializerSettings);
+        await transport.SendAsync(new object(), FeatureFlagsEvpTransport.ExposureIntakePath, SerializerSettings);
+        await transport.SendAsync(new object(), FeatureFlagsEvpTransport.FlagEvaluationIntakePath, SerializerSettings);
 
         local.RequestsSent.Should().ContainSingle();
         direct.RequestsSent.Should().HaveCount(2, "the failed current batch and the next batch both use direct intake");
@@ -123,8 +127,8 @@ public class FeatureFlagsEvpTransportTests
         var direct = CreateFactory("https://event-platform-intake.datadoghq.com/");
         using var transport = CreateTransport(local, direct, initialLocalProxyEndpoint: FeatureFlagsEvpTransport.EventPlatformProxyV4);
 
-        await transport.SendAsync(new object(), SerializerSettings);
-        await transport.SendAsync(new object(), SerializerSettings);
+        await transport.SendAsync(new object(), FeatureFlagsEvpTransport.ExposureIntakePath, SerializerSettings);
+        await transport.SendAsync(new object(), FeatureFlagsEvpTransport.FlagEvaluationIntakePath, SerializerSettings);
 
         local.RequestsSent.Should().HaveCount(2);
         direct.RequestsSent.Should().BeEmpty();
@@ -138,8 +142,8 @@ public class FeatureFlagsEvpTransportTests
         var direct = CreateFactory("https://event-platform-intake.datadoghq.com/");
         using var transport = CreateTransport(local, direct, initialLocalProxyEndpoint: FeatureFlagsEvpTransport.EventPlatformProxyV4);
 
-        await transport.SendAsync(new object(), SerializerSettings);
-        await transport.SendAsync(new object(), SerializerSettings);
+        await transport.SendAsync(new object(), FeatureFlagsEvpTransport.ExposureIntakePath, SerializerSettings);
+        await transport.SendAsync(new object(), FeatureFlagsEvpTransport.FlagEvaluationIntakePath, SerializerSettings);
 
         local.RequestsSent.Should().ContainSingle();
         direct.RequestsSent.Should().HaveCount(2);
@@ -153,10 +157,10 @@ public class FeatureFlagsEvpTransportTests
         var direct = CreateFactory("https://event-platform-intake.datadoghq.com/");
         using var transport = CreateTransport(local, direct, initialLocalProxyEndpoint: FeatureFlagsEvpTransport.EventPlatformProxyV4);
 
-        await transport.SendAsync(new object(), SerializerSettings);
+        await transport.SendAsync(new object(), FeatureFlagsEvpTransport.ExposureIntakePath, SerializerSettings);
         direct.RequestsSent.Should().BeEmpty("an ambiguously failed payload may already have reached the local relay");
 
-        await transport.SendAsync(new object(), SerializerSettings);
+        await transport.SendAsync(new object(), FeatureFlagsEvpTransport.FlagEvaluationIntakePath, SerializerSettings);
 
         local.RequestsSent.Should().ContainSingle();
         direct.RequestsSent.Should().ContainSingle("only the later payload is safe to send direct");
@@ -171,7 +175,7 @@ public class FeatureFlagsEvpTransportTests
             uri => new ThrowingApiRequest(uri, new IOException("direct reset")));
         using var transport = CreateTransport(local, direct);
 
-        await transport.SendAsync(new object(), SerializerSettings);
+        await transport.SendAsync(new object(), FeatureFlagsEvpTransport.FlagEvaluationIntakePath, SerializerSettings);
 
         direct.RequestsSent.Should().ContainSingle();
         local.RequestsSent.Should().BeEmpty();
@@ -200,6 +204,8 @@ public class FeatureFlagsEvpTransportTests
         factory.Should().NotBeNull();
         factory!.GetEndpoint(FeatureFlagsEvpTransport.ExposureIntakePath)
                 .Should().Be(new Uri("https://event-platform-intake.datadoghq.eu/api/v2/exposures"));
+        factory.GetEndpoint(FeatureFlagsEvpTransport.FlagEvaluationIntakePath)
+               .Should().Be(new Uri("https://event-platform-intake.datadoghq.eu/api/v2/flagevaluation"));
         factory.GetType().Name.Should().BeOneOf("HttpClientRequestFactory", "ApiWebRequestFactory");
     }
 
@@ -213,7 +219,7 @@ public class FeatureFlagsEvpTransportTests
         transport.Dispose();
 
         discovery.Callbacks.Should().BeEmpty();
-        await transport.SendAsync(new object(), SerializerSettings);
+        await transport.SendAsync(new object(), FeatureFlagsEvpTransport.ExposureIntakePath, SerializerSettings);
     }
 
     private static FeatureFlagsEvpTransport CreateTransport(

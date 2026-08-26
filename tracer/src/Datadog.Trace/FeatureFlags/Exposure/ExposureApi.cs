@@ -97,7 +97,7 @@ internal sealed class ExposureApi : IDisposable
                 var payload = TryGetPayload();
                 if (payload is not null)
                 {
-                    await _transport.SendAsync(payload, SerializerSettings).ConfigureAwait(false);
+                    await _transport.SendAsync(payload, FeatureFlagsEvpTransport.ExposureIntakePath, SerializerSettings).ConfigureAwait(false);
                 }
             }
             catch (Exception ex)

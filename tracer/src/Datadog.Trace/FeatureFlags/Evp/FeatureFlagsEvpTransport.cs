@@ -33,6 +33,7 @@ namespace Datadog.Trace.FeatureFlags.Evp;
 internal sealed class FeatureFlagsEvpTransport : IDisposable
 {
     internal const string ExposureIntakePath = "api/v2/exposures";
+    internal const string FlagEvaluationIntakePath = "api/v2/flagevaluation";
     internal const string EventPlatformProxyV4 = "evp_proxy/v4";
     internal const string EventPlatformProxyV2 = "evp_proxy/v2";
 
@@ -181,31 +182,31 @@ internal sealed class FeatureFlagsEvpTransport : IDisposable
         _discoveryService.RemoveSubscription(_discoveryCallback);
     }
 
-    internal async Task SendAsync<T>(T payload, JsonSerializerSettings serializerSettings)
+    internal async Task SendAsync<T>(T payload, string intakePath, JsonSerializerSettings serializerSettings)
     {
         if (Volatile.Read(ref _directIsSticky) != 0)
         {
-            await SendDirectAsync(payload, serializerSettings).ConfigureAwait(false);
+            await SendDirectAsync(payload, intakePath, serializerSettings).ConfigureAwait(false);
             return;
         }
 
         var localProxyEndpoint = Volatile.Read(ref _localProxyEndpoint);
         if (localProxyEndpoint is not null)
         {
-            await SendLocalAsync(payload, serializerSettings, localProxyEndpoint).ConfigureAwait(false);
+            await SendLocalAsync(payload, intakePath, serializerSettings, localProxyEndpoint).ConfigureAwait(false);
             return;
         }
 
         if (_source == FeatureFlagsSource.Agentless && _directRequestFactory is not null)
         {
             Interlocked.Exchange(ref _directIsSticky, 1);
-            await SendDirectAsync(payload, serializerSettings).ConfigureAwait(false);
+            await SendDirectAsync(payload, intakePath, serializerSettings).ConfigureAwait(false);
             return;
         }
 
         if (Interlocked.Exchange(ref _unavailableWarningLogged, 1) == 0)
         {
-            Log.Warning("Feature Flags exposure delivery is disabled because no compatible local EVP route or direct intake credentials are available");
+            Log.Warning("Feature Flags event delivery is disabled because no compatible local EVP route or direct intake credentials are available");
         }
     }
 
@@ -221,10 +222,10 @@ internal sealed class FeatureFlagsEvpTransport : IDisposable
         Volatile.Write(ref _localProxyEndpoint, endpoint);
     }
 
-    private async Task SendLocalAsync<T>(T payload, JsonSerializerSettings serializerSettings, string localProxyEndpoint)
+    private async Task SendLocalAsync<T>(T payload, string intakePath, JsonSerializerSettings serializerSettings, string localProxyEndpoint)
     {
         var localFactory = Volatile.Read(ref _localRequestFactory);
-        var endpoint = localFactory.GetEndpoint($"{localProxyEndpoint}/{ExposureIntakePath}");
+        var endpoint = localFactory.GetEndpoint($"{localProxyEndpoint}/{intakePath}");
 
         try
         {
@@ -233,13 +234,13 @@ internal sealed class FeatureFlagsEvpTransport : IDisposable
             if (response.StatusCode is 403 or 404 or 405 && _directRequestFactory is not null)
             {
                 Interlocked.Exchange(ref _directIsSticky, 1);
-                await SendDirectAsync(payload, serializerSettings).ConfigureAwait(false);
+                await SendDirectAsync(payload, intakePath, serializerSettings).ConfigureAwait(false);
             }
         }
         catch (Exception ex) when (ClassifyNetworkFailure(ex) is NetworkFailure.DefinitivePreSend && _directRequestFactory is not null)
         {
             Interlocked.Exchange(ref _directIsSticky, 1);
-            await SendDirectAsync(payload, serializerSettings).ConfigureAwait(false);
+            await SendDirectAsync(payload, intakePath, serializerSettings).ConfigureAwait(false);
         }
         catch (Exception ex) when (ClassifyNetworkFailure(ex) is NetworkFailure.Ambiguous)
         {
@@ -250,11 +251,11 @@ internal sealed class FeatureFlagsEvpTransport : IDisposable
                 Interlocked.Exchange(ref _directIsSticky, 1);
             }
 
-            Log.ErrorSkipTelemetry(ex, "Feature Flags local EVP request failed ambiguously; the current exposure batch will not be replayed");
+            Log.ErrorSkipTelemetry(ex, "Feature Flags local EVP request failed ambiguously; the current event batch will not be replayed");
         }
     }
 
-    private async Task SendDirectAsync<T>(T payload, JsonSerializerSettings serializerSettings)
+    private async Task SendDirectAsync<T>(T payload, string intakePath, JsonSerializerSettings serializerSettings)
     {
         var directFactory = _directRequestFactory;
         if (directFactory is null)
@@ -262,7 +263,7 @@ internal sealed class FeatureFlagsEvpTransport : IDisposable
             return;
         }
 
-        var endpoint = directFactory.GetEndpoint(ExposureIntakePath);
+        var endpoint = directFactory.GetEndpoint(intakePath);
         try
         {
             var request = directFactory.Create(endpoint);
