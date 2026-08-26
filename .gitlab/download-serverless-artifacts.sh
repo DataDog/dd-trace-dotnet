@@ -14,7 +14,7 @@ if [ -n "$CI_COMMIT_TAG" ] && [ -n "$CI_COMMIT_SHA" ]; then
   echo "Downloading artifacts from Azure"
   curl --location --fail \
     --output $target_dir/serverless-artifacts.zip \
-    "https://apmdotnetci.blob.core.windows.net/apm-dotnet-ci-artifacts-master/${CI_COMMIT_SHA}/serverless-artifacts.zip"
+    "https://apmdotnetbuildstorage.blob.core.windows.net/apm-dotnet-ci-artifacts-master/${CI_COMMIT_SHA}/serverless-artifacts.zip"
 
   # Extract top level artifact
   unzip $target_dir/serverless-artifacts.zip -d $target_dir/
