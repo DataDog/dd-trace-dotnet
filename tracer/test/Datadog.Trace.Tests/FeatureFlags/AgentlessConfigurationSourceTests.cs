@@ -256,7 +256,7 @@ public class AgentlessConfigurationSourceTests
                 return true;
             },
             environment,
-            NoWait);
+            waitAsync: NoWait);
 
     private static AgentlessEndpoint CreateEndpoint()
     {
