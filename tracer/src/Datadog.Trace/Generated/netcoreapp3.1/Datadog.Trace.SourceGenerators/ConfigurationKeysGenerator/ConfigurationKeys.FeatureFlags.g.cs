@@ -49,9 +49,14 @@ internal static partial class ConfigurationKeys
 
         /// <summary>
         /// Configuration key for overriding the endpoint used by the <c>agentless</c> configuration source.
-        /// When the URL has no path, or a path of <c>/</c>, the standard rules-based server path is appended;
-        /// any other path is used verbatim as the exact endpoint.
-        /// If unset, the endpoint is derived from <see cref="ConfigurationKeys.Site"/>.
+        /// If unset, the endpoint is derived from <see cref="ConfigurationKeys.Site"/> and Datadog hosts it.
+        /// A configured URL is treated as an endpoint of your own, which changes three things:
+        /// the Datadog API key is not sent to it, so it is responsible for its own authentication;
+        /// it is requested exactly as written, so <c>dd_env</c> is not added and any environment or tenant
+        /// scope has to be part of the URL you configure;
+        /// and only its path is completed, when it has none or a path of <c>/</c>, with the standard
+        /// rules-based server path. Any other path is used verbatim as the exact endpoint.
+        /// The value may carry credentials, so it is never written to logs or telemetry.
         /// </summary>
         public const string FeatureFlagsConfigurationSourceAgentlessBaseUrl = "DD_FEATURE_FLAGS_CONFIGURATION_SOURCE_AGENTLESS_BASE_URL";
 

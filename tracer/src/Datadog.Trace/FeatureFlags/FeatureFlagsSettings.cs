@@ -67,11 +67,14 @@ internal sealed class FeatureFlagsSettings
         // switch wins over everything (expressed as a validator that rejects any configured value),
         // an explicit source wins over the legacy key, the legacy key grandfathers existing
         // adopters onto Remote Configuration, and everything else defaults to agentless.
-        DefaultResult<FeatureFlagsSource> defaultSource = (enabled, legacyEnabled) switch
+        // Not a tuple pattern: net461 has no System.ValueTuple, so (enabled, legacyEnabled) switch
+        // does not compile there.
+        DefaultResult<FeatureFlagsSource> defaultSource = enabled switch
         {
-            (false, _) => new(FeatureFlagsSource.Offline, OfflineSourceName),
-            (null, true) => new(FeatureFlagsSource.RemoteConfig, RemoteConfigSourceName),
-            (null, false) => new(FeatureFlagsSource.Offline, OfflineSourceName),
+            false => new(FeatureFlagsSource.Offline, OfflineSourceName),
+            null when legacyEnabled is not null => legacyEnabled.Value
+                                                       ? new(FeatureFlagsSource.RemoteConfig, RemoteConfigSourceName)
+                                                       : new(FeatureFlagsSource.Offline, OfflineSourceName),
             _ => new(FeatureFlagsSource.Agentless, AgentlessSourceName),
         };
 
