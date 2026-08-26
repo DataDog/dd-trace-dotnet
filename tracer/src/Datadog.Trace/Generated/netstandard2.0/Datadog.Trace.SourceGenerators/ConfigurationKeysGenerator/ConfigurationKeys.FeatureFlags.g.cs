@@ -26,7 +26,7 @@ internal static partial class ConfigurationKeys
         /// <summary>
         /// Configuration key for how long, in milliseconds, provider initialization waits for the first
         /// flag configuration to arrive before returning.
-        /// Default value is <c>10000</c> (10 seconds).
+        /// Default value is <c>30000</c> (30 seconds), matching the other tracers.
         /// Initialization does not fail when the timeout expires: the provider stays not-ready, evaluations
         /// return the caller's default value, and the provider becomes ready when configuration arrives.
         /// </summary>
