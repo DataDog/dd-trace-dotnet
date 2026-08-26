@@ -442,13 +442,13 @@ internal sealed class AgentlessConfigurationSource : IDisposable
         switch (result.StatusCode)
         {
             case 401 or 403:
-                Log.Error<int>("Feature Flags agentless endpoint returned HTTP {StatusCode}; verify endpoint authentication", result.StatusCode!.Value);
+                Log.Warning<int>("Feature Flags agentless endpoint returned HTTP {StatusCode}; verify endpoint authentication", result.StatusCode!.Value);
                 break;
             case not null:
-                Log.Error<int, int>("Feature Flags agentless endpoint returned HTTP {StatusCode} after {Attempts} attempts", result.StatusCode.Value, attempts);
+                Log.Warning<int, int>("Feature Flags agentless endpoint returned HTTP {StatusCode} after {Attempts} attempts", result.StatusCode.Value, attempts);
                 break;
             default:
-                Log.Error<int>(result.Error, "Feature Flags agentless request failed after {Attempts} attempts", attempts);
+                Log.Warning<int>(result.Error, "Feature Flags agentless request failed after {Attempts} attempts", attempts);
                 break;
         }
     }
