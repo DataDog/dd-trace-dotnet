@@ -47,8 +47,11 @@ internal sealed class AgentlessConfigurationSource : IDisposable
     private readonly TimeSpan _pollInterval;
     private readonly TimeSpan _requestTimeout;
     private readonly Func<ServerConfiguration, bool> _applyConfiguration;
-    private readonly Func<TimeSpan, CancellationToken, Task> _waitAsync;
-    private readonly CancellationTokenSource _shutdown = new();
+    private readonly Func<TimeSpan, Task> _waitAsync;
+
+    // Not a CancellationTokenSource: cancellation throws, and an exception on the shutdown path can
+    // crash the runtime, so shutdown is signalled by completing a task instead.
+    private readonly TaskCompletionSource<bool> _shutdown = new(TaskCreationOptions.RunContinuationsAsynchronously);
     private readonly Random _random = new();
 
     // Only ever touched from the poll loop.
@@ -73,7 +76,7 @@ internal sealed class AgentlessConfigurationSource : IDisposable
         TimeSpan requestTimeout,
         Func<ServerConfiguration, bool> applyConfiguration,
         string? environment = null,
-        Func<TimeSpan, CancellationToken, Task>? waitAsync = null)
+        Func<TimeSpan, Task>? waitAsync = null)
     {
         _endpoint = endpoint;
         _requestFactory = requestFactory;
@@ -161,7 +164,7 @@ internal sealed class AgentlessConfigurationSource : IDisposable
         {
             result = await RequestAsync().ConfigureAwait(false);
 
-            if (_shutdown.IsCancellationRequested)
+            if (_shutdown.Task.IsCompleted)
             {
                 // A shutdown mid-poll leaves the response unusable for state transitions: keep
                 // last-known-good and the current ETag.
@@ -182,13 +185,13 @@ internal sealed class AgentlessConfigurationSource : IDisposable
 
             await WaitAsync(RetryDelay(attempt)).ConfigureAwait(false);
 
-            if (_shutdown.IsCancellationRequested)
+            if (_shutdown.Task.IsCompleted)
             {
                 return;
             }
         }
 
-        if (_shutdown.IsCancellationRequested)
+        if (_shutdown.Task.IsCompleted)
         {
             // A shutdown during the final attempt leaves the response unusable for state
             // transitions: keep last-known-good and the current ETag.
@@ -203,14 +206,15 @@ internal sealed class AgentlessConfigurationSource : IDisposable
         // The request in flight is bounded by the request timeout, and the loop is never joined,
         // so a shutdown does not wait for it. A poll that completes after disposal is prevented
         // from applying its result by the shutdown check in PollAsync.
+        _shutdown.TrySetResult(true);
+
         try
         {
             _environmentSubscription?.Dispose();
-            _shutdown.Cancel();
         }
         catch (Exception ex)
         {
-            Log.Debug(ex, "Error cancelling the Feature Flags agentless poll loop");
+            Log.Debug(ex, "Error unsubscribing the Feature Flags agentless poll loop from settings changes");
         }
     }
 
@@ -257,7 +261,7 @@ internal sealed class AgentlessConfigurationSource : IDisposable
     {
         Log.Debug("AgentlessConfigurationSource::RunAsync -> Enter");
 
-        while (!_shutdown.IsCancellationRequested)
+        while (!_shutdown.Task.IsCompleted)
         {
             try
             {
@@ -275,17 +279,10 @@ internal sealed class AgentlessConfigurationSource : IDisposable
         Log.Debug("AgentlessConfigurationSource::RunAsync -> Exit");
     }
 
+    // A shutdown ends the wait early. The delay itself is left to expire on its own: it holds no
+    // thread, and the loop has already exited by the time it does.
     private async Task WaitAsync(TimeSpan delay)
-    {
-        try
-        {
-            await _waitAsync(delay, _shutdown.Token).ConfigureAwait(false);
-        }
-        catch (OperationCanceledException)
-        {
-            // Shutting down
-        }
-    }
+        => await Task.WhenAny(_waitAsync(delay), _shutdown.Task).ConfigureAwait(false);
 
     private TimeSpan RetryDelay(int attempt)
     {
