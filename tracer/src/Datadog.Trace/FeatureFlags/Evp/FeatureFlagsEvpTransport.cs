@@ -182,25 +182,31 @@ internal sealed class FeatureFlagsEvpTransport : IDisposable
         _discoveryService.RemoveSubscription(_discoveryCallback);
     }
 
-    internal async Task SendAsync<T>(T payload, string intakePath, JsonSerializerSettings serializerSettings)
+    internal Task SendAsync<T>(T payload, string intakePath, JsonSerializerSettings serializerSettings)
+        => SendAsync(intakePath, request => request.PostAsJsonAsync(payload, MultipartCompression.GZip, serializerSettings));
+
+    internal Task SendCompressedAsync(ArraySegment<byte> payload, string intakePath)
+        => SendAsync(intakePath, request => request.PostAsync(payload, MimeTypes.Json, "gzip"));
+
+    private async Task SendAsync(string intakePath, Func<IApiRequest, Task<IApiResponse>> sendAsync)
     {
         if (Volatile.Read(ref _directIsSticky) != 0)
         {
-            await SendDirectAsync(payload, intakePath, serializerSettings).ConfigureAwait(false);
+            await SendDirectAsync(intakePath, sendAsync).ConfigureAwait(false);
             return;
         }
 
         var localProxyEndpoint = Volatile.Read(ref _localProxyEndpoint);
         if (localProxyEndpoint is not null)
         {
-            await SendLocalAsync(payload, intakePath, serializerSettings, localProxyEndpoint).ConfigureAwait(false);
+            await SendLocalAsync(intakePath, localProxyEndpoint, sendAsync).ConfigureAwait(false);
             return;
         }
 
         if (_source == FeatureFlagsSource.Agentless && _directRequestFactory is not null)
         {
             Interlocked.Exchange(ref _directIsSticky, 1);
-            await SendDirectAsync(payload, intakePath, serializerSettings).ConfigureAwait(false);
+            await SendDirectAsync(intakePath, sendAsync).ConfigureAwait(false);
             return;
         }
 
@@ -222,7 +228,7 @@ internal sealed class FeatureFlagsEvpTransport : IDisposable
         Volatile.Write(ref _localProxyEndpoint, endpoint);
     }
 
-    private async Task SendLocalAsync<T>(T payload, string intakePath, JsonSerializerSettings serializerSettings, string localProxyEndpoint)
+    private async Task SendLocalAsync(string intakePath, string localProxyEndpoint, Func<IApiRequest, Task<IApiResponse>> sendAsync)
     {
         var localFactory = Volatile.Read(ref _localRequestFactory);
         var endpoint = localFactory.GetEndpoint($"{localProxyEndpoint}/{intakePath}");
@@ -230,17 +236,17 @@ internal sealed class FeatureFlagsEvpTransport : IDisposable
         try
         {
             var request = localFactory.Create(endpoint);
-            using var response = await request.PostAsJsonAsync(payload, MultipartCompression.GZip, serializerSettings).ConfigureAwait(false);
+            using var response = await sendAsync(request).ConfigureAwait(false);
             if (response.StatusCode is 403 or 404 or 405 && _directRequestFactory is not null)
             {
                 Interlocked.Exchange(ref _directIsSticky, 1);
-                await SendDirectAsync(payload, intakePath, serializerSettings).ConfigureAwait(false);
+                await SendDirectAsync(intakePath, sendAsync).ConfigureAwait(false);
             }
         }
         catch (Exception ex) when (ClassifyNetworkFailure(ex) is NetworkFailure.DefinitivePreSend && _directRequestFactory is not null)
         {
             Interlocked.Exchange(ref _directIsSticky, 1);
-            await SendDirectAsync(payload, intakePath, serializerSettings).ConfigureAwait(false);
+            await SendDirectAsync(intakePath, sendAsync).ConfigureAwait(false);
         }
         catch (Exception ex) when (ClassifyNetworkFailure(ex) is NetworkFailure.Ambiguous)
         {
@@ -255,7 +261,7 @@ internal sealed class FeatureFlagsEvpTransport : IDisposable
         }
     }
 
-    private async Task SendDirectAsync<T>(T payload, string intakePath, JsonSerializerSettings serializerSettings)
+    private async Task SendDirectAsync(string intakePath, Func<IApiRequest, Task<IApiResponse>> sendAsync)
     {
         var directFactory = _directRequestFactory;
         if (directFactory is null)
@@ -267,7 +273,7 @@ internal sealed class FeatureFlagsEvpTransport : IDisposable
         try
         {
             var request = directFactory.Create(endpoint);
-            using var response = await request.PostAsJsonAsync(payload, MultipartCompression.GZip, serializerSettings).ConfigureAwait(false);
+            using var response = await sendAsync(request).ConfigureAwait(false);
             if (response.StatusCode is < 200 or >= 300)
             {
                 Log.Warning<int>("Feature Flags direct EVP request failed with HTTP status code {StatusCode}", response.StatusCode);

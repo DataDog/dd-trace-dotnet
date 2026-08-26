@@ -82,6 +82,34 @@ public class FeatureFlagsEvpTransportTests
             $"/{FeatureFlagsEvpTransport.FlagEvaluationIntakePath}");
     }
 
+    [Theory]
+    [InlineData(FeatureFlagsEvpTransport.EventPlatformProxyV4, false)]
+    [InlineData(FeatureFlagsEvpTransport.EventPlatformProxyV2, false)]
+    [InlineData(null, true)]
+    public async Task CompressedFlagEvaluationPayloadUsesSelectedRoute(string? proxyEndpoint, bool usesDirect)
+    {
+        var local = CreateFactory("http://agent:8126/", uri => new RecordingCompressedApiRequest(uri));
+        var direct = CreateFactory("https://event-platform-intake.datadoghq.com/", uri => new RecordingCompressedApiRequest(uri));
+        var discovery = new DiscoveryServiceMock();
+        using var transport = CreateTransport(local, direct, discovery);
+
+        discovery.TriggerChange(eventPlatformProxyEndpoint: proxyEndpoint ?? "v0.4/traces");
+        var payload = new byte[] { 1, 2, 3 };
+
+        await transport.SendCompressedAsync(new ArraySegment<byte>(payload), FeatureFlagsEvpTransport.FlagEvaluationIntakePath);
+
+        var selectedFactory = usesDirect ? direct : local;
+        var request = selectedFactory.RequestsSent.Should().ContainSingle().Which.Should().BeOfType<RecordingCompressedApiRequest>().Subject;
+        request.Endpoint.AbsolutePath.Should().Be(
+            usesDirect
+                ? $"/{FeatureFlagsEvpTransport.FlagEvaluationIntakePath}"
+                : $"/{proxyEndpoint}/{FeatureFlagsEvpTransport.FlagEvaluationIntakePath}");
+        request.Payload.Should().Equal(payload);
+        request.ContentType.Should().Be(MimeTypes.Json);
+        request.ContentEncoding.Should().Be("gzip");
+        (usesDirect ? local : direct).RequestsSent.Should().BeEmpty();
+    }
+
     [Fact]
     public async Task RemoteConfigurationNeverUsesDirectIntake()
     {
@@ -252,5 +280,19 @@ public class FeatureFlagsEvpTransportTests
     {
         public override Task<IApiResponse> PostAsJsonAsync<T>(T payload, MultipartCompression compression, JsonSerializerSettings settings)
             => Task.FromException<IApiResponse>(exception);
+    }
+
+    private sealed class RecordingCompressedApiRequest(Uri endpoint) : TestApiRequest(endpoint)
+    {
+        public byte[] Payload { get; private set; } = [];
+
+        public string ContentEncoding { get; private set; } = string.Empty;
+
+        public override Task<IApiResponse> PostAsync(ArraySegment<byte> bytes, string contentType, string contentEncoding)
+        {
+            Payload = bytes.ToArray();
+            ContentEncoding = contentEncoding;
+            return base.PostAsync(bytes, contentType, contentEncoding);
+        }
     }
 }
