@@ -78,7 +78,16 @@ namespace Datadog.Trace.FeatureFlags
                 return null;
             }
 
-            return new FeatureFlagsModule(settings, rcmSubscriptionManager, discoveryService);
+            var module = new FeatureFlagsModule(settings, rcmSubscriptionManager, discoveryService);
+
+            // Subscribing here rather than in the constructor: SubscribeToChanges can invoke the
+            // callback, which must not reach a module that is still being constructed.
+            if (settings.FeatureFlags.Source == FeatureFlagsSource.RemoteConfig)
+            {
+                module.SubscribeToRemoteConfiguration();
+            }
+
+            return module;
         }
 
         public void Dispose()
@@ -117,8 +126,13 @@ namespace Datadog.Trace.FeatureFlags
         }
 
         /// <summary>
-        /// Signals that application code initialized the provider. Configuration is only requested
-        /// from this point on, because those requests are billable. Idempotent.
+        /// Signals that application code initialized the provider. Idempotent.
+        /// <para>
+        /// This is where the agentless source starts, because its requests go straight to Datadog and
+        /// are billable, so nothing is sent until the application adopts the provider. The Remote
+        /// Configuration source does not wait here: it rides the poll the agent already performs, and
+        /// every other tracer subscribes to it at startup.
+        /// </para>
         /// </summary>
         internal void Activate()
         {
@@ -135,23 +149,6 @@ namespace Datadog.Trace.FeatureFlags
 
                 switch (_settings.Source)
                 {
-                    case FeatureFlagsSource.RemoteConfig:
-                        // Remote Configuration subscription is deferred to activation so that merely
-                        // enabling Feature Flags does not start a billed RC subscription.
-                        if (!_isRemoteConfigurationAvailable)
-                        {
-                            Log.Warning("Feature Flags are configured to use the Remote Configuration source, but Remote Configuration is not available. No flag configuration will be received.");
-                            _deliveryUnavailableReason = "the Remote Configuration source is selected, but Remote Configuration is not available in this environment";
-                            break;
-                        }
-
-                        var ffeProduct = new FfeProduct(configs => ApplyConfigurations(configs));
-                        _rcmSubscription = new Subscription(ffeProduct.UpdateFromRcm, RcmProducts.FfeFlags);
-                        _rcmSubscriptionManager.SubscribeToChanges(_rcmSubscription);
-                        _rcmSubscriptionManager.SetCapability(RcmCapabilitiesIndices.FfeFlagConfigurationRules, true);
-                        _deliveryStarted = true;
-                        Log.Debug("FeatureFlagsModule::Activate -> Remote Configuration source subscribed");
-                        break;
                     case FeatureFlagsSource.Agentless:
                         // Polling is billable, so it starts here rather than at construction.
                         var source = AgentlessConfigurationSource.Create(_settings, _settingsManager, ApplyConfiguration);
@@ -206,8 +203,9 @@ namespace Datadog.Trace.FeatureFlags
                 deliveryUnavailableReason = _deliveryUnavailableReason;
             }
 
-            // When activation could not start any delivery source (for example, agentless without an
-            // API key), no configuration can ever arrive, so waiting would only delay startup.
+            // When no delivery source could start (agentless without an API key, or the Remote
+            // Configuration source where Remote Configuration is unavailable), no configuration can
+            // ever arrive, so waiting would only delay startup.
             // Returning instead would report the provider as usable while every evaluation keeps
             // returning its default, so the failure is raised: the SDK turns it into an error status
             // and an error event without taking the application down.
@@ -266,6 +264,38 @@ namespace Datadog.Trace.FeatureFlags
             {
                 Log.Warning(ex, "FeatureFlagsModule::ApplyConfiguration -> Error applying configuration");
                 return false;
+            }
+        }
+
+        /// <summary>
+        /// Subscribes to the Remote Configuration product carrying flag configuration. Called at
+        /// startup, not on activation: the configuration arrives on the poll the agent already makes,
+        /// so subscribing early adds no request, and every other tracer subscribes at startup too.
+        /// Deferring it made .NET the one tracer that never advertised the capability until the
+        /// application resolved a flag.
+        /// </summary>
+        private void SubscribeToRemoteConfiguration()
+        {
+            lock (_stateLock)
+            {
+                if (_disposed)
+                {
+                    return;
+                }
+
+                if (!_isRemoteConfigurationAvailable)
+                {
+                    Log.Warning("Feature Flags are configured to use the Remote Configuration source, but Remote Configuration is not available. No flag configuration will be received.");
+                    _deliveryUnavailableReason = "the Remote Configuration source is selected, but Remote Configuration is not available in this environment";
+                    return;
+                }
+
+                var ffeProduct = new FfeProduct(configs => ApplyConfigurations(configs));
+                _rcmSubscription = new Subscription(ffeProduct.UpdateFromRcm, RcmProducts.FfeFlags);
+                _rcmSubscriptionManager.SubscribeToChanges(_rcmSubscription);
+                _rcmSubscriptionManager.SetCapability(RcmCapabilitiesIndices.FfeFlagConfigurationRules, true);
+                _deliveryStarted = true;
+                Log.Debug("FeatureFlagsModule::SubscribeToRemoteConfiguration -> Remote Configuration source subscribed");
             }
         }
 

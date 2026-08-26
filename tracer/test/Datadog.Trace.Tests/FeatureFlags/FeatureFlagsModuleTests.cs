@@ -33,8 +33,10 @@ public class FeatureFlagsModuleTests
         // Arrange
         var rcmManager = new MockRcmSubscriptionManager();
         var settings = CreateSettings();
-        var module = new FeatureFlagsModule(settings, rcmManager);
-        module.Activate();
+
+        // Through Create(), because that is what registers the Remote Configuration subscription
+        // this test drives.
+        var module = CreateModule(settings, rcmManager);
 
         var callbackInvoked = false;
         module.RegisterOnNewConfigEventHandler(() => callbackInvoked = true);
@@ -49,7 +51,7 @@ public class FeatureFlagsModuleTests
         });
         var configPath = RemoteConfigurationPath.FromPath($"datadog/2/{RcmProducts.FfeFlags}/test-config/config");
         var subscription = rcmManager.LastSubscription
-                        ?? throw new InvalidOperationException("Activation did not register a Remote Configuration subscription.");
+                        ?? throw new InvalidOperationException("Create did not register a Remote Configuration subscription.");
 
         subscription.Invoke(
             new Dictionary<string, List<RemoteConfiguration>>
@@ -100,18 +102,16 @@ public class FeatureFlagsModuleTests
     }
 
     [Fact]
-    public void Create_WithRemoteConfigSource_DoesNotSubscribeUntilActivated()
+    public void Create_WithRemoteConfigSource_SubscribesImmediately()
     {
         var rcmManager = new MockRcmSubscriptionManager();
         var settings = CreateSettings((ConfigurationKeys.FeatureFlags.FeatureFlagsConfigurationSource, "remote_config"));
 
+        // Every tracer subscribes at startup when this source is selected, so the shared parametric
+        // suite asserts an apply status without evaluating a flag first. Deferring the subscription
+        // to Activate() would make .NET the only tracer that never advertises the capability until
+        // the application resolves a flag.
         using var module = CreateModule(settings, rcmManager);
-
-        // Subscription is deferred to Activate() so merely enabling Feature Flags does not start
-        // a billed RC subscription.
-        rcmManager.HasAnySubscription.Should().BeFalse();
-
-        module.Activate();
 
         rcmManager.HasAnySubscription.Should().BeTrue();
         rcmManager.ProductKeys.Should().Contain(RcmProducts.FfeFlags);
@@ -229,13 +229,13 @@ public class FeatureFlagsModuleTests
     }
 
     [Fact]
-    public void Activate_WhenCalledConcurrently_SubscribesOnce()
+    public void Activate_WhenCalledConcurrently_LeavesTheSingleStartupSubscription()
     {
         var rcmManager = new MockRcmSubscriptionManager();
         using var module = CreateModule(CreateSettings(), rcmManager);
 
-        // Activation claims its flag and completes its setup atomically, so a second caller cannot
-        // subscribe a second time, nor observe the module as activated while setup is still running.
+        // Create() subscribed once. Activation claims its flag atomically, so no caller can add a
+        // second subscription, nor observe the module as activated while setup is still running.
         const int callers = 16;
         using var start = new Barrier(callers);
         Parallel.For(
@@ -251,7 +251,7 @@ public class FeatureFlagsModuleTests
     }
 
     [Fact]
-    public void Activate_AfterDispose_DoesNotSubscribe()
+    public void Activate_AfterDispose_DoesNotSubscribeAgain()
     {
         var rcmManager = new MockRcmSubscriptionManager();
         var module = CreateModule(CreateSettings(), rcmManager);
@@ -260,9 +260,10 @@ public class FeatureFlagsModuleTests
         module.Activate();
 
         // Disposal has already run its unsubscribe, so a subscription registered afterwards would
-        // never be removed, leaving a billed delivery path active for the rest of the process.
+        // never be removed, leaving a delivery path active for the rest of the process. Only the one
+        // subscription Create() made is expected, and it is gone.
         rcmManager.HasAnySubscription.Should().BeFalse();
-        rcmManager.ProductKeys.Should().BeEmpty();
+        rcmManager.ProductKeys.Should().ContainSingle().Which.Should().Be(RcmProducts.FfeFlags);
     }
 
     [Fact]
@@ -271,7 +272,6 @@ public class FeatureFlagsModuleTests
         var rcmManager = new MockRcmSubscriptionManager();
         var module = CreateModule(CreateSettings(), rcmManager);
 
-        module.Activate();
         rcmManager.HasAnySubscription.Should().BeTrue();
 
         module.Dispose();
@@ -305,6 +305,7 @@ public class FeatureFlagsModuleTests
         var collection = new NameValueCollection
         {
             { ConfigurationKeys.FeatureFlags.FeatureFlagsConfigurationSource, "remote_config" },
+            { ConfigurationKeys.Rcm.RemoteConfigurationEnabled, "true" },
 #pragma warning disable 618 // superseded, but still honoured for existing adopters
             { ConfigurationKeys.FeatureFlags.FlaggingProviderEnabled, "true" },
 #pragma warning restore 618
