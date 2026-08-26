@@ -170,7 +170,7 @@ internal sealed class AgentlessConfigurationSource : IDisposable
                 return;
             }
 
-            if (!IsRetryable(result))
+            if (!IsRetryable(in result))
             {
                 break;
             }
@@ -178,7 +178,7 @@ internal sealed class AgentlessConfigurationSource : IDisposable
             if (attempt == MaxAttempts)
             {
                 // Every attempt failed in a retryable way. Last-known-good stays in place.
-                WarnFailure(result, MaxAttempts);
+                WarnFailure(in result, MaxAttempts);
                 return;
             }
 
@@ -197,7 +197,7 @@ internal sealed class AgentlessConfigurationSource : IDisposable
             return;
         }
 
-        await ApplyAsync(result).ConfigureAwait(false);
+        Apply(in result);
     }
 
     public void Dispose()
@@ -375,19 +375,19 @@ internal sealed class AgentlessConfigurationSource : IDisposable
         return await reader.ReadToEndAsync().ConfigureAwait(false);
     }
 
-    private Task ApplyAsync(PollResult result)
+    private void Apply(in PollResult result)
     {
         switch (result.StatusCode)
         {
             case 304:
                 // Nothing changed, and the ETag stays as it is.
-                return Task.CompletedTask;
+                return;
             case 401 or 403:
-                WarnFailure(result, attempts: 1);
-                return Task.CompletedTask;
+                WarnFailure(in result, attempts: 1);
+                return;
             case not 200:
-                WarnFailure(result, attempts: 1);
-                return Task.CompletedTask;
+                WarnFailure(in result, attempts: 1);
+                return;
         }
 
         if (!UfcConfigurationParser.TryParse(result.Body, out var configuration, out var error))
@@ -398,7 +398,7 @@ internal sealed class AgentlessConfigurationSource : IDisposable
                 Log.Error("Feature Flags agentless endpoint returned an unusable payload: {Error}", error);
             }
 
-            return Task.CompletedTask;
+            return;
         }
 
         if (!_applyConfiguration(configuration))
@@ -409,7 +409,7 @@ internal sealed class AgentlessConfigurationSource : IDisposable
                 Log.Warning("Feature Flags agentless configuration could not be applied");
             }
 
-            return Task.CompletedTask;
+            return;
         }
 
         // The ETag advances only once parsing and applying have both succeeded. Advancing on
@@ -417,8 +417,6 @@ internal sealed class AgentlessConfigurationSource : IDisposable
         // answer 304, pinning the process to stale configuration with no way back.
         var newEtag = result.ETag?.Trim();
         _etag = StringUtil.IsNullOrEmpty(newEtag) ? null : newEtag;
-
-        return Task.CompletedTask;
     }
 
     /// <summary>
