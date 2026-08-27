@@ -3157,6 +3157,85 @@ supportedConfigurations:
     documentation: |-
       Enables Feature Flags Provider (Experimental).
       Default value is <c>false</c> (disabled).
+  DD_EXPERIMENTAL_FLAGGING_PROVIDER_INITIALIZATION_TIMEOUT_MS:
+  - implementation: A
+    scope: managed
+    type: int
+    default: '30000'
+    product: FeatureFlags
+    const_name: FlaggingProviderInitializationTimeoutMs
+    documentation: |-
+      Configuration key for how long, in milliseconds, provider initialization waits for the first
+      flag configuration to arrive before returning.
+      Default value is <c>30000</c> (30 seconds), matching the other tracers.
+      Initialization does not fail when the timeout expires: the provider stays not-ready, evaluations
+      return the caller's default value, and the provider becomes ready when configuration arrives.
+  DD_FEATURE_FLAGS_ENABLED:
+  - implementation: A
+    scope: managed
+    type: boolean
+    default: 'true'
+    product: FeatureFlags
+    const_name: FeatureFlagsEnabled
+    documentation: |-
+      Configuration key to enable or disable Feature Flags.
+      Default value is <c>true</c> (enabled).
+      Feature Flags only contact Datadog once application code initializes the provider, so enabling
+      this alone does not start requesting flag configuration.
+      This supersedes <see cref="ConfigurationKeys.FeatureFlags.FlaggingProviderEnabled"/>.
+  DD_FEATURE_FLAGS_CONFIGURATION_SOURCE:
+  - implementation: A
+    scope: managed
+    type: string
+    default: agentless
+    product: FeatureFlags
+    const_name: FeatureFlagsConfigurationSource
+    documentation: |-
+      Configuration key for selecting where flag configuration is loaded from.
+      Supported values are <c>agentless</c> (direct HTTP delivery, the default),
+      <c>remote_config</c> (delivery through the Datadog Agent's Remote Configuration)
+      and <c>offline</c>, which disables Feature Flags and contacts nothing.
+      Any other value is rejected and the default applies.
+  DD_FEATURE_FLAGS_CONFIGURATION_SOURCE_AGENTLESS_BASE_URL:
+  - implementation: A
+    scope: managed
+    type: string
+    sensitive: true
+    default: null
+    product: FeatureFlags
+    const_name: FeatureFlagsConfigurationSourceAgentlessBaseUrl
+    documentation: |-
+      Configuration key for overriding the endpoint used by the <c>agentless</c> configuration source.
+      If unset, the endpoint is derived from <see cref="ConfigurationKeys.Site"/> and Datadog hosts it.
+      A configured URL is treated as an endpoint of your own, which changes three things:
+      the Datadog API key is not sent to it, so it is responsible for its own authentication;
+      it is requested exactly as written, so <c>dd_env</c> is not added and any environment or tenant
+      scope has to be part of the URL you configure;
+      and only its path is completed, when it has none or a path of <c>/</c>, with the standard
+      rules-based server path. Any other path is used verbatim as the exact endpoint.
+      The value may carry credentials, so it is never written to logs or telemetry.
+  DD_FEATURE_FLAGS_CONFIGURATION_SOURCE_AGENTLESS_POLL_INTERVAL_SECONDS:
+  - implementation: A
+    scope: managed
+    type: int
+    default: '30'
+    product: FeatureFlags
+    const_name: FeatureFlagsConfigurationSourceAgentlessPollIntervalSeconds
+    documentation: |-
+      Configuration key for how often, in seconds, the <c>agentless</c> configuration source polls for
+      flag configuration.
+      Default value is <c>30</c>. Values outside <c>(0, 3600]</c> are rejected and the default is used.
+  DD_FEATURE_FLAGS_CONFIGURATION_SOURCE_AGENTLESS_REQUEST_TIMEOUT_SECONDS:
+  - implementation: A
+    scope: managed
+    type: int
+    default: '5'
+    product: FeatureFlags
+    const_name: FeatureFlagsConfigurationSourceAgentlessRequestTimeoutSeconds
+    documentation: |-
+      Configuration key for the request timeout, in seconds, used by the <c>agentless</c> configuration
+      source.
+      Default value is <c>5</c>. Non-positive values are rejected and the default is used.
   DD_EXPERIMENTAL_FLAGGING_PROVIDER_SPAN_ENRICHMENT_ENABLED:
   - implementation: A
     scope: managed
