@@ -27,6 +27,7 @@ public class DataStreamsMonitoringManualApiTest : TestHelper
 
     [SkippableFact]
     [Trait("Category", "EndToEnd")]
+    [Flaky("Identified as flaky in CI")]
     public async Task ContextPropagation()
     {
         SetEnvironmentVariable(ConfigurationKeys.DataStreamsMonitoring.Enabled, "1");

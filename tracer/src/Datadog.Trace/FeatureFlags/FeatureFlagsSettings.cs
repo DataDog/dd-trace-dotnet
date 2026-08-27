@@ -28,10 +28,12 @@ internal sealed class FeatureFlagsSettings
 
     internal const int DefaultPollIntervalSeconds = 30;
     internal const int DefaultRequestTimeoutSeconds = 5;
-    internal const int DefaultInitializationTimeoutMs = 10_000;
+    // Matches the Go, Java and Node tracers, so the same slow first configuration does not give
+    // one language the caller's default value while the others still return a real one.
+    internal const int DefaultInitializationTimeoutMs = 30_000;
 
-    // An interval above this is indistinguishable from "never poll" and is more likely a
-    // misconfiguration (for example milliseconds passed as seconds) than an intent.
+    // One hour. An interval above this is more likely a misconfiguration (for example milliseconds
+    // passed as seconds) than an intent, and the other tracers cap it at the same value.
     private const int MaxPollIntervalSeconds = 3600;
 
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(FeatureFlagsSettings));
@@ -59,26 +61,32 @@ internal sealed class FeatureFlagsSettings
 #pragma warning restore 618
         }
 
-        // The source is resolved in a single read so configuration telemetry reports the value we
-        // actually use. Shared across tracers, so the precedence is deliberate: the stable kill
-        // switch wins over everything (expressed as a validator that rejects any configured value),
-        // an explicit source wins over the legacy key, the legacy key grandfathers existing
-        // adopters onto Remote Configuration, and everything else defaults to agentless.
+        // Where configuration comes from is a separate question from whether the product runs, and
+        // the two are answered separately below, as the other tracers answer them.
+        //
+        // The source key is read once, with every other outcome expressed as its default, so
+        // configuration telemetry reports the one value we act on rather than one entry per
+        // candidate key. Shared across tracers, so the precedence is deliberate: an explicit source
+        // wins over the legacy key, the legacy key grandfathers existing adopters onto Remote
+        // Configuration, and everything else defaults to agentless.
+        // net461 has no System.ValueTuple, so a tuple pattern over both values does not compile.
         DefaultResult<FeatureFlagsSource> defaultSource = enabled switch
         {
-            false => new(FeatureFlagsSource.Disabled, OfflineSourceName),
             null when legacyEnabled is not null => legacyEnabled.Value
                                                        ? new(FeatureFlagsSource.RemoteConfig, RemoteConfigSourceName)
-                                                       : new(FeatureFlagsSource.Disabled, OfflineSourceName),
+                                                       : new(FeatureFlagsSource.Offline, OfflineSourceName),
             _ => new(FeatureFlagsSource.Agentless, AgentlessSourceName),
         };
 
         Source = config
                 .WithKeys(ConfigurationKeys.FeatureFlags.FeatureFlagsConfigurationSource)
-                .GetAs(
-                     defaultSource,
-                     validator: enabled == false ? static _ => false : static _ => true,
-                     converter: ConvertSource);
+                .GetAs(defaultSource, validator: null, converter: ConvertSource);
+
+        // The stable kill switch turns the product off whatever the source says. Beyond that, only a
+        // delivery source has anything to run: offline delivers nothing, and an unrecognised value
+        // resolves to offline so that a typo fails closed instead of starting billed delivery.
+        Enabled = enabled != false
+               && Source is FeatureFlagsSource.Agentless or FeatureFlagsSource.RemoteConfig;
 
         var agentlessBaseUrl = config
                                 .WithKeys(ConfigurationKeys.FeatureFlags.FeatureFlagsConfigurationSourceAgentlessBaseUrl)
@@ -112,14 +120,15 @@ internal sealed class FeatureFlagsSettings
     }
 
     /// <summary>
-    /// Gets the resolved delivery source. <see cref="FeatureFlagsSource.Disabled"/> means nothing is contacted.
+    /// Gets the resolved delivery source. <see cref="FeatureFlagsSource.Offline"/> means nothing is contacted.
     /// </summary>
     public FeatureFlagsSource Source { get; }
 
     /// <summary>
-    /// Gets a value indicating whether Feature Flags are enabled at all.
+    /// Gets a value indicating whether Feature Flags run at all. Independent of <see cref="Source"/>,
+    /// which says where configuration would come from.
     /// </summary>
-    public bool Enabled => Source != FeatureFlagsSource.Disabled;
+    public bool Enabled { get; }
 
     /// <summary>
     /// Gets the configured override for the agentless endpoint, or <c>null</c> to derive it from the site.
@@ -153,9 +162,8 @@ internal sealed class FeatureFlagsSettings
 
     /// <summary>
     /// Converts a configured source name to a <see cref="FeatureFlagsSource"/>. A blank value is
-    /// treated as unset, and an unrecognised one is reported as a parsing failure so that it shows
-    /// up as rejected in configuration telemetry rather than as a value nobody configured. Both
-    /// fall back to the default, which is what an unset key would have selected anyway.
+    /// treated as unset and falls back to the default, which is what an absent key would have
+    /// selected anyway. An unrecognised value fails closed instead: nothing is contacted.
     /// </summary>
     private static ParsingResult<FeatureFlagsSource> ConvertSource(string? value)
     {
@@ -164,38 +172,31 @@ internal sealed class FeatureFlagsSettings
             return ParsingResult<FeatureFlagsSource>.Failure();
         }
 
-        // Compared without allocating. A value with surrounding whitespace is trimmed only once the
-        // direct comparisons have failed, so the common path stays allocation-free.
-        if (TryMatch(value, out var source) || TryMatch(value.Trim(), out source))
+        var trimmed = value.Trim();
+
+        if (string.Equals(trimmed, AgentlessSourceName, StringComparison.OrdinalIgnoreCase))
         {
-            return ParsingResult<FeatureFlagsSource>.Success(source);
+            return ParsingResult<FeatureFlagsSource>.Success(FeatureFlagsSource.Agentless);
         }
 
-        return ParsingResult<FeatureFlagsSource>.Failure();
-    }
-
-    private static bool TryMatch(string value, out FeatureFlagsSource source)
-    {
-        if (string.Equals(value, AgentlessSourceName, StringComparison.OrdinalIgnoreCase))
+        if (string.Equals(trimmed, RemoteConfigSourceName, StringComparison.OrdinalIgnoreCase))
         {
-            source = FeatureFlagsSource.Agentless;
-            return true;
+            return ParsingResult<FeatureFlagsSource>.Success(FeatureFlagsSource.RemoteConfig);
         }
 
-        if (string.Equals(value, RemoteConfigSourceName, StringComparison.OrdinalIgnoreCase))
+        // "offline" is a reserved sentinel: the provider is intentionally off.
+        if (string.Equals(trimmed, OfflineSourceName, StringComparison.OrdinalIgnoreCase))
         {
-            source = FeatureFlagsSource.RemoteConfig;
-            return true;
+            return ParsingResult<FeatureFlagsSource>.Success(FeatureFlagsSource.Offline);
         }
 
-        // "offline" is a reserved fail-closed sentinel: the provider is intentionally off.
-        if (string.Equals(value, OfflineSourceName, StringComparison.OrdinalIgnoreCase))
-        {
-            source = FeatureFlagsSource.Disabled;
-            return true;
-        }
+        // A value nobody recognises fails closed rather than falling back to agentless: guessing a
+        // billed delivery path from a typo is worse than delivering nothing. Shared across tracers,
+        // and asserted by the system-tests parametric suite.
+        Log.Warning<string>(
+            "Unsupported Feature Flags configuration source {Source}. No configuration will be delivered.",
+            value);
 
-        source = FeatureFlagsSource.Disabled;
-        return false;
+        return ParsingResult<FeatureFlagsSource>.Success(FeatureFlagsSource.Offline);
     }
 }

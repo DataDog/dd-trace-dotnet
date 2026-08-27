@@ -47,16 +47,20 @@ internal sealed class AgentlessConfigurationSource : IDisposable
     private readonly TimeSpan _pollInterval;
     private readonly TimeSpan _requestTimeout;
     private readonly Func<ServerConfiguration, bool> _applyConfiguration;
-    private readonly Func<TimeSpan, CancellationToken, Task> _waitAsync;
-    private readonly CancellationTokenSource _shutdown = new();
-    private readonly Random _random = new();
+    private readonly Func<TimeSpan, Task> _waitAsync;
+
+    // Not a CancellationTokenSource: cancellation throws, and an exception on the shutdown path can
+    // crash the runtime, so shutdown is signalled by completing a task instead.
+    private readonly TaskCompletionSource<bool> _shutdown = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
     // Only ever touched from the poll loop.
     private readonly HashSet<string> _loggedFailureCategories = new();
 
-    // Written by the settings-change callback, read by the poll loop.
-    private string? _environment;
-    private IDisposable? _environmentSubscription;
+    private readonly IDisposable? _environmentSubscription;
+
+    // Written by the settings-change callback, read by the poll loop. The URI is stored rather than
+    // the environment it carries, so it is only built when the environment changes.
+    private Uri _requestUri;
 
     // Only ever touched from the poll loop.
     private bool _malformedPayloadLogged;
@@ -73,15 +77,27 @@ internal sealed class AgentlessConfigurationSource : IDisposable
         TimeSpan requestTimeout,
         Func<ServerConfiguration, bool> applyConfiguration,
         string? environment = null,
-        Func<TimeSpan, CancellationToken, Task>? waitAsync = null)
+        TracerSettings.SettingsManager? settingsManager = null,
+        Func<TimeSpan, Task>? waitAsync = null)
     {
         _endpoint = endpoint;
         _requestFactory = requestFactory;
         _pollInterval = pollInterval;
         _requestTimeout = requestTimeout;
         _applyConfiguration = applyConfiguration;
-        _environment = environment;
+        _requestUri = endpoint.BuildRequestUri(environment);
         _waitAsync = waitAsync ?? Task.Delay;
+
+        // Subscribed last, so every field the callback touches is already set. The environment is
+        // tracked rather than captured: customers can change it in code while the application runs,
+        // and flags are targeted per environment.
+        _environmentSubscription = settingsManager?.SubscribeToChanges(changes =>
+        {
+            if (changes.UpdatedMutable is { } mutable)
+            {
+                UpdateEnvironment(mutable.Environment);
+            }
+        });
     }
 
     /// <summary>
@@ -106,33 +122,22 @@ internal sealed class AgentlessConfigurationSource : IDisposable
             return null;
         }
 
-        var source = new AgentlessConfigurationSource(
+        return new AgentlessConfigurationSource(
             endpoint,
             CreateRequestFactory(endpoint, settings),
             settings.PollInterval,
             settings.RequestTimeout,
             applyConfiguration,
-            manager.InitialMutableSettings.Environment);
-
-        // The environment is tracked rather than captured: customers can change it in code while
-        // the application runs, and flags are targeted per environment. Only the value is stored
-        // here, so that the poll loop stays the only thing that touches the request state.
-        source._environmentSubscription = manager.SubscribeToChanges(changes =>
-        {
-            if (changes.UpdatedMutable is { } mutable)
-            {
-                source.UpdateEnvironment(mutable.Environment);
-            }
-        });
-
-        return source;
+            manager.InitialMutableSettings.Environment,
+            manager);
     }
 
     /// <summary>
-    /// Records the environment to request configuration for. Applied by the poll loop on its next
-    /// request, so a change never disturbs a request already in flight.
+    /// Records the environment to request configuration for, as the URI that carries it. Picked up
+    /// by the poll loop on its next request, so a change never disturbs a request already in flight.
     /// </summary>
-    internal void UpdateEnvironment(string? environment) => Volatile.Write(ref _environment, environment);
+    internal void UpdateEnvironment(string? environment)
+        => Volatile.Write(ref _requestUri, _endpoint.BuildRequestUri(environment));
 
     /// <summary>
     /// Starts polling. Idempotent.
@@ -144,10 +149,9 @@ internal sealed class AgentlessConfigurationSource : IDisposable
             return;
         }
 
-        // Deliberately not wrapped in Task.Run: this is called from provider initialization, which
-        // is waiting for the first configuration, so the first request should go out on the calling
-        // thread rather than queue behind whatever else is on the thread pool.
-        _ = RunAsync().ContinueWith(t => Log.Error(t.Exception, "Feature Flags agentless poll loop failed"), TaskContinuationOptions.OnlyOnFaulted);
+        // The loop runs on the thread pool, so nothing of it happens on the caller's thread. Nothing
+        // ever awaits it either, so a fault is observed here or not at all.
+        _ = Task.Run(RunAsync).ContinueWith(t => Log.Error(t.Exception, "Feature Flags agentless poll loop failed"), TaskContinuationOptions.OnlyOnFaulted);
     }
 
     /// <summary>
@@ -161,14 +165,14 @@ internal sealed class AgentlessConfigurationSource : IDisposable
         {
             result = await RequestAsync().ConfigureAwait(false);
 
-            if (_shutdown.IsCancellationRequested)
+            if (_shutdown.Task.IsCompleted)
             {
                 // A shutdown mid-poll leaves the response unusable for state transitions: keep
                 // last-known-good and the current ETag.
                 return;
             }
 
-            if (!IsRetryable(result))
+            if (!IsRetryable(in result))
             {
                 break;
             }
@@ -176,26 +180,30 @@ internal sealed class AgentlessConfigurationSource : IDisposable
             if (attempt == MaxAttempts)
             {
                 // Every attempt failed in a retryable way. Last-known-good stays in place.
-                WarnFailure(result, MaxAttempts);
+                WarnFailure(in result, MaxAttempts);
                 return;
             }
 
             await WaitAsync(RetryDelay(attempt)).ConfigureAwait(false);
 
-            if (_shutdown.IsCancellationRequested)
+            if (_shutdown.Task.IsCompleted)
             {
                 return;
             }
         }
 
-        if (_shutdown.IsCancellationRequested)
+        if (_shutdown.Task.IsCompleted)
         {
             // A shutdown during the final attempt leaves the response unusable for state
             // transitions: keep last-known-good and the current ETag.
             return;
         }
 
-        await ApplyAsync(result).ConfigureAwait(false);
+        Apply(in result);
+
+        // A failure with no status code never reached the endpoint, so it is worth another attempt.
+        static bool IsRetryable(in PollResult result)
+            => result.StatusCode is not { } status || status is 408 or 429 or (>= 500 and <= 599);
     }
 
     public void Dispose()
@@ -203,14 +211,15 @@ internal sealed class AgentlessConfigurationSource : IDisposable
         // The request in flight is bounded by the request timeout, and the loop is never joined,
         // so a shutdown does not wait for it. A poll that completes after disposal is prevented
         // from applying its result by the shutdown check in PollAsync.
+        _shutdown.TrySetResult(true);
+
         try
         {
             _environmentSubscription?.Dispose();
-            _shutdown.Cancel();
         }
         catch (Exception ex)
         {
-            Log.Debug(ex, "Error cancelling the Feature Flags agentless poll loop");
+            Log.Debug(ex, "Error unsubscribing the Feature Flags agentless poll loop from settings changes");
         }
     }
 
@@ -250,14 +259,11 @@ internal sealed class AgentlessConfigurationSource : IDisposable
 #endif
     }
 
-    private static bool IsRetryable(in PollResult result)
-        => result.StatusCode is not { } status || status is 408 or 429 or (>= 500 and <= 599);
-
     private async Task RunAsync()
     {
         Log.Debug("AgentlessConfigurationSource::RunAsync -> Enter");
 
-        while (!_shutdown.IsCancellationRequested)
+        while (!_shutdown.Task.IsCompleted)
         {
             try
             {
@@ -275,17 +281,10 @@ internal sealed class AgentlessConfigurationSource : IDisposable
         Log.Debug("AgentlessConfigurationSource::RunAsync -> Exit");
     }
 
+    // A shutdown ends the wait early. The delay itself is left to expire on its own: it holds no
+    // thread, and the loop has already exited by the time it does.
     private async Task WaitAsync(TimeSpan delay)
-    {
-        try
-        {
-            await _waitAsync(delay, _shutdown.Token).ConfigureAwait(false);
-        }
-        catch (OperationCanceledException)
-        {
-            // Shutting down
-        }
-    }
+        => await Task.WhenAny(_waitAsync(delay), _shutdown.Task).ConfigureAwait(false);
 
     private TimeSpan RetryDelay(int attempt)
     {
@@ -293,11 +292,7 @@ internal sealed class AgentlessConfigurationSource : IDisposable
                           ? Clamp(_pollInterval.TotalSeconds / 6, FirstRetryMin, FirstRetryMax)
                           : Clamp(_pollInterval.TotalSeconds / 3, SecondRetryMin, SecondRetryMax);
 
-        double jitter;
-        lock (_random)
-        {
-            jitter = 1 - RetryJitter + (_random.NextDouble() * RetryJitter * 2);
-        }
+        var jitter = 1 - RetryJitter + (ThreadSafeRandom.Shared.NextDouble() * RetryJitter * 2);
 
         return TimeSpan.FromSeconds(Math.Max(MinRetryDelay.TotalSeconds, seconds * jitter));
 
@@ -309,9 +304,9 @@ internal sealed class AgentlessConfigurationSource : IDisposable
     {
         try
         {
-            // The environment is applied per request rather than baked into the endpoint, because
-            // it can be changed in code after startup.
-            var uri = _endpoint.BuildRequestUri(Volatile.Read(ref _environment));
+            // Read per request rather than captured, because the environment it carries can be
+            // changed in code after startup.
+            var uri = Volatile.Read(ref _requestUri);
 
             // An ETag only identifies the configuration served for the URI it came from. Sending it
             // against a different environment would earn a 304 and pin the process to the previous
@@ -346,67 +341,74 @@ internal sealed class AgentlessConfigurationSource : IDisposable
                     t => { try { using var r = t.Result; } catch { } },
                     TaskContinuationOptions.None);
 
-                return new PollResult(statusCode: null, etag: null, body: null, error: new TimeoutException($"Feature Flags agentless request timed out after {_requestTimeout.TotalSeconds}s"));
+                return new PollResult(statusCode: null, etag: null, configuration: null, parseError: null, error: new TimeoutException($"Feature Flags agentless request timed out after {_requestTimeout.TotalSeconds}s"));
             }
 
             using var response = await getTask.ConfigureAwait(false);
 #endif
 
-            // Only a 200 carries configuration; other bodies are never decoded as one.
-            var body = response.StatusCode == 200 ? await ReadBodyAsync(response).ConfigureAwait(false) : null;
-            return new PollResult(response.StatusCode, response.GetHeader("ETag"), body, error: null);
+            // Only a 200 carries configuration; other bodies are never decoded as one. The payload
+            // is parsed here, while the response is still open, so it never has to be held as a
+            // string. A payload that does not parse is reported, not thrown: it is not retryable.
+            ServerConfiguration? configuration = null;
+            string? parseError = null;
+
+            if (response.StatusCode == 200)
+            {
+                using var stream = await response.GetStreamAsync().ConfigureAwait(false);
+
+                using var decompressed =
+                    response.GetContentEncodingType() == ContentEncodingType.GZip
+                        ? new GZipStream(stream, CompressionMode.Decompress, leaveOpen: true)
+                        : null;
+
+                // Every parameter has to be given to reach leaveOpen. A byte order mark is not
+                // expected, and letting one be detected would override the declared encoding.
+                using var reader = new StreamReader(
+                    decompressed ?? stream,
+                    response.GetCharsetEncoding(),
+                    detectEncodingFromByteOrderMarks: false,
+                    bufferSize: 1024, // the default
+                    leaveOpen: true);
+
+                if (UfcConfigurationParser.TryParse(reader, out var parsed, out parseError))
+                {
+                    configuration = parsed;
+                }
+            }
+
+            return new PollResult(response.StatusCode, response.GetHeader("ETag"), configuration, parseError, error: null);
         }
         catch (Exception ex)
         {
-            return new PollResult(statusCode: null, etag: null, body: null, error: ex);
+            return new PollResult(statusCode: null, etag: null, configuration: null, parseError: null, error: ex);
         }
     }
 
-    private async Task<string> ReadBodyAsync(IApiResponse response)
-    {
-        var stream = await response.GetStreamAsync().ConfigureAwait(false);
-        GZipStream? decompressed = null;
-
-        try
-        {
-            if (response.GetContentEncodingType() == ContentEncodingType.GZip)
-            {
-                decompressed = new GZipStream(stream, CompressionMode.Decompress);
-            }
-
-            using var reader = new StreamReader(decompressed ?? stream, response.GetCharsetEncoding());
-            return await reader.ReadToEndAsync().ConfigureAwait(false);
-        }
-        finally
-        {
-            decompressed?.Dispose();
-        }
-    }
-
-    private Task ApplyAsync(PollResult result)
+    private void Apply(in PollResult result)
     {
         switch (result.StatusCode)
         {
             case 304:
                 // Nothing changed, and the ETag stays as it is.
-                return Task.CompletedTask;
+                return;
             case 401 or 403:
-                WarnFailure(result, attempts: 1);
-                return Task.CompletedTask;
+                WarnFailure(in result, attempts: 1);
+                return;
             case not 200:
-                WarnFailure(result, attempts: 1);
-                return Task.CompletedTask;
+                WarnFailure(in result, attempts: 1);
+                return;
         }
 
-        if (!UfcConfigurationParser.TryParse(result.Body, out var configuration, out var error))
+        if (result.Configuration is not { } configuration)
         {
             if (!_malformedPayloadLogged)
             {
                 _malformedPayloadLogged = true;
-                Log.Error("Feature Flags agentless endpoint returned an unusable payload: {Error}", error);
+                Log.Error("Feature Flags agentless endpoint returned an unusable payload: {Error}", result.ParseError);
             }
 
-            return Task.CompletedTask;
+            return;
         }
 
         if (!_applyConfiguration(configuration))
@@ -417,7 +419,7 @@ internal sealed class AgentlessConfigurationSource : IDisposable
                 Log.Warning("Feature Flags agentless configuration could not be applied");
             }
 
-            return Task.CompletedTask;
+            return;
         }
 
         // The ETag advances only once parsing and applying have both succeeded. Advancing on
@@ -425,8 +427,6 @@ internal sealed class AgentlessConfigurationSource : IDisposable
         // answer 304, pinning the process to stale configuration with no way back.
         var newEtag = result.ETag?.Trim();
         _etag = StringUtil.IsNullOrEmpty(newEtag) ? null : newEtag;
-
-        return Task.CompletedTask;
     }
 
     /// <summary>
@@ -450,24 +450,26 @@ internal sealed class AgentlessConfigurationSource : IDisposable
         switch (result.StatusCode)
         {
             case 401 or 403:
-                Log.Error<int>("Feature Flags agentless endpoint returned HTTP {StatusCode}; verify endpoint authentication", result.StatusCode!.Value);
+                Log.Warning<int>("Feature Flags agentless endpoint returned HTTP {StatusCode}; verify endpoint authentication", result.StatusCode!.Value);
                 break;
             case not null:
-                Log.Error<int, int>("Feature Flags agentless endpoint returned HTTP {StatusCode} after {Attempts} attempts", result.StatusCode.Value, attempts);
+                Log.Warning<int, int>("Feature Flags agentless endpoint returned HTTP {StatusCode} after {Attempts} attempts", result.StatusCode.Value, attempts);
                 break;
             default:
-                Log.Error<int>(result.Error, "Feature Flags agentless request failed after {Attempts} attempts", attempts);
+                Log.Warning<int>(result.Error, "Feature Flags agentless request failed after {Attempts} attempts", attempts);
                 break;
         }
     }
 
-    internal readonly struct PollResult(int? statusCode, string? etag, string? body, Exception? error)
+    internal readonly struct PollResult(int? statusCode, string? etag, ServerConfiguration? configuration, string? parseError, Exception? error)
     {
         public int? StatusCode { get; } = statusCode;
 
         public string? ETag { get; } = etag;
 
-        public string? Body { get; } = body;
+        public ServerConfiguration? Configuration { get; } = configuration;
+
+        public string? ParseError { get; } = parseError;
 
         public Exception? Error { get; } = error;
     }
