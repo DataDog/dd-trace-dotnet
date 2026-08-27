@@ -124,9 +124,9 @@ namespace Datadog.Profiler.IntegrationTests.Signature
             else
             {
                 stack = new StackTrace(
-                    new StackFrame("|lm:Samples.Computer01 |ns:Samples.Computer01 |ct:GenericClass |cg:<TKey, TVal> |fn:ThrowFromGeneric |fg:<T0> |sg:(T0 element, TKey key1, TVal value, TKey key2)"),
-                    new StackFrame("|lm:Samples.Computer01 |ns:Samples.Computer01 |ct:GenericClass |cg:<TKey, TVal> |fn:ThrowGenericFromGeneric |fg:<T0> |sg:(T0 element)"),
-                    new StackFrame("|lm:Samples.Computer01 |ns:Samples.Computer01 |ct:GenericClass |cg:<TKey, TVal> |fn:ThrowOneGeneric |fg: |sg:(TVal value)"),
+                    new StackFrame("|lm:Samples.Computer01 |ns:Samples.Computer01 |ct:GenericClass |cg:<TKey, TValue> |fn:ThrowFromGeneric |fg:<T0> |sg:(T0 element, TKey key1, TVal value, TKey key2)"),
+                    new StackFrame("|lm:Samples.Computer01 |ns:Samples.Computer01 |ct:GenericClass |cg:<TKey, TValue> |fn:ThrowGenericFromGeneric |fg:<T0> |sg:(T0 element)"),
+                    new StackFrame("|lm:Samples.Computer01 |ns:Samples.Computer01 |ct:GenericClass |cg:<TKey, TValue> |fn:ThrowOneGeneric |fg: |sg:(TVal value)"),
                     new StackFrame("|lm:Samples.Computer01 |ns:Samples.Computer01 |ct:GenericClassForValueTypeTest |cg:<System.Int32, System.Boolean> |fn:ThrowOneGenericFromMethod |fg:<System.Boolean> |sg:(System.Boolean value)"),
                     new StackFrame("|lm:Samples.Computer01 |ns:Samples.Computer01 |ct:GenericClassForValueTypeTest |cg:<System.Int32, System.Boolean> |fn:ThrowOneGenericFromType |fg: |sg:(TVal value)"),
                     new StackFrame("|lm:Samples.Computer01 |ns:Samples.Computer01 |ct:MethodsSignature |cg: |fn:ThrowGenericMethod2 |fg:<T0, System.Int32, T2, T3> |sg:(T0 key1, System.Int32 value1, System.Int32 value2, T2 key2, T3 key3, System.Collections.Generic.List<System.Int32> listOfTValue)"),
