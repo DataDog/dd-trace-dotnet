@@ -24,14 +24,16 @@ namespace Datadog.Trace.TestHelpers;
 /// Applications that exit before their telemetry is read (the console samples) only need
 /// <see cref="ClearSessionAsync"/>. A server that outlives a single test case -- an IIS site
 /// behind <c>IisFixture</c>, or a Kestrel process behind <c>AspNetCoreTestFixture</c> -- needs
-/// <see cref="ClearSessionWhenQuietAsync"/> instead, and also
+/// <see cref="ClearSessionWhenQuietAsync"/> once its warm-up has settled, and then
+/// <see cref="ClearSessionAsync"/> around each test case; it also needs
 /// <see cref="CheckAvailabilityAsync"/>, since both fixtures have to be started without their
 /// own health check (a request round-trip through the mock DD agent) once
 /// <c>OTEL_TRACES_EXPORTER=otlp</c> routes every span to this session instead.
 /// </para>
 /// <para>
-/// Test classes that use this should carry <c>[Collection(nameof(TestAgentOtlpCollection))]</c>,
-/// because clearing the session affects every other test reading from the same ddapm test-agent.
+/// Each instance generates its own <see cref="SessionToken"/>, so concurrent test classes reading
+/// from the same ddapm test-agent are already isolated from one another and no xUnit collection is
+/// needed to serialize them.
 /// </para>
 /// </summary>
 internal sealed class OtlpTestAgentSession
@@ -57,9 +59,10 @@ internal sealed class OtlpTestAgentSession
     /// How long the session has to stay empty after being cleared before we accept that nothing
     /// else is in flight. Needs to comfortably exceed the exporter's flush interval, including on
     /// contended ARM64 CI runners where a batch export can lag well past the exporter's nominal
-    /// flush interval.
+    /// flush interval. <c>AgentWriter</c>'s flush loop only wakes once a second, so anything below
+    /// that reports "quiet" while the first batch is still pending.
     /// </summary>
-    private const int QuietPeriodMs = 5_000;
+    private const int QuietPeriodMs = 2_000;
 
     private const int MaxQuietAttempts = 6;
 
@@ -167,9 +170,12 @@ internal sealed class OtlpTestAgentSession
 
     /// <summary>
     /// Clears the test-agent session, so this test case's telemetry is the only thing in it,
-    /// retrying while the test agent is still starting up. Enough for an application that is
-    /// started after this runs and has exited by the time the session is read; see
-    /// <see cref="ClearSessionWhenQuietAsync"/> when the application outlives the test case.
+    /// retrying while the test agent is still starting up. Enough on its own for an application
+    /// that is started after this runs and has exited by the time the session is read. For a
+    /// server that outlives the test case it is only enough once
+    /// <see cref="ClearSessionWhenQuietAsync"/> has settled the session after warm-up, because
+    /// this returns as soon as the clear is acknowledged and so cannot outrun a batch the
+    /// application has not exported yet.
     /// </summary>
     /// <returns>A task that completes once the session has been cleared.</returns>
     public async Task ClearSessionAsync()

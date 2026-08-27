@@ -26,8 +26,10 @@ namespace Datadog.Trace.TestHelpers
         private const string TracingHeaderValue2 = "0000-0000-0000";
 
         private readonly HttpClient _httpClient;
+        private readonly object _initializationLock = new();
         private ITestOutputHelper _currentOutput;
         private object _outputLock = new();
+        private Task _initialization;
 
         public AspNetCoreTestFixture()
         {
@@ -254,6 +256,42 @@ namespace Datadog.Trace.TestHelpers
                        count: 1,
                        minDateTime: now,
                        returnAllOperations: true);
+        }
+
+        /// <summary>
+        /// Runs <paramref name="initialize"/> the first time it is called and awaits that same task
+        /// on every later call, so a test class's one-time setup happens once no matter how many test
+        /// cases it has. xUnit builds a fresh instance of the test class - and so runs
+        /// <c>IAsyncLifetime.InitializeAsync</c> - for every test case, while this fixture is created
+        /// once per test class, which makes it the only place a once-per-class latch can live.
+        /// This allows consumers of AspNetCoreTestFixture to use custom initialization logic for their
+        /// test class.
+        /// </summary>
+        /// <param name="initialize">The setup to run once. A failure is cached along with the task,
+        /// so the remaining test cases fail with the same exception instead of each retrying a setup
+        /// that has already been shown not to work.</param>
+        /// <returns>The single initialization task, shared by every test case in the class.</returns>
+        internal Task EnsureInitializedAsync(Func<Task> initialize)
+        {
+            lock (_initializationLock)
+            {
+                if (_initialization is null)
+                {
+                    try
+                    {
+                        _initialization = initialize();
+                    }
+                    catch (Exception ex)
+                    {
+                        // A delegate that throws before reaching its first await throws out of the
+                        // call rather than returning a faulted task, which would leave the latch
+                        // unset and send the next test case back through the same failing setup.
+                        _initialization = Task.FromException(ex);
+                    }
+                }
+
+                return _initialization;
+            }
         }
 
         // Returns true when a known race fingerprint was detected in the captured stderr and the

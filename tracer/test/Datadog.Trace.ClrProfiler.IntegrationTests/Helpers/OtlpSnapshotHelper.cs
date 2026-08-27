@@ -98,8 +98,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Helpers
         /// </summary>
         /// <param name="tracesRequests">The captured OTLP requests.</param>
         /// <param name="names">The field-name casing to use.</param>
-        /// <param name="applicationStartTimeUnixNano">The time the sample application was started, used as a lower bound for span timestamps.</param>
-        public static void NormalizeSpans(JToken tracesRequests, OtlpFieldNames names, long applicationStartTimeUnixNano)
+        /// <param name="testStartTimeUnixNano">The time the test case was started, used as a lower bound for span timestamps.</param>
+        public static void NormalizeSpans(JToken tracesRequests, OtlpFieldNames names, long testStartTimeUnixNano)
         {
             var isJson = names.IsJson;
             var stringValueKey = names.StringValue;
@@ -121,7 +121,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Helpers
                 var spanEndTimeUnixNano = long.Parse(span[endTimeUnixNanoKey]!.ToString());
 
                 // Add strong assertions on unstable span information
-                // spanStartTimeUnixNano.Should().BeGreaterThanOrEqualTo(applicationStartTimeUnixNano); // Remove one source of flakiness
+                spanStartTimeUnixNano.Should().BeGreaterThanOrEqualTo(testStartTimeUnixNano);
                 spanEndTimeUnixNano.Should().BeGreaterThanOrEqualTo(spanStartTimeUnixNano);
                 traceIdData.Should().MatchRegex(TraceIdRegex);
                 spanIdData.Should().MatchRegex(SpanIdRegex);

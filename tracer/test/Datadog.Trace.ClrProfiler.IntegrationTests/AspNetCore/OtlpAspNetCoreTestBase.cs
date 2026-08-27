@@ -156,25 +156,23 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
             { "GET", "/bad-request", 500, true },
         };
 
-        public async Task InitializeAsync()
-        {
-            if (!await Fixture.OtlpSession.CheckAvailabilityAsync(Output))
-            {
-                // Don't pay for starting the sample app for a test that is about to skip.
-                return;
-            }
+        /// <summary>
+        /// xUnit runs this once per test case, since it builds a fresh instance of the test class for
+        /// each one, so the actual startup goes through the fixture's once-per-class instance.
+        /// The result is that only the first test case needs to pay for the availability check and the warm-up.
+        /// </summary>
+        public Task InitializeAsync()
+            => Fixture.EnsureInitializedAsync(StartApplicationAsync);
 
-            // sendHealthCheck: false because AspNetCoreTestFixture's own health check waits for a
-            // span to reach the mock agent, and OTEL_TRACES_EXPORTER=otlp sends traces to the ddapm
-            // test-agent instead. Warm the app up with our own request and discard its spans afterwards.
-            await Fixture.TryStartApp(this, sendHealthCheck: false);
-            await WarmUpApplicationAsync();
-        }
-
-        public Task DisposeAsync()
+        public async Task DisposeAsync()
         {
             Fixture.SetOutput(null);
-            return Task.CompletedTask;
+
+            // Clear the session at the end of the test to avoid leaking spans between test cases.
+            if (Fixture.OtlpSession.IsAvailable)
+            {
+                await Fixture.OtlpSession.ClearSessionAsync();
+            }
         }
 
         /// <summary>
@@ -257,13 +255,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
 
             var names = OtlpFieldNames.For(isJson: false);
 
-            // The application under test outlives each test case, so drop everything the previous
-            // case and the warm-up request produced first.
-            await Fixture.OtlpSession.ClearSessionWhenQuietAsync(Output);
+            // DisposeAsync already clears after every case, but clear again to ensure that
+            // spans still in-flight due to a previous failure do not leak into the next test case
+            await Fixture.OtlpSession.ClearSessionAsync();
 
             // Captured before the request is sent, so it is a lower bound for every span the server
             // creates while handling it.
-            var applicationStartTimeUnixNano = DateTimeOffset.UtcNow.ToUnixTimeNanoseconds();
+            var testStartTimeUnixNano = DateTimeOffset.UtcNow.ToUnixTimeNanoseconds();
 
             await SendRequestAsync(httpMethod, path, (HttpStatusCode)statusCode);
 
@@ -281,7 +279,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
             }
 
             OtlpSnapshotHelper.NormalizeResourceAttributes(tracesRequests, names);
-            OtlpSnapshotHelper.NormalizeSpans(tracesRequests, names, applicationStartTimeUnixNano);
+            OtlpSnapshotHelper.NormalizeSpans(tracesRequests, names, testStartTimeUnixNano);
             OtlpSnapshotHelper.NormalizeCodeOriginAttributes(tracesRequests);
 
             foreach (var key in UnstableAttributeKeys)
@@ -314,6 +312,30 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
             var request = Fixture.CreateRequest(new HttpMethod(httpMethod), path);
             var statusCode = await Fixture.SendHttpRequest(request);
             statusCode.Should().Be(expectedStatusCode);
+        }
+
+        /// <summary>
+        /// Brings up the application the whole test class shares. Runs once per class, through
+        /// <see cref="AspNetCoreTestFixture.EnsureInitializedAsync"/>, so it reads the environment
+        /// variables the first test case's constructor set - which is also why it can't be a fixture
+        /// <c>InitializeAsync</c>, as those are not set until a test class instance exists.
+        /// </summary>
+        private async Task StartApplicationAsync()
+        {
+            if (!await Fixture.OtlpSession.CheckAvailabilityAsync(Output))
+            {
+                // Don't pay for starting the sample app for a test that is about to skip.
+                return;
+            }
+
+            // sendHealthCheck: false because AspNetCoreTestFixture's own health check waits for a
+            // span to reach the mock agent, and OTEL_TRACES_EXPORTER=otlp sends traces to the ddapm
+            // test-agent instead. Warm the app up with our own request and discard its spans afterwards.
+            await Fixture.TryStartApp(this, sendHealthCheck: false);
+            await WarmUpApplicationAsync();
+
+            // Clear the session so the warm-up request is not returned in the next test case.
+            await Fixture.OtlpSession.ClearSessionWhenQuietAsync(Output);
         }
 
         /// <summary>
