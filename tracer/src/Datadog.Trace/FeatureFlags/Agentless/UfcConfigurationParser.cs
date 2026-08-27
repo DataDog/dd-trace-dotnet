@@ -9,6 +9,7 @@ using System;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using Datadog.Trace.FeatureFlags.Rcm.Model;
+using Datadog.Trace.Util.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.FeatureFlags.Agentless;
@@ -52,7 +53,7 @@ internal static class UfcConfigurationParser
             // Timestamps stay strings: the model carries createdAt verbatim, and letting Newtonsoft
             // turn it into a date would also make the type check below fail. The reader belongs to
             // the caller, which owns the response it came from.
-            using var reader = new JsonTextReader(body) { DateParseHandling = DateParseHandling.None, CloseInput = false };
+            using var reader = new JsonTextReader(body) { DateParseHandling = DateParseHandling.None, CloseInput = false, ArrayPool = JsonArrayPool.Shared };
             var serializer = new JsonSerializer { DateParseHandling = DateParseHandling.None };
 
             if (!reader.Read())
