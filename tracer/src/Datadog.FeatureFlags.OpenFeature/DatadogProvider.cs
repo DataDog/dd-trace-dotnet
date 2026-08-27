@@ -25,6 +25,7 @@ public sealed class DatadogProvider : global::OpenFeature.FeatureProvider, IDisp
 {
     private static Action? _onNewConfig = null;
     private readonly Metadata _metadata = new Metadata("datadog-openfeature-provider");
+    private readonly FlagEvalEVPHook _flagEvalEVPHook;
 #if NET6_0_OR_GREATER
     private readonly FlagEvalMetricsHook _metricsHook;
 #endif
@@ -39,6 +40,7 @@ public sealed class DatadogProvider : global::OpenFeature.FeatureProvider, IDisp
     public DatadogProvider()
     {
         FeatureFlagsSdk.RegisterOnNewConfigEventHandler(() => SignalGeneralUpdate());
+        _flagEvalEVPHook = new FlagEvalEVPHook();
 #if NET6_0_OR_GREATER
         _metricsHook = new FlagEvalMetricsHook();
 #endif
@@ -206,25 +208,21 @@ public sealed class DatadogProvider : global::OpenFeature.FeatureProvider, IDisp
         return Task.FromResult(res);
     }
 
-    /// <summary> Gets provider hooks for flag evaluation metrics tracking. </summary>
+    /// <summary> Gets provider hooks for flag-evaluation reporting and optional span enrichment. </summary>
     /// <returns> Returns the list of provider hooks. </returns>
     public override IImmutableList<Hook> GetProviderHooks()
     {
+        var hooks = ImmutableList.CreateBuilder<Hook>();
 #if NET6_0_OR_GREATER
-        if (_spanEnrichmentHook is not null)
-        {
-            return ImmutableList.Create<Hook>(_metricsHook, _spanEnrichmentHook);
-        }
-
-        return ImmutableList.Create<Hook>(_metricsHook);
-#else
-        if (_spanEnrichmentHook is not null)
-        {
-            return ImmutableList.Create<Hook>(_spanEnrichmentHook);
-        }
-
-        return ImmutableList<Hook>.Empty;
+        hooks.Add(_metricsHook);
 #endif
+        hooks.Add(_flagEvalEVPHook);
+        if (_spanEnrichmentHook is not null)
+        {
+            hooks.Add(_spanEnrichmentHook);
+        }
+
+        return hooks.ToImmutable();
     }
 
     /// <inheritdoc/>

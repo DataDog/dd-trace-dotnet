@@ -9,7 +9,6 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Threading;
 using System.Threading.Tasks;
-using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.FeatureFlags.Evp;
 using Datadog.Trace.FeatureFlags.Exposure.Model;
@@ -44,9 +43,9 @@ internal sealed class ExposureApi : IDisposable
     private Dictionary<string, string> _context;
     private int _started;
 
-    internal ExposureApi(TracerSettings tracerSettings, IDiscoveryService discoveryService)
+    internal ExposureApi(TracerSettings tracerSettings, FeatureFlagsEvpTransport transport)
     {
-        _transport = new FeatureFlagsEvpTransport(tracerSettings, discoveryService);
+        _transport = transport;
         UpdateContext(tracerSettings.Manager.InitialMutableSettings);
 
         tracerSettings.Manager.SubscribeToChanges(changes =>
@@ -74,7 +73,6 @@ internal sealed class ExposureApi : IDisposable
     public void Dispose()
     {
         _processExit.TrySetResult(true);
-        _transport.Dispose();
     }
 
     public void TryToStartSendLoopIfNotStarted()

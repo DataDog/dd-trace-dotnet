@@ -12,8 +12,10 @@ using System.Threading.Tasks;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.FeatureFlags.Agentless;
+using Datadog.Trace.FeatureFlags.Evp;
 using Datadog.Trace.FeatureFlags.Exposure;
 using Datadog.Trace.FeatureFlags.Exposure.Model;
+using Datadog.Trace.FeatureFlags.FlagEvaluation;
 using Datadog.Trace.FeatureFlags.Rcm;
 using Datadog.Trace.FeatureFlags.Rcm.Model;
 using Datadog.Trace.Logging;
@@ -37,10 +39,12 @@ namespace Datadog.Trace.FeatureFlags
         // after startup, so it needs the manager rather than a captured value.
         private readonly TracerSettings.SettingsManager _settingsManager;
         private readonly bool _isRemoteConfigurationAvailable;
+        private readonly FeatureFlagsEvpTransport _evpTransport;
         private readonly Func<ExposureApi> _exposureApiFactory;
         private readonly bool _spanEnrichmentEnabled;
         private readonly IRcmSubscriptionManager _rcmSubscriptionManager;
         private readonly TaskCompletionSource<bool> _firstConfigReceived = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        private FlagEvaluationApi? _flagEvalEVPApi;
         private ISubscription? _rcmSubscription;
 
         private Action? _onNewConfigEventHander;
@@ -58,8 +62,21 @@ namespace Datadog.Trace.FeatureFlags
             _settingsManager = settings.Manager;
             _isRemoteConfigurationAvailable = settings.IsRemoteConfigurationAvailable;
             _spanEnrichmentEnabled = settings.IsSpanEnrichmentEnabled;
-            _exposureApiFactory = () => new ExposureApi(settings, discoveryService ?? NullDiscoveryService.Instance);
+            _evpTransport = new FeatureFlagsEvpTransport(settings, discoveryService ?? NullDiscoveryService.Instance);
+            _exposureApiFactory = () => new ExposureApi(settings, _evpTransport);
             _rcmSubscriptionManager = rcmSubscriptionManager;
+
+            if (settings.IsFlaggingEvaluationCountsEnabled)
+            {
+                try
+                {
+                    _flagEvalEVPApi = new FlagEvaluationApi(settings, _evpTransport);
+                }
+                catch (Exception ex)
+                {
+                    Log.Warning(ex, "FeatureFlagsModule: failed to create FlagEvaluationApi");
+                }
+            }
 
             Log.Debug<FeatureFlagsSource>("FeatureFlagsModule ENABLED with source {Source}", _settings.Source);
         }
@@ -95,6 +112,7 @@ namespace Datadog.Trace.FeatureFlags
             ISubscription? subscription;
             AgentlessConfigurationSource? agentlessSource;
             ExposureApi? exposureApi;
+            FlagEvaluationApi? flagEvalEVPApi;
 
             lock (_stateLock)
             {
@@ -108,10 +126,12 @@ namespace Datadog.Trace.FeatureFlags
                 subscription = _rcmSubscription;
                 agentlessSource = _agentlessSource;
                 exposureApi = _exposureApi;
+                flagEvalEVPApi = _flagEvalEVPApi;
 
                 _rcmSubscription = null;
                 _agentlessSource = null;
                 Volatile.Write(ref _exposureApi, null);
+                Volatile.Write(ref _flagEvalEVPApi, null);
             }
 
             // Released the lock first: disposal is not state mutation, and holding it here would
@@ -123,6 +143,8 @@ namespace Datadog.Trace.FeatureFlags
 
             agentlessSource?.Dispose();
             exposureApi?.Dispose();
+            flagEvalEVPApi?.Dispose();
+            _evpTransport.Dispose();
         }
 
         /// <summary>
@@ -237,6 +259,8 @@ namespace Datadog.Trace.FeatureFlags
         {
             _onNewConfigEventHander = onNewConfig;
         }
+
+        internal FlagEvaluationApi? GetFlagEvalEVPApi() => Volatile.Read(ref _flagEvalEVPApi);
 
         internal Evaluation Evaluate(string flagKey, ValueType resultType, object? defaultValue, string targetingKey, IDictionary<string, object?>? attributes)
         {
