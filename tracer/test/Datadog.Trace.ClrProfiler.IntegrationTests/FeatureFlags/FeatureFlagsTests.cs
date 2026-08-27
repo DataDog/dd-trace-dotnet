@@ -27,7 +27,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.FeatureFlags;
 public class FeatureFlagsTests : FeatureFlagsTestsBase
 {
     public FeatureFlagsTests(ITestOutputHelper output)
-        : base("FeatureFlags", output)
+        : base("FeatureFlags", expectFlagEvaluationEvents: false, output)
     {
     }
 }
@@ -38,23 +38,27 @@ public class FeatureFlagsTests : FeatureFlagsTestsBase
 public class OpenFeatureFeatureFlagsTests : FeatureFlagsTestsBase
 {
     public OpenFeatureFeatureFlagsTests(ITestOutputHelper output)
-        : base("OpenFeature", output)
+        : base("OpenFeature", expectFlagEvaluationEvents: true, output)
     {
     }
 }
 
 public abstract class FeatureFlagsTestsBase : TestHelper
 {
-    public FeatureFlagsTestsBase(string sampleName, ITestOutputHelper output)
+    private readonly bool _expectFlagEvaluationEvents;
+
+    public FeatureFlagsTestsBase(string sampleName, bool expectFlagEvaluationEvents, ITestOutputHelper output)
         : base(sampleName, output)
     {
+        _expectFlagEvaluationEvents = expectFlagEvaluationEvents;
     }
 
     [SkippableFact]
     [Trait("RunOnWindows", "True")]
     public async Task FfeEnabled()
     {
-        int eventsReceived = 0;
+        int exposureEventsReceived = 0;
+        int flagEvaluationEventsReceived = 0;
         using var agent = EnvironmentHelper.GetMockAgent();
         var request1 = agent.SetupRcm(
             Output,
@@ -71,10 +75,17 @@ public abstract class FeatureFlagsTestsBase : TestHelper
         {
             if (e.Value.PathAndQuery.EndsWith("api/v2/exposures"))
             {
-                Interlocked.Increment(ref eventsReceived);
+                Interlocked.Increment(ref exposureEventsReceived);
                 e.Value.Headers["Content-Encoding"].Should().Be("gzip");
                 var payload = JsonConvert.DeserializeObject(e.Value.BodyInJson);
                 return;
+            }
+
+            if (e.Value.PathAndQuery.EndsWith("api/v2/flagevaluation"))
+            {
+                Interlocked.Increment(ref flagEvaluationEventsReceived);
+                e.Value.Headers["Content-Encoding"].Should().Be("gzip");
+                JsonConvert.DeserializeObject(e.Value.BodyInJson).Should().NotBeNull();
             }
         };
 
@@ -89,7 +100,11 @@ public abstract class FeatureFlagsTestsBase : TestHelper
         Assert.Contains("Eval (time-based-flag) : <OK: ", output);
         Assert.Contains("Eval (exposure-flag) : <OK: ", output);
         Assert.Contains("Exit. OK", output);
-        Assert.True(eventsReceived > 0);
+        Assert.True(exposureEventsReceived > 0);
+        if (_expectFlagEvaluationEvents)
+        {
+            Assert.True(flagEvaluationEventsReceived > 0);
+        }
     }
 
     [SkippableFact]

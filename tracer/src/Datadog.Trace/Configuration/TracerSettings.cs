@@ -766,6 +766,9 @@ namespace Datadog.Trace.Configuration
             IsSpanEnrichmentEnabled = config.WithKeys(ConfigurationKeys.FeatureFlags.SpanEnrichmentEnabled)
                                                        .AsBool(false);
 
+            IsFlaggingEvaluationCountsEnabled = config.WithKeys(ConfigurationKeys.FeatureFlags.FlaggingEvaluationCountsEnabled)
+                                                       .AsBool(true);
+
             if (source is CompositeConfigurationSource compositeSource)
             {
                 foreach (var nestedSource in compositeSource)
@@ -1502,6 +1505,12 @@ namespace Datadog.Trace.Configuration
         /// Gets the Feature Flags settings, which select where flag configuration is delivered from.
         /// </summary>
         internal FeatureFlagsSettings FeatureFlags { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether EVP flagevaluation emission from the OpenFeature provider is enabled.
+        /// Gates only the EVP path; the OTel feature_flag.evaluations metric path is unaffected. Default <c>true</c>.
+        /// </summary>
+        internal bool IsFlaggingEvaluationCountsEnabled { get; }
 
         /// <summary>
         /// Gets a value indicating whether partial flush is enabled

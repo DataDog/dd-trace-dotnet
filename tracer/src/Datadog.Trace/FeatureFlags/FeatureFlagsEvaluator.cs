@@ -25,6 +25,7 @@ namespace Datadog.Trace.FeatureFlags
     internal sealed class FeatureFlagsEvaluator
     {
         internal const string MetadataAllocationKey = "__dd_allocation_key";
+        internal const string MetadataObserveFullEvaluationData = FeatureFlagMetadataKeys.ObserveFullEvaluationData;
 
         internal const string MetadataSplitSerialId = FeatureFlagMetadataKeys.SplitSerialId;
         internal const string MetadataDoLog = FeatureFlagMetadataKeys.DoLog;
@@ -39,6 +40,7 @@ namespace Datadog.Trace.FeatureFlags
         {
             _onExposureEvent = onExposureEvent;
             _config = config;
+            _config?.SnapshotPrivacyConsent();
             _spanEnrichmentEnabled = spanEnrichmentEnabled;
             if (_config is null)
             {
@@ -54,12 +56,14 @@ namespace Datadog.Trace.FeatureFlags
 
         public Evaluation Evaluate(string flagKey, ValueType resultType, object? defaultValue, EvaluationContext? context)
         {
+            var observeFullEvaluationData = false;
             try
             {
                 var config = _config;
                 if (config == null)
                 {
-                    return new Evaluation(
+                    return CreateEvaluation(
+                        observeFullEvaluationData,
                         flagKey,
                         defaultValue,
                         EvaluationReason.Error,
@@ -70,11 +74,16 @@ namespace Datadog.Trace.FeatureFlags
                         });
                 }
 
+                // Missing and invalid flags still belong to this UFC snapshot, so use its root
+                // consent. A merged snapshot AND-folds root consent across every source.
+                observeFullEvaluationData = config.ObserveFullEvaluationData;
+
                 Flag? flag = null;
                 var lookupResult = config.Flags?.Find(flagKey, out flag) ?? FlagLookupResult.NotFound;
                 if (lookupResult == FlagLookupResult.NotFound)
                 {
-                    return new Evaluation(
+                    return CreateEvaluation(
+                        observeFullEvaluationData,
                         flagKey,
                         defaultValue,
                         EvaluationReason.Error,
@@ -87,7 +96,8 @@ namespace Datadog.Trace.FeatureFlags
 
                 if (lookupResult == FlagLookupResult.Invalid || flag is null)
                 {
-                    return new Evaluation(
+                    return CreateEvaluation(
+                        observeFullEvaluationData,
                         flagKey,
                         defaultValue,
                         EvaluationReason.Error,
@@ -98,9 +108,12 @@ namespace Datadog.Trace.FeatureFlags
                         });
                 }
 
+                observeFullEvaluationData = flag.ObserveFullEvaluationData;
+
                 if (flag.Enabled != true)
                 {
-                    return new Evaluation(
+                    return CreateEvaluation(
+                        observeFullEvaluationData,
                         flagKey,
                         defaultValue,
                         EvaluationReason.Disabled);
@@ -108,7 +121,8 @@ namespace Datadog.Trace.FeatureFlags
 
                 if (flag.VariationType != resultType)
                 {
-                    return new Evaluation(
+                    return CreateEvaluation(
+                        observeFullEvaluationData,
                         flagKey,
                         defaultValue,
                         EvaluationReason.Error,
@@ -121,7 +135,8 @@ namespace Datadog.Trace.FeatureFlags
 
                 if (flag.Allocations is null or { Count: 0 })
                 {
-                    return new Evaluation(
+                    return CreateEvaluation(
+                        observeFullEvaluationData,
                         flagKey,
                         defaultValue,
                         EvaluationReason.Default);
@@ -194,14 +209,16 @@ namespace Datadog.Trace.FeatureFlags
                 }
 
                 // No allocation / split matched – use default
-                return new Evaluation(
+                return CreateEvaluation(
+                    observeFullEvaluationData,
                     flagKey,
                     defaultValue,
                     EvaluationReason.Default);
             }
             catch (FormatException ex)
             {
-                return new Evaluation(
+                return CreateEvaluation(
+                    observeFullEvaluationData,
                     flagKey,
                     defaultValue,
                     EvaluationReason.Error,
@@ -214,7 +231,8 @@ namespace Datadog.Trace.FeatureFlags
             }
             catch (MissingTargetingKeyException)
             {
-                return new Evaluation(
+                return CreateEvaluation(
+                    observeFullEvaluationData,
                     flagKey,
                     defaultValue,
                     EvaluationReason.Error,
@@ -226,7 +244,8 @@ namespace Datadog.Trace.FeatureFlags
             }
             catch (Exception ex)
             {
-                return new Evaluation(
+                return CreateEvaluation(
+                    observeFullEvaluationData,
                     flagKey,
                     defaultValue,
                     EvaluationReason.Error,
@@ -237,6 +256,22 @@ namespace Datadog.Trace.FeatureFlags
                         ["message"] = ex.Message
                     });
             }
+        }
+
+        private static Evaluation CreateEvaluation(
+            bool observeFullEvaluationData,
+            string flagKey,
+            object? value,
+            EvaluationReason reason,
+            string? variant = null,
+            string? error = null,
+            IDictionary<string, string>? metadata = null)
+        {
+            var metadataSnapshot = metadata is null
+                                       ? new Dictionary<string, string>()
+                                       : new Dictionary<string, string>(metadata);
+            metadataSnapshot[MetadataObserveFullEvaluationData] = observeFullEvaluationData ? "true" : "false";
+            return new Evaluation(flagKey, value, reason, variant, error, metadataSnapshot);
         }
 
         private static bool IsAllocationActive(Allocation allocation, DateTime now)
@@ -711,7 +746,8 @@ namespace Datadog.Trace.FeatureFlags
                 }
             }
 
-            var evaluation = new Evaluation(
+            var evaluation = CreateEvaluation(
+                flag.ObserveFullEvaluationData,
                 flagKey,
                 mappedValue,
                 reason,
@@ -727,7 +763,8 @@ namespace Datadog.Trace.FeatureFlags
 
             Evaluation ParseError(string error)
             {
-                return new Evaluation(
+                return CreateEvaluation(
+                    flag.ObserveFullEvaluationData,
                     flagKey,
                     defaultValue,
                     EvaluationReason.Error,

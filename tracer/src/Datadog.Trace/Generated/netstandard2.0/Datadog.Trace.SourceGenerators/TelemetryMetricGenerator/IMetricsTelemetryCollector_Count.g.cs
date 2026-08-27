@@ -27,6 +27,12 @@ internal partial interface IMetricsTelemetryCollector
 
     public void RecordCountTraceChunkSent(int increment = 1);
 
+    public void RecordCountFlagEvaluationRowsDropped(Datadog.Trace.Telemetry.Metrics.MetricTags.FlagEvaluationReason tag, int increment = 1);
+
+    public void RecordCountFlagEvaluationRowsDegraded(Datadog.Trace.Telemetry.Metrics.MetricTags.FlagEvaluationReason tag, int increment = 1);
+
+    public void RecordCountFlagEvaluationPayloadSplits(int increment = 1);
+
     public void RecordCountTraceSegmentsClosed(int increment = 1);
 
     public void RecordCountTraceApiRequests(int increment = 1);

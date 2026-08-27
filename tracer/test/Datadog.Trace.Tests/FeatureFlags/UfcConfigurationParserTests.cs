@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.IO;
 using Datadog.Trace.FeatureFlags.Agentless;
 using Datadog.Trace.FeatureFlags.Rcm.Model;
+using Datadog.Trace.Vendors.Newtonsoft.Json;
 using FluentAssertions;
 using Xunit;
 
@@ -26,6 +27,18 @@ public class UfcConfigurationParserTests
         { "format": "SERVER", "createdAt": "2025-01-01T00:00:00Z",
           "environment": { "name": "production" }, "flags": {} }
         """;
+
+    public static IEnumerable<object?[]> ObserveFullEvaluationDataCases()
+    {
+        yield return [null, false];
+        yield return ["false", false];
+        yield return ["true", true];
+        yield return ["null", false];
+        yield return ["\"true\"", false];
+        yield return ["1", false];
+        yield return ["{}", false];
+        yield return ["[]", false];
+    }
 
     [Fact]
     public void ParsesValidEnvelope()
@@ -121,6 +134,95 @@ public class UfcConfigurationParserTests
 
         error.Should().BeNull();
         configuration!.Environment!.Name.Should().Be("123");
+    }
+
+    [Theory]
+    [MemberData(nameof(ObserveFullEvaluationDataCases))]
+    public void AgentlessParserOnlyBooleanTrueEnablesFullEvaluationData(string? jsonValue, bool expected)
+    {
+        var privacyProperty = jsonValue is null ? string.Empty : $", \"observeFullEvaluationData\": {jsonValue}";
+        var body = $$"""
+            { "data": { "type": "universal-flag-configuration",
+                        "attributes": { "format": "SERVER", "createdAt": "2025-01-01T00:00:00Z",
+                                        "environment": { "name": "production" },
+                                        "flags": { "test-flag": { "key": "test-flag", "enabled": true, "variationType": "BOOLEAN" } }
+                                        {{privacyProperty}} } } }
+            """;
+
+        Parse(body, out var configuration, out var error).Should().BeTrue();
+
+        error.Should().BeNull();
+        configuration!.ObserveFullEvaluationData.Should().Be(expected);
+        configuration.Flags!["test-flag"].ObserveFullEvaluationData.Should().Be(expected);
+    }
+
+    [Theory]
+    [MemberData(nameof(ObserveFullEvaluationDataCases))]
+    public void RemoteConfigurationDeserializerOnlyBooleanTrueEnablesFullEvaluationData(string? jsonValue, bool expected)
+    {
+        var privacyProperty = jsonValue is null ? string.Empty : $", \"observeFullEvaluationData\": {jsonValue}";
+        var body = $$"""
+            { "format": "SERVER", "createdAt": "2025-01-01T00:00:00Z",
+              "environment": { "name": "production" },
+              "flags": { "test-flag": { "key": "test-flag", "enabled": true, "variationType": "BOOLEAN" } }
+              {{privacyProperty}} }
+            """;
+
+        var configuration = JsonConvert.DeserializeObject<ServerConfiguration>(body);
+
+        configuration.Should().NotBeNull();
+        configuration!.ObserveFullEvaluationData.Should().Be(expected);
+        configuration.Flags!["test-flag"].ObserveFullEvaluationData.Should().Be(expected);
+    }
+
+    [Fact]
+    public void MergePreservesConsentFromEachFlagsSourceConfiguration()
+    {
+        var full = JsonConvert.DeserializeObject<ServerConfiguration>(
+            """{ "observeFullEvaluationData": true, "flags": { "full": { "key": "full", "enabled": true } } }""")!;
+        var protectedConfig = JsonConvert.DeserializeObject<ServerConfiguration>(
+            """{ "observeFullEvaluationData": false, "flags": { "protected": { "key": "protected", "enabled": true } } }""")!;
+        var merged = new ServerConfiguration();
+
+        merged.Merge(full);
+        merged.Merge(protectedConfig);
+
+        merged.Flags!["full"].ObserveFullEvaluationData.Should().BeTrue();
+        merged.Flags["protected"].ObserveFullEvaluationData.Should().BeFalse();
+    }
+
+    [Fact]
+    public void MergeRootConsent_IsOrderIndependentAndFailsClosedAcrossSources()
+    {
+        var full = JsonConvert.DeserializeObject<ServerConfiguration>(
+            """{ "observeFullEvaluationData": true, "flags": { "full": { "key": "full", "enabled": true } } }""")!;
+        var protectedConfig = JsonConvert.DeserializeObject<ServerConfiguration>(
+            """{ "observeFullEvaluationData": false, "flags": { "protected": { "key": "protected", "enabled": true } } }""")!;
+        var fullThenProtected = new ServerConfiguration();
+        var protectedThenFull = new ServerConfiguration();
+
+        fullThenProtected.Merge(full);
+        fullThenProtected.Merge(protectedConfig);
+        protectedThenFull.Merge(protectedConfig);
+        protectedThenFull.Merge(full);
+
+        fullThenProtected.ObserveFullEvaluationData.Should().BeFalse();
+        protectedThenFull.ObserveFullEvaluationData.Should().BeFalse();
+    }
+
+    [Fact]
+    public void MergeRootConsent_RemainsFullOnlyWhenEverySourceOptsIn()
+    {
+        var first = JsonConvert.DeserializeObject<ServerConfiguration>(
+            """{ "observeFullEvaluationData": true, "flags": { "one": { "key": "one", "enabled": true } } }""")!;
+        var second = JsonConvert.DeserializeObject<ServerConfiguration>(
+            """{ "observeFullEvaluationData": true, "flags": { "two": { "key": "two", "enabled": true } } }""")!;
+        var merged = new ServerConfiguration();
+
+        merged.Merge(first);
+        merged.Merge(second);
+
+        merged.ObserveFullEvaluationData.Should().BeTrue();
     }
 
     // The parser reads the response stream directly, so a body under test is handed to it as a reader.

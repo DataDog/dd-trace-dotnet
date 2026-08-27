@@ -116,6 +116,7 @@ public partial class FeatureFlagsEvaluatorTests
         Assert.Equal(23, result.Value);
         Assert.Equal(EvaluationReason.Error, result.Reason);
         Assert.Equal("PROVIDER_NOT_READY", result.Error);
+        Assert.Equal("false", result.FlagMetadata?[FeatureFlagsEvaluator.MetadataObserveFullEvaluationData]);
     }
 
     [Fact]
@@ -149,7 +150,104 @@ public partial class FeatureFlagsEvaluatorTests
         Assert.Equal("PARSE_ERROR", invalid.FlagMetadata?["errorCode"]);
         Assert.Equal(EvaluationReason.Error, missing.Reason);
         Assert.Equal("FLAG_NOT_FOUND", missing.Error);
+        Assert.Equal("false", missing.FlagMetadata?[FeatureFlagsEvaluator.MetadataObserveFullEvaluationData]);
         Assert.Equal(EvaluationReason.Default, valid.Reason);
+        Assert.Equal("false", valid.FlagMetadata?[FeatureFlagsEvaluator.MetadataObserveFullEvaluationData]);
+    }
+
+    [Fact]
+    public void EvaluateMissingAndInvalidFlagsUseRootPrivacyConsent()
+    {
+        const string json = """
+                            {
+                              "observeFullEvaluationData": true,
+                              "flags": {
+                                "invalid-flag": {
+                                  "enabled": true,
+                                  "variationType": "STRING",
+                                  "allocations": "not-an-array"
+                                }
+                              }
+                            }
+                            """;
+        var evaluator = new FeatureFlagsEvaluator(null, JsonConvert.DeserializeObject<ServerConfiguration>(json)!);
+        var ctx = new EvaluationContext("target");
+
+        var invalid = evaluator.Evaluate("invalid-flag", ValueType.String, "default", ctx);
+        var missing = evaluator.Evaluate("missing-flag", ValueType.String, "default", ctx);
+
+        Assert.Equal("true", invalid.FlagMetadata?[FeatureFlagsEvaluator.MetadataObserveFullEvaluationData]);
+        Assert.Equal("true", missing.FlagMetadata?[FeatureFlagsEvaluator.MetadataObserveFullEvaluationData]);
+    }
+
+    [Fact]
+    public void EvaluateGenericExceptionKeepsRootConsentAndDiagnostic()
+    {
+        var config = new ServerConfiguration
+        {
+            ObserveFullEvaluationData = true,
+            Flags = new FlagCollection
+            {
+                ["broken"] = new Flag
+                {
+                    Key = "broken",
+                    Enabled = true,
+                    VariationType = ValueType.String,
+                    Variations = new Dictionary<string, Variant> { ["on"] = new Variant("on", "on") },
+                    Allocations =
+                    [
+                        new Allocation
+                        {
+                            Key = "allocation",
+                            Splits =
+                            [
+                                new Split
+                                {
+                                    VariationKey = "on",
+                                    Shards =
+                                    [
+                                        new Shard
+                                        {
+                                            Salt = "salt",
+                                            TotalShards = 0,
+                                            Ranges = [new ShardRange { Start = 0, End = 1 }]
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            }
+        };
+        var evaluator = new FeatureFlagsEvaluator(null, config);
+
+        var result = evaluator.Evaluate("broken", ValueType.String, "default", new EvaluationContext("target"));
+
+        Assert.Equal(EvaluationReason.Error, result.Reason);
+        Assert.NotNull(result.Error);
+        Assert.NotEqual("GENERAL", result.Error);
+        Assert.Equal("GENERAL", result.FlagMetadata?["errorCode"]);
+        Assert.Equal("true", result.FlagMetadata?[FeatureFlagsEvaluator.MetadataObserveFullEvaluationData]);
+    }
+
+    [Fact]
+    public void EvaluateSnapshotsPrivacyConsentPerFlagAcrossMergedConfigurations()
+    {
+        var full = JsonConvert.DeserializeObject<ServerConfiguration>(
+            """{ "observeFullEvaluationData": true, "flags": { "full": { "key": "full", "enabled": true, "variationType": "STRING" } } }""")!;
+        var protectedConfig = JsonConvert.DeserializeObject<ServerConfiguration>(
+            """{ "observeFullEvaluationData": false, "flags": { "protected": { "key": "protected", "enabled": true, "variationType": "STRING" } } }""")!;
+        full.Merge(protectedConfig);
+        var evaluator = new FeatureFlagsEvaluator(null, full);
+
+        var fullResult = evaluator.Evaluate("full", ValueType.String, "default", new EvaluationContext("user"));
+        var protectedResult = evaluator.Evaluate("protected", ValueType.String, "default", new EvaluationContext("user"));
+
+        Assert.Equal(EvaluationReason.Default, fullResult.Reason);
+        Assert.Equal("true", fullResult.FlagMetadata?[FeatureFlagsEvaluator.MetadataObserveFullEvaluationData]);
+        Assert.Equal(EvaluationReason.Default, protectedResult.Reason);
+        Assert.Equal("false", protectedResult.FlagMetadata?[FeatureFlagsEvaluator.MetadataObserveFullEvaluationData]);
     }
 
     [Fact]
@@ -277,6 +375,27 @@ public partial class FeatureFlagsEvaluatorTests
 
         // DoLog=true -> one exposure event
         Assert.Single(events);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void EvaluatePrivacyConsentIsIndependentOfExposureDoLog(bool doLog)
+    {
+        var flag = FeatureFlagsHelpers.CreateExposureFlag();
+        flag.Allocations![0].DoLog = doLog;
+        var config = new ServerConfiguration
+        {
+            ObserveFullEvaluationData = true,
+            Flags = new FlagCollection { ["exposure-flag"] = flag }
+        };
+        var events = new List<Trace.FeatureFlags.Exposure.Model.ExposureEvent>();
+        var evaluator = new FeatureFlagsEvaluator((in Trace.FeatureFlags.Exposure.Model.ExposureEvent e) => events.Add(e), config);
+
+        var result = evaluator.Evaluate("exposure-flag", ValueType.String, "default", new EvaluationContext("user-123"));
+
+        Assert.Equal("true", result.FlagMetadata?[FeatureFlagsEvaluator.MetadataObserveFullEvaluationData]);
+        events.Should().HaveCount(doLog ? 1 : 0);
     }
 
     [Fact]
