@@ -25,7 +25,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     [Trait("RequiresDockerDependency", "true")]
     [Trait("DockerGroup", "1")]
     [UsesVerify]
-    [Collection(nameof(TestAgentOtlpCollection))]
     public class OpenTelemetrySdkTests : TracingIntegrationTest
     {
         private static readonly string CustomServiceName = "CustomServiceName";
@@ -273,6 +272,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             SetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENABLED", otelTracesEnabled);
             SetEnvironmentVariable("OTEL_EXPORTER_OTLP_PROTOCOL", protocol);
+            SetEnvironmentVariable("OTEL_EXPORTER_OTLP_HEADERS", $"X-Datadog-Test-Session-Token={_otlpSession.SessionToken}"); // Isolates OTLP to this test
             if (useAgentHostBackup)
             {
                 SetEnvironmentVariable("DD_AGENT_HOST", _otlpSession.TestAgentHost);

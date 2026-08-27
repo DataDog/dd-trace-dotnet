@@ -30,8 +30,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
     /// <c>OpenTelemetryAspNetTestBase</c>, which does the same for IIS-hosted .NET Framework samples;
     /// both build on the fixture-agnostic <see cref="OtlpTestAgentSession"/>, since none of the
     /// session/isolation/normalization plumbing depends on how the application under test was
-    /// started. Derived suites carry <c>[Collection(nameof(TestAgentOtlpCollection))]</c> because the
-    /// session is shared with every other OTLP test reading from the same test agent.
+    /// started.
     /// </summary>
     [UsesVerify]
     public abstract class OtlpAspNetCoreTestBase : TestHelper, IClassFixture<AspNetCoreTestFixture>, IAsyncLifetime

@@ -17,7 +17,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
 {
     [Trait("RequiresDockerDependency", "true")]
     [Trait("DockerGroup", "1")]
-    [Collection(nameof(TestAgentOtlpCollection))]
     public class OtlpAspNetCoreMinimalApisTestsCallTarget : OtlpAspNetCoreMinimalApisTests
     {
         public OtlpAspNetCoreMinimalApisTestsCallTarget(AspNetCoreTestFixture fixture, ITestOutputHelper output)
@@ -28,7 +27,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
 
     [Trait("RequiresDockerDependency", "true")]
     [Trait("DockerGroup", "1")]
-    [Collection(nameof(TestAgentOtlpCollection))]
     public class OtlpAspNetCoreMinimalApisTestsCallTargetWithFeatureFlag : OtlpAspNetCoreMinimalApisTests
     {
         public OtlpAspNetCoreMinimalApisTestsCallTargetWithFeatureFlag(AspNetCoreTestFixture fixture, ITestOutputHelper output)
@@ -39,7 +37,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
 
     [Trait("RequiresDockerDependency", "true")]
     [Trait("DockerGroup", "1")]
-    [Collection(nameof(TestAgentOtlpCollection))]
     public class OtlpAspNetCoreMinimalApisTestsCallTargetSingleSpan : OtlpAspNetCoreMinimalApisTests
     {
         public OtlpAspNetCoreMinimalApisTestsCallTargetSingleSpan(AspNetCoreTestFixture fixture, ITestOutputHelper output)
@@ -50,7 +47,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
 
     [Trait("RequiresDockerDependency", "true")]
     [Trait("DockerGroup", "1")]
-    [Collection(nameof(TestAgentOtlpCollection))]
     public class OtlpAspNetCoreMinimalApisTestsCallTargetWithOpenTelemetrySemantics : OtlpAspNetCoreMinimalApisTests
     {
         public OtlpAspNetCoreMinimalApisTestsCallTargetWithOpenTelemetrySemantics(AspNetCoreTestFixture fixture, ITestOutputHelper output)
@@ -61,7 +57,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
 
     [Trait("RequiresDockerDependency", "true")]
     [Trait("DockerGroup", "1")]
-    [Collection(nameof(TestAgentOtlpCollection))]
     public class OtlpAspNetCoreMinimalApisTestsCallTargetWithFeatureFlagWithOpenTelemetrySemantics : OtlpAspNetCoreMinimalApisTests
     {
         public OtlpAspNetCoreMinimalApisTestsCallTargetWithFeatureFlagWithOpenTelemetrySemantics(AspNetCoreTestFixture fixture, ITestOutputHelper output)
@@ -72,7 +67,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
 
     [Trait("RequiresDockerDependency", "true")]
     [Trait("DockerGroup", "1")]
-    [Collection(nameof(TestAgentOtlpCollection))]
     public class OtlpAspNetCoreMinimalApisTestsCallTargetSingleSpanWithOpenTelemetrySemantics : OtlpAspNetCoreMinimalApisTests
     {
         public OtlpAspNetCoreMinimalApisTestsCallTargetSingleSpanWithOpenTelemetrySemantics(AspNetCoreTestFixture fixture, ITestOutputHelper output)

@@ -18,33 +18,35 @@ public class HttpSemanticConventionsTests
 
     [Theory]
     // The RFC 9110 methods, plus PATCH and QUERY
-    [InlineData("CONNECT", "CONNECT")]
-    [InlineData("DELETE", "DELETE")]
-    [InlineData("GET", "GET")]
-    [InlineData("HEAD", "HEAD")]
-    [InlineData("OPTIONS", "OPTIONS")]
-    [InlineData("PATCH", "PATCH")]
-    [InlineData("POST", "POST")]
-    [InlineData("PUT", "PUT")]
-    [InlineData("QUERY", "QUERY")]
-    [InlineData("TRACE", "TRACE")]
+    [InlineData("CONNECT", "CONNECT", null)]
+    [InlineData("DELETE", "DELETE", null)]
+    [InlineData("GET", "GET", null)]
+    [InlineData("HEAD", "HEAD", null)]
+    [InlineData("OPTIONS", "OPTIONS", null)]
+    [InlineData("PATCH", "PATCH", null)]
+    [InlineData("POST", "POST", null)]
+    [InlineData("PUT", "PUT", null)]
+    [InlineData("QUERY", "QUERY", null)]
+    [InlineData("TRACE", "TRACE", null)]
 
     // Known methods are converted to their canonical form
-    [InlineData("get", "GET")]
-    [InlineData("Post", "POST")]
-    [InlineData("pAtCh", "PATCH")]
+    [InlineData("get", "GET", null)]
+    [InlineData("Post", "POST", null)]
+    [InlineData("pAtCh", "PATCH", null)]
 
     // Anything else is _OTHER
-    [InlineData("FOO", "_OTHER")]
-    [InlineData("GETS", "_OTHER")]
-    [InlineData("GE", "_OTHER")]
-    [InlineData("_OTHER", "_OTHER")]
-    [InlineData(" GET", "_OTHER")]
-    [InlineData("", "_OTHER")]
-    [InlineData(null, "_OTHER")]
-    public void NormalizeRequestMethod_ReturnsKnownMethodOrOther(string httpMethod, string expected)
+    [InlineData("FOO", "_OTHER", "FOO")]
+    [InlineData("GETS", "_OTHER", "GETS")]
+    [InlineData("GE", "_OTHER", "GE")]
+    [InlineData("_OTHER", "_OTHER", "_OTHER")]
+    [InlineData(" GET", "_OTHER", " GET")]
+    [InlineData("", "_OTHER", "")]
+    [InlineData(null, "_OTHER", null)]
+    public void GetRequestMethodAttributeValues_ReturnsKnownMethodOrOther(string httpMethod, string expectedMethod, string expectedMethodOriginal)
     {
-        HttpSemanticConventions.NormalizeRequestMethod(httpMethod).Should().Be(expected);
+        HttpSemanticConventions.GetRequestMethodAttributeValues(httpMethod, out var method, out var methodOriginal);
+        method.Should().Be(expectedMethod);
+        methodOriginal.Should().Be(expectedMethodOriginal);
     }
 
     [Theory]
@@ -56,15 +58,17 @@ public class HttpSemanticConventionsTests
         HttpSemanticConventions.GetResourceName(requestMethod).Should().Be(expected);
     }
 
-    // NormalizeRequestMethod holds the known methods twice: an ordinal switch for the fast path,
-    // and a case-insensitive dictionary for the fallback. Exercising every method in both its
+    // Exercise every method in both its
     // canonical and its lower-case form covers both, so the two cannot drift apart unnoticed.
     [Theory]
     [MemberData(nameof(AllKnownMethods))]
-    public void NormalizeRequestMethod_TakesTheSameDecisionOnBothPaths(string canonicalMethod)
+    public void GetRequestMethodAttributeValues_TakesTheSameDecisionOnBothPaths(string canonicalMethod)
     {
-        HttpSemanticConventions.NormalizeRequestMethod(canonicalMethod).Should().Be(canonicalMethod);
-        HttpSemanticConventions.NormalizeRequestMethod(canonicalMethod.ToLowerInvariant()).Should().Be(canonicalMethod);
+        HttpSemanticConventions.GetRequestMethodAttributeValues(canonicalMethod, out string method, out _);
+        method.Should().Be(canonicalMethod);
+
+        HttpSemanticConventions.GetRequestMethodAttributeValues(canonicalMethod.ToLowerInvariant(), out string methodLower, out _);
+        methodLower.Should().Be(canonicalMethod);
     }
 
     [Theory]

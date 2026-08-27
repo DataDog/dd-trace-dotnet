@@ -27,7 +27,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     // - url.full credential/query redaction
     // Note: This intentionally only covers OTLP export (which is where the RFC requires typed attribute values).
     [UsesVerify]
-    [Collection(nameof(TestAgentOtlpCollection))]
     public class OpenTelemetryHttpClientTests : TracingIntegrationTest
     {
         private readonly OtlpTestAgentSession _otlpSession = new();

@@ -57,7 +57,8 @@ namespace Datadog.Trace.PlatformHelpers
             {
                 // The OpenTelemetry HTTP span specification requires the span name to be "{method} {http.route}",
                 // or just "{method}" when no route is available. Instrumentation MUST NOT fall back to the URI path.
-                return HttpSemanticConventions.GetResourceName(HttpSemanticConventions.NormalizeRequestMethod(request.Method));
+                HttpSemanticConventions.GetRequestMethodAttributeValues(request.Method, out string httpRequestMethod, out _);
+                return HttpSemanticConventions.GetResourceName(httpRequestMethod);
             }
 
             string httpMethod = request.Method?.ToUpperInvariant() ?? "UNKNOWN";

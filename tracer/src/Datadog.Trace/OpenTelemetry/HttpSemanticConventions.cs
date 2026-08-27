@@ -50,18 +50,14 @@ namespace Datadog.Trace.OpenTelemetry
         /// <param name="queryStringManager">Used to truncate and obfuscate the query string</param>
         internal static void SetHttpClientRequestValues(Span span, HttpTags tags, string? httpMethod, Uri? requestUri, QueryStringManager? queryStringManager)
         {
-            var requestMethod = NormalizeRequestMethod(httpMethod);
-
-            tags.HttpMethod = requestMethod;
-
-            // "http.request.method_original" is only set when it differs from "http.request.method", ignoring case.
-            // Always assigned, as some integrations call this method more than once for the same span.
-            tags.HttpRequestMethodOriginal = GetRequestMethodOriginal(httpMethod, requestMethod);
+            GetRequestMethodAttributeValues(httpMethod, out string httpRequestMethod, out string? httpRequestMethodOriginal);
+            tags.HttpMethod = httpRequestMethod;
+            tags.HttpRequestMethodOriginal = httpRequestMethodOriginal;
 
             // The span name is "{method} {target}", but there is no low-cardinality target available
             // for HTTP client spans until we support "url.template", so we only use the method.
             // Note that we must not fall back to using the URI path as the target.
-            span.ResourceName = GetResourceName(requestMethod);
+            span.ResourceName = GetResourceName(httpRequestMethod);
 
             if (requestUri is not null)
             {
@@ -106,11 +102,11 @@ namespace Datadog.Trace.OpenTelemetry
             span.Type = SpanTypes.Web;
             span.ResourceName = resourceName?.Trim();
 
-            var requestMethod = NormalizeRequestMethod(originalMethod);
-
-            tags.HttpMethod = requestMethod;
             tags.HttpUserAgent = userAgent;
-            tags.HttpRequestMethodOriginal = GetRequestMethodOriginal(originalMethod, requestMethod);
+
+            GetRequestMethodAttributeValues(originalMethod, out string httpRequestMethod, out string? httpRequestMethodOriginal);
+            tags.HttpMethod = httpRequestMethod;
+            tags.HttpRequestMethodOriginal = httpRequestMethodOriginal;
 
             SetHttpServerUrlTags(tags, scheme, host, port, pathBase, path, queryString, queryStringManager);
         }
@@ -201,12 +197,16 @@ namespace Datadog.Trace.OpenTelemetry
         }
 
         /// <summary>
-        /// Calculates the value to report in <c>http.request.method_original</c> when the original method differs from the normalized one.
+        /// Calculates the values to report in <c>http.request.method</c> and <c>http.request.method_original</c> given the original method.
         /// </summary>
         /// <param name="originalMethod">The request method as reported by the framework.</param>
-        /// <param name="normalizedMethod">The normalized value written to <c>http.request.method</c>.</param>
-        internal static string? GetRequestMethodOriginal(string? originalMethod, string normalizedMethod)
-            => normalizedMethod == OtherRequestMethod ? originalMethod : null;
+        /// <param name="normalizedMethod">The normalized value to be written to <c>http.request.method</c>.</param>
+        /// <param name="originalMethodOriginal">The original value to be written to <c>http.request.method_original</c>, or <c>null</c> if the original method (in its canonical form) is the same as the normalized one.</param>
+        internal static void GetRequestMethodAttributeValues(string? originalMethod, out string normalizedMethod, out string? originalMethodOriginal)
+        {
+            normalizedMethod = NormalizeRequestMethod(originalMethod);
+            originalMethodOriginal = normalizedMethod == OtherRequestMethod ? originalMethod : null;
+        }
 
         /// <summary>
         /// Gets the value to report in "network.protocol.version" for the protocol version of a
@@ -225,13 +225,22 @@ namespace Datadog.Trace.OpenTelemetry
             };
 
         /// <summary>
+        /// Gets the resource name for a request with the provided "http.request.method" value, when no
+        /// low-cardinality target is available.
+        /// </summary>
+        internal static string GetResourceName(string requestMethod)
+            => string.Equals(requestMethod, OtherRequestMethod, StringComparison.Ordinal)
+                   ? UnknownMethodSpanName
+                   : requestMethod;
+
+        /// <summary>
         /// Gets the value to report in "http.request.method": the canonical form of
         /// <paramref name="httpMethod"/>, or <see cref="OtherRequestMethod"/> if it is not one of
         /// the methods defined in
         /// <see href="https://www.rfc-editor.org/rfc/rfc9110.html#name-methods">RFC 9110</see>, plus
         /// PATCH and QUERY.
         /// </summary>
-        internal static string NormalizeRequestMethod(string? httpMethod)
+        private static string NormalizeRequestMethod(string? httpMethod)
         {
             if (StringUtil.IsNullOrEmpty(httpMethod))
             {
@@ -310,14 +319,5 @@ namespace Datadog.Trace.OpenTelemetry
 
             return OtherRequestMethod;
         }
-
-        /// <summary>
-        /// Gets the resource name for a request with the provided "http.request.method" value, when no
-        /// low-cardinality target is available.
-        /// </summary>
-        internal static string GetResourceName(string requestMethod)
-            => string.Equals(requestMethod, OtherRequestMethod, StringComparison.Ordinal)
-                   ? UnknownMethodSpanName
-                   : requestMethod;
     }
 }
