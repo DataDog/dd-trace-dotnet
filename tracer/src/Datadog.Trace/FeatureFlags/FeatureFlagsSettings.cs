@@ -61,17 +61,17 @@ internal sealed class FeatureFlagsSettings
 #pragma warning restore 618
         }
 
+        // Where configuration comes from is a separate question from whether the product runs, and
+        // the two are answered separately below, as the other tracers answer them.
+        //
         // The source key is read once, with every other outcome expressed as its default, so
         // configuration telemetry reports the one value we act on rather than one entry per
-        // candidate key. Shared across tracers, so the precedence is deliberate: the stable kill
-        // switch wins over everything (expressed as a validator that rejects any configured value),
-        // an explicit source wins over the legacy key (an unrecognised one fails closed, so a typo
-        // never starts billed delivery), the legacy key grandfathers existing adopters onto Remote
+        // candidate key. Shared across tracers, so the precedence is deliberate: an explicit source
+        // wins over the legacy key, the legacy key grandfathers existing adopters onto Remote
         // Configuration, and everything else defaults to agentless.
         // net461 has no System.ValueTuple, so a tuple pattern over both values does not compile.
         DefaultResult<FeatureFlagsSource> defaultSource = enabled switch
         {
-            false => new(FeatureFlagsSource.Offline, OfflineSourceName),
             null when legacyEnabled is not null => legacyEnabled.Value
                                                        ? new(FeatureFlagsSource.RemoteConfig, RemoteConfigSourceName)
                                                        : new(FeatureFlagsSource.Offline, OfflineSourceName),
@@ -80,10 +80,13 @@ internal sealed class FeatureFlagsSettings
 
         Source = config
                 .WithKeys(ConfigurationKeys.FeatureFlags.FeatureFlagsConfigurationSource)
-                .GetAs(
-                     defaultSource,
-                     validator: enabled == false ? static _ => false : static _ => true,
-                     converter: ConvertSource);
+                .GetAs(defaultSource, validator: null, converter: ConvertSource);
+
+        // The stable kill switch turns the product off whatever the source says. Beyond that, only a
+        // delivery source has anything to run: offline delivers nothing, and an unrecognised value
+        // resolves to offline so that a typo fails closed instead of starting billed delivery.
+        Enabled = enabled != false
+               && Source is FeatureFlagsSource.Agentless or FeatureFlagsSource.RemoteConfig;
 
         var agentlessBaseUrl = config
                                 .WithKeys(ConfigurationKeys.FeatureFlags.FeatureFlagsConfigurationSourceAgentlessBaseUrl)
@@ -122,9 +125,10 @@ internal sealed class FeatureFlagsSettings
     public FeatureFlagsSource Source { get; }
 
     /// <summary>
-    /// Gets a value indicating whether Feature Flags are enabled at all.
+    /// Gets a value indicating whether Feature Flags run at all. Independent of <see cref="Source"/>,
+    /// which says where configuration would come from.
     /// </summary>
-    public bool Enabled => Source != FeatureFlagsSource.Offline;
+    public bool Enabled { get; }
 
     /// <summary>
     /// Gets the configured override for the agentless endpoint, or <c>null</c> to derive it from the site.
