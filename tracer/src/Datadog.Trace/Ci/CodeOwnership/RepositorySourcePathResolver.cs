@@ -29,7 +29,7 @@ internal sealed class RepositorySourcePathResolver
         => MakeRelativePath(_sourceRoot, sourceFilePath, useOSSeparator);
 
     /// <summary>
-    /// Resolves the source path below the repository root, including paths recorded from another CI workspace.
+    /// Resolves the source path below the repository root, including paths recorded in another build environment.
     /// </summary>
     internal bool TryMakeRepositoryRelative(string sourceFilePath, string repositoryRoot, bool useOSSeparator, [NotNullWhen(true)] out string? relativePath)
     {
@@ -165,15 +165,15 @@ internal sealed class RepositorySourcePathResolver
     private static bool TryAnchorExistingSuffix(string sourceFilePath, string repositoryRoot, bool useOSSeparator, [NotNullWhen(true)] out string? relativePath)
     {
         relativePath = null;
-        if (Path.IsPathRooted(sourceFilePath) || Uri.TryCreate(sourceFilePath, UriKind.Absolute, out _))
+        if (!TryNormalizeCompilerPath(sourceFilePath, out var normalizedPath))
         {
             return false;
         }
 
-        var normalizedPath = sourceFilePath.IndexOf('\\') >= 0 ? sourceFilePath.Replace('\\', '/') : sourceFilePath;
         var repositoryPathStart = SkipLeadingNavigationSegments(normalizedPath);
         var pathWithoutLeadingNavigation = repositoryPathStart == 0 ? normalizedPath : normalizedPath.Substring(repositoryPathStart);
-        if (Path.IsPathRooted(pathWithoutLeadingNavigation) || Uri.TryCreate(pathWithoutLeadingNavigation, UriKind.Absolute, out _))
+        if (repositoryPathStart > 0 &&
+            (IsPathRootedCrossPlatform(pathWithoutLeadingNavigation) || Uri.TryCreate(pathWithoutLeadingNavigation, UriKind.Absolute, out _)))
         {
             return false;
         }
@@ -219,6 +219,43 @@ internal sealed class RepositorySourcePathResolver
         }
 
         return false;
+    }
+
+    private static bool TryNormalizeCompilerPath(string sourceFilePath, [NotNullWhen(true)] out string? normalizedPath)
+    {
+        normalizedPath = sourceFilePath;
+        if (!IsPathRootedCrossPlatform(sourceFilePath) && Uri.TryCreate(sourceFilePath, UriKind.Absolute, out var uri))
+        {
+            if (!uri.IsFile)
+            {
+                normalizedPath = null;
+                return false;
+            }
+
+            normalizedPath = uri.LocalPath;
+        }
+
+        if (normalizedPath.IndexOf('\\') >= 0)
+        {
+            normalizedPath = normalizedPath.Replace('\\', '/');
+        }
+
+        return true;
+    }
+
+    private static bool IsPathRootedCrossPlatform(string path)
+    {
+        if (Path.IsPathRooted(path) ||
+            path.StartsWith("\\", StringComparison.Ordinal) ||
+            path.StartsWith("//", StringComparison.Ordinal))
+        {
+            return true;
+        }
+
+        return path.Length >= 3 &&
+               CharHelpers.IsAsciiLetter(path[0]) &&
+               path[1] == ':' &&
+               (path[2] == '\\' || path[2] == '/');
     }
 
     private static int SkipLeadingNavigationSegments(string path)
@@ -304,6 +341,12 @@ internal sealed class RepositorySourcePathResolver
         RootPathInfo root,
         [NotNullWhen(true)] out string? absolutePath)
     {
+        if (IsPathRootedCrossPlatform(relativePath))
+        {
+            absolutePath = null;
+            return false;
+        }
+
         var resolvedPath = Path.GetFullPath(Path.Combine(root.FullPath, relativePath));
         if (!resolvedPath.StartsWith(root.FullPathWithSeparator, root.PathComparison) &&
             !string.Equals(resolvedPath, root.FullPath, root.PathComparison))

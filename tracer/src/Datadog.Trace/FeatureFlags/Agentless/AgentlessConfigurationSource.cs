@@ -45,7 +45,6 @@ internal sealed class AgentlessConfigurationSource : IDisposable
     private readonly IApiRequestFactory _requestFactory;
     private readonly AgentlessEndpoint _endpoint;
     private readonly TimeSpan _pollInterval;
-    private readonly TimeSpan _requestTimeout;
     private readonly Func<ServerConfiguration, bool> _applyConfiguration;
     private readonly Func<TimeSpan, Task> _waitAsync;
 
@@ -74,7 +73,6 @@ internal sealed class AgentlessConfigurationSource : IDisposable
         AgentlessEndpoint endpoint,
         IApiRequestFactory requestFactory,
         TimeSpan pollInterval,
-        TimeSpan requestTimeout,
         Func<ServerConfiguration, bool> applyConfiguration,
         string? environment = null,
         TracerSettings.SettingsManager? settingsManager = null,
@@ -83,7 +81,6 @@ internal sealed class AgentlessConfigurationSource : IDisposable
         _endpoint = endpoint;
         _requestFactory = requestFactory;
         _pollInterval = pollInterval;
-        _requestTimeout = requestTimeout;
         _applyConfiguration = applyConfiguration;
         _requestUri = endpoint.BuildRequestUri(environment);
         _waitAsync = waitAsync ?? Task.Delay;
@@ -126,7 +123,6 @@ internal sealed class AgentlessConfigurationSource : IDisposable
             endpoint,
             CreateRequestFactory(endpoint, settings),
             settings.PollInterval,
-            settings.RequestTimeout,
             applyConfiguration,
             manager.InitialMutableSettings.Environment,
             manager);
@@ -324,28 +320,7 @@ internal sealed class AgentlessConfigurationSource : IDisposable
                 request.AddHeader("If-None-Match", etag);
             }
 
-#if NETCOREAPP
-            // HttpClient.Timeout applies to async calls, so no explicit race is needed.
             using var response = await request.GetAsync().ConfigureAwait(false);
-#else
-            // HttpWebRequest.Timeout does not apply to async calls (GetResponseAsync), so we race
-            // the request against an explicit delay to bound the wait on net461/netstandard2.0.
-            var getTask = request.GetAsync();
-            var timeoutTask = Task.Delay(_requestTimeout);
-
-            if (await Task.WhenAny(getTask, timeoutTask).ConfigureAwait(false) == timeoutTask)
-            {
-                // The request is still in flight. Dispose the response when it eventually completes
-                // (success or fault) so the underlying connection is released.
-                _ = getTask.ContinueWith(
-                    t => { try { using var r = t.Result; } catch { } },
-                    TaskContinuationOptions.None);
-
-                return new PollResult(statusCode: null, etag: null, configuration: null, parseError: null, error: new TimeoutException($"Feature Flags agentless request timed out after {_requestTimeout.TotalSeconds}s"));
-            }
-
-            using var response = await getTask.ConfigureAwait(false);
-#endif
 
             // Only a 200 carries configuration; other bodies are never decoded as one. The payload
             // is parsed here, while the response is still open, so it never has to be held as a
