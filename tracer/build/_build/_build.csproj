@@ -73,10 +73,6 @@
     <Content Include="..\..\..\.gitlab\benchmarks\*" Link="ci\.gitlab\benchmarks\%(Filename)%(Extension)" />
     <Content Include="..\..\build_in_docker.sh" Link="boot\build_in_docker.sh" />
     <Content Include="..\..\build_in_docker.ps1" Link="boot\build_in_docker.ps1" />
-    <Content Include="..\..\..\.github\CODEOWNERS" Condition="Exists('..\..\..\.github\CODEOWNERS')" Link="CodeOwners\CODEOWNERS">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-   
   </ItemGroup>
 
   <ItemGroup>

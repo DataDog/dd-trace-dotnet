@@ -4,7 +4,6 @@ using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
-using CodeOwners;
 using Microsoft.Extensions.FileSystemGlobbing;
 using Newtonsoft.Json;
 using Nuke.Common;
@@ -18,29 +17,12 @@ partial class Build : NukeBuild
 {
     private const string TracerArea = "Tracer";
     private const string AsmArea = "ASM";
-    private const string TracingDotnet = "@DataDog/tracing-dotnet";
-    private const string ASMDotnet = "@DataDog/asm-dotnet";
-    private const string DebuggerDotnet = "@DataDog/debugger-dotnet";
-    private const string ProfilerDotnet = "@DataDog/profiling-dotnet";
-
-    class ChangedTeamValue
-    {
-        public string VariableName { get; set; }
-        public string TeamName { get; set; }
-        public bool IsChanged { get; set; }
-    }
-
-    static private ChangedTeamValue[] _changedTeamValue = new ChangedTeamValue[]
-    {
-        new ChangedTeamValue { VariableName = "isAsmChanged", TeamName = ASMDotnet},
-        new ChangedTeamValue { VariableName = "isTracerChanged", TeamName = TracingDotnet},
-        new ChangedTeamValue { VariableName = "isDebuggerChanged", TeamName = DebuggerDotnet},
-        new ChangedTeamValue { VariableName = "isProfilerChanged", TeamName = ProfilerDotnet},
-    };
 
     Target GenerateVariables
         => _ =>
         {
+            bool asmChanged = false;
+
             return _
                   .Unlisted()
                   .Executes(() =>
@@ -55,60 +37,49 @@ partial class Build : NukeBuild
                        GenerateIntegrationTestsDebuggerArm64Matrices();
                    });
 
-            bool CommonTracerChanges(string[] changedFiles, CodeOwnersParser codeOwners)
-            {
-                // These folders are owned by @DataDog/tracing-dotnet but changes should not affect ASM functionality
-                string[] nonCommonDirectories = new[]
-                {
-                    "tracer/test/",
-                    "tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/",
-                    "tracer/src/Datadog.Trace.", // Does not match the main tracer project
-                    "tracer/src/Datadog.Trace/Agent/",
-                    "tracer/src/Datadog.Trace/ContinuousProfiler/",
-                    "tracer/src/Datadog.Trace/Generated/",
-                    "tracer/src/Datadog.Trace/Logging/",
-                    "tracer/src/Datadog.Trace/OpenTelemetry/",
-                    "tracer/src/Datadog.Trace/PDBs/",
-                    "tracer/src/Datadog.Trace/LibDatadog/",
-                    "tracer/src/Datadog.Trace/FaultTolerant/",
-                    "tracer/src/Datadog.Trace/DogStatsd/",
-                };
-
-                // Directories that are not explicitelly owned by ASM but are common to both teams
-                string[] commonDirectories = new[]
-{
-                    "tracer/test/Datadog.Trace.TestHelpers/",
-                };
-
-                foreach (var file in changedFiles)
-                {
-                    if ((codeOwners.Match("/" + file)?.Owners.Contains(TracingDotnet) is true) &&
-                        (commonDirectories.Any(x => file.StartsWith(x, StringComparison.OrdinalIgnoreCase)) ||
-                        !nonCommonDirectories.Any(x => file.StartsWith(x, StringComparison.OrdinalIgnoreCase))
-                        ))
-                    {
-                        Logger.Information($"File {file} was detected as common.");
-                        return true;
-                    }
-                }
-
-                return false;
-            }
-
             void GenerateConditionVariables()
             {
-                CodeOwnersParser codeOwners = new(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "CodeOwners", "CODEOWNERS"));
+                asmChanged = GenerateConditionVariableBasedOnGitChange("isAsmChanged", IsAsmChanged);
 
-                foreach(var changedTeamValue in _changedTeamValue)
+                // Test selection is independent of review ownership. CODEOWNERS may identify a specific
+                // accountable team without changing which product tests should run.
+                GenerateConditionVariableBasedOnGitChange("isTracerChanged", changedFiles => IsExplorationTestChanged(global::ExplorationTestUseCase.Tracer, changedFiles));
+                GenerateConditionVariableBasedOnGitChange("isDebuggerChanged", changedFiles => IsExplorationTestChanged(global::ExplorationTestUseCase.Debugger, changedFiles));
+                GenerateConditionVariableBasedOnGitChange("isProfilerChanged", changedFiles => IsExplorationTestChanged(global::ExplorationTestUseCase.ContinuousProfiler, changedFiles));
+
+                bool IsAsmChanged(string[] changedFiles)
                 {
-                    GenerateConditionVariableBasedOnGitChange(changedTeamValue, codeOwners);
+                    foreach (var changedFile in changedFiles)
+                    {
+                        if (AsmTestChangeDetector.IsMatch(changedFile))
+                        {
+                            Logger.Information($"File {changedFile} affects ASM tests.");
+                            return true;
+                        }
+                    }
+
+                    return false;
                 }
 
-                void GenerateConditionVariableBasedOnGitChange(ChangedTeamValue changedTeamValue, CodeOwnersParser codeOwners)
+                bool IsExplorationTestChanged(global::ExplorationTestUseCase useCase, string[] changedFiles)
+                {
+                    foreach (var changedFile in changedFiles)
+                    {
+                        if (ExplorationTestChangeDetector.IsMatch(useCase, changedFile))
+                        {
+                            Logger.Information($"File {changedFile} affects {useCase} exploration tests.");
+                            return true;
+                        }
+                    }
+
+                    return false;
+                }
+
+                bool GenerateConditionVariableBasedOnGitChange(string variableName, Func<string[], bool> hasRelevantChanges)
                 {
                     var baseBranch = string.IsNullOrEmpty(TargetBranch) ? ReleaseBranchForCurrentVersion() : $"origin/{TargetBranch}";
                     bool isChanged = false;
-                    var forceExplorationTestsWithVariableName = $"force_run_tests_with_{changedTeamValue.VariableName}";
+                    var forceExplorationTestsWithVariableName = $"force_run_tests_with_{variableName}";
 
                     if (Environment.GetEnvironmentVariable("BUILD_REASON") == "Schedule" && bool.Parse(Environment.GetEnvironmentVariable("isMainBranch") ?? "false"))
                     {
@@ -129,32 +100,14 @@ partial class Build : NukeBuild
                     else
                     {
                         var changedFiles = GetGitChangedFiles(baseBranch);
-                        // Choose changedFiles that meet any of the filters => Choose changedFiles that DON'T meet any of the exclusion filters
-
-                        if (changedTeamValue.TeamName == ASMDotnet && CommonTracerChanges(changedFiles, codeOwners))
-                        {
-                            isChanged = true;
-                            Logger.Information($"ASM tests will be launched based on common changes.");
-                        }
-                        else
-                        {
-                            foreach (var changedFile in changedFiles)
-                            {
-                                if (codeOwners.Match("/" + changedFile)?.Owners.Contains(changedTeamValue.TeamName) == true)
-                                {
-                                    Logger.Information($"File {changedFile} is owned by {changedTeamValue.TeamName}");
-                                    isChanged = true;
-                                    break;
-                                }
-                            }
-                        }
+                        isChanged = hasRelevantChanges(changedFiles);
                     }
 
-                    Logger.Information($"{changedTeamValue.VariableName} - {isChanged}");
+                    Logger.Information($"{variableName} - {isChanged}");
                     var variableValue = isChanged.ToString();
-                    EnvironmentInfo.SetVariable(changedTeamValue.VariableName, variableValue);
-                    AzurePipelines.Instance.SetOutputVariable(changedTeamValue.VariableName, variableValue);
-                    changedTeamValue.IsChanged = isChanged;
+                    EnvironmentInfo.SetVariable(variableName, variableValue);
+                    AzurePipelines.Instance.SetOutputVariable(variableName, variableValue);
+                    return isChanged;
                 }
             }
 
@@ -194,7 +147,7 @@ partial class Build : NukeBuild
             {
                 if (area == AsmArea)
                 {
-                    return _changedTeamValue.First(x => x.TeamName == ASMDotnet).IsChanged;
+                    return asmChanged;
                 }
 
                 return true;
