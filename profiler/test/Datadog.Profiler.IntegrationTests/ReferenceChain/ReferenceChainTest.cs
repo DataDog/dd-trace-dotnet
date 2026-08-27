@@ -204,7 +204,8 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
             var binByStem = binFiles.ToDictionary(f => Path.GetFileNameWithoutExtension(f), f => f);
             var commonStems = jsonByStem.Keys.Intersect(binByStem.Keys).ToList();
 
-            Assert.True(commonStems.Count > 0,
+            Assert.True(
+                commonStems.Count > 0,
                 "No matching JSON/binary file pairs found (expected same filename stem for both formats)");
 
             foreach (var stem in commonStems)

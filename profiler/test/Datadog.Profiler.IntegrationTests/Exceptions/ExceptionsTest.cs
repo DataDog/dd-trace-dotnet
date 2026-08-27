@@ -71,7 +71,7 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
                         new StackFrame("|lm:Samples.ExceptionGenerator |ns:Samples.ExceptionGenerator |ct:ParallelExceptionsScenario |cg: |fn:ThrowExceptions |fg: |sg:(object state)"));
                 }
             }
-            else if (framework =="net10.0")
+            else if (framework == "net10.0")
             {
                 if (IntPtr.Size == 4)
                 {
@@ -146,7 +146,7 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
                 total.Should().Be(expectedExceptionCount);
             }
         }
-    
+
         [Flaky("Flaky on ARM64")]
         [TestAppFact("Samples.ExceptionGenerator")]
         public void ThrowExceptionsInParallelWithCustomGetFunctionFromIp(string appName, string framework, string appAssembly)
@@ -698,6 +698,7 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
                         break;
                     }
                 }
+
                 if (matched)
                 {
                     break;
