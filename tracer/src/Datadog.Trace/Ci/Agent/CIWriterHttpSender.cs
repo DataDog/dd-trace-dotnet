@@ -8,6 +8,7 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
+using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.Transports;
@@ -24,12 +25,12 @@ namespace Datadog.Trace.Ci.Agent;
 
 internal sealed class CIWriterHttpSender : ICIVisibilityProtocolWriterSender
 {
-    private const string ApiKeyHeader = "dd-api-key";
     private const string EvpSubdomainHeader = "X-Datadog-EVP-Subdomain";
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<CIWriterHttpSender>();
 
     private readonly IApiRequestFactory _apiRequestFactory;
     private readonly bool _isDebugEnabled;
+    private int _apiKeyTransportRejected;
 
     public CIWriterHttpSender(IApiRequestFactory apiRequestFactory)
     {
@@ -91,6 +92,11 @@ internal sealed class CIWriterHttpSender : ICIVisibilityProtocolWriterSender
 
     private async Task SendPayloadAsync<T>(EventPlatformPayload payload, Func<IApiRequest, EventPlatformPayload, T, Task<IApiResponse>> senderFunc, T state)
     {
+        if (Volatile.Read(ref _apiKeyTransportRejected) != 0)
+        {
+            return;
+        }
+
         // retry up to 5 times with exponential back-off
         const int retryLimit = 5;
         var retryCount = 1;
@@ -111,10 +117,12 @@ internal sealed class CIWriterHttpSender : ICIVisibilityProtocolWriterSender
                 {
                     request.AddHeader(EvpSubdomainHeader, payload.EventPlatformSubdomain);
                 }
-                else
-                {
-                    request.AddHeader(ApiKeyHeader, TestOptimization.Instance.Settings.ApiKey);
-                }
+            }
+            catch (ApiKeyHttpTransportException ex)
+            {
+                DisableForUnsafeApiKeyTransport(ex);
+                TelemetryFactory.Metrics.RecordCountCIVisibilityEndpointPayloadDropped(payload.TelemetryEndpoint);
+                return;
             }
             catch (Exception ex)
             {
@@ -130,6 +138,12 @@ internal sealed class CIWriterHttpSender : ICIVisibilityProtocolWriterSender
             try
             {
                 statusCode = await SendPayloadAsync(senderFunc, request, payload, state, isFinalTry).ConfigureAwait(false);
+            }
+            catch (ApiKeyHttpTransportException ex)
+            {
+                DisableForUnsafeApiKeyTransport(ex);
+                TelemetryFactory.Metrics.RecordCountCIVisibilityEndpointPayloadDropped(payload.TelemetryEndpoint);
+                return;
             }
             catch (Exception ex)
             {
@@ -182,6 +196,14 @@ internal sealed class CIWriterHttpSender : ICIVisibilityProtocolWriterSender
 
             Log.Debug<string>("Successfully sent events to {AgentEndpoint}", _apiRequestFactory.Info(url));
             return;
+        }
+    }
+
+    private void DisableForUnsafeApiKeyTransport(ApiKeyHttpTransportException exception)
+    {
+        if (Interlocked.Exchange(ref _apiKeyTransportRejected, 1) == 0)
+        {
+            Log.Error(exception, "Disabling CI Visibility agentless uploads because the API-key transport is unsafe.");
         }
     }
 

@@ -53,12 +53,17 @@ namespace Datadog.Trace.Agent.Transports
                 request.Timeout = (int)_timeout.Value.TotalMilliseconds;
             }
 
+            var hasApiKeyHeader = false;
             foreach (var pair in _defaultHeaders)
             {
                 request.Headers.Add(pair.Key, pair.Value);
+                if (string.Equals(pair.Key, ApiKeyHttpTransportGuard.ApiKeyHeaderName, StringComparison.OrdinalIgnoreCase))
+                {
+                    hasApiKeyHeader = true;
+                }
             }
 
-            return new ApiWebRequest(request);
+            return new ApiWebRequest(request, hasApiKeyHeader);
         }
 
         public void SetProxy(WebProxy proxy, NetworkCredential credential)
