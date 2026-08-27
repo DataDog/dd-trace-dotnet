@@ -17,7 +17,7 @@
     <!-- OpenFeature v2.3.0  = Datadog.FeatureFlags.OpenFeature 2.3.1 (patch release)-->    
     <!-- OpenFeature v2.3.1  = Datadog.FeatureFlags.OpenFeature 2.3.100 (Open Feature patch)-->    
     <!-- OpenFeature v2.3.1  = Datadog.FeatureFlags.OpenFeature 2.3.101 (Open Feature patch + dd patch)-->    
-    <Version>2.3.0</Version>
+    <Version>2.3.1</Version>
     <!-- These target frameworks should match the values exposed in the OpenFeature package referenced below-->
     <TargetFrameworks>net462;netstandard2.0;net8.0;net9.0</TargetFrameworks>
   </PropertyGroup>
@@ -36,6 +36,7 @@
   <ItemGroup>
     <Compile Include="..\Datadog.Trace\FeatureFlags\EvaluationReason.cs" Link="Sdk\EvaluationReason.cs" />
     <Compile Include="..\Datadog.Trace\FeatureFlags\FeatureFlagMetadataKeys.cs" Link="Sdk\FeatureFlagMetadataKeys.cs" />
+    <Compile Include="..\Datadog.Trace\FeatureFlags\FeatureEvaluationPrivacy.cs" Link="Sdk\FeatureEvaluationPrivacy.cs" />
     <Compile Include="..\Datadog.Trace\FeatureFlags\IEvaluation.cs" Link="Sdk\IEvaluation.cs" />
     <Compile Include="..\Datadog.Trace\FeatureFlags\ValueType.cs" Link="Sdk\ValueType.cs" />
   </ItemGroup>

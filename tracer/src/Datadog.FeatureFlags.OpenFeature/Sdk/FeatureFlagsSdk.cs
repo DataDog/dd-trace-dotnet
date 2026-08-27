@@ -24,6 +24,29 @@ namespace Datadog.FeatureFlags.OpenFeature;
 [Browsable(false)]
 internal static class FeatureFlagsSdk
 {
+    /// <summary>
+    /// Metadata key carrying the evaluation timestamp (Unix milliseconds), stamped at provider
+    /// entry so the EVP hook records evaluation time rather than the later hook-fire time.
+    /// </summary>
+    internal const string MetadataEvalTimeKey = "dd.eval.timestamp_ms";
+
+    /// <summary>
+    /// Enqueues one flag evaluation into the auto-instrumented EVP aggregation pipeline.
+    /// This stub is a no-op when only the standalone package is loaded.
+    /// </summary>
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    internal static void EnqueueEVP(
+        string flagKey,
+        string? variant,
+        string? allocationKey,
+        string? targetingKey,
+        string? errorMessage,
+        long evalTimeMs,
+        bool observeFullEvaluationData,
+        IDictionary<string, object?>? contextAttrs)
+    {
+    }
+
     /// <summary> Gets a value indicating whether FeatureFlags framework is available or not </summary>
     /// <returns> True if FeatureFlagsSDK is instrumented </returns>
     [MethodImpl(MethodImplOptions.NoInlining)]
@@ -75,8 +98,11 @@ internal static class FeatureFlagsSdk
     {
     }
 
-    public static ResolutionDetails<T> Resolve<T>(string flagKey, Trace.FeatureFlags.ValueType targetType, object? defaultValue, EvaluationContext? context) =>
-        GetResolutionDetails<T>(Evaluate(flagKey, targetType, defaultValue, context?.TargetingKey, GetContextAttributes(context)));
+    public static ResolutionDetails<T> Resolve<T>(string flagKey, Trace.FeatureFlags.ValueType targetType, object? defaultValue, EvaluationContext? context)
+    {
+        var evalTimeMs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        return GetResolutionDetails<T>(Evaluate(flagKey, targetType, defaultValue, context?.TargetingKey, GetContextAttributes(context)), evalTimeMs);
+    }
 
     private static IDictionary<string, object?>? GetContextAttributes(EvaluationContext? context)
     {
@@ -97,7 +123,7 @@ internal static class FeatureFlagsSdk
         _ => value.AsObject,
     };
 
-    private static ResolutionDetails<T> GetResolutionDetails<T>(Datadog.Trace.FeatureFlags.IEvaluation? evaluation)
+    private static ResolutionDetails<T> GetResolutionDetails<T>(Datadog.Trace.FeatureFlags.IEvaluation? evaluation, long evalTimeMs)
     {
         if (evaluation is null)
         {
@@ -108,24 +134,41 @@ internal static class FeatureFlagsSdk
                         default,
                         default,
                         "FeatureFlagsSdk is disabled",
-                        null);
+                        ToMetadata(null, evalTimeMs));
         }
 
         var value = typeof(T) == typeof(Value) ? JsonToValue(evaluation.Value) : evaluation.Value!;
+        string? metadataErrorCode = null;
+        evaluation.FlagMetadata?.TryGetValue("errorCode", out metadataErrorCode);
         var res = new ResolutionDetails<T>(
             evaluation.FlagKey,
             (T)value,
-            ToErrorType(evaluation.Reason, evaluation.Error),
+            ToErrorType(evaluation.Reason, metadataErrorCode, evaluation.Error),
             ReasonToLowerSnakeCase(evaluation.Reason),
             evaluation.Variant,
             evaluation.Error,
-            ToMetadata(evaluation.FlagMetadata));
+            ToMetadata(evaluation.FlagMetadata, evalTimeMs));
         return res;
     }
 
-    private static ErrorType ToErrorType(Datadog.Trace.FeatureFlags.EvaluationReason reason, string? errorMessage)
+    private static ErrorType ToErrorType(Datadog.Trace.FeatureFlags.EvaluationReason reason, string? metadataErrorCode, string? errorMessage)
     {
-        return errorMessage switch
+        var metadataErrorType = StableCodeToErrorType(metadataErrorCode);
+        if (metadataErrorType != ErrorType.None)
+        {
+            return metadataErrorType;
+        }
+
+        var messageErrorType = StableCodeToErrorType(errorMessage);
+        if (messageErrorType != ErrorType.None)
+        {
+            return messageErrorType;
+        }
+
+        return reason == Datadog.Trace.FeatureFlags.EvaluationReason.Error ? ErrorType.General : ErrorType.None;
+    }
+
+    private static ErrorType StableCodeToErrorType(string? errorCode) => errorCode switch
         {
             "FLAG_NOT_FOUND" => ErrorType.FlagNotFound,
             "INVALID_CONTEXT" => ErrorType.InvalidContext,
@@ -137,7 +180,6 @@ internal static class FeatureFlagsSdk
             "GENERAL" => ErrorType.General,
             _ => ErrorType.None,
         };
-    }
 
     // Converts EvaluationReason enum to lower_snake_case string for OpenFeature Reason field.
     // Uses cached strings to avoid allocation.
@@ -154,9 +196,15 @@ internal static class FeatureFlagsSdk
         _ => "unknown"
     };
 
-    private static ImmutableMetadata ToMetadata(IDictionary<string, string>? metadata)
+    private static ImmutableMetadata ToMetadata(IDictionary<string, string>? metadata, long evalTimeMs)
     {
-        var dic = (metadata ?? new Dictionary<string, string>()).ToDictionary(p => p.Key, p => (object)p.Value);
+        var dic = (metadata ?? new Dictionary<string, string>())
+                 .ToDictionary(
+                      pair => pair.Key,
+                      pair => pair.Key == FeatureFlagMetadataKeys.ObserveFullEvaluationData
+                                  ? (object)string.Equals(pair.Value, "true", StringComparison.Ordinal)
+                                  : pair.Value);
+        dic[MetadataEvalTimeKey] = evalTimeMs.ToString(System.Globalization.CultureInfo.InvariantCulture);
         return new ImmutableMetadata(dic);
     }
 

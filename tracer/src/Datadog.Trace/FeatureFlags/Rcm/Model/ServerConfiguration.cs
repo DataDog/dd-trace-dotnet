@@ -5,7 +5,7 @@
 
 #nullable enable
 
-using System;
+using System.Runtime.Serialization;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.FeatureFlags.Rcm.Model;
@@ -18,11 +18,56 @@ internal sealed class ServerConfiguration
 
     public Environment? Environment { get; set; }
 
+    [JsonConverter(typeof(StrictBooleanTrueJsonConverter))]
+    public bool ObserveFullEvaluationData { get; set; }
+
     [JsonConverter(typeof(FlagCollectionJsonConverter))]
     public FlagCollection? Flags { get; set; }
 
+    [JsonIgnore]
+    internal bool HasSnapshottedPrivacyConsent { get; private set; }
+
+    [JsonIgnore]
+    private bool HasPrivacyConsentSource { get; set; }
+
+    internal void SnapshotPrivacyConsent()
+    {
+        if (HasSnapshottedPrivacyConsent)
+        {
+            return;
+        }
+
+        if (Flags is not null)
+        {
+            foreach (var pair in Flags.ValidFlags)
+            {
+                pair.Value.ObserveFullEvaluationData = ObserveFullEvaluationData;
+            }
+        }
+
+        HasSnapshottedPrivacyConsent = true;
+        HasPrivacyConsentSource = true;
+    }
+
     internal void Merge(ServerConfiguration other)
     {
+        var hasExistingPrivacyConsentSource = HasPrivacyConsentSource
+                                            || HasSnapshottedPrivacyConsent
+                                            || Flags is not null
+                                            || CreatedAt is not null
+                                            || Format is not null
+                                            || Environment is not null;
+        SnapshotPrivacyConsent();
+        other.SnapshotPrivacyConsent();
+
+        // A missing/invalid flag has no per-flag snapshot, so it uses the merged UFC root consent.
+        // Fail closed unless every contributing source opted in. The first merge into an empty
+        // accumulator adopts the source value so the result is independent of source order.
+        ObserveFullEvaluationData = hasExistingPrivacyConsentSource
+                                        ? ObserveFullEvaluationData && other.ObserveFullEvaluationData
+                                        : other.ObserveFullEvaluationData;
+        HasPrivacyConsentSource = true;
+
         if (other.CreatedAt is not null)
         {
             CreatedAt = other.CreatedAt;
@@ -47,5 +92,10 @@ internal sealed class ServerConfiguration
         {
             Flags.Merge(other.Flags);
         }
+
+        HasSnapshottedPrivacyConsent = true;
     }
+
+    [OnDeserialized]
+    internal void OnDeserialized(StreamingContext context) => SnapshotPrivacyConsent();
 }
