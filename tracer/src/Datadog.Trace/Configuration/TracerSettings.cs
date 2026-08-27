@@ -811,6 +811,10 @@ namespace Datadog.Trace.Configuration
                 .WithKeys(ConfigurationKeys.OpenTelemetry.OtelSemanticsEnabled)
                 .AsBool(defaultValue: false);
 
+            OtelThreadContextEnabled = config
+                .WithKeys(ConfigurationKeys.OpenTelemetry.OtelThreadContextEnabled)
+                .AsBool(defaultValue: false);
+
             if (OtelSemanticsEnabled)
             {
                 // OpenTelemetry semantics mode already fully replaces Datadog attribute naming and values,
@@ -1301,6 +1305,14 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         /// <seealso cref="ConfigurationKeys.OpenTelemetry.OtelSemanticsEnabled"/>
         internal bool OtelSemanticsEnabled { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether the active trace and span identifiers of each thread are published
+        /// using the OpenTelemetry thread context protocol (OTEP 4947).
+        /// Only supported on Linux x64 and arm64. Default is <c>false</c>.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.OpenTelemetry.OtelThreadContextEnabled"/>
+        internal bool OtelThreadContextEnabled { get; }
 
         /// <summary>
         /// Gets the comma separated list of url patterns to skip tracing.

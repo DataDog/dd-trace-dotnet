@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.Runtime.InteropServices;
 using Datadog.Trace.Iast.Analyzers;
 
@@ -260,6 +261,22 @@ namespace Datadog.Trace.ClrProfiler
             return true;
         }
 
+        /// <summary>
+        /// Gets the address of the calling thread's <c>otel_thread_ctx_v1</c> slot, as required by OTEP 4947,
+        /// or <see cref="IntPtr.Zero"/> when the current platform does not publish the symbol.
+        /// See docs/OTelContextPropagation.md.
+        /// </summary>
+        public static IntPtr GetOtelThreadContextSlot()
+        {
+            // the symbol is only defined on Linux, matching the scope of OTEP 4947
+            if (IsWindows)
+            {
+                return IntPtr.Zero;
+            }
+
+            return NonWindows.GetOtelThreadContextSlot();
+        }
+
         // the "dll" extension is required on .NET Framework
         // and optional on .NET Core
         // The DllImport methods are re-written by cor_profiler to have the correct vales
@@ -350,6 +367,9 @@ namespace Datadog.Trace.ClrProfiler
 
             [DllImport("Datadog.Tracer.Native")]
             public static extern long GetInodeForPath([MarshalAs(UnmanagedType.LPWStr)]string path);
+
+            [DllImport("Datadog.Tracer.Native")]
+            public static extern IntPtr GetOtelThreadContextSlot();
         }
     }
 }
