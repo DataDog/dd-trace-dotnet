@@ -9,6 +9,7 @@ using System;
 using System.Collections.Generic;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Tagging;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Sampling
 {
@@ -18,9 +19,11 @@ namespace Datadog.Trace.Sampling
     {
         private const string DefaultKey = "service:,env:";
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<AgentSamplingRule>();
+        private static readonly TimeSpan RampUpInterval = TimeSpan.FromSeconds(1);
 
         private Dictionary<SampleRateKey, float> _sampleRates = new();
         private float? _defaultSamplingRate;
+        private DateTime _lastCapped;
 
         // if there are no rules, this normally means we haven't sent any payloads to the Agent yet (aka cold start), so the mechanism is "Default".
         // if there are rules, there should always be at least one match (the fallback "service:,env:") and the mechanism is "AgentRate".
@@ -57,6 +60,29 @@ namespace Datadog.Trace.Sampling
             return 1;
         }
 
+        /// <summary>
+        /// Returns a rate that is at most 2x the old rate when increasing.
+        /// Rate decreases and transitions from zero are applied immediately.
+        /// When <paramref name="canIncrease"/> is false (cooldown not elapsed), increases are held at <paramref name="oldRate"/>.
+        /// </summary>
+        internal static bool CappedRate(float oldRate, float newRate, bool canIncrease, out float effectiveRate)
+        {
+            if (newRate <= oldRate || oldRate == 0)
+            {
+                effectiveRate = newRate;
+                return false;
+            }
+
+            if (!canIncrease)
+            {
+                effectiveRate = oldRate;
+                return fase;
+            }
+
+            effectiveRate = Math.Min(oldRate * 2, newRate);
+            return true;
+        }
+
         public void SetDefaultSampleRates(IReadOnlyDictionary<string, float> sampleRates)
         {
             if (sampleRates is not { Count: > 0 })
@@ -70,11 +96,16 @@ namespace Datadog.Trace.Sampling
             var rates = new Dictionary<SampleRateKey, float>(sampleRates.Count);
             var defaultSamplingRate = _defaultSamplingRate;
 
+            var now = Clock.UtcNow;
+            var canIncrease = (now - _lastCapped) >= RampUpInterval;
+            var capApplied = false;
+
             foreach (var pair in sampleRates)
             {
                 if (string.Equals(pair.Key, DefaultKey, StringComparison.OrdinalIgnoreCase))
                 {
-                    defaultSamplingRate = pair.Value;
+                    var oldDefault = _defaultSamplingRate ?? 1f;
+                    capApplied = CappedRate(oldDefault, pair.Value, canIncrease, out defaultSamplingRate) || capApplied;
                     continue;
                 }
 
@@ -86,7 +117,18 @@ namespace Datadog.Trace.Sampling
                     continue;
                 }
 
-                rates.Add(key.Value, pair.Value);
+                if (!_sampleRates.TryGetValue(key.Value, out var oldRate))
+                {
+                    oldRate = _defaultSamplingRate ?? 1f;
+                }
+
+                capApplied = CappedRate(oldRate, pair.Value, canIncrease, out var effectiveRate) || capApplied;
+                rates.Add(key.Value, effectiveRate);
+            }
+
+            if (capApplied)
+            {
+                _lastCapped = now;
             }
 
             _defaultSamplingRate = defaultSamplingRate;
