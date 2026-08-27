@@ -938,21 +938,20 @@ public class CodeOwnersSpecTests
         Match(codeOwners, matchingPath).Should().Equal(["@slow"], "a difficult non-match must not disable the rule globally");
 
         const int concurrentWorkerCount = 4;
-        using var startSignal = new ManualResetEventSlim();
-        // Dedicated threads keep this check independent of the shared ThreadPool used by the test runner.
+        using var startBarrier = new Barrier(concurrentWorkerCount);
+        // The barrier releases all dedicated threads together without relying on the shared ThreadPool.
         var concurrentMatches = Enumerable.Range(0, concurrentWorkerCount)
                                           .Select(
                                                _ => Task.Factory.StartNew(
                                                    () =>
                                                    {
-                                                       startSignal.Wait();
+                                                       startBarrier.SignalAndWait(TestTimeout).Should().BeTrue("all workers must be ready before matching starts");
                                                        return Match(codeOwners, nonMatchingPath);
                                                    },
                                                    CancellationToken.None,
                                                    TaskCreationOptions.LongRunning,
                                                    TaskScheduler.Default))
                                           .ToArray();
-        startSignal.Set();
 
         Task.WaitAll(concurrentMatches, TestTimeout).Should().BeTrue("concurrent matching must not deadlock");
         foreach (var concurrentMatch in concurrentMatches)
