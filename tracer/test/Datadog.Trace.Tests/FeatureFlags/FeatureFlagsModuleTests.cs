@@ -305,6 +305,7 @@ public class FeatureFlagsModuleTests
         var collection = new NameValueCollection
         {
             { ConfigurationKeys.FeatureFlags.FeatureFlagsConfigurationSource, "remote_config" },
+            { ConfigurationKeys.Rcm.RemoteConfigurationEnabled, "true" },
 #pragma warning disable 618 // superseded, but still honoured for existing adopters
             { ConfigurationKeys.FeatureFlags.FlaggingProviderEnabled, "true" },
 #pragma warning restore 618

@@ -7,15 +7,12 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Datadog.Trace.Agent;
-using Datadog.Trace.Agent.Transports;
+using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.FeatureFlags.Evp;
 using Datadog.Trace.FeatureFlags.Exposure.Model;
-using Datadog.Trace.HttpOverStreams;
 using Datadog.Trace.Logging;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
@@ -28,7 +25,6 @@ internal sealed class ExposureApi : IDisposable
     internal static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ExposureApi));
 
     private const int DefaultCapacity = 1 << 16; // 65536 elements
-    public const string ExposurePath = "evp_proxy/v2/api/v2/exposures";
     [TestingAndPrivateOnly]
     internal static readonly JsonSerializerSettings SerializerSettings = new()
     {
@@ -44,39 +40,22 @@ internal sealed class ExposureApi : IDisposable
     private readonly Queue<ExposureEvent> _exposures = new Queue<ExposureEvent>();
 
     private readonly ExposureCache _exposureCache = new ExposureCache(DefaultCapacity);
-    private IApiRequestFactory _apiRequestFactory;
+    private readonly FeatureFlagsEvpTransport _transport;
     private Dictionary<string, string> _context;
     private int _started;
 
-    internal ExposureApi(TracerSettings tracerSettings)
+    internal ExposureApi(TracerSettings tracerSettings, IDiscoveryService discoveryService)
     {
-        UpdateApi(tracerSettings.Manager.InitialExporterSettings);
+        _transport = new FeatureFlagsEvpTransport(tracerSettings, discoveryService);
         UpdateContext(tracerSettings.Manager.InitialMutableSettings);
 
         tracerSettings.Manager.SubscribeToChanges(changes =>
         {
-            if (changes.UpdatedExporter is { } exporter)
-            {
-                UpdateApi(exporter);
-            }
-
             if (changes.UpdatedMutable is { } mutable)
             {
                 UpdateContext(mutable);
             }
         });
-
-        [MemberNotNull(nameof(_apiRequestFactory))]
-        void UpdateApi(ExporterSettings exporterSettings)
-        {
-            Log.Debug("ExposureApi::UpdateApi-> Applying settings");
-            var apiRequestFactory = AgentTransportStrategy.Get(
-                exporterSettings,
-                productName: "FeatureFlags exposure",
-                tcpTimeout: TimeSpan.FromSeconds(5),
-                httpHeaderHelper: EventPlatformHeaderHelper.Instance);
-            Interlocked.Exchange(ref _apiRequestFactory!, apiRequestFactory);
-        }
 
         [MemberNotNull(nameof(_context))]
         void UpdateContext(MutableSettings settings)
@@ -95,6 +74,7 @@ internal sealed class ExposureApi : IDisposable
     public void Dispose()
     {
         _processExit.TrySetResult(true);
+        _transport.Dispose();
     }
 
     public void TryToStartSendLoopIfNotStarted()
@@ -114,13 +94,10 @@ internal sealed class ExposureApi : IDisposable
         {
             try
             {
-                var apiRequestFactory = _apiRequestFactory;
-                var uri = apiRequestFactory.GetEndpoint(ExposurePath);
                 var payload = TryGetPayload();
                 if (payload is not null)
                 {
-                    var request = apiRequestFactory.Create(uri);
-                    using var response = await request.PostAsJsonAsync(payload, MultipartCompression.GZip, SerializerSettings).ConfigureAwait(false);
+                    await _transport.SendAsync(payload, FeatureFlagsEvpTransport.ExposureIntakePath, SerializerSettings).ConfigureAwait(false);
                 }
             }
             catch (Exception ex)

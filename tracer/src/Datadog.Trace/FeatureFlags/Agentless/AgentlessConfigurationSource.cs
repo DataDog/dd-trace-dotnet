@@ -49,7 +49,7 @@ internal sealed class AgentlessConfigurationSource : IDisposable
     private readonly Func<ServerConfiguration, bool> _applyConfiguration;
     private readonly Func<TimeSpan, CancellationToken, Task> _waitAsync;
     private readonly CancellationTokenSource _shutdown = new();
-    private readonly Random _random = new();
+    private readonly Random _random = ThreadSafeRandom.Shared;
 
     // Only ever touched from the poll loop.
     private readonly HashSet<string> _loggedFailureCategories = new();
