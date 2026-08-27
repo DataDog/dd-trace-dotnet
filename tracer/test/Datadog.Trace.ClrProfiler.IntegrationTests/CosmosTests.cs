@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Datadog.Trace.ClrProfiler.IntegrationTests.Helpers;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
@@ -27,21 +28,18 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             SetServiceVersion("1.0.0");
         }
 
-        public static IEnumerable<object[]> GetEnabledConfig()
-            => from packageVersionArray in PackageVersions.CosmosDb
-               from metadataSchemaVersion in new[] { "v0", "v1" }
-               select new[] { packageVersionArray[0], metadataSchemaVersion };
-
         public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.IsCosmosDb(metadataSchemaVersion);
 
         [SkippableTheory]
-        [MemberData(nameof(GetEnabledConfig))]
+        [CombinatorialOrPairwiseData]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
         [Trait("Category", "LinuxUnsupported")]
         [Trait("Category", "ArmUnsupported")]
         [Trait("SkipInCI", "True")] // Cosmos emulator is too flaky in CI at the moment
-        public async Task SubmitTraces(string packageVersion, string metadataSchemaVersion)
+        public async Task SubmitTraces(
+            [PackageVersionData(nameof(PackageVersions.CosmosDb))] string packageVersion,
+            [MetadataSchemaVersionData] string metadataSchemaVersion)
         {
             var expectedSpanCount = 14;
 
