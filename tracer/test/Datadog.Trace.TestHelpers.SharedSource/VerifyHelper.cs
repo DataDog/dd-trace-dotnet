@@ -53,10 +53,6 @@ namespace Datadog.Trace.TestHelpers
 
         private static readonly Regex CodeOriginFilePathRegex = new(@"(?<prefix>_dd\.code_origin\.frames\.\d+\.file:\s*)(?<path>[^,\r\n]+)", RegOptions);
 
-        private static readonly Regex SpanEventTimeRegex = new(@"time_unix_nano"":([0-9]{10}[0-9]+)", RegOptions);
-
-        private static readonly Regex SpanEventStackTraceRegex = new(@"""exception\.stacktrace"":""(?:\\.|[^""\\])*""", RegOptions);
-
         /// <summary>
         /// With <see cref="Verify"/>, parameters are used as part of the filename.
         /// This method produces a "sanitised" version to remove problematic values

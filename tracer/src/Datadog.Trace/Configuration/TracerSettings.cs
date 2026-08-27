@@ -412,6 +412,11 @@ namespace Datadog.Trace.Configuration
                                 .WithKeys(ConfigurationKeys.SerializationBatchInterval)
                                 .AsInt32(defaultTraceBatchInterval);
 
+            // Parse the OpenTelemetry semantics mode early because it affects the RouteTemplateResourceNamesEnabled and SingleSpanAspNetCoreEnabled settings.
+            OtelSemanticsEnabled = config
+                .WithKeys(ConfigurationKeys.OpenTelemetry.OtelSemanticsEnabled)
+                .AsBool(defaultValue: false);
+
             RouteTemplateResourceNamesEnabled = config
                                                .WithKeys(ConfigurationKeys.FeatureFlags.RouteTemplateResourceNamesEnabled)
                                                .AsBool(defaultValue: true);
@@ -419,6 +424,24 @@ namespace Datadog.Trace.Configuration
             SingleSpanAspNetCoreEnabled = config
                                          .WithKeys(ConfigurationKeys.FeatureFlags.SingleSpanAspNetCoreEnabled)
                                          .AsBool(defaultValue: false);
+
+            if (OtelSemanticsEnabled && !RouteTemplateResourceNamesEnabled)
+            {
+                // OpenTelemetry semantics require that the server span has a low-cardinality name based only
+                // on HTTP request method and the route/template, so enable the route template resource names feature rather than expanding the route.
+                RouteTemplateResourceNamesEnabled = true;
+                telemetry.Record(ConfigurationKeys.FeatureFlags.RouteTemplateResourceNamesEnabled, true, ConfigurationOrigins.Calculated);
+            }
+
+            if (OtelSemanticsEnabled && !SingleSpanAspNetCoreEnabled)
+            {
+                // OpenTelemetry semantics require emitting only a single web server span per request,
+                // in line with the single-span ASP.NET Core observer logic we've previously written
+                // which emits a single root span per request with no aspnet_core_mvc.request child span.
+                SingleSpanAspNetCoreEnabled = true;
+                telemetry.Record(ConfigurationKeys.FeatureFlags.SingleSpanAspNetCoreEnabled, true, ConfigurationOrigins.Calculated);
+            }
+
 #if !NET6_0_OR_GREATER
             // single span aspnetcore is only supported in .NET 6+, so override for telemetry purposes
             if (SingleSpanAspNetCoreEnabled)
@@ -807,10 +830,6 @@ namespace Datadog.Trace.Configuration
             var explicitSpanMetrics = config.WithKeys(ConfigurationKeys.OpenTelemetry.TracesSpanMetricsEnabled).AsBool();
             OtelTracesSpanMetricsEnabled = explicitSpanMetrics
                 ?? (string.Equals(otelTracesExporter, "otlp", StringComparison.OrdinalIgnoreCase) && OpenTelemetryMetricsEnabled);
-
-            OtelSemanticsEnabled = config
-                .WithKeys(ConfigurationKeys.OpenTelemetry.OtelSemanticsEnabled)
-                .AsBool(defaultValue: false);
 
             if (OtelSemanticsEnabled)
             {

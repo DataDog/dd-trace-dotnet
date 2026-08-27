@@ -113,9 +113,7 @@ namespace Datadog.Trace.PlatformHelpers
 
         public Scope StartAspNetCorePipelineScope(Tracer tracer, Security security, Iast.Iast iast, HttpContext httpContext, string resourceName)
         {
-            // OpenTelemetry semantics require route-based span names, so they imply the endpoint tags
-            var routeTemplateResourceNames = tracer.Settings.RouteTemplateResourceNamesEnabled || tracer.Settings.OtelSemanticsEnabled;
-            var tags = routeTemplateResourceNames ? new AspNetCoreEndpointTags() : new AspNetCoreTags();
+            var tags = tracer.Settings.RouteTemplateResourceNamesEnabled ? new AspNetCoreEndpointTags() : new AspNetCoreTags();
             return StartAspNetCorePipelineScope(tracer, security, iast, httpContext, resourceName, tags, useSingleSpanRequestTracking: false);
         }
 
@@ -381,7 +379,7 @@ namespace Datadog.Trace.PlatformHelpers
                                 // with the status code, resource name, operation name etc that we set
                                 // by default on aspnetcore spans when _not_ using activities
                                 // We also don't want to override our standard aspnetcore/web tags.
-                                if (!IsKnownWebTag(kvp.Key))
+                                if (!IsKnownWebTag(kvp.Key, s.OpenTelemetrySemanticsEnabled))
                                 {
                                     OtlpHelpers.SetTagObject(s.Span, kvp.Key, kvp.Value, setKnownValues: false, remapOtelKeys: !s.OpenTelemetrySemanticsEnabled);
                                 }
@@ -403,7 +401,7 @@ namespace Datadog.Trace.PlatformHelpers
                                 // with the status code, resource name, operation name etc that we set
                                 // by default on aspnetcore spans when _not_ using activities
                                 // We also don't want to override our standard aspnetcore/web tags.
-                                if (!IsKnownWebTag(kvp.Key))
+                                if (!IsKnownWebTag(kvp.Key, s.OpenTelemetrySemanticsEnabled))
                                 {
                                     OtlpHelpers.SetTagObject(s.Span, kvp.Key, kvp.Value, setKnownValues: false, remapOtelKeys: !s.OpenTelemetrySemanticsEnabled);
                                 }
@@ -422,9 +420,11 @@ namespace Datadog.Trace.PlatformHelpers
             // for _all_ the tags we might set on aspnetcore root spans,
             // but we only both to check tags that are likely to be set here
             // (i.e. don't bother checking the aspnetcore. tags)
-            // The OpenTelemetry names are included because the ASP.NET Core activity emits them,
-            // and we set the same concepts ourselves when OTel semantics are enabled.
-            static bool IsKnownWebTag(string tagName) =>
+            // The OpenTelemetry semantic convention names are only known/set by this
+            // instrumentation when OTel semantics are enabled, so only filter those out
+            // in that case. Otherwise we'd drop the activity's own values instead of
+            // deduplicating them.
+            static bool IsKnownWebTag(string tagName, bool openTelemetrySemanticsEnabled) =>
                 tagName == Tags.HttpRoute
              || tagName == Tags.HttpUserAgent
              || tagName == Tags.HttpMethod
@@ -433,16 +433,17 @@ namespace Datadog.Trace.PlatformHelpers
              || tagName == Tags.HttpResponseStatusCode
              || tagName == Tags.NetworkClientIp
              || tagName == Tags.HttpClientIp
-             || tagName == Tags.HttpRequestMethod
-             || tagName == Tags.HttpRequestMethodOriginal
-             || tagName == Tags.UrlScheme
-             || tagName == Tags.UrlPath
-             || tagName == Tags.UrlQuery
-             || tagName == Tags.ServerAddress
-             || tagName == Tags.ServerPort
-             || tagName == Tags.UserAgentOriginal
-             || tagName == Tags.ClientAddress
-             || tagName == Tags.NetworkPeerAddress;
+             || (openTelemetrySemanticsEnabled
+              && (tagName == Tags.HttpRequestMethod
+               || tagName == Tags.HttpRequestMethodOriginal
+               || tagName == Tags.UrlScheme
+               || tagName == Tags.UrlPath
+               || tagName == Tags.UrlQuery
+               || tagName == Tags.ServerAddress
+               || tagName == Tags.ServerPort
+               || tagName == Tags.UserAgentOriginal
+               || tagName == Tags.ClientAddress
+               || tagName == Tags.NetworkPeerAddress));
         }
 
         /// <summary>

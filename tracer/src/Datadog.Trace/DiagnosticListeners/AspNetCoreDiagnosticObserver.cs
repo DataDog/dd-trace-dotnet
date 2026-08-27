@@ -472,8 +472,7 @@ namespace Datadog.Trace.DiagnosticListeners
              && typedArg.HttpContext is { } httpContext
              && httpContext.Items[AspNetCoreHttpRequestHandler.HttpContextTrackingKey] is AspNetCoreHttpRequestHandler.RequestTrackingFeature { RootScope.Span: { } rootSpan } trackingFeature)
             {
-                var otelSemanticsEnabled = _tracer.Settings.OtelSemanticsEnabled;
-                var routeTemplateResourceNamesEnabled = _tracer.Settings.RouteTemplateResourceNamesEnabled || otelSemanticsEnabled;
+                var routeTemplateResourceNamesEnabled = _tracer.Settings.RouteTemplateResourceNamesEnabled;
                 var isFirstExecution = trackingFeature.IsFirstPipelineExecution;
                 // Only modify tracking feature if _not_ using legacy feature names
                 if (isFirstExecution && routeTemplateResourceNamesEnabled)
@@ -578,7 +577,7 @@ namespace Datadog.Trace.DiagnosticListeners
                                       : null;
 
                 string resourceName;
-                if (otelSemanticsEnabled)
+                if (_tracer.Settings.OtelSemanticsEnabled)
                 {
                     // The OTel span name must be "{method} {http.route}", so use the route verbatim
                     // instead of the Datadog simplified route pattern. If there's no route, fall back
@@ -645,7 +644,7 @@ namespace Datadog.Trace.DiagnosticListeners
                 Span span = null;
                 if (integrationEnabled)
                 {
-                    if (!_tracer.Settings.RouteTemplateResourceNamesEnabled && !_tracer.Settings.OtelSemanticsEnabled)
+                    if (!_tracer.Settings.RouteTemplateResourceNamesEnabled)
                     {
                         // override the parent's resource name with the simplified MVC route template
                         rootSpan.ResourceName = GetLegacyResourceName(typedArg);
