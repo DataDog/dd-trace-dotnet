@@ -7,11 +7,15 @@
 
 using System;
 using System.Collections.Generic;
+using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.FeatureFlags.Rcm.Model;
 
 internal sealed class Flag
 {
+    [JsonIgnore]
+    internal bool ObserveFullEvaluationData { get; set; }
+
     public string? Key { get; set; }
 
     public bool? Enabled { get; set; }

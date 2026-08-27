@@ -55,6 +55,12 @@ internal static class JsonHelper
         return (T?)DeserializeObject(value, typeof(T), settings: null);
     }
 
+    public static T? DeserializeObject<T>(string value, JsonSerializerSettings settings)
+    {
+        // equivalent to Datadog.Trace.Vendors.Newtonsoft.Json.JsonConvert.DeserializeObject()
+        return (T?)DeserializeObject(value, typeof(T), settings);
+    }
+
     public static JObject ParseJObject(byte[] json, Encoding encoding)
     {
         // A new overload, equivalent to calling Encoding.Utf8.GetBytes() and
