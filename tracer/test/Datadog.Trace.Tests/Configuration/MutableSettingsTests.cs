@@ -652,20 +652,44 @@ namespace Datadog.Trace.Tests.Configuration
             mutable.GitCommitSha.Should().Be("42");
         }
 
-        [Fact]
-        public void OTELTagsSetsServiceInformation()
+        [Theory]
+        [InlineData("deployment.environment.name=stable_env", "stable_env")]
+        [InlineData("deployment.environment=legacy_env", "legacy_env")]
+        [InlineData("deployment.environment.name=stable_env,deployment.environment=legacy_env", "stable_env")]
+        [InlineData("deployment.environment=legacy_env,deployment.environment.name=stable_env", "stable_env")]
+        public void OTELTagsSetServiceInformation(string environmentAttributes, string expectedEnvironment)
         {
             var source = new NameValueConfigurationSource(new()
             {
-                { "OTEL_RESOURCE_ATTRIBUTES", "deployment.environment=datadog_env,service.name=datadog_service,service.version=datadog_version" },
+                { ConfigurationKeys.OpenTelemetry.ResourceAttributes, $"{environmentAttributes},service.name=datadog_service,service.version=datadog_version,custom.attribute=custom_value" },
+            });
+
+            var tracerSettings = new TracerSettings(source);
+            var mutable = GetMutableSettings(source, tracerSettings);
+
+            mutable.Environment.Should().Be(expectedEnvironment);
+            mutable.ServiceVersion.Should().Be("datadog_version");
+            mutable.ServiceName.Should().Be("datadog_service");
+            mutable.GlobalTags.Should().NotContainKey("deployment.environment.name");
+            mutable.GlobalTags.Should().NotContainKey("deployment.environment");
+            mutable.GlobalTags.Should().Contain("custom.attribute", "custom_value");
+        }
+
+        [Fact]
+        public void DDEnvTakesPrecedenceOverOTELTags()
+        {
+            var source = new NameValueConfigurationSource(new()
+            {
+                { ConfigurationKeys.Environment, "datadog_env" },
+                { ConfigurationKeys.OpenTelemetry.ResourceAttributes, "deployment.environment=legacy_env,deployment.environment.name=stable_env" },
             });
 
             var tracerSettings = new TracerSettings(source);
             var mutable = GetMutableSettings(source, tracerSettings);
 
             mutable.Environment.Should().Be("datadog_env");
-            mutable.ServiceVersion.Should().Be("datadog_version");
-            mutable.ServiceName.Should().Be("datadog_service");
+            mutable.GlobalTags.Should().NotContainKey("deployment.environment.name");
+            mutable.GlobalTags.Should().NotContainKey("deployment.environment");
         }
 
         [Fact]
