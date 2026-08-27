@@ -26,7 +26,14 @@ pr:
     exclude:
       - .azure-pipelines/noop-pipeline.yml
       - .gitignore
-      - .github/
+      # CODEOWNERS is intentionally not excluded because it is consumed by tracer tests.
+      - .github/actions/
+      - .github/chainguard/
+      - .github/ISSUE_TEMPLATE/
+      - .github/workflows/
+      - .github/dependabot.yml
+      - .github/labeller.yml
+      - .github/pull_request_template.md
       - .claude/
       - .devcontainer/
       - .vscode/

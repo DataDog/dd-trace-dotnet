@@ -287,7 +287,7 @@ publish:
 download-nuget-packages-to-sign:
   stage: package
   image: registry.ddbuild.io/images/ci/images:1.2.6
-  timeout: 1h
+  timeout: 2h15m # based on 3 attempts x40min
   tags: [ "arch:amd64" ]
   needs:
     - job: build
@@ -368,7 +368,7 @@ sign-nuget-packages:
 download-single-step-artifacts:
   stage: package
   image: registry.ddbuild.io/images/ci/images:1.2.6
-  timeout: 45m
+  timeout: 2h15m # based on 3 attempts x40min
   tags: [ "arch:amd64" ]
   needs:
     - job: build
@@ -415,6 +415,7 @@ deploy_to_reliability_env:
 download-serverless-artifacts:
   stage: package
   image: registry.ddbuild.io/images/ci/images:1.2.6
+  timeout: 2h15m # based on 3 attempts x40min
   tags: [ "arch:amd64" ]
   needs: []
   rules:

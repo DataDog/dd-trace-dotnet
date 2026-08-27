@@ -149,6 +149,25 @@ namespace Datadog.Trace.Tests.Agent
         }
 
         [Fact]
+        public void TraceCount_TracksWhetherThereIsAnythingToFlush()
+        {
+            // The flush loop reads this without taking the buffer's lock, to decide whether a
+            // buffer is worth sizing a replacement array for.
+            var buffer = new SpanBuffer(10 * 1024 * 1024, new SpanBufferMessagePackSerializer(SpanFormatterResolver.Instance));
+
+            buffer.TraceCount.Should().Be(0);
+
+            buffer.TryWrite(CreateTraceChunk(1), ref _temporaryBuffer).Should().Be(SpanBuffer.WriteStatus.Success);
+            buffer.TraceCount.Should().Be(1);
+
+            buffer.TryWrite(CreateTraceChunk(1), ref _temporaryBuffer).Should().Be(SpanBuffer.WriteStatus.Success);
+            buffer.TraceCount.Should().Be(2);
+
+            buffer.Detach(new byte[SpanBuffer.InitialBufferSize]).Array.Should().NotBeNull();
+            buffer.TraceCount.Should().Be(0);
+        }
+
+        [Fact]
         public void DetachingFullBuffer_ClearsTheFullFlag()
         {
             var buffer = new SpanBuffer(512, new SpanBufferMessagePackSerializer(SpanFormatterResolver.Instance));
