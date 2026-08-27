@@ -34,8 +34,10 @@ internal sealed class FeatureFlagsEvpTransport : IDisposable
 {
     internal const string ExposureIntakePath = "api/v2/exposures";
     internal const string FlagEvaluationIntakePath = "api/v2/flagevaluation";
+    internal const int PayloadSizeLimitBytes = 5 * 1024 * 1024;
     internal const string EventPlatformProxyV4 = "evp_proxy/v4";
     internal const string EventPlatformProxyV2 = "evp_proxy/v2";
+    private static readonly TimeSpan InitialDiscoveryWait = TimeSpan.FromSeconds(5);
 
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(FeatureFlagsEvpTransport));
 
@@ -44,9 +46,13 @@ internal sealed class FeatureFlagsEvpTransport : IDisposable
     private readonly IDiscoveryService _discoveryService;
     private readonly Action<AgentConfiguration> _discoveryCallback;
     private readonly IDisposable? _settingsSubscription;
+    private readonly TimeSpan _initialDiscoveryWait;
+    private readonly TaskCompletionSource<bool> _initialDiscovery = new(TaskCreationOptions.RunContinuationsAsynchronously);
     private IApiRequestFactory _localRequestFactory;
     private string? _localProxyEndpoint;
     private int _directIsSticky;
+    private int _disposed;
+    private int _discoveryKnown;
     private int _unavailableWarningLogged;
 
     public FeatureFlagsEvpTransport(TracerSettings settings, IDiscoveryService discoveryService)
@@ -58,6 +64,7 @@ internal sealed class FeatureFlagsEvpTransport : IDisposable
                                     : null;
         _discoveryService = discoveryService;
         _discoveryCallback = UpdateAgentConfiguration;
+        _initialDiscoveryWait = InitialDiscoveryWait;
 
         // Remote Configuration never falls back to direct intake. Keep its historical v2 route
         // available while discovery starts, and replace it with v4 when the Agent advertises it.
@@ -80,14 +87,23 @@ internal sealed class FeatureFlagsEvpTransport : IDisposable
         IApiRequestFactory localRequestFactory,
         IApiRequestFactory? directRequestFactory,
         IDiscoveryService discoveryService,
-        string? initialLocalProxyEndpoint = null)
+        string? initialLocalProxyEndpoint = null,
+        bool initialDiscoveryKnown = true,
+        TimeSpan? initialDiscoveryWait = null)
     {
         _source = source;
         _localRequestFactory = localRequestFactory;
         _directRequestFactory = source == FeatureFlagsSource.Agentless ? directRequestFactory : null;
         _discoveryService = discoveryService;
         _discoveryCallback = UpdateAgentConfiguration;
+        _initialDiscoveryWait = initialDiscoveryWait ?? InitialDiscoveryWait;
         _localProxyEndpoint = initialLocalProxyEndpoint ?? (source == FeatureFlagsSource.RemoteConfig ? EventPlatformProxyV2 : null);
+        if (initialDiscoveryKnown)
+        {
+            Volatile.Write(ref _discoveryKnown, 1);
+            _initialDiscovery.TrySetResult(true);
+        }
+
         _discoveryService.SubscribeToChanges(_discoveryCallback);
     }
 
@@ -107,9 +123,15 @@ internal sealed class FeatureFlagsEvpTransport : IDisposable
 
     internal static IApiRequestFactory? CreateDirectRequestFactory(FeatureFlagsSettings settings)
     {
-        if (string.IsNullOrWhiteSpace(settings.ApiKey)
-         || !Uri.TryCreate($"https://event-platform-intake.{settings.Site}", UriKind.Absolute, out var endpoint)
-         || endpoint.Scheme != Uri.UriSchemeHttps)
+        if (string.IsNullOrWhiteSpace(settings.ApiKey) || !TryNormalizeSite(settings.Site, out var site))
+        {
+            return null;
+        }
+
+        var expectedHost = $"event-platform-intake.{site}";
+        if (!Uri.TryCreate($"https://{expectedHost}", UriKind.Absolute, out var endpoint)
+         || endpoint.Scheme != Uri.UriSchemeHttps
+         || !string.Equals(endpoint.IdnHost, expectedHost, StringComparison.Ordinal))
         {
             return null;
         }
@@ -123,6 +145,60 @@ internal sealed class FeatureFlagsEvpTransport : IDisposable
         // HttpWebRequest uses the platform default proxy, including its bypass list.
         return new ApiWebRequestFactory(endpoint, headers, timeout: TimeSpan.FromSeconds(5));
 #endif
+    }
+
+    private static bool TryNormalizeSite(string? value, out string site)
+    {
+        site = string.Empty;
+        if (value is null || value.Length is 0 or > 230)
+        {
+            return false;
+        }
+
+        var labelLength = 0;
+        var previousWasHyphen = false;
+        foreach (var c in value)
+        {
+            if (c == '.')
+            {
+                if (labelLength == 0 || previousWasHyphen)
+                {
+                    return false;
+                }
+
+                labelLength = 0;
+                previousWasHyphen = false;
+                continue;
+            }
+
+            if (c is >= 'A' and <= 'Z' or >= 'a' and <= 'z' or >= '0' and <= '9')
+            {
+                labelLength++;
+                previousWasHyphen = false;
+            }
+            else if (c == '-' && labelLength > 0)
+            {
+                labelLength++;
+                previousWasHyphen = true;
+            }
+            else
+            {
+                return false;
+            }
+
+            if (labelLength > 63)
+            {
+                return false;
+            }
+        }
+
+        if (labelLength == 0 || previousWasHyphen)
+        {
+            return false;
+        }
+
+        site = value.ToLowerInvariant();
+        return true;
     }
 
     private static IApiRequestFactory CreateLocalRequestFactory(ExporterSettings exporterSettings)
@@ -140,7 +216,12 @@ internal sealed class FeatureFlagsEvpTransport : IDisposable
             switch (current)
             {
                 case SocketException socketException:
-                    return socketException.SocketErrorCode is SocketError.HostNotFound or SocketError.TryAgain or SocketError.ConnectionRefused
+                    return socketException.SocketErrorCode is SocketError.HostNotFound
+                                                               or SocketError.TryAgain
+                                                               or SocketError.ConnectionRefused
+                                                               or SocketError.NetworkUnreachable
+                                                               or SocketError.HostUnreachable
+                                                               or SocketError.AddressNotAvailable
                         || socketException.ErrorCode == 2 // ENOENT for a missing Unix domain socket
                                ? NetworkFailure.DefinitivePreSend
                                : NetworkFailure.Ambiguous;
@@ -178,6 +259,8 @@ internal sealed class FeatureFlagsEvpTransport : IDisposable
 
     public void Dispose()
     {
+        Volatile.Write(ref _disposed, 1);
+        _initialDiscovery.TrySetResult(false);
         _settingsSubscription?.Dispose();
         _discoveryService.RemoveSubscription(_discoveryCallback);
     }
@@ -190,13 +273,53 @@ internal sealed class FeatureFlagsEvpTransport : IDisposable
 
     private async Task SendAsync(string intakePath, Func<IApiRequest, Task<IApiResponse>> sendAsync)
     {
+        if (Volatile.Read(ref _disposed) != 0)
+        {
+            return;
+        }
+
         if (Volatile.Read(ref _directIsSticky) != 0)
         {
             await SendDirectAsync(intakePath, sendAsync).ConfigureAwait(false);
             return;
         }
 
+        // Remote Configuration starts with the historical v2 route, so it must not wait for /info.
         var localProxyEndpoint = Volatile.Read(ref _localProxyEndpoint);
+        if (localProxyEndpoint is not null)
+        {
+            await SendLocalAsync(intakePath, localProxyEndpoint, sendAsync).ConfigureAwait(false);
+            return;
+        }
+
+        if (Volatile.Read(ref _discoveryKnown) == 0)
+        {
+            var completed = await Task.WhenAny(_initialDiscovery.Task, Task.Delay(_initialDiscoveryWait)).ConfigureAwait(false);
+            if (Volatile.Read(ref _disposed) != 0)
+            {
+                return;
+            }
+
+            if (completed != _initialDiscovery.Task)
+            {
+                // Re-check after the timer wins so a concurrently published /info response can
+                // still select the local route before direct intake becomes sticky.
+                localProxyEndpoint = Volatile.Read(ref _localProxyEndpoint);
+                if (localProxyEndpoint is not null)
+                {
+                    await SendLocalAsync(intakePath, localProxyEndpoint, sendAsync).ConfigureAwait(false);
+                    return;
+                }
+
+                if (Volatile.Read(ref _discoveryKnown) == 0)
+                {
+                    Volatile.Write(ref _discoveryKnown, 1);
+                    _initialDiscovery.TrySetResult(false);
+                }
+            }
+        }
+
+        localProxyEndpoint = Volatile.Read(ref _localProxyEndpoint);
         if (localProxyEndpoint is not null)
         {
             await SendLocalAsync(intakePath, localProxyEndpoint, sendAsync).ConfigureAwait(false);
@@ -226,6 +349,8 @@ internal sealed class FeatureFlagsEvpTransport : IDisposable
         };
 
         Volatile.Write(ref _localProxyEndpoint, endpoint);
+        Volatile.Write(ref _discoveryKnown, 1);
+        _initialDiscovery.TrySetResult(true);
     }
 
     private async Task SendLocalAsync(string intakePath, string localProxyEndpoint, Func<IApiRequest, Task<IApiResponse>> sendAsync)

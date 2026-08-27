@@ -39,6 +39,16 @@ public class FeatureFlagsEvpTransportTests
         yield return [new WebException("send failed", WebExceptionStatus.SendFailure)];
     }
 
+    public static IEnumerable<object[]> DefinitivePreSendSocketFailures()
+    {
+        yield return [SocketError.HostNotFound];
+        yield return [SocketError.TryAgain];
+        yield return [SocketError.ConnectionRefused];
+        yield return [SocketError.NetworkUnreachable];
+        yield return [SocketError.HostUnreachable];
+        yield return [SocketError.AddressNotAvailable];
+    }
+
     [Theory]
     [InlineData(FeatureFlagsEvpTransport.EventPlatformProxyV4, FeatureFlagsEvpTransport.ExposureIntakePath)]
     [InlineData(FeatureFlagsEvpTransport.EventPlatformProxyV4, FeatureFlagsEvpTransport.FlagEvaluationIntakePath)]
@@ -80,6 +90,41 @@ public class FeatureFlagsEvpTransportTests
         direct.RequestsSent.Select(r => r.Endpoint.AbsolutePath).Should().Equal(
             $"/{FeatureFlagsEvpTransport.ExposureIntakePath}",
             $"/{FeatureFlagsEvpTransport.FlagEvaluationIntakePath}");
+    }
+
+    [Fact]
+    public async Task SendRacingFirstDiscovery_WaitsAndUsesAdvertisedLocalRoute()
+    {
+        var local = CreateFactory("http://agent:8126/");
+        var direct = CreateFactory("https://event-platform-intake.datadoghq.com/");
+        var discovery = new DiscoveryServiceMock();
+        using var transport = CreateTransport(local, direct, discovery, initialDiscoveryKnown: false);
+
+        var send = transport.SendAsync(new object(), FeatureFlagsEvpTransport.ExposureIntakePath, SerializerSettings);
+        discovery.TriggerChange(eventPlatformProxyEndpoint: FeatureFlagsEvpTransport.EventPlatformProxyV4);
+        await send;
+
+        local.RequestsSent.Should().ContainSingle()
+             .Which.Endpoint.AbsolutePath.Should().Be($"/{FeatureFlagsEvpTransport.EventPlatformProxyV4}/{FeatureFlagsEvpTransport.ExposureIntakePath}");
+        direct.RequestsSent.Should().BeEmpty("direct intake is selected only after /info establishes that no compatible local route exists");
+    }
+
+    [Fact]
+    public async Task InitialDiscoveryTimeout_UsesDirectForCurrentAndLaterBatches()
+    {
+        var local = CreateFactory("http://agent:8126/");
+        var direct = CreateFactory("https://event-platform-intake.datadoghq.com/");
+        using var transport = CreateTransport(
+            local,
+            direct,
+            initialDiscoveryKnown: false,
+            initialDiscoveryWait: TimeSpan.FromMilliseconds(10));
+
+        await transport.SendAsync(new object(), FeatureFlagsEvpTransport.ExposureIntakePath, SerializerSettings);
+        await transport.SendAsync(new object(), FeatureFlagsEvpTransport.FlagEvaluationIntakePath, SerializerSettings);
+
+        local.RequestsSent.Should().BeEmpty();
+        direct.RequestsSent.Should().HaveCount(2, "the discovery timeout selects direct intake for the current and subsequent batches");
     }
 
     [Theory]
@@ -178,6 +223,21 @@ public class FeatureFlagsEvpTransportTests
     }
 
     [Theory]
+    [MemberData(nameof(DefinitivePreSendSocketFailures))]
+    public async Task DefinitivePreSendSocketFailure_ReplaysCurrentBatchDirectAndStaysDirect(SocketError socketError)
+    {
+        var local = CreateFactory("http://agent:8126/", uri => new ThrowingApiRequest(uri, new SocketException((int)socketError)));
+        var direct = CreateFactory("https://event-platform-intake.datadoghq.com/");
+        using var transport = CreateTransport(local, direct, initialLocalProxyEndpoint: FeatureFlagsEvpTransport.EventPlatformProxyV4);
+
+        await transport.SendAsync(new object(), FeatureFlagsEvpTransport.ExposureIntakePath, SerializerSettings);
+        await transport.SendAsync(new object(), FeatureFlagsEvpTransport.FlagEvaluationIntakePath, SerializerSettings);
+
+        local.RequestsSent.Should().ContainSingle();
+        direct.RequestsSent.Should().HaveCount(2);
+    }
+
+    [Theory]
     [MemberData(nameof(AmbiguousFailures))]
     public async Task AmbiguousLocalFailure_DoesNotReplayCurrentBatchButChangesFutureRoute(Exception failure)
     {
@@ -237,6 +297,29 @@ public class FeatureFlagsEvpTransportTests
         factory.GetType().Name.Should().BeOneOf("HttpClientRequestFactory", "ApiWebRequestFactory");
     }
 
+    [Theory]
+    [InlineData("datadoghq.com@attacker.example")]
+    [InlineData("https://attacker.example")]
+    [InlineData("datadoghq.com/path")]
+    [InlineData("datadoghq.com?redirect=attacker.example")]
+    [InlineData("datadoghq.com#attacker.example")]
+    [InlineData("datadoghq.com:443")]
+    [InlineData(" datadoghq.com")]
+    [InlineData("datadoghq.com ")]
+    [InlineData("data doghq.com")]
+    [InlineData("-datadoghq.com")]
+    [InlineData("datadoghq.com-")]
+    [InlineData("datadoghq..com")]
+    public void DirectFactoryRejectsSiteThatIsNotAHostnameComponent(string site)
+    {
+        var settings = CreateSettings(
+            (ConfigurationKeys.FeatureFlags.FeatureFlagsConfigurationSource, "agentless"),
+            (ConfigurationKeys.ApiKey, "test-api-key"),
+            (ConfigurationKeys.Site, site));
+
+        FeatureFlagsEvpTransport.CreateDirectRequestFactory(settings.FeatureFlags).Should().BeNull();
+    }
+
     [Fact]
     public async Task DisposeUnsubscribesFromDiscovery()
     {
@@ -250,17 +333,42 @@ public class FeatureFlagsEvpTransportTests
         await transport.SendAsync(new object(), FeatureFlagsEvpTransport.ExposureIntakePath, SerializerSettings);
     }
 
+    [Fact]
+    public async Task DisposeUnblocksInitialDiscoveryWaitWithoutSending()
+    {
+        var local = CreateFactory("http://agent:8126/");
+        var direct = CreateFactory("https://event-platform-intake.datadoghq.com/");
+        var transport = CreateTransport(
+            local,
+            direct,
+            initialDiscoveryKnown: false,
+            initialDiscoveryWait: TimeSpan.FromMinutes(1));
+
+        var send = transport.SendAsync(new object(), FeatureFlagsEvpTransport.ExposureIntakePath, SerializerSettings);
+        transport.Dispose();
+
+        var completed = await Task.WhenAny(send, Task.Delay(TimeSpan.FromSeconds(1)));
+        completed.Should().BeSameAs(send);
+        await send;
+        local.RequestsSent.Should().BeEmpty();
+        direct.RequestsSent.Should().BeEmpty();
+    }
+
     private static FeatureFlagsEvpTransport CreateTransport(
         TestRequestFactory local,
         TestRequestFactory direct,
         DiscoveryServiceMock? discovery = null,
-        string? initialLocalProxyEndpoint = null)
+        string? initialLocalProxyEndpoint = null,
+        bool initialDiscoveryKnown = true,
+        TimeSpan? initialDiscoveryWait = null)
         => new(
             FeatureFlagsSource.Agentless,
             local,
             direct,
             discovery ?? new DiscoveryServiceMock(),
-            initialLocalProxyEndpoint);
+            initialLocalProxyEndpoint,
+            initialDiscoveryKnown,
+            initialDiscoveryWait);
 
     private static TestRequestFactory CreateFactory(string baseEndpoint, params Func<Uri, TestApiRequest>[] requests)
         => new(new Uri(baseEndpoint), requests);
