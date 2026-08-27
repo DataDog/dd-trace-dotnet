@@ -19,14 +19,8 @@ namespace Datadog.Trace.Agent.Transports
 {
     internal sealed class ApiWebRequest : IApiRequest
     {
-        private const string BoundarySeparator = $"{CrLf}--{Boundary}{CrLf}";
-        private const string BoundaryTrailer = $"{CrLf}--{Boundary}--{CrLf}";
-
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<ApiWebRequest>();
         private readonly HttpWebRequest _request;
-
-        private byte[] _boundarySeparatorInBytes;
-        private byte[] _boundaryTrailerInBytes;
 
         public ApiWebRequest(HttpWebRequest request)
         {
@@ -131,8 +125,8 @@ namespace Datadog.Trace.Agent.Transports
             async Task WriteToStreamAsync(MultipartFormItem[] multipartItems, Stream requestStream)
             {
                 // Write form request using the boundary
-                var boundaryBytes = _boundarySeparatorInBytes ??= Encoding.ASCII.GetBytes(BoundarySeparator);
-                var trailerBytes = _boundaryTrailerInBytes ??= Encoding.ASCII.GetBytes(BoundaryTrailer);
+                var boundaryBytes = MultipartBytes.BoundarySeparator;
+                var trailerBytes = MultipartBytes.BoundaryTrailer;
 
                 // Write each MultipartFormItem
                 var itemsWritten = 0;
