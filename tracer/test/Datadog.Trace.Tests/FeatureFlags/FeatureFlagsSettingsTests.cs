@@ -19,40 +19,42 @@ public class FeatureFlagsSettingsTests
 {
     // The source-selection contract is shared across tracers, so these cases mirror the
     // system-tests parametric suite (tests/parametric/test_ffe/test_configuration_sources.py).
+    // Where configuration would come from and whether Feature Flags run are asserted separately:
+    // the kill switch turns the product off without changing the source it would have used.
     [Theory]
     // Nothing configured: agentless is the default.
-    [InlineData(null, null, null, FeatureFlagsSource.Agentless)]
+    [InlineData(null, null, null, FeatureFlagsSource.Agentless, true)]
     // The stable kill switch wins over everything, including a legacy opt-in and an explicit source.
-    [InlineData("false", null, null, FeatureFlagsSource.Disabled)]
-    [InlineData("false", null, "true", FeatureFlagsSource.Disabled)]
-    [InlineData("false", "agentless", null, FeatureFlagsSource.Disabled)]
-    [InlineData("false", "remote_config", null, FeatureFlagsSource.Disabled)]
+    [InlineData("false", null, null, FeatureFlagsSource.Agentless, false)]
+    [InlineData("false", null, "true", FeatureFlagsSource.Agentless, false)]
+    [InlineData("false", "agentless", null, FeatureFlagsSource.Agentless, false)]
+    [InlineData("false", "remote_config", null, FeatureFlagsSource.RemoteConfig, false)]
     // Enabling explicitly does not imply the historical Remote Configuration source.
-    [InlineData("true", null, null, FeatureFlagsSource.Agentless)]
+    [InlineData("true", null, null, FeatureFlagsSource.Agentless, true)]
     // An explicit source wins over the legacy key, in both directions.
-    [InlineData(null, "agentless", "true", FeatureFlagsSource.Agentless)]
-    [InlineData(null, "remote_config", "false", FeatureFlagsSource.RemoteConfig)]
+    [InlineData(null, "agentless", "true", FeatureFlagsSource.Agentless, true)]
+    [InlineData(null, "remote_config", "false", FeatureFlagsSource.RemoteConfig, true)]
     // The legacy key grandfathers existing adopters, who opted in when RC was the only source.
-    [InlineData(null, null, "true", FeatureFlagsSource.RemoteConfig)]
-    [InlineData(null, null, "false", FeatureFlagsSource.Disabled)]
+    [InlineData(null, null, "true", FeatureFlagsSource.RemoteConfig, true)]
+    [InlineData(null, null, "false", FeatureFlagsSource.Offline, false)]
     // An explicit new-key value takes precedence over the legacy key, so a stale legacy disable
     // does not silently keep Feature Flags off during migration.
-    [InlineData("true", null, "false", FeatureFlagsSource.Agentless)]
-    [InlineData("true", null, "true", FeatureFlagsSource.Agentless)]
-    // An unrecognised source is a parsing failure, reported as such in configuration telemetry, so
-    // the key behaves as if it were unset rather than resolving to a value nobody configured.
-    [InlineData(null, "invalid", null, FeatureFlagsSource.Agentless)]
-    [InlineData(null, "invalid", "true", FeatureFlagsSource.RemoteConfig)]
-    // "offline" is a reserved, recognised fail-closed sentinel (not an unrecognised value).
-    [InlineData(null, "offline", null, FeatureFlagsSource.Disabled)]
-    [InlineData(null, "offline", "true", FeatureFlagsSource.Disabled)]
-    public void ResolvesSource(string? enabled, string? source, string? legacyEnabled, object expected)
+    [InlineData("true", null, "false", FeatureFlagsSource.Agentless, true)]
+    [InlineData("true", null, "true", FeatureFlagsSource.Agentless, true)]
+    // An unrecognised source fails closed, and does so before the legacy key is considered: starting
+    // billed delivery off a typo is worse than delivering nothing. Java and JS resolve it the same
+    // way, and the system-tests parametric suite asserts no request is made.
+    [InlineData(null, "invalid", null, FeatureFlagsSource.Offline, false)]
+    [InlineData(null, "invalid", "true", FeatureFlagsSource.Offline, false)]
+    // "offline" is a recognised source that delivers nothing, so there is nothing to run yet.
+    [InlineData(null, "offline", null, FeatureFlagsSource.Offline, false)]
+    [InlineData(null, "offline", "true", FeatureFlagsSource.Offline, false)]
+    public void ResolvesSource(string? enabled, string? source, string? legacyEnabled, object expected, bool expectedEnabled)
     {
-        var expectedSource = (FeatureFlagsSource)expected;
         var settings = CreateSettings(enabled, source, legacyEnabled);
 
-        settings.Source.Should().Be(expectedSource);
-        settings.Enabled.Should().Be(expectedSource != FeatureFlagsSource.Disabled);
+        settings.Source.Should().Be((FeatureFlagsSource)expected);
+        settings.Enabled.Should().Be(expectedEnabled);
     }
 
     [Theory]

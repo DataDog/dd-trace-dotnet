@@ -6,8 +6,10 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.MessagePack;
+using Datadog.Trace.OpenTelemetry.Traces;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.Vendors.MessagePack.Formatters;
 using FluentAssertions;
@@ -34,12 +36,12 @@ namespace Datadog.Trace.Tests.Agent
                 buffer.TryWrite(spans, ref _temporaryBuffer).Should().Be(SpanBuffer.WriteStatus.Success);
             }
 
-            buffer.Lock();
+            var payload = buffer.Detach(new byte[SpanBuffer.InitialBufferSize]);
 
-            buffer.TraceCount.Should().Be(traceCount);
-            buffer.SpanCount.Should().Be(traceCount * spanCount);
+            payload.TraceCount.Should().Be(traceCount);
+            payload.SpanCount.Should().Be(traceCount * spanCount);
 
-            var content = buffer.Data;
+            var content = payload.Data;
             var mockTraceChunks = MessagePackSerializer.Deserialize<MockSpan[][]>(content);
             var resized = content.Count > SpanBuffer.InitialBufferSize;
 
@@ -65,43 +67,162 @@ namespace Datadog.Trace.Tests.Agent
             buffer.TraceCount.Should().Be(0);
             buffer.IsFull.Should().BeFalse();
 
-            buffer.Lock();
-            var innerBuffer = buffer.Data;
+            var innerBuffer = buffer.RawData;
 
             innerBuffer.Array!.Skip(SpanBufferMessagePackSerializer.HeaderSizeConst).All(b => b == 0x0).Should().BeTrue("No data should have been written to the buffer");
         }
 
         [Fact]
-        public void LockingBuffer()
+        public void DetachingBuffer_HandsOverThePayloadAndResetsTheBuffer()
         {
             var buffer = new SpanBuffer(10 * 1024 * 1024, new SpanBufferMessagePackSerializer(SpanFormatterResolver.Instance));
-            var spans = CreateTraceChunk(1);
 
-            buffer.TryWrite(spans, ref _temporaryBuffer).Should().Be(SpanBuffer.WriteStatus.Success);
-            buffer.Lock();
-            buffer.TryWrite(spans, ref _temporaryBuffer).Should().Be(SpanBuffer.WriteStatus.Locked);
-            buffer.Clear();
-            buffer.TryWrite(spans, ref _temporaryBuffer).Should().Be(SpanBuffer.WriteStatus.Success);
+            buffer.TryWrite(CreateTraceChunk(3), ref _temporaryBuffer).Should().Be(SpanBuffer.WriteStatus.Success);
+            buffer.TryWrite(CreateTraceChunk(3), ref _temporaryBuffer).Should().Be(SpanBuffer.WriteStatus.Success);
+
+            var payload = buffer.Detach(new byte[SpanBuffer.InitialBufferSize]);
+
+            payload.Array.Should().NotBeNull();
+            payload.TraceCount.Should().Be(2);
+            payload.SpanCount.Should().Be(6);
+
+            var chunks = MessagePackSerializer.Deserialize<MockSpan[][]>(payload.Data);
+            chunks.Length.Should().Be(2);
+            chunks.Sum(t => t.Length).Should().Be(6);
+
+            // The buffer handed everything over, so it's empty again
+            buffer.IsEmpty.Should().BeTrue();
         }
 
         [Fact]
-        public void ClearingBuffer()
+        public void DetachingBuffer_LeavesThePayloadIntactWhileTheBufferIsWrittenTo()
         {
             var buffer = new SpanBuffer(10 * 1024 * 1024, new SpanBufferMessagePackSerializer(SpanFormatterResolver.Instance));
-            var spans = CreateTraceChunk(3);
 
-            buffer.TryWrite(spans, ref _temporaryBuffer).Should().Be(SpanBuffer.WriteStatus.Success);
-            buffer.TraceCount.Should().Be(1);
-            buffer.SpanCount.Should().Be(3);
+            buffer.TryWrite(CreateTraceChunk(3), ref _temporaryBuffer).Should().Be(SpanBuffer.WriteStatus.Success);
 
-            buffer.Clear();
+            var payload = buffer.Detach(new byte[SpanBuffer.InitialBufferSize]);
+
+            // The whole point of detaching: the buffer is writable straight away, and none of
+            // those writes may touch the payload that is still being sent
+            for (var i = 0; i < 10; i++)
+            {
+                buffer.TryWrite(CreateTraceChunk(5), ref _temporaryBuffer).Should().Be(SpanBuffer.WriteStatus.Success);
+            }
+
+            var chunks = MessagePackSerializer.Deserialize<MockSpan[][]>(payload.Data);
+            chunks.Length.Should().Be(1);
+            chunks[0].Length.Should().Be(3);
+        }
+
+        [Fact]
+        public void DetachingBuffer_InstallsTheReplacementArray()
+        {
+            var buffer = new SpanBuffer(10 * 1024 * 1024, new SpanBufferMessagePackSerializer(SpanFormatterResolver.Instance));
+            var replacement = new byte[SpanBuffer.InitialBufferSize];
+
+            buffer.TryWrite(CreateTraceChunk(1), ref _temporaryBuffer).Should().Be(SpanBuffer.WriteStatus.Success);
+            var first = buffer.Detach(replacement);
+
+            buffer.TryWrite(CreateTraceChunk(1), ref _temporaryBuffer).Should().Be(SpanBuffer.WriteStatus.Success);
+            var second = buffer.Detach(first.Array!);
+
+            first.Array.Should().NotBeSameAs(replacement);
+            second.Array.Should().BeSameAs(replacement, "the replacement handed to the first detach becomes the backing array");
+        }
+
+        [Fact]
+        public void DetachingEmptyBuffer_ReturnsNothingAndDoesNotConsumeTheReplacement()
+        {
+            var buffer = new SpanBuffer(10 * 1024 * 1024, new SpanBufferMessagePackSerializer(SpanFormatterResolver.Instance));
+            var replacement = new byte[SpanBuffer.InitialBufferSize];
+
+            var payload = buffer.Detach(replacement);
+
+            payload.Array.Should().BeNull();
+            payload.TraceCount.Should().Be(0);
+            payload.SpanCount.Should().Be(0);
+
+            // The replacement wasn't taken, so the caller can still use it for the next flush
+            buffer.TryWrite(CreateTraceChunk(1), ref _temporaryBuffer).Should().Be(SpanBuffer.WriteStatus.Success);
+            buffer.Detach(replacement).Array.Should().NotBeSameAs(replacement);
+        }
+
+        [Fact]
+        public void TraceCount_TracksWhetherThereIsAnythingToFlush()
+        {
+            // The flush loop reads this without taking the buffer's lock, to decide whether a
+            // buffer is worth sizing a replacement array for.
+            var buffer = new SpanBuffer(10 * 1024 * 1024, new SpanBufferMessagePackSerializer(SpanFormatterResolver.Instance));
 
             buffer.TraceCount.Should().Be(0);
-            buffer.SpanCount.Should().Be(0);
 
-            buffer.Lock();
+            buffer.TryWrite(CreateTraceChunk(1), ref _temporaryBuffer).Should().Be(SpanBuffer.WriteStatus.Success);
+            buffer.TraceCount.Should().Be(1);
 
-            buffer.Data.Count.Should().Be(SpanBufferMessagePackSerializer.HeaderSizeConst);
+            buffer.TryWrite(CreateTraceChunk(1), ref _temporaryBuffer).Should().Be(SpanBuffer.WriteStatus.Success);
+            buffer.TraceCount.Should().Be(2);
+
+            buffer.Detach(new byte[SpanBuffer.InitialBufferSize]).Array.Should().NotBeNull();
+            buffer.TraceCount.Should().Be(0);
+        }
+
+        [Fact]
+        public void DetachingFullBuffer_ClearsTheFullFlag()
+        {
+            var buffer = new SpanBuffer(512, new SpanBufferMessagePackSerializer(SpanFormatterResolver.Instance));
+
+            SpanBuffer.WriteStatus status;
+
+            do
+            {
+                status = buffer.TryWrite(CreateTraceChunk(1), ref _temporaryBuffer);
+            }
+            while (status == SpanBuffer.WriteStatus.Success);
+
+            status.Should().Be(SpanBuffer.WriteStatus.Full);
+            buffer.IsFull.Should().BeTrue();
+
+            buffer.Detach(new byte[512]);
+
+            buffer.IsFull.Should().BeFalse();
+            buffer.TryWrite(CreateTraceChunk(1), ref _temporaryBuffer).Should().Be(SpanBuffer.WriteStatus.Success);
+        }
+
+        [Fact]
+        public void JsonSerializer_CanAlwaysCloseThePayload_EvenWhenTheBufferFillsUp()
+        {
+            // FinishBody appends the closing brackets when the payload is detached, and that runs
+            // while the buffer's lock is held. Every write reserves TrailerSize bytes for them, so
+            // finalizing can never need to grow the array there -- and the payload can never come
+            // out unterminated.
+            var serializer = new OtlpTracesJsonSerializer();
+
+            // Measure two chunks, then size the real buffer so that without the reservation it
+            // would fill to within fewer bytes than the closing brackets need. That is the case
+            // where finalizing used to silently give up and emit unterminated JSON.
+            var probe = new SpanBuffer(64 * 1024, new OtlpTracesJsonSerializer());
+            probe.TryWrite(CreateTraceChunk(1), ref _temporaryBuffer).Should().Be(SpanBuffer.WriteStatus.Success);
+            probe.TryWrite(CreateTraceChunk(1), ref _temporaryBuffer).Should().Be(SpanBuffer.WriteStatus.Success);
+
+            var buffer = new SpanBuffer(probe.RawData.Count + serializer.TrailerSize - 1, serializer);
+
+            SpanBuffer.WriteStatus status;
+
+            do
+            {
+                status = buffer.TryWrite(CreateTraceChunk(1), ref _temporaryBuffer);
+            }
+            while (status == SpanBuffer.WriteStatus.Success);
+
+            status.Should().Be(SpanBuffer.WriteStatus.Full, "the buffer should fill up rather than reject the first chunk");
+
+            var payload = buffer.Detach(new byte[64 * 1024]);
+
+            payload.Array.Should().NotBeNull();
+
+            var json = Encoding.UTF8.GetString(payload.Data.Array!, payload.Data.Offset, payload.Data.Count);
+            json.Should().EndWith("]}]}]}", "the closing brackets must always fit");
         }
 
         [Fact]
