@@ -523,7 +523,7 @@ stages:
         useNativeSdkVersion: true
         command: "Clean BuildNativeLoader BuildNativeWrapper ExtractDebugInfoLinux ValidateNativeLoaderSnapshotTestsLinux"
         retryCountForRunCommand: 1
-        timeoutInMinutesForRunCommand: 20
+        timeoutInMinutesForRunCommand: 10
 
     - publish: $(monitoringHome)/linux-musl-x64
       displayName: Uploading linux universal artifacts
@@ -869,7 +869,7 @@ stages:
         useNativeSdkVersion: true
         command: "Clean BuildNativeLoader BuildNativeWrapper ExtractDebugInfoLinux ValidateNativeLoaderSnapshotTestsLinux"
         retryCountForRunCommand: 1
-        timeoutInMinutesForRunCommand: 20
+        timeoutInMinutesForRunCommand: 10
 
     - publish: $(monitoringHome)/linux-musl-arm64
       displayName: Uploading linux universal arm64 artifacts
@@ -1003,7 +1003,7 @@ stages:
       artifact: build-macos-native_tracer
 
   - job: native_loader_and_managed
-    timeoutInMinutes: 100
+    timeoutInMinutes: 80
     dependsOn: [ ]
     pool:
       vmImage: macos-14
@@ -1017,7 +1017,7 @@ stages:
     # The CreateTrimmingFile tasks expects the managed loader but we build that in the other stage
     - script: ./tracer/build.sh BuildManagedTracerHome BuildNativeLoader --skip CreateTrimmingFile
       displayName: Build managed tracer + native loader
-      timeoutInMinutes: 40
+      timeoutInMinutes: 30
       retryCountOnTaskFailure: 1
 
     - publish: $(monitoringHome)
@@ -1082,7 +1082,7 @@ stages:
 
       - script: tracer\build.cmd PackageTracerHome PublishFleetInstaller DownloadWinSsiTelemetryForwarder
         displayName: Build MSI, Tracer home, FleetInstaller, and TelemetryForwarder
-        timeoutInMinutes: 20
+        timeoutInMinutes: 10
         retryCountOnTaskFailure: 1
 
       - publish: $(artifacts)/windows-tracer-home.zip
@@ -1377,7 +1377,7 @@ stages:
 
       - script: tracer\build.cmd BuildManagedUnitTests --framework $(framework) --code-coverage-enabled $(CodeCoverageEnabled)
         displayName: Build unit tests
-        timeoutInMinutes: 35
+        timeoutInMinutes: 15
         retryCountOnTaskFailure: 3
         env:
           DD_LOGGER_DD_API_KEY: $(ddApiKey)
@@ -1595,7 +1595,7 @@ stages:
 
         - script: tracer\build.cmd CreateRequiredDirectories CompileSamples
           displayName: Build sample projects
-          timeoutInMinutes: 50
+          timeoutInMinutes: 20
           retryCountOnTaskFailure: 1
           env:
             SampleName: $(IntegrationTestSampleName)
@@ -1645,7 +1645,7 @@ stages:
 
         - script: tracer\build.cmd CreateRequiredDirectories CompileSamples -Framework $(framework) -TestAllPackageVersions
           displayName: Build sample projects
-          timeoutInMinutes: 50
+          timeoutInMinutes: 20
           retryCountOnTaskFailure: 1
           env:
             SampleName: $(IntegrationTestSampleName)
@@ -1674,7 +1674,7 @@ stages:
         jobs: [macos]
 
     - job: macos
-      timeoutInMinutes: 60 #default value
+      timeoutInMinutes: 90
       pool:
         vmImage: macos-14
       steps:
@@ -1686,7 +1686,7 @@ stages:
 
         - script: ./tracer/build.sh CreateRequiredDirectories CompileSamples
           displayName: Build sample projects
-          timeoutInMinutes: 50
+          timeoutInMinutes: 40
           retryCountOnTaskFailure: 1
           env:
             SampleName: $(IntegrationTestSampleName)
@@ -3101,7 +3101,7 @@ stages:
       allowSkipped: true
 
   - job: Linux
-    timeoutInMinutes: 60 #default value
+    timeoutInMinutes: 90
 
     pool:
       name: $(linuxX64Pool)
@@ -3124,7 +3124,7 @@ stages:
         command: "BuildProfilerAsanTest -Framework net7.0"
         apiKey: $(DD_LOGGER_DD_API_KEY)
         retryCountForRunCommand: 1
-        timeoutInMinutesForRunCommand: 40
+        timeoutInMinutesForRunCommand: 30
 
     - template: steps/run-in-docker.yml
       parameters:
@@ -3134,7 +3134,7 @@ stages:
         command: "BuildProfilerSampleForSanitiserTests -Framework net7.0"
         apiKey: $(DD_LOGGER_DD_API_KEY)
         retryCountForRunCommand: 1
-        timeoutInMinutesForRunCommand: 40
+        timeoutInMinutesForRunCommand: 10
 
     - template: steps/run-in-docker.yml
       parameters:
@@ -3189,7 +3189,7 @@ stages:
       jobs: [Linux]
 
   - job: Linux
-    timeoutInMinutes: 60
+    timeoutInMinutes: 90
 
     pool:
       name: $(linuxArm64Pool)
@@ -3207,7 +3207,7 @@ stages:
         command: "BuildProfilerAsanTest -Framework net7.0"
         apiKey: $(DD_LOGGER_DD_API_KEY)
         retryCountForRunCommand: 1
-        timeoutInMinutesForRunCommand: 40
+        timeoutInMinutesForRunCommand: 30
 
     - template: steps/run-in-docker.yml
       parameters:
@@ -3216,7 +3216,7 @@ stages:
         command: "BuildProfilerSampleForSanitiserTests -Framework net7.0"
         apiKey: $(DD_LOGGER_DD_API_KEY)
         retryCountForRunCommand: 1
-        timeoutInMinutesForRunCommand: 40
+        timeoutInMinutesForRunCommand: 10
 
     - template: steps/run-in-docker.yml
       parameters:
@@ -3247,7 +3247,7 @@ stages:
       jobs: [Linux]
 
   - job: Linux
-    timeoutInMinutes: 60
+    timeoutInMinutes: 90
 
     pool:
       name: $(linuxArm64Pool)
@@ -3265,7 +3265,7 @@ stages:
         command: "BuildProfilerUbsanTest -Framework net7.0"
         apiKey: $(DD_LOGGER_DD_API_KEY)
         retryCountForRunCommand: 1
-        timeoutInMinutesForRunCommand: 40
+        timeoutInMinutesForRunCommand: 30
 
     - template: steps/run-in-docker.yml
       parameters:
@@ -3274,7 +3274,7 @@ stages:
         command: "BuildProfilerSampleForSanitiserTests -Framework net7.0"
         apiKey: $(DD_LOGGER_DD_API_KEY)
         retryCountForRunCommand: 1
-        timeoutInMinutesForRunCommand: 40
+        timeoutInMinutesForRunCommand: 10
 
     - template: steps/run-in-docker.yml
       parameters:
@@ -3305,7 +3305,7 @@ stages:
       jobs: [Linux]
 
   - job: Linux
-    timeoutInMinutes: 60 #default value
+    timeoutInMinutes: 90
 
     pool:
       name: $(linuxX64Pool)
@@ -3326,7 +3326,7 @@ stages:
         command: "BuildProfilerUbsanTest -Framework net7.0"
         apiKey: $(DD_LOGGER_DD_API_KEY)
         retryCountForRunCommand: 1
-        timeoutInMinutesForRunCommand: 40
+        timeoutInMinutesForRunCommand: 30
 
     - template: steps/run-in-docker.yml
       parameters:
@@ -3336,7 +3336,7 @@ stages:
         command: "BuildProfilerSampleForSanitiserTests -Framework net7.0"
         apiKey: $(DD_LOGGER_DD_API_KEY)
         retryCountForRunCommand: 1
-        timeoutInMinutesForRunCommand: 40
+        timeoutInMinutesForRunCommand: 10
 
     - template: steps/run-in-docker.yml
       parameters:
