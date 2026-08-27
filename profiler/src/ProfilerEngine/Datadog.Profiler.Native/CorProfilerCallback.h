@@ -249,9 +249,7 @@ private :
     std::shared_ptr<IMetricsSender> _metricsSender;
     std::atomic<bool> _isInitialized{false}; // pay attention to keeping ProfilerEngineStatus::IsProfilerEngiveActive in sync with this!
 
-    // Guards ICorProfilerCallback methods (see EngineActiveGuard.h) against DisposeInternal()
-    // concurrently tearing down the service pointers below. _isServicesShutdown must only ever be
-    // read/written while holding this mutex (shared or exclusive) - never as a bare flag check.
+    // Synchronizes access to the services below, and the engine lifetime flag.
     mutable std::shared_mutex _engineLifetimeMutex;
     bool _isServicesShutdown = false;
 
