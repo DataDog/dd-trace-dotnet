@@ -43,7 +43,10 @@
 #include "IEtwEventsManager.h"
 #include "ISsiLifetime.h"
 #include "HeapSnapshotManager.h"
+#include "ClrNativeHeapSnapshot.h"
+#include "EEHeapReporter.h"
 #include "GCThreadsCpuProvider.h"
+#include "MemoryBreakdownProvider.h"
 #include "PInvoke.h"
 
 #include "shared/src/native-src/dd_memory_resource.hpp"
@@ -267,7 +270,14 @@ private :
     NetworkProvider* _pNetworkProvider = nullptr;
     RuntimeIdStore* _pRuntimeIdStore = nullptr;
     HeapSnapshotManager* _pHeapSnapshotManager = nullptr;
+    EEHeapReporter* _pEEHeapReporter = nullptr;
     INativeThreadList* _pNativeThreadList = nullptr;
+
+    // Shared, per-export CLR native/managed heap + OS address-space snapshot, consumed by both the
+    // EEHeapReporter (JSON) and the MemoryBreakdownProvider (samples). Created when either the eeheap
+    // or the memory-breakdown feature is enabled.
+    std::unique_ptr<ClrNativeHeapSnapshot> _clrNativeHeapSnapshot = nullptr;
+    std::unique_ptr<MemoryBreakdownProvider> _memoryBreakdownProvider = nullptr;
 
 #ifdef LINUX
     SystemCallsShield* _systemCallsShield = nullptr;
