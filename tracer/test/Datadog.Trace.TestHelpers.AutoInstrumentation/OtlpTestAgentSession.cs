@@ -36,7 +36,7 @@ namespace Datadog.Trace.TestHelpers;
 /// needed to serialize them.
 /// </para>
 /// </summary>
-internal sealed class OtlpTestAgentSession
+internal sealed class OtlpTestAgentSession : IAsyncDisposable
 {
     /// <summary>
     /// The port the ddapm test-agent receives OTLP/HTTP on, and also serves its session API on.
@@ -123,6 +123,14 @@ internal sealed class OtlpTestAgentSession
     /// <param name="tracesRequests">The captured OTLP requests.</param>
     /// <returns>The number of spans.</returns>
     public static int CountSpans(JToken tracesRequests) => tracesRequests.SelectTokens("$..spans[*]").Count();
+
+    public async ValueTask DisposeAsync()
+    {
+        if (IsAvailable)
+        {
+            await ClearSessionAsync();
+        }
+    }
 
     /// <summary>
     /// Gets the OTLP endpoint the application under test exports to, which is the receiver

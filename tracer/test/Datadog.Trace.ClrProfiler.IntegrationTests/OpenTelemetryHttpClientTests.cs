@@ -27,7 +27,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     // - url.full credential/query redaction
     // Note: This intentionally only covers OTLP export (which is where the RFC requires typed attribute values).
     [UsesVerify]
-    public class OpenTelemetryHttpClientTests : TracingIntegrationTest
+    public class OpenTelemetryHttpClientTests : TracingIntegrationTest, IAsyncLifetime
     {
         private readonly OtlpTestAgentSession _otlpSession = new();
 
@@ -35,6 +35,22 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             : base("OpenTelemetry.HttpClient", output)
         {
             SetServiceVersion("1.0.0");
+        }
+
+        public async Task InitializeAsync()
+        {
+            if (await _otlpSession.CheckAvailabilityAsync(Output))
+            {
+                await _otlpSession.StartSessionAsync();
+            }
+        }
+
+        public async Task DisposeAsync()
+        {
+            if (_otlpSession.IsAvailable)
+            {
+                await _otlpSession.DisposeAsync();
+            }
         }
 
         public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.IsHttpMessageHandler(metadataSchemaVersion);
@@ -49,10 +65,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             SetInstrumentationVerification();
 
             var names = OtlpFieldNames.For(isJson: false);
-
-            // Establishes this token as a real ddapm test-agent session, so that
-            // /test/session/traces only ever returns requests sent after this point.
-            await _otlpSession.StartSessionAsync();
 
             int httpPort = TcpPortProvider.GetOpenPort();
             Output.WriteLine($"Assigning port {httpPort} for the httpPort.");

@@ -28,7 +28,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     // - url.full credential/query redaction
     // Note: This intentionally only covers OTLP export (which is where the RFC requires typed attribute values).
     [UsesVerify]
-    public class OpenTelemetryWebRequestTests : TracingIntegrationTest
+    public class OpenTelemetryWebRequestTests : TracingIntegrationTest, IAsyncLifetime
     {
         private readonly Regex _exceptionStacktraceOtlp400Regex = new(@"stringValue"": ""System.Net.WebException: The remote server returned an error: \(400\) Bad Request.*""");
         private readonly Regex _exceptionStacktraceOtlp500Regex = new(@"stringValue"": ""System.Net.WebException: The remote server returned an error: \(500\) Internal Server Error.*""");
@@ -38,6 +38,22 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             : base("OpenTelemetry.WebRequest", output)
         {
             SetServiceVersion("1.0.0");
+        }
+
+        public async Task InitializeAsync()
+        {
+            if (await _otlpSession.CheckAvailabilityAsync(Output))
+            {
+                await _otlpSession.StartSessionAsync();
+            }
+        }
+
+        public async Task DisposeAsync()
+        {
+            if (_otlpSession.IsAvailable)
+            {
+                await _otlpSession.DisposeAsync();
+            }
         }
 
         public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.IsWebRequest(metadataSchemaVersion);

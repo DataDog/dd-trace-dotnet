@@ -81,7 +81,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         private readonly Regex _exceptionStacktraceRegex = new(@"exception.stacktrace"":""System.ArgumentException: Example argument exception.*"",""");
         private readonly Regex _exceptionStacktraceOtlpRegex = new(@"string_value"": ""System.ArgumentException: Example argument exception.*""");
         private readonly Regex _exceptionStacktraceOtlpJsonRegex = new(@"stringValue"": ""System.ArgumentException: Example argument exception.*""");
-        private readonly OtlpTestAgentSession _otlpSession = new();
+        private readonly OtlpTestAgentSession _otlpSession = new(); // Do not decorate this class with IAsyncLifetime because it is not used in every test case.
 
         public OpenTelemetrySdkTests(ITestOutputHelper output)
             : base("OpenTelemetrySdk", output)
