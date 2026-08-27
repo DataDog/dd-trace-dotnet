@@ -27,7 +27,7 @@ The full managed tracer (`Datadog.Trace.dll`) contains all auto-instrumentation 
 
 ## Tracer Structure
 
-- `tracer/src/Datadog.Trace` — Core managed tracer library
+- `tracer/src/Datadog.Trace` — Core managed tracer library.
   - `Activity` — System.Diagnostics.Activity bridge/helpers.
   - `Agent` — Agent transport, payloads, health, serialization.
   - `AppSec` — Application Security (WAF/RASP) components.
@@ -123,7 +123,7 @@ The full managed tracer (`Datadog.Trace.dll`) contains all auto-instrumentation 
   - For instance, prefer `is not null` to `!= null`
 - Prefer modern collection expressions (`[]`)
 - Use `StringUtil.IsNullOrEmpty()` instead of `string.IsNullOrEmpty()` for compatibility across all supported runtimes
-- StyleCop: see `tracer/stylecop.json`; address warnings before pushing
+- StyleCop: see `tracer/stylecop.json`; address warnings before pushing.
 - Never manually edit generated files (`.g.` in the file extension). Read the file header for regeneration instructions instead.
 
 **C/C++ style:**

@@ -45,6 +45,25 @@ namespace Datadog.Trace.Tests.Debugger
         }
 
         [Theory]
+        [InlineData("10", 10)]
+        [InlineData("50", 50)]
+        [InlineData("1000", 1000)]
+        [InlineData("-1", DebuggerSettings.DefaultMaxEvaluationTimeInMilliseconds)]
+        [InlineData("0", DebuggerSettings.DefaultMaxEvaluationTimeInMilliseconds)]
+        [InlineData("9", DebuggerSettings.DefaultMaxEvaluationTimeInMilliseconds)]
+        [InlineData("1001", DebuggerSettings.DefaultMaxEvaluationTimeInMilliseconds)]
+        [InlineData("", DebuggerSettings.DefaultMaxEvaluationTimeInMilliseconds)]
+        [InlineData(null, DebuggerSettings.DefaultMaxEvaluationTimeInMilliseconds)]
+        public void MaxEvaluationTime_HasExpectedValue(string value, int expected)
+        {
+            var settings = new DebuggerSettings(
+                new NameValueConfigurationSource(new() { { ConfigurationKeys.Debugger.EvaluationTimeoutMs, value }, }),
+                NullConfigurationTelemetry.Instance);
+
+            settings.MaxEvaluationTimeInMilliseconds.Should().Be(expected);
+        }
+
+        [Theory]
         [InlineData(null)]
         [InlineData("")]
         [InlineData("false")]

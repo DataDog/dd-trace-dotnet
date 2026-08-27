@@ -27,17 +27,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure
         {
         }
 
-        public static IEnumerable<object[]> GetEnabledConfig()
-            => from packageVersionArray in PackageVersions.AzureEventHubs
-               from metadataSchemaVersion in new[] { "v0", "v1" }
-               select new[] { packageVersionArray[0], metadataSchemaVersion };
-
-        public static IEnumerable<object[]> GetEnabledConfigWithMessageCount()
-            => from packageVersionArray in PackageVersions.AzureEventHubs
-               from metadataSchemaVersion in new[] { "v0", "v1" }
-               from messageCount in new[] { 1, 3 }
-               select new object[] { packageVersionArray[0], metadataSchemaVersion, messageCount };
-
         public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.Tags["span.kind"] switch
         {
             SpanKinds.Consumer => span.IsAzureEventHubsInbound(metadataSchemaVersion),
@@ -47,9 +36,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure
         };
 
         [SkippableTheory]
-        [MemberData(nameof(GetEnabledConfig))]
+        [CombinatorialOrPairwiseData]
         [Trait("Category", "EndToEnd")]
-        public async Task TestEventHubsMessageBatchIntegration(string packageVersion, string metadataSchemaVersion)
+        public async Task TestEventHubsMessageBatchIntegration(
+            [PackageVersionData(nameof(PackageVersions.AzureEventHubs))] string packageVersion,
+            [MetadataSchemaVersionData] string metadataSchemaVersion)
         {
             SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
             SetEnvironmentVariable("DD_TRACE_AZUREEVENTHUBS_ENABLED", "true");
@@ -59,7 +50,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure
             using (var agent = EnvironmentHelper.GetMockAgent())
             using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
             {
-                var spans = await agent.WaitForSpansAsync(5, timeoutInMilliseconds: 30000, assertExpectedCount: false);
+                var spans = await agent.WaitForSpansAsync(5, timeoutInMilliseconds: 30000, failOnTimeout: false);
 
                 using var s = new AssertionScope();
 
@@ -89,9 +80,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure
         }
 
         [SkippableTheory]
-        [MemberData(nameof(GetEnabledConfigWithMessageCount))]
+        [CombinatorialOrPairwiseData]
         [Trait("Category", "EndToEnd")]
-        public async Task TestEventHubsEnumerableIntegration(string packageVersion, string metadataSchemaVersion, int messageCount)
+        public async Task TestEventHubsEnumerableIntegration(
+            [PackageVersionData(nameof(PackageVersions.AzureEventHubs))] string packageVersion,
+            [MetadataSchemaVersionData] string metadataSchemaVersion,
+            [CombinatorialValues(1, 3)] int messageCount)
         {
             SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
             SetEnvironmentVariable("DD_TRACE_AZUREEVENTHUBS_ENABLED", "true");
@@ -102,7 +96,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure
             using (var agent = EnvironmentHelper.GetMockAgent())
             using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
             {
-                var spans = await agent.WaitForSpansAsync(2, timeoutInMilliseconds: 30000, assertExpectedCount: false);
+                var spans = await agent.WaitForSpansAsync(2, timeoutInMilliseconds: 30000, failOnTimeout: false);
 
                 using var s = new AssertionScope();
 
@@ -126,9 +120,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure
         }
 
         [SkippableTheory]
-        [MemberData(nameof(GetEnabledConfig))]
+        [CombinatorialOrPairwiseData]
         [Trait("Category", "EndToEnd")]
-        public async Task TestEventHubsMessageBatchIntegrationWithoutBatchLinks(string packageVersion, string metadataSchemaVersion)
+        public async Task TestEventHubsMessageBatchIntegrationWithoutBatchLinks(
+            [PackageVersionData(nameof(PackageVersions.AzureEventHubs))] string packageVersion,
+            [MetadataSchemaVersionData] string metadataSchemaVersion)
         {
             SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
             SetEnvironmentVariable("DD_TRACE_AZUREEVENTHUBS_ENABLED", "true");
@@ -138,7 +134,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure
             using (var agent = EnvironmentHelper.GetMockAgent())
             using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
             {
-                var spans = await agent.WaitForSpansAsync(2, timeoutInMilliseconds: 30000, assertExpectedCount: false);
+                var spans = await agent.WaitForSpansAsync(2, timeoutInMilliseconds: 30000, failOnTimeout: false);
 
                 using var s = new AssertionScope();
 
@@ -162,9 +158,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure
         }
 
         [SkippableTheory]
-        [MemberData(nameof(GetEnabledConfigWithMessageCount))]
+        [CombinatorialOrPairwiseData]
         [Trait("Category", "EndToEnd")]
-        public async Task TestEventHubsEnumerableIntegrationWithoutBatchLinks(string packageVersion, string metadataSchemaVersion, int messageCount)
+        public async Task TestEventHubsEnumerableIntegrationWithoutBatchLinks(
+            [PackageVersionData(nameof(PackageVersions.AzureEventHubs))] string packageVersion,
+            [MetadataSchemaVersionData] string metadataSchemaVersion,
+            [CombinatorialValues(1, 3)] int messageCount)
         {
             SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
             SetEnvironmentVariable("DD_TRACE_AZUREEVENTHUBS_ENABLED", "true");
@@ -175,7 +174,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure
             using (var agent = EnvironmentHelper.GetMockAgent())
             using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
             {
-                var spans = await agent.WaitForSpansAsync(2, timeoutInMilliseconds: 30000, assertExpectedCount: false);
+                var spans = await agent.WaitForSpansAsync(2, timeoutInMilliseconds: 30000, failOnTimeout: false);
 
                 using var s = new AssertionScope();
 
@@ -202,9 +201,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure
         }
 
         [SkippableTheory]
-        [MemberData(nameof(GetEnabledConfig))]
+        [CombinatorialOrPairwiseData]
         [Trait("Category", "EndToEnd")]
-        public async Task TestEventHubsBufferedProducerIntegration(string packageVersion, string metadataSchemaVersion)
+        public async Task TestEventHubsBufferedProducerIntegration(
+            [PackageVersionData(nameof(PackageVersions.AzureEventHubs))] string packageVersion,
+            [MetadataSchemaVersionData] string metadataSchemaVersion)
         {
             SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
             SetEnvironmentVariable("DD_TRACE_AZUREEVENTHUBS_ENABLED", "true");
@@ -214,7 +215,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure
             using (var agent = EnvironmentHelper.GetMockAgent())
             using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
             {
-                var spans = await agent.WaitForSpansAsync(5, timeoutInMilliseconds: 30000, assertExpectedCount: false);
+                var spans = await agent.WaitForSpansAsync(5, timeoutInMilliseconds: 30000, failOnTimeout: false);
 
                 using var s = new AssertionScope();
 
@@ -244,9 +245,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure
         }
 
         [SkippableTheory]
-        [MemberData(nameof(GetEnabledConfig))]
+        [CombinatorialOrPairwiseData]
         [Trait("Category", "EndToEnd")]
-        public async Task TestEventHubsBufferedProducerIntegrationWithoutBatchLinks(string packageVersion, string metadataSchemaVersion)
+        public async Task TestEventHubsBufferedProducerIntegrationWithoutBatchLinks(
+            [PackageVersionData(nameof(PackageVersions.AzureEventHubs))] string packageVersion,
+            [MetadataSchemaVersionData] string metadataSchemaVersion)
         {
             SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
             SetEnvironmentVariable("DD_TRACE_AZUREEVENTHUBS_ENABLED", "true");
@@ -256,7 +259,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure
             using (var agent = EnvironmentHelper.GetMockAgent())
             using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
             {
-                var spans = await agent.WaitForSpansAsync(2, timeoutInMilliseconds: 30000, assertExpectedCount: false);
+                var spans = await agent.WaitForSpansAsync(2, timeoutInMilliseconds: 30000, failOnTimeout: false);
 
                 using var s = new AssertionScope();
 
@@ -283,9 +286,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure
         }
 
         [SkippableTheory]
-        [MemberData(nameof(GetEnabledConfig))]
+        [CombinatorialOrPairwiseData]
         [Trait("Category", "EndToEnd")]
-        public async Task TestEventHubsIntegrationDisabled(string packageVersion, string metadataSchemaVersion)
+        public async Task TestEventHubsIntegrationDisabled(
+            [PackageVersionData(nameof(PackageVersions.AzureEventHubs))] string packageVersion,
+            [MetadataSchemaVersionData] string metadataSchemaVersion)
         {
             SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
             SetEnvironmentVariable("DD_TRACE_AZUREEVENTHUBS_ENABLED", "false");
@@ -299,7 +304,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure
                 using (var agent = EnvironmentHelper.GetMockAgent())
                 using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
                 {
-                    var spans = await agent.WaitForSpansAsync(1, timeoutInMilliseconds: 1000, assertExpectedCount: false);
+                    var spans = await agent.WaitForSpansAsync(1, timeoutInMilliseconds: 1000, failOnTimeout: false);
                     spans.Should().BeEmpty($"Expected no spans when DD_TRACE_AZUREEVENTHUBS_ENABLED is false for test mode {testMode}");
                 }
             }

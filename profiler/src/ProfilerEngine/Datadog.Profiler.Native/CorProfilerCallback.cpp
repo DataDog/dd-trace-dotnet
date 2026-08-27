@@ -26,6 +26,7 @@
 #include "ClrLifetime.h"
 #include "Configuration.h"
 #include "ContentionProvider.h"
+#include "CoreLibModuleProvider.h"
 #include "CpuTimeProvider.h"
 #include "DebugInfoStore.h"
 #include "EnabledProfilers.h"
@@ -188,6 +189,9 @@ void CorProfilerCallback::InitializeServices()
     _pFrameStore = std::make_unique<FrameStore>(
         _pCorProfilerInfo, _pConfiguration.get(), _pDebugInfoStore.get(), _managedCodeCache.get());
 
+    // must be created before the components that resolve core library types (i.e. exceptions and heap snapshot)
+    _pCoreLibModuleProvider = std::make_unique<CoreLibModuleProvider>(_pCorProfilerInfo);
+
     // Create service instances
     _pThreadsCpuManager = RegisterService<ThreadsCpuManager>();
 
@@ -305,6 +309,7 @@ void CorProfilerCallback::InitializeServices()
             _pCorProfilerInfo,
             _pManagedThreadList,
             _pFrameStore.get(),
+            _pCoreLibModuleProvider.get(),
             _pConfiguration.get(),
             _rawSampleTransformer.get(),
             _metricsRegistry,
@@ -399,6 +404,7 @@ void CorProfilerCallback::InitializeServices()
                 _pConfiguration.get(),
                 _pCorProfilerInfoEvents,
                 _pFrameStore.get(),
+                _pCoreLibModuleProvider.get(),
                 _pThreadsCpuManager,
                 _metricsRegistry,
                 _pNativeThreadList,
@@ -1051,7 +1057,17 @@ void CorProfilerCallback::DisposeInternal()
             _pEtwEventsManager->Stop();
         }
 
-        DisposeServices();
+        {
+            // _isServicesShutdown must be set to true before this lock releases, not after - see
+            // EngineActiveGuard.h. From this point on, no EngineActiveGuard can ever report
+            // IsActive() again (the mutex's own synchronizes-with guarantee ensures every future
+            // lock acquisition, on any thread, observes _isServicesShutdown == true), so no guarded
+            // ICorProfilerCallback method can race DisposeServices() below, or run after it and
+            // find already-destroyed service pointers.
+            std::unique_lock<std::shared_mutex> exclusiveLock(_engineLifetimeMutex);
+            _isServicesShutdown = true;
+            DisposeServices();
+        }
 
         ICorProfilerInfo5* pCorProfilerInfo = _pCorProfilerInfo;
         if (pCorProfilerInfo != nullptr)
@@ -1598,6 +1614,15 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
         eventMask |= COR_PRF_MONITOR_MODULE_LOADS | COR_PRF_MONITOR_CLASS_LOADS;
     }
 
+    if (_pConfiguration->IsHeapSnapshotEnabled())
+    {
+        // CoreLibModuleProvider is fed from ModuleLoadFinished and InlineVTCache needs it
+        // to resolve the primitive types of inline value type fields. Exception profiling
+        // asks for the same flag and is enabled by default, so this only matters when it
+        // has been turned off.
+        eventMask |= COR_PRF_MONITOR_MODULE_LOADS;
+    }
+
     if (_pConfiguration->IsAllocationRecorderEnabled() && !_pConfiguration->GetProfilesOutputDirectory().empty())
     {
         //              for GC                              for JIT
@@ -1997,6 +2022,15 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::AppDomainCreationStarted(AppDomai
 
 HRESULT STDMETHODCALLTYPE CorProfilerCallback::AppDomainCreationFinished(AppDomainID appDomainId, HRESULT hrStatus)
 {
+    // Previously unguarded entirely (unlike its siblings below, which at least had the racy
+    // _isInitialized check) - _pRuntimeIdStore is a _services-managed pointer DisposeServices()
+    // can free concurrently. See EngineActiveGuard.h.
+    EngineActiveGuard engineGuard(_isInitialized, _engineLifetimeMutex, _isServicesShutdown);
+    if (!engineGuard.IsActive())
+    {
+        return S_OK;
+    }
+
     _pAppDomainStore->Register(appDomainId);
     if (_pConfiguration->GetDeploymentMode() == DeploymentMode::SingleStepInstrumentation)
     {
@@ -2045,9 +2079,9 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ModuleLoadStarted(ModuleID module
 
 HRESULT STDMETHODCALLTYPE CorProfilerCallback::ModuleLoadFinished(ModuleID moduleId, HRESULT hrStatus)
 {
-    if (false == _isInitialized.load())
+    EngineActiveGuard engineGuard(_isInitialized, _engineLifetimeMutex, _isServicesShutdown);
+    if (!engineGuard.IsActive())
     {
-        // If this CorProfilerCallback has not yet initialized, or if it has already shut down, then this callback is a No-Op.
         return S_OK;
     }
 
@@ -2058,6 +2092,12 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ModuleLoadFinished(ModuleID modul
         GetFullFrameworkVersion(moduleId);
     }
 #endif
+
+    // must be done first: the other consumers rely on the core library module id being set
+    if (_pCoreLibModuleProvider != nullptr)
+    {
+        _pCoreLibModuleProvider->OnModuleLoaded(moduleId);
+    }
 
     if (_pConfiguration->IsExceptionProfilingEnabled())
     {
@@ -2074,6 +2114,13 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ModuleLoadFinished(ModuleID modul
 
 HRESULT STDMETHODCALLTYPE CorProfilerCallback::ModuleUnloadStarted(ModuleID moduleId)
 {
+    if (_pHeapSnapshotManager != nullptr)
+    {
+        // Notified here rather than from ModuleUnloadFinished so that the ClassIDs of the
+        // module stop being used before the runtime starts freeing what they point to.
+        _pHeapSnapshotManager->OnModuleUnloaded();
+    }
+
     return S_OK;
 }
 
@@ -2154,9 +2201,9 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ThreadCreated(ThreadID threadId)
 {
     Log::Debug("Callback invoked: ThreadCreated(threadId=0x", std::hex, threadId, std::dec, ")");
 
-    if (false == _isInitialized.load())
+    EngineActiveGuard engineGuard(_isInitialized, _engineLifetimeMutex, _isServicesShutdown);
+    if (!engineGuard.IsActive())
     {
-        // If this CorProfilerCallback has not yet initialized, or if it has already shut down, then this callback is a No-Op.
         return S_OK;
     }
 
@@ -2208,9 +2255,9 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ThreadDestroyed(ThreadID threadId
 {
     Log::Debug("Callback invoked: ThreadDestroyed(threadId=0x", std::hex, threadId, std::dec, ")");
 
-    if (false == _isInitialized.load())
+    EngineActiveGuard engineGuard(_isInitialized, _engineLifetimeMutex, _isServicesShutdown);
+    if (!engineGuard.IsActive())
     {
-        // If this CorProfilerCallback has not yet initialized, or if it has already shut down, then this callback is a No-Op.
         return S_OK;
     }
 
@@ -2257,9 +2304,9 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ThreadAssignedToOSThread(ThreadID
 {
     Log::Debug("Callback invoked: ThreadAssignedToOSThread(managedThreadId=0x", std::hex, managedThreadId, ", osThreadId=", std::dec, osThreadId, ")");
 
-    if (false == _isInitialized.load())
+    EngineActiveGuard engineGuard(_isInitialized, _engineLifetimeMutex, _isServicesShutdown);
+    if (!engineGuard.IsActive())
     {
-        // If this CorProfilerCallback has not yet initialized, or if it has already shut down, then this callback is a No-Op.
         return S_OK;
     }
 
@@ -2368,9 +2415,9 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ThreadAssignedToOSThread(ThreadID
 
 HRESULT STDMETHODCALLTYPE CorProfilerCallback::ThreadNameChanged(ThreadID threadId, ULONG cchName, WCHAR name[])
 {
-    if (false == _isInitialized.load())
+    EngineActiveGuard engineGuard(_isInitialized, _engineLifetimeMutex, _isServicesShutdown);
+    if (!engineGuard.IsActive())
     {
-        // If this CorProfilerCallback has not yet initialized, or if it has already shut down, then this callback is a No-Op.
         return S_OK;
     }
 
@@ -2505,9 +2552,9 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::RootReferences(ULONG cRootRefs, O
 
 HRESULT STDMETHODCALLTYPE CorProfilerCallback::ExceptionThrown(ObjectID thrownObjectId)
 {
-    if (false == _isInitialized.load())
+    EngineActiveGuard engineGuard(_isInitialized, _engineLifetimeMutex, _isServicesShutdown);
+    if (!engineGuard.IsActive())
     {
-        // If this CorProfilerCallback has not yet initialized, or if it has already shut down, then this callback is a No-Op.
         return S_OK;
     }
 

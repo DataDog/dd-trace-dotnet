@@ -312,7 +312,7 @@ namespace Datadog.Trace.Debugger
                                             lineProbes.Add(new NativeLineProbeDefinition(location!.ProbeDefinition.Id, location.Mvid, location.MethodToken, (int)location.BytecodeOffset, location.LineNumber, location.ProbeDefinition.Where.SourceFile));
                                             fetchProbeStatus.Add(new FetchProbeStatus(addedProbe.Id, addedProbe.Version ?? 0));
                                             _lastReportedUnboundProbeErrors.Remove(addedProbe.Id);
-                                            ProbeExpressionsProcessor.Instance.AddProbeProcessor(addedProbe);
+                                            ProbeExpressionsProcessor.Instance.AddProbeProcessor(addedProbe, _settings.MaxEvaluationTimeInMilliseconds);
                                             SetRateLimit(addedProbe);
                                             break;
                                         case LiveProbeResolveStatus.Unbound:
@@ -351,7 +351,7 @@ namespace Datadog.Trace.Debugger
                                     {
                                         var nativeDefinition = new NativeMethodProbeDefinition(addedProbe.Id, addedProbe.Where.TypeName, addedProbe.Where.MethodName, signature);
                                         methodProbes.Add(nativeDefinition);
-                                        ProbeExpressionsProcessor.Instance.AddProbeProcessor(addedProbe);
+                                        ProbeExpressionsProcessor.Instance.AddProbeProcessor(addedProbe, _settings.MaxEvaluationTimeInMilliseconds);
                                         SetRateLimit(addedProbe);
                                     }
 
@@ -692,7 +692,7 @@ namespace Datadog.Trace.Debugger
                     // configured rate would never take effect for that probe.
                     foreach (var boundProbe in boundProbes)
                     {
-                        ProbeExpressionsProcessor.Instance.AddProbeProcessor(boundProbe);
+                        ProbeExpressionsProcessor.Instance.AddProbeProcessor(boundProbe, _settings.MaxEvaluationTimeInMilliseconds);
                         SetRateLimit(boundProbe);
                     }
 
@@ -851,7 +851,7 @@ namespace Datadog.Trace.Debugger
             }
         }
 
-        internal void AddSnapshot(ProbeInfo probe, string snapshot)
+        internal void AddSnapshot(ProbeInfo probe, string snapshot, uint incompleteReasons)
         {
             if (IsDisposed)
             {
@@ -860,22 +860,22 @@ namespace Datadog.Trace.Debugger
 
             if (!probe.IsFullSnapshot)
             {
-                AddLog(probe, snapshot);
+                AddLog(probe, snapshot, incompleteReasons);
                 return;
             }
 
-            _snapshotUploader.Add(probe.ProbeId, snapshot);
+            _snapshotUploader.Add(probe.ProbeId, snapshot, incompleteReasons);
             SetProbeStatusToEmitting(probe);
         }
 
-        internal void AddLog(ProbeInfo probe, string log)
+        internal void AddLog(ProbeInfo probe, string log, uint incompleteReasons)
         {
             if (IsDisposed)
             {
                 return;
             }
 
-            _logUploader.Add(probe.ProbeId, log);
+            _logUploader.Add(probe.ProbeId, log, incompleteReasons);
             SetProbeStatusToEmitting(probe);
         }
 

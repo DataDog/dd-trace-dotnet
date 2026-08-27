@@ -74,13 +74,13 @@ namespace Datadog.Trace.Tests.Agent
         public async Task SpanSampling_ShouldSend_SingleMatchedSpan_WhenStatsDrops()
         {
             var api = new Mock<IApi>();
-            ArraySegment<byte> actualData = default;
+            byte[] actualData = [];
             var actualDroppedP0Traces = 0L;
             var actualDroppedP0Spans = 0L;
             api.Setup(x => x.SendTracesAsync(It.IsAny<ArraySegment<byte>>(), It.IsAny<int>(), It.IsAny<bool>(), It.IsAny<long>(), It.IsAny<long>(), It.IsAny<bool>()))
                 .Callback((ArraySegment<byte> traces, int _, bool _, long numberOfDroppedP0Traces, long numberOfDroppedP0Spans, bool _) =>
                 {
-                    actualData = traces;
+                    actualData = CopyPayload(traces);
                     actualDroppedP0Traces = numberOfDroppedP0Traces;
                     actualDroppedP0Spans = numberOfDroppedP0Spans;
                 })
@@ -119,13 +119,13 @@ namespace Datadog.Trace.Tests.Agent
         public async Task SpanSampling_ShouldSend_MultipleMatchedSpans_WhenStatsDrops()
         {
             var api = new Mock<IApi>();
-            ArraySegment<byte> actualData = default;
+            byte[] actualData = [];
             var actualDroppedP0Traces = 0L;
             var actualDroppedP0Spans = 0L;
             api.Setup(x => x.SendTracesAsync(It.IsAny<ArraySegment<byte>>(), It.IsAny<int>(), It.IsAny<bool>(), It.IsAny<long>(), It.IsAny<long>(), It.IsAny<bool>()))
                 .Callback((ArraySegment<byte> traces, int _, bool _, long numberOfDroppedP0Traces, long numberOfDroppedP0Spans, bool _) =>
                 {
-                    actualData = traces;
+                    actualData = CopyPayload(traces);
                     actualDroppedP0Traces = numberOfDroppedP0Traces;
                     actualDroppedP0Spans = numberOfDroppedP0Spans;
                 })
@@ -223,11 +223,11 @@ namespace Datadog.Trace.Tests.Agent
         [Fact]
         public async Task WriteTrace_2Traces_SendToApi()
         {
-            ArraySegment<byte> actualPayload = default;
+            byte[] actualPayload = [];
             _api.Setup(x => x.SendTracesAsync(It.IsAny<ArraySegment<byte>>(), It.IsAny<int>(), It.IsAny<bool>(), It.IsAny<long>(), It.IsAny<long>(), It.IsAny<bool>()))
                 .Callback((ArraySegment<byte> traces, int _, bool _, long _, long _, bool _) =>
                 {
-                    actualPayload = traces;
+                    actualPayload = CopyPayload(traces);
                 })
                 .ReturnsAsync(true);
 
@@ -242,7 +242,7 @@ namespace Datadog.Trace.Tests.Agent
             AssertPayloadEqual(actualPayload, expectedData1);
 
             _api.Invocations.Clear();
-            actualPayload = default;
+            actualPayload = [];
 
             spans = CreateTraceChunk(1, 2);
             traceChunk = new TraceChunkModel(spans);
@@ -288,57 +288,58 @@ namespace Datadog.Trace.Tests.Agent
         }
 
         [Fact]
-        public Task SwitchBuffer()
+        public async Task BufferStaysWritableWhileItsPayloadIsBeingSent()
         {
-            // Make sure that the agent is able to switch to the secondary buffer when the primary is full/busy
+            // Flushing detaches the payload instead of holding the buffer for the duration of the
+            // send, so the serialization thread can keep writing to the very buffer being flushed.
+            // Before that change the buffer was locked across the send, and a trace arriving at the
+            // wrong moment could find both buffers unavailable and be dropped.
             var api = new Mock<IApi>();
             var agent = new AgentWriter(api.Object, statsAggregator: null, statsd: TestStatsdManager.NoOp);
 
-            var barrier = new Barrier(2);
+            using var sendStarted = new ManualResetEventSlim();
+            using var releaseSend = new ManualResetEventSlim();
+            var alreadyBlocked = 0;
 
             api.Setup(a => a.SendTracesAsync(It.IsAny<ArraySegment<byte>>(), It.IsAny<int>(), It.IsAny<bool>(), It.IsAny<long>(), It.IsAny<long>(), It.IsAny<bool>()))
-                .Callback(() =>
+               .Callback(() =>
                 {
-                    barrier.SignalAndWait();
-                    barrier.SignalAndWait();
+                    // Only stall the first send, so that shutdown isn't blocked
+                    if (Interlocked.Exchange(ref alreadyBlocked, 1) == 0)
+                    {
+                        sendStarted.Set();
+                        releaseSend.Wait(30_000);
+                    }
                 })
-                .Returns(Task.FromResult(true));
+               .Returns(Task.FromResult(true));
 
             agent.WriteTrace(CreateTraceChunk(1));
 
-            // Wait for the flush operation
-            barrier.SignalAndWait();
+            sendStarted.Wait(30_000).Should().BeTrue("the flush loop should have started sending the first trace");
 
-            // At this point, the flush thread is stuck in Api.SendTracesAsync, and the frontBuffer should be active and locked
+            // The flush thread is stuck inside SendTracesAsync, but it took the payload with it,
+            // so the active buffer is empty and immediately writable again
             agent.ActiveBuffer.Should().BeSameAs(agent.FrontBuffer);
-            agent.FrontBuffer.IsLocked.Should().BeTrue();
+            agent.FrontBuffer.IsEmpty.Should().BeTrue();
+
+            WriteTraceAndWait(agent, CreateTraceChunk(2));
+
+            // No swap was needed, because the buffer was never unavailable
+            agent.ActiveBuffer.Should().BeSameAs(agent.FrontBuffer);
             agent.FrontBuffer.TraceCount.Should().Be(1);
-            agent.FrontBuffer.SpanCount.Should().Be(1);
+            agent.FrontBuffer.SpanCount.Should().Be(2);
+            agent.BackBuffer.IsEmpty.Should().BeTrue();
 
-            agent.WriteTrace(CreateTraceChunk(2));
+            // Nothing was dropped while the send was in flight, and nothing timed out waiting
+            // for the buffer either
+            agent.DroppedTracesBufferFull.Should().Be(0);
+            agent.DroppedTracesBufferFullAndLocked.Should().Be(0);
+            agent.DroppedTracesBuffersLocked.Should().Be(0);
+            agent.DroppedTracesTooLarge.Should().Be(0);
 
-            // Wait for the trace to be dequeued
-            WaitForDequeue(agent);
+            releaseSend.Set();
 
-            // Since the frontBuffer was locked, the buffers should have been swapped
-            agent.ActiveBuffer.Should().BeSameAs(agent.BackBuffer);
-            agent.BackBuffer.TraceCount.Should().Be(1);
-            agent.BackBuffer.SpanCount.Should().Be(2);
-
-            // Unblock the flush thread
-            barrier.SignalAndWait();
-
-            // Wait for the next flush operation
-            barrier.SignalAndWait();
-
-            // Back buffer should still be active and being flushed
-            agent.ActiveBuffer.Should().BeSameAs(agent.BackBuffer);
-            agent.BackBuffer.IsLocked.Should().BeTrue();
-            agent.FrontBuffer.IsLocked.Should().BeFalse();
-
-            // Unblock and exit
-            barrier.Dispose();
-            return agent.FlushAndCloseAsync();
+            await agent.FlushAndCloseAsync();
         }
 
         [Fact]
@@ -369,6 +370,31 @@ namespace Datadog.Trace.Tests.Agent
             agent.BackBuffer.IsEmpty.Should().BeTrue();
 
             api.Verify(a => a.SendTracesAsync(It.IsAny<ArraySegment<byte>>(), 1, It.IsAny<bool>(), It.IsAny<long>(), It.IsAny<long>(), It.IsAny<bool>()), Times.Exactly(2));
+
+            await agent.FlushAndCloseAsync();
+        }
+
+        [Fact]
+        public async Task FlushesAFallbackBufferThatIsNotFull()
+        {
+            // A Locked write swaps away from a buffer that holds traces but was never marked full.
+            // Nothing else will ever empty that buffer, so a flush has to pick it up regardless of
+            // whether it is full.
+            var api = new MockApi();
+            var agent = AgentWriterHelper.CreateWithManualFlush(api);
+
+            WriteTraceAndWait(agent, CreateTraceChunk(1));
+
+            agent.SwapActiveBufferForTests();
+
+            agent.ActiveBuffer.Should().BeSameAs(agent.BackBuffer);
+            agent.FrontBuffer.IsFull.Should().BeFalse();
+            agent.FrontBuffer.TraceCount.Should().Be(1);
+
+            await agent.FlushTracesAsync();
+
+            api.Traces.Should().HaveCount(1);
+            agent.FrontBuffer.IsEmpty.Should().BeTrue();
 
             await agent.FlushAndCloseAsync();
         }
@@ -426,8 +452,6 @@ namespace Datadog.Trace.Tests.Agent
             agent.BackBuffer.SpanCount.Should().Be(1);
 
             agent.DroppedTracesBufferFull.Should().Be(1);
-            agent.DroppedTracesBufferFullAndLocked.Should().Be(0);
-            agent.DroppedTracesBuffersLocked.Should().Be(0);
             agent.DroppedTracesTooLarge.Should().Be(0);
 
             // Dropped trace should have been reported to statsd
@@ -436,44 +460,6 @@ namespace Datadog.Trace.Tests.Agent
             statsd.Verify(s => s.Increment(TracerMetricNames.Queue.DroppedTraces, 1, 1, null), Times.Once);
             statsd.Verify(s => s.Increment(TracerMetricNames.Queue.DroppedSpans, 2, 1, null), Times.Once);
             statsd.VerifyNoOtherCalls();
-
-            await agent.FlushAndCloseAsync();
-        }
-
-        [Fact]
-        public async Task DropTraceWhenBothBuffersAreLocked()
-        {
-            var agent = AgentWriterHelper.CreateWithManualFlush(Mock.Of<IApi>());
-
-            agent.FrontBuffer.Lock().Should().BeTrue();
-            agent.BackBuffer.Lock().Should().BeTrue();
-
-            WriteTraceAndWait(agent, CreateTraceChunk(1));
-
-            agent.DroppedTracesBufferFull.Should().Be(0);
-            agent.DroppedTracesBufferFullAndLocked.Should().Be(0);
-            agent.DroppedTracesBuffersLocked.Should().Be(1);
-            agent.DroppedTracesTooLarge.Should().Be(0);
-
-            await agent.FlushAndCloseAsync();
-        }
-
-        [Fact]
-        public async Task DropTraceWhenOneBufferIsFullAndOneIsLocked()
-        {
-            var sizeOfTrace = ComputeSize(CreateTraceChunk(1));
-            var agent = AgentWriterHelper.CreateWithManualFlush(
-                Mock.Of<IApi>(),
-                maxBufferSize: (sizeOfTrace * 2) + SpanBufferMessagePackSerializer.HeaderSizeConst - 1);
-
-            agent.FrontBuffer.Lock().Should().BeTrue();
-            WriteTraceAndWait(agent, CreateTraceChunk(1));
-            WriteTraceAndWait(agent, CreateTraceChunk(2));
-
-            agent.DroppedTracesBufferFull.Should().Be(0);
-            agent.DroppedTracesBufferFullAndLocked.Should().Be(1);
-            agent.DroppedTracesBuffersLocked.Should().Be(0);
-            agent.DroppedTracesTooLarge.Should().Be(0);
 
             await agent.FlushAndCloseAsync();
         }
@@ -505,26 +491,6 @@ namespace Datadog.Trace.Tests.Agent
 
             agent.DroppedTracesBufferFull.Should().Be(0);
             agent.DroppedTracesTooLarge.Should().Be(0);
-
-            await agent.FlushAndCloseAsync();
-        }
-
-        [Fact]
-        public async Task DropTraceThatExceedsBufferSizeWhenActiveBufferIsLocked()
-        {
-            var agent = AgentWriterHelper.CreateWithManualFlush(
-                Mock.Of<IApi>(),
-                maxBufferSize: SpanBufferMessagePackSerializer.HeaderSizeConst);
-
-            agent.ActiveBuffer.Lock().Should().BeTrue();
-
-            WriteTraceAndWait(agent, CreateTraceChunk(2));
-
-            agent.ActiveBuffer.Should().BeSameAs(agent.BackBuffer);
-            agent.FrontBuffer.IsLocked.Should().BeTrue();
-            agent.BackBuffer.IsEmpty.Should().BeTrue();
-            agent.DroppedTracesBufferFull.Should().Be(0);
-            agent.DroppedTracesTooLarge.Should().Be(1);
 
             await agent.FlushAndCloseAsync();
         }
@@ -828,18 +794,31 @@ namespace Datadog.Trace.Tests.Agent
             return mutex.Wait(delay);
         }
 
-        private static void AssertPayloadEqual(ArraySegment<byte> data, byte[] expectedData)
+        /// <summary>
+        /// Takes a copy of the payload handed to the API. Copying matters: once the send completes,
+        /// the flush loop recycles that array as a buffer's backing store, so the bytes are only
+        /// guaranteed to be intact for the duration of the call. Deliberately assertion-free —
+        /// it runs on the flush thread, where a failed assertion would be swallowed rather than
+        /// failing the test.
+        /// </summary>
+        private static byte[] CopyPayload(ArraySegment<byte> data)
         {
-            data.Array.Should().NotBeNull();
-            data.Count.Should().BeGreaterOrEqualTo(SpanBufferMessagePackSerializer.HeaderSizeConst);
+            if (data.Array is null)
+            {
+                return [];
+            }
 
-            var actualPayload = data.Array!
-                .Skip(data.Offset)
-                .Take(data.Count)
-                .Skip(SpanBufferMessagePackSerializer.HeaderSizeConst)
-                .ToArray();
+            var copy = new byte[data.Count];
+            Array.Copy(data.Array, data.Offset, copy, 0, data.Count);
+            return copy;
+        }
 
-            actualPayload.Should().Equal(expectedData);
+        private static void AssertPayloadEqual(byte[] data, byte[] expectedData)
+        {
+            data.Length.Should().BeGreaterOrEqualTo(SpanBufferMessagePackSerializer.HeaderSizeConst);
+
+            data.Skip(SpanBufferMessagePackSerializer.HeaderSizeConst)
+                .Should().Equal(expectedData);
         }
 
         private static int ComputeSize(SpanCollection spans)

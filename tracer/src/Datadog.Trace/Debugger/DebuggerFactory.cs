@@ -19,6 +19,7 @@ using Datadog.Trace.DogStatsd;
 using Datadog.Trace.HttpOverStreams;
 using Datadog.Trace.Logging;
 using Datadog.Trace.RemoteConfigurationManagement;
+using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Vendors.StatsdClient;
 using Datadog.Trace.Vendors.StatsdClient.Transport;
 
@@ -32,8 +33,8 @@ internal sealed class DebuggerFactory
     {
         var globalRateLimiter = DebuggerGlobalRateLimiter.Instance;
         var snapshotSlicer = SnapshotSlicer.Create(debuggerSettings);
-        var snapshotSink = SnapshotSink.Create(debuggerSettings, snapshotSlicer);
-        var logSink = SnapshotSink.Create(debuggerSettings, snapshotSlicer);
+        var snapshotSink = SnapshotSink.Create(debuggerSettings, snapshotSlicer, MetricTags.DebuggerCaptureEventType.Snapshot);
+        var logSink = SnapshotSink.Create(debuggerSettings, snapshotSlicer, MetricTags.DebuggerCaptureEventType.Log);
         var diagnosticsSink = DiagnosticsSink.Create(serviceNameProvider, debuggerSettings);
 
         var snapshotUploader = CreateSnapshotUploader(discoveryService, debuggerSettings, gitMetadataTagsProvider, GetApiFactory(tracerSettings, true), snapshotSink);

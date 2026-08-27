@@ -376,6 +376,7 @@
       <type fullname="System.Linq.Expressions.NewArrayExpression" />
       <type fullname="System.Linq.Expressions.NewExpression" />
       <type fullname="System.Linq.Expressions.ParameterExpression" />
+      <type fullname="System.Linq.Expressions.TryExpression" />
       <type fullname="System.Linq.Expressions.TypeBinaryExpression" />
       <type fullname="System.Linq.Expressions.UnaryExpression" />
       <type fullname="System.Runtime.CompilerServices.CallSite" />
@@ -733,10 +734,12 @@
       <type fullname="System.GC" />
       <type fullname="System.GCGenerationInfo" />
       <type fullname="System.GCMemoryInfo" />
+      <type fullname="System.Globalization.CharUnicodeInfo" />
       <type fullname="System.Globalization.CultureInfo" />
       <type fullname="System.Globalization.DateTimeStyles" />
       <type fullname="System.Globalization.NumberFormatInfo" />
       <type fullname="System.Globalization.NumberStyles" />
+      <type fullname="System.Globalization.UnicodeCategory" />
       <type fullname="System.Guid" />
       <type fullname="System.HashCode" />
       <type fullname="System.IAsyncDisposable" />

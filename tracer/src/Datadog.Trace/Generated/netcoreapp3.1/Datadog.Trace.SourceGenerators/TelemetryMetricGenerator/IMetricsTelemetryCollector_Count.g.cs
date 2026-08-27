@@ -93,6 +93,12 @@ internal partial interface IMetricsTelemetryCollector
 
     public void RecordCountDebuggerMemoryPressureDuration(Datadog.Trace.Telemetry.Metrics.MetricTags.DebuggerMemoryPressureDurationBucket tag, int increment = 1);
 
+    public void RecordCountDebuggerEventsSkipped(Datadog.Trace.Telemetry.Metrics.MetricTags.DebuggerEventsSkippedReason tag1, Datadog.Trace.Telemetry.Metrics.MetricTags.DebuggerEventType tag2, int increment = 1);
+
+    public void RecordCountDebuggerEventsDropped(Datadog.Trace.Telemetry.Metrics.MetricTags.DebuggerEventsDroppedReason tag1, Datadog.Trace.Telemetry.Metrics.MetricTags.DebuggerCaptureEventType tag2, int increment = 1);
+
+    public void RecordCountDebuggerCaptureIncomplete(Datadog.Trace.Telemetry.Metrics.MetricTags.DebuggerCaptureEventType tag1, Datadog.Trace.Telemetry.Metrics.MetricTags.DebuggerCaptureIncompleteReason tag2, int increment = 1);
+
     public void RecordCountWafInit(Datadog.Trace.Telemetry.Metrics.MetricTags.WafStatus tag, int increment = 1);
 
     public void RecordCountWafUpdates(Datadog.Trace.Telemetry.Metrics.MetricTags.WafStatus tag, int increment = 1);
@@ -100,6 +106,8 @@ internal partial interface IMetricsTelemetryCollector
     public void RecordCountWafRequests(Datadog.Trace.Telemetry.Metrics.MetricTags.WafAnalysis tag, int increment = 1);
 
     public void RecordCountInputTruncated(Datadog.Trace.Telemetry.Metrics.MetricTags.TruncationReason tag, int increment = 1);
+
+    public void RecordCountWafError(Datadog.Trace.Telemetry.Metrics.MetricTags.WafError tag, int increment = 1);
 
     public void RecordCountRaspRuleEval(Datadog.Trace.Telemetry.Metrics.MetricTags.RaspRuleType tag, int increment = 1);
 

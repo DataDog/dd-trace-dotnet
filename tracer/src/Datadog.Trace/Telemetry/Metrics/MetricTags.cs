@@ -235,6 +235,64 @@ internal static class MetricTags
         [Description("bucket:gte_30s")] GreaterThanOrEqual30Seconds,
     }
 
+    internal enum DebuggerEventType
+    {
+        [Description("event_type:snapshot")] Snapshot = 0,
+        [Description("event_type:log")] Log = 1,
+        [Description("event_type:metric")] Metric = 2,
+        [Description("event_type:span")] Span = 3,
+    }
+
+    internal enum DebuggerCaptureEventType
+    {
+        [Description("event_type:snapshot")] Snapshot = 0,
+        [Description("event_type:log")] Log = 1,
+    }
+
+    internal enum DebuggerEventsSkippedReason
+    {
+        [Description("reason:rateLimitGlobal")] RateLimitGlobal = 0,
+        [Description("reason:rateLimitProbe")] RateLimitProbe = 1,
+
+        /// <summary>
+        /// The event was skipped because probe evaluation exceeded its time limit before capture began.
+        /// </summary>
+        [Description("reason:evaluationTimeout")] EvaluationTimeout = 2,
+    }
+
+    internal enum DebuggerEventsDroppedReason
+    {
+        /// <summary>
+        /// The captured event was discarded because the debugger upload queue was full.
+        /// </summary>
+        [Description("reason:queueFull")] QueueFull = 0,
+
+        /// <summary>
+        /// The captured event exceeded the 1 MB intake payload limit and was discarded.
+        /// </summary>
+        [Description("reason:payloadTooLarge")] PayloadTooLarge = 1,
+    }
+
+    internal enum DebuggerCaptureIncompleteReason
+    {
+        [Description("reason:runtimeError")] RuntimeError = 0,
+
+        /// <summary>
+        /// Capture exceeded its time limit, so the partial event was retained.
+        /// </summary>
+        [Description("reason:timeout")] Timeout = 1,
+        [Description("reason:depth")] Depth = 2,
+        [Description("reason:fieldCount")] FieldCount = 3,
+        [Description("reason:collectionSize")] CollectionSize = 4,
+        [Description("reason:stringLength")] StringLength = 5,
+
+        /// <summary>
+        /// The event exceeded the 1 MB intake payload limit, so capture was trimmed and the partial event was retained.
+        /// </summary>
+        [Description("reason:payloadTooLarge")] PayloadTooLarge = 6,
+        [Description("reason:other")] Other = 7,
+    }
+
     internal enum IntegrationName
     {
         // manual integration
@@ -345,15 +403,26 @@ internal static class MetricTags
         // Note the initial 'waf_version'. This is an optimisation to avoid multiple array allocations
         // It is replaced with the "real" waf_version at runtime
         // CAUTION: waf_version should aways be placed in first position
-        [Description("waf_version;event_rules_version;rule_triggered:false;request_blocked:false;waf_timeout:false;block_failure:false;rate_limited:false;input_truncated:false")]Normal,
-        [Description("waf_version;event_rules_version;rule_triggered:true;request_blocked:false;waf_timeout:false;block_failure:false;rate_limited:false;input_truncated:false")]RuleTriggered,
-        [Description("waf_version;event_rules_version;rule_triggered:true;request_blocked:true;waf_timeout:false;block_failure:false;rate_limited:false;input_truncated:false")]RuleTriggeredAndBlocked,
-        [Description("waf_version;event_rules_version;rule_triggered:false;request_blocked:false;waf_timeout:true;block_failure:false;rate_limited:false;input_truncated:false")]WafTimeout,
+        [Description("waf_version;event_rules_version;rule_triggered:false;request_blocked:false;waf_timeout:false;block_failure:false;rate_limited:false;input_truncated:false;waf_error:false")]Normal,
+        [Description("waf_version;event_rules_version;rule_triggered:true;request_blocked:false;waf_timeout:false;block_failure:false;rate_limited:false;input_truncated:false;waf_error:false")]RuleTriggered,
+        [Description("waf_version;event_rules_version;rule_triggered:true;request_blocked:true;waf_timeout:false;block_failure:false;rate_limited:false;input_truncated:false;waf_error:false")]RuleTriggeredAndBlocked,
+        [Description("waf_version;event_rules_version;rule_triggered:false;request_blocked:false;waf_timeout:true;block_failure:false;rate_limited:false;input_truncated:false;waf_error:false")]WafTimeout,
         // Input truncated
-        [Description("waf_version;event_rules_version;rule_triggered:false;request_blocked:false;waf_timeout:false;block_failure:false;rate_limited:false;input_truncated:true")] NormalTruncated,
-        [Description("waf_version;event_rules_version;rule_triggered:true;request_blocked:false;waf_timeout:false;block_failure:false;rate_limited:false;input_truncated:true")] RuleTriggeredTruncated,
-        [Description("waf_version;event_rules_version;rule_triggered:true;request_blocked:true;waf_timeout:false;block_failure:false;rate_limited:false;input_truncated:true")] RuleTriggeredAndBlockedTruncated,
-        [Description("waf_version;event_rules_version;rule_triggered:false;request_blocked:false;waf_timeout:true;block_failure:false;rate_limited:false;input_truncated:true")] WafTimeoutTruncated,
+        [Description("waf_version;event_rules_version;rule_triggered:false;request_blocked:false;waf_timeout:false;block_failure:false;rate_limited:false;input_truncated:true;waf_error:false")] NormalTruncated,
+        [Description("waf_version;event_rules_version;rule_triggered:true;request_blocked:false;waf_timeout:false;block_failure:false;rate_limited:false;input_truncated:true;waf_error:false")] RuleTriggeredTruncated,
+        [Description("waf_version;event_rules_version;rule_triggered:true;request_blocked:true;waf_timeout:false;block_failure:false;rate_limited:false;input_truncated:true;waf_error:false")] RuleTriggeredAndBlockedTruncated,
+        [Description("waf_version;event_rules_version;rule_triggered:false;request_blocked:false;waf_timeout:true;block_failure:false;rate_limited:false;input_truncated:true;waf_error:false")] WafTimeoutTruncated,
+        [Description("waf_version;event_rules_version;rule_triggered:false;request_blocked:false;waf_timeout:false;block_failure:false;rate_limited:false;input_truncated:false;waf_error:true")] WafError,
+        [Description("waf_version;event_rules_version;rule_triggered:false;request_blocked:false;waf_timeout:false;block_failure:false;rate_limited:false;input_truncated:true;waf_error:true")] WafErrorTruncated,
+    }
+
+    public enum WafError
+    {
+        // CAUTION: waf_version should aways be placed in first position
+        [Description("waf_version;event_rules_version;waf_error:-127")] BindingError,
+        [Description("waf_version;event_rules_version;waf_error:-3")] Internal,
+        [Description("waf_version;event_rules_version;waf_error:-2")] InvalidObject,
+        [Description("waf_version;event_rules_version;waf_error:-1")] InvalidArgument,
     }
 
     public enum WafStatus

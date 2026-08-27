@@ -10,6 +10,7 @@
 
 #include "AllocationsProvider.h"
 #include "ApplicationStore.h"
+#include "EngineActiveGuard.h"
 #include "EventPipeEventsManager.h"
 #include "ExceptionsProvider.h"
 #include "IAppDomainStore.h"
@@ -50,9 +51,11 @@
 
 #include <atomic>
 #include <memory>
+#include <shared_mutex>
 #include <vector>
 
 class ContentionProvider;
+class CoreLibModuleProvider;
 class IService;
 class IThreadsCpuManager;
 class IManagedThreadList;
@@ -246,6 +249,10 @@ private :
     std::shared_ptr<IMetricsSender> _metricsSender;
     std::atomic<bool> _isInitialized{false}; // pay attention to keeping ProfilerEngineStatus::IsProfilerEngiveActive in sync with this!
 
+    // Synchronizes access to the services below, and the engine lifetime flag.
+    mutable std::shared_mutex _engineLifetimeMutex;
+    bool _isServicesShutdown = false;
+
     // The pointer here are observable pointer which means that they are used only to access the data.
     // Their lifetime is managed by the _services vector.
     IThreadsCpuManager* _pThreadsCpuManager = nullptr;
@@ -284,6 +291,8 @@ private :
     bool _IsManagedConfigurationSet = false; // profiler can't start before this becomes true
     std::unique_ptr<IAppDomainStore> _pAppDomainStore = nullptr;
     std::unique_ptr<IFrameStore> _pFrameStore = nullptr;
+    // shared by the components that need to resolve types defined in the core library
+    std::unique_ptr<CoreLibModuleProvider> _pCoreLibModuleProvider = nullptr;
     std::unique_ptr<IRuntimeInfo> _pRuntimeInfo = nullptr;
     bool _isFrameworkVersionKnown = false;
     std::unique_ptr<IEnabledProfilers> _pEnabledProfilers = nullptr;

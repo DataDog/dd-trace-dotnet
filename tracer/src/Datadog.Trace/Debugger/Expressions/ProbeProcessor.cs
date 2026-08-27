@@ -19,6 +19,8 @@ using Datadog.Trace.Debugger.RateLimiting;
 using Datadog.Trace.Debugger.Snapshots;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
+using Datadog.Trace.SourceGenerators;
+using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.Debugger.Expressions
@@ -38,18 +40,22 @@ namespace Datadog.Trace.Debugger.Expressions
         /// Initializes a new instance of the <see cref="ProbeProcessor"/> class, that correlated to probe id
         /// </summary>
         /// <param name="probe">A probe that can pe log probe, metric probe or span decoration probe</param>
+        /// <param name="maxEvaluationTimeInMilliseconds">Maximum elapsed time allowed for expression evaluation.</param>
         /// <exception cref="ArgumentOutOfRangeException">If probe type or probe location is from unsupported type</exception>
         /// <remarks>Exceptions should be caught and logged by the caller</remarks>
-        internal ProbeProcessor(ProbeDefinition probe)
-            : this(probe, DebuggerGlobalRateLimiter.Instance)
+        internal ProbeProcessor(ProbeDefinition probe, int maxEvaluationTimeInMilliseconds)
+            : this(probe, maxEvaluationTimeInMilliseconds, DebuggerGlobalRateLimiter.Instance)
         {
         }
 
-        internal ProbeProcessor(ProbeDefinition probe, IDebuggerGlobalRateLimiter globalRateLimiter)
+        internal ProbeProcessor(ProbeDefinition probe, int maxEvaluationTimeInMilliseconds, IDebuggerGlobalRateLimiter globalRateLimiter)
         {
             _globalRateLimiter = globalRateLimiter ?? throw new ArgumentNullException(nameof(globalRateLimiter));
-            _state = ProbeProcessorState.Create(probe);
+            _state = ProbeProcessorState.Create(probe, maxEvaluationTimeInMilliseconds);
         }
+
+        [TestingOnly]
+        internal int EvaluatorMaxEvaluationTimeInMilliseconds => _state.GetOrCreateEvaluator().MaxEvaluationTimeInMilliseconds;
 
         private static DebuggerExpression? ToDebuggerExpression(SnapshotSegment? segment)
         {
@@ -60,9 +66,9 @@ namespace Datadog.Trace.Debugger.Expressions
         {
         }
 
-        public IProbeProcessor UpdateProbeProcessor(ProbeDefinition probe)
+        public IProbeProcessor UpdateProbeProcessor(ProbeDefinition probe, int maxEvaluationTimeInMilliseconds)
         {
-            _state = ProbeProcessorState.Create(probe);
+            _state = ProbeProcessorState.Create(probe, maxEvaluationTimeInMilliseconds);
             return this;
         }
 
@@ -134,10 +140,17 @@ namespace Datadog.Trace.Debugger.Expressions
             // Global-first matches Java; it can affect per-probe fairness and may be improved later.
             if (probeInfo.ProbeType == ProbeType.Snapshot && !_globalRateLimiter.ShouldSampleSnapshot(probeInfo.ProbeId))
             {
+                DebuggerGuardrailMetrics.RecordEventsSkipped(probeInfo.ProbeType, MetricTags.DebuggerEventsSkippedReason.RateLimitGlobal);
                 return false;
             }
 
-            return sampler.Sample();
+            if (!sampler.Sample())
+            {
+                DebuggerGuardrailMetrics.RecordEventsSkipped(probeInfo.ProbeType, MetricTags.DebuggerEventsSkippedReason.RateLimitProbe);
+                return false;
+            }
+
+            return true;
         }
 
         public bool Process<TCapture>(ref CaptureInfo<TCapture> info, IDebuggerSnapshotCreator inSnapshotCreator, in ProbeData probeData)
@@ -325,6 +338,20 @@ namespace Datadog.Trace.Debugger.Expressions
 
         private ExpressionEvaluationResult Evaluate(ProbeProcessorState state, ProbeInfo probeInfo, DebuggerSnapshotCreator snapshotCreator, out bool shouldStopCapture, IAdaptiveSampler sampler)
         {
+            var evaluationResult = EvaluateCore(state, probeInfo, snapshotCreator, out shouldStopCapture, sampler);
+
+            // An exceeded time budget fails open: the event is still emitted with its evaluation errors so the
+            // customer can see why the probe is too slow. Only report it as skipped when the event is dropped.
+            if (shouldStopCapture && evaluationResult.EvaluationBudget.TimedOut)
+            {
+                DebuggerGuardrailMetrics.RecordEventsSkipped(probeInfo.ProbeType, MetricTags.DebuggerEventsSkippedReason.EvaluationTimeout);
+            }
+
+            return evaluationResult;
+        }
+
+        private ExpressionEvaluationResult EvaluateCore(ProbeProcessorState state, ProbeInfo probeInfo, DebuggerSnapshotCreator snapshotCreator, out bool shouldStopCapture, IAdaptiveSampler sampler)
+        {
             ExpressionEvaluationResult evaluationResult = default;
             shouldStopCapture = false;
             var captureExpressionsEvaluated = false;
@@ -347,9 +374,15 @@ namespace Datadog.Trace.Debugger.Expressions
             catch (Exception e)
             {
                 Log.Error(e, "Failed to evaluate expression for probe: {ProbeId}", probeInfo.ProbeId);
+                var evaluationTimedOut = e is EvaluationTimeBudgetExceededException || evaluationResult.EvaluationBudget.TimedOut;
                 if (evaluationResult.IsNull())
                 {
                     evaluationResult = new ExpressionEvaluationResult();
+                }
+
+                if (evaluationTimedOut)
+                {
+                    evaluationResult.EvaluationBudget.MarkTimedOut();
                 }
 
                 evaluationResult.Errors ??= new List<EvaluationError>();
@@ -614,7 +647,7 @@ namespace Datadog.Trace.Debugger.Expressions
                     if (!probeInfo.IsFullSnapshot)
                     {
                         var snapshot = snapshotCreator.FinalizeMethodSnapshot(probeInfo.ProbeId, probeInfo.ProbeVersion, ref info);
-                        DebuggerManager.Instance.DynamicInstrumentation?.AddSnapshot(probeInfo, snapshot);
+                        DebuggerManager.Instance.DynamicInstrumentation?.AddSnapshot(probeInfo, snapshot, snapshotCreator.IncompleteReasons);
                         break;
                     }
 
@@ -639,7 +672,7 @@ namespace Datadog.Trace.Debugger.Expressions
                     if (!probeInfo.IsFullSnapshot)
                     {
                         var snapshot = snapshotCreator.FinalizeMethodSnapshot(probeInfo.ProbeId, probeInfo.ProbeVersion, ref info);
-                        DebuggerManager.Instance.DynamicInstrumentation?.AddSnapshot(probeInfo, snapshot);
+                        DebuggerManager.Instance.DynamicInstrumentation?.AddSnapshot(probeInfo, snapshot, snapshotCreator.IncompleteReasons);
                         break;
                     }
 
@@ -672,7 +705,7 @@ namespace Datadog.Trace.Debugger.Expressions
                         }
 
                         var snapshot = snapshotCreator.FinalizeMethodSnapshot(probeInfo.ProbeId, probeInfo.ProbeVersion, ref info);
-                        DebuggerManager.Instance.DynamicInstrumentation?.AddSnapshot(probeInfo, snapshot);
+                        DebuggerManager.Instance.DynamicInstrumentation?.AddSnapshot(probeInfo, snapshot, snapshotCreator.IncompleteReasons);
                         snapshotCreator.Stop();
                         break;
                     }
@@ -717,7 +750,7 @@ namespace Datadog.Trace.Debugger.Expressions
                     }
 
                     var snapshot = snapshotCreator.FinalizeLineSnapshot(probeInfo.ProbeId, probeInfo.ProbeVersion, ref info);
-                    DebuggerManager.Instance.DynamicInstrumentation?.AddSnapshot(probeInfo, snapshot);
+                    DebuggerManager.Instance.DynamicInstrumentation?.AddSnapshot(probeInfo, snapshot, snapshotCreator.IncompleteReasons);
                     snapshotCreator.Stop();
                     break;
 
@@ -743,7 +776,8 @@ namespace Datadog.Trace.Debugger.Expressions
                 DebuggerExpression? condition,
                 DebuggerExpression? metric,
                 KeyValuePair<DebuggerExpression?, KeyValuePair<string?, DebuggerExpression?[]>[]>[]? spanDecorations,
-                CaptureExpressionDefinition[]? captureExpressions)
+                CaptureExpressionDefinition[]? captureExpressions,
+                int maxEvaluationTimeInMilliseconds)
             {
                 ProbeInfo = probeInfo;
                 Templates = templates;
@@ -751,6 +785,7 @@ namespace Datadog.Trace.Debugger.Expressions
                 Metric = metric;
                 SpanDecorations = spanDecorations;
                 CaptureExpressions = captureExpressions;
+                MaxEvaluationTimeInMilliseconds = maxEvaluationTimeInMilliseconds;
                 HasCondition = condition.HasValue;
                 IsMetricCountWithoutExpression = probeInfo.ProbeType == ProbeType.Metric && (metric?.Json == null) && probeInfo.MetricKind == MetricKind.COUNT;
                 ShouldCaptureExpressions = !probeInfo.IsFullSnapshot && captureExpressions is { Length: > 0 };
@@ -775,6 +810,8 @@ namespace Datadog.Trace.Debugger.Expressions
 
             private CaptureExpressionDefinition[]? CaptureExpressions { get; }
 
+            internal int MaxEvaluationTimeInMilliseconds { get; }
+
             internal bool HasCondition { get; }
 
             internal bool IsMetricCountWithoutExpression { get; }
@@ -783,7 +820,7 @@ namespace Datadog.Trace.Debugger.Expressions
 
             internal bool ShouldEvaluateExpressions { get; }
 
-            internal static ProbeProcessorState Create(ProbeDefinition probe)
+            internal static ProbeProcessorState Create(ProbeDefinition probe, int maxEvaluationTimeInMilliseconds)
             {
                 var location = probe.Where.MethodName != null
                                    ? ProbeLocation.Method
@@ -862,7 +899,8 @@ namespace Datadog.Trace.Debugger.Expressions
                     condition,
                     metric,
                     spanDecorations,
-                    captureExpressions);
+                    captureExpressions,
+                    maxEvaluationTimeInMilliseconds);
             }
 
             internal ProbeExpressionEvaluator GetOrCreateEvaluator()
@@ -873,7 +911,7 @@ namespace Datadog.Trace.Debugger.Expressions
                     return evaluator;
                 }
 
-                var newEvaluator = new ProbeExpressionEvaluator(Templates, Condition, Metric, SpanDecorations, CaptureExpressions);
+                var newEvaluator = new ProbeExpressionEvaluator(Templates, Condition, Metric, SpanDecorations, CaptureExpressions, MaxEvaluationTimeInMilliseconds);
                 var previousEvaluator = Interlocked.CompareExchange(ref _evaluator, newEvaluator, null);
                 return previousEvaluator ?? newEvaluator;
             }

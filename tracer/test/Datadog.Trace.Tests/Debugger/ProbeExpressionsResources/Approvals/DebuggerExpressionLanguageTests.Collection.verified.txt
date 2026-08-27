@@ -1,11 +1,10 @@
 Template:
-Segments: 
+Segments:
 
 {
     "ref": "Collection"
 }
-Expressions: 
-(
+Expressions: (
     scopeMember,
     scopeMember,
     scopeMember,
