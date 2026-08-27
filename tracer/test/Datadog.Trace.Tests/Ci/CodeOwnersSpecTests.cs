@@ -9,6 +9,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Ci.CodeOwnership;
 using FluentAssertions;
@@ -936,9 +937,22 @@ public class CodeOwnersSpecTests
         stopwatch.Elapsed.Should().BeLessThan(TestTimeout, "glob matching has bounded, non-backtracking cost");
         Match(codeOwners, matchingPath).Should().Equal(["@slow"], "a difficult non-match must not disable the rule globally");
 
-        var concurrentMatches = Enumerable.Range(0, 64)
-                                          .Select(_ => Task.Run(() => Match(codeOwners, nonMatchingPath)))
+        const int concurrentWorkerCount = 4;
+        using var startBarrier = new Barrier(concurrentWorkerCount);
+        // The barrier releases all dedicated threads together without relying on the shared ThreadPool.
+        var concurrentMatches = Enumerable.Range(0, concurrentWorkerCount)
+                                          .Select(
+                                               _ => Task.Factory.StartNew(
+                                                   () =>
+                                                   {
+                                                       startBarrier.SignalAndWait(TestTimeout).Should().BeTrue("all workers must be ready before matching starts");
+                                                       return Match(codeOwners, nonMatchingPath);
+                                                   },
+                                                   CancellationToken.None,
+                                                   TaskCreationOptions.LongRunning,
+                                                   TaskScheduler.Default))
                                           .ToArray();
+
         Task.WaitAll(concurrentMatches, TestTimeout).Should().BeTrue("concurrent matching must not deadlock");
         foreach (var concurrentMatch in concurrentMatches)
         {
