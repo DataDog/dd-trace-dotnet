@@ -586,7 +586,6 @@ stages:
         baseImage: $(managedBaseImage)
         command: "ExtractDebugInfoLinux ValidateNativeProfilerGlibcCompatibility"
         retryCountForRunCommand: 1
-        timeoutInMinutesForRunCommand: 10
 
     - publish: $(monitoringHome)
       displayName: Uploading linux profiler home artifact
@@ -1468,7 +1467,7 @@ stages:
       jobs: [managed]
 
   - job: managed
-    timeoutInMinutes: 60 #default value
+    timeoutInMinutes: 90 # BuildManagedUnitTests can retry up to 4x15 min, so make sure there's headroom for RunManagedUnitTests too
     strategy:
       matrix:
         $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.unit_tests_linux_x64_matrix'] ]
@@ -1525,7 +1524,7 @@ stages:
         jobs: [test]
 
     - job: test
-      timeoutInMinutes: 60 #default value
+      timeoutInMinutes: 90 # BuildManagedUnitTests can retry up to 4x15 min, so make sure there's headroom for RunManagedUnitTests too
 
       strategy:
         matrix:
@@ -3123,8 +3122,7 @@ stages:
         useNativeSdkVersion: true
         command: "BuildProfilerAsanTest -Framework net7.0"
         apiKey: $(DD_LOGGER_DD_API_KEY)
-        retryCountForRunCommand: 1
-        timeoutInMinutesForRunCommand: 30
+        timeoutInMinutesForRunCommand: 30 # No retry: this target also runs the sanitizer unit tests, and retrying could mask a real intermittent finding
 
     - template: steps/run-in-docker.yml
       parameters:
@@ -3206,8 +3204,7 @@ stages:
         baseImage: debian
         command: "BuildProfilerAsanTest -Framework net7.0"
         apiKey: $(DD_LOGGER_DD_API_KEY)
-        retryCountForRunCommand: 1
-        timeoutInMinutesForRunCommand: 30
+        timeoutInMinutesForRunCommand: 30 # No retry: this target also runs the sanitizer unit tests, and retrying could mask a real intermittent finding
 
     - template: steps/run-in-docker.yml
       parameters:
@@ -3264,8 +3261,7 @@ stages:
         baseImage: debian
         command: "BuildProfilerUbsanTest -Framework net7.0"
         apiKey: $(DD_LOGGER_DD_API_KEY)
-        retryCountForRunCommand: 1
-        timeoutInMinutesForRunCommand: 30
+        timeoutInMinutesForRunCommand: 30 # No retry: this target also runs the sanitizer unit tests, and retrying could mask a real intermittent finding
 
     - template: steps/run-in-docker.yml
       parameters:
@@ -3325,8 +3321,7 @@ stages:
         useNativeSdkVersion: true
         command: "BuildProfilerUbsanTest -Framework net7.0"
         apiKey: $(DD_LOGGER_DD_API_KEY)
-        retryCountForRunCommand: 1
-        timeoutInMinutesForRunCommand: 30
+        timeoutInMinutesForRunCommand: 30 # No retry: this target also runs the sanitizer unit tests, and retrying could mask a real intermittent finding
 
     - template: steps/run-in-docker.yml
       parameters:
