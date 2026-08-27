@@ -9,9 +9,12 @@
 // end
 
 #include <memory>
+#include <shared_mutex>
+#include <unordered_map>
 
 #include "BclEventsParser.h"
 #include "ClrEventsParser.h"
+#include "DotnetEventsProvider.h"
 
 
 class IAllocationsListener;
@@ -32,6 +35,7 @@ public:
                            IConfiguration* pConfiguration,
                            IGCDumpListener* pGCDumpListener);
     void Register(IGarbageCollectionsListener* pGarbageCollectionsListener);
+    void OnProviderCreated(EVENTPIPE_PROVIDER provider);
     void ParseEvent(EVENTPIPE_PROVIDER provider,
                     DWORD eventId,
                     DWORD eventVersion,
@@ -55,9 +59,14 @@ private:
         DWORD& version
         );
 
+    DotnetEventsProvider ResolveProvider(EVENTPIPE_PROVIDER provider);
+    DotnetEventsProvider GetProvider(EVENTPIPE_PROVIDER provider);
+
 
 private:
     ICorProfilerInfo12* _pCorProfilerInfo;
     std::unique_ptr<ClrEventsParser> _clrParser;
     std::unique_ptr<BclEventsParser> _bclParser;
+    std::shared_mutex _providersMutex;
+    std::unordered_map<EVENTPIPE_PROVIDER, DotnetEventsProvider> _providers;
 };
