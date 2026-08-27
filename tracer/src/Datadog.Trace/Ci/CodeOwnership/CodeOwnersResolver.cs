@@ -48,17 +48,17 @@ internal sealed class CodeOwnersResolver
         var locatedFile = _locatedCodeOwners;
         if (locatedFile is null)
         {
-            var fallbackPath = _pathResolver.MakeRelativeToSourceRoot(sourceFilePath, useOSSeparator);
-            return new SourceOwnership(fallbackPath, [], isRepositoryRelative: false);
+            var sourceRootPath = _pathResolver.MakeRelativeToSourceRoot(sourceFilePath, useOSSeparator);
+            return new SourceOwnership(sourceRootPath, [], isRepositoryRelative: false);
         }
 
-        _pathResolver.TryMakeRepositoryRelative(sourceFilePath, locatedFile.RepositoryRoot, useOSSeparator, out var repositoryPath);
+        if (_pathResolver.TryMakeRepositoryRelative(sourceFilePath, locatedFile.RepositoryRoot, useOSSeparator, out var repositoryPath))
+        {
+            return new SourceOwnership(repositoryPath, locatedFile.Rules.Match(repositoryPath), isRepositoryRelative: true);
+        }
 
-        var isRepositoryRelative = repositoryPath is not null;
-        var resolvedPath = repositoryPath ?? _pathResolver.MakeRelativeToSourceRoot(sourceFilePath, useOSSeparator);
-        var matchingOwners = locatedFile.Rules.Match(resolvedPath);
-
-        return new SourceOwnership(resolvedPath, matchingOwners, isRepositoryRelative);
+        var fallbackPath = _pathResolver.MakeRelativeToSourceRoot(sourceFilePath, useOSSeparator);
+        return new SourceOwnership(fallbackPath, [], isRepositoryRelative: false);
     }
 
     private readonly struct SourcePathCacheKey : IEquatable<SourcePathCacheKey>

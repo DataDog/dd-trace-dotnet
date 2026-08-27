@@ -249,7 +249,6 @@ public class AgentlessConfigurationSourceTests
             CreateEndpoint(),
             factory,
             TimeSpan.FromSeconds(30),
-            TimeSpan.FromSeconds(5),
             configuration =>
             {
                 applied.Add(configuration);
