@@ -46,6 +46,7 @@ steps:
     AZURE_STORAGE_CONTAINER: $(${{ parameters.containerVariable }})
 
 - bash: |
+    set -e
     az storage blob upload --container-name "$AZURE_STORAGE_CONTAINER" --file "index.txt" --name "index.txt" --overwrite true
     az storage blob upload --container-name "$AZURE_STORAGE_CONTAINER" --file "sha.txt" --name "sha.txt" --overwrite true
     az storage blob upload --container-name "$AZURE_STORAGE_CONTAINER" --file "version.txt" --name "version.txt" --overwrite true
