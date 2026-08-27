@@ -37,7 +37,7 @@ namespace Datadog.Trace.Agent.Transports
         }
 
         public Task<IApiResponse> GetAsync()
-            => SendAsync(method: "GET", contentType: null, contentEncoding: null, state: this, writeBody: null);
+            => SendAsync(method: "GET", contentType: null, contentEncoding: null, state: this, writeBody: null, new CancellationTokenSource(_request.Timeout));
 
         public Task<IApiResponse> PostAsync(ArraySegment<byte> bytes, string contentType)
             => PostAsync(bytes, contentType, null);
@@ -184,11 +184,31 @@ namespace Datadog.Trace.Agent.Transports
             }
         }
 
-        private async Task<IApiResponse> SendAsync<TState>(string method, string? contentType, string? contentEncoding, TState state, Func<Stream, TState, Task>? writeBody)
+        private Task<IApiResponse> SendAsync<TState>(string method, string? contentType, string? contentEncoding, TState state, Func<Stream, TState, Task> writeBody)
+            => SendAsync(method, contentType, contentEncoding, state, writeBody, new CancellationTokenSource(_request.Timeout));
+
+        [TestingOnly]
+        internal Task<IApiResponse> SendAsync(string method, string? contentType, string? contentEncoding, Func<Stream, Task>? writeBody, CancellationTokenSource cts)
+            => SendAsync(method, contentType, contentEncoding, state: writeBody, writeBody is null ? null : static (stream, writeFunc) => writeFunc!(stream), cts);
+
+        private async Task<IApiResponse> SendAsync<TState>(string method, string? contentType, string? contentEncoding, TState state, Func<Stream, TState, Task>? writeBody, CancellationTokenSource cts)
         {
             try
             {
                 ResetRequest(method, contentType, contentEncoding);
+
+                // The callback runs on a CancellationTokenSource timer thread (or
+                // synchronously if the token is already cancelled), so it must swallow
+                // exceptions -- nothing observes them there.
+
+                // Note that this deadline is currently _only_ scoped to the "send": connect,
+                // writing the request body, and waiting for response headers - ending when
+                // SendAsync returns. Reading the response body afterwards is not covered.
+                //
+                // This diverges slightly from HttpClient, where the timeout covers the _whole_ read
+                // currently, however, this _may_ change if we switch to using HttpCompletionMode.
+                // ResponseHeadersRead to avoid the full buffering into memory as we do today.
+                cts.Token.Register(static s => { try { ((HttpWebRequest)s!).Abort(); } catch { } }, _request);
 
                 if (writeBody is not null)
                 {
@@ -206,6 +226,14 @@ namespace Datadog.Trace.Agent.Transports
             {
                 // If the exception is caused by an error status code, ignore it and let the caller handle the result
                 return new ApiWebResponse((HttpWebResponse)exception.Response);
+            }
+            catch (Exception ex) when (cts.IsCancellationRequested)
+            {
+                throw new OperationCanceledException($"The request to {_request.RequestUri} timed out after {_request.Timeout}ms.", ex, cts.Token);
+            }
+            finally
+            {
+                cts.Dispose();
             }
         }
 
