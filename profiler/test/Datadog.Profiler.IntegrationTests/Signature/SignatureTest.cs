@@ -15,17 +15,17 @@ namespace Datadog.Profiler.IntegrationTests.Signature
 {
     public class SignatureTest
     {
+        // On Linux/ARM64 the unwinder sometimes yields a single Unknown-Frame-Type frame instead of the
+        // full managed stack. When that happens, retry the whole run to get a complete stack.
+        private const string UnknownFrameType =
+            "|lm:Unknown-Assembly |ns: |ct:Unknown-Type |cg: |fn:Unknown-Frame-Type |fg: |sg:(?)";
+
         private readonly ITestOutputHelper _output;
 
         public SignatureTest(ITestOutputHelper output)
         {
             _output = output;
         }
-
-        // On Linux/ARM64 the unwinder sometimes yields a single Unknown-Frame-Type frame instead of the
-        // full managed stack. When that happens, retry the whole run to get a complete stack.
-        private const string UnknownFrameType =
-            "|lm:Unknown-Assembly |ns: |ct:Unknown-Type |cg: |fn:Unknown-Frame-Type |fg: |sg:(?)";
 
         [Flaky("On Linux/ARM64 the unwinder sometimes yields a single Unknown-Frame-Type frame; retry to get a full stack")]
         [TestAppFact("Samples.Computer01", new[] { "net48", "netcoreapp3.1", "net6.0", "net8.0", })] // FIXME: .NET 9 skipping .NET 9 for now
@@ -49,20 +49,6 @@ namespace Datadog.Profiler.IntegrationTests.Signature
                 && EnvironmentHelper.GetPlatform() == "ARM64"
                 && actualStack.FramesCount == 1
                 && actualStack[0].ToString() == UnknownFrameType;
-        }
-
-        private (string Type, string Message, long Count, StackTrace Stacktrace)[] GetExceptionSamples(string appName, string framework, string appAssembly)
-        {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: "--scenario 20");
-            EnvironmentHelper.DisableDefaultProfilers(runner);
-            runner.Environment.SetVariable(EnvironmentVariables.TimestampsAsLabelEnabled, "0");
-            runner.Environment.SetVariable(EnvironmentVariables.ExceptionProfilerEnabled, "1");
-
-            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
-            runner.Run(agent);
-            Assert.True(agent.NbCallsOnProfilingEndpoint > 0);
-
-            return SamplesHelper.ExtractExceptionSamples(runner.Environment.PprofDir).ToArray();
         }
 
         private static void CheckAsyncStateMachineFrames((string Type, string Message, long Count, StackTrace Stacktrace)[] exceptionSamples)
@@ -184,6 +170,20 @@ namespace Datadog.Profiler.IntegrationTests.Signature
 
                 Assert.True(sample.Stacktrace.EndWith(stack, out var stackEndWithMessage), stackEndWithMessage);
             }
+        }
+
+        private (string Type, string Message, long Count, StackTrace Stacktrace)[] GetExceptionSamples(string appName, string framework, string appAssembly)
+        {
+            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: "--scenario 20");
+            EnvironmentHelper.DisableDefaultProfilers(runner);
+            runner.Environment.SetVariable(EnvironmentVariables.TimestampsAsLabelEnabled, "0");
+            runner.Environment.SetVariable(EnvironmentVariables.ExceptionProfilerEnabled, "1");
+
+            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
+            runner.Run(agent);
+            Assert.True(agent.NbCallsOnProfilingEndpoint > 0);
+
+            return SamplesHelper.ExtractExceptionSamples(runner.Environment.PprofDir).ToArray();
         }
     }
 }

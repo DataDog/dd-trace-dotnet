@@ -740,10 +740,12 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
                 var idx = pending.FindIndex(
                     s => s.Type == exp.Type && s.Message == exp.Message && s.Count == exp.Count &&
                          AssertExpectedStack(s.Stacktrace, exp.ExpectedStack).Matched);
+#pragma warning disable SA1118 // Parameter should not span multiple lines
                 idx.Should().BeGreaterThanOrEqualTo(
                     0,
                     $"Expected a sample for {exp.Type} / {exp.Message} / count {exp.Count} with matching stack. " +
                     $"Remaining: {FormatExceptionSamplesSummary(pending)}");
+#pragma warning restore SA1118 // Parameter should not span multiple lines
                 pending.RemoveAt(idx);
             }
 
