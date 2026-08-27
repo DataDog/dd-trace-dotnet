@@ -25,8 +25,17 @@ internal sealed class CodeOwnersFileLocator
     {
         _repository = repository;
         _provider = provider;
-        LocatedFile = FindFromAncestors(sourceRoot, workspacePath) ??
-                      FindFromAncestors(workspacePath, basePath: null);
+        var sourceDirectory = RepositorySourcePathResolver.GetSearchStart(sourceRoot, workspacePath);
+        var workspaceDirectory = RepositorySourcePathResolver.GetSearchStart(workspacePath, basePath: null);
+        var repositoryRoot = FindGitRoot(sourceDirectory) ?? FindGitRoot(workspaceDirectory);
+
+        if (repositoryRoot is not null)
+        {
+            LocatedFile = TryLoadFromRepositoryRoot(repositoryRoot);
+            return;
+        }
+
+        LocatedFile = TryLoadFromExplicitRoot(workspaceDirectory) ?? TryLoadFromExplicitRoot(sourceDirectory);
     }
 
     /// <summary>
@@ -34,9 +43,8 @@ internal sealed class CodeOwnersFileLocator
     /// </summary>
     internal LocatedCodeOwners? LocatedFile { get; }
 
-    private LocatedCodeOwners? FindFromAncestors(string? startPath, string? basePath)
+    private static string? FindGitRoot(string? startDirectory)
     {
-        var startDirectory = RepositorySourcePathResolver.GetSearchStart(startPath, basePath);
         if (StringUtil.IsNullOrEmpty(startDirectory))
         {
             return null;
@@ -55,15 +63,9 @@ internal sealed class CodeOwnersFileLocator
 
         while (directory is not null)
         {
-            var locatedFile = TryLoadFromRepositoryRoot(directory.FullName);
-            if (locatedFile is not null)
-            {
-                return locatedFile;
-            }
-
             if (HasGitMarker(directory.FullName))
             {
-                return null;
+                return directory.FullName;
             }
 
             directory = directory.Parent;
@@ -87,6 +89,9 @@ internal sealed class CodeOwnersFileLocator
                    ? new LocatedCodeOwners(rules, root)
                    : null;
     }
+
+    private LocatedCodeOwners? TryLoadFromExplicitRoot(string? root)
+        => StringUtil.IsNullOrEmpty(root) ? null : TryLoadFromRepositoryRoot(root);
 
     private CodeOwners.Dialect DetectDialect(string root)
     {
