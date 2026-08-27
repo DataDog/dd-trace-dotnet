@@ -9,6 +9,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Datadog.Trace.ClrProfiler.IntegrationTests.Helpers;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
@@ -44,11 +45,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             SetServiceVersion("1.0.0");
         }
 
-        public static IEnumerable<object[]> GetEnabledConfig()
-            => from packageVersionArray in PackageVersions.Kafka
-               from metadataSchemaVersion in new[] { "v0", "v1" }
-               select new[] { packageVersionArray[0], metadataSchemaVersion };
-
         public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) =>
             span.Tags["span.kind"] switch
             {
@@ -58,11 +54,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             };
 
         [SkippableTheory]
-        [MemberData(nameof(GetEnabledConfig))]
+        [CombinatorialOrPairwiseData]
         [Trait("Category", "EndToEnd")]
         [Trait("Category", "ArmUnsupported")]
         [Flaky("Kafka SubmitsTraces is flaky", maxRetries: 3)]
-        public async Task SubmitsTraces(string packageVersion, string metadataSchemaVersion)
+        public async Task SubmitsTraces(
+            [PackageVersionData(nameof(PackageVersions.Kafka))] string packageVersion,
+            [MetadataSchemaVersionData] string metadataSchemaVersion)
         {
             var topic = $"sample-topic-{TestPrefix}-{packageVersion}".Replace('.', '-');
 
