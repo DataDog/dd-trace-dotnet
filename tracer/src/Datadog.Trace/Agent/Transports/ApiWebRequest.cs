@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 using System.IO;
 using System.IO.Compression;
@@ -40,7 +42,7 @@ namespace Datadog.Trace.Agent.Transports
         public Task<IApiResponse> PostAsync(ArraySegment<byte> bytes, string contentType)
             => PostAsync(bytes, contentType, null);
 
-        public Task<IApiResponse> PostAsync(ArraySegment<byte> bytes, string contentType, string contentEncoding)
+        public Task<IApiResponse> PostAsync(ArraySegment<byte> bytes, string contentType, string? contentEncoding)
             => SendAsync(
                 method: "POST",
                 contentType,
@@ -67,7 +69,7 @@ namespace Datadog.Trace.Agent.Transports
                 writeBody: static (reqStream, state) => SerializationHelpers.WriteAsJson(reqStream, state.Payload, state.Settings, state.Compression));
         }
 
-        public Task<IApiResponse> PostAsync(Func<Stream, Task> writeToRequestStream, string contentType, string contentEncoding, string multipartBoundary)
+        public Task<IApiResponse> PostAsync(Func<Stream, Task> writeToRequestStream, string contentType, string? contentEncoding, string multipartBoundary)
             => SendAsync(
                 method: "POST",
                 ContentTypeHelper.GetContentType(contentType, multipartBoundary),
@@ -168,7 +170,7 @@ namespace Datadog.Trace.Agent.Transports
             await requestStream.WriteAsync(trailerBytes, 0, trailerBytes.Length).ConfigureAwait(false);
         }
 
-        private void ResetRequest(string method, string contentType, string contentEncoding)
+        private void ResetRequest(string method, string? contentType, string? contentEncoding)
         {
             _request.Method = method;
             _request.ContentType = string.IsNullOrEmpty(contentType) ? null : contentType;
@@ -182,7 +184,7 @@ namespace Datadog.Trace.Agent.Transports
             }
         }
 
-        private async Task<IApiResponse> SendAsync<TState>(string method, string contentType, string contentEncoding, TState state, Func<Stream, TState, Task> writeBody)
+        private async Task<IApiResponse> SendAsync<TState>(string method, string? contentType, string? contentEncoding, TState state, Func<Stream, TState, Task>? writeBody)
         {
             try
             {
