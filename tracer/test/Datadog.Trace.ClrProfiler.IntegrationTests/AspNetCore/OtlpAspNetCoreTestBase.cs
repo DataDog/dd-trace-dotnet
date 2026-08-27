@@ -68,12 +68,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
 
             SetServiceVersion("1.0.0");
 
-            // The OpenTelemetry conventions require the low-cardinality route template in
-            // "http.route", which is only tracked when route-template resource names are enabled and
-            // route-template expansion is not.
+            // Set RouteTemplateResourceNamesEnabled and SingleSpanAspNetCoreEnabled according to the test configuration, which will affect how spans under Datadog semantics are named and structured.
+            // Under OpenTelemetry semantics, TracerSettings force-enables both, so there should be no changes to the resulting spans.
             SetEnvironmentVariable(ConfigurationKeys.FeatureFlags.RouteTemplateResourceNamesEnabled, (flags == AspNetCoreFeatureFlags.RouteTemplateResourceNames).ToString());
             SetEnvironmentVariable(ConfigurationKeys.FeatureFlags.SingleSpanAspNetCoreEnabled, (flags == AspNetCoreFeatureFlags.SingleSpan).ToString());
-            SetEnvironmentVariable(ConfigurationKeys.ExpandRouteTemplatesEnabled, "false");
 
             SetEnvironmentVariable("DD_TRACE_OTEL_SEMANTICS_ENABLED", openTelemetrySemanticsEnabled.ToString());
 

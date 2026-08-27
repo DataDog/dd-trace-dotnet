@@ -408,7 +408,7 @@ namespace Datadog.Trace.DiagnosticListeners
 
             if (otelSemanticsEnabled)
             {
-                // The OpenTelemetry ASP.NET Core instrumentation generates a single server span,
+                // The OpenTelemetry semantic conventions call for a single HTTP server span per request,
                 // so don't create the aspnet_core_mvc.request child span.
                 return null;
             }
