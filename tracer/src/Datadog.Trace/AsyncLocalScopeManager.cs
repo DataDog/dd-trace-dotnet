@@ -32,7 +32,7 @@ namespace Datadog.Trace
         internal AsyncLocalScopeManager(IOtelThreadContextPublisher otelThreadContextPublisher)
         {
             _otelThreadContextPublisher = otelThreadContextPublisher;
-            _activeScope = CreateScope(otelThreadContextPublisher);
+            _activeScope = CreateScope();
         }
 
         public Scope Active
@@ -76,9 +76,9 @@ namespace Datadog.Trace
             DistributedTracer.Instance.SetSpanContext(scope.Span.Context.Parent as SpanContext);
         }
 
-        private AsyncLocal<Scope> CreateScope(IOtelThreadContextPublisher otelThreadContextPublisher)
+        private AsyncLocal<Scope> CreateScope()
         {
-            if (Profiler.Instance.ContextTracker.IsEnabled || otelThreadContextPublisher.IsEnabled)
+            if (Profiler.Instance.ContextTracker.IsEnabled || _otelThreadContextPublisher.IsEnabled)
             {
                 return new AsyncLocal<Scope>(OnScopeChanged);
             }
