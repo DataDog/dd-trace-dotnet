@@ -1,4 +1,4 @@
-// <copyright file="ApiWebRequest.cs" company="Datadog">
+﻿// <copyright file="ApiWebRequest.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -20,15 +20,9 @@ namespace Datadog.Trace.Agent.Transports
 {
     internal sealed class ApiWebRequest : IApiRequest
     {
-        private const string BoundarySeparator = $"{CrLf}--{Boundary}{CrLf}";
-        private const string BoundaryTrailer = $"{CrLf}--{Boundary}--{CrLf}";
-
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<ApiWebRequest>();
         private readonly HttpWebRequest _request;
         private readonly TimeSpan? _asyncTimeout;
-
-        private byte[] _boundarySeparatorInBytes;
-        private byte[] _boundaryTrailerInBytes;
 
         public ApiWebRequest(HttpWebRequest request, TimeSpan? asyncTimeout = null)
         {
@@ -138,8 +132,8 @@ namespace Datadog.Trace.Agent.Transports
             async Task WriteToStreamAsync(MultipartFormItem[] multipartItems, Stream requestStream)
             {
                 // Write form request using the boundary
-                var boundaryBytes = _boundarySeparatorInBytes ??= Encoding.ASCII.GetBytes(BoundarySeparator);
-                var trailerBytes = _boundaryTrailerInBytes ??= Encoding.ASCII.GetBytes(BoundaryTrailer);
+                var boundaryBytes = MultipartBytes.BoundarySeparator;
+                var trailerBytes = MultipartBytes.BoundaryTrailer;
 
                 // Write each MultipartFormItem
                 var itemsWritten = 0;
