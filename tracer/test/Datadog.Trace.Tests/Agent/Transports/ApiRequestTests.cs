@@ -7,7 +7,11 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net;
+using System.Net.Http;
+using System.Net.Sockets;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.StreamFactories;
@@ -43,12 +47,87 @@ public class ApiRequestTests
 
     [Theory]
     [CombinatorialData]
-    public async Task ApiWebRequest(bool useGzip)
+    public async Task ApiWebRequest(bool useGzip, bool withTimeout)
     {
         using var agent = MockTracerAgent.Create(_output);
         var url = new Uri($"http://localhost:{agent.Port}/");
-        var factory = new ApiWebRequestFactory(url, AgentHttpHeaderNames.DefaultHeaders);
+
+        var timeout = withTimeout ? TimeSpan.FromSeconds(90) : (TimeSpan?)null;
+        var factory = new ApiWebRequestFactory(url, AgentHttpHeaderNames.DefaultHeaders, timeout);
         await RunTest(agent, () => factory.Create(url), useGzip);
+    }
+
+    // These tests exercise the deadline-enforcement added to ApiWebRequest to work around
+    // HttpWebRequest.Timeout having no effect on the async GetRequestStreamAsync/
+    // GetResponseAsync APIs.
+
+    [Fact]
+    public async Task ApiWebRequest_PostAsync_AbortedMidFlight_ThrowsOperationCanceledException()
+    {
+        using var listener = new BlackHoleTcpListener();
+        using var cts = new CancellationTokenSource();
+        var request = CreateWebRequest(listener.Port);
+        var bytes = Encoding.UTF8.GetBytes("{}");
+
+        try
+        {
+            var pending = request.SendAsync("POST", "application/json", null, stream => stream.WriteAsync(bytes, 0, bytes.Length), cts);
+
+            await listener.Accepted;
+            cts.Cancel();
+
+            Func<Task> act = () => pending;
+            await act.Should().ThrowAsync<OperationCanceledException>();
+        }
+        finally
+        {
+            listener.Release();
+        }
+    }
+
+    [Fact]
+    public async Task ApiWebRequest_GetAsync_AbortedMidFlight_ThrowsOperationCanceledException()
+    {
+        using var listener = new BlackHoleTcpListener();
+        using var cts = new CancellationTokenSource();
+        var request = CreateWebRequest(listener.Port);
+
+        try
+        {
+            var pending = request.SendAsync("GET", null, null, null, cts);
+
+            await listener.Accepted;
+            cts.Cancel();
+
+            Func<Task> act = () => pending;
+            await act.Should().ThrowAsync<OperationCanceledException>();
+        }
+        finally
+        {
+            listener.Release();
+        }
+    }
+
+    [Fact]
+    public async Task ApiWebRequest_AlreadyCancelledDeadline_ThrowsOperationCanceledException()
+    {
+        using var listener = new BlackHoleTcpListener();
+        using var cts = new CancellationTokenSource();
+        var request = CreateWebRequest(listener.Port);
+
+        try
+        {
+            // Cancel before the send even starts, so the abort lands during
+            // GetRequestStreamAsync/connect, not during GetResponseAsync.
+            cts.Cancel();
+
+            Func<Task> act = () => request.SendAsync("GET", null, null, null, cts);
+            await act.Should().ThrowAsync<OperationCanceledException>();
+        }
+        finally
+        {
+            listener.Release();
+        }
     }
 
 #if NETCOREAPP3_1_OR_GREATER
@@ -73,6 +152,28 @@ public class ApiRequestTests
             new DatadogHttpClient(TraceAgentHttpHeaderHelper.Instance),
             Localhost);
         await RunTest(agent, () => factory.Create(Localhost), useGzip);
+    }
+
+    [Fact]
+    public async Task HttpClientRequest_TimesOut_PropagatesTaskCanceledException()
+    {
+        var handler = new StubHttpMessageHandler(_ => throw new TaskCanceledException("Simulated HttpClient.Timeout"));
+        var factory = new HttpClientRequestFactory(Localhost, AgentHttpHeaderNames.DefaultHeaders, handler);
+        var request = factory.Create(Localhost);
+
+        Func<Task> act = request.GetAsync;
+        await act.Should().ThrowAsync<TaskCanceledException>();
+    }
+
+    [Fact]
+    public async Task HttpClientRequest_OtherFailure_PropagatesUnchanged()
+    {
+        var handler = new StubHttpMessageHandler(_ => throw new HttpRequestException("Simulated connection failure"));
+        var factory = new HttpClientRequestFactory(Localhost, AgentHttpHeaderNames.DefaultHeaders, handler);
+        var request = factory.Create(Localhost);
+
+        Func<Task> act = request.GetAsync;
+        await act.Should().ThrowAsync<HttpRequestException>();
     }
 #endif
 
@@ -105,6 +206,8 @@ public class ApiRequestTests
             Localhost);
         await RunTest(agent, () => factory.Create(Localhost), useGzip);
     }
+
+    private static ApiWebRequest CreateWebRequest(int port) => new((HttpWebRequest)WebRequest.Create($"http://127.0.0.1:{port}/"));
 
     private async Task RunTest(MockTracerAgent agent, Func<IApiRequest> createRequest, bool useGzip)
     {
@@ -187,4 +290,77 @@ public class ApiRequestTests
                         Interval = 60,
                     },
                 }));
+
+#if NETCOREAPP3_1_OR_GREATER
+    private sealed class StubHttpMessageHandler : HttpMessageHandler
+    {
+        private readonly Func<HttpRequestMessage, HttpResponseMessage> _responder;
+
+        public StubHttpMessageHandler(Func<HttpRequestMessage, HttpResponseMessage> responder)
+        {
+            _responder = responder;
+        }
+
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+            => Task.FromResult(_responder(request));
+    }
+#endif
+
+    private sealed class BlackHoleTcpListener : IDisposable
+    {
+        private readonly TcpListener _listener;
+        private readonly TaskCompletionSource<bool> _accepted = new();
+        private readonly TaskCompletionSource<bool> _release = new();
+
+        public BlackHoleTcpListener()
+        {
+            _listener = new TcpListener(IPAddress.Loopback, 0);
+            _listener.Start();
+            Port = ((IPEndPoint)_listener.LocalEndpoint).Port;
+
+            var thread = new Thread(Run) { IsBackground = true };
+            thread.Start();
+        }
+
+        public int Port { get; }
+
+        public Task Accepted => _accepted.Task;
+
+        public void Release() => _release.TrySetResult(true);
+
+        public void Dispose()
+        {
+            Release();
+
+            try
+            {
+                _listener.Stop();
+            }
+            catch
+            {
+                // best-effort cleanup
+            }
+        }
+
+        private void Run()
+        {
+            TcpClient client = null;
+            try
+            {
+                client = _listener.AcceptTcpClient();
+                _accepted.TrySetResult(true);
+
+                // Hold the connection open -- never finish the response -- until the test is done with it.
+                _release.Task.Wait();
+            }
+            catch (Exception ex)
+            {
+                _accepted.TrySetException(ex);
+            }
+            finally
+            {
+                client?.Close();
+            }
+        }
+    }
 }
