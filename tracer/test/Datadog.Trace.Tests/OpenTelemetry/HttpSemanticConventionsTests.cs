@@ -58,6 +58,24 @@ public class HttpSemanticConventionsTests
         HttpSemanticConventions.GetResourceName(requestMethod).Should().Be(expected);
     }
 
+    [Theory]
+    // A template is reported exactly as the server stored it, including its casing, whether or not
+    // it has a leading slash, and inline defaults and constraints.
+    [InlineData("/api/delay/{seconds}", "/api/delay/{seconds}")]
+    [InlineData("api/delay/{seconds}", "api/delay/{seconds}")]
+    [InlineData("status-code/{statusCode}", "status-code/{statusCode}")]
+    [InlineData("{controller=Home}/{action=Index}/{id?}", "{controller=Home}/{action=Index}/{id?}")]
+    // ...except that a template matching the application root is stored as the empty string, and
+    // reporting it verbatim would emit an empty attribute and a span name with a trailing space.
+    [InlineData("", "/")]
+    [InlineData("/", "/")]
+    // No route matched, so http.route must be omitted rather than substituted.
+    [InlineData(null, null)]
+    public void GetHttpRoute_ReportsTheTemplateVerbatimExceptForTheApplicationRoot(string routeTemplate, string expected)
+    {
+        HttpSemanticConventions.GetHttpRoute(routeTemplate).Should().Be(expected);
+    }
+
     // Exercise every method in both its
     // canonical and its lower-case form covers both, so the two cannot drift apart unnoticed.
     [Theory]

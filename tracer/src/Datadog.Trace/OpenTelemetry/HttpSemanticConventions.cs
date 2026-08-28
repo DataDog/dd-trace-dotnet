@@ -32,6 +32,11 @@ namespace Datadog.Trace.OpenTelemetry
         /// </summary>
         internal const string UnknownMethodSpanName = "HTTP";
 
+        /// <summary>
+        /// The value reported in "http.route" for a route template that matches the application root.
+        /// </summary>
+        private const string RootRoute = "/";
+
         // The values reported in "network.protocol.version" for the protocol versions we expect to
         // see. Held as constants so the common cases don't allocate a string per request.
         private const string ProtocolVersion10 = "1.0";
@@ -223,6 +228,18 @@ namespace Datadog.Trace.OpenTelemetry
                 { Major: 3, Minor: 0 } => ProtocolVersion30,
                 _ => protocolVersion.ToString(),
             };
+
+        /// <summary>
+        /// Gets the value to report in "http.route" for the route template the server matched, or
+        /// <c>null</c> if no route matched. ASP.NET Core stores a template that matches the
+        /// application root as the empty string, which must not be reported verbatim: it would emit
+        /// an empty attribute and leave a trailing space in the "{method} {http.route}" span name.
+        /// ASP.NET Core's own "http.route" and the OpenTelemetry ASP.NET Core instrumentation both
+        /// report "/" in that case, so we do the same.
+        /// </summary>
+        /// <param name="routeTemplate">The route template as stored by the server.</param>
+        internal static string? GetHttpRoute(string? routeTemplate)
+            => routeTemplate is { Length: 0 } ? RootRoute : routeTemplate;
 
         /// <summary>
         /// Gets the resource name for a request with the provided "http.request.method" value, when no

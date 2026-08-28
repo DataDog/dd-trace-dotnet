@@ -255,22 +255,25 @@ namespace Datadog.Trace.DiagnosticListeners
                 {
                     tags.AspNetCoreEndpoint = routeEndpoint.Value.DisplayName;
                     var routePattern = routeEndpoint.Value.RoutePattern.DuckCast<RoutePattern>();
-                    // No need to ToLowerInvariant() these strings, as we lower case
-                    // the whole route later
 
-                    var normalizedRoute = routePattern.RawText?.ToLowerInvariant();
-
+                    string? normalizedRoute;
                     if (_tracer.Settings.OtelSemanticsEnabled)
                     {
                         // The OTel span name must be "{method} {http.route}", so use the route verbatim
-                        // instead of the Datadog simplified route pattern. If there's no route, fall back
-                        // to the method-only resource name instead of appending a null route.
+                        // (as stored by ASP.NET Core) instead of the Datadog simplified route pattern.
+                        // If there's no route, fall back to the method-only resource name instead of
+                        // appending a null route.
+                        normalizedRoute = HttpSemanticConventions.GetHttpRoute(routePattern.RawText);
                         rootSpan.ResourceName = normalizedRoute is not null
                                                      ? $"{HttpSemanticConventions.GetResourceName(tags.HttpMethod)} {normalizedRoute}"
                                                      : HttpSemanticConventions.GetResourceName(tags.HttpMethod);
                     }
                     else
                     {
+                        // No need to ToLowerInvariant() these strings, as we lower case
+                        // the whole route later
+                        normalizedRoute = routePattern.RawText?.ToLowerInvariant();
+
                         var resourcePathName = AspNetCoreResourceNameHelper.SimplifyRoutePattern(
                             routePattern,
                             routeValues,

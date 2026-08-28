@@ -368,15 +368,17 @@ namespace Datadog.Trace.DiagnosticListeners
 
                 if (routeTemplate is not null)
                 {
-                    aspNetRoute = routeTemplate.TemplateText.ToLowerInvariant();
-
                     if (otelSemanticsEnabled)
                     {
                         // The OTel span name must be "{method} {http.route}", so use the route verbatim
+                        // (as stored by ASP.NET Core), instead of lower-casing it like the Datadog semantics do.
+                        aspNetRoute = HttpSemanticConventions.GetHttpRoute(routeTemplate.TemplateText);
                         resourceName = $"{HttpSemanticConventions.GetResourceName(rootSpanTags.HttpMethod)} {aspNetRoute}";
                     }
                     else
                     {
+                        aspNetRoute = routeTemplate.TemplateText.ToLowerInvariant();
+
                         // If we have a route, overwrite the existing resource name
                         var resourcePathName = AspNetCoreResourceNameHelper.SimplifyRouteTemplate(
                             routeTemplate,
@@ -558,7 +560,11 @@ namespace Datadog.Trace.DiagnosticListeners
                 var routePattern = routeEndpoint.Value.RoutePattern.DuckCast<RoutePattern>();
 
                 // Have to pass this value through to the MVC span, as not available there
-                var normalizedRoute = routePattern.RawText?.ToLowerInvariant();
+                // OpenTelemetry semantics should report the route verbatim (as stored by ASP.NET Core),
+                // while Datadog semantics lower-case it for consistency with the rest of the resource name.
+                var normalizedRoute = _tracer.Settings.OtelSemanticsEnabled
+                                           ? HttpSemanticConventions.GetHttpRoute(routePattern.RawText)
+                                           : routePattern.RawText?.ToLowerInvariant();
                 trackingFeature.Route = normalizedRoute;
 
                 var request = httpContext.Request.DuckCast<HttpRequestStruct>();
