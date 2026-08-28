@@ -42,6 +42,7 @@ namespace Datadog.Profiler.SmokeTests
             {
                 runner.EnvironmentHelper.SetVariable(EnvironmentVariables.EtwEnabled, "0");
             }
+
             runner.EnvironmentHelper.SetVariable(EnvironmentVariables.MemoryFootprintEnabled, "1");
 
             runner.RunAndCheck();
@@ -55,6 +56,7 @@ namespace Datadog.Profiler.SmokeTests
             {
                 runner.EnvironmentHelper.SetVariable(EnvironmentVariables.EtwEnabled, "0");
             }
+
             runner.EnvironmentHelper.SetVariable(EnvironmentVariables.MemoryFootprintEnabled, "1");
 
             runner.RunAndCheck();
@@ -68,6 +70,7 @@ namespace Datadog.Profiler.SmokeTests
             {
                 runner.EnvironmentHelper.SetVariable(EnvironmentVariables.EtwEnabled, "0");
             }
+
             runner.EnvironmentHelper.SetVariable(EnvironmentVariables.MemoryFootprintEnabled, "1");
 
             runner.RunAndCheck();
@@ -81,6 +84,7 @@ namespace Datadog.Profiler.SmokeTests
             {
                 runner.EnvironmentHelper.SetVariable(EnvironmentVariables.EtwEnabled, "0");
             }
+
             runner.EnvironmentHelper.SetVariable(EnvironmentVariables.MemoryFootprintEnabled, "1");
 
             runner.RunAndCheck();
@@ -141,7 +145,7 @@ namespace Datadog.Profiler.SmokeTests
                 runner.EnvironmentHelper.SetVariable(EnvironmentVariables.EtwEnabled, "0");
             }
 
-            // First, check for no error  
+            // First, check for no error
             runner.RunAndCheck();
 
             // Then check for custom get function from IP enabled

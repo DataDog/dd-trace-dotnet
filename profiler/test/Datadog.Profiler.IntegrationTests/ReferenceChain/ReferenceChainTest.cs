@@ -204,7 +204,8 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
             var binByStem = binFiles.ToDictionary(f => Path.GetFileNameWithoutExtension(f), f => f);
             var commonStems = jsonByStem.Keys.Intersect(binByStem.Keys).ToList();
 
-            Assert.True(commonStems.Count > 0,
+            Assert.True(
+                commonStems.Count > 0,
                 "No matching JSON/binary file pairs found (expected same filename stem for both formats)");
 
             foreach (var stem in commonStems)
@@ -245,107 +246,6 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
         public void CheckReferenceTreeTypesAreInClassHistogramJson(string appName, string framework, string appAssembly)
         {
             CheckReferenceTreeTypesAreInClassHistogram(appName, framework, appAssembly, referenceTreeFormat: "2", treeFileName: "reference_tree.json", treeExtension: "json");
-        }
-
-        private void CheckReferenceTreeTypesAreInClassHistogram(
-            string appName,
-            string framework,
-            string appAssembly,
-            string referenceTreeFormat,
-            string treeFileName,
-            string treeExtension)
-        {
-            // The class histogram and the reference tree are built from the same heap snapshot
-            // and use the same type names, so every heap object type listed in the tree is
-            // expected to appear in the histogram of that snapshot.
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: $"--scenario {ReferenceChainScenarioNumber} --param 1");
-            runner.TestDurationInSeconds = 30;
-            runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotEnabled, "1");
-            runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotMemoryPressureThreshold, "0");
-            runner.Environment.SetVariable(EnvironmentVariables.TestHeapSnapshotInterval, "15");
-            runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotReferenceTreeFormat, referenceTreeFormat);
-
-            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
-            bool hasBothFiles = false;
-            agent.ProfilerRequestReceived += (object sender, EventArgs<HttpListenerContext> ctx) =>
-            {
-                var request = ctx.Value.Request;
-                if (!request.ContentType.StartsWith("multipart/form-data"))
-                {
-                    return;
-                }
-
-                var mpReader = new MultiPartReader(request);
-                if (!mpReader.Parse())
-                {
-                    return;
-                }
-
-                hasBothFiles |= mpReader.Files.Any(f => f.FileName == "histogram.json")
-                             && mpReader.Files.Any(f => f.FileName == treeFileName);
-            };
-
-            runner.Run(agent);
-
-            Assert.True(hasBothFiles, $"No profile was sent with both a class histogram and a {treeFileName}");
-
-            var histogramFiles = Directory.GetFiles(runner.Environment.PprofDir, "histogram_*.json");
-            var referenceTreeFiles = Directory.GetFiles(runner.Environment.PprofDir, $"reference_tree_*.{treeExtension}");
-            Assert.True(histogramFiles.Length > 0, "No class histogram files were generated");
-            Assert.True(referenceTreeFiles.Length > 0, $"No reference tree .{treeExtension} files were generated");
-
-            // Pair the files coming from the same export: they share the generated
-            // <service>_<pid>_<uid> suffix built from the id of the profile they belong to.
-            var histogramsById = histogramFiles.ToDictionary(f => GetSnapshotId(f, "histogram_"), f => f);
-            var treesById = referenceTreeFiles.ToDictionary(f => GetSnapshotId(f, "reference_tree_"), f => f);
-
-            // A histogram without a reference tree is expected: no tree file is emitted when
-            // the traversal did not find any root.
-            var snapshotIds = histogramsById.Keys.Intersect(treesById.Keys).ToList();
-            Assert.True(snapshotIds.Count > 0, "No histogram/reference tree pair from the same export was found");
-
-            var typesPerSnapshot = new List<(HashSet<string> HistogramTypes, HashSet<string> TreeTypes)>();
-
-            foreach (var snapshotId in snapshotIds)
-            {
-                var histogramTypes = ReadHistogramTypeNames(histogramsById[snapshotId]);
-                var tree = LoadAndValidateAllTrees(new[] { treesById[snapshotId] }).Single();
-                var treeTypes = CollectHeapObjectTypeNames(tree);
-
-                // The histogram is a superset by design: the tree only contains what the
-                // traversal reached (interior pointer roots are skipped, depth is capped...).
-                var onlyInTree = treeTypes.Except(histogramTypes).OrderBy(t => t).ToList();
-                _output.WriteLine(
-                    $"{snapshotId}: {treeTypes.Count} heap object types in the tree, {histogramTypes.Count} in the histogram, " +
-                    $"{histogramTypes.Except(treeTypes).Count()} only in the histogram, " +
-                    $"{onlyInTree.Count} only in the tree [{string.Join(", ", onlyInTree)}]");
-
-                typesPerSnapshot.Add((histogramTypes, treeTypes));
-            }
-
-            // Checked on at least one snapshot rather than on all of them: the two artifacts
-            // describe the same GC but are produced by different mechanisms -- the histogram
-            // from the EventPipe bulk node events, the tree from the live traversal -- so a
-            // dropped event batch can legitimately leave a traversed type out of a histogram.
-            var consistentSnapshots = typesPerSnapshot.Count(snapshot => !snapshot.TreeTypes.Except(snapshot.HistogramTypes).Any());
-            Assert.True(
-                consistentSnapshots > 0,
-                "Expected at least one snapshot whose reference tree types are all present in the class histogram");
-
-            // Both files must name the scenario types identically. Checked on at least one
-            // snapshot because the first one can be taken before they are allocated.
-            var scenarioTypes = new[]
-            {
-                "Samples.Computer01.Order",
-                "Samples.Computer01.Customer",
-                "Samples.Computer01.Address",
-                "Samples.Computer01.Product",
-            };
-
-            Assert.True(
-                typesPerSnapshot.Any(snapshot => scenarioTypes.All(
-                    typeName => snapshot.TreeTypes.Contains(typeName) && snapshot.HistogramTypes.Contains(typeName))),
-                $"Expected at least one snapshot where both files report [{string.Join(", ", scenarioTypes)}]");
         }
 
         [TestAppFact("Samples.Computer01", new[] { "net10.0" })]
@@ -1047,39 +947,7 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
             }
         }
 
-        /// <summary>
-        /// Load all reference tree files (JSON or binary), validate their structure, and return the parsed trees.
-        /// Structural validation runs on JSON files; chain validation is left to the caller.
-        /// </summary>
-        private List<ReferenceTree> LoadAndValidateAllTrees(string[] referenceTreeFiles)
-        {
-            var trees = new List<ReferenceTree>();
-            foreach (var referenceTreeFile in referenceTreeFiles)
-            {
-                if (referenceTreeFile.EndsWith(".json", StringComparison.OrdinalIgnoreCase))
-                {
-                    var jsonContent = File.ReadAllText(referenceTreeFile);
-                    _output.WriteLine($"Reference tree JSON ({referenceTreeFile}): {jsonContent.Substring(0, Math.Min(2000, jsonContent.Length))}...");
-
-                    ValidateReferenceTreeJsonStructure(jsonContent);
-                    trees.Add(ReferenceTreeLoader.Load(jsonContent));
-                }
-                else
-                {
-                    _output.WriteLine($"Reference tree binary ({referenceTreeFile}): {new FileInfo(referenceTreeFile).Length} bytes");
-                    trees.Add(ReferenceTreeLoader.LoadFromFile(referenceTreeFile));
-                }
-            }
-
-            foreach (var tree in trees)
-            {
-                AssertTypeIndicesResolve(tree);
-            }
-
-            return trees;
-        }
-
-        /// <summary>
+         /// <summary>
         /// Every node must point at a real type table slot. Without this check an out-of-range
         /// index would be indistinguishable from a name the profiler could not resolve:
         /// <see cref="ReferenceTree.GetTypeName"/> returns "?" for both.
@@ -1380,6 +1248,130 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
                 edges.Add($"{parentName}->{childName}");
                 CollectTypeEdgesRecursive(child, tree, edges);
             }
+        }
+
+        /// <summary>
+        /// Load all reference tree files (JSON or binary), validate their structure, and return the parsed trees.
+        /// Structural validation runs on JSON files; chain validation is left to the caller.
+        /// </summary>
+        private List<ReferenceTree> LoadAndValidateAllTrees(string[] referenceTreeFiles)
+        {
+            var trees = new List<ReferenceTree>();
+            foreach (var referenceTreeFile in referenceTreeFiles)
+            {
+                if (referenceTreeFile.EndsWith(".json", StringComparison.OrdinalIgnoreCase))
+                {
+                    var jsonContent = File.ReadAllText(referenceTreeFile);
+                    _output.WriteLine($"Reference tree JSON ({referenceTreeFile}): {jsonContent.Substring(0, Math.Min(2000, jsonContent.Length))}...");
+
+                    ValidateReferenceTreeJsonStructure(jsonContent);
+                    trees.Add(ReferenceTreeLoader.Load(jsonContent));
+                }
+                else
+                {
+                    _output.WriteLine($"Reference tree binary ({referenceTreeFile}): {new FileInfo(referenceTreeFile).Length} bytes");
+                    trees.Add(ReferenceTreeLoader.LoadFromFile(referenceTreeFile));
+                }
+            }
+
+            foreach (var tree in trees)
+            {
+                AssertTypeIndicesResolve(tree);
+            }
+
+            return trees;
+        }
+
+        private void CheckReferenceTreeTypesAreInClassHistogram(
+            string appName,
+            string framework,
+            string appAssembly,
+            string referenceTreeFormat,
+            string treeFileName,
+            string treeExtension)
+        {
+            // The class histogram and the reference tree are built from the same heap snapshot
+            // and use the same type names, so every heap object type listed in the tree is
+            // expected to appear in the histogram of that snapshot.
+            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: $"--scenario {ReferenceChainScenarioNumber} --param 1");
+            runner.TestDurationInSeconds = 30;
+            runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotEnabled, "1");
+            runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotMemoryPressureThreshold, "0");
+            runner.Environment.SetVariable(EnvironmentVariables.TestHeapSnapshotInterval, "15");
+            runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotReferenceTreeFormat, referenceTreeFormat);
+
+            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
+            bool hasBothFiles = false;
+            agent.ProfilerRequestReceived += (object sender, EventArgs<HttpListenerContext> ctx) =>
+            {
+                var request = ctx.Value.Request;
+                if (!request.ContentType.StartsWith("multipart/form-data"))
+                {
+                    return;
+                }
+
+                var mpReader = new MultiPartReader(request);
+                if (!mpReader.Parse())
+                {
+                    return;
+                }
+
+                hasBothFiles |= mpReader.Files.Any(f => f.FileName == "histogram.json")
+                             && mpReader.Files.Any(f => f.FileName == treeFileName);
+            };
+
+            runner.Run(agent);
+
+            Assert.True(hasBothFiles, $"No profile was sent with both a class histogram and a {treeFileName}");
+
+            var histogramFiles = Directory.GetFiles(runner.Environment.PprofDir, "histogram_*.json");
+            var referenceTreeFiles = Directory.GetFiles(runner.Environment.PprofDir, $"reference_tree_*.{treeExtension}");
+            Assert.True(histogramFiles.Length > 0, "No class histogram files were generated");
+            Assert.True(referenceTreeFiles.Length > 0, $"No reference tree .{treeExtension} files were generated");
+
+            // Pair the files coming from the same export: they share the generated
+            // <service>_<pid>_<uid> suffix built from the id of the profile they belong to.
+            var histogramsById = histogramFiles.ToDictionary(f => GetSnapshotId(f, "histogram_"), f => f);
+            var treesById = referenceTreeFiles.ToDictionary(f => GetSnapshotId(f, "reference_tree_"), f => f);
+
+            // A histogram without a reference tree is expected: no tree file is emitted when
+            // the traversal did not find any root.
+            var snapshotIds = histogramsById.Keys.Intersect(treesById.Keys).ToList();
+            Assert.True(snapshotIds.Count > 0, "No histogram/reference tree pair from the same export was found");
+
+            var typesPerSnapshot = new List<(HashSet<string> HistogramTypes, HashSet<string> TreeTypes)>();
+
+            foreach (var snapshotId in snapshotIds)
+            {
+                var histogramTypes = ReadHistogramTypeNames(histogramsById[snapshotId]);
+                var tree = LoadAndValidateAllTrees(new[] { treesById[snapshotId] }).Single();
+                var treeTypes = CollectHeapObjectTypeNames(tree);
+
+                // The histogram is a superset by design: the tree only contains what the
+                // traversal reached (interior pointer roots are skipped, depth is capped...).
+                var onlyInTree = treeTypes.Except(histogramTypes).OrderBy(t => t).ToList();
+                _output.WriteLine(
+                    $"{snapshotId}: {treeTypes.Count} heap object types in the tree, {histogramTypes.Count} in the histogram, " +
+                    $"{histogramTypes.Except(treeTypes).Count()} only in the histogram, " +
+                    $"{onlyInTree.Count} only in the tree [{string.Join(", ", onlyInTree)}]");
+
+                typesPerSnapshot.Add((histogramTypes, treeTypes));
+            }
+
+            // Both files must name the scenario types identically. Checked on at least one
+            // snapshot because the first one can be taken before they are allocated.
+            var scenarioTypes = new[]
+            {
+                "Samples.Computer01.Order",
+                "Samples.Computer01.Customer",
+                "Samples.Computer01.Address",
+                "Samples.Computer01.Product",
+            };
+
+            Assert.True(
+                typesPerSnapshot.Any(snapshot => scenarioTypes.All(
+                    typeName => snapshot.TreeTypes.Contains(typeName) && snapshot.HistogramTypes.Contains(typeName))),
+                $"Expected at least one snapshot where both files report [{string.Join(", ", scenarioTypes)}]");
         }
     }
 }
