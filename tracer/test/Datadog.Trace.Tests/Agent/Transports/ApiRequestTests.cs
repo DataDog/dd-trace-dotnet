@@ -147,6 +147,93 @@ public class ApiRequestTests
         response.StatusCode.Should().Be(400);
     }
 
+    [Fact]
+    public async Task ApiWebRequest_PostAsync_ProducerStalledOnUnrelatedIO_ThrowsOperationCanceledException()
+    {
+        // The deadline must bound the request-body producer even when it's blocked on something
+        // other than the request stream (e.g. reading a local file), where Abort() alone has no
+        // effect. Use a body producer that never completes on its own -- if the deadline doesn't
+        // bound it, this test hangs instead of failing.
+        //
+        // This producer never writes to the request stream, so we can't synchronize on
+        // listener.Accepted: GetRequestStreamAsync() hands back a buffering stream (neither
+        // ContentLength nor SendChunked is set), and HttpWebRequest defers the actual connect/send
+        // until that stream sees data or is closed. Since nothing is ever written, no connection is
+        // ever attempted - waiting on the listener would hang forever. Instead, synchronize on the
+        // producer having actually been invoked.
+        using var listener = new BlackHoleTcpListener();
+        using var cts = new CancellationTokenSource();
+        var request = CreateWebRequest(listener.Port);
+        var neverCompletes = new TaskCompletionSource<bool>();
+        var started = new TaskCompletionSource<bool>();
+
+        try
+        {
+            var pending = request.SendAsync(
+                "POST",
+                "application/json",
+                null,
+                _ =>
+                {
+                    started.TrySetResult(true);
+                    return neverCompletes.Task;
+                },
+                cts);
+
+            await started.Task;
+            cts.Cancel();
+
+            Func<Task> act = () => pending;
+            await act.Should().ThrowAsync<OperationCanceledException>();
+        }
+        finally
+        {
+            neverCompletes.TrySetResult(true);
+            listener.Release();
+        }
+    }
+
+    [Fact]
+    public async Task ApiWebRequest_PostAsync_AbortedWhileBlockedWritingRequestStream_ThrowsOperationCanceledException()
+    {
+        // Make sure that request is aborted when the producer is blocked writing to the request stream
+        // BlackHoleTcpListener never reads from the socket, so a large enough write blocks once the OS send buffer fills.
+        using var listener = new BlackHoleTcpListener();
+        using var cts = new CancellationTokenSource();
+        var request = CreateWebRequest(listener.Port);
+        var bytes = new byte[10 * 1024 * 1024];
+
+        try
+        {
+            var pending = request.SendAsync(
+                "POST",
+                "application/json",
+                null,
+                async stream =>
+                {
+                    // Write in chunks so the write genuinely blocks on the full send buffer instead
+                    // of buffering the whole payload in one WriteAsync call.
+                    const int chunkSize = 64 * 1024;
+                    for (var offset = 0; offset < bytes.Length; offset += chunkSize)
+                    {
+                        var count = Math.Min(chunkSize, bytes.Length - offset);
+                        await stream.WriteAsync(bytes, offset, count);
+                    }
+                },
+                cts);
+
+            await listener.Accepted;
+            cts.Cancel();
+
+            Func<Task> act = () => pending;
+            await act.Should().ThrowAsync<OperationCanceledException>();
+        }
+        finally
+        {
+            listener.Release();
+        }
+    }
+
 #if NETCOREAPP3_1_OR_GREATER
 
     [Theory]
