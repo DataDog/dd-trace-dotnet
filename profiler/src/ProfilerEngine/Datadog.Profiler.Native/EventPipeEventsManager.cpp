@@ -90,29 +90,32 @@ void EventPipeEventsManager::OnProviderCreated(EVENTPIPE_PROVIDER provider)
     // Treat the provider-created notification as the authoritative writer of the cache entry:
     // always overwrite (including Unknown) so that a reused EVENTPIPE_PROVIDER address that now
     // belongs to a different provider replaces any stale entry.
-    DotnetEventsProvider resolved = ResolveProvider(provider);
-
+    //
+    // The resolve-then-insert sequence is done as a single critical section (instead of resolving
+    // outside the lock) so that this is the only place calling into
+    // ICorProfilerInfo::EventPipeGetProviderInfo: a provider can be reported as created concurrently
+    // on more than one thread (or a provider could otherwise still be mid-registration on the CLR
+    // side), and calling into that API for the same provider from more than one thread at once is
+    // not something the profiling API is known to support safely.
     std::unique_lock lock(_providersMutex);
-    _providers[provider] = resolved;
+    _providers[provider] = ResolveProvider(provider);
 }
 
 DotnetEventsProvider EventPipeEventsManager::GetProvider(EVENTPIPE_PROVIDER provider)
 {
+    std::shared_lock lock(_providersMutex);
+    auto it = _providers.find(provider);
+    if (it != _providers.end())
     {
-        std::shared_lock lock(_providersMutex);
-        auto it = _providers.find(provider);
-        if (it != _providers.end())
-        {
-            return it->second;
-        }
+        return it->second;
     }
 
-    // Fallback for providers created before the manager/callback was active (e.g. late attach).
-    DotnetEventsProvider resolved = ResolveProvider(provider);
-
-    std::unique_lock lock(_providersMutex);
-    _providers[provider] = resolved;
-    return resolved;
+    // No EventPipeProviderCreated notification has been received (yet) for this provider.
+    // Do NOT call into ICorProfilerInfo::EventPipeGetProviderInfo from here: this is the hot,
+    // possibly-concurrent event-delivery path, and OnProviderCreated is expected to always
+    // populate the cache before any event for a given provider is delivered. Treat an unresolved
+    // provider as unknown and drop the event rather than resolving it out-of-band.
+    return DotnetEventsProvider::Unknown;
 }
 
 DotnetEventsProvider EventPipeEventsManager::ResolveProvider(EVENTPIPE_PROVIDER provider)
