@@ -28,7 +28,11 @@ internal sealed class ActionResponseFilter : IActionFilter
             && result.Value is not null
             && Tracer.Instance.ActiveScope?.Span is Span currentSpan)
         {
-            security.CheckBody(context.HttpContext, currentSpan, result.Value, response: true);
+            var extractedBody = security.CheckBody(context.HttpContext, currentSpan, result.Value, response: true);
+            if (extractedBody is not null)
+            {
+                context.HttpContext.Items[SecurityCoordinatorHelpers.ResponseBodyItemKey] = extractedBody;
+            }
         }
     }
 }
