@@ -20,6 +20,7 @@ namespace Datadog.Trace.Propagators
     internal static class OtelTraceStateHelpers
     {
         private const int MaxHexDigits = 14;
+        private const ulong MaxOtelTraceStateValue = (1UL << (MaxHexDigits * 4)) - 1;
 
         /// <summary>
         /// Finds the "rv" item in the raw "ot=" value (items separated by ';', key/value by ':')
@@ -99,6 +100,11 @@ namespace Datadog.Trace.Propagators
         /// </summary>
         internal static string? SetRvTh(string? raw, ulong? rv, ulong? th)
         {
+            if (rv is > MaxOtelTraceStateValue)
+            {
+                throw new ArgumentOutOfRangeException(nameof(rv));
+            }
+
             var sb = StringBuilderCache.Acquire();
 
             try

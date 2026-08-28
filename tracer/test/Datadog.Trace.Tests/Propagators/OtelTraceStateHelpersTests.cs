@@ -5,6 +5,7 @@
 
 #nullable enable
 
+using System;
 using Datadog.Trace.Propagators;
 using FluentAssertions;
 using Xunit;
@@ -63,6 +64,7 @@ namespace Datadog.Trace.Tests.Propagators
         [Theory]
         [InlineData(null, null, null, null)]
         [InlineData("", null, null, null)]
+        [InlineData(null, 0x1UL, null, "rv:00000000000001")]
         [InlineData(null, 0xef284ace7a91e1UL, null, "rv:ef284ace7a91e1")]
         [InlineData(null, null, 0xe6666666666668UL, "th:e6666666666668")]
         [InlineData(null, 0xef284ace7a91e1UL, 0xe6666666666668UL, "rv:ef284ace7a91e1;th:e6666666666668")]
@@ -74,6 +76,13 @@ namespace Datadog.Trace.Tests.Propagators
         public void SetRvTh_RewritesRvAndThInPlace(string? raw, ulong? rv, ulong? th, string? expected)
         {
             OtelTraceStateHelpers.SetRvTh(raw, rv, th).Should().Be(expected);
+        }
+
+        [Fact]
+        public void SetRvTh_ThrowsWhenRvExceeds56Bits()
+        {
+            FluentActions.Invoking(() => OtelTraceStateHelpers.SetRvTh(null, 1UL << 56, null))
+                         .Should().Throw<ArgumentOutOfRangeException>();
         }
     }
 }
