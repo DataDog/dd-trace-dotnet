@@ -18,8 +18,25 @@
 #include "cor.h"
 #include "corprof.h"
 
+#ifndef _WINDOWS
+#include "ReaderWriterSpinningMutex.hpp"
+#endif
+
 class CounterMetric;
 class MetricsRegistry;
+
+// The cache read paths can run inside the profiler's signal handlers (SIGPROF for
+// the timer_create CPU profiler, SIGUSR1 for wall-time stack collection). The timed
+// acquire of std::shared_timed_mutex lowers to pthread_rwlock_timedrdlock, which
+// POSIX does not list as async-signal-safe. ReaderWriterSpinningMutex implements the
+// same SharedTimedMutex requirements using only atomics, so it can be used with
+// std::shared_lock/std::unique_lock unchanged.
+// Windows has no signal-based sampling, so the standard type is used there.
+#ifdef _WINDOWS
+using CodeCacheMutex = std::shared_timed_mutex;
+#else
+using CodeCacheMutex = ReaderWriterSpinningMutex;
+#endif
 
 // Represents a single contiguous code range
 struct CodeRange {
@@ -96,7 +113,7 @@ private:
     // Each page has its own data + lock for fine-grained concurrency
     struct PageEntry {
         std::vector<CodeRange> ranges;  // Sorted by startAddress
-        mutable std::shared_timed_mutex lock;  // Reader-writer lock (timed for signal-handler reads)
+        mutable CodeCacheMutex lock;  // Reader-writer lock (timed for signal-handler reads)
         
         PageEntry() = default;
         
@@ -143,13 +160,13 @@ public:
     // ownership cannot be acquired within the timeout. Holding an exclusive lock
     // on either mutex from another thread deterministically reproduces that
     // "contended" state.
-    std::unique_lock<std::shared_timed_mutex> LockPagesMutexExclusiveForTest()
+    std::unique_lock<CodeCacheMutex> LockPagesMutexExclusiveForTest()
     {
-        return std::unique_lock<std::shared_timed_mutex>(_pagesMutex);
+        return std::unique_lock<CodeCacheMutex>(_pagesMutex);
     }
-    std::unique_lock<std::shared_timed_mutex> LockModulesMutexExclusiveForTest()
+    std::unique_lock<CodeCacheMutex> LockModulesMutexExclusiveForTest()
     {
-        return std::unique_lock<std::shared_timed_mutex>(_modulesMutex);
+        return std::unique_lock<CodeCacheMutex>(_modulesMutex);
     }
 private:
 #endif
@@ -161,11 +178,11 @@ private:
     // Map from page number -> page entry (with its own lock)
     PagesMap _pagesMap;
     std::vector<ModuleCodeRange> _modulesCodeRanges;
-    mutable std::shared_timed_mutex _modulesMutex;
+    mutable CodeCacheMutex _modulesMutex;
     
     // Coarse lock ONLY for modifying the map structure itself
     // (adding/removing pages, not modifying page contents)
-    mutable std::shared_timed_mutex _pagesMutex;
+    mutable CodeCacheMutex _pagesMutex;
     
     // Profiler interface (ICorProfilerInfo4 is available in .NET Framework 4.5+)
     ICorProfilerInfo4* _profilerInfo;
