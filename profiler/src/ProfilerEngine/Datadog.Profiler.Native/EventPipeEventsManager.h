@@ -59,7 +59,7 @@ private:
         DWORD& version
         );
 
-    DotnetEventsProvider ResolveProvider(EVENTPIPE_PROVIDER provider);
+    bool TryResolveProvider(EVENTPIPE_PROVIDER provider, DotnetEventsProvider& result);
     DotnetEventsProvider GetProvider(EVENTPIPE_PROVIDER provider);
 
 
