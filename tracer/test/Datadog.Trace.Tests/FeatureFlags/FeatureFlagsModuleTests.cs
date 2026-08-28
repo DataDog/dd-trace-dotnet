@@ -75,6 +75,46 @@ public class FeatureFlagsModuleTests
         result.Reason.Should().Be(EvaluationReason.Error);
     }
 
+    [Fact]
+    public void UpdateRemoteConfig_WithExistingPath_ReplacesPreviousConfiguration()
+    {
+        var rcmManager = new MockRcmSubscriptionManager();
+        var module = new FeatureFlagsModule(CreateSettings(), rcmManager);
+        var configPath = RemoteConfigurationPath.FromPath($"datadog/2/{RcmProducts.FfeFlags}/test-config/config");
+
+        rcmManager.LastSubscription!.Invoke(
+            new Dictionary<string, List<RemoteConfiguration>>
+            {
+                [RcmProducts.FfeFlags] = [CreateRemoteConfiguration(configPath, "old-flag")]
+            },
+            null);
+
+        module.Evaluate("old-flag", FeatureFlagsValueType.Boolean, false, "user-1", null).Error.Should().BeNull();
+
+        rcmManager.LastSubscription.Invoke(
+            new Dictionary<string, List<RemoteConfiguration>>
+            {
+                [RcmProducts.FfeFlags] = [CreateRemoteConfiguration(configPath, "new-flag")]
+            },
+            null);
+
+        module.Evaluate("old-flag", FeatureFlagsValueType.Boolean, false, "user-1", null).Error.Should().Be("FLAG_NOT_FOUND");
+        module.Evaluate("new-flag", FeatureFlagsValueType.Boolean, false, "user-1", null).Error.Should().BeNull();
+    }
+
+    private static RemoteConfiguration CreateRemoteConfiguration(RemoteConfigurationPath configPath, string flagKey)
+    {
+        var configJson = JsonConvert.SerializeObject(new ServerConfiguration
+        {
+            Flags = new FlagCollection
+            {
+                [flagKey] = new Flag { Key = flagKey, Enabled = true, VariationType = FeatureFlagsValueType.Boolean }
+            }
+        });
+        var configBytes = System.Text.Encoding.UTF8.GetBytes(configJson);
+        return new RemoteConfiguration(configPath, configBytes, configBytes.Length, new Dictionary<string, string> { { "sha256", "dummy" } }, 1);
+    }
+
     private static TracerSettings CreateSettings()
     {
         var collection = new NameValueCollection
