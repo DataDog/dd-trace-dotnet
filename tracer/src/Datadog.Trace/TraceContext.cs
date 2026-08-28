@@ -423,16 +423,11 @@ namespace Datadog.Trace
                                              or Sampling.SamplingMechanism.RemoteUserSamplingRule
                                              or Sampling.SamplingMechanism.Default)
                 {
-                    var h = SamplingHelpers.ComputeKnuthHash(rootSpan.TraceId128.Lower);
-                    var rv = (~h) >> 8;
-                    // round-trip the rate through decimal first: samplingRate is a float, and widening it to
-                    // double directly keeps its 32-bit mantissa noise in the low bits of the 56-bit threshold.
-                    var th = (ulong)Math.Round((1.0 - (double)(decimal)samplingRate) * (1UL << 56), MidpointRounding.AwayFromZero);
-
-                    // clamp th into the valid 56-bit domain: rate=0.0f rounds up to 2^56, one bit out of range.
-                    th = Math.Min(th, (1UL << 56) - 1);
+                    var rv = SamplingHelpers.ComputeOtelTraceStateRandomValue(rootSpan.TraceId128.Lower);
+                    var th = SamplingHelpers.ComputeOtelTraceStateThreshold(samplingRate);
 
                     // Ensure (rv, th) agrees with DD's actual keep/drop decision.
+                    // This is due to floating point imprecision when converting to otel format
                     if (didSample && rv < th)
                     {
                         rv = th;
