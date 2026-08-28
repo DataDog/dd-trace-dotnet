@@ -1,0 +1,11 @@
+issuer: https://token.actions.githubusercontent.com
+
+subject_pattern: "repo:DataDog/dd-trace-dotnet:pull_request"
+
+claim_pattern:
+  event_name: pull_request
+  repository: DataDog/dd-trace-dotnet
+  job_workflow_ref: DataDog/dd-trace-dotnet/\.github/workflows/auto_check_snapshots\.yml@refs/(pull/[0-9]+/merge|heads/.+)
+
+permissions:
+  pull_requests: write
