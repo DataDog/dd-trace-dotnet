@@ -244,11 +244,11 @@ namespace Datadog.Trace.Agent.Transports
                 var getResponseResult = await Task.WhenAny(getResponseTask, deadlineExpired.Task).ConfigureAwait(false);
                 if (getResponseResult == deadlineExpired.Task)
                 {
-                    // The deadline fired before the body producer finished. Don't wait for it any longer - observe
-                    // its eventual fault here so it can't surface as an unobserved task exception later.
-                    _ = getResponseTask.ContinueWith(
-                        static t => _ = t.Exception,
-                        TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously);
+                    // The deadline fired before GetResponseAsync() finished. Don't wait for it any longer:
+                    // if it eventually faults, observe the exception so it can't surface as an unobserved
+                    // task exception; if it eventually succeeds _despite_ Abort(), dispose the orphaned
+                    // response instead of leaking the underlying connection.
+                    _ = getResponseTask.ContinueWith(static t => ObserveOrphanedResponse(t), TaskContinuationOptions.ExecuteSynchronously);
                     ThrowCancelledException(_request, cts.Token, null);
                     httpWebResponse = default; // Not reachable, but easiest way to keep the compiler happy
                 }
@@ -296,6 +296,18 @@ namespace Datadog.Trace.Agent.Transports
             [DoesNotReturn]
             static void ThrowCancelledException(HttpWebRequest request, CancellationToken token, Exception? innerException)
                 => throw new OperationCanceledException($"The request to {request.RequestUri} timed out after {request.Timeout}ms.", innerException, token);
+
+            static void ObserveOrphanedResponse(Task<WebResponse> task)
+            {
+                if (task.IsFaulted)
+                {
+                    _ = task.Exception;
+                }
+                else if (task.Status == TaskStatus.RanToCompletion)
+                {
+                    task.Result.Dispose();
+                }
+            }
         }
 
         private readonly struct JsonState<T>(T payload, JsonSerializerSettings settings, MultipartCompression compression)
