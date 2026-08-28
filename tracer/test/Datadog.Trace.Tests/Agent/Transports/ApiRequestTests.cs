@@ -130,6 +130,23 @@ public class ApiRequestTests
         }
     }
 
+    [Fact]
+    public async Task ApiWebRequest_ProtocolError_WithoutTimeout_StillReturnsResponse()
+    {
+        using var agent = MockTracerAgent.Create(_output);
+        agent.ShouldDeserializeTraces = false;
+        agent.CustomResponses[MockTracerResponseType.Traces] = new MockTracerResponse("{\"errors\":[\"bad request\"]}", 400);
+
+        var url = new Uri($"http://localhost:{agent.Port}/");
+        var factory = new ApiWebRequestFactory(url, AgentHttpHeaderNames.DefaultHeaders, TimeSpan.FromSeconds(30));
+        var request = factory.Create(url);
+        var bytes = Encoding.UTF8.GetBytes("{}");
+
+        var response = await request.PostAsync(new ArraySegment<byte>(bytes), "application/json");
+
+        response.StatusCode.Should().Be(400);
+    }
+
 #if NETCOREAPP3_1_OR_GREATER
 
     [Theory]

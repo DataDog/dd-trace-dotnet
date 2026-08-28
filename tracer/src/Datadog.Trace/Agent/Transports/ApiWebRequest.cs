@@ -6,6 +6,7 @@
 #nullable enable
 
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.IO.Compression;
 using System.Net;
@@ -193,6 +194,7 @@ namespace Datadog.Trace.Agent.Transports
 
         private async Task<IApiResponse> SendAsync<TState>(string method, string? contentType, string? contentEncoding, TState state, Func<Stream, TState, Task>? writeBody, CancellationTokenSource cts)
         {
+            CancellationTokenRegistration registration = default;
             try
             {
                 ResetRequest(method, contentType, contentEncoding);
@@ -208,7 +210,7 @@ namespace Datadog.Trace.Agent.Transports
                 // This diverges slightly from HttpClient, where the timeout covers the _whole_ read
                 // currently, however, this _may_ change if we switch to using HttpCompletionMode.
                 // ResponseHeadersRead to avoid the full buffering into memory as we do today.
-                cts.Token.Register(static s => { try { ((HttpWebRequest)s!).Abort(); } catch { } }, _request);
+                registration = cts.Token.Register(static s => { try { ((HttpWebRequest)s!).Abort(); } catch { } }, _request);
 
                 if (writeBody is not null)
                 {
@@ -219,22 +221,46 @@ namespace Datadog.Trace.Agent.Transports
                 }
 
                 var httpWebResponse = (HttpWebResponse)await _request.GetResponseAsync().ConfigureAwait(false);
+
+                // Make sure we don't have a concurrent Abort() before returning - calling Dispose() here waits
+                // for in-flight cancellation, and it's safe to call Dispose() more than once.
+                registration.Dispose();
+                if (cts.IsCancellationRequested)
+                {
+                    httpWebResponse.Dispose();
+                    ThrowCancelledException(_request, cts.Token, null);
+                }
+
                 return new ApiWebResponse(httpWebResponse);
             }
             catch (WebException exception)
                 when (exception.Status == WebExceptionStatus.ProtocolError && exception.Response != null)
             {
+                // Same race as above, and we don't want Abort() to happen after we return response to caller
+                registration.Dispose();
+                if (cts.IsCancellationRequested)
+                {
+                    exception.Response.Dispose();
+                    ThrowCancelledException(_request, cts.Token, exception);
+                }
+
                 // If the exception is caused by an error status code, ignore it and let the caller handle the result
                 return new ApiWebResponse((HttpWebResponse)exception.Response);
             }
-            catch (Exception ex) when (cts.IsCancellationRequested)
+            catch (Exception ex) when (cts.IsCancellationRequested && ex is not OperationCanceledException)
             {
-                throw new OperationCanceledException($"The request to {_request.RequestUri} timed out after {_request.Timeout}ms.", ex, cts.Token);
+                ThrowCancelledException(_request, cts.Token, ex);
+                return default; // never hit, compiler is stupid
             }
             finally
             {
+                registration.Dispose();
                 cts.Dispose();
             }
+
+            [DoesNotReturn]
+            static void ThrowCancelledException(HttpWebRequest request, CancellationToken token, Exception? innerException)
+                => throw new OperationCanceledException($"The request to {request.RequestUri} timed out after {request.Timeout}ms.", innerException, token);
         }
 
         private readonly struct JsonState<T>(T payload, JsonSerializerSettings settings, MultipartCompression compression)
