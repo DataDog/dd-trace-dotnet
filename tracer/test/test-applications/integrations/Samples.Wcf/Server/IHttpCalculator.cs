@@ -22,4 +22,8 @@ public interface IHttpCalculator
     [OperationContract]
     [WebInvoke(UriTemplate = "ServerSyncAddWrapped", RequestFormat = WebMessageFormat.Json, ResponseFormat = WebMessageFormat.Json, BodyStyle = WebMessageBodyStyle.Wrapped)]
     double ServerSyncAddWrapped(string n1, string n2);
+
+    [OperationContract]
+    [WebGet(UriTemplate = "ServerSyncAddJsonQuery/{n1}?n2={n2}&api_key={apiKey}", RequestFormat = WebMessageFormat.Json, ResponseFormat = WebMessageFormat.Json, BodyStyle = WebMessageBodyStyle.Bare)]
+    double ServerSyncAddJsonQuery(string n1, string n2, string apiKey);
 }
