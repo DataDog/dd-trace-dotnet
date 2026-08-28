@@ -1258,11 +1258,10 @@ TEST_F(ConfigurationTest, CheckCpuProfilerTypeIsKeptWhenSignalQueueIsJustLargeEn
     ASSERT_THAT(Configuration::ExtractCpuProfilerType(true, availableSlots), CpuProfilerType::TimerCreate);
 }
 
-// Not being able to tell how many slots are left must not cost the accurate CPU profiler.
-TEST_F(ConfigurationTest, CheckCpuProfilerTypeIsKeptWhenSignalQueueIsUnknown)
+TEST_F(ConfigurationTest, CheckCpuProfilerTypeToManualWhenSignalQueueIsUnknown)
 {
     EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::CpuProfilerType, WStr("TimerCreate"));
-    ASSERT_THAT(Configuration::ExtractCpuProfilerType(true, std::nullopt), CpuProfilerType::TimerCreate);
+    ASSERT_THAT(Configuration::ExtractCpuProfilerType(true, std::nullopt), CpuProfilerType::ManualCpuTime);
 }
 
 // No timer is ever created when CPU profiling is off, so there is nothing to fall back from.
