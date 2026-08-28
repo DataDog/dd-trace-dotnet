@@ -415,6 +415,7 @@ public class ApiRequestTests
         private readonly TcpListener _listener;
         private readonly TaskCompletionSource<bool> _accepted = new();
         private readonly TaskCompletionSource<bool> _release = new();
+        private volatile bool _stopping;
 
         public BlackHoleTcpListener()
         {
@@ -434,6 +435,12 @@ public class ApiRequestTests
 
         public void Dispose()
         {
+            // Tell Run() to give up instead of calling the blocking AcceptTcpClient() if nothing has
+            // connected yet. On some runtimes (e.g. netcoreapp3.1 on Linux), Stop()/Dispose() spin-waits
+            // for an in-flight accept to release the socket handle, and a newly-arriving connection
+            // doesn't reliably wake it -- deadlocking test cleanup. Avoiding the blocking call entirely
+            // once we're stopping sidesteps that instead of depending on the runtime to interrupt it.
+            _stopping = true;
             Release();
 
             try
@@ -451,6 +458,16 @@ public class ApiRequestTests
             TcpClient client = null;
             try
             {
+                while (!_stopping && !_listener.Pending())
+                {
+                    Thread.Sleep(10);
+                }
+
+                if (_stopping)
+                {
+                    return;
+                }
+
                 client = _listener.AcceptTcpClient();
                 _accepted.TrySetResult(true);
 
