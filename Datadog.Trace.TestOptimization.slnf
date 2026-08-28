@@ -19,6 +19,7 @@
       "tracer\\test\\benchmarks\\Benchmarks.Trace\\Benchmarks.Trace.csproj",
       "tracer\\test\\Datadog.Trace.BenchmarkDotNet.Tests\\Datadog.Trace.BenchmarkDotNet.Tests.csproj",
       "tracer\\test\\Datadog.Trace.ClrProfiler.IntegrationTests\\Datadog.Trace.ClrProfiler.IntegrationTests.csproj",
+      "tracer\\test\\Datadog.Trace.Ci.IntegrationTests\\Datadog.Trace.Ci.IntegrationTests.csproj",
       "tracer\\test\\Datadog.Trace.ClrProfiler.Managed.Tests\\Datadog.Trace.ClrProfiler.Managed.Tests.csproj",
       "tracer\\test\\Datadog.Trace.DuckTyping.Tests\\Datadog.Trace.DuckTyping.Tests.csproj",
       "tracer\\test\\Datadog.Trace.IntegrationTests\\Datadog.Trace.IntegrationTests.csproj",

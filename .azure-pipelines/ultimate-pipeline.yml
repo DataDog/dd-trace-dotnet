@@ -1721,7 +1721,7 @@ stages:
         SampleName: $(IntegrationTestSampleName)
 
     - script: tracer\build.cmd RunIntegrationTests RunWindowsRegressionTests -Framework $(framework) --code-coverage-enabled $(CodeCoverageEnabled)
-      displayName: Run integration tests (Tracer)
+      displayName: Run integration tests ($(area))
       condition: ne(variables['area'], 'ASM')
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
@@ -2307,11 +2307,10 @@ stages:
           -e CodeCoverageEnabled=$(CodeCoverageEnabled) \
           -e IncludeTestsRequiringDocker=false  \
           -e Filter=$(IntegrationTestFilter) \
-          -e "IntegrationTestPartitionFilter=$(integrationTestPartitionFilter)" \
           -e SampleName=$(IntegrationTestSampleName) \
           -e Area=$(area) \
           IntegrationTests
-      displayName: docker-compose run IntegrationTests (Tracer)
+      displayName: docker-compose run IntegrationTests ($(area))
       condition: ne(variables['area'], 'ASM')
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
@@ -2325,7 +2324,6 @@ stages:
           -e CodeCoverageEnabled=$(CodeCoverageEnabled) \
           -e IncludeTestsRequiringDocker=false  \
           -e Filter=$(IntegrationTestFilter) \
-          -e "IntegrationTestPartitionFilter=$(integrationTestPartitionFilter)" \
           -e SampleName=$(IntegrationTestSampleName) \
           -e Area=$(area) \
           IntegrationTests
@@ -3388,6 +3386,7 @@ stages:
               -e IncludeTestsRequiringDocker=false \
               -e Filter=$(IntegrationTestFilter) \
               -e SampleName=$(IntegrationTestSampleName) \
+              -e Area=$(area) \
               IntegrationTests.ARM64
           displayName: docker-compose run --no-deps IntegrationTests
           env:
@@ -3422,7 +3421,7 @@ stages:
     - job: DockerTest
       timeoutInMinutes: 60 #default value
       strategy:
-        matrix: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.integration_tests_linux_arm64_matrix']]
+        matrix: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.integration_tests_linux_arm64_docker_matrix']]
       workspace:
         clean: all
       pool:
@@ -3470,6 +3469,7 @@ stages:
               -e IncludeTestsRequiringDocker=true \
               -e Filter=$(IntegrationTestFilter) \
               -e SampleName=$(IntegrationTestSampleName) \
+              -e Area=$(area) \
               IntegrationTests.ARM64 \
           displayName: docker-compose run IntegrationTests
           env:

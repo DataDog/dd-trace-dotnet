@@ -18,8 +18,10 @@ partial class Build : NukeBuild
 {
     private const string TracerArea = "Tracer";
     private const string AsmArea = "ASM";
+    private const string CiVisibilityArea = "CIVisibility";
     private const string TracingDotnet = "@DataDog/tracing-dotnet";
     private const string ASMDotnet = "@DataDog/asm-dotnet";
+    private const string CiVisibilityDotnet = "@DataDog/ci-app-libraries-dotnet";
     private const string DebuggerDotnet = "@DataDog/debugger-dotnet";
     private const string ProfilerDotnet = "@DataDog/profiling-dotnet";
 
@@ -33,6 +35,7 @@ partial class Build : NukeBuild
     static private ChangedTeamValue[] _changedTeamValue = new ChangedTeamValue[]
     {
         new ChangedTeamValue { VariableName = "isAsmChanged", TeamName = ASMDotnet},
+        new ChangedTeamValue { VariableName = "isCiVisibilityChanged", TeamName = CiVisibilityDotnet},
         new ChangedTeamValue { VariableName = "isTracerChanged", TeamName = TracingDotnet},
         new ChangedTeamValue { VariableName = "isDebuggerChanged", TeamName = DebuggerDotnet},
         new ChangedTeamValue { VariableName = "isProfilerChanged", TeamName = ProfilerDotnet},
@@ -189,12 +192,19 @@ partial class Build : NukeBuild
                 }
             }
 
-            // We only call this method for the tracer and ASM areas
+            // We only call this method for the tracer, ASM, and CI Visibility areas
             bool ShouldBeIncluded(string area)
             {
                 if (area == AsmArea)
                 {
                     return _changedTeamValue.First(x => x.TeamName == ASMDotnet).IsChanged;
+                }
+
+                if (area == CiVisibilityArea)
+                {
+                    // CI Visibility tests also compile and exercise shared tracer and test helper code.
+                    return _changedTeamValue.First(x => x.TeamName == CiVisibilityDotnet).IsChanged ||
+                           _changedTeamValue.First(x => x.TeamName == TracingDotnet).IsChanged;
                 }
 
                 return true;
@@ -213,7 +223,7 @@ partial class Build : NukeBuild
             {
                 var targetFrameworks = GetTestingFrameworks(PlatformFamily.Windows);
                 var targetPlatforms = new[] { "x86", "x64" };
-                var areas = new[] { TracerArea, AsmArea };
+                var areas = new[] { TracerArea, AsmArea, CiVisibilityArea };
                 var matrix = new Dictionary<string, object>();
 
                 foreach (var framework in targetFrameworks)
@@ -345,7 +355,8 @@ partial class Build : NukeBuild
             {
                 GenerateIntegrationTestsLinuxMatrix(true);
                 GenerateIntegrationTestsLinuxMatrix(false);
-                GenerateIntegrationTestsLinuxArm64Matrix();
+                GenerateIntegrationTestsLinuxArm64Matrix(true);
+                GenerateIntegrationTestsLinuxArm64Matrix(false);
                 GenerateIntegrationTestsDebuggerLinuxMatrix();
             }
 
@@ -374,18 +385,12 @@ partial class Build : NukeBuild
                         }
                         else
                         {
-                            var partitions = new[]
-                            {
-                                (name: TracerArea, area: TracerArea, filter: "Category!=TestIntegrations"),
-                                (name: "CIVisibility", area: TracerArea, filter: "Category=TestIntegrations"),
-                                (name: AsmArea, area: AsmArea, filter: string.Empty),
-                            };
-
-                            foreach (var (name, area, filter) in partitions)
+                            var areas = new[] { TracerArea, AsmArea, CiVisibilityArea };
+                            foreach (var area in areas)
                             {
                                 if (ShouldBeIncluded(area))
                                 {
-                                    matrix.Add($"{baseImage}_{framework}_{name}", new { publishTargetFramework = framework, baseImage = baseImage, artifactSuffix = artifactSuffix, area = area, integrationTestPartitionFilter = filter });
+                                    matrix.Add($"{baseImage}_{framework}_{area}", new { publishTargetFramework = framework, baseImage = baseImage, artifactSuffix = artifactSuffix, area = area });
                                 }
                             }
                         }
@@ -398,7 +403,7 @@ partial class Build : NukeBuild
                 AzurePipelines.Instance.SetOutputVariable(outputVariableName, JsonConvert.SerializeObject(matrix, Formatting.None));
             }
 
-            void GenerateIntegrationTestsLinuxArm64Matrix()
+            void GenerateIntegrationTestsLinuxArm64Matrix(bool dockerTest)
             {
                 var baseImages = new []
                 {
@@ -407,26 +412,27 @@ partial class Build : NukeBuild
                 };
 
                 var targetFrameworks = GetTestingFrameworks(PlatformFamily.Linux, isArm64: true);
+                var areas = dockerTest ? new[] { TracerArea, AsmArea } : new[] { TracerArea, AsmArea, CiVisibilityArea };
 
                 var matrix = new Dictionary<string, object>();
                 foreach (var framework in targetFrameworks)
                 {
                     foreach (var (baseImage, artifactSuffix) in baseImages)
                     {
-                        if (ShouldBeIncluded(AsmArea))
+                        foreach (var area in areas)
                         {
-                            matrix.Add($"{baseImage}_{framework}", new { publishTargetFramework = framework, baseImage = baseImage, artifactSuffix = artifactSuffix });
-                        }
-                        else
-                        {
-                            matrix.Add($"{baseImage}_{framework}", new { publishTargetFramework = framework, baseImage = baseImage, artifactSuffix = artifactSuffix, area = TracerArea });
+                            if (ShouldBeIncluded(area))
+                            {
+                                matrix.Add($"{baseImage}_{framework}_{area}", new { publishTargetFramework = framework, baseImage = baseImage, artifactSuffix = artifactSuffix, area = area });
+                            }
                         }
                     }
                 }
 
-                Logger.Information($"Integration test Linux Arm64 matrix");
+                Logger.Information(dockerTest ? "Integration test Linux Arm64 dockerTest matrix" : "Integration test Linux Arm64 matrix");
                 Logger.Information(JsonConvert.SerializeObject(matrix, Formatting.Indented));
-                AzurePipelines.Instance.SetOutputVariable("integration_tests_linux_arm64_matrix", JsonConvert.SerializeObject(matrix, Formatting.None));
+                var outputVariableName = dockerTest ? "integration_tests_linux_arm64_docker_matrix" : "integration_tests_linux_arm64_matrix";
+                AzurePipelines.Instance.SetOutputVariable(outputVariableName, JsonConvert.SerializeObject(matrix, Formatting.None));
             }
 
             void GenerateIntegrationTestsDebuggerLinuxMatrix()

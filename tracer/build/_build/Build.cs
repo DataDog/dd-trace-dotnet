@@ -82,9 +82,6 @@ partial class Build : NukeBuild
     [Parameter("Override the default test filters for integration tests. (Optional)")]
     readonly string Filter;
 
-    [Parameter("Additional integration test filter used to partition tests without replacing the default filters. (Optional)")]
-    readonly string IntegrationTestPartitionFilter;
-
     [Parameter("Run tests from a especific area (tracer, ASM, debugger, profiler...)")]
     readonly string Area;
 

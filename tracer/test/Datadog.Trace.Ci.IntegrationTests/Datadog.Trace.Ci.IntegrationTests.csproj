@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <!--These should be consolidated in a file that can be shared for the tests and samples directories -->
@@ -7,15 +7,18 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Remove="applicationHost.config" />
     <None Remove="xunit.runner.json" />
-    <Compile Remove="CI\**\*.cs" />
-    <Compile Remove="SourceCodeIntegrationGitMetadataTests.cs" />
+    <Compile Include="..\Datadog.Trace.ClrProfiler.IntegrationTests\CI\**\*.cs" Link="CI\%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="..\Datadog.Trace.ClrProfiler.IntegrationTests\SourceCodeIntegrationGitMetadataTests.cs" Link="SourceCodeIntegrationGitMetadataTests.cs" />
+    <Compile Include="..\Datadog.Trace.ClrProfiler.IntegrationTests\GlobalUsings.cs" Link="GlobalUsings.cs" />
+    <Compile Include="..\Datadog.Trace.ClrProfiler.IntegrationTests\Helpers\CombinatorialParams.cs" Link="Helpers\CombinatorialParams.cs" />
+    <Compile Include="..\Datadog.Trace.ClrProfiler.IntegrationTests\Helpers\TelemetryHelper.cs" Link="Helpers\TelemetryHelper.cs" />
+    <Compile Include="..\Datadog.Trace.ClrProfiler.IntegrationTests\PackageVersions.g.cs" Link="PackageVersions.g.cs" />
+    <Compile Include="..\Datadog.Trace.ClrProfiler.IntegrationTests\PackageVersionsLatestMajors.g.cs" Link="PackageVersionsLatestMajors.g.cs" />
+    <Compile Include="..\Datadog.Trace.ClrProfiler.IntegrationTests\PackageVersionsLatestMinors.g.cs" Link="PackageVersionsLatestMinors.g.cs" />
+    <Compile Include="..\Datadog.Trace.ClrProfiler.IntegrationTests\PackageVersionsLatestSpecific.g.cs" Link="PackageVersionsLatestSpecific.g.cs" />
     <Compile Include="..\Datadog.Trace.TestHelpers.SharedSource\VerifyHelper.cs" Link="Helpers\VerifyHelper.cs" />
-    <Content Include="applicationHost.config">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="xunit.runner.json">
+    <Content Include="..\Datadog.Trace.ClrProfiler.IntegrationTests\xunit.runner.json" Link="xunit.runner.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
 
@@ -24,18 +27,13 @@
     <ProjectReference Include="..\Datadog.Trace.TestHelpers\Datadog.Trace.TestHelpers.csproj" />
 
     <PackageReference Include="Microsoft.Diagnostics.Runtime" Version="2.0.226801" />
-
-    <PackageReference Include="Azure.Messaging.EventHubs" Version="5.11.5" />
-    <PackageReference Include="Azure.Messaging.ServiceBus" Version="7.18.1" />
-    <PackageReference Include="Azure.Storage.Blobs" Version="12.23.0" />
-
     <PackageReference Include="Newtonsoft.Json" Version="13.0.2" />
-
     <PackageReference Include="System.Diagnostics.DiagnosticSource" Version="8.0.1" />
     <PackageReference Include="System.Collections.Immutable" Version="6.0.0" />
-
     <PackageReference Include="Testcontainers" Version="3.6.0" />
-    <PackageReference Include="StrongNamer" Version="0.2.5" />  
+    <PackageReference Include="StrongNamer" Version="0.2.5" />
+    <PackageReference Include="Verify.Xunit" Version="14.13.1" />
+    <PackageReference Include="DiffPlex" Version="1.7.2" />
   </ItemGroup>
 
   <ItemGroup Condition=" $(TargetFramework.StartsWith('net4')) ">
@@ -44,21 +42,8 @@
     <Reference Include="System.EnterpriseServices" />
   </ItemGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Verify.Xunit" Version="14.13.1" />
-    <PackageReference Include="DiffPlex" Version="1.7.2" />
-  </ItemGroup>
-
   <ItemGroup Condition=" $(TargetFramework.StartsWith('netcoreapp')) ">
     <PackageReference Include="System.Net.Http" Version="4.3.4" />
   </ItemGroup>
 
-  <ItemGroup>
-    <None Update="CI\Data\*.*">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </None>
-    <None Update="CI\Data\**\*.*">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </None>
-  </ItemGroup>
 </Project>

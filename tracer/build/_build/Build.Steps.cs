@@ -199,8 +199,8 @@ partial class Build
 
     Project[] ClrProfilerIntegrationTests
         => IsOsx
-               ? new[] { Solution.GetProject(Projects.ClrProfilerIntegrationTests), Solution.GetProject(Projects.AppSecIntegrationTests), Solution.GetProject(Projects.DdTraceIntegrationTests) }
-               : new[] { Solution.GetProject(Projects.ClrProfilerIntegrationTests), Solution.GetProject(Projects.AppSecIntegrationTests), Solution.GetProject(Projects.DdTraceIntegrationTests), Solution.GetProject(Projects.DdDotnetIntegrationTests) };
+               ? new[] { Solution.GetProject(Projects.ClrProfilerIntegrationTests), Solution.GetProject(Projects.CiVisibilityIntegrationTests), Solution.GetProject(Projects.AppSecIntegrationTests), Solution.GetProject(Projects.DdTraceIntegrationTests) }
+               : new[] { Solution.GetProject(Projects.ClrProfilerIntegrationTests), Solution.GetProject(Projects.CiVisibilityIntegrationTests), Solution.GetProject(Projects.AppSecIntegrationTests), Solution.GetProject(Projects.DdTraceIntegrationTests), Solution.GetProject(Projects.DdDotnetIntegrationTests) };
 
     TargetFramework[] TestingFrameworks => GetTestingFrameworks(Platform, IsArm64);
 
@@ -1596,6 +1596,7 @@ partial class Build
             DotnetBuild(projects, framework: Framework, noRestore: IsWin);
 
             IntegrationTestLinuxOrOsxProfilerDirFudge(Projects.ClrProfilerIntegrationTests);
+            IntegrationTestLinuxOrOsxProfilerDirFudge(Projects.CiVisibilityIntegrationTests);
             IntegrationTestLinuxOrOsxProfilerDirFudge(Projects.AppSecIntegrationTests);
         });
 
@@ -1888,7 +1889,7 @@ partial class Build
 
             DotNetTestSettings ConfigureIntegrationTestRun(DotNetTestSettings config, string baseFilter)
             {
-                var filter = AddAreaFilter(AddIntegrationTestPartitionFilter(baseFilter));
+                var filter = AddAreaFilter(baseFilter);
 
                 return config
                       .SetDotnetPath(TargetPlatform)
@@ -1934,21 +1935,6 @@ partial class Build
             }
         });
 
-    private string AddIntegrationTestPartitionFilter(string filter)
-    {
-        if (string.IsNullOrWhiteSpace(IntegrationTestPartitionFilter))
-        {
-            return filter;
-        }
-
-        if (string.IsNullOrWhiteSpace(filter))
-        {
-            return $"({IntegrationTestPartitionFilter})";
-        }
-
-        return $"({filter})&({IntegrationTestPartitionFilter})";
-    }
-
     private string AddAreaFilter(string filter)
     {
         if (string.IsNullOrWhiteSpace(Area))
@@ -1961,7 +1947,7 @@ partial class Build
             return $"(Area={Area})";
         }
 
-        return filter + $"&(Area={Area})";
+        return $"({filter})&(Area={Area})";
     }
 
     Target CompileAzureFunctionsSamplesWindows => _ => _

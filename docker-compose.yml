@@ -707,6 +707,7 @@ services:
       - framework=${framework:-netcoreapp3.1}
       - Filter=${Filter:-} #optional
       - SampleName=${SampleName:- } #optional
+      - Area=${Area:- } #optional
       - CodeCoverageEnabled=${CodeCoverageEnabled:-false}
       - baseImage=${baseImage:-debian}
       - TestAllPackageVersions=${TestAllPackageVersions:-true}
