@@ -75,6 +75,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
 
             SetEnvironmentVariable("DD_TRACE_OTEL_SEMANTICS_ENABLED", openTelemetrySemanticsEnabled.ToString());
 
+            // Registers the empty route template and the pre-routing path rewrite that the last two
+            // rows of Data() exercise. Only this harness asks for them, so the sample applications'
+            // pipelines are unchanged for every other suite.
+            SetEnvironmentVariable("ADD_ROUTE_EDGE_CASES", "1");
+
             // OTEL_TRACES_EXPORTER=otlp is what makes the Datadog SDK emit OTLP instead of msgpack.
             // Everything else is left at its default dd-trace-dotnet value.
             ConfigureOtlpExport(fixture.OtlpSession);
@@ -152,6 +157,18 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
 
             // An unhandled exception is an error too, and is recorded as an exception span event.
             { "GET", "/bad-request", 500, true },
+
+            // -- ASP.NET Core route edge cases --
+
+            // A route template that matches the application root is stored by ASP.NET Core as the
+            // empty string, which must be reported as "/" rather than verbatim - otherwise
+            // http.route is an empty attribute and the span name has a trailing space.
+            { "GET", "/", 200, true },
+
+            // Middleware rewrote the path before routing ran, so the endpoint that matched is not the
+            // one the request arrived on. It is still the endpoint that served the request, so it is
+            // the route to report.
+            { "GET", "/rewrite-me", 200, true },
         };
 
         /// <summary>
