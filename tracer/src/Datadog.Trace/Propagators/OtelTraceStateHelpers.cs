@@ -23,7 +23,7 @@ namespace Datadog.Trace.Propagators
 
         /// <summary>
         /// Finds the "rv" item in the raw "ot=" value (items separated by ';', key/value by ':')
-        /// and returns its value parsed as 1-14 lowercase hex digits, or null if absent or malformed.
+        /// and returns its value parsed as exactly 14 lowercase hex digits, or null if absent or malformed.
         /// Never throws.
         /// </summary>
         internal static ulong? ExtractRv(string? raw)

@@ -22,6 +22,8 @@ namespace Datadog.Trace.Tests.Propagators
         [InlineData("th:e6666666666668;rv:ef284ace7a91e1", 0xef284ace7a91e1UL)]
         [InlineData("foo:bar;rv:1;baz:qux", null)]
         [InlineData("rv:zzzzzz", null)]
+        // rv must contain exactly 14 lowercase hexadecimal digits.
+        [InlineData("rv:ef284ace7a91e", null)]
         [InlineData("rv:123456789abcdef1", null)]
         [InlineData("rv:", null)]
         public void ExtractRv_ReturnsValueOrNull(string? raw, ulong? expected)
@@ -40,7 +42,9 @@ namespace Datadog.Trace.Tests.Propagators
         [InlineData("rv:ef284ace7a91e1;th:zz", "rv:ef284ace7a91e1")]
         [InlineData("rv:zz;th:e6666666666668", "th:e6666666666668")]
         [InlineData("foo:bar;rv:zz;th:e6666666666668;baz:qux", "foo:bar;th:e6666666666668;baz:qux")]
+        // rv values use lowercase hexadecimal digits.
         [InlineData("rv:EF284ACE7A91E1;foo:bar", "foo:bar")]
+        // th must contain no more than 14 lowercase hexadecimal digits.
         [InlineData("th:123456789abcdef;foo:bar", "foo:bar")]
         [InlineData("rv:;th;foo:bar", "foo:bar")]
         public void Normalize_RemovesOnlyMalformedRvAndTh(string? raw, string? expected)
