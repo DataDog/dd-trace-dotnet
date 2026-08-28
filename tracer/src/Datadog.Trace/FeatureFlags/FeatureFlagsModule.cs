@@ -213,23 +213,22 @@ namespace Datadog.Trace.FeatureFlags
                 throw new FeatureFlagsDeliveryUnavailableException(deliveryUnavailableReason);
             }
 
-            using var timeoutCancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-            var timeout = Task.Delay(_settings.InitializationTimeout, timeoutCancellation.Token);
-            var completed = await Task.WhenAny(_firstConfigReceived.Task, timeout).ConfigureAwait(false);
+            // Cancellation is signalled by completing a task: cancelling a token source throws, and
+            // an exception on this path can crash buggy runtimes.
+            var cancelled = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            using var registration = cancellationToken.Register(() => cancelled.TrySetResult(true));
 
-            // Stop the timer, otherwise it holds a callback for the whole initialization timeout.
-            timeoutCancellation.Cancel();
+            var timeout = Task.Delay(_settings.InitializationTimeout);
+            var completed = await Task.WhenAny(_firstConfigReceived.Task, timeout, cancelled.Task).ConfigureAwait(false);
 
-            if (completed != timeout)
+            if (completed == timeout)
             {
-                return;
+                // Evaluations keep returning the caller's default with PROVIDER_NOT_READY until
+                // configuration lands, which promotes the provider then.
+                Log.Warning<double>(
+                    "Feature Flags configuration did not arrive within {TimeoutMs}ms. Evaluations use their default values until it does.",
+                    _settings.InitializationTimeout.TotalMilliseconds);
             }
-
-            // Evaluations keep returning the caller's default with PROVIDER_NOT_READY until
-            // configuration lands, which promotes the provider then.
-            Log.Warning<double>(
-                "Feature Flags configuration did not arrive within {TimeoutMs}ms. Evaluations use their default values until it does.",
-                _settings.InitializationTimeout.TotalMilliseconds);
         }
 
         internal void RegisterOnNewConfigEventHandler(Action? onNewConfig)
