@@ -71,7 +71,7 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
                         new StackFrame("|lm:Samples.ExceptionGenerator |ns:Samples.ExceptionGenerator |ct:ParallelExceptionsScenario |cg: |fn:ThrowExceptions |fg: |sg:(object state)"));
                 }
             }
-            else if (framework =="net10.0")
+            else if (framework == "net10.0")
             {
                 if (IntPtr.Size == 4)
                 {
@@ -146,7 +146,7 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
                 total.Should().Be(expectedExceptionCount);
             }
         }
-    
+
         [Flaky("Flaky on ARM64")]
         [TestAppFact("Samples.ExceptionGenerator")]
         public void ThrowExceptionsInParallelWithCustomGetFunctionFromIp(string appName, string framework, string appAssembly)
@@ -698,6 +698,7 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
                         break;
                     }
                 }
+
                 if (matched)
                 {
                     break;
@@ -739,10 +740,12 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
                 var idx = pending.FindIndex(
                     s => s.Type == exp.Type && s.Message == exp.Message && s.Count == exp.Count &&
                          AssertExpectedStack(s.Stacktrace, exp.ExpectedStack).Matched);
+#pragma warning disable SA1118 // Parameter should not span multiple lines
                 idx.Should().BeGreaterThanOrEqualTo(
                     0,
                     $"Expected a sample for {exp.Type} / {exp.Message} / count {exp.Count} with matching stack. " +
                     $"Remaining: {FormatExceptionSamplesSummary(pending)}");
+#pragma warning restore SA1118 // Parameter should not span multiple lines
                 pending.RemoveAt(idx);
             }
 
