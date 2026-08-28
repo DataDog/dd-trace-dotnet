@@ -246,9 +246,11 @@ namespace Datadog.Trace.TestHelpers
                        returnAllOperations: true);
         }
 
-        // Returns true when a known race fingerprint was detected in the captured stderr and the
-        // caller should retry the launch (process and agent have been torn down). Returns false
-        // when no fingerprint matched. Throws if the fingerprint persisted past the retry budget.
+        // Returns true when a known race fingerprint was detected and the caller should retry the
+        // launch, false when no fingerprint matched (caller gives up and throws). Throws if the
+        // fingerprint persisted past the retry budget. In every case the process and agent are torn
+        // down before returning, so a give-up/throw never leaves the shared fixture pointing at a
+        // dead process.
         private async Task<bool> CheckRaceAndCleanupForRetryAsync(int attempt, int maxAttempts, StringBuilder capturedStderr, TestHelper helper)
         {
             // Reset HttpPort up-front: whether we retry or rethrow, the port we bound earlier
@@ -272,14 +274,26 @@ namespace Datadog.Trace.TestHelpers
                 // best-effort
             }
 
-            if (!await ErrorHelpers.HandleRuntimeSkippableErrorsAsync(attempt, maxAttempts, exitCode, capturedStderr.ToString(), helper, WriteToOutput))
-            {
-                return false;
-            }
-
             try
             {
-                if (!Process.HasExited)
+                return await ErrorHelpers.HandleRuntimeSkippableErrorsAsync(attempt, maxAttempts, exitCode, capturedStderr.ToString(), helper, WriteToOutput);
+            }
+            finally
+            {
+                // Tear down the process and agent whether we retry, give up, or fail loudly.
+                // Otherwise TryStartApp throws with Process still assigned, and because the fixture
+                // is shared via IClassFixture the next test short-circuits on `Process is not null`
+                // and runs against HttpPort == 0 — turning one startup crash into a cascade of
+                // failures across every test in the class.
+                DisposeProcessAndAgent();
+            }
+        }
+
+        private void DisposeProcessAndAgent()
+        {
+            try
+            {
+                if (Process is not null && !Process.HasExited)
                 {
                     Process.Kill();
                 }
@@ -289,11 +303,10 @@ namespace Datadog.Trace.TestHelpers
                 // best-effort cleanup
             }
 
-            Process.Dispose();
+            Process?.Dispose();
             Process = null;
-            Agent.Dispose();
+            Agent?.Dispose();
             Agent = null;
-            return true;
         }
 
         private async Task EnsureServerStarted(bool sendHealthCheck)
