@@ -13,6 +13,7 @@ using System.Net;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Util;
@@ -210,17 +211,51 @@ namespace Datadog.Trace.Agent.Transports
                 // This diverges slightly from HttpClient, where the timeout covers the _whole_ read
                 // currently, however, this _may_ change if we switch to using HttpCompletionMode.
                 // ResponseHeadersRead to avoid the full buffering into memory as we do today.
+                var deadlineExpired = new TaskCompletionSource<object?>(TaskCreationOptions.RunContinuationsAsynchronously);
+                using var tcsRegistration = cts.Token.Register(x => ((TaskCompletionSource<object?>)x!).TrySetResult(true), deadlineExpired, useSynchronizationContext: false);
                 registration = cts.Token.Register(static s => { try { ((HttpWebRequest)s!).Abort(); } catch { } }, _request);
 
                 if (writeBody is not null)
                 {
                     using (var requestStream = await _request.GetRequestStreamAsync().ConfigureAwait(false))
                     {
-                        await writeBody(requestStream, state).ConfigureAwait(false);
+                        var writeBodyTask = writeBody(requestStream, state);
+                        var result = await Task.WhenAny(writeBodyTask, deadlineExpired.Task).ConfigureAwait(false);
+                        if (result == deadlineExpired.Task)
+                        {
+                            // The deadline fired before the body producer finished. Don't wait for it any longer - observe
+                            // its eventual fault here so it can't surface as an unobserved task exception later.
+                            _ = writeBodyTask.ContinueWith(
+                                static t => _ = t.Exception,
+                                TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously);
+                            ThrowCancelledException(_request, cts.Token, null);
+                        }
+                        else
+                        {
+                            // This has  finished, but not necessarily succesfully, so await it
+                            await writeBodyTask.ConfigureAwait(false);
+                        }
                     }
                 }
 
-                var httpWebResponse = (HttpWebResponse)await _request.GetResponseAsync().ConfigureAwait(false);
+                // Call GetResponseAsync(), but make sure we handle cancellation in the mean time
+                HttpWebResponse httpWebResponse;
+                var getResponseTask = _request.GetResponseAsync();
+                var getResponseResult = await Task.WhenAny(getResponseTask, deadlineExpired.Task).ConfigureAwait(false);
+                if (getResponseResult == deadlineExpired.Task)
+                {
+                    // The deadline fired before the body producer finished. Don't wait for it any longer - observe
+                    // its eventual fault here so it can't surface as an unobserved task exception later.
+                    _ = getResponseTask.ContinueWith(
+                        static t => _ = t.Exception,
+                        TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously);
+                    ThrowCancelledException(_request, cts.Token, null);
+                    httpWebResponse = default; // Not reachable, but easiest way to keep the compiler happy
+                }
+                else
+                {
+                    httpWebResponse = (HttpWebResponse)await getResponseTask.ConfigureAwait(false);
+                }
 
                 // Make sure we don't have a concurrent Abort() before returning - calling Dispose() here waits
                 // for in-flight cancellation, and it's safe to call Dispose() more than once.
