@@ -26,7 +26,6 @@ public static class Projects
     public const string FleetInstallerTests = "Datadog.FleetInstaller.IntegrationTests";
     public const string AppSecUnitTests = "Datadog.Trace.Security.Unit.Tests";
     public const string AppSecIntegrationTests = "Datadog.Trace.Security.IntegrationTests";
-    public const string CiVisibilityIntegrationTests = "Datadog.Trace.Ci.IntegrationTests";
     public const string ClrProfilerIntegrationTests = "Datadog.Trace.ClrProfiler.IntegrationTests";
     public const string ClrProfilerManagedTests = "Datadog.Trace.ClrProfiler.Managed.Tests";
     public const string DdTraceIntegrationTests = "Datadog.Trace.Tools.Runner.IntegrationTests";

@@ -9,8 +9,6 @@
   <ItemGroup>
     <None Remove="applicationHost.config" />
     <None Remove="xunit.runner.json" />
-    <Compile Remove="CI\**\*.cs" />
-    <Compile Remove="SourceCodeIntegrationGitMetadataTests.cs" />
     <Compile Include="..\Datadog.Trace.TestHelpers.SharedSource\VerifyHelper.cs" Link="Helpers\VerifyHelper.cs" />
     <Content Include="applicationHost.config">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>

@@ -1729,6 +1729,7 @@ stages:
         Filter: $(IntegrationTestFilter)
         SampleName: $(IntegrationTestSampleName)
         Area: $(area)
+        IntegrationTestPartitionFilter: $(integrationTestPartitionFilter)
 
     - script: tracer\build.cmd RunIntegrationTests RunWindowsRegressionTests -Framework $(framework) --code-coverage-enabled $(CodeCoverageEnabled)
       displayName: Run integration tests (ASM)
@@ -1740,6 +1741,7 @@ stages:
         Filter: $(IntegrationTestFilter)
         SampleName: $(IntegrationTestSampleName)
         Area: $(area)
+        IntegrationTestPartitionFilter: $(integrationTestPartitionFilter)
 
 #    TODO: Re-enable test-agent.windows once VM images are updated (hitting rate limits for docker)
 #    - script: docker compose -f docker-compose.windows.yml down
@@ -2307,6 +2309,7 @@ stages:
           -e CodeCoverageEnabled=$(CodeCoverageEnabled) \
           -e IncludeTestsRequiringDocker=false  \
           -e Filter=$(IntegrationTestFilter) \
+          -e "IntegrationTestPartitionFilter=$(integrationTestPartitionFilter)" \
           -e SampleName=$(IntegrationTestSampleName) \
           -e Area=$(area) \
           IntegrationTests
@@ -2324,6 +2327,7 @@ stages:
           -e CodeCoverageEnabled=$(CodeCoverageEnabled) \
           -e IncludeTestsRequiringDocker=false  \
           -e Filter=$(IntegrationTestFilter) \
+          -e "IntegrationTestPartitionFilter=$(integrationTestPartitionFilter)" \
           -e SampleName=$(IntegrationTestSampleName) \
           -e Area=$(area) \
           IntegrationTests
@@ -3385,6 +3389,7 @@ stages:
               -e CodeCoverageEnabled=$(CodeCoverageEnabled) \
               -e IncludeTestsRequiringDocker=false \
               -e Filter=$(IntegrationTestFilter) \
+              -e "IntegrationTestPartitionFilter=$(integrationTestPartitionFilter)" \
               -e SampleName=$(IntegrationTestSampleName) \
               -e Area=$(area) \
               IntegrationTests.ARM64

@@ -18,7 +18,7 @@ partial class Build : NukeBuild
 {
     private const string TracerArea = "Tracer";
     private const string AsmArea = "ASM";
-    private const string CiVisibilityArea = "CIVisibility";
+    private const string CiVisibilityPartition = "CIVisibility";
     private const string TracingDotnet = "@DataDog/tracing-dotnet";
     private const string ASMDotnet = "@DataDog/asm-dotnet";
     private const string CiVisibilityDotnet = "@DataDog/ci-app-libraries-dotnet";
@@ -40,6 +40,15 @@ partial class Build : NukeBuild
         new ChangedTeamValue { VariableName = "isDebuggerChanged", TeamName = DebuggerDotnet},
         new ChangedTeamValue { VariableName = "isProfilerChanged", TeamName = ProfilerDotnet},
     };
+
+    static private readonly (string Name, string Area, string Filter)[] _integrationTestPartitions = new[]
+    {
+        (Name: TracerArea, Area: TracerArea, Filter: "Category!=TestIntegrations"),
+        (Name: CiVisibilityPartition, Area: TracerArea, Filter: "Category=TestIntegrations"),
+        (Name: AsmArea, Area: AsmArea, Filter: string.Empty),
+    };
+
+    static private bool _isCoreChanged;
 
     Target GenerateVariables
         => _ =>
@@ -98,6 +107,41 @@ partial class Build : NukeBuild
                 return false;
             }
 
+            bool CoreTracerChanges(string[] changedFiles)
+            {
+                const string tracerProjectDirectory = "tracer/src/Datadog.Trace/";
+                string[] productSpecificDirectories = new[]
+                {
+                    $"{tracerProjectDirectory}AppSec/",
+                    $"{tracerProjectDirectory}Ci/",
+                    $"{tracerProjectDirectory}ClrProfiler/AutoInstrumentation/",
+                    $"{tracerProjectDirectory}ContinuousProfiler/",
+                    $"{tracerProjectDirectory}DatabaseMonitoring/",
+                    $"{tracerProjectDirectory}DataStreamsMonitoring/",
+                    $"{tracerProjectDirectory}Debugger/",
+                    $"{tracerProjectDirectory}FeatureFlags/",
+                    $"{tracerProjectDirectory}Iast/",
+                    $"{tracerProjectDirectory}OpenTelemetry/",
+                    $"{tracerProjectDirectory}Serverless/",
+                    $"{tracerProjectDirectory}ServiceFabric/",
+                };
+
+                foreach (var file in changedFiles)
+                {
+                    if (file.StartsWith("tracer/test/Datadog.Trace.TestHelpers", StringComparison.OrdinalIgnoreCase) ||
+                        file.StartsWith("tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/Helpers/", StringComparison.OrdinalIgnoreCase) ||
+                        file.StartsWith("tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/PackageVersions", StringComparison.OrdinalIgnoreCase) ||
+                        (file.StartsWith(tracerProjectDirectory, StringComparison.OrdinalIgnoreCase) &&
+                         !productSpecificDirectories.Any(directory => file.StartsWith(directory, StringComparison.OrdinalIgnoreCase))))
+                    {
+                        Logger.Information($"File {file} was detected as a core tracer change.");
+                        return true;
+                    }
+                }
+
+                return false;
+            }
+
             void GenerateConditionVariables()
             {
                 CodeOwnersParser codeOwners = new(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "CodeOwners", "CODEOWNERS"));
@@ -105,6 +149,41 @@ partial class Build : NukeBuild
                 foreach(var changedTeamValue in _changedTeamValue)
                 {
                     GenerateConditionVariableBasedOnGitChange(changedTeamValue, codeOwners);
+                }
+
+                GenerateCoreConditionVariable();
+
+                void GenerateCoreConditionVariable()
+                {
+                    const string variableName = "isCoreChanged";
+                    var baseBranch = string.IsNullOrEmpty(TargetBranch) ? ReleaseBranchForCurrentVersion() : $"origin/{TargetBranch}";
+                    var forceRunVariableName = $"force_run_tests_with_{variableName}";
+                    _isCoreChanged = false;
+
+                    if (Environment.GetEnvironmentVariable("BUILD_REASON") == "Schedule" && bool.Parse(Environment.GetEnvironmentVariable("isMainBranch") ?? "false"))
+                    {
+                        Logger.Information("Running scheduled build on master, treating core code as changed.");
+                        _isCoreChanged = true;
+                    }
+                    else if (bool.Parse(Environment.GetEnvironmentVariable(forceRunVariableName) ?? "false"))
+                    {
+                        Logger.Information($"{forceRunVariableName} was set - treating core code as changed.");
+                        _isCoreChanged = true;
+                    }
+                    else if (IsGitBaseBranch(baseBranch))
+                    {
+                        Logger.Information("Running on the base branch, treating core code as changed.");
+                        _isCoreChanged = true;
+                    }
+                    else
+                    {
+                        _isCoreChanged = CoreTracerChanges(GetGitChangedFiles(baseBranch));
+                    }
+
+                    Logger.Information($"{variableName} - {_isCoreChanged}");
+                    var variableValue = _isCoreChanged.ToString();
+                    EnvironmentInfo.SetVariable(variableName, variableValue);
+                    AzurePipelines.Instance.SetOutputVariable(variableName, variableValue);
                 }
 
                 void GenerateConditionVariableBasedOnGitChange(ChangedTeamValue changedTeamValue, CodeOwnersParser codeOwners)
@@ -192,19 +271,18 @@ partial class Build : NukeBuild
                 }
             }
 
-            // We only call this method for the tracer, ASM, and CI Visibility areas
-            bool ShouldBeIncluded(string area)
+            bool ShouldBeIncluded(string partition)
             {
-                if (area == AsmArea)
+                if (partition == AsmArea)
                 {
                     return _changedTeamValue.First(x => x.TeamName == ASMDotnet).IsChanged;
                 }
 
-                if (area == CiVisibilityArea)
+                if (partition == CiVisibilityPartition)
                 {
-                    // CI Visibility tests also compile and exercise shared tracer and test helper code.
                     return _changedTeamValue.First(x => x.TeamName == CiVisibilityDotnet).IsChanged ||
-                           _changedTeamValue.First(x => x.TeamName == TracingDotnet).IsChanged;
+                           _changedTeamValue.First(x => x.TeamName == TracingDotnet).IsChanged ||
+                           _isCoreChanged;
                 }
 
                 return true;
@@ -223,18 +301,17 @@ partial class Build : NukeBuild
             {
                 var targetFrameworks = GetTestingFrameworks(PlatformFamily.Windows);
                 var targetPlatforms = new[] { "x86", "x64" };
-                var areas = new[] { TracerArea, AsmArea, CiVisibilityArea };
                 var matrix = new Dictionary<string, object>();
 
                 foreach (var framework in targetFrameworks)
                 {
                     foreach (var targetPlatform in targetPlatforms)
                     {
-                        foreach (var area in areas)
+                        foreach (var (name, area, filter) in _integrationTestPartitions)
                         {
-                            if (ShouldBeIncluded(area))
+                            if (ShouldBeIncluded(name))
                             {
-                                matrix.Add($"{targetPlatform}_{framework}_{area}", new { framework = framework, targetPlatform = targetPlatform, area = area });
+                                matrix.Add($"{targetPlatform}_{framework}_{name}", new { framework = framework, targetPlatform = targetPlatform, area = area, integrationTestPartitionFilter = filter });
                             }
                         }
                     }
@@ -385,12 +462,11 @@ partial class Build : NukeBuild
                         }
                         else
                         {
-                            var areas = new[] { TracerArea, AsmArea, CiVisibilityArea };
-                            foreach (var area in areas)
+                            foreach (var (name, area, filter) in _integrationTestPartitions)
                             {
-                                if (ShouldBeIncluded(area))
+                                if (ShouldBeIncluded(name))
                                 {
-                                    matrix.Add($"{baseImage}_{framework}_{area}", new { publishTargetFramework = framework, baseImage = baseImage, artifactSuffix = artifactSuffix, area = area });
+                                    matrix.Add($"{baseImage}_{framework}_{name}", new { publishTargetFramework = framework, baseImage = baseImage, artifactSuffix = artifactSuffix, area = area, integrationTestPartitionFilter = filter });
                                 }
                             }
                         }
@@ -412,18 +488,25 @@ partial class Build : NukeBuild
                 };
 
                 var targetFrameworks = GetTestingFrameworks(PlatformFamily.Linux, isArm64: true);
-                var areas = dockerTest ? new[] { TracerArea, AsmArea } : new[] { TracerArea, AsmArea, CiVisibilityArea };
-
                 var matrix = new Dictionary<string, object>();
                 foreach (var framework in targetFrameworks)
                 {
                     foreach (var (baseImage, artifactSuffix) in baseImages)
                     {
-                        foreach (var area in areas)
+                        if (dockerTest)
                         {
-                            if (ShouldBeIncluded(area))
+                            // Preserve the existing combined Tracer/ASM job when ASM tests are required.
+                            var area = ShouldBeIncluded(AsmArea) ? string.Empty : TracerArea;
+                            matrix.Add($"{baseImage}_{framework}", new { publishTargetFramework = framework, baseImage = baseImage, artifactSuffix = artifactSuffix, area = area });
+                        }
+                        else
+                        {
+                            foreach (var (name, area, filter) in _integrationTestPartitions)
                             {
-                                matrix.Add($"{baseImage}_{framework}_{area}", new { publishTargetFramework = framework, baseImage = baseImage, artifactSuffix = artifactSuffix, area = area });
+                                if (ShouldBeIncluded(name))
+                                {
+                                    matrix.Add($"{baseImage}_{framework}_{name}", new { publishTargetFramework = framework, baseImage = baseImage, artifactSuffix = artifactSuffix, area = area, integrationTestPartitionFilter = filter });
+                                }
                             }
                         }
                     }
