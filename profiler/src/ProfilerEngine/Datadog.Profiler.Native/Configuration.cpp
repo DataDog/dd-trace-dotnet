@@ -541,8 +541,8 @@ CpuProfilerType Configuration::ExtractCpuProfilerType(bool isCpuProfilingEnabled
     // its siginfo) once the queue is full.
     if (isCpuProfilingEnabled &&
         cpuProfilerType == CpuProfilerType::TimerCreate &&
-        availableSignalQueueSlots.has_value() &&
-        availableSignalQueueSlots.value() < MinimumFreeSignalQueueSlots)
+        (!availableSignalQueueSlots.has_value() ||
+         availableSignalQueueSlots.value() < MinimumFreeSignalQueueSlots))
     {
         Log::Warn("Only ", availableSignalQueueSlots.value(), " signal queue slots are available out of the ",
                   MinimumFreeSignalQueueSlots, " required (see RLIMIT_SIGPENDING). ",
