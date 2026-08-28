@@ -43,7 +43,7 @@ namespace Datadog.Profiler.IntegrationTests.Bugs
                         return (l.Name == "thread name");
                     }).Value;
 
-                    if (threadName == "")
+                    if (threadName == string.Empty)
                     {
                         var stackTrace = sample.StackTrace(profile);
                         if (stackTrace.FramesCount == 0)
