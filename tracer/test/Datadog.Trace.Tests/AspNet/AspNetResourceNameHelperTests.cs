@@ -171,6 +171,119 @@ namespace Datadog.Trace.Tests.AspNet
             using var a = new AssertionScope();
             resource.Should().Be($"{method} {expected}");
         }
+
+        /// <summary>
+        /// Verifies that when expandRouteTemplates is true, the route path extracted
+        /// from the resource name is consistent and can be used as the http.route tag value.
+        /// This is the pattern used by AspNetMvcIntegration and AspNetWebApi2Integration
+        /// to keep http.route consistent with resource_name.
+        /// </summary>
+        [Theory]
+        [InlineData("{tenantId}/{controller}/{id}", "/home/index/{id}", false, "{tenantId}/{controller}/{id}")]
+        [InlineData("{tenantId}/{controller}/{id}", "/home/index/{id}", true, "/{tenantid}/home/{id}")]
+        [InlineData("{controller}/{action}/{nonid}", "/home/index/{nonid}", false, "{controller}/{action}/{nonid}")]
+        [InlineData("{controller}/{action}/{nonid}", "/home/index/oops", true, "/home/index/oops")]
+        [InlineData("{controller}", "/home", false, "{controller}")]
+        [InlineData("{controller}", "/home", true, "/home")]
+        public void ExpandedRoute_ExtractedFromResourceName_IsConsistentWithResourceName(
+            string template, string expectedRoute, bool expandRouteTemplates, string expectedHttpRouteWhenNotExpanded)
+        {
+            const string method = "GET";
+
+            var routeValues = new RouteValueDictionary
+            {
+                { "controller", "Home" },
+                { "action", "Index" },
+                { "tenantId", "abc123" },
+                { "nonid", "oops" },
+                { "id", 42 },
+            };
+
+            var resource = AspNetResourceNameHelper.CalculateResourceName(
+                httpMethod: method,
+                routeTemplate: template,
+                routeValues: routeValues,
+                defaults: null,
+                out _,
+                out _,
+                out _,
+                expandRouteTemplates);
+
+            // Extract route from resource name (same pattern used in the integration code)
+            string httpRouteValue = template;
+            if (expandRouteTemplates && resource != null)
+            {
+                var spaceIndex = resource.IndexOf(' ');
+                if (spaceIndex >= 0 && spaceIndex + 1 < resource.Length)
+                {
+                    httpRouteValue = resource.Substring(spaceIndex + 1);
+                }
+            }
+
+            using var a = new AssertionScope();
+            resource.Should().Be($"{method} {expectedRoute}");
+
+            if (expandRouteTemplates)
+            {
+                // When expanding, http.route should match the route part of resource_name
+                httpRouteValue.Should().Be(expectedRoute,
+                    "http.route should be consistent with resource_name when expandRouteTemplates is true");
+            }
+            else
+            {
+                // When not expanding, http.route stays as the raw template
+                httpRouteValue.Should().Be(template,
+                    "http.route should remain as the raw route template when expandRouteTemplates is false");
+            }
+        }
+
+        /// <summary>
+        /// Regression test: verifies that with a generic {controller} route template,
+        /// multiple different controllers produce distinct http.route values when
+        /// expandRouteTemplates is true, preventing duplicate endpoints in the UI.
+        /// </summary>
+        [Fact]
+        public void ExpandedRoute_DifferentControllers_ProduceDifferentHttpRoutes()
+        {
+            const string method = "GET";
+            const string template = "api/{controller}/{id}";
+
+            var controllers = new[] { "users", "orders", "products", "settings" };
+            var httpRoutes = new System.Collections.Generic.HashSet<string>();
+
+            foreach (var controllerName in controllers)
+            {
+                var routeValues = new RouteValueDictionary
+                {
+                    { "controller", controllerName },
+                    { "id", 42 },
+                };
+
+                var resource = AspNetResourceNameHelper.CalculateResourceName(
+                    httpMethod: method,
+                    routeTemplate: template,
+                    routeValues: routeValues,
+                    defaults: null,
+                    out _,
+                    out _,
+                    out _,
+                    expandRouteTemplates: true);
+
+                // Extract the route from the resource name
+                var spaceIndex = resource.IndexOf(' ');
+                var httpRouteValue = resource.Substring(spaceIndex + 1);
+
+                httpRoutes.Add(httpRouteValue);
+
+                // Each controller should produce a unique route containing the controller name
+                httpRouteValue.Should().Contain(controllerName,
+                    $"http.route should contain the expanded controller name '{controllerName}'");
+            }
+
+            // All routes should be distinct (no duplicates)
+            httpRoutes.Should().HaveCount(controllers.Length,
+                "each controller should produce a distinct http.route value");
+        }
     }
 }
 #endif
