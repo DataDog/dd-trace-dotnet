@@ -928,6 +928,7 @@
       <type fullname="System.Runtime.ExceptionServices.FirstChanceExceptionEventArgs" />
       <type fullname="System.Runtime.ExceptionServices.HandleProcessCorruptedStateExceptionsAttribute" />
       <type fullname="System.Runtime.InteropServices.ComVisibleAttribute" />
+      <type fullname="System.Runtime.InteropServices.ExternalException" />
       <type fullname="System.Runtime.InteropServices.GCHandle" />
       <type fullname="System.Runtime.InteropServices.GCHandleType" />
       <type fullname="System.Runtime.InteropServices.InAttribute" />
