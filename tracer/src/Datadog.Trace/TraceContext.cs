@@ -358,7 +358,7 @@ namespace Datadog.Trace
                 samplingDecision.Mechanism,
                 samplingDecision.Rate,
                 samplingDecision.LimiterRate,
-                sample: samplingDecision.Sample);
+                sample: samplingDecision.KeptByProbabilitySampling);
 
             return samplingDecision.Priority;
         }

@@ -189,7 +189,7 @@ namespace Datadog.Trace.Tests.Sampling
 
             var decision = sampler.MakeSamplingDecision(scope.Span);
 
-            decision.Sample.Should().BeTrue();
+            decision.KeptByProbabilitySampling.Should().BeTrue();
         }
 
         private async Task RunSamplerTest(

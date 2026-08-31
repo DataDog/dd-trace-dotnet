@@ -32,10 +32,10 @@ internal readonly struct SamplingDecision
     /// <summary>
     /// The raw probability keep/drop outcome (before any rate-limiter demotion), or null
     /// when no probability mechanism made this decision (e.g. <see cref="SamplingDecision.Default"/>).
-    /// Used only to derive the OTel "ot.rv"/"ot.th" tracestate values in
+    /// Used to derive the OTel "ot.rv"/"ot.th" tracestate values in
     /// <see cref="TraceContext.SetSamplingPriority"/> — never affects <see cref="Priority"/>.
     /// </summary>
-    public readonly bool? Sample;
+    public readonly bool? KeptByProbabilitySampling;
 
     public SamplingDecision(int priority, string? mechanism, float? rate, float? limiterRate, bool? sample = null)
     {
@@ -43,7 +43,7 @@ internal readonly struct SamplingDecision
         Mechanism = mechanism;
         Rate = rate;
         LimiterRate = limiterRate;
-        Sample = sample;
+        KeptByProbabilitySampling = sample;
     }
 
     public void Deconstruct(out int priority, out string? mechanism, out float? rate, out float? limiterRate)
