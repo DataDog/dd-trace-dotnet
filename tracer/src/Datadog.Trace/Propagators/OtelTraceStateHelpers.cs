@@ -6,6 +6,7 @@
 #nullable enable
 
 using System;
+using System.Text;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Propagators
@@ -111,7 +112,7 @@ namespace Datadog.Trace.Propagators
             {
                 if (rv is { } rvValue)
                 {
-                    sb.Append("rv:").Append(rvValue.ToString("x14"));
+                    AppendRandomValueHex(sb, rvValue);
                 }
 
                 if (th is { } thValue)
@@ -121,7 +122,7 @@ namespace Datadog.Trace.Propagators
                         sb.Append(';');
                     }
 
-                    sb.Append("th:").Append(FormatThresholdHex(thValue));
+                    AppendThresholdHex(sb, thValue);
                 }
 
                 if (!StringUtil.IsNullOrEmpty(raw))
@@ -162,13 +163,41 @@ namespace Datadog.Trace.Propagators
             }
         }
 
-        private static string FormatThresholdHex(ulong th)
+        private static void AppendRandomValueHex(StringBuilder sb, ulong rv)
+        {
+            sb.Append("rv:");
+#if NETCOREAPP3_1_OR_GREATER
+            Span<char> buffer = stackalloc char[MaxHexDigits];
+            _ = rv.TryFormat(buffer, out _, "x14");
+            sb.Append(buffer);
+#else
+            sb.Append(rv.ToString("x14"));
+#endif
+        }
+
+        private static void AppendThresholdHex(StringBuilder sb, ulong th)
         {
             // Format as 14 hex digits, then trim trailing zero nibbles.
             // A fully-zero threshold trims to the empty string; represent it as a single "0".
+            sb.Append("th:");
+#if NETCOREAPP3_1_OR_GREATER
+            Span<char> buffer = stackalloc char[MaxHexDigits];
+            _ = th.TryFormat(buffer, out var written, "x14");
+            var trimmed = buffer.Slice(0, written).TrimEnd('0');
+
+            if (trimmed.IsEmpty)
+            {
+                sb.Append('0');
+            }
+            else
+            {
+                sb.Append(trimmed);
+            }
+#else
             var hex = th.ToString("x14");
             var trimmed = hex.TrimEnd('0');
-            return trimmed.Length == 0 ? "0" : trimmed;
+            sb.Append(trimmed.Length == 0 ? "0" : trimmed);
+#endif
         }
 
         private static string? RemoveInvalidRvTh(string raw)
