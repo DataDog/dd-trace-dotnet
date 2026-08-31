@@ -539,16 +539,22 @@ CpuProfilerType Configuration::ExtractCpuProfilerType(bool isCpuProfilingEnabled
     // fails and those threads silently produce no CPU sample. The manual profiler is a safe
     // destination because it relies on a standard signal, which the kernel keeps delivering (minus
     // its siginfo) once the queue is full.
-    if (isCpuProfilingEnabled &&
-        cpuProfilerType == CpuProfilerType::TimerCreate &&
-        (!availableSignalQueueSlots.has_value() ||
-         availableSignalQueueSlots.value() < MinimumFreeSignalQueueSlots))
+    if (isCpuProfilingEnabled && cpuProfilerType == CpuProfilerType::TimerCreate)
     {
-        Log::Warn("Only ", availableSignalQueueSlots.value(), " signal queue slots are available out of the ",
-                  MinimumFreeSignalQueueSlots, " required (see RLIMIT_SIGPENDING). ",
-                  "Falling back to the manual CPU profiler.");
+        if (!availableSignalQueueSlots.has_value())
+        {
+            Log::Warn("Unable to determine how many signal queue slots are available (see RLIMIT_SIGPENDING). ",
+                      "Falling back to the manual CPU profiler.");
+            return CpuProfilerType::ManualCpuTime;
+        }
 
-        return CpuProfilerType::ManualCpuTime;
+        if (availableSignalQueueSlots.value() < MinimumFreeSignalQueueSlots)
+        {
+            Log::Warn("Only ", availableSignalQueueSlots.value(), " signal queue slots are available out of the ",
+                      MinimumFreeSignalQueueSlots, " required (see RLIMIT_SIGPENDING). ",
+                      "Falling back to the manual CPU profiler.");
+            return CpuProfilerType::ManualCpuTime;
+        }
     }
 #else
     (void)isCpuProfilingEnabled;
