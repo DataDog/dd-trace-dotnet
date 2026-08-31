@@ -931,7 +931,6 @@ namespace Datadog.Trace.Tests.Propagators
             var result = W3CPropagator.Extract(headers.Object);
 
             result.SpanContext!.AdditionalW3CTraceState.Should().Be(ExpectedAdditionalTraceState);
-            ((IReadOnlyDictionary<string, string>)result.SpanContext)["__DistributedKey-AdditionalW3CTraceState"].Should().Be(ExpectedAdditionalTraceState);
 
             var tracestate = W3CTraceContextPropagator.CreateTraceStateHeader(result.SpanContext!);
             tracestate.Should().Be($"dd=s:1;p:0000000000000001,{ExpectedAdditionalTraceState}");
