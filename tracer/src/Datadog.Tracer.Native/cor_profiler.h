@@ -126,6 +126,17 @@ private:
     bool GetIntegrationTypeRef(ModuleMetadata& module_metadata, ModuleID module_id,
                                const IntegrationDefinition& integration_definition, mdTypeRef& integration_type_ref);
     bool ProfilerAssemblyIsLoadedIntoAppDomain(AppDomainID app_domain_id);
+#ifdef LINUX
+    using OtelThreadContextDetach = void* (*)();
+    using OtelThreadContextFree = void (*)(void*);
+
+    void* libdatadog_handle_ = nullptr;
+    OtelThreadContextDetach otel_thread_context_detach_ = nullptr;
+    OtelThreadContextFree otel_thread_context_free_ = nullptr;
+
+    void InitializeOtelThreadContextCleanup();
+    void CleanupOtelThreadContext();
+#endif
     std::string GetILCodes(const std::string& title, ILRewriter* rewriter, const FunctionInfo& caller,
                            const ComPtr<IMetaDataImport2>& metadata_import);
     HRESULT RewriteForDistributedTracing(const ModuleMetadata& module_metadata, ModuleID module_id);
@@ -167,6 +178,8 @@ public:
     HRESULT STDMETHODCALLTYPE ModuleLoadFinished(ModuleID module_id, HRESULT hr_status) override;
 
     HRESULT STDMETHODCALLTYPE ModuleUnloadStarted(ModuleID module_id) override;
+
+    HRESULT STDMETHODCALLTYPE ThreadDestroyed(ThreadID thread_id) override;
 
     HRESULT STDMETHODCALLTYPE JITCompilationStarted(FunctionID function_id, BOOL is_safe_to_block) override;
 

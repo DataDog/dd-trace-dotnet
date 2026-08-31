@@ -6,18 +6,41 @@
 using System.Threading;
 using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.ContinuousProfiler;
-using Datadog.Trace.Logging;
+using Datadog.Trace.LibDatadog.OtelThreadContext;
 
 namespace Datadog.Trace
 {
     internal sealed class AsyncLocalScopeManager : IScopeManager, IScopeRawAccess
     {
         private readonly AsyncLocal<Scope> _activeScope = CreateScope();
+        private readonly IOtelThreadContextPublisher _otelThreadContextPublisher;
+        private readonly AsyncLocal<Scope> _otelScope;
+
+        public AsyncLocalScopeManager()
+            : this(OtelThreadContextPublisher.Disabled)
+        {
+        }
+
+        internal AsyncLocalScopeManager(IOtelThreadContextPublisher otelThreadContextPublisher)
+        {
+            _otelThreadContextPublisher = otelThreadContextPublisher;
+            if (otelThreadContextPublisher.IsEnabled)
+            {
+                _otelScope = new AsyncLocal<Scope>(OnOtelScopeChanged);
+            }
+        }
 
         public Scope Active
         {
             get => _activeScope.Value;
-            private set => _activeScope.Value = value;
+            private set
+            {
+                _activeScope.Value = value;
+                if (_otelScope is not null)
+                {
+                    _otelScope.Value = value;
+                }
+            }
         }
 
         Scope IScopeRawAccess.Active
@@ -74,6 +97,18 @@ namespace Datadog.Trace
             else
             {
                 Profiler.Instance.ContextTracker.Set(obj.CurrentValue.Span.RootSpanId, obj.CurrentValue.Span.SpanId);
+            }
+        }
+
+        private void OnOtelScopeChanged(AsyncLocalValueChangedArgs<Scope> obj)
+        {
+            if (obj.CurrentValue == null)
+            {
+                _otelThreadContextPublisher.Reset();
+            }
+            else
+            {
+                _otelThreadContextPublisher.Set(obj.CurrentValue.Span);
             }
         }
     }

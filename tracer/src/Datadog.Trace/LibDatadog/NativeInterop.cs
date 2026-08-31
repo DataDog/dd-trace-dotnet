@@ -25,6 +25,14 @@ internal static class NativeInterop
         internal static extern void DropError(ref Error errorHandle);
     }
 
+    // These declarations match the three-argument ABI shipped by libdatadog-dotnet v2.1.0.
+    // The ABI must be reviewed whenever the libdatadog dependency is updated.
+    internal static unsafe class OtelThreadContext
+    {
+        [DllImport(DllName, EntryPoint = "ddog_otel_thread_ctx_update")]
+        internal static extern void Update(byte* traceId, byte* spanId, byte* localRootSpanId);
+    }
+
     internal static class LibraryConfig
     {
         [DllImport(DllName, EntryPoint = "ddog_tracer_metadata_new")]
