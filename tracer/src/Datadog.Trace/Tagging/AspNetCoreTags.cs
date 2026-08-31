@@ -11,16 +11,6 @@ namespace Datadog.Trace.Tagging
     {
         private const string ComponentName = "aspnet_core";
 
-        public AspNetCoreTags()
-            : this(otelSemanticsEnabled: false)
-        {
-        }
-
-        public AspNetCoreTags(bool otelSemanticsEnabled)
-            : base(otelSemanticsEnabled)
-        {
-        }
-
         // Read/write instead of readonly as AzureFunctions updates the component name
         [Tag(Trace.Tags.InstrumentationName)]
         public string InstrumentationName { get; set; } = ComponentName;

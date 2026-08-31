@@ -13,16 +13,6 @@ internal sealed partial class AspNetCoreSingleSpanTags : WebTags
 {
     private const string ComponentName = "aspnet_core";
 
-    public AspNetCoreSingleSpanTags()
-        : this(otelSemanticsEnabled: false)
-    {
-    }
-
-    public AspNetCoreSingleSpanTags(bool otelSemanticsEnabled)
-        : base(otelSemanticsEnabled)
-    {
-    }
-
     // Read/write instead of readonly as AzureFunctions updates the component name
     [Tag(Trace.Tags.InstrumentationName)]
     public string InstrumentationName => ComponentName;

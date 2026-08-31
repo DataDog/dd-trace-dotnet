@@ -113,14 +113,13 @@ namespace Datadog.Trace.PlatformHelpers
 
         public Scope StartAspNetCorePipelineScope(Tracer tracer, Security security, Iast.Iast iast, HttpContext httpContext, string resourceName)
         {
-            var otelSemanticsEnabled = tracer.Settings.OtelSemanticsEnabled;
-            var tags = tracer.Settings.RouteTemplateResourceNamesEnabled ? new AspNetCoreEndpointTags(otelSemanticsEnabled) : new AspNetCoreTags(otelSemanticsEnabled);
+            var tags = tracer.Settings.RouteTemplateResourceNamesEnabled ? new AspNetCoreEndpointTags() : new AspNetCoreTags();
             return StartAspNetCorePipelineScope(tracer, security, iast, httpContext, resourceName, tags, useSingleSpanRequestTracking: false);
         }
 
 #if NET6_0_OR_GREATER
         public Scope StartAspNetCoreSingleSpanPipelineScope(Tracer tracer, Security security, Iast.Iast iast, HttpContext httpContext, string resourceName)
-            => StartAspNetCorePipelineScope(tracer, security, iast, httpContext, resourceName, new AspNetCoreSingleSpanTags(tracer.Settings.OtelSemanticsEnabled), useSingleSpanRequestTracking: true);
+            => StartAspNetCorePipelineScope(tracer, security, iast, httpContext, resourceName, new AspNetCoreSingleSpanTags(), useSingleSpanRequestTracking: true);
 #endif
 
         private Scope StartAspNetCorePipelineScope(Tracer tracer, Security security, Iast.Iast iast, HttpContext httpContext, string resourceName, WebTags tags, bool useSingleSpanRequestTracking)

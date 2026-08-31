@@ -235,14 +235,27 @@ internal sealed class OtlpTestAgentSession : IAsyncDisposable
     }
 
     /// <summary>
-    /// Polls this session until it holds at least <paramref name="expectedSpanCount"/> spans.
-    /// Waiting on a count rather than on "any traces at all" is what an application that keeps
-    /// running needs, since the exporter can flush a partial view of the trace.
+    /// Polls this session until it holds at least <paramref name="expectedSpanCount"/> spans that
+    /// started at or after <paramref name="minStartTimeUnixNano"/>, and returns only those spans.
+    /// The server this session reads from outlives a single test case, so a delayed export from a
+    /// previous (possibly failed) test case can still land after <see cref="ClearSessionAsync"/>
+    /// returns; without this lower bound such a span would be miscounted as belonging to the
+    /// current test case, or leak into its snapshot. Waiting on a count rather than on "any traces
+    /// at all" is what an application that keeps running needs, since the exporter can flush a
+    /// partial view of the trace.
     /// </summary>
     /// <param name="expectedSpanCount">The number of spans the request under test is expected to produce.</param>
-    /// <returns>The captured OTLP trace requests.</returns>
-    public Task<JToken> WaitForSpansAsync(int expectedSpanCount) =>
-        WaitForDataAsync(TracesUrl, data => CountSpans(data) >= expectedSpanCount);
+    /// <param name="minStartTimeUnixNano">The lower bound (inclusive) a span's start time must meet to count.</param>
+    /// <param name="startTimeUnixNanoKey">The JSON key holding a span's start time, which varies with the payload's casing.</param>
+    /// <returns>The captured OTLP trace requests, with any spans older than <paramref name="minStartTimeUnixNano"/> removed.</returns>
+    public async Task<JToken> WaitForSpansAsync(int expectedSpanCount, long minStartTimeUnixNano, string startTimeUnixNanoKey)
+    {
+        var data = await WaitForDataAsync(
+            TracesUrl,
+            candidate => CountSpans(RemoveSpansOlderThan(candidate, minStartTimeUnixNano, startTimeUnixNanoKey)) >= expectedSpanCount);
+
+        return RemoveSpansOlderThan(data, minStartTimeUnixNano, startTimeUnixNanoKey);
+    }
 
     /// <summary>
     /// Polls this session until any traces arrive. Enough for an application that has already
@@ -262,6 +275,23 @@ internal sealed class OtlpTestAgentSession : IAsyncDisposable
     /// </summary>
     /// <returns>The captured OTLP logs requests.</returns>
     public Task<JToken> WaitForLogsAsync() => WaitForDataAsync(LogsUrl, data => data.HasValues);
+
+    // Returns a clone of tracesRequests with every span whose start time predates minStartTimeUnixNano
+    // removed, so a slow-arriving span from a previous test case can't be mistaken for this one's.
+    private static JToken RemoveSpansOlderThan(JToken tracesRequests, long minStartTimeUnixNano, string startTimeUnixNanoKey)
+    {
+        var clone = tracesRequests.DeepClone();
+
+        foreach (var span in clone.SelectTokens("$..spans[*]").ToList())
+        {
+            if (long.Parse(span[startTimeUnixNanoKey]!.ToString()) < minStartTimeUnixNano)
+            {
+                ((JArray)span.Parent!).Remove(span);
+            }
+        }
+
+        return clone;
+    }
 
     // Reads one of this session's endpoints, without waiting for anything to arrive.
     private static async Task<JToken> GetDataAsync(string url, string sessionToken)

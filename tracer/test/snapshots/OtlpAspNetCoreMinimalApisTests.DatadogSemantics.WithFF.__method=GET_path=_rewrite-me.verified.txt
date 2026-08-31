@@ -113,18 +113,6 @@
                   }
                 },
                 {
-                  "key": "aspnet_core.endpoint",
-                  "value": {
-                    "stringValue": "Samples.AspNetCoreMvc.Controllers.HomeController.IsAlive (Samples.AspNetCoreMinimalApis)"
-                  }
-                },
-                {
-                  "key": "aspnet_core.route",
-                  "value": {
-                    "stringValue": "alive-check"
-                  }
-                },
-                {
                   "key": "component",
                   "value": {
                     "stringValue": "aspnet_core"
@@ -140,12 +128,6 @@
                   "key": "http.request.headers.host",
                   "value": {
                     "stringValue": "localhost:00000"
-                  }
-                },
-                {
-                  "key": "http.route",
-                  "value": {
-                    "stringValue": "alive-check"
                   }
                 },
                 {

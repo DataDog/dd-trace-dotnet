@@ -65,7 +65,7 @@
             {
               "traceId": "normalized-trace-id",
               "spanId": "normalized-span-id",
-              "name": "GET alive-check",
+              "name": "GET",
               "kind": 2,
               "startTimeUnixNano": "0",
               "endTimeUnixNano": "0",
@@ -113,18 +113,6 @@
                   }
                 },
                 {
-                  "key": "aspnet_core.endpoint",
-                  "value": {
-                    "stringValue": "Samples.AspNetCoreMvc.Controllers.HomeController.IsAlive (Samples.AspNetCoreMvc31)"
-                  }
-                },
-                {
-                  "key": "aspnet_core.route",
-                  "value": {
-                    "stringValue": "alive-check"
-                  }
-                },
-                {
                   "key": "http.request.method",
                   "value": {
                     "stringValue": "GET"
@@ -134,12 +122,6 @@
                   "key": "http.response.status_code",
                   "value": {
                     "intValue": "200"
-                  }
-                },
-                {
-                  "key": "http.route",
-                  "value": {
-                    "stringValue": "alive-check"
                   }
                 },
                 {

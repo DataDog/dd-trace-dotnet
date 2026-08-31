@@ -280,7 +280,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
 
             await SendRequestAsync(httpMethod, path, (HttpStatusCode)statusCode);
 
-            var tracesRequests = await Fixture.OtlpSession.WaitForSpansAsync(expectedSpanCount);
+            var tracesRequests = await Fixture.OtlpSession.WaitForSpansAsync(expectedSpanCount, testStartTimeUnixNano, names.StartTimeUnixNano);
             tracesRequests.Should().NotBeNullOrEmpty();
             OtlpTestAgentSession.CountSpans(tracesRequests).Should().Be(expectedSpanCount);
 

@@ -65,7 +65,7 @@
             {
               "traceId": "normalized-trace-id",
               "spanId": "normalized-span-id",
-              "name": "GET status-code/{statuscode}",
+              "name": "GET status-code/{statusCode}",
               "kind": 2,
               "startTimeUnixNano": "0",
               "endTimeUnixNano": "0",
@@ -121,7 +121,7 @@
                 {
                   "key": "aspnet_core.route",
                   "value": {
-                    "stringValue": "status-code/{statuscode}"
+                    "stringValue": "status-code/{statusCode}"
                   }
                 },
                 {
@@ -145,7 +145,7 @@
                 {
                   "key": "http.route",
                   "value": {
-                    "stringValue": "status-code/{statuscode}"
+                    "stringValue": "status-code/{statusCode}"
                   }
                 },
                 {

@@ -9,16 +9,6 @@ namespace Datadog.Trace.Tagging
 {
     internal sealed partial class AspNetCoreEndpointTags : AspNetCoreTags
     {
-        public AspNetCoreEndpointTags()
-            : this(otelSemanticsEnabled: false)
-        {
-        }
-
-        public AspNetCoreEndpointTags(bool otelSemanticsEnabled)
-            : base(otelSemanticsEnabled)
-        {
-        }
-
         [Tag(Trace.Tags.AspNetCoreEndpoint)]
         public string AspNetCoreEndpoint { get; set; }
     }

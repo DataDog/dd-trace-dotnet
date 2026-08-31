@@ -9,19 +9,9 @@ namespace Datadog.Trace.Tagging
 {
     internal partial class WebTags : InstrumentationTags, IHasStatusCode, IHasHttpMethod
     {
-        // Only allocated when OpenTelemetry semantics are enabled, so that the (currently more common)
-        // Datadog-semantics case doesn't pay for fields it never populates.
-        private readonly OtelTags _otelTags;
-
-        public WebTags()
-            : this(otelSemanticsEnabled: false)
-        {
-        }
-
-        public WebTags(bool otelSemanticsEnabled)
-        {
-            _otelTags = otelSemanticsEnabled ? new OtelTags() : null;
-        }
+        // Lazily allocated on first write, so that the (currently more common) Datadog-semantics
+        // case doesn't pay for fields it never populates.
+        private OtelTags _otelTags;
 
         [Tag(Trace.Tags.SpanKind)]
         public override string SpanKind => SpanKinds.Server;
@@ -38,7 +28,7 @@ namespace Datadog.Trace.Tagging
         public string HttpRequestMethodOriginal
         {
             get => _otelTags?.HttpRequestMethodOriginal;
-            set => _otelTags?.HttpRequestMethodOriginal = value;
+            set => (_otelTags ??= new OtelTags()).HttpRequestMethodOriginal = value;
         }
 
         // Datadog-only: OpenTelemetry splits this concept into ServerAddress + ServerPort.
@@ -54,7 +44,7 @@ namespace Datadog.Trace.Tagging
         public string UrlScheme
         {
             get => _otelTags?.UrlScheme;
-            set => _otelTags?.UrlScheme = value;
+            set => (_otelTags ??= new OtelTags()).UrlScheme = value;
         }
 
         // OpenTelemetry-only
@@ -62,7 +52,7 @@ namespace Datadog.Trace.Tagging
         public string UrlPath
         {
             get => _otelTags?.UrlPath;
-            set => _otelTags?.UrlPath = value;
+            set => (_otelTags ??= new OtelTags()).UrlPath = value;
         }
 
         // OpenTelemetry-only
@@ -70,7 +60,7 @@ namespace Datadog.Trace.Tagging
         public string UrlQuery
         {
             get => _otelTags?.UrlQuery;
-            set => _otelTags?.UrlQuery = value;
+            set => (_otelTags ??= new OtelTags()).UrlQuery = value;
         }
 
         // OpenTelemetry-only
@@ -78,7 +68,7 @@ namespace Datadog.Trace.Tagging
         public string ServerAddress
         {
             get => _otelTags?.ServerAddress;
-            set => _otelTags?.ServerAddress = value;
+            set => (_otelTags ??= new OtelTags()).ServerAddress = value;
         }
 
         // OpenTelemetry-only
@@ -86,7 +76,7 @@ namespace Datadog.Trace.Tagging
         public int? ServerPort
         {
             get => _otelTags?.ServerPort;
-            set => _otelTags?.ServerPort = value;
+            set => (_otelTags ??= new OtelTags()).ServerPort = value;
         }
 
         [Tag(Trace.Tags.HttpStatusCode, OtelName = Trace.Tags.HttpResponseStatusCode)]
