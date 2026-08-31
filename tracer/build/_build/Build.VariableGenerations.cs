@@ -82,10 +82,9 @@ partial class Build : NukeBuild
 
                 foreach (var file in changedFiles)
                 {
-                    if ((codeOwners.Match("/" + file)?.Owners.Contains(TracingDotnet) is true) &&
-                        (commonDirectories.Any(x => file.StartsWith(x, StringComparison.OrdinalIgnoreCase)) ||
-                        !nonCommonDirectories.Any(x => file.StartsWith(x, StringComparison.OrdinalIgnoreCase))
-                        ))
+                    if (commonDirectories.Any(x => file.StartsWith(x, StringComparison.OrdinalIgnoreCase)) ||
+                        ((codeOwners.Match("/" + file)?.Owners.Contains(TracingDotnet) is true) &&
+                         !nonCommonDirectories.Any(x => file.StartsWith(x, StringComparison.OrdinalIgnoreCase))))
                     {
                         Logger.Information($"File {file} was detected as common.");
                         return true;
@@ -140,9 +139,11 @@ partial class Build : NukeBuild
                         {
                             foreach (var changedFile in changedFiles)
                             {
-                                if (codeOwners.Match("/" + changedFile)?.Owners.Contains(changedTeamValue.TeamName) == true)
+                                if ((changedTeamValue.TeamName == TracingDotnet &&
+                                     changedFile.StartsWith("tracer/test/", StringComparison.OrdinalIgnoreCase)) ||
+                                    codeOwners.Match("/" + changedFile)?.Owners.Contains(changedTeamValue.TeamName) == true)
                                 {
-                                    Logger.Information($"File {changedFile} is owned by {changedTeamValue.TeamName}");
+                                    Logger.Information($"File {changedFile} affects {changedTeamValue.VariableName}");
                                     isChanged = true;
                                     break;
                                 }
