@@ -60,6 +60,9 @@ const std::string MetadataProvider::StartTime("Start Time");
 const std::string MetadataProvider::NbCores("Number of Cores");
 const std::string MetadataProvider::CpuLimit("Cpu Limit");
 const std::string MetadataProvider::ClrVersion("Clr Version");
+// The DD_INTERNAL_CPU_PROFILER_TYPE entry above is the requested type; this one is the type actually
+// in use, which differs when the environment forces a fallback.
+const std::string MetadataProvider::EffectiveCpuProfilerType("Cpu Profiler Type");
 
 
 MetadataProvider::MetadataProvider()

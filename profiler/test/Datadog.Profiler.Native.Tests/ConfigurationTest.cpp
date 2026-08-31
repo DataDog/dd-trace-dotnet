@@ -1199,63 +1199,104 @@ TEST_F(ConfigurationTest, CheckEtwLoggingIsEnabledIfEnvVarSetToTrue)
     ASSERT_THAT(configuration.IsEtwLoggingEnabled(), expectedValue);
 }
 
+// The signal queue is a host-wide resource shared by every process of the same user, so the cases
+// checking how the environment variable is parsed pass a headroom large enough to never trigger the
+// fallback, whatever state the machine running the tests is in.
+static constexpr std::optional<std::uint64_t> PlentyOfSignalQueueSlots = 10 * Configuration::MinimumFreeSignalQueueSlots;
+
 TEST_F(ConfigurationTest, CheckDefaultCpuProfilerType)
 {
     EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::CpuProfilerType, WStr(""));
-    auto configuration = Configuration{};
     auto expected =
 #ifdef _WINDOWS
         CpuProfilerType::ManualCpuTime;
 #else
         CpuProfilerType::TimerCreate;
 #endif
-    ASSERT_THAT(configuration.GetCpuProfilerType(), expected);
+    ASSERT_THAT(Configuration::ExtractCpuProfilerType(true, PlentyOfSignalQueueSlots), expected);
 }
 
 TEST_F(ConfigurationTest, CheckDefaultCpuProfilerTypeWhenEnvVarNotSet)
 {
-    auto configuration = Configuration{};
     auto expected =
 #ifdef _WINDOWS
         CpuProfilerType::ManualCpuTime;
 #else
         CpuProfilerType::TimerCreate;
 #endif
-    ASSERT_THAT(configuration.GetCpuProfilerType(), expected);
+    ASSERT_THAT(Configuration::ExtractCpuProfilerType(true, PlentyOfSignalQueueSlots), expected);
 }
 
 TEST_F(ConfigurationTest, CheckUnknownCpuProfilerType)
 {
     EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::CpuProfilerType, WStr("UnknownCpuProfilerType"));
-    auto configuration = Configuration{};
     auto expected =
 #ifdef _WINDOWS
         CpuProfilerType::ManualCpuTime;
 #else
         CpuProfilerType::TimerCreate;
 #endif
-    ASSERT_THAT(configuration.GetCpuProfilerType(), expected);
+    ASSERT_THAT(Configuration::ExtractCpuProfilerType(true, PlentyOfSignalQueueSlots), expected);
 }
 
 TEST_F(ConfigurationTest, CheckManualCpuProfilerType)
 {
     EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::CpuProfilerType, WStr("ManualCpuTime"));
-    auto configuration = Configuration{};
-    ASSERT_THAT(configuration.GetCpuProfilerType(), CpuProfilerType::ManualCpuTime);
+    ASSERT_THAT(Configuration::ExtractCpuProfilerType(true, PlentyOfSignalQueueSlots), CpuProfilerType::ManualCpuTime);
 }
 
 TEST_F(ConfigurationTest, CheckTimerCreateCpuProfilerType)
 {
     EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::CpuProfilerType, WStr("TimerCreate"));
-    auto configuration = Configuration{};
     auto expected =
 #ifdef LINUX
         CpuProfilerType::TimerCreate;
 #else
         CpuProfilerType::ManualCpuTime;
 #endif
-    ASSERT_THAT(configuration.GetCpuProfilerType(), expected);
+    ASSERT_THAT(Configuration::ExtractCpuProfilerType(true, PlentyOfSignalQueueSlots), expected);
 }
+
+#ifdef LINUX
+TEST_F(ConfigurationTest, CheckCpuProfilerTypeFallsBackWhenSignalQueueIsTooSmall)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::CpuProfilerType, WStr("TimerCreate"));
+    auto availableSlots = Configuration::MinimumFreeSignalQueueSlots - 1;
+    ASSERT_THAT(Configuration::ExtractCpuProfilerType(true, availableSlots), CpuProfilerType::ManualCpuTime);
+}
+
+TEST_F(ConfigurationTest, CheckCpuProfilerTypeFallsBackWhenSignalQueueIsExhausted)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::CpuProfilerType, WStr("TimerCreate"));
+    ASSERT_THAT(Configuration::ExtractCpuProfilerType(true, 0), CpuProfilerType::ManualCpuTime);
+}
+
+TEST_F(ConfigurationTest, CheckCpuProfilerTypeIsKeptWhenSignalQueueIsJustLargeEnough)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::CpuProfilerType, WStr("TimerCreate"));
+    auto availableSlots = Configuration::MinimumFreeSignalQueueSlots;
+    ASSERT_THAT(Configuration::ExtractCpuProfilerType(true, availableSlots), CpuProfilerType::TimerCreate);
+}
+
+TEST_F(ConfigurationTest, CheckCpuProfilerTypeToManualWhenSignalQueueIsUnknown)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::CpuProfilerType, WStr("TimerCreate"));
+    ASSERT_THAT(Configuration::ExtractCpuProfilerType(true, std::nullopt), CpuProfilerType::ManualCpuTime);
+}
+
+// No timer is ever created when CPU profiling is off, so there is nothing to fall back from.
+TEST_F(ConfigurationTest, CheckCpuProfilerTypeIsKeptWhenCpuProfilingIsDisabled)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::CpuProfilerType, WStr("TimerCreate"));
+    ASSERT_THAT(Configuration::ExtractCpuProfilerType(false, 0), CpuProfilerType::TimerCreate);
+}
+
+TEST_F(ConfigurationTest, CheckManualCpuProfilerTypeIsKeptWhenSignalQueueIsExhausted)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::CpuProfilerType, WStr("ManualCpuTime"));
+    ASSERT_THAT(Configuration::ExtractCpuProfilerType(true, 0), CpuProfilerType::ManualCpuTime);
+}
+#endif
 
 TEST_F(ConfigurationTest, CheckDefaultCpuProfilingInterval)
 {

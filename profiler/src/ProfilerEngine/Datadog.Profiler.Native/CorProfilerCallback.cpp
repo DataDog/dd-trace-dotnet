@@ -1459,6 +1459,8 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
 
     _pMetadataProvider = std::make_unique<MetadataProvider>();
     _pMetadataProvider->Initialize();
+    _pMetadataProvider->Add(MetadataProvider::SectionRuntimeSettings, MetadataProvider::EffectiveCpuProfilerType,
+                            to_string(_pConfiguration->GetCpuProfilerType()));
     PrintEnvironmentVariables();
 
     _pSsiManager = std::make_unique<SsiManager>(_pConfiguration.get(), this);
@@ -2312,7 +2314,9 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ThreadDestroyed(ThreadID threadId
         _systemCallsShield->Unregister();
     }
 
-    if (_pCpuProfiler != nullptr)
+    // pThreadInfo is only set when the thread was still in the managed thread list: there is no timer
+    // to delete otherwise, and UnregisterThread would dereference a null pointer.
+    if (_pCpuProfiler != nullptr && pThreadInfo != nullptr)
     {
         _pCpuProfiler->UnregisterThread(pThreadInfo);
     }

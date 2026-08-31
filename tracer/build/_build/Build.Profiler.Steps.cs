@@ -340,13 +340,22 @@ partial class Build
             BuildAndRunProfilerIntegrationTestsInternal("(Category=CpuLimitTest)");
         });
 
+    Target BuildAndRunProfilerSigPendingLimitTests => _ => _
+        .After(BuildProfilerSamples)
+        .Description("Run the profiler tests that need a constrained RLIMIT_SIGPENDING")
+        .Requires(() => IsLinux)
+        .Executes(() =>
+        {
+            BuildAndRunProfilerIntegrationTestsInternal("(Category=SigPendingLimitTest)");
+        });
+
     Target BuildAndRunProfilerIntegrationTests => _ => _
         .After(BuildProfilerSamples)
         .Description("Builds and runs the profiler integration tests")
         .Executes(() =>
         {
-            // Exclude CpuLimitTest from this path: They are already launched in a specific step + specific setup
-            var filter = string.IsNullOrWhiteSpace(Filter) ? $"{(IsLinux ? "(Category!=WindowsOnly)" : "(Category!=LinuxOnly)")}&(Category!=CpuLimitTest)" : Filter;
+            // Exclude CpuLimitTest and SigPendingLimitTest from this path: They are already launched in a specific step + specific setup
+            var filter = string.IsNullOrWhiteSpace(Filter) ? $"{(IsLinux ? "(Category!=WindowsOnly)" : "(Category!=LinuxOnly)")}&(Category!=CpuLimitTest)&(Category!=SigPendingLimitTest)" : Filter;
             BuildAndRunProfilerIntegrationTestsInternal(filter);
         });
 
