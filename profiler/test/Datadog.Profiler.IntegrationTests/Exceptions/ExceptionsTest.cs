@@ -307,6 +307,8 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
 
             runner.Run(agent);
 
+            CpuProfilerHelper.SkipIfTimerCreateWasDowngraded(runner.Environment.LogDir);
+
             Assert.True(agent.NbCallsOnProfilingEndpoint > 0);
 
             var exceptionSamples = SamplesHelper.GetSamples(runner.Environment.PprofDir, "exception").ToArray();
