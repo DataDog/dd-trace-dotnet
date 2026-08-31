@@ -65,7 +65,7 @@
             {
               "traceId": "normalized-trace-id",
               "spanId": "normalized-span-id",
-              "name": "GET status-code/{statusCode}",
+              "name": "GET /",
               "kind": 2,
               "startTimeUnixNano": "0",
               "endTimeUnixNano": "0",
@@ -97,7 +97,7 @@
                 {
                   "key": "_dd.code_origin.frames.0.method",
                   "value": {
-                    "stringValue": "StatusCodeTest"
+                    "stringValue": "Index"
                   }
                 },
                 {
@@ -115,7 +115,7 @@
                 {
                   "key": "aspnet_core.route",
                   "value": {
-                    "stringValue": "status-code/{statusCode}"
+                    "stringValue": "/"
                   }
                 },
                 {
@@ -127,13 +127,13 @@
                 {
                   "key": "http.response.status_code",
                   "value": {
-                    "intValue": "400"
+                    "intValue": "200"
                   }
                 },
                 {
                   "key": "http.route",
                   "value": {
-                    "stringValue": "status-code/{statusCode}"
+                    "stringValue": "/"
                   }
                 },
                 {
@@ -151,7 +151,7 @@
                 {
                   "key": "url.path",
                   "value": {
-                    "stringValue": "/status-code/400"
+                    "stringValue": "/"
                   }
                 },
                 {

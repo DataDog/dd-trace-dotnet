@@ -65,7 +65,7 @@
             {
               "traceId": "normalized-trace-id",
               "spanId": "normalized-span-id",
-              "name": "GET status-code/{statusCode}",
+              "name": "GET /path-base/api/delay/{seconds}",
               "kind": 2,
               "startTimeUnixNano": "0",
               "endTimeUnixNano": "0",
@@ -79,7 +79,7 @@
                 {
                   "key": "_dd.code_origin.frames.0.file",
                   "value": {
-                    "stringValue": "tracer/test/test-applications/integrations/Samples.AspNetCoreMvc21/Controllers/HomeController.cs"
+                    "stringValue": "tracer/test/test-applications/integrations/Samples.AspNetCoreMvc21/Controllers/ApiController.cs"
                   }
                 },
                 {
@@ -97,13 +97,13 @@
                 {
                   "key": "_dd.code_origin.frames.0.method",
                   "value": {
-                    "stringValue": "StatusCodeTest"
+                    "stringValue": "Delay"
                   }
                 },
                 {
                   "key": "_dd.code_origin.frames.0.type",
                   "value": {
-                    "stringValue": "Samples.AspNetCoreMvc.Controllers.HomeController"
+                    "stringValue": "Samples.AspNetCoreMvc.Controllers.ApiController"
                   }
                 },
                 {
@@ -115,67 +115,153 @@
                 {
                   "key": "aspnet_core.route",
                   "value": {
-                    "stringValue": "status-code/{statusCode}"
+                    "stringValue": "api/delay/{seconds}"
                   }
                 },
                 {
-                  "key": "error.type",
+                  "key": "component",
                   "value": {
-                    "stringValue": "500"
+                    "stringValue": "aspnet_core"
                   }
                 },
                 {
-                  "key": "http.request.method",
+                  "key": "http.method",
                   "value": {
                     "stringValue": "GET"
                   }
                 },
                 {
-                  "key": "http.response.status_code",
+                  "key": "http.request.headers.host",
                   "value": {
-                    "intValue": "500"
+                    "stringValue": "localhost:00000"
                   }
                 },
                 {
                   "key": "http.route",
                   "value": {
-                    "stringValue": "status-code/{statusCode}"
+                    "stringValue": "api/delay/{seconds}"
                   }
                 },
                 {
-                  "key": "server.address",
+                  "key": "http.status_code",
                   "value": {
-                    "stringValue": "localhost"
+                    "intValue": "200"
                   }
                 },
                 {
-                  "key": "server.port",
+                  "key": "http.url",
                   "value": {
-                    "intValue": "00000"
+                    "stringValue": "http://localhost:00000/path-base/api/delay/0"
                   }
                 },
                 {
-                  "key": "url.path",
-                  "value": {
-                    "stringValue": "/status-code/500"
-                  }
-                },
-                {
-                  "key": "url.scheme",
-                  "value": {
-                    "stringValue": "http"
-                  }
-                },
-                {
-                  "key": "user_agent.original",
+                  "key": "http.useragent",
                   "value": {
                     "stringValue": "testhelper"
                   }
+                },
+                {
+                  "key": "operation.name",
+                  "value": {
+                    "stringValue": "aspnet_core.request"
+                  }
+                },
+                {
+                  "key": "resource.name",
+                  "value": {
+                    "stringValue": "GET /path-base/api/delay/{seconds}"
+                  }
+                },
+                {
+                  "key": "runtime-id",
+                  "value": {
+                    "stringValue": "Guid_1"
+                  }
+                },
+                {
+                  "key": "service.name",
+                  "value": {
+                    "stringValue": "samples.aspnetcoremvc21"
+                  }
+                },
+                {
+                  "key": "span.kind",
+                  "value": {
+                    "stringValue": "server"
+                  }
+                },
+                {
+                  "key": "span.type",
+                  "value": {
+                    "stringValue": "web"
+                  }
                 }
-              ],
-              "status": {
-                "code": 2
-              }
+              ]
+            },
+            {
+              "traceId": "normalized-trace-id",
+              "spanId": "normalized-span-id",
+              "parentSpanId": "normalized-parent-span-id",
+              "name": "GET /path-base/api/delay/{seconds}",
+              "kind": 2,
+              "startTimeUnixNano": "0",
+              "endTimeUnixNano": "0",
+              "attributes": [
+                {
+                  "key": "aspnet_core.action",
+                  "value": {
+                    "stringValue": "delay"
+                  }
+                },
+                {
+                  "key": "aspnet_core.controller",
+                  "value": {
+                    "stringValue": "api"
+                  }
+                },
+                {
+                  "key": "aspnet_core.route",
+                  "value": {
+                    "stringValue": "api/delay/{seconds}"
+                  }
+                },
+                {
+                  "key": "component",
+                  "value": {
+                    "stringValue": "aspnet_core"
+                  }
+                },
+                {
+                  "key": "operation.name",
+                  "value": {
+                    "stringValue": "aspnet_core_mvc.request"
+                  }
+                },
+                {
+                  "key": "resource.name",
+                  "value": {
+                    "stringValue": "GET /path-base/api/delay/{seconds}"
+                  }
+                },
+                {
+                  "key": "service.name",
+                  "value": {
+                    "stringValue": "samples.aspnetcoremvc21"
+                  }
+                },
+                {
+                  "key": "span.kind",
+                  "value": {
+                    "stringValue": "server"
+                  }
+                },
+                {
+                  "key": "span.type",
+                  "value": {
+                    "stringValue": "web"
+                  }
+                }
+              ]
             }
           ]
         }

@@ -65,7 +65,7 @@
             {
               "traceId": "normalized-trace-id",
               "spanId": "normalized-span-id",
-              "name": "GET status-code/{statusCode}",
+              "name": "GET api/delay/{seconds}",
               "kind": 2,
               "startTimeUnixNano": "0",
               "endTimeUnixNano": "0",
@@ -79,7 +79,7 @@
                 {
                   "key": "_dd.code_origin.frames.0.file",
                   "value": {
-                    "stringValue": "tracer/test/test-applications/integrations/Samples.AspNetCoreMvc21/Controllers/HomeController.cs"
+                    "stringValue": "tracer/test/test-applications/integrations/Samples.AspNetCoreMvc21/Controllers/ApiController.cs"
                   }
                 },
                 {
@@ -97,13 +97,13 @@
                 {
                   "key": "_dd.code_origin.frames.0.method",
                   "value": {
-                    "stringValue": "StatusCodeTest"
+                    "stringValue": "Delay"
                   }
                 },
                 {
                   "key": "_dd.code_origin.frames.0.type",
                   "value": {
-                    "stringValue": "Samples.AspNetCoreMvc.Controllers.HomeController"
+                    "stringValue": "Samples.AspNetCoreMvc.Controllers.ApiController"
                   }
                 },
                 {
@@ -115,7 +115,7 @@
                 {
                   "key": "aspnet_core.route",
                   "value": {
-                    "stringValue": "status-code/{statusCode}"
+                    "stringValue": "api/delay/{seconds}"
                   }
                 },
                 {
@@ -127,13 +127,13 @@
                 {
                   "key": "http.response.status_code",
                   "value": {
-                    "intValue": "400"
+                    "intValue": "200"
                   }
                 },
                 {
                   "key": "http.route",
                   "value": {
-                    "stringValue": "status-code/{statusCode}"
+                    "stringValue": "api/delay/{seconds}"
                   }
                 },
                 {
@@ -151,7 +151,7 @@
                 {
                   "key": "url.path",
                   "value": {
-                    "stringValue": "/status-code/400"
+                    "stringValue": "/path-base/api/delay/0"
                   }
                 },
                 {

@@ -65,7 +65,7 @@
             {
               "traceId": "normalized-trace-id",
               "spanId": "normalized-span-id",
-              "name": "GET status-code/{statusCode}",
+              "name": "GET",
               "kind": 2,
               "startTimeUnixNano": "0",
               "endTimeUnixNano": "0",
@@ -97,7 +97,7 @@
                 {
                   "key": "_dd.code_origin.frames.0.method",
                   "value": {
-                    "stringValue": "StatusCodeTest"
+                    "stringValue": "IsAlive"
                   }
                 },
                 {
@@ -113,12 +113,6 @@
                   }
                 },
                 {
-                  "key": "aspnet_core.route",
-                  "value": {
-                    "stringValue": "status-code/{statusCode}"
-                  }
-                },
-                {
                   "key": "http.request.method",
                   "value": {
                     "stringValue": "GET"
@@ -127,13 +121,7 @@
                 {
                   "key": "http.response.status_code",
                   "value": {
-                    "intValue": "400"
-                  }
-                },
-                {
-                  "key": "http.route",
-                  "value": {
-                    "stringValue": "status-code/{statusCode}"
+                    "intValue": "200"
                   }
                 },
                 {
@@ -151,7 +139,7 @@
                 {
                   "key": "url.path",
                   "value": {
-                    "stringValue": "/status-code/400"
+                    "stringValue": "/rewrite-me"
                   }
                 },
                 {

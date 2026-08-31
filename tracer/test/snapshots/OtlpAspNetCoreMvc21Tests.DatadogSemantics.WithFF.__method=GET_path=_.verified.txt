@@ -65,7 +65,7 @@
             {
               "traceId": "normalized-trace-id",
               "spanId": "normalized-span-id",
-              "name": "GET status-code/{statusCode}",
+              "name": "GET /",
               "kind": 2,
               "startTimeUnixNano": "0",
               "endTimeUnixNano": "0",
@@ -97,7 +97,7 @@
                 {
                   "key": "_dd.code_origin.frames.0.method",
                   "value": {
-                    "stringValue": "StatusCodeTest"
+                    "stringValue": "Index"
                   }
                 },
                 {
@@ -115,55 +115,150 @@
                 {
                   "key": "aspnet_core.route",
                   "value": {
-                    "stringValue": "status-code/{statusCode}"
+                    "stringValue": ""
                   }
                 },
                 {
-                  "key": "http.request.method",
+                  "key": "component",
+                  "value": {
+                    "stringValue": "aspnet_core"
+                  }
+                },
+                {
+                  "key": "http.method",
                   "value": {
                     "stringValue": "GET"
                   }
                 },
                 {
-                  "key": "http.response.status_code",
+                  "key": "http.request.headers.host",
                   "value": {
-                    "intValue": "400"
+                    "stringValue": "localhost:00000"
                   }
                 },
                 {
                   "key": "http.route",
                   "value": {
-                    "stringValue": "status-code/{statusCode}"
+                    "stringValue": ""
                   }
                 },
                 {
-                  "key": "server.address",
+                  "key": "http.status_code",
                   "value": {
-                    "stringValue": "localhost"
+                    "intValue": "200"
                   }
                 },
                 {
-                  "key": "server.port",
+                  "key": "http.url",
                   "value": {
-                    "intValue": "00000"
+                    "stringValue": "http://localhost:00000/"
                   }
                 },
                 {
-                  "key": "url.path",
-                  "value": {
-                    "stringValue": "/status-code/400"
-                  }
-                },
-                {
-                  "key": "url.scheme",
-                  "value": {
-                    "stringValue": "http"
-                  }
-                },
-                {
-                  "key": "user_agent.original",
+                  "key": "http.useragent",
                   "value": {
                     "stringValue": "testhelper"
+                  }
+                },
+                {
+                  "key": "operation.name",
+                  "value": {
+                    "stringValue": "aspnet_core.request"
+                  }
+                },
+                {
+                  "key": "resource.name",
+                  "value": {
+                    "stringValue": "GET /"
+                  }
+                },
+                {
+                  "key": "runtime-id",
+                  "value": {
+                    "stringValue": "Guid_1"
+                  }
+                },
+                {
+                  "key": "service.name",
+                  "value": {
+                    "stringValue": "samples.aspnetcoremvc21"
+                  }
+                },
+                {
+                  "key": "span.kind",
+                  "value": {
+                    "stringValue": "server"
+                  }
+                },
+                {
+                  "key": "span.type",
+                  "value": {
+                    "stringValue": "web"
+                  }
+                }
+              ]
+            },
+            {
+              "traceId": "normalized-trace-id",
+              "spanId": "normalized-span-id",
+              "parentSpanId": "normalized-parent-span-id",
+              "name": "GET /",
+              "kind": 2,
+              "startTimeUnixNano": "0",
+              "endTimeUnixNano": "0",
+              "attributes": [
+                {
+                  "key": "aspnet_core.action",
+                  "value": {
+                    "stringValue": "index"
+                  }
+                },
+                {
+                  "key": "aspnet_core.controller",
+                  "value": {
+                    "stringValue": "home"
+                  }
+                },
+                {
+                  "key": "aspnet_core.route",
+                  "value": {
+                    "stringValue": ""
+                  }
+                },
+                {
+                  "key": "component",
+                  "value": {
+                    "stringValue": "aspnet_core"
+                  }
+                },
+                {
+                  "key": "operation.name",
+                  "value": {
+                    "stringValue": "aspnet_core_mvc.request"
+                  }
+                },
+                {
+                  "key": "resource.name",
+                  "value": {
+                    "stringValue": "GET /"
+                  }
+                },
+                {
+                  "key": "service.name",
+                  "value": {
+                    "stringValue": "samples.aspnetcoremvc21"
+                  }
+                },
+                {
+                  "key": "span.kind",
+                  "value": {
+                    "stringValue": "server"
+                  }
+                },
+                {
+                  "key": "span.type",
+                  "value": {
+                    "stringValue": "web"
                   }
                 }
               ]
