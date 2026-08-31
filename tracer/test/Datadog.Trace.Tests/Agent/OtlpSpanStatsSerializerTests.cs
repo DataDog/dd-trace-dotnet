@@ -306,6 +306,80 @@ namespace Datadog.Trace.Tests.Agent
             resourceAttrs.Should().ContainKey("datadog.runtime_id");
         }
 
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public void Serialize_ResourceIncludesProcessTags(bool useJson)
+        {
+            var buffer = CreateBuffer();
+            AddHit(buffer);
+
+            var processTagValues = useJson
+                                       ? SerializeToJson(buffer)
+                                        .SelectTokens("$..attributes[?(@.key == 'datadog.process_tags')].value.arrayValue.values[*].stringValue")
+                                        .Values<string>()
+                                       : GetProtobufResourceAttributeValues(buffer)["datadog.process_tags"].ArrayValue.Values.Select(value => value.StringValue);
+
+            processTagValues.Should().NotBeEmpty();
+        }
+
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public void Serialize_EmitsAdditionalMetricTags(bool useJson)
+        {
+            var buffer = CreateBuffer();
+            var key = CreateKey();
+            var additionalMetricTags = new List<byte[]>
+            {
+                Encoding.UTF8.GetBytes("team:payments"),
+                Encoding.UTF8.GetBytes("datadog.custom:value"),
+                Encoding.UTF8.GetBytes("endpoint:https://example.com:443"),
+                Encoding.UTF8.GetBytes("span.kind:custom"),
+                Encoding.UTF8.GetBytes(StatsAggregator.BlockedByTracerSentinel),
+            };
+            buffer.Buckets.Add(key, new StatsBucket(key, EmptyPeerTags, additionalMetricTags) { Hits = 1, Duration = 5_000_000 });
+
+            var attrs = useJson ? GetDataPointAttributes(SerializeToJson(buffer)) : GetProtobufDataPointAttributes(buffer);
+
+            attrs.Should().ContainKey("team").WhoseValue.Should().Be("payments");
+            attrs.Should().ContainKey("datadog.custom").WhoseValue.Should().Be("value");
+            attrs.Should().ContainKey("endpoint").WhoseValue.Should().Be("https://example.com:443");
+            attrs.Should().ContainKey("span.kind").WhoseValue.Should().Be("SPAN_KIND_SERVER");
+            attrs.Should().ContainKey(StatsAggregator.BlockedByTracerSentinel).WhoseValue.Should().BeEmpty();
+        }
+
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public void Serialize_PeerTags_EmittedAsCombinedArrayValue(bool useJson)
+        {
+            var buffer = CreateBuffer();
+            var key = CreateKey();
+            var peerTags = new List<byte[]>
+            {
+                Encoding.UTF8.GetBytes("peer.service:downstream"),
+                Encoding.UTF8.GetBytes("net.peer.name:downstream.example.com"),
+            };
+            buffer.Buckets.Add(key, new StatsBucket(key, peerTags, []) { Hits = 1, Duration = 5_000_000 });
+
+            var peerTagValues = useJson
+                                    ? SerializeToJson(buffer)
+                                     .SelectTokens("$..attributes[?(@.key == 'datadog.peer_tags')].value.arrayValue.values[*].stringValue")
+                                     .Values<string>()
+                                    : GetProtobufDataPointAttributeValues(buffer)["datadog.peer_tags"].ArrayValue.Values.Select(value => value.StringValue);
+
+            peerTagValues.Should().Equal("peer.service:downstream", "net.peer.name:downstream.example.com");
+        }
+
+        [Fact]
+        public void SerializeJson_PeerTags_AbsentWhenEmpty()
+        {
+            var attrs = GetDataPointAttributes(SerializeToJson(CreateBufferWithOneHit()));
+
+            attrs.Should().NotContainKey("datadog.peer_tags");
+        }
+
         [Fact]
         public void SerializeJson_AggregationTemporalityIsDelta()
         {
@@ -542,6 +616,22 @@ namespace Datadog.Trace.Tests.Agent
             var result = new Dictionary<string, AnyValue>();
 
             foreach (var attribute in GetLengthDelimitedFields(dataPoint, 9))
+            {
+                var keyValue = KeyValue.Parser.ParseFrom(attribute);
+                result[keyValue.Key] = keyValue.Value;
+            }
+
+            return result;
+        }
+
+        private static Dictionary<string, AnyValue> GetProtobufResourceAttributeValues(StatsBuffer buffer)
+        {
+            var request = OtlpSpanStatsSerializer.Serialize(buffer, BucketDurationNs)!;
+            var resourceMetrics = GetLengthDelimitedFields(request, 1).Single();
+            var resource = GetLengthDelimitedFields(resourceMetrics, 1).Single();
+            var result = new Dictionary<string, AnyValue>();
+
+            foreach (var attribute in GetLengthDelimitedFields(resource, 1))
             {
                 var keyValue = KeyValue.Parser.ParseFrom(attribute);
                 result[keyValue.Key] = keyValue.Value;
