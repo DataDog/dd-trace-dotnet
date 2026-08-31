@@ -263,13 +263,19 @@ namespace Datadog.Trace.Agent
 
             if (bucket.PeerTags.Count > 0)
             {
-                WriteStringArrayKvJson(writer, "datadog.peer_tags", DecodePeerTags(bucket.PeerTags));
+                WriteUtf8StringArrayKvJson(writer, "datadog.peer_tags", bucket.PeerTags);
             }
 
             foreach (var tag in bucket.AdditionalMetricTags)
             {
-                if (TryDecodeAdditionalMetricTag(tag, out var tagKey, out var tagValue))
+                if (TryGetAdditionalMetricTagSeparator(tag, out var separatorIndex))
                 {
+                    var tagKey = separatorIndex < 0
+                                     ? StatsAggregator.BlockedByTracerSentinel
+                                     : EncodingHelpers.Utf8NoBom.GetString(tag, 0, separatorIndex);
+                    var tagValue = separatorIndex < 0
+                                       ? string.Empty
+                                       : EncodingHelpers.Utf8NoBom.GetString(tag, separatorIndex + 1, tag.Length - separatorIndex - 1);
                     WriteStringKvJson(writer, tagKey, tagValue);
                 }
             }
@@ -378,6 +384,31 @@ namespace Datadog.Trace.Agent
                 writer.WriteStartObject();
                 writer.WritePropertyName("stringValue");
                 writer.WriteValue(value);
+                writer.WriteEndObject();
+            }
+
+            writer.WriteEndArray();
+            writer.WriteEndObject();
+            writer.WriteEndObject();
+            writer.WriteEndObject();
+        }
+
+        private static void WriteUtf8StringArrayKvJson(JsonTextWriter writer, string key, List<byte[]> values)
+        {
+            writer.WriteStartObject();
+            writer.WritePropertyName("key");
+            writer.WriteValue(key);
+            writer.WritePropertyName("value");
+            writer.WriteStartObject();
+            writer.WritePropertyName("arrayValue");
+            writer.WriteStartObject();
+            writer.WritePropertyName("values");
+            writer.WriteStartArray();
+            foreach (var value in values)
+            {
+                writer.WriteStartObject();
+                writer.WritePropertyName("stringValue");
+                writer.WriteValue(EncodingHelpers.Utf8NoBom.GetString(value));
                 writer.WriteEndObject();
             }
 
@@ -560,14 +591,22 @@ namespace Datadog.Trace.Agent
 
             if (bucket.PeerTags.Count > 0)
             {
-                WriteStringArrayAttribute(writer, "datadog.peer_tags", DecodePeerTags(bucket.PeerTags), FieldNumbers.HistogramDataPointAttributes);
+                WriteUtf8StringArrayAttribute(writer, "datadog.peer_tags", bucket.PeerTags, FieldNumbers.HistogramDataPointAttributes);
             }
 
             foreach (var tag in bucket.AdditionalMetricTags)
             {
-                if (TryDecodeAdditionalMetricTag(tag, out var tagKey, out var tagValue))
+                if (TryGetAdditionalMetricTagSeparator(tag, out var separatorIndex))
                 {
-                    WriteAttribute(writer, tagKey, tagValue, FieldNumbers.HistogramDataPointAttributes);
+                    var keyLength = separatorIndex < 0 ? tag.Length : separatorIndex;
+                    var valueOffset = separatorIndex < 0 ? tag.Length : separatorIndex + 1;
+                    WriteUtf8Attribute(
+                        writer,
+                        tag,
+                        keyLength,
+                        valueOffset,
+                        tag.Length - valueOffset,
+                        FieldNumbers.HistogramDataPointAttributes);
                 }
             }
 
@@ -732,47 +771,55 @@ namespace Datadog.Trace.Agent
             return null;
         }
 
-        private static bool TryDecodeAdditionalMetricTag(byte[] encodedTag, out string key, out string value)
+        private static bool TryGetAdditionalMetricTagSeparator(byte[] encodedTag, out int separatorIndex)
         {
-            var separatorIndex = Array.IndexOf(encodedTag, (byte)':');
-            if (separatorIndex <= 0)
+            separatorIndex = Array.IndexOf(encodedTag, (byte)':');
+            if (separatorIndex < 0)
             {
-                key = EncodingHelpers.Utf8NoBom.GetString(encodedTag);
-                value = string.Empty;
-                return separatorIndex < 0 && key == StatsAggregator.BlockedByTracerSentinel;
+                return encodedTag.AsSpan().SequenceEqual("tracer_blocked_value"u8);
             }
 
-            key = EncodingHelpers.Utf8NoBom.GetString(encodedTag, 0, separatorIndex);
-            value = EncodingHelpers.Utf8NoBom.GetString(encodedTag, separatorIndex + 1, encodedTag.Length - separatorIndex - 1);
-            return !IsBuiltInDataPointAttribute(key);
+            return separatorIndex > 0 && !IsBuiltInDataPointAttribute(encodedTag, separatorIndex);
         }
 
-        private static bool IsBuiltInDataPointAttribute(string key)
-            => key is "service.name"
-                   or "status.code"
-                   or "span.kind"
-                   or "span.name"
-                   or "http.request.method"
-                   or "http.response.status_code"
-                   or "http.route"
-                   or "rpc.response.status_code"
-                   or "datadog.operation.name"
-                   or "datadog.span.type"
-                   or "datadog.span.top_level"
-                   or "datadog.is_trace_root"
-                   or "datadog.origin"
-                   or "datadog.svc_src"
-                   or "datadog.peer_tags";
-
-        private static List<string> DecodePeerTags(List<byte[]> peerTags)
+        private static bool IsBuiltInDataPointAttribute(byte[] encodedTag, int keyLength)
         {
-            var decoded = new List<string>(peerTags.Count);
-            foreach (var peerTag in peerTags)
-            {
-                decoded.Add(EncodingHelpers.Utf8NoBom.GetString(peerTag));
-            }
+            var key = encodedTag.AsSpan(0, keyLength);
+            return key.SequenceEqual("service.name"u8)
+                || key.SequenceEqual("status.code"u8)
+                || key.SequenceEqual("span.kind"u8)
+                || key.SequenceEqual("span.name"u8)
+                || key.SequenceEqual("http.request.method"u8)
+                || key.SequenceEqual("http.response.status_code"u8)
+                || key.SequenceEqual("http.route"u8)
+                || key.SequenceEqual("rpc.response.status_code"u8)
+                || key.SequenceEqual("datadog.operation.name"u8)
+                || key.SequenceEqual("datadog.span.type"u8)
+                || key.SequenceEqual("datadog.span.top_level"u8)
+                || key.SequenceEqual("datadog.is_trace_root"u8)
+                || key.SequenceEqual("datadog.origin"u8)
+                || key.SequenceEqual("datadog.svc_src"u8)
+                || key.SequenceEqual("datadog.peer_tags"u8);
+        }
 
-            return decoded;
+        private static void WriteUtf8Attribute(
+            BinaryWriter writer,
+            byte[] encodedTag,
+            int keyLength,
+            int valueOffset,
+            int valueLength,
+            int fieldNumber)
+        {
+            var valueSize = GetUtf8StringFieldSize(AnyValueFieldNumbers.StringValue, valueLength);
+            var keyValueSize = GetUtf8StringFieldSize(FieldNumbers.Key, keyLength)
+                             + GetLengthDelimitedFieldSize(FieldNumbers.Value, valueSize);
+
+            WriteTag(writer, fieldNumber, WireTypeLengthDelimited);
+            WriteVarInt(writer, keyValueSize);
+            WriteUtf8StringField(writer, FieldNumbers.Key, encodedTag, 0, keyLength);
+            WriteTag(writer, FieldNumbers.Value, WireTypeLengthDelimited);
+            WriteVarInt(writer, valueSize);
+            WriteUtf8StringField(writer, AnyValueFieldNumbers.StringValue, encodedTag, valueOffset, valueLength);
         }
 
         private static void WriteAttribute(BinaryWriter writer, string key, string value, int fieldNumber = FieldNumbers.Attributes)
@@ -866,51 +913,56 @@ namespace Datadog.Trace.Agent
 
         private static void WriteStringArrayAttribute(BinaryWriter writer, string key, List<string> values, int fieldNumber = FieldNumbers.Attributes)
         {
-            var kv = SerializeStringArrayKeyValue(key, values);
-            WriteTag(writer, fieldNumber, WireTypeLengthDelimited);
-            WriteVarInt(writer, kv.Length);
-            writer.Write(kv);
-        }
-
-        private static byte[] SerializeStringArrayKeyValue(string key, List<string> values)
-        {
-            using var stream = new MemoryStream(64);
-            using var writer = new BinaryWriter(stream, Encoding.UTF8, leaveOpen: true);
-
-            WriteStringField(writer, FieldNumbers.Key, key);
-
-            using var arrayStream = new MemoryStream(64);
-            using var arrayWriter = new BinaryWriter(arrayStream, Encoding.UTF8, leaveOpen: true);
+            var arraySize = 0;
             foreach (var value in values)
             {
-                using var elementStream = new MemoryStream(32);
-                using var elementWriter = new BinaryWriter(elementStream, Encoding.UTF8, leaveOpen: true);
-                WriteStringField(elementWriter, AnyValueFieldNumbers.StringValue, value);
-                elementWriter.Flush();
-                var elementData = elementStream.ToArray();
-
-                WriteTag(arrayWriter, ArrayValueFieldNumbers.Values, WireTypeLengthDelimited);
-                WriteVarInt(arrayWriter, elementData.Length);
-                arrayWriter.Write(elementData);
+                var valueSize = GetUtf8StringFieldSize(AnyValueFieldNumbers.StringValue, EncodingHelpers.Utf8NoBom.GetByteCount(value));
+                arraySize += GetLengthDelimitedFieldSize(ArrayValueFieldNumbers.Values, valueSize);
             }
 
-            arrayWriter.Flush();
-            var arrayData = arrayStream.ToArray();
+            WriteStringArrayAttributeHeader(writer, key, arraySize, fieldNumber);
+            foreach (var value in values)
+            {
+                var valueSize = GetUtf8StringFieldSize(AnyValueFieldNumbers.StringValue, EncodingHelpers.Utf8NoBom.GetByteCount(value));
+                WriteTag(writer, ArrayValueFieldNumbers.Values, WireTypeLengthDelimited);
+                WriteVarInt(writer, valueSize);
+                WriteStringField(writer, AnyValueFieldNumbers.StringValue, value);
+            }
+        }
 
-            using var anyStream = new MemoryStream(arrayData.Length + 8);
-            using var anyWriter = new BinaryWriter(anyStream, Encoding.UTF8, leaveOpen: true);
-            WriteTag(anyWriter, AnyValueFieldNumbers.ArrayValue, WireTypeLengthDelimited);
-            WriteVarInt(anyWriter, arrayData.Length);
-            anyWriter.Write(arrayData);
-            anyWriter.Flush();
-            var anyData = anyStream.ToArray();
+        private static void WriteUtf8StringArrayAttribute(BinaryWriter writer, string key, List<byte[]> values, int fieldNumber)
+        {
+            var arraySize = 0;
+            foreach (var value in values)
+            {
+                var valueSize = GetUtf8StringFieldSize(AnyValueFieldNumbers.StringValue, value.Length);
+                arraySize += GetLengthDelimitedFieldSize(ArrayValueFieldNumbers.Values, valueSize);
+            }
 
+            WriteStringArrayAttributeHeader(writer, key, arraySize, fieldNumber);
+            foreach (var value in values)
+            {
+                var valueSize = GetUtf8StringFieldSize(AnyValueFieldNumbers.StringValue, value.Length);
+                WriteTag(writer, ArrayValueFieldNumbers.Values, WireTypeLengthDelimited);
+                WriteVarInt(writer, valueSize);
+                WriteUtf8StringField(writer, AnyValueFieldNumbers.StringValue, value, 0, value.Length);
+            }
+        }
+
+        private static void WriteStringArrayAttributeHeader(BinaryWriter writer, string key, int arraySize, int fieldNumber)
+        {
+            var anyValueSize = GetLengthDelimitedFieldSize(AnyValueFieldNumbers.ArrayValue, arraySize);
+            var keySize = EncodingHelpers.Utf8NoBom.GetByteCount(key);
+            var keyValueSize = GetUtf8StringFieldSize(FieldNumbers.Key, keySize)
+                             + GetLengthDelimitedFieldSize(FieldNumbers.Value, anyValueSize);
+
+            WriteTag(writer, fieldNumber, WireTypeLengthDelimited);
+            WriteVarInt(writer, keyValueSize);
+            WriteStringField(writer, FieldNumbers.Key, key);
             WriteTag(writer, FieldNumbers.Value, WireTypeLengthDelimited);
-            WriteVarInt(writer, anyData.Length);
-            writer.Write(anyData);
-
-            writer.Flush();
-            return stream.ToArray();
+            WriteVarInt(writer, anyValueSize);
+            WriteTag(writer, AnyValueFieldNumbers.ArrayValue, WireTypeLengthDelimited);
+            WriteVarInt(writer, arraySize);
         }
 
         private static void WriteStringField(BinaryWriter writer, int fieldNumber, string value)
@@ -922,6 +974,33 @@ namespace Datadog.Trace.Agent
                 WriteVarInt(writer, bytes.Length);
                 writer.Write(bytes);
             }
+        }
+
+        private static void WriteUtf8StringField(BinaryWriter writer, int fieldNumber, byte[] value, int offset, int count)
+        {
+            if (count > 0)
+            {
+                WriteTag(writer, fieldNumber, WireTypeLengthDelimited);
+                WriteVarInt(writer, count);
+                writer.Write(value, offset, count);
+            }
+        }
+
+        private static int GetUtf8StringFieldSize(int fieldNumber, int valueLength)
+            => valueLength == 0 ? 0 : GetLengthDelimitedFieldSize(fieldNumber, valueLength);
+
+        private static int GetLengthDelimitedFieldSize(int fieldNumber, int valueLength)
+            => GetVarIntSize((fieldNumber << 3) | WireTypeLengthDelimited) + GetVarIntSize(valueLength) + valueLength;
+
+        private static int GetVarIntSize(int value)
+        {
+            var size = 1;
+            while ((value >>= 7) != 0)
+            {
+                size++;
+            }
+
+            return size;
         }
 
         private static void WriteTag(BinaryWriter writer, int fieldNumber, int wireType)
