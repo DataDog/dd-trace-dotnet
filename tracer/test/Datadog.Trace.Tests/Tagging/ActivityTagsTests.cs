@@ -134,7 +134,7 @@ public class ActivityTagsTests
     }
 
     [Fact]
-    public async Task ActivityLink_PreservesOtelTraceState()
+    public async Task ActivityLink_PreservesTraceStateWithoutParsingOtelTraceState()
     {
         var traceId = new Mock<IActivityTraceId>();
         traceId.Setup(x => x.TraceId).Returns("0af7651916cd43dd8448eb211c80319c");
@@ -156,6 +156,8 @@ public class ActivityTagsTests
 
         OtlpHelpers.UpdateSpanFromActivity(activity.Object, span);
 
-        span.SpanLinks.Should().ContainSingle().Which.Context.OtelTraceState.Should().Be("rv:ef284ace7a91e1;th:e6666666666668");
+        var spanLinkContext = span.SpanLinks.Should().ContainSingle().Which.Context;
+        spanLinkContext.AdditionalW3CTraceState.Should().Be("ot=rv:ef284ace7a91e1;th:e6666666666668");
+        spanLinkContext.OtelTraceState.Should().BeNull();
     }
 }
