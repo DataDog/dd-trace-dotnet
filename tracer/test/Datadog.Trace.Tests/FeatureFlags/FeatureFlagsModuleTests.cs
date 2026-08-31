@@ -75,11 +75,85 @@ public class FeatureFlagsModuleTests
         result.Reason.Should().Be(EvaluationReason.Error);
     }
 
-    private static TracerSettings CreateSettings()
+    [Fact]
+    public void IsReady_WhenRemoteConfigurationIsDisabled_ReturnsFalse()
+    {
+        // When RC is disabled, IsReady() returns false because no evaluator will ever be
+        // installed. InitializeAsync detects this via IsAvailable() and throws
+        // ProviderFatalException rather than waiting 30s to timeout.
+        var rcmManager = new MockRcmSubscriptionManager();
+        var settings = CreateSettings(remoteConfigurationEnabled: false);
+        var module = new FeatureFlagsModule(settings, rcmManager);
+
+        module.IsReady().Should().BeFalse();
+    }
+
+    [Fact]
+    public void IsReady_WhenEvaluatorInstalledAndRCEnabled_ReturnsTrue()
+    {
+        var rcmManager = new MockRcmSubscriptionManager();
+        var settings = CreateSettings(remoteConfigurationEnabled: true);
+        var module = new FeatureFlagsModule(settings, rcmManager);
+
+        // Before config arrives, not ready.
+        module.IsReady().Should().BeFalse();
+
+        // Push a config so the evaluator is installed.
+        var configJson = JsonConvert.SerializeObject(new ServerConfiguration
+        {
+            Flags = new FlagCollection
+            {
+                ["flag"] = new Flag { Key = "flag", Enabled = true, VariationType = FeatureFlagsValueType.Boolean }
+            }
+        });
+        var configPath = RemoteConfigurationPath.FromPath($"datadog/2/{RcmProducts.FfeFlags}/cfg/config");
+        rcmManager.LastSubscription!.Invoke(
+            new Dictionary<string, List<RemoteConfiguration>>
+            {
+                [RcmProducts.FfeFlags] = [new RemoteConfiguration(configPath, System.Text.Encoding.UTF8.GetBytes(configJson), configJson.Length, new Dictionary<string, string> { { "sha256", "dummy" } }, 1)]
+            },
+            null);
+
+        module.IsReady().Should().BeTrue();
+    }
+
+    [Fact]
+    public void RegisterOnNewConfigEventHandler_ReplaysFiredWhenEvaluatorAlreadyPresent()
+    {
+        // Verifies the replay path: if an evaluator is already installed when the handler is
+        // registered, the handler is invoked immediately.
+        var rcmManager = new MockRcmSubscriptionManager();
+        var settings = CreateSettings();
+        var module = new FeatureFlagsModule(settings, rcmManager);
+
+        // Install evaluator before registering the handler.
+        var configJson = JsonConvert.SerializeObject(new ServerConfiguration
+        {
+            Flags = new FlagCollection
+            {
+                ["flag"] = new Flag { Key = "flag", Enabled = true, VariationType = FeatureFlagsValueType.Boolean }
+            }
+        });
+        var configPath = RemoteConfigurationPath.FromPath($"datadog/2/{RcmProducts.FfeFlags}/cfg/config");
+        rcmManager.LastSubscription!.Invoke(
+            new Dictionary<string, List<RemoteConfiguration>>
+            {
+                [RcmProducts.FfeFlags] = [new RemoteConfiguration(configPath, System.Text.Encoding.UTF8.GetBytes(configJson), configJson.Length, new Dictionary<string, string> { { "sha256", "dummy" } }, 1)]
+            },
+            null);
+
+        var callbackInvoked = false;
+        module.RegisterOnNewConfigEventHandler(() => callbackInvoked = true);
+
+        callbackInvoked.Should().BeTrue("handler should be replayed immediately when evaluator already exists");
+    }
+
+    private static TracerSettings CreateSettings(bool remoteConfigurationEnabled = true)
     {
         var collection = new NameValueCollection
         {
-            { ConfigurationKeys.FeatureFlags.FlaggingProviderEnabled, "true" }
+            { ConfigurationKeys.FeatureFlags.FlaggingProviderEnabled, "true" },
+            { ConfigurationKeys.Rcm.RemoteConfigurationEnabled, remoteConfigurationEnabled ? "true" : "false" },
         };
 
         return new TracerSettings(new NameValueConfigurationSource(collection));

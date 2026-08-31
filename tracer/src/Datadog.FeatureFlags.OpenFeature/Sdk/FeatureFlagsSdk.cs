@@ -27,6 +27,11 @@ internal static class FeatureFlagsSdk
     [MethodImpl(MethodImplOptions.NoInlining)]
     public static bool IsAvailable() => false;
 
+    /// <summary> Gets a value indicating whether FeatureFlags has received its initial configuration </summary>
+    /// <returns> True if FeatureFlagsSDK is ready to evaluate flags </returns>
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    public static bool IsReady() => false;
+
     /// <summary>Gets a value indicating whether APM span enrichment is enabled.</summary>
     /// <returns> True when the span-enrichment gate is on </returns>
     [MethodImpl(MethodImplOptions.NoInlining)]
