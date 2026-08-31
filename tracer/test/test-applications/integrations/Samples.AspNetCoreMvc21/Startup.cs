@@ -83,6 +83,11 @@ namespace Samples.AspNetCoreMvc
 
                     await next();
                 });
+
+                // Strips the path base from requests mounted under it, the way an app hosted behind
+                // a reverse proxy or in a sub-application would be. Routing then runs against the
+                // remaining path.
+                app.UsePathBase("/path-base");
             }
 
             app.UseMvc(routes =>

@@ -169,6 +169,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
             // one the request arrived on. It is still the endpoint that served the request, so it is
             // the route to report.
             { "GET", "/rewrite-me", 200, true },
+
+            // The application is mounted under a path base, which routing strips before matching.
+            // http.route is reported without the path base, aligning with built-in ASP.NET Core and OTel .NET instrumentation.
+            { "GET", "/path-base/api/delay/0", 200, true },
         };
 
         /// <summary>
