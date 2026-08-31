@@ -82,10 +82,9 @@ partial class Build : NukeBuild
 
                 foreach (var file in changedFiles)
                 {
-                    if ((codeOwners.Match("/" + file)?.Owners.Contains(TracingDotnet) is true) &&
-                        (commonDirectories.Any(x => file.StartsWith(x, StringComparison.OrdinalIgnoreCase)) ||
-                        !nonCommonDirectories.Any(x => file.StartsWith(x, StringComparison.OrdinalIgnoreCase))
-                        ))
+                    if (commonDirectories.Any(x => file.StartsWith(x, StringComparison.OrdinalIgnoreCase)) ||
+                        ((codeOwners.Match("/" + file)?.Owners.Contains(TracingDotnet) is true) &&
+                         !nonCommonDirectories.Any(x => file.StartsWith(x, StringComparison.OrdinalIgnoreCase))))
                     {
                         Logger.Information($"File {file} was detected as common.");
                         return true;
