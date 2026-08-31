@@ -12,6 +12,9 @@ steps:
     includePreviewVersions: true
   retryCountOnTaskFailure: 5
 
+- script: dotnet --info
+  displayName: validate .NET SDK $(dotnetCoreSdkLatestVersion) installation
+
 - ${{ if eq(parameters.includeX86, true) }}:
     - template: install-dotnet-sdk-manually.yml
       parameters:

@@ -70,3 +70,6 @@ steps:
     packageType: sdk
     version: $(dotnetCoreSdkLatestVersion)
   retryCountOnTaskFailure: 5
+
+- script: dotnet --info
+  displayName: validate .NET SDK $(dotnetCoreSdkLatestVersion) installation
