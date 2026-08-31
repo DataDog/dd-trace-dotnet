@@ -140,9 +140,11 @@ partial class Build : NukeBuild
                         {
                             foreach (var changedFile in changedFiles)
                             {
-                                if (codeOwners.Match("/" + changedFile)?.Owners.Contains(changedTeamValue.TeamName) == true)
+                                if ((changedTeamValue.TeamName == TracingDotnet &&
+                                     changedFile.StartsWith("tracer/test/", StringComparison.OrdinalIgnoreCase)) ||
+                                    codeOwners.Match("/" + changedFile)?.Owners.Contains(changedTeamValue.TeamName) == true)
                                 {
-                                    Logger.Information($"File {changedFile} is owned by {changedTeamValue.TeamName}");
+                                    Logger.Information($"File {changedFile} affects {changedTeamValue.VariableName}");
                                     isChanged = true;
                                     break;
                                 }
