@@ -56,7 +56,7 @@ namespace Datadog.Trace.DuckTyping.Tests
 #elif NETCOREAPP2_1
                 asmDuckTypes.Should().Be(1186);
 #else
-                asmDuckTypes.Should().Be(1187);
+                asmDuckTypes.Should().Be(1188);
 #endif
             }
             else
@@ -67,7 +67,7 @@ namespace Datadog.Trace.DuckTyping.Tests
 #elif NETCOREAPP2_1
                 asmDuckTypes.Should().BeGreaterThan(1186);
 #else
-                asmDuckTypes.Should().BeGreaterThan(1187);
+                asmDuckTypes.Should().BeGreaterThan(1188);
 #endif
             }
         }
