@@ -9,6 +9,7 @@ using System.Collections.Specialized;
 using System.Data;
 using System.Data.Common;
 using System.Data.SqlClient;
+using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet;
@@ -16,6 +17,10 @@ using Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.AdoNet;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
+using Datadog.Trace.DatabaseMonitoring;
+using Datadog.Trace.OpenTelemetry;
+using Datadog.Trace.Processors;
+using Datadog.Trace.Tagging;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.TestHelpers.TestTracer;
 using FluentAssertions;
@@ -29,6 +34,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
     public class DbScopeFactoryTests
     {
         private const string DbmCommandText = "SELECT 1";
+        private const string SanitizedDbmCommandText = "SELECT ?";
 
         public static TheoryData<Type, string, string> GetDbCommands() => new()
         {
@@ -740,6 +746,167 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
 
         [Theory]
         [MemberData(nameof(GetDbCommands))]
+        public async Task CreateDbCommandScope_WithDatadogSemantics_UsesDatadogNamesAndValues(Type commandType, string integrationName, string dbType)
+        {
+            // HACK: avoid analyzer warning about not using arguments
+            _ = integrationName;
+
+            var command = (IDbCommand)Activator.CreateInstance(commandType)!;
+            command.CommandText = DbmCommandText;
+
+            await using var tracer = TracerHelper.CreateWithFakeAgent(TracerSettings.Create(new()));
+
+            using var scope = CreateDbCommandScope(tracer, command);
+            var tags = GetSerializedTags(scope.Span);
+
+            tags.Should().Contain(Tags.DbType, dbType);
+            scope.Span.ResourceName.Should().Be(DbmCommandText);
+
+            tags.Keys.Should().NotContain(
+            [
+                Tags.DbSystemName,
+                Tags.DbNamespace,
+                Tags.ServerAddress,
+                Tags.ServerPort,
+                Tags.DbQueryText,
+                Tags.DbQuerySummary,
+                Tags.DbOperationName,
+                Tags.DbStoredProcedureName,
+                Tags.DbCollectionName,
+            ]);
+        }
+
+        [Theory]
+        [MemberData(nameof(GetDbCommands))]
+        public async Task CreateDbCommandScope_WithOpenTelemetrySemantics_UsesOpenTelemetryNamesAndValues(Type commandType, string integrationName, string dbType)
+        {
+            // HACK: avoid analyzer warning about not using arguments
+            _ = integrationName;
+
+            var command = (IDbCommand)Activator.CreateInstance(commandType)!;
+            command.CommandText = DbmCommandText;
+
+            await using var tracer = CreateTracerWithOpenTelemetrySemantics();
+
+            using var scope = CreateDbCommandScope(tracer, command);
+            var tags = GetSerializedTags(scope.Span);
+
+            var expectedDbSystemName = DbSemanticConventions.GetDbSystemName(dbType);
+            tags.Should().Contain(Tags.DbSystemName, expectedDbSystemName);
+
+            // the numeric literal of "SELECT 1" is replaced with a placeholder
+            tags.Should().Contain(Tags.DbQueryText, SanitizedDbmCommandText);
+
+            // No connection is open, so there is no namespace or server to report, which leaves the
+            // database management system as the span name
+            scope.Span.ResourceName.Should().Be(expectedDbSystemName);
+
+            tags.Keys.Should().NotContain([Tags.DbType, Tags.DbName, Tags.DbUser, Tags.OutHost]);
+        }
+
+        [Theory]
+        [InlineData(null, null)]
+        [InlineData("v0", null)]
+        [InlineData("v1", null)]
+        [InlineData(null, true)]
+        [InlineData("v1", true)]
+        public async Task CreateDbCommandScope_WithOpenTelemetrySemantics_NeverUsesV1SchemaTags(string schemaVersion, bool? peerServiceDefaultsEnabled)
+        {
+            var command = (IDbCommand)Activator.CreateInstance(typeof(Npgsql.NpgsqlCommand))!;
+            command.CommandText = DbmCommandText;
+
+            await using var tracer = CreateTracerWithOpenTelemetrySemantics(schemaVersion, peerServiceDefaultsEnabled);
+
+            using var scope = CreateDbCommandScope(tracer, command);
+            var tags = GetSerializedTags(scope.Span);
+
+            tags.Keys.Should().NotContain([Tags.PeerService, Tags.PeerServiceSource]);
+        }
+
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public async Task CreateDbCommandScope_SuppressesTheNestedCallsOfTheSameCommand(bool openTelemetrySemanticsEnabled)
+        {
+            // A provider calling ExecuteReader() -> ExecuteReader(behavior) must only produce one
+            // span. With OpenTelemetry semantics the resource name is no longer the command text, so
+            // this is the regression test for recognizing the command another way.
+            var command = (IDbCommand)Activator.CreateInstance(typeof(Npgsql.NpgsqlCommand))!;
+            command.CommandText = DbmCommandText;
+
+            await using var tracer = openTelemetrySemanticsEnabled
+                                         ? CreateTracerWithOpenTelemetrySemantics()
+                                         : TracerHelper.CreateWithFakeAgent(TracerSettings.Create(new()));
+
+            using var outerScope = CreateDbCommandScope(tracer, command);
+            outerScope.Should().NotBeNull();
+
+            using var nestedScope = CreateDbCommandScope(tracer, command);
+            nestedScope.Should().BeNull();
+        }
+
+        [Theory]
+        // Microsoft SQL Server does not support the SQL standard CALL keyword
+        [InlineData(typeof(Microsoft.Data.SqlClient.SqlCommand), "EXECUTE")]
+        [InlineData(typeof(Npgsql.NpgsqlCommand), "CALL")]
+        public async Task CreateDbCommandScope_WithOpenTelemetrySemantics_SetsStoredProcedureAttributes(Type commandType, string expectedOperation)
+        {
+            var command = (IDbCommand)Activator.CreateInstance(commandType)!;
+            command.CommandType = CommandType.StoredProcedure;
+            command.CommandText = "get_customer";
+
+            await using var tracer = CreateTracerWithOpenTelemetrySemantics();
+
+            using var scope = CreateDbCommandScope(tracer, command);
+            var tags = GetSerializedTags(scope.Span);
+
+            tags.Should().Contain(Tags.DbOperationName, expectedOperation);
+            tags.Should().Contain(Tags.DbStoredProcedureName, "get_customer");
+            tags.Should().Contain(Tags.DbQuerySummary, $"{expectedOperation} get_customer");
+            scope.Span.ResourceName.Should().Be($"{expectedOperation} get_customer");
+
+            // The command text is the name of the procedure, not a query
+            tags.Keys.Should().NotContain(Tags.DbQueryText);
+        }
+
+        [Fact]
+        public async Task CreateDbCommandScope_WithOpenTelemetrySemantics_ReportsTheQueryTextWithoutTheDbmComment()
+        {
+            var command = (IDbCommand)Activator.CreateInstance(typeof(Npgsql.NpgsqlCommand))!;
+            command.CommandText = DbmCommandText;
+
+            var tracerSettings = TracerSettings.Create(new()
+            {
+                { ConfigurationKeys.OpenTelemetry.OtelSemanticsEnabled, "true" },
+                { ConfigurationKeys.DbmPropagationMode, "full" },
+            });
+            await using var tracer = TracerHelper.CreateWithFakeAgent(tracerSettings);
+
+            using var scope = CreateDbCommandScope(tracer, command);
+            var tags = GetSerializedTags(scope.Span);
+
+            // Database Monitoring rewrites the command text after we capture it, so the reported
+            // query text must be the text the application asked for
+            command.CommandText.Should().Contain(DatabaseMonitoringPropagator.DbmPrefix);
+            tags.Should().Contain(Tags.DbQueryText, SanitizedDbmCommandText);
+        }
+
+        [Fact]
+        public async Task CreateDbCommandScope_WithOpenTelemetrySemantics_SanitizesTheQueryText()
+        {
+            var command = (IDbCommand)Activator.CreateInstance(typeof(Npgsql.NpgsqlCommand))!;
+            command.CommandText = "SELECT * FROM users WHERE name = 'zach' AND id = 12";
+
+            await using var tracer = CreateTracerWithOpenTelemetrySemantics();
+
+            using var scope = CreateDbCommandScope(tracer, command);
+            var tags = GetSerializedTags(scope.Span);
+
+            tags.Should().Contain(Tags.DbQueryText, "SELECT * FROM users WHERE name = ? AND id = ?");
+        }
+
+        [Theory]
+        [MemberData(nameof(GetDbCommands))]
         internal void TryGetIntegrationDetails_CorrectNameGenerated(Type commandType, string expectedIntegrationName, string expectedDbType)
         {
             var command = (IDbCommand)Activator.CreateInstance(commandType)!;
@@ -813,6 +980,34 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             return TracerHelper.Create(tracerSettings);
         }
 
+        private static ScopedTracer CreateTracerWithOpenTelemetrySemantics(string schemaVersion = null, bool? peerServiceDefaultsEnabled = null)
+        {
+            var settings = new Dictionary<string, object>
+            {
+                { ConfigurationKeys.OpenTelemetry.OtelSemanticsEnabled, "true" },
+            };
+
+            if (schemaVersion is not null)
+            {
+                settings[ConfigurationKeys.MetadataSchemaVersion] = schemaVersion;
+            }
+
+            if (peerServiceDefaultsEnabled is { } peerService)
+            {
+                settings[ConfigurationKeys.PeerServiceDefaultsEnabled] = peerService.ToString();
+            }
+
+            return TracerHelper.CreateWithFakeAgent(TracerSettings.Create(settings));
+        }
+
+        private static Dictionary<string, string> GetSerializedTags(Span span)
+        {
+            var tags = new Dictionary<string, string>();
+            var processor = new TagCollectorProcessor(tags);
+            span.Tags.EnumerateTags(ref processor, span.OpenTelemetrySemanticsEnabled);
+            return tags;
+        }
+
         private static Scope CreateDbCommandScope(Tracer tracer, IDbCommand command)
         {
             var methodName = nameof(DbScopeFactory.Cache<object>.CreateDbCommandScope);
@@ -821,6 +1016,26 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             return (Scope)typeof(DbScopeFactory.Cache<>).MakeGenericType(command.GetType())
                                                         .GetMethod(methodName)
                                                        ?.Invoke(null, arguments);
+        }
+
+        private readonly struct TagCollectorProcessor : IItemProcessor<string>, IItemProcessor<int>
+        {
+            private readonly Dictionary<string, string> _items;
+
+            public TagCollectorProcessor(Dictionary<string, string> items)
+            {
+                _items = items;
+            }
+
+            public void Process(TagItem<string> item)
+            {
+                _items[item.Key] = item.Value;
+            }
+
+            public void Process(TagItem<int> item)
+            {
+                _items[item.Key] = item.Value.ToString(CultureInfo.InvariantCulture);
+            }
         }
     }
 }
