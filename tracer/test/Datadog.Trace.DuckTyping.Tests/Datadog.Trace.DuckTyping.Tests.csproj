@@ -10,7 +10,7 @@
     <ProjectReference Include="..\Datadog.Trace.TestHelpers\Datadog.Trace.TestHelpers.csproj" />
     <ProjectReference Include="..\..\src\Datadog.Trace\Datadog.Trace.csproj" />
     <ProjectReference Include="..\Datadog.Trace.DuckTyping.Tests.Fixtures\Shared\Datadog.Trace.DuckTyping.Tests.Fixtures.Shared.csproj" />
-    <ProjectReference Include="..\Datadog.Trace.DuckTyping.Tests.Fixtures\Target\Datadog.Trace.DuckTyping.Tests.Fixtures.Target.csproj" />
+    <ProjectReference Include="..\Datadog.Trace.DuckTyping.Tests.Fixtures\Target\Datadog.Trace.DuckTyping.Tests.Fixtures.Target.csproj" ReferenceOutputAssembly="false" />
   </ItemGroup>
   <PropertyGroup Condition="'$(TargetFramework)' == 'netcoreapp3.1'">
     <DefineConstants>$(DefineConstants);INTERFACE_DEFAULTS</DefineConstants>
@@ -25,5 +25,16 @@
     <None Remove="xunit.runner.json" />
     <Content Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
+
+  <Target Name="CopyAssemblyLoadContextFixtures" AfterTargets="Build" Condition="'$(TargetFramework)' != ''">
+    <MSBuild Projects="..\Datadog.Trace.DuckTyping.Tests.Fixtures\Target\Datadog.Trace.DuckTyping.Tests.Fixtures.Target.csproj"
+             Targets="GetTargetPath"
+             Properties="Configuration=$(Configuration)">
+      <Output TaskParameter="TargetOutputs" ItemName="AssemblyLoadContextTargetFixture" />
+    </MSBuild>
+    <Copy SourceFiles="@(AssemblyLoadContextTargetFixture);$(TargetDir)Datadog.Trace.DuckTyping.Tests.Fixtures.Shared.dll"
+          DestinationFolder="$(TargetDir)AssemblyLoadContextFixtures"
+          SkipUnchangedFiles="true" />
+  </Target>
 
 </Project>
