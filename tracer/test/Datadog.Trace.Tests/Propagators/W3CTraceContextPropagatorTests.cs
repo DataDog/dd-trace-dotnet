@@ -967,7 +967,7 @@ namespace Datadog.Trace.Tests.Propagators
             traceContext.SetSamplingPriority(
                 priority: SamplingPriorityValues.UserKeep,
                 mechanism: SamplingMechanism.LocalTraceSamplingRule,
-                rate: 0.1f,
+                rate: 0.1,
                 sample: true);
 
             var spanContext = traceContext.RootSpan!.Context;
