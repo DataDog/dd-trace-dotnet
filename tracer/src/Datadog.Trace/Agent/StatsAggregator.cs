@@ -162,6 +162,11 @@ namespace Datadog.Trace.Agent
                 _buffers[i] = new(header, new(settings), new(TelemetryFactory.Metrics));
             }
 
+            if (_isOtlp)
+            {
+                _buffers[_currentBuffer].SetStartTime(DateTimeOffset.UtcNow.ToUnixTimeNanoseconds());
+            }
+
             _flushTask = Task.Run(Flush);
             _flushTask.ContinueWith(t => Log.Error(t.Exception, "Error in StatsAggregator"), TaskContinuationOptions.OnlyOnFaulted);
 
@@ -667,13 +672,18 @@ namespace Datadog.Trace.Agent
 
                 var buffer = CurrentBuffer;
                 var nextBufferIndex = (_currentBuffer + 1) % BufferCount;
-                if (_isOtlp)
-                {
-                    _buffers[nextBufferIndex].SetMinStartTime(buffer.Start + bucketDurationNs);
-                }
+                var statsDurationNs = bucketDurationNs;
 
                 lock (_buffers)
                 {
+                    if (_isOtlp)
+                    {
+                        // Keep the delta interval valid if the wall clock moves backwards.
+                        var boundaryNs = Math.Max(buffer.Start + 1, DateTimeOffset.UtcNow.ToUnixTimeNanoseconds());
+                        statsDurationNs = boundaryNs - buffer.Start;
+                        _buffers[nextBufferIndex].SetStartTime(boundaryNs);
+                    }
+
                     _currentBuffer = nextBufferIndex;
                 }
 
@@ -689,7 +699,7 @@ namespace Datadog.Trace.Agent
 
                 if (buffer.HasHits() && CanComputeStats == true)
                 {
-                    await _api.SendStatsAsync(buffer, bucketDurationNs, Volatile.Read(ref _tracerObfuscationVersion)).ConfigureAwait(false);
+                    await _api.SendStatsAsync(buffer, statsDurationNs, Volatile.Read(ref _tracerObfuscationVersion)).ConfigureAwait(false);
                 }
 
                 buffer.Reset();

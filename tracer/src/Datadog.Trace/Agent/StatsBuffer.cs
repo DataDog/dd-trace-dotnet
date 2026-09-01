@@ -151,6 +151,8 @@ namespace Datadog.Trace.Agent
             Start = Math.Max(minimumStart, nowNs - (nowNs % 10_000_000_000));
         }
 
+        public void SetStartTime(long start) => Start = start;
+
         public void Serialize(Stream stream, long bucketDuration)
         {
             var count = 10; // Base: Hostname, Env, Version, Stats, Lang, TracerVersion, RuntimeID, Sequence, Service, TracerDdTags

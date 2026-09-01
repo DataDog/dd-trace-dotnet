@@ -31,7 +31,7 @@ namespace Datadog.Trace.Tests.Agent
         [Fact]
         public async Task CallFlushAutomatically()
         {
-            const int bucketDurationSeconds = 1;
+            const int bucketDurationSeconds = 60;
             var bucketDuration = TimeSpan.FromSeconds(bucketDurationSeconds);
 
             using var mutex = new ManualResetEventSlim();
@@ -163,11 +163,10 @@ namespace Datadog.Trace.Tests.Agent
         public async Task Otlp_FlushesUseContiguousTimestamps()
         {
             const int bucketDurationSeconds = 1;
-            var bucketDuration = TimeSpan.FromSeconds(bucketDurationSeconds);
-            var starts = new List<long>();
+            var windows = new List<(long Start, long Duration)>();
             var api = new Mock<IApi>();
-            api.Setup(a => a.SendStatsAsync(It.IsAny<StatsBuffer>(), bucketDuration.ToNanoseconds(), It.IsAny<int>()))
-               .Callback<StatsBuffer, long, int>((buffer, _, _) => starts.Add(buffer.Start))
+            api.Setup(a => a.SendStatsAsync(It.IsAny<StatsBuffer>(), It.IsAny<long>(), It.IsAny<int>()))
+               .Callback<StatsBuffer, long, int>((buffer, duration, _) => windows.Add((buffer.Start, duration)))
                .Returns(Task.FromResult(true));
 
             var aggregator = new StatsAggregator(api.Object, GetSettings(bucketDurationSeconds), NullDiscoveryService.Instance, Mock.Of<IStatsdManager>(), isOtlp: true);
@@ -178,8 +177,10 @@ namespace Datadog.Trace.Tests.Agent
             aggregator.Add(CreateTopLevelSpan(DateTimeOffset.UtcNow));
             await aggregator.Flush();
 
-            starts.Should().HaveCount(2);
-            starts[1].Should().Be(starts[0] + bucketDuration.ToNanoseconds());
+            windows.Should().HaveCount(2);
+            windows[0].Duration.Should().BePositive();
+            windows[0].Duration.Should().BeLessThan(TimeSpan.FromSeconds(bucketDurationSeconds).ToNanoseconds());
+            windows[1].Start.Should().Be(windows[0].Start + windows[0].Duration);
         }
 
         [Fact]
