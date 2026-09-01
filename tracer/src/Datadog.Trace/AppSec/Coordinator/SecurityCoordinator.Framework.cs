@@ -453,7 +453,7 @@ internal readonly partial struct SecurityCoordinator
         {
             { AddressesConstants.RequestMethod, request.HttpMethod },
             { AddressesConstants.ResponseStatus, request.RequestContext.HttpContext.Response.StatusCode.ToString() },
-            { AddressesConstants.RequestClientIp, _localRootSpan.GetTag(Tags.HttpClientIp) ?? _localRootSpan.GetTag(Tags.NetworkClientIp) }
+            { AddressesConstants.RequestClientIp, _localRootSpan.GetHttpClientIp() ?? _localRootSpan.GetNetworkClientIp() }
         };
 
         var url = RequestDataHelper.GetUrl(request);

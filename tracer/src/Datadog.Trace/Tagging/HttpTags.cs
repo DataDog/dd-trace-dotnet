@@ -8,7 +8,7 @@ using Datadog.Trace.SourceGenerators;
 #pragma warning disable SA1402 // File must contain single type
 namespace Datadog.Trace.Tagging
 {
-    internal partial class HttpTags : InstrumentationTags, IHasStatusCode
+    internal partial class HttpTags : InstrumentationTags, IHasStatusCode, IHasHttpMethod
     {
         private const string HttpClientHandlerTypeKey = "http-client-handler-type";
 
