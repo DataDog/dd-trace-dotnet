@@ -20,17 +20,50 @@ namespace Datadog.Trace.Tagging
         // DbTypeBytes = MessagePack.Serialize("db.type");
         private static ReadOnlySpan<byte> DbTypeBytes => [167, 100, 98, 46, 116, 121, 112, 101];
 
+        // DbTypeOtelBytes = MessagePack.Serialize("db.system.name");
+        private static ReadOnlySpan<byte> DbTypeOtelBytes => [174, 100, 98, 46, 115, 121, 115, 116, 101, 109, 46, 110, 97, 109, 101];
+
         // InstrumentationNameBytes = MessagePack.Serialize("component");
         private static ReadOnlySpan<byte> InstrumentationNameBytes => [169, 99, 111, 109, 112, 111, 110, 101, 110, 116];
 
         // DbNameBytes = MessagePack.Serialize("db.name");
         private static ReadOnlySpan<byte> DbNameBytes => [167, 100, 98, 46, 110, 97, 109, 101];
 
+        // DbNameOtelBytes = MessagePack.Serialize("db.namespace");
+        private static ReadOnlySpan<byte> DbNameOtelBytes => [172, 100, 98, 46, 110, 97, 109, 101, 115, 112, 97, 99, 101];
+
         // DbUserBytes = MessagePack.Serialize("db.user");
         private static ReadOnlySpan<byte> DbUserBytes => [167, 100, 98, 46, 117, 115, 101, 114];
 
         // OutHostBytes = MessagePack.Serialize("out.host");
         private static ReadOnlySpan<byte> OutHostBytes => [168, 111, 117, 116, 46, 104, 111, 115, 116];
+
+        // OutHostOtelBytes = MessagePack.Serialize("server.address");
+        private static ReadOnlySpan<byte> OutHostOtelBytes => [174, 115, 101, 114, 118, 101, 114, 46, 97, 100, 100, 114, 101, 115, 115];
+
+        // ServerPortBytes = MessagePack.Serialize("server.port");
+        private static ReadOnlySpan<byte> ServerPortBytes => [171, 115, 101, 114, 118, 101, 114, 46, 112, 111, 114, 116];
+
+        // DbQueryTextBytes = MessagePack.Serialize("db.query.text");
+        private static ReadOnlySpan<byte> DbQueryTextBytes => [173, 100, 98, 46, 113, 117, 101, 114, 121, 46, 116, 101, 120, 116];
+
+        // DbQuerySummaryBytes = MessagePack.Serialize("db.query.summary");
+        private static ReadOnlySpan<byte> DbQuerySummaryBytes => [176, 100, 98, 46, 113, 117, 101, 114, 121, 46, 115, 117, 109, 109, 97, 114, 121];
+
+        // DbOperationNameBytes = MessagePack.Serialize("db.operation.name");
+        private static ReadOnlySpan<byte> DbOperationNameBytes => [177, 100, 98, 46, 111, 112, 101, 114, 97, 116, 105, 111, 110, 46, 110, 97, 109, 101];
+
+        // DbStoredProcedureNameBytes = MessagePack.Serialize("db.stored_procedure.name");
+        private static ReadOnlySpan<byte> DbStoredProcedureNameBytes => [184, 100, 98, 46, 115, 116, 111, 114, 101, 100, 95, 112, 114, 111, 99, 101, 100, 117, 114, 101, 46, 110, 97, 109, 101];
+
+        // DbCollectionNameBytes = MessagePack.Serialize("db.collection.name");
+        private static ReadOnlySpan<byte> DbCollectionNameBytes => [178, 100, 98, 46, 99, 111, 108, 108, 101, 99, 116, 105, 111, 110, 46, 110, 97, 109, 101];
+
+        // DbResponseStatusCodeBytes = MessagePack.Serialize("db.response.status_code");
+        private static ReadOnlySpan<byte> DbResponseStatusCodeBytes => [183, 100, 98, 46, 114, 101, 115, 112, 111, 110, 115, 101, 46, 115, 116, 97, 116, 117, 115, 95, 99, 111, 100, 101];
+
+        // ErrorTypeBytes = MessagePack.Serialize("error.type");
+        private static ReadOnlySpan<byte> ErrorTypeBytes => [170, 101, 114, 114, 111, 114, 46, 116, 121, 112, 101];
 
         // DbmTraceInjectedBytes = MessagePack.Serialize("_dd.dbm_trace_injected");
         private static ReadOnlySpan<byte> DbmTraceInjectedBytes => [182, 95, 100, 100, 46, 100, 98, 109, 95, 116, 114, 97, 99, 101, 95, 105, 110, 106, 101, 99, 116, 101, 100];
@@ -43,11 +76,19 @@ namespace Datadog.Trace.Tagging
             return key switch
             {
                 "span.kind" => SpanKind,
-                "db.type" => DbType,
+                "db.type" or "db.system.name" => DbType,
                 "component" => InstrumentationName,
-                "db.name" => DbName,
+                "db.name" or "db.namespace" => DbName,
                 "db.user" => DbUser,
-                "out.host" => OutHost,
+                "out.host" or "server.address" => OutHost,
+                "server.port" => ServerPort is null ? null : Datadog.Trace.Util.IntStringCache.ToInvariantString(ServerPort.Value),
+                "db.query.text" => DbQueryText,
+                "db.query.summary" => DbQuerySummary,
+                "db.operation.name" => DbOperationName,
+                "db.stored_procedure.name" => DbStoredProcedureName,
+                "db.collection.name" => DbCollectionName,
+                "db.response.status_code" => DbResponseStatusCode,
+                "error.type" => ErrorType,
                 "_dd.dbm_trace_injected" => DbmTraceInjected,
                 "_dd.propagated_hash" => BaseHash,
                 _ => base.GetTag(key),
@@ -58,20 +99,55 @@ namespace Datadog.Trace.Tagging
         {
             switch(key)
             {
-                case "db.type": 
+                case "db.type":
+                case "db.system.name":
                     DbType = value;
                     break;
                 case "component": 
                     InstrumentationName = value;
                     break;
-                case "db.name": 
+                case "db.name":
+                case "db.namespace":
                     DbName = value;
                     break;
                 case "db.user": 
                     DbUser = value;
                     break;
-                case "out.host": 
+                case "out.host":
+                case "server.address":
                     OutHost = value;
+                    break;
+                case "server.port": 
+                    if (int.TryParse(value, System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out var parsedServerPort))
+                    {
+                        ServerPort = parsedServerPort;
+                    }
+                    else
+                    {
+                        ServerPort = null;
+                    }
+
+                    break;
+                case "db.query.text": 
+                    DbQueryText = value;
+                    break;
+                case "db.query.summary": 
+                    DbQuerySummary = value;
+                    break;
+                case "db.operation.name": 
+                    DbOperationName = value;
+                    break;
+                case "db.stored_procedure.name": 
+                    DbStoredProcedureName = value;
+                    break;
+                case "db.collection.name": 
+                    DbCollectionName = value;
+                    break;
+                case "db.response.status_code": 
+                    DbResponseStatusCode = value;
+                    break;
+                case "error.type": 
+                    ErrorType = value;
                     break;
                 case "_dd.dbm_trace_injected": 
                     DbmTraceInjected = value;
@@ -97,7 +173,14 @@ namespace Datadog.Trace.Tagging
 
             if (DbType is not null)
             {
-                processor.Process(new TagItem<string>("db.type", DbType, DbTypeBytes));
+                if (openTelemetrySemanticsEnabled)
+                {
+                    processor.Process(new TagItem<string>("db.system.name", DbType, DbTypeOtelBytes));
+                }
+                else
+                {
+                    processor.Process(new TagItem<string>("db.type", DbType, DbTypeBytes));
+                }
             }
 
             if (InstrumentationName is not null)
@@ -107,7 +190,14 @@ namespace Datadog.Trace.Tagging
 
             if (DbName is not null)
             {
-                processor.Process(new TagItem<string>("db.name", DbName, DbNameBytes));
+                if (openTelemetrySemanticsEnabled)
+                {
+                    processor.Process(new TagItem<string>("db.namespace", DbName, DbNameOtelBytes));
+                }
+                else
+                {
+                    processor.Process(new TagItem<string>("db.name", DbName, DbNameBytes));
+                }
             }
 
             if (DbUser is not null)
@@ -117,7 +207,54 @@ namespace Datadog.Trace.Tagging
 
             if (OutHost is not null)
             {
-                processor.Process(new TagItem<string>("out.host", OutHost, OutHostBytes));
+                if (openTelemetrySemanticsEnabled)
+                {
+                    processor.Process(new TagItem<string>("server.address", OutHost, OutHostOtelBytes));
+                }
+                else
+                {
+                    processor.Process(new TagItem<string>("out.host", OutHost, OutHostBytes));
+                }
+            }
+
+            if (ServerPort is not null)
+            {
+                processor.Process(new TagItem<int>("server.port", ServerPort.Value, ServerPortBytes));
+            }
+
+            if (DbQueryText is not null)
+            {
+                processor.Process(new TagItem<string>("db.query.text", DbQueryText, DbQueryTextBytes));
+            }
+
+            if (DbQuerySummary is not null)
+            {
+                processor.Process(new TagItem<string>("db.query.summary", DbQuerySummary, DbQuerySummaryBytes));
+            }
+
+            if (DbOperationName is not null)
+            {
+                processor.Process(new TagItem<string>("db.operation.name", DbOperationName, DbOperationNameBytes));
+            }
+
+            if (DbStoredProcedureName is not null)
+            {
+                processor.Process(new TagItem<string>("db.stored_procedure.name", DbStoredProcedureName, DbStoredProcedureNameBytes));
+            }
+
+            if (DbCollectionName is not null)
+            {
+                processor.Process(new TagItem<string>("db.collection.name", DbCollectionName, DbCollectionNameBytes));
+            }
+
+            if (DbResponseStatusCode is not null)
+            {
+                processor.Process(new TagItem<string>("db.response.status_code", DbResponseStatusCode, DbResponseStatusCodeBytes));
+            }
+
+            if (ErrorType is not null)
+            {
+                processor.Process(new TagItem<string>("error.type", ErrorType, ErrorTypeBytes));
             }
 
             if (DbmTraceInjected is not null)
@@ -174,6 +311,62 @@ namespace Datadog.Trace.Tagging
             {
                 sb.Append("out.host (tag):")
                   .Append(OutHost)
+                  .Append(',');
+            }
+
+            if (ServerPort is not null)
+            {
+                sb.Append("server.port (tag):")
+                  .Append(ServerPort.Value.ToString(System.Globalization.CultureInfo.InvariantCulture))
+                  .Append(',');
+            }
+
+            if (DbQueryText is not null)
+            {
+                sb.Append("db.query.text (tag):")
+                  .Append(DbQueryText)
+                  .Append(',');
+            }
+
+            if (DbQuerySummary is not null)
+            {
+                sb.Append("db.query.summary (tag):")
+                  .Append(DbQuerySummary)
+                  .Append(',');
+            }
+
+            if (DbOperationName is not null)
+            {
+                sb.Append("db.operation.name (tag):")
+                  .Append(DbOperationName)
+                  .Append(',');
+            }
+
+            if (DbStoredProcedureName is not null)
+            {
+                sb.Append("db.stored_procedure.name (tag):")
+                  .Append(DbStoredProcedureName)
+                  .Append(',');
+            }
+
+            if (DbCollectionName is not null)
+            {
+                sb.Append("db.collection.name (tag):")
+                  .Append(DbCollectionName)
+                  .Append(',');
+            }
+
+            if (DbResponseStatusCode is not null)
+            {
+                sb.Append("db.response.status_code (tag):")
+                  .Append(DbResponseStatusCode)
+                  .Append(',');
+            }
+
+            if (ErrorType is not null)
+            {
+                sb.Append("error.type (tag):")
+                  .Append(ErrorType)
                   .Append(',');
             }
 
