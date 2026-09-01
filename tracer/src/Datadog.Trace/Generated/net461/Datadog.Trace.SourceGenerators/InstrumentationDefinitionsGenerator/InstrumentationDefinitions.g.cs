@@ -691,11 +691,18 @@ namespace Datadog.Trace.ClrProfiler
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.XUnitTestInvokerRunAsyncIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.XUnitTestOutputHelperQueueTestOutputIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.XUnitTestRunnerRunAsyncIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.V4.XunitTestMethodRunnerContextCtorV4Integration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.V3.XUnitTestAssemblyRunnerRunV3Integration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.V4.XUnitTestAssemblyRunnerRunV4Integration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.V3.XUnitTestClassRunnerRunV3Integration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.V4.XUnitTestClassRunnerRunV4Integration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.V3.XUnitTestOutputHelperQueueTestOutputV3Integration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.V4.XUnitTestOutputHelperQueueTestOutputV4Integration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.V3.XUnitTestRunnerV3Integration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.V4.XUnitTestRunnerV4Integration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.V4.XUnitTestRunnerBaseRunV4Integration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.V3.XUnitTestMethodRunnerBaseRunTestCaseV3Integration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.V4.XUnitTestMethodRunnerBaseContextRunTestCaseV4Integration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.V3.XunitTestMethodRunnerContextCtorV3Integration"
                     => Datadog.Trace.Configuration.IntegrationId.XUnit,
 

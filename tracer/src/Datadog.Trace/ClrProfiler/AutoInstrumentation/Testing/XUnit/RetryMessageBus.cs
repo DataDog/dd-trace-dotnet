@@ -1,22 +1,25 @@
-﻿// <copyright file="RetryMessageBus.cs" company="Datadog">
+// <copyright file="RetryMessageBus.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+
 #nullable enable
+
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.InteropServices;
+using System.Threading;
 using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit;
 
 internal sealed class RetryMessageBus : IMessageBus
 {
-    private readonly Dictionary<string, RetryTestCaseMetadata> _testMethodMetadata = new();
+    private readonly ConcurrentDictionary<string, RetryTestCaseMetadata> _testCaseMetadata = new(StringComparer.Ordinal);
     private readonly IMessageBus _innerMessageBus;
     private readonly int _totalExecutions;
     private readonly int _executionNumber;
+    private int _disposed;
 
     public RetryMessageBus(IMessageBus innerMessageBus, int totalExecutions, int executionNumber)
     {
@@ -27,184 +30,215 @@ internal sealed class RetryMessageBus : IMessageBus
 
     public TestCaseMetadata GetMetadata(string uniqueID)
     {
-        Common.Log.Debug("RetryMessageBus.GetMetadata: Looking for: {Id}", uniqueID);
-#if NET6_0_OR_GREATER
-        ref var value = ref CollectionsMarshal.GetValueRefOrAddDefault(_testMethodMetadata, uniqueID, out _);
-        if (value is null)
+        if (_testCaseMetadata.TryGetValue(uniqueID, out var metadata))
         {
-            Common.Log.Debug("RetryMessageBus.GetMetadata: Not found, creating new one for value {Id}", uniqueID);
-            value = new RetryTestCaseMetadata(uniqueID, _totalExecutions, _executionNumber);
+            return metadata;
         }
-#else
-        if (!_testMethodMetadata.TryGetValue(uniqueID, out var value))
-        {
-            Common.Log.Debug("RetryMessageBus.GetMetadata: Not found, creating new one for value {Id}", uniqueID);
-            value = new RetryTestCaseMetadata(uniqueID, _totalExecutions, _executionNumber);
-            _testMethodMetadata[uniqueID] = value;
-        }
-#endif
 
-        return value;
+        var newMetadata = new RetryTestCaseMetadata(uniqueID, _totalExecutions, _executionNumber);
+        return _testCaseMetadata.GetOrAdd(uniqueID, newMetadata);
+    }
+
+    public bool TryGetMetadata(string uniqueID, out TestCaseMetadata? metadata)
+    {
+        if (_testCaseMetadata.TryGetValue(uniqueID, out var existingMetadata))
+        {
+            metadata = existingMetadata;
+            return true;
+        }
+
+        metadata = null;
+        return false;
     }
 
     [DuckReverseMethod]
     public void Dispose()
     {
+        if (Interlocked.Exchange(ref _disposed, 1) != 0)
+        {
+            return;
+        }
+
+        foreach (var uniqueID in _testCaseMetadata.Keys)
+        {
+            FlushMessages(uniqueID);
+        }
+
         _innerMessageBus.Dispose();
     }
 
     [DuckReverseMethod]
     public bool QueueMessage(object? message)
     {
-        if (message is null)
+        if (message is null || Volatile.Read(ref _disposed) != 0)
         {
             return false;
         }
 
-        string? uniqueID;
-        if (message.TryDuckCast<ITestCaseMessage>(out var testCaseMessage))
+        var uniqueID = GetTestCaseUniqueID(message);
+        if (uniqueID is null)
         {
-            uniqueID = testCaseMessage.TestCase.UniqueID;
-        }
-        else if (message.TryDuckCast<ITestCaseMessageV3>(out var testCaseMessageV3))
-        {
-            uniqueID = testCaseMessageV3.TestMethodUniqueID;
-        }
-        else if (message.TryDuckCast<ITestMethodMetadataV3>(out var testMethodMetadataV3))
-        {
-            uniqueID = testMethodMetadataV3.TestMethodUniqueID;
-        }
-        else
-        {
-            Common.Log.Debug("RetryMessageBus.QueueMessage: Message is not a supported message. Flushing: {Message}", message);
+            Common.Log.Debug("RetryMessageBus.QueueMessage: Message has no test case identity. Forwarding: {Message}", message);
             return InternalQueueMessage(message);
         }
 
-        Common.Log.Debug("RetryMessageBus.QueueMessage: Message: {Message} | UniqueID: {UniqueID}", message, uniqueID);
+        var metadata = (RetryTestCaseMetadata)GetMetadata(uniqueID);
+        var forwardDirectly = false;
+        var invalidExecutionIndex = false;
 
-        if (uniqueID is not null)
+        lock (metadata.SyncRoot)
         {
-            var metadata = (RetryTestCaseMetadata)GetMetadata(uniqueID);
+            if (Volatile.Read(ref _disposed) != 0)
+            {
+                return false;
+            }
+
             if (metadata.Disposed)
             {
-                Common.Log.Debug("RetryMessageBus.QueueMessage: Metadata is disposed for: {UniqueID} direct flush of the message.", uniqueID);
-                return InternalQueueMessage(message);
+                forwardDirectly = true;
             }
-
-            var totalExecutions = metadata.TotalExecutions;
-
-            // Let's store all messages for all executions of the given test, when the test case is finished,
-            // we will try to find a passing execution to flush, if not we will flush the first one.
-            var currentExecutionNumber = metadata.CountDownExecutionNumber + 1;
-            var index = totalExecutions - currentExecutionNumber;
-            if (metadata.ListOfMessages is null)
+            else
             {
-                Common.Log.Debug<int>("RetryMessageBus.QueueMessage: Creating list of messages for {Executions} executions.", totalExecutions);
-                metadata.ListOfMessages = new List<object>[totalExecutions];
-            }
-            else if (metadata.ListOfMessages.Length < totalExecutions)
-            {
-                Common.Log.Debug<int>("RetryMessageBus.QueueMessage: Resizing array with list of messages for {Executions} executions.", totalExecutions);
-                metadata.ResizeListOfMessages(totalExecutions);
-            }
-
-            if (index < 0)
-            {
-                Common.Log.Error<int>("RetryMessageBus.QueueMessage: Execution index {Index} is less than 0.", index);
-                FlushMessages(uniqueID);
-                throw new Exception($"Execution index {index} is less than 0.");
-            }
-
-            if (metadata.ListOfMessages[index] is not { } lstRetryInstance)
-            {
-                lstRetryInstance = [];
-                metadata.ListOfMessages[index] = lstRetryInstance;
-            }
-
-            lstRetryInstance.Add(message);
-
-            // Bypass some events to trigger MessageSink events. (Allure lib required it to create the test context)
-            // but just send the event once.
-            var messageTypeName = message.GetType().Name;
-            if (messageTypeName is "TestStarting" or "TestClassConstructionStarting" or "TestClassConstructionFinished")
-            {
-                if ((!metadata.Skipped && metadata.BypassedMessageTypes.Add(messageTypeName)) ||
-                    metadata.IsEarlyFlakeDetection)
+                var totalExecutions = metadata.TotalExecutions;
+                if (metadata.ListOfMessages is null)
                 {
-                    Common.Log.Debug("RetryMessageBus.QueueMessage: Message bypass, flushing directly for: {UniqueID} | {MessageType}", uniqueID, messageTypeName);
-                    return InternalQueueMessage(message);
+                    metadata.ListOfMessages = new List<object>?[totalExecutions];
                 }
-            }
-
-            return true;
-        }
-
-        Common.Log.Error("RetryMessageBus.QueueMessage: Message doesn't have an UniqueID. Flushing: {Message}", message);
-        return InternalQueueMessage(message);
-    }
-
-    public bool FlushMessages(string uniqueID)
-    {
-        Common.Log.Debug("RetryMessageBus.FlushMessages: Flushing messages for: {UniqueID}", uniqueID);
-
-        var metadata = (RetryTestCaseMetadata)GetMetadata(uniqueID);
-        var listOfMessages = metadata.ListOfMessages;
-        if (listOfMessages is null || listOfMessages.Length == 0 || metadata.Disposed || metadata.Skipped)
-        {
-            Common.Log.Debug("RetryMessageBus.FlushMessages: Nothing to flush for: {UniqueID}", uniqueID);
-            metadata.ListOfMessages = null;
-            return true;
-        }
-
-        // Let's check for a passing execution to flush that one.
-        List<object>? defaultMessages = null;
-        foreach (var messages in listOfMessages)
-        {
-            if (messages is not null)
-            {
-                defaultMessages ??= messages;
-                foreach (var sinkMessage in messages)
+                else if (metadata.ListOfMessages.Length < totalExecutions)
                 {
-                    if (sinkMessage.GetType().Name == "TestPassed")
+                    metadata.ResizeListOfMessages(totalExecutions);
+                }
+
+                var currentExecutionNumber = metadata.CountDownExecutionNumber + 1;
+                var index = totalExecutions - currentExecutionNumber;
+                if (index < 0 || index >= metadata.ListOfMessages.Length)
+                {
+                    invalidExecutionIndex = true;
+                    forwardDirectly = true;
+                }
+                else
+                {
+                    var executionMessages = metadata.ListOfMessages[index] ??= [];
+                    executionMessages.Add(message);
+
+                    var messageTypeName = message.GetType().Name;
+                    if (messageTypeName is "TestStarting" or "TestClassConstructionStarting" or "TestClassConstructionFinished")
                     {
-                        return InternalFlushMessages(messages);
+                        forwardDirectly = (!metadata.Skipped && metadata.BypassedMessageTypes.Add(messageTypeName)) ||
+                                          metadata.IsEarlyFlakeDetection;
                     }
                 }
             }
         }
 
-        // If we don't detect any passing execution, we just flush the first not null one.
-        if (defaultMessages is null)
+        if (invalidExecutionIndex)
+        {
+            Common.Log.Error("RetryMessageBus.QueueMessage: Invalid execution index for test case {UniqueID}. Forwarding the message.", uniqueID);
+        }
+
+        return forwardDirectly ? InternalQueueMessage(message) : true;
+    }
+
+    public bool FlushMessages(string uniqueID, XUnitFrameworkResult frameworkResult = XUnitFrameworkResult.Unknown)
+    {
+        if (!_testCaseMetadata.TryGetValue(uniqueID, out var metadata))
+        {
+            return true;
+        }
+
+        List<object>? messagesToFlush = null;
+        lock (metadata.SyncRoot)
+        {
+            if (metadata.Disposed)
+            {
+                return true;
+            }
+
+            metadata.Disposed = true;
+            var messagesByExecution = metadata.ListOfMessages;
+            metadata.ListOfMessages = null;
+
+            if (metadata.Skipped || messagesByExecution is null || messagesByExecution.Length == 0)
+            {
+                return true;
+            }
+
+            List<object>? firstCompletedExecution = null;
+            foreach (var executionMessages in messagesByExecution)
+            {
+                if (executionMessages is null)
+                {
+                    continue;
+                }
+
+                firstCompletedExecution ??= executionMessages;
+                foreach (var sinkMessage in executionMessages)
+                {
+                    var messageResult = GetFrameworkResult(sinkMessage);
+                    var isSelectedResult = frameworkResult == XUnitFrameworkResult.Unknown
+                                               ? messageResult == XUnitFrameworkResult.Passed
+                                               : messageResult == frameworkResult;
+                    if (isSelectedResult)
+                    {
+                        messagesToFlush = [.. executionMessages];
+                        break;
+                    }
+                }
+
+                if (messagesToFlush is not null)
+                {
+                    break;
+                }
+            }
+
+            messagesToFlush ??= firstCompletedExecution is null ? null : [.. firstCompletedExecution];
+        }
+
+        if (messagesToFlush is null)
         {
             return false;
         }
 
-        return InternalFlushMessages(defaultMessages);
-
-        bool InternalFlushMessages(List<object> messages)
+        var result = true;
+        foreach (var message in messagesToFlush)
         {
-            var retValue = true;
-            Common.Log.Debug("RetryMessageBus.InternalFlushMessages: Flushing messages for: {UniqueID}", uniqueID);
-            foreach (var messageInList in messages)
+            var messageTypeName = message.GetType().Name;
+            if (messageTypeName is "TestStarting" or "TestClassConstructionStarting" or "TestClassConstructionFinished")
             {
-                var messageTypeName = messageInList.GetType().Name;
-                if (messageTypeName is "TestStarting" or "TestClassConstructionStarting" or "TestClassConstructionFinished")
-                {
-                    Common.Log.Debug("RetryMessageBus.InternalFlushMessages: Skipping message: {Message} for: {UniqueID}", messageInList, uniqueID);
-                }
-                else
-                {
-                    Common.Log.Debug("RetryMessageBus.InternalFlushMessages: Flushing message: {Message} for: {UniqueID}", messageInList, uniqueID);
-                    retValue = InternalQueueMessage(messageInList) && retValue;
-                }
+                continue;
             }
 
-            Common.Log.Debug<int, string>("RetryMessageBus.InternalFlushMessages: {Count} messages flushed for: {UniqueID}", messages.Count, uniqueID);
-
-            Array.Clear(listOfMessages, 0, listOfMessages.Length);
-            return retValue;
+            result = InternalQueueMessage(message) && result;
         }
+
+        return result;
     }
+
+    private static string? GetTestCaseUniqueID(object message)
+    {
+        if (message.TryDuckCast<ITestCaseMessage>(out var testCaseMessage))
+        {
+            return testCaseMessage.TestCase.UniqueID;
+        }
+
+        if (message.TryDuckCast<ITestCaseMessageV3>(out var testCaseMessageV3) &&
+            testCaseMessageV3.TestCaseUniqueID is { Length: > 0 } testCaseUniqueID)
+        {
+            return testCaseUniqueID;
+        }
+
+        return null;
+    }
+
+    private static XUnitFrameworkResult GetFrameworkResult(object message)
+        => message.GetType().Name switch
+        {
+            "TestPassed" => XUnitFrameworkResult.Passed,
+            "TestFailed" => XUnitFrameworkResult.Failed,
+            "TestSkipped" => XUnitFrameworkResult.Skipped,
+            "TestNotRun" => XUnitFrameworkResult.NotRun,
+            _ => XUnitFrameworkResult.Unknown,
+        };
 
     private bool InternalQueueMessage(object message)
     {
@@ -225,24 +259,16 @@ internal sealed class RetryMessageBus : IMessageBus
         ITestCase TestCase { get; }
     }
 
-    internal interface ITestMethodMetadataV3
+    internal interface ITestCaseMessageV3
     {
-        string TestMethodUniqueID { get; }
-    }
-
-    internal interface ITestCaseMessageV3 : ITestMethodMessageV3
-    {
-        string? TestCaseUniqueID { get; set; }
-    }
-
-    internal interface ITestMethodMessageV3
-    {
-        string? TestMethodUniqueID { get; set; }
+        string? TestCaseUniqueID { get; }
     }
 
     private sealed class RetryTestCaseMetadata(string uniqueID, int totalExecution, int executionNumber) : TestCaseMetadata(uniqueID, totalExecution, executionNumber)
     {
         private List<object>?[]? _listOfMessages;
+
+        public object SyncRoot { get; } = new();
 
         public List<object>?[]? ListOfMessages
         {
@@ -252,12 +278,6 @@ internal sealed class RetryMessageBus : IMessageBus
 
         public bool Disposed { get; set; }
 
-        /// <summary>
-        /// Gets the messages types that were bypassed to trigger MessageSink events.
-        /// This is used to avoid sending the same message multiple times.
-        /// For example, TestStarting, TestClassConstructionStarting, TestClassConstructionFinished, etc.
-        /// "TestCaseStarting" or "TestMethodStarting" are not bypassed, as they are used to create the test context.
-        /// </summary>
         public HashSet<string> BypassedMessageTypes { get; } = new();
 
         public void ResizeListOfMessages(int totalExecutions)

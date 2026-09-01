@@ -8,7 +8,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Ci.CiEnvironment;
 using Datadog.Trace.Configuration;
@@ -28,7 +27,6 @@ public abstract class TestingFrameworkImpactedTests : TestingFrameworkTest
 {
 #pragma warning disable SA1401 // FieldsMustBePrivate
     protected const string ModifiedLine = "// Modified by TestingFrameworkImpactedTests.cs";
-    protected const int ExpectedTestCount = 16;
     protected string baseSha = string.Empty;
     protected string repositoryRoot = string.Empty;
     protected string repo = string.Empty;
@@ -36,9 +34,31 @@ public abstract class TestingFrameworkImpactedTests : TestingFrameworkTest
     protected bool gitAvailable = false;
 #pragma warning restore SA1401 // FieldsMustBePrivate
 
+    private const int DefaultExpectedTestCount = 16;
+    private const string DefaultTestFileRelativePath = "tracer/test/test-applications/integrations/Samples.XUnitTests/TestSuite.cs";
+    private static readonly string[] DefaultModificationMarkers =
+    [
+        "_output.WriteLine(\"Test:SimplePassTest\");",
+        "public void TraitSkipFromAttributeTest()",
+    ];
+
+    private readonly int _expectedTestCount;
+    private readonly string[] _modificationMarkers;
+    private readonly string _testFileRelativePath;
+    private readonly bool _useDotnetExec;
+
     public TestingFrameworkImpactedTests(string sampleAppName, ITestOutputHelper output)
+        : this(sampleAppName, DefaultTestFileRelativePath, DefaultExpectedTestCount, useDotnetExec: false, DefaultModificationMarkers, output)
+    {
+    }
+
+    public TestingFrameworkImpactedTests(string sampleAppName, string testFileRelativePath, int expectedTestCount, bool useDotnetExec, string[] modificationMarkers, ITestOutputHelper output)
         : base(sampleAppName, output)
     {
+        _testFileRelativePath = testFileRelativePath;
+        _expectedTestCount = expectedTestCount;
+        _useDotnetExec = useDotnetExec;
+        _modificationMarkers = modificationMarkers;
         InitGit();
         SetCIEnvironmentValues();
         SetEnvironmentVariable(ConfigurationKeys.CIVisibility.Enabled, "1");
@@ -113,7 +133,7 @@ public abstract class TestingFrameworkImpactedTests : TestingFrameworkTest
                      "attributes": {
                        "base_sha": "{{commitValue}}",
                        "files": [
-                          "tracer/test/test-applications/integrations/Samples.XUnitTests/TestSuite.cs"
+                          "{{_testFileRelativePath}}"
                        ]
                      }
                    }
@@ -163,32 +183,113 @@ public abstract class TestingFrameworkImpactedTests : TestingFrameworkTest
             var tests = new List<MockCIVisibilityTest>();
             using var agent = GetAgent(tests, agentRequestProcessor);
 
-            using var processResult = await RunDotnetTestSampleAndWaitForExit(agent, packageVersion: packageVersion, expectedExitCode: 1);
-            var deadline = DateTime.UtcNow.AddMilliseconds(5000);
-            testFilter ??= _ => true; // t => t.Meta.ContainsKey("is_modified")
-
-            List<MockCIVisibilityTest> filteredTests = tests;
-            while (DateTime.UtcNow < deadline)
-            {
-                filteredTests = tests.Where(testFilter).ToList();
-                if (tests.Count() >= ExpectedTestCount)
-                {
-                    break;
-                }
-
-                await Task.Delay(500);
-            }
+            using var processResult = await RunDotnetTestSampleAndWaitForExit(agent, packageVersion: packageVersion, expectedExitCode: 1, useDotnetExec: _useDotnetExec);
+            testFilter ??= static _ => true;
+            var filteredTests = tests.Where(testFilter).ToList();
 
             // Sort and aggregate
             var results = filteredTests.Select(t => t.Resource).Distinct().OrderBy(t => t).ToList();
 
-            tests.Count().Should().BeGreaterOrEqualTo(ExpectedTestCount, "Expected test count not met");
+            tests.Count.Should().BeGreaterOrEqualTo(_expectedTestCount, "Expected test count not met");
             results.Count().Should().Be(expectedTests, "Expected filtered test count not met");
         }
         finally
         {
             RestoreFile();
         }
+    }
+
+    protected async Task SubmitTestsUsingGitBranch(string packageVersion, int expectedTests, Func<MockCIVisibilityTest, bool> testFilter)
+    {
+        Skip.IfNot(gitAvailable, "Git not available or not properly configured in current environment");
+
+        var testBranchName = $"test-impact-detection-{Guid.NewGuid():N}";
+        var currentBranchOutput = RunGitCommand("branch --show-current");
+        currentBranchOutput.ExitCode.Should().Be(0, "Failed to get current branch");
+        var originalBranch = currentBranchOutput.Output.Trim();
+        var originalHeadOutput = RunGitCommand("rev-parse --verify HEAD");
+        originalHeadOutput.ExitCode.Should().Be(0, "Failed to get current HEAD");
+        var originalHead = originalHeadOutput.Output.Trim();
+        var statusOutput = RunGitCommand("status --porcelain");
+        statusOutput.ExitCode.Should().Be(0, "Failed to get worktree status");
+        Skip.IfNot(string.IsNullOrWhiteSpace(statusOutput.Output), "Git branch impact detection requires a clean working tree");
+        var testBranchCreated = false;
+
+        try
+        {
+            var createBranchOutput = RunGitCommand($"checkout -b {testBranchName}");
+            testBranchCreated = createBranchOutput.ExitCode == 0;
+            createBranchOutput.ExitCode.Should().Be(0, $"Failed to create test branch: {createBranchOutput.Error}");
+
+            ModifyFile();
+            var addOutput = RunGitCommand($"add {GetTestFile()}");
+            addOutput.ExitCode.Should().Be(0, $"Failed to stage changes: {addOutput.Error}");
+
+            var commitOutput = RunGitCommand("commit -m \"Test modifications for impact detection test\"");
+            commitOutput.ExitCode.Should().Be(0, $"Failed to commit changes: {commitOutput.Error}");
+
+            SetEnvironmentVariable(ConfigurationKeys.CIVisibility.ImpactedTestsDetectionEnabled, "True");
+            SetEnvironmentVariable(ConfigurationKeys.CIVisibility.Enabled, "1");
+            SetEnvironmentVariable(ConfigurationKeys.CIVisibility.Logs, "1");
+            SetEnvironmentVariable(PlatformKeys.Ci.Azure.SystemPullRequestSourceBranch, testBranchName);
+            SetEnvironmentVariable(PlatformKeys.Ci.Azure.BuildSourceBranch, testBranchName);
+            SetEnvironmentVariable(PlatformKeys.Ci.Azure.BuildSourceBranchName, testBranchName);
+
+            await SubmitTestsWithGitBranch(packageVersion, expectedTests, testFilter);
+        }
+        finally
+        {
+            var cleanupFailures = new List<string>();
+            var restoreOutput = RunGitCommand($"restore --source {originalHead} --staged --worktree -- {GetTestFile()}");
+            if (restoreOutput.ExitCode != 0)
+            {
+                cleanupFailures.Add($"Failed to restore the impacted-test file: {restoreOutput.Error}");
+            }
+
+            ProcessHelpers.CommandOutput checkoutOutput;
+            if (!string.IsNullOrEmpty(originalBranch))
+            {
+                checkoutOutput = RunGitCommand($"checkout {originalBranch}");
+            }
+            else
+            {
+                checkoutOutput = RunGitCommand($"checkout --detach {originalHead}");
+            }
+
+            if (checkoutOutput.ExitCode != 0)
+            {
+                cleanupFailures.Add($"Failed to restore the original checkout: {checkoutOutput.Error}");
+            }
+
+            if (testBranchCreated)
+            {
+                var deleteBranchOutput = RunGitCommand($"branch -D {testBranchName}");
+                if (deleteBranchOutput.ExitCode != 0)
+                {
+                    cleanupFailures.Add($"Failed to delete temporary branch {testBranchName}: {deleteBranchOutput.Error}");
+                }
+            }
+
+            cleanupFailures.Should().BeEmpty("the branch-based impacted test must restore its Git state");
+        }
+    }
+
+    protected async Task SubmitTestsWithGitBranch(string packageVersion, int expectedTests, Func<MockCIVisibilityTest, bool> testFilter, Action<MockTracerAgent.EvpProxyPayload, List<MockCIVisibilityTest>> agentRequestProcessor = null)
+    {
+        SetEnvironmentVariable(ConfigurationKeys.CIVisibility.TestOptimizationRunId, Guid.NewGuid().ToString("n"));
+
+        var tests = new List<MockCIVisibilityTest>();
+        using var agent = GetAgent(tests, agentRequestProcessor);
+        using var processResult = await RunDotnetTestSampleAndWaitForExit(agent, packageVersion: packageVersion, expectedExitCode: 1, useDotnetExec: _useDotnetExec);
+        var filteredTests = tests.Where(testFilter).ToList();
+
+        var results = filteredTests.Select(test => test.Resource).Distinct().OrderBy(resource => resource).ToList();
+        tests.Count.Should().BeGreaterOrEqualTo(_expectedTestCount, "Expected test count not met");
+        results.Count.Should().Be(expectedTests, "Expected filtered test count not met");
+
+        var nonModifiedTests = tests.Where(test => !testFilter(test)).ToList();
+        filteredTests.Count.Should().Be(expectedTests, "Expected number of modified tests not met");
+        nonModifiedTests.Count.Should().Be(tests.Count - expectedTests, "Unexpected tests marked as modified");
     }
 
     protected override Dictionary<string, string> DefineCIEnvironmentValues(Dictionary<string, string> values)
@@ -220,6 +321,7 @@ public abstract class TestingFrameworkImpactedTests : TestingFrameworkTest
         SetEnvironmentVariable(PlatformKeys.Ci.GitHub.Repository, repo);
         SetEnvironmentVariable(PlatformKeys.Ci.GitHub.BaseRef, branch);
         SetEnvironmentVariable(PlatformKeys.Ci.GitHub.Workspace, repositoryRoot);
+        SetEnvironmentVariable(ConfigurationKeys.CIVisibility.Enabled, "1");
         if (setupPr)
         {
             SetEnvironmentVariable(PlatformKeys.Ci.GitHub.EventPath, GetEventJsonFile());
@@ -266,16 +368,24 @@ public abstract class TestingFrameworkImpactedTests : TestingFrameworkTest
 
     protected string GetTestFile()
     {
-        return Path.Combine(repositoryRoot, "tracer/test/test-applications/integrations/Samples.XUnitTests/TestSuite.cs");
+        return Path.Combine(repositoryRoot, _testFileRelativePath.Replace('/', Path.DirectorySeparatorChar));
     }
 
     protected void ModifyFile()
     {
         var path = GetTestFile();
         var lines = File.ReadAllLines(path).ToList();
-        lines.Insert(33, ModifiedLine);
-        lines.Insert(63, ModifiedLine);
-        lines.Insert(64, ModifiedLine);
+        foreach (var marker in _modificationMarkers)
+        {
+            var markerIndex = lines.FindIndex(line => line.IndexOf(marker, StringComparison.Ordinal) >= 0);
+            if (markerIndex < 0)
+            {
+                throw new InvalidOperationException($"Unable to find impacted-test modification marker '{marker}' in '{path}'.");
+            }
+
+            lines.Insert(markerIndex + 1, ModifiedLine);
+        }
+
         File.WriteAllLines(path, lines);
     }
 

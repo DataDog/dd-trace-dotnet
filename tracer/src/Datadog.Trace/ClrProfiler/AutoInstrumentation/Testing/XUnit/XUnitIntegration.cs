@@ -340,9 +340,9 @@ internal static class XUnitIntegration
         if (isAtrRetry && testCaseMetadata is { HasAnException: true, IsLastRetry: false })
         {
             var remainingBudget = GetRemainingAtrBudget();
-            // This pre-close check runs before the retry scheduler decrements budget.
-            // If budget is 1 now, the next decrement reaches 0, so no further retry will run.
-            isAtrBudgetExhausted = remainingBudget <= 1;
+            // This pre-close check runs before the retry scheduler consumes a budget slot.
+            // A value of 0 means no further retry can be scheduled.
+            isAtrBudgetExhausted = remainingBudget <= 0;
         }
 
         // Single-execution test: TotalExecutions == 1 means no retries were scheduled
@@ -426,18 +426,29 @@ internal static class XUnitIntegration
             return XUnitRetryExecutionDecision.Retry;
         }
 
-        var remainingTotalRetries = Interlocked.Decrement(ref totalRetries);
-        if (!hasFailures)
-        {
-            return XUnitRetryExecutionDecision.SuccessfulExecution;
-        }
-
         if (hasNotRun)
         {
             return XUnitRetryExecutionDecision.NotRun;
         }
 
-        return remainingTotalRetries < 1 ? XUnitRetryExecutionDecision.RetryBudgetExhausted : XUnitRetryExecutionDecision.Retry;
+        if (!hasFailures)
+        {
+            return XUnitRetryExecutionDecision.SuccessfulExecution;
+        }
+
+        while (true)
+        {
+            var remainingTotalRetries = Interlocked.CompareExchange(ref totalRetries, 0, 0);
+            if (remainingTotalRetries <= 0)
+            {
+                return XUnitRetryExecutionDecision.RetryBudgetExhausted;
+            }
+
+            if (Interlocked.CompareExchange(ref totalRetries, remainingTotalRetries - 1, remainingTotalRetries) == remainingTotalRetries)
+            {
+                return XUnitRetryExecutionDecision.Retry;
+            }
+        }
     }
 
     internal static bool ShouldWaitForExceptionInstrumentation(ITestOptimization testOptimization, TestCaseMetadata testCaseMetadata)
@@ -507,14 +518,14 @@ internal static class XUnitIntegration
     /// <summary>
     /// Unified read-only snapshot of remaining ATR budget for pre-close checks.
     /// Uses Math.Max to handle both v2 and v3 scenarios (they have separate counters).
-    /// Value meanings: -1 = uninitialized, 0 = exhausted, positive = nominally available.
-    /// This value is observed before retry scheduling decrements the budget, so values of 1 or 0 mean
-    /// the current failed execution is the last one before exhaustion.
+    /// Value meanings: -1 = uninitialized, 0 = exhausted, positive = available retry slots.
+    /// This value is observed before retry scheduling consumes a slot, so a value of 1 permits one
+    /// final retry and a value of 0 permits none.
     /// </summary>
     internal static int GetRemainingAtrBudget()
     {
         var v2Budget = XUnitTestRunnerRunAsyncIntegration.GetRemainingAtrBudget();
-        var v3Budget = V3.XUnitTestMethodRunnerBaseRunTestCaseV3Integration.GetRemainingAtrBudget();
-        return Math.Max(v2Budget, v3Budget);
+        var v3AndV4Budget = XUnitRetryCoordinator.GetRemainingAtrBudget();
+        return Math.Max(v2Budget, v3AndV4Budget);
     }
 }
