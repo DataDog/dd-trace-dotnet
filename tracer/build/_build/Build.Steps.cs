@@ -1442,6 +1442,7 @@ partial class Build
         .DependsOn(CompileManagedLoader)
         .Executes(() =>
         {
+            DotnetBuild(TracerDirectory.GlobFiles("test/Datadog.Trace.DuckTyping.Tests.Fixtures/Target/*.csproj"), noDependencies: false);
             DotnetBuild(TracerDirectory.GlobFiles("test/**/*.Tests.csproj"));
         });
 
