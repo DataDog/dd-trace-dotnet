@@ -244,13 +244,12 @@ Directory.Build.props                     @DataDog/apm-dotnet
 /tracer/test/Datadog.Trace.OpenTracing.Tests/ @DataDog/apm-sdk-capabilities-dotnet
 /tracer/test/Datadog.Trace.Security.IntegrationTests/ @DataDog/asm-dotnet
 /tracer/test/Datadog.Trace.Security.Unit.Tests/ @DataDog/asm-dotnet
-/tracer/test/Datadog.Trace.SourceGenerators.Tests/ @DataDog/apm-lang-platform-dotnet
-/tracer/test/Datadog.Trace.SourceGenerators.Tests/ConfigKeyAliasesSwitcherGeneratorTests.cs @DataDog/apm-sdk-capabilities-dotnet
-/tracer/test/Datadog.Trace.SourceGenerators.Tests/ConfigurationKeysGeneratorTests.cs @DataDog/apm-sdk-capabilities-dotnet
-/tracer/test/Datadog.Trace.SourceGenerators.Tests/EnumExtensionsGeneratorTests.cs @DataDog/apm-sdk-capabilities-dotnet
-/tracer/test/Datadog.Trace.SourceGenerators.Tests/TagsListGeneratorTests.cs @DataDog/apm-sdk-capabilities-dotnet
-/tracer/test/Datadog.Trace.SourceGenerators.Tests/TelemetryMetricGeneratorTests.cs @DataDog/apm-sdk-capabilities-dotnet
-/tracer/test/Datadog.Trace.SourceGenerators.Tests/YamlReaderTests.cs @DataDog/apm-sdk-capabilities-dotnet
+
+# Datadog.Trace.SourceGenerators.Tests
+/tracer/test/Datadog.Trace.SourceGenerators.Tests/
+/tracer/test/Datadog.Trace.SourceGenerators.Tests/TestInfrastructure/                           @DataDog/apm-lang-platform-dotnet
+/tracer/test/Datadog.Trace.SourceGenerators.Tests/Tracing/                                    @DataDog/apm-sdk-capabilities-dotnet
+/tracer/test/Datadog.Trace.SourceGenerators.Tests/Datadog.Trace.SourceGenerators.Tests.csproj  @DataDog/apm-lang-platform-dotnet
 /tracer/test/Datadog.Trace.TestHelpers.AutoInstrumentation/ @DataDog/apm-lang-platform-dotnet
 /tracer/test/Datadog.Trace.TestHelpers.SharedSource/ @DataDog/apm-lang-platform-dotnet
 
