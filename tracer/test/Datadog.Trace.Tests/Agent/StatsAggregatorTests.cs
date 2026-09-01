@@ -31,7 +31,7 @@ namespace Datadog.Trace.Tests.Agent
         [Fact]
         public async Task CallFlushAutomatically()
         {
-            const int bucketDurationSeconds = 60;
+            const int bucketDurationSeconds = 1;
             var bucketDuration = TimeSpan.FromSeconds(bucketDurationSeconds);
 
             using var mutex = new ManualResetEventSlim();
@@ -162,7 +162,7 @@ namespace Datadog.Trace.Tests.Agent
         [Fact]
         public async Task Otlp_FlushesUseContiguousTimestamps()
         {
-            const int bucketDurationSeconds = 1;
+            const int bucketDurationSeconds = 60;
             var windows = new List<(long Start, long Duration)>();
             var api = new Mock<IApi>();
             api.Setup(a => a.SendStatsAsync(It.IsAny<StatsBuffer>(), It.IsAny<long>(), It.IsAny<int>()))
