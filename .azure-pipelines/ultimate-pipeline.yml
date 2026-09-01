@@ -2805,7 +2805,7 @@ stages:
       jobs: [Win]
 
   - job: Win
-    timeoutInMinutes: 60 #default value
+    timeoutInMinutes: 90
     strategy:
       matrix:
         x86:
@@ -2873,7 +2873,7 @@ stages:
       jobs: [Test]
 
   - job: Test
-    timeoutInMinutes: 60 #default value
+    timeoutInMinutes: 90
     strategy:
       matrix:
         x64:
@@ -3003,7 +3003,7 @@ stages:
       jobs: [Test]
 
   - job: Test
-    timeoutInMinutes: 60 #default value
+    timeoutInMinutes: 90
     strategy:
       matrix:
         arm64:
