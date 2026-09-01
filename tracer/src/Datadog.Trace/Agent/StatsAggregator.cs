@@ -664,10 +664,16 @@ namespace Datadog.Trace.Agent
                 await Task.WhenAny(_processExit.Task, Task.Delay(_bucketDuration)).ConfigureAwait(false);
 
                 var buffer = CurrentBuffer;
+                var nextBufferIndex = (_currentBuffer + 1) % BufferCount;
+                if (_isOtlp)
+                {
+                    // OTLP delta windows must start where the previous window ended.
+                    _buffers[nextBufferIndex].Reset(buffer.Start + _bucketDuration.ToNanoseconds());
+                }
 
                 lock (_buffers)
                 {
-                    _currentBuffer = (_currentBuffer + 1) % BufferCount;
+                    _currentBuffer = nextBufferIndex;
                 }
 
                 TelemetryFactory.Metrics.RecordGaugeStatsBuckets(buffer.Buckets.Count);
@@ -685,9 +691,10 @@ namespace Datadog.Trace.Agent
                     await _api.SendStatsAsync(buffer, _bucketDuration.ToNanoseconds(), Volatile.Read(ref _tracerObfuscationVersion)).ConfigureAwait(false);
                 }
 
-                // Always reset the buffer so Start is re-aligned and stale keys are pruned,
-                // even when no hits were recorded this interval.
-                buffer.Reset();
+                if (!_isOtlp)
+                {
+                    buffer.Reset();
+                }
             }
             while (!_processExit.Task.IsCompleted);
         }

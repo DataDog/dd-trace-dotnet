@@ -160,6 +160,29 @@ namespace Datadog.Trace.Tests.Agent
         }
 
         [Fact]
+        public async Task OtlpFlushesUseContiguousTimestamps()
+        {
+            const int bucketDurationSeconds = 1;
+            var bucketDuration = TimeSpan.FromSeconds(bucketDurationSeconds);
+            var starts = new List<long>();
+            var api = new Mock<IApi>();
+            api.Setup(a => a.SendStatsAsync(It.IsAny<StatsBuffer>(), bucketDuration.ToNanoseconds(), It.IsAny<int>()))
+               .Callback<StatsBuffer, long, int>((buffer, _, _) => starts.Add(buffer.Start))
+               .Returns(Task.FromResult(true));
+
+            var aggregator = new StatsAggregator(api.Object, GetSettings(bucketDurationSeconds), NullDiscoveryService.Instance, Mock.Of<IStatsdManager>(), isOtlp: true);
+            await aggregator.DisposeAsync();
+
+            aggregator.Add(CreateTopLevelSpan(DateTimeOffset.UtcNow));
+            await aggregator.Flush();
+            aggregator.Add(CreateTopLevelSpan(DateTimeOffset.UtcNow));
+            await aggregator.Flush();
+
+            starts.Should().HaveCount(2);
+            starts[1].Should().Be(starts[0] + bucketDuration.ToNanoseconds());
+        }
+
+        [Fact]
         public async Task CreatesDistinctBuckets_TS003()
         {
             const int millisecondsToNanoseconds = 1_000_000;
