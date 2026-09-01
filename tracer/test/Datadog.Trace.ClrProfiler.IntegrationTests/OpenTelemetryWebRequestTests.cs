@@ -12,9 +12,9 @@ using Datadog.Trace.ClrProfiler.IntegrationTests.Helpers;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.TestHelpers;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
-using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 using FluentAssertions;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using VerifyXunit;
 using Xunit;
 using Xunit.Abstractions;
@@ -40,21 +40,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             SetServiceVersion("1.0.0");
         }
 
-        public async Task InitializeAsync()
-        {
-            if (await _otlpSession.CheckAvailabilityAsync(Output))
-            {
-                await _otlpSession.StartSessionAsync();
-            }
-        }
+        public async Task InitializeAsync() => await _otlpSession.CheckAvailabilityAsync(Output);
 
-        public async Task DisposeAsync()
-        {
-            if (_otlpSession.IsAvailable)
-            {
-                await _otlpSession.DisposeAsync();
-            }
-        }
+        public async Task DisposeAsync() => await _otlpSession.DisposeAsync();
 
         public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.IsWebRequest(metadataSchemaVersion);
 

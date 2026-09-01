@@ -9,7 +9,7 @@ using System;
 using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
-using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
+using Newtonsoft.Json.Linq;
 using Xunit.Abstractions;
 
 namespace Datadog.Trace.TestHelpers;
@@ -36,7 +36,7 @@ namespace Datadog.Trace.TestHelpers;
 /// needed to serialize them.
 /// </para>
 /// </summary>
-internal sealed class OtlpTestAgentSession : IAsyncDisposable
+public sealed class OtlpTestAgentSession : IAsyncDisposable
 {
     /// <summary>
     /// The port the ddapm test-agent receives OTLP/HTTP on, and also serves its session API on.

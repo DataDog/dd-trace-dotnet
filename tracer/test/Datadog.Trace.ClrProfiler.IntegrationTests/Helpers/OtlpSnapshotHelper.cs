@@ -10,8 +10,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using Datadog.Trace.TestHelpers;
-using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 using FluentAssertions;
+using Newtonsoft.Json.Linq;
 using VerifyTests;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.Helpers

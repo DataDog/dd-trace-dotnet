@@ -387,7 +387,7 @@ namespace Datadog.Trace.TestHelpers
             }
         }
 
-        internal void ConfigureOtlpExport(OtlpTestAgentSession otlpSession, string protocol = "http/protobuf")
+        public void ConfigureOtlpExport(OtlpTestAgentSession otlpSession, string protocol = "http/protobuf")
         {
             SetEnvironmentVariable("OTEL_TRACES_EXPORTER", "otlp");
             SetEnvironmentVariable("OTEL_EXPORTER_OTLP_PROTOCOL", protocol);

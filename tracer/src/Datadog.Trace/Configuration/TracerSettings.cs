@@ -428,11 +428,12 @@ namespace Datadog.Trace.Configuration
             if (OtelSemanticsEnabled && !RouteTemplateResourceNamesEnabled)
             {
                 // OpenTelemetry semantics require that the server span has a low-cardinality name based only
-                // on HTTP request method and the route/template, so enable the route template resource names feature rather than expanding the route.
+                // on HTTP request method and the route/template, so ensure resource names are based on the route template
                 RouteTemplateResourceNamesEnabled = true;
                 telemetry.Record(ConfigurationKeys.FeatureFlags.RouteTemplateResourceNamesEnabled, true, ConfigurationOrigins.Calculated);
             }
 
+#if NET6_0_OR_GREATER
             if (OtelSemanticsEnabled && !SingleSpanAspNetCoreEnabled)
             {
                 // OpenTelemetry semantics require emitting only a single web server span per request,
@@ -441,8 +442,7 @@ namespace Datadog.Trace.Configuration
                 SingleSpanAspNetCoreEnabled = true;
                 telemetry.Record(ConfigurationKeys.FeatureFlags.SingleSpanAspNetCoreEnabled, true, ConfigurationOrigins.Calculated);
             }
-
-#if !NET6_0_OR_GREATER
+#else
             // single span aspnetcore is only supported in .NET 6+, so override for telemetry purposes
             if (SingleSpanAspNetCoreEnabled)
             {
@@ -456,6 +456,13 @@ namespace Datadog.Trace.Configuration
             ExpandRouteTemplatesEnabled = config
                                          .WithKeys(ConfigurationKeys.ExpandRouteTemplatesEnabled)
                                          .AsBool(defaultValue: !(RouteTemplateResourceNamesEnabled || SingleSpanAspNetCoreEnabled)); // disabled by default if route template resource names or single-span enabled
+            if (OtelSemanticsEnabled && ExpandRouteTemplatesEnabled)
+            {
+                // OpenTelemetry semantics require that the server span has a low-cardinality name based only
+                // on HTTP request method and the route/template, so force-disable the expansion of route template variables
+                ExpandRouteTemplatesEnabled = false;
+                telemetry.Record(ConfigurationKeys.ExpandRouteTemplatesEnabled, false, ConfigurationOrigins.Calculated);
+            }
 
             AzureServiceBusBatchLinksEnabled = config
                                              .WithKeys(ConfigurationKeys.AzureServiceBusBatchLinksEnabled)

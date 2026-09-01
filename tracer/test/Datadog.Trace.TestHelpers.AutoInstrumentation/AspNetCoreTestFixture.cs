@@ -59,7 +59,7 @@ namespace Datadog.Trace.TestHelpers
         /// lifetime -- a token generated per test case would stop matching what the running process
         /// actually sends after the first one.
         /// </summary>
-        internal OtlpTestAgentSession OtlpSession { get; } = new();
+        public OtlpTestAgentSession OtlpSession { get; } = new();
 
         public void SetOutput(ITestOutputHelper output)
         {
@@ -271,7 +271,7 @@ namespace Datadog.Trace.TestHelpers
         /// so the remaining test cases fail with the same exception instead of each retrying a setup
         /// that has already been shown not to work.</param>
         /// <returns>The single initialization task, shared by every test case in the class.</returns>
-        internal Task EnsureInitializedAsync(Func<Task> initialize)
+        public Task EnsureInitializedAsync(Func<Task> initialize)
         {
             lock (_initializationLock)
             {
