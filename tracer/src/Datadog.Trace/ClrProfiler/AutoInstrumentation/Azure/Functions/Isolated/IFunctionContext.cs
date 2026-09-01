@@ -18,6 +18,11 @@ internal interface IFunctionContext
     FunctionDefinitionStruct FunctionDefinition { get; }
 
     IEnumerable<KeyValuePair<Type, object?>>? Features { get; }
+
+    /// <summary>
+    /// Gets the distributed tracing context for the invocation (W3C traceparent / tracestate).
+    /// </summary>
+    object? TraceContext { get; }
 }
 
 #endif

@@ -9,6 +9,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
 using System.Linq;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Shared;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Proxy;
@@ -18,6 +19,7 @@ using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Propagators;
+using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
 using Datadog.Trace.Util.Json;
@@ -248,6 +250,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                         _ when type.StartsWith("eventHub", StringComparison.OrdinalIgnoreCase) => "EventHub",        // Microsoft.Azure.Functions.Worker.Extensions.EventHubs
                         _ when type.StartsWith("cosmosDb", StringComparison.OrdinalIgnoreCase) => "Cosmos",          // Microsoft.Azure.Functions.Worker.Extensions.CosmosDB
                         _ when type.StartsWith("eventGrid", StringComparison.OrdinalIgnoreCase) => "EventGrid",      // Microsoft.Azure.Functions.Worker.Extensions.EventGrid.CosmosDB
+                        _ when type.Equals("orchestrationTrigger", StringComparison.OrdinalIgnoreCase) => "DurableOrchestration", // Microsoft.Azure.Functions.Worker.Extensions.DurableTask
+                        _ when type.Equals("activityTrigger", StringComparison.OrdinalIgnoreCase) => "DurableActivity",
+                        _ when type.Equals("entityTrigger", StringComparison.OrdinalIgnoreCase) => "DurableEntity",
                         _ => "Automatic",                                                                            // Automatic is the catch all for any triggers we don't explicitly handle
                     };
 
@@ -264,12 +269,24 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                         case "EventHub" when tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId.AzureEventHubs):
                             extractedContext = ExtractPropagatedContextFromMessaging(functionContext, "Properties", "PropertiesArray").MergeBaggageInto(Baggage.Current);
                             break;
+
+                        case "DurableOrchestration":
+                        case "DurableActivity":
+                        case "DurableEntity":
+                            // Durable Functions don't carry the trace context in the trigger binding. Instead, the
+                            // Functions host propagates a W3C traceparent via FunctionContext.TraceContext. On the
+                            // Durable Task Scheduler backend this traceparent is consistent for the whole
+                            // orchestration, so using it as the parent keeps orchestration/activity/entity
+                            // invocations on the originating trace (the storage backend does not propagate it reliably).
+                            extractedContext = ExtractPropagatedContextFromWorkerTraceContext(functionContext).MergeBaggageInto(Baggage.Current);
+                            break;
                     }
 
                     break;
                 }
 
                 var functionName = functionContext.FunctionDefinition.Name;
+
                 if (tracer.InternalActiveScope == null)
                 {
                     // This is the root scope
@@ -457,6 +474,82 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                 ctx.SpanContext != null &&
                 ctx.SpanContext.TraceId128 == first!.TraceId128 &&
                 ctx.SpanContext.SpanId == first.SpanId);
+        }
+
+        /// <summary>
+        /// Extracts the W3C trace context (traceparent/tracestate) that the Functions host propagates via
+        /// <see cref="IFunctionContext.TraceContext"/>. Durable Functions do not carry the trace context in the
+        /// trigger binding, so this is the only place the parent context is available. On the Durable Task Scheduler
+        /// backend the traceparent is consistent for the whole orchestration, so using it as the parent keeps the
+        /// orchestration, activity, and entity invocations on the originating trace.
+        /// </summary>
+        private static PropagationContext ExtractPropagatedContextFromWorkerTraceContext<T>(T functionContext)
+            where T : IFunctionContext
+        {
+            try
+            {
+                if (functionContext.TraceContext is not { } rawTraceContext
+                 || !rawTraceContext.TryDuckCast<IWorkerTraceContext>(out var traceContext)
+                 || StringUtil.IsNullOrEmpty(traceContext.TraceParent))
+                {
+                    return default;
+                }
+
+                // Azure Functions' Application Insights ActivityListener returns AllData without copying a
+                // recorded parent's sampling decision to AllDataAndRecorded:
+                // https://github.com/Azure/azure-functions-dotnet-worker/blob/c04e252f18c3d028f7c5653146d45024743d1ff4/src/DotNetWorker.ApplicationInsights/FunctionsTelemetryModule.cs#L62-L63
+                // This can clear the W3C sampled flag while retaining Datadog's positive decision in tracestate.
+                // Reconcile this known Durable-only inconsistency before extraction.
+                var reconciledContext = (
+                    TraceParent: ReconcileDurableTraceParentSampling(traceContext.TraceParent!, traceContext.TraceState),
+                    TraceState: traceContext.TraceState);
+
+                return Tracer.Instance.TracerManager.SpanContextPropagator.Extract(
+                    reconciledContext,
+                    static (ctx, name) =>
+                    {
+                        if (name.Equals("traceparent", StringComparison.OrdinalIgnoreCase))
+                        {
+                            return new[] { ctx.TraceParent };
+                        }
+
+                        if (name.Equals("tracestate", StringComparison.OrdinalIgnoreCase))
+                        {
+                            return new[] { ctx.TraceState };
+                        }
+
+                        return Enumerable.Empty<string?>();
+                    });
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error extracting propagated context from worker TraceContext");
+                return default;
+            }
+        }
+
+        [TestingAndPrivateOnly]
+        internal static string ReconcileDurableTraceParentSampling(string traceParent, string? traceState)
+        {
+            if (W3CTraceContextPropagator.ParseTraceState(traceState).SamplingPriority is not > 0)
+            {
+                return traceParent;
+            }
+
+            var flagsStart = traceParent.LastIndexOf('-') + 1;
+            if (flagsStart <= 0
+             || traceParent.Length - flagsStart != 2
+             || !HexString.TryParseByte(traceParent.AsSpan(flagsStart, 2), out var flags)
+             || (flags & 1) != 0)
+            {
+                return traceParent;
+            }
+
+            var reconciledTraceParent = traceParent.ToCharArray();
+            var reconciledFlags = (flags | 1).ToString("x2", CultureInfo.InvariantCulture);
+            reconciledTraceParent[flagsStart] = reconciledFlags[0];
+            reconciledTraceParent[flagsStart + 1] = reconciledFlags[1];
+            return new string(reconciledTraceParent);
         }
 
         private static TFeature? GetFeatureFromContext<T, TFeature>(T context, string featureTypeName)
