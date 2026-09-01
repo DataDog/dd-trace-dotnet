@@ -868,7 +868,7 @@ namespace Datadog.Trace.Tests.Propagators
             }
             else
             {
-                tracestate.Should().Contain($"ot={inboundOtelTraceState}");
+                tracestate.Split(',').Should().Contain($"ot={inboundOtelTraceState}");
             }
         }
 

@@ -51,11 +51,10 @@ namespace Datadog.Trace.Util
         internal static ulong ComputeOtelTraceStateRandomValue(ulong traceId) =>
             (~ComputeKnuthHash(traceId)) >> 8;
 
-        internal static ulong ComputeOtelTraceStateThreshold(float samplingRate)
+        internal static ulong ComputeOtelTraceStateThreshold(double samplingRate)
         {
-            // Use decimal to avoid float precision affecting the threshold's low bits.
             var threshold = (ulong)Math.Round(
-                (1.0 - (double)(decimal)samplingRate) * OtelTraceStateValueRange,
+                (1.0 - samplingRate) * OtelTraceStateValueRange,
                 MidpointRounding.AwayFromZero);
             return Math.Min(threshold, OtelTraceStateMaxValue);
         }

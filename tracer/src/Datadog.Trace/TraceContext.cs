@@ -105,7 +105,7 @@ namespace Datadog.Trace
 
         public string? SamplingMechanism { get; set; }
 
-        public float? AppliedSamplingRate { get; set; }
+        public double? AppliedSamplingRate { get; set; }
 
         public float? RateLimiterRate { get; set; }
 
@@ -366,7 +366,7 @@ namespace Datadog.Trace
         public void SetSamplingPriority(
             int? priority,
             string? mechanism = null,
-            float? rate = null,
+            double? rate = null,
             float? limiterRate = null,
             bool notifyDistributedTracer = true,
             bool? sample = null)

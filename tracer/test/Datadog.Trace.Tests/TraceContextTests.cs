@@ -25,7 +25,7 @@ namespace Datadog.Trace.Tests
         private const ulong OtelTraceStateExampleTraceIdLower = 0xfff972474538efff;
         private const ulong OtelTraceStateImprecisionClampTraceIdLower = 0x03a93ee8b1999f00;
         private const ulong OtelTraceStateMinimumTraceIdLower = 1;
-        private const float OtelTraceStateExampleSamplingRate = 0.1f;
+        private const double OtelTraceStateExampleSamplingRate = 0.1;
         private const double OtelTraceStateImprecisionClampSamplingRate = 0.1;
         private const float OtelTraceStateRateLimiterRate = 0.05f;
         private const float NeverSampleRate = 0f;
@@ -35,7 +35,6 @@ namespace Datadog.Trace.Tests
         private const string OtelTraceStateExampleRandomValue = "ef284ace7a91e1";
         private const string OtelTraceStateExampleThreshold = "e6666666666668";
         private const string OtelTraceStateMaximumThreshold = "ffffffffffffff";
-        private const string OtelTraceStateMinimumRandomValue = "00000000000000";
         private const string OtelTraceStateMinimumThreshold = "0";
         private const string OtelTraceStateUnrelatedValue = "foo:bar";
         private const string OtelTraceStateExample = "rv:" + OtelTraceStateExampleRandomValue + ";th:" + OtelTraceStateExampleThreshold;
@@ -285,6 +284,8 @@ namespace Datadog.Trace.Tests
         [Fact]
         public void SetSamplingPriority_ImprecisionClamp_ForcesAgreementWithDdDecision()
         {
+            // The Datadog decision and the 56-bit OTel representation can land on
+            // opposite sides of a sampling boundary after rate conversion.
             var sample = SamplingHelpers.SampleByRate(OtelTraceStateImprecisionClampTraceIdLower, OtelTraceStateImprecisionClampSamplingRate);
             var traceContext = TraceContextTestHelpers.CreateTraceContextWithRootSpan(OtelTraceStateImprecisionClampTraceIdLower);
 
@@ -365,17 +366,21 @@ namespace Datadog.Trace.Tests
         }
 
         [Theory]
+        // `th:ffffffffffffff` encodes a zero sampling rate, so the trace must drop.
         [InlineData(NeverSampleRate, OtelTraceStateExampleRandomValue, OtelTraceStateMaximumThreshold)]
-        [InlineData(AlwaysSampleRate, OtelTraceStateMinimumRandomValue, OtelTraceStateMinimumThreshold)]
-        public void SetSamplingPriority_BoundaryDrop_ProducesValidOtelTraceState(float rate, string expectedRandomValue, string expectedThreshold)
+        // `th:0` encodes a 100% sampling rate, so the trace must keep; `rv:0` is
+        // valid, but also represents a keep decision at this threshold.
+        [InlineData(AlwaysSampleRate, OtelTraceStateExampleRandomValue, OtelTraceStateMinimumThreshold)]
+        public void SetSamplingPriority_BoundaryRate_ProducesValidOtelTraceState(double rate, string expectedRandomValue, string expectedThreshold)
         {
             var traceContext = TraceContextTestHelpers.CreateTraceContextWithRootSpan(traceIdLower: OtelTraceStateExampleTraceIdLower);
+            var sample = SamplingHelpers.SampleByRate(OtelTraceStateExampleTraceIdLower, rate);
 
             traceContext.SetSamplingPriority(
-                priority: SamplingPriorityValues.UserReject,
+                priority: sample ? SamplingPriorityValues.UserKeep : SamplingPriorityValues.UserReject,
                 mechanism: SamplingMechanism.LocalTraceSamplingRule,
                 rate: rate,
-                sample: false);
+                sample: sample);
 
             traceContext.OtelTraceState.Should().Be($"rv:{expectedRandomValue};th:{expectedThreshold}");
         }

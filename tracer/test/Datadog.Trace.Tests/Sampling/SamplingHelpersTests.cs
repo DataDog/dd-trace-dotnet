@@ -52,11 +52,11 @@ public class SamplingHelpersTests
     }
 
     [Theory]
-    [InlineData(0f, 0xffffffffffffffUL)]
-    [InlineData(0.1f, 0xe6666666666668UL)]
-    [InlineData(1f, 0UL)]
+    [InlineData(0d, 0xffffffffffffffUL)]
+    [InlineData(0.1d, 0xe6666666666668UL)]
+    [InlineData(1d, 0UL)]
     public void ComputeOtelTraceStateThreshold_ReturnsClampedThreshold(
-        float samplingRate,
+        double samplingRate,
         ulong expected)
     {
         SamplingHelpers.ComputeOtelTraceStateThreshold(samplingRate).Should().Be(expected);
