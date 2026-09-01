@@ -4,7 +4,7 @@ AWS Lambda instrumentation is a somewhat complex topic. The AWS lambda tests in 
 
 ## The AWS Lambda integration test setup
 
-There are lots of moving parts in the Aws Lambda integration tests, which are configured in the [docker-compose.serverless.yml](../../docker-compose.serverless.yml) file, and [in `AwsLambdaTests`](../../tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/AWS/AwsLambdaTests.cs) :
+There are lots of moving parts in the Aws Lambda integration tests, which are configured in the [docker-compose.serverless.yml](../../docker-compose.serverless.yml) file, and [in `AwsLambdaTests`](../../tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/Serverless/AWS/AwsLambdaTests.cs) :
 
 - **Integration Test**. This is the running xunit test project. The test project starts:
   - The `MockTracerAgent`, where is where spans are sent, simulating the agent running in the Lambda extension.
