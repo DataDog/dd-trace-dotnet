@@ -25,12 +25,12 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Remove="DuckTyping\DuckTypeMethodBenchmark.cs" />
-    <Compile Remove="DuckTyping\DuckTypeMethodCallComparisonBenchmark.cs" />
-    <Compile Remove="DuckTyping\DuckTypeStructCopyValueTypePropertyBenchmark.cs" />
-    <Compile Remove="DuckTyping\DuckTypeValueTypeFieldBenchmark.cs" />
-    <Compile Remove="DuckTyping\DuckTypeValueTypePropertyBenchmark.cs" />
-    <Compile Remove="DuckTyping\ObscureObject.cs" />
+    <Compile Remove="TestInfrastructure\DuckTyping\DuckTypeMethodBenchmark.cs" />
+    <Compile Remove="TestInfrastructure\DuckTyping\DuckTypeMethodCallComparisonBenchmark.cs" />
+    <Compile Remove="TestInfrastructure\DuckTyping\DuckTypeStructCopyValueTypePropertyBenchmark.cs" />
+    <Compile Remove="TestInfrastructure\DuckTyping\DuckTypeValueTypeFieldBenchmark.cs" />
+    <Compile Remove="TestInfrastructure\DuckTyping\DuckTypeValueTypePropertyBenchmark.cs" />
+    <Compile Remove="TestInfrastructure\DuckTyping\ObscureObject.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="..\..\..\src\Datadog.Trace\AppSec\Waf\ConfigFiles\rule-set.json">
@@ -80,12 +80,12 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="DuckTyping\DuckTypeMethodBenchmark.cs" />
-    <None Include="DuckTyping\DuckTypeMethodCallComparisonBenchmark.cs" />
-    <None Include="DuckTyping\DuckTypeStructCopyValueTypePropertyBenchmark.cs" />
-    <None Include="DuckTyping\DuckTypeValueTypeFieldBenchmark.cs" />
-    <None Include="DuckTyping\DuckTypeValueTypePropertyBenchmark.cs" />
-    <None Include="DuckTyping\ObscureObject.cs" />
+    <None Include="TestInfrastructure\DuckTyping\DuckTypeMethodBenchmark.cs" />
+    <None Include="TestInfrastructure\DuckTyping\DuckTypeMethodCallComparisonBenchmark.cs" />
+    <None Include="TestInfrastructure\DuckTyping\DuckTypeStructCopyValueTypePropertyBenchmark.cs" />
+    <None Include="TestInfrastructure\DuckTyping\DuckTypeValueTypeFieldBenchmark.cs" />
+    <None Include="TestInfrastructure\DuckTyping\DuckTypeValueTypePropertyBenchmark.cs" />
+    <None Include="TestInfrastructure\DuckTyping\ObscureObject.cs" />
   </ItemGroup>
 
 </Project>
