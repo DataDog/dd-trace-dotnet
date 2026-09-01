@@ -669,7 +669,7 @@ namespace Datadog.Trace.Agent
                 var nextBufferIndex = (_currentBuffer + 1) % BufferCount;
                 if (_isOtlp)
                 {
-                    _buffers[nextBufferIndex].Reset(minimumStart: buffer.Start + bucketDurationNs);
+                    _buffers[nextBufferIndex].SetMinStartTime(buffer.Start + bucketDurationNs);
                 }
 
                 lock (_buffers)
@@ -692,9 +692,10 @@ namespace Datadog.Trace.Agent
                     await _api.SendStatsAsync(buffer, bucketDurationNs, Volatile.Read(ref _tracerObfuscationVersion)).ConfigureAwait(false);
                 }
 
+                buffer.Reset();
                 if (!_isOtlp)
                 {
-                    buffer.Reset();
+                    buffer.SetMinStartTime();
                 }
             }
             while (!_processExit.Task.IsCompleted);
