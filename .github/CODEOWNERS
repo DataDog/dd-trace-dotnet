@@ -161,25 +161,16 @@ tracer/                                   @DataDog/apm-sdk-capabilities-dotnet @
 /tracer/src/Datadog.Trace/Iast/           @DataDog/asm-dotnet
 /tracer/test/test-applications/integrations/Samples.InstrumentedTests/ @DataDog/asm-dotnet
 /tracer/src/Datadog.Trace/Tags.AppSec.cs @DataDog/asm-dotnet
-/tracer/test/benchmarks/Benchmarks.Trace/       @DataDog/apm-lang-platform-dotnet
-/tracer/test/benchmarks/Benchmarks.Trace/ActivityBenchmark.cs @DataDog/apm-sdk-capabilities-dotnet
-/tracer/test/benchmarks/Benchmarks.Trace/AgentWriterBenchmark.cs @DataDog/apm-sdk-capabilities-dotnet
-/tracer/test/benchmarks/Benchmarks.Trace/SpanBenchmark.cs @DataDog/apm-sdk-capabilities-dotnet
-/tracer/test/benchmarks/Benchmarks.Trace/TraceAnnotationsBenchmark.cs @DataDog/apm-sdk-capabilities-dotnet
-/tracer/test/benchmarks/Benchmarks.Trace/TraceProcessorBenchmark.cs @DataDog/apm-sdk-capabilities-dotnet
-/tracer/test/benchmarks/Benchmarks.Trace/AspNetCoreBenchmark.cs @DataDog/apm-idm-dotnet
-/tracer/test/benchmarks/Benchmarks.Trace/DbCommandBenchmark.cs @DataDog/apm-idm-dotnet
-/tracer/test/benchmarks/Benchmarks.Trace/ElasticsearchBenchmark.cs @DataDog/apm-idm-dotnet
-/tracer/test/benchmarks/Benchmarks.Trace/GraphQLBenchmark.cs @DataDog/apm-idm-dotnet
-/tracer/test/benchmarks/Benchmarks.Trace/HttpClientBenchmark.cs @DataDog/apm-idm-dotnet
-/tracer/test/benchmarks/Benchmarks.Trace/ILoggerBenchmark.cs @DataDog/apm-idm-dotnet
-/tracer/test/benchmarks/Benchmarks.Trace/Log4netBenchmark.cs @DataDog/apm-idm-dotnet
-/tracer/test/benchmarks/Benchmarks.Trace/NLogBenchmark.cs @DataDog/apm-idm-dotnet
-/tracer/test/benchmarks/Benchmarks.Trace/RedisBenchmark.cs @DataDog/apm-idm-dotnet
-/tracer/test/benchmarks/Benchmarks.Trace/SerilogBenchmark.cs @DataDog/apm-idm-dotnet
-/tracer/test/benchmarks/Benchmarks.Trace/CIVisibilityProtocolWriterBenchmark.cs @DataDog/ci-app-libraries-dotnet
-/tracer/test/benchmarks/Benchmarks.Trace/Asm/   @DataDog/asm-dotnet
-/tracer/test/benchmarks/Benchmarks.Trace/Iast/   @DataDog/asm-dotnet
+/tracer/test/benchmarks/Benchmarks.Trace/
+/tracer/test/benchmarks/Benchmarks.Trace/AutoInstrumentation/ @DataDog/apm-idm-dotnet
+/tracer/test/benchmarks/Benchmarks.Trace/CI/                  @DataDog/ci-app-libraries-dotnet
+/tracer/test/benchmarks/Benchmarks.Trace/Tracing/             @DataDog/apm-sdk-capabilities-dotnet
+/tracer/test/benchmarks/Benchmarks.Trace/TestInfrastructure/  @DataDog/apm-lang-platform-dotnet
+/tracer/test/benchmarks/Benchmarks.Trace/Asm/                 @DataDog/asm-dotnet
+/tracer/test/benchmarks/Benchmarks.Trace/Iast/                @DataDog/asm-dotnet
+/tracer/test/benchmarks/Benchmarks.Trace/microbenchmarks/     @DataDog/apm-lang-platform-dotnet
+/tracer/test/benchmarks/Benchmarks.Trace/Benchmarks.Trace.csproj @DataDog/apm-lang-platform-dotnet
+/tracer/test/benchmarks/Benchmarks.Trace/README_GUIDELINES.md   @DataDog/apm-lang-platform-dotnet
 /tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/CryptographyAlgorithm/  @DataDog/asm-dotnet
 /tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/HashAlgorithm/  @DataDog/asm-dotnet
 /tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Process/  @DataDog/asm-dotnet @DataDog/tracing-dotnet
