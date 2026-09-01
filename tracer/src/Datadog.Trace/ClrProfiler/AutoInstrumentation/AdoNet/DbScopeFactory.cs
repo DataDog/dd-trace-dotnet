@@ -15,6 +15,7 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Schema;
 using Datadog.Trace.DatabaseMonitoring;
 using Datadog.Trace.Logging;
+using Datadog.Trace.OpenTelemetry;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
 
@@ -37,14 +38,19 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
             Scope? scope = null;
             SqlTags tags;
             var commandText = command.CommandText ?? string.Empty;
+            var otelSemanticsEnabled = tracer.Settings.OtelSemanticsEnabled;
+
+            // The value reported in "db.type"/"db.system.name", which is also what identifies an
+            // already-instrumented parent span.
+            var dbTypeTagValue = otelSemanticsEnabled ? DbSemanticConventions.GetDbSystemName(dbType) : dbType;
 
             try
             {
                 var parent = tracer.InternalActiveScope?.Span;
 
                 if (parent is { Type: SpanTypes.Sql } &&
-                    HasDbType(parent, dbType) &&
-                    (parent.ResourceName == commandText || commandText.StartsWith(DatabaseMonitoringPropagator.DbmPrefix) || commandText == DatabaseMonitoringPropagator.SetContextCommand))
+                    HasDbType(parent, dbTypeTagValue) &&
+                    (IsSameCommand(parent, commandText, otelSemanticsEnabled) || commandText.StartsWith(DatabaseMonitoringPropagator.DbmPrefix) || commandText == DatabaseMonitoringPropagator.SetContextCommand))
                 {
                     // we are already instrumenting this,
                     // don't instrument nested methods that belong to the same stacktrace
@@ -56,18 +62,41 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                 VulnerabilitiesModule.OnSqlQuery(commandText, integrationId);
 
                 tags = perTraceSettings.Schema.Database.CreateSqlTags();
-                tags.DbType = dbType;
+                tags.DbType = dbTypeTagValue;
                 tags.InstrumentationName = IntegrationRegistry.GetName(integrationId);
-                tags.DbName = tagsFromConnectionString.DbName;
-                tags.DbUser = tagsFromConnectionString.DbUser;
-                tags.OutHost = tagsFromConnectionString.OutHost;
+
+                if (otelSemanticsEnabled)
+                {
+                    // The OpenTelemetry attributes carry the same concepts as the Datadog ones, but
+                    // shaped as the specification requires, so they are calculated separately.
+                    // "db.user" has no OpenTelemetry equivalent: it was removed from the semantic
+                    // conventions, so it must not be reported under that name here.
+                    tags.DbName = tagsFromConnectionString.DbNamespace;
+                    tags.OutHost = tagsFromConnectionString.ServerAddress;
+                    tags.ServerPort = tagsFromConnectionString.ServerPort;
+                }
+                else
+                {
+                    tags.DbName = tagsFromConnectionString.DbName;
+                    tags.DbUser = tagsFromConnectionString.DbUser;
+                    tags.OutHost = tagsFromConnectionString.OutHost;
+                }
 
                 tags.SetAnalyticsSampleRate(integrationId, perTraceSettings.Settings, enabledWithGlobalSetting: false);
                 perTraceSettings.Schema.RemapPeerService(tags);
 
                 scope = tracer.StartActiveInternal(operationName, tags: tags, serviceName: serviceName, serviceNameSource: serviceNameSource);
-                scope.Span.ResourceName = commandText;
                 scope.Span.Type = SpanTypes.Sql;
+
+                if (otelSemanticsEnabled)
+                {
+                    DbSemanticConventions.SetDbClientRequestValues(scope.Span, tags, GetCommandType(command), commandText);
+                }
+                else
+                {
+                    scope.Span.ResourceName = commandText;
+                }
+
                 tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(integrationId);
             }
             catch (Exception ex) when (ex is not BlockException)
@@ -142,6 +171,73 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                 }
 
                 return span.GetTag(Tags.DbType) == dbType;
+            }
+
+            static bool IsSameCommand(Span parent, string commandText, bool otelSemanticsEnabled)
+            {
+                // With OpenTelemetry semantics the resource name is the low-cardinality span name
+                // rather than the command, so the command is compared against the attributes that
+                // carry it. This only runs when we are already inside a database span of the same
+                // type, which is the nesting this check exists to detect.
+                return otelSemanticsEnabled
+                           ? parent.Tags is SqlTags parentTags && DbSemanticConventions.IsSameCommand(parentTags, commandText)
+                           : parent.ResourceName == commandText;
+            }
+        }
+
+        /// <summary>
+        /// Finishes the scope of a database command, recording the error attributes the
+        /// OpenTelemetry database semantic conventions require when the command failed. This is the
+        /// database counterpart of
+        /// <see cref="AutoInstrumentationExtensions.DisposeWithException(Scope?, Exception?)"/>:
+        /// every ADO.NET integration must use this instead.
+        /// </summary>
+        /// <param name="scope">The scope created by <see cref="Cache{TCommand}.CreateDbCommandScope"/>, if there is one.</param>
+        /// <param name="exception">The exception the command failed with, if it failed.</param>
+        public static void CloseDbCommandScope(Scope? scope, Exception? exception)
+        {
+            if (scope is null)
+            {
+                return;
+            }
+
+            try
+            {
+                if (exception is not null)
+                {
+                    var span = scope.Span;
+                    if (span is not null)
+                    {
+                        if (span.OpenTelemetrySemanticsEnabled && span.Tags is SqlTags tags)
+                        {
+                            DbSemanticConventions.SetDbClientErrorValues(tags, exception);
+                        }
+
+                        span.SetException(exception);
+                    }
+                }
+            }
+            finally
+            {
+                scope.Dispose();
+            }
+        }
+
+        /// <summary>
+        /// Gets how the provider interprets the command text. Providers are not required to support
+        /// every <see cref="CommandType"/>, and some throw rather than return one, so this falls
+        /// back to <see cref="CommandType.Text"/>.
+        /// </summary>
+        private static CommandType GetCommandType(IDbCommand command)
+        {
+            try
+            {
+                return command.CommandType;
+            }
+            catch (Exception ex)
+            {
+                Log.Debug(ex, "CommandType cannot be retrieved from the command.");
+                return CommandType.Text;
             }
         }
 
@@ -274,7 +370,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                 {
                     // use the cached values if command.GetType() == typeof(TCommand)
                     // and we successfully called TryGetIntegrationDetails() in the ctor
-                    var tagsFromConnectionString = GetTagsFromConnectionString(command);
+                    var tagsFromConnectionString = GetTagsFromConnectionString(command, DbTypeName);
                     var (cachedServiceName, cachedServiceNameSource) = GetServiceNameMetadata(tracer, DbTypeName);
                     return DbScopeFactory.CreateDbCommandScope(
                         tracer: tracer,
@@ -293,7 +389,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                 if (TryGetIntegrationDetails(tracer.Settings.DisabledAdoNetCommandTypes, commandType.FullName, out var integrationId, out var dbTypeName))
                 {
                     var operationName = $"{dbTypeName}.query";
-                    var tagsFromConnectionString = GetTagsFromConnectionString(command);
+                    var tagsFromConnectionString = GetTagsFromConnectionString(command, dbTypeName);
                     var (resolvedServiceName, resolvedServiceNameSource) = GetServiceNameMetadata(tracer, dbTypeName);
                     return DbScopeFactory.CreateDbCommandScope(
                         tracer: tracer,
@@ -342,7 +438,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                 return metadata;
             }
 
-            private static DbCommandCache.TagsCacheItem GetTagsFromConnectionString(IDbCommand command)
+            private static DbCommandCache.TagsCacheItem GetTagsFromConnectionString(IDbCommand command, string dbTypeName)
             {
                 string? connectionString = null;
                 try
@@ -368,9 +464,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                     return default;
                 }
 
-                // Check if the connection string is the one in the cache
+                // Check if the connection string is the one in the cache. The cached tags also
+                // depend on the provider, which is not always the one this cache was created for
+                // when we are instrumenting a method defined in a base class.
                 var tagsByConnectionString = _tagsByConnectionStringCache;
-                if (tagsByConnectionString.Key == connectionString)
+                if (tagsByConnectionString.Key == connectionString && tagsByConnectionString.Value.DbType == dbTypeName)
                 {
                     // Fastpath
                     return tagsByConnectionString.Value;
@@ -378,7 +476,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
 
                 // Cache the new tags by connection string
                 // Slowpath
-                var tags = DbCommandCache.GetTagsFromDbCommand(command);
+                var tags = DbCommandCache.GetTagsFromDbCommand(command, dbTypeName);
                 _tagsByConnectionStringCache = new KeyValuePair<string, DbCommandCache.TagsCacheItem>(connectionString, tags);
                 return tags;
             }
