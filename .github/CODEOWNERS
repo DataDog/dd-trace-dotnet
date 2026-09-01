@@ -36,7 +36,6 @@ tracer/                                   @DataDog/apm-sdk-capabilities-dotnet @
 /tracer/test/Datadog.Trace.TestHelpers/Ci/           @DataDog/ci-app-libraries-dotnet
 /tracer/test/Datadog.Trace.TestHelpers/Debugger/     @DataDog/debugger-dotnet
 /tracer/test/Datadog.Trace.TestHelpers/FeatureFlags/ @DataDog/feature-flagging-and-experimentation-sdk
-/tracer/test/Datadog.Trace.Tests/ManualInstrumentation/ @DataDog/apm-sdk-capabilities-dotnet
 
 # IDM
 /tracer/test/test-applications/integrations/                                                            @DataDog/apm-idm-dotnet  @DataDog/tracing-dotnet
@@ -58,12 +57,9 @@ tracer/                                   @DataDog/apm-sdk-capabilities-dotnet @
 /tracer/test/test-applications/integrations/Samples.TraceAnnotations.VersionMismatch.AfterFeature/      @DataDog/apm-sdk-capabilities-dotnet @DataDog/tracing-dotnet
 /tracer/test/test-applications/integrations/Samples.TraceAnnotations.VersionMismatch.BeforeFeature/     @DataDog/apm-sdk-capabilities-dotnet @DataDog/tracing-dotnet
 
-/tracer/test/Datadog.Trace.Tests/ManualInstrumentation/DataStreamsInstrumentationTests.cs               @DataDog/apm-sdk-capabilities-dotnet @DataDog/tracing-dotnet @DataDog/data-streams-monitoring
-
 ## DBM and DSM
 /tracer/src/Datadog.Trace/DatabaseMonitoring/                                                           @DataDog/apm-idm-dotnet  @DataDog/tracing-dotnet
 /tracer/src/Datadog.Trace/DataStreamsMonitoring/                                                        @DataDog/tracing-dotnet  @DataDog/data-streams-monitoring
-/tracer/test/Datadog.Trace.Tests/DataStreamsMonitoring/                                                 @DataDog/tracing-dotnet  @DataDog/data-streams-monitoring
 /tracer/test/Datadog.Trace.TestHelpers/DataStreamsMonitoring/                                           @DataDog/tracing-dotnet  @DataDog/data-streams-monitoring
 
 ## auto instrumentations
@@ -142,12 +138,10 @@ tracer/                                   @DataDog/apm-sdk-capabilities-dotnet @
 # Profiler
 /profiler/                                @DataDog/profiling-dotnet
 /tracer/src/Datadog.Trace/ContinuousProfiler/ @DataDog/profiling-dotnet @DataDog/tracing-dotnet
-/tracer/test/Datadog.Trace.Tests/ContinuousProfiler/ @DataDog/profiling-dotnet @DataDog/tracing-dotnet
 /tracer/build/_build/Build.Profiler.Steps.cs @DataDog/profiling-dotnet @DataDog/tracing-dotnet
 
 # Debugger
 /tracer/src/Datadog.Trace/Debugger/        @DataDog/debugger-dotnet
-/tracer/test/Datadog.Trace.Tests/Debugger/ @DataDog/debugger-dotnet
 /tracer/src/Datadog.Trace/PDBs/            @DataDog/debugger-dotnet
 /tracer/test/test-applications/debugger/   @DataDog/debugger-dotnet
 debugger_*.cpp                             @DataDog/debugger-dotnet
@@ -171,13 +165,11 @@ Datadog.Trace.Debugger.slnf                @DataDog/debugger-dotnet
 /tracer/src/Datadog.Trace.Manual/FeatureFlags/                                                 @DataDog/feature-flagging-and-experimentation-sdk @DataDog/tracing-dotnet
 /tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/ManualInstrumentation/FeatureFlags/  @DataDog/feature-flagging-and-experimentation-sdk @DataDog/tracing-dotnet
 /tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/ManualInstrumentation/OpenFeature/   @DataDog/feature-flagging-and-experimentation-sdk @DataDog/tracing-dotnet
-/tracer/test/Datadog.Trace.Tests/FeatureFlags/                                                 @DataDog/feature-flagging-and-experimentation-sdk @DataDog/tracing-dotnet
 /tracer/test/test-applications/integrations/Samples.FeatureFlags/                              @DataDog/feature-flagging-and-experimentation-sdk @DataDog/tracing-dotnet
 /tracer/test/test-applications/integrations/Samples.OpenFeature/                               @DataDog/feature-flagging-and-experimentation-sdk @DataDog/tracing-dotnet
 
 # CI
 /tracer/src/Datadog.Trace/Ci/             @DataDog/ci-app-libraries-dotnet @DataDog/apm-dotnet
-/tracer/test/Datadog.Trace.Tests/Ci/      @DataDog/ci-app-libraries-dotnet @DataDog/apm-dotnet
 /tracer/src/Datadog.Trace/PDBs/MethodSymbolResolver.cs        @DataDog/ci-app-libraries-dotnet
 /tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Testing/  @DataDog/ci-app-libraries-dotnet
 /tracer/test/test-applications/integrations/Samples.XUnit*/  @DataDog/ci-app-libraries-dotnet
@@ -262,101 +254,70 @@ Directory.Build.props                     @DataDog/apm-dotnet
 /tracer/test/Datadog.Trace.SourceGenerators.Tests/YamlReaderTests.cs @DataDog/apm-sdk-capabilities-dotnet
 /tracer/test/Datadog.Trace.TestHelpers.AutoInstrumentation/ @DataDog/apm-lang-platform-dotnet
 /tracer/test/Datadog.Trace.TestHelpers.SharedSource/ @DataDog/apm-lang-platform-dotnet
-/tracer/test/Datadog.Trace.Tests/Activity/ @DataDog/apm-sdk-capabilities-dotnet
-/tracer/test/Datadog.Trace.Tests/Agent/ @DataDog/apm-sdk-capabilities-dotnet
-/tracer/test/Datadog.Trace.Tests/Agent/MessagePack/SpanMetaStructTests.cs @DataDog/apm-sdk-capabilities-dotnet @DataDog/asm-dotnet
-/tracer/test/Datadog.Trace.Tests/AppSec/ @DataDog/asm-dotnet
-/tracer/test/Datadog.Trace.Tests/AspNet/ @DataDog/apm-idm-dotnet
-/tracer/test/Datadog.Trace.Tests/CallTarget/ @DataDog/apm-lang-platform-dotnet
-/tracer/test/Datadog.Trace.Tests/Ci/ @DataDog/ci-app-libraries-dotnet
-/tracer/test/Datadog.Trace.Tests/Configuration/ @DataDog/apm-sdk-capabilities-dotnet
-/tracer/test/Datadog.Trace.Tests/Configuration/DynamicConfigurationManagerTests.cs @DataDog/apm-sdk-capabilities-dotnet @DataDog/debugger-dotnet
-/tracer/test/Datadog.Trace.Tests/Configuration/TestOptimizationSettingsTests.cs @DataDog/ci-app-libraries-dotnet
-/tracer/test/Datadog.Trace.Tests/Configuration/ExporterSettingsAzureFunctionsPipeTests.cs @DataDog/apm-sdk-capabilities-dotnet @DataDog/apm-serverless @DataDog/serverless-azure-and-gcp
-/tracer/test/Datadog.Trace.Tests/Configuration/ImmutableAzureAppServiceSettingsTests.cs @DataDog/apm-sdk-capabilities-dotnet @DataDog/apm-serverless @DataDog/serverless-azure-and-gcp
-/tracer/test/Datadog.Trace.Tests/Configuration/ImmutableGCPFunctionSettingsTests.cs @DataDog/apm-sdk-capabilities-dotnet @DataDog/apm-serverless @DataDog/serverless-azure-and-gcp
-/tracer/test/Datadog.Trace.Tests/Configuration/TracerSettingsAwsLambdaTests.cs @DataDog/apm-sdk-capabilities-dotnet @DataDog/apm-serverless @DataDog/serverless-aws
-/tracer/test/Datadog.Trace.Tests/Configuration/TracerSettingsAzureAppServiceTests.cs @DataDog/apm-sdk-capabilities-dotnet @DataDog/apm-serverless @DataDog/serverless-azure-and-gcp
-/tracer/test/Datadog.Trace.Tests/ClrProfiler/AutoInstrumentation/ @DataDog/apm-idm-dotnet
-/tracer/test/Datadog.Trace.Tests/ClrProfiler/AutoInstrumentation/Azure/ @DataDog/serverless-azure-and-gcp
-/tracer/test/Datadog.Trace.Tests/ClrProfiler/ScopeFactoryTests.cs @DataDog/apm-idm-dotnet
-/tracer/test/Datadog.Trace.Tests/ContinuousProfiler/ @DataDog/profiling-dotnet
-/tracer/test/Datadog.Trace.Tests/DatabaseMonitoring/ @DataDog/apm-idm-dotnet
-/tracer/test/Datadog.Trace.Tests/DataStreamsMonitoring/ @DataDog/data-streams-monitoring
-/tracer/test/Datadog.Trace.Tests/Debugger/ @DataDog/debugger-dotnet
-/tracer/test/Datadog.Trace.Tests/DiagnosticListeners/ @DataDog/apm-idm-dotnet
-/tracer/test/Datadog.Trace.Tests/DiagnosticListeners/AspNetCoreDiagnosticObserverTests.cs @DataDog/apm-idm-dotnet @DataDog/asm-dotnet @DataDog/debugger-dotnet
-/tracer/test/Datadog.Trace.Tests/DistributedTracer/ @DataDog/apm-sdk-capabilities-dotnet
-/tracer/test/Datadog.Trace.Tests/DogStatsd/ @DataDog/apm-sdk-capabilities-dotnet
-/tracer/test/Datadog.Trace.Tests/ExtensionMethods/ @DataDog/apm-lang-platform-dotnet
-/tracer/test/Datadog.Trace.Tests/FeatureFlags/ @DataDog/feature-flagging-and-experimentation-sdk
-/tracer/test/Datadog.Trace.Tests/Headers/ @DataDog/apm-sdk-capabilities-dotnet
-/tracer/test/Datadog.Trace.Tests/Headers/Ip/ @DataDog/asm-dotnet
-/tracer/test/Datadog.Trace.Tests/HttpOverStreams/ @DataDog/apm-sdk-capabilities-dotnet
-/tracer/test/Datadog.Trace.Tests/Logging/ @DataDog/apm-lang-platform-dotnet
-/tracer/test/Datadog.Trace.Tests/OpenTelemetry/ @DataDog/apm-sdk-capabilities-dotnet
-/tracer/test/Datadog.Trace.Tests/Pdb/ @DataDog/debugger-dotnet
-/tracer/test/Datadog.Trace.Tests/PlatformHelpers/ @DataDog/apm-lang-platform-dotnet
-/tracer/test/Datadog.Trace.Tests/Propagators/ @DataDog/apm-sdk-capabilities-dotnet
-/tracer/test/Datadog.Trace.Tests/RemoteConfigurationManagement/ @DataDog/apm-sdk-capabilities-dotnet
-/tracer/test/Datadog.Trace.Tests/RuntimeMetrics/ @DataDog/apm-sdk-capabilities-dotnet
-/tracer/test/Datadog.Trace.Tests/Sampling/ @DataDog/apm-sdk-capabilities-dotnet
-/tracer/test/Datadog.Trace.Tests/Serverless/ @DataDog/apm-serverless
-/tracer/test/Datadog.Trace.Tests/Serverless/AwsInfoTests.cs @DataDog/serverless-aws
-/tracer/test/Datadog.Trace.Tests/Serverless/AzureInfoTests.cs @DataDog/serverless-azure-and-gcp
-/tracer/test/Datadog.Trace.Tests/Serverless/GcpInfoTests.cs @DataDog/serverless-azure-and-gcp
-/tracer/test/Datadog.Trace.Tests/Serverless/ServerlessCompatPipeNameHelperTests.cs @DataDog/serverless-azure-and-gcp
-/tracer/test/Datadog.Trace.Tests/Snapshots/ @DataDog/apm-sdk-capabilities-dotnet
-/tracer/test/Datadog.Trace.Tests/Tagging/ @DataDog/apm-idm-dotnet
-/tracer/test/Datadog.Trace.Tests/Telemetry/ @DataDog/apm-sdk-capabilities-dotnet
-/tracer/test/Datadog.Trace.Tests/Telemetry/Collectors/DebuggerGuardrailTelemetryTests.cs @DataDog/apm-sdk-capabilities-dotnet @DataDog/debugger-dotnet
-/tracer/test/Datadog.Trace.Tests/TraceProcessors/ @DataDog/apm-sdk-capabilities-dotnet
-/tracer/test/Datadog.Trace.Tests/Util/ @DataDog/apm-lang-platform-dotnet
-/tracer/test/Datadog.Trace.Tests/Util/PeerServiceHelpersTests.cs @DataDog/apm-idm-dotnet @DataDog/serverless-aws
-/tracer/test/Datadog.Trace.Tests/Util/RequestDataHelperTests.cs @DataDog/apm-lang-platform-dotnet @DataDog/asm-dotnet
-/tracer/test/Datadog.Trace.Tests/Util/UnmanagedMemoryPoolTests.cs @DataDog/apm-lang-platform-dotnet @DataDog/asm-dotnet
-/tracer/test/Datadog.Trace.Tests/ActivityTests.cs @DataDog/apm-sdk-capabilities-dotnet
-/tracer/test/Datadog.Trace.Tests/ActivityTestsCollection.cs @DataDog/apm-sdk-capabilities-dotnet
-/tracer/test/Datadog.Trace.Tests/PlatformHelpers/AzureAppServicesTests.cs @DataDog/serverless-azure-and-gcp
-/tracer/test/Datadog.Trace.Tests/BaggageTests.cs @DataDog/apm-sdk-capabilities-dotnet
-/tracer/test/Datadog.Trace.Tests/CustomTestFramework.cs @DataDog/apm-lang-platform-dotnet
-/tracer/test/Datadog.Trace.Tests/Datadog.Trace.Tests.csproj @DataDog/apm-lang-platform-dotnet
-/tracer/test/Datadog.Trace.Tests/DistributedTraceTests.cs @DataDog/apm-sdk-capabilities-dotnet
-/tracer/test/Datadog.Trace.Tests/DogStatsDTests.cs @DataDog/apm-sdk-capabilities-dotnet
-/tracer/test/Datadog.Trace.Tests/EnvironmentVariablesTestCollection.cs @DataDog/apm-lang-platform-dotnet
-/tracer/test/Datadog.Trace.Tests/ExtraServicesProviderTests.cs @DataDog/apm-sdk-capabilities-dotnet
-/tracer/test/Datadog.Trace.Tests/FrameworkDescriptionTests.cs @DataDog/apm-lang-platform-dotnet
-/tracer/test/Datadog.Trace.Tests/GlobalUsings.cs @DataDog/apm-lang-platform-dotnet
-/tracer/test/Datadog.Trace.Tests/HttpClientRequestTests.cs @DataDog/apm-lang-platform-dotnet
-/tracer/test/Datadog.Trace.Tests/LambdaCommonTests.cs @DataDog/serverless-aws
-/tracer/test/Datadog.Trace.Tests/LambdaRequestBuilderTests.cs @DataDog/serverless-aws
-/tracer/test/Datadog.Trace.Tests/MeterListenerTests.cs @DataDog/apm-sdk-capabilities-dotnet
-/tracer/test/Datadog.Trace.Tests/MockLogsIntakeTests.cs @DataDog/apm-lang-platform-dotnet
-/tracer/test/Datadog.Trace.Tests/MultipartFormTests.cs @DataDog/apm-lang-platform-dotnet
-/tracer/test/Datadog.Trace.Tests/OpenTelemetryOperationNameMapperTests.cs @DataDog/apm-sdk-capabilities-dotnet
-/tracer/test/Datadog.Trace.Tests/OpenTelemetrySpecialTagRemapperTests.cs @DataDog/apm-sdk-capabilities-dotnet
-/tracer/test/Datadog.Trace.Tests/ProcessTagsTests.cs @DataDog/apm-sdk-capabilities-dotnet @DataDog/apm-lang-platform-dotnet @DataDog/data-streams-monitoring
-/tracer/test/Datadog.Trace.Tests/PublicApiTests.cs @DataDog/apm-sdk-capabilities-dotnet
-/tracer/test/Datadog.Trace.Tests/ServiceRemappingHashTests.cs @DataDog/apm-idm-dotnet @DataDog/data-streams-monitoring
-/tracer/test/Datadog.Trace.Tests/SimpleClock.cs @DataDog/apm-lang-platform-dotnet
-/tracer/test/Datadog.Trace.Tests/SpanContextInjectorExtractorTests.cs @DataDog/apm-sdk-capabilities-dotnet @DataDog/data-streams-monitoring
-/tracer/test/Datadog.Trace.Tests/SpanContextPropagatorTests_AddSecurityTestingHeadersAsTags.cs @DataDog/asm-dotnet
-/tracer/test/Datadog.Trace.Tests/SpanContextPropagatorTests_ExtractBaggageHeaderTags.cs @DataDog/apm-sdk-capabilities-dotnet
-/tracer/test/Datadog.Trace.Tests/SpanContextPropagatorTests_ExtractHeaderTags.cs @DataDog/apm-sdk-capabilities-dotnet
-/tracer/test/Datadog.Trace.Tests/SpanContextTests.cs @DataDog/apm-sdk-capabilities-dotnet
-/tracer/test/Datadog.Trace.Tests/SpanStatisticalTests.cs @DataDog/apm-sdk-capabilities-dotnet
-/tracer/test/Datadog.Trace.Tests/SpanTests.cs @DataDog/apm-sdk-capabilities-dotnet
-/tracer/test/Datadog.Trace.Tests/TimeUtilsTests.cs @DataDog/apm-lang-platform-dotnet
-/tracer/test/Datadog.Trace.Tests/TraceContextTests.cs @DataDog/apm-sdk-capabilities-dotnet
-/tracer/test/Datadog.Trace.Tests/TraceContextTests_KnuthSamplingRate.cs @DataDog/apm-sdk-capabilities-dotnet
-/tracer/test/Datadog.Trace.Tests/TraceContextTests_SetSamplingDecision.cs @DataDog/apm-sdk-capabilities-dotnet
-/tracer/test/Datadog.Trace.Tests/TracerInstanceTest.cs @DataDog/apm-lang-platform-dotnet
-/tracer/test/Datadog.Trace.Tests/TracerInstanceTestCollection.cs @DataDog/apm-lang-platform-dotnet
-/tracer/test/Datadog.Trace.Tests/TracerManagerFactoryTests.cs @DataDog/apm-lang-platform-dotnet
-/tracer/test/Datadog.Trace.Tests/TracerTests.cs @DataDog/apm-sdk-capabilities-dotnet
-/tracer/test/Datadog.Trace.Tests/VendoredCodeTests.cs @DataDog/apm-lang-platform-dotnet
-/tracer/test/Datadog.Trace.Tests/WebRequestCollection.cs @DataDog/apm-lang-platform-dotnet
-/tracer/test/Datadog.Trace.Tests/xunit.runner.json @DataDog/apm-lang-platform-dotnet
+
+# Datadog.Trace.Tests
+/tracer/test/Datadog.Trace.Tests/
+/tracer/test/Datadog.Trace.Tests/Activity/                                  @DataDog/apm-sdk-capabilities-dotnet
+/tracer/test/Datadog.Trace.Tests/Agent/                                     @DataDog/apm-sdk-capabilities-dotnet
+/tracer/test/Datadog.Trace.Tests/Agent/MessagePack/AppSec/                  @DataDog/apm-sdk-capabilities-dotnet @DataDog/asm-dotnet
+/tracer/test/Datadog.Trace.Tests/AppSec/                                    @DataDog/asm-dotnet
+/tracer/test/Datadog.Trace.Tests/AspNet/                                    @DataDog/apm-idm-dotnet
+/tracer/test/Datadog.Trace.Tests/CallTarget/                                @DataDog/apm-lang-platform-dotnet
+/tracer/test/Datadog.Trace.Tests/Ci/                                        @DataDog/ci-app-libraries-dotnet
+/tracer/test/Datadog.Trace.Tests/ClrProfiler/AutoInstrumentation/           @DataDog/apm-idm-dotnet
+/tracer/test/Datadog.Trace.Tests/ClrProfiler/AutoInstrumentation/Azure/     @DataDog/serverless-azure-and-gcp
+/tracer/test/Datadog.Trace.Tests/ClrProfiler/Managed/Loader/                @DataDog/apm-lang-platform-dotnet
+/tracer/test/Datadog.Trace.Tests/Configuration/                             @DataDog/apm-sdk-capabilities-dotnet
+/tracer/test/Datadog.Trace.Tests/Configuration/CI/                          @DataDog/ci-app-libraries-dotnet
+/tracer/test/Datadog.Trace.Tests/Configuration/Debugger/                    @DataDog/apm-sdk-capabilities-dotnet @DataDog/debugger-dotnet
+/tracer/test/Datadog.Trace.Tests/Configuration/Serverless/AWS/              @DataDog/apm-sdk-capabilities-dotnet @DataDog/apm-serverless @DataDog/serverless-aws
+/tracer/test/Datadog.Trace.Tests/Configuration/Serverless/Azure/            @DataDog/apm-sdk-capabilities-dotnet @DataDog/apm-serverless @DataDog/serverless-azure-and-gcp
+/tracer/test/Datadog.Trace.Tests/Configuration/Serverless/GCP/              @DataDog/apm-sdk-capabilities-dotnet @DataDog/apm-serverless @DataDog/serverless-azure-and-gcp
+/tracer/test/Datadog.Trace.Tests/ContinuousProfiler/                        @DataDog/profiling-dotnet
+/tracer/test/Datadog.Trace.Tests/DatabaseMonitoring/                        @DataDog/apm-idm-dotnet
+/tracer/test/Datadog.Trace.Tests/DataStreamsMonitoring/                     @DataDog/data-streams-monitoring
+/tracer/test/Datadog.Trace.Tests/DataStreamsMonitoring/ManualInstrumentation/ @DataDog/apm-sdk-capabilities-dotnet @DataDog/tracing-dotnet @DataDog/data-streams-monitoring
+/tracer/test/Datadog.Trace.Tests/Debugger/                                  @DataDog/debugger-dotnet
+/tracer/test/Datadog.Trace.Tests/DiagnosticListeners/                       @DataDog/apm-idm-dotnet
+/tracer/test/Datadog.Trace.Tests/DiagnosticListeners/AspNetCore/            @DataDog/apm-idm-dotnet @DataDog/asm-dotnet @DataDog/debugger-dotnet
+/tracer/test/Datadog.Trace.Tests/DistributedTracer/                         @DataDog/apm-sdk-capabilities-dotnet
+/tracer/test/Datadog.Trace.Tests/DogStatsd/                                 @DataDog/apm-sdk-capabilities-dotnet
+/tracer/test/Datadog.Trace.Tests/ExtensionMethods/                          @DataDog/apm-lang-platform-dotnet
+/tracer/test/Datadog.Trace.Tests/FeatureFlags/                              @DataDog/feature-flagging-and-experimentation-sdk
+/tracer/test/Datadog.Trace.Tests/Headers/                                   @DataDog/apm-sdk-capabilities-dotnet
+/tracer/test/Datadog.Trace.Tests/Headers/Ip/                                @DataDog/asm-dotnet
+/tracer/test/Datadog.Trace.Tests/HttpOverStreams/                           @DataDog/apm-sdk-capabilities-dotnet
+/tracer/test/Datadog.Trace.Tests/Logging/                                   @DataDog/apm-lang-platform-dotnet
+/tracer/test/Datadog.Trace.Tests/ManualInstrumentation/                     @DataDog/apm-sdk-capabilities-dotnet
+/tracer/test/Datadog.Trace.Tests/OpenTelemetry/                             @DataDog/apm-sdk-capabilities-dotnet
+/tracer/test/Datadog.Trace.Tests/Pdb/                                       @DataDog/debugger-dotnet
+/tracer/test/Datadog.Trace.Tests/PlatformHelpers/                           @DataDog/apm-lang-platform-dotnet
+/tracer/test/Datadog.Trace.Tests/PlatformHelpers/Serverless/Azure/          @DataDog/serverless-azure-and-gcp
+/tracer/test/Datadog.Trace.Tests/Propagators/                               @DataDog/apm-sdk-capabilities-dotnet
+/tracer/test/Datadog.Trace.Tests/Propagators/AppSec/                        @DataDog/asm-dotnet
+/tracer/test/Datadog.Trace.Tests/RemoteConfigurationManagement/             @DataDog/apm-sdk-capabilities-dotnet
+/tracer/test/Datadog.Trace.Tests/RuntimeMetrics/                            @DataDog/apm-sdk-capabilities-dotnet
+/tracer/test/Datadog.Trace.Tests/Sampling/                                  @DataDog/apm-sdk-capabilities-dotnet
+/tracer/test/Datadog.Trace.Tests/Serverless/                                @DataDog/apm-serverless
+/tracer/test/Datadog.Trace.Tests/Serverless/AWS/                            @DataDog/serverless-aws
+/tracer/test/Datadog.Trace.Tests/Serverless/Azure/                          @DataDog/serverless-azure-and-gcp
+/tracer/test/Datadog.Trace.Tests/Serverless/GCP/                            @DataDog/serverless-azure-and-gcp
+/tracer/test/Datadog.Trace.Tests/Snapshots/                                 @DataDog/apm-sdk-capabilities-dotnet
+/tracer/test/Datadog.Trace.Tests/Tagging/                                   @DataDog/apm-idm-dotnet
+/tracer/test/Datadog.Trace.Tests/Telemetry/                                 @DataDog/apm-sdk-capabilities-dotnet
+/tracer/test/Datadog.Trace.Tests/Telemetry/Collectors/Debugger/             @DataDog/apm-sdk-capabilities-dotnet @DataDog/debugger-dotnet
+/tracer/test/Datadog.Trace.Tests/TestInfrastructure/                        @DataDog/apm-lang-platform-dotnet
+/tracer/test/Datadog.Trace.Tests/TraceProcessors/                           @DataDog/apm-sdk-capabilities-dotnet
+/tracer/test/Datadog.Trace.Tests/Tracing/                                   @DataDog/apm-sdk-capabilities-dotnet
+/tracer/test/Datadog.Trace.Tests/Tracing/DataStreamsMonitoring/             @DataDog/apm-sdk-capabilities-dotnet @DataDog/data-streams-monitoring
+/tracer/test/Datadog.Trace.Tests/Tracing/ProcessTags/                       @DataDog/apm-sdk-capabilities-dotnet @DataDog/apm-lang-platform-dotnet @DataDog/data-streams-monitoring
+/tracer/test/Datadog.Trace.Tests/Tracing/ServiceRemapping/                  @DataDog/apm-idm-dotnet @DataDog/data-streams-monitoring
+/tracer/test/Datadog.Trace.Tests/Util/                                      @DataDog/apm-lang-platform-dotnet
+/tracer/test/Datadog.Trace.Tests/Util/AppSec/                               @DataDog/apm-lang-platform-dotnet @DataDog/asm-dotnet
+/tracer/test/Datadog.Trace.Tests/Util/PeerService/                          @DataDog/apm-idm-dotnet @DataDog/serverless-aws
+/tracer/test/Datadog.Trace.Tests/Datadog.Trace.Tests.csproj*                @DataDog/apm-lang-platform-dotnet
+/tracer/test/Datadog.Trace.Tests/GlobalUsings.cs                            @DataDog/apm-lang-platform-dotnet
+/tracer/test/Datadog.Trace.Tests/xunit.runner.json                          @DataDog/apm-lang-platform-dotnet
 /tracer/test/Datadog.Trace.Tools.Analyzers.Tests/ @DataDog/apm-lang-platform-dotnet
 /tracer/test/Datadog.Trace.Tools.Analyzers.Tests/AspectAnalyzers/ @DataDog/asm-dotnet
 /tracer/test/Datadog.Trace.Tools.Analyzers.Tests/ConfigurationAnalyzers/ @DataDog/apm-sdk-capabilities-dotnet
