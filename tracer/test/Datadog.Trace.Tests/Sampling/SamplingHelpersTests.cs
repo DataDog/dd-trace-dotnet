@@ -47,8 +47,11 @@ public class SamplingHelpersTests
     [Fact]
     public void ComputeOtelTraceStateRandomValue_ReturnsLower56BitsOfInvertedKnuthHash()
     {
-        SamplingHelpers.ComputeOtelTraceStateRandomValue(0xfff972474538efffUL)
-                       .Should().Be(0xef284ace7a91e1UL);
+        const ulong traceId = 0xfff972474538efffUL;
+        var knuthHash = SamplingHelpers.ComputeKnuthHash(traceId);
+
+        knuthHash.Should().Be(0x10d7b531856e1e39UL);
+        SamplingHelpers.ComputeOtelTraceStateRandomValue(traceId).Should().Be((~knuthHash) >> 8);
     }
 
     [Theory]
