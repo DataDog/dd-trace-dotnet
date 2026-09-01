@@ -33,9 +33,9 @@
 tracer/                                   @DataDog/apm-sdk-capabilities-dotnet @DataDog/apm-lang-platform-dotnet @DataDog/tracing-dotnet
 /tracer/build/                            @DataDog/apm-dotnet
 /tracer/test/Datadog.Trace.TestHelpers/   @DataDog/apm-lang-platform-dotnet
-/tracer/test/Datadog.Trace.TestHelpers/Ci/ @DataDog/ci-app-libraries-dotnet
-/tracer/test/Datadog.Trace.TestHelpers/FeatureFlagsHelpers.cs @DataDog/feature-flagging-and-experimentation-sdk
-/tracer/test/Datadog.Trace.TestHelpers/MockProbeSnapshot.cs @DataDog/debugger-dotnet
+/tracer/test/Datadog.Trace.TestHelpers/Ci/           @DataDog/ci-app-libraries-dotnet
+/tracer/test/Datadog.Trace.TestHelpers/Debugger/     @DataDog/debugger-dotnet
+/tracer/test/Datadog.Trace.TestHelpers/FeatureFlags/ @DataDog/feature-flagging-and-experimentation-sdk
 /tracer/test/Datadog.Trace.Tests/ManualInstrumentation/ @DataDog/apm-sdk-capabilities-dotnet
 
 # IDM
