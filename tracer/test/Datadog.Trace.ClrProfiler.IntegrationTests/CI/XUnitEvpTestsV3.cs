@@ -6,10 +6,7 @@
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
-using Datadog.Trace.Ci.Ipc;
-using Datadog.Trace.Ci.Ipc.Messages;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
@@ -295,15 +292,6 @@ public class XUnitEvpTestsV3 : TestingFrameworkEvpTest
             out var runId);
 
         Output.WriteLine("RunId: {0}", runId);
-        var codeCoverageReceived = new StrongBox<bool>(false);
-        var name = $"session_{sessionId}";
-        using var ipcServer = new IpcServer(name);
-        ipcServer.SetMessageReceivedCallback(
-            o =>
-            {
-                codeCoverageReceived.Value = codeCoverageReceived.Value || o is SessionCodeCoverageMessage or SessionCodeCoverageReferenceMessage;
-            });
-
         string[] messages = null;
 
         using var logsIntake = new MockLogsIntakeForCiVisibility();
@@ -365,6 +353,11 @@ public class XUnitEvpTestsV3 : TestingFrameworkEvpTest
                                       useDotnetExec: true);
 
         // Check the tests, suites and modules count
+        if (tests.Count != ExpectedTestCount)
+        {
+            WriteSpans(tests);
+        }
+
         Assert.Equal(ExpectedTestCount, tests.Count);
         Assert.Equal(2, testSuites.Count);
         Assert.Single(testModules);
@@ -604,6 +597,189 @@ public class XUnitEvpTestsV3 : TestingFrameworkEvpTest
                        .Should()
                        .NotBeEmpty()
                        .And.OnlyContain(x => HasCorrectCompressionTag(x.Tags, expectedGzip));
+    }
+
+    [SkippableFact]
+    [Trait("Category", "EndToEnd")]
+    [Trait("Category", "TestIntegrations")]
+    public Task SubmitTracesWithVSTestAdapterV4()
+    {
+        return ExecuteTestAsync(
+            "4.0.0",
+            "evp_proxy/v4",
+            expectedGzip: false,
+            new TestScenario(
+                nameof(XUnitEvpTestsV3),
+                "vstest_adapter_v4",
+                new MockData(GetSettingsJson("false", "false", "false", "0"), string.Empty, string.Empty),
+                expectedExitCode: 1,
+                expectedSpans: ExpectedTestCount,
+                useSnapshot: false,
+                (in ExecutionData data) =>
+                {
+                    data.TestSuites.Should().HaveCount(2);
+                    data.TestModules.Should().ContainSingle();
+                },
+                useDotnetExec: false));
+    }
+
+    [SkippableFact]
+    [Trait("Category", "EndToEnd")]
+    [Trait("Category", "TestIntegrations")]
+    public Task SubmitTracesWithForcedRunV4()
+    {
+        const string skippableTestsJson = """
+                                              {
+                                                  "data": [
+                                                      {
+                                                          "id": "Samples.XUnitTestsV3.UnSkippableSuite.UnskippableTest",
+                                                          "type": "test_params",
+                                                          "attributes": {
+                                                              "suite": "Samples.XUnitTestsV3.UnSkippableSuite",
+                                                              "name": "UnskippableTest",
+                                                              "_missing_line_code_coverage": false
+                                                          }
+                                                      }
+                                                  ],
+                                                  "meta": {
+                                                      "correlation_id": "2e8a36bda770b683345957cc6c15baf9"
+                                                  }
+                                              }
+                                              """;
+
+        return ExecuteTestAsync(
+            "4.0.0",
+            "evp_proxy/v4",
+            expectedGzip: false,
+            new TestScenario(
+                nameof(XUnitEvpTestsV3),
+                "forced_run_v4",
+                new MockData(
+                    GetSettingsJson("false", "true", "false", "0"),
+                    string.Empty,
+                    string.Empty,
+                    skippableTestsJson),
+                expectedExitCode: 1,
+                expectedSpans: ExpectedTestCount,
+                useSnapshot: false,
+                (in ExecutionData data) =>
+                {
+                    var forcedRun = data.Tests.Should().ContainSingle(test => test.Resource == $"{UnSkippableSuiteName}.UnskippableTest").Subject;
+                    forcedRun.Meta.Should().Contain(IntelligentTestRunnerTags.UnskippableTag, "true");
+                    forcedRun.Meta.Should().Contain(IntelligentTestRunnerTags.ForcedRunTag, "true");
+                    forcedRun.Meta.Should().Contain(TestTags.Status, TestTags.StatusPass);
+                },
+                useDotnetExec: true));
+    }
+
+    [SkippableFact]
+    [Trait("Category", "EndToEnd")]
+    [Trait("Category", "TestIntegrations")]
+    public Task SubmitTracesWithDisabledTestV4()
+    {
+        const string testManagementTestsJson = """
+                                                     {
+                                                         "data": {
+                                                             "id": "878448902e138d339eb9f26a778851f35582b5ea3622ae8ab446209d232399af",
+                                                             "type": "ci_app_libraries_tests",
+                                                             "attributes": {
+                                                                 "modules": {
+                                                                     "Samples.XUnitTestsV3": {
+                                                                         "suites": {
+                                                                             "Samples.XUnitTestsV3.TestSuite": {
+                                                                                 "tests": {
+                                                                                     "SimpleErrorTest": {
+                                                                                         "properties": {
+                                                                                             "disabled": true
+                                                                                         }
+                                                                                     }
+                                                                                 }
+                                                                             }
+                                                                         }
+                                                                     }
+                                                                 }
+                                                             }
+                                                         }
+                                                     }
+                                                     """;
+
+        return ExecuteTestAsync(
+            "4.0.0",
+            "evp_proxy/v4",
+            expectedGzip: false,
+            new TestScenario(
+                nameof(XUnitEvpTestsV3),
+                "disabled_test_v4",
+                new MockData(
+                    GetSettingsJson("false", "false", "true", "0"),
+                    string.Empty,
+                    testManagementTestsJson),
+                expectedExitCode: 1,
+                expectedSpans: ExpectedTestCount,
+                useSnapshot: false,
+                (in ExecutionData data) =>
+                {
+                    var disabledTest = data.Tests.Should().ContainSingle(test => test.Resource == $"{TestSuiteName}.SimpleErrorTest").Subject;
+                    disabledTest.Meta.Should().Contain(TestTags.Status, TestTags.StatusSkip);
+                    disabledTest.Meta.Should().Contain(TestTags.TestIsDisabled, "true");
+                    disabledTest.Meta.Should().Contain(TestTags.SkipReason, "Flaky test is disabled by Datadog");
+                },
+                useDotnetExec: true));
+    }
+
+    [SkippableFact]
+    [Trait("Category", "EndToEnd")]
+    [Trait("Category", "TestIntegrations")]
+    public Task SubmitTracesWithItrSkipV4()
+    {
+        const string correlationId = "2e8a36bda770b683345957cc6c15baf9";
+        const string skippableTestsJson = $$"""
+                                               {
+                                                   "data": [
+                                                       {
+                                                           "id": "Samples.XUnitTestsV3.TestSuite.SimplePassTest",
+                                                           "type": "test_params",
+                                                           "attributes": {
+                                                               "suite": "Samples.XUnitTestsV3.TestSuite",
+                                                               "name": "SimplePassTest",
+                                                               "_missing_line_code_coverage": false
+                                                           }
+                                                       }
+                                                   ],
+                                                   "meta": {
+                                                       "correlation_id": "{{correlationId}}"
+                                                   }
+                                               }
+                                               """;
+
+        return ExecuteTestAsync(
+            "4.0.0",
+            "evp_proxy/v4",
+            expectedGzip: false,
+            new TestScenario(
+                nameof(XUnitEvpTestsV3),
+                "itr_skip_v4",
+                new MockData(
+                    GetSettingsJson("false", "true", "false", "0"),
+                    string.Empty,
+                    string.Empty,
+                    skippableTestsJson),
+                expectedExitCode: 1,
+                expectedSpans: ExpectedTestCount,
+                useSnapshot: false,
+                (in ExecutionData data) =>
+                {
+                    var skippedTest = data.Tests.Should().ContainSingle(test => test.Resource == $"{TestSuiteName}.SimplePassTest").Subject;
+                    skippedTest.Meta.Should().Contain(TestTags.Status, TestTags.StatusSkip);
+                    skippedTest.Meta.Should().Contain(IntelligentTestRunnerTags.SkippedBy, "true");
+                    skippedTest.Meta.Should().Contain(TestTags.SkipReason, IntelligentTestRunnerTags.SkippedByReason);
+                    skippedTest.CorrelationId.Should().Be(correlationId);
+
+                    var testSuite = data.TestSuites.Should().ContainSingle(suite => suite.Resource == TestSuiteName).Subject;
+                    testSuite.Metrics.Should().Contain(IntelligentTestRunnerTags.SkippingCount, 2);
+                    data.TestModules.Should().ContainSingle().Which.Metrics.Should().Contain(IntelligentTestRunnerTags.SkippingCount, 2);
+                },
+                useDotnetExec: true));
     }
 
     [SkippableTheory]

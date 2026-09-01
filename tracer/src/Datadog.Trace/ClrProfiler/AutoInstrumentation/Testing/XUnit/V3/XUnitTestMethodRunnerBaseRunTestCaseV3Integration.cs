@@ -9,13 +9,11 @@ using System;
 using System.ComponentModel;
 using System.Linq;
 using System.Runtime.InteropServices;
-using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.DuckTyping;
-using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.V3;
 
@@ -35,8 +33,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.V3;
 [EditorBrowsable(EditorBrowsableState.Never)]
 public static class XUnitTestMethodRunnerBaseRunTestCaseV3Integration
 {
-    private static int _totalRetries = -1;
-
     internal static CallTargetState OnMethodBegin<TTarget, TContext, TTestCase>(TTarget instance, TContext context, TTestCase testcaseOriginal)
         where TContext : IXunitTestMethodRunnerBaseContextV3
     {
@@ -112,13 +108,13 @@ public static class XUnitTestMethodRunnerBaseRunTestCaseV3Integration
         // If the flaky retry feature is enabled, we need to set the total retries to the total flaky retry count
         if (isFlakyRetryEnabled)
         {
-            Interlocked.CompareExchange(ref _totalRetries, testOptimization.FlakyRetryFeature?.TotalFlakyRetryCount ?? TestOptimizationFlakyRetryFeature.TotalFlakyRetryCountDefault, -1);
+            XUnitRetryCoordinator.InitializeRetryBudget(testOptimization);
         }
 
         // If we have a RetryMessageBus means that we are in a retry context
         if (context.MessageBus is IDuckType { Instance: { } and RetryMessageBus retryMessageBus })
         {
-            var testCaseMetadata = retryMessageBus.GetMetadata(testcase.TestMethod.UniqueID);
+            var testCaseMetadata = retryMessageBus.GetMetadata(testcase.UniqueID);
 
             // We skip the test if the tesk management property is set to Disabled and there's no attempt to fix
             if (isDisabledByTestManagement)
@@ -138,8 +134,6 @@ public static class XUnitTestMethodRunnerBaseRunTestCaseV3Integration
 
     internal static async Task<TReturn> OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, CallTargetState state)
     {
-        var testOptimization = TestOptimization.Instance;
-
         // If the state is not a TestRunnerState, we just return the original value
         if (instance is null || state.State is not TestRunnerState { MessageBus: { } messageBus, TestCaseMetadata: { } testCaseMetadata, Context: { Instance: { } } context, TestCase: { Instance: { } } testcase })
         {
@@ -149,197 +143,47 @@ public static class XUnitTestMethodRunnerBaseRunTestCaseV3Integration
         if (!RunSummaryConverter<TReturn>.TryGetEditableRunSummary(returnValue, out var runSummaryUnsafe))
         {
             Common.Log.Debug("XUnitTestMethodRunnerBaseRunTestCaseV3Integration: TryGetEditableRunSummary failed. Flushing messages for: {TestCaseDisplayName}", testcase.TestCaseDisplayName);
-            messageBus.FlushMessages(testcase.TestMethod.UniqueID);
+            messageBus.FlushMessages(testcase.UniqueID);
             return returnValue;
         }
 
-        switch (testCaseMetadata)
+        var runSummary = new XUnitRunSummary
         {
-            case { SelectedRetryMode: not TestRetryMode.None, AbortByThreshold: false }:
-            {
-                var isFirstExecution = testCaseMetadata.ExecutionIndex == 0;
+            Total = runSummaryUnsafe.Total,
+            Failed = runSummaryUnsafe.Failed,
+            Skipped = runSummaryUnsafe.Skipped,
+            NotRun = runSummaryUnsafe.NotRun,
+            Time = runSummaryUnsafe.Time,
+        };
 
-                // If it's the first execution then let's calculate the total executions
-                if (isFirstExecution)
-                {
-                    XUnitIntegration.InitializeTotalExecutions(testOptimization, testCaseMetadata, () => Common.GetNumberOfExecutionsForDuration(TimeSpan.FromSeconds((double)runSummaryUnsafe.Time)));
-                }
+        runSummary = await XUnitRetryCoordinator.ProcessResultAsync(
+                         messageBus,
+                         testCaseMetadata,
+                         testcase.TestCaseDisplayName,
+                         runSummary,
+                         new RetryRunner<TTarget, TReturn>(instance, context, testcase))
+                     .ConfigureAwait(false);
 
-                if (testCaseMetadata.CountDownExecutionNumber > 0)
-                {
-                    var retryDecision = XUnitIntegration.GetRetryExecutionDecision(testCaseMetadata, hasFailures: runSummaryUnsafe.Failed > 0, hasNotRun: runSummaryUnsafe.NotRun > 0, ref _totalRetries);
-                    if (retryDecision == XUnitRetryExecutionDecision.Retry)
-                    {
-                        if (XUnitIntegration.ShouldWaitForExceptionInstrumentation(testOptimization, testCaseMetadata))
-                        {
-                            Common.Log.Debug("XUnitTestMethodRunnerBaseRunTestCaseV3Integration: First execution with an exception detected. Waiting for the exception instrumentation.");
-                            await testOptimization.DynamicInstrumentationFeature!.WaitForExceptionInstrumentation(TestOptimizationDynamicInstrumentationFeature.DefaultExceptionHandlerTimeout).ConfigureAwait(false);
-                            Common.Log.Debug("XUnitTestMethodRunnerBaseRunTestCaseV3Integration: Exception instrumentation was set or timed out.");
-                        }
-
-                        // Let's execute the retry
-                        var retryNumber = testCaseMetadata.ExecutionIndex + 1;
-
-                        // Set the retry as a continuation of this execution. This will be executing recursively until the execution count is 0/
-                        Common.Log.Debug<int, int>("XUnitTestMethodRunnerBaseRunTestCaseV3Integration: EFD/Retry: [Retry {Num}] Test class runner is duck casted, running a retry. [Current retry value is {Value}]", retryNumber, testCaseMetadata.CountDownExecutionNumber);
-                        var mrunner = instance.DuckCast<IXunitTestMethodRunnerV3>();
-
-                        // Decrement the execution number (the method body will do the execution)
-                        testCaseMetadata.CountDownExecutionNumber--;
-                        var innerReturnValue = (TReturn)await mrunner.RunTestCase(context.Instance, testcase.Instance);
-                        Common.Log.Debug<int, int, string?>("XUnitTestMethodRunnerBaseRunTestCaseV3Integration: EFD/Retry: [Retry {Num}] Retry finished. [Current retry value is {Value}]. DisplayName: {DisplayName}", retryNumber, testCaseMetadata.CountDownExecutionNumber, testcase.TestCaseDisplayName);
-
-                        var innerReturnValueUnsafe = Unsafe.As<TReturn, RunSummaryUnsafeStruct>(ref innerReturnValue);
-                        Common.Log.Debug<int>("XUnitTestMethodRunnerBaseRunTestCaseV3Integration: EFD/Retry: [Retry {Num}] Aggregating results.", retryNumber);
-                        runSummaryUnsafe.Total += innerReturnValueUnsafe.Total;
-                        runSummaryUnsafe.Failed += innerReturnValueUnsafe.Failed;
-                        runSummaryUnsafe.Skipped += innerReturnValueUnsafe.Skipped;
-                        runSummaryUnsafe.NotRun += innerReturnValueUnsafe.NotRun;
-                        runSummaryUnsafe.Time += innerReturnValueUnsafe.Time;
-                    }
-                    else if (retryDecision == XUnitRetryExecutionDecision.SuccessfulExecution)
-                    {
-                        Common.Log.Debug("XUnitTestMethodRunnerBaseRunTestCaseV3Integration: EFD/Retry: [FlakyRetryEnabled] A non failed test execution was detected, skipping the remaining executions.");
-                    }
-                    else if (retryDecision == XUnitRetryExecutionDecision.NotRun)
-                    {
-                        Common.Log.Debug("XUnitTestMethodRunnerBaseRunTestCaseV3Integration: EFD/Retry: [FlakyRetryEnabled] A NotRun test was detected, skipping the remaining executions.");
-                    }
-                    else if (retryDecision == XUnitRetryExecutionDecision.RetryBudgetExhausted)
-                    {
-                        Common.Log.Debug("XUnitTestMethodRunnerBaseRunTestCaseV3Integration: EFD/Retry: [FlakyRetryEnabled] Exceeded number of total retries. [{Number}]", testOptimization.FlakyRetryFeature?.TotalFlakyRetryCount);
-                    }
-                }
-                else
-                {
-                    // If we are in the last execution, we write some debug logs
-                    if (testCaseMetadata.IsFlakyRetry && runSummaryUnsafe.Failed == 0)
-                    {
-                        Common.Log.Debug("XUnitTestMethodRunnerBaseRunTestCaseV3Integration: EFD/Retry: [FlakyRetryEnabled] A non failed test execution was detected.");
-                    }
-                    else
-                    {
-                        Common.Log.Debug("XUnitTestMethodRunnerBaseRunTestCaseV3Integration: EFD/Retry: All retries were executed.");
-                    }
-                }
-
-                if (isFirstExecution)
-                {
-                    // Let's clear the failed and skipped runs if we have at least one successful run
-                    if (Common.Log.IsEnabled(LogEventLevel.Debug))
-                    {
-                        var debugMsg = $"EFD/Retry: Summary: {testcase.TestCaseDisplayName} [Total: {runSummaryUnsafe.Total}, Failed: {runSummaryUnsafe.Failed}, Skipped: {runSummaryUnsafe.Skipped}]";
-                        Common.Log.Debug("XUnitTestMethodRunnerBaseRunTestCaseV3Integration: {Value}", debugMsg);
-                    }
-
-                    if (testCaseMetadata is { IsQuarantinedTest: true } or { IsDisabledTest: true })
-                    {
-                        // Quarantined or disabled test results should not be reported to the testing framework.
-                        Common.Log.Debug("XUnitTestMethodRunnerBaseRunTestCaseV3Integration: Quarantined or disabled test: {TestCaseDisplayName}", testcase.TestCaseDisplayName);
-
-                        HideQuarantinedOrDisabledRunSummary(ref runSummaryUnsafe);
-                    }
-                    else
-                    {
-                        Common.Log.Debug("XUnitTestMethodRunnerBaseRunTestCaseV3Integration: Flushing test: {TestCaseDisplayName}", testcase.TestCaseDisplayName);
-
-                        // Let's update the summary to have only one test run
-                        var passed = runSummaryUnsafe.Total - runSummaryUnsafe.Skipped - runSummaryUnsafe.Failed;
-                        if (passed > 0)
-                        {
-                            runSummaryUnsafe.Total = 1;
-                            runSummaryUnsafe.Failed = 0;
-                            runSummaryUnsafe.Skipped = 0;
-                            runSummaryUnsafe.NotRun = 0;
-                        }
-                        else if (runSummaryUnsafe.Skipped > 0)
-                        {
-                            runSummaryUnsafe.Total = 1;
-                            runSummaryUnsafe.Skipped = 1;
-                            runSummaryUnsafe.Failed = 0;
-                            runSummaryUnsafe.NotRun = 0;
-                        }
-                        else if (runSummaryUnsafe.Failed > 0)
-                        {
-                            runSummaryUnsafe.Total = 1;
-                            runSummaryUnsafe.Skipped = 0;
-                            runSummaryUnsafe.Failed = 1;
-                            runSummaryUnsafe.NotRun = 0;
-                        }
-                    }
-
-                    messageBus.FlushMessages(testcase.TestMethod.UniqueID);
-
-                    if (Common.Log.IsEnabled(LogEventLevel.Debug))
-                    {
-                        var debugMsg = $"EFD/Retry: Returned summary: {testcase.TestCaseDisplayName} [Total: {runSummaryUnsafe.Total}, Failed: {runSummaryUnsafe.Failed}, Skipped: {runSummaryUnsafe.Skipped}]";
-                        Common.Log.Debug("XUnitTestMethodRunnerBaseRunTestCaseV3Integration: {Value}", debugMsg);
-                    }
-                }
-
-                break;
-            }
-
-            // We report the result of a test as skipped to the testing framework if:
-            // - Is a quarantined test, or
-            // - Is a disabled test
-            case { IsQuarantinedTest: true } or { IsDisabledTest: true }:
-                Common.Log.Debug("XUnitTestMethodRunnerBaseRunTestCaseV3Integration: Quarantined or disabled test: {TestCaseDisplayName}", testcase.TestCaseDisplayName);
-                ReportQuarantinedOrDisabledRunSummaryAsSkipped(ref runSummaryUnsafe);
-                messageBus.FlushMessages(testcase.TestMethod.UniqueID);
-                break;
-
-            // For everything else, we just flush the messages
-            default:
-                Common.Log.Debug("XUnitTestMethodRunnerBaseRunTestCaseV3Integration: Flushing messages for: {TestCaseDisplayName}", testcase.TestCaseDisplayName);
-                messageBus.FlushMessages(testcase.TestMethod.UniqueID);
-                break;
-        }
+        runSummaryUnsafe.Total = runSummary.Total;
+        runSummaryUnsafe.Failed = runSummary.Failed;
+        runSummaryUnsafe.Skipped = runSummary.Skipped;
+        runSummaryUnsafe.NotRun = runSummary.NotRun;
+        runSummaryUnsafe.Time = runSummary.Time;
 
         return RunSummaryConverter<TReturn>.ToReturnValue(ref runSummaryUnsafe);
     }
 
     /// <summary>
     /// Read-only snapshot of remaining ATR budget for pre-close checks (XUnit v3).
-    /// Value meanings: -1 = uninitialized, 0 = exhausted, positive = nominally available.
-    /// This value is observed before retry scheduling decrements budget, so values of 1 or 0 mean no
-    /// further retry can run after the current failed execution.
+    /// Value meanings: -1 = uninitialized, 0 = exhausted, positive = available retry slots.
+    /// This value is observed before retry scheduling consumes a slot, so a value of 1 permits one
+    /// final retry and a value of 0 permits none.
     /// </summary>
     internal static int GetRemainingAtrBudget()
-        => Interlocked.CompareExchange(ref _totalRetries, 0, 0);
+        => XUnitRetryCoordinator.GetRemainingAtrBudget();
 
-    /// <summary>
-    /// Hides a quarantined or disabled first execution from the framework retry summary.
-    /// </summary>
-    /// <param name="runSummary">Run summary to edit before returning to xUnit.</param>
-    internal static void HideQuarantinedOrDisabledRunSummary(ref RunSummaryUnsafeStruct runSummary)
-    {
-        runSummary.Total = 1;
-        runSummary.Failed = 0;
-        runSummary.Skipped = 0;
-        runSummary.NotRun = 0;
-    }
-
-    /// <summary>
-    /// Reports a final quarantined or disabled execution as skipped to xUnit.
-    /// </summary>
-    /// <param name="runSummary">Run summary to edit before returning to xUnit.</param>
-    internal static void ReportQuarantinedOrDisabledRunSummaryAsSkipped(ref RunSummaryUnsafeStruct runSummary)
-    {
-        runSummary.Total = 1;
-        runSummary.Failed = 0;
-        runSummary.Skipped = 1;
-        runSummary.NotRun = 0;
-    }
-
-    /// <summary>
-    /// Converts the edited unsafe run summary back to the framework return type after compatibility checks pass.
-    /// </summary>
-    /// <param name="runSummary">Edited run summary value.</param>
-    /// <typeparam name="TReturn">xUnit run summary return type.</typeparam>
-    /// <returns>Run summary represented as the original framework return type.</returns>
-    internal static TReturn ToRunSummaryReturnValue<TReturn>(ref RunSummaryUnsafeStruct runSummary)
-        => RunSummaryConverter<TReturn>.ToReturnValue(ref runSummary);
+    internal static bool IsRunSummaryCompatible<TReturn>()
+        => RunSummaryConverter<TReturn>.IsCompatible;
 
     /// <summary>
     /// Gets row-specific test method arguments from the test case when xUnit exposes them.
@@ -353,6 +197,39 @@ public static class XUnitTestMethodRunnerBaseRunTestCaseV3Integration
         return testcaseOriginal.TryDuckCast<IXunitTestCaseMethodArgumentsV3>(out var testCaseWithMethodArguments) ?
                    testCaseWithMethodArguments.TestMethodArguments :
                    testcase.TestMethod.TestMethodArguments;
+    }
+
+    private readonly struct RetryRunner<TTarget, TReturn> : IXUnitRetryRunner
+    {
+        private readonly TTarget _instance;
+        private readonly IXunitTestMethodRunnerBaseContextV3 _context;
+        private readonly IXunitTestCaseV3 _testCase;
+
+        public RetryRunner(TTarget instance, IXunitTestMethodRunnerBaseContextV3 context, IXunitTestCaseV3 testCase)
+        {
+            _instance = instance;
+            _context = context;
+            _testCase = testCase;
+        }
+
+        public async Task<XUnitRunSummary?> RunAsync()
+        {
+            var methodRunner = _instance!.DuckCast<IXunitTestMethodRunnerV3>();
+            var innerReturnValue = (TReturn)await methodRunner.RunTestCase(_context.Instance!, _testCase.Instance!);
+            if (!RunSummaryConverter<TReturn>.TryGetEditableRunSummary(innerReturnValue, out var innerRunSummary))
+            {
+                return null;
+            }
+
+            return new XUnitRunSummary
+            {
+                Total = innerRunSummary.Total,
+                Failed = innerRunSummary.Failed,
+                Skipped = innerRunSummary.Skipped,
+                NotRun = innerRunSummary.NotRun,
+                Time = innerRunSummary.Time,
+            };
+        }
     }
 
     private readonly struct TestRunnerState
@@ -374,7 +251,7 @@ public static class XUnitTestMethodRunnerBaseRunTestCaseV3Integration
     private static class RunSummaryConverter<TReturn>
     {
         // ReSharper disable once StaticMemberInGenericType
-        private static readonly bool IsCompatible;
+        internal static readonly bool IsCompatible;
 
         static RunSummaryConverter()
         {
