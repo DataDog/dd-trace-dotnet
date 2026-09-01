@@ -11,6 +11,7 @@ using System;
 using System.IO;
 using System.Reflection;
 using System.Runtime.Loader;
+using Datadog.Trace.DuckTyping.Tests.Fixtures.Shared;
 using FluentAssertions;
 using Xunit;
 
@@ -25,29 +26,38 @@ public class AssemblyLoadContextTests
     [Fact]
     public void DuckFieldThrowsMissingFieldExceptionAcrossAssemblyLoadContexts()
     {
-        var testAssemblyPath = Assembly.GetExecutingAssembly().Location;
-        var assemblyDirectory = Path.GetDirectoryName(testAssemblyPath)!;
-        var sharedAssemblyPath = Path.Combine(assemblyDirectory, SharedAssemblyName + ".dll");
-        var targetAssemblyPath = Path.Combine(assemblyDirectory, TargetAssemblyName + ".dll");
+        var defaultContext = AssemblyLoadContext.Default;
+        var assemblyDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)!;
+        var fixtureDirectory = Path.Combine(assemblyDirectory, "AssemblyLoadContextFixtures");
+        var sharedAssemblyPath = Path.Combine(fixtureDirectory, SharedAssemblyName + ".dll");
+        var targetAssemblyPath = Path.Combine(fixtureDirectory, TargetAssemblyName + ".dll");
         var targetContext = new AssemblyLoadContext("DuckTypingTarget");
-        var proxyContext = new ProxyLoadContext(testAssemblyPath);
 
-        // The target field and the generated proxy resolve the same dependency identity in different contexts.
+        var defaultSharedAssembly = typeof(FieldValue).Assembly;
+        AssemblyLoadContext.GetLoadContext(typeof(DuckType).Assembly).Should().BeSameAs(defaultContext);
+        AssemblyLoadContext.GetLoadContext(typeof(ProxyRunner).Assembly).Should().BeSameAs(defaultContext);
+        AssemblyLoadContext.GetLoadContext(defaultSharedAssembly).Should().BeSameAs(defaultContext);
+        defaultContext.Assemblies.Should().NotContain(assembly => assembly.GetName().Name == TargetAssemblyName);
+
+        // The target field and the generated proxy resolve the same dependency identity in different contexts,
+        // matching Azure Functions where Event Grid has a separate Azure.Core copy in its load context.
         var targetSharedAssembly = targetContext.LoadFromAssemblyPath(sharedAssemblyPath);
-        var proxySharedAssembly = proxyContext.LoadFromAssemblyPath(sharedAssemblyPath);
-        targetSharedAssembly.FullName.Should().Be(proxySharedAssembly.FullName);
-        targetSharedAssembly.Should().NotBeSameAs(proxySharedAssembly);
+        targetSharedAssembly.FullName.Should().Be(defaultSharedAssembly.FullName);
+        targetSharedAssembly.Should().NotBeSameAs(defaultSharedAssembly);
+        AssemblyLoadContext.GetLoadContext(targetSharedAssembly).Should().BeSameAs(targetContext);
 
         var targetAssembly = targetContext.LoadFromAssemblyPath(targetAssemblyPath);
+        AssemblyLoadContext.GetLoadContext(targetAssembly).Should().BeSameAs(targetContext);
         var targetType = targetAssembly.GetType(TargetTypeName, throwOnError: true)!;
+        var targetField = targetType.GetField("_field", BindingFlags.Instance | BindingFlags.NonPublic)!;
+        targetField.FieldType.Assembly.Should().BeSameAs(targetSharedAssembly);
         var target = Activator.CreateInstance(targetType)!;
 
-        var proxyAssembly = proxyContext.LoadFromAssemblyPath(testAssemblyPath);
-        var proxyRunner = proxyAssembly.GetType(typeof(ProxyRunner).FullName!, throwOnError: true)!;
+        Assert.Throws<MissingFieldException>(() => ProxyRunner.AccessField(target));
 
-        var exception = Assert.Throws<TargetInvocationException>(
-            () => proxyRunner.GetMethod(nameof(ProxyRunner.AccessField))!.Invoke(null, [target]));
-        exception.InnerException.Should().BeOfType<MissingFieldException>();
+        var proxyType = DuckType.GetOrCreateProxyType(typeof(ProxyRunner.ITargetProxy), targetType).ProxyType!;
+        proxyType.Assembly.IsDynamic.Should().BeTrue();
+        AssemblyLoadContext.GetLoadContext(proxyType.Assembly).Should().BeSameAs(defaultContext);
     }
 
     public static class ProxyRunner
@@ -65,27 +75,6 @@ public class AssemblyLoadContextTests
         public static void AccessField(object target)
         {
             _ = target.DuckCast<ITargetProxy>().Field;
-        }
-    }
-
-    private sealed class ProxyLoadContext : AssemblyLoadContext
-    {
-        private readonly string _directory;
-
-        public ProxyLoadContext(string testAssemblyPath)
-            : base("DuckTypingProxy")
-        {
-            _directory = Path.GetDirectoryName(testAssemblyPath)!;
-        }
-
-        protected override Assembly? Load(AssemblyName assemblyName)
-        {
-            if (assemblyName.Name != typeof(DuckType).Assembly.GetName().Name)
-            {
-                return null;
-            }
-
-            return LoadFromAssemblyPath(Path.Combine(_directory, assemblyName.Name + ".dll"));
         }
     }
 }
