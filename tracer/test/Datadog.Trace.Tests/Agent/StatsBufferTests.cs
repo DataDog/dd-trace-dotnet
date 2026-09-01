@@ -144,6 +144,21 @@ namespace Datadog.Trace.Tests.Agent
         }
 
         [Fact]
+        public void Reset_UsesLaterStart()
+        {
+            const long oneHourNs = 3_600_000_000_000;
+            var buffer = CreateBuffer(new ClientStatsPayload(MutableSettings.CreateForTesting(new(), [])));
+
+            var staleStart = buffer.Start - oneHourNs;
+            buffer.Reset(minimumStart: staleStart);
+            buffer.Start.Should().BeGreaterThan(staleStart);
+
+            var minimumStart = buffer.Start + oneHourNs;
+            buffer.Reset(minimumStart);
+            buffer.Start.Should().Be(minimumStart);
+        }
+
+        [Fact]
         public void Reset_ResetsActiveBucketCount()
         {
             var buffer = CreateBuffer(new ClientStatsPayload(MutableSettings.CreateForTesting(new(), [])));

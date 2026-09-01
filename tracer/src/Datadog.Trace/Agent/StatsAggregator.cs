@@ -651,6 +651,8 @@ namespace Datadog.Trace.Agent
 
         internal async Task Flush()
         {
+            var bucketDurationNs = _bucketDuration.ToNanoseconds();
+
             // Use a do/while loop to still flush once if _processExit is already completed (this makes testing easier)
             do
             {
@@ -667,8 +669,7 @@ namespace Datadog.Trace.Agent
                 var nextBufferIndex = (_currentBuffer + 1) % BufferCount;
                 if (_isOtlp)
                 {
-                    // OTLP delta windows must start where the previous window ended.
-                    _buffers[nextBufferIndex].Reset(buffer.Start + _bucketDuration.ToNanoseconds());
+                    _buffers[nextBufferIndex].Reset(minimumStart: buffer.Start + bucketDurationNs);
                 }
 
                 lock (_buffers)
@@ -688,7 +689,7 @@ namespace Datadog.Trace.Agent
 
                 if (buffer.HasHits() && CanComputeStats == true)
                 {
-                    await _api.SendStatsAsync(buffer, _bucketDuration.ToNanoseconds(), Volatile.Read(ref _tracerObfuscationVersion)).ConfigureAwait(false);
+                    await _api.SendStatsAsync(buffer, bucketDurationNs, Volatile.Read(ref _tracerObfuscationVersion)).ConfigureAwait(false);
                 }
 
                 if (!_isOtlp)

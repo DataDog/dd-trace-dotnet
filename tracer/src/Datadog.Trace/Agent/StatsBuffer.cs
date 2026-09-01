@@ -113,7 +113,9 @@ namespace Datadog.Trace.Agent
         /// </summary>
         public void IncrementActiveBucketCount() => ActiveBucketCount++;
 
-        public void Reset(long? start = null)
+        public void Reset() => Reset(0);
+
+        public void Reset(long minimumStart)
         {
             // We need to do some cleanup because the application could have an unlimited number of endpoints,
             // but at the same time we don't want to reallocate all the sketches every time.
@@ -142,16 +144,9 @@ namespace Datadog.Trace.Agent
             CardinalityLimiter.Reset();
             CardinalityReporter.Reset();
 
-            if (start is { } startNs)
-            {
-                Start = startNs;
-            }
-            else
-            {
-                // Align to 10-second boundary to match the Go tracer's alignTs: ts - ts % bucketSize
-                var nowNs = DateTimeOffset.UtcNow.ToUnixTimeNanoseconds();
-                Start = nowNs - (nowNs % 10_000_000_000);
-            }
+            // Align to 10-second boundary to match the Go tracer's alignTs: ts - ts % bucketSize
+            var nowNs = DateTimeOffset.UtcNow.ToUnixTimeNanoseconds();
+            Start = Math.Max(minimumStart, nowNs - (nowNs % 10_000_000_000));
         }
 
         public void Serialize(Stream stream, long bucketDuration)

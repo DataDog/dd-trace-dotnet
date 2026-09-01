@@ -160,7 +160,7 @@ namespace Datadog.Trace.Tests.Agent
         }
 
         [Fact]
-        public async Task OtlpFlushesUseContiguousTimestamps()
+        public async Task Otlp_FlushesUseContiguousTimestamps()
         {
             const int bucketDurationSeconds = 1;
             var bucketDuration = TimeSpan.FromSeconds(bucketDurationSeconds);
