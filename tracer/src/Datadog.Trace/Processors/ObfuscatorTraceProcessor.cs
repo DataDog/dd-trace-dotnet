@@ -65,6 +65,14 @@ namespace Datadog.Trace.Processors
 
         public Span Process(Span span)
         {
+            if (span.OpenTelemetrySemanticsEnabled)
+            {
+                // The resource name is the low-cardinality span name the OpenTelemetry semantic
+                // conventions define, not a query, so obfuscating it would only corrupt it. The
+                // query itself is reported in "db.query.text", already sanitized.
+                return span;
+            }
+
             if (span.Type == "sql" || span.Type == "cassandra")
             {
                 span.ResourceName = ObfuscateSqlResource(span.ResourceName);
@@ -115,7 +123,7 @@ namespace Datadog.Trace.Processors
                     {
                         if (IsQuoted(sqlChars, sequenceStart, sequenceEnd)
                             || IsNumericLiteralPrefix(sqlChars[sequenceStart])
-                            || IsHexLiteralPrefix(sqlChars, sequenceStart, sequenceEnd))
+                            || IsPrefixedLiteral(sqlChars, sequenceStart, sequenceEnd))
                         {
                             var length = sequenceEnd - sequenceStart;
                             Array.Copy(sqlChars, end, sqlChars, sequenceStart + 1, outputLength - end);
@@ -181,17 +189,16 @@ namespace Datadog.Trace.Processors
 
         private static bool IsSplitter(char c)
         {
-            if (Convert.ToInt16(c) < 256)
-            {
-                return Splitters.Get(c);
-            }
-
-            return false;
+            // Note: the comparison must not go through Convert, which throws for a char that does
+            // not fit an Int16. A query holding one (any CJK character from U+8000, or either half
+            // of an emoji surrogate pair) would otherwise abort obfuscation and leave every literal
+            // in the query untouched.
+            return c < 256 && Splitters.Get(c);
         }
 
         private static bool IsNumericLiteralPrefix(char c)
         {
-            return NumericLiteralPrefix.Get(Convert.ToByte(c));
+            return c < 256 && NumericLiteralPrefix.Get(c);
         }
 
         /// <summary>
@@ -255,10 +262,40 @@ namespace Datadog.Trace.Processors
             return (sqlChars[start] == '\'' && sqlChars[end] == '\'');
         }
 
-        private static bool IsHexLiteralPrefix(char[] sqlChars, int start, int end)
+        /// <summary>
+        /// Determines whether the sequence is a string literal introduced by a type prefix, which
+        /// every SQL dialect we instrument has some form of: hexadecimal (<c>x'..'</c>), national
+        /// character (<c>N'..'</c>), escaped (<c>E'..'</c>), bit (<c>B'..'</c>), Oracle quoted
+        /// (<c>q'[..]'</c>), and MySQL character set introducers (<c>_utf8'..'</c>). Without this
+        /// the literal is left in place, so the value it holds is reported verbatim.
+        /// </summary>
+        private static bool IsPrefixedLiteral(char[] sqlChars, int start, int end)
         {
-            // | 0x20 converts ASCII characters to lowercase
-            return (sqlChars[start] | 0x20) == 'x' && start + 1 < end && sqlChars[start + 1] == '\'';
+            if (sqlChars[end] != '\'')
+            {
+                return false;
+            }
+
+            // The prefix is the identifier characters between the start of the sequence and the
+            // opening quote, and there has to be at least one of them and at least one after it.
+            for (var i = start; i < end; i++)
+            {
+                var c = sqlChars[i];
+                if (c == '\'')
+                {
+                    return i > start;
+                }
+
+                // | 0x20 converts ASCII characters to lowercase. A digit is only allowed after the
+                // first character, so that a numeric literal is not mistaken for a prefix.
+                var isLetter = (c | 0x20) is >= 'a' and <= 'z';
+                if (!isLetter && c != '_' && !(i > start && c is >= '0' and <= '9'))
+                {
+                    return false;
+                }
+            }
+
+            return false;
         }
 
         private static int PreviousSetBit(BitArray array, int fromIndex)
