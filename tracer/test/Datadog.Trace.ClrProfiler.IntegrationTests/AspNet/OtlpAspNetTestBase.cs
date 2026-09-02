@@ -1,4 +1,4 @@
-// <copyright file="OtlpAspNetTestBase.cs" company="Datadog">
+﻿// <copyright file="OtlpAspNetTestBase.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -23,7 +23,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         private readonly IisFixture _iisFixture;
 
         protected OtlpAspNetTestBase(IisFixture iisFixture, ITestOutputHelper output, string testName, bool openTelemetrySemanticsEnabled)
-            : base("AspNetMvc5", @"test\test-applications\aspnet", output, testName, openTelemetrySemanticsEnabled, iisFixture.OtlpSession)
+            : base("AspNetMvc5", iisFixture, @"test\test-applications\aspnet", output, testName, openTelemetrySemanticsEnabled)
         {
             _iisFixture = iisFixture;
             _iisFixture.ShutdownPath = "/home/shutdown";
@@ -33,7 +33,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         protected override string WarmupPath => "/home/index";
 
         /// <inheritdoc />
-        protected override Task StartApplicationAsync()
+        protected override Task StartServerAsync()
             => _iisFixture.TryStartIis(this, IisAppType.AspNetIntegrated, sendHealthCheck: false);
 
         /// <inheritdoc />
