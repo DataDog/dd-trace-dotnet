@@ -277,9 +277,6 @@ internal static class RaspModule
         RecordRaspError(address, result, metrics);
     }
 
-    internal static void RecordRaspError(string address, IResult? result)
-        => RecordRaspError(address, result, TelemetryFactory.Metrics);
-
     internal static void RecordRaspError(string address, IResult? result, IMetricsTelemetryCollector metrics)
     {
         // a timeout is already reported through rasp.timeout, and takes precedence over the return
@@ -527,11 +524,6 @@ internal static class RaspModule
                 }
 
                 var context = rootSpan.Context.TraceContext.AppSecRequestContext;
-                if (context is null)
-                {
-                    RecordRaspSkipped(AddressesConstants.DownstreamUrl, SkipReason.OutOfRequest);
-                    return false;
-                }
 
                 var wafArgs = new Dictionary<string, object>();
                 wafArgs[AddressesConstants.DownstreamUrl] = requestMessage.RequestUri?.ToString() ?? string.Empty;
@@ -589,11 +581,6 @@ internal static class RaspModule
             }
 
             var context = rootSpan.Context.TraceContext.AppSecRequestContext;
-            if (context is null)
-            {
-                RecordRaspSkipped(AddressesConstants.DownstreamUrl, SkipReason.OutOfRequest);
-                return;
-            }
 
             var wafArgs = new Dictionary<string, object>();
             wafArgs[AddressesConstants.DownstreamResponseStatus] = responseMessage.StatusCode;
