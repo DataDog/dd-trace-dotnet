@@ -243,6 +243,24 @@ namespace BuggyBits.Controllers
             return Ok("Endpoint profiling");
         }
 
+        // GET: Products/Allocations
+        [Route("Products/Allocations")]
+        public IActionResult Allocations(int count, int size)
+        {
+            if (count <= 0 || size <= 0)
+            {
+                return BadRequest("The allocation count and size must be positive.");
+            }
+
+            for (var i = 0; i < count; i++)
+            {
+                var allocation = new byte[size];
+                GC.KeepAlive(allocation);
+            }
+
+            return Ok($"Allocated {count} byte[{size}] arrays");
+        }
+
         // GET: Products/Details/BugSpray
         [Route("Products/Details/{productName}")]
         public IActionResult Details(string productName)

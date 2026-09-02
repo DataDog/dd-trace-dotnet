@@ -25,6 +25,7 @@ public:
         static const std::string CodeHotspotsThreadsThreshold;
         static const std::string TimestampsAsLabelEnabled;
         static const std::string DebugInfoEnabled;
+        static const std::string GcLifecycleEventsSkipProcessing;
         static const std::string GcThreadsCpuTimeEnabled;
         static const std::string InternalMetricsEnabled;
         static const std::string CoreMinimumOverride;

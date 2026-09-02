@@ -61,6 +61,7 @@ public:
     int32_t CpuThreadsThreshold() const override;
     int32_t CodeHotspotsThreadsThreshold() const override;
     bool IsGarbageCollectionProfilingEnabled() const override;
+    bool IsGcLifecycleEventsProcessingSkipped() const override;
     bool IsHeapProfilingEnabled() const override;
     bool IsAllocationRecorderEnabled() const override;
     bool IsDebugInfoEnabled() const override;
@@ -163,6 +164,7 @@ private:
     bool _isAllocationProfilingEnabled;
     bool _isContentionProfilingEnabled;
     bool _isGarbageCollectionProfilingEnabled;
+    bool _isGcLifecycleEventsProcessingSkipped;
     bool _isHeapProfilingEnabled;
     bool _isThreadLifetimeEnabled;
     bool _debugLogEnabled;

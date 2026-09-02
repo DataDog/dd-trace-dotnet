@@ -2843,5 +2843,11 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::EventPipeProviderCreated(EVENTPIP
     }
 
     Log::Debug("Event pipe provider: ", shared::ToString(providerName));
+
+    if (_pEventPipeEventsManager != nullptr)
+    {
+        _pEventPipeEventsManager->OnProviderCreated(provider);
+    }
+
     return S_OK;
 }
