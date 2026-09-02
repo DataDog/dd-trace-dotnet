@@ -31,6 +31,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
 
         private const string OperationName = "aspnet-webapi.request";
 
+        // The HttpRequestMessage property under which the OWIN hosts store the request's IOwinContext
+        private const string OwinContextKey = "MS_OwinContext";
+
         private const IntegrationId IntegrationId = Configuration.IntegrationId.AspNetWebApi2;
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(AspNetWebApi2Integration));
 
@@ -69,7 +72,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                     if (tracer.Settings.IpHeaderEnabled || Security.Instance.AppsecEnabled)
                     {
                         const string httpContextKey = "MS_HttpContext";
-                        if (request.Properties.TryGetValue("MS_OwinContext", out var owinContextObj))
+                        if (request.Properties.TryGetValue(OwinContextKey, out var owinContextObj))
                         {
                             if (owinContextObj != null)
                             {
@@ -234,19 +237,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
 
                 if (otelSemanticsEnabled)
                 {
-                    // HttpRequestMessage.Version is not the protocol the request arrived over: the
-                    // System.Web host builds the message itself and leaves the default 1.1 in place,
-                    // so read the protocol from the underlying request instead. A self-hosted Web API
-                    // has no System.Web request, and no protocol worth guessing at.
-                    var currentRequest = System.Web.HttpContext.Current?.Request;
-
                     HttpSemanticConventions.SetHttpServerRequestValues(
                         span,
                         tags,
                         resourceName: HttpSemanticConventions.GetServerResourceName(request.Method.Method, route),
                         originalMethod: request.Method.Method,
                         userAgent: request.Headers.UserAgent?.ToString(),
-                        protocol: currentRequest is null ? null : RequestDataHelper.GetServerProtocol(currentRequest),
+                        protocol: GetCurrentRequestProtocol(request),
                         hostHeader: request.Headers.Host,
                         requestUri: requestUri,
                         queryStringManager: tracer.TracerManager.QueryStringManager);
@@ -296,6 +293,36 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
             {
                 Log.Error(ex, "Error populating scope data.");
             }
+        }
+
+        /// <summary>
+        /// Gets the protocol the request arrived over, e.g. "HTTP/1.1", or <c>null</c> if it cannot be
+        /// determined. Note that <c>HttpRequestMessage.Version</c> must not be used for this: neither
+        /// host populates it from the incoming request, so it always holds the default of 1.1.
+        /// </summary>
+        /// <param name="request">The request being traced</param>
+        private static string GetCurrentRequestProtocol(IHttpRequestMessage request)
+        {
+            // When Web API is hosted by ASP.NET, the System.Web request knows the protocol.
+            if (System.Web.HttpContext.Current?.Request is { } currentRequest)
+            {
+                return RequestDataHelper.GetServerProtocol(currentRequest);
+            }
+
+            // A self-hosted (OWIN) Web API has no System.Web request, but the OWIN request has the protocol.
+            try
+            {
+                if (request.Properties.TryGetValue(OwinContextKey, out var owinContextObj) && owinContextObj is not null)
+                {
+                    return owinContextObj.DuckCast<OwinContextStruct>().Request.Protocol;
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Debug(ex, "Error reading the protocol from the OWIN request.");
+            }
+
+            return null;
         }
 
         private static string TryGetRouteTemplate(IHttpControllerContext controllerContext)

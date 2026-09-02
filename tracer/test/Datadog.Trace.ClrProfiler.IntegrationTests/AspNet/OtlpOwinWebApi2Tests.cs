@@ -54,10 +54,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public static TheoryData<string, string, int, int> Data => new()
         {
             // The baseline attribute set (http.request.method, url.path, url.scheme,
-            // http.response.status_code, server.address, server.port, user_agent.original), with the
-            // low-cardinality route retained in http.route, a "{method} {http.route}" span name, and
-            // no url.query. Unlike the IIS-hosted samples there is no network.protocol.version: the
-            // protocol the request arrived over is only reachable through System.Web.
+            // http.response.status_code, network.protocol.version, server.address, server.port,
+            // user_agent.original), with the low-cardinality route retained in http.route, a
+            // "{method} {http.route}" span name, and no url.query. There is no System.Web request to
+            // read the protocol from here, so it is read from the OWIN request instead.
             { "GET", "/api/delay/0", 200, 1 },
 
             // url.query is reported when the request carries a query string.
