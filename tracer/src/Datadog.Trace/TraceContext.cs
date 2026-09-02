@@ -333,12 +333,7 @@ namespace Datadog.Trace
                 return samplingPriority;
             }
 
-            return GetOrMakeSamplingDecision(_rootSpan);
-        }
-
-        public int GetOrMakeSamplingDecision(Span? span)
-        {
-            if (span is null)
+            if (_rootSpan is null)
             {
                 // we can't make a sampling decision without a root span because:
                 // - we need a trace id, and for now trace id lives in SpanContext, not in TraceContext
@@ -350,7 +345,7 @@ namespace Datadog.Trace
             }
 
             var samplingDecision = CurrentTraceSettings?.TraceSampler is { } sampler
-                                       ? sampler.MakeSamplingDecision(span)
+                                       ? sampler.MakeSamplingDecision(_rootSpan)
                                        : SamplingDecision.Default;
 
             SetSamplingPriority(
