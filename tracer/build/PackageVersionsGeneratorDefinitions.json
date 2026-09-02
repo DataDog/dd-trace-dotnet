@@ -599,6 +599,16 @@
     ]
   },
   {
+    "IntegrationName": "XUnitV4Parallel",
+    "SampleProjectName": "Samples.XUnitTestsV4Parallel",
+    "NugetPackageSearchName": "xunit.v3",
+    "MinVersion": "4.0.0",
+    "MaxVersionExclusive": "5.0.0",
+    "SpecificVersions": [
+      "4.*.*"
+    ]
+  },
+  {
     "IntegrationName": "NUnit",
     "SampleProjectName": "Samples.NUnitTests",
     "NugetPackageSearchName": "NUnit",

@@ -27,7 +27,31 @@ public class XUnitV4ParallelTests : TestingFrameworkRetriesTests
         SetServiceName("xunit-v4-parallel");
     }
 
-    public static IEnumerable<object[]> Repetitions => Enumerable.Range(1, 20).Select(index => new object[] { index, index % 2 == 0 ? "conservative" : "aggressive" });
+    public static IEnumerable<object[]> Repetitions
+    {
+        get
+        {
+            foreach (var packageVersion in PackageVersions.XUnitV4Parallel)
+            {
+                foreach (var repetition in Enumerable.Range(1, 20))
+                {
+                    yield return [packageVersion[0], repetition, repetition % 2 == 0 ? "conservative" : "aggressive"];
+                }
+            }
+        }
+    }
+
+    public static IEnumerable<object[]> ParallelModes
+    {
+        get
+        {
+            foreach (var packageVersion in PackageVersions.XUnitV4Parallel)
+            {
+                yield return [packageVersion[0], "none"];
+                yield return [packageVersion[0], "collections"];
+            }
+        }
+    }
 
     protected override string AlwaysFails => $"{TestSuite}.AlwaysFails";
 
@@ -46,24 +70,23 @@ public class XUnitV4ParallelTests : TestingFrameworkRetriesTests
     [Trait("Category", "EndToEnd")]
     [Trait("Category", "TestIntegrations")]
     [Trait("Category", "FlakyRetries")]
-    public async Task FullParallelRetriesKeepTheoryRowsIsolated(int repetition, string parallelAlgorithm)
+    public async Task FullParallelRetriesKeepTheoryRowsIsolated(string packageVersion, int repetition, string parallelAlgorithm)
     {
         Output.WriteLine("Parallel retry repetition: {0}; algorithm: {1}", repetition, parallelAlgorithm);
         SetEnvironmentVariable(RequireCaseParallelismEnvironmentVariable, "1");
-        var tests = await FlakyRetriesWithArguments("4.0.0", $"-parallelMode all -parallelAlgorithm {parallelAlgorithm} -maxThreads unlimited");
+        var tests = await FlakyRetriesWithArguments(packageVersion, $"-parallelMode all -parallelAlgorithm {parallelAlgorithm} -maxThreads unlimited");
         AssertRetryIsolation(tests);
     }
 
     [SkippableTheory]
-    [InlineData("none")]
-    [InlineData("collections")]
+    [MemberData(nameof(ParallelModes))]
     [Trait("Category", "EndToEnd")]
     [Trait("Category", "TestIntegrations")]
     [Trait("Category", "FlakyRetries")]
-    public async Task RunnerParallelModesPreserveRetrySemantics(string parallelMode)
+    public async Task RunnerParallelModesPreserveRetrySemantics(string packageVersion, string parallelMode)
     {
         SetEnvironmentVariable(RequireCaseParallelismEnvironmentVariable, "0");
-        var tests = await FlakyRetriesWithArguments("4.0.0", $"-parallelMode {parallelMode} -parallelAlgorithm conservative");
+        var tests = await FlakyRetriesWithArguments(packageVersion, $"-parallelMode {parallelMode} -parallelAlgorithm conservative");
         AssertRetryIsolation(tests);
     }
 

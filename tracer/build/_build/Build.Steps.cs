@@ -1760,14 +1760,17 @@ partial class Build
             CompileSamplesThatDependOnDatadogTrace();
 
             // This is separated from CompileSamples, because we can only publish for the actual platform we're on,
-            var trimmingSamples = new []
+            var platformSpecificSamples = new []
             {
-                (project: "Samples.Trimming",include: Framework.IsGreaterThanOrEqualTo(TargetFramework.NET6_0), r2r: false),
-                (project: "Samples.ManualInstrumentation",include: Framework.IsGreaterThanOrEqualTo(TargetFramework.NETCOREAPP2_1), r2r: true),
+                (project: "Samples.Trimming", include: Framework.IsGreaterThanOrEqualTo(TargetFramework.NET6_0), publishWithRuntimeIdentifier: true, r2r: false, apiVersion: string.Empty),
+                (project: "Samples.ManualInstrumentation", include: Framework.IsGreaterThanOrEqualTo(TargetFramework.NETCOREAPP2_1), publishWithRuntimeIdentifier: true, r2r: true, apiVersion: string.Empty),
+                // xUnit v4's VSTest adapter launches the test assembly through its apphost,
+                // so the Windows-built multi-version artifact cannot be reused on Unix.
+                (project: "Samples.XUnitTestsV3", include: !IsWin && Framework.IsGreaterThanOrEqualTo(TargetFramework.NET8_0), publishWithRuntimeIdentifier: false, r2r: false, apiVersion: "4.0.0"),
             };
             // These are sample projects, looked up in SamplesSolution (the default Solution is now Datadog.Trace.Build.g.sln, which excludes samples).
-            var projectsToPublish = trimmingSamples
-                                   .Select(x => (project: SamplesSolution.GetProject(x.project), x.include, x.r2r))
+            var projectsToPublish = platformSpecificSamples
+                                   .Select(x => (project: SamplesSolution.GetProject(x.project), x.include, x.publishWithRuntimeIdentifier, x.r2r, x.apiVersion))
                                    .Where(x => (x, x.project.TryGetTargetFrameworks(), x.project.RequiresDockerDependency()) switch
                                     {
                                         ({include: false }, _, _) => false,
@@ -1790,11 +1793,12 @@ partial class Build
 
             DotNetPublish(config => config
                 .SetConfiguration(BuildConfiguration)
-                .SetRuntime(rid)
                 .SetFramework(Framework)
                 .CombineWith(projectsToPublish,
                     (s, project) => s
                         .SetProject(project.project)
+                        .When(!string.IsNullOrEmpty(project.apiVersion), x => x.SetProperty("ApiVersion", project.apiVersion))
+                        .When(project.publishWithRuntimeIdentifier, x => x.SetRuntime(rid))
                         .When(project.r2r, x => x.SetPublishReadyToRun(true))));
 
             void CompileSamplesThatDependOnDatadogTrace()

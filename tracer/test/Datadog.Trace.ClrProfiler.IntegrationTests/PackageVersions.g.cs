@@ -92,6 +92,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         public static IEnumerable<object[]> XUnitRetriesV3 => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.XUnitRetriesV3 : PackageVersionsLatestSpecific.XUnitRetriesV3;
 
+        public static IEnumerable<object[]> XUnitV4Parallel => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.XUnitV4Parallel : PackageVersionsLatestSpecific.XUnitV4Parallel;
+
         public static IEnumerable<object[]> NUnit => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.NUnit : PackageVersionsLatestSpecific.NUnit;
 
         public static IEnumerable<object[]> NUnitGlobalCoverageMemoryCoverlet => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.NUnitGlobalCoverageMemoryCoverlet : PackageVersionsLatestSpecific.NUnitGlobalCoverageMemoryCoverlet;
