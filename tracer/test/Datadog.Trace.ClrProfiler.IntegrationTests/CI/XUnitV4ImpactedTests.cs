@@ -12,6 +12,7 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI;
 
+[Collection(nameof(ImpactedTestsCollection))]
 public class XUnitV4ImpactedTests : TestingFrameworkImpactedTests
 {
     private const string IsModifiedTag = "test.is_modified";

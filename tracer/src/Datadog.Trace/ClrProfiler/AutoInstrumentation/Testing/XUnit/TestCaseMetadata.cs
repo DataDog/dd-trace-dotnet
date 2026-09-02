@@ -49,6 +49,17 @@ internal class TestCaseMetadata
     public bool HasAnException { get; set; }
 
     /// <summary>
+    /// Gets or sets a value indicating whether retries are scheduled after the current test span closes.
+    /// </summary>
+    public bool UsesRetryCoordinator { get; set; }
+
+    /// <summary>
+    /// Gets or sets the decision reserved while the current attempt closes. The retry scheduler reuses this
+    /// decision so another test cannot consume the same shared ATR budget slot in between callbacks.
+    /// </summary>
+    public XUnitRetryExecutionDecision? PendingRetryDecision { get; set; }
+
+    /// <summary>
     /// Gets or sets a value indicating whether the initial execution passed. Only PASS counts as passed, not SKIP.
     /// </summary>
     public bool InitialExecutionPassed { get; set; }
@@ -66,4 +77,11 @@ internal class TestCaseMetadata
     public bool AnyRetryPassed { get; set; }
 
     public string UniqueID { get; }
+
+    public void PrepareForRetry()
+    {
+        CountDownExecutionNumber--;
+        HasAnException = false;
+        PendingRetryDecision = null;
+    }
 }

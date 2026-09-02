@@ -315,6 +315,20 @@ internal static class XUnitIntegration
             return;
         }
 
+        XUnitRetryExecutionDecision? retryDecision = null;
+        if (testCaseMetadata is { UsesRetryCoordinator: true, IsFlakyRetry: true })
+        {
+            var hasRemainingExecutions = testCaseMetadata.IsRetry
+                                             ? testCaseMetadata.CountDownExecutionNumber > 0
+                                             : (TestOptimization.Instance.FlakyRetryFeature?.FlakyRetryCount ?? TestOptimizationFlakyRetryFeature.FlakyRetryCountDefault) > 0;
+            retryDecision = hasRemainingExecutions
+                                ? XUnitRetryCoordinator.GetOrCreateRetryExecutionDecision(
+                                    testCaseMetadata,
+                                    hasFailures: !isSkip && testCaseMetadata.HasAnException,
+                                    hasNotRun: false)
+                                : XUnitRetryExecutionDecision.RetryBudgetExhausted;
+        }
+
         // Determine if this is a "final execution" for final_status calculation
         // XUnit has a timing issue: TotalExecutions is stale during initial EFD execution
         // (it's updated in OnAsyncMethodEnd AFTER FinishTest). Use guards to handle this.
@@ -325,7 +339,9 @@ internal static class XUnitIntegration
             {
                 TestRetryMode.EarlyFlakeDetection => true,
                 TestRetryMode.AttemptToFix => true,
-                TestRetryMode.AutomaticTestRetry => !isSkip && testCaseMetadata.HasAnException && GetRemainingAtrBudget() != 0,
+                TestRetryMode.AutomaticTestRetry => retryDecision is { } decision
+                                                        ? decision == XUnitRetryExecutionDecision.Retry
+                                                        : !isSkip && testCaseMetadata.HasAnException && GetRemainingAtrBudget() != 0,
                 _ => false
             };
         }
@@ -333,16 +349,16 @@ internal static class XUnitIntegration
         // ATR early exit detection
         var isAtrRetry = testCaseMetadata.IsRetry && testCaseMetadata.IsFlakyRetry;
         var isAtrEarlyExit = isAtrRetry &&
-                             testCaseMetadata is { HasAnException: false, Skipped: false, IsLastRetry: false };
+                             testCaseMetadata is { HasAnException: false, Skipped: false, IsLastRetry: false } &&
+                             (retryDecision is null || retryDecision == XUnitRetryExecutionDecision.SuccessfulExecution);
 
         // ATR budget exhaustion detection (Edge Case 23)
         var isAtrBudgetExhausted = false;
         if (isAtrRetry && testCaseMetadata is { HasAnException: true, IsLastRetry: false })
         {
-            var remainingBudget = GetRemainingAtrBudget();
-            // This pre-close check runs before the retry scheduler consumes a budget slot.
-            // A value of 0 means no further retry can be scheduled.
-            isAtrBudgetExhausted = remainingBudget <= 0;
+            isAtrBudgetExhausted = retryDecision is { } decision
+                                       ? decision == XUnitRetryExecutionDecision.RetryBudgetExhausted
+                                       : GetRemainingAtrBudget() <= 0;
         }
 
         // Single-execution test: TotalExecutions == 1 means no retries were scheduled
@@ -449,6 +465,18 @@ internal static class XUnitIntegration
                 return XUnitRetryExecutionDecision.Retry;
             }
         }
+    }
+
+    internal static XUnitRetryExecutionDecision GetOrCreateRetryExecutionDecision(TestCaseMetadata testCaseMetadata, bool hasFailures, bool hasNotRun, ref int totalRetries)
+    {
+        if (testCaseMetadata.PendingRetryDecision is { } retryDecision)
+        {
+            return retryDecision;
+        }
+
+        retryDecision = GetRetryExecutionDecision(testCaseMetadata, hasFailures, hasNotRun, ref totalRetries);
+        testCaseMetadata.PendingRetryDecision = retryDecision;
+        return retryDecision;
     }
 
     internal static bool ShouldWaitForExceptionInstrumentation(ITestOptimization testOptimization, TestCaseMetadata testCaseMetadata)

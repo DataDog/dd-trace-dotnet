@@ -207,6 +207,53 @@ public class XUnitV4IntegrationTests
     }
 
     [Fact]
+    public void SharedAutomaticRetryBudgetReservationIsStableUnderContention()
+    {
+        var metadata = new[]
+        {
+            CreateAutomaticRetryMetadata("case-1"),
+            CreateAutomaticRetryMetadata("case-2"),
+        };
+        var decisions = new XUnitRetryExecutionDecision[metadata.Length];
+        var retryBudget = 1;
+
+        Parallel.For(
+            0,
+            metadata.Length,
+            index => decisions[index] = XUnitIntegration.GetOrCreateRetryExecutionDecision(
+                metadata[index],
+                hasFailures: true,
+                hasNotRun: false,
+                ref retryBudget));
+
+        decisions.Should().ContainSingle(decision => decision == XUnitRetryExecutionDecision.Retry);
+        decisions.Should().ContainSingle(decision => decision == XUnitRetryExecutionDecision.RetryBudgetExhausted);
+        retryBudget.Should().Be(0);
+
+        for (var i = 0; i < metadata.Length; i++)
+        {
+            XUnitIntegration.GetOrCreateRetryExecutionDecision(metadata[i], hasFailures: false, hasNotRun: false, ref retryBudget)
+                            .Should().Be(decisions[i]);
+        }
+    }
+
+    [Fact]
+    public void SharedRetryMetadataClearsOnlyPerAttemptStateBeforeRetry()
+    {
+        var metadata = CreateAutomaticRetryMetadata("case");
+        metadata.HasAnException = true;
+        metadata.InitialExecutionFailed = true;
+        metadata.PendingRetryDecision = XUnitRetryExecutionDecision.Retry;
+
+        metadata.PrepareForRetry();
+
+        metadata.ExecutionIndex.Should().Be(1);
+        metadata.HasAnException.Should().BeFalse();
+        metadata.PendingRetryDecision.Should().BeNull();
+        metadata.InitialExecutionFailed.Should().BeTrue();
+    }
+
+    [Fact]
     public void SharedRunSummaryKeepsFirstCompletedResultWhenNoExecutionPasses()
     {
         var failedThenSkipped = new XUnitRunSummary { Total = 1, Failed = 1 };
@@ -385,6 +432,12 @@ public class XUnitV4IntegrationTests
                 new TestPassed(testCaseUniqueID, testMethodUniqueID, value) :
                 new TestFailed(testCaseUniqueID, testMethodUniqueID, value));
     }
+
+    private static TestCaseMetadata CreateAutomaticRetryMetadata(string uniqueID)
+        => new(uniqueID, totalExecution: 4, countDownExecutionNumber: 3)
+        {
+            SelectedRetryMode = TestRetryMode.AutomaticTestRetry,
+        };
 
     private static IEnumerable<string> GetCaseValues(RecordingMessageBus innerBus, string testCaseUniqueID)
         => innerBus.Messages.OfType<TestResult>()

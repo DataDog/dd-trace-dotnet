@@ -26,6 +26,12 @@ internal static class XUnitRetryCoordinator
     internal static int GetRemainingAtrBudget()
         => Interlocked.CompareExchange(ref _totalRetries, 0, 0);
 
+    internal static XUnitRetryExecutionDecision GetOrCreateRetryExecutionDecision(
+        TestCaseMetadata testCaseMetadata,
+        bool hasFailures,
+        bool hasNotRun)
+        => XUnitIntegration.GetOrCreateRetryExecutionDecision(testCaseMetadata, hasFailures, hasNotRun, ref _totalRetries);
+
 #if NETCOREAPP3_1_OR_GREATER
     internal static async ValueTask<XUnitRunSummary> ProcessResultAsync<TRetryRunner>(
 #else
@@ -55,11 +61,10 @@ internal static class XUnitRetryCoordinator
 
                 if (testCaseMetadata.CountDownExecutionNumber > 0)
                 {
-                    var retryDecision = XUnitIntegration.GetRetryExecutionDecision(
+                    var retryDecision = GetOrCreateRetryExecutionDecision(
                         testCaseMetadata,
                         hasFailures: runSummary.Failed > 0,
-                        hasNotRun: runSummary.NotRun > 0,
-                        ref _totalRetries);
+                        hasNotRun: runSummary.NotRun > 0);
 
                     if (retryDecision == XUnitRetryExecutionDecision.Retry)
                     {
@@ -71,7 +76,7 @@ internal static class XUnitRetryCoordinator
                                                   .ConfigureAwait(false);
                         }
 
-                        testCaseMetadata.CountDownExecutionNumber--;
+                        testCaseMetadata.PrepareForRetry();
                         if (await retryRunner.RunAsync().ConfigureAwait(false) is { } retrySummary)
                         {
                             runSummary.Aggregate(retrySummary);
