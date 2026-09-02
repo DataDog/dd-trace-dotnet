@@ -14,9 +14,9 @@ namespace Datadog.Trace.TestHelpers
         public static Result IsAdoNet(this MockSpan span, string metadataSchemaVersion) =>
             metadataSchemaVersion switch
             {
-                // A custom ADO.NET provider reports the name we derived from its command type,
-                // so there is no fixed "db.system.name" to expect here
-                "otel" => span.IsDatabaseClientOTel(span.Name),
+                // A custom ADO.NET provider reports the name we derived from its command type, so
+                // neither the operation name nor "db.system.name" has a fixed value to expect here
+                "otel" => span.IsDatabaseClientOTel(),
                 "v1" => span.IsAdoNetV1(),
                 _ => span.IsAdoNetV0(),
             };

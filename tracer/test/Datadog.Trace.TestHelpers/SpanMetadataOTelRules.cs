@@ -42,10 +42,19 @@ namespace Datadog.Trace.TestHelpers
 
         // See: https://opentelemetry.io/docs/specs/semconv/database/database-spans/
         //  and https://opentelemetry.io/docs/specs/semconv/database/sql/
-        public static Result IsDatabaseClientOTel(this MockSpan span, string operationName, string dbSystemName = null) => Result.FromSpan(span)
-            .Properties(s => s
-                .Matches(Name, operationName)
-                .Matches(Type, "sql"))
+        /// <param name="span">The database client span.</param>
+        /// <param name="operationName">The Datadog operation name, or <c>null</c> for a custom ADO.NET provider, whose operation name is derived from its command type.</param>
+        /// <param name="dbSystemName">The expected "db.system.name", or <c>null</c> for a custom ADO.NET provider, which has no fixed value.</param>
+        public static Result IsDatabaseClientOTel(this MockSpan span, string operationName = null, string dbSystemName = null) => Result.FromSpan(span)
+            .Properties(s =>
+            {
+                if (operationName is not null)
+                {
+                    s.Matches(Name, operationName);
+                }
+
+                s.Matches(Type, "sql");
+            })
             .Tags(s =>
             {
                 // Required. A custom ADO.NET provider reports the name we derived from its command

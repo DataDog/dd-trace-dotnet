@@ -891,6 +891,65 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             tags.Should().Contain(Tags.DbQueryText, SanitizedDbmCommandText);
         }
 
+        [Theory]
+        // The host, the port, and the namespace each come from a different part of the connection
+        // string depending on the provider
+        [InlineData(typeof(Npgsql.NpgsqlCommand), "Host=pg;Port=5433;Database=app", "pg", "5433", "app")]
+        [InlineData(typeof(Npgsql.NpgsqlCommand), "Host=pg;Port=5432;Database=app", "pg", null, "app")]
+        [InlineData(typeof(MySqlConnector.MySqlCommand), "Server=mysql;Port=3307;Database=world", "mysql", "3307", "world")]
+        [InlineData(typeof(Microsoft.Data.SqlClient.SqlCommand), "Server=tcp:mssql,1434;Initial Catalog=app", "mssql", "1434", "app")]
+        [InlineData(typeof(Microsoft.Data.SqlClient.SqlCommand), "Server=mssql\\SQLEXPRESS;Initial Catalog=app", "mssql", null, "SQLEXPRESS|app")]
+        public async Task CreateDbCommandScope_WithOpenTelemetrySemantics_ReportsTheConnectionAttributes(
+            Type commandType,
+            string connectionString,
+            string expectedServerAddress,
+            string expectedServerPort,
+            string expectedDbNamespace)
+        {
+            var command = (IDbCommand)Activator.CreateInstance(commandType)!;
+            command.CommandText = DbmCommandText;
+            command.Connection = CreateConnection(connectionString);
+
+            await using var tracer = CreateTracerWithOpenTelemetrySemantics();
+
+            using var scope = CreateDbCommandScope(tracer, command);
+            var tags = GetSerializedTags(scope.Span);
+
+            tags.Should().Contain(Tags.ServerAddress, expectedServerAddress);
+            tags.Should().Contain(Tags.DbNamespace, expectedDbNamespace);
+
+            if (expectedServerPort is null)
+            {
+                // The default port of the DBMS is not reported
+                tags.Keys.Should().NotContain(Tags.ServerPort);
+            }
+            else
+            {
+                tags.Should().Contain(Tags.ServerPort, expectedServerPort);
+            }
+
+            // No query summary is available without a SQL parser, so the span name is the namespace
+            scope.Span.ResourceName.Should().Be(expectedDbNamespace);
+        }
+
+        [Fact]
+        public async Task CreateDbCommandScope_WithDatadogSemantics_ReportsTheConnectionStringVerbatim()
+        {
+            var command = (IDbCommand)Activator.CreateInstance(typeof(Microsoft.Data.SqlClient.SqlCommand))!;
+            command.CommandText = DbmCommandText;
+            command.Connection = CreateConnection("Server=tcp:mssql,1434;Initial Catalog=app;User ID=me");
+
+            await using var tracer = TracerHelper.CreateWithFakeAgent(TracerSettings.Create(new()));
+
+            using var scope = CreateDbCommandScope(tracer, command);
+            var tags = GetSerializedTags(scope.Span);
+
+            tags.Should().Contain(Tags.OutHost, "tcp:mssql,1434");
+            tags.Should().Contain(Tags.DbName, "app");
+            tags.Should().Contain(Tags.DbUser, "me");
+            tags.Keys.Should().NotContain(Tags.ServerPort);
+        }
+
         [Fact]
         public async Task CreateDbCommandScope_WithOpenTelemetrySemantics_SanitizesTheQueryText()
         {
@@ -1006,6 +1065,12 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             var processor = new TagCollectorProcessor(tags);
             span.Tags.EnumerateTags(ref processor, span.OpenTelemetrySemanticsEnabled);
             return tags;
+        }
+
+        private static IDbConnection CreateConnection(string connectionString)
+        {
+            // The connection is never opened: only its connection string is read
+            return new MockDbConnection { ConnectionString = connectionString };
         }
 
         private static Scope CreateDbCommandScope(Tracer tracer, IDbCommand command)

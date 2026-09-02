@@ -12,8 +12,16 @@ using AdoNetDbType = Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.DbType
 
 namespace Datadog.Trace.Tests.Util;
 
+[Collection(nameof(DbCommandCacheTestCollection))]
 public class DbCommandCacheTests
 {
+    public DbCommandCacheTests()
+    {
+        // The cache is process-wide, and it disables itself once it has seen more distinct
+        // connection strings than its capacity
+        DbCommandCache.Cache.ResetForTests();
+    }
+
     [Theory]
     // SQL Server keeps the host, the instance name, and the port in a single keyword, which the
     // Datadog "out.host" reports verbatim and the OpenTelemetry attributes split apart

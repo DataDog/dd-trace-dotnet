@@ -15,6 +15,7 @@ using AdoNetDbType = Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.DbType
 
 namespace Datadog.Trace.Tests.ExtensionMethods
 {
+    [Collection(nameof(DbCommandCacheTestCollection))]
     public class SpanExtensionsTests
     {
         public SpanExtensionsTests()
