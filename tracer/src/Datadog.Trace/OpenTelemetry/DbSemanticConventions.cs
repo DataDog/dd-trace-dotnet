@@ -200,24 +200,25 @@ namespace Datadog.Trace.OpenTelemetry
             // name can no longer be used for now that it holds the span name.
             tags.RawCommandText = commandText;
 
-            var target = NullIfEmpty(commandText.Trim());
-
             switch (commandType)
             {
-                case CommandType.StoredProcedure when target is not null:
+                // The command text of a stored procedure or a table direct command is a name rather
+                // than a query, so it is trimmed. Doing that here rather than before the switch
+                // keeps the allocation off the CommandType.Text path, which is the common one.
+                case CommandType.StoredProcedure when NullIfEmpty(commandText.Trim()) is { } procedureName:
                     // The command text is the name of the procedure, so there is no query text to
                     // report, and both the operation and the target are known without parsing.
                     tags.DbOperationName = tags.DbType == SqlServerSystem ? ExecuteOperation : CallOperation;
-                    tags.DbStoredProcedureName = target;
-                    tags.DbQuerySummary = tags.DbOperationName + " " + target;
+                    tags.DbStoredProcedureName = procedureName;
+                    tags.DbQuerySummary = tags.DbOperationName + " " + procedureName;
                     break;
 
-                case CommandType.TableDirect when target is not null:
+                case CommandType.TableDirect when NullIfEmpty(commandText.Trim()) is { } tableName:
                     // The command text is the name of a table to read in its entirety, so the
                     // collection name is readily available without parsing any query text.
                     tags.DbOperationName = SelectOperation;
-                    tags.DbCollectionName = target;
-                    tags.DbQuerySummary = SelectOperation + " " + target;
+                    tags.DbCollectionName = tableName;
+                    tags.DbQuerySummary = SelectOperation + " " + tableName;
                     break;
 
                 case CommandType.StoredProcedure:
