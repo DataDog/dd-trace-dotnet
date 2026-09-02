@@ -460,6 +460,7 @@ services:
       - TEST_AGENT_HOST=test-agent
       - CONTAINER_HOSTNAME=http://integrationtests
       - TESTCONTAINERS_RYUK_DISABLED
+      - TESTCONTAINERS_RYUK_CONTAINER_IMAGE
       - DD_LOGGER_DD_API_KEY
       - DD_LOGGER_DD_TRACE_LOG_DIRECTORY=/project/artifacts/build_data/infra_logs
       - DD_LOGGER_DD_SERVICE
@@ -699,6 +700,7 @@ services:
     command: dotnet /build/bin/Debug/_build.dll RunIntegrationTests
     volumes:
       - ./:/project
+      - /var/run/docker.sock:/var/run/docker.sock
     cap_add:
       - SYS_PTRACE
     environment:
@@ -715,6 +717,7 @@ services:
       - Verify_DisableClipboard=true
       - DiffEngine_Disabled=true
       - TESTCONTAINERS_RYUK_DISABLED
+      - TESTCONTAINERS_RYUK_CONTAINER_IMAGE
       - DD_CLR_ENABLE_NGEN=${DD_CLR_ENABLE_NGEN:-1}
       - IncludeAllTestFrameworks
       - MONGO_HOST=mongo_arm64
