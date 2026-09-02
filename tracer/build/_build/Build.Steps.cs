@@ -1798,8 +1798,7 @@ partial class Build
             {
                 foreach (var target in new[] { "Restore", "Publish" })
                 {
-                    MSBuild(config => config
-                        .SetMSBuildPath()
+                    DotNetMSBuild(config => config
                         .SetTargets(target)
                         .SetConfiguration(BuildConfiguration)
                         .SetProperty("TargetFramework", Framework.ToString())
