@@ -15,9 +15,9 @@ using Datadog.Trace.ClrProfiler.IntegrationTests.Helpers;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.TestHelpers;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
-using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 using FluentAssertions;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using VerifyXunit;
 using Xunit;
 using Xunit.Abstractions;
@@ -230,11 +230,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             // Captured before the request is sent, so it is a lower bound for every span the server
             // creates while handling it.
-            var applicationStartTimeUnixNano = DateTimeOffset.UtcNow.ToUnixTimeNanoseconds();
+            var testStartTimeUnixNano = DateTimeOffset.UtcNow.ToUnixTimeNanoseconds();
 
             await SendRequestAsync(httpMethod, path, (HttpStatusCode)statusCode);
 
-            var tracesRequests = await _otlpSession.WaitForSpansAsync(expectedSpanCount);
+            var tracesRequests = await _otlpSession.WaitForSpansAsync(expectedSpanCount, testStartTimeUnixNano, names.StartTimeUnixNano);
             tracesRequests.Should().NotBeNullOrEmpty();
             OtlpTestAgentSession.CountSpans(tracesRequests).Should().Be(expectedSpanCount);
 
@@ -248,7 +248,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
 
             OtlpSnapshotHelper.NormalizeResourceAttributes(tracesRequests, names);
-            OtlpSnapshotHelper.NormalizeSpans(tracesRequests, names, applicationStartTimeUnixNano);
+            OtlpSnapshotHelper.NormalizeSpans(tracesRequests, names, testStartTimeUnixNano);
             OtlpSnapshotHelper.NormalizeCodeOriginAttributes(tracesRequests);
 
             foreach (var key in UnstableAttributeKeys)

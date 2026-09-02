@@ -1,4 +1,4 @@
-﻿// <copyright file="OtlpAspNetWebApi2Tests.cs" company="Datadog">
+// <copyright file="OtlpAspNetWebApi2Tests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -16,7 +16,6 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
-    [Collection(nameof(TestAgentOtlpCollection))]
     public class OtlpAspNetWebApi2TestsDatadogSemantics : OtlpAspNetWebApi2Tests
     {
         public OtlpAspNetWebApi2TestsDatadogSemantics(IisFixture iisFixture, ITestOutputHelper output)
@@ -25,7 +24,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         }
     }
 
-    [Collection(nameof(TestAgentOtlpCollection))]
     public class OtlpAspNetWebApi2TestsOtelSemantics : OtlpAspNetWebApi2Tests
     {
         public OtlpAspNetWebApi2TestsOtelSemantics(IisFixture iisFixture, ITestOutputHelper output)

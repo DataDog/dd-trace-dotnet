@@ -14,7 +14,6 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
-    [Collection(nameof(TestAgentOtlpCollection))]
     public class OtlpOwinWebApi2TestsDatadogSemantics : OtlpOwinWebApi2Tests
     {
         public OtlpOwinWebApi2TestsDatadogSemantics(OwinFixture fixture, ITestOutputHelper output)
@@ -23,7 +22,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         }
     }
 
-    [Collection(nameof(TestAgentOtlpCollection))]
     public class OtlpOwinWebApi2TestsOtelSemantics : OtlpOwinWebApi2Tests
     {
         public OtlpOwinWebApi2TestsOtelSemantics(OwinFixture fixture, ITestOutputHelper output)
