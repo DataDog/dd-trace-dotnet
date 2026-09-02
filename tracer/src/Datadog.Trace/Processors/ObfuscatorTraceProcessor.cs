@@ -123,7 +123,8 @@ namespace Datadog.Trace.Processors
                     {
                         if (IsQuoted(sqlChars, sequenceStart, sequenceEnd)
                             || IsNumericLiteralPrefix(sqlChars[sequenceStart])
-                            || IsPrefixedLiteral(sqlChars, sequenceStart, sequenceEnd))
+                            || IsPrefixedLiteral(sqlChars, sequenceStart, sequenceEnd)
+                            || IsDollarQuoted(sqlChars, sequenceStart, sequenceEnd))
                         {
                             var length = sequenceEnd - sequenceStart;
                             Array.Copy(sqlChars, end, sqlChars, sequenceStart + 1, outputLength - end);
@@ -296,6 +297,16 @@ namespace Datadog.Trace.Processors
             }
 
             return false;
+        }
+
+        /// <summary>
+        /// Determines whether the sequence is a PostgreSQL dollar-quoted string (<c>$$..$$</c> or
+        /// <c>$tag$..$tag$</c>), which is how a value holding a quote is written. A positional
+        /// parameter (<c>$1</c>) does not end with a dollar sign, so it is left alone.
+        /// </summary>
+        private static bool IsDollarQuoted(char[] sqlChars, int start, int end)
+        {
+            return sqlChars[start] == '$' && sqlChars[end] == '$' && end > start;
         }
 
         private static int PreviousSetBit(BitArray array, int fromIndex)

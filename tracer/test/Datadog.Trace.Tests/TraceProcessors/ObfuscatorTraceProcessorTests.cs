@@ -186,6 +186,11 @@ namespace Datadog.Trace.Tests.TraceProcessors
             yield return new object[] { "SELECT * FROM t WHERE a = B'0101'", "SELECT * FROM t WHERE a = ?" };
             yield return new object[] { "SELECT * FROM t WHERE a = _utf8'secret'", "SELECT * FROM t WHERE a = ?" };
 
+            // PostgreSQL dollar-quoted strings, but not its positional parameters
+            yield return new object[] { "SELECT * FROM t WHERE token = $$mysecret$$", "SELECT * FROM t WHERE token = ?" };
+            yield return new object[] { "SELECT * FROM t WHERE token = $tag$my'secret$tag$", "SELECT * FROM t WHERE token = ?" };
+            yield return new object[] { "SELECT * FROM t WHERE id = $1", "SELECT * FROM t WHERE id = $1" };
+
             // ... but a quoted identifier is not a literal, and neither is a bare identifier
             yield return new object[] { "SELECT \"c1\" FROM t WHERE a = 'x'", "SELECT \"c1\" FROM t WHERE a = ?" };
             yield return new object[] { "SELECT country_name FROM v_country_all", "SELECT country_name FROM v_country_all" };
