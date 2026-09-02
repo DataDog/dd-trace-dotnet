@@ -111,8 +111,15 @@ public class DbSemanticConventionsTests
     [InlineData("postgres", "[2001:db8::1]:5433", null, "2001:db8::1", 5433)]
     [InlineData("postgres", "::1", null, "::1", null)]
 
-    // The first host of a failover list is the one we connect to first
+    // The first host of a failover list is the one we connect to first, along with its own port
     [InlineData("postgres", "host1,host2", null, "host1", null)]
+    [InlineData("postgres", "host1:5433,host2:5434", null, "host1", 5433)]
+    [InlineData("mysql", "host1:3307,host2:3308", null, "host1", 3307)]
+
+    // "server.port" is only reported when "server.address" is
+    [InlineData("mysql", null, "3307", null, null)]
+    [InlineData("sql-server", null, "1434", null, null)]
+    [InlineData("oracle", null, "1522", null, null)]
 
     // An unknown provider has no default port to omit
     [InlineData("fake", "localhost", "1433", "localhost", 1433)]
@@ -134,7 +141,7 @@ public class DbSemanticConventionsTests
     [InlineData("(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=oracledb)(PORT=1522))(CONNECT_DATA=(SERVICE_NAME=ORCL)))", "oracledb", 1522, "ORCL")]
     [InlineData("(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=oracledb)(PORT=1521))(CONNECT_DATA=(SID=ORCL)))", "oracledb", null, "ORCL")]
 
-    // A bare TNS alias names neither a host nor a service
+    // A bare TNS alias is indistinguishable from a host name, so it is reported as one
     [InlineData("ORCL_ALIAS", "ORCL_ALIAS", null, null)]
     public void GetConnectionAttributes_ParsesTheOracleDataSource(string dataSource, string expectedAddress, int? expectedPort, string expectedNamespace)
     {
@@ -189,6 +196,15 @@ public class DbSemanticConventionsTests
     [InlineData(
         "SELECT Name FROM Employees WHERE Id IN (1, 2, 3)",
         "SELECT Name FROM Employees WHERE Id IN (?, ?, ?)")]
+
+    // ... including a literal introduced by a type prefix, and one holding a character that does
+    // not fit an Int16, both of which used to survive obfuscation
+    [InlineData(
+        "UPDATE Employees SET Ssn = N'123-45-6789' WHERE Id = 4",
+        "UPDATE Employees SET Ssn = ? WHERE Id = ?")]
+    [InlineData(
+        "SELECT Id FROM Employees WHERE Name = '\u9ad8\u6a4b' AND Salary = 90000",
+        "SELECT Id FROM Employees WHERE Name = ? AND Salary = ?")]
 
     // ... but a parameter placeholder is not a literal, and a query with no literal is untouched
     [InlineData(

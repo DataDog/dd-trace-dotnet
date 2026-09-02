@@ -144,14 +144,14 @@ namespace Datadog.Trace.OpenTelemetry
                     // SQLite is embedded, so there is no server to report. The data source (a file
                     // path or ":memory:") is what identifies the database.
                     dbNamespace ??= NullIfEmpty(dataSource);
-                    return;
+                    break;
 
                 case AdoNetDbType.SqlServer:
                 {
                     ParseSqlServerDataSource(dataSource, out serverAddress, out var instanceName, out serverPort);
                     serverPort = OmitDefaultPort(serverPort ?? ParsePort(port), SqlServerDefaultPort);
                     dbNamespace = JoinNamespace(instanceName, dbNamespace);
-                    return;
+                    break;
                 }
 
                 case AdoNetDbType.Oracle:
@@ -159,7 +159,7 @@ namespace Datadog.Trace.OpenTelemetry
                     ParseOracleDataSource(dataSource, out serverAddress, out serverPort, out var serviceName);
                     serverPort = OmitDefaultPort(serverPort ?? ParsePort(port), OracleDefaultPort);
                     dbNamespace ??= serviceName;
-                    return;
+                    break;
                 }
 
                 default:
@@ -173,8 +173,14 @@ namespace Datadog.Trace.OpenTelemetry
                         _ => serverPort,
                     };
 
-                    return;
+                    break;
                 }
+            }
+
+            // "server.port" is only reported when "server.address" is, as the specification requires
+            if (serverAddress is null)
+            {
+                serverPort = null;
             }
         }
 
@@ -447,7 +453,8 @@ namespace Datadog.Trace.OpenTelemetry
         /// Parses an Oracle data source, which is either an "easy connect" string
         /// (<c>[//]host[:port][/service]</c>) or a TNS connect descriptor
         /// (<c>(DESCRIPTION=(ADDRESS=(HOST=..)(PORT=..))(CONNECT_DATA=(SERVICE_NAME=..)))</c>).
-        /// A bare TNS alias names neither a host nor a service, so nothing is reported for it.
+        /// A bare TNS alias is indistinguishable from a host name, so it is reported as one, which
+        /// is also what the Datadog "out.host" tag has always done with it.
         /// </summary>
         private static void ParseOracleDataSource(string? dataSource, out string? host, out int? port, out string? serviceName)
         {
@@ -541,22 +548,27 @@ namespace Datadog.Trace.OpenTelemetry
 
             // A bracketed IPv6 address owns every colon up to its closing bracket.
             var hostEndIndex = remaining[0] == '[' ? remaining.IndexOf(']') : -1;
-            var separatorIndex = remaining.IndexOf(',', hostEndIndex + 1);
 
-            if (separatorIndex < 0)
+            // Only the first entry of a host list is reported, and it can carry its own port.
+            var commaIndex = remaining.IndexOf(',', hostEndIndex + 1);
+            if (commaIndex > hostEndIndex)
+            {
+                port = ParsePort(remaining.Substring(commaIndex + 1));
+                remaining = remaining.Substring(0, commaIndex).TrimEnd();
+            }
+
+            if (port is null)
             {
                 var colonIndex = remaining.LastIndexOf(':');
                 if (colonIndex > hostEndIndex &&
                     (hostEndIndex >= 0 || colonIndex == remaining.IndexOf(':')))
                 {
-                    separatorIndex = colonIndex;
+                    port = ParsePort(remaining.Substring(colonIndex + 1));
+                    if (port is not null)
+                    {
+                        remaining = remaining.Substring(0, colonIndex).TrimEnd();
+                    }
                 }
-            }
-
-            if (separatorIndex > hostEndIndex)
-            {
-                port = ParsePort(remaining.Substring(separatorIndex + 1));
-                remaining = remaining.Substring(0, separatorIndex).TrimEnd();
             }
 
             host = NormalizeHost(remaining);
