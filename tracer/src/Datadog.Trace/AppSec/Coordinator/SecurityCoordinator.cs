@@ -53,8 +53,10 @@ internal readonly partial struct SecurityCoordinator
         return args.Count > 0 ? RunWaf(args, lastTime) : null;
     }
 
-    // Returns the request addresses once per request, an empty set afterwards. The context check comes
-    // first so they aren't marked as sent when there is no store to keep them.
+    // Core request-phase collection: returns the request addresses to the first scan of the request and an
+    // empty set to the following ones (Framework doesn't go through here, it refreshes them on every
+    // BeginRequest). The context check comes first so they aren't marked as sent when there is no store to
+    // keep them.
     internal Dictionary<string, object> CollectRequestArgsForWaf() =>
         _appsecRequestContext.GetOrCreateAdditiveContext(_security) is not null && _appsecRequestContext.ShouldSendRequestAddresses()
             ? GetBasicRequestArgsForWaf()
