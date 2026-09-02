@@ -65,7 +65,7 @@
             {
               "traceId": "normalized-trace-id",
               "spanId": "normalized-span-id",
-              "name": "FOO api2/{action}/{value}",
+              "name": "HTTP api2/{action}/{value}",
               "kind": 2,
               "startTimeUnixNano": "0",
               "endTimeUnixNano": "0",

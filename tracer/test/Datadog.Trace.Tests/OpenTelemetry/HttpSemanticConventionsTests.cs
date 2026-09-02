@@ -229,22 +229,14 @@ public class HttpSemanticConventionsTests
     // would make the span name high-cardinality.
     [InlineData("GET", null, "GET")]
     [InlineData("GET", "", "GET")]
+    [InlineData("get", "", "GET")]
 
     // An unrecognized method is reported as "_OTHER", but the span name says "HTTP"
-    [InlineData("_OTHER", "/users/{id}", "HTTP /users/{id}")]
-    [InlineData("_OTHER", null, "HTTP")]
+    [InlineData("FOO", "/users/{id}", "HTTP /users/{id}")]
+    [InlineData("FOO", null, "HTTP")]
     public void GetServerResourceName_IsMethodAndRoute(string requestMethod, string route, string expected)
     {
         HttpSemanticConventions.GetServerResourceName(requestMethod, route).Should().Be(expected);
-    }
-
-    [Theory]
-    [InlineData("get", "GET")]
-    [InlineData("FOO", "HTTP")]
-    [InlineData(null, "HTTP")]
-    public void GetServerResourceNameFromRawMethod_NormalizesTheMethod(string httpMethod, string expected)
-    {
-        HttpSemanticConventions.GetServerResourceNameFromRawMethod(httpMethod).Should().Be(expected);
     }
 
     [Theory]
