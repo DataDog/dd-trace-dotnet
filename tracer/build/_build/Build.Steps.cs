@@ -1778,7 +1778,8 @@ partial class Build
                                         (_, _, DockerDependencyType.All) => false, // can't use docker on Windows
                                         (_, { } targets, _) => targets.Contains(Framework),
                                         _ => true,
-                                    });
+                                    })
+                                   .ToList();
             var rid = (Platform, TargetPlatform.ToString()) switch
             {
                 (PlatformFamily.Linux, "x64") => IsAlpine ? "linux-musl-x64" : "linux-x64",
@@ -1791,13 +1792,29 @@ partial class Build
                 _ => throw new InvalidOperationException($"Unknown platform {Platform} ({RuntimeInformation.ProcessArchitecture})"),
             };
 
+            var samplesRequiringExplicitRestore = projectsToPublish.Where(project => !string.IsNullOrEmpty(project.apiVersion)).ToList();
+            if (samplesRequiringExplicitRestore.Count > 0)
+            {
+                // The implicit restore performed by dotnet publish evaluates ArtifactsPivots without a TargetFramework.
+                // Restore explicitly so NuGet and publish use the same intermediate output path.
+                DotNetRestore(config => config
+                    .CombineWith(samplesRequiringExplicitRestore,
+                        (s, project) => s
+                            .SetProjectFile(project.project)
+                            .SetProperty("Configuration", BuildConfiguration.ToString())
+                            .SetProperty("TargetFramework", Framework.ToString())
+                            .SetProperty("ApiVersion", project.apiVersion)));
+            }
+
             DotNetPublish(config => config
                 .SetConfiguration(BuildConfiguration)
                 .SetFramework(Framework)
                 .CombineWith(projectsToPublish,
                     (s, project) => s
                         .SetProject(project.project)
-                        .When(!string.IsNullOrEmpty(project.apiVersion), x => x.SetProperty("ApiVersion", project.apiVersion))
+                        .When(!string.IsNullOrEmpty(project.apiVersion), x => x
+                            .SetProperty("ApiVersion", project.apiVersion)
+                            .EnableNoRestore())
                         .When(project.publishWithRuntimeIdentifier, x => x.SetRuntime(rid))
                         .When(project.r2r, x => x.SetPublishReadyToRun(true))));
 
