@@ -114,7 +114,7 @@ variables:
   DiffEngine_Disabled: true
   OriginalCommitId: $[coalesce(variables['System.PullRequest.SourceCommitId'], variables['Build.SourceVersion'])]
   TESTCONTAINERS_RYUK_DISABLED: true
-  # Keep synchronized with the Resource Reaper image pinned by Testcontainers 4.11.0.
+  # Keep synchronized with the Resource Reaper image pinned by Testcontainers 4.14.0.
   TESTCONTAINERS_RYUK_CONTAINER_IMAGE: 'testcontainers/ryuk:0.14.0@sha256:7c1a8a9a47c780ed0f983770a662f80deb115d95cce3e2daa3d12115b8cd28f0'
   NUGET_ENABLE_EXPERIMENTAL_HTTP_RETRY: true
   NUGET_EXPERIMENTAL_CHAIN_BUILD_RETRY_POLICY: 3,1000
