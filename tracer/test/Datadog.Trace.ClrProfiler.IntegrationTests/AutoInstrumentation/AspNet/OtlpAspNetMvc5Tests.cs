@@ -1,4 +1,4 @@
-﻿// <copyright file="OtlpAspNetMvc5Tests.cs" company="Datadog">
+// <copyright file="OtlpAspNetMvc5Tests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -15,7 +15,6 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
-    [Collection(nameof(TestAgentOtlpCollection))]
     public class OtlpAspNetMvc5TestsWithDatadogSemantics : OtlpAspNetMvc5Tests
     {
         public OtlpAspNetMvc5TestsWithDatadogSemantics(IisFixture iisFixture, ITestOutputHelper output)
@@ -24,7 +23,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         }
     }
 
-    [Collection(nameof(TestAgentOtlpCollection))]
     public class OtlpAspNetMvc5TestsWithOpenTelemetrySemantics : OtlpAspNetMvc5Tests
     {
         public OtlpAspNetMvc5TestsWithOpenTelemetrySemantics(IisFixture iisFixture, ITestOutputHelper output)
