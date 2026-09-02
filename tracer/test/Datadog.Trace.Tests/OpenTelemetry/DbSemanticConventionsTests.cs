@@ -171,6 +171,43 @@ public class DbSemanticConventionsTests
     }
 
     [Theory]
+    // Every literal is replaced with a placeholder ...
+    [InlineData(
+        "CREATE TABLE Employees (Id INTEGER PRIMARY KEY, Name VARCHAR(100), Salary INTEGER)",
+        "CREATE TABLE Employees (Id INTEGER PRIMARY KEY, Name VARCHAR(?), Salary INTEGER)")]
+    [InlineData(
+        "INSERT INTO Employees (Id, Name, Salary) VALUES (1, 'Alice', 90000)",
+        "INSERT INTO Employees (Id, Name, Salary) VALUES (?, ?, ?)")]
+    [InlineData(
+        "SELECT COUNT(*) FROM Employees WHERE Salary > 50000",
+        "SELECT COUNT(*) FROM Employees WHERE Salary > ?")]
+    [InlineData(
+        "SELECT Id, Name FROM Employees WHERE Name = 'Alice'",
+        "SELECT Id, Name FROM Employees WHERE Name = ?")]
+
+    // ... including the members of an IN clause, which we report without collapsing them
+    [InlineData(
+        "SELECT Name FROM Employees WHERE Id IN (1, 2, 3)",
+        "SELECT Name FROM Employees WHERE Id IN (?, ?, ?)")]
+
+    // ... but a parameter placeholder is not a literal, and a query with no literal is untouched
+    [InlineData(
+        "INSERT INTO Employees (Id, Name, Salary) VALUES (@id, @name, @salary)",
+        "INSERT INTO Employees (Id, Name, Salary) VALUES (@id, @name, @salary)")]
+    [InlineData(
+        "SELECT Id, Name FROM Employees ORDER BY Id",
+        "SELECT Id, Name FROM Employees ORDER BY Id")]
+    public void SetDbClientRequestValues_ReplacesEveryLiteralInTheQueryText(string commandText, string expected)
+    {
+        var span = CreateSpan();
+        var tags = new SqlTags { DbType = "sqlite", DbName = ":memory:" };
+
+        DbSemanticConventions.SetDbClientRequestValues(span, tags, CommandType.Text, commandText);
+
+        tags.DbQueryText.Should().Be(expected);
+    }
+
+    [Theory]
     // Microsoft SQL Server does not support the SQL standard CALL keyword
     [InlineData("microsoft.sql_server", "EXECUTE")]
     [InlineData("postgresql", "CALL")]

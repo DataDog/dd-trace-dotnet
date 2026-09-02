@@ -14,6 +14,9 @@ namespace Datadog.Trace.TestHelpers
         public static Result IsAdoNet(this MockSpan span, string metadataSchemaVersion) =>
             metadataSchemaVersion switch
             {
+                // A custom ADO.NET provider reports the name we derived from its command type,
+                // so there is no fixed "db.system.name" to expect here
+                "otel" => span.IsDatabaseClientOTel(span.Name),
                 "v1" => span.IsAdoNetV1(),
                 _ => span.IsAdoNetV0(),
             };
@@ -261,6 +264,7 @@ namespace Datadog.Trace.TestHelpers
         public static Result IsMySql(this MockSpan span, string metadataSchemaVersion) =>
             metadataSchemaVersion switch
             {
+                "otel" => span.IsDatabaseClientOTel("mysql.query", "mysql"),
                 "v1" => span.IsMySqlV1(),
                 _ => span.IsMySqlV0(),
             };
@@ -268,6 +272,7 @@ namespace Datadog.Trace.TestHelpers
         public static Result IsNpgsql(this MockSpan span, string metadataSchemaVersion) =>
             metadataSchemaVersion switch
             {
+                "otel" => span.IsDatabaseClientOTel("postgres.query", "postgresql"),
                 "v1" => span.IsNpgsqlV1(),
                 _ => span.IsNpgsqlV0(),
             };
@@ -282,6 +287,7 @@ namespace Datadog.Trace.TestHelpers
         public static Result IsOracle(this MockSpan span, string metadataSchemaVersion) =>
             metadataSchemaVersion switch
             {
+                "otel" => span.IsDatabaseClientOTel("oracle.query", "oracle.db"),
                 "v1" => span.IsOracleV1(),
                 _ => span.IsOracleV0(),
             };
@@ -368,6 +374,7 @@ namespace Datadog.Trace.TestHelpers
         public static Result IsSqlite(this MockSpan span, string metadataSchemaVersion) =>
             metadataSchemaVersion switch
             {
+                "otel" => span.IsDatabaseClientOTel("sqlite.query", "sqlite"),
                 "v1" => span.IsSqliteV1(),
                 _ => span.IsSqliteV0(),
             };
@@ -375,6 +382,7 @@ namespace Datadog.Trace.TestHelpers
         public static Result IsSqlClient(this MockSpan span, string metadataSchemaVersion) =>
             metadataSchemaVersion switch
             {
+                "otel" => span.IsDatabaseClientOTel("sql-server.query", "microsoft.sql_server"),
                 "v1" => span.IsSqlClientV1(),
                 _ => span.IsSqlClientV0(),
             };
