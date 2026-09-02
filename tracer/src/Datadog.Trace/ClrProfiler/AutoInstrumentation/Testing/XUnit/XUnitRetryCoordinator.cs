@@ -26,7 +26,11 @@ internal static class XUnitRetryCoordinator
     internal static int GetRemainingAtrBudget()
         => Interlocked.CompareExchange(ref _totalRetries, 0, 0);
 
+#if NETCOREAPP3_1_OR_GREATER
+    internal static async ValueTask<XUnitRunSummary> ProcessResultAsync<TRetryRunner>(
+#else
     internal static async Task<XUnitRunSummary> ProcessResultAsync<TRetryRunner>(
+#endif
         RetryMessageBus messageBus,
         TestCaseMetadata testCaseMetadata,
         string? testCaseDisplayName,

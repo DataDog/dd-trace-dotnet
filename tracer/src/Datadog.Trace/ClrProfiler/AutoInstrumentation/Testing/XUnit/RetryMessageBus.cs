@@ -180,7 +180,7 @@ internal sealed class RetryMessageBus : IMessageBus
                                                : messageResult == frameworkResult;
                     if (isSelectedResult)
                     {
-                        messagesToFlush = [.. executionMessages];
+                        messagesToFlush = executionMessages;
                         break;
                     }
                 }
@@ -191,7 +191,7 @@ internal sealed class RetryMessageBus : IMessageBus
                 }
             }
 
-            messagesToFlush ??= firstCompletedExecution is null ? null : [.. firstCompletedExecution];
+            messagesToFlush ??= firstCompletedExecution;
         }
 
         if (messagesToFlush is null)
