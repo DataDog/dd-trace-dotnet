@@ -280,6 +280,11 @@ internal readonly partial struct SecurityCoordinator
     {
         var args = new Dictionary<string, object>(3);
 
+        // ASP.NET adds its session cookie to Request.Cookies only once the session id is read, so read it
+        // before the cookies below: a request that arrived without cookies gets one just here, and the
+        // session fingerprint needs it. BlockAndReport reads the same id again to send it to the waf.
+        _ = _httpTransport.Context.Session?.SessionID;
+
         if (_httpTransport.StatusCode is { } statusCode)
         {
             args[AddressesConstants.ResponseStatus] = statusCode.ToString();
@@ -290,8 +295,6 @@ internal readonly partial struct SecurityCoordinator
             args[AddressesConstants.RequestPathParams] = pathParams;
         }
 
-        // ASP.NET adds its session cookie to Request.Cookies only once the session id is read, so a request
-        // that arrived without cookies has them just here, and the session fingerprint needs them.
         if (ExtractCookiesFromRequest(_httpTransport.Context.Request) is { } cookies)
         {
             args[AddressesConstants.RequestCookies] = cookies;
