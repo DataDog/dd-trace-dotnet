@@ -849,7 +849,7 @@ public abstract class XUnitEvpTests : TestingFrameworkEvpTest
                             "attributes": {
                               "suite": "{{TestSuiteName}}",
                               "name": "SimplePassTest",
-                              "_missing_line_code_coverage": false
+                              "_is_missing_line_code_coverage": false
                             }
                           }
                         ],
@@ -1384,7 +1384,7 @@ public abstract class XUnitEvpTests : TestingFrameworkEvpTest
             {
                 ["suite"] = TestSuiteName,
                 ["name"] = name,
-                ["_missing_line_code_coverage"] = missingLineCodeCoverage,
+                ["_is_missing_line_code_coverage"] = missingLineCodeCoverage,
                 ["configurations"] = configurations
             }
         };

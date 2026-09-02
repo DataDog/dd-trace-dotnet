@@ -338,7 +338,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                                       "suite": "{{TestSuiteName}}",
                                       "name": "SimpleParameterizedTest",
                                       "parameters": "{{skippedRowParameters.Replace("\"", "\\\"")}}",
-                                      "_missing_line_code_coverage": false
+                                      "_is_missing_line_code_coverage": false
                                     }
                                   }
                                 ],

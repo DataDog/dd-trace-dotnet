@@ -28,7 +28,7 @@ internal readonly struct SkippableTest
     /// <summary>
     /// Indicates whether the backend explicitly reported missing line coverage for this skippable test.
     /// </summary>
-    [JsonProperty("_missing_line_code_coverage")]
+    [JsonProperty("_is_missing_line_code_coverage")]
     public readonly bool? MissingLineCodeCoverage;
 
     /// <summary>
