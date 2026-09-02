@@ -2843,5 +2843,13 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::EventPipeProviderCreated(EVENTPIP
     }
 
     Log::Debug("Event pipe provider: ", shared::ToString(providerName));
+
+    // The provider cache is keyed by address; drop any stale entry in case this
+    // address was reused by a newly created provider.
+    if (_pEventPipeEventsManager != nullptr)
+    {
+        _pEventPipeEventsManager->OnProviderCreated(provider);
+    }
+
     return S_OK;
 }
