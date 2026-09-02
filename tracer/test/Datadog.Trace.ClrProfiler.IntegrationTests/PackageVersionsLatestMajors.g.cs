@@ -1714,6 +1714,25 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #endif
             };
 
+      public static IEnumerable<object[]> XUnitV4Parallel =>
+
+            new List<object[]>
+            {
+#if DEFAULT_SAMPLES
+                new object[] { string.Empty },
+#else
+#if NET8_0
+                new object[] { "4.0.0" },
+#endif
+#if NET9_0
+                new object[] { "4.0.0" },
+#endif
+#if NET10_0
+                new object[] { "4.0.0" },
+#endif
+#endif
+            };
+
       public static IEnumerable<object[]> NUnit =>
 
             new List<object[]>

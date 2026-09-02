@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
+    <ApiVersion Condition="'$(ApiVersion)' == ''">4.0.0</ApiVersion>
     <TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
     <MicrosoftTestSDKVersion>17.13.0</MicrosoftTestSDKVersion>
     <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
@@ -14,7 +15,7 @@
     <PackageReference Include="Microsoft.TestPlatform.TestHost" Version="$(MicrosoftTestSDKVersion)">
       <ExcludeAssets>build;buildtransitive</ExcludeAssets>
     </PackageReference>
-    <PackageReference Include="xunit.v3" Version="4.0.0" />
+    <PackageReference Include="xunit.v3" Version="$(ApiVersion)" />
     <PackageReference Include="xunit.runner.visualstudio" Version="4.0.0" />
   </ItemGroup>
 
