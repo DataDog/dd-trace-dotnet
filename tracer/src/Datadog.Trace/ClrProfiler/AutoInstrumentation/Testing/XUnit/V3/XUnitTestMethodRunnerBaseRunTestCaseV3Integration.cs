@@ -115,6 +115,7 @@ public static class XUnitTestMethodRunnerBaseRunTestCaseV3Integration
         if (context.MessageBus is IDuckType { Instance: { } and RetryMessageBus retryMessageBus })
         {
             var testCaseMetadata = retryMessageBus.GetMetadata(testcase.UniqueID);
+            testCaseMetadata.UsesRetryCoordinator = true;
 
             // We skip the test if the tesk management property is set to Disabled and there's no attempt to fix
             if (isDisabledByTestManagement)

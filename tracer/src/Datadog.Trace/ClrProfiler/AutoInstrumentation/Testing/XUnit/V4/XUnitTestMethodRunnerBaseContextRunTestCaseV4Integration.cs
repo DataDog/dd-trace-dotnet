@@ -95,6 +95,7 @@ public static class XUnitTestMethodRunnerBaseContextRunTestCaseV4Integration
         }
 
         var testCaseMetadata = retryMessageBus.GetMetadata(testCase.UniqueID);
+        testCaseMetadata.UsesRetryCoordinator = true;
         if (isDisabledByTestManagement)
         {
             testCase.SkipReason = "Flaky test is disabled by Datadog";

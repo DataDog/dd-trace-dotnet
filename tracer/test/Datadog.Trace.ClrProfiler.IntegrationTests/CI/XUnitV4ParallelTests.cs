@@ -121,6 +121,7 @@ public class XUnitV4ParallelTests : TestingFrameworkRetriesTests
             executions.Should().ContainSingle(test => test.Meta[TestTags.Status] == TestTags.StatusPass);
             executions.Should().ContainSingle(test => !test.Meta.ContainsKey(TestTags.TestIsRetry));
             executions.Should().ContainSingle(test => test.Meta.GetValueOrDefault(TestTags.TestIsRetry) == "true");
+            executions.Should().ContainSingle(test => test.Meta.GetValueOrDefault(TestTags.TestFinalStatus) == TestTags.StatusPass);
         }
     }
 }

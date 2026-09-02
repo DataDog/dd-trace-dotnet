@@ -1797,43 +1797,59 @@ partial class Build
                         .SetProject(project.project)
                         .When(project.r2r, x => x.SetPublishReadyToRun(true))));
 
-            PublishXUnitV4SampleForCurrentPlatform();
+            PublishXUnitV4SamplesForCurrentPlatform();
 
-            void PublishXUnitV4SampleForCurrentPlatform()
+            void PublishXUnitV4SamplesForCurrentPlatform()
             {
-                const string sampleName = "Samples.XUnitTestsV3";
-                var sampleProject = SamplesSolution.GetProject(sampleName);
                 if (IsWin ||
-                    !Framework.IsGreaterThanOrEqualTo(TargetFramework.NET8_0) ||
-                    (!string.IsNullOrWhiteSpace(SampleName) && !sampleProject.Path.ToString().Contains(SampleName, StringComparison.OrdinalIgnoreCase)))
+                    !Framework.IsGreaterThanOrEqualTo(TargetFramework.NET8_0))
                 {
                     return;
                 }
 
+                var sampleNames = new[]
+                {
+                    "Samples.XUnitTestsV3",
+                    "Samples.XUnitTestsRetriesV3",
+                    "Samples.XUnitTestsV4Parallel",
+                };
+
                 // CompileSamples normally builds every package-version sample on Windows and shares that artifact
                 // with the Unix test jobs. Starting with xunit.v3 4.x, its matching xunit.runner.visualstudio 4.x adapter
-                // launches the test assembly through the generated apphost. An apphost contains native launcher code for the OS that produced it,
-                // so an apphost built on Windows cannot run on Linux or macOS even though the managed test DLL can.
-                // Republish only the xUnit 4.x variants on the current Unix platform to generate a compatible apphost.
+                // launches the test assembly through the generated apphost. An apphost contains native launcher code
+                // for the OS that produced it, so one built on Windows cannot run on Linux or macOS even though the
+                // managed test DLL can.
+                // Republish the baseline, retry, and parallel xUnit 4.x samples on the current Unix platform to generate
+                // compatible apphosts for every integration test that runs them through dotnet exec.
                 // Use the generated PackageVersionSample items instead of pinning 4.0.0 here, so newly generated 4.x
                 // minor versions are picked up automatically. Restore and publish stay in separate MSBuild evaluations,
                 // matching CompileSamples and ensuring that Publish sees the assets written by Restore.
-                foreach (var target in new[] { "RestoreSamplesForPackageVersionsOnly", "RestoreAndBuildSamplesForPackageVersionsOnly" })
+                foreach (var sampleName in sampleNames)
                 {
-                    DotNetMSBuild(config => config
-                        .SetTargetPath(MsBuildProject)
-                        .SetTargets(target)
-                        .SetConfiguration(BuildConfiguration)
-                        .SetProperty("TargetFramework", Framework.ToString())
-                        .SetProperty("BuildInParallel", "true")
-                        .SetProperty("CheckEolTargetFramework", "false")
-                        .SetProperty("ManuallyCopyCodeCoverageFiles", "false")
-                        .SetProperty("TestAllPackageVersions", "true")
-                        .SetProperty("SampleName", sampleName)
-                        .SetProperty("PackageVersionApiVersionPrefix", "4.")
-                        .When(IncludeMinorPackageVersions, x => x.SetProperty("IncludeMinorPackageVersions", "true"))
-                        .When(!string.IsNullOrEmpty(NugetPackageDirectory), x => x.SetProperty("RestorePackagesPath", NugetPackageDirectory))
-                        .SetProcessArgumentConfigurator(args => args.Add("/nowarn:NU1701")));
+                    var sampleProject = SamplesSolution.GetProject(sampleName);
+                    if (!string.IsNullOrWhiteSpace(SampleName) &&
+                        !sampleProject.Path.ToString().Contains(SampleName, StringComparison.OrdinalIgnoreCase))
+                    {
+                        continue;
+                    }
+
+                    foreach (var target in new[] { "RestoreSamplesForPackageVersionsOnly", "RestoreAndBuildSamplesForPackageVersionsOnly" })
+                    {
+                        DotNetMSBuild(config => config
+                            .SetTargetPath(MsBuildProject)
+                            .SetTargets(target)
+                            .SetConfiguration(BuildConfiguration)
+                            .SetProperty("TargetFramework", Framework.ToString())
+                            .SetProperty("BuildInParallel", "true")
+                            .SetProperty("CheckEolTargetFramework", "false")
+                            .SetProperty("ManuallyCopyCodeCoverageFiles", "false")
+                            .SetProperty("TestAllPackageVersions", "true")
+                            .SetProperty("SampleName", sampleName)
+                            .SetProperty("PackageVersionApiVersionPrefix", "4.")
+                            .When(IncludeMinorPackageVersions, x => x.SetProperty("IncludeMinorPackageVersions", "true"))
+                            .When(!string.IsNullOrEmpty(NugetPackageDirectory), x => x.SetProperty("RestorePackagesPath", NugetPackageDirectory))
+                            .SetProcessArgumentConfigurator(args => args.Add("/nowarn:NU1701")));
+                    }
                 }
             }
 
