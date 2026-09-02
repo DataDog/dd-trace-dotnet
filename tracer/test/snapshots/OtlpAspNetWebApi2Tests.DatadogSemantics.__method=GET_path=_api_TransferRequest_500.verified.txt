@@ -1,0 +1,507 @@
+{
+  "resourceSpans": [
+    {
+      "resource": {
+        "attributes": [
+          {
+            "key": "service.name",
+            "value": {
+              "stringValue": "sample"
+            }
+          },
+          {
+            "key": "service.version",
+            "value": {
+              "stringValue": "1.0.0"
+            }
+          },
+          {
+            "key": "deployment.environment.name",
+            "value": {
+              "stringValue": "integration_tests"
+            }
+          },
+          {
+            "key": "telemetry.sdk.name",
+            "value": {
+              "stringValue": "sdk-name"
+            }
+          },
+          {
+            "key": "telemetry.sdk.language",
+            "value": {
+              "stringValue": "dotnet"
+            }
+          },
+          {
+            "key": "telemetry.sdk.version",
+            "value": {
+              "stringValue": "sdk-version"
+            }
+          },
+          {
+            "key": "git.commit.sha",
+            "value": {
+              "stringValue": "normalized-git-commit-sha"
+            }
+          },
+          {
+            "key": "git.repository_url",
+            "value": {
+              "stringValue": "https://github.com/DataDog/dd-trace-dotnet"
+            }
+          },
+          {
+            "key": "runtime-id",
+            "value": {
+              "stringValue": "Guid_1"
+            }
+          }
+        ]
+      },
+      "scopeSpans": [
+        {
+          "spans": [
+            {
+              "traceId": "normalized-trace-id",
+              "spanId": "normalized-span-id",
+              "name": "GET /api/transferrequest/{statuscode}",
+              "kind": 2,
+              "startTimeUnixNano": "0",
+              "endTimeUnixNano": "0",
+              "attributes": [
+                {
+                  "key": "_dd.code_origin.frames.0.column",
+                  "value": {
+                    "stringValue": "0"
+                  }
+                },
+                {
+                  "key": "_dd.code_origin.frames.0.file",
+                  "value": {
+                    "stringValue": "tracer/test/test-applications/aspnet/Samples.AspNetMvc5/Controllers/ApiController.cs"
+                  }
+                },
+                {
+                  "key": "_dd.code_origin.frames.0.index",
+                  "value": {
+                    "stringValue": "0"
+                  }
+                },
+                {
+                  "key": "_dd.code_origin.frames.0.line",
+                  "value": {
+                    "stringValue": "0"
+                  }
+                },
+                {
+                  "key": "_dd.code_origin.frames.0.method",
+                  "value": {
+                    "stringValue": "BadRequestWithStatusCodeAndTransferRequest"
+                  }
+                },
+                {
+                  "key": "_dd.code_origin.frames.0.type",
+                  "value": {
+                    "stringValue": "Samples.AspNetMvc5.Controllers.ApiController"
+                  }
+                },
+                {
+                  "key": "_dd.code_origin.type",
+                  "value": {
+                    "stringValue": "entry"
+                  }
+                },
+                {
+                  "key": "component",
+                  "value": {
+                    "stringValue": "aspnet"
+                  }
+                },
+                {
+                  "key": "error.msg",
+                  "value": {
+                    "stringValue": "Oops, it broke. Specified status code was: 500"
+                  }
+                },
+                {
+                  "key": "error.stack",
+                  "value": {
+                    "stringValue": "normalized-error.stack"
+                  }
+                },
+                {
+                  "key": "error.type",
+                  "value": {
+                    "stringValue": "System.Exception"
+                  }
+                },
+                {
+                  "key": "http.method",
+                  "value": {
+                    "stringValue": "GET"
+                  }
+                },
+                {
+                  "key": "http.request.headers.host",
+                  "value": {
+                    "stringValue": "localhost:00000"
+                  }
+                },
+                {
+                  "key": "http.route",
+                  "value": {
+                    "stringValue": "api/statuscode/{value}"
+                  }
+                },
+                {
+                  "key": "http.status_code",
+                  "value": {
+                    "intValue": "500"
+                  }
+                },
+                {
+                  "key": "http.url",
+                  "value": {
+                    "stringValue": "http://localhost:00000/api/TransferRequest/500"
+                  }
+                },
+                {
+                  "key": "http.useragent",
+                  "value": {
+                    "stringValue": "testhelper"
+                  }
+                },
+                {
+                  "key": "operation.name",
+                  "value": {
+                    "stringValue": "aspnet.request"
+                  }
+                },
+                {
+                  "key": "resource.name",
+                  "value": {
+                    "stringValue": "GET /api/transferrequest/{statuscode}"
+                  }
+                },
+                {
+                  "key": "runtime-id",
+                  "value": {
+                    "stringValue": "Guid_1"
+                  }
+                },
+                {
+                  "key": "service.name",
+                  "value": {
+                    "stringValue": "sample"
+                  }
+                },
+                {
+                  "key": "span.kind",
+                  "value": {
+                    "stringValue": "server"
+                  }
+                },
+                {
+                  "key": "span.type",
+                  "value": {
+                    "stringValue": "web"
+                  }
+                }
+              ],
+              "status": {
+                "message": "Oops, it broke. Specified status code was: 500",
+                "code": 2
+              }
+            },
+            {
+              "traceId": "normalized-trace-id",
+              "spanId": "normalized-span-id",
+              "parentSpanId": "normalized-parent-span-id",
+              "name": "GET /api/transferrequest/{statuscode}",
+              "kind": 2,
+              "startTimeUnixNano": "0",
+              "endTimeUnixNano": "0",
+              "attributes": [
+                {
+                  "key": "aspnet.route",
+                  "value": {
+                    "stringValue": "api/TransferRequest/{statuscode}"
+                  }
+                },
+                {
+                  "key": "component",
+                  "value": {
+                    "stringValue": "aspnet"
+                  }
+                },
+                {
+                  "key": "error.msg",
+                  "value": {
+                    "stringValue": "Oops, it broke. Specified status code was: 500"
+                  }
+                },
+                {
+                  "key": "error.stack",
+                  "value": {
+                    "stringValue": "normalized-error.stack"
+                  }
+                },
+                {
+                  "key": "error.type",
+                  "value": {
+                    "stringValue": "System.Exception"
+                  }
+                },
+                {
+                  "key": "http.method",
+                  "value": {
+                    "stringValue": "GET"
+                  }
+                },
+                {
+                  "key": "http.request.headers.host",
+                  "value": {
+                    "stringValue": "localhost:00000"
+                  }
+                },
+                {
+                  "key": "http.status_code",
+                  "value": {
+                    "intValue": "500"
+                  }
+                },
+                {
+                  "key": "http.url",
+                  "value": {
+                    "stringValue": "http://localhost:00000/api/TransferRequest/500"
+                  }
+                },
+                {
+                  "key": "http.useragent",
+                  "value": {
+                    "stringValue": "testhelper"
+                  }
+                },
+                {
+                  "key": "operation.name",
+                  "value": {
+                    "stringValue": "aspnet_webapi.request"
+                  }
+                },
+                {
+                  "key": "resource.name",
+                  "value": {
+                    "stringValue": "GET /api/transferrequest/{statuscode}"
+                  }
+                },
+                {
+                  "key": "service.name",
+                  "value": {
+                    "stringValue": "sample"
+                  }
+                },
+                {
+                  "key": "span.kind",
+                  "value": {
+                    "stringValue": "server"
+                  }
+                },
+                {
+                  "key": "span.type",
+                  "value": {
+                    "stringValue": "web"
+                  }
+                }
+              ],
+              "status": {
+                "message": "Oops, it broke. Specified status code was: 500",
+                "code": 2
+              }
+            },
+            {
+              "traceId": "normalized-trace-id",
+              "spanId": "normalized-span-id",
+              "parentSpanId": "normalized-parent-span-id",
+              "name": "GET /api/statuscode/{value}",
+              "kind": 2,
+              "startTimeUnixNano": "0",
+              "endTimeUnixNano": "0",
+              "attributes": [
+                {
+                  "key": "component",
+                  "value": {
+                    "stringValue": "aspnet"
+                  }
+                },
+                {
+                  "key": "error.msg",
+                  "value": {
+                    "stringValue": "The HTTP response has status code 500."
+                  }
+                },
+                {
+                  "key": "http.method",
+                  "value": {
+                    "stringValue": "GET"
+                  }
+                },
+                {
+                  "key": "http.request.headers.host",
+                  "value": {
+                    "stringValue": "localhost:00000"
+                  }
+                },
+                {
+                  "key": "http.status_code",
+                  "value": {
+                    "intValue": "500"
+                  }
+                },
+                {
+                  "key": "http.url",
+                  "value": {
+                    "stringValue": "http://localhost:00000/api/statuscode/500"
+                  }
+                },
+                {
+                  "key": "http.useragent",
+                  "value": {
+                    "stringValue": "testhelper"
+                  }
+                },
+                {
+                  "key": "operation.name",
+                  "value": {
+                    "stringValue": "aspnet.request"
+                  }
+                },
+                {
+                  "key": "resource.name",
+                  "value": {
+                    "stringValue": "GET /api/statuscode/{value}"
+                  }
+                },
+                {
+                  "key": "service.name",
+                  "value": {
+                    "stringValue": "sample"
+                  }
+                },
+                {
+                  "key": "span.kind",
+                  "value": {
+                    "stringValue": "server"
+                  }
+                },
+                {
+                  "key": "span.type",
+                  "value": {
+                    "stringValue": "web"
+                  }
+                }
+              ],
+              "status": {
+                "message": "The HTTP response has status code 500.",
+                "code": 2
+              }
+            },
+            {
+              "traceId": "normalized-trace-id",
+              "spanId": "normalized-span-id",
+              "parentSpanId": "normalized-parent-span-id",
+              "name": "GET /api/statuscode/{value}",
+              "kind": 2,
+              "startTimeUnixNano": "0",
+              "endTimeUnixNano": "0",
+              "attributes": [
+                {
+                  "key": "aspnet.route",
+                  "value": {
+                    "stringValue": "api/statuscode/{value}"
+                  }
+                },
+                {
+                  "key": "component",
+                  "value": {
+                    "stringValue": "aspnet"
+                  }
+                },
+                {
+                  "key": "error.msg",
+                  "value": {
+                    "stringValue": "The HTTP response has status code 500."
+                  }
+                },
+                {
+                  "key": "http.method",
+                  "value": {
+                    "stringValue": "GET"
+                  }
+                },
+                {
+                  "key": "http.request.headers.host",
+                  "value": {
+                    "stringValue": "localhost:00000"
+                  }
+                },
+                {
+                  "key": "http.status_code",
+                  "value": {
+                    "intValue": "500"
+                  }
+                },
+                {
+                  "key": "http.url",
+                  "value": {
+                    "stringValue": "http://localhost:00000/api/statuscode/500"
+                  }
+                },
+                {
+                  "key": "http.useragent",
+                  "value": {
+                    "stringValue": "testhelper"
+                  }
+                },
+                {
+                  "key": "operation.name",
+                  "value": {
+                    "stringValue": "aspnet_webapi.request"
+                  }
+                },
+                {
+                  "key": "resource.name",
+                  "value": {
+                    "stringValue": "GET /api/statuscode/{value}"
+                  }
+                },
+                {
+                  "key": "service.name",
+                  "value": {
+                    "stringValue": "sample"
+                  }
+                },
+                {
+                  "key": "span.kind",
+                  "value": {
+                    "stringValue": "server"
+                  }
+                },
+                {
+                  "key": "span.type",
+                  "value": {
+                    "stringValue": "web"
+                  }
+                }
+              ],
+              "status": {
+                "message": "The HTTP response has status code 500.",
+                "code": 2
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
