@@ -367,12 +367,25 @@ void RejitHandler::Shutdown()
 {
     DBG("RejitHandler::Shutdown");
 
+    // Request shutdown before draining the queue. WaitForTermination() below joins the worker
+    // thread, so it processes every item already queued first. Setting m_shutdown afterwards
+    // meant those items still did full RequestReJIT work against the CLR, and because
+    // CorProfiler::Shutdown holds module_ids across this call, a deep queue stalled every thread
+    // that needs to JIT a method or load a module. Setting it first lets the queued items
+    // short-circuit (they still resolve their promises, so no waiter hangs).
+    //
+    // The write lock is released before WaitForTermination(): the worker calls
+    // IsShutdownRequested(), which takes a read lock on the same lock.
+    {
+        WriteLock w_lock(m_shutdown_lock);
+        m_shutdown.store(true);
+    }
+
     // Wait for exiting the thread
     m_work_offloader->Enqueue(RejitWorkItem::CreateTerminatingWorkItem());
     m_work_offloader->WaitForTermination();
 
     WriteLock w_lock(m_shutdown_lock);
-    m_shutdown.store(true);
 
     for (size_t x = 0; x < m_rejittersCount; x++)
     {
