@@ -61,7 +61,7 @@ namespace Datadog.Trace.Util
                 return default;
             }
 
-            var tags = _cache.GetOrAdd(connectionString, cs => ExtractTagsFromConnectionString(cs, dbType));
+            var tags = _cache.GetOrAdd(connectionString, dbType, static (cs, type) => ExtractTagsFromConnectionString(cs, type));
 
             // The cache is keyed by connection string alone, but the OpenTelemetry attributes also
             // depend on the provider. The same connection string being used by two providers is
