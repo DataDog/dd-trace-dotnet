@@ -1,4 +1,4 @@
-// <copyright file="WafAddressReuseTests.cs" company="Datadog">
+﻿// <copyright file="WafAddressReuseTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -12,8 +12,9 @@ using Xunit;
 namespace Datadog.Trace.Security.Unit.Tests;
 
 /// <summary>
-/// Pins what a later WAF run of the same request has to re-supply: the tracer sends the whole
-/// request address set again on its last call, and these tests say whether that is necessary.
+/// The tracer now sends each request address to the WAF once, so a later run of the same request only
+/// carries what changed. These tests pin what that costs: what the WAF still derives from the addresses
+/// of an earlier run, and what genuinely has to be re-supplied.
 /// </summary>
 public class WafAddressReuseTests : WafLibraryRequiredTest
 {
