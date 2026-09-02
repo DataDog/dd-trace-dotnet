@@ -128,7 +128,7 @@ namespace Datadog.Trace.AspNet
                 // "{method} {http.route}", or just "{method}" when no route is available. Falling back
                 // to the URI path is explicitly not allowed, as it makes the name high-cardinality.
                 // The route is added later by the MVC / Web API integrations, if the request matched one.
-                return HttpSemanticConventions.GetServerResourceNameFromRawMethod(httpRequest.HttpMethod);
+                return HttpSemanticConventions.GetServerResourceName(httpRequest.HttpMethod, route: null);
             }
 
             var url = tracer.Settings.BypassHttpRequestUrlCachingEnabled

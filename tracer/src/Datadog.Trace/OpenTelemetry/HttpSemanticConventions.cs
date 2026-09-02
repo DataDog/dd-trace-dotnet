@@ -562,19 +562,12 @@ namespace Datadog.Trace.OpenTelemetry
         /// when the request didn't match a route. Note that we must not fall back to using the URI
         /// path as the target, as that would make the name high-cardinality.
         /// </summary>
-        /// <param name="requestMethod">The value reported in "http.request.method"</param>
+        /// <param name="httpMethod">The HTTP method of the request, as provided by the instrumented library</param>
         /// <param name="route">The value reported in "http.route", if the request matched a route</param>
-        internal static string GetServerResourceName(string requestMethod, string? route)
+        internal static string GetServerResourceName(string httpMethod, string? route)
         {
-            var method = GetResourceName(requestMethod);
+            var method = GetResourceName(NormalizeRequestMethod(httpMethod));
             return StringUtil.IsNullOrEmpty(route) ? method : $"{method} {route}";
         }
-
-        /// <summary>
-        /// Gets the resource name for an HTTP server request whose method has not been normalized yet.
-        /// </summary>
-        /// <param name="httpMethod">The HTTP method of the request, as provided by the instrumented library</param>
-        internal static string GetServerResourceNameFromRawMethod(string httpMethod)
-            => GetServerResourceName(NormalizeRequestMethod(httpMethod), route: null);
     }
 }
