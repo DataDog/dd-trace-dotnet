@@ -28,8 +28,15 @@ public class DbSemanticConventionsTests
     [InlineData("oracle", "oracle.db")]
     [InlineData("sqlite", "sqlite")]
 
-    // Any other ADO.NET provider reports the name we derived from its command type, which the
-    // specification allows as a custom value because it is lowercase and version-free
+    // The generic ADO.NET instrumentation derives the name from the command type, which for these
+    // third-party providers abbreviates a DBMS the specification does name
+    [InlineData("db2", "ibm.db2")]
+    [InlineData("pgsql", "postgresql")]
+    [InlineData("fb", "firebirdsql")]
+    [InlineData("td", "teradata")]
+
+    // Any other ADO.NET provider reports the derived name, which the specification allows as a
+    // custom value because it is lowercase and version-free
     [InlineData("fake", "fake")]
     [InlineData("duckdb", "duckdb")]
 

@@ -191,6 +191,18 @@ namespace Datadog.Trace.Tests.TraceProcessors
             yield return new object[] { "SELECT * FROM t WHERE token = $tag$my'secret$tag$", "SELECT * FROM t WHERE token = ?" };
             yield return new object[] { "SELECT * FROM t WHERE id = $1", "SELECT * FROM t WHERE id = $1" };
 
+            // Comments are dropped rather than replaced, because they hold whatever the
+            // application put there
+            // (the whitespace the comment sat between is kept, as it is everywhere else)
+            yield return new object[] { "SELECT * FROM t /* note: hunter2 */ WHERE a = 'x'", "SELECT * FROM t  WHERE a = ?" };
+            yield return new object[] { "SELECT * FROM users -- password is hunter2", "SELECT * FROM users " };
+            yield return new object[] { "SELECT a -- the first column\nFROM t WHERE b = 1", "SELECT a \nFROM t WHERE b = ?" };
+            yield return new object[] { "SELECT * FROM t /* unterminated", "SELECT * FROM t " };
+
+            // ... but the comment markers of a SQL Server temporary table and of a value are not
+            yield return new object[] { "SELECT * FROM #TempTable WHERE id = 5", "SELECT * FROM #TempTable WHERE id = ?" };
+            yield return new object[] { "SELECT * FROM t WHERE a = 'has -- inside a value' AND b = 2", "SELECT * FROM t WHERE a = ? AND b = ?" };
+
             // ... but a quoted identifier is not a literal, and neither is a bare identifier
             yield return new object[] { "SELECT \"c1\" FROM t WHERE a = 'x'", "SELECT \"c1\" FROM t WHERE a = ?" };
             yield return new object[] { "SELECT country_name FROM v_country_all", "SELECT country_name FROM v_country_all" };

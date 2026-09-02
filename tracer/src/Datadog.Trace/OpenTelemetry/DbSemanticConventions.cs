@@ -108,6 +108,15 @@ namespace Datadog.Trace.OpenTelemetry
                 AdoNetDbType.MySql => "mysql",
                 AdoNetDbType.Oracle => "oracle.db",
                 AdoNetDbType.Sqlite => "sqlite",
+
+                // The generic ADO.NET instrumentation derives the name from the command type, which
+                // for these third-party providers abbreviates a DBMS the specification does name,
+                // and a value it defines must be used when one applies.
+                "db2" => "ibm.db2", // IBM.Data.Db2.DB2Command
+                "pgsql" => "postgresql", // Devart.Data.PostgreSql.PgSqlCommand
+                "fb" => "firebirdsql", // FirebirdSql.Data.FirebirdClient.FbCommand
+                "td" => "teradata", // Teradata.Client.Provider.TdCommand
+
                 null or "" => OtherSqlSystem,
                 _ => dbType,
             };
@@ -234,6 +243,10 @@ namespace Datadog.Trace.OpenTelemetry
                     break;
             }
 
+            // Note that the span type stays "sql", so the Datadog agent still applies its SQL
+            // obfuscator to the resource name of a span sent over msgpack, which can rewrite a
+            // name like "myhost:5433" to "myhost:?". Only OTLP export, which is what this mode is
+            // meant to be paired with, carries the name through untouched.
             span.ResourceName = GetSpanName(tags);
         }
 

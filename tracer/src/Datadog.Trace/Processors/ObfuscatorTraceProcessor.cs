@@ -69,7 +69,9 @@ namespace Datadog.Trace.Processors
             {
                 // The resource name is the low-cardinality span name the OpenTelemetry semantic
                 // conventions define, not a query, so obfuscating it would only corrupt it. The
-                // query itself is reported in "db.query.text", already sanitized.
+                // query itself is reported in "db.query.text", already sanitized. Note that this
+                // only covers the client-side pass: the Datadog agent runs its own obfuscator over
+                // the resource name of a "sql" span it receives over msgpack.
                 return span;
             }
 
@@ -93,6 +95,8 @@ namespace Datadog.Trace.Processors
             {
                 return string.Empty;
             }
+
+            sqlQuery = RemoveComments(sqlQuery);
 
             var sqlChars = sqlQuery.ToCharArray();
 
@@ -152,6 +156,81 @@ namespace Datadog.Trace.Processors
             }
 
             return sqlQuery;
+        }
+
+        /// <summary>
+        /// Removes the SQL comments from a query. A comment can hold anything the application put
+        /// there, so it is dropped rather than replaced with a placeholder, which is also what the
+        /// Datadog agent's obfuscator does. Only the two portable forms are recognized: MySQL's
+        /// <c>#</c> is left alone because it also introduces a SQL Server temporary table name.
+        /// </summary>
+        internal static string RemoveComments(string sqlQuery)
+        {
+            StringBuilder? sb = null;
+            var quoted = false;
+            var escaped = false;
+            var copiedTo = 0;
+
+            for (var i = 0; i < sqlQuery.Length; i++)
+            {
+                var c = sqlQuery[i];
+
+                if (quoted)
+                {
+                    if (c == '\'' && !escaped)
+                    {
+                        quoted = false;
+                    }
+
+                    escaped = (c == '\\') & !escaped;
+                    continue;
+                }
+
+                if (c == '\'')
+                {
+                    quoted = true;
+                    escaped = false;
+                    continue;
+                }
+
+                if (i + 1 >= sqlQuery.Length)
+                {
+                    break;
+                }
+
+                var next = sqlQuery[i + 1];
+                int end;
+
+                if (c == '-' && next == '-')
+                {
+                    // A line comment runs to the end of the line, or to the end of the query
+                    end = sqlQuery.IndexOf('\n', i + 2);
+                    end = end < 0 ? sqlQuery.Length : end;
+                }
+                else if (c == '/' && next == '*')
+                {
+                    // An unterminated block comment runs to the end of the query
+                    end = sqlQuery.IndexOf("*/", i + 2, StringComparison.Ordinal);
+                    end = end < 0 ? sqlQuery.Length : end + 2;
+                }
+                else
+                {
+                    continue;
+                }
+
+                sb ??= StringBuilderCache.Acquire();
+                sb.Append(sqlQuery, copiedTo, i - copiedTo);
+                copiedTo = end;
+                i = end - 1;
+            }
+
+            if (sb is null)
+            {
+                return sqlQuery;
+            }
+
+            sb.Append(sqlQuery, copiedTo, sqlQuery.Length - copiedTo);
+            return StringBuilderCache.GetStringAndRelease(sb);
         }
 
         internal static string ObfuscateRedisResource(string redisResource)
