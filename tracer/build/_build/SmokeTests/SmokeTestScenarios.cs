@@ -1001,6 +1001,31 @@ public static class SmokeTestScenarios
                              RunCrashTest = false,
                              Channel32Bit = channel32Bit,
                          };
+
+            // Regression test for the MSI in-place-upgrade DLL-staleness bug: install
+            // the last release that shipped libdatadog v20.0.0, then upgrade in place
+            // to the locally-built MSI, and assert every independently-versioned
+            // native binary (datadog_profiling_ffi.dll, ddwaf.dll) actually got
+            // replaced. One representative runtime is enough here -- the upgrade
+            // mechanism under test lives entirely in the MSI/WiX layer, not in the
+            // .NET runtime being profiled.
+            yield return new[]
+            {
+                new WindowsMsiScenario
+                {
+                    ShortName = "x64_upgrade",
+                    PublishFramework = TargetFramework.NET8_0,
+                    RuntimeTag = "8.0-windowsservercore-ltsc2022",
+                    DockerImageRepo = "mcr.microsoft.com/dotnet/aspnet",
+                    Os = "windows",
+                    OsVersion = "servercore-2022",
+                    RunCrashTest = false,
+                    Channel32Bit = "",
+                    // Last release before the tracer moved to libdatadog v25.0.0 --
+                    // the exact "old" version from the original crash report.
+                    PreviousReleaseVersion = "3.33.0",
+                },
+            };
         }
 
         static IEnumerable<IEnumerable<SmokeTestScenario>> WindowsNuGetScenarios()
