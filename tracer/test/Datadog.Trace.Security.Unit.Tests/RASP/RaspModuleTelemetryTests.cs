@@ -32,6 +32,27 @@ public class RaspModuleTelemetryTests
             new object[] { AddressesConstants.CommandInjection, new[] { "rule_type:command_injection", "rule_variant:exec" } },
         };
 
+    /// <summary>
+    /// Every address x WAF error combination TryGetRaspErrorTag maps, so that a copy/paste in that
+    /// hand-written table (shell mapped to the exec variant, say) cannot go unnoticed.
+    /// </summary>
+    public static IEnumerable<object[]> RaspErrorMappings
+    {
+        get
+        {
+            // a null return code stands for a null result, which is reported as the binding error
+            int?[] returnCodes = [null, -3, -2, -1];
+
+            foreach (var address in RaspAddresses)
+            {
+                foreach (var returnCode in returnCodes)
+                {
+                    yield return [address[0], (object)returnCode!, $"waf_error:{returnCode?.ToString() ?? "-127"}", address[1]];
+                }
+            }
+        }
+    }
+
     [Theory]
     [MemberData(nameof(RaspAddresses))]
     public async Task GivenASkippedRaspCall_WhenTheReasonIsAfterRequest_ThenTheRuleTypeAndReasonAreReported(string address, string[] expectedRuleTags)
@@ -72,25 +93,16 @@ public class RaspModuleTelemetryTests
     }
 
     [Theory]
-    [MemberData(nameof(RaspAddresses))]
-    public async Task GivenANullResult_WhenTheErrorIsRecorded_ThenABindingErrorIsReported(string address, string[] expectedRuleTags)
+    [MemberData(nameof(RaspErrorMappings))]
+    public async Task GivenAFailedRaspRun_WhenTheErrorIsRecorded_ThenTheAddressAndReturnCodeMapToTheExactTags(string address, int? returnCode, string expectedErrorTag, string[] expectedRuleTags)
     {
-        var metrics = await RecordAsync(collector => RaspModule.RecordRaspError(address, result: null, collector));
+        var result = returnCode is null ? null : CreateResult(returnCode.Value);
 
+        var metrics = await RecordAsync(collector => RaspModule.RecordRaspError(address, result, collector));
+
+        var expectedTags = new[] { "waf_version:unknown", "event_rules_version:unknown", expectedErrorTag }.Concat(expectedRuleTags);
         var tags = metrics.Should().ContainSingle(m => m.Name == "rasp.error").Which.Tags;
-        tags.Should().Contain("waf_error:-127").And.Contain(expectedRuleTags);
-    }
-
-    [Theory]
-    [InlineData(-3, "waf_error:-3")]
-    [InlineData(-2, "waf_error:-2")]
-    [InlineData(-1, "waf_error:-1")]
-    public async Task GivenAFailedRaspRun_WhenTheErrorIsRecorded_ThenTheReturnCodeIsReported(int returnCode, string expectedErrorTag)
-    {
-        var metrics = await RecordAsync(collector => RaspModule.RecordRaspError(AddressesConstants.DBStatement, CreateResult(returnCode), collector));
-
-        var tags = metrics.Should().ContainSingle(m => m.Name == "rasp.error").Which.Tags;
-        tags.Should().Contain(expectedErrorTag).And.Contain("rule_type:sql_injection");
+        tags.Should().Equal(expectedTags);
     }
 
     [Theory]
