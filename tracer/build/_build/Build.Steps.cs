@@ -1792,29 +1792,35 @@ partial class Build
                 _ => throw new InvalidOperationException($"Unknown platform {Platform} ({RuntimeInformation.ProcessArchitecture})"),
             };
 
-            var samplesRequiringExplicitRestore = projectsToPublish.Where(project => !string.IsNullOrEmpty(project.apiVersion)).ToList();
-            if (samplesRequiringExplicitRestore.Count > 0)
+            // Match CompileSamples' package-version flow: restore in one MSBuild evaluation, then publish in another.
+            var packageVersionSamples = projectsToPublish.Where(project => !string.IsNullOrEmpty(project.apiVersion)).ToList();
+            if (packageVersionSamples.Count > 0)
             {
-                // The implicit restore performed by dotnet publish evaluates ArtifactsPivots without a TargetFramework.
-                // Restore explicitly so NuGet and publish use the same intermediate output path.
-                DotNetRestore(config => config
-                    .CombineWith(samplesRequiringExplicitRestore,
-                        (s, project) => s
-                            .SetProjectFile(project.project)
-                            .SetProperty("Configuration", BuildConfiguration.ToString())
-                            .SetProperty("TargetFramework", Framework.ToString())
-                            .SetProperty("ApiVersion", project.apiVersion)));
+                foreach (var target in new[] { "Restore", "Publish" })
+                {
+                    MSBuild(config => config
+                        .SetMSBuildPath()
+                        .SetTargets(target)
+                        .SetConfiguration(BuildConfiguration)
+                        .SetProperty("TargetFramework", Framework.ToString())
+                        .SetProperty("BuildInParallel", "true")
+                        .SetProperty("CheckEolTargetFramework", "false")
+                        .SetProperty("ManuallyCopyCodeCoverageFiles", "false")
+                        .When(!string.IsNullOrEmpty(NugetPackageDirectory), x => x.SetProperty("RestorePackagesPath", NugetPackageDirectory))
+                        .SetProcessArgumentConfigurator(args => args.Add("/nowarn:NU1701"))
+                        .CombineWith(packageVersionSamples,
+                            (s, project) => s
+                                .SetTargetPath(project.project)
+                                .SetProperty("ApiVersion", project.apiVersion)));
+                }
             }
 
             DotNetPublish(config => config
                 .SetConfiguration(BuildConfiguration)
                 .SetFramework(Framework)
-                .CombineWith(projectsToPublish,
+                .CombineWith(projectsToPublish.Where(project => string.IsNullOrEmpty(project.apiVersion)),
                     (s, project) => s
                         .SetProject(project.project)
-                        .When(!string.IsNullOrEmpty(project.apiVersion), x => x
-                            .SetProperty("ApiVersion", project.apiVersion)
-                            .EnableNoRestore())
                         .When(project.publishWithRuntimeIdentifier, x => x.SetRuntime(rid))
                         .When(project.r2r, x => x.SetPublishReadyToRun(true))));
 
