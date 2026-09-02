@@ -1,4 +1,4 @@
-// <copyright file="OwinFixture.cs" company="Datadog">
+﻿// <copyright file="OwinFixture.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -12,21 +12,24 @@ using System.Net;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
-using Datadog.Trace.TestHelpers;
 using Xunit.Abstractions;
 
-namespace Datadog.Trace.ClrProfiler.IntegrationTests
+namespace Datadog.Trace.TestHelpers
 {
     /// <summary>
     /// Starts the <c>Samples.Owin.WebApi2</c> sample, which self-hosts Web API with OWIN rather than
     /// running under IIS, and keeps it alive for every test case in a class. Shared by
-    /// <see cref="OwinWebApi2Tests"/> and <see cref="OtlpOwinWebApi2Tests"/>; each test class
-    /// gets its own instance, and so its own process started with that class's configuration.
+    /// <c>OwinWebApi2Tests</c> and <c>OtlpOwinWebApi2Tests</c>; each test class gets its own
+    /// instance, and so its own process started with that class's configuration.
     /// </summary>
-    public sealed class OwinFixture : IDisposable
+    public sealed class OwinFixture : IAspNetFixture, IDisposable
     {
         private readonly HttpClient _httpClient;
+        private readonly object _initializationLock = new();
+        private readonly object _outputLock = new();
+        private ITestOutputHelper _currentOutput;
         private Process _process;
+        private Task _initialization;
 
         public OwinFixture()
         {
@@ -47,27 +50,67 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         /// <c>OTEL_EXPORTER_OTLP_HEADERS</c> when the process starts, and that process is shared by
         /// every test case in the class.
         /// </summary>
-        internal OtlpTestAgentSession OtlpSession { get; } = new();
+        public OtlpTestAgentSession OtlpSession { get; } = new();
+
+        /// <inheritdoc />
+        public void SetOutput(ITestOutputHelper output)
+        {
+            lock (_outputLock)
+            {
+                _currentOutput = output;
+
+                // The agent logs from its own listener threads for as long as the sample runs, so it
+                // has to follow the swap rather than hold on to whichever helper was current when it
+                // was created. Its own writes are already null-conditional.
+                if (Agent is not null)
+                {
+                    Agent.Output = output;
+                }
+            }
+        }
+
+        /// <inheritdoc />
+        public Task EnsureInitializedAsync(Func<Task> initialize)
+        {
+            lock (_initializationLock)
+            {
+                if (_initialization is null)
+                {
+                    try
+                    {
+                        _initialization = initialize();
+                    }
+                    catch (Exception ex)
+                    {
+                        // A delegate that throws before reaching its first await throws out of the
+                        // call rather than returning a faulted task, which would leave the latch
+                        // unset and send the next test case back through the same failing setup.
+                        _initialization = Task.FromException(ex);
+                    }
+                }
+
+                return _initialization;
+            }
+        }
 
         public async Task TryStartApp(TestHelper helper, ITestOutputHelper output)
         {
+            SetOutput(output);
+
             if (_process is not null)
             {
                 return;
             }
 
-            if (_process is null)
-            {
-                var initialAgentPort = TcpPortProvider.GetOpenPort();
-                HttpPort = TcpPortProvider.GetOpenPort();
+            var initialAgentPort = TcpPortProvider.GetOpenPort();
+            HttpPort = TcpPortProvider.GetOpenPort();
 
-                Agent = MockTracerAgent.Create(output, initialAgentPort);
-                Agent.SpanFilters.Add(IsNotServerLifeCheck);
-                output.WriteLine($"Starting OWIN sample, agentPort: {Agent.Port}, samplePort: {HttpPort}");
-                _process = await helper.StartSample(Agent, arguments: null, packageVersion: string.Empty, aspNetCorePort: HttpPort);
-            }
+            Agent = MockTracerAgent.Create(_currentOutput, initialAgentPort);
+            Agent.SpanFilters.Add(IsNotServerLifeCheck);
+            WriteToOutput($"Starting OWIN sample, agentPort: {Agent.Port}, samplePort: {HttpPort}");
+            _process = await helper.StartSample(Agent, arguments: null, packageVersion: string.Empty, aspNetCorePort: HttpPort);
 
-            await EnsureServerStarted(output);
+            await EnsureServerStarted();
         }
 
         public void Dispose()
@@ -78,7 +121,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 {
                     if (!_process.HasExited)
                     {
-                        SubmitRequest(null, "/shutdown").GetAwaiter().GetResult();
+                        SubmitRequest("/shutdown").GetAwaiter().GetResult();
 
                         _process.Kill();
                     }
@@ -92,20 +135,27 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
 
             Agent?.Dispose();
+
+            SetOutput(null);
         }
 
         public async Task<IImmutableList<MockSpan>> WaitForSpans(ITestOutputHelper output, string path, int expectedSpanCount)
         {
+            SetOutput(output);
+
             var testStart = DateTimeOffset.UtcNow;
 
-            await SubmitRequest(output, path);
+            await SubmitRequest(path);
             return await Agent.WaitForSpansAsync(count: expectedSpanCount, minDateTime: testStart, returnAllOperations: true);
         }
 
-        private async Task EnsureServerStarted(ITestOutputHelper output)
+        private async Task EnsureServerStarted()
         {
             var wh = new EventWaitHandle(false, EventResetMode.AutoReset);
 
+            // These handlers stay attached for as long as the sample runs, which is longer than any
+            // single test case, so they have to write through WriteToOutput rather than capture the
+            // output helper of whichever test case happened to start the sample.
             _process.OutputDataReceived += (sender, args) =>
             {
                 if (args.Data != null)
@@ -115,7 +165,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                         wh.Set();
                     }
 
-                    output.WriteLine($"[webserver][stdout] {args.Data}");
+                    WriteToOutput($"[webserver][stdout] {args.Data}");
                 }
             };
             _process.BeginOutputReadLine();
@@ -124,7 +174,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             {
                 if (args.Data != null)
                 {
-                    output.WriteLine($"[webserver][stderr] {args.Data}");
+                    WriteToOutput($"[webserver][stderr] {args.Data}");
                 }
             };
 
@@ -142,7 +192,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             {
                 try
                 {
-                    serverReady = await SubmitRequest(output, "/alive-check") == HttpStatusCode.OK;
+                    serverReady = await SubmitRequest("/alive-check") == HttpStatusCode.OK;
                 }
                 catch
                 {
@@ -159,7 +209,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             if (!serverReady)
             {
-                throw new Exception("Couldn't verify the application is ready to receive requests.");
+                throw new Exception($"Couldn't verify the application is ready to receive requests at http://localhost:{HttpPort}/alive-check.");
             }
         }
 
@@ -174,12 +224,31 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             return !url.Contains("alive-check") && !url.Contains("shutdown");
         }
 
-        private async Task<HttpStatusCode> SubmitRequest(ITestOutputHelper output, string path)
+        private async Task<HttpStatusCode> SubmitRequest(string path)
         {
             HttpResponseMessage response = await _httpClient.GetAsync($"http://localhost:{HttpPort}{path}");
             string responseText = await response.Content.ReadAsStringAsync();
-            output?.WriteLine($"[http] {response.StatusCode} {responseText}");
+            WriteToOutput($"[http] {response.StatusCode} {responseText}");
             return response.StatusCode;
+        }
+
+        // The fixture outlives every individual test case, so its diagnostics have to go through
+        // whichever ITestOutputHelper is currently accepting writes -- see SetOutput.
+        private void WriteToOutput(string line)
+        {
+            lock (_outputLock)
+            {
+                try
+                {
+                    _currentOutput?.WriteLine(line);
+                }
+                catch (InvalidOperationException)
+                {
+                    // The test case that owned the output helper finished between the read and the
+                    // write. These writes come from the sample's stdout/stderr handlers, which run
+                    // on threadpool threads, so throwing here would take the test host down with it.
+                }
+            }
         }
     }
 }

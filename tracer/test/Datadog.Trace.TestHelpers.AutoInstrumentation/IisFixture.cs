@@ -1,4 +1,4 @@
-// <copyright file="IisFixture.cs" company="Datadog">
+﻿// <copyright file="IisFixture.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -11,12 +11,16 @@ using System.Net.Http;
 using System.Net.Sockets;
 using System.Threading.Tasks;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace Datadog.Trace.TestHelpers
 {
     [CollectionDefinition("IisTests", DisableParallelization = false)]
-    public sealed class IisFixture : GacFixture, IDisposable
+    public sealed class IisFixture : GacFixture, IAspNetFixture, IDisposable
     {
+        private readonly object _initializationLock = new();
+        private Task _initialization;
+
         public (ProcessHelper Process, string ConfigFile) IisExpress { get; private set; }
 
         public MockTracerAgent Agent { get; private set; }
@@ -43,6 +47,36 @@ namespace Datadog.Trace.TestHelpers
         /// </summary>
         public OtlpTestAgentSession OtlpSession { get; } = new();
 
+        /// <inheritdoc />
+        public void SetOutput(ITestOutputHelper output)
+        {
+            // no-op
+        }
+
+        /// <inheritdoc />
+        public Task EnsureInitializedAsync(Func<Task> initialize)
+        {
+            lock (_initializationLock)
+            {
+                if (_initialization is null)
+                {
+                    try
+                    {
+                        _initialization = initialize();
+                    }
+                    catch (Exception ex)
+                    {
+                        // A delegate that throws before reaching its first await throws out of the
+                        // call rather than returning a faulted task, which would leave the latch
+                        // unset and send the next test case back through the same failing setup.
+                        _initialization = Task.FromException(ex);
+                    }
+                }
+
+                return _initialization;
+            }
+        }
+
         public async Task TryStartIis(TestHelper helper, IisAppType appType, bool sendHealthCheck = true, string url = "")
         {
             if (IisExpress.Process == null)
@@ -53,7 +87,8 @@ namespace Datadog.Trace.TestHelpers
                 }
 
                 var initialAgentPort = TcpPortProvider.GetOpenPort();
-                Agent = MockTracerAgent.Create(null, initialAgentPort);
+                var agent = MockTracerAgent.Create(null, initialAgentPort);
+                Agent = agent;
 
                 HttpPort = TcpPortProvider.GetOpenPort();
                 IisExpress = await helper.StartIISExpress(Agent, HttpPort, appType, VirtualApplicationPath, UsePartialTrust, UseLegacyCasModel);
@@ -168,7 +203,7 @@ namespace Datadog.Trace.TestHelpers
 
             if (!serverReady)
             {
-                throw new Exception("Couldn't verify the application is ready to receive requests.");
+                throw new Exception($"Couldn't verify the application is ready to receive requests at http://localhost:{HttpPort}{url}.");
             }
         }
 

@@ -1,4 +1,4 @@
-// <copyright file="OtlpOwinWebApi2Tests.cs" company="Datadog">
+﻿// <copyright file="OtlpOwinWebApi2Tests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -8,7 +8,7 @@
 #pragma warning disable SA1649 // File name must match first type name
 
 using System.Threading.Tasks;
-using Datadog.Trace.ClrProfiler.IntegrationTests.Helpers;
+using Datadog.Trace.TestHelpers;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -43,7 +43,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         private readonly OwinFixture _fixture;
 
         protected OtlpOwinWebApi2Tests(OwinFixture fixture, ITestOutputHelper output, bool openTelemetrySemanticsEnabled)
-            : base("Owin.WebApi2", samplePathOverride: null, output, nameof(OtlpOwinWebApi2Tests), openTelemetrySemanticsEnabled, fixture.OtlpSession)
+            : base("Owin.WebApi2", fixture, samplePathOverride: null, output, nameof(OtlpOwinWebApi2Tests), openTelemetrySemanticsEnabled)
         {
             _fixture = fixture;
         }
@@ -100,7 +100,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             => RunTestCaseAsync(httpMethod, path, statusCode, expectedSpanCount);
 
         /// <inheritdoc />
-        protected override Task StartApplicationAsync() => _fixture.TryStartApp(this, Output);
+        protected override Task StartServerAsync() => _fixture.TryStartApp(this, Output);
 
         /// <inheritdoc />
         protected override string GetRequestUrl(string path) => $"http://localhost:{_fixture.HttpPort}{path}";

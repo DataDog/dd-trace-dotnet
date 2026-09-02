@@ -1,4 +1,4 @@
-// <copyright file="OtlpServerTestBase.cs" company="Datadog">
+﻿// <copyright file="OtlpServerTestBase.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -38,11 +38,17 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     /// <c>OtlpOwinWebApi2Tests</c> self-hosts one with OWIN.
     /// </para>
     /// <para>
-    /// Derived suites carry <c>[Collection(nameof(TestAgentOtlpCollection))]</c> because the session
-    /// is shared with every other OTLP test reading from the same test agent, and are snapshotted
-    /// under both semantics, so the pair of snapshots is the diff between the Datadog defaults and
-    /// the OpenTelemetry conventions for the same request. This intentionally only covers OTLP
-    /// export, which is where the RFC requires typed attribute values.
+    /// Each fixture generates its own <see cref="OtlpTestAgentSession"/> token, so suites reading
+    /// from the same test agent are already isolated from one another and no xUnit collection is
+    /// needed for that. The IIS-hosted suites still carry <c>[Collection("IisTests")]</c>, because
+    /// <see cref="IisFixture"/> installs the monitoring home into the GAC and removes it again in
+    /// its <c>Dispose</c>, which must not overlap with another IIS suite doing the same.
+    /// </para>
+    /// <para>
+    /// Derived suites are snapshotted under both semantics, so the pair of snapshots is the diff
+    /// between the Datadog defaults and the OpenTelemetry conventions for the same request. This
+    /// intentionally only covers OTLP export, which is where the RFC requires typed attribute
+    /// values.
     /// </para>
     /// </summary>
     [UsesVerify]
@@ -75,18 +81,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             "network.peer.port",
         ];
 
-        /// <summary>
-        /// The ddapm test-agent session the application under test exports to, owned by the fixture
-        /// that starts it: the session token is baked into the application's environment when it
-        /// starts, and the application outlives every test case in the class, so a session created
-        /// per test case would stop matching what the running application actually sends.
-        /// </summary>
-        private readonly OtlpTestAgentSession _otlpSession;
-
-        internal OtlpServerTestBase(string sampleAppName, string samplePathOverride, ITestOutputHelper output, string testName, bool openTelemetrySemanticsEnabled, OtlpTestAgentSession otlpSession)
+        internal OtlpServerTestBase(string sampleAppName, IAspNetFixture fixture, string samplePathOverride, ITestOutputHelper output, string testName, bool openTelemetrySemanticsEnabled)
             : base(sampleAppName, samplePathOverride, output)
         {
-            _otlpSession = otlpSession;
             OpenTelemetrySemanticsEnabled = openTelemetrySemanticsEnabled;
             TestName = testName + (openTelemetrySemanticsEnabled ? ".OtelSemantics" : ".DatadogSemantics");
 
@@ -102,8 +99,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             // OTEL_TRACES_EXPORTER=otlp is what makes the Datadog SDK emit OTLP instead of msgpack.
             // Everything else is left at its default dd-trace-dotnet value.
-            ConfigureOtlpExport(_otlpSession);
+            ConfigureOtlpExport(fixture.OtlpSession);
+
+            Fixture = fixture;
+            Fixture.SetOutput(output);
         }
+
+        protected IAspNetFixture Fixture { get; }
 
         protected bool OpenTelemetrySemanticsEnabled { get; }
 
@@ -113,25 +115,30 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         protected string TestName { get; }
 
         /// <summary>
-        /// Gets the path hit until the application responds, to confirm it is up. The spans it
-        /// produces are discarded before each test case runs.
+        /// Gets the path hit until the application responds, to confirm it is up. Requested with
+        /// tracing disabled, as in <c>OtlpAspNetCoreTestBase</c>, so the warm-up doesn't leave spans
+        /// behind for the first test case to wait out.
         /// </summary>
         protected abstract string WarmupPath { get; }
 
-        public async Task InitializeAsync()
+        /// <summary>
+        /// xUnit runs this once per test case, since it builds a fresh instance of the test class for
+        /// each one, so the real work is delegated to the fixture's once-per-class latch. The result
+        /// is that only the first test case pays for the availability check, the application startup
+        /// and the warm-up; every later one finds the same already-completed task.
+        /// </summary>
+        public Task InitializeAsync() => Fixture.EnsureInitializedAsync(StartApplicationAsync);
+
+        public async Task DisposeAsync()
         {
-            if (!await _otlpSession.CheckAvailabilityAsync(Output))
+            Fixture.SetOutput(null);
+
+            // Clear the session at the end of the test to avoid leaking spans between test cases.
+            if (Fixture.OtlpSession.IsAvailable)
             {
-                // Don't pay for starting the application under test (which for IIS Express also means
-                // installing into the GAC) for a test that is about to skip.
-                return;
+                await Fixture.OtlpSession.ClearSessionAsync();
             }
-
-            await StartApplicationAsync();
-            await WarmUpApplicationAsync();
         }
-
-        public virtual Task DisposeAsync() => Task.CompletedTask;
 
         /// <summary>
         /// Gets the value of a span attribute as a string, whichever value kind it was reported as,
@@ -159,11 +166,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         }
 
         /// <summary>
-        /// Starts the application under test, without the fixture's own health check: that waits for
-        /// a span to reach the mock agent, and <c>OTEL_TRACES_EXPORTER=otlp</c> sends traces to the
-        /// ddapm test-agent instead. <see cref="WarmUpApplicationAsync"/> takes its place.
+        /// Starts the application under test, without the fixture's own health check: that one waits
+        /// for a span to reach the mock DD agent, and <c>OTEL_TRACES_EXPORTER=otlp</c> sends traces to
+        /// the ddapm test-agent instead, so it would never be satisfied.
+        /// <see cref="WarmUpApplicationAsync"/> takes its place. This is the only step of
+        /// <see cref="StartApplicationAsync"/> that differs per hosting model, which is why it is the
+        /// only one a derived harness supplies; <c>OtlpAspNetCoreTestBase</c>, having a single
+        /// fixture, calls <c>AspNetCoreTestFixture.TryStartApp</c> inline at the same point.
         /// </summary>
-        protected abstract Task StartApplicationAsync();
+        protected abstract Task StartServerAsync();
 
         /// <summary>
         /// Gets the absolute URL the application under test serves <paramref name="path"/> at.
@@ -216,17 +227,39 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
         }
 
+        /// <summary>
+        /// Brings up the application the whole test class shares. Runs once per class, through
+        /// <see cref="IAspNetFixture.EnsureInitializedAsync"/>, so it reads the environment
+        /// variables the first test case's constructor set - which is also why it can't be a fixture
+        /// <c>InitializeAsync</c>, as those are not set until a test class instance exists.
+        /// </summary>
+        private async Task StartApplicationAsync()
+        {
+            if (!await Fixture.OtlpSession.CheckAvailabilityAsync(Output))
+            {
+                // Don't pay for starting the application under test (which for IIS Express also means
+                // installing into the GAC) for a test that is about to skip.
+                return;
+            }
+
+            await StartServerAsync();
+            await WarmUpApplicationAsync();
+
+            // Clear the session so the warm-up request is not returned in the next test case.
+            await Fixture.OtlpSession.ClearSessionWhenQuietAsync(Output);
+        }
+
         private async Task<JToken> SendRequestAndCollectSpansAsync(string httpMethod, string path, int statusCode, int expectedSpanCount)
         {
             // The IIS integration-test job doesn't filter on RequiresDockerDependency the way the
             // other jobs do, so it would run this test without a test-agent to export OTLP to.
-            Skip.IfNot(_otlpSession.IsAvailable, $"The ddapm test-agent is not reachable at {_otlpSession.TracesUrl}.");
+            Skip.IfNot(Fixture.OtlpSession.IsAvailable, $"The ddapm test-agent is not reachable at {Fixture.OtlpSession.TracesUrl}.");
 
             var names = OtlpFieldNames.For(isJson: false);
 
-            // Unlike the console-application OTLP tests, the application under test outlives each
-            // test case, so drop everything the previous case and the warm-up request produced first.
-            await _otlpSession.ClearSessionWhenQuietAsync(Output);
+            // DisposeAsync already clears after every case, but clear again to ensure that
+            // spans still in-flight due to a previous failure do not leak into the next test case
+            await Fixture.OtlpSession.ClearSessionAsync();
 
             // Captured before the request is sent, so it is a lower bound for every span the server
             // creates while handling it.
@@ -234,7 +267,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             await SendRequestAsync(httpMethod, path, (HttpStatusCode)statusCode);
 
-            var tracesRequests = await _otlpSession.WaitForSpansAsync(expectedSpanCount, testStartTimeUnixNano, names.StartTimeUnixNano);
+            var tracesRequests = await Fixture.OtlpSession.WaitForSpansAsync(expectedSpanCount, testStartTimeUnixNano, names.StartTimeUnixNano);
             tracesRequests.Should().NotBeNullOrEmpty();
             OtlpTestAgentSession.CountSpans(tracesRequests).Should().Be(expectedSpanCount);
 
@@ -296,9 +329,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         }
 
         /// <summary>
-        /// Sends requests until the application responds, because it was started without its own
-        /// health check and so only waited for the port to be bound, not for the application to
-        /// finish starting.
+        /// Sends requests until the application responds, because <see cref="StartServerAsync"/> ran
+        /// without the fixture's own health check and so only waited for the port to be bound, not
+        /// for the application to finish starting.
         /// </summary>
         private async Task WarmUpApplicationAsync()
         {

@@ -1,4 +1,4 @@
-// <copyright file="OtlpAspNetCoreTestBase.cs" company="Datadog">
+﻿// <copyright file="OtlpAspNetCoreTestBase.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -43,7 +43,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
 
         /// <summary>
         /// Attributes whose values depend on the machine, the socket, or the checkout path rather than
-        /// on the request. See the identical list in <c>OtlpAspNetTestBase</c>.
+        /// on the request. See the identical list in <c>OtlpServerTestBase</c>.
         /// </summary>
         private static readonly string[] UnstableAttributeKeys =
         {
