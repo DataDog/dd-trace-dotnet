@@ -402,7 +402,7 @@ namespace Datadog.Trace.TestHelpers
         /// from <see cref="MockTracerAgent.WaitForOtlpSpansAsync"/>'s <c>minDateTime</c> parameter, the
         /// same way non-OTLP AspNetCore suites isolate against <see cref="MockTracerAgent.Spans"/>.
         /// </summary>
-        internal void ConfigureOtlpExport(string tracesEndpoint, string protocol = "http/protobuf")
+        public void ConfigureOtlpExport(string tracesEndpoint, string protocol = "http/protobuf")
         {
             SetEnvironmentVariable("OTEL_TRACES_EXPORTER", "otlp");
             SetEnvironmentVariable("OTEL_EXPORTER_OTLP_PROTOCOL", protocol);
