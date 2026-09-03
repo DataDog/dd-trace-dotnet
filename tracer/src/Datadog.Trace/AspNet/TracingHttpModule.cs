@@ -1,4 +1,4 @@
-// <copyright file="TracingHttpModule.cs" company="Datadog">
+﻿// <copyright file="TracingHttpModule.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -199,6 +199,27 @@ namespace Datadog.Trace.AspNet
                 }
 
                 HttpRequest httpRequest = httpContext.Request;
+
+                var otelSemanticsEnabled = tracer.Settings.OtelSemanticsEnabled;
+
+                // HttpServerUtility.TransferRequest re-runs the pipeline with a fresh HttpContext but
+                // the same ExecutionContext, so the span the original request started is still active.
+                // The OpenTelemetry conventions describe a single HTTP server span per inbound request,
+                // so track the transferred request against that span rather than nesting a second
+                // server span inside it. This pipeline still produces the response the client sees, and
+                // its EndRequest runs first, so it is the one that stamps the status code onto the span.
+                //
+                // This check runs before the context extraction below so that a transferred request
+                // never starts an inferred proxy span that it would then have to discard: it doesn't
+                // own a span, so it has nothing to attach an extracted context or a proxy scope to.
+                if (otelSemanticsEnabled && HttpSemanticConventions.GetActiveHttpServerScope(tracer) is { } reusedScope)
+                {
+                    httpContext.Items[_httpContextScopeKey] = new ScopeContainer(reusedScope, proxyScope: null, ownsScope: false);
+                    shouldDisposeScope = false;
+                    ReportToSecurityAndIast(reusedScope, httpContext, httpRequest);
+                    return;
+                }
+
                 var requestHeaders = RequestDataHelper.GetHeaders(httpRequest) ?? [];
                 var headers = requestHeaders.Wrap();
                 PropagationContext extractedContext = default;
@@ -225,22 +246,6 @@ namespace Datadog.Trace.AspNet
                     {
                         Log.Error(ex, "Error extracting propagated HTTP headers.");
                     }
-                }
-
-                var otelSemanticsEnabled = tracer.Settings.OtelSemanticsEnabled;
-
-                // HttpServerUtility.TransferRequest re-runs the pipeline with a fresh HttpContext but
-                // the same ExecutionContext, so the span the original request started is still active.
-                // The OpenTelemetry conventions describe a single HTTP server span per inbound request,
-                // so track the transferred request against that span rather than nesting a second
-                // server span inside it. This pipeline still produces the response the client sees, and
-                // its EndRequest runs first, so it is the one that stamps the status code onto the span.
-                if (otelSemanticsEnabled && HttpSemanticConventions.GetActiveHttpServerScope(tracer) is { } reusedScope)
-                {
-                    httpContext.Items[_httpContextScopeKey] = new ScopeContainer(reusedScope, proxyScope: null, ownsScope: false);
-                    shouldDisposeScope = false;
-                    ReportToSecurityAndIast(reusedScope, httpContext, httpRequest);
-                    return;
                 }
 
                 string host = requestHeaders.Get("Host");
