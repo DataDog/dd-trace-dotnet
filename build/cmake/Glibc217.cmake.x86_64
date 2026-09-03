@@ -1,0 +1,225 @@
+# Approach A of docs/development/rfc-linux-x64-build-host.md: build the x86_64 Linux
+# Datadog.Tracer.Native / Datadog.Profiler.Native artifacts on a plain, current Ubuntu host
+# while still producing a binary whose glibc floor matches what compiling inside a real
+# CentOS 7 container produces today (GLIBC_2.17). Modeled directly on the musl cross-toolchain
+# file this repo already ships and runs in production for the "Universal" build
+# (Universal.cmake.x86_64) - same mechanism, re-pointed at glibc instead of musl.
+#
+# Unlike Universal.cmake.x86_64, this file deliberately does NOT set CMAKE_SYSROOT: doing so
+# would also redirect the *compiler's* header search into the sysroot, and we want to keep
+# compiling C against the build host's own modern glibc headers (needed for -std=c++20 -
+# CentOS 7's own headers predate that). This is safe for glibc's OWN symbol-version ceiling,
+# because that's a link-time-only property (which .so the linker resolves undefined symbols
+# against, via that .so's .gnu.version_d section) - it is not affected by which glibc headers
+# were used to compile. The one known glibc-side exception - functions whose
+# compiler-generated call target differs depending on which glibc header version compiled
+# the call (the historic stat/fstat/lstat -> __xstat/__fxstat/__lxstat indirection) - is
+# handled by linking in the existing glibc-compat shim... except that shim was tried here and
+# reverted: its strerror_r override hard-conflicts with real glibc's _GNU_SOURCE-declared
+# signature (see tracer/src/Datadog.Tracer.Native/CMakeLists.txt's comment). Empirically,
+# stat/fstat/lstat resolve correctly on this path without it regardless (see the RFC).
+#
+# The SAME "compile with modern headers is fine" reasoning does NOT hold for C++: libstdc++
+# is not just a symbol-version target, its HEADERS contain inlined implementations (e.g.
+# std::condition_variable::wait_until) that call glibc functions newer than 2.17 directly
+# (__libc_single_threaded, __cxa_thread_atexit_impl, pthread_cond_clockwait - all verified as
+# hard "undefined symbol" link failures in CI, not just version mismatches) whenever a
+# modern GCC's own headers/libstdc++.a are used - which is what clang finds by default via
+# its own GCC-installation auto-detection on any current Ubuntu host. So both the C++ HEADER
+# search and the libstdc++.a/libgcc.a used at link time are redirected below to a harvested
+# devtoolset-11 (Red Hat's own GCC 11, rebuilt specifically to still target RHEL7's glibc
+# floor - not a coincidence that it shares a GCC major version with a typical modern host's
+# system GCC, but built to assume nothing newer than glibc 2.17 is present). devtoolset-11 is
+# also the newest devtoolset CentOS 7 ever shipped (there is no devtoolset-12) and already a
+# pipeline dependency elsewhere (centos7.build.dockerfile bootstraps clang-16 with it).
+#
+# So this file changes two things: where the COMPILER looks for C++ standard library headers
+# (-cxx-isystem, C headers are untouched - see above), and where the LINKER looks for
+# libraries/the dynamic-linker/interpreter (library search paths, glibc's own sysroot, and
+# devtoolset-11's libstdc++.a/libgcc.a) - pointing both at a frozen, harvested sysroot instead
+# of the Ubuntu host's own modern glibc/GCC. See glibc217-sysroot.harvest.dockerfile for how
+# /sysroot/x86_64-glibc217 (including its devtoolset11/ subdirectory) gets populated
+# (harvested once, out-of-band, from a real centos:7 container - never rebuilt per-CI-job).
+
+# Defaults to the path ubuntu.dockerfile's `COPY --from=glibc217-harvest` populates, which is
+# the only place this build normally runs. Overridable purely so a one-off local repro doesn't
+# require editing this tracked file (which is easy to forget to revert, and produces a
+# confusing diff):
+#   cmake -DGLIBC217_SYSROOT=/path/to/harvested/sysroot ...
+# The harvested tarball extracts straight into such a directory (its members are ./usr/lib64,
+# ./lib64, ./devtoolset11), so `mkdir sysroot && tar xzf glibc217-sysroot-x86_64.tar.gz -C
+# sysroot` then pointing this at it is enough - no sudo and no writing to /sysroot needed.
+set(GLIBC217_SYSROOT "/sysroot/x86_64-glibc217" CACHE PATH
+    "Location of the harvested glibc 2.17 + devtoolset-11 sysroot")
+set(glibc217_sysroot ${GLIBC217_SYSROOT})
+
+# try_compile() (which project()/enable_language run for compiler ABI detection) generates a
+# throwaway sub-project that re-includes this toolchain file but does NOT inherit the outer
+# cache, so GLIBC217_SYSROOT would revert to its default there and the FATAL_ERROR below would
+# fire from inside the ABI check - "CMAKE_C_COMPILER not set, after EnableLanguage", which
+# gives no hint about the real cause. Forwarding it is the documented fix. Only matters when
+# the default is overridden, which is why the in-Docker path never hit this.
+list(APPEND CMAKE_TRY_COMPILE_PLATFORM_VARIABLES GLIBC217_SYSROOT)
+set(devtoolset11_dir ${glibc217_sysroot}/devtoolset11)
+
+if (NOT EXISTS ${glibc217_sysroot})
+    message(FATAL_ERROR "USE_GLIBC217_SYSROOT is set but ${glibc217_sysroot} does not exist. "
+                         "The Docker image should have extracted the harvested glibc 2.17 "
+                         "sysroot tarball there - see docs/development/rfc-linux-x64-build-host.md. "
+                         "To build outside that image, point -DGLIBC217_SYSROOT= at a local copy.")
+endif()
+
+if (NOT EXISTS ${devtoolset11_dir})
+    message(FATAL_ERROR "USE_GLIBC217_SYSROOT is set but ${devtoolset11_dir} does not exist. "
+                         "The harvested sysroot must also include devtoolset-11's "
+                         "libstdc++/libgcc and C++ headers - see "
+                         "docs/development/rfc-linux-x64-build-host.md.")
+endif()
+
+# Selecting this toolchain file IS the opt-in, so USE_GLIBC217_SYSROOT is defined HERE rather
+# than passed as a second -D that callers would have to keep in sync with -DCMAKE_TOOLCHAIN_FILE=
+# (Build.cs deliberately passes only the latter). A plain set() is enough and reaches the
+# subdirectories that gate on it: CMake includes this file from CMakeSystem.cmake during the
+# top-level project() call, so these variables land in the top-level directory scope and are
+# inherited by add_subdirectory(tracer)/add_subdirectory(profiler).
+#
+# Without it, the two things the subdirectory CMakeLists gate on this variable for both silently
+# don't happen: glibc217-compat never gets built or linked (verified: "ld.lld-16: error:
+# undefined symbol: __libc_single_threaded, referenced by atomicity.h:52 ... referenced 3322 more
+# times" when linking Datadog.Profiler.Native.so - the reference our own sys/single_threaded.h
+# stub deliberately creates, with nothing left to back it), and the redundant -stdlib=libstdc++
+# stays on the command line, warning "argument unused during compilation" on every single file.
+set(USE_GLIBC217_SYSROOT ON)
+
+# UNIVERSAL and USE_GLIBC217_SYSROOT are mutually exclusive: the Universal build targets musl
+# (that's the whole point of the glibc-compat shim it pulls in - see FindGlibcCompat.cmake),
+# while this file targets a frozen glibc. The native loader and wrapper cannot be both at once.
+#
+# Root CMakeLists.txt declares UNIVERSAL with option(... ON), so the mere DEFAULT would
+# otherwise silently opt this build into the musl path. Seeding the cache here - before that
+# option() runs, since this file is included from project() - makes the natural
+# "-DCMAKE_TOOLCHAIN_FILE=<this file>" configure self-consistent without callers having to
+# also remember -DUNIVERSAL=OFF (which is what CI's CompileNativeWrapper already passes
+# explicitly). Verified: with UNIVERSAL left at its ON default, building the native-loader
+# target under this toolchain fails to compile outright -
+# "shared/src/glibc-compat/glibc-compat.c:111:5: error: conflicting types for 'strerror_r'",
+# because that shim defines musl's XSI int-returning strerror_r while real glibc here declares
+# the _GNU_SOURCE char*-returning one. No FORCE, so an explicit -DUNIVERSAL=ON on the command
+# line still wins - and root CMakeLists.txt turns that contradiction into a hard error rather
+# than letting it reach that confusing compile failure.
+set(UNIVERSAL OFF CACHE BOOL "Build as Universal binary")
+
+set(CMAKE_SYSTEM_NAME Linux)
+set(CMAKE_SYSTEM_PROCESSOR x86_64)
+set(triple x86_64-unknown-linux-gnu)
+set(CMAKE_C_COMPILER_TARGET ${triple})
+set(CMAKE_CXX_COMPILER_TARGET ${triple})
+
+# CMAKE_CURRENT_LIST_DIR (this file's own directory), not DOTNET_TRACER_REPO_ROOT_PATH/
+# CMAKE_SOURCE_DIR: toolchain files are processed before project()/the root CMakeLists.txt
+# body runs, so those aren't reliably set yet here.
+get_filename_component(glibc217_compat_include_dir "${CMAKE_CURRENT_LIST_DIR}/../../shared/src/glibc217-compat" ABSOLUTE)
+
+# -isystem shadows glibc's real <sys/single_threaded.h> (introduced in glibc 2.32) with our
+# own stub - see shared/src/glibc217-compat/glibc217-compat.c for the full story: libstdc++'s
+# <ext/atomicity.h> does `#if __has_include(<sys/single_threaded.h>)`, re-evaluated fresh on
+# every file that includes it against whatever C headers are reachable at that moment - since
+# C header search isn't redirected below (only C++ - see the next comment for why that's
+# normally fine), the build host's own modern glibc satisfies that check, pulling in
+# __libc_single_threaded, which doesn't exist in glibc 2.17 (verified in CI: "undefined
+# symbol: __libc_single_threaded", from ordinary std::string/std::shared_ptr usage - not
+# something the earlier empirical verification below happened to exercise). Must come before
+# the devtoolset-11 redirect below is irrelevant to ordering - -isystem and -cxx-isystem are
+# separate search lists - but verified together as one flag set regardless.
+#
+# -nostdinc++ + -cxx-isystem redirect the C++ standard library header search to
+# devtoolset-11's (main dir + the arch-specific subdir, which has bits/c++config.h) - C
+# headers are untouched, still resolved from the Ubuntu host's own modern glibc (see the
+# file comment for why that's safe). Without this, functions like
+# std::condition_variable::wait_until get their glibc-version-dependent implementation
+# inlined from whichever C++ headers compiled the call, regardless of which libstdc++.a is
+# linked (verified in CI: this was still broken with only the *library* redirected below).
+set(CMAKE_CXX_FLAGS_INIT "-isystem ${glibc217_compat_include_dir} -nostdinc++ -cxx-isystem ${devtoolset11_dir}/include/11 -cxx-isystem ${devtoolset11_dir}/include/11/x86_64-redhat-linux")
+
+# -Wl,--sysroot= is required, not optional: glibc's own /usr/lib64/libc.so, libpthread.so,
+# etc. are GNU ld linker SCRIPTS (text files containing e.g.
+# "GROUP ( /lib64/libpthread-2.17.so /lib64/libpthread_nonshared.a ... )"), and those paths
+# are ABSOLUTE, as shipped on the source CentOS 7 system. Without --sysroot telling the
+# LINKER (not the compiler - this is passed via -Wl, specifically so it never touches header
+# search) to treat absolute paths as sysroot-relative, the linker resolves them against the
+# real build-host filesystem instead and fails outright (verified: `ld.lld: error: cannot
+# open /lib64/libpthread.so.0: No such file or directory` without this flag).
+#
+# -B tells the compiler driver to also look here for crt*.o startup objects, so the ones
+# glibc itself provides (crt1.o/crti.o/crtn.o) come from the frozen sysroot rather than the
+# host's own glibc; the devtoolset-11 lib dir is also added to -B/-L so -static-libstdc++/
+# -static-libgcc pick up ITS libstdc++.a/libgcc.a instead of whatever GCC clang would
+# otherwise auto-detect on the build host. -rpath-link points the linker's own transitive
+# search at the same two places.
+#
+# Deliberately NOT set here: -Wl,--dynamic-linker. Pointing the ELF interpreter at the
+# sysroot's own ld.so looks right by symmetry with everything else above, but it bakes an
+# ABSOLUTE BUILD-HOST path into PT_INTERP, and that path exists only on the machine that did
+# the linking - not on the target. It also isn't needed: /lib64/ld-linux-x86-64.so.2 (clang's
+# default for this triple) is the x86_64 psABI-mandated interpreter path, byte-identical on
+# CentOS 7 and on any modern distro, so the default is already the portable answer.
+#
+# This is latent rather than obvious because PT_INTERP only exists in EXECUTABLES: the
+# tracer/profiler .so targets silently ignored the flag, so only the GoogleTest executables
+# ever tripped over it. And they trip hard - gtest_discover_tests RUNS the freshly linked test
+# binary at BUILD time to enumerate test cases, so this surfaced as a build failure, not a
+# test failure: "Datadog.Profiler.Native.Tests: <sysroot>/lib64/ld-linux-x86-64.so.2: version
+# `GLIBC_2.35' not found (required by /lib/x86_64-linux-gnu/libc.so.6)". Note what that error
+# actually says - the pinned glibc-2.17 ld.so was found and started, then went on to load the
+# HOST's modern libc.so.6 (its own default search path, not the sysroot's), and a 2.17 loader
+# cannot satisfy a 2.36 libc. Leaving PT_INTERP at the default gives the matched
+# loader/libc pair on whatever machine runs the binary, old or new, which is the entire goal.
+#
+# This whole flag set was verified empirically (not just reasoned about): compiling a test
+# program exercising stat/fstat/lstat/pow/ceil/malloc/free/dlopen AND
+# std::mutex/std::condition_variable::wait_until/thread_local-with-destructor/std::atomic
+# (to specifically exercise __libc_single_threaded/__cxa_thread_atexit_impl/
+# pthread_cond_clockwait) with a current Ubuntu's own modern C++ headers redirected to a
+# harvested devtoolset-11, and linking with exactly these flags against a sysroot harvested
+# per glibc217-sysroot.harvest.dockerfile, produced a clean link with `nm
+# --with-symbol-versions` showing a max requirement of exactly GLIBC_2.17, and none of the
+# three problem symbols referenced at all. The same source linked normally (no sysroot, no
+# devtoolset-11 redirect) against a stock Ubuntu 22.04 fails to link outright on those three
+# undefined symbols, and separately pulls in GLIBC_2.34 for the parts that do resolve. See
+# docs/development/rfc-linux-x64-build-host.md for the full comparison.
+# -Wl,--no-dependent-libraries: lld (unlike bfd/gold, which don't have this feature at all -
+# why this was never an issue on the existing centos7 build) honors MSVC-style
+# #pragma comment(lib, "X") directives recorded in object files as ELF "dependent library"
+# specifiers, even on Linux - clang parses the pragma regardless of target OS. Some vendored
+# CoreCLR PAL header (Windows-originating source) has one for mscoree.lib, a Windows-only
+# library that obviously doesn't exist here (verified in CI: "ld.lld: error: unable to find
+# library from dependent library specifier: mscoree.lib", across several *.cpp.o in
+# Datadog.Tracer.Native.Tests). This directive was always latent in the code; explicitly
+# selecting lld below (matching the Universal build's own precedent) is what exposes it,
+# since lld defaults this feature to enabled for ELF targets. Disabling it here doesn't lose
+# anything real - nothing in this codebase actually wants MSVC's implicit-autolink behavior.
+#
+# -Wno-unused-command-line-argument is on the LINK flags only, and only silences a false
+# positive that CMake's design forces on us: CMake appends CMAKE_CXX_FLAGS to the link command
+# line as well as to compile lines, so the compile-only -nostdinc++ above rides along to a
+# link-only clang invocation, which then quite correctly reports "argument unused during
+# compilation: '-nostdinc++'" - once per linked target, with nothing wrong to fix. Scoped to the
+# linker flags rather than added to CMAKE_CXX_FLAGS_INIT deliberately: real unused-argument
+# warnings during actual COMPILATION still surface normally. (Universal.cmake.x86_64 solves the
+# same problem with the blunter -Qunused-arguments in its shared compile+link flags.)
+set(glibc217_link_flags "-fuse-ld=lld-16 -Wno-unused-command-line-argument -Wl,--no-dependent-libraries -static-libgcc -static-libstdc++ -B${devtoolset11_dir}/lib -L${devtoolset11_dir}/lib -Wl,--sysroot=${glibc217_sysroot} -B${glibc217_sysroot}/usr/lib64 -B${glibc217_sysroot}/lib64 -L${glibc217_sysroot}/usr/lib64 -L${glibc217_sysroot}/lib64 -Wl,-rpath-link=${glibc217_sysroot}/lib64:${glibc217_sysroot}/usr/lib64")
+
+set(CMAKE_EXE_LINKER_FLAGS_INIT "${glibc217_link_flags}")
+set(CMAKE_SHARED_LINKER_FLAGS_INIT "${glibc217_link_flags}")
+
+# -fuse-ld=lld-16 (versioned, matching ubuntu.dockerfile's llvm.sh-installed ld.lld-16 -
+# there's no bare `lld` symlink, only clang/clang++/clang-tidy/run-clang-tidy are symlinked
+# to unversioned names) is pinned explicitly, matching this repo's own Universal.cmake.x86_64
+# precedent of pinning binutils rather than trusting the build host's ambient default (which
+# varies by image/distro between ld.bfd/ld.gold/lld). The empirical verification above was
+# run with plain `lld` from Ubuntu 22.04's own default package, which resolves the same way.
+
+# To debug what the linker actually resolves against, append -Wl,-verbose to the flags above
+# and inspect the "attempt to open ..." trace, or just re-run
+# ValidateNativeTracerGlibcCompatibility/ValidateNativeProfilerGlibcCompatibility (nm
+# --with-symbol-versions) against the produced .so - that's the authoritative check.
