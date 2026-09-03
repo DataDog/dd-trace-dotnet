@@ -79,6 +79,26 @@ public class CodeOwnersFallbackTests
     }
 
     [SkippableFact]
+    public void UsesGitRootInsteadOfNestedCodeOwnersFile()
+    {
+        using var tempDirectory = new TemporaryDirectory();
+        var repoRoot = tempDirectory.RootPath;
+        var srcDir = Path.Combine(repoRoot, "src");
+        Directory.CreateDirectory(Path.Combine(repoRoot, ".git"));
+        Directory.CreateDirectory(srcDir);
+        var sourceFile = Path.Combine(srcDir, "SpanBenchmark.cs");
+        File.WriteAllText(Path.Combine(repoRoot, "CODEOWNERS"), "* @repository-owner");
+        File.WriteAllText(Path.Combine(srcDir, "CODEOWNERS"), "* @nested-owner");
+        File.WriteAllText(sourceFile, "class SpanBenchmark {}");
+
+        var ciValues = CreateGitHubEnvironmentForWorkspace(srcDir);
+        var ownership = ciValues.ResolveSourceOwnership(sourceFile, useOSSeparator: false);
+
+        Assert.Equal("src/SpanBenchmark.cs", ownership.RepositoryRelativePath);
+        Assert.Equal(["@repository-owner"], ownership.MatchingOwners);
+    }
+
+    [SkippableFact]
     public void DoesNotUseCurrentDirectoryForRelativeSourceFile()
     {
         using var tempDirectory = new TemporaryDirectory();
@@ -295,10 +315,12 @@ public class CodeOwnersFallbackTests
 
         Assert.True(ciValues.HasCodeOwners);
         Assert.False(ownership.IsRepositoryRelative);
+        Assert.Empty(ownership.MatchingOwners);
+        Assert.Null(ownership.CodeOwnersTag);
     }
 
     [SkippableFact]
-    public void KeepsSourceRootMatchWhenFallbackCannotResolve()
+    public void DoesNotMatchCodeOwnersWhenFallbackCannotResolve()
     {
         using var repoDirectory = new TemporaryDirectory();
         var repoRoot = repoDirectory.RootPath;
@@ -315,7 +337,8 @@ public class CodeOwnersFallbackTests
 
         Assert.StartsWith("..", ownership.RepositoryRelativePath, StringComparison.Ordinal);
         Assert.False(ownership.IsRepositoryRelative);
-        Assert.Equal(["@global"], ownership.MatchingOwners);
+        Assert.Empty(ownership.MatchingOwners);
+        Assert.Null(ownership.CodeOwnersTag);
     }
 
     [SkippableFact]
@@ -340,6 +363,48 @@ public class CodeOwnersFallbackTests
         Assert.Equal("tracer/test/benchmarks/Benchmarks.Trace/SpanBenchmark.cs", ownership.RepositoryRelativePath);
         Assert.True(ownership.IsRepositoryRelative);
         Assert.Equal(["@owner"], ownership.MatchingOwners);
+    }
+
+    [SkippableFact]
+    public void UsesMatchingLocalGitCheckoutForMirroredCiWorkspace()
+    {
+        using var tempDirectory = new TemporaryDirectory();
+        var repoRoot = tempDirectory.RootPath;
+        var sourceDirectory = Path.Combine(repoRoot, "tracer", "test", "benchmarks", "Benchmarks.Trace", "Asm");
+        const string codeOwnersFile = """
+            tracer/ @DataDog/tracing-dotnet
+            /tracer/test/benchmarks/Benchmarks.Trace/Asm/ @DataDog/asm-dotnet
+
+            """;
+        Directory.CreateDirectory(Path.Combine(repoRoot, ".git"));
+        Directory.CreateDirectory(Path.Combine(repoRoot, ".github"));
+        Directory.CreateDirectory(sourceDirectory);
+        File.WriteAllText(Path.Combine(repoRoot, ".github", "CODEOWNERS"), codeOwnersFile);
+        File.WriteAllText(Path.Combine(sourceDirectory, "AppSecBodyBenchmark.cs"), "// benchmark");
+
+        var ciValues = new MirroredGitLabEnvironmentValues(repoRoot, CommitSha, CommitSha);
+        var ownership = ciValues.ResolveSourceOwnership(
+            @"D:\build\dd-trace-dotnet\tracer\test\benchmarks\Benchmarks.Trace\Asm\AppSecBodyBenchmark.cs",
+            useOSSeparator: false);
+
+        Assert.True(ciValues.HasCodeOwners);
+        Assert.True(ownership.IsRepositoryRelative);
+        Assert.Equal("tracer/test/benchmarks/Benchmarks.Trace/Asm/AppSecBodyBenchmark.cs", ownership.RepositoryRelativePath);
+        Assert.Equal(["@DataDog/asm-dotnet"], ownership.MatchingOwners);
+    }
+
+    [SkippableFact]
+    public void DoesNotUseLocalGitCheckoutWhenCommitDoesNotMatchCi()
+    {
+        using var tempDirectory = new TemporaryDirectory();
+        var repoRoot = tempDirectory.RootPath;
+        Directory.CreateDirectory(Path.Combine(repoRoot, ".git"));
+        Directory.CreateDirectory(Path.Combine(repoRoot, ".github"));
+        File.WriteAllText(Path.Combine(repoRoot, ".github", "CODEOWNERS"), OwnerOnly);
+
+        var ciValues = new MirroredGitLabEnvironmentValues(repoRoot, CommitSha, "different-commit");
+
+        Assert.False(ciValues.HasCodeOwners);
     }
 
     [SkippableFact]
@@ -480,11 +545,11 @@ public class CodeOwnersFallbackTests
     [SkippableTheory]
     [InlineData(@"D:\a\_work\1\s\src\SpanBenchmark.cs")]
     [InlineData(@"D:\a\1\s\src\SpanBenchmark.cs")]
+    [InlineData("D:/a/_work/1/s/src/SpanBenchmark.cs")]
     [InlineData("/home/vsts/work/1/s/src/SpanBenchmark.cs")]
     [InlineData("/tmp/work/1/s/src/SpanBenchmark.cs")]
     [InlineData("file:///D:/a/_work/1/s/src/SpanBenchmark.cs")]
-    [InlineData("https://example.com/a/_work/1/s/src/SpanBenchmark.cs")]
-    public void DoesNotAnchorAbsoluteAzurePipelinesPathsWithMatchingRepositorySuffix(string sourcePath)
+    public void AnchorsRelocatedCompilerPathsWithMatchingRepositorySuffix(string sourcePath)
     {
         using var tempDirectory = new TemporaryDirectory();
         var repoRoot = tempDirectory.RootPath;
@@ -504,7 +569,9 @@ public class CodeOwnersFallbackTests
         var ciValues = CIEnvironmentValues.Create(env);
 
         var ownership = ciValues.ResolveSourceOwnership(sourcePath, useOSSeparator: false);
-        Assert.False(ownership.IsRepositoryRelative);
+        Assert.True(ownership.IsRepositoryRelative);
+        Assert.Equal("src/SpanBenchmark.cs", ownership.RepositoryRelativePath);
+        Assert.Equal(["@owner"], ownership.MatchingOwners);
     }
 
     [SkippableFact]
@@ -526,12 +593,11 @@ public class CodeOwnersFallbackTests
     }
 
     [SkippableTheory]
-    [InlineData("file:///outside/src/SpanBenchmark.cs")]
     [InlineData("https://example.com/src/SpanBenchmark.cs")]
     [InlineData("../../C:/outside/src/SpanBenchmark.cs")]
     [InlineData("../..//outside/src/SpanBenchmark.cs")]
     [InlineData(@"..\..\\server\share\src\SpanBenchmark.cs")]
-    public void DoesNotAnchorAbsoluteOrEmbeddedRootedPathsWithMatchingRepositorySuffix(string sourceFilePath)
+    public void DoesNotAnchorNonFileUrisOrEmbeddedRootedPaths(string sourceFilePath)
     {
         using var tempDirectory = new TemporaryDirectory();
         var repoRoot = tempDirectory.RootPath;
@@ -623,6 +689,36 @@ public class CodeOwnersFallbackTests
             SourceRoot = _sourceRoot;
             WorkspacePath = _sourceRoot;
             Provider = _provider;
+        }
+    }
+
+    private sealed class MirroredGitLabEnvironmentValues : CIEnvironmentValues
+    {
+        private readonly string _localRepositoryRoot;
+        private readonly string _localCommit;
+        private readonly string _ciCommit;
+
+        public MirroredGitLabEnvironmentValues(string localRepositoryRoot, string localCommit, string ciCommit)
+        {
+            _localRepositoryRoot = localRepositoryRoot;
+            _localCommit = localCommit;
+            _ciCommit = ciCommit;
+            ReloadEnvironmentData();
+        }
+
+        protected override void Setup(IGitInfo gitInfo)
+        {
+            var localGitInfo = (GitInfo)gitInfo;
+            localGitInfo.SourceRoot = _localRepositoryRoot;
+            localGitInfo.Repository = "https://github.com/DataDog/dd-trace-dotnet.git";
+            localGitInfo.Commit = _localCommit;
+
+            var unavailableCiRoot = Path.Combine(_localRepositoryRoot, "remote-ci-workspace");
+            SourceRoot = unavailableCiRoot;
+            WorkspacePath = unavailableCiRoot;
+            Repository = "https://gitlab.ddbuild.io/DataDog/apm-reliability/dd-trace-dotnet.git";
+            Commit = _ciCommit;
+            Provider = "gitlab";
         }
     }
 }

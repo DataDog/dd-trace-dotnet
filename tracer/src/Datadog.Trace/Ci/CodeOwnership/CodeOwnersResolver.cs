@@ -21,9 +21,15 @@ internal sealed class CodeOwnersResolver
     private readonly SmallCacheOrNoCache<SourcePathCacheKey, SourceOwnership> _sourcePathCache;
     private readonly Func<SourcePathCacheKey, SourceOwnership> _resolveCacheMiss;
 
-    internal CodeOwnersResolver(string? sourceRoot, string? workspacePath, string? repository, string? provider)
+    internal CodeOwnersResolver(
+        string? sourceRoot,
+        string? workspacePath,
+        string? repository,
+        string? provider,
+        string? localRepositoryRoot,
+        string? localRepository)
     {
-        _locatedCodeOwners = new CodeOwnersFileLocator(sourceRoot, workspacePath, repository, provider).LocatedFile;
+        _locatedCodeOwners = new CodeOwnersFileLocator(sourceRoot, workspacePath, repository, provider, localRepositoryRoot, localRepository).LocatedFile;
         _pathResolver = new RepositorySourcePathResolver(sourceRoot);
         // The cache disables itself after the limit instead of retaining an unbounded number of source paths.
         _sourcePathCache = new SmallCacheOrNoCache<SourcePathCacheKey, SourceOwnership>(SourcePathCacheLimit, "CODEOWNERS source paths");
@@ -48,17 +54,17 @@ internal sealed class CodeOwnersResolver
         var locatedFile = _locatedCodeOwners;
         if (locatedFile is null)
         {
-            var fallbackPath = _pathResolver.MakeRelativeToSourceRoot(sourceFilePath, useOSSeparator);
-            return new SourceOwnership(fallbackPath, [], isRepositoryRelative: false);
+            var sourceRootPath = _pathResolver.MakeRelativeToSourceRoot(sourceFilePath, useOSSeparator);
+            return new SourceOwnership(sourceRootPath, [], isRepositoryRelative: false);
         }
 
-        _pathResolver.TryMakeRepositoryRelative(sourceFilePath, locatedFile.RepositoryRoot, useOSSeparator, out var repositoryPath);
+        if (_pathResolver.TryMakeRepositoryRelative(sourceFilePath, locatedFile.RepositoryRoot, useOSSeparator, out var repositoryPath))
+        {
+            return new SourceOwnership(repositoryPath, locatedFile.Rules.Match(repositoryPath), isRepositoryRelative: true);
+        }
 
-        var isRepositoryRelative = repositoryPath is not null;
-        var resolvedPath = repositoryPath ?? _pathResolver.MakeRelativeToSourceRoot(sourceFilePath, useOSSeparator);
-        var matchingOwners = locatedFile.Rules.Match(resolvedPath);
-
-        return new SourceOwnership(resolvedPath, matchingOwners, isRepositoryRelative);
+        var fallbackPath = _pathResolver.MakeRelativeToSourceRoot(sourceFilePath, useOSSeparator);
+        return new SourceOwnership(fallbackPath, [], isRepositoryRelative: false);
     }
 
     private readonly struct SourcePathCacheKey : IEquatable<SourcePathCacheKey>

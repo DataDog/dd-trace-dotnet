@@ -759,7 +759,7 @@ std::vector<std::string> GetGenericTypeParameters(IMetaDataImport2* pMetadata, m
         {
             ULONG index;
             DWORD flags;
-            hr = pMetadata->GetGenericParamProps(genericParams[currentParam], &index, &flags, nullptr, nullptr, paramName, paramNameLen, &paramNameLen);
+            hr = pMetadata->GetGenericParamProps(genericParams[currentParam], &index, &flags, nullptr, nullptr, paramName, ARRAY_LEN(paramName), &paramNameLen);
             if (SUCCEEDED(hr))
             {
                 // need to convert from UTF16 to UTF8

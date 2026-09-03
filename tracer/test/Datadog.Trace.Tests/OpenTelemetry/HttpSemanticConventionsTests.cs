@@ -5,6 +5,7 @@
 
 using System;
 using Datadog.Trace.OpenTelemetry;
+using Datadog.Trace.Tagging;
 using FluentAssertions;
 using Xunit;
 
@@ -17,33 +18,35 @@ public class HttpSemanticConventionsTests
 
     [Theory]
     // The RFC 9110 methods, plus PATCH and QUERY
-    [InlineData("CONNECT", "CONNECT")]
-    [InlineData("DELETE", "DELETE")]
-    [InlineData("GET", "GET")]
-    [InlineData("HEAD", "HEAD")]
-    [InlineData("OPTIONS", "OPTIONS")]
-    [InlineData("PATCH", "PATCH")]
-    [InlineData("POST", "POST")]
-    [InlineData("PUT", "PUT")]
-    [InlineData("QUERY", "QUERY")]
-    [InlineData("TRACE", "TRACE")]
+    [InlineData("CONNECT", "CONNECT", null)]
+    [InlineData("DELETE", "DELETE", null)]
+    [InlineData("GET", "GET", null)]
+    [InlineData("HEAD", "HEAD", null)]
+    [InlineData("OPTIONS", "OPTIONS", null)]
+    [InlineData("PATCH", "PATCH", null)]
+    [InlineData("POST", "POST", null)]
+    [InlineData("PUT", "PUT", null)]
+    [InlineData("QUERY", "QUERY", null)]
+    [InlineData("TRACE", "TRACE", null)]
 
     // Known methods are converted to their canonical form
-    [InlineData("get", "GET")]
-    [InlineData("Post", "POST")]
-    [InlineData("pAtCh", "PATCH")]
+    [InlineData("get", "GET", null)]
+    [InlineData("Post", "POST", null)]
+    [InlineData("pAtCh", "PATCH", null)]
 
     // Anything else is _OTHER
-    [InlineData("FOO", "_OTHER")]
-    [InlineData("GETS", "_OTHER")]
-    [InlineData("GE", "_OTHER")]
-    [InlineData("_OTHER", "_OTHER")]
-    [InlineData(" GET", "_OTHER")]
-    [InlineData("", "_OTHER")]
-    [InlineData(null, "_OTHER")]
-    public void NormalizeRequestMethod_ReturnsKnownMethodOrOther(string httpMethod, string expected)
+    [InlineData("FOO", "_OTHER", "FOO")]
+    [InlineData("GETS", "_OTHER", "GETS")]
+    [InlineData("GE", "_OTHER", "GE")]
+    [InlineData("_OTHER", "_OTHER", "_OTHER")]
+    [InlineData(" GET", "_OTHER", " GET")]
+    [InlineData("", "_OTHER", "")]
+    [InlineData(null, "_OTHER", null)]
+    public void GetRequestMethodAttributeValues_ReturnsKnownMethodOrOther(string httpMethod, string expectedMethod, string expectedMethodOriginal)
     {
-        HttpSemanticConventions.NormalizeRequestMethod(httpMethod).Should().Be(expected);
+        HttpSemanticConventions.GetRequestMethodAttributeValues(httpMethod, out var method, out var methodOriginal);
+        method.Should().Be(expectedMethod);
+        methodOriginal.Should().Be(expectedMethodOriginal);
     }
 
     [Theory]
@@ -55,15 +58,35 @@ public class HttpSemanticConventionsTests
         HttpSemanticConventions.GetResourceName(requestMethod).Should().Be(expected);
     }
 
-    // NormalizeRequestMethod holds the known methods twice: an ordinal switch for the fast path,
-    // and a case-insensitive dictionary for the fallback. Exercising every method in both its
+    [Theory]
+    // A template is reported exactly as the server stored it, including its casing, whether or not
+    // it has a leading slash, and inline defaults and constraints.
+    [InlineData("/api/delay/{seconds}", "/api/delay/{seconds}")]
+    [InlineData("api/delay/{seconds}", "api/delay/{seconds}")]
+    [InlineData("status-code/{statusCode}", "status-code/{statusCode}")]
+    [InlineData("{controller=Home}/{action=Index}/{id?}", "{controller=Home}/{action=Index}/{id?}")]
+    // ...except that a template matching the application root is stored as the empty string, and
+    // reporting it verbatim would emit an empty attribute and a span name with a trailing space.
+    [InlineData("", "/")]
+    [InlineData("/", "/")]
+    // No route matched, so http.route must be omitted rather than substituted.
+    [InlineData(null, null)]
+    public void GetHttpRoute_ReportsTheTemplateVerbatimExceptForTheApplicationRoot(string routeTemplate, string expected)
+    {
+        HttpSemanticConventions.GetHttpRoute(routeTemplate).Should().Be(expected);
+    }
+
+    // Exercise every method in both its
     // canonical and its lower-case form covers both, so the two cannot drift apart unnoticed.
     [Theory]
     [MemberData(nameof(AllKnownMethods))]
-    public void NormalizeRequestMethod_TakesTheSameDecisionOnBothPaths(string canonicalMethod)
+    public void GetRequestMethodAttributeValues_TakesTheSameDecisionOnBothPaths(string canonicalMethod)
     {
-        HttpSemanticConventions.NormalizeRequestMethod(canonicalMethod).Should().Be(canonicalMethod);
-        HttpSemanticConventions.NormalizeRequestMethod(canonicalMethod.ToLowerInvariant()).Should().Be(canonicalMethod);
+        HttpSemanticConventions.GetRequestMethodAttributeValues(canonicalMethod, out string method, out _);
+        method.Should().Be(canonicalMethod);
+
+        HttpSemanticConventions.GetRequestMethodAttributeValues(canonicalMethod.ToLowerInvariant(), out string methodLower, out _);
+        methodLower.Should().Be(canonicalMethod);
     }
 
     [Theory]
@@ -106,6 +129,32 @@ public class HttpSemanticConventionsTests
     public void GetServerAddress_StripsIPv6Brackets(string host, string expected)
     {
         HttpSemanticConventions.GetServerAddress(host).Should().Be(expected);
+    }
+
+    [Theory]
+    // ASP.NET Core's HostString.Host wraps IPv6 addresses in brackets too, so
+    // SetHttpServerUrlTags (used for server spans) must strip them the same way
+    // GetServerAddress does for client spans
+    [InlineData("[::1]", "::1")]
+    [InlineData("[2001:db8::1]", "2001:db8::1")]
+
+    // Regular hostnames are unaffected
+    [InlineData("example.com", "example.com")]
+    public void SetHttpServerUrlTags_StripsIPv6BracketsFromServerAddress(string host, string expected)
+    {
+        var tags = new WebTags();
+
+        HttpSemanticConventions.SetHttpServerUrlTags(
+            tags,
+            scheme: "https",
+            host: host,
+            port: 443,
+            pathBase: null,
+            path: "/",
+            queryString: null,
+            queryStringManager: null);
+
+        tags.ServerAddress.Should().Be(expected);
     }
 
     [Theory]

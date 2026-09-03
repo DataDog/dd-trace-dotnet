@@ -335,7 +335,8 @@ internal abstract class CIEnvironmentValues
         CommitterDate = null;
         Message = null;
         SourceRoot = null;
-        Setup(StringUtil.IsNullOrEmpty(_gitSearchFolder) ? GitInfo.GetCurrent() : GitInfo.GetFrom(_gitSearchFolder));
+        var gitInfo = StringUtil.IsNullOrEmpty(_gitSearchFolder) ? GitInfo.GetCurrent() : GitInfo.GetFrom(_gitSearchFolder);
+        Setup(gitInfo);
 
         // **********
         // Remove sensitive info from repository url
@@ -359,7 +360,16 @@ internal abstract class CIEnvironmentValues
             Repository = Repository.Replace(uriRepository.UserInfo, string.Empty);
         }
 
-        _codeOwnersResolver = new CodeOwnersResolver(SourceRoot, WorkspacePath, Repository, Provider);
+        // The local checkout is safe to use for CODEOWNERS only when it contains the CI revision.
+        var localGitMatchesCi = !StringUtil.IsNullOrEmpty(Commit) &&
+                                string.Equals(gitInfo.Commit, Commit, StringComparison.OrdinalIgnoreCase);
+        _codeOwnersResolver = new CodeOwnersResolver(
+            SourceRoot,
+            WorkspacePath,
+            Repository,
+            Provider,
+            localGitMatchesCi ? gitInfo.SourceRoot : null,
+            localGitMatchesCi ? gitInfo.Repository : null);
     }
 
     protected abstract void Setup(IGitInfo gitInfo);

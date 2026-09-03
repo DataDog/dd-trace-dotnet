@@ -3,7 +3,9 @@
 
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"
+#include "CounterMetric.h"
 #include "ManagedCodeCache.h"
+#include "MetricsRegistry.h"
 #include "MockProfilerInfo.h"
 
 #include <thread>
@@ -15,11 +17,12 @@ using namespace testing;
 class ManagedCodeCacheTest : public Test {
 protected:
     MockProfilerInfo* mockProfiler;
+    MetricsRegistry metricsRegistry;
     std::unique_ptr<ManagedCodeCache> cache;
 
     void SetUp() override {
         mockProfiler = new MockProfilerInfo();
-        cache = std::make_unique<ManagedCodeCache>(mockProfiler);
+        cache = std::make_unique<ManagedCodeCache>(mockProfiler, metricsRegistry);
         cache->Initialize();
     }
 
@@ -45,9 +48,13 @@ protected:
             });
     }
 
-    // Helper: Wait for async worker thread
-    void WaitForWorkerThread(int milliseconds = 100) {
-        std::this_thread::sleep_for(std::chrono::milliseconds(milliseconds));
+    // Helper: read (and reset) the IsManaged lock-failure counter.
+    // GetMetrics() exchanges the underlying atomic to 0, so each call returns the
+    // number of failures recorded since the previous read.
+    uint64_t GetLockFailureCount() {
+        auto metric = metricsRegistry.GetOrRegister<CounterMetric>("dotnet_managed_code_cache_lock_failures");
+        auto metrics = metric->GetMetrics();
+        return metrics.empty() ? 0 : static_cast<uint64_t>(metrics.front().second);
     }
 };
 
@@ -60,8 +67,6 @@ TEST_F(ManagedCodeCacheTest, AddFunction_SingleRange_GetFunctionIdReturnsCorrect
     SetupMockCodeInfo(testFuncId, codeStart, codeSize);
 
     cache->AddFunction(testFuncId);
-    WaitForWorkerThread();
-
     // Test IPs within range
     EXPECT_EQ(testFuncId, cache->GetFunctionId(codeStart).value_or(0));
     EXPECT_EQ(testFuncId, cache->GetFunctionId(codeStart + 0x100).value_or(0));
@@ -87,16 +92,12 @@ TEST_F(ManagedCodeCacheTest, AddFunction_MultipleRanges_AccumulatesCorrectly) {
     // First JIT (Tier 0)
     SetupMockCodeInfo(testFuncId, tier0Start, tier0Size);
     cache->AddFunction(testFuncId);
-    WaitForWorkerThread();
-
     // Verify Tier 0 works
     EXPECT_EQ(testFuncId, cache->GetFunctionId(tier0Start + 0x50).value_or(0));
 
     // Second JIT (Tier 1)
     SetupMockCodeInfo(testFuncId, tier1Start, tier1Size);
     cache->AddFunction(testFuncId);
-    WaitForWorkerThread();
-
     // Both ranges should work (accumulation)
     EXPECT_EQ(testFuncId, cache->GetFunctionId(tier0Start + 0x50).value_or(0));
     EXPECT_EQ(testFuncId, cache->GetFunctionId(tier1Start + 0x100).value_or(0));
@@ -110,8 +111,6 @@ TEST_F(ManagedCodeCacheTest, IsManaged_ValidManagedIP_ReturnsTrue) {
 
     SetupMockCodeInfo(testFuncId, codeStart, codeSize);
     cache->AddFunction(testFuncId);
-    WaitForWorkerThread();
-
     EXPECT_TRUE(cache->IsManaged(codeStart + 0x50));
 }
 
@@ -138,8 +137,6 @@ TEST_F(ManagedCodeCacheTest, AddFunction_MultipleFunctions_NoInterference) {
 
     cache->AddFunction(func1);
     cache->AddFunction(func2);
-    WaitForWorkerThread();
-
     EXPECT_EQ(func1, cache->GetFunctionId(code1Start + 0x50).value_or(0));
     EXPECT_EQ(func2, cache->GetFunctionId(code2Start + 0x50).value_or(0));
 
@@ -180,8 +177,6 @@ TEST_F(ManagedCodeCacheTest, AddFunction_ConcurrentCalls_ThreadSafe) {
         thread.join();
     }
 
-    WaitForWorkerThread(500);  // Wait longer for all async operations
-
     // Verify every function is retrievable by IP
     for (int t = 0; t < numThreads; t++) {
         for (int i = 0; i < functionsPerThread; i++) {
@@ -216,8 +211,6 @@ TEST_F(ManagedCodeCacheTest, IsManaged_ConcurrentAccess) {
 
     SetupMockCodeInfo(testFuncId, codeStart, codeSize);
     cache->AddFunction(testFuncId);
-    WaitForWorkerThread();
-
     // Concurrent IsManaged calls (simulating signal handler scenario)
     const int numCalls = 1000;
     std::atomic<int> successCount{0};
@@ -249,8 +242,6 @@ TEST_F(ManagedCodeCacheTest, GetFunctionId_BoundaryIPs_CorrectBehavior) {
 
     SetupMockCodeInfo(testFuncId, codeStart, codeSize);
     cache->AddFunction(testFuncId);
-    WaitForWorkerThread();
-
     // Exact boundaries
     EXPECT_EQ(testFuncId, cache->GetFunctionId(codeStart).value_or(0));  // First byte (inclusive)
     EXPECT_EQ(testFuncId, cache->GetFunctionId(codeStart + codeSize - 1).value_or(0));  // Last byte (inclusive)
@@ -267,7 +258,7 @@ TEST_F(ManagedCodeCacheTest, GetFunctionId_BoundaryIPs_CorrectBehavior) {
 // Regression: GetCodeRanges used `startAddress + size - 1` without guarding
 // size==0.  For startAddress==0 this gives endAddress==UINTPTR_MAX and the
 // page-insertion loop `for (page=0; page<=UINTPTR_MAX/pageSize; ++page)` runs
-// for billions of iterations, permanently hanging the background worker.
+// for billions of iterations, permanently hanging the (now synchronous) insert.
 // For non-zero startAddress the loop silently skips (endPage < startPage) but
 // the degenerate CodeRange still pollutes the sorted range vector.
 TEST_F(ManagedCodeCacheTest, AddFunction_ZeroSizeRange_DoesNotPolluteCacheNonZeroBase) {
@@ -277,8 +268,6 @@ TEST_F(ManagedCodeCacheTest, AddFunction_ZeroSizeRange_DoesNotPolluteCacheNonZer
 
     SetupMockCodeInfo(testFuncId, codeStart, codeSize);
     cache->AddFunction(testFuncId);
-    WaitForWorkerThread();
-
     // A zero-size range has no valid code; no IP should be reported as managed.
     auto codeStartIp = cache->IsManaged(codeStart);
     EXPECT_TRUE(codeStartIp.has_value());
@@ -295,18 +284,17 @@ TEST_F(ManagedCodeCacheTest, AddFunction_ZeroSizeRange_DoesNotPolluteCacheNonZer
 }
 
 // For startAddress==0 with size==0 the page loop would run from page 0 to
-// ~UINTPTR_MAX/pageSize, hanging the worker forever.  After the fix the worker
-// must complete within the normal wait and IsManaged must return false.
-TEST_F(ManagedCodeCacheTest, AddFunction_ZeroSizeRangeAtAddressZero_WorkerDoesNotHang) {
+// ~UINTPTR_MAX/pageSize, hanging forever.  After the fix AddFunction (now
+// synchronous) must return promptly and IsManaged must return false.
+TEST_F(ManagedCodeCacheTest, AddFunction_ZeroSizeRangeAtAddressZero_DoesNotHang) {
     FunctionID testFuncId = 778;
     uintptr_t codeStart = 0;
     ULONG32 codeSize = 0;
 
     SetupMockCodeInfo(testFuncId, codeStart, codeSize);
+    // If the synchronous insert is stuck this call blocks until the test times out.
     cache->AddFunction(testFuncId);
 
-    // If the worker is stuck this call blocks until the test times out.
-    WaitForWorkerThread(200);
     auto codeStartPlusOneThousand = cache->IsManaged(0x1000);
     EXPECT_TRUE(codeStartPlusOneThousand.has_value());
     EXPECT_FALSE(codeStartPlusOneThousand.value())
@@ -321,8 +309,6 @@ TEST_F(ManagedCodeCacheTest, AddFunction_LargeCodeRange_WorksCorrectly) {
 
     SetupMockCodeInfo(testFuncId, codeStart, codeSize);
     cache->AddFunction(testFuncId);
-    WaitForWorkerThread();
-
     // Test various points in large range
     EXPECT_EQ(testFuncId, cache->GetFunctionId(codeStart).value_or(0));
     EXPECT_EQ(testFuncId, cache->GetFunctionId(codeStart + 0x8000).value_or(0));
@@ -344,8 +330,6 @@ TEST_F(ManagedCodeCacheTest, AddFunction_GetCodeInfo2Fails_HandledGracefully) {
         .WillOnce(Return(E_FAIL));
 
     cache->AddFunction(testFuncId);
-    WaitForWorkerThread();
-
     // Should not crash
     auto nullIp = cache->GetFunctionId(0x1000);
     EXPECT_TRUE(nullIp.has_value());
@@ -392,8 +376,6 @@ TEST_F(ManagedCodeCacheTest, IsManaged_WriterHoldsPagesMutex_ReturnsNullopt) {
 
     SetupMockCodeInfo(testFuncId, codeStart, codeSize);
     cache->AddFunction(testFuncId);
-    WaitForWorkerThread();
-
     // Sanity: with no contention, IsManaged returns a concrete value.
     auto baseline = cache->IsManaged(codeStart + 0x50);
     ASSERT_TRUE(baseline.has_value());
@@ -432,6 +414,47 @@ TEST_F(ManagedCodeCacheTest, IsManaged_WriterHoldsPagesMutex_ReturnsNullopt) {
     auto afterRelease = cache->IsManaged(codeStart + 0x50);
     ASSERT_TRUE(afterRelease.has_value());
     EXPECT_TRUE(afterRelease.value());
+}
+
+// Test: IsManaged increments the lock-failure metric when it cannot acquire the
+// pages mutex within the timeout, and leaves it untouched on the success path.
+TEST_F(ManagedCodeCacheTest, IsManaged_LockAcquisitionFailure_IncrementsMetric) {
+    FunctionID testFuncId = 0x4321;
+    uintptr_t codeStart = 0xD000;
+    ULONG32 codeSize = 0x100;
+
+    SetupMockCodeInfo(testFuncId, codeStart, codeSize);
+    cache->AddFunction(testFuncId);
+
+    // Success path must not increment the failure metric.
+    ASSERT_TRUE(cache->IsManaged(codeStart + 0x50).value_or(false));
+    EXPECT_EQ(0u, GetLockFailureCount());
+
+    // Hold the pages mutex exclusively so IsManaged times out and returns nullopt.
+    std::atomic<bool> writerHoldsLock{false};
+    std::atomic<bool> readerDone{false};
+    std::thread writer([&]() {
+        auto lock = cache->LockPagesMutexExclusiveForTest();
+        writerHoldsLock.store(true);
+        while (!readerDone.load())
+        {
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        }
+    });
+
+    while (!writerHoldsLock.load())
+    {
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    }
+
+    auto contended = cache->IsManaged(codeStart + 0x50);
+    EXPECT_FALSE(contended.has_value());
+
+    readerDone.store(true);
+    writer.join();
+
+    // The failed acquisition must have been recorded exactly once.
+    EXPECT_EQ(1u, GetLockFailureCount());
 }
 
 // Test: IsManaged must also return nullopt when the writer holds the modules
