@@ -263,8 +263,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
         {
             var names = OtlpFieldNames.For(isJson: true);
 
-            // Capture the current span IDs before the request. A test shares its agent with earlier
-            // cases, and their spans can be within MockTracerAgent's timestamp tolerance.
+            // Capture the current span IDs before the request. We cannot use the fixture's usual
+            // filtered wait helper here: the /rewrite-me edge case is rewritten to /alive-check and
+            // would be mistaken for a health-check span. Selecting newly received IDs also prevents
+            // a span from an earlier case, within MockTracerAgent's timestamp tolerance, leaking in.
             var existingSpanIds = Fixture.Agent.OtlpSpans.Select(s => s.SpanId).ToHashSet();
             var now = DateTimeOffset.UtcNow;
             var testStartTimeUnixNano = now.ToUnixTimeNanoseconds();
@@ -285,6 +287,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
                                                 .ToHashSet();
             }
 
+            // An OTLP export batch can contain spans from more than one request, so trim each batch
+            // to the IDs selected above before building this test case's snapshot.
             var relevantRequests = Fixture.Agent.OtlpTraceRequests
                                           .Select(r => Fixture.Agent.TrimOtlpTraceRequestToSpans(r, relevantSpanIds))
                                           .Where(r => r.Spans.Count > 0)
