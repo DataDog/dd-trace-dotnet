@@ -653,8 +653,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Datadog.AutoInstrumentation
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Datadog.AutoInstrumentation.Generator.Cli", "tracer\src\Datadog.AutoInstrumentation.Generator.Cli\Datadog.AutoInstrumentation.Generator.Cli.csproj", "{8D722514-8BAD-4069-84D0-15797026E0ED}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.XUnitTestsV4Parallel", "tracer\test\test-applications\integrations\Samples.XUnitTestsV4Parallel\Samples.XUnitTestsV4Parallel.csproj", "{598A9FDB-2DA6-4A74-8FCD-E7E0BE6DF852}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -1599,10 +1597,6 @@ Global
 		{8D722514-8BAD-4069-84D0-15797026E0ED}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8D722514-8BAD-4069-84D0-15797026E0ED}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{8D722514-8BAD-4069-84D0-15797026E0ED}.Release|Any CPU.Build.0 = Release|Any CPU
-		{598A9FDB-2DA6-4A74-8FCD-E7E0BE6DF852}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{598A9FDB-2DA6-4A74-8FCD-E7E0BE6DF852}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{598A9FDB-2DA6-4A74-8FCD-E7E0BE6DF852}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{598A9FDB-2DA6-4A74-8FCD-E7E0BE6DF852}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -1861,7 +1855,6 @@ Global
 		{CFECF8D4-3A46-35A8-7CB1-BA359974A1A9} = {9E5F0022-0A50-40BF-AC6A-C3078585ECAB}
 		{0E3E1069-80FF-99C9-D29F-936D96D5F516} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 		{08C6510D-42DC-C8B4-CC79-26349F2D6DBB} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
-		{598A9FDB-2DA6-4A74-8FCD-E7E0BE6DF852} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 		{B3A07CA3-3536-4D43-81A3-A5A73FB76F22} = {9E5F0022-0A50-40BF-AC6A-C3078585ECAB}
 		{8D722514-8BAD-4069-84D0-15797026E0ED} = {9E5F0022-0A50-40BF-AC6A-C3078585ECAB}
 	EndGlobalSection

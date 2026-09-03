@@ -1,4 +1,4 @@
-// <copyright file="XUnitTestMethodRunnerBaseContextRunTestCaseV4Integration.cs" company="Datadog">
+// <copyright file="XUnitTestMethodRunnerBaseContextRunTestCaseV3V4Integration.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -17,10 +17,10 @@ using Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.V3;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.DuckTyping;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.V4;
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.V3V4;
 
 /// <summary>
-/// Instruments xUnit 4 test case execution for skipping and retries.
+/// Instruments xUnit v3/v4 test case execution for skipping and retries.
 /// </summary>
 [InstrumentMethod(
     AssemblyName = "xunit.v3.core",
@@ -33,7 +33,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.V4;
     IntegrationName = XUnitIntegration.IntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public static class XUnitTestMethodRunnerBaseContextRunTestCaseV4Integration
+public static class XUnitTestMethodRunnerBaseContextRunTestCaseV3V4Integration
 {
     internal static CallTargetState OnMethodBegin<TTarget, TTestCase>(TTarget instance, TTestCase testCaseOriginal)
     {
@@ -42,7 +42,7 @@ public static class XUnitTestMethodRunnerBaseContextRunTestCaseV4Integration
             return CallTargetState.GetDefault();
         }
 
-        var context = instance.DuckCast<IXunitTestMethodRunnerBaseContextV4>();
+        var context = instance.DuckCast<IXunitTestMethodRunnerBaseContextV3V4>();
         if (context?.Instance is null)
         {
             return CallTargetState.GetDefault();
@@ -114,7 +114,7 @@ public static class XUnitTestMethodRunnerBaseContextRunTestCaseV4Integration
 
         if (!RunSummaryConverter<TReturn>.TryGetEditableRunSummary(returnValue, out var unsafeSummary))
         {
-            Common.Log.Error("XUnit v4: RunSummary layout is incompatible. Retries are disabled for {TestCaseDisplayName}.", testCase.TestCaseDisplayName);
+            Common.Log.Error("xUnit v3/v4: RunSummary layout is incompatible. Retries are disabled for {TestCaseDisplayName}.", testCase.TestCaseDisplayName);
             messageBus.FlushMessages(testCase.UniqueID);
             return returnValue;
         }
@@ -166,10 +166,10 @@ public static class XUnitTestMethodRunnerBaseContextRunTestCaseV4Integration
 
     private readonly struct RetryRunner<TReturn> : IXUnitRetryRunner
     {
-        private readonly IXunitTestMethodRunnerBaseContextV4 _context;
+        private readonly IXunitTestMethodRunnerBaseContextV3V4 _context;
         private readonly IXunitTestCaseV3 _testCase;
 
-        public RetryRunner(IXunitTestMethodRunnerBaseContextV4 context, IXunitTestCaseV3 testCase)
+        public RetryRunner(IXunitTestMethodRunnerBaseContextV3V4 context, IXunitTestCaseV3 testCase)
         {
             _context = context;
             _testCase = testCase;
@@ -198,10 +198,10 @@ public static class XUnitTestMethodRunnerBaseContextRunTestCaseV4Integration
     {
         public readonly RetryMessageBus MessageBus;
         public readonly TestCaseMetadata TestCaseMetadata;
-        public readonly IXunitTestMethodRunnerBaseContextV4 Context;
+        public readonly IXunitTestMethodRunnerBaseContextV3V4 Context;
         public readonly IXunitTestCaseV3 TestCase;
 
-        public TestRunnerState(RetryMessageBus messageBus, TestCaseMetadata testCaseMetadata, IXunitTestMethodRunnerBaseContextV4 context, IXunitTestCaseV3 testCase)
+        public TestRunnerState(RetryMessageBus messageBus, TestCaseMetadata testCaseMetadata, IXunitTestMethodRunnerBaseContextV3V4 context, IXunitTestCaseV3 testCase)
         {
             MessageBus = messageBus;
             TestCaseMetadata = testCaseMetadata;
@@ -214,7 +214,7 @@ public static class XUnitTestMethodRunnerBaseContextRunTestCaseV4Integration
     {
         internal static readonly bool IsCompatible = CheckCompatibility();
 
-        internal static bool TryGetEditableRunSummary(TReturn returnValue, out RunSummaryUnsafeStructV4 editableRunSummary)
+        internal static bool TryGetEditableRunSummary(TReturn returnValue, out RunSummaryUnsafeStructV3V4 editableRunSummary)
         {
             editableRunSummary = default;
             if (!IsCompatible)
@@ -222,12 +222,12 @@ public static class XUnitTestMethodRunnerBaseContextRunTestCaseV4Integration
                 return false;
             }
 
-            editableRunSummary = Unsafe.As<TReturn, RunSummaryUnsafeStructV4>(ref returnValue);
+            editableRunSummary = Unsafe.As<TReturn, RunSummaryUnsafeStructV3V4>(ref returnValue);
             return true;
         }
 
-        internal static TReturn ToReturnValue(ref RunSummaryUnsafeStructV4 runSummary)
-            => Unsafe.As<RunSummaryUnsafeStructV4, TReturn>(ref runSummary);
+        internal static TReturn ToReturnValue(ref RunSummaryUnsafeStructV3V4 runSummary)
+            => Unsafe.As<RunSummaryUnsafeStructV3V4, TReturn>(ref runSummary);
 
         private static bool CheckCompatibility()
         {
@@ -237,7 +237,7 @@ public static class XUnitTestMethodRunnerBaseContextRunTestCaseV4Integration
                 return false;
             }
 
-            if (Marshal.SizeOf<TReturn>() != Marshal.SizeOf<RunSummaryUnsafeStructV4>())
+            if (Marshal.SizeOf<TReturn>() != Marshal.SizeOf<RunSummaryUnsafeStructV3V4>())
             {
                 return false;
             }

@@ -3,10 +3,14 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
+using Datadog.Trace.Ci.Ipc;
+using Datadog.Trace.Ci.Ipc.Messages;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
@@ -348,6 +352,7 @@ public class XUnitEvpTestsV3 : TestingFrameworkEvpTest
 
         using var processResult = await RunDotnetTestSampleAndWaitForExit(
                                       agent,
+                                      arguments: GetTestRunnerArguments(packageVersion, useDotnetExec: true),
                                       packageVersion: packageVersion,
                                       expectedExitCode: 1,
                                       useDotnetExec: true);
@@ -626,6 +631,50 @@ public class XUnitEvpTestsV3 : TestingFrameworkEvpTest
     [SkippableFact]
     [Trait("Category", "EndToEnd")]
     [Trait("Category", "TestIntegrations")]
+    public async Task SubmitCodeCoverageWithVSTestAdapterV4()
+    {
+        InjectSession(
+            out var sessionId,
+            out _,
+            out _,
+            out _,
+            out _,
+            out _,
+            out _);
+
+        var coverageReceived = 0;
+        using var ipcServer = new IpcServer($"session_{sessionId}");
+        ipcServer.SetMessageReceivedCallback(
+            message =>
+            {
+                if (message is SessionCodeCoverageMessage or SessionCodeCoverageReferenceMessage)
+                {
+                    Interlocked.Exchange(ref coverageReceived, 1);
+                }
+            });
+
+        using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
+        agent.EventPlatformProxyPayloadReceived += (_, args) =>
+        {
+            if (args.Value.PathAndQuery.EndsWith("api/v2/libraries/tests/services/setting"))
+            {
+                args.Value.Response = new MockTracerResponse("""{"data":{"id":"b5a855bffe6c0b2ae5d150fb6ad674363464c816","type":"ci_app_tracers_test_service_settings","attributes":{"code_coverage":false,"efd_enabled":false,"flaky_test_retries_enabled":false,"itr_enabled":false,"require_git":false,"tests_skipping":false}}}""", 200);
+            }
+        };
+
+        using var processResult = await RunDotnetTestSampleAndWaitForExit(
+                                      agent,
+                                      arguments: "--collect:\"XPlat Code Coverage\" --TestCaseFilter:FullyQualifiedName~Samples.XUnitTestsV3.",
+                                      packageVersion: "4.0.0",
+                                      expectedExitCode: 1,
+                                      useDotnetExec: false);
+
+        Volatile.Read(ref coverageReceived).Should().Be(1);
+    }
+
+    [SkippableFact]
+    [Trait("Category", "EndToEnd")]
+    [Trait("Category", "TestIntegrations")]
     public Task SubmitTracesWithForcedRunV4()
     {
         const string skippableTestsJson = """
@@ -893,6 +942,20 @@ public class XUnitEvpTestsV3 : TestingFrameworkEvpTest
                         Assert.Single(data.TestModules);
                     }))
            .ConfigureAwait(false);
+    }
+
+    protected override string GetTestRunnerArguments(string packageVersion, bool useDotnetExec)
+    {
+        if (!packageVersion.StartsWith("4.", StringComparison.Ordinal))
+        {
+            return null;
+        }
+
+        // The v3/v4 parallel-retry cases share this sample, so keep the existing EVP scenarios scoped to their
+        // original namespace. The in-process xUnit runner and VSTest use different filter syntaxes.
+        return useDotnetExec
+                   ? "-namespace Samples.XUnitTestsV3"
+                   : "--TestCaseFilter:FullyQualifiedName~Samples.XUnitTestsV3.";
     }
 
     private static bool HasCorrectCompressionTag(string[] tags, bool isGzipped)

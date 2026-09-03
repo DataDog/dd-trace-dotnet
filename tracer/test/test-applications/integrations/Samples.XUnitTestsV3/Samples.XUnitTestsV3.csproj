@@ -9,6 +9,7 @@
     <MicrosoftTestSDKVersion Condition="$([MSBuild]::VersionGreaterThanOrEquals($(ApiVersion), '4.0.0'))">17.13.0</MicrosoftTestSDKVersion>
     <XunitRunnerVisualStudioVersion>3.0.1</XunitRunnerVisualStudioVersion>
     <XunitRunnerVisualStudioVersion Condition="$([MSBuild]::VersionGreaterThanOrEquals($(ApiVersion), '4.0.0'))">4.0.0</XunitRunnerVisualStudioVersion>
+    <DefineConstants Condition="$([MSBuild]::VersionGreaterThanOrEquals($(ApiVersion), '4.0.0'))">$(DefineConstants);XUNIT_V3_V4</DefineConstants>
 
     <!-- Required to build multiple projects with the same Configuration|Platform -->
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>

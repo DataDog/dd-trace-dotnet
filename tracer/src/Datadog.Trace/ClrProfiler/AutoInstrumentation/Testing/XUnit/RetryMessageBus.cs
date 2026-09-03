@@ -17,15 +17,26 @@ internal sealed class RetryMessageBus : IMessageBus
 {
     private readonly ConcurrentDictionary<string, RetryTestCaseMetadata> _testCaseMetadata = new(StringComparer.Ordinal);
     private readonly IMessageBus _innerMessageBus;
+    private readonly object _lifecycleLock = new();
     private readonly int _totalExecutions;
     private readonly int _executionNumber;
-    private int _disposed;
+    // Dispose closes admission under this lock, then waits for every operation that was already admitted.
+    // This keeps calls to the inner bus outside the shared lock without allowing one to outlive Dispose.
+    private int _activeOperations;
+    private LifecycleState _lifecycleState;
 
     public RetryMessageBus(IMessageBus innerMessageBus, int totalExecutions, int executionNumber)
     {
         _innerMessageBus = innerMessageBus;
         _totalExecutions = totalExecutions;
         _executionNumber = executionNumber;
+    }
+
+    private enum LifecycleState
+    {
+        Active,
+        Disposing,
+        Disposed,
     }
 
     public TestCaseMetadata GetMetadata(string uniqueID)
@@ -54,92 +65,172 @@ internal sealed class RetryMessageBus : IMessageBus
     [DuckReverseMethod]
     public void Dispose()
     {
-        if (Interlocked.Exchange(ref _disposed, 1) != 0)
+        lock (_lifecycleLock)
         {
-            return;
+            if (_lifecycleState == LifecycleState.Disposed)
+            {
+                return;
+            }
+
+            if (_lifecycleState == LifecycleState.Disposing)
+            {
+                while (_lifecycleState != LifecycleState.Disposed)
+                {
+                    Monitor.Wait(_lifecycleLock);
+                }
+
+                return;
+            }
+
+            _lifecycleState = LifecycleState.Disposing;
+            while (_activeOperations != 0)
+            {
+                Monitor.Wait(_lifecycleLock);
+            }
         }
 
-        foreach (var uniqueID in _testCaseMetadata.Keys)
+        try
         {
-            FlushMessages(uniqueID);
-        }
+            foreach (var uniqueID in _testCaseMetadata.Keys)
+            {
+                FlushMessagesCore(uniqueID, XUnitFrameworkResult.Unknown);
+            }
 
-        _innerMessageBus.Dispose();
+            _innerMessageBus.Dispose();
+        }
+        finally
+        {
+            lock (_lifecycleLock)
+            {
+                _lifecycleState = LifecycleState.Disposed;
+                Monitor.PulseAll(_lifecycleLock);
+            }
+        }
     }
 
     [DuckReverseMethod]
     public bool QueueMessage(object? message)
     {
-        if (message is null || Volatile.Read(ref _disposed) != 0)
+        if (message is null)
         {
             return false;
         }
 
-        var uniqueID = GetTestCaseUniqueID(message);
-        if (uniqueID is null)
+        if (!TryBeginOperation())
         {
-            Common.Log.Debug("RetryMessageBus.QueueMessage: Message has no test case identity. Forwarding: {Message}", message);
-            return InternalQueueMessage(message);
+            return false;
         }
 
-        var metadata = (RetryTestCaseMetadata)GetMetadata(uniqueID);
-        var forwardDirectly = false;
-        var invalidExecutionIndex = false;
-
-        lock (metadata.SyncRoot)
+        try
         {
-            if (Volatile.Read(ref _disposed) != 0)
+            var uniqueID = GetTestCaseUniqueID(message);
+            if (uniqueID is null)
             {
-                return false;
+                Common.Log.Debug("RetryMessageBus.QueueMessage: Message has no test case identity. Forwarding: {Message}", message);
+                return InternalQueueMessage(message);
             }
 
-            if (metadata.Disposed)
-            {
-                forwardDirectly = true;
-            }
-            else
-            {
-                var totalExecutions = metadata.TotalExecutions;
-                if (metadata.ListOfMessages is null)
-                {
-                    metadata.ListOfMessages = new List<object>?[totalExecutions];
-                }
-                else if (metadata.ListOfMessages.Length < totalExecutions)
-                {
-                    metadata.ResizeListOfMessages(totalExecutions);
-                }
+            var metadata = (RetryTestCaseMetadata)GetMetadata(uniqueID);
+            var forwardDirectly = false;
+            var invalidExecutionIndex = false;
 
-                var currentExecutionNumber = metadata.CountDownExecutionNumber + 1;
-                var index = totalExecutions - currentExecutionNumber;
-                if (index < 0 || index >= metadata.ListOfMessages.Length)
+            lock (metadata.SyncRoot)
+            {
+                if (metadata.Disposed)
                 {
-                    invalidExecutionIndex = true;
                     forwardDirectly = true;
                 }
                 else
                 {
-                    var executionMessages = metadata.ListOfMessages[index] ??= [];
-                    executionMessages.Add(message);
-
-                    var messageTypeName = message.GetType().Name;
-                    if (messageTypeName is "TestStarting" or "TestClassConstructionStarting" or "TestClassConstructionFinished")
+                    var totalExecutions = metadata.TotalExecutions;
+                    if (metadata.ListOfMessages is null)
                     {
-                        forwardDirectly = (!metadata.Skipped && metadata.BypassedMessageTypes.Add(messageTypeName)) ||
-                                          metadata.IsEarlyFlakeDetection;
+                        metadata.ListOfMessages = new List<object>?[totalExecutions];
+                    }
+                    else if (metadata.ListOfMessages.Length < totalExecutions)
+                    {
+                        metadata.ResizeListOfMessages(totalExecutions);
+                    }
+
+                    var currentExecutionNumber = metadata.CountDownExecutionNumber + 1;
+                    var index = totalExecutions - currentExecutionNumber;
+                    if (index < 0 || index >= metadata.ListOfMessages.Length)
+                    {
+                        invalidExecutionIndex = true;
+                        forwardDirectly = true;
+                    }
+                    else
+                    {
+                        var executionMessages = metadata.ListOfMessages[index] ??= [];
+                        executionMessages.Add(message);
+
+                        var messageTypeName = message.GetType().Name;
+                        if (messageTypeName is "TestStarting" or "TestClassConstructionStarting" or "TestClassConstructionFinished")
+                        {
+                            forwardDirectly = (!metadata.Skipped && metadata.BypassedMessageTypes.Add(messageTypeName)) ||
+                                              metadata.IsEarlyFlakeDetection;
+                        }
                     }
                 }
             }
-        }
 
-        if (invalidExecutionIndex)
+            if (invalidExecutionIndex)
+            {
+                Common.Log.Error("RetryMessageBus.QueueMessage: Invalid execution index for test case {UniqueID}. Forwarding the message.", uniqueID);
+            }
+
+            return forwardDirectly ? InternalQueueMessage(message) : true;
+        }
+        finally
         {
-            Common.Log.Error("RetryMessageBus.QueueMessage: Invalid execution index for test case {UniqueID}. Forwarding the message.", uniqueID);
+            EndOperation();
         }
-
-        return forwardDirectly ? InternalQueueMessage(message) : true;
     }
 
     public bool FlushMessages(string uniqueID, XUnitFrameworkResult frameworkResult = XUnitFrameworkResult.Unknown)
+    {
+        if (!TryBeginOperation())
+        {
+            return false;
+        }
+
+        try
+        {
+            return FlushMessagesCore(uniqueID, frameworkResult);
+        }
+        finally
+        {
+            EndOperation();
+        }
+    }
+
+    private static string? GetTestCaseUniqueID(object message)
+    {
+        if (message.TryDuckCast<ITestCaseMessage>(out var testCaseMessage))
+        {
+            return testCaseMessage.TestCase.UniqueID;
+        }
+
+        if (message.TryDuckCast<ITestCaseMessageV3>(out var testCaseMessageV3) &&
+            testCaseMessageV3.TestCaseUniqueID is { Length: > 0 } testCaseUniqueID)
+        {
+            return testCaseUniqueID;
+        }
+
+        return null;
+    }
+
+    private static XUnitFrameworkResult GetFrameworkResult(object message)
+        => message.GetType().Name switch
+        {
+            "TestPassed" => XUnitFrameworkResult.Passed,
+            "TestFailed" => XUnitFrameworkResult.Failed,
+            "TestSkipped" => XUnitFrameworkResult.Skipped,
+            "TestNotRun" => XUnitFrameworkResult.NotRun,
+            _ => XUnitFrameworkResult.Unknown,
+        };
+
+    private bool FlushMessagesCore(string uniqueID, XUnitFrameworkResult frameworkResult)
     {
         if (!_testCaseMetadata.TryGetValue(uniqueID, out var metadata))
         {
@@ -214,32 +305,6 @@ internal sealed class RetryMessageBus : IMessageBus
         return result;
     }
 
-    private static string? GetTestCaseUniqueID(object message)
-    {
-        if (message.TryDuckCast<ITestCaseMessage>(out var testCaseMessage))
-        {
-            return testCaseMessage.TestCase.UniqueID;
-        }
-
-        if (message.TryDuckCast<ITestCaseMessageV3>(out var testCaseMessageV3) &&
-            testCaseMessageV3.TestCaseUniqueID is { Length: > 0 } testCaseUniqueID)
-        {
-            return testCaseUniqueID;
-        }
-
-        return null;
-    }
-
-    private static XUnitFrameworkResult GetFrameworkResult(object message)
-        => message.GetType().Name switch
-        {
-            "TestPassed" => XUnitFrameworkResult.Passed,
-            "TestFailed" => XUnitFrameworkResult.Failed,
-            "TestSkipped" => XUnitFrameworkResult.Skipped,
-            "TestNotRun" => XUnitFrameworkResult.NotRun,
-            _ => XUnitFrameworkResult.Unknown,
-        };
-
     private bool InternalQueueMessage(object message)
     {
         try
@@ -250,6 +315,32 @@ internal sealed class RetryMessageBus : IMessageBus
         {
             Common.Log.Error(ex, "RetryMessageBus.InternalQueueMessage: Error while queueing message: {Message}", message);
             return false;
+        }
+    }
+
+    private bool TryBeginOperation()
+    {
+        lock (_lifecycleLock)
+        {
+            if (_lifecycleState != LifecycleState.Active)
+            {
+                return false;
+            }
+
+            _activeOperations++;
+            return true;
+        }
+    }
+
+    private void EndOperation()
+    {
+        lock (_lifecycleLock)
+        {
+            _activeOperations--;
+            if (_activeOperations == 0 && _lifecycleState == LifecycleState.Disposing)
+            {
+                Monitor.PulseAll(_lifecycleLock);
+            }
         }
     }
 

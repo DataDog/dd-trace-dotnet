@@ -1,4 +1,4 @@
-// <copyright file="XUnitV4ImpactedTests.cs" company="Datadog">
+// <copyright file="XUnitV3V4ImpactedTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -13,11 +13,11 @@ using Xunit.Abstractions;
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI;
 
 [Collection(nameof(ImpactedTestsCollection))]
-public class XUnitV4ImpactedTests : TestingFrameworkImpactedTests
+public class XUnitV3V4ImpactedTests : TestingFrameworkImpactedTests
 {
     private const string IsModifiedTag = "test.is_modified";
 
-    public XUnitV4ImpactedTests(ITestOutputHelper output)
+    public XUnitV3V4ImpactedTests(ITestOutputHelper output)
         : base(
             "XUnitTestsV3",
             "tracer/test/test-applications/integrations/Samples.XUnitTestsV3/TestSuite.cs",
@@ -27,9 +27,10 @@ public class XUnitV4ImpactedTests : TestingFrameworkImpactedTests
                 "_output.WriteLine(\"Test:SimplePassTest\");",
                 "public void TraitSkipFromAttributeTest()",
             ],
+            "-namespace Samples.XUnitTestsV3",
             output)
     {
-        SetServiceName("xunit-v4-impacted-tests");
+        SetServiceName("xunit-v3-v4-impacted-tests");
         SetServiceVersion("1.0.0");
     }
 

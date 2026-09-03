@@ -548,7 +548,12 @@ public abstract class TestingFrameworkEvpTest : TestHelper
                 }
             };
 
-            using var processResult = await RunDotnetTestSampleAndWaitForExit(agent, packageVersion: packageVersion, expectedExitCode: testScenario.ExpectedExitCode, useDotnetExec: testScenario.UseDotnetExec);
+            using var processResult = await RunDotnetTestSampleAndWaitForExit(
+                                          agent,
+                                          arguments: GetTestRunnerArguments(packageVersion, testScenario.UseDotnetExec),
+                                          packageVersion: packageVersion,
+                                          expectedExitCode: testScenario.ExpectedExitCode,
+                                          useDotnetExec: testScenario.UseDotnetExec);
             Assert.Equal(testScenario.ExpectedSpans, executionData.Tests.Count);
 
             // Call the validate action
@@ -591,6 +596,8 @@ public abstract class TestingFrameworkEvpTest : TestHelper
             throw;
         }
     }
+
+    protected virtual string? GetTestRunnerArguments(string packageVersion, bool useDotnetExec) => null;
 
     private static TValue? GetValueOrDefault<TKey, TValue>(IDictionary<TKey, TValue> dictionary, TKey key)
         where TKey : notnull => dictionary.TryGetValue(key, out var value) ? value : default;

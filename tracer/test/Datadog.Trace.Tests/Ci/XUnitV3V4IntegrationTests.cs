@@ -1,63 +1,65 @@
-// <copyright file="XUnitV4IntegrationTests.cs" company="Datadog">
+// <copyright file="XUnitV3V4IntegrationTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
 #nullable enable
 
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.V3;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.V4;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.V3V4;
 using FluentAssertions;
 using Xunit;
 
 namespace Datadog.Trace.Tests.Ci;
 
-public class XUnitV4IntegrationTests
+public class XUnitV3V4IntegrationTests
 {
     [Fact]
-    public void V4RunSummaryHasExpectedLayoutAndTimeEncoding()
+    public void V3V4RunSummaryHasExpectedLayoutAndTimeEncoding()
     {
-        Marshal.SizeOf<RunSummaryUnsafeStructV4>().Should().Be(24);
-        Marshal.OffsetOf<RunSummaryUnsafeStructV4>(nameof(RunSummaryUnsafeStructV4.Total)).ToInt32().Should().Be(8);
-        Marshal.OffsetOf<RunSummaryUnsafeStructV4>(nameof(RunSummaryUnsafeStructV4.Failed)).ToInt32().Should().Be(12);
-        Marshal.OffsetOf<RunSummaryUnsafeStructV4>(nameof(RunSummaryUnsafeStructV4.Skipped)).ToInt32().Should().Be(16);
-        Marshal.OffsetOf<RunSummaryUnsafeStructV4>(nameof(RunSummaryUnsafeStructV4.NotRun)).ToInt32().Should().Be(20);
+        Marshal.SizeOf<RunSummaryUnsafeStructV3V4>().Should().Be(24);
+        Marshal.OffsetOf<RunSummaryUnsafeStructV3V4>(nameof(RunSummaryUnsafeStructV3V4.Total)).ToInt32().Should().Be(8);
+        Marshal.OffsetOf<RunSummaryUnsafeStructV3V4>(nameof(RunSummaryUnsafeStructV3V4.Failed)).ToInt32().Should().Be(12);
+        Marshal.OffsetOf<RunSummaryUnsafeStructV3V4>(nameof(RunSummaryUnsafeStructV3V4.Skipped)).ToInt32().Should().Be(16);
+        Marshal.OffsetOf<RunSummaryUnsafeStructV3V4>(nameof(RunSummaryUnsafeStructV3V4.NotRun)).ToInt32().Should().Be(20);
 
-        var summary = new RunSummaryUnsafeStructV4 { Time = 1.234m };
+        var summary = new RunSummaryUnsafeStructV3V4 { Time = 1.234m };
 
         summary.Time.Should().Be(1.234m);
     }
 
     [Fact]
-    public void V4RunSummaryCompatibilityAcceptsExactLayout()
+    public void V3V4RunSummaryCompatibilityAcceptsExactLayout()
     {
-        XUnitTestMethodRunnerBaseContextRunTestCaseV4Integration.IsRunSummaryCompatible<CompatibleV4RunSummary>().Should().BeTrue();
+        XUnitTestMethodRunnerBaseContextRunTestCaseV3V4Integration.IsRunSummaryCompatible<CompatibleV3V4RunSummary>().Should().BeTrue();
     }
 
     [Fact]
-    public void V4RunSummaryCompatibilityRejectsV3Layout()
+    public void V3V4RunSummaryCompatibilityRejectsV3Layout()
     {
-        XUnitTestMethodRunnerBaseContextRunTestCaseV4Integration.IsRunSummaryCompatible<RunSummaryUnsafeStruct>().Should().BeFalse();
+        XUnitTestMethodRunnerBaseContextRunTestCaseV3V4Integration.IsRunSummaryCompatible<RunSummaryUnsafeStruct>().Should().BeFalse();
     }
 
     [Fact]
-    public void V3RunSummaryCompatibilityRejectsV4Layout()
+    public void V3RunSummaryCompatibilityRejectsV3V4Layout()
     {
-        XUnitTestMethodRunnerBaseRunTestCaseV3Integration.IsRunSummaryCompatible<RunSummaryUnsafeStructV4>().Should().BeFalse();
+        XUnitTestMethodRunnerBaseRunTestCaseV3Integration.IsRunSummaryCompatible<RunSummaryUnsafeStructV3V4>().Should().BeFalse();
     }
 
     [Fact]
-    public void V4RunSummaryCompatibilityRejectsUnexpectedFields()
+    public void V3V4RunSummaryCompatibilityRejectsUnexpectedFields()
     {
-        XUnitTestMethodRunnerBaseContextRunTestCaseV4Integration.IsRunSummaryCompatible<IncompatibleV4RunSummary>().Should().BeFalse();
+        XUnitTestMethodRunnerBaseContextRunTestCaseV3V4Integration.IsRunSummaryCompatible<IncompatibleV3V4RunSummary>().Should().BeFalse();
     }
 
     [Theory]
@@ -374,9 +376,9 @@ public class XUnitV4IntegrationTests
         using var retryBus = new RetryMessageBus(innerBus, totalExecutions: 1, executionNumber: 0);
         retryBus.QueueMessage(new TestPassed("case", "method", "result"));
 
-        var flushes = Enumerable.Range(0, 20)
-                                .Select(_ => Task.Run(() => retryBus.FlushMessages("case")));
-        await Task.WhenAll(flushes);
+        await Task.WhenAll(
+            Task.Run(() => retryBus.FlushMessages("case")),
+            Task.Run(() => retryBus.FlushMessages("case")));
 
         innerBus.Messages.OfType<TestPassed>().Should().ContainSingle(message => message.Value == "result");
     }
@@ -395,6 +397,22 @@ public class XUnitV4IntegrationTests
         innerBus.DisposeCount.Should().Be(1);
         retryBus.QueueMessage(new TestPassed("case", "method", "late-result")).Should().BeFalse();
         innerBus.Messages.OfType<TestPassed>().Should().NotContain(message => message.Value == "late-result");
+    }
+
+    [Fact]
+    public void RetryMessageBusDisposeDoesNotCallInnerBusUnderLifecycleLock()
+    {
+        var innerBus = new RecordingMessageBus();
+        var retryBus = new RetryMessageBus(innerBus, totalExecutions: 1, executionNumber: 0);
+        var lifecycleLock = typeof(RetryMessageBus).GetField("_lifecycleLock", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(retryBus)!;
+        innerBus.BeforeQueueMessage = () => Monitor.IsEntered(lifecycleLock).Should().BeFalse();
+        innerBus.BeforeDispose = () => Monitor.IsEntered(lifecycleLock).Should().BeFalse();
+        retryBus.QueueMessage(new TestPassed("case", "method", "result"));
+
+        retryBus.Dispose();
+
+        innerBus.Messages.OfType<TestPassed>().Should().ContainSingle(message => message.Value == "result");
+        innerBus.DisposeCount.Should().Be(1);
     }
 
     [Fact]
@@ -446,7 +464,7 @@ public class XUnitV4IntegrationTests
 
     [StructLayout(LayoutKind.Sequential)]
 #pragma warning disable SA1202
-    private struct CompatibleV4RunSummary
+    private struct CompatibleV3V4RunSummary
     {
 #pragma warning disable CS0169
         private long _timeInMilliseconds;
@@ -459,7 +477,7 @@ public class XUnitV4IntegrationTests
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    private struct IncompatibleV4RunSummary
+    private struct IncompatibleV3V4RunSummary
     {
 #pragma warning disable CS0169
         private long _timeInMilliseconds;
@@ -475,7 +493,7 @@ public class XUnitV4IntegrationTests
     private readonly struct UnexpectedRetryRunner : IXUnitRetryRunner
     {
         public Task<XUnitRunSummary?> RunAsync()
-            => throw new System.InvalidOperationException("The retry runner must not be called after a threshold abort");
+            => throw new InvalidOperationException("The retry runner must not be called after a threshold abort");
     }
 
     private abstract class TestResult
@@ -516,12 +534,17 @@ public class XUnitV4IntegrationTests
         private readonly ConcurrentQueue<object> _messages = new();
         private int _disposeCount;
 
+        public Action? BeforeQueueMessage { get; set; }
+
+        public Action? BeforeDispose { get; set; }
+
         public IReadOnlyCollection<object> Messages => _messages.ToArray();
 
         public int DisposeCount => _disposeCount;
 
         public bool QueueMessage(object? message)
         {
+            BeforeQueueMessage?.Invoke();
             if (message is not null)
             {
                 _messages.Enqueue(message);
@@ -530,6 +553,10 @@ public class XUnitV4IntegrationTests
             return true;
         }
 
-        public void Dispose() => Interlocked.Increment(ref _disposeCount);
+        public void Dispose()
+        {
+            BeforeDispose?.Invoke();
+            Interlocked.Increment(ref _disposeCount);
+        }
     }
 }

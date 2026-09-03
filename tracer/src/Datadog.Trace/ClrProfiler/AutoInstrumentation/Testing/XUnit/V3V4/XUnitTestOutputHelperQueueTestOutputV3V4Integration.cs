@@ -1,4 +1,4 @@
-// <copyright file="XUnitTestOutputHelperQueueTestOutputV4Integration.cs" company="Datadog">
+// <copyright file="XUnitTestOutputHelperQueueTestOutputV3V4Integration.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -8,10 +8,10 @@
 using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.V4;
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.V3V4;
 
 /// <summary>
-/// Instruments xUnit 4 test output.
+/// Instruments xUnit v3/v4 test output.
 /// </summary>
 [InstrumentMethod(
     AssemblyName = "xunit.v3.core",
@@ -24,7 +24,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.V4;
     IntegrationName = XUnitIntegration.IntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public static class XUnitTestOutputHelperQueueTestOutputV4Integration
+public static class XUnitTestOutputHelperQueueTestOutputV3V4Integration
 {
     internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, string output)
         => XUnitTestOutputHelperQueueTestOutputIntegration.OnMethodBegin(instance, output);
