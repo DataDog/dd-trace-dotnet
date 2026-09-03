@@ -18,10 +18,12 @@ partial class Build : NukeBuild
 {
     private const string TracerArea = "Tracer";
     private const string AsmArea = "ASM";
+    private const string CiVisibilityArea = "CIVisibility";
     private const string TracingDotnet = "@DataDog/tracing-dotnet";
     private const string ASMDotnet = "@DataDog/asm-dotnet";
     private const string DebuggerDotnet = "@DataDog/debugger-dotnet";
     private const string ProfilerDotnet = "@DataDog/profiling-dotnet";
+    private const string CiAppLibrariesDotnet = "@DataDog/ci-app-libraries-dotnet";
 
     class ChangedTeamValue
     {
@@ -36,6 +38,7 @@ partial class Build : NukeBuild
         new ChangedTeamValue { VariableName = "isTracerChanged", TeamName = TracingDotnet},
         new ChangedTeamValue { VariableName = "isDebuggerChanged", TeamName = DebuggerDotnet},
         new ChangedTeamValue { VariableName = "isProfilerChanged", TeamName = ProfilerDotnet},
+        new ChangedTeamValue { VariableName = "isCiVisibilityChanged", TeamName = CiAppLibrariesDotnet},
     };
 
     Target GenerateVariables
@@ -131,10 +134,11 @@ partial class Build : NukeBuild
                         var changedFiles = GetGitChangedFiles(baseBranch);
                         // Choose changedFiles that meet any of the filters => Choose changedFiles that DON'T meet any of the exclusion filters
 
-                        if (changedTeamValue.TeamName == ASMDotnet && CommonTracerChanges(changedFiles, codeOwners))
+                        if ((changedTeamValue.TeamName == ASMDotnet || changedTeamValue.TeamName == CiAppLibrariesDotnet)
+                         && CommonTracerChanges(changedFiles, codeOwners))
                         {
                             isChanged = true;
-                            Logger.Information($"ASM tests will be launched based on common changes.");
+                            Logger.Information($"{changedTeamValue.VariableName} tests will be launched based on common changes.");
                         }
                         else
                         {
@@ -189,12 +193,17 @@ partial class Build : NukeBuild
                 }
             }
 
-            // We only call this method for the tracer and ASM areas
+            // We only call this method for the tracer, ASM, and CI Visibility areas
             bool ShouldBeIncluded(string area)
             {
                 if (area == AsmArea)
                 {
                     return _changedTeamValue.First(x => x.TeamName == ASMDotnet).IsChanged;
+                }
+
+                if (area == CiVisibilityArea)
+                {
+                    return _changedTeamValue.First(x => x.TeamName == CiAppLibrariesDotnet).IsChanged;
                 }
 
                 return true;
@@ -213,7 +222,7 @@ partial class Build : NukeBuild
             {
                 var targetFrameworks = GetTestingFrameworks(PlatformFamily.Windows);
                 var targetPlatforms = new[] { "x86", "x64" };
-                var areas = new[] { TracerArea, AsmArea };
+                var areas = new[] { TracerArea, AsmArea, CiVisibilityArea };
                 var matrix = new Dictionary<string, object>();
 
                 foreach (var framework in targetFrameworks)
@@ -374,7 +383,7 @@ partial class Build : NukeBuild
                         }
                         else
                         {
-                            var areas = new[] { TracerArea, AsmArea };
+                            var areas = new[] { TracerArea, AsmArea, CiVisibilityArea };
                             foreach (var area in areas)
                             {
                                 if (ShouldBeIncluded(area))
