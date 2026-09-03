@@ -25,6 +25,7 @@ using Xunit.Abstractions;
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI;
 
 #if NET8_0_OR_GREATER
+[Trait("Area", "CIVisibility")]
 [UsesVerify]
 public class XUnitEvpTestsV3 : TestingFrameworkEvpTest
 {
