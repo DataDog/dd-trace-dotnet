@@ -23,7 +23,6 @@ using VerifyXunit;
 using Xunit;
 using Xunit.Abstractions;
 
-// See the identical comment in OtlpSnapshotHelper.cs.
 using OtlpSpan = OpenTelemetry.Proto.Trace.V1.Span;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
@@ -71,8 +70,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
 
             SetEnvironmentVariable("DD_TRACE_OTEL_SEMANTICS_ENABLED", openTelemetrySemanticsEnabled.ToString());
 
-            // Registers the empty route template and the pre-routing path rewrite exercised below.
-            // Only this harness asks for them, leaving the samples' pipelines unchanged for other suites.
+            // Registers the empty route template and the pre-routing path rewrite that the last two
+            // rows of Data() exercise. Only this harness asks for them, so the sample applications'
+            // pipelines are unchanged for every other suite.
             SetEnvironmentVariable("ADD_ROUTE_EDGE_CASES", "1");
 
             Fixture = fixture;
