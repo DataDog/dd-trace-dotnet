@@ -70,7 +70,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                     var newResourceNamesEnabled = tracer.Settings.RouteTemplateResourceNamesEnabled || otelSemanticsEnabled;
                     string host = httpContext.Request.Headers.Get("Host");
                     var userAgent = httpContext.Request.Headers.Get(HttpHeaderNames.UserAgent);
-                    string datadogHttpMethod = httpContext.Request.HttpMethod.ToUpperInvariant();
+                    string httpMethod = httpContext.Request.HttpMethod;
+                    string datadogHttpMethod = httpMethod.ToUpperInvariant();
                     string resourceName = null;
 
                     RouteData routeData = controllerContext.RouteData;
@@ -124,7 +125,18 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                         actionName = (routeValues?.GetValueOrDefault("action") as string)?.ToLowerInvariant();
                     }
 
-                    if (!otelSemanticsEnabled)
+                    if (otelSemanticsEnabled)
+                    {
+                        // The OpenTelemetry span name must be "{method} {http.route}", so use the route
+                        // template verbatim rather than the Datadog simplified route, and fall back to
+                        // just the method rather than to the URI path. Child actions keep the name that
+                        // was already computed for the request itself.
+                        if (!isChildAction || string.IsNullOrEmpty(resourceName))
+                        {
+                            resourceName = HttpSemanticConventions.GetServerResourceName(httpMethod, routeUrl);
+                        }
+                    }
+                    else
                     {
                         if (string.IsNullOrEmpty(resourceName) && httpContext.Request.Url != null)
                         {
@@ -206,17 +218,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                     {
                         // Only reached when the ASP.NET integration did not create a server span, so this
                         // is the only HTTP server span for the request and carries the request attributes.
-                        string httpMethod = httpContext.Request.HttpMethod;
-
-                        // The OpenTelemetry span name must be "{method} {http.route}", so use the route
-                        // template verbatim rather than the Datadog simplified route, and fall back to
-                        // just the method rather than to the URI path. Child actions keep the name that
-                        // was already computed for the request itself.
-                        if (!isChildAction || string.IsNullOrEmpty(resourceName))
-                        {
-                            resourceName = HttpSemanticConventions.GetServerResourceName(httpMethod, routeUrl);
-                        }
-
                         HttpSemanticConventions.SetHttpServerRequestValues(
                             span,
                             tags,

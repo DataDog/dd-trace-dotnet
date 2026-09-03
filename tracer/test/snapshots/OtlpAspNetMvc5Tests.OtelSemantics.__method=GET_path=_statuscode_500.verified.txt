@@ -65,7 +65,7 @@
             {
               "traceId": "normalized-trace-id",
               "spanId": "normalized-span-id",
-              "name": "GET /statuscode/{value}",
+              "name": "GET statuscode/{value}",
               "kind": 2,
               "startTimeUnixNano": "0",
               "endTimeUnixNano": "0",
