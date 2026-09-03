@@ -149,13 +149,20 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
             // An unhandled exception is an error too, and is recorded as an exception span event.
             { "GET", "/bad-request", 500, true },
 
-            // An empty route template must be reported as "/", not as an empty http.route attribute.
+            // -- ASP.NET Core route edge cases --
+
+            // A route template that matches the application root is stored by ASP.NET Core as the
+            // empty string, which must be reported as "/" rather than verbatim - otherwise
+            // http.route is an empty attribute and the span name has a trailing space.
             { "GET", "/", 200, true },
 
-            // The route that handles a rewritten request, not the original path, must be reported.
+            // Middleware rewrote the path before routing ran, so the endpoint that matched is not the
+            // one the request arrived on. It is still the endpoint that served the request, so it is
+            // the route to report.
             { "GET", "/rewrite-me", 200, true },
 
-            // http.route excludes the application's path base.
+            // The application is mounted under a path base, which routing strips before matching.
+            // http.route is reported without the path base, aligning with built-in ASP.NET Core and OTel .NET instrumentation.
             { "GET", "/path-base/api/delay/0", 200, true },
         };
 
