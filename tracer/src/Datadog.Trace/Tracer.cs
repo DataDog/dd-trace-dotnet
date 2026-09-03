@@ -333,7 +333,6 @@ namespace Datadog.Trace
                     traceContext.SetSamplingPriority(samplingPriority);
                     traceContext.Origin = parentSpanContext.Origin;
                     traceContext.AdditionalW3CTraceState = parentSpanContext.AdditionalW3CTraceState;
-                    traceContext.OtelTraceState = parentSpanContext.OtelTraceState;
                 }
 
                 // if the parent is a remote context, set the last parent id that came from the distributed header
