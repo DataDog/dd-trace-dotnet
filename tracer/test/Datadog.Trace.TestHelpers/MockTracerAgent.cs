@@ -541,6 +541,30 @@ namespace Datadog.Trace.TestHelpers
             _cancellationTokenSource.Cancel();
         }
 
+        /// <summary>
+        /// Clones <paramref name="request"/>'s underlying protobuf message and removes every span whose
+        /// (hex) ID isn't in <paramref name="relevantSpanIds"/>, so a batch that also carried filtered-out
+        /// spans (e.g. a warm-up request's) doesn't leak them into the trimmed result.
+        /// </summary>
+        internal MockOtlpTraceRequest TrimOtlpTraceRequestToSpans(MockOtlpTraceRequest request, HashSet<string> relevantSpanIds)
+        {
+            var raw = request.Raw.Clone();
+
+            foreach (var resourceSpans in raw.ResourceSpans)
+            {
+                foreach (var scopeSpans in resourceSpans.ScopeSpans)
+                {
+                    var keptSpans = scopeSpans.Spans
+                                               .Where(s => relevantSpanIds.Contains(HexString.ToHexString(s.SpanId.ToByteArray())))
+                                               .ToList();
+                    scopeSpans.Spans.Clear();
+                    scopeSpans.Spans.AddRange(keptSpans);
+                }
+            }
+
+            return MockOtlpTraceRequest.Create(raw);
+        }
+
         protected void IgnoreException(Action action)
         {
             try
@@ -1193,30 +1217,6 @@ namespace Datadog.Trace.TestHelpers
                     throw;
                 }
             }
-        }
-
-        /// <summary>
-        /// Clones <paramref name="request"/>'s underlying protobuf message and removes every span whose
-        /// (hex) ID isn't in <paramref name="relevantSpanIds"/>, so a batch that also carried filtered-out
-        /// spans (e.g. a warm-up request's) doesn't leak them into the trimmed result.
-        /// </summary>
-        private MockOtlpTraceRequest TrimOtlpTraceRequestToSpans(MockOtlpTraceRequest request, HashSet<string> relevantSpanIds)
-        {
-            var raw = request.Raw.Clone();
-
-            foreach (var resourceSpans in raw.ResourceSpans)
-            {
-                foreach (var scopeSpans in resourceSpans.ScopeSpans)
-                {
-                    var keptSpans = scopeSpans.Spans
-                                               .Where(s => relevantSpanIds.Contains(HexString.ToHexString(s.SpanId.ToByteArray())))
-                                               .ToList();
-                    scopeSpans.Spans.Clear();
-                    scopeSpans.Spans.AddRange(keptSpans);
-                }
-            }
-
-            return MockOtlpTraceRequest.Create(raw);
         }
 
         /// <summary>

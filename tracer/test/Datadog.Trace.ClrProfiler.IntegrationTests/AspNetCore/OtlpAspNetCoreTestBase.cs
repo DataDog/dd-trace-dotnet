@@ -71,6 +71,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
 
             SetEnvironmentVariable("DD_TRACE_OTEL_SEMANTICS_ENABLED", openTelemetrySemanticsEnabled.ToString());
 
+            // Registers the empty route template and the pre-routing path rewrite exercised below.
+            // Only this harness asks for them, leaving the samples' pipelines unchanged for other suites.
+            SetEnvironmentVariable("ADD_ROUTE_EDGE_CASES", "1");
+
             Fixture = fixture;
             Fixture.SetOutput(output);
         }
@@ -144,6 +148,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
 
             // An unhandled exception is an error too, and is recorded as an exception span event.
             { "GET", "/bad-request", 500, true },
+
+            // An empty route template must be reported as "/", not as an empty http.route attribute.
+            { "GET", "/", 200, true },
+
+            // The route that handles a rewritten request, not the original path, must be reported.
+            { "GET", "/rewrite-me", 200, true },
+
+            // http.route excludes the application's path base.
+            { "GET", "/path-base/api/delay/0", 200, true },
         };
 
         public async Task InitializeAsync()
@@ -243,16 +256,32 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
         {
             var names = OtlpFieldNames.For(isJson: true);
 
-            // Captured before the request is sent: a lower bound for every span the server creates
-            // while handling it, and the isolation boundary against the warm-up request and every
-            // other test case sharing this fixture's MockTracerAgent -- the same pattern
-            // AspNetCoreTestFixture.WaitForSpans uses for the Datadog protocol.
+            // Capture the current span IDs before the request. A test shares its agent with earlier
+            // cases, and their spans can be within MockTracerAgent's timestamp tolerance.
+            var existingSpanIds = Fixture.Agent.OtlpSpans.Select(s => s.SpanId).ToHashSet();
             var now = DateTimeOffset.UtcNow;
-            var applicationStartTimeUnixNano = now.ToUnixTimeNanoseconds();
+            var testStartTimeUnixNano = now.ToUnixTimeNanoseconds();
 
             await SendRequestAsync(httpMethod, path, (HttpStatusCode)statusCode);
 
-            var relevantRequests = await Fixture.Agent.WaitForOtlpTraceRequestsAsync(expectedSpanCount, minDateTime: now);
+            var deadline = DateTime.UtcNow.AddSeconds(20);
+            var relevantSpanIds = Fixture.Agent.OtlpSpans
+                                                .Where(s => !existingSpanIds.Contains(s.SpanId) && s.StartTimeUnixNano >= (ulong)testStartTimeUnixNano)
+                                                .Select(s => s.SpanId)
+                                                .ToHashSet();
+            while (DateTime.UtcNow < deadline && relevantSpanIds.Count < expectedSpanCount)
+            {
+                await Task.Delay(250);
+                relevantSpanIds = Fixture.Agent.OtlpSpans
+                                                .Where(s => !existingSpanIds.Contains(s.SpanId) && s.StartTimeUnixNano >= (ulong)testStartTimeUnixNano)
+                                                .Select(s => s.SpanId)
+                                                .ToHashSet();
+            }
+
+            var relevantRequests = Fixture.Agent.OtlpTraceRequests
+                                          .Select(r => Fixture.Agent.TrimOtlpTraceRequestToSpans(r, relevantSpanIds))
+                                          .Where(r => r.Spans.Count > 0)
+                                          .ToList();
             relevantRequests.Should().NotBeNullOrEmpty();
             relevantRequests.Sum(r => r.Spans.Count).Should().Be(expectedSpanCount);
 
@@ -267,7 +296,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
             var tracesRequests = JToken.Parse(JsonFormatter.Default.Format(mergedRequest));
 
             OtlpSnapshotHelper.NormalizeResourceAttributes(tracesRequests, names);
-            OtlpSnapshotHelper.NormalizeSpans(tracesRequests, names, applicationStartTimeUnixNano);
+            OtlpSnapshotHelper.NormalizeSpans(tracesRequests, names, testStartTimeUnixNano);
             OtlpSnapshotHelper.NormalizeCodeOriginAttributes(tracesRequests);
 
             foreach (var key in UnstableAttributeKeys)
