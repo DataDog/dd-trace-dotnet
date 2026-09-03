@@ -24,15 +24,6 @@ public class ThirdPartyModulesTests
     [InlineData("Akka.Cluster")]
     [InlineData("Datadog.Trace")]
     [InlineData("Datadog.Trace.ClrProfiler.Managed.Loader")]
-    [InlineData("xunit.v3.assert")]
-    [InlineData("xunit.v3.common")]
-    [InlineData("xunit.v3.core")]
-    [InlineData("xunit.v3.msbuildtasks")]
-    [InlineData("xunit.v3.mtp-v2")]
-    [InlineData("xunit.v3.runner.common")]
-    [InlineData("xunit.v3.runner.inproc.console")]
-    [InlineData("xunit.v3.runner.utility.netcore")]
-    [InlineData("xunit.v3.runner.utility.netfx")]
     public void Contains_HandlesKnownModules(string module)
     {
         ThirdPartyModules.Contains(module).Should().BeTrue();

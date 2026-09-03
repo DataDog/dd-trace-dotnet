@@ -1,3 +1,5 @@
+#if XUNIT_V3_V4
+
 using System;
 using System.Collections.Concurrent;
 using System.Reflection;
@@ -8,11 +10,11 @@ using Xunit.v3;
 
 #nullable enable
 
-namespace Samples.XUnitTestsV4Parallel;
+namespace Samples.XUnitTestsV3V4Parallel;
 
 public sealed class TestSuite : IClassFixture<SharedFixture>
 {
-    private static readonly bool RequireCaseParallelism = string.Equals(Environment.GetEnvironmentVariable("XUNIT_V4_REQUIRE_CASE_PARALLELISM"), "1", StringComparison.Ordinal);
+    private static readonly bool RequireCaseParallelism = string.Equals(Environment.GetEnvironmentVariable("XUNIT_V3_V4_REQUIRE_CASE_PARALLELISM"), "1", StringComparison.Ordinal);
     private static readonly ConcurrentDictionary<int, int> TheoryAttempts = new();
     private static readonly ParallelGate FactGate = new(participantCount: 2, RequireCaseParallelism);
     private static readonly ParallelGate TheoryGate = new(participantCount: 4, RequireCaseParallelism);
@@ -86,7 +88,7 @@ public sealed class TestSuite : IClassFixture<SharedFixture>
     [Fact]
     public void DynamicSkip()
     {
-        Assert.Skip("Dynamic skip from the xUnit v4 parallel sample");
+        Assert.Skip("Dynamic skip from the xUnit v3/v4 parallel sample");
     }
 
     [Fact]
@@ -233,3 +235,5 @@ public sealed class CollectionIndependentSecond
     [Fact]
     public void PassesInIndependentCollection() => _output.WriteLine("independent-collection-second");
 }
+
+#endif

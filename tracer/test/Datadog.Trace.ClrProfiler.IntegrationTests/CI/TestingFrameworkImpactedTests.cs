@@ -45,20 +45,22 @@ public abstract class TestingFrameworkImpactedTests : TestingFrameworkTest
     private readonly int _expectedTestCount;
     private readonly string[] _modificationMarkers;
     private readonly string _testFileRelativePath;
+    private readonly string _testRunnerArguments;
     private readonly bool _useDotnetExec;
 
     public TestingFrameworkImpactedTests(string sampleAppName, ITestOutputHelper output)
-        : this(sampleAppName, DefaultTestFileRelativePath, DefaultExpectedTestCount, useDotnetExec: false, DefaultModificationMarkers, output)
+        : this(sampleAppName, DefaultTestFileRelativePath, DefaultExpectedTestCount, useDotnetExec: false, DefaultModificationMarkers, testRunnerArguments: null, output)
     {
     }
 
-    public TestingFrameworkImpactedTests(string sampleAppName, string testFileRelativePath, int expectedTestCount, bool useDotnetExec, string[] modificationMarkers, ITestOutputHelper output)
+    public TestingFrameworkImpactedTests(string sampleAppName, string testFileRelativePath, int expectedTestCount, bool useDotnetExec, string[] modificationMarkers, string testRunnerArguments, ITestOutputHelper output)
         : base(sampleAppName, output)
     {
         _testFileRelativePath = testFileRelativePath;
         _expectedTestCount = expectedTestCount;
         _useDotnetExec = useDotnetExec;
         _modificationMarkers = modificationMarkers;
+        _testRunnerArguments = testRunnerArguments;
         InitGit();
         SetCIEnvironmentValues();
         SetEnvironmentVariable(ConfigurationKeys.CIVisibility.Enabled, "1");
@@ -183,7 +185,7 @@ public abstract class TestingFrameworkImpactedTests : TestingFrameworkTest
             var tests = new List<MockCIVisibilityTest>();
             using var agent = GetAgent(tests, agentRequestProcessor);
 
-            using var processResult = await RunDotnetTestSampleAndWaitForExit(agent, packageVersion: packageVersion, expectedExitCode: 1, useDotnetExec: _useDotnetExec);
+            using var processResult = await RunDotnetTestSampleAndWaitForExit(agent, arguments: _testRunnerArguments, packageVersion: packageVersion, expectedExitCode: 1, useDotnetExec: _useDotnetExec);
             testFilter ??= static _ => true;
             var filteredTests = tests.Where(testFilter).ToList();
 
@@ -280,7 +282,7 @@ public abstract class TestingFrameworkImpactedTests : TestingFrameworkTest
 
         var tests = new List<MockCIVisibilityTest>();
         using var agent = GetAgent(tests, agentRequestProcessor);
-        using var processResult = await RunDotnetTestSampleAndWaitForExit(agent, packageVersion: packageVersion, expectedExitCode: 1, useDotnetExec: _useDotnetExec);
+        using var processResult = await RunDotnetTestSampleAndWaitForExit(agent, arguments: _testRunnerArguments, packageVersion: packageVersion, expectedExitCode: 1, useDotnetExec: _useDotnetExec);
         var filteredTests = tests.Where(testFilter).ToList();
 
         var results = filteredTests.Select(test => test.Resource).Distinct().OrderBy(resource => resource).ToList();

@@ -1,13 +1,15 @@
-// <copyright file="XUnitV4ParallelTests.cs" company="Datadog">
+// <copyright file="XUnitV3V4ParallelTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
-#if NET8_0_OR_GREATER
+#if NET8_0_OR_GREATER && !DEFAULT_SAMPLES
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.Ci.Tags;
+using Datadog.Trace.ClrProfiler.IntegrationTests.Helpers;
 using Datadog.Trace.TestHelpers.Ci;
 using FluentAssertions;
 using Xunit;
@@ -16,41 +18,28 @@ using Xunit.Abstractions;
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI;
 
 [Collection(nameof(TransportTestsCollection))]
-public class XUnitV4ParallelTests : TestingFrameworkRetriesTests
+public class XUnitV3V4ParallelTests : TestingFrameworkRetriesTests
 {
-    private const string RequireCaseParallelismEnvironmentVariable = "XUNIT_V4_REQUIRE_CASE_PARALLELISM";
-    private const string TestSuite = "Samples.XUnitTestsV4Parallel.TestSuite";
+    private const string RequireCaseParallelismEnvironmentVariable = "XUNIT_V3_V4_REQUIRE_CASE_PARALLELISM";
+    private const string TestNamespace = "Samples.XUnitTestsV3V4Parallel";
+    private const string TestSuite = "Samples.XUnitTestsV3V4Parallel.TestSuite";
 
-    public XUnitV4ParallelTests(ITestOutputHelper output)
-        : base("XUnitTestsV4Parallel", output)
+    public XUnitV3V4ParallelTests(ITestOutputHelper output)
+        : base("XUnitTestsV3", output)
     {
-        SetServiceName("xunit-v4-parallel");
+        SetServiceName("xunit-v3-v4-parallel");
     }
 
-    public static IEnumerable<object[]> Repetitions
+    public enum ParallelAlgorithm
     {
-        get
-        {
-            foreach (var packageVersion in PackageVersions.XUnitV4Parallel)
-            {
-                foreach (var repetition in Enumerable.Range(1, 20))
-                {
-                    yield return [packageVersion[0], repetition, repetition % 2 == 0 ? "conservative" : "aggressive"];
-                }
-            }
-        }
+        Conservative,
+        Aggressive,
     }
 
-    public static IEnumerable<object[]> ParallelModes
+    public enum ParallelMode
     {
-        get
-        {
-            foreach (var packageVersion in PackageVersions.XUnitV4Parallel)
-            {
-                yield return [packageVersion[0], "none"];
-                yield return [packageVersion[0], "collections"];
-            }
-        }
+        None,
+        Collections,
     }
 
     protected override string AlwaysFails => $"{TestSuite}.AlwaysFails";
@@ -66,34 +55,53 @@ public class XUnitV4ParallelTests : TestingFrameworkRetriesTests
     protected override bool UseDotnetExec => true;
 
     [SkippableTheory]
-    [MemberData(nameof(Repetitions))]
+    [CombinatorialOrPairwiseData]
     [Trait("Category", "EndToEnd")]
     [Trait("Category", "TestIntegrations")]
     [Trait("Category", "FlakyRetries")]
-    public async Task FullParallelRetriesKeepTheoryRowsIsolated(string packageVersion, int repetition, string parallelAlgorithm)
+    public async Task FullParallelRetriesKeepTheoryRowsIsolated(
+        [PackageVersionData(nameof(PackageVersions.XUnitV3), minInclusive: "4.0.0")] string packageVersion,
+        [CombinatorialValues(ParallelAlgorithm.Conservative, ParallelAlgorithm.Aggressive)] ParallelAlgorithm parallelAlgorithm)
     {
-        Output.WriteLine("Parallel retry repetition: {0}; algorithm: {1}", repetition, parallelAlgorithm);
         SetEnvironmentVariable(RequireCaseParallelismEnvironmentVariable, "1");
-        var tests = await FlakyRetriesWithArguments(packageVersion, $"-parallelMode all -parallelAlgorithm {parallelAlgorithm} -maxThreads unlimited");
+        var tests = await FlakyRetriesWithArguments(packageVersion, $"-namespace {TestNamespace} -parallelMode all -parallelAlgorithm {GetArgument(parallelAlgorithm)} -maxThreads unlimited");
         AssertRetryIsolation(tests);
     }
 
     [SkippableTheory]
-    [MemberData(nameof(ParallelModes))]
+    [CombinatorialOrPairwiseData]
     [Trait("Category", "EndToEnd")]
     [Trait("Category", "TestIntegrations")]
     [Trait("Category", "FlakyRetries")]
-    public async Task RunnerParallelModesPreserveRetrySemantics(string packageVersion, string parallelMode)
+    public async Task RunnerParallelModesPreserveRetrySemantics(
+        [PackageVersionData(nameof(PackageVersions.XUnitV3), minInclusive: "4.0.0")] string packageVersion,
+        [CombinatorialValues(ParallelMode.None, ParallelMode.Collections)] ParallelMode parallelMode)
     {
         SetEnvironmentVariable(RequireCaseParallelismEnvironmentVariable, "0");
-        var tests = await FlakyRetriesWithArguments(packageVersion, $"-parallelMode {parallelMode} -parallelAlgorithm conservative");
+        var tests = await FlakyRetriesWithArguments(packageVersion, $"-namespace {TestNamespace} -parallelMode {GetArgument(parallelMode)} -parallelAlgorithm conservative");
         AssertRetryIsolation(tests);
     }
+
+    private static string GetArgument(ParallelAlgorithm parallelAlgorithm) =>
+        parallelAlgorithm switch
+        {
+            ParallelAlgorithm.Conservative => "conservative",
+            ParallelAlgorithm.Aggressive => "aggressive",
+            _ => throw new ArgumentOutOfRangeException(nameof(parallelAlgorithm), parallelAlgorithm, null),
+        };
+
+    private static string GetArgument(ParallelMode parallelMode) =>
+        parallelMode switch
+        {
+            ParallelMode.None => "none",
+            ParallelMode.Collections => "collections",
+            _ => throw new ArgumentOutOfRangeException(nameof(parallelMode), parallelMode, null),
+        };
 
     private static void AssertRetryIsolation(List<MockCIVisibilityTest> tests)
     {
         var theoryRows = tests.Where(test => test.Resource == $"{TestSuite}.ConcurrentTheoryRow").ToList();
-        var auxiliaryTests = tests.Where(test => test.Resource.StartsWith("Samples.XUnitTestsV4Parallel.Collection", System.StringComparison.Ordinal)).ToList();
+        var auxiliaryTests = tests.Where(test => test.Resource.StartsWith("Samples.XUnitTestsV3V4Parallel.Collection", StringComparison.Ordinal)).ToList();
         var dynamicSkip = tests.Where(test => test.Resource == $"{TestSuite}.DynamicSkip").ToList();
         var cancellationContextTests = tests.Where(test => test.Resource == $"{TestSuite}.CancellationContextIsAvailableOnRetry").ToList();
 

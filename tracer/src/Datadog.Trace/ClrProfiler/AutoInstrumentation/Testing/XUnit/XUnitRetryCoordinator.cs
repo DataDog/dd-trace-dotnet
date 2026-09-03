@@ -5,6 +5,7 @@
 
 #nullable enable
 
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Ci;
@@ -56,7 +57,7 @@ internal static class XUnitRetryCoordinator
                     XUnitIntegration.InitializeTotalExecutions(
                         testOptimization,
                         testCaseMetadata,
-                        () => Common.GetNumberOfExecutionsForDuration(System.TimeSpan.FromSeconds((double)runSummary.Time)));
+                        () => Common.GetNumberOfExecutionsForDuration(TimeSpan.FromSeconds((double)runSummary.Time)));
                 }
 
                 if (testCaseMetadata.CountDownExecutionNumber > 0)
