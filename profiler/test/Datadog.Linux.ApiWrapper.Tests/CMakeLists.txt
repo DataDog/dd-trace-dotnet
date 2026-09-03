@@ -22,7 +22,7 @@ if (RUN_UBSAN)
 endif()
 
 if(ISLINUX)
-    add_compile_options(-stdlib=libstdc++ -DLINUX -Wno-pragmas)
+    add_compile_options(${DD_CXX_STDLIB_COMPILE_OPTIONS} -DLINUX -Wno-pragmas)
 endif()
 
 SET(TEST_EXECUTABLE_NAME "Datadog.Linux.ApiWrapper.Tests")
@@ -62,5 +62,17 @@ target_link_libraries(${TEST_EXECUTABLE_NAME}
   -ldl
   -Wc++20-extensions
 )
+
+# Same reason the tracer and profiler static libs link it (see
+# shared/src/glibc217-compat/glibc217-compat.c): our sys/single_threaded.h stub keeps
+# libstdc++'s __has_include check in <ext/atomicity.h> satisfied, so devtoolset-11's headers
+# emit references to __libc_single_threaded, which glibc 2.17 does not define. This target was
+# missed when the tracer/profiler ones were wired up - it only shows up once UNIVERSAL is OFF
+# (they're mutually exclusive - see the root CMakeLists.txt guard), which is what the glibc217
+# toolchain now implies: "ld.lld-16: error: undefined symbol: __libc_single_threaded".
+if (USE_GLIBC217_SYSROOT)
+    target_link_libraries(${TEST_EXECUTABLE_NAME} glibc217-compat)
+    add_dependencies(${TEST_EXECUTABLE_NAME} glibc217-compat)
+endif()
 
 gtest_discover_tests(${TEST_EXECUTABLE_NAME})
