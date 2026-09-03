@@ -112,6 +112,24 @@ partial class Build : NukeBuild
     [Parameter("Should we build native binaries as Universal. Default to false, so we can still build native libs outside of docker.")]
     readonly bool AsUniversal = false;
 
+    [Parameter("Should the Linux x64 native tracer/profiler build link against a frozen glibc 2.17 sysroot instead of requiring a real CentOS 7 host. Populated from the UseGlibc217Sysroot Docker ENV var (see ubuntu.dockerfile). Default to false, so the existing centos7-hosted build is unaffected. See docs/development/rfc-linux-x64-build-host.md.")]
+    readonly bool UseGlibc217Sysroot = false;
+
+    // Extra CMake args enabling the frozen glibc-2.17 sysroot toolchain file (Approach A of
+    // docs/development/rfc-linux-x64-build-host.md), mirroring how CompileNativeWrapper
+    // threads -DCMAKE_TOOLCHAIN_FILE= for AsUniversal. CMAKE_TOOLCHAIN_FILE is passed as an
+    // ABSOLUTE path (RootDirectory / ...), not the relative "./build/cmake/..." string
+    // CompileNativeWrapper uses for AsUniversal - verified in CI that the relative form
+    // fails on a fresh configure ("Could not find toolchain file"), since CMake resolves a
+    // relative CMAKE_TOOLCHAIN_FILE against whatever the cmake process's actual working
+    // directory happens to be, which isn't reliably RootDirectory.
+    // No -DUSE_GLIBC217_SYSROOT is passed, even though the CMake side very much does use that
+    // variable (it gates linking glibc217-compat and selecting the C++ stdlib flag). The
+    // toolchain file DEFINES it itself, precisely so there is exactly one switch to throw here
+    // instead of two that could drift apart - see build/cmake/Glibc217.cmake.x86_64.
+    string Glibc217SysrootCMakeArgs =>
+        UseGlibc217Sysroot ? $" -DCMAKE_TOOLCHAIN_FILE={RootDirectory / "build" / "cmake" / "Glibc217.cmake.x86_64"}" : "";
+
     [Parameter("RuntimeIdentifier sets the target platform for ReadyToRun assemblies in 'PublishManagedTracerR2R'." +
                "See https://learn.microsoft.com/en-us/dotnet/core/rid-catalog")]
     string RuntimeIdentifier { get; }

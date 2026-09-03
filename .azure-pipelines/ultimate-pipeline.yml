@@ -367,7 +367,10 @@ stages:
     strategy:
       matrix:
         x64:
-          nativeBaseImage: centos7
+          # Approach A of docs/development/rfc-linux-x64-build-host.md, Stage 0/1 CI spike:
+          # ubuntu.dockerfile links against a frozen glibc-2.17 sysroot instead of requiring
+          # a real CentOS 7 host - see that RFC before reverting to centos7 here.
+          nativeBaseImage: ubuntu
           managedBaseImage: debian
           useNativeSdkVersion: true
           artifactSuffix: linux-x64
@@ -549,7 +552,16 @@ stages:
     strategy:
       matrix:
         x64:
-          baseImage: centos7
+          # Approach A of docs/development/rfc-linux-x64-build-host.md, Stage 0/1 CI spike:
+          # ubuntu.dockerfile links against a frozen glibc-2.17 sysroot instead of requiring
+          # a real CentOS 7 host - see that RFC before reverting to centos7 here. Note this
+          # also affects CompileNativeWrapper/CompileNativeLoaderNativeTests below, which are
+          # NOT gated by USE_GLIBC217_SYSROOT (they're the separate, out-of-scope
+          # AsUniversal/musl path) - on this image they now build against Ubuntu's own glibc
+          # instead of centos7's, but neither is published from this stage (see comment
+          # below), so this only affects RunNativeWrapperNativeTests/
+          # RunNativeLoaderNativeTests' own test run, not any shipped artifact.
+          baseImage: ubuntu
           managedBaseImage: debian
           artifactSuffix: linux-x64
           useNativeSdkVersion: true
