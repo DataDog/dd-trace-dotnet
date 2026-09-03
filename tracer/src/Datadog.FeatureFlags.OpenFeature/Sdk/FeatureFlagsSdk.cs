@@ -36,8 +36,9 @@ internal static class FeatureFlagsSdk
 
     /// <summary>
     /// Activates flag configuration delivery and waits for the first configuration to arrive.
-    /// Delivery only starts here, because requesting configuration is billable and installing the
-    /// tracer alone must not do it.
+    /// Agentless delivery only starts here, because those requests are billable and installing the
+    /// tracer alone must not make them. With the Remote Configuration source, configuration is
+    /// already being received by this point and this waits for the first update.
     /// </summary>
     /// <param name="cancellationToken"> Cancellation token supplied by OpenFeature </param>
     /// <returns> A task that completes once configuration has arrived or the initialization timeout has elapsed, and that faults when no source could start delivery at all </returns>
