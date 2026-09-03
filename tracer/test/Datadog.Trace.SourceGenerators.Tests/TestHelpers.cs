@@ -14,6 +14,7 @@ using Datadog.Trace.SourceGenerators.Helpers;
 using FluentAssertions;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Text;
 
 namespace Datadog.Trace.SourceGenerators.Tests
@@ -39,7 +40,7 @@ namespace Datadog.Trace.SourceGenerators.Tests
             where TGenerator : IIncrementalGenerator, new()
             => GetGeneratedTrees<TGenerator, TTrackingNames>(sources, assertOutput: true);
 
-        public static (ImmutableArray<Diagnostic> Diagnostics, string[] Output) GetGeneratedTrees<TGenerator, TTrackingNames>(string[] sources, bool assertOutput, (string Path, string Content)[] additionalFiles = null)
+        public static (ImmutableArray<Diagnostic> Diagnostics, string[] Output) GetGeneratedTrees<TGenerator, TTrackingNames>(string[] sources, bool assertOutput, (string Path, string Content)[] additionalFiles = null, AnalyzerConfigOptionsProvider optionsProvider = null, string[] preprocessorSymbols = null)
             where TGenerator : IIncrementalGenerator, new()
         {
             // get all the const string fields
@@ -50,13 +51,16 @@ namespace Datadog.Trace.SourceGenerators.Tests
                                .Where(x => !string.IsNullOrEmpty(x))
                                .ToArray();
 
-            return GetGeneratedTrees<TGenerator>(sources, trackingNames, assertOutput: assertOutput, additionalFiles: additionalFiles);
+            return GetGeneratedTrees<TGenerator>(sources, trackingNames, additionalFiles: additionalFiles, assertOutput: assertOutput, optionsProvider: optionsProvider, preprocessorSymbols: preprocessorSymbols);
         }
 
-        public static (ImmutableArray<Diagnostic> Diagnostics, string[] Output) GetGeneratedTrees<T>(string[] source, string[] stages, (string Path, string Content)[] additionalFiles = null, bool assertOutput = true)
+        public static (ImmutableArray<Diagnostic> Diagnostics, string[] Output) GetGeneratedTrees<T>(string[] source, string[] stages, (string Path, string Content)[] additionalFiles = null, bool assertOutput = true, AnalyzerConfigOptionsProvider optionsProvider = null, string[] preprocessorSymbols = null)
             where T : IIncrementalGenerator, new()
         {
-            var syntaxTrees = source.Select(static x => CSharpSyntaxTree.ParseText(x));
+            var parseOptions = preprocessorSymbols is null
+                ? CSharpParseOptions.Default
+                : CSharpParseOptions.Default.WithPreprocessorSymbols(preprocessorSymbols);
+            var syntaxTrees = source.Select(x => CSharpSyntaxTree.ParseText(x, parseOptions));
             var references = AppDomain.CurrentDomain.GetAssemblies()
                                       .Where(_ => !_.IsDynamic && !string.IsNullOrWhiteSpace(_.Location))
                                       .Select(_ => MetadataReference.CreateFromFile(_.Location))
@@ -68,12 +72,20 @@ namespace Datadog.Trace.SourceGenerators.Tests
                 references,
                 new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
 
-            GeneratorDriverRunResult runResult = RunGeneratorAndAssertOutput<T>(compilation, stages, additionalFiles ?? Array.Empty<(string, string)>(), assertOutput);
+            GeneratorDriverRunResult runResult = RunGeneratorAndAssertOutput<T>(compilation, stages, additionalFiles ?? Array.Empty<(string, string)>(), assertOutput, optionsProvider);
 
             return (runResult.Diagnostics, runResult.GeneratedTrees.Select(x => x.ToString()).ToArray());
         }
 
-        private static GeneratorDriverRunResult RunGeneratorAndAssertOutput<T>(CSharpCompilation compilation, string[] trackingNames, (string Path, string Content)[] additionalFiles = null, bool assertOutput = true)
+        /// <summary>
+        /// Builds an <see cref="AnalyzerConfigOptionsProvider"/> exposing the given key/value pairs as
+        /// global options (i.e. <c>AnalyzerConfigOptionsProvider.GlobalOptions</c>), for generators that read
+        /// MSBuild properties exposed via <c>CompilerVisibleProperty</c> (e.g. <c>build_property.TargetFrameworkIdentifier</c>).
+        /// </summary>
+        public static AnalyzerConfigOptionsProvider CreateOptionsProvider(params (string Key, string Value)[] globalOptions)
+            => new TestAnalyzerConfigOptionsProvider(new TestAnalyzerConfigOptions(globalOptions));
+
+        private static GeneratorDriverRunResult RunGeneratorAndAssertOutput<T>(CSharpCompilation compilation, string[] trackingNames, (string Path, string Content)[] additionalFiles = null, bool assertOutput = true, AnalyzerConfigOptionsProvider optionsProvider = null)
             where T : IIncrementalGenerator, new()
         {
             ISourceGenerator generator = new T().AsSourceGenerator();
@@ -84,7 +96,7 @@ namespace Datadog.Trace.SourceGenerators.Tests
 
             var additionalTexts = additionalFiles?.Select(f => (AdditionalText)new TestAdditionalText(f.Path, f.Content)).ToImmutableArray();
 
-            GeneratorDriver driver = CSharpGeneratorDriver.Create([generator], additionalTexts: additionalTexts, driverOptions: opts);
+            GeneratorDriver driver = CSharpGeneratorDriver.Create([generator], additionalTexts: additionalTexts, parseOptions: null, optionsProvider: optionsProvider, driverOptions: opts);
 
             var clone = compilation.Clone();
             // Run twice, once with a clone of the compilation
@@ -249,6 +261,32 @@ namespace Datadog.Trace.SourceGenerators.Tests
             {
                 return SourceText.From(_text);
             }
+        }
+
+        private class TestAnalyzerConfigOptionsProvider : AnalyzerConfigOptionsProvider
+        {
+            public TestAnalyzerConfigOptionsProvider(AnalyzerConfigOptions globalOptions)
+            {
+                GlobalOptions = globalOptions;
+            }
+
+            public override AnalyzerConfigOptions GlobalOptions { get; }
+
+            public override AnalyzerConfigOptions GetOptions(SyntaxTree tree) => GlobalOptions;
+
+            public override AnalyzerConfigOptions GetOptions(AdditionalText textFile) => GlobalOptions;
+        }
+
+        private class TestAnalyzerConfigOptions : AnalyzerConfigOptions
+        {
+            private readonly Dictionary<string, string> _values;
+
+            public TestAnalyzerConfigOptions((string Key, string Value)[] values)
+            {
+                _values = values.ToDictionary(x => x.Key, x => x.Value);
+            }
+
+            public override bool TryGetValue(string key, out string value) => _values.TryGetValue(key, out value);
         }
     }
 }
