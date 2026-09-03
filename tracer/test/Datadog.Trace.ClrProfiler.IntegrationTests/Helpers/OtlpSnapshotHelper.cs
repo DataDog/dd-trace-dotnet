@@ -128,8 +128,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Helpers
                 var spanStartTimeUnixNano = long.Parse(span[startTimeUnixNanoKey]!.ToString());
                 var spanEndTimeUnixNano = long.Parse(span[endTimeUnixNanoKey]!.ToString());
 
-                // Add strong assertions on unstable span information
-                // spanStartTimeUnixNano.Should().BeGreaterThanOrEqualTo(applicationStartTimeUnixNano); // Remove one source of flakiness
+                // Match MockTracerAgent's 16 ms tolerance for timestamps captured in the test and
+                // instrumented application processes, whose clock precision can differ slightly.
+                spanStartTimeUnixNano.Should().BeGreaterThanOrEqualTo(applicationStartTimeUnixNano - 16_000_000);
                 spanEndTimeUnixNano.Should().BeGreaterThanOrEqualTo(spanStartTimeUnixNano);
                 traceIdData.Should().MatchRegex(TraceIdRegex);
                 spanIdData.Should().MatchRegex(SpanIdRegex);
