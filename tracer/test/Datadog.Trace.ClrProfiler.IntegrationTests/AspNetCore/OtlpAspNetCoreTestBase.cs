@@ -65,6 +65,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
 
             SetServiceVersion("1.0.0");
 
+            // Set RouteTemplateResourceNamesEnabled and SingleSpanAspNetCoreEnabled according to the test configuration, which will affect how spans under Datadog semantics are named and structured.
+            // Under OpenTelemetry semantics, TracerSettings force-enables both, so there should be no changes to the resulting spans.
             SetEnvironmentVariable(ConfigurationKeys.FeatureFlags.RouteTemplateResourceNamesEnabled, (flags == AspNetCoreFeatureFlags.RouteTemplateResourceNames).ToString());
             SetEnvironmentVariable(ConfigurationKeys.FeatureFlags.SingleSpanAspNetCoreEnabled, (flags == AspNetCoreFeatureFlags.SingleSpan).ToString());
 
