@@ -896,6 +896,20 @@
       "send_to_user": false,
       "user_tags": []
     },
+    "rasp.error": {
+      "tags": [
+        "waf_version",
+        "event_rules_version",
+        "waf_error",
+        "rule_type",
+        "rule_variant"
+      ],
+      "metric_type": "count",
+      "data_type": "errors",
+      "description": "Counts the number of times the WAF returned an error when evaluating a specific rule type.",
+      "send_to_user": false,
+      "user_tags": []
+    },
     "rasp.rule.eval": {
       "tags": [
         "waf_version",
@@ -920,6 +934,18 @@
       "metric_type": "count",
       "data_type": "matches",
       "description": "Counts the number of times a rule type has a match",
+      "send_to_user": false,
+      "user_tags": []
+    },
+    "rasp.rule.skipped": {
+      "tags": [
+        "reason",
+        "rule_type",
+        "rule_variant"
+      ],
+      "metric_type": "count",
+      "data_type": "events",
+      "description": "Counts the number of times the evaluation of a RASP instrumentation had to be skipped due to issues related to the request lifecycle",
       "send_to_user": false,
       "user_tags": []
     },
