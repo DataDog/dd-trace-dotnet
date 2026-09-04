@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
@@ -14,6 +15,7 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Datadog.Trace.TestHelpers.MockOtlp;
 using Xunit.Abstractions;
 
 namespace Datadog.Trace.TestHelpers
@@ -26,10 +28,8 @@ namespace Datadog.Trace.TestHelpers
         private const string TracingHeaderValue2 = "0000-0000-0000";
 
         private readonly HttpClient _httpClient;
-        private readonly object _initializationLock = new();
         private ITestOutputHelper _currentOutput;
         private object _outputLock = new();
-        private Task _initialization;
 
         public AspNetCoreTestFixture()
         {
@@ -50,16 +50,6 @@ namespace Datadog.Trace.TestHelpers
         public MockTracerAgent.TcpUdpAgent Agent { get; private set; }
 
         public int HttpPort { get; private set; }
-
-        /// <summary>
-        /// Gets the ddapm test-agent session the application under test exports OTLP to, for suites
-        /// that use <c>OTEL_TRACES_EXPORTER=otlp</c>. Owned by the fixture rather than by each test
-        /// case, because the fixture starts one process shared by every test case, and that process's
-        /// <c>OTEL_EXPORTER_OTLP_HEADERS</c> (which carries the session token) is fixed for its whole
-        /// lifetime -- a token generated per test case would stop matching what the running process
-        /// actually sends after the first one.
-        /// </summary>
-        public OtlpTestAgentSession OtlpSession { get; } = new();
 
         public void SetOutput(ITestOutputHelper output)
         {
@@ -84,7 +74,7 @@ namespace Datadog.Trace.TestHelpers
         /// <param name="useTelemetry">use telemetry</param>
         /// <exception cref="Exception">exception, dont timeout</exception>
         /// <returns>Awaits the Response to the alive check</returns>
-        public async Task TryStartApp(TestHelper helper, bool? enableSecurity = null, string externalRulesFile = null, bool sendHealthCheck = true, string packageVersion = "", MockTracerAgent.AgentConfiguration agentConfiguration = null, bool useTelemetry = false)
+        public async Task TryStartApp(TestHelper helper, bool? enableSecurity = null, string externalRulesFile = null, bool sendHealthCheck = true, string packageVersion = "", MockTracerAgent.AgentConfiguration agentConfiguration = null, bool useTelemetry = false, Action<MockTracerAgent.TcpUdpAgent> onAgentCreated = null)
         {
             if (Process is not null)
             {
@@ -99,6 +89,7 @@ namespace Datadog.Trace.TestHelpers
                 var initialAgentPort = TcpPortProvider.GetOpenPort();
 
                 Agent = MockTracerAgent.Create(_currentOutput, initialAgentPort, agentConfiguration: agentConfiguration, useTelemetry: useTelemetry);
+                onAgentCreated?.Invoke(Agent);
                 WriteToOutput($"Starting aspnetcore sample, agentPort: {Agent.Port}");
                 Process = await helper.StartSample(Agent, arguments: null, packageVersion: packageVersion, aspNetCorePort: 0, enableSecurity: enableSecurity, externalRulesFile: externalRulesFile);
 
@@ -178,6 +169,7 @@ namespace Datadog.Trace.TestHelpers
                 }
 
                 Agent.SpanFilters.Add(IsNotServerLifeCheck);
+                Agent.OtlpSpanFilters.Add(IsNotServerLifeCheckOtlp);
                 return;
             }
         }
@@ -256,42 +248,6 @@ namespace Datadog.Trace.TestHelpers
                        count: 1,
                        minDateTime: now,
                        returnAllOperations: true);
-        }
-
-        /// <summary>
-        /// Runs <paramref name="initialize"/> the first time it is called and awaits that same task
-        /// on every later call, so a test class's one-time setup happens once no matter how many test
-        /// cases it has. xUnit builds a fresh instance of the test class - and so runs
-        /// <c>IAsyncLifetime.InitializeAsync</c> - for every test case, while this fixture is created
-        /// once per test class, which makes it the only place a once-per-class latch can live.
-        /// This allows consumers of AspNetCoreTestFixture to use custom initialization logic for their
-        /// test class.
-        /// </summary>
-        /// <param name="initialize">The setup to run once. A failure is cached along with the task,
-        /// so the remaining test cases fail with the same exception instead of each retrying a setup
-        /// that has already been shown not to work.</param>
-        /// <returns>The single initialization task, shared by every test case in the class.</returns>
-        public Task EnsureInitializedAsync(Func<Task> initialize)
-        {
-            lock (_initializationLock)
-            {
-                if (_initialization is null)
-                {
-                    try
-                    {
-                        _initialization = initialize();
-                    }
-                    catch (Exception ex)
-                    {
-                        // A delegate that throws before reaching its first await throws out of the
-                        // call rather than returning a faulted task, which would leave the latch
-                        // unset and send the next test case back through the same failing setup.
-                        _initialization = Task.FromException(ex);
-                    }
-                }
-
-                return _initialization;
-            }
         }
 
         // Returns true when a known race fingerprint was detected in the captured stderr and the
@@ -435,6 +391,29 @@ namespace Datadog.Trace.TestHelpers
             if (url != null && (url.Contains("alive-check") || url.Contains("shutdown")))
             {
                 return false;
+            }
+
+            return true;
+        }
+
+        private bool IsNotServerLifeCheckOtlp(MockOtlpSpan span)
+        {
+            if (span.Name is not null && (span.Name.Contains("alive-check") || span.Name.Contains("shutdown")))
+            {
+                return false;
+            }
+
+            foreach (var key in new[] { "url.path", "http.url", "http.target" })
+            {
+                var attribute = span.Attributes.FirstOrDefault(a => a.Key == key);
+                if (attribute?.Value.Kind == MockOtlpAttributeValueKind.String)
+                {
+                    var value = attribute.Value.StringValue;
+                    if (value is not null && (value.Contains("alive-check") || value.Contains("shutdown")))
+                    {
+                        return false;
+                    }
+                }
             }
 
             return true;

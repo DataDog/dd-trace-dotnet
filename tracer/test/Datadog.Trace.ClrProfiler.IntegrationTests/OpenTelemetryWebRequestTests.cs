@@ -4,7 +4,6 @@
 // </copyright>
 
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -13,6 +12,7 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
+using Google.Protobuf;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using VerifyXunit;
@@ -28,11 +28,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     // - url.full credential/query redaction
     // Note: This intentionally only covers OTLP export (which is where the RFC requires typed attribute values).
     [UsesVerify]
-    public class OpenTelemetryWebRequestTests : TracingIntegrationTest, IAsyncLifetime
+    public class OpenTelemetryWebRequestTests : TracingIntegrationTest
     {
         private readonly Regex _exceptionStacktraceOtlp400Regex = new(@"stringValue"": ""System.Net.WebException: The remote server returned an error: \(400\) Bad Request.*""");
         private readonly Regex _exceptionStacktraceOtlp500Regex = new(@"stringValue"": ""System.Net.WebException: The remote server returned an error: \(500\) Internal Server Error.*""");
-        private readonly OtlpTestAgentSession _otlpSession = new();
 
         public OpenTelemetryWebRequestTests(ITestOutputHelper output)
             : base("OpenTelemetry.WebRequest", output)
@@ -40,67 +39,50 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             SetServiceVersion("1.0.0");
         }
 
-        public async Task InitializeAsync() => await _otlpSession.CheckAvailabilityAsync(Output);
-
-        public async Task DisposeAsync() => await _otlpSession.DisposeAsync();
-
         public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.IsWebRequest(metadataSchemaVersion);
 
         [SkippableTheory]
         [Trait("Category", "EndToEnd")]
-        [Trait("RequiresDockerDependency", "true")]
         [InlineData(false)]
         [InlineData(true)]
         public async Task SubmitsOtlpTraces(bool openTelemetrySemanticsEnabled)
         {
             SetInstrumentationVerification();
 
-            var names = OtlpFieldNames.For(isJson: false);
-
-            // Establishes this token as a real ddapm test-agent session, so that
-            // /test/session/traces only ever returns requests sent after this point.
-            await _otlpSession.StartSessionAsync();
-
             int httpPort = TcpPortProvider.GetOpenPort();
             Output.WriteLine($"Assigning port {httpPort} for the httpPort.");
 
             SetEnvironmentVariable("DD_TRACE_OTEL_SEMANTICS_ENABLED", openTelemetrySemanticsEnabled.ToString());
-            ConfigureOtlpExport(_otlpSession);
 
             var applicationStartTimeUnixNano = DateTimeOffset.UtcNow.ToUnixTimeNanoseconds();
 
-            // Traces go to the test-agent over OTLP, but telemetry still goes to the mock agent
+            // Traces go to the mock agent over OTLP, and telemetry goes to the same mock agent over
+            // the Datadog protocol.
             using var telemetry = this.ConfigureTelemetry();
             using var agent = EnvironmentHelper.GetMockAgent();
+            ConfigureOtlpExport($"http://127.0.0.1:{((MockTracerAgent.TcpUdpAgent)agent).Port}/v1/traces");
+
             using ProcessResult processResult = await RunSampleAndWaitForExit(agent, arguments: $"Port={httpPort}");
 
-            var tracesRequests = await _otlpSession.WaitForTracesAsync();
-            tracesRequests.Should().NotBeNullOrEmpty();
+            var relevantRequests = await agent.WaitForOtlpTraceRequestsAsync(count: 1);
+            relevantRequests.Should().NotBeNullOrEmpty();
 
-            // NormalizeSpans overwrites startTimeUnixNano with a fixed placeholder, so capture the
-            // real value first (keyed by span reference) to sort chronologically afterward.
-            var spanStartTimes = new Dictionary<JToken, long>(ReferenceEqualityComparer.Instance);
-            foreach (var span in tracesRequests.SelectTokens("$..spans[*]"))
-            {
-                spanStartTimes[span] = long.Parse(span[names.StartTimeUnixNano]!.ToString());
-            }
+            // Sort by actual start time before NormalizeSpans (below) overwrites it with a placeholder.
+            var mergedRequest = OtlpSnapshotHelper.MergeDatadogRequests(
+                relevantRequests,
+                spans => spans.OrderBy(s => s.StartTimeUnixNano)
+                              .ThenBy(s => s.Name ?? string.Empty, StringComparer.Ordinal)
+                              .ThenBy(s => OtlpSnapshotHelper.GetAttributeStringValue(s, "url.full", "http.url") ?? string.Empty, StringComparer.Ordinal)
+                              .ThenBy(s => JsonFormatter.Default.Format(s), StringComparer.Ordinal));
+
+            var tracesRequests = JToken.Parse(JsonFormatter.Default.Format(mergedRequest));
+            var names = OtlpFieldNames.For(isJson: true);
 
             OtlpSnapshotHelper.NormalizeResourceAttributes(tracesRequests, names);
             OtlpSnapshotHelper.NormalizeSpans(tracesRequests, names, applicationStartTimeUnixNano);
             OtlpSnapshotHelper.SortSpanAttributes(tracesRequests);
 
-            // Sort chronologically first so the snapshot mirrors the order the sample application
-            // issued its requests in, then by name/URL/JSON to keep ties (e.g. two requests to the
-            // same endpoint with identical timestamp resolution) stable across runs.
-            var merged = OtlpSnapshotHelper.MergeDatadogRequests(
-                tracesRequests,
-                names,
-                spans => spans.OrderBy(s => spanStartTimes[s])
-                              .ThenBy(s => s["name"]?.ToString() ?? string.Empty, StringComparer.Ordinal)
-                              .ThenBy(s => OtlpSnapshotHelper.GetAttributeStringValue(s, names, "url.full", "http.url") ?? string.Empty, StringComparer.Ordinal)
-                              .ThenBy(s => s.ToString(Formatting.None), StringComparer.Ordinal));
-
-            var finalJson = merged.ToString(Formatting.Indented);
+            var finalJson = tracesRequests.ToString(Formatting.Indented);
 
             var settings = VerifyHelper.GetSpanVerifierSettings();
             OtlpSnapshotHelper.AddProtobufToJsonScrubbers(settings);

@@ -395,6 +395,20 @@ namespace Datadog.Trace.TestHelpers
             SetEnvironmentVariable("OTEL_EXPORTER_OTLP_HEADERS", $"X-Datadog-Test-Session-Token={otlpSession.SessionToken}");
         }
 
+        /// <summary>
+        /// Points the sample application's OTLP/HTTP trace export at the in-process MockTracerAgent
+        /// (<paramref name="tracesEndpoint"/> is the full <c>/v1/traces</c> URL), instead of the Docker
+        /// ddapm test-agent. No session token/header is needed: isolation between test cases comes
+        /// from <see cref="MockTracerAgent.WaitForOtlpSpansAsync"/>'s <c>minDateTime</c> parameter, the
+        /// same way non-OTLP AspNetCore suites isolate against <see cref="MockTracerAgent.Spans"/>.
+        /// </summary>
+        public void ConfigureOtlpExport(string tracesEndpoint, string protocol = "http/protobuf")
+        {
+            SetEnvironmentVariable("OTEL_TRACES_EXPORTER", "otlp");
+            SetEnvironmentVariable("OTEL_EXPORTER_OTLP_PROTOCOL", protocol);
+            SetEnvironmentVariable("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT", tracesEndpoint);
+        }
+
         protected void ValidateSpans<T>(IEnumerable<MockSpan> spans, Func<MockSpan, T> mapper, IEnumerable<T> expected)
         {
             var spanLookup = new Dictionary<T, int>();
