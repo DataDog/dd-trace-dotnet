@@ -3361,6 +3361,7 @@ supportedConfigurations:
       <seealso cref="Datadog.Trace.Configuration.TracerSettings.ObfuscationQueryStringRegexTimeout"/>
   DD_TRACE_OTEL_ACTIVITY_INTERCEPTION_ENABLED:
   - implementation: A
+    scope: managed
     type: boolean
     default: 'false'
     product: FeatureFlags

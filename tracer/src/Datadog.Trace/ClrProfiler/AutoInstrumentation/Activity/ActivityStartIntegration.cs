@@ -264,7 +264,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Activity
             // (those require the scope to be set on the Activity's custom property, which isn't done yet).
             if (activity5.HasTagObjects())
             {
-                var state = new OtelTagsEnumerationState(span);
+                var state = new OtelTagsEnumerationState(span, span.OpenTelemetrySemanticsEnabled);
                 ActivityEnumerationHelper.EnumerateTagObjects(activity5, ref state, static (ref OtelTagsEnumerationState s, KeyValuePair<string, object?> kvp) =>
                 {
                     OtlpHelpers.SetTagObject(s.Span, kvp.Key, kvp.Value);

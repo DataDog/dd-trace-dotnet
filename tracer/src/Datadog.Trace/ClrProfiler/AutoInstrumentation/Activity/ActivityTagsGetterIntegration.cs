@@ -11,6 +11,7 @@ using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Tagging;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Activity
 {
@@ -69,7 +70,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Activity
                 {
                     var list = new List<KeyValuePair<string, string?>>();
                     var processor = new StringTagListBuilder(list);
-                    span.Tags.EnumerateTags(ref processor);
+                    span.Tags.EnumerateTags(ref processor, span.OpenTelemetrySemanticsEnabled);
                     return new CallTargetReturn<TReturn>((TReturn)(object)list);
                 }
             }
@@ -77,13 +78,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Activity
             return new CallTargetReturn<TReturn>(returnValue);
         }
 
-        private struct StringTagListBuilder : IItemProcessor<string>
+        private struct StringTagListBuilder : IItemProcessor<string>, IItemProcessor<int>
         {
             private readonly List<KeyValuePair<string, string?>> _list;
 
             public StringTagListBuilder(List<KeyValuePair<string, string?>> list) => _list = list;
 
             public void Process(TagItem<string> item) => _list.Add(new KeyValuePair<string, string?>(item.Key, item.Value));
+
+            public void Process(TagItem<int> item) => _list.Add(new KeyValuePair<string, string?>(item.Key, IntStringCache.ToInvariantString(item.Value)));
         }
     }
 }
