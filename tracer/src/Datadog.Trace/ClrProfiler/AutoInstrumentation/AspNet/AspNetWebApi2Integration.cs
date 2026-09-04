@@ -14,6 +14,7 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
+using Datadog.Trace.OpenTelemetry;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
@@ -29,6 +30,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
         internal const string HttpContextKey = "__Datadog.Trace.ClrProfiler.Integrations.AspNetWebApi2Integration";
 
         private const string OperationName = "aspnet-webapi.request";
+
+        // The HttpRequestMessage property under which the OWIN hosts store the request's IOwinContext
+        private const string OwinContextKey = "MS_OwinContext";
 
         private const IntegrationId IntegrationId = Configuration.IntegrationId.AspNetWebApi2;
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(AspNetWebApi2Integration));
@@ -68,7 +72,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                     if (tracer.Settings.IpHeaderEnabled || Security.Instance.AppsecEnabled)
                     {
                         const string httpContextKey = "MS_HttpContext";
-                        if (request.Properties.TryGetValue("MS_OwinContext", out var owinContextObj))
+                        if (request.Properties.TryGetValue(OwinContextKey, out var owinContextObj))
                         {
                             if (owinContextObj != null)
                             {
@@ -118,27 +122,66 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
             return scope;
         }
 
+        /// <summary>
+        /// Determines whether this integration must enrich an existing HTTP server span rather than
+        /// create one of its own. The OpenTelemetry HTTP semantic conventions describe a single server
+        /// span per request, so when Web API is hosted by another instrumented framework (i.e. ASP.NET,
+        /// as opposed to being self-hosted with OWIN) that framework's span is the one to use.
+        /// </summary>
+        /// <param name="tracer">The tracer whose active scope is inspected</param>
+        internal static bool UsesExistingServerSpan(Tracer tracer)
+            => tracer.Settings.OtelSemanticsEnabled
+            && tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId)
+            && HttpSemanticConventions.GetActiveHttpServerSpan(tracer) is not null;
+
+        /// <summary>
+        /// Applies the route information of the executing Web API action to the existing HTTP server
+        /// span. Called both when the action starts and when it ends, because the route is not always
+        /// resolved by the time the action starts.
+        /// </summary>
+        /// <param name="tracer">The tracer whose active scope holds the server span</param>
+        /// <param name="controllerContext">The context of the executing action</param>
+        internal static void UpdateExistingServerSpan(Tracer tracer, IHttpControllerContext controllerContext)
+        {
+            try
+            {
+                var route = TryGetRouteTemplate(controllerContext);
+                var requestMethod = HttpSemanticConventions.NormalizeRequestMethod(controllerContext.Request?.Method.Method);
+                var resourceName = HttpSemanticConventions.GetServerResourceName(requestMethod, route);
+
+                if (HttpSemanticConventions.GetActiveHttpServerSpan(tracer) is { } serverSpan)
+                {
+                    HttpSemanticConventions.SetHttpRoute(serverSpan, route);
+                    serverSpan.ResourceName = resourceName;
+                }
+
+                // Also record it in the HttpContext so TracingHttpModule applies it when the request
+                // ends, which is the only way to reach the span when the pipeline unwinds elsewhere.
+                var httpContext = System.Web.HttpContext.Current;
+                if (httpContext is not null)
+                {
+                    httpContext.Items[SharedItems.HttpContextPropagatedResourceNameKey] = resourceName;
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error updating the ASP.NET server span with Web API route data.");
+            }
+        }
+
         internal static void UpdateSpan(IHttpControllerContext controllerContext, Span span, AspNetTags tags)
         {
             try
             {
                 var tracer = Tracer.Instance;
                 var tracerSettings = tracer.Settings;
-                var newResourceNamesEnabled = tracerSettings.RouteTemplateResourceNamesEnabled;
+                var otelSemanticsEnabled = tracerSettings.OtelSemanticsEnabled;
+                var newResourceNamesEnabled = tracerSettings.RouteTemplateResourceNamesEnabled || otelSemanticsEnabled;
                 var request = controllerContext.Request;
                 Uri requestUri = request.RequestUri;
 
-                string host = request.Headers.Host ?? string.Empty;
-                var userAgent = request.Headers.UserAgent?.ToString() ?? string.Empty;
                 string method = request.Method.Method?.ToUpperInvariant() ?? "GET";
-                string route = null;
-                try
-                {
-                    route = controllerContext.RouteData.Route.RouteTemplate;
-                }
-                catch
-                {
-                }
+                string route = TryGetRouteTemplate(controllerContext);
 
                 IDictionary<string, object> routeValues = null;
                 try
@@ -192,15 +235,33 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                     }
                 }
 
-                var url = request.GetUrlForSpan(tracer.TracerManager.QueryStringManager);
+                if (otelSemanticsEnabled)
+                {
+                    HttpSemanticConventions.SetHttpServerRequestValues(
+                        span,
+                        tags,
+                        resourceName: HttpSemanticConventions.GetServerResourceName(request.Method.Method, route),
+                        originalMethod: request.Method.Method,
+                        userAgent: request.Headers.UserAgent?.ToString(),
+                        protocol: GetCurrentRequestProtocol(request),
+                        hostHeader: request.Headers.Host,
+                        requestUri: requestUri,
+                        queryStringManager: tracer.TracerManager.QueryStringManager);
+                }
+                else
+                {
+                    string host = request.Headers.Host ?? string.Empty;
+                    var url = request.GetUrlForSpan(tracer.TracerManager.QueryStringManager);
+                    var userAgent = request.Headers.UserAgent?.ToString() ?? string.Empty;
 
-                span.DecorateWebServerSpan(
-                    resourceName: resourceName,
-                    method: method,
-                    host: host,
-                    httpUrl: url,
-                    userAgent: userAgent,
-                    tags);
+                    span.DecorateWebServerSpan(
+                        resourceName: resourceName,
+                        method: method,
+                        host: host,
+                        httpUrl: url,
+                        userAgent: userAgent,
+                        tags);
+                }
 
                 if (tags is not null)
                 {
@@ -231,6 +292,48 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
             catch (Exception ex)
             {
                 Log.Error(ex, "Error populating scope data.");
+            }
+        }
+
+        /// <summary>
+        /// Gets the protocol the request arrived over, e.g. "HTTP/1.1", or <c>null</c> if it cannot be
+        /// determined. Note that <c>HttpRequestMessage.Version</c> must not be used for this: neither
+        /// host populates it from the incoming request, so it always holds the default of 1.1.
+        /// </summary>
+        /// <param name="request">The request being traced</param>
+        private static string GetCurrentRequestProtocol(IHttpRequestMessage request)
+        {
+            // When Web API is hosted by ASP.NET, the System.Web request knows the protocol.
+            if (System.Web.HttpContext.Current?.Request is { } currentRequest)
+            {
+                return RequestDataHelper.GetServerProtocol(currentRequest);
+            }
+
+            // A self-hosted (OWIN) Web API has no System.Web request, but the OWIN request has the protocol.
+            try
+            {
+                if (request.Properties.TryGetValue(OwinContextKey, out var owinContextObj) && owinContextObj is not null)
+                {
+                    return owinContextObj.DuckCast<OwinContextStruct>().Request.Protocol;
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Debug(ex, "Error reading the protocol from the OWIN request.");
+            }
+
+            return null;
+        }
+
+        private static string TryGetRouteTemplate(IHttpControllerContext controllerContext)
+        {
+            try
+            {
+                return controllerContext.RouteData.Route.RouteTemplate;
+            }
+            catch
+            {
+                return null;
             }
         }
     }

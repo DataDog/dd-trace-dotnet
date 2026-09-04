@@ -118,7 +118,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                     var responseObject = actionResult.Data;
                     if (responseObject is not null)
                     {
-                        var scope = SharedItems.TryPeekScope(HttpContext.Current, AspNetMvcIntegration.HttpContextKey);
+                        var scope = SharedItems.TryPeekScopeOrServerScope(HttpContext.Current, AspNetMvcIntegration.HttpContextKey);
                         if (scope is not null)
                         {
                             var securityTransport = SecurityCoordinator.Get(security, scope.Span, HttpContext.Current);

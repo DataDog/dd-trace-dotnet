@@ -1,4 +1,4 @@
-// <copyright file="OtlpTestAgentSession.cs" company="Datadog">
+﻿// <copyright file="OtlpTestAgentSession.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -38,6 +38,25 @@ namespace Datadog.Trace.TestHelpers;
 /// </summary>
 public sealed class OtlpTestAgentSession : IAsyncDisposable
 {
+    /// <summary>
+    /// How far below a caller's lower bound a span's start time may fall and still be treated as
+    /// belonging to that test case.
+    /// <para>
+    /// The bound is a <see cref="DateTimeOffset.UtcNow"/> reading taken in the test process, while
+    /// span start times are stamped by <c>TraceClock</c> in the application under test, which
+    /// derives them from a monotonic stopwatch that it re-anchors to wall clock only every five
+    /// minutes -- and which tolerates up to 16ms of skew when it does anchor. The two clocks
+    /// therefore disagree by a few milliseconds, so without a margin a span created just after the
+    /// bound can report a timestamp just before it, be filtered out as belonging to a previous test
+    /// case, and leave the caller polling until it times out.
+    /// </para>
+    /// <para>
+    /// Comfortably larger than that skew and comfortably smaller than the gap to the previous test
+    /// case, whose spans have in any case already been removed by <see cref="ClearSessionAsync"/>.
+    /// </para>
+    /// </summary>
+    public const long StartTimeToleranceNanoseconds = 250L * 1_000_000L;
+
     /// <summary>
     /// The port the ddapm test-agent receives OTLP/HTTP on, and also serves its session API on.
     /// </summary>
@@ -245,16 +264,20 @@ public sealed class OtlpTestAgentSession : IAsyncDisposable
     /// partial view of the trace.
     /// </summary>
     /// <param name="expectedSpanCount">The number of spans the request under test is expected to produce.</param>
-    /// <param name="minStartTimeUnixNano">The lower bound (inclusive) a span's start time must meet to count.</param>
+    /// <param name="minStartTimeUnixNano">The lower bound a span's start time must meet to count, less <see cref="StartTimeToleranceNanoseconds"/>.</param>
     /// <param name="startTimeUnixNanoKey">The JSON key holding a span's start time, which varies with the payload's casing.</param>
-    /// <returns>The captured OTLP trace requests, with any spans older than <paramref name="minStartTimeUnixNano"/> removed.</returns>
+    /// <returns>The captured OTLP trace requests, with any spans older than the tolerated lower bound removed.</returns>
     public async Task<JToken> WaitForSpansAsync(int expectedSpanCount, long minStartTimeUnixNano, string startTimeUnixNanoKey)
     {
+        // The caller's bound and the spans' timestamps are read from different clocks in different
+        // processes; see StartTimeToleranceNanoseconds.
+        var lowerBound = minStartTimeUnixNano - StartTimeToleranceNanoseconds;
+
         var data = await WaitForDataAsync(
             TracesUrl,
-            candidate => CountSpans(RemoveSpansOlderThan(candidate, minStartTimeUnixNano, startTimeUnixNanoKey)) >= expectedSpanCount);
+            candidate => CountSpans(RemoveSpansOlderThan(candidate, lowerBound, startTimeUnixNanoKey)) >= expectedSpanCount);
 
-        return RemoveSpansOlderThan(data, minStartTimeUnixNano, startTimeUnixNanoKey);
+        return RemoveSpansOlderThan(data, lowerBound, startTimeUnixNanoKey);
     }
 
     /// <summary>
