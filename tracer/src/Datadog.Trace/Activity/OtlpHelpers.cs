@@ -507,7 +507,7 @@ namespace Datadog.Trace.Activity
                 case "operation.name":
                     if (setKnownValues)
                     {
-                        span.OperationName = value?.ToLowerInvariant();
+                        span.OperationName = StringUtil.ToLowerInvariant(value);
                     }
 
                     break;

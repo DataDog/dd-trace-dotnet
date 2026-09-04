@@ -185,7 +185,7 @@ public sealed class TestModule
         tags.TestsSkipped = "false";
 
         var span = Tracer.Instance.StartSpan(
-            string.IsNullOrEmpty(framework) ? "test_module" : $"{framework!.ToLowerInvariant()}.test_module",
+            string.IsNullOrEmpty(framework) ? "test_module" : $"{StringUtil.ToLowerInvariant(framework)}.test_module",
             tags: tags,
             startTime: startDate);
         TelemetryFactory.Metrics.RecordCountSpanCreated(MetricTags.IntegrationName.CiAppManual);
