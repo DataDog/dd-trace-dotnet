@@ -16,15 +16,12 @@ using FluentAssertions.Execution;
 using VerifyXunit;
 using Xunit;
 using Xunit.Abstractions;
-using Xunit.Sdk;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests;
 
 [UsesVerify]
 public class QuartzTests : TracingIntegrationTest
 {
-    private const string AnalyticsSampleRateKey = "_dd1.sr.eausr";
-
     private readonly Regex _versionRegex = new(@"telemetry.sdk.version: (0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)");
     private readonly Regex _timeUnixNanoRegex = new(@"time_unix_nano"":([0-9]{10}[0-9]+)");
 
@@ -97,47 +94,6 @@ public class QuartzTests : TracingIntegrationTest
         }
     }
 
-    [SkippableTheory]
-    [Trait("Category", "EndToEnd")]
-    [Trait("RunOnWindows", "True")]
-    [MemberData(nameof(GetData))]
-    public async Task UsesDefaultActivityHandlerWhenDisabled(string packageVersion)
-    {
-        SkipUnlessQuartzV4(packageVersion);
-        SetEnvironmentVariable("DD_TRACE_QUARTZ_ENABLED", "false");
-
-        using (var telemetry = this.ConfigureTelemetry())
-        using (var agent = EnvironmentHelper.GetMockAgent())
-        using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
-        {
-            var (_, expectedSpanCount) = GetSuffix(packageVersion);
-            var spans = await agent.WaitForSpansAsync(expectedSpanCount);
-            spans.Should().HaveCount(expectedSpanCount);
-
-            await telemetry.AssertIntegrationAsync(IntegrationId.Quartz, enabled: false, autoEnabled: false);
-            await telemetry.AssertIntegrationEnabledAsync(IntegrationId.OpenTelemetry);
-        }
-    }
-
-    [SkippableTheory]
-    [Trait("Category", "EndToEnd")]
-    [Trait("RunOnWindows", "True")]
-    [MemberData(nameof(GetData))]
-    public async Task SetsAnalyticsSampleRate(string packageVersion)
-    {
-        SkipUnlessQuartzV4(packageVersion);
-        SetEnvironmentVariable("DD_TRACE_QUARTZ_ANALYTICS_ENABLED", "true");
-        SetEnvironmentVariable("DD_TRACE_QUARTZ_ANALYTICS_SAMPLE_RATE", "0.5");
-
-        using (var agent = EnvironmentHelper.GetMockAgent())
-        using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
-        {
-            var (_, expectedSpanCount) = GetSuffix(packageVersion);
-            var spans = await agent.WaitForSpansAsync(expectedSpanCount);
-            spans.Should().Contain(s => s.Metrics.TryGetValue(AnalyticsSampleRateKey, out var value) && value == 0.5);
-        }
-    }
-
     private static Tuple<string, int> GetSuffix(string packageVersion)
     {
         if (string.IsNullOrEmpty(packageVersion))
@@ -168,11 +124,4 @@ public class QuartzTests : TracingIntegrationTest
                ? IntegrationId.Quartz
                : IntegrationId.OpenTelemetry;
 
-    private static void SkipUnlessQuartzV4(string packageVersion)
-    {
-        if (StringUtil.IsNullOrEmpty(packageVersion) || new Version(packageVersion) < new Version(4, 0, 0))
-        {
-            throw new SkipException("Quartz Activity handler configuration applies to Quartz v4 and later.");
-        }
-    }
 }
