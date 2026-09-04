@@ -76,5 +76,13 @@ internal static class StringUtil
 
         return value;
     }
+#else
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static string ToUpperInvariant(string value)
+        => value.ToUpperInvariant();
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static string ToLowerInvariant(string value)
+        => value.ToLowerInvariant();
 #endif
 }
