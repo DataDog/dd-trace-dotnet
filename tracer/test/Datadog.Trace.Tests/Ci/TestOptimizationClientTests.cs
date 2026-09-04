@@ -77,7 +77,7 @@ public class TestOptimizationClientTests : SettingsTestsBase
                   "attributes": {
                     "suite": "Samples.XUnitTests.TestSuite",
                     "name": "SimplePassTest",
-                    "_missing_line_code_coverage": false
+                    "_is_missing_line_code_coverage": false
                   }
                 }
               ],
@@ -147,7 +147,7 @@ public class TestOptimizationClientTests : SettingsTestsBase
                   "attributes": {
                     "suite": "Samples.XUnitTests.TestSuite",
                     "name": "SimplePassTest",
-                    "_missing_line_code_coverage": true
+                    "_is_missing_line_code_coverage": true
                   }
                 }
               ],
@@ -183,7 +183,7 @@ public class TestOptimizationClientTests : SettingsTestsBase
                         "queue": "nightly"
                       }
                     },
-                    "_missing_line_code_coverage": false
+                    "_is_missing_line_code_coverage": false
                   }
                 }
               ],
@@ -220,7 +220,7 @@ public class TestOptimizationClientTests : SettingsTestsBase
                         "test.bundle": "Samples.XUnitTests"
                       }
                     },
-                    "_missing_line_code_coverage": false
+                    "_is_missing_line_code_coverage": false
                   }
                 }
               ],
@@ -255,7 +255,7 @@ public class TestOptimizationClientTests : SettingsTestsBase
                         "test.bundle": "Samples.XUnitTests"
                       }
                     },
-                    "_missing_line_code_coverage": false
+                    "_is_missing_line_code_coverage": false
                   }
                 }
               ],
@@ -290,7 +290,7 @@ public class TestOptimizationClientTests : SettingsTestsBase
                         "test.bundle": "Other.Tests"
                       }
                     },
-                    "_missing_line_code_coverage": false
+                    "_is_missing_line_code_coverage": false
                   }
                 }
               ],
@@ -325,7 +325,7 @@ public class TestOptimizationClientTests : SettingsTestsBase
                         "test.module": "Samples.XUnitTests"
                       }
                     },
-                    "_missing_line_code_coverage": false
+                    "_is_missing_line_code_coverage": false
                   }
                 }
               ],
@@ -360,7 +360,7 @@ public class TestOptimizationClientTests : SettingsTestsBase
                         "test.module": "Samples.XUnitTests"
                       }
                     },
-                    "_missing_line_code_coverage": false
+                    "_is_missing_line_code_coverage": false
                   }
                 }
               ],
@@ -393,7 +393,7 @@ public class TestOptimizationClientTests : SettingsTestsBase
                     "configurations": {
                       "test.bundle": "Other.Tests"
                     },
-                    "_missing_line_code_coverage": false
+                    "_is_missing_line_code_coverage": false
                   }
                 }
               ],
