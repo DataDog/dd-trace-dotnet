@@ -74,6 +74,10 @@ namespace Datadog.Trace.Propagators
                 throw new ArgumentOutOfRangeException(nameof(rv));
             }
 
+            // "sb" already holds the preceding tracestate members (e.g. "dd=...,ot="), so item
+            // separators must be relative to where this member's content starts, not to the whole builder.
+            var startLength = sb.Length;
+
             if (rv is { } rvValue)
             {
                 AppendRandomValueHex(sb, rvValue);
@@ -81,7 +85,7 @@ namespace Datadog.Trace.Propagators
 
             if (th is { } thValue)
             {
-                if (sb.Length > 0)
+                if (sb.Length > startLength)
                 {
                     sb.Append(';');
                 }
@@ -102,7 +106,7 @@ namespace Datadog.Trace.Propagators
 
                     if (!key.Equals("rv".AsSpan(), StringComparison.Ordinal) && !key.Equals("th".AsSpan(), StringComparison.Ordinal))
                     {
-                        if (sb.Length > 0)
+                        if (sb.Length > startLength)
                         {
                             sb.Append(';');
                         }

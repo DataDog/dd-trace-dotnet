@@ -75,6 +75,25 @@ namespace Datadog.Trace.Tests.Propagators
             sb.ToString().Should().Be(expected);
         }
 
+        // SetRvTh writes into the same StringBuilder that already holds "dd=...,ot=", so its
+        // item separators must be relative to where it started appending, not to the whole builder.
+        [Theory]
+        [InlineData(null, null, null, "")]
+        [InlineData("foo:bar", null, null, "foo:bar")]
+        [InlineData(null, null, 0xe6666666666668UL, "th:e6666666666668")]
+        [InlineData("rv:zzzz;foo:bar", null, null, "foo:bar")]
+        [InlineData("rv:zzzz;th:2;foo:bar", null, 0xe6666666666668UL, "th:e6666666666668;foo:bar")]
+        [InlineData("foo:bar;rv:1;th:2", 0xef284ace7a91e1UL, 0xe6666666666668UL, "rv:ef284ace7a91e1;th:e6666666666668;foo:bar")]
+        public void SetRvTh_AppendingToNonEmptyBuilder_DoesNotEmitLeadingSeparator(string? raw, ulong? rv, ulong? th, string expected)
+        {
+            const string prefix = "dd=s:1;p:0000000000000002,ot=";
+
+            var sb = new StringBuilder(prefix);
+            OtelTraceStateHelpers.SetRvTh(sb, raw, rv, th);
+
+            sb.ToString().Should().Be(prefix + expected);
+        }
+
         [Fact]
         public void SetRvTh_ThrowsWhenRvExceeds56Bits()
         {
