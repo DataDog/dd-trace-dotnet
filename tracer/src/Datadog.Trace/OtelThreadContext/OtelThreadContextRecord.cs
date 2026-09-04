@@ -104,21 +104,22 @@ internal static unsafe class OtelThreadContextRecord
     /// mid-update sees an invalid record and skips it instead of reading a torn one.
     /// </para>
     /// </summary>
-    public static void Write(byte* record, TraceId traceId, ulong spanId, ulong localRootSpanId, byte traceFlags)
+    public static void Write(IntPtr address, Span activeSpan)
     {
-        var span = AsSpan(record);
+        var record = AsSpan((byte*)address);
+        var traceId = activeSpan.Context.TraceId128;
 
-        Volatile.Write(ref span[ValidOffset], Invalid);
+        Volatile.Write(ref record[ValidOffset], Invalid);
 
         // trace id and span id are big endian, per the W3C Trace Context format. Note that Upper is
         // always the most significant half regardless of machine endianness, so it is written first.
-        BinaryPrimitives.WriteUInt64BigEndian(span.Slice(TraceIdOffset), traceId.Upper);
-        BinaryPrimitives.WriteUInt64BigEndian(span.Slice(TraceIdOffset + sizeof(ulong)), traceId.Lower);
-        BinaryPrimitives.WriteUInt64BigEndian(span.Slice(SpanIdOffset), spanId);
-        span[TraceFlagsOffset] = traceFlags;
-        HexString.ToHexBytes(localRootSpanId, span.Slice(AttrsDataOffset + 2));
+        BinaryPrimitives.WriteUInt64BigEndian(record.Slice(TraceIdOffset), traceId.Upper);
+        BinaryPrimitives.WriteUInt64BigEndian(record.Slice(TraceIdOffset + sizeof(ulong)), traceId.Lower);
+        BinaryPrimitives.WriteUInt64BigEndian(record.Slice(SpanIdOffset), activeSpan.SpanId);
+        record[TraceFlagsOffset] = GetTraceFlags(activeSpan);
+        HexString.ToHexBytes(activeSpan.RootSpanId, record.Slice(AttrsDataOffset + 2));
 
-        Volatile.Write(ref span[ValidOffset], Valid);
+        Volatile.Write(ref record[ValidOffset], Valid);
     }
 
     /// <summary>
@@ -126,9 +127,27 @@ internal static unsafe class OtelThreadContextRecord
     /// is clearing the thread-local pointer, and a writer must pick one mechanism or the other, not both.
     /// We own a fixed record per thread, so we always use the flag.
     /// </summary>
-    public static void Invalidate(byte* record)
+    public static void Invalidate(IntPtr address)
     {
-        Volatile.Write(ref AsSpan(record)[ValidOffset], Invalid);
+        Volatile.Write(ref AsSpan((byte*)address)[ValidOffset], Invalid);
+    }
+
+    /// <summary>
+    /// Builds the W3C trace-flags byte.
+    /// <para>
+    /// This reads the sampling decision only if one has already been made. Calling
+    /// <c>GetOrMakeSamplingDecision()</c> here - as the W3C propagator does - would force the decision at
+    /// span activation time instead of when the trace is propagated or flushed, which is an observable
+    /// change in tracer behaviour. An undecided trace is reported as not sampled.
+    /// </para>
+    /// </summary>
+    private static byte GetTraceFlags(Span span)
+    {
+        var samplingPriority = span.Context.TraceContext?.SamplingPriority ?? span.Context.SamplingPriority;
+
+        return samplingPriority is { } priority && SamplingPriorityValues.IsKeep(priority)
+                   ? (byte)1
+                   : (byte)0;
     }
 
     private static Span<byte> AsSpan(byte* record) => new(record, Size);

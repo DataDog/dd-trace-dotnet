@@ -53,20 +53,11 @@ internal static class OtelProcessContextAnnouncer
 
     private const uint SupportedVersion = 2;
 
-    private static readonly byte[] Signature = Encoding.ASCII.GetBytes("OTEL_CTX");
-
-    // The names /proc/<pid>/maps gives the mapping, depending on which of memfd_create and
-    // prctl(PR_SET_VMA_ANON_NAME) the publisher managed to use.
-    private static readonly string[] MappingNames =
-    [
-        "[anon_shmem:OTEL_CTX",
-        "[anon:OTEL_CTX",
-        "/memfd:OTEL_CTX",
-    ];
-
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(OtelProcessContextAnnouncer));
 
     private static int _announced;
+
+    private static ReadOnlySpan<byte> Signature => "OTEL_CTX"u8;
 
     /// <summary>
     /// Announces the thread context schema, once per process. Never throws: if anything is missing or
@@ -74,7 +65,7 @@ internal static class OtelProcessContextAnnouncer
     /// </summary>
     public static void Announce(TracerSettings settings)
     {
-        if (!settings.OtelThreadContextEnabled || !OtelThreadContextPublisher.IsPlatformSupported())
+        if (!settings.OtelThreadContextEnabled || !OtelThreadContextPublisher.IsPlatformSupported(FrameworkDescription.Instance))
         {
             return;
         }
@@ -94,7 +85,7 @@ internal static class OtelProcessContextAnnouncer
             }
             else
             {
-                Log.Information(
+                Log.Warning(
                     "Could not announce the OpenTelemetry thread context schema ({Reason}). Thread contexts are still published, but external readers will not discover them.",
                     failure);
             }
@@ -134,68 +125,42 @@ internal static class OtelProcessContextAnnouncer
     /// </summary>
     internal static bool TryParseMappingAddress(string maps, out IntPtr address)
     {
-        foreach (var line in maps.Split('\n'))
+        var remaining = maps.AsSpan();
+
+        while (!remaining.IsEmpty)
         {
-            if (!HasMappingName(line))
+            var newline = remaining.IndexOf('\n');
+            var line = newline >= 0 ? remaining.Slice(0, newline) : remaining;
+
+            if (HasMappingName(line))
             {
-                continue;
+                var separator = line.IndexOf('-');
+
+                if (separator > 0 && HexString.TryParseUInt64(line.Slice(0, separator), out var start))
+                {
+                    address = (IntPtr)start;
+                    return true;
+                }
             }
 
-            var separator = line.IndexOf('-');
-
-            if (separator > 0 && TryParseHex(line, separator, out var start))
+            if (newline < 0)
             {
-                address = (IntPtr)start;
-                return true;
+                break;
             }
+
+            remaining = remaining.Slice(newline + 1);
         }
 
         address = IntPtr.Zero;
         return false;
     }
 
-    /// <summary>
-    /// Parses the leading hexadecimal address of a /proc/self/maps line. Hand-rolled because the span
-    /// overloads of <c>ulong.TryParse</c> are not available on every target framework, and the address
-    /// field has no fixed width.
-    /// </summary>
-    private static bool TryParseHex(string line, int length, out ulong value)
-    {
-        value = 0;
-
-        if (length is 0 or > 16)
-        {
-            return false;
-        }
-
-        for (var i = 0; i < length; i++)
-        {
-            var digit = HexConverter.FromChar(line[i]);
-
-            if (digit == 0xFF)
-            {
-                return false;
-            }
-
-            value = (value << 4) | (uint)digit;
-        }
-
-        return true;
-    }
-
-    private static bool HasMappingName(string line)
-    {
-        foreach (var name in MappingNames)
-        {
-            // the name is the last column, so a plain search is enough to tell the mapping apart
-            if (line.IndexOf(name, StringComparison.Ordinal) >= 0)
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
+    // The names /proc/<pid>/maps gives the mapping, depending on which of memfd_create and
+    // prctl(PR_SET_VMA_ANON_NAME) the publisher managed to use.
+    private static bool HasMappingName(ReadOnlySpan<char> line)
+        => line.IndexOf("[anon_shmem:OTEL_CTX".AsSpan(), StringComparison.Ordinal) >= 0
+        || line.IndexOf("[anon:OTEL_CTX".AsSpan(), StringComparison.Ordinal) >= 0
+        || line.IndexOf("/memfd:OTEL_CTX".AsSpan(), StringComparison.Ordinal) >= 0;
 
     /// <summary>
     /// Appends <paramref name="extraAttributes"/> to the payload the header points at, and republishes
@@ -218,7 +183,7 @@ internal static class OtelProcessContextAnnouncer
 
         if (version != SupportedVersion)
         {
-            failure = "process context version " + version.ToString() + " is not supported";
+            failure = $"process context version {version} is not supported";
             return false;
         }
 
@@ -289,16 +254,7 @@ internal static class OtelProcessContextAnnouncer
     {
         // Guards against a future libdatadog that emits the threadlocal.* keys itself, which would
         // otherwise leave two copies of each key in the payload.
-        var key = Encoding.UTF8.GetBytes(ThreadLocalMetadataPayload.SchemaVersionAttribute);
-
-        for (var i = 0; i + key.Length <= payload.Length; i++)
-        {
-            if (payload.Slice(i, key.Length).SequenceEqual(key))
-            {
-                return true;
-            }
-        }
-
-        return false;
+        ReadOnlySpan<byte> key = Encoding.UTF8.GetBytes(ThreadLocalMetadataPayload.SchemaVersionAttribute);
+        return payload.IndexOf(key) >= 0;
     }
 }

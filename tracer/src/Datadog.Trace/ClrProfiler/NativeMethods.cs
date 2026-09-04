@@ -27,6 +27,18 @@ namespace Datadog.Trace.ClrProfiler
             }
         }
 
+        public static bool IsLinux
+        {
+            get
+            {
+#if NETFRAMEWORK
+                return false;
+#else
+                return System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(OSPlatform.Linux);
+#endif
+            }
+        }
+
         /// <summary>
         /// Gets a value indicating whether Datadog's instrumentation library (aka CLR profiler) is attached to the current process.
         /// </summary>
@@ -269,12 +281,12 @@ namespace Datadog.Trace.ClrProfiler
         public static IntPtr GetOtelThreadContextSlot()
         {
             // the symbol is only defined on Linux, matching the scope of OTEP 4947
-            if (IsWindows)
+            if (IsLinux)
             {
-                return IntPtr.Zero;
+                return NonWindows.GetOtelThreadContextSlot();
             }
 
-            return NonWindows.GetOtelThreadContextSlot();
+            return IntPtr.Zero;
         }
 
         // the "dll" extension is required on .NET Framework

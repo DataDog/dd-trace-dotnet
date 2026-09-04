@@ -6,6 +6,7 @@
 using System;
 using System.Text;
 using Datadog.Trace.OtelThreadContext;
+using Datadog.Trace.Tests.Util;
 using Datadog.Trace.Util;
 using FluentAssertions;
 using Xunit;
@@ -35,7 +36,7 @@ namespace Datadog.Trace.Tests.OtelThreadContext
             { 0UL, 0xfedcba9876543210UL, 0x1122334455667788UL, 0x1122334455667788UL, 0 }, // 64-bit trace id
             { 0UL, 0UL, 0UL, 0UL, 0 }, // all zeroes, i.e. no trace
             { ulong.MaxValue, ulong.MaxValue, ulong.MaxValue, ulong.MaxValue, 1 },
-            { 1UL, 1UL, 1UL, 1UL, 3 }, // sampled + random-trace-id flags
+            { 1UL, 1UL, 1UL, 1UL, 1 },
         };
 
         [Fact]
@@ -80,11 +81,12 @@ namespace Datadog.Trace.Tests.OtelThreadContext
         {
             var traceId = new TraceId(traceIdUpper, traceIdLower);
             var buffer = NewBuffer();
+            var activeSpan = CreateSpan(traceId, spanId, localRootSpanId, traceFlags);
 
             fixed (byte* record = buffer)
             {
                 OtelThreadContextRecord.Initialize(record);
-                OtelThreadContextRecord.Write(record, traceId, spanId, localRootSpanId, traceFlags);
+                OtelThreadContextRecord.Write((IntPtr)record, activeSpan);
             }
 
             buffer[ValidOffset].Should().Be(1, "the record is complete and readable");
@@ -111,18 +113,19 @@ namespace Datadog.Trace.Tests.OtelThreadContext
         {
             var traceId = new TraceId(0x0123456789abcdefUL, 0xfedcba9876543210UL);
             var buffer = NewBuffer();
+            var activeSpan = CreateSpan(traceId, spanId: 42, localRootSpanId: 43, traceFlags: 1);
 
             fixed (byte* record = buffer)
             {
                 OtelThreadContextRecord.Initialize(record);
-                OtelThreadContextRecord.Write(record, traceId, 42, 43, traceFlags: 1);
+                OtelThreadContextRecord.Write((IntPtr)record, activeSpan);
             }
 
             var written = (byte[])buffer.Clone();
 
             fixed (byte* record = buffer)
             {
-                OtelThreadContextRecord.Invalidate(record);
+                OtelThreadContextRecord.Invalidate((IntPtr)record);
             }
 
             buffer[ValidOffset].Should().Be(0);
@@ -137,18 +140,50 @@ namespace Datadog.Trace.Tests.OtelThreadContext
         public void SuccessiveWritesOverwriteTheWholeContext()
         {
             var buffer = NewBuffer();
+            var populatedSpan = CreateSpan(
+                new TraceId(ulong.MaxValue, ulong.MaxValue),
+                ulong.MaxValue,
+                ulong.MaxValue,
+                traceFlags: 1);
+            var emptySpan = CreateSpan(TraceId.Zero, 0, 0, traceFlags: 0);
 
             fixed (byte* record = buffer)
             {
                 OtelThreadContextRecord.Initialize(record);
-                OtelThreadContextRecord.Write(record, new TraceId(ulong.MaxValue, ulong.MaxValue), ulong.MaxValue, ulong.MaxValue, traceFlags: 1);
-                OtelThreadContextRecord.Write(record, TraceId.Zero, 0, 0, traceFlags: 0);
+                OtelThreadContextRecord.Write((IntPtr)record, populatedSpan);
+                OtelThreadContextRecord.Write((IntPtr)record, emptySpan);
             }
 
             buffer[ValidOffset].Should().Be(1);
             buffer[TraceFlagsOffset].Should().Be(0);
             buffer.AsSpan(TraceIdOffset, 24).ToArray().Should().OnlyContain(b => b == 0, "no bytes of the previous context may survive");
             Encoding.ASCII.GetString(buffer, AttrsDataOffset + 2, 16).Should().Be("0000000000000000");
+        }
+
+        private static Span CreateSpan(TraceId traceId, ulong spanId, ulong localRootSpanId, byte traceFlags)
+        {
+            if (traceId == TraceId.Zero && spanId == 0 && localRootSpanId == 0)
+            {
+                return new Span(SpanContext.Zero, DateTimeOffset.UtcNow);
+            }
+
+            var samplingPriority = traceFlags == 1 ? SamplingPriorityValues.AutoKeep : SamplingPriorityValues.AutoReject;
+
+            if (spanId == localRootSpanId)
+            {
+                var spanContext = new SpanContext(traceId, spanId, samplingPriority, serviceName: "test", origin: null);
+                return new Span(spanContext, DateTimeOffset.UtcNow);
+            }
+
+            var traceContext = new TraceContext(new StubDatadogTracer());
+            traceContext.SetSamplingPriority(samplingPriority, notifyDistributedTracer: false);
+
+            var rootContext = new SpanContext(parent: null, traceContext, serviceName: "test", traceId: traceId, spanId: localRootSpanId);
+            var rootSpan = new Span(rootContext, DateTimeOffset.UtcNow);
+            traceContext.AddSpan(rootSpan);
+
+            var childContext = new SpanContext(rootContext, traceContext, serviceName: "test", spanId: spanId);
+            return new Span(childContext, DateTimeOffset.UtcNow);
         }
 
         private static byte[] NewBuffer() => new byte[OtelThreadContextRecord.Size];

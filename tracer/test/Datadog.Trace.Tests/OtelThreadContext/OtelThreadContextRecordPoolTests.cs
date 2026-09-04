@@ -55,7 +55,9 @@ namespace Datadog.Trace.Tests.OtelThreadContext
             var pool = new OtelThreadContextRecordPool();
 
             var block = pool.Rent();
-            OtelThreadContextRecord.Write(block, new TraceId(ulong.MaxValue, ulong.MaxValue), ulong.MaxValue, ulong.MaxValue, traceFlags: 1);
+            var context = new SpanContext(new TraceId(ulong.MaxValue, ulong.MaxValue), ulong.MaxValue, SamplingPriorityValues.AutoKeep, serviceName: "test", origin: null);
+            var activeSpan = new Span(context, DateTimeOffset.UtcNow);
+            OtelThreadContextRecord.Write((IntPtr)block, activeSpan);
             pool.Return(block);
 
             var recycled = pool.Rent();

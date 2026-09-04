@@ -56,19 +56,20 @@ internal sealed unsafe class OtelThreadContextPublisher : IOtelThreadContextPubl
         }
 
         var framework = FrameworkDescription.Instance;
-        var platformSupported = IsPlatformSupported();
+        if (!IsPlatformSupported(framework))
+        {
+            Log.Warning<string, string>(
+                "OpenTelemetry thread context publication was requested but is unavailable on {OSPlatform}/{ProcessArchitecture}.",
+                framework.OSPlatform,
+                framework.ProcessArchitecture);
+            return NullOtelThreadContextPublisher.Instance;
+        }
 
         // The P/Invoke to the native tracer is only usable under automatic instrumentation, because that
         // is what rewrites the P/Invoke map to point at the deployed native library.
-        var instrumentationAttached = EnvironmentHelpersNoLogging.IsClrProfilerAttachedSafe();
-
-        if (!platformSupported || !instrumentationAttached)
+        if (!EnvironmentHelpersNoLogging.IsClrProfilerAttachedSafe())
         {
-            Log.Information<string, string, bool>(
-                "OpenTelemetry thread context publication was requested but is unavailable on {OSPlatform}/{ProcessArchitecture} (instrumentation attached: {InstrumentationAttached}).",
-                framework.OSPlatform,
-                framework.ProcessArchitecture,
-                instrumentationAttached);
+            Log.Warning("OpenTelemetry thread context publication was requested but is unavailable as instrumentation is not attached.");
 
             return NullOtelThreadContextPublisher.Instance;
         }
@@ -81,10 +82,8 @@ internal sealed unsafe class OtelThreadContextPublisher : IOtelThreadContextPubl
     /// is deliberately Linux-only: it relies on ELF thread-local storage, and its readers are themselves
     /// Linux-specific (the OpenTelemetry eBPF profiler, OBI).
     /// </summary>
-    internal static bool IsPlatformSupported()
+    internal static bool IsPlatformSupported(FrameworkDescription framework)
     {
-        var framework = FrameworkDescription.Instance;
-
         return string.Equals(framework.OSPlatform, OSPlatformName.Linux, StringComparison.OrdinalIgnoreCase) &&
                (framework.ProcessArchitecture == ProcessArchitecture.X64 ||
                 framework.ProcessArchitecture == ProcessArchitecture.Arm64);
@@ -101,12 +100,7 @@ internal sealed unsafe class OtelThreadContextPublisher : IOtelThreadContextPubl
 
         try
         {
-            OtelThreadContextRecord.Write(
-                (byte*)record.Address,
-                span.Context.TraceId128,
-                span.SpanId,
-                span.RootSpanId,
-                GetTraceFlags(span));
+            OtelThreadContextRecord.Write(record.Address, span);
         }
         catch (Exception ex)
         {
@@ -127,30 +121,12 @@ internal sealed unsafe class OtelThreadContextPublisher : IOtelThreadContextPubl
 
         try
         {
-            OtelThreadContextRecord.Invalidate((byte*)record.Address);
+            OtelThreadContextRecord.Invalidate(record.Address);
         }
         catch (Exception ex)
         {
             Disable(ex);
         }
-    }
-
-    /// <summary>
-    /// Builds the W3C trace-flags byte.
-    /// <para>
-    /// This reads the sampling decision only if one has already been made. Calling
-    /// <c>GetOrMakeSamplingDecision()</c> here - as the W3C propagator does - would force the decision at
-    /// span activation time instead of when the trace is propagated or flushed, which is an observable
-    /// change in tracer behaviour. An undecided trace is reported as not sampled.
-    /// </para>
-    /// </summary>
-    private static byte GetTraceFlags(Span span)
-    {
-        var samplingPriority = span.Context.TraceContext?.SamplingPriority ?? span.Context.SamplingPriority;
-
-        return samplingPriority is { } priority && SamplingPriorityValues.IsKeep(priority)
-                   ? (byte)1
-                   : (byte)0;
     }
 
     private ThreadRecord? GetThreadRecord()
@@ -177,6 +153,7 @@ internal sealed unsafe class OtelThreadContextPublisher : IOtelThreadContextPubl
                 return null;
             }
 
+            // The block will be returned when the ThreadRecord is destroyed
             var block = OtelThreadContextRecordPool.Instance.Rent();
 
             // Publishing the pointer is a plain store: only this thread writes this slot, and the record
