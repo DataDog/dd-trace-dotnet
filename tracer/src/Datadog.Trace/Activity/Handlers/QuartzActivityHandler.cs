@@ -32,7 +32,8 @@ namespace Datadog.Trace.Activity.Handlers
         public bool ShouldListenTo(string sourceName, string? version)
         {
             // Listen to Quartz diagnostic source
-            return sourceName.StartsWith("Quartz");
+            return sourceName.StartsWith("Quartz")
+                && Tracer.Instance.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId.Quartz);
         }
 
         public void ActivityStarted<T>(string sourceName, T activity)

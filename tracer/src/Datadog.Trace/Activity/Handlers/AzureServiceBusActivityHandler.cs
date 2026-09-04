@@ -14,7 +14,8 @@ namespace Datadog.Trace.Activity.Handlers
     internal sealed class AzureServiceBusActivityHandler : IActivityHandler
     {
         public bool ShouldListenTo(string sourceName, string? version)
-            => sourceName.StartsWith("Azure.Messaging.ServiceBus");
+            => sourceName.StartsWith("Azure.Messaging.ServiceBus")
+            && Tracer.Instance.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId.AzureServiceBus);
 
         public void ActivityStarted<T>(string sourceName, T activity)
             where T : IActivity

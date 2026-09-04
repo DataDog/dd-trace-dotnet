@@ -245,6 +245,9 @@ namespace Datadog.Trace.Activity.Handlers
                     rawTraceId: rawTraceId,
                     rawSpanId: rawSpanId);
 
+#pragma warning disable 618 // App analytics is deprecated, but still used
+                span.SetMetric(Trace.Tags.Analytics, Tracer.Instance.CurrentTraceSettings.Settings.GetIntegrationAnalyticsSampleRate(integrationId, enabledWithGlobalSetting: false));
+#pragma warning restore 618
                 Tracer.Instance.TracerManager.Telemetry.IntegrationGeneratedSpan(integrationId);
                 return Tracer.Instance.ActivateSpan(span, finishOnClose: false);
             }
