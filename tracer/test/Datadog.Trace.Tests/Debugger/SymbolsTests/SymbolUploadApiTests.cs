@@ -363,7 +363,7 @@ public class SymbolUploadApiTests
             return Task.FromResult<IApiResponse>(new TestApiResponse(_statusCode, "{}", MimeTypes.Json));
         }
 
-        public async Task<IApiResponse> PostAsync(Func<Stream, Task> writeToRequestStream, string contentType, string contentEncoding, string multipartBoundary)
+        public async Task<IApiResponse> PostAsync(Func<Stream, Task> writeToRequestStream, string contentType, string? contentEncoding, string multipartBoundary)
         {
             using var stream = new MemoryStream();
             await writeToRequestStream(stream).ConfigureAwait(false);

@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 using System.IO;
 using System.Threading.Tasks;
@@ -19,13 +21,13 @@ namespace Datadog.Trace.Agent
 
         Task<IApiResponse> PostAsync(ArraySegment<byte> bytes, string contentType);
 
-        Task<IApiResponse> PostAsync(ArraySegment<byte> bytes, string contentType, string contentEncoding);
+        Task<IApiResponse> PostAsync(ArraySegment<byte> bytes, string contentType, string? contentEncoding);
 
         Task<IApiResponse> PostAsJsonAsync<T>(T payload, MultipartCompression compression);
 
         Task<IApiResponse> PostAsJsonAsync<T>(T payload, MultipartCompression compression, JsonSerializerSettings settings);
 
-        Task<IApiResponse> PostAsync(Func<Stream, Task> writeToRequestStream, string contentType, string contentEncoding, string multipartBoundary);
+        Task<IApiResponse> PostAsync(Func<Stream, Task> writeToRequestStream, string contentType, string? contentEncoding, string multipartBoundary);
 
         Task<IApiResponse> PostAsync(MultipartFormItem[] items, MultipartCompression multipartCompression = MultipartCompression.None);
     }

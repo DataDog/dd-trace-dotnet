@@ -111,9 +111,9 @@ internal sealed class CIWriterHttpSender : ICIVisibilityProtocolWriterSender
                 {
                     request.AddHeader(EvpSubdomainHeader, payload.EventPlatformSubdomain);
                 }
-                else
+                else if (TestOptimization.Instance.Settings.ApiKey is { } apiKey)
                 {
-                    request.AddHeader(ApiKeyHeader, TestOptimization.Instance.Settings.ApiKey);
+                    request.AddHeader(ApiKeyHeader, apiKey);
                 }
             }
             catch (Exception ex)
