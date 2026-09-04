@@ -24,7 +24,6 @@ namespace Datadog.Trace.Activity.Handlers
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ActivityHandlerCommon));
         internal static readonly ConcurrentDictionary<ActivityKey, ActivityMapping> ActivityMappingById = new();
-        private static readonly IntegrationId IntegrationId = IntegrationId.OpenTelemetry;
 
         // Periodic sweep that handles two reliability cases that the hot-path Stop callback
         // cannot: 1. Activities the customer abandoned without calling Stop (their WeakReference
@@ -48,6 +47,7 @@ namespace Datadog.Trace.Activity.Handlers
         /// <summary>
         /// Handles when a new Activity is started to map it to a new <see cref="Span"/>/<see cref="Scope"/>.
         /// </summary>
+        /// <param name="integrationId">The integration that generated the Activity.</param>
         /// <param name="sourceName">The name of the Activity source</param>
         /// <param name="activity">The Activity object</param>
         /// <param name="tags">
@@ -56,10 +56,10 @@ namespace Datadog.Trace.Activity.Handlers
         /// </param>
         /// <param name="activityMapping">The mapping of Activity to its <see cref="Scope"/>.</param>
         /// <typeparam name="T">The <see cref="IActivity"/>.</typeparam>
-        public static void ActivityStarted<T>(string sourceName, T activity, OpenTelemetryTags? tags, out ActivityMapping activityMapping)
+        public static void ActivityStarted<T>(IntegrationId integrationId, string sourceName, T activity, OpenTelemetryTags? tags, out ActivityMapping activityMapping)
             where T : IActivity
         {
-            Tracer.Instance.TracerManager.Telemetry.IntegrationRunning(IntegrationId);
+            Tracer.Instance.TracerManager.Telemetry.IntegrationRunning(integrationId);
 
             // Propagate Trace and Parent Span ids
             SpanContext? parent = null;
@@ -221,10 +221,10 @@ namespace Datadog.Trace.Activity.Handlers
                 // Avoid closure allocation if we can
                 activityMapping = ActivityMappingById.GetOrAdd(
                     activityKey.Value,
-                    static (_, details) => new(new(details.activity.Instance!), CreateScopeFromActivity(details.activity, details.tags, details.parent, details.traceId, details.spanId, details.rawTraceId, details.rawSpanId)),
-                    (activity, tags, parent, traceId, spanId, rawTraceId, rawSpanId));
+                    static (_, details) => new(new(details.activity.Instance!), CreateScopeFromActivity(details.integrationId, details.activity, details.tags, details.parent, details.traceId, details.spanId, details.rawTraceId, details.rawSpanId)),
+                    (integrationId, activity, tags, parent, traceId, spanId, rawTraceId, rawSpanId));
 #else
-                activityMapping = ActivityMappingById.GetOrAdd(activityKey.Value, _ => new(new(activity.Instance!), CreateScopeFromActivity(activity, tags, parent, traceId, spanId, rawTraceId, rawSpanId)));
+                activityMapping = ActivityMappingById.GetOrAdd(activityKey.Value, _ => new(new(activity.Instance!), CreateScopeFromActivity(integrationId, activity, tags, parent, traceId, spanId, rawTraceId, rawSpanId)));
 #endif
             }
             catch (Exception ex)
@@ -233,7 +233,7 @@ namespace Datadog.Trace.Activity.Handlers
                 activityMapping = default;
             }
 
-            static Scope CreateScopeFromActivity(T activity, OpenTelemetryTags? tags, SpanContext? parent, TraceId traceId, ulong spanId, string? rawTraceId, string? rawSpanId)
+            static Scope CreateScopeFromActivity(IntegrationId integrationId, T activity, OpenTelemetryTags? tags, SpanContext? parent, TraceId traceId, ulong spanId, string? rawTraceId, string? rawSpanId)
             {
                 var span = Tracer.Instance.StartSpan(
                     activity.OperationName,
@@ -245,7 +245,10 @@ namespace Datadog.Trace.Activity.Handlers
                     rawTraceId: rawTraceId,
                     rawSpanId: rawSpanId);
 
-                Tracer.Instance.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
+#pragma warning disable 618 // App analytics is deprecated, but still used
+                span.SetMetric(Trace.Tags.Analytics, Tracer.Instance.CurrentTraceSettings.Settings.GetIntegrationAnalyticsSampleRate(integrationId, enabledWithGlobalSetting: false));
+#pragma warning restore 618
+                Tracer.Instance.TracerManager.Telemetry.IntegrationGeneratedSpan(integrationId);
                 return Tracer.Instance.ActivateSpan(span, finishOnClose: false);
             }
         }

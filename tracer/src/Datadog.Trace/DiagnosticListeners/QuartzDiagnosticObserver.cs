@@ -8,6 +8,7 @@
 using Datadog.Trace.Activity;
 using Datadog.Trace.Activity.DuckTypes;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Quartz;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.DiagnosticListeners;
@@ -28,6 +29,11 @@ internal sealed class QuartzDiagnosticObserver : DiagnosticObserver
 
     protected override void OnNext(string eventName, object arg)
     {
+        if (!Tracer.Instance.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId.Quartz))
+        {
+            return;
+        }
+
         switch (eventName)
         {
             case "Quartz.Job.Execute.Start":
@@ -45,6 +51,7 @@ internal sealed class QuartzDiagnosticObserver : DiagnosticObserver
                 if (activity?.Instance is not null)
                 {
                     QuartzCommon.EnhanceActivityMetadata(activity);
+                    Tracer.Instance.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId.Quartz);
                 }
 
                 break;

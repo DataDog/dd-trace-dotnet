@@ -89,7 +89,7 @@ public class QuartzTests : TracingIntegrationTest
                                                         .ThenBy(x => x.Error))
                               .UseFileName(filename);
 
-            await telemetry.AssertIntegrationEnabledAsync(IntegrationId.OpenTelemetry);
+            await telemetry.AssertIntegrationEnabledAsync(IntegrationId.Quartz);
         }
     }
 
