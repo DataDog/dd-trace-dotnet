@@ -10,6 +10,7 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.Util;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using VerifyXunit;
@@ -163,13 +164,13 @@ public class QuartzTests : TracingIntegrationTest
     }
 
     private static IntegrationId GetIntegrationId(string packageVersion)
-        => !string.IsNullOrEmpty(packageVersion) && new Version(packageVersion) >= new Version(4, 0, 0)
+        => !StringUtil.IsNullOrEmpty(packageVersion) && new Version(packageVersion) >= new Version(4, 0, 0)
                ? IntegrationId.Quartz
                : IntegrationId.OpenTelemetry;
 
     private static void SkipUnlessQuartzV4(string packageVersion)
     {
-        if (string.IsNullOrEmpty(packageVersion) || new Version(packageVersion) < new Version(4, 0, 0))
+        if (StringUtil.IsNullOrEmpty(packageVersion) || new Version(packageVersion) < new Version(4, 0, 0))
         {
             throw new SkipException("Quartz Activity handler configuration applies to Quartz v4 and later.");
         }
