@@ -101,6 +101,24 @@ partial class Build
             {
                 additionalArgs += $" -DCMAKE_TOOLCHAIN_FILE=./build/cmake/Universal.cmake.{(IsArm64 ? "aarch64" : "x86_64")}";
             }
+            else
+            {
+            // Glibc217SysrootCMakeArgs is threaded through here too, even though this target
+            // builds nothing glibc-2.17-specific itself: every Compile*/Build* target shares one
+            // NativeBuildDirectory, and CMake only SOURCES a toolchain file when it first
+            // configures a build directory. Whichever target configures it first therefore
+            // decides the toolchain for all of them. The sanitizer targets declare
+            // .DependsOn(BuildNativeLoader) BEFORE .DependsOn(CompileProfilerWith*Linux), so
+            // this configure runs first and, without the flag, would create a cache with no
+            // toolchain - making the sanitizer configure's own -DCMAKE_TOOLCHAIN_FILE= a silent
+            // no-op and quietly linking the ASAN/UBSAN/TSAN profiler against the build host's
+            // modern glibc. Passing the same args everywhere makes the order irrelevant.
+                // Only in the else branch: UNIVERSAL (musl) and the glibc217 sysroot are
+                // mutually exclusive, and passing two -DCMAKE_TOOLCHAIN_FILE would just let the
+                // last one win silently. The root CMakeLists.txt errors out if both are somehow
+                // requested together.
+                additionalArgs += Glibc217SysrootCMakeArgs;
+            }
 
             CMake.Value(
                 arguments: $"-DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang -B {NativeBuildDirectory} -S {RootDirectory} -DCMAKE_BUILD_TYPE={BuildConfiguration} {additionalArgs}");
@@ -116,8 +134,18 @@ partial class Build
         {
             EnsureExistingDirectory(NativeBuildDirectory);
 
+            // Glibc217SysrootCMakeArgs is threaded through here too, even though this target
+            // builds nothing glibc-2.17-specific itself: every Compile*/Build* target shares one
+            // NativeBuildDirectory, and CMake only SOURCES a toolchain file when it first
+            // configures a build directory. Whichever target configures it first therefore
+            // decides the toolchain for all of them. The sanitizer targets declare
+            // .DependsOn(BuildNativeLoader) BEFORE .DependsOn(CompileProfilerWith*Linux), so
+            // this configure runs first and, without the flag, would create a cache with no
+            // toolchain - making the sanitizer configure's own -DCMAKE_TOOLCHAIN_FILE= a silent
+            // no-op and quietly linking the ASAN/UBSAN/TSAN profiler against the build host's
+            // modern glibc. Passing the same args everywhere makes the order irrelevant.
             CMake.Value(
-                arguments: $"-DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang -B {NativeBuildDirectory} -S {RootDirectory} -DCMAKE_BUILD_TYPE={BuildConfiguration}");
+                arguments: $"-DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang -B {NativeBuildDirectory} -S {RootDirectory} -DCMAKE_BUILD_TYPE={BuildConfiguration}{Glibc217SysrootCMakeArgs}");
             CMake.Value(
                 arguments: $"--build . --parallel {Environment.ProcessorCount} --target {FileNames.NativeLoaderTests}",
                 workingDirectory: NativeBuildDirectory);
