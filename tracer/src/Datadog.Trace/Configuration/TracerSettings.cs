@@ -550,7 +550,7 @@ namespace Datadog.Trace.Configuration
                                          .WithKeys(ConfigurationKeys.PropagationBehaviorExtract)
                                          .GetAs(
                                              defaultValue: new(ExtractBehavior.Continue, "continue"),
-                                             converter: x => x.ToLowerInvariant() switch
+                                             converter: x => StringUtil.ToLowerInvariant(x) switch
                                              {
                                                  "continue" => ExtractBehavior.Continue,
                                                  "restart" => ExtractBehavior.Restart,
@@ -741,7 +741,7 @@ namespace Datadog.Trace.Configuration
             }
 
             HttpClientExcludedUrlSubstrings = !string.IsNullOrEmpty(urlSubstringSkips)
-                                                  ? TrimSplitString(urlSubstringSkips.ToUpperInvariant(), commaSeparator)
+                                                  ? TrimSplitString(StringUtil.ToUpperInvariant(urlSubstringSkips), commaSeparator)
                                                   : [];
 
             var dbmPropagationMode = config

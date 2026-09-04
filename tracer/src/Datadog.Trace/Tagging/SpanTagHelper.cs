@@ -5,6 +5,7 @@
 
 #nullable enable
 
+using System;
 using System.Diagnostics.CodeAnalysis;
 using Datadog.Trace.Util;
 
@@ -68,7 +69,7 @@ internal static class SpanTagHelper
         }
 
         var sb = StringBuilderCache.Acquire(trimmedValue.Length);
-        sb.Append(trimmedValue.ToLowerInvariant());
+        sb.Append(StringUtil.ToLowerInvariant(trimmedValue));
 
         for (var x = 0; x < sb.Length; x++)
         {

@@ -506,7 +506,7 @@ internal readonly partial struct SecurityCoordinator
             var keyForDictionary = originalKey ?? string.Empty;
             if (!keyForDictionary.Equals("cookie", StringComparison.OrdinalIgnoreCase))
             {
-                keyForDictionary = keyForDictionary.ToLowerInvariant();
+                keyForDictionary = StringUtil.ToLowerInvariant(keyForDictionary);
                 if (!headersDic.ContainsKey(keyForDictionary))
                 {
                     headersDic.Add(keyForDictionary, GetHeaderAsArray(response.Headers.GetValues(originalKey)));

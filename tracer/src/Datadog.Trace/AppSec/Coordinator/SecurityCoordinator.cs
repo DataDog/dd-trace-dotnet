@@ -231,7 +231,7 @@ internal readonly partial struct SecurityCoordinator
                 var currentKey = key ?? string.Empty;
                 if (!currentKey.Equals("cookie", StringComparison.OrdinalIgnoreCase))
                 {
-                    currentKey = currentKey.ToLowerInvariant();
+                    currentKey = StringUtil.ToLowerInvariant(currentKey);
                     var value = getHeaderValue(collection, currentKey);
 #if NETCOREAPP
                     if (!headersDic.TryAdd(currentKey, value))
