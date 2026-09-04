@@ -1,317 +1,211 @@
 # Repository Guidelines
 
-> **For AI Agents**: This file provides a navigation hub and quick reference. Linked docs in each section can be loaded when their topic is relevant to your task.
+This file is the coding-agent operating guide and task-routing reference for this repository. Read the linked guide for a specialized subsystem before changing it.
 
-## Project Structure & Module Organization
+## Agent Workflow
 
-- tracer/src — Managed tracer, analyzers, tooling.
-- tracer/test — Unit/integration tests; sample apps under test/test-applications.
-- profiler/src, profiler/test — Native profiler and tests.
-- shared — Cross-cutting native libs/utilities.
-- docs — Product and developer docs.
-- docker-compose.yml — Test dependencies (databases, brokers, etc.).
-- Solutions: `Datadog.Trace.sln`, `Datadog.Profiler.sln` (IDE).
+For non-trivial work:
 
-## Architecture Overview
+1. Identify the affected area, read its guide, and define verifiable success criteria.
+2. Keep the change narrowly scoped. Mention unrelated problems, but do not fix them unless asked.
+3. Never manually edit generated files (`.g.` in the extension). Read the file header and use the documented regeneration command.
+4. Add a regression test for bug fixes when practical.
+5. Run the smallest relevant test first, then the full affected suite for feature work when practical. Do not run every repository test by default.
+6. Report the exact verification commands, pass/fail counts, skipped tests, and anything not run. Never claim a command passed unless it was executed. Explain platform, Docker, or infrastructure constraints that prevented verification.
 
-- Auto-instrumentation: Native CLR profiler hooks the runtime (CallTarget) and loads the managed tracer.
-- Managed tracer: `Datadog.Trace` handles spans, context propagation, and library integrations.
-- Loader/home: Build outputs publish a "monitoring home"; the native loader boots the tracer from there.
-- Build system: Nuke coordinates .NET builds and CMake/vcpkg for native components.
+## Repository and Architecture
 
-## NuGet Package Architecture
+- `tracer/src` — Managed tracer, analyzers, generators, and tooling.
+- `tracer/test` — Managed unit and integration tests; samples are under `tracer/test/test-applications`.
+- `profiler/src`, `profiler/test` — Native Continuous Profiler and tests.
+- `shared` — Cross-cutting native libraries and utilities.
+- `docs` — Product and developer documentation; start with `docs/README.md`.
+- `docker-compose.yml` — Integration-test dependencies.
+- Main IDE solutions: `Datadog.Trace.sln` and `Datadog.Profiler.sln`.
 
-The `Datadog.Trace` NuGet package ships **only** the manual instrumentation API (`Datadog.Trace.Manual.dll`) — **not** auto-instrumentation code or native profiler binaries. Reference it in customer code for `Tracer.Instance.StartActive()` etc.
+Data flow and loading:
 
-The full managed tracer (`Datadog.Trace.dll`) contains all auto-instrumentation code and is delivered separately via the tracer "monitoring home" (installers, MSI, container images, or specialized packages: `Datadog.Trace.Bundle` for complete multi-runtime/multi-product distribution; `Datadog.AzureFunctions` for Azure Functions). The native profiler loads `Datadog.Trace.dll` into instrumented processes from the home.
+- The native CLR profiler hooks the runtime through CallTarget and loads the managed tracer.
+- `Datadog.Trace` creates spans, propagates context, samples traces, and instruments libraries.
+- Build outputs publish a monitoring home; the native loader boots the tracer from that home.
+- Nuke coordinates .NET builds and CMake/vcpkg native builds.
 
-## Tracer Structure
+Core managed tracer areas under `tracer/src/Datadog.Trace`:
 
-- `tracer/src/Datadog.Trace` — Core managed tracer library.
-  - `Activity` — System.Diagnostics.Activity bridge/helpers.
-  - `Agent` — Agent transport, payloads, health, serialization.
-  - `AppSec` — Application Security (WAF/RASP) components.
-  - `AspNet` — ASP.NET helpers/back-compat.
-  - `Ci` — CI Visibility (test/session/span) logic.
-  - `ClrProfiler` — Auto-instrumentation runtime (CallTarget, handlers, definitions).
-  - `Configuration` — Settings, sources, environment parsing.
-  - `ContinuousProfiler` — Hooks for CPU/wall profiler coordination.
-  - `DataStreamsMonitoring` — DSM utilities and checkpoints.
-  - `DatabaseMonitoring` — DBM helpers.
-  - `Debugger` — Dynamic Instrumentation (live debugger) plumbing.
-  - `DiagnosticListeners` — DiagnosticSource/Listener integrations.
-  - `DogStatsd` — StatsD metrics client integration.
-  - `DuckTyping` — Duck typing runtime and attributes.
-  - `ExtensionMethods` — Internal extension helpers.
-  - `FaultTolerant` — Retry/backoff/resiliency helpers.
-  - `Generated` — Generated sources (source generators output).
-  - `Headers` — HTTP header constants/parsing.
-  - `HttpOverStreams` — Socket/pipe HTTP transport to the agent.
-  - `Iast` — Interactive App Security Testing.
-  - `LibDatadog` — Native interop wrappers.
-  - `Logging` — Internal logging abstractions.
-  - `OTelMetrics` / `OpenTelemetry` — OTEL interop and exporters.
-  - `PDBs` — Symbol/PDB helpers.
-  - `PlatformHelpers` — OS/arch/runtime helpers.
-  - `Processors` — Pipelines and span processors.
-  - `Propagators` — Trace context inject/extract (Datadog, W3C, B3).
-  - `RemoteConfigurationManagement` — RCM polling/apply.
-  - `RuntimeMetrics` — Process/runtime metrics.
-  - `Sampling` — Samplers and priorities.
-  - `ServiceFabric` — Service Fabric integration helpers.
-  - `Tagging` — Strongly-typed tag sets.
-  - `Telemetry` — Product telemetry emission.
-  - `Util` — Common utilities.
-  - `Vendors` — Vendored third-party code.
-- Other tracer modules under `tracer/src`
-  - `Datadog.Trace.ClrProfiler.Managed.Loader` — Managed bootstrapper loaded by the profiler.
-  - `Datadog.Trace.Manual` — Manual instrumentation shims/APIs.
-  - `Datadog.Trace.SourceGenerators` — Compile-time code generators.
-  - `Datadog.Trace.OpenTracing` — OpenTracing bridge.
-  - `Datadog.Trace.MSBuild` — MSBuild tasks/targets.
-  - `Datadog.Trace.Tools.*` — CLI tools, analyzers, shared libs, and dd_dotnet.
-  - `Datadog.Trace.Trimming` — Trimming/linker support.
-  - `Datadog.AzureFunctions` — Azure Functions support.
-  - `Datadog.FleetInstaller` — Fleet/installer utilities.
-  - `Datadog.InstrumentedAssembly*` — Pre-instrumented assembly tooling/verification.
-  - `Datadog.AutoInstrumentation.Generator` — Instrumentation metadata generators.
-- `Datadog.Tracer.Native` — Native interop glue and packaging metadata.
+- Instrumentation: `ClrProfiler`, `DiagnosticListeners`, `DuckTyping`, and `Activity`.
+- Trace pipeline: `Agent`, `Processors`, `Propagators`, `Sampling`, and `Tagging`.
+- Configuration and diagnostics: `Configuration`, `Logging`, `Telemetry`, and `PlatformHelpers`.
+- Products: `AppSec`, `Ci`, `ContinuousProfiler`, `Debugger`, `DataStreamsMonitoring`, and `DatabaseMonitoring`.
+- Supporting components: `RuntimeMetrics`, `RemoteConfigurationManagement`, `LibDatadog`, and `HttpOverStreams`.
 
-## Build & Development
+Other modules under `tracer/src` include the managed loader, manual instrumentation API, source generators, OpenTracing bridge, MSBuild tasks, CLI tools, trimming support, Azure Functions support, Fleet Installer, and pre-instrumented assembly tooling. `Datadog.Tracer.Native` contains native interop and packaging metadata.
 
-**Quick start:**
-- Build: `./tracer/build.sh` (Linux/macOS) or `.\tracer\build.cmd` (Windows)
-- Unit tests: `./tracer/build.sh BuildAndRunManagedUnitTests`
-- Integration tests: `BuildAndRunIntegrationTests`
+### NuGet Package Architecture
 
-- **`tracer/README.md`** — Complete development setup guide (VS requirements, Docker, Dev Containers, platform-specific build commands, and Nuke targets)
+The `Datadog.Trace` NuGet package ships only the manual instrumentation API, `Datadog.Trace.Manual.dll`; it does not ship auto-instrumentation code or native profiler binaries. Customer code references it for APIs such as `Tracer.Instance.StartActive()`.
+
+The full `Datadog.Trace.dll` contains auto-instrumentation code and is delivered through the monitoring home, installers, or specialized packages such as `Datadog.Trace.Bundle` and `Datadog.AzureFunctions`. The native profiler loads this assembly from the monitoring home.
+
+## Build and Test Commands
+
+Run commands from the repository root. Unit and integration test targets require `BuildTracerHome` to have been built first. See `tracer/README.md` for prerequisites, Docker and dev-container workflows, filtered tests, and additional Nuke targets.
+
+### Windows
+
+```powershell
+.\tracer\build.cmd Clean BuildTracerHome
+.\tracer\build.cmd BuildAndRunManagedUnitTests RunNativeUnitTests
+.\tracer\build.cmd BuildAndRunIntegrationTests
+```
+
+### Linux (recommended Docker workflow)
+
+```bash
+./tracer/build_in_docker.sh Clean BuildTracerHome
+./tracer/build_in_docker.sh BuildAndRunManagedUnitTests
+./tracer/build_in_docker.sh BuildAndRunIntegrationTests
+```
+
+### macOS
+
+```bash
+./tracer/build.sh Clean BuildTracerHome
+./tracer/build.sh BuildAndRunManagedUnitTests RunNativeUnitTests
+./tracer/build.sh BuildAndRunIntegrationTests
+```
 
 ## Creating Integrations
 
-**Quick reference:**
-- Location: `tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/<Area>/<Integration>.cs`
-- Add `[InstrumentMethod]` attribute with assembly/type/method details and version range
-- Implement `OnMethodBegin` and `OnMethodEnd`/`OnAsyncMethodEnd` handlers
-- Use duck typing constraints (`where TReq : IMyShape, IDuckType`) or `obj.DuckCast<IMyShape>()` for third-party types
-- Tests: Add under `tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests` with samples in `tracer/test/test-applications/integrations`
-- Generate boilerplate (GUI): `./tracer/build.ps1 RunInstrumentationGenerator`
-- Generate boilerplate (CLI): `./tracer/build.ps1 RunInstrumentationGeneratorCli --assembly-path <dll> --type-name <type> --method-name <method>`
+- Add integrations under `tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/<Area>`.
+- Add `[InstrumentMethod]` with the assembly, type, method, and supported version range.
+- Implement `OnMethodBegin` and `OnMethodEnd` or `OnAsyncMethodEnd` handlers.
+- Use constrained duck types or `DuckCast<T>()` for third-party types.
+- Add tests under `tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests` and samples under `tracer/test/test-applications/integrations`.
 
-- **`docs/development/AutomaticInstrumentation.md`** — Complete guide to creating integrations, CallTarget wiring, testing strategies, package version configuration, and CI testing
-- **`docs/development/InstrumentationGenerator.md`** — GUI and CLI instrumentation generator tools, Nuke integration, duck typing flags, JSON output, and two-tool workflow with dotnet-inspect
-- **`docs/development/DuckTyping.md`** — Duck typing patterns, proxy types, binding attributes, best practices, and performance benchmarks
+Read `docs/development/AutomaticInstrumentation.md`, `docs/development/InstrumentationGenerator.md`, and `docs/development/DuckTyping.md` before implementing an integration. Use `docs/development/for-ai/InstrumentationGenerator-CLI.md` for the CLI schemas and error behavior.
 
-## Azure Functions & Serverless
+Generate CLI boilerplate from the repository root:
 
-**Quick reference:**
-- **Setup**: Use Azure App Services Site Extension on Windows Premium/Elastic Premium/Dedicated plans; use `Datadog.AzureFunctions` NuGet package for Linux Consumption/Container Apps
-- **Tests**: `BuildAndRunWindowsAzureFunctionsTests` Nuke target; samples under `tracer/test/test-applications/azure-functions/`
-- **External Repos**: [Azure Functions Host](https://github.com/Azure/azure-functions-host) and [.NET Worker](https://github.com/Azure/azure-functions-dotnet-worker)
+```powershell
+# Windows
+.\tracer\build.cmd RunInstrumentationGeneratorCli --assembly-path <dll> --type-name <type> --method-name <method>
+```
 
-- **`docs/development/AzureFunctions.md`** — Setup, testing, instrumentation specifics, and debugging guide
+```bash
+# Linux/macOS
+./tracer/build.sh RunInstrumentationGeneratorCli --assembly-path <dll> --type-name <type> --method-name <method>
+```
 
-- **`docs/development/for-ai/AzureFunctions-Architecture.md`** — Deep dive into Azure Functions Host and .NET Worker architecture, gRPC protocol, and instrumentation hook points
+The GUI generator is primarily a Windows workflow:
 
-- **`docs/development/AwsLambdaIntegrationTests.md`** — AWS Lambda integration test setup, architecture, and test patterns
+```powershell
+.\tracer\build.ps1 RunInstrumentationGenerator
+```
+
+## Specialized Task Routing
+
+### Azure Functions and Serverless
+
+- Use the Azure App Services Site Extension on Windows Premium, Elastic Premium, and Dedicated plans; use the `Datadog.AzureFunctions` NuGet package for Linux Consumption and Container Apps.
+- Read `docs/development/AzureFunctions.md` and `docs/development/for-ai/AzureFunctions-Architecture.md` before changing Azure Functions instrumentation.
+- Samples are under `tracer/test/test-applications/azure-functions`.
+- Run the Windows test target with `.\tracer\build.cmd BuildAndRunWindowsAzureFunctionsTests`.
+- Read `docs/development/AwsLambdaIntegrationTests.md` for AWS Lambda integration tests.
+- Consult the upstream [Azure Functions Host](https://github.com/Azure/azure-functions-host) and [.NET Worker](https://github.com/Azure/azure-functions-dotnet-worker) repositories when host or worker behavior matters.
+
+### Debugger and Dynamic Instrumentation
+
+Debugger code inspects live customer objects. Before changing capture, expression evaluation, Exception Replay, Code Origin, or symbol resolution, read `docs/development/DebuggerSafetyBoundaries.md`. Avoid paths that load customer types early, trigger type initializers, instantiate attributes, or execute getters, enumerators, exception overrides, or `ToString()`.
+
+For general local debugging, read `docs/development/TracerDebugging.md`. For querying spans and logs during investigations, read `docs/development/QueryingDatadogAPIs.md`.
+
+### Configuration and SDK Maintenance
+
+- Treat `tracer/src/Datadog.Trace/Configuration/supported-configurations.yaml` as the source of truth for `DD_*` and `OTEL_*` configuration metadata, aliases, deprecations, and defaults.
+- Follow `docs/development/Configuration/AddingConfigurationKeys.md` when adding configuration keys.
+- Follow `docs/development/UpdatingTheSdk.md` for SDK updates.
+- Check `docs/RUNTIME_SUPPORT_POLICY.md` before making runtime-compatibility assumptions.
 
 ## Coding Standards
 
-**C# style:**
-- See `.editorconfig` (auto-enforced)
-- Add missing `using` directives instead of fully-qualified type names
-- Use modern C# syntax, but avoid features requiring types unavailable in older runtimes (e.g., no `ValueTuple` syntax for .NET Framework 4.6.1)
-  - For instance, prefer `is not null` to `!= null`
-- Prefer modern collection expressions (`[]`)
-- Use `StringUtil.IsNullOrEmpty()` instead of `string.IsNullOrEmpty()` for compatibility across all supported runtimes
-- StyleCop: see `tracer/stylecop.json`; address warnings before pushing.
-- Never manually edit generated files (`.g.` in the file extension). Read the file header for regeneration instructions instead.
+### C#
 
-**C/C++ style:**
-- See `.clang-format`; keep consistent naming
+- Follow `.editorconfig` and `tracer/stylecop.json`; address analyzer and StyleCop warnings.
+- Add `using` directives instead of fully qualified type names.
+- Prefer modern C# syntax and collection expressions (`[]`), but do not use APIs or language constructs whose required types are unavailable on supported target frameworks. For example, avoid `ValueTuple` syntax in .NET Framework 4.6.1 code.
+- Prefer `is not null` to `!= null`.
+- In compatible tracer projects where the helper is available, use `StringUtil.IsNullOrEmpty()` for multi-target compatibility; do not assume every repository project exposes it.
 
-## Windows Command Line Best Practices
+### C and C++
 
-**CRITICAL: Avoid `>nul` and `2>nul` redirections on Windows**
-
-On Windows, redirecting to `nul` can create a literal file named "nul" instead of redirecting to the NUL device. These files are extremely difficult to delete and cause repository issues.
-
-**Problem commands:**
-```cmd
-findstr /s /i "pattern" "*.cpp" "*.h" 2>nul
-command 2>nul | head -20
-any-command >nul
-```
-
-**Safe alternatives:**
-1. **Don't suppress errors** - Let error output show naturally
-2. **Use full device path**: `2>\\.\NUL` (works reliably but verbose)
-3. **Use PowerShell** for cross-platform compatibility where applicable
-4. **Prefer dedicated tools** over piped bash commands (use Grep, Glob, Read tools instead)
-
-**Examples of safe patterns:**
-```cmd
-# Bad: Creates nul file
-findstr /s /i "DD_TRACE" "*.cpp" 2>nul
-
-# Good: Let errors show
-findstr /s /i "DD_TRACE" "*.cpp"
-
-# Good: Use full device path if suppression is essential
-findstr /s /i "DD_TRACE" "*.cpp" 2>\\.\NUL
-```
+Follow `.clang-format` and the surrounding naming conventions.
 
 ## Logging Guidelines
 
-Use clear, customer-facing terminology in log messages to avoid confusion. `Profiler` is ambiguous — it can refer to the .NET profiling APIs we use internally or the Continuous Profiler product.
+Use unambiguous customer-facing terms in high-level logs:
 
-**Customer-facing terminology (high-level logs):**
-- **Datadog SDK** — When disabling the entire product or referring to the whole monitoring solution
-  - Example: `"The Datadog SDK has been disabled"`
-- **Instrumentation** or **Instrumentation component** — For the native tracer auto-instrumentation
-  - Example: `"Instrumentation has been disabled"` or `"The Instrumentation component failed to initialize"`
-- **Continuous Profiler** — Always use full name for the profiling product
-  - Example: `"The Continuous Profiler has been disabled"`
-- **Datadog.Trace.dll** — For the managed tracer assembly (avoid "managed profiler")
-  - Example: `"Unable to initialize: Datadog.Trace.dll was not yet loaded into the App Domain"`
+- **Datadog SDK** for the complete monitoring solution.
+- **Instrumentation** or **Instrumentation component** for native tracer auto-instrumentation.
+- **Continuous Profiler** for the profiling product.
+- **Datadog.Trace.dll** for the managed tracer assembly; do not call it the managed profiler.
 
-**Internal/technical naming (still valid):**
-- Native loader, Native tracer, Managed tracer loader, Managed tracer, Libdatadog, Continuous Profiler
-- `CorProfiler` / `ICorProfiler` / `COR Profiler` for runtime components
+Internal technical names such as native loader, native tracer, managed tracer loader, managed tracer, Libdatadog, and `CorProfiler` remain valid in technical contexts.
 
-### Log Argument Formatting
+Do not allocate numeric strings in log calls:
 
-Never use `ToString()` on numeric types in log calls - use generic log methods instead:
 ```csharp
-// BAD - allocates a string unnecessarily
+// Bad
 Log.Debug(ex, "Error (attempt {Attempt})", (attempt + 1).ToString());
 
-// GOOD - uses generic method, no allocation
+// Good
 Log.Debug<int>(ex, "Error (attempt {Attempt})", attempt + 1);
 ```
 
-### Log Levels for Retry Operations
+For retries, log intermediate expected failures at Debug and the final exhausted or non-retryable failure at Error.
 
-When implementing retry logic, use appropriate log levels:
-- **Debug**: Intermediate retry attempts (transient errors are expected)
-- **Error**: Final failure after all retries exhausted
-- **Error**: Non-retryable errors (e.g., 400 Bad Request indicates a bug)
+Use `Log.ErrorSkipTelemetry` for expected environmental or transient errors, such as endpoint unavailability. Do not use it for HTTP 400 responses, bugs, or outer catch blocks that only receive unexpected exceptions after inner methods handled expected failures.
 
-### ErrorSkipTelemetry Usage
+Final network-failure messages must include the endpoint, number of attempts, and a troubleshooting-documentation link.
 
-`Log.ErrorSkipTelemetry` logs locally but does NOT send to Datadog telemetry. Use it for:
-- **Expected environmental errors**: Network connectivity issues, endpoint unavailability
-- **Transient failures**: Errors that are expected in production and self-resolve
+## Performance and Testing
 
-**Do NOT use ErrorSkipTelemetry for:**
-- Errors in outer catch blocks that would only catch unexpected exceptions
-- HTTP 400 Bad Request (indicates a bug in our payload)
-- Errors that indicate bugs in the tracer code
+The tracer runs inside customer processes. Treat startup code and hot paths as performance-critical, including loader initialization, static constructors, configuration loading, integration registration, span creation, tagging, propagation, sampling, and instrumentation callbacks.
 
-**Understanding code flow is critical**: If inner methods already handle expected errors, outer catch blocks should use `Log.Error` since they would only catch unexpected exceptions (bugs).
+In these paths:
 
-### Error Messages for Network Failures
+- Use `readonly struct` providers with generic interface constraints when they avoid boxing.
+- Avoid interpolated logging and `params` array allocations; use format strings and fixed-arity overloads.
+- Measure or benchmark meaningful performance-sensitive changes when practical.
 
-When logging final failures for network operations, include:
-1. The endpoint that failed
-2. Number of attempts made
-3. Link to troubleshooting documentation
+Do not introduce interfaces, provider structs, or generic constraints mechanically in ordinary code. Use them where dependencies need substitution or where a demonstrated critical path benefits.
 
-## Performance Guidelines
+Tests use xUnit for managed code and GoogleTest for native code. Prefer inline assertions such as `SomeMethod().Should().Be(expected)` and `[Theory]` data over duplicated `[Fact]` tests. Many integration tests require Docker services from `docker-compose.yml`.
 
-The tracer runs in-process with customer applications and must have minimal performance impact.
+For CI failures and smoke tests, use `docs/development/CI/TroubleshootingCIFailures.md` and `docs/development/CI/RunSmokeTestsLocally.md`.
 
-**Critical code paths:**
-1. **Bootstrap/Startup Code**: Managed loader, tracer initialization, static constructors, configuration loading, integration registration
-2. **Hot Paths**: Span creation/tagging, context propagation, sampling decisions, instrumentation callbacks, request/response pipeline
+## Shell and Command-Line Safety
 
-**Key patterns:**
-- **Zero-Allocation Provider Structs**: Use `readonly struct` with generic type parameters and interface constraints to avoid boxing
-  - Example: `EnvironmentVariableProvider` in managed loader
-- **Avoid Allocation in Logging**: Use format strings (`Log("value: {0}", x)`) instead of interpolation (`Log($"value: {x}")`)
-- **Avoid params Array Allocations**: Provide overloads for common cases (0, 1, 2 args)
+Use syntax for the active shell; do not mix shell dialects:
 
-## Debugger / Dynamic Instrumentation Safety
+- `cmd.exe`: `>NUL` or `2>NUL`
+- PowerShell: `> $null` or `2> $null`
+- Bash, Git Bash, WSL, Linux, and macOS: `>/dev/null` or `2>/dev/null`
 
-Debugger code runs inside customer processes while inspecting live customer objects. Before changing debugger capture, expression evaluation, Exception Replay, Code Origin, or symbol-resolution paths, check:
+In a Unix-like shell, `>nul` can create an ordinary file instead of targeting a null device. Prefer retaining diagnostics unless suppression is necessary. When available, prefer structured file-reading and repository-search capabilities over complex shell pipelines.
 
-- **`docs/development/DebuggerSafetyBoundaries.md`** — guidance for reflection paths that may resolve customer assemblies/types/members early, trigger type initializers, instantiate attributes, or execute customer code such as getters, enumerators, exception overrides, or `ToString()`.
+## Commits, Pull Requests, and Security
 
-## Testing
+- Use imperative commit messages with an optional area prefix such as `[Debugger]` or `[SymDB]`.
+- Follow `docs/CONTRIBUTING.md` and `.github/pull_request_template.md`; explain what and why, and include how only when it is non-obvious.
+- Follow `docs/development/GitHubActionsSecurity.md` for action allowlisting and SHA pinning.
+- Do not commit secrets. Use environment variables for `DD_*` credentials, and do not put credentials in `.env`.
+- Use the SDK selected by `global.json`; confirm it with `dotnet --version`.
 
-**Frameworks:** xUnit (managed), GoogleTest (native)
-**Test style:** Inline results in assertions: `SomeMethod().Should().Be(expected)`
-**Docker:** Many integration tests require Docker; services in `docker-compose.yml`
+## Datadog-Specific Glossary
 
-**Testing patterns:**
-- Extract interfaces for environment/filesystem dependencies (e.g., `IEnvironmentVariableProvider`)
-- Use struct implementations with generic constraints for zero-allocation production code
-  - Example: Managed loader tests use `MockEnvironmentVariableProvider` (see `tracer/test/Datadog.Trace.Tests/ClrProfiler/Managed/Loader/`)
-- Prefer using `[Theory]` with input data rather than duplicating tests
-
-- **`docs/development/TracerDebugging.md`** — Local debugging techniques, launchSettings.json configuration, $(SolutionDir) path issues, IDE-specific tips, and troubleshooting common tracer loading problems
-
-## Commit & Pull Request Guidelines
-
-- Commits: imperative mood, optional `[Area]` prefix (e.g. `[Debugger]`, `[SymDB]`). Keep messages concise — avoid full diffs or extensive explanation.
-- PRs: follow [`.github/pull_request_template.md`](.github/pull_request_template.md). Keep descriptions concise — focus on "what" and "why", brief "how" only when complex.
-
-## Documentation References
-
-**Core docs:**
-- `docs/README.md` — Overview and links
-- `docs/CONTRIBUTING.md` — Contribution process and external PR policies
-- `tracer/README.md` — Dev setup, platform requirements, and build targets
-- `docs/RUNTIME_SUPPORT_POLICY.md` — Supported runtimes
-
-**Development guides:**
-- `docs/development/AutomaticInstrumentation.md` — Creating integrations
-- `docs/development/InstrumentationGenerator.md` — GUI and CLI instrumentation generator tools
-- `docs/development/for-ai/InstrumentationGenerator-CLI.md` — LLM reference for the CLI (commands, JSON schemas, error handling)
-- `docs/development/DuckTyping.md` — Duck typing guide
-- `docs/development/TracerDebugging.md` — Local debugging, IDE configuration, path issues, and troubleshooting
-- `docs/development/AzureFunctions.md` — Azure Functions integration
-- `docs/development/for-ai/AzureFunctions-Architecture.md` — Azure Functions architecture deep dive
-- `docs/development/AwsLambdaIntegrationTests.md` — AWS Lambda integration tests
-- `docs/development/DebuggerSafetyBoundaries.md` — Debugger reflection/type-loading and customer-code execution safety guide
-- `docs/development/UpdatingTheSdk.md` — SDK updates
-- `docs/development/QueryingDatadogAPIs.md` — Querying Datadog APIs for debugging (spans, logs)
-- `docs/development/GitHubActionsSecurity.md` — GitHub Actions SHA-pinning policy, action allowlist, and reviewer checklist
-
-**CI & Testing:**
-- `docs/development/CI/TroubleshootingCIFailures.md` — Investigating build/test failures in Azure DevOps
-- `docs/development/CI/RunSmokeTestsLocally.md` — Running smoke tests locally
-
-## Configuration
-
-- **`tracer/src/Datadog.Trace/Configuration/supported-configurations.yaml`** — Human-readable config metadata, product categorization, key aliases, deprecations, and default values for all `DD_*` and `OTEL_*` environment variables (also consumed by source generators).
-
-- **`docs/development/Configuration/AddingConfigurationKeys.md`** — Step-by-step guide for adding config keys: YAML definitions, source generators, aliases, telemetry normalization, and related analyzers
-
-## Security & Configuration
-
-- Do not commit secrets; prefer env vars (`DD_*`). `.env` should not contain credentials.
-- Use `global.json` SDK; confirm with `dotnet --version`.
-
-## Glossary
-
-Common acronyms used in this repository:
-
-- **AAS** — Azure App Services
-- **AAP** — App and API Protection (formerly ASM, previously AppSec)
-- **AOT** — Ahead-of-Time (compilation)
-- **APM** — Application Performance Monitoring
-- **ASM** — see AAP
-- **CI** — Continuous Integration / CI Visibility
-- **CP** — Continuous Profiler
-- **DBM** — Database Monitoring
-- **DI** — Dynamic Instrumentation
-- **DSM** — Data Streams Monitoring
-- **IAST** — Interactive Application Security Testing
-- **JIT** — Just-in-Time (compiler)
-- **OTEL** — OpenTelemetry
-- **R2R** — ReadyToRun
-- **RASP** — Runtime Application Self-Protection
-- **RCM** — Remote Configuration Management
-- **RID** — Runtime Identifier
-- **TFM** — Target Framework Moniker
-- **WAF** — Web Application Firewall
+- **AAP / ASM** — App and API Protection, formerly ASM/AppSec.
+- **CP** — Continuous Profiler.
+- **DI** — Dynamic Instrumentation.
+- **DSM** — Data Streams Monitoring.
+- **RASP** — Runtime Application Self-Protection.
+- **RCM** — Remote Configuration Management.
