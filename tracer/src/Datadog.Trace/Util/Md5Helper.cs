@@ -8,6 +8,7 @@
 using System;
 using System.Security.Cryptography;
 using System.Text;
+using Datadog.Trace.SourceGenerators;
 
 namespace Datadog.Trace.Util;
 
@@ -51,10 +52,21 @@ internal static class Md5Helper
 #else
     /// <summary>
     /// Compute the MD5 hash of the input by first converting it to UTF8.
+    /// On .NET Framework with FIPS enforcement enabled, returns the first 16 bytes of SHA-256 instead.
     /// The result is returned from the method
     /// </summary>
-    /// <returns>The MD5 hash of the encoded input</returns>
+    /// <returns>A 16-byte hash of the encoded input</returns>
     public static byte[] ComputeMd5Hash(string input)
+    {
+#if NETFRAMEWORK
+        return ComputeMd5Hash(input, CryptoConfig.AllowOnlyFipsAlgorithms);
+#else
+        return ComputeMd5Hash(input, useFipsCompliantAlgorithm: false);
+#endif
+    }
+
+    [TestingAndPrivateOnly]
+    internal static byte[] ComputeMd5Hash(string input, bool useFipsCompliantAlgorithm)
     {
         // 1. Encode input to UTF8
         // arbitrary threshold for stackalloc
@@ -66,9 +78,19 @@ internal static class Md5Helper
             var encodeCount = EncodingHelpers.Utf8NoBom.GetBytes(input, charIndex: 0, charCount: input.Length, pooledArray, byteIndex: 0);
 
             // 2. Take MD5 of encoded input
-            using var md5 = MD5.Create();
-            var hash = md5.ComputeHash(pooledArray, offset: 0, count: encodeCount);
-            return hash;
+            // MD5 is not available on .NET Framework when the process enforces FIPS-approved
+            // algorithms. In that case, use the first 16 bytes of SHA-256 so callers retain the
+            // same output size without failing exception processing or feature flag evaluation.
+            using HashAlgorithm algorithm = useFipsCompliantAlgorithm ? SHA256.Create() : MD5.Create();
+            var hash = algorithm.ComputeHash(pooledArray, offset: 0, count: encodeCount);
+            if (hash.Length == 16)
+            {
+                return hash;
+            }
+
+            var truncatedHash = new byte[16];
+            Buffer.BlockCopy(hash, srcOffset: 0, truncatedHash, dstOffset: 0, count: truncatedHash.Length);
+            return truncatedHash;
         }
         finally
         {
