@@ -144,11 +144,11 @@ namespace Datadog.Trace.AspNet
             if (url is not null)
             {
                 var path = UriHelpers.GetCleanUriPath(url, httpRequest.ApplicationPath);
-                return $"{httpRequest.HttpMethod.ToUpperInvariant()} {path.ToLowerInvariant()}";
+                return $"{StringUtil.ToUpperInvariant(httpRequest.HttpMethod)} {StringUtil.ToLowerInvariant(path)}";
             }
             else
             {
-                return $"{httpRequest.HttpMethod.ToUpperInvariant()}";
+                return $"{StringUtil.ToUpperInvariant(httpRequest.HttpMethod)}";
             }
         }
 

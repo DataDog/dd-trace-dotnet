@@ -62,7 +62,7 @@ internal sealed class JenkinsEnvironmentValues<TValueProvider>(TValueProvider va
             var jobNameParts = jobNameNoBranch.Split('/');
             if (jobNameParts.Length > 1 && jobNameParts[1].Contains("="))
             {
-                var configsStr = jobNameParts[1].ToLowerInvariant().Trim();
+                var configsStr = StringUtil.ToLowerInvariant(jobNameParts[1]).Trim();
                 var configsKeyValue = configsStr.Split(',');
                 foreach (var configKeyValue in configsKeyValue)
                 {
