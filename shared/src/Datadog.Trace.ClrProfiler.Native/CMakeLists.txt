@@ -14,10 +14,10 @@ endif()
 
 project("Datadog.Trace.ClrProfiler.Native" VERSION 3.53.0)
 
-if (UNIVERSAL)
-   find_package(GlibcCompat REQUIRED)
-   message(STATUS "Glibc Compat objects")
-endif()
+# glibc-compat is now defined once at the root CMakeLists.txt (needed by more than one
+# subdirectory when USE_GLIBC217_SYSROOT is also in play - see
+# docs/development/rfc-linux-x64-build-host.md) - this file only references the resulting
+# target further down, it doesn't call find_package(GlibcCompat) itself anymore.
 
 # ******************************************************
 # Environment detection
@@ -124,7 +124,7 @@ if (UNIVERSAL)
 elseif (ISMACOS)
     add_compile_options(-stdlib=libc++ -DMACOS -Wno-pragma-pack -Wno-deprecated-declarations -fvisibility=hidden -Wno-deprecated-this-capture)
 else()
-    add_compile_options(-stdlib=libstdc++)
+    add_compile_options(${DD_CXX_STDLIB_COMPILE_OPTIONS})
 endif()
 
 if(ISLINUX)
@@ -253,4 +253,25 @@ if (UNIVERSAL)
         glibc-compat
         -flto
         )
+endif()
+
+# The glibc217 counterpart of the UNIVERSAL block above - never both, they're mutually
+# exclusive (see the root CMakeLists.txt guard). Backs the __libc_single_threaded references
+# devtoolset-11's libstdc++ headers emit once our sys/single_threaded.h stub satisfies their
+# __has_include check; glibc 2.17 has no such symbol, so without this the loader fails to
+# link: "ld.lld-16: error: undefined symbol: __libc_single_threaded". See
+# shared/src/glibc217-compat/glibc217-compat.c. No -flto here: that's an artifact of the
+# Universal/musl path, not something this path needs.
+if (USE_GLIBC217_SYSROOT)
+    # Linked into the .static archive, NOT just the shared lib: linking an OBJECT library into
+    # a STATIC one archives its object files, so every consumer of
+    # Datadog.Trace.ClrProfiler.Native.static.a inherits the definition. Attaching it to the
+    # shared target instead (mirroring the UNIVERSAL block above, which can get away with it
+    # because musl has no __libc_single_threaded at all) leaves anything that links the archive
+    # directly still broken - concretely Datadog.Trace.ClrProfiler.Native.Tests, which failed
+    # with "undefined symbol: __libc_single_threaded ... referenced by
+    # runtimeid_store.cpp.o ... in archive Datadog.Trace.ClrProfiler.Native.static.a" while the
+    # loader .so itself linked fine. This matches how the tracer and profiler wire it up.
+    target_link_libraries("Datadog.Trace.ClrProfiler.Native.static" glibc217-compat)
+    add_dependencies("Datadog.Trace.ClrProfiler.Native.static" glibc217-compat)
 endif()

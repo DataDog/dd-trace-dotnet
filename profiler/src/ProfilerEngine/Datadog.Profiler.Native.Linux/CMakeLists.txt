@@ -4,6 +4,17 @@
 
 project("Datadog.Profiler.Native.Linux" VERSION 3.53.0)
 
+# USE_GLIBC217_SYSROOT (Approach A of docs/development/rfc-linux-x64-build-host.md)
+# deliberately does NOT link the ORIGINAL glibc-compat, despite that shim existing for a
+# similar-sounding "compiled with newer headers" reason under the Universal build. Verified
+# in CI: glibc-compat.c's strerror_r override uses the POSIX/XSI int-returning signature,
+# which hard-conflicts with real glibc's _GNU_SOURCE-declared char*-returning strerror_r
+# ("conflicting types for 'strerror_r'") - it was written for musl, which only has the XSI
+# variant. Separately verified empirically (see the RFC) that stat/fstat/lstat/ceil/pow/malloc
+# all already resolve to the correct old glibc symbol versions on this path with no shim
+# active at all. It DOES link a separate, purpose-built glibc217-compat (below) for a
+# different, real problem: see shared/src/glibc217-compat/glibc217-compat.c.
+
 option(RUN_ASAN "Build with Clang Undefined-Behavior Sanitizer" OFF)
 option(RUN_UBSAN "Build with Clang Undefined-Behavior Sanitizer" OFF)
 option(RUN_TSAN "Build with Clang Thread Sanitizer" OFF)
@@ -57,7 +68,9 @@ if (RUN_TSAN)
 endif()
 
 if(ISLINUX)
-    add_compile_options(-stdlib=libstdc++ -DLINUX -Wno-pragmas)
+    # DD_CXX_STDLIB_COMPILE_OPTIONS is empty under USE_GLIBC217_SYSROOT - see the root
+    # CMakeLists.txt for why.
+    add_compile_options(${DD_CXX_STDLIB_COMPILE_OPTIONS} -DLINUX -Wno-pragmas)
 endif()
 
 if (BIT64)
@@ -172,6 +185,11 @@ target_link_libraries(${PROFILER_STATIC_LIB_NAME}
 )
 
 add_dependencies(${PROFILER_STATIC_LIB_NAME} libdatadog-lib libunwind-lib coreclr spdlog-headers PPDB)
+
+if (USE_GLIBC217_SYSROOT)
+    target_link_libraries(${PROFILER_STATIC_LIB_NAME} glibc217-compat)
+    add_dependencies(${PROFILER_STATIC_LIB_NAME} glibc217-compat)
+endif()
 
 # ******************************************************
 # Define shared target
