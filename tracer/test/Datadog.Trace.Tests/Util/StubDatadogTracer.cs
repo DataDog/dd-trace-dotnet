@@ -3,15 +3,12 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-#nullable enable
-
 using System;
 using System.Collections.Generic;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Schema;
 using Datadog.Trace.Configuration.Telemetry;
-using Datadog.Trace.Sampling;
 
 namespace Datadog.Trace.Tests.Util;
 
@@ -23,21 +20,11 @@ internal class StubDatadogTracer : IDatadogTracer
     }
 
     public StubDatadogTracer(TracerSettings settings)
-    : this(settings, traceSampler: null)
-    {
-    }
-
-    public StubDatadogTracer(ITraceSampler traceSampler)
-    : this(new TracerSettings(NullConfigurationSource.Instance), traceSampler)
-    {
-    }
-
-    public StubDatadogTracer(TracerSettings settings, ITraceSampler? traceSampler)
     {
         DefaultServiceName = "stub-service";
         Settings = settings;
         var namingSchema = new NamingSchema(SchemaVersion.V0, false, false, DefaultServiceName, null, null);
-        PerTraceSettings = new PerTraceSettings(traceSampler, null, namingSchema, MutableSettings.CreateWithoutDefaultSources(Settings, new ConfigurationTelemetry()));
+        PerTraceSettings = new PerTraceSettings(null, null, namingSchema, MutableSettings.CreateWithoutDefaultSources(Settings, new ConfigurationTelemetry()));
     }
 
     public string DefaultServiceName { get; }
