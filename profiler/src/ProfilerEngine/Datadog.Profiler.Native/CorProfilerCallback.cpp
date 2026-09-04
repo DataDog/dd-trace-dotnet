@@ -880,6 +880,20 @@ bool CorProfilerCallback::SetConfiguration(shared::StableConfig::SharedConfig co
         if (config.profilingEnabled == shared::StableConfig::ProfilingEnabled::ProfilingDisabled)
         {
             Log::Info("Profiler is disabled via Stable Configuration");
+#ifdef ARM64
+            // On ARM64 the Continuous Profiler is gated behind DD_INTERNAL_PROFILING_ENABLED_ARM64 (default off).
+            // When managed activation is enabled (e.g. Single Step Instrumentation), the enablement decision is
+            // computed in the managed layer and arrives here as a plain "disabled", so the hint emitted in
+            // Configuration::ExtractEnablementStatus is bypassed. Surface it here too, in the profiler's own log,
+            // so the reason is discoverable where customers look when profiling does not start.
+            bool arm64ProfilingEnabled = false;
+            shared::TryParseBooleanEnvironmentValue(
+                shared::GetEnvironmentValue(EnvironmentVariables::EnableProfilerArchitectureArm64), arm64ProfilingEnabled);
+            if (!arm64ProfilingEnabled)
+            {
+                Log::Info("Continuous Profiler is not enabled for ARM64 architecture. If you want to use it, set the environment variable DD_INTERNAL_PROFILING_ENABLED_ARM64 to 1.");
+            }
+#endif
             return true;
         }
         else

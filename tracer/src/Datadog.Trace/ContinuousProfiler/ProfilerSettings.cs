@@ -8,12 +8,15 @@
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
+using Datadog.Trace.Logging;
 using Datadog.Trace.SourceGenerators;
 
 namespace Datadog.Trace.ContinuousProfiler;
 
 internal sealed class ProfilerSettings
 {
+    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ProfilerSettings));
+
     private readonly bool _isManagedActivationEnabled;
 
     public ProfilerSettings(IConfigurationSource config, IConfigurationTelemetry telemetry)
@@ -81,6 +84,7 @@ internal sealed class ProfilerSettings
             {
                 ProfilerState = ProfilerState.Disabled;
                 telemetry.Record(ConfigurationKeys.Profiler.ProfilingEnabled, "false", recordValue: true, ConfigurationOrigins.Calculated);
+                Log.Warning("The Continuous Profiler was requested but is disabled on Linux ARM64: set {Setting}=1 to enable it. On ARM64 the Continuous Profiler is gated behind this setting (default off).", ConfigurationKeys.ContinuousProfiler.InternalProfilingEnabledArm64);
             }
         }
     }
