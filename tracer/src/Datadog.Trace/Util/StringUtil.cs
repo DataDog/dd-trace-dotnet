@@ -6,6 +6,7 @@
 #nullable enable
 
 using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
 using System.Runtime.CompilerServices;
 
 // ReSharper disable once CheckNamespace - Putting this in system so we can do simple drop-in replacement
@@ -38,4 +39,42 @@ internal static class StringUtil
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool IsNullOrWhiteSpace([NotNullWhen(false)] string? value)
         => string.IsNullOrWhiteSpace(value);
+
+#if NETFRAMEWORK
+    /// <summary>
+    /// Non-allocating alternative to <paramref name="value"/>.ToUpperInvariant(). May return the same
+    /// instance (instead of allocating) when no character in <paramref name="value"/> actually needs to change.
+    /// </summary>
+    public static string ToUpperInvariant(string value)
+    {
+        foreach (var digit in value)
+        {
+            if (digit > '\x7F' || (uint)(digit - 'a') <= 'z' - 'a')
+            {
+                // Note: we don't call string.ToUpperInvariant() here to avoid potential accidental recursion
+                return CultureInfo.InvariantCulture.TextInfo.ToUpper(value);
+            }
+        }
+
+        return value;
+    }
+
+    /// <summary>
+    /// Non-allocating alternative to <paramref name="value"/>.ToLowerInvariant(). May return the same
+    /// instance (instead of allocating) when no character in <paramref name="value"/> actually needs to change.
+    /// </summary>
+    public static string ToLowerInvariant(string value)
+    {
+        foreach (var digit in value)
+        {
+            if (digit > '\x7F' || (uint)(digit - 'A') <= 'Z' - 'A')
+            {
+                // Note: we don't call string.ToLowerInvariant() here to avoid potential accidental recursion
+                return CultureInfo.InvariantCulture.TextInfo.ToLower(value);
+            }
+        }
+
+        return value;
+    }
+#endif
 }
