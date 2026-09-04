@@ -15,16 +15,15 @@ namespace Datadog.Trace.Debugger.Helpers
         // https://stackoverflow.com/questions/18021808/uuid-interop-with-c-sharp-code
         public static string ToUUID(this string input)
         {
-            // 1. To MD5
+            // 1. To SHA-256
 #if NETCOREAPP
-            // MD5 always produces a 16 byte hash
-            Span<byte> bytes = stackalloc byte[16];
-            Md5Helper.ComputeMd5Hash(input, bytes);
+            Span<byte> bytes = stackalloc byte[32];
+            Sha256Helper.ComputeHash(input, bytes);
 #else
-            var bytes = Md5Helper.ComputeMd5Hash(input);
+            var bytes = Sha256Helper.ComputeHash(input);
 #endif
 
-            // version (3) and variant (RFC 4122)
+            // Preserve the version (3) and variant bits used by existing exception hash identifiers
             bytes[6] = (byte)((bytes[6] & 0x0F) | 0x30);
             bytes[8] = (byte)((bytes[8] & 0x3F) | 0x80);
 

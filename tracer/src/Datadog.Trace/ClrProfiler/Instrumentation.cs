@@ -209,7 +209,7 @@ namespace Datadog.Trace.ClrProfiler
                     // On .NET Core 2.0-3.0 we see an occasional hang caused by OpenSSL being loaded
                     // while the app is shutting down, which results in flaky tests due to the short-
                     // lived nature of our apps. This appears to be a bug in the runtime (although
-                    // we haven't yet confirmed that). Calling the `ToUuid()` method uses an MD5
+                    // we haven't yet confirmed that). Calling the `ToUUID()` method uses a SHA-256
                     // hash which calls into the native library, triggering the load.
                     _ = string.Empty.ToUUID();
                 }
