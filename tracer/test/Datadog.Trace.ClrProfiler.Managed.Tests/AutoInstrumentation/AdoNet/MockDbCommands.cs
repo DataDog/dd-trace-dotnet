@@ -55,6 +55,35 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.AdoNet
         protected override DbDataReader ExecuteDbDataReader(CommandBehavior behavior) => null;
     }
 
+    public class MockDbConnection : DbConnection
+    {
+        public override string ConnectionString { get; set; }
+
+        public override string Database => null;
+
+        public override string DataSource => null;
+
+        public override string ServerVersion => null;
+
+        public override ConnectionState State => ConnectionState.Closed;
+
+        public override void ChangeDatabase(string databaseName)
+        {
+        }
+
+        public override void Close()
+        {
+        }
+
+        public override void Open()
+        {
+        }
+
+        protected override DbTransaction BeginDbTransaction(IsolationLevel isolationLevel) => null;
+
+        protected override DbCommand CreateDbCommand() => null;
+    }
+
     public class MockDbParameter : DbParameter
     {
         public override DbType DbType { get; set; }

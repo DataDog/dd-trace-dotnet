@@ -280,6 +280,103 @@ namespace Datadog.Trace.Tests.Tagging
                .Contain(new KeyValuePair<string, string>(Tags.ServerPort, "8080"));
         }
 
+        [Theory]
+        [InlineData(Tags.DbType, Tags.DbSystemName)]
+        [InlineData(Tags.DbName, Tags.DbNamespace)]
+        [InlineData(Tags.OutHost, Tags.ServerAddress)]
+        public void SqlTagsAliasesCanBeReadAndWrittenByEitherName(string datadogName, string otelName)
+        {
+            var tags = new SqlTags();
+
+            tags.SetTag(datadogName, "first");
+            tags.GetTag(otelName).Should().Be("first");
+
+            tags.SetTag(otelName, "second");
+            tags.GetTag(datadogName).Should().Be("second");
+
+            // clearing via either name clears the single backing value
+            tags.SetTag(otelName, null);
+            tags.GetTag(datadogName).Should().BeNull();
+        }
+
+        [Theory]
+        [InlineData(false, Tags.DbType, Tags.DbName, Tags.OutHost)]
+        [InlineData(true, Tags.DbSystemName, Tags.DbNamespace, Tags.ServerAddress)]
+        public void SqlTagsAliasesEnumerateSelectedNames(bool openTelemetrySemanticsEnabled, string systemKey, string namespaceKey, string addressKey)
+        {
+            // The values themselves are shaped by DbSemanticConventions, so all this asserts is
+            // which of the two names each concept is reported under.
+            var tags = new SqlTags { DbType = "sqlite", DbName = ":memory:", OutHost = "localhost" };
+
+            var snapshot = GetTagsSnapshot(tags, openTelemetrySemanticsEnabled);
+
+            snapshot.Should().Contain(
+            [
+                new KeyValuePair<string, string>(systemKey, "sqlite"),
+                new KeyValuePair<string, string>(namespaceKey, ":memory:"),
+                new KeyValuePair<string, string>(addressKey, "localhost"),
+            ]);
+
+            var aliasedKeys = new[] { Tags.DbType, Tags.DbSystemName, Tags.DbName, Tags.DbNamespace, Tags.OutHost, Tags.ServerAddress };
+
+            snapshot
+               .Select(x => x.Key)
+               .Where(aliasedKeys.Contains)
+               .Should()
+               .BeEquivalentTo([systemKey, namespaceKey, addressKey]);
+        }
+
+        [Fact]
+        public void SqlTagsOtelOnlyTagsAreEmittedUnderTheirOwnName()
+        {
+            // These have no Datadog equivalent, so they are emitted under the same name in both
+            // modes. The instrumentation only populates them when OTel semantics are enabled.
+            var tags = new SqlTags
+            {
+                ServerPort = 5433,
+                DbQueryText = "SELECT * FROM users WHERE id = ?",
+                DbQuerySummary = "EXECUTE get_customer",
+                DbOperationName = "EXECUTE",
+                DbStoredProcedureName = "get_customer",
+                DbCollectionName = "users",
+                DbResponseStatusCode = "08P01",
+                ErrorType = "Npgsql.PostgresException",
+            };
+
+            foreach (var openTelemetrySemanticsEnabled in new[] { false, true })
+            {
+                GetTagsSnapshot(tags, openTelemetrySemanticsEnabled)
+                   .Should()
+                   .Contain(
+                    [
+                        new KeyValuePair<string, string>(Tags.ServerPort, "5433"),
+                        new KeyValuePair<string, string>(Tags.DbQueryText, "SELECT * FROM users WHERE id = ?"),
+                        new KeyValuePair<string, string>(Tags.DbQuerySummary, "EXECUTE get_customer"),
+                        new KeyValuePair<string, string>(Tags.DbOperationName, "EXECUTE"),
+                        new KeyValuePair<string, string>(Tags.DbStoredProcedureName, "get_customer"),
+                        new KeyValuePair<string, string>(Tags.DbCollectionName, "users"),
+                        new KeyValuePair<string, string>(Tags.DbResponseStatusCode, "08P01"),
+                        new KeyValuePair<string, string>(Tags.ErrorType, "Npgsql.PostgresException"),
+                    ]);
+            }
+        }
+
+        [Fact]
+        public void SqlTagsRawCommandTextIsNeverSerialized()
+        {
+            const string commandText = "SELECT * FROM users WHERE id = 12";
+            var tags = new SqlTags { RawCommandText = commandText };
+
+            foreach (var openTelemetrySemanticsEnabled in new[] { false, true })
+            {
+                // "span.kind" is the only tag a SqlTags reports without being populated
+                GetTagsSnapshot(tags, openTelemetrySemanticsEnabled)
+                   .Should()
+                   .OnlyContain(x => x.Key == Tags.SpanKind)
+                   .And.NotContain(x => x.Value == commandText);
+            }
+        }
+
         [Fact]
         public void GetTag_GetMetric_ReturnUpdatedValues()
         {
