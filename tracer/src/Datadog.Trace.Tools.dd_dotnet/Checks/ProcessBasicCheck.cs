@@ -21,6 +21,14 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
     {
         internal const string ClsidKey = @"SOFTWARE\Classes\CLSID\" + Utils.Profilerid + @"\InprocServer32";
         internal const string Clsid32Key = @"SOFTWARE\Classes\Wow6432Node\CLSID\" + Utils.Profilerid + @"\InprocServer32";
+        private const string AzureAppServiceSiteNameKey = "WEBSITE_SITE_NAME";
+
+        // On Windows, App Service instances resolve %HOME% to either "C:\home" or "D:\home" depending on when the
+        // instance was provisioned, so the drive letter must not be hardcoded. See
+        // https://github.com/projectkudu/kudu/wiki/Understanding-the-Azure-App-Service-file-system
+        internal static readonly string AzureAppServiceRootPath = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
+            ? Path.Combine(Environment.GetEnvironmentVariable("HOME") ?? @"C:\home", "site", "wwwroot")
+            : "/home/site/wwwroot";
 
         public static bool Run(ProcessInfo process, IRegistryService? registryService = null)
         {
@@ -189,9 +197,15 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
             process.EnvironmentVariables.TryGetValue(corProfilerPathKey, out var corProfilerPathValue);
             process.EnvironmentVariables.TryGetValue(corProfilerPathKey32, out var corProfilerPathValue32);
             process.EnvironmentVariables.TryGetValue(corProfilerPathKey64, out var corProfilerPathValue64);
+            var isAzureAppService = process.EnvironmentVariables.TryGetValue(AzureAppServiceSiteNameKey, out _);
+
+            if (isAzureAppService && RuntimeInformation.IsOSPlatform(OSPlatform.Windows) && Environment.GetEnvironmentVariable("HOME") is null)
+            {
+                Utils.WriteWarning(AzureAppServiceHomeNotSet);
+            }
 
             string?[] valuesToCheck = { corProfilerPathValue, corProfilerPathValue32, corProfilerPathValue64 };
-            var isTracingUsingBundle = TracingWithBundle(valuesToCheck, process);
+            var isTracingUsingBundle = TracingWithBundle(valuesToCheck, process, isAzureAppService);
 
             if (!ok && isTracingUsingBundle)
             {
@@ -629,9 +643,8 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
                 or "1";
         }
 
-        private static bool TracingWithBundle(string?[] profilerPathValues, ProcessInfo process)
+        internal static bool TracingWithBundle(string?[] profilerPathValues, ProcessInfo process, bool isAzureAppService)
         {
-            // Get the file path of the main module (the .exe file)
             string? filePath = process.MainModule;
             string? directoryPath = Path.GetDirectoryName(filePath);
 
@@ -650,6 +663,10 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
                 foreach (var profilerPath in profilerPathValues)
                 {
                     if (profilerPath is not null && profilerPath.Equals(directoryPath + bundleSetupEnding, StringComparison.OrdinalIgnoreCase))
+                    {
+                        return true;
+                    }
+                    else if (isAzureAppService && profilerPath is not null && profilerPath.Equals(AzureAppServiceRootPath + bundleSetupEnding, StringComparison.OrdinalIgnoreCase))
                     {
                         return true;
                     }
