@@ -6,6 +6,7 @@
 #nullable enable
 
 using Datadog.Trace.Activity.DuckTypes;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.Tagging;
 
 namespace Datadog.Trace.Activity.Handlers
@@ -19,7 +20,7 @@ namespace Datadog.Trace.Activity.Handlers
             where T : IActivity
         {
             var tags = Tracer.Instance.CurrentTraceSettings.Schema.Client.CreateAzureServiceBusTags();
-            ActivityHandlerCommon.ActivityStarted(sourceName, activity, tags: tags, out var activityMapping);
+            ActivityHandlerCommon.ActivityStarted(IntegrationId.AzureServiceBus, sourceName, activity, tags: tags, out var activityMapping);
         }
 
         public void ActivityStopped<T>(string sourceName, T activity)

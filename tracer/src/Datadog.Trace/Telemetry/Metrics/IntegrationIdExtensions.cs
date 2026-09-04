@@ -90,6 +90,7 @@ internal static class IntegrationIdExtensions
             IntegrationId.EmailHtmlInjection => MetricTags.IntegrationName.EmailHtmlInjection,
             IntegrationId.Protobuf => MetricTags.IntegrationName.Protobuf,
             IntegrationId.Hangfire => MetricTags.IntegrationName.Hangfire,
+            IntegrationId.Quartz => MetricTags.IntegrationName.Quartz,
             IntegrationId.DatadogTraceVersionConflict => MetricTags.IntegrationName.VersionConflict,
             IntegrationId.OpenFeature => MetricTags.IntegrationName.OpenFeature,
             IntegrationId.ServerlessCompat => MetricTags.IntegrationName.ServerlessCompat,

@@ -89,7 +89,7 @@ public class QuartzTests : TracingIntegrationTest
                                                         .ThenBy(x => x.Error))
                               .UseFileName(filename);
 
-            await telemetry.AssertIntegrationEnabledAsync(IntegrationId.OpenTelemetry);
+            await telemetry.AssertIntegrationEnabledAsync(GetIntegrationId(packageVersion));
         }
     }
 
@@ -117,4 +117,9 @@ public class QuartzTests : TracingIntegrationTest
             _ => new("V3", 2)
         };
     }
+
+    private static IntegrationId GetIntegrationId(string packageVersion)
+        => !string.IsNullOrEmpty(packageVersion) && new Version(packageVersion) >= new Version(4, 0, 0)
+               ? IntegrationId.Quartz
+               : IntegrationId.OpenTelemetry;
 }
