@@ -651,58 +651,6 @@ namespace Datadog.Trace.Tests.Agent
         }
 
         [Fact]
-        public async Task ConcurrentFlushTracesAsync_NeverRunsMoreThanOneFlushAtATime()
-        {
-            // Buffers are only ever locked and flushed by the flush loop, so no matter how many callers
-            // are flushing concurrently, a buffer is never sent while another send is in flight.
-            var api = new Mock<IApi>();
-            var concurrentSends = 0;
-            var maxConcurrentSends = 0;
-            var maxLock = new object();
-
-            api.Setup(i => i.SendTracesAsync(It.IsAny<ArraySegment<byte>>(), It.IsAny<int>(), It.IsAny<bool>(), It.IsAny<long>(), It.IsAny<long>(), It.IsAny<bool>()))
-                .Returns(async () =>
-                {
-                    var current = Interlocked.Increment(ref concurrentSends);
-
-                    lock (maxLock)
-                    {
-                        maxConcurrentSends = Math.Max(maxConcurrentSends, current);
-                    }
-
-                    // Give any other flush a chance to overlap with this one, but not too big,
-                    // otherwise could cause flake
-                    await Task.Delay(5);
-
-                    Interlocked.Decrement(ref concurrentSends);
-                    return true;
-                });
-
-            // Buffers big enough for a single trace, so that they fill up and the active buffer keeps
-            // switching while flushes are in flight. Background flushes are enabled too, so those must
-            // not overlap with the requested ones either.
-            var sizeOfTrace = ComputeSize(CreateTraceChunk(1));
-            var agent = new AgentWriter(api.Object, statsAggregator: null, statsd: TestStatsdManager.NoOp, maxBufferSize: (sizeOfTrace * 2) + SpanBufferMessagePackSerializer.HeaderSizeConst - 1, batchInterval: 0);
-
-            var flushes = new List<Task>();
-
-            for (var i = 0; i < 10; i++)
-            {
-                agent.WriteTrace(CreateTraceChunk(1));
-                flushes.Add(agent.FlushTracesAsync());
-            }
-
-            await Task.WhenAll(flushes).WaitAsync(TimeSpan.FromMilliseconds(30000));
-
-            lock (maxLock)
-            {
-                maxConcurrentSends.Should().Be(1);
-            }
-
-            await agent.FlushAndCloseAsync();
-        }
-
-        [Fact]
         public async Task FlushTracesAsync_SendsTracesWrittenOnTheSameThread()
         {
             // A trace written before FlushTracesAsync() is called must have left the pending queue and be
@@ -853,6 +801,62 @@ namespace Datadog.Trace.Tests.Agent
             };
 
             return TracerSettings.Create(new() { { ConfigurationKeys.SpanSamplingRules, JsonConvert.SerializeObject(rules) } });
+        }
+
+        [Collection(nameof(HighConcurrencyTestCollection))]
+        public class ConcurrencyTests
+        {
+            [Fact]
+            public async Task ConcurrentFlushTracesAsync_NeverRunsMoreThanOneFlushAtATime()
+            {
+                // Buffers are only ever locked and flushed by the flush loop, so no matter how many callers
+                // are flushing concurrently, a buffer is never sent while another send is in flight.
+                var api = new Mock<IApi>();
+                var concurrentSends = 0;
+                var maxConcurrentSends = 0;
+                var maxLock = new object();
+
+                api.Setup(i => i.SendTracesAsync(It.IsAny<ArraySegment<byte>>(), It.IsAny<int>(), It.IsAny<bool>(), It.IsAny<long>(), It.IsAny<long>(), It.IsAny<bool>()))
+                    .Returns(async () =>
+                    {
+                        var current = Interlocked.Increment(ref concurrentSends);
+
+                        lock (maxLock)
+                        {
+                            maxConcurrentSends = Math.Max(maxConcurrentSends, current);
+                        }
+
+                        // Give any other flush a chance to overlap with this one, but not too big,
+                        // otherwise could cause flake
+                        await Task.Delay(5);
+
+                        Interlocked.Decrement(ref concurrentSends);
+                        return true;
+                    });
+
+                // Buffers big enough for a single trace, so that they fill up and the active buffer keeps
+                // switching while flushes are in flight. Background flushes are enabled too, so those must
+                // not overlap with the requested ones either.
+                var sizeOfTrace = ComputeSize(CreateTraceChunk(1));
+                var agent = new AgentWriter(api.Object, statsAggregator: null, statsd: TestStatsdManager.NoOp, maxBufferSize: (sizeOfTrace * 2) + SpanBufferMessagePackSerializer.HeaderSizeConst - 1, batchInterval: 0);
+
+                var flushes = new List<Task>();
+
+                for (var i = 0; i < 10; i++)
+                {
+                    agent.WriteTrace(CreateTraceChunk(1));
+                    flushes.Add(agent.FlushTracesAsync());
+                }
+
+                await Task.WhenAll(flushes).WaitAsync(TimeSpan.FromMilliseconds(60_000));
+
+                lock (maxLock)
+                {
+                    maxConcurrentSends.Should().Be(1);
+                }
+
+                await agent.FlushAndCloseAsync();
+            }
         }
 
         internal class StubStatsAggregator(bool shouldKeepTrace, Func<SpanCollection, SpanCollection> processTrace) : IStatsAggregator
