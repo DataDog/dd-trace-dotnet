@@ -17,6 +17,22 @@ internal sealed class OtelTraceState
         CachedHeaderString = headerString;
     }
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="OtelTraceState"/> class holding the same values as
+    /// <paramref name="other"/>. A single extracted <see cref="SpanContext"/> can start more than one
+    /// trace, and <see cref="TraceContext.SetSamplingPriority"/> mutates this object in place, so each
+    /// <see cref="TraceContext"/> must take its own copy rather than alias the extracted one.
+    /// The copy is inherited state by definition, so <see cref="LocallyGeneratedOtelRandomValue"/>
+    /// deliberately starts out false.
+    /// </summary>
+    internal OtelTraceState(OtelTraceState other)
+    {
+        CachedHeaderString = other.CachedHeaderString;
+        RandomValue = other.RandomValue;
+        Threshold = other.Threshold;
+        IsModified = other.IsModified;
+    }
+
     public ulong? Threshold { get; set; }
 
     public ulong? RandomValue { get; set; }

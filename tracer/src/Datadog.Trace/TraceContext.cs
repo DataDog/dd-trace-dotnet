@@ -127,11 +127,13 @@ namespace Datadog.Trace
         internal OtelTraceState? OtelTraceState
         {
             get => _otelTraceState;
-            set
-            {
-                _otelTraceState = value;
-                _otelTraceState?.LocallyGeneratedOtelRandomValue = false;
-            }
+
+            // Store a copy, never the caller's instance: the value normally comes from an extracted
+            // SpanContext that may start several traces, and the sampling decision below mutates this
+            // object in place. Aliasing it would let one trace's override rewrite a sibling trace's
+            // "ot=" member. The copy constructor also resets LocallyGeneratedOtelRandomValue, since
+            // anything assigned through here arrived from outside this trace.
+            set => _otelTraceState = value is null ? null : new OtelTraceState(value);
         }
 
         /// <summary> Gets the IAST context </summary>

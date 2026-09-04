@@ -8,6 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Headers;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.TestHelpers;
@@ -395,6 +396,43 @@ namespace Datadog.Trace.Tests
             traceContext.SetSamplingPriority(SamplingPriorityValues.UserKeep, SamplingMechanism.Manual);
 
             WriteOtelTraceStateHeader(traceContext.OtelTraceState).Should().Be(OtelTraceStateExampleWithoutThreshold);
+        }
+
+        /// <summary>
+        /// Two traces continued from the same extracted <see cref="SpanContext"/> must each own their
+        /// <see cref="OtelTraceState"/>. Otherwise a sampling override on one trace mutates the other.
+        /// </summary>
+        [Fact]
+        public async Task OtelTraceState_IsNotSharedBetweenTracesContinuedFromTheSameExtractedContext()
+        {
+            const string inboundTraceState = "foo=1,ot=rv:aaaaaaaaaaaaaa;th:8,congo=2";
+
+            var propagator = SpanContextPropagatorFactory.GetSpanContextPropagator(
+                [ContextPropagationHeaderStyle.W3CTraceContext],
+                [ContextPropagationHeaderStyle.W3CTraceContext],
+                propagationExtractFirst: false);
+
+            var headers = new Mock<IHeadersCollection>(MockBehavior.Strict);
+            headers.Setup(h => h.GetValues("traceparent")).Returns(new[] { "00-11111111111111111111111111111111-1111111111111111-01" });
+            headers.Setup(h => h.GetValues("tracestate")).Returns(new[] { inboundTraceState });
+
+            var extracted = propagator.Extract(headers.Object).SpanContext;
+
+            await using var tracer = TracerHelper.Create();
+
+            var spanA = tracer.StartSpan("a", parent: extracted);
+            var spanB = tracer.StartSpan("b", parent: extracted);
+
+            // a manual override applies to trace A only, and must not disturb trace B
+            spanA.Context.TraceContext.SetSamplingPriority(SamplingPriorityValues.UserKeep, SamplingMechanism.Manual);
+
+            // trace A drops "th" and moves "ot" to the front, as a rewritten member should
+            W3CTraceContextPropagator.CreateTraceStateHeader(spanA.Context)
+                                     .Should().Contain("ot=rv:aaaaaaaaaaaaaa,").And.NotContain("th:8");
+
+            // trace B keeps its inherited "th" and its original member ordering.
+            W3CTraceContextPropagator.CreateTraceStateHeader(spanB.Context)
+                                     .Should().Contain("foo=1,ot=rv:aaaaaaaaaaaaaa;th:8,congo=2");
         }
 
         private static ulong ParseThForTest(string otelTraceState)
