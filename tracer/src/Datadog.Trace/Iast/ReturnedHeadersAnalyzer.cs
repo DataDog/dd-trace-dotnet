@@ -300,7 +300,7 @@ internal static class ReturnedHeadersAnalyzer
 #if NETCOREAPP
         return contentTypeValue.Contains("text/html", StringComparison.OrdinalIgnoreCase) || contentTypeValue.Contains("application/xhtml+xml", StringComparison.OrdinalIgnoreCase);
 #else
-        var contentType = contentTypeValue.ToLowerInvariant();
+        var contentType = StringUtil.ToLowerInvariant(contentTypeValue);
         return contentType.Contains("text/html") || contentType.Contains("application/xhtml+xml");
 #endif
     }

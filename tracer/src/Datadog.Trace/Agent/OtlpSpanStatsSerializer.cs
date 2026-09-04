@@ -647,7 +647,7 @@ namespace Datadog.Trace.Agent
                 name = name.Substring(11);
             }
 
-            name = name.ToUpperInvariant();
+            name = StringUtil.ToUpperInvariant(name);
 
             // Accept common single-L alias and compact form
             if (name == "CANCELED")

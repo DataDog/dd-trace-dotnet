@@ -158,7 +158,7 @@ namespace Datadog.Trace.Configuration
                 return null;
             }
 
-            return $"/subscriptions/{subscriptionId}/resourcegroups/{resourceGroup}/providers/microsoft.web/sites/{siteName}".ToLowerInvariant();
+            return StringUtil.ToLowerInvariant($"/subscriptions/{subscriptionId}/resourcegroups/{resourceGroup}/providers/microsoft.web/sites/{siteName}");
         }
 
         private static string? GetSubscriptionId(IConfigurationSource source, IConfigurationTelemetry telemetry)
