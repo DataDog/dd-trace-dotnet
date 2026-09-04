@@ -1950,12 +1950,20 @@ partial class Build
             return filter;
         }
 
+        // CI Visibility tests live in the same test assemblies as the Tracer area (so they carry
+        // both Area=Tracer at the assembly level and Area=CIVisibility at the class level), but
+        // they run in their own job. Exclude them explicitly from the Tracer area to avoid running
+        // them twice.
+        var areaFilter = Area == TracerArea
+                             ? $"(Area={Area})&(Area!={CiVisibilityArea})"
+                             : $"(Area={Area})";
+
         if (string.IsNullOrWhiteSpace(filter))
         {
-            return $"(Area={Area})";
+            return areaFilter;
         }
 
-        return filter + $"&(Area={Area})";
+        return filter + $"&{areaFilter}";
     }
 
     Target CompileAzureFunctionsSamplesWindows => _ => _

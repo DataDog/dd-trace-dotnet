@@ -27,6 +27,7 @@ using Xunit;
 namespace Datadog.Trace.Tools.Runner.IntegrationTests
 {
     [Collection(nameof(ConsoleTestsCollection))]
+    [Trait("Area", "CIVisibility")]
     [EnvironmentVariablesCleaner(
         Configuration.ConfigurationKeys.DebugEnabled,
         Configuration.ConfigurationKeys.CIVisibility.ExternalCodeCoveragePath,
