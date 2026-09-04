@@ -558,6 +558,21 @@ namespace Datadog.Trace.Activity
                     }
 
                     break;
+                case "otel.status_code":
+                    // Normalize short-form values ("OK"/"ERROR"/"UNSET") written directly via Activity.SetTag
+                    // by older OTel API versions (< 1.6) whose TelemetrySpan.SetStatus() never calls
+                    // Activity.SetStatus(). Mirrors the post-processing done for the listener path in
+                    // AgentConvertSpan.
+                    var normalizedStatusCode = value switch
+                    {
+                        "OK" => "STATUS_CODE_OK",
+                        "ERROR" => "STATUS_CODE_ERROR",
+                        "UNSET" => "STATUS_CODE_UNSET",
+                        _ => value
+                    };
+                    span.SetTag(key, normalizedStatusCode);
+
+                    break;
                 default:
                     span.SetTag(key, value);
                     break;
