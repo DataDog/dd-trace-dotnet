@@ -969,7 +969,9 @@ public sealed class StringAspects
     [AspectMethodReplace("System.String::ToUpperInvariant()", AspectFilter.StringLiteral_0)]
     public static string ToUpperInvariant(string target)
     {
+#pragma warning disable RS0030 // This aspect replaces the BCL method, so it must call it directly
         var result = target.ToUpperInvariant();
+#pragma warning restore RS0030
         try
         {
             PropagationModuleImpl.PropagateTaint(target, result);
@@ -1033,7 +1035,9 @@ public sealed class StringAspects
     [AspectMethodReplace("System.String::ToLowerInvariant()", AspectFilter.StringLiteral_0)]
     public static string ToLowerInvariant(string target)
     {
+#pragma warning disable RS0030 // This aspect replaces the BCL method, so it must call it directly
         var result = target.ToLowerInvariant();
+#pragma warning restore RS0030
         try
         {
             PropagationModuleImpl.PropagateTaint(target, result);

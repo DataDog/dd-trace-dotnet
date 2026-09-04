@@ -1,0 +1,4 @@
+# Banned APIs for Datadog.Trace when targeting .NET Framework
+
+M:System.String.ToUpperInvariant;Use StringUtil.ToUpperInvariant(value) instead - on .NET Framework it avoids allocating when the string is already uppercase
+M:System.String.ToLowerInvariant;Use StringUtil.ToLowerInvariant(value) instead - on .NET Framework it avoids allocating when the string is already lowercase

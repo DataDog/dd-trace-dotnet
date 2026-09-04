@@ -65,7 +65,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                     var newResourceNamesEnabled = tracer.Settings.RouteTemplateResourceNamesEnabled;
                     string host = httpContext.Request.Headers.Get("Host");
                     var userAgent = httpContext.Request.Headers.Get(HttpHeaderNames.UserAgent);
-                    string httpMethod = httpContext.Request.HttpMethod.ToUpperInvariant();
+                    string httpMethod = StringUtil.ToUpperInvariant(httpContext.Request.HttpMethod);
                     var url = httpContext.Request.GetUrlForSpan(tracer.TracerManager.QueryStringManager);
                     string resourceName = null;
 
@@ -115,15 +115,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                     else
                     {
                         // just grab area/controller/action directly
-                        areaName = (routeValues?.GetValueOrDefault("area") as string)?.ToLowerInvariant();
-                        controllerName = (routeValues?.GetValueOrDefault("controller") as string)?.ToLowerInvariant();
-                        actionName = (routeValues?.GetValueOrDefault("action") as string)?.ToLowerInvariant();
+                        areaName = StringUtil.ToLowerInvariant(routeValues?.GetValueOrDefault("area") as string);
+                        controllerName = StringUtil.ToLowerInvariant(routeValues?.GetValueOrDefault("controller") as string);
+                        actionName = StringUtil.ToLowerInvariant(routeValues?.GetValueOrDefault("action") as string);
                     }
 
                     if (string.IsNullOrEmpty(resourceName) && httpContext.Request.Url != null)
                     {
                         var cleanUri = UriHelpers.GetCleanUriPath(httpContext.Request.Url, httpContext.Request.ApplicationPath);
-                        resourceName = $"{httpMethod} {cleanUri.ToLowerInvariant()}";
+                        resourceName = $"{httpMethod} {StringUtil.ToLowerInvariant(cleanUri)}";
                     }
 
                     if (string.IsNullOrEmpty(resourceName))

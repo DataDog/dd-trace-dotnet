@@ -108,7 +108,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
 #if NETCOREAPP
                 return (_isDataCollectorDomainCache = DomainMetadata.Instance.AppDomainName.Contains("datacollector", StringComparison.OrdinalIgnoreCase)).Value;
 #else
-                return (_isDataCollectorDomainCache = DomainMetadata.Instance.AppDomainName.ToLowerInvariant().Contains("datacollector")).Value;
+                return (_isDataCollectorDomainCache = StringUtil.ToLowerInvariant(DomainMetadata.Instance.AppDomainName).Contains("datacollector")).Value;
 #endif
             }
         }
