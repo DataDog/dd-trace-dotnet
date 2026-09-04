@@ -54,7 +54,7 @@ Run commands from the repository root. Unit and integration test targets require
 
 ```powershell
 .\tracer\build.cmd Clean BuildTracerHome
-.\tracer\build.cmd BuildAndRunManagedUnitTests BuildAndRunNativeUnitTests
+.\tracer\build.cmd BuildAndRunManagedUnitTests RunNativeUnitTests
 .\tracer\build.cmd BuildAndRunIntegrationTests
 ```
 
@@ -70,7 +70,7 @@ Run commands from the repository root. Unit and integration test targets require
 
 ```bash
 ./tracer/build.sh Clean BuildTracerHome
-./tracer/build.sh BuildAndRunManagedUnitTests BuildAndRunNativeUnitTests
+./tracer/build.sh BuildAndRunManagedUnitTests RunNativeUnitTests
 ./tracer/build.sh BuildAndRunIntegrationTests
 ```
 
