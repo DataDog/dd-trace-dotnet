@@ -1,4 +1,4 @@
-// <copyright file="SecurityCoordinator.cs" company="Datadog">
+﻿// <copyright file="SecurityCoordinator.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -42,9 +42,26 @@ internal readonly partial struct SecurityCoordinator
 
     public IResult? Scan(bool lastTime = false)
     {
-        var args = GetBasicRequestArgsForWaf();
-        return RunWaf(args, lastTime);
+        var args = CollectRequestArgsForWaf();
+
+        if (lastTime && _httpTransport.StatusCode is { } statusCode)
+        {
+            args[AddressesConstants.ResponseStatus] = statusCode.ToString();
+        }
+
+        return args.Count > 0 ? RunWaf(args, lastTime) : null;
     }
+
+    // Core request-phase collection: returns the request addresses to the first scan of the request and an
+    // empty set to the following ones (Framework doesn't go through here, it refreshes them on every
+    // BeginRequest). The context check comes first so they aren't marked as sent when there is no store to
+    // keep them.
+    internal Dictionary<string, object> CollectRequestArgsForWaf() =>
+        _appsecRequestContext.GetOrCreateAdditiveContext(_security) is not null && _appsecRequestContext.ShouldSendRequestAddresses()
+            ? GetBasicRequestArgsForWaf()
+            : new Dictionary<string, object>(3);
+
+    internal bool ShouldScanResponse() => _appsecRequestContext.ShouldScanResponse();
 
     public IResult? RunWaf(Dictionary<string, object> args, bool lastWafCall = false, bool runWithEphemeral = false, bool isRasp = false, string? sessionId = null)
     {
