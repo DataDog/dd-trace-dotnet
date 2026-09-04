@@ -199,39 +199,16 @@ namespace Datadog.Trace.Propagators
                     sb.Length--;
                 }
 
-                var otelTraceState = context.OtelTraceState;
-                var additionalTraceState = context.AdditionalW3CTraceState;
-                ExtractMember(
-                    additionalTraceState.AsSpan(),
-                    "ot=",
-                    out var originalOtelTraceState,
-                    out var precedingMembers,
-                    out var succeedingMembers,
-                    out var hasOriginalOtelTraceState);
+                var additionalState = context.AdditionalW3CTraceState;
 
-                var hasOtelTraceState = !string.IsNullOrWhiteSpace(otelTraceState);
-                var preserveOriginalOtelTraceState = hasOriginalOtelTraceState &&
-                                                     hasOtelTraceState &&
-                                                     originalOtelTraceState.Equals(otelTraceState.AsSpan(), StringComparison.Ordinal);
-
-                if (preserveOriginalOtelTraceState)
+                if (!string.IsNullOrWhiteSpace(additionalState))
                 {
-                    AppendTraceStateMembers(sb, additionalTraceState.AsSpan());
-                }
-                else
-                {
-                    if (hasOtelTraceState)
+                    if (sb.Length > 0)
                     {
-                        if (sb.Length > 0)
-                        {
-                            sb.Append(TraceStateHeaderValuesSeparator);
-                        }
-
-                        sb.Append("ot=").Append(otelTraceState);
+                        sb.Append(TraceStateHeaderValuesSeparator);
                     }
 
-                    AppendTraceStateMembers(sb, precedingMembers);
-                    AppendTraceStateMembers(sb, succeedingMembers);
+                    sb.Append(additionalState);
                 }
 
                 return StringBuilderCache.GetStringAndRelease(sb);
@@ -334,38 +311,29 @@ namespace Datadog.Trace.Propagators
             // header format: "[*,]dd=s:1;o:rum;t.dm:-4;t.usr.id:12345[,*]"
             if (string.IsNullOrWhiteSpace(header))
             {
-                return new W3CTraceState(samplingPriority: null, origin: null, lastParent: ZeroLastParent, propagatedTags: null, additionalValues: null, otTraceState: null);
+                return new W3CTraceState(samplingPriority: null, origin: null, lastParent: ZeroLastParent, propagatedTags: null, additionalValues: null);
             }
 
-            var traceState = header!.AsSpan().Trim();
-            ExtractMember(
-                traceState,
-                "dd=",
+            SplitTraceStateValues(
+                header!.AsSpan().Trim(),
                 out var ddValues,
                 out var precedingMembers,
                 out var succeedingMembers,
                 out _);
-            ExtractMember(
-                traceState,
-                "ot=",
-                out var otTraceState,
-                out _,
-                out _,
-                out var hasOtTraceState);
             var additionalValues = GetAdditionalValues(precedingMembers, succeedingMembers);
 
-            return ParseDdMember(ddValues, additionalValues, hasOtTraceState ? otTraceState.ToString() : null);
+            return ParseDdMember(ddValues, additionalValues);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static W3CTraceState ParseDdMember(ReadOnlySpan<char> ddValues, string? additionalValues, string? otTraceState)
+        private static W3CTraceState ParseDdMember(ReadOnlySpan<char> ddValues, string? additionalValues)
         {
             if (ddValues.Length < 3)
             {
                 // "dd" section not found or it is too short
                 // shortest valid length is 3 as in "a:b" ("dd=" prefix already stripped)
                 // note for this case the p will be viewed as 0 if added as a span tag
-                return new W3CTraceState(samplingPriority: null, origin: null, lastParent: ZeroLastParent, propagatedTags: null, additionalValues, otTraceState);
+                return new W3CTraceState(samplingPriority: null, origin: null, lastParent: ZeroLastParent, propagatedTags: null, additionalValues);
             }
 
             int? samplingPriority = null;
@@ -424,7 +392,7 @@ namespace Datadog.Trace.Propagators
                     propagatedTags = null;
                 }
 
-                return new W3CTraceState(samplingPriority, origin.IsEmpty ? null : origin.ToString(), lastParent.IsEmpty ? ZeroLastParent : lastParent.ToString(), propagatedTags, additionalValues, otTraceState);
+                return new W3CTraceState(samplingPriority, origin.IsEmpty ? null : origin.ToString(), lastParent.IsEmpty ? ZeroLastParent : lastParent.ToString(), propagatedTags, additionalValues);
             }
             finally
             {
@@ -447,6 +415,16 @@ namespace Datadog.Trace.Propagators
             name = source.Slice(0, colonIndex);
             value = source.Slice(colonIndex + 1);
             return true;
+        }
+
+        private static void SplitTraceStateValues(
+            ReadOnlySpan<char> header,
+            out ReadOnlySpan<char> ddValues,
+            out ReadOnlySpan<char> precedingMembers,
+            out ReadOnlySpan<char> succeedingMembers,
+            out bool hasDdValues)
+        {
+            ExtractMember(header, "dd=", out ddValues, out precedingMembers, out succeedingMembers, out hasDdValues);
         }
 
         private static void ExtractMember(
@@ -495,38 +473,25 @@ namespace Datadog.Trace.Propagators
             succeedingMembers = endIndex == header.Length ? default : header.Slice(endIndex + 1);
         }
 
-        private static string? GetAdditionalValues(ReadOnlySpan<char> precedingMembers, ReadOnlySpan<char> succeedingMembers)
+        private static string? GetAdditionalValues(
+            ReadOnlySpan<char> precedingMembers,
+            ReadOnlySpan<char> succeedingMembers)
         {
             if (precedingMembers.IsEmpty)
             {
                 return succeedingMembers.IsEmpty ? null : succeedingMembers.ToString();
             }
 
-            return succeedingMembers.IsEmpty ? precedingMembers.ToString() : CombineMembers(precedingMembers, succeedingMembers);
-        }
+            if (succeedingMembers.IsEmpty)
+            {
+                return precedingMembers.ToString();
+            }
 
-        private static string CombineMembers(ReadOnlySpan<char> precedingMembers, ReadOnlySpan<char> succeedingMembers)
-        {
             var sb = StringBuilderCache.Acquire(precedingMembers.Length + succeedingMembers.Length + 1);
             sb.Append(precedingMembers)
               .Append(TraceStateHeaderValuesSeparator)
               .Append(succeedingMembers);
             return StringBuilderCache.GetStringAndRelease(sb);
-        }
-
-        private static void AppendTraceStateMembers(StringBuilder sb, ReadOnlySpan<char> members)
-        {
-            if (members.Trim().IsEmpty)
-            {
-                return;
-            }
-
-            if (sb.Length > 0)
-            {
-                sb.Append(TraceStateHeaderValuesSeparator);
-            }
-
-            sb.Append(members);
         }
 
         private static int? SamplingPriorityToInt32(ReadOnlySpan<char> samplingPriority)
@@ -604,7 +569,6 @@ namespace Datadog.Trace.Propagators
 
             spanContext.PropagatedTags = traceTags;
             spanContext.AdditionalW3CTraceState = traceState.AdditionalValues;
-            spanContext.OtelTraceState = OtelTraceStateHelpers.Normalize(traceState.OtTraceState);
             spanContext.LastParentId = traceState.LastParent;
 
             context = new PropagationContext(spanContext, baggage: null);

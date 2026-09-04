@@ -21,19 +21,12 @@ internal readonly struct W3CTraceState
     // the string left in "tracestate" after removing "dd=*"
     public readonly string? AdditionalValues;
 
-    /// <summary>
-    /// Raw content of the inbound "ot=" tracestate list-member (no "ot=" prefix),
-    /// captured verbatim with no sub-key parsing. Null if no "ot=" member was present.
-    /// </summary>
-    public readonly string? OtTraceState;
-
-    public W3CTraceState(int? samplingPriority, string? origin, string? lastParent, string? propagatedTags, string? additionalValues, string? otTraceState = null)
+    public W3CTraceState(int? samplingPriority, string? origin, string? lastParent, string? propagatedTags, string? additionalValues)
     {
         SamplingPriority = samplingPriority;
         Origin = origin;
         LastParent = lastParent;
         PropagatedTags = propagatedTags;
         AdditionalValues = additionalValues;
-        OtTraceState = otTraceState;
     }
 }
