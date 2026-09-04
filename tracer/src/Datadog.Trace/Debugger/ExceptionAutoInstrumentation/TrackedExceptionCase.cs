@@ -24,7 +24,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
         public TrackedExceptionCase(ExceptionIdentifier exceptionId, string exceptionToString, int maxFramesToCapture)
         {
             ExceptionIdentifier = exceptionId;
-            ErrorHash = ExceptionHashProvider.GetHash(exceptionId);
+            ErrorHash = MD5HashProvider.GetHash(exceptionId);
             ExceptionToString = exceptionToString;
             StartCollectingTime = DateTime.MaxValue;
             MaxFramesToCapture = maxFramesToCapture;
