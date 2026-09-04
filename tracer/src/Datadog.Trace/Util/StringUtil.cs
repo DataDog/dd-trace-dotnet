@@ -45,11 +45,17 @@ internal static class StringUtil
     /// Non-allocating alternative to <paramref name="value"/>.ToUpperInvariant(). May return the same
     /// instance (instead of allocating) when no character in <paramref name="value"/> actually needs to change.
     /// </summary>
-    public static string ToUpperInvariant(string value)
+    [return: NotNullIfNotNull(nameof(value))]
+    public static string? ToUpperInvariant(string? value)
     {
-        foreach (var digit in value)
+        if (value is null)
         {
-            if (digit > '\x7F' || (uint)(digit - 'a') <= 'z' - 'a')
+            return null;
+        }
+
+        foreach (var c in value)
+        {
+            if (c > '\x7F' || (uint)(c - 'a') <= 'z' - 'a')
             {
                 // Note: we don't call string.ToUpperInvariant() here to avoid potential accidental recursion
                 return CultureInfo.InvariantCulture.TextInfo.ToUpper(value);
@@ -63,11 +69,17 @@ internal static class StringUtil
     /// Non-allocating alternative to <paramref name="value"/>.ToLowerInvariant(). May return the same
     /// instance (instead of allocating) when no character in <paramref name="value"/> actually needs to change.
     /// </summary>
-    public static string ToLowerInvariant(string value)
+    [return: NotNullIfNotNull(nameof(value))]
+    public static string? ToLowerInvariant(string? value)
     {
-        foreach (var digit in value)
+        if (value is null)
         {
-            if (digit > '\x7F' || (uint)(digit - 'A') <= 'Z' - 'A')
+            return null;
+        }
+
+        foreach (var c in value)
+        {
+            if (c > '\x7F' || (uint)(c - 'A') <= 'Z' - 'A')
             {
                 // Note: we don't call string.ToLowerInvariant() here to avoid potential accidental recursion
                 return CultureInfo.InvariantCulture.TextInfo.ToLower(value);
@@ -77,12 +89,14 @@ internal static class StringUtil
         return value;
     }
 #else
+    [return: NotNullIfNotNull(nameof(value))]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static string ToUpperInvariant(string value)
-        => value.ToUpperInvariant();
+    public static string? ToUpperInvariant(string? value)
+        => value?.ToUpperInvariant();
 
+    [return: NotNullIfNotNull(nameof(value))]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static string ToLowerInvariant(string value)
-        => value.ToLowerInvariant();
+    public static string? ToLowerInvariant(string? value)
+        => value?.ToLowerInvariant();
 #endif
 }

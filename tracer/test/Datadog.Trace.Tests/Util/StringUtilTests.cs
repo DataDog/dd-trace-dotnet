@@ -70,6 +70,18 @@ public class StringUtilTests
         }
     }
 
+    [Fact]
+    public void ToUpperInvariant_Null_ReturnsNull()
+    {
+        StringUtil.ToUpperInvariant(null).Should().BeNull();
+    }
+
+    [Fact]
+    public void ToLowerInvariant_Null_ReturnsNull()
+    {
+        StringUtil.ToLowerInvariant(null).Should().BeNull();
+    }
+
 #if NETFRAMEWORK
     [Theory]
     [MemberData(nameof(Data.SemanticEquivalenceInputs), MemberType = typeof(Data))]
