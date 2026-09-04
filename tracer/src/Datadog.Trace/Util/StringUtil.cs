@@ -45,8 +45,14 @@ internal static class StringUtil
     /// Non-allocating alternative to <paramref name="value"/>.ToUpperInvariant(). May return the same
     /// instance (instead of allocating) when no character in <paramref name="value"/> actually needs to change.
     /// </summary>
-    public static string ToUpperInvariant(string value)
+    [return: NotNullIfNotNull(nameof(value))]
+    public static string? ToUpperInvariant(string? value)
     {
+        if (value is null)
+        {
+            return null;
+        }
+
         foreach (var digit in value)
         {
             if (digit > '\x7F' || char.IsBetween(digit, 'a', 'z'))
@@ -63,8 +69,14 @@ internal static class StringUtil
     /// Non-allocating alternative to <paramref name="value"/>.ToLowerInvariant(). May return the same
     /// instance (instead of allocating) when no character in <paramref name="value"/> actually needs to change.
     /// </summary>
-    public static string ToLowerInvariant(string value)
+    [return: NotNullIfNotNull(nameof(value))]
+    public static string? ToLowerInvariant(string? value)
     {
+        if (value is null)
+        {
+            return null;
+        }
+
         foreach (var digit in value)
         {
             if (digit > '\x7F' || char.IsBetween(digit, 'A', 'Z'))
@@ -77,12 +89,14 @@ internal static class StringUtil
         return value;
     }
 #else
+    [return: NotNullIfNotNull(nameof(value))]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static string ToUpperInvariant(string value)
-        => value.ToUpperInvariant();
+    public static string? ToUpperInvariant(string? value)
+        => value?.ToUpperInvariant();
 
+    [return: NotNullIfNotNull(nameof(value))]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static string ToLowerInvariant(string value)
-        => value.ToLowerInvariant();
+    public static string? ToLowerInvariant(string? value)
+        => value?.ToLowerInvariant();
 #endif
 }
