@@ -201,37 +201,37 @@ namespace Datadog.Trace.Propagators
 
                 var otelTraceState = context.OtelTraceState;
                 var additionalTraceState = context.AdditionalW3CTraceState;
-                ExtractMember(
-                    additionalTraceState.AsSpan(),
-                    "ot=",
-                    out var originalOtelTraceState,
-                    out var precedingMembers,
-                    out var succeedingMembers,
-                    out var hasOriginalOtelTraceState);
 
-                var hasOtelTraceState = !string.IsNullOrWhiteSpace(otelTraceState);
-                var preserveOriginalOtelTraceState = hasOriginalOtelTraceState &&
-                                                     hasOtelTraceState &&
-                                                     originalOtelTraceState.Equals(otelTraceState.AsSpan(), StringComparison.Ordinal);
+                if (otelTraceState is { IsModified: true })
+                {
+                    ExtractMember(
+                        additionalTraceState.AsSpan(),
+                        "ot=",
+                        out _,
+                        out var precedingMembers,
+                        out var succeedingMembers,
+                        out _);
 
-                if (preserveOriginalOtelTraceState)
-                {
-                    AppendTraceStateMembers(sb, additionalTraceState.AsSpan());
-                }
-                else
-                {
-                    if (hasOtelTraceState)
+                    // Save the position prior to emitting the "ot" so we can "rewind" the length
+                    // in case the actual contents are empty.
+                    var rewindPosition = sb.Length;
+
+                    sb.Append(TraceStateHeaderValuesSeparator);
+                    sb.Append("ot=");
+
+                    var otPosition = sb.Length;
+                    OtelTraceStateHelpers.SetRvTh(sb, otelTraceState.CachedHeaderString, otelTraceState.RandomValue, otelTraceState.Threshold);
+                    if (sb.Length == otPosition)
                     {
-                        if (sb.Length > 0)
-                        {
-                            sb.Append(TraceStateHeaderValuesSeparator);
-                        }
-
-                        sb.Append("ot=").Append(otelTraceState);
+                        sb.Length = rewindPosition;
                     }
 
                     AppendTraceStateMembers(sb, precedingMembers);
                     AppendTraceStateMembers(sb, succeedingMembers);
+                }
+                else
+                {
+                    AppendTraceStateMembers(sb, additionalTraceState.AsSpan());
                 }
 
                 return StringBuilderCache.GetStringAndRelease(sb);
@@ -604,7 +604,7 @@ namespace Datadog.Trace.Propagators
 
             spanContext.PropagatedTags = traceTags;
             spanContext.AdditionalW3CTraceState = traceState.AdditionalValues;
-            spanContext.OtelTraceState = OtelTraceStateHelpers.Normalize(traceState.OtTraceState);
+            spanContext.OtelTraceState = OtelTraceState.Parse(traceState.OtTraceState);
             spanContext.LastParentId = traceState.LastParent;
 
             context = new PropagationContext(spanContext, baggage: null);

@@ -20,8 +20,8 @@ namespace Datadog.Trace.Propagators
     /// </summary>
     internal static class OtelTraceStateHelpers
     {
-        private const int MaxHexDigits = 14;
-        private const ulong MaxOtelTraceStateValue = (1UL << (MaxHexDigits * 4)) - 1;
+        internal const int MaxHexDigits = 14;
+        internal const ulong MaxOtelTraceStateValue = (1UL << (MaxHexDigits * 4)) - 1;
 
         /// <summary>
         /// Finds the "rv" item in the raw "ot=" value (items separated by ';', key/value by ':')
@@ -61,109 +61,66 @@ namespace Datadog.Trace.Propagators
         }
 
         /// <summary>
-        /// Removes malformed "rv" and "th" items while preserving valid and unknown items.
-        /// Returns the original string when no rewrite is needed, and null when nothing remains.
-        /// </summary>
-        internal static string? Normalize(string? raw)
-        {
-            if (StringUtil.IsNullOrEmpty(raw))
-            {
-                return null;
-            }
-
-            var remaining = raw!.AsSpan();
-
-            while (true)
-            {
-                var separatorIndex = remaining.IndexOf(';');
-                var item = separatorIndex < 0 ? remaining : remaining.Slice(0, separatorIndex);
-
-                if (IsInvalidRvOrTh(item))
-                {
-                    return RemoveInvalidRvTh(raw);
-                }
-
-                if (separatorIndex < 0)
-                {
-                    return raw;
-                }
-
-                remaining = remaining.Slice(separatorIndex + 1);
-            }
-        }
-
-        /// <summary>
         /// Drops any existing "rv"/"th" items from <paramref name="raw"/> (whether well-formed
         /// or not), then emits "rv:&lt;14-hex-digits&gt;" (if <paramref name="rv"/> is non-null)
         /// followed by "th:&lt;hex, trailing zero nibbles trimmed&gt;" (if <paramref name="th"/>
         /// is non-null), followed by every other item from <paramref name="raw"/> in its original
         /// order. Returns null when nothing is left to emit.
         /// </summary>
-        internal static string? SetRvTh(string? raw, ulong? rv, ulong? th)
+        internal static void SetRvTh(StringBuilder sb, string? raw, ulong? rv, ulong? th)
         {
             if (rv is > MaxOtelTraceStateValue)
             {
                 throw new ArgumentOutOfRangeException(nameof(rv));
             }
 
-            var sb = StringBuilderCache.Acquire();
-
-            try
+            if (rv is { } rvValue)
             {
-                if (rv is { } rvValue)
-                {
-                    AppendRandomValueHex(sb, rvValue);
-                }
-
-                if (th is { } thValue)
-                {
-                    if (sb.Length > 0)
-                    {
-                        sb.Append(';');
-                    }
-
-                    AppendThresholdHex(sb, thValue);
-                }
-
-                if (!StringUtil.IsNullOrEmpty(raw))
-                {
-                    var remaining = raw!.AsSpan();
-
-                    while (true)
-                    {
-                        var separatorIndex = remaining.IndexOf(';');
-                        var item = separatorIndex < 0 ? remaining : remaining.Slice(0, separatorIndex);
-                        var colonIndex = item.IndexOf(':');
-                        var key = colonIndex > 0 ? item.Slice(0, colonIndex) : item;
-
-                        if (!key.Equals("rv".AsSpan(), StringComparison.Ordinal) && !key.Equals("th".AsSpan(), StringComparison.Ordinal))
-                        {
-                            if (sb.Length > 0)
-                            {
-                                sb.Append(';');
-                            }
-
-                            sb.Append(item);
-                        }
-
-                        if (separatorIndex < 0)
-                        {
-                            break;
-                        }
-
-                        remaining = remaining.Slice(separatorIndex + 1);
-                    }
-                }
-
-                return sb.Length == 0 ? null : sb.ToString();
+                AppendRandomValueHex(sb, rvValue);
             }
-            finally
+
+            if (th is { } thValue)
             {
-                StringBuilderCache.Release(sb);
+                if (sb.Length > 0)
+                {
+                    sb.Append(';');
+                }
+
+                AppendThresholdHex(sb, thValue);
+            }
+
+            if (!StringUtil.IsNullOrEmpty(raw))
+            {
+                var remaining = raw!.AsSpan();
+
+                while (true)
+                {
+                    var separatorIndex = remaining.IndexOf(';');
+                    var item = separatorIndex < 0 ? remaining : remaining.Slice(0, separatorIndex);
+                    var colonIndex = item.IndexOf(':');
+                    var key = colonIndex > 0 ? item.Slice(0, colonIndex) : item;
+
+                    if (!key.Equals("rv".AsSpan(), StringComparison.Ordinal) && !key.Equals("th".AsSpan(), StringComparison.Ordinal))
+                    {
+                        if (sb.Length > 0)
+                        {
+                            sb.Append(';');
+                        }
+
+                        sb.Append(item);
+                    }
+
+                    if (separatorIndex < 0)
+                    {
+                        break;
+                    }
+
+                    remaining = remaining.Slice(separatorIndex + 1);
+                }
             }
         }
 
-        private static void AppendRandomValueHex(StringBuilder sb, ulong rv)
+        internal static void AppendRandomValueHex(StringBuilder sb, ulong rv)
         {
             sb.Append("rv:");
 #if NETCOREAPP3_1_OR_GREATER
@@ -175,7 +132,7 @@ namespace Datadog.Trace.Propagators
 #endif
         }
 
-        private static void AppendThresholdHex(StringBuilder sb, ulong th)
+        internal static void AppendThresholdHex(StringBuilder sb, ulong th)
         {
             // Format as 14 hex digits, then trim trailing zero nibbles.
             // A fully-zero threshold trims to the empty string; represent it as a single "0".
@@ -200,66 +157,7 @@ namespace Datadog.Trace.Propagators
 #endif
         }
 
-        private static string? RemoveInvalidRvTh(string raw)
-        {
-            var sb = StringBuilderCache.Acquire();
-
-            try
-            {
-                var remaining = raw.AsSpan();
-
-                while (true)
-                {
-                    var separatorIndex = remaining.IndexOf(';');
-                    var item = separatorIndex < 0 ? remaining : remaining.Slice(0, separatorIndex);
-
-                    if (!IsInvalidRvOrTh(item))
-                    {
-                        if (sb.Length > 0)
-                        {
-                            sb.Append(';');
-                        }
-
-                        sb.Append(item);
-                    }
-
-                    if (separatorIndex < 0)
-                    {
-                        break;
-                    }
-
-                    remaining = remaining.Slice(separatorIndex + 1);
-                }
-
-                return sb.Length == 0 ? null : sb.ToString();
-            }
-            finally
-            {
-                StringBuilderCache.Release(sb);
-            }
-        }
-
-        private static bool IsInvalidRvOrTh(ReadOnlySpan<char> item)
-        {
-            var colonIndex = item.IndexOf(':');
-            var key = colonIndex > 0 ? item.Slice(0, colonIndex) : item;
-
-            if (key.Equals("rv".AsSpan(), StringComparison.Ordinal))
-            {
-                var value = colonIndex > 0 ? item.Slice(colonIndex + 1) : default;
-                return value.Length != MaxHexDigits || !TryParseLowercaseHex(value, out _);
-            }
-
-            if (key.Equals("th".AsSpan(), StringComparison.Ordinal))
-            {
-                var value = colonIndex > 0 ? item.Slice(colonIndex + 1) : default;
-                return value.Length is < 1 or > MaxHexDigits || !TryParseLowercaseHex(value, out _);
-            }
-
-            return false;
-        }
-
-        private static bool TryParseLowercaseHex(ReadOnlySpan<char> value, out ulong result)
+        internal static bool TryParseLowercaseHex(ReadOnlySpan<char> value, out ulong result)
         {
             result = 0;
             foreach (var character in value)

@@ -6,6 +6,7 @@
 #nullable enable
 
 using System;
+using System.Text;
 using Datadog.Trace.Propagators;
 using FluentAssertions;
 using Xunit;
@@ -33,37 +34,31 @@ namespace Datadog.Trace.Tests.Propagators
         }
 
         [Theory]
-        [InlineData(null, null)]
-        [InlineData("", null)]
-        [InlineData("rv:ef284ace7a91e1", "rv:ef284ace7a91e1")]
-        [InlineData("th:0", "th:0")]
-        [InlineData("th:e6666666666668", "th:e6666666666668")]
-        [InlineData("unknownkey:whatever", "unknownkey:whatever")]
-        [InlineData("rv:zz;th:zz", null)]
-        [InlineData("rv:ef284ace7a91e1;th:zz", "rv:ef284ace7a91e1")]
-        [InlineData("rv:zz;th:e6666666666668", "th:e6666666666668")]
-        [InlineData("foo:bar;rv:zz;th:e6666666666668;baz:qux", "foo:bar;th:e6666666666668;baz:qux")]
+        [InlineData(null, null, null)]
+        [InlineData("", null, null)]
+        [InlineData("rv:ef284ace7a91e1", 0xef284ace7a91e1UL, null)]
+        [InlineData("th:0", null, 0UL)]
+        [InlineData("th:e6666666666668", null, 0xe6666666666668UL)]
+        [InlineData("unknownkey:whatever", null, null)]
+        [InlineData("rv:zz;th:zz", null, null)]
+        [InlineData("rv:ef284ace7a91e1;th:zz", 0xef284ace7a91e1UL, null)]
+        [InlineData("rv:zz;th:e6666666666668", null, 0xe6666666666668UL)]
+        [InlineData("foo:bar;rv:zz;th:e6666666666668;baz:qux", null, 0xe6666666666668UL)]
         // rv values use lowercase hexadecimal digits.
-        [InlineData("rv:EF284ACE7A91E1;foo:bar", "foo:bar")]
+        [InlineData("rv:EF284ACE7A91E1;foo:bar", null, null)]
         // th must contain no more than 14 lowercase hexadecimal digits.
-        [InlineData("th:123456789abcdef;foo:bar", "foo:bar")]
-        [InlineData("rv:;th;foo:bar", "foo:bar")]
-        public void Normalize_RemovesOnlyMalformedRvAndTh(string? raw, string? expected)
+        [InlineData("th:123456789abcdef;foo:bar", null, null)]
+        [InlineData("rv:;th;foo:bar", null, null)]
+        public void Parse_RemovesOnlyMalformedRvAndTh(string? raw, ulong? expectedRv, ulong? expectedTh)
         {
-            OtelTraceStateHelpers.Normalize(raw).Should().Be(expected);
+            var otelTraceState = OtelTraceState.Parse(raw);
+            otelTraceState.RandomValue.Should().Be(expectedRv);
+            otelTraceState.Threshold.Should().Be(expectedTh);
         }
 
         [Theory]
-        [InlineData("rv:ef284ace7a91e1;th:e6666666666668")]
-        [InlineData("unknownkey:whatever")]
-        public void Normalize_ValidContentReturnsOriginalInstance(string raw)
-        {
-            OtelTraceStateHelpers.Normalize(raw).Should().BeSameAs(raw);
-        }
-
-        [Theory]
-        [InlineData(null, null, null, null)]
-        [InlineData("", null, null, null)]
+        [InlineData(null, null, null, "")]
+        [InlineData("", null, null, "")]
         [InlineData(null, 0x1UL, null, "rv:00000000000001")]
         [InlineData(null, 0xef284ace7a91e1UL, null, "rv:ef284ace7a91e1")]
         [InlineData(null, null, 0xe6666666666668UL, "th:e6666666666668")]
@@ -75,13 +70,16 @@ namespace Datadog.Trace.Tests.Propagators
         [InlineData("foo:bar", null, null, "foo:bar")]
         public void SetRvTh_RewritesRvAndThInPlace(string? raw, ulong? rv, ulong? th, string? expected)
         {
-            OtelTraceStateHelpers.SetRvTh(raw, rv, th).Should().Be(expected);
+            var sb = new StringBuilder();
+            OtelTraceStateHelpers.SetRvTh(sb, raw, rv, th);
+            sb.ToString().Should().Be(expected);
         }
 
         [Fact]
         public void SetRvTh_ThrowsWhenRvExceeds56Bits()
         {
-            FluentActions.Invoking(() => OtelTraceStateHelpers.SetRvTh(null, 1UL << 56, null))
+            var sb = new StringBuilder();
+            FluentActions.Invoking(() => OtelTraceStateHelpers.SetRvTh(sb, null, 1UL << 56, null))
                          .Should().Throw<ArgumentOutOfRangeException>();
         }
     }
