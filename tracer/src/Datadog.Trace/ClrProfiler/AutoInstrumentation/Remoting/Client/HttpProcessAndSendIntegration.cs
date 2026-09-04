@@ -80,7 +80,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Remoting.Client
                     return new CallTargetReturn<TReturn>(returnValue);
                 }
 
-                var requestMethod = request.Method.ToUpperInvariant();
+                var requestMethod = StringUtil.ToUpperInvariant(request.Method);
 
                 if (requestUri != null)
                 {

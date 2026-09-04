@@ -130,7 +130,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
 
                 string host = request.Headers.Host ?? string.Empty;
                 var userAgent = request.Headers.UserAgent?.ToString() ?? string.Empty;
-                string method = request.Method.Method?.ToUpperInvariant() ?? "GET";
+                string method = StringUtil.ToUpperInvariant(request.Method.Method) ?? "GET";
                 string route = null;
                 try
                 {
@@ -183,9 +183,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                     // get the route values. Not sure how this is possible, but is preexisting behaviour
                     try
                     {
-                        area = (routeValues.GetValueOrDefault("area") as string)?.ToLowerInvariant();
-                        controller = (routeValues.GetValueOrDefault("controller") as string)?.ToLowerInvariant();
-                        action = (routeValues.GetValueOrDefault("action") as string)?.ToLowerInvariant();
+                        area = StringUtil.ToLowerInvariant(routeValues.GetValueOrDefault("area") as string);
+                        controller = StringUtil.ToLowerInvariant(routeValues.GetValueOrDefault("controller") as string);
+                        action = StringUtil.ToLowerInvariant(routeValues.GetValueOrDefault("action") as string);
                     }
                     catch
                     {

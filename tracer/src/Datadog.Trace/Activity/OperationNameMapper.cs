@@ -56,7 +56,7 @@ namespace Datadog.Trace.Activity
             if (tags.SpanKind == SpanKinds.Client && tags.GetTag("db.system") is { Length: > 0 } dbSystem)
             {
                 // IsDatabase
-                return $"{dbSystem.ToLowerInvariant()}.query";
+                return $"{StringUtil.ToLowerInvariant(dbSystem)}.query";
             }
 
             if (tags.SpanKind is SpanKinds.Client or SpanKinds.Server or SpanKinds.Producer or SpanKinds.Consumer
@@ -64,7 +64,7 @@ namespace Datadog.Trace.Activity
                 && tags.GetTag(Tags.MessagingOperation) is { Length: > 0 } messagingOperation)
             {
                 // IsMessaging
-                return $"{messagingSystem}.{messagingOperation}".ToLowerInvariant();
+                return StringUtil.ToLowerInvariant($"{messagingSystem}.{messagingOperation}");
             }
 
             var rpcSystem = tags.GetTag(Tags.RpcSystem);
@@ -73,27 +73,27 @@ namespace Datadog.Trace.Activity
                 if (tags.SpanKind == SpanKinds.Client && string.Equals(rpcSystem, "aws-api", StringComparison.OrdinalIgnoreCase))
                 {
                     // IsAwsClient
-                    var service = tags.GetTag(Tags.RpcService)?.ToLowerInvariant();
+                    var service = StringUtil.ToLowerInvariant(tags.GetTag(Tags.RpcService));
                     return !StringUtil.IsNullOrEmpty(service) ? $"aws.{service}.request" : "aws.client.request";
                 }
 
                 if (tags.SpanKind == SpanKinds.Client)
                 {
                     // IsRpcClient
-                    return $"{rpcSystem.ToLowerInvariant()}.client.request";
+                    return $"{StringUtil.ToLowerInvariant(rpcSystem)}.client.request";
                 }
 
                 if (tags.SpanKind == SpanKinds.Server)
                 {
                     // IsRpcServer
-                    return $"{rpcSystem.ToLowerInvariant()}.server.request";
+                    return $"{StringUtil.ToLowerInvariant(rpcSystem)}.server.request";
                 }
             }
 
             if (tags.SpanKind == SpanKinds.Server && tags.GetTag("faas.trigger") is { Length: > 0 } faasTrigger)
             {
                 // IsFaasServer
-                return $"{faasTrigger.ToLowerInvariant()}.invoke";
+                return $"{StringUtil.ToLowerInvariant(faasTrigger)}.invoke";
             }
 
             if (tags.SpanKind == SpanKinds.Client
@@ -101,7 +101,7 @@ namespace Datadog.Trace.Activity
              && tags.GetTag("faas.invoked_name") is { Length: > 0 } faasInvokedName)
             {
                 // IsFaasClient
-                return $"{faasInvokedProvider}.{faasInvokedName}.invoke".ToLowerInvariant();
+                return StringUtil.ToLowerInvariant($"{faasInvokedProvider}.{faasInvokedName}.invoke");
             }
 
             if (tags.SpanKind == SpanKinds.Server && !StringUtil.IsNullOrEmpty(tags.GetTag("graphql.operation.type")))
@@ -114,19 +114,19 @@ namespace Datadog.Trace.Activity
             {
                 // IsGenericServer
                 var name = tags.GetTag("network.protocol.name");
-                return !StringUtil.IsNullOrEmpty(name) ? $"{name.ToLowerInvariant()}.server.request" : "server.request";
+                return !StringUtil.IsNullOrEmpty(name) ? $"{StringUtil.ToLowerInvariant(name)}.server.request" : "server.request";
             }
 
             if (tags.SpanKind == SpanKinds.Client)
             {
                 // IsGenericClient
                 var name = tags.GetTag("network.protocol.name");
-                return !StringUtil.IsNullOrEmpty(name) ? $"{name.ToLowerInvariant()}.client.request" : "client.request";
+                return !StringUtil.IsNullOrEmpty(name) ? $"{StringUtil.ToLowerInvariant(name)}.client.request" : "client.request";
             }
 
             // when there is no SpanKind defined (possible on Activity objects without "Kind")
             // fallback to using "internal" for the name.
-            return !StringUtil.IsNullOrEmpty(tags.SpanKind) ? tags.SpanKind.ToLowerInvariant() : SpanKinds.Internal;
+            return !StringUtil.IsNullOrEmpty(tags.SpanKind) ? StringUtil.ToLowerInvariant(tags.SpanKind) : SpanKinds.Internal;
         }
     }
 }
