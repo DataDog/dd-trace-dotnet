@@ -233,18 +233,63 @@ namespace Datadog.Trace.Tests.Propagators
         }
 
         [Fact]
-        public void CreateTraceStateHeader_EmitsOtRightAfterDd_WhenOtelTraceStateIsSet()
+        public void CreateTraceStateHeader_EmitsOtInOriginalPosition_WhenOtelTraceStateIsUnchanged()
         {
             var traceContext = new TraceContext(new StubDatadogTracer());
             var spanContext = new SpanContext(parent: SpanContext.None, traceContext, serviceName: null, traceId: (TraceId)1, spanId: 2)
             {
-                OtelTraceState = "rv:ef284ace7a91e1;th:e6666666666668",
-                AdditionalW3CTraceState = "congo=t61rcWkgMzE"
+                OtelTraceState = OtelTraceState.Parse("rv:ef284ace7a91e1;th:e6666666666668"),
+                AdditionalW3CTraceState = "congo=t61rcWkgMzE,ot=rv:ef284ace7a91e1;th:e6666666666668"
             };
 
             var tracestate = W3CTraceContextPropagator.CreateTraceStateHeader(spanContext);
 
-            tracestate.Should().Be("dd=s:1;p:0000000000000002,ot=rv:ef284ace7a91e1;th:e6666666666668,congo=t61rcWkgMzE");
+            tracestate.Should().Be("dd=s:1;p:0000000000000002,congo=t61rcWkgMzE,ot=rv:ef284ace7a91e1;th:e6666666666668");
+        }
+
+        [Fact]
+        public void CreateTraceStateHeader_EmitsOtRightAfterDd_WhenOtelTraceStateIsChanged()
+        {
+            var traceContext = new TraceContext(new StubDatadogTracer());
+            var spanContext = new SpanContext(parent: SpanContext.None, traceContext, serviceName: null, traceId: (TraceId)1, spanId: 2)
+            {
+                OtelTraceState = OtelTraceState.Parse("rv:ef284ace7a91e1;th:zz"),
+                AdditionalW3CTraceState = "ot=rv:ef284ace7a91e1;th:zz,congo=t61rcWkgMzE"
+            };
+
+            var tracestate = W3CTraceContextPropagator.CreateTraceStateHeader(spanContext);
+
+            tracestate.Should().Be("dd=s:1;p:0000000000000002,ot=rv:ef284ace7a91e1,congo=t61rcWkgMzE");
+        }
+
+        [Fact]
+        public void CreateTraceStateHeader_DoesNotEmitEmptySubKey_WhenOnlyUnknownOtItemsRemain()
+        {
+            var traceContext = new TraceContext(new StubDatadogTracer());
+            var spanContext = new SpanContext(parent: SpanContext.None, traceContext, serviceName: null, traceId: (TraceId)1, spanId: 2)
+            {
+                OtelTraceState = OtelTraceState.Parse("rv:zz;vendor:x"),
+                AdditionalW3CTraceState = "ot=rv:zz;vendor:x,congo=t61rcWkgMzE"
+            };
+
+            var tracestate = W3CTraceContextPropagator.CreateTraceStateHeader(spanContext);
+
+            tracestate.Should().Be("dd=s:1;p:0000000000000002,ot=vendor:x,congo=t61rcWkgMzE");
+        }
+
+        [Fact]
+        public void CreateTraceStateHeader_DoesNotEmitEmptySubKey_WhenRvIsDroppedButThRemains()
+        {
+            var traceContext = new TraceContext(new StubDatadogTracer());
+            var spanContext = new SpanContext(parent: SpanContext.None, traceContext, serviceName: null, traceId: (TraceId)1, spanId: 2)
+            {
+                OtelTraceState = OtelTraceState.Parse("rv:zz;th:e6666666666668"),
+                AdditionalW3CTraceState = "ot=rv:zz;th:e6666666666668,congo=t61rcWkgMzE"
+            };
+
+            var tracestate = W3CTraceContextPropagator.CreateTraceStateHeader(spanContext);
+
+            tracestate.Should().Be("dd=s:1;p:0000000000000002,ot=th:e6666666666668,congo=t61rcWkgMzE");
         }
 
         [Fact]
@@ -859,7 +904,7 @@ namespace Datadog.Trace.Tests.Propagators
 
             var result = W3CPropagator.Extract(headers.Object);
 
-            result.SpanContext!.OtelTraceState.Should().Be(inboundOtelTraceState);
+            result.SpanContext!.OtelTraceState.CachedHeaderString.Should().Be(inboundOtelTraceState);
 
             var tracestate = W3CTraceContextPropagator.CreateTraceStateHeader(result.SpanContext);
             if (inboundOtelTraceState is null)
@@ -888,7 +933,7 @@ namespace Datadog.Trace.Tests.Propagators
 
             var result = W3CPropagator.Extract(headers.Object);
 
-            result.SpanContext!.OtelTraceState.Should().Be(ExpectedOtelTraceState);
+            result.SpanContext!.OtelTraceState.CachedHeaderString.Should().Be(InboundOtelTraceState);
             result.SpanContext.AdditionalW3CTraceState.Should().Be($"foo=bar,ot={InboundOtelTraceState},something=else");
 
             var tracestate = W3CTraceContextPropagator.CreateTraceStateHeader(result.SpanContext!);
@@ -909,7 +954,7 @@ namespace Datadog.Trace.Tests.Propagators
 
             var result = W3CPropagator.Extract(headers.Object);
 
-            result.SpanContext!.OtelTraceState.Should().Be(UnknownOtelTraceState);
+            result.SpanContext!.OtelTraceState.CachedHeaderString.Should().Be(UnknownOtelTraceState);
 
             var tracestate = W3CTraceContextPropagator.CreateTraceStateHeader(result.SpanContext);
             tracestate.Should().Contain($"ot={UnknownOtelTraceState}");
@@ -950,7 +995,7 @@ namespace Datadog.Trace.Tests.Propagators
 
             var result = W3CPropagator.Extract(headers.Object);
 
-            result.SpanContext!.OtelTraceState.Should().Be("rv:ef284ace7a91e1;th:e6666666666668;unknownsubkey:x");
+            result.SpanContext!.OtelTraceState.CachedHeaderString.Should().Be("rv:ef284ace7a91e1;th:e6666666666668;unknownsubkey:x");
             result.SpanContext.AdditionalW3CTraceState.Should().Be("foo1=bar1,ot=rv:ef284ace7a91e1;th:e6666666666668;unknownsubkey:x,congo=t61rcWkgMzE");
 
             var tracestate = W3CTraceContextPropagator.CreateTraceStateHeader(result.SpanContext);

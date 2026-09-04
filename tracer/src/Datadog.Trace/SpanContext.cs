@@ -296,7 +296,7 @@ namespace Datadog.Trace
         /// </summary>
         [MaybeNull]
         [AllowNull]
-        internal string OtelTraceState
+        internal OtelTraceState OtelTraceState
         {
             get => TraceContext?.OtelTraceState ?? _remoteW3CTraceState?.OtelTraceState;
             set
@@ -547,7 +547,7 @@ namespace Datadog.Trace
         {
             public string AdditionalW3CTraceState { get; set; }
 
-            public string OtelTraceState { get; set; }
+            public OtelTraceState OtelTraceState { get; set; }
         }
 
         internal static class Keys

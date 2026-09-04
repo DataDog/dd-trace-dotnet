@@ -41,8 +41,7 @@ namespace Datadog.Trace
 
         private IastRequestContext? _iastRequestContext;
         private AppSecRequestContext? _appSecRequestContext;
-        private string? _otelTraceState;
-        private bool _containsLocallyGeneratedOtelRandomValue;
+        private OtelTraceState? _otelTraceState;
 
         // Lazily created on the first feature-flag evaluation for this trace; null until then, so
         // traces that never evaluate a flag pay nothing. State dies with the TraceContext.
@@ -125,14 +124,16 @@ namespace Datadog.Trace
         /// <see cref="Propagators.OtelTraceStateHelpers"/> for the only code that inspects
         /// or rewrites its "rv"/"th" sub-keys.
         /// </summary>
-        internal string? OtelTraceState
+        internal OtelTraceState? OtelTraceState
         {
             get => _otelTraceState;
-            set
-            {
-                _otelTraceState = value;
-                _containsLocallyGeneratedOtelRandomValue = false;
-            }
+
+            // Store a copy, never the caller's instance: the value normally comes from an extracted
+            // SpanContext that may start several traces, and the sampling decision below mutates this
+            // object in place. Aliasing it would let one trace's override rewrite a sibling trace's
+            // "ot=" member. The copy constructor also resets LocallyGeneratedOtelRandomValue, since
+            // anything assigned through here arrived from outside this trace.
+            set => _otelTraceState = value is null ? null : new OtelTraceState(value);
         }
 
         /// <summary> Gets the IAST context </summary>
@@ -432,24 +433,32 @@ namespace Datadog.Trace
                         rv = th > 0 ? th - 1 : 0;
                     }
 
+                    _otelTraceState ??= new(headerString: null);
+                    _otelTraceState.IsModified = true;
+
                     var rateLimiterRejected = didSample && SamplingPriorityValues.IsDrop(p);
                     if (rateLimiterRejected)
                     {
-                        var inheritedRv = _containsLocallyGeneratedOtelRandomValue ? null : OtelTraceStateHelpers.ExtractRv(_otelTraceState);
-                        _otelTraceState = OtelTraceStateHelpers.SetRvTh(_otelTraceState, inheritedRv ?? rv, th: null);
-                        _containsLocallyGeneratedOtelRandomValue = inheritedRv is null;
+                        var inheritedRv = _otelTraceState.LocallyGeneratedOtelRandomValue ? null : OtelTraceStateHelpers.ExtractRv(_otelTraceState.CachedHeaderString);
+
+                        _otelTraceState.RandomValue = inheritedRv ?? rv;
+                        _otelTraceState.Threshold = null;
+                        _otelTraceState.LocallyGeneratedOtelRandomValue = inheritedRv is null;
                     }
                     else
                     {
-                        _otelTraceState = OtelTraceStateHelpers.SetRvTh(_otelTraceState, rv, th);
-                        _containsLocallyGeneratedOtelRandomValue = true;
+                        _otelTraceState.RandomValue = rv;
+                        _otelTraceState.Threshold = th;
+                        _otelTraceState.LocallyGeneratedOtelRandomValue = true;
                     }
                 }
             }
             else if (mechanism is Sampling.SamplingMechanism.Manual or Sampling.SamplingMechanism.Asm)
             {
-                var inheritedRv = _containsLocallyGeneratedOtelRandomValue ? null : OtelTraceStateHelpers.ExtractRv(_otelTraceState);
-                OtelTraceState = OtelTraceStateHelpers.SetRvTh(_otelTraceState, inheritedRv, th: null);
+                _otelTraceState ??= new(headerString: null);
+                _otelTraceState.IsModified = true;
+                _otelTraceState.RandomValue = _otelTraceState.LocallyGeneratedOtelRandomValue ? null : OtelTraceStateHelpers.ExtractRv(_otelTraceState.CachedHeaderString);
+                _otelTraceState.Threshold = null;
             }
 
             if (notifyDistributedTracer)
