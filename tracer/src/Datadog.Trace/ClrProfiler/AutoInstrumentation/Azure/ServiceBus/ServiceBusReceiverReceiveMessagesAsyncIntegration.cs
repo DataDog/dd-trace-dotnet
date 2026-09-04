@@ -16,6 +16,7 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Schema;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Serverless;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus;
 
@@ -38,11 +39,13 @@ public sealed class ServiceBusReceiverReceiveMessagesAsyncIntegration
     private const string OperationName = "azure_servicebus.receive";
 
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ServiceBusReceiverReceiveMessagesAsyncIntegration));
+    private static readonly object ProcessorReceiveState = new();
 
     internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, int maxMessages, TimeSpan? maxWaitTime, bool isProcessor, CancellationToken cancellationToken)
         where TTarget : IServiceBusReceiver, IDuckType
     {
-        return CallTargetState.GetDefault();
+        var receiveState = isProcessor ? ProcessorReceiveState : null;
+        return new CallTargetState(scope: null, state: receiveState);
     }
 
     internal static TReturn? OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn? returnValue, Exception exception, in CallTargetState state)
@@ -66,8 +69,16 @@ public sealed class ServiceBusReceiverReceiveMessagesAsyncIntegration
         var spanLinks = ExtractSpanLinksFromMessages(tracer, messagesList);
         var scope = CreateAndConfigureSpan(tracer, spanLinks, instance, messagesList);
 
-        // Re-inject the new span context into all messages so Azure Functions will use it as parent
-        if (scope != null && messagesList != null && messageCount > 0)
+        var isProcessorReceive = ReferenceEquals(state.State, ProcessorReceiveState);
+        var shouldReinjectContext = ShouldReinjectContext(
+            tracer.Settings.IsRunningInAzureFunctions,
+            isProcessorReceive,
+            AzureInfo.Instance.IsIsolatedFunctionHostProcess);
+
+        // Re-inject the new span context into all messages so the Azure Functions trigger handoff
+        // parents to this receive span. See ShouldReinjectContext for why processor receives are
+        // excluded outside the isolated Functions host process.
+        if (scope != null && messagesList != null && messageCount > 0 && shouldReinjectContext)
         {
             ReinjectContextIntoMessages(tracer, scope, messagesList);
         }
@@ -79,6 +90,24 @@ public sealed class ServiceBusReceiverReceiveMessagesAsyncIntegration
 
         return returnValue;
     }
+
+    // Decides whether the receive-span context should be written back into the received messages so a
+    // downstream reader parents to it. This is only wanted for the Azure Functions Service Bus trigger
+    // handoff, and only where the function invocation is parented by reading the message:
+    //   - Isolated model: the host process receives and serializes the message over gRPC; the worker
+    //     parents its function span by extracting the context from UserProperties (see
+    //     AzureFunctionsCommon.CreateIsolatedFunctionScope), so the host must reinject.
+    //   - Non-processor receives in Functions: kept for back-compat with manual receives.
+    //
+    // It must NOT run for a user-created ServiceBusProcessor: with the Azure activity source enabled the
+    // SDK's ServiceBusProcessor.ProcessMessage activity parents to the message context, so overwriting it
+    // here splits the producer and consumer into separate traces.
+    //
+    // The in-process Functions trigger is intentionally excluded too: its function span is created at
+    // FunctionExecutor.TryExecuteAsync and parents to the active scope, not by reading the message, so it
+    // does not depend on reinjection. Do not re-enable it for that case.
+    internal static bool ShouldReinjectContext(bool isRunningInAzureFunctions, bool isProcessorReceive, bool isIsolatedFunctionHostProcess)
+        => isRunningInAzureFunctions && (!isProcessorReceive || isIsolatedFunctionHostProcess);
 
     private static List<SpanLink>? ExtractSpanLinksFromMessages(Tracer tracer, System.Collections.IList? messagesList)
     {
