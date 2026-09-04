@@ -23,6 +23,7 @@ using Xunit.Abstractions;
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
     [Collection("IisTests")]
+    [Trait("IISExpress", "True")]
     public class AspNetMvc4TestsCallTargetClassic : AspNetMvc4Tests
     {
         public AspNetMvc4TestsCallTargetClassic(IisFixture iisFixture, ITestOutputHelper output)
@@ -32,6 +33,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     }
 
     [Collection("IisTests")]
+    [Trait("IISExpress", "True")]
     public class AspNetMvc4TestsCallTargetIntegrated : AspNetMvc4Tests
     {
         public AspNetMvc4TestsCallTargetIntegrated(IisFixture iisFixture, ITestOutputHelper output)
@@ -41,6 +43,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     }
 
     [Collection("IisTests")]
+    [Trait("IISExpress", "True")]
     public class AspNetMvc4TestsCallTargetClassicWithFeatureFlag : AspNetMvc4Tests
     {
         public AspNetMvc4TestsCallTargetClassicWithFeatureFlag(IisFixture iisFixture, ITestOutputHelper output)
@@ -50,6 +53,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     }
 
     [Collection("IisTests")]
+    [Trait("IISExpress", "True")]
     public class AspNetMvc4TestsCallTargetIntegratedWithFeatureFlag : AspNetMvc4Tests
     {
         public AspNetMvc4TestsCallTargetIntegratedWithFeatureFlag(IisFixture iisFixture, ITestOutputHelper output)
@@ -59,6 +63,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     }
 
     [Collection("IisTests")]
+    [Trait("IISExpress", "True")]
     public class AspNetMvc4TestsCallTargetIntegratedWithRouteTemplateExpansion : AspNetMvc4Tests
     {
         public AspNetMvc4TestsCallTargetIntegratedWithRouteTemplateExpansion(IisFixture iisFixture, ITestOutputHelper output)

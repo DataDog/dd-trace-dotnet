@@ -17,6 +17,7 @@ using Xunit.Abstractions;
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
 {
     [Collection("IisTests")]
+    [Trait("IISExpress", "True")]
     public class AspNetCoreIisMinimalApisTestsInProcess : AspNetCoreIisMinimalApisTests
     {
         public AspNetCoreIisMinimalApisTestsInProcess(IisFixture fixture, ITestOutputHelper output)
@@ -26,6 +27,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
     }
 
     [Collection("IisTests")]
+    [Trait("IISExpress", "True")]
     public class AspNetCoreIisMinimalApisTestsInProcessWithFeatureFlag : AspNetCoreIisMinimalApisTests
     {
         public AspNetCoreIisMinimalApisTestsInProcessWithFeatureFlag(IisFixture fixture, ITestOutputHelper output)
@@ -35,6 +37,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
     }
 
     [Collection("IisTests")]
+    [Trait("IISExpress", "True")]
     public class AspNetCoreIisMinimalApisTestsOutOfProcess : AspNetCoreIisMinimalApisTests
     {
         public AspNetCoreIisMinimalApisTestsOutOfProcess(IisFixture fixture, ITestOutputHelper output)
@@ -44,6 +47,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
     }
 
     [Collection("IisTests")]
+    [Trait("IISExpress", "True")]
     public class AspNetCoreIisMinimalApisTestsOutOfProcessWithFeatureFlag : AspNetCoreIisMinimalApisTests
     {
         public AspNetCoreIisMinimalApisTestsOutOfProcessWithFeatureFlag(IisFixture fixture, ITestOutputHelper output)
@@ -53,6 +57,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
     }
 
     [Collection("IisTests")]
+    [Trait("IISExpress", "True")]
     public class AspNetCoreIisMinimalApisTestsInProcessSingleSpan : AspNetCoreIisMinimalApisTests
     {
         public AspNetCoreIisMinimalApisTestsInProcessSingleSpan(IisFixture fixture, ITestOutputHelper output)
@@ -62,6 +67,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
     }
 
     [Collection("IisTests")]
+    [Trait("IISExpress", "True")]
     public class AspNetCoreIisMinimalApisTestsOutOfProcessSingleSpan : AspNetCoreIisMinimalApisTests
     {
         public AspNetCoreIisMinimalApisTestsOutOfProcessSingleSpan(IisFixture fixture, ITestOutputHelper output)

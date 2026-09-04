@@ -81,7 +81,7 @@ partial class Build
             foreach (var architecture in ArchitecturesForPlatformForTracer)
             {
                 var workingDirectory = GetNativeOutputDirectory(NativeLoaderTestsProject.Name) / BuildConfiguration / architecture.ToString();
-                var testsResultFile = BuildDataDirectory / "tests" / $"{FileNames.NativeLoaderTests}.Results.{BuildConfiguration}.{TargetPlatform}.xml";
+                var testsResultFile = BuildDataDirectory / "tests" / $"{FileNames.NativeLoaderTests}.Results.{BuildConfiguration}.{architecture}.xml";
                 var exePath = workingDirectory / $"{FileNames.NativeLoaderTests}.exe";
                 var testExe = ToolResolver.GetLocalTool(exePath);
                 testExe($"--gtest_output=xml:{testsResultFile}", workingDirectory: workingDirectory);
@@ -192,8 +192,9 @@ partial class Build
             CMake.Value(
                 arguments: $"-B {buildDirectory} -S {RootDirectory} -DCMAKE_BUILD_TYPE={BuildConfiguration} -DUNIVERSAL=OFF -DCMAKE_OSX_SYSROOT={sdkPath}",
                 environmentVariables: envVariables);
+            var parallelism = IsGitlab ? Math.Min(4, Environment.ProcessorCount) : Environment.ProcessorCount;
             CMake.Value(
-                arguments: $"--build {buildDirectory} --parallel {Environment.ProcessorCount} --target {FileNames.NativeLoader}",
+                arguments: $"--build {buildDirectory} --parallel {parallelism} --target {FileNames.NativeLoader}",
                 environmentVariables: envVariables);
 
             var sourceFile = GetNativeOutputDirectory(NativeLoaderProject.Name) / $"{NativeLoaderProject.Name}.dylib";
