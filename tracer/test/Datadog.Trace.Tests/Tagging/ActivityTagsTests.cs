@@ -132,4 +132,46 @@ public class ActivityTagsTests
             }
         }
     }
+
+    [Theory]
+    [InlineData("deployment.environment.name", "stable_env")]
+    [InlineData("deployment.environment", "legacy_env")]
+    public async Task Environment_ShouldBe_FixedUpFromActivityTag(string tagKey, string tagValue)
+    {
+        var activityMock = new Mock<IActivity5>();
+        activityMock.Setup(x => x.Kind).Returns(ActivityKind.Producer);
+
+        var tagObjects = new Dictionary<string, object> { { tagKey, tagValue } };
+        activityMock.Setup(x => x.TagObjects).Returns(tagObjects);
+
+        // UpdateSpanFromActivity implicitly accesses Tracer.Instance if there's no associated Tracer in the span
+        await using var tracer = TracerHelper.CreateWithFakeAgent();
+        using var span = tracer.StartSpan("operation", new OpenTelemetryTags());
+
+        OtlpHelpers.UpdateSpanFromActivity(activityMock.Object, span);
+
+        span.Context.TraceContext!.Environment.Should().Be(tagValue);
+    }
+
+    [Fact]
+    public async Task Environment_StableTagName_ShouldTakePrecedenceOverLegacyTagName()
+    {
+        var activityMock = new Mock<IActivity5>();
+        activityMock.Setup(x => x.Kind).Returns(ActivityKind.Producer);
+
+        var tagObjects = new Dictionary<string, object>
+        {
+            { "deployment.environment", "legacy_env" },
+            { "deployment.environment.name", "stable_env" }
+        };
+        activityMock.Setup(x => x.TagObjects).Returns(tagObjects);
+
+        // UpdateSpanFromActivity implicitly accesses Tracer.Instance if there's no associated Tracer in the span
+        await using var tracer = TracerHelper.CreateWithFakeAgent();
+        using var span = tracer.StartSpan("operation", new OpenTelemetryTags());
+
+        OtlpHelpers.UpdateSpanFromActivity(activityMock.Object, span);
+
+        span.Context.TraceContext!.Environment.Should().Be("stable_env");
+    }
 }
