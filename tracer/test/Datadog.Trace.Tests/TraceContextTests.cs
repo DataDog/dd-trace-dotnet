@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Text;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
@@ -251,7 +252,7 @@ namespace Datadog.Trace.Tests
                 rate: OtelTraceStateExampleSamplingRate,
                 sample: true);
 
-            traceContext.OtelTraceState.Should().Be(OtelTraceStateExample);
+            WriteOtelTraceStateHeader(traceContext.OtelTraceState).Should().Be(OtelTraceStateExample);
         }
 
         [Fact]
@@ -265,7 +266,7 @@ namespace Datadog.Trace.Tests
                 rate: OtelTraceStateExampleSamplingRate,
                 sample: false);
 
-            traceContext.OtelTraceState.Should().Contain("th:" + OtelTraceStateExampleThreshold);
+            WriteOtelTraceStateHeader(traceContext.OtelTraceState).Should().Contain("th:" + OtelTraceStateExampleThreshold);
         }
 
         [Fact]
@@ -278,7 +279,7 @@ namespace Datadog.Trace.Tests
 
             traceContext.SetSamplingPriority(SamplingPriorityValues.UserKeep, SamplingMechanism.LocalTraceSamplingRule, rate: OtelTraceStateExampleSamplingRate, sample: true);
 
-            traceContext.OtelTraceState.Should().BeNull();
+            WriteOtelTraceStateHeader(traceContext.OtelTraceState).Should().Be(string.Empty);
         }
 
         [Fact]
@@ -295,8 +296,8 @@ namespace Datadog.Trace.Tests
                 rate: (float)OtelTraceStateImprecisionClampSamplingRate,
                 sample: sample);
 
-            var rv = OtelTraceStateHelpers.ExtractRv(traceContext.OtelTraceState)!.Value;
-            var th = ParseThForTest(traceContext.OtelTraceState);
+            var rv = traceContext.OtelTraceState!.RandomValue;
+            var th = traceContext.OtelTraceState.Threshold;
             (rv >= th).Should().Be(sample);
         }
 
@@ -314,7 +315,7 @@ namespace Datadog.Trace.Tests
 
             traceContext.SetSamplingPriority(SamplingPriorityValues.UserKeep, mechanism);
 
-            traceContext.OtelTraceState.Should().BeNull();
+            WriteOtelTraceStateHeader(traceContext.OtelTraceState).Should().Be(string.Empty);
         }
 
         [Fact]
@@ -329,7 +330,7 @@ namespace Datadog.Trace.Tests
                 limiterRate: OtelTraceStateRateLimiterRate,
                 sample: true);
 
-            traceContext.OtelTraceState.Should().Be(OtelTraceStateExampleWithoutThreshold);
+            WriteOtelTraceStateHeader(traceContext.OtelTraceState).Should().Be(OtelTraceStateExampleWithoutThreshold);
         }
 
         [Fact]
@@ -346,14 +347,14 @@ namespace Datadog.Trace.Tests
 
             traceContext.GetOrMakeSamplingDecision();
 
-            traceContext.OtelTraceState.Should().Be(OtelTraceStateExampleWithoutThreshold);
+            WriteOtelTraceStateHeader(traceContext.OtelTraceState).Should().Be(OtelTraceStateExampleWithoutThreshold);
         }
 
         [Fact]
         public void SetSamplingPriority_RateLimiterDemotesKeep_StripsInheritedThButKeepsRvAndUnknownItems()
         {
             var traceContext = TraceContextTestHelpers.CreateTraceContextWithRootSpan(traceIdLower: OtelTraceStateExampleTraceIdLower);
-            traceContext.OtelTraceState = OtelTraceStateExampleWithUnrelatedValue;
+            traceContext.OtelTraceState = OtelTraceState.Parse(OtelTraceStateExampleWithUnrelatedValue);
 
             traceContext.SetSamplingPriority(
                 priority: SamplingPriorityValues.UserReject,
@@ -362,7 +363,7 @@ namespace Datadog.Trace.Tests
                 limiterRate: OtelTraceStateRateLimiterRate,
                 sample: true);
 
-            traceContext.OtelTraceState.Should().Be(OtelTraceStateExampleWithoutThresholdWithUnrelatedValue);
+            WriteOtelTraceStateHeader(traceContext.OtelTraceState).Should().Be(OtelTraceStateExampleWithoutThresholdWithUnrelatedValue);
         }
 
         [Theory]
@@ -382,18 +383,18 @@ namespace Datadog.Trace.Tests
                 rate: rate,
                 sample: sample);
 
-            traceContext.OtelTraceState.Should().Be($"rv:{expectedRandomValue};th:{expectedThreshold}");
+            WriteOtelTraceStateHeader(traceContext.OtelTraceState).Should().Be($"rv:{expectedRandomValue};th:{expectedThreshold}");
         }
 
         [Fact]
         public void SetSamplingPriority_ManualOverride_StripsInheritedThButKeepsRv()
         {
             var traceContext = TraceContextTestHelpers.CreateTraceContextWithRootSpan(traceIdLower: OtelTraceStateMinimumTraceIdLower);
-            traceContext.OtelTraceState = OtelTraceStateExample;
+            traceContext.OtelTraceState = OtelTraceState.Parse(OtelTraceStateExample);
 
             traceContext.SetSamplingPriority(SamplingPriorityValues.UserKeep, SamplingMechanism.Manual);
 
-            traceContext.OtelTraceState.Should().Be(OtelTraceStateExampleWithoutThreshold);
+            WriteOtelTraceStateHeader(traceContext.OtelTraceState).Should().Be(OtelTraceStateExampleWithoutThreshold);
         }
 
         private static ulong ParseThForTest(string otelTraceState)
@@ -407,6 +408,13 @@ namespace Datadog.Trace.Tests
             }
 
             throw new InvalidOperationException("no th found");
+        }
+
+        private static string WriteOtelTraceStateHeader(OtelTraceState traceState)
+        {
+            var sb = new StringBuilder();
+            OtelTraceStateHelpers.SetRvTh(sb, traceState?.CachedHeaderString, traceState?.RandomValue, traceState?.Threshold);
+            return sb.ToString();
         }
     }
 }
