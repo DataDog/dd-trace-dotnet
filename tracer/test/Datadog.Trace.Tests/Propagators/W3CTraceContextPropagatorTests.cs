@@ -263,6 +263,36 @@ namespace Datadog.Trace.Tests.Propagators
         }
 
         [Fact]
+        public void CreateTraceStateHeader_DoesNotEmitEmptySubKey_WhenOnlyUnknownOtItemsRemain()
+        {
+            var traceContext = new TraceContext(new StubDatadogTracer());
+            var spanContext = new SpanContext(parent: SpanContext.None, traceContext, serviceName: null, traceId: (TraceId)1, spanId: 2)
+            {
+                OtelTraceState = OtelTraceState.Parse("rv:zz;vendor:x"),
+                AdditionalW3CTraceState = "ot=rv:zz;vendor:x,congo=t61rcWkgMzE"
+            };
+
+            var tracestate = W3CTraceContextPropagator.CreateTraceStateHeader(spanContext);
+
+            tracestate.Should().Be("dd=s:1;p:0000000000000002,ot=vendor:x,congo=t61rcWkgMzE");
+        }
+
+        [Fact]
+        public void CreateTraceStateHeader_DoesNotEmitEmptySubKey_WhenRvIsDroppedButThRemains()
+        {
+            var traceContext = new TraceContext(new StubDatadogTracer());
+            var spanContext = new SpanContext(parent: SpanContext.None, traceContext, serviceName: null, traceId: (TraceId)1, spanId: 2)
+            {
+                OtelTraceState = OtelTraceState.Parse("rv:zz;th:e6666666666668"),
+                AdditionalW3CTraceState = "ot=rv:zz;th:e6666666666668,congo=t61rcWkgMzE"
+            };
+
+            var tracestate = W3CTraceContextPropagator.CreateTraceStateHeader(spanContext);
+
+            tracestate.Should().Be("dd=s:1;p:0000000000000002,ot=th:e6666666666668,congo=t61rcWkgMzE");
+        }
+
+        [Fact]
         public void CreateTraceStateHeader_OmitsOtMember_WhenOtelTraceStateIsNull()
         {
             var traceContext = new TraceContext(new StubDatadogTracer());
