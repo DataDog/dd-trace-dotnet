@@ -13,6 +13,7 @@ using Datadog.Trace.ClrProfiler.IntegrationTests.Helpers;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.TestHelpers.AutoInstrumentation.Containers;
 using FluentAssertions.Execution;
 using VerifyXunit;
 using Xunit;
@@ -23,12 +24,17 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     [UsesVerify]
     [Trait("RequiresDockerDependency", "true")]
     [Trait("DockerGroup", "1")]
+    [Collection(RabbitMqCollection.Name)]
     public class RabbitMQTests : TracingIntegrationTest
     {
-        public RabbitMQTests(ITestOutputHelper output)
+        private readonly RabbitMqFixture _rabbitMqFixture;
+
+        public RabbitMQTests(ITestOutputHelper output, RabbitMqFixture rabbitMqFixture)
             : base("RabbitMQ", output)
         {
+            _rabbitMqFixture = rabbitMqFixture;
             SetServiceVersion("1.0.0");
+            ConfigureContainers(rabbitMqFixture);
         }
 
         public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) =>
@@ -76,6 +82,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 // We generate a new queue name for the "default" queue with each run
                 settings.AddScrubber(QueueScrubber.ReplaceRabbitMqQueues);
+                settings.AddSimpleScrubber($"out.host: {_rabbitMqFixture.Host}", "out.host: rabbitmq");
+                settings.AddSimpleScrubber($"peer.service: {_rabbitMqFixture.Host}", "peer.service: rabbitmq");
                 settings.AddSimpleScrubber("out.host: localhost", "out.host: rabbitmq");
                 settings.AddSimpleScrubber("out.host: rabbitmq_arm64", "out.host: rabbitmq");
                 settings.AddSimpleScrubber("peer.service: localhost", "peer.service: rabbitmq");

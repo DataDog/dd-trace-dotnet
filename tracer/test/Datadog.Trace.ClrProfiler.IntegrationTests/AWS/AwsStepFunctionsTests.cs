@@ -7,8 +7,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Datadog.Trace.ClrProfiler.IntegrationTests.Helpers;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.TestHelpers.AutoInstrumentation.Containers;
 using FluentAssertions;
 using VerifyXunit;
 using Xunit;
@@ -18,12 +20,17 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
 {
     [Trait("RequiresDockerDependency", "true")]
     [Trait("DockerGroup", "2")]
+    [Collection(LocalStackCollection.Name)]
     [UsesVerify]
     public class AwsStepFunctionsTests : TracingIntegrationTest
     {
-        public AwsStepFunctionsTests(ITestOutputHelper output)
+        private readonly LocalStackFixture _localStackFixture;
+
+        public AwsStepFunctionsTests(ITestOutputHelper output, LocalStackFixture localStackFixture)
             : base("AWS.StepFunctions", output)
         {
+            _localStackFixture = localStackFixture;
+            ConfigureContainers(localStackFixture);
         }
 
         public static IEnumerable<object[]> GetEnabledConfig()
@@ -63,8 +70,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
                 stepFunctionsSpans.Should().NotBeEmpty();
                 ValidateIntegrationSpans(stepFunctionsSpans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan: true);
 
-                var host = Environment.GetEnvironmentVariable("AWS_SDK_HOST");
-
                 var settings = VerifyHelper.GetSpanVerifierSettings();
 
                 // Default version is 3.7.*
@@ -78,17 +83,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
 
                 settings.UseFileName($"{nameof(AwsStepFunctionsTests)}.{frameworkName}.Schema{metadataSchemaVersion.ToUpper()}{snapshotSuffix}");
                 settings.AddSimpleScrubber("out.host: localhost", "out.host: aws_stepfunctions");
-                settings.AddSimpleScrubber("out.host: localstack", "out.host: aws_stepfunctions");
-                settings.AddSimpleScrubber("out.host: localstack_arm64", "out.host: aws_stepfunctions");
+                settings.AddSimpleScrubber($"out.host: {_localStackFixture.Host}", "out.host: aws_stepfunctions");
                 settings.AddSimpleScrubber("peer.service: localhost", "peer.service: aws_stepfunctions");
-                settings.AddSimpleScrubber("peer.service: localstack", "peer.service: aws_stepfunctions");
-                settings.AddSimpleScrubber("peer.service: localstack_arm64", "peer.service: aws_stepfunctions");
+                settings.AddSimpleScrubber($"peer.service: {_localStackFixture.Host}", "peer.service: aws_stepfunctions");
+                settings.AddSimpleScrubber(_localStackFixture.HostAndPort, "localhost:00000");
                 // V4 uses the sockets handler by default where possible instead of the httpclienthandler
                 settings.AddSimpleScrubber("http-client-handler-type: System.Net.Http.SocketsHttpHandler", "http-client-handler-type: System.Net.Http.HttpClientHandler");
-                if (!string.IsNullOrWhiteSpace(host))
-                {
-                    settings.AddSimpleScrubber(host, "localhost:00000");
-                }
 
                 settings.DisableRequireUniquePrefix();
 

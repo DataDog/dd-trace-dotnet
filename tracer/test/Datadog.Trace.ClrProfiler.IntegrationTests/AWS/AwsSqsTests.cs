@@ -6,10 +6,11 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Datadog.Trace.ClrProfiler.IntegrationTests.Helpers;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.TestHelpers.AutoInstrumentation.Containers;
 using FluentAssertions;
 using VerifyXunit;
 using Xunit;
@@ -17,15 +18,19 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
 {
-    [Collection(nameof(AwsSqsTestsCollection))]
+    [Collection(LocalStackCollection.Name)]
     [Trait("RequiresDockerDependency", "true")]
     [Trait("DockerGroup", "2")]
     [UsesVerify]
     public class AwsSqsTests : TracingIntegrationTest
     {
-        public AwsSqsTests(ITestOutputHelper output)
+        private readonly LocalStackFixture _localStackFixture;
+
+        public AwsSqsTests(ITestOutputHelper output, LocalStackFixture localStackFixture)
             : base("AWS.SQS", output)
         {
+            _localStackFixture = localStackFixture;
+            ConfigureContainers(localStackFixture);
         }
 
         public static IEnumerable<object[]> GetEnabledConfig()
@@ -66,27 +71,18 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
                 sqsSpans.Should().NotBeEmpty();
                 ValidateIntegrationSpans(sqsSpans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan: true);
 
-                var host = Environment.GetEnvironmentVariable("AWS_SDK_HOST");
-
                 var settings = VerifyHelper.GetSpanVerifierSettings();
                 var suffix = GetSnapshotSuffix(packageVersion);
 
                 settings.UseFileName($"{nameof(AwsSqsTests)}.{frameworkName}.Schema{metadataSchemaVersion.ToUpper()}{suffix}");
                 settings.AddSimpleScrubber("out.host: localhost", "out.host: aws_sqs");
-                settings.AddSimpleScrubber("out.host: localstack", "out.host: aws_sqs");
-                settings.AddSimpleScrubber("out.host: localstack_arm64", "out.host: aws_sqs");
+                settings.AddSimpleScrubber($"out.host: {_localStackFixture.Host}", "out.host: aws_sqs");
                 settings.AddSimpleScrubber("peer.service: localhost", "peer.service: aws_sqs");
-                settings.AddSimpleScrubber("peer.service: localstack", "peer.service: aws_sqs");
-                settings.AddSimpleScrubber("peer.service: localstack_arm64", "peer.service: aws_sqs");
-                settings.AddSimpleScrubber("aws.queue.url: localstack_arm64", "peer.service: aws_sqs");
-                settings.AddRegexScrubber(new Regex(@"sqs\..+\.localhost.*\.localstack.*\.cloud:4566"), "localhost:00000");
+                settings.AddSimpleScrubber($"peer.service: {_localStackFixture.Host}", "peer.service: aws_sqs");
+                settings.AddSimpleScrubber(_localStackFixture.HostAndPort, "localhost:00000");
+                settings.AddSimpleScrubber("/queue/us-east-1", string.Empty);
                 // V4 uses the sockets handler by default where possible instead of the httpclienthandler
                 settings.AddSimpleScrubber("http-client-handler-type: System.Net.Http.SocketsHttpHandler", "http-client-handler-type: System.Net.Http.HttpClientHandler");
-
-                if (!string.IsNullOrWhiteSpace(host))
-                {
-                    settings.AddSimpleScrubber(host, "localhost:00000");
-                }
 
                 settings.DisableRequireUniquePrefix();
 
@@ -106,13 +102,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
                         _ => string.Empty
                     };
             }
-        }
-
-        [CollectionDefinition(nameof(AwsSqsTestsCollection), DisableParallelization = true)]
-        public class AwsSqsTestsCollection
-        {
-            // Just an empty collection that's going to be used to prevent different SQS tests relying on the same "backend" (an SQS queue)
-            // from running at the same time, which would cause unwanted interactions between them and make tests fail.
         }
     }
 }

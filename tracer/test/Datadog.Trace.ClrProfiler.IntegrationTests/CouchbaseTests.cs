@@ -10,6 +10,7 @@ using Datadog.Trace.ClrProfiler.IntegrationTests.Helpers;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.TestHelpers.AutoInstrumentation.Containers;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -17,12 +18,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
     [Trait("RequiresDockerDependency", "true")]
     [Trait("DockerGroup", "1")]
+    [Collection(CouchbaseCollection.Name)]
     public class CouchbaseTests : TracingIntegrationTest
     {
-        public CouchbaseTests(ITestOutputHelper output)
+        public CouchbaseTests(ITestOutputHelper output, CouchbaseFixture couchbaseFixture)
             : base("Couchbase", output)
         {
             SetServiceVersion("1.0.0");
+            ConfigureContainers(couchbaseFixture);
         }
 
         public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.IsCouchbase(metadataSchemaVersion);
@@ -41,7 +44,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             using var telemetry = this.ConfigureTelemetry();
             using (var agent = EnvironmentHelper.GetMockAgent())
-            using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
+            using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion, retryOnRuntime127957Race: false))
             {
                 var spans = await agent.WaitForSpansAsync(13, 500);
                 Assert.True(spans.Count >= 13, $"Expecting at least 13 spans, only received {spans.Count}");
