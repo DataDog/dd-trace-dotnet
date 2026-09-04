@@ -10,7 +10,6 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
-using Datadog.Trace.Util;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using VerifyXunit;
@@ -90,7 +89,7 @@ public class QuartzTests : TracingIntegrationTest
                                                         .ThenBy(x => x.Error))
                               .UseFileName(filename);
 
-            await telemetry.AssertIntegrationEnabledAsync(GetIntegrationId(packageVersion));
+            await telemetry.AssertIntegrationEnabledAsync(IntegrationId.Quartz);
         }
     }
 
@@ -118,10 +117,4 @@ public class QuartzTests : TracingIntegrationTest
             _ => new("V3", 2)
         };
     }
-
-    private static IntegrationId GetIntegrationId(string packageVersion)
-        => !StringUtil.IsNullOrEmpty(packageVersion) && new Version(packageVersion) >= new Version(4, 0, 0)
-               ? IntegrationId.Quartz
-               : IntegrationId.OpenTelemetry;
-
 }
