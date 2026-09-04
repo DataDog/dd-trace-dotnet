@@ -1,4 +1,4 @@
-﻿// <copyright file="SpanContext.cs" company="Datadog">
+﻿﻿// <copyright file="SpanContext.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -57,7 +57,7 @@ namespace Datadog.Trace
         private string _rawTraceId;
         private string _rawSpanId;
         private string _origin;
-        private string _additionalW3CTraceState;
+        private RemoteW3CTraceState _remoteW3CTraceState;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SpanContext"/> class
@@ -271,18 +271,43 @@ namespace Datadog.Trace
         /// <summary>
         /// Gets or sets additional key/value pairs from an upstream "tracestate" W3C header that we will propagate downstream.
         /// This value will _not_ include the "dd" key, which is parsed out into other individual values
-        /// (e.g. sampling priority, origin, propagates tags, etc).
+        /// (e.g. sampling priority, origin, propagates tags, etc), but may include the "ot" key.
         /// </summary>
         internal string AdditionalW3CTraceState
         {
-            get => TraceContext?.AdditionalW3CTraceState ?? _additionalW3CTraceState;
+            get => TraceContext?.AdditionalW3CTraceState ?? _remoteW3CTraceState?.AdditionalW3CTraceState;
             set
             {
-                _additionalW3CTraceState = value;
-
-                if (TraceContext is not null)
+                if (TraceContext is { } traceContext)
                 {
-                    TraceContext.AdditionalW3CTraceState = value;
+                    traceContext.AdditionalW3CTraceState = value;
+                }
+                else if (_remoteW3CTraceState is not null || value is not null)
+                {
+                    (_remoteW3CTraceState ??= new()).AdditionalW3CTraceState = value;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Gets or sets the raw content of the inbound "ot=" W3C tracestate member
+        /// (OpenTelemetry consistent-probability-sampling sub-keys). Null if none was
+        /// present on extraction and nothing has derived one locally.
+        /// </summary>
+        [MaybeNull]
+        [AllowNull]
+        internal string OtelTraceState
+        {
+            get => TraceContext?.OtelTraceState ?? _remoteW3CTraceState?.OtelTraceState;
+            set
+            {
+                if (TraceContext is { } traceContext)
+                {
+                    traceContext.OtelTraceState = value;
+                }
+                else if (_remoteW3CTraceState is not null || value is not null)
+                {
+                    (_remoteW3CTraceState ??= new()).OtelTraceState = value;
                 }
             }
         }
@@ -516,6 +541,13 @@ namespace Datadog.Trace
         internal void ManuallySetPathwayContextToPairMessages(PathwayContext? pathwayContext)
         {
             PathwayContext = pathwayContext;
+        }
+
+        private sealed class RemoteW3CTraceState
+        {
+            public string AdditionalW3CTraceState { get; set; }
+
+            public string OtelTraceState { get; set; }
         }
 
         internal static class Keys
