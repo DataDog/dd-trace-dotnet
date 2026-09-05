@@ -122,7 +122,7 @@ The full managed tracer (`Datadog.Trace.dll`) contains all auto-instrumentation 
 - Use modern C# syntax, but avoid features requiring types unavailable in older runtimes (e.g., no `ValueTuple` syntax for .NET Framework 4.6.1)
   - For instance, prefer `is not null` to `!= null`
 - Prefer modern collection expressions (`[]`)
-- Use `StringUtil.IsNullOrEmpty()` instead of `string.IsNullOrEmpty()` for compatibility across all supported runtimes
+- Use `StringUtil.IsNullOrEmpty()` instead of `string.IsNullOrEmpty()` for compatibility across all supported runtimes.
 - StyleCop: see `tracer/stylecop.json`; address warnings before pushing.
 - Never manually edit generated files (`.g.` in the file extension). Read the file header for regeneration instructions instead.
 
