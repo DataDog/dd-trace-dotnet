@@ -36,9 +36,17 @@ public abstract class TestingFrameworkRetriesTests : TestingFrameworkEvpTest
 
     protected abstract string TrueAtThirdRetry { get; }
 
+    protected virtual int ExpectedTestSuiteCount => 1;
+
     protected virtual bool UseDotnetExec => false;
 
-    public virtual async Task<List<MockCIVisibilityTest>> FlakyRetries(string packageVersion)
+    public virtual Task<List<MockCIVisibilityTest>> FlakyRetries(string packageVersion)
+        => FlakyRetriesWithArguments(packageVersion, arguments: null);
+
+    public virtual Task FlakyRetriesWithExceptionReplay(string packageVersion)
+        => FlakyRetriesWithExceptionReplayCore(packageVersion);
+
+    protected async Task<List<MockCIVisibilityTest>> FlakyRetriesWithArguments(string packageVersion, string arguments)
     {
         EnvironmentHelper.EnableDefaultTransport();
         var tests = new List<MockCIVisibilityTest>();
@@ -101,13 +109,13 @@ public abstract class TestingFrameworkRetriesTests : TestingFrameworkEvpTest
                                           agent,
                                           packageVersion: packageVersion,
                                           expectedExitCode: 1,
-                                          useDotnetExec: UseDotnetExec);
+                                          useDotnetExec: UseDotnetExec,
+                                          arguments: arguments);
 
             // 1 Module
             testModules.Should().HaveCount(1);
 
-            // 1 Suite
-            testSuites.Should().HaveCount(1);
+            testSuites.Should().HaveCount(ExpectedTestSuiteCount);
 
             // AlwaysFails => 1 + 5 retries
             var alwaysFailsTests = tests.Where(t => t.Resource == AlwaysFails).ToList();
@@ -138,7 +146,42 @@ public abstract class TestingFrameworkRetriesTests : TestingFrameworkEvpTest
         return tests;
     }
 
-    public virtual async Task FlakyRetriesWithExceptionReplay(string packageVersion)
+    private static void CheckForEnoughNumberOfStackFrames(List<MockCIVisibilityTest> tests)
+    {
+        Skip.If(
+            tests.Any(t => NumberOfOccurrences(t.Meta["error.stack"], "   at ") == 1),
+            "There are stacktraces with only 1 stackframe, these kind of exception doesn't have any debugger info because that stack frame always refers to the throw frame.");
+
+        Skip.If(
+            tests.Any(t => NumberOfOccurrences(t.Meta["error.stack"], "   at ") == NumberOfOccurrences(t.Meta["error.stack"], "   at Xunit.")),
+            "All stackframes in the exception contains information of the Xunit assembly only.");
+    }
+
+    private static int NumberOfOccurrences(ReadOnlySpan<char> value, ReadOnlySpan<char> pattern, bool allowOverlap = false)
+    {
+        if (pattern.IsEmpty)
+        {
+            return 0; // empty pattern has 0 occurrences
+        }
+
+        var count = 0;
+        var shift = allowOverlap ? 1 : pattern.Length;
+        while (value.Length >= pattern.Length)
+        {
+            var pos = value.IndexOf(pattern);
+            if (pos < 0)
+            {
+                break;
+            }
+
+            count++;
+            value = value.Slice(pos + shift);
+        }
+
+        return count;
+    }
+
+    private async Task FlakyRetriesWithExceptionReplayCore(string packageVersion)
     {
         SetEnvironmentVariable(ConfigurationKeys.CIVisibility.DynamicInstrumentationEnabled, "1");
         SetEnvironmentVariable(ConfigurationKeys.Debugger.ExceptionReplayEnabled, "1");
@@ -200,41 +243,6 @@ public abstract class TestingFrameworkRetriesTests : TestingFrameworkEvpTest
             Output.WriteLine("Tests (in JSON):\n{0}", JsonConvert.SerializeObject(tests,  Formatting.Indented));
             throw;
         }
-    }
-
-    private static void CheckForEnoughNumberOfStackFrames(List<MockCIVisibilityTest> tests)
-    {
-        Skip.If(
-            tests.Any(t => NumberOfOccurrences(t.Meta["error.stack"], "   at ") == 1),
-            "There are stacktraces with only 1 stackframe, these kind of exception doesn't have any debugger info because that stack frame always refers to the throw frame.");
-
-        Skip.If(
-            tests.Any(t => NumberOfOccurrences(t.Meta["error.stack"], "   at ") == NumberOfOccurrences(t.Meta["error.stack"], "   at Xunit.")),
-            "All stackframes in the exception contains information of the Xunit assembly only.");
-    }
-
-    private static int NumberOfOccurrences(ReadOnlySpan<char> value, ReadOnlySpan<char> pattern, bool allowOverlap = false)
-    {
-        if (pattern.IsEmpty)
-        {
-            return 0; // empty pattern has 0 occurrences
-        }
-
-        var count = 0;
-        var shift = allowOverlap ? 1 : pattern.Length;
-        while (value.Length >= pattern.Length)
-        {
-            var pos = value.IndexOf(pattern);
-            if (pos < 0)
-            {
-                break;
-            }
-
-            count++;
-            value = value.Slice(pos + shift);
-        }
-
-        return count;
     }
 }
 #endif

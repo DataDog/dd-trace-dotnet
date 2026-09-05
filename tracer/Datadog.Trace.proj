@@ -29,7 +29,13 @@
     <ItemGroup>
       <!-- Assumes that the core C# projects are already built first -->
       <!-- Filter the sample projects by various attributes -->
-      <PackageVersionSampleFiltered Include="@(PackageVersionSample)" Condition="('$(SampleName)' == '' OR '%(PackageVersionSample.SampleName)' == '$(SampleName)') AND ('%(PackageVersionSample.TargetFramework)' == '' or '%(PackageVersionSample.TargetFramework)'=='$(TargetFramework)') AND (('$(IsAlpine)' != 'true' OR '%(PackageVersionSample.SkipAlpine)'!='true') AND ('$(IsArm64)' != 'true' OR '%(PackageVersionSample.SkipArm64)'!='true')) AND ('$(IncludeTestsRequiringDocker)' == '' OR ('$(IncludeTestsRequiringDocker)' == 'true' AND '%(PackageVersionSample.RequiresDockerDependency)' != 'None') OR ('$(IncludeTestsRequiringDocker)' != 'true' AND '%(PackageVersionSample.RequiresDockerDependency)' == 'None'))" />
+      <!--
+        PackageVersionApiVersionPrefix is used by platform-specific rebuilds to select one generated package-version
+        family. When it is empty, the condition preserves the normal CompileSamples behavior. PackageVersionsGenerator
+        writes ApiVersion first in Properties, so matching this prefix selects (for example) every generated 4.x entry
+        for one exact SampleName.
+      -->
+      <PackageVersionSampleFiltered Include="@(PackageVersionSample)" Condition="('$(SampleName)' == '' OR '%(PackageVersionSample.SampleName)' == '$(SampleName)') AND ('$(PackageVersionApiVersionPrefix)' == '' OR $([System.String]::Copy('%(PackageVersionSample.Properties)').StartsWith('ApiVersion=$(PackageVersionApiVersionPrefix)'))) AND ('%(PackageVersionSample.TargetFramework)' == '' or '%(PackageVersionSample.TargetFramework)'=='$(TargetFramework)') AND (('$(IsAlpine)' != 'true' OR '%(PackageVersionSample.SkipAlpine)'!='true') AND ('$(IsArm64)' != 'true' OR '%(PackageVersionSample.SkipArm64)'!='true')) AND ('$(IncludeTestsRequiringDocker)' == '' OR ('$(IncludeTestsRequiringDocker)' == 'true' AND '%(PackageVersionSample.RequiresDockerDependency)' != 'None') OR ('$(IncludeTestsRequiringDocker)' != 'true' AND '%(PackageVersionSample.RequiresDockerDependency)' == 'None'))" />
     </ItemGroup>
 
     <!-- Build the sample projects concurrently -->
@@ -44,7 +50,8 @@
     <ItemGroup>
       <!-- Assumes that the core C# projects are already built first -->
       <!-- Filter the sample projects by various attributes -->
-      <PackageVersionSampleFiltered Include="@(PackageVersionSample)" Condition="('$(SampleName)' == '' OR '%(PackageVersionSample.SampleName)' == '$(SampleName)') AND ('%(PackageVersionSample.TargetFramework)' == '' or '%(PackageVersionSample.TargetFramework)'=='$(TargetFramework)') AND (('$(IsAlpine)' != 'true' OR '%(PackageVersionSample.SkipAlpine)'!='true') AND ('$(IsArm64)' != 'true' OR '%(PackageVersionSample.SkipArm64)'!='true')) AND ('$(IncludeTestsRequiringDocker)' == '' OR ('$(IncludeTestsRequiringDocker)' == 'true' AND '%(PackageVersionSample.RequiresDockerDependency)' != 'None') OR ('$(IncludeTestsRequiringDocker)' != 'true' AND '%(PackageVersionSample.RequiresDockerDependency)' == 'None'))" />
+      <!-- See the PackageVersionApiVersionPrefix contract documented in RestoreSamplesForPackageVersionsOnly above. -->
+      <PackageVersionSampleFiltered Include="@(PackageVersionSample)" Condition="('$(SampleName)' == '' OR '%(PackageVersionSample.SampleName)' == '$(SampleName)') AND ('$(PackageVersionApiVersionPrefix)' == '' OR $([System.String]::Copy('%(PackageVersionSample.Properties)').StartsWith('ApiVersion=$(PackageVersionApiVersionPrefix)'))) AND ('%(PackageVersionSample.TargetFramework)' == '' or '%(PackageVersionSample.TargetFramework)'=='$(TargetFramework)') AND (('$(IsAlpine)' != 'true' OR '%(PackageVersionSample.SkipAlpine)'!='true') AND ('$(IsArm64)' != 'true' OR '%(PackageVersionSample.SkipArm64)'!='true')) AND ('$(IncludeTestsRequiringDocker)' == '' OR ('$(IncludeTestsRequiringDocker)' == 'true' AND '%(PackageVersionSample.RequiresDockerDependency)' != 'None') OR ('$(IncludeTestsRequiringDocker)' != 'true' AND '%(PackageVersionSample.RequiresDockerDependency)' == 'None'))" />
     </ItemGroup>
 
     <!-- Build the sample projects concurrently -->

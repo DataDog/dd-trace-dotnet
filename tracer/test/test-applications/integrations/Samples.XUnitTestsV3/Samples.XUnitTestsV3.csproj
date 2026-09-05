@@ -6,6 +6,10 @@
     <TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
     <TargetFrameworks Condition="$(ApiVersion) &lt; 2.0.0">net6.0;net7.0;net8.0;net9.0;net10.0</TargetFrameworks>
     <MicrosoftTestSDKVersion>17.12.0</MicrosoftTestSDKVersion>
+    <MicrosoftTestSDKVersion Condition="$([MSBuild]::VersionGreaterThanOrEquals($(ApiVersion), '4.0.0'))">17.13.0</MicrosoftTestSDKVersion>
+    <XunitRunnerVisualStudioVersion>3.0.1</XunitRunnerVisualStudioVersion>
+    <XunitRunnerVisualStudioVersion Condition="$([MSBuild]::VersionGreaterThanOrEquals($(ApiVersion), '4.0.0'))">4.0.0</XunitRunnerVisualStudioVersion>
+    <DefineConstants Condition="$([MSBuild]::VersionGreaterThanOrEquals($(ApiVersion), '4.0.0'))">$(DefineConstants);XUNIT_V3_V4</DefineConstants>
 
     <!-- Required to build multiple projects with the same Configuration|Platform -->
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
@@ -27,7 +31,7 @@
     </PackageReference>
 
     <PackageReference Include="xunit.v3" Version="$(ApiVersion)" />
-    <PackageReference Include="xunit.runner.visualstudio" Version="3.0.1" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="$(XunitRunnerVisualStudioVersion)" />
     <PackageReference Include="coverlet.collector" Version="6.0.0">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>

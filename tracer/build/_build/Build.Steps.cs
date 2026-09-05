@@ -1815,6 +1815,61 @@ partial class Build
             }
         });
 
+    Target CompilePlatformSpecificSamples => _ => _
+        .Description("Compiles package-version samples that require artifacts for the current platform")
+        .Unlisted()
+        .After(Clean)
+        .Before(RunIntegrationTests)
+        .Requires(() => Framework)
+        .DependsOn(HackForMissingMsBuildLocation)
+        .Executes(() =>
+        {
+            var platformSpecificPackageVersionSamples = new[]
+            {
+                (project: "Samples.XUnitTestsV3", apiVersionPrefix: "4."),
+            };
+
+            var samplesToBuild = platformSpecificPackageVersionSamples
+                                .Select(sample => (project: SamplesSolution.GetProject(sample.project), sample.apiVersionPrefix))
+                                .Where(sample => sample.project.TryGetTargetFrameworks()?.Contains(Framework) != false)
+                                .Where(sample => string.IsNullOrWhiteSpace(SampleName) ||
+                                                 sample.project.Path.ToString().Contains(SampleName, StringComparison.OrdinalIgnoreCase));
+
+            // CompileSamples builds package-version samples on Windows and shares them with the integration-test jobs.
+            // xunit.v3 already generated an apphost before version 4. In 4.x, however, xunit.runner.visualstudio 4.x uses
+            // that apphost when VSTest starts the test assembly. Because the apphost contains native launcher code, the
+            // Windows artifact cannot run in a Linux or macOS test job even though the managed test assembly can.
+            //
+            // Only Samples.XUnitTestsV3 is rebuilt here: the xUnit 4 VSTest scenarios exercise the platform apphost
+            // path. The retry, parallel, and impacted-tests fixtures use `dotnet exec` on the managed DLL and do
+            // not need a platform-native apphost. Keeping this as a separate target makes the exceptional platform work
+            // explicit and lets the pipeline request it only in Unix jobs that consume the prebuilt Windows samples.
+            //
+            // The version prefix selects generated PackageVersionSample entries instead of pinning 4.0.0, so future 4.x
+            // versions are included automatically. Restore and publish remain separate, matching CompileSamples and
+            // ensuring that Publish consumes the assets created by Restore.
+            foreach (var sample in samplesToBuild)
+            {
+                foreach (var target in new[] { "RestoreSamplesForPackageVersionsOnly", "RestoreAndBuildSamplesForPackageVersionsOnly" })
+                {
+                    DotNetMSBuild(config => config
+                        .SetTargetPath(MsBuildProject)
+                        .SetTargets(target)
+                        .SetConfiguration(BuildConfiguration)
+                        .SetProperty("TargetFramework", Framework.ToString())
+                        .SetProperty("BuildInParallel", "true")
+                        .SetProperty("CheckEolTargetFramework", "false")
+                        .SetProperty("ManuallyCopyCodeCoverageFiles", "false")
+                        .SetProperty("TestAllPackageVersions", "true")
+                        .SetProperty("SampleName", sample.project.Name)
+                        .SetProperty("PackageVersionApiVersionPrefix", sample.apiVersionPrefix)
+                        .When(IncludeMinorPackageVersions, x => x.SetProperty("IncludeMinorPackageVersions", "true"))
+                        .When(!string.IsNullOrEmpty(NugetPackageDirectory), x => x.SetProperty("RestorePackagesPath", NugetPackageDirectory))
+                        .SetProcessArgumentConfigurator(args => args.Add("/nowarn:NU1701")));
+                }
+            }
+        });
+
     Target PublishIisSamples => _ => _
         .Unlisted()
         .After(CompileManagedTestHelpers)
