@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Text;
 using System.Text.RegularExpressions;
 using CodeOwners;
 using Microsoft.Extensions.FileSystemGlobbing;
@@ -37,6 +38,426 @@ partial class Build : NukeBuild
         new ChangedTeamValue { VariableName = "isDebuggerChanged", TeamName = DebuggerDotnet},
         new ChangedTeamValue { VariableName = "isProfilerChanged", TeamName = ProfilerDotnet},
     };
+
+    Target GenerateGitlabWindowsUnitTestsPipeline
+        => _ => _
+           .Unlisted()
+           .Executes(() => WriteGitlabWindowsUnitTestsPipeline(
+                GetTestingFrameworks(
+                    PlatformFamily.Windows,
+                    isArm64: false,
+                    includeAllFrameworks: IncludeAllTestFrameworks)));
+
+    Target GenerateGitlabLinuxUnitTestsPipeline
+        => _ => _
+           .Unlisted()
+           .Executes(() => WriteGitlabLinuxUnitTestsPipeline(
+                GetTestingFrameworks(
+                    PlatformFamily.Linux,
+                    isArm64: false,
+                    includeAllFrameworks: IncludeAllTestFrameworks)));
+
+    Target GenerateGitlabLinuxArm64UnitTestsPipeline
+        => _ => _
+           .Unlisted()
+           .Executes(() => WriteGitlabLinuxArm64UnitTestsPipeline(
+                GetTestingFrameworks(
+                    PlatformFamily.Linux,
+                    isArm64: true,
+                    includeAllFrameworks: IncludeAllTestFrameworks)));
+
+    Target GenerateGitlabMacosUnitTestsPipeline
+        => _ => _
+           .Unlisted()
+           .Executes(() => WriteGitlabMacosUnitTestsPipeline(
+                GetTestingFrameworks(
+                    PlatformFamily.OSX,
+                    isArm64: false,
+                    includeAllFrameworks: IncludeAllTestFrameworks)));
+
+    Target GenerateGitlabLinuxIntegrationTestsPipeline
+        => _ => _
+           .Unlisted()
+           .Executes(() => WriteGitlabLinuxIntegrationTestsPipeline(
+                GetLinuxX64IntegrationTestPlatformMatrix(IncludeAllTestFrameworks)));
+
+    Target GenerateGitlabLinuxArm64IntegrationTestsPipeline
+        => _ => _
+           .Unlisted()
+           .Executes(() => WriteGitlabLinuxIntegrationTestsPipeline(
+                GetLinuxArm64IntegrationTestPlatformMatrix(IncludeAllTestFrameworks),
+                isArm64: true));
+
+    Target GenerateGitlabWindowsIntegrationTestsPipeline
+        => _ => _
+           .Unlisted()
+           .Executes(() => WriteGitlabWindowsIntegrationTestsPipeline(
+                GetTestingFrameworks(
+                    PlatformFamily.Windows,
+                    isArm64: false,
+                    includeAllFrameworks: IncludeAllTestFrameworks)));
+
+    void WriteGitlabWindowsUnitTestsPipeline(IEnumerable<TargetFramework> frameworks)
+    {
+        var yaml = new StringBuilder(
+            """
+            include:
+              - local: .gitlab/windows-unit-tests-child.yml
+
+            stages:
+              - test
+
+            """);
+
+        foreach (var framework in frameworks)
+        {
+            yaml.AppendLine($"\"unit-tests-windows:{framework}\":");
+            yaml.AppendLine("  extends: .windows-unit-test");
+            yaml.AppendLine("  variables:");
+            yaml.AppendLine($"    FRAMEWORK: \"{framework}\"");
+        }
+
+        var outputDirectory = RootDirectory / ".gitlab" / "generated";
+        Directory.CreateDirectory(outputDirectory);
+        var outputPath = outputDirectory / "windows-unit-tests.yml";
+        File.WriteAllText(outputPath, yaml.ToString());
+        Logger.Information("Generated GitLab Windows unit-test child pipeline at {Path}", outputPath);
+    }
+
+    void WriteGitlabWindowsIntegrationTestsPipeline(IEnumerable<TargetFramework> frameworks)
+    {
+        var frameworkList = frameworks.ToList();
+        var yaml = new StringBuilder(
+            """
+            include:
+              - local: .gitlab/windows-integration-tests-child.yml
+
+            stages:
+              - test
+
+            """);
+
+        var targetPlatforms = new[] { "x64", "x86" };
+        foreach (var framework in frameworkList)
+        {
+            foreach (var targetPlatform in targetPlatforms)
+            {
+                AppendWindowsJob($"integration-tests-windows-{targetPlatform}:{framework}:tracer", framework, targetPlatform, "integration", TracerArea);
+                AppendWindowsJob($"integration-tests-windows-{targetPlatform}:{framework}:asm", framework, targetPlatform, "integration", AsmArea);
+
+                // These combinations fail in Azure because the x86 apphost is unavailable.
+                if (targetPlatform == "x86" && (framework.Equals(TargetFramework.NETCOREAPP3_1) || framework.Equals(TargetFramework.NET6_0)))
+                {
+                    continue;
+                }
+
+                foreach (var debugType in new[] { "portable", "full" })
+                {
+                    foreach (var optimize in new[] { true, false })
+                    {
+                        var optimization = optimize ? "optimized" : "unoptimized";
+                        AppendWindowsJob($"integration-tests-windows-debugger-{targetPlatform}:{framework}:{debugType}:{optimization}", framework, targetPlatform, "debugger", null, optimize, debugType);
+                    }
+                }
+            }
+        }
+
+        if (frameworkList.Contains(TargetFramework.NET48))
+        {
+            AppendWindowsJob("integration-tests-windows-localdb-x64:net48:tracer", TargetFramework.NET48, "x64", "localdb", TracerArea);
+
+            // Match Azure's historically named IIS matrix. RunWindowsTracerIisIntegrationTests
+            // selects LoadFromGAC=True, so these cells are the dedicated GAC/IIS suite.
+            foreach (var targetPlatform in targetPlatforms)
+            {
+                AppendWindowsJob($"integration-tests-windows-iis-{targetPlatform}:net48:tracer", TargetFramework.NET48, targetPlatform, "iis", TracerArea);
+                AppendWindowsJob($"integration-tests-windows-iis-{targetPlatform}:net48:asm", TargetFramework.NET48, targetPlatform, "iis", AsmArea);
+            }
+        }
+
+        if (frameworkList.Contains(TargetFramework.NET10_0))
+        {
+            // Chrome requires Windows components that are absent from Server Core,
+            // so this cell runs directly on the Windows runner with checkout-local tools.
+            AppendWindowsJob("integration-tests-windows-selenium-x64:net10.0:tracer", TargetFramework.NET10_0, "x64", "selenium", TracerArea);
+        }
+
+        // Match Azure's dedicated Windows Azure Functions matrix. These jobs are
+        // always emitted because the specialized suite intentionally covers every
+        // supported Functions TFM, independently of the regular thorough-test matrix.
+        foreach (var framework in new[]
+                 {
+                     TargetFramework.NET6_0,
+                     TargetFramework.NET7_0,
+                     TargetFramework.NET8_0,
+                     TargetFramework.NET9_0,
+                     TargetFramework.NET10_0,
+                 })
+        {
+            AppendWindowsJob($"integration-tests-windows-azure-functions-x64:{framework}", framework, "x64", "azure-functions", null);
+        }
+
+        var outputDirectory = RootDirectory / ".gitlab" / "generated";
+        Directory.CreateDirectory(outputDirectory);
+        var outputPath = outputDirectory / "windows-integration-tests.yml";
+        File.WriteAllText(outputPath, yaml.ToString());
+        Logger.Information("Generated GitLab Windows integration-test child pipeline at {Path}", outputPath);
+
+        void AppendWindowsJob(string name, TargetFramework framework, string targetPlatform, string testSuite, string area, bool? optimize = null, string debugType = null)
+        {
+            yaml.AppendLine($"\"{name}\":");
+            yaml.AppendLine("  extends: .windows-integration-test");
+            yaml.AppendLine("  variables:");
+            yaml.AppendLine($"    FRAMEWORK: \"{framework}\"");
+            yaml.AppendLine($"    TARGET_PLATFORM: \"{targetPlatform}\"");
+            yaml.AppendLine($"    TEST_SUITE: \"{testSuite}\"");
+            if (area is not null)
+            {
+                yaml.AppendLine($"    AREA: \"{area}\"");
+            }
+
+            if (optimize is not null)
+            {
+                yaml.AppendLine($"    OPTIMIZE: \"{optimize.Value.ToString().ToLowerInvariant()}\"");
+            }
+
+            if (debugType is not null)
+            {
+                yaml.AppendLine($"    DEBUG_TYPE: \"{debugType}\"");
+            }
+        }
+    }
+
+    void WriteGitlabLinuxUnitTestsPipeline(IEnumerable<TargetFramework> frameworks)
+    {
+        var yaml = new StringBuilder(
+            """
+            include:
+              - local: .gitlab/linux-unit-tests-child.yml
+
+            stages:
+              - test
+
+            """);
+
+        foreach (var framework in frameworks)
+        {
+            yaml.AppendLine($"\"unit-tests-linux-x64:{framework}\":");
+            yaml.AppendLine("  extends: .linux-unit-test-x64-glibc");
+            yaml.AppendLine("  variables:");
+            yaml.AppendLine($"    FRAMEWORK: \"{framework}\"");
+            yaml.AppendLine($"\"unit-tests-linux-musl-x64:{framework}\":");
+            yaml.AppendLine("  extends: .linux-unit-test-x64-musl");
+            yaml.AppendLine("  variables:");
+            yaml.AppendLine($"    FRAMEWORK: \"{framework}\"");
+        }
+
+        var outputDirectory = RootDirectory / ".gitlab" / "generated";
+        Directory.CreateDirectory(outputDirectory);
+        var outputPath = outputDirectory / "linux-unit-tests.yml";
+        File.WriteAllText(outputPath, yaml.ToString());
+        Logger.Information("Generated GitLab Linux unit-test child pipeline at {Path}", outputPath);
+    }
+
+    void WriteGitlabLinuxArm64UnitTestsPipeline(IEnumerable<TargetFramework> frameworks)
+    {
+        var yaml = new StringBuilder(
+            """
+            include:
+              - local: .gitlab/linux-unit-tests-child.yml
+
+            stages:
+              - test
+
+            """);
+
+        foreach (var framework in frameworks)
+        {
+            yaml.AppendLine($"\"unit-tests-linux-arm64:{framework}\":");
+            yaml.AppendLine("  extends: .linux-unit-test-arm64-glibc");
+            yaml.AppendLine("  variables:");
+            yaml.AppendLine($"    FRAMEWORK: \"{framework}\"");
+            yaml.AppendLine($"\"unit-tests-linux-musl-arm64:{framework}\":");
+            yaml.AppendLine("  extends: .linux-unit-test-arm64-musl");
+            yaml.AppendLine("  variables:");
+            yaml.AppendLine($"    FRAMEWORK: \"{framework}\"");
+        }
+
+        var outputDirectory = RootDirectory / ".gitlab" / "generated";
+        Directory.CreateDirectory(outputDirectory);
+        var outputPath = outputDirectory / "linux-arm64-unit-tests.yml";
+        File.WriteAllText(outputPath, yaml.ToString());
+        Logger.Information("Generated GitLab Linux ARM64 unit-test child pipeline at {Path}", outputPath);
+    }
+
+    void WriteGitlabMacosUnitTestsPipeline(IEnumerable<TargetFramework> frameworks)
+    {
+        var yaml = new StringBuilder(
+            """
+            include:
+              - local: .gitlab/macos-unit-tests-child.yml
+
+            stages:
+              - test
+
+            """);
+
+        foreach (var framework in frameworks)
+        {
+            yaml.AppendLine($"\"unit-tests-macos-amd64:{framework}\":");
+            yaml.AppendLine("  extends: .macos-unit-test-amd64");
+            yaml.AppendLine("  variables:");
+            yaml.AppendLine($"    FRAMEWORK: \"{framework}\"");
+        }
+
+        var outputDirectory = RootDirectory / ".gitlab" / "generated";
+        Directory.CreateDirectory(outputDirectory);
+        var outputPath = outputDirectory / "macos-unit-tests.yml";
+        File.WriteAllText(outputPath, yaml.ToString());
+        Logger.Information("Generated GitLab macOS unit-test child pipeline at {Path}", outputPath);
+    }
+
+    void WriteGitlabLinuxIntegrationTestsPipeline(
+        IEnumerable<(TargetFramework Framework, string BaseImage, string ArtifactSuffix)> configurations,
+        bool isArm64 = false)
+    {
+        var configurationList = configurations.ToList();
+        var yaml = new StringBuilder(
+            """
+            include:
+              - local: .gitlab/linux-integration-tests-child.yml
+
+            stages:
+              - build
+              - test
+
+            """);
+
+        foreach (var framework in configurationList.Select(x => x.Framework).Distinct())
+        {
+            var sampleJob = $"build-samples-multi-version:{framework}";
+            yaml.AppendLine($"\"{sampleJob}\":");
+            yaml.AppendLine("  extends: .windows-integration-sample-build");
+            yaml.AppendLine("  variables:");
+            yaml.AppendLine($"    FRAMEWORK: \"{framework}\"");
+        }
+
+        foreach (var (framework, baseImage, artifactSuffix) in configurationList)
+        {
+            var sampleJob = $"build-samples-multi-version:{framework}";
+            var producerSuffix = baseImage == "alpine" ? "-musl" : string.Empty;
+            var architecture = isArm64 ? "arm64" : "x64";
+
+            AppendLinuxJob($"integration-tests-{artifactSuffix}:{framework}:tracer", "integration", TracerArea);
+            AppendLinuxJob($"integration-tests-{artifactSuffix}:{framework}:asm", "integration", AsmArea);
+
+            if (isArm64)
+            {
+                AppendLinuxJob($"integration-tests-{artifactSuffix}:{framework}:docker", "docker");
+            }
+            else
+            {
+                foreach (var dockerGroup in new[] { 1, 2 })
+                {
+                    AppendLinuxJob($"integration-tests-{artifactSuffix}:{framework}:docker-group-{dockerGroup}", "docker", dockerGroup: dockerGroup);
+                }
+            }
+
+            foreach (var optimize in new[] { true, false })
+            {
+                var optimization = optimize ? "optimized" : "unoptimized";
+                AppendLinuxJob($"integration-tests-{artifactSuffix}:{framework}:debugger-{optimization}", "debugger", optimize: optimize);
+            }
+
+            void AppendLinuxJob(string name, string testSuite, string area = null, int? dockerGroup = null, bool? optimize = null)
+            {
+                yaml.AppendLine($"\"{name}\":");
+                yaml.AppendLine($"  extends: .linux-integration-test-{architecture}");
+                yaml.AppendLine("  needs:");
+                yaml.AppendLine($"    - job: \"{sampleJob}\"");
+                yaml.AppendLine("      artifacts: true");
+                AppendParentArtifactNeed($"build-linux-tracer-{architecture}{producerSuffix}");
+                AppendParentArtifactNeed($"build-linux-profiler-{architecture}{producerSuffix}");
+                AppendParentArtifactNeed($"build-linux-universal-{architecture}");
+                AppendParentArtifactNeed("build-samples-standalone");
+                yaml.AppendLine("  variables:");
+                yaml.AppendLine($"    FRAMEWORK: \"{framework}\"");
+                yaml.AppendLine($"    BASE_IMAGE: \"{baseImage}\"");
+                yaml.AppendLine($"    ARTIFACT_SUFFIX: \"{artifactSuffix}\"");
+                yaml.AppendLine($"    TARGET_ARCHITECTURE: \"{architecture}\"");
+                yaml.AppendLine($"    TEST_SUITE: \"{testSuite}\"");
+                if (area is not null)
+                {
+                    yaml.AppendLine($"    AREA: \"{area}\"");
+                }
+
+                if (dockerGroup is not null)
+                {
+                    yaml.AppendLine($"    DOCKER_GROUP: \"{dockerGroup}\"");
+                }
+
+                if (optimize is not null)
+                {
+                    yaml.AppendLine($"    OPTIMIZE: \"{optimize.Value.ToString().ToLowerInvariant()}\"");
+                }
+            }
+
+            void AppendParentArtifactNeed(string job)
+            {
+                yaml.AppendLine("    - pipeline: \"$PARENT_PIPELINE_ID\"");
+                yaml.AppendLine($"      job: \"{job}\"");
+                yaml.AppendLine("      artifacts: true");
+            }
+        }
+
+        var outputDirectory = RootDirectory / ".gitlab" / "generated";
+        Directory.CreateDirectory(outputDirectory);
+        var outputPath = outputDirectory / (isArm64 ? "linux-arm64-integration-tests.yml" : "linux-integration-tests.yml");
+        File.WriteAllText(outputPath, yaml.ToString());
+        Logger.Information("Generated GitLab Linux {Architecture} integration-test child pipeline at {Path}", isArm64 ? "ARM64" : "x64", outputPath);
+    }
+
+    IEnumerable<(TargetFramework Framework, string BaseImage, string ArtifactSuffix)> GetLinuxX64IntegrationTestPlatformMatrix(
+        bool includeAllFrameworks)
+    {
+        var baseImages = new[]
+        {
+            (BaseImage: "debian", ArtifactSuffix: "linux-x64"),
+            (BaseImage: "alpine", ArtifactSuffix: "linux-musl-x64"),
+        };
+
+        foreach (var framework in GetTestingFrameworks(
+                     PlatformFamily.Linux,
+                     isArm64: false,
+                     includeAllFrameworks: includeAllFrameworks))
+        {
+            foreach (var (baseImage, artifactSuffix) in baseImages)
+            {
+                yield return (framework, baseImage, artifactSuffix);
+            }
+        }
+    }
+
+    IEnumerable<(TargetFramework Framework, string BaseImage, string ArtifactSuffix)> GetLinuxArm64IntegrationTestPlatformMatrix(
+        bool includeAllFrameworks)
+    {
+        var baseImages = new[]
+        {
+            (BaseImage: "debian", ArtifactSuffix: "linux-arm64"),
+            (BaseImage: "alpine", ArtifactSuffix: "linux-musl-arm64"),
+        };
+
+        foreach (var framework in GetTestingFrameworks(
+                     PlatformFamily.Linux,
+                     isArm64: true,
+                     includeAllFrameworks: includeAllFrameworks))
+        {
+            foreach (var (baseImage, artifactSuffix) in baseImages)
+            {
+                yield return (framework, baseImage, artifactSuffix);
+            }
+        }
+    }
 
     Target GenerateVariables
         => _ =>
@@ -160,10 +581,19 @@ partial class Build : NukeBuild
 
             void GenerateUnitTestFrameworkMatrices()
             {
-                GenerateTfmsMatrix("unit_tests_windows_matrix", GetTestingFrameworks(PlatformFamily.Windows));
+                var windowsFrameworks = GetTestingFrameworks(PlatformFamily.Windows);
+                GenerateTfmsMatrix("unit_tests_windows_matrix", windowsFrameworks);
                 GenerateTfmsMatrix("unit_tests_macos_matrix", GetTestingFrameworks(PlatformFamily.OSX));
                 GenerateLinuxMatrix("x64", GetTestingFrameworks(PlatformFamily.Linux));
                 GenerateLinuxMatrix("arm64", GetTestingFrameworks(PlatformFamily.Linux, isArm64: true));
+
+                if (IsGitlab)
+                {
+                    WriteGitlabWindowsUnitTestsPipeline(windowsFrameworks);
+                    WriteGitlabLinuxUnitTestsPipeline(GetTestingFrameworks(PlatformFamily.Linux));
+                    WriteGitlabLinuxArm64UnitTestsPipeline(GetTestingFrameworks(PlatformFamily.Linux, isArm64: true));
+                    WriteGitlabMacosUnitTestsPipeline(GetTestingFrameworks(PlatformFamily.OSX));
+                }
 
                 void GenerateTfmsMatrix(string name, IEnumerable<TargetFramework> frameworks)
                 {
@@ -187,6 +617,7 @@ partial class Build : NukeBuild
                     Logger.Information(JsonConvert.SerializeObject(matrix, Formatting.Indented));
                     AzurePipelines.Instance.SetOutputVariable($"unit_tests_linux_{platform}_matrix", JsonConvert.SerializeObject(matrix, Formatting.None));
                 }
+
             }
 
             // We only call this method for the tracer and ASM areas
@@ -351,36 +782,26 @@ partial class Build : NukeBuild
 
             void GenerateIntegrationTestsLinuxMatrix(bool dockerTest)
             {
-                var baseImages = new []
-                {
-                    (baseImage: "debian", artifactSuffix: "linux-x64"),
-                    (baseImage: "alpine", artifactSuffix: "linux-musl-x64"),
-                };
-
-                var targetFrameworks = GetTestingFrameworks(PlatformFamily.Linux);
-
                 var matrix = new Dictionary<string, object>();
-                foreach (var framework in targetFrameworks)
+                foreach (var (framework, baseImage, artifactSuffix) in GetLinuxX64IntegrationTestPlatformMatrix(
+                             IncludeAllTestFrameworks || RequiresThoroughTesting()))
                 {
-                    foreach (var (baseImage, artifactSuffix) in baseImages)
+                    if (dockerTest)
                     {
-                        if (dockerTest)
+                        var dockerGroups = new[] { 1, 2 };
+                        foreach (var dockerGroup in dockerGroups)
                         {
-                            var dockerGroups = new[] { 1, 2 };
-                            foreach (var dockerGroup in dockerGroups)
-                            {
-                                matrix.Add($"{baseImage}_{framework}_group{dockerGroup}", new { publishTargetFramework = framework, baseImage = baseImage, artifactSuffix = artifactSuffix, dockerGroup = dockerGroup });
-                            }
+                            matrix.Add($"{baseImage}_{framework}_group{dockerGroup}", new { publishTargetFramework = framework, baseImage = baseImage, artifactSuffix = artifactSuffix, dockerGroup = dockerGroup });
                         }
-                        else
+                    }
+                    else
+                    {
+                        var areas = new[] { TracerArea, AsmArea };
+                        foreach (var area in areas)
                         {
-                            var areas = new[] { TracerArea, AsmArea };
-                            foreach (var area in areas)
+                            if (ShouldBeIncluded(area))
                             {
-                                if (ShouldBeIncluded(area))
-                                {
-                                    matrix.Add($"{baseImage}_{framework}_{area}", new { publishTargetFramework = framework, baseImage = baseImage, artifactSuffix = artifactSuffix, area = area });
-                                }
+                                matrix.Add($"{baseImage}_{framework}_{area}", new { publishTargetFramework = framework, baseImage = baseImage, artifactSuffix = artifactSuffix, area = area });
                             }
                         }
                     }
@@ -876,12 +1297,24 @@ partial class Build : NukeBuild
         const string AzureSystemPullRequestSourceBranch = "SYSTEM_PULLREQUEST_SOURCEBRANCH";
         const string AzureBuildSourceBranch = "BUILD_SOURCEBRANCH";
         const string AzureBuildSourceBranchName = "BUILD_SOURCEBRANCHNAME";
+        const string GitlabMergeRequestSourceBranch = "CI_MERGE_REQUEST_SOURCE_BRANCH_NAME";
+        const string GitlabCommitBranch = "CI_COMMIT_BRANCH";
 
         var prBranch = Environment.GetEnvironmentVariable(AzureSystemPullRequestSourceBranch);
+        if (string.IsNullOrWhiteSpace(prBranch))
+        {
+            prBranch = Environment.GetEnvironmentVariable(GitlabMergeRequestSourceBranch);
+        }
+
         var branch = !string.IsNullOrWhiteSpace(prBranch) ? prBranch : Environment.GetEnvironmentVariable(AzureBuildSourceBranch);
         if (string.IsNullOrWhiteSpace(branch))
         {
             branch = Environment.GetEnvironmentVariable(AzureBuildSourceBranchName);
+        }
+
+        if (string.IsNullOrWhiteSpace(branch))
+        {
+            branch = Environment.GetEnvironmentVariable(GitlabCommitBranch);
         }
 
         Console.WriteLine("Base Branch: {0}", baseBranch);

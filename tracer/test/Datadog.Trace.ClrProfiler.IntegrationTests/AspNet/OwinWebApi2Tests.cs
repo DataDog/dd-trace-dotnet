@@ -25,6 +25,7 @@ using Xunit.Abstractions;
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
     [Collection("IisTests")]
+    [Trait("IISExpress", "True")]
     public class OwinWebApi2TestsCallTarget : OwinWebApi2Tests
     {
         public OwinWebApi2TestsCallTarget(OwinFixture fixture, ITestOutputHelper output)
@@ -34,6 +35,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     }
 
     [Collection("IisTests")]
+    [Trait("IISExpress", "True")]
     public class OwinWebApi2TestsCallTargetWithFeatureFlag : OwinWebApi2Tests
     {
         public OwinWebApi2TestsCallTargetWithFeatureFlag(OwinFixture fixture, ITestOutputHelper output)
@@ -43,6 +45,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     }
 
     [Collection("IisTests")]
+    [Trait("IISExpress", "True")]
     public class OwinWebApi2TestsCallTargetWithRouteTemplateExpansion : OwinWebApi2Tests
     {
         public OwinWebApi2TestsCallTargetWithRouteTemplateExpansion(OwinFixture fixture, ITestOutputHelper output)
