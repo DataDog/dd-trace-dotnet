@@ -11951,6 +11951,28 @@
   {
     "IntegrationName": "MsTestV2",
     "AssemblyName": "MSTestAdapter.PlatformServices",
+    "TargetTypeName": "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestMethodInfo",
+    "TargetMethodName": "GetRetryAttribute",
+    "TargetReturnType": "Microsoft.VisualStudio.TestTools.UnitTesting.RetryBaseAttribute",
+    "TargetParameterTypes": [],
+    "MinimumVersion": {
+      "Item1": 4,
+      "Item2": 4,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 4,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2.TestMethodInfoGetRetryAttributeIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "MsTestV2",
+    "AssemblyName": "MSTestAdapter.PlatformServices",
     "TargetTypeName": "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestMethodRunner",
     "TargetMethodName": "ExecuteAsync",
     "TargetReturnType": "System.Threading.Tasks.Task`1[Microsoft.VisualStudio.TestTools.UnitTesting.TestResult[]]",

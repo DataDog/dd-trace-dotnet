@@ -140,12 +140,18 @@ public sealed class TestMethodAttributeExecuteAsyncIntegration
         var execution = MsTestExecution.GetForTestMethod(testMethodProxy.Instance);
         execution?.ObserveTestMethod(testMethodProxy);
         var isNativeRetry = execution is { HasNativeRetry: true, IsNativeRetry: true };
-        var testRunnerState = new TestRunnerState(testMethodProxy, MsTestIntegration.OnMethodBegin(testMethodProxy, testMethodProxy.Type, isRetry: isNativeRetry), execution);
+        var retryContext = execution is { HasNativeRetry: true } ? new MsTestRetryContext(testMethodProxy) : null;
+        var testRunnerState = new TestRunnerState(testMethodProxy, MsTestIntegration.OnMethodBegin(testMethodProxy, testMethodProxy.Type, isRetry: isNativeRetry), execution, retryContext);
         return new CallTargetState(Tracer.Instance.InternalActiveScope, testRunnerState);
     }
 
     internal static CallTargetReturn<TReturn?> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn? returnValue, Exception? exception, in CallTargetState state)
     {
+        if (state.State is TestRunnerState { Test: not null, Execution: { HasNativeRetry: true } } testState && ReferenceEquals(Test.Current, testState.Test))
+        {
+            Test.Current = null;
+        }
+
         return new CallTargetReturn<TReturn?>(returnValue);
     }
 
@@ -173,7 +179,7 @@ public sealed class TestMethodAttributeExecuteAsyncIntegration
                 if (execution is { HasNativeRetry: true })
                 {
                     ApplyRetryTags(testMethodState.Test.GetTags(), new RetryState { IsNativeRetry = execution.IsNativeRetry });
-                    execution.CloseAttempt(testMethodState.Test, null, TestStatus.Fail, null);
+                    execution.FinishAttempt(testMethodState.Test, null, TestStatus.Fail, null);
                 }
                 else
                 {
@@ -372,7 +378,12 @@ public sealed class TestMethodAttributeExecuteAsyncIntegration
 
         return returnValueList;
 
-        static async Task<bool> RunRetryAsync(ITestMethod testMethod, TestRunnerState testMethodState, RetryState retryState, List<IList> resultsCollection)
+        static Task<bool> RunRetryAsync(ITestMethod testMethod, TestRunnerState testMethodState, RetryState retryState, List<IList> resultsCollection)
+            => testMethodState.RetryContext is { } context
+                   ? context.RunAsync(() => InvokeRetryAsync(testMethod, testMethodState, retryState, resultsCollection))
+                   : InvokeRetryAsync(testMethod, testMethodState, retryState, resultsCollection);
+
+        static async Task<bool> InvokeRetryAsync(ITestMethod testMethod, TestRunnerState testMethodState, RetryState retryState, List<IList> resultsCollection)
         {
             var retryTest = MsTestIntegration.OnMethodBegin(testMethod, testMethod.Type, isRetry: true);
             object? retryTestResult = null;
@@ -382,11 +393,11 @@ public sealed class TestMethodAttributeExecuteAsyncIntegration
             {
                 if (testMethodState.TestMethod is ITestMethodV4 testMethodV4)
                 {
-                    retryTestResult = await testMethodV4.InvokeAsync(null);
+                    retryTestResult = await testMethodV4.InvokeAsync(testMethod.Arguments);
                 }
                 else if (testMethodState.TestMethod is ITestMethodV3 testMethodV3)
                 {
-                    retryTestResult = testMethodV3.Invoke(null);
+                    retryTestResult = testMethodV3.Invoke(testMethod.Arguments);
                 }
                 else
                 {
@@ -607,7 +618,7 @@ public sealed class TestMethodAttributeExecuteAsyncIntegration
         {
             if (execution is { HasNativeRetry: true })
             {
-                execution.CloseAttempt(test, testResult, status, skipReason);
+                execution.FinishAttempt(test, testResult, status, skipReason, isDatadogRetry: retryState.IsARetry);
             }
             else
             {
@@ -929,10 +940,12 @@ public sealed class TestMethodAttributeExecuteAsyncIntegration
         public readonly Test? Test;
         public readonly DateTimeOffset StartTime;
         public readonly MsTestExecution? Execution;
+        public readonly MsTestRetryContext? RetryContext;
 
-        public TestRunnerState(ITestMethod testMethod, Test? test, MsTestExecution? execution)
+        public TestRunnerState(ITestMethod testMethod, Test? test, MsTestExecution? execution, MsTestRetryContext? retryContext)
         {
             Execution = execution;
+            RetryContext = retryContext;
             TestMethod = testMethod;
             Test = test;
             _clock = TraceClock.Instance;
