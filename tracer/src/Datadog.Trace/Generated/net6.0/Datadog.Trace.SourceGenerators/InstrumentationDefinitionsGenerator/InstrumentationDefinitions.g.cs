@@ -607,6 +607,7 @@ namespace Datadog.Trace.ClrProfiler
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Activity.ActivityStatusDescriptionGetterIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Activity.ActivityTagObjectsGetterIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Activity.ActivityTagsGetterIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Activity.ActivityGetTagItemIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Activity.ActivityDisplayNameIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Activity.ActivitySetStatusIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Activity.ActivitySetTagIntegration"
