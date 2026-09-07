@@ -25,7 +25,7 @@ public class MSTestInstrumentationTests
         GC.Collect();
         result.IsAlive.Should().BeTrue();
 
-        execution.FinishSpans();
+        execution.CloseTests();
         GC.Collect();
         result.IsAlive.Should().BeFalse();
         GC.KeepAlive(execution);
