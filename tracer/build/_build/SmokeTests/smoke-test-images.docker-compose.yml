@@ -56,7 +56,7 @@ services:
   aspnet-8_0-bookworm-slim:
     image: mcr.microsoft.com/dotnet/aspnet:8.0-bookworm-slim@sha256:787c228ea85457bec43c8b084e6ac360b26ea43b5c2fcbe861f721f2e8670dd3
   aspnet-8_0-jammy:
-    image: mcr.microsoft.com/dotnet/aspnet:8.0-jammy@sha256:fc285b0c35d42d2684bef46c95300b3ffc8304bf7bbf8b5bbc4ca621876ae220
+    image: mcr.microsoft.com/dotnet/aspnet:8.0-jammy@sha256:66a797868bec922a8f9cd7058c9539d1d08fb03720df62fe244fc8a7dd3bc6c3
   aspnet-8_0-jammy-chiseled:
     image: mcr.microsoft.com/dotnet/aspnet:8.0-jammy-chiseled@sha256:ddbf85dbace8b4e75cb84682c21e0cc5c56ce3331d922b19803d85f2b94b5e71
   aspnet-8_0-jammy-chiseled-composite:
@@ -88,7 +88,7 @@ services:
   aspnet-10_0-noble-chiseled-composite:
     image: mcr.microsoft.com/dotnet/aspnet:10.0-noble-chiseled-composite@sha256:e2cdbcce8da78049c6c9f3ffd1f85bbe806133de36fa3220ae87cd699b9c4dcb
   aspnet-10_0-resolute:
-    image: mcr.microsoft.com/dotnet/aspnet:10.0-resolute@sha256:9da264457103c75004bec097f55624b8962ac5aa5e53f2a8c41d37a3ceef2533
+    image: mcr.microsoft.com/dotnet/aspnet:10.0-resolute@sha256:e12b240891f34144edd813a11e86649dca6120165adfb5ad0a29bbde6753a975
   aspnet-10_0-resolute-chiseled:
     image: mcr.microsoft.com/dotnet/aspnet:10.0-resolute-chiseled@sha256:95fe45615d8ca4de2aa15206a827ce9383b67e8e34cc0aba58cb3261fb52c40c
   aspnet-10_0-resolute-chiseled-composite:
@@ -116,7 +116,7 @@ services:
   sdk-8_0-alpine3_18:
     image: mcr.microsoft.com/dotnet/sdk:8.0-alpine3.18@sha256:b16fdc4c48d4627bd5c4e8e569f1cc295b8cda938a29ead7d2df981d410a4175
   sdk-8_0-jammy:
-    image: mcr.microsoft.com/dotnet/sdk:8.0-jammy@sha256:ac2731ba829691dddf6b059833afa68381e0336bf1db69404ee3d6eec0495cf4
+    image: mcr.microsoft.com/dotnet/sdk:8.0-jammy@sha256:b300ab9f6790233c2cb91632d7e9a8576e8f01e6ac19743833b7b0a24bdf5094
   sdk-9_0-alpine3_20:
     image: mcr.microsoft.com/dotnet/sdk:9.0-alpine3.20@sha256:823a26bb53762a51795dbcdcf67659360d6f62823f5a83dc380cbef226d4ded3
   sdk-9_0-bookworm-slim:
@@ -128,7 +128,7 @@ services:
   sdk-10_0-noble:
     image: mcr.microsoft.com/dotnet/sdk:10.0-noble@sha256:e1ffd2a92ae84c1291bc1b6887501f8af98e6331e7af6d4c8d37168c5e87a64c
   sdk-10_0-resolute:
-    image: mcr.microsoft.com/dotnet/sdk:10.0-resolute@sha256:683a6f43f6f05c14ce3d2291f0fd9bc4ae168d61a65834706d56f56757f40c5b
+    image: mcr.microsoft.com/dotnet/sdk:10.0-resolute@sha256:17d5b93701079599eb771cf72f2aaa45a5826d9802f2cfbae565fd2eecf72073
 
   # andrewlock/dotnet-centos
   dotnet-centos-7-2_1:
