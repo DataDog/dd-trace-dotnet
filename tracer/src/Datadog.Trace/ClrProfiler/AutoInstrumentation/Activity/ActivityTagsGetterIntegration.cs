@@ -8,6 +8,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Globalization;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Tagging;
@@ -59,7 +60,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Activity
         }
 
         /// <summary>
-        /// OnMethodEnd — build an enumerable of string tags from the Span's tag storage.
+        /// OnMethodEnd — build an enumerable of string tags from the Span's tag storage, via the
+        /// shared <see cref="ActivityTagProjection"/> (covers tags, metrics, and the reserved OTel keys).
         /// </summary>
         internal static CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception? exception, in CallTargetState state)
         {
@@ -70,7 +72,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Activity
                 {
                     var list = new List<KeyValuePair<string, string?>>();
                     var processor = new StringTagListBuilder(list);
-                    span.Tags.EnumerateTags(ref processor, span.OpenTelemetrySemanticsEnabled);
+                    ActivityTagProjection.Project(span, ref processor);
                     return new CallTargetReturn<TReturn>((TReturn)(object)list);
                 }
             }
@@ -78,7 +80,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Activity
             return new CallTargetReturn<TReturn>(returnValue);
         }
 
-        private struct StringTagListBuilder : IItemProcessor<string>, IItemProcessor<int>
+        private struct StringTagListBuilder : IItemProcessor<string>, IItemProcessor<int>, IItemProcessor<double>
         {
             private readonly List<KeyValuePair<string, string?>> _list;
 
@@ -87,6 +89,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Activity
             public void Process(TagItem<string> item) => _list.Add(new KeyValuePair<string, string?>(item.Key, item.Value));
 
             public void Process(TagItem<int> item) => _list.Add(new KeyValuePair<string, string?>(item.Key, IntStringCache.ToInvariantString(item.Value)));
+
+            // Numeric attributes set via Activity.SetTag(key, <number>) round-trip through OtlpHelpers.SetTagObject
+            // into the Span's metrics (not its tags) — see ActivityTagProjection. Activity.Tags is string-valued,
+            // so the metric value is formatted here; full CLR-type fidelity is only available via get_TagObjects.
+            public void Process(TagItem<double> item) => _list.Add(new KeyValuePair<string, string?>(item.Key, item.Value.ToString(CultureInfo.InvariantCulture)));
         }
     }
 }

@@ -6,11 +6,9 @@
 #nullable enable
 
 using System;
-using System.Collections.Generic;
 using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.Tagging;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Activity
 {
@@ -59,10 +57,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Activity
         }
 
         /// <summary>
-        /// OnMethodEnd — build an enumerable of object-valued tags from the Span's tag storage.
-        /// Tags are stored internally as strings; they are boxed to object here to match the
-        /// Activity.TagObjects contract. Numeric values that were originally set via SetMetric
-        /// are not reflected here (they are not retrievable as tags from the Span).
+        /// OnMethodEnd — build an enumerable of object-valued tags from the Span's tag storage, via the
+        /// shared <see cref="ActivityTagProjection"/> (covers tags, metrics, and the reserved OTel keys).
+        /// String tags are boxed to object here to match the Activity.TagObjects contract. Numeric
+        /// attributes come back boxed as <see cref="double"/> (the type they are stored as via SetMetric),
+        /// not their original CLR type — see ActivityTagProjection's remarks on type fidelity.
         /// </summary>
         internal static CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception? exception, in CallTargetState state)
         {
@@ -71,25 +70,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Activity
                 var span = state.Scope?.Span;
                 if (span is not null)
                 {
-                    var list = new List<KeyValuePair<string, object?>>();
-                    var processor = new ObjectTagListBuilder(list);
-                    span.Tags.EnumerateTags(ref processor, span.OpenTelemetrySemanticsEnabled);
+                    var list = ActivityTagProjection.ProjectToObjectList(span);
                     return new CallTargetReturn<TReturn>((TReturn)(object)list);
                 }
             }
 
             return new CallTargetReturn<TReturn>(returnValue);
-        }
-
-        private struct ObjectTagListBuilder : IItemProcessor<string>, IItemProcessor<int>
-        {
-            private readonly List<KeyValuePair<string, object?>> _list;
-
-            public ObjectTagListBuilder(List<KeyValuePair<string, object?>> list) => _list = list;
-
-            public void Process(TagItem<string> item) => _list.Add(new KeyValuePair<string, object?>(item.Key, item.Value));
-
-            public void Process(TagItem<int> item) => _list.Add(new KeyValuePair<string, object?>(item.Key, item.Value));
         }
     }
 }
