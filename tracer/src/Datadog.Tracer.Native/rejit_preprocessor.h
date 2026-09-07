@@ -3,6 +3,8 @@
 
 #include "integration.h"
 #include <future>
+#include <mutex>
+#include <unordered_set>
 #include "cor.h"
 #include "corprof.h"
 #include "module_metadata.h"
@@ -100,6 +102,10 @@ protected:
     std::unordered_map<ModuleID, std::unique_ptr<RejitHandlerModule>> m_modules;
     std::mutex m_ngenInlinersModules_lock;
     std::vector<ModuleID> m_ngenInlinersModules;
+
+    // Unloaded modules. PreprocessRejitRequests skips these so we don't call into the CLR after unload.
+    std::mutex m_unloaded_modules_lock;
+    std::unordered_set<ModuleID> m_unloaded_modules;
 
 public:
     RejitPreprocessor(CorProfiler* corProfiler, std::shared_ptr<RejitHandler> rejit_handler,

@@ -8,6 +8,10 @@
 
 namespace trace
 {
+// Upper bound on RejitPreprocessor::m_unloaded_modules.
+// Handle cases where modules keep on being unloaded and loaded again.
+static constexpr size_t kMaxTrackedUnloadedModules = 4096;
+
 // Rejitter
 Rejitter::Rejitter(std::shared_ptr<RejitHandler> handler, RejitterPriority priority, bool registerRejitter) :
     m_rejitHandler(handler), m_priority(priority)
@@ -42,9 +46,11 @@ void RejitPreprocessor<RejitRequestDefinition>::Shutdown()
 
     std::lock_guard<std::mutex> moduleGuard(m_modules_lock);
     std::lock_guard<std::mutex> ngenModuleGuard(m_ngenInlinersModules_lock);
+    std::lock_guard<std::mutex> unloadedModuleGuard(m_unloaded_modules_lock);
 
     m_modules.clear();
     m_ngenInlinersModules.clear();
+    m_unloaded_modules.clear();
 }
 
 template <class RejitRequestDefinition>
@@ -60,6 +66,12 @@ RejitHandlerModule* RejitPreprocessor<RejitRequestDefinition>::GetOrAddModule(Mo
     if (find_res != m_modules.end())
     {
         return find_res->second.get();
+    }
+
+    // The CLR can reuse a ModuleID, so drop it from the unloaded set.
+    {
+        std::lock_guard<std::mutex> unloadedGuard(m_unloaded_modules_lock);
+        m_unloaded_modules.erase(moduleId);
     }
 
     RejitHandlerModule* moduleHandler = new RejitHandlerModule(moduleId, m_rejit_handler.get());
@@ -102,6 +114,14 @@ void RejitPreprocessor<RejitRequestDefinition>::RemoveModule(ModuleID moduleId)
     std::lock_guard<std::mutex> inlinersGuard(m_ngenInlinersModules_lock);
     m_ngenInlinersModules.erase(std::remove(m_ngenInlinersModules.begin(), m_ngenInlinersModules.end(), moduleId),
                                 m_ngenInlinersModules.end());
+
+    // Record unloaded modules to avoid re-processing them.
+    std::lock_guard<std::mutex> unloadedGuard(m_unloaded_modules_lock);
+    if (m_unloaded_modules.size() >= kMaxTrackedUnloadedModules)
+    {
+        m_unloaded_modules.clear();
+    }
+    m_unloaded_modules.insert(moduleId);
 }
 
 template <class RejitRequestDefinition>
@@ -562,6 +582,17 @@ ULONG RejitPreprocessor<RejitRequestDefinition>::PreprocessRejitRequests(
     for (const auto& module : modules)
     {
         auto _ = trace::Stats::Instance()->CallTargetRequestRejitMeasure();
+
+        {
+            // Skip modules that have been unloaded.
+            std::lock_guard<std::mutex> unloadedGuard(m_unloaded_modules_lock);
+            if (m_unloaded_modules.find(module) != m_unloaded_modules.end())
+            {
+                DBG("PreprocessRejitRequests: skipping module already unloaded: ", module);
+                continue;
+            }
+        }
+
         const ModuleInfo& moduleInfo = GetModuleInfo(corProfilerInfo, module);
         if (!moduleInfo.IsValid())
         {
