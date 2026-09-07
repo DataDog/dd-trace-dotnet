@@ -1350,11 +1350,13 @@ partial class Build
         Directory.CreateDirectory(tempDir);
         await DownloadArtifact(client, tempDir, $"{awsUri}fleet-installer.zip");
 
-        // Overwrite the unsigned NuGet packages Azure DevOps built (in `artifactsPath`, what we
-        // actually push to nuget.org) with GitLab's Authenticode-signed copies - see
-        // SignNuGetPackageContents in Build.Gitlab.cs. Do this before the sha512.txt checksums are
-        // computed by the caller, so the recorded hashes describe what actually gets pushed.
-        await ReplaceWithSignedNuGetPackages(client, destination, awsUri, artifactsPath);
+        // Overwrite the NuGet packages Azure DevOps built (in `artifactsPath`, what we actually push
+        // to nuget.org) with the copies GitLab built and Authenticode-signed - see SignDlls and
+        // SignNuGetPackageContents in Build.Gitlab.cs. This includes the .snupkg symbol packages,
+        // which must come from the same build as the .nupkg files they describe. Do this before the
+        // sha512.txt checksums are computed by the caller, so the recorded hashes describe what
+        // actually gets pushed.
+        await ReplaceWithGitlabNuGetPackages(client, destination, awsUri, artifactsPath);
 
         return;
 
@@ -1368,28 +1370,34 @@ partial class Build
         }
     }
 
-    // Downloads the Authenticode-signed .nupkg files produced by GitLab's `sign-nuget-packages` job
-    // and replaces every .nupkg in `artifactsPath` with its signed counterpart.
-    static async Task ReplaceWithSignedNuGetPackages(HttpClient client, AbsolutePath destination, string awsUri, AbsolutePath artifactsPath)
+    // Downloads the NuGet packages (and symbol packages) that GitLab published to S3 for this commit
+    // and replaces every .nupkg/.snupkg in `artifactsPath` with its GitLab counterpart.
+    static async Task ReplaceWithGitlabNuGetPackages(HttpClient client, AbsolutePath destination, string awsUri, AbsolutePath artifactsPath)
     {
-        var signedDir = destination / "signed-nuget-packages";
-        EnsureExistingDirectory(signedDir);
+        var gitlabDir = destination / "signed-nuget-packages";
+        EnsureExistingDirectory(gitlabDir);
 
-        var unsignedPackages = artifactsPath.GlobFiles("*.nupkg");
-        foreach (var unsignedFile in unsignedPackages)
+        // `dotnet nuget push *.nupkg` implicitly pushes the sibling .snupkg, so we have to replace both
+        var azurePackages = artifactsPath.GlobFiles("*.nupkg", "*.snupkg");
+        if (azurePackages.Count == 0)
         {
-            var name = unsignedFile.Name;
-            var signedUrl = $"{awsUri}signed-nuget-packages/{name}";
-            var signedFile = signedDir / name;
+            throw new Exception($"No .nupkg or .snupkg files found in {artifactsPath}");
+        }
+
+        foreach (var azureFile in azurePackages)
+        {
+            var name = azureFile.Name;
+            var gitlabUrl = $"{awsUri}signed-nuget-packages/{name}";
+            var gitlabFile = gitlabDir / name;
 
             await DownloadFileWithRetry(
                 client,
-                signedUrl,
-                signedFile,
-                $"Error downloading Authenticode-signed NuGet package '{name}'. Check that the 'sign-nuget-packages' GitLab job ran (and published) this package for this commit");
+                gitlabUrl,
+                gitlabFile,
+                $"Error downloading '{name}' from GitLab. Check that the 'publish' GitLab job uploaded this file for this commit (the .nupkg files come from the 'build' and 'sign-nuget-packages' jobs, the .snupkg files from 'build')");
 
-            File.Copy(signedFile, unsignedFile, overwrite: true);
-            Console.WriteLine($"Replaced {name} with the Authenticode-signed copy from {signedUrl}");
+            File.Copy(gitlabFile, azureFile, overwrite: true);
+            Console.WriteLine($"Replaced {name} with the GitLab copy from {gitlabUrl}");
         }
     }
 
