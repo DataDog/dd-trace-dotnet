@@ -104,6 +104,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         public static IEnumerable<object[]> MSTest2Retries => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.MSTest2Retries : PackageVersionsLatestSpecific.MSTest2Retries;
 
+        public static IEnumerable<object[]> MSTestNativeRetries => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.MSTestNativeRetries : PackageVersionsLatestSpecific.MSTestNativeRetries;
+
+        public static IEnumerable<object[]> MSTestNativeRetriesMtp => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.MSTestNativeRetriesMtp : PackageVersionsLatestSpecific.MSTestNativeRetriesMtp;
+
+        public static IEnumerable<object[]> MSTestDiscovery => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.MSTestDiscovery : PackageVersionsLatestSpecific.MSTestDiscovery;
+
         public static IEnumerable<object[]> Kafka => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.Kafka : PackageVersionsLatestSpecific.Kafka;
 
         public static IEnumerable<object[]> CosmosDb => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.CosmosDb : PackageVersionsLatestSpecific.CosmosDb;

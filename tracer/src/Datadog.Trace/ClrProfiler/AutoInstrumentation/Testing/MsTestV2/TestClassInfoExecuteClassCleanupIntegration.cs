@@ -115,6 +115,8 @@ public static class TestClassInfoExecuteClassCleanupAsyncIntegration
 
     internal static TReturn? OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn? returnValue, Exception? exception, in CallTargetState state)
     {
+        // MSTest returns a TestFailedException for cleanup failures instead of throwing it.
+        exception ??= returnValue as Exception;
         TestClassInfoExecuteClassCleanupIntegration.OnMethodEnd(instance, exception, state);
         return returnValue;
     }

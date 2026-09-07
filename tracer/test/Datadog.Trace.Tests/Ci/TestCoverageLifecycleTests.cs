@@ -29,6 +29,29 @@ namespace Datadog.Trace.Tests.Ci;
 public class TestCoverageLifecycleTests : SettingsTestsBase
 {
     [Fact]
+    public void DeferredSpanCompletionEndsAttemptCoverageAndReleasesTheScope()
+    {
+        var handler = new CountingCoverageEventHandler();
+        using var harness = new TestHarness(handler);
+        var previousScope = Tracer.Instance.InternalActiveScope;
+        var test = harness.Suite.CreateTest("native-retry-attempt");
+        var duration = TimeSpan.FromMilliseconds(12);
+
+        test.CloseWithDeferredSpan(TestStatus.Fail, duration, skipReason: null);
+
+        test.IsClosed.Should().BeTrue();
+        handler.FinishedCount.Should().Be(1);
+        handler.Container.Should().BeNull();
+        Tracer.Instance.InternalActiveScope.Should().BeSameAs(previousScope);
+        test.GetInternalSpan().IsFinished.Should().BeFalse();
+        test.GetTags().FinalStatus = "fail";
+        test.GetInternalSpan().Finish(duration);
+        test.GetInternalSpan().IsFinished.Should().BeTrue();
+        test.GetInternalSpan().Duration.Should().Be(duration);
+        handler.FinishedCount.Should().Be(1);
+    }
+
+    [Fact]
     public void ConstructorFailureAfterCoverageStartAbortsCoverageContext()
     {
         using var harness = new TestHarness();

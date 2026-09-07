@@ -495,6 +495,14 @@ public sealed class Test
     /// <param name="duration">Duration of the test suite</param>
     /// <param name="skipReason">In case </param>
     public void Close(TestStatus status, TimeSpan? duration, string? skipReason)
+        => Close(status, duration, skipReason, finishSpan: true);
+
+    // A framework can finish an attempt before it knows whether that attempt is final.
+    // The caller owns Span.Finish; coverage and the active scope still end here.
+    internal void CloseWithDeferredSpan(TestStatus status, TimeSpan duration, string? skipReason)
+        => Close(status, duration, skipReason, finishSpan: false);
+
+    private void Close(TestStatus status, TimeSpan? duration, string? skipReason, bool finishSpan)
     {
         if (Interlocked.Exchange(ref _finished, 1) == 1)
         {
@@ -591,7 +599,15 @@ public sealed class Test
             _onCloseActions.Clear();
         }
 
-        scope.Span.Finish(duration.Value);
+        if (finishSpan)
+        {
+            scope.Span.Finish(duration.Value);
+        }
+        else
+        {
+            scope.SetFinishOnClose(false);
+        }
+
         scope.Dispose();
 
         if (TelemetryHelper.GetEventTypeWithCodeOwnerAndSupportedCiAndBenchmarkAndEarlyFlakeDetection(
