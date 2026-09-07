@@ -6,6 +6,7 @@
 
 using System;
 using System.ComponentModel;
+using System.Runtime.CompilerServices;
 using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.ClrProfiler.CallTarget;
@@ -183,11 +184,41 @@ public static class TestMethodRunnerExecuteTestIntegrationV4_3
     internal static CallTargetState OnMethodBegin<TTarget, TTestContext, TTestMethod>(TTarget instance, TTestContext testContext, TTestMethod testMethod)
         where TTarget : ITestMethodRunnerV3_9
         where TTestMethod : ITestMethod
-        => TestMethodRunnerExecuteTestIntegrationV3_9.OnMethodBegin(instance, testMethod);
+    {
+        var state = TestMethodRunnerExecuteTestIntegrationV3_9.OnMethodBegin(instance, testMethod);
+        var binding = MsTestExecution.BindTestMethod(testMethod.Instance);
+        return binding is null ? state : new CallTargetState(null, new ExecutionState(state, binding));
+    }
 
     internal static CallTargetReturn<TReturn?> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn? returnValue, Exception? exception, in CallTargetState state)
-        => TestMethodRunnerExecuteTestIntegrationV3_9.OnMethodEnd(instance, returnValue, exception, in state);
+    {
+        var executorState = state.State is ExecutionState execution ? execution.ExecutorState : state;
+        TestMethodRunnerExecuteTestIntegrationV3_9.OnMethodEnd(instance, returnValue, exception, in executorState);
+        return new CallTargetReturn<TReturn?>(returnValue);
+    }
 
     internal static TReturn? OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn? returnValue, Exception? exception, in CallTargetState state)
-        => TestMethodRunnerExecuteTestIntegrationV3_9.OnAsyncMethodEnd(instance, returnValue, exception, in state);
+    {
+        if (state.State is not ExecutionState execution)
+        {
+            return TestMethodRunnerExecuteTestIntegrationV3_9.OnAsyncMethodEnd(instance, returnValue, exception, in state);
+        }
+
+        try
+        {
+            return TestMethodRunnerExecuteTestIntegrationV3_9.OnAsyncMethodEnd(instance, returnValue, exception, execution.ExecutorState);
+        }
+        finally
+        {
+            // The type cache retains methods across attempts, but must not retain completed executions.
+            execution.Binding.Value = null;
+        }
+    }
+
+    private sealed class ExecutionState(CallTargetState executorState, StrongBox<MsTestExecution?> binding)
+    {
+        public CallTargetState ExecutorState { get; } = executorState;
+
+        public StrongBox<MsTestExecution?> Binding { get; } = binding;
+    }
 }
