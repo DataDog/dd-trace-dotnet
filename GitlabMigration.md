@@ -1,6 +1,6 @@
 # GitLab CI migration plan and findings
 
-Last updated: 2026-08-21
+Last updated: 2026-09-07
 
 ## Purpose
 
@@ -26,19 +26,30 @@ This document combines:
 - [Using CI Identities](https://datadoghq.atlassian.net/wiki/spaces/SECENG/pages/5324145720/Using+CI+Identities)
 - [GitLab CI/CD YAML reference](https://docs.gitlab.com/ci/yaml/)
 - [GitLab CI/CD variables](https://docs.gitlab.com/ci/variables/)
-- [CI job-sizing dashboard](https://app.datadoghq.com/dashboard/vev-54z-7wr/?fromUser=false&refresh_mode=sliding&from_ts=1776091263874&to_ts=1777300863874&live=true)
+- [CI job-sizing dashboard](https://app.datadoghq.com/dashboard/vev-54z-7wr/)
 
 ## Current state
 
-CI is split across Azure DevOps and GitLab.
+CI is split across Azure DevOps and GitLab. The detailed measurements and failed experiments later in this document are historical evidence; the table below and the **Open decisions and risks** section are the authoritative status summaries.
 
-- `.azure-pipelines/ultimate-pipeline.yml` contains the full build and test matrix. As of this update, it is 5,693 lines with 80 top-level stages.
+- `.azure-pipelines/ultimate-pipeline.yml` contains the full build and test matrix, with 80 top-level stages at the time of this update.
 - Azure DevOps covers Windows, Linux x64 and ARM64, glibc and musl, macOS, unit tests, integration tests, smoke tests, profiler tests, packaging, and publishing.
 - GitLab runs generated managed-unit-test matrices on Windows, Linux x64, Linux ARM64, and macOS. Generated integration-test matrices now cover Windows x64/x86 and Linux x64/ARM64, with glibc and musl coverage on Linux. Packaging/publishing work and benchmarks continue to run alongside the migration jobs.
 - Existing GitLab jobs import Azure artifacts through `.gitlab/download-single-step-artifacts.sh` and `.gitlab/download-serverless-artifacts.sh`.
 - The implementation uses generated child configurations under `.gitlab/generated` and reusable child templates under `.gitlab` instead of the originally proposed `.gitlab/ci/` layout.
 
 The long-term goal is to host the entire build and test pipeline in GitLab, remove the cross-CI artifact handoff, and retire Azure DevOps only after an extended period of demonstrated parity.
+
+### Status at a glance
+
+| Area | Current GitLab state | Remaining work |
+| --- | --- | --- |
+| Platform builds | Windows, Linux x64/ARM64 for glibc and musl, and macOS amd64 producers are implemented. Linux profiler and universal loader/wrapper producers are also present. | Validate new producer changes over repeated pipelines and add variants only when Azure parity requires them. |
+| Managed unit tests | Generated matrices cover the Azure-selected TFMs on Windows, Linux x64, Linux ARM64, and macOS. Normal and thorough matrices have completed successfully. | Add code-coverage mode and decide whether managed TRX results should be converted for GitLab's test-report UI. |
+| Native unit tests | Windows and Linux x64 match the native suites Azure invokes; Azure and GitLab both omit explicit native suites on Linux ARM64 and macOS. | Preserve retry and artifact parity and validate newly changed Linux producer paths. |
+| Integration tests | Generated Windows x64/x86 and Linux x64/ARM64 matrices cover Tracer, ASM, Debugger, and the documented dependency-specific cases. | Add macOS and profiler integration tests. Windows Docker-dependent coverage remains deferred while Azure's equivalent setup is disabled. |
+| Packaging and publishing | Existing GitLab jobs build, sign, and publish selected artifacts while release workflows still consume some Azure outputs. | Establish complete artifact equivalence, migrate remaining packages and smoke-test consumers, then remove cross-CI download scripts. |
+| Switchover | Azure and GitLab run in parallel. | Measure agreement for at least four weeks, migrate status/reporting dependencies, and retire Azure incrementally. |
 
 ## Runner guidance
 
@@ -69,10 +80,10 @@ The long-term goal is to host the entire build and test pipeline in GitLab, remo
 - Use shallow fetches where possible.
 - Build and test platforms in parallel.
 - Publish artifacts from each platform build and consume them through explicit `needs`.
-- Gate PoC jobs with a reversible variable.
+- Keep experimental jobs reversible through narrowly scoped `rules` while they are being validated.
 - Measure correctness, duration, queueing, artifact size, and runner utilization before expanding the matrix.
 
-## Completed foundation work
+## Implementation history and findings
 
 ### Windows compiler parallelism and memory
 
@@ -155,7 +166,7 @@ registry.ddbuild.io/ci/dd-trace-dotnet/dd-trace-dotnet-docker-build
 4. Hashes the concatenated value.
 5. Uses the first 12 lowercase characters as the image tag.
 
-The current `master` checkout produces `814a0509e85a`.
+Do not treat a hash recorded in this document as authoritative. Run the script against the target commit and use its output consistently for the image build, consumers, and runner-AMI pre-pull. At this audit's checkout, the script produced `9eef46c69bf9`.
 
 The normal GitLab build verifies that the exact hash-tagged image exists. If it does not, the job fails with instructions to run the manual `build-windows-ci-image` job. That job builds and pushes both the content-addressed tag and `:latest`. Consumers always use the content-addressed tag.
 
@@ -217,7 +228,7 @@ The first attempt used `docker.io/library/docker:27-cli` as the job image and wa
 
 The first complete Linux producer run was green in approximately 16:56. Repository and runner preparation took about 0:58, the Debian and CentOS builder images took about 2:25 and 4:31 respectively, the three NUKE phases took 0:11, 3:59, and 4:26, and artifact publication took about 0:19. All 76 tracer native tests passed, glibc compatibility validation and debug extraction succeeded, and both the selective archive and JUnit report uploaded successfully. As a short-term optimization, build the independent Debian and CentOS Docker images concurrently while keeping all NUKE invocations sequential because they share the mounted workspace and artifact directories. This could save up to roughly 2:25 on a cold run, subject to CPU, network, and Docker-daemon contention. Prebuilt content-addressed builder images remain the preferred long-term solution.
 
-The Linux integration-test prerequisites are now implemented as independent GitLab build producers. `build-linux-profiler-x64` mirrors Azure's CentOS 7 native build plus Debian compatibility-validation phases, while `build-linux-profiler-x64-musl` builds and validates in Alpine. Both run the profiler, native-wrapper, and native-loader native suites and retain the profiler monitoring home, native symbols, XML test results, logs, and dumps. Libunwind's CMake download disables Git progress output because Git writes normal clone progress to stderr, which NUKE otherwise mislabels as errors; genuine clone failures remain fatal. `build-linux-universal-x64` uses the existing universal builder to produce and validate the native loader/wrapper outputs consumed by both x64 libc variants.
+The Linux integration-test prerequisites are now implemented as independent GitLab build producers. `build-linux-profiler-x64` mirrors Azure's CentOS 7 native build plus Debian compatibility-validation phases, while `build-linux-profiler-x64-musl` builds and validates in Alpine. Both run the profiler, native-wrapper, and native-loader native suites and retain the profiler monitoring home, native symbols, XML test results, logs, and dumps. [PR #9198](https://github.com/DataDog/dd-trace-dotnet/pull/9198) disables Git progress output for libunwind's CMake download, preventing thousands of clone-progress lines from flooding native build logs across CI systems. Genuine clone failures remain fatal. `build-linux-universal-x64` uses the existing universal builder to produce and validate the native loader/wrapper outputs consumed by both x64 libc variants.
 
 Sample artifacts also mirror Azure's producer boundary. The parent `build-samples-standalone` job publishes `artifacts/bin`. Multi-version sample producers now live beside their consumers in the generated Linux integration-test child pipeline, and each publishes `artifacts/publish` for exactly one selected framework. A normal pipeline creates producers for `netcoreapp3.1`, `net9.0`, and `net10.0`; a thorough pipeline creates producers for all eight Linux-compatible frameworks from `netcoreapp3.0` through `net10.0`. These jobs use the content-addressed Windows build image because Azure also builds the cross-platform sample artifacts on Windows. The prefilled `perform_comprehensive_testing` variable controls whether minor dependency-package versions are included. The first standalone run exposed an ambient `Platform=x64` inherited from the Visual Studio environment, while the generated samples solution only defines `Any CPU`; `CompileSamples` now explicitly selects the solution's exact `Any CPU` platform, while individual project builds continue to use `AnyCPU`.
 
@@ -384,15 +395,14 @@ Findings:
 - The Windows root volume defaults to 300 GB, so the additional cached image should not create a material storage problem.
 - Pre-pull the exact content tag consumed by CI, not only `:latest`.
 - The exact tag must be refreshed whenever a file under `tracer/build/_build/docker/gitlab` changes.
-- A modified copy currently exists at `citemp/packer/windows/scripts/base/pre-pull-docker-images.ps1`.
-- That copy currently references `814a0509e85a`.
-- Do not submit that tag unchanged after PR #8962 or another image change merges. Recompute the hash, build and publish the new image, and then update the AMI PR.
+- A modified copy was prepared at `citemp/packer/windows/scripts/base/pre-pull-docker-images.ps1`.
+- Its recorded `814a0509e85a` tag is stale after PR #8962 and later image changes. Recompute the hash, build and publish the image, and then update the AMI PR before submission.
 
 Expected benefit: remove approximately 7–9 minutes from a fresh Windows job. Based on measured runs, that could reduce a roughly 19–24 minute job to approximately 12–17 minutes, subject to runner and build variance.
 
 ### Pre-install vcpkg helper tools
 
-[PR #8962](https://github.com/DataDog/dd-trace-dotnet/pull/8962) is open.
+[PR #8962](https://github.com/DataDog/dd-trace-dotnet/pull/8962) merged on 2026-07-30.
 
 The PR:
 
@@ -403,7 +413,7 @@ The PR:
 
 The latest GitLab build, Azure Windows tracer build, and Azure Windows profiler build are green.
 
-Review findings:
+Remaining follow-ups identified during review:
 
 - The vcpkg version remains duplicated between `gitlab.windows.dockerfile` and `Build.Steps.cs`.
 - `GetVcpkg()` prefers any `vcpkg.exe` on `PATH` and does not validate its version. A future one-sided version bump could therefore make GitLab and fallback builds use different versions.
@@ -414,125 +424,45 @@ Review findings:
 - Removing the explicit downloads root changes all Windows builds, not only GitLab. The successful Azure Windows jobs reduce the immediate compatibility risk, but the behavior should remain documented.
 - Pre-downloading libdatadog itself remains a possible later optimization and is intentionally out of scope for PR #8962.
 
-## Proposed GitLab file layout
+## Implemented GitLab file layout
 
-Use one file per pipeline phase, with all platforms represented as separate jobs or matrices inside that file:
+The original proposal used phase-specific files under `.gitlab/ci/` and temporary `gl-` job prefixes. The implementation instead evolved around generated child pipelines and should be treated as the source of truth:
 
-```text
-.gitlab-ci.yml
-.gitlab/
-  ci/
-    templates.yml
-    images.yml
-    build.yml
-    test-unit.yml
-    test-integration.yml
-    package.yml
-    test-smoke.yml
-  benchmarks/
-```
+- `.gitlab-ci.yml` defines parent stages, platform producers, bridge jobs, packaging, publishing, and image orchestration.
+- `.gitlab/*-unit-tests-child.yml` and `.gitlab/*-integration-tests-child.yml` provide reusable child-job templates.
+- NUKE targets in `tracer/build/_build/Build.VariableGenerations.cs` generate the platform/framework matrices consumed by those templates.
+- `.gitlab/generated/` is the generation output location; generated configurations are artifacts, not hand-maintained pipeline definitions.
+- `.gitlab/*.ps1` and `.gitlab/*.sh` hold focused platform setup and execution logic that would be unwieldy in YAML.
+- `tracer/build/_build/docker/gitlab/` defines the content-addressed Windows build image and its update procedure.
+- `.gitlab/benchmarks/` remains the home of benchmark-specific pipelines.
 
-Responsibilities:
+Current jobs use descriptive names such as `build-linux-tracer-x64`, `unit-tests-linux-x64`, and `integration-tests-windows`. New jobs should follow the established `<phase>-<platform>-<component>-<architecture>` style and use child-job suffixes for framework or test dimensions. Do not introduce the superseded `.gitlab/ci/` layout, `gl-` prefixes, or a `GITLAB_POC` switch without a new design decision.
 
-- `templates.yml`: common defaults, rules, runner tags, and per-platform NUKE skeletons.
-- `images.yml`: image hash calculation and image-build jobs.
-- `build.yml`: platform builds and their artifacts.
-- `test-unit.yml`: native and managed unit-test jobs that consume platform build artifacts.
-- `test-integration.yml`: integration and profiler-integration tests.
-- `package.yml`: packaging and signing.
-- `test-smoke.yml`: artifact smoke tests.
+## Phase 1: builds and unit tests (implemented)
 
-Naming convention:
-
-```text
-<phase>:<platform>[:<arch>][:<libc>][:<framework>]
-```
-
-Examples:
-
-```text
-gl-build:windows:x64
-gl-build:linux:arm64:musl
-gl-test-unit:linux:x64:glibc:net8.0
-```
-
-During parallel validation, use `gl-` stage and job prefixes so the new jobs cannot collide with existing jobs. Gate the PoC with:
-
-```yaml
-GITLAB_POC: "true"
-```
-
-The variable should default to enabled during validation but allow the PoC jobs to be disabled without removing YAML.
-
-## Phase 1: builds and unit tests
-
-### Scope
+### Implemented scope
 
 - Build Windows x64.
-- Build Linux x64 on glibc and musl.
-- Build Linux ARM64 on glibc and musl.
-- Build macOS ARM64.
-- Produce platform monitoring-home artifacts without signing or packaging.
-- Run native unit tests explicitly in downstream jobs when build artifacts can be reused efficiently.
-- Run managed unit tests in downstream jobs by target framework.
+- Build Linux x64 and ARM64 on glibc and musl.
+- Build universal macOS binaries on an amd64 runner.
+- Produce platform monitoring-home and diagnostic artifacts.
+- Run the native suites required for Azure parity in their producing Windows and Linux x64 jobs.
+- Run generated managed-unit-test matrices by target framework on Windows, Linux x64, Linux ARM64, and macOS.
 
-Out of scope:
+Packaging, publishing, integration tests, and smoke tests are tracked in their later phases even where partial GitLab implementations already exist.
 
-- Signing and MSI/deb/rpm packaging.
-- S3 and OCI publishing.
-- R2R variants.
-- Sample and debug builds.
-- IIS and Azure Functions tests.
-- Integration and smoke tests.
-- macOS AMD64.
-
-### Top-level changes
-
-Modify `.gitlab-ci.yml` additively:
-
-- Include `.gitlab/ci/templates.yml`.
-- Include `.gitlab/ci/images.yml`.
-- Include `.gitlab/ci/build.yml`.
-- Include `.gitlab/ci/test-unit.yml`.
-- Add `gl-images`, `gl-build`, and `gl-test-unit` stages.
-- Add the `GITLAB_POC` variable.
-- Preserve all existing jobs and stages.
-
-### Shared templates
-
-Proposed defaults:
-
-```yaml
-.dd-default:
-  interruptible: true
-  variables:
-    GIT_DEPTH: 20
-    GIT_STRATEGY: fetch
-    GIT_SUBMODULE_STRATEGY: recursive
-
-.dd-rules-poc:
-  rules:
-    - if: '$GITLAB_POC == "true"'
-      when: on_success
-    - when: never
-```
-
-Before adopting recursive submodules, verify that the repository requires them; avoid unnecessary clone work.
-
-Add `.dd-nuke-windows`, `.dd-nuke-linux`, and `.dd-nuke-macos` templates with their images, runner tags, setup, and common artifact handling.
-
-### Image jobs
+### Image strategy and remaining work
 
 Windows:
 
 - Reuse `tracer/build/_build/docker/gitlab/compute-image-hash.ps1`.
-- Keep or refactor the existing manual `build-windows-ci-image` job.
+- Keep the existing `build-windows-ci-image` behavior: run automatically for image-affecting changes, allow a manual fallback, and skip rebuilding an image that already exists.
 - Continue failing consumers when their expected content-addressed image is absent.
 
-Linux:
+Linux follow-up:
 
-- Add `tracer/build/_build/docker/compute-linux-image-hash.sh`.
-- Build Debian, Alpine, CentOS 7, universal, and Alpine ARM64 variants as required.
+- Define content-addressed hash inputs and an update script for reusable Linux builder images.
+- Publish only the Debian, Alpine, CentOS 7, universal, and ARM64 variants demonstrated to reduce pipeline cost.
 - Use `arch:amd64` or `arch:arm64` runners with remote BuildKit.
 - Publish content-addressed images under a repository such as:
 
@@ -540,20 +470,19 @@ Linux:
   registry.ddbuild.io/ci/dd-trace-dotnet/dd-trace-dotnet-linux-build-<variant>:<hash>
   ```
 
-The exact Linux image set should be derived from Phase 1 jobs first; avoid building unused variants.
+Derive the exact Linux image set from measured producer costs; avoid publishing unused variants.
 
 ### Build jobs
 
-| Job | Runner | Image | Principal NUKE targets |
-| --- | --- | --- | --- |
-| `gl-build:windows:x64` | `windows-v2:2022` | Windows content-hash image | `BuildTracerHome BuildProfilerHome BuildNativeLoader BuildDdDotnet` |
-| `gl-build:linux:x64:glibc` | `arch:amd64` | Debian build image | `Clean CompileManagedLoader BuildNativeTracerHome BuildManagedTracerHome BuildNativeLoader BuildNativeWrapper BuildDdDotnet ExtractDebugInfoLinux BuildProfilerHome` |
-| `gl-build:linux:x64:musl` | `arch:amd64` | Alpine build image | Same platform-appropriate build targets |
-| `gl-build:linux:arm64:glibc` | `arch:arm64` | ARM64 Debian build image | Same platform-appropriate build targets |
-| `gl-build:linux:arm64:musl` | `arch:arm64` | ARM64 Alpine build image | Same platform-appropriate build targets |
-| `gl-build:macos:arm64` | `macos:sonoma-arm64` | Native runner | `CreateRequiredDirectories CompileManagedLoader BuildNativeTracerHome BuildManagedTracerHome BuildNativeLoader` |
+| Job family | Runner | Purpose |
+| --- | --- | --- |
+| `build` | `windows-v2:2022` | Unified Windows build, native tests, packaging, and signing using the content-addressed Windows image. |
+| `build-linux-tracer-{x64,arm64}[-musl]` | Matching Docker-in-Docker architecture | Managed/native tracer producer for Debian/glibc or Alpine/musl. |
+| `build-linux-profiler-{x64,arm64}[-musl]` | Matching Docker-in-Docker architecture | Continuous Profiler producer; x64 jobs also run the Azure-equivalent profiler, native-loader, and native-wrapper suites. |
+| `build-linux-universal-{x64,arm64}` | Matching Docker-in-Docker architecture | Universal native loader/wrapper artifacts shared by libc-specific consumers. |
+| `build-macos-tracer-amd64` | `macos:sonoma-amd64` | Universal macOS tracer/loader producer for the amd64 managed-test matrix. |
 
-Linux jobs may use a matrix over architecture and libc when the image, runner tag, artifact name, and `needs` mapping remain understandable.
+Keep architecture and libc explicit in job and artifact names. Use a matrix only when runner tags, images, artifact names, and `needs` mappings remain easy to audit.
 
 #### Native-test requirement
 
@@ -576,9 +505,9 @@ Additional native-test jobs required for current Azure parity:
 
 | Job | Coverage | Principal NUKE targets |
 | --- | --- | --- |
-| `gl-build:windows:x64` | Windows x64 and x86, inline after the build | The six tracer, loader, and profiler targets listed above |
-| `gl-test-native:linux:x64:glibc` | Linux x64 on glibc | Tracer, profiler, native loader, and native wrapper compile/run targets |
-| `gl-test-native:linux:x64:musl` | Linux x64 on musl | The same Linux native targets in Alpine |
+| `build` | Windows x64 and x86, inline after the build | The six tracer, loader, and profiler targets listed above |
+| `build-linux-tracer-x64` and `build-linux-profiler-x64` | Linux x64 on glibc | Tracer, profiler, native-loader, and native-wrapper compile/run targets split across the matching producers |
+| `build-linux-tracer-x64-musl` and `build-linux-profiler-x64-musl` | Linux x64 on musl | The same Linux native targets in Alpine |
 
 Azure does not currently invoke these native unit-test targets in its Linux ARM64 or macOS build stages, so those platforms are not required for native-test parity in Phase 1.
 
@@ -586,13 +515,13 @@ Azure does not currently invoke these native unit-test targets in its Linux ARM6
 
 Publish the minimum artifacts required by downstream tests:
 
-- `monitoringHome/`
-- Required managed build outputs under `tracer/bin/`
+- `artifacts/monitoring-home/`
+- Required managed build outputs under `artifacts/bin/`
 - Required profiler outputs
 - Required shared/native outputs
 - Native test reports from the producing Windows build job and downstream Linux native-test jobs
 
-Do not publish broad working directories by default. Measure artifact size and transfer time, then add only missing paths required by downstream jobs. Native tests currently run in the build job and therefore do not require native bin/object artifacts.
+Do not publish broad working directories by default. Measure artifact size and transfer time, then add only missing paths required by downstream jobs. Native tests run in their producing build jobs and therefore do not require native bin/object artifacts solely for test handoff.
 
 Current Windows measurements:
 
@@ -618,34 +547,32 @@ Azure's artifact is broader, while the tested GitLab artifact selected native tr
 | `unit-tests-linux-musl-arm64:*` | Same ARM64-selected TFMs; Alpine/musl | `docker-in-docker:arm64` | parent `build-linux-tracer-arm64-musl` via `needs:pipeline:job` | `BuildManagedUnitTests RunManagedUnitTests --framework $FRAMEWORK` |
 | `unit-tests-macos-amd64:*` | NUKE-selected macOS TFMs: 3 normally, 8 for thorough runs | `macos:sonoma-amd64` | parent `build-macos-tracer-amd64` via `needs:pipeline:job` | `BuildManagedUnitTests RunManagedUnitTests --framework $FRAMEWORK` |
 
-Publish JUnit-compatible XML with `artifacts:reports:junit` so failures appear directly on the merge request.
+Native suites publish JUnit-compatible XML with `artifacts:reports:junit`. Managed suites currently retain TRX results as ordinary artifacts; converting them for GitLab's test-report UI remains follow-up work.
 
 Current implemented build-and-unit-test slice:
 
-- 6 producer jobs: Windows, Linux x64 glibc and musl, Linux ARM64 glibc and musl, and macOS amd64. Native tests run inside the relevant x64 producers.
+- 6 primary tracer/platform producers: Windows, Linux x64 glibc and musl, Linux ARM64 glibc and musl, and macOS amd64. Separate Linux profiler and universal loader/wrapper producers support integration-test consumers. Native tests run inside the relevant Windows and Linux x64 producers.
 - 1 matrix-generator job and 4 child-pipeline bridge jobs.
 - 4 Windows managed-unit-test jobs normally; 9 for thorough runs.
 - 6 Linux x64 managed-unit-test jobs normally; 16 for thorough runs.
 - 8 Linux ARM64 managed-unit-test jobs normally; 12 for thorough runs.
 - 3 macOS managed-unit-test jobs normally; 8 for thorough runs.
-- 32 jobs normally; 56 for thorough runs.
+- Continue validating the concurrency budget with the CI Infrastructure team because generated integration matrices and shared runner capacity make a single static job count misleading.
 
-Validate the budget with the CI Infrastructure team because concurrency is shared and job count alone does not capture queueing or CPU usage.
+### Phase 1 validation criteria
 
-### Phase 1 success criteria
-
-- All 28 jobs pass on representative merge requests.
-- Existing Azure and GitLab jobs remain unchanged and green.
+- Normal and thorough generated matrices pass on representative merge requests.
+- Existing Azure and pre-migration GitLab jobs remain green during parallel validation.
 - Each build publishes the expected platform artifacts.
-- Each managed test job publishes a visible JUnit report.
+- Native test reports appear in GitLab's test-report UI, and every managed test job retains complete TRX results and diagnostics.
 - GitLab and Azure monitoring-home outputs are equivalent for the same commit, allowing timestamps and explicitly documented signing differences.
-- Compare artifacts manually for approximately the first ten successful PoC runs.
+- Compare artifacts manually for approximately the first ten successful migration runs after a material producer or packaging change.
 - No unexplained binary or file-set differences.
 - Windows build remains below 25 minutes before AMI pre-pull and targets approximately 12–17 minutes after pre-pull.
 - Each Linux build cell targets 25 minutes or less.
 - macOS build targets 30 minutes or less.
 - Total build and unit-test wall clock targets 75 minutes or less, including queueing.
-- The PoC can be disabled through `GITLAB_POC` without reverting code.
+- Experimental additions remain reversible through focused GitLab `rules` or isolated commits without disabling established coverage.
 
 ## Phase 2
 
@@ -657,13 +584,16 @@ The implementation uses the generated child pipelines and reusable templates und
 
 Current implementation:
 
-- Linux x64 integration jobs use `docker-in-docker:amd64`, reuse `docker-compose.yml`, and cover both glibc and musl across the NUKE-selected frameworks.
+- Linux x64 integration jobs use `docker-in-docker:amd64` and cover both glibc and musl across the NUKE-selected frameworks. Dependency-free cells run the tester image directly; Docker-dependent cells reuse `docker-compose.yml`.
 - Tracer, ASM, two Docker dependency groups, and portable-PDB optimized/unoptimized Debugger cells are generated as separate Linux jobs.
 - Windows x64 and x86 generate Tracer and ASM cells. Debugger cells cover portable/full PDBs and optimized/unoptimized builds on both architectures, subject to the Azure-compatible x86 framework exclusions.
 - Windows IIS runs in separate `net48` x64/x86 Tracer and ASM cells. LocalDB has a dedicated `net48` x64 cell and MSMQ runs in eligible regular Tracer cells. Chrome runs in one blocking `net10.0` x64 host cell with checkout-local tools because Server Core lacks its runtime dependencies. Regular Tracer and ASM cells also run the Windows regression-test target used by Azure.
 - Linux ARM64 integration coverage is validated for Debian and Alpine, including Tracer, ASM, Docker-dependent, and optimized/unoptimized Debugger cells.
 - Windows Azure Functions has a dedicated x64 `net6.0`-`net10.0` matrix with pinned Functions Core Tools and Storage Emulator dependencies in the ephemeral test image.
 - Windows Docker-dependent coverage remains pending; Azure currently skips these tests too while its Windows Docker test-agent setup is disabled.
+
+Remaining integration work:
+
 - Add macOS integration tests per supported framework.
 - Mirror profiler integration tests on Windows and Linux.
 
@@ -671,27 +601,21 @@ The generated per-framework, per-platform matrix favors failure isolation. Conti
 
 Queue duration must be evaluated independently from execution duration. In particular, the current Linux integration critical path includes `windows-v2:2022` multi-version sample producers. Confirm whether those MSBuild targets can move to Linux; otherwise reserve or increase Windows capacity before expanding the matrix further. After correctness parity is established, introduce per-TFM/platform sample producer artifacts so multiple Tracer, ASM, Docker, Debugger, and regression consumers do not repeat compatible sample compilation.
 
-## Phase 3.5: packaging
+## Phase 3.5: packaging (partially implemented)
 
-Add `.gitlab/ci/package.yml`.
+The existing Windows `build` job creates and signs GitLab-built deliverables and five NuGet packages. `sign-nuget-packages` imports and signs the three packages whose complete multi-platform inputs still come from Azure. The `publish` job uploads the combined set, and release preparation replaces matching Azure artifacts with those GitLab-published copies before checksums and publication. [PR #9196](https://github.com/DataDog/dd-trace-dotnet/pull/9196) extends this path so symbol packages emitted by the GitLab-built package set are uploaded with their `.nupkg` counterparts and replaced during release preparation; the three imported Azure packages do not produce symbol packages.
 
-Windows:
+Remaining packaging work:
 
-- Consume `gl-build:windows:x64`.
-- Run packaging and signing targets such as `PackageTracerHome`, `PublishFleetInstaller`, `SignDlls`, and `SignMsi`.
-- Produce MSI, symbols, tracer home, Fleet Installer, and related artifacts with Azure-equivalent naming and retention.
+- Remove the Azure handoff for the packages and platform artifacts that GitLab does not yet build independently.
+- Produce Linux tar.gz, deb, and rpm artifacts from the matching architecture/libc producers.
+- Verify and reproduce Azure's package-signing behavior, including any GPG signing.
+- Compare names, contents, permissions, symbols, checksums, retention, and signing for the same commit.
+- Keep packaging complete before enabling smoke tests that consume installed artifacts.
 
-Linux:
+## Phase 4: smoke tests (planned)
 
-- Consume the matching architecture/libc build.
-- Produce tar.gz, deb, and rpm artifacts as applicable.
-- Verify whether current Azure packages are GPG-signed and reproduce that behavior.
-
-Packaging must be complete before smoke tests that consume installed artifacts.
-
-## Phase 4: smoke tests
-
-Add `.gitlab/ci/test-smoke.yml`.
+Add smoke-test jobs using the established parent/child layout; do not create the superseded `.gitlab/ci/test-smoke.yml` path.
 
 Candidate categories:
 
@@ -707,7 +631,7 @@ Use matrices over architecture, libc, and .NET version where appropriate.
 
 - Linux smoke tests use Docker-in-Docker microVMs.
 - Windows smoke tests use `windows-v2:2022`.
-- macOS initially covers applicable tool tests on `macos:sonoma-arm64`.
+- macOS should initially cover applicable tool tests on `macos:sonoma-amd64`, matching the migrated macOS build and unit-test runner.
 
 Start with approximately 10–12 job definitions and measure the expanded matrix before enabling all cells by default.
 
@@ -773,11 +697,11 @@ No macOS native unit-test targets are required for current Azure parity.
 
 ### Pipeline dry run
 
-- Push a branch with `GITLAB_POC=true`.
-- Confirm all 33 Phase 1 jobs are created.
+- Push a branch and confirm the expected normal or thorough generated matrices are created.
+- Inspect the generated configuration artifacts before relying on their child-pipeline bridges.
 - Confirm each job selects the intended runner and image.
-- Confirm build artifacts are available through `needs`.
-- Confirm test reports appear on the merge request.
+- Confirm build and sample artifacts are available through same-pipeline or `needs:pipeline:job` dependencies as appropriate.
+- Confirm native JUnit reports and managed TRX artifacts are retained.
 - Record execution and queue duration separately.
 
 ### Artifact comparison
@@ -803,9 +727,9 @@ After deployment:
 - Confirm no layers are downloaded before the build.
 - Compare fresh-runner duration with the prior 7–9 minute pull.
 
-### Azure unchanged
+### Parallel-pipeline safety
 
-- Confirm `.azure-pipelines/ultimate-pipeline.yml` remains functionally unchanged during Phase 1.
+- Confirm `.azure-pipelines/ultimate-pipeline.yml` remains functionally unchanged until each equivalent GitLab slice completes its parallel-validation window.
 - Confirm existing GitLab build, publish, benchmark, OCI, and serverless jobs remain functional.
 - Run a clean `master` build after foundational image changes.
 
@@ -813,9 +737,8 @@ After deployment:
 
 ### Immediate
 
-- Merge or otherwise resolve PR #8962 before finalizing the AMI pre-pull tag.
-- Decide whether to centralize the vcpkg version before merging PR #8962.
-- Decide whether to pin and verify the vcpkg archive checksum.
+- Decide whether to centralize the vcpkg version or explicitly document why the Docker and NUKE copies may diverge.
+- Pin and verify the vcpkg archive checksum, or document the accepted reproducibility tradeoff.
 - Recompute and publish the final Windows image hash.
 - Update the `ci-platform-machine-images` PR to pre-pull that exact tag.
 - Make `docker pull` failures explicit in the pre-pull script:
@@ -831,15 +754,14 @@ After deployment:
 - Deploy the AMI and validate the measured pull-time reduction.
 - Decide whether the Windows Packer job must become a required PR check. It is manual on PR branches and automatic on `main`.
 
-### Phase 1 design
+### Build and unit-test follow-ups
 
 - Rename the existing Windows `build` job to `build-windows-tracer-x64` after updating and validating every artifact, packaging, publishing, and child-pipeline consumer.
 - Confirm the concurrent-job and runner-capacity budget with CI Infrastructure.
-- Confirm whether recursive submodules are required.
-- Validate the new Linux x64 profiler/native-loader/native-wrapper producers and their artifacts; the Windows mapping is complete and green.
+- Validate changes to the Linux x64 profiler/native-loader/native-wrapper producers and their artifacts over repeated pipelines; the Windows mapping is complete and green.
 - Define the minimum artifact set for each downstream test job.
-- Validate the generated child pipeline's same-pipeline sample-artifact `needs` edges and parent build-artifact downloads in CI.
-- Decide whether Linux needs every proposed image variant in Phase 1.
+- Continue monitoring generated child pipelines' same-pipeline sample-artifact `needs` edges and parent build-artifact downloads as matrices evolve.
+- Decide which content-addressed Linux image variants are worth publishing instead of building on every pipeline.
 - Define Linux image ownership, rebuild procedure, hash inputs, and publication permissions.
 - Decide how image-building jobs authenticate without creating private-repository dependencies that violate public-repository guidance.
 
@@ -847,7 +769,7 @@ After deployment:
 
 - Decide when to add the Linux x64 R2R variant.
 - Decide whether later integration families can reuse these per-TFM sample jobs or require additional sample variants.
-- Extend the generated-child-pipeline approach from unit tests and Linux Tracer integration tests to each later matrix as it migrates.
+- Extend the generated-child-pipeline approach to macOS and profiler integration tests as they migrate.
 - Confirm Linux package-signing parity.
 - Re-evaluate Dockerfile layer splitting if AMI pre-pull and vcpkg initialization do not meet the Windows target.
 - Consider pre-caching libdatadog after measuring its remaining contribution.
@@ -855,27 +777,20 @@ After deployment:
 
 ## Critical files
 
-### Proposed new files
+### Current implementation
 
-- `.gitlab/ci/templates.yml`
-- `.gitlab/ci/images.yml`
-- `.gitlab/ci/build.yml`
-- `.gitlab/ci/test-unit.yml`
-- `.gitlab/ci/test-integration.yml`
-- `.gitlab/ci/package.yml`
-- `.gitlab/ci/test-smoke.yml`
-- `tracer/build/_build/docker/compute-linux-image-hash.sh`
-
-### Files modified during the migration
-
-- `.gitlab-ci.yml`
-- `.gitlab/linux-unit-tests-child.yml`
-- `tracer/build/_build/Build.VariableGenerations.cs`
-- `tracer/build/_build/docker/gitlab/UPDATING_IMAGE.md`
-- `tracer/build/_build/docker/gitlab/gitlab.windows.dockerfile`
-- `tracer/build/_build/docker/gitlab/compute-image-hash.ps1`
-- `tracer/build/_build/docker/gitlab/entrypoint.bat`
-- `ci-platform-machine-images/packer/windows/scripts/base/pre-pull-docker-images.ps1` in the separate runner-image repository
+- `.gitlab-ci.yml`: parent pipeline, producers, bridges, packaging, publishing, and image orchestration.
+- `.gitlab/one-pipeline.locked.yml`: shared pipeline integration.
+- `.gitlab/windows-unit-tests-child.yml`, `.gitlab/linux-unit-tests-child.yml`, and `.gitlab/macos-unit-tests-child.yml`: managed-unit-test child templates.
+- `.gitlab/windows-integration-tests-child.yml` and `.gitlab/linux-integration-tests-child.yml`: integration-test child templates.
+- `.gitlab/run-windows-integration-tests.ps1` and `.gitlab/run-linux-integration-tests.sh`: platform integration-test orchestration.
+- `.gitlab/build-multi-version-samples.ps1`: per-framework sample producer.
+- `.gitlab/download-single-step-artifacts.sh` and `.gitlab/download-serverless-artifacts.sh`: temporary Azure handoff to remove during switchover.
+- `tracer/build/_build/Build.VariableGenerations.cs`: NUKE-owned generated matrix definitions.
+- `tracer/build/_build/docker/gitlab/UPDATING_IMAGE.md`, `gitlab.windows.dockerfile`, and `compute-image-hash.ps1`: Windows image definition and lifecycle.
+- `build/cmake/FindLibunwind.cmake`: libunwind dependency build, including CI-safe clone verbosity.
+- `.gitlab/benchmarks/`: benchmark-specific pipelines and scripts.
+- `ci-platform-machine-images/packer/windows/scripts/base/pre-pull-docker-images.ps1` in the separate runner-image repository: Windows AMI image pre-pull.
 
 ### Existing sources of truth
 
