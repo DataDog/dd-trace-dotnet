@@ -50,10 +50,10 @@
       <HintPath>..\..\..\..\..\packages\Ninject.3.0.1.10\lib\net40\Ninject.dll</HintPath>
     </Reference>
     <Reference Include="Ninject.Web.Common, Version=3.0.0.0, Culture=neutral, PublicKeyToken=c7192dc5380945e7, processorArchitecture=MSIL">
-      <HintPath>..\..\..\..\..\packages\Ninject.Web.Common.3.0.0.7\lib\net40\Ninject.Web.Common.dll</HintPath>
+      <HintPath>..\..\..\..\..\packages\Ninject.Web.Common.3.0.0.7\lib\net40-full\Ninject.Web.Common.dll</HintPath>
     </Reference>
     <Reference Include="Ninject.Web.Mvc, Version=3.0.0.0, Culture=neutral, PublicKeyToken=c7192dc5380945e7, processorArchitecture=MSIL">
-      <HintPath>..\..\..\..\..\packages\Ninject.MVC3.3.0.0.6\lib\net40\Ninject.Web.Mvc.dll</HintPath>
+      <HintPath>..\..\..\..\..\packages\Ninject.MVC3.3.0.0.6\lib\net40-full\Ninject.Web.Mvc.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.ComponentModel.DataAnnotations" />
