@@ -1427,7 +1427,8 @@ partial class Build
         .Executes(() =>
         {
             //we need to build in this exact order
-            DotnetBuild(TracerDirectory.GlobFiles("test/Datadog.Trace.DuckTyping.Tests.Fixtures/Target/*.csproj"), noDependencies: false);
+            DotnetBuild(TracerDirectory.GlobFiles("test/Datadog.Trace.DuckTyping.Tests.Fixtures/Shared/*.csproj"));
+            DotnetBuild(TracerDirectory.GlobFiles("test/Datadog.Trace.DuckTyping.Tests.Fixtures/Target/*.csproj"));
             DotnetBuild(TracerDirectory.GlobFiles("test/**/*TestHelpers.csproj"));
             DotnetBuild(TracerDirectory.GlobFiles("test/**/*TestHelpers.AutoInstrumentation.csproj"));
         });
