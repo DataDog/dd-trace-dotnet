@@ -277,7 +277,7 @@ public sealed class TestMethodAttributeExecuteAsyncIntegration
         return returnValue;
     }
 
-    internal static async Task<IList> RunRetriesAsync(IList returnValueList, TestRunnerState testMethodState, TestAttemptResult attempt)
+    internal static async Task<IList> RunRetriesAsync(IList returnValueList, TestRunnerState testMethodState, TestAttemptResult attempt, string? retryDisplayName = null)
     {
         var testOptimization = TestOptimization.Instance;
         var testMethod = testMethodState.TestMethod;
@@ -316,7 +316,7 @@ public sealed class TestMethodAttributeExecuteAsyncIntegration
                 {
                     retryState.IsLastRetry = i == remainingRetries - 1;
                     Common.Log.Debug<string?, int>("TestMethodAttributeExecuteIntegration: {Mode}: Retry number: {RetryNumber}", retryReason, i);
-                    await RunRetryAsync(testMethod, testMethodState, retryState, results).ConfigureAwait(false);
+                    await RunRetryAsync(testMethod, testMethodState, retryState, results, retryDisplayName).ConfigureAwait(false);
                 }
 
                 // Calculate final results
@@ -361,7 +361,7 @@ public sealed class TestMethodAttributeExecuteAsyncIntegration
                     }
 
                     Common.Log.Debug<int>("TestMethodAttributeExecuteIntegration: FlakyRetry: [Retry {Num}] Running retry...", i + 1);
-                    var failedResult = await RunRetryAsync(testMethod, testMethodState, retryState, results).ConfigureAwait(false);
+                    var failedResult = await RunRetryAsync(testMethod, testMethodState, retryState, results, retryDisplayName).ConfigureAwait(false);
 
                     // If the retried test passed, we can stop the retries
                     if (!failedResult)
@@ -378,14 +378,20 @@ public sealed class TestMethodAttributeExecuteAsyncIntegration
 
         return returnValueList;
 
-        static Task<bool> RunRetryAsync(ITestMethod testMethod, TestRunnerState testMethodState, RetryState retryState, List<IList> resultsCollection)
+        static Task<bool> RunRetryAsync(ITestMethod testMethod, TestRunnerState testMethodState, RetryState retryState, List<IList> resultsCollection, string? retryDisplayName)
             => testMethodState.RetryContext is { } context
-                   ? context.RunAsync(() => InvokeRetryAsync(testMethod, testMethodState, retryState, resultsCollection))
-                   : InvokeRetryAsync(testMethod, testMethodState, retryState, resultsCollection);
+                   ? context.RunAsync(() => InvokeRetryAsync(testMethod, testMethodState, retryState, resultsCollection, retryDisplayName))
+                   : InvokeRetryAsync(testMethod, testMethodState, retryState, resultsCollection, retryDisplayName);
 
-        static async Task<bool> InvokeRetryAsync(ITestMethod testMethod, TestRunnerState testMethodState, RetryState retryState, List<IList> resultsCollection)
+        static async Task<bool> InvokeRetryAsync(ITestMethod testMethod, TestRunnerState testMethodState, RetryState retryState, List<IList> resultsCollection, string? retryDisplayName)
         {
             var retryTest = MsTestIntegration.OnMethodBegin(testMethod, testMethod.Type, isRetry: true);
+            if (retryTest is not null && !StringUtil.IsNullOrEmpty(retryDisplayName))
+            {
+                retryTest.SetName(retryDisplayName);
+                MsTestIntegration.UpdateTestParameters(retryTest, testMethod, retryDisplayName);
+            }
+
             object? retryTestResult = null;
             Exception? retryException = null;
             var hasFailed = false;
@@ -410,6 +416,11 @@ public sealed class TestMethodAttributeExecuteAsyncIntegration
             }
             finally
             {
+                if (retryDisplayName is not null && retryTestResult.TryDuckCast<ITestResult>(out var namedResult))
+                {
+                    namedResult.DisplayName = retryDisplayName;
+                }
+
                 if (retryTestResult is IList { Count: > 0 } retryTestResultList)
                 {
                     for (var j = 0; j < retryTestResultList.Count; j++)
@@ -639,7 +650,7 @@ public sealed class TestMethodAttributeExecuteAsyncIntegration
         Common.ApplyRetryTags(testTags, retryState.IsARetry, retryState.SelectedRetryMode);
     }
 
-    private static TestStatus GetStatusFromOutcome(UnitTestOutcome outcome)
+    internal static TestStatus GetStatusFromOutcome(UnitTestOutcome outcome)
     {
         return outcome switch
         {
