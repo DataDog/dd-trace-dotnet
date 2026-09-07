@@ -9,4 +9,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2;
 internal interface ITestMethodInfoWithRetry
 {
     object? RetryAttribute { get; }
+
+    object TestContext { get; set; }
+
+    void SetArguments(object[]? arguments);
 }

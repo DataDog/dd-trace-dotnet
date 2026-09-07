@@ -5,16 +5,14 @@
 #nullable enable
 
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.CallTarget;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2;
 
 /// <summary>
-/// Coordinates the native retry sequence before applying Datadog retry policies.
+/// Owns the test lifetime and closes pending attempts on every exit path.
 /// </summary>
 [InstrumentMethod(
     AssemblyName = "MSTestAdapter.PlatformServices",
@@ -53,7 +51,7 @@ public static class UnitTestRunnerRunSingleTestAsyncIntegrationV4_4
         return new CallTargetReturn<TReturn?>(returnValue);
     }
 
-    internal static async Task<TReturn?> OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn? returnValue, Exception? exception, CallTargetState state)
+    internal static TReturn? OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn? returnValue, Exception? exception, CallTargetState state)
     {
         if (state.State is not MsTestExecution execution)
         {
@@ -64,17 +62,12 @@ public static class UnitTestRunnerRunSingleTestAsyncIntegrationV4_4
         MsTestExecution.Current = execution;
         try
         {
-            if (returnValue is IList results)
-            {
-                await execution.CompleteAsync(results, exception).ConfigureAwait(false);
-            }
-
             UnitTestRunnerRunSingleTestAsyncIntegration3_8.OnAsyncMethodEnd(instance, returnValue, exception, execution.PreviousState);
             return returnValue;
         }
         finally
         {
-            execution.FinishSpans();
+            execution.CloseTests();
             MsTestExecution.Current = previous;
         }
     }

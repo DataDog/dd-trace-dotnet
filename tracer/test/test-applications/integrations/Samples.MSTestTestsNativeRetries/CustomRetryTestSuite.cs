@@ -16,6 +16,21 @@ namespace Samples.MSTestTestsNativeRetries;
 [TestCategory("CustomRetry")]
 public class CustomRetryTestSuite
 {
+    private static bool _nativePolicyCompleted;
+
+    [TestMethod]
+    [RetryTwice]
+    public void CustomPolicyContinuesAfterPassing()
+    {
+        var attempt = TestSuite.RecordAttempt(nameof(CustomPolicyContinuesAfterPassing));
+        if (attempt > 3)
+        {
+            Assert.IsTrue(_nativePolicyCompleted, "Datadog retries must wait for the outermost native policy.");
+        }
+
+        Assert.IsTrue(attempt == 2 || attempt >= 4);
+    }
+
     [EmptyTestMethod]
     [Retry(2)]
     public void EmptyExecutor() => Assert.Fail("The executor must not invoke this method.");
@@ -46,6 +61,28 @@ public class CustomRetryTestSuite
     {
         TestSuite.RecordAttempt(nameof(CanceledRetry));
         Assert.Fail("The retry policy is canceled.");
+    }
+
+    private class RetryOnceAttribute : RetryBaseAttribute
+    {
+        protected override async Task<RetryResult> ExecuteAsync(RetryContext retryContext)
+        {
+            var result = new RetryResult();
+            result.AddResult(await retryContext.ExecuteTaskGetter());
+            return result;
+        }
+    }
+
+    private sealed class RetryTwiceAttribute : RetryOnceAttribute
+    {
+        protected override async Task<RetryResult> ExecuteAsync(RetryContext retryContext)
+        {
+            var result = await base.ExecuteAsync(retryContext);
+            // This policy deliberately continues after a successful attempt.
+            result.AddResult(await retryContext.ExecuteTaskGetter());
+            _nativePolicyCompleted = true;
+            return result;
+        }
     }
 
     private sealed class EmptyRetryAttribute : RetryBaseAttribute

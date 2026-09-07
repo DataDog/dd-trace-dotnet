@@ -86,23 +86,30 @@ public class MsTestV2NativeRetriesTests : TestingFrameworkEvpTest
     }
 
     [Theory]
-    [InlineData("MixedRowOutcomes", 4, 2, 0, 0)]
-    [InlineData("TimesOut", 3, 1, 1, 2)]
-    public async Task NativeRetryPolicyHandlesMixedRowsAndTimeouts(string name, int expectedAttempts, int expectedRows, int vstestExitCode, int mtpExitCode)
+    [InlineData("MixedRowOutcomes", 4, 2, 0, 0, false)]
+    [InlineData("TimesOut", 3, 1, 1, 2, false)]
+    [InlineData("RegressesAfterPassing", 6, 2, 1, 2, false)]
+    [InlineData("RegressesAfterPassing", 7, 2, 0, 0, true)]
+    [InlineData("RetriesUseFreshInstances", 4, 1, 0, 0, true)]
+    [InlineData("CustomPolicyContinuesAfterPassing", 3, 1, 1, 2, false)]
+    [InlineData("CustomPolicyContinuesAfterPassing", 4, 1, 0, 0, true)]
+    public async Task NativeRetryPolicyHandlesMixedRowsAndTimeouts(string name, int expectedAttempts, int expectedRows, int vstestExitCode, int mtpExitCode, bool automaticRetries)
     {
         EnvironmentHelper.EnableDefaultTransport();
         InjectSession(out _, out _, out _, out _, out _, out _, out _);
-        SetEnvironmentVariable(ConfigurationKeys.CIVisibility.FlakyRetryEnabled, "0");
+        SetEnvironmentVariable(ConfigurationKeys.CIVisibility.FlakyRetryEnabled, automaticRetries ? "1" : "0");
         SetEnvironmentVariable("TESTINGPLATFORM_TELEMETRY_OPTOUT", "1");
         var attemptsFile = Path.GetTempFileName();
+        var historyFile = Path.GetTempFileName();
         SetEnvironmentVariable("MSTEST_ATTEMPTS_FILE", attemptsFile);
+        SetEnvironmentVariable("MSTEST_RETRY_HISTORY_FILE", historyFile);
         var tests = new List<MockCIVisibilityTest>();
         using var agent = EnvironmentHelper.GetMockAgent();
         agent.EventPlatformProxyPayloadReceived += (_, e) =>
         {
             if (e.Value.PathAndQuery.EndsWith("api/v2/libraries/tests/services/setting"))
             {
-                e.Value.Response = new MockTracerResponse(GetSettingsJson("false", "false", "false", "0"), 200);
+                e.Value.Response = new MockTracerResponse(GetSettingsJson("false", "false", "false", "0", automaticRetries ? "true" : "false"), 200);
             }
             else if (e.Value.PathAndQuery.EndsWith("api/v2/citestcycle"))
             {
@@ -126,6 +133,35 @@ public class MsTestV2NativeRetriesTests : TestingFrameworkEvpTest
             {
                 tests.Where(test => test.Meta.ContainsKey(TestTags.TestFinalStatus)).Select(test => test.Meta[TestTags.TestFinalStatus]).Should().BeEquivalentTo([TestTags.StatusSkip, TestTags.StatusPass]);
             }
+            else if (name == "RegressesAfterPassing")
+            {
+                if (UseMtp)
+                {
+                    File.ReadAllLines(historyFile).Should().BeEquivalentTo(
+                        "RegressesAfterPassing (0)|1|True",
+                        "RegressesAfterPassing (1)|1|True",
+                        "RegressesAfterPassing (0)|2|True",
+                        "RegressesAfterPassing (1)|2|True",
+                        "RegressesAfterPassing (0)|3|False",
+                        "RegressesAfterPassing (1)|3|False");
+                }
+
+                var rows = tests.GroupBy(test => test.Meta[TestTags.Parameters]).ToArray();
+                rows.Should().HaveCount(2);
+                foreach (var row in rows)
+                {
+                    var attempts = row.OrderBy(test => test.Start).ToArray();
+                    attempts.Length.Should().BeInRange(3, automaticRetries ? 4 : 3);
+                    attempts.Take(attempts.Length - 1).Should().OnlyContain(test => !test.Meta.ContainsKey(TestTags.TestFinalStatus));
+                    attempts.Last().Meta[TestTags.TestFinalStatus].Should().Be(attempts.Last().Meta[TestTags.Status]);
+                }
+
+                tests.Where(test => test.Meta.ContainsKey(TestTags.TestFinalStatus)).Select(test => test.Meta[TestTags.TestFinalStatus]).Should().BeEquivalentTo([automaticRetries ? TestTags.StatusPass : TestTags.StatusFail, TestTags.StatusPass]);
+            }
+            else if (name is "RetriesUseFreshInstances" or "CustomPolicyContinuesAfterPassing")
+            {
+                tests.OrderBy(test => test.Start).Last().Meta[TestTags.TestFinalStatus].Should().Be(automaticRetries ? TestTags.StatusPass : TestTags.StatusFail);
+            }
             else
             {
                 tests.Should().OnlyContain(test => test.Meta[TestTags.Status] == TestTags.StatusFail);
@@ -135,6 +171,7 @@ public class MsTestV2NativeRetriesTests : TestingFrameworkEvpTest
         {
             Output.WriteLine(JsonConvert.SerializeObject(tests, Formatting.Indented));
             File.Delete(attemptsFile);
+            File.Delete(historyFile);
         }
     }
 
@@ -194,15 +231,16 @@ public class MsTestV2NativeRetriesTests : TestingFrameworkEvpTest
     }
 
     [Theory]
-    [InlineData("efd", "AlwaysFails", 5, "fail")]
-    [InlineData("efd_faulty", "AlwaysFails", 3, "fail")]
-    [InlineData("efd_and_atr", "AlwaysFails", 5, "fail")]
-    [InlineData("attempt_to_fix", "AlwaysFails", 5, "fail")]
-    [InlineData("attempt_to_fix", "PassesOnThirdAttempt", 5, "fail")]
-    [InlineData("quarantined", "AlwaysFails", 3, "skip")]
-    [InlineData("disabled", "AlwaysFails", 0, "skip")]
-    [InlineData("itr", "AlwaysFails", 0, "skip")]
-    public async Task NativeRetriesRespectTestOptimizationPolicies(string feature, string name, int expectedAttempts, string expectedFinalStatus)
+    [InlineData("efd", "AlwaysFails", 5, "fail", 3)]
+    [InlineData("efd_faulty", "AlwaysFails", 3, "fail", 3)]
+    [InlineData("efd_and_atr", "AlwaysFails", 5, "fail", 3)]
+    [InlineData("attempt_to_fix", "AlwaysFails", 5, "fail", 3)]
+    [InlineData("attempt_to_fix", "PassesOnThirdAttempt", 5, "fail", 3)]
+    [InlineData("quarantined", "AlwaysFails", 3, "skip", 3)]
+    [InlineData("disabled", "AlwaysFails", 0, "skip", 3)]
+    [InlineData("itr", "AlwaysFails", 0, "skip", 3)]
+    [InlineData("efd", "InitiallyPassesWithFreshInstances", 3, "pass", 1)]
+    public async Task NativeRetriesRespectTestOptimizationPolicies(string feature, string name, int expectedAttempts, string expectedFinalStatus, int expectedNativeAttempts)
     {
         EnvironmentHelper.EnableDefaultTransport();
         InjectSession(out _, out _, out _, out _, out _, out _, out _);
@@ -221,7 +259,7 @@ public class MsTestV2NativeRetriesTests : TestingFrameworkEvpTest
             if (e.Value.PathAndQuery.EndsWith("api/v2/libraries/tests/services/setting"))
             {
                 var settings = GetSettingsJson(isEfd ? "true" : "false", feature == "itr" ? "true" : "false", isEfd || feature == "itr" ? "false" : "true", "3", isAtr ? "true" : "false")
-                              .Replace("\"faulty_session_threshold\": 100", feature == "efd_faulty" ? "\"faulty_session_threshold\": 5" : "\"faulty_session_threshold\": 0")
+                              .Replace("\"faulty_session_threshold\": 100", feature == "efd_faulty" ? "\"faulty_session_threshold\": 1" : "\"faulty_session_threshold\": 0")
                               .Replace(": 10", ": 3");
                 e.Value.Response = new MockTracerResponse(settings, 200);
             }
@@ -290,7 +328,7 @@ public class MsTestV2NativeRetriesTests : TestingFrameworkEvpTest
         try
         {
             var filter = UseMtp ? $"--filter FullyQualifiedName~{name}" : $"--TestCaseFilter:FullyQualifiedName~{name}";
-            using var result = await RunDotnetTestSampleAndWaitForExit(agent, arguments: filter, packageVersion: PackageVersion, expectedExitCode: isEfd ? (UseMtp ? 2 : 1) : 0, useDotnetExec: UseMtp);
+            using var result = await RunDotnetTestSampleAndWaitForExit(agent, arguments: filter, packageVersion: PackageVersion, expectedExitCode: isEfd && expectedFinalStatus == TestTags.StatusFail ? (UseMtp ? 2 : 1) : 0, useDotnetExec: UseMtp);
             File.ReadAllLines(attemptsFile).Should().HaveCount(expectedAttempts);
             tests.Should().HaveCount(Math.Max(1, expectedAttempts));
             tests.Count(test => test.Meta.ContainsKey(TestTags.TestFinalStatus)).Should().Be(1);
@@ -298,7 +336,7 @@ public class MsTestV2NativeRetriesTests : TestingFrameworkEvpTest
             if (isEfd || feature == "attempt_to_fix")
             {
                 var retryReason = isEfd ? TestTags.TestRetryReasonEfd : TestTags.TestRetryReasonAttemptToFix;
-                tests.Count(test => test.Meta.TryGetValue(TestTags.TestRetryReason, out var reason) && reason == retryReason).Should().Be(expectedAttempts - 3);
+                tests.Count(test => test.Meta.TryGetValue(TestTags.TestRetryReason, out var reason) && reason == retryReason).Should().Be(expectedAttempts - expectedNativeAttempts);
                 tests.Should().NotContain(test => test.Meta.ContainsKey(TestTags.TestRetryReason) && test.Meta[TestTags.TestRetryReason] == TestTags.TestRetryReasonAtr);
             }
         }
