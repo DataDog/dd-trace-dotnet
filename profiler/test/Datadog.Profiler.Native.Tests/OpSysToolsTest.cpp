@@ -8,6 +8,8 @@
 
 #include "OpSysTools.h"
 
+#include <sstream>
+
 #include "shared/src/native-src/dd_filesystem.hpp"
 
 // based on https://linux.die.net/man/5/proc
@@ -162,6 +164,112 @@ TEST(GetThreadInfoTest, Check_Missing_KernelTime)
     bool result = OpSysTools::ParseThreadInfo(line, state, userTime, kernelTime);
 
     ASSERT_FALSE(result);
+}
+
+// The SigQ line of /proc/<pid>/status holds "<queued>/<limit>", where <queued> is the number of
+// signals queued for the real user id and <limit> the soft RLIMIT_SIGPENDING of the process.
+
+TEST(GetAvailableSignalQueueSlotsTest, Check_SigQ_Line)
+{
+    std::istringstream status("SigQ:\t12/63641\n");
+
+    auto availableSlots = OpSysTools::ParseAvailableSignalQueueSlots(status);
+
+    ASSERT_TRUE(availableSlots.has_value());
+    ASSERT_EQ(std::uint64_t{63629}, availableSlots.value());
+}
+
+TEST(GetAvailableSignalQueueSlotsTest, Check_SigQ_Line_Among_Others)
+{
+    std::istringstream status(
+        "Name:\tdotnet\n"
+        "Threads:\t14\n"
+        "SigQ:\t0/63641\n"
+        "SigPnd:\t0000000000000000\n");
+
+    auto availableSlots = OpSysTools::ParseAvailableSignalQueueSlots(status);
+
+    ASSERT_TRUE(availableSlots.has_value());
+    ASSERT_EQ(std::uint64_t{63641}, availableSlots.value());
+}
+
+TEST(GetAvailableSignalQueueSlotsTest, Check_Exhausted_Queue)
+{
+    std::istringstream status("SigQ:\t64/64\n");
+
+    auto availableSlots = OpSysTools::ParseAvailableSignalQueueSlots(status);
+
+    ASSERT_TRUE(availableSlots.has_value());
+    ASSERT_EQ(std::uint64_t{0}, availableSlots.value());
+}
+
+// The two counts are accounted independently: <queued> is host-wide for the user id while <limit>
+// belongs to this process, so the subtraction must saturate instead of wrapping around.
+TEST(GetAvailableSignalQueueSlotsTest, Check_More_Queued_Than_Limit)
+{
+    std::istringstream status("SigQ:\t200/64\n");
+
+    auto availableSlots = OpSysTools::ParseAvailableSignalQueueSlots(status);
+
+    ASSERT_TRUE(availableSlots.has_value());
+    ASSERT_EQ(std::uint64_t{0}, availableSlots.value());
+}
+
+TEST(GetAvailableSignalQueueSlotsTest, Check_Unlimited_Queue)
+{
+    std::istringstream status("SigQ:\t12/18446744073709551615\n");
+
+    auto availableSlots = OpSysTools::ParseAvailableSignalQueueSlots(status);
+
+    ASSERT_TRUE(availableSlots.has_value());
+    ASSERT_EQ(std::uint64_t{18446744073709551603ULL}, availableSlots.value());
+}
+
+TEST(GetAvailableSignalQueueSlotsTest, Check_Missing_SigQ_Line)
+{
+    std::istringstream status(
+        "Name:\tdotnet\n"
+        "Threads:\t14\n");
+
+    auto availableSlots = OpSysTools::ParseAvailableSignalQueueSlots(status);
+
+    ASSERT_FALSE(availableSlots.has_value());
+}
+
+TEST(GetAvailableSignalQueueSlotsTest, Check_EmptyString)
+{
+    std::istringstream status("");
+
+    auto availableSlots = OpSysTools::ParseAvailableSignalQueueSlots(status);
+
+    ASSERT_FALSE(availableSlots.has_value());
+}
+
+TEST(GetAvailableSignalQueueSlotsTest, Check_Missing_Separator)
+{
+    std::istringstream status("SigQ:\t63641\n");
+
+    auto availableSlots = OpSysTools::ParseAvailableSignalQueueSlots(status);
+
+    ASSERT_FALSE(availableSlots.has_value());
+}
+
+TEST(GetAvailableSignalQueueSlotsTest, Check_Non_Numeric_Values)
+{
+    std::istringstream status("SigQ:\tunknown/unknown\n");
+
+    auto availableSlots = OpSysTools::ParseAvailableSignalQueueSlots(status);
+
+    ASSERT_FALSE(availableSlots.has_value());
+}
+
+TEST(GetAvailableSignalQueueSlotsTest, Check_Missing_Limit)
+{
+    std::istringstream status("SigQ:\t12/\n");
+
+    auto availableSlots = OpSysTools::ParseAvailableSignalQueueSlots(status);
+
+    ASSERT_FALSE(availableSlots.has_value());
 }
 
 #endif

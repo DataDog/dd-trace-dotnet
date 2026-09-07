@@ -340,13 +340,22 @@ partial class Build
             BuildAndRunProfilerIntegrationTestsInternal("(Category=CpuLimitTest)");
         });
 
+    Target BuildAndRunProfilerSigPendingLimitTests => _ => _
+        .After(BuildProfilerSamples)
+        .Description("Run the profiler tests that need a constrained RLIMIT_SIGPENDING")
+        .Requires(() => IsLinux)
+        .Executes(() =>
+        {
+            BuildAndRunProfilerIntegrationTestsInternal("(Category=SigPendingLimitTest)");
+        });
+
     Target BuildAndRunProfilerIntegrationTests => _ => _
         .After(BuildProfilerSamples)
         .Description("Builds and runs the profiler integration tests")
         .Executes(() =>
         {
-            // Exclude CpuLimitTest from this path: They are already launched in a specific step + specific setup
-            var filter = string.IsNullOrWhiteSpace(Filter) ? $"{(IsLinux ? "(Category!=WindowsOnly)" : "(Category!=LinuxOnly)")}&(Category!=CpuLimitTest)" : Filter;
+            // Exclude CpuLimitTest and SigPendingLimitTest from this path: They are already launched in a specific step + specific setup
+            var filter = string.IsNullOrWhiteSpace(Filter) ? $"{(IsLinux ? "(Category!=WindowsOnly)" : "(Category!=LinuxOnly)")}&(Category!=CpuLimitTest)&(Category!=SigPendingLimitTest)" : Filter;
             BuildAndRunProfilerIntegrationTestsInternal(filter);
         });
 
@@ -814,8 +823,12 @@ partial class Build
             // Filtering tests is temporary.
             // For now, false negatives are reported by the tool because dependencies are not built
             // against thread sanitizer lib (ex: libdatadog).
-            // For now we focus on the ring buffer unit tests.
-            RunProfilerUnitTests("Datadog.Profiler.Native.Tests", Configuration.Release, MSBuildTargetPlatform.x64, SanitizerKind.Tsan, testsFilter: "*RingBuffer*");
+            // For now we focus on the ring buffer unit tests, plus the StackSamplerLoop/
+            // StackSamplerLoopManager lifecycle tests added for the shutdown-crash fix - they stub
+            // out the stack-walking/collector path entirely (see StubOutSamplingConfig() in
+            // StackSamplerLoopManagerTest.cpp), so they shouldn't hit the same libdatadog-related
+            // noise the rest of the unfiltered suite can.
+            RunProfilerUnitTests("Datadog.Profiler.Native.Tests", Configuration.Release, MSBuildTargetPlatform.x64, SanitizerKind.Tsan, testsFilter: "*RingBuffer*:*StackSamplerLoop*");
         });
 
     Target BuildProfilerSampleForSanitiserTests => _ => _

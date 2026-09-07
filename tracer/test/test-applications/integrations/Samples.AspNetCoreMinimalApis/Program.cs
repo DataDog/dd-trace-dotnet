@@ -12,12 +12,47 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllersWithViews();
 var app = builder.Build();
 
+var includeRouteEdgeCases = Environment.GetEnvironmentVariable("ADD_ROUTE_EDGE_CASES") == "1";
+
 if (Environment.GetEnvironmentVariable("ADD_ACTIVITY_MIDDLEWARE") == "1")
 {
     app.UseMiddleware<ActivityMiddleware>();
 }
 
 app.UseMiddleware<PingMiddleware>();
+
+if (includeRouteEdgeCases)
+{
+    // Turns an error status into an error page by re-running the pipeline against a different path.
+    // Scoped to /re-execute so that every other test case keeps the default pipeline.
+    app.UseWhen(
+        context => context.Request.Path.StartsWithSegments("/re-execute"),
+        branch => branch.UseStatusCodePagesWithReExecute("/status-code/{0}"));
+
+    // Rewrites the path the way a URL-rewriting middleware would, so that routing runs against
+    // a different path than the one the request arrived on. UseRouting has to be called
+    // explicitly here, otherwise WebApplication adds it ahead of this middleware.
+    app.Use(async (context, next) =>
+    {
+        if (context.Request.Path == "/rewrite-me")
+        {
+            context.Request.Path = "/alive-check";
+        }
+
+        await next();
+    });
+
+    // Strips the path base from requests mounted under it, the way an app hosted behind a
+    // reverse proxy or in a sub-application would be. Routing then runs against the remaining
+    // path.
+    app.UsePathBase("/path-base");
+
+    app.UseRouting();
+
+    // A route template that matches the application root, which ASP.NET Core stores as the
+    // empty string. Registered before the default route so that it is the one that matches "/".
+    app.MapControllerRoute("empty-route-template", string.Empty, new { controller = "Home", action = "Index" });
+}
 
 app.MapControllerRoute("default", "{controller=Home}/{action=Index}/{id?}");
 app.Map("/branch", x => x.UseMiddleware<PingMiddleware>());

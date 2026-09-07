@@ -39,6 +39,11 @@ namespace Datadog.Trace.TestHelpers
             (new(@"process_id: \d+\.0", RegOptions), "process_id: 0"),
             (new(@"http.client_ip: (.)*(?=,)", RegOptions), "http.client_ip: 127.0.0.1"),
             (new(@"http.useragent: grpc-dotnet\/(.)*(?=,)", RegOptions), "http.useragent: grpc-dotnet/123"),
+            // OpenTelemetry semantic convention equivalents of the above (DD_TRACE_OTEL_SEMANTICS_ENABLED=true)
+            (new(@"client.address: (.)*(?=,)", RegOptions), "client.address: 127.0.0.1"),
+            (new(@"network.peer.address: (.)*(?=,)", RegOptions), "network.peer.address: 127.0.0.1"),
+            (new(@"user_agent.original: grpc-dotnet\/(.)*(?=,)", RegOptions), "user_agent.original: grpc-dotnet/123"),
+            (new(@"server.port: \d+", RegOptions), "server.port: 00000"),
             (new(@"git.commit.sha: [0-9a-f]{40}", RegOptions), "git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbb"),
             (new(@"_dd\.p\.tid: [0-9a-f]{16}", RegOptions), "_dd.p.tid: 1234567890abcdef"),
             (new(@"(_dd\.code_origin\.frames\.\d+\.line:\s*)\d+", RegOptions), "${1}0"),

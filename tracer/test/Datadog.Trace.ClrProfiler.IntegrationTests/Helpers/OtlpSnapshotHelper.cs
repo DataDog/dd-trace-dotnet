@@ -8,18 +8,18 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net.Http;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 using Datadog.Trace.TestHelpers;
-using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 using FluentAssertions;
+using Newtonsoft.Json.Linq;
 using VerifyTests;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.Helpers
 {
     /// <summary>
-    /// Shared plumbing for tests that snapshot OTLP payloads captured by the ddapm test agent.
+    /// Shapes the OTLP payloads captured by the ddapm test agent into something a snapshot can be
+    /// compared against: normalizing what changes per run, merging exports, and ordering spans and
+    /// attributes.
     /// </summary>
     internal static class OtlpSnapshotHelper
     {
@@ -50,6 +50,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Helpers
 
         private static readonly Regex SpanIdRegex = new(@"^([a-fA-F0-9]{16})$");
 
+        private static readonly Regex CodeOriginFrameLineOrColumnKeyRegex = new(@"^_dd\.code_origin\.frames\.\d+\.(line|column)$", RegexOptions.Compiled);
+
+        private static readonly Regex CodeOriginFrameFileKeyRegex = new(@"^_dd\.code_origin\.frames\.\d+\.file$", RegexOptions.Compiled);
+
         public static void AddProtobufToJsonScrubbers(VerifySettings settings)
         {
             foreach (var (from, to) in ProtobufToJsonFieldNameMappings)
@@ -61,77 +65,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Helpers
             {
                 settings.AddSimpleScrubber(from, to);
             }
-        }
-
-        /// <summary>
-        /// Clears the test-agent session, retrying if the agent is not yet ready.
-        /// Ensures the OTLP HTTP endpoint is accepting connections before tests proceed.
-        /// </summary>
-        /// <param name="testAgentHost">The host the test agent is listening on.</param>
-        /// <param name="maxRetries">The number of attempts to make before failing.</param>
-        /// <param name="delayMs">The delay between attempts, in milliseconds.</param>
-        /// <returns>A task that completes once the session has been cleared.</returns>
-        public static async Task ClearTestAgentSessionAsync(string testAgentHost, int maxRetries = 5, int delayMs = 1000)
-        {
-            using var httpClient = new HttpClient { Timeout = TimeSpan.FromSeconds(5) };
-            var url = $"http://{testAgentHost}:4318/test/session/clear";
-
-            for (var attempt = 1; attempt <= maxRetries; attempt++)
-            {
-                try
-                {
-                    var response = await httpClient.GetAsync(url);
-                    response.EnsureSuccessStatusCode();
-                    return;
-                }
-                catch (Exception) when (attempt < maxRetries)
-                {
-                    await Task.Delay(delayMs);
-                }
-            }
-
-            // Final attempt -- let it throw if it fails
-            var finalResponse = await httpClient.GetAsync(url);
-            finalResponse.EnsureSuccessStatusCode();
-        }
-
-        /// <summary>
-        /// Polls the test-agent for data until non-empty results are returned or timeout is reached.
-        /// The sample app exports data during shutdown, so there can be a brief delay
-        /// between process exit and data appearing in the test-agent. The timeout is generous
-        /// because first-time gRPC connections (TCP+HTTP/2+TLS handshake) plus tracer shutdown
-        /// flushing can stack up on slower CI runners.
-        /// </summary>
-        /// <param name="url">The test agent endpoint to poll.</param>
-        /// <param name="timeoutSeconds">How long to keep polling before giving up.</param>
-        /// <param name="pollIntervalMs">The delay between polls, in milliseconds.</param>
-        /// <returns>The data returned by the test agent.</returns>
-        public static async Task<JToken> WaitForTestAgentDataAsync(string url, int timeoutSeconds = 60, int pollIntervalMs = 500)
-        {
-            using var httpClient = new HttpClient { Timeout = TimeSpan.FromSeconds(10) };
-            var deadline = DateTime.UtcNow.AddSeconds(timeoutSeconds);
-
-            while (DateTime.UtcNow < deadline)
-            {
-                var response = await httpClient.GetAsync(url);
-                response.EnsureSuccessStatusCode();
-
-                var json = await response.Content.ReadAsStringAsync();
-                var data = JToken.Parse(json);
-
-                if (data.HasValues)
-                {
-                    return data;
-                }
-
-                await Task.Delay(pollIntervalMs);
-            }
-
-            // Final attempt -- return whatever we get so the caller's assertion shows the actual value
-            var finalResponse = await httpClient.GetAsync(url);
-            finalResponse.EnsureSuccessStatusCode();
-            var finalJson = await finalResponse.Content.ReadAsStringAsync();
-            return JToken.Parse(finalJson);
         }
 
         /// <summary>
@@ -165,8 +98,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Helpers
         /// </summary>
         /// <param name="tracesRequests">The captured OTLP requests.</param>
         /// <param name="names">The field-name casing to use.</param>
-        /// <param name="applicationStartTimeUnixNano">The time the sample application was started, used as a lower bound for span timestamps.</param>
-        public static void NormalizeSpans(JToken tracesRequests, OtlpFieldNames names, long applicationStartTimeUnixNano)
+        /// <param name="testStartTimeUnixNano">The time the test case was started, used as a lower bound for span timestamps.</param>
+        public static void NormalizeSpans(JToken tracesRequests, OtlpFieldNames names, long testStartTimeUnixNano)
         {
             var isJson = names.IsJson;
             var stringValueKey = names.StringValue;
@@ -188,7 +121,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Helpers
                 var spanEndTimeUnixNano = long.Parse(span[endTimeUnixNanoKey]!.ToString());
 
                 // Add strong assertions on unstable span information
-                spanStartTimeUnixNano.Should().BeGreaterThanOrEqualTo(applicationStartTimeUnixNano);
+                spanStartTimeUnixNano.Should().BeGreaterThanOrEqualTo(testStartTimeUnixNano);
                 spanEndTimeUnixNano.Should().BeGreaterThanOrEqualTo(spanStartTimeUnixNano);
                 traceIdData.Should().MatchRegex(TraceIdRegex);
                 spanIdData.Should().MatchRegex(SpanIdRegex);
@@ -257,6 +190,39 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Helpers
             {
                 ((JObject)@event).Remove(timeUnixNanoKey);
                 ((JObject)@event).AddFirst(new JProperty(timeUnixNanoKey, "0"));
+            }
+        }
+
+        /// <summary>
+        /// Replaces the file/line/column of every <c>_dd.code_origin.frames.N.*</c> attribute with
+        /// fixed placeholders, since the source line/column shift whenever the instrumented sample
+        /// code changes, and the file path is checkout-dependent (absolute in CI, relative locally).
+        /// </summary>
+        /// <param name="tracesRequests">The captured OTLP requests.</param>
+        public static void NormalizeCodeOriginAttributes(JToken tracesRequests)
+        {
+            foreach (var attribute in tracesRequests.SelectTokens("$..attributes[*]"))
+            {
+                var key = attribute["key"]?.ToString();
+                if (key is null || attribute["value"] is not JObject value)
+                {
+                    continue;
+                }
+
+                if (CodeOriginFrameLineOrColumnKeyRegex.IsMatch(key))
+                {
+                    foreach (var property in value.Properties())
+                    {
+                        property.Value = "0";
+                    }
+                }
+                else if (CodeOriginFrameFileKeyRegex.IsMatch(key))
+                {
+                    foreach (var property in value.Properties())
+                    {
+                        property.Value = NormalizeCodeOriginFilePath(property.Value!.ToString());
+                    }
+                }
             }
         }
 
@@ -454,5 +420,18 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Helpers
         private static string ToTraceId(byte[] bytes) => ToHexString(bytes, 16);
 
         private static string ToSpanId(byte[] bytes) => ToHexString(bytes, 8);
+
+        /// <summary>
+        /// Trims a code-origin file path down to the repo-relative portion starting at "tracer",
+        /// so absolute checkout paths (which differ between CI and local machines) don't break the
+        /// snapshot. Mirrors VerifyHelper.NormalizeCodeOriginFilePaths, but keeps forward slashes to
+        /// match how the rest of an OTLP payload's paths are rendered.
+        /// </summary>
+        private static string NormalizeCodeOriginFilePath(string path)
+        {
+            var normalized = path.Replace('\\', '/');
+            var tracerIndex = normalized.IndexOf("tracer/", StringComparison.OrdinalIgnoreCase);
+            return tracerIndex < 0 ? path : normalized.Substring(tracerIndex);
+        }
     }
 }

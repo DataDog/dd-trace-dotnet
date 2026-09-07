@@ -43,6 +43,11 @@ namespace Datadog.Trace.ExtensionMethods
             }
         }
 
+        /// <summary>
+        /// Decorates an HTTP server span using the Datadog HTTP semantics. Callers using OpenTelemetry
+        /// semantics must call <see cref="Datadog.Trace.OpenTelemetry.HttpSemanticConventions.SetHttpServerRequestValues"/>
+        /// instead: use exactly one of the two for a given span, never both.
+        /// </summary>
         internal static void DecorateWebServerSpan(
             this ISpan span,
             string resourceName,
@@ -58,9 +63,9 @@ namespace Datadog.Trace.ExtensionMethods
             if (tags is not null)
             {
                 tags.HttpMethod = method;
+                tags.HttpUserAgent = userAgent;
                 tags.HttpRequestHeadersHost = host;
                 tags.HttpUrl = httpUrl;
-                tags.HttpUserAgent = userAgent;
             }
         }
 
@@ -114,6 +119,33 @@ namespace Datadog.Trace.ExtensionMethods
                 return httpStatusCode;
             }
         }
+
+        /// <summary>
+        /// Gets the HTTP request method, reading the strongly-typed <see cref="IHasHttpMethod"/> property when
+        /// available so that the caller doesn't have to know which of the Datadog/OpenTelemetry tag names is in use.
+        /// </summary>
+        internal static string GetHttpMethod(this Span span)
+            => span.Tags is IHasHttpMethod httpMethodTags
+                   ? httpMethodTags.HttpMethod
+                   : span.GetTag(span.OpenTelemetrySemanticsEnabled ? Tags.HttpRequestMethod : Tags.HttpMethod);
+
+        /// <summary>
+        /// Gets the client IP extracted from the request headers, reading the strongly-typed <see cref="WebTags"/>
+        /// property when available.
+        /// </summary>
+        internal static string GetHttpClientIp(this Span span)
+            => span.Tags is WebTags webTags
+                   ? webTags.HttpClientIp
+                   : span.GetTag(span.OpenTelemetrySemanticsEnabled ? Tags.ClientAddress : Tags.HttpClientIp);
+
+        /// <summary>
+        /// Gets the peer IP of the socket connection, reading the strongly-typed <see cref="WebTags"/>
+        /// property when available.
+        /// </summary>
+        internal static string GetNetworkClientIp(this Span span)
+            => span.Tags is WebTags webTags
+                   ? webTags.NetworkClientIp
+                   : span.GetTag(span.OpenTelemetrySemanticsEnabled ? Tags.NetworkPeerAddress : Tags.NetworkClientIp);
 
         internal static void SetHttpStatusCode(this Span span, int statusCode, bool isServer, MutableSettings tracerSettings)
         {
