@@ -1990,6 +1990,69 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #endif
             };
 
+      public static IEnumerable<object[]> MSTestNativeRetries =>
+
+            new List<object[]>
+            {
+#if DEFAULT_SAMPLES
+                new object[] { string.Empty },
+#else
+#if NET48
+                new object[] { "4.4.0" },
+#endif
+#if NET8_0
+                new object[] { "4.4.0" },
+#endif
+#if NET9_0
+                new object[] { "4.4.0" },
+#endif
+#if NET10_0
+                new object[] { "4.4.0" },
+#endif
+#endif
+            };
+
+      public static IEnumerable<object[]> MSTestNativeRetriesMtp =>
+
+            new List<object[]>
+            {
+#if DEFAULT_SAMPLES
+                new object[] { string.Empty },
+#else
+#if NET8_0
+                new object[] { "4.4.0" },
+#endif
+#if NET9_0
+                new object[] { "4.4.0" },
+#endif
+#if NET10_0
+                new object[] { "4.4.0" },
+#endif
+#endif
+            };
+
+      public static IEnumerable<object[]> MSTestDiscovery =>
+
+            new List<object[]>
+            {
+#if DEFAULT_SAMPLES
+                new object[] { string.Empty },
+#else
+#if NET48
+                new object[] { "4.4.0" },
+#endif
+#if NET8_0
+                new object[] { "4.4.0" },
+#endif
+#if NET9_0
+                new object[] { "4.4.0" },
+#endif
+#if NET10_0
+                new object[] { "4.4.0" },
+#endif
+#endif
+            };
+
       public static IEnumerable<object[]> Kafka =>
 
             new List<object[]>
