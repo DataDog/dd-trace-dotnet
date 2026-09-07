@@ -13,6 +13,7 @@ using System.Threading.Tasks;
 using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.ClrProfiler.CallTarget;
+using Datadog.Trace.ClrProfiler.CallTarget.Handlers;
 using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2;
@@ -24,8 +25,9 @@ internal sealed class MsTestExecution
     private IList? _firstResults;
     private List<IList>? _additionalResults;
     private List<NativeAttempt>? _nativeAttempts;
-    private List<CompletedTest>? _completedTests;
+    private List<PendingTest>? _pendingTests;
     private int _nativeAttemptNumber = -1;
+    private bool _datadogRetriesApplied;
 
     public MsTestExecution(CallTargetState previousState, MsTestExecution? parent)
     {
@@ -64,6 +66,19 @@ internal sealed class MsTestExecution
     public static MsTestExecution? GetForTestMethod(object? testMethod)
         => testMethod is not null && MethodExecutions.TryGetValue(testMethod, out var binding) ? binding.Value : Current;
 
+    public static bool IsAcceptableNativeResult(IList results)
+    {
+        foreach (var result in results)
+        {
+            if (result.DuckCast<ITestResult>()!.Outcome is UnitTestOutcome.Failed or UnitTestOutcome.Timeout)
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     public void StartNativeAttempt() => _nativeAttemptNumber++;
 
     public void ObserveTestMethod(ITestMethod testMethod)
@@ -71,7 +86,7 @@ internal sealed class MsTestExecution
         if (_nativeAttempts is null && testMethod.Instance.TryDuckCast<ITestMethodInfoWithRetry>(out var method) && method.RetryAttribute is not null)
         {
             _nativeAttempts = [];
-            _completedTests = [];
+            _pendingTests = [];
         }
     }
 
@@ -136,7 +151,7 @@ internal sealed class MsTestExecution
         _nativeAttempts!.Add(new NativeAttempt(_nativeAttemptNumber, results, state, summary));
     }
 
-    public void CloseAttempt(Test test, ITestResult? result, TestStatus status, string? skipReason)
+    public void FinishAttempt(Test test, ITestResult? result, TestStatus status, string? skipReason, bool isDatadogRetry = false)
     {
         if (IsNativeRetry && FindInitialAttempt(test) is { } initial)
         {
@@ -145,19 +160,37 @@ internal sealed class MsTestExecution
 
         var span = test.GetInternalSpan();
         var duration = status == TestStatus.Skip ? TimeSpan.Zero : span.Context.TraceContext.Clock.ElapsedSince(span.StartTime);
-        _completedTests!.Add(new CompletedTest(test, result, status, duration));
-        test.CloseWithDeferredSpan(status, duration, skipReason);
+        _pendingTests!.Add(new PendingTest(test, result, status, duration, isDatadogRetry));
+        try
+        {
+            test.UnsafeFinishExecution(status, duration, skipReason);
+        }
+        catch (Exception ex)
+        {
+            Common.Log.Error(ex, "MSTest: Error completing test execution.");
+        }
+        finally
+        {
+            // End this attempt's active context without disposing its still-open scope.
+            // This also covers Datadog retries, which invoke the method without CallTarget.
+            if (Tracer.Instance.InternalActiveScope is { } scope && ReferenceEquals(scope.Span, span))
+            {
+                var parentContext = new CallTargetState(scope.Parent, span.Context.Parent as SpanContext, CallTargetState.GetDefault());
+                IntegrationOptions.RestoreScopeFromAsyncExecution(parentContext);
+            }
+        }
     }
 
-    public async Task CompleteAsync(IList results, Exception? exception)
+    public async Task ApplyDatadogRetriesAsync(IList results)
     {
-        if (_nativeAttempts is not { Count: > 0 } || exception is not null || results.Count == 0)
+        if (_datadogRetriesApplied || _nativeAttempts is not { Count: > 0 } || results.Count == 0)
         {
             return;
         }
 
-        // Retry metadata is assigned by CombineRetryAttempts, after ExecuteAsync has returned.
-        // Keep MSTest's historical entries intact: MTP publishes those entries to its consumers.
+        _datadogRetriesApplied = true;
+        // Update only the final native attempt, before MSTest assigns retry metadata and runs cleanup.
+        // Earlier attempts stay intact for MTP's retry history.
         foreach (var attempt in _nativeAttempts)
         {
             if (attempt.Number != _nativeAttemptNumber)
@@ -178,19 +211,21 @@ internal sealed class MsTestExecution
                         continue;
                     }
 
-                    if (originalResults[row].TryDuckCast<ITestResultV4_4>(out var original) &&
-                        finalResults[row].TryDuckCast<ITestResultV4_4>(out var final))
-                    {
-                        final.RetryAttemptNumber = original.RetryAttemptNumber;
-                        final.IsSupersededRetryAttempt = original.IsSupersededRetryAttempt;
-                    }
-
+                    // InvokeAsync produces the execution result. The runner adds the row identity
+                    // afterwards, so preserve it when a Datadog retry replaces that result.
+                    var original = originalResults[row].DuckCast<ITestResultV4_4>()!;
+                    var final = finalResults[row].DuckCast<ITestResultV4_4>()!;
+                    final.DisplayName = original.DisplayName;
+                    final.ExecutionId = original.ExecutionId;
+                    final.ParentExecId = original.ParentExecId;
+                    final.DatarowIndex = original.DatarowIndex;
+                    final.AssociatedUnitTestElement = original.AssociatedUnitTestElement;
                     results[index] = finalResults[row];
                 }
             }
         }
 
-        foreach (var completed in _completedTests!)
+        foreach (var completed in _pendingTests!)
         {
             var tags = completed.Test.GetTags();
             if (tags.IsQuarantined == "true" || tags.IsDisabled == "true" || tags.IsAttemptToFix == "true")
@@ -207,15 +242,23 @@ internal sealed class MsTestExecution
         }
     }
 
-    public void FinishSpans()
+    public void CloseTests()
     {
         // ClassInitialize can retain its captured ExecutionContext until the assembly finishes.
         // Release attempt data even if that context still references this execution.
-        var completedTests = _completedTests;
+        var completedTests = _pendingTests;
+        if (_nativeAttempts is { } nativeAttempts)
+        {
+            foreach (var attempt in nativeAttempts)
+            {
+                attempt.State.RetryContext?.Dispose();
+            }
+        }
+
         _firstResults = null;
         _additionalResults = null;
         _nativeAttempts = null;
-        _completedTests = null;
+        _pendingTests = null;
         if (completedTests is null)
         {
             return;
@@ -226,8 +269,14 @@ internal sealed class MsTestExecution
             foreach (var completed in completedTests)
             {
                 var tags = completed.Test.GetTags();
-                CompletedTest? last = null;
-                var anyPassed = false;
+                if (completed.Test.IsClosed)
+                {
+                    continue;
+                }
+
+                PendingTest? last = null;
+                PendingTest? lastNativeAttempt = null;
+                var anyDatadogRetryPassed = false;
                 var anyFailed = false;
                 var executions = 0;
                 var allRetriesFailed = true;
@@ -239,7 +288,15 @@ internal sealed class MsTestExecution
                         continue;
                     }
 
-                    anyPassed |= candidate.Status == TestStatus.Pass;
+                    if (candidate.IsDatadogRetry)
+                    {
+                        anyDatadogRetryPassed |= candidate.Status == TestStatus.Pass;
+                    }
+                    else
+                    {
+                        lastNativeAttempt = candidate;
+                    }
+
                     anyFailed |= candidate.Status == TestStatus.Fail;
                     if (executions++ > 0)
                     {
@@ -249,22 +306,42 @@ internal sealed class MsTestExecution
                     last = candidate;
                 }
 
-                // Final tags must be set before Span.Finish can enqueue the event for writing.
-                tags.FinalStatus = ReferenceEquals(completed, last)
-                                       ? Common.CalculateFinalStatus(anyPassed, anyFailed, completed.Status == TestStatus.Skip, tags)
-                                       : null;
-                tags.HasFailedAllRetries = ReferenceEquals(completed, last) && executions > 1 && allRetriesFailed ? "true" : null;
-                if (tags.IsAttemptToFix == "true" && ReferenceEquals(completed, last) && executions > 1)
-                {
-                    tags.AttemptToFixPassed = anyFailed ? "false" : "true";
-                }
+                // MSTest keeps the last native attempt, even if an earlier one passed.
+                // Datadog's retries can recover that result; ATF still considers every failure.
+                var anyPassed = lastNativeAttempt?.Status == TestStatus.Pass || anyDatadogRetryPassed;
+                completed.Test.Close(
+                    completed.Status,
+                    completed.Duration,
+                    skipReason: null,
+                    beforeClose: test =>
+                    {
+                        var finalTags = test.GetTags();
+                        finalTags.FinalStatus = ReferenceEquals(completed, last)
+                                                    ? Common.CalculateFinalStatus(anyPassed, anyFailed, completed.Status == TestStatus.Skip, finalTags)
+                                                    : null;
+                        finalTags.HasFailedAllRetries = ReferenceEquals(completed, last) && executions > 1 && allRetriesFailed ? "true" : null;
+                        if (finalTags.IsAttemptToFix == "true" && ReferenceEquals(completed, last) && executions > 1)
+                        {
+                            finalTags.AttemptToFixPassed = anyFailed ? "false" : "true";
+                        }
+                    });
             }
         }
         finally
         {
             foreach (var completed in completedTests)
             {
-                completed.Test.GetInternalSpan().Finish(completed.Duration);
+                try
+                {
+                    if (!completed.Test.IsClosed)
+                    {
+                        completed.Test.Close(completed.Status, completed.Duration);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Common.Log.Error(ex, "MSTest: Error closing a completed test.");
+                }
             }
         }
     }
@@ -295,7 +372,7 @@ internal sealed class MsTestExecution
         public TestAttemptResult Summary { get; } = summary;
     }
 
-    private sealed class CompletedTest(Test test, ITestResult? result, TestStatus status, TimeSpan duration)
+    private sealed class PendingTest(Test test, ITestResult? result, TestStatus status, TimeSpan duration, bool isDatadogRetry)
     {
         public Test Test { get; } = test;
 
@@ -304,5 +381,7 @@ internal sealed class MsTestExecution
         public TestStatus Status { get; } = status;
 
         public TimeSpan Duration { get; } = duration;
+
+        public bool IsDatadogRetry { get; } = isDatadogRetry;
     }
 }

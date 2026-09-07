@@ -46,6 +46,21 @@ public class TestSuite
         await Task.Delay(1_000, TestContext.CancellationToken);
     }
 
+    [TestMethod(UnfoldingStrategy = TestDataSourceUnfoldingStrategy.Fold)]
+    [TestCategory("CustomRetry")]
+    [DataRow(0)]
+    [DataRow(1)]
+    [Retry(2)]
+    public void RegressesAfterPassing(int row)
+    {
+        var attempt = RecordAttempt(nameof(RegressesAfterPassing) + row);
+#pragma warning disable MSTESTEXP // Verify the ambient TestContext used by MSTest 4.4 retries.
+        Assert.AreSame(TestContext, TestContext.Current);
+#pragma warning restore MSTESTEXP
+        Assert.AreEqual(row, TestContext.TestData[0]);
+        Assert.IsTrue(row == 0 ? attempt == 1 || attempt >= 4 : attempt >= 2);
+    }
+
     [TestMethod]
     [Retry(2)]
     public void PassesImmediately() => RecordAttempt(nameof(PassesImmediately));

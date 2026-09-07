@@ -4,6 +4,8 @@
 // </copyright>
 #nullable enable
 
+using System;
+
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2;
 
 internal interface ITestResultV4_4 : ITestResult
@@ -11,4 +13,12 @@ internal interface ITestResultV4_4 : ITestResult
     int RetryAttemptNumber { get; set; }
 
     bool IsSupersededRetryAttempt { get; set; }
+
+    Guid ExecutionId { get; set; }
+
+    Guid ParentExecId { get; set; }
+
+    int DatarowIndex { get; set; }
+
+    object? AssociatedUnitTestElement { get; set; }
 }

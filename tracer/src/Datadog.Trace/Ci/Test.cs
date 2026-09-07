@@ -31,9 +31,14 @@ public sealed class Test
     private static readonly HashSet<Test> OpenedTests = new();
     private readonly ITestOptimization _testOptimization;
     private readonly Scope _scope;
+    private readonly object _executionLock = new();
     private readonly Test? _priorTest;
     private Coverage.CoverageSessionHandle? _coverageSessionHandle;
     private int _finished;
+    private bool _finishingExecution;
+    private bool _executionFinished;
+    private bool _closeRequested;
+    private TimeSpan? _executionDuration;
     private List<Action<Test>>? _onCloseActions;
 
     internal Test(TestSuite suite, string name, DateTimeOffset? startDate)
@@ -495,27 +500,109 @@ public sealed class Test
     /// <param name="duration">Duration of the test suite</param>
     /// <param name="skipReason">In case </param>
     public void Close(TestStatus status, TimeSpan? duration, string? skipReason)
-        => Close(status, duration, skipReason, finishSpan: true);
+        => Close(status, duration, skipReason, beforeClose: null);
 
-    // A framework can finish an attempt before it knows whether that attempt is final.
-    // The caller owns Span.Finish; coverage and the active scope still end here.
-    internal void CloseWithDeferredSpan(TestStatus status, TimeSpan duration, string? skipReason)
-        => Close(status, duration, skipReason, finishSpan: false);
-
-    private void Close(TestStatus status, TimeSpan? duration, string? skipReason, bool finishSpan)
+    /// <summary>
+    /// Assigns remaining tags and closes the test under the same guard as shutdown.
+    /// The callback is skipped if another caller has already closed the test.
+    /// </summary>
+    internal void Close(TestStatus status, TimeSpan? duration, string? skipReason, Action<Test>? beforeClose)
     {
-        if (Interlocked.Exchange(ref _finished, 1) == 1)
+        lock (_executionLock)
         {
-            _testOptimization.Log.Warning("Test.Close() was already called before.");
+            if (IsClosed)
+            {
+                _testOptimization.Log.Warning("Test.Close() was already called before.");
+                return;
+            }
+
+            _closeRequested = true;
+            try
+            {
+                beforeClose?.Invoke(this);
+            }
+            finally
+            {
+                // A completion callback can request Close on this same thread. The outer
+                // execution completion will close the span after all callbacks have returned.
+                if (!_finishingExecution)
+                {
+                    try
+                    {
+                        FinishExecution(status, duration, skipReason);
+                    }
+                    finally
+                    {
+                        CompleteClose();
+                    }
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// Captures the attempt's duration and outcome and finishes its coverage and callbacks once.
+    /// The test remains open until Close is called with its final tags already assigned.
+    /// </summary>
+    /// <remarks>
+    /// Only instrumentation that owns the remaining test lifetime may call this method.
+    /// It must restore the active execution context and arrange a later Close, including error paths.
+    /// The scope is not disposed here. Shutdown can still find the test and use its captured duration.
+    /// </remarks>
+    internal void UnsafeFinishExecution(TestStatus status, TimeSpan duration, string? skipReason)
+    {
+        lock (_executionLock)
+        {
+            try
+            {
+                FinishExecution(status, duration, skipReason);
+            }
+            finally
+            {
+                if (_closeRequested && !_finishingExecution)
+                {
+                    CompleteClose();
+                }
+            }
+        }
+    }
+
+    private void FinishExecution(TestStatus status, TimeSpan? duration, string? skipReason)
+    {
+        if (_executionFinished || _finishingExecution)
+        {
             return;
         }
 
+        _finishingExecution = true;
+        _executionDuration = duration ?? _scope.Span.Context.TraceContext.Clock.ElapsedSince(_scope.Span.StartTime);
+        var tags = (TestSpanTags)_scope.Span.Tags;
+        try
+        {
+            SetExecutionStatus(tags, status, skipReason);
+            try
+            {
+                FinishCoverage(tags, status);
+            }
+            finally
+            {
+                RunCompletionCallbacks();
+            }
+        }
+        finally
+        {
+            _executionFinished = true;
+            _finishingExecution = false;
+            if (ReferenceEquals(Current, this))
+            {
+                Current = null;
+            }
+        }
+    }
+
+    private void FinishCoverage(TestSpanTags tags, TestStatus status)
+    {
         var scope = _scope;
-        var tags = (TestSpanTags)scope.Span.Tags;
-
-        // Calculate duration beforehand
-        duration ??= scope.Span.Context.TraceContext.Clock.ElapsedSince(scope.Span.StartTime);
-
         // The immutable coverage handle must be claimed once because Close() may be called concurrently.
         var coverageSessionHandle = Interlocked.Exchange(ref _coverageSessionHandle, null);
         var coverageEnded = coverageSessionHandle is null || !coverageSessionHandle.IsValid;
@@ -549,7 +636,10 @@ public sealed class Test
                 coverageSessionHandle?.AbortIncomplete(Coverage.GlobalCoverageFailureReason.TestCloseBeforeCoverage);
             }
         }
+    }
 
+    private void SetExecutionStatus(TestSpanTags tags, TestStatus status, string? skipReason)
+    {
         // Set status
         switch (status)
         {
@@ -588,28 +678,69 @@ public sealed class Test
         {
             TelemetryFactory.Metrics.RecordCountCIVisibilityITRForcedRun(MetricTags.CIVisibilityTestingEventType.Test);
         }
+    }
 
-        if (_onCloseActions is not null)
+    private void RunCompletionCallbacks()
+    {
+        var callbacks = _onCloseActions;
+        _onCloseActions = null;
+        if (callbacks is null)
         {
-            foreach (var action in _onCloseActions)
+            return;
+        }
+
+        foreach (var callback in callbacks)
+        {
+            try
             {
-                action(this);
+                callback(this);
+            }
+            catch (Exception ex)
+            {
+                _testOptimization.Log.Error(ex, "Error completing a test callback.");
+            }
+        }
+    }
+
+    private void CompleteClose()
+    {
+        if (Interlocked.Exchange(ref _finished, 1) == 1)
+        {
+            return;
+        }
+
+        var tags = (TestSpanTags)_scope.Span.Tags;
+        try
+        {
+            try
+            {
+                _scope.Span.Finish(_executionDuration!.Value);
+            }
+            finally
+            {
+                _scope.Dispose();
             }
 
-            _onCloseActions.Clear();
+            RecordCloseTelemetry(tags);
         }
-
-        if (finishSpan)
+        finally
         {
-            scope.Span.Finish(duration.Value);
-        }
-        else
-        {
-            scope.SetFinishOnClose(false);
+            if (ReferenceEquals(Current, this))
+            {
+                Current = null;
+            }
+
+            lock (OpenedTests)
+            {
+                OpenedTests.Remove(this);
+            }
         }
 
-        scope.Dispose();
+        _testOptimization.Log.Debug("######### Test Closed: {Name} ({Suite} | {Module}) | {Status}", Name, Suite.Name, Suite.Module.Name, tags.Status);
+    }
 
+    private void RecordCloseTelemetry(TestSpanTags tags)
+    {
         if (TelemetryHelper.GetEventTypeWithCodeOwnerAndSupportedCiAndBenchmarkAndEarlyFlakeDetection(
                 MetricTags.CIVisibilityTestingEventType.Test,
                 tags.Type == TestTags.TypeBenchmark,
@@ -637,14 +768,6 @@ public sealed class Test
                 quarantinedOrDisabled,
                 attemptToFix);
         }
-
-        Current = null;
-        lock (OpenedTests)
-        {
-            OpenedTests.Remove(this);
-        }
-
-        _testOptimization.Log.Debug("######### Test Closed: {Name} ({Suite} | {Module}) | {Status}", Name, Suite.Name, Suite.Module.Name, tags.Status);
     }
 
     internal void ResetStartTime()
@@ -669,7 +792,16 @@ public sealed class Test
 
     internal void AddOnCloseAction(Action<Test> action)
     {
-        _onCloseActions ??= [];
-        _onCloseActions.Add(action);
+        lock (_executionLock)
+        {
+            if (_executionFinished || _finishingExecution)
+            {
+                _testOptimization.Log.Warning("Cannot register a completion callback after test execution has finished.");
+                return;
+            }
+
+            _onCloseActions ??= [];
+            _onCloseActions.Add(action);
+        }
     }
 }
