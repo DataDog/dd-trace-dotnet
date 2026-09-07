@@ -38,6 +38,18 @@ namespace Datadog.Trace.Activity
             AgentConvertSpan(activity, span, openTelemetrySemanticsEnabled);
         }
 
+        /// <summary>
+        /// Extracts ActivityLinks and ActivityEvents from an activity and adds them to the span.
+        /// Called from ActivityStopIntegration when using CallTarget-based Activity interception,
+        /// because links and events are typically added by the OTel SDK at stop time.
+        /// </summary>
+        internal static void ExtractLinksAndEventsFromActivity<TInner>(TInner activity5, Span span)
+            where TInner : IActivity5
+        {
+            ExtractActivityLinks(span, activity5);
+            ExtractActivityEvents(span, activity5);
+        }
+
         // See trace agent func convertSpan: https://github.com/DataDog/datadog-agent/blob/67c353cff1a6a275d7ce40059aad30fc6a3a0bc1/pkg/trace/api/otlp.go#L459
         private static void AgentConvertSpan<TInner>(TInner activity, Span span, bool openTelemetrySemanticsEnabled)
             where TInner : IActivity
@@ -546,6 +558,21 @@ namespace Datadog.Trace.Activity
                     }
 
                     break;
+                case "otel.status_code":
+                    // Normalize short-form values ("OK"/"ERROR"/"UNSET") written directly via Activity.SetTag
+                    // by older OTel API versions (< 1.6) whose TelemetrySpan.SetStatus() never calls
+                    // Activity.SetStatus(). Mirrors the post-processing done for the listener path in
+                    // AgentConvertSpan.
+                    var normalizedStatusCode = value switch
+                    {
+                        "OK" => "STATUS_CODE_OK",
+                        "ERROR" => "STATUS_CODE_ERROR",
+                        "UNSET" => "STATUS_CODE_UNSET",
+                        _ => value
+                    };
+                    span.SetTag(key, normalizedStatusCode);
+
+                    break;
                 default:
                     span.SetTag(key, value);
                     break;
@@ -610,7 +637,7 @@ namespace Datadog.Trace.Activity
         /// The type of <c>Activity</c> - note that only <see cref="IActivity5"/> and up have support for events.
         /// </typeparam>
         /// <remarks>OpenTelemetry creates these attributes via it's <c>Activity.RecordException</c> function.</remarks>
-        private static void ExtractExceptionAttributes<TInner>(TInner activity, Span span)
+        internal static void ExtractExceptionAttributes<TInner>(TInner activity, Span span)
             where TInner : IActivity5
         {
             // OpenTelemetry stores the exception attributes in Activity.Events
