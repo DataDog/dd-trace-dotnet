@@ -23,6 +23,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI;
 
 [Trait("Category", "EndToEnd")]
 [Trait("Category", "TestIntegrations")]
+[Trait("RunOnWindows", "True")]
 public class MsTestV2DiscoveryTests(ITestOutputHelper output) : TestingFrameworkEvpTest("MSTestTestsDiscovery", output)
 {
 #if DEFAULT_SAMPLES
