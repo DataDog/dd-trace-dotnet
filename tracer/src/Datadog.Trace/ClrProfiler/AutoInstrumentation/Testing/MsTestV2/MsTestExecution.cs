@@ -200,10 +200,20 @@ internal sealed class MsTestExecution
 
             var originalResults = new object?[attempt.Results.Count];
             attempt.Results.CopyTo(originalResults, 0);
-            var finalResults = await TestMethodAttributeExecuteAsyncIntegration.RunRetriesAsync(attempt.Results, attempt.State, attempt.Summary).ConfigureAwait(false);
-            ObserveResults(finalResults);
             for (var row = 0; row < originalResults.Length; row++)
             {
+                // A custom executor can return several results. Retry each result independently;
+                // a passing result must not hide another failure or receive its retry outcome.
+                var original = originalResults[row].DuckCast<ITestResultV4_4>()!;
+                var summary = attempt.Summary;
+                summary.ResultStatus = TestMethodAttributeExecuteAsyncIntegration.GetStatusFromOutcome(original.Outcome);
+                summary.AllowRetries = summary.ResultStatus != TestStatus.Skip;
+                summary.InitialExecutionPassed = summary.ResultStatus == TestStatus.Pass;
+                summary.InitialExecutionFailed = summary.ResultStatus == TestStatus.Fail;
+                object?[] rowResults = [originalResults[row]];
+                var retryName = FindPendingTest(original.Instance)?.Test.Name;
+                var finalResults = await TestMethodAttributeExecuteAsyncIntegration.RunRetriesAsync(rowResults, attempt.State, summary, retryName).ConfigureAwait(false);
+                ObserveResults(finalResults);
                 for (var index = 0; index < results.Count; index++)
                 {
                     if (!ReferenceEquals(results[index], originalResults[row]))
@@ -213,15 +223,16 @@ internal sealed class MsTestExecution
 
                     // InvokeAsync produces the execution result. The runner adds the row identity
                     // afterwards, so preserve it when a Datadog retry replaces that result.
-                    var original = originalResults[row].DuckCast<ITestResultV4_4>()!;
-                    var final = finalResults[row].DuckCast<ITestResultV4_4>()!;
+                    var final = finalResults[0].DuckCast<ITestResultV4_4>()!;
                     final.DisplayName = original.DisplayName;
                     final.ExecutionId = original.ExecutionId;
                     final.ParentExecId = original.ParentExecId;
                     final.DatarowIndex = original.DatarowIndex;
                     final.AssociatedUnitTestElement = original.AssociatedUnitTestElement;
-                    results[index] = finalResults[row];
+                    results[index] = finalResults[0];
                 }
+
+                attempt.Results[row] = finalResults[0];
             }
         }
 
@@ -344,6 +355,20 @@ internal sealed class MsTestExecution
                 }
             }
         }
+    }
+
+    private PendingTest? FindPendingTest(object? result)
+    {
+        foreach (var test in _pendingTests!)
+        {
+            if (ReferenceEquals(test.Result?.Instance, result))
+            {
+                // The runner can change DisplayName after capture. Keep the original span identity.
+                return test;
+            }
+        }
+
+        return null;
     }
 
     private NativeAttempt? FindInitialAttempt(Test test)

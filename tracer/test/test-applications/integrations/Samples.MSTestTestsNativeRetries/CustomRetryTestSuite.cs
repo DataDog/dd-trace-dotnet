@@ -18,6 +18,35 @@ public class CustomRetryTestSuite
 {
     private static bool _nativePolicyCompleted;
 
+    [DelegatingTestMethod]
+    [Retry(2)]
+    public void DelegatingExecutor()
+        => Assert.IsTrue(TestSuite.RecordAttempt(nameof(DelegatingExecutor)) >= 2);
+
+    [MultipleResultsTestMethod]
+    [Retry(2)]
+    public void MultipleResults()
+    {
+        var attempt = TestSuite.RecordAttempt(nameof(MultipleResults));
+        Assert.IsTrue(attempt % 2 == 0 || attempt >= 7);
+    }
+
+    [TestMethod]
+    [AsyncThrowingRetry]
+    public void AsyncThrowingRetry()
+    {
+        TestSuite.RecordAttempt(nameof(AsyncThrowingRetry));
+        Assert.Fail("The retry policy fails after an await.");
+    }
+
+    [TestMethod]
+    [AsyncCanceledRetry]
+    public void AsyncCanceledRetry()
+    {
+        TestSuite.RecordAttempt(nameof(AsyncCanceledRetry));
+        Assert.Fail("The retry policy is canceled after an await.");
+    }
+
     [TestMethod]
     [RetryTwice]
     public void CustomPolicyContinuesAfterPassing()
@@ -103,6 +132,55 @@ public class CustomRetryTestSuite
         }
 
         public override Task<TestResult[]> ExecuteAsync(ITestMethod testMethod) => Task.FromResult<TestResult[]>([]);
+    }
+
+    private sealed class DelegatingTestMethodAttribute : TestMethodAttribute
+    {
+        public DelegatingTestMethodAttribute([CallerFilePath] string filePath = "", [CallerLineNumber] int lineNumber = 0)
+            : base(filePath, lineNumber)
+        {
+        }
+
+        public override async Task<TestResult[]> ExecuteAsync(ITestMethod testMethod)
+        {
+            await Task.Yield();
+            return await base.ExecuteAsync(testMethod);
+        }
+    }
+
+    private sealed class AsyncThrowingRetryAttribute : RetryBaseAttribute
+    {
+        protected override async Task<RetryResult> ExecuteAsync(RetryContext retryContext)
+        {
+            await Task.Yield();
+            throw new InvalidOperationException("Custom retry failed after an await.");
+        }
+    }
+
+    private sealed class MultipleResultsTestMethodAttribute : TestMethodAttribute
+    {
+        public MultipleResultsTestMethodAttribute([CallerFilePath] string filePath = "", [CallerLineNumber] int lineNumber = 0)
+            : base(filePath, lineNumber)
+        {
+        }
+
+        public override async Task<TestResult[]> ExecuteAsync(ITestMethod testMethod)
+        {
+            var first = await base.ExecuteAsync(testMethod);
+            var second = await base.ExecuteAsync(testMethod);
+            first[0].DisplayName = "First result";
+            second[0].DisplayName = "Second result";
+            return [first[0], second[0]];
+        }
+    }
+
+    private sealed class AsyncCanceledRetryAttribute : RetryBaseAttribute
+    {
+        protected override async Task<RetryResult> ExecuteAsync(RetryContext retryContext)
+        {
+            await Task.Yield();
+            throw new OperationCanceledException("Custom retry canceled after an await.");
+        }
     }
 
     private sealed class ThrowingTestMethodAttribute : TestMethodAttribute
