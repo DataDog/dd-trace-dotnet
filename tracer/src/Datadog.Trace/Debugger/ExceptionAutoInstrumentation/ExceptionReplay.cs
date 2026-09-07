@@ -13,6 +13,7 @@ using Datadog.Trace.Debugger.Snapshots;
 using Datadog.Trace.Debugger.ThirdParty;
 using Datadog.Trace.Debugger.Upload;
 using Datadog.Trace.Logging;
+using Datadog.Trace.SourceGenerators;
 
 namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 {
@@ -38,7 +39,32 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 
         public void Initialize()
         {
+            Initialize(md5Probe: null);
+        }
+
+        [TestingAndPrivateOnly]
+        internal void Initialize(Action? md5Probe)
+        {
             Log.Information("Initializing Exception Replay");
+
+            try
+            {
+                if (md5Probe is null)
+                {
+                    _ = string.Empty.ToUUID();
+                }
+                else
+                {
+                    md5Probe();
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Warning(ex, "Exception Replay has been disabled because MD5 hashing is unavailable.");
+                _isDisabled = true;
+                Settings.Disable();
+                return;
+            }
 
             InitSnapshotsSink();
             _exceptionTrackManager = ExceptionTrackManager.Create(Settings);
