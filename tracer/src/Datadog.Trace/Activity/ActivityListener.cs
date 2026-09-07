@@ -236,8 +236,18 @@ namespace Datadog.Trace.Activity
                 ThrowHelper.ThrowNullReferenceException($"Resulting proxy type after ducktyping {activityListenerType} is null");
             }
 
-            activityListenerProxy.ActivityStarted = ActivityListenerDelegatesBuilder.CreateOnActivityStartedDelegate(activityType, onActivityStartedMethodInfo);
-            activityListenerProxy.ActivityStopped = ActivityListenerDelegatesBuilder.CreateOnActivityStoppedDelegate(activityType, onActivityStoppedMethodInfo);
+            // In interception mode, ActivityStartIntegration/ActivityStopIntegration handle span creation
+            // directly off the CallTarget rewrite, so ActivityStarted/ActivityStopped are left unassigned
+            // (the runtime null-checks them before invoking) rather than allocating a duck-type proxy per
+            // Activity purely to hit ActivityListenerHandler's early-return. ShouldListenTo/Sample still
+            // need to run unconditionally: an ActivitySource with no listener returns null from
+            // StartActivity, and our CallTarget intercept never fires.
+            if (!Tracer.Instance.Settings.IsActivityInterceptionEnabled)
+            {
+                activityListenerProxy.ActivityStarted = ActivityListenerDelegatesBuilder.CreateOnActivityStartedDelegate(activityType, onActivityStartedMethodInfo);
+                activityListenerProxy.ActivityStopped = ActivityListenerDelegatesBuilder.CreateOnActivityStoppedDelegate(activityType, onActivityStoppedMethodInfo);
+            }
+
             activityListenerProxy.Sample = ActivityListenerDelegatesBuilder.CreateOnSampleDelegate(activitySamplingResultType, activityCreationOptionsType, activityContextType, sampleActivityType, onSampleMethodInfo);
             activityListenerProxy.SampleUsingParentId = ActivityListenerDelegatesBuilder.CreateOnSampleUsingParentIdDelegate(activitySamplingResultType, activityCreationOptionsType, sampleActivityType, onSampleUsingParentIdMethodInfo);
             activityListenerProxy.ShouldListenTo = ActivityListenerDelegatesBuilder.CreateOnShouldListenToDelegate(activitySourceType, onShouldListenToMethodInfo);
