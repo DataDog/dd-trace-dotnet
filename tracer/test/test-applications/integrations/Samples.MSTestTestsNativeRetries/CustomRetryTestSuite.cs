@@ -18,6 +18,17 @@ public class CustomRetryTestSuite
 {
     private static bool _nativePolicyCompleted;
 
+    public TestContext TestContext { get; set; }
+
+    [TestMethod]
+    [KeepPassingAttempt]
+    public void CustomPolicySelectsEarlierAttempt()
+    {
+        var attempt = TestSuite.RecordAttempt(nameof(CustomPolicySelectsEarlierAttempt));
+        Assert.AreEqual(attempt, TestContext.TestRunCount);
+        Assert.IsTrue(attempt == 2 || attempt > 3);
+    }
+
     [DelegatingTestMethod]
     [Retry(2)]
     public void DelegatingExecutor()
@@ -98,6 +109,18 @@ public class CustomRetryTestSuite
         {
             var result = new RetryResult();
             result.AddResult(await retryContext.ExecuteTaskGetter());
+            return result;
+        }
+    }
+
+    private sealed class KeepPassingAttemptAttribute : RetryBaseAttribute
+    {
+        protected override async Task<RetryResult> ExecuteAsync(RetryContext retryContext)
+        {
+            var passingAttempt = await retryContext.ExecuteTaskGetter();
+            await retryContext.ExecuteTaskGetter();
+            var result = new RetryResult();
+            result.AddResult(passingAttempt);
             return result;
         }
     }
