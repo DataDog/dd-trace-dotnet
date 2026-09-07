@@ -182,8 +182,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Activity
                 span.Finish(finishTime);
                 scope.Close();
 
-                // Clean up the custom property to avoid memory leaks
-                ActivityCustomPropertyAccessor<TTarget>.SetScope(instance, null);
+                // Deliberately NOT clearing the "__dd_span__" custom property here. Activity.Stop()'s
+                // synchronous NotifyActivityStop only covers a SimpleActivityExportProcessor; OTel .NET's
+                // default BatchActivityExportProcessor merely enqueues in OnEnd and reads the Activity's
+                // tags/status/display name off a background thread later. Every read API (get_Tags,
+                // get_TagObjects, GetTagItem, EnumerateTagObjects, get_Status, get_StatusDescription) is
+                // served from the Span via this property, so clearing it here would make the batched
+                // export see nothing. Let it die naturally with the Activity — Span/TagsList are plain
+                // heap objects (no pooling), so this creates no leak, just a slightly longer-lived Span.
             }
             catch (Exception ex)
             {
