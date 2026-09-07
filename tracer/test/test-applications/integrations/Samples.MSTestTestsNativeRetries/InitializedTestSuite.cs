@@ -13,6 +13,12 @@ namespace Samples.MSTestTestsNativeRetries;
 [Retry(2)]
 public class InitializedTestSuite
 {
+    [TestMethod]
+    [TestCategory("CustomRetry")]
+    [Retry(1)]
+    public void MethodRetryOverridesClass()
+        => Assert.IsTrue(TestSuite.RecordAttempt(nameof(MethodRetryOverridesClass)) >= 3);
+
     [ClassInitialize]
     public static async Task Initialize(TestContext context)
     {
