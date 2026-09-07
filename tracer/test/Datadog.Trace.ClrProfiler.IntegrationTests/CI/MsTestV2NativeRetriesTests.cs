@@ -24,6 +24,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI;
 
 [Trait("Category", "EndToEnd")]
 [Trait("Category", "TestIntegrations")]
+[Trait("RunOnWindows", "True")]
 public class MsTestV2NativeRetriesTests : TestingFrameworkEvpTest
 {
 #if DEFAULT_SAMPLES
@@ -94,6 +95,8 @@ public class MsTestV2NativeRetriesTests : TestingFrameworkEvpTest
     [InlineData("RetriesUseFreshInstances", 4, 1, 0, 0, true)]
     [InlineData("CustomPolicyContinuesAfterPassing", 3, 1, 1, 2, false)]
     [InlineData("CustomPolicyContinuesAfterPassing", 4, 1, 0, 0, true)]
+    [InlineData("CustomPolicySelectsEarlierAttempt", 3, 1, 0, 0, false)]
+    [InlineData("CustomPolicySelectsEarlierAttempt", 3, 1, 0, 0, true)]
     [InlineData("DelegatingExecutor", 2, 1, 0, 0, false)]
     [InlineData("MethodRetryOverridesClass", 2, 1, 1, 2, false)]
     [InlineData("MultipleResults", 6, 2, 1, 2, false)]
@@ -177,6 +180,15 @@ public class MsTestV2NativeRetriesTests : TestingFrameworkEvpTest
                 }
 
                 tests.Where(test => test.Meta.ContainsKey(TestTags.TestFinalStatus)).Select(test => test.Meta[TestTags.TestFinalStatus]).Should().BeEquivalentTo([automaticRetries ? TestTags.StatusPass : TestTags.StatusFail, TestTags.StatusPass]);
+            }
+            else if (name == "CustomPolicySelectsEarlierAttempt")
+            {
+                tests.OrderBy(test => test.Start).Select(test => test.Meta[TestTags.Status]).Should().Equal(TestTags.StatusFail, TestTags.StatusPass, TestTags.StatusFail);
+                tests.Single(test => test.Meta.ContainsKey(TestTags.TestFinalStatus)).Meta[TestTags.TestFinalStatus].Should().Be(TestTags.StatusPass);
+                if (UseMtp)
+                {
+                    File.ReadAllLines(historyFile).Should().BeEquivalentTo("CustomPolicySelectsEarlierAttempt|1|True", "CustomPolicySelectsEarlierAttempt|2|False");
+                }
             }
             else if (name is "RetriesUseFreshInstances" or "CustomPolicyContinuesAfterPassing" or "DelegatingExecutor")
             {
@@ -264,6 +276,8 @@ public class MsTestV2NativeRetriesTests : TestingFrameworkEvpTest
     [InlineData("itr", "AlwaysFails", 0, "skip", 3)]
     [InlineData("itr_row", "ParameterizedRetry", 2, "pass", 2)]
     [InlineData("efd", "InitiallyPassesWithFreshInstances", 3, "pass", 1)]
+    [InlineData("efd", "CustomPolicySelectsEarlierAttempt", 5, "pass", 3)]
+    [InlineData("attempt_to_fix", "CustomPolicySelectsEarlierAttempt", 5, "fail", 3)]
     public async Task NativeRetriesRespectTestOptimizationPolicies(string feature, string name, int expectedAttempts, string expectedFinalStatus, int expectedNativeAttempts)
     {
         EnvironmentHelper.EnableDefaultTransport();
@@ -273,6 +287,7 @@ public class MsTestV2NativeRetriesTests : TestingFrameworkEvpTest
         var isItr = feature is "itr" or "itr_row";
         var skipOneRow = feature == "itr_row";
         var module = UseMtp ? "Samples.MSTestTestsNativeRetriesMtp" : "Samples.MSTestTestsNativeRetries";
+        var suite = name == "CustomPolicySelectsEarlierAttempt" ? "Samples.MSTestTestsNativeRetries.CustomRetryTestSuite" : "Samples.MSTestTestsNativeRetries.TestSuite";
         var attemptsFile = Path.GetTempFileName();
         SetEnvironmentVariable("MSTEST_ATTEMPTS_FILE", attemptsFile);
         SetEnvironmentVariable("TESTINGPLATFORM_TELEMETRY_OPTOUT", "1");
@@ -306,7 +321,7 @@ public class MsTestV2NativeRetriesTests : TestingFrameworkEvpTest
                                 type = skipOneRow ? "test_params" : "test",
                                 attributes = new
                                 {
-                                    suite = "Samples.MSTestTestsNativeRetries.TestSuite",
+                                    suite,
                                     name,
                                     parameters = skipOneRow ? """{"metadata":{},"arguments":{"row":"0"}}""" : null,
                                     _missing_line_code_coverage = false
@@ -331,7 +346,7 @@ public class MsTestV2NativeRetriesTests : TestingFrameworkEvpTest
                                 {
                                     suites = new Dictionary<string, object>
                                     {
-                                        ["Samples.MSTestTestsNativeRetries.TestSuite"] = new
+                                        [suite] = new
                                         {
                                             tests = new Dictionary<string, object>
                                             {
@@ -378,6 +393,11 @@ public class MsTestV2NativeRetriesTests : TestingFrameworkEvpTest
             if (feature == "attempt_to_fix")
             {
                 tests.Single(test => test.Meta.ContainsKey(TestTags.TestFinalStatus)).Meta[TestTags.TestAttemptToFixPassed].Should().Be(expectedFinalStatus == TestTags.StatusPass ? "true" : "false");
+            }
+
+            if (name == "CustomPolicySelectsEarlierAttempt")
+            {
+                tests.OrderBy(test => test.Start).Select(test => test.Meta[TestTags.Status]).Should().Equal(TestTags.StatusFail, TestTags.StatusPass, TestTags.StatusFail, TestTags.StatusPass, TestTags.StatusPass);
             }
 
             if (isEfd || feature == "attempt_to_fix")

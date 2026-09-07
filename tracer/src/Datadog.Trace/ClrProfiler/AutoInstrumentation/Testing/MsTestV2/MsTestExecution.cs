@@ -122,22 +122,6 @@ internal sealed class MsTestExecution
         }
 
         return false;
-
-        static bool ContainsReference(IList? results, object result)
-        {
-            if (results is not null)
-            {
-                foreach (var observed in results)
-                {
-                    if (ReferenceEquals(observed, result))
-                    {
-                        return true;
-                    }
-                }
-            }
-
-            return false;
-        }
     }
 
     public void RecordNativeAttempt(IList results, TestMethodAttributeExecuteAsyncIntegration.TestRunnerState state, TestAttemptResult summary)
@@ -148,7 +132,7 @@ internal sealed class MsTestExecution
             summary.IsEfdTest = initial.Summary.IsEfdTest;
         }
 
-        _nativeAttempts!.Add(new NativeAttempt(_nativeAttemptNumber, results, state, summary));
+        _nativeAttempts!.Add(new NativeAttempt(results, state, summary));
     }
 
     public void FinishAttempt(Test test, ITestResult? result, TestStatus status, string? skipReason, bool isDatadogRetry = false)
@@ -189,29 +173,35 @@ internal sealed class MsTestExecution
         }
 
         _datadogRetriesApplied = true;
-        // Update only the final native attempt, before MSTest assigns retry metadata and runs cleanup.
-        // Earlier attempts stay intact for MTP's retry history.
+        // A custom policy can return an earlier attempt. Retry only the results it selected,
+        // before MSTest assigns retry metadata and runs cleanup.
         foreach (var attempt in _nativeAttempts)
         {
-            if (attempt.Number != _nativeAttemptNumber)
-            {
-                continue;
-            }
-
             var originalResults = new object?[attempt.Results.Count];
             attempt.Results.CopyTo(originalResults, 0);
             for (var row = 0; row < originalResults.Length; row++)
             {
+                if (!ContainsReference(results, originalResults[row]))
+                {
+                    continue;
+                }
+
                 // A custom executor can return several results. Retry each result independently;
                 // a passing result must not hide another failure or receive its retry outcome.
                 var original = originalResults[row].DuckCast<ITestResultV4_4>()!;
+                var pendingTest = FindPendingTest(original.Instance);
+                if (pendingTest is not null)
+                {
+                    pendingTest.IsSelectedNativeResult = true;
+                }
+
                 var summary = attempt.Summary;
                 summary.ResultStatus = TestMethodAttributeExecuteAsyncIntegration.GetStatusFromOutcome(original.Outcome);
                 summary.AllowRetries = summary.ResultStatus != TestStatus.Skip;
                 summary.InitialExecutionPassed = summary.ResultStatus == TestStatus.Pass;
                 summary.InitialExecutionFailed = summary.ResultStatus == TestStatus.Fail;
                 object?[] rowResults = [originalResults[row]];
-                var retryName = FindPendingTest(original.Instance)?.Test.Name;
+                var retryName = pendingTest?.Test.Name;
                 var finalResults = await TestMethodAttributeExecuteAsyncIntegration.RunRetriesAsync(rowResults, attempt.State, summary, retryName).ConfigureAwait(false);
                 ObserveResults(finalResults);
                 for (var index = 0; index < results.Count; index++)
@@ -287,6 +277,7 @@ internal sealed class MsTestExecution
 
                 PendingTest? last = null;
                 PendingTest? lastNativeAttempt = null;
+                PendingTest? selectedNativeResult = null;
                 var anyDatadogRetryPassed = false;
                 var anyFailed = false;
                 var executions = 0;
@@ -306,6 +297,10 @@ internal sealed class MsTestExecution
                     else
                     {
                         lastNativeAttempt = candidate;
+                        if (candidate.IsSelectedNativeResult)
+                        {
+                            selectedNativeResult = candidate;
+                        }
                     }
 
                     anyFailed |= candidate.Status == TestStatus.Fail;
@@ -317,9 +312,10 @@ internal sealed class MsTestExecution
                     last = candidate;
                 }
 
-                // MSTest keeps the last native attempt, even if an earlier one passed.
-                // Datadog's retries can recover that result; ATF still considers every failure.
-                var anyPassed = lastNativeAttempt?.Status == TestStatus.Pass || anyDatadogRetryPassed;
+                // The policy chooses the native result; Datadog retries can recover it.
+                // If the policy threw or returned no results, use the last recorded attempt.
+                // ATF still considers every failure, including attempts discarded by the policy.
+                var anyPassed = (selectedNativeResult ?? lastNativeAttempt)?.Status == TestStatus.Pass || anyDatadogRetryPassed;
                 completed.Test.Close(
                     completed.Status,
                     completed.Duration,
@@ -357,6 +353,22 @@ internal sealed class MsTestExecution
         }
     }
 
+    private static bool ContainsReference(IList? results, object? result)
+    {
+        if (results is not null)
+        {
+            foreach (var observed in results)
+            {
+                if (ReferenceEquals(observed, result))
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
     private PendingTest? FindPendingTest(object? result)
     {
         foreach (var test in _pendingTests!)
@@ -386,10 +398,8 @@ internal sealed class MsTestExecution
         return null;
     }
 
-    private sealed class NativeAttempt(int number, IList results, TestMethodAttributeExecuteAsyncIntegration.TestRunnerState state, TestAttemptResult summary)
+    private sealed class NativeAttempt(IList results, TestMethodAttributeExecuteAsyncIntegration.TestRunnerState state, TestAttemptResult summary)
     {
-        public int Number { get; } = number;
-
         public IList Results { get; } = results;
 
         public TestMethodAttributeExecuteAsyncIntegration.TestRunnerState State { get; } = state;
@@ -408,5 +418,7 @@ internal sealed class MsTestExecution
         public TimeSpan Duration { get; } = duration;
 
         public bool IsDatadogRetry { get; } = isDatadogRetry;
+
+        public bool IsSelectedNativeResult { get; set; }
     }
 }

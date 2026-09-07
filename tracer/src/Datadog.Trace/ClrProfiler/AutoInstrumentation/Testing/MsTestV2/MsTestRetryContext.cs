@@ -62,7 +62,9 @@ internal sealed class MsTestRetryContext : IDisposable
             _methodInfo.SetArguments(_arguments);
             context.SetTestData(_arguments);
             context.SetDisplayName(_displayName);
-            context.TestRunCount = ++_testRunCount;
+            // The policy can select an older attempt, but retries follow every native execution.
+            _testRunCount = Math.Max(_testRunCount, previousContext.DuckCast<IMsTestContext>().TestRunCount) + 1;
+            context.TestRunCount = _testRunCount;
             _methodInfo.TestContext = context.Instance!;
             using (context.SetCurrentTestContext(context.Instance!))
             {
