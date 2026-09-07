@@ -4,7 +4,9 @@
 // </copyright>
 
 #if NETFRAMEWORK
+using System.IO;
 using System.Threading.Tasks;
+using Datadog.Trace.Configuration;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -20,6 +22,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
         public SandboxLegacySecurityPolicySmokeTest(ITestOutputHelper output)
             : base(output, "Sandbox.LegacySecurityPolicy")
         {
+            // This test expects instrumentation to fail gracefully, which writes an error log.
+            // Keep that expected error out of the directory scanned by CheckBuildLogsForErrors.
+            SetEnvironmentVariable(ConfigurationKeys.LogDirectory, Path.GetTempPath());
         }
 
         [SkippableFact]
