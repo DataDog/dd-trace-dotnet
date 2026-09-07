@@ -16,7 +16,13 @@ namespace Datadog.Trace.Activity.Handlers
     /// </summary>
     internal sealed class IgnoreActivityHandler : IActivityHandler
     {
-        private static readonly string[] SourcesNames =
+        /// <summary>
+        /// ActivitySources that already have dedicated (non-Activity-based) Datadog auto-instrumentation, so
+        /// their Activities must be ignored to avoid duplicate/conflicting spans. Shared with
+        /// <see cref="ClrProfiler.AutoInstrumentation.Activity.ActivitySourceFilter"/>, which applies the same
+        /// list on the CallTarget interception path — kept as one array so the two paths cannot drift apart.
+        /// </summary>
+        internal static readonly string[] SourcesNames =
         {
             "Couchbase.DotnetSdk.RequestTracer",
             "Couchbase.DotnetSdk.OpenTelemetryRequestTracer",

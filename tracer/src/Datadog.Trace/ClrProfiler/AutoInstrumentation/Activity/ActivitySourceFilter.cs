@@ -8,6 +8,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
+using Datadog.Trace.Activity.Handlers;
 using Datadog.Trace.Sampling;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Activity
@@ -16,25 +17,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Activity
     /// Shared filter for Activity source names that should be ignored because they are already handled
     /// by dedicated Datadog integrations (e.g. ASP.NET Core, HttpClient, SqlClient) or because they
     /// have been explicitly disabled via <c>DD_TRACE_DISABLED_ACTIVITY_SOURCES</c>.
-    /// This mirrors the <c>IgnoreActivityHandler.SourcesNames</c> list used by the managed ActivityListener.
+    /// Uses <see cref="IgnoreActivityHandler.SourcesNames"/> directly (rather than a second copy of the
+    /// list) so the CallTarget interception path and the managed ActivityListener path cannot drift apart.
     /// </summary>
     internal static class ActivitySourceFilter
     {
-        private static readonly string[] IgnoredSources =
-        {
-            "Couchbase.DotnetSdk.RequestTracer",
-            "HttpHandlerDiagnosticListener",
-            "Microsoft.AspNetCore",
-            "Microsoft.EntityFrameworkCore",
-            "MySqlConnector",
-            "Npgsql",
-            "System.Net.Http.Desktop",
-            "SqlClientDiagnosticListener",
-            "Experimental.System.Net.NameResolution",
-            "Experimental.System.Net.Http.Connections",
-            "Experimental.System.Net.Sockets",
-        };
-
         private static List<Regex>? _disabledSourceGlobs;
         private static bool _disableAll;
 
@@ -50,7 +37,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Activity
                 return false;
             }
 
-            foreach (var ignored in IgnoredSources)
+            foreach (var ignored in IgnoreActivityHandler.SourcesNames)
             {
                 if (string.Equals(sourceName, ignored, StringComparison.Ordinal))
                 {
