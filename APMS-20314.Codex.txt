@@ -1,0 +1,266 @@
+APMS-20314 dump analysis
+========================
+
+Summary
+-------
+
+The dumps strongly support the existing Ninject contention diagnosis for the
+hcueuxe site hosted by hCueUx_MobileAppPool. They do not show evidence of a
+Datadog tracer defect.
+
+The affected mobile UX application is putting thousands of short-lived data
+annotation validation attributes through Ninject's global activation cache.
+The cache has extreme churn and contains collision-prone entries. Periodic
+cache pruning and activation operations can consequently spend significant
+time under Ninject's global lock.
+
+Datadog may add enough allocation or execution overhead to push the application
+into this already-problematic regime. However, the dumps do not show that
+Datadog objects, or a specific tracer integration, cause the Ninject cache
+growth.
+
+This diagnosis is specific to hCueUx_MobileAppPool. Of the five distinct
+application pools represented by the dumps, it is the only one that has Ninject
+loaded. In particular, hCueUXAppPool hosts the separate hcueux WebForms
+application, which uses Crystal Reports, has no MVC, and does not load Ninject.
+Any reported latency in hcueux cannot have this Ninject root cause and must be
+investigated separately rather than pooled with hcueuxe results.
+
+
+Artifacts analyzed
+------------------
+
+Twenty w3wp dumps were analyzed from these servers and application pools:
+
+- ZUSE2SHCUDX01 and ZUSE2SHCUDX02
+  - hCueDXAppPool
+  - hCueMobilehCueRestfulDx
+- ZUSE2SHCUUX01 and ZUSE2SHCUUX02
+  - CTAdminUXAppPool
+  - hCueUx_MobileAppPool
+  - hCueUXAppPool
+
+Each application pool had two snapshots, collected approximately 34 minutes
+apart on September 3, 2026.
+
+
+Key heap evidence
+-----------------
+
+Ninject was present only in hCueUx_MobileAppPool. The significant activation-
+cache state was found there:
+
+Dump                         Live cache entries  Cache mutations  Live RequiredAttribute targets
+---------------------------  ------------------  ---------------  ------------------------------
+UX01 08:43                                      9,298        1,583,574                           7,388
+UX01 09:17                                     12,681        1,383,367                          11,375
+UX02 08:45                                      9,093        1,612,317                             306
+UX02 09:18                                        785        2,937,655                             402
+
+Notes about these values:
+
+- "Cache mutations" is the internal HashSet version. It is incremented on
+  successful modifications and demonstrates very high cache churn.
+- The lower version in the second UX01 snapshot indicates that the cache was
+  recreated between snapshots, for example because of an application or
+  AppDomain recycle. Despite that, it had already accumulated more than 11,000
+  RequiredAttribute targets.
+- In UX02, the cache version increased from about 1.6 million to 2.9 million
+  while the live entry count dropped from 9,093 to 785. This is consistent with
+  extensive activation/deactivation and pruning activity.
+
+In the UX01 08:43 dump specifically:
+
+- Ninject's activatedObjects HashSet contained 9,298 live entries.
+- Its slot array had reached at least 32,788 used positions, with many free
+  holes left by removals.
+- The HashSet version was 1,583,574.
+- The managed heap contained exactly 7,388 RequiredAttribute objects.
+- There were exactly 7,388 live WeakShort handles targeting RequiredAttribute
+  objects.
+- The application had loaded
+  Ninject.Web.Mvc.Validation.NinjectDataAnnotationsModelValidatorProvider.
+
+The later UX01 cache contained 12,681 entries. Of these, 11,376 entries (84.5%)
+hashed to one value and formed a single collision chain; 11,375 of those entries
+were RequiredAttribute instances. Operations on that bucket must walk the
+collision chain linearly. This triggers the degenerate HashSet behavior
+previously described, affecting per-request cache operations as well as removal
+during pruning.
+
+The inspected RequiredAttribute instances had identical field state, including
+the same populated error-message resource delegate and default values for the
+remaining fields. Their inherited Attribute.GetHashCode() behavior produces the
+observed common hash value.
+
+Pruning removes entries but does not automatically shrink the HashSet's backing
+arrays. The retained capacity and long history of free slots make later scans
+more expensive even after the live entry count falls. Consequently, the cost
+can become progressively worse over the process lifetime.
+
+The MVC setting AddImplicitRequiredAttributeForValueTypes was true, which is its
+default. This causes MVC to generate implicit RequiredAttribute instances for
+non-nullable value-type properties and supplies the high-volume input that
+triggers the Ninject cache pathology.
+
+NinjectDataAnnotationsModelValidatorProvider was present, while the default
+DataAnnotationsModelValidatorProvider was not. The application defines 37
+custom ValidationAttribute subclasses, but none use injected services. This
+makes replacing the Ninject provider with the default MVC provider a likely
+compatible and targeted mitigation, subject to normal application testing.
+
+No live weak target in this dump had a Datadog.* type. This directly argues
+against the hypothesis that Datadog objects are filling Ninject's activation
+cache.
+
+The other application pools did not load Ninject and therefore cannot exhibit
+this Ninject activation-cache behavior.
+
+
+Thread and lock evidence
+------------------------
+
+None of the twenty snapshots captured ActivationCache.Prune() actively
+executing, and none captured threads waiting on the activation-cache monitor.
+Most CLR worker threads were idle at the instant each dump was taken.
+
+Consequently, these dumps cannot independently measure the duration of a prune
+operation or show the blocking stack in progress. A dump is only an instantaneous
+snapshot, so missing a periodic contention window is expected.
+
+This limitation does not invalidate the heap evidence. The dumps show the exact
+large, high-churn, collision-prone cache state that can make the prune operation
+previously observed in profiles expensive.
+
+
+Datadog tracer findings
+-----------------------
+
+The dumps contain Datadog.Trace.dll version 3.51.1.0. This differs from tracer
+version 2.56 recorded in the original ticket description, so the ticket should
+be updated to reflect the version used when these dumps were collected.
+
+A search of the tracer source found no Ninject activation-cache or MVC
+validation-provider instrumentation. The ASP.NET MVC instrumentation works with
+request context, routes, action parameters, security features, and spans. It
+does not create, resolve, or retain System.ComponentModel.DataAnnotations
+validation attributes.
+
+The only explicit Ninject-specific behavior found in the tracer is a native
+startup safeguard in:
+
+  tracer/src/Datadog.Tracer.Native/cor_profiler.cpp
+
+This safeguard detects Ninject's temporary NinjectModuleLoader AppDomain and
+avoids registering the tracer startup hook there. It is unrelated to activation
+cache population.
+
+Relevant ASP.NET MVC instrumentation is in:
+
+  tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AspNet/AspNetMvcIntegration.cs
+  tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AspNet/ControllerActionInvoker_InvokeAction_Integration.cs
+
+No tracer code path was found that explains the creation of thousands of
+RequiredAttribute instances or their addition to Ninject's activation cache.
+
+
+Conclusion
+----------
+
+With AddImplicitRequiredAttributeForValueTypes enabled,
+NinjectDataAnnotationsModelValidatorProvider is putting thousands of implicit
+RequiredAttribute instances through Ninject's activation pipeline. Ninject
+records them in a global activation cache backed by weak references and a
+HashSet. The cache undergoes millions of modifications, grows to thousands of
+live entries, and places 84.5% of its live values in one collision chain.
+
+When Ninject periodically prunes this cache, or when requests add and remove
+entries, the work happens under its global cache lock. A sufficiently expensive
+operation stalls concurrent controller and dependency resolution. Requests then
+queue behind the lock, producing the long uninstrumented gaps, increased request
+latency, and secondary thread-pool pressure observed in the earlier traces and
+profiles.
+
+For hcueuxe, the evidence confirms an existing application/Ninject performance
+pathology rather than a defect in a specific Datadog integration. The small
+additional overhead of Datadog can push this degenerate path over a performance
+cliff. These dumps do not establish which secondary effect differs from New
+Relic.
+
+This conclusion must not be generalized to hcueux or another application pool
+that does not load Ninject. A latency report for one of those applications is a
+separate symptom requiring its own controlled evidence and diagnosis.
+
+
+Recommended next steps
+----------------------
+
+1. Prefer replacing NinjectDataAnnotationsModelValidatorProvider with MVC's
+   built-in DataAnnotationsModelValidatorProvider in development. The 37 custom
+   ValidationAttribute subclasses do not use injected services, so this is
+   likely compatible. It removes validation attributes from Ninject's activation
+   pipeline and directly targets the demonstrated source of cache pollution.
+
+2. Alternatively, test the customer's prepared activation-cache-disabled
+   configuration in development if the provider change cannot be used.
+
+3. If disabling the cache requires a no-op IActivationCache implementation,
+   validate application behavior
+   carefully. Disabling the cache removes Ninject's double-activation guard and
+   can change OnActivation/OnDeactivation behavior.
+
+4. Perform a controlled before/after load test using the same deployment and
+   infrastructure. Avoid combining profiler changes with application restarts,
+   redeployments, or unrelated configuration changes.
+
+5. During elevated latency, capture three dumps two to five seconds apart. This
+   improves the chance of capturing ActivationCache.Prune() and threads blocked
+   on the global cache monitor.
+
+6. Compare these measurements after the Ninject change:
+
+   - request latency distribution;
+   - Ninject activation-cache live count and version;
+   - number of live RequiredAttribute objects;
+   - lock contention time;
+   - GC frequency and allocation rate;
+   - CLR thread-pool queue length and available workers.
+
+7. If Datadog-versus-New-Relic causality still needs to be isolated, repeat the
+   identical workload under each profiler while collecting the same runtime and
+   contention metrics. The current dumps contain only the Datadog-attached state
+   and therefore cannot answer that comparison directly.
+
+
+Repository changes
+------------------
+
+No tracer source code was changed as part of this investigation.
+
+A standalone investigation sample was added at:
+
+  tracer/test/test-applications/aspnet/Samples.NinjectMvcCache
+
+It targets .NET Framework 4.6, exercises real MVC validator resolution with the
+customer-era MVC and Ninject versions, and supports three restart-selected
+modes: the affected Ninject validator, MVC's default validator, and a no-op
+activation cache. It also includes a concurrent load script and a diagnostic
+endpoint that reports the activation cache's size, backing capacity, hash
+distribution, and live RequiredAttribute count.
+
+An end-to-end test was added at:
+
+  tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/AspNet/
+  NinjectMvcCacheTests.cs
+
+The test uses IisFixture to launch the application under 64-bit IIS Express
+with Datadog auto-instrumentation, creates roughly 12,000 implicit
+RequiredAttribute instances, verifies the degenerate activation-cache shape,
+and confirms that the request produced ASP.NET and ASP.NET MVC spans. The
+sample is included in Datadog.Trace.sln and is a build dependency of the
+integration-test project.
+
+The sample's XML and PowerShell syntax checks pass. A full compile/run remains
+pending because the exact historical Ninject packages are not present in this
+checkout and this environment could not authenticate to the configured NuGet
+feeds during restore.
