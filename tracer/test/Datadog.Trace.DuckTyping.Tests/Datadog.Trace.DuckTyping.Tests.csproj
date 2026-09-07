@@ -9,6 +9,15 @@
   <ItemGroup>
     <ProjectReference Include="..\Datadog.Trace.TestHelpers\Datadog.Trace.TestHelpers.csproj" />
     <ProjectReference Include="..\..\src\Datadog.Trace\Datadog.Trace.csproj" />
+    <ProjectReference Include="..\Datadog.Trace.DuckTyping.Tests.Fixtures\Shared\Datadog.Trace.DuckTyping.Tests.Fixtures.Shared.csproj"
+                      OutputItemType="Content"
+                      CopyToOutputDirectory="PreserveNewest"
+                      TargetPath="AssemblyLoadContextFixtures\Datadog.Trace.DuckTyping.Tests.Fixtures.Shared.dll" />
+    <ProjectReference Include="..\Datadog.Trace.DuckTyping.Tests.Fixtures\Target\Datadog.Trace.DuckTyping.Tests.Fixtures.Target.csproj"
+                      ReferenceOutputAssembly="false"
+                      OutputItemType="Content"
+                      CopyToOutputDirectory="PreserveNewest"
+                      TargetPath="AssemblyLoadContextFixtures\Datadog.Trace.DuckTyping.Tests.Fixtures.Target.dll" />
   </ItemGroup>
   <PropertyGroup Condition="'$(TargetFramework)' == 'netcoreapp3.1'">
     <DefineConstants>$(DefineConstants);INTERFACE_DEFAULTS</DefineConstants>
