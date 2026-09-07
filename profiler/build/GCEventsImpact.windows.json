@@ -1,0 +1,65 @@
+{
+  "enableDatadog": true,
+  "warmUpCount": 2,
+  "count": 10,
+  "scenarios": [
+    {
+      "name": "GC_events_disabled",
+      "isBaseline": true,
+      "environmentVariables": {
+        "DD_PROFILING_GC_ENABLED": "0"
+      }
+    },
+    {
+      "name": "GC_events_clr_only",
+      "environmentVariables": {
+        "DD_INTERNAL_PROFILING_GC_LIFECYCLE_EVENTS_SKIP_PROCESSING": "1"
+      }
+    },
+    {
+      "name": "GC_events_clr_with_profiling",
+      "environmentVariables": {
+        "DD_INTERNAL_PROFILING_GC_LIFECYCLE_EVENTS_SKIP_PROCESSING": "0"
+      }
+    }
+  ],
+  "processName": "Samples.BuggyBits.exe",
+  "processArguments": "--scenario 16384 --allocation-count 360000 --allocation-size 64 --iterations 100 --disableLogs",
+  "processTimeout": 30,
+  "workingDirectory": "$(CWD)\\..\\..\\artifacts\\profiler-build\\bin\\Release-$(arch)\\profiler\\src\\Demos\\Samples.BuggyBits\\net10.0",
+  "environmentVariables": {
+    "COR_ENABLE_PROFILING": "1",
+    "COR_PROFILER": "{BD1A650D-AC5D-4896-B64F-D6FA25D6B26A}",
+    "COR_PROFILER_PATH": "$(CWD)\\..\\..\\artifacts\\monitoring-home\\win-$(arch)\\Datadog.Profiler.Native.dll",
+    "CORECLR_ENABLE_PROFILING": "1",
+    "CORECLR_PROFILER": "{BD1A650D-AC5D-4896-B64F-D6FA25D6B26A}",
+    "CORECLR_PROFILER_PATH": "$(CWD)\\..\\..\\artifacts\\monitoring-home\\win-$(arch)\\Datadog.Profiler.Native.dll",
+    "DD_CLR_ENABLE_NGEN": "true",
+    "DD_PROFILING_ENABLED": "1",
+    "DD_PROFILING_WALLTIME_ENABLED": "0",
+    "DD_PROFILING_CPU_ENABLED": "1",
+    "DD_PROFILING_EXCEPTION_ENABLED": "0",
+    "DD_PROFILING_ALLOCATION_ENABLED": "0",
+    "DD_PROFILING_LOCK_ENABLED": "0",
+    "DD_PROFILING_GC_ENABLED": "1",
+    "DD_PROFILING_HEAP_ENABLED": "0",
+    "DD_PROFILING_HEAPSNAPSHOT_ENABLED": "0",
+    "DD_PROFILING_HTTP_ENABLED": "0",
+    "DD_INTERNAL_PROFILING_WAITHANDLE_ENABLED": "0",
+    "DD_GC_THREADS_CPUTIME_ENABLED": "0",
+    "DD_THREAD_LIFETIME_ENABLED": "0",
+    "DD_TRACE_ENABLED": "0",
+    "DD_PROFILING_MANAGED_ACTIVATION_ENABLED": "0",
+    "DD_PROFILING_METRICS_FILEPATH": "metrics.json",
+    "DOTNET_ROOT": ""
+  },
+  "tags": {
+    "runtime.architecture": "$(arch)",
+    "runtime.name": ".NET Core",
+    "runtime.version": "10.0",
+    "benchmark.job.runtime.name": ".NET 10.0",
+    "benchmark.job.runtime.moniker": "net10.0"
+  },
+  "metricsFilePath": "*metrics.json",
+  "overheadThreshold": 100
+}

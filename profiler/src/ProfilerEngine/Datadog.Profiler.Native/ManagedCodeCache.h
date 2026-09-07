@@ -3,26 +3,40 @@
 
 #pragma once
 
-#include "ServiceBase.h"
-#include "AutoResetEvent.h"
-
 #include <atomic>
-#include <future>
+#include <memory>
 #include <vector>
 #include <unordered_map>
 #include <unordered_set>
 #include <optional>
 #include <shared_mutex>
-#include <thread>
 #include <mutex>
 #include <set>
 #include <algorithm>
-#include <deque>
-#include <functional>
 
 
 #include "cor.h"
 #include "corprof.h"
+
+#ifndef _WINDOWS
+#include "ReaderWriterSpinningMutex.hpp"
+#endif
+
+class CounterMetric;
+class MetricsRegistry;
+
+// The cache read paths can run inside the profiler's signal handlers (SIGPROF for
+// the timer_create CPU profiler, SIGUSR1 for wall-time stack collection). The timed
+// acquire of std::shared_timed_mutex lowers to pthread_rwlock_timedrdlock, which
+// POSIX does not list as async-signal-safe. ReaderWriterSpinningMutex implements the
+// same SharedTimedMutex requirements using only atomics, so it can be used with
+// std::shared_lock/std::unique_lock unchanged.
+// Windows has no signal-based sampling, so the standard type is used there.
+#ifdef _WINDOWS
+using CodeCacheMutex = std::shared_timed_mutex;
+#else
+using CodeCacheMutex = ReaderWriterSpinningMutex;
+#endif
 
 // Represents a single contiguous code range
 struct CodeRange {
@@ -80,7 +94,7 @@ class ManagedCodeCache {
 public:
     static constexpr FunctionID InvalidFunctionId = -1;
 
-    explicit ManagedCodeCache(ICorProfilerInfo4* pProfilerInfo);
+    ManagedCodeCache(ICorProfilerInfo4* pProfilerInfo, MetricsRegistry& metricsRegistry);
     ~ManagedCodeCache();
 
     // Signal-safe lookup methods (no allocation)
@@ -99,7 +113,7 @@ private:
     // Each page has its own data + lock for fine-grained concurrency
     struct PageEntry {
         std::vector<CodeRange> ranges;  // Sorted by startAddress
-        mutable std::shared_mutex lock;  // Reader-writer lock
+        mutable CodeCacheMutex lock;  // Reader-writer lock (timed for signal-handler reads)
         
         PageEntry() = default;
         
@@ -142,55 +156,45 @@ public:
     void AddModuleRangesToCache(std::vector<ModuleCodeRange> moduleCodeRanges);
 #ifdef DD_TEST
     // Test-only hooks to simulate signal-handler contention. IsManaged uses
-    // try_to_lock semantics on these two mutexes and returns std::nullopt when
-    // ownership cannot be acquired. Holding an exclusive lock on either mutex
-    // from another thread deterministically reproduces that "contended" state.
-    std::unique_lock<std::shared_mutex> LockPagesMutexExclusiveForTest()
+    // a time-based acquire on these two mutexes and returns std::nullopt when
+    // ownership cannot be acquired within the timeout. Holding an exclusive lock
+    // on either mutex from another thread deterministically reproduces that
+    // "contended" state.
+    std::unique_lock<CodeCacheMutex> LockPagesMutexExclusiveForTest()
     {
-        return std::unique_lock<std::shared_mutex>(_pagesMutex);
+        return std::unique_lock<CodeCacheMutex>(_pagesMutex);
     }
-    std::unique_lock<std::shared_mutex> LockModulesMutexExclusiveForTest()
+    std::unique_lock<CodeCacheMutex> LockModulesMutexExclusiveForTest()
     {
-        return std::unique_lock<std::shared_mutex>(_modulesMutex);
+        return std::unique_lock<CodeCacheMutex>(_modulesMutex);
     }
 private:
 #endif
-    void AddModuleCodeRangesAsync(std::vector<ModuleCodeRange> moduleCodeRanges);
-    void AddFunctionCodeRangesAsync(std::vector<CodeRange> ranges);
     std::vector<ModuleCodeRange> GetModuleCodeRanges(ModuleID moduleId);
     void InsertCodeRangeIntoPage(PagesMap::iterator pageIt, const CodeRange& range);
 
-    void WorkerThread(std::promise<void> startPromise);
-    
-    // Helper: Ensure a page exists in the map
-    void EnsurePageExists(uint64_t page);
     std::optional<bool> IsManagedImpl(std::uintptr_t ip) const noexcept;
 
     // Map from page number -> page entry (with its own lock)
     PagesMap _pagesMap;
     std::vector<ModuleCodeRange> _modulesCodeRanges;
-    mutable std::shared_mutex _modulesMutex;
+    mutable CodeCacheMutex _modulesMutex;
     
     // Coarse lock ONLY for modifying the map structure itself
     // (adding/removing pages, not modifying page contents)
-    mutable std::shared_mutex _pagesMutex;
+    mutable CodeCacheMutex _pagesMutex;
     
     // Profiler interface (ICorProfilerInfo4 is available in .NET Framework 4.5+)
     ICorProfilerInfo4* _profilerInfo;
-    std::thread _worker;
-    std::atomic<bool> _requestStop;
-    
-    std::deque<std::function<void()>> _workerQueue;
-    std::mutex _queueMutex;
 
-    template<typename WorkType>
-    void EnqueueWork(WorkType work);
+    // Counts how many times IsManaged failed to acquire a lock within the timeout
+    // (signal-handler read path backing off instead of blocking).
+    std::shared_ptr<CounterMetric> _lockFailureMetric;
+
     std::optional<FunctionID> GetFunctionIdImpl(std::uintptr_t ip) const noexcept;
     std::optional<bool> IsCodeInR2RModule(std::uintptr_t ip, bool signalSafe) const noexcept;
     std::optional<FunctionID> GetFunctionFromIP_Original(std::uintptr_t ip) noexcept;
-    void AddFunctionImpl(FunctionID functionId, bool isAsync);
-    
-    AutoResetEvent _workerQueueEvent;
+    void AddFunctionImpl(FunctionID functionId);
 };
 
 // Compile-time checks for signal-safety

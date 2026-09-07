@@ -21,9 +21,15 @@ internal sealed class CodeOwnersResolver
     private readonly SmallCacheOrNoCache<SourcePathCacheKey, SourceOwnership> _sourcePathCache;
     private readonly Func<SourcePathCacheKey, SourceOwnership> _resolveCacheMiss;
 
-    internal CodeOwnersResolver(string? sourceRoot, string? workspacePath, string? repository, string? provider)
+    internal CodeOwnersResolver(
+        string? sourceRoot,
+        string? workspacePath,
+        string? repository,
+        string? provider,
+        string? localRepositoryRoot,
+        string? localRepository)
     {
-        _locatedCodeOwners = new CodeOwnersFileLocator(sourceRoot, workspacePath, repository, provider).LocatedFile;
+        _locatedCodeOwners = new CodeOwnersFileLocator(sourceRoot, workspacePath, repository, provider, localRepositoryRoot, localRepository).LocatedFile;
         _pathResolver = new RepositorySourcePathResolver(sourceRoot);
         // The cache disables itself after the limit instead of retaining an unbounded number of source paths.
         _sourcePathCache = new SmallCacheOrNoCache<SourcePathCacheKey, SourceOwnership>(SourcePathCacheLimit, "CODEOWNERS source paths");

@@ -62,6 +62,38 @@ testing::Matcher<const CharT*> GenericStrEq(const CharT* str)
     return GenericStrEq(std::basic_string<CharT>(str));
 }
 
+class CountingGarbageCollectionsListener : public IGarbageCollectionsListener
+{
+public:
+    void OnGarbageCollectionStart(
+        std::chrono::nanoseconds,
+        int32_t,
+        uint32_t,
+        GCReason,
+        GCType) override
+    {
+        StartCount++;
+    }
+
+    void OnGarbageCollectionEnd(
+        int32_t,
+        uint32_t,
+        GCReason,
+        GCType,
+        bool,
+        std::chrono::nanoseconds,
+        std::chrono::nanoseconds,
+        std::chrono::nanoseconds,
+        uint64_t,
+        uint64_t,
+        uint64_t,
+        uint32_t) override
+    {
+    }
+
+    int StartCount = 0;
+};
+
 TEST(ClrEventsParserTest, ContentionStopV1)
 {
     auto [configuration, mockConfiguration] = CreateConfiguration();
@@ -167,4 +199,51 @@ TEST(ClrEventsParserTest, AllocationTickV4)
     EXPECT_CALL(mockAllocationListener, OnAllocation(0, 12, GenericStrEq(typeName), 123456789, 999, 42)).Times(1);
 
     parser.ParseEvent(12345ns, 4, KEYWORD_GC, EVENT_ALLOCATION_TICK, (ULONG)eventSize, buffer.get());
+}
+
+TEST(ClrEventsParserTest, AllocationTickV4IsProcessedWhenGcLifecycleEventsProcessingIsSkipped)
+{
+    auto [configuration, mockConfiguration] = CreateConfiguration();
+    EXPECT_CALL(mockConfiguration, IsHeapSnapshotSkipTraversal()).WillOnce(testing::Return(false));
+    mockConfiguration.GcLifecycleEventsProcessingSkipped = true;
+    auto [allocationListener, mockAllocationListener] = CreateMockForUniquePtr<IAllocationsListener, MockAllocationListener>();
+    auto parser = ClrEventsParser(allocationListener.get(), nullptr, nullptr, configuration.get(), nullptr);
+
+    auto typeName = WStr("MyType");
+    auto [buffer, eventSize] = CreateAllocationTickEvent(typeName, 0x0, 42, 12, 123456789, 999);
+
+    EXPECT_CALL(mockAllocationListener, OnAllocation(0, 12, GenericStrEq(typeName), 123456789, 999, 42)).Times(1);
+
+    parser.ParseEvent(12345ns, 4, KEYWORD_GC, EVENT_ALLOCATION_TICK, (ULONG)eventSize, buffer.get());
+}
+
+TEST(ClrEventsParserTest, GcLifecycleEventIsProcessedByDefault)
+{
+    auto [configuration, mockConfiguration] = CreateConfiguration();
+    EXPECT_CALL(mockConfiguration, IsHeapSnapshotSkipTraversal()).WillOnce(testing::Return(false));
+    auto parser = ClrEventsParser(nullptr, nullptr, nullptr, configuration.get(), nullptr);
+    auto listener = CountingGarbageCollectionsListener{};
+    parser.Register(&listener);
+
+    GCStartPayload payload{1, 0, GCReason::AllocSmall, GCType::NonConcurrentGC};
+
+    parser.ParseEvent(42ns, 2, KEYWORD_GC, EVENT_GC_START, sizeof(payload), reinterpret_cast<LPCBYTE>(&payload));
+
+    ASSERT_EQ(listener.StartCount, 1);
+}
+
+TEST(ClrEventsParserTest, GcLifecycleEventIsNotProcessedWhenConfigured)
+{
+    auto [configuration, mockConfiguration] = CreateConfiguration();
+    EXPECT_CALL(mockConfiguration, IsHeapSnapshotSkipTraversal()).WillOnce(testing::Return(false));
+    mockConfiguration.GcLifecycleEventsProcessingSkipped = true;
+    auto parser = ClrEventsParser(nullptr, nullptr, nullptr, configuration.get(), nullptr);
+    auto listener = CountingGarbageCollectionsListener{};
+    parser.Register(&listener);
+
+    GCStartPayload payload{1, 0, GCReason::AllocSmall, GCType::NonConcurrentGC};
+
+    parser.ParseEvent(42ns, 2, KEYWORD_GC, EVENT_GC_START, sizeof(payload), reinterpret_cast<LPCBYTE>(&payload));
+
+    ASSERT_EQ(listener.StartCount, 0);
 }

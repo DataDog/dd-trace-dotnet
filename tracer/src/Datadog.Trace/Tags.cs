@@ -249,6 +249,37 @@ namespace Datadog.Trace
         internal const string HttpClientIp = "http.client_ip";
 
         /// <summary>
+        /// The OpenTelemetry semantic convention URI scheme.
+        /// </summary>
+        internal const string UrlScheme = "url.scheme";
+
+        /// <summary>
+        /// The OpenTelemetry semantic convention URI path component.
+        /// </summary>
+        internal const string UrlPath = "url.path";
+
+        /// <summary>
+        /// The OpenTelemetry semantic convention URI query component, without the leading '?'.
+        /// </summary>
+        internal const string UrlQuery = "url.query";
+
+        /// <summary>
+        /// The OpenTelemetry semantic convention User-Agent header value.
+        /// </summary>
+        internal const string UserAgentOriginal = "user_agent.original";
+
+        /// <summary>
+        /// The OpenTelemetry semantic convention client address: the IP address of the original
+        /// client behind all proxies, if known, otherwise the immediate client peer address.
+        /// </summary>
+        internal const string ClientAddress = "client.address";
+
+        /// <summary>
+        /// The OpenTelemetry semantic convention peer address of the network connection.
+        /// </summary>
+        internal const string NetworkPeerAddress = "network.peer.address";
+
+        /// <summary>
         /// The ASP.NET routing template.
         /// </summary>
         internal const string AspNetRoute = "aspnet.route";

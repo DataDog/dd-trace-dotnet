@@ -3,8 +3,11 @@
 
 #pragma once
 
+#include <atomic>
 #include <chrono>
+#include <future>
 #include <memory>
+#include <mutex>
 #include <thread>
 #include <unordered_map>
 
@@ -13,7 +16,6 @@
 #include "corprof.h"
 // end
 
-#include "CallstackProvider.h"
 #include "CounterMetric.h"
 #include "ICollector.h"
 #include "IMetricsSender.h"
@@ -25,8 +27,6 @@
 #include "RawCpuSample.h"
 #include "RawWallTimeSample.h"
 #include "StackSamplerLoop.h"
-#include "MetricsRegistry.h"
-#include "CounterMetric.h"
 #include "ServiceBase.h"
 
 // forward declaration
@@ -78,16 +78,11 @@ class StackSamplerLoopManager
 public:
     StackSamplerLoopManager(
         ICorProfilerInfo4* pCorProfilerInfo,
-        IConfiguration* pConfiguration,
         std::shared_ptr<IMetricsSender> metricsSender,
         IClrLifetime const* clrLifetime,
         IThreadsCpuManager* pThreadsCpuManager,
-        IManagedThreadList* pManagedThreadList,
-        IManagedThreadList* pCodeHotspotThreadList,
-        ICollector<RawWallTimeSample>* pWallTimeCollector,
-        ICollector<RawCpuSample>* pCpuTimeCollector,
-        MetricsRegistry& metricsRegistry,
-        CallstackProvider callstackProvider);
+        StackFramesCollectorBase* pStackFramesCollector,
+        MetricsRegistry& metricsRegistry);
 
     ~StackSamplerLoopManager() override;
 
@@ -99,18 +94,18 @@ public:
     void NotifyCollectionEnd() override;
     void NotifyIterationFinished() override;
 
+    void SetStackSamplerLoop(StackSamplerLoop* pStackSamplerLoop);
+
 private:
     StackSamplerLoopManager() = delete;
 
     inline bool GetUpdateIsThreadSafeForStackSampleCollection(ManagedThreadInfo* pThreadInfo, bool* pIsStatusChanged);
     static inline bool ShouldCollectThread(std::uint64_t threadAggPeriodDeadlockCount, std::uint64_t globalAggPeriodDeadlockCount) ;
 
-    void InitializeSampler();
-
-    void RunWatcherAndSampler();
+    bool RunWatcher();
     void ShutdownWatcher();
 
-    void WatcherLoop();
+    void WatcherLoop(std::promise<void> watcherReadyPromise);
     void WatcherLoopIteration();
     void PerformDeadlockIntervention(const std::chrono::nanoseconds& ongoingStackSampleCollectionDurationNs);
     void LogDeadlockIntervention(
@@ -202,19 +197,16 @@ private:
 private:
     const char* _serviceName = "StackSamplerLoopManager";
     ICorProfilerInfo4* _pCorProfilerInfo;
-    IConfiguration* _pConfiguration = nullptr;
     IThreadsCpuManager* _pThreadsCpuManager = nullptr;
-    IManagedThreadList* _pManagedThreadList = nullptr;
-    IManagedThreadList* _pCodeHotspotsThreadList = nullptr;
-    ICollector<RawWallTimeSample>* _pWallTimeCollector = nullptr;
-    ICollector<RawCpuSample>* _pCpuTimeCollector = nullptr;
 
-    std::unique_ptr<StackSamplerLoop> _pStackSamplerLoop;
-    std::unique_ptr<StackFramesCollectorBase> _pStackFramesCollector;
+    // Non-owning: both are independently-registered IServices; lifetime is managed by
+    // CorProfilerCallback::_services. See SetStackSamplerLoop().
+    StackFramesCollectorBase* _pStackFramesCollector = nullptr;
+    StackSamplerLoop* _pStackSamplerLoop = nullptr;
     std::uint8_t _deadlockInterventionInProgress;
 
     std::unique_ptr<std::thread> _pWatcherThread;
-    bool _isWatcherShutdownRequested;
+    std::atomic<bool> _isWatcherShutdownRequested;
 
     std::mutex _watcherActivityLock;
 
@@ -241,6 +233,4 @@ private:
     std::unique_ptr<Statistics> _currentStatistics;
     MetricsRegistry& _metricsRegistry;
     std::shared_ptr<CounterMetric> _deadlockCountMetric;
-
-    CallstackProvider _callstackProvider;
 };

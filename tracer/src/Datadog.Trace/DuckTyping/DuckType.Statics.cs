@@ -185,24 +185,20 @@ namespace Datadog.Trace.DuckTyping
             }
         }
 
-        private static Type? GetTypeFromPartialName(string partialName, bool throwOnError = false)
+        /// <summary>
+        /// Resolves a possibly-partial assembly-qualified type name, or returns null if it cannot be found.
+        /// </summary>
+        private static Type? GetTypeFromPartialName(string partialName)
         {
-            // We configure it to throw in case throwOnError is true and the partial name contains a version (is not partial).
-            return Type.GetType(partialName, throwOnError: throwOnError && partialName.Contains("Version=")) ??
-                   GetTypeFromPartialNameSlow(partialName, throwOnError);
+            return Type.GetType(partialName, throwOnError: false) ?? GetTypeFromPartialNameSlow(partialName);
 
-            static Type? GetTypeFromPartialNameSlow(string partialName, bool throwOnError = false)
+            static Type? GetTypeFromPartialNameSlow(string partialName)
             {
                 // If the type cannot be found, and the name doesn't contain a version,
                 // we try to find the type in the current domain/alc using any assembly that has the same name.
                 var typePair = partialName.Split([','], StringSplitOptions.RemoveEmptyEntries);
                 if (typePair.Length != 2)
                 {
-                    if (throwOnError)
-                    {
-                        DuckTypeException.Throw($"Invalid type name: {partialName}");
-                    }
-
                     return null;
                 }
 
@@ -227,16 +223,7 @@ namespace Datadog.Trace.DuckTyping
                 }
                 catch
                 {
-                    if (throwOnError)
-                    {
-                        throw;
-                    }
-                }
-
-                // If we were unable to load the type, and we have to throw an error, we do it now.
-                if (throwOnError)
-                {
-                    DuckTypeException.Throw($"Type not found: {partialName}");
+                    // Scanning loaded assemblies is best-effort; GetName() can fail for some of them.
                 }
 
                 return null;

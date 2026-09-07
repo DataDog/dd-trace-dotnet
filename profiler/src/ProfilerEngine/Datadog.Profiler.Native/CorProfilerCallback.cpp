@@ -53,6 +53,8 @@
 #include "Sample.h"
 #include "SampleValueTypeProvider.h"
 #include "SsiManager.h"
+#include "StackFramesCollectorBase.h"
+#include "StackSamplerLoop.h"
 #include "StackSamplerLoopManager.h"
 #include "ThreadsCpuManager.h"
 #include "WallTimeProvider.h"
@@ -619,18 +621,33 @@ void CorProfilerCallback::InitializeServices()
     auto const& sampleTypeDefinitions = valueTypeProvider.GetValueTypes();
     Sample::ValuesCount = sampleTypeDefinitions.size();
 
+    // Stack frames collector is shared by StackSamplerLoopManager and StackSamplerLoop
+    //  (registered separately below), so it's constructed here rather than by either of them.
+    _callstackProvider = CallstackProvider(_memoryResourceManager.GetSynchronizedPool(100, Callstack::MaxSize));
+    _pStackFramesCollector = OsSpecificApi::CreateNewStackFramesCollectorInstance(
+        _pCorProfilerInfo, _pConfiguration.get(), &_callstackProvider, _metricsRegistry);
+
     _pStackSamplerLoopManager = RegisterService<StackSamplerLoopManager>(
         _pCorProfilerInfo,
-        _pConfiguration.get(),
         _metricsSender,
         _pClrLifetime.get(),
+        _pThreadsCpuManager,
+        _pStackFramesCollector.get(),
+        _metricsRegistry);
+
+    _pStackSamplerLoop = RegisterService<StackSamplerLoop>(
+        _pCorProfilerInfo,
+        _pConfiguration.get(),
+        _pStackFramesCollector.get(),
+        _pStackSamplerLoopManager,
         _pThreadsCpuManager,
         _pManagedThreadList,
         _pCodeHotspotsThreadList,
         _pWallTimeProvider,
         _pCpuTimeProvider,
-        _metricsRegistry,
-        CallstackProvider(_memoryResourceManager.GetSynchronizedPool(100, Callstack::MaxSize)));
+        _metricsRegistry);
+
+    _pStackSamplerLoopManager->SetStackSamplerLoop(_pStackSamplerLoop);
 
 #ifdef ARM64
     if (Log::IsDebugEnabled())
@@ -978,6 +995,7 @@ bool CorProfilerCallback::DisposeServices()
 
     _pThreadsCpuManager = nullptr;
     _pStackSamplerLoopManager = nullptr;
+    _pStackSamplerLoop = nullptr;
     _pManagedThreadList = nullptr;
     _pNativeThreadList = nullptr;
     _pCodeHotspotsThreadList = nullptr;
@@ -1441,6 +1459,8 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
 
     _pMetadataProvider = std::make_unique<MetadataProvider>();
     _pMetadataProvider->Initialize();
+    _pMetadataProvider->Add(MetadataProvider::SectionRuntimeSettings, MetadataProvider::EffectiveCpuProfilerType,
+                            to_string(_pConfiguration->GetCpuProfilerType()));
     PrintEnvironmentVariables();
 
     _pSsiManager = std::make_unique<SsiManager>(_pConfiguration.get(), this);
@@ -1583,7 +1603,7 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
     // Use managed code cache
     if (_pConfiguration->UseManagedCodeCache())
     {
-        _managedCodeCache = std::make_unique<ManagedCodeCache>(_pCorProfilerInfo);
+        _managedCodeCache = std::make_unique<ManagedCodeCache>(_pCorProfilerInfo, _metricsRegistry);
         if (!_managedCodeCache->Initialize())
         {
             Log::Error("Failed to initialize managed code cache. The profiler will not run.");
@@ -1844,6 +1864,9 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Shutdown()
 
     // A final .pprof should be generated before exiting
     // The aggregator must be stopped before the provider, since it will call them to get the last samples
+    // (StopServices() will also call Stop() on both of these again later, in the correct reverse-of-
+    // registration order; both are one-shot services, so those later calls are guaranteed no-ops.)
+    _pStackSamplerLoop->Stop();
     _pStackSamplerLoopManager->Stop();
 
 
@@ -2291,7 +2314,9 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ThreadDestroyed(ThreadID threadId
         _systemCallsShield->Unregister();
     }
 
-    if (_pCpuProfiler != nullptr)
+    // pThreadInfo is only set when the thread was still in the managed thread list: there is no timer
+    // to delete otherwise, and UnregisterThread would dereference a null pointer.
+    if (_pCpuProfiler != nullptr && pThreadInfo != nullptr)
     {
         _pCpuProfiler->UnregisterThread(pThreadInfo);
     }
@@ -2818,5 +2843,11 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::EventPipeProviderCreated(EVENTPIP
     }
 
     Log::Debug("Event pipe provider: ", shared::ToString(providerName));
+
+    if (_pEventPipeEventsManager != nullptr)
+    {
+        _pEventPipeEventsManager->OnProviderCreated(provider);
+    }
+
     return S_OK;
 }

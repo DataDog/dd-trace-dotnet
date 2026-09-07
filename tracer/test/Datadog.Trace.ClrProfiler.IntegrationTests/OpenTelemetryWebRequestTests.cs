@@ -12,9 +12,9 @@ using Datadog.Trace.ClrProfiler.IntegrationTests.Helpers;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.TestHelpers;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
-using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 using FluentAssertions;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using VerifyXunit;
 using Xunit;
 using Xunit.Abstractions;
@@ -28,17 +28,21 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     // - url.full credential/query redaction
     // Note: This intentionally only covers OTLP export (which is where the RFC requires typed attribute values).
     [UsesVerify]
-    [Collection(nameof(TestAgentOtlpCollection))]
-    public class OpenTelemetryWebRequestTests : TracingIntegrationTest
+    public class OpenTelemetryWebRequestTests : TracingIntegrationTest, IAsyncLifetime
     {
         private readonly Regex _exceptionStacktraceOtlp400Regex = new(@"stringValue"": ""System.Net.WebException: The remote server returned an error: \(400\) Bad Request.*""");
         private readonly Regex _exceptionStacktraceOtlp500Regex = new(@"stringValue"": ""System.Net.WebException: The remote server returned an error: \(500\) Internal Server Error.*""");
+        private readonly OtlpTestAgentSession _otlpSession = new();
 
         public OpenTelemetryWebRequestTests(ITestOutputHelper output)
             : base("OpenTelemetry.WebRequest", output)
         {
             SetServiceVersion("1.0.0");
         }
+
+        public async Task InitializeAsync() => await _otlpSession.CheckAvailabilityAsync(Output);
+
+        public async Task DisposeAsync() => await _otlpSession.DisposeAsync();
 
         public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.IsWebRequest(metadataSchemaVersion);
 
@@ -52,20 +56,16 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             SetInstrumentationVerification();
 
             var names = OtlpFieldNames.For(isJson: false);
-            var testAgentHost = Environment.GetEnvironmentVariable("TEST_AGENT_HOST") ?? "127.0.0.1";
 
-            await OtlpSnapshotHelper.ClearTestAgentSessionAsync(testAgentHost);
+            // Establishes this token as a real ddapm test-agent session, so that
+            // /test/session/traces only ever returns requests sent after this point.
+            await _otlpSession.StartSessionAsync();
 
             int httpPort = TcpPortProvider.GetOpenPort();
             Output.WriteLine($"Assigning port {httpPort} for the httpPort.");
 
             SetEnvironmentVariable("DD_TRACE_OTEL_SEMANTICS_ENABLED", openTelemetrySemanticsEnabled.ToString());
-
-            // OTEL_TRACES_EXPORTER=otlp is what makes the Datadog SDK emit OTLP instead of msgpack.
-            // Everything else is left at its default dd-trace-dotnet value.
-            SetEnvironmentVariable("OTEL_TRACES_EXPORTER", "otlp");
-            SetEnvironmentVariable("OTEL_EXPORTER_OTLP_PROTOCOL", "http/protobuf");
-            SetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENDPOINT", $"http://{testAgentHost}:4318");
+            ConfigureOtlpExport(_otlpSession);
 
             var applicationStartTimeUnixNano = DateTimeOffset.UtcNow.ToUnixTimeNanoseconds();
 
@@ -74,7 +74,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             using var agent = EnvironmentHelper.GetMockAgent();
             using ProcessResult processResult = await RunSampleAndWaitForExit(agent, arguments: $"Port={httpPort}");
 
-            var tracesRequests = await OtlpSnapshotHelper.WaitForTestAgentDataAsync($"http://{testAgentHost}:4318/test/session/traces");
+            var tracesRequests = await _otlpSession.WaitForTracesAsync();
             tracesRequests.Should().NotBeNullOrEmpty();
 
             // NormalizeSpans overwrites startTimeUnixNano with a fixed placeholder, so capture the

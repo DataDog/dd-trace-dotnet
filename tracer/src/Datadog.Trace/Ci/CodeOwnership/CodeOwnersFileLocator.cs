@@ -21,13 +21,19 @@ internal sealed class CodeOwnersFileLocator
     private readonly string? _provider;
     private readonly string? _repository;
 
-    internal CodeOwnersFileLocator(string? sourceRoot, string? workspacePath, string? repository, string? provider)
+    internal CodeOwnersFileLocator(
+        string? sourceRoot,
+        string? workspacePath,
+        string? repository,
+        string? provider,
+        string? localRepositoryRoot,
+        string? localRepository)
     {
-        _repository = repository;
+        _repository = StringUtil.IsNullOrWhiteSpace(localRepository) ? repository : localRepository;
         _provider = provider;
         var sourceDirectory = RepositorySourcePathResolver.GetSearchStart(sourceRoot, workspacePath);
         var workspaceDirectory = RepositorySourcePathResolver.GetSearchStart(workspacePath, basePath: null);
-        var repositoryRoot = FindGitRoot(sourceDirectory) ?? FindGitRoot(workspaceDirectory);
+        var repositoryRoot = FindGitRoot(sourceDirectory) ?? FindGitRoot(workspaceDirectory) ?? FindGitRoot(localRepositoryRoot);
 
         if (repositoryRoot is not null)
         {

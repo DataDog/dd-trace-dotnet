@@ -620,7 +620,7 @@ internal static partial class IastModule
         if (span?.Type == SpanTypes.Web)
         {
             var route = span.GetTag(Tags.HttpRoute) ?? string.Empty;
-            var method = span.GetTag(Tags.HttpMethod) ?? string.Empty;
+            var method = span.GetHttpMethod() ?? string.Empty;
             var key = $"{method}#{route}";
             if (key.Length > 1)
             {
