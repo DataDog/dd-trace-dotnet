@@ -278,10 +278,17 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Activity
 
             // Ensure IsAllDataRequested is true so that user code guarded by
             // `if (activity.IsAllDataRequested) { activity.AddTag(...); }` will actually run.
-            // The managed ActivityListener did this implicitly by returning AllData from its Sample
-            // callback. Since we skip the managed listener when interception is enabled, we must
-            // set it here, after Start() has populated the Activity's IDs.
-            activity5.IsAllDataRequested = true;
+            // In practice this is already true by the time we get here: our own ActivityListener
+            // stays registered even in interception mode (see ActivityListenerHandler.OnSample) and
+            // requests AllData for every source DefaultActivityHandler catches, so the .NET runtime's
+            // own sampling aggregation has already set this for anything created via an ActivitySource.
+            // Only guard, don't force unconditionally — an Activity created directly (`new Activity(...)`,
+            // bypassing ActivitySource sampling entirely) or one whose listeners explicitly requested
+            // less than AllData should not have that decision silently overridden here.
+            if (!activity5.IsAllDataRequested)
+            {
+                activity5.IsAllDataRequested = true;
+            }
         }
     }
 }

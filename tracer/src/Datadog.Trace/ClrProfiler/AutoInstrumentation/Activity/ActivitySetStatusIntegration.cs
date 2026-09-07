@@ -82,6 +82,16 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Activity
                 return;
             }
 
+            // Because skipMethodBody suppresses Activity's own SetStatus body, Activity.StatusDescription
+            // (the real backing field) never gets written in interception mode. get_StatusDescription is
+            // intercepted to read it back from this "otel.status_description" tag instead, so it must be
+            // written here regardless of status code (Activity.SetStatus accepts a description for any
+            // status, not just Error).
+            if (!string.IsNullOrEmpty(description))
+            {
+                span.SetTag("otel.status_description", description);
+            }
+
             // Map ActivityStatusCode enum value to OTel status string
             // ActivityStatusCode: Unset = 0, Ok = 1, Error = 2
             switch (statusCodeInt)
