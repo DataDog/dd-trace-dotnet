@@ -137,65 +137,6 @@ public class RaspModuleTelemetryTests
         metrics.Should().BeEmpty();
     }
 
-    [Fact]
-    public async Task GivenANullResult_WhenTheContextWasAlreadyDisposed_ThenTheRunIsReportedAsSkipped()
-    {
-        // the request can end between the lifecycle check and the WAF call: nothing was evaluated,
-        // so this is a skip rather than a binding error
-        var rootSpan = CreateRootSpan(disposeAdditiveContext: true);
-
-        var metrics = await RecordAsync(collector => RaspModule.RecordRaspRunOutcome(AddressesConstants.DBStatement, result: null, rootSpan, collector));
-
-        var tags = metrics.Should().ContainSingle(m => m.Name == "rasp.rule.skipped").Which.Tags;
-        tags.Should().Contain("reason:after-request").And.Contain("rule_type:sql_injection");
-    }
-
-    [Fact]
-    public async Task GivenANullResult_WhenTheContextIsStillAlive_ThenTheRunIsReportedAsABindingError()
-    {
-        var rootSpan = CreateRootSpan(disposeAdditiveContext: false);
-
-        var metrics = await RecordAsync(collector => RaspModule.RecordRaspRunOutcome(AddressesConstants.DBStatement, result: null, rootSpan, collector));
-
-        var tags = metrics.Should().ContainSingle(m => m.Name == "rasp.error").Which.Tags;
-        tags.Should().Contain("waf_error:-127").And.Contain("rule_type:sql_injection");
-    }
-
-    [Fact]
-    public async Task GivenAFailedResult_WhenTheContextWasAlreadyDisposed_ThenTheErrorIsStillReported()
-    {
-        // the WAF did run and did return an error, so the disposal that happened afterwards is irrelevant
-        var rootSpan = CreateRootSpan(disposeAdditiveContext: true);
-
-        var metrics = await RecordAsync(collector => RaspModule.RecordRaspRunOutcome(AddressesConstants.DBStatement, CreateResult(-3), rootSpan, collector));
-
-        var tags = metrics.Should().ContainSingle(m => m.Name == "rasp.error").Which.Tags;
-        tags.Should().Contain("waf_error:-3").And.Contain("rule_type:sql_injection");
-    }
-
-    [Fact]
-    public async Task GivenASuccessfulResult_WhenTheOutcomeIsRecorded_ThenNothingIsReported()
-    {
-        var rootSpan = CreateRootSpan(disposeAdditiveContext: false);
-
-        var metrics = await RecordAsync(collector => RaspModule.RecordRaspRunOutcome(AddressesConstants.DBStatement, CreateResult(0), rootSpan, collector));
-
-        metrics.Should().BeEmpty();
-    }
-
-    private static Span CreateRootSpan(bool disposeAdditiveContext)
-    {
-        var traceContext = new TraceContext(new EmptyDatadogTracer());
-
-        if (disposeAdditiveContext)
-        {
-            traceContext.AppSecRequestContext.DisposeAdditiveContext();
-        }
-
-        var spanContext = new SpanContext(parent: null, traceContext, serviceName: "My Service Name", traceId: (TraceId)100, spanId: 200);
-        return new Span(spanContext, DateTimeOffset.Now);
-    }
-
     private static async Task<List<(string Name, string[] Tags)>> RecordAsync(Action<IMetricsTelemetryCollector> record)
     {
         var collector = new MetricsTelemetryCollector(Timeout.InfiniteTimeSpan);

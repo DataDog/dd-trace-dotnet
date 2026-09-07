@@ -652,7 +652,7 @@ namespace Datadog.Trace.AppSec
             return false;
         }
 
-        internal IContext? CreateAdditiveContext() => _waf?.CreateContext();
+        internal IContext? CreateAdditiveContext(bool isRasp = false) => _waf?.CreateContext(isRasp);
 
         private void RunShutdown(Exception? ex)
         {

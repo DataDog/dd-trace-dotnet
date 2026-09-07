@@ -261,22 +261,6 @@ internal static class RaspModule
         metrics.RecordCountRaspRuleSkipped(ruleTypeSkipped.Value);
     }
 
-    internal static void RecordRaspRunOutcome(string address, IResult? result, Span rootSpan)
-        => RecordRaspRunOutcome(address, result, rootSpan, TelemetryFactory.Metrics);
-
-    internal static void RecordRaspRunOutcome(string address, IResult? result, Span rootSpan, IMetricsTelemetryCollector metrics)
-    {
-        // the request can end between the lifecycle check and the WAF call: the additive context is
-        // then gone and nothing was evaluated, which is a skip rather than a binding error
-        if (result is null && rootSpan.Context.TraceContext?.AppSecRequestContext.IsAdditiveContextDisposed == true)
-        {
-            RecordRaspSkipped(address, SkipReason.AfterRequest, metrics);
-            return;
-        }
-
-        RecordRaspError(address, result, metrics);
-    }
-
     internal static void RecordRaspError(string address, IResult? result, IMetricsTelemetryCollector metrics)
     {
         // a timeout is already reported through rasp.timeout, and takes precedence over the return
@@ -357,8 +341,14 @@ internal static class RaspModule
             return;
         }
 
-        var result = securityCoordinator.Value.RunWaf(arguments, runWithEphemeral: true, isRasp: true);
-        RecordRaspRunOutcome(address, result, rootSpan);
+        var result = securityCoordinator.Value.RunWaf(arguments, runWithEphemeral: true, isRasp: true, raspAddress: address);
+
+        // a null result is already reported by whoever knows why it is null: GetOrCreateAdditiveContext
+        // for an unavailable context, RunWaf's catch for a binding failure
+        if (result is not null)
+        {
+            RecordRaspError(address, result, TelemetryFactory.Metrics);
+        }
 
         try
         {

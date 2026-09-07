@@ -17,7 +17,9 @@ namespace Datadog.Trace.AppSec.Waf
 
         bool Disposed { get; }
 
-        public IContext? CreateContext();
+        /// <param name="isRasp">Whether the context serves a RASP evaluation, whose binding errors
+        /// are reported as rasp.error instead of the generic waf.error.</param>
+        public IContext? CreateContext(bool isRasp = false);
 
         /// <summary>
         /// Evaluates persistent data, whose side effects live for the whole context.

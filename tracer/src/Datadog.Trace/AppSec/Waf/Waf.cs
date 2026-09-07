@@ -309,7 +309,7 @@ namespace Datadog.Trace.AppSec.Waf
         /// </summary>
         /// <returns>Context object to perform matching using the provided WAF instance</returns>
         /// <exception cref="Exception">Exception</exception>
-        public IContext? CreateContext()
+        public IContext? CreateContext(bool isRasp = false)
         {
             if (Disposed)
             {
@@ -345,7 +345,14 @@ namespace Datadog.Trace.AppSec.Waf
             else
             {
                 Log.Warning("Context couldn't be created as we couldn't acquire a reader lock");
-                TelemetryFactory.Metrics.RecordCountWafError(Telemetry.Metrics.MetricTags.WafError.BindingError);
+
+                // a RASP run reports its binding errors as rasp.error, the same way Context and
+                // SecurityCoordinator suppress the generic metric for it
+                if (!isRasp)
+                {
+                    TelemetryFactory.Metrics.RecordCountWafError(Telemetry.Metrics.MetricTags.WafError.BindingError);
+                }
+
                 return null;
             }
 

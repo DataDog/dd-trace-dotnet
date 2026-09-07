@@ -11,6 +11,7 @@ using Datadog.Trace.AppSec.Rasp;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Tagging;
+using Datadog.Trace.Telemetry;
 using Datadog.Trace.Util.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
@@ -172,21 +173,6 @@ internal partial class AppSecRequestContext
 
     private IContext? _context;
 
-    /// <summary>
-    /// Gets a value indicating whether the WAF context has already been disposed, which means the
-    /// request has ended and no further WAF call can be made for it.
-    /// </summary>
-    internal bool IsAdditiveContextDisposed
-    {
-        get
-        {
-            lock (_contextSync)
-            {
-                return _isAdditiveContextDisposed;
-            }
-        }
-    }
-
     internal static AppSecRequestContext CreateWithDisposedAdditiveContext()
         => new() { _isAdditiveContextDisposed = true };
 
@@ -202,23 +188,36 @@ internal partial class AppSecRequestContext
         }
     }
 
-    internal IContext? GetOrCreateAdditiveContext(Security security)
+    // raspAddress is set for a RASP run only, and a context that cannot be handed out is then reported
+    // under it: telling an ended request from a failed creation is only reliable while _contextSync is held
+    internal IContext? GetOrCreateAdditiveContext(Security security, string? raspAddress = null)
     {
+        IContext? context;
+        bool disposed;
+
         lock (_contextSync)
         {
-            if (_isAdditiveContextDisposed)
-            {
-                Log.Debug("Additive context was requested when already disposed");
-                return null;
-            }
-
-            if (_context is not null)
-            {
-                return _context;
-            }
-
-            _context = security.CreateAdditiveContext();
-            return _context;
+            disposed = _isAdditiveContextDisposed;
+            context = disposed ? null : _context ??= security.CreateAdditiveContext(raspAddress is not null);
         }
+
+        if (disposed)
+        {
+            Log.Debug("Additive context was requested when already disposed");
+        }
+
+        if (context is null && raspAddress is not null)
+        {
+            if (disposed)
+            {
+                RaspModule.RecordRaspSkipped(raspAddress, RaspModule.SkipReason.AfterRequest);
+            }
+            else
+            {
+                RaspModule.RecordRaspError(raspAddress, result: null, TelemetryFactory.Metrics);
+            }
+        }
+
+        return context;
     }
 }

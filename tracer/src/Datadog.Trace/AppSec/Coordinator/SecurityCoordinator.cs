@@ -7,6 +7,7 @@
 #pragma warning disable CS0282
 using System;
 using System.Collections.Generic;
+using Datadog.Trace.AppSec.Rasp;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Telemetry;
@@ -46,14 +47,16 @@ internal readonly partial struct SecurityCoordinator
         return RunWaf(args, lastTime);
     }
 
-    public IResult? RunWaf(Dictionary<string, object> args, bool lastWafCall = false, bool runWithEphemeral = false, bool isRasp = false, string? sessionId = null)
+    public IResult? RunWaf(Dictionary<string, object> args, bool lastWafCall = false, bool runWithEphemeral = false, bool isRasp = false, string? sessionId = null, string? raspAddress = null)
     {
         SecurityReporter.LogAddressIfDebugEnabled(args);
         IResult? result = null;
 
         try
         {
-            var additiveContext = _appsecRequestContext.GetOrCreateAdditiveContext(_security);
+            // GetOrCreateAdditiveContext reports its own RASP failure: it is the only place that can
+            // tell an ended request from a failed creation without racing a concurrent disposal
+            var additiveContext = _appsecRequestContext.GetOrCreateAdditiveContext(_security, raspAddress);
 
             if (additiveContext is null)
             {
@@ -78,9 +81,16 @@ internal readonly partial struct SecurityCoordinator
         }
         catch (Exception ex) when (ex is not BlockException)
         {
-            if (result is null && !isRasp)
+            if (result is null)
             {
-                TelemetryFactory.Metrics.RecordCountWafError(MetricTags.WafError.BindingError);
+                if (raspAddress is not null)
+                {
+                    RaspModule.RecordRaspError(raspAddress, result: null, TelemetryFactory.Metrics);
+                }
+                else if (!isRasp)
+                {
+                    TelemetryFactory.Metrics.RecordCountWafError(MetricTags.WafError.BindingError);
+                }
             }
 
             var stringBuilder = StringBuilderCache.Acquire();
