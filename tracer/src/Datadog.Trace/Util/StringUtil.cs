@@ -49,7 +49,7 @@ internal static class StringUtil
     {
         foreach (var digit in value)
         {
-            if (digit > '\x7F' || (uint)(digit - 'a') <= 'z' - 'a')
+            if (digit > '\x7F' || char.IsBetween(digit, 'a', 'z'))
             {
                 // Note: we don't call string.ToUpperInvariant() here to avoid potential accidental recursion
                 return CultureInfo.InvariantCulture.TextInfo.ToUpper(value);
@@ -67,7 +67,7 @@ internal static class StringUtil
     {
         foreach (var digit in value)
         {
-            if (digit > '\x7F' || (uint)(digit - 'A') <= 'Z' - 'A')
+            if (digit > '\x7F' || char.IsBetween(digit, 'A', 'Z'))
             {
                 // Note: we don't call string.ToLowerInvariant() here to avoid potential accidental recursion
                 return CultureInfo.InvariantCulture.TextInfo.ToLower(value);
