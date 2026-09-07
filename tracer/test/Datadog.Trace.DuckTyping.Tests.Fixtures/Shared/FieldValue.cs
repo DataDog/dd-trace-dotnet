@@ -7,4 +7,7 @@ namespace Datadog.Trace.DuckTyping.Tests.Fixtures.Shared;
 
 public sealed class FieldValue
 {
+    public const int ExpectedValue = 42;
+
+    public int Value => ExpectedValue;
 }

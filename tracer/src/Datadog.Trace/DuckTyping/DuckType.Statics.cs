@@ -12,7 +12,7 @@ using System.Diagnostics;
 using System.Reflection;
 using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
-#if NET6_0_OR_GREATER
+#if NETCOREAPP3_1 || NET6_0_OR_GREATER
 using System.Runtime.Loader;
 #endif
 // ReSharper disable InconsistentNaming
@@ -47,6 +47,14 @@ namespace Datadog.Trace.DuckTyping
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private static readonly MethodInfo? _defineDynamicAssemblyMethodInfo;
 #endif
+#if NETSTANDARD2_0
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+        private static readonly MethodInfo? _getAssemblyLoadContextMethodInfo;
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+        private static readonly object? _duckTypeAssemblyLoadContext;
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+        private static readonly Dictionary<Assembly, bool> AssembliesInDuckTypeLoadContext;
+#endif
 
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private static long _assemblyCount;
@@ -68,6 +76,12 @@ namespace Datadog.Trace.DuckTyping
             _ignoresAccessChecksToAttributeCtor = typeof(IgnoresAccessChecksToAttribute).GetConstructor(new[] { typeof(string) });
 #if NETSTANDARD2_0 || NETCOREAPP3_1
             _defineDynamicAssemblyMethodInfo = typeof(AssemblyBuilder).GetMethod(nameof(AssemblyBuilder.DefineDynamicAssembly), new[] { typeof(AssemblyName), typeof(AssemblyBuilderAccess) });
+#endif
+#if NETSTANDARD2_0
+            var assemblyLoadContextType = Type.GetType("System.Runtime.Loader.AssemblyLoadContext, System.Runtime.Loader", throwOnError: false);
+            _getAssemblyLoadContextMethodInfo = assemblyLoadContextType?.GetMethod("GetLoadContext", BindingFlags.Public | BindingFlags.Static, binder: null, [typeof(Assembly)], modifiers: null);
+            _duckTypeAssemblyLoadContext = _getAssemblyLoadContextMethodInfo?.Invoke(obj: null, [typeof(DuckType).Assembly]);
+            AssembliesInDuckTypeLoadContext = new();
 #endif
 
             _assemblyCount = 0;
@@ -207,15 +221,57 @@ namespace Datadog.Trace.DuckTyping
                 assemblyName.Version = targetAssembly.GetName().Version;
 
 #if NET6_0_OR_GREATER
-                using var contextualReflectionScope = AssemblyLoadContext.EnterContextualReflection(targetAssembly);
-                var assemblyBuilder = AssemblyBuilder.DefineDynamicAssembly(assemblyName, AssemblyBuilderAccess.Run);
+                AssemblyBuilder assemblyBuilder;
+                if (IsAssemblyInCurrentLoadContext(targetAssembly))
+                {
+                    assemblyBuilder = AssemblyBuilder.DefineDynamicAssembly(assemblyName, AssemblyBuilderAccess.Run);
+                }
+                else
+                {
+                    using var contextualReflectionScope = AssemblyLoadContext.EnterContextualReflection(targetAssembly);
+                    assemblyBuilder = AssemblyBuilder.DefineDynamicAssembly(assemblyName, AssemblyBuilderAccess.Run);
+                }
 #elif NETSTANDARD2_0 || NETCOREAPP3_1
-                var assemblyBuilder = DefineDynamicAssemblyInTargetLoadContext(assemblyName, targetAssembly.ManifestModule);
+                var assemblyBuilder = IsAssemblyInCurrentLoadContext(targetAssembly)
+                                          ? AssemblyBuilder.DefineDynamicAssembly(assemblyName, AssemblyBuilderAccess.Run)
+                                          : DefineDynamicAssemblyInTargetLoadContext(assemblyName, targetAssembly.ManifestModule);
 #else
                 var assemblyBuilder = AssemblyBuilder.DefineDynamicAssembly(assemblyName, AssemblyBuilderAccess.Run);
 #endif
                 return assemblyBuilder.DefineDynamicModule("MainModule");
             }
+
+#if NETCOREAPP3_1 || NET6_0_OR_GREATER
+            static bool IsAssemblyInCurrentLoadContext(Assembly targetAssembly)
+            {
+#if NET6_0_OR_GREATER
+                var currentLoadContext = AssemblyLoadContext.CurrentContextualReflectionContext
+                                      ?? AssemblyLoadContext.GetLoadContext(typeof(DuckType).Assembly);
+#else
+                var currentLoadContext = AssemblyLoadContext.GetLoadContext(typeof(DuckType).Assembly);
+#endif
+                return ReferenceEquals(AssemblyLoadContext.GetLoadContext(targetAssembly), currentLoadContext);
+            }
+#elif NETSTANDARD2_0
+            static bool IsAssemblyInCurrentLoadContext(Assembly targetAssembly)
+            {
+                // AssemblyLoadContext is not part of the .NET Standard 2.0 contract. Resolve it at runtime
+                // so the fast path does not add a System.Runtime.Loader dependency to Datadog.Trace.
+                if (_getAssemblyLoadContextMethodInfo is null)
+                {
+                    return true;
+                }
+
+                if (!AssembliesInDuckTypeLoadContext.TryGetValue(targetAssembly, out var isInDuckTypeLoadContext))
+                {
+                    var targetAssemblyLoadContext = _getAssemblyLoadContextMethodInfo.Invoke(obj: null, [targetAssembly]);
+                    isInDuckTypeLoadContext = ReferenceEquals(targetAssemblyLoadContext, _duckTypeAssemblyLoadContext);
+                    AssembliesInDuckTypeLoadContext.Add(targetAssembly, isInDuckTypeLoadContext);
+                }
+
+                return isInDuckTypeLoadContext;
+            }
+#endif
 
 #if NETSTANDARD2_0 || NETCOREAPP3_1
             static AssemblyBuilder DefineDynamicAssemblyInTargetLoadContext(AssemblyName assemblyName, Module targetModule)
