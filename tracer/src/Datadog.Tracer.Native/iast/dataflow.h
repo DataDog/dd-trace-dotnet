@@ -116,6 +116,9 @@ namespace iast
         void Shutdown() override;
         RejitHandlerModule* GetOrAddModule(ModuleID moduleId) override;
         bool HasModuleAndMethod(ModuleID moduleId, mdMethodDef methodDef) override;
+        void NotifyModuleLoaded(ModuleID moduleId) override;
+        void AcquireInFlightRequest() override;
+        void ReleaseInFlightRequest() override;
         void RemoveModule(ModuleID moduleId) override;
         void AddNGenInlinerModule(ModuleID moduleId) override;
 

@@ -41,6 +41,9 @@ public:
     virtual void Shutdown() = 0;
     virtual RejitHandlerModule* GetOrAddModule(ModuleID moduleId) = 0;
     virtual bool HasModuleAndMethod(ModuleID moduleId, mdMethodDef methodDef) = 0;
+    virtual void NotifyModuleLoaded(ModuleID moduleId) = 0;
+    virtual void AcquireInFlightRequest() = 0;
+    virtual void ReleaseInFlightRequest() = 0;
     virtual void RemoveModule(ModuleID moduleId) = 0;
     virtual void AddNGenInlinerModule(ModuleID moduleId) = 0;
 
@@ -97,15 +100,24 @@ protected:
                                   const std::vector<RejitRequestDefinition>& definitions,
                                   std::vector<MethodIdentifier>& rejitRequests);
 
+    // Counts one request as in flight until the returned token is destroyed. Must be held for as
+    // long as a module list taken from CorProfiler::module_ids is used.
+    std::shared_ptr<void> AcquireInFlightRequestToken();
+
 protected:
     std::mutex m_modules_lock;
     std::unordered_map<ModuleID, std::unique_ptr<RejitHandlerModule>> m_modules;
     std::mutex m_ngenInlinersModules_lock;
     std::vector<ModuleID> m_ngenInlinersModules;
 
-    // Unloaded modules. PreprocessRejitRequests skips these so we don't call into the CLR after unload.
+    // Unloaded modules. PreprocessRejitRequests skips these so we don't call into the CLR after
+    // unload. An entry is only needed while a request that could name the module is in flight, so
+    // unloads are recorded only while m_in_flight_requests is non-zero, and the whole set is
+    // dropped once the last request completes. Counting requests rather than modules keeps this
+    // O(1) per request; the cost is that an entry outlives the request that needed it.
     std::mutex m_unloaded_modules_lock;
     std::unordered_set<ModuleID> m_unloaded_modules;
+    size_t m_in_flight_requests = 0;
 
 public:
     RejitPreprocessor(CorProfiler* corProfiler, std::shared_ptr<RejitHandler> rejit_handler,
@@ -114,6 +126,9 @@ public:
     void Shutdown() override;
     RejitHandlerModule* GetOrAddModule(ModuleID moduleId) override;
     bool HasModuleAndMethod(ModuleID moduleId, mdMethodDef methodDef) override;
+    void NotifyModuleLoaded(ModuleID moduleId) override;
+    void AcquireInFlightRequest() override;
+    void ReleaseInFlightRequest() override;
     void RemoveModule(ModuleID moduleId) override;
     void AddNGenInlinerModule(ModuleID moduleId) override;
     HRESULT RejitMethod(FunctionControlWrapper& functionControl) override;

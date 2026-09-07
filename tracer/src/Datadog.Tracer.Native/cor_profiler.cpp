@@ -552,6 +552,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id, HR
         return S_OK;
     }
 
+    rejit_handler->NotifyModuleLoaded(module_id);
+
     auto hr = TryRejitModule(module_id, modules.Ref());
 
     // Push integration definitions from past modules that were unable to be added
@@ -600,6 +602,13 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id, HR
             {
                 Logger::Warn("Timeout while waiting for the rejit requests to be processed. Rejit will continue asynchronously, but some initial calls may not be instrumented");
             }
+        }
+
+        // The enqueued request holds its own token now, so drop the ones taken when the modules
+        // were queued above.
+        for (size_t i = 0; i < rejitModuleIds.size(); i++)
+        {
+            rejit_handler->ReleaseInFlightRequest();
         }
     }
 
@@ -1163,6 +1172,9 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id, std::vector<ModuleID>& m
 
                 if (methodReferences.size() > 0)
                 {
+                    // The module can unload while it waits here, so keep its unload recorded until
+                    // we dequeue it.
+                    rejit_handler->AcquireInFlightRequest();
                     rejit_module_method_pairs.push_back(std::make_pair(module_id, methodReferences));
                 }
             }

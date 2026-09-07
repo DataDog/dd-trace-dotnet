@@ -50,6 +50,9 @@ void RejitPreprocessor<RejitRequestDefinition>::Shutdown()
 
     m_modules.clear();
     m_ngenInlinersModules.clear();
+
+    // Nothing reads m_unloaded_modules after shutdown, but tokens can still be outstanding, so
+    // clear the set and leave m_in_flight_requests for them to unwind.
     m_unloaded_modules.clear();
 }
 
@@ -68,12 +71,9 @@ RejitHandlerModule* RejitPreprocessor<RejitRequestDefinition>::GetOrAddModule(Mo
         return find_res->second.get();
     }
 
-    // The CLR can reuse a ModuleID, so drop it from the unloaded set.
-    {
-        std::lock_guard<std::mutex> unloadedGuard(m_unloaded_modules_lock);
-        m_unloaded_modules.erase(moduleId);
-    }
-
+    // Deliberately does not clear m_unloaded_modules: this runs for unloaded modules too (callers
+    // such as RemoveProbes pass stored ModuleIDs), and clearing here would unprotect in-flight
+    // requests. NotifyModuleLoaded handles ModuleID reuse.
     RejitHandlerModule* moduleHandler = new RejitHandlerModule(moduleId, m_rejit_handler.get());
     m_modules[moduleId] = std::unique_ptr<RejitHandlerModule>(moduleHandler);
     return moduleHandler;
@@ -99,6 +99,47 @@ bool RejitPreprocessor<RejitRequestDefinition>::HasModuleAndMethod(ModuleID modu
 }
 
 template <class RejitRequestDefinition>
+void RejitPreprocessor<RejitRequestDefinition>::NotifyModuleLoaded(ModuleID moduleId)
+{
+    if (m_rejit_handler->IsShutdownRequested())
+    {
+        return;
+    }
+
+    // The CLR can reuse a ModuleID, so drop it from the unloaded set.
+    std::lock_guard<std::mutex> unloadedGuard(m_unloaded_modules_lock);
+    m_unloaded_modules.erase(moduleId);
+}
+
+template <class RejitRequestDefinition>
+void RejitPreprocessor<RejitRequestDefinition>::AcquireInFlightRequest()
+{
+    std::lock_guard<std::mutex> unloadedGuard(m_unloaded_modules_lock);
+    ++m_in_flight_requests;
+}
+
+template <class RejitRequestDefinition>
+void RejitPreprocessor<RejitRequestDefinition>::ReleaseInFlightRequest()
+{
+    std::lock_guard<std::mutex> unloadedGuard(m_unloaded_modules_lock);
+    if (--m_in_flight_requests == 0)
+    {
+        // Nothing can name an unloaded module any more.
+        m_unloaded_modules.clear();
+    }
+}
+
+template <class RejitRequestDefinition>
+std::shared_ptr<void> RejitPreprocessor<RejitRequestDefinition>::AcquireInFlightRequestToken()
+{
+    AcquireInFlightRequest();
+
+    // The deleter runs when the last owner goes away, which also covers a work item that is
+    // discarded without running.
+    return std::shared_ptr<void>(nullptr, [this](void*) { ReleaseInFlightRequest(); });
+}
+
+template <class RejitRequestDefinition>
 void RejitPreprocessor<RejitRequestDefinition>::RemoveModule(ModuleID moduleId)
 {
     if (m_rejit_handler->IsShutdownRequested())
@@ -107,6 +148,13 @@ void RejitPreprocessor<RejitRequestDefinition>::RemoveModule(ModuleID moduleId)
     }
 
     // Removes the RejitHandlerModule instance
+    //
+    // TODO: this destroys the handler (and its methods and metadata) while other threads can still
+    // be using it: GetOrAddModule hands out a raw pointer and drops m_modules_lock, so callers such
+    // as ProcessTypeDefForRejit and RejitMethod dereference it unsynchronized with this erase.
+    // The unloaded-module tracking below only stops us picking up a module that unloaded *before*
+    // the request ran; it does not protect a module that unloads mid-request. Pre-existing, and
+    // fixable by holding the handlers in shared_ptr so in-flight users keep them alive.
     std::lock_guard<std::mutex> modulesGuard(m_modules_lock);
     m_modules.erase(moduleId);
 
@@ -115,13 +163,13 @@ void RejitPreprocessor<RejitRequestDefinition>::RemoveModule(ModuleID moduleId)
     m_ngenInlinersModules.erase(std::remove(m_ngenInlinersModules.begin(), m_ngenInlinersModules.end(), moduleId),
                                 m_ngenInlinersModules.end());
 
-    // Record unloaded modules to avoid re-processing them.
+    // Record unloaded modules to avoid re-processing them. With no request in flight there is
+    // nothing holding a module list that could name this module, so there is nothing to track.
     std::lock_guard<std::mutex> unloadedGuard(m_unloaded_modules_lock);
-    if (m_unloaded_modules.size() >= kMaxTrackedUnloadedModules)
+    if (m_in_flight_requests > 0)
     {
-        m_unloaded_modules.clear();
+        m_unloaded_modules.insert(moduleId);
     }
-    m_unloaded_modules.insert(moduleId);
 }
 
 template <class RejitRequestDefinition>
@@ -452,6 +500,8 @@ ULONG RejitPreprocessor<RejitRequestDefinition>::RequestRejitForLoadedModules(
     const std::vector<ModuleID>& modules, const std::vector<RejitRequestDefinition>& definitions,
     bool enqueueInSameThread)
 {
+    // No token taken here: every caller either already holds one for this module list, or holds
+    // CorProfiler::module_ids for the duration of the call, which blocks the unload.
     std::vector<MethodIdentifier> rejitRequests{};
     const auto rejitCount = PreprocessRejitRequests(modules, definitions, rejitRequests);
     RequestRejit(rejitRequests, enqueueInSameThread);
@@ -549,8 +599,12 @@ void RejitPreprocessor<RejitRequestDefinition>::EnqueueRequestRejitForLoadedModu
     DBG("RejitHandler::EnqueueRequestRejitForLoadedModules");
     auto enqueueMeasure = trace::Stats::Instance()->EnqueueRequestRejitForLoadedModulesMeasure();
 
+    // Taken before enqueuing: the modules can unload while the work item sits in the queue.
+    auto requestToken = AcquireInFlightRequestToken();
+
     std::function<void()> action = [=, modules = std::move(modulesVector), definitions = std::move(definitions),
-                                    localPromise = promise, enqueueMeasure = std::move(enqueueMeasure)]() mutable {
+                                    localPromise = promise, enqueueMeasure = std::move(enqueueMeasure),
+                                    requestToken = std::move(requestToken)]() mutable {
         // Process modules for rejit
         const auto rejitCount = RequestRejitForLoadedModules(modules, definitions, true);
 
@@ -907,8 +961,12 @@ void RejitPreprocessor<RejitRequestDefinition>::EnqueuePreprocessRejitRequests(
 
     DBG("RejitHandler::EnqueuePreprocessRejitRequests");
 
+    // Taken before enqueuing: the modules can unload while the work item sits in the queue.
+    auto requestToken = AcquireInFlightRequestToken();
+
     std::function<void()> action = [=, modules = std::move(modulesVector), definitions = std::move(definitions),
-                                    localRejitRequests = rejitRequests, localPromise = promise]() mutable {
+                                    localRejitRequests = rejitRequests, localPromise = promise,
+                                    requestToken = std::move(requestToken)]() mutable {
         // Process modules for rejit
         const auto rejitCount = PreprocessRejitRequests(modules, definitions, localRejitRequests);
 
