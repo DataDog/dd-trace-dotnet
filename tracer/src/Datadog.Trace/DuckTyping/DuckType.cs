@@ -1417,6 +1417,26 @@ namespace Datadog.Trace.DuckTyping
             private readonly Delegate? _activator;
             private readonly ExceptionDispatchInfo? _exceptionInfo;
 
+            // WORKAROUND: https://github.com/dotnet/runtime/issues/45929
+            // Fixed in the runtime by https://github.com/dotnet/runtime/pull/46636.
+            //
+            // Failed proxy creations are cached, so every caller for the same proxy/target type pair
+            // receives a copy of this CreateTypeResult containing the same ExceptionDispatchInfo and
+            // therefore the same Exception instance. Windows CoreCLR versions before .NET 6 have a race
+            // when that same exception is rethrown concurrently. ExceptionDispatchInfo.Throw() restores
+            // mutable stack-trace and Watson-bucket fields on the Exception. At the same time, another
+            // thread may be reading those fields while constructing a reflection exception wrapper. The
+            // old runtime checks that the Watson-bucket reference is non-null, reads it again later, and
+            // can then dereference null after the concurrent restore. The result is an access violation
+            // followed by a fatal 0x80131506 internal CLR error; managed code cannot catch it.
+            //
+            // This reference is deliberately shared by all copies of the readonly struct, including the
+            // boxed copy used as the failure delegate's target. It lets us serialize every rethrow of one
+            // cached failure. Do not lock on `this`: CreateTypeResult is a value type, so doing so would box
+            // each copy independently and would not provide mutual exclusion. Successful results keep this
+            // field null, so the workaround allocates a lock only for failed proxy creation results.
+            private readonly object? _failureLock;
+
             /// <summary>
             /// Initializes a new instance of the <see cref="CreateTypeResult"/> struct.
             /// </summary>
@@ -1430,6 +1450,7 @@ namespace Datadog.Trace.DuckTyping
                 _activator = activator;
                 _proxyType = proxyType;
                 _exceptionInfo = exceptionInfo;
+                _failureLock = exceptionInfo is null ? null : new object();
                 TargetType = targetType;
                 Success = proxyType != null && exceptionInfo == null;
                 if (exceptionInfo is not null)
@@ -1451,7 +1472,7 @@ namespace Datadog.Trace.DuckTyping
                 [MethodImpl(MethodImplOptions.AggressiveInlining)]
                 get
                 {
-                    _exceptionInfo?.Throw();
+                    ThrowCachedException();
                     return _proxyType;
                 }
             }
@@ -1511,14 +1532,50 @@ namespace Datadog.Trace.DuckTyping
                     ThrowHelper.ThrowNullReferenceException("The activator for this proxy type is null, check if the type can be created by calling 'CanCreate()'");
                 }
 
+                // The non-generic API invokes the failure delegate through reflection. DynamicInvoke catches
+                // the exception raised by ThrowOnError<T> and creates a TargetInvocationException around it.
+                // The Windows CoreCLR crash described above occurs while the runtime copies Watson buckets
+                // from that shared inner exception into the new wrapper. Locking only inside ThrowOnError<T>
+                // would release the lock before DynamicInvoke constructs and throws the wrapper, leaving the
+                // crashing portion of the runtime path unprotected. Keep the same shared lock around the whole
+                // DynamicInvoke operation so it covers both the ExceptionDispatchInfo.Throw() and the runtime's
+                // subsequent TargetInvocationException construction. Monitor locks are re-entrant, so the
+                // failure delegate can safely acquire the same lock again in ThrowCachedException().
+                if (_failureLock is { } failureLock)
+                {
+                    lock (failureLock)
+                    {
+                        return _activator.DynamicInvoke(instance)!;
+                    }
+                }
+
                 return _activator.DynamicInvoke(instance)!;
             }
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             private T? ThrowOnError<T>(object? instance)
             {
-                _exceptionInfo?.Throw();
+                ThrowCachedException();
                 return default;
+            }
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            private void ThrowCachedException()
+            {
+                var exceptionInfo = _exceptionInfo;
+                if (exceptionInfo is null)
+                {
+                    return;
+                }
+
+                // Keep the monitor held for the complete dispatch of the shared exception. This protects the
+                // direct generic failure path and ProxyType getter. The non-generic path additionally acquires
+                // this lock around DynamicInvoke so that reflection's TargetInvocationException wrapper is also
+                // created while concurrent restores of the shared ExceptionDispatchInfo are excluded.
+                lock (_failureLock!)
+                {
+                    exceptionInfo.Throw();
+                }
             }
         }
 
