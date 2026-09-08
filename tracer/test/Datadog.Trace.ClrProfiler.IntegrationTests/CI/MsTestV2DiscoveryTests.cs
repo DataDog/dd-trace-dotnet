@@ -26,47 +26,55 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI;
 [Trait("RunOnWindows", "True")]
 public class MsTestV2DiscoveryTests(ITestOutputHelper output) : TestingFrameworkEvpTest("MSTestTestsDiscovery", output)
 {
-#if DEFAULT_SAMPLES
-    private const string PackageVersion = "";
-#else
-    private const string PackageVersion = "4.4.0";
-#endif
+    public static IEnumerable<object[]> InputSources()
+    {
+        foreach (var version in PackageVersions.MSTestDiscovery)
+        {
+            var packageVersion = (string)version[0];
+            yield return [packageVersion, "MSTestTestsDiscovery"];
+            // The second assembly is available at matching versions only in the versioned matrix.
+            if (packageVersion.Length > 0 && PackageVersions.MSTest2.Any(other => (string)other[0] == packageVersion))
+            {
+                yield return [packageVersion, "MSTestTests2"];
+            }
+        }
+    }
 
-    [Theory]
-#if !DEFAULT_SAMPLES
-    [InlineData("4.3.3")]
-#endif
-    [InlineData(PackageVersion)]
-    public Task RepeatingAnInputSourceDoesNotChangeDiscovery(string packageVersion)
-        => RunDiscoveryScenario(packageVersion, 20, 14, true, string.Empty, 10, useMtp: false, additionalSample: "MSTestTestsDiscovery");
+    public static IEnumerable<object[]> DiscoveryScenarios()
+    {
+        foreach (var version in PackageVersions.MSTestDiscovery)
+        {
+            var packageVersion = (string)version[0];
+            yield return [packageVersion, 20, 14, true, string.Empty, 10, false];
+            // Keep the pre-4.4 discovery regression; the remaining cases exercise the new async hook.
+            if (packageVersion.Length > 0 && new Version(packageVersion) < new Version(4, 4))
+            {
+                continue;
+            }
 
-#if !DEFAULT_SAMPLES
-    [Theory]
-    [InlineData("4.3.3")]
-    [InlineData("4.4.0")]
-    public Task MultipleInputAssembliesPreserveTheDiscoveryThreshold(string packageVersion)
-        // With this VSTest invocation, 4.3.3 still applies the threshold to the selected sample.
-        => RunDiscoveryScenario(packageVersion, 20, 14, true, "FullyQualifiedName~Samples.MSTestTestsDiscovery", 10, useMtp: false, additionalSample: "MSTestTests2");
-#endif
-
-    [Theory]
-#if !DEFAULT_SAMPLES
-    [InlineData("4.3.3", 20, 14, true, "", 10, false)]
-#endif
-    [InlineData(PackageVersion, 10, 12, true, "", 10, false)]
-    [InlineData(PackageVersion, 20, 14, true, "", 10, false)]
-    [InlineData(PackageVersion, 30, 16, false, "", 10, false)]
-    [InlineData(PackageVersion, 0, 16, false, "", 10, false)]
-    [InlineData(PackageVersion, 10, 3, false, "FullyQualifiedName~Case10", 1, false)]
-    [InlineData(PackageVersion, 20, 0, false, "FullyQualifiedName~MissingTest", 0, false)]
+            yield return [packageVersion, 10, 12, true, string.Empty, 10, false];
+            yield return [packageVersion, 30, 16, false, string.Empty, 10, false];
+            yield return [packageVersion, 0, 16, false, string.Empty, 10, false];
+            yield return [packageVersion, 10, 3, false, "FullyQualifiedName~Case10", 1, false];
+            yield return [packageVersion, 20, 0, false, "FullyQualifiedName~MissingTest", 0, false];
 #if NET8_0_OR_GREATER
-    [InlineData(PackageVersion, 10, 12, true, "", 10, true)]
-    [InlineData(PackageVersion, 20, 14, true, "", 10, true)]
-    [InlineData(PackageVersion, 30, 16, false, "", 10, true)]
-    [InlineData(PackageVersion, 0, 16, false, "", 10, true)]
-    [InlineData(PackageVersion, 10, 3, false, "FullyQualifiedName~Case10", 1, true)]
-    [InlineData(PackageVersion, 20, 0, false, "FullyQualifiedName~MissingTest", 0, true)]
+            yield return [packageVersion, 10, 12, true, string.Empty, 10, true];
+            yield return [packageVersion, 20, 14, true, string.Empty, 10, true];
+            yield return [packageVersion, 30, 16, false, string.Empty, 10, true];
+            yield return [packageVersion, 0, 16, false, string.Empty, 10, true];
+            yield return [packageVersion, 10, 3, false, "FullyQualifiedName~Case10", 1, true];
+            yield return [packageVersion, 20, 0, false, "FullyQualifiedName~MissingTest", 0, true];
 #endif
+        }
+    }
+
+    [Theory]
+    [MemberData(nameof(InputSources))]
+    public Task InputSourcesPreserveTheDiscoveryThreshold(string packageVersion, string additionalSample)
+        => RunDiscoveryScenario(packageVersion, 20, 14, true, additionalSample == "MSTestTestsDiscovery" ? string.Empty : "FullyQualifiedName~Samples.MSTestTestsDiscovery", 10, useMtp: false, additionalSample: additionalSample);
+
+    [Theory]
+    [MemberData(nameof(DiscoveryScenarios))]
     public Task DiscoveryControlsTheFaultySessionThreshold(string packageVersion, int threshold, int expectedAttempts, bool faulty, string filter, int expectedTests, bool useMtp)
         => RunDiscoveryScenario(packageVersion, threshold, expectedAttempts, faulty, filter, expectedTests, useMtp);
 

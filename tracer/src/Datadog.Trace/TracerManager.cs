@@ -12,7 +12,6 @@ using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.AppSec;
-using Datadog.Trace.Ci;
 using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
@@ -129,6 +128,12 @@ namespace Datadog.Trace
                 Interlocked.Exchange(ref _perTraceSettings, new(traceSampler, spanSampler, schema, mutableSettings));
             }
         }
+
+        /// <summary>
+        /// Gets or sets the callback that completes pending events before process shutdown closes writers.
+        /// Assignment replaces the callback; repeated singleton factories do not accumulate registrations.
+        /// </summary>
+        internal static Func<Exception, Task> ShutdownCallback { get; set; }
 
         /// <summary>
         /// Gets the global <see cref="TracerManager"/> instance used by all <see cref="Tracer"/> instances
@@ -733,22 +738,20 @@ namespace Datadog.Trace
             ServiceDiscoveryHelper.StoreTracerMetadata(tracerSettings, tracerSettings.Manager.InitialMutableSettings);
         }
 
-        /// <summary>
-        /// Closes test sessions before shared services, regardless of whether APM or CI initialized first.
-        /// Standalone manager disposal does not use this process-wide shutdown hook.
-        /// </summary>
         private static async Task RunShutdownTasksAsync(Exception ex)
         {
             try
             {
-                await TestOptimization.ShutdownAsync(ex).ConfigureAwait(false);
+                if (ShutdownCallback is { } callback)
+                {
+                    await callback(ex).ConfigureAwait(false);
+                }
             }
-            catch (Exception shutdownException)
+            finally
             {
-                Log.Error(shutdownException, "Error closing test sessions on shutdown.");
+                // Writers must still be flushed and disposed if their producer fails to shut down.
+                await RunShutdownTasksAsync(_instance, _heartbeatTimer).ConfigureAwait(false);
             }
-
-            await RunShutdownTasksAsync(_instance, _heartbeatTimer).ConfigureAwait(false);
         }
 
         private static async Task RunShutdownTasksAsync(TracerManager instance, Timer heartbeatTimer)
