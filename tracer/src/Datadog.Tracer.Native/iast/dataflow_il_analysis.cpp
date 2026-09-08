@@ -880,6 +880,8 @@ namespace iast
 
     //----------------------------------------
 
+    static constexpr int default_branch_id_ = -1;
+
     Branch::Branch(InstructionInfo* instruction, std::vector<InstructionInfo*>* stack)
     {
         this->Instruction = instruction;
@@ -887,6 +889,7 @@ namespace iast
         {
             Stack = *stack;
         }
+        Id = default_branch_id_;
     }
 
     InstructionInfo* Branch::Pop(ILAnalysis& analysis, InstructionInfo* instruction)
@@ -927,7 +930,7 @@ namespace iast
     {
         if (force || addedBranches.find(branch->Instruction) == addedBranches.end())
         {
-            if (branch->Id == -1)
+            if (branch->Id == default_branch_id_)
             {
                 branch->Id = (int)addedBranches.size();
             }
