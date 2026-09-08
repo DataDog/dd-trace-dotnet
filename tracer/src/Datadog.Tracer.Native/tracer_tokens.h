@@ -13,7 +13,7 @@ namespace trace
 class TracerTokens : public CallTargetTokens
 {
 private:
-    ICorProfilerInfo4* _profiler_info;
+    ICorProfilerInfo4* _profiler_info = nullptr;
     mdMemberRef beginArrayMemberRef = mdMemberRefNil;
     mdMemberRef beginMethodFastPathRefs[FASTPATH_COUNT];
     mdMemberRef endVoidMemberRef = mdMemberRefNil;
