@@ -98,6 +98,11 @@ namespace Datadog.Trace.TestHelpers
 
         public ITestOutputHelper Output { get; set; }
 
+        /// <summary>
+        /// Gets or sets the opt-in directory for rejected gzip bodies in the temporary MSTest investigation.
+        /// </summary>
+        public string DecompressionFailureDirectory { get; set; }
+
         public AgentConfiguration Configuration { get; set; }
 
         public IImmutableList<NameValueCollection> TelemetryRequestHeaders { get; private set; } = ImmutableList<NameValueCollection>.Empty;
@@ -913,7 +918,7 @@ namespace Datadog.Trace.TestHelpers
             {
                 try
                 {
-                    var body = request.ReadStreamBody();
+                    var body = request.ReadStreamBody(DecompressionFailureDirectory);
                     var headerCollection = new NameValueCollection();
                     foreach (var header in request.Headers)
                     {
