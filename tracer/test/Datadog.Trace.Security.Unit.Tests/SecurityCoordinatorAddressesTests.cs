@@ -8,7 +8,6 @@ using System.Collections.Generic;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Coordinator;
 using Datadog.Trace.AppSec.Waf;
-using Datadog.Trace.Security.Unit.Tests.Utils;
 using FluentAssertions;
 #if NETFRAMEWORK
 using System.IO;
@@ -25,11 +24,12 @@ using static Datadog.Trace.AppSec.Coordinator.SecurityCoordinator;
 namespace Datadog.Trace.Security.Unit.Tests;
 
 /// <summary>
-/// Who sends which address to the WAF, and when. The request addresses go out once per request and the
-/// response status only when the response is actually known, so these pin the coordinator side of it
-/// rather than what the WAF makes of it.
+/// Who sends which address to the WAF, and when: on ASP.NET Core the request addresses go out once per
+/// request (Framework refreshes them on every BeginRequest), and the response status only once the
+/// response is actually known. The WAF itself is mocked here, this is the coordinator side of it.
 /// </summary>
-public class SecurityCoordinatorAddressesTests : WafLibraryRequiredTest
+[Collection(nameof(SecuritySequentialTests))]
+public class SecurityCoordinatorAddressesTests
 {
     [Fact]
     public void GivenARequestContext_WhenTheRequestAddressesAreClaimedTwice_ThenOnlyTheFirstCallerSendsThem()

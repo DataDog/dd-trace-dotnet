@@ -12,9 +12,10 @@ using Xunit;
 namespace Datadog.Trace.Security.Unit.Tests;
 
 /// <summary>
-/// The tracer now sends each request address to the WAF once, so a later run of the same request only
-/// carries what changed. These tests pin what that costs: what the WAF still derives from the addresses
-/// of an earlier run, and what genuinely has to be re-supplied.
+/// On ASP.NET Core the tracer now sends each request address to the WAF once, so a later run of the same
+/// request only carries what changed (Framework keeps re-sending them on every BeginRequest). These tests
+/// pin what that costs at the WAF level: what it still derives from the addresses of an earlier run, and
+/// what genuinely has to be re-supplied.
 /// </summary>
 public class WafAddressReuseTests : WafLibraryRequiredTest
 {
@@ -43,10 +44,9 @@ public class WafAddressReuseTests : WafLibraryRequiredTest
     }
 
     /// <summary>
-    /// ASP.NET only puts its session cookie in Request.Cookies once the session id has been read, which
-    /// happens on the last WAF call of the request, so a request that arrived without cookies has none to
-    /// send at the beginning and does have one to send at the end. Not re-reading them there is what
-    /// empties the cookie halves of the session fingerprint.
+    /// A cookie that only becomes available after the first run has to be re-supplied on a later one for
+    /// the session fingerprint to be complete: the WAF doesn't fill the cookie halves of
+    /// _dd.appsec.fp.session from a set of cookies it was never given.
     /// </summary>
     [Theory]
     [InlineData(true)]
