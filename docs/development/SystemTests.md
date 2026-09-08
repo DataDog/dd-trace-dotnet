@@ -15,7 +15,7 @@ against a system-tests feature branch:
 1. Navigate to the [consolidated-pipeline](https://dev.azure.com/datadoghq/dd-trace-dotnet/_build?definitionId=54)
 2. Click `Run Pipeline`, and select your dd-trace-dotnet branch
 3. Click `Variables`, and set `system_tests_branch` to the system-tests branch or tag name
-4. Select `Stages To Run`, and select `build_linux`, `package_linux` and `system_tests` to avoid using excessive resources
+4. Select `Stages To Run`, and select `merge_commit_id`, `build_linux_tracer`, `build_linux_profiler`, `build_dd_dotnet_linux`, `build_linux_universal`, `package_linux` and `system_tests` to avoid using excessive resources
 
 `system_tests_branch` accepts a branch or tag name, not a commit SHA. No source edit is
 needed, and there is nothing to revert before merging.
