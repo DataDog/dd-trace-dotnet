@@ -81,6 +81,7 @@ Run commands from the repository root. Unit and integration test targets require
 - Implement `OnMethodBegin` and `OnMethodEnd` or `OnAsyncMethodEnd` handlers.
 - Use constrained duck types or `DuckCast<T>()` for third-party types.
 - Add tests under `tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests` and samples under `tracer/test/test-applications/integrations`.
+- Add span assertions to `tracer/test/Datadog.Trace.TestHelpers/SpanMetadataV0Rules.cs`, `SpanMetadataV1Rules.cs`, and `SpanMetadataOTelRules.cs` for new spans, then regenerate `docs/span_attribute_schema/v0.md` and `v1.md` with `./tracer/build.sh GenerateSpanDocumentation`. Those two files are generated; do not edit them by hand.
 
 Read `docs/development/AutomaticInstrumentation.md`, `docs/development/InstrumentationGenerator.md`, and `docs/development/DuckTyping.md` before implementing an integration. Use `docs/development/for-ai/InstrumentationGenerator-CLI.md` for the CLI schemas and error behavior.
 
@@ -180,6 +181,16 @@ In these paths:
 Do not introduce interfaces, provider structs, or generic constraints mechanically in ordinary code. Use them where dependencies need substitution or where a demonstrated critical path benefits.
 
 Tests use xUnit for managed code and GoogleTest for native code. Prefer inline assertions such as `SomeMethod().Should().Be(expected)` and `[Theory]` data over duplicated `[Fact]` tests. Many integration tests require Docker services from `docker-compose.yml`.
+
+Integration tests compare traces against Verify snapshots in `tracer/test/snapshots`. A mismatch writes a `.received.*` file next to the `.verified.*` file. Never hand-edit `.verified.*` files. Review the diff, then accept intended changes with `UpdateSnapshots`, which replaces verified files with the received ones:
+
+```bash
+./tracer/build.sh UpdateSnapshots       # .\tracer\build.cmd UpdateSnapshots on Windows
+```
+
+Report snapshot changes as part of verification; a large snapshot diff usually means a span, tag, or schema change that needs review.
+
+For integration tests, prefer the repository's `[CombinatorialOrPairwiseData]` attribute over hand-written `[MemberData]` matrices; read `docs/development/XunitCombinatorial.md`.
 
 For CI failures and smoke tests, use `docs/development/CI/TroubleshootingCIFailures.md` and `docs/development/CI/RunSmokeTestsLocally.md`.
 
