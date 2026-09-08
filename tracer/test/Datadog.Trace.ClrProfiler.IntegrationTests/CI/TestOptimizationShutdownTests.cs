@@ -25,6 +25,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI;
 public class TestOptimizationShutdownTests(ITestOutputHelper output) : TestingFrameworkEvpTest("TestOptimizationShutdown", output)
 {
     [Theory]
+    [InlineData("concurrent", "explicit-close")]
+    [InlineData("concurrent", "process-exit")]
+    [InlineData("concurrent", "exception")]
     [InlineData("ci-first", "explicit-close")]
     [InlineData("apm-first", "explicit-close")]
     [InlineData("ci-first", "process-exit")]
