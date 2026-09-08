@@ -43,8 +43,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             [PackageVersionData(nameof(PackageVersions.Aerospike))] string packageVersion,
             [MetadataSchemaVersionData] string metadataSchemaVersion)
         {
-            _aerospikeFixture.SkipIfUnavailable();
-            ConfigureContainers(_aerospikeFixture);
+            await ConfigureContainers(_aerospikeFixture);
 
             SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
             var isExternalSpan = metadataSchemaVersion == "v0";
