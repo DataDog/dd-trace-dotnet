@@ -24,11 +24,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     [UsesVerify]
     public class AerospikeTests : TracingIntegrationTest, IClassFixture<AerospikeFixture>
     {
+        private readonly AerospikeFixture _aerospikeFixture;
+
         public AerospikeTests(ITestOutputHelper output, AerospikeFixture aerospikeFixture)
             : base("Aerospike", output)
         {
+            _aerospikeFixture = aerospikeFixture;
             SetServiceVersion("1.0.0");
-            ConfigureContainers(aerospikeFixture);
         }
 
         public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.IsAerospike(metadataSchemaVersion);
@@ -41,6 +43,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             [PackageVersionData(nameof(PackageVersions.Aerospike))] string packageVersion,
             [MetadataSchemaVersionData] string metadataSchemaVersion)
         {
+            _aerospikeFixture.SkipIfUnavailable();
+            ConfigureContainers(_aerospikeFixture);
+
             SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
             var isExternalSpan = metadataSchemaVersion == "v0";
             var clientSpanServiceName = isExternalSpan ? $"{EnvironmentHelper.FullSampleName}-aerospike" : EnvironmentHelper.FullSampleName;
