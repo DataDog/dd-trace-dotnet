@@ -43,10 +43,10 @@ internal static class Sha256Helper
     {
         System.Diagnostics.Debug.Assert(buffer.Length >= Sha256HashSizeBytes, "buffer.Length must be at least 32");
 
-        var maxInputSize = encoding.GetMaxByteCount(input.Length);
-        var inputBuffer = maxInputSize <= 512
+        var inputSize = encoding.GetByteCount(input);
+        var inputBuffer = inputSize <= 512
                               ? stackalloc byte[512]
-                              : new byte[maxInputSize];
+                              : new byte[inputSize];
         var encodeCount = encoding.GetBytes(input, inputBuffer);
         var encodedInput = inputBuffer.Slice(0, encodeCount);
 
@@ -71,11 +71,11 @@ internal static class Sha256Helper
 
     private static byte[] ComputeHash(string input, Encoding encoding)
     {
-        var maxInputSize = encoding.GetMaxByteCount(input.Length);
+        var inputSize = encoding.GetByteCount(input);
         byte[]? pooledArray = null;
         try
         {
-            pooledArray = ArrayPool<byte>.Shared.Rent(maxInputSize);
+            pooledArray = ArrayPool<byte>.Shared.Rent(inputSize);
             var encodeCount = encoding.GetBytes(input, charIndex: 0, charCount: input.Length, pooledArray, byteIndex: 0);
 
             using var sha256 = SHA256.Create();

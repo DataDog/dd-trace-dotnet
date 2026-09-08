@@ -7,6 +7,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Reflection;
 using System.Threading;
 using Datadog.Trace.Ci;
@@ -83,7 +84,7 @@ internal static class Common
         return paramValue.ToString() ?? "(null)";
     }
 
-    internal static TestParameters CreateTestParameters(object[]? testMethodArguments, ParameterInfo[]? methodParameters, string? metadataTestName)
+    internal static TestParameters CreateTestParameters(object[]? testMethodArguments, ParameterInfo[]? methodParameters, string? metadataTestName, bool useParameterIndexForUnnamedParameters = false)
     {
         var testParameters = new TestParameters
         {
@@ -103,7 +104,7 @@ internal static class Common
 
         for (var i = 0; i < methodParameters.Length; i++)
         {
-            var key = methodParameters[i].Name ?? string.Empty;
+            var key = methodParameters[i].Name ?? (useParameterIndexForUnnamedParameters ? i.ToString(CultureInfo.InvariantCulture) : string.Empty);
             testParameters.Arguments[key] = testMethodArguments is not null && i < testMethodArguments.Length
                                                 ? GetParametersValueData(testMethodArguments[i])
                                                 : "(default)";
@@ -112,10 +113,10 @@ internal static class Common
         return testParameters;
     }
 
-    internal static bool ShouldSkip(string testSuite, string testName, object[]? testMethodArguments, ParameterInfo[]? methodParameters, string? moduleName = null, string? metadataTestName = null, bool allowParametersMetadataMismatch = false)
-        => ShouldSkip(testSuite, testName, testMethodArguments, methodParameters, out _, moduleName, metadataTestName, allowParametersMetadataMismatch);
+    internal static bool ShouldSkip(string testSuite, string testName, object[]? testMethodArguments, ParameterInfo[]? methodParameters, string? moduleName = null, string? metadataTestName = null, bool allowParametersMetadataMismatch = false, bool includeMetadataTestNameInFingerprint = true, bool useParameterIndexForUnnamedParameters = false)
+        => ShouldSkip(testSuite, testName, testMethodArguments, methodParameters, out _, moduleName, metadataTestName, allowParametersMetadataMismatch, includeMetadataTestNameInFingerprint, useParameterIndexForUnnamedParameters);
 
-    internal static bool ShouldSkip(string testSuite, string testName, object[]? testMethodArguments, ParameterInfo[]? methodParameters, out SkippableTest? skippableTest, string? moduleName = null, string? metadataTestName = null, bool allowParametersMetadataMismatch = false)
+    internal static bool ShouldSkip(string testSuite, string testName, object[]? testMethodArguments, ParameterInfo[]? methodParameters, out SkippableTest? skippableTest, string? moduleName = null, string? metadataTestName = null, bool allowParametersMetadataMismatch = false, bool includeMetadataTestNameInFingerprint = true, bool useParameterIndexForUnnamedParameters = false)
     {
         skippableTest = null;
         var currentContext = SynchronizationContext.Current;
@@ -140,7 +141,11 @@ internal static class Common
 
                     if (parameters?.TryGetFingerprint(out var expectedFingerprint) == true)
                     {
-                        localTestParameters ??= CreateTestParameters(testMethodArguments, methodParameters, metadataTestName);
+                        localTestParameters ??= CreateTestParameters(
+                            testMethodArguments,
+                            methodParameters,
+                            includeMetadataTestNameInFingerprint ? metadataTestName : null,
+                            useParameterIndexForUnnamedParameters);
                         localTestParametersFingerprint ??= localTestParameters.GetFingerprint();
                         if (string.Equals(expectedFingerprint, localTestParametersFingerprint, StringComparison.Ordinal))
                         {

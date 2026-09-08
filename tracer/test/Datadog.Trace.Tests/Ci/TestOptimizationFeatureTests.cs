@@ -1367,6 +1367,39 @@ public class TestOptimizationFeatureTests : SettingsTestsBase
     }
 
     [Fact]
+    public void MsTestShouldSkipMatchesOversizedParametersWithoutEmittedDisplayNameMetadata()
+    {
+        var skippableFeature = new Mock<ITestOptimizationSkippableFeature>();
+        var testOptimization = CreateTestOptimization(CreateSettings(), Directory.GetCurrentDirectory());
+        testOptimization.Setup(x => x.SkippableFeature).Returns(skippableFeature.Object);
+
+        var method = typeof(TestOptimizationFeatureTests).GetMethod(nameof(SampleParameterizedItrTest), BindingFlags.NonPublic | BindingFlags.Static)!;
+        var testSuite = typeof(TestOptimizationFeatureTests).FullName!;
+        var value = new string('a', 6_000);
+        const string DisplayName = "Custom display name";
+        var parameters = Common.CreateTestParameters([value], method.GetParameters(), metadataTestName: null, useParameterIndexForUnnamedParameters: true).ToJSON();
+        var candidate = new SkippableTest(nameof(SampleParameterizedItrTest), testSuite, parameters, configurations: null);
+        var testMethod = new MsTestMethodStub(method, [value], DisplayName);
+
+        parameters.Should().Contain("_dd.parameters_fingerprint");
+        skippableFeature.Setup(x => x.GetSkippableTestsFromSuiteAndName(testSuite, nameof(SampleParameterizedItrTest), It.IsAny<string>())).Returns([candidate]);
+        TestOptimization.Instance = testOptimization.Object;
+
+        try
+        {
+            MsTestIntegration.ShouldSkip(testMethod, out var isUnskippable, out var isForcedRun, traits: []).Should().BeTrue();
+
+            isUnskippable.Should().BeFalse();
+            isForcedRun.Should().BeFalse();
+        }
+        finally
+        {
+            TestOptimization.Instance = new TestOptimization();
+            TestOptimization.Instance.Reset();
+        }
+    }
+
+    [Fact]
     public void MsTestShouldSkipRejectsLateDisplayNameMetadataUntilDisplayNameIsResolved()
     {
         var skippableFeature = new Mock<ITestOptimizationSkippableFeature>();
