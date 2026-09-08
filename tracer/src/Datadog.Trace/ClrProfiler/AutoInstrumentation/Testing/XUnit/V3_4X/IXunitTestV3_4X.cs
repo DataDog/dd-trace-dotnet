@@ -1,4 +1,4 @@
-// <copyright file="IXunitTestV3V4.cs" company="Datadog">
+// <copyright file="IXunitTestV3_4X.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -8,9 +8,9 @@
 using System.Collections.Generic;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.V3;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.V3V4;
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.V3_4X;
 
-internal interface IXunitTestV3V4
+internal interface IXunitTestV3_4X
 {
     string? SkipReason { get; }
 

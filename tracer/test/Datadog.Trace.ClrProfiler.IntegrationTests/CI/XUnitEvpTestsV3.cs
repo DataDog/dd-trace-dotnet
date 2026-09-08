@@ -607,7 +607,7 @@ public class XUnitEvpTestsV3 : TestingFrameworkEvpTest
     [SkippableFact]
     [Trait("Category", "EndToEnd")]
     [Trait("Category", "TestIntegrations")]
-    public Task SubmitTracesWithVSTestAdapterV4()
+    public Task SubmitTracesWithVSTestAdapterV3_4X()
     {
         return ExecuteTestAsync(
             "4.0.0",
@@ -615,7 +615,7 @@ public class XUnitEvpTestsV3 : TestingFrameworkEvpTest
             expectedGzip: false,
             new TestScenario(
                 nameof(XUnitEvpTestsV3),
-                "vstest_adapter_v4",
+                "vstest_adapter_v3_4",
                 new MockData(GetSettingsJson("false", "false", "false", "0"), string.Empty, string.Empty),
                 expectedExitCode: 1,
                 expectedSpans: ExpectedTestCount,
@@ -631,7 +631,7 @@ public class XUnitEvpTestsV3 : TestingFrameworkEvpTest
     [SkippableFact]
     [Trait("Category", "EndToEnd")]
     [Trait("Category", "TestIntegrations")]
-    public async Task SubmitCodeCoverageWithVSTestAdapterV4()
+    public async Task SubmitCodeCoverageWithVSTestAdapterV3_4X()
     {
         InjectSession(
             out var sessionId,
@@ -675,7 +675,7 @@ public class XUnitEvpTestsV3 : TestingFrameworkEvpTest
     [SkippableFact]
     [Trait("Category", "EndToEnd")]
     [Trait("Category", "TestIntegrations")]
-    public Task SubmitTracesWithForcedRunV4()
+    public Task SubmitTracesWithForcedRunV3_4X()
     {
         const string skippableTestsJson = """
                                               {
@@ -702,7 +702,7 @@ public class XUnitEvpTestsV3 : TestingFrameworkEvpTest
             expectedGzip: false,
             new TestScenario(
                 nameof(XUnitEvpTestsV3),
-                "forced_run_v4",
+                "forced_run_v3_4",
                 new MockData(
                     GetSettingsJson("false", "true", "false", "0"),
                     string.Empty,
@@ -724,7 +724,7 @@ public class XUnitEvpTestsV3 : TestingFrameworkEvpTest
     [SkippableFact]
     [Trait("Category", "EndToEnd")]
     [Trait("Category", "TestIntegrations")]
-    public Task SubmitTracesWithDisabledTestV4()
+    public Task SubmitTracesWithDisabledTestV3_4X()
     {
         const string testManagementTestsJson = """
                                                      {
@@ -758,7 +758,7 @@ public class XUnitEvpTestsV3 : TestingFrameworkEvpTest
             expectedGzip: false,
             new TestScenario(
                 nameof(XUnitEvpTestsV3),
-                "disabled_test_v4",
+                "disabled_test_v3_4",
                 new MockData(
                     GetSettingsJson("false", "false", "true", "0"),
                     string.Empty,
@@ -779,7 +779,7 @@ public class XUnitEvpTestsV3 : TestingFrameworkEvpTest
     [SkippableFact]
     [Trait("Category", "EndToEnd")]
     [Trait("Category", "TestIntegrations")]
-    public Task SubmitTracesWithItrSkipV4()
+    public Task SubmitTracesWithItrSkipV3_4X()
     {
         const string correlationId = "2e8a36bda770b683345957cc6c15baf9";
         const string skippableTestsJson = $$"""
@@ -807,7 +807,7 @@ public class XUnitEvpTestsV3 : TestingFrameworkEvpTest
             expectedGzip: false,
             new TestScenario(
                 nameof(XUnitEvpTestsV3),
-                "itr_skip_v4",
+                "itr_skip_v3_4",
                 new MockData(
                     GetSettingsJson("false", "true", "false", "0"),
                     string.Empty,
@@ -951,7 +951,7 @@ public class XUnitEvpTestsV3 : TestingFrameworkEvpTest
             return null;
         }
 
-        // The v3/v4 parallel-retry cases share this sample, so keep the existing EVP scenarios scoped to their
+        // The v3 4.x parallel-retry cases share this sample, so keep the existing EVP scenarios scoped to their
         // original namespace. The in-process xUnit runner and VSTest use different filter syntaxes.
         return useDotnetExec
                    ? "-namespace Samples.XUnitTestsV3"

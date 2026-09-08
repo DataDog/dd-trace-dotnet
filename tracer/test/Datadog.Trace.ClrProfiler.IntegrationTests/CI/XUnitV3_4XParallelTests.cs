@@ -1,4 +1,4 @@
-// <copyright file="XUnitV3V4ParallelTests.cs" company="Datadog">
+// <copyright file="XUnitV3_4XParallelTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -18,16 +18,16 @@ using Xunit.Abstractions;
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI;
 
 [Collection(nameof(TransportTestsCollection))]
-public class XUnitV3V4ParallelTests : TestingFrameworkRetriesTests
+public class XUnitV3_4XParallelTests : TestingFrameworkRetriesTests
 {
-    private const string RequireCaseParallelismEnvironmentVariable = "XUNIT_V3_V4_REQUIRE_CASE_PARALLELISM";
-    private const string TestNamespace = "Samples.XUnitTestsV3V4Parallel";
-    private const string TestSuite = "Samples.XUnitTestsV3V4Parallel.TestSuite";
+    private const string RequireCaseParallelismEnvironmentVariable = "XUNIT_V3_4X_REQUIRE_CASE_PARALLELISM";
+    private const string TestNamespace = "Samples.XUnitTestsV3_4XParallel";
+    private const string TestSuite = "Samples.XUnitTestsV3_4XParallel.TestSuite";
 
-    public XUnitV3V4ParallelTests(ITestOutputHelper output)
+    public XUnitV3_4XParallelTests(ITestOutputHelper output)
         : base("XUnitTestsV3", output)
     {
-        SetServiceName("xunit-v3-v4-parallel");
+        SetServiceName("xunit-v3-4x-parallel");
     }
 
     public enum ParallelAlgorithm
@@ -101,7 +101,7 @@ public class XUnitV3V4ParallelTests : TestingFrameworkRetriesTests
     private static void AssertRetryIsolation(List<MockCIVisibilityTest> tests)
     {
         var theoryRows = tests.Where(test => test.Resource == $"{TestSuite}.ConcurrentTheoryRow").ToList();
-        var auxiliaryTests = tests.Where(test => test.Resource.StartsWith("Samples.XUnitTestsV3V4Parallel.Collection", StringComparison.Ordinal)).ToList();
+        var auxiliaryTests = tests.Where(test => test.Resource.StartsWith("Samples.XUnitTestsV3_4XParallel.Collection", StringComparison.Ordinal)).ToList();
         var dynamicSkip = tests.Where(test => test.Resource == $"{TestSuite}.DynamicSkip").ToList();
         var cancellationContextTests = tests.Where(test => test.Resource == $"{TestSuite}.CancellationContextIsAvailableOnRetry").ToList();
 

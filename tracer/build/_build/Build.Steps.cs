@@ -1820,7 +1820,7 @@ partial class Build
     Target CompilePlatformSpecificSamples => _ => _
         .Description("Compiles package-version samples that require artifacts for the current platform")
         .Unlisted()
-        .After(Clean)
+        .After(Clean, CompileManagedSrc)
         .Before(RunIntegrationTests)
         .Requires(() => Framework)
         .DependsOn(HackForMissingMsBuildLocation)
@@ -1842,7 +1842,7 @@ partial class Build
             // that apphost when VSTest starts the test assembly. Because the apphost contains native launcher code, the
             // Windows artifact cannot run in a Linux or macOS test job even though the managed test assembly can.
             //
-            // Only Samples.XUnitTestsV3 is rebuilt here: the xUnit 4 VSTest scenarios exercise the platform apphost
+            // Only Samples.XUnitTestsV3 is rebuilt here: the xUnit v3 4.x VSTest scenarios exercise the platform apphost
             // path. The retry, parallel, and impacted-tests fixtures use `dotnet exec` on the managed DLL and do
             // not need a platform-native apphost. Keeping this as a separate target makes the exceptional platform work
             // explicit and lets the pipeline request it only in Unix jobs that consume the prebuilt Windows samples.

@@ -1,4 +1,4 @@
-// <copyright file="XUnitTestRunnerV3V4Integration.cs" company="Datadog">
+// <copyright file="XUnitTestRunnerV3_4XIntegration.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -14,10 +14,10 @@ using Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.V3;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.DuckTyping;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.V3V4;
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.V3_4X;
 
 /// <summary>
-/// Instruments xUnit v3/v4 individual test execution.
+/// Instruments xUnit v3 4.x individual test execution.
 /// </summary>
 [InstrumentMethod(
     AssemblyName = "xunit.v3.core",
@@ -30,10 +30,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.V3V4;
     IntegrationName = XUnitIntegration.IntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public static class XUnitTestRunnerV3V4Integration
+public static class XUnitTestRunnerV3_4XIntegration
 {
     internal static CallTargetState OnMethodBegin<TTarget, TContext>(TTarget instance, TContext context)
-        where TContext : IXunitTestRunnerContextV3V4
+        where TContext : IXunitTestRunnerContextV3_4X
     {
         if (!XUnitIntegration.IsEnabled || instance is null)
         {
@@ -49,7 +49,7 @@ public static class XUnitTestRunnerV3V4Integration
         return new CallTargetState(null, state);
     }
 
-    internal static TestRunnerStruct CreateTestRunnerData(IXunitTestRunnerContextV3V4 context)
+    internal static TestRunnerStruct CreateTestRunnerData(IXunitTestRunnerContextV3_4X context)
     {
         return new TestRunnerStruct
         {
@@ -85,7 +85,7 @@ public static class XUnitTestRunnerV3V4Integration
     {
         if (state.State is Tuple<Test?, object> { Item1: { } test, Item2: { } context })
         {
-            var testRunnerContext = context.DuckCast<IXunitTestRunnerContextV3V4>();
+            var testRunnerContext = context.DuckCast<IXunitTestRunnerContextV3_4X>();
             XUnitIntegration.FinishTest(test, testRunnerContext.Aggregator);
         }
 

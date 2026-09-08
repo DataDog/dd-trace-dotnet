@@ -553,7 +553,7 @@ internal static class XUnitIntegration
     internal static int GetRemainingAtrBudget()
     {
         var v2Budget = XUnitTestRunnerRunAsyncIntegration.GetRemainingAtrBudget();
-        var v3AndV4Budget = XUnitRetryCoordinator.GetRemainingAtrBudget();
-        return Math.Max(v2Budget, v3AndV4Budget);
+        var v3Budget = XUnitRetryCoordinator.GetRemainingAtrBudget();
+        return Math.Max(v2Budget, v3Budget);
     }
 }

@@ -1,4 +1,4 @@
-// <copyright file="XunitTestMethodRunnerContextCtorV3V4Integration.cs" company="Datadog">
+// <copyright file="XunitTestMethodRunnerContextCtorV3_4XIntegration.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -11,10 +11,10 @@ using Datadog.Trace.Ci;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.DuckTyping;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.V3V4;
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.V3_4X;
 
 /// <summary>
-/// Replaces the xUnit v3/v4 method runner message bus when retry features are enabled.
+/// Replaces the xUnit v3 4.x method runner message bus when retry features are enabled.
 /// </summary>
 [InstrumentMethod(
     AssemblyName = "xunit.v3.core",
@@ -39,7 +39,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.V3V4;
     IntegrationName = XUnitIntegration.IntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public static class XunitTestMethodRunnerContextCtorV3V4Integration
+public static class XunitTestMethodRunnerContextCtorV3_4XIntegration
 {
     internal static CallTargetState OnMethodBegin<TTarget, TTestMethod, TTestCases, TExplicitOption, TMessageBus, TExceptionAggregator, TParallelMode, TScheduler>(
         TTarget instance,

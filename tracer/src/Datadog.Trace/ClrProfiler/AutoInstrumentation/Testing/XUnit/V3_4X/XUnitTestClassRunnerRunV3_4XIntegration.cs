@@ -1,4 +1,4 @@
-// <copyright file="XUnitTestAssemblyRunnerRunV3V4Integration.cs" company="Datadog">
+// <copyright file="XUnitTestClassRunnerRunV3_4XIntegration.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -7,19 +7,17 @@
 
 using System;
 using System.ComponentModel;
-using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.V3;
 using Datadog.Trace.ClrProfiler.CallTarget;
-using Datadog.Trace.DuckTyping;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.V3V4;
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.V3_4X;
 
 /// <summary>
-/// Instruments xUnit v3/v4 test assembly execution.
+/// Instruments xUnit v3 4.x test class execution.
 /// </summary>
 [InstrumentMethod(
     AssemblyName = "xunit.v3.core",
-    TypeName = "Xunit.v3.TestAssemblyRunner`4",
+    TypeName = "Xunit.v3.TestClassRunner`4",
     MethodName = "Run",
     ParameterTypeNames = ["!0"],
     ReturnTypeName = "System.Threading.Tasks.ValueTask`1[Xunit.v3.RunSummary]",
@@ -28,15 +26,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.V3V4;
     IntegrationName = XUnitIntegration.IntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public static class XUnitTestAssemblyRunnerRunV3V4Integration
+public static class XUnitTestClassRunnerRunV3_4XIntegration
 {
     internal static CallTargetState OnMethodBegin<TTarget, TContext>(TTarget instance, TContext context)
-        where TContext : ITestAssemblyRunnerContextV3, IDuckType
-        => XUnitTestAssemblyRunnerRunV3Integration.OnMethodBegin(instance, context);
+        where TContext : IXunitTestClassRunnerContextV3
+        => XUnitTestClassRunnerRunV3Integration.OnMethodBegin(instance, context);
 
     internal static CallTargetReturn<TResult> OnMethodEnd<TTarget, TResult>(TTarget instance, TResult returnValue, Exception exception, in CallTargetState state)
-        => XUnitTestAssemblyRunnerRunV3Integration.OnMethodEnd(instance, returnValue, exception, in state);
+        => XUnitTestClassRunnerRunV3Integration.OnMethodEnd(instance, returnValue, exception, in state);
 
-    internal static Task<TReturn> OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, CallTargetState state)
-        => XUnitTestAssemblyRunnerRunV3Integration.OnAsyncMethodEnd(instance, returnValue, exception, state);
+    internal static TReturn OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, CallTargetState state)
+        => XUnitTestClassRunnerRunV3Integration.OnAsyncMethodEnd(instance, returnValue, exception, state);
 }

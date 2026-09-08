@@ -1,4 +1,4 @@
-#if XUNIT_V3_V4
+#if XUNIT_V3_4X
 
 using System;
 using System.Collections.Concurrent;
@@ -10,11 +10,11 @@ using Xunit.v3;
 
 #nullable enable
 
-namespace Samples.XUnitTestsV3V4Parallel;
+namespace Samples.XUnitTestsV3_4XParallel;
 
 public sealed class TestSuite : IClassFixture<SharedFixture>
 {
-    private static readonly bool RequireCaseParallelism = string.Equals(Environment.GetEnvironmentVariable("XUNIT_V3_V4_REQUIRE_CASE_PARALLELISM"), "1", StringComparison.Ordinal);
+    private static readonly bool RequireCaseParallelism = string.Equals(Environment.GetEnvironmentVariable("XUNIT_V3_4X_REQUIRE_CASE_PARALLELISM"), "1", StringComparison.Ordinal);
     private static readonly ConcurrentDictionary<int, int> TheoryAttempts = new();
     private static readonly ParallelGate FactGate = new(participantCount: 2, RequireCaseParallelism);
     private static readonly ParallelGate TheoryGate = new(participantCount: 4, RequireCaseParallelism);
@@ -88,7 +88,7 @@ public sealed class TestSuite : IClassFixture<SharedFixture>
     [Fact]
     public void DynamicSkip()
     {
-        Assert.Skip("Dynamic skip from the xUnit v3/v4 parallel sample");
+        Assert.Skip("Dynamic skip from the xUnit v3 4.x parallel sample");
     }
 
     [Fact]
@@ -192,7 +192,7 @@ internal sealed class ParallelGate
     }
 }
 
-[Collection("shared-v4-collection")]
+[Collection("shared-v3-4x-collection")]
 public sealed class CollectionSharedFirst
 {
     private readonly ITestOutputHelper _output;
@@ -203,7 +203,7 @@ public sealed class CollectionSharedFirst
     public void PassesInSharedCollection() => _output.WriteLine("shared-collection-first");
 }
 
-[Collection("shared-v4-collection")]
+[Collection("shared-v3-4x-collection")]
 public sealed class CollectionSharedSecond
 {
     private readonly ITestOutputHelper _output;
@@ -214,7 +214,7 @@ public sealed class CollectionSharedSecond
     public void PassesInSharedCollection() => _output.WriteLine("shared-collection-second");
 }
 
-[Collection("independent-v4-collection-a")]
+[Collection("independent-v3-4x-collection-a")]
 public sealed class CollectionIndependentFirst
 {
     private readonly ITestOutputHelper _output;
@@ -225,7 +225,7 @@ public sealed class CollectionIndependentFirst
     public void PassesInIndependentCollection() => _output.WriteLine("independent-collection-first");
 }
 
-[Collection("independent-v4-collection-b")]
+[Collection("independent-v3-4x-collection-b")]
 public sealed class CollectionIndependentSecond
 {
     private readonly ITestOutputHelper _output;

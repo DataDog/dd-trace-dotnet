@@ -1,4 +1,4 @@
-// <copyright file="XUnitV3V4IntegrationTests.cs" company="Datadog">
+// <copyright file="XUnitV3_4XIntegrationTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -16,50 +16,50 @@ using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.V3;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.V3V4;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.V3_4X;
 using FluentAssertions;
 using Xunit;
 
 namespace Datadog.Trace.Tests.Ci;
 
-public class XUnitV3V4IntegrationTests
+public class XUnitV3_4XIntegrationTests
 {
     [Fact]
-    public void V3V4RunSummaryHasExpectedLayoutAndTimeEncoding()
+    public void V3_4XRunSummaryHasExpectedLayoutAndTimeEncoding()
     {
-        Marshal.SizeOf<RunSummaryUnsafeStructV3V4>().Should().Be(24);
-        Marshal.OffsetOf<RunSummaryUnsafeStructV3V4>(nameof(RunSummaryUnsafeStructV3V4.Total)).ToInt32().Should().Be(8);
-        Marshal.OffsetOf<RunSummaryUnsafeStructV3V4>(nameof(RunSummaryUnsafeStructV3V4.Failed)).ToInt32().Should().Be(12);
-        Marshal.OffsetOf<RunSummaryUnsafeStructV3V4>(nameof(RunSummaryUnsafeStructV3V4.Skipped)).ToInt32().Should().Be(16);
-        Marshal.OffsetOf<RunSummaryUnsafeStructV3V4>(nameof(RunSummaryUnsafeStructV3V4.NotRun)).ToInt32().Should().Be(20);
+        Marshal.SizeOf<RunSummaryUnsafeStructV3_4X>().Should().Be(24);
+        Marshal.OffsetOf<RunSummaryUnsafeStructV3_4X>(nameof(RunSummaryUnsafeStructV3_4X.Total)).ToInt32().Should().Be(8);
+        Marshal.OffsetOf<RunSummaryUnsafeStructV3_4X>(nameof(RunSummaryUnsafeStructV3_4X.Failed)).ToInt32().Should().Be(12);
+        Marshal.OffsetOf<RunSummaryUnsafeStructV3_4X>(nameof(RunSummaryUnsafeStructV3_4X.Skipped)).ToInt32().Should().Be(16);
+        Marshal.OffsetOf<RunSummaryUnsafeStructV3_4X>(nameof(RunSummaryUnsafeStructV3_4X.NotRun)).ToInt32().Should().Be(20);
 
-        var summary = new RunSummaryUnsafeStructV3V4 { Time = 1.234m };
+        var summary = new RunSummaryUnsafeStructV3_4X { Time = 1.234m };
 
         summary.Time.Should().Be(1.234m);
     }
 
     [Fact]
-    public void V3V4RunSummaryCompatibilityAcceptsExactLayout()
+    public void V3_4XRunSummaryCompatibilityAcceptsExactLayout()
     {
-        XUnitTestMethodRunnerBaseContextRunTestCaseV3V4Integration.IsRunSummaryCompatible<CompatibleV3V4RunSummary>().Should().BeTrue();
+        XUnitTestMethodRunnerBaseContextRunTestCaseV3_4XIntegration.IsRunSummaryCompatible<CompatibleV3_4XRunSummary>().Should().BeTrue();
     }
 
     [Fact]
-    public void V3V4RunSummaryCompatibilityRejectsV3Layout()
+    public void V3_4XRunSummaryCompatibilityRejectsV3Layout()
     {
-        XUnitTestMethodRunnerBaseContextRunTestCaseV3V4Integration.IsRunSummaryCompatible<RunSummaryUnsafeStruct>().Should().BeFalse();
+        XUnitTestMethodRunnerBaseContextRunTestCaseV3_4XIntegration.IsRunSummaryCompatible<RunSummaryUnsafeStruct>().Should().BeFalse();
     }
 
     [Fact]
-    public void V3RunSummaryCompatibilityRejectsV3V4Layout()
+    public void V3RunSummaryCompatibilityRejectsV3_4XLayout()
     {
-        XUnitTestMethodRunnerBaseRunTestCaseV3Integration.IsRunSummaryCompatible<RunSummaryUnsafeStructV3V4>().Should().BeFalse();
+        XUnitTestMethodRunnerBaseRunTestCaseV3Integration.IsRunSummaryCompatible<RunSummaryUnsafeStructV3_4X>().Should().BeFalse();
     }
 
     [Fact]
-    public void V3V4RunSummaryCompatibilityRejectsUnexpectedFields()
+    public void V3_4XRunSummaryCompatibilityRejectsUnexpectedFields()
     {
-        XUnitTestMethodRunnerBaseContextRunTestCaseV3V4Integration.IsRunSummaryCompatible<IncompatibleV3V4RunSummary>().Should().BeFalse();
+        XUnitTestMethodRunnerBaseContextRunTestCaseV3_4XIntegration.IsRunSummaryCompatible<IncompatibleV3_4XRunSummary>().Should().BeFalse();
     }
 
     [Theory]
@@ -464,7 +464,7 @@ public class XUnitV3V4IntegrationTests
 
     [StructLayout(LayoutKind.Sequential)]
 #pragma warning disable SA1202
-    private struct CompatibleV3V4RunSummary
+    private struct CompatibleV3_4XRunSummary
     {
 #pragma warning disable CS0169
         private long _timeInMilliseconds;
@@ -477,7 +477,7 @@ public class XUnitV3V4IntegrationTests
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    private struct IncompatibleV3V4RunSummary
+    private struct IncompatibleV3_4XRunSummary
     {
 #pragma warning disable CS0169
         private long _timeInMilliseconds;

@@ -1,4 +1,4 @@
-// <copyright file="IXunitTestRunnerContextV3V4.cs" company="Datadog">
+// <copyright file="IXunitTestRunnerContextV3_4X.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -8,13 +8,13 @@
 using System.Reflection;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.V3;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.V3V4;
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.V3_4X;
 
-internal interface IXunitTestRunnerContextV3V4 : IContextBaseV3
+internal interface IXunitTestRunnerContextV3_4X : IContextBaseV3
 {
     MethodInfo Method { get; }
 
     object?[] MethodArguments { get; }
 
-    IXunitTestV3V4 Test { get; }
+    IXunitTestV3_4X Test { get; }
 }
