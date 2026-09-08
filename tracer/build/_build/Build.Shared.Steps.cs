@@ -81,7 +81,7 @@ partial class Build
             foreach (var architecture in ArchitecturesForPlatformForTracer)
             {
                 var workingDirectory = GetNativeOutputDirectory(NativeLoaderTestsProject.Name) / BuildConfiguration / architecture.ToString();
-                var testsResultFile = BuildDataDirectory / "tests" / $"{FileNames.NativeLoaderTests}.Results.{BuildConfiguration}.{TargetPlatform}.xml";
+                var testsResultFile = BuildDataDirectory / "tests" / $"{FileNames.NativeLoaderTests}.Results.{BuildConfiguration}.{architecture}.xml";
                 var exePath = workingDirectory / $"{FileNames.NativeLoaderTests}.exe";
                 var testExe = ToolResolver.GetLocalTool(exePath);
                 testExe($"--gtest_output=xml:{testsResultFile}", workingDirectory: workingDirectory);
