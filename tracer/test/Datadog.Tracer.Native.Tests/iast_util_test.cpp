@@ -227,18 +227,38 @@ TEST(IastIntegrationTests, String_SplitType)
 
 TEST(IastIntegrationTests, String_Trim)
 {
+    EXPECT_EQ("",     iast::Trim(""));
+    EXPECT_EQ("",     iast::Trim(" "));
+    EXPECT_EQ("a",    iast::Trim("a"));
+    EXPECT_EQ("a",    iast::Trim(" a "));
+    EXPECT_EQ("",     iast::Trim("   "));
+    EXPECT_EQ("",     iast::Trim(" ** ", " *"));
+    EXPECT_EQ("Test", iast::Trim("Test"));
     EXPECT_EQ("Test", iast::Trim("  Test  "));
     EXPECT_EQ("Test", iast::Trim(" *Test* ", " *"));
 }
 
 TEST(IastIntegrationTests, String_TrimStart)
 {
+    EXPECT_EQ("",       iast::TrimStart(""));
+    EXPECT_EQ("",       iast::TrimStart(" "));
+    EXPECT_EQ("a",      iast::TrimStart("a"));
+    EXPECT_EQ("a",      iast::TrimStart(" a"));
+    EXPECT_EQ("",       iast::TrimStart("   "));
+    EXPECT_EQ("",       iast::TrimStart(" *", " *"));
+    EXPECT_EQ("Test",   iast::TrimStart("Test"));
     EXPECT_EQ("Test  ", iast::TrimStart("  Test  "));
     EXPECT_EQ("Test* ", iast::TrimStart(" *Test* ", " *"));
 }
 
 TEST(IastIntegrationTests, String_TrimEnd)
 {
+    EXPECT_EQ("",       iast::TrimEnd(""));
+    EXPECT_EQ("",       iast::TrimEnd(" "));
+    EXPECT_EQ("a",      iast::TrimEnd("a "));
+    EXPECT_EQ("",       iast::TrimEnd("   "));
+    EXPECT_EQ("",       iast::TrimEnd(" *", " *"));
+    EXPECT_EQ("Test",   iast::TrimEnd("Test"));
     EXPECT_EQ("  Test", iast::TrimEnd("  Test  "));
     EXPECT_EQ(" *Test", iast::TrimEnd(" *Test* ", " *"));
 }
