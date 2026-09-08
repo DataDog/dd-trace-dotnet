@@ -1417,31 +1417,38 @@ namespace Datadog.Trace.DuckTyping
             private readonly Delegate? _activator;
             private readonly ExceptionDispatchInfo? _exceptionInfo;
 
-#if !NETFRAMEWORK && !NET6_0_OR_GREATER
+#if !NET6_0_OR_GREATER
             // WORKAROUND: https://github.com/dotnet/runtime/issues/45929
             // Fixed in the runtime by https://github.com/dotnet/runtime/pull/46636.
             //
             // Failed proxy creations are cached, so every caller for the same proxy/target type pair
             // receives a copy of this CreateTypeResult containing the same ExceptionDispatchInfo and
-            // therefore the same Exception instance. Windows CoreCLR versions before .NET 6 have a race
-            // when that same exception is rethrown concurrently. ExceptionDispatchInfo.Throw() restores
-            // mutable stack-trace and Watson-bucket fields on the Exception. At the same time, another
-            // thread may be reading those fields while constructing a reflection exception wrapper. The
-            // old runtime checks that the Watson-bucket reference is non-null, reads it again later, and
-            // can then dereference null after the concurrent restore. The result is an access violation
-            // followed by a fatal 0x80131506 internal CLR error; managed code cannot catch it.
+            // therefore the same Exception instance. Windows CoreCLR versions before .NET 6 have a confirmed
+            // race when that same exception is rethrown concurrently. ExceptionDispatchInfo.Throw() restores
+            // mutable stack-trace and Watson-bucket fields on the Exception. At the same time, another thread
+            // may be reading those fields while constructing a reflection exception wrapper. The old runtime
+            // checks that the Watson-bucket reference is non-null, reads it again later, and can then dereference
+            // null after the concurrent restore. The result is an access violation followed by a fatal
+            // 0x80131506 internal CLR error; managed code cannot catch it.
+            //
+            // .NET Framework's Reference Source uses the same relevant managed sequence as the affected
+            // CoreCLR: it restores the mutable ExceptionDispatchInfo state under an internal lock, releases
+            // that lock, and only then throws the shared Exception through Reflection. The Reference Source
+            // does not include the native clr.dll Watson-bucket copy implementation, so it cannot demonstrate
+            // that the native part of this race is absent from .NET Framework. We therefore apply the
+            // process-safety workaround to .NET Framework as well instead of relying on an unverified native
+            // implementation detail. See:
+            // https://github.com/microsoft/referencesource/blob/main/mscorlib/system/exception.cs
             //
             // This reference is deliberately shared by all copies of the readonly struct, including the
             // boxed copy used as the failure delegate's target. It lets us serialize every rethrow of one
             // cached failure. Do not lock on `this`: CreateTypeResult is a value type, so doing so would box
             // each copy independently and would not provide mutual exclusion.
             //
-            // The workaround is compiled only into the netstandard2.0 and netcoreapp3.1 tracer assets. Those
-            // are the assets selected for the affected pre-.NET 6 CoreCLR runtimes. The net461 asset does not
-            // need it because the runtime bug is not present on .NET Framework, and the net6.0 asset does not
-            // need it because that is the first runtime line containing Microsoft's fix. Successful results
-            // on the affected assets keep this field null, so even there a lock is allocated only for failed
-            // proxy creation results.
+            // The workaround is compiled into the net461, netstandard2.0, and netcoreapp3.1 tracer assets. The
+            // net6.0 asset is the only one excluded because .NET 6 is the first runtime line containing
+            // Microsoft's confirmed native fix. Successful results on the affected assets keep this field
+            // null, so even there a lock is allocated only for failed proxy creation results.
             private readonly object? _failureLock;
 #endif
 
@@ -1458,7 +1465,7 @@ namespace Datadog.Trace.DuckTyping
                 _activator = activator;
                 _proxyType = proxyType;
                 _exceptionInfo = exceptionInfo;
-#if !NETFRAMEWORK && !NET6_0_OR_GREATER
+#if !NET6_0_OR_GREATER
                 _failureLock = exceptionInfo is null ? null : new object();
 #endif
                 TargetType = targetType;
@@ -1542,7 +1549,7 @@ namespace Datadog.Trace.DuckTyping
                     ThrowHelper.ThrowNullReferenceException("The activator for this proxy type is null, check if the type can be created by calling 'CanCreate()'");
                 }
 
-#if !NETFRAMEWORK && !NET6_0_OR_GREATER
+#if !NET6_0_OR_GREATER
                 // The non-generic API invokes the failure delegate through reflection. DynamicInvoke catches
                 // the exception raised by ThrowOnError<T> and creates a TargetInvocationException around it.
                 // The Windows CoreCLR crash described above occurs while the runtime copies Watson buckets
@@ -1580,7 +1587,7 @@ namespace Datadog.Trace.DuckTyping
                     return;
                 }
 
-#if !NETFRAMEWORK && !NET6_0_OR_GREATER
+#if !NET6_0_OR_GREATER
                 // Keep the monitor held for the complete dispatch of the shared exception. This protects the
                 // direct generic failure path and ProxyType getter. The non-generic path additionally acquires
                 // this lock around DynamicInvoke so that reflection's TargetInvocationException wrapper is also
@@ -1590,10 +1597,10 @@ namespace Datadog.Trace.DuckTyping
                     exceptionInfo.Throw();
                 }
 #else
-                // .NET Framework does not contain the Watson-bucket race described above. .NET 6 and later
-                // contain the runtime fix, so deliberately preserve the original concurrent behavior there.
-                // ConcurrentFailureTests exercises the same shared-exception scenario on these targets: the
-                // process must remain healthy and every caller must still receive the expected exception.
+                // .NET 6 and later contain the runtime fix, so deliberately preserve the original concurrent
+                // behavior there. ConcurrentFailureTests exercises the same shared-exception scenario on these
+                // targets: the process must remain healthy and every caller must still receive the expected
+                // exception.
                 exceptionInfo.Throw();
 #endif
             }

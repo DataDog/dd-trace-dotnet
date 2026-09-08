@@ -56,12 +56,14 @@ public class ConcurrentFailureTests
     // thread briefly in that callback, the test deterministically observes whether the exact same cached
     // Exception can be thrown concurrently and validates the appropriate contract for each target:
     //
-    // - Pre-.NET 6 CoreCLR targets must serialize the dispatches because they contain the runtime bug.
-    // - .NET Framework and .NET 6+ must allow the dispatches to overlap. Requiring overlap proves that those
-    //   tests are exercising the runtime fix rather than accidentally remaining protected by our workaround.
-    //   If the runtime regressed, the non-generic test would terminate the test process while reflection copies
-    //   Watson buckets into TargetInvocationException. Otherwise, all calls must complete with the expected
-    //   cached exception and exception-wrapper contracts.
+    // - Every pre-.NET 6 target, including .NET Framework, must serialize the dispatches. The native CoreCLR
+    //   race is confirmed on old runtimes, while the public .NET Framework Reference Source exposes the same
+    //   managed race window but not the native clr.dll implementation needed to prove that it is safe.
+    // - .NET 6+ must allow the dispatches to overlap. Requiring overlap proves that those tests are exercising
+    //   the runtime fix rather than accidentally remaining protected by our workaround. If the runtime
+    //   regressed, the non-generic test would terminate the test process while reflection copies Watson buckets
+    //   into TargetInvocationException. Otherwise, all calls must complete with the expected cached exception
+    //   and exception-wrapper contracts.
     private static void AssertConcurrentThrowsAreSafe(Func<Exception> invoke, Func<Exception, Exception> unwrap)
     {
         var firstException = invoke();
@@ -132,14 +134,14 @@ public class ConcurrentFailureTests
             unwrap(exception!).Should().BeSameAs(cachedException);
         }
 
-#if NETFRAMEWORK || NET6_0_OR_GREATER
+#if NET6_0_OR_GREATER
         maximumConcurrentThrows.Should().BeGreaterThan(
             1,
             "the fixed runtime should safely support concurrent dispatches without the workaround");
 #else
         maximumConcurrentThrows.Should().Be(
             1,
-            "pre-.NET 6 CoreCLR requires the workaround to serialize dispatches of a cached exception");
+            "targets without a confirmed runtime fix require the workaround to serialize dispatches of a cached exception");
 #endif
     }
 
