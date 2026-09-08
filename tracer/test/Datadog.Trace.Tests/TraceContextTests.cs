@@ -335,7 +335,7 @@ namespace Datadog.Trace.Tests
         }
 
         [Fact]
-        public void SetSamplingPriority_RateLimiterDemotesKeep_StripsThButKeepsLocallyGeneratedRv()
+        public void SetSamplingPriority_RateLimiterDemotesKeep_WithoutExistingRv_RemovesOtelTraceState()
         {
             var traceContext = TraceContextTestHelpers.CreateTraceContextWithRootSpan(traceIdLower: OtelTraceStateExampleTraceIdLower);
 
@@ -346,11 +346,11 @@ namespace Datadog.Trace.Tests
                 limiterRate: OtelTraceStateRateLimiterRate,
                 sample: true);
 
-            traceContext.OtelTraceState.Should().Be(OtelTraceStateExampleWithoutThreshold);
+            traceContext.OtelTraceState.Should().BeNull();
         }
 
         [Fact]
-        public void TraceSampler_LimiterDemotesKeep_KeepsRv_ViaGetOrMakeSamplingDecision()
+        public void TraceSampler_LimiterDemotesKeep_WithoutExistingRv_DoesNotCreateRv_ViaGetOrMakeSamplingDecision()
         {
             var builder = new TraceSampler.Builder(new TracerRateLimiter(maxTracesPerInterval: 0, intervalMilliseconds: null));
             builder.RegisterRule(new GlobalSamplingRateRule(AlwaysSampleRate));
@@ -363,7 +363,7 @@ namespace Datadog.Trace.Tests
 
             traceContext.GetOrMakeSamplingDecision();
 
-            traceContext.OtelTraceState.Should().Be(OtelTraceStateExampleWithoutThreshold);
+            traceContext.OtelTraceState.Should().BeNull();
         }
 
         [Fact]

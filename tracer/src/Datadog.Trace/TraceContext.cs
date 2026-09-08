@@ -437,9 +437,9 @@ namespace Datadog.Trace
                     var rateLimiterRejected = didSample && SamplingPriorityValues.IsDrop(p);
                     if (rateLimiterRejected)
                     {
-                        var inheritedRv = _containsLocallyGeneratedOtelRandomValue ? null : OtelTraceStateHelpers.ExtractRv(_otelTraceState);
-                        _otelTraceState = OtelTraceStateHelpers.SetRvTh(_otelTraceState, inheritedRv ?? rv, th: null);
-                        _containsLocallyGeneratedOtelRandomValue = inheritedRv is null;
+                        var existingRv = OtelTraceStateHelpers.ExtractRv(_otelTraceState);
+                        _otelTraceState = OtelTraceStateHelpers.SetRvTh(_otelTraceState, existingRv, th: null);
+                        _containsLocallyGeneratedOtelRandomValue &= existingRv is not null;
                     }
                     else
                     {
