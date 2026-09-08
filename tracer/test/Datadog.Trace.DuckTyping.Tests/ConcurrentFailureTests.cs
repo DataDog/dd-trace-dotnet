@@ -56,14 +56,15 @@ public class ConcurrentFailureTests
     // thread briefly in that callback, the test deterministically observes whether the exact same cached
     // Exception can be thrown concurrently and validates the appropriate contract for each target:
     //
-    // - Every pre-.NET 6 target, including .NET Framework, must serialize the dispatches. The native CoreCLR
-    //   race is confirmed on old runtimes, while the public .NET Framework Reference Source exposes the same
-    //   managed race window but not the native clr.dll implementation needed to prove that it is safe.
-    // - .NET 6+ must allow the dispatches to overlap. Requiring overlap proves that those tests are exercising
-    //   the runtime fix rather than accidentally remaining protected by our workaround. If the runtime
-    //   regressed, the non-generic test would terminate the test process while reflection copies Watson buckets
-    //   into TargetInvocationException. Otherwise, all calls must complete with the expected cached exception
-    //   and exception-wrapper contracts.
+    // - Every pre-.NET 6 target, including .NET Framework, must throw a distinct copy of the cached exception.
+    //   The native CoreCLR race is confirmed on old runtimes, while the public .NET Framework Reference Source
+    //   exposes the same managed race window but not the native clr.dll implementation needed to prove it safe.
+    // - .NET 6+ must continue throwing the cached exception itself. Requiring the callbacks to overlap proves
+    //   that those tests exercise the runtime fix rather than accidentally retaining a serialization workaround.
+    // - Every target must allow callbacks to overlap. This guards against holding a monitor while synchronous
+    //   FirstChanceException callbacks or exception filters execute, which could deadlock customer processes.
+    //   If a runtime regressed, the non-generic test could additionally terminate the test process while
+    //   reflection copies Watson buckets into TargetInvocationException.
     private static void AssertConcurrentThrowsAreSafe(Func<Exception> invoke, Func<Exception, Exception> unwrap)
     {
         var firstException = invoke();
@@ -75,7 +76,7 @@ public class ConcurrentFailureTests
         var maximumConcurrentThrows = 0;
         EventHandler<FirstChanceExceptionEventArgs> handler = (_, args) =>
         {
-            if (!ReferenceEquals(args.Exception, cachedException))
+            if (args.Exception.GetType() != cachedException.GetType() || args.Exception.Message != cachedException.Message)
             {
                 return;
             }
@@ -128,21 +129,41 @@ public class ConcurrentFailureTests
             AppDomain.CurrentDomain.FirstChanceException -= handler;
         }
 
-        foreach (var exception in exceptions)
+        var unwrappedExceptions = new Exception[exceptions.Length];
+        for (var i = 0; i < exceptions.Length; i++)
         {
+            var exception = exceptions[i];
             exception.Should().NotBeNull();
-            unwrap(exception!).Should().BeSameAs(cachedException);
+            var unwrapped = unwrap(exception!);
+            unwrappedExceptions[i] = unwrapped;
+            unwrapped.Should().BeOfType(cachedException.GetType());
+            unwrapped.Message.Should().Be(cachedException.Message);
+#if NET6_0_OR_GREATER
+            unwrapped.Should().BeSameAs(
+                cachedException,
+                "the fixed runtime should preserve the existing cached-exception behavior without the workaround");
+#else
+            unwrapped.Should().NotBeSameAs(
+                cachedException,
+                "targets without a confirmed runtime fix must throw independent copies of the cached exception");
+#endif
         }
 
-#if NET6_0_OR_GREATER
+#if !NET6_0_OR_GREATER
+        for (var i = 0; i < unwrappedExceptions.Length; i++)
+        {
+            for (var j = i + 1; j < unwrappedExceptions.Length; j++)
+            {
+                unwrappedExceptions[i].Should().NotBeSameAs(
+                    unwrappedExceptions[j],
+                    "concurrent callers must never share an exception instance on targets without the runtime fix");
+            }
+        }
+#endif
+
         maximumConcurrentThrows.Should().BeGreaterThan(
             1,
-            "the fixed runtime should safely support concurrent dispatches without the workaround");
-#else
-        maximumConcurrentThrows.Should().Be(
-            1,
-            "targets without a confirmed runtime fix require the workaround to serialize dispatches of a cached exception");
-#endif
+            "exception dispatch must not hold a monitor while synchronous callbacks or exception filters execute");
     }
 
     private static Exception CaptureException(Action action)
