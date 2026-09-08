@@ -59,8 +59,12 @@ namespace Datadog.Trace.Activity
                         if (HandlerBySource.TryAdd(sName, handler))
                         {
                             Log.Debug("ActivityListenerHandler: {SourceName} will be handled by {Handler}.", sName, handler);
-                            return true;
                         }
+
+                        // Even when TryAdd fails because sName is already registered (e.g. a second
+                        // ActivitySource instance created with the same name), the source should still be
+                        // listened to - it already has a handler.
+                        return true;
                     }
                 }
                 else if (handler.ShouldListenTo(sName, null))
@@ -74,8 +78,9 @@ namespace Datadog.Trace.Activity
                     if (HandlerBySource.TryAdd(sName, handler))
                     {
                         Log.Debug("ActivityListenerHandler: {SourceName} will be handled by {Handler}.", sName, handler);
-                        return true;
                     }
+
+                    return true;
                 }
             }
 
