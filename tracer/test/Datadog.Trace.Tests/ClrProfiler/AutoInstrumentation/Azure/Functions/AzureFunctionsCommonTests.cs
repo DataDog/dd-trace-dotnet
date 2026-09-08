@@ -8,6 +8,7 @@
 #if !NETFRAMEWORK
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions;
 using Datadog.Trace.Propagators;
@@ -90,6 +91,61 @@ namespace Datadog.Trace.Tests.ClrProfiler.AutoInstrumentation.Azure.Functions
             Baggage.Current.Count.Should().Be(2);
         }
 
+        [Theory]
+        [InlineData("orchestrationTrigger", "DurableOrchestration")]
+        [InlineData("activityTrigger", "DurableActivity")]
+        [InlineData("entityTrigger", "DurableEntity")]
+        [InlineData("httpTrigger", null)]
+        public void DurableGetTriggerType_ClassifiesOnlyDurableInputs(string bindingType, string? expected)
+        {
+            var context = CreateMockFunctionContext(bindingType);
+
+            AzureFunctionsDurableCommon.GetTriggerType(context).Should().Be(expected);
+        }
+
+        [Theory]
+        [InlineData("00", null, null, null)]
+        [InlineData("00", "vendor=value", null, "vendor=value")]
+        [InlineData("00", "dd=s:0", 0, null)]
+        [InlineData("00", "dd=s:-1", -1, null)]
+        [InlineData("00", "dd=s:1;p:0000000000000002", 1, null)]
+        [InlineData("01", null, 1, null)]
+        public void DurableExtractPropagatedContext_UsesWorkerTraceContext(
+            string traceFlags,
+            string? traceState,
+            int? expectedSamplingPriority,
+            string? expectedAdditionalTraceState)
+        {
+            const string traceId = "00000000000000000000000000000001";
+            const string spanId = "0000000000000002";
+            var context = CreateMockFunctionContext("activityTrigger");
+            context.TraceContext = new MockWorkerTraceContext
+            {
+                TraceParent = $"00-{traceId}-{spanId}-{traceFlags}",
+                TraceState = traceState,
+            };
+
+            var extractedContext = AzureFunctionsDurableCommon.ExtractPropagatedContext(context);
+
+            extractedContext.SpanContext.Should().NotBeNull();
+            extractedContext.SpanContext!.RawTraceId.Should().Be(traceId);
+            extractedContext.SpanContext.RawSpanId.Should().Be(spanId);
+            extractedContext.SpanContext.SamplingPriority.Should().Be(expectedSamplingPriority);
+            extractedContext.SpanContext.AdditionalW3CTraceState.Should().Be(expectedAdditionalTraceState);
+        }
+
+        [Theory]
+        [InlineData("00-00000000000000000000000000000001-0000000000000001-00", "dd=s:1;p:0000000000000001", "00-00000000000000000000000000000001-0000000000000001-01")]
+        [InlineData("00-00000000000000000000000000000001-0000000000000001-02", "dd=s:2", "00-00000000000000000000000000000001-0000000000000001-03")]
+        [InlineData("00-00000000000000000000000000000001-0000000000000001-01", "dd=s:1", "00-00000000000000000000000000000001-0000000000000001-01")]
+        [InlineData("00-00000000000000000000000000000001-0000000000000001-00", "dd=s:0", "00-00000000000000000000000000000001-0000000000000001-00")]
+        [InlineData("00-00000000000000000000000000000001-0000000000000001-00", null, "00-00000000000000000000000000000001-0000000000000001-00")]
+        [InlineData("invalid", "dd=s:1", "invalid")]
+        public void DurableReconcileTraceParentSampling_UsesPositiveDatadogDecision(string traceParent, string? traceState, string expected)
+        {
+            AzureFunctionsDurableCommon.ReconcileTraceParentSampling(traceParent, traceState).Should().Be(expected);
+        }
+
         private static MockFunctionContext CreateMockFunctionContext(string propertyKey, Dictionary<string, object>? headerProperties)
         {
             var triggerMetadata = new Dictionary<string, object?>();
@@ -116,14 +172,52 @@ namespace Datadog.Trace.Tests.ClrProfiler.AutoInstrumentation.Azure.Functions
             };
         }
 
-        // This duck types with tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Azure/Functions/Isolated/IFunctionContext.cs
-        private class MockFunctionContext : IFunctionContext
+        private static MockFunctionContext CreateMockFunctionContext(string bindingType)
+        {
+            var inputBindings = new Hashtable
+            {
+                ["trigger"] = new MockBindingMetadata
+                {
+                    Direction = BindingDirection.In,
+                    Type = bindingType,
+                }
+            };
+
+            return new MockFunctionContext
+            {
+                FunctionDefinition = new FunctionDefinitionStruct
+                {
+                    InputBindings = inputBindings,
+                    Name = "TestFunction",
+                    EntryPoint = "Tests.TestFunction.Run",
+                }
+            };
+        }
+
+        // This duck types with the isolated-worker FunctionContext contracts.
+        private class MockFunctionContext : IDurableFunctionContext
         {
             public FunctionDefinitionStruct FunctionDefinition { get; set; }
 
             public IEnumerable<KeyValuePair<Type, object?>>? Features { get; set; }
 
             public IDictionary<object, object?>? Items { get; }
+
+            public object? TraceContext { get; set; }
+        }
+
+        private class MockBindingMetadata
+        {
+            public BindingDirection Direction { get; set; }
+
+            public string? Type { get; set; }
+        }
+
+        private class MockWorkerTraceContext
+        {
+            public string? TraceParent { get; set; }
+
+            public string? TraceState { get; set; }
         }
 
         // This duck types with tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Azure/Functions/Isolated/GrpcBindingsFeatureStruct.cs
