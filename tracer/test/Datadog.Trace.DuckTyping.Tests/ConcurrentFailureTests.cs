@@ -5,6 +5,7 @@
 
 using System;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Runtime.ExceptionServices;
 using System.Threading;
 using System.Threading.Tasks;
@@ -48,6 +49,46 @@ public class ConcurrentFailureTests
         AssertConcurrentThrowsAreSafe(
             () => CaptureException(() => _ = result.ProxyType),
             exception => exception);
+    }
+
+    [Fact]
+    public void CachedFailureThrowPreservesOriginalStackTrace()
+    {
+        var originalException = CaptureOriginalFailure();
+        var originalStackTrace = originalException.StackTrace;
+        originalStackTrace.Should().NotBeNull();
+        originalStackTrace.Should().Contain(nameof(ThrowOriginalFailure));
+
+        var result = new DuckType.CreateTypeResult(
+            typeof(IWrongFieldName.IProtectedValueTypeField),
+            proxyType: null,
+            targetType: typeof(object),
+            activator: null,
+            ExceptionDispatchInfo.Capture(originalException));
+
+        var thrownException = CaptureCachedProxyTypeFailure(result);
+        thrownException.Should().BeOfType(originalException.GetType());
+#if NET6_0_OR_GREATER
+        thrownException.Should().BeSameAs(
+            originalException,
+            "the fixed runtime should preserve the existing cached-exception behavior without the workaround");
+#else
+        thrownException.Should().NotBeSameAs(
+            originalException,
+            "targets without a confirmed runtime fix must throw an independent copy of the cached exception");
+#endif
+
+        // The workaround copies the Exception before capturing and throwing it. Verify that the complete
+        // original trace survives that sequence and that ExceptionDispatchInfo appends the current dispatch
+        // path, rather than replacing the diagnostic information from the proxy-creation failure.
+        thrownException.StackTrace.Should().Contain(originalStackTrace!);
+        thrownException.StackTrace.Should().Contain(nameof(CaptureCachedProxyTypeFailure));
+
+#if !NET6_0_OR_GREATER
+        // Throwing the copy must not mutate the cached source exception. Besides preserving diagnostics for
+        // later callers, this separation is what prevents concurrent throws from racing over its CLR fields.
+        originalException.StackTrace.Should().Be(originalStackTrace);
+#endif
     }
 
     // The CoreCLR access violation is Windows-only and timing-dependent, so trying to provoke the native
@@ -178,6 +219,27 @@ public class ConcurrentFailureTests
             return exception;
         }
     }
+
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static DuckTypeException CaptureOriginalFailure()
+    {
+        try
+        {
+            ThrowOriginalFailure();
+            return null;
+        }
+        catch (DuckTypeException exception)
+        {
+            return exception;
+        }
+    }
+
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static void ThrowOriginalFailure() => throw DuckTypeException.Create("Original proxy-creation failure");
+
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static Exception CaptureCachedProxyTypeFailure(DuckType.CreateTypeResult result)
+        => CaptureException(() => _ = result.ProxyType);
 
     private static Exception UnwrapTargetInvocationException(Exception exception)
     {
