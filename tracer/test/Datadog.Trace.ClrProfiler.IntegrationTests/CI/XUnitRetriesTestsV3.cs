@@ -41,17 +41,11 @@ public class XUnitRetriesTestsV3 : TestingFrameworkRetriesTests
         return base.FlakyRetries(packageVersion);
     }
 
-    [SkippableTheory]
+    [SkippableTheory(Skip = "Exception Replay coverage for xunit.v3 requires further investigation.")]
     [MemberData(nameof(PackageVersions.XUnitRetriesV3), MemberType = typeof(PackageVersions))]
     [Trait("Category", "EndToEnd")]
     [Trait("Category", "TestIntegrations")]
     [Trait("Category", "FlakyRetries")]
-    public override Task FlakyRetriesWithExceptionReplay(string packageVersion)
-    {
-        // This should work but, it's failing due the way ExceptionReplay works in xUnit v3.
-        // return base.FlakyRetriesWithExceptionReplay(packageVersion);
-        _ = packageVersion;
-        return Task.CompletedTask;
-    }
+    public override Task FlakyRetriesWithExceptionReplay(string packageVersion) => base.FlakyRetriesWithExceptionReplay(packageVersion);
 }
 #endif
