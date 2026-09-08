@@ -2287,6 +2287,38 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler,
     {
         methodReturnType = caller->method_signature.GetReturnValue();
     }
+
+    if (!isAsyncMethod)
+    {
+        // In async methods, the return value can't be byref-like (it can't be Task<T> where T is byref-like, because
+        // byref-like can't exist as a generic param). Therefore, we only need to worry about non-async methods.
+        // EndMethod<TReturn> instantiates a managed generic with the return type, so unknown must fail closed.
+        bool isReturnByRefLike = false;
+        hr = IsTypeByRefLike(m_corProfiler->info_, module_metadata, methodReturnType, debuggerTokens->GetCorLibAssemblyRef(), isReturnByRefLike);
+        if (FAILED(hr) || isReturnByRefLike)
+        {
+            if (FAILED(hr))
+            {
+                Logger::Warn("DebuggerRewriter: Failed to determine if the return value is By-Ref like.");
+            }
+            MarkAllProbesAsError(methodProbes, lineProbes, spanOnMethodProbes, invalid_probe_probe_byreflike_return_not_supported);
+            return E_NOTIMPL;
+        }
+    }
+
+    bool isContainingTypeByRefLike = false;
+    hr = IsTypeTokenByRefLike(m_corProfiler->info_, module_metadata, caller->type.id, isContainingTypeByRefLike);
+
+    if (FAILED(hr) || isContainingTypeByRefLike)
+    {
+        if (FAILED(hr))
+        {
+            Logger::Warn("DebuggerRewriter: Failed to determine if the type we are instrumenting is By-Ref like.");
+        }
+        MarkAllProbesAsError(methodProbes, lineProbes, spanOnMethodProbes, invalid_probe_type_is_by_ref_like);
+        return E_NOTIMPL;
+    }
+
     auto debuggerLocals = std::vector<ULONG>(debuggerTokens->GetAdditionalLocalsCount(methodArguments));
     hr = debuggerTokens->ModifyLocalSigAndInitialize(&rewriterWrapper, &methodReturnType, &methodArguments, caller, &callTargetStateIndex, &exceptionIndex,
                                                      &callTargetReturnIndex, &staticValueTypeIndex, &returnValueIndex, &callTargetStateToken,
@@ -2301,36 +2333,6 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler,
         MarkAllProbesAsError(methodProbes, lineProbes, spanOnMethodProbes, invalid_probe_failed_to_add_di_locals);
         // Error message is already written in ModifyLocalSigAndInitialize
         return S_FALSE; // TODO https://datadoghq.atlassian.net/browse/DEBUG-706
-    }
-
-    if (!isAsyncMethod)
-    {
-        // In async methods, the return value can't be byref-like (it can't be Task<T> where T is byref-like, because
-        // byref-like can't exist as a generic param). Therefore, we only need to worry about non-async methods.
-        bool isTypeIsByRefLike = false;
-        hr = IsTypeByRefLike(m_corProfiler->info_, module_metadata, methodReturnType, debuggerTokens->GetCorLibAssemblyRef(), isTypeIsByRefLike);
-        if (FAILED(hr))
-        {
-            Logger::Warn("DebuggerRewriter: Failed to determine if the return value is By-Ref like.");
-        }
-        else if (isTypeIsByRefLike)
-        {
-            MarkAllProbesAsError(methodProbes, lineProbes, spanOnMethodProbes, invalid_probe_probe_byreflike_return_not_supported);
-            return E_NOTIMPL;
-        }
-    }
-
-    bool isTypeIsByRefLike = false;
-    hr = IsTypeTokenByRefLike(m_corProfiler->info_, module_metadata, caller->type.id, isTypeIsByRefLike);
-
-    if (FAILED(hr))
-    {
-        Logger::Warn("DebuggerRewriter: Failed to determine if the type we are instrumenting is By-Ref like.");
-    }
-    else if (isTypeIsByRefLike)
-    {
-        MarkAllProbesAsError(methodProbes, lineProbes, spanOnMethodProbes, invalid_probe_type_is_by_ref_like);
-        return E_NOTIMPL;
     }
 
     const auto instrumentedMethodIndex = ProbesMetadataTracker::Instance()->GetInstrumentedMethodIndex(module_id, function_token);

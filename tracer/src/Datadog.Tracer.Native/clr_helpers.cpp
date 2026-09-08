@@ -1702,8 +1702,8 @@ HRESULT IsTypeTokenByRefLike(ICorProfilerInfo4* corProfilerInfo4, const ModuleMe
 
         if (FAILED(hr))
         {
-            // Callers that instantiate unmanaged-to-managed generics (e.g. LogLocal<TLocal>)
-            // must skip the value when we cannot prove it is not byref-like.
+            // Callers must fail closed when we cannot prove the type is not byref-like:
+            // skip LogArg/LogLocal, or reject the rewrite for return/containing types.
             Logger::Warn("[IsTypeTokenByRefLike] Failed to resolve TypeRef. Returning failure so callers can skip.");
             isTypeIsByRefLike = false;
             return hr;
