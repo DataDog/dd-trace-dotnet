@@ -55,7 +55,15 @@ internal sealed class TestOptimization : ITestOptimization
 
     public static ITestOptimization Instance
     {
-        get => LazyInitializer.EnsureInitialized(ref _instance, () => new TestOptimization())!;
+        get => LazyInitializer.EnsureInitialized(ref _instance, static () =>
+        {
+            var instance = new TestOptimization();
+            // Register with the tracer's existing hook so our events finish before its writer,
+            // even when APM initialized first. Concurrent factories assign the same callback;
+            // it reads the published singleton instead of retaining a discarded candidate.
+            TracerManager.ShutdownCallback = ShutdownAsync;
+            return instance;
+        })!;
         internal set => _instance = value;
     }
 
@@ -232,10 +240,20 @@ internal sealed class TestOptimization : ITestOptimization
     /// Does not create Test Optimization in applications that never initialized it.
     /// Uses manager initialization because InitializeFromRunner resets the IsRunning flag.
     /// </summary>
-    internal static Task ShutdownAsync(Exception? exception)
-        => _instance is TestOptimization instance && instance._tracerManagement is not null
-               ? instance.CloseActiveTestsAsync(exception)
-               : Task.CompletedTask;
+    private static async Task ShutdownAsync(Exception? exception)
+    {
+        if (_instance is TestOptimization instance && instance._tracerManagement is not null)
+        {
+            try
+            {
+                await instance.CloseActiveTestsAsync(exception).ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                instance.Log.Error(ex, "Error closing test sessions on shutdown.");
+            }
+        }
+    }
 
     public void Initialize()
     {

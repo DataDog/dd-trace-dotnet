@@ -27,11 +27,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI;
 [Trait("RunOnWindows", "True")]
 public class MsTestV2NativeRetriesTests : TestingFrameworkEvpTest
 {
-#if DEFAULT_SAMPLES
-    private const string PackageVersion = "";
-#else
-    private const string PackageVersion = "4.4.0";
-#endif
+    // PackageVersions supplies either the local sample or the versioned 4.4.0 sample.
+    private static readonly string PackageVersion = (string)PackageVersions.MSTestNativeRetries.First(version => version[0] is "" or "4.4.0")[0];
 
     public MsTestV2NativeRetriesTests(ITestOutputHelper output)
         : this("MSTestTestsNativeRetries", output)
@@ -426,10 +423,10 @@ public class MsTestV2NativeRetriesTests : TestingFrameworkEvpTest
     }
 
     [Theory]
-    [InlineData(PackageVersion, false, 1000)]
-    [InlineData(PackageVersion, true, 1000)]
-    [InlineData(PackageVersion, true, 1)]
-    public async Task NativeRetriesCompleteBeforeAutomaticRetries(string packageVersion, bool automaticRetries, int totalRetryCount)
+    [InlineData(false, 1000)]
+    [InlineData(true, 1000)]
+    [InlineData(true, 1)]
+    public async Task NativeRetriesCompleteBeforeAutomaticRetries(bool automaticRetries, int totalRetryCount)
     {
         EnvironmentHelper.EnableDefaultTransport();
         InjectSession(out _, out _, out _, out _, out _, out _, out _);
@@ -462,7 +459,7 @@ public class MsTestV2NativeRetriesTests : TestingFrameworkEvpTest
 
         try
         {
-            using var result = await RunMSTestAsync(agent, "TestCategory!=CustomRetry", FailedTestExitCode, packageVersion);
+            using var result = await RunMSTestAsync(agent, "TestCategory!=CustomRetry", FailedTestExitCode);
             var attempts = File.ReadAllLines(attemptsFile);
             if (UseMtp)
             {
@@ -556,14 +553,14 @@ public class MsTestV2NativeRetriesTests : TestingFrameworkEvpTest
         }
     }
 
-    private Task<ProcessResult> RunMSTestAsync(MockTracerAgent agent, string testFilter, int expectedExitCode, string packageVersion = PackageVersion)
+    private Task<ProcessResult> RunMSTestAsync(MockTracerAgent agent, string testFilter, int expectedExitCode)
     {
         var arguments = UseMtp ? "--filter " + testFilter : "--TestCaseFilter:" + testFilter;
 #if NETFRAMEWORK
         // Visual Studio can launch a 64-bit test host even when the fixture uses the x86 profiler.
         arguments += " /Platform:" + EnvironmentTools.GetTestTargetPlatform();
 #endif
-        return RunDotnetTestSampleAndWaitForExit(agent, arguments: arguments, packageVersion: packageVersion, expectedExitCode: expectedExitCode, useDotnetExec: UseMtp);
+        return RunDotnetTestSampleAndWaitForExit(agent, arguments: arguments, packageVersion: PackageVersion, expectedExitCode: expectedExitCode, useDotnetExec: UseMtp);
     }
 
     private readonly struct RetryScenarioResult(IReadOnlyList<MockCIVisibilityTest> tests, string[] retryHistory)
