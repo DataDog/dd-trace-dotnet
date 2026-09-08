@@ -5,6 +5,7 @@
 #nullable enable
 
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using Datadog.Trace.Processors;
 using Datadog.Trace.Util;
@@ -52,7 +53,7 @@ namespace Datadog.Trace.Ci
             return JsonHelper.SerializeObject(fingerprintParameters);
         }
 
-        internal bool TryGetFingerprint(out string fingerprint)
+        internal bool TryGetFingerprint([NotNullWhen(true)] out string? fingerprint)
         {
             if (Metadata is { Count: 1 } &&
                 Metadata.TryGetValue(FingerprintFormatMetadataKey, out var format) &&
@@ -65,7 +66,7 @@ namespace Datadog.Trace.Ci
                 return true;
             }
 
-            fingerprint = string.Empty;
+            fingerprint = null;
             return false;
         }
 

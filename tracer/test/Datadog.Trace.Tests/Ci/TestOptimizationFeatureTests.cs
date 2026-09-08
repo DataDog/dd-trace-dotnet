@@ -996,6 +996,8 @@ public class TestOptimizationFeatureTests : SettingsTestsBase
         };
 
         testParameters.ToJSON().Should().Be("""{"metadata":{},"arguments":{"value":"1"}}""");
+        testParameters.TryGetFingerprint(out var fingerprint).Should().BeFalse();
+        fingerprint.Should().BeNull();
     }
 
     [Fact]
@@ -1032,7 +1034,10 @@ public class TestOptimizationFeatureTests : SettingsTestsBase
 
         Encoding.UTF8.GetByteCount(json).Should().BeLessThanOrEqualTo(TruncatorTagsProcessor.MaxMetaValLen);
         json.Should().Contain("\"_dd.parameters_format\":\"sha256-v1\"");
-        JsonHelper.DeserializeObject<TestParameters>(json).Should().NotBeNull();
+        var serializedParameters = JsonHelper.DeserializeObject<TestParameters>(json);
+        serializedParameters.Should().NotBeNull();
+        serializedParameters.TryGetFingerprint(out var fingerprint).Should().BeTrue();
+        fingerprint.Should().NotBeNull();
 
         var processedJson = json;
         var key = TestTags.Parameters;
