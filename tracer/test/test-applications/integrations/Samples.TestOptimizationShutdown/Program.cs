@@ -5,6 +5,7 @@
 
 using System;
 using System.Reflection;
+using System.Threading.Tasks;
 
 namespace Samples.TestOptimizationShutdown;
 
@@ -22,7 +23,23 @@ internal static class Program
 
         var shutdownTrigger = args[2];
         var optimizationType = tracerAssembly.GetType("Datadog.Trace.Ci.TestOptimization", throwOnError: true)!;
-        var optimization = optimizationType.GetProperty("Instance")!.GetValue(null)!;
+        var instanceProperty = optimizationType.GetProperty("Instance")!;
+        if (args[1] == "concurrent")
+        {
+            var managerType = tracerAssembly.GetType("Datadog.Trace.TracerManager", throwOnError: true)!;
+            var callbackProperty = managerType.GetProperty("ShutdownCallback", BindingFlags.Static | BindingFlags.NonPublic)!;
+            Parallel.For(0, 32, _ =>
+            {
+                var instance = instanceProperty.GetValue(null)!;
+                var callback = (Delegate)callbackProperty.GetValue(null)!;
+                if (!ReferenceEquals(callback.Target, instance))
+                {
+                    throw new InvalidOperationException("Shutdown must target the published Test Optimization instance.");
+                }
+            });
+        }
+
+        var optimization = instanceProperty.GetValue(null)!;
         optimizationType.GetMethod("Initialize")!.Invoke(optimization, null);
 
         var sessionType = tracerAssembly.GetType("Datadog.Trace.Ci.TestSession", throwOnError: true)!;
