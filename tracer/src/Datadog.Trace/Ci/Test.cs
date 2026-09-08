@@ -39,7 +39,7 @@ public sealed class Test
     private bool _executionFinished;
     private bool _closeRequested;
     private TimeSpan? _executionDuration;
-    private List<Action<Test>>? _onCloseActions;
+    private List<Action<Test>>? _executionCompletedActions;
 
     internal Test(TestSuite suite, string name, DateTimeOffset? startDate)
         : this(suite, name, startDate, default, 0)
@@ -682,8 +682,8 @@ public sealed class Test
 
     private void RunCompletionCallbacks()
     {
-        var callbacks = _onCloseActions;
-        _onCloseActions = null;
+        var callbacks = _executionCompletedActions;
+        _executionCompletedActions = null;
         if (callbacks is null)
         {
             return;
@@ -790,7 +790,11 @@ public sealed class Test
         ((TestSpanTags)_scope.Span.Tags).Name = name;
     }
 
-    internal void AddOnCloseAction(Action<Test> action)
+    /// <summary>
+    /// Registers a callback that runs once when execution finishes, before the span is closed.
+    /// Final retry tags may still be pending. Callbacks registered after execution finishes are rejected.
+    /// </summary>
+    internal void AddOnExecutionCompletedAction(Action<Test> action)
     {
         lock (_executionLock)
         {
@@ -800,8 +804,8 @@ public sealed class Test
                 return;
             }
 
-            _onCloseActions ??= [];
-            _onCloseActions.Add(action);
+            _executionCompletedActions ??= [];
+            _executionCompletedActions.Add(action);
         }
     }
 }
