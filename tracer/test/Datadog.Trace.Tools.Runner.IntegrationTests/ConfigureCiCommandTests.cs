@@ -17,6 +17,7 @@ using Xunit.Abstractions;
 namespace Datadog.Trace.Tools.Runner.IntegrationTests
 {
     [Collection(nameof(ConsoleTestsCollection))]
+    [Trait("Area", "CIVisibility")]
     public class ConfigureCiCommandTests(ITestOutputHelper output)
     {
         private static readonly string[] RunScopedBackfillEnvironmentVariables =

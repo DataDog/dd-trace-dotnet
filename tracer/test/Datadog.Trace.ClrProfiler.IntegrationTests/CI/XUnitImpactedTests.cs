@@ -12,6 +12,7 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 {
+    [Trait("Area", "CIVisibility")]
     [UsesVerify]
     [Collection(nameof(ImpactedTestsCollection))]
     public class XUnitImpactedTests : TestingFrameworkImpactedTests
