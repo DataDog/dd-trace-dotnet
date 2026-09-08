@@ -493,7 +493,7 @@ namespace iast
                 DEL(branch);
             }
         }
-        catch (std::exception err)
+        catch (const std::exception &err)
         {
             _error = err.what();
             trace::Logger::Error("ERROR verfying ", body->GetMethodInfo()->GetFullName(), " : ", _error);
@@ -871,7 +871,7 @@ namespace iast
             DEL_MAP_VALUES(handlers);
             Log(debugLevel, "Dump end");
         }
-        catch (std::exception err)
+        catch (const std::exception &err)
         {
             trace::Logger::Error("ERROR in Dump: ", err.what());
         }
