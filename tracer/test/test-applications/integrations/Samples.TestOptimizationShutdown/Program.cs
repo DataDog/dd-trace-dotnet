@@ -5,6 +5,8 @@
 
 using System;
 using System.Reflection;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Samples.TestOptimizationShutdown;
 
@@ -20,6 +22,23 @@ internal static class Program
             _ = tracerType.GetProperty("Instance")!.GetValue(null);
         }
 
+        var shutdownTrigger = args[2];
+        if (shutdownTrigger is "pre-shutdown-failure" or "pre-shutdown-timeout")
+        {
+            // Register before Test Optimization so a failed hook must not block either
+            // the remaining pre-shutdown work or the writer's normal shutdown task.
+            var lifetimeType = tracerAssembly.GetType("Datadog.Trace.LifetimeManager", throwOnError: true)!;
+            var lifetime = lifetimeType.GetProperty("Instance")!.GetValue(null)!;
+            Func<Exception?, Task> shutdownTask = _ =>
+            {
+                Console.WriteLine("Running pre-shutdown task: " + shutdownTrigger);
+                return shutdownTrigger == "pre-shutdown-failure"
+                           ? Task.FromException(new InvalidOperationException("Pre-shutdown regression."))
+                           : Task.Delay(Timeout.Infinite);
+            };
+            lifetimeType.GetMethod("AddAsyncPreShutdownTask")!.Invoke(lifetime, [shutdownTask]);
+        }
+
         var optimizationType = tracerAssembly.GetType("Datadog.Trace.Ci.TestOptimization", throwOnError: true)!;
         var optimization = optimizationType.GetProperty("Instance")!.GetValue(null)!;
         optimizationType.GetMethod("Initialize")!.Invoke(optimization, null);
@@ -28,7 +47,7 @@ internal static class Program
         var getSession = sessionType.GetMethod("GetOrCreate", BindingFlags.Static | BindingFlags.NonPublic)!;
         _ = getSession.Invoke(null, ["shutdown regression", null, "MSTest", null, false]);
 
-        switch (args[2])
+        switch (shutdownTrigger)
         {
             case "explicit-close":
                 optimizationType.GetMethod("Close")!.Invoke(optimization, null);
@@ -39,10 +58,12 @@ internal static class Program
                 lifetimeType.GetMethod("RunShutdownTasks")!.Invoke(lifetime, [new InvalidOperationException("shutdown regression")]);
                 break;
             case "process-exit":
+            case "pre-shutdown-failure":
+            case "pre-shutdown-timeout":
                 // Leave the session open for the real ProcessExit callback.
                 break;
             default:
-                throw new ArgumentException("Unknown shutdown trigger: " + args[2]);
+                throw new ArgumentException("Unknown shutdown trigger: " + shutdownTrigger);
         }
     }
 }

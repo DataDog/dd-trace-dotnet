@@ -65,7 +65,7 @@ public class TestCoverageLifecycleTests : SettingsTestsBase
         var callbackCount = 0;
         var callbackObservedFinishedSpan = false;
         string? callbackStatus = null;
-        test.AddOnCloseAction(
+        test.AddOnExecutionCompletedAction(
             t =>
             {
                 callbackCount++;
@@ -172,8 +172,8 @@ public class TestCoverageLifecycleTests : SettingsTestsBase
         using var harness = new TestHarness(new CountingCoverageEventHandler());
         var test = harness.Suite.CreateTest("reentrant-close");
         var secondCallbackRanBeforeClose = false;
-        test.AddOnCloseAction(t => t.Close(TestStatus.Pass));
-        test.AddOnCloseAction(t => secondCallbackRanBeforeClose = !t.GetInternalSpan().IsFinished);
+        test.AddOnExecutionCompletedAction(t => t.Close(TestStatus.Pass));
+        test.AddOnExecutionCompletedAction(t => secondCallbackRanBeforeClose = !t.GetInternalSpan().IsFinished);
 
         if (finishExecutionEarly)
         {
@@ -195,8 +195,8 @@ public class TestCoverageLifecycleTests : SettingsTestsBase
         using var harness = new TestHarness(new CountingCoverageEventHandler());
         var test = harness.Suite.CreateTest("throwing-callback");
         var secondCallbackCount = 0;
-        test.AddOnCloseAction(_ => throw new InvalidOperationException("Injected callback failure."));
-        test.AddOnCloseAction(_ => secondCallbackCount++);
+        test.AddOnExecutionCompletedAction(_ => throw new InvalidOperationException("Injected callback failure."));
+        test.AddOnExecutionCompletedAction(_ => secondCallbackCount++);
 
         test.UnsafeFinishExecution(TestStatus.Pass, TimeSpan.FromMilliseconds(12), null);
         test.Close(TestStatus.Pass);
@@ -234,7 +234,7 @@ public class TestCoverageLifecycleTests : SettingsTestsBase
         }
         else
         {
-            test.AddOnCloseAction(callback);
+            test.AddOnExecutionCompletedAction(callback);
         }
 
         var finish = Task.Run(
@@ -319,7 +319,7 @@ public class TestCoverageLifecycleTests : SettingsTestsBase
         using var harness = new TestHarness(new ThrowingCoverageEventHandler());
         var test = harness.Suite.CreateTest("early-coverage-failure");
         var callbackCount = 0;
-        test.AddOnCloseAction(_ => callbackCount++);
+        test.AddOnExecutionCompletedAction(_ => callbackCount++);
 
         var finish = () => test.UnsafeFinishExecution(TestStatus.Fail, TimeSpan.FromMilliseconds(12), null);
 
