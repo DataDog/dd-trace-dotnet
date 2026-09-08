@@ -49,12 +49,28 @@ internal readonly struct SkippableTest
     }
 
     /// <summary>
-    /// Gets parsed test parameters for matching framework test cases to backend skippable candidates.
+    /// Tries to parse test parameters for matching framework test cases to backend skippable candidates.
     /// </summary>
-    /// <returns>Parsed test parameters, or null when the backend candidate has no parameter payload.</returns>
-    public TestParameters? GetParameters()
+    /// <param name="parameters">Parsed test parameters, or null when the backend candidate has no parameter payload.</param>
+    /// <returns>True when the payload is empty or valid JSON; otherwise, false.</returns>
+    public bool TryGetParameters(out TestParameters? parameters)
     {
-        return StringUtil.IsNullOrWhiteSpace(RawParameters) ? null : JsonHelper.DeserializeObject<TestParameters>(RawParameters!);
+        if (StringUtil.IsNullOrWhiteSpace(RawParameters))
+        {
+            parameters = null;
+            return true;
+        }
+
+        try
+        {
+            parameters = JsonHelper.DeserializeObject<TestParameters>(RawParameters!);
+            return true;
+        }
+        catch (JsonException)
+        {
+            parameters = null;
+            return false;
+        }
     }
 
     /// <summary>

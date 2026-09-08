@@ -8,6 +8,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
+using System.Text;
 using System.Threading.Tasks;
 using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.CiEnvironment;
@@ -20,7 +21,9 @@ using Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Processors;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.Util.Json;
 using FluentAssertions;
 using Moq;
 using Xunit;
@@ -898,6 +901,164 @@ public class TestOptimizationFeatureTests : SettingsTestsBase
             matchedSkippableTest.Should().Be(candidate);
             skippableFeature.Verify(x => x.GetSkippableTestsFromSuiteAndName(TestSuite, TestName, ModuleName), Times.Once);
             skippableFeature.Verify(x => x.CanSkipWithCoverageBackfill(candidate, ModuleName, out reason), Times.Once);
+        }
+        finally
+        {
+            TestOptimization.Instance = new TestOptimization();
+            TestOptimization.Instance.Reset();
+        }
+    }
+
+    [Fact]
+    public void CommonShouldSkipIgnoresMalformedParameters()
+    {
+        var skippableFeature = new Mock<ITestOptimizationSkippableFeature>();
+        var testOptimization = CreateTestOptimization(CreateSettings(), Directory.GetCurrentDirectory());
+        testOptimization.Setup(x => x.SkippableFeature).Returns(skippableFeature.Object);
+
+        var method = typeof(TestOptimizationFeatureTests).GetMethod(nameof(SampleParameterizedItrTest), BindingFlags.NonPublic | BindingFlags.Static)!;
+        var testSuite = typeof(TestOptimizationFeatureTests).FullName!;
+        const string ParametersPrefix = "{\"arguments\":{\"value\":\"";
+        var parameters = ParametersPrefix + new string('a', 5_000 - ParametersPrefix.Length - 3) + "...";
+        var candidate = new SkippableTest(nameof(SampleParameterizedItrTest), testSuite, parameters, configurations: null);
+
+        parameters.Should().HaveLength(5_000);
+        skippableFeature.Setup(x => x.GetSkippableTestsFromSuiteAndName(testSuite, nameof(SampleParameterizedItrTest), It.IsAny<string>())).Returns([candidate]);
+        TestOptimization.Instance = testOptimization.Object;
+
+        try
+        {
+            Common.ShouldSkip(testSuite, nameof(SampleParameterizedItrTest), [1], method.GetParameters()).Should().BeFalse();
+        }
+        finally
+        {
+            TestOptimization.Instance = new TestOptimization();
+            TestOptimization.Instance.Reset();
+        }
+    }
+
+    [Fact]
+    public void CommonShouldSkipContinuesAfterMalformedParameters()
+    {
+        var skippableFeature = new Mock<ITestOptimizationSkippableFeature>();
+        var testOptimization = CreateTestOptimization(CreateSettings(), Directory.GetCurrentDirectory());
+        testOptimization.Setup(x => x.SkippableFeature).Returns(skippableFeature.Object);
+
+        var method = typeof(TestOptimizationFeatureTests).GetMethod(nameof(SampleParameterizedItrTest), BindingFlags.NonPublic | BindingFlags.Static)!;
+        var testSuite = typeof(TestOptimizationFeatureTests).FullName!;
+        var malformedCandidate = new SkippableTest(nameof(SampleParameterizedItrTest), testSuite, "{\"arguments\":{\"value\":\"...", configurations: null);
+        var validCandidate = new SkippableTest(nameof(SampleParameterizedItrTest), testSuite, """{"arguments":{"value":"1"}}""", configurations: null);
+
+        skippableFeature.Setup(x => x.GetSkippableTestsFromSuiteAndName(testSuite, nameof(SampleParameterizedItrTest), It.IsAny<string>())).Returns([malformedCandidate, validCandidate]);
+        TestOptimization.Instance = testOptimization.Object;
+
+        try
+        {
+            Common.ShouldSkip(testSuite, nameof(SampleParameterizedItrTest), [1], method.GetParameters()).Should().BeTrue();
+        }
+        finally
+        {
+            TestOptimization.Instance = new TestOptimization();
+            TestOptimization.Instance.Reset();
+        }
+    }
+
+    [Fact]
+    public void SmallTestParametersKeepOriginalJson()
+    {
+        var testParameters = new TestParameters
+        {
+            Metadata = new Dictionary<string, object>(),
+            Arguments = new Dictionary<string, object> { ["value"] = "1" }
+        };
+
+        testParameters.ToJSON().Should().Be("""{"metadata":{},"arguments":{"value":"1"}}""");
+    }
+
+    [Fact]
+    public void TestParametersUseFingerprintOnlyAboveMetaValueLimit()
+    {
+        var testParameters = new TestParameters
+        {
+            Metadata = new Dictionary<string, object>(),
+            Arguments = new Dictionary<string, object> { ["value"] = string.Empty }
+        };
+        var emptyValueJson = JsonHelper.SerializeObject(testParameters);
+        testParameters.Arguments["value"] = new string('a', TruncatorTagsProcessor.MaxMetaValLen - Encoding.UTF8.GetByteCount(emptyValueJson));
+
+        var maximumLengthJson = testParameters.ToJSON();
+
+        Encoding.UTF8.GetByteCount(maximumLengthJson).Should().Be(TruncatorTagsProcessor.MaxMetaValLen);
+        maximumLengthJson.Should().NotContain("_dd.parameters_fingerprint");
+
+        testParameters.Arguments["value"] += "a";
+
+        testParameters.ToJSON().Should().Contain("_dd.parameters_fingerprint");
+    }
+
+    [Fact]
+    public void OversizedTestParametersUseBoundedFingerprintJson()
+    {
+        var testParameters = new TestParameters
+        {
+            Metadata = new Dictionary<string, object> { [TestTags.MetadataTestName] = "SampleParameterizedItrTest(value: long)" },
+            Arguments = new Dictionary<string, object> { ["value"] = new string('\u00e9', 3_000) }
+        };
+
+        var json = testParameters.ToJSON();
+
+        Encoding.UTF8.GetByteCount(json).Should().BeLessThanOrEqualTo(TruncatorTagsProcessor.MaxMetaValLen);
+        json.Should().Contain("\"_dd.parameters_format\":\"sha256-v1\"");
+        JsonHelper.DeserializeObject<TestParameters>(json).Should().NotBeNull();
+
+        var processedJson = json;
+        var key = TestTags.Parameters;
+        new TruncatorTagsProcessor().ProcessMeta(ref key, ref processedJson);
+        processedJson.Should().Be(json);
+    }
+
+    [Theory]
+    [InlineData(1)]
+    [InlineData(3_000)]
+    public void TestParametersWithInvalidUtf16DoNotThrow(int argumentLength)
+    {
+        var testParameters = new TestParameters
+        {
+            Metadata = new Dictionary<string, object>(),
+            Arguments = new Dictionary<string, object> { ["value"] = new string('\uD83D', argumentLength) }
+        };
+
+        var action = testParameters.ToJSON;
+
+        action.Should().NotThrow();
+    }
+
+    [Fact]
+    public void CommonShouldSkipMatchesOversizedParametersByFingerprint()
+    {
+        var skippableFeature = new Mock<ITestOptimizationSkippableFeature>();
+        var testOptimization = CreateTestOptimization(CreateSettings(), Directory.GetCurrentDirectory());
+        testOptimization.Setup(x => x.SkippableFeature).Returns(skippableFeature.Object);
+
+        var method = typeof(TestOptimizationFeatureTests).GetMethod(nameof(SampleParameterizedItrTest), BindingFlags.NonPublic | BindingFlags.Static)!;
+        var testSuite = typeof(TestOptimizationFeatureTests).FullName!;
+        var value = new string('a', 6_000);
+        var displayName = $"SampleParameterizedItrTest(value: {value})";
+        var testParameters = new TestParameters
+        {
+            Metadata = new Dictionary<string, object> { [TestTags.MetadataTestName] = displayName },
+            Arguments = new Dictionary<string, object> { ["value"] = value }
+        };
+        var candidate = new SkippableTest(nameof(SampleParameterizedItrTest), testSuite, testParameters.ToJSON(), configurations: null);
+
+        skippableFeature.Setup(x => x.GetSkippableTestsFromSuiteAndName(testSuite, nameof(SampleParameterizedItrTest), It.IsAny<string>())).Returns([candidate]);
+        TestOptimization.Instance = testOptimization.Object;
+
+        try
+        {
+            Common.ShouldSkip(testSuite, nameof(SampleParameterizedItrTest), [value], method.GetParameters(), metadataTestName: displayName).Should().BeTrue();
+            Common.ShouldSkip(testSuite, nameof(SampleParameterizedItrTest), [value[..^1] + "b"], method.GetParameters(), metadataTestName: displayName).Should().BeFalse();
+            Common.ShouldSkip(testSuite, nameof(SampleParameterizedItrTest), [value], method.GetParameters(), metadataTestName: displayName + " changed").Should().BeFalse();
         }
         finally
         {
