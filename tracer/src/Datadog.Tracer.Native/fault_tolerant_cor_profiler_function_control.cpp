@@ -11,6 +11,7 @@ FaultTolerantCorProfilerFunctionControl::FaultTolerantCorProfilerFunctionControl
     mdMethodDef methodId,
     RejitHandlerModule* moduleHandler, RejitHandlerModuleMethod* methodHandler,
     InjectSuccessfulInstrumentationLambda injectSuccessfulInstrumentation) :
+    m_refCount(0),
     m_moduleId(moduleId),
     m_methodId(methodId),
     moduleHandler(moduleHandler),

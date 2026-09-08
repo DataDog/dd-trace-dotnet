@@ -5,6 +5,7 @@
 namespace instrumented_assembly_generator
 {
 CorProfilerInfo::CorProfilerInfo(IUnknown* pICorProfilerInfoUnk)
+    : m_refCount(0)
 {
     m_pICorProfilerInfoUnk.Attach(pICorProfilerInfoUnk);
 }

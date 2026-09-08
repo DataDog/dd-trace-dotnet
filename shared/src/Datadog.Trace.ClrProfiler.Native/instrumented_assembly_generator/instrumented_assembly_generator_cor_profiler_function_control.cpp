@@ -10,6 +10,7 @@ namespace instrumented_assembly_generator
 CorProfilerFunctionControl::CorProfilerFunctionControl(ICorProfilerFunctionControl* corProfilerFunctionControl,
                                                        std::shared_ptr<ICorProfilerInfo12> corProfilerInfo12,
                                                        ModuleID moduleId, mdMethodDef methodId) :
+    m_refCount(0),
     m_corProfilerInfo(std::move(corProfilerInfo12)),
     m_moduleId(moduleId),
     m_methodId(methodId)
