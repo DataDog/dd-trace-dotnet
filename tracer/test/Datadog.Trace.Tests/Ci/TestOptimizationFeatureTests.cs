@@ -36,7 +36,6 @@ using NUnitTypeInfo = Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUni
 using NUnitWorkItem = Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit.IWorkItem;
 using NUnitWorkItemPerformWorkIntegration = Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit.NUnitWorkItemPerformWorkIntegration;
 using XUnitV3Context = Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.V3.IXunitTestMethodRunnerBaseContextV3;
-using XUnitV3RunSummary = Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.V3.RunSummaryUnsafeStruct;
 using XUnitV3RunTestCaseIntegration = Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.V3.XUnitTestMethodRunnerBaseRunTestCaseV3Integration;
 using XUnitV3TestCase = Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.V3.IXunitTestCaseV3;
 using XUnitV3TestClass = Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.V3.IXunitTestClassV3;
@@ -1603,9 +1602,9 @@ public class TestOptimizationFeatureTests : SettingsTestsBase
     }
 
     [Fact]
-    public void XUnitV3QuarantinedOrDisabledRetryRunSummaryIsHidden()
+    public void SharedXUnitQuarantinedOrDisabledRetryRunSummaryIsHidden()
     {
-        var runSummary = new XUnitV3RunSummary
+        var runSummary = new XUnitRunSummary
         {
             Total = 3,
             Failed = 2,
@@ -1613,7 +1612,7 @@ public class TestOptimizationFeatureTests : SettingsTestsBase
             NotRun = 1
         };
 
-        XUnitV3RunTestCaseIntegration.HideQuarantinedOrDisabledRunSummary(ref runSummary);
+        runSummary.HideQuarantinedOrDisabledResult();
 
         runSummary.Total.Should().Be(1);
         runSummary.Failed.Should().Be(0);
@@ -1622,9 +1621,9 @@ public class TestOptimizationFeatureTests : SettingsTestsBase
     }
 
     [Fact]
-    public void XUnitV3QuarantinedOrDisabledFinalRunSummaryIsReportedAsSkipped()
+    public void SharedXUnitQuarantinedOrDisabledFinalRunSummaryIsReportedAsSkipped()
     {
-        var runSummary = new XUnitV3RunSummary
+        var runSummary = new XUnitRunSummary
         {
             Total = 3,
             Failed = 2,
@@ -1632,13 +1631,12 @@ public class TestOptimizationFeatureTests : SettingsTestsBase
             NotRun = 1
         };
 
-        XUnitV3RunTestCaseIntegration.ReportQuarantinedOrDisabledRunSummaryAsSkipped(ref runSummary);
-        var returnedRunSummary = XUnitV3RunTestCaseIntegration.ToRunSummaryReturnValue<XUnitV3RunSummary>(ref runSummary);
+        runSummary.ReportQuarantinedOrDisabledResultAsSkipped();
 
-        returnedRunSummary.Total.Should().Be(1);
-        returnedRunSummary.Failed.Should().Be(0);
-        returnedRunSummary.Skipped.Should().Be(1);
-        returnedRunSummary.NotRun.Should().Be(0);
+        runSummary.Total.Should().Be(1);
+        runSummary.Failed.Should().Be(0);
+        runSummary.Skipped.Should().Be(1);
+        runSummary.NotRun.Should().Be(0);
     }
 
     [Fact]

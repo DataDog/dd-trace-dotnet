@@ -2338,7 +2338,7 @@ stages:
       parameters:
         build: true
         baseImage: $(baseImage)
-        command: "BuildIntegrationTests CompileTrimmingSamples --framework $(publishTargetFramework) --IncludeTestsRequiringDocker false --Filter \"$(IntegrationTestFilter)\" --SampleName \"$(IntegrationTestSampleName)\""
+        command: "BuildIntegrationTests CompileTrimmingSamples CompilePlatformSpecificSamples --framework $(publishTargetFramework) --IncludeTestsRequiringDocker false --Filter \"$(IntegrationTestFilter)\" --SampleName \"$(IntegrationTestSampleName)\""
         apikey: $(DD_LOGGER_DD_API_KEY)
         retryCountForRunCommand: 3
         timeoutInMinutesForRunCommand: 15
@@ -3458,7 +3458,7 @@ stages:
           parameters:
             build: true
             baseImage: $(baseImage)
-            command: "BuildIntegrationTests CompileTrimmingSamples --framework $(publishTargetFramework) --IncludeTestsRequiringDocker false --Filter \"$(IntegrationTestFilter)\" --SampleName \"$(IntegrationTestSampleName)\""
+            command: "BuildIntegrationTests CompileTrimmingSamples CompilePlatformSpecificSamples --framework $(publishTargetFramework) --IncludeTestsRequiringDocker false --Filter \"$(IntegrationTestFilter)\" --SampleName \"$(IntegrationTestSampleName)\""
             apiKey: $(DD_LOGGER_DD_API_KEY)
             retryCountForRunCommand: 3
             timeoutInMinutesForRunCommand: 15
