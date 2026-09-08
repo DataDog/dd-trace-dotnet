@@ -1085,7 +1085,7 @@ public class TestOptimizationFeatureTests : SettingsTestsBase
         try
         {
             Common.ShouldSkip(testSuite, nameof(SampleParameterizedItrTest), [value], method.GetParameters(), metadataTestName: displayName).Should().BeTrue();
-            Common.ShouldSkip(testSuite, nameof(SampleParameterizedItrTest), [value[..^1] + "b"], method.GetParameters(), metadataTestName: displayName).Should().BeFalse();
+            Common.ShouldSkip(testSuite, nameof(SampleParameterizedItrTest), [value.Substring(0, value.Length - 1) + "b"], method.GetParameters(), metadataTestName: displayName).Should().BeFalse();
             Common.ShouldSkip(testSuite, nameof(SampleParameterizedItrTest), [value], method.GetParameters(), metadataTestName: displayName + " changed").Should().BeFalse();
         }
         finally
