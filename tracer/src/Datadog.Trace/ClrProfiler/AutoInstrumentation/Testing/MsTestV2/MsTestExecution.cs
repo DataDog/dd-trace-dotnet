@@ -21,7 +21,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2;
 internal sealed class MsTestExecution
 {
     private static readonly AsyncLocal<MsTestExecution?> CurrentExecution = new();
-    private static readonly ConditionalWeakTable<object, StrongBox<MsTestExecution?>> MethodExecutions = new();
+    private static readonly ConditionalWeakTable<object, TestMethodBinding> MethodExecutions = new();
     private IList? _firstResults;
     private List<IList>? _additionalResults;
     private List<NativeAttempt>? _nativeAttempts;
@@ -49,7 +49,7 @@ internal sealed class MsTestExecution
 
     public bool IsNativeRetry => _nativeAttemptNumber > 0;
 
-    public static StrongBox<MsTestExecution?>? BindTestMethod(object? testMethod)
+    public static IDisposable? BindTestMethod(object? testMethod)
     {
         if (Current is not { } execution || testMethod is null)
         {
@@ -58,13 +58,13 @@ internal sealed class MsTestExecution
 
         // MSTest can restore the ExecutionContext captured by ClassInitialize before invoking a test.
         // Bind the actual method object before that switch; its arguments also distinguish data rows.
-        var binding = MethodExecutions.GetOrCreateValue(testMethod);
-        binding.Value = execution;
+        var binding = MethodExecutions.GetValue(testMethod, static _ => new TestMethodBinding());
+        binding.Execution = execution;
         return binding;
     }
 
     public static MsTestExecution? GetForTestMethod(object? testMethod)
-        => testMethod is not null && MethodExecutions.TryGetValue(testMethod, out var binding) ? binding.Value : Current;
+        => testMethod is not null && MethodExecutions.TryGetValue(testMethod, out var binding) ? binding.Execution : Current;
 
     public static bool IsAcceptableNativeResult(IList results)
     {
@@ -179,87 +179,23 @@ internal sealed class MsTestExecution
         {
             var originalResults = new object?[attempt.Results.Count];
             attempt.Results.CopyTo(originalResults, 0);
-            for (var row = 0; row < originalResults.Length; row++)
+            for (var resultIndex = 0; resultIndex < originalResults.Length; resultIndex++)
             {
-                if (!ContainsReference(results, originalResults[row]))
+                var originalResult = originalResults[resultIndex];
+                if (ContainsReference(results, originalResult))
                 {
-                    continue;
+                    await RetrySelectedResultAsync(results, attempt, resultIndex, originalResult).ConfigureAwait(false);
                 }
-
-                // A custom executor can return several results. Retry each result independently;
-                // a passing result must not hide another failure or receive its retry outcome.
-                var original = originalResults[row].DuckCast<ITestResultV4_4>()!;
-                var pendingTest = FindPendingTest(original.Instance);
-                if (pendingTest is not null)
-                {
-                    pendingTest.IsSelectedNativeResult = true;
-                }
-
-                var summary = attempt.Summary;
-                summary.ResultStatus = TestMethodAttributeExecuteAsyncIntegration.GetStatusFromOutcome(original.Outcome);
-                summary.AllowRetries = summary.ResultStatus != TestStatus.Skip;
-                summary.InitialExecutionPassed = summary.ResultStatus == TestStatus.Pass;
-                summary.InitialExecutionFailed = summary.ResultStatus == TestStatus.Fail;
-                object?[] rowResults = [originalResults[row]];
-                var retryName = pendingTest?.Test.Name;
-                var finalResults = await TestMethodAttributeExecuteAsyncIntegration.RunRetriesAsync(rowResults, attempt.State, summary, retryName).ConfigureAwait(false);
-                ObserveResults(finalResults);
-                for (var index = 0; index < results.Count; index++)
-                {
-                    if (!ReferenceEquals(results[index], originalResults[row]))
-                    {
-                        continue;
-                    }
-
-                    // InvokeAsync produces the execution result. The runner adds the row identity
-                    // afterwards, so preserve it when a Datadog retry replaces that result.
-                    var final = finalResults[0].DuckCast<ITestResultV4_4>()!;
-                    final.DisplayName = original.DisplayName;
-                    final.ExecutionId = original.ExecutionId;
-                    final.ParentExecId = original.ParentExecId;
-                    final.DatarowIndex = original.DatarowIndex;
-                    final.AssociatedUnitTestElement = original.AssociatedUnitTestElement;
-                    results[index] = finalResults[0];
-                }
-
-                attempt.Results[row] = finalResults[0];
             }
         }
 
-        foreach (var completed in _pendingTests!)
-        {
-            var tags = completed.Test.GetTags();
-            if (tags.IsQuarantined == "true" || tags.IsDisabled == "true" || tags.IsAttemptToFix == "true")
-            {
-                foreach (var result in results)
-                {
-                    if (completed.Result is { } completedResult && ReferenceEquals(completedResult.Instance, result) && result.TryDuckCast<ITestResultV4_4>(out var final) && !final.IsSupersededRetryAttempt)
-                    {
-                        final.Outcome = UnitTestOutcome.Ignored;
-                        final.TestFailureException = null;
-                    }
-                }
-            }
-        }
+        MaskTestManagementOutcomes(results);
     }
 
     public void CloseTests()
     {
-        // ClassInitialize can retain its captured ExecutionContext until the assembly finishes.
-        // Release attempt data even if that context still references this execution.
         var completedTests = _pendingTests;
-        if (_nativeAttempts is { } nativeAttempts)
-        {
-            foreach (var attempt in nativeAttempts)
-            {
-                attempt.State.RetryContext?.Dispose();
-            }
-        }
-
-        _firstResults = null;
-        _additionalResults = null;
-        _nativeAttempts = null;
-        _pendingTests = null;
+        ReleaseAttemptState();
         if (completedTests is null)
         {
             return;
@@ -269,86 +205,109 @@ internal sealed class MsTestExecution
         {
             foreach (var completed in completedTests)
             {
-                var tags = completed.Test.GetTags();
                 if (completed.Test.IsClosed)
                 {
                     continue;
                 }
 
-                PendingTest? last = null;
-                PendingTest? lastNativeAttempt = null;
-                PendingTest? selectedNativeResult = null;
-                var anyDatadogRetryPassed = false;
-                var anyFailed = false;
-                var executions = 0;
-                var allRetriesFailed = true;
-                foreach (var candidate in completedTests)
-                {
-                    var candidateTags = candidate.Test.GetTags();
-                    if (candidateTags.Name != tags.Name || candidateTags.Parameters != tags.Parameters)
-                    {
-                        continue;
-                    }
-
-                    if (candidate.IsDatadogRetry)
-                    {
-                        anyDatadogRetryPassed |= candidate.Status == TestStatus.Pass;
-                    }
-                    else
-                    {
-                        lastNativeAttempt = candidate;
-                        if (candidate.IsSelectedNativeResult)
-                        {
-                            selectedNativeResult = candidate;
-                        }
-                    }
-
-                    anyFailed |= candidate.Status == TestStatus.Fail;
-                    if (executions++ > 0)
-                    {
-                        allRetriesFailed &= candidate.Status == TestStatus.Fail;
-                    }
-
-                    last = candidate;
-                }
-
-                // The policy chooses the native result; Datadog retries can recover it.
-                // If the policy threw or returned no results, use the last recorded attempt.
-                // ATF still considers every failure, including attempts discarded by the policy.
-                var anyPassed = (selectedNativeResult ?? lastNativeAttempt)?.Status == TestStatus.Pass || anyDatadogRetryPassed;
+                var outcome = GetRetryOutcome(completedTests, completed);
                 completed.Test.Close(
                     completed.Status,
                     completed.Duration,
                     skipReason: null,
-                    beforeClose: test =>
-                    {
-                        var finalTags = test.GetTags();
-                        finalTags.FinalStatus = ReferenceEquals(completed, last)
-                                                    ? Common.CalculateFinalStatus(anyPassed, anyFailed, completed.Status == TestStatus.Skip, finalTags)
-                                                    : null;
-                        finalTags.HasFailedAllRetries = ReferenceEquals(completed, last) && executions > 1 && allRetriesFailed ? "true" : null;
-                        if (finalTags.IsAttemptToFix == "true" && ReferenceEquals(completed, last) && executions > 1)
-                        {
-                            finalTags.AttemptToFixPassed = anyFailed ? "false" : "true";
-                        }
-                    });
+                    beforeClose: test => outcome.ApplyFinalTags(test, completed));
             }
         }
         finally
         {
-            foreach (var completed in completedTests)
+            CloseRemainingTests(completedTests);
+        }
+    }
+
+    private static void ReplaceSelectedResult(IList selectedResults, ITestResultV4_4 originalResult, object? replacement)
+    {
+        for (var index = 0; index < selectedResults.Count; index++)
+        {
+            if (ReferenceEquals(selectedResults[index], originalResult.Instance))
             {
-                try
+                CopyResultIdentity(originalResult, replacement.DuckCast<ITestResultV4_4>()!);
+                selectedResults[index] = replacement;
+            }
+        }
+    }
+
+    private static void CopyResultIdentity(ITestResultV4_4 source, ITestResultV4_4 destination)
+    {
+        // InvokeAsync produces the execution result. The runner adds the row identity afterwards.
+        destination.DisplayName = source.DisplayName;
+        destination.ExecutionId = source.ExecutionId;
+        destination.ParentExecId = source.ParentExecId;
+        destination.DatarowIndex = source.DatarowIndex;
+        destination.AssociatedUnitTestElement = source.AssociatedUnitTestElement;
+    }
+
+    private static RetryOutcome GetRetryOutcome(List<PendingTest> completedTests, PendingTest completed)
+    {
+        var tags = completed.Test.GetTags();
+        PendingTest? lastAttempt = null;
+        PendingTest? lastNativeAttempt = null;
+        PendingTest? selectedNativeResult = null;
+        var anyDatadogRetryPassed = false;
+        var anyFailed = false;
+        var executionCount = 0;
+        var allRetriesFailed = true;
+        foreach (var candidate in completedTests)
+        {
+            var candidateTags = candidate.Test.GetTags();
+            if (candidateTags.Name != tags.Name || candidateTags.Parameters != tags.Parameters)
+            {
+                continue;
+            }
+
+            if (candidate.IsDatadogRetry)
+            {
+                anyDatadogRetryPassed |= candidate.Status == TestStatus.Pass;
+            }
+            else
+            {
+                lastNativeAttempt = candidate;
+                if (candidate.IsSelectedNativeResult)
                 {
-                    if (!completed.Test.IsClosed)
-                    {
-                        completed.Test.Close(completed.Status, completed.Duration);
-                    }
+                    selectedNativeResult = candidate;
                 }
-                catch (Exception ex)
+            }
+
+            anyFailed |= candidate.Status == TestStatus.Fail;
+            if (executionCount > 0)
+            {
+                allRetriesFailed &= candidate.Status == TestStatus.Fail;
+            }
+
+            executionCount++;
+            lastAttempt = candidate;
+        }
+
+        // The policy chooses the native result; Datadog retries can recover it.
+        // If the policy threw or returned no results, use the last recorded attempt.
+        // ATF still considers every failure, including attempts discarded by the policy.
+        var anyPassed = (selectedNativeResult ?? lastNativeAttempt)?.Status == TestStatus.Pass || anyDatadogRetryPassed;
+        return new RetryOutcome(lastAttempt, anyPassed, anyFailed, executionCount, allRetriesFailed);
+    }
+
+    private static void CloseRemainingTests(List<PendingTest> completedTests)
+    {
+        foreach (var completed in completedTests)
+        {
+            try
+            {
+                if (!completed.Test.IsClosed)
                 {
-                    Common.Log.Error(ex, "MSTest: Error closing a completed test.");
+                    completed.Test.Close(completed.Status, completed.Duration);
                 }
+            }
+            catch (Exception ex)
+            {
+                Common.Log.Error(ex, "MSTest: Error closing a completed test.");
             }
         }
     }
@@ -367,6 +326,73 @@ internal sealed class MsTestExecution
         }
 
         return false;
+    }
+
+    private async Task RetrySelectedResultAsync(IList selectedResults, NativeAttempt attempt, int resultIndex, object? result)
+    {
+        // A custom executor can return several results. Retry each result independently;
+        // a passing result must not hide another failure or receive its retry outcome.
+        var originalResult = result.DuckCast<ITestResultV4_4>()!;
+        var pendingTest = FindPendingTest(originalResult.Instance);
+        if (pendingTest is not null)
+        {
+            pendingTest.IsSelectedNativeResult = true;
+        }
+
+        var summary = attempt.Summary;
+        summary.ResultStatus = TestMethodAttributeExecuteAsyncIntegration.GetStatusFromOutcome(originalResult.Outcome);
+        summary.AllowRetries = summary.ResultStatus != TestStatus.Skip;
+        summary.InitialExecutionPassed = summary.ResultStatus == TestStatus.Pass;
+        summary.InitialExecutionFailed = summary.ResultStatus == TestStatus.Fail;
+        object?[] initialResults = [result];
+        var retryResults = await TestMethodAttributeExecuteAsyncIntegration.RunRetriesAsync(initialResults, attempt.State, summary, pendingTest?.Test.Name).ConfigureAwait(false);
+        ObserveResults(retryResults);
+        ReplaceSelectedResult(selectedResults, originalResult, retryResults[0]);
+        attempt.Results[resultIndex] = retryResults[0];
+    }
+
+    private void MaskTestManagementOutcomes(IList selectedResults)
+    {
+        foreach (var completed in _pendingTests!)
+        {
+            if (completed.Result is not { } completedResult)
+            {
+                continue;
+            }
+
+            var tags = completed.Test.GetTags();
+            if (tags.IsQuarantined != "true" && tags.IsDisabled != "true" && tags.IsAttemptToFix != "true")
+            {
+                continue;
+            }
+
+            foreach (var result in selectedResults)
+            {
+                if (ReferenceEquals(completedResult.Instance, result) && result.TryDuckCast<ITestResultV4_4>(out var final) && !final.IsSupersededRetryAttempt)
+                {
+                    final.Outcome = UnitTestOutcome.Ignored;
+                    final.TestFailureException = null;
+                }
+            }
+        }
+    }
+
+    private void ReleaseAttemptState()
+    {
+        // ClassInitialize can retain its captured ExecutionContext until the assembly finishes.
+        // Release attempt data even if that context still references this execution.
+        if (_nativeAttempts is { } nativeAttempts)
+        {
+            foreach (var attempt in nativeAttempts)
+            {
+                attempt.State.RetryContext?.Dispose();
+            }
+        }
+
+        _firstResults = null;
+        _additionalResults = null;
+        _nativeAttempts = null;
+        _pendingTests = null;
     }
 
     private PendingTest? FindPendingTest(object? result)
@@ -396,6 +422,37 @@ internal sealed class MsTestExecution
         }
 
         return null;
+    }
+
+    private readonly struct RetryOutcome(PendingTest? lastAttempt, bool anyPassed, bool anyFailed, int executionCount, bool allRetriesFailed)
+    {
+        private readonly PendingTest? _lastAttempt = lastAttempt;
+        private readonly bool _anyPassed = anyPassed;
+        private readonly bool _anyFailed = anyFailed;
+        private readonly int _executionCount = executionCount;
+        private readonly bool _allRetriesFailed = allRetriesFailed;
+
+        public void ApplyFinalTags(Test test, PendingTest attempt)
+        {
+            var tags = test.GetTags();
+            var isLastAttempt = ReferenceEquals(attempt, _lastAttempt);
+            tags.FinalStatus = isLastAttempt
+                                   ? Common.CalculateFinalStatus(_anyPassed, _anyFailed, attempt.Status == TestStatus.Skip, tags)
+                                   : null;
+            tags.HasFailedAllRetries = isLastAttempt && _executionCount > 1 && _allRetriesFailed ? "true" : null;
+            if (tags.IsAttemptToFix == "true" && isLastAttempt && _executionCount > 1)
+            {
+                tags.AttemptToFixPassed = _anyFailed ? "false" : "true";
+            }
+        }
+    }
+
+    private sealed class TestMethodBinding : IDisposable
+    {
+        public MsTestExecution? Execution { get; set; }
+
+        // The type cache retains methods across attempts, but must not retain completed executions.
+        public void Dispose() => Execution = null;
     }
 
     private sealed class NativeAttempt(IList results, TestMethodAttributeExecuteAsyncIntegration.TestRunnerState state, TestAttemptResult summary)
