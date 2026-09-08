@@ -567,6 +567,10 @@ public sealed class Test
         }
     }
 
+    /// <summary>
+    /// Captures status and duration once and ends coverage and execution callbacks.
+    /// Requires the execution lock; reentrant Close waits until callbacks have completed.
+    /// </summary>
     private void FinishExecution(TestStatus status, TimeSpan? duration, string? skipReason)
     {
         if (_executionFinished || _finishingExecution)
@@ -600,6 +604,9 @@ public sealed class Test
         }
     }
 
+    /// <summary>
+    /// Ends the exact coverage session captured at test creation, even after an async context switch.
+    /// </summary>
     private void FinishCoverage(TestSpanTags tags, TestStatus status)
     {
         var scope = _scope;
@@ -638,6 +645,9 @@ public sealed class Test
         }
     }
 
+    /// <summary>
+    /// Records the attempt outcome and propagates failures and skip accounting to its suite.
+    /// </summary>
     private void SetExecutionStatus(TestSpanTags tags, TestStatus status, string? skipReason)
     {
         // Set status
@@ -680,6 +690,9 @@ public sealed class Test
         }
     }
 
+    /// <summary>
+    /// Runs each execution callback once, allowing remaining callbacks to run if one fails.
+    /// </summary>
     private void RunCompletionCallbacks()
     {
         var callbacks = _executionCompletedActions;
@@ -702,6 +715,10 @@ public sealed class Test
         }
     }
 
+    /// <summary>
+    /// Finishes the span with its captured duration, disposes its scope, and removes the active test.
+    /// Requires the execution lock and completed execution callbacks.
+    /// </summary>
     private void CompleteClose()
     {
         if (Interlocked.Exchange(ref _finished, 1) == 1)
@@ -739,6 +756,9 @@ public sealed class Test
         _testOptimization.Log.Debug("######### Test Closed: {Name} ({Suite} | {Module}) | {Status}", Name, Suite.Name, Suite.Module.Name, tags.Status);
     }
 
+    /// <summary>
+    /// Records closure after final retry tags are available, so telemetry reflects the emitted span.
+    /// </summary>
     private void RecordCloseTelemetry(TestSpanTags tags)
     {
         if (TelemetryHelper.GetEventTypeWithCodeOwnerAndSupportedCiAndBenchmarkAndEarlyFlakeDetection(
