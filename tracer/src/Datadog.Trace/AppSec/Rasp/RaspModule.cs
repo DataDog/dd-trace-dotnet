@@ -245,6 +245,38 @@ internal static class RaspModule
         RunWafRasp(arguments, rootSpan, address);
     }
 
+    internal static void RecordRaspOutcome(string address, WafOutcome outcome)
+        => RecordRaspOutcome(address, outcome, TelemetryFactory.Metrics);
+
+    /// <summary>
+    /// Turns the cause of a RASP evaluation that produced no result into its metric. This is the only
+    /// place that decides, so that context creation and the run itself cannot classify the same cause
+    /// differently.
+    /// </summary>
+    internal static void RecordRaspOutcome(string address, WafOutcome outcome, IMetricsTelemetryCollector metrics)
+    {
+        switch (outcome)
+        {
+            case WafOutcome.RequestEnded:
+                RecordRaspSkipped(address, SkipReason.AfterRequest, metrics);
+                break;
+
+            case WafOutcome.BindingFailed:
+                RecordRaspError(address, result: null, metrics);
+                break;
+
+            case WafOutcome.WafUnavailable:
+                // a WAF that is gone (disposed, replaced by an update, or never initialized) never got
+                // to evaluate anything, so counting it as a RASP error would turn every remote
+                // configuration update into a burst of phantom binding errors
+                break;
+
+            case WafOutcome.Success:
+                // the result carries the return code, so RecordRaspError classifies it instead
+                break;
+        }
+    }
+
     internal static void RecordRaspSkipped(string address, SkipReason reason)
         => RecordRaspSkipped(address, reason, TelemetryFactory.Metrics);
 
@@ -341,12 +373,11 @@ internal static class RaspModule
             return;
         }
 
-        var result = securityCoordinator.Value.RunWaf(arguments, runWithEphemeral: true, isRasp: true, raspAddress: address);
+        var result = securityCoordinator.Value.RunWaf(arguments, runWithEphemeral: true, raspAddress: address);
 
-        // RecordRaspError needs a result to classify. GetOrCreateAdditiveContext reports the context it
-        // could not hand out and RunWaf's catch a thrown binding failure, but a null out of
-        // Context.RunInternal (empty ephemeral batch, failed SubcontextInit, request context disposed
-        // after hand-out) still reports nothing: RunInternal has to surface its cause first
+        // a null result carries no return code to classify, and RunWaf has already reported it from the
+        // outcome the failing step returned: the context it could not hand out, the run that produced
+        // nothing, or a thrown binding failure
         if (result is not null)
         {
             RecordRaspError(address, result, TelemetryFactory.Metrics);

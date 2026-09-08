@@ -140,6 +140,42 @@ public class RaspModuleTelemetryTests
         metrics.Should().BeEmpty();
     }
 
+    [Theory]
+    [MemberData(nameof(RaspAddresses))]
+    public async Task GivenAnEndedRequest_WhenTheOutcomeIsRecorded_ThenAnAfterRequestSkipIsReported(string address, string[] expectedRuleTags)
+    {
+        var metrics = await RecordAsync(collector => RaspModule.RecordRaspOutcome(address, WafOutcome.RequestEnded, collector));
+
+        var metric = metrics.Should().ContainSingle(m => m.Name == "rasp.rule.skipped").Which;
+        metric.Tags.Should().Contain("reason:after-request").And.Contain(expectedRuleTags);
+        metric.Values.Should().Equal(1);
+    }
+
+    [Theory]
+    [MemberData(nameof(RaspAddresses))]
+    public async Task GivenAFailedBinding_WhenTheOutcomeIsRecorded_ThenTheBindingErrorIsReported(string address, string[] expectedRuleTags)
+    {
+        var metrics = await RecordAsync(collector => RaspModule.RecordRaspOutcome(address, WafOutcome.BindingFailed, collector));
+
+        var expectedTags = new[] { "waf_version:unknown", "event_rules_version:unknown", "waf_error:-127" }.Concat(expectedRuleTags);
+        var metric = metrics.Should().ContainSingle(m => m.Name == "rasp.error").Which;
+        metric.Tags.Should().Equal(expectedTags);
+        metric.Values.Should().Equal(1);
+    }
+
+    // WafOutcome is internal, so a public theory has to carry it as its underlying value
+    [Theory]
+    [InlineData((int)WafOutcome.Success)]
+    [InlineData((int)WafOutcome.WafUnavailable)]
+    public async Task GivenAnEvaluationThatDidNotFail_WhenTheOutcomeIsRecorded_ThenNothingIsReported(int outcomeValue)
+    {
+        // a successful run is classified from its return code instead, and a WAF that is gone never got
+        // to evaluate anything: neither is a RASP error
+        var metrics = await RecordAsync(collector => RaspModule.RecordRaspOutcome(AddressesConstants.DBStatement, (WafOutcome)outcomeValue, collector));
+
+        metrics.Should().BeEmpty();
+    }
+
     private static async Task<List<(string Name, string[] Tags, int[] Values)>> RecordAsync(Action<IMetricsTelemetryCollector> record)
     {
         var collector = new MetricsTelemetryCollector(Timeout.InfiniteTimeSpan);

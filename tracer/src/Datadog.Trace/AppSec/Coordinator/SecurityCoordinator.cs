@@ -47,10 +47,14 @@ internal readonly partial struct SecurityCoordinator
         return RunWaf(args, lastTime);
     }
 
-    public IResult? RunWaf(Dictionary<string, object> args, bool lastWafCall = false, bool runWithEphemeral = false, bool isRasp = false, string? sessionId = null, string? raspAddress = null)
+    public IResult? RunWaf(Dictionary<string, object> args, bool lastWafCall = false, bool runWithEphemeral = false, string? sessionId = null, string? raspAddress = null)
     {
         SecurityReporter.LogAddressIfDebugEnabled(args);
         IResult? result = null;
+
+        // a RASP run is exactly a run that has an address to report under, so the execution mode and
+        // the telemetry classification cannot end up disagreeing
+        var isRasp = raspAddress is not null;
 
         try
         {
@@ -72,9 +76,17 @@ internal readonly partial struct SecurityCoordinator
             _security.ApiSecurity.ShouldAnalyzeSchema(lastWafCall, _localRootSpan, args, _httpTransport.StatusCode, _httpTransport.RouteData);
 
             // run the WAF and execute the results
+            var outcome = WafOutcome.Success;
             result = runWithEphemeral
-                         ? additiveContext.RunWithEphemeral(args, _security.Settings.WafTimeoutMicroSeconds, isRasp)
+                         ? additiveContext.RunWithEphemeral(args, _security.Settings.WafTimeoutMicroSeconds, isRasp, out outcome)
                          : additiveContext.Run(args, _security.Settings.WafTimeoutMicroSeconds);
+
+            if (raspAddress is not null)
+            {
+                // the context was handed out, so a run that produced nothing failed or arrived after the
+                // request ended, and only the run knows which: a null here is not classifiable
+                RaspModule.RecordRaspOutcome(raspAddress, outcome);
+            }
 
             SetErrorInformation(isRasp, result);
             SecurityReporter.RecordWafTelemetry(result, isRasp);
@@ -85,9 +97,9 @@ internal readonly partial struct SecurityCoordinator
             {
                 if (raspAddress is not null)
                 {
-                    RaspModule.RecordRaspError(raspAddress, result: null, TelemetryFactory.Metrics);
+                    RaspModule.RecordRaspOutcome(raspAddress, WafOutcome.BindingFailed);
                 }
-                else if (!isRasp)
+                else
                 {
                     TelemetryFactory.Metrics.RecordCountWafError(MetricTags.WafError.BindingError);
                 }

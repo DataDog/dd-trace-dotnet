@@ -17,9 +17,11 @@ namespace Datadog.Trace.AppSec.Waf
 
         bool Disposed { get; }
 
+        /// <param name="outcome">Why no context was handed out, so that a caller can tell a binding
+        /// failure from a WAF that is gone without re-reading state a concurrent disposal has moved.</param>
         /// <param name="isRasp">Whether the context serves a RASP evaluation, whose binding errors
         /// are reported as rasp.error instead of the generic waf.error.</param>
-        public IContext? CreateContext(bool isRasp = false);
+        public IContext? CreateContext(out WafOutcome outcome, bool isRasp = false);
 
         /// <summary>
         /// Evaluates persistent data, whose side effects live for the whole context.

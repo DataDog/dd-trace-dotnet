@@ -11,7 +11,6 @@ using Datadog.Trace.AppSec.Rasp;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Tagging;
-using Datadog.Trace.Telemetry;
 using Datadog.Trace.Util.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
@@ -189,33 +188,35 @@ internal partial class AppSecRequestContext
     }
 
     // raspAddress is set for a RASP run only, and a context that cannot be handed out is then reported
-    // under it: telling an ended request from a failed creation is only reliable while _contextSync is held
+    // under it. The cause is captured while _contextSync is held because it is not observable
+    // afterwards: a concurrent disposal would make an ended request and a failed creation look alike.
     internal IContext? GetOrCreateAdditiveContext(Security security, string? raspAddress = null)
     {
         IContext? context;
-        bool disposed;
+        var outcome = WafOutcome.Success;
 
         lock (_contextSync)
         {
-            disposed = _isAdditiveContextDisposed;
-            context = disposed ? null : _context ??= security.CreateAdditiveContext(raspAddress is not null);
+            if (_isAdditiveContextDisposed)
+            {
+                outcome = WafOutcome.RequestEnded;
+                context = null;
+            }
+            else
+            {
+                // an already created context keeps the Success it was handed out with
+                context = _context ??= security.CreateAdditiveContext(out outcome, raspAddress is not null);
+            }
         }
 
-        if (disposed)
+        if (outcome is WafOutcome.RequestEnded)
         {
             Log.Debug("Additive context was requested when already disposed");
         }
 
-        if (context is null && raspAddress is not null)
+        if (raspAddress is not null)
         {
-            if (disposed)
-            {
-                RaspModule.RecordRaspSkipped(raspAddress, RaspModule.SkipReason.AfterRequest);
-            }
-            else
-            {
-                RaspModule.RecordRaspError(raspAddress, result: null, TelemetryFactory.Metrics);
-            }
+            RaspModule.RecordRaspOutcome(raspAddress, outcome);
         }
 
         return context;

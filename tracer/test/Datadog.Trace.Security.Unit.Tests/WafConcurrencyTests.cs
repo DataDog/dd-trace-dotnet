@@ -162,7 +162,7 @@ public class WafConcurrencyTests : WafLibraryRequiredTest
                     for (var i = 0; i < 100; i++)
                     {
                         var next = r.Next();
-                        using var context = waf.CreateContext();
+                        using var context = waf.CreateContext(out _);
                         if (context == null)
                         {
                             i--;
@@ -262,7 +262,7 @@ public class WafConcurrencyTests : WafLibraryRequiredTest
 
         var threads = new Thread[20];
 
-        var context = waf.CreateContext();
+        var context = waf.CreateContext(out _);
 
         for (var t = 0; t < threads.Length; t++)
         {
@@ -339,7 +339,8 @@ public class WafConcurrencyTests : WafLibraryRequiredTest
 
         try
         {
-            waf!.CreateContext(isRasp).Should().BeNull();
+            waf!.CreateContext(out var outcome, isRasp).Should().BeNull();
+            outcome.Should().Be(WafOutcome.BindingFailed);
         }
         finally
         {

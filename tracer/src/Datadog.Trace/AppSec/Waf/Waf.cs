@@ -309,11 +309,12 @@ namespace Datadog.Trace.AppSec.Waf
         /// </summary>
         /// <returns>Context object to perform matching using the provided WAF instance</returns>
         /// <exception cref="Exception">Exception</exception>
-        public IContext? CreateContext(bool isRasp = false)
+        public IContext? CreateContext(out WafOutcome outcome, bool isRasp = false)
         {
             if (Disposed)
             {
                 Log.Warning("Context can't be created as waf instance has been disposed.");
+                outcome = WafOutcome.WafUnavailable;
                 return null;
             }
 
@@ -331,6 +332,7 @@ namespace Datadog.Trace.AppSec.Waf
                     _wafLocker.ExitReadLock();
                     ReleasePendingHandles();
                     Log.Warning("Context can't be created as waf instance has been disposed.");
+                    outcome = WafOutcome.WafUnavailable;
                     return null;
                 }
 
@@ -346,13 +348,14 @@ namespace Datadog.Trace.AppSec.Waf
             {
                 Log.Warning("Context couldn't be created as we couldn't acquire a reader lock");
 
-                // a RASP run reports its binding errors as rasp.error, the same way Context and
-                // SecurityCoordinator suppress the generic metric for it
+                // a RASP run reports its binding errors as rasp.error instead, which the caller does
+                // from the outcome
                 if (!isRasp)
                 {
                     TelemetryFactory.Metrics.RecordCountWafError(Telemetry.Metrics.MetricTags.WafError.BindingError);
                 }
 
+                outcome = WafOutcome.BindingFailed;
                 return null;
             }
 
@@ -362,7 +365,11 @@ namespace Datadog.Trace.AppSec.Waf
                 throw new Exception(InitContextError);
             }
 
-            return Context.GetContext(contextHandle, this, _wafLibraryInvoker, _encoder);
+            // GetContext only drops the handle when it finds the waf disposed under it, so a null here
+            // is a lost race against an update or a shutdown, never a binding failure
+            var context = Context.GetContext(contextHandle, this, _wafLibraryInvoker, _encoder);
+            outcome = context is null ? WafOutcome.WafUnavailable : WafOutcome.Success;
+            return context;
         }
 
         // Doesn't require a non disposed waf handle, but as the WAF instance needs to be valid for the lifetime of the context, if waf is disposed, don't run (unpredictable)

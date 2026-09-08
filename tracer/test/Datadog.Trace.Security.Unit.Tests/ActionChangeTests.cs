@@ -30,7 +30,7 @@ public class ActionChangeTests : WafLibraryRequiredTest
         var configurationState = CreateConfigurationState("rasp-rule-set.json");
         var initResult = CreateWaf(configurationState, true);
         var waf = initResult.Waf;
-        using var context = waf.CreateContext();
+        using var context = waf.CreateContext(out _);
         var args = CreateArgs(paramValue);
         var result = context.Run(args, TimeoutMicroSeconds);
         result.Timeout.Should().BeFalse("Timeout should be false");
@@ -41,7 +41,7 @@ public class ActionChangeTests : WafLibraryRequiredTest
         var newAction = CreateNewStatusAction(action, actionType, newStatus);
         UpdateWafWithActions([newAction], waf, configurationState, "update1");
 
-        using var contextNew = waf.CreateContext();
+        using var contextNew = waf.CreateContext(out _);
         result = contextNew.Run(args, TimeoutMicroSeconds);
         result.Timeout.Should().BeFalse("Timeout should be false");
         if (actionType == BlockingAction.BlockRequestType)
@@ -67,7 +67,7 @@ public class ActionChangeTests : WafLibraryRequiredTest
 
         UpdateWafWithActions([CreateNewStatusAction("block", BlockingAction.BlockRequestType, 500)], waf, configurationState, "update1");
 
-        using var context = waf.CreateContext();
+        using var context = waf.CreateContext(out _);
         var result = context.Run(args, TimeoutMicroSeconds);
         result.Timeout.Should().BeFalse("Timeout should be false");
         result.BlockInfo["status_code"].Should().Be(500);
