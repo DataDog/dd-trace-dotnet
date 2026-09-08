@@ -45,6 +45,8 @@ public class MsTestV2NativeRetriesTests : TestingFrameworkEvpTest
 
     protected virtual bool UseMtp => false;
 
+    private int FailedTestExitCode => UseMtp ? 2 : 1;
+
     [Fact]
     public async Task CleanupFailureAfterNativeRetryBelongsToTheSuite()
     {
@@ -78,8 +80,7 @@ public class MsTestV2NativeRetriesTests : TestingFrameworkEvpTest
             }
         };
 
-        var filter = UseMtp ? "--filter FullyQualifiedName~PassesBeforeCleanupFailure" : "--TestCaseFilter:FullyQualifiedName~PassesBeforeCleanupFailure";
-        using var result = await RunDotnetTestSampleAndWaitForExit(agent, arguments: filter, packageVersion: PackageVersion, expectedExitCode: UseMtp ? 2 : 1, useDotnetExec: UseMtp);
+        using var result = await RunMSTestAsync(agent, "FullyQualifiedName~PassesBeforeCleanupFailure", FailedTestExitCode);
         tests.Should().HaveCount(2);
         tests.Single(test => test.Meta.ContainsKey(TestTags.TestFinalStatus)).Meta[TestTags.TestFinalStatus].Should().Be(TestTags.StatusPass);
         suites.Should().ContainSingle();
@@ -87,123 +88,131 @@ public class MsTestV2NativeRetriesTests : TestingFrameworkEvpTest
         suites.Single()["meta"].Value<string>(Tags.ErrorMsg).Should().Contain("Class cleanup failed after the retry.");
     }
 
-    [Theory]
-    [InlineData("MixedRowOutcomes", 4, 2, 0, 0, false)]
-    [InlineData("TimesOut", 3, 1, 1, 2, false)]
-    [InlineData("RegressesAfterPassing", 6, 2, 1, 2, false)]
-    [InlineData("RegressesAfterPassing", 7, 2, 0, 0, true)]
-    [InlineData("RetriesUseFreshInstances", 4, 1, 0, 0, true)]
-    [InlineData("CustomPolicyContinuesAfterPassing", 3, 1, 1, 2, false)]
-    [InlineData("CustomPolicyContinuesAfterPassing", 4, 1, 0, 0, true)]
-    [InlineData("CustomPolicySelectsEarlierAttempt", 3, 1, 0, 0, false)]
-    [InlineData("CustomPolicySelectsEarlierAttempt", 3, 1, 0, 0, true)]
-    [InlineData("DelegatingExecutor", 2, 1, 0, 0, false)]
-    [InlineData("MethodRetryOverridesClass", 2, 1, 1, 2, false)]
-    [InlineData("MultipleResults", 6, 2, 1, 2, false)]
-    [InlineData("MultipleResults", 7, 2, 0, 0, true)]
-    public async Task NativeRetryPolicyHandlesMixedRowsAndTimeouts(string name, int expectedAttempts, int expectedRows, int vstestExitCode, int mtpExitCode, bool automaticRetries)
+    [Fact]
+    public async Task NativeRetriesPreserveSkippedAndPassingRows()
     {
-        EnvironmentHelper.EnableDefaultTransport();
-        InjectSession(out _, out _, out _, out _, out _, out _, out _);
-        SetEnvironmentVariable(ConfigurationKeys.CIVisibility.FlakyRetryEnabled, automaticRetries ? "1" : "0");
-        SetEnvironmentVariable("TESTINGPLATFORM_TELEMETRY_OPTOUT", "1");
-        var attemptsFile = Path.GetTempFileName();
-        var historyFile = Path.GetTempFileName();
-        SetEnvironmentVariable("MSTEST_ATTEMPTS_FILE", attemptsFile);
-        SetEnvironmentVariable("MSTEST_RETRY_HISTORY_FILE", historyFile);
-        var tests = new List<MockCIVisibilityTest>();
-        using var agent = EnvironmentHelper.GetMockAgent();
-        agent.EventPlatformProxyPayloadReceived += (_, e) =>
+        var result = await RunRetryScenarioAsync("MixedRowOutcomes", expectedAttempts: 4, expectedRows: 2, expectedExitCode: 0);
+        result.Tests.Where(test => test.Meta.ContainsKey(TestTags.TestFinalStatus))
+              .Select(test => test.Meta[TestTags.TestFinalStatus])
+              .Should().BeEquivalentTo(TestTags.StatusSkip, TestTags.StatusPass);
+    }
+
+    [Fact]
+    public async Task NativeRetriesExhaustTimeoutAttempts()
+    {
+        var result = await RunRetryScenarioAsync("TimesOut", expectedAttempts: 3, expectedRows: 1, expectedExitCode: FailedTestExitCode);
+        result.Tests.Should().OnlyContain(test => test.Meta[TestTags.Status] == TestTags.StatusFail);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task NativeRetriesKeepEachRowsFinalOutcome(bool automaticRetries)
+    {
+        var result = await RunRetryScenarioAsync(
+            "RegressesAfterPassing",
+            expectedAttempts: automaticRetries ? 7 : 6,
+            expectedRows: 2,
+            expectedExitCode: automaticRetries ? 0 : FailedTestExitCode,
+            automaticRetries: automaticRetries);
+        var rows = result.Tests.GroupBy(test => test.Meta[TestTags.Parameters]).ToArray();
+        rows.Should().HaveCount(2);
+        foreach (var row in rows)
         {
-            if (e.Value.PathAndQuery.EndsWith("api/v2/libraries/tests/services/setting"))
-            {
-                e.Value.Response = new MockTracerResponse(GetSettingsJson("false", "false", "false", "0", automaticRetries ? "true" : "false"), 200);
-            }
-            else if (e.Value.PathAndQuery.EndsWith("api/v2/citestcycle"))
-            {
-                var payload = JsonConvert.DeserializeObject<MockCIVisibilityProtocol>(e.Value.BodyInJson);
-                foreach (var testEvent in payload.Events.Where(testEvent => testEvent.Type == SpanTypes.Test))
-                {
-                    tests.Add(JsonConvert.DeserializeObject<MockCIVisibilityTest>(testEvent.Content.ToString()));
-                }
-            }
-        };
-
-        try
-        {
-            var filter = UseMtp ? $"--filter FullyQualifiedName~{name}" : $"--TestCaseFilter:FullyQualifiedName~{name}";
-            using var result = await RunDotnetTestSampleAndWaitForExit(agent, arguments: filter, packageVersion: PackageVersion, expectedExitCode: UseMtp ? mtpExitCode : vstestExitCode, useDotnetExec: UseMtp);
-            File.ReadAllLines(attemptsFile).Should().HaveCount(expectedAttempts);
-            tests.Should().HaveCount(expectedAttempts);
-            tests.Count(test => test.Meta.ContainsKey(TestTags.TestFinalStatus)).Should().Be(expectedRows);
-            tests.Count(test => test.Meta.ContainsKey(TestTags.TestIsRetry)).Should().Be(expectedAttempts - expectedRows);
-            if (name == "MixedRowOutcomes")
-            {
-                tests.Where(test => test.Meta.ContainsKey(TestTags.TestFinalStatus)).Select(test => test.Meta[TestTags.TestFinalStatus]).Should().BeEquivalentTo([TestTags.StatusSkip, TestTags.StatusPass]);
-            }
-            else if (name == "MultipleResults")
-            {
-                tests.Where(test => test.Meta.ContainsKey(TestTags.TestFinalStatus)).Select(test => test.Meta[TestTags.TestFinalStatus]).Should().BeEquivalentTo([automaticRetries ? TestTags.StatusPass : TestTags.StatusFail, TestTags.StatusPass]);
-                tests.Select(test => test.Meta[TestTags.Name]).Distinct().Should().BeEquivalentTo("First result", "Second result");
-                if (UseMtp)
-                {
-                    File.ReadAllLines(historyFile).Should().BeEquivalentTo(
-                        "First result|1|True",
-                        "Second result|1|True",
-                        "First result|2|True",
-                        "Second result|2|True",
-                        "First result|3|False",
-                        "Second result|3|False");
-                }
-            }
-            else if (name == "RegressesAfterPassing")
-            {
-                if (UseMtp)
-                {
-                    File.ReadAllLines(historyFile).Should().BeEquivalentTo(
-                        "RegressesAfterPassing (0)|1|True",
-                        "RegressesAfterPassing (1)|1|True",
-                        "RegressesAfterPassing (0)|2|True",
-                        "RegressesAfterPassing (1)|2|True",
-                        "RegressesAfterPassing (0)|3|False",
-                        "RegressesAfterPassing (1)|3|False");
-                }
-
-                var rows = tests.GroupBy(test => test.Meta[TestTags.Parameters]).ToArray();
-                rows.Should().HaveCount(2);
-                foreach (var row in rows)
-                {
-                    var attempts = row.OrderBy(test => test.Start).ToArray();
-                    attempts.Length.Should().BeInRange(3, automaticRetries ? 4 : 3);
-                    attempts.Take(attempts.Length - 1).Should().OnlyContain(test => !test.Meta.ContainsKey(TestTags.TestFinalStatus));
-                    attempts.Last().Meta[TestTags.TestFinalStatus].Should().Be(attempts.Last().Meta[TestTags.Status]);
-                }
-
-                tests.Where(test => test.Meta.ContainsKey(TestTags.TestFinalStatus)).Select(test => test.Meta[TestTags.TestFinalStatus]).Should().BeEquivalentTo([automaticRetries ? TestTags.StatusPass : TestTags.StatusFail, TestTags.StatusPass]);
-            }
-            else if (name == "CustomPolicySelectsEarlierAttempt")
-            {
-                tests.OrderBy(test => test.Start).Select(test => test.Meta[TestTags.Status]).Should().Equal(TestTags.StatusFail, TestTags.StatusPass, TestTags.StatusFail);
-                tests.Single(test => test.Meta.ContainsKey(TestTags.TestFinalStatus)).Meta[TestTags.TestFinalStatus].Should().Be(TestTags.StatusPass);
-                if (UseMtp)
-                {
-                    File.ReadAllLines(historyFile).Should().BeEquivalentTo("CustomPolicySelectsEarlierAttempt|1|True", "CustomPolicySelectsEarlierAttempt|2|False");
-                }
-            }
-            else if (name is "RetriesUseFreshInstances" or "CustomPolicyContinuesAfterPassing" or "DelegatingExecutor")
-            {
-                tests.OrderBy(test => test.Start).Last().Meta[TestTags.TestFinalStatus].Should().Be(vstestExitCode == 0 ? TestTags.StatusPass : TestTags.StatusFail);
-            }
-            else
-            {
-                tests.Should().OnlyContain(test => test.Meta[TestTags.Status] == TestTags.StatusFail);
-            }
+            var attempts = row.OrderBy(test => test.Start).ToArray();
+            attempts.Length.Should().BeInRange(3, automaticRetries ? 4 : 3);
+            attempts.Take(attempts.Length - 1).Should().OnlyContain(test => !test.Meta.ContainsKey(TestTags.TestFinalStatus));
+            attempts.Last().Meta[TestTags.TestFinalStatus].Should().Be(attempts.Last().Meta[TestTags.Status]);
         }
-        finally
+
+        result.Tests.Where(test => test.Meta.ContainsKey(TestTags.TestFinalStatus))
+              .Select(test => test.Meta[TestTags.TestFinalStatus])
+              .Should().BeEquivalentTo(automaticRetries ? TestTags.StatusPass : TestTags.StatusFail, TestTags.StatusPass);
+        if (UseMtp)
         {
-            Output.WriteLine(JsonConvert.SerializeObject(tests, Formatting.Indented));
-            File.Delete(attemptsFile);
-            File.Delete(historyFile);
+            result.RetryHistory.Should().BeEquivalentTo(
+                "RegressesAfterPassing (0)|1|True",
+                "RegressesAfterPassing (1)|1|True",
+                "RegressesAfterPassing (0)|2|True",
+                "RegressesAfterPassing (1)|2|True",
+                "RegressesAfterPassing (0)|3|False",
+                "RegressesAfterPassing (1)|3|False");
+        }
+    }
+
+    [Fact]
+    public async Task NativeAndAutomaticRetriesUseFreshInstances()
+    {
+        var result = await RunRetryScenarioAsync("RetriesUseFreshInstances", expectedAttempts: 4, expectedRows: 1, expectedExitCode: 0, automaticRetries: true);
+        result.Tests.OrderBy(test => test.Start).Last().Meta[TestTags.TestFinalStatus].Should().Be(TestTags.StatusPass);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task CustomRetryPolicyCanContinueAfterPassing(bool automaticRetries)
+    {
+        var result = await RunRetryScenarioAsync(
+            "CustomPolicyContinuesAfterPassing",
+            expectedAttempts: automaticRetries ? 4 : 3,
+            expectedRows: 1,
+            expectedExitCode: automaticRetries ? 0 : FailedTestExitCode,
+            automaticRetries: automaticRetries);
+        result.Tests.OrderBy(test => test.Start).Last().Meta[TestTags.TestFinalStatus].Should().Be(automaticRetries ? TestTags.StatusPass : TestTags.StatusFail);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task CustomRetryPolicyCanSelectAnEarlierPassingAttempt(bool automaticRetries)
+    {
+        var result = await RunRetryScenarioAsync("CustomPolicySelectsEarlierAttempt", expectedAttempts: 3, expectedRows: 1, expectedExitCode: 0, automaticRetries: automaticRetries);
+        result.Tests.OrderBy(test => test.Start).Select(test => test.Meta[TestTags.Status]).Should().Equal(TestTags.StatusFail, TestTags.StatusPass, TestTags.StatusFail);
+        result.Tests.Single(test => test.Meta.ContainsKey(TestTags.TestFinalStatus)).Meta[TestTags.TestFinalStatus].Should().Be(TestTags.StatusPass);
+        if (UseMtp)
+        {
+            result.RetryHistory.Should().BeEquivalentTo("CustomPolicySelectsEarlierAttempt|1|True", "CustomPolicySelectsEarlierAttempt|2|False");
+        }
+    }
+
+    [Fact]
+    public async Task DelegatingExecutorPreservesNativeRetryResults()
+    {
+        var result = await RunRetryScenarioAsync("DelegatingExecutor", expectedAttempts: 2, expectedRows: 1, expectedExitCode: 0);
+        result.Tests.OrderBy(test => test.Start).Last().Meta[TestTags.TestFinalStatus].Should().Be(TestTags.StatusPass);
+    }
+
+    [Fact]
+    public async Task MethodRetryPolicyOverridesTheClassPolicy()
+    {
+        var result = await RunRetryScenarioAsync("MethodRetryOverridesClass", expectedAttempts: 2, expectedRows: 1, expectedExitCode: FailedTestExitCode);
+        result.Tests.Should().OnlyContain(test => test.Meta[TestTags.Status] == TestTags.StatusFail);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task MultipleExecutorResultsKeepSeparateRetriesAndIdentities(bool automaticRetries)
+    {
+        var result = await RunRetryScenarioAsync(
+            "MultipleResults",
+            expectedAttempts: automaticRetries ? 7 : 6,
+            expectedRows: 2,
+            expectedExitCode: automaticRetries ? 0 : FailedTestExitCode,
+            automaticRetries: automaticRetries);
+        result.Tests.Where(test => test.Meta.ContainsKey(TestTags.TestFinalStatus))
+              .Select(test => test.Meta[TestTags.TestFinalStatus])
+              .Should().BeEquivalentTo(automaticRetries ? TestTags.StatusPass : TestTags.StatusFail, TestTags.StatusPass);
+        result.Tests.Select(test => test.Meta[TestTags.Name]).Distinct().Should().BeEquivalentTo("First result", "Second result");
+        if (UseMtp)
+        {
+            result.RetryHistory.Should().BeEquivalentTo(
+                "First result|1|True",
+                "Second result|1|True",
+                "First result|2|True",
+                "Second result|2|True",
+                "First result|3|False",
+                "Second result|3|False");
         }
     }
 
@@ -251,8 +260,7 @@ public class MsTestV2NativeRetriesTests : TestingFrameworkEvpTest
         };
 
         var testName = name is "AssemblyInitializationFailure" or "ClassInitializationFailure" ? "PassesAfterClassInitialization" : name;
-        var filter = UseMtp ? $"--filter FullyQualifiedName~.{testName}" : $"--TestCaseFilter:FullyQualifiedName~.{testName}";
-        using var result = await RunDotnetTestSampleAndWaitForExit(agent, arguments: filter, packageVersion: PackageVersion, expectedExitCode: UseMtp ? mtpExitCode : vstestExitCode, useDotnetExec: UseMtp);
+        using var result = await RunMSTestAsync(agent, $"FullyQualifiedName~.{testName}", UseMtp ? mtpExitCode : vstestExitCode);
         tests.Should().HaveCount(expectedAttempts);
         tests.Should().OnlyContain(test => test.Meta[TestTags.Status] == TestTags.StatusFail);
         tests.Count(test => test.Meta.ContainsKey(TestTags.TestIsRetry)).Should().Be(expectedAttempts - 1);
@@ -374,8 +382,7 @@ public class MsTestV2NativeRetriesTests : TestingFrameworkEvpTest
 
         try
         {
-            var filter = UseMtp ? $"--filter FullyQualifiedName~{name}" : $"--TestCaseFilter:FullyQualifiedName~{name}";
-            using var result = await RunDotnetTestSampleAndWaitForExit(agent, arguments: filter, packageVersion: PackageVersion, expectedExitCode: isEfd && expectedFinalStatus == TestTags.StatusFail ? (UseMtp ? 2 : 1) : 0, useDotnetExec: UseMtp);
+            using var result = await RunMSTestAsync(agent, $"FullyQualifiedName~{name}", isEfd && expectedFinalStatus == TestTags.StatusFail ? FailedTestExitCode : 0);
             File.ReadAllLines(attemptsFile).Should().HaveCount(expectedAttempts);
             if (skipOneRow)
             {
@@ -455,7 +462,7 @@ public class MsTestV2NativeRetriesTests : TestingFrameworkEvpTest
 
         try
         {
-            using var result = await RunDotnetTestSampleAndWaitForExit(agent, arguments: UseMtp ? "--filter TestCategory!=CustomRetry" : "--TestCaseFilter:TestCategory!=CustomRetry", packageVersion: packageVersion, expectedExitCode: UseMtp ? 2 : 1, useDotnetExec: UseMtp);
+            using var result = await RunMSTestAsync(agent, "TestCategory!=CustomRetry", FailedTestExitCode, packageVersion);
             var attempts = File.ReadAllLines(attemptsFile);
             if (UseMtp)
             {
@@ -502,6 +509,68 @@ public class MsTestV2NativeRetriesTests : TestingFrameworkEvpTest
             File.Delete(attemptsFile);
             File.Delete(historyFile);
         }
+    }
+
+    private async Task<RetryScenarioResult> RunRetryScenarioAsync(string name, int expectedAttempts, int expectedRows, int expectedExitCode, bool automaticRetries = false)
+    {
+        EnvironmentHelper.EnableDefaultTransport();
+        InjectSession(out _, out _, out _, out _, out _, out _, out _);
+        SetEnvironmentVariable(ConfigurationKeys.CIVisibility.FlakyRetryEnabled, automaticRetries ? "1" : "0");
+        SetEnvironmentVariable("TESTINGPLATFORM_TELEMETRY_OPTOUT", "1");
+        var attemptsFile = Path.GetTempFileName();
+        var historyFile = Path.GetTempFileName();
+        SetEnvironmentVariable("MSTEST_ATTEMPTS_FILE", attemptsFile);
+        SetEnvironmentVariable("MSTEST_RETRY_HISTORY_FILE", historyFile);
+        var tests = new List<MockCIVisibilityTest>();
+        using var agent = EnvironmentHelper.GetMockAgent();
+        agent.EventPlatformProxyPayloadReceived += (_, e) =>
+        {
+            if (e.Value.PathAndQuery.EndsWith("api/v2/libraries/tests/services/setting"))
+            {
+                e.Value.Response = new MockTracerResponse(GetSettingsJson("false", "false", "false", "0", automaticRetries ? "true" : "false"), 200);
+            }
+            else if (e.Value.PathAndQuery.EndsWith("api/v2/citestcycle"))
+            {
+                var payload = JsonConvert.DeserializeObject<MockCIVisibilityProtocol>(e.Value.BodyInJson);
+                foreach (var testEvent in payload.Events.Where(testEvent => testEvent.Type == SpanTypes.Test))
+                {
+                    tests.Add(JsonConvert.DeserializeObject<MockCIVisibilityTest>(testEvent.Content.ToString()));
+                }
+            }
+        };
+
+        try
+        {
+            using var result = await RunMSTestAsync(agent, $"FullyQualifiedName~{name}", expectedExitCode);
+            File.ReadAllLines(attemptsFile).Should().HaveCount(expectedAttempts);
+            tests.Should().HaveCount(expectedAttempts);
+            tests.Count(test => test.Meta.ContainsKey(TestTags.TestFinalStatus)).Should().Be(expectedRows);
+            tests.Count(test => test.Meta.ContainsKey(TestTags.TestIsRetry)).Should().Be(expectedAttempts - expectedRows);
+            return new RetryScenarioResult(tests, File.ReadAllLines(historyFile));
+        }
+        finally
+        {
+            Output.WriteLine(JsonConvert.SerializeObject(tests, Formatting.Indented));
+            File.Delete(attemptsFile);
+            File.Delete(historyFile);
+        }
+    }
+
+    private Task<ProcessResult> RunMSTestAsync(MockTracerAgent agent, string testFilter, int expectedExitCode, string packageVersion = PackageVersion)
+    {
+        var arguments = UseMtp ? "--filter " + testFilter : "--TestCaseFilter:" + testFilter;
+#if NETFRAMEWORK
+        // Visual Studio can launch a 64-bit test host even when the fixture uses the x86 profiler.
+        arguments += " /Platform:" + EnvironmentTools.GetTestTargetPlatform();
+#endif
+        return RunDotnetTestSampleAndWaitForExit(agent, arguments: arguments, packageVersion: packageVersion, expectedExitCode: expectedExitCode, useDotnetExec: UseMtp);
+    }
+
+    private readonly struct RetryScenarioResult(IReadOnlyList<MockCIVisibilityTest> tests, string[] retryHistory)
+    {
+        public IReadOnlyList<MockCIVisibilityTest> Tests { get; } = tests;
+
+        public string[] RetryHistory { get; } = retryHistory;
     }
 }
 

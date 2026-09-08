@@ -6,7 +6,6 @@
 
 using System;
 using System.ComponentModel;
-using System.Runtime.CompilerServices;
 using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.ClrProfiler.CallTarget;
@@ -210,15 +209,14 @@ public static class TestMethodRunnerExecuteTestIntegrationV4_3
         }
         finally
         {
-            // The type cache retains methods across attempts, but must not retain completed executions.
-            execution.Binding.Value = null;
+            execution.Binding.Dispose();
         }
     }
 
-    private sealed class ExecutionState(CallTargetState executorState, StrongBox<MsTestExecution?> binding)
+    private sealed class ExecutionState(CallTargetState executorState, IDisposable binding)
     {
         public CallTargetState ExecutorState { get; } = executorState;
 
-        public StrongBox<MsTestExecution?> Binding { get; } = binding;
+        public IDisposable Binding { get; } = binding;
     }
 }
