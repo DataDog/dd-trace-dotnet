@@ -350,41 +350,41 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         private record Config
         {
             [JsonProperty("tracing_enabled")]
-            public bool TraceEnabled { get; init; }
+            public bool TraceEnabled { get; set; }
 
             // [JsonProperty("runtime_metrics_enabled")]
-            // public bool RuntimeMetricsEnabled { get; init; }
+            // public bool RuntimeMetricsEnabled { get; set; }
 
             // [JsonProperty("tracing_debug")]
-            // public bool DebugLogsEnabled { get; init; }
+            // public bool DebugLogsEnabled { get; set; }
 
             [JsonProperty("log_injection_enabled")]
-            public bool LogInjectionEnabled { get; init; }
+            public bool LogInjectionEnabled { get; set; }
 
             [JsonProperty("tracing_sampling_rate")]
-            public double? TraceSampleRate { get; init; }
+            public double? TraceSampleRate { get; set; }
 
             [JsonProperty("tracing_sampling_rules")]
             [JsonConverter(typeof(PlainJsonStringConverter))]
-            public string TraceSamplingRules { get; init; }
+            public string TraceSamplingRules { get; set; }
 
             // [JsonProperty("span_sampling_rules")]
-            // public string SpanSamplingRules { get; init; }
+            // public string SpanSamplingRules { get; set; }
 
             // [JsonProperty("data_streams_enabled")]
-            // public bool DataStreamsEnabled { get; init; }
+            // public bool DataStreamsEnabled { get; set; }
 
             [JsonProperty("tracing_header_tags")]
             [JsonConverter(typeof(PlainJsonStringConverter))]
-            public string TraceHeaderTags { get; init; }
+            public string TraceHeaderTags { get; set; }
 
             [JsonProperty("tracing_tags")]
             [JsonConverter(typeof(PlainJsonStringConverter))]
-            public string GlobalTags { get; init; }
+            public string GlobalTags { get; set; }
 
             // [JsonProperty("tracing_service_mapping")]
             // [JsonConverter(typeof(PlainJsonStringConverter))]
-            // public string ServiceNameMapping { get; init; }
+            // public string ServiceNameMapping { get; set; }
         }
     }
 }
