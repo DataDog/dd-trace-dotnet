@@ -39,7 +39,7 @@ namespace iast
     {
         std::vector<DataflowAspectFilterValue> res;
         auto parts = Split(TrimEnd(TrimStart(filter, WStr("[")), WStr("]")), WStr(","));
-        for(auto part : parts)
+        for(auto &part : parts)
         {
             res.push_back(ParseAspectFilterValue(Trim(part)));
         }
@@ -360,7 +360,7 @@ namespace iast
                 {
                     if (auto sig = memberRefInfo->GetSignature())
                     {
-                        auto sigRepresentation = sig->GetParamsRepresentation();
+                        const auto &sigRepresentation = sig->GetParamsRepresentation();
                         if (sigRepresentation == _targetMethodParams)
                         {
                             //Found the method

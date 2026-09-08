@@ -451,7 +451,7 @@ MethodInfo* ModuleInfo::GetMethod(mdTypeDef typeDef, const WSTRING& methodName, 
     {
         if (auto sig = method->GetSignature())
         {
-            auto sigRepresentation = sig->GetParamsRepresentation();
+            const auto &sigRepresentation = sig->GetParamsRepresentation();
             if (sigRepresentation == methodParams)
             {
                 return method;
