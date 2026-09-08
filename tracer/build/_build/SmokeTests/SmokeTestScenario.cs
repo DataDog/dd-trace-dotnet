@@ -128,6 +128,16 @@ public record TrimmingScenario : SmokeTestScenario
 public record WindowsMsiScenario : SmokeTestScenario
 {
     public required string Channel32Bit { get; init; }
+
+    /// <summary>
+    /// When set, this scenario tests an in-place MSI upgrade instead of a fresh
+    /// install: the given previously-released version (e.g. "3.33.0") is installed
+    /// first to create a genuinely aged on-disk state, then upgraded to the
+    /// locally-built MSI under test. Regression test for the libdatadog v20→v25
+    /// DLL-staleness bug, where Windows Installer's unversioned-file heuristic left
+    /// a stale datadog_profiling_ffi.dll on disk after an upgrade.
+    /// </summary>
+    public string? PreviousReleaseVersion { get; init; }
 }
 
 public record WindowsNuGetScenario : SmokeTestScenario
