@@ -266,7 +266,7 @@ internal sealed class TestOptimization : ITestOptimization
             Log.Information("TestOptimization: EVP Proxy was enabled with mode: {Mode}", TracerManagement.EventPlatformProxySupport);
         }
 
-        LifetimeManager.Instance.AddAsyncShutdownTask(ShutdownAsync);
+        LifetimeManager.Instance.AddAsyncPreShutdownTask(ShutdownAsync);
         cd.Debug("Added shutdown task");
 
         var tracerSettings = settings.TracerSettings;
@@ -339,7 +339,7 @@ internal sealed class TestOptimization : ITestOptimization
         Log.Information("TestOptimization: Initializing CI Visibility from dd-trace / runner with RunId: {RunId}", RunId);
 
         Settings = settings;
-        LifetimeManager.Instance.AddAsyncShutdownTask(ShutdownAsync);
+        LifetimeManager.Instance.AddAsyncPreShutdownTask(ShutdownAsync);
 
         var tracerSettings = settings.TracerSettings;
         Log.Debug("TestOptimization: Setting up the test session name to: {TestSessionName}", settings.TestSessionName);
