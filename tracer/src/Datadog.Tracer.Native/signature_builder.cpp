@@ -1,5 +1,7 @@
 #include "signature_builder.h"
 
+#include <algorithm>
+
 SignatureBuilder::SignatureBuilder()
 {
     _buffer = _stackSignatureBuffer;
