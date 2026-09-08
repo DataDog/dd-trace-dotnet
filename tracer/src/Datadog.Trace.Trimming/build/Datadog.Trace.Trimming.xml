@@ -931,7 +931,9 @@
       <type fullname="System.Runtime.InteropServices.GCHandle" />
       <type fullname="System.Runtime.InteropServices.GCHandleType" />
       <type fullname="System.Runtime.InteropServices.InAttribute" />
+      <type fullname="System.Runtime.InteropServices.LayoutKind" />
       <type fullname="System.Runtime.InteropServices.SafeHandle" />
+      <type fullname="System.Runtime.InteropServices.StructLayoutAttribute" />
       <type fullname="System.Runtime.JitInfo" />
       <type fullname="System.Runtime.Serialization.IFormatterConverter" />
       <type fullname="System.Runtime.Serialization.ISerializable" />
@@ -1074,7 +1076,6 @@
       <type fullname="System.DllNotFoundException" />
       <type fullname="System.IO.UnmanagedMemoryAccessor" />
       <type fullname="System.Runtime.InteropServices.CallingConvention" />
-      <type fullname="System.Runtime.InteropServices.CollectionsMarshal" />
       <type fullname="System.Runtime.InteropServices.COMException" />
       <type fullname="System.Runtime.InteropServices.ComInterfaceType" />
       <type fullname="System.Runtime.InteropServices.ComTypes.IStream" />

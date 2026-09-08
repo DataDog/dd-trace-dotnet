@@ -559,10 +559,11 @@
     "SampleProjectName": "Samples.XUnitTestsV3",
     "NugetPackageSearchName": "xunit.v3",
     "MinVersion": "1.0.0",
-    "MaxVersionExclusive": "4.0.0",
+    "MaxVersionExclusive": "5.0.0",
     "SpecificVersions": [
       "2.*.*",
-      "3.*.*"
+      "3.*.*",
+      "4.*.*"
     ],
     "VersionConditions": [
       {
@@ -580,10 +581,11 @@
     "SampleProjectName": "Samples.XUnitTestsRetriesV3",
     "NugetPackageSearchName": "xunit.v3",
     "MinVersion": "1.0.0",
-    "MaxVersionExclusive": "4.0.0",
+    "MaxVersionExclusive": "5.0.0",
     "SpecificVersions": [
       "2.*.*",
-      "3.*.*"
+      "3.*.*",
+      "4.*.*"
     ],
     "VersionConditions": [
       {
