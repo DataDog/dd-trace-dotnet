@@ -59,8 +59,9 @@ public class RaspModuleTelemetryTests
     {
         var metrics = await RecordAsync(collector => RaspModule.RecordRaspSkipped(address, RaspModule.SkipReason.AfterRequest, collector));
 
-        var tags = metrics.Should().ContainSingle(m => m.Name == "rasp.rule.skipped").Which.Tags;
-        tags.Should().Contain("reason:after-request").And.Contain(expectedRuleTags);
+        var metric = metrics.Should().ContainSingle(m => m.Name == "rasp.rule.skipped").Which;
+        metric.Tags.Should().Contain("reason:after-request").And.Contain(expectedRuleTags);
+        metric.Values.Should().Equal(1);
     }
 
     [Theory]
@@ -69,8 +70,9 @@ public class RaspModuleTelemetryTests
     {
         var metrics = await RecordAsync(collector => RaspModule.RecordRaspSkipped(address, RaspModule.SkipReason.OutOfRequest, collector));
 
-        var tags = metrics.Should().ContainSingle(m => m.Name == "rasp.rule.skipped").Which.Tags;
-        tags.Should().Contain("reason:out-of-request").And.Contain(expectedRuleTags);
+        var metric = metrics.Should().ContainSingle(m => m.Name == "rasp.rule.skipped").Which;
+        metric.Tags.Should().Contain("reason:out-of-request").And.Contain(expectedRuleTags);
+        metric.Values.Should().Equal(1);
     }
 
     [Fact]
@@ -101,8 +103,9 @@ public class RaspModuleTelemetryTests
         var metrics = await RecordAsync(collector => RaspModule.RecordRaspError(address, result, collector));
 
         var expectedTags = new[] { "waf_version:unknown", "event_rules_version:unknown", expectedErrorTag }.Concat(expectedRuleTags);
-        var tags = metrics.Should().ContainSingle(m => m.Name == "rasp.error").Which.Tags;
-        tags.Should().Equal(expectedTags);
+        var metric = metrics.Should().ContainSingle(m => m.Name == "rasp.error").Which;
+        metric.Tags.Should().Equal(expectedTags);
+        metric.Values.Should().Equal(1);
     }
 
     [Theory]
@@ -137,14 +140,16 @@ public class RaspModuleTelemetryTests
         metrics.Should().BeEmpty();
     }
 
-    private static async Task<List<(string Name, string[] Tags)>> RecordAsync(Action<IMetricsTelemetryCollector> record)
+    private static async Task<List<(string Name, string[] Tags, int[] Values)>> RecordAsync(Action<IMetricsTelemetryCollector> record)
     {
         var collector = new MetricsTelemetryCollector(Timeout.InfiniteTimeSpan);
         record(collector);
         await collector.DisposeAsync();
 
+        // the point values are what make a single report distinguishable from a duplicated one:
+        // two increments of the same series aggregate into one point of value 2, which ContainSingle alone accepts
         return collector.GetMetrics().Metrics?
-                        .Select(m => (m.Metric, m.Tags ?? []))
+                        .Select(m => (m.Metric, m.Tags ?? [], m.Points.Select(p => p.Value).ToArray()))
                         .ToList()
             ?? [];
     }

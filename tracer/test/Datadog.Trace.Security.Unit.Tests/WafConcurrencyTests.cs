@@ -351,7 +351,7 @@ public class WafConcurrencyTests : WafLibraryRequiredTest
 
         await collector.DisposeAsync();
 
-        var metrics = collector.GetMetrics().Metrics?.Select(m => (Name: m.Metric, Tags: m.Tags ?? [])).ToList() ?? [];
+        var metrics = collector.GetMetrics().Metrics?.Select(m => (Name: m.Metric, Tags: m.Tags ?? [], Values: m.Points.Select(p => p.Value).ToArray())).ToList() ?? [];
 
         if (isRasp)
         {
@@ -359,7 +359,11 @@ public class WafConcurrencyTests : WafLibraryRequiredTest
         }
         else
         {
-            metrics.Should().ContainSingle(m => m.Name == "waf.error").Which.Tags.Should().Contain("waf_error:-127");
+            var metric = metrics.Should().ContainSingle(m => m.Name == "waf.error").Which;
+            metric.Tags.Should().Contain("waf_error:-127");
+
+            // one failed creation, one increment: a double count aggregates into a single point of value 2
+            metric.Values.Should().Equal(1);
         }
     }
 

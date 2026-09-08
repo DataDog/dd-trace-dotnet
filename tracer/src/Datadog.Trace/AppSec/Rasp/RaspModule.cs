@@ -343,8 +343,10 @@ internal static class RaspModule
 
         var result = securityCoordinator.Value.RunWaf(arguments, runWithEphemeral: true, isRasp: true, raspAddress: address);
 
-        // a null result is already reported by whoever knows why it is null: GetOrCreateAdditiveContext
-        // for an unavailable context, RunWaf's catch for a binding failure
+        // RecordRaspError needs a result to classify. GetOrCreateAdditiveContext reports the context it
+        // could not hand out and RunWaf's catch a thrown binding failure, but a null out of
+        // Context.RunInternal (empty ephemeral batch, failed SubcontextInit, request context disposed
+        // after hand-out) still reports nothing: RunInternal has to surface its cause first
         if (result is not null)
         {
             RecordRaspError(address, result, TelemetryFactory.Metrics);
