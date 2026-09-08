@@ -5,7 +5,6 @@
 
 using System;
 using System.Reflection;
-using System.Threading.Tasks;
 
 namespace Samples.TestOptimizationShutdown;
 
@@ -15,30 +14,9 @@ internal static class Program
     {
         // Load the full tracer without auto-instrumentation so the sample controls initialization order.
         var tracerAssembly = Assembly.LoadFrom(args[0]);
-        if (args[1] == "apm-first")
-        {
-            var tracerType = tracerAssembly.GetType("Datadog.Trace.Tracer", throwOnError: true)!;
-            _ = tracerType.GetProperty("Instance")!.GetValue(null);
-        }
-
-        var shutdownTrigger = args[2];
+        var shutdownTrigger = args[1];
         var optimizationType = tracerAssembly.GetType("Datadog.Trace.Ci.TestOptimization", throwOnError: true)!;
         var instanceProperty = optimizationType.GetProperty("Instance")!;
-        if (args[1] == "concurrent")
-        {
-            var managerType = tracerAssembly.GetType("Datadog.Trace.TracerManager", throwOnError: true)!;
-            var callbackProperty = managerType.GetProperty("ShutdownCallback", BindingFlags.Static | BindingFlags.NonPublic)!;
-            Parallel.For(0, 32, _ =>
-            {
-                var instance = instanceProperty.GetValue(null)!;
-                var callback = (Delegate)callbackProperty.GetValue(null)!;
-                if (!ReferenceEquals(callback.Target, instance))
-                {
-                    throw new InvalidOperationException("Shutdown must target the published Test Optimization instance.");
-                }
-            });
-        }
-
         var optimization = instanceProperty.GetValue(null)!;
         optimizationType.GetMethod("Initialize")!.Invoke(optimization, null);
 
