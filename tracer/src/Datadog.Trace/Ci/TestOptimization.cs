@@ -62,7 +62,7 @@ internal sealed class TestOptimization : ITestOptimization
             var instance = new TestOptimization();
             // The initialization lock binds shutdown to the one published instance.
             // The tracer invokes it before closing writers, even when APM initialized first.
-            TracerManager.ShutdownCallback = instance.CloseActiveTestsAsync;
+            TracerManager.ShutdownCallback = instance.ShutdownAsync;
             return instance;
         })!;
         internal set
@@ -529,7 +529,7 @@ internal sealed class TestOptimization : ITestOptimization
     /// Closes active tests from children to parents, then flushes coverage and test events.
     /// Pending retry attempts retain the duration captured when their execution finished.
     /// </summary>
-    private async Task CloseActiveTestsAsync(Exception? exception)
+    private async Task ShutdownAsync(Exception? exception)
     {
         // Instance can be created without starting Test Optimization. InitializeFromRunner resets
         // IsRunning, so use the initialized manager to decide whether there is anything to close.
