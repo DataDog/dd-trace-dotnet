@@ -46,7 +46,7 @@ public class MockHttpRequest
         };
     }
 
-    internal byte[] ReadStreamBody()
+    internal byte[] ReadStreamBody(string decompressionFailureDirectory = null)
     {
         var isGzip = Headers.TryGetValue("Content-Encoding", out var encoding) && encoding is "gzip";
 
@@ -75,10 +75,31 @@ public class MockHttpRequest
         }
 
         using var finalStream = new MemoryStream();
-        using (var gzip = new GZipStream(ms, CompressionMode.Decompress, leaveOpen: true))
+        try
         {
+            using var gzip = new GZipStream(ms, CompressionMode.Decompress, leaveOpen: true);
             gzip.CopyTo(finalStream);
             gzip.Flush();
+        }
+        catch (InvalidDataException exception) when (decompressionFailureDirectory is not null)
+        {
+            // Temporary MSTest diagnostic: retain the exact compressed body, before deserialization.
+            // Capture only framing headers, and preserve the original failure even if saving fails.
+            try
+            {
+                Directory.CreateDirectory(decompressionFailureDirectory);
+                var path = Path.Combine(decompressionFailureDirectory, Guid.NewGuid().ToString("N"));
+                File.WriteAllBytes(path + ".bin", ms.ToArray());
+                Headers.TryGetValue("Content-Length", out var contentLength);
+                Headers.TryGetValue("Transfer-Encoding", out var transferEncoding);
+                File.WriteAllText(path + ".txt", $"Path: {PathAndQuery}\nContent-Encoding: {encoding}\nContent-Length: {contentLength}\nTransfer-Encoding: {transferEncoding}\nReceived bytes: {ms.Length}\n{exception}");
+            }
+            catch (Exception captureException)
+            {
+                exception.Data["Payload capture failed"] = captureException.ToString();
+            }
+
+            throw;
         }
 
         return finalStream.ToArray();

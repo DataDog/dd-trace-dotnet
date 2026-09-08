@@ -1759,9 +1759,31 @@ stages:
         Filter: $(IntegrationTestFilter)
         SampleName: $(IntegrationTestSampleName)
 
+    # Temporary gzip investigation: ten runs of the two retry variants, stopping at the first failure.
+    - powershell: |
+        for ($iteration = 1; $iteration -le 10; $iteration++) {
+          Write-Host "MSTest gzip diagnostic run $iteration of 10"
+          & tracer\build.cmd RunIntegrationTests -Framework net8.0 --code-coverage-enabled $(CodeCoverageEnabled)
+          $testExitCode = $LASTEXITCODE
+          # The next run cleans logs. Preserve each run, including transient errors in a passing run.
+          $captureDirectory = "artifacts/build_data/gzip-diagnostic/run-$iteration"
+          New-Item -ItemType Directory -Force $captureDirectory | Out-Null
+          Copy-Item "artifacts/build_data/logs/MsTestV2NativeRetriesMtpTestsLogs" $captureDirectory -Recurse
+          if ($testExitCode -ne 0) { exit $testExitCode }
+        }
+      displayName: Diagnose MSTest gzip failure (Windows x86)
+      condition: and(succeeded(), eq(variables['targetPlatform'], 'x86'), eq(variables['framework'], 'net8.0'), eq(variables['area'], 'Tracer'))
+      timeoutInMinutes: 10
+      env:
+        DD_LOGGER_DD_API_KEY: $(ddApiKey)
+        enable_crash_dumps: true
+        Filter: FullyQualifiedName~MsTestV2NativeRetriesMtpTests.CustomRetryPolicyCanContinueAfterPassing
+        Area: Tracer
+
     - script: tracer\build.cmd RunIntegrationTests RunWindowsRegressionTests -Framework $(framework) --code-coverage-enabled $(CodeCoverageEnabled)
       displayName: Run integration tests (Tracer)
-      condition: ne(variables['area'], 'ASM')
+      # Preserve failed diagnostic logs: RunIntegrationTests starts by cleaning the log directory.
+      condition: and(succeeded(), ne(variables['area'], 'ASM'))
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
         enable_crash_dumps: true
