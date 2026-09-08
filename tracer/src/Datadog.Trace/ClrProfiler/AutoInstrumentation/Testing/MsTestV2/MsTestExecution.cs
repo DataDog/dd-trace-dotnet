@@ -237,7 +237,21 @@ internal sealed class MsTestExecution
     public void CloseTests()
     {
         var completedTests = _pendingTests;
-        ReleaseAttemptState();
+        // ClassInitialize can retain its captured ExecutionContext until the assembly finishes.
+        // Release retry inputs even if that context still references this execution.
+        if (_nativeAttempts is { } nativeAttempts)
+        {
+            foreach (var attempt in nativeAttempts)
+            {
+                attempt.State.RetryContext?.Dispose();
+            }
+        }
+
+        _firstResults = null;
+        _additionalResults = null;
+        _nativeAttempts = null;
+        _pendingTests = null;
+
         if (completedTests is null)
         {
             return;
@@ -264,35 +278,6 @@ internal sealed class MsTestExecution
         {
             CloseRemainingTests(completedTests);
         }
-    }
-
-    /// <summary>
-    /// Replaces every reference to a selected result while preserving its runner-assigned identity.
-    /// </summary>
-    private static void ReplaceSelectedResult(IList selectedResults, ITestResultV4_4 originalResult, object? replacement)
-    {
-        for (var index = 0; index < selectedResults.Count; index++)
-        {
-            if (ReferenceEquals(selectedResults[index], originalResult.Instance))
-            {
-                CopyResultIdentity(originalResult, replacement.DuckCast<ITestResultV4_4>()!);
-                selectedResults[index] = replacement;
-            }
-        }
-    }
-
-    /// <summary>
-    /// Preserves MSTest row and execution identifiers when a Datadog retry replaces a result.
-    /// MTP uses these identifiers to associate the reported result with the discovered test.
-    /// </summary>
-    private static void CopyResultIdentity(ITestResultV4_4 source, ITestResultV4_4 destination)
-    {
-        // InvokeAsync produces the execution result. The runner adds the row identity afterwards.
-        destination.DisplayName = source.DisplayName;
-        destination.ExecutionId = source.ExecutionId;
-        destination.ParentExecId = source.ParentExecId;
-        destination.DatarowIndex = source.DatarowIndex;
-        destination.AssociatedUnitTestElement = source.AssociatedUnitTestElement;
     }
 
     /// <summary>
@@ -395,7 +380,19 @@ internal sealed class MsTestExecution
         // A custom executor can return several results. Retry each result independently;
         // a passing result must not hide another failure or receive its retry outcome.
         var originalResult = result.DuckCast<ITestResultV4_4>()!;
-        var pendingTest = FindPendingTest(originalResult.Instance);
+        var originalResultInstance = originalResult.Instance;
+
+        // The runner can change DisplayName after capture, so match the original result object.
+        PendingTest? pendingTest = null;
+        foreach (var test in _pendingTests!)
+        {
+            if (ReferenceEquals(test.Result?.Instance, originalResultInstance))
+            {
+                pendingTest = test;
+                break;
+            }
+        }
+
         if (pendingTest is not null)
         {
             pendingTest.IsSelectedNativeResult = true;
@@ -409,7 +406,24 @@ internal sealed class MsTestExecution
         object?[] initialResults = [result];
         var retryResults = await TestMethodAttributeExecuteAsyncIntegration.RunRetriesAsync(initialResults, attempt.State, summary, pendingTest?.Test.Name).ConfigureAwait(false);
         ObserveResults(retryResults);
-        ReplaceSelectedResult(selectedResults, originalResult, retryResults[0]);
+        var replacementResult = retryResults[0];
+
+        // Preserve the runner-assigned row identity when replacing its selected result.
+        // MTP uses these identifiers to associate the result with the discovered test.
+        for (var index = 0; index < selectedResults.Count; index++)
+        {
+            if (ReferenceEquals(selectedResults[index], originalResult.Instance))
+            {
+                var replacement = replacementResult.DuckCast<ITestResultV4_4>()!;
+                replacement.DisplayName = originalResult.DisplayName;
+                replacement.ExecutionId = originalResult.ExecutionId;
+                replacement.ParentExecId = originalResult.ParentExecId;
+                replacement.DatarowIndex = originalResult.DatarowIndex;
+                replacement.AssociatedUnitTestElement = originalResult.AssociatedUnitTestElement;
+                selectedResults[index] = replacementResult;
+            }
+        }
+
         attempt.Results[resultIndex] = retryResults[0];
     }
 
@@ -440,44 +454,6 @@ internal sealed class MsTestExecution
                 }
             }
         }
-    }
-
-    /// <summary>
-    /// Drops result and context references that ClassInitialize's captured context could otherwise retain.
-    /// </summary>
-    private void ReleaseAttemptState()
-    {
-        // ClassInitialize can retain its captured ExecutionContext until the assembly finishes.
-        // Release attempt data even if that context still references this execution.
-        if (_nativeAttempts is { } nativeAttempts)
-        {
-            foreach (var attempt in nativeAttempts)
-            {
-                attempt.State.RetryContext?.Dispose();
-            }
-        }
-
-        _firstResults = null;
-        _additionalResults = null;
-        _nativeAttempts = null;
-        _pendingTests = null;
-    }
-
-    /// <summary>
-    /// Finds the span by result identity even if the runner has since changed the display name.
-    /// </summary>
-    private PendingTest? FindPendingTest(object? result)
-    {
-        foreach (var test in _pendingTests!)
-        {
-            if (ReferenceEquals(test.Result?.Instance, result))
-            {
-                // The runner can change DisplayName after capture. Keep the original span identity.
-                return test;
-            }
-        }
-
-        return null;
     }
 
     /// <summary>
