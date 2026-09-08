@@ -259,96 +259,48 @@ internal sealed class MsTestExecution
 
         try
         {
+            // Aggregate once per name and parameter set, preserving attempt order and policy selection.
+            // Keep the original list for closing: grouping must not change the order spans are emitted.
+            var outcomes = new Dictionary<Test, RetryOutcome>(TestIdentityComparer.Instance);
             foreach (var completed in completedTests)
             {
-                if (completed.Test.IsClosed)
+                if (!outcomes.TryGetValue(completed.Test, out var outcome))
                 {
-                    continue;
+                    outcome = new RetryOutcome();
+                    outcomes.Add(completed.Test, outcome);
                 }
 
-                var outcome = GetRetryOutcome(completedTests, completed);
-                completed.Test.Close(
-                    completed.Status,
-                    completed.Duration,
-                    skipReason: null,
-                    beforeClose: test => outcome.ApplyFinalTags(test, completed));
+                outcome.Add(completed);
+            }
+
+            foreach (var completed in completedTests)
+            {
+                if (!completed.Test.IsClosed)
+                {
+                    completed.Test.Close(
+                        completed.Status,
+                        completed.Duration,
+                        skipReason: null,
+                        beforeClose: outcomes[completed.Test].ApplyFinalTags);
+                }
             }
         }
         finally
         {
-            CloseRemainingTests(completedTests);
-        }
-    }
-
-    /// <summary>
-    /// Aggregates attempts for one test identity; native policy selection takes precedence over order.
-    /// Only its last emitted span receives final_status, while Attempt to Fix considers every failure.
-    /// </summary>
-    private static RetryOutcome GetRetryOutcome(List<PendingTest> completedTests, PendingTest completed)
-    {
-        var tags = completed.Test.GetTags();
-        PendingTest? lastAttempt = null;
-        PendingTest? lastNativeAttempt = null;
-        PendingTest? selectedNativeResult = null;
-        var anyDatadogRetryPassed = false;
-        var anyFailed = false;
-        var executionCount = 0;
-        var allRetriesFailed = true;
-        foreach (var candidate in completedTests)
-        {
-            var candidateTags = candidate.Test.GetTags();
-            if (candidateTags.Name != tags.Name || candidateTags.Parameters != tags.Parameters)
+            // If finalization fails, still close every remaining span with its captured duration.
+            foreach (var completed in completedTests)
             {
-                continue;
-            }
-
-            if (candidate.IsDatadogRetry)
-            {
-                anyDatadogRetryPassed |= candidate.Status == TestStatus.Pass;
-            }
-            else
-            {
-                lastNativeAttempt = candidate;
-                if (candidate.IsSelectedNativeResult)
+                try
                 {
-                    selectedNativeResult = candidate;
+                    if (!completed.Test.IsClosed)
+                    {
+                        completed.Test.Close(completed.Status, completed.Duration);
+                    }
                 }
-            }
-
-            anyFailed |= candidate.Status == TestStatus.Fail;
-            if (executionCount > 0)
-            {
-                allRetriesFailed &= candidate.Status == TestStatus.Fail;
-            }
-
-            executionCount++;
-            lastAttempt = candidate;
-        }
-
-        // The policy chooses the native result; Datadog retries can recover it.
-        // If the policy threw or returned no results, use the last recorded attempt.
-        // ATF still considers every failure, including attempts discarded by the policy.
-        var anyPassed = (selectedNativeResult ?? lastNativeAttempt)?.Status == TestStatus.Pass || anyDatadogRetryPassed;
-        return new RetryOutcome(lastAttempt, anyPassed, anyFailed, executionCount, allRetriesFailed);
-    }
-
-    /// <summary>
-    /// Closes any spans left open after finalization fails, using their captured execution durations.
-    /// </summary>
-    private static void CloseRemainingTests(List<PendingTest> completedTests)
-    {
-        foreach (var completed in completedTests)
-        {
-            try
-            {
-                if (!completed.Test.IsClosed)
+                catch (Exception ex)
                 {
-                    completed.Test.Close(completed.Status, completed.Duration);
+                    Common.Log.Error(ex, "MSTest: Error closing a completed test.");
                 }
-            }
-            catch (Exception ex)
-            {
-                Common.Log.Error(ex, "MSTest: Error closing a completed test.");
             }
         }
     }
@@ -474,23 +426,79 @@ internal sealed class MsTestExecution
         return null;
     }
 
-    private readonly struct RetryOutcome(PendingTest? lastAttempt, bool anyPassed, bool anyFailed, int executionCount, bool allRetriesFailed)
+    /// <summary>
+    /// Groups attempts by the same name and parameters used to identify rows throughout this integration.
+    /// Uses existing tests as keys without allocating a separate identity for each attempt.
+    /// </summary>
+    private sealed class TestIdentityComparer : IEqualityComparer<Test>
     {
-        private readonly PendingTest? _lastAttempt = lastAttempt;
-        private readonly bool _anyPassed = anyPassed;
-        private readonly bool _anyFailed = anyFailed;
-        private readonly int _executionCount = executionCount;
-        private readonly bool _allRetriesFailed = allRetriesFailed;
+        public static readonly TestIdentityComparer Instance = new();
+
+        public bool Equals(Test? x, Test? y)
+            => x?.GetTags().Name == y?.GetTags().Name && x?.GetTags().Parameters == y?.GetTags().Parameters;
+
+        public int GetHashCode(Test test)
+        {
+            var tags = test.GetTags();
+            return unchecked(((tags.Name?.GetHashCode() ?? 0) * 397) ^ (tags.Parameters?.GetHashCode() ?? 0));
+        }
+    }
+
+    /// <summary>
+    /// Accumulates one test's retry outcome and shares its final-tag callback across all attempts.
+    /// Native policy selection takes precedence over order; Attempt to Fix considers every failure.
+    /// </summary>
+    private sealed class RetryOutcome
+    {
+        private PendingTest? _lastAttempt;
+        private PendingTest? _lastNativeAttempt;
+        private PendingTest? _selectedNativeResult;
+        private bool _anyDatadogRetryPassed;
+        private bool _anyFailed;
+        private int _executionCount;
+        private bool _allRetriesFailed = true;
+
+        public RetryOutcome() => ApplyFinalTags = ApplyTags;
+
+        // Cache one delegate per test identity, rather than capturing state for every attempt.
+        public Action<Test> ApplyFinalTags { get; }
+
+        public void Add(PendingTest attempt)
+        {
+            if (attempt.IsDatadogRetry)
+            {
+                _anyDatadogRetryPassed |= attempt.Status == TestStatus.Pass;
+            }
+            else
+            {
+                _lastNativeAttempt = attempt;
+                if (attempt.IsSelectedNativeResult)
+                {
+                    _selectedNativeResult = attempt;
+                }
+            }
+
+            _anyFailed |= attempt.Status == TestStatus.Fail;
+            if (_executionCount > 0)
+            {
+                _allRetriesFailed &= attempt.Status == TestStatus.Fail;
+            }
+
+            _executionCount++;
+            _lastAttempt = attempt;
+        }
 
         /// <summary>
         /// Assigns aggregate retry tags inside Test.Close so shutdown cannot finish the span between writes.
         /// </summary>
-        public void ApplyFinalTags(Test test, PendingTest attempt)
+        private void ApplyTags(Test test)
         {
             var tags = test.GetTags();
-            var isLastAttempt = ReferenceEquals(attempt, _lastAttempt);
+            var isLastAttempt = ReferenceEquals(test, _lastAttempt!.Test);
+            // If the policy threw or returned no results, use the last native attempt.
+            var anyPassed = (_selectedNativeResult ?? _lastNativeAttempt)?.Status == TestStatus.Pass || _anyDatadogRetryPassed;
             tags.FinalStatus = isLastAttempt
-                                   ? Common.CalculateFinalStatus(_anyPassed, _anyFailed, attempt.Status == TestStatus.Skip, tags)
+                                   ? Common.CalculateFinalStatus(anyPassed, _anyFailed, _lastAttempt.Status == TestStatus.Skip, tags)
                                    : null;
             tags.HasFailedAllRetries = isLastAttempt && _executionCount > 1 && _allRetriesFailed ? "true" : null;
             if (tags.IsAttemptToFix == "true" && isLastAttempt && _executionCount > 1)
