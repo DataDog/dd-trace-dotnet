@@ -12362,6 +12362,28 @@
     "InstrumentationCategory": 1
   },
   {
+    "IntegrationName": "MsTestV2",
+    "AssemblyName": "MSTestAdapter.PlatformServices",
+    "TargetTypeName": "Microsoft.VisualStudio.TestPlatform.MSTestAdapter.PlatformServices.TestSourceHost",
+    "TargetMethodName": "SetupHost",
+    "TargetReturnType": "System.Void",
+    "TargetParameterTypes": [],
+    "MinimumVersion": {
+      "Item1": 4,
+      "Item2": 3,
+      "Item3": 3
+    },
+    "MaximumVersion": {
+      "Item1": 4,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2.TestSourceHostSetupHostIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
     "IntegrationName": "MySql",
     "AssemblyName": "MySql.Data",
     "TargetTypeName": "MySql.Data.MySqlClient.MySqlCommand",

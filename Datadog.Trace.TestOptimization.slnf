@@ -34,6 +34,7 @@
       "tracer\\test\\test-applications\\integrations\\Samples.MSTestTestsNativeRetries\\Samples.MSTestTestsNativeRetries.csproj",
       "tracer\\test\\test-applications\\integrations\\Samples.MSTestTestsNativeRetriesMtp\\Samples.MSTestTestsNativeRetriesMtp.csproj",
       "tracer\\test\\test-applications\\integrations\\Samples.MSTestTestsDiscovery\\Samples.MSTestTestsDiscovery.csproj",
+      "tracer\\test\\test-applications\\integrations\\Samples.TestOptimizationShutdown\\Samples.TestOptimizationShutdown.csproj",
       "tracer\\test\\test-applications\\integrations\\Samples.MSTestTests\\Samples.MSTestTests.csproj",
       "tracer\\test\\test-applications\\integrations\\Samples.NUnitTestsRetries\\Samples.NUnitTestsRetries.csproj",
       "tracer\\test\\test-applications\\integrations\\Samples.NUnitTests\\Samples.NUnitTests.csproj",

@@ -533,6 +533,7 @@ namespace Datadog.Trace.ClrProfiler
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2.UnitTestRunnerRunSingleTestAsyncIntegrationV4_4"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2.UnitTestDiscovererSendTestCasesIntegrationV4"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2.UnitTestDiscovererSendTestCasesAsyncIntegrationV4_4"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2.TestSourceHostSetupHostIntegration"
                     => Datadog.Trace.Configuration.IntegrationId.MsTestV2,
                 "Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmission.LoggingConfigurationFileLoaderLoadInstrumentation"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmission.LogFactoryActivateLoggingConfigurationInstrumentation"

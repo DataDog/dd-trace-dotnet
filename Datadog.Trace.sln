@@ -663,12 +663,18 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.MSTestTestsNativeRe
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.MSTestTestsDiscovery", "tracer\test\test-applications\integrations\Samples.MSTestTestsDiscovery\Samples.MSTestTestsDiscovery.csproj", "{8625421C-B637-4EFB-95AC-64D324DFB9DF}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.TestOptimizationShutdown", "tracer\test\test-applications\integrations\Samples.TestOptimizationShutdown\Samples.TestOptimizationShutdown.csproj", "{207A6285-EDAF-4DBE-9232-D677483ED619}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{207A6285-EDAF-4DBE-9232-D677483ED619}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{207A6285-EDAF-4DBE-9232-D677483ED619}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{207A6285-EDAF-4DBE-9232-D677483ED619}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{207A6285-EDAF-4DBE-9232-D677483ED619}.Release|Any CPU.Build.0 = Release|Any CPU
 		{C4FF3DF9-9A1B-48F3-BECE-74F9B4572373}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{C4FF3DF9-9A1B-48F3-BECE-74F9B4572373}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C4FF3DF9-9A1B-48F3-BECE-74F9B4572373}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -1632,6 +1638,7 @@ Global
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
+		{207A6285-EDAF-4DBE-9232-D677483ED619} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 		{C4FF3DF9-9A1B-48F3-BECE-74F9B4572373} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 		{1C29692A-19EB-48CD-BC67-73D503FAB794} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 		{8625421C-B637-4EFB-95AC-64D324DFB9DF} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
