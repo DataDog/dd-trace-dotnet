@@ -62,6 +62,22 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Activity
         public static void SetInitialOperationName(TTarget instance, string? operationName)
             => SetCustomProperty?.Invoke(instance, ActivityCustomPropertyKeys.InitialOpName, operationName);
 
+        /// <summary>
+        /// Retrieves the status description saved by <c>ActivitySetStatusIntegration</c>. Stored as a custom
+        /// property (not a span tag) because, unlike the listener path — which reads the real
+        /// <c>Activity.StatusDescription</c> backing field and never materialises it as a Datadog span tag —
+        /// interception skips <c>SetStatus</c>'s body, so the backing field is never written and something
+        /// has to hold the value for <c>get_StatusDescription</c> to read back.
+        /// </summary>
+        public static string? GetStatusDescription(TTarget instance)
+            => GetCustomProperty?.Invoke(instance, ActivityCustomPropertyKeys.StatusDescription) as string;
+
+        /// <summary>
+        /// Stores the status description on the activity. See <see cref="GetStatusDescription"/>.
+        /// </summary>
+        public static void SetStatusDescription(TTarget instance, string? description)
+            => SetCustomProperty?.Invoke(instance, ActivityCustomPropertyKeys.StatusDescription, description);
+
         private static Func<TTarget, string, object?>? CreateGetDelegate()
         {
             try

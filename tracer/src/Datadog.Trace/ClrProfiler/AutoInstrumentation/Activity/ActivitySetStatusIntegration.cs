@@ -55,7 +55,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Activity
                 // Convert.ToInt32 correctly handles enum→int conversion even when TStatusCode
                 // is a foreign enum type (System.Diagnostics.ActivityStatusCode from the target assembly).
                 // Direct cast like (int)(object)statusCode would throw InvalidCastException for enums.
-                ApplyStatus(scope.Span, System.Convert.ToInt32((object)statusCode!), (string?)(object?)description);
+                var statusCodeInt = System.Convert.ToInt32((object)statusCode!);
+                var rawDescription = (string?)(object?)description;
+
+                // Mirror real Activity.SetStatus: the description is only retained for Error status;
+                // any other status silently discards it, same as the framework implementation does.
+                var effectiveDescription = statusCodeInt == 2 ? rawDescription : null;
+                ActivityCustomPropertyAccessor<TTarget>.SetStatusDescription(instance, effectiveDescription);
+                ApplyStatus(scope.Span, statusCodeInt, effectiveDescription);
                 return new CallTargetState(null, null, skipMethodBody: true);
             }
 
@@ -80,16 +87,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Activity
             if (span.Tags is not OpenTelemetryTags tags)
             {
                 return;
-            }
-
-            // Because skipMethodBody suppresses Activity's own SetStatus body, Activity.StatusDescription
-            // (the real backing field) never gets written in interception mode. get_StatusDescription is
-            // intercepted to read it back from this "otel.status_description" tag instead, so it must be
-            // written here regardless of status code (Activity.SetStatus accepts a description for any
-            // status, not just Error).
-            if (!string.IsNullOrEmpty(description))
-            {
-                span.SetTag("otel.status_description", description);
             }
 
             // Map ActivityStatusCode enum value to OTel status string

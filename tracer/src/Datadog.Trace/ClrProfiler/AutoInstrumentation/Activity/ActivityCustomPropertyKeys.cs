@@ -17,5 +17,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Activity
         internal const string Span = "__dd_span__";
         internal const string Resource = "__dd_resource__";
         internal const string InitialOpName = "__dd_initial_op__";
+        internal const string StatusDescription = "__dd_status_description__";
     }
 }

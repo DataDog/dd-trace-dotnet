@@ -16,8 +16,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Activity
     /// CallTarget instrumentation for the <c>System.Diagnostics.Activity.StatusDescription</c> property getter.
     /// Available on DiagnosticSource 6.0+ (.NET 6+).
     /// When the feature flag is enabled and the Activity is tracked, <see cref="ActivitySetStatusIntegration"/>
-    /// skips Activity's internal status fields; this getter reads the description back from the linked Span
-    /// so the observable value stays consistent.
+    /// skips Activity's internal status fields; this getter reads the description back from a custom property
+    /// on the Activity (see <see cref="ActivityCustomPropertyAccessor{TTarget}.GetStatusDescription"/>) so the
+    /// observable value stays consistent, without materialising it as a visible Datadog span tag.
     /// </summary>
     [InstrumentMethod(
         AssemblyName = "System.Diagnostics.DiagnosticSource",
@@ -56,18 +57,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Activity
         }
 
         /// <summary>
-        /// OnMethodEnd — return the status description from the Span's "otel.status_description" tag.
+        /// OnMethodEnd — return the status description stored on the Activity's custom property.
         /// </summary>
         internal static CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception? exception, in CallTargetState state)
         {
             if (state.GetSkipMethodBody())
             {
-                var span = state.Scope?.Span;
-                if (span is not null)
-                {
-                    var description = span.GetTag("otel.status_description");
-                    return new CallTargetReturn<TReturn>((TReturn)(object?)description!);
-                }
+                var description = ActivityCustomPropertyAccessor<TTarget>.GetStatusDescription(instance);
+                return new CallTargetReturn<TReturn>((TReturn)(object?)description!);
             }
 
             return new CallTargetReturn<TReturn>(returnValue);
