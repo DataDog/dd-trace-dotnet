@@ -26,6 +26,8 @@ namespace Datadog.Trace.Ci;
 internal sealed class TestOptimization : ITestOptimization
 {
     private static ITestOptimization? _instance;
+    private static bool _instanceInitialized;
+    private static object _instanceLock = new();
 
     private readonly Lazy<CIEnvironmentValues> _ciVariablesLazy;
     private int _firstInitialization = 1;
@@ -55,16 +57,22 @@ internal sealed class TestOptimization : ITestOptimization
 
     public static ITestOptimization Instance
     {
-        get => LazyInitializer.EnsureInitialized(ref _instance, static () =>
+        get => LazyInitializer.EnsureInitialized(ref _instance, ref _instanceInitialized, ref _instanceLock, static () =>
         {
             var instance = new TestOptimization();
-            // Register with the tracer's existing hook so our events finish before its writer,
-            // even when APM initialized first. Concurrent factories assign the same callback;
-            // it reads the published singleton instead of retaining a discarded candidate.
-            TracerManager.ShutdownCallback = ShutdownAsync;
+            // The initialization lock binds shutdown to the one published instance.
+            // The tracer invokes it before closing writers, even when APM initialized first.
+            TracerManager.ShutdownCallback = instance.CloseActiveTestsAsync;
             return instance;
         })!;
-        internal set => _instance = value;
+        internal set
+        {
+            lock (_instanceLock)
+            {
+                _instance = value;
+                _instanceInitialized = true;
+            }
+        }
     }
 
     public static bool DefaultUseLockedTracerManager { get; set; } = true;
@@ -234,26 +242,6 @@ internal sealed class TestOptimization : ITestOptimization
     }
 
     public CIEnvironmentValues CIValues => _ciVariablesLazy.Value;
-
-    /// <summary>
-    /// Closes test events before the tracer's existing shutdown hook disposes their writer.
-    /// Does not create Test Optimization in applications that never initialized it.
-    /// Uses manager initialization because InitializeFromRunner resets the IsRunning flag.
-    /// </summary>
-    private static async Task ShutdownAsync(Exception? exception)
-    {
-        if (_instance is TestOptimization instance && instance._tracerManagement is not null)
-        {
-            try
-            {
-                await instance.CloseActiveTestsAsync(exception).ConfigureAwait(false);
-            }
-            catch (Exception ex)
-            {
-                instance.Log.Error(ex, "Error closing test sessions on shutdown.");
-            }
-        }
-    }
 
     public void Initialize()
     {
@@ -543,62 +531,75 @@ internal sealed class TestOptimization : ITestOptimization
     /// </summary>
     private async Task CloseActiveTestsAsync(Exception? exception)
     {
-        using var cd = CodeDuration.Create();
-
-        // Let's close any opened test, suite, modules and sessions before shutting down to avoid losing any data.
-        // But marking them as failed.
-
-        foreach (var test in Test.ActiveTests)
+        // Instance can be created without starting Test Optimization. InitializeFromRunner resets
+        // IsRunning, so use the initialized manager to decide whether there is anything to close.
+        if (_tracerManagement is null)
         {
-            if (exception is not null)
-            {
-                test.SetErrorInfo(exception);
-            }
-
-            test.Close(TestStatus.Skip, null, "Test is being closed due to test session shutdown.");
-        }
-
-        foreach (var testSuite in TestSuite.ActiveTestSuites)
-        {
-            if (exception is not null)
-            {
-                testSuite.SetErrorInfo(exception);
-            }
-
-            testSuite.Close();
-        }
-
-        foreach (var testModule in TestModule.ActiveTestModules)
-        {
-            if (exception is not null)
-            {
-                testModule.SetErrorInfo(exception);
-            }
-
-            await testModule.CloseAsync().ConfigureAwait(false);
+            return;
         }
 
         try
         {
-            CoverageReporter.FinalizeGlobalCoverage();
+            using var cd = CodeDuration.Create();
+
+            // Close children before parents so every event reaches the writer before it is disposed.
+
+            foreach (var test in Test.ActiveTests)
+            {
+                if (exception is not null)
+                {
+                    test.SetErrorInfo(exception);
+                }
+
+                test.Close(TestStatus.Skip, null, "Test is being closed due to test session shutdown.");
+            }
+
+            foreach (var testSuite in TestSuite.ActiveTestSuites)
+            {
+                if (exception is not null)
+                {
+                    testSuite.SetErrorInfo(exception);
+                }
+
+                testSuite.Close();
+            }
+
+            foreach (var testModule in TestModule.ActiveTestModules)
+            {
+                if (exception is not null)
+                {
+                    testModule.SetErrorInfo(exception);
+                }
+
+                await testModule.CloseAsync().ConfigureAwait(false);
+            }
+
+            try
+            {
+                CoverageReporter.FinalizeGlobalCoverage();
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "TestOptimization: Error finalizing global code coverage during shutdown.");
+            }
+
+            foreach (var testSession in TestSession.ActiveTestSessions)
+            {
+                if (exception is not null)
+                {
+                    testSession.SetErrorInfo(exception);
+                }
+
+                await testSession.CloseAsync(TestStatus.Skip).ConfigureAwait(false);
+            }
+
+            await FlushAsync().ConfigureAwait(false);
+            MethodSymbolResolver.Instance.Clear();
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "TestOptimization: Error finalizing global code coverage during shutdown.");
+            Log.Error(ex, "Error closing test sessions on shutdown.");
         }
-
-        foreach (var testSession in TestSession.ActiveTestSessions)
-        {
-            if (exception is not null)
-            {
-                testSession.SetErrorInfo(exception);
-            }
-
-            await testSession.CloseAsync(TestStatus.Skip).ConfigureAwait(false);
-        }
-
-        await FlushAsync().ConfigureAwait(false);
-        MethodSymbolResolver.Instance.Clear();
     }
 
     private async Task InitializeAdditionalFeaturesAsync()
