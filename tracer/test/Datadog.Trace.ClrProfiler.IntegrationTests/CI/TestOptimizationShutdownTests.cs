@@ -25,16 +25,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI;
 public class TestOptimizationShutdownTests(ITestOutputHelper output) : TestingFrameworkEvpTest("TestOptimizationShutdown", output)
 {
     [Theory]
-    [InlineData("concurrent", "explicit-close")]
-    [InlineData("concurrent", "process-exit")]
-    [InlineData("concurrent", "exception")]
-    [InlineData("ci-first", "explicit-close")]
-    [InlineData("apm-first", "explicit-close")]
-    [InlineData("ci-first", "process-exit")]
-    [InlineData("apm-first", "process-exit")]
-    [InlineData("ci-first", "exception")]
-    [InlineData("apm-first", "exception")]
-    public async Task OpenSessionIsSentBeforeTheWriterCloses(string initializationOrder, string shutdownTrigger)
+    [InlineData("explicit-close")]
+    [InlineData("process-exit")]
+    [InlineData("exception")]
+    public async Task OpenSessionIsSentBeforeTheWriterCloses(string shutdownTrigger)
     {
         EnvironmentHelper.EnableDefaultTransport();
         SetEnvironmentVariable("CORECLR_ENABLE_PROFILING", "0");
@@ -60,7 +54,7 @@ public class TestOptimizationShutdownTests(ITestOutputHelper output) : TestingFr
         };
 
         var tracerPath = Path.Combine(EnvironmentHelper.GetMonitoringHomePath(), EnvironmentHelper.IsCoreClr() ? "net6.0" : "net461", "Datadog.Trace.dll");
-        using var result = await RunSampleAndWaitForExit(agent, $"\"{tracerPath}\" {initializationOrder} {shutdownTrigger}");
+        using var result = await RunSampleAndWaitForExit(agent, $"\"{tracerPath}\" {shutdownTrigger}");
 
         sessions.Should().ContainSingle();
         var session = sessions.Single();

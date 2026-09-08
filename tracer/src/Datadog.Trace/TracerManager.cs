@@ -130,12 +130,6 @@ namespace Datadog.Trace
         }
 
         /// <summary>
-        /// Gets or sets the callback that completes pending events before process shutdown closes writers.
-        /// Assignment replaces the callback; repeated singleton factories do not accumulate registrations.
-        /// </summary>
-        internal static Func<Exception, Task> ShutdownCallback { get; set; }
-
-        /// <summary>
         /// Gets the global <see cref="TracerManager"/> instance used by all <see cref="Tracer"/> instances
         /// </summary>
         public static TracerManager Instance
@@ -738,21 +732,7 @@ namespace Datadog.Trace
             ServiceDiscoveryHelper.StoreTracerMetadata(tracerSettings, tracerSettings.Manager.InitialMutableSettings);
         }
 
-        private static async Task RunShutdownTasksAsync(Exception ex)
-        {
-            try
-            {
-                if (ShutdownCallback is { } callback)
-                {
-                    await callback(ex).ConfigureAwait(false);
-                }
-            }
-            finally
-            {
-                // Writers must still be flushed and disposed if their producer fails to shut down.
-                await RunShutdownTasksAsync(_instance, _heartbeatTimer).ConfigureAwait(false);
-            }
-        }
+        private static Task RunShutdownTasksAsync(Exception ex) => RunShutdownTasksAsync(_instance, _heartbeatTimer);
 
         private static async Task RunShutdownTasksAsync(TracerManager instance, Timer heartbeatTimer)
         {
