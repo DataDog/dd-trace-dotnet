@@ -157,6 +157,23 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Activity
 
                         if (parent is null)
                         {
+                            // Cold path 2: Activity.Parent didn't yield a match either — e.g. the caller built
+                            // the child directly (`new Activity(name)`) and called SetParentId(...) explicitly
+                            // rather than letting Start() derive Parent from Activity.Current (see
+                            // Samples.NetActivitySdk's "W3CChildSpan"/"ChildSpan"). Activity.Parent is only
+                            // auto-populated from Activity.Current when ParentId was NOT already set before
+                            // Start(), so this in-process link is otherwise invisible to us. If the named
+                            // parent is exactly the currently active Datadog span, treat it as an in-process
+                            // child rather than falling through to the remote-parent reconstruction below.
+                            if (tracer.ActiveScope?.Span is Span currentSpan
+                             && string.Equals(currentSpan.Context.RawSpanId, parentSpanId, StringComparison.OrdinalIgnoreCase))
+                            {
+                                parent = currentSpan.Context;
+                            }
+                        }
+
+                        if (parent is null)
+                        {
                             // Remote parent — construct SpanContext from TraceId + ParentSpanId
                             _ = HexString.TryParseTraceId(activityTraceId, out var remoteTraceId);
                             _ = HexString.TryParseUInt64(parentSpanId, out var remoteSpanId);
