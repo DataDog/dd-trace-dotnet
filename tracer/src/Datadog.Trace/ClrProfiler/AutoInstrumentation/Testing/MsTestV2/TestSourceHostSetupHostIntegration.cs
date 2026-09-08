@@ -33,6 +33,9 @@ public static class TestSourceHostSetupHostIntegration
         AppDomain? AppDomain { get; }
     }
 
+    /// <summary>
+    /// Transfers discovery totals after MSTest has created the isolated execution AppDomain.
+    /// </summary>
     internal static CallTargetReturn OnMethodEnd<TTarget>(TTarget instance, Exception? exception, in CallTargetState state)
         where TTarget : ITestSourceHost
     {

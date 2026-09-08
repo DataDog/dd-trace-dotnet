@@ -28,7 +28,6 @@ namespace Datadog.Trace
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<LifetimeManager>();
         private static LifetimeManager? _instance;
-        private readonly ConcurrentQueue<Func<Exception?, Task>> _preShutdownHooks = new();
         private readonly ConcurrentQueue<object> _shutdownHooks = new();
 
         // Signaled when RunShutdownTasks finishes. Subsequent callers wait on this
@@ -122,32 +121,6 @@ namespace Datadog.Trace
             _shutdownHooks.Enqueue(func);
         }
 
-        /// <summary>
-        /// Registers work to run before shutdown tasks dispose shared services.
-        /// For example, test sessions must close while their event writer can still accept events.
-        /// </summary>
-        /// <remarks>
-        /// A failure or timeout is logged without preventing the remaining shutdown tasks.
-        /// The timeout limits how long shutdown waits; it does not cancel the registered work.
-        /// </remarks>
-        public void AddAsyncPreShutdownTask(Func<Exception?, Task> func)
-        {
-            _preShutdownHooks.Enqueue(func);
-        }
-
-        private void RunPreShutdownTask(Func<Exception?, Task> task, Exception? exception)
-        {
-            try
-            {
-                AsyncUtil.RunSync(task, exception, (int)TaskTimeout.TotalMilliseconds);
-            }
-            catch (Exception ex)
-            {
-                // Shared services must still flush and close if a producer fails to finish.
-                Log.Error(ex, "Error running a pre-shutdown task. Continuing shutdown.");
-            }
-        }
-
         private void CurrentDomain_ProcessExit(object? sender, EventArgs e)
         {
             RunShutdownTasks();
@@ -218,11 +191,6 @@ namespace Datadog.Trace
                     if (current is not null)
                     {
                         SetSynchronizationContext(null);
-                    }
-
-                    while (_preShutdownHooks.TryDequeue(out var preShutdownTask))
-                    {
-                        RunPreShutdownTask(preShutdownTask, exception);
                     }
 
                     while (_shutdownHooks.TryDequeue(out var actionOrFunc))

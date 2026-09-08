@@ -26,6 +26,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2;
 [EditorBrowsable(EditorBrowsableState.Never)]
 public static class TestMethodInfoGetRetryAttributeIntegration
 {
+    /// <summary>
+    /// Wraps the resolved policy so selected results remain available before class cleanup.
+    /// </summary>
     internal static CallTargetReturn<TReturn?> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn? returnValue, Exception? exception, in CallTargetState state)
     {
         if (exception is null && returnValue is not null && MsTestIntegration.IsEnabled)

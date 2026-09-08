@@ -25,6 +25,10 @@ internal sealed class MsTestRetryContext : IDisposable
     private readonly string? _displayName;
     private int _testRunCount;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="MsTestRetryContext"/> class before the test span is activated.
+    /// The array copy survives MSTest clearing arguments; argument objects retain their original identity.
+    /// </summary>
     public MsTestRetryContext(ITestMethod testMethod)
     {
         _testMethod = testMethod;
@@ -37,6 +41,9 @@ internal sealed class MsTestRetryContext : IDisposable
         _executionContext = ExecutionContext.Capture();
     }
 
+    /// <summary>
+    /// Runs a retry in a copy of the captured context, without inheriting a pending attempt's span.
+    /// </summary>
     public Task<T> RunAsync<T>(Func<Task<T>> retry)
     {
         if (_executionContext is null)
@@ -50,8 +57,15 @@ internal sealed class MsTestRetryContext : IDisposable
         return task!;
     }
 
+    /// <summary>
+    /// Releases the captured ExecutionContext when the owning runner finishes all attempts.
+    /// </summary>
     public void Dispose() => _executionContext?.Dispose();
 
+    /// <summary>
+    /// Installs a fresh TestContext and restores the original arguments and context on every exit.
+    /// The supplied retry invokes MSTest InvokeAsync, which creates and cleans up a fresh test class.
+    /// </summary>
     private async Task<T> RunWithTestContextAsync<T>(Func<Task<T>> retry)
     {
         var previousArguments = _testMethod.Arguments;

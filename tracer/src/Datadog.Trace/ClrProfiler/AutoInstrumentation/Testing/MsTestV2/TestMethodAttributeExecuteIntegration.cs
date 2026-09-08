@@ -277,6 +277,10 @@ public sealed class TestMethodAttributeExecuteAsyncIntegration
         return returnValue;
     }
 
+    /// <summary>
+    /// Applies the existing EFD, Attempt to Fix, or automatic retry policy to the selected results.
+    /// Native retry policies call this before MSTest cleanup, once their own outcome is known.
+    /// </summary>
     internal static async Task<IList> RunRetriesAsync(IList returnValueList, TestRunnerState testMethodState, TestAttemptResult attempt, string? retryDisplayName = null)
     {
         var testOptimization = TestOptimization.Instance;
@@ -454,6 +458,9 @@ public sealed class TestMethodAttributeExecuteAsyncIntegration
         }
     }
 
+    /// <summary>
+    /// Records one executor result and either closes its test or defers closure for native retry tags.
+    /// </summary>
     private static TestStatus HandleTestResult<TTestMethod, TTestResult>(Test test, TTestMethod testMethod, TTestResult testResult, Exception? exception, RetryState retryState, MsTestExecution? execution)
         where TTestResult : ITestResult
     {
@@ -638,6 +645,9 @@ public sealed class TestMethodAttributeExecuteAsyncIntegration
         }
     }
 
+    /// <summary>
+    /// Labels the current attempt without guessing whether the native policy will retry again.
+    /// </summary>
     private static void ApplyRetryTags(Ci.Tagging.TestSpanTags testTags, RetryState retryState)
     {
         if (retryState.IsNativeRetry)
