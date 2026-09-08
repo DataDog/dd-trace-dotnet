@@ -44,7 +44,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Activity
         {
             try
             {
-                (CreateNode, CreateEnumerator, EnumeratorType) = Build();
+                var result = Build();
+                CreateNode = result.CreateNode;
+                CreateEnumerator = result.CreateEnumerator;
+                EnumeratorType = result.EnumeratorType;
             }
             catch (Exception ex)
             {
@@ -101,7 +104,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Activity
             return true;
         }
 
-        private static (CreateNodeDelegate? CreateNode, CreateEnumeratorDelegate? CreateEnumerator, Type? EnumeratorType) Build()
+        private static BuildResult Build()
         {
             var assembly = typeof(TTarget).Assembly;
             var kvpType = typeof(KeyValuePair<string, object?>);
@@ -131,7 +134,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Activity
             var createNode = BuildCreateNodeDelegate(diagNodeType, nodeCtor, nextField, kvpType);
             var createEnumerator = BuildCreateEnumeratorDelegate(enumeratorType, enumeratorCtor, diagNodeType);
 
-            return (createNode, createEnumerator, enumeratorType);
+            return new BuildResult(createNode, createEnumerator, enumeratorType);
         }
 
         private static CreateNodeDelegate BuildCreateNodeDelegate(Type diagNodeType, ConstructorInfo nodeCtor, FieldInfo nextField, Type kvpType)
@@ -182,6 +185,24 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Activity
             il.Emit(OpCodes.Ret);
 
             return (CreateEnumeratorDelegate)dm.CreateDelegate(typeof(CreateEnumeratorDelegate));
+        }
+
+        // Not a named-element ValueTuple: that requires TupleElementNamesAttribute, which isn't available
+        // when compiling this project for net461 (see AGENTS.md - no ValueTuple syntax for .NET Framework 4.6.1).
+        private readonly struct BuildResult
+        {
+            public BuildResult(CreateNodeDelegate? createNode, CreateEnumeratorDelegate? createEnumerator, Type? enumeratorType)
+            {
+                CreateNode = createNode;
+                CreateEnumerator = createEnumerator;
+                EnumeratorType = enumeratorType;
+            }
+
+            public CreateNodeDelegate? CreateNode { get; }
+
+            public CreateEnumeratorDelegate? CreateEnumerator { get; }
+
+            public Type? EnumeratorType { get; }
         }
     }
 }
