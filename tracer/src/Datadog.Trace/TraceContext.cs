@@ -441,11 +441,17 @@ namespace Datadog.Trace
                     var rateLimiterRejected = didSample && SamplingPriorityValues.IsDrop(p);
                     if (rateLimiterRejected)
                     {
+<<<<<<< HEAD
                         var inheritedRv = _otelTraceState.LocallyGeneratedOtelRandomValue ? null : OtelTraceStateHelpers.ExtractRv(_otelTraceState.CachedHeaderString);
 
                         _otelTraceState.RandomValue = inheritedRv ?? rv;
                         _otelTraceState.Threshold = null;
                         _otelTraceState.LocallyGeneratedOtelRandomValue = inheritedRv is null;
+=======
+                        var existingRv = OtelTraceStateHelpers.ExtractRv(_otelTraceState);
+                        _otelTraceState = OtelTraceStateHelpers.SetRvTh(_otelTraceState, existingRv, th: null);
+                        _containsLocallyGeneratedOtelRandomValue &= existingRv is not null;
+>>>>>>> f8c7fd03e1 (fix(propagators): avoid generating rv on limiter rejection)
                     }
                     else
                     {
