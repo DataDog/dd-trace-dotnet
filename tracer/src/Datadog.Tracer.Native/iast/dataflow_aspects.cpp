@@ -233,7 +233,7 @@ namespace iast
         }
         if ((int)parts.size() > ++part) // TargetType
         {
-            WSTRING assembliesPart, targetParams;
+            WSTRING assembliesPart;
 
             SplitType(parts[part], &assembliesPart, &_targetType);
             if (assembliesPart.length() > 0)
