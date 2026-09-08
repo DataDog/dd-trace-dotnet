@@ -4,7 +4,7 @@ This file is the coding-agent operating guide and task-routing reference for thi
 
 ## Agent Workflow
 
-For non-trivial work:
+For non-trivial code changes:
 
 1. Identify the affected area, read its guide, and define verifiable success criteria.
 2. Keep the change narrowly scoped. Mention unrelated problems, but do not fix them unless asked.
