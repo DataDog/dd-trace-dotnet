@@ -10,6 +10,9 @@ using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2;
 
+/// <summary>
+/// Intercepts completion of MSTest's native policy before the runner destroys its retry inputs.
+/// </summary>
 internal static class MsTestRetryPolicy
 {
     private interface IRetryPolicy
@@ -17,6 +20,10 @@ internal static class MsTestRetryPolicy
         object ExecuteAsync(object context);
     }
 
+    /// <summary>
+    /// Preserves custom RetryBaseAttribute implementations through a reverse duck-typed wrapper.
+    /// The wrapper uses the framework's own RetryResult type without a compile-time dependency.
+    /// </summary>
     public static object Wrap(object policy, Type retryBaseType)
     {
         var resultType = retryBaseType.Assembly.GetType("Microsoft.VisualStudio.TestTools.UnitTesting.RetryResult", throwOnError: true)!;
@@ -28,6 +35,9 @@ internal static class MsTestRetryPolicy
     {
         private readonly IRetryPolicy _policy = policy.DuckCast<IRetryPolicy>();
 
+        /// <summary>
+        /// Invokes the original policy once and preserves its exception and cancellation behavior.
+        /// </summary>
         [DuckReverseMethod(Name = "ExecuteAsync", ParameterTypeNames = ["Microsoft.VisualStudio.TestTools.UnitTesting.RetryContext"])]
         public Task<TResult> Execute(object context)
         {
@@ -36,6 +46,10 @@ internal static class MsTestRetryPolicy
             return execution is null ? task : CompleteAsync(task, execution);
         }
 
+        /// <summary>
+        /// Runs Datadog retries against the selected native results before returning control to MSTest.
+        /// Instrumentation failures are logged without replacing the policy's result.
+        /// </summary>
         private static async Task<TResult> CompleteAsync(Task<TResult> task, MsTestExecution execution)
         {
             // Await the original policy outside our error handler. Its exceptions and cancellation

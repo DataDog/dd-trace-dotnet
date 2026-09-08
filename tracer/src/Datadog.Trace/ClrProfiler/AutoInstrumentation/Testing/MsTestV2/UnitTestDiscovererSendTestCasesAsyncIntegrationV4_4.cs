@@ -26,6 +26,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2;
 [EditorBrowsable(EditorBrowsableState.Never)]
 public static class UnitTestDiscovererSendTestCasesAsyncIntegrationV4_4
 {
+    /// <summary>
+    /// Captures the unfiltered count used by EFD; collections avoid a second enumeration.
+    /// </summary>
     internal static CallTargetState OnMethodBegin<TTarget, TSink, TFilter, TLogger>(TTarget instance, IEnumerable? testElements, TSink sink, TFilter filter, TLogger logger)
     {
         var count = 0;

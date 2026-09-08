@@ -227,6 +227,16 @@ internal sealed class TestOptimization : ITestOptimization
 
     public CIEnvironmentValues CIValues => _ciVariablesLazy.Value;
 
+    /// <summary>
+    /// Closes test events before the tracer's existing shutdown hook disposes their writer.
+    /// Does not create Test Optimization in applications that never initialized it.
+    /// Uses manager initialization because InitializeFromRunner resets the IsRunning flag.
+    /// </summary>
+    internal static Task ShutdownAsync(Exception? exception)
+        => _instance is TestOptimization instance && instance._tracerManagement is not null
+               ? instance.CloseActiveTestsAsync(exception)
+               : Task.CompletedTask;
+
     public void Initialize()
     {
         using var cd = CodeDurationRef.Create();
@@ -265,9 +275,6 @@ internal sealed class TestOptimization : ITestOptimization
         {
             Log.Information("TestOptimization: EVP Proxy was enabled with mode: {Mode}", TracerManagement.EventPlatformProxySupport);
         }
-
-        LifetimeManager.Instance.AddAsyncPreShutdownTask(ShutdownAsync);
-        cd.Debug("Added shutdown task");
 
         var tracerSettings = settings.TracerSettings;
         Log.Debug("TestOptimization: Setting up the test session name to: {TestSessionName}", settings.TestSessionName);
@@ -339,7 +346,6 @@ internal sealed class TestOptimization : ITestOptimization
         Log.Information("TestOptimization: Initializing CI Visibility from dd-trace / runner with RunId: {RunId}", RunId);
 
         Settings = settings;
-        LifetimeManager.Instance.AddAsyncPreShutdownTask(ShutdownAsync);
 
         var tracerSettings = settings.TracerSettings;
         Log.Debug("TestOptimization: Setting up the test session name to: {TestSessionName}", settings.TestSessionName);
@@ -513,7 +519,11 @@ internal sealed class TestOptimization : ITestOptimization
         return _runId = runId;
     }
 
-    private async Task ShutdownAsync(Exception? exception)
+    /// <summary>
+    /// Closes active tests from children to parents, then flushes coverage and test events.
+    /// Pending retry attempts retain the duration captured when their execution finished.
+    /// </summary>
+    private async Task CloseActiveTestsAsync(Exception? exception)
     {
         using var cd = CodeDuration.Create();
 

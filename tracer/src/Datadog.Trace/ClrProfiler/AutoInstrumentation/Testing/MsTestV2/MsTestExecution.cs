@@ -18,6 +18,10 @@ using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2;
 
+/// <summary>
+/// Owns one runner invocation, including its data rows and native and Datadog retries.
+/// Attempt execution ends immediately; spans close only after the native policy selects its result.
+/// </summary>
 internal sealed class MsTestExecution
 {
     private static readonly AsyncLocal<MsTestExecution?> CurrentExecution = new();
@@ -49,6 +53,10 @@ internal sealed class MsTestExecution
 
     public bool IsNativeRetry => _nativeAttemptNumber > 0;
 
+    /// <summary>
+    /// Associates the method object with this execution across MSTest ExecutionContext switches.
+    /// The caller must dispose the binding so MSTest's method cache cannot retain completed attempts.
+    /// </summary>
     public static IDisposable? BindTestMethod(object? testMethod)
     {
         if (Current is not { } execution || testMethod is null)
@@ -63,9 +71,15 @@ internal sealed class MsTestExecution
         return binding;
     }
 
+    /// <summary>
+    /// Recovers the bound execution when ClassInitialize has restored an older ExecutionContext.
+    /// </summary>
     public static MsTestExecution? GetForTestMethod(object? testMethod)
         => testMethod is not null && MethodExecutions.TryGetValue(testMethod, out var binding) ? binding.Execution : Current;
 
+    /// <summary>
+    /// Matches MSTest's decision to skip its retry policy after an acceptable first attempt.
+    /// </summary>
     public static bool IsAcceptableNativeResult(IList results)
     {
         foreach (var result in results)
@@ -79,8 +93,14 @@ internal sealed class MsTestExecution
         return true;
     }
 
+    /// <summary>
+    /// Counts a runner invocation once, before any of its data rows execute.
+    /// </summary>
     public void StartNativeAttempt() => _nativeAttemptNumber++;
 
+    /// <summary>
+    /// Allocates native retry state only for methods with a resolved retry attribute.
+    /// </summary>
     public void ObserveTestMethod(ITestMethod testMethod)
     {
         if (_nativeAttempts is null && testMethod.Instance.TryDuckCast<ITestMethodInfoWithRetry>(out var method) && method.RetryAttribute is not null)
@@ -90,6 +110,10 @@ internal sealed class MsTestExecution
         }
     }
 
+    /// <summary>
+    /// Remembers executor results so the outer runner does not create duplicate test spans.
+    /// Additional result storage is allocated only when another executor invocation returns.
+    /// </summary>
     public void ObserveResults(IList results)
     {
         if (_firstResults is null)
@@ -101,6 +125,9 @@ internal sealed class MsTestExecution
         (_additionalResults ??= []).Add(results);
     }
 
+    /// <summary>
+    /// Checks result identity rather than outcome or name, which custom executors may reuse.
+    /// </summary>
     public bool WasObserved(object result)
     {
         if (ContainsReference(_firstResults, result))
@@ -124,6 +151,9 @@ internal sealed class MsTestExecution
         return false;
     }
 
+    /// <summary>
+    /// Retains the inputs and retry decision needed if the native policy selects this attempt.
+    /// </summary>
     public void RecordNativeAttempt(IList results, TestMethodAttributeExecuteAsyncIntegration.TestRunnerState state, TestAttemptResult summary)
     {
         if (IsNativeRetry && FindInitialAttempt(state.Test!) is { } initial)
@@ -135,6 +165,10 @@ internal sealed class MsTestExecution
         _nativeAttempts!.Add(new NativeAttempt(results, state, summary));
     }
 
+    /// <summary>
+    /// Captures duration and completes coverage and callbacks while the attempt context is active.
+    /// Keeps the test and span open for final retry tags, then restores the parent tracing context.
+    /// </summary>
     public void FinishAttempt(Test test, ITestResult? result, TestStatus status, string? skipReason, bool isDatadogRetry = false)
     {
         if (IsNativeRetry && FindInitialAttempt(test) is { } initial)
@@ -165,6 +199,10 @@ internal sealed class MsTestExecution
         }
     }
 
+    /// <summary>
+    /// Retries only results selected by the native policy, before MSTest runs class cleanup.
+    /// Also handles an acceptable first attempt, for which MSTest never invokes its retry policy.
+    /// </summary>
     public async Task ApplyDatadogRetriesAsync(IList results)
     {
         if (_datadogRetriesApplied || _nativeAttempts is not { Count: > 0 } || results.Count == 0)
@@ -192,6 +230,10 @@ internal sealed class MsTestExecution
         MaskTestManagementOutcomes(results);
     }
 
+    /// <summary>
+    /// Applies the final outcome and closes pending spans under Test's shutdown guard.
+    /// Releases retained retry contexts even when the framework exits with an error.
+    /// </summary>
     public void CloseTests()
     {
         var completedTests = _pendingTests;
@@ -224,6 +266,9 @@ internal sealed class MsTestExecution
         }
     }
 
+    /// <summary>
+    /// Replaces every reference to a selected result while preserving its runner-assigned identity.
+    /// </summary>
     private static void ReplaceSelectedResult(IList selectedResults, ITestResultV4_4 originalResult, object? replacement)
     {
         for (var index = 0; index < selectedResults.Count; index++)
@@ -236,6 +281,10 @@ internal sealed class MsTestExecution
         }
     }
 
+    /// <summary>
+    /// Preserves MSTest row and execution identifiers when a Datadog retry replaces a result.
+    /// MTP uses these identifiers to associate the reported result with the discovered test.
+    /// </summary>
     private static void CopyResultIdentity(ITestResultV4_4 source, ITestResultV4_4 destination)
     {
         // InvokeAsync produces the execution result. The runner adds the row identity afterwards.
@@ -246,6 +295,10 @@ internal sealed class MsTestExecution
         destination.AssociatedUnitTestElement = source.AssociatedUnitTestElement;
     }
 
+    /// <summary>
+    /// Aggregates attempts for one test identity; native policy selection takes precedence over order.
+    /// Only its last emitted span receives final_status, while Attempt to Fix considers every failure.
+    /// </summary>
     private static RetryOutcome GetRetryOutcome(List<PendingTest> completedTests, PendingTest completed)
     {
         var tags = completed.Test.GetTags();
@@ -294,6 +347,9 @@ internal sealed class MsTestExecution
         return new RetryOutcome(lastAttempt, anyPassed, anyFailed, executionCount, allRetriesFailed);
     }
 
+    /// <summary>
+    /// Closes any spans left open after finalization fails, using their captured execution durations.
+    /// </summary>
     private static void CloseRemainingTests(List<PendingTest> completedTests)
     {
         foreach (var completed in completedTests)
@@ -312,6 +368,9 @@ internal sealed class MsTestExecution
         }
     }
 
+    /// <summary>
+    /// Matches the exact result object; equal-looking results can belong to different attempts.
+    /// </summary>
     private static bool ContainsReference(IList? results, object? result)
     {
         if (results is not null)
@@ -328,6 +387,9 @@ internal sealed class MsTestExecution
         return false;
     }
 
+    /// <summary>
+    /// Runs Datadog retries independently for one selected result and updates the framework result.
+    /// </summary>
     private async Task RetrySelectedResultAsync(IList selectedResults, NativeAttempt attempt, int resultIndex, object? result)
     {
         // A custom executor can return several results. Retry each result independently;
@@ -351,6 +413,9 @@ internal sealed class MsTestExecution
         attempt.Results[resultIndex] = retryResults[0];
     }
 
+    /// <summary>
+    /// Applies quarantine and test-management masking after retries, without changing attempt spans.
+    /// </summary>
     private void MaskTestManagementOutcomes(IList selectedResults)
     {
         foreach (var completed in _pendingTests!)
@@ -377,6 +442,9 @@ internal sealed class MsTestExecution
         }
     }
 
+    /// <summary>
+    /// Drops result and context references that ClassInitialize's captured context could otherwise retain.
+    /// </summary>
     private void ReleaseAttemptState()
     {
         // ClassInitialize can retain its captured ExecutionContext until the assembly finishes.
@@ -395,6 +463,9 @@ internal sealed class MsTestExecution
         _pendingTests = null;
     }
 
+    /// <summary>
+    /// Finds the span by result identity even if the runner has since changed the display name.
+    /// </summary>
     private PendingTest? FindPendingTest(object? result)
     {
         foreach (var test in _pendingTests!)
@@ -409,6 +480,9 @@ internal sealed class MsTestExecution
         return null;
     }
 
+    /// <summary>
+    /// Finds the first matching data row so native retries preserve its new-test and EFD decisions.
+    /// </summary>
     private NativeAttempt? FindInitialAttempt(Test test)
     {
         foreach (var attempt in _nativeAttempts!)
@@ -432,6 +506,9 @@ internal sealed class MsTestExecution
         private readonly int _executionCount = executionCount;
         private readonly bool _allRetriesFailed = allRetriesFailed;
 
+        /// <summary>
+        /// Assigns aggregate retry tags inside Test.Close so shutdown cannot finish the span between writes.
+        /// </summary>
         public void ApplyFinalTags(Test test, PendingTest attempt)
         {
             var tags = test.GetTags();
