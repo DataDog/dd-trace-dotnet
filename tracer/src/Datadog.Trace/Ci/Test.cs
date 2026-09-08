@@ -39,6 +39,8 @@ public sealed class Test
     private bool _executionFinished;
     private bool _closeRequested;
     private TimeSpan? _executionDuration;
+    // Execution callbacks (for example, Selenium RUM flush) must run before leaving the attempt context,
+    // even when MSTest keeps the span open until its retry policy selects the final result.
     private List<Action<Test>>? _executionCompletedActions;
 
     internal Test(TestSuite suite, string name, DateTimeOffset? startDate)
