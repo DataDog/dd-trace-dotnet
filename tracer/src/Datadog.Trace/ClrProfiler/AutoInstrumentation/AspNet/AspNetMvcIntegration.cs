@@ -120,9 +120,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                         actionName = (routeValues?.GetValueOrDefault("action") as string)?.ToLowerInvariant();
                     }
 
-                    if (string.IsNullOrEmpty(resourceName) && httpContext.Request.Url != null)
+                    if (string.IsNullOrEmpty(resourceName) && RequestDataHelper.GetUrl(httpContext.Request) is { } requestUrl)
                     {
-                        var cleanUri = UriHelpers.GetCleanUriPath(httpContext.Request.Url, httpContext.Request.ApplicationPath);
+                        var cleanUri = UriHelpers.GetCleanUriPath(requestUrl, httpContext.Request.ApplicationPath);
                         resourceName = $"{httpMethod} {cleanUri.ToLowerInvariant()}";
                     }
 
