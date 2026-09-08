@@ -28,6 +28,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2;
 [EditorBrowsable(EditorBrowsableState.Never)]
 public static class TestMethodRunnerExecuteAsyncIntegrationV4_4
 {
+    /// <summary>
+    /// Advances the native attempt counter before MSTest enumerates data rows.
+    /// </summary>
     internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, string? logs, string? errors, string? trace, string? messages)
     {
         if (MsTestExecution.Current is not { } execution)
@@ -39,6 +42,9 @@ public static class TestMethodRunnerExecuteAsyncIntegrationV4_4
         return new CallTargetState(null, execution);
     }
 
+    /// <summary>
+    /// Runs EFD and Attempt to Fix before cleanup when an acceptable result bypasses the native policy.
+    /// </summary>
     internal static async Task<TReturn?> OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn? returnValue, Exception? exception, CallTargetState state)
     {
         // MSTest never calls RetryBaseAttribute when the first attempt is already acceptable.

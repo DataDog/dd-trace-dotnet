@@ -27,6 +27,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2;
 [EditorBrowsable(EditorBrowsableState.Never)]
 public static class UnitTestRunnerRunSingleTestAsyncIntegrationV4_4
 {
+    /// <summary>
+    /// Creates the execution owner before native retries and preserves the surrounding runner state.
+    /// </summary>
     internal static CallTargetState OnMethodBegin<TTarget, TElement, TLogger>(TTarget instance, TElement element, IDictionary<string, object?> testProperties, IDictionary<string, object?> lifecycleProperties, TLogger logger)
     {
         if (!MsTestIntegration.IsEnabled)
@@ -40,6 +43,9 @@ public static class UnitTestRunnerRunSingleTestAsyncIntegrationV4_4
         return new CallTargetState(null, execution);
     }
 
+    /// <summary>
+    /// Restores the caller context after MSTest returns its task, without ending the async execution.
+    /// </summary>
     internal static CallTargetReturn<TReturn?> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn? returnValue, Exception? exception, in CallTargetState state)
     {
         if (state.State is MsTestExecution execution)
@@ -51,6 +57,9 @@ public static class UnitTestRunnerRunSingleTestAsyncIntegrationV4_4
         return new CallTargetReturn<TReturn?>(returnValue);
     }
 
+    /// <summary>
+    /// Finalizes framework results and closes every pending attempt, including exceptional exits.
+    /// </summary>
     internal static TReturn? OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn? returnValue, Exception? exception, CallTargetState state)
     {
         if (state.State is not MsTestExecution execution)

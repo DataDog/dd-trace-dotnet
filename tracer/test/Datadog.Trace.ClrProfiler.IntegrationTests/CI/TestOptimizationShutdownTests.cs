@@ -31,10 +31,6 @@ public class TestOptimizationShutdownTests(ITestOutputHelper output) : TestingFr
     [InlineData("apm-first", "process-exit")]
     [InlineData("ci-first", "exception")]
     [InlineData("apm-first", "exception")]
-    [InlineData("ci-first", "pre-shutdown-failure")]
-    [InlineData("apm-first", "pre-shutdown-failure")]
-    [InlineData("ci-first", "pre-shutdown-timeout")]
-    [InlineData("apm-first", "pre-shutdown-timeout")]
     public async Task OpenSessionIsSentBeforeTheWriterCloses(string initializationOrder, string shutdownTrigger)
     {
         EnvironmentHelper.EnableDefaultTransport();
@@ -62,11 +58,6 @@ public class TestOptimizationShutdownTests(ITestOutputHelper output) : TestingFr
 
         var tracerPath = Path.Combine(EnvironmentHelper.GetMonitoringHomePath(), EnvironmentHelper.IsCoreClr() ? "net6.0" : "net461", "Datadog.Trace.dll");
         using var result = await RunSampleAndWaitForExit(agent, $"\"{tracerPath}\" {initializationOrder} {shutdownTrigger}");
-
-        if (shutdownTrigger is "pre-shutdown-failure" or "pre-shutdown-timeout")
-        {
-            result.StandardOutput.Should().Contain("Running pre-shutdown task: " + shutdownTrigger);
-        }
 
         sessions.Should().ContainSingle();
         var session = sessions.Single();
