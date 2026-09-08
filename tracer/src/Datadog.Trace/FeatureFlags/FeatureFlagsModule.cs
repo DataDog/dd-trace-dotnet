@@ -9,6 +9,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.FeatureFlags.Agentless;
 using Datadog.Trace.FeatureFlags.Exposure;
@@ -51,13 +52,13 @@ namespace Datadog.Trace.FeatureFlags
         private bool _disposed;
         private bool _deliveryStarted;
 
-        internal FeatureFlagsModule(TracerSettings settings, IRcmSubscriptionManager rcmSubscriptionManager)
+        internal FeatureFlagsModule(TracerSettings settings, IRcmSubscriptionManager rcmSubscriptionManager, IDiscoveryService? discoveryService = null)
         {
             _settings = settings.FeatureFlags;
             _settingsManager = settings.Manager;
             _isRemoteConfigurationAvailable = settings.IsRemoteConfigurationAvailable;
             _spanEnrichmentEnabled = settings.IsSpanEnrichmentEnabled;
-            _exposureApiFactory = () => new ExposureApi(settings);
+            _exposureApiFactory = () => new ExposureApi(settings, discoveryService ?? NullDiscoveryService.Instance);
             _rcmSubscriptionManager = rcmSubscriptionManager;
 
             Log.Debug<FeatureFlagsSource>("FeatureFlagsModule ENABLED with source {Source}", _settings.Source);
@@ -70,14 +71,14 @@ namespace Datadog.Trace.FeatureFlags
 
         internal FeatureFlagsSettings Settings => _settings;
 
-        public static FeatureFlagsModule? Create(TracerSettings settings, IRcmSubscriptionManager rcmSubscriptionManager)
+        public static FeatureFlagsModule? Create(TracerSettings settings, IRcmSubscriptionManager rcmSubscriptionManager, IDiscoveryService? discoveryService = null)
         {
             if (!settings.FeatureFlags.Enabled)
             {
                 return null;
             }
 
-            var module = new FeatureFlagsModule(settings, rcmSubscriptionManager);
+            var module = new FeatureFlagsModule(settings, rcmSubscriptionManager, discoveryService);
 
             // Subscribing here rather than in the constructor: SubscribeToChanges can invoke the
             // callback, which must not reach a module that is still being constructed.
