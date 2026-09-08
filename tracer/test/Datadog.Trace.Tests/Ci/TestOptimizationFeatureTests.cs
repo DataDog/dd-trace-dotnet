@@ -937,6 +937,29 @@ public class TestOptimizationFeatureTests : SettingsTestsBase
         }
     }
 
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("   ")]
+    [InlineData("null")]
+    [InlineData("{\"arguments\":")]
+    public void SkippableTestTryGetParametersReturnsFalseWithoutParsedParameters(string rawParameters)
+    {
+        var candidate = new SkippableTest(nameof(SampleParameterizedItrTest), typeof(TestOptimizationFeatureTests).FullName!, rawParameters, configurations: null);
+
+        candidate.TryGetParameters(out var parameters).Should().BeFalse();
+        parameters.Should().BeNull();
+    }
+
+    [Fact]
+    public void SkippableTestTryGetParametersReturnsNonNullParametersOnSuccess()
+    {
+        var candidate = new SkippableTest(nameof(SampleParameterizedItrTest), typeof(TestOptimizationFeatureTests).FullName!, """{"arguments":{"value":"1"}}""", configurations: null);
+
+        candidate.TryGetParameters(out var parameters).Should().BeTrue();
+        parameters.Should().NotBeNull();
+    }
+
     [Fact]
     public void CommonShouldSkipContinuesAfterMalformedParameters()
     {

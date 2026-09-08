@@ -5,6 +5,7 @@
 #nullable enable
 
 using System;
+using System.Diagnostics.CodeAnalysis;
 using Datadog.Trace.Util;
 using Datadog.Trace.Util.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
@@ -51,19 +52,26 @@ internal readonly struct SkippableTest
     /// <summary>
     /// Tries to parse test parameters for matching framework test cases to backend skippable candidates.
     /// </summary>
-    /// <param name="parameters">Parsed test parameters, or null when the backend candidate has no parameter payload.</param>
-    /// <returns>True when the payload is empty or valid JSON; otherwise, false.</returns>
-    public bool TryGetParameters(out TestParameters? parameters)
+    /// <param name="parameters">Parsed test parameters when the method returns true; otherwise, null.</param>
+    /// <returns>True when the payload contains valid test parameters; otherwise, false.</returns>
+    public bool TryGetParameters([NotNullWhen(true)] out TestParameters? parameters)
     {
         if (StringUtil.IsNullOrWhiteSpace(RawParameters))
         {
             parameters = null;
-            return true;
+            return false;
         }
 
         try
         {
-            parameters = JsonHelper.DeserializeObject<TestParameters>(RawParameters!);
+            var parsedParameters = JsonHelper.DeserializeObject<TestParameters>(RawParameters);
+            if (parsedParameters is null)
+            {
+                parameters = null;
+                return false;
+            }
+
+            parameters = parsedParameters;
             return true;
         }
         catch (JsonException)

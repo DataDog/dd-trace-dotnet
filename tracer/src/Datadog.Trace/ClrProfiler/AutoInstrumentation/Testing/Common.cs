@@ -130,7 +130,9 @@ internal static class Common
                 string? localTestParametersFingerprint = null;
                 foreach (var candidate in skippableTests)
                 {
-                    if (!candidate.TryGetParameters(out var parameters))
+                    TestParameters? parameters = null;
+                    if (!StringUtil.IsNullOrWhiteSpace(candidate.RawParameters) &&
+                        !candidate.TryGetParameters(out parameters))
                     {
                         Log.Debug("Common: Ignoring a skippable test candidate because its parameters are not valid JSON.");
                         continue;
