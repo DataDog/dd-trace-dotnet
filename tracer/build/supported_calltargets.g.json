@@ -14550,6 +14550,28 @@
     "IntegrationName": "OpenTelemetry",
     "AssemblyName": "System.Diagnostics.DiagnosticSource",
     "TargetTypeName": "System.Diagnostics.Activity",
+    "TargetMethodName": "EnumerateTagObjects",
+    "TargetReturnType": "System.Diagnostics.Activity+Enumerator`1[System.Collections.Generic.KeyValuePair`2[System.String,System.Object]]",
+    "TargetParameterTypes": [],
+    "MinimumVersion": {
+      "Item1": 9,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 10,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Activity.ActivityEnumerateTagObjectsIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "OpenTelemetry",
+    "AssemblyName": "System.Diagnostics.DiagnosticSource",
+    "TargetTypeName": "System.Diagnostics.Activity",
     "TargetMethodName": "get_DisplayName",
     "TargetReturnType": "System.String",
     "TargetParameterTypes": [],
@@ -14652,6 +14674,30 @@
       "Item3": 65535
     },
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Activity.ActivityTagsGetterIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "OpenTelemetry",
+    "AssemblyName": "System.Diagnostics.DiagnosticSource",
+    "TargetTypeName": "System.Diagnostics.Activity",
+    "TargetMethodName": "GetTagItem",
+    "TargetReturnType": "System.Object",
+    "TargetParameterTypes": [
+      "System.String"
+    ],
+    "MinimumVersion": {
+      "Item1": 7,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 10,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Activity.ActivityGetTagItemIntegration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": false,
     "InstrumentationCategory": 1
