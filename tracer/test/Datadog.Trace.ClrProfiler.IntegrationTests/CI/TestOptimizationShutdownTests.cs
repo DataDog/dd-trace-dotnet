@@ -34,7 +34,8 @@ public class TestOptimizationShutdownTests(ITestOutputHelper output) : TestingFr
         SetEnvironmentVariable("CORECLR_ENABLE_PROFILING", "0");
         SetEnvironmentVariable("COR_ENABLE_PROFILING", "0");
         SetEnvironmentVariable(ConfigurationKeys.CIVisibility.Enabled, "1");
-        SetEnvironmentVariable(ConfigurationKeys.CIVisibility.ForceAgentsEvpProxy, "V4");
+        // Exercise agent discovery during initialization instead of bypassing it with a forced EVP mode.
+        SetEnvironmentVariable(ConfigurationKeys.CIVisibility.ForceAgentsEvpProxy, null);
         SetEnvironmentVariable(ConfigurationKeys.CIVisibility.IntelligentTestRunnerEnabled, "0");
         SetEnvironmentVariable(ConfigurationKeys.CIVisibility.GitUploadEnabled, "0");
         SetEnvironmentVariable(ConfigurationKeys.CIVisibility.CodeCoverage, "0");
