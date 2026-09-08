@@ -565,6 +565,24 @@ std::tuple<unsigned, int> TypeSignature::GetElementTypeAndFlags() const
     return {elementType, typeFlags};
 }
 
+bool TypeSignature::MayBeByRefLike() const
+{
+    const auto [elementType, typeFlags] = GetElementTypeAndFlags();
+
+    // Ref structs are value types (including GENERICINST of a value type, e.g. Span<T>).
+    // Primitives, string, object, and classes cannot be byref-like.
+    switch (elementType)
+    {
+        case ELEMENT_TYPE_VALUETYPE:
+        case ELEMENT_TYPE_TYPEDBYREF:
+            return true;
+        case ELEMENT_TYPE_GENERICINST:
+            return (typeFlags & TypeFlagBoxedType) != 0;
+        default:
+            return false;
+    }
+}
+
 mdToken TypeSignature::GetTypeTok(const ComPtr<IMetaDataEmit2>& pEmit, mdAssemblyRef corLibRef) const
 {
     mdToken token = mdTokenNil;
@@ -1704,7 +1722,7 @@ HRESULT IsTypeTokenByRefLike(ICorProfilerInfo4* corProfilerInfo4, const ModuleMe
         {
             // Callers must fail closed when we cannot prove the type is not byref-like:
             // skip LogArg/LogLocal, or reject the rewrite for return/containing types.
-            Logger::Warn("[IsTypeTokenByRefLike] Failed to resolve TypeRef. Returning failure so callers can skip.");
+            Logger::Warn("[IsTypeTokenByRefLike] Failed to resolve TypeRef. Returning failure to the caller.");
             isTypeIsByRefLike = false;
             return hr;
         }

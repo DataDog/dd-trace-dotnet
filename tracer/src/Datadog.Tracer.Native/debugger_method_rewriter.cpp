@@ -13,32 +13,6 @@
 namespace debugger
 {
 
-namespace
-{
-// Ref structs are valuetypes (including GENERICINST of a valuetype, e.g. Span<T>).
-// Void, primitives, string, object, and classes cannot be byref-like; calling
-// IsTypeByRefLike for those signatures can fail (nil token / synthetic TypeRef)
-// and must not reject the rewrite.
-bool SignatureMayBeByRefLike(unsigned elementType, int typeFlags)
-{
-    if ((typeFlags & TypeFlagVoid) != 0)
-    {
-        return false;
-    }
-
-    switch (elementType)
-    {
-        case ELEMENT_TYPE_VALUETYPE:
-        case ELEMENT_TYPE_TYPEDBYREF:
-            return true;
-        case ELEMENT_TYPE_GENERICINST:
-            return (typeFlags & TypeFlagBoxedType) != 0;
-        default:
-            return false;
-    }
-}
-} // namespace
-
 // Get function locals
 HRESULT DebuggerMethodRewriter::GetFunctionLocalSignature(const ModuleMetadata& module_metadata, ILRewriter& rewriter, FunctionLocalSignature& localSignature)
 {
@@ -2320,18 +2294,19 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler,
         // byref-like can't exist as a generic param). Therefore, we only need to worry about non-async methods.
         // EndMethod<TReturn> instantiates a managed generic with the return type, so unknown must fail closed
         // for signatures that can actually be ref structs.
-        const auto [returnElementType, returnTypeFlags] = methodReturnType.GetElementTypeAndFlags();
-        if (SignatureMayBeByRefLike(returnElementType, returnTypeFlags))
+        if (methodReturnType.MayBeByRefLike())
         {
             bool isReturnByRefLike = false;
-            hr = IsTypeByRefLike(m_corProfiler->info_, module_metadata, methodReturnType, debuggerTokens->GetCorLibAssemblyRef(), isReturnByRefLike);
+            hr = IsTypeByRefLike(m_corProfiler->info_, module_metadata, methodReturnType,
+                                 debuggerTokens->GetCorLibAssemblyRef(), isReturnByRefLike);
             if (FAILED(hr) || isReturnByRefLike)
             {
                 if (FAILED(hr))
                 {
                     Logger::Warn("DebuggerRewriter: Failed to determine if the return value is By-Ref like.");
                 }
-                MarkAllProbesAsError(methodProbes, lineProbes, spanOnMethodProbes, invalid_probe_probe_byreflike_return_not_supported);
+                MarkAllProbesAsError(methodProbes, lineProbes, spanOnMethodProbes,
+                                     invalid_probe_probe_byreflike_return_not_supported);
                 return E_NOTIMPL;
             }
         }
@@ -2354,9 +2329,10 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler,
     }
 
     auto debuggerLocals = std::vector<ULONG>(debuggerTokens->GetAdditionalLocalsCount(methodArguments));
-    hr = debuggerTokens->ModifyLocalSigAndInitialize(&rewriterWrapper, &methodReturnType, &methodArguments, caller, &callTargetStateIndex, &exceptionIndex,
-                                                     &callTargetReturnIndex, &staticValueTypeIndex, &returnValueIndex, &callTargetStateToken,
-                                                     &exceptionToken, &callTargetReturnToken, &firstInstruction, debuggerLocals, isAsyncMethod);
+    hr = debuggerTokens->ModifyLocalSigAndInitialize(
+        &rewriterWrapper, &methodReturnType, &methodArguments, caller, &callTargetStateIndex, &exceptionIndex,
+        &callTargetReturnIndex, &staticValueTypeIndex, &returnValueIndex, &callTargetStateToken, &exceptionToken,
+        &callTargetReturnToken, &firstInstruction, debuggerLocals, isAsyncMethod);
 
     ULONG lineProbeCallTargetStateIndex = debuggerLocals[0];
     ULONG spanMethodStateIndex = debuggerLocals[1];

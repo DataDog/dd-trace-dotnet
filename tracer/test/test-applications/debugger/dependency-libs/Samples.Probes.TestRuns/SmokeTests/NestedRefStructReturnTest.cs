@@ -1,9 +1,7 @@
-#if NET6_0_OR_GREATER
+#if NET9_0_OR_GREATER
 
 using System.Runtime.CompilerServices;
-#if NET9_0_OR_GREATER
 using System.Threading;
-#endif
 using Samples.Probes.External;
 
 namespace Samples.Probes.TestRuns.SmokeTests
@@ -17,9 +15,7 @@ namespace Samples.Probes.TestRuns.SmokeTests
         {
             var nested = Nested(21);
             _ = nested.Value;
-#if NET9_0_OR_GREATER
             using var scope = LockScope();
-#endif
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
@@ -29,7 +25,6 @@ namespace Samples.Probes.TestRuns.SmokeTests
             return new NestedRefLikeContainer.NestedRefLike(input);
         }
 
-#if NET9_0_OR_GREATER
         private static readonly Lock Gate = new();
 
         [MethodImpl(MethodImplOptions.NoInlining)]
@@ -38,7 +33,6 @@ namespace Samples.Probes.TestRuns.SmokeTests
         {
             return Gate.EnterScope();
         }
-#endif
     }
 }
 

@@ -462,6 +462,7 @@ struct TypeSignature
     mdToken GetTypeTok(const ComPtr<IMetaDataEmit2>& pEmit, mdAssemblyRef corLibRef) const;
     shared::WSTRING GetTypeTokName(ComPtr<IMetaDataImport2>& pImport) const;
     std::tuple<unsigned, int> GetElementTypeAndFlags() const;
+    bool MayBeByRefLike() const;
     ULONG GetSignature(PCCOR_SIGNATURE& data) const;
 };
 
