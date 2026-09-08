@@ -19,44 +19,50 @@ public class ConcurrentFailureTests
     private const int ConcurrentCallCount = 4;
 
     [Fact]
-    public void ConcurrentFailedGenericCreateInstanceCallsAreSerialized()
+    public void ConcurrentFailedGenericCreateInstanceCallsAreSafe()
     {
         var target = ObscureObject.GetObject(nameof(ObscureObject.GetFieldInternalObject));
 
-        AssertConcurrentThrowsAreSerialized(
+        AssertConcurrentThrowsAreSafe(
             () => CaptureException(() => target.DuckCast<IWrongFieldName.IProtectedValueTypeField>()),
             exception => exception);
     }
 
     [Fact]
-    public void ConcurrentFailedNonGenericCreateInstanceCallsAreSerialized()
+    public void ConcurrentFailedNonGenericCreateInstanceCallsAreSafe()
     {
         var target = ObscureObject.GetObject(nameof(ObscureObject.GetFieldInternalObject));
         var proxyType = typeof(IWrongFieldName.IProtectedValueTypeField);
 
-        AssertConcurrentThrowsAreSerialized(
+        AssertConcurrentThrowsAreSafe(
             () => CaptureException(() => target.DuckCast(proxyType)),
             UnwrapTargetInvocationException);
     }
 
     [Fact]
-    public void ConcurrentFailedProxyTypeCallsAreSerialized()
+    public void ConcurrentFailedProxyTypeCallsAreSafe()
     {
         var target = ObscureObject.GetObject(nameof(ObscureObject.GetFieldInternalObject));
         var result = DuckType.GetOrCreateProxyType(typeof(IWrongFieldName.IProtectedValueTypeField), target.GetType());
 
-        AssertConcurrentThrowsAreSerialized(
+        AssertConcurrentThrowsAreSafe(
             () => CaptureException(() => _ = result.ProxyType),
             exception => exception);
     }
 
     // The CoreCLR access violation is Windows-only and timing-dependent, so trying to provoke the native
-    // crash directly would make this regression test both platform-specific and flaky. FirstChanceException
-    // runs synchronously on the throwing thread before the exception is caught. By holding each participating
-    // thread briefly in that callback, the test deterministically observes whether the same cached Exception
-    // can be thrown concurrently. That is the exact precondition for the runtime race, while remaining safe
-    // and meaningful on every target framework and operating system.
-    private static void AssertConcurrentThrowsAreSerialized(Func<Exception> invoke, Func<Exception, Exception> unwrap)
+    // crash directly on an affected runtime would make the result flaky. FirstChanceException runs
+    // synchronously on the throwing thread before the exception is caught. By holding each participating
+    // thread briefly in that callback, the test deterministically observes whether the exact same cached
+    // Exception can be thrown concurrently and validates the appropriate contract for each target:
+    //
+    // - Pre-.NET 6 CoreCLR targets must serialize the dispatches because they contain the runtime bug.
+    // - .NET Framework and .NET 6+ must allow the dispatches to overlap. Requiring overlap proves that those
+    //   tests are exercising the runtime fix rather than accidentally remaining protected by our workaround.
+    //   If the runtime regressed, the non-generic test would terminate the test process while reflection copies
+    //   Watson buckets into TargetInvocationException. Otherwise, all calls must complete with the expected
+    //   cached exception and exception-wrapper contracts.
+    private static void AssertConcurrentThrowsAreSafe(Func<Exception> invoke, Func<Exception, Exception> unwrap)
     {
         var firstException = invoke();
         firstException.Should().NotBeNull();
@@ -126,7 +132,15 @@ public class ConcurrentFailureTests
             unwrap(exception!).Should().BeSameAs(cachedException);
         }
 
-        maximumConcurrentThrows.Should().Be(1);
+#if NETFRAMEWORK || NET6_0_OR_GREATER
+        maximumConcurrentThrows.Should().BeGreaterThan(
+            1,
+            "the fixed runtime should safely support concurrent dispatches without the workaround");
+#else
+        maximumConcurrentThrows.Should().Be(
+            1,
+            "pre-.NET 6 CoreCLR requires the workaround to serialize dispatches of a cached exception");
+#endif
     }
 
     private static Exception CaptureException(Action action)

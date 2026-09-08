@@ -1417,6 +1417,7 @@ namespace Datadog.Trace.DuckTyping
             private readonly Delegate? _activator;
             private readonly ExceptionDispatchInfo? _exceptionInfo;
 
+#if !NETFRAMEWORK && !NET6_0_OR_GREATER
             // WORKAROUND: https://github.com/dotnet/runtime/issues/45929
             // Fixed in the runtime by https://github.com/dotnet/runtime/pull/46636.
             //
@@ -1433,9 +1434,16 @@ namespace Datadog.Trace.DuckTyping
             // This reference is deliberately shared by all copies of the readonly struct, including the
             // boxed copy used as the failure delegate's target. It lets us serialize every rethrow of one
             // cached failure. Do not lock on `this`: CreateTypeResult is a value type, so doing so would box
-            // each copy independently and would not provide mutual exclusion. Successful results keep this
-            // field null, so the workaround allocates a lock only for failed proxy creation results.
+            // each copy independently and would not provide mutual exclusion.
+            //
+            // The workaround is compiled only into the netstandard2.0 and netcoreapp3.1 tracer assets. Those
+            // are the assets selected for the affected pre-.NET 6 CoreCLR runtimes. The net461 asset does not
+            // need it because the runtime bug is not present on .NET Framework, and the net6.0 asset does not
+            // need it because that is the first runtime line containing Microsoft's fix. Successful results
+            // on the affected assets keep this field null, so even there a lock is allocated only for failed
+            // proxy creation results.
             private readonly object? _failureLock;
+#endif
 
             /// <summary>
             /// Initializes a new instance of the <see cref="CreateTypeResult"/> struct.
@@ -1450,7 +1458,9 @@ namespace Datadog.Trace.DuckTyping
                 _activator = activator;
                 _proxyType = proxyType;
                 _exceptionInfo = exceptionInfo;
+#if !NETFRAMEWORK && !NET6_0_OR_GREATER
                 _failureLock = exceptionInfo is null ? null : new object();
+#endif
                 TargetType = targetType;
                 Success = proxyType != null && exceptionInfo == null;
                 if (exceptionInfo is not null)
@@ -1532,6 +1542,7 @@ namespace Datadog.Trace.DuckTyping
                     ThrowHelper.ThrowNullReferenceException("The activator for this proxy type is null, check if the type can be created by calling 'CanCreate()'");
                 }
 
+#if !NETFRAMEWORK && !NET6_0_OR_GREATER
                 // The non-generic API invokes the failure delegate through reflection. DynamicInvoke catches
                 // the exception raised by ThrowOnError<T> and creates a TargetInvocationException around it.
                 // The Windows CoreCLR crash described above occurs while the runtime copies Watson buckets
@@ -1548,6 +1559,7 @@ namespace Datadog.Trace.DuckTyping
                         return _activator.DynamicInvoke(instance)!;
                     }
                 }
+#endif
 
                 return _activator.DynamicInvoke(instance)!;
             }
@@ -1568,6 +1580,7 @@ namespace Datadog.Trace.DuckTyping
                     return;
                 }
 
+#if !NETFRAMEWORK && !NET6_0_OR_GREATER
                 // Keep the monitor held for the complete dispatch of the shared exception. This protects the
                 // direct generic failure path and ProxyType getter. The non-generic path additionally acquires
                 // this lock around DynamicInvoke so that reflection's TargetInvocationException wrapper is also
@@ -1576,6 +1589,13 @@ namespace Datadog.Trace.DuckTyping
                 {
                     exceptionInfo.Throw();
                 }
+#else
+                // .NET Framework does not contain the Watson-bucket race described above. .NET 6 and later
+                // contain the runtime fix, so deliberately preserve the original concurrent behavior there.
+                // ConcurrentFailureTests exercises the same shared-exception scenario on these targets: the
+                // process must remain healthy and every caller must still receive the expected exception.
+                exceptionInfo.Throw();
+#endif
             }
         }
 
