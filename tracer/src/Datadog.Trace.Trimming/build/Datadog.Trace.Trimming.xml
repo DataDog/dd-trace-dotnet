@@ -1107,6 +1107,7 @@
    </assembly>
    <assembly fullname="System.Runtime.Loader">
       <type fullname="System.Runtime.Loader.AssemblyLoadContext" />
+      <type fullname="System.Runtime.Loader.AssemblyLoadContext/ContextualReflectionScope" />
    </assembly>
    <assembly fullname="System.Runtime.Numerics">
       <type fullname="System.Numerics.BigInteger" />
