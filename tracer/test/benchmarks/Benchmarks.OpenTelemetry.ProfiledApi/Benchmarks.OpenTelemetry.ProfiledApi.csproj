@@ -1,0 +1,53 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFrameworks>net6.0</TargetFrameworks>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <DefineConstants>PROFILEDAPI</DefineConstants>
+
+    <RootNamespace>Benchmarks.OpenTelemetry.ProfiledApi</RootNamespace>
+
+    <!-- benchmarkdotnet only support numberic values, not "latest"-->
+    <LangVersion>14</LangVersion>
+
+    <!-- Strong name signature -->
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>..\..\..\..\Datadog.Trace.snk</AssemblyOriginatorKeyFile>
+    <DelaySign>false</DelaySign>
+    <!-- NU* are workaround for Rider bug: https://youtrack.jetbrains.com/issue/RIDER-103207/Cannot-suppress-vulnerable-package-errors -->
+    <NoWarn>1591;NU1901;NU1902;NU1903;NU1904</NoWarn>
+
+    <CheckEolTargetFramework>false</CheckEolTargetFramework>
+  </PropertyGroup>
+
+  <!--
+    net6.0 only, deliberately: the Activity CallTarget integrations are MinimumVersion="5.0.0"+, and several
+    of the getters this is meant to price are DS 7.0/9.0+, so netcoreapp3.1 is structurally uninstrumentable
+    here and net472 only triples the env-var surface for no signal. See plan step 4.
+  -->
+
+  <ItemGroup>
+    <!-- Share benchmark bodies with Benchmarks.OpenTelemetry.Api so method names line up across arms. -->
+    <Compile Include="..\Benchmarks.OpenTelemetry.Api\*.cs" />
+    <Compile Include="..\Benchmarks.OpenTelemetry.Api\Trace\**\*.cs" Link="Trace\%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="BenchmarkDotNet" Version="0.15.6" />
+    <PackageReference Include="OpenTelemetry" Version="1.11.2" />
+    <PackageReference Include="OpenTelemetry.Api" Version="1.11.2" />
+  </ItemGroup>
+
+  <!--
+    Deliberately NO ProjectReference to Datadog.Trace.BenchmarkDotNet (or Datadog.Trace itself). The whole
+    tracer under test comes from DD_DOTNET_TRACER_HOME via the native profiler (see ProfilerEnv.cs), so this
+    project can A/B branch-vs-master by pointing the same exe at a different monitoring home, and there is no
+    bin-local Datadog.Trace.dll to shadow the one the loader picks up in the default ALC.
+  -->
+
+  <ItemGroup>
+    <None Remove="microbenchmarks\.gitignore" />
+  </ItemGroup>
+
+</Project>

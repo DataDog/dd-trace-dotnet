@@ -1,5 +1,7 @@
 #if INSTRUMENTEDAPI
 namespace Benchmarks.OpenTelemetry.InstrumentedApi;
+#elif PROFILEDAPI
+namespace Benchmarks.OpenTelemetry.ProfiledApi;
 #else
 namespace Benchmarks.OpenTelemetry.Api;
 #endif

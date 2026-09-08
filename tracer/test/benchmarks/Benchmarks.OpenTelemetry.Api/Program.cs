@@ -7,10 +7,16 @@ using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Configs;
 using BenchmarkDotNet.Exporters.Json;
 using BenchmarkDotNet.Running;
+#if PROFILEDAPI
+using BenchmarkDotNet.Jobs;
+#else
 using Datadog.Trace.BenchmarkDotNet;
+#endif
 
 #if INSTRUMENTEDAPI
 namespace Benchmarks.OpenTelemetry.InstrumentedApi;
+#elif PROFILEDAPI
+namespace Benchmarks.OpenTelemetry.ProfiledApi;
 #else
 namespace Benchmarks.OpenTelemetry.Api;
 #endif
@@ -33,8 +39,17 @@ internal class Program
         config = config.WithOptions(ConfigOptions.DisableOptimizationsValidator);
 #endif
 
+#if PROFILEDAPI
+        // No Datadog.Trace reference here by design - the native profiler attaches per-job via env vars
+        // (see ProfilerEnv), so a bin-local Datadog.Trace.dll can never shadow the one it loads from
+        // DD_DOTNET_TRACER_HOME. See plan step 4, "Attaching the profiler to the measured process".
+        config = config.AddJob(ProfilerEnv.CreateListenerJob("listener").AsBaseline())
+                       .AddJob(ProfilerEnv.CreateInterceptionJob("interception"))
+                       .AddExporter(JsonExporter.FullCompressed);
+#else
         config = config.WithDatadog()
                        .AddExporter(JsonExporter.FullCompressed);
+#endif
 
         Console.WriteLine("Running tests...");
         BenchmarkSwitcher.FromAssembly(typeof(Program).Assembly).Run(args, config);

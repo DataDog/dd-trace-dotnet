@@ -3,6 +3,8 @@ using OpenTelemetry.Trace;
 
 #if INSTRUMENTEDAPI
 namespace Benchmarks.OpenTelemetry.InstrumentedApi.Trace;
+#elif PROFILEDAPI
+namespace Benchmarks.OpenTelemetry.ProfiledApi.Trace;
 #else
 namespace Benchmarks.OpenTelemetry.Api.Trace;
 #endif
