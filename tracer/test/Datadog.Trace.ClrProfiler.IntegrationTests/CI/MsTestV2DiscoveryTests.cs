@@ -133,6 +133,9 @@ public class MsTestV2DiscoveryTests(ITestOutputHelper output) : TestingFramework
                 arguments = "\"" + additionalEnvironment.GetTestCommandForSampleApplicationPath(packageVersion) + "\" " + arguments;
             }
 
+#if NETFRAMEWORK
+            arguments += " /Platform:" + EnvironmentTools.GetTestTargetPlatform();
+#endif
             using var result = await RunDotnetTestSampleAndWaitForExit(agent, arguments: arguments, packageVersion: packageVersion, expectedExitCode: useMtp && expectedTests == 0 ? 8 : 0, useDotnetExec: useMtp);
             tests.Should().HaveCount(expectedAttempts);
             tests.Select(test => test.Meta[TestTags.Name]).Distinct().Should().HaveCount(expectedTests);

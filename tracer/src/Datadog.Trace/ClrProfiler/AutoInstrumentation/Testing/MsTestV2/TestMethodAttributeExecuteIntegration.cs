@@ -523,7 +523,7 @@ public sealed class TestMethodAttributeExecuteAsyncIntegration
                     SetFinalStatusIfApplicable(test, testMethod, cacheKey, TestStatus.Fail, retryState);
                 }
 
-                CloseAttempt(TestStatus.Fail);
+                FinishAttempt(TestStatus.Fail);
                 return TestStatus.Fail;
             }
 
@@ -602,16 +602,16 @@ public sealed class TestMethodAttributeExecuteAsyncIntegration
             switch (testStatus)
             {
                 case TestStatus.Fail:
-                    CloseAttempt(TestStatus.Fail);
+                    FinishAttempt(TestStatus.Fail);
                     return TestStatus.Fail;
                 case TestStatus.Skip:
-                    CloseAttempt(TestStatus.Skip, testException?.Message ?? string.Empty);
+                    FinishAttempt(TestStatus.Skip, testException?.Message ?? string.Empty);
                     return TestStatus.Skip;
                 case TestStatus.Pass:
-                    CloseAttempt(TestStatus.Pass);
+                    FinishAttempt(TestStatus.Pass);
                     return TestStatus.Pass;
                 default:
-                    CloseAttempt(TestStatus.Fail);
+                    FinishAttempt(TestStatus.Fail);
                     return TestStatus.Fail;
             }
         }
@@ -625,7 +625,7 @@ public sealed class TestMethodAttributeExecuteAsyncIntegration
             }
         }
 
-        void CloseAttempt(TestStatus status, string? skipReason = null)
+        void FinishAttempt(TestStatus status, string? skipReason = null)
         {
             if (execution is { HasNativeRetry: true })
             {
