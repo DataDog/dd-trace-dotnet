@@ -572,9 +572,9 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id, HR
             // Push integration definitions from the given module
             for (const auto& methodReference : methodReferences)
             {
-                integration_definitions_.push_back(
-                    IntegrationDefinition(methodReference, *trace_annotation_integration_type.get(), false, false,
-                                          false));
+                integration_definitions_.emplace_back(
+                    methodReference, *trace_annotation_integration_type.get(), false, false,
+                                          false);
             }
 
             rejit_module_method_pairs.pop_front();
@@ -1143,10 +1143,10 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id, std::vector<ModuleID>& m
                             // As we are in the right method, we gather all information we need and stored it in to
                             // the ReJIT handler.
                             std::vector<shared::WSTRING> signatureTypes;
-                            methodReferences.push_back(MethodReference(
+                            methodReferences.emplace_back(
                                 tracemethodintegration_assemblyname, caller.type.name, caller.name,
                                 Version(0, 0, 0, 0), Version(USHRT_MAX, USHRT_MAX, USHRT_MAX, USHRT_MAX),
-                                signatureTypes));
+                                signatureTypes);
                         }
                     }
                 }
@@ -1177,8 +1177,8 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id, std::vector<ModuleID>& m
                 // Push integration definitions from this module
                 for (const auto& methodReference : methodReferences)
                 {
-                    integration_definitions_.push_back(IntegrationDefinition(
-                        methodReference, *trace_annotation_integration_type.get(), false, false, false));
+                    integration_definitions_.emplace_back(
+                        methodReference, *trace_annotation_integration_type.get(), false, false, false);
                 }
             }
         }
@@ -1847,7 +1847,7 @@ void CorProfiler::InternalAddInstrumentation(WCHAR* id, CallTargetDefinition* it
                 const auto& currentSignature = current.signatureTypes[sIdx];
                 if (currentSignature != nullptr)
                 {
-                    signatureTypes.push_back(shared::WSTRING(currentSignature));
+                    signatureTypes.emplace_back(currentSignature);
                 }
             }
 
@@ -1965,7 +1965,7 @@ long CorProfiler::RegisterCallTargetDefinitions(WCHAR* id, CallTargetDefinition3
                 const auto& currentSignature = current.signatureTypes[sIdx];
                 if (currentSignature != nullptr)
                 {
-                    signatureTypes.push_back(shared::WSTRING(currentSignature));
+                    signatureTypes.emplace_back(currentSignature);
                 }
             }
 

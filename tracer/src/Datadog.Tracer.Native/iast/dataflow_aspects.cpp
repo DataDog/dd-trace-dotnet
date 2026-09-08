@@ -659,7 +659,7 @@ namespace iast
                 {
                     if (IsReplace(_aspect->_behavior) || _aspect->_paramShift[x] == 0)
                     {
-                        instructionsToProcess.push_back(InstructionProcessInfo(instruction, x, _aspect->_behavior));
+                        instructionsToProcess.emplace_back(instruction, x, _aspect->_behavior);
                     }
                     else if (!IsReplace(_aspect->_behavior) && _aspect->_paramShift[x] > 0)
                     {
@@ -669,7 +669,7 @@ namespace iast
                         int paramCount = methodSig->GetEffectiveParamCount();
                         for (auto iInfo : processor->StackAnalysis()->LocateCallParamInstructions(instruction, paramCount - _aspect->_paramShift[x] - 1)) //Locate param load instruction
                         {
-                            instructionsToProcess.push_back(InstructionProcessInfo(iInfo->_instruction, x, AspectBehavior::InsertAfter)); //Insert after the target param load always
+                            instructionsToProcess.emplace_back(iInfo->_instruction, x, AspectBehavior::InsertAfter); //Insert after the target param load always
                         }
                         if (instructionsToProcess.size() == 0)
                         {

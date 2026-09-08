@@ -499,7 +499,7 @@ void DebuggerProbesInstrumentationRequester::AddMethodProbes(debugger::DebuggerM
                 const auto& currentSignature = current.targetParameterTypes[sIdx];
                 if (currentSignature != nullptr)
                 {
-                    signatureTypes.push_back(shared::WSTRING(currentSignature));
+                    signatureTypes.emplace_back(currentSignature);
                 }
             }
 
@@ -549,7 +549,7 @@ void DebuggerProbesInstrumentationRequester::AddMethodProbes(debugger::DebuggerM
                 const auto& currentSignature = current.targetParameterTypes[sIdx];
                 if (currentSignature != nullptr)
                 {
-                    signatureTypes.push_back(shared::WSTRING(currentSignature));
+                    signatureTypes.emplace_back(currentSignature);
                 }
             }
 
