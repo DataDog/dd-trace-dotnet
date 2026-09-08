@@ -409,9 +409,11 @@ namespace Datadog.Trace
                     Tags.TryAddTag(Trace.Tags.Propagated.KnuthSamplingRate, samplingRate.ToString("0.######", CultureInfo.InvariantCulture));
                 }
 
-                // (for OTel interop) derive/erase the "ot=" tracestate rv/th sub-keys for W3C injection on every root
+                // (for OTel interop) derive/erase the "ot=" tracestate rv/th sub-keys for W3C injection or OTLP trace export on every root
                 // probability decision, including the "Default" mechanism fallback rate.
-                if (isLocalRoot && IsW3CTraceContextInjectionEnabled() && sample is { } didSample && RootSpan is { } rootSpan
+                if (isLocalRoot &&
+                    (IsW3CTraceContextInjectionEnabled() || Tracer.Settings.Manager.InitialExporterSettings.IsOtlpTraceExport) &&
+                    sample is { } didSample && RootSpan is { } rootSpan
                                 && mechanism is Sampling.SamplingMechanism.AgentRate
                                              or Sampling.SamplingMechanism.LocalTraceSamplingRule
                                              or Sampling.SamplingMechanism.RemoteAdaptiveSamplingRule
@@ -435,9 +437,9 @@ namespace Datadog.Trace
                     var rateLimiterRejected = didSample && SamplingPriorityValues.IsDrop(p);
                     if (rateLimiterRejected)
                     {
-                        var inheritedRv = _containsLocallyGeneratedOtelRandomValue ? null : OtelTraceStateHelpers.ExtractRv(_otelTraceState);
-                        _otelTraceState = OtelTraceStateHelpers.SetRvTh(_otelTraceState, inheritedRv ?? rv, th: null);
-                        _containsLocallyGeneratedOtelRandomValue = inheritedRv is null;
+                        var existingRv = OtelTraceStateHelpers.ExtractRv(_otelTraceState);
+                        _otelTraceState = OtelTraceStateHelpers.SetRvTh(_otelTraceState, existingRv, th: null);
+                        _containsLocallyGeneratedOtelRandomValue &= existingRv is not null;
                     }
                     else
                     {
