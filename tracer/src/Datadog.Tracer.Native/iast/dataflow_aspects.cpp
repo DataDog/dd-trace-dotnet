@@ -333,17 +333,17 @@ namespace iast
         mdTypeRef targetTypeRef = 0; 
         std::vector<mdTypeRef> paramTypeRefs; 
         std::vector<mdMemberRef> targetMethodRefCandidates;
-        hr = module->FindTypeRefByName(_targetMethodType.c_str(), &targetMethodTypeRef);
+        hr = module->FindTypeRefByName(_targetMethodType, &targetMethodTypeRef);
         if (SUCCEEDED(hr))
         {
-            module->FindMemberRefsByName(targetMethodTypeRef, _targetMethodName.c_str(), targetMethodRefCandidates);
+            module->FindMemberRefsByName(targetMethodTypeRef, _targetMethodName, targetMethodRefCandidates);
         }
         else if (this->IsTargetModule(module))
         {
-            hr = module->GetTypeDef(_targetMethodType.c_str(), &targetMethodTypeRef);
+            hr = module->GetTypeDef(_targetMethodType, &targetMethodTypeRef);
             if (SUCCEEDED(hr))
             {
-                auto methods = module->GetMethods(targetMethodTypeRef, _targetMethodName.c_str());
+                auto methods = module->GetMethods(targetMethodTypeRef, _targetMethodName);
                 for (auto method : methods)
                 {
                     targetMethodRefCandidates.push_back(method->GetMethodDef());
@@ -395,7 +395,7 @@ namespace iast
             if (targetMethodRef != 0 && _isVirtual)
             {
                 //Look for virtual target typeRef
-                if (FAILED(module->FindTypeRefByName(_targetType.c_str(), &targetTypeRef)))
+                if (FAILED(module->FindTypeRefByName(_targetType, &targetTypeRef)))
                 {
                     targetMethodRef = 0;
                 }
