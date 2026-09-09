@@ -556,13 +556,13 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id, HR
     // Keep the lock until all callbacks are done using the module, to prevent it from unloading while in use.
     auto& modules = moduleLock.Modules();
 
-    // Double check if is_attached_ has changed to avoid a possible race condition with shutdown.
+    // double check if is_attached_ has changed to avoid possible race condition with shutdown function
     if (!is_attached_ || rejit_handler == nullptr)
     {
         return S_OK;
     }
 
-    const auto hr = TryRejitModule(module_id, modules);
+    auto hr = TryRejitModule(module_id, modules);
 
     // Push integration definitions from past modules that were unable to be added
     auto rejit_size = rejit_module_method_pairs.size();
@@ -577,14 +577,14 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id, HR
             const auto& methodReferences = rejit_module_method_pair.second;
             integration_definitions_.reserve(integration_definitions_.size() + methodReferences.size());
 
-            DBG("ModuleLoadFinished requesting ReJIT now for ModuleId=", module_id,
-                ", methodReferences.size()=", methodReferences.size());
+            DBG("ModuleLoadFinished requesting ReJIT now for ModuleId=", module_id, ", methodReferences.size()=", methodReferences.size());
 
             // Push integration definitions from the given module
             for (const auto& methodReference : methodReferences)
             {
-                integration_definitions_.push_back(IntegrationDefinition(
-                    methodReference, *trace_annotation_integration_type.get(), false, false, false));
+                integration_definitions_.push_back(
+                    IntegrationDefinition(methodReference, *trace_annotation_integration_type.get(), false, false,
+                                          false));
             }
 
             rejit_module_method_pairs.pop_front();
@@ -595,8 +595,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id, HR
         {
             auto promise = std::make_shared<std::promise<ULONG>>();
             std::future<ULONG> future = promise->get_future();
-            tracer_integration_preprocessor->EnqueueRequestRejitForLoadedModules(rejitModuleIds,
-                                                                                 integration_definitions_, promise);
+            tracer_integration_preprocessor->EnqueueRequestRejitForLoadedModules(rejitModuleIds, integration_definitions_,
+                                                                                promise);
 
             // wait and get the value from the future<ULONG>
             const auto status = future.wait_for(200ms);
@@ -608,8 +608,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id, HR
             }
             else
             {
-                Logger::Warn("Timeout while waiting for the rejit requests to be processed. Rejit will continue "
-                             "asynchronously, but some initial calls may not be instrumented");
+                Logger::Warn("Timeout while waiting for the rejit requests to be processed. Rejit will continue asynchronously, but some initial calls may not be instrumented");
             }
         }
     }
