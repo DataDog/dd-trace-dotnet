@@ -95,6 +95,18 @@ services:
     image: mcr.microsoft.com/dotnet/aspnet:10.0-resolute-chiseled-composite@sha256:532716422e6777619b3dfa99cb2043cc3bf251379da50b076e88181643067766
   aspnet-10_0-windowsservercore-ltsc2022:
     image: mcr.microsoft.com/dotnet/aspnet:10.0-windowsservercore-ltsc2022@sha256:62b6d9b8b72ae31719925141d8032c88e894829ab8d134c85c8f2587ee6fe994
+  aspnet-11_0-alpine3_24:
+    image: mcr.microsoft.com/dotnet/aspnet:11.0-alpine3.24@sha256:afd3756c420c1e23fa117d5e307a7ea2b9b8e01edb7d2b7593afaf04abde86e5
+  aspnet-11_0-alpine3_24-composite:
+    image: mcr.microsoft.com/dotnet/aspnet:11.0-alpine3.24-composite@sha256:b61b34e02eddc5b1d20c58be307dcf28bc8e265ba446e154691b1104b025b682
+  aspnet-11_0-resolute:
+    image: mcr.microsoft.com/dotnet/aspnet:11.0-resolute@sha256:656770db703ebbc4f5115104095573677d9a21a906fcccc16393d18ea949a49f
+  aspnet-11_0-resolute-chiseled:
+    image: mcr.microsoft.com/dotnet/aspnet:11.0-resolute-chiseled@sha256:ec752d908262db3ed7fe5cd7baad2dc97373c0bd390456a50bda8aaa866fc93d
+  aspnet-11_0-resolute-chiseled-composite:
+    image: mcr.microsoft.com/dotnet/aspnet:11.0-resolute-chiseled-composite@sha256:3aa2e329c49605c3131722a295cc4fac459651d3ba3abd9c23346f39259734b9
+  aspnet-11_0-windowsservercore-ltsc2025:
+    image: mcr.microsoft.com/dotnet/aspnet:11.0-windowsservercore-ltsc2025@sha256:fefaf3a3e5efa79622df0700d9c5ceb3856b03e4d53bc12f6978f5ab3e84123b
 
   # mcr.microsoft.com/dotnet/framework/aspnet
   framework-aspnet-4_8-windowsservercore-ltsc2022:
@@ -129,6 +141,10 @@ services:
     image: mcr.microsoft.com/dotnet/sdk:10.0-noble@sha256:2fa828c68761b1b8c23d7662dc134421b9d3b59fe1425fdbc80804e390cdb24d
   sdk-10_0-resolute:
     image: mcr.microsoft.com/dotnet/sdk:10.0-resolute@sha256:4bd809877fc795924d30c686774a3c2136710f0e923f15224c5fbb70a09cfb2f
+  sdk-11_0-alpine3_24:
+    image: mcr.microsoft.com/dotnet/sdk:11.0-alpine3.24@sha256:5be53e6cab2dacc7d3024739857174f80828b6bbc867ec96c95faa57a9c20b08
+  sdk-11_0-resolute:
+    image: mcr.microsoft.com/dotnet/sdk:11.0-resolute@sha256:86afb5e989113ab0c32f04002635ff1c6fe0620cbb8ca0e22d2db1e151384a3f
 
   # andrewlock/dotnet-centos
   dotnet-centos-7-2_1:
