@@ -93,7 +93,7 @@ namespace Datadog.Trace.OpenTelemetry
         /// <param name="queryStringManager">Used to truncate and obfuscate the query string.</param>
         internal static void SetHttpServerRequestValues(
             Span span,
-            WebTags? tags,
+            WebTags tags,
             string? resourceName,
             string? originalMethod,
             string? userAgent,
@@ -109,17 +109,14 @@ namespace Datadog.Trace.OpenTelemetry
             span.Type = SpanTypes.Web;
             span.ResourceName = resourceName?.Trim();
 
-            if (tags is not null)
-            {
-                tags.HttpUserAgent = userAgent;
+            tags.HttpUserAgent = userAgent;
 
-                GetRequestMethodAttributeValues(originalMethod, out string httpRequestMethod, out string? httpRequestMethodOriginal);
-                tags.HttpMethod = httpRequestMethod;
-                tags.HttpRequestMethodOriginal = httpRequestMethodOriginal;
-                tags.NetworkProtocolVersion = GetNetworkProtocolVersion(protocol);
+            GetRequestMethodAttributeValues(originalMethod, out string httpRequestMethod, out string? httpRequestMethodOriginal);
+            tags.HttpMethod = httpRequestMethod;
+            tags.HttpRequestMethodOriginal = httpRequestMethodOriginal;
+            tags.NetworkProtocolVersion = GetNetworkProtocolVersion(protocol);
 
-                SetHttpServerUrlTags(tags, scheme, host, port, pathBase, path, queryString, queryStringManager);
-            }
+            SetHttpServerUrlTags(tags, scheme, host, port, pathBase, path, queryString, queryStringManager);
         }
 
         /// <summary>
@@ -138,7 +135,7 @@ namespace Datadog.Trace.OpenTelemetry
         /// <param name="queryStringManager">Used to truncate and obfuscate the query string</param>
         internal static void SetHttpServerRequestValues(
             Span span,
-            WebTags? tags,
+            WebTags tags,
             string? resourceName,
             string? originalMethod,
             string? userAgent,
@@ -150,32 +147,29 @@ namespace Datadog.Trace.OpenTelemetry
             span.Type = SpanTypes.Web;
             span.ResourceName = resourceName?.Trim();
 
-            if (tags is not null)
+            tags.HttpUserAgent = userAgent;
+
+            GetRequestMethodAttributeValues(originalMethod, out string httpRequestMethod, out string? httpRequestMethodOriginal);
+            tags.HttpMethod = httpRequestMethod;
+            tags.HttpRequestMethodOriginal = httpRequestMethodOriginal;
+            tags.NetworkProtocolVersion = GetNetworkProtocolVersion(protocol);
+
+            if (requestUri is not null)
             {
-                tags.HttpUserAgent = userAgent;
+                tags.UrlScheme = requestUri.Scheme;
+                tags.UrlPath = requestUri.AbsolutePath;
 
-                GetRequestMethodAttributeValues(originalMethod, out string httpRequestMethod, out string? httpRequestMethodOriginal);
-                tags.HttpMethod = httpRequestMethod;
-                tags.HttpRequestMethodOriginal = httpRequestMethodOriginal;
-                tags.NetworkProtocolVersion = GetNetworkProtocolVersion(protocol);
-
-                if (requestUri is not null)
+                // "url.query" excludes the leading '?'
+                var query = queryStringManager?.TruncateAndObfuscate(requestUri.Query) ?? string.Empty;
+                tags.UrlQuery = query.Length switch
                 {
-                    tags.UrlScheme = requestUri.Scheme;
-                    tags.UrlPath = requestUri.AbsolutePath;
-
-                    // "url.query" excludes the leading '?'
-                    var query = queryStringManager?.TruncateAndObfuscate(requestUri.Query) ?? string.Empty;
-                    tags.UrlQuery = query.Length switch
-                    {
-                        0 => null,
-                        _ when query[0] == '?' => query.Substring(1),
-                        _ => query,
-                    };
-                }
-
-                SetServerAddressAndPort(tags, hostHeader, requestUri);
+                    0 => null,
+                    _ when query[0] == '?' => query.Substring(1),
+                    _ => query,
+                };
             }
+
+            SetServerAddressAndPort(tags, hostHeader, requestUri);
         }
 
         /// <summary>

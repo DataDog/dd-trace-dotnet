@@ -60,12 +60,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
             var boxedControllerContext = (IHttpControllerContext)controllerContext;
             var tracer = Tracer.Instance;
 
-            if (AspNetWebApi2Integration.UsesExistingServerSpan(tracer))
+            if (AspNetWebApi2Integration.ShouldReuseActiveServerSpan(tracer))
             {
                 // With OpenTelemetry semantics a request has a single HTTP server span, so enrich the
                 // ASP.NET one instead of nesting an aspnet-webapi.request span inside it. The controller
-                // context is carried through so the route can be refreshed once the action has run.
-                AspNetWebApi2Integration.UpdateExistingServerSpan(tracer, boxedControllerContext);
+                // context is carried through so the route can be recorded again once the action has run,
+                // which is the point at which it is guaranteed to have been resolved.
+                AspNetWebApi2Integration.SetRouteOnActiveServerSpan(tracer, boxedControllerContext);
                 return new CallTargetState(scope: null, state: boxedControllerContext);
             }
 
@@ -98,22 +99,27 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
             var scope = state.Scope;
             SharedItems.TryPopScope(httpContext, AspNetWebApi2Integration.HttpContextKey);
 
-            if (scope is null)
+            if (scope is null && state.State is null)
             {
-                if (state.State is IHttpControllerContext existingSpanContext)
-                {
-                    // No span of our own: the route information belongs on the ASP.NET server span, and
-                    // this is the first point at which the executed route is guaranteed to be resolved.
-                    AspNetWebApi2Integration.UpdateExistingServerSpan(Tracer.Instance, existingSpanContext);
-                }
-
                 return responseMessage;
             }
 
             var controllerContext = (IHttpControllerContext)state.State;
 
+            if (scope is null)
+            {
+                // When the instrumentation did not produce a new span but we are tracking the controller context,
+                // then we are operating with OpenTelemetry semantics to generate only one HTTP server span:
+                // Update the existing ASP.NET span with the resolved route information
+                AspNetWebApi2Integration.SetRouteOnActiveServerSpan(Tracer.Instance, controllerContext);
+                return responseMessage;
+            }
+
+            // The instrumentation produced a new span, indicating that either Datadog semantics is enabled
+            // (and a aspnet-webapi.request span was created) or OpenTelemetry semantics is enabled but the
+            // there was no previous server span (application is hosted on OWIN which is not currently instrumented)
             // some fields aren't set till after execution, so populate anything missing
-            AspNetWebApi2Integration.UpdateSpan(controllerContext, scope.Span, (AspNetTags)scope.Span.Tags);
+            AspNetWebApi2Integration.UpdateWebApiSpan(controllerContext, scope.Span, (AspNetTags)scope.Span.Tags);
 
             if (exception != null)
             {
