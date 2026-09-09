@@ -2,8 +2,8 @@
 #
 # To build this file locally, starting from the root directory:
 # cd tracer/build/_build/docker/gitlab
-# docker build -f gitlab.windows.dockerfile --tag datadog/dd-trace-dotnet-docker-build:dotnet10 .
-# docker push datadog/dd-trace-dotnet-docker-build:dotnet10
+# docker build -f gitlab.windows.dockerfile --tag datadog/dd-trace-dotnet-docker-build:dotnet11 .
+# docker push datadog/dd-trace-dotnet-docker-build:dotnet11
 
 ARG BASE_IMAGE=mcr.microsoft.com/dotnet/framework/runtime:4.8-windowsservercore-ltsc2022
 FROM ${BASE_IMAGE}
@@ -31,11 +31,11 @@ RUN Powershell -Command .\install_net35.ps1
 COPY install_wix.ps1 .
 RUN powershell -Command .\install_wix.ps1 -Version $ENV:WIX_VERSION -Sha256 $ENV:WIX_SHA256
 
-# Install .NET 10
+# Install .NET 11
 # To find these links, visit https://dotnet.microsoft.com/en-us/download, click the Windows, x64 installer, and grab the download url + SHA512 hash
-ENV DOTNET_VERSION="10.0.100" \
-    DOTNET_DOWNLOAD_URL="https://builds.dotnet.microsoft.com/dotnet/Sdk/10.0.100/dotnet-sdk-10.0.100-win-x64.exe" \
-    DOTNET_SHA512="e9920ce4b9b2fa3ce63a35f288080bb8d2b7f5bfbf2d51588276f81eddc8858254760f172aa1d0a7211a98378816c6e8bb17b59f4844db8456988ad10a557ca9"
+ENV DOTNET_VERSION="11.0.100-rc.1.26425.128" \
+    DOTNET_DOWNLOAD_URL="https://builds.dotnet.microsoft.com/dotnet/Sdk/11.0.100-rc.1.26425.128/dotnet-sdk-11.0.100-rc.1.26425.128-win-x64.exe" \
+    DOTNET_SHA512="a17775d1a27dfff2e86ead906808bd9bdcb2ca8305de62d5c83a8d22f43817d6463d29ea86f4f4511e1539767993e5414445bf132fccc4bb0661a432f2357dee"
 
 COPY install_dotnet.ps1 .
 RUN powershell -Command .\install_dotnet.ps1  -Version $ENV:DOTNET_VERSION -Sha512 $ENV:DOTNET_SHA512 $ENV:DOTNET_DOWNLOAD_URL
