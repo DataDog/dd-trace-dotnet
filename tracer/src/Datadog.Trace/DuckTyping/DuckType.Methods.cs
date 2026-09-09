@@ -861,7 +861,14 @@ namespace Datadog.Trace.DuckTyping
                                 il.WriteLoadArgument(idx, false);
 
                                 // Load the value inside the ref
-                                il.Emit(OpCodes.Ldind_Ref);
+                                if (outerParamTypeElementType.IsGenericParameter)
+                                {
+                                    il.Emit(OpCodes.Ldobj, outerParamTypeElementType);
+                                }
+                                else
+                                {
+                                    il.Emit(OpCodes.Ldind_Ref);
+                                }
 
                                 // Check if the type can be converted of if we need to enable duck chaining
                                 if (needsDuckChaining(innerParamTypeElementType, outerParamTypeElementType))

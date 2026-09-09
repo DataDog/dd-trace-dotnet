@@ -39,6 +39,8 @@ namespace Datadog.Trace.DuckTyping.Tests.Methods
         private interface IGenericOutParameterProxy
         {
             void GetDefault<T>(out T output);
+
+            void Preserve<T>(ref T value);
         }
 
         [Theory]
@@ -60,85 +62,98 @@ namespace Datadog.Trace.DuckTyping.Tests.Methods
         [InlineData(GenericOutParameterType.TwelveByteStruct)]
         [InlineData(GenericOutParameterType.String)]
         [InlineData(GenericOutParameterType.Object)]
-        public void GenericOutParameterDoesNotCorruptAdjacentFields(GenericOutParameterType parameterType)
+        public void GenericOutAndRefParametersDoNotCorruptAdjacentFields(GenericOutParameterType parameterType)
         {
             var proxy = new GenericOutParameterTarget().DuckCast<IGenericOutParameterProxy>();
 
             switch (parameterType)
             {
                 case GenericOutParameterType.Boolean:
-                    AssertGenericOutParameter(proxy, true);
+                    AssertGenericByRefParameters(proxy, true);
                     break;
                 case GenericOutParameterType.Byte:
-                    AssertGenericOutParameter(proxy, byte.MaxValue);
+                    AssertGenericByRefParameters(proxy, byte.MaxValue);
                     break;
                 case GenericOutParameterType.SByte:
-                    AssertGenericOutParameter(proxy, sbyte.MinValue);
+                    AssertGenericByRefParameters(proxy, sbyte.MinValue);
                     break;
                 case GenericOutParameterType.Int16:
-                    AssertGenericOutParameter(proxy, short.MinValue);
+                    AssertGenericByRefParameters(proxy, short.MinValue);
                     break;
                 case GenericOutParameterType.UInt16:
-                    AssertGenericOutParameter(proxy, ushort.MaxValue);
+                    AssertGenericByRefParameters(proxy, ushort.MaxValue);
                     break;
                 case GenericOutParameterType.Char:
-                    AssertGenericOutParameter(proxy, '\u1234');
+                    AssertGenericByRefParameters(proxy, '\u1234');
                     break;
                 case GenericOutParameterType.Int32:
-                    AssertGenericOutParameter(proxy, int.MinValue);
+                    AssertGenericByRefParameters(proxy, int.MinValue);
                     break;
                 case GenericOutParameterType.UInt32:
-                    AssertGenericOutParameter(proxy, uint.MaxValue);
+                    AssertGenericByRefParameters(proxy, uint.MaxValue);
                     break;
                 case GenericOutParameterType.Single:
-                    AssertGenericOutParameter(proxy, 123.5f);
+                    AssertGenericByRefParameters(proxy, 123.5f);
                     break;
                 case GenericOutParameterType.Int64:
-                    AssertGenericOutParameter(proxy, long.MinValue);
+                    AssertGenericByRefParameters(proxy, long.MinValue);
                     break;
                 case GenericOutParameterType.UInt64:
-                    AssertGenericOutParameter(proxy, ulong.MaxValue);
+                    AssertGenericByRefParameters(proxy, ulong.MaxValue);
                     break;
                 case GenericOutParameterType.Double:
-                    AssertGenericOutParameter(proxy, 123.5d);
+                    AssertGenericByRefParameters(proxy, 123.5d);
                     break;
                 case GenericOutParameterType.Decimal:
-                    AssertGenericOutParameter(proxy, 123.5m);
+                    AssertGenericByRefParameters(proxy, 123.5m);
                     break;
                 case GenericOutParameterType.Guid:
-                    AssertGenericOutParameter(proxy, new Guid("00112233-4455-6677-8899-aabbccddeeff"));
+                    AssertGenericByRefParameters(proxy, new Guid("00112233-4455-6677-8899-aabbccddeeff"));
                     break;
                 case GenericOutParameterType.ThreeByteStruct:
-                    AssertGenericOutParameter(proxy, new ThreeByteStruct(0x12, 0x34, 0x56));
+                    AssertGenericByRefParameters(proxy, new ThreeByteStruct(0x12, 0x34, 0x56));
                     break;
                 case GenericOutParameterType.TwelveByteStruct:
-                    AssertGenericOutParameter(proxy, new TwelveByteStruct(0x0123456789abcdef, 0x12345678));
+                    AssertGenericByRefParameters(proxy, new TwelveByteStruct(0x0123456789abcdef, 0x12345678));
                     break;
                 case GenericOutParameterType.String:
-                    AssertGenericOutParameter(proxy, "expected");
+                    AssertGenericByRefParameters(proxy, "expected");
                     break;
                 case GenericOutParameterType.Object:
-                    AssertGenericOutParameter(proxy, new object());
+                    AssertGenericByRefParameters(proxy, new object());
                     break;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(parameterType), parameterType, null);
             }
         }
 
-        private static void AssertGenericOutParameter<T>(IGenericOutParameterProxy proxy, T initialValue)
+        private static void AssertGenericByRefParameters<T>(IGenericOutParameterProxy proxy, T initialValue)
         {
-            var guarded = new GuardedValue<T>
+            var outGuarded = new GuardedValue<T>
             {
                 Before = BeforeSentinel,
                 Value = initialValue,
                 After = AfterSentinel,
             };
 
-            proxy.GetDefault<T>(out guarded.Value);
+            proxy.GetDefault<T>(out outGuarded.Value);
 
-            Assert.Equal(BeforeSentinel, guarded.Before);
-            Assert.Equal(default(T), guarded.Value);
-            Assert.Equal(AfterSentinel, guarded.After);
+            Assert.Equal(BeforeSentinel, outGuarded.Before);
+            Assert.Equal(default(T), outGuarded.Value);
+            Assert.Equal(AfterSentinel, outGuarded.After);
+
+            var refGuarded = new GuardedValue<T>
+            {
+                Before = BeforeSentinel,
+                Value = initialValue,
+                After = AfterSentinel,
+            };
+
+            proxy.Preserve<T>(ref refGuarded.Value);
+
+            Assert.Equal(BeforeSentinel, refGuarded.Before);
+            Assert.Equal(initialValue, refGuarded.Value);
+            Assert.Equal(AfterSentinel, refGuarded.After);
         }
 
         [StructLayout(LayoutKind.Sequential)]
@@ -180,6 +195,10 @@ namespace Datadog.Trace.DuckTyping.Tests.Methods
         private class GenericOutParameterTarget
         {
             public void GetDefault<T>(out T output) => output = default;
+
+            public void Preserve<T>(ref T value)
+            {
+            }
         }
     }
 }
