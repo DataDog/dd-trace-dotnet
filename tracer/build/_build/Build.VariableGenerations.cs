@@ -290,6 +290,7 @@ partial class Build : NukeBuild
                     new {framework = TargetFramework.NET8_0 },
                     new {framework = TargetFramework.NET9_0 },
                     new {framework = TargetFramework.NET10_0 },
+                    new {framework = TargetFramework.NET11_0 },
                 };
 
                 var matrix = new Dictionary<string, object>();
@@ -687,12 +688,15 @@ partial class Build : NukeBuild
                         (TargetFramework.NET8_0, "macos-14"),
                         (TargetFramework.NET9_0, "macos-14"),
                         (TargetFramework.NET10_0, "macos-14"),
+                        (TargetFramework.NET11_0, "macos-14"),
                         (TargetFramework.NET6_0, "macos-15"),
                         (TargetFramework.NET8_0, "macos-15"),
                         (TargetFramework.NET9_0, "macos-15"),
                         (TargetFramework.NET10_0, "macos-15"),
+                        (TargetFramework.NET11_0, "macos-15"),
                         (TargetFramework.NET6_0, "macOS-15-arm64"),
                         (TargetFramework.NET10_0, "macOS-15-arm64"),
+                        (TargetFramework.NET11_0, "macOS-15-arm64"),
                     };
 
                     var matrix = images.ToDictionary(
