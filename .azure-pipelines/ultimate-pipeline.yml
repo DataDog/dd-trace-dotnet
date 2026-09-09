@@ -1759,16 +1759,9 @@ stages:
         Filter: $(IntegrationTestFilter)
         SampleName: $(IntegrationTestSampleName)
 
-    # The normal suite can expose gzip failures in any framework, not only the original MSTest case.
-    # Keep the shared, bounded capture directory outside logs because Nuke cleans logs before running tests.
-    - powershell: |
-        Write-Host "##vso[task.setvariable variable=DD_INTERNAL_CI_GZIP_DIAGNOSTIC_DIRECTORY]$(Build.SourcesDirectory)/artifacts/build_data/gzip-diagnostic"
-      displayName: Enable gzip diagnostics (Windows x86)
-      condition: and(succeeded(), eq(variables['targetPlatform'], 'x86'), eq(variables['framework'], 'net8.0'), eq(variables['area'], 'CIVisibility'))
-
     - script: tracer\build.cmd RunIntegrationTests RunWindowsRegressionTests -Framework $(framework) --code-coverage-enabled $(CodeCoverageEnabled)
       displayName: Run integration tests (Tracer)
-      condition: and(succeeded(), ne(variables['area'], 'ASM'))
+      condition: ne(variables['area'], 'ASM')
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
         enable_crash_dumps: true

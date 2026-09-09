@@ -208,12 +208,6 @@ namespace Datadog.Trace.TestHelpers
             string externalRulesFile = null,
             bool ignoreProfilerProcessesVar = false)
         {
-            // Keep sender and receiver evidence together even when child environments are rebuilt by the harness.
-            if (!string.IsNullOrEmpty(agent.DecompressionFailureDirectory))
-            {
-                environmentVariables[ConfigurationKeys.CIVisibilityGzipDiagnosticDirectory] = agent.DecompressionFailureDirectory;
-            }
-
             string profilerEnabled = AutomaticInstrumentationEnabled ? "1" : "0";
             environmentVariables["DD_DOTNET_TRACER_HOME"] = MonitoringHome;
 
