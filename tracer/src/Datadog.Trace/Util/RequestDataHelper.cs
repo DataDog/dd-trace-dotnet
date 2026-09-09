@@ -187,7 +187,7 @@ internal static class RequestDataHelper
         }
         catch (Exception ex) when (ex is HttpRequestValidationException || ex is UriFormatException)
         {
-            Log.Debug("Error reading request.Url from the request.");
+            Log.Debug(ex, "Error reading request.Url from the request.");
             return null;
         }
     }
