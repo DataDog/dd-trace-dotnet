@@ -2,19 +2,18 @@
 
 #include "Synchronized.hpp"
 
-#include <type_traits>
 #include <utility>
 
 namespace trace
 {
 
-template <typename TModules, typename TSnapshot>
-class ModuleLoadContext
+template <typename TModules>
+class ModuleLoadLock
 {
 public:
-    template <typename TSnapshotFactory>
-    ModuleLoadContext(Synchronized<TModules>& moduleIds, TSnapshotFactory&& snapshotFactory) :
-        _snapshot(std::forward<TSnapshotFactory>(snapshotFactory)()), _modules(moduleIds)
+    template <typename TBeforeLock>
+    ModuleLoadLock(Synchronized<TModules>& moduleIds, TBeforeLock&& beforeLock) :
+        _modules(Acquire(moduleIds, std::forward<TBeforeLock>(beforeLock)))
     {
     }
 
@@ -23,20 +22,15 @@ public:
         return _modules.Ref();
     }
 
-    const TSnapshot& Snapshot() const
+private:
+    template <typename TBeforeLock>
+    static typename Synchronized<TModules>::Scope Acquire(Synchronized<TModules>& moduleIds, TBeforeLock&& beforeLock)
     {
-        return _snapshot;
+        std::forward<TBeforeLock>(beforeLock)();
+        return moduleIds.Get();
     }
 
-private:
-    // Member initialization order is intentional: snapshotting can acquire m_probes_mutex, so it must happen before
-    // _modules acquires module_ids.
-    TSnapshot _snapshot;
     typename Synchronized<TModules>::Scope _modules;
 };
-
-template <typename TModules, typename TSnapshotFactory>
-ModuleLoadContext(Synchronized<TModules>&, TSnapshotFactory&&)
-    -> ModuleLoadContext<TModules, std::decay_t<std::invoke_result_t<TSnapshotFactory>>>;
 
 } // namespace trace

@@ -543,16 +543,18 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id, HR
         return S_OK;
     }
 
-    ModuleLoadContext context(module_ids, [&]() {
+    std::vector<std::shared_ptr<debugger::MethodProbeDefinition>> methodProbes;
+    ModuleLoadLock moduleLock(module_ids, [&]() {
         // InstrumentProbes acquires m_probes_mutex before module_ids, so snapshot the probes before acquiring
         // module_ids to preserve that lock order.
-        return debugger_instrumentation_requester != nullptr
-                   ? debugger_instrumentation_requester->GetMethodProbesSnapshot()
-                   : std::vector<std::shared_ptr<debugger::MethodProbeDefinition>>{};
+        if (debugger_instrumentation_requester != nullptr)
+        {
+            methodProbes = debugger_instrumentation_requester->GetMethodProbesSnapshot();
+        }
     });
 
-    // Keep the context alive until all callbacks are done using the module, to prevent it from unloading while in use.
-    auto& modules = context.Modules();
+    // Keep the lock until all callbacks are done using the module, to prevent it from unloading while in use.
+    auto& modules = moduleLock.Modules();
 
     // Double check if is_attached_ has changed to avoid a possible race condition with shutdown.
     if (!is_attached_ || rejit_handler == nullptr)
@@ -614,7 +616,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id, HR
 
     if (debugger_instrumentation_requester != nullptr)
     {
-        debugger_instrumentation_requester->ModuleLoadFinished(module_id, context.Snapshot());
+        debugger_instrumentation_requester->ModuleLoadFinished(module_id, methodProbes);
     }
 
     if (_dataflow != nullptr)

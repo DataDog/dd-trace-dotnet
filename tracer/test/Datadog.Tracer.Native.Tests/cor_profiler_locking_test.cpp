@@ -21,9 +21,8 @@ TEST(CorProfilerLockingTest, SnapshotsProbesBeforeAcquiringModuleLock)
     {
         auto modules = moduleIds.Get();
         moduleLoadFuture = std::async(std::launch::async, [&]() {
-            ModuleLoadContext context(moduleIds, [&]() {
+            ModuleLoadLock moduleLock(moduleIds, [&]() {
                 snapshotStarted.set_value();
-                return 0;
             });
         });
 
@@ -45,7 +44,7 @@ TEST(CorProfilerLockingTest, ModuleLockIsHeldDuringModuleCallbacks)
     auto unloadStartedFuture = unloadStarted.get_future();
 
     auto moduleLoadFuture = std::async(std::launch::async, [&]() {
-        ModuleLoadContext context(moduleIds, []() { return 0; });
+        ModuleLoadLock moduleLock(moduleIds, []() {});
         callbacksStarted.set_value();
         finishCallbacksFuture.wait();
     });
