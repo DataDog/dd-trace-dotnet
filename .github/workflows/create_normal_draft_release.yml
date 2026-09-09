@@ -33,6 +33,13 @@ jobs:
         permissions:
           contents: read # actions/checkout uses the workflow token to clone
           id-token: write # required for dd-octo-sts OIDC and NuGet trusted publishing
+        # Must be declared here (even though the real values come from the reusable
+        # workflow's `environment: publish-debug-symbols-env` secrets) - the environment
+        # secret only overrides a name already known to the called workflow's secrets
+        # context; it doesn't get exposed on its own. See _create_draft_release.yml.
+        secrets:
+            AZURE_DEVOPS_TOKEN: ${{ secrets.AZURE_DEVOPS_TOKEN }}
+            NUGET_TRUSTED_PUBLISHING_USERNAME: ${{ secrets.NUGET_TRUSTED_PUBLISHING_USERNAME }}
         with:
             forced_commit_id: ${{ inputs.forced_commit_id }}
             ignore_gitlab_failures: ${{ inputs.ignore_gitlab_failures }}

@@ -43,53 +43,6 @@ namespace Datadog.Trace.Tests.Tagging
         public async Task DisposeAsync() => await _tracer.DisposeAsync();
 
         [Fact]
-        [Flaky("This concurrency test can time out on saturated CI agents")]
-        public async Task SetTagAndSetTags_WhenCalledConcurrently_ShouldKeepSingleEntryPerKey()
-        {
-            var tags = new TagsList();
-
-            const int workerCount = 4;
-            const int iterationsPerWorker = 1_000;
-            var timeout = TimeSpan.FromSeconds(20);
-            var expectedKeys = new[] { "k1", "k2", "k3", "k4" };
-
-            using var startSignal = new ManualResetEventSlim(false);
-            var workers = Enumerable.Range(0, workerCount)
-                                    .Select(
-                                         workerId => Task.Run(
-                                             () =>
-                                             {
-                                                 startSignal.Wait();
-
-                                                 for (var i = 0; i < iterationsPerWorker; i++)
-                                                 {
-                                                     tags.SetTags(
-                                                         new("k1", workerId.ToString()),
-                                                         new("k2", i.ToString()),
-                                                         new("k3", "stable"));
-                                                     tags.SetTag("k4", workerId.ToString());
-                                                 }
-                                             }))
-                                    .ToArray();
-
-            startSignal.Set();
-
-            var allWorkers = Task.WhenAll(workers);
-            var completedTask = await Task.WhenAny(allWorkers, Task.Delay(timeout));
-            if (completedTask != allWorkers)
-            {
-                throw new TimeoutException($"Concurrent tag updates exceeded {timeout}. Worker statuses: {string.Join(", ", workers.Select(w => w.Status))}");
-            }
-
-            await allWorkers;
-
-            var snapshot = GetTagsSnapshot(tags);
-
-            snapshot.Select(x => x.Key).Should().BeEquivalentTo(expectedKeys);
-            snapshot.Select(x => x.Key).Should().OnlyHaveUniqueItems();
-        }
-
-        [Fact]
         public void SetTags_WithOnlyNullValues_DoesNotInitializeBackingTagsList()
         {
             var tags = new TagsList();
@@ -680,6 +633,57 @@ namespace Datadog.Trace.Tests.Tagging
             public void Process(TagItem<int> item)
             {
                 _items.Add(new(item.Key, item.Value.ToString(CultureInfo.InvariantCulture)));
+            }
+        }
+
+        [Collection(nameof(HighConcurrencyTestCollection))]
+        public class ConcurrencyTests
+        {
+            [Fact]
+            [Flaky("This concurrency test can time out on saturated CI agents")]
+            public async Task SetTagAndSetTags_WhenCalledConcurrently_ShouldKeepSingleEntryPerKey()
+            {
+                var tags = new TagsList();
+
+                const int workerCount = 4;
+                const int iterationsPerWorker = 1_000;
+                var timeout = TimeSpan.FromSeconds(20);
+                var expectedKeys = new[] { "k1", "k2", "k3", "k4" };
+
+                using var startSignal = new ManualResetEventSlim(false);
+                var workers = Enumerable.Range(0, workerCount)
+                                        .Select(
+                                             workerId => Task.Run(
+                                                 () =>
+                                                 {
+                                                     startSignal.Wait();
+
+                                                     for (var i = 0; i < iterationsPerWorker; i++)
+                                                     {
+                                                         tags.SetTags(
+                                                             new("k1", workerId.ToString()),
+                                                             new("k2", i.ToString()),
+                                                             new("k3", "stable"));
+                                                         tags.SetTag("k4", workerId.ToString());
+                                                     }
+                                                 }))
+                                        .ToArray();
+
+                startSignal.Set();
+
+                var allWorkers = Task.WhenAll(workers);
+                var completedTask = await Task.WhenAny(allWorkers, Task.Delay(timeout));
+                if (completedTask != allWorkers)
+                {
+                    throw new TimeoutException($"Concurrent tag updates exceeded {timeout}. Worker statuses: {string.Join(", ", workers.Select(w => w.Status))}");
+                }
+
+                await allWorkers;
+
+                var snapshot = GetTagsSnapshot(tags);
+
+                snapshot.Select(x => x.Key).Should().BeEquivalentTo(expectedKeys);
+                snapshot.Select(x => x.Key).Should().OnlyHaveUniqueItems();
             }
         }
     }

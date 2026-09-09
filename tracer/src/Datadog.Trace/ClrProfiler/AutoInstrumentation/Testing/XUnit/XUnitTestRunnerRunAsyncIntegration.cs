@@ -321,9 +321,9 @@ public static class XUnitTestRunnerRunAsyncIntegration
 
     /// <summary>
     /// Read-only snapshot of remaining ATR budget for pre-close checks (XUnit v2).
-    /// Value meanings: -1 = uninitialized, 0 = exhausted, positive = nominally available.
-    /// This value is observed before retry scheduling decrements budget, so values of 1 or 0 mean no
-    /// further retry can run after the current failed execution.
+    /// Value meanings: -1 = uninitialized, 0 = exhausted, positive = available retry slots.
+    /// This value is observed before retry scheduling consumes a slot, so a value of 1 permits one
+    /// final retry and a value of 0 permits none.
     /// </summary>
     internal static int GetRemainingAtrBudget()
         => Interlocked.CompareExchange(ref _totalRetries, 0, 0);

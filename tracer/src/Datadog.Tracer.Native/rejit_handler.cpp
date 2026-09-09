@@ -96,8 +96,8 @@ bool RejitHandlerModuleMethod::RequestRejitForInlinersInModule(ModuleID moduleId
             if (total > 0)
             {
                 handler->EnqueueForRejit(modules, methods);
-                Logger::Info("NGEN:: Processed with ", total, " inliners [ModuleId=", currentModuleId,
-                             ",MethodDef=", currentMethodDef, "]");
+                Logger::Debug("NGEN:: Processed with ", total, " inliners [ModuleId=", currentModuleId,
+                              ",MethodDef=", currentMethodDef, "]");
             }
 
             if (incompleteData)
@@ -288,7 +288,7 @@ void RejitHandler::RequestRejit(std::vector<ModuleID>& modulesVector, std::vecto
         }
         if (SUCCEEDED(hr))
         {
-            Logger::Info("Request ReJIT done for ", modulesVector.size(), " methods");
+            Logger::Debug("Request ReJIT done for ", modulesVector.size(), " methods");
 
             if (enable_rejit_tracking)
             {
