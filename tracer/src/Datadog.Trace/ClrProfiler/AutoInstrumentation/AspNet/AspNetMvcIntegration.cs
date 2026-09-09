@@ -64,10 +64,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                 if (tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId))
                 {
                     var otelSemanticsEnabled = tracer.Settings.OtelSemanticsEnabled;
-
-                    // The OpenTelemetry HTTP span specification requires the low-cardinality route
-                    // template, which is only tracked when route-template resource names are enabled.
-                    var newResourceNamesEnabled = tracer.Settings.RouteTemplateResourceNamesEnabled || otelSemanticsEnabled;
+                    var newResourceNamesEnabled = tracer.Settings.RouteTemplateResourceNamesEnabled;
                     string host = httpContext.Request.Headers.Get("Host");
                     var userAgent = httpContext.Request.Headers.Get(HttpHeaderNames.UserAgent);
                     string httpMethod = httpContext.Request.HttpMethod;
