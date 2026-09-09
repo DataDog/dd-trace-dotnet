@@ -187,23 +187,38 @@ internal partial class AppSecRequestContext
         }
     }
 
-    internal IContext? GetOrCreateAdditiveContext(Security security)
+    // raspAddress is set for a RASP run only, and a context that cannot be handed out is then reported
+    // under it. The cause is captured while _contextSync is held because it is not observable
+    // afterwards: a concurrent disposal would make an ended request and a failed creation look alike.
+    internal IContext? GetOrCreateAdditiveContext(Security security, string? raspAddress = null)
     {
+        IContext? context;
+        var outcome = WafOutcome.Success;
+
         lock (_contextSync)
         {
             if (_isAdditiveContextDisposed)
             {
-                Log.Debug("Additive context was requested when already disposed");
-                return null;
+                outcome = WafOutcome.RequestEnded;
+                context = null;
             }
-
-            if (_context is not null)
+            else
             {
-                return _context;
+                // an already created context keeps the Success it was handed out with
+                context = _context ??= security.CreateAdditiveContext(out outcome, raspAddress is not null);
             }
-
-            _context = security.CreateAdditiveContext();
-            return _context;
         }
+
+        if (outcome is WafOutcome.RequestEnded)
+        {
+            Log.Debug("Additive context was requested when already disposed");
+        }
+
+        if (raspAddress is not null)
+        {
+            RaspModule.RecordRaspOutcome(raspAddress, outcome);
+        }
+
+        return context;
     }
 }
