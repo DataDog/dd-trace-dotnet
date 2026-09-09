@@ -250,7 +250,7 @@ TEST(DebugInfoStoreTest, ParseModuleDebugInfo_DbgHelp)
 TEST(DebugInfoStoreTest, ParseModuleDebugInfo_NetCorePortable)
 {
     // Get paths to the sample PDB and module
-    auto [pdbPath, modulePath] = GetSamplePdbPath("Samples.BuggyBits", "net10.0");
+    auto [pdbPath, modulePath] = GetSamplePdbPath("Samples.BuggyBits", "net11.0");
     if (pdbPath.empty())
     {
         GTEST_SKIP() << "Failed to get current process path";
@@ -260,7 +260,7 @@ TEST(DebugInfoStoreTest, ParseModuleDebugInfo_NetCorePortable)
     std::error_code ec;
     if (!fs::exists(pdbPath, ec) || !fs::exists(modulePath, ec))
     {
-        GTEST_SKIP() << "Samples.BuggyBits.pdb (net10.0) not found. This is expected if net10.0 is not compiled.";
+        GTEST_SKIP() << "Samples.BuggyBits.pdb (net11.0) not found. This is expected if net11.0 is not compiled.";
         return;
     }
 
@@ -276,7 +276,7 @@ TEST(DebugInfoStoreTest, ParseModuleDebugInfo_NetCorePortable)
 
     // For .NET Core/5+ PDB (Portable PDB format), the LoadingState should be Portable
     ASSERT_EQ(moduleInfo.LoadingState, SymbolLoadingState::Portable)
-        << "Expected Portable PDB format for .NET Core/5+ compilation (net10.0)";
+        << "Expected Portable PDB format for .NET Core/5+ compilation (net11.0)";
 
     // Portable PDBs use RID-based lookup
     ASSERT_FALSE(moduleInfo.RidToDebugInfo.empty()) << "Expected RID to debug info mapping for Portable PDB";
