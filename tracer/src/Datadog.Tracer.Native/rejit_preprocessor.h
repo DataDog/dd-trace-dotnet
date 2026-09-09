@@ -123,11 +123,15 @@ public:
                                        const std::vector<RejitRequestDefinition>& requests,
                                        bool enqueueInSameThread = false);
     void EnqueueRequestRejit(std::vector<MethodIdentifier>& rejitRequests, std::shared_ptr<std::promise<void>> promise, bool callRevertExplicitly = false);
+    // `definitions` is a shared_ptr so the (potentially large, e.g. CorProfiler::integration_definitions_)
+    // backing vector never needs to be deep-copied just to hand it to the async queue: copying a
+    // shared_ptr is a noexcept atomic refcount bump, regardless of what it points to. May be
+    // nullptr (treated the same as an empty list) if a caller's own allocation failed upstream.
     void EnqueueRequestRejitForLoadedModules(const std::vector<ModuleID>& modulesVector,
-                                             const std::vector<RejitRequestDefinition>& requests,
+                                             std::shared_ptr<const std::vector<RejitRequestDefinition>> requests,
                                              std::shared_ptr<std::promise<ULONG>> promise);
     void EnqueuePreprocessRejitRequests(const std::vector<ModuleID>& modules,
-                                  const std::vector<RejitRequestDefinition>& definitions,
+                                  std::shared_ptr<const std::vector<RejitRequestDefinition>> definitions,
                                   std::shared_ptr<std::promise<std::vector<MethodIdentifier>>> promise);
 
 };

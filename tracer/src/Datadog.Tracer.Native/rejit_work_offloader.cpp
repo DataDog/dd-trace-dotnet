@@ -84,7 +84,25 @@ void RejitWorkOffloader::EnqueueThreadLoop(RejitWorkOffloader* offloader)
             // Execute given work
             // *************************************
 
-            item->func();
+            // Last-resort backstop: an uncaught exception escaping this thread's function calls
+            // std::terminate(), taking the whole process down. The queued item's own producer
+            // (e.g. RejitPreprocessor::EnqueueRequestRejitForLoadedModules) already catches and
+            // handles what it can, but this covers anything else enqueued here, now or in the
+            // future, that doesn't.
+            try
+            {
+                item->func();
+            }
+            catch (const std::exception& ex)
+            {
+                Logger::Error("RejitWorkOffloader: uncaught exception from a queued rejit work item, "
+                              "dropping it and continuing: ", ex.what());
+            }
+            catch (...)
+            {
+                Logger::Error("RejitWorkOffloader: uncaught non-standard exception from a queued rejit "
+                              "work item, dropping it and continuing.");
+            }
         }
     }
     Logger::Info("Exiting ReJIT request thread.");
