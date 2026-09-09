@@ -1722,7 +1722,8 @@ HRESULT IsTypeTokenByRefLike(ICorProfilerInfo4* corProfilerInfo4, const ModuleMe
         {
             // Callers must fail closed when we cannot prove the type is not byref-like:
             // skip LogArg/LogLocal, or reject the rewrite for return/containing types.
-            Logger::Warn("[IsTypeTokenByRefLike] Failed to resolve TypeRef. Returning failure to the caller.");
+            // Expected when the defining module is not loaded yet.
+            DBG("[IsTypeTokenByRefLike] Failed to resolve TypeRef. Returning failure to the caller.");
             isTypeIsByRefLike = false;
             return hr;
         }

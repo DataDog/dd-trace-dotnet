@@ -21,11 +21,17 @@ namespace Samples.Probes.TestRuns.SmokeTests
         public int Method(int input)
         {
             var nested = new NestedRefLikeContainer.NestedRefLike(input);
-            int[] values = { input };
-            Span<int> span = values;
-            var enumerator = span.GetEnumerator();
+            var enumerator = CreateSpan(input).GetEnumerator();
             var fromSpan = enumerator.MoveNext() ? enumerator.Current : 0;
             return nested.Value + fromSpan;
+        }
+
+        // Keep the Span backing store out of the probed method so Windows and Linux
+        // do not disagree on a named int[] local at method exit.
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static Span<int> CreateSpan(int input)
+        {
+            return new[] { input };
         }
     }
 }
