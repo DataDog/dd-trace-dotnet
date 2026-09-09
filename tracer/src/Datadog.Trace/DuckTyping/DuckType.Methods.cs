@@ -861,7 +861,7 @@ namespace Datadog.Trace.DuckTyping
                                 il.WriteLoadArgument(idx, false);
 
                                 // Load the value inside the ref
-                                if (outerParamTypeElementType.IsGenericParameter)
+                                if (outerParamTypeElementType.IsGenericParameter || outerParamTypeElementType.IsValueType)
                                 {
                                     il.Emit(OpCodes.Ldobj, outerParamTypeElementType);
                                 }
@@ -1065,7 +1065,7 @@ namespace Datadog.Trace.DuckTyping
                     }
 
                     // We store the value
-                    if (proxyArgumentType.IsGenericParameter)
+                    if (proxyArgumentType.IsGenericParameter || proxyArgumentType.IsValueType)
                     {
                         il.Emit(OpCodes.Stobj, proxyArgumentType);
                     }
