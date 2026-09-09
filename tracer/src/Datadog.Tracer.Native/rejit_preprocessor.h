@@ -110,11 +110,7 @@ protected:
     std::mutex m_ngenInlinersModules_lock;
     std::vector<ModuleID> m_ngenInlinersModules;
 
-    // Unloaded modules. PreprocessRejitRequests skips these so we don't call into the CLR after
-    // unload. An entry is only needed while a request that could name the module is in flight, so
-    // unloads are recorded only while m_in_flight_requests is non-zero, and the whole set is
-    // dropped once the last request completes. Counting requests rather than modules keeps this
-    // O(1) per request; the cost is that an entry outlives the request that needed it.
+    // Unloaded modules handling: prevent from calling into the CLR for an unloaded module.
     std::mutex m_unloaded_modules_lock;
     std::unordered_set<ModuleID> m_unloaded_modules;
     size_t m_in_flight_requests = 0;

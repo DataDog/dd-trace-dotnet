@@ -149,7 +149,7 @@ void RejitPreprocessor<RejitRequestDefinition>::RemoveModule(ModuleID moduleId)
 
     // Removes the RejitHandlerModule instance
     //
-    // TODO: this destroys the handler (and its methods and metadata) while other threads can still
+    // TOFIX (gleocadie): this destroys the handler (and its methods and metadata) while other threads can still
     // be using it: GetOrAddModule hands out a raw pointer and drops m_modules_lock, so callers such
     // as ProcessTypeDefForRejit and RejitMethod dereference it unsynchronized with this erase.
     // The unloaded-module tracking below only stops us picking up a module that unloaded *before*
