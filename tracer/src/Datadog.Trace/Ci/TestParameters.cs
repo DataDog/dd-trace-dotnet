@@ -48,7 +48,7 @@ namespace Datadog.Trace.Ci
             var fingerprintParameters = new TestParameters
             {
                 Metadata = new Dictionary<string, object?> { [FingerprintFormatMetadataKey] = FingerprintFormat },
-                Arguments = new Dictionary<string, object?> { [FingerprintArgumentKey] = Sha256Helper.ComputeHashAsHexString(json, Encoding.UTF8) }
+                Arguments = new Dictionary<string, object?> { [FingerprintArgumentKey] = ComputeFingerprint(json) }
             };
             return JsonHelper.SerializeObject(fingerprintParameters);
         }
@@ -72,7 +72,22 @@ namespace Datadog.Trace.Ci
 
         internal string GetFingerprint()
         {
-            return Sha256Helper.ComputeHashAsHexString(JsonHelper.SerializeObject(this), Encoding.UTF8);
+            return ComputeFingerprint(JsonHelper.SerializeObject(this));
+        }
+
+        private static string ComputeFingerprint(string json)
+        {
+            try
+            {
+                return Sha256Helper.ComputeHashAsHexString(json);
+            }
+            catch (EncoderFallbackException)
+            {
+                // Sha256Helper uses strict UTF-8, but test parameters can contain unpaired surrogates.
+                // Match the replacement fallback used when the JSON is encoded for transport.
+                var normalizedJson = Encoding.UTF8.GetString(Encoding.UTF8.GetBytes(json));
+                return Sha256Helper.ComputeHashAsHexString(normalizedJson);
+            }
         }
     }
 }
