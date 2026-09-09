@@ -25,7 +25,7 @@ namespace Datadog.Profiler.IntegrationTests
             _output = output;
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net10.0" })]
+        [TestAppFact("Samples.Computer01", new[] { "net11.0" })]
         public void CheckMemoryFootprintMetricsWhenEnabled(string appName, string framework, string appAssembly)
         {
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: "--scenario 10");
@@ -51,7 +51,7 @@ namespace Datadog.Profiler.IntegrationTests
             lines.Should().ContainMatch("*Total measured profiler memory*");
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net10.0" })]
+        [TestAppFact("Samples.Computer01", new[] { "net11.0" })]
         public void CheckMemoryFootprintMetricsAbsentWhenDisabled(string appName, string framework, string appAssembly)
         {
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: "--scenario 10");
