@@ -171,6 +171,7 @@ tracer/                                   @DataDog/apm-sdk-capabilities-dotnet @
 /tracer/src/Datadog.Trace/ContinuousProfiler/ @DataDog/profiling-dotnet @DataDog/tracing-dotnet
 /tracer/test/Datadog.Trace.Tests/ContinuousProfiler/ @DataDog/profiling-dotnet @DataDog/tracing-dotnet
 /tracer/build/_build/Build.Profiler.Steps.cs @DataDog/profiling-dotnet @DataDog/tracing-dotnet
+/tracer/build/_build/Build.Tracer.Native.Sanitizers.Steps.cs @DataDog/tracing-dotnet
 
 # Debugger
 /tracer/src/Datadog.Trace/Debugger/        @DataDog/debugger-dotnet
@@ -272,7 +273,7 @@ Directory.Build.props                     @DataDog/apm-dotnet
 /tracer/src/Datadog.Trace.Trimming/Datadog.Trace.Trimming.csproj @DataDog/apm-dotnet
 /tracer/src/Datadog.Trace/Datadog.Trace.csproj @DataDog/apm-dotnet
 /tracer/src/Datadog.Trace/TracerConstants.cs @DataDog/apm-dotnet
-/tracer/src/Datadog.Tracer.Native/CMakeLists.txt @DataDog/apm-dotnet
+/tracer/src/Datadog.Tracer.Native/CMakeLists.txt @DataDog/apm-dotnet @DataDog/tracing-dotnet
 /tracer/src/Datadog.Tracer.Native/Resource.rc @DataDog/apm-dotnet
 /tracer/src/Datadog.Tracer.Native/dd_profiler_constants.h @DataDog/apm-dotnet
 

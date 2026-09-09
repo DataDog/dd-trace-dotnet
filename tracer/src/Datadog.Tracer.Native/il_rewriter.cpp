@@ -9,6 +9,19 @@
 #include <algorithm>
 #include <memory>
 
+// IL is a variable-length, byte-packed format: opcode arguments routinely land on
+// non-4/8-byte-aligned offsets by design (see the UNALIGNED-cast reads/writes throughout
+// this file, e.g. *(UNALIGNED INT32*) &(pIL[offset]) = ...). UNALIGNED is a real MSVC
+// keyword on Windows (generates genuinely safe unaligned-access code) but is defined as
+// literally nothing on this non-Windows PAL (shared/src/native-lib/coreclr/src/pal/inc/pal.h),
+// so these casts provide no actual safety under Clang -- confirmed by UBSan flagging
+// exactly this ("store to misaligned address ... which requires 4 byte alignment") running
+// the tracer's UBSAN CI job. Suppressed for this file only (not build-wide) so the
+// alignment check still catches a genuine bug anywhere else in the native tracer.
+#if defined(__clang__)
+#pragma clang attribute push(__attribute__((no_sanitize("alignment"))), apply_to = function)
+#endif
+
 #undef IfFailRet
 #define IfFailRet(EXPR)                                                                                                \
     do                                                                                                                 \
@@ -921,3 +934,7 @@ void ILRewriter::SortEHClauses(EHClause* pEH, unsigned nEH)
         pEH[i] = sorted[i];
     }
 }
+
+#if defined(__clang__)
+#pragma clang attribute pop
+#endif
