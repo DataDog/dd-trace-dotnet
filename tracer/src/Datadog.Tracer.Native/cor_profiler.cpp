@@ -543,88 +543,86 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id, HR
         return S_OK;
     }
 
-    return WithModuleLockAfterSnapshot(
-        module_ids,
-        [&]() {
-            // InstrumentProbes acquires m_probes_mutex before module_ids, so snapshot the probes before acquiring
-            // module_ids to preserve that lock order.
-            return debugger_instrumentation_requester != nullptr
-                       ? debugger_instrumentation_requester->GetMethodProbesSnapshot()
-                       : std::vector<std::shared_ptr<debugger::MethodProbeDefinition>>{};
-        },
-        [&](auto& modules, const auto& methodProbes) -> HRESULT {
-            // The helper keeps module_ids locked until this callback returns, preventing the module from unloading
-            // while the debugger and dataflow callbacks use its metadata.
-            // Double check if is_attached_ has changed to avoid a possible race condition with shutdown.
-            if (!is_attached_ || rejit_handler == nullptr)
+    ModuleLoadContext context(module_ids, [&]() {
+        // InstrumentProbes acquires m_probes_mutex before module_ids, so snapshot the probes before acquiring
+        // module_ids to preserve that lock order.
+        return debugger_instrumentation_requester != nullptr
+                   ? debugger_instrumentation_requester->GetMethodProbesSnapshot()
+                   : std::vector<std::shared_ptr<debugger::MethodProbeDefinition>>{};
+    });
+
+    // Keep the context alive until all callbacks are done using the module, to prevent it from unloading while in use.
+    auto& modules = context.Modules();
+
+    // Double check if is_attached_ has changed to avoid a possible race condition with shutdown.
+    if (!is_attached_ || rejit_handler == nullptr)
+    {
+        return S_OK;
+    }
+
+    const auto hr = TryRejitModule(module_id, modules);
+
+    // Push integration definitions from past modules that were unable to be added
+    auto rejit_size = rejit_module_method_pairs.size();
+    if (rejit_size > 0 && trace_annotation_integration_type != nullptr)
+    {
+        std::vector<ModuleID> rejitModuleIds;
+        for (size_t i = 0; i < rejit_size; i++)
+        {
+            auto rejit_module_method_pair = rejit_module_method_pairs.front();
+            rejitModuleIds.push_back(rejit_module_method_pair.first);
+
+            const auto& methodReferences = rejit_module_method_pair.second;
+            integration_definitions_.reserve(integration_definitions_.size() + methodReferences.size());
+
+            DBG("ModuleLoadFinished requesting ReJIT now for ModuleId=", module_id,
+                ", methodReferences.size()=", methodReferences.size());
+
+            // Push integration definitions from the given module
+            for (const auto& methodReference : methodReferences)
             {
-                return S_OK;
+                integration_definitions_.push_back(IntegrationDefinition(
+                    methodReference, *trace_annotation_integration_type.get(), false, false, false));
             }
 
-            const auto hr = TryRejitModule(module_id, modules);
+            rejit_module_method_pairs.pop_front();
+        }
 
-            // Push integration definitions from past modules that were unable to be added
-            auto rejit_size = rejit_module_method_pairs.size();
-            if (rejit_size > 0 && trace_annotation_integration_type != nullptr)
+        // We call the function to analyze the module and request the ReJIT of integrations defined in this module.
+        if (tracer_integration_preprocessor != nullptr && !integration_definitions_.empty())
+        {
+            auto promise = std::make_shared<std::promise<ULONG>>();
+            std::future<ULONG> future = promise->get_future();
+            tracer_integration_preprocessor->EnqueueRequestRejitForLoadedModules(rejitModuleIds,
+                                                                                 integration_definitions_, promise);
+
+            // wait and get the value from the future<ULONG>
+            const auto status = future.wait_for(200ms);
+
+            if (status != std::future_status::timeout)
             {
-                std::vector<ModuleID> rejitModuleIds;
-                for (size_t i = 0; i < rejit_size; i++)
-                {
-                    auto rejit_module_method_pair = rejit_module_method_pairs.front();
-                    rejitModuleIds.push_back(rejit_module_method_pair.first);
-
-                    const auto& methodReferences = rejit_module_method_pair.second;
-                    integration_definitions_.reserve(integration_definitions_.size() + methodReferences.size());
-
-                    DBG("ModuleLoadFinished requesting ReJIT now for ModuleId=", module_id,
-                        ", methodReferences.size()=", methodReferences.size());
-
-                    // Push integration definitions from the given module
-                    for (const auto& methodReference : methodReferences)
-                    {
-                        integration_definitions_.push_back(IntegrationDefinition(
-                            methodReference, *trace_annotation_integration_type.get(), false, false, false));
-                    }
-
-                    rejit_module_method_pairs.pop_front();
-                }
-
-                // We call the function to analyze the module and request the ReJIT of integrations defined in this
-                // module.
-                if (tracer_integration_preprocessor != nullptr && !integration_definitions_.empty())
-                {
-                    auto promise = std::make_shared<std::promise<ULONG>>();
-                    std::future<ULONG> future = promise->get_future();
-                    tracer_integration_preprocessor->EnqueueRequestRejitForLoadedModules(
-                        rejitModuleIds, integration_definitions_, promise);
-
-                    // wait and get the value from the future<ULONG>
-                    const auto status = future.wait_for(200ms);
-
-                    if (status != std::future_status::timeout)
-                    {
-                        const auto& numReJITs = future.get();
-                        DBG("Total number of ReJIT Requested: ", numReJITs);
-                    }
-                    else
-                    {
-                        Logger::Warn("Timeout while waiting for the rejit requests to be processed. Rejit will "
-                                     "continue asynchronously, but some initial calls may not be instrumented");
-                    }
-                }
+                const auto& numReJITs = future.get();
+                DBG("Total number of ReJIT Requested: ", numReJITs);
             }
-            if (debugger_instrumentation_requester != nullptr)
+            else
             {
-                debugger_instrumentation_requester->ModuleLoadFinished(module_id, methodProbes);
+                Logger::Warn("Timeout while waiting for the rejit requests to be processed. Rejit will continue "
+                             "asynchronously, but some initial calls may not be instrumented");
             }
+        }
+    }
 
-            if (_dataflow != nullptr)
-            {
-                _dataflow->ModuleLoaded(module_id);
-            }
+    if (debugger_instrumentation_requester != nullptr)
+    {
+        debugger_instrumentation_requester->ModuleLoadFinished(module_id, context.Snapshot());
+    }
 
-            return hr;
-        });
+    if (_dataflow != nullptr)
+    {
+        _dataflow->ModuleLoaded(module_id);
+    }
+
+    return hr;
 }
 
 std::string GetNativeLoaderFilePath()

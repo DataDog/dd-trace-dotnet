@@ -11,66 +11,27 @@ using namespace std::chrono_literals;
 namespace trace
 {
 
-namespace
-{
-    enum class ModuleLoadStep
-    {
-        SnapshotProbes,
-        LockModules,
-        RunCallbacks
-    };
-
-    class RecordingModuleIds
-    {
-    public:
-        class Scope
-        {
-        public:
-            std::vector<ModuleID>& Ref()
-            {
-                return _modules;
-            }
-
-        private:
-            friend class RecordingModuleIds;
-            explicit Scope(std::vector<ModuleID>& modules) : _modules(modules)
-            {
-            }
-
-            std::vector<ModuleID>& _modules;
-        };
-
-        explicit RecordingModuleIds(std::vector<ModuleLoadStep>& steps) : _steps(steps)
-        {
-        }
-
-        Scope Get()
-        {
-            _steps.push_back(ModuleLoadStep::LockModules);
-            return Scope(_modules);
-        }
-
-    private:
-        std::vector<ModuleLoadStep>& _steps;
-        std::vector<ModuleID> _modules;
-    };
-} // namespace
-
 TEST(CorProfilerLockingTest, SnapshotsProbesBeforeAcquiringModuleLock)
 {
-    std::vector<ModuleLoadStep> steps;
-    RecordingModuleIds moduleIds(steps);
+    Synchronized<std::vector<ModuleID>> moduleIds;
+    std::promise<void> snapshotStarted;
+    auto snapshotStartedFuture = snapshotStarted.get_future();
+    std::future<void> moduleLoadFuture;
 
-    WithModuleLockAfterSnapshot(
-        moduleIds,
-        [&]() {
-            steps.push_back(ModuleLoadStep::SnapshotProbes);
-            return 0;
-        },
-        [&](auto&, const auto&) { steps.push_back(ModuleLoadStep::RunCallbacks); });
+    {
+        auto modules = moduleIds.Get();
+        moduleLoadFuture = std::async(std::launch::async, [&]() {
+            ModuleLoadContext context(moduleIds, [&]() {
+                snapshotStarted.set_value();
+                return 0;
+            });
+        });
 
-    EXPECT_EQ(steps, (std::vector<ModuleLoadStep>{ModuleLoadStep::SnapshotProbes, ModuleLoadStep::LockModules,
-                                                  ModuleLoadStep::RunCallbacks}));
+        EXPECT_EQ(snapshotStartedFuture.wait_for(1s), std::future_status::ready);
+        EXPECT_EQ(moduleLoadFuture.wait_for(100ms), std::future_status::timeout);
+    }
+
+    EXPECT_EQ(moduleLoadFuture.wait_for(1s), std::future_status::ready);
 }
 
 TEST(CorProfilerLockingTest, ModuleLockIsHeldDuringModuleCallbacks)
@@ -84,12 +45,9 @@ TEST(CorProfilerLockingTest, ModuleLockIsHeldDuringModuleCallbacks)
     auto unloadStartedFuture = unloadStarted.get_future();
 
     auto moduleLoadFuture = std::async(std::launch::async, [&]() {
-        WithModuleLockAfterSnapshot(
-            moduleIds, []() { return 0; },
-            [&](auto&, const auto&) {
-                callbacksStarted.set_value();
-                finishCallbacksFuture.wait();
-            });
+        ModuleLoadContext context(moduleIds, []() { return 0; });
+        callbacksStarted.set_value();
+        finishCallbacksFuture.wait();
     });
 
     auto moduleUnloadFuture = std::async(std::launch::async, [&]() {
