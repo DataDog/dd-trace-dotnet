@@ -2720,6 +2720,12 @@ partial class Build
                knownPatterns.Add(new(@".*SingleStepGuardRails::ShouldForceInstrumentationOverride: Found incompatible runtime .NET 10 or higher.*", RegexOptions.Compiled));
            }
 
+           // Make sure we _only_ add this while .NET 11 is in preview (to make sure we don't forget in the final release)
+           if (RuntimeInformation.FrameworkDescription.StartsWith(".NET 11.0.0-"))
+           {
+               knownPatterns.Add(new(@".*SingleStepGuardRails::ShouldForceInstrumentationOverride: Found incompatible runtime .NET 11 or higher.*", RegexOptions.Compiled));
+           }
+
            // CI Visibility known errors
            knownPatterns.Add(new(@".*The Git repository couldn't be automatically extracted.*", RegexOptions.Compiled));
            knownPatterns.Add(new(@".*DD_GIT_REPOSITORY_URL is set with.*", RegexOptions.Compiled));
