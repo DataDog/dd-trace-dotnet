@@ -6,15 +6,31 @@
 #nullable enable
 #if NETCOREAPP3_1_OR_GREATER
 
+using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.IO;
+using System.Linq;
+using System.Net;
+using System.Net.Http;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Rasp;
+using Datadog.Trace.AppSec.Rcm;
+using Datadog.Trace.AppSec.Waf;
+using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.Telemetry;
+using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.Security.Unit.Tests.Utils;
+using Datadog.Trace.Telemetry;
+using Datadog.Trace.TestHelpers;
+using Datadog.Trace.TestHelpers.TestTracer;
 using FluentAssertions;
+using Moq;
 using Xunit;
+using AppSecSecurity = Datadog.Trace.AppSec.Security;
 
 namespace Datadog.Trace.Security.Unit.Tests.RASP;
 
@@ -265,6 +281,204 @@ public class RaspModuleDownstreamTests : WafLibraryRequiredTest
         await RaspModule.AddBody(chunkedContent, wafArgs, AddressesConstants.DownstreamResponseBody, bodySizeLimit);
 
         wafArgs.Should().NotContainKey(AddressesConstants.DownstreamResponseBody);
+    }
+
+    [Theory]
+    [InlineData(SpanTypes.Custom, false)]
+    [InlineData(SpanTypes.Web, true)]
+    public async Task GivenSsrfIsNotInTheRuleset_WhenADownstreamRequestIsChecked_ThenNothingIsReported(string spanType, bool finished)
+    {
+        // a ruleset without SSRF rules must not report skips for an instrumentation that is not
+        // active: these are the lifecycles that report before CheckVulnerability rechecks the address
+        var metrics = await CheckDownstreamRequestAsync(ssrfAddressEnabled: false, spanType, finished);
+
+        metrics.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task GivenNoSecurityCoordinator_WhenADownstreamRequestIsChecked_ThenAnOutOfRequestSkipIsReported()
+    {
+        // no ambient HttpContext, so the coordinator cannot be built and the WAF is never reached
+        var metrics = await CheckDownstreamRequestAsync(ssrfAddressEnabled: true, SpanTypes.Web, finished: false);
+
+        ShouldBeTheSingleSkip(metrics, "reason:out-of-request", "rule_type:ssrf");
+    }
+
+    [Fact]
+    public async Task GivenANonWebRootSpan_WhenADownstreamRequestIsChecked_ThenAnOutOfRequestSkipIsReported()
+    {
+        var metrics = await CheckDownstreamRequestAsync(ssrfAddressEnabled: true, SpanTypes.Custom, finished: false);
+
+        ShouldBeTheSingleSkip(metrics, "reason:out-of-request", "rule_type:ssrf");
+    }
+
+    [Fact]
+    public async Task GivenAFinishedRootSpan_WhenADownstreamRequestIsChecked_ThenAnAfterRequestSkipIsReported()
+    {
+        var metrics = await CheckDownstreamRequestAsync(ssrfAddressEnabled: true, SpanTypes.Web, finished: true);
+
+        ShouldBeTheSingleSkip(metrics, "reason:after-request", "rule_type:ssrf");
+    }
+
+    [Theory]
+    [InlineData(SpanTypes.Custom, false)]
+    [InlineData(SpanTypes.Web, true)]
+    public async Task GivenSsrfIsNotInTheRuleset_WhenADownstreamResponseIsChecked_ThenNothingIsReported(string spanType, bool finished)
+    {
+        var metrics = await CheckDownstreamResponseAsync(ssrfAddressEnabled: false, spanType, finished);
+
+        metrics.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task GivenNoSecurityCoordinator_WhenADownstreamResponseIsChecked_ThenAnOutOfRequestSkipIsReported()
+    {
+        var metrics = await CheckDownstreamResponseAsync(ssrfAddressEnabled: true, SpanTypes.Web, finished: false);
+
+        ShouldBeTheSingleSkip(metrics, "reason:out-of-request", "rule_type:ssrf");
+    }
+
+    [Fact]
+    public async Task GivenANonWebRootSpan_WhenADownstreamResponseIsChecked_ThenAnOutOfRequestSkipIsReported()
+    {
+        var metrics = await CheckDownstreamResponseAsync(ssrfAddressEnabled: true, SpanTypes.Custom, finished: false);
+
+        ShouldBeTheSingleSkip(metrics, "reason:out-of-request", "rule_type:ssrf");
+    }
+
+    [Fact]
+    public async Task GivenAFinishedRootSpan_WhenADownstreamResponseIsChecked_ThenAnAfterRequestSkipIsReported()
+    {
+        var metrics = await CheckDownstreamResponseAsync(ssrfAddressEnabled: true, SpanTypes.Web, finished: true);
+
+        ShouldBeTheSingleSkip(metrics, "reason:after-request", "rule_type:ssrf");
+    }
+
+    [Fact]
+    public async Task GivenNoActiveScope_WhenASqlQueryIsChecked_ThenTheSkipCarriesItsOwnRuleType()
+    {
+        // the same classifier serves every RASP address, so the rule type has to come from the
+        // address rather than from the SSRF path the downstream tests above exercise
+        var metrics = await RecordAsync([AddressesConstants.DBStatement], _ => RaspModule.OnSqlQuery("SELECT 1", IntegrationId.SqlClient));
+
+        ShouldBeTheSingleSkip(metrics, "reason:out-of-request", "rule_type:sql_injection");
+    }
+
+    private static void ShouldBeTheSingleSkip(List<(string Name, string[] Tags, int[] Values)> metrics, params string[] expectedTags)
+    {
+        var metric = metrics.Should().ContainSingle(m => m.Name == "rasp.rule.skipped").Which;
+        metric.Tags.Should().Equal(expectedTags);
+
+        // one call, one skip: a path reporting twice would show up as a second point or a count of 2
+        metric.Values.Should().Equal(1);
+    }
+
+    private static Span CreateRootSpan(string spanType, bool finished)
+    {
+        var traceContext = new TraceContext(new EmptyDatadogTracer());
+        var spanContext = new SpanContext(parent: null, traceContext, serviceName: "My Service Name", traceId: (TraceId)100, spanId: 200);
+        var span = new Span(spanContext, DateTimeOffset.UtcNow) { Type = spanType };
+        traceContext.AddSpan(span);
+
+        if (finished)
+        {
+            span.Finish();
+        }
+
+        return span;
+    }
+
+    private static AppSecSecurity CreateSecurity(string[] knownAddresses)
+    {
+        var waf = new Mock<IWaf>();
+        waf.SetupGet(x => x.Version).Returns("1.26.0");
+        waf.Setup(x => x.IsKnowAddressesSuported()).Returns(true);
+        waf.Setup(x => x.GetKnownAddresses()).Returns(knownAddresses);
+
+        var config = new NameValueCollection
+        {
+            { ConfigurationKeys.AppSec.Enabled, "1" },
+            { ConfigurationKeys.AppSec.RaspEnabled, "1" },
+        };
+
+        var settings = new SecuritySettings(new NameValueConfigurationSource(config), NullConfigurationTelemetry.Instance);
+
+        // passing a waf keeps the real init out of the way, but AppsecEnabled is only flipped by that
+        // init, so the configuration state has to be built by hand
+        var configurationState = new ConfigurationState(settings, NullConfigurationTelemetry.Instance, wafIsNull: false) { AppsecEnabled = true };
+
+        return new AppSecSecurity(settings, waf.Object, rcmSubscriptionManager: Mock.Of<IRcmSubscriptionManager>(), configurationState: configurationState);
+    }
+
+    private static Task<List<(string Name, string[] Tags, int[] Values)>> CheckDownstreamRequestAsync(bool ssrfAddressEnabled, string spanType, bool finished)
+        => RecordAsync(
+            ssrfAddressEnabled ? [AddressesConstants.DownstreamUrl] : [AddressesConstants.FileAccess],
+            _ =>
+            {
+                // the root span is built inside the swap so that the test does not rely on its own
+                // span lifecycle metrics landing in somebody else's collector
+                var rootSpan = CreateRootSpan(spanType, finished);
+
+                // OnSSRF arms the thread-static flag OnDownstreamRequest checks, so both calls have to
+                // stay on the same thread: no await between them
+                using var request = new HttpRequestMessage(HttpMethod.Get, "http://downstream.example.com/");
+                RaspModule.OnSSRF(request.RequestUri!.ToString());
+                RaspModule.OnDownstreamRequest(request, requestSpanId: 1, rootSpan);
+            });
+
+    private static Task<List<(string Name, string[] Tags, int[] Values)>> CheckDownstreamResponseAsync(bool ssrfAddressEnabled, string spanType, bool finished)
+        => RecordAsync(
+            ssrfAddressEnabled ? [AddressesConstants.DownstreamUrl] : [AddressesConstants.FileAccess],
+            tracer =>
+            {
+                // unlike the request path, OnDownstreamResponse takes its root span from the ambient
+                // tracer, so the scope has to be active on the global one
+                using var scope = (Scope)tracer.StartActive("test.trace");
+                scope.Span.Type = spanType;
+
+                if (finished)
+                {
+                    scope.Span.Finish();
+                }
+
+                using var response = new HttpResponseMessage(HttpStatusCode.OK);
+                RaspModule.OnDownstreamResponse(response, requestSpanId: 1);
+            });
+
+    private static async Task<List<(string Name, string[] Tags, int[] Values)>> RecordAsync(string[] knownAddresses, Action<ScopedTracer> run)
+    {
+        var previousSecurity = AppSecSecurity.Instance;
+        var previousTracer = Tracer.Instance;
+        var previousTracerManager = previousTracer.TracerManager;
+        var security = CreateSecurity(knownAddresses);
+        await using var tracer = TracerHelper.CreateWithFakeAgent();
+        var collector = new MetricsTelemetryCollector(Timeout.InfiniteTimeSpan);
+        var previousMetrics = TelemetryFactory.SetMetricsForTesting(collector);
+
+        try
+        {
+            AppSecSecurity.Instance = security;
+            TracerRestorerAttribute.SetTracer(tracer);
+
+            run(tracer);
+        }
+        finally
+        {
+            TracerRestorerAttribute.SetTracer(previousTracer, previousTracerManager);
+            TelemetryFactory.SetMetricsForTesting(previousMetrics);
+            AppSecSecurity.Instance = previousSecurity;
+            security.Dispose();
+        }
+
+        await collector.DisposeAsync();
+
+        // the span lifecycle metrics of the test's own root span are not what these tests assert on,
+        // and filtering them out is what keeps a BeEmpty() expectation meaningful
+        return collector.GetMetrics().Metrics?
+                        .Where(m => m.Metric.StartsWith("rasp."))
+                        .Select(m => (m.Metric, m.Tags ?? [], m.Points.Select(p => p.Value).ToArray()))
+                        .ToList()
+            ?? [];
     }
 }
 

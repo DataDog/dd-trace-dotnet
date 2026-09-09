@@ -20,6 +20,7 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 {
+    [Trait("Area", "CIVisibility")]
     [UsesVerify]
     public class MsTestV2EvpTests : TestingFrameworkEvpTest
     {
@@ -52,7 +53,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                 if (string.IsNullOrEmpty(packageVersion) ||
                     packageVersion == "2.2.10" ||
                     packageVersion == "3.11.1" ||
-                    packageVersion == "4.3.3")
+                    packageVersion == "4.4.0")
                 {
                     yield return version.Concat("evp_proxy/v4", false);
                 }

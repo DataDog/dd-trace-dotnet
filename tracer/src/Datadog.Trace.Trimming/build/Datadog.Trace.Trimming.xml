@@ -53,6 +53,7 @@
    </assembly>
    <assembly fullname="Microsoft.AspNetCore.Http.Features">
       <type fullname="Microsoft.AspNetCore.Http.Features.IFeatureCollection" />
+      <type fullname="Microsoft.AspNetCore.Http.Features.IHttpResponseFeature" />
       <type fullname="Microsoft.AspNetCore.Http.IHeaderDictionary" />
       <type fullname="Microsoft.AspNetCore.Http.IQueryCollection" />
       <type fullname="Microsoft.AspNetCore.Http.IRequestCookieCollection" />
@@ -931,7 +932,9 @@
       <type fullname="System.Runtime.InteropServices.GCHandle" />
       <type fullname="System.Runtime.InteropServices.GCHandleType" />
       <type fullname="System.Runtime.InteropServices.InAttribute" />
+      <type fullname="System.Runtime.InteropServices.LayoutKind" />
       <type fullname="System.Runtime.InteropServices.SafeHandle" />
+      <type fullname="System.Runtime.InteropServices.StructLayoutAttribute" />
       <type fullname="System.Runtime.JitInfo" />
       <type fullname="System.Runtime.Serialization.IFormatterConverter" />
       <type fullname="System.Runtime.Serialization.ISerializable" />
@@ -965,6 +968,7 @@
       <type fullname="System.StringSplitOptions" />
       <type fullname="System.Text.Decoder" />
       <type fullname="System.Text.Encoder" />
+      <type fullname="System.Text.EncoderFallbackException" />
       <type fullname="System.Text.Encoding" />
       <type fullname="System.Text.StringBuilder" />
       <type fullname="System.Text.StringBuilder/AppendInterpolatedStringHandler" />
@@ -1074,7 +1078,6 @@
       <type fullname="System.DllNotFoundException" />
       <type fullname="System.IO.UnmanagedMemoryAccessor" />
       <type fullname="System.Runtime.InteropServices.CallingConvention" />
-      <type fullname="System.Runtime.InteropServices.CollectionsMarshal" />
       <type fullname="System.Runtime.InteropServices.COMException" />
       <type fullname="System.Runtime.InteropServices.ComInterfaceType" />
       <type fullname="System.Runtime.InteropServices.ComTypes.IStream" />
@@ -1107,6 +1110,7 @@
    </assembly>
    <assembly fullname="System.Runtime.Loader">
       <type fullname="System.Runtime.Loader.AssemblyLoadContext" />
+      <type fullname="System.Runtime.Loader.AssemblyLoadContext/ContextualReflectionScope" />
    </assembly>
    <assembly fullname="System.Runtime.Numerics">
       <type fullname="System.Numerics.BigInteger" />

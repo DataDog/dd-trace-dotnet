@@ -27,6 +27,7 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI;
 
+[Trait("Area", "CIVisibility")]
 public abstract class TestingFrameworkEvpTest : TestHelper
 {
     private readonly GacFixture _gacFixture;
@@ -504,7 +505,9 @@ public abstract class TestingFrameworkEvpTest : TestHelper
 
                 if (e.Value.PathAndQuery.EndsWith("api/v2/ci/tests/skippable"))
                 {
-                    e.Value.Response = new MockTracerResponse($"{{\"data\":[],\"meta\":{{\"correlation_id\":\"{correlationId}\"}}}}", 200);
+                    e.Value.Response = string.IsNullOrEmpty(testScenario.MockData.SkippableTestsJson)
+                                           ? new MockTracerResponse($"{{\"data\":[],\"meta\":{{\"correlation_id\":\"{correlationId}\"}}}}", 200)
+                                           : new MockTracerResponse(testScenario.MockData.SkippableTestsJson, 200);
                     return;
                 }
 
@@ -546,7 +549,12 @@ public abstract class TestingFrameworkEvpTest : TestHelper
                 }
             };
 
-            using var processResult = await RunDotnetTestSampleAndWaitForExit(agent, packageVersion: packageVersion, expectedExitCode: testScenario.ExpectedExitCode, useDotnetExec: testScenario.UseDotnetExec);
+            using var processResult = await RunDotnetTestSampleAndWaitForExit(
+                                          agent,
+                                          arguments: GetTestRunnerArguments(packageVersion, testScenario.UseDotnetExec),
+                                          packageVersion: packageVersion,
+                                          expectedExitCode: testScenario.ExpectedExitCode,
+                                          useDotnetExec: testScenario.UseDotnetExec);
             Assert.Equal(testScenario.ExpectedSpans, executionData.Tests.Count);
 
             // Call the validate action
@@ -590,6 +598,8 @@ public abstract class TestingFrameworkEvpTest : TestHelper
         }
     }
 
+    protected virtual string? GetTestRunnerArguments(string packageVersion, bool useDotnetExec) => null;
+
     private static TValue? GetValueOrDefault<TKey, TValue>(IDictionary<TKey, TValue> dictionary, TKey key)
         where TKey : notnull => dictionary.TryGetValue(key, out var value) ? value : default;
 
@@ -598,6 +608,7 @@ public abstract class TestingFrameworkEvpTest : TestHelper
         public readonly string SettingsJson;
         public readonly string TestsJson;
         public readonly string TestManagementTestsJson;
+        public readonly string SkippableTestsJson;
 
         /// <summary>
         /// Optional paginated known tests responses. When non-null, the handler returns these
@@ -611,6 +622,16 @@ public abstract class TestingFrameworkEvpTest : TestHelper
             SettingsJson = settingsJson;
             TestsJson = testsJson;
             TestManagementTestsJson = testManagementTestsJson;
+            SkippableTestsJson = string.Empty;
+            KnownTestsJsonPages = null;
+        }
+
+        public MockData(string settingsJson, string testsJson, string testManagementTestsJson, string skippableTestsJson)
+        {
+            SettingsJson = settingsJson;
+            TestsJson = testsJson;
+            TestManagementTestsJson = testManagementTestsJson;
+            SkippableTestsJson = skippableTestsJson;
             KnownTestsJsonPages = null;
         }
 
@@ -619,12 +640,13 @@ public abstract class TestingFrameworkEvpTest : TestHelper
             SettingsJson = settingsJson;
             TestsJson = string.Empty;
             TestManagementTestsJson = testManagementTestsJson;
+            SkippableTestsJson = string.Empty;
             KnownTestsJsonPages = knownTestsJsonPages;
         }
 
         public override string ToString()
         {
-            return $"SettingsJson: {SettingsJson}, TestsJson: {TestsJson}, TestManagementTestsJson: {TestManagementTestsJson}";
+            return $"SettingsJson: {SettingsJson}, TestsJson: {TestsJson}, TestManagementTestsJson: {TestManagementTestsJson}, SkippableTestsJson: {SkippableTestsJson}";
         }
     }
 

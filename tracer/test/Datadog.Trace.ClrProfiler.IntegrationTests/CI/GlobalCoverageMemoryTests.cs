@@ -34,6 +34,7 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI;
 
+[Trait("Area", "CIVisibility")]
 public sealed class GlobalCoverageMemoryTests : TestingFrameworkEvpTest
 {
     private const long MaximumProcessMemoryGrowth = 512L * 1024 * 1024;

@@ -7,6 +7,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Reflection;
 using System.Threading;
 using Datadog.Trace.Ci;
@@ -83,10 +84,39 @@ internal static class Common
         return paramValue.ToString() ?? "(null)";
     }
 
-    internal static bool ShouldSkip(string testSuite, string testName, object[]? testMethodArguments, ParameterInfo[]? methodParameters, string? moduleName = null, string? metadataTestName = null, bool allowParametersMetadataMismatch = false)
-        => ShouldSkip(testSuite, testName, testMethodArguments, methodParameters, out _, moduleName, metadataTestName, allowParametersMetadataMismatch);
+    internal static TestParameters CreateTestParameters(object[]? testMethodArguments, ParameterInfo[]? methodParameters, string? metadataTestName, bool useParameterIndexForUnnamedParameters = false)
+    {
+        var testParameters = new TestParameters
+        {
+            Metadata = new Dictionary<string, object?>(),
+            Arguments = new Dictionary<string, object?>()
+        };
 
-    internal static bool ShouldSkip(string testSuite, string testName, object[]? testMethodArguments, ParameterInfo[]? methodParameters, out SkippableTest? skippableTest, string? moduleName = null, string? metadataTestName = null, bool allowParametersMetadataMismatch = false)
+        if (metadataTestName is not null)
+        {
+            testParameters.Metadata[TestTags.MetadataTestName] = metadataTestName;
+        }
+
+        if (methodParameters is null)
+        {
+            return testParameters;
+        }
+
+        for (var i = 0; i < methodParameters.Length; i++)
+        {
+            var key = methodParameters[i].Name ?? (useParameterIndexForUnnamedParameters ? i.ToString(CultureInfo.InvariantCulture) : string.Empty);
+            testParameters.Arguments[key] = testMethodArguments is not null && i < testMethodArguments.Length
+                                                ? GetParametersValueData(testMethodArguments[i])
+                                                : "(default)";
+        }
+
+        return testParameters;
+    }
+
+    internal static bool ShouldSkip(string testSuite, string testName, object[]? testMethodArguments, ParameterInfo[]? methodParameters, string? moduleName = null, string? metadataTestName = null, bool allowParametersMetadataMismatch = false, bool includeMetadataTestNameInFingerprint = true, bool useParameterIndexForUnnamedParameters = false)
+        => ShouldSkip(testSuite, testName, testMethodArguments, methodParameters, out _, moduleName, metadataTestName, allowParametersMetadataMismatch, includeMetadataTestNameInFingerprint, useParameterIndexForUnnamedParameters);
+
+    internal static bool ShouldSkip(string testSuite, string testName, object[]? testMethodArguments, ParameterInfo[]? methodParameters, out SkippableTest? skippableTest, string? moduleName = null, string? metadataTestName = null, bool allowParametersMetadataMismatch = false, bool includeMetadataTestNameInFingerprint = true, bool useParameterIndexForUnnamedParameters = false)
     {
         skippableTest = null;
         var currentContext = SynchronizationContext.Current;
@@ -97,9 +127,33 @@ internal static class Common
             var skippableTests = GetSkippableTestsFromSuiteAndNames(testSuite, testName, moduleName, metadataTestName);
             if (skippableTests.Count > 0)
             {
+                TestParameters? localTestParameters = null;
+                string? localTestParametersFingerprint = null;
                 foreach (var candidate in skippableTests)
                 {
-                    var parameters = candidate.GetParameters();
+                    TestParameters? parameters = null;
+                    if (!StringUtil.IsNullOrWhiteSpace(candidate.RawParameters) &&
+                        !candidate.TryGetParameters(out parameters))
+                    {
+                        Log.Debug("Common: Ignoring a skippable test candidate because its parameters are not valid JSON.");
+                        continue;
+                    }
+
+                    if (parameters?.TryGetFingerprint(out var expectedFingerprint) == true)
+                    {
+                        localTestParameters ??= CreateTestParameters(
+                            testMethodArguments,
+                            methodParameters,
+                            includeMetadataTestNameInFingerprint ? metadataTestName : null,
+                            useParameterIndexForUnnamedParameters);
+                        localTestParametersFingerprint ??= localTestParameters.GetFingerprint();
+                        if (string.Equals(expectedFingerprint, localTestParametersFingerprint, StringComparison.Ordinal))
+                        {
+                            return CanSkipForCoverage(candidate, moduleName, out skippableTest);
+                        }
+
+                        continue;
+                    }
 
                     // Same test name and no parameters
                     if ((parameters?.Arguments is null || parameters.Arguments.Count == 0) &&
