@@ -904,7 +904,14 @@ namespace Datadog.Trace.Tests.Propagators
 
             var result = W3CPropagator.Extract(headers.Object);
 
-            result.SpanContext!.OtelTraceState.CachedHeaderString.Should().Be(inboundOtelTraceState);
+            if (inboundOtelTraceState is null)
+            {
+                result.SpanContext!.OtelTraceState.Should().BeNull();
+            }
+            else
+            {
+                result.SpanContext!.OtelTraceState.CachedHeaderString.Should().Be(inboundOtelTraceState);
+            }
 
             var tracestate = W3CTraceContextPropagator.CreateTraceStateHeader(result.SpanContext);
             if (inboundOtelTraceState is null)

@@ -47,16 +47,17 @@ internal sealed class OtelTraceState
     /// Converts the original header into a TraceState object and stores valid "rv" and "th" items
     /// into their first-class properties.
     /// Unknown items remain present in the cached string.
-    /// Returns the original string when no rewrite is needed, and null when nothing remains.
+    /// Returns null when <paramref name="raw"/> is null or empty, to avoid allocating for the common
+    /// case where the "ot" tracestate member is absent.
     /// </summary>
-    internal static OtelTraceState Parse(string? raw)
+    internal static OtelTraceState? Parse(string? raw)
     {
-        var traceState = new OtelTraceState(raw);
         if (StringUtil.IsNullOrEmpty(raw))
         {
-            return traceState;
+            return null;
         }
 
+        var traceState = new OtelTraceState(raw);
         var remaining = raw!.AsSpan();
 
         while (true)
