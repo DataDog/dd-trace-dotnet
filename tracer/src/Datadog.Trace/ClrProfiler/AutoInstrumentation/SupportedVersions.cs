@@ -8,5 +8,5 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation;
 
 internal static class SupportedVersions
 {
-    public const string LatestDotNet = "10.*.*";
+    public const string LatestDotNet = "11.*.*";
 }
