@@ -34,6 +34,7 @@ public class MSTestInstrumentationTests
     [Theory]
     [InlineData("4.3.3")]
     [InlineData("4.4.0")]
+    [InlineData("14.0.0")] // MSTest 2.x and 3.x use assembly version 14.0.0.
     public void EachMethodHasOneInstrumentationOwner(string packageVersion)
     {
         var version = new Version(packageVersion);

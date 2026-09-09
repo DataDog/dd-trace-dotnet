@@ -15,6 +15,8 @@ using Datadog.Trace.Ci.CiEnvironment;
 using Datadog.Trace.Ci.Configuration;
 using Datadog.Trace.Ci.Coverage;
 using Datadog.Trace.Ci.Coverage.Metadata;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2;
+using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Logging;
@@ -28,6 +30,45 @@ namespace Datadog.Trace.Tests.Ci;
 [Collection(nameof(CoverageGlobalStateTestCollection))]
 public class TestCoverageLifecycleTests : SettingsTestsBase
 {
+    [Theory]
+    [InlineData("3.8")]
+    [InlineData("3.9")]
+    [InlineData("3.10")]
+    [InlineData("3.11")]
+    public void CleanupCallbacksRecordReturnedErrorsWithoutTheRunner(string version)
+    {
+        using var harness = new TestHarness();
+        var state = new CallTargetState(null, harness.Suite);
+        var exception = new Mock<Exception>();
+        exception.SetupGet(error => error.Message).Returns("Class cleanup failed.");
+
+        // ForceCleanup can call the cleanup method without RunSingleTest. The hook must
+        // record the returned exception itself and ignore subsequent calls for this suite.
+        for (var invocation = 0; invocation < 2; invocation++)
+        {
+            switch (version)
+            {
+                case "3.8":
+                case "3.10":
+                    TestClassInfoRunClassCleanupIntegration.OnMethodEnd<object, Exception>(null!, exception.Object, null, state);
+                    break;
+                case "3.9":
+                    TestClassInfoExecuteClassCleanupIntegrationV3_9.OnMethodEnd<object, Exception>(null!, exception.Object, null, state);
+                    break;
+                default:
+                    TestClassInfoExecuteClassCleanupAsyncIntegration.OnAsyncMethodEnd<object, Exception>(null!, exception.Object, null, state);
+                    break;
+            }
+
+            harness.Suite.IsClosed.Should().BeTrue();
+            harness.Suite.Tags.Status.Should().Be("fail");
+            harness.Module.Tags.Status.Should().Be("fail");
+            harness.Suite.Tags.GetTag(Tags.ErrorMsg).Should().Be("Class cleanup failed.");
+        }
+
+        exception.VerifyGet(error => error.Message, Times.Once);
+    }
+
     [Fact]
     public void CompletedExecutionRemainsOpenUntilClose()
     {
