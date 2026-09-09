@@ -861,7 +861,14 @@ namespace Datadog.Trace.DuckTyping
                                 il.WriteLoadArgument(idx, false);
 
                                 // Load the value inside the ref
-                                il.Emit(OpCodes.Ldind_Ref);
+                                if (outerParamTypeElementType.IsGenericParameter || outerParamTypeElementType.IsValueType)
+                                {
+                                    il.Emit(OpCodes.Ldobj, outerParamTypeElementType);
+                                }
+                                else
+                                {
+                                    il.Emit(OpCodes.Ldind_Ref);
+                                }
 
                                 // Check if the type can be converted of if we need to enable duck chaining
                                 if (needsDuckChaining(innerParamTypeElementType, outerParamTypeElementType))
@@ -1058,7 +1065,14 @@ namespace Datadog.Trace.DuckTyping
                     }
 
                     // We store the value
-                    il.Emit(OpCodes.Stind_Ref);
+                    if (proxyArgumentType.IsGenericParameter || proxyArgumentType.IsValueType)
+                    {
+                        il.Emit(OpCodes.Stobj, proxyArgumentType);
+                    }
+                    else
+                    {
+                        il.Emit(OpCodes.Stind_Ref);
+                    }
                 }
 
                 return null;
