@@ -10,6 +10,11 @@ namespace Datadog.Trace.Configuration;
 internal static partial class ConfigurationKeys
 {
     /// <summary>
+    /// Temporary, opt-in directory for bounded gzip captures shared by CI tests and their instrumented processes.
+    /// </summary>
+    public const string CIVisibilityGzipDiagnosticDirectory = "DD_INTERNAL_CI_GZIP_DIAGNOSTIC_DIRECTORY";
+
+    /// <summary>
     /// Internal environment marker set when the current process observes at least one test skipped by Intelligent Test Runner while coverage backfill is active.
     /// </summary>
     public const string CIVisibilityItrCoverageBackfillActualSkip = "DD_CIVISIBILITY_ITR_COVERAGE_BACKFILL_ACTUAL_SKIP";

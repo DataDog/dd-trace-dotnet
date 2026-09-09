@@ -7,6 +7,7 @@ using System;
 using System.IO;
 using System.IO.Compression;
 using System.Net;
+using Datadog.Trace.Ci.Agent;
 using Datadog.Trace.HttpOverStreams;
 using HttpHeaders = System.Net.Http.Headers.HttpHeaders;
 
@@ -62,7 +63,7 @@ public class MockHttpRequest
 
         // yes this is a bit horrible, but without it we get weirdness in .NET FX/netcoreapp2.1
         // where the copy doesn't actually read to the end
-        using MemoryStream ms = bytes is not null ? new(bytes) : new();
+        using MemoryStream ms = bytes is not null ? new(bytes, 0, bytes.Length, writable: false, publiclyVisible: true) : new();
         if (bytes is null)
         {
             Body.CopyTo(ms);
@@ -83,21 +84,12 @@ public class MockHttpRequest
         }
         catch (InvalidDataException exception) when (decompressionFailureDirectory is not null)
         {
-            // Temporary MSTest diagnostic: retain the exact compressed body, before deserialization.
-            // Capture only framing headers, and preserve the original failure even if saving fails.
-            try
-            {
-                Directory.CreateDirectory(decompressionFailureDirectory);
-                var path = Path.Combine(decompressionFailureDirectory, Guid.NewGuid().ToString("N"));
-                File.WriteAllBytes(path + ".bin", ms.ToArray());
-                Headers.TryGetValue("Content-Length", out var contentLength);
-                Headers.TryGetValue("Transfer-Encoding", out var transferEncoding);
-                File.WriteAllText(path + ".txt", $"Path: {PathAndQuery}\nContent-Encoding: {encoding}\nContent-Length: {contentLength}\nTransfer-Encoding: {transferEncoding}\nReceived bytes: {ms.Length}\n{exception}");
-            }
-            catch (Exception captureException)
-            {
-                exception.Data["Payload capture failed"] = captureException.ToString();
-            }
+            // Match any framework's rejected request to the sender snapshot, without collecting credentials.
+            Headers.TryGetValue("Content-Length", out var contentLength);
+            Headers.TryGetValue("Transfer-Encoding", out var transferEncoding);
+            Headers.TryGetValue(GzipDiagnosticCapture.RequestHeader, out var requestId);
+            ms.TryGetBuffer(out var compressedBody);
+            GzipDiagnosticCapture.Save(decompressionFailureDirectory, compressedBody, $"Side: receiver\nRequest: {requestId}\nContent-Encoding: {encoding}\nContent-Length: {contentLength}\nTransfer-Encoding: {transferEncoding}\nReceived bytes: {ms.Length}\n{exception}");
 
             throw;
         }
