@@ -531,12 +531,6 @@ public class MsTestV2NativeRetriesTests : TestingFrameworkEvpTest
         SetEnvironmentVariable("MSTEST_RETRY_HISTORY_FILE", historyFile);
         var tests = new List<MockCIVisibilityTest>();
         using var agent = EnvironmentHelper.GetMockAgent();
-        if (UseMtp && name == "CustomPolicyContinuesAfterPassing")
-        {
-            // Azure uploads this directory even when the test fails. Keep gzip enabled to capture the real error.
-            agent.DecompressionFailureDirectory = Path.Combine(LogDirectory, "gzip-failures");
-        }
-
         agent.EventPlatformProxyPayloadReceived += (_, e) =>
         {
             if (e.Value.PathAndQuery.EndsWith("api/v2/libraries/tests/services/setting"))
