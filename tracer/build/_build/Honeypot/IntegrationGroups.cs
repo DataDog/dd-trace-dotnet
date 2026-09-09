@@ -89,6 +89,7 @@ namespace Honeypot
             NugetPackages.Add("log4net", new [] { "log4net" });
             NugetPackages.Add("Microsoft.Azure.Functions.Worker.Core", new string[] { "Microsoft.Azure.Functions.Worker.Core" });
             NugetPackages.Add("Microsoft.Azure.Functions.Worker", new string[] { "Microsoft.Azure.Functions.Worker" });
+            NugetPackages.Add("Microsoft.Azure.Functions.Worker.Extensions.DurableTask", new string[] { "Microsoft.Azure.Functions.Worker.Extensions.DurableTask" });
             NugetPackages.Add("Microsoft.Azure.WebJobs.Host", new [] { "Microsoft.Azure.WebJobs" });
             NugetPackages.Add("Microsoft.Azure.WebJobs.Script.Grpc", new string[] { });
             NugetPackages.Add("Microsoft.Azure.WebJobs.Script.WebHost", new string[] { });
