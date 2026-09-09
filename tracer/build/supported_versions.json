@@ -27,7 +27,7 @@
     "integrationName": "AdoNet",
     "assemblyName": "System.Data.Common",
     "minAssemblyVersionInclusive": "4.0.0",
-    "maxAssemblyVersionInclusive": "10.65535.65535",
+    "maxAssemblyVersionInclusive": "11.65535.65535",
     "packages": [
       {
         "name": "System.Data.Common",
@@ -75,15 +75,15 @@
     "integrationName": "AspNetCore",
     "assemblyName": "Microsoft.AspNetCore.Authentication.Abstractions",
     "minAssemblyVersionInclusive": "2.0.0",
-    "maxAssemblyVersionInclusive": "10.65535.65535",
+    "maxAssemblyVersionInclusive": "11.65535.65535",
     "packages": [
       {
         "name": "Microsoft.AspNetCore.Authentication.Abstractions",
         "minVersionAvailableInclusive": "2.0.0",
         "minVersionSupportedInclusive": "2.0.0",
         "minVersionTestedInclusive": null,
-        "maxVersionSupportedInclusive": "2.3.12",
-        "maxVersionAvailableInclusive": "2.3.12",
+        "maxVersionSupportedInclusive": "2.3.13",
+        "maxVersionAvailableInclusive": "2.3.13",
         "maxVersionTestedInclusive": null
       }
     ]
@@ -92,22 +92,22 @@
     "integrationName": "AspNetCore",
     "assemblyName": "Microsoft.AspNetCore.Http",
     "minAssemblyVersionInclusive": "2.0.0",
-    "maxAssemblyVersionInclusive": "10.65535.65535",
+    "maxAssemblyVersionInclusive": "11.65535.65535",
     "packages": []
   },
   {
     "integrationName": "AspNetCore",
     "assemblyName": "Microsoft.AspNetCore.Http.Abstractions",
     "minAssemblyVersionInclusive": "2.2.0",
-    "maxAssemblyVersionInclusive": "10.65535.65535",
+    "maxAssemblyVersionInclusive": "11.65535.65535",
     "packages": [
       {
         "name": "Microsoft.AspNetCore.Http.Abstractions",
         "minVersionAvailableInclusive": "1.0.0",
         "minVersionSupportedInclusive": "2.2.0",
         "minVersionTestedInclusive": null,
-        "maxVersionSupportedInclusive": "2.3.12",
-        "maxVersionAvailableInclusive": "2.3.12",
+        "maxVersionSupportedInclusive": "2.3.13",
+        "maxVersionAvailableInclusive": "2.3.13",
         "maxVersionTestedInclusive": null
       }
     ]
@@ -116,15 +116,15 @@
     "integrationName": "AspNetCore",
     "assemblyName": "Microsoft.AspNetCore.Identity",
     "minAssemblyVersionInclusive": "2.0.0",
-    "maxAssemblyVersionInclusive": "10.65535.65535",
+    "maxAssemblyVersionInclusive": "11.65535.65535",
     "packages": [
       {
         "name": "Microsoft.AspNetCore.Identity",
         "minVersionAvailableInclusive": "1.0.0",
         "minVersionSupportedInclusive": "2.0.0",
         "minVersionTestedInclusive": null,
-        "maxVersionSupportedInclusive": "2.3.12",
-        "maxVersionAvailableInclusive": "2.3.12",
+        "maxVersionSupportedInclusive": "2.3.13",
+        "maxVersionAvailableInclusive": "2.3.13",
         "maxVersionTestedInclusive": null
       }
     ]
@@ -133,15 +133,15 @@
     "integrationName": "AspNetCore",
     "assemblyName": "Microsoft.AspNetCore.Mvc.Core",
     "minAssemblyVersionInclusive": "2.0.0",
-    "maxAssemblyVersionInclusive": "10.65535.65535",
+    "maxAssemblyVersionInclusive": "11.65535.65535",
     "packages": [
       {
         "name": "Microsoft.AspNetCore.Mvc.Core",
         "minVersionAvailableInclusive": "1.0.0",
         "minVersionSupportedInclusive": "2.0.0",
         "minVersionTestedInclusive": null,
-        "maxVersionSupportedInclusive": "2.3.12",
-        "maxVersionAvailableInclusive": "2.3.12",
+        "maxVersionSupportedInclusive": "2.3.13",
+        "maxVersionAvailableInclusive": "2.3.13",
         "maxVersionTestedInclusive": null
       }
     ]
@@ -150,7 +150,7 @@
     "integrationName": "AspNetCore",
     "assemblyName": "Microsoft.AspNetCore.Server.IIS",
     "minAssemblyVersionInclusive": "2.0.0",
-    "maxAssemblyVersionInclusive": "10.65535.65535",
+    "maxAssemblyVersionInclusive": "11.65535.65535",
     "packages": [
       {
         "name": "Microsoft.AspNetCore.Server.IIS",
@@ -167,15 +167,15 @@
     "integrationName": "AspNetCore",
     "assemblyName": "Microsoft.AspNetCore.Server.Kestrel.Core",
     "minAssemblyVersionInclusive": "2.0.0",
-    "maxAssemblyVersionInclusive": "10.65535.65535",
+    "maxAssemblyVersionInclusive": "11.65535.65535",
     "packages": [
       {
         "name": "Microsoft.AspNetCore.Server.Kestrel.Core",
         "minVersionAvailableInclusive": "2.0.0",
         "minVersionSupportedInclusive": "2.0.0",
         "minVersionTestedInclusive": null,
-        "maxVersionSupportedInclusive": "2.3.12",
-        "maxVersionAvailableInclusive": "2.3.12",
+        "maxVersionSupportedInclusive": "2.3.13",
+        "maxVersionAvailableInclusive": "2.3.13",
         "maxVersionTestedInclusive": null
       }
     ]
@@ -184,15 +184,15 @@
     "integrationName": "AspNetCore",
     "assemblyName": "Microsoft.AspNetCore.Session",
     "minAssemblyVersionInclusive": "2.0.0",
-    "maxAssemblyVersionInclusive": "10.65535.65535",
+    "maxAssemblyVersionInclusive": "11.65535.65535",
     "packages": [
       {
         "name": "Microsoft.AspNetCore.Session",
         "minVersionAvailableInclusive": "1.0.0",
         "minVersionSupportedInclusive": "2.0.0",
         "minVersionTestedInclusive": null,
-        "maxVersionSupportedInclusive": "2.3.12",
-        "maxVersionAvailableInclusive": "2.3.12",
+        "maxVersionSupportedInclusive": "2.3.13",
+        "maxVersionAvailableInclusive": "2.3.13",
         "maxVersionTestedInclusive": null
       }
     ]
@@ -201,15 +201,15 @@
     "integrationName": "AspNetCore",
     "assemblyName": "Microsoft.AspNetCore.StaticFiles",
     "minAssemblyVersionInclusive": "2.0.0",
-    "maxAssemblyVersionInclusive": "10.65535.65535",
+    "maxAssemblyVersionInclusive": "11.65535.65535",
     "packages": [
       {
         "name": "Microsoft.AspNetCore.StaticFiles",
         "minVersionAvailableInclusive": "1.0.0",
         "minVersionSupportedInclusive": "2.0.0",
         "minVersionTestedInclusive": null,
-        "maxVersionSupportedInclusive": "2.3.12",
-        "maxVersionAvailableInclusive": "2.3.12",
+        "maxVersionSupportedInclusive": "2.3.13",
+        "maxVersionAvailableInclusive": "2.3.13",
         "maxVersionTestedInclusive": null
       }
     ]
@@ -218,15 +218,15 @@
     "integrationName": "AspNetCore",
     "assemblyName": "Microsoft.Extensions.Identity.Core",
     "minAssemblyVersionInclusive": "2.0.0",
-    "maxAssemblyVersionInclusive": "10.65535.65535",
+    "maxAssemblyVersionInclusive": "11.65535.65535",
     "packages": [
       {
         "name": "Microsoft.Extensions.Identity.Core",
         "minVersionAvailableInclusive": "2.0.0",
         "minVersionSupportedInclusive": "2.0.0",
         "minVersionTestedInclusive": null,
-        "maxVersionSupportedInclusive": "10.0.11",
-        "maxVersionAvailableInclusive": "10.0.11",
+        "maxVersionSupportedInclusive": "10.0.12",
+        "maxVersionAvailableInclusive": "10.0.12",
         "maxVersionTestedInclusive": null
       }
     ]
@@ -334,9 +334,9 @@
         "minVersionAvailableInclusive": "3.1.0",
         "minVersionSupportedInclusive": "3.3.0",
         "minVersionTestedInclusive": "3.3.113.2",
-        "maxVersionSupportedInclusive": "4.0.102.5",
-        "maxVersionAvailableInclusive": "4.0.102.5",
-        "maxVersionTestedInclusive": "4.0.102.5"
+        "maxVersionSupportedInclusive": "4.0.103",
+        "maxVersionAvailableInclusive": "4.0.103",
+        "maxVersionTestedInclusive": "4.0.103"
       }
     ]
   },
@@ -501,9 +501,9 @@
         "minVersionAvailableInclusive": "3.0.0",
         "minVersionSupportedInclusive": "3.6.0",
         "minVersionTestedInclusive": "3.6.0",
-        "maxVersionSupportedInclusive": "3.62.1",
-        "maxVersionAvailableInclusive": "3.62.1",
-        "maxVersionTestedInclusive": "3.62.1"
+        "maxVersionSupportedInclusive": "3.63.0",
+        "maxVersionAvailableInclusive": "3.63.0",
+        "maxVersionTestedInclusive": "3.63.0"
       }
     ]
   },
@@ -730,7 +730,7 @@
     "integrationName": "HashAlgorithm",
     "assemblyName": "System.Security.Cryptography",
     "minAssemblyVersionInclusive": "7.0.0",
-    "maxAssemblyVersionInclusive": "10.65535.65535",
+    "maxAssemblyVersionInclusive": "11.65535.65535",
     "packages": []
   },
   {
@@ -795,7 +795,7 @@
     "integrationName": "HttpMessageHandler",
     "assemblyName": "System.Net.Http",
     "minAssemblyVersionInclusive": "4.0.0",
-    "maxAssemblyVersionInclusive": "10.65535.65535",
+    "maxAssemblyVersionInclusive": "11.65535.65535",
     "packages": [
       {
         "name": "System.Net.Http",
@@ -812,15 +812,15 @@
     "integrationName": "HttpMessageHandler",
     "assemblyName": "System.Net.Http.WinHttpHandler",
     "minAssemblyVersionInclusive": "4.0.0",
-    "maxAssemblyVersionInclusive": "10.65535.65535",
+    "maxAssemblyVersionInclusive": "11.65535.65535",
     "packages": [
       {
         "name": "System.Net.Http.WinHttpHandler",
         "minVersionAvailableInclusive": "4.0.0",
         "minVersionSupportedInclusive": "4.0.0",
         "minVersionTestedInclusive": null,
-        "maxVersionSupportedInclusive": "10.0.11",
-        "maxVersionAvailableInclusive": "10.0.11",
+        "maxVersionSupportedInclusive": "10.0.12",
+        "maxVersionAvailableInclusive": "10.0.12",
         "maxVersionTestedInclusive": null
       }
     ]
@@ -863,15 +863,15 @@
     "integrationName": "ILogger",
     "assemblyName": "Microsoft.Extensions.Logging",
     "minAssemblyVersionInclusive": "2.0.0",
-    "maxAssemblyVersionInclusive": "10.65535.65535",
+    "maxAssemblyVersionInclusive": "11.65535.65535",
     "packages": [
       {
         "name": "Microsoft.Extensions.Logging",
         "minVersionAvailableInclusive": "1.0.0",
         "minVersionSupportedInclusive": "2.0.0",
         "minVersionTestedInclusive": null,
-        "maxVersionSupportedInclusive": "10.0.11",
-        "maxVersionAvailableInclusive": "10.0.11",
+        "maxVersionSupportedInclusive": "10.0.12",
+        "maxVersionAvailableInclusive": "10.0.12",
         "maxVersionTestedInclusive": null
       }
     ]
@@ -880,15 +880,15 @@
     "integrationName": "ILogger",
     "assemblyName": "Microsoft.Extensions.Logging.Abstractions",
     "minAssemblyVersionInclusive": "2.0.0",
-    "maxAssemblyVersionInclusive": "10.65535.65535",
+    "maxAssemblyVersionInclusive": "11.65535.65535",
     "packages": [
       {
         "name": "Microsoft.Extensions.Logging.Abstractions",
         "minVersionAvailableInclusive": "1.0.0",
         "minVersionSupportedInclusive": "2.0.0",
         "minVersionTestedInclusive": null,
-        "maxVersionSupportedInclusive": "10.0.11",
-        "maxVersionAvailableInclusive": "10.0.11",
+        "maxVersionSupportedInclusive": "10.0.12",
+        "maxVersionAvailableInclusive": "10.0.12",
         "maxVersionTestedInclusive": null
       }
     ]
@@ -897,7 +897,7 @@
     "integrationName": "ILogger",
     "assemblyName": "Microsoft.Extensions.Telemetry",
     "minAssemblyVersionInclusive": "8.0.0",
-    "maxAssemblyVersionInclusive": "10.65535.65535",
+    "maxAssemblyVersionInclusive": "11.65535.65535",
     "packages": [
       {
         "name": "Microsoft.Extensions.Telemetry",
@@ -1240,8 +1240,8 @@
         "minVersionAvailableInclusive": "12.1.21",
         "minVersionSupportedInclusive": "12.1.21",
         "minVersionTestedInclusive": null,
-        "maxVersionSupportedInclusive": "23.26.300",
-        "maxVersionAvailableInclusive": "23.26.300",
+        "maxVersionSupportedInclusive": "23.26.301",
+        "maxVersionAvailableInclusive": "23.26.301",
         "maxVersionTestedInclusive": null
       }
     ]
@@ -1250,14 +1250,14 @@
     "integrationName": "Process",
     "assemblyName": "System",
     "minAssemblyVersionInclusive": "1.0.0",
-    "maxAssemblyVersionInclusive": "10.65535.65535",
+    "maxAssemblyVersionInclusive": "11.65535.65535",
     "packages": []
   },
   {
     "integrationName": "Process",
     "assemblyName": "System.Diagnostics.Process",
     "minAssemblyVersionInclusive": "1.0.0",
-    "maxAssemblyVersionInclusive": "10.65535.65535",
+    "maxAssemblyVersionInclusive": "11.65535.65535",
     "packages": []
   },
   {
@@ -1336,9 +1336,9 @@
         "minVersionAvailableInclusive": "2.9.0",
         "minVersionSupportedInclusive": "4.0.2",
         "minVersionTestedInclusive": "4.5.14",
-        "maxVersionSupportedInclusive": "10.1.4",
-        "maxVersionAvailableInclusive": "10.1.4",
-        "maxVersionTestedInclusive": "10.1.4"
+        "maxVersionSupportedInclusive": "10.1.5",
+        "maxVersionAvailableInclusive": "10.1.5",
+        "maxVersionTestedInclusive": "10.1.5"
       }
     ]
   },
@@ -1380,16 +1380,16 @@
     "integrationName": "Sqlite",
     "assemblyName": "Microsoft.Data.Sqlite",
     "minAssemblyVersionInclusive": "2.0.0",
-    "maxAssemblyVersionInclusive": "10.65535.65535",
+    "maxAssemblyVersionInclusive": "11.65535.65535",
     "packages": [
       {
         "name": "Microsoft.Data.Sqlite",
         "minVersionAvailableInclusive": "1.0.0",
         "minVersionSupportedInclusive": "2.0.0",
         "minVersionTestedInclusive": "2.3.0",
-        "maxVersionSupportedInclusive": "10.0.11",
-        "maxVersionAvailableInclusive": "10.0.11",
-        "maxVersionTestedInclusive": "10.0.11"
+        "maxVersionSupportedInclusive": "10.0.12",
+        "maxVersionAvailableInclusive": "10.0.12",
+        "maxVersionTestedInclusive": "10.0.12"
       }
     ]
   },
@@ -1455,15 +1455,15 @@
     "integrationName": "StackTraceLeak",
     "assemblyName": "Microsoft.AspNetCore.Diagnostics",
     "minAssemblyVersionInclusive": "2.0.0",
-    "maxAssemblyVersionInclusive": "10.65535.65535",
+    "maxAssemblyVersionInclusive": "11.65535.65535",
     "packages": [
       {
         "name": "Microsoft.AspNetCore.Diagnostics",
         "minVersionAvailableInclusive": "1.0.0",
         "minVersionSupportedInclusive": "2.0.0",
         "minVersionTestedInclusive": null,
-        "maxVersionSupportedInclusive": "2.3.12",
-        "maxVersionAvailableInclusive": "2.3.12",
+        "maxVersionSupportedInclusive": "2.3.13",
+        "maxVersionAvailableInclusive": "2.3.13",
         "maxVersionTestedInclusive": null
       }
     ]
@@ -1486,7 +1486,7 @@
     "integrationName": "WebRequest",
     "assemblyName": "System.Net.Requests",
     "minAssemblyVersionInclusive": "4.0.0",
-    "maxAssemblyVersionInclusive": "10.65535.65535",
+    "maxAssemblyVersionInclusive": "11.65535.65535",
     "packages": [
       {
         "name": "System.Net.Requests",
@@ -1503,15 +1503,15 @@
     "integrationName": "Xss",
     "assemblyName": "Microsoft.AspNetCore.Html.Abstractions",
     "minAssemblyVersionInclusive": "1.0.0",
-    "maxAssemblyVersionInclusive": "10.65535.65535",
+    "maxAssemblyVersionInclusive": "11.65535.65535",
     "packages": [
       {
         "name": "Microsoft.AspNetCore.Html.Abstractions",
         "minVersionAvailableInclusive": "1.0.0",
         "minVersionSupportedInclusive": "1.0.0",
         "minVersionTestedInclusive": null,
-        "maxVersionSupportedInclusive": "2.3.12",
-        "maxVersionAvailableInclusive": "2.3.12",
+        "maxVersionSupportedInclusive": "2.3.13",
+        "maxVersionAvailableInclusive": "2.3.13",
         "maxVersionTestedInclusive": null
       }
     ]
