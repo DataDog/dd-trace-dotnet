@@ -20,6 +20,7 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI;
 
+[Trait("Area", "CIVisibility")]
 [Trait("Category", "EndToEnd")]
 [Trait("Category", "TestIntegrations")]
 [Trait("RunOnWindows", "True")]
@@ -27,17 +28,24 @@ public class MsTestV2CleanupTests(ITestOutputHelper output) : TestingFrameworkEv
 {
     public static IEnumerable<object[]> CleanupVersions()
     {
+        // Match the default sample: MSTest 4 on .NET 8+ / Framework, MSTest 3 on older .NET.
+#if NET8_0_OR_GREATER || NETFRAMEWORK
+        var defaultVersion = new Version(4, 0, 1);
+#else
+        var defaultVersion = new Version(3, 11, 1);
+#endif
         foreach (var row in PackageVersions.MSTest)
         {
             var packageVersion = (string)row[0];
-            // MSTest 4 removed EndOfAssembly; the unversioned sample also uses MSTest 4.
-            if (packageVersion.Length > 0 && new Version(packageVersion) < new Version(4, 0))
+            var version = packageVersion.Length == 0 ? defaultVersion : new Version(packageVersion);
+            // MSTest 4 removed EndOfAssembly.
+            if (version < new Version(4, 0))
             {
                 yield return [packageVersion, "EndOfAssembly"];
             }
 
             // Earlier adapters only support cleanup at the end of the assembly.
-            if (packageVersion.Length == 0 || new Version(packageVersion) >= new Version(2, 2, 8))
+            if (version >= new Version(2, 2, 8))
             {
                 yield return [packageVersion, "EndOfClass"];
             }
@@ -88,6 +96,8 @@ public class MsTestV2CleanupTests(ITestOutputHelper output) : TestingFrameworkEv
             packageVersion: packageVersion,
             expectedExitCode: warningOnly ? 0 : 1);
 
+        // An aborted testhost can also return 1; report that startup failure before checking emitted events.
+        result.StandardError.Should().NotContain("Test Run Aborted.");
         suites.Should().ContainSingle();
         suites.Single()["meta"].Value<string>(TestTags.Status).Should().Be(TestTags.StatusFail);
         suites.Single()["meta"].Value<string>(Tags.ErrorMsg).Should().Contain("MSTest class cleanup failed.");
