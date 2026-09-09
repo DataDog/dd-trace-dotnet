@@ -71,7 +71,7 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
                         new StackFrame("|lm:Samples.ExceptionGenerator |ns:Samples.ExceptionGenerator |ct:ParallelExceptionsScenario |cg: |fn:ThrowExceptions |fg: |sg:(object state)"));
                 }
             }
-            else if (framework == "net10.0")
+            else if (framework == "net10.0" || framework == "net11.0")
             {
                 if (IntPtr.Size == 4)
                 {
@@ -208,7 +208,7 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
                         new StackFrame("|lm:Samples.ExceptionGenerator |ns:Samples.ExceptionGenerator |ct:ParallelExceptionsScenario |cg: |fn:ThrowExceptions |fg: |sg:(object state)"));
                 }
             }
-            else if (framework == "net10.0")
+            else if (framework == "net10.0" || framework == "net11.0")
             {
                 if (IntPtr.Size == 4)
                 {
