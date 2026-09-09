@@ -19,7 +19,6 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent.DiscoveryService;
-using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.HttpOverStreams;
 using Datadog.Trace.Telemetry;
@@ -98,11 +97,6 @@ namespace Datadog.Trace.TestHelpers
         public ConcurrentStack<object> Telemetry { get; } = new();
 
         public ITestOutputHelper Output { get; set; }
-
-        /// <summary>
-        /// Gets or sets the opt-in directory shared with instrumented processes for rejected gzip bodies.
-        /// </summary>
-        public string DecompressionFailureDirectory { get; set; } = Environment.GetEnvironmentVariable(ConfigurationKeys.CIVisibilityGzipDiagnosticDirectory);
 
         public AgentConfiguration Configuration { get; set; }
 
@@ -919,7 +913,7 @@ namespace Datadog.Trace.TestHelpers
             {
                 try
                 {
-                    var body = request.ReadStreamBody(DecompressionFailureDirectory);
+                    var body = request.ReadStreamBody();
                     var headerCollection = new NameValueCollection();
                     foreach (var header in request.Headers)
                     {
