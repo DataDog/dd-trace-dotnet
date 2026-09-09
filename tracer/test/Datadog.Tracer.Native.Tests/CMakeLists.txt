@@ -46,7 +46,7 @@ add_executable(${TEST_EXECUTABLE_NAME}
     il_rewriter_eh_sort_test.cpp
     dataflow_test.cpp
     string_test.cpp
-    synchronized_test.cpp
+    cor_profiler_locking_test.cpp
 	util_test.cpp
     test_link_stubs.cpp
 )
