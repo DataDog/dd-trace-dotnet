@@ -859,9 +859,15 @@ DebuggerRejitPreprocessor* DebuggerProbesInstrumentationRequester::GetPreprocess
     return m_debugger_rejit_preprocessor.get();
 }
 
-void DebuggerProbesInstrumentationRequester::RequestRejitForLoadedModule(const ModuleID moduleId)
+std::vector<std::shared_ptr<MethodProbeDefinition>>
+DebuggerProbesInstrumentationRequester::GetMethodProbesSnapshot()
 {
     std::vector<std::shared_ptr<MethodProbeDefinition>> methodProbes;
+
+    if (!is_debugger_or_exception_replay_hot_standby)
+    {
+        return methodProbes;
+    }
 
     std::lock_guard lock(m_probes_mutex);
 
@@ -874,6 +880,12 @@ void DebuggerProbesInstrumentationRequester::RequestRejitForLoadedModule(const M
         }
     }
 
+    return methodProbes;
+}
+
+void DebuggerProbesInstrumentationRequester::RequestRejitForLoadedModule(
+    const ModuleID moduleId, const std::vector<std::shared_ptr<MethodProbeDefinition>>& methodProbes)
+{
     if (methodProbes.empty())
     {
         Logger::Debug("[Debugger] There are no Method Probes");
@@ -1039,7 +1051,8 @@ void DebuggerProbesInstrumentationRequester::ModuleLoadFinished_AddMetadataToMod
     }
 }
 
-HRESULT STDMETHODCALLTYPE DebuggerProbesInstrumentationRequester::ModuleLoadFinished(const ModuleID moduleId)
+HRESULT STDMETHODCALLTYPE DebuggerProbesInstrumentationRequester::ModuleLoadFinished(
+    const ModuleID moduleId, const std::vector<std::shared_ptr<MethodProbeDefinition>>& methodProbes)
 {
     if (!is_debugger_or_exception_replay_hot_standby)
     {
@@ -1049,7 +1062,7 @@ HRESULT STDMETHODCALLTYPE DebuggerProbesInstrumentationRequester::ModuleLoadFini
     // IMPORTANT: The call to `ModuleLoadFinished_AddMetadataToModule` must be in `ModuleLoadFinished` as mutating the
     // layout of types is only feasible prior the type is loaded.
     ModuleLoadFinished_AddMetadataToModule(moduleId);
-    RequestRejitForLoadedModule(moduleId);
+    RequestRejitForLoadedModule(moduleId, methodProbes);
     return S_OK;
 }
 
