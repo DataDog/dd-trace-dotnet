@@ -455,10 +455,14 @@ namespace Datadog.Trace
             }
             else if (mechanism is Sampling.SamplingMechanism.Manual or Sampling.SamplingMechanism.Asm)
             {
-                _otelTraceState ??= new(headerString: null);
-                _otelTraceState.IsModified = true;
-                _otelTraceState.RandomValue = _otelTraceState.LocallyGeneratedOtelRandomValue ? null : OtelTraceStateHelpers.ExtractRv(_otelTraceState.CachedHeaderString);
-                _otelTraceState.Threshold = null;
+                // Only rewrite an "ot=" state that already exists
+                // If none exists, then there's no need to allocate a new object only to set its properties to null
+                if (_otelTraceState is { } otelTraceState)
+                {
+                    otelTraceState.IsModified = true;
+                    otelTraceState.RandomValue = otelTraceState.LocallyGeneratedOtelRandomValue ? null : OtelTraceStateHelpers.ExtractRv(otelTraceState.CachedHeaderString);
+                    otelTraceState.Threshold = null;
+                }
             }
 
             if (notifyDistributedTracer)

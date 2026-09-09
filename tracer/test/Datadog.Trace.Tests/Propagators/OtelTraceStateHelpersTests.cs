@@ -52,7 +52,14 @@ namespace Datadog.Trace.Tests.Propagators
         public void Parse_RemovesOnlyMalformedRvAndTh(string? raw, ulong? expectedRv, ulong? expectedTh)
         {
             var otelTraceState = OtelTraceState.Parse(raw);
-            otelTraceState.RandomValue.Should().Be(expectedRv);
+
+            if (string.IsNullOrEmpty(raw))
+            {
+                otelTraceState.Should().BeNull();
+                return;
+            }
+
+            otelTraceState!.RandomValue.Should().Be(expectedRv);
             otelTraceState.Threshold.Should().Be(expectedTh);
         }
 
