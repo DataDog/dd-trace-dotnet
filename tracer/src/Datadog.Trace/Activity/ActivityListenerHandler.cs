@@ -5,6 +5,7 @@
 
 #nullable enable
 
+using System;
 using System.Collections.Concurrent;
 using Datadog.Trace.Activity.DuckTypes;
 using Datadog.Trace.Activity.Handlers;
@@ -89,6 +90,16 @@ namespace Datadog.Trace.Activity
             var sName = sourceName ?? "(null)";
             if (HandlerBySource.TryGetValue(sName, out var handler))
             {
+                // Activities created through DiagnosticListener have an empty ActivitySource name. Give specialized
+                // integration handlers a chance to claim them by operation name before using the default handler.
+                if (StringUtil.IsNullOrEmpty(sourceName)
+                 && handler is DefaultActivityHandler
+                 && activity.OperationName is { } operationName
+                 && GetIntegrationHandler(operationName) is { } integrationHandler)
+                {
+                    handler = integrationHandler;
+                }
+
                 handler.ActivityStarted(sName, activity);
             }
             else
@@ -109,6 +120,26 @@ namespace Datadog.Trace.Activity
             {
                 Log.Warning("ActivityListenerHandler: There's no handler to process the ActivityStopped event.  [Source={SourceName}]", sName);
             }
+        }
+
+        private static IActivityHandler? GetIntegrationHandler(string operationName)
+        {
+            foreach (var handler in ActivityHandlersRegister.Handlers)
+            {
+                if (handler is DefaultActivityHandler)
+                {
+                    return null;
+                }
+
+                if (handler is not DisableActivityHandler
+                 && handler is not IgnoreActivityHandler
+                 && handler.ShouldListenTo(operationName, version: null))
+                {
+                    return handler;
+                }
+            }
+
+            return null;
         }
     }
 }

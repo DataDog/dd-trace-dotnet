@@ -51,7 +51,6 @@ internal sealed class QuartzDiagnosticObserver : DiagnosticObserver
                 if (activity?.Instance is not null)
                 {
                     QuartzCommon.EnhanceActivityMetadata(activity);
-                    Tracer.Instance.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId.Quartz);
                 }
 
                 break;

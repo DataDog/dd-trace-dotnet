@@ -90,6 +90,8 @@ public class QuartzTests : TracingIntegrationTest
                               .UseFileName(filename);
 
             await telemetry.AssertIntegrationEnabledAsync(IntegrationId.Quartz);
+            (await telemetry.GetMetricDataPointsAsync("spans_created", "integration_name:quartz")).Sum(x => x.Value).Should().Be(expectedSpanCount);
+            (await telemetry.GetMetricDataPointsAsync("spans_created", "integration_name:otel")).Should().BeEmpty();
         }
     }
 
