@@ -1058,7 +1058,14 @@ namespace Datadog.Trace.DuckTyping
                     }
 
                     // We store the value
-                    il.Emit(OpCodes.Stind_Ref);
+                    if (proxyArgumentType.IsGenericParameter)
+                    {
+                        il.Emit(OpCodes.Stobj, proxyArgumentType);
+                    }
+                    else
+                    {
+                        il.Emit(OpCodes.Stind_Ref);
+                    }
                 }
 
                 return null;
