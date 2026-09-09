@@ -1772,13 +1772,13 @@ stages:
           if ($testExitCode -ne 0) { exit $testExitCode }
         }
       displayName: Diagnose MSTest gzip failure (Windows x86)
-      condition: and(succeeded(), eq(variables['targetPlatform'], 'x86'), eq(variables['framework'], 'net8.0'), eq(variables['area'], 'Tracer'))
+      condition: and(succeeded(), eq(variables['targetPlatform'], 'x86'), eq(variables['framework'], 'net8.0'), eq(variables['area'], 'CIVisibility'))
       timeoutInMinutes: 10
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
         enable_crash_dumps: true
         Filter: FullyQualifiedName~MsTestV2NativeRetriesMtpTests.CustomRetryPolicyCanContinueAfterPassing
-        Area: Tracer
+        Area: CIVisibility
 
     - script: tracer\build.cmd RunIntegrationTests RunWindowsRegressionTests -Framework $(framework) --code-coverage-enabled $(CodeCoverageEnabled)
       displayName: Run integration tests (Tracer)
