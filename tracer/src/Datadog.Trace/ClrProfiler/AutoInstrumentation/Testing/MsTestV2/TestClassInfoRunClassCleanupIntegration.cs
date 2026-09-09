@@ -7,6 +7,7 @@
 using System;
 using System.ComponentModel;
 using Datadog.Trace.Ci;
+using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.ClrProfiler.CallTarget;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2;
@@ -69,16 +70,20 @@ public static class TestClassInfoRunClassCleanupIntegration
     /// <returns>A response value, in an async scenario will be T of Task of T</returns>
     internal static CallTargetReturn<TReturn?> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn? returnValue, Exception? exception, in CallTargetState state)
     {
-        if (state.State is TestSuite suite)
+        if (state.State is TestSuite { IsClosed: false } suite)
         {
+            // ExecuteClassCleanup in MSTest 3.8 and 3.10 returns the failure instead of throwing it.
+            exception ??= returnValue as Exception;
             if (exception is not null)
             {
                 suite.SetErrorInfo(exception);
+                suite.Tags.Status = TestTags.StatusFail;
             }
 
             if (returnValue is string { } strWarning)
             {
                 suite.SetErrorInfo("SuiteCleanUp", strWarning, null);
+                suite.Tags.Status = TestTags.StatusFail;
             }
 
             suite.Close();
@@ -86,4 +91,30 @@ public static class TestClassInfoRunClassCleanupIntegration
 
         return new CallTargetReturn<TReturn?>(returnValue);
     }
+}
+
+/// <summary>
+/// MSTest 2.0–2.2.7 has no cleanup-behavior argument. It reports failures as warning strings
+/// at the end of the assembly, outside RunSingleTest, so it needs its own method signature.
+/// </summary>
+[InstrumentMethod(
+    AssemblyName = "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter",
+    TypeName = "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestClassInfo",
+    MethodName = "RunClassCleanup",
+    ReturnTypeName = ClrNames.String,
+    MinimumVersion = "14.0.0",
+    MaximumVersion = "14.*.*",
+    IntegrationName = MsTestIntegration.IntegrationName)]
+[Browsable(false)]
+[EditorBrowsable(EditorBrowsableState.Never)]
+#pragma warning disable SA1402
+public static class TestClassInfoRunClassCleanupIntegrationV2
+#pragma warning restore SA1402
+{
+    internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance)
+        where TTarget : ITestClassInfo
+        => TestClassInfoExecuteClassCleanupIntegration.OnMethodBegin(instance);
+
+    internal static CallTargetReturn<TReturn?> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn? returnValue, Exception? exception, in CallTargetState state)
+        => TestClassInfoRunClassCleanupIntegration.OnMethodEnd(instance, returnValue, exception, state);
 }
