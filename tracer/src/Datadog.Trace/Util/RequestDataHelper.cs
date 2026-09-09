@@ -175,6 +175,11 @@ internal static class RequestDataHelper
 
     /// <summary>
     /// Gets the Uri from the <paramref name="request"/>.
+    /// <para>
+    /// Note that this will <em>CACHE</em> the <c>Uri</c> of the underlying <see cref="HttpRequest"/>
+    /// for all future callers (example the customer's application) if the <paramref name="request"/>
+    /// is an <see cref="HttpRequestWrapper"/> and we are the first to call <see cref="HttpRequest.Url"/>.
+    /// </para>
     /// </summary>
     /// <param name="request">The <see cref="HttpRequestBase"/> to get the <c>Uri</c> of.</param>
     /// <returns>The <c>Uri</c>; otherwise <see langword="null"/>.</returns>
