@@ -1530,52 +1530,21 @@ namespace Datadog.Trace.DuckTyping
                     return;
                 }
 
-#if !NET6_0_OR_GREATER
+#if NET6_0_OR_GREATER
+                exceptionInfo.Throw();
+#else
                 // WORKAROUND: https://github.com/dotnet/runtime/issues/45929
                 // Fixed in the runtime by https://github.com/dotnet/runtime/pull/46636.
                 //
                 // Failed proxy creations are cached, so every caller for the same proxy/target type pair receives
                 // the same ExceptionDispatchInfo and therefore the same Exception instance. Windows CoreCLR
-                // versions before .NET 6 have a confirmed race when that instance is rethrown concurrently.
-                // ExceptionDispatchInfo.Throw() restores mutable stack-trace and Watson-bucket fields on the
-                // Exception while another thread may be reading those fields to construct a reflection exception
-                // wrapper. The old runtime checks that the Watson-bucket reference is non-null, reads the field
-                // again later, and can dereference null after the concurrent restore. The result is an access
-                // violation followed by a fatal 0x80131506 internal CLR error; managed code cannot catch it.
-                //
-                // Do not serialize ExceptionDispatchInfo.Throw() with a monitor. FirstChanceException callbacks
-                // and exception filters run synchronously before the throw unwinds through the monitor's finally
-                // block. If such customer code waits for another thread that reaches this cached failure, that
-                // thread blocks on the monitor and the process deadlocks. The non-generic API would require an
-                // even wider monitor around DynamicInvoke because Reflection constructs TargetInvocationException
-                // from the shared inner exception before returning control to this code.
+                // versions before .NET 6 have a confirmed race when that instance is rethrown concurrently,
+                // which can cause a crash.
                 //
                 // Instead, make a shallow copy of the cached DuckTypeException and capture that copy immediately
-                // before every throw. MemberwiseClone preserves the exact internal exception subtype, message,
-                // inner exception, HResult, Data, and captured diagnostic state, while giving the runtime a
-                // distinct Exception object with independent mutable field slots. Concurrent throws can therefore
-                // no longer restore the same object's stack-trace or Watson-bucket fields. DynamicInvoke also sees
-                // a distinct inner exception for each call, so construction of TargetInvocationException is safe
-                // without holding a lock while callbacks or filters execute.
-                //
-                // .NET Framework's Reference Source uses the same relevant managed sequence as the affected
-                // CoreCLR: it restores ExceptionDispatchInfo state under an internal lock, releases that lock,
-                // and only then throws the shared Exception through Reflection. Its native clr.dll Watson-bucket
-                // copy implementation is not public, so it cannot prove that .NET Framework is safe. Apply this
-                // process-safety workaround to .NET Framework too. See:
-                // https://github.com/microsoft/referencesource/blob/main/mscorlib/system/exception.cs
-                //
-                // This branch is compiled into the net461, netstandard2.0, and netcoreapp3.1 tracer assets. The
-                // net6.0 asset is excluded because .NET 6 is the first runtime line containing Microsoft's
-                // confirmed native fix. Proxy creation failures are exceptional, so the extra exception and
-                // ExceptionDispatchInfo allocations do not affect successful proxy creation or invocation.
+                // before every throw. MemberwiseClone preserves the exact internal details, so concurrent
+                // throws no longer cause a crash. Fixed in .NET 6+.
                 ExceptionDispatchInfo.Capture(((DuckTypeException)exceptionInfo.SourceException).CloneForThrow()).Throw();
-#else
-                // .NET 6 and later contain the runtime fix, so deliberately preserve the original concurrent
-                // behavior there. ConcurrentFailureTests exercises the same shared-exception scenario on these
-                // targets: the process must remain healthy and every caller must still receive the expected
-                // exception.
-                exceptionInfo.Throw();
 #endif
             }
         }
