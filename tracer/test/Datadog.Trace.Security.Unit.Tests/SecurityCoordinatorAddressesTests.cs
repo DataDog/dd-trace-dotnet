@@ -58,7 +58,9 @@ public class SecurityCoordinatorAddressesTests
         wafContext.Setup(x => x.Run(It.IsAny<IDictionary<string, object>>(), It.IsAny<ulong>()))
                   .Callback<IDictionary<string, object>, ulong>((args, _) => runs.Add(new Dictionary<string, object>(args)));
         var waf = new Mock<IWaf>();
-        waf.Setup(x => x.CreateContext()).Returns(wafContext.Object);
+        // Moq assigns the value the out argument held when the setup was recorded
+        var outcome = WafOutcome.Success;
+        waf.Setup(x => x.CreateContext(out outcome, It.IsAny<bool>())).Returns(wafContext.Object);
         waf.Setup(x => x.GetKnownAddresses()).Returns([]);
 
         using var security = new AppSec.Security(waf: waf.Object);

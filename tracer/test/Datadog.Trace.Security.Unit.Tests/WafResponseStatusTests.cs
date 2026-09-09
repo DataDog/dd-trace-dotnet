@@ -24,7 +24,7 @@ public class WafResponseStatusTests : WafLibraryRequiredTest
     public void GivenAScannerRequest_WhenTheStatusIsSentOnlyAtResponseTime_ThenTheRuleMatches()
     {
         using var waf = CreateWaf().Waf;
-        using var context = waf.CreateContext();
+        using var context = waf.CreateContext(out _);
 
         context.Run(RequestArgs(status: null), TimeoutMicroSeconds).Should().NotBeNull();
 
@@ -35,7 +35,7 @@ public class WafResponseStatusTests : WafLibraryRequiredTest
     public void GivenAScannerRequest_WhenTheRequestPhaseFabricatesA200Status_ThenTheResponsePhaseStillMatches()
     {
         using var waf = CreateWaf().Waf;
-        using var context = waf.CreateContext();
+        using var context = waf.CreateContext(out _);
 
         // re-supplying a persistent address replaces it and re-marks it as new, so 200 does not latch
         context.Run(RequestArgs(status: "200"), TimeoutMicroSeconds).Should().NotBeNull();
@@ -47,7 +47,7 @@ public class WafResponseStatusTests : WafLibraryRequiredTest
     public void GivenAScannerRequest_WhenTheStatusIsSentTwice_ThenTheRuleMatchesOnce()
     {
         using var waf = CreateWaf().Waf;
-        using var context = waf.CreateContext();
+        using var context = waf.CreateContext(out _);
 
         context.Run(RequestArgs(status: null), TimeoutMicroSeconds).Should().NotBeNull();
         MatchedRules(context.Run(new Dictionary<string, object> { { AddressesConstants.ResponseStatus, "404" } }, TimeoutMicroSeconds)).Should().Contain(ScannerRule);
@@ -59,7 +59,7 @@ public class WafResponseStatusTests : WafLibraryRequiredTest
     public void GivenAScannerRequest_WhenTheRealStatusIsNeverSent_ThenTheRuleNeverMatches()
     {
         using var waf = CreateWaf().Waf;
-        using var context = waf.CreateContext();
+        using var context = waf.CreateContext(out _);
 
         MatchedRules(context.Run(RequestArgs(status: "200"), TimeoutMicroSeconds)).Should().NotContain(ScannerRule);
     }

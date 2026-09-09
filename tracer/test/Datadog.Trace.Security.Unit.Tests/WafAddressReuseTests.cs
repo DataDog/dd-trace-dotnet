@@ -25,7 +25,7 @@ public class WafAddressReuseTests : WafLibraryRequiredTest
     public void GivenSchemaExtractionOnTheLastRun_WhenRequestAddressesAreNotResupplied_ThenSchemasAreStillProduced(bool resupplyRequestAddresses)
     {
         using var waf = CreateWaf().Waf;
-        using var context = waf.CreateContext();
+        using var context = waf.CreateContext(out _);
 
         context.Run(RequestArgs(), TimeoutMicroSeconds).Should().NotBeNull();
 
@@ -54,7 +54,7 @@ public class WafAddressReuseTests : WafLibraryRequiredTest
     public void GivenARequestWithoutCookies_WhenCookiesShowUpForTheLastRun_ThenOnlySendingThemFillsTheSessionFingerprint(bool sendLateCookies)
     {
         using var waf = CreateWaf().Waf;
-        using var context = waf.CreateContext();
+        using var context = waf.CreateContext(out _);
 
         var firstArgs = RequestArgs();
         firstArgs.Remove(AddressesConstants.RequestCookies);
