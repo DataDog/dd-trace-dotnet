@@ -11,7 +11,7 @@ using namespace std::chrono_literals;
 namespace trace
 {
 
-TEST(CorProfilerLockingTest, SnapshotsProbesBeforeAcquiringModuleLock)
+TEST(CorProfilerLockingTest, AcquiresModuleLockBeforeSnapshottingProbes)
 {
     Synchronized<std::vector<ModuleID>> moduleIds;
     std::promise<void> snapshotStarted;
@@ -26,10 +26,11 @@ TEST(CorProfilerLockingTest, SnapshotsProbesBeforeAcquiringModuleLock)
             });
         });
 
-        EXPECT_EQ(snapshotStartedFuture.wait_for(1s), std::future_status::ready);
+        EXPECT_EQ(snapshotStartedFuture.wait_for(100ms), std::future_status::timeout);
         EXPECT_EQ(moduleLoadFuture.wait_for(100ms), std::future_status::timeout);
     }
 
+    EXPECT_EQ(snapshotStartedFuture.wait_for(1s), std::future_status::ready);
     EXPECT_EQ(moduleLoadFuture.wait_for(1s), std::future_status::ready);
 }
 

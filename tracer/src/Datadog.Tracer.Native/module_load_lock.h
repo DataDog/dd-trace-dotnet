@@ -2,8 +2,6 @@
 
 #include "Synchronized.hpp"
 
-#include <utility>
-
 namespace trace
 {
 
@@ -11,10 +9,10 @@ template <typename TModules>
 class ModuleLoadLock
 {
 public:
-    template <typename TBeforeLock>
-    ModuleLoadLock(Synchronized<TModules>& moduleIds, TBeforeLock&& beforeLock) :
-        _modules(Acquire(moduleIds, std::forward<TBeforeLock>(beforeLock)))
+    template <typename TAfterLock>
+    ModuleLoadLock(Synchronized<TModules>& moduleIds, TAfterLock&& afterLock) : _modules(moduleIds.Get())
     {
+        afterLock();
     }
 
     TModules& Modules()
@@ -23,13 +21,6 @@ public:
     }
 
 private:
-    template <typename TBeforeLock>
-    static typename Synchronized<TModules>::Scope Acquire(Synchronized<TModules>& moduleIds, TBeforeLock&& beforeLock)
-    {
-        std::forward<TBeforeLock>(beforeLock)();
-        return moduleIds.Get();
-    }
-
     typename Synchronized<TModules>::Scope _modules;
 };
 

@@ -545,8 +545,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id, HR
 
     std::vector<std::shared_ptr<debugger::MethodProbeDefinition>> methodProbes;
     ModuleLoadLock moduleLock(module_ids, [&]() {
-        // InstrumentProbes acquires m_probes_mutex before module_ids, so snapshot the probes before acquiring
-        // module_ids to preserve that lock order.
+        // InstrumentProbes uses the same module_ids -> m_probes_mutex lock order.
         if (debugger_instrumentation_requester != nullptr)
         {
             methodProbes = debugger_instrumentation_requester->GetMethodProbesSnapshot();
