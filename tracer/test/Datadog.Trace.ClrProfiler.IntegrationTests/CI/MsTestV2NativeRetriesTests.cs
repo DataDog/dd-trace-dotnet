@@ -51,6 +51,10 @@ public class MsTestV2NativeRetriesTests : TestingFrameworkEvpTest
         InjectSession(out _, out _, out _, out _, out _, out _, out _);
         SetEnvironmentVariable(ConfigurationKeys.CIVisibility.FlakyRetryEnabled, "0");
         SetEnvironmentVariable("TESTINGPLATFORM_TELEMETRY_OPTOUT", "1");
+        // Inspect only this run: another scenario can legitimately log a different lifecycle error.
+        var logDirectory = Path.Combine(LogDirectory, Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(logDirectory);
+        SetEnvironmentVariable(ConfigurationKeys.LogDirectory, logDirectory);
         var tests = new List<MockCIVisibilityTest>();
         var suites = new List<JObject>();
         using var agent = EnvironmentHelper.GetMockAgent();
@@ -83,6 +87,12 @@ public class MsTestV2NativeRetriesTests : TestingFrameworkEvpTest
         suites.Should().ContainSingle();
         suites.Single()["meta"].Value<string>(TestTags.Status).Should().Be(TestTags.StatusFail);
         suites.Single()["meta"].Value<string>(Tags.ErrorMsg).Should().Contain("Class cleanup failed after the retry.");
+        var logs = Directory.GetFiles(logDirectory, "dotnet-tracer-managed-*.log");
+        logs.Should().NotBeEmpty();
+        foreach (var log in logs)
+        {
+            File.ReadAllText(log).Should().NotContain("SetTag should not be called after the span was closed");
+        }
     }
 
     [Fact]

@@ -509,6 +509,7 @@ namespace Datadog.Trace.ClrProfiler
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2.TestClassInfoExecuteClassCleanupIntegrationV3_9"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2.TestClassInfoRunClassCleanupIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2.TestClassInfoRunClassCleanupIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2.TestClassInfoRunClassCleanupIntegrationV2"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2.TestClassInfoRunClassInitializeIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2.TestClassInfoRunClassInitializeIntegrationV3_9"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2.TestMethodRunnerExecuteIntegration"

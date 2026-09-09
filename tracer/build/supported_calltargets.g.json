@@ -10930,6 +10930,28 @@
     "IntegrationName": "MsTestV2",
     "AssemblyName": "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter",
     "TargetTypeName": "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestClassInfo",
+    "TargetMethodName": "RunClassCleanup",
+    "TargetReturnType": "System.String",
+    "TargetParameterTypes": [],
+    "MinimumVersion": {
+      "Item1": 14,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 14,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2.TestClassInfoRunClassCleanupIntegrationV2",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "MsTestV2",
+    "AssemblyName": "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter",
+    "TargetTypeName": "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestClassInfo",
     "TargetMethodName": "RunClassInitialize",
     "TargetReturnType": "System.Void",
     "TargetParameterTypes": [
