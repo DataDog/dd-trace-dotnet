@@ -7,7 +7,6 @@ using System;
 using System.IO;
 using System.IO.Compression;
 using System.Net;
-using Datadog.Trace.Ci.Agent;
 using Datadog.Trace.HttpOverStreams;
 using HttpHeaders = System.Net.Http.Headers.HttpHeaders;
 
@@ -47,7 +46,7 @@ public class MockHttpRequest
         };
     }
 
-    internal byte[] ReadStreamBody(string decompressionFailureDirectory = null)
+    internal byte[] ReadStreamBody()
     {
         var isGzip = Headers.TryGetValue("Content-Encoding", out var encoding) && encoding is "gzip";
 
@@ -63,7 +62,7 @@ public class MockHttpRequest
 
         // yes this is a bit horrible, but without it we get weirdness in .NET FX/netcoreapp2.1
         // where the copy doesn't actually read to the end
-        using MemoryStream ms = bytes is not null ? new(bytes, 0, bytes.Length, writable: false, publiclyVisible: true) : new();
+        using MemoryStream ms = bytes is not null ? new(bytes) : new();
         if (bytes is null)
         {
             Body.CopyTo(ms);
@@ -76,22 +75,10 @@ public class MockHttpRequest
         }
 
         using var finalStream = new MemoryStream();
-        try
+        using (var gzip = new GZipStream(ms, CompressionMode.Decompress, leaveOpen: true))
         {
-            using var gzip = new GZipStream(ms, CompressionMode.Decompress, leaveOpen: true);
             gzip.CopyTo(finalStream);
             gzip.Flush();
-        }
-        catch (InvalidDataException exception) when (decompressionFailureDirectory is not null)
-        {
-            // Match any framework's rejected request to the sender snapshot, without collecting credentials.
-            Headers.TryGetValue("Content-Length", out var contentLength);
-            Headers.TryGetValue("Transfer-Encoding", out var transferEncoding);
-            Headers.TryGetValue(GzipDiagnosticCapture.RequestHeader, out var requestId);
-            ms.TryGetBuffer(out var compressedBody);
-            GzipDiagnosticCapture.Save(decompressionFailureDirectory, compressedBody, $"Side: receiver\nRequest: {requestId}\nContent-Encoding: {encoding}\nContent-Length: {contentLength}\nTransfer-Encoding: {transferEncoding}\nReceived bytes: {ms.Length}\n{exception}");
-
-            throw;
         }
 
         return finalStream.ToArray();
