@@ -22,6 +22,7 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI;
 
+[Trait("Area", "CIVisibility")]
 [Trait("Category", "EndToEnd")]
 [Trait("Category", "TestIntegrations")]
 [Trait("RunOnWindows", "True")]
