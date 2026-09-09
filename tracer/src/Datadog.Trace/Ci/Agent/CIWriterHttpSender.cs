@@ -27,6 +27,7 @@ internal sealed class CIWriterHttpSender : ICIVisibilityProtocolWriterSender
     private const string ApiKeyHeader = "dd-api-key";
     private const string EvpSubdomainHeader = "X-Datadog-EVP-Subdomain";
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<CIWriterHttpSender>();
+    private static readonly string? GzipDiagnosticDirectory = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.CIVisibilityGzipDiagnosticDirectory);
 
     private readonly IApiRequestFactory _apiRequestFactory;
     private readonly bool _isDebugEnabled;
@@ -220,7 +221,10 @@ internal sealed class CIWriterHttpSender : ICIVisibilityProtocolWriterSender
 
             await SendPayloadAsync(
                     payload,
-                    static (request, payload, payloadBytes) => request.PostAsync(payloadBytes, MimeTypes.MsgPack, payload.UseGZip ? "gzip" : null),
+                    static (request, payload, payloadBytes) =>
+                        GzipDiagnosticDirectory is { Length: > 0 } directory && payload.UseGZip && payload.Url.IsLoopback
+                            ? GzipDiagnosticCapture.SendAsync(request, payloadBytes, directory)
+                            : request.PostAsync(payloadBytes, MimeTypes.MsgPack, payload.UseGZip ? "gzip" : null),
                     payloadArraySegment)
                .ConfigureAwait(false);
         }
