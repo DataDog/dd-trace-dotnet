@@ -356,6 +356,7 @@
     <ClInclude Include="signature_builder.h" />
     <ClInclude Include="stats.h" />
     <ClInclude Include="Synchronized.hpp" />
+    <ClInclude Include="module_load_lock.h" />
     <ClInclude Include="threadUtils.h" />
     <ClInclude Include="tracer_handler_module_method.h" />
     <ClInclude Include="tracer_integration_definition.h" />

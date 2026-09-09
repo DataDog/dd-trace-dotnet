@@ -1,10 +1,9 @@
 #include "pch.h"
 
-#include "../../src/Datadog.Tracer.Native/Synchronized.hpp"
+#include "../../src/Datadog.Tracer.Native/module_load_lock.h"
 
 #include <chrono>
 #include <future>
-#include <mutex>
 #include <vector>
 
 using namespace std::chrono_literals;
@@ -12,39 +11,66 @@ using namespace std::chrono_literals;
 namespace trace
 {
 
-TEST(CorProfilerLockingTest, SnapshottingProbesBeforeModuleLockAvoidsLockInversion)
+namespace
 {
-    Synchronized<std::vector<ModuleID>> moduleIds;
-    std::recursive_mutex probesMutex;
-    std::promise<void> probesLocked;
-    auto probesLockedFuture = probesLocked.get_future().share();
-    std::promise<void> snapshotStarted;
-    auto snapshotStartedFuture = snapshotStarted.get_future();
-    std::promise<void> continueInstrumentProbes;
-    auto continueInstrumentProbesFuture = continueInstrumentProbes.get_future().share();
+    enum class ModuleLoadStep
+    {
+        SnapshotProbes,
+        LockModules,
+        RunCallbacks
+    };
 
-    auto instrumentProbesFuture = std::async(std::launch::async, [&]() {
-        std::lock_guard probesLock(probesMutex);
-        probesLocked.set_value();
-        continueInstrumentProbesFuture.wait();
-        auto modules = moduleIds.Get();
-    });
-
-    auto moduleLoadFuture = std::async(std::launch::async, [&]() {
+    class RecordingModuleIds
+    {
+    public:
+        class Scope
         {
-            probesLockedFuture.wait();
-            snapshotStarted.set_value();
-            std::lock_guard probesLock(probesMutex);
+        public:
+            std::vector<ModuleID>& Ref()
+            {
+                return _modules;
+            }
+
+        private:
+            friend class RecordingModuleIds;
+            explicit Scope(std::vector<ModuleID>& modules) : _modules(modules)
+            {
+            }
+
+            std::vector<ModuleID>& _modules;
+        };
+
+        explicit RecordingModuleIds(std::vector<ModuleLoadStep>& steps) : _steps(steps)
+        {
         }
 
-        auto modules = moduleIds.Get();
-    });
+        Scope Get()
+        {
+            _steps.push_back(ModuleLoadStep::LockModules);
+            return Scope(_modules);
+        }
 
-    EXPECT_EQ(snapshotStartedFuture.wait_for(1s), std::future_status::ready);
-    continueInstrumentProbes.set_value();
+    private:
+        std::vector<ModuleLoadStep>& _steps;
+        std::vector<ModuleID> _modules;
+    };
+} // namespace
 
-    EXPECT_EQ(instrumentProbesFuture.wait_for(1s), std::future_status::ready);
-    EXPECT_EQ(moduleLoadFuture.wait_for(1s), std::future_status::ready);
+TEST(CorProfilerLockingTest, SnapshotsProbesBeforeAcquiringModuleLock)
+{
+    std::vector<ModuleLoadStep> steps;
+    RecordingModuleIds moduleIds(steps);
+
+    WithModuleLockAfterSnapshot(
+        moduleIds,
+        [&]() {
+            steps.push_back(ModuleLoadStep::SnapshotProbes);
+            return 0;
+        },
+        [&](auto&, const auto&) { steps.push_back(ModuleLoadStep::RunCallbacks); });
+
+    EXPECT_EQ(steps, (std::vector<ModuleLoadStep>{ModuleLoadStep::SnapshotProbes, ModuleLoadStep::LockModules,
+                                                  ModuleLoadStep::RunCallbacks}));
 }
 
 TEST(CorProfilerLockingTest, ModuleLockIsHeldDuringModuleCallbacks)
@@ -58,9 +84,12 @@ TEST(CorProfilerLockingTest, ModuleLockIsHeldDuringModuleCallbacks)
     auto unloadStartedFuture = unloadStarted.get_future();
 
     auto moduleLoadFuture = std::async(std::launch::async, [&]() {
-        auto modules = moduleIds.Get();
-        callbacksStarted.set_value();
-        finishCallbacksFuture.wait();
+        WithModuleLockAfterSnapshot(
+            moduleIds, []() { return 0; },
+            [&](auto&, const auto&) {
+                callbacksStarted.set_value();
+                finishCallbacksFuture.wait();
+            });
     });
 
     auto moduleUnloadFuture = std::async(std::launch::async, [&]() {
