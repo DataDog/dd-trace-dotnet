@@ -90,14 +90,17 @@ namespace Datadog.Trace.Activity
             var sName = sourceName ?? "(null)";
             if (HandlerBySource.TryGetValue(sName, out var handler))
             {
-                // Activities created through DiagnosticListener have an empty ActivitySource name. Give specialized
-                // integration handlers a chance to claim them by operation name before using the default handler.
-                if (StringUtil.IsNullOrEmpty(sourceName)
-                 && handler is DefaultActivityHandler
-                 && activity.OperationName is { } operationName
-                 && GetIntegrationHandler(operationName) is { } integrationHandler)
+                var isSourceNameMissing = StringUtil.IsNullOrEmpty(sourceName);
+                var isUsingDefaultHandler = handler is DefaultActivityHandler;
+
+                // If the source lookup only found the default handler, use the operation name as a fallback.
+                if (isSourceNameMissing && isUsingDefaultHandler)
                 {
-                    handler = integrationHandler;
+                    var integrationHandler = FindIntegrationHandlerByOperationName(activity.OperationName);
+                    if (integrationHandler is not null)
+                    {
+                        handler = integrationHandler;
+                    }
                 }
 
                 handler.ActivityStarted(sName, activity);
@@ -122,8 +125,13 @@ namespace Datadog.Trace.Activity
             }
         }
 
-        private static IActivityHandler? GetIntegrationHandler(string operationName)
+        private static IActivityHandler? FindIntegrationHandlerByOperationName(string? operationName)
         {
+            if (StringUtil.IsNullOrEmpty(operationName))
+            {
+                return null;
+            }
+
             foreach (var handler in ActivityHandlersRegister.Handlers)
             {
                 if (handler is DefaultActivityHandler)
