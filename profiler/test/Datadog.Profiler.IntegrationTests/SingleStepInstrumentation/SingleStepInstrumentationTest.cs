@@ -505,8 +505,8 @@ namespace Datadog.Profiler.IntegrationTests.SingleStepInstrumentation
         private static void ForceInjectionIfRequired(TestApplicationRunner runner, string framework)
         {
             // For preview and old runtimes we have to force injection
-            // after .NET 10 preview, can remove this
-            if (framework == "net10.0")
+            // after .NET 11 preview, can remove this
+            if (framework == "net11.0")
             {
                 runner.Environment.SetVariable(EnvironmentVariables.SsiInjectionForced, "1");
             }
