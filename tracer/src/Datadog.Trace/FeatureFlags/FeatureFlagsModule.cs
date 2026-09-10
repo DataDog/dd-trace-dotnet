@@ -135,6 +135,14 @@ namespace Datadog.Trace.FeatureFlags
         /// </summary>
         internal void Activate()
         {
+            // Every evaluation calls this, so the steady state must not take the lock. The flag only
+            // ever goes false to true, so a stale read costs one lock acquisition and nothing else:
+            // the check inside the lock is what decides.
+            if (Volatile.Read(ref _activated))
+            {
+                return;
+            }
+
             AgentlessConfigurationSource? sourceToStart = null;
 
             lock (_stateLock)
@@ -345,7 +353,7 @@ namespace Datadog.Trace.FeatureFlags
 
         // Created on first use because most applications never evaluate a flag, and under the lock
         // because the evaluation path races disposal. Only the very first exposure takes the lock:
-        // afterwards the field is read directly, keeping the evaluation path lock-free. Internal so
+        // afterwards the field is read directly, keeping the exposure path lock-free. Internal so
         // tests can assert the disposal behaviour without starting a send loop.
         internal ExposureApi? GetExposureApi()
         {
