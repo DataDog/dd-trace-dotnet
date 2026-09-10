@@ -190,6 +190,12 @@ namespace Datadog.Trace.FeatureFlags
         /// <see cref="FeatureFlagsDeliveryUnavailableException"/> when no source could start at all,
         /// which is permanent for the life of the process and must not be reported as a ready provider.
         /// </para>
+        /// <para>
+        /// The wait ends only when a configuration arrives, so a service with no flag configuration
+        /// waits the whole timeout. The application is blocked for that long, because OpenFeature
+        /// awaits this from <c>SetProviderAsync</c>, so the timeout has to stay below whatever budget
+        /// the application's readiness probe allows.
+        /// </para>
         /// </summary>
         internal async Task InitializeAsync(CancellationToken cancellationToken)
         {
