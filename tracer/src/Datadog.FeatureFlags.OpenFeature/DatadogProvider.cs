@@ -60,10 +60,11 @@ public sealed class DatadogProvider : global::OpenFeature.FeatureProvider, IDisp
 
     private void SignalGeneralUpdate()
     {
+        // This provider is the only source of its own status events, so the notification is written
+        // before anything the application supplied runs: a handler that throws must not be able to
+        // suppress it.
         try
         {
-            _onNewConfig?.Invoke();
-
             // The first configuration is what makes this provider usable, and only a ready event
             // promotes it: initialization reports an error when no delivery source could start, and
             // OpenFeature keeps that status until told otherwise. Later configurations are changes,
@@ -71,13 +72,20 @@ public sealed class DatadogProvider : global::OpenFeature.FeatureProvider, IDisp
             if (Interlocked.CompareExchange(ref _readySignalled, 1, 0) == 0)
             {
                 SignalReady();
-                return;
             }
+            else
+            {
+                // Specific flag keys are unknown, so this payload only reports that something changed.
+                // An event already queued says exactly the same thing, which is why a full channel is
+                // left alone: the notification is on its way regardless.
+                EventChannel.Writer.TryWrite(CreatePayload(ProviderEventTypes.ProviderConfigurationChanged, "A backend update occurred, but specific changes are unknown."));
+            }
+        }
+        catch { }
 
-            // Specific flag keys are unknown, so this payload only reports that something changed.
-            // An event already queued says exactly the same thing, which is why a full channel is
-            // left alone: the notification is on its way regardless.
-            EventChannel.Writer.TryWrite(CreatePayload(ProviderEventTypes.ProviderConfigurationChanged, "A backend update occurred, but specific changes are unknown."));
+        try
+        {
+            _onNewConfig?.Invoke();
         }
         catch { }
     }
