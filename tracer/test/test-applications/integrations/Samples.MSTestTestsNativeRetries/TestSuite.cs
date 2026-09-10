@@ -22,6 +22,20 @@ public class TestSuite
 
     [TestMethod(UnfoldingStrategy = TestDataSourceUnfoldingStrategy.Fold)]
     [TestCategory("CustomRetry")]
+#pragma warning disable MSTEST0042 // Identical rows deliberately exercise distinct execution identities.
+    [DataRow(0)]
+    [DataRow(0)]
+#pragma warning restore MSTEST0042
+    [Retry(2)]
+    public void DuplicateRows(int row)
+    {
+        // Both rows have identical names and arguments. Only the first row needs retries.
+        var attempt = RecordAttempt(nameof(DuplicateRows));
+        Assert.IsTrue(attempt % 2 == 0 || attempt >= 7);
+    }
+
+    [TestMethod(UnfoldingStrategy = TestDataSourceUnfoldingStrategy.Fold)]
+    [TestCategory("CustomRetry")]
     [DataRow(0, DisplayName = "Mixed row")]
     [DataRow(1, DisplayName = "Mixed row")]
     [Retry(2)]
