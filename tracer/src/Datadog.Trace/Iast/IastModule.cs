@@ -742,14 +742,25 @@ internal static partial class IastModule
 
     private static Location? GetLocation(StackTrace? stack = null, Span? currentSpan = null)
     {
-        stack ??= StackWalker.GetStackTrace();
-        if (!StackWalker.TryGetFrame(stack, out var stackFrame))
+        var stackTraceEnabled = Security.Instance.Settings.StackTraceEnabled;
+
+        StackFrame? stackFrame;
+        if (stack is null)
+        {
+            // Source info for every frame is only paid for when the whole stack gets reported;
+            // the location itself only needs file and line for the single frame we select.
+            if (!StackWalker.TryGetStackTraceAndFrame(stackTraceEnabled, out stack, out stackFrame))
+            {
+                return null;
+            }
+        }
+        else if (!StackWalker.TryGetFrame(stack, out stackFrame))
         {
             return null;
         }
 
         string? stackId = null;
-        if (stack != null && Security.Instance.Settings.StackTraceEnabled)
+        if (stack != null && stackTraceEnabled)
         {
             if (currentSpan is null)
             {
