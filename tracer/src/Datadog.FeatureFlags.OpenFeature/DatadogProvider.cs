@@ -14,6 +14,7 @@ using System.Threading.Channels;
 using System.Threading.Tasks;
 using OpenFeature;
 using OpenFeature.Constant;
+using OpenFeature.Error;
 using OpenFeature.Model;
 
 namespace Datadog.FeatureFlags.OpenFeature;
@@ -60,26 +61,72 @@ public sealed class DatadogProvider : global::OpenFeature.FeatureProvider, IDisp
 
     private void SignalGeneralUpdate()
     {
+        // This provider is the only source of its own status events, so the notification is written
+        // before anything the application supplied runs: a handler that throws must not be able to
+        // suppress it.
+        try
+        {
+            if (!FeatureFlagsSdk.HasConfiguration())
+            {
+                SignalConfigurationUnavailable();
+            }
+            else if (Interlocked.CompareExchange(ref _readySignalled, 1, 0) == 0)
+            {
+                // The first configuration is what makes this provider usable, and only a ready event
+                // promotes it: initialization reports an error when no delivery source could start, and
+                // OpenFeature keeps that status until told otherwise. This also promotes the provider
+                // again after a withdrawal, which resets the flag.
+                SignalReady();
+            }
+            else
+            {
+                // Specific flag keys are unknown, so this payload only reports that something changed.
+                // An event already queued says exactly the same thing, which is why a full channel is
+                // left alone: the notification is on its way regardless.
+                EventChannel.Writer.TryWrite(CreatePayload(ProviderEventTypes.ProviderConfigurationChanged, "A backend update occurred, but specific changes are unknown."));
+            }
+        }
+        catch { }
+
         try
         {
             _onNewConfig?.Invoke();
-
-            // The first configuration is what makes this provider usable, and only a ready event
-            // promotes it: initialization reports an error when no delivery source could start, and
-            // OpenFeature keeps that status until told otherwise. Later configurations are changes,
-            // which deliberately leave the status alone.
-            if (Interlocked.CompareExchange(ref _readySignalled, 1, 0) == 0)
-            {
-                SignalReady();
-                return;
-            }
-
-            // Specific flag keys are unknown, so this payload only reports that something changed.
-            // An event already queued says exactly the same thing, which is why a full channel is
-            // left alone: the notification is on its way regardless.
-            EventChannel.Writer.TryWrite(CreatePayload(ProviderEventTypes.ProviderConfigurationChanged, "A backend update occurred, but specific changes are unknown."));
         }
         catch { }
+    }
+
+    private void SignalConfigurationUnavailable()
+    {
+        // Configuration was withdrawn, so every evaluation now returns its default value. Leaving the
+        // status at READY would report a provider that resolves nothing, so an error is emitted and the
+        // ready flag is reset, which lets the next configuration promote the provider back.
+        if (Interlocked.Exchange(ref _readySignalled, 0) == 0)
+        {
+            // Never promoted, so there is no status to correct.
+            return;
+        }
+
+        var payload = CreatePayload(ProviderEventTypes.ProviderError, "Feature flag configuration is unavailable.");
+        payload.ErrorType = ErrorType.ProviderNotReady;
+
+        if (!EventChannel.Writer.TryWrite(payload))
+        {
+            // A status transition cannot be dropped, for the same reason the ready event cannot.
+            _ = WriteWhenRoomAvailableAsync(payload);
+        }
+    }
+
+    private void SignalInitializationFailed(string message)
+    {
+        // Emitted before the exception leaves this method, because the provider owns its status events
+        // rather than letting them be inferred from how initialization terminated.
+        var payload = CreatePayload(ProviderEventTypes.ProviderError, message);
+        payload.ErrorType = ErrorType.ProviderFatal;
+
+        if (!EventChannel.Writer.TryWrite(payload))
+        {
+            _ = WriteWhenRoomAvailableAsync(payload);
+        }
     }
 
     private void SignalReady()
@@ -124,18 +171,41 @@ public sealed class DatadogProvider : global::OpenFeature.FeatureProvider, IDisp
     /// provider can actually resolve flags.
     /// <para>
     /// It returns normally when the wait times out, because slow delivery is transient and the
-    /// configuration still arrives afterwards. It faults when no source could start delivery at all,
-    /// which leaves the provider unable to resolve anything for the rest of the process: OpenFeature
-    /// then marks this provider as errored instead of ready, and evaluations keep returning their
-    /// default values. The exception does not reach the application, because OpenFeature handles it
-    /// while setting the provider.
+    /// configuration still arrives afterwards. It throws <see cref="ProviderFatalException"/> when no
+    /// source could start delivery at all, which leaves the provider unable to resolve anything for
+    /// the rest of the process: that is irrecoverable rather than merely not-ready. The exception does
+    /// not reach the application, because OpenFeature handles it while setting the provider.
+    /// </para>
+    /// <para>
+    /// This provider emits its own status event either way, rather than leaving the SDK to infer one
+    /// from how this method returns.
     /// </para>
     /// </summary>
     /// <param name="context"> Evaluation context </param>
     /// <param name="cancellationToken"> Async cancellation token </param>
     /// <returns> A task that completes when initialization is complete </returns>
-    public override Task InitializeAsync(EvaluationContext context, CancellationToken cancellationToken = default)
-        => FeatureFlagsSdk.InitializeAsync(cancellationToken);
+    public override async Task InitializeAsync(EvaluationContext context, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            await FeatureFlagsSdk.InitializeAsync(cancellationToken).ConfigureAwait(false);
+        }
+        catch (Exception exception)
+        {
+            SignalInitializationFailed(exception.Message);
+
+            // Irrecoverable: no source can be started later in this process, so no configuration will
+            // ever arrive and every evaluation returns its default value.
+            throw new ProviderFatalException(exception.Message, exception);
+        }
+
+        // Configuration that arrived before the application registered this provider leaves nothing to
+        // signal from the configuration callback, so the ready event is emitted here instead.
+        if (FeatureFlagsSdk.HasConfiguration() && Interlocked.CompareExchange(ref _readySignalled, 1, 0) == 0)
+        {
+            SignalReady();
+        }
+    }
 
     /// <summary> Gets provider metadata </summary>
     /// <returns> Returns provider metadata </returns>

@@ -35,12 +35,20 @@ internal static class FeatureFlagsSdk
     internal static bool IsSpanEnrichmentEnabled() => false;
 
     /// <summary>
+    /// Gets a value indicating whether flag configuration is currently held, so the provider can
+    /// resolve flags. Goes back to <c>false</c> when configuration is withdrawn.
+    /// </summary>
+    /// <returns> True while configuration is held </returns>
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    internal static bool HasConfiguration() => false;
+
+    /// <summary>
     /// Activates flag configuration delivery and waits for the first configuration to arrive.
     /// Agentless delivery only starts here, because those requests are billable and installing the
     /// tracer alone must not make them. With the Remote Configuration source, configuration is
     /// already being received by this point and this waits for the first update.
     /// </summary>
-    /// <param name="cancellationToken"> Cancellation token supplied by OpenFeature </param>
+    /// <param name="cancellationToken"> Cancellation token. OpenFeature 2.3.0 does not forward one through SetProviderAsync, so only a direct caller supplies it </param>
     /// <returns> A task that completes once configuration has arrived or the initialization timeout has elapsed, and that faults when no source could start delivery at all </returns>
     [MethodImpl(MethodImplOptions.NoInlining)]
     public static Task InitializeAsync(CancellationToken cancellationToken) => Task.CompletedTask;

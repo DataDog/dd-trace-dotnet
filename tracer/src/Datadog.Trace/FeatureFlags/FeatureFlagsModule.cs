@@ -17,6 +17,7 @@ using Datadog.Trace.FeatureFlags.Rcm;
 using Datadog.Trace.FeatureFlags.Rcm.Model;
 using Datadog.Trace.Logging;
 using Datadog.Trace.RemoteConfigurationManagement;
+using Datadog.Trace.SourceGenerators;
 
 namespace Datadog.Trace.FeatureFlags
 {
@@ -36,28 +37,40 @@ namespace Datadog.Trace.FeatureFlags
         // after startup, so it needs the manager rather than a captured value.
         private readonly TracerSettings.SettingsManager _settingsManager;
         private readonly bool _isRemoteConfigurationAvailable;
-        private readonly Func<ExposureApi> _exposureApiFactory;
+
+        // ExposureApi reads only settings.Manager but takes TracerSettings. Held so the API can be
+        // built on the first exposure instead of at startup.
+        private readonly TracerSettings _tracerSettings;
+
+        // A factory rather than the static Create, so a test can supply a source that records what the
+        // module does with it: whether it is started before activation, and whether it is disposed.
+        private readonly Func<FeatureFlagsModule, IFeatureFlagsDeliverySource?> _agentlessSourceFactory;
         private readonly bool _spanEnrichmentEnabled;
         private readonly IRcmSubscriptionManager _rcmSubscriptionManager;
         private readonly TaskCompletionSource<bool> _firstConfigReceived = new(TaskCreationOptions.RunContinuationsAsynchronously);
         private ISubscription? _rcmSubscription;
 
-        private Action? _onNewConfigEventHander;
+        private Action? _onNewConfigEventHandler;
         private FeatureFlagsEvaluator? _evaluator;
-        private AgentlessConfigurationSource? _agentlessSource;
+        private IFeatureFlagsDeliverySource? _agentlessSource;
         private ExposureApi? _exposureApi;
         private string? _deliveryUnavailableReason;
         private bool _activated;
         private bool _disposed;
         private bool _deliveryStarted;
 
-        internal FeatureFlagsModule(TracerSettings settings, IRcmSubscriptionManager rcmSubscriptionManager)
+        internal FeatureFlagsModule(
+            TracerSettings settings,
+            IRcmSubscriptionManager rcmSubscriptionManager,
+            Func<FeatureFlagsModule, IFeatureFlagsDeliverySource?>? agentlessSourceFactory = null)
         {
             _settings = settings.FeatureFlags;
             _settingsManager = settings.Manager;
             _isRemoteConfigurationAvailable = settings.IsRemoteConfigurationAvailable;
             _spanEnrichmentEnabled = settings.IsSpanEnrichmentEnabled;
-            _exposureApiFactory = () => new ExposureApi(settings);
+            _tracerSettings = settings;
+            _agentlessSourceFactory = agentlessSourceFactory
+                                   ?? (static module => AgentlessConfigurationSource.Create(module._settings, module._settingsManager, module.ApplyConfiguration));
             _rcmSubscriptionManager = rcmSubscriptionManager;
 
             Log.Debug<FeatureFlagsSource>("FeatureFlagsModule ENABLED with source {Source}", _settings.Source);
@@ -66,21 +79,32 @@ namespace Datadog.Trace.FeatureFlags
         /// <summary>
         /// Gets a task that completes once configuration has been applied for the first time.
         /// </summary>
+        [TestingAndPrivateOnly]
         internal Task FirstConfigReceived => _firstConfigReceived.Task;
 
+        [TestingAndPrivateOnly]
         internal FeatureFlagsSettings Settings => _settings;
 
-        public static FeatureFlagsModule? Create(TracerSettings settings, IRcmSubscriptionManager rcmSubscriptionManager)
+        /// <summary>
+        /// Gets a value indicating whether configuration is currently held, so evaluations can resolve
+        /// flags. Goes back to <c>false</c> when Remote Configuration withdraws it.
+        /// </summary>
+        internal bool HasConfiguration => Volatile.Read(ref _evaluator) is not null;
+
+        public static FeatureFlagsModule? Create(
+            TracerSettings settings,
+            IRcmSubscriptionManager rcmSubscriptionManager,
+            Func<FeatureFlagsModule, IFeatureFlagsDeliverySource?>? agentlessSourceFactory = null)
         {
             if (!settings.FeatureFlags.Enabled)
             {
                 return null;
             }
 
-            var module = new FeatureFlagsModule(settings, rcmSubscriptionManager);
+            var module = new FeatureFlagsModule(settings, rcmSubscriptionManager, agentlessSourceFactory);
 
-            // Subscribing here rather than in the constructor: SubscribeToChanges can invoke the
-            // callback, which must not reach a module that is still being constructed.
+            // Subscribing from here rather than the constructor, so the callback can only ever reach
+            // a fully constructed module.
             if (settings.FeatureFlags.Source == FeatureFlagsSource.RemoteConfig)
             {
                 module.SubscribeToRemoteConfiguration();
@@ -92,7 +116,7 @@ namespace Datadog.Trace.FeatureFlags
         public void Dispose()
         {
             ISubscription? subscription;
-            AgentlessConfigurationSource? agentlessSource;
+            IFeatureFlagsDeliverySource? agentlessSource;
             ExposureApi? exposureApi;
 
             lock (_stateLock)
@@ -135,7 +159,15 @@ namespace Datadog.Trace.FeatureFlags
         /// </summary>
         internal void Activate()
         {
-            AgentlessConfigurationSource? sourceToStart = null;
+            // Every evaluation calls this, so the steady state must not take the lock. The flag only
+            // ever goes false to true, so a stale read costs one lock acquisition and nothing else:
+            // the check inside the lock is what decides.
+            if (Volatile.Read(ref _activated))
+            {
+                return;
+            }
+
+            IFeatureFlagsDeliverySource? sourceToStart = null;
 
             lock (_stateLock)
             {
@@ -150,7 +182,7 @@ namespace Datadog.Trace.FeatureFlags
                 {
                     case FeatureFlagsSource.Agentless:
                         // Polling is billable, so it starts here rather than at construction.
-                        var source = AgentlessConfigurationSource.Create(_settings, _settingsManager, ApplyConfiguration);
+                        var source = _agentlessSourceFactory(this);
                         if (source is null)
                         {
                             // Create logs the specific reason, which may name configuration the
@@ -166,10 +198,9 @@ namespace Datadog.Trace.FeatureFlags
                 }
             }
 
-            // Start() issues the first request on the calling thread up to its first await, so it runs
-            // outside the lock: holding it across a network request would block Dispose(). A Dispose()
-            // that interleaves here has already cancelled the source's shutdown token, which makes the
-            // poll loop exit before its first request.
+            // Outside the lock, so that a source which does any work of its own before returning cannot
+            // hold up a Dispose(). A Dispose() that interleaves here has already signalled the source's
+            // shutdown, which makes its poll loop exit before the first request.
             sourceToStart?.Start();
         }
 
@@ -177,10 +208,18 @@ namespace Datadog.Trace.FeatureFlags
         /// Activates delivery and waits for the first configuration, so that a provider reported as
         /// ready can resolve flags.
         /// <para>
-        /// Returns without throwing when the wait times out, because delivery being slow is transient:
-        /// the configuration still arrives later and promotes the provider. Throws
+        /// Returns without throwing when the wait times out: delivery being slow is transient, and
+        /// OpenFeature marks the provider ready on a normal return, so evaluations return their
+        /// defaults with PROVIDER_NOT_READY until the configuration lands. Throws
         /// <see cref="FeatureFlagsDeliveryUnavailableException"/> when no source could start at all,
-        /// which is permanent for the life of the process and must not be reported as a ready provider.
+        /// which OpenFeature turns into an error status: a provider that can never resolve a flag is
+        /// in error, not ready.
+        /// </para>
+        /// <para>
+        /// The wait ends only when a configuration arrives, so a service with no flag configuration
+        /// waits the whole timeout. The application is blocked for that long, because OpenFeature
+        /// awaits this from <c>SetProviderAsync</c>, so the timeout has to stay below whatever budget
+        /// the application's readiness probe allows.
         /// </para>
         /// </summary>
         internal async Task InitializeAsync(CancellationToken cancellationToken)
@@ -213,18 +252,23 @@ namespace Datadog.Trace.FeatureFlags
                 throw new FeatureFlagsDeliveryUnavailableException(deliveryUnavailableReason);
             }
 
-            // Cancellation is signalled by completing a task: cancelling a token source throws, and
-            // an exception on this path can crash buggy runtimes.
+            // The caller's cancellation is turned into a completed task rather than passed to anything
+            // that throws on it, because an exception on this path can crash buggy runtimes.
             var cancelled = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
             using var registration = cancellationToken.Register(() => cancelled.TrySetResult(true));
 
-            var timeout = Task.Delay(_settings.InitializationTimeout);
+            // The timeout is cancelled on the way out, so an initialization that completes in
+            // milliseconds does not leave a timer armed for the rest of the timeout.
+            using var timeoutCancellation = new CancellationTokenSource();
+            var timeout = Task.Delay(_settings.InitializationTimeout, timeoutCancellation.Token);
             var completed = await Task.WhenAny(_firstConfigReceived.Task, timeout, cancelled.Task).ConfigureAwait(false);
 
-            if (completed == timeout)
+            if (completed != timeout)
             {
-                // Evaluations keep returning the caller's default with PROVIDER_NOT_READY until
-                // configuration lands, which promotes the provider then.
+                timeoutCancellation.Cancel();
+            }
+            else
+            {
                 Log.Warning<double>(
                     "Feature Flags configuration did not arrive within {TimeoutMs}ms. Evaluations use their default values until it does.",
                     _settings.InitializationTimeout.TotalMilliseconds);
@@ -233,7 +277,7 @@ namespace Datadog.Trace.FeatureFlags
 
         internal void RegisterOnNewConfigEventHandler(Action? onNewConfig)
         {
-            _onNewConfigEventHander = onNewConfig;
+            _onNewConfigEventHandler = onNewConfig;
         }
 
         internal Evaluation Evaluate(string flagKey, ValueType resultType, object? defaultValue, string targetingKey, IDictionary<string, object?>? attributes)
@@ -249,20 +293,34 @@ namespace Datadog.Trace.FeatureFlags
             return evaluator.Evaluate(flagKey, resultType, defaultValue, new EvaluationContext(targetingKey, attributes));
         }
 
+        [TestingAndPrivateOnly]
         internal bool ApplyConfiguration(ServerConfiguration configuration)
         {
             try
             {
                 Interlocked.Exchange(ref _evaluator, new FeatureFlagsEvaluator(ReportExposure, configuration, _spanEnrichmentEnabled));
                 _firstConfigReceived.TrySetResult(true);
-                _onNewConfigEventHander?.Invoke();
-                return true;
             }
             catch (Exception ex)
             {
                 Log.Warning(ex, "FeatureFlagsModule::ApplyConfiguration -> Error applying configuration");
                 return false;
             }
+
+            // The handler comes from application code, and the agentless source reads the return value
+            // to decide whether to advance its ETag. Reporting a failed apply because a handler threw
+            // would make every later poll re-download the whole payload instead of getting a 304, so
+            // the configuration is already applied by this point and the handler cannot change that.
+            try
+            {
+                _onNewConfigEventHandler?.Invoke();
+            }
+            catch (Exception ex)
+            {
+                Log.Warning(ex, "FeatureFlagsModule::ApplyConfiguration -> Error in the configuration event handler");
+            }
+
+            return true;
         }
 
         /// <summary>
@@ -288,7 +346,7 @@ namespace Datadog.Trace.FeatureFlags
                     return;
                 }
 
-                var ffeProduct = new FfeProduct(configs => ApplyConfigurations(configs));
+                var ffeProduct = new FfeProduct(ApplyRemoteConfigurations);
                 _rcmSubscription = new Subscription(ffeProduct.UpdateFromRcm, RcmProducts.FfeFlags);
                 _rcmSubscriptionManager.SubscribeToChanges(_rcmSubscription);
                 _rcmSubscriptionManager.SetCapability(RcmCapabilitiesIndices.FfeFlagConfigurationRules, true);
@@ -297,9 +355,9 @@ namespace Datadog.Trace.FeatureFlags
             }
         }
 
-        private void ApplyConfigurations(List<KeyValuePair<string, ServerConfiguration>> list)
+        private void ApplyRemoteConfigurations(List<KeyValuePair<string, ServerConfiguration>> list)
         {
-            Log.Debug<int>("FeatureFlagsModule::ApplyConfigurations -> New config received. {Count}", list.Count);
+            Log.Debug<int>("FeatureFlagsModule::ApplyRemoteConfigurations -> New config received. {Count}", list.Count);
             try
             {
                 if (list.Count > 0)
@@ -309,14 +367,16 @@ namespace Datadog.Trace.FeatureFlags
                 }
                 else
                 {
-                    // RC reset: clear evaluator so Evaluate() returns PROVIDER_NOT_READY
+                    // The configuration was withdrawn, so every evaluation returns PROVIDER_NOT_READY
+                    // from here on. The handler is notified either way, and reads HasConfiguration to
+                    // tell a withdrawal from an update.
                     Interlocked.Exchange(ref _evaluator, null);
-                    _onNewConfigEventHander?.Invoke();
+                    _onNewConfigEventHandler?.Invoke();
                 }
             }
             catch (Exception ex)
             {
-                Log.Warning(ex, "FeatureFlagsModule::ApplyConfigurations -> Error processing new config");
+                Log.Warning(ex, "FeatureFlagsModule::ApplyRemoteConfigurations -> Error processing new config");
             }
 
             static ServerConfiguration MergeConfigs(List<KeyValuePair<string, ServerConfiguration>> list)
@@ -345,8 +405,8 @@ namespace Datadog.Trace.FeatureFlags
 
         // Created on first use because most applications never evaluate a flag, and under the lock
         // because the evaluation path races disposal. Only the very first exposure takes the lock:
-        // afterwards the field is read directly, keeping the evaluation path lock-free. Internal so
-        // tests can assert the disposal behaviour without starting a send loop.
+        // afterwards the field is read directly, keeping the exposure path lock-free.
+        [TestingAndPrivateOnly]
         internal ExposureApi? GetExposureApi()
         {
             var exposureApi = Volatile.Read(ref _exposureApi);
@@ -365,7 +425,7 @@ namespace Datadog.Trace.FeatureFlags
                 exposureApi = _exposureApi;
                 if (exposureApi is null)
                 {
-                    exposureApi = _exposureApiFactory();
+                    exposureApi = new ExposureApi(_tracerSettings);
                     Volatile.Write(ref _exposureApi, exposureApi);
                 }
 
