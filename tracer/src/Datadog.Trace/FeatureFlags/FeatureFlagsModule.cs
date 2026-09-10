@@ -208,10 +208,12 @@ namespace Datadog.Trace.FeatureFlags
         /// Activates delivery and waits for the first configuration, so that a provider reported as
         /// ready can resolve flags.
         /// <para>
-        /// Returns without throwing when the wait times out, because delivery being slow is transient:
-        /// the configuration still arrives later and promotes the provider. Throws
+        /// Returns without throwing when the wait times out: delivery being slow is transient, and
+        /// OpenFeature marks the provider ready on a normal return, so evaluations return their
+        /// defaults with PROVIDER_NOT_READY until the configuration lands. Throws
         /// <see cref="FeatureFlagsDeliveryUnavailableException"/> when no source could start at all,
-        /// which is permanent for the life of the process and must not be reported as a ready provider.
+        /// which OpenFeature turns into an error status: a provider that can never resolve a flag is
+        /// in error, not ready.
         /// </para>
         /// <para>
         /// The wait ends only when a configuration arrives, so a service with no flag configuration
@@ -267,8 +269,6 @@ namespace Datadog.Trace.FeatureFlags
             }
             else
             {
-                // Evaluations keep returning the caller's default with PROVIDER_NOT_READY until
-                // configuration lands, which promotes the provider then.
                 Log.Warning<double>(
                     "Feature Flags configuration did not arrive within {TimeoutMs}ms. Evaluations use their default values until it does.",
                     _settings.InitializationTimeout.TotalMilliseconds);
