@@ -27,6 +27,8 @@
     },
     Metrics: {
       process_id: 0,
+      _dd.limit_psr: 1.0,
+      _dd.rule_psr: 1.0,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 2.0
@@ -80,6 +82,8 @@
     },
     Metrics: {
       process_id: 0,
+      _dd.limit_psr: 1.0,
+      _dd.rule_psr: 1.0,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 2.0
@@ -113,6 +117,8 @@
     },
     Metrics: {
       process_id: 0,
+      _dd.limit_psr: 1.0,
+      _dd.rule_psr: 1.0,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 2.0
@@ -146,6 +152,8 @@
     },
     Metrics: {
       process_id: 0,
+      _dd.limit_psr: 1.0,
+      _dd.rule_psr: 1.0,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 2.0
