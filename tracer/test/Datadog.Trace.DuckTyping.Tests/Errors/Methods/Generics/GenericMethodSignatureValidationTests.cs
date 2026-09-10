@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using System.Reflection;
 using FluentAssertions;
 using FluentAssertions.Execution;
@@ -51,6 +52,21 @@ namespace Datadog.Trace.DuckTyping.Tests.Errors.Methods.Generics
         private interface IReorderedArrayReturnProxy
         {
             TFirst[] ReturnArray<TFirst, TSecond>();
+        }
+
+        private interface IValueWithTypeReturnProxy
+        {
+            ValueWithType<T> ReturnWithType<T>(T value);
+        }
+
+        private interface ICovariantReferenceReturnProxy
+        {
+            IEnumerable<object> ReturnCovariant<T>(T value);
+        }
+
+        private interface IReverseValueWithTypeContract
+        {
+            ValueWithType<T> ReturnWithType<T>(T value);
         }
 
         private interface IReverseGenericContract
@@ -131,6 +147,46 @@ namespace Datadog.Trace.DuckTyping.Tests.Errors.Methods.Generics
         }
 
         [Fact]
+        public void AllowsOpenGenericReturnWrappedWithRuntimeType()
+        {
+            // ValueWithType<T> is an explicit DuckTyping return contract. AddReturnIl extracts the T value from the
+            // target and wraps it together with its runtime Type, so signature validation must compare the wrapper's
+            // element type with the target placeholder instead of rejecting the supported wrapper itself.
+            var proxy = new GenericMethodSignatureTarget().DuckCast<IValueWithTypeReturnProxy>();
+
+            ValueWithType<int> result = proxy.ReturnWithType(42);
+            result.Value.Should().Be(42);
+            result.Type.Should().Be(typeof(int));
+        }
+
+        [Fact]
+        public void AllowsOpenGenericReturnWrappedWithRuntimeTypeInReverseProxy()
+        {
+            // Reverse proxies use the same return helper with the contract as the outer method. Preserve the wrapper
+            // there as well while still requiring its T to match the implementation's generic parameter position.
+            var implementation = new ReverseValueWithTypeImplementation();
+            var proxy = (IReverseValueWithTypeContract)implementation.DuckImplement(typeof(IReverseValueWithTypeContract));
+
+            ValueWithType<string> result = proxy.ReturnWithType("expected");
+            result.Value.Should().Be("expected");
+            result.Type.Should().Be(typeof(string));
+        }
+
+        [Fact]
+        public void AllowsCastSafeConversionInsideConstructedReferenceReturnType()
+        {
+            // A concrete argument nested inside a reference-type return can be checked by castclass at invocation
+            // time. Covariance makes IEnumerable<string> compatible with IEnumerable<object>; an incompatible value
+            // type instantiation still fails with a managed InvalidCastException instead of producing unsafe IL.
+            var proxy = new GenericMethodSignatureTarget().DuckCast<ICovariantReferenceReturnProxy>();
+
+            proxy.ReturnCovariant("expected").Should().Equal("expected");
+
+            Action returnValueType = () => proxy.ReturnCovariant(42);
+            returnValueType.Should().Throw<InvalidCastException>();
+        }
+
+        [Fact]
         public void RejectsDifferentGenericParameterPositionsInReverseProxy()
         {
             // Keep the argument positions equivalent so this test reaches the return-specific validation for
@@ -170,6 +226,19 @@ namespace Datadog.Trace.DuckTyping.Tests.Errors.Methods.Generics
             public Tuple<TFirst, TSecond> Wrap<TFirst, TSecond>(TFirst first, TSecond second) => Tuple.Create(first, second);
 
             public TSecond[] ReturnArray<TFirst, TSecond>() => Array.Empty<TSecond>();
+
+            public T ReturnWithType<T>(T value) => value;
+
+            public IEnumerable<T> ReturnCovariant<T>(T value)
+            {
+                yield return value;
+            }
+        }
+
+        private class ReverseValueWithTypeImplementation
+        {
+            [DuckReverseMethod]
+            public T ReturnWithType<T>(T value) => value;
         }
 
         private class ReorderedReverseImplementation

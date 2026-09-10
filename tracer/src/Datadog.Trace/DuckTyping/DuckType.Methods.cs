@@ -190,7 +190,11 @@ namespace Datadog.Trace.DuckTyping
                 // same position. Validate the complete signature before defining or emitting the proxy method so
                 // invalid signatures cannot produce unverifiable IL that reinterprets value-type data as an object
                 // reference, or reads/writes a managed reference using the wrong element size.
-                if (ValidateGenericMethodSignature(proxyMethodDefinition, targetMethod) is { } signatureError)
+                if (ValidateGenericMethodSignature(
+                        proxyMethodDefinition,
+                        targetMethod,
+                        proxyMethodReturnType: UnwrapValueWithType(proxyMethodDefinition.ReturnType),
+                        targetMethodReturnType: targetMethod.ReturnType) is { } signatureError)
                 {
                     return signatureError;
                 }
@@ -330,7 +334,11 @@ namespace Datadog.Trace.DuckTyping
                 // Reverse proxies exchange the roles of the implementation and overridden methods, but generic
                 // parameter identity has exactly the same requirement: a generic parameter at one position must
                 // never be treated as the parameter at another position.
-                if (ValidateGenericMethodSignature(implementationMethod, overriddenMethod) is { } signatureError)
+                if (ValidateGenericMethodSignature(
+                        implementationMethod,
+                        overriddenMethod,
+                        proxyMethodReturnType: implementationMethod.ReturnType,
+                        targetMethodReturnType: UnwrapValueWithType(overriddenMethod.ReturnType)) is { } signatureError)
                 {
                     return signatureError;
                 }
@@ -715,7 +723,11 @@ namespace Datadog.Trace.DuckTyping
             return null;
         }
 
-        private static DuckTypeException? ValidateGenericMethodSignature(MethodInfo proxyMethod, MethodInfo targetMethod)
+        private static DuckTypeException? ValidateGenericMethodSignature(
+            MethodInfo proxyMethod,
+            MethodInfo targetMethod,
+            Type proxyMethodReturnType,
+            Type targetMethodReturnType)
         {
             Type[] proxyGenericArguments = proxyMethod.GetGenericArguments();
             Type[] targetGenericArguments = targetMethod.GetGenericArguments();
@@ -743,7 +755,7 @@ namespace Datadog.Trace.DuckTyping
                 }
             }
 
-            if (!HaveCompatibleGenericParameterStructure(proxyMethod.ReturnType, targetMethod.ReturnType))
+            if (!HaveCompatibleGenericParameterStructure(proxyMethodReturnType, targetMethodReturnType))
             {
                 return DuckTypeProxyAndTargetMethodReturnTypeMismatchException.Create(proxyMethod, targetMethod);
             }
@@ -751,7 +763,23 @@ namespace Datadog.Trace.DuckTyping
             return null;
         }
 
+        private static Type UnwrapValueWithType(Type returnType)
+        {
+            // ValueWithType<T> is an explicit outer return contract. AddReturnIl forwards the inner T and then
+            // wraps it together with the target's runtime Type, so generic signature validation must compare T
+            // with the target return rather than treating the wrapper as an unrelated value type.
+            return returnType.IsGenericType && returnType.GetGenericTypeDefinition() == typeof(ValueWithType<>)
+                       ? returnType.GetGenericArguments()[0]
+                       : returnType;
+        }
+
         private static bool HaveCompatibleGenericParameterStructure(Type proxyType, Type targetType)
+            => HaveCompatibleGenericParameterStructure(proxyType, targetType, canDeferConcreteParameterToReferenceCast: null);
+
+        private static bool HaveCompatibleGenericParameterStructure(
+            Type proxyType,
+            Type targetType,
+            bool? canDeferConcreteParameterToReferenceCast)
         {
             if (proxyType == targetType)
             {
@@ -770,10 +798,11 @@ namespace Datadog.Trace.DuckTyping
             {
                 if (!proxyType.IsGenericParameter || !targetType.IsGenericParameter)
                 {
-                    // A concrete type and an open generic parameter are not interchangeable. In particular, an
-                    // unconstrained generic parameter may be either a value or reference type, so there is no IL
-                    // conversion that is valid for every possible method instantiation.
-                    return false;
+                    // A top-level generic parameter cannot be treated as a concrete type: its representation is
+                    // unknown until the method is constructed. Inside an outer reference type, however, the value
+                    // on the stack is always an object reference. The existing conversion path can therefore emit
+                    // castclass and let incompatible instantiations fail with a managed InvalidCastException.
+                    return canDeferConcreteParameterToReferenceCast is true;
                 }
 
                 // Generic parameter names do not participate in signature identity. The metadata position and
@@ -792,7 +821,10 @@ namespace Datadog.Trace.DuckTyping
                     return false;
                 }
 
-                return HaveCompatibleGenericParameterStructure(proxyType.GetElementType()!, targetType.GetElementType()!);
+                return HaveCompatibleGenericParameterStructure(
+                    proxyType.GetElementType()!,
+                    targetType.GetElementType()!,
+                    canDeferConcreteParameterToReferenceCast: false);
             }
 
             if (proxyType.IsArray && targetType.IsArray)
@@ -806,13 +838,23 @@ namespace Datadog.Trace.DuckTyping
                     return false;
                 }
 
-                return HaveCompatibleGenericParameterStructure(proxyType.GetElementType()!, targetType.GetElementType()!);
+                return HaveCompatibleGenericParameterStructure(
+                    proxyType.GetElementType()!,
+                    targetType.GetElementType()!,
+                    canDeferConcreteParameterToReferenceCast ?? true);
             }
 
             if (proxyType.IsGenericType
              && targetType.IsGenericType
              && proxyType.GetGenericTypeDefinition() == targetType.GetGenericTypeDefinition())
             {
+                // Only the outermost signature type decides whether a concrete/open mismatch can be deferred.
+                // Once a value type or managed reference requires exact storage identity, a nested reference type
+                // must not relax that decision.
+                bool canDeferNestedParameter =
+                    canDeferConcreteParameterToReferenceCast
+                 ?? (!proxyType.IsValueType && !targetType.IsValueType);
+
                 Type[] proxyGenericArguments = proxyType.GetGenericArguments();
                 Type[] targetGenericArguments = targetType.GetGenericArguments();
                 if (proxyGenericArguments.Length != targetGenericArguments.Length)
@@ -822,7 +864,10 @@ namespace Datadog.Trace.DuckTyping
 
                 for (int i = 0; i < proxyGenericArguments.Length; i++)
                 {
-                    if (!HaveCompatibleGenericParameterStructure(proxyGenericArguments[i], targetGenericArguments[i]))
+                    if (!HaveCompatibleGenericParameterStructure(
+                            proxyGenericArguments[i],
+                            targetGenericArguments[i],
+                            canDeferNestedParameter))
                     {
                         return false;
                     }
