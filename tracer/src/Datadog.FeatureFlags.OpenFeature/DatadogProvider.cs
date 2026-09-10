@@ -65,12 +65,16 @@ public sealed class DatadogProvider : global::OpenFeature.FeatureProvider, IDisp
         // suppress it.
         try
         {
-            // The first configuration is what makes this provider usable, and only a ready event
-            // promotes it: initialization reports an error when no delivery source could start, and
-            // OpenFeature keeps that status until told otherwise. Later configurations are changes,
-            // which deliberately leave the status alone.
-            if (Interlocked.CompareExchange(ref _readySignalled, 1, 0) == 0)
+            if (!FeatureFlagsSdk.HasConfiguration())
             {
+                SignalConfigurationUnavailable();
+            }
+            else if (Interlocked.CompareExchange(ref _readySignalled, 1, 0) == 0)
+            {
+                // The first configuration is what makes this provider usable, and only a ready event
+                // promotes it: initialization reports an error when no delivery source could start, and
+                // OpenFeature keeps that status until told otherwise. This also promotes the provider
+                // again after a withdrawal, which resets the flag.
                 SignalReady();
             }
             else
@@ -88,6 +92,27 @@ public sealed class DatadogProvider : global::OpenFeature.FeatureProvider, IDisp
             _onNewConfig?.Invoke();
         }
         catch { }
+    }
+
+    private void SignalConfigurationUnavailable()
+    {
+        // Configuration was withdrawn, so every evaluation now returns its default value. Leaving the
+        // status at READY would report a provider that resolves nothing, so an error is emitted and the
+        // ready flag is reset, which lets the next configuration promote the provider back.
+        if (Interlocked.Exchange(ref _readySignalled, 0) == 0)
+        {
+            // Never promoted, so there is no status to correct.
+            return;
+        }
+
+        var payload = CreatePayload(ProviderEventTypes.ProviderError, "Feature flag configuration is unavailable.");
+        payload.ErrorType = ErrorType.ProviderNotReady;
+
+        if (!EventChannel.Writer.TryWrite(payload))
+        {
+            // A status transition cannot be dropped, for the same reason the ready event cannot.
+            _ = WriteWhenRoomAvailableAsync(payload);
+        }
     }
 
     private void SignalReady()

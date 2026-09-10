@@ -37,6 +37,7 @@ namespace Datadog.Trace.FeatureFlags
         // after startup, so it needs the manager rather than a captured value.
         private readonly TracerSettings.SettingsManager _settingsManager;
         private readonly bool _isRemoteConfigurationAvailable;
+
         // ExposureApi reads only settings.Manager but takes TracerSettings. Held so the API can be
         // built on the first exposure instead of at startup.
         private readonly TracerSettings _tracerSettings;
@@ -83,6 +84,12 @@ namespace Datadog.Trace.FeatureFlags
 
         [TestingAndPrivateOnly]
         internal FeatureFlagsSettings Settings => _settings;
+
+        /// <summary>
+        /// Gets a value indicating whether configuration is currently held, so evaluations can resolve
+        /// flags. Goes back to <c>false</c> when Remote Configuration withdraws it.
+        /// </summary>
+        internal bool HasConfiguration => Volatile.Read(ref _evaluator) is not null;
 
         public static FeatureFlagsModule? Create(
             TracerSettings settings,
@@ -360,7 +367,9 @@ namespace Datadog.Trace.FeatureFlags
                 }
                 else
                 {
-                    // RC reset: clear evaluator so Evaluate() returns PROVIDER_NOT_READY
+                    // The configuration was withdrawn, so every evaluation returns PROVIDER_NOT_READY
+                    // from here on. The handler is notified either way, and reads HasConfiguration to
+                    // tell a withdrawal from an update.
                     Interlocked.Exchange(ref _evaluator, null);
                     _onNewConfigEventHandler?.Invoke();
                 }

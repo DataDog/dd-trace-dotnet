@@ -170,6 +170,41 @@ public class FeatureFlagsModuleTests
     }
 
     [Fact]
+    public void HasConfiguration_FollowsWhetherTheEvaluatorCanResolve()
+    {
+        var rcmManager = new MockRcmSubscriptionManager();
+        using var module = CreateModule(CreateSettings(), rcmManager);
+
+        module.HasConfiguration.Should().BeFalse();
+
+        var subscription = rcmManager.LastSubscription
+                        ?? throw new InvalidOperationException("Create did not register a Remote Configuration subscription.");
+
+        var configJson = JsonConvert.SerializeObject(new ServerConfiguration());
+        var configPath = RemoteConfigurationPath.FromPath($"datadog/2/{RcmProducts.FfeFlags}/test-config/config");
+
+        subscription.Invoke(
+            new Dictionary<string, List<RemoteConfiguration>>
+            {
+                [RcmProducts.FfeFlags] = [new RemoteConfiguration(configPath, System.Text.Encoding.UTF8.GetBytes(configJson), configJson.Length, new Dictionary<string, string> { { "sha256", "dummy" } }, 1)]
+            },
+            null);
+
+        module.HasConfiguration.Should().BeTrue();
+
+        // A withdrawal from Remote Configuration, which the provider reads to emit an error status
+        // instead of leaving itself reported as ready while resolving nothing.
+        subscription.Invoke(
+            new Dictionary<string, List<RemoteConfiguration>>(),
+            new Dictionary<string, List<RemoteConfigurationPath>>
+            {
+                [RcmProducts.FfeFlags] = [configPath]
+            });
+
+        module.HasConfiguration.Should().BeFalse();
+    }
+
+    [Fact]
     public void ApplyConfiguration_WhenTheEventHandlerThrows_ReportsTheConfigurationAsApplied()
     {
         using var module = CreateModule(CreateSettings(), new MockRcmSubscriptionManager());

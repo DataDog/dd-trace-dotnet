@@ -35,6 +35,14 @@ internal static class FeatureFlagsSdk
     internal static bool IsSpanEnrichmentEnabled() => false;
 
     /// <summary>
+    /// Gets a value indicating whether flag configuration is currently held, so the provider can
+    /// resolve flags. Goes back to <c>false</c> when configuration is withdrawn.
+    /// </summary>
+    /// <returns> True while configuration is held </returns>
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    internal static bool HasConfiguration() => false;
+
+    /// <summary>
     /// Activates flag configuration delivery and waits for the first configuration to arrive.
     /// Delivery only starts here, because requesting configuration is billable and installing the
     /// tracer alone must not do it.
