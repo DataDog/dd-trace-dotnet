@@ -1820,7 +1820,8 @@ HRESULT DebuggerMethodRewriter::ApplyAsyncMethodProbe(
 
     if (FAILED(hr))
     {
-        Logger::Error("DebuggerMethodRewriter::ApplyAsyncMethodProbe: Fail in EndAsyncMethodProbe");
+        // Expected fail-closed abort; Error would fail CheckBuildLogsForErrors.
+        Logger::Warn("DebuggerMethodRewriter::ApplyAsyncMethodProbe: Fail in EndAsyncMethodProbe");
         return hr;
     }
 
@@ -1968,7 +1969,8 @@ HRESULT DebuggerMethodRewriter::ApplyAsyncMethodSpanProbe(
 
     if (FAILED(hr))
     {
-        Logger::Error("DebuggerMethodRewriter::ApplyAsyncMethodProbe: Fail in EndAsyncMethodSpanProbe");
+        // Expected fail-closed abort; Error would fail CheckBuildLogsForErrors.
+        Logger::Warn("DebuggerMethodRewriter::ApplyAsyncMethodProbe: Fail in EndAsyncMethodSpanProbe");
         return hr;
     }
 
