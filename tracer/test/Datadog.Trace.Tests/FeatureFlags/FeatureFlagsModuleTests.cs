@@ -198,7 +198,7 @@ public class FeatureFlagsModuleTests
     }
 
     [Fact]
-    public async Task InitializeAsync_OnCancellation_ReturnsWithoutThrowing()
+    public async Task InitializeAsync_WhenADirectCallerCancels_ReturnsWithoutThrowing()
     {
         var settings = CreateInitializationSettings("60000");
         using var module = CreateModule(settings, new MockRcmSubscriptionManager());
@@ -399,9 +399,6 @@ public class FeatureFlagsModuleTests
         var collection = new NameValueCollection
         {
             { ConfigurationKeys.FeatureFlags.FeatureFlagsConfigurationSource, "remote_config" },
-#pragma warning disable 618 // superseded, but still honoured for existing adopters
-            { ConfigurationKeys.FeatureFlags.FlaggingProviderEnabled, "true" },
-#pragma warning restore 618
         };
 
         foreach (var (key, value) in settings)

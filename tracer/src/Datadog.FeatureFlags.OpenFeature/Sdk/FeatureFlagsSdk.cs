@@ -39,7 +39,7 @@ internal static class FeatureFlagsSdk
     /// Delivery only starts here, because requesting configuration is billable and installing the
     /// tracer alone must not do it.
     /// </summary>
-    /// <param name="cancellationToken"> Cancellation token supplied by OpenFeature </param>
+    /// <param name="cancellationToken"> Cancellation token. OpenFeature 2.3.0 does not forward one through SetProviderAsync, so only a direct caller supplies it </param>
     /// <returns> A task that completes once configuration has arrived or the initialization timeout has elapsed, and that faults when no source could start delivery at all </returns>
     [MethodImpl(MethodImplOptions.NoInlining)]
     public static Task InitializeAsync(CancellationToken cancellationToken) => Task.CompletedTask;
