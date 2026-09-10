@@ -113,6 +113,36 @@ public class MsTestV2NativeRetriesTests : TestingFrameworkEvpTest
     }
 
     [Theory]
+    [InlineData("DuplicateRows", false)]
+    [InlineData("DuplicateRows", true)]
+    [InlineData("DuplicateExecutorResults", false)]
+    [InlineData("DuplicateExecutorResults", true)]
+    public async Task IdenticalRowsKeepSeparateRetryOutcomes(string name, bool automaticRetries)
+    {
+        var result = await RunRetryScenarioAsync(
+            name,
+            expectedAttempts: automaticRetries ? 7 : 6,
+            expectedRows: 2,
+            expectedExitCode: automaticRetries ? 0 : FailedTestExitCode,
+            automaticRetries: automaticRetries);
+        var attempts = result.Tests.OrderBy(test => test.Start).ToArray();
+        attempts.Select(test => test.Meta[TestTags.Name]).Distinct().Should().ContainSingle();
+        attempts.Select(test => test.Meta[TestTags.Parameters]).Distinct().Should().ContainSingle();
+        attempts.Take(4).Should().OnlyContain(test => !test.Meta.ContainsKey(TestTags.TestFinalStatus));
+
+        // The second row passed on every native execution; it must not share the first row's failure.
+        attempts[5].Meta[TestTags.Status].Should().Be(TestTags.StatusPass);
+        attempts[5].Meta[TestTags.TestFinalStatus].Should().Be(TestTags.StatusPass);
+        var finalFirstRow = attempts[automaticRetries ? 6 : 4];
+        finalFirstRow.Meta[TestTags.TestFinalStatus].Should().Be(automaticRetries ? TestTags.StatusPass : TestTags.StatusFail);
+        if (automaticRetries)
+        {
+            attempts[4].Meta.Should().NotContainKey(TestTags.TestFinalStatus);
+            finalFirstRow.Meta[TestTags.TestRetryReason].Should().Be(TestTags.TestRetryReasonAtr);
+        }
+    }
+
+    [Theory]
     [InlineData(false)]
     [InlineData(true)]
     public async Task NativeRetriesKeepEachRowsFinalOutcome(bool automaticRetries)

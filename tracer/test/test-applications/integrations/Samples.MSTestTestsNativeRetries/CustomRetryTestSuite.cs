@@ -42,6 +42,14 @@ public class CustomRetryTestSuite
         Assert.IsTrue(attempt % 2 == 0 || attempt >= 7);
     }
 
+    [MultipleResultsTestMethod(SameDisplayName = true)]
+    [Retry(2)]
+    public void DuplicateExecutorResults()
+    {
+        var attempt = TestSuite.RecordAttempt(nameof(DuplicateExecutorResults));
+        Assert.IsTrue(attempt % 2 == 0 || attempt >= 7);
+    }
+
     [TestMethod]
     [AsyncThrowingRetry]
     public void AsyncThrowingRetry()
@@ -182,6 +190,8 @@ public class CustomRetryTestSuite
 
     private sealed class MultipleResultsTestMethodAttribute : TestMethodAttribute
     {
+        public bool SameDisplayName { get; set; }
+
         public MultipleResultsTestMethodAttribute([CallerFilePath] string filePath = "", [CallerLineNumber] int lineNumber = 0)
             : base(filePath, lineNumber)
         {
@@ -192,7 +202,7 @@ public class CustomRetryTestSuite
             var first = await base.ExecuteAsync(testMethod);
             var second = await base.ExecuteAsync(testMethod);
             first[0].DisplayName = "First result";
-            second[0].DisplayName = "Second result";
+            second[0].DisplayName = SameDisplayName ? "First result" : "Second result";
             return [first[0], second[0]];
         }
     }

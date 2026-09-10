@@ -31,6 +31,8 @@ internal sealed class MsTestExecution
     private List<NativeAttempt>? _nativeAttempts;
     private List<PendingTest>? _pendingTests;
     private int _nativeAttemptNumber = -1;
+    private int _nextNativeRowIndex;
+    private int _datadogRetryRowIndex;
     private bool _datadogRetriesApplied;
 
     public MsTestExecution(CallTargetState previousState, MsTestExecution? parent)
@@ -52,6 +54,8 @@ internal sealed class MsTestExecution
     public bool HasNativeRetry => _nativeAttempts is not null;
 
     public bool IsNativeRetry => _nativeAttemptNumber > 0;
+
+    public int NextNativeRowIndex => _nextNativeRowIndex;
 
     /// <summary>
     /// Associates the method object with this execution across MSTest ExecutionContext switches.
@@ -96,7 +100,11 @@ internal sealed class MsTestExecution
     /// <summary>
     /// Counts a runner invocation once, before any of its data rows execute.
     /// </summary>
-    public void StartNativeAttempt() => _nativeAttemptNumber++;
+    public void StartNativeAttempt()
+    {
+        _nativeAttemptNumber++;
+        _nextNativeRowIndex = 0;
+    }
 
     /// <summary>
     /// Allocates native retry state only for methods with a resolved retry attribute.
@@ -156,7 +164,7 @@ internal sealed class MsTestExecution
     /// </summary>
     public void RecordNativeAttempt(IList results, TestMethodAttributeExecuteAsyncIntegration.TestRunnerState state, TestAttemptResult summary)
     {
-        if (IsNativeRetry && FindInitialAttempt(state.Test!) is { } initial)
+        if (IsNativeRetry && FindInitialAttempt(state.NativeRowIndex) is { } initial)
         {
             // A native retry must not reconsider a faulty-session decision made on the first attempt.
             summary.IsEfdTest = initial.Summary.IsEfdTest;
@@ -171,14 +179,18 @@ internal sealed class MsTestExecution
     /// </summary>
     public void FinishAttempt(Test test, ITestResult? result, TestStatus status, string? skipReason, bool isDatadogRetry = false)
     {
-        if (IsNativeRetry && FindInitialAttempt(test) is { } initial)
+        // MSTest enumerates folded rows and executor results again for each native attempt.
+        // Names/arguments can repeat, and execution IDs are assigned later and change on retry.
+        // Keep the result's position instead; Datadog retries inherit the selected row explicitly.
+        var rowIndex = isDatadogRetry ? _datadogRetryRowIndex : _nextNativeRowIndex++;
+        if (IsNativeRetry && FindInitialAttempt(rowIndex) is { } initial)
         {
             test.GetTags().TestIsNew = initial.State.Test!.GetTags().TestIsNew;
         }
 
         var span = test.GetInternalSpan();
         var duration = status == TestStatus.Skip ? TimeSpan.Zero : span.Context.TraceContext.Clock.ElapsedSince(span.StartTime);
-        _pendingTests!.Add(new PendingTest(test, result, status, duration, isDatadogRetry));
+        _pendingTests!.Add(new PendingTest(test, result, status, duration, isDatadogRetry, rowIndex));
         try
         {
             test.UnsafeFinishExecution(status, duration, skipReason);
@@ -259,15 +271,15 @@ internal sealed class MsTestExecution
 
         try
         {
-            // Aggregate once per name and parameter set, preserving attempt order and policy selection.
+            // Aggregate once per row, preserving attempt order and policy selection.
             // Keep the original list for closing: grouping must not change the order spans are emitted.
-            var outcomes = new Dictionary<Test, RetryOutcome>(TestIdentityComparer.Instance);
+            var outcomes = new Dictionary<int, RetryOutcome>();
             foreach (var completed in completedTests)
             {
-                if (!outcomes.TryGetValue(completed.Test, out var outcome))
+                if (!outcomes.TryGetValue(completed.RowIndex, out var outcome))
                 {
                     outcome = new RetryOutcome();
-                    outcomes.Add(completed.Test, outcome);
+                    outcomes.Add(completed.RowIndex, outcome);
                 }
 
                 outcome.Add(completed);
@@ -281,7 +293,7 @@ internal sealed class MsTestExecution
                         completed.Status,
                         completed.Duration,
                         skipReason: null,
-                        beforeClose: outcomes[completed.Test].ApplyFinalTags);
+                        beforeClose: outcomes[completed.RowIndex].ApplyFinalTags);
                 }
             }
         }
@@ -356,6 +368,7 @@ internal sealed class MsTestExecution
         summary.InitialExecutionPassed = summary.ResultStatus == TestStatus.Pass;
         summary.InitialExecutionFailed = summary.ResultStatus == TestStatus.Fail;
         object?[] initialResults = [result];
+        _datadogRetryRowIndex = pendingTest?.RowIndex ?? attempt.State.NativeRowIndex + resultIndex;
         var retryResults = await TestMethodAttributeExecuteAsyncIntegration.RunRetriesAsync(initialResults, attempt.State, summary, pendingTest?.Test.Name).ConfigureAwait(false);
         ObserveResults(retryResults);
         var replacementResult = retryResults[0];
@@ -411,37 +424,18 @@ internal sealed class MsTestExecution
     /// <summary>
     /// Finds the first matching data row so native retries preserve its new-test and EFD decisions.
     /// </summary>
-    private NativeAttempt? FindInitialAttempt(Test test)
+    private NativeAttempt? FindInitialAttempt(int rowIndex)
     {
         foreach (var attempt in _nativeAttempts!)
         {
-            var initialTags = attempt.State.Test!.GetTags();
-            var tags = test.GetTags();
-            if (initialTags.Name == tags.Name && initialTags.Parameters == tags.Parameters)
+            // A custom executor can produce several results for one method invocation.
+            if (rowIndex >= attempt.State.NativeRowIndex && rowIndex < attempt.State.NativeRowIndex + attempt.Results.Count)
             {
                 return attempt;
             }
         }
 
         return null;
-    }
-
-    /// <summary>
-    /// Groups attempts by the same name and parameters used to identify rows throughout this integration.
-    /// Uses existing tests as keys without allocating a separate identity for each attempt.
-    /// </summary>
-    private sealed class TestIdentityComparer : IEqualityComparer<Test>
-    {
-        public static readonly TestIdentityComparer Instance = new();
-
-        public bool Equals(Test? x, Test? y)
-            => x?.GetTags().Name == y?.GetTags().Name && x?.GetTags().Parameters == y?.GetTags().Parameters;
-
-        public int GetHashCode(Test test)
-        {
-            var tags = test.GetTags();
-            return unchecked(((tags.Name?.GetHashCode() ?? 0) * 397) ^ (tags.Parameters?.GetHashCode() ?? 0));
-        }
     }
 
     /// <summary>
@@ -525,7 +519,7 @@ internal sealed class MsTestExecution
         public TestAttemptResult Summary { get; } = summary;
     }
 
-    private sealed class PendingTest(Test test, ITestResult? result, TestStatus status, TimeSpan duration, bool isDatadogRetry)
+    private sealed class PendingTest(Test test, ITestResult? result, TestStatus status, TimeSpan duration, bool isDatadogRetry, int rowIndex)
     {
         public Test Test { get; } = test;
 
@@ -536,6 +530,8 @@ internal sealed class MsTestExecution
         public TimeSpan Duration { get; } = duration;
 
         public bool IsDatadogRetry { get; } = isDatadogRetry;
+
+        public int RowIndex { get; } = rowIndex;
 
         public bool IsSelectedNativeResult { get; set; }
     }
