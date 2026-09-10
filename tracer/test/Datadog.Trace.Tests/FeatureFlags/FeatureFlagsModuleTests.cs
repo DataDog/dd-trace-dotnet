@@ -162,6 +162,19 @@ public class FeatureFlagsModuleTests
     }
 
     [Fact]
+    public void ApplyConfiguration_WhenTheEventHandlerThrows_ReportsTheConfigurationAsApplied()
+    {
+        using var module = CreateModule(CreateSettings(), new MockRcmSubscriptionManager());
+
+        module.RegisterOnNewConfigEventHandler(() => throw new InvalidOperationException("from application code"));
+
+        // False would tell the agentless source the configuration was not applied, so it would hold
+        // its ETag back and re-download the whole payload on every later poll.
+        module.ApplyConfiguration(new ServerConfiguration()).Should().BeTrue();
+        module.FirstConfigReceived.IsCompleted.Should().BeTrue();
+    }
+
+    [Fact]
     public async Task InitializeAsync_OnTimeout_ReturnsWithoutThrowing()
     {
         var settings = CreateInitializationSettings("1");
