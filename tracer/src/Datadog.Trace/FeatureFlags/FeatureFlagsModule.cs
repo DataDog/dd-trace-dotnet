@@ -37,6 +37,10 @@ namespace Datadog.Trace.FeatureFlags
         private readonly TracerSettings.SettingsManager _settingsManager;
         private readonly bool _isRemoteConfigurationAvailable;
         private readonly Func<ExposureApi> _exposureApiFactory;
+
+        // A factory rather than the static Create, so a test can supply a source that records what the
+        // module does with it: whether it is started before activation, and whether it is disposed.
+        private readonly Func<FeatureFlagsModule, IFeatureFlagsDeliverySource?> _agentlessSourceFactory;
         private readonly bool _spanEnrichmentEnabled;
         private readonly IRcmSubscriptionManager _rcmSubscriptionManager;
         private readonly TaskCompletionSource<bool> _firstConfigReceived = new(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -44,20 +48,25 @@ namespace Datadog.Trace.FeatureFlags
 
         private Action? _onNewConfigEventHander;
         private FeatureFlagsEvaluator? _evaluator;
-        private AgentlessConfigurationSource? _agentlessSource;
+        private IFeatureFlagsDeliverySource? _agentlessSource;
         private ExposureApi? _exposureApi;
         private string? _deliveryUnavailableReason;
         private bool _activated;
         private bool _disposed;
         private bool _deliveryStarted;
 
-        internal FeatureFlagsModule(TracerSettings settings, IRcmSubscriptionManager rcmSubscriptionManager)
+        internal FeatureFlagsModule(
+            TracerSettings settings,
+            IRcmSubscriptionManager rcmSubscriptionManager,
+            Func<FeatureFlagsModule, IFeatureFlagsDeliverySource?>? agentlessSourceFactory = null)
         {
             _settings = settings.FeatureFlags;
             _settingsManager = settings.Manager;
             _isRemoteConfigurationAvailable = settings.IsRemoteConfigurationAvailable;
             _spanEnrichmentEnabled = settings.IsSpanEnrichmentEnabled;
             _exposureApiFactory = () => new ExposureApi(settings);
+            _agentlessSourceFactory = agentlessSourceFactory
+                                   ?? (static module => AgentlessConfigurationSource.Create(module._settings, module._settingsManager, module.ApplyConfiguration));
             _rcmSubscriptionManager = rcmSubscriptionManager;
 
             Log.Debug<FeatureFlagsSource>("FeatureFlagsModule ENABLED with source {Source}", _settings.Source);
@@ -70,14 +79,17 @@ namespace Datadog.Trace.FeatureFlags
 
         internal FeatureFlagsSettings Settings => _settings;
 
-        public static FeatureFlagsModule? Create(TracerSettings settings, IRcmSubscriptionManager rcmSubscriptionManager)
+        public static FeatureFlagsModule? Create(
+            TracerSettings settings,
+            IRcmSubscriptionManager rcmSubscriptionManager,
+            Func<FeatureFlagsModule, IFeatureFlagsDeliverySource?>? agentlessSourceFactory = null)
         {
             if (!settings.FeatureFlags.Enabled)
             {
                 return null;
             }
 
-            var module = new FeatureFlagsModule(settings, rcmSubscriptionManager);
+            var module = new FeatureFlagsModule(settings, rcmSubscriptionManager, agentlessSourceFactory);
 
             // Subscribing here rather than in the constructor: SubscribeToChanges can invoke the
             // callback, which must not reach a module that is still being constructed.
@@ -92,7 +104,7 @@ namespace Datadog.Trace.FeatureFlags
         public void Dispose()
         {
             ISubscription? subscription;
-            AgentlessConfigurationSource? agentlessSource;
+            IFeatureFlagsDeliverySource? agentlessSource;
             ExposureApi? exposureApi;
 
             lock (_stateLock)
@@ -143,7 +155,7 @@ namespace Datadog.Trace.FeatureFlags
                 return;
             }
 
-            AgentlessConfigurationSource? sourceToStart = null;
+            IFeatureFlagsDeliverySource? sourceToStart = null;
 
             lock (_stateLock)
             {
@@ -158,7 +170,7 @@ namespace Datadog.Trace.FeatureFlags
                 {
                     case FeatureFlagsSource.Agentless:
                         // Polling is billable, so it starts here rather than at construction.
-                        var source = AgentlessConfigurationSource.Create(_settings, _settingsManager, ApplyConfiguration);
+                        var source = _agentlessSourceFactory(this);
                         if (source is null)
                         {
                             // Create logs the specific reason, which may name configuration the

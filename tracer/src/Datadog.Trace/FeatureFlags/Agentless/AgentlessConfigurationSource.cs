@@ -26,7 +26,7 @@ namespace Datadog.Trace.FeatureFlags.Agentless;
 /// Polls the agentless endpoint for flag configuration. Polling is billable, so it is only
 /// started once application code has activated the provider.
 /// </summary>
-internal sealed class AgentlessConfigurationSource : IDisposable
+internal sealed class AgentlessConfigurationSource : IFeatureFlagsDeliverySource
 {
     private const int MaxAttempts = 3;
     private const double RetryJitter = 0.2;

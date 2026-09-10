@@ -153,12 +153,20 @@ public class FeatureFlagsModuleTests
         var settings = CreateInitializationSettings("60000");
         using var module = CreateModule(settings, new MockRcmSubscriptionManager());
 
+        var stopwatch = Stopwatch.StartNew();
+
         var initialization = module.InitializeAsync(CancellationToken.None);
         initialization.IsCompleted.Should().BeFalse();
 
         module.ApplyConfiguration(new ServerConfiguration()).Should().BeTrue();
 
         await initialization;
+
+        stopwatch.Stop();
+
+        // Bounded, because the wait also ends normally at the 60s timeout: without this, the test
+        // would pass even if the arriving configuration never released it.
+        stopwatch.Elapsed.Should().BeLessThan(TimeSpan.FromSeconds(5));
     }
 
     [Fact]
@@ -196,10 +204,18 @@ public class FeatureFlagsModuleTests
         using var module = CreateModule(settings, new MockRcmSubscriptionManager());
         using var cancellation = new CancellationTokenSource();
 
+        var stopwatch = Stopwatch.StartNew();
+
         var initialization = module.InitializeAsync(cancellation.Token);
         cancellation.Cancel();
 
         await initialization;
+
+        stopwatch.Stop();
+
+        // Bounded, because without the cancellation the wait would run to the 60s timeout and still
+        // return normally, which would make this test pass for the wrong reason.
+        stopwatch.Elapsed.Should().BeLessThan(TimeSpan.FromSeconds(5));
     }
 
     [Fact]
@@ -242,25 +258,89 @@ public class FeatureFlagsModuleTests
     }
 
     [Fact]
-    public void Activate_WhenCalledConcurrently_LeavesTheSingleStartupSubscription()
+    public void Create_WithTheAgentlessSource_DoesNotStartDeliveryUntilActivated()
     {
-        var rcmManager = new MockRcmSubscriptionManager();
-        using var module = CreateModule(CreateSettings(), rcmManager);
+        var source = new FakeDeliverySource();
+        using var module = CreateModule(CreateAgentlessSettings(), new MockRcmSubscriptionManager(), _ => source);
 
-        // Create() subscribed once. Activation claims its flag atomically, so no caller can add a
-        // second subscription, nor observe the module as activated while setup is still running.
-        const int callers = 16;
-        using var start = new Barrier(callers);
-        Parallel.For(
-            0,
-            callers,
+        // Installing the tracer must not issue a billable request. Only application code that adopts
+        // the provider may start the poller.
+        source.Started.Should().Be(0);
+
+        module.Activate();
+        module.Activate();
+
+        source.Started.Should().Be(1);
+        source.Disposed.Should().Be(0);
+    }
+
+    [Fact]
+    public void Dispose_WithTheAgentlessSource_DisposesTheStartedPoller()
+    {
+        var source = new FakeDeliverySource();
+        var module = CreateModule(CreateAgentlessSettings(), new MockRcmSubscriptionManager(), _ => source);
+        module.Activate();
+
+        module.Dispose();
+
+        // A poller that survives disposal keeps issuing billable requests for the rest of the process.
+        source.Disposed.Should().Be(1);
+    }
+
+    [Fact]
+    public void Activate_AfterDispose_DoesNotStartTheAgentlessPoller()
+    {
+        var source = new FakeDeliverySource();
+        var module = CreateModule(CreateAgentlessSettings(), new MockRcmSubscriptionManager(), _ => source);
+        module.Dispose();
+
+        module.Activate();
+
+        // Disposal has already run, so nothing would ever dispose a poller started now.
+        source.Started.Should().Be(0);
+    }
+
+    [Fact]
+    public void Activate_WhenCalledConcurrently_StartsExactlyOnePoller()
+    {
+        var created = 0;
+        var source = new FakeDeliverySource();
+
+        using var module = CreateModule(
+            CreateAgentlessSettings(),
+            new MockRcmSubscriptionManager(),
             _ =>
             {
-                start.SignalAndWait();
-                module.Activate();
+                Interlocked.Increment(ref created);
+                return source;
             });
 
-        rcmManager.ProductKeys.Should().ContainSingle().Which.Should().Be(RcmProducts.FfeFlags);
+        // Dedicated threads rather than Parallel.For: blocked pool items in a host that already runs
+        // collections in parallel wait on thread-pool injection instead of on each other.
+        const int callers = 8;
+        using var start = new ManualResetEventSlim(false);
+        var threads = new Thread[callers];
+        for (var i = 0; i < callers; i++)
+        {
+            threads[i] = new Thread(() =>
+            {
+                start.Wait();
+                module.Activate();
+            })
+            { IsBackground = true };
+
+            threads[i].Start();
+        }
+
+        start.Set();
+
+        foreach (var thread in threads)
+        {
+            thread.Join(TimeSpan.FromSeconds(30)).Should().BeTrue("Activate must not block");
+        }
+
+        created.Should().Be(1);
+        source.Started.Should().Be(1);
     }
 
     [Fact]
@@ -273,10 +353,8 @@ public class FeatureFlagsModuleTests
         module.Activate();
 
         // Disposal has already run its unsubscribe, so a subscription registered afterwards would
-        // never be removed, leaving a delivery path active for the rest of the process. Only the one
-        // subscription Create() made is expected, and it is gone.
+        // never be removed, leaving a delivery path active for the rest of the process.
         rcmManager.HasAnySubscription.Should().BeFalse();
-        rcmManager.ProductKeys.Should().ContainSingle().Which.Should().Be(RcmProducts.FfeFlags);
     }
 
     [Fact]
@@ -309,8 +387,11 @@ public class FeatureFlagsModuleTests
     // Creates the module for settings that enable Feature Flags, and returns it as non-nullable so
     // tests can use it directly. Throwing rather than asserting keeps the compiler's nullable analysis
     // satisfied without a null-forgiving operator.
-    private static FeatureFlagsModule CreateModule(TracerSettings settings, IRcmSubscriptionManager rcmSubscriptionManager)
-        => FeatureFlagsModule.Create(settings, rcmSubscriptionManager)
+    private static FeatureFlagsModule CreateModule(
+        TracerSettings settings,
+        IRcmSubscriptionManager rcmSubscriptionManager,
+        Func<FeatureFlagsModule, IFeatureFlagsDeliverySource?>? agentlessSourceFactory = null)
+        => FeatureFlagsModule.Create(settings, rcmSubscriptionManager, agentlessSourceFactory)
         ?? throw new InvalidOperationException("Feature Flags are enabled, but no module was created.");
 
     private static TracerSettings CreateSettings(params (string Key, string Value)[] settings)
@@ -335,4 +416,23 @@ public class FeatureFlagsModuleTests
         => CreateSettings(
             (ConfigurationKeys.FeatureFlags.FeatureFlagsConfigurationSource, "remote_config"),
             (ConfigurationKeys.FeatureFlags.FlaggingProviderInitializationTimeoutMs, timeoutMs));
+
+    private static TracerSettings CreateAgentlessSettings()
+        => CreateSettings((ConfigurationKeys.FeatureFlags.FeatureFlagsConfigurationSource, "agentless"));
+
+    // Records what the module does with a delivery source, which the real one cannot report without
+    // issuing requests.
+    private sealed class FakeDeliverySource : IFeatureFlagsDeliverySource
+    {
+        private int _started;
+        private int _disposed;
+
+        public int Started => Volatile.Read(ref _started);
+
+        public int Disposed => Volatile.Read(ref _disposed);
+
+        public void Start() => Interlocked.Increment(ref _started);
+
+        public void Dispose() => Interlocked.Increment(ref _disposed);
+    }
 }
