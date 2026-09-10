@@ -185,6 +185,16 @@ namespace Datadog.Trace.DuckTyping
                     targetMethod = targetMethod.MakeGenericMethod(genericParameterTypes);
                 }
 
+                // Open generic parameters are placeholders for types selected by the caller. They can only be
+                // passed through without conversion when the proxy and target use the same placeholder at the
+                // same position. Validate the complete signature before defining or emitting the proxy method so
+                // invalid signatures cannot produce unverifiable IL that reinterprets value-type data as an object
+                // reference, or reads/writes a managed reference using the wrong element size.
+                if (ValidateGenericMethodSignature(proxyMethodDefinition, targetMethod) is { } signatureError)
+                {
+                    return signatureError;
+                }
+
                 // Gets target method parameters
                 ParameterInfo[] targetMethodParameters = targetMethod.GetParameters();
                 Type[] targetMethodParametersTypes = targetMethodParameters.Select(p => p.ParameterType).ToArray();
@@ -317,6 +327,14 @@ namespace Datadog.Trace.DuckTyping
                     return DuckTypeReverseProxyMustImplementGenericMethodAsGenericException.Create(implementationMethod, overriddenMethod);
                 }
 
+                // Reverse proxies exchange the roles of the implementation and overridden methods, but generic
+                // parameter identity has exactly the same requirement: a generic parameter at one position must
+                // never be treated as the parameter at another position.
+                if (ValidateGenericMethodSignature(implementationMethod, overriddenMethod) is { } signatureError)
+                {
+                    return signatureError;
+                }
+
                 // Gets target method parameters
                 ParameterInfo[] overriddenMethodParameters = overriddenMethod.GetParameters();
                 if (implementationMethodParameters.Length > overriddenMethodParameters.Length)
@@ -410,6 +428,15 @@ namespace Datadog.Trace.DuckTyping
 
             T proxyMethodDuckAttribute = proxyMethod.GetCustomAttribute<T>(true) ?? new T();
             proxyMethodDuckAttribute.Name ??= proxyMethod.Name;
+
+            // A non-generic proxy method can select a generic target method and provide every generic argument
+            // explicitly through DuckAttribute.GenericParameterTypeNames. The candidate is still an open generic
+            // definition while this method searches for it, so comparing a concrete proxy parameter with the
+            // corresponding target placeholder here would reject a valid match. Once selected, the caller closes
+            // the target method and ValidateGenericMethodSignature checks the resulting concrete signature.
+            bool targetGenericArgumentsAreProvidedByAttribute =
+                proxyMethodDuckAttribute is DuckAttribute { GenericParameterTypeNames: { Length: > 0 } }
+             && !proxyMethod.IsGenericMethodDefinition;
 
             MethodInfo? targetMethod;
 
@@ -554,7 +581,23 @@ namespace Datadog.Trace.DuckTyping
                     proxyParamType = proxyParamType.IsByRef ? proxyParamType.GetElementType()! : proxyParamType;
                     candidateParamType = candidateParamType.IsByRef ? candidateParamType.GetElementType()! : candidateParamType;
 
-                    // We can't compare generic parameters
+                    // Generic parameter names are only documentation. Their positions define their identity in
+                    // metadata, so TFirst (position 0) and TSecond (position 1) are different types even though
+                    // both report IsGenericParameter. The comparison also walks arrays and constructed generic
+                    // types so a mismatch cannot be hidden inside a container such as Tuple<TFirst, TSecond>.
+                    // Reverse proxies perform their arity check after method selection so they can return the
+                    // established DuckTypeReverseProxyMustImplementGenericMethodAsGenericException. Their complete
+                    // open signature is validated before any IL is emitted below.
+                    if (typeof(T) != typeof(DuckReverseMethodAttribute)
+                     && !targetGenericArgumentsAreProvidedByAttribute
+                     && !HaveCompatibleGenericParameterStructure(proxyParamType, candidateParamType))
+                    {
+                        skip = true;
+                        break;
+                    }
+
+                    // Matching generic parameters are passed through. Their Type objects belong to different
+                    // method definitions, so reference equality cannot be used here.
                     if (candidateParamType.IsGenericParameter)
                     {
                         continue;
@@ -672,12 +715,136 @@ namespace Datadog.Trace.DuckTyping
             return null;
         }
 
+        private static DuckTypeException? ValidateGenericMethodSignature(MethodInfo proxyMethod, MethodInfo targetMethod)
+        {
+            Type[] proxyGenericArguments = proxyMethod.GetGenericArguments();
+            Type[] targetGenericArguments = targetMethod.GetGenericArguments();
+
+            // A generic method definition is emitted by substituting the generated proxy method's generic
+            // parameters into the target method. That substitution is only possible when both definitions have
+            // the same arity. A non-generic proxy may still call a constructed generic target selected through
+            // DuckAttribute.GenericParameterTypeNames; in that case the target is no longer a definition and the
+            // normal concrete-type conversion rules apply below.
+            if (proxyMethod.IsGenericMethodDefinition != targetMethod.IsGenericMethodDefinition
+             || (proxyMethod.IsGenericMethodDefinition && proxyGenericArguments.Length != targetGenericArguments.Length))
+            {
+                return DuckTypeProxyAndTargetMethodParameterSignatureMismatchException.Create(proxyMethod, targetMethod);
+            }
+
+            ParameterInfo[] proxyParameters = proxyMethod.GetParameters();
+            ParameterInfo[] targetParameters = targetMethod.GetParameters();
+            int sharedParameterCount = Math.Min(proxyParameters.Length, targetParameters.Length);
+
+            for (int i = 0; i < sharedParameterCount; i++)
+            {
+                if (!HaveCompatibleGenericParameterStructure(proxyParameters[i].ParameterType, targetParameters[i].ParameterType))
+                {
+                    return DuckTypeProxyAndTargetMethodParameterSignatureMismatchException.Create(proxyMethod, targetMethod);
+                }
+            }
+
+            if (!HaveCompatibleGenericParameterStructure(proxyMethod.ReturnType, targetMethod.ReturnType))
+            {
+                return DuckTypeProxyAndTargetMethodReturnTypeMismatchException.Create(proxyMethod, targetMethod);
+            }
+
+            return null;
+        }
+
+        private static bool HaveCompatibleGenericParameterStructure(Type proxyType, Type targetType)
+        {
+            if (proxyType == targetType)
+            {
+                return true;
+            }
+
+            if (!proxyType.ContainsGenericParameters && !targetType.ContainsGenericParameters)
+            {
+                // Closed types contain no placeholders whose identities can be confused. They may still require a
+                // normal cast, boxing operation or duck conversion, which is deliberately handled later by the
+                // existing conversion pipeline.
+                return true;
+            }
+
+            if (proxyType.IsGenericParameter || targetType.IsGenericParameter)
+            {
+                if (!proxyType.IsGenericParameter || !targetType.IsGenericParameter)
+                {
+                    // A concrete type and an open generic parameter are not interchangeable. In particular, an
+                    // unconstrained generic parameter may be either a value or reference type, so there is no IL
+                    // conversion that is valid for every possible method instantiation.
+                    return false;
+                }
+
+                // Generic parameter names do not participate in signature identity. The metadata position and
+                // owner kind do: method parameter !!0 is equivalent to method parameter !!0 on the corresponding
+                // method, but it is not equivalent to !!1 or to type parameter !0.
+                return proxyType.GenericParameterPosition == targetType.GenericParameterPosition
+                    && (proxyType.DeclaringMethod is null) == (targetType.DeclaringMethod is null);
+            }
+
+            if (proxyType.IsByRef || targetType.IsByRef || proxyType.IsPointer || targetType.IsPointer)
+            {
+                // Managed references and pointers describe storage, not a reference-type conversion. Both sides
+                // must use the same shape before it is safe to compare their element placeholders.
+                if (proxyType.IsPointer != targetType.IsPointer || proxyType.IsByRef != targetType.IsByRef)
+                {
+                    return false;
+                }
+
+                return HaveCompatibleGenericParameterStructure(proxyType.GetElementType()!, targetType.GetElementType()!);
+            }
+
+            if (proxyType.IsArray && targetType.IsArray)
+            {
+                // A vector (T[]) and a rank-one multidimensional array (T[*]) have the same rank but different
+                // runtime signatures. Preserve that distinction as well as the rank before comparing elements.
+                bool proxyIsVector = proxyType.GetArrayRank() == 1 && proxyType == proxyType.GetElementType()!.MakeArrayType();
+                bool targetIsVector = targetType.GetArrayRank() == 1 && targetType == targetType.GetElementType()!.MakeArrayType();
+                if (proxyType.GetArrayRank() != targetType.GetArrayRank() || proxyIsVector != targetIsVector)
+                {
+                    return false;
+                }
+
+                return HaveCompatibleGenericParameterStructure(proxyType.GetElementType()!, targetType.GetElementType()!);
+            }
+
+            if (proxyType.IsGenericType
+             && targetType.IsGenericType
+             && proxyType.GetGenericTypeDefinition() == targetType.GetGenericTypeDefinition())
+            {
+                Type[] proxyGenericArguments = proxyType.GetGenericArguments();
+                Type[] targetGenericArguments = targetType.GetGenericArguments();
+                if (proxyGenericArguments.Length != targetGenericArguments.Length)
+                {
+                    return false;
+                }
+
+                for (int i = 0; i < proxyGenericArguments.Length; i++)
+                {
+                    if (!HaveCompatibleGenericParameterStructure(proxyGenericArguments[i], targetGenericArguments[i]))
+                    {
+                        return false;
+                    }
+                }
+            }
+
+            // This helper validates only the placement of open generic parameters. Concrete assignability, enum
+            // handling, boxing, duck chaining and runtime casts remain the responsibility of the existing type
+            // conversion logic.
+            return true;
+        }
+
         private static DuckTypeInvalidTypeConversionException? WriteSafeTypeConversion(this LazyILGenerator il, Type actualType, Type expectedType)
         {
-            // If both types are generics, we expect that the generic parameter are the same type (passthrough)
-            if (actualType.IsGenericParameter && expectedType.IsGenericParameter)
+            // Matching generic parameters are substituted with the same concrete type when the generated method
+            // is constructed, so no conversion is necessary. Never apply this shortcut to different positions:
+            // they may be instantiated with unrelated value/reference categories and storage sizes.
+            if (actualType.IsGenericParameter || expectedType.IsGenericParameter)
             {
-                return null;
+                return HaveCompatibleGenericParameterStructure(actualType, expectedType)
+                           ? null
+                           : DuckTypeInvalidTypeConversionException.Create(actualType, expectedType);
             }
 
             return il.WriteTypeConversion(actualType, expectedType);
