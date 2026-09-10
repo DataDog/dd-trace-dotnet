@@ -30,6 +30,7 @@ public class AspNetCore5ExceptionReplayInvalidProgramTests : AspNetBase, IClassF
 {
     private const string ExceptionReplayPhaseTag = "_dd.di._er";
     private const string DebugInfoCapturedTag = "error.debug_info_captured";
+    private const string SnapshotIdTagName = "snapshot_id";
     private const int MaxAttempts = 8;
 
     // Exception Replay captures once (Eligible + frame tags) then reverts probes.
@@ -58,8 +59,12 @@ public class AspNetCore5ExceptionReplayInvalidProgramTests : AspNetBase, IClassF
 
     public static IEnumerable<object[]> InvalidProgramScenarios()
     {
-        yield return [typeof(NestedUsingAwaitGenericOverrideTest)];
-        yield return [typeof(AwaitUsingCatchFilterFinallyTest)];
+        yield return
+        [
+            typeof(NestedUsingAwaitGenericOverrideTest),
+            nameof(NestedUsingAwaitGenericOverrideTest.PaymentGetAllQueryHandler.Handle)
+        ];
+        yield return [typeof(AwaitUsingCatchFilterFinallyTest), nameof(AwaitUsingCatchFilterFinallyTest.RunAsync)];
     }
 
     public override void Dispose()
@@ -72,7 +77,7 @@ public class AspNetCore5ExceptionReplayInvalidProgramTests : AspNetBase, IClassF
     [MemberData(nameof(InvalidProgramScenarios))]
     [Trait("Category", "EndToEnd")]
     [Trait("RunOnWindows", "True")]
-    public async Task ExceptionReplayRewrite_DoesNotThrowInvalidProgramException(Type testType)
+    public async Task ExceptionReplayRewrite_DoesNotThrowInvalidProgramException(Type testType, string expectedAsyncMethodName)
     {
         var url = $"/RunTest/{testType.FullName}";
         var expectedErrorType = typeof(ExceptionReplayIntentionalException).FullName;
@@ -113,7 +118,7 @@ public class AspNetCore5ExceptionReplayInvalidProgramTests : AspNetBase, IClassF
 
                 errorType.Should().Be(expectedErrorType);
 
-                if (IsSuccessfulCapture(erroredSpan, exceptionReplayPhase))
+                if (IsSuccessfulCapture(erroredSpan, exceptionReplayPhase, expectedAsyncMethodName))
                 {
                     capturedRequests++;
                 }
@@ -123,8 +128,9 @@ public class AspNetCore5ExceptionReplayInvalidProgramTests : AspNetBase, IClassF
 
             capturedRequests.Should().BeGreaterThanOrEqualTo(
                 RequiredCapturedRequests,
-                "Exception Replay should capture {0} after rewriting MoveNext (Eligible with snapshot_id frame tags). Failure phases such as InvalidatedCase must not count.",
-                testType.Name);
+                "Exception Replay should capture {0}.{1} after rewriting MoveNext (Eligible with snapshot_id frame tags). Failure phases such as InvalidatedCase must not count.",
+                testType.Name,
+                expectedAsyncMethodName);
         }
         finally
         {
@@ -132,15 +138,30 @@ public class AspNetCore5ExceptionReplayInvalidProgramTests : AspNetBase, IClassF
         }
     }
 
-    private static bool IsSuccessfulCapture(MockSpan span, string exceptionReplayPhase)
+    private static bool IsSuccessfulCapture(MockSpan span, string exceptionReplayPhase, string expectedAsyncMethodName)
     {
         if (exceptionReplayPhase != ExceptionReplayDiagnosticTagNames.Eligible || span.Tags is null)
         {
             return false;
         }
 
-        return span.Tags.ContainsKey(DebugInfoCapturedTag)
-            && span.Tags.Keys.Any(key => key.EndsWith(".snapshot_id", StringComparison.Ordinal));
+        if (!span.Tags.ContainsKey(DebugInfoCapturedTag))
+        {
+            return false;
+        }
+
+        var expectedStateMachinePrefix = $"<{expectedAsyncMethodName}>d__";
+        foreach (var tagName in span.Tags.Keys.Where(key => key.EndsWith($".{SnapshotIdTagName}", StringComparison.Ordinal)))
+        {
+            var framePrefix = tagName.Substring(0, tagName.Length - SnapshotIdTagName.Length);
+            if (span.GetTag(framePrefix + "frame_data.function") == "MoveNext"
+             && span.GetTag(framePrefix + "frame_data.class_name")?.StartsWith(expectedStateMachinePrefix, StringComparison.Ordinal) == true)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 }
 

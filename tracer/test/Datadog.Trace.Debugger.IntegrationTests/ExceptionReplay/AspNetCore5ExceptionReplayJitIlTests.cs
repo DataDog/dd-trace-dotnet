@@ -6,6 +6,7 @@
 #if NETCOREAPP3_0_OR_GREATER
 
 using System;
+using System.IO;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Debugger.ExceptionAutoInstrumentation;
@@ -28,7 +29,9 @@ namespace Datadog.Trace.Debugger.IntegrationTests.ExceptionReplay;
 public class AspNetCore5ExceptionReplayJitIlTests : AspNetBase, IClassFixture<AspNetCoreTestFixture>
 {
     private const string ExceptionReplayPhaseTag = "_dd.di._er";
+    private const string UnsupportedCompletionValueLoadLog = "EndAsyncMethodProbe: instruction before SetException is not a standalone value load";
     private const int MaxAttempts = 8;
+    private readonly string _logPath;
 
     public AspNetCore5ExceptionReplayJitIlTests(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
         : base("AspNetCore5", outputHelper)
@@ -42,6 +45,10 @@ public class AspNetCore5ExceptionReplayJitIlTests : AspNetBase, IClassFixture<As
         SetEnvironmentVariable("DD_CLR_ENABLE_INLINING", "0");
         SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", "Production");
         SetEnvironmentVariable("COMPLUS_ForceEnc", "0");
+
+        _logPath = Path.Combine(LogDirectory, nameof(AspNetCore5ExceptionReplayJitIlTests));
+        Directory.CreateDirectory(_logPath);
+        SetEnvironmentVariable(ConfigurationKeys.LogDirectory, _logPath);
 
         Fixture = fixture;
         Fixture.SetOutput(outputHelper);
@@ -66,6 +73,7 @@ public class AspNetCore5ExceptionReplayJitIlTests : AspNetBase, IClassFixture<As
         var expectedErrorType = typeof(InvalidOperationException).FullName;
 
         IncludeAllHttpSpans = true;
+        using var logEntryWatcher = new LogEntryWatcher("dotnet-tracer-native-*", _logPath, Output);
         await Fixture.TryStartApp(this);
         SetHttpPort(Fixture.HttpPort);
 
@@ -98,6 +106,9 @@ public class AspNetCore5ExceptionReplayJitIlTests : AspNetBase, IClassFixture<As
                 errorType.Should().Be(expectedErrorType);
                 await Task.Delay(250);
             }
+
+            var guardLog = await logEntryWatcher.WaitForLogEntry(UnsupportedCompletionValueLoadLog);
+            guardLog.Should().Contain("LdfldSm.MoveNext");
         }
         finally
         {

@@ -1216,8 +1216,10 @@ HRESULT DebuggerMethodRewriter::EndAsyncMethodProbe(ILRewriterWrapper& rewriterW
                                                     ULONG callTargetReturnIndex,
                                                     mdFieldDef isReEntryFieldTok, 
                                                     std::vector<EHClause>& newClauses,
-                                                    const ProbeType& probeType) const
+                                                    const ProbeType& probeType,
+                                                    bool& unsupportedCompletionValueLoad) const
 {
+    unsupportedCompletionValueLoad = false;
     ILInstr* setResultEndMethodTryStartInstr = nullptr;
     ILInstr* endMethodOriginalCodeFirstInstr = nullptr;
 
@@ -1248,6 +1250,7 @@ HRESULT DebuggerMethodRewriter::EndAsyncMethodProbe(ILRewriterWrapper& rewriterW
                                    (functionInfo.name == WStr("SetResult") && elementType != ELEMENT_TYPE_VOID);
         if (willClonePrev && !ILRewriter::IsCloneableStandaloneValueLoad(pInstr->m_pPrev->m_opcode))
         {
+            unsupportedCompletionValueLoad = true;
             Logger::Warn("EndAsyncMethodProbe: instruction before ", functionInfo.name,
                          " is not a standalone value load (opcode=", pInstr->m_pPrev->m_opcode,
                          "). Aborting rewrite to avoid InvalidProgramException. method=", caller->type.name, ".",
@@ -1400,8 +1403,10 @@ HRESULT DebuggerMethodRewriter::EndAsyncMethodSpanProbe(ILRewriterWrapper& rewri
                                                     TypeSignature* methodReturnType,
                                                     const std::vector<TypeSignature>& methodLocals, int numLocals,
                                                     ULONG callTargetReturnIndex, mdFieldDef isReEntryFieldTok,
-                                                    std::vector<EHClause>& newClauses) const
+                                                    std::vector<EHClause>& newClauses,
+                                                    bool& unsupportedCompletionValueLoad) const
 {
+    unsupportedCompletionValueLoad = false;
     ILInstr* setResultEndMethodTryStartInstr = nullptr;
     ILInstr* endMethodOriginalCodeFirstInstr = nullptr;
 
@@ -1429,6 +1434,7 @@ HRESULT DebuggerMethodRewriter::EndAsyncMethodSpanProbe(ILRewriterWrapper& rewri
         if (functionInfo.name == WStr("SetException") &&
             !ILRewriter::IsCloneableStandaloneValueLoad(pInstr->m_pPrev->m_opcode))
         {
+            unsupportedCompletionValueLoad = true;
             Logger::Warn("EndAsyncMethodSpanProbe: instruction before SetException is not a standalone value load (opcode=",
                          pInstr->m_pPrev->m_opcode, "). Aborting rewrite to avoid InvalidProgramException. method=",
                          caller->type.name, ".", caller->name);
@@ -1815,13 +1821,18 @@ HRESULT DebuggerMethodRewriter::ApplyAsyncMethodProbe(
     // ENDING OF THE METHOD EXECUTION
     // ***
 
+    bool unsupportedCompletionValueLoad;
     hr = EndAsyncMethodProbe(rewriterWrapper, module_metadata, debugger_tokens, caller, isStatic, methodReturnType,
-                                methodLocals, numLocals, callTargetReturnIndex, isReEntryFieldTok, newClauses, probeType);
+                             methodLocals, numLocals, callTargetReturnIndex, isReEntryFieldTok, newClauses, probeType,
+                             unsupportedCompletionValueLoad);
 
     if (FAILED(hr))
     {
-        // Expected fail-closed abort; Error would fail CheckBuildLogsForErrors.
-        Logger::Warn("DebuggerMethodRewriter::ApplyAsyncMethodProbe: Fail in EndAsyncMethodProbe");
+        if (!unsupportedCompletionValueLoad)
+        {
+            Logger::Error("DebuggerMethodRewriter::ApplyAsyncMethodProbe: Fail in EndAsyncMethodProbe");
+        }
+
         return hr;
     }
 
@@ -1964,13 +1975,18 @@ HRESULT DebuggerMethodRewriter::ApplyAsyncMethodSpanProbe(
     // ENDING OF THE METHOD EXECUTION
     // ***
 
+    bool unsupportedCompletionValueLoad;
     hr = EndAsyncMethodSpanProbe(rewriterWrapper, moduleMetadata, debuggerTokens, caller, isStatic, methodReturnType,
-                                methodLocals, numLocals, callTargetReturnIndex, isReEntryFieldTok, newClauses);
+                                 methodLocals, numLocals, callTargetReturnIndex, isReEntryFieldTok, newClauses,
+                                 unsupportedCompletionValueLoad);
 
     if (FAILED(hr))
     {
-        // Expected fail-closed abort; Error would fail CheckBuildLogsForErrors.
-        Logger::Warn("DebuggerMethodRewriter::ApplyAsyncMethodProbe: Fail in EndAsyncMethodSpanProbe");
+        if (!unsupportedCompletionValueLoad)
+        {
+            Logger::Error("DebuggerMethodRewriter::ApplyAsyncMethodSpanProbe: Fail in EndAsyncMethodSpanProbe");
+        }
+
         return hr;
     }
 

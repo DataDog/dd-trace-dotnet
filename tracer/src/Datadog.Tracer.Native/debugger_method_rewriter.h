@@ -88,13 +88,14 @@ private:
                                        FunctionInfo* caller, bool isStatic, TypeSignature* methodReturnType,
                                        const std::vector<TypeSignature>& methodLocals, int numLocals, 
                                        ULONG callTargetReturnIndex, mdFieldDef isReEntryFieldTok,
-                                       std::vector<EHClause>& newClauses, const ProbeType& probeType) const;
+                                       std::vector<EHClause>& newClauses, const ProbeType& probeType,
+                                       bool& unsupportedCompletionValueLoad) const;
     HRESULT EndAsyncMethodSpanProbe(ILRewriterWrapper& rewriterWrapper, ModuleMetadata& module_metadata,
                                 DebuggerTokens* debuggerTokens, FunctionInfo* caller, bool isStatic,
                                 TypeSignature* methodReturnType, const std::vector<TypeSignature>& methodLocals,
                                 int numLocals, ULONG callTargetReturnIndex,
                                 mdFieldDef isReEntryFieldTok,
-                                std::vector<EHClause>& newClauses) const;
+                                std::vector<EHClause>& newClauses, bool& unsupportedCompletionValueLoad) const;
     static HRESULT LoadProbeIdIntoStack(ModuleID moduleId, const ModuleMetadata& moduleMetadata, mdToken functionToken,
                                         const shared::WSTRING& methodProbeId, const ILRewriterWrapper& rewriterWrapper,
                                         ILInstr** outLoadStrInstr);
