@@ -7,6 +7,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Debugger.ExceptionAutoInstrumentation;
@@ -28,8 +29,11 @@ namespace Datadog.Trace.Debugger.IntegrationTests.ExceptionReplay;
 public class AspNetCore5ExceptionReplayInvalidProgramTests : AspNetBase, IClassFixture<AspNetCoreTestFixture>
 {
     private const string ExceptionReplayPhaseTag = "_dd.di._er";
+    private const string DebugInfoCapturedTag = "error.debug_info_captured";
     private const int MaxAttempts = 8;
-    private const int RequiredRewrittenRequests = 2;
+
+    // Exception Replay captures once (Eligible + frame tags) then reverts probes.
+    private const int RequiredCapturedRequests = 1;
 
     public AspNetCore5ExceptionReplayInvalidProgramTests(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
         : base("AspNetCore5", outputHelper)
@@ -79,11 +83,11 @@ public class AspNetCore5ExceptionReplayInvalidProgramTests : AspNetBase, IClassF
         SetHttpPort(Fixture.HttpPort);
 
         var agent = Fixture.Agent;
-        var rewrittenRequests = 0;
+        var capturedRequests = 0;
 
         try
         {
-            for (var attempt = 1; attempt <= MaxAttempts && rewrittenRequests < RequiredRewrittenRequests; attempt++)
+            for (var attempt = 1; attempt <= MaxAttempts && capturedRequests < RequiredCapturedRequests; attempt++)
             {
                 var spans = await SendRequestsAsync(agent, [url]);
 
@@ -109,19 +113,17 @@ public class AspNetCore5ExceptionReplayInvalidProgramTests : AspNetBase, IClassF
 
                 errorType.Should().Be(expectedErrorType);
 
-                if (IsPendingInstrumentation(exceptionReplayPhase))
+                if (IsSuccessfulCapture(erroredSpan, exceptionReplayPhase))
                 {
-                    await Task.Delay(250);
-                    continue;
+                    capturedRequests++;
                 }
 
-                rewrittenRequests++;
                 await Task.Delay(250);
             }
 
-            rewrittenRequests.Should().BeGreaterThanOrEqualTo(
-                RequiredRewrittenRequests,
-                "Exception Replay should rewrite {0} after the first throw so later requests run instrumented MoveNext",
+            capturedRequests.Should().BeGreaterThanOrEqualTo(
+                RequiredCapturedRequests,
+                "Exception Replay should capture {0} after rewriting MoveNext (Eligible with snapshot_id frame tags). Failure phases such as InvalidatedCase must not count.",
                 testType.Name);
         }
         finally
@@ -130,11 +132,15 @@ public class AspNetCore5ExceptionReplayInvalidProgramTests : AspNetBase, IClassF
         }
     }
 
-    private static bool IsPendingInstrumentation(string exceptionReplayPhase)
+    private static bool IsSuccessfulCapture(MockSpan span, string exceptionReplayPhase)
     {
-        return exceptionReplayPhase is null
-            || exceptionReplayPhase == ExceptionReplayDiagnosticTagNames.NewCase
-            || exceptionReplayPhase == ExceptionReplayDiagnosticTagNames.ExceptionTrackManagerNotInitialized;
+        if (exceptionReplayPhase != ExceptionReplayDiagnosticTagNames.Eligible || span.Tags is null)
+        {
+            return false;
+        }
+
+        return span.Tags.ContainsKey(DebugInfoCapturedTag)
+            && span.Tags.Keys.Any(key => key.EndsWith(".snapshot_id", StringComparison.Ordinal));
     }
 }
 

@@ -832,7 +832,6 @@ bool ILRewriter::IsCloneableStandaloneValueLoad(unsigned opcode)
     {
         case CEE_LDNULL:
         case CEE_LDSTR:
-        case CEE_LDSFLD:
             return true;
         default:
             return false;
