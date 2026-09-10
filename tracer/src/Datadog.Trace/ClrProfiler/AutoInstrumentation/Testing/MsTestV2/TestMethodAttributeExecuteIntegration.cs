@@ -962,10 +962,12 @@ public sealed class TestMethodAttributeExecuteAsyncIntegration
         public readonly DateTimeOffset StartTime;
         public readonly MsTestExecution? Execution;
         public readonly MsTestRetryContext? RetryContext;
+        public readonly int NativeRowIndex;
 
         public TestRunnerState(ITestMethod testMethod, Test? test, MsTestExecution? execution, MsTestRetryContext? retryContext)
         {
             Execution = execution;
+            NativeRowIndex = execution?.NextNativeRowIndex ?? 0;
             RetryContext = retryContext;
             TestMethod = testMethod;
             Test = test;
