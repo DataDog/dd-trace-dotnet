@@ -14,6 +14,7 @@ using System.Threading.Channels;
 using System.Threading.Tasks;
 using OpenFeature;
 using OpenFeature.Constant;
+using OpenFeature.Error;
 using OpenFeature.Model;
 
 namespace Datadog.FeatureFlags.OpenFeature;
@@ -115,6 +116,19 @@ public sealed class DatadogProvider : global::OpenFeature.FeatureProvider, IDisp
         }
     }
 
+    private void SignalInitializationFailed(string message)
+    {
+        // Emitted before the exception leaves this method, because the provider owns its status events
+        // rather than letting them be inferred from how initialization terminated.
+        var payload = CreatePayload(ProviderEventTypes.ProviderError, message);
+        payload.ErrorType = ErrorType.ProviderFatal;
+
+        if (!EventChannel.Writer.TryWrite(payload))
+        {
+            _ = WriteWhenRoomAvailableAsync(payload);
+        }
+    }
+
     private void SignalReady()
     {
         var payload = CreatePayload(ProviderEventTypes.ProviderReady, "Feature flag configuration was received.");
@@ -157,18 +171,41 @@ public sealed class DatadogProvider : global::OpenFeature.FeatureProvider, IDisp
     /// provider can actually resolve flags.
     /// <para>
     /// It returns normally when the wait times out, because slow delivery is transient and the
-    /// configuration still arrives afterwards. It faults when no source could start delivery at all,
-    /// which leaves the provider unable to resolve anything for the rest of the process: OpenFeature
-    /// then marks this provider as errored instead of ready, and evaluations keep returning their
-    /// default values. The exception does not reach the application, because OpenFeature handles it
-    /// while setting the provider.
+    /// configuration still arrives afterwards. It throws <see cref="ProviderFatalException"/> when no
+    /// source could start delivery at all, which leaves the provider unable to resolve anything for
+    /// the rest of the process: that is irrecoverable rather than merely not-ready. The exception does
+    /// not reach the application, because OpenFeature handles it while setting the provider.
+    /// </para>
+    /// <para>
+    /// This provider emits its own status event either way, rather than leaving the SDK to infer one
+    /// from how this method returns.
     /// </para>
     /// </summary>
     /// <param name="context"> Evaluation context </param>
     /// <param name="cancellationToken"> Async cancellation token </param>
     /// <returns> A task that completes when initialization is complete </returns>
-    public override Task InitializeAsync(EvaluationContext context, CancellationToken cancellationToken = default)
-        => FeatureFlagsSdk.InitializeAsync(cancellationToken);
+    public override async Task InitializeAsync(EvaluationContext context, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            await FeatureFlagsSdk.InitializeAsync(cancellationToken).ConfigureAwait(false);
+        }
+        catch (Exception exception)
+        {
+            SignalInitializationFailed(exception.Message);
+
+            // Irrecoverable: no source can be started later in this process, so no configuration will
+            // ever arrive and every evaluation returns its default value.
+            throw new ProviderFatalException(exception.Message, exception);
+        }
+
+        // Configuration that arrived before the application registered this provider leaves nothing to
+        // signal from the configuration callback, so the ready event is emitted here instead.
+        if (FeatureFlagsSdk.HasConfiguration() && Interlocked.CompareExchange(ref _readySignalled, 1, 0) == 0)
+        {
+            SignalReady();
+        }
+    }
 
     /// <summary> Gets provider metadata </summary>
     /// <returns> Returns provider metadata </returns>
