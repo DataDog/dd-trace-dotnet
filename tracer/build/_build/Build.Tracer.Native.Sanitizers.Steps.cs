@@ -37,6 +37,7 @@ partial class Build
     Target CompileTracerWithAsanLinux => _ => _
         .Unlisted()
         .OnlyWhenStatic(() => IsLinux)
+        .After(CompileManagedLoader)
         .Before(PublishNativeTracer)
         .Triggers(RunTracerUnitTestsWithAsanLinux)
         .Executes(() =>
@@ -79,6 +80,7 @@ partial class Build
     Target CompileTracerWithUbsanLinux => _ => _
         .Unlisted()
         .OnlyWhenStatic(() => IsLinux)
+        .After(CompileManagedLoader)
         .Before(PublishNativeTracer)
         .Triggers(RunTracerUnitTestsWithUbsanLinux)
         .Executes(() =>
