@@ -1,0 +1,42 @@
+// <copyright file="EventGridPublisherClientSendCloudEventsToChannelAsyncIntegration.cs" company="Datadog">
+// Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
+// This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
+// </copyright>
+
+#nullable enable
+
+using System;
+using System.ComponentModel;
+using System.Threading;
+using Datadog.Trace.ClrProfiler.CallTarget;
+using Datadog.Trace.Configuration;
+
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.EventGrid;
+
+/// <summary>
+/// Azure.Messaging.EventGrid.EventGridPublisherClient.SendEventsAsync calltarget instrumentation for partner channel CloudEvents
+/// </summary>
+[InstrumentMethod(
+    AssemblyName = "Azure.Messaging.EventGrid",
+    TypeName = "Azure.Messaging.EventGrid.EventGridPublisherClient",
+    MethodName = "SendEventsAsync",
+    ReturnTypeName = "System.Threading.Tasks.Task`1[Azure.Response]",
+    ParameterTypeNames = ["System.Collections.Generic.IEnumerable`1[Azure.Messaging.CloudEvent]", ClrNames.String, ClrNames.CancellationToken],
+    MinimumVersion = "4.11.0",
+    MaximumVersion = "5.*.*",
+    IntegrationName = nameof(IntegrationId.AzureEventGrid))]
+[Browsable(false)]
+[EditorBrowsable(EditorBrowsableState.Never)]
+public sealed class EventGridPublisherClientSendCloudEventsToChannelAsyncIntegration
+{
+    internal static CallTargetState OnMethodBegin<TTarget, TEvents>(TTarget instance, ref TEvents events, string channelName, CancellationToken cancellationToken)
+    {
+        return EventGridCommon.CreateProducerSpan(instance, ref events, injectContext: true);
+    }
+
+    internal static TReturn OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception? exception, in CallTargetState state)
+    {
+        state.Scope?.DisposeWithException(exception);
+        return returnValue;
+    }
+}
