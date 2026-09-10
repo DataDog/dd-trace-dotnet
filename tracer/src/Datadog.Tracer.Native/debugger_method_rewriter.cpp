@@ -1244,6 +1244,17 @@ HRESULT DebuggerMethodRewriter::EndAsyncMethodProbe(ILRewriterWrapper& rewriterW
         ILInstr* endMethodTryStartInstr = nullptr;
         ILInstr* endMethodCallInstr;
         auto [elementType, returnTypeFlags] = methodReturnType->GetElementTypeAndFlags();
+        const bool willClonePrev = functionInfo.name == WStr("SetException") ||
+                                   (functionInfo.name == WStr("SetResult") && elementType != ELEMENT_TYPE_VOID);
+        if (willClonePrev && !ILRewriter::IsCloneableStandaloneValueLoad(pInstr->m_pPrev->m_opcode))
+        {
+            Logger::Warn("EndAsyncMethodProbe: instruction before ", functionInfo.name,
+                         " is not a standalone value load (opcode=", pInstr->m_pPrev->m_opcode,
+                         "). Aborting rewrite to avoid InvalidProgramException. method=", caller->type.name, ".",
+                         caller->name);
+            return E_FAIL;
+        }
+
         if (functionInfo.name == WStr("SetResult"))
         {
             rewriterWrapper.SetILPosition(lastEh->m_pHandlerEnd->m_pNext);
@@ -1413,6 +1424,15 @@ HRESULT DebuggerMethodRewriter::EndAsyncMethodSpanProbe(ILRewriterWrapper& rewri
         if (functionInfo.name != WStr("SetResult") && functionInfo.name != WStr("SetException"))
         {
             continue;
+        }
+
+        if (functionInfo.name == WStr("SetException") &&
+            !ILRewriter::IsCloneableStandaloneValueLoad(pInstr->m_pPrev->m_opcode))
+        {
+            Logger::Warn("EndAsyncMethodSpanProbe: instruction before SetException is not a standalone value load (opcode=",
+                         pInstr->m_pPrev->m_opcode, "). Aborting rewrite to avoid InvalidProgramException. method=",
+                         caller->type.name, ".", caller->name);
+            return E_FAIL;
         }
 
         ILInstr* endMethodTryStartInstr = nullptr;

@@ -821,6 +821,24 @@ bool ILRewriter::IsLoadConstantInstruction(unsigned opcode)
     }
 }
 
+bool ILRewriter::IsCloneableStandaloneValueLoad(unsigned opcode)
+{
+    if (IsLoadLocalDirectInstruction(opcode) || IsLoadConstantInstruction(opcode))
+    {
+        return true;
+    }
+
+    switch (opcode)
+    {
+        case CEE_LDNULL:
+        case CEE_LDSTR:
+        case CEE_LDSFLD:
+            return true;
+        default:
+            return false;
+    }
+}
+
 // Checks whether the range [innerBegin, innerEnd) is a proper subset of [outerBegin, outerEnd).
 // All values are IL offsets using exclusive ends (first offset past the region).
 static bool IsProperlyContained(unsigned innerBegin, unsigned innerEnd, unsigned outerBegin, unsigned outerEnd)
