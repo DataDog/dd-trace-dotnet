@@ -269,14 +269,27 @@ namespace Datadog.Trace.FeatureFlags
             {
                 Interlocked.Exchange(ref _evaluator, new FeatureFlagsEvaluator(ReportExposure, configuration, _spanEnrichmentEnabled));
                 _firstConfigReceived.TrySetResult(true);
-                _onNewConfigEventHander?.Invoke();
-                return true;
             }
             catch (Exception ex)
             {
                 Log.Warning(ex, "FeatureFlagsModule::ApplyConfiguration -> Error applying configuration");
                 return false;
             }
+
+            // The handler comes from application code, and the agentless source reads the return value
+            // to decide whether to advance its ETag. Reporting a failed apply because a handler threw
+            // would make every later poll re-download the whole payload instead of getting a 304, so
+            // the configuration is already applied by this point and the handler cannot change that.
+            try
+            {
+                _onNewConfigEventHander?.Invoke();
+            }
+            catch (Exception ex)
+            {
+                Log.Warning(ex, "FeatureFlagsModule::ApplyConfiguration -> Error in the configuration event handler");
+            }
+
+            return true;
         }
 
         /// <summary>
