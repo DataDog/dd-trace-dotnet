@@ -133,9 +133,9 @@ std::pair<bool, FrameInfoView> FrameStore::GetFrame(uintptr_t instructionPointer
     }
     else
     {
-        functionId = _pManagedCodeCache->GetFunctionId(instructionPointer);
+        auto functionInfo = _pManagedCodeCache->GetFunctionInfo(instructionPointer);
 
-        if (!functionId.has_value())
+        if (!functionInfo.has_value())
         {
             // Windows-only: the ICorProfilerInfo::GetFunctionFromIP call inside
             // ManagedCodeCache was wrapped in __try/__except and caught an SEH
@@ -144,12 +144,23 @@ std::pair<bool, FrameInfoView> FrameStore::GetFrame(uintptr_t instructionPointer
             return {true, {NotResolvedModuleName, NotResolvedFrame, "", 0}};
         }
 
-        if (functionId.value() == ManagedCodeCache::InvalidFunctionId)
+        if (functionInfo->FunctionId == ManagedCodeCache::InvalidFunctionId)
         {
             // IP is not in managed ranges (native frame). Return isResolved=false so
             // RawSampleTransformer drops it from the final callstack.
             return {false, {NotResolvedModuleName, NotResolvedFrame, "", 0}};
         }
+
+        if (functionInfo->IsDynamic)
+        {
+            // Dynamic methods (IL stubs, DynamicMethod/LCG) have no metadata token,
+            // so the metadata path below can never give them a name.
+            // Return isResolved=false to drop the frame instead of showing a
+            // misleading "unknown method" placeholder.
+            return {false, {NotResolvedModuleName, NotResolvedFrame, "", 0}};
+        }
+
+        functionId = functionInfo->FunctionId;
     }
 
     auto frameInfo = GetManagedFrame(functionId.value());
