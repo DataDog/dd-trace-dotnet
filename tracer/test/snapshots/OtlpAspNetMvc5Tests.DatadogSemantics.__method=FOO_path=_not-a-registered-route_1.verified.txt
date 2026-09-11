@@ -1,0 +1,152 @@
+{
+  "resourceSpans": [
+    {
+      "resource": {
+        "attributes": [
+          {
+            "key": "service.name",
+            "value": {
+              "stringValue": "sample"
+            }
+          },
+          {
+            "key": "service.version",
+            "value": {
+              "stringValue": "1.0.0"
+            }
+          },
+          {
+            "key": "deployment.environment.name",
+            "value": {
+              "stringValue": "integration_tests"
+            }
+          },
+          {
+            "key": "telemetry.sdk.name",
+            "value": {
+              "stringValue": "sdk-name"
+            }
+          },
+          {
+            "key": "telemetry.sdk.language",
+            "value": {
+              "stringValue": "dotnet"
+            }
+          },
+          {
+            "key": "telemetry.sdk.version",
+            "value": {
+              "stringValue": "sdk-version"
+            }
+          },
+          {
+            "key": "git.commit.sha",
+            "value": {
+              "stringValue": "normalized-git-commit-sha"
+            }
+          },
+          {
+            "key": "git.repository_url",
+            "value": {
+              "stringValue": "https://github.com/DataDog/dd-trace-dotnet"
+            }
+          },
+          {
+            "key": "runtime-id",
+            "value": {
+              "stringValue": "Guid_1"
+            }
+          }
+        ]
+      },
+      "scopeSpans": [
+        {
+          "spans": [
+            {
+              "traceId": "normalized-trace-id",
+              "spanId": "normalized-span-id",
+              "name": "FOO /not-a-registered-route/?",
+              "kind": 2,
+              "startTimeUnixNano": "0",
+              "endTimeUnixNano": "0",
+              "attributes": [
+                {
+                  "key": "component",
+                  "value": {
+                    "stringValue": "aspnet"
+                  }
+                },
+                {
+                  "key": "http.method",
+                  "value": {
+                    "stringValue": "FOO"
+                  }
+                },
+                {
+                  "key": "http.request.headers.host",
+                  "value": {
+                    "stringValue": "localhost:00000"
+                  }
+                },
+                {
+                  "key": "http.status_code",
+                  "value": {
+                    "intValue": "404"
+                  }
+                },
+                {
+                  "key": "http.url",
+                  "value": {
+                    "stringValue": "http://localhost:00000/not-a-registered-route/1"
+                  }
+                },
+                {
+                  "key": "http.useragent",
+                  "value": {
+                    "stringValue": "testhelper"
+                  }
+                },
+                {
+                  "key": "operation.name",
+                  "value": {
+                    "stringValue": "aspnet.request"
+                  }
+                },
+                {
+                  "key": "resource.name",
+                  "value": {
+                    "stringValue": "FOO /not-a-registered-route/?"
+                  }
+                },
+                {
+                  "key": "runtime-id",
+                  "value": {
+                    "stringValue": "Guid_1"
+                  }
+                },
+                {
+                  "key": "service.name",
+                  "value": {
+                    "stringValue": "sample"
+                  }
+                },
+                {
+                  "key": "span.kind",
+                  "value": {
+                    "stringValue": "server"
+                  }
+                },
+                {
+                  "key": "span.type",
+                  "value": {
+                    "stringValue": "web"
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

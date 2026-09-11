@@ -1,4 +1,4 @@
-// <copyright file="OtlpSnapshotHelper.cs" company="Datadog">
+﻿// <copyright file="OtlpSnapshotHelper.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -120,8 +120,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Helpers
                 var spanStartTimeUnixNano = long.Parse(span[startTimeUnixNanoKey]!.ToString());
                 var spanEndTimeUnixNano = long.Parse(span[endTimeUnixNanoKey]!.ToString());
 
-                // Add strong assertions on unstable span information
-                spanStartTimeUnixNano.Should().BeGreaterThanOrEqualTo(testStartTimeUnixNano);
+                // Add strong assertions on unstable span information. The start time is allowed the
+                // same tolerance the session's span filter applies, since the bound was read from a
+                // different clock, in a different process, than the span's timestamp.
+                spanStartTimeUnixNano.Should().BeGreaterThanOrEqualTo(testStartTimeUnixNano - OtlpTestAgentSession.StartTimeToleranceNanoseconds);
                 spanEndTimeUnixNano.Should().BeGreaterThanOrEqualTo(spanStartTimeUnixNano);
                 traceIdData.Should().MatchRegex(TraceIdRegex);
                 spanIdData.Should().MatchRegex(SpanIdRegex);
@@ -162,11 +164,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Helpers
             {
                 if (attribute["value"] is JObject value)
                 {
-                    // The port arrives as an int on client spans and as a double on server spans,
-                    // so overwrite whichever value kind is present. Always writing a string keeps
-                    // http/json and http/protobuf rendering identically, as the timestamps above do.
-                    // TODO: Fix this up when implementing HTTP server spans as they should always
-                    // be emitted as ints from our instrumentation once implemented.
                     foreach (var property in value.Properties())
                     {
                         property.Value = "00000";

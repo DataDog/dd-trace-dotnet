@@ -53,6 +53,9 @@ namespace Datadog.Trace.Tagging
         // ServerPortBytes = MessagePack.Serialize("server.port");
         private static ReadOnlySpan<byte> ServerPortBytes => [171, 115, 101, 114, 118, 101, 114, 46, 112, 111, 114, 116];
 
+        // NetworkProtocolVersionBytes = MessagePack.Serialize("network.protocol.version");
+        private static ReadOnlySpan<byte> NetworkProtocolVersionBytes => [184, 110, 101, 116, 119, 111, 114, 107, 46, 112, 114, 111, 116, 111, 99, 111, 108, 46, 118, 101, 114, 115, 105, 111, 110];
+
         // HttpStatusCodeBytes = MessagePack.Serialize("http.status_code");
         private static ReadOnlySpan<byte> HttpStatusCodeBytes => [176, 104, 116, 116, 112, 46, 115, 116, 97, 116, 117, 115, 95, 99, 111, 100, 101];
 
@@ -86,6 +89,7 @@ namespace Datadog.Trace.Tagging
                 "url.query" => UrlQuery,
                 "server.address" => ServerAddress,
                 "server.port" => ServerPort is null ? null : Datadog.Trace.Util.IntStringCache.ToInvariantString(ServerPort.Value),
+                "network.protocol.version" => NetworkProtocolVersion,
                 "http.status_code" or "http.response.status_code" => HttpStatusCode is null ? null : Datadog.Trace.Util.IntStringCache.ToInvariantString(HttpStatusCode.Value),
                 "network.client.ip" or "network.peer.address" => NetworkClientIp,
                 "http.client_ip" or "client.address" => HttpClientIp,
@@ -136,6 +140,9 @@ namespace Datadog.Trace.Tagging
                         ServerPort = null;
                     }
 
+                    break;
+                case "network.protocol.version": 
+                    NetworkProtocolVersion = value;
                     break;
                 case "http.status_code":
                 case "http.response.status_code":
@@ -235,6 +242,11 @@ namespace Datadog.Trace.Tagging
             if (ServerPort is not null)
             {
                 processor.Process(new TagItem<int>("server.port", ServerPort.Value, ServerPortBytes));
+            }
+
+            if (NetworkProtocolVersion is not null)
+            {
+                processor.Process(new TagItem<string>("network.protocol.version", NetworkProtocolVersion, NetworkProtocolVersionBytes));
             }
 
             if (HttpStatusCode is not null)
@@ -352,6 +364,13 @@ namespace Datadog.Trace.Tagging
             {
                 sb.Append("server.port (tag):")
                   .Append(ServerPort.Value.ToString(System.Globalization.CultureInfo.InvariantCulture))
+                  .Append(',');
+            }
+
+            if (NetworkProtocolVersion is not null)
+            {
+                sb.Append("network.protocol.version (tag):")
+                  .Append(NetworkProtocolVersion)
                   .Append(',');
             }
 

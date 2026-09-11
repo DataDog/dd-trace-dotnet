@@ -25,6 +25,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
         /// Gets a value indicating whether its an encrypted connection
         /// </summary>
         public bool IsSecure;
+
+        /// <summary>
+        /// Gets the protocol the request arrived over, e.g. "HTTP/1.1"
+        /// </summary>
+        public string Protocol;
     }
 }
 #endif

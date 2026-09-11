@@ -79,6 +79,15 @@ namespace Datadog.Trace.Tagging
             set => (_otelTags ??= new OtelTags()).ServerPort = value;
         }
 
+        // OpenTelemetry-only: the version of the protocol the request arrived over, without the
+        // protocol name, so an HTTP/1.1 request is reported as "1.1".
+        [Tag(Trace.Tags.NetworkProtocolVersion)]
+        public string NetworkProtocolVersion
+        {
+            get => _otelTags?.NetworkProtocolVersion;
+            set => (_otelTags ??= new OtelTags()).NetworkProtocolVersion = value;
+        }
+
         [Tag(Trace.Tags.HttpStatusCode, OtelName = Trace.Tags.HttpResponseStatusCode)]
         public int? HttpStatusCode { get; set; }
 
@@ -103,6 +112,8 @@ namespace Datadog.Trace.Tagging
             public string ServerAddress { get; set; }
 
             public int? ServerPort { get; set; }
+
+            public string NetworkProtocolVersion { get; set; }
         }
     }
 }
