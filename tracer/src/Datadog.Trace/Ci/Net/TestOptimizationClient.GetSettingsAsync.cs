@@ -270,6 +270,50 @@ internal sealed partial class TestOptimizationClient
             ThirtySeconds = thirtySeconds;
             FiveMinutes = fiveMinutes;
         }
+
+        /// <summary>
+        /// Returns the EFD retry-bucket index for an initial test duration.
+        /// </summary>
+        public int RetryBucketIndexForDuration(double initialAttemptSeconds)
+        {
+            if (initialAttemptSeconds <= 5)
+            {
+                return 0;
+            }
+
+            if (initialAttemptSeconds <= 10)
+            {
+                return 1;
+            }
+
+            if (initialAttemptSeconds <= 30)
+            {
+                return 2;
+            }
+
+            if (initialAttemptSeconds <= 300)
+            {
+                return 3;
+            }
+
+            return 4;
+        }
+
+        /// <summary>
+        /// Returns the configured retry budget for an initial test duration.
+        /// </summary>
+        public int RetriesForDuration(double initialAttemptSeconds)
+        {
+            var retries = RetryBucketIndexForDuration(initialAttemptSeconds) switch
+            {
+                0 => FiveSeconds ?? 0,
+                1 => TenSeconds ?? 0,
+                2 => ThirtySeconds ?? 0,
+                3 => FiveMinutes ?? 0,
+                _ => 0,
+            };
+            return retries;
+        }
     }
 
     public readonly struct TestManagementSettingsResponse

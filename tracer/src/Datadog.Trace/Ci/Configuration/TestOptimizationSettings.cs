@@ -12,6 +12,7 @@ using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
+using Datadog.Trace.Logging;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Util;
@@ -111,6 +112,10 @@ namespace Datadog.Trace.Ci.Configuration
 
             // Flaky retry
             FlakyRetryEnabled = config.WithKeys(ConfigurationKeys.CIVisibility.FlakyRetryEnabled).AsBool();
+
+            // Dynamic ATR (duration-based retry budgets)
+            DynamicAtrEnabled = config.WithKeys(ConfigurationKeys.CIVisibility.DynamicAtrEnabled).AsBool(false);
+            DynamicAtrBuckets = ParseDynamicAtrBuckets(config.WithKeys(ConfigurationKeys.CIVisibility.DynamicAtrBuckets).AsString());
 
             // Maximum number of retry attempts for a single test case.
             FlakyRetryCount = config.WithKeys(ConfigurationKeys.CIVisibility.FlakyRetryCount).AsInt32(defaultValue: 5, validator: val => val >= 1) ?? 5;
@@ -247,6 +252,16 @@ namespace Datadog.Trace.Ci.Configuration
         public bool? FlakyRetryEnabled { get; private set; }
 
         /// <summary>
+        /// Gets a value indicating whether dynamic, duration-based ATR retry budgets are enabled.
+        /// </summary>
+        public bool DynamicAtrEnabled { get; private set; }
+
+        /// <summary>
+        /// Gets the custom dynamic ATR retry buckets (five ints), or null to use EFD retry settings.
+        /// </summary>
+        public int[]? DynamicAtrBuckets { get; private set; }
+
+        /// <summary>
         /// Gets a value indicating the maximum number of retry attempts for a single test case.
         /// </summary>
         public int FlakyRetryCount { get; private set; }
@@ -326,6 +341,40 @@ namespace Datadog.Trace.Ci.Configuration
             Agentless = enabled;
             ApiKey = apiKey;
             AgentlessUrl = agentlessUrl;
+        }
+
+        private static readonly IDatadogLogger SettingsLog = DatadogLogging.GetLoggerFor<TestOptimizationSettings>();
+
+        private const int RetryBucketCount = 5;
+        private const int MaxRetriesPerBucket = 20;
+
+        internal static int[]? ParseDynamicAtrBuckets(string? rawBuckets)
+        {
+            if (StringUtil.IsNullOrEmpty(rawBuckets))
+            {
+                return null;
+            }
+
+            var parts = rawBuckets!.Split(',');
+            if (parts.Length != RetryBucketCount)
+            {
+                SettingsLog.Warning<string, int>("Invalid {EnvVar} value {Value}; expected {Count} comma-separated integers in [1, {Max}].", ConfigurationKeys.CIVisibility.DynamicAtrBuckets, rawBuckets, RetryBucketCount);
+                return null;
+            }
+
+            var buckets = new int[RetryBucketCount];
+            for (var i = 0; i < RetryBucketCount; i++)
+            {
+                if (!int.TryParse(parts[i].Trim(), out var value) || value < 1 || value > MaxRetriesPerBucket)
+                {
+                    SettingsLog.Warning<string, int>("Invalid {EnvVar} value {Value}; expected {Count} comma-separated integers in [1, {Max}].", ConfigurationKeys.CIVisibility.DynamicAtrBuckets, rawBuckets, RetryBucketCount);
+                    return null;
+                }
+
+                buckets[i] = value;
+            }
+
+            return buckets;
         }
 
         internal void SetCodeCoverageMode(string? coverageMode)

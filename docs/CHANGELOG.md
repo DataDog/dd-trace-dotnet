@@ -1,6 +1,13 @@
 # Datadog .NET Tracer (`dd-trace-dotnet`) Release Notes
 
 
+## Unreleased
+
+### Features
+
+- CI Visibility: Adds `DD_CIVISIBILITY_DYNAMIC_ATR_ENABLED` to enable dynamic Auto Test Retries budgets based on test duration, instead of the flat per-test retry limit. Optionally configure the five duration-based budgets with `DD_CIVISIBILITY_DYNAMIC_ATR_BUCKETS` (five comma-separated integers in `[1, 20]`), corresponding to the Early Flake Detection duration buckets.
+
+
 
 
 
