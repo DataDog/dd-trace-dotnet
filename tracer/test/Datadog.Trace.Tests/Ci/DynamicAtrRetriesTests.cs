@@ -251,6 +251,56 @@ public class DynamicAtrRetriesTests : SettingsTestsBase
     }
 
     [Fact]
+    public void SkippedSettingsRequestWithLocalFlatAtrDoesNotEnableDynamicAtr()
+    {
+        var settings = CreateSettings(
+            (ConfigurationKeys.CIVisibility.CodeCoverage, "false"),
+            (ConfigurationKeys.CIVisibility.TestsSkippingEnabled, "false"),
+            (ConfigurationKeys.CIVisibility.EarlyFlakeDetectionEnabled, "false"),
+            (ConfigurationKeys.CIVisibility.FlakyRetryEnabled, "true"),
+            (ConfigurationKeys.CIVisibility.FlakyRetryCount, "5"),
+            (ConfigurationKeys.CIVisibility.DynamicAtrEnabled, "true"),
+            (ConfigurationKeys.CIVisibility.DynamicInstrumentationEnabled, "false"),
+            (ConfigurationKeys.CIVisibility.ImpactedTestsDetectionEnabled, "false"),
+            (ConfigurationKeys.CIVisibility.TestManagementEnabled, "false"));
+        var locallySynthesizedResponse = TestOptimizationClient.CreateSettingsResponseFromTestOptimizationSettings(settings, tracerManagement: null);
+        var flakyRetryFeature = TestOptimizationFlakyRetryFeature.Create(settings, locallySynthesizedResponse, isRemoteSettingsResponse: false);
+        var testOptimization = new Mock<ITestOptimization>();
+        testOptimization.SetupGet(x => x.Settings).Returns(settings);
+        testOptimization.SetupGet(x => x.FlakyRetryFeature).Returns(flakyRetryFeature);
+        var metadata = new TestCaseMetadata("case", totalExecution: 1, countDownExecutionNumber: 0)
+        {
+            SelectedRetryMode = TestRetryMode.AutomaticTestRetry,
+        };
+
+        locallySynthesizedResponse.FlakyTestRetries.Should().BeTrue();
+        flakyRetryFeature.Enabled.Should().BeTrue();
+        flakyRetryFeature.BackendEnabled.Should().BeFalse();
+        flakyRetryFeature.DynamicAtrEnabled.Should().BeFalse();
+
+        XUnitIntegration.InitializeTotalExecutions(testOptimization.Object, metadata, TimeSpan.FromSeconds(1));
+
+        metadata.TotalExecutions.Should().Be(6);
+
+        var mockCollector = new Mock<IMetricsTelemetryCollector>();
+        var original = TelemetryFactory.SetMetricsForTesting(mockCollector.Object);
+        try
+        {
+            TestOptimization.RecordDynamicAtrTelemetry(settings, flakyRetryFeature);
+
+            mockCollector.Verify(
+                c => c.RecordCountCIVisibilityDynamicAtrRetries(
+                    It.IsAny<MetricTags.CIVisibilityDynamicAtrRetriesHasCustomBuckets>(),
+                    It.IsAny<int>()),
+                Times.Never);
+        }
+        finally
+        {
+            TelemetryFactory.SetMetricsForTesting(original);
+        }
+    }
+
+    [Fact]
     public void DynamicAtrRequiresBackendAtrDespiteLocalFlatAtrOverride()
     {
         var settings = CreateSettings(
@@ -263,6 +313,48 @@ public class DynamicAtrRetriesTests : SettingsTestsBase
         flakyRetryFeature.Enabled.Should().BeTrue();
         flakyRetryFeature.BackendEnabled.Should().BeFalse();
         flakyRetryFeature.DynamicAtrEnabled.Should().BeFalse();
+    }
+
+    [Fact]
+    public void XUnit_DynamicAtrFallbackSchedulesOneRetryForDurationsOverFiveMinutes()
+    {
+        var settings = CreateSettings(
+            (ConfigurationKeys.CIVisibility.DynamicAtrEnabled, "true"),
+            (ConfigurationKeys.CIVisibility.FlakyRetryEnabled, "true"));
+        var flakyRetryFeature = CreateFlakyRetryFeature(settings, backendEnabled: true);
+        var earlyFlakeDetectionFeature = new Mock<ITestOptimizationEarlyFlakeDetectionFeature>();
+        earlyFlakeDetectionFeature.SetupGet(x => x.EarlyFlakeDetectionSettings).Returns(
+            new TestOptimizationClient.EarlyFlakeDetectionSettingsResponse(
+                enabled: false,
+                slowTestRetries: new TestOptimizationClient.SlowTestRetriesSettingsResponse(),
+                faultySessionThreshold: 0));
+        var testOptimization = new Mock<ITestOptimization>();
+        testOptimization.SetupGet(x => x.Settings).Returns(settings);
+        testOptimization.SetupGet(x => x.FlakyRetryFeature).Returns(flakyRetryFeature);
+        testOptimization.SetupGet(x => x.EarlyFlakeDetectionFeature).Returns(earlyFlakeDetectionFeature.Object);
+        var metadata = new TestCaseMetadata("case", totalExecution: 1, countDownExecutionNumber: 0)
+        {
+            SelectedRetryMode = TestRetryMode.AutomaticTestRetry,
+        };
+        var originalTestOptimization = TestOptimization.Instance;
+        try
+        {
+            TestOptimization.Instance = testOptimization.Object;
+
+            XUnitIntegration.InitializeTotalExecutions(testOptimization.Object, metadata, TimeSpan.FromSeconds(301));
+
+            metadata.TotalExecutions.Should().Be(2);
+            var remainingRetries = 1;
+            XUnitIntegration.GetRetryExecutionDecision(metadata, hasFailures: true, hasNotRun: false, ref remainingRetries)
+                            .Should().Be(XUnitRetryExecutionDecision.Retry);
+            remainingRetries.Should().Be(0);
+            XUnitIntegration.GetRetryExecutionDecision(metadata, hasFailures: true, hasNotRun: false, ref remainingRetries)
+                            .Should().Be(XUnitRetryExecutionDecision.RetryBudgetExhausted);
+        }
+        finally
+        {
+            TestOptimization.Instance = originalTestOptimization;
+        }
     }
 
     [Fact]
@@ -326,7 +418,8 @@ public class DynamicAtrRetriesTests : SettingsTestsBase
                 earlyFlakeDetection: new TestOptimizationClient.EarlyFlakeDetectionSettingsResponse(),
                 knownTestsEnabled: false,
                 testManagement: new TestOptimizationClient.TestManagementSettingsResponse(),
-                dynamicInstrumentationEnabled: false));
+                dynamicInstrumentationEnabled: false),
+            isRemoteSettingsResponse: true);
     }
 
     private static TestOptimizationSettings CreateSettings(params (string Key, string Value)[] values)

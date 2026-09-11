@@ -625,7 +625,7 @@ internal sealed class TestOptimization : ITestOptimization
                     remoteSettings = await client.GetSettingsAsync(skipFrameworkInfo: true).ConfigureAwait(false);
                 }
 
-                FlakyRetryFeature = TestOptimizationFlakyRetryFeature.Create(settings, remoteSettings);
+                FlakyRetryFeature = TestOptimizationFlakyRetryFeature.Create(settings, remoteSettings, isRemoteSettingsResponse: true);
                 RecordDynamicAtrTelemetry(settings, FlakyRetryFeature);
                 DynamicInstrumentationFeature = TestOptimizationDynamicInstrumentationFeature.Create(settings, remoteSettings);
                 KnownTestsFeature = TestOptimizationKnownTestsFeature.Create(settings, remoteSettings, client);
@@ -678,7 +678,7 @@ internal sealed class TestOptimization : ITestOptimization
     {
         using var cd = CodeDurationRef.Create();
         var remoteSettings = TestOptimizationClient.CreateSettingsResponseFromTestOptimizationSettings(settings, tracerManagement);
-        FlakyRetryFeature = TestOptimizationFlakyRetryFeature.Create(settings, remoteSettings);
+        FlakyRetryFeature = TestOptimizationFlakyRetryFeature.Create(settings, remoteSettings, isRemoteSettingsResponse: false);
         RecordDynamicAtrTelemetry(settings, FlakyRetryFeature);
         DynamicInstrumentationFeature = TestOptimizationDynamicInstrumentationFeature.Create(settings, remoteSettings);
         KnownTestsFeature = TestOptimizationKnownTestsFeature.Create(settings, remoteSettings, client);

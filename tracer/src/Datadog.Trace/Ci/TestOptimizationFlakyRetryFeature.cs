@@ -17,7 +17,7 @@ internal sealed class TestOptimizationFlakyRetryFeature : ITestOptimizationFlaky
 
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(TestOptimizationFlakyRetryFeature));
 
-    private TestOptimizationFlakyRetryFeature(TestOptimizationSettings settings, TestOptimizationClient.SettingsResponse clientSettingsResponse)
+    private TestOptimizationFlakyRetryFeature(TestOptimizationSettings settings, TestOptimizationClient.SettingsResponse clientSettingsResponse, bool isRemoteSettingsResponse)
     {
         if (!settings.FlakyRetryEnabled.HasValue && clientSettingsResponse.FlakyTestRetries.HasValue)
         {
@@ -25,7 +25,7 @@ internal sealed class TestOptimizationFlakyRetryFeature : ITestOptimizationFlaky
             settings.SetFlakyRetryEnabled(clientSettingsResponse.FlakyTestRetries.Value);
         }
 
-        BackendEnabled = clientSettingsResponse.FlakyTestRetries == true;
+        BackendEnabled = isRemoteSettingsResponse && clientSettingsResponse.FlakyTestRetries == true;
         Enabled = settings.FlakyRetryEnabled == true;
         DynamicAtrEnabled = settings.DynamicAtrEnabled && BackendEnabled && Enabled;
         FlakyRetryCount = settings.FlakyRetryCount;
@@ -43,6 +43,6 @@ internal sealed class TestOptimizationFlakyRetryFeature : ITestOptimizationFlaky
 
     public int TotalFlakyRetryCount { get; }
 
-    public static ITestOptimizationFlakyRetryFeature Create(TestOptimizationSettings settings, TestOptimizationClient.SettingsResponse clientSettingsResponse)
-        => new TestOptimizationFlakyRetryFeature(settings, clientSettingsResponse);
+    public static ITestOptimizationFlakyRetryFeature Create(TestOptimizationSettings settings, TestOptimizationClient.SettingsResponse clientSettingsResponse, bool isRemoteSettingsResponse)
+        => new TestOptimizationFlakyRetryFeature(settings, clientSettingsResponse, isRemoteSettingsResponse);
 }
