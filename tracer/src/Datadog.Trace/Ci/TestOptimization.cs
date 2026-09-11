@@ -626,7 +626,7 @@ internal sealed class TestOptimization : ITestOptimization
                 }
 
                 FlakyRetryFeature = TestOptimizationFlakyRetryFeature.Create(settings, remoteSettings);
-                RecordDynamicAtrTelemetry(settings);
+                RecordDynamicAtrTelemetry(settings, FlakyRetryFeature);
                 DynamicInstrumentationFeature = TestOptimizationDynamicInstrumentationFeature.Create(settings, remoteSettings);
                 KnownTestsFeature = TestOptimizationKnownTestsFeature.Create(settings, remoteSettings, client);
                 EarlyFlakeDetectionFeature = TestOptimizationEarlyFlakeDetectionFeature.Create(settings, remoteSettings, KnownTestsFeature);
@@ -679,7 +679,7 @@ internal sealed class TestOptimization : ITestOptimization
         using var cd = CodeDurationRef.Create();
         var remoteSettings = TestOptimizationClient.CreateSettingsResponseFromTestOptimizationSettings(settings, tracerManagement);
         FlakyRetryFeature = TestOptimizationFlakyRetryFeature.Create(settings, remoteSettings);
-        RecordDynamicAtrTelemetry(settings);
+        RecordDynamicAtrTelemetry(settings, FlakyRetryFeature);
         DynamicInstrumentationFeature = TestOptimizationDynamicInstrumentationFeature.Create(settings, remoteSettings);
         KnownTestsFeature = TestOptimizationKnownTestsFeature.Create(settings, remoteSettings, client);
         EarlyFlakeDetectionFeature = TestOptimizationEarlyFlakeDetectionFeature.Create(settings, remoteSettings, KnownTestsFeature);
@@ -688,9 +688,9 @@ internal sealed class TestOptimization : ITestOptimization
         TestManagementFeature = TestOptimizationTestManagementFeature.Create(settings, remoteSettings, client);
     }
 
-    private static void RecordDynamicAtrTelemetry(TestOptimizationSettings settings)
+    internal static void RecordDynamicAtrTelemetry(TestOptimizationSettings settings, ITestOptimizationFlakyRetryFeature? flakyRetryFeature)
     {
-        if (settings.DynamicAtrEnabled && settings.FlakyRetryEnabled == true)
+        if (flakyRetryFeature?.DynamicAtrEnabled == true)
         {
             var hasCustomBuckets = settings.DynamicAtrBuckets is not null
                 ? MetricTags.CIVisibilityDynamicAtrRetriesHasCustomBuckets.True

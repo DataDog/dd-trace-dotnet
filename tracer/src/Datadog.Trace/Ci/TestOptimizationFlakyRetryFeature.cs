@@ -25,13 +25,19 @@ internal sealed class TestOptimizationFlakyRetryFeature : ITestOptimizationFlaky
             settings.SetFlakyRetryEnabled(clientSettingsResponse.FlakyTestRetries.Value);
         }
 
+        BackendEnabled = clientSettingsResponse.FlakyTestRetries == true;
         Enabled = settings.FlakyRetryEnabled == true;
+        DynamicAtrEnabled = settings.DynamicAtrEnabled && BackendEnabled && Enabled;
         FlakyRetryCount = settings.FlakyRetryCount;
         TotalFlakyRetryCount = settings.TotalFlakyRetryCount;
         Log.Information("{V}", Enabled ? "TestOptimizationFlakyRetryFeature: Flaky retries is enabled." : "TestOptimizationFlakyRetryFeature: Flaky retries is disabled.");
     }
 
     public bool Enabled { get; }
+
+    public bool BackendEnabled { get; }
+
+    public bool DynamicAtrEnabled { get; }
 
     public int FlakyRetryCount { get; }
 

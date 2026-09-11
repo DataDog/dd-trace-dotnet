@@ -106,7 +106,7 @@ internal sealed class TestOptimizationTestCommand
                 Common.Log.Debug("TestOptimizationTestCommand: Exception instrumentation was set or timed out.");
             }
 
-            if (testOptimization.Settings.DynamicAtrEnabled)
+            if (testOptimization.FlakyRetryFeature?.DynamicAtrEnabled == true)
             {
                 var dynamicRetries = Common.GetDynamicAtrRetryCountForDuration(duration);
                 result = DoRetries(new DynamicFlakyRetryBehavior(testOptimization, dynamicRetries), context, result);

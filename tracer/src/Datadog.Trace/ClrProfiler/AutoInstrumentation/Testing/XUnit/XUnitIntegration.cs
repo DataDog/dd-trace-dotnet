@@ -300,7 +300,7 @@ internal static class XUnitIntegration
         {
             var hasRemainingExecutions = testCaseMetadata.IsRetry
                                              ? testCaseMetadata.CountDownExecutionNumber > 0
-                                             : TestOptimization.Instance.Settings.DynamicAtrEnabled ||
+                                             : TestOptimization.Instance.FlakyRetryFeature?.DynamicAtrEnabled == true ||
                                                (TestOptimization.Instance.FlakyRetryFeature?.FlakyRetryCount ?? TestOptimizationFlakyRetryFeature.FlakyRetryCountDefault) > 0;
             retryDecision = hasRemainingExecutions
                                 ? XUnitRetryCoordinator.GetOrCreateRetryExecutionDecision(
@@ -408,7 +408,7 @@ internal static class XUnitIntegration
     {
         testCaseMetadata.TotalExecutions = testCaseMetadata.SelectedRetryMode switch
         {
-            TestRetryMode.AutomaticTestRetry => testOptimization.Settings.DynamicAtrEnabled
+            TestRetryMode.AutomaticTestRetry => testOptimization.FlakyRetryFeature?.DynamicAtrEnabled == true
                 ? Common.GetDynamicAtrRetryCountForDuration(initialDuration) + 1
                 : (testOptimization.FlakyRetryFeature?.FlakyRetryCount ?? TestOptimizationFlakyRetryFeature.FlakyRetryCountDefault) + 1,
             TestRetryMode.AttemptToFix => testOptimization.TestManagementFeature?.TestManagementAttemptToFixRetryCount ?? TestOptimizationTestManagementFeature.TestManagementAttemptToFixRetryCountDefault,

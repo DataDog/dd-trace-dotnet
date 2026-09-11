@@ -9,6 +9,8 @@ using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.Configuration;
 using Datadog.Trace.Ci.Coverage.Backfill;
 using Datadog.Trace.Ci.Net;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.TestHelpers;
@@ -23,7 +25,9 @@ namespace Datadog.Trace.Tests.Ci;
 [Collection(nameof(TracerInstanceTestCollection))]
 [EnvironmentVariablesCleaner(
     ConfigurationKeys.CIVisibility.DynamicAtrEnabled,
-    ConfigurationKeys.CIVisibility.DynamicAtrBuckets)]
+    ConfigurationKeys.CIVisibility.DynamicAtrBuckets,
+    ConfigurationKeys.CIVisibility.FlakyRetryEnabled,
+    ConfigurationKeys.CIVisibility.FlakyRetryCount)]
 public class DynamicAtrRetriesTests : SettingsTestsBase
 {
     [Theory]
@@ -177,14 +181,9 @@ public class DynamicAtrRetriesTests : SettingsTestsBase
                 (ConfigurationKeys.CIVisibility.DynamicAtrBuckets, "3,1,1,1,1"),
                 (ConfigurationKeys.CIVisibility.FlakyRetryEnabled, "true"));
 
-            // Simulate the telemetry call that TestOptimization would make
-            if (settings.DynamicAtrEnabled && settings.FlakyRetryEnabled == true)
-            {
-                var hasCustomBuckets = settings.DynamicAtrBuckets is not null
-                    ? MetricTags.CIVisibilityDynamicAtrRetriesHasCustomBuckets.True
-                    : MetricTags.CIVisibilityDynamicAtrRetriesHasCustomBuckets.False;
-                TelemetryFactory.Metrics.RecordCountCIVisibilityDynamicAtrRetries(hasCustomBuckets);
-            }
+            var flakyRetryFeature = CreateFlakyRetryFeature(settings, backendEnabled: true);
+
+            TestOptimization.RecordDynamicAtrTelemetry(settings, flakyRetryFeature);
 
             mockCollector.Verify(
                 c => c.RecordCountCIVisibilityDynamicAtrRetries(
@@ -209,14 +208,9 @@ public class DynamicAtrRetriesTests : SettingsTestsBase
                 (ConfigurationKeys.CIVisibility.DynamicAtrEnabled, "true"),
                 (ConfigurationKeys.CIVisibility.FlakyRetryEnabled, "true"));
 
-            // No custom buckets set
-            if (settings.DynamicAtrEnabled && settings.FlakyRetryEnabled == true)
-            {
-                var hasCustomBuckets = settings.DynamicAtrBuckets is not null
-                    ? MetricTags.CIVisibilityDynamicAtrRetriesHasCustomBuckets.True
-                    : MetricTags.CIVisibilityDynamicAtrRetriesHasCustomBuckets.False;
-                TelemetryFactory.Metrics.RecordCountCIVisibilityDynamicAtrRetries(hasCustomBuckets);
-            }
+            var flakyRetryFeature = CreateFlakyRetryFeature(settings, backendEnabled: true);
+
+            TestOptimization.RecordDynamicAtrTelemetry(settings, flakyRetryFeature);
 
             mockCollector.Verify(
                 c => c.RecordCountCIVisibilityDynamicAtrRetries(
@@ -240,14 +234,9 @@ public class DynamicAtrRetriesTests : SettingsTestsBase
             var settings = CreateSettings(
                 (ConfigurationKeys.CIVisibility.DynamicAtrEnabled, "false"),
                 (ConfigurationKeys.CIVisibility.FlakyRetryEnabled, "true"));
+            var flakyRetryFeature = CreateFlakyRetryFeature(settings, backendEnabled: true);
 
-            if (settings.DynamicAtrEnabled && settings.FlakyRetryEnabled == true)
-            {
-                var hasCustomBuckets = settings.DynamicAtrBuckets is not null
-                    ? MetricTags.CIVisibilityDynamicAtrRetriesHasCustomBuckets.True
-                    : MetricTags.CIVisibilityDynamicAtrRetriesHasCustomBuckets.False;
-                TelemetryFactory.Metrics.RecordCountCIVisibilityDynamicAtrRetries(hasCustomBuckets);
-            }
+            TestOptimization.RecordDynamicAtrTelemetry(settings, flakyRetryFeature);
 
             mockCollector.Verify(
                 c => c.RecordCountCIVisibilityDynamicAtrRetries(
@@ -259,6 +248,85 @@ public class DynamicAtrRetriesTests : SettingsTestsBase
         {
             TelemetryFactory.SetMetricsForTesting(original);
         }
+    }
+
+    [Fact]
+    public void DynamicAtrRequiresBackendAtrDespiteLocalFlatAtrOverride()
+    {
+        var settings = CreateSettings(
+            (ConfigurationKeys.CIVisibility.DynamicAtrEnabled, "true"),
+            (ConfigurationKeys.CIVisibility.FlakyRetryEnabled, "true"),
+            (ConfigurationKeys.CIVisibility.FlakyRetryCount, "5"));
+
+        var flakyRetryFeature = CreateFlakyRetryFeature(settings, backendEnabled: false);
+
+        flakyRetryFeature.Enabled.Should().BeTrue();
+        flakyRetryFeature.BackendEnabled.Should().BeFalse();
+        flakyRetryFeature.DynamicAtrEnabled.Should().BeFalse();
+    }
+
+    [Fact]
+    public void XUnit_UsesFlatRetryBudgetWhenBackendAtrIsDisabled()
+    {
+        var settings = CreateSettings(
+            (ConfigurationKeys.CIVisibility.DynamicAtrEnabled, "true"),
+            (ConfigurationKeys.CIVisibility.FlakyRetryEnabled, "true"),
+            (ConfigurationKeys.CIVisibility.FlakyRetryCount, "5"));
+        var flakyRetryFeature = CreateFlakyRetryFeature(settings, backendEnabled: false);
+        var testOptimization = new Mock<ITestOptimization>();
+        testOptimization.SetupGet(x => x.Settings).Returns(settings);
+        testOptimization.SetupGet(x => x.FlakyRetryFeature).Returns(flakyRetryFeature);
+        var metadata = new TestCaseMetadata("case", totalExecution: 1, countDownExecutionNumber: 0)
+        {
+            SelectedRetryMode = TestRetryMode.AutomaticTestRetry,
+        };
+
+        XUnitIntegration.InitializeTotalExecutions(testOptimization.Object, metadata, TimeSpan.FromSeconds(1));
+
+        metadata.TotalExecutions.Should().Be(6);
+    }
+
+    [Fact]
+    public void Telemetry_BackendAtrDisabled_DoesNotRecordDynamicAtrMetric()
+    {
+        var mockCollector = new Mock<IMetricsTelemetryCollector>();
+        var original = TelemetryFactory.SetMetricsForTesting(mockCollector.Object);
+        try
+        {
+            var settings = CreateSettings(
+                (ConfigurationKeys.CIVisibility.DynamicAtrEnabled, "true"),
+                (ConfigurationKeys.CIVisibility.DynamicAtrBuckets, "3,1,1,1,1"),
+                (ConfigurationKeys.CIVisibility.FlakyRetryEnabled, "true"));
+            var flakyRetryFeature = CreateFlakyRetryFeature(settings, backendEnabled: false);
+
+            TestOptimization.RecordDynamicAtrTelemetry(settings, flakyRetryFeature);
+
+            mockCollector.Verify(
+                c => c.RecordCountCIVisibilityDynamicAtrRetries(
+                    It.IsAny<MetricTags.CIVisibilityDynamicAtrRetriesHasCustomBuckets>(),
+                    It.IsAny<int>()),
+                Times.Never);
+        }
+        finally
+        {
+            TelemetryFactory.SetMetricsForTesting(original);
+        }
+    }
+
+    private static ITestOptimizationFlakyRetryFeature CreateFlakyRetryFeature(TestOptimizationSettings settings, bool backendEnabled)
+    {
+        return TestOptimizationFlakyRetryFeature.Create(
+            settings,
+            new TestOptimizationClient.SettingsResponse(
+                codeCoverage: false,
+                testsSkipping: false,
+                requireGit: false,
+                impactedTestsEnabled: false,
+                flakyTestRetries: backendEnabled,
+                earlyFlakeDetection: new TestOptimizationClient.EarlyFlakeDetectionSettingsResponse(),
+                knownTestsEnabled: false,
+                testManagement: new TestOptimizationClient.TestManagementSettingsResponse(),
+                dynamicInstrumentationEnabled: false));
     }
 
     private static TestOptimizationSettings CreateSettings(params (string Key, string Value)[] values)
