@@ -85,6 +85,16 @@ internal static partial class ConfigurationKeys
         public const string DynamicInstrumentationEnabled = "DD_CIVISIBILITY_DI_ENABLED";
 
         /// <summary>
+        /// Configuration key for overriding the five duration-based Auto Test Retries budgets with five comma-separated integers in [1, 20].
+        /// </summary>
+        public const string DynamicAtrBuckets = "DD_CIVISIBILITY_DYNAMIC_ATR_BUCKETS";
+
+        /// <summary>
+        /// Configuration key for enabling dynamic, duration-based Auto Test Retries budgets instead of the flat per-test retry limit.
+        /// </summary>
+        public const string DynamicAtrEnabled = "DD_CIVISIBILITY_DYNAMIC_ATR_ENABLED";
+
+        /// <summary>
         /// Configuration key for enabling or disabling the early flake detection feature in CI Visibility
         /// </summary>
         public const string EarlyFlakeDetectionEnabled = "DD_CIVISIBILITY_EARLY_FLAKE_DETECTION_ENABLED";
