@@ -1,0 +1,186 @@
+name: Auto bump Datadog.Serverless.Compat
+
+run-name: Bump Datadog.Serverless.Compat to ${{ inputs['package-version'] }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      package-version:
+        description: Exact Datadog.Serverless.Compat package version
+        required: true
+        type: string
+
+concurrency:
+  group: auto-bump-serverless-compat-${{ inputs['package-version'] }}
+  cancel-in-progress: false
+
+jobs:
+  bump_serverless_compat:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write # Required for dd-octo-sts authentication
+
+    steps:
+      - name: Authorize release automation
+        env:
+          ACTUAL_ACTOR: ${{ github.actor }}
+          EXPECTED_ACTOR: ${{ vars.RELEASE_AUTOMATION_ACTOR }}
+          TRIGGERING_ACTOR: ${{ github.triggering_actor }}
+          WORKFLOW_REF: ${{ github.ref }}
+        run: |
+          if [[ -z "$EXPECTED_ACTOR" || "$ACTUAL_ACTOR" != "$EXPECTED_ACTOR" || "$TRIGGERING_ACTOR" != "$EXPECTED_ACTOR" ]]; then
+            echo "This workflow may only be run or rerun by the configured release automation actor."
+            exit 1
+          fi
+          if [[ "$WORKFLOW_REF" != "refs/heads/master" ]]; then
+            echo "This workflow may only be run from refs/heads/master."
+            exit 1
+          fi
+
+      - name: Validate package version
+        env:
+          PACKAGE_VERSION: ${{ inputs['package-version'] }}
+        run: |
+          if [[ ! "$PACKAGE_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z]+([.-][0-9A-Za-z]+)*)?$ ]]; then
+            echo "package-version must be an exact semantic version without a leading v."
+            exit 1
+          fi
+
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Update Datadog.Serverless.Compat
+        id: update
+        env:
+          PACKAGE_VERSION: ${{ inputs['package-version'] }}
+        run: |
+          python3 <<'PY'
+          import os
+          import re
+          from pathlib import Path
+
+          path = Path("tracer/src/Datadog.AzureFunctions/Datadog.AzureFunctions.csproj")
+          content = path.read_text()
+          pattern = re.compile(
+              r'(<PackageReference Include="Datadog\.Serverless\.Compat" Version=")([^"]+)(" PrivateAssets="none" />)'
+          )
+          matches = pattern.findall(content)
+          if len(matches) != 1:
+              raise SystemExit(f"Expected exactly one Datadog.Serverless.Compat package reference, found {len(matches)}")
+
+          package_version = os.environ["PACKAGE_VERSION"]
+          updated = pattern.sub(rf"\g<1>{package_version}\g<3>", content)
+          if updated != content:
+              path.write_text(updated)
+          PY
+
+          mapfile -t changed_files < <(git diff --name-only)
+          if [[ ${#changed_files[@]} -eq 0 ]]; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          elif [[ ${#changed_files[@]} -eq 1 && "${changed_files[0]}" == "tracer/src/Datadog.AzureFunctions/Datadog.AzureFunctions.csproj" ]]; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "The updater changed files outside the Datadog.AzureFunctions package reference."
+            printf '%s\n' "${changed_files[@]}"
+            exit 1
+          fi
+
+      - name: Get dd-octo-sts token
+        if: steps.update.outputs.changed == 'true'
+        uses: DataDog/dd-octo-sts-action@96a25462dbcb10ebf0bfd6e2ccc917d2ab235b9a # v1.0.4
+        id: octo-sts
+        with:
+          scope: DataDog/dd-trace-dotnet
+          policy: self.auto_bump_serverless_compat.create-pr
+
+      - name: Check existing bot branch and pull request
+        if: steps.update.outputs.changed == 'true'
+        env:
+          BRANCH: bot/datadog-serverless-compat-${{ inputs['package-version'] }}
+          EXPECTED_TITLE: "[Datadog.Serverless.Compat Bump] Update to ${{ inputs['package-version'] }}"
+          GH_TOKEN: ${{ steps.octo-sts.outputs.token }}
+          PACKAGE_VERSION: ${{ inputs['package-version'] }}
+        run: |
+          set -euo pipefail
+          target="tracer/src/Datadog.AzureFunctions/Datadog.AzureFunctions.csproj"
+          encoded_branch="$(jq -rn --arg value "$BRANCH" '$value | @uri')"
+          error_file="$(mktemp)"
+
+          if gh api "repos/${GITHUB_REPOSITORY}/git/ref/heads/${encoded_branch}" > branch.json 2>"$error_file"; then
+            branch_exists=true
+          elif grep -q "HTTP 404" "$error_file"; then
+            branch_exists=false
+          else
+            cat "$error_file"
+            exit 1
+          fi
+
+          if [[ "$branch_exists" == "false" ]]; then
+            exit 0
+          fi
+
+          mapfile -t branch_files < <(gh api "repos/${GITHUB_REPOSITORY}/compare/master...${encoded_branch}" --jq '.files[].filename')
+          if [[ ${#branch_files[@]} -ne 1 || "${branch_files[0]}" != "$target" ]]; then
+            echo "The existing bot branch contains changes outside $target."
+            printf '%s\n' "${branch_files[@]}"
+            exit 1
+          fi
+
+          gh api -X GET -H "Accept: application/vnd.github.raw+json" \
+            "repos/${GITHUB_REPOSITORY}/contents/${target}" -f ref="$BRANCH" > branch-project.xml
+          if ! cmp -s branch-project.xml "$target"; then
+            echo "The existing bot branch does not exactly match the requested dependency update."
+            exit 1
+          fi
+          python3 <<'PY'
+          import os
+          import re
+          from pathlib import Path
+
+          content = Path("branch-project.xml").read_text()
+          versions = re.findall(
+              r'<PackageReference Include="Datadog\.Serverless\.Compat" Version="([^"]+)" PrivateAssets="none" />',
+              content,
+          )
+          expected = os.environ["PACKAGE_VERSION"]
+          if versions != [expected]:
+              raise SystemExit(f"Existing bot branch does not contain the requested package version {expected}")
+          PY
+
+          prs="$(gh pr list --repo "$GITHUB_REPOSITORY" --state all --head "$BRANCH" \
+            --json baseRefName,mergedAt,state,title,url --limit 100)"
+          pr_count="$(jq 'length' <<< "$prs")"
+          if [[ "$pr_count" -gt 1 ]]; then
+            echo "More than one pull request uses the existing bot branch."
+            exit 1
+          fi
+          if [[ "$pr_count" -eq 1 ]]; then
+            state="$(jq -r '.[0].state' <<< "$prs")"
+            base="$(jq -r '.[0].baseRefName' <<< "$prs")"
+            title="$(jq -r '.[0].title' <<< "$prs")"
+            if [[ "$state" != "OPEN" || "$base" != "master" || "$title" != "$EXPECTED_TITLE" ]]; then
+              echo "The existing bot branch belongs to a conflicting pull request."
+              jq -r '.[0].url' <<< "$prs"
+              exit 1
+            fi
+          fi
+
+      - name: Create Pull Request
+        if: steps.update.outputs.changed == 'true'
+        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
+        with:
+          token: ${{ steps.octo-sts.outputs.token }}
+          branch: bot/datadog-serverless-compat-${{ inputs['package-version'] }}
+          commit-message: "[Datadog.Serverless.Compat Bump] Update to ${{ inputs['package-version'] }}"
+          delete-branch: true
+          base: master
+          title: "[Datadog.Serverless.Compat Bump] Update to ${{ inputs['package-version'] }}"
+          reviewers: DataDog/apm-dotnet
+          labels: dependencies
+          body: |
+            Updates the Datadog.AzureFunctions dependency on `Datadog.Serverless.Compat` to exact version `${{ inputs['package-version'] }}`.
+
+            This pull request requires human review and the repository's existing CI before merge.
