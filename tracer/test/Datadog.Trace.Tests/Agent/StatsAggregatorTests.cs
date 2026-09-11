@@ -1400,6 +1400,25 @@ namespace Datadog.Trace.Tests.Agent
         }
 
         [Fact]
+        public async Task OtlpAdditionalTags_StoreSourceValuesAndIgnoreBuiltInAttributes()
+        {
+            var start = DateTimeOffset.UtcNow;
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettingsWithAdditionalTags("region,span.kind"), Mock.Of<IDiscoveryService>(), Mock.Of<IStatsdManager>(), isOtlp: true);
+
+            var span = CreateTopLevelSpan(start, "svc");
+            span.SetTag("region", "us-east-1");
+            span.SetTag(Tags.SpanKind, SpanKinds.Client);
+
+            aggregator.Add(span);
+
+            aggregator.CurrentBuffer.Buckets.Should().ContainSingle();
+            var bucket = aggregator.CurrentBuffer.Buckets.Values.Single();
+            bucket.AdditionalMetricTags.Should().BeEmpty();
+            bucket.Otlp.AdditionalMetricTags.Should().ContainSingle()
+                  .Which.Should().Be(new KeyValuePair<string, string>("region", "us-east-1"));
+        }
+
+        [Fact]
         public async Task AdditionalTags_MissingTagBucketsSeparatelyFromPresent()
         {
             var start = DateTimeOffset.UtcNow;
@@ -1564,6 +1583,27 @@ namespace Datadog.Trace.Tests.Agent
             aggregator.Add(MakeTenant("a"));
             aggregator.CurrentBuffer.Buckets.Should().HaveCount(4);
             aggregator.CurrentBuffer.Buckets[aggregator.BuildKey(MakeTenant("a"))].Hits.Should().Be(2);
+        }
+
+        [Fact]
+        public async Task OtlpAdditionalTags_PerBucketCapPreservesOverflowDimension()
+        {
+            var start = DateTimeOffset.UtcNow;
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettingsWithAdditionalTags("tenant", cardinalityLimit: 1), Mock.Of<IDiscoveryService>(), Mock.Of<IStatsdManager>(), isOtlp: true);
+
+            Span MakeTenant(string tenant)
+            {
+                var span = CreateTopLevelSpan(start, "svc");
+                span.SetTag("tenant", tenant);
+                return span;
+            }
+
+            aggregator.Add(MakeTenant("admitted"), MakeTenant("blocked"));
+
+            aggregator.CurrentBuffer.Buckets.Should().HaveCount(2);
+            var blockedBucket = aggregator.CurrentBuffer.Buckets.Values
+                                          .Single(b => b.Otlp.AdditionalMetricTags.Contains(new(StatsAggregator.BlockedByTracerSentinel, string.Empty)));
+            blockedBucket.Hits.Should().Be(1);
         }
 
         [Fact]
