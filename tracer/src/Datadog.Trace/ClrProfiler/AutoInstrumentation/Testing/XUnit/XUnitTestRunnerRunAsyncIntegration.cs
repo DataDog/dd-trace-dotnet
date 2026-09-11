@@ -147,8 +147,8 @@ public static class XUnitTestRunnerRunAsyncIntegration
             XUnitIntegration.CreateTest(ref runnerInstance, testCaseMetadata);
         }
 
-        // Decrement the execution number (the method body will do the execution)
-        testCaseMetadata.CountDownExecutionNumber--;
+        // Reset the previous attempt's outcome before the method body executes again.
+        testCaseMetadata.PrepareForRetry();
 
         return new CallTargetState(null, new TestRunnerState(testRunnerInstance, retryMessageBus, testCaseMetadata));
     }
@@ -194,7 +194,8 @@ public static class XUnitTestRunnerRunAsyncIntegration
 
                 if (testCaseMetadata.CountDownExecutionNumber > 0)
                 {
-                    var retryDecision = XUnitIntegration.GetRetryExecutionDecision(testCaseMetadata, hasFailures: runSummary.Failed > 0, hasNotRun: false, ref _totalRetries);
+                    // Quarantine clears the framework's exceptions, but ATR still needs the actual attempt's outcome.
+                    var retryDecision = XUnitIntegration.GetRetryExecutionDecision(testCaseMetadata, hasFailures: runSummary.Failed > 0 || testCaseMetadata.HasAnException, hasNotRun: false, ref _totalRetries);
                     if (retryDecision == XUnitRetryExecutionDecision.Retry)
                     {
                         if (XUnitIntegration.ShouldWaitForExceptionInstrumentation(testOptimization, testCaseMetadata))
