@@ -33,76 +33,48 @@ namespace Datadog.Trace.Security.Unit.Tests.IAST
             StackWalker.MustSkipAssembly(assemblyName).Should().Be(outcome);
         }
 
-        [Theory]
-        [InlineData(true)]
-        [InlineData(false)]
-        public void GivenAStack_WhenTryGetStackTraceAndFrame_ThenTheTargetFrameIsTheFirstNonExcludedCaller(bool captureSourceInfoForAllFrames)
+        [Fact]
+        public void GivenAStack_WhenGetStackTrace_ThenTheTargetFrameIsTheFirstNonExcludedCaller()
         {
-            Capture(captureSourceInfoForAllFrames, out var stack, out var frame).Should().BeTrue();
+            var stack = Capture();
 
             stack.Should().NotBeNull();
+            StackWalker.TryGetFrame(stack!, out var frame).Should().BeTrue();
             frame!.GetMethod()!.DeclaringType.Should().Be(typeof(StackWalkerTests));
-            frame.GetMethod()!.Name.Should().Be(nameof(GivenAStack_WhenTryGetStackTraceAndFrame_ThenTheTargetFrameIsTheFirstNonExcludedCaller));
+            frame.GetMethod()!.Name.Should().Be(nameof(GivenAStack_WhenGetStackTrace_ThenTheTargetFrameIsTheFirstNonExcludedCaller));
         }
 
         [Fact]
-        public void GivenSourceInfoIsNotCapturedForEveryFrame_WhenTryGetStackTraceAndFrame_ThenTheTargetFrameKeepsItsFileInfo()
+        public void GivenExcludedFramesBeforeTheTarget_WhenTryGetFrame_ThenTheyAreSkipped()
         {
-            Capture(true, out _, out var frameFromFullCapture).Should().BeTrue();
-            Capture(false, out _, out var frameFromCheapCapture).Should().BeTrue();
+            // Lazy<T> lives in an excluded assembly, so the target is not simply the first frame.
+            var stack = new Lazy<StackTrace?>(Capture).Value;
 
-            frameFromCheapCapture!.GetFileName().Should().Be(frameFromFullCapture!.GetFileName());
-
-            // Only assert on the line when the test assembly actually ships debug info.
-            if (frameFromFullCapture.GetFileName() is not null)
-            {
-                frameFromCheapCapture.GetFileLineNumber().Should().BeGreaterThan(0);
-            }
+            stack.Should().NotBeNull();
+            StackWalker.TryGetFrame(stack!, out var frame).Should().BeTrue();
+            frame!.GetMethod()!.Name.Should().Be(nameof(GivenExcludedFramesBeforeTheTarget_WhenTryGetFrame_ThenTheyAreSkipped));
         }
 
         [Fact]
-        public void GivenExcludedFramesBeforeTheTarget_WhenTryGetStackTraceAndFrame_ThenTheResolvedFrameMatchesTheCapturedOne()
+        public void GivenANearlyExhaustedStack_WhenGetStackTrace_ThenItBailsOutInsteadOfWalking()
         {
-            // Lazy<T> lives in an excluded assembly, so the target frame sits at an index greater than
-            // zero and the cheap capture has to re-resolve it by index rather than by luck.
-            var frames = new Lazy<(StackFrame? Full, StackFrame? Cheap)>(CaptureBothFromAnExcludedCaller).Value;
-
-            frames.Full!.GetMethod().Should().BeSameAs(frames.Cheap!.GetMethod());
-            frames.Full.GetMethod()!.Name.Should().Be(nameof(GivenExcludedFramesBeforeTheTarget_WhenTryGetStackTraceAndFrame_ThenTheResolvedFrameMatchesTheCapturedOne));
-            frames.Cheap.GetFileName().Should().Be(frames.Full.GetFileName());
+            RecurseUntilTheStackIsNearlyExhausted().Should().BeNull();
         }
 
-        [Fact]
-        public void GivenANearlyExhaustedStack_WhenTryGetStackTraceAndFrame_ThenItBailsOutInsteadOfWalking()
-        {
-            RecurseUntilTheStackIsNearlyExhausted().Should().BeFalse();
-        }
-
-        // Both the capture and the frame lookup happen inside StackWalker, which skips its own frame
-        // and its immediate caller (this helper), so the frame under test is the calling test method.
+        // StackWalker skips its own frame and its immediate caller, so going through this helper
+        // leaves the target frame on whoever called it.
         [MethodImpl(MethodImplOptions.NoInlining)]
-        private static bool Capture(bool captureSourceInfoForAllFrames, out StackTrace? stack, out StackFrame? frame)
-            => StackWalker.TryGetStackTraceAndFrame(captureSourceInfoForAllFrames, out stack, out frame);
-
-        // Calls StackWalker directly (no local helper) so the two frames it skips are its own and this
-        // method's, leaving the excluded Lazy<T> frames in front of the target.
-        [MethodImpl(MethodImplOptions.NoInlining)]
-        private static (StackFrame? Full, StackFrame? Cheap) CaptureBothFromAnExcludedCaller()
-        {
-            StackWalker.TryGetStackTraceAndFrame(true, out _, out var full);
-            StackWalker.TryGetStackTraceAndFrame(false, out _, out var cheap);
-            return (full, cheap);
-        }
+        private static StackTrace? Capture() => StackWalker.GetStackTrace();
 
         [MethodImpl(MethodImplOptions.NoInlining)]
-        private static bool RecurseUntilTheStackIsNearlyExhausted()
+        private static StackTrace? RecurseUntilTheStackIsNearlyExhausted()
         {
             if (ExecutionStackGuard.HasSufficientStack())
             {
                 return RecurseUntilTheStackIsNearlyExhausted();
             }
 
-            return StackWalker.TryGetStackTraceAndFrame(true, out _, out _);
+            return StackWalker.GetStackTrace();
         }
     }
 }

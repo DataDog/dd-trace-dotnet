@@ -51,70 +51,25 @@ internal static class StackWalker
     private static readonly ConcurrentDictionary<string, bool> ExcludedAssemblyCache = new ConcurrentDictionary<string, bool>();
 
     /// <summary>
-    /// Captures the current stack and selects the frame a vulnerability should be reported at.
+    /// Captures the stack a vulnerability should be reported from, or <c>null</c> when there is not
+    /// enough stack left to walk it safely.
     /// </summary>
-    /// <param name="captureSourceInfoForAllFrames">
-    /// Whether to resolve source info (a PDB lookup per frame) for the whole stack. Only needed when the
-    /// full stack is going to be reported; the selected frame keeps its file info either way.
-    /// </param>
-    /// <param name="stack">The captured stack, or <c>null</c> when the stack was not walked.</param>
-    /// <param name="targetFrame">The frame to report, or <c>null</c> when no suitable frame was found.</param>
-    /// <returns><c>false</c> when no location should be reported at all.</returns>
-    // Not inlined, and the capture and the frame lookup live together on purpose: the index returned by
-    // the capture only maps to a StackFrame created at the very same stack depth.
+    // The runtime walks the stack on this very thread, so walking one that is already nearly
+    // exhausted is what pushes a deeply recursive request over the guard page.
+    // Not inlined because DefaultSkipFrames counts this method and its caller.
     [MethodImpl(MethodImplOptions.NoInlining)]
-    public static bool TryGetStackTraceAndFrame(bool captureSourceInfoForAllFrames, out StackTrace? stack, out StackFrame? targetFrame)
+    public static StackTrace? GetStackTrace()
     {
-        stack = null;
-        targetFrame = null;
-
-        // The runtime walks the stack on this very thread, so walking one that is already nearly
-        // exhausted is what pushes a deeply recursive request over the guard page.
-        if (!ExecutionStackGuard.HasSufficientStack())
-        {
-            return false;
-        }
-
-        var capture = new StackTrace(DefaultSkipFrames, captureSourceInfoForAllFrames);
-        if (!TryGetFrameIndex(capture, out var index))
-        {
-            return false;
-        }
-
-        stack = capture;
-        if (index >= 0)
-        {
-            targetFrame = captureSourceInfoForAllFrames
-                              ? capture.GetFrame(index)
-                              : new StackFrame(DefaultSkipFrames + index, true);
-        }
-
-        return true;
+        return ExecutionStackGuard.HasSufficientStack() ? new StackTrace(DefaultSkipFrames, true) : null;
     }
 
     public static bool TryGetFrame(StackTrace stackTrace, out StackFrame? targetFrame)
     {
         targetFrame = null;
-        if (!TryGetFrameIndex(stackTrace, out var index))
-        {
-            return false;
-        }
-
-        if (index >= 0)
-        {
-            targetFrame = stackTrace.GetFrame(index);
-        }
-
-        return true;
-    }
-
-    private static bool TryGetFrameIndex(StackTrace stackTrace, out int index)
-    {
-        index = -1;
         var frames = stackTrace.GetFrames() ?? [];
-        for (var i = 0; i < frames.Length; i++)
+        foreach (var frame in frames)
         {
-            var declaringType = frames[i]?.GetMethod()?.DeclaringType;
+            var declaringType = frame?.GetMethod()?.DeclaringType;
 
             foreach (var excludeType in ExcludeSpanGenerationTypes)
             {
@@ -127,8 +82,8 @@ internal static class StackWalker
             var assembly = declaringType?.Assembly.GetName().Name;
             if (assembly != null && !MustSkipAssembly(assembly))
             {
-                index = i;
-                return true;
+                targetFrame = frame;
+                break;
             }
         }
 
