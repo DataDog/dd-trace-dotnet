@@ -22,8 +22,8 @@ internal static class ExecutionStackGuard
 #if NETCOREAPP
         return RuntimeHelpers.TryEnsureSufficientExecutionStack();
 #else
-        // .NET Framework only offers the throwing variant. The exception is only paid for on the
-        // path where we are about to bail out anyway.
+        // .NET Framework and netstandard2.0 only offer the throwing variant. The exception is only
+        // paid for on the path where we are about to bail out anyway.
         try
         {
             RuntimeHelpers.EnsureSufficientExecutionStack();
