@@ -16,31 +16,28 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
+using Google.Protobuf;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using VerifyXunit;
 using Xunit;
 using Xunit.Abstractions;
 
+using OtlpSpan = OpenTelemetry.Proto.Trace.V1.Span;
+
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
 {
     /// <summary>
     /// Shared harness for HTTP server suites hosted by <c>AspNetCoreTestFixture</c> (a Kestrel
-    /// process) and exported over OTLP to the ddapm test-agent. Mirrors
-    /// <c>OpenTelemetryAspNetTestBase</c>, which does the same for IIS-hosted .NET Framework samples;
-    /// both build on the fixture-agnostic <see cref="OtlpTestAgentSession"/>, since none of the
-    /// session/isolation/normalization plumbing depends on how the application under test was
-    /// started.
+    /// process) and exported over OTLP to the in-process <c>MockTracerAgent</c> that the fixture
+    /// already runs for Datadog-protocol traces. Mirrors <c>OpenTelemetryAspNetTestBase</c>, which
+    /// does the same for IIS-hosted .NET Framework samples. Test-case isolation works exactly like
+    /// the non-OTLP AspNetCore suites: <see cref="MockTracerAgent.WaitForOtlpSpansAsync"/> filters by
+    /// a <c>minDateTime</c> captured right before each request, rather than clearing any shared state.
     /// </summary>
     [UsesVerify]
     public abstract class OtlpAspNetCoreTestBase : TestHelper, IClassFixture<AspNetCoreTestFixture>, IAsyncLifetime
     {
-        /// <summary>
-        /// Temporary property used to carry each span's real start time through normalization and
-        /// merging, so the spans can still be ordered chronologically afterwards.
-        /// </summary>
-        private const string StartTimeKey = "__startTimeUnixNano";
-
         /// <summary>
         /// Attributes whose values depend on the machine, the socket, or the checkout path rather than
         /// on the request. See the identical list in <c>OpenTelemetryAspNetTestBase</c>.
@@ -79,10 +76,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
             // rows of Data() exercise. Only this harness asks for them, so the sample applications'
             // pipelines are unchanged for every other suite.
             SetEnvironmentVariable("ADD_ROUTE_EDGE_CASES", "1");
-
-            // OTEL_TRACES_EXPORTER=otlp is what makes the Datadog SDK emit OTLP instead of msgpack.
-            // Everything else is left at its default dd-trace-dotnet value.
-            ConfigureOtlpExport(fixture.OtlpSession);
 
             Fixture = fixture;
             Fixture.SetOutput(output);
@@ -175,23 +168,23 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
             { "GET", "/path-base/api/delay/0", 200, true },
         };
 
-        /// <summary>
-        /// xUnit runs this once per test case, since it builds a fresh instance of the test class for
-        /// each one, so the actual startup goes through the fixture's once-per-class instance.
-        /// The result is that only the first test case needs to pay for the availability check and the warm-up.
-        /// </summary>
-        public Task InitializeAsync()
-            => Fixture.EnsureInitializedAsync(StartApplicationAsync);
+        public async Task InitializeAsync()
+        {
+            // sendHealthCheck: false -- the fixture's health check waits for a Datadog-protocol span,
+            // but this sample exports OTLP; warm up with our own request below instead.
+            // onAgentCreated runs here (not the constructor) since TryStartApp creates a fresh agent
+            // and port per launch attempt.
+            await Fixture.TryStartApp(
+                this,
+                sendHealthCheck: false,
+                onAgentCreated: agent => ConfigureOtlpExport($"http://127.0.0.1:{agent.Port}/v1/traces"));
+            await WarmUpApplicationAsync();
+        }
 
-        public async Task DisposeAsync()
+        public Task DisposeAsync()
         {
             Fixture.SetOutput(null);
-
-            // Clear the session at the end of the test to avoid leaking spans between test cases.
-            if (Fixture.OtlpSession.IsAvailable)
-            {
-                await Fixture.OtlpSession.ClearSessionAsync();
-            }
+            return Task.CompletedTask;
         }
 
         /// <summary>
@@ -270,32 +263,50 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
 
         private async Task<JToken> SendRequestAndCollectSpansAsync(string httpMethod, string path, int statusCode, int expectedSpanCount)
         {
-            Skip.IfNot(Fixture.OtlpSession.IsAvailable, $"The ddapm test-agent is not reachable at {Fixture.OtlpSession.TracesUrl}.");
+            var names = OtlpFieldNames.For(isJson: true);
 
-            var names = OtlpFieldNames.For(isJson: false);
-
-            // DisposeAsync already clears after every case, but clear again to ensure that
-            // spans still in-flight due to a previous failure do not leak into the next test case
-            await Fixture.OtlpSession.ClearSessionAsync();
-
-            // Captured before the request is sent, so it is a lower bound for every span the server
-            // creates while handling it.
-            var testStartTimeUnixNano = DateTimeOffset.UtcNow.ToUnixTimeNanoseconds();
+            // Capture the current span IDs before the request. We cannot use the fixture's usual
+            // filtered wait helper here: the /rewrite-me edge case is rewritten to /alive-check and
+            // would be mistaken for a health-check span. Selecting newly received IDs also prevents
+            // a span from an earlier case, within MockTracerAgent's timestamp tolerance, leaking in.
+            var existingSpanIds = Fixture.Agent.OtlpSpans.Select(s => s.SpanId).ToHashSet();
+            var now = DateTimeOffset.UtcNow;
+            var testStartTimeUnixNano = now.ToUnixTimeNanoseconds();
 
             await SendRequestAsync(httpMethod, path, (HttpStatusCode)statusCode);
 
-            var tracesRequests = await Fixture.OtlpSession.WaitForSpansAsync(expectedSpanCount, testStartTimeUnixNano, names.StartTimeUnixNano);
-            tracesRequests.Should().NotBeNullOrEmpty();
-            OtlpTestAgentSession.CountSpans(tracesRequests).Should().Be(expectedSpanCount);
-
-            // Stash the real start time on each span so that the chronological ordering below survives
-            // both NormalizeSpans, which replaces startTimeUnixNano with a fixed placeholder, and
-            // MergeDatadogRequests, which clones the tokens as it re-parents the spans of every
-            // subsequent export into the first one. The property is removed again before returning.
-            foreach (var span in tracesRequests.SelectTokens("$..spans[*]"))
+            var deadline = DateTime.UtcNow.AddSeconds(20);
+            var relevantSpanIds = Fixture.Agent.OtlpSpans
+                                                .Where(s => !existingSpanIds.Contains(s.SpanId) && s.StartTimeUnixNano >= (ulong)testStartTimeUnixNano)
+                                                .Select(s => s.SpanId)
+                                                .ToHashSet();
+            while (DateTime.UtcNow < deadline && relevantSpanIds.Count < expectedSpanCount)
             {
-                ((JObject)span)[StartTimeKey] = span[names.StartTimeUnixNano]!.ToString();
+                await Task.Delay(250);
+                relevantSpanIds = Fixture.Agent.OtlpSpans
+                                                .Where(s => !existingSpanIds.Contains(s.SpanId) && s.StartTimeUnixNano >= (ulong)testStartTimeUnixNano)
+                                                .Select(s => s.SpanId)
+                                                .ToHashSet();
             }
+
+            // An OTLP export batch can contain spans from more than one request, so trim each batch
+            // to the IDs selected above before building this test case's snapshot.
+            var relevantRequests = Fixture.Agent.OtlpTraceRequests
+                                          .Select(r => Fixture.Agent.TrimOtlpTraceRequestToSpans(r, relevantSpanIds))
+                                          .Where(r => r.Spans.Count > 0)
+                                          .ToList();
+            relevantRequests.Should().NotBeNullOrEmpty();
+            relevantRequests.Sum(r => r.Spans.Count).Should().Be(expectedSpanCount);
+
+            // Sort by actual start time before NormalizeSpans (below) overwrites it with a placeholder.
+            var mergedRequest = OtlpSnapshotHelper.MergeDatadogRequests(
+                relevantRequests,
+                spans => spans.OrderBy(s => s.StartTimeUnixNano)
+                              .ThenBy(s => s.Name ?? string.Empty, StringComparer.Ordinal)
+                              .ThenBy(s => OtlpSnapshotHelper.GetAttributeStringValue(s, "url.path", "http.url") ?? string.Empty, StringComparer.Ordinal)
+                              .ThenBy(s => JsonFormatter.Default.Format(s), StringComparer.Ordinal));
+
+            var tracesRequests = JToken.Parse(JsonFormatter.Default.Format(mergedRequest));
 
             OtlpSnapshotHelper.NormalizeResourceAttributes(tracesRequests, names);
             OtlpSnapshotHelper.NormalizeSpans(tracesRequests, names, testStartTimeUnixNano);
@@ -308,22 +319,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
 
             OtlpSnapshotHelper.SortSpanAttributes(tracesRequests);
 
-            // Sort chronologically first so the snapshot mirrors the nesting the server produced, then
-            // by name/path/JSON to keep ties stable across runs.
-            var merged = OtlpSnapshotHelper.MergeDatadogRequests(
-                tracesRequests,
-                names,
-                spans => spans.OrderBy(s => long.Parse(s[StartTimeKey]!.ToString()))
-                              .ThenBy(s => s["name"]?.ToString() ?? string.Empty, StringComparer.Ordinal)
-                              .ThenBy(s => OtlpSnapshotHelper.GetAttributeStringValue(s, names, "url.path", "http.url") ?? string.Empty, StringComparer.Ordinal)
-                              .ThenBy(s => s.ToString(Formatting.None), StringComparer.Ordinal));
-
-            foreach (var span in merged.SelectTokens("$..spans[*]"))
-            {
-                ((JObject)span).Remove(StartTimeKey);
-            }
-
-            return merged;
+            return tracesRequests;
         }
 
         private async Task SendRequestAsync(string httpMethod, string path, HttpStatusCode expectedStatusCode)
@@ -331,30 +327,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
             var request = Fixture.CreateRequest(new HttpMethod(httpMethod), path);
             var statusCode = await Fixture.SendHttpRequest(request);
             statusCode.Should().Be(expectedStatusCode);
-        }
-
-        /// <summary>
-        /// Brings up the application the whole test class shares. Runs once per class, through
-        /// <see cref="AspNetCoreTestFixture.EnsureInitializedAsync"/>, so it reads the environment
-        /// variables the first test case's constructor set - which is also why it can't be a fixture
-        /// <c>InitializeAsync</c>, as those are not set until a test class instance exists.
-        /// </summary>
-        private async Task StartApplicationAsync()
-        {
-            if (!await Fixture.OtlpSession.CheckAvailabilityAsync(Output))
-            {
-                // Don't pay for starting the sample app for a test that is about to skip.
-                return;
-            }
-
-            // sendHealthCheck: false because AspNetCoreTestFixture's own health check waits for a
-            // span to reach the mock agent, and OTEL_TRACES_EXPORTER=otlp sends traces to the ddapm
-            // test-agent instead. Warm the app up with our own request and discard its spans afterwards.
-            await Fixture.TryStartApp(this, sendHealthCheck: false);
-            await WarmUpApplicationAsync();
-
-            // Clear the session so the warm-up request is not returned in the next test case.
-            await Fixture.OtlpSession.ClearSessionWhenQuietAsync(Output);
         }
 
         /// <summary>
