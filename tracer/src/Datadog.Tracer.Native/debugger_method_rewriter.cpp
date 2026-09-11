@@ -1221,6 +1221,39 @@ bool DebuggerMethodRewriter::IsAsyncMethodBuilderCompletion(const FunctionInfo& 
            IsAsyncMethodBuilderType(functionInfo.type);
 }
 
+// Walks instruction pointers because m_offset is stale after BeginMethod insertion.
+bool DebuggerMethodRewriter::CatchHandlerContains(const EHClause& clause, const ILInstr* instr, const ILInstr* sentinel)
+{
+    if (clause.m_pHandlerBegin == nullptr || clause.m_pHandlerEnd == nullptr)
+    {
+        return false;
+    }
+
+    const auto stop = clause.m_pHandlerEnd->m_pNext;
+    for (auto pInstr = clause.m_pHandlerBegin; pInstr != stop && pInstr != sentinel; pInstr = pInstr->m_pNext)
+    {
+        if (pInstr == instr)
+        {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+// True when inner's handler is a proper subset of outer's (try-in-handler nesting).
+bool DebuggerMethodRewriter::CatchHandlerProperlyContains(const EHClause& outer, const EHClause& inner,
+                                                          const ILInstr* sentinel)
+{
+    if (outer.m_pHandlerBegin == inner.m_pHandlerBegin && outer.m_pHandlerEnd == inner.m_pHandlerEnd)
+    {
+        return false;
+    }
+
+    return CatchHandlerContains(outer, inner.m_pHandlerBegin, sentinel) &&
+           CatchHandlerContains(outer, inner.m_pHandlerEnd, sentinel);
+}
+
 EHClause* DebuggerMethodRewriter::FindInnermostCatchContaining(ILRewriter* rewriter, ILInstr* instr)
 {
     auto ehCount = rewriter->GetEHCount();
@@ -1232,43 +1265,23 @@ EHClause* DebuggerMethodRewriter::FindInnermostCatchContaining(ILRewriter* rewri
 
     auto sentinel = rewriter->GetILList();
     EHClause* best = nullptr;
-    unsigned bestLen = 0;
 
     for (unsigned ehIndex = 0; ehIndex < ehCount; ehIndex++)
     {
-        if (ehPointer[ehIndex].m_Flags == COR_ILEXCEPTION_CLAUSE_FINALLY ||
-            ehPointer[ehIndex].m_Flags == COR_ILEXCEPTION_CLAUSE_FAULT)
+        // Typed/catch-all only. Filter/finally/fault are not the async completion catch.
+        if (ehPointer[ehIndex].m_Flags != COR_ILEXCEPTION_CLAUSE_NONE)
         {
             continue;
         }
 
-        if (ehPointer[ehIndex].m_pHandlerBegin == nullptr || ehPointer[ehIndex].m_pHandlerEnd == nullptr)
+        if (!CatchHandlerContains(ehPointer[ehIndex], instr, sentinel))
         {
             continue;
         }
 
-        unsigned len = 0;
-        bool contains = false;
-        auto stop = ehPointer[ehIndex].m_pHandlerEnd->m_pNext;
-        for (auto pInstr = ehPointer[ehIndex].m_pHandlerBegin; pInstr != stop && pInstr != sentinel;
-             pInstr = pInstr->m_pNext)
-        {
-            len++;
-            if (pInstr == instr)
-            {
-                contains = true;
-            }
-        }
-
-        if (!contains)
-        {
-            continue;
-        }
-
-        if (best == nullptr || len < bestLen)
+        if (best == nullptr || CatchHandlerProperlyContains(*best, ehPointer[ehIndex], sentinel))
         {
             best = &ehPointer[ehIndex];
-            bestLen = len;
         }
     }
 

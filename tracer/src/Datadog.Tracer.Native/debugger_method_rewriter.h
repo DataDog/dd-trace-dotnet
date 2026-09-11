@@ -85,6 +85,8 @@ private:
 
     static bool IsAsyncMethodBuilderType(const TypeInfo& type);
     static bool IsAsyncMethodBuilderCompletion(const FunctionInfo& functionInfo);
+    static bool CatchHandlerContains(const EHClause& clause, const ILInstr* instr, const ILInstr* sentinel);
+    static bool CatchHandlerProperlyContains(const EHClause& outer, const EHClause& inner, const ILInstr* sentinel);
     static EHClause* FindInnermostCatchContaining(ILRewriter* rewriter, ILInstr* instr);
     static HRESULT TryGetSetExceptionCatchClause(ILRewriterWrapper& rewriterWrapper, ModuleMetadata& module_metadata,
                                                  FunctionInfo* caller, EHClause** setExceptionCatch);
