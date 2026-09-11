@@ -83,6 +83,11 @@ private:
                             ULONG callTargetReturnIndex, ULONG returnValueIndex, mdToken callTargetReturnToken,
                             int instrumentedMethodIndex, ILInstr*& beforeLineProbe, std::vector<EHClause>& newClauses) const;
 
+    static bool IsAsyncMethodBuilderType(const TypeInfo& type);
+    static bool IsAsyncMethodBuilderCompletion(const FunctionInfo& functionInfo);
+    static EHClause* FindInnermostCatchContaining(ILRewriter* rewriter, ILInstr* instr);
+    static HRESULT TryGetSetExceptionCatchClause(ILRewriterWrapper& rewriterWrapper, ModuleMetadata& module_metadata,
+                                                 FunctionInfo* caller, EHClause** setExceptionCatch);
     HRESULT EndAsyncMethodProbe(ILRewriterWrapper& rewriterWrapper,
                                        ModuleMetadata& module_metadata, DebuggerTokens* debuggerTokens,
                                        FunctionInfo* caller, bool isStatic, TypeSignature* methodReturnType,

@@ -1208,6 +1208,119 @@ HRESULT DebuggerMethodRewriter::ApplyMethodSpanProbe(
     return S_OK;
 }
 
+bool DebuggerMethodRewriter::IsAsyncMethodBuilderType(const TypeInfo& type)
+{
+    const auto& typeName = type.name;
+    return typeName.find(WStr("Async")) != shared::WSTRING::npos &&
+           typeName.find(WStr("MethodBuilder")) != shared::WSTRING::npos;
+}
+
+bool DebuggerMethodRewriter::IsAsyncMethodBuilderCompletion(const FunctionInfo& functionInfo)
+{
+    return (functionInfo.name == WStr("SetResult") || functionInfo.name == WStr("SetException")) &&
+           IsAsyncMethodBuilderType(functionInfo.type);
+}
+
+EHClause* DebuggerMethodRewriter::FindInnermostCatchContaining(ILRewriter* rewriter, ILInstr* instr)
+{
+    auto ehCount = rewriter->GetEHCount();
+    auto ehPointer = rewriter->GetEHPointer();
+    if (ehCount == 0 || ehPointer == nullptr)
+    {
+        return nullptr;
+    }
+
+    auto sentinel = rewriter->GetILList();
+    EHClause* best = nullptr;
+    unsigned bestLen = 0;
+
+    for (unsigned ehIndex = 0; ehIndex < ehCount; ehIndex++)
+    {
+        if (ehPointer[ehIndex].m_Flags == COR_ILEXCEPTION_CLAUSE_FINALLY ||
+            ehPointer[ehIndex].m_Flags == COR_ILEXCEPTION_CLAUSE_FAULT)
+        {
+            continue;
+        }
+
+        if (ehPointer[ehIndex].m_pHandlerBegin == nullptr || ehPointer[ehIndex].m_pHandlerEnd == nullptr)
+        {
+            continue;
+        }
+
+        unsigned len = 0;
+        bool contains = false;
+        auto stop = ehPointer[ehIndex].m_pHandlerEnd->m_pNext;
+        for (auto pInstr = ehPointer[ehIndex].m_pHandlerBegin; pInstr != stop && pInstr != sentinel;
+             pInstr = pInstr->m_pNext)
+        {
+            len++;
+            if (pInstr == instr)
+            {
+                contains = true;
+            }
+        }
+
+        if (!contains)
+        {
+            continue;
+        }
+
+        if (best == nullptr || len < bestLen)
+        {
+            best = &ehPointer[ehIndex];
+            bestLen = len;
+        }
+    }
+
+    return best;
+}
+
+HRESULT DebuggerMethodRewriter::TryGetSetExceptionCatchClause(ILRewriterWrapper& rewriterWrapper,
+                                                              ModuleMetadata& module_metadata, FunctionInfo* caller,
+                                                              EHClause** setExceptionCatch)
+{
+    *setExceptionCatch = nullptr;
+    auto rewriter = rewriterWrapper.GetILRewriter();
+    ILInstr* setExceptionCall = nullptr;
+
+    for (auto pInstr = rewriter->GetILList()->m_pPrev; pInstr != rewriter->GetILList(); pInstr = pInstr->m_pPrev)
+    {
+        if (pInstr->m_opcode != CEE_CALL)
+        {
+            continue;
+        }
+
+        auto functionInfo = GetFunctionInfo(module_metadata.metadata_import, pInstr->m_Arg32);
+        if (functionInfo.name != WStr("SetException") || !IsAsyncMethodBuilderType(functionInfo.type))
+        {
+            continue;
+        }
+
+        setExceptionCall = pInstr;
+        break;
+    }
+
+    if (setExceptionCall == nullptr)
+    {
+        Logger::Warn("*** DebuggerMethodRewriter::TryGetSetExceptionCatchClause() no async method builder SetException "
+                     "call. Aborting rewrite. method=",
+                     caller->type.name, ".", caller->name);
+        return E_FAIL;
+    }
+
+    auto catchClause = FindInnermostCatchContaining(rewriter, setExceptionCall);
+    if (catchClause == nullptr || catchClause->m_pHandlerBegin == nullptr || catchClause->m_pHandlerEnd == nullptr)
+    {
+        Logger::Warn("*** DebuggerMethodRewriter::TryGetSetExceptionCatchClause() SetException is not inside a catch "
+                     "handler. Aborting rewrite. method=",
+                     caller->type.name, ".", caller->name);
+        return E_FAIL;
+    }
+
+    *setExceptionCatch = catchClause;
+    return S_OK;
+}
+
 HRESULT DebuggerMethodRewriter::EndAsyncMethodProbe(ILRewriterWrapper& rewriterWrapper,
                                                     ModuleMetadata& module_metadata,
                                                     DebuggerTokens* debuggerTokens, FunctionInfo* caller, bool isStatic,
@@ -1223,8 +1336,15 @@ HRESULT DebuggerMethodRewriter::EndAsyncMethodProbe(ILRewriterWrapper& rewriterW
     ILInstr* setResultEndMethodTryStartInstr = nullptr;
     ILInstr* endMethodOriginalCodeFirstInstr = nullptr;
 
+    EHClause* setExceptionCatch = nullptr;
+    HRESULT bindHr = TryGetSetExceptionCatchClause(rewriterWrapper, module_metadata, caller, &setExceptionCatch);
+    if (FAILED(bindHr))
+    {
+        unsupportedCompletionValueLoad = true;
+        return bindHr;
+    }
+
     int numberOfCallsFounded = 0;
-    auto lastEh = &rewriterWrapper.GetILRewriter()->GetEHPointer()[rewriterWrapper.GetILRewriter()->GetEHCount() - 1];
     ILInstr* setExceptionReturnInstruction = nullptr; // Used by SetException to determine what is the index of the return value
     // search call to SetResult and SetException
     for (ILInstr* pInstr = rewriterWrapper.GetILRewriter()->GetILList()->m_pPrev;
@@ -1237,7 +1357,7 @@ HRESULT DebuggerMethodRewriter::EndAsyncMethodProbe(ILRewriterWrapper& rewriterW
         }
 
         auto functionInfo = GetFunctionInfo(module_metadata.metadata_import, pInstr->m_Arg32);
-        if (functionInfo.name != WStr("SetResult") && functionInfo.name != WStr("SetException"))
+        if (!IsAsyncMethodBuilderCompletion(functionInfo))
         {
             continue;
         }
@@ -1260,7 +1380,7 @@ HRESULT DebuggerMethodRewriter::EndAsyncMethodProbe(ILRewriterWrapper& rewriterW
 
         if (functionInfo.name == WStr("SetResult"))
         {
-            rewriterWrapper.SetILPosition(lastEh->m_pHandlerEnd->m_pNext);
+            rewriterWrapper.SetILPosition(setExceptionCatch->m_pHandlerEnd->m_pNext);
 
             if (elementType == ELEMENT_TYPE_VOID)
             {
@@ -1295,7 +1415,7 @@ HRESULT DebuggerMethodRewriter::EndAsyncMethodProbe(ILRewriterWrapper& rewriterW
         }
         else if (functionInfo.name == WStr("SetException"))
         {
-            rewriterWrapper.SetILPosition(lastEh->m_pHandlerBegin->m_pNext);
+            rewriterWrapper.SetILPosition(setExceptionCatch->m_pHandlerBegin->m_pNext);
             LoadInstanceIntoStack(caller, isStatic, rewriterWrapper, &endMethodTryStartInstr, debuggerTokens);
             if (elementType != ELEMENT_TYPE_VOID)
             {
@@ -1410,8 +1530,15 @@ HRESULT DebuggerMethodRewriter::EndAsyncMethodSpanProbe(ILRewriterWrapper& rewri
     ILInstr* setResultEndMethodTryStartInstr = nullptr;
     ILInstr* endMethodOriginalCodeFirstInstr = nullptr;
 
+    EHClause* setExceptionCatch = nullptr;
+    HRESULT bindHr = TryGetSetExceptionCatchClause(rewriterWrapper, module_metadata, caller, &setExceptionCatch);
+    if (FAILED(bindHr))
+    {
+        unsupportedCompletionValueLoad = true;
+        return bindHr;
+    }
+
     int numberOfCallsFounded = 0;
-    auto lastEh = &rewriterWrapper.GetILRewriter()->GetEHPointer()[rewriterWrapper.GetILRewriter()->GetEHCount() - 1];
     ILInstr* setExceptionReturnInstruction =
         nullptr; // Used by SetException to determine what is the index of the return value
     // search call to SetResult and SetException
@@ -1426,7 +1553,7 @@ HRESULT DebuggerMethodRewriter::EndAsyncMethodSpanProbe(ILRewriterWrapper& rewri
         }
 
         auto functionInfo = GetFunctionInfo(module_metadata.metadata_import, pInstr->m_Arg32);
-        if (functionInfo.name != WStr("SetResult") && functionInfo.name != WStr("SetException"))
+        if (!IsAsyncMethodBuilderCompletion(functionInfo))
         {
             continue;
         }
@@ -1446,7 +1573,7 @@ HRESULT DebuggerMethodRewriter::EndAsyncMethodSpanProbe(ILRewriterWrapper& rewri
         auto [elementType, returnTypeFlags] = methodReturnType->GetElementTypeAndFlags();
         if (functionInfo.name == WStr("SetResult"))
         {
-            rewriterWrapper.SetILPosition(lastEh->m_pHandlerEnd->m_pNext);
+            rewriterWrapper.SetILPosition(setExceptionCatch->m_pHandlerEnd->m_pNext);
             endMethodTryStartInstr = rewriterWrapper.LoadNull();
             rewriterWrapper.LoadArgument(0);
             rewriterWrapper.LoadFieldAddress(isReEntryFieldTok);
@@ -1456,7 +1583,7 @@ HRESULT DebuggerMethodRewriter::EndAsyncMethodSpanProbe(ILRewriterWrapper& rewri
         }
         else if (functionInfo.name == WStr("SetException"))
         {
-            rewriterWrapper.SetILPosition(lastEh->m_pHandlerBegin->m_pNext);
+            rewriterWrapper.SetILPosition(setExceptionCatch->m_pHandlerBegin->m_pNext);
             // create the instruction that load the exception value
             ILInstr* exceptionInstruction = rewriterWrapper.GetILRewriter()->NewILInstr();
             memcpy(exceptionInstruction, pInstr->m_pPrev, sizeof(*exceptionInstruction));

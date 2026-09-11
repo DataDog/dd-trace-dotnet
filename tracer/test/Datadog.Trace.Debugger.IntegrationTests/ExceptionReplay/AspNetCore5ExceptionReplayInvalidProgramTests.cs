@@ -23,6 +23,8 @@ namespace Datadog.Trace.Debugger.IntegrationTests.ExceptionReplay;
 /// <summary>
 /// APMS-20228: after Exception Replay rewrites an async MoveNext, the next invocation
 /// must not throw InvalidProgramException. First throw arms ER; later throws run rewritten IL.
+/// Also regresses finally-last EH: injection must bind to the SetException catch, not the
+/// last clause, so capture is Eligible rather than EmptyCallStackTreeWhileCollecting.
 /// </summary>
 [CollectionDefinition(nameof(AspNetCore5ExceptionReplayInvalidProgramTests), DisableParallelization = true)]
 [Collection(nameof(AspNetCore5ExceptionReplayInvalidProgramTests))]
@@ -62,9 +64,11 @@ public class AspNetCore5ExceptionReplayInvalidProgramTests : AspNetBase, IClassF
         yield return
         [
             typeof(NestedUsingAwaitGenericOverrideTest),
-            nameof(NestedUsingAwaitGenericOverrideTest.PaymentGetAllQueryHandler.Handle)
+            "<Handle>d__"
         ];
-        yield return [typeof(AwaitUsingCatchFilterFinallyTest), nameof(AwaitUsingCatchFilterFinallyTest.RunAsync)];
+        yield return [typeof(AwaitUsingCatchFilterFinallyTest), "<RunAsync>d__"];
+        // Handwritten MoveNext: finally is last EH; SetException lives in an earlier catch.
+        yield return [typeof(FinallyLastEhTest), "FinallyLastSm"];
     }
 
     public override void Dispose()
@@ -77,7 +81,7 @@ public class AspNetCore5ExceptionReplayInvalidProgramTests : AspNetBase, IClassF
     [MemberData(nameof(InvalidProgramScenarios))]
     [Trait("Category", "EndToEnd")]
     [Trait("RunOnWindows", "True")]
-    public async Task ExceptionReplayRewrite_DoesNotThrowInvalidProgramException(Type testType, string expectedAsyncMethodName)
+    public async Task ExceptionReplayRewrite_DoesNotThrowInvalidProgramException(Type testType, string expectedMoveNextClassPrefix)
     {
         var url = $"/RunTest/{testType.FullName}";
         var expectedErrorType = typeof(ExceptionReplayIntentionalException).FullName;
@@ -118,7 +122,7 @@ public class AspNetCore5ExceptionReplayInvalidProgramTests : AspNetBase, IClassF
 
                 errorType.Should().Be(expectedErrorType);
 
-                if (IsSuccessfulCapture(erroredSpan, exceptionReplayPhase, expectedAsyncMethodName))
+                if (IsSuccessfulCapture(erroredSpan, exceptionReplayPhase, expectedMoveNextClassPrefix))
                 {
                     capturedRequests++;
                 }
@@ -128,9 +132,9 @@ public class AspNetCore5ExceptionReplayInvalidProgramTests : AspNetBase, IClassF
 
             capturedRequests.Should().BeGreaterThanOrEqualTo(
                 RequiredCapturedRequests,
-                "Exception Replay should capture {0}.{1} after rewriting MoveNext (Eligible with snapshot_id frame tags). Failure phases such as InvalidatedCase must not count.",
+                "Exception Replay should capture {0} MoveNext ({1}) after rewriting (Eligible with snapshot_id frame tags). EmptyCallStackTreeWhileCollecting and InvalidatedCase must not count.",
                 testType.Name,
-                expectedAsyncMethodName);
+                expectedMoveNextClassPrefix);
         }
         finally
         {
@@ -138,7 +142,7 @@ public class AspNetCore5ExceptionReplayInvalidProgramTests : AspNetBase, IClassF
         }
     }
 
-    private static bool IsSuccessfulCapture(MockSpan span, string exceptionReplayPhase, string expectedAsyncMethodName)
+    private static bool IsSuccessfulCapture(MockSpan span, string exceptionReplayPhase, string expectedMoveNextClassPrefix)
     {
         if (exceptionReplayPhase != ExceptionReplayDiagnosticTagNames.Eligible || span.Tags is null)
         {
@@ -150,12 +154,11 @@ public class AspNetCore5ExceptionReplayInvalidProgramTests : AspNetBase, IClassF
             return false;
         }
 
-        var expectedStateMachinePrefix = $"<{expectedAsyncMethodName}>d__";
         foreach (var tagName in span.Tags.Keys.Where(key => key.EndsWith($".{SnapshotIdTagName}", StringComparison.Ordinal)))
         {
             var framePrefix = tagName.Substring(0, tagName.Length - SnapshotIdTagName.Length);
             if (span.GetTag(framePrefix + "frame_data.function") == "MoveNext"
-             && span.GetTag(framePrefix + "frame_data.class_name")?.StartsWith(expectedStateMachinePrefix, StringComparison.Ordinal) == true)
+             && span.GetTag(framePrefix + "frame_data.class_name")?.StartsWith(expectedMoveNextClassPrefix, StringComparison.Ordinal) == true)
             {
                 return true;
             }
