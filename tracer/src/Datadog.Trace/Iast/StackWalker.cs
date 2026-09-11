@@ -10,6 +10,8 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Runtime.CompilerServices;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Iast;
 
@@ -48,9 +50,17 @@ internal static class StackWalker
 
     private static readonly ConcurrentDictionary<string, bool> ExcludedAssemblyCache = new ConcurrentDictionary<string, bool>();
 
-    public static StackTrace GetStackTrace()
+    /// <summary>
+    /// Captures the stack a vulnerability should be reported from, or <c>null</c> when there is not
+    /// enough stack left to walk it safely.
+    /// </summary>
+    // The runtime walks the stack on this very thread, so walking one that is already nearly
+    // exhausted is what pushes a deeply recursive request over the guard page.
+    // Not inlined because DefaultSkipFrames counts this method and its caller.
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    public static StackTrace? GetStackTrace()
     {
-        return new StackTrace(DefaultSkipFrames, true);
+        return ExecutionStackGuard.HasSufficientStack() ? new StackTrace(DefaultSkipFrames, true) : null;
     }
 
     public static bool TryGetFrame(StackTrace stackTrace, out StackFrame? targetFrame)
