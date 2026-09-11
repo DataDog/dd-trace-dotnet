@@ -114,6 +114,8 @@ variables:
   DiffEngine_Disabled: true
   OriginalCommitId: $[coalesce(variables['System.PullRequest.SourceCommitId'], variables['Build.SourceVersion'])]
   TESTCONTAINERS_RYUK_DISABLED: true
+  # Keep synchronized with the Resource Reaper image pinned by Testcontainers 4.14.0.
+  TESTCONTAINERS_RYUK_CONTAINER_IMAGE: 'testcontainers/ryuk:0.14.0@sha256:7c1a8a9a47c780ed0f983770a662f80deb115d95cce3e2daa3d12115b8cd28f0'
   NUGET_ENABLE_EXPERIMENTAL_HTTP_RETRY: true
   NUGET_EXPERIMENTAL_CHAIN_BUILD_RETRY_POLICY: 3,1000
   # Retry parameters for network operations to improve CI resilency
@@ -2411,6 +2413,7 @@ stages:
     variables:
       TestAllPackageVersions: true
       IncludeMinorPackageVersions:  $[eq(variables.perform_comprehensive_testing, 'true')]
+      TESTCONTAINERS_RYUK_DISABLED: false
 
     pool:
       name: $(linuxX64Pool)
@@ -2427,6 +2430,10 @@ stages:
     - template: steps/download-samples.yml
       parameters:
         framework: $(publishTargetFramework)
+    - template: steps/ensure-docker-ready.yml
+    - script: docker pull "$(TESTCONTAINERS_RYUK_CONTAINER_IMAGE)"
+      displayName: Pull Testcontainers resource reaper
+      retryCountOnTaskFailure: 5
     - bash: |
         if [ -z "$(IntegrationTestFilter)" ]; then
           newFilter="DockerGroup=$(dockerGroup)"
@@ -3507,6 +3514,8 @@ stages:
       timeoutInMinutes: 60 #default value
       strategy:
         matrix: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.integration_tests_linux_arm64_matrix']]
+      variables:
+        TESTCONTAINERS_RYUK_DISABLED: false
       workspace:
         clean: all
       pool:
@@ -3524,6 +3533,11 @@ stages:
         - template: steps/download-samples.yml
           parameters:
             framework: $(publishTargetFramework)
+
+        - template: steps/ensure-docker-ready.yml
+        - script: docker pull "$(TESTCONTAINERS_RYUK_CONTAINER_IMAGE)"
+          displayName: Pull Testcontainers resource reaper
+          retryCountOnTaskFailure: 5
 
         - template: steps/run-in-docker.yml
           parameters:
