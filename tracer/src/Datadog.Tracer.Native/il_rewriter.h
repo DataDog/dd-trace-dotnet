@@ -151,6 +151,12 @@ public:
 
     static bool IsLoadConstantInstruction(unsigned opcode);
 
+    // True when a single IL instruction is a complete, replay-safe stack value
+    // (safe to memcpy as the argument to SetResult/SetException).
+    // ldloc/ldc/ldnull/ldstr are; ldsfld is not (rereads a mutable static, and
+    // does not copy a volatile. prefix). ldfld/ldobj/call/nop are not.
+    static bool IsCloneableStandaloneValueLoad(unsigned opcode);
+
     static void SortEHClauses(EHClause* pEH, unsigned nEH);
 };
 
