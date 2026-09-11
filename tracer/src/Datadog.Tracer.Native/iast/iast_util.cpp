@@ -480,7 +480,7 @@ namespace iast
             }
             indexTo--;
         }
-        if (indexTo < indexFrom || _IndexOf(str[indexTo], c) >= 0)
+        if (_IndexOf(str[indexTo], c) >= 0)
         {
             return EmptyWStr;
         }
@@ -537,7 +537,7 @@ namespace iast
             }
             indexTo--;
         }
-        if (indexTo < indexFrom || _IndexOf(str[indexTo], c) >= 0)
+        if (_IndexOf(str[indexTo], c) >= 0)
         {
             return "";
         }
