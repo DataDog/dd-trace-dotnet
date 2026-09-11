@@ -56,6 +56,13 @@ protected:
         auto metrics = metric->GetMetrics();
         return metrics.empty() ? 0 : static_cast<uint64_t>(metrics.front().second);
     }
+
+    // Same as GetLockFailureCount but for the overwritten code ranges counter
+    uint64_t GetRangeOverwriteCount() {
+        auto metric = metricsRegistry.GetOrRegister<CounterMetric>("dotnet_managed_code_cache_range_overwrites");
+        auto metrics = metric->GetMetrics();
+        return metrics.empty() ? 0 : static_cast<uint64_t>(metrics.front().second);
+    }
 };
 
 // Test: Single code range
@@ -101,6 +108,92 @@ TEST_F(ManagedCodeCacheTest, AddFunction_MultipleRanges_AccumulatesCorrectly) {
     // Both ranges should work (accumulation)
     EXPECT_EQ(testFuncId, cache->GetFunctionId(tier0Start + 0x50).value_or(0));
     EXPECT_EQ(testFuncId, cache->GetFunctionId(tier1Start + 0x100).value_or(0));
+}
+
+// Test: the same functionId reported twice at the same address must overwrite the
+// existing range, not add a duplicate one.
+TEST_F(ManagedCodeCacheTest, AddFunction_SameFunctionIdReRegisteredAtSameAddress_DoesNotDuplicate) {
+    FunctionID testFuncId = 24680;
+    uintptr_t codeStart = 0x30000;
+    ULONG32 codeSize = 0x100;
+
+    SetupMockCodeInfo(testFuncId, codeStart, codeSize);
+    cache->AddFunction(testFuncId);
+    ASSERT_EQ(0u, GetRangeOverwriteCount())
+        << "The first registration at a fresh address is a plain insert, not an overwrite.";
+
+    // Same functionId and same start address, but a different size
+    SetupMockCodeInfo(testFuncId, codeStart, codeSize * 2);
+    cache->AddFunction(testFuncId);
+
+    // The counter is checked instead of the lookup result: a duplicated range could still
+    // return the expected functionId, depending on which entry the binary search picks.
+    EXPECT_EQ(1u, GetRangeOverwriteCount())
+        << "Re-registering the same functionId at the same startAddress must overwrite the "
+           "existing CodeRange in place, not accumulate a duplicate entry alongside it.";
+    EXPECT_EQ(testFuncId, cache->GetFunctionId(codeStart + 0x50).value_or(0));
+}
+
+// Test: when the CLR recycles freed LCG/IL stub code memory, a different functionId gets
+// registered at the same address: the new one must replace the stale one, otherwise the
+// frames would be attributed to a method that no longer exists.
+TEST_F(ManagedCodeCacheTest, AddFunction_DifferentFunctionIdAtRecycledAddress_NewOneWins) {
+    FunctionID oldFuncId = 11111;
+    FunctionID newFuncId = 22222;
+    uintptr_t codeStart = 0x40000;
+    ULONG32 codeSize = 0x100;
+
+    SetupMockCodeInfo(oldFuncId, codeStart, codeSize);
+    cache->AddFunction(oldFuncId);
+    ASSERT_EQ(oldFuncId, cache->GetFunctionId(codeStart + 0x50).value_or(0));
+    ASSERT_EQ(0u, GetRangeOverwriteCount())
+        << "The first registration at a fresh address is a plain insert, not an overwrite.";
+
+    // The address has been recycled for a different method
+    SetupMockCodeInfo(newFuncId, codeStart, codeSize);
+    cache->AddFunction(newFuncId);
+
+    // Same as the previous test: the counter tells the old range was replaced and not
+    // simply hidden by a duplicated entry.
+    EXPECT_EQ(1u, GetRangeOverwriteCount())
+        << "A new registration at a recycled address must replace, not sit alongside, "
+           "the stale one.";
+    EXPECT_EQ(newFuncId, cache->GetFunctionId(codeStart + 0x50).value_or(0))
+        << "The new, live functionId must be returned -- never the old, dead one.";
+}
+
+// Test: the CLR can merge two adjacent freed code blocks and reuse them for a single
+// larger method: all the stale ranges covered by the new one must be replaced, not only
+// the one starting at the same address.
+TEST_F(ManagedCodeCacheTest, AddFunction_NewRangeSpansTwoStaleRanges_BothAreReplaced) {
+    FunctionID oldFuncId1 = 33333;
+    FunctionID oldFuncId2 = 44444;
+    FunctionID newFuncId = 55555;
+    uintptr_t rangeStart = 0x50000;
+    ULONG32 halfSize = 0x100;
+
+    // Two adjacent methods, as if the CLR had allocated them back to back
+    SetupMockCodeInfo(oldFuncId1, rangeStart, halfSize);
+    cache->AddFunction(oldFuncId1);
+    SetupMockCodeInfo(oldFuncId2, rangeStart + halfSize, halfSize);
+    cache->AddFunction(oldFuncId2);
+    ASSERT_EQ(oldFuncId1, cache->GetFunctionId(rangeStart + 0x50).value_or(0));
+    ASSERT_EQ(oldFuncId2, cache->GetFunctionId(rangeStart + halfSize + 0x50).value_or(0));
+    ASSERT_EQ(0u, GetRangeOverwriteCount())
+        << "Both are plain inserts at distinct addresses, not overwrites.";
+
+    // Both blocks are freed, merged and reused by a larger method covering both ranges
+    SetupMockCodeInfo(newFuncId, rangeStart, halfSize * 2);
+    cache->AddFunction(newFuncId);
+
+    // An implementation matching only on the start address would replace oldFuncId1 but
+    // leave oldFuncId2 overlapping the new range.
+    EXPECT_EQ(2u, GetRangeOverwriteCount())
+        << "A new range spanning two stale ranges must replace both of them.";
+    EXPECT_EQ(newFuncId, cache->GetFunctionId(rangeStart + 0x50).value_or(0));
+    EXPECT_EQ(newFuncId, cache->GetFunctionId(rangeStart + halfSize + 0x50).value_or(0))
+        << "This address used to be oldFuncId2's territory -- it must now resolve to the "
+           "new functionId, not the stale one left dangling by a partial-overlap bug.";
 }
 
 // Test: IsManaged for valid managed IP
