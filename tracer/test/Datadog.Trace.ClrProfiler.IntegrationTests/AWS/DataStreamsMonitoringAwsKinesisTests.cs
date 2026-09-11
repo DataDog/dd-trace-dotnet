@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.IntegrationTests.Helpers;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.TestHelpers.AutoInstrumentation.Containers;
 using Datadog.Trace.TestHelpers.DataStreamsMonitoring;
 using FluentAssertions;
 using VerifyXunit;
@@ -20,12 +21,17 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
 {
     [Trait("RequiresDockerDependency", "true")]
     [Trait("DockerGroup", "2")]
+    [Collection(LocalStackCollection.Name)]
     [UsesVerify]
     public class DataStreamsMonitoringAwsKinesisTests : TracingIntegrationTest
     {
-        public DataStreamsMonitoringAwsKinesisTests(ITestOutputHelper output)
+        private readonly LocalStackFixture _localStackFixture;
+
+        public DataStreamsMonitoringAwsKinesisTests(ITestOutputHelper output, LocalStackFixture localStackFixture)
             : base("AWS.Kinesis", output)
         {
+            _localStackFixture = localStackFixture;
+            ConfigureContainers(localStackFixture);
         }
 
         public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.Tags["span.kind"] switch
@@ -69,15 +75,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
 
                 var dsPoints = await agent.WaitForDataStreamsPointsAsync(statsCount: 2);
 
-                var host = Environment.GetEnvironmentVariable("AWS_SDK_HOST");
-
                 var settings = VerifyHelper.GetSpanVerifierSettings();
                 settings.UseFileName($"{nameof(DataStreamsMonitoringAwsKinesisTests)}.{frameworkName}.Schema{metadataSchemaVersion.ToUpper()}");
                 settings.AddDataStreamsScrubber();
-                if (!string.IsNullOrWhiteSpace(host))
-                {
-                    settings.AddSimpleScrubber(host, "localhost:00000");
-                }
+                settings.AddSimpleScrubber(_localStackFixture.HostAndPort, "localhost:00000");
 
                 await Verifier.Verify(MockDataStreamsPayload.Normalize(dsPoints), settings)
                           .DisableRequireUniquePrefix();

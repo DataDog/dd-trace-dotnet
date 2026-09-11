@@ -13,15 +13,17 @@ namespace Samples.WebForms.Database
             RegisterAsyncTask(new PageAsyncTask(CallElasticsearch));
         }
 
-        private static string Host()
+        private static Uri Endpoint()
         {
-            return Environment.GetEnvironmentVariable("ELASTICSEARCH_HOST") ?? "localhost";
+            var endpoint = Environment.GetEnvironmentVariable("ELASTICSEARCH6_HOST");
+            return endpoint is null
+                       ? new Uri("http://" + (Environment.GetEnvironmentVariable("ELASTICSEARCH_HOST") ?? "localhost") + ":9200")
+                       : new Uri("http://" + endpoint);
         }
 
         private async Task CallElasticsearch()
         {
-            var host = new Uri("http://" + Host() + ":9200");
-            var settings = new ConnectionSettings(host).DefaultIndex("elastic-net-example");
+            var settings = new ConnectionSettings(Endpoint()).DefaultIndex("elastic-net-example");
             var elastic = new ElasticClient(settings);
 
             await elastic.ClusterHealthAsync(new ClusterHealthRequest());

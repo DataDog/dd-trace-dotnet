@@ -11,6 +11,7 @@ using Datadog.Trace.ClrProfiler.IntegrationTests.Helpers;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.TestHelpers.AutoInstrumentation.Containers;
 using VerifyXunit;
 using Xunit;
 using Xunit.Abstractions;
@@ -19,16 +20,20 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
     [Trait("RequiresDockerDependency", "true")]
     [Trait("DockerGroup", "2")]
+    [Collection(Elasticsearch6Collection.Name)]
     [UsesVerify]
     public class Elasticsearch6Tests : TracingIntegrationTest
     {
         private const string ServiceName = "Samples.Elasticsearch";
+        private readonly Elasticsearch6Fixture _elasticsearchFixture;
 
-        public Elasticsearch6Tests(ITestOutputHelper output)
+        public Elasticsearch6Tests(ITestOutputHelper output, Elasticsearch6Fixture elasticsearchFixture)
             : base("Elasticsearch", output)
         {
+            _elasticsearchFixture = elasticsearchFixture;
             SetServiceName(ServiceName);
             SetServiceVersion("1.0.0");
+            ConfigureContainers(elasticsearchFixture);
         }
 
         public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.IsElasticsearchNet(metadataSchemaVersion);
@@ -167,20 +172,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     _ => "6_0"
                 };
 
-                var host = Environment.GetEnvironmentVariable("ELASTICSEARCH6_HOST");
-
                 var settings = VerifyHelper.GetSpanVerifierSettings();
-                // normalise between running directly against localhost and against elasticsearch containers
+                // Normalise the dynamically-mapped Testcontainers endpoint.
                 settings.AddSimpleScrubber("out.host: localhost", "out.host: elasticsearch");
-                settings.AddSimpleScrubber("out.host: elasticsearch6", "out.host: elasticsearch");
-                settings.AddSimpleScrubber("out.host: elasticsearch7_arm64", "out.host: elasticsearch");
+                settings.AddSimpleScrubber($"out.host: {_elasticsearchFixture.Host}", "out.host: elasticsearch");
+                settings.AddSimpleScrubber($"out.port: {_elasticsearchFixture.Port}", "out.port: 9200");
                 settings.AddSimpleScrubber("peer.service: localhost", "peer.service: elasticsearch");
-                settings.AddSimpleScrubber("peer.service: elasticsearch6", "peer.service: elasticsearch");
-                settings.AddSimpleScrubber("peer.service: elasticsearch7_arm64", "peer.service: elasticsearch");
-                if (!string.IsNullOrWhiteSpace(host))
-                {
-                    settings.AddSimpleScrubber(host, "localhost:00000");
-                }
+                settings.AddSimpleScrubber($"peer.service: {_elasticsearchFixture.Host}", "peer.service: elasticsearch");
+                settings.AddSimpleScrubber(_elasticsearchFixture.HostAndPort, "localhost:00000");
 
                 await VerifyHelper.VerifySpans(spans, settings)
                                   .UseTextForParameters($"packageVersion={snapshotSuffix}.Schema{metadataSchemaVersion.ToUpper()}")

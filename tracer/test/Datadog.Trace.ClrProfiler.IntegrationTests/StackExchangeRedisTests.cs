@@ -6,11 +6,13 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.IntegrationTests.Helpers;
 using Datadog.Trace.ClrProfiler.IntegrationTests.TestCollections;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.TestHelpers.AutoInstrumentation.Containers;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using VerifyXunit;
@@ -25,10 +27,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     [UsesVerify]
     public class StackExchangeRedisTests : TracingIntegrationTest
     {
-        public StackExchangeRedisTests(ITestOutputHelper output)
+        private readonly StackExchangeRedisFixture _redisFixture;
+
+        public StackExchangeRedisTests(ITestOutputHelper output, StackExchangeRedisFixture redisFixture)
             : base("StackExchange.Redis", output)
         {
+            _redisFixture = redisFixture;
             SetServiceVersion("1.0.0");
+            ConfigureContainers(redisFixture);
         }
 
         private enum PackageVersion
@@ -77,30 +83,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 var spans = await agent.WaitForSpansAsync(expectedCount);
                 ValidateIntegrationSpans(spans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan);
 
-                var host = Environment.GetEnvironmentVariable("STACKEXCHANGE_REDIS_HOST") ?? "localhost:6389";
-                var port = host.Substring(host.IndexOf(':') + 1);
-                host = host.Substring(0, host.IndexOf(':'));
-
                 var settings = VerifyHelper.GetSpanVerifierSettings();
                 settings.UseFileName($"{nameof(StackExchangeRedisTests)}.{calculatedVersion}" + $".Schema{metadataSchemaVersion.ToUpper()}");
                 settings.DisableRequireUniquePrefix();
                 settings.AddSimpleScrubber($" {TestPrefix}StackExchange.Redis.", " StackExchange.Redis.");
-                if (EnvironmentTools.IsOsx())
-                {
-                    settings.AddSimpleScrubber("out.host: localhost", "out.host: stackexchangeredis");
-                    settings.AddSimpleScrubber("peer.service: localhost", "peer.service: stackexchangeredis");
-                    settings.AddSimpleScrubber("out.host: 127.0.0.1", "out.host: stackexchangeredis-replica");
-                    settings.AddSimpleScrubber("peer.service: 127.0.0.1", "peer.service: stackexchangeredis-replica");
-                    settings.AddSimpleScrubber("out.port: 6390", "out.port: 6379");
-                    settings.AddSimpleScrubber("out.port: 6391", "out.port: 6379");
-                    settings.AddSimpleScrubber("out.port: 6392", "out.port: 6379");
-                }
-                else
-                {
-                    settings.AddSimpleScrubber($"out.host: {host}", "out.host: stackexchangeredis");
-                    settings.AddSimpleScrubber($"peer.service: {host}", "peer.service: stackexchangeredis");
-                    settings.AddSimpleScrubber($"out.port: {port}", "out.port: 6379");
-                }
+                AddEndpointScrubbers(settings, _redisFixture.PrimaryHost, _redisFixture.PrimaryPort, "stackexchangeredis");
+                AddEndpointScrubbers(settings, _redisFixture.ReplicaHost, _redisFixture.ReplicaPort, "stackexchangeredis-replica");
 
                 await VerifyHelper.VerifySpans(
                     spans,
@@ -114,6 +102,22 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
 
             await telemetry.AssertIntegrationEnabledAsync(IntegrationId.StackExchangeRedis);
+        }
+
+        private static void AddEndpointScrubbers(VerifyTests.VerifySettings settings, string host, ushort port, string normalizedHost)
+        {
+            var escapedHost = Regex.Escape(host);
+            var endpointWithPeerService = new Regex($@"out\.host: {escapedHost},\r?\n([ \t]+)out\.port: {port},\r?\n\1peer\.service: [^,\r\n]+,");
+            var endpoint = new Regex($@"out\.host: {escapedHost},\r?\n([ \t]+)out\.port: {port},");
+            settings.AddScrubber(
+                builder =>
+                {
+                    var scrubbed = endpointWithPeerService.Replace(
+                        builder.ToString(),
+                        $"out.host: {normalizedHost},\n      out.port: 6379,\n      peer.service: {normalizedHost},");
+                    scrubbed = endpoint.Replace(scrubbed, $"out.host: {normalizedHost},\n      out.port: 6379,");
+                    builder.Clear().Append(scrubbed);
+                });
         }
 
         private static PackageVersion GetPackageVersion(string packageVersionString)

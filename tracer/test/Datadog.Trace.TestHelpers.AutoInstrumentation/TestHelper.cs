@@ -181,9 +181,9 @@ namespace Datadog.Trace.TestHelpers
             return process;
         }
 
-        public async Task<ProcessResult> RunSampleAndWaitForExit(MockTracerAgent agent, string arguments = null, string packageVersion = "", string framework = "", int aspNetCorePort = 5000, bool usePublishWithRID = false, string dotnetRuntimeArgs = null)
+        public async Task<ProcessResult> RunSampleAndWaitForExit(MockTracerAgent agent, string arguments = null, string packageVersion = "", string framework = "", int aspNetCorePort = 5000, bool usePublishWithRID = false, string dotnetRuntimeArgs = null, bool retryOnRuntime127957Race = true)
         {
-            const int maxAttempts = 3;
+            var maxAttempts = retryOnRuntime127957Race ? 3 : 1;
             var attempt = 1;
 
             while (true)

@@ -12,6 +12,7 @@ using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.IntegrationTests.Helpers;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.TestHelpers.AutoInstrumentation.Containers;
 using FluentAssertions;
 using VerifyXunit;
 using Xunit;
@@ -22,12 +23,19 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
     [Trait("RequiresDockerDependency", "true")]
     [Trait("DockerGroup", "1")]
     [UsesVerify]
-    public class MySqlCommandTests : TracingIntegrationTest
+    [Collection(MySqlCollection.Name)]
+    public class MySqlCommandTests : TracingIntegrationTest, IClassFixture<MySql57Fixture>
     {
-        public MySqlCommandTests(ITestOutputHelper output)
+        private readonly MySql8Fixture _mySql8Fixture;
+        private readonly MySql57Fixture _mySql57Fixture;
+
+        public MySqlCommandTests(ITestOutputHelper output, MySql8Fixture mySql8Fixture, MySql57Fixture mySql57Fixture)
             : base("MySql", output)
         {
+            _mySql8Fixture = mySql8Fixture;
+            _mySql57Fixture = mySql57Fixture;
             SetServiceVersion("1.0.0");
+            ConfigureContainers(mySql8Fixture, mySql57Fixture);
         }
 
         public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.IsMySql(metadataSchemaVersion);
@@ -121,6 +129,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
 
             var settings = VerifyHelper.GetSpanVerifierSettings();
             settings.AddRegexScrubber(new Regex("MySql-Test-[a-zA-Z0-9]{32}"), "MySql-Test-GUID");
+            settings.AddSimpleScrubber($"out.host: {_mySql8Fixture.Host}", "out.host: mysql");
+            if (_mySql57Fixture.Host is { } mySql57Host)
+            {
+                settings.AddSimpleScrubber($"out.host: {mySql57Host}", "out.host: mysql");
+            }
+
             settings.AddSimpleScrubber("out.host: localhost", "out.host: mysql");
             settings.AddSimpleScrubber("out.host: mysql57", "out.host: mysql");
             settings.AddSimpleScrubber("out.host: mysql_arm64", "out.host: mysql");
