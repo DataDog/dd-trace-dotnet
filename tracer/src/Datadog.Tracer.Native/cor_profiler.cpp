@@ -1,4 +1,5 @@
 #include "cor_profiler.h"
+#include "module_load_lock.h"
 
 #include "corhlpr.h"
 #include <corprof.h>
@@ -542,9 +543,17 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id, HR
         return S_OK;
     }
 
-    // keep this lock until we are done using the module,
-    // to prevent it from unloading while in use
-    auto modules = module_ids.Get();
+    std::vector<std::shared_ptr<debugger::MethodProbeDefinition>> methodProbes;
+    ModuleLoadLock moduleLock(module_ids, [&]() {
+        // InstrumentProbes uses the same module_ids -> m_probes_mutex lock order.
+        if (debugger_instrumentation_requester != nullptr)
+        {
+            methodProbes = debugger_instrumentation_requester->GetMethodProbesSnapshot();
+        }
+    });
+
+    // Keep the lock until all callbacks are done using the module, to prevent it from unloading while in use.
+    auto& modules = moduleLock.Modules();
 
     // double check if is_attached_ has changed to avoid possible race condition with shutdown function
     if (!is_attached_ || rejit_handler == nullptr)
@@ -552,7 +561,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id, HR
         return S_OK;
     }
 
-    auto hr = TryRejitModule(module_id, modules.Ref());
+    auto hr = TryRejitModule(module_id, modules);
 
     // Push integration definitions from past modules that were unable to be added
     auto rejit_size = rejit_module_method_pairs.size();
@@ -605,7 +614,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id, HR
 
     if (debugger_instrumentation_requester != nullptr)
     {
-        debugger_instrumentation_requester->ModuleLoadFinished(module_id);
+        debugger_instrumentation_requester->ModuleLoadFinished(module_id, methodProbes);
     }
 
     if (_dataflow != nullptr)
