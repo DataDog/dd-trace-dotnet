@@ -114,10 +114,10 @@ tracer/                                   @DataDog/apm-sdk-capabilities-dotnet @
 /tracer/test/test-applications/integrations/Samples.InstrumentedTests/ @DataDog/asm-dotnet
 /tracer/src/Datadog.Trace/Tags.AppSec.cs @DataDog/asm-dotnet
 /tracer/test/benchmarks/Benchmarks.Trace/
+/tracer/test/benchmarks/Benchmarks.Trace/*.*                   @DataDog/apm-lang-platform-dotnet
 /tracer/test/benchmarks/Benchmarks.Trace/Asm/                 @DataDog/asm-dotnet
 /tracer/test/benchmarks/Benchmarks.Trace/Iast/                @DataDog/asm-dotnet
 /tracer/test/benchmarks/Benchmarks.Trace/microbenchmarks/     @DataDog/apm-lang-platform-dotnet
-/tracer/test/benchmarks/Benchmarks.Trace/*.*                   @DataDog/apm-lang-platform-dotnet
 /tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/CryptographyAlgorithm/  @DataDog/asm-dotnet
 /tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/HashAlgorithm/  @DataDog/asm-dotnet
 /tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Process/  @DataDog/asm-dotnet @DataDog/tracing-dotnet
@@ -161,6 +161,8 @@ Datadog.Trace.Debugger.slnf                @DataDog/debugger-dotnet
 
 # CI
 /tracer/src/Datadog.Trace/Ci/             @DataDog/ci-app-libraries-dotnet @DataDog/apm-dotnet
+# The build's CODEOWNERS parser requires this explicit path for nested benchmarks.
+/tracer/test/benchmarks/Benchmarks.Trace/CI/ @DataDog/ci-app-libraries-dotnet
 /tracer/src/Datadog.Trace/PDBs/MethodSymbolResolver.cs        @DataDog/ci-app-libraries-dotnet
 /tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Testing/  @DataDog/ci-app-libraries-dotnet
 /tracer/src/Datadog.Trace.BenchmarkDotNet/                          @DataDog/ci-app-libraries-dotnet @DataDog/apm-dotnet
