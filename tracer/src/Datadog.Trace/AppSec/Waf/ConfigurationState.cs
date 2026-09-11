@@ -390,7 +390,7 @@ internal sealed record ConfigurationState
         }
         else
         {
-            AutoUserInstrumMode = autoUserInstrumMode?.Mode?.ToLowerInvariant();
+            AutoUserInstrumMode = StringUtil.ToLowerInvariant(autoUserInstrumMode?.Mode);
         }
     }
 

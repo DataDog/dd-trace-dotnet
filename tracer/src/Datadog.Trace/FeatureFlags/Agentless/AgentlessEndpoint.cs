@@ -99,7 +99,7 @@ internal sealed class AgentlessEndpoint
                 }
             }
 
-            var managedHost = ManagedHostPrefix + trimmedSite.ToLowerInvariant();
+            var managedHost = ManagedHostPrefix + StringUtil.ToLowerInvariant(trimmedSite);
 
             if (!Uri.TryCreate($"https://{managedHost}{DefaultPath}", UriKind.Absolute, out var managedUri))
             {

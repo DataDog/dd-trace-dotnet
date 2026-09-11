@@ -209,25 +209,32 @@ internal class Sources
                         };
 
                     private static System.Collections.Generic.KeyValuePair<string, string[]> GetIntegrationEnabledKeysFallback(string integrationName) =>
-                        new(string.Format("DD_TRACE_{0}_ENABLED", integrationName.ToUpperInvariant()),
+                        new(string.Format("DD_TRACE_{0}_ENABLED", ToUpperInvariant(integrationName)),
                         [
                             string.Format("DD_TRACE_{0}_ENABLED", integrationName),
                             $"DD_{integrationName}_ENABLED"
                         ]);
 
                     private static System.Collections.Generic.KeyValuePair<string, string[]> GetIntegrationAnalyticsEnabledKeysFallback(string integrationName) =>
-                        new(string.Format("DD_TRACE_{0}_ANALYTICS_ENABLED", integrationName.ToUpperInvariant()),
+                        new(string.Format("DD_TRACE_{0}_ANALYTICS_ENABLED", ToUpperInvariant(integrationName)),
                         [
                             string.Format("DD_TRACE_{0}_ANALYTICS_ENABLED", integrationName),
                             $"DD_{integrationName}_ANALYTICS_ENABLED"
                         ]);
 
                     private static System.Collections.Generic.KeyValuePair<string, string[]> GetIntegrationAnalyticsSampleRateKeysFallback(string integrationName) =>
-                        new(string.Format("DD_TRACE_{0}_ANALYTICS_SAMPLE_RATE", integrationName.ToUpperInvariant()),
+                        new(string.Format("DD_TRACE_{0}_ANALYTICS_SAMPLE_RATE", ToUpperInvariant(integrationName)),
                         [
                             string.Format("DD_TRACE_{0}_ANALYTICS_SAMPLE_RATE", integrationName),
                             $"DD_{integrationName}_ANALYTICS_SAMPLE_RATE"
                         ]);
+
+                    private static string ToUpperInvariant(string value) =>
+            #if NETFRAMEWORK
+                        System.StringUtil.ToUpperInvariant(value);
+            #else
+                        value.ToUpperInvariant();
+            #endif
                 }
             }
             

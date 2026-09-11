@@ -59,7 +59,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                 sb.Append('/');
             }
 
-            sb.Append(routeTemplate.ToLowerInvariant());
+            sb.Append(StringUtil.ToLowerInvariant(routeTemplate));
 
             areaName = null;
             controllerName = null;
@@ -69,17 +69,17 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
             {
                 if (string.Equals(kvp.Key, "action", StringComparison.OrdinalIgnoreCase) && kvp.Value is string action)
                 {
-                    actionName = action.ToLowerInvariant();
+                    actionName = StringUtil.ToLowerInvariant(action);
                     sb.Replace("{action}", actionName);
                 }
                 else if (string.Equals(kvp.Key, "controller", StringComparison.OrdinalIgnoreCase) && kvp.Value is string controller)
                 {
-                    controllerName = controller.ToLowerInvariant();
+                    controllerName = StringUtil.ToLowerInvariant(controller);
                     sb.Replace("{controller}", controllerName);
                 }
                 else if (string.Equals(kvp.Key, "area", StringComparison.OrdinalIgnoreCase) && kvp.Value is string area)
                 {
-                    areaName = area.ToLowerInvariant();
+                    areaName = StringUtil.ToLowerInvariant(area);
                     sb.Replace("{area}", areaName);
                 }
                 else if (expandRouteTemplates)
@@ -129,7 +129,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                 else
                 {
                     sb.Remove(startIndex, length);
-                    sb.Insert(startIndex, value?.ToLowerInvariant() ?? string.Empty);
+                    sb.Insert(startIndex, StringUtil.ToLowerInvariant(value) ?? string.Empty);
                 }
             }
 
