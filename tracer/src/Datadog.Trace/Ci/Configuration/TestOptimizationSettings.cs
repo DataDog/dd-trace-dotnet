@@ -21,6 +21,11 @@ namespace Datadog.Trace.Ci.Configuration
 {
     internal sealed class TestOptimizationSettings
     {
+        private const int RetryBucketCount = 5;
+        private const int MaxRetriesPerBucket = 20;
+
+        private static readonly IDatadogLogger SettingsLog = DatadogLogging.GetLoggerFor<TestOptimizationSettings>();
+
         private TracerSettings? _tracerSettings;
 
         public TestOptimizationSettings(IConfigurationSource source, IConfigurationTelemetry telemetry)
@@ -343,11 +348,6 @@ namespace Datadog.Trace.Ci.Configuration
             AgentlessUrl = agentlessUrl;
         }
 
-        private static readonly IDatadogLogger SettingsLog = DatadogLogging.GetLoggerFor<TestOptimizationSettings>();
-
-        private const int RetryBucketCount = 5;
-        private const int MaxRetriesPerBucket = 20;
-
         internal static int[]? ParseDynamicAtrBuckets(string? rawBuckets)
         {
             if (StringUtil.IsNullOrEmpty(rawBuckets))
@@ -358,7 +358,7 @@ namespace Datadog.Trace.Ci.Configuration
             var parts = rawBuckets!.Split(',');
             if (parts.Length != RetryBucketCount)
             {
-                SettingsLog.Warning<string, int>("Invalid {EnvVar} value {Value}; expected {Count} comma-separated integers in [1, {Max}].", ConfigurationKeys.CIVisibility.DynamicAtrBuckets, rawBuckets, RetryBucketCount);
+                SettingsLog.Warning<string, string>("Invalid {EnvVar} value {Value}; expected five comma-separated integers in [1, 20].", ConfigurationKeys.CIVisibility.DynamicAtrBuckets, rawBuckets);
                 return null;
             }
 
@@ -367,7 +367,7 @@ namespace Datadog.Trace.Ci.Configuration
             {
                 if (!int.TryParse(parts[i].Trim(), out var value) || value < 1 || value > MaxRetriesPerBucket)
                 {
-                    SettingsLog.Warning<string, int>("Invalid {EnvVar} value {Value}; expected {Count} comma-separated integers in [1, {Max}].", ConfigurationKeys.CIVisibility.DynamicAtrBuckets, rawBuckets, RetryBucketCount);
+                    SettingsLog.Warning<string, string>("Invalid {EnvVar} value {Value}; expected five comma-separated integers in [1, 20].", ConfigurationKeys.CIVisibility.DynamicAtrBuckets, rawBuckets);
                     return null;
                 }
 
