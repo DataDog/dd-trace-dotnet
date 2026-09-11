@@ -19,6 +19,7 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.Iast;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.Util;
+using Datadog.Trace.Util.Http;
 using FluentAssertions;
 using Moq;
 using Xunit;
@@ -55,6 +56,8 @@ public class RequestDataHelperTests
         var workerRequest = new SimpleWorkerInvalidHost("/test", "/test", "test.aspx", null, new StringWriter());
         var context = new HttpContext(workerRequest);
         var request = context.Request;
+        var requestBase = new HttpRequestWrapper(request);
+        var queryStringManager = new QueryStringManager(reportQueryString: false, timeout: 200, maxSizeBeforeObfuscation: 5_000, pattern: string.Empty);
 
         try
         {
@@ -65,6 +68,8 @@ public class RequestDataHelperTests
         {
             RequestDataHelper.BuildUrl(request).Should().BeNull();
             RequestDataHelper.GetUrl(request).Should().BeNull();
+            RequestDataHelper.GetUrl(requestBase).Should().BeNull();
+            requestBase.GetUrlForSpan(queryStringManager).Should().BeNull();
         }
     }
 #endif

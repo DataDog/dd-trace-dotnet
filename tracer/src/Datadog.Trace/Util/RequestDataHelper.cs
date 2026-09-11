@@ -174,6 +174,30 @@ internal static class RequestDataHelper
     }
 
     /// <summary>
+    /// Gets the Uri from the <paramref name="request"/>.
+    /// <para>
+    /// Note that this will <em>CACHE</em> the <c>Uri</c> of the underlying <see cref="HttpRequest"/>
+    /// for all future callers (example the customer's application) if the <paramref name="request"/>
+    /// is an <see cref="HttpRequestWrapper"/> and we are the first to call <see cref="HttpRequest.Url"/>.
+    /// </para>
+    /// </summary>
+    /// <param name="request">The <see cref="HttpRequestBase"/> to get the <c>Uri</c> of.</param>
+    /// <returns>The <c>Uri</c>; otherwise <see langword="null"/>.</returns>
+    internal static Uri? GetUrl(HttpRequestBase request)
+    {
+        // UriFormatException can happen if, for example, the request contains the variable "SERVER_NAME" with an invalid value.
+        try
+        {
+            return request.Url;
+        }
+        catch (Exception ex) when (ex is HttpRequestValidationException || ex is UriFormatException)
+        {
+            Log.Debug(ex, "Error reading request.Url from the request.");
+            return null;
+        }
+    }
+
+    /// <summary>
     /// Builds the Uri from the <paramref name="request"/>.
     /// <para>
     /// Note that this will <em>bypass</em> the caching behavior of the <see cref="HttpRequest.Url"/> property.
