@@ -100,15 +100,58 @@ TEST(FrameStoreTest, GetFrame_WithCache_NativeIp_ReturnsNotResolvedAndDropped)
     // Sanity-check the upstream contract we rely on: the cache must report the IP
     // as "definitely native" (a value equal to InvalidFunctionId), not nullopt.
     const uintptr_t nativeIp = 0xDEAD;
-    auto cacheResult = cache->GetFunctionId(nativeIp);
+    auto cacheResult = cache->GetFunctionInfo(nativeIp);
     ASSERT_TRUE(cacheResult.has_value());
-    ASSERT_EQ(ManagedCodeCache::InvalidFunctionId, cacheResult.value());
+    ASSERT_EQ(ManagedCodeCache::InvalidFunctionId, cacheResult->FunctionId);
 
     auto [isResolved, frameInfo] = frameStore.GetFrame(nativeIp);
 
     EXPECT_FALSE(isResolved) << "Native IPs (InvalidFunctionId from the cache) must "
                                 "be reported as unresolved so RawSampleTransformer "
                                 "drops them from the sample.";
+    EXPECT_EQ(std::string(frameInfo.Frame), std::string(NotResolvedFrameText));
+
+    cache.reset();
+}
+
+// Test: an IP resolving to a dynamic method must be dropped (isResolved=false) instead
+// of being resolved into the misleading Unknown-Method placeholder: such methods have no
+// metadata token, so their name could never be resolved anyway.
+TEST(FrameStoreTest, GetFrame_WithCache_DynamicMethod_ReturnsNotResolvedAndDropped)
+{
+    auto mockProfiler = MockProfilerInfo{};
+
+    const FunctionID dynamicFuncId = 0xD1;
+    const uintptr_t codeStart = 0x20000;
+    const ULONG32 codeSize = 0x100;
+
+    EXPECT_CALL(mockProfiler, GetCodeInfo2(dynamicFuncId, _, _, _))
+        .WillOnce([codeStart, codeSize](FunctionID, ULONG32, ULONG32* pcCodeInfos,
+                                         COR_PRF_CODE_INFO codeInfos[]) {
+            if (pcCodeInfos != nullptr) *pcCodeInfos = 1;
+            if (codeInfos != nullptr)
+            {
+                codeInfos[0].startAddress = codeStart;
+                codeInfos[0].size = codeSize;
+            }
+            return S_OK;
+        });
+
+    MetricsRegistry metricsRegistry;
+    auto cache = std::make_unique<ManagedCodeCache>(&mockProfiler, metricsRegistry);
+    cache->Initialize();
+    cache->AddFunction(dynamicFuncId, /*isDynamic*/ true);
+
+    FrameStore frameStore(
+        /*pCorProfilerInfo*/ &mockProfiler,
+        /*pConfiguration  */ nullptr,
+        /*pDebugInfoStore */ nullptr,
+        /*pManagedCodeCache*/ cache.get());
+
+    auto [isResolved, frameInfo] = frameStore.GetFrame(codeStart + 0x10);
+
+    EXPECT_FALSE(isResolved) << "Dynamic-method frames must be dropped, not resolved "
+                                 "into a placeholder that implies a resolution failure.";
     EXPECT_EQ(std::string(frameInfo.Frame), std::string(NotResolvedFrameText));
 
     cache.reset();
@@ -152,7 +195,7 @@ TEST(FrameStoreTest, GetFrame_FakeIps_ShortCircuitToResolvedPlaceholders)
 
 #ifdef _WINDOWS
 // Test (Windows only): cached-path "nullopt" branch simulates the SEH mirror inside
-// ManagedCodeCache::GetFunctionId. When ICorProfilerInfo::GetFunctionFromIP crashes
+// ManagedCodeCache::GetFunctionInfo. When ICorProfilerInfo::GetFunctionFromIP crashes
 // (e.g. module unloaded concurrently) the __try/__except in the cache returns
 // std::nullopt. FrameStore must translate that to {isResolved=true, NotResolvedFrame}
 // so the Windows pipeline preserves the placeholder frame rather than dropping it.
@@ -167,7 +210,7 @@ TEST(FrameStoreTest, GetFrame_WithCache_CachedPathNullopt_ReturnsResolvedPlaceho
     auto cache = std::make_unique<ManagedCodeCache>(&mockProfiler, metricsRegistry);
     cache->Initialize();
 
-    // Register an R2R module range so GetFunctionId falls through to
+    // Register an R2R module range so GetFunctionInfo falls through to
     // GetFunctionFromIP_Original (which wraps the ICorProfilerInfo call in __try/__except).
     const uintptr_t r2rCodeStart = 0xC0000000;
     const uintptr_t r2rCodeEnd   = 0xC000FFFF;
@@ -193,7 +236,7 @@ TEST(FrameStoreTest, GetFrame_WithCache_CachedPathNullopt_ReturnsResolvedPlaceho
         /*pManagedCodeCache*/ cache.get());
 
     // Sanity-check the upstream contract: the cache reports nullopt (SEH path).
-    ASSERT_FALSE(cache->GetFunctionId(ipInR2R).has_value());
+    ASSERT_FALSE(cache->GetFunctionInfo(ipInR2R).has_value());
 
     // Re-arm the mock for the GetFrame call.
     EXPECT_CALL(mockProfiler, GetFunctionFromIP(reinterpret_cast<LPCBYTE>(ipInR2R), _))
