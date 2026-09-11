@@ -3,8 +3,12 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.Collections.Generic;
 using System.Text;
+using Datadog.Trace.Processors;
+using Datadog.Trace.Tagging;
+using FluentAssertions;
 using Xunit;
 
 namespace Datadog.Trace.Tests.TraceProcessors
@@ -169,6 +173,39 @@ namespace Datadog.Trace.Tests.TraceProcessors
               country_name = ?
               WHERE id = ?"
             };
+
+            // A character that does not fit an Int16 must not abort obfuscation and leave every
+            // literal in the query untouched
+            yield return new object[] { "SELECT * FROM users WHERE name = '高橋' AND ssn = '123-45-6789'", "SELECT * FROM users WHERE name = ? AND ssn = ?" };
+            yield return new object[] { "SELECT * FROM users WHERE name = '🎉' AND id = 8", "SELECT * FROM users WHERE name = ? AND id = ?" };
+
+            // String literals introduced by a type prefix
+            yield return new object[] { "UPDATE Users SET Ssn = N'123-45-6789' WHERE Id = 4", "UPDATE Users SET Ssn = ? WHERE Id = ?" };
+            yield return new object[] { "INSERT INTO t VALUES (E'p@ssw0rd')", "INSERT INTO t VALUES (?)" };
+            yield return new object[] { "SELECT * FROM t WHERE a = q'[secret]'", "SELECT * FROM t WHERE a = ?" };
+            yield return new object[] { "SELECT * FROM t WHERE a = B'0101'", "SELECT * FROM t WHERE a = ?" };
+            yield return new object[] { "SELECT * FROM t WHERE a = _utf8'secret'", "SELECT * FROM t WHERE a = ?" };
+
+            // PostgreSQL dollar-quoted strings, but not its positional parameters
+            yield return new object[] { "SELECT * FROM t WHERE token = $$mysecret$$", "SELECT * FROM t WHERE token = ?" };
+            yield return new object[] { "SELECT * FROM t WHERE token = $tag$my'secret$tag$", "SELECT * FROM t WHERE token = ?" };
+            yield return new object[] { "SELECT * FROM t WHERE id = $1", "SELECT * FROM t WHERE id = $1" };
+
+            // Comments are dropped rather than replaced, because they hold whatever the
+            // application put there
+            // (the whitespace the comment sat between is kept, as it is everywhere else)
+            yield return new object[] { "SELECT * FROM t /* note: hunter2 */ WHERE a = 'x'", "SELECT * FROM t  WHERE a = ?" };
+            yield return new object[] { "SELECT * FROM users -- password is hunter2", "SELECT * FROM users " };
+            yield return new object[] { "SELECT a -- the first column\nFROM t WHERE b = 1", "SELECT a \nFROM t WHERE b = ?" };
+            yield return new object[] { "SELECT * FROM t /* unterminated", "SELECT * FROM t " };
+
+            // ... but the comment markers of a SQL Server temporary table and of a value are not
+            yield return new object[] { "SELECT * FROM #TempTable WHERE id = 5", "SELECT * FROM #TempTable WHERE id = ?" };
+            yield return new object[] { "SELECT * FROM t WHERE a = 'has -- inside a value' AND b = 2", "SELECT * FROM t WHERE a = ? AND b = ?" };
+
+            // ... but a quoted identifier is not a literal, and neither is a bare identifier
+            yield return new object[] { "SELECT \"c1\" FROM t WHERE a = 'x'", "SELECT \"c1\" FROM t WHERE a = ?" };
+            yield return new object[] { "SELECT country_name FROM v_country_all", "SELECT country_name FROM v_country_all" };
         }
 
         [Theory]
@@ -177,6 +214,36 @@ namespace Datadog.Trace.Tests.TraceProcessors
         {
             var actualValue = Trace.Processors.ObfuscatorTraceProcessor.ObfuscateSqlResource(inValue);
             Assert.Equal(expectedValue, actualValue);
+        }
+
+        [Fact]
+        public void LeavesTheResourceNameOfAnOpenTelemetrySemanticsSpanAlone()
+        {
+            // With OpenTelemetry semantics the resource name of a database span is the
+            // low-cardinality span name, not a query, so obfuscating it would only corrupt it
+            var span = new Span(new SpanContext(1, 1), DateTimeOffset.UtcNow, new SqlTags(), openTelemetrySemanticsEnabled: true)
+            {
+                Type = SpanTypes.Sql,
+                ResourceName = "myhost:5433",
+            };
+
+            new ObfuscatorTraceProcessor().Process(span);
+
+            span.ResourceName.Should().Be("myhost:5433");
+        }
+
+        [Fact]
+        public void ObfuscatesTheResourceNameOfADatadogSemanticsSpan()
+        {
+            var span = new Span(new SpanContext(1, 1), DateTimeOffset.UtcNow, new SqlTags())
+            {
+                Type = SpanTypes.Sql,
+                ResourceName = "SELECT * FROM users WHERE id = 12",
+            };
+
+            new ObfuscatorTraceProcessor().Process(span);
+
+            span.ResourceName.Should().Be("SELECT * FROM users WHERE id = ?");
         }
     }
 }

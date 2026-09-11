@@ -114,6 +114,13 @@ namespace Datadog.Trace
         public const string DbType = "db.type";
 
         /// <summary>
+        /// The OpenTelemetry semantic convention name of the database management system, as
+        /// identified by the client instrumentation (e.g. "microsoft.sql_server", "mysql",
+        /// "postgresql", "sqlite", "oracle.db").
+        /// </summary>
+        public const string DbSystemName = "db.system.name";
+
+        /// <summary>
         /// The user used to sign into a database
         /// </summary>
         public const string DbUser = "db.user";
@@ -122,6 +129,40 @@ namespace Datadog.Trace
         /// The name of the database.
         /// </summary>
         public const string DbName = "db.name";
+
+        /// <summary>
+        /// The OpenTelemetry semantic convention name of the database, qualified within the server
+        /// address and port. Multiple components are joined from the most general to the most
+        /// specific with a '|' separator (for example, a SQL Server named instance and its database).
+        /// </summary>
+        public const string DbNamespace = "db.namespace";
+
+        /// <summary>
+        /// The OpenTelemetry semantic convention name of the operation being executed, when a
+        /// single operation name describes the call (for example, "EXECUTE" for a stored procedure).
+        /// </summary>
+        public const string DbOperationName = "db.operation.name";
+
+        /// <summary>
+        /// The OpenTelemetry semantic convention name of the stored procedure being executed.
+        /// </summary>
+        public const string DbStoredProcedureName = "db.stored_procedure.name";
+
+        /// <summary>
+        /// The OpenTelemetry semantic convention name of the collection (table) being acted on,
+        /// when the call is known to act on a single collection.
+        /// </summary>
+        public const string DbCollectionName = "db.collection.name";
+
+        /// <summary>
+        /// The OpenTelemetry semantic convention sanitized text of the database query being executed.
+        /// </summary>
+        public const string DbQueryText = "db.query.text";
+
+        /// <summary>
+        /// The OpenTelemetry semantic convention low-cardinality summary of the database query.
+        /// </summary>
+        public const string DbQuerySummary = "db.query.summary";
 
         /// <summary>
         /// The query text

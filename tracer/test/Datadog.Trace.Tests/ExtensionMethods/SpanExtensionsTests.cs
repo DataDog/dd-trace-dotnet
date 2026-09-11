@@ -11,9 +11,11 @@ using Datadog.Trace.Util;
 using FluentAssertions;
 using Moq;
 using Xunit;
+using AdoNetDbType = Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.DbType;
 
 namespace Datadog.Trace.Tests.ExtensionMethods
 {
+    [Collection(nameof(DbCommandCacheTestCollection))]
     public class SpanExtensionsTests
     {
         public SpanExtensionsTests()
@@ -39,7 +41,7 @@ namespace Datadog.Trace.Tests.ExtensionMethods
             string expectedUserId,
             string expectedHost)
         {
-            var commandTags = DbCommandCache.GetTagsFromDbCommand(CreateDbCommand(connectionString));
+            var commandTags = DbCommandCache.GetTagsFromDbCommand(CreateDbCommand(connectionString), AdoNetDbType.SqlServer);
             commandTags.DbName.Should().Be(expectedDbName);
             commandTags.DbUser.Should().Be(expectedUserId);
             commandTags.OutHost.Should().Be(expectedHost);
@@ -55,7 +57,7 @@ namespace Datadog.Trace.Tests.ExtensionMethods
             {
                 var connectionString = string.Format(connectionStringTemplate, i);
 
-                var commandTags = DbCommandCache.GetTagsFromDbCommand(CreateDbCommand(connectionString));
+                var commandTags = DbCommandCache.GetTagsFromDbCommand(CreateDbCommand(connectionString), AdoNetDbType.SqlServer);
 
                 DbCommandCache.Cache.IsCaching.Should().BeTrue();
                 commandTags.OutHost.Should().Be("myServerName" + i);
@@ -66,7 +68,7 @@ namespace Datadog.Trace.Tests.ExtensionMethods
             {
                 var connectionString = string.Format(connectionStringTemplate, "NoCache" + i);
 
-                var commandTags = DbCommandCache.GetTagsFromDbCommand(CreateDbCommand(connectionString));
+                var commandTags = DbCommandCache.GetTagsFromDbCommand(CreateDbCommand(connectionString), AdoNetDbType.SqlServer);
 
                 DbCommandCache.Cache.IsCaching.Should().BeFalse();
                 commandTags.OutHost.Should().Be("myServerName" + "NoCache" + i);
