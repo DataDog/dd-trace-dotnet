@@ -1668,6 +1668,7 @@ partial class Build
                                 .SetMSBuildPath()
                                 .SetTargets("Restore", "Build")
                                 .SetConfiguration(BuildConfiguration)
+                                .SetTargetPlatformAnyCPU()
                                 .SetProperty("ApiVersion", ApiVersion)
                                 .When(Framework is not null, o => o.SetProperty("TargetFramework", Framework.ToString()))
                                 .SetProperty("BuildInParallel", "true")
@@ -1677,6 +1678,12 @@ partial class Build
               {
                   // TODO: set Samples.Trimming as don't build, as we have to explicitly build that on every platform anyway
                   DotNetBuild(config => config.SetConfiguration(BuildConfiguration)
+                                              .When(string.IsNullOrWhiteSpace(SampleName), x => x.SetProperty("Platform", "Any CPU"))
+                                              .When(!string.IsNullOrWhiteSpace(SampleName), x => x.SetTargetPlatformAnyCPU())
+                                              // Project references outside the generated samples solution can otherwise
+                                              // retain the build host's PlatformTarget and produce architecture-specific
+                                              // managed assemblies in the shared artifacts.
+                                              .SetProperty("PlatformTarget", "AnyCPU")
                                               .SetProperty("BuildInParallel", "true")
                                               .SetProcessArgumentConfigurator(arg => arg.Add("/nowarn:NU1701"))
                                               .When(Framework is not null, x => x.SetFramework(Framework))
@@ -1792,6 +1799,7 @@ partial class Build
 
             DotNetPublish(config => config
                 .SetConfiguration(BuildConfiguration)
+                .SetTargetPlatformAnyCPU()
                 .SetRuntime(rid)
                 .SetFramework(Framework)
                 .CombineWith(projectsToPublish,
