@@ -809,6 +809,12 @@ internal static class MetricTags
         [Description("test_management_enabled:false")] Disabled,
     }
 
+    public enum CIVisibilityDynamicAtrRetriesHasCustomBuckets
+    {
+        [Description("has_custom_buckets:true")] True,
+        [Description("")] False,
+    }
+
     public enum CIVisibilityRequestCompressed
     {
         [Description("")] Uncompressed,

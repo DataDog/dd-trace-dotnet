@@ -451,6 +451,22 @@ supportedConfigurations:
     product: CIVisibility
     const_name: CodeCoverageSnkFile
     documentation: Configuration key for re-signing assemblies after the Code Coverage modification.
+  DD_CIVISIBILITY_DYNAMIC_ATR_BUCKETS:
+  - implementation: A
+    scope: managed
+    type: string
+    default: null
+    product: CIVisibility
+    const_name: DynamicAtrBuckets
+    documentation: Configuration key for overriding the five duration-based Auto Test Retries budgets with five comma-separated integers in [1, 20].
+  DD_CIVISIBILITY_DYNAMIC_ATR_ENABLED:
+  - implementation: A
+    scope: managed
+    type: boolean
+    default: 'false'
+    product: CIVisibility
+    const_name: DynamicAtrEnabled
+    documentation: Configuration key for enabling dynamic, duration-based Auto Test Retries budgets instead of the flat per-test retry limit.
   DD_CIVISIBILITY_DI_ENABLED:
   - implementation: A
     scope: managed

@@ -16,7 +16,7 @@ internal readonly struct FlakyRetryBehavior : IRetryBehavior
     public FlakyRetryBehavior(ITestOptimization testOptimization)
     {
         RemainingRetries = testOptimization.FlakyRetryFeature?.FlakyRetryCount ?? TestOptimizationFlakyRetryFeature.FlakyRetryCountDefault;
-        Interlocked.CompareExchange(ref _totalRetries, testOptimization.FlakyRetryFeature?.TotalFlakyRetryCount ?? TestOptimizationFlakyRetryFeature.TotalFlakyRetryCountDefault, -1);
+        EnsureTotalRetriesInitialized(testOptimization);
     }
 
     public int RemainingRetries { get; }
@@ -27,6 +27,22 @@ internal readonly struct FlakyRetryBehavior : IRetryBehavior
         => result.ResultState.Status == TestStatus.Failed && Interlocked.Decrement(ref _totalRetries) > 0;
 
     public ITestResult ResultChanges(ITestResult result) => result;
+
+    /// <summary>
+    /// Ensures the session-level total retry budget is initialized.
+    /// Shared with <see cref="DynamicFlakyRetryBehavior"/> so both paths use the same counter.
+    /// </summary>
+    internal static void EnsureTotalRetriesInitialized(ITestOptimization testOptimization)
+    {
+        Interlocked.CompareExchange(ref _totalRetries, testOptimization.FlakyRetryFeature?.TotalFlakyRetryCount ?? TestOptimizationFlakyRetryFeature.TotalFlakyRetryCountDefault, -1);
+    }
+
+    /// <summary>
+    /// Atomically decrements the session-level total retry budget.
+    /// Shared with <see cref="DynamicFlakyRetryBehavior"/>.
+    /// </summary>
+    internal static int DecrementTotalRetries()
+        => Interlocked.Decrement(ref _totalRetries);
 
     /// <summary>
     /// Read-only snapshot of remaining ATR budget for pre-close checks.

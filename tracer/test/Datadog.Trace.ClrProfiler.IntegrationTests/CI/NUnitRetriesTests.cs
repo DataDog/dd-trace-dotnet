@@ -46,6 +46,26 @@ public class NUnitRetriesTests : TestingFrameworkRetriesTests
     [Trait("Category", "EndToEnd")]
     [Trait("Category", "TestIntegrations")]
     [Trait("Category", "FlakyRetries")]
+    public override Task<List<MockCIVisibilityTest>> DynamicFlakyRetries(string packageVersion)
+    {
+        return base.DynamicFlakyRetries(packageVersion);
+    }
+
+    [SkippableTheory]
+    [MemberData(nameof(PackageVersions.NUnitRetries), MemberType = typeof(PackageVersions))]
+    [Trait("Category", "EndToEnd")]
+    [Trait("Category", "TestIntegrations")]
+    [Trait("Category", "FlakyRetries")]
+    public override Task DynamicFlakyRetriesHonorSessionCap(string packageVersion)
+    {
+        return base.DynamicFlakyRetriesHonorSessionCap(packageVersion);
+    }
+
+    [SkippableTheory]
+    [MemberData(nameof(PackageVersions.NUnitRetries), MemberType = typeof(PackageVersions))]
+    [Trait("Category", "EndToEnd")]
+    [Trait("Category", "TestIntegrations")]
+    [Trait("Category", "FlakyRetries")]
     [Flaky("Under investigation", 5)]
     public override Task FlakyRetriesWithExceptionReplay(string packageVersion)
     {

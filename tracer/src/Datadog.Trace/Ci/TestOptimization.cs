@@ -18,6 +18,7 @@ using Datadog.Trace.Logging;
 using Datadog.Trace.Pdb;
 using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Telemetry;
+using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Util;
 using TaskExtensions = Datadog.Trace.ExtensionMethods.TaskExtensions;
 
@@ -624,7 +625,8 @@ internal sealed class TestOptimization : ITestOptimization
                     remoteSettings = await client.GetSettingsAsync(skipFrameworkInfo: true).ConfigureAwait(false);
                 }
 
-                FlakyRetryFeature = TestOptimizationFlakyRetryFeature.Create(settings, remoteSettings);
+                FlakyRetryFeature = TestOptimizationFlakyRetryFeature.Create(settings, remoteSettings, isRemoteSettingsResponse: true);
+                RecordDynamicAtrTelemetry(settings, FlakyRetryFeature);
                 DynamicInstrumentationFeature = TestOptimizationDynamicInstrumentationFeature.Create(settings, remoteSettings);
                 KnownTestsFeature = TestOptimizationKnownTestsFeature.Create(settings, remoteSettings, client);
                 EarlyFlakeDetectionFeature = TestOptimizationEarlyFlakeDetectionFeature.Create(settings, remoteSettings, KnownTestsFeature);
@@ -676,12 +678,24 @@ internal sealed class TestOptimization : ITestOptimization
     {
         using var cd = CodeDurationRef.Create();
         var remoteSettings = TestOptimizationClient.CreateSettingsResponseFromTestOptimizationSettings(settings, tracerManagement);
-        FlakyRetryFeature = TestOptimizationFlakyRetryFeature.Create(settings, remoteSettings);
+        FlakyRetryFeature = TestOptimizationFlakyRetryFeature.Create(settings, remoteSettings, isRemoteSettingsResponse: false);
+        RecordDynamicAtrTelemetry(settings, FlakyRetryFeature);
         DynamicInstrumentationFeature = TestOptimizationDynamicInstrumentationFeature.Create(settings, remoteSettings);
         KnownTestsFeature = TestOptimizationKnownTestsFeature.Create(settings, remoteSettings, client);
         EarlyFlakeDetectionFeature = TestOptimizationEarlyFlakeDetectionFeature.Create(settings, remoteSettings, KnownTestsFeature);
         ImpactedTestsDetectionFeature = TestOptimizationImpactedTestsDetectionFeature.Create(settings, remoteSettings, environmentValues);
         SkippableFeature = TestOptimizationSkippableFeature.Create(settings, remoteSettings, client, this);
         TestManagementFeature = TestOptimizationTestManagementFeature.Create(settings, remoteSettings, client);
+    }
+
+    internal static void RecordDynamicAtrTelemetry(TestOptimizationSettings settings, ITestOptimizationFlakyRetryFeature? flakyRetryFeature)
+    {
+        if (flakyRetryFeature?.DynamicAtrEnabled == true)
+        {
+            var hasCustomBuckets = settings.DynamicAtrBuckets is not null
+                ? MetricTags.CIVisibilityDynamicAtrRetriesHasCustomBuckets.True
+                : MetricTags.CIVisibilityDynamicAtrRetriesHasCustomBuckets.False;
+            TelemetryFactory.Metrics.RecordCountCIVisibilityDynamicAtrRetries(hasCustomBuckets);
+        }
     }
 }

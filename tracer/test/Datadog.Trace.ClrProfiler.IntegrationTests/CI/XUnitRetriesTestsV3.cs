@@ -42,6 +42,26 @@ public class XUnitRetriesTestsV3 : TestingFrameworkRetriesTests
         return base.FlakyRetries(packageVersion);
     }
 
+    [SkippableTheory]
+    [MemberData(nameof(PackageVersions.XUnitRetriesV3), MemberType = typeof(PackageVersions))]
+    [Trait("Category", "EndToEnd")]
+    [Trait("Category", "TestIntegrations")]
+    [Trait("Category", "FlakyRetries")]
+    public override Task<List<MockCIVisibilityTest>> DynamicFlakyRetries(string packageVersion)
+    {
+        return base.DynamicFlakyRetries(packageVersion);
+    }
+
+    [SkippableTheory]
+    [MemberData(nameof(PackageVersions.XUnitRetriesV3), MemberType = typeof(PackageVersions))]
+    [Trait("Category", "EndToEnd")]
+    [Trait("Category", "TestIntegrations")]
+    [Trait("Category", "FlakyRetries")]
+    public override Task DynamicFlakyRetriesHonorSessionCap(string packageVersion)
+    {
+        return base.DynamicFlakyRetriesHonorSessionCap(packageVersion);
+    }
+
     [SkippableTheory(Skip = "Exception Replay coverage for xunit.v3 requires further investigation.")]
     [MemberData(nameof(PackageVersions.XUnitRetriesV3), MemberType = typeof(PackageVersions))]
     [Trait("Category", "EndToEnd")]

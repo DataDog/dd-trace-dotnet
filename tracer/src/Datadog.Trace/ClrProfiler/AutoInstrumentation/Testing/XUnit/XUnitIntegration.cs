@@ -300,7 +300,8 @@ internal static class XUnitIntegration
         {
             var hasRemainingExecutions = testCaseMetadata.IsRetry
                                              ? testCaseMetadata.CountDownExecutionNumber > 0
-                                             : (TestOptimization.Instance.FlakyRetryFeature?.FlakyRetryCount ?? TestOptimizationFlakyRetryFeature.FlakyRetryCountDefault) > 0;
+                                             : TestOptimization.Instance.FlakyRetryFeature?.DynamicAtrEnabled == true ||
+                                               (TestOptimization.Instance.FlakyRetryFeature?.FlakyRetryCount ?? TestOptimizationFlakyRetryFeature.FlakyRetryCountDefault) > 0;
             retryDecision = hasRemainingExecutions
                                 ? XUnitRetryCoordinator.GetOrCreateRetryExecutionDecision(
                                     testCaseMetadata,
@@ -403,13 +404,15 @@ internal static class XUnitIntegration
         return TestRetryMode.None;
     }
 
-    internal static void InitializeTotalExecutions(ITestOptimization testOptimization, TestCaseMetadata testCaseMetadata, Func<int> getEarlyFlakeDetectionExecutions)
+    internal static void InitializeTotalExecutions(ITestOptimization testOptimization, TestCaseMetadata testCaseMetadata, TimeSpan initialDuration)
     {
         testCaseMetadata.TotalExecutions = testCaseMetadata.SelectedRetryMode switch
         {
-            TestRetryMode.AutomaticTestRetry => (testOptimization.FlakyRetryFeature?.FlakyRetryCount ?? TestOptimizationFlakyRetryFeature.FlakyRetryCountDefault) + 1,
+            TestRetryMode.AutomaticTestRetry => testOptimization.FlakyRetryFeature?.DynamicAtrEnabled == true
+                ? Common.GetDynamicAtrRetryCountForDuration(initialDuration) + 1
+                : (testOptimization.FlakyRetryFeature?.FlakyRetryCount ?? TestOptimizationFlakyRetryFeature.FlakyRetryCountDefault) + 1,
             TestRetryMode.AttemptToFix => testOptimization.TestManagementFeature?.TestManagementAttemptToFixRetryCount ?? TestOptimizationTestManagementFeature.TestManagementAttemptToFixRetryCountDefault,
-            _ => getEarlyFlakeDetectionExecutions()
+            _ => Common.GetNumberOfExecutionsForDuration(initialDuration)
         };
 
         testCaseMetadata.CountDownExecutionNumber = testCaseMetadata.TotalExecutions - 1;
