@@ -50,6 +50,10 @@ public sealed class FeatureFlagsSdkEvaluateIntegration
             return new CallTargetReturn<TReturn?>(returnValue);
         }
 
+        // Manual API users may not call InitializeAsync before Evaluate. Activate delivery as a
+        // fallback so the agentless poller starts on first evaluation, not never.
+        flags.Activate();
+
         var parameters = (State)state.State!;
         var res = flags.Evaluate(parameters.FlagKey, parameters.TargetType, parameters.DefaultValue, parameters.TargetingKey ?? string.Empty, parameters.Attributes);
         var traceContext = tracer.InternalActiveScope?.Span?.Context.TraceContext;
