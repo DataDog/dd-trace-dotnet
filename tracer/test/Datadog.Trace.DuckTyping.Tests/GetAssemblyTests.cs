@@ -47,27 +47,29 @@ namespace Datadog.Trace.DuckTyping.Tests
 
             /*****
              * WARNING: This number is expected to change if you add
-             * a another test to the ducktype assembly.
+             * another test to the ducktype assembly. Generic signature
+             * validation also lowers this count when an invalid proxy is
+             * rejected before its dynamic assembly is created.
              */
             if (!TestOptimization.Instance.IsRunning)
             {
 #if NETFRAMEWORK
-                asmDuckTypes.Should().Be(1519);
+                asmDuckTypes.Should().Be(1516);
 #elif NETCOREAPP2_1
-                asmDuckTypes.Should().Be(1529);
+                asmDuckTypes.Should().Be(1526);
 #else
-                asmDuckTypes.Should().Be(1530);
+                asmDuckTypes.Should().Be(1527);
 #endif
             }
             else
             {
                 // When running inside CI Visibility, we will generate additional duck types
 #if NETFRAMEWORK
-                asmDuckTypes.Should().BeGreaterThan(1519);
+                asmDuckTypes.Should().BeGreaterThan(1516);
 #elif NETCOREAPP2_1
-                asmDuckTypes.Should().BeGreaterThan(1529);
+                asmDuckTypes.Should().BeGreaterThan(1526);
 #else
-                asmDuckTypes.Should().BeGreaterThan(1530);
+                asmDuckTypes.Should().BeGreaterThan(1527);
 #endif
             }
         }
