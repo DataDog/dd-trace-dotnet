@@ -26,35 +26,6 @@ namespace Datadog.Trace.Ci.Configuration
 
         private static readonly IDatadogLogger SettingsLog = DatadogLogging.GetLoggerFor<TestOptimizationSettings>();
 
-        internal static int[]? ParseDynamicAtrBuckets(string? rawBuckets)
-        {
-            if (StringUtil.IsNullOrEmpty(rawBuckets))
-            {
-                return null;
-            }
-
-            var parts = rawBuckets!.Split(',');
-            if (parts.Length != RetryBucketCount)
-            {
-                SettingsLog.Warning<string, string>("Invalid {EnvVar} value {Value}; expected five comma-separated integers in [1, 20].", ConfigurationKeys.CIVisibility.DynamicAtrBuckets, rawBuckets);
-                return null;
-            }
-
-            var buckets = new int[RetryBucketCount];
-            for (var i = 0; i < RetryBucketCount; i++)
-            {
-                if (!int.TryParse(parts[i].Trim(), out var value) || value < 1 || value > MaxRetriesPerBucket)
-                {
-                    SettingsLog.Warning<string, string>("Invalid {EnvVar} value {Value}; expected five comma-separated integers in [1, 20].", ConfigurationKeys.CIVisibility.DynamicAtrBuckets, rawBuckets);
-                    return null;
-                }
-
-                buckets[i] = value;
-            }
-
-            return buckets;
-        }
-
         private TracerSettings? _tracerSettings;
 
         public TestOptimizationSettings(IConfigurationSource source, IConfigurationTelemetry telemetry)
@@ -324,6 +295,35 @@ namespace Datadog.Trace.Ci.Configuration
         /// Gets the tracer settings
         /// </summary>
         public TracerSettings TracerSettings => LazyInitializer.EnsureInitialized(ref _tracerSettings, () => InitializeTracerSettings())!;
+
+        internal static int[]? ParseDynamicAtrBuckets(string? rawBuckets)
+        {
+            if (StringUtil.IsNullOrEmpty(rawBuckets))
+            {
+                return null;
+            }
+
+            var parts = rawBuckets!.Split(',');
+            if (parts.Length != RetryBucketCount)
+            {
+                SettingsLog.Warning<string, string>("Invalid {EnvVar} value {Value}; expected five comma-separated integers in [1, 20].", ConfigurationKeys.CIVisibility.DynamicAtrBuckets, rawBuckets);
+                return null;
+            }
+
+            var buckets = new int[RetryBucketCount];
+            for (var i = 0; i < RetryBucketCount; i++)
+            {
+                if (!int.TryParse(parts[i].Trim(), out var value) || value < 1 || value > MaxRetriesPerBucket)
+                {
+                    SettingsLog.Warning<string, string>("Invalid {EnvVar} value {Value}; expected five comma-separated integers in [1, 20].", ConfigurationKeys.CIVisibility.DynamicAtrBuckets, rawBuckets);
+                    return null;
+                }
+
+                buckets[i] = value;
+            }
+
+            return buckets;
+        }
 
         public static TestOptimizationSettings FromDefaultSources()
         {
