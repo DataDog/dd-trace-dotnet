@@ -64,8 +64,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             using ProcessResult processResult = await RunSampleAndWaitForExit(agent, arguments: $"Port={httpPort}");
 
-            var relevantRequests = await agent.WaitForOtlpTraceRequestsAsync(count: 1);
-            relevantRequests.Should().NotBeNullOrEmpty();
+            const int expectedSpanCount = 8;
+            var relevantRequests = await agent.WaitForOtlpTraceRequestsAsync(expectedSpanCount);
+            relevantRequests.Sum(r => r.Spans.Count).Should().Be(expectedSpanCount);
 
             // Sort by actual start time before NormalizeSpans (below) overwrites it with a placeholder.
             var mergedRequest = OtlpSnapshotHelper.MergeDatadogRequests(

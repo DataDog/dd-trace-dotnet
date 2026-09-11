@@ -294,8 +294,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             using (await RunSampleAndWaitForExit(agent, packageVersion: packageVersion ?? "1.13.1"))
             {
-                var relevantRequests = await agent.WaitForOtlpTraceRequestsAsync(count: 1);
-                relevantRequests.Should().NotBeNullOrEmpty();
+                // GetOtlpTracesTestData only yields datadogTracesEnabled: "true" rows (the OTel SDK
+                // path is disabled above to reduce CI flake), which is the 38-span _DD* snapshot.
+                const int expectedSpanCount = 38;
+                var relevantRequests = await agent.WaitForOtlpTraceRequestsAsync(expectedSpanCount);
+                relevantRequests.Sum(r => r.Spans.Count).Should().Be(expectedSpanCount);
 
                 var names = OtlpFieldNames.For(isJson: true);
                 JToken tracesRequests;
