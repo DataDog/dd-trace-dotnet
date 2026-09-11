@@ -565,6 +565,24 @@ std::tuple<unsigned, int> TypeSignature::GetElementTypeAndFlags() const
     return {elementType, typeFlags};
 }
 
+bool TypeSignature::MayBeByRefLike() const
+{
+    const auto [elementType, typeFlags] = GetElementTypeAndFlags();
+
+    // Ref structs are value types (including GENERICINST of a value type, e.g. Span<T>).
+    // Primitives, string, object, and classes cannot be byref-like.
+    switch (elementType)
+    {
+        case ELEMENT_TYPE_VALUETYPE:
+        case ELEMENT_TYPE_TYPEDBYREF:
+            return true;
+        case ELEMENT_TYPE_GENERICINST:
+            return (typeFlags & TypeFlagBoxedType) != 0;
+        default:
+            return false;
+    }
+}
+
 mdToken TypeSignature::GetTypeTok(const ComPtr<IMetaDataEmit2>& pEmit, mdAssemblyRef corLibRef) const
 {
     mdToken token = mdTokenNil;
@@ -1364,7 +1382,7 @@ HRESULT ResolveType(ICorProfilerInfo4* info,
                     ComPtr<IMetaDataImport2>& resolvedMetadataImport)
 {
     mdToken resolutionScope = mdTokenNil; // will hold either AssemblyRef or ModuleRef token
-    mdToken enclosingType = mdTokenNil;
+    std::vector<mdToken> enclosingTypeRefs;
     ULONG nameSize = 0;
     std::vector<WCHAR> refTypeName(kNameMaxSize);
 
@@ -1376,21 +1394,14 @@ HRESULT ResolveType(ICorProfilerInfo4* info,
         return E_FAIL;
     }
 
-    mdToken tempToken = mdTokenNil;
+    WCHAR unusedName[kNameMaxSize]{};
     // To avoid ending up in an infinite loop, I'm limiting the execution to 1000 (arbitrary large number that will be
     // well beyond enough)
     int retryCount = 1000;
-    while (retryCount-- > 0 && 
-        TypeFromToken(resolutionScope) != mdtAssemblyRef && 
-        TypeFromToken(resolutionScope) != mdtModuleRef &&
-        resolutionScope != mdTokenNil)
+    while (retryCount-- > 0 && TypeFromToken(resolutionScope) == mdtTypeRef)
     {
-        tempToken = resolutionScope;
-        if (enclosingType == mdTokenNil)
-        {
-            enclosingType = tempToken;
-        }
-        hr = metadata_import->GetTypeRefProps(tempToken, &resolutionScope, nullptr, 0, &nameSize);
+        enclosingTypeRefs.push_back(resolutionScope);
+        hr = metadata_import->GetTypeRefProps(resolutionScope, &resolutionScope, unusedName, kNameMaxSize, &nameSize);
         if (FAILED(hr))
         {
             Logger::Warn("[ResolveType] GetTypeRefProps [2] has failed. typeRefToken: ", typeRefToken);
@@ -1469,21 +1480,54 @@ HRESULT ResolveType(ICorProfilerInfo4* info,
     const auto& resolutionScopeName = assemblyMetadata.name;
 
     resolvedTypeDefToken = mdTokenNil;
-    if (enclosingType != mdTokenNil)
+    if (!enclosingTypeRefs.empty())
     {
-        DBG("ResolveType: Found enclosing type, try to get parent token");
-        std::vector<WCHAR> enclosingRefTypeName(kNameMaxSize);
-        hr = metadata_import->GetTypeRefProps(enclosingType, &resolutionScope, enclosingRefTypeName.data(),
-                                              kNameMaxSize, &nameSize);
+        // Nested TypeRefs (Lock+Scope, Span`1+Enumerator, ...) must be resolved in the module
+        // that actually defines the enclosing type. That module can differ from the original
+        // TypeRef assembly when the parent is type-forwarded (System.Runtime -> CoreLib).
+        DBG("ResolveType: Found enclosing type(s), resolving nested TypeRef from outermost parent");
+        for (int i = static_cast<int>(enclosingTypeRefs.size()) - 1; i >= 0; --i)
+        {
+            std::vector<WCHAR> enclosingRefTypeName(kNameMaxSize);
+            mdToken unusedScope = mdTokenNil;
+            hr = metadata_import->GetTypeRefProps(enclosingTypeRefs[i], &unusedScope, enclosingRefTypeName.data(),
+                                                  kNameMaxSize, &nameSize);
+            if (FAILED(hr))
+            {
+                Logger::Warn("[ResolveType] GetTypeRefProps [3] has failed. typeRefToken: ", typeRefToken);
+            }
+            IfFailRet(hr);
+
+            if (i == static_cast<int>(enclosingTypeRefs.size()) - 1)
+            {
+                hr = ResolveTypeInternal(info, loadedModules, enclosingRefTypeName, mdTokenNil, resolutionScopeName,
+                                         resolvedTypeDefToken, resolvedMetadataImport);
+                IfFailRet(hr);
+            }
+            else
+            {
+                mdTypeDef nestedTypeDef = mdTypeDefNil;
+                hr = resolvedMetadataImport->FindTypeDefByName(enclosingRefTypeName.data(), resolvedTypeDefToken,
+                                                               &nestedTypeDef);
+                if (FAILED(hr))
+                {
+                    Logger::Warn("[ResolveType] FindTypeDefByName for enclosing nested type has failed. typeRefToken: ",
+                                 typeRefToken);
+                }
+                IfFailRet(hr);
+                resolvedTypeDefToken = nestedTypeDef;
+            }
+        }
+
+        mdTypeDef nestedTypeDef = mdTypeDefNil;
+        hr = resolvedMetadataImport->FindTypeDefByName(refTypeName.data(), resolvedTypeDefToken, &nestedTypeDef);
         if (FAILED(hr))
         {
-            Logger::Warn("[ResolveType] GetTypeRefProps [3] has failed. typeRefToken: ", typeRefToken);
+            Logger::Warn("[ResolveType] FindTypeDefByName for nested type has failed. typeRefToken: ", typeRefToken);
         }
         IfFailRet(hr);
-
-        hr = ResolveTypeInternal(info, loadedModules, enclosingRefTypeName, mdTokenNil, resolutionScopeName,
-                                 resolvedTypeDefToken, resolvedMetadataImport);
-        IfFailRet(hr);
+        resolvedTypeDefToken = nestedTypeDef;
+        return S_OK;
     }
 
     return ResolveTypeInternal(info, loadedModules, refTypeName, resolvedTypeDefToken, resolutionScopeName,
@@ -1676,9 +1720,12 @@ HRESULT IsTypeTokenByRefLike(ICorProfilerInfo4* corProfilerInfo4, const ModuleMe
 
         if (FAILED(hr))
         {
-            // For now we ignore issues with resolving types.
+            // Callers must fail closed when we cannot prove the type is not byref-like:
+            // skip LogArg/LogLocal, or reject the rewrite for return/containing types.
+            // Expected when the defining module is not loaded yet.
+            DBG("[IsTypeTokenByRefLike] Failed to resolve TypeRef. Returning failure to the caller.");
             isTypeIsByRefLike = false;
-            return S_OK;
+            return hr;
         }
     }
 

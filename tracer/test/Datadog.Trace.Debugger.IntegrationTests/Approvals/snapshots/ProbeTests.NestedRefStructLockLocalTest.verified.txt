@@ -1,0 +1,77 @@
+﻿[
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "entry": {
+            "arguments": {
+              "input": {
+                "type": "Int32",
+                "value": "21"
+              },
+              "this": {
+                "type": "NestedRefStructLockLocalTest"
+              }
+            },
+            "staticFields": {
+              "Gate": {
+                "notCapturedReason": "typeInitializer",
+                "type": "Lock"
+              }
+            }
+          },
+          "return": {
+            "arguments": {
+              "input": {
+                "type": "Int32",
+                "value": "21"
+              },
+              "this": {
+                "type": "NestedRefStructLockLocalTest"
+              }
+            },
+            "locals": {
+              "@return": {
+                "type": "Int32",
+                "value": "42"
+              }
+            },
+            "staticFields": {
+              "Gate": {
+                "notCapturedReason": "typeInitializer",
+                "type": "Lock"
+              }
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "method": "Method",
+            "type": "Samples.Probes.TestRuns.SmokeTests.NestedRefStructLockLocalTest"
+          },
+          "version": 0
+        },
+        "stack": "ScrubbedValue",
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "debugger.product": "di",
+    "debugger.type": "snapshot",
+    "logger": {
+      "method": "Method",
+      "name": "Samples.Probes.TestRuns.SmokeTests.NestedRefStructLockLocalTest",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "ScrubbedValue",
+    "service": "probes"
+  }
+]

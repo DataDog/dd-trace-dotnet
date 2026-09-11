@@ -309,6 +309,25 @@ TEST_F(CLRHelperTest, TypeSignatureGetTypeTokName) {
   }
 }
 
+TEST_F(CLRHelperTest, TypeSignatureMayBeByRefLike) {
+  const auto mayBeByRefLike = [](std::initializer_list<COR_SIGNATURE> signature) {
+    const std::vector<COR_SIGNATURE> signatureBytes(signature);
+    TypeSignature typeSignature{0, static_cast<ULONG>(signatureBytes.size()), signatureBytes.data()};
+    return typeSignature.MayBeByRefLike();
+  };
+
+  EXPECT_TRUE(mayBeByRefLike({ELEMENT_TYPE_VALUETYPE}));
+  EXPECT_TRUE(mayBeByRefLike({ELEMENT_TYPE_TYPEDBYREF}));
+  EXPECT_TRUE(mayBeByRefLike({ELEMENT_TYPE_GENERICINST, ELEMENT_TYPE_VALUETYPE}));
+
+  EXPECT_FALSE(mayBeByRefLike({ELEMENT_TYPE_GENERICINST, ELEMENT_TYPE_CLASS}));
+  EXPECT_FALSE(mayBeByRefLike({ELEMENT_TYPE_VOID}));
+  EXPECT_FALSE(mayBeByRefLike({ELEMENT_TYPE_I4}));
+  EXPECT_FALSE(mayBeByRefLike({ELEMENT_TYPE_STRING}));
+  EXPECT_FALSE(mayBeByRefLike({ELEMENT_TYPE_OBJECT}));
+  EXPECT_FALSE(mayBeByRefLike({ELEMENT_TYPE_CLASS}));
+}
+
 TEST_F(CLRHelperTest, FunctionLocalSignatureTryParse) {
   COR_SIGNATURE localSignatureWithOneChar[] = {0x07, 0x01, ELEMENT_TYPE_CHAR};
   COR_SIGNATURE localSignatureWithOneByRefChar[] = {0x07, 0x01, ELEMENT_TYPE_BYREF, ELEMENT_TYPE_CHAR};
