@@ -275,6 +275,16 @@ namespace Datadog.Trace.DuckTyping
                 return null;
             }
 
+            // Ref-like structs may live only in managed stack locations. The CLR explicitly forbids boxing
+            // them, storing them in object references, or unboxing an object into them. Reflection still
+            // reports them as value types, so allowing the normal value/reference conversion branches below
+            // would emit box, isinst or unbox.any instructions that are invalid for types such as Span<T>.
+            // Exact matches have already returned above and remain valid pass-through signatures.
+            if (IsByRefLike(actualUnderlyingType) || IsByRefLike(expectedUnderlyingType))
+            {
+                return DuckTypeInvalidTypeConversionException.Create(actualType, expectedType);
+            }
+
             if (actualUnderlyingType.IsValueType)
             {
                 if (expectedUnderlyingType.IsValueType)
@@ -365,6 +375,16 @@ namespace Datadog.Trace.DuckTyping
                 return null;
             }
 
+            // Ref-like structs may live only in managed stack locations. The CLR explicitly forbids boxing
+            // them, storing them in object references, or unboxing an object into them. Reflection still
+            // reports them as value types, so allowing the normal value/reference conversion branches below
+            // would emit box, isinst or unbox.any instructions that are invalid for types such as Span<T>.
+            // Exact matches have already returned above and remain valid pass-through signatures.
+            if (IsByRefLike(actualUnderlyingType) || IsByRefLike(expectedUnderlyingType))
+            {
+                return DuckTypeInvalidTypeConversionException.Create(actualType, expectedType);
+            }
+
             if (actualUnderlyingType.IsValueType)
             {
                 if (expectedUnderlyingType.IsValueType)
@@ -389,6 +409,23 @@ namespace Datadog.Trace.DuckTyping
             }
 
             return null;
+        }
+
+        /// <summary>
+        /// Returns whether a type carries the runtime marker that restricts it to managed stack locations.
+        /// </summary>
+        /// <param name="type">Type to inspect.</param>
+        /// <returns><c>true</c> for a ref-like value type; otherwise, <c>false</c>.</returns>
+        private static bool IsByRefLike(Type type)
+        {
+            // Type.IsByRefLike is unavailable in some reference assemblies targeted by the tracer. Inspecting
+            // CustomAttributeData avoids constructing arbitrary attributes while providing the same answer on
+            // runtimes that encode ref-like types with IsByRefLikeAttribute.
+            return type.GetCustomAttributesData()
+                       .Any(attribute => string.Equals(
+                                attribute.AttributeType.FullName,
+                                "System.Runtime.CompilerServices.IsByRefLikeAttribute",
+                                StringComparison.Ordinal));
         }
 
         /// <summary>
