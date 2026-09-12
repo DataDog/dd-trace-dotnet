@@ -156,6 +156,15 @@ namespace Samples.Wcf
                 AssertResult(result);
                 LoggingHelper.WriteLineWithDate($"[Client] Result: {result}");
             }
+
+            using (sampleHelper.CreateScope("ServerSyncAddJsonQuery"))
+            {
+                Console.WriteLine();
+                LoggingHelper.WriteLineWithDate($"[Client] Invoke: ServerSyncAddJsonQuery(1, 2, abc)");
+                var result = calculator.ServerSyncAddJsonQuery("1", "2", "abc");
+                AssertResult(result);
+                LoggingHelper.WriteLineWithDate($"[Client] Result: {result}");
+            }
         }
 
         private static void AssertResult(double result)
