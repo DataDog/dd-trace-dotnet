@@ -449,11 +449,19 @@ namespace Datadog.Trace.DuckTyping
             // reject the non-exact value-type conversion instead of risking invalid IL.
             try
             {
-                return type.GetCustomAttributesData()
-                           .Any(attribute => string.Equals(
-                                    attribute.AttributeType.FullName,
-                                    "System.Runtime.CompilerServices.IsByRefLikeAttribute",
-                                    StringComparison.Ordinal));
+                var attributes = type.GetCustomAttributesData();
+                for (int i = 0; i < attributes.Count; i++)
+                {
+                    if (string.Equals(
+                            attributes[i].AttributeType.FullName,
+                            "System.Runtime.CompilerServices.IsByRefLikeAttribute",
+                            StringComparison.Ordinal))
+                    {
+                        return true;
+                    }
+                }
+
+                return false;
             }
             catch (Exception ex) when (IsAttributeInspectionException(ex))
             {
