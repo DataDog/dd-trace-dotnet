@@ -19,6 +19,7 @@ using Datadog.Trace.Logging;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Vendors.OpenTelemetry.Exporter.OpenTelemetryProtocol;
 using Datadog.Trace.Vendors.OpenTelemetry.Exporter.OpenTelemetryProtocol.Implementation.ExportClient;
+using Datadog.Trace.Vendors.Serilog.Events;
 #nullable enable
 
 namespace Datadog.Trace.OpenTelemetry.Metrics
@@ -344,12 +345,17 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
                                 retryDelay = TimeSpan.FromMilliseconds((long)(retryDelay.TotalMilliseconds * 2));
                             }
 
+                            if (Log.IsEnabled(LogEventLevel.Debug))
+                            {
+                                Log.Debug("A retryable error occurred while sending an OTLP metrics request to {AgentEndpoint}. Retrying after {RetryDelay}.", _endpoint, retryDelay);
+                            }
+
                             await Task.Delay(retryDelay).ConfigureAwait(false);
                             continue;
                         }
                     }
 
-                    Log.ErrorSkipTelemetry("An error occurred while sending OTLP request to {AgentEndpoint}. If the error isn't transient, please check https://docs.datadoghq.com/tracing/troubleshooting/connection_errors/?code-lang=dotnet for guidance.", _endpoint);
+                    Log.ErrorSkipTelemetry("An error occurred while sending an OTLP metrics request to {AgentEndpoint}. If the error isn't transient, please check https://docs.datadoghq.com/tracing/troubleshooting/connection_errors/?code-lang=dotnet for guidance.", _endpoint);
                     return false;
                 }
                 catch (TaskCanceledException) when (attempt < maxRetries)
@@ -359,7 +365,7 @@ namespace Datadog.Trace.OpenTelemetry.Metrics
                 }
                 catch (Exception ex)
                 {
-                    Log.Debug<int>(ex, "Error sending OTLP request (attempt {Attempt})", attempt + 1);
+                    Log.Debug<int>(ex, "Error sending OTLP metrics request (attempt {Attempt})", attempt + 1);
                     if (attempt < maxRetries)
                     {
                         retryDelay = TimeSpan.FromMilliseconds((long)(retryDelay.TotalMilliseconds * 2));
