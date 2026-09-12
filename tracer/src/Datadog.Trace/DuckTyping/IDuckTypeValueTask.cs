@@ -1,49 +1,46 @@
-// <copyright file="IDuckTypeTask.cs" company="Datadog">
+// <copyright file="IDuckTypeValueTask.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
 #nullable enable
-
-using System.Threading.Tasks;
-
 namespace Datadog.Trace.DuckTyping;
 
 /// <summary>
-/// Duck type task interface
+/// Duck type value task interface
 /// </summary>
 /// <typeparam name="T">Type of the result</typeparam>
-public interface IDuckTypeTask<out T> : IDuckType
+public interface IDuckTypeValueTask<out T> : IDuckType
 {
     /// <summary>
-    /// Gets the status of the task
+    /// Gets a value indicating whether the value task completed successfully
     /// </summary>
-    TaskStatus Status { get; }
+    bool IsCompletedSuccessfully { get; }
 
     /// <summary>
-    /// Gets the result of the task
+    /// Gets the result of the value task
     /// </summary>
     T? Result { get; }
 
     /// <summary>
-    /// Gets the awaiter for the task
+    /// Gets the awaiter for the value task
     /// </summary>
     /// <returns>Awaiter instance</returns>
     IDuckTypeAwaiter<T> GetAwaiter();
 }
 
 /// <summary>
-/// Duck type task interface
+/// Duck type value task interface
 /// </summary>
-public interface IDuckTypeTask : IDuckType
+public interface IDuckTypeValueTask : IDuckType
 {
     /// <summary>
-    /// Gets the status of the task
+    /// Gets a value indicating whether the value task completed successfully
     /// </summary>
-    TaskStatus Status { get; }
+    bool IsCompletedSuccessfully { get; }
 
     /// <summary>
-    /// Gets the awaiter for the task
+    /// Gets the awaiter for the value task
     /// </summary>
     /// <returns>Awaiter instance</returns>
     IDuckTypeAwaiter GetAwaiter();
