@@ -35,6 +35,8 @@ namespace Datadog.Trace.Agent.DiscoveryService
         private const string SupportedDataStreamsEndpoint = "v0.1/pipeline_stats";
         private const string SupportedEventPlatformProxyEndpointV2 = "evp_proxy/v2";
         private const string SupportedEventPlatformProxyEndpointV4 = "evp_proxy/v4";
+        private const string EvpOriginHeader = "DD-EVP-ORIGIN";
+        private const string EvpOriginVersionHeader = "DD-EVP-ORIGIN-VERSION";
         private const string SupportedTelemetryProxyEndpoint = "telemetry/proxy";
         private const string SupportedTracerFlareEndpoint = "tracer_flare/v1";
 
@@ -373,6 +375,10 @@ namespace Datadog.Trace.Agent.DiscoveryService
             }
 
             var discoveredEndpoints = (jObject["endpoints"] as JArray)?.Values<string>().ToArray();
+            var evpProxyAllowedHeaders = (jObject["evp_proxy_allowed_headers"] as JArray)?.Values<string>().ToArray();
+            var eventPlatformProxySupportsEvpOriginHeaders =
+                evpProxyAllowedHeaders?.Any(header => string.Equals(header?.Trim(), EvpOriginHeader, StringComparison.OrdinalIgnoreCase)) == true
+             && evpProxyAllowedHeaders.Any(header => string.Equals(header?.Trim(), EvpOriginVersionHeader, StringComparison.OrdinalIgnoreCase));
             string? configurationEndpoint = null;
             string? debuggerEndpoint = null;
             string? debuggerV2Endpoint = null;
@@ -463,7 +469,8 @@ namespace Datadog.Trace.Agent.DiscoveryService
                 peerTags: peerTags!,
                 obfuscationVersion: obfuscationVersion,
                 traceFilterConfig: traceFilterConfig,
-                featureFlags: featureFlags!);
+                featureFlags: featureFlags!,
+                eventPlatformProxySupportsEvpOriginHeaders: eventPlatformProxySupportsEvpOriginHeaders);
 
             // Save the hash, whether the details we care about changed or not
             _configurationHash = HexString.ToHexString(sha256.Hash);

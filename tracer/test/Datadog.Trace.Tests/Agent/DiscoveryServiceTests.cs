@@ -76,7 +76,30 @@ public class DiscoveryServiceTests
         config.StatsEndpoint.Should().NotBeNullOrEmpty();
         config.DataStreamsMonitoringEndpoint.Should().NotBeNullOrEmpty();
         config.EventPlatformProxyEndpoint.Should().Be(evpProxyEndpoint);
+        config.EventPlatformProxySupportsEvpOriginHeaders.Should().BeFalse();
         await ds.DisposeAsync();
+    }
+
+    [Theory]
+    [InlineData("null", false)]
+    [InlineData("[]", false)]
+    [InlineData("[\"DD-EVP-ORIGIN\"]", false)]
+    [InlineData("[\"DD-EVP-ORIGIN-VERSION\"]", false)]
+    [InlineData("[\" dd-evp-origin-version \",\"dd-evp-origin\"]", true)]
+    public async Task ReportsWhetherEvpProxyCanForwardLogicalProducerIdentity(string allowedHeaders, bool expected)
+    {
+        AgentConfiguration config = null;
+        var response = $"{{\"endpoints\":[\"/evp_proxy/v4/\"],\"evp_proxy_allowed_headers\":{allowedHeaders}}}";
+        var factory = new TestRequestFactory(x => new TestApiRequest(x, responseContent: response));
+
+        await using var ds = new DiscoveryService(factory, DisabledServiceRemappingHash, InitialRetryDelayMs, MaxRetryDelayMs, RecheckIntervalMs, autoStartLoop: false);
+        ds.SubscribeToChanges(x => config = x);
+
+        await ds.RunOneIterationAsync(previousRetryDuration: null);
+
+        config.Should().NotBeNull();
+        config.EventPlatformProxyEndpoint.Should().Be("evp_proxy/v4");
+        config.EventPlatformProxySupportsEvpOriginHeaders.Should().Be(expected);
     }
 
     [Fact]
