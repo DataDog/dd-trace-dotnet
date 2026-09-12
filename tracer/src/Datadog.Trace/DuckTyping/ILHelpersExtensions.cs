@@ -20,7 +20,7 @@ namespace Datadog.Trace.DuckTyping
     internal static class ILHelpersExtensions
     {
         private static readonly List<DynamicMethod> DynamicMethods = new();
-        private static readonly PropertyInfo? IsFunctionPointerProperty = typeof(Type).GetProperty("IsFunctionPointer", BindingFlags.Instance | BindingFlags.Public);
+        private static readonly Func<Type, bool>? RuntimeIsFunctionPointer = CreateRuntimeIsFunctionPointerGetter();
 
         internal static DynamicMethod GetDynamicMethodForIndex(int index)
         {
@@ -425,10 +425,20 @@ namespace Datadog.Trace.DuckTyping
                 return true;
             }
 
+            return RuntimeIsFunctionPointer?.Invoke(type) is true;
+        }
+
+        /// <summary>
+        /// Creates an open delegate for <c>Type.IsFunctionPointer</c> when the running CLR exposes it.
+        /// </summary>
+        /// <returns>The cached property getter, or <c>null</c> on older runtimes.</returns>
+        private static Func<Type, bool>? CreateRuntimeIsFunctionPointerGetter()
+        {
             // Type.IsFunctionPointer is not part of every reference assembly targeted by the tracer. The
-            // running runtime can still expose function-pointer metadata for an inspected assembly, so query
-            // the property when it is available instead of silently treating the type as an object reference.
-            return IsFunctionPointerProperty?.GetValue(type, index: null) is true;
+            // running runtime can still expose function-pointer metadata for an inspected assembly, so discover
+            // the getter once and invoke it without reflection or boxing for every subsequent conversion.
+            MethodInfo? getter = typeof(Type).GetProperty("IsFunctionPointer", BindingFlags.Instance | BindingFlags.Public)?.GetMethod;
+            return getter is null ? null : (Func<Type, bool>)getter.CreateDelegate(typeof(Func<Type, bool>));
         }
 
         /// <summary>
