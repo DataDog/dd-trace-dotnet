@@ -62,6 +62,16 @@ public class ByRefLikeTypeTests
         target.DuckIs<ISpanParameterProxy>().Should().BeFalse();
     }
 
+    [Fact]
+    public void ByRefLikeTypeInsideManagedReferenceCannotBeConverted()
+    {
+        var byRefSpan = typeof(Span<int>).MakeByRefType();
+        var byRefObject = typeof(object).MakeByRefType();
+
+        ILHelpersExtensions.CheckTypeConversion(byRefSpan, byRefObject).Should().NotBeNull();
+        ILHelpersExtensions.CheckTypeConversion(byRefObject, byRefSpan).Should().NotBeNull();
+    }
+
     private interface IExactSpanReturnProxy
     {
         Span<int> GetSpan();

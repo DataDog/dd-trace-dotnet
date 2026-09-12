@@ -7,6 +7,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
@@ -20,6 +21,7 @@ namespace Datadog.Trace.DuckTyping
     internal static class ILHelpersExtensions
     {
         private static readonly List<DynamicMethod> DynamicMethods = new();
+        private static readonly Func<Type, bool>? RuntimeIsByRefLike = CreateRuntimeIsByRefLikeGetter();
 
         internal static DynamicMethod GetDynamicMethodForIndex(int index)
         {
@@ -418,14 +420,62 @@ namespace Datadog.Trace.DuckTyping
         /// <returns><c>true</c> for a ref-like value type; otherwise, <c>false</c>.</returns>
         private static bool IsByRefLike(Type type)
         {
-            // Type.IsByRefLike is unavailable in some reference assemblies targeted by the tracer. Inspecting
-            // CustomAttributeData avoids constructing arbitrary attributes while providing the same answer on
-            // runtimes that encode ref-like types with IsByRefLikeAttribute.
-            return type.GetCustomAttributesData()
-                       .Any(attribute => string.Equals(
-                                attribute.AttributeType.FullName,
-                                "System.Runtime.CompilerServices.IsByRefLikeAttribute",
-                                StringComparison.Ordinal));
+            // A managed reference is represented by a wrapper Type whose IsValueType and custom attributes
+            // describe the wrapper, not the value stored at the referenced location. Inspect the element so
+            // ref Span<T> cannot fall through to a castclass instruction for a managed pointer.
+            if (type.IsByRef)
+            {
+                type = type.GetElementType()!;
+            }
+
+            // Only value types can be ref-like. This inexpensive guard also keeps ordinary customer reference
+            // conversions away from custom-attribute inspection, where an unrelated attribute whose assembly
+            // cannot be loaded could otherwise make proxy validation fail.
+            if (!type.IsValueType)
+            {
+                return false;
+            }
+
+            // Newer runtimes expose the flag directly and answer without enumerating custom attributes. The
+            // tracer also targets reference assemblies that do not contain Type.IsByRefLike, so the getter is
+            // discovered once rather than referenced statically.
+            if (RuntimeIsByRefLike is not null)
+            {
+                return RuntimeIsByRefLike(type);
+            }
+
+            // Older runtimes encode the restriction with IsByRefLikeAttribute. CustomAttributeData avoids
+            // constructing customer attributes. If metadata for an attribute cannot be resolved, conservatively
+            // reject the non-exact value-type conversion instead of risking invalid IL.
+            try
+            {
+                return type.GetCustomAttributesData()
+                           .Any(attribute => string.Equals(
+                                    attribute.AttributeType.FullName,
+                                    "System.Runtime.CompilerServices.IsByRefLikeAttribute",
+                                    StringComparison.Ordinal));
+            }
+            catch (Exception ex) when (IsAttributeInspectionException(ex))
+            {
+                return true;
+            }
+        }
+
+        private static bool IsAttributeInspectionException(Exception exception)
+            => exception is TypeLoadException
+                    or FileNotFoundException
+                    or FileLoadException
+                    or CustomAttributeFormatException
+                    or BadImageFormatException;
+
+        /// <summary>
+        /// Creates an open delegate for <c>Type.IsByRefLike</c> when the running CLR exposes it.
+        /// </summary>
+        /// <returns>The cached property getter, or <c>null</c> on older runtimes.</returns>
+        private static Func<Type, bool>? CreateRuntimeIsByRefLikeGetter()
+        {
+            MethodInfo? getter = typeof(Type).GetProperty("IsByRefLike", BindingFlags.Instance | BindingFlags.Public)?.GetMethod;
+            return getter is null ? null : (Func<Type, bool>)getter.CreateDelegate(typeof(Func<Type, bool>));
         }
 
         /// <summary>
