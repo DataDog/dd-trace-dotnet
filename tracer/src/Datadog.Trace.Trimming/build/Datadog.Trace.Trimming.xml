@@ -772,6 +772,7 @@
       <type fullname="System.IO.File" />
       <type fullname="System.IO.FileAccess" />
       <type fullname="System.IO.FileInfo" />
+      <type fullname="System.IO.FileLoadException" />
       <type fullname="System.IO.FileMode" />
       <type fullname="System.IO.FileNotFoundException" />
       <type fullname="System.IO.FileOptions" />
@@ -844,6 +845,7 @@
       <type fullname="System.Reflection.ConstructorInfo" />
       <type fullname="System.Reflection.CustomAttributeData" />
       <type fullname="System.Reflection.CustomAttributeExtensions" />
+      <type fullname="System.Reflection.CustomAttributeFormatException" />
       <type fullname="System.Reflection.CustomAttributeNamedArgument" />
       <type fullname="System.Reflection.CustomAttributeTypedArgument" />
       <type fullname="System.Reflection.DefaultMemberAttribute" />
