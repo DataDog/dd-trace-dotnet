@@ -946,8 +946,14 @@ namespace Datadog.Trace.DuckTyping
                     // alone are insufficient: without the source attributes and type constraints the CLR must
                     // treat every placeholder as unconstrained, and a call to a constrained target method then
                     // fails verification even when the original proxy contract declared the same constraints.
+                    string[] genericParameterNames = new string[proxyMethodDefinitionGenericArguments.Length];
+                    for (int i = 0; i < proxyMethodDefinitionGenericArguments.Length; i++)
+                    {
+                        genericParameterNames[i] = proxyMethodDefinitionGenericArguments[i].Name;
+                    }
+
                     GenericTypeParameterBuilder[] genericParameterBuilders =
-                        proxyMethod.DefineGenericParameters(proxyMethodDefinitionGenericArguments.Select(argument => argument.Name).ToArray());
+                        proxyMethod.DefineGenericParameters(genericParameterNames);
                     CopyGenericParameterConstraints(proxyMethodDefinitionGenericArguments, genericParameterBuilders);
                     proxyMethodGenericArguments = genericParameterBuilders;
                 }
@@ -1059,18 +1065,30 @@ namespace Datadog.Trace.DuckTyping
                     return type;
                 }
 
-                if (!type.IsGenericType)
+                if (!type.IsGenericType || !type.ContainsGenericParameters)
                 {
                     return type;
                 }
 
                 Type[] genericArguments = type.GetGenericArguments();
+                bool replacedAnyArgument = false;
                 for (int i = 0; i < genericArguments.Length; i++)
                 {
-                    genericArguments[i] = ReplaceMethodGenericParameters(
-                        genericArguments[i],
+                    Type originalArgument = genericArguments[i];
+                    Type emittedArgument = ReplaceMethodGenericParameters(
+                        originalArgument,
                         definitionArguments,
                         emittedArguments);
+                    genericArguments[i] = emittedArgument;
+                    if (emittedArgument != originalArgument)
+                    {
+                        replacedAnyArgument = true;
+                    }
+                }
+
+                if (!replacedAnyArgument)
+                {
+                    return type;
                 }
 
                 return type.GetGenericTypeDefinition().MakeGenericType(genericArguments);

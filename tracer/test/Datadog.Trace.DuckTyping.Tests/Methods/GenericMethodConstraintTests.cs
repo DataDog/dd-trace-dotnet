@@ -26,6 +26,7 @@ public class GenericMethodConstraintTests
         proxy.Interface<ConstraintImplementation>().Should().Be(nameof(ConstraintImplementation));
         proxy.Multiple<ConstraintImplementation>().Should().Be(nameof(ConstraintImplementation));
         proxy.Related<ConstraintBase, ConstraintImplementation>().Should().BeTrue();
+        proxy.ArrayConstraint<int, ArrayConstraintImplementation>().Should().Be(nameof(ArrayConstraintImplementation));
     }
 
     [Fact]
@@ -58,6 +59,12 @@ public class GenericMethodConstraintTests
                               .GetGenericArguments();
         relatedArguments[1].GetGenericParameterConstraints().Should().ContainSingle()
                            .Which.Should().BeSameAs(relatedArguments[0]);
+
+        var arrayArguments = generatedType
+                            .GetMethod(nameof(IMatchingConstraintProxy.ArrayConstraint))
+                            .GetGenericArguments();
+        var arrayConstraint = arrayArguments[1].GetGenericParameterConstraints().Should().ContainSingle().Which;
+        arrayConstraint.GetGenericArguments()[0].GetElementType().Should().BeSameAs(arrayArguments[0]);
     }
 
     [Fact]
@@ -118,6 +125,9 @@ public class GenericMethodConstraintTests
 
         bool Related<TBase, TDerived>()
             where TDerived : TBase;
+
+        string ArrayConstraint<TElement, TConstraint>()
+            where TConstraint : IArrayConstraint<TElement[]>;
     }
 
     private interface IReverseConstraintContract
@@ -160,6 +170,10 @@ public class GenericMethodConstraintTests
         public bool Related<TBase, TDerived>()
             where TDerived : TBase
             => typeof(TBase).IsAssignableFrom(typeof(TDerived));
+
+        public string ArrayConstraint<TElement, TConstraint>()
+            where TConstraint : IArrayConstraint<TElement[]>
+            => typeof(TConstraint).Name;
     }
 
     private class ReverseConstraintImplementation
@@ -185,7 +199,15 @@ public class GenericMethodConstraintTests
     {
     }
 
+    private interface IArrayConstraint<T>
+    {
+    }
+
     private class ConstraintImplementation : ConstraintBase, IConstraintMarker
+    {
+    }
+
+    private class ArrayConstraintImplementation : IArrayConstraint<int[]>
     {
     }
 }
