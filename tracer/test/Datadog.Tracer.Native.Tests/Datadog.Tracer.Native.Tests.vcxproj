@@ -102,6 +102,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="rejit_enqueue_bad_alloc_fix_test.cpp" />
     <ClCompile Include="signature_builder_test.cpp" />
     <ClCompile Include="string_test.cpp" />
     <ClCompile Include="test_link_stubs.cpp" />

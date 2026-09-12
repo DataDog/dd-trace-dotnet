@@ -584,9 +584,30 @@ void DebuggerProbesInstrumentationRequester::AddMethodProbes(debugger::DebuggerM
 
     auto modules = m_corProfiler->module_ids.Get();
 
+    // methodProbeDefinitions is needed both for the rejit request below and to extend m_probes
+    // afterward, so it can't simply be moved into the request -- move it into a shared_ptr once
+    // here, and read *methodProbeDefinitionsPtr for both uses instead of the (otherwise
+    // moved-from) local.
+    std::shared_ptr<const std::vector<std::shared_ptr<MethodProbeDefinition>>> methodProbeDefinitionsPtr;
+    try
+    {
+        methodProbeDefinitionsPtr = std::make_shared<const std::vector<std::shared_ptr<MethodProbeDefinition>>>(
+            std::move(methodProbeDefinitions));
+    }
+    catch (const std::exception& ex)
+    {
+        Logger::Error("[AddMethodProbes] failed to prepare the method probe definitions, dropping this batch: ", ex.what());
+        return;
+    }
+    catch (...)
+    {
+        Logger::Error("[AddMethodProbes] failed to prepare the method probe definitions (non-standard exception), dropping this batch.");
+        return;
+    }
+
     auto promise = std::make_shared<std::promise<std::vector<MethodIdentifier>>>();
     std::future<std::vector<MethodIdentifier>> future = promise->get_future();
-    m_debugger_rejit_preprocessor->EnqueuePreprocessRejitRequests(modules.Ref(), methodProbeDefinitions, promise);
+    m_debugger_rejit_preprocessor->EnqueuePreprocessRejitRequests(modules.Ref(), methodProbeDefinitionsPtr, promise);
 
     const auto& methodProbeRequests = future.get();
 
@@ -601,8 +622,8 @@ void DebuggerProbesInstrumentationRequester::AddMethodProbes(debugger::DebuggerM
             methodProbesLength, " method probes.");
     }
 
-    m_probes.reserve(m_probes.size() + methodProbeDefinitions.size());
-    for (const auto& methodProbe : methodProbeDefinitions)
+    m_probes.reserve(m_probes.size() + methodProbeDefinitionsPtr->size());
+    for (const auto& methodProbe : *methodProbeDefinitionsPtr)
     {
         m_probes.push_back(methodProbe);
     }
