@@ -111,7 +111,7 @@ namespace Datadog.Trace.Logging.DirectSubmission.Sink
                 }
                 catch (Exception ex)
                 {
-                    var tag = ex is TimeoutException ? MetricTags.ApiError.Timeout : MetricTags.ApiError.NetworkError;
+                    var tag = ex is TimeoutException or OperationCanceledException ? MetricTags.ApiError.Timeout : MetricTags.ApiError.NetworkError;
                     TelemetryFactory.Metrics.RecordCountDirectLogApiErrors(tag);
 
                     exception = ex;
