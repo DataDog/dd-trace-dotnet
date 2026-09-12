@@ -18,6 +18,7 @@ using Datadog.Trace.LibDatadog.HandsOffConfiguration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.Logging.TracerFlare;
+using Datadog.Trace.OtelThreadContext;
 using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.RemoteConfigurationManagement.Transport;
@@ -50,7 +51,8 @@ namespace Datadog.Trace
                 settings,
                 agentWriter: null,
                 sampler: null,
-                scopeManager: previous?.ScopeManager, // no configuration, so can always use the same one
+                // its settings are startup-only, and reusing it preserves the AsyncLocal identity and the active scopes
+                scopeManager: previous?.ScopeManager,
                 statsd: null, // For now, let's continue to always create a new StatsD instance
                 runtimeMetrics: previous?.RuntimeMetrics,
                 logSubmissionManager: previous?.DirectLogSubmission,
@@ -134,7 +136,7 @@ namespace Datadog.Trace
                 discoveryService is NullDiscoveryService ? null : discoveryService.SetCurrentConfigStateHash,
                 discoveryService,
                 telemetrySettings);
-            scopeManager ??= new AsyncLocalScopeManager();
+            scopeManager ??= new AsyncLocalScopeManager(OtelThreadContextPublisher.Create(settings));
 
             var gitMetadataTagsProvider = GetGitMetadataTagsProvider(settings, settings.Manager.InitialMutableSettings, scopeManager, telemetry);
             logSubmissionManager = DirectLogSubmissionManager.Create(
