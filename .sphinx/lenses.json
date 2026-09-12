@@ -1,0 +1,279 @@
+[
+  {
+    "theme": "Missing or insufficient test coverage for behavior changes",
+    "pattern": "Flag new or changed behavior (edge cases, unicode/encoding, redaction, sampling/weighting removal, config defaults) that ships without a corresponding unit, integration, or system test.",
+    "examples": [
+      "LGTM, though I would add some extra unicode tests, and remove the timeout-related one (which will flake in CI)",
+      "should add a regression test for the new unweighted behavior",
+      "LGTM, I wonder if this should be tested in system tests too?",
+      "I would add also an integration test with a snapshot file to validate that the tags are correctly set",
+      "Just to confirm, are there already system tests for this, or do we need to add them?",
+      "Just a comment to change + test to add (just in case)",
+      "seems good, maybe we could improve testing, but I guess is a general issue for all our native code"
+    ],
+    "confidence": "high",
+    "source": "review-comments"
+  },
+  {
+    "theme": "Tests relying on wall-clock timing or polling are flaky",
+    "pattern": "Flag tests that use Task.Run/Sleep/polling loops or fixed timeouts to coordinate concurrency instead of deterministic synchronization (await on a real completion signal), since these are prone to flake under CI load.",
+    "examples": [
+      "remove the timeout-related one (which will flake in CI)",
+      "Replaced Task.Run + blocking/timeouts in race tests with a synchronous re-entrant test double",
+      "Updated WaitForInitializationAsync to await DynamicInstrumentation.GetInitializationTask() with a timeout (instead of polling IsInitialized)",
+      "I'd rather we instead re-wrote RuntimeId to not be inherently flaky",
+      "I have significant concerns about the use of timeouts and delays - these look practically guaranteed to flake in our overloaded CI. We should bump up timeouts to huge values, and ideally don't rely on timings at all, to keep the steps deterministic",
+      "Running stability experiments [allocating more CPU per benchmark item]. Once we verify flakiness was reduced, we can merge"
+    ],
+    "confidence": "high",
+    "source": "review-comments"
+  },
+  {
+    "theme": "Reflection/metadata code must avoid executing customer code as a side effect",
+    "pattern": "In debugger/reflection-based capture, expression-evaluation, or IL-scanning paths, flag any code that instantiates attributes, resolves tokens at runtime, or reads statics/getters in a way that could trigger customer type initializers (.cctor), assembly loads, or arbitrary code execution.",
+    "examples": [
+      "reading compiler state-machine attributes via CustomAttributeData (metadata-only) instead of instantiating attribute objects, avoiding potential user code execution from attribute constructors",
+      "switching the Exception Replay IL scanning logic to avoid runtime resolution (Module.ResolveMethod(token)) ... to prevent IL scanning from triggering assembly loads or other side effects",
+      "skip unsafe statics (types with TypeInitializer != null) ... to avoid triggering customer type initializers (.cctor) when reading static fields/properties via reflection",
+      "adds a resolver that inspects already-loaded assemblies without triggering assembly loads"
+    ],
+    "confidence": "medium",
+    "source": "review-comments"
+  },
+  {
+    "theme": "Concurrency bugs around disposal, timers, and task scheduling",
+    "pattern": "Flag disposal races (using a resource after/while it is disposed), timers/handles not disposed when an owner is dropped, non-atomic get-or-add-with-side-effect patterns, and blocking Task overloads that can deadlock on custom SynchronizationContexts.",
+    "examples": [
+      "fix ObjectDisposedException race in DataStreamsWriter disposal",
+      "ensuring AdaptiveSampler timers are disposed when samplers are dropped ... avoid ConcurrentDictionary.GetOrAdd factory double-invocation leaks",
+      "use TaskScheduler.Default for ProcessQueueLoop to avoid deadlock ... we should likely fix all the cases where we're using this overload",
+      "Close an instrumentation race by registering processors/samplers before activating IL for newly-bound probes"
+    ],
+    "confidence": "medium",
+    "source": "review-comments"
+  },
+  {
+    "theme": "Unbounded collection/cardinality growth can exhaust memory",
+    "pattern": "Flag aggregation, metrics, or capture logic that grows a dictionary/collection per unique key/tag combination without a cap, overflow bucket, or truncation strategy.",
+    "examples": [
+      "Add bounded cardinality limits for OTEL metrics collection",
+      "implements configurable cardinality controls for client-side stats aggregation to prevent unbounded memory growth ... adds an overflow bucket",
+      "root-level capture expressions of the form filter(...) are evaluated with a bounded enumeration (respecting MaxCollectionSize) rather than materializing full filtered collections before serialization"
+    ],
+    "confidence": "medium",
+    "source": "review-comments"
+  },
+  {
+    "theme": "Unbounded recursion/stack depth in native or array-walking code",
+    "pattern": "Flag recursive traversal of type hierarchies, arrays, or object graphs (especially over native/interop or customer-controlled data) that isn't converted to an iterative form or bounded, since it risks stack exhaustion/overflow on deep or cyclic input.",
+    "examples": [
+      "Make GetTypeInfo Iterative to Prevent Native Stack Exhaustion",
+      "Prevent OTLP array attribute stack overflow on cyclic/deep arrays"
+    ],
+    "confidence": "medium",
+    "source": "review-comments"
+  },
+  {
+    "theme": "Hot-path allocation reduction",
+    "pattern": "In per-request or per-span hot paths (metrics collection, symbol/PDB upload, code-origin detection), flag unnecessary intermediate allocations/copies and prefer streaming, struct-based, or handle-comparison approaches over materializing strings/collections.",
+    "examples": [
+      "Optimise OTEL metrics collection to reduce allocations",
+      "streaming payloads directly into the request body (including streaming gzip output) to reduce intermediate allocations/copies ... instead of materializing a full string/byte[]",
+      "optimizes span code-origin endpoint detection ... to reduce allocations and CPU overhead ... via handle-based comparisons",
+      "In the prod code, I've entirely just flagged stylistic and perf things, but I'm not sure how much of a concern the perf/allocation side is"
+    ],
+    "confidence": "high",
+    "source": "review-comments"
+  },
+  {
+    "theme": "Redaction gaps for sensitive data in debugger snapshots",
+    "pattern": "When serializing captured objects/dictionaries for the debugger, flag any code path (e.g. dictionary values, iterator key/value projections) that can expose a value under a sensitive key without going through the existing redaction logic.",
+    "examples": [
+      "ensure dictionary values are redacted when their corresponding dictionary keys match sensitive identifiers (e.g., \"password\"), preventing secret leakage in snapshots",
+      "closes a redaction bypass in the debugger expression language where dictionary iterator projections (@key/@value) could expose values under sensitive keys without applying existing redaction rules"
+    ],
+    "confidence": "medium",
+    "source": "review-comments"
+  },
+  {
+    "theme": "Overly large or mixed-concern PRs are hard to review",
+    "pattern": "Flag PRs that bundle unrelated changes (e.g., a new feature plus a build/CI rework) or that are so large a reviewer cannot hold the full scope in mind; suggest splitting into smaller, focused PRs.",
+    "examples": [
+      "I got about 10% of the way through, but it's just too much, I literally couldn't keep the scope in my head ... I'd suggest a couple of rounds of AI review instead",
+      "Copilot wasn't able to review this pull request because it exceeds the maximum number of lines (20,000)",
+      "this should probably be 2 separate PRs - One to add the new sample and tests - One changing the build"
+    ],
+    "confidence": "medium",
+    "source": "review-comments"
+  },
+  {
+    "theme": "Explicit resource ownership/disposal to avoid file-handle leaks",
+    "pattern": "In code that opens files or native resources (assembly readers, PDB readers) for parallel/concurrent access, flag missing explicit disposal or unclear ownership that could leave file handles open, especially on Windows where lingering handles cause locking failures.",
+    "examples": [
+      "reads dependencies in-memory, and disposes assemblies to avoid lingering file handles",
+      "more explicit resource-ownership/disposal to prevent file-handle leaks (notably for sidecar portable PDB providers)"
+    ],
+    "confidence": "medium",
+    "source": "review-comments"
+  },
+  {
+    "theme": "Shared endpoint/config resolution reused across unrelated transports",
+    "anti_pattern": "The OTLP traces exporter resolved its HTTP client/endpoint through a shared code path (`exporterSettings.OtlpTracesEndpoint`) that was originally built for the UDS transport, so setting a UDS socket silently redirected OTLP traces to the wrong endpoint.",
+    "fix_example": "Introduced a dedicated `OtlpTransportStrategy` so each OTLP signal resolves its own endpoint independently of unrelated transport configuration.",
+    "root_cause": "Sharing a resolution helper across transports that have different configuration semantics couples unrelated features, so a config value meant for one path silently changes behavior of another.",
+    "confidence": "medium",
+    "source": "fix-mining"
+  },
+  {
+    "theme": "Mutable counter passed by value into a function pointer callback",
+    "anti_pattern": "`childrenCount` was passed by value into a `delegate*<...>` unmanaged function pointer call, so decrements made inside the callee (`EnumerateIDictionaryItems`) never propagated back to the caller's copy.",
+    "fix_example": "Changed the parameter to `ref childrenCount` so the callee mutates the caller's variable directly.",
+    "root_cause": "Value semantics through function-pointer/delegate boundaries are easy to miss because the call site looks like a normal reference-type API; any out-parameter-like usage needs an explicit `ref`/`out`.",
+    "confidence": "high",
+    "source": "fix-mining"
+  },
+  {
+    "theme": "Assuming a config-delivery protocol is full-snapshot when it is incremental",
+    "anti_pattern": "`ReceivedNewConfig()` unconditionally cleared pending updates/removes on every call, implicitly assuming each RCM payload represented the complete config state, which is false since RCM delivers incremental updates.",
+    "fix_example": "Replaced the clear-every-call logic with a single `_pendingByProduct` dictionary that accumulates across calls instead of resetting.",
+    "root_cause": "Treating an incremental protocol as if it were full-snapshot silently drops previously-pending state whenever a new partial update arrives.",
+    "confidence": "high",
+    "source": "fix-mining"
+  },
+  {
+    "theme": "Caching a transient failure/zero result as if it were permanent",
+    "anti_pattern": "`GetOrAdd` on a static `ConcurrentDictionary<string,int>` cached a partition count of `0` returned during Kafka metadata-propagation lag, permanently baking a transient value into a supposedly stable cache.",
+    "fix_example": "Avoided caching values obtained during a known-transient window so the lookup retries until a stable, non-zero value is observed.",
+    "root_cause": "Memoization APIs like `GetOrAdd` don't distinguish \"valid but temporary\" from \"final\" results, so caching too eagerly bakes in race-dependent noise permanently.",
+    "confidence": "medium",
+    "source": "fix-mining"
+  },
+  {
+    "theme": "Off-by-one boundary check using strict inequality",
+    "anti_pattern": "`if (idx > childrenCount) break;` allowed `idx == childrenCount` to pass through and encode one extra (out-of-range) element in the non-`IList` `IEnumerable` encoding branch.",
+    "fix_example": "Changed the comparison to `if (idx >= childrenCount) break;` so the loop stops exactly at the declared count.",
+    "root_cause": "Boundary conditions on count-based loops are a classic off-by-one hazard, especially when the bound was declared/pre-allocated separately from the iteration that fills it.",
+    "confidence": "high",
+    "source": "fix-mining"
+  },
+  {
+    "theme": "Resource leak from disposable objects dropped without disposal across multiple code paths",
+    "anti_pattern": "`System.Threading.Timer`-backed adaptive samplers were dropped/replaced on several code paths without calling `Dispose()`, and `ConcurrentDictionary.GetOrAdd`'s factory could run more than once, leaking the discarded-but-constructed sampler instances.",
+    "fix_example": "Made the sampler type `IDisposable`, and switched from `GetOrAdd` to an explicit `TryGetValue` \u2192 `TryAdd` \u2192 dispose-on-lose pattern so only the winning instance survives.",
+    "root_cause": "`GetOrAdd`'s factory is not guaranteed to run exactly once under contention; any disposable object it constructs must be disposed explicitly if it loses the race, or it leaks.",
+    "confidence": "high",
+    "source": "fix-mining"
+  },
+  {
+    "theme": "Special-case unwrapping added in one code path but not mirrored in a sibling path",
+    "anti_pattern": "`Nullable<T>` unwrapping was added to `IsSafeToCallToString` but the parallel redaction-type check (`CheckForRedactedType`) was left unwrapped, letting `Guid?` values bypass redaction configured for `System.Guid`.",
+    "fix_example": "Applied the same `Nullable<T>` unwrapping inside `CheckForRedactedType` (factored into a shared `CheckForRedactedTypeCore`).",
+    "root_cause": "When two functions implement related but separate policy checks over the same type system, a special case fixed in one is easy to forget in the other, creating an inconsistent security/redaction boundary.",
+    "confidence": "medium",
+    "source": "fix-mining"
+  },
+  {
+    "theme": "Reference-type array fields used in structural hashing/equality",
+    "anti_pattern": "`HashCode.Combine` was called on array-typed properties (`Tags[]?`) inside config records; arrays inherit `object`'s reference-identity `Equals`/`GetHashCode`, so structurally-identical probe configs produced different hash codes on each RCM reapply.",
+    "fix_example": "Added a `NullableSequentialHashCode<T>` helper and custom `Equals`/`GetHashCode` overrides that hash array contents rather than array identity.",
+    "root_cause": "Arrays (and other reference types without overridden equality) silently default to identity semantics, which breaks any equality/hash-based deduplication or memoization over records containing them.",
+    "confidence": "medium",
+    "source": "fix-mining"
+  },
+  {
+    "theme": "Default-dispose semantics of a stream wrapper closing shared state",
+    "anti_pattern": "`using var reader = new StreamReader(json)` disposed the underlying `HttpContent` stream by default, breaking later re-reads of the response body by application code downstream.",
+    "fix_example": "Constructed the `StreamReader` with `leaveOpen: true` and explicitly restored the stream position after parsing.",
+    "root_cause": "Wrapping a shared/borrowed stream in a disposable reader without `leaveOpen` silently closes state that other code still needs, and the failure only surfaces far from the wrapping site.",
+    "confidence": "high",
+    "source": "fix-mining"
+  },
+  {
+    "theme": "Double-checked locking returns the wrong variable on the re-check hit path",
+    "anti_pattern": "In a cache's double-checked-locking `GetOrAdd`, the branch taken when another thread already populated the entry under the write lock returned a stale/uninitialized local `value` instead of `item.Value`, and skipped updating access/hit bookkeeping.",
+    "fix_example": "Made the lock-acquired hit path mirror the fast-path read-hit logic exactly: `item.UpdateAccess(...)`, increment hit counters, notify the eviction policy, and `return item.Value;`.",
+    "root_cause": "Double-checked locking has two logically-equivalent \"already cached\" branches (fast path and locked re-check); if they aren't kept in sync, the slow path can silently return wrong data under contention \u2014 a bug that only appears under concurrent load.",
+    "confidence": "high",
+    "source": "fix-mining"
+  },
+  {
+    "theme": "Fire-and-forget async initialization observed via a plain non-atomic flag",
+    "anti_pattern": "`Initialize()` launched async setup via `_ = InitializeAsync()` and exposed completion through a plain `bool IsInitialized { get; private set; }`, so callers/tests could observe `IsInitialized == false` even after initialization logically started, due to missing memory-visibility guarantees and no way to await completion.",
+    "fix_example": "Replaced the flag with an `Interlocked.CompareExchange`-guarded state machine (`Volatile.Read`-backed 0/1/2 states) and an awaitable `_initializationTask` that callers can observe deterministically.",
+    "root_cause": "A plain auto-property has no cross-thread visibility or ordering guarantees; state that's set by a fire-and-forget task and read from other threads needs atomic/volatile semantics or an awaitable signal, not a bare bool.",
+    "confidence": "high",
+    "source": "fix-mining"
+  },
+  {
+    "theme": "Deferred IEnumerable enumerated twice with observable side effects",
+    "anti_pattern": "IAST taint-propagation code called `target.AppendJoin(separator, values)` and then separately enumerated the same deferred `IEnumerable<T>` again for taint tracking, double-executing side effects for enumerables like SqlKata/Npgsql query compilers.",
+    "fix_example": "Materialized the enumerable once into an array and reused that materialized result for both the original call and taint propagation.",
+    "root_cause": "LINQ-style deferred enumerables can have side effects on each enumeration; any code path that walks the same sequence more than once must materialize it first or risk duplicated/incorrect side effects.",
+    "confidence": "medium",
+    "source": "fix-mining"
+  },
+  {
+    "theme": "Hard failure in a parser meant to be best-effort against untrusted input",
+    "anti_pattern": "Local-variable-signature parsing for PDB metadata threw `BadImageFormatException` on malformed/truncated blobs from some customer assemblies, even though local variable names are explicitly a best-effort, non-critical metadata feature.",
+    "fix_example": "Added `TryReadLocalVariablesCount`/`TryDecodeLocalSignature` helpers that validate blob shape and catch `BadImageFormatException`, falling back to zero locals instead of propagating the exception.",
+    "root_cause": "Parsers over externally-produced/untrusted binary data (customer assemblies, PDBs) must degrade gracefully; letting a malformed blob throw out of a best-effort diagnostic path turns an optional feature into a hard crash.",
+    "confidence": "medium",
+    "source": "fix-mining"
+  },
+  {
+    "theme": "Plain volatile used instead of atomic for a cross-thread field",
+    "anti_pattern": "`AdaptiveSampler`'s `_probability`/`_samplesBudget` fields were declared `volatile` (C++), which only affects compiler reordering and gives no atomicity or memory-model guarantees, while being written by a timer thread and read concurrently by `Sample()`.",
+    "fix_example": "Changed the fields to `std::atomic<T>` so reads and writes have well-defined atomicity and ordering across threads.",
+    "root_cause": "C++ `volatile` is not a substitute for `std::atomic`: it prevents compiler-level caching/reordering but provides no cross-thread synchronization, so concurrent readers can observe torn or stale values.",
+    "confidence": "high",
+    "source": "fix-mining"
+  },
+  {
+    "theme": "Double-checked locking re-checks a stale pre-lock local instead of the shared state",
+    "anti_pattern": "`ProfilerSignalManager`'s post-lock guard checked a local variable captured before acquiring the mutex instead of re-reading the shared `_handler`, so two racing threads could both proceed to call `SetupSignalHandler()` and corrupt `_previousAction`.",
+    "fix_example": "Changed the handler to `std::atomic<HandlerFn_t>` with acquire/release ordering and made the post-lock check re-read the atomic field itself.",
+    "root_cause": "In double-checked locking, the second check must read the actual shared/atomic state after acquiring the lock \u2014 checking a variable captured before the lock defeats the entire pattern and reintroduces the race it was meant to prevent.",
+    "confidence": "high",
+    "source": "fix-mining"
+  },
+  {
+    "theme": "Log-throttling modulo accidentally gating functional control flow",
+    "anti_pattern": "An empty-stack early-return in `ContentionProvider` was gated on `failureCount % 1000 == 0`, a condition meant only to rate-limit a log message, so 999 out of 1000 empty-stack failures fell through and emitted a corrupt zero-frame sample instead of returning early.",
+    "fix_example": "Made the early return unconditional and moved the modulo check to only throttle the associated log statement.",
+    "root_cause": "Reusing a sampling/rate-limit condition to also guard a functional code path silently changes program behavior 999 times out of 1000 \u2014 throttling logic must never double as correctness logic.",
+    "confidence": "high",
+    "source": "fix-mining"
+  },
+  {
+    "theme": "Unsigned integer underflow producing an unbounded range",
+    "anti_pattern": "For code entries with `size == 0`, `endAddress = startAddress - 1` underflowed on `startAddress == 0`, producing `endAddress = UINTPTR_MAX` and causing a page-insertion loop to run effectively forever.",
+    "fix_example": "Added an explicit guard for zero-size ranges and checked `SUCCEEDED(hrStatus)` before calling `AddFunction`.",
+    "root_cause": "Subtracting from an unsigned integer without checking for zero/underflow can silently produce a near-maximal value, turning a bounds calculation into an unbounded or infinite loop.",
+    "confidence": "high",
+    "source": "fix-mining"
+  },
+  {
+    "theme": "Untrusted CI input interpolated directly into shell script bodies",
+    "anti_pattern": "Values like `$(System.PullRequest.SourceBranch)` and `${{ github.event.inputs.branch_name }}` were interpolated directly into inline shell script text in pipeline YAML, allowing a maliciously-named branch/input to inject arbitrary shell commands.",
+    "fix_example": "Passed the values through `env:` variables (e.g. `PR_SOURCE_BRANCH`) and sanitized/normalized them (stripping `refs/heads/`) before any shell use.",
+    "root_cause": "Template/expression interpolation into a shell script body is textual substitution, not parameter passing; untrusted strings (branch names, PR titles, user inputs) must be passed via environment variables, never spliced into script text.",
+    "confidence": "high",
+    "source": "fix-mining"
+  },
+  {
+    "theme": "Static constructor blocking combined with reentrant runtime callbacks",
+    "anti_pattern": "The `AppDomain.AssemblyResolve` handler was a static method on a class (`Startup`) whose own static constructor could block on sync-over-async work; when that async continuation triggered `AssemblyResolve` on a ThreadPool thread, the CLR required `Startup..cctor` to finish first, deadlocking the blocked cctor against the blocked resolve callback.",
+    "fix_example": "Moved the `AssemblyResolve` handler to a sibling class with a trivial static constructor, decoupling it from any class whose cctor can block.",
+    "root_cause": "A type's static constructor runs under an implicit CLR lock; any blocking/sync-over-async work inside a cctor risks deadlock if the same or a related type is re-entered from another thread (e.g. via an event handler) before the cctor completes.",
+    "confidence": "medium",
+    "source": "fix-mining"
+  },
+  {
+    "theme": "Sort comparator violates strict weak ordering",
+    "anti_pattern": "The EH-clause sort comparator only detected try-in-try nesting (`a.tryBegin > b.tryBegin && a.tryEnd < b.tryEnd`) and missed try-in-handler nesting, while also violating `std::sort`'s strict-weak-ordering requirement (incomparability wasn't transitive for sibling clauses near a nesting relationship), producing undefined sort behavior and invalid IL clause ordering.",
+    "fix_example": "Replaced the ad-hoc comparator with a function that computes an explicit nesting depth per clause and sorts by (depth descending, try-offset ascending), a valid total order.",
+    "root_cause": "`std::sort` (and similar generic sort algorithms) requires a strict weak ordering; a comparator that only special-cases some relationships and leaves others inconsistent triggers undefined behavior, not just \"wrong order\".",
+    "confidence": "high",
+    "source": "fix-mining"
+  }
+]
