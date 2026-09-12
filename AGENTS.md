@@ -101,6 +101,18 @@ The full managed tracer (`Datadog.Trace.dll`) contains all auto-instrumentation 
 - **`docs/development/InstrumentationGenerator.md`** — GUI and CLI instrumentation generator tools, Nuke integration, duck typing flags, JSON output, and two-tool workflow with dotnet-inspect
 - **`docs/development/DuckTyping.md`** — Duck typing patterns, proxy types, binding attributes, best practices, and performance benchmarks
 
+## Roslyn Analyzers & Code Fixes
+
+**Quick reference:**
+- Analyzers: `tracer/src/Datadog.Trace.Tools.Analyzers/<AnalyzerName>/`
+- Code fixes: `tracer/src/Datadog.Trace.Tools.Analyzers.CodeFixes/<AnalyzerName>/`
+- Tests: `tracer/test/Datadog.Trace.Tools.Analyzers.Tests/`
+- Both projects target `netstandard2.0` with `Microsoft.CodeAnalysis.CSharp` v5.0.0
+- Diagnostic IDs: `DD00xx` (general), `DDLOGxxx` (logging), `DDDUCKxxx` (duck typing), `DDSEALxxx` (sealing)
+
+📖 **Load when**: Creating, scaffolding, or reviewing a Roslyn analyzer or code fix
+- **`/roslyn-analyzer`** skill — Guided workflow for creating new analyzers/code fixes or reviewing existing ones, with templates, patterns, and a review checklist
+
 ## Azure Functions & Serverless
 
 **Quick reference:**
