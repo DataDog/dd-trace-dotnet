@@ -9,6 +9,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
+using Datadog.Trace.Agent;
+using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.CiEnvironment;
 using Datadog.Trace.Ci.Configuration;
@@ -19,6 +21,7 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Logging;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.TestHelpers.TransportHelpers;
 using Datadog.Trace.Util.Json;
 using FluentAssertions;
 using Moq;
@@ -508,6 +511,27 @@ public class TestOptimizationClientTests : SettingsTestsBase
     }
 
     [Fact]
+    public async Task ApiKeyTransportRejectionStopsRetriesAndFutureRequests()
+    {
+        var workspacePath = Path.Combine(Path.GetTempPath(), $"dd-trace-dotnet-api-key-transport-{Guid.NewGuid():N}");
+        var settings = CreateSettings();
+        settings.SetAgentlessConfiguration(enabled: true, apiKey: "test-key", agentlessUrl: "https://example.com");
+        var requestFactory = new TestRequestFactory(new Uri("https://example.com"), x => new UnsafeApiKeyTransportRequest(x));
+        var tracerManagement = new Mock<ITestOptimizationTracerManagement>();
+        tracerManagement.Setup(x => x.GetRequestFactory(It.IsAny<TracerSettings>(), It.IsAny<TimeSpan>())).Returns(requestFactory);
+        var testOptimization = CreateTestOptimization(settings, workspacePath);
+        testOptimization.Setup(x => x.TracerManagement).Returns(tracerManagement.Object);
+        var client = TestOptimizationClient.Create(workspacePath, testOptimization.Object);
+
+        Func<Task> firstRequest = async () => await client.GetSettingsAsync();
+        Func<Task> secondRequest = async () => await client.GetSettingsAsync();
+
+        await firstRequest.Should().ThrowAsync<ApiKeyHttpTransportException>();
+        await secondRequest.Should().ThrowAsync<ApiKeyHttpTransportException>();
+        requestFactory.RequestsSent.Should().ContainSingle();
+    }
+
+    [Fact]
     public void UnscopedSkippableCandidateKeepsLegacyMatching()
     {
         var candidate = new SkippableTest(
@@ -525,10 +549,14 @@ public class TestOptimizationClientTests : SettingsTestsBase
 
     private static Mock<ITestOptimization> CreateTestOptimization(TestOptimizationSettings settings, string workspacePath)
     {
+        var hostInfo = new Mock<ITestOptimizationHostInfo>();
+        hostInfo.Setup(x => x.GetOperatingSystemVersion()).Returns("test-os-version");
+
         var testOptimization = new Mock<ITestOptimization>();
         testOptimization.Setup(x => x.RunId).Returns("test-run");
         testOptimization.Setup(x => x.Settings).Returns(settings);
         testOptimization.Setup(x => x.CIValues).Returns(new TestCIEnvironmentValues(workspacePath));
+        testOptimization.Setup(x => x.HostInfo).Returns(hostInfo.Object);
         testOptimization.Setup(x => x.Log).Returns(DatadogLogging.GetLoggerFor(typeof(TestOptimizationClientTests)));
         return testOptimization;
     }
@@ -572,6 +600,7 @@ public class TestOptimizationClientTests : SettingsTestsBase
         public TestCIEnvironmentValues(string workspacePath)
         {
             WorkspacePath = workspacePath;
+            Repository = "https://github.com/DataDog/dd-trace-dotnet";
             Branch = "main";
             Commit = "abcdef123456";
         }
@@ -579,5 +608,16 @@ public class TestOptimizationClientTests : SettingsTestsBase
         protected override void Setup(IGitInfo gitInfo)
         {
         }
+    }
+
+    private sealed class UnsafeApiKeyTransportRequest : TestApiRequest
+    {
+        public UnsafeApiKeyTransportRequest(Uri endpoint)
+            : base(endpoint)
+        {
+        }
+
+        public override Task<IApiResponse> PostAsync(ArraySegment<byte> bytes, string contentType, string contentEncoding)
+            => Task.FromException<IApiResponse>(new ApiKeyHttpTransportException("Unsafe API-key transport."));
     }
 }

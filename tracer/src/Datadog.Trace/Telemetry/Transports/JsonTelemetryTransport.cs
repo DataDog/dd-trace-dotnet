@@ -7,6 +7,7 @@
 
 using System;
 using System.Net;
+using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.Transports;
@@ -29,6 +30,7 @@ namespace Datadog.Trace.Telemetry.Transports
         private readonly ContainerMetadata _containerMetadata;
         private readonly bool _enableDebug;
         private readonly bool _telemetryGzipCompressionEnabled;
+        private int _apiKeyTransportRejected;
 
         protected JsonTelemetryTransport(IApiRequestFactory requestFactory, bool enableDebug, string telemetryCompressionMethod, ContainerMetadata containerMetadata)
         {
@@ -43,6 +45,11 @@ namespace Datadog.Trace.Telemetry.Transports
 
         public async Task<TelemetryPushResult> PushTelemetry(TelemetryData data)
         {
+            if (Volatile.Read(ref _apiKeyTransportRejected) != 0)
+            {
+                return TelemetryPushResult.FatalError;
+            }
+
             var endpointMetricTag = GetEndpointMetricTag();
 
             try
@@ -78,6 +85,16 @@ namespace Datadog.Trace.Telemetry.Transports
 
                 Log.Debug("Error sending telemetry to '{Endpoint}' {StatusCode} . CompressionEnabled {Compression}", GetEndpointInfo(), response.StatusCode, _telemetryGzipCompressionEnabled);
                 return TelemetryPushResult.TransientFailure;
+            }
+            catch (ApiKeyHttpTransportException ex)
+            {
+                if (Interlocked.Exchange(ref _apiKeyTransportRejected, 1) == 0)
+                {
+                    Log.Error(ex, "Disabling direct telemetry because the API-key transport is unsafe.");
+                }
+
+                TelemetryFactory.Metrics.RecordCountTelemetryApiErrors(endpointMetricTag, MetricTags.ApiError.NetworkError);
+                return TelemetryPushResult.FatalError;
             }
             catch (Exception ex) when (IsFatalException(ex))
             {

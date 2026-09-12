@@ -35,6 +35,7 @@ namespace Datadog.Trace.Debugger.Upload
         private readonly string _runtimeId;
         private readonly bool _enableCompression;
         private readonly Func<TimeSpan, Task> _delayAsync;
+        private int _apiKeyTransportRejected;
         private int _uploadFailureCount;
 
         private SymbolUploadApi(
@@ -131,6 +132,11 @@ namespace Datadog.Trace.Debugger.Upload
                 ThrowHelper.ThrowArgumentNullException(nameof(writeSymbols));
             }
 
+            if (Volatile.Read(ref _apiKeyTransportRejected) != 0)
+            {
+                return false;
+            }
+
             var uri = BuildUri();
             if (string.IsNullOrEmpty(uri))
             {
@@ -143,14 +149,29 @@ namespace Datadog.Trace.Debugger.Upload
 
             while (retries < MaxRetries)
             {
-                var request = _apiRequestFactory.Create(endpoint);
-                using var response = await request
-                           .PostAsync(
-                                stream => WriteMultipartFormData(stream, writeSymbols, state, metadata),
-                                MimeTypes.MultipartFormData,
-                                contentEncoding: null,
-                                DatadogHttpValues.Boundary)
-                           .ConfigureAwait(false);
+                IApiResponse response;
+                try
+                {
+                    var request = _apiRequestFactory.Create(endpoint);
+                    response = await request
+                                    .PostAsync(
+                                         stream => WriteMultipartFormData(stream, writeSymbols, state, metadata),
+                                         MimeTypes.MultipartFormData,
+                                         contentEncoding: null,
+                                         DatadogHttpValues.Boundary)
+                                    .ConfigureAwait(false);
+                }
+                catch (ApiKeyHttpTransportException e)
+                {
+                    if (Interlocked.Exchange(ref _apiKeyTransportRejected, 1) == 0)
+                    {
+                        Log.Error(e, "Disabling symbol database uploads because the API-key transport is unsafe.");
+                    }
+
+                    return false;
+                }
+
+                using var responseToDispose = response;
 
                 if (response.StatusCode is >= 200 and <= 299)
                 {

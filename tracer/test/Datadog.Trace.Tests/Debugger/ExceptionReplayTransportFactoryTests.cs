@@ -71,5 +71,20 @@ namespace Datadog.Trace.Tests.Debugger
                      .ToString()
                      .Should().Be("https://custom-host.example.com/api/v2/debugger");
         }
+
+        [Fact]
+        public void AgentlessTransport_RejectsUnsafeOverrideUrlDuringCreation()
+        {
+            var tracerSettings = new TracerSettings(new NameValueConfigurationSource(new NameValueCollection()));
+            var collection = new NameValueCollection
+            {
+                { ConfigurationKeys.Debugger.ExceptionReplayAgentlessEnabled, "true" },
+                { ConfigurationKeys.ApiKey, "test-key" },
+                { ConfigurationKeys.Debugger.ExceptionReplayAgentlessUrl, "http://example.com" }
+            };
+            var erSettings = new ExceptionReplaySettings(new NameValueConfigurationSource(collection), NullConfigurationTelemetry.Instance);
+
+            ExceptionReplayTransportFactory.Create(tracerSettings, erSettings, NullDiscoveryService.Instance).Should().BeNull();
+        }
     }
 }

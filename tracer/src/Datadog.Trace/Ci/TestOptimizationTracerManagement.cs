@@ -5,6 +5,7 @@
 
 #nullable enable
 using System;
+using System.Collections.Generic;
 using System.Net;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -160,7 +161,7 @@ internal sealed class TestOptimizationTracerManagement : ITestOptimizationTracer
     {
         IApiRequestFactory? factory;
         var exporterSettings = tracerSettings.Manager.InitialExporterSettings;
-        if (exporterSettings.TracesTransport != TracesTransportType.Default)
+        if (!_settings.Agentless && exporterSettings.TracesTransport != TracesTransportType.Default)
         {
             factory = AgentTransportStrategy.Get(
                 exporterSettings,
@@ -170,16 +171,30 @@ internal sealed class TestOptimizationTracerManagement : ITestOptimizationTracer
         }
         else
         {
+            var baseEndpoint = exporterSettings.AgentUri;
+            var defaultHeaders = AgentHttpHeaderNames.DefaultHeaders;
+            if (_settings.Agentless)
+            {
+                baseEndpoint = string.IsNullOrWhiteSpace(_settings.AgentlessUrl)
+                                   ? new Uri($"https://api.{_settings.Site}")
+                                   : new Uri(_settings.AgentlessUrl);
+                defaultHeaders =
+                [
+                    ..AgentHttpHeaderNames.DefaultHeaders,
+                    new KeyValuePair<string, string>(ApiKeyHttpTransportGuard.ApiKeyHeaderName, _settings.ApiKey!)
+                ];
+            }
+
 #if NETCOREAPP
             Log.Information("TestOptimizationTracerManagement: Using {FactoryType} for trace transport.", nameof(HttpClientRequestFactory));
             factory = new HttpClientRequestFactory(
-                exporterSettings.AgentUri,
-                AgentHttpHeaderNames.DefaultHeaders,
-                handler: new System.Net.Http.HttpClientHandler { AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate, },
-                timeout: timeout);
+                baseEndpoint,
+                defaultHeaders,
+                timeout: timeout,
+                automaticDecompression: DecompressionMethods.GZip | DecompressionMethods.Deflate);
 #else
             Log.Information("TestOptimizationTracerManagement: Using {FactoryType} for trace transport.", nameof(ApiWebRequestFactory));
-            factory = new ApiWebRequestFactory(exporterSettings.AgentUri, AgentHttpHeaderNames.DefaultHeaders, timeout: timeout);
+            factory = new ApiWebRequestFactory(baseEndpoint, defaultHeaders, timeout: timeout);
 #endif
             if (!string.IsNullOrWhiteSpace(_settings.ProxyHttps))
             {

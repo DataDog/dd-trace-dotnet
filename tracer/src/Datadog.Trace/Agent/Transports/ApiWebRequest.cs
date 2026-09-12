@@ -24,17 +24,24 @@ namespace Datadog.Trace.Agent.Transports
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<ApiWebRequest>();
         private readonly HttpWebRequest _request;
+        private readonly bool _hasApiKeyHeader;
 
         private byte[] _boundarySeparatorInBytes;
         private byte[] _boundaryTrailerInBytes;
 
-        public ApiWebRequest(HttpWebRequest request)
+        public ApiWebRequest(HttpWebRequest request, bool hasApiKeyHeader)
         {
             _request = request;
+            _hasApiKeyHeader = hasApiKeyHeader;
+            if (hasApiKeyHeader)
+            {
+                ConfigureApiKeyTransport();
+            }
         }
 
         public void AddHeader(string name, string value)
         {
+            ApiKeyHttpTransportGuard.RejectLateApiKeyHeader(name);
             _request.Headers.Add(name, value);
         }
 
@@ -193,6 +200,51 @@ namespace Datadog.Trace.Agent.Transports
             else
             {
                 _request.Headers.Set(HttpRequestHeader.ContentEncoding, contentEncoding);
+            }
+
+            ValidateApiKeyTransport();
+        }
+
+        private void ConfigureApiKeyTransport()
+        {
+            try
+            {
+                _request.AllowAutoRedirect = false;
+                var endpoint = _request.RequestUri;
+                if (ApiKeyHttpTransportGuard.IsPlaintextLoopback(endpoint))
+                {
+                    // Proxy bypass checks are mutable and racy. Enforce a direct connection instead.
+                    _request.Proxy = null;
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new ApiKeyHttpTransportException("Unable to configure a safe HTTP transport for DD-API-KEY.", ex);
+            }
+        }
+
+        private void ValidateApiKeyTransport()
+        {
+            if (!_hasApiKeyHeader)
+            {
+                return;
+            }
+
+            try
+            {
+                var endpoint = _request.RequestUri;
+                ApiKeyHttpTransportGuard.EnsureSafe(
+                    endpoint,
+                    isProxyDisabled: !ApiKeyHttpTransportGuard.IsPlaintextLoopback(endpoint) || _request.Proxy is null,
+                    redirectsDisabled: !_request.AllowAutoRedirect);
+            }
+            catch (ApiKeyHttpTransportException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                throw new ApiKeyHttpTransportException("Unable to verify a safe HTTP transport for DD-API-KEY.", ex);
             }
         }
 

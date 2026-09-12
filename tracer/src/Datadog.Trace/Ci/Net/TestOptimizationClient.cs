@@ -15,6 +15,7 @@ using System.Net.Sockets;
 using System.Runtime.ExceptionServices;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.Transports;
@@ -35,7 +36,6 @@ namespace Datadog.Trace.Ci.Net;
 
 internal sealed partial class TestOptimizationClient : ITestOptimizationClient
 {
-    private const string ApiKeyHeader = "DD-API-KEY";
     private const string EvpSubdomainHeader = "X-Datadog-EVP-Subdomain";
 
     private const int MaxRetries = 5;
@@ -57,6 +57,7 @@ internal sealed partial class TestOptimizationClient : ITestOptimizationClient
     private readonly string _repositoryUrl;
     private readonly string _branchName;
     private readonly string _commitSha;
+    private int _apiKeyTransportRejected;
 
     static TestOptimizationClient()
     {
@@ -414,10 +415,6 @@ internal sealed partial class TestOptimizationClient : ITestOptimizationClient
         {
             request.AddHeader(EvpSubdomainHeader, "api");
         }
-        else
-        {
-            request.AddHeader(ApiKeyHeader, _testOptimization.Settings.ApiKey);
-        }
     }
 
     private void CheckResponseStatusCode(IApiResponse response, byte[]? responseContent, bool finalTry)
@@ -450,6 +447,11 @@ internal sealed partial class TestOptimizationClient : ITestOptimizationClient
 
     private async Task<T> WithRetries<T, TState>(Func<TState, bool, Task<T>> sendDelegate, TState state, int numOfRetries)
     {
+        if (Volatile.Read(ref _apiKeyTransportRejected) != 0)
+        {
+            throw new ApiKeyHttpTransportException("Test Optimization agentless requests are disabled because the API-key transport is unsafe.");
+        }
+
         var retryCount = 1;
         var sleepDuration = 100; // in milliseconds
 
@@ -472,6 +474,16 @@ internal sealed partial class TestOptimizationClient : ITestOptimizationClient
             if (exceptionDispatchInfo is not null)
             {
                 var sourceException = exceptionDispatchInfo.SourceException;
+
+                if (sourceException is ApiKeyHttpTransportException)
+                {
+                    if (Interlocked.Exchange(ref _apiKeyTransportRejected, 1) == 0)
+                    {
+                        Log.Error(sourceException, "Disabling Test Optimization agentless requests because the API-key transport is unsafe.");
+                    }
+
+                    exceptionDispatchInfo.Throw();
+                }
 
                 if (isFinalTry ||
                     sourceException is RateLimitException { DelayTimeInSeconds: null } ||

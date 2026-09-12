@@ -6,8 +6,10 @@
 
 using System;
 using System.Net.Sockets;
+using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
+using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Util.Http;
@@ -17,7 +19,6 @@ namespace Datadog.Trace.Logging.DirectSubmission.Sink
     internal sealed class LogsApi : ILogsApi
     {
         internal const string LogIntakePath = "/api/v2/logs";
-        internal const string IntakeHeaderNameApiKey = "DD-API-KEY";
 
         private const string MimeType = "application/json";
 
@@ -26,13 +27,12 @@ namespace Datadog.Trace.Logging.DirectSubmission.Sink
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<LogsApi>();
 
-        private readonly string _apiKey;
         private readonly IApiRequestFactory _apiRequestFactory;
         private readonly Uri _logsIntakeEndpoint;
+        private int _apiKeyTransportRejected;
 
-        public LogsApi(string apiKey, IApiRequestFactory apiRequestFactory)
+        public LogsApi(IApiRequestFactory apiRequestFactory)
         {
-            _apiKey = apiKey;
             _apiRequestFactory = apiRequestFactory;
             _logsIntakeEndpoint = _apiRequestFactory.GetEndpoint(LogIntakePath);
             Log.Debug("Using logs intake endpoint {LogsIntakeEndpoint}", _logsIntakeEndpoint.ToString());
@@ -44,6 +44,11 @@ namespace Datadog.Trace.Logging.DirectSubmission.Sink
 
         public async Task<bool> SendLogsAsync(ArraySegment<byte> logs, int numberOfLogs)
         {
+            if (Volatile.Read(ref _apiKeyTransportRejected) != 0)
+            {
+                return false;
+            }
+
             var retriesRemaining = MaxNumberRetries - 1;
             var nextSleepDuration = InitialSleepDurationMs;
 
@@ -57,14 +62,16 @@ namespace Datadog.Trace.Logging.DirectSubmission.Sink
                 {
                     request = _apiRequestFactory.Create(_logsIntakeEndpoint);
                 }
+                catch (ApiKeyHttpTransportException ex)
+                {
+                    DisableForUnsafeApiKeyTransport(ex);
+                    return false;
+                }
                 catch (Exception ex)
                 {
                     Log.Error(ex, "An error occurred while generating request to send logs to the intake at {IntakeEndpoint}", _apiRequestFactory.Info(_logsIntakeEndpoint));
                     return false;
                 }
-
-                // Set additional headers
-                request.AddHeader(IntakeHeaderNameApiKey, _apiKey);
 
                 Exception? exception = null;
                 var isFinalTry = retriesRemaining <= 0;
@@ -109,6 +116,11 @@ namespace Datadog.Trace.Logging.DirectSubmission.Sink
                         response?.Dispose();
                     }
                 }
+                catch (ApiKeyHttpTransportException ex)
+                {
+                    DisableForUnsafeApiKeyTransport(ex);
+                    return false;
+                }
                 catch (Exception ex)
                 {
                     var tag = ex is TimeoutException ? MetricTags.ApiError.Timeout : MetricTags.ApiError.NetworkError;
@@ -142,6 +154,15 @@ namespace Datadog.Trace.Logging.DirectSubmission.Sink
                 await Task.Delay(nextSleepDuration).ConfigureAwait(false);
                 retriesRemaining--;
                 nextSleepDuration *= 2;
+            }
+        }
+
+        private void DisableForUnsafeApiKeyTransport(ApiKeyHttpTransportException exception)
+        {
+            if (Interlocked.Exchange(ref _apiKeyTransportRejected, 1) == 0)
+            {
+                TelemetryFactory.Metrics.RecordCountDirectLogApiErrors(MetricTags.ApiError.NetworkError);
+                Log.Error(exception, "Disabling direct log submission because the API-key transport is unsafe.");
             }
         }
     }
