@@ -194,6 +194,12 @@ Dataflow::Dataflow(ICorProfilerInfo* profiler, std::shared_ptr<RejitHandler> rej
 
 Dataflow::~Dataflow()
 {
+    // Shutdown() is the normal teardown path (wired the same way as every other Rejitter's
+    // Shutdown(), via RejitHandler::Shutdown() fanning out on profiler detach/process shutdown),
+    // but call it here too so this destructor is correct on its own -- e.g. in tests that
+    // construct a Dataflow directly and never explicitly call Shutdown(). Safe to call twice:
+    // by the time it runs a second time, both maps are already empty.
+    Shutdown();
     REL(_profiler);
 }
 
@@ -812,6 +818,26 @@ bool Dataflow::InstrumentInstruction(DataflowContext& context, std::vector<Dataf
 
 void Dataflow::Shutdown()
 {
+    CSGUARD(_cs);
+
+    // _modules/_appDomains are process-lifetime caches with no other teardown path for whatever
+    // is still loaded when the profiler detaches / the process exits: ModuleUnloaded already
+    // frees an entry's ModuleInfo* on a real module unload (see DEL(it->second) there), but
+    // nothing previously freed what's left afterward. Same pattern as _appDomains, which has no
+    // per-entry unload notification at all and so never freed anything until now.
+    for (auto const& entry : _modules)
+    {
+        auto moduleInfo = entry.second;
+        DEL(moduleInfo);
+    }
+    _modules.clear();
+
+    for (auto const& entry : _appDomains)
+    {
+        auto appDomainInfo = entry.second;
+        DEL(appDomainInfo);
+    }
+    _appDomains.clear();
 }
 RejitHandlerModule* Dataflow::GetOrAddModule(ModuleID moduleId)
 {
