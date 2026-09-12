@@ -41,7 +41,7 @@ public unsafe class SpecialTypeMethodTests
     {
         var proxy = new PointerTarget().DuckCast<IExactPointerProxy>();
 
-        ((nint)proxy.GetPointer()).Should().Be(new nint(0x1234));
+        ((nint)proxy.GetPointer()).Should().Be((nint)0x1234);
     }
 
     [Theory]
