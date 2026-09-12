@@ -19,4 +19,12 @@ public class StringExtensionsTests
     {
         Datadog.Trace.Debugger.Helpers.StringExtensions.ToUUID(input).Should().Be(expected);
     }
+
+    [Theory]
+    [InlineData("", "e3b0c442-98fc-3c14-9afb-f4c8996fb924")]
+    [InlineData("test", "9f86d081-884c-3d65-9a2f-eaa0c55ad015")]
+    public void ToUuidUsesTruncatedSha256ForFips(string input, string expected)
+    {
+        Datadog.Trace.Debugger.Helpers.StringExtensions.ToUUID(input, useFipsCompliantAlgorithm: true).Should().Be(expected);
+    }
 }
