@@ -416,13 +416,13 @@ partial class Build : NukeBuild
                 {
                     foreach (var (baseImage, artifactSuffix) in baseImages)
                     {
-                        if (ShouldBeIncluded(AsmArea))
+                        var areas = new[] { TracerArea, AsmArea, CiVisibilityArea };
+                        foreach (var area in areas)
                         {
-                            matrix.Add($"{baseImage}_{framework}", new { publishTargetFramework = framework, baseImage = baseImage, artifactSuffix = artifactSuffix });
-                        }
-                        else
-                        {
-                            matrix.Add($"{baseImage}_{framework}", new { publishTargetFramework = framework, baseImage = baseImage, artifactSuffix = artifactSuffix, area = TracerArea });
+                            if (ShouldBeIncluded(area))
+                            {
+                                matrix.Add($"{baseImage}_{framework}_{area}", new { publishTargetFramework = framework, baseImage = baseImage, artifactSuffix = artifactSuffix, area = area });
+                            }
                         }
                     }
                 }
