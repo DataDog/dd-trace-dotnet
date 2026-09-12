@@ -72,12 +72,62 @@ namespace Datadog.Trace.DuckTyping.Tests
             proxy.ToString().Should().Be(instance.ToString());
         }
 
+        [Fact]
+        public void ToStringIgnoresHiddenMethodWithNonStringReturnType()
+        {
+            var instance = new TargetWithHiddenNonStringToString();
+
+            var proxy = instance.DuckCast<IEmptyProxy>();
+
+            ((IDuckType)proxy).ToString().Should().Be("ToString from the base target.");
+        }
+
+        [Fact]
+        public void ToStringIgnoresHiddenStaticMethod()
+        {
+            var instance = new TargetWithHiddenStaticToString();
+
+            var proxy = instance.DuckCast<IEmptyProxy>();
+
+            ((IDuckType)proxy).ToString().Should().Be("ToString from the base target.");
+        }
+
+        [Fact]
+        public void ToStringUsesHiddenInstanceMethodWithStringReturnType()
+        {
+            var instance = new TargetWithHiddenStringToString();
+
+            var proxy = instance.DuckCast<IEmptyProxy>();
+
+            ((IDuckType)proxy).ToString().Should().Be("ToString from the hidden target method.");
+        }
+
         public class TargetClass
         {
             public override string ToString()
             {
                 return "ToString from Target instance.";
             }
+        }
+
+        public class TargetBaseClass
+        {
+            public override string ToString() => "ToString from the base target.";
+        }
+
+        public class TargetWithHiddenNonStringToString : TargetBaseClass
+        {
+            public new virtual int ToString() => 0;
+        }
+
+        public class TargetWithHiddenStaticToString : TargetBaseClass
+        {
+            public static new string ToString() => "ToString from the hidden static target method.";
+        }
+
+        public class TargetWithHiddenStringToString : TargetBaseClass
+        {
+            public new string ToString() => "ToString from the hidden target method.";
         }
 
         public interface IEmptyProxy
