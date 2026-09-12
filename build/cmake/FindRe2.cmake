@@ -31,6 +31,11 @@ if (ISMACOS)
     set_property(TARGET re2 PROPERTY JOB_SERVER_AWARE TRUE)
 
 elseif(ISLINUX)
+    # CC=/CXX= are threaded through explicitly (matching whatever the outer CMake configure
+    # was given via -DCMAKE_C_COMPILER=/-DCMAKE_CXX_COMPILER=), same reasoning as
+    # FindLibunwind.cmake: re2's plain Makefile has no configure step to inherit a compiler
+    # from, so without this it would fall back to GNU Make's own default (usually system
+    # `cc`), which can silently differ from the rest of the project's toolchain.
     ExternalProject_Add(re2
         DOWNLOAD_COMMAND ${DOWNLOAD_COMMAND}
         TIMEOUT 5
@@ -38,7 +43,7 @@ elseif(ISLINUX)
         CONFIGURE_COMMAND ""
         UPDATE_COMMAND ""
         BUILD_IN_SOURCE TRUE
-        BUILD_COMMAND ${CMAKE_COMMAND} -E env ARFLAGS=-r\ -s\ -c CXXFLAGS=-O3\ -g\ -fPIC\ -D_GLIBCXX_USE_CXX11_ABI=0 $(MAKE) -j
+        BUILD_COMMAND ${CMAKE_COMMAND} -E env CC=${CMAKE_C_COMPILER} CXX=${CMAKE_CXX_COMPILER} ARFLAGS=-r\ -s\ -c CXXFLAGS=-O3\ -g\ -fPIC\ -D_GLIBCXX_USE_CXX11_ABI=0 $(MAKE) -j
         BUILD_BYPRODUCTS ${CMAKE_CURRENT_BINARY_DIR}/re2-prefix/src/re2/obj/libre2.a
     )
 endif()
