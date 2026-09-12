@@ -13,6 +13,7 @@ using Datadog.Trace.FeatureFlags.Rcm.Model;
 using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.RemoteConfigurationManagement.Protocol;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.Tests.Agent;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using FluentAssertions;
 using Xunit;
@@ -23,6 +24,28 @@ namespace Datadog.Trace.Tests.FeatureFlags;
 
 public class FeatureFlagsModuleTests
 {
+    [Fact]
+    public void AgentlessModuleUsesSharedDiscoveryForEventDelivery()
+    {
+        var rcmManager = new MockRcmSubscriptionManager();
+        var discovery = new DiscoveryServiceMock();
+        var collection = new NameValueCollection
+        {
+            { ConfigurationKeys.FeatureFlags.FlaggingProviderEnabled, "true" },
+            { ConfigurationKeys.FeatureFlags.FeatureFlagsConfigurationSource, "agentless" },
+            { ConfigurationKeys.ApiKey, "test-api-key" },
+            { ConfigurationKeys.Site, "datadoghq.com" },
+        };
+        var settings = new TracerSettings(new NameValueConfigurationSource(collection));
+
+        using (new FeatureFlagsModule(settings, rcmManager, discovery))
+        {
+            discovery.Callbacks.Should().ContainSingle();
+        }
+
+        discovery.Callbacks.Should().BeEmpty();
+    }
+
     [Fact]
     public void UpdateRemoteConfig_WithEmptyList_InvokesCallbackAndReturnsProviderNotReady()
     {

@@ -30,7 +30,8 @@ internal sealed record AgentConfiguration
         List<string>? peerTags = null,
         int obfuscationVersion = 0,
         AgentTraceFilterConfig? traceFilterConfig = null,
-        List<string>? featureFlags = null)
+        List<string>? featureFlags = null,
+        bool eventPlatformProxySupportsEvpOriginHeaders = false)
     {
         ConfigurationEndpoint = configurationEndpoint;
         DebuggerEndpoint = debuggerEndpoint;
@@ -51,6 +52,7 @@ internal sealed record AgentConfiguration
         ObfuscationVersion = obfuscationVersion;
         TraceFilterConfig = traceFilterConfig ?? AgentTraceFilterConfig.Empty;
         FeatureFlags = featureFlags;
+        EventPlatformProxySupportsEvpOriginHeaders = eventPlatformProxySupportsEvpOriginHeaders;
     }
 
     public string? ConfigurationEndpoint { get; }
@@ -82,6 +84,8 @@ internal sealed record AgentConfiguration
     public string? DataStreamsMonitoringEndpoint { get; }
 
     public string? EventPlatformProxyEndpoint { get; }
+
+    public bool EventPlatformProxySupportsEvpOriginHeaders { get; }
 
     public string? TelemetryProxyEndpoint { get; }
 

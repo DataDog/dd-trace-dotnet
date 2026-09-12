@@ -8,7 +8,9 @@
 using System;
 using System.Collections.Generic;
 using System.Threading;
+using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.FeatureFlags.Evp;
 using Datadog.Trace.FeatureFlags.Exposure;
 using Datadog.Trace.FeatureFlags.Exposure.Model;
 using Datadog.Trace.FeatureFlags.Rcm;
@@ -25,29 +27,31 @@ namespace Datadog.Trace.FeatureFlags
         private readonly IRcmSubscriptionManager _rcmSubscriptionManager;
         private readonly ISubscription _rcmSubscription;
         private readonly FfeProduct _ffeProduct;
+        private readonly FeatureFlagsEvpTransport _evpTransport;
         private readonly ExposureApi _exposureApi;
         private readonly bool _spanEnrichmentEnabled;
 
         private Action? _onNewConfigEventHander;
         private FeatureFlagsEvaluator? _evaluator;
 
-        internal FeatureFlagsModule(TracerSettings settings, IRcmSubscriptionManager rcmSubscriptionManager)
+        internal FeatureFlagsModule(TracerSettings settings, IRcmSubscriptionManager rcmSubscriptionManager, IDiscoveryService? discoveryService = null)
         {
             Log.Debug("FeatureFlagsModule ENABLED");
             _spanEnrichmentEnabled = settings.IsSpanEnrichmentEnabled;
             _rcmSubscriptionManager = rcmSubscriptionManager;
-            _exposureApi = new ExposureApi(settings);
+            _evpTransport = new FeatureFlagsEvpTransport(settings, discoveryService ?? NullDiscoveryService.Instance);
+            _exposureApi = new ExposureApi(settings, _evpTransport);
             _ffeProduct = new FfeProduct(UpdateRemoteConfig);
             _rcmSubscription = new Subscription(_ffeProduct.UpdateFromRcm, RcmProducts.FfeFlags);
             _rcmSubscriptionManager.SubscribeToChanges(_rcmSubscription!);
             _rcmSubscriptionManager.SetCapability(RcmCapabilitiesIndices.FfeFlagConfigurationRules, true);
         }
 
-        public static FeatureFlagsModule? Create(TracerSettings settings, IRcmSubscriptionManager rcmSubscriptionManager)
+        public static FeatureFlagsModule? Create(TracerSettings settings, IRcmSubscriptionManager rcmSubscriptionManager, IDiscoveryService? discoveryService = null)
         {
             if (settings.IsFlaggingProviderEnabled)
             {
-                return new FeatureFlagsModule(settings, rcmSubscriptionManager);
+                return new FeatureFlagsModule(settings, rcmSubscriptionManager, discoveryService);
             }
 
             return null;
@@ -56,6 +60,7 @@ namespace Datadog.Trace.FeatureFlags
         public void Dispose()
         {
             _exposureApi.Dispose();
+            _evpTransport.Dispose();
         }
 
         internal void RegisterOnNewConfigEventHandler(Action? onNewConfig)
