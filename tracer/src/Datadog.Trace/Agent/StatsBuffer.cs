@@ -24,6 +24,7 @@ namespace Datadog.Trace.Agent
             Buckets = new();
             CardinalityReporter = cardinalityReporter;
             Reset();
+            SetMinStartTime();
         }
 
         public Dictionary<StatsAggregationKey, StatsBucket> Buckets { get; }
@@ -141,11 +142,16 @@ namespace Datadog.Trace.Agent
             // Reset the per-field admission sets so each flush window admits a fresh set of distinct values.
             CardinalityLimiter.Reset();
             CardinalityReporter.Reset();
+        }
 
+        public void SetMinStartTime(long minimumStart = 0)
+        {
             // Align to 10-second boundary to match the Go tracer's alignTs: ts - ts % bucketSize
             var nowNs = DateTimeOffset.UtcNow.ToUnixTimeNanoseconds();
-            Start = nowNs - (nowNs % 10_000_000_000);
+            Start = Math.Max(minimumStart, nowNs - (nowNs % 10_000_000_000));
         }
+
+        public void SetStartTime(long start) => Start = start;
 
         public void Serialize(Stream stream, long bucketDuration)
         {
