@@ -99,6 +99,15 @@ namespace Datadog.Trace.TestHelpers
 
             Output.WriteLine("Executable: " + exec);
             Output.WriteLine($"ApplicationPath: {appPath} {arguments ?? string.Empty}");
+            if (!EnvironmentHelper.IsCoreClr())
+            {
+                // The installed VSTest launcher can be x64 even when it starts an x86 testhost.
+                // Let each CLR select the loader for its own architecture.
+                var monitoringHome = EnvironmentHelper.GetMonitoringHomePath();
+                SetEnvironmentVariable("COR_PROFILER_PATH_32", Path.Combine(monitoringHome, "win-x86", "Datadog.Trace.ClrProfiler.Native.dll"));
+                SetEnvironmentVariable("COR_PROFILER_PATH_64", Path.Combine(monitoringHome, "win-x64", "Datadog.Trace.ClrProfiler.Native.dll"));
+            }
+
             var process = await ProfilerHelper.StartProcessWithProfiler(
                 exec,
                 EnvironmentHelper,

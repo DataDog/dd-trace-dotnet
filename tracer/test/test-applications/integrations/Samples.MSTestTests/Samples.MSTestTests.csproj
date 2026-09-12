@@ -3,6 +3,8 @@
   <PropertyGroup>
     <IsPackable>false</IsPackable>
     <OutputType>Library</OutputType>
+    <!-- MSTest 4 requires .NET 8 or .NET Framework. Keep the default sample runnable on older .NET runtimes too. -->
+    <ApiVersion Condition="'$(ApiVersion)' == '' And ($(TargetFramework.StartsWith('netcoreapp')) Or '$(TargetFramework)' == 'net5.0' Or '$(TargetFramework)' == 'net6.0' Or '$(TargetFramework)' == 'net7.0')">3.11.1</ApiVersion>
     <ApiVersion Condition="'$(ApiVersion)' == ''">4.0.1</ApiVersion>
     <TestSdkVersion>16.7.1</TestSdkVersion>
     <TestSdkVersion Condition="$(ApiVersion.StartsWith('4.'))">18.0.0</TestSdkVersion>

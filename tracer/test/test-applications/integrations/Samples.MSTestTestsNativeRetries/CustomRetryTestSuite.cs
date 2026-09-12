@@ -1,0 +1,242 @@
+// <copyright file="CustomRetryTestSuite.cs" company="Datadog">
+// Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
+// This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
+// </copyright>
+
+using System;
+using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+
+namespace Samples.MSTestTestsNativeRetries;
+
+#pragma warning disable MSTESTEXP // Custom retry policies are the contract exercised by this sample.
+
+[TestClass]
+[TestCategory("CustomRetry")]
+public class CustomRetryTestSuite
+{
+    private static bool _nativePolicyCompleted;
+
+    public TestContext TestContext { get; set; }
+
+    [TestMethod]
+    [KeepPassingAttempt]
+    public void CustomPolicySelectsEarlierAttempt()
+    {
+        var attempt = TestSuite.RecordAttempt(nameof(CustomPolicySelectsEarlierAttempt));
+        Assert.AreEqual(attempt, TestContext.TestRunCount);
+        Assert.IsTrue(attempt == 2 || attempt > 3);
+    }
+
+    [DelegatingTestMethod]
+    [Retry(2)]
+    public void DelegatingExecutor()
+        => Assert.IsTrue(TestSuite.RecordAttempt(nameof(DelegatingExecutor)) >= 2);
+
+    [MultipleResultsTestMethod]
+    [Retry(2)]
+    public void MultipleResults()
+    {
+        var attempt = TestSuite.RecordAttempt(nameof(MultipleResults));
+        Assert.IsTrue(attempt % 2 == 0 || attempt >= 7);
+    }
+
+    [MultipleResultsTestMethod(SameDisplayName = true)]
+    [Retry(2)]
+    public void DuplicateExecutorResults()
+    {
+        var attempt = TestSuite.RecordAttempt(nameof(DuplicateExecutorResults));
+        Assert.IsTrue(attempt % 2 == 0 || attempt >= 7);
+    }
+
+    [TestMethod]
+    [AsyncThrowingRetry]
+    public void AsyncThrowingRetry()
+    {
+        TestSuite.RecordAttempt(nameof(AsyncThrowingRetry));
+        Assert.Fail("The retry policy fails after an await.");
+    }
+
+    [TestMethod]
+    [AsyncCanceledRetry]
+    public void AsyncCanceledRetry()
+    {
+        TestSuite.RecordAttempt(nameof(AsyncCanceledRetry));
+        Assert.Fail("The retry policy is canceled after an await.");
+    }
+
+    [TestMethod]
+    [RetryTwice]
+    public void CustomPolicyContinuesAfterPassing()
+    {
+        var attempt = TestSuite.RecordAttempt(nameof(CustomPolicyContinuesAfterPassing));
+        if (attempt > 3)
+        {
+            Assert.IsTrue(_nativePolicyCompleted, "Datadog retries must wait for the outermost native policy.");
+        }
+
+        Assert.IsTrue(attempt == 2 || attempt >= 4);
+    }
+
+    [EmptyTestMethod]
+    [Retry(2)]
+    public void EmptyExecutor() => Assert.Fail("The executor must not invoke this method.");
+
+    [ThrowingTestMethod]
+    [Retry(2)]
+    public void ThrowingExecutor() => Assert.Fail("The executor must not invoke this method.");
+
+    [TestMethod]
+    [EmptyRetry]
+    public void EmptyFinalRetry()
+    {
+        TestSuite.RecordAttempt(nameof(EmptyFinalRetry));
+        Assert.Fail("The retry policy returns an empty final result.");
+    }
+
+    [TestMethod]
+    [ThrowingRetry]
+    public void ThrowingRetry()
+    {
+        TestSuite.RecordAttempt(nameof(ThrowingRetry));
+        Assert.Fail("The retry policy throws.");
+    }
+
+    [TestMethod]
+    [CanceledRetry]
+    public void CanceledRetry()
+    {
+        TestSuite.RecordAttempt(nameof(CanceledRetry));
+        Assert.Fail("The retry policy is canceled.");
+    }
+
+    private class RetryOnceAttribute : RetryBaseAttribute
+    {
+        protected override async Task<RetryResult> ExecuteAsync(RetryContext retryContext)
+        {
+            var result = new RetryResult();
+            result.AddResult(await retryContext.ExecuteTaskGetter());
+            return result;
+        }
+    }
+
+    private sealed class KeepPassingAttemptAttribute : RetryBaseAttribute
+    {
+        protected override async Task<RetryResult> ExecuteAsync(RetryContext retryContext)
+        {
+            var passingAttempt = await retryContext.ExecuteTaskGetter();
+            await retryContext.ExecuteTaskGetter();
+            var result = new RetryResult();
+            result.AddResult(passingAttempt);
+            return result;
+        }
+    }
+
+    private sealed class RetryTwiceAttribute : RetryOnceAttribute
+    {
+        protected override async Task<RetryResult> ExecuteAsync(RetryContext retryContext)
+        {
+            var result = await base.ExecuteAsync(retryContext);
+            // This policy deliberately continues after a successful attempt.
+            result.AddResult(await retryContext.ExecuteTaskGetter());
+            _nativePolicyCompleted = true;
+            return result;
+        }
+    }
+
+    private sealed class EmptyRetryAttribute : RetryBaseAttribute
+    {
+        protected override Task<RetryResult> ExecuteAsync(RetryContext retryContext)
+        {
+            var result = new RetryResult();
+            result.AddResult([]);
+            return Task.FromResult(result);
+        }
+    }
+
+    private sealed class EmptyTestMethodAttribute : TestMethodAttribute
+    {
+        public EmptyTestMethodAttribute([CallerFilePath] string filePath = "", [CallerLineNumber] int lineNumber = 0)
+            : base(filePath, lineNumber)
+        {
+        }
+
+        public override Task<TestResult[]> ExecuteAsync(ITestMethod testMethod) => Task.FromResult<TestResult[]>([]);
+    }
+
+    private sealed class DelegatingTestMethodAttribute : TestMethodAttribute
+    {
+        public DelegatingTestMethodAttribute([CallerFilePath] string filePath = "", [CallerLineNumber] int lineNumber = 0)
+            : base(filePath, lineNumber)
+        {
+        }
+
+        public override async Task<TestResult[]> ExecuteAsync(ITestMethod testMethod)
+        {
+            await Task.Yield();
+            return await base.ExecuteAsync(testMethod);
+        }
+    }
+
+    private sealed class AsyncThrowingRetryAttribute : RetryBaseAttribute
+    {
+        protected override async Task<RetryResult> ExecuteAsync(RetryContext retryContext)
+        {
+            await Task.Yield();
+            throw new InvalidOperationException("Custom retry failed after an await.");
+        }
+    }
+
+    private sealed class MultipleResultsTestMethodAttribute : TestMethodAttribute
+    {
+        public bool SameDisplayName { get; set; }
+
+        public MultipleResultsTestMethodAttribute([CallerFilePath] string filePath = "", [CallerLineNumber] int lineNumber = 0)
+            : base(filePath, lineNumber)
+        {
+        }
+
+        public override async Task<TestResult[]> ExecuteAsync(ITestMethod testMethod)
+        {
+            var first = await base.ExecuteAsync(testMethod);
+            var second = await base.ExecuteAsync(testMethod);
+            first[0].DisplayName = "First result";
+            second[0].DisplayName = SameDisplayName ? "First result" : "Second result";
+            return [first[0], second[0]];
+        }
+    }
+
+    private sealed class AsyncCanceledRetryAttribute : RetryBaseAttribute
+    {
+        protected override async Task<RetryResult> ExecuteAsync(RetryContext retryContext)
+        {
+            await Task.Yield();
+            throw new OperationCanceledException("Custom retry canceled after an await.");
+        }
+    }
+
+    private sealed class ThrowingTestMethodAttribute : TestMethodAttribute
+    {
+        public ThrowingTestMethodAttribute([CallerFilePath] string filePath = "", [CallerLineNumber] int lineNumber = 0)
+            : base(filePath, lineNumber)
+        {
+        }
+
+        public override Task<TestResult[]> ExecuteAsync(ITestMethod testMethod) => throw new InvalidOperationException("Custom executor failed.");
+    }
+
+    private sealed class ThrowingRetryAttribute : RetryBaseAttribute
+    {
+        protected override Task<RetryResult> ExecuteAsync(RetryContext retryContext)
+            => throw new InvalidOperationException("Custom retry failed.");
+    }
+
+    private sealed class CanceledRetryAttribute : RetryBaseAttribute
+    {
+        protected override Task<RetryResult> ExecuteAsync(RetryContext retryContext)
+            => throw new OperationCanceledException("Custom retry canceled.");
+    }
+}
+
+#pragma warning restore MSTESTEXP
