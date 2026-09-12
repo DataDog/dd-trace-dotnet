@@ -106,6 +106,7 @@ variables:
   # Only run code coverage when requested
   # Coverlet relies on IL rewriting, which currently breaks tests which explictly check the IL
   CodeCoverageEnabled: $[eq(variables['run_code_coverage'], 'true')]
+  SystemTestsBranch: $[coalesce(variables['system_tests_branch'], 'main')]
   DD_DOTNET_TRACER_MSBUILD:
   NugetPackageDirectory: $(System.DefaultWorkingDirectory)/packages
   relativeNugetPackageDirectory: packages
@@ -5121,8 +5122,10 @@ stages:
             versionSpec: '3.12'
           displayName: Install python 3.12
 
-        - script: git $(GIT_RETRY_CONFIG) clone --depth 1 https://github.com/DataDog/system-tests.git
-          displayName: Get system tests repo
+        - script: git $(GIT_RETRY_CONFIG) clone --depth 1 --branch "$SYSTEM_TESTS_BRANCH" https://github.com/DataDog/system-tests.git
+          displayName: Get system tests repo ($(SystemTestsBranch))
+          env:
+            SYSTEM_TESTS_BRANCH: $(SystemTestsBranch)
 
         - script: |
             ./build.sh -i runner
@@ -5223,8 +5226,10 @@ stages:
           versionSpec: '3.12'
         displayName: Install python 3.12
 
-      - script: git $(GIT_RETRY_CONFIG) clone --depth 1 https://github.com/DataDog/system-tests.git
-        displayName: Get system tests repo
+      - script: git $(GIT_RETRY_CONFIG) clone --depth 1 --branch "$SYSTEM_TESTS_BRANCH" https://github.com/DataDog/system-tests.git
+        displayName: Get system tests repo ($(SystemTestsBranch))
+        env:
+          SYSTEM_TESTS_BRANCH: $(SystemTestsBranch)
 
       - template: steps/download-artifact.yml
         parameters:
