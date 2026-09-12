@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.Runtime.InteropServices;
 using Datadog.Trace.Iast.Analyzers;
 
@@ -260,6 +261,34 @@ namespace Datadog.Trace.ClrProfiler
             return true;
         }
 
+        public static bool TryGetFileMetadataForPath(string path, bool followSymlinks, out uint mode, out uint userId)
+        {
+            mode = 0;
+            userId = 0;
+            if (IsWindows)
+            {
+                return false;
+            }
+
+            try
+            {
+                var result = NonWindows.GetFileMetadataForPath(path, followSymlinks ? 1 : 0, out mode, out userId);
+                return result == 0;
+            }
+            catch (DllNotFoundException)
+            {
+                return false;
+            }
+            catch (EntryPointNotFoundException)
+            {
+                return false;
+            }
+            catch (BadImageFormatException)
+            {
+                return false;
+            }
+        }
+
         // the "dll" extension is required on .NET Framework
         // and optional on .NET Core
         // The DllImport methods are re-written by cor_profiler to have the correct vales
@@ -350,6 +379,9 @@ namespace Datadog.Trace.ClrProfiler
 
             [DllImport("Datadog.Tracer.Native")]
             public static extern long GetInodeForPath([MarshalAs(UnmanagedType.LPWStr)]string path);
+
+            [DllImport("Datadog.Tracer.Native")]
+            public static extern int GetFileMetadataForPath([MarshalAs(UnmanagedType.LPWStr)] string path, int followSymlinks, out uint mode, out uint userId);
         }
     }
 }

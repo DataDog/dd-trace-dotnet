@@ -27,3 +27,4 @@ EXPORTS
     GetInodeForPath
     InitEmbeddedCallSiteDefinitions
     InitEmbeddedCallTargetDefinitions
+    GetFileMetadataForPath
