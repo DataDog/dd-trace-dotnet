@@ -515,35 +515,56 @@ namespace Datadog.Trace.DuckTyping
             il.Emit(OpCodes.Ldflda, instanceField);
             il.Emit(OpCodes.Ret);
 
-            var toStringTargetType = targetType.GetMethod(nameof(IDuckType.ToString), Type.EmptyTypes);
-            if (toStringTargetType is not null)
+            // A target can hide Object.ToString with a public parameterless method whose return type is
+            // unrelated to string, or with a static method. Method lookup by name and parameter types alone
+            // accepts those methods because the return type is not part of a CLR method signature. Calling such
+            // a method from the string-returning proxy method leaves an incompatible value on the evaluation
+            // stack and can make the JIT consume an integer as an object reference.
+            //
+            // Restrict the lookup to instance methods and validate the return type before emitting any IL. If
+            // the most-derived candidate has hidden the virtual ToString slot with an incompatible signature,
+            // calling Object.ToString is the correct fallback: normal virtual dispatch still reaches any valid
+            // override inherited by the target.
+            var toStringTargetMethod = targetType.GetMethod(
+                nameof(IDuckType.ToString),
+                BindingFlags.Public | BindingFlags.Instance,
+                binder: null,
+                Type.EmptyTypes,
+                modifiers: null);
+            if (toStringTargetMethod?.ReturnType != typeof(string))
             {
-                MethodBuilder toStringMethod = proxyTypeBuilder.DefineMethod(nameof(IDuckType.ToString), toStringTargetType.Attributes, typeof(string), Type.EmptyTypes);
-                il = toStringMethod.GetILGenerator();
-                il.Emit(OpCodes.Ldarg_0);
-                if (instanceType.IsValueType)
-                {
-                    il.Emit(OpCodes.Ldflda, instanceField);
-                    il.Emit(OpCodes.Constrained, targetType);
-                    il.EmitCall(OpCodes.Callvirt, toStringTargetType, null);
-                }
-                else
-                {
-                    il.Emit(OpCodes.Ldfld, instanceField);
-                    il.Emit(OpCodes.Dup);
-                    var lblTrue = il.DefineLabel();
-                    il.Emit(OpCodes.Brtrue_S, lblTrue);
-
-                    il.Emit(OpCodes.Pop);
-                    il.Emit(OpCodes.Ldnull);
-                    il.Emit(OpCodes.Ret);
-
-                    il.MarkLabel(lblTrue);
-                    il.EmitCall(OpCodes.Callvirt, toStringTargetType, null);
-                }
-
-                il.Emit(OpCodes.Ret);
+                toStringTargetMethod = typeof(object).GetMethod(nameof(IDuckType.ToString), Type.EmptyTypes)!;
             }
+
+            MethodBuilder toStringMethod = proxyTypeBuilder.DefineMethod(
+                nameof(IDuckType.ToString),
+                MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.Final | MethodAttributes.HideBySig,
+                typeof(string),
+                Type.EmptyTypes);
+            il = toStringMethod.GetILGenerator();
+            il.Emit(OpCodes.Ldarg_0);
+            if (instanceType.IsValueType)
+            {
+                il.Emit(OpCodes.Ldflda, instanceField);
+                il.Emit(OpCodes.Constrained, targetType);
+                il.EmitCall(OpCodes.Callvirt, toStringTargetMethod, null);
+            }
+            else
+            {
+                il.Emit(OpCodes.Ldfld, instanceField);
+                il.Emit(OpCodes.Dup);
+                var lblTrue = il.DefineLabel();
+                il.Emit(OpCodes.Brtrue_S, lblTrue);
+
+                il.Emit(OpCodes.Pop);
+                il.Emit(OpCodes.Ldnull);
+                il.Emit(OpCodes.Ret);
+
+                il.MarkLabel(lblTrue);
+                il.EmitCall(OpCodes.Callvirt, toStringTargetMethod, null);
+            }
+
+            il.Emit(OpCodes.Ret);
 
             return instanceField;
         }
