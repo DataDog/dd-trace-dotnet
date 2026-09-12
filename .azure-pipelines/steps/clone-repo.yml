@@ -83,12 +83,52 @@ steps:
     condition: and(succeeded(), not(eq(variables['Agent.OS'], 'Windows_NT')))
 
   - powershell: |
-      echo "Cleaning up source directories ..."
-      $localPath=$env:BUILD_REPOSITORY_LOCALPATH
-      rm $localPath/* -r -fo -Exclude ".git"
+      function Remove-SourceEntry {
+        param([string] $Path)
 
+        $attributes = [System.IO.File]::GetAttributes($Path)
+        if (($attributes -band [System.IO.FileAttributes]::ReparsePoint) -ne 0) {
+          if (($attributes -band [System.IO.FileAttributes]::Directory) -ne 0) {
+            cmd.exe /d /c "rd `"$Path`""
+          }
+          else {
+            cmd.exe /d /c "del /f /q `"$Path`""
+          }
+
+          if ($LASTEXITCODE -ne 0) {
+            throw "Failed to remove reparse point '$Path'."
+          }
+
+          return
+        }
+
+        if (($attributes -band [System.IO.FileAttributes]::Directory) -ne 0) {
+          foreach ($child in [System.IO.Directory]::GetFileSystemEntries($Path)) {
+            Remove-SourceEntry $child
+          }
+
+          [System.IO.File]::SetAttributes($Path, [System.IO.FileAttributes]::Normal)
+          [System.IO.Directory]::Delete($Path)
+          return
+        }
+
+        [System.IO.File]::SetAttributes($Path, [System.IO.FileAttributes]::Normal)
+        [System.IO.File]::Delete($Path)
+      }
+
+      $localPath = $env:BUILD_REPOSITORY_LOCALPATH
+      foreach ($entry in [System.IO.Directory]::GetFileSystemEntries($localPath)) {
+        if ([System.IO.Path]::GetFileName($entry) -ne '.git') {
+          Remove-SourceEntry $entry
+        }
+      }
+    displayName: Clean source directory
+    condition: and(succeeded(), eq(variables['Agent.OS'], 'Windows_NT'))
+
+  - powershell: |
       # As this is a pull request, we need to do a fake merge
       # uses similar process to existing checkout task
+      $localPath=$env:BUILD_REPOSITORY_LOCALPATH
       $prBranch=$env:SYSTEM_PULLREQUEST_SOURCEBRANCH
       echo "Checking out merge commit for ${{ parameters.targetShaId }} and $prBranch"
       echo "Checking out merge commit for ${{ parameters.targetShaId }} and $prBranch"
@@ -159,8 +199,47 @@ steps:
     displayName: clean
     condition: and(succeeded(), not(eq(variables['Agent.OS'], 'Windows_NT')))
 
-  - powershell: rm "$env:BUILD_REPOSITORY_LOCALPATH/*" -r -fo -Exclude ".git"
-    displayName: clean
+  - powershell: |
+      function Remove-SourceEntry {
+        param([string] $Path)
+
+        $attributes = [System.IO.File]::GetAttributes($Path)
+        if (($attributes -band [System.IO.FileAttributes]::ReparsePoint) -ne 0) {
+          if (($attributes -band [System.IO.FileAttributes]::Directory) -ne 0) {
+            cmd.exe /d /c "rd `"$Path`""
+          }
+          else {
+            cmd.exe /d /c "del /f /q `"$Path`""
+          }
+
+          if ($LASTEXITCODE -ne 0) {
+            throw "Failed to remove reparse point '$Path'."
+          }
+
+          return
+        }
+
+        if (($attributes -band [System.IO.FileAttributes]::Directory) -ne 0) {
+          foreach ($child in [System.IO.Directory]::GetFileSystemEntries($Path)) {
+            Remove-SourceEntry $child
+          }
+
+          [System.IO.File]::SetAttributes($Path, [System.IO.FileAttributes]::Normal)
+          [System.IO.Directory]::Delete($Path)
+          return
+        }
+
+        [System.IO.File]::SetAttributes($Path, [System.IO.FileAttributes]::Normal)
+        [System.IO.File]::Delete($Path)
+      }
+
+      $localPath = $env:BUILD_REPOSITORY_LOCALPATH
+      foreach ($entry in [System.IO.Directory]::GetFileSystemEntries($localPath)) {
+        if ([System.IO.Path]::GetFileName($entry) -ne '.git') {
+          Remove-SourceEntry $entry
+        }
+      }
+    displayName: Clean source directory
     condition: and(succeeded(), eq(variables['Agent.OS'], 'Windows_NT'))
 
   - checkout: self
