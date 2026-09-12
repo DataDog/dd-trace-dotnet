@@ -555,8 +555,12 @@ namespace Datadog.Trace.DuckTyping
                     }
                 }
 
-                // The proxy must have the same or less parameters than the candidate ( less is due to possible optional parameters in the candidate ).
-                if (proxyMethodParameters.Length > candidateParameters.Length)
+                // A direct IL call must place one value on the evaluation stack for every target parameter.
+                // Optional parameters are a C# call-site feature: the compiler substitutes their constants before
+                // emitting the call, while Reflection.Emit still requires the complete target signature. Until
+                // DuckTyping explicitly emits every omitted default value, accepting a shorter proxy signature
+                // would create a call with an incomplete stack and produce InvalidProgramException at invocation.
+                if (proxyMethodParameters.Length != candidateParameters.Length)
                 {
                     continue;
                 }
@@ -686,21 +690,6 @@ namespace Datadog.Trace.DuckTyping
                                 }
                             }
                         }
-                    }
-                }
-
-                if (skip)
-                {
-                    continue;
-                }
-
-                // The target method may have optional parameters with default values so we have to skip those
-                for (int i = proxyMethodParametersTypes.Length; i < candidateParameters.Length; i++)
-                {
-                    if (!candidateParameters[i].IsOptional)
-                    {
-                        skip = true;
-                        break;
                     }
                 }
 
@@ -989,13 +978,12 @@ namespace Datadog.Trace.DuckTyping
 
                     if (outerParamInfo is null)
                     {
-                        // The outer (proxy) method is missing parameters, we check if the target parameter is optional
-                        // This will not occur for reverse proxies, where the parameter count must match
-                        if (!innerParamInfo.IsOptional)
-                        {
-                            // The target method parameter is not optional.
-                            return DuckTypeProxyMethodParameterIsMissingException.Create(outerMethod, innerParamInfo);
-                        }
+                        // The proxy cannot omit a target parameter, including an optional one. Optional defaults
+                        // are inserted by language compilers at their call sites; a generated IL call must still
+                        // push the argument explicitly. Keep this defensive check even though normal method
+                        // selection rejects unequal counts, because attribute-based selection can identify a
+                        // target by its declared parameter type names.
+                        return DuckTypeProxyMethodParameterIsMissingException.Create(outerMethod, innerParamInfo);
                     }
                     else
                     {
