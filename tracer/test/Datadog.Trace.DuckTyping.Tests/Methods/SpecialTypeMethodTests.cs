@@ -55,7 +55,10 @@ public unsafe class SpecialTypeMethodTests
         target.DuckIs(proxyType).Should().BeFalse();
     }
 
-#if NET5_0_OR_GREATER
+    // .NET 5 through .NET 7 reflection represents a function-pointer signature as IntPtr, so boxing the
+    // reflected value is valid there. Starting with .NET 8, reflection preserves the function-pointer type
+    // and DuckTyping must reject any attempt to treat that evaluation-stack value as an object reference.
+#if NET8_0_OR_GREATER
     [Fact]
     public void FunctionPointerReturnedAsObjectIsRejected()
     {
@@ -96,7 +99,7 @@ public unsafe class SpecialTypeMethodTests
         object GetPointer();
     }
 
-#if NET5_0_OR_GREATER
+#if NET8_0_OR_GREATER
     private interface IFunctionPointerAsObjectProxy
     {
         object GetFunctionPointer();
@@ -117,7 +120,7 @@ public unsafe class SpecialTypeMethodTests
         public long* GetPointer() => (long*)0x1234;
     }
 
-#if NET5_0_OR_GREATER
+#if NET8_0_OR_GREATER
     private class FunctionPointerTarget
     {
         public delegate*<void> GetFunctionPointer() => &Empty;
