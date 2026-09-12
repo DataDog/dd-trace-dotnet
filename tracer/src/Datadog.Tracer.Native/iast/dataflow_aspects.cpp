@@ -39,7 +39,7 @@ namespace iast
     {
         std::vector<DataflowAspectFilterValue> res;
         auto parts = Split(TrimEnd(TrimStart(filter, WStr("[")), WStr("]")), WStr(","));
-        for(auto part : parts)
+        for(auto &part : parts)
         {
             res.push_back(ParseAspectFilterValue(Trim(part)));
         }
@@ -233,7 +233,7 @@ namespace iast
         }
         if ((int)parts.size() > ++part) // TargetType
         {
-            WSTRING assembliesPart, targetParams;
+            WSTRING assembliesPart;
 
             SplitType(parts[part], &assembliesPart, &_targetType);
             if (assembliesPart.length() > 0)
@@ -333,17 +333,17 @@ namespace iast
         mdTypeRef targetTypeRef = 0; 
         std::vector<mdTypeRef> paramTypeRefs; 
         std::vector<mdMemberRef> targetMethodRefCandidates;
-        hr = module->FindTypeRefByName(_targetMethodType.c_str(), &targetMethodTypeRef);
+        hr = module->FindTypeRefByName(_targetMethodType, &targetMethodTypeRef);
         if (SUCCEEDED(hr))
         {
-            module->FindMemberRefsByName(targetMethodTypeRef, _targetMethodName.c_str(), targetMethodRefCandidates);
+            module->FindMemberRefsByName(targetMethodTypeRef, _targetMethodName, targetMethodRefCandidates);
         }
         else if (this->IsTargetModule(module))
         {
-            hr = module->GetTypeDef(_targetMethodType.c_str(), &targetMethodTypeRef);
+            hr = module->GetTypeDef(_targetMethodType, &targetMethodTypeRef);
             if (SUCCEEDED(hr))
             {
-                auto methods = module->GetMethods(targetMethodTypeRef, _targetMethodName.c_str());
+                auto methods = module->GetMethods(targetMethodTypeRef, _targetMethodName);
                 for (auto method : methods)
                 {
                     targetMethodRefCandidates.push_back(method->GetMethodDef());
@@ -360,7 +360,7 @@ namespace iast
                 {
                     if (auto sig = memberRefInfo->GetSignature())
                     {
-                        auto sigRepresentation = sig->GetParamsRepresentation();
+                        const auto &sigRepresentation = sig->GetParamsRepresentation();
                         if (sigRepresentation == _targetMethodParams)
                         {
                             //Found the method
@@ -395,7 +395,7 @@ namespace iast
             if (targetMethodRef != 0 && _isVirtual)
             {
                 //Look for virtual target typeRef
-                if (FAILED(module->FindTypeRefByName(_targetType.c_str(), &targetTypeRef)))
+                if (FAILED(module->FindTypeRefByName(_targetType, &targetTypeRef)))
                 {
                     targetMethodRef = 0;
                 }
@@ -659,7 +659,7 @@ namespace iast
                 {
                     if (IsReplace(_aspect->_behavior) || _aspect->_paramShift[x] == 0)
                     {
-                        instructionsToProcess.push_back(InstructionProcessInfo(instruction, x, _aspect->_behavior));
+                        instructionsToProcess.emplace_back(instruction, x, _aspect->_behavior);
                     }
                     else if (!IsReplace(_aspect->_behavior) && _aspect->_paramShift[x] > 0)
                     {
@@ -669,7 +669,7 @@ namespace iast
                         int paramCount = methodSig->GetEffectiveParamCount();
                         for (auto iInfo : processor->StackAnalysis()->LocateCallParamInstructions(instruction, paramCount - _aspect->_paramShift[x] - 1)) //Locate param load instruction
                         {
-                            instructionsToProcess.push_back(InstructionProcessInfo(iInfo->_instruction, x, AspectBehavior::InsertAfter)); //Insert after the target param load always
+                            instructionsToProcess.emplace_back(iInfo->_instruction, x, AspectBehavior::InsertAfter); //Insert after the target param load always
                         }
                         if (instructionsToProcess.size() == 0)
                         {

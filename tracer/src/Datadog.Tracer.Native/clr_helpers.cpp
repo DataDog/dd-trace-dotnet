@@ -318,7 +318,7 @@ TypeInfoLeaf ResolveTypeInfoLeaf(const ComPtr<IMetaDataImport2>& metadata_import
         leaf.type_spec = typeSpec;
         leaf.token_type = typeSpec != mdTypeSpecNil ? mdtTypeSpec : token_type;
 
-        const auto generic_token_index = leaf.name.rfind(WStr("`"));
+        const auto generic_token_index = leaf.name.rfind(WStr('`'));
         if (generic_token_index != std::string::npos)
         {
             const auto idxFromRight = leaf.name.length() - generic_token_index - 1;
