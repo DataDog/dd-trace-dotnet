@@ -533,7 +533,7 @@ namespace Datadog.Trace.DuckTyping
                 modifiers: null);
             if (toStringTargetMethod?.ReturnType != typeof(string))
             {
-                toStringTargetMethod = typeof(object).GetMethod(nameof(IDuckType.ToString), Type.EmptyTypes)!;
+                toStringTargetMethod = _objectToStringMethodInfo;
             }
 
             MethodBuilder toStringMethod = proxyTypeBuilder.DefineMethod(
