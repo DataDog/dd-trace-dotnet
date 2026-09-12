@@ -20,6 +20,7 @@ namespace Datadog.Trace.DuckTyping
     internal static class ILHelpersExtensions
     {
         private static readonly List<DynamicMethod> DynamicMethods = new();
+        private static readonly PropertyInfo? IsFunctionPointerProperty = typeof(Type).GetProperty("IsFunctionPointer", BindingFlags.Instance | BindingFlags.Public);
 
         internal static DynamicMethod GetDynamicMethodForIndex(int index)
         {
@@ -275,6 +276,16 @@ namespace Datadog.Trace.DuckTyping
                 return null;
             }
 
+            // Managed references, unmanaged pointers and function pointers are special evaluation-stack
+            // categories. They are not object references, even though reflection reports them as non-value
+            // types, and castclass, box or an omitted conversion cannot change one special category into
+            // another. Their exact reflected types must match before IL emission; otherwise the generated body
+            // can be unverifiable or make the runtime consume an address using the wrong calling convention.
+            if (RequiresExactTypeMatch(actualUnderlyingType) || RequiresExactTypeMatch(expectedUnderlyingType))
+            {
+                return DuckTypeInvalidTypeConversionException.Create(actualType, expectedType);
+            }
+
             if (actualUnderlyingType.IsValueType)
             {
                 if (expectedUnderlyingType.IsValueType)
@@ -365,6 +376,16 @@ namespace Datadog.Trace.DuckTyping
                 return null;
             }
 
+            // Managed references, unmanaged pointers and function pointers are special evaluation-stack
+            // categories. They are not object references, even though reflection reports them as non-value
+            // types, and castclass, box or an omitted conversion cannot change one special category into
+            // another. Their exact reflected types must match before IL emission; otherwise the generated body
+            // can be unverifiable or make the runtime consume an address using the wrong calling convention.
+            if (RequiresExactTypeMatch(actualUnderlyingType) || RequiresExactTypeMatch(expectedUnderlyingType))
+            {
+                return DuckTypeInvalidTypeConversionException.Create(actualType, expectedType);
+            }
+
             if (actualUnderlyingType.IsValueType)
             {
                 if (expectedUnderlyingType.IsValueType)
@@ -389,6 +410,25 @@ namespace Datadog.Trace.DuckTyping
             }
 
             return null;
+        }
+
+        /// <summary>
+        /// Returns whether a reflected type represents an evaluation-stack category that cannot participate in
+        /// the boxing and reference conversions supported by <see cref="WriteTypeConversion"/>.
+        /// </summary>
+        /// <param name="type">Type to inspect.</param>
+        /// <returns><c>true</c> when only an exact type match can be emitted safely.</returns>
+        private static bool RequiresExactTypeMatch(Type type)
+        {
+            if (type.IsByRef || type.IsPointer)
+            {
+                return true;
+            }
+
+            // Type.IsFunctionPointer is not part of every reference assembly targeted by the tracer. The
+            // running runtime can still expose function-pointer metadata for an inspected assembly, so query
+            // the property when it is available instead of silently treating the type as an object reference.
+            return IsFunctionPointerProperty?.GetValue(type, index: null) is true;
         }
 
         /// <summary>
