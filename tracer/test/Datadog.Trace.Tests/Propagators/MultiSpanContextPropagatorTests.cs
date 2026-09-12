@@ -482,7 +482,7 @@ namespace Datadog.Trace.Tests.Propagators
             var result = restartPropagator.Extract(headers.Object);
 
             result.SpanContext.Should().BeNull();
-            result.Links.Should().ContainSingle().Which.Context.OtelTraceState.Should().Be("rv:ef284ace7a91e1;th:e6666666666668");
+            result.Links.Should().ContainSingle().Which.Context.OtelTraceState.CachedHeaderString.Should().Be("rv:ef284ace7a91e1;th:e6666666666668");
         }
 
         [Fact]
@@ -809,7 +809,7 @@ namespace Datadog.Trace.Tests.Propagators
                       },
                       opts => opts.ExcludingMissingMembers());
 
-            result.SpanContext!.OtelTraceState.Should().Be(!extractFirst || w3CHeaderFirst ? "rv:ef284ace7a91e1;th:e6666666666668" : null);
+            result.SpanContext!.OtelTraceState?.CachedHeaderString.Should().Be(!extractFirst || w3CHeaderFirst ? "rv:ef284ace7a91e1;th:e6666666666668" : null);
             result.Baggage.Should().BeNull();
             result.Links.Should().BeNullOrEmpty();
         }
