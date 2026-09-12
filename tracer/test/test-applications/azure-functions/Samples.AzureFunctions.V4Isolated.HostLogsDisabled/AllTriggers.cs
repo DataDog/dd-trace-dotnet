@@ -1,8 +1,4 @@
-using System.Collections;
-using System.Collections.Generic;
-using System.Diagnostics;
 using System.Net;
-using System.Net.Http.Headers;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.Extensions.Hosting;
@@ -15,7 +11,9 @@ public class AllTriggers
     private readonly IHostApplicationLifetime _lifetime;
     private const string AtMidnightOnFirstJan = "0 0 0 1 Jan *";
     private static readonly HttpClient HttpClient = new();
-    private static readonly ManualResetEventSlim _mutex = new(initialState: false, spinCount: 0);
+    private static int _shutdownStarted;
+
+    private static readonly string FunctionBaseUrl = $"http://{Environment.GetEnvironmentVariable("WEBSITE_HOSTNAME") ?? "localhost:7071"}";
 
     private readonly ILogger _logger;
 
@@ -35,31 +33,20 @@ public class AllTriggers
         _logger.LogInformation("$Profiler env vars: {EnvVars}", envVars);
 
         _logger.LogInformation($"C# Timer trigger function executed at: {DateTime.Now}");
+
+        // The startup timer can run before the HTTP listener is ready, which would lose the self-call spans.
+        await AzureFunctionsTestHelpers.WaitForFunctionHostToAcceptHttpRequestsAsync(FunctionBaseUrl);
         await CallFunctionHttp("trigger");
+
         _logger.LogInformation($"Trigger All Timer complete: {DateTime.Now}");
-        _mutex.Set();
     }
 
-    [Function("ExitApp")]
-    public void ExitApp([TimerTrigger(AtMidnightOnFirstJan, RunOnStartup = true)] TimerInfo myTimer)
+    [Function("Shutdown")]
+    public HttpResponseData Shutdown(
+        [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "shutdown")] HttpRequestData req)
     {
-        _logger.LogInformation($"Waiting for mutex");
-        if (!_mutex.Wait(TimeSpan.FromMinutes(5)))
-        {
-            _logger.LogError($"Error waiting for mutex: not obtained after 5 minutes!");
-        }
-
-        _logger.LogInformation($"Pausing for 3s");
-        Thread.Sleep(3_000); // just need time for the TriggerAllTimer to finish up etc
-
-        _logger.LogInformation($"Calling StopApplication()");
-        _lifetime.StopApplication();
-        // brutally kill the host, as can't find any other way to signal it should stop
-        foreach (var process in Process.GetProcessesByName("func"))
-        {
-            _logger.LogInformation("Killing {PID} ({Name})", process.Id, process.ProcessName);
-            process.Kill();
-        }
+        ScheduleShutdown();
+        return req.CreateResponse(HttpStatusCode.Accepted);
     }
 
     [Function("SimpleHttpTrigger")]
@@ -133,13 +120,29 @@ public class AllTriggers
         return req.CreateResponse(HttpStatusCode.BadRequest);
     }
 
-    private async Task<string> CallFunctionHttp(string path)
+    private Task<string> CallFunctionHttp(string path)
     {
-        var httpFunctionUrl = Environment.GetEnvironmentVariable("WEBSITE_HOSTNAME") ?? "localhost:7071";
-        var uri = $"{$"http://{httpFunctionUrl}"}/api/{path}";
+        var uri = $"{FunctionBaseUrl}/api/{path}";
         _logger.LogInformation("Calling Uri {Uri}", uri);
-        var simpleResponse = await HttpClient.GetStringAsync(uri);
-        return simpleResponse;
+        return HttpClient.GetStringAsync(uri);
+    }
+
+    private void ScheduleShutdown()
+    {
+        // Concurrent shutdown requests must not race to stop the shared worker.
+        if (Interlocked.Exchange(ref _shutdownStarted, 1) == 0)
+        {
+            _ = StopWorkerAsync();
+        }
+    }
+
+    private async Task StopWorkerAsync()
+    {
+        // Give the shutdown response time to reach the test before stopping the worker.
+        await Task.Delay(TimeSpan.FromMilliseconds(250));
+        await SampleHelpers.ForceTracerFlushAsync();
+        _logger.LogInformation("Stopping Azure Functions worker");
+        _lifetime.StopApplication();
     }
 
     private async Task Attempt(string endpoint, bool expectFailure = false)
