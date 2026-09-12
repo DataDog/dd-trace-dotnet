@@ -153,7 +153,6 @@ namespace Datadog.Trace.DuckTyping
 
                 // Gets the proxy method definition generic arguments
                 Type[] proxyMethodDefinitionGenericArguments = proxyMethodDefinition.GetGenericArguments();
-                string[] proxyMethodDefinitionGenericArgumentsNames = proxyMethodDefinitionGenericArguments.Select(a => a.Name).ToArray();
 
                 // Checks if the target method is a generic method while the proxy method is non generic (checks if the Duck attribute contains the generic parameters)
                 Type[] targetMethodGenericArguments = targetMethod.GetGenericArguments();
@@ -208,7 +207,13 @@ namespace Datadog.Trace.DuckTyping
 
                 // Create the proxy method implementation
                 MethodBuilder? proxyMethod = proxyTypeBuilder?.DefineMethod(proxyMethodDefinition.Name, proxyMethodAttributes, proxyMethodDefinition.ReturnType, proxyMethodDefinitionParametersTypes);
-                LazyILGenerator il = MethodIlHelper.InitialiseProxyMethod(proxyMethod, proxyMethodDefinitionParameters, proxyMethodDefinitionGenericArgumentsNames, targetMethod, instanceField);
+                LazyILGenerator il = MethodIlHelper.InitialiseProxyMethod(
+                    proxyMethod,
+                    proxyMethodDefinitionParameters,
+                    proxyMethodDefinitionGenericArguments,
+                    targetMethod,
+                    instanceField,
+                    out Type[] proxyMethodGenericArguments);
 
                 // Load all the arguments / parameters
                 if (MethodIlHelper.AddIlToLoadArguments(
@@ -233,7 +238,7 @@ namespace Datadog.Trace.DuckTyping
                 {
                     // If the instance is public we can emit directly without any dynamic method
 
-                    targetMethod = MethodIlHelper.AddIlForDirectMethodCall(il, targetMethod, proxyMethodDefinitionGenericArguments);
+                    targetMethod = MethodIlHelper.AddIlForDirectMethodCall(il, targetMethod, proxyMethodGenericArguments);
                 }
                 else
                 {
@@ -322,7 +327,6 @@ namespace Datadog.Trace.DuckTyping
                 // Gets the proxy method definition generic arguments
                 Type[] overriddenMethodGenericArguments = overriddenMethod.GetGenericArguments();
                 Type[] implementationDefinitionGenericArguments = implementationMethod.GetGenericArguments();
-                string[] implementationDefinitionGenericArgumentsNames = implementationDefinitionGenericArguments.Select(a => a.Name).ToArray();
 
                 // Reverse duck typing doesn't support providing a non-generic implementation for a generic method
                 if (overriddenMethodGenericArguments.Length > 0
@@ -359,7 +363,13 @@ namespace Datadog.Trace.DuckTyping
 
                 // Create the proxy method implementation
                 MethodBuilder? proxyMethod = proxyTypeBuilder?.DefineMethod(overriddenMethod.Name, proxyMethodAttributes, overriddenMethod.ReturnType, overriddenMethodParametersTypes);
-                LazyILGenerator il = MethodIlHelper.InitialiseProxyMethod(proxyMethod, overriddenMethodParameters, implementationDefinitionGenericArgumentsNames, implementationMethod, instanceField);
+                LazyILGenerator il = MethodIlHelper.InitialiseProxyMethod(
+                    proxyMethod,
+                    overriddenMethodParameters,
+                    overriddenMethodGenericArguments,
+                    implementationMethod,
+                    instanceField,
+                    out Type[] proxyMethodGenericArguments);
 
                 // Load all the arguments / parameters
                 if (MethodIlHelper.AddIlToLoadArguments(
@@ -382,7 +392,7 @@ namespace Datadog.Trace.DuckTyping
                 // We know we have direct access to the target method because we defined it in our proxy
 
                 // If the instance is public we can emit directly without any dynamic method
-                implementationMethod = MethodIlHelper.AddIlForDirectMethodCall(il, implementationMethod, overriddenMethodGenericArguments);
+                implementationMethod = MethodIlHelper.AddIlForDirectMethodCall(il, implementationMethod, proxyMethodGenericArguments);
 
                 // We check if we have output or ref parameters to set in the proxy method
                 if (outputAndRefParameters is not null)
@@ -916,19 +926,34 @@ namespace Datadog.Trace.DuckTyping
             internal static LazyILGenerator InitialiseProxyMethod(
                 MethodBuilder? proxyMethod,
                 ParameterInfo[] proxyMethodDefinitionParameters,
-                string[] proxyMethodDefinitionGenericArgumentsNames,
+                Type[] proxyMethodDefinitionGenericArguments,
                 MethodInfo targetMethod,
-                FieldInfo? instanceField)
+                FieldInfo? instanceField,
+                out Type[] proxyMethodGenericArguments)
             {
                 if (proxyMethod is null)
                 {
+                    // Dry runs do not define a MethodBuilder, but the remaining validation still needs the
+                    // definition parameters to construct and check the target generic method.
+                    proxyMethodGenericArguments = proxyMethodDefinitionGenericArguments;
                     return new LazyILGenerator(null);
                 }
 
                 ParameterBuilder[] proxyMethodParametersBuilders = new ParameterBuilder[proxyMethodDefinitionParameters.Length];
-                if (proxyMethodDefinitionGenericArgumentsNames.Length > 0)
+                if (proxyMethodDefinitionGenericArguments.Length > 0)
                 {
-                    _ = proxyMethod.DefineGenericParameters(proxyMethodDefinitionGenericArgumentsNames);
+                    // DefineGenericParameters creates new placeholders owned by the emitted proxy method. Names
+                    // alone are insufficient: without the source attributes and type constraints the CLR must
+                    // treat every placeholder as unconstrained, and a call to a constrained target method then
+                    // fails verification even when the original proxy contract declared the same constraints.
+                    GenericTypeParameterBuilder[] genericParameterBuilders =
+                        proxyMethod.DefineGenericParameters(proxyMethodDefinitionGenericArguments.Select(argument => argument.Name).ToArray());
+                    CopyGenericParameterConstraints(proxyMethodDefinitionGenericArguments, genericParameterBuilders);
+                    proxyMethodGenericArguments = genericParameterBuilders;
+                }
+                else
+                {
+                    proxyMethodGenericArguments = Type.EmptyTypes;
                 }
 
                 // Define the proxy method implementation parameters for optional parameters with default values
@@ -957,6 +982,98 @@ namespace Datadog.Trace.DuckTyping
                 }
 
                 return il;
+            }
+
+            /// <summary>
+            /// Copies the generic parameter contract from a proxy definition to the parameters owned by the
+            /// emitted method.
+            /// </summary>
+            /// <param name="definitionArguments">Generic parameters from the proxy method definition.</param>
+            /// <param name="emittedArguments">Generic parameter builders owned by the emitted proxy method.</param>
+            private static void CopyGenericParameterConstraints(
+                Type[] definitionArguments,
+                GenericTypeParameterBuilder[] emittedArguments)
+            {
+                for (int i = 0; i < definitionArguments.Length; i++)
+                {
+                    Type definitionArgument = definitionArguments[i];
+                    GenericTypeParameterBuilder emittedArgument = emittedArguments[i];
+                    emittedArgument.SetGenericParameterAttributes(definitionArgument.GenericParameterAttributes);
+
+                    Type? baseTypeConstraint = null;
+                    List<Type>? interfaceConstraints = null;
+                    foreach (Type constraint in definitionArgument.GetGenericParameterConstraints())
+                    {
+                        Type emittedConstraint = ReplaceMethodGenericParameters(
+                            constraint,
+                            definitionArguments,
+                            emittedArguments);
+
+                        if (emittedConstraint.IsInterface)
+                        {
+                            interfaceConstraints ??= new List<Type>();
+                            interfaceConstraints.Add(emittedConstraint);
+                        }
+                        else
+                        {
+                            // CLR metadata permits one class constraint. A constraint that references another
+                            // method generic parameter also belongs in this slot, even though reflection does
+                            // not report that placeholder as a class.
+                            baseTypeConstraint = emittedConstraint;
+                        }
+                    }
+
+                    if (baseTypeConstraint is not null)
+                    {
+                        emittedArgument.SetBaseTypeConstraint(baseTypeConstraint);
+                    }
+
+                    if (interfaceConstraints is not null)
+                    {
+                        emittedArgument.SetInterfaceConstraints(interfaceConstraints.ToArray());
+                    }
+                }
+            }
+
+            /// <summary>
+            /// Rebuilds a constraint so any method generic placeholders are owned by the emitted proxy method.
+            /// Type-level generic parameters remain unchanged because the generated proxy type already owns them.
+            /// </summary>
+            /// <param name="type">Constraint type to rebuild.</param>
+            /// <param name="definitionArguments">Parameters owned by the source method definition.</param>
+            /// <param name="emittedArguments">Parameters owned by the emitted proxy method.</param>
+            /// <returns>The constraint expressed in terms of the emitted method parameters.</returns>
+            private static Type ReplaceMethodGenericParameters(
+                Type type,
+                Type[] definitionArguments,
+                GenericTypeParameterBuilder[] emittedArguments)
+            {
+                if (type.IsGenericParameter && type.DeclaringMethod is not null)
+                {
+                    int position = type.GenericParameterPosition;
+                    if (position < definitionArguments.Length && type == definitionArguments[position])
+                    {
+                        return emittedArguments[position];
+                    }
+
+                    return type;
+                }
+
+                if (!type.IsGenericType)
+                {
+                    return type;
+                }
+
+                Type[] genericArguments = type.GetGenericArguments();
+                for (int i = 0; i < genericArguments.Length; i++)
+                {
+                    genericArguments[i] = ReplaceMethodGenericParameters(
+                        genericArguments[i],
+                        definitionArguments,
+                        emittedArguments);
+                }
+
+                return type.GetGenericTypeDefinition().MakeGenericType(genericArguments);
             }
 
             internal static DuckTypeException? AddIlToLoadArguments(
@@ -1157,12 +1274,14 @@ namespace Datadog.Trace.DuckTyping
             internal static MethodInfo AddIlForDirectMethodCall(
                 LazyILGenerator il,
                 MethodInfo targetMethod,
-                Type[] proxyMethodDefinitionGenericArguments)
+                Type[] proxyMethodGenericArguments)
             {
-                // Create generic method call
-                if (proxyMethodDefinitionGenericArguments.Length > 0)
+                // Construct the target with parameters owned by the emitted method. Reusing the generic
+                // parameters from the source MethodInfo loses the relationship between the emitted method's
+                // constraints and the call operand, which can make an otherwise valid body unverifiable.
+                if (proxyMethodGenericArguments.Length > 0)
                 {
-                    targetMethod = targetMethod.MakeGenericMethod(proxyMethodDefinitionGenericArguments);
+                    targetMethod = targetMethod.MakeGenericMethod(proxyMethodGenericArguments);
                 }
 
                 // Method call
