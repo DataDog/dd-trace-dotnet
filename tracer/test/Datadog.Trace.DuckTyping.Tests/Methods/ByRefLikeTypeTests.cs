@@ -6,6 +6,7 @@
 #if NETCOREAPP3_1_OR_GREATER
 
 using System;
+using System.Reflection;
 using FluentAssertions;
 using Xunit;
 
@@ -33,6 +34,7 @@ public class ByRefLikeTypeTests
 
         DuckType.CanCreate<ISpanReturnAsObjectProxy>(target).Should().BeFalse();
         target.DuckIs<ISpanReturnAsObjectProxy>().Should().BeFalse();
+        AssertInvalidConversion<ISpanReturnAsObjectProxy>(target);
     }
 
     [Fact]
@@ -42,6 +44,7 @@ public class ByRefLikeTypeTests
 
         DuckType.CanCreate<ISpanPropertyAsObjectProxy>(target).Should().BeFalse();
         target.DuckIs<ISpanPropertyAsObjectProxy>().Should().BeFalse();
+        AssertInvalidConversion<ISpanPropertyAsObjectProxy>(target);
     }
 
     [Fact]
@@ -51,6 +54,7 @@ public class ByRefLikeTypeTests
 
         DuckType.CanCreate<IObjectParameterProxy>(target).Should().BeFalse();
         target.DuckIs<IObjectParameterProxy>().Should().BeFalse();
+        AssertInvalidConversion<IObjectParameterProxy>(target);
     }
 
     [Fact]
@@ -60,6 +64,7 @@ public class ByRefLikeTypeTests
 
         DuckType.CanCreate<ISpanParameterProxy>(target).Should().BeFalse();
         target.DuckIs<ISpanParameterProxy>().Should().BeFalse();
+        AssertInvalidConversion<ISpanParameterProxy>(target);
     }
 
     [Fact]
@@ -70,6 +75,17 @@ public class ByRefLikeTypeTests
 
         ILHelpersExtensions.CheckTypeConversion(byRefSpan, byRefObject).Should().NotBeNull();
         ILHelpersExtensions.CheckTypeConversion(byRefObject, byRefSpan).Should().NotBeNull();
+    }
+
+    private static void AssertInvalidConversion<TProxy>(object target)
+    {
+        Action genericCast = () => target.DuckCast<TProxy>();
+        genericCast.Should().ThrowExactly<DuckTypeInvalidTypeConversionException>();
+
+        Action nonGenericCast = () => target.DuckCast(typeof(TProxy));
+        nonGenericCast.Should()
+                      .Throw<TargetInvocationException>()
+                      .WithInnerExceptionExactly<DuckTypeInvalidTypeConversionException>();
     }
 
     private interface IExactSpanReturnProxy
