@@ -2,6 +2,7 @@
 
 [*.{cs,vb}]
 dotnet_diagnostic.DDSEAL001.severity = error # types should be sealed
+dotnet_diagnostic.DDALLOC005.severity = none # Enum.ToString() - disabled until existing usages are migrated
 
 # Microsoft performance analyzers
 dotnet_diagnostic.CA1802.severity = error # Use Literals Where Appropriate
