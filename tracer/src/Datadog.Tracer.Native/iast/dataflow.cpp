@@ -821,6 +821,15 @@ bool Dataflow::HasModuleAndMethod(ModuleID moduleId, mdMethodDef methodDef)
 {
     return false;
 }
+void Dataflow::NotifyModuleLoaded(ModuleID moduleId)
+{
+}
+void Dataflow::AcquireInFlightRequest()
+{
+}
+void Dataflow::ReleaseInFlightRequest()
+{
+}
 void Dataflow::RemoveModule(ModuleID moduleId)
 {
 }
