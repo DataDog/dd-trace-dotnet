@@ -442,12 +442,23 @@ internal sealed class FeatureFlagsEvpTransport : IDisposable
 
             // The Agent contract proves these statuses mean the proxy route did not accept the
             // payload. An upstream 403 is not safe to replay because it may have been forwarded.
-            if (response.StatusCode is 404 or 405 && LeaveLocalRoute())
+            if (response.StatusCode is 404 or 405)
             {
-                await SendDirectAsync(intakePath, sendAsync).ConfigureAwait(false);
+                if (LeaveLocalRoute())
+                {
+                    await SendDirectAsync(intakePath, sendAsync).ConfigureAwait(false);
+                }
+                else
+                {
+                    Log.Warning<int>("Feature Flags local EVP request failed with HTTP status code {StatusCode}", response.StatusCode);
+                }
+
                 return;
             }
 
+            // Other responses may have come from upstream after the Agent accepted the payload.
+            // Never replay this batch, but leave the failed route for future Agentless batches.
+            LeaveLocalRoute();
             Log.Warning<int>("Feature Flags local EVP request failed with HTTP status code {StatusCode}", response.StatusCode);
         }
         catch (Exception ex) when (ClassifyNetworkFailure(ex) is NetworkFailure.DefinitivePreSend)

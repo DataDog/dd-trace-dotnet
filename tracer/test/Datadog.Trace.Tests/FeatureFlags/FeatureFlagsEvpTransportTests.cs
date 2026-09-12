@@ -329,20 +329,49 @@ public class FeatureFlagsEvpTransportTests
     [InlineData(429)]
     [InlineData(500)]
     [InlineData(503)]
-    public async Task PotentiallyForwardedOrRetryableHttpFailureDoesNotFallback(int statusCode)
+    public async Task PotentiallyForwardedOrRetryableHttpFailureChangesOnlyFutureBatchesToDirect(int statusCode)
     {
         var local = CreateFactory(
             "http://agent:8126/",
-            uri => new TestApiRequest(uri, statusCode),
-            uri => new TestApiRequest(uri));
+            uri => new TestApiRequest(uri, statusCode));
         var direct = CreateFactory("https://event-platform-intake.datadoghq.com/");
         using var transport = CreateTransport(local, direct, initialLocalProxyEndpoint: FeatureFlagsEvpTransport.EventPlatformProxyV4);
 
         await transport.SendAsync(new object(), FeatureFlagsEvpTransport.ExposureIntakePath, SerializerSettings);
         await transport.SendAsync(new object(), FeatureFlagsEvpTransport.FlagEvaluationIntakePath, SerializerSettings);
 
-        local.RequestsSent.Should().HaveCount(2);
-        direct.RequestsSent.Should().BeEmpty("the SDK must not replay a batch that the relay may have accepted");
+        local.RequestsSent.Should().ContainSingle();
+        direct.RequestsSent.Should().ContainSingle("the failed batch is not replayed, but the next batch uses direct intake");
+    }
+
+    [Theory]
+    [InlineData(403)]
+    [InlineData(429)]
+    [InlineData(500)]
+    [InlineData(503)]
+    public async Task PotentiallyForwardedOrRetryableHttpFailureWithoutDirectCredentialsEntersCooldown(int statusCode)
+    {
+        var now = new DateTimeOffset(2026, 9, 12, 0, 0, 0, TimeSpan.Zero);
+        var local = CreateFactory(
+            "http://agent:8126/",
+            uri => new TestApiRequest(uri, statusCode),
+            uri => new TestApiRequest(uri));
+        using var transport = CreateTransport(
+            local,
+            direct: null,
+            initialLocalProxyEndpoint: FeatureFlagsEvpTransport.EventPlatformProxyV4,
+            routeRecoveryCooldown: TimeSpan.FromMinutes(1),
+            utcNow: () => now);
+
+        await transport.SendAsync(new object(), FeatureFlagsEvpTransport.ExposureIntakePath, SerializerSettings);
+        await transport.SendAsync(new object(), FeatureFlagsEvpTransport.FlagEvaluationIntakePath, SerializerSettings);
+
+        local.RequestsSent.Should().ContainSingle("the failed route remains unavailable during cooldown");
+
+        now = now.AddMinutes(1);
+        await transport.SendAsync(new object(), FeatureFlagsEvpTransport.FlagEvaluationIntakePath, SerializerSettings);
+
+        local.RequestsSent.Should().HaveCount(2, "one post-cooldown local probe restores delivery");
     }
 
     [Theory]
