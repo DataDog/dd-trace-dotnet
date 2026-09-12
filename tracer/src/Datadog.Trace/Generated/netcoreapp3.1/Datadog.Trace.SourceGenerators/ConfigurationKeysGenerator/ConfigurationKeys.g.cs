@@ -36,6 +36,14 @@ internal static partial class ConfigurationKeys
     public const string AgentHost = "DD_AGENT_HOST";
 
     /// <summary>
+    /// Global switch for sending supported product data directly to Datadog intake instead of through the local Agent.
+    /// When explicitly set, this value takes precedence over supported product-specific agentless settings.
+    /// Existing product-specific settings may be used as compatibility fallbacks when this key is not set.
+    /// Default value is false (disabled).
+    /// </summary>
+    public const string AgentlessEnabled = "DD_AGENTLESS_ENABLED";
+
+    /// <summary>
     /// Configuration key for setting the API key, used by the Agent.
     /// </summary>
     public const string ApiKey = "DD_API_KEY";
