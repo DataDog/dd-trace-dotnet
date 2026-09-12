@@ -51,7 +51,18 @@ internal sealed class FfeProduct
                     var serverConfigFile = new NamedRawFile(ffeConfig.Path, ffeConfig.Contents).Deserialize<ServerConfiguration>();
                     if (serverConfigFile.TypedFile is not null)
                     {
-                        _serverConfigurations.Add(new KeyValuePair<string, ServerConfiguration>(ffeConfig.Path.Path, serverConfigFile.TypedFile));
+                        var path = ffeConfig.Path.Path;
+                        var updatedConfig = new KeyValuePair<string, ServerConfiguration>(path, serverConfigFile.TypedFile);
+                        var existingIndex = _serverConfigurations.FindIndex(config => config.Key == path);
+                        if (existingIndex >= 0)
+                        {
+                            _serverConfigurations[existingIndex] = updatedConfig;
+                        }
+                        else
+                        {
+                            _serverConfigurations.Add(updatedConfig);
+                        }
+
                         res.Add(ApplyDetails.FromOk(ffeConfig.Path.Path));
                         apply = true;
                     }
