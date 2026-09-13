@@ -1,0 +1,183 @@
+{
+  "$id": "precomputed-assignment",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "FLEX Precomputed Assignment Fixture",
+  "description": "Schema for precomputed assignment test fixtures consumed by client SDKs.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["name", "description", "context", "response", "evaluations", "expectations"],
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Fixture identifier; should match the filename stem."
+    },
+    "description": {
+      "type": "string",
+      "description": "Human-readable description of what the fixture tests."
+    },
+    "context": {
+      "$ref": "#/$defs/EvaluationContext"
+    },
+    "response": {
+      "type": "object",
+      "description": "Mocked precomputed-assignments response. Open-ended; downstream code validates the payload shape."
+    },
+    "evaluations": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Evaluation"
+      },
+      "minItems": 1
+    },
+    "expectations": {
+      "$ref": "#/$defs/Expectations"
+    },
+    "_skip": {
+      "$ref": "#/$defs/PlatformFilter",
+      "description": "Skip this entire fixture for listed platforms."
+    },
+    "_include": {
+      "$ref": "#/$defs/PlatformFilter",
+      "description": "Run this fixture only for listed platforms."
+    }
+  },
+  "not": {
+    "required": ["_skip", "_include"]
+  },
+  "$defs": {
+    "PlatformFilterEntry": {
+      "type": "object",
+      "required": ["platform"],
+      "additionalProperties": false,
+      "properties": {
+        "platform": {
+          "type": "string",
+          "description": "Platform identifier (e.g., web, ios, android, flutter, react-native, maui, kotlin-multiplatform, electron)."
+        },
+        "reason": {
+          "type": "string",
+          "description": "Optional explanation for why this platform is skipped or included."
+        }
+      }
+    },
+    "PlatformFilter": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/PlatformFilterEntry"
+      },
+      "minItems": 1
+    },
+    "EvaluationContext": {
+      "type": "object",
+      "required": ["targetingKey", "attributes"],
+      "additionalProperties": false,
+      "properties": {
+        "targetingKey": {
+          "type": ["string", "null"]
+        },
+        "attributes": {
+          "type": "object"
+        }
+      }
+    },
+    "ExpectedResult": {
+      "type": "object",
+      "required": ["value"],
+      "additionalProperties": false,
+      "properties": {
+        "value": {
+          "description": "Expected flag value."
+        },
+        "reason": {
+          "type": ["string", "null"],
+          "description": "Expected OpenFeature reason code."
+        },
+        "errorCode": {
+          "type": ["string", "null"],
+          "description": "Expected OpenFeature error code."
+        },
+        "variantKey": {
+          "type": ["string", "null"],
+          "description": "Expected variation key."
+        }
+      }
+    },
+    "Evaluation": {
+      "type": "object",
+      "required": ["flag", "variationType", "defaultValue", "expectedResult"],
+      "additionalProperties": false,
+      "properties": {
+        "flag": {
+          "type": "string",
+          "description": "Flag key to evaluate."
+        },
+        "variationType": {
+          "type": "string",
+          "enum": ["boolean", "string", "integer", "float", "object"],
+          "description": "Type to request from the SDK getter."
+        },
+        "defaultValue": {
+          "description": "Default value passed to the getter."
+        },
+        "expectedResult": {
+          "$ref": "#/$defs/ExpectedResult"
+        },
+        "_skip": {
+          "$ref": "#/$defs/PlatformFilter"
+        },
+        "_include": {
+          "$ref": "#/$defs/PlatformFilter"
+        }
+      },
+      "not": {
+        "required": ["_skip", "_include"]
+      }
+    },
+    "EventMatcher": {
+      "type": "object",
+      "required": ["_count"],
+      "description": "Matches received events by subset. All keys not prefixed with _ are match fields compared against event data. Control fields: _count (required), _skip, _include.",
+      "properties": {
+        "_count": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Number of events this matcher should consume."
+        },
+        "_skip": {
+          "$ref": "#/$defs/PlatformFilter"
+        },
+        "_include": {
+          "$ref": "#/$defs/PlatformFilter"
+        }
+      },
+      "not": {
+        "required": ["_skip", "_include"]
+      }
+    },
+    "Expectations": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "noUnmatchedEvents": {
+          "type": "boolean",
+          "default": false,
+          "description": "When true, assert that all received events (exposures and evaluations) are consumed by matchers. No extra events allowed."
+        },
+        "exposures": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/EventMatcher"
+          },
+          "description": "Ordered, exclusive matchers for exposure events."
+        },
+        "evaluationEvents": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/EventMatcher"
+          },
+          "description": "Ordered, exclusive matchers for flagevaluation events."
+        }
+      }
+    }
+  }
+}

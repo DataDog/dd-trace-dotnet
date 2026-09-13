@@ -1,0 +1,110 @@
+{
+  "name": "defaults-and-emission-gates",
+  "description": "Precomputed assignments that validate exposure gates, unknown variation isolation, and default/error flagevaluation payloads.",
+  "context": {
+    "targetingKey": "precomputed-user",
+    "attributes": {
+      "plan": "free",
+      "platform": "flutter"
+    }
+  },
+  "response": {
+    "data": {
+      "attributes": {
+        "flags": {
+          "flutter.fixture.silent": {
+            "allocationKey": "allocation-silent",
+            "variationKey": "silent-on",
+            "variationType": "boolean",
+            "variationValue": true,
+            "reason": "TARGETING_MATCH",
+            "doLog": false
+          },
+          "flutter.fixture.string": {
+            "allocationKey": "allocation-string",
+            "variationKey": "copy-b",
+            "variationType": "string",
+            "variationValue": "Actual string",
+            "reason": "TARGETING_MATCH",
+            "doLog": true
+          },
+          "flutter.fixture.unknown": {
+            "allocationKey": "allocation-unknown",
+            "variationKey": "unknown-a",
+            "variationType": "unsupported",
+            "variationValue": "Ignored",
+            "reason": "TARGETING_MATCH",
+            "doLog": true
+          }
+        }
+      }
+    }
+  },
+  "evaluations": [
+    {
+      "flag": "flutter.fixture.silent",
+      "variationType": "boolean",
+      "defaultValue": false,
+      "expectedResult": {
+        "value": true,
+        "reason": "TARGETING_MATCH",
+        "errorCode": null,
+        "variantKey": "silent-on"
+      }
+    },
+    {
+      "flag": "flutter.fixture.string",
+      "variationType": "boolean",
+      "defaultValue": false,
+      "expectedResult": {
+        "value": false,
+        "reason": null,
+        "errorCode": "TYPE_MISMATCH",
+        "variantKey": null
+      }
+    },
+    {
+      "flag": "flutter.fixture.unknown",
+      "variationType": "boolean",
+      "defaultValue": false,
+      "expectedResult": {
+        "value": false,
+        "reason": null,
+        "errorCode": "TYPE_MISMATCH",
+        "variantKey": null
+      }
+    },
+    {
+      "flag": "flutter.fixture.missing",
+      "variationType": "string",
+      "defaultValue": "fallback",
+      "expectedResult": {
+        "value": "fallback",
+        "reason": null,
+        "errorCode": "FLAG_NOT_FOUND",
+        "variantKey": null
+      }
+    }
+  ],
+  "expectations": {
+    "noUnmatchedEvents": true,
+    "evaluationEvents": [
+      {
+        "_count": 4,
+        "_skip": [
+          {
+            "platform": "web"
+          }
+        ]
+      },
+      {
+        "_count": 1,
+        "_include": [
+          {
+            "platform": "web"
+          }
+        ]
+      }
+    ]
+  }
+}
