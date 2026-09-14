@@ -162,12 +162,25 @@ RejitHandler* RejitHandlerModule::GetHandler()
 
 ModuleMetadata* RejitHandlerModule::GetModuleMetadata()
 {
+    std::lock_guard<std::mutex> guard(m_metadata_lock);
     return m_metadata.get();
 }
 
-void RejitHandlerModule::SetModuleMetadata(ModuleMetadata* metadata)
+// A module lifetime is a shared lease, so several preprocessors can reach the same module at once. Creating
+// the metadata has to be a single atomic create-if-absent: a plain set would let the loser of the race delete
+// the object that a concurrent rewrite is already working through. Once published the pointer is never
+// replaced, so it stays valid for as long as the caller holds the lease.
+bool RejitHandlerModule::CreateModuleMetadataIfNotExists(RejitHandlerModuleMetadataCreatorFunc creator)
 {
-    m_metadata = std::unique_ptr<ModuleMetadata>(metadata);
+    std::lock_guard<std::mutex> guard(m_metadata_lock);
+
+    if (m_metadata != nullptr)
+    {
+        return false;
+    }
+
+    m_metadata = creator();
+    return true;
 }
 
 bool RejitHandlerModule::CreateMethodIfNotExists(const mdMethodDef methodDef,
@@ -431,13 +444,17 @@ void RejitHandler::Shutdown()
         m_rejitters[x]->Shutdown();
     }
 
-    m_profilerInfo = nullptr;
-    m_profilerInfo10 = nullptr;
+    // m_profilerInfo / m_profilerInfo10 are deliberately left alone. They are owned by the CLR and stay valid
+    // for the life of the profiler, so clearing them bought nothing: callers that reach RequestRejit without a
+    // module lifetime (iast::Dataflow, JITInlining, the NGEN inliner enumeration) raced this and would null
+    // deref instead of simply receiving a failure HRESULT from the runtime.
 }
 
 bool RejitHandler::IsShutdownRequested()
 {
-    ReadLock r_lock(m_shutdown_lock);
+    // m_shutdown is atomic, and the value can go stale the moment a lock would be released anyway. The
+    // shutdown lock is only needed where it orders an enqueue against the terminator, not for advisory reads
+    // like this one, which sit on the JIT callback path.
     return m_shutdown;
 }
 

@@ -84,7 +84,20 @@ void RejitWorkOffloader::EnqueueThreadLoop(RejitWorkOffloader* offloader)
             // Execute given work
             // *************************************
 
-            item->func();
+            // An exception escaping here would unwind the thread function and terminate the process, turning a
+            // recoverable allocation failure into a hard crash in the customer's application.
+            try
+            {
+                item->func();
+            }
+            catch (const std::exception& ex)
+            {
+                Logger::Error("Exception while executing a ReJIT work item: ", ex.what());
+            }
+            catch (...)
+            {
+                Logger::Error("Unknown exception while executing a ReJIT work item.");
+            }
         }
     }
     Logger::Info("Exiting ReJIT request thread.");

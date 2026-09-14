@@ -1416,20 +1416,12 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ProfilerDetachSucceeded()
 
     CorProfilerBase::ProfilerDetachSucceeded();
 
-    // keep this lock until we are done using the module,
-    // to prevent it from unloading while in use
-    auto modules = module_ids.Get();
-
-    // double check if is_attached_ has changed to avoid possible race condition with shutdown function
-    if (!is_attached_)
-    {
-        return S_OK;
-    }
-
     Logger::Info("Detaching Instrumentation component");
     Logger::Flush();
-    is_attached_.store(false);
-    return S_OK;
+
+    // Shutdown owns the single is_attached_ transition and the ReJIT worker join, and is idempotent. Clearing
+    // is_attached_ here instead would make any later Shutdown() a no-op and leak the worker thread.
+    return Shutdown();
 }
 
 HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(FunctionID function_id, BOOL is_safe_to_block)

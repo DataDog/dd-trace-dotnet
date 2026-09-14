@@ -217,6 +217,47 @@ TEST(RejitHandlerShutdown, EnqueueForRejitResolvesPromiseAfterShutdown)
     EXPECT_EQ(std::future_status::ready, future.wait_for(1s));
 }
 
+// A module lifetime is a shared lease, so two preprocessors can reach the same module at once. Creating the
+// metadata has to be a single create-if-absent: with a plain check-then-set both threads allocate and the
+// loser's assignment deletes the instance a concurrent rewrite is still reading through.
+TEST(RejitHandlerModule, ConcurrentMetadataCreationPublishesExactlyOneInstance)
+{
+    constexpr int iterations = 200;
+
+    for (int i = 0; i < iterations; i++)
+    {
+        RejitHandlerModule module(1, nullptr);
+        std::atomic<int> created{0};
+        std::atomic<int> ready{0};
+
+        const auto create = [&]
+        {
+            // Line both threads up so they contend on the same create-if-absent.
+            ready++;
+            while (ready < 2)
+            {
+            }
+
+            module.CreateModuleMetadataIfNotExists(
+                [&]
+                {
+                    created++;
+                    return std::make_unique<ModuleMetadata>(
+                        ComPtr<IMetaDataImport2>{}, ComPtr<IMetaDataEmit2>{}, ComPtr<IMetaDataAssemblyImport>{},
+                        ComPtr<IMetaDataAssemblyEmit>{}, WStr("Assembly"), AppDomainID{}, nullptr, false, false);
+                });
+        };
+
+        std::thread first(create);
+        std::thread second(create);
+        first.join();
+        second.join();
+
+        ASSERT_EQ(1, created.load());
+        ASSERT_NE(nullptr, module.GetModuleMetadata());
+    }
+}
+
 TEST(DebuggerRejitHandlerModuleMethod, DuplicateProbeIdsAreIgnored)
 {
     debugger::DebuggerRejitHandlerModuleMethod method(mdMethodDefNil, nullptr, FunctionInfo{},
