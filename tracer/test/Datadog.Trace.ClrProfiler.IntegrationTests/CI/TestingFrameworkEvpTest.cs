@@ -458,8 +458,8 @@ public abstract class TestingFrameworkEvpTest : TestHelper
         sessionId = RandomIdGenerator.Shared.NextSpanId();
         sessionCommand = "test command";
         var ciValues = (CIEnvironmentValues)CIValues!;
-        var propagatedSessionWorkingDirectory = Path.Combine(ciValues.SourceRoot!, "tracer");
-        sessionWorkingDirectory = ciValues.MakeRelativePathFromSourceRoot(propagatedSessionWorkingDirectory, false);
+        var propagatedSessionWorkingDirectory = ciValues.SourceRoot!;
+        sessionWorkingDirectory = ".";
         SetEnvironmentVariable(HttpHeaderNames.TraceId.Replace(".", "_").Replace("-", "_").ToUpperInvariant(), sessionId.ToString(CultureInfo.InvariantCulture));
         SetEnvironmentVariable(HttpHeaderNames.ParentId.Replace(".", "_").Replace("-", "_").ToUpperInvariant(), sessionId.ToString(CultureInfo.InvariantCulture));
         SetEnvironmentVariable(ConfigurationKeys.CIVisibility.TestSessionCommand, sessionCommand);
