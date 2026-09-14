@@ -66,6 +66,7 @@ CI set including `dotnet-perf-params-hotpath`, `full` = every case). `--runs` on
 those cases. Needs `ddtool` on the host for a real (non-`--fake`) run.
 
 CI includes the reusable `"llm validation"` job from the platform repo (see `.gitlab-ci.yml`).
+This repo's default branch is `master`, so the job uses the platform default `LLMVAL_BASE_REF`.
 
 ## What a pass means
 

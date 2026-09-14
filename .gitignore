@@ -391,6 +391,11 @@ datadog-coverage-*
 .claude/worktrees
 CLAUDE.local.md
 
+# LLM Validation local/CI artifacts
+.llm-validation/results.json
+.llm-validation/report.md
+.llm-validation/details.json
+
 # tools/dumps
 tools/dumps/
 !tools/dumps/README_ALPINE_ARM64.md
