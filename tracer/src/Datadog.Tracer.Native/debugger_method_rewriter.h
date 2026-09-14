@@ -83,18 +83,26 @@ private:
                             ULONG callTargetReturnIndex, ULONG returnValueIndex, mdToken callTargetReturnToken,
                             int instrumentedMethodIndex, ILInstr*& beforeLineProbe, std::vector<EHClause>& newClauses) const;
 
+    static bool IsAsyncMethodBuilderType(const TypeInfo& type);
+    static bool IsAsyncMethodBuilderCompletion(const FunctionInfo& functionInfo);
+    static bool CatchHandlerContains(const EHClause& clause, const ILInstr* instr, const ILInstr* sentinel);
+    static bool CatchHandlerProperlyContains(const EHClause& outer, const EHClause& inner, const ILInstr* sentinel);
+    static EHClause* FindInnermostCatchContaining(ILRewriter* rewriter, ILInstr* instr);
+    static HRESULT TryGetSetExceptionCatchClause(ILRewriterWrapper& rewriterWrapper, ModuleMetadata& module_metadata,
+                                                 FunctionInfo* caller, EHClause** setExceptionCatch);
     HRESULT EndAsyncMethodProbe(ILRewriterWrapper& rewriterWrapper,
                                        ModuleMetadata& module_metadata, DebuggerTokens* debuggerTokens,
                                        FunctionInfo* caller, bool isStatic, TypeSignature* methodReturnType,
                                        const std::vector<TypeSignature>& methodLocals, int numLocals, 
                                        ULONG callTargetReturnIndex, mdFieldDef isReEntryFieldTok,
-                                       std::vector<EHClause>& newClauses, const ProbeType& probeType) const;
+                                       std::vector<EHClause>& newClauses, const ProbeType& probeType,
+                                       bool& unsupportedCompletionValueLoad) const;
     HRESULT EndAsyncMethodSpanProbe(ILRewriterWrapper& rewriterWrapper, ModuleMetadata& module_metadata,
                                 DebuggerTokens* debuggerTokens, FunctionInfo* caller, bool isStatic,
                                 TypeSignature* methodReturnType, const std::vector<TypeSignature>& methodLocals,
                                 int numLocals, ULONG callTargetReturnIndex,
                                 mdFieldDef isReEntryFieldTok,
-                                std::vector<EHClause>& newClauses) const;
+                                std::vector<EHClause>& newClauses, bool& unsupportedCompletionValueLoad) const;
     static HRESULT LoadProbeIdIntoStack(ModuleID moduleId, const ModuleMetadata& moduleMetadata, mdToken functionToken,
                                         const shared::WSTRING& methodProbeId, const ILRewriterWrapper& rewriterWrapper,
                                         ILInstr** outLoadStrInstr);

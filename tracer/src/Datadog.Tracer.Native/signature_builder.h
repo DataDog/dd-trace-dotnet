@@ -8,6 +8,13 @@ class SignatureBuilder
 public:
     SignatureBuilder();
 
+    // _buffer points into this object while the signature fits in _stackSignatureBuffer, so a
+    // copied or moved instance would keep pointing at the original. Nothing needs either.
+    SignatureBuilder(const SignatureBuilder&) = delete;
+    SignatureBuilder& operator=(const SignatureBuilder&) = delete;
+    SignatureBuilder(SignatureBuilder&&) = delete;
+    SignatureBuilder& operator=(SignatureBuilder&&) = delete;
+
     void Append(const COR_SIGNATURE elementType);
     void Append(const void* elements, const size_t length);
 

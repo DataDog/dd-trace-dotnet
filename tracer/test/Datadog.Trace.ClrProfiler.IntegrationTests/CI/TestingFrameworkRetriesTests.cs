@@ -18,6 +18,7 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI;
 
+[Trait("Area", "CIVisibility")]
 public abstract class TestingFrameworkRetriesTests : TestingFrameworkEvpTest
 {
     public TestingFrameworkRetriesTests(string sampleAppName, ITestOutputHelper output)
