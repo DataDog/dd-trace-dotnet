@@ -71,6 +71,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
         /// </summary>
         private const string MinimalApiRoute = "/api/delay";
 
+        /// <summary>
+        /// The path base Samples.AspNetCoreMinimalApis is mounted under, matching the sample's own
+        /// <c>app.UsePathBase("/path-base")</c>. The "/path-base/api/delay/0" row in
+        /// <see cref="OtlpAspNetCoreTestBase.Data"/> reaches the same minimal-API endpoint as
+        /// "/api/delay/0", just through the mounted path base, so it must be stripped before matching
+        /// <see cref="MinimalApiRoute"/> below.
+        /// </summary>
+        private const string PathBasePrefix = "/path-base";
+
         protected OtlpAspNetCoreMinimalApisTests(AspNetCoreTestFixture fixture, ITestOutputHelper output, AspNetCoreFeatureFlags flags, bool openTelemetrySemanticsEnabled)
             : base("AspNetCoreMinimalApis", fixture, output, flags, openTelemetrySemanticsEnabled)
         {
@@ -94,7 +103,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
         /// <param name="handledByEndpoint">Whether an endpoint handled the request.</param>
         private int GetExpectedSpanCount(string path, bool handledByEndpoint)
         {
-            if (!handledByEndpoint || path.StartsWith(MinimalApiRoute, StringComparison.Ordinal))
+            var routePath = path.StartsWith(PathBasePrefix, StringComparison.Ordinal)
+                                 ? path[PathBasePrefix.Length..]
+                                 : path;
+
+            if (!handledByEndpoint || routePath.StartsWith(MinimalApiRoute, StringComparison.Ordinal))
             {
                 return 1;
             }
