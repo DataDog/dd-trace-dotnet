@@ -204,6 +204,10 @@ partial class Build
 
     TargetFramework[] TestingFrameworks => GetTestingFrameworks(Platform, IsArm64);
 
+    // dd_dotnet unit tests only target net7.0, so reduced unit-test matrices must include it.
+    IEnumerable<TargetFramework> GetUnitTestFrameworks(PlatformFamily platform, bool isArm64 = false)
+        => GetTestingFrameworks(platform, isArm64).Append(TargetFramework.NET7_0).Distinct();
+
     TargetFramework[] GetTestingFrameworks(PlatformFamily platform, bool isArm64 = false) => (platform, isArm64, IncludeAllTestFrameworks || RequiresThoroughTesting()) switch
     {
         // we only support linux-arm64 on .NET 5+, so we run a different subset of the TFMs for ARM64
@@ -1475,7 +1479,7 @@ partial class Build
             var exceptions = new List<Exception>();
             try
             {
-                foreach (var targetFramework in TestingFrameworks.Where(x => x == Framework || Framework is null))
+                foreach (var targetFramework in GetUnitTestFrameworks(Platform, IsArm64).Where(x => x == Framework || Framework is null))
                 {
                     if (IsArm64 && Framework is null && targetFramework == TargetFramework.NETCOREAPP2_1)
                     {
