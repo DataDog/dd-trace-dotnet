@@ -114,6 +114,46 @@ namespace Datadog.Trace.DuckTyping.Tests
             ((IDuckType)proxy).ToString().Should().Be("ToString from the hidden target method.");
         }
 
+        [Theory]
+        [InlineData(42, "42")]
+        [InlineData(TargetEnum.Value, "Value")]
+        public void ToStringFromValueTypeTarget(object instance, string expected)
+        {
+            var proxy = instance.DuckCast<IEmptyProxy>();
+
+            proxy.ToString().Should().Be(expected);
+        }
+
+        [Fact]
+        public void ToStringIgnoresOpenGenericMethod()
+        {
+            var instance = new TargetWithGenericToString();
+
+            var proxy = instance.DuckCast<IEmptyProxy>();
+
+            ((IDuckType)proxy).ToString().Should().Be(instance.ToString());
+        }
+
+        [Fact]
+        public void ToStringUsesNonGenericMethodWhenGenericOverloadExists()
+        {
+            var instance = new TargetWithGenericAndNonGenericToString();
+
+            var proxy = instance.DuckCast<IEmptyProxy>();
+
+            ((IDuckType)proxy).ToString().Should().Be("ToString from the non-generic target method.");
+        }
+
+        [Fact]
+        public void ToStringIgnoresByRefReturnType()
+        {
+            var instance = new TargetWithByRefToString();
+
+            var proxy = instance.DuckCast<IEmptyProxy>();
+
+            ((IDuckType)proxy).ToString().Should().Be("ToString from the base target.");
+        }
+
         public class TargetClass
         {
             public override string ToString()
@@ -145,6 +185,30 @@ namespace Datadog.Trace.DuckTyping.Tests
         public class TargetWithHiddenStringToString : TargetBaseClass
         {
             public new string ToString() => "ToString from the hidden target method.";
+        }
+
+        public class TargetWithGenericToString
+        {
+            public string ToString<T>() => typeof(T).Name;
+        }
+
+        public class TargetWithGenericAndNonGenericToString
+        {
+            public new string ToString() => "ToString from the non-generic target method.";
+
+            public string ToString<T>() => typeof(T).Name;
+        }
+
+        public class TargetWithByRefToString : TargetBaseClass
+        {
+            private string _value = "ToString from the by-ref target method.";
+
+            public new ref string ToString() => ref _value;
+        }
+
+        public enum TargetEnum
+        {
+            Value,
         }
 
         public interface IEmptyProxy

@@ -515,26 +515,7 @@ namespace Datadog.Trace.DuckTyping
             il.Emit(OpCodes.Ldflda, instanceField);
             il.Emit(OpCodes.Ret);
 
-            // A target can hide Object.ToString with a public parameterless method whose return type is
-            // unrelated to string, or with a static method. Method lookup by name and parameter types alone
-            // accepts those methods because the return type is not part of a CLR method signature. Calling such
-            // a method from the string-returning proxy method leaves an incompatible value on the evaluation
-            // stack and can make the JIT consume an integer as an object reference.
-            //
-            // Restrict the lookup to instance methods and validate the return type before emitting any IL. If
-            // the most-derived candidate has hidden the virtual ToString slot with an incompatible signature,
-            // calling Object.ToString is the correct fallback: normal virtual dispatch still reaches any valid
-            // override inherited by the target.
-            var toStringTargetMethod = targetType.GetMethod(
-                nameof(IDuckType.ToString),
-                BindingFlags.Public | BindingFlags.Instance,
-                binder: null,
-                Type.EmptyTypes,
-                modifiers: null);
-            if (toStringTargetMethod?.ReturnType != typeof(string))
-            {
-                toStringTargetMethod = _objectToStringMethodInfo;
-            }
+            var toStringTargetMethod = GetToStringTargetMethod(targetType);
 
             MethodAttributes toStringMethodAttributes = MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.Final | MethodAttributes.HideBySig;
             if (proxyTypeBuilder.BaseType?.GetMethod(nameof(IDuckType.ToString), Type.EmptyTypes)?.IsFinal == true)
@@ -575,6 +556,62 @@ namespace Datadog.Trace.DuckTyping
             il.Emit(OpCodes.Ret);
 
             return instanceField;
+        }
+
+        private static MethodInfo GetToStringTargetMethod(Type targetType)
+        {
+            // Type.GetMethod cannot express both a zero generic arity and an empty parameter list on every
+            // target framework supported by the tracer. Without the generic arity check it can select an open
+            // ToString<T>() method, or throw AmbiguousMatchException when generic and non-generic overloads
+            // coexist. Emitting a call to the open method produces invalid IL.
+            //
+            // GetMember limits the allocation and subsequent checks to methods named ToString. Select the
+            // parameterless, closed candidate declared by the most-derived type. If that candidate does not
+            // return string, use Object.ToString instead; virtual dispatch will still reach a valid override.
+            MethodInfo? toStringTargetMethod = null;
+            var toStringMembers = targetType.GetMember(
+                nameof(IDuckType.ToString),
+                MemberTypes.Method,
+                BindingFlags.Public | BindingFlags.Instance);
+
+            for (var i = 0; i < toStringMembers.Length; i++)
+            {
+                var candidate = (MethodInfo)toStringMembers[i];
+                if (candidate.ContainsGenericParameters || candidate.GetParameters().Length != 0)
+                {
+                    continue;
+                }
+
+                if (toStringTargetMethod is null)
+                {
+                    toStringTargetMethod = candidate;
+                    continue;
+                }
+
+                var selectedDeclaringType = toStringTargetMethod.DeclaringType;
+                var candidateDeclaringType = candidate.DeclaringType;
+
+                // Multiple methods with the same name, generic arity, and parameters can only differ by return
+                // type in metadata. Such a signature cannot be selected unambiguously from C#, so use the
+                // standard virtual ToString slot instead of relying on reflection enumeration order.
+                if (selectedDeclaringType == candidateDeclaringType)
+                {
+                    return _objectToStringMethodInfo;
+                }
+
+                if (selectedDeclaringType?.IsAssignableFrom(candidateDeclaringType) == true)
+                {
+                    toStringTargetMethod = candidate;
+                }
+                else if (candidateDeclaringType?.IsAssignableFrom(selectedDeclaringType) != true)
+                {
+                    return _objectToStringMethodInfo;
+                }
+            }
+
+            return toStringTargetMethod?.ReturnType == typeof(string)
+                       ? toStringTargetMethod
+                       : _objectToStringMethodInfo;
         }
 
         private static DuckTypeCustomAttributeHasNamedArgumentsException? AddCustomAttributes(TypeBuilder? proxyTypeBuilder, Type targetType, bool isDryRun)
