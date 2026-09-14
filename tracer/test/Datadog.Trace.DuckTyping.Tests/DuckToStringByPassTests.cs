@@ -73,6 +73,18 @@ namespace Datadog.Trace.DuckTyping.Tests
         }
 
         [Fact]
+        public void ProxyWithSealedToStringCanBeCreated()
+        {
+            var instance = new TargetWithDefaultToString();
+
+            var proxy = instance.DuckCast<ProxyWithSealedToString>();
+
+            proxy.GetValue().Should().Be(42);
+            proxy.ToString().Should().Be("ToString from the proxy base.");
+            ((IDuckType)proxy).ToString().Should().Be(instance.ToString());
+        }
+
+        [Fact]
         public void ToStringIgnoresHiddenMethodWithNonStringReturnType()
         {
             var instance = new TargetWithHiddenNonStringToString();
@@ -108,6 +120,11 @@ namespace Datadog.Trace.DuckTyping.Tests
             {
                 return "ToString from Target instance.";
             }
+        }
+
+        public class TargetWithDefaultToString
+        {
+            public int GetValue() => 42;
         }
 
         public class TargetBaseClass
@@ -155,6 +172,13 @@ namespace Datadog.Trace.DuckTyping.Tests
         public abstract class ToStringAbstractProxyClass
         {
             public override string ToString() => null;
+        }
+
+        public abstract class ProxyWithSealedToString
+        {
+            public abstract int GetValue();
+
+            public sealed override string ToString() => "ToString from the proxy base.";
         }
     }
 }

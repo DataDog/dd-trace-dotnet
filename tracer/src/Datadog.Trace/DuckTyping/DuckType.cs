@@ -536,9 +536,17 @@ namespace Datadog.Trace.DuckTyping
                 toStringTargetMethod = _objectToStringMethodInfo;
             }
 
+            MethodAttributes toStringMethodAttributes = MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.Final | MethodAttributes.HideBySig;
+            if (proxyTypeBuilder.BaseType?.GetMethod(nameof(IDuckType.ToString), Type.EmptyTypes)?.IsFinal == true)
+            {
+                // A sealed ToString on the proxy base cannot be overridden. A new virtual slot keeps the
+                // generated type loadable while preserving the base method for direct virtual dispatch.
+                toStringMethodAttributes |= MethodAttributes.NewSlot;
+            }
+
             MethodBuilder toStringMethod = proxyTypeBuilder.DefineMethod(
                 nameof(IDuckType.ToString),
-                MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.Final | MethodAttributes.HideBySig,
+                toStringMethodAttributes,
                 typeof(string),
                 Type.EmptyTypes);
             il = toStringMethod.GetILGenerator();
