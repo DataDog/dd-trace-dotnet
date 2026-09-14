@@ -287,7 +287,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Helpers
             Resource? previousResource = null;
             foreach (var request in requests)
             {
-                request.Raw.ResourceSpans.Should().HaveCount(1);
+                if (request.Raw.ResourceSpans.Count != 1)
+                {
+                    throw new InvalidOperationException(
+                        $"{nameof(MergeDatadogRequests)} assumes the DD SDK emits exactly one ResourceSpans per request, " +
+                        $"but found {request.Raw.ResourceSpans.Count}. The DD SDK must now be emitting multiple resources " +
+                        $"(e.g. multiple services) per export -- update this method to merge per-resource instead of assuming a single one.");
+                }
+
                 var resource = request.Raw.ResourceSpans[0].Resource;
 
                 if (previousResource is null)
@@ -305,7 +312,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Helpers
             var allSpans = new List<OtlpSpan>();
             foreach (var request in requests)
             {
-                request.Raw.ResourceSpans[0].ScopeSpans.Should().HaveCount(1);
+                if (request.Raw.ResourceSpans[0].ScopeSpans.Count != 1)
+                {
+                    throw new InvalidOperationException(
+                        $"{nameof(MergeDatadogRequests)} assumes the DD SDK emits exactly one ScopeSpans (instrumentation scope) " +
+                        $"per resource, but found {request.Raw.ResourceSpans[0].ScopeSpans.Count}. The DD SDK must now be tracking " +
+                        $"spans per instrumentation scope (see the TODO above) -- update this method to merge spans across scopes " +
+                        $"instead of assuming a single one.");
+                }
+
                 allSpans.AddRange(request.Raw.ResourceSpans[0].ScopeSpans[0].Spans);
             }
 
