@@ -99,11 +99,26 @@ internal sealed class GitHubSourceLinkUrlParser : SourceLinkUrlParser
 
     /// <summary>
     /// Parses /raw/{owner}/{repo}/{sha}/* (5 segments) for GHE without subdomain isolation.
+    /// Yields to GitLab when the path uses GitLab's /raw/ or /-/raw/ markers after the first segment
+    /// (e.g. a GitLab group named "raw": /raw/{repo}/raw/{sha}/*). A GHE repo literally named "raw"
+    /// has the same shape and will not parse as GitHub.
     /// </summary>
     private static bool TryParseRawPrefixPath(Uri uri, out string? commitSha, out string? repositoryUrl)
     {
         commitSha = null;
         repositoryUrl = null;
+
+        var path = uri.AbsolutePath;
+        if (path.IndexOf("/-/raw/", StringComparison.Ordinal) >= 0)
+        {
+            return false;
+        }
+
+        var firstRaw = path.IndexOf("/raw/", StringComparison.Ordinal);
+        if (firstRaw < 0 || path.LastIndexOf("/raw/", StringComparison.Ordinal) != firstRaw)
+        {
+            return false;
+        }
 
         ReadOnlySpan<char> owner = default;
         ReadOnlySpan<char> repo = default;

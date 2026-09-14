@@ -70,6 +70,8 @@ public class GitHubSourceLinkUrlParserTests
     [InlineData("https://example.com/raw/owner/repo/not-a-sha/*")] // GHE /raw/ form with invalid sha
     [InlineData("https://example.com/raw/owner/" + ValidSha + "/*")] // GHE /raw/ form with missing repo (4 segments, not 5)
     [InlineData("https://example.com/notraw/owner/repo/" + ValidSha + "/*")] // /notraw/ is not /raw/
+    [InlineData("https://gitlab.com/raw/myrepo/raw/" + ValidSha + "/*")] // GitLab old format with group named "raw" — not GHE
+    [InlineData("https://gitlab.com/raw/myrepo/-/raw/" + ValidSha + "/*")] // GitLab /-/raw/ format — not GHE
     public void TryParseSourceLinkUrl_InvalidUrl_ReturnsFalse(string url)
     {
         var result = _parser.TryParseSourceLinkUrl(new Uri(url), out var commitSha, out var repositoryUrl);

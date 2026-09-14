@@ -77,6 +77,15 @@ public class CompositeSourceLinkUrlParserTests
         "https://gitlab.com/group/subgroup/repo/-/raw/" + ValidSha + "/*",
         ValidSha,
         "https://gitlab.com/group/subgroup/repo")]
+    // Must not be claimed by the GHE /raw/{owner}/{repo}/{sha}/* fallback
+    [InlineData(
+        "https://gitlab.com/raw/myrepo/raw/" + ValidSha + "/*",
+        ValidSha,
+        "https://gitlab.com/raw/myrepo")]
+    [InlineData(
+        "https://gitlab.com/raw/myrepo/-/raw/" + ValidSha + "/*",
+        ValidSha,
+        "https://gitlab.com/raw/myrepo")]
     public void TryParseSourceLinkUrl_ValidUrl_RoutesToCorrectParser(string url, string expectedSha, string expectedRepoUrl)
     {
         var result = CompositeSourceLinkUrlParser.Instance.TryParseSourceLinkUrl(new Uri(url), out var commitSha, out var repositoryUrl);

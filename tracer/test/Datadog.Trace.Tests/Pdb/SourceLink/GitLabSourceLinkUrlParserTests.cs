@@ -59,6 +59,15 @@ public class GitLabSourceLinkUrlParserTests
         "https://gitlab.com/group/sub1/sub2/repo/-/raw/" + ValidSha + "/*",
         ValidSha,
         "https://gitlab.com/group/sub1/sub2/repo")]
+    // Top-level group named "raw" must still parse as GitLab, not GHE /raw/{owner}/{repo}/
+    [InlineData(
+        "https://gitlab.com/raw/myrepo/raw/" + ValidSha + "/*",
+        ValidSha,
+        "https://gitlab.com/raw/myrepo")]
+    [InlineData(
+        "https://gitlab.com/raw/myrepo/-/raw/" + ValidSha + "/*",
+        ValidSha,
+        "https://gitlab.com/raw/myrepo")]
     public void TryParseSourceLinkUrl_ValidUrl_ReturnsTrue(string url, string expectedSha, string expectedRepoUrl)
     {
         var result = _parser.TryParseSourceLinkUrl(new Uri(url), out var commitSha, out var repositoryUrl);
