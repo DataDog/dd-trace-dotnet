@@ -80,6 +80,25 @@ TEST(ILRewriterCatchHandlerInsertionTest, AcceptsPop)
     delete[] instrs;
 }
 
+TEST(ILRewriterCatchHandlerInsertionTest, SkipsNopsAndAcceptsPop)
+{
+    auto* instrs = MakeInstrChain({0, 1, 2, 3, 4});
+    instrs[0].m_opcode = CEE_NOP;
+    instrs[1].m_opcode = CEE_NOP;
+    instrs[2].m_opcode = CEE_POP;
+    instrs[3].m_opcode = CEE_LDARG_0;
+
+    EHClause clause{};
+    clause.m_pHandlerBegin = &instrs[0];
+    clause.m_pHandlerEnd = &instrs[3];
+
+    EXPECT_EQ(
+        ILRewriter::GetStackNeutralCatchHandlerInsertionPoint(clause, &instrs[4]),
+        &instrs[3]);
+
+    delete[] instrs;
+}
+
 TEST(ILRewriterCatchHandlerInsertionTest, RejectsInstructionsBeforeExceptionConsumer)
 {
     auto* instrs = MakeInstrChain({0, 1, 2, 3, 4});

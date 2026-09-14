@@ -7,7 +7,8 @@ namespace Samples.Probes.TestRuns.ExceptionReplay
 {
     /// <summary>
     /// Handwritten MoveNext whose SetException catch does not bind the caught exception.
-    /// Roslyn emits <c>pop</c>, rather than <c>stloc</c>, as the first handler instruction.
+    /// Roslyn emits <c>pop</c>, rather than <c>stloc</c>, as the first handler instruction
+    /// (optional leading <c>nop</c>s in Debug). Locked by CatchPopFirstInstructionIlTests.
     /// Async method and span probes must insert only after that instruction has consumed the exception.
     /// </summary>
     public class CatchPopFirstInstructionTest : IAsyncRun
