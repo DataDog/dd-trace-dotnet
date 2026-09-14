@@ -1424,14 +1424,24 @@ partial class Build
         .After(Restore)
         .After(CompileManagedSrc)
         .DependsOn(CompileInstrumentationVerificationLibrary)
-        .Executes(() =>
-        {
-            //we need to build in this exact order
-            DotnetBuild(TracerDirectory.GlobFiles("test/Datadog.Trace.DuckTyping.Tests.Fixtures/Shared/*.csproj"));
-            DotnetBuild(TracerDirectory.GlobFiles("test/Datadog.Trace.DuckTyping.Tests.Fixtures/Target/*.csproj"));
-            DotnetBuild(TracerDirectory.GlobFiles("test/**/*TestHelpers.csproj"));
-            DotnetBuild(TracerDirectory.GlobFiles("test/**/*TestHelpers.AutoInstrumentation.csproj"));
-        });
+        .Executes(() => BuildManagedTestHelpers());
+
+    Target CompileManagedUnitTestHelpers => _ => _
+        .Unlisted()
+        .After(Restore)
+        .After(CompileManagedSrc)
+        .DependsOn(CompileInstrumentationVerificationLibrary)
+        // Other test targets need helpers for multiple frameworks, even when Framework is specified.
+        .Executes(() => BuildManagedTestHelpers(Framework));
+
+    void BuildManagedTestHelpers(TargetFramework framework = null)
+    {
+        // We need to build in this exact order. The fixtures always target netstandard2.0.
+        DotnetBuild(TracerDirectory.GlobFiles("test/Datadog.Trace.DuckTyping.Tests.Fixtures/Shared/*.csproj"));
+        DotnetBuild(TracerDirectory.GlobFiles("test/Datadog.Trace.DuckTyping.Tests.Fixtures/Target/*.csproj"));
+        DotnetBuild(TracerDirectory.GlobFiles("test/**/*TestHelpers.csproj"), framework: framework);
+        DotnetBuild(TracerDirectory.GlobFiles("test/**/*TestHelpers.AutoInstrumentation.csproj"), framework: framework);
+    }
 
     Target CompileManagedUnitTests => _ => _
         .Unlisted()
@@ -1440,11 +1450,14 @@ partial class Build
         .After(BuildRunnerTool)
         .DependsOn(CopyNativeFilesForAppSecUnitTests)
         .DependsOn(CopyNativeFilesForTests)
-        .DependsOn(CompileManagedTestHelpers)
+        .DependsOn(CompileManagedUnitTestHelpers)
         .DependsOn(CompileManagedLoader)
         .Executes(() =>
         {
-            DotnetBuild(TracerDirectory.GlobFiles("test/**/*.Tests.csproj"));
+            var projects = TracerDirectory.GlobFiles("test/**/*.Tests.csproj")
+                                          .Where(path => Framework is null || Solution.GetProject(path).GetTargetFrameworks().Contains(Framework));
+
+            DotnetBuild(projects, framework: Framework);
         });
 
     Target RunManagedUnitTests => _ => _
@@ -1484,7 +1497,7 @@ partial class Build
                             .SetLogsDirectory(TestLogsDirectory)
                             .When(CodeCoverageEnabled, ConfigureCodeCoverage)
                             .When(!string.IsNullOrWhiteSpace(Filter), c => c.SetFilter(Filter))
-                            .CombineWith(testProjects, (x, project) => x
+                            .CombineWith(testProjects.Where(project => project.GetTargetFrameworks().Contains(targetFramework)), (x, project) => x
                                 .EnableTrxLogOutput(GetResultsDirectory(project))
                                 .WithDatadogLogger()
                                 .SetProjectFile(project)));
