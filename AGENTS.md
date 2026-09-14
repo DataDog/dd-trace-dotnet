@@ -230,6 +230,18 @@ The tracer runs in-process with customer applications and must have minimal perf
 - **Avoid Allocation in Logging**: Use format strings (`Log("value: {0}", x)`) instead of interpolation (`Log($"value: {x}")`)
 - **Avoid params Array Allocations**: Provide overloads for common cases (0, 1, 2 args)
 
+## Review Guidelines
+
+Before pushing or opening a PR, run the [dd-apm-sdk-review](./.agents/skills/dd-apm-sdk-review/SKILL.md)
+skill on your changes. Fix blocking findings first, or get explicit authorization from the human you
+work with and record them verbatim in the PR description. Never post security findings in a PR
+description; route them through [docs/SECURITY.md](docs/SECURITY.md).
+
+**Reviewer without a skill harness** (for example, GitHub Codex): read and follow
+`.agents/skills/dd-apm-sdk-review/review-without-harness.md`. Do not load `SKILL.md`
+or `reviewers/report-template.md`. This skill is the product-lens gate; do not use
+`.claude/skills/review-pr` in its place.
+
 ## Debugger / Dynamic Instrumentation Safety
 
 Debugger code runs inside customer processes while inspecting live customer objects. Before changing debugger capture, expression evaluation, Exception Replay, Code Origin, or symbol-resolution paths, check:

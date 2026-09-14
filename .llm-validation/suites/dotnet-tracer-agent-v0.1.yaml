@@ -287,3 +287,35 @@ cases:
       - Claims String.Replace strips or doesn't propagate taint, so nothing is flagged.
       - Requires manual annotation of the source/sink, or invents a non-existent mechanism, flag, or API.
       - Confuses IAST (code-level vulnerability detection) with the WAF / AppSec live-attack (threat) detection.
+
+  # Starter case for the dd-apm-sdk-review skill (one pattern on purpose).
+  - id: dotnet-perf-params-hotpath
+    files:
+      - AGENTS.md
+      - .agents/skills/dd-apm-sdk-review/reviewers/performance.md
+      - .agents/skills/dd-apm-sdk-review/reviewers/_common.md
+      - .agents/dd-apm-sdk-review-overrides/reviewers/performance.md
+    input: |
+      Apply this repo's performance-review criteria (reviewers/performance.md, its
+      .agents/dd-apm-sdk-review-overrides/reviewers/performance.md override, _common.md,
+      and AGENTS.md § "Performance Guidelines") to the following change. No git checkout
+      available — this snippet is the entire change to review.
+
+      ```csharp
+      // Called from OnMethodBegin on every instrumented request.
+      static void TagAll(Span span, params object[] tags)
+      {
+          for (var i = 0; i < tags.Length; i += 2)
+          {
+              span.SetTag((string)tags[i], tags[i + 1]?.ToString());
+          }
+      }
+      ```
+    expected_criteria:
+      - Flags the `params object[]` helper on a per-request instrumentation callback.
+      - Names the concrete cost — a new array (and boxed values) on every request.
+      - Recommends overloads for the common 0/1/2-arg cases instead of `params`.
+      - Classifies the finding as at least P1, not a style nit.
+    bad_signals:
+      - Approves `params object[]` as the recommended hot-path helper.
+      - Treats the allocation as acceptable because the method is short.

@@ -5,6 +5,10 @@ instruction_files:
   - AGENTS.md
   - .claude/skills/bump-libdatadog/SKILL.md
   - .claude/skills/bump-libdatadog/scripts/fetch-release-hashes.sh
+  - .agents/skills/dd-apm-sdk-review/reviewers/performance.md
+  - .agents/skills/dd-apm-sdk-review/reviewers/_common.md
+  - .agents/dd-apm-sdk-review-overrides/reviewers/performance.md
+  - .agents/dd-apm-sdk-review-overrides/repo-context.md
 
 default_level: gate
 presets:
@@ -16,6 +20,7 @@ presets:
       - dotnet-tracer-confirm-instrumentation-011
       - dotnet-tracer-bump-libdatadog-013
       - dotnet-tracer-control-context-propagation-016
+      - dotnet-perf-params-hotpath
     runs: 8
   minimum:
     cases: ["dotnet-tracer-logging-terminology-004", "dotnet-tracer-bump-libdatadog-013"]
