@@ -31,6 +31,96 @@ static ILInstr* FindInstr(ILInstr* chain, size_t count, unsigned offset)
     return nullptr;
 }
 
+TEST(ILRewriterCatchHandlerInsertionTest, SkipsNopsAndAcceptsStoreLocalForms)
+{
+    const unsigned storeLocalOpcodes[] = {
+        CEE_STLOC,
+        CEE_STLOC_0,
+        CEE_STLOC_1,
+        CEE_STLOC_2,
+        CEE_STLOC_3,
+        CEE_STLOC_S,
+    };
+
+    for (const auto opcode : storeLocalOpcodes)
+    {
+        auto* instrs = MakeInstrChain({0, 1, 2, 3, 4});
+        instrs[0].m_opcode = CEE_NOP;
+        instrs[1].m_opcode = CEE_NOP;
+        instrs[2].m_opcode = opcode;
+        instrs[3].m_opcode = CEE_LDARG_0;
+
+        EHClause clause{};
+        clause.m_pHandlerBegin = &instrs[0];
+        clause.m_pHandlerEnd = &instrs[3];
+
+        EXPECT_EQ(
+            ILRewriter::GetStackNeutralCatchHandlerInsertionPoint(clause, &instrs[4]),
+            &instrs[3])
+            << "opcode=" << opcode;
+
+        delete[] instrs;
+    }
+}
+
+TEST(ILRewriterCatchHandlerInsertionTest, AcceptsPop)
+{
+    auto* instrs = MakeInstrChain({0, 1, 2});
+    instrs[0].m_opcode = CEE_POP;
+    instrs[1].m_opcode = CEE_LDARG_0;
+
+    EHClause clause{};
+    clause.m_pHandlerBegin = &instrs[0];
+    clause.m_pHandlerEnd = &instrs[1];
+
+    EXPECT_EQ(
+        ILRewriter::GetStackNeutralCatchHandlerInsertionPoint(clause, &instrs[2]),
+        &instrs[1]);
+
+    delete[] instrs;
+}
+
+TEST(ILRewriterCatchHandlerInsertionTest, RejectsInstructionsBeforeExceptionConsumer)
+{
+    auto* instrs = MakeInstrChain({0, 1, 2, 3, 4});
+    instrs[0].m_opcode = CEE_NOP;
+    instrs[1].m_opcode = CEE_LDSTR; // Models an already-inserted line-probe sequence.
+    instrs[2].m_opcode = CEE_STLOC_0;
+    instrs[3].m_opcode = CEE_LDARG_0;
+
+    EHClause clause{};
+    clause.m_pHandlerBegin = &instrs[0];
+    clause.m_pHandlerEnd = &instrs[3];
+
+    EXPECT_EQ(
+        ILRewriter::GetStackNeutralCatchHandlerInsertionPoint(clause, &instrs[4]),
+        nullptr);
+
+    instrs[1].m_opcode = CEE_DUP;
+    EXPECT_EQ(
+        ILRewriter::GetStackNeutralCatchHandlerInsertionPoint(clause, &instrs[4]),
+        nullptr);
+
+    delete[] instrs;
+}
+
+TEST(ILRewriterCatchHandlerInsertionTest, RejectsConsumerAtHandlerEnd)
+{
+    auto* instrs = MakeInstrChain({0, 1, 2});
+    instrs[0].m_opcode = CEE_NOP;
+    instrs[1].m_opcode = CEE_STLOC_0;
+
+    EHClause clause{};
+    clause.m_pHandlerBegin = &instrs[0];
+    clause.m_pHandlerEnd = &instrs[1];
+
+    EXPECT_EQ(
+        ILRewriter::GetStackNeutralCatchHandlerInsertionPoint(clause, &instrs[2]),
+        nullptr);
+
+    delete[] instrs;
+}
+
 // ============================================================================
 // Test: simple try-in-try nesting
 // Inner try [20,50) nested in outer try [10,80). Inner should come first.
