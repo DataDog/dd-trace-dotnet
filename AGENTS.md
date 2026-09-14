@@ -232,15 +232,20 @@ The tracer runs in-process with customer applications and must have minimal perf
 
 ## Review Guidelines
 
-Before pushing or opening a PR, run the [dd-apm-sdk-review](./.agents/skills/dd-apm-sdk-review/SKILL.md)
-skill on your changes. Fix blocking findings first, or get explicit authorization from the human you
-work with and record them verbatim in the PR description. Never post security findings in a PR
-description; route them through [docs/SECURITY.md](docs/SECURITY.md).
+**Local agent with a skill harness:** Before pushing code or creating a pull request, you must run
+the [dd-apm-sdk-review](./.agents/skills/dd-apm-sdk-review/) skill on your unpushed changes. If any
+`P0` issues are reported, you must either fix them or get explicit authorization from the human you
+are working with and record the unresolved finding verbatim in the PR description. `P1` and `P2`
+findings should be fixed before pushing, but can be dismissed by the human.
+
+Exception: security findings are never pasted into a PR description — a PR is a public forum, so
+posting one there is an improper disclosure. Route them privately
+(see [docs/SECURITY.md](docs/SECURITY.md)). This skill is the product-lens gate; do not use
+`.claude/skills/review-pr` in its place.
 
 **Reviewer without a skill harness** (for example, GitHub Codex): read and follow
-`.agents/skills/dd-apm-sdk-review/review-without-harness.md`. Do not load `SKILL.md`
-or `reviewers/report-template.md`. This skill is the product-lens gate; do not use
-`.claude/skills/review-pr` in its place.
+[`.agents/skills/dd-apm-sdk-review/review-without-harness.md`](./.agents/skills/dd-apm-sdk-review/review-without-harness.md).
+Do not load `SKILL.md` or `reviewers/report-template.md`.
 
 ## Debugger / Dynamic Instrumentation Safety
 
