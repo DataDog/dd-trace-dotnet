@@ -152,7 +152,7 @@ public class MockOtlpTraceDecodingTests
         await PostAsync(agent, "/v1/traces", CreateExportRequest().ToByteArray(), "application/x-protobuf");
 
         agent.Spans.Should().ContainSingle(s => s.Name == "datadog.span");
-        agent.OtlpSpans.Should().ContainSingle();
+        agent.OtlpSpans.Should().ContainSingle(s => s.Name == "test.operation");
     }
 
     [Fact]
