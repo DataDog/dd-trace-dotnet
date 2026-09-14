@@ -4,6 +4,9 @@
 // </copyright>
 
 using System;
+using System.Reflection;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using FluentAssertions;
 using Xunit;
 
@@ -13,89 +16,280 @@ namespace Datadog.Trace.DuckTyping.Tests.Methods;
 
 public class OptionalParameterMethodTests
 {
-    public enum OptionalParameterKind
+    [Fact]
+    public void OmittedOptionalTargetParametersUseTheirDeclaredDefaults()
     {
-        Int32,
-        String,
-        Enum,
-        NullableInt32,
-        MultipleParameters,
+        var proxy = new OptionalParameterTarget().DuckCast<IOptionalParameterProxy>();
+
+        proxy.Boolean().Should().BeTrue();
+        proxy.Character().Should().Be('\u1234');
+        proxy.SignedByte().Should().Be(-100);
+        proxy.Byte().Should().Be(200);
+        proxy.Int16().Should().Be(-12_345);
+        proxy.UInt16().Should().Be(54_321);
+        proxy.Int32().Should().Be(-123_456_789);
+        proxy.UInt32().Should().Be(4_000_000_000);
+        proxy.Int64().Should().Be(-1_234_567_890_123_456_789);
+        proxy.UInt64().Should().Be(18_000_000_000_000_000_000);
+        proxy.Single().Should().Be(1.25f);
+        proxy.Double().Should().Be(-2.5);
+        proxy.Decimal().Should().Be(1.5m);
+        proxy.String().Should().Be("expected");
+        proxy.NullReference().Should().BeTrue();
+        proxy.Enum().Should().Be(200);
+        proxy.Nullable().Should().BeTrue();
+        proxy.DateTime().Should().Be(0);
+        proxy.DateTimeConstant().Should().Be(638_000_000_000_000_000);
+        proxy.Struct().Should().Be(0);
+        proxy.Multiple().Should().Be(42);
     }
 
-    [Theory]
-    [InlineData(OptionalParameterKind.Int32)]
-    [InlineData(OptionalParameterKind.String)]
-    [InlineData(OptionalParameterKind.Enum)]
-    [InlineData(OptionalParameterKind.NullableInt32)]
-    [InlineData(OptionalParameterKind.MultipleParameters)]
-    public void OmittedOptionalTargetParameterIsRejected(OptionalParameterKind parameterKind)
+    [Fact]
+    public void OptionalAttributeWithoutConstantUsesCompilerDefaults()
     {
-        var target = CreateTarget(parameterKind);
+        var proxy = new OptionalAttributeTarget().DuckCast<IOptionalAttributeProxy>();
 
-        DuckType.CanCreate<IParameterlessProxy>(target).Should().BeFalse();
-        target.DuckIs<IParameterlessProxy>().Should().BeFalse();
-        target.TryDuckCast<IParameterlessProxy>(out var proxy).Should().BeFalse();
+        proxy.ValueType().Should().Be(0);
+        proxy.ReferenceType().Should().BeTrue();
+        proxy.ExplicitDefault().Should().Be(7);
+    }
+
+    [Fact]
+    public void ExactArityOverloadIsPreferredOverOmittingOptionalArgument()
+    {
+        var proxy = new OverloadTarget().DuckCast<IOverloadProxy>();
+
+        proxy.GetValue("expected").Should().Be(1);
+    }
+
+    [Fact]
+    public void OmittedCallerInfoParameterIsRejected()
+    {
+        var target = new CallerInfoTarget();
+
+        DuckType.CanCreate<ICallerInfoProxy>(target).Should().BeFalse();
+        target.DuckIs<ICallerInfoProxy>().Should().BeFalse();
+        target.TryDuckCast<ICallerInfoProxy>(out var proxy).Should().BeFalse();
         proxy.Should().BeNull();
+
+        DuckType.CanCreate<ICallerFilePathProxy>(new CallerFilePathTarget()).Should().BeFalse();
+        DuckType.CanCreate<ICallerLineNumberProxy>(new CallerLineNumberTarget()).Should().BeFalse();
+#if NETCOREAPP3_1_OR_GREATER
+        DuckType.CanCreate<ICallerArgumentExpressionProxy>(new CallerArgumentExpressionTarget()).Should().BeFalse();
+#endif
     }
 
     [Fact]
     public void OptionalTargetParameterCanBeSuppliedByProxy()
     {
-        var target = new Int32OptionalParameterTarget();
+        var target = new OptionalParameterTarget();
         var proxy = target.DuckCast<IExplicitParameterProxy>();
 
-        proxy.GetValue(21).Should().Be(21);
+        proxy.Int32(21).Should().Be(21);
     }
 
-    private static object CreateTarget(OptionalParameterKind parameterKind)
-        => parameterKind switch
-        {
-            OptionalParameterKind.Int32 => new Int32OptionalParameterTarget(),
-            OptionalParameterKind.String => new StringOptionalParameterTarget(),
-            OptionalParameterKind.Enum => new EnumOptionalParameterTarget(),
-            OptionalParameterKind.NullableInt32 => new NullableOptionalParameterTarget(),
-            OptionalParameterKind.MultipleParameters => new MultipleOptionalParametersTarget(),
-            _ => throw new ArgumentOutOfRangeException(nameof(parameterKind), parameterKind, null),
-        };
-
-    private interface IParameterlessProxy
+    [Fact]
+    public void OmittedRequiredTargetParameterIsRejected()
     {
-        int GetValue();
+        var target = new RequiredParameterTarget();
+
+        DuckType.CanCreate<IRequiredParameterProxy>(target).Should().BeFalse();
+        target.DuckIs<IRequiredParameterProxy>().Should().BeFalse();
+        target.TryDuckCast<IRequiredParameterProxy>(out var proxy).Should().BeFalse();
+        proxy.Should().BeNull();
     }
+
+    private interface IOptionalParameterProxy
+    {
+        bool Boolean();
+
+        char Character();
+
+        sbyte SignedByte();
+
+        byte Byte();
+
+        short Int16();
+
+        ushort UInt16();
+
+        int Int32();
+
+        uint UInt32();
+
+        long Int64();
+
+        ulong UInt64();
+
+        float Single();
+
+        double Double();
+
+        decimal Decimal();
+
+        string String();
+
+        bool NullReference();
+
+        int Enum();
+
+        bool Nullable();
+
+        long DateTime();
+
+        long DateTimeConstant();
+
+        int Struct();
+
+        int Multiple();
+    }
+
+    private interface IOptionalAttributeProxy
+    {
+        int ValueType();
+
+        bool ReferenceType();
+
+        int ExplicitDefault();
+    }
+
+    private interface IOverloadProxy
+    {
+        int GetValue(object value);
+    }
+
+    private interface ICallerInfoProxy
+    {
+        string GetCaller();
+    }
+
+    private interface ICallerFilePathProxy
+    {
+        string GetCallerFilePath();
+    }
+
+    private interface ICallerLineNumberProxy
+    {
+        int GetCallerLineNumber();
+    }
+
+#if NETCOREAPP3_1_OR_GREATER
+    private interface ICallerArgumentExpressionProxy
+    {
+        string GetCallerArgumentExpression(object value);
+    }
+#endif
 
     private interface IExplicitParameterProxy
     {
-        int GetValue(int value);
+        int Int32(int value);
     }
 
-    private class Int32OptionalParameterTarget
+    private interface IRequiredParameterProxy
     {
-        public int GetValue(int value = 42) => value;
+        int Required();
     }
 
-    private class StringOptionalParameterTarget
+    private class OptionalParameterTarget
     {
-        public int GetValue(string value = "expected") => value.Length;
+        public bool Boolean(bool value = true) => value;
+
+        public char Character(char value = '\u1234') => value;
+
+        public sbyte SignedByte(sbyte value = -100) => value;
+
+        public byte Byte(byte value = 200) => value;
+
+        public short Int16(short value = -12_345) => value;
+
+        public ushort UInt16(ushort value = 54_321) => value;
+
+        public int Int32(int value = -123_456_789) => value;
+
+        public uint UInt32(uint value = 4_000_000_000) => value;
+
+        public long Int64(long value = -1_234_567_890_123_456_789) => value;
+
+        public ulong UInt64(ulong value = 18_000_000_000_000_000_000) => value;
+
+        public float Single(float value = 1.25f) => value;
+
+        public double Double(double value = -2.5) => value;
+
+        public decimal Decimal(decimal value = 1.5m) => value;
+
+        public string String(string value = "expected") => value;
+
+        public bool NullReference(string value = null) => value is null;
+
+        public int Enum(ByteEnum value = ByteEnum.Expected) => (int)value;
+
+        public bool Nullable(int? value = null) => value is null;
+
+        public long DateTime(DateTime value = default) => value.Ticks;
+
+        public long DateTimeConstant([Optional, DateTimeConstant(638_000_000_000_000_000)] DateTime value) => value.Ticks;
+
+        public int Struct(OptionalStruct value = default) => value.Value;
+
+        public int Multiple(int first = 21, int second = 21) => first + second;
     }
 
-    private class EnumOptionalParameterTarget
+    private class OverloadTarget
     {
-        public int GetValue(OptionalValue value = OptionalValue.Second) => (int)value;
+        public int GetValue(string value, int optional = 2) => optional;
+
+        public int GetValue(Uri value, int optional = 3) => optional;
+
+        public int GetValue(string value) => 1;
     }
 
-    private class NullableOptionalParameterTarget
+    private class CallerInfoTarget
     {
-        public int GetValue(int? value = null) => value ?? -1;
+        public string GetCaller([CallerMemberName] string caller = null) => caller;
     }
 
-    private class MultipleOptionalParametersTarget
+    private class CallerFilePathTarget
     {
-        public int GetValue(int first = 21, int second = 21) => first + second;
+        public string GetCallerFilePath([CallerFilePath] string path = null) => path;
     }
 
-    private enum OptionalValue
+    private class CallerLineNumberTarget
     {
-        First,
-        Second,
+        public int GetCallerLineNumber([CallerLineNumber] int line = 0) => line;
+    }
+
+#if NETCOREAPP3_1_OR_GREATER
+    private class CallerArgumentExpressionTarget
+    {
+        public string GetCallerArgumentExpression(
+            object value,
+            [CallerArgumentExpression("value")] string expression = null)
+            => expression;
+    }
+#endif
+
+    private class OptionalAttributeTarget
+    {
+        public int ValueType([Optional] int value) => value;
+
+        public bool ReferenceType([Optional] object value) => ReferenceEquals(value, Missing.Value);
+
+        public int ExplicitDefault([Optional, DefaultParameterValue(7)] int value) => value;
+    }
+
+    private class RequiredParameterTarget
+    {
+        public int Required(int value) => value;
+    }
+
+    private enum ByteEnum : byte
+    {
+        Expected = 200,
+    }
+
+    private struct OptionalStruct
+    {
+        public int Value { get; set; }
     }
 }
