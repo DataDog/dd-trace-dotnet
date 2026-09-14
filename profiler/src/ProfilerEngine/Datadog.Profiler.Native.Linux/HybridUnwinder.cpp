@@ -70,7 +70,7 @@ bool HybridUnwinder::UnwindNativeFrames(UnwindCursor* cursor, Callstack& callsta
             return false;
         }
 
-        if (ip <= MinPlausibleNativeIp)
+        if (ip < MinPlausibleNativeIp)
         {
             if (recorder)
             {
