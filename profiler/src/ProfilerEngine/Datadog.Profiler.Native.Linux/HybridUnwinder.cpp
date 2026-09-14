@@ -52,6 +52,12 @@ struct UnwindCursor
 bool HybridUnwinder::UnwindNativeFrames(UnwindCursor* cursor, Callstack& callstack,
     UnwindingRecorder* recorder) const
 {
+    // libunwind can produce bogus low IPs (below 0x4000) when unwinding signal-interrupted
+    // leaf frames whose CFI never spills the return address (e.g. __rawmemchr in glibc).
+    // 0x4000 matches libunwind's own tdep_trace threshold for rejecting implausible PCs.
+    // We stop the walk on a bogus IP, exactly as libunwind/unw_backtrace2 does via tdep_trace.
+    static constexpr unw_word_t MinPlausibleNativeIp = 0x4000;
+
     unw_word_t ip = 0;
     while (true)
     {
@@ -60,6 +66,15 @@ bool HybridUnwinder::UnwindNativeFrames(UnwindCursor* cursor, Callstack& callsta
             if (recorder)
             {
                 recorder->RecordFinish(getResult, FinishReason::FailedGetReg);
+            }
+            return false;
+        }
+
+        if (ip <= MinPlausibleNativeIp)
+        {
+            if (recorder)
+            {
+                recorder->RecordFinish(static_cast<std::int32_t>(ip), FinishReason::InvalidIp);
             }
             return false;
         }
