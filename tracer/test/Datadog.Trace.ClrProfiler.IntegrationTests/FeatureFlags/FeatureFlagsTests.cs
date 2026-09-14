@@ -82,6 +82,7 @@ public abstract class FeatureFlagsTestsBase : TestHelper
 
         Assert.NotNull(output);
         Assert.Contains("<INSTRUMENTED>", output);
+        Assert.Contains("<INITIALIZED: READY>", output);
         Assert.Contains("Eval (nonexistent) : ", output);
         Assert.Contains("Eval (simple-string) : <OK: ", output);
         Assert.Contains("Eval (rule-based-flag) : <OK: ", output);

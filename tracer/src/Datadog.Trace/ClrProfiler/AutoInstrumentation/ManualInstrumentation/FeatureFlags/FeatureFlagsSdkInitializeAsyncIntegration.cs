@@ -8,6 +8,7 @@ using System;
 using System.ComponentModel;
 using System.Threading;
 using System.Threading.Tasks;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 
@@ -22,7 +23,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Datadog_Trace_Manual;
     MethodName = "InitializeAsync",
     ReturnTypeName = ClrNames.Task,
     ParameterTypeNames = [ClrNames.CancellationToken],
-    MinimumVersion = "3.31.0",
+    MinimumVersion = "3.54.0", // InitializeAsync added in 3.54.0
     MaximumVersion = "3.*.*",
     IntegrationName = nameof(IntegrationId.DatadogTraceManual))]
 [Browsable(false)]
@@ -33,22 +34,5 @@ public sealed class FeatureFlagsSdkInitializeAsyncIntegration
         => new CallTargetState(scope: null, state: cancellationToken);
 
     internal static CallTargetReturn<Task> OnMethodEnd<TTarget>(Task returnValue, Exception? exception, in CallTargetState state)
-    {
-        if (exception is not null)
-        {
-            return new CallTargetReturn<Task>(returnValue);
-        }
-
-        // Agentless polling only starts here, because those requests go straight to Datadog and are
-        // billable, so the tracer must not start them until application code adopts the provider. The
-        // Remote Configuration source is already subscribed by then; this call waits for its first
-        // configuration.
-        if (TracerManager.Instance.FeatureFlags is { } featureFlags)
-        {
-            var cancellationToken = state.State is CancellationToken token ? token : default;
-            return new CallTargetReturn<Task>(featureFlags.InitializeAsync(cancellationToken));
-        }
-
-        return new CallTargetReturn<Task>(returnValue);
-    }
+        => FeatureFlagsInitializeHelper.OnMethodEnd(returnValue, exception, in state, absorbDeliveryFailure: true);
 }

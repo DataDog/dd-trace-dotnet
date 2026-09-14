@@ -33,22 +33,5 @@ public sealed class OpenFeatureSdkInitializeAsyncIntegration
         => new CallTargetState(scope: null, state: cancellationToken);
 
     internal static CallTargetReturn<Task> OnMethodEnd<TTarget>(Task returnValue, Exception? exception, in CallTargetState state)
-    {
-        if (exception is not null)
-        {
-            return new CallTargetReturn<Task>(returnValue);
-        }
-
-        // Agentless polling only starts here, because those requests go straight to Datadog and are
-        // billable, so the tracer must not start them until application code adopts the provider. The
-        // Remote Configuration source is already subscribed by then; this call waits for its first
-        // configuration.
-        if (TracerManager.Instance.FeatureFlags is { } featureFlags)
-        {
-            var cancellationToken = state.State is CancellationToken token ? token : default;
-            return new CallTargetReturn<Task>(featureFlags.InitializeAsync(cancellationToken));
-        }
-
-        return new CallTargetReturn<Task>(returnValue);
-    }
+        => FeatureFlagsInitializeHelper.OnMethodEnd(returnValue, exception, in state, absorbDeliveryFailure: false);
 }
