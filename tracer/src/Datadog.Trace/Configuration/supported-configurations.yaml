@@ -454,7 +454,7 @@ supportedConfigurations:
   DD_CIVISIBILITY_DYNAMIC_ATR_BUCKETS:
   - implementation: A
     scope: managed
-    type: string
+    type: array
     default: null
     product: CIVisibility
     const_name: DynamicAtrBuckets
