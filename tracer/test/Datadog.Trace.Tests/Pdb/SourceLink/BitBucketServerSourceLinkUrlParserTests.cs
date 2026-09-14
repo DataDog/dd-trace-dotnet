@@ -29,6 +29,16 @@ public class BitBucketServerSourceLinkUrlParserTests
         "https://stash.example.com/base/projects/PROJ/repos/my-repo/raw/*?at=" + ValidSha,
         ValidSha,
         "https://stash.example.com/base/projects/PROJ/repos/my-repo")]
+    // With a base path containing /repos/
+    [InlineData(
+        "https://stash.example.com/repos/bitbucket/projects/PROJ/repos/my-repo/raw/*?at=" + ValidSha,
+        ValidSha,
+        "https://stash.example.com/repos/bitbucket/projects/PROJ/repos/my-repo")]
+    // With a project key named "repos"
+    [InlineData(
+        "https://stash.example.com/projects/repos/repos/my-repo/raw/*?at=" + ValidSha,
+        ValidSha,
+        "https://stash.example.com/projects/repos/repos/my-repo")]
     // Bitbucket Server < 4.7: /projects/{project}/repos/{repo}/browse/*?at={sha}&raw
     [InlineData(
         "http://stash.mycompany.com:7990/projects/cclcom/repos/myrepo/browse/*?at=" + ValidSha + "&raw",

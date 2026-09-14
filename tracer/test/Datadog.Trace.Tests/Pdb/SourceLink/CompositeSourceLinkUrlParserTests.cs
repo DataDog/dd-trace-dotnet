@@ -86,6 +86,11 @@ public class CompositeSourceLinkUrlParserTests
         "https://gitlab.com/raw/myrepo/-/raw/" + ValidSha + "/*",
         ValidSha,
         "https://gitlab.com/raw/myrepo")]
+    // Self-hosted old format remains unambiguous when the "raw" group has a subgroup
+    [InlineData(
+        "https://git.example.com/raw/subgroup/myrepo/raw/" + ValidSha + "/*",
+        ValidSha,
+        "https://git.example.com/raw/subgroup/myrepo")]
     public void TryParseSourceLinkUrl_ValidUrl_RoutesToCorrectParser(string url, string expectedSha, string expectedRepoUrl)
     {
         var result = CompositeSourceLinkUrlParser.Instance.TryParseSourceLinkUrl(new Uri(url), out var commitSha, out var repositoryUrl);
@@ -100,6 +105,7 @@ public class CompositeSourceLinkUrlParserTests
     [InlineData("https://example.com/")] // minimal path
     [InlineData("https://raw.githubusercontent.com/DataDog/dd-trace-dotnet/invalid-sha/*")] // partially matches GitHub but invalid
     [InlineData("https://api.bitbucket.org/2.0/repositories/test-org/test-repo/src/invalid/*")] // partially matches BitBucket but invalid
+    [InlineData("https://git.example.com/raw/owner/raw/" + ValidSha + "/*")] // ambiguous: GHE repo named "raw" or old GitLab group named "raw"
     public void TryParseSourceLinkUrl_InvalidUrl_ReturnsFalse(string url)
     {
         var result = CompositeSourceLinkUrlParser.Instance.TryParseSourceLinkUrl(new Uri(url), out var commitSha, out var repositoryUrl);

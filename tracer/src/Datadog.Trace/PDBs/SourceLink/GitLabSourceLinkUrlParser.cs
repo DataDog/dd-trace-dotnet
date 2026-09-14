@@ -29,10 +29,11 @@ internal sealed class GitLabSourceLinkUrlParser : SourceLinkUrlParser
             // Try /-/raw/ first (GitLab >= 12.0), then /raw/ (GitLab < 12.0).
             // Use LastIndexOf so that repo paths containing "raw" as a segment name don't confuse us.
             int rawMarkerIndex = path.LastIndexOf("/-/raw/", StringComparison.Ordinal);
+            var isNewFormat = rawMarkerIndex >= 0;
             int repoPathEnd;
             int afterRawStart;
 
-            if (rawMarkerIndex >= 0)
+            if (isNewFormat)
             {
                 // /-/raw/ found — new format
                 repoPathEnd = rawMarkerIndex;
@@ -75,6 +76,16 @@ internal sealed class GitLabSourceLinkUrlParser : SourceLinkUrlParser
                 return false;
             }
 
+            // On self-hosted instances, /raw/{name}/raw/{sha}/* could be either an old-format
+            // GitLab repository under the "raw" group or a GHE repository named "raw".
+            // Without canonical host evidence, fail closed instead of returning incorrect metadata.
+            if (!isNewFormat &&
+                !uri.Host.Equals("gitlab.com", StringComparison.OrdinalIgnoreCase) &&
+                IsAmbiguousWithGitHubEnterprise(repoPath))
+            {
+                return false;
+            }
+
             repositoryUrl = $"{uri.Scheme}://{uri.Authority}{path.Substring(0, repoPathEnd)}";
             commitSha = sha.ToString();
             return true;
@@ -85,5 +96,13 @@ internal sealed class GitLabSourceLinkUrlParser : SourceLinkUrlParser
         }
 
         return false;
+    }
+
+    private static bool IsAmbiguousWithGitHubEnterprise(ReadOnlySpan<char> repoPath)
+    {
+        var slashIndex = repoPath.IndexOf('/');
+        return slashIndex == "raw".Length &&
+               repoPath.Slice(0, slashIndex).SequenceEqual("raw".AsSpan()) &&
+               repoPath.Slice(slashIndex + 1).IndexOf('/') < 0;
     }
 }

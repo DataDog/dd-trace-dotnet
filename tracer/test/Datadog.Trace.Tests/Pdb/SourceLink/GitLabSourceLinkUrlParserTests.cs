@@ -68,6 +68,15 @@ public class GitLabSourceLinkUrlParserTests
         "https://gitlab.com/raw/myrepo/-/raw/" + ValidSha + "/*",
         ValidSha,
         "https://gitlab.com/raw/myrepo")]
+    // Self-hosted paths remain unambiguous with a subgroup or the new /-/raw/ marker
+    [InlineData(
+        "https://git.example.com/raw/subgroup/myrepo/raw/" + ValidSha + "/*",
+        ValidSha,
+        "https://git.example.com/raw/subgroup/myrepo")]
+    [InlineData(
+        "https://git.example.com/raw/myrepo/-/raw/" + ValidSha + "/*",
+        ValidSha,
+        "https://git.example.com/raw/myrepo")]
     public void TryParseSourceLinkUrl_ValidUrl_ReturnsTrue(string url, string expectedSha, string expectedRepoUrl)
     {
         var result = _parser.TryParseSourceLinkUrl(new Uri(url), out var commitSha, out var repositoryUrl);
@@ -84,6 +93,7 @@ public class GitLabSourceLinkUrlParserTests
     [InlineData("https://gitlab.com/test-org/test-repo/raw/invalid-sha/*")] // invalid sha
     [InlineData("https://gitlab.com/test-org/test-repo/-/raw/invalid-sha/*")] // invalid sha with new format
     [InlineData("https://gitlab.com/test-org/test-repo/-/raw/" + ValidSha + "/specific-file")] // trailing segment != "*" with new format
+    [InlineData("https://git.example.com/raw/owner/raw/" + ValidSha + "/*")] // ambiguous with a GHE repository named "raw"
     public void TryParseSourceLinkUrl_InvalidUrl_ReturnsFalse(string url)
     {
         var result = _parser.TryParseSourceLinkUrl(new Uri(url), out var commitSha, out var repositoryUrl);

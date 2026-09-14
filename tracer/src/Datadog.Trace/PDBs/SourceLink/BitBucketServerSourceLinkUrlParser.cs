@@ -28,35 +28,24 @@ internal sealed class BitBucketServerSourceLinkUrlParser : SourceLinkUrlParser
             var path = uri.AbsolutePath;
             var query = uri.Query;
 
-            // Bitbucket Server paths are /projects/{project}/repos/{repo}/..., so /projects/ must precede /repos/
-            var projectsIdx = path.IndexOf("/projects/", StringComparison.Ordinal);
-            var reposIdx = path.IndexOf("/repos/", StringComparison.Ordinal);
-            if (projectsIdx < 0 || reposIdx <= projectsIdx)
-            {
-                return false;
-            }
-
-            var afterRepos = path.Substring(reposIdx + "/repos/".Length);
-
-            // Find the repo name (next segment after /repos/)
-            var repoEndSlash = afterRepos.IndexOf('/');
-            if (repoEndSlash <= 0)
-            {
-                return false;
-            }
-
-            var afterRepo = afterRepos.Substring(repoEndSlash);
-
             bool isBrowseForm;
-            if (afterRepo.StartsWith("/raw/", StringComparison.Ordinal))
+            string repoUrlPath;
+            if (path.EndsWith("/raw/*", StringComparison.Ordinal))
             {
                 isBrowseForm = false;
+                repoUrlPath = path.Substring(0, path.Length - "/raw/*".Length);
             }
-            else if (afterRepo.StartsWith("/browse/", StringComparison.Ordinal))
+            else if (path.EndsWith("/browse/*", StringComparison.Ordinal))
             {
                 isBrowseForm = true;
+                repoUrlPath = path.Substring(0, path.Length - "/browse/*".Length);
             }
             else
+            {
+                return false;
+            }
+
+            if (!IsValidRepositoryPath(repoUrlPath))
             {
                 return false;
             }
@@ -91,10 +80,6 @@ internal sealed class BitBucketServerSourceLinkUrlParser : SourceLinkUrlParser
                 return false;
             }
 
-            // Build repo URL: {scheme}://{authority}[/base]/projects/{project}/repos/{repo}
-            // This is everything up to and including the repo name segment
-            var repoUrlPath = path.Substring(0, reposIdx + "/repos/".Length + repoEndSlash);
-
             repositoryUrl = $"{uri.Scheme}://{uri.Authority}{repoUrlPath}";
             commitSha = shaSpan.ToString();
             return true;
@@ -105,5 +90,33 @@ internal sealed class BitBucketServerSourceLinkUrlParser : SourceLinkUrlParser
         }
 
         return false;
+    }
+
+    private static bool IsValidRepositoryPath(string path)
+    {
+        // Parse the fixed trailing structure from right to left so marker-like base path,
+        // project, or repository names do not get mistaken for structural markers.
+        var repoStart = path.LastIndexOf('/');
+        if (repoStart <= 0 || repoStart == path.Length - 1)
+        {
+            return false;
+        }
+
+        var reposStart = path.LastIndexOf('/', repoStart - 1);
+        if (reposStart <= 0 ||
+            !path.AsSpan(reposStart + 1, repoStart - reposStart - 1).SequenceEqual("repos".AsSpan()))
+        {
+            return false;
+        }
+
+        var projectStart = path.LastIndexOf('/', reposStart - 1);
+        if (projectStart <= 0 || projectStart == reposStart - 1)
+        {
+            return false;
+        }
+
+        var projectsStart = path.LastIndexOf('/', projectStart - 1);
+        return projectsStart >= 0 &&
+               path.AsSpan(projectsStart + 1, projectStart - projectsStart - 1).SequenceEqual("projects".AsSpan());
     }
 }
