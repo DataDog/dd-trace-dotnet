@@ -76,6 +76,7 @@ public class BitBucketServerSourceLinkUrlParserTests
     [InlineData("https://bitbucket.mycompany.com/projects/MYPROJ/repos/myrepo/blob/*?at=" + ValidSha)] // /blob/ instead of /raw/ or /browse/
     [InlineData("https://bitbucket.mycompany.com/projects/MYPROJ/repos/myrepo/browse/*?at=" + ValidSha)] // /browse/ without &raw query flag
     [InlineData("https://bitbucket.mycompany.com/projects/MYPROJ/repos/myrepo/browse/*?at=" + ValidSha + "&raws=1")] // "raws" is not the standalone "raw" flag
+    [InlineData("https://bitbucket.mycompany.com/projects/MYPROJ/repos/myrepo/browse/*?at=" + ValidSha + "&raw=false")] // "raw" must not have a value
     public void TryParseSourceLinkUrl_InvalidUrl_ReturnsFalse(string url)
     {
         var result = _parser.TryParseSourceLinkUrl(new Uri(url), out var commitSha, out var repositoryUrl);

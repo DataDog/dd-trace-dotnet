@@ -27,6 +27,11 @@ internal sealed class GitHubSourceLinkUrlParser : SourceLinkUrlParser
 
         try
         {
+            if (!uri.AbsolutePath.EndsWith("/*", StringComparison.Ordinal))
+            {
+                return false;
+            }
+
             // Case 1: GitHub.com — https://raw.githubusercontent.com/{owner}/{repo}/{sha}/*
             if (uri.Host.Equals("raw.githubusercontent.com", StringComparison.OrdinalIgnoreCase))
             {

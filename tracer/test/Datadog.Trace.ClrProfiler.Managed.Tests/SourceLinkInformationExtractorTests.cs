@@ -100,7 +100,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
                 assemblyBuilder.SetCustomAttribute(CreateCustomAttributeBuilder(repositoryUrlAttribute));
             }
 
-            if (!string.IsNullOrEmpty(informationalVersion))
+            if (informationalVersion is not null)
             {
                 var informationalVersionAttribute = new AssemblyInformationalVersionAttribute(informationalVersion);
                 assemblyBuilder.SetCustomAttribute(CreateCustomAttributeBuilder(informationalVersionAttribute));

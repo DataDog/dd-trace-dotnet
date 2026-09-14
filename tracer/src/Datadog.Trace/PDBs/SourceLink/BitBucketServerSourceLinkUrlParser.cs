@@ -64,7 +64,7 @@ internal sealed class BitBucketServerSourceLinkUrlParser : SourceLinkUrlParser
                 {
                     shaSpan = pairSpan.Slice(eqIndex + 1);
                 }
-                else if (key.SequenceEqual("raw".AsSpan()))
+                else if (eqIndex < 0 && key.SequenceEqual("raw".AsSpan()))
                 {
                     hasRawFlag = true;
                 }
