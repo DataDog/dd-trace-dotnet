@@ -355,6 +355,7 @@
     <ClInclude Include="rejit_work_offloader.h" />
     <ClInclude Include="signature_builder.h" />
     <ClInclude Include="stats.h" />
+    <ClInclude Include="module_rewrite_eligibility.h" />
     <ClInclude Include="Synchronized.hpp" />
     <ClInclude Include="threadUtils.h" />
     <ClInclude Include="tracer_handler_module_method.h" />

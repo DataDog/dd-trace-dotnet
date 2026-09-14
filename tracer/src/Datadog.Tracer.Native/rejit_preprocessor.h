@@ -16,6 +16,7 @@ class RejitHandlerModuleMethod;
 class RejitHandlerModule;
 class FunctionControlWrapper;
 struct FunctionInfo;
+struct ModuleIDWithLifetime;
 
 enum class RejitterPriority
 {
@@ -55,7 +56,6 @@ class RejitPreprocessor : public Rejitter
 protected:
     CorProfiler* m_corProfiler;
     std::shared_ptr<RejitHandler> m_rejit_handler = nullptr;
-    std::shared_ptr<RejitWorkOffloader> m_work_offloader = nullptr;
 
     void ProcessTypeDefForRejit(const RejitRequestDefinition& definition, ComPtr<IMetaDataImport2>& metadataImport,
                             ComPtr<IMetaDataEmit2>& metadataEmit, ComPtr<IMetaDataAssemblyImport>& assemblyImport,
@@ -91,7 +91,7 @@ protected:
                           std::vector<MethodIdentifier>& rejitRequests, unsigned methodDef,
                           const FunctionInfo& functionInfo, RejitHandlerModule* moduleHandler);
 
-    ULONG PreprocessRejitRequests(const std::vector<ModuleID>& modules,
+    ULONG PreprocessRejitRequests(const std::vector<ModuleIDWithLifetime>& modules,
                                   const std::vector<RejitRequestDefinition>& definitions,
                                   std::vector<MethodIdentifier>& rejitRequests);
 
@@ -124,7 +124,7 @@ public:
                                        bool enqueueInSameThread = false);
     void EnqueueRequestRejit(std::vector<MethodIdentifier>& rejitRequests, std::shared_ptr<std::promise<void>> promise, bool callRevertExplicitly = false);
     void EnqueueRequestRejitForLoadedModules(const std::vector<ModuleID>& modulesVector,
-                                             const std::vector<RejitRequestDefinition>& requests,
+                                             std::vector<RejitRequestDefinition> requests,
                                              std::shared_ptr<std::promise<ULONG>> promise);
     void EnqueuePreprocessRejitRequests(const std::vector<ModuleID>& modules,
                                   const std::vector<RejitRequestDefinition>& definitions,

@@ -8,6 +8,10 @@
 #include "fault_tolerant_method_duplicator.h"
 
 #include <map>
+#include <memory>
+#include <mutex>
+#include <set>
+#include <vector>
 
 // forward declaration
 
@@ -34,6 +38,7 @@ class DebuggerProbesInstrumentationRequester
 {
 private:
     CorProfiler* m_corProfiler;
+    std::mutex m_instrumentation_mutex;
     std::recursive_mutex m_probes_mutex;
     std::vector<ProbeDefinition_S> m_probes;
     std::unique_ptr<DebuggerRejitPreprocessor> m_debugger_rejit_preprocessor = nullptr;
@@ -51,9 +56,9 @@ private:
                       std::set<MethodIdentifier>& revertRequests);
     void AddMethodProbes(debugger::DebuggerMethodProbeDefinition* methodProbes, int methodProbesLength,
                          debugger::DebuggerMethodSpanProbeDefinition* spanProbes, int spanProbesLength,
-                         std::set<trace::MethodIdentifier>& rejitRequests);
+                         std::vector<std::shared_ptr<MethodProbeDefinition>>& methodProbeDefinitions);
     void AddLineProbes(debugger::DebuggerLineProbeDefinition* lineProbes, int lineProbesLength,
-                       std::set<MethodIdentifier>& rejitRequests);
+                       std::vector<std::shared_ptr<LineProbeDefinition>>& lineProbeDefinitions);
     void DetermineReInstrumentProbes(std::set<MethodIdentifier>& revertRequests,
                                      std::set<MethodIdentifier>& reInstrumentRequests) const;
 
@@ -76,7 +81,6 @@ public:
     void RequestRejitForLoadedModule(ModuleID moduleId);
 
     void ModuleLoadFinished_AddMetadataToModule(ModuleID moduleId);
-    HRESULT STDMETHODCALLTYPE ModuleLoadFinished(const ModuleID moduleId);
 
     static HRESULT NotifyReJITError(ModuleID moduleId, mdMethodDef methodId, FunctionID functionId, HRESULT hrStatus);
 };

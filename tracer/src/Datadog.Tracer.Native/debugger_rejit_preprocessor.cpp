@@ -19,7 +19,7 @@ DebuggerRejitPreprocessor::DebuggerRejitPreprocessor(CorProfiler* corProfiler,
 }
 
 ULONG DebuggerRejitPreprocessor::PreprocessLineProbes(
-    const std::vector<ModuleID>& modules, const std::vector<std::shared_ptr<LineProbeDefinition>>& lineProbes,
+    const std::vector<ModuleIDWithLifetime>& modules, const std::vector<std::shared_ptr<LineProbeDefinition>>& lineProbes,
     std::vector<MethodIdentifier>& rejitRequests)
 {
     if (m_rejit_handler->IsShutdownRequested())
@@ -32,8 +32,15 @@ ULONG DebuggerRejitPreprocessor::PreprocessLineProbes(
     auto enable_by_ref_instrumentation = m_rejit_handler->GetEnableByRefInstrumentation();
     auto enable_calltarget_state_by_ref = m_rejit_handler->GetEnableCallTargetStateByRef();
 
-    for (const auto& module : modules)
+    for (const auto& moduleWithLifetime : modules)
     {
+        auto moduleLifetime = moduleWithLifetime.Acquire();
+        if (!moduleLifetime.has_value())
+        {
+            continue;
+        }
+
+        const auto module = moduleWithLifetime.id;
         const ModuleInfo& moduleInfo = GetModuleInfo(corProfilerInfo, module);
         if (!moduleInfo.IsValid())
         {
@@ -148,7 +155,7 @@ ULONG DebuggerRejitPreprocessor::PreprocessLineProbes(
 
 void DebuggerRejitPreprocessor::EnqueuePreprocessLineProbes(
     const std::vector<ModuleID>& modulesVector, const std::vector<std::shared_ptr<LineProbeDefinition>>& lineProbes,
-    std::promise<std::vector<MethodIdentifier>>* promise)
+    std::shared_ptr<std::promise<std::vector<MethodIdentifier>>> promise)
 {
     std::vector<MethodIdentifier> rejitRequests;
 
@@ -164,12 +171,18 @@ void DebuggerRejitPreprocessor::EnqueuePreprocessLineProbes(
 
     if (modulesVector.size() == 0 || lineProbes.size() == 0)
     {
+        if (promise != nullptr)
+        {
+            promise->set_value(rejitRequests);
+        }
+
         return;
     }
 
     Logger::Debug("RejitHandler::EnqueuePreprocessRejitRequests");
+    auto modulesWithLifetime = m_rejit_handler->GetModulesWithLifetime(modulesVector);
 
-    std::function<void()> action = [=, modules = std::move(modulesVector), definitions = std::move(lineProbes),
+    std::function<void()> action = [=, modules = std::move(modulesWithLifetime), definitions = std::move(lineProbes),
                                     localRejitRequests = rejitRequests, localPromise = promise]() mutable {
         // Process modules for rejit
         const auto rejitCount = PreprocessLineProbes(modules, definitions, localRejitRequests);
@@ -182,7 +195,10 @@ void DebuggerRejitPreprocessor::EnqueuePreprocessLineProbes(
     };
 
     // Enqueue
-    m_work_offloader->Enqueue(std::make_unique<RejitWorkItem>(std::move(action)));
+    if (!m_rejit_handler->Enqueue(std::make_unique<RejitWorkItem>(std::move(action))) && promise != nullptr)
+    {
+        promise->set_value(rejitRequests);
+    }
 }
 
 void DebuggerRejitPreprocessor::ProcessTypesForRejit(
@@ -338,7 +354,11 @@ void DebuggerRejitPreprocessor::UpdateMethodInternal(RejitHandlerModuleMethod* m
         return;
     }
 
-    debuggerMethodHandler->AddProbe(probe);
+    if (!debuggerMethodHandler->AddProbe(probe))
+    {
+        return;
+    }
+
     ProbesMetadataTracker::Instance()->AddMethodToProbe(
         probe->probeId, debuggerMethodHandler->GetModule()->GetModuleId(), debuggerMethodHandler->GetMethodDef());
 }

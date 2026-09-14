@@ -23,7 +23,7 @@ public:
                                      const FunctionInfo& functionInfo,
                                      std::unique_ptr<MethodRewriter> methodRewriter);
 
-    void AddProbe(ProbeDefinition_S probe);
+    bool AddProbe(ProbeDefinition_S probe);
     bool RemoveProbe(const shared::WSTRING& probeId);
     std::vector<ProbeDefinition_S>& GetProbes();
 };

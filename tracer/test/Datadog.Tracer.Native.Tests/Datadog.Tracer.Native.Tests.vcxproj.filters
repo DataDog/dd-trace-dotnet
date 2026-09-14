@@ -7,6 +7,7 @@
     <ClCompile Include="clr_helper_test.cpp" />
     <ClCompile Include="dataflow_test.cpp" />
     <ClCompile Include="metadata_builder_test.cpp" />
+    <ClCompile Include="module_ids_lock_protocol_test.cpp" />
     <ClCompile Include="pch.cpp" />
     <ClCompile Include="version_struct_test.cpp" />
     <ClCompile Include="string_test.cpp" />

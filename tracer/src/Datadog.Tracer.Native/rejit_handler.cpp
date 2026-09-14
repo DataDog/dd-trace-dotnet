@@ -332,6 +332,18 @@ RejitHandler::RejitHandler(ICorProfilerInfo10* pInfo, std::shared_ptr<RejitWorkO
 {
 }
 
+bool RejitHandler::Enqueue(std::unique_ptr<RejitWorkItem>&& item)
+{
+    ReadLock lock(m_shutdown_lock);
+    if (m_shutdown)
+    {
+        return false;
+    }
+
+    m_work_offloader->Enqueue(std::move(item));
+    return true;
+}
+
 void RejitHandler::EnqueueForRejit(std::vector<ModuleID>& modulesVector, std::vector<mdMethodDef>& modulesMethodDef,
                                    std::shared_ptr<std::promise<void>> promise, bool callRevertExplicitly)
 {
@@ -360,19 +372,54 @@ void RejitHandler::EnqueueForRejit(std::vector<ModuleID>& modulesVector, std::ve
     };
 
     // Enqueue
-    m_work_offloader->Enqueue(std::make_unique<RejitWorkItem>(std::move(action)));
+    if (!Enqueue(std::make_unique<RejitWorkItem>(std::move(action))) && promise != nullptr)
+    {
+        promise->set_value();
+    }
 }
 
 void RejitHandler::Shutdown()
 {
     DBG("RejitHandler::Shutdown");
 
-    // Wait for exiting the thread
-    m_work_offloader->Enqueue(RejitWorkItem::CreateTerminatingWorkItem());
-    m_work_offloader->WaitForTermination();
+    // Mark shutdown before draining the queue so queued work can short-circuit.
+    // Release the write lock before joining because the worker reads this state.
+    {
+        WriteLock w_lock(m_shutdown_lock);
+        m_shutdown.store(true);
+        if (m_work_offloader != nullptr)
+        {
+            m_work_offloader->Enqueue(RejitWorkItem::CreateTerminatingWorkItem());
+        }
+    }
 
-    WriteLock w_lock(m_shutdown_lock);
-    m_shutdown.store(true);
+    // Wait for exiting the thread
+    if (m_work_offloader != nullptr)
+    {
+        m_work_offloader->WaitForTermination();
+    }
+
+    std::lock_guard<std::mutex> cleanupLock(m_module_cleanup_lock);
+
+    std::vector<std::shared_ptr<ModuleLifetime>> moduleLifetimes;
+    {
+        std::lock_guard<std::mutex> lock(m_module_lifetimes_lock);
+        moduleLifetimes.reserve(m_module_lifetimes.size());
+        for (const auto& moduleLifetime : m_module_lifetimes)
+        {
+            moduleLifetimes.push_back(moduleLifetime.second);
+        }
+
+        m_module_lifetimes.clear();
+    }
+
+    std::vector<WriteLock> lifetimeLocks;
+    lifetimeLocks.reserve(moduleLifetimes.size());
+    for (const auto& moduleLifetime : moduleLifetimes)
+    {
+        lifetimeLocks.emplace_back(moduleLifetime->m_lock);
+        moduleLifetime->m_unloading = true;
+    }
 
     for (size_t x = 0; x < m_rejittersCount; x++)
     {
@@ -419,6 +466,13 @@ HRESULT RejitHandler::NotifyReJITParameters(ModuleID moduleId, mdMethodDef metho
         return S_FALSE;
     }
 
+    auto module = GetModuleWithLifetime(moduleId);
+    auto moduleLifetime = module.Acquire();
+    if (!moduleLifetime.has_value())
+    {
+        return S_FALSE;
+    }
+
     HRESULT hr = S_OK;
     LPCBYTE originalMehodBody = nullptr;
     ULONG originalMehodLen = 0;
@@ -455,6 +509,47 @@ AssemblyProperty* RejitHandler::GetCorAssemblyProperty()
     return m_pCorAssemblyProperty;
 }
 
+void RejitHandler::RegisterModule(ModuleID moduleId)
+{
+    ReadLock shutdownLock(m_shutdown_lock);
+    if (m_shutdown)
+    {
+        return;
+    }
+
+    std::lock_guard<std::mutex> lock(m_module_lifetimes_lock);
+    if (m_module_lifetimes.find(moduleId) == m_module_lifetimes.end())
+    {
+        m_module_lifetimes.emplace(moduleId, std::make_shared<ModuleLifetime>());
+    }
+}
+
+ModuleIDWithLifetime RejitHandler::GetModuleWithLifetime(ModuleID moduleId)
+{
+    std::lock_guard<std::mutex> lock(m_module_lifetimes_lock);
+    const auto module = m_module_lifetimes.find(moduleId);
+    return module == m_module_lifetimes.end() ? ModuleIDWithLifetime{moduleId, nullptr}
+                                              : ModuleIDWithLifetime{moduleId, module->second};
+}
+
+std::vector<ModuleIDWithLifetime> RejitHandler::GetModulesWithLifetime(const std::vector<ModuleID>& moduleIds)
+{
+    std::vector<ModuleIDWithLifetime> modules;
+    modules.reserve(moduleIds.size());
+
+    std::lock_guard<std::mutex> lock(m_module_lifetimes_lock);
+    for (const auto moduleId : moduleIds)
+    {
+        const auto module = m_module_lifetimes.find(moduleId);
+        if (module != m_module_lifetimes.end())
+        {
+            modules.push_back({moduleId, module->second});
+        }
+    }
+
+    return modules;
+}
+
 void RejitHandler::SetEnableByRefInstrumentation(bool enableByRefInstrumentation)
 {
     enable_by_ref_instrumentation = enableByRefInstrumentation;
@@ -482,6 +577,13 @@ bool RejitHandler::HasModuleAndMethod(ModuleID moduleId, mdMethodDef methodDef)
         return false;
     }
 
+    auto module = GetModuleWithLifetime(moduleId);
+    auto moduleLifetime = module.Acquire();
+    if (!moduleLifetime.has_value())
+    {
+        return false;
+    }
+
     Rejitter* prev = nullptr;
     for (size_t x = 0; x < m_rejittersCount; x++)
     {
@@ -497,11 +599,25 @@ bool RejitHandler::HasModuleAndMethod(ModuleID moduleId, mdMethodDef methodDef)
 
 void RejitHandler::RemoveModule(ModuleID moduleId)
 {
-    if (IsShutdownRequested())
+    std::lock_guard<std::mutex> cleanupLock(m_module_cleanup_lock);
+
+    std::shared_ptr<ModuleLifetime> moduleLifetime;
     {
-        return;
+        std::lock_guard<std::mutex> lock(m_module_lifetimes_lock);
+        const auto module = m_module_lifetimes.find(moduleId);
+        if (module != m_module_lifetimes.end())
+        {
+            moduleLifetime = module->second;
+            m_module_lifetimes.erase(module);
+        }
     }
 
+    std::optional<WriteLock> lifetimeLock;
+    if (moduleLifetime != nullptr)
+    {
+        lifetimeLock.emplace(moduleLifetime->m_lock);
+        moduleLifetime->m_unloading = true;
+    }
 
     Rejitter* prev = nullptr;
     for (size_t x = 0; x < m_rejittersCount; x++)
@@ -517,6 +633,13 @@ void RejitHandler::RemoveModule(ModuleID moduleId)
 void RejitHandler::AddNGenInlinerModule(ModuleID moduleId)
 {
     if (IsShutdownRequested())
+    {
+        return;
+    }
+
+    auto module = GetModuleWithLifetime(moduleId);
+    auto moduleLifetime = module.Acquire();
+    if (!moduleLifetime.has_value())
     {
         return;
     }

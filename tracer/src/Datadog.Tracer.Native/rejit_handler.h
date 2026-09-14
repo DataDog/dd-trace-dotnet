@@ -1,7 +1,9 @@
 #pragma once
 #include <atomic>
 #include <future>
+#include <memory>
 #include <mutex>
+#include <optional>
 #include <shared_mutex>
 #include <string>
 #include <unordered_map>
@@ -19,6 +21,38 @@ namespace trace
 typedef std::shared_mutex Lock;
 typedef std::unique_lock<Lock> WriteLock;
 typedef std::shared_lock<Lock> ReadLock;
+
+class ModuleLifetime
+{
+    friend class RejitHandler;
+
+private:
+    mutable Lock m_lock;
+    bool m_unloading = false;
+
+public:
+    std::optional<ReadLock> Acquire() const
+    {
+        ReadLock lock(m_lock);
+        if (m_unloading)
+        {
+            return std::nullopt;
+        }
+
+        return std::optional<ReadLock>{std::move(lock)};
+    }
+};
+
+struct ModuleIDWithLifetime
+{
+    ModuleID id;
+    std::shared_ptr<ModuleLifetime> lifetime;
+
+    std::optional<ReadLock> Acquire() const
+    {
+        return lifetime == nullptr ? std::nullopt : lifetime->Acquire();
+    }
+};
 
 // forward declarations...
 class RejitHandlerModule;
@@ -109,6 +143,10 @@ private:
 
     std::shared_ptr<RejitWorkOffloader> m_work_offloader;
 
+    std::mutex m_module_cleanup_lock;
+    std::mutex m_module_lifetimes_lock;
+    std::unordered_map<ModuleID, std::shared_ptr<ModuleLifetime>> m_module_lifetimes;
+
     bool enable_by_ref_instrumentation = false;
     bool enable_calltarget_state_by_ref = false;
 
@@ -131,6 +169,7 @@ public:
     bool GetEnableByRefInstrumentation();
 
     void RequestRejit(std::vector<ModuleID>& modulesVector, std::vector<mdMethodDef>& modulesMethodDef, bool callRevertExplicitly = false);
+    bool Enqueue(std::unique_ptr<RejitWorkItem>&& item);
     void EnqueueForRejit(std::vector<ModuleID>& modulesVector, std::vector<mdMethodDef>& modulesMethodDef, std::shared_ptr<std::promise<void>> promise = nullptr, bool callRevertExplicitly = false);
     void EnqueueRequestRejit(std::vector<MethodIdentifier>& rejitRequests, std::shared_ptr<std::promise<void>> promise, bool callRevertExplicitly = false);
 
@@ -144,6 +183,10 @@ public:
 
     void SetCorAssemblyProfiler(AssemblyProperty* pCorAssemblyProfiler);
     AssemblyProperty* GetCorAssemblyProperty();
+
+    void RegisterModule(ModuleID moduleId);
+    ModuleIDWithLifetime GetModuleWithLifetime(ModuleID moduleId);
+    std::vector<ModuleIDWithLifetime> GetModulesWithLifetime(const std::vector<ModuleID>& moduleIds);
 
     bool HasModuleAndMethod(ModuleID moduleId, mdMethodDef methodDef);
     void RemoveModule(ModuleID moduleId);

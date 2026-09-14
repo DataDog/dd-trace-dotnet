@@ -13,9 +13,18 @@ DebuggerRejitHandlerModuleMethod::DebuggerRejitHandlerModuleMethod(
 {
 }
 
-void DebuggerRejitHandlerModuleMethod::AddProbe(ProbeDefinition_S probe)
+bool DebuggerRejitHandlerModuleMethod::AddProbe(ProbeDefinition_S probe)
 {
+    for (const auto& currentProbe : m_probes)
+    {
+        if (currentProbe->probeId == probe->probeId)
+        {
+            return false;
+        }
+    }
+
     m_probes.push_back(probe);
+    return true;
 }
 
 bool DebuggerRejitHandlerModuleMethod::RemoveProbe(const shared::WSTRING& probeId)

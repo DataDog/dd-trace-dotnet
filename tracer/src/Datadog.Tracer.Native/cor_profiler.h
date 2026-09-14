@@ -5,6 +5,7 @@
 #include "corprof.h"
 #include <atomic>
 #include <mutex>
+#include <shared_mutex>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -106,6 +107,8 @@ private:
     // Module helper variables and internal tokens (use internal tokens only if the module_ids lock is in place)
     //
     Synchronized<std::vector<ModuleID>> module_ids;
+    std::shared_mutex jit_skipped_module_ids_lock;
+    std::unordered_set<ModuleID> jit_skipped_module_ids;
     std::vector<ModuleID> managedInternalModules_;
     mdMethodDef getDistributedTraceMethodDef_;
     mdMethodDef getNativeTracerVersionMethodDef_;
@@ -132,7 +135,7 @@ private:
     HRESULT RewriteForTelemetry(const ModuleMetadata& module_metadata, ModuleID module_id);
     HRESULT RewriteIsManualInstrumentationOnly(const ModuleMetadata& module_metadata, ModuleID module_id);
     HRESULT EmitDistributedTracerTargetMethod(const ModuleMetadata& module_metadata, ModuleID module_id);
-    HRESULT TryRejitModule(ModuleID module_id, std::vector<ModuleID>& modules);
+    HRESULT TryRejitModule(ModuleID module_id, std::vector<ModuleID>& modules, bool& enqueue_rejit);
     static bool TypeNameMatchesTraceAttribute(WCHAR type_name[], DWORD type_name_len);
     static bool EnsureCallTargetBubbleUpExceptionTypeAvailable(const ModuleMetadata& module_metadata, mdTypeDef* mdTypeDefToken);
     static bool EnsureIsCallTargetBubbleUpExceptionFunctionAvailable(const ModuleMetadata& module_metadata, mdTypeDef typeDef);
