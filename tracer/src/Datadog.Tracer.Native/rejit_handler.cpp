@@ -382,11 +382,16 @@ void RejitHandler::Shutdown()
 {
     DBG("RejitHandler::Shutdown");
 
-    // Mark shutdown before draining the queue so queued work can short-circuit.
+    // Mark shutdown before draining the queue so queued work can short-circuit. The exchange also makes this
+    // idempotent, so only one caller ever enqueues the terminator and joins the worker.
     // Release the write lock before joining because the worker reads this state.
     {
         WriteLock w_lock(m_shutdown_lock);
-        m_shutdown.store(true);
+        if (m_shutdown.exchange(true))
+        {
+            return;
+        }
+
         if (m_work_offloader != nullptr)
         {
             m_work_offloader->Enqueue(RejitWorkItem::CreateTerminatingWorkItem());
@@ -403,7 +408,7 @@ void RejitHandler::Shutdown()
 
     std::vector<std::shared_ptr<ModuleLifetime>> moduleLifetimes;
     {
-        std::lock_guard<std::mutex> lock(m_module_lifetimes_lock);
+        WriteLock lock(m_module_lifetimes_lock);
         moduleLifetimes.reserve(m_module_lifetimes.size());
         for (const auto& moduleLifetime : m_module_lifetimes)
         {
@@ -466,6 +471,10 @@ HRESULT RejitHandler::NotifyReJITParameters(ModuleID moduleId, mdMethodDef metho
         return S_FALSE;
     }
 
+    // Hold the module's lifetime for the whole rewrite: the rejitters read this module's metadata and
+    // m_profilerInfo, both of which a concurrent unload or Shutdown would tear down underneath us.
+    // Nothing below this point may wait on the ReJIT worker, because the worker can be blocked behind an
+    // unload that is waiting for this very lifetime (APMS-20456).
     auto module = GetModuleWithLifetime(moduleId);
     auto moduleLifetime = module.Acquire();
     if (!moduleLifetime.has_value())
@@ -517,7 +526,7 @@ void RejitHandler::RegisterModule(ModuleID moduleId)
         return;
     }
 
-    std::lock_guard<std::mutex> lock(m_module_lifetimes_lock);
+    WriteLock lock(m_module_lifetimes_lock);
     if (m_module_lifetimes.find(moduleId) == m_module_lifetimes.end())
     {
         m_module_lifetimes.emplace(moduleId, std::make_shared<ModuleLifetime>());
@@ -526,7 +535,7 @@ void RejitHandler::RegisterModule(ModuleID moduleId)
 
 ModuleIDWithLifetime RejitHandler::GetModuleWithLifetime(ModuleID moduleId)
 {
-    std::lock_guard<std::mutex> lock(m_module_lifetimes_lock);
+    ReadLock lock(m_module_lifetimes_lock);
     const auto module = m_module_lifetimes.find(moduleId);
     return module == m_module_lifetimes.end() ? ModuleIDWithLifetime{moduleId, nullptr}
                                               : ModuleIDWithLifetime{moduleId, module->second};
@@ -537,7 +546,7 @@ std::vector<ModuleIDWithLifetime> RejitHandler::GetModulesWithLifetime(const std
     std::vector<ModuleIDWithLifetime> modules;
     modules.reserve(moduleIds.size());
 
-    std::lock_guard<std::mutex> lock(m_module_lifetimes_lock);
+    ReadLock lock(m_module_lifetimes_lock);
     for (const auto moduleId : moduleIds)
     {
         const auto module = m_module_lifetimes.find(moduleId);
@@ -599,11 +608,17 @@ bool RejitHandler::HasModuleAndMethod(ModuleID moduleId, mdMethodDef methodDef)
 
 void RejitHandler::RemoveModule(ModuleID moduleId)
 {
+    if (IsShutdownRequested())
+    {
+        return;
+    }
+
+    // Serialized against Shutdown, which marks every remaining lifetime as unloading.
     std::lock_guard<std::mutex> cleanupLock(m_module_cleanup_lock);
 
     std::shared_ptr<ModuleLifetime> moduleLifetime;
     {
-        std::lock_guard<std::mutex> lock(m_module_lifetimes_lock);
+        WriteLock lock(m_module_lifetimes_lock);
         const auto module = m_module_lifetimes.find(moduleId);
         if (module != m_module_lifetimes.end())
         {

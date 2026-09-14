@@ -48,7 +48,7 @@ add_executable(${TEST_EXECUTABLE_NAME}
     string_test.cpp
 	util_test.cpp
     signature_builder_test.cpp
-    module_ids_lock_protocol_test.cpp
+    module_lifetime_test.cpp
     test_link_stubs.cpp
 )
 

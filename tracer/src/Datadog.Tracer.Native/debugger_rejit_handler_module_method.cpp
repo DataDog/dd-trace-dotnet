@@ -15,6 +15,8 @@ DebuggerRejitHandlerModuleMethod::DebuggerRejitHandlerModuleMethod(
 
 bool DebuggerRejitHandlerModuleMethod::AddProbe(ProbeDefinition_S probe)
 {
+    std::lock_guard lock(m_probes_lock);
+
     for (const auto& currentProbe : m_probes)
     {
         if (currentProbe->probeId == probe->probeId)
@@ -29,6 +31,8 @@ bool DebuggerRejitHandlerModuleMethod::AddProbe(ProbeDefinition_S probe)
 
 bool DebuggerRejitHandlerModuleMethod::RemoveProbe(const shared::WSTRING& probeId)
 {
+    std::lock_guard lock(m_probes_lock);
+
     for (auto probe = m_probes.begin(); probe != m_probes.end(); ++probe)
     {
         if ((*probe)->probeId == probeId)
@@ -41,8 +45,9 @@ bool DebuggerRejitHandlerModuleMethod::RemoveProbe(const shared::WSTRING& probeI
     return false;
 }
 
-std::vector<ProbeDefinition_S>& DebuggerRejitHandlerModuleMethod::GetProbes()
+std::vector<ProbeDefinition_S> DebuggerRejitHandlerModuleMethod::GetProbes() const
 {
+    std::lock_guard lock(m_probes_lock);
     return m_probes;
 }
 

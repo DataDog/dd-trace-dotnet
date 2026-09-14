@@ -144,7 +144,7 @@ private:
     std::shared_ptr<RejitWorkOffloader> m_work_offloader;
 
     std::mutex m_module_cleanup_lock;
-    std::mutex m_module_lifetimes_lock;
+    Lock m_module_lifetimes_lock;
     std::unordered_map<ModuleID, std::shared_ptr<ModuleLifetime>> m_module_lifetimes;
 
     bool enable_by_ref_instrumentation = false;

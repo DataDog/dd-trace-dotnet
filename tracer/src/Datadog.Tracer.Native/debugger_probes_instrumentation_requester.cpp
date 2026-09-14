@@ -888,45 +888,33 @@ void DebuggerProbesInstrumentationRequester::RequestRejitForLoadedModule(const M
         return;
     }
 
-    std::function<void()> action = [this, moduleId] {
-        std::lock_guard lock(m_probes_mutex);
+    // Runs inside ModuleLoadFinished, so the module cannot unload underneath us and preprocessing does not need
+    // its own lifetime. The actual RequestReJIT is still offloaded to the ReJIT worker, and neither this lock nor
+    // module_ids is held across a wait (APMS-20456).
+    std::vector<std::shared_ptr<MethodProbeDefinition>> methodProbes;
 
-        auto corProfilerInfo = m_rejit_handler->GetCorProfilerInfo();
-        if (corProfilerInfo == nullptr)
+    std::lock_guard lock(m_probes_mutex);
+
+    for (const auto& probe : m_probes)
+    {
+        const auto methodProbe = std::dynamic_pointer_cast<MethodProbeDefinition>(probe);
+        if (methodProbe != nullptr)
         {
-            return;
+            methodProbes.emplace_back(methodProbe);
         }
+    }
 
-        const auto& moduleInfo = GetModuleInfo(corProfilerInfo, moduleId);
-        if (!moduleInfo.IsValid() || moduleInfo.IsDynamic() || IsCoreLibOr3rdParty(moduleInfo.assembly.name))
-        {
-            return;
-        }
+    if (methodProbes.empty())
+    {
+        Logger::Debug("[Debugger] There are no Method Probes");
+        return;
+    }
 
-        std::vector<std::shared_ptr<MethodProbeDefinition>> methodProbes;
-        for (const auto& probe : m_probes)
-        {
-            const auto methodProbe = std::dynamic_pointer_cast<MethodProbeDefinition>(probe);
-            if (methodProbe != nullptr)
-            {
-                methodProbes.emplace_back(methodProbe);
-            }
-        }
+    const auto numReJITs =
+        m_debugger_rejit_preprocessor->RequestRejitForLoadedModules(std::vector<ModuleID>{moduleId}, methodProbes);
+    // TODO do it also for line probes (scenario: module loaded (line probe request arrived) & unloaded & loaded)
 
-        if (methodProbes.empty())
-        {
-            Logger::Debug("[Debugger] There are no Method Probes");
-            return;
-        }
-
-        const auto numReJITs = m_debugger_rejit_preprocessor->RequestRejitForLoadedModules(
-            std::vector<ModuleID>{moduleId}, methodProbes, /* enqueueInSameThread */ true);
-        // TODO do it also for line probes (scenario: module loaded (line probe request arrived) & unloaded & loaded)
-
-        Logger::Debug("[Debugger] Total number of ReJIT Requested: ", numReJITs);
-    };
-
-    m_rejit_handler->Enqueue(std::make_unique<RejitWorkItem>(std::move(action)));
+    Logger::Debug("[Debugger] Total number of ReJIT Requested: ", numReJITs);
 }
 
 void DebuggerProbesInstrumentationRequester::ModuleLoadFinished_AddMetadataToModule(const ModuleID moduleId)
@@ -936,9 +924,8 @@ void DebuggerProbesInstrumentationRequester::ModuleLoadFinished_AddMetadataToMod
         return;
     }
 
-    // This callback runs outside the ReJIT worker. Its lease keeps profiler and rejitter state alive if shutdown starts
-    // concurrently; registration is idempotent with CorProfiler's normal module registration.
-    m_rejit_handler->RegisterModule(moduleId);
+    // CorProfiler::ModuleLoadFinished registers the lifetime before calling us. Holding it keeps m_profilerInfo
+    // and the rejitter state alive if Shutdown starts concurrently.
     auto module = m_rejit_handler->GetModuleWithLifetime(moduleId);
     auto moduleLifetime = module.Acquire();
     if (!moduleLifetime.has_value())

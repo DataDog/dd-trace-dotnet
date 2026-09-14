@@ -15,6 +15,9 @@ namespace debugger
 class DebuggerRejitHandlerModuleMethod : public RejitHandlerModuleMethod
 {
 private:
+    // Probes are added from the ReJIT worker while preprocessing, removed from the managed thread that serves
+    // RemoveProbes, and read from whichever thread the runtime calls GetReJITParameters on.
+    mutable std::mutex m_probes_lock;
     std::vector<ProbeDefinition_S> m_probes;
 
 public:
@@ -25,7 +28,7 @@ public:
 
     bool AddProbe(ProbeDefinition_S probe);
     bool RemoveProbe(const shared::WSTRING& probeId);
-    std::vector<ProbeDefinition_S>& GetProbes();
+    std::vector<ProbeDefinition_S> GetProbes() const;
 };
 
 } // namespace debugger

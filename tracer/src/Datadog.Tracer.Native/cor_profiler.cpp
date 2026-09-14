@@ -19,7 +19,6 @@
 #include "logger.h"
 #include "metadata_builder.h"
 #include "module_metadata.h"
-#include "module_rewrite_eligibility.h"
 #include "resource.h"
 #include "stats.h"
 #include "Generated/generated_definitions.h"
@@ -578,21 +577,12 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id, HR
         return S_OK;
     }
 
-    const auto& module_info = GetModuleInfo(this->info_, module_id);
+    if (rejit_handler != nullptr)
     {
-        std::unique_lock<std::shared_mutex> lock(jit_skipped_module_ids_lock);
-        if (ShouldSkipModuleIdsLockForJit(module_info))
-        {
-            jit_skipped_module_ids.emplace(module_id);
-        }
-        else
-        {
-            jit_skipped_module_ids.erase(module_id);
-        }
+        // Every module gets a lifetime, so any ReJIT path can pin it for as long as it needs the module's
+        // metadata. ModuleUnloadStarted drops it and then waits for the outstanding pins (APMS-20456).
+        rejit_handler->RegisterModule(module_id);
     }
-
-    const bool skip_module_ids = ShouldSkipModuleIdsLockForModuleLoad(module_info);
-    HRESULT hr = S_OK;
 
     if (debugger_instrumentation_requester != nullptr)
     {
@@ -601,72 +591,65 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id, HR
         debugger_instrumentation_requester->ModuleLoadFinished_AddMetadataToModule(module_id);
     }
 
-    if (rejit_handler != nullptr && ShouldRegisterModuleLifetime(module_info))
-    {
-        rejit_handler->RegisterModule(module_id);
-    }
+    HRESULT hr = S_OK;
+    bool enqueue_this_module = false;
+    std::vector<ModuleID> deferred_module_ids;
+    std::vector<std::future<ULONG>> pending_rejits;
 
-    if (!skip_module_ids)
     {
-        bool enqueue_this_module = false;
-        std::vector<ModuleID> deferred_module_ids;
-        std::vector<std::future<ULONG>> pending_rejits;
+        // Hold module_ids only while mutating the rewrite set and enqueueing immutable work snapshots.
+        // The ReJIT waits happen after this scope (APMS-20456).
+        auto modules = module_ids.Get();
 
+        // double check if is_attached_ has changed to avoid possible race condition with shutdown function
+        if (!is_attached_ || rejit_handler == nullptr)
         {
-            // Hold module_ids only while mutating the rewrite set and enqueueing immutable work snapshots.
-            // The ReJIT waits happen after this scope (APMS-20456).
-            auto modules = module_ids.Get();
+            return S_OK;
+        }
 
-            // double check if is_attached_ has changed to avoid possible race condition with shutdown function
-            if (!is_attached_ || rejit_handler == nullptr)
+        hr = TryRejitModule(module_id, modules.Ref(), enqueue_this_module);
+
+        // Push integration definitions from past modules that were unable to be added
+        auto rejit_size = rejit_module_method_pairs.size();
+        if (rejit_size > 0 && trace_annotation_integration_type != nullptr)
+        {
+            for (size_t i = 0; i < rejit_size; i++)
             {
-                return S_OK;
-            }
+                auto rejit_module_method_pair = rejit_module_method_pairs.front();
+                deferred_module_ids.push_back(rejit_module_method_pair.first);
 
-            hr = TryRejitModule(module_id, modules.Ref(), enqueue_this_module);
+                const auto& methodReferences = rejit_module_method_pair.second;
+                integration_definitions_.reserve(integration_definitions_.size() + methodReferences.size());
 
-            // Push integration definitions from past modules that were unable to be added
-            auto rejit_size = rejit_module_method_pairs.size();
-            if (rejit_size > 0 && trace_annotation_integration_type != nullptr)
-            {
-                for (size_t i = 0; i < rejit_size; i++)
+                DBG("ModuleLoadFinished requesting ReJIT now for ModuleId=", module_id,
+                    ", methodReferences.size()=", methodReferences.size());
+
+                // Push integration definitions from the given module
+                for (const auto& methodReference : methodReferences)
                 {
-                    auto rejit_module_method_pair = rejit_module_method_pairs.front();
-                    deferred_module_ids.push_back(rejit_module_method_pair.first);
-
-                    const auto& methodReferences = rejit_module_method_pair.second;
-                    integration_definitions_.reserve(integration_definitions_.size() + methodReferences.size());
-
-                    DBG("ModuleLoadFinished requesting ReJIT now for ModuleId=", module_id,
-                        ", methodReferences.size()=", methodReferences.size());
-
-                    // Push integration definitions from the given module
-                    for (const auto& methodReference : methodReferences)
-                    {
-                        integration_definitions_.push_back(
-                            IntegrationDefinition(methodReference, *trace_annotation_integration_type.get(), false,
-                                                  false, false));
-                    }
-
-                    rejit_module_method_pairs.pop_front();
+                    integration_definitions_.push_back(
+                        IntegrationDefinition(methodReference, *trace_annotation_integration_type.get(), false, false,
+                                              false));
                 }
-            }
 
-            if (enqueue_this_module)
-            {
-                EnqueueRejitForLoadedModules(tracer_integration_preprocessor.get(), {module_id},
-                                             integration_definitions_, pending_rejits);
-            }
-
-            if (!deferred_module_ids.empty())
-            {
-                EnqueueRejitForLoadedModules(tracer_integration_preprocessor.get(), deferred_module_ids,
-                                             integration_definitions_, pending_rejits);
+                rejit_module_method_pairs.pop_front();
             }
         }
 
-        WaitForPendingRejits(pending_rejits);
+        if (enqueue_this_module)
+        {
+            EnqueueRejitForLoadedModules(tracer_integration_preprocessor.get(), {module_id}, integration_definitions_,
+                                         pending_rejits);
+        }
+
+        if (!deferred_module_ids.empty())
+        {
+            EnqueueRejitForLoadedModules(tracer_integration_preprocessor.get(), deferred_module_ids,
+                                         integration_definitions_, pending_rejits);
+        }
     }
+
+    WaitForPendingRejits(pending_rejits);
 
     if (debugger_instrumentation_requester != nullptr)
     {
@@ -738,6 +721,13 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id, std::vector<ModuleID>& m
         module_info.assembly.app_domain_id, " ", module_info.assembly.app_domain_name, std::boolalpha,
         " | IsNGEN = ", module_info.IsNGEN(), " | IsDynamic = ", module_info.IsDynamic(),
         " | IsResource = ", module_info.IsResource(), std::noboolalpha);
+
+    if (module_info.IsNGEN())
+    {
+        // We check if the Module contains NGEN images and added to the
+        // rejit handler list to verify the inlines.
+        rejit_handler->AddNGenInlinerModule(module_id);
+    }
 
     AppDomainID app_domain_id = module_info.assembly.app_domain_id;
 
@@ -1273,11 +1263,6 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleUnloadStarted(ModuleID module_id)
     auto _ = trace::Stats::Instance()->ModuleUnloadStartedMeasure();
 
     {
-        std::unique_lock<std::shared_mutex> lock(jit_skipped_module_ids_lock);
-        jit_skipped_module_ids.erase(module_id);
-    }
-
-    {
         auto scopedModules = module_ids.Get();
 
         // double check if is_attached_ has changed to avoid possible race condition with shutdown function
@@ -1339,12 +1324,14 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleUnloadStarted(ModuleID module_id)
 
 HRESULT STDMETHODCALLTYPE CorProfiler::Shutdown()
 {
-    if (!is_attached_)
+    // Shutdown is reachable both from the CLR callback and from the DisableTracerCLRProfiler export, so the
+    // detach has to be a single atomic transition. Otherwise both callers reach RejitHandler::Shutdown and
+    // join the ReJIT worker thread twice.
+    bool attached = true;
+    if (!is_attached_.compare_exchange_strong(attached, false))
     {
         return S_OK;
     }
-
-    is_attached_.store(false);
 
     CorProfilerBase::Shutdown();
 
@@ -1467,15 +1454,6 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(FunctionID function
     {
         Logger::Warn("JITCompilationStarted: Call to ICorProfilerInfo4.GetFunctionInfo() failed for ", function_id);
         return S_OK;
-    }
-
-    {
-        std::shared_lock<std::shared_mutex> lock(jit_skipped_module_ids_lock);
-        if (jit_skipped_module_ids.find(module_id) != jit_skipped_module_ids.end())
-        {
-            // This module was classified at load time and never joins the rewrite set.
-            return S_OK;
-        }
     }
 
     bool run_instrument_all = false;

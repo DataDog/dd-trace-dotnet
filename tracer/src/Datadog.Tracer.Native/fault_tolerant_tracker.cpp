@@ -2,11 +2,12 @@
 
 void fault_tolerant::FaultTolerantTracker::RequestRejit(ModuleID moduleId, mdMethodDef methodId, std::shared_ptr<RejitHandler> rejit_handler)
 {
+    // Reached from the method rewriters, which run under the module lifetime taken by NotifyReJITParameters, so
+    // this must not wait on the ReJIT worker: the worker can be blocked behind a module unload that is waiting
+    // for that lifetime (APMS-20456). RequestReJIT only schedules the recompilation, so there is nothing useful
+    // to wait for here.
     std::vector<MethodIdentifier> requests = {{moduleId, methodId}};
-    auto promise = std::make_shared<std::promise<void>>();
-    auto future = promise->get_future();
-    rejit_handler->EnqueueRequestRejit(requests, promise, true);
-    future.get();
+    rejit_handler->EnqueueRequestRejit(requests, nullptr, true);
 }
 
 void fault_tolerant::FaultTolerantTracker::AddFaultTolerant(ModuleID fromModuleId, mdMethodDef fromMethodId,

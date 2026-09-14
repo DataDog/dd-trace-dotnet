@@ -44,12 +44,12 @@ HRESULT FaultTolerantRewriter::ApplyKickoffInstrumentation(RejitHandlerModule* m
     auto methodIdOfOriginalMethod = FaultTolerantTracker::Instance()->GetOriginalMethod(moduleId, methodId);
     auto methodIdOfInstrumentedMethod = FaultTolerantTracker::Instance()->GetInstrumentedMethod(moduleId, methodId);
 
-    // Request ReJIT for instrumented and original duplications.
+    // Request ReJIT for instrumented and original duplications. This runs under the module lifetime taken by
+    // NotifyReJITParameters, so it must not wait on the ReJIT worker: the worker can be blocked behind a module
+    // unload that is itself waiting for that lifetime (APMS-20456). Waiting would buy nothing anyway, because
+    // RequestReJIT only schedules the recompilation, it does not perform it.
     std::vector<MethodIdentifier> requests = {{moduleId, methodIdOfOriginalMethod}, {moduleId, methodIdOfInstrumentedMethod}};
-    auto promise = std::make_shared<std::promise<void>>();
-    auto future = promise->get_future();
-    m_rejit_handler->EnqueueRequestRejit(requests, promise);
-    future.get();
+    m_rejit_handler->EnqueueRequestRejit(requests, nullptr);
 
     FunctionInfo* caller = methodHandler->GetFunctionInfo();
     int numArgs = caller->method_signature.NumberOfArguments();
