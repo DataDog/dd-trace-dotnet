@@ -53,6 +53,7 @@
    </assembly>
    <assembly fullname="Microsoft.AspNetCore.Http.Features">
       <type fullname="Microsoft.AspNetCore.Http.Features.IFeatureCollection" />
+      <type fullname="Microsoft.AspNetCore.Http.Features.IHttpResponseFeature" />
       <type fullname="Microsoft.AspNetCore.Http.IHeaderDictionary" />
       <type fullname="Microsoft.AspNetCore.Http.IQueryCollection" />
       <type fullname="Microsoft.AspNetCore.Http.IRequestCookieCollection" />
@@ -967,6 +968,7 @@
       <type fullname="System.StringSplitOptions" />
       <type fullname="System.Text.Decoder" />
       <type fullname="System.Text.Encoder" />
+      <type fullname="System.Text.EncoderFallbackException" />
       <type fullname="System.Text.Encoding" />
       <type fullname="System.Text.StringBuilder" />
       <type fullname="System.Text.StringBuilder/AppendInterpolatedStringHandler" />

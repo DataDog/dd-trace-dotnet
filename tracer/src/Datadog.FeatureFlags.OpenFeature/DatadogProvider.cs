@@ -24,6 +24,13 @@ namespace Datadog.FeatureFlags.OpenFeature;
 /// </summary>
 public sealed class DatadogProvider : global::OpenFeature.FeatureProvider, IDisposable
 {
+    // The status this provider last reported, which decides the transitions it owns. The first ready
+    // event is not one of them: OpenFeature synthesizes one as soon as InitializeAsync returns, so
+    // emitting it here as well would run every application handler twice.
+    private const int StatusInitializing = 0;
+    private const int StatusReady = 1;
+    private const int StatusError = 2;
+
     private static Action? _onNewConfig = null;
     private readonly Metadata _metadata = new Metadata("datadog-openfeature-provider");
 #if NET6_0_OR_GREATER
@@ -34,7 +41,7 @@ public sealed class DatadogProvider : global::OpenFeature.FeatureProvider, IDisp
     // nothing is allocated/registered when the feature is disabled.
     private readonly SpanEnrichmentHook? _spanEnrichmentHook;
 
-    private int _readySignalled;
+    private int _status = StatusInitializing;
 
     /// <summary> Initializes a new instance of the <see cref="DatadogProvider"/> class. </summary>
     public DatadogProvider()
@@ -61,30 +68,30 @@ public sealed class DatadogProvider : global::OpenFeature.FeatureProvider, IDisp
 
     private void SignalGeneralUpdate()
     {
-        // This provider is the only source of its own status events, so the notification is written
-        // before anything the application supplied runs: a handler that throws must not be able to
-        // suppress it.
+        // The status event is written before anything the application supplied runs: a handler that
+        // throws must not be able to suppress it.
         try
         {
             if (!FeatureFlagsSdk.HasConfiguration())
             {
                 SignalConfigurationUnavailable();
             }
-            else if (Interlocked.CompareExchange(ref _readySignalled, 1, 0) == 0)
+            else if (Interlocked.CompareExchange(ref _status, StatusReady, StatusError) == StatusError)
             {
-                // The first configuration is what makes this provider usable, and only a ready event
-                // promotes it: initialization reports an error when no delivery source could start, and
-                // OpenFeature keeps that status until told otherwise. This also promotes the provider
-                // again after a withdrawal, which resets the flag.
+                // Configuration is back after a withdrawal, and nothing else promotes the provider:
+                // OpenFeature keeps the error status until a ready event replaces it.
                 SignalReady();
             }
-            else
+            else if (Volatile.Read(ref _status) == StatusReady)
             {
                 // Specific flag keys are unknown, so this payload only reports that something changed.
                 // An event already queued says exactly the same thing, which is why a full channel is
                 // left alone: the notification is on its way regardless.
                 EventChannel.Writer.TryWrite(CreatePayload(ProviderEventTypes.ProviderConfigurationChanged, "A backend update occurred, but specific changes are unknown."));
             }
+
+            // Otherwise initialization has not returned yet, and the ready event it produces already
+            // accounts for this configuration.
         }
         catch { }
 
@@ -98,11 +105,11 @@ public sealed class DatadogProvider : global::OpenFeature.FeatureProvider, IDisp
     private void SignalConfigurationUnavailable()
     {
         // Configuration was withdrawn, so every evaluation now returns its default value. Leaving the
-        // status at READY would report a provider that resolves nothing, so an error is emitted and the
-        // ready flag is reset, which lets the next configuration promote the provider back.
-        if (Interlocked.Exchange(ref _readySignalled, 0) == 0)
+        // status at READY would report a provider that resolves nothing, so an error is emitted; the
+        // next configuration promotes the provider back.
+        if (Interlocked.CompareExchange(ref _status, StatusError, StatusReady) != StatusReady)
         {
-            // Never promoted, so there is no status to correct.
+            // Not reported as ready, so there is no status to correct.
             return;
         }
 
@@ -112,19 +119,6 @@ public sealed class DatadogProvider : global::OpenFeature.FeatureProvider, IDisp
         if (!EventChannel.Writer.TryWrite(payload))
         {
             // A status transition cannot be dropped, for the same reason the ready event cannot.
-            _ = WriteWhenRoomAvailableAsync(payload);
-        }
-    }
-
-    private void SignalInitializationFailed(string message)
-    {
-        // Emitted before the exception leaves this method, because the provider owns its status events
-        // rather than letting them be inferred from how initialization terminated.
-        var payload = CreatePayload(ProviderEventTypes.ProviderError, message);
-        payload.ErrorType = ErrorType.ProviderFatal;
-
-        if (!EventChannel.Writer.TryWrite(payload))
-        {
             _ = WriteWhenRoomAvailableAsync(payload);
         }
     }
@@ -139,9 +133,9 @@ public sealed class DatadogProvider : global::OpenFeature.FeatureProvider, IDisp
         }
 
         // Unlike a change notification, this one cannot be dropped: losing it would leave the provider
-        // reported as errored for the rest of the process even though it can now resolve flags. The
-        // channel holds a single item, so waiting for room happens in the background rather than on the
-        // thread applying the configuration. Only ever one such write exists, because it is signalled once.
+        // reported as errored even though it can now resolve flags. The channel holds a single item, so
+        // waiting for room happens in the background rather than on the thread applying the
+        // configuration.
         _ = WriteWhenRoomAvailableAsync(payload);
     }
 
@@ -177,8 +171,8 @@ public sealed class DatadogProvider : global::OpenFeature.FeatureProvider, IDisp
     /// not reach the application, because OpenFeature handles it while setting the provider.
     /// </para>
     /// <para>
-    /// This provider emits its own status event either way, rather than leaving the SDK to infer one
-    /// from how this method returns.
+    /// No status event is emitted here. OpenFeature derives the provider's initial status from how
+    /// this method returns, so the provider only reports the transitions that happen afterwards.
     /// </para>
     /// </summary>
     /// <param name="context"> Evaluation context </param>
@@ -192,19 +186,17 @@ public sealed class DatadogProvider : global::OpenFeature.FeatureProvider, IDisp
         }
         catch (Exception exception)
         {
-            SignalInitializationFailed(exception.Message);
+            Volatile.Write(ref _status, StatusError);
 
             // Irrecoverable: no source can be started later in this process, so no configuration will
-            // ever arrive and every evaluation returns its default value.
+            // ever arrive and every evaluation returns its default value. OpenFeature reports the error
+            // status from this exception.
             throw new ProviderFatalException(exception.Message, exception);
         }
 
-        // Configuration that arrived before the application registered this provider leaves nothing to
-        // signal from the configuration callback, so the ready event is emitted here instead.
-        if (FeatureFlagsSdk.HasConfiguration() && Interlocked.CompareExchange(ref _readySignalled, 1, 0) == 0)
-        {
-            SignalReady();
-        }
+        // Recorded rather than signalled, because OpenFeature marks the provider ready as soon as this
+        // returns. It is what lets a later withdrawal be reported as a transition out of READY.
+        Volatile.Write(ref _status, StatusReady);
     }
 
     /// <summary> Gets provider metadata </summary>
