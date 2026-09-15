@@ -57,7 +57,7 @@ COPY --from=registry.ddbuild.io/windows-code-signer/go:v0.7.0 c:/windows-code-si
 # Install vcpkg and pre-fetch its helper toolchain. 
 # Keep VCPKG_VERSION in sync with the vcpkgVersion constant in
 # Build.Steps.cs. See UPDATING_IMAGE.md.
-ENV VCPKG_VERSION="2024.11.16" \
+ENV VCPKG_VERSION="2026.07.29" \
     VCPKG_ROOT="C:\vcpkg"
 
 COPY install_vcpkg.ps1 .
