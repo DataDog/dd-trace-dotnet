@@ -1,4 +1,6 @@
 using System;
+using System.Threading;
+using System.Threading.Tasks;
 using Datadog.Trace.FeatureFlags;
 
 namespace Samples.FeatureFlags;
@@ -6,16 +8,19 @@ class Evaluator
 {
     static Action? _onNewConfig = null;
 
-    public static bool Init()
+    public static async Task<bool> Init()
     {
         Console.WriteLine("FeatureFlags SDK Sample");
-        if (FeatureFlagsSdk.IsAvailable())
+        if (!FeatureFlagsSdk.IsAvailable())
         {
-            Datadog.Trace.FeatureFlags.FeatureFlagsSdk.RegisterOnNewConfigEventHandler(() => _onNewConfig?.Invoke());
-            return true;
+            return false;
         }
 
-        return false;
+        Datadog.Trace.FeatureFlags.FeatureFlagsSdk.RegisterOnNewConfigEventHandler(() => _onNewConfig?.Invoke());
+
+        // Starts agentless delivery; with the remote_config source it waits for the first update.
+        await Datadog.Trace.FeatureFlags.FeatureFlagsSdk.InitializeAsync(CancellationToken.None);
+        return true;
     }
 
     public static void RegisterOnNewConfigEventHandler(Action onNewConfig)

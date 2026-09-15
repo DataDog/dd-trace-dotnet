@@ -6,6 +6,8 @@
 #nullable enable
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using System.Threading;
+using System.Threading.Tasks;
 using Datadog.Trace.SourceGenerators;
 
 namespace Datadog.Trace.FeatureFlags;
@@ -22,6 +24,18 @@ public static class FeatureFlagsSdk
     [Instrumented]
     [MethodImpl(MethodImplOptions.NoInlining)]
     public static bool IsAvailable() => false;
+
+    /// <summary>
+    /// Activates flag configuration delivery and waits for the first configuration to arrive.
+    /// Agentless delivery only starts here, because those requests are billable and installing the
+    /// tracer alone must not make them. With the Remote Configuration source, configuration is
+    /// already being received by this point and this waits for the first update.
+    /// </summary>
+    /// <param name="cancellationToken"> Cancellation token. Signalling it completes the returned task; it does not throw <see cref="System.OperationCanceledException"/> </param>
+    /// <returns> A task that completes once configuration has arrived, the initialization timeout has elapsed, or no delivery source could be started at all. A completed task is not a promise that flags resolve: when delivery could not start, the reason is in the Datadog tracer log and every evaluation returns its default value </returns>
+    [Instrumented]
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    public static Task InitializeAsync(CancellationToken cancellationToken = default) => Task.CompletedTask;
 
     /// <summary> Installs an event handler to be fired when a new config has been received </summary>
     /// <param name="onNewConfig"> Action to be called when the event is fired </param>
