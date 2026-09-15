@@ -9,7 +9,7 @@ using System.Diagnostics;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using Datadog.Trace.AppSec.Rasp;
-using Datadog.Trace.Util;
+using Datadog.Trace.Iast;
 using FluentAssertions;
 using Xunit;
 

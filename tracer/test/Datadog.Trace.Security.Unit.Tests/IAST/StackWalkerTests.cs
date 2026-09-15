@@ -9,7 +9,6 @@ using System;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using Datadog.Trace.Iast;
-using Datadog.Trace.Util;
 using FluentAssertions;
 using Xunit;
 
