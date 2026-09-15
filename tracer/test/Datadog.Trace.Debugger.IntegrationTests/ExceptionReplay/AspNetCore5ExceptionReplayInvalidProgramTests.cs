@@ -77,7 +77,7 @@ public class AspNetCore5ExceptionReplayInvalidProgramTests : AspNetBase, IClassF
         Fixture.SetOutput(null);
     }
 
-    [SkippableTheory]
+    [SkippableTheory(Skip = "This test intermittently hangs the sample process after Exception Replay re-JIT.")]
     [MemberData(nameof(InvalidProgramScenarios))]
     [Trait("Category", "EndToEnd")]
     [Trait("RunOnWindows", "True")]
