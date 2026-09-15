@@ -1,6 +1,6 @@
 ---
 name: dd-apm-sdk-review
-description: "ALWAYS USE BEFORE PUSHING CODE! Multi-perspective read-only review of changes in this tracer repo, consolidated into one report with an explicit go / no-go verdict."
+description: "On-demand multi-perspective read-only review of changes in this tracer repo, consolidated into one report with an explicit go / no-go verdict. Invoke when asked. GitHub Codex does not use this file — it follows review-without-harness.md via AGENTS.md."
 model: opus
 effort: high
 allowed-tools:
