@@ -367,7 +367,10 @@ stages:
     strategy:
       matrix:
         x64:
-          nativeBaseImage: centos7
+          # Approach A of docs/development/rfc-linux-x64-build-host.md, Stage 0/1 CI spike:
+          # ubuntu.dockerfile links against a frozen glibc-2.17 sysroot instead of requiring
+          # a real CentOS 7 host - see that RFC before reverting to centos7 here.
+          nativeBaseImage: ubuntu
           managedBaseImage: debian
           useNativeSdkVersion: true
           artifactSuffix: linux-x64
@@ -549,7 +552,16 @@ stages:
     strategy:
       matrix:
         x64:
-          baseImage: centos7
+          # Approach A of docs/development/rfc-linux-x64-build-host.md, Stage 0/1 CI spike:
+          # ubuntu.dockerfile links against a frozen glibc-2.17 sysroot instead of requiring
+          # a real CentOS 7 host - see that RFC before reverting to centos7 here. Note this
+          # also affects CompileNativeWrapper/CompileNativeLoaderNativeTests below, which are
+          # NOT gated by USE_GLIBC217_SYSROOT (they're the separate, out-of-scope
+          # AsUniversal/musl path) - on this image they now build against Ubuntu's own glibc
+          # instead of centos7's, but neither is published from this stage (see comment
+          # below), so this only affects RunNativeWrapperNativeTests/
+          # RunNativeLoaderNativeTests' own test run, not any shipped artifact.
+          baseImage: ubuntu
           managedBaseImage: debian
           artifactSuffix: linux-x64
           useNativeSdkVersion: true
@@ -3141,7 +3153,17 @@ stages:
       parameters:
         build: true
         target: builder
-        baseImage: centos7
+        # Approach A of docs/development/rfc-linux-x64-build-host.md, extended to the x64
+        # sanitizer stages. Nothing else has to change: ubuntu.dockerfile sets
+        # UseGlibc217Sysroot=true, and Build.Profiler.Steps.cs already threads
+        # Glibc217SysrootCMakeArgs through the RUN_ASAN/RUN_UBSAN/RUN_TSAN configures, so all
+        # three pick up the frozen glibc-2.17 sysroot toolchain automatically on this image.
+        # Verified locally for all three sanitizers: they build, link and run clean with a
+        # GLIBC_2.17 ceiling. Clang's own statically-linked sanitizer runtime archives pull in
+        # nothing newer than 2.17 - the one borderline symbol, pthread_getattr_np, resolves
+        # against the sysroot's libpthread at GLIBC_2.2.5 rather than the GLIBC_2.32 version a
+        # modern host would otherwise supply. See that RFC before reverting to centos7 here.
+        baseImage: ubuntu
         useNativeSdkVersion: true
         command: "BuildProfilerAsanTest -Framework net7.0"
         apiKey: $(DD_LOGGER_DD_API_KEY)
@@ -3160,7 +3182,9 @@ stages:
     - template: steps/run-in-docker.yml
       parameters:
         target: builder
-        baseImage: centos7
+        # ubuntu (frozen glibc-2.17 sysroot) to match this stage's build step above - see
+        # the comment there and docs/development/rfc-linux-x64-build-host.md.
+        baseImage: ubuntu
         useNativeSdkVersion: true
         command: "RunSampleWithProfilerAsan -Framework net7.0"
         apiKey: $(DD_LOGGER_DD_API_KEY)
@@ -3340,7 +3364,9 @@ stages:
       parameters:
         build: true
         target: builder
-        baseImage: centos7
+        # ubuntu (frozen glibc-2.17 sysroot) - see asan_profiler_tests above for the full
+        # rationale, and docs/development/rfc-linux-x64-build-host.md.
+        baseImage: ubuntu
         useNativeSdkVersion: true
         command: "BuildProfilerUbsanTest -Framework net7.0"
         apiKey: $(DD_LOGGER_DD_API_KEY)
@@ -3359,7 +3385,9 @@ stages:
     - template: steps/run-in-docker.yml
       parameters:
         target: builder
-        baseImage: centos7
+        # ubuntu (frozen glibc-2.17 sysroot) to match this stage's build step above - see
+        # the comment there and docs/development/rfc-linux-x64-build-host.md.
+        baseImage: ubuntu
         useNativeSdkVersion: true
         command: "RunSampleWithProfilerUbsan -Framework net7.0"
         apiKey: $(DD_LOGGER_DD_API_KEY)
@@ -3407,7 +3435,9 @@ stages:
       parameters:
         build: true
         target: builder
-        baseImage: centos7
+        # ubuntu (frozen glibc-2.17 sysroot) - see asan_profiler_tests above for the full
+        # rationale, and docs/development/rfc-linux-x64-build-host.md.
+        baseImage: ubuntu
         useNativeSdkVersion: true
         command: "BuildProfilerTsanTest RunUnitTestsWithTsanLinux -Framework net7.0"
         apiKey: $(DD_LOGGER_DD_API_KEY)
