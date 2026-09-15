@@ -531,6 +531,8 @@ public abstract class XUnitEvpTests : TestingFrameworkEvpTest
         var unskippableTestSuite = testSuites.First(suite => suite.Resource == UnSkippableSuiteName);
         var testModule = testModules[0];
 
+        ValidateTestSessionFingerprintInputs(testModule, testSuites, tests, sessionWorkingDirectory, gitRepositoryUrl);
+
         // Check Suite
         Assert.True(tests.All(t => t.TestSuiteId == testSuite.TestSuiteId || t.TestSuiteId == unskippableTestSuite.TestSuiteId));
         testSuite.TestModuleId.Should().Be(testModule.TestModuleId);
