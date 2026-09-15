@@ -19,11 +19,14 @@ public:
     DebuggerRejitPreprocessor(CorProfiler* corProfiler, std::shared_ptr<RejitHandler> rejit_handler,
                             std::shared_ptr<RejitWorkOffloader> work_offloader);
 
-    ULONG PreprocessLineProbes(const std::vector<ModuleID>& modules, const std::vector<std::shared_ptr<LineProbeDefinition>>& lineProbes,
-                               std::vector<MethodIdentifier>& rejitRequests);
+    ULONG PreprocessLineProbes(const std::vector<ModuleIDWithLifetime>& modules, const std::vector<std::shared_ptr<LineProbeDefinition>>& lineProbes,
+                               std::vector<RejitRequest>& rejitRequests);
     void EnqueuePreprocessLineProbes(const std::vector<ModuleID>& modules,
                                      const std::vector<std::shared_ptr<LineProbeDefinition>>& lineProbes,
-                               std::promise<std::vector<MethodIdentifier>>* promise);
+                                     std::shared_ptr<std::promise<std::vector<RejitRequest>>> promise);
+    void EnqueuePreprocessLineProbes(const std::vector<ModuleIDWithLifetime>& modules,
+                                     const std::vector<std::shared_ptr<LineProbeDefinition>>& lineProbes,
+                                     std::shared_ptr<std::promise<std::vector<RejitRequest>>> promise);
 
 protected:
     void ProcessTypesForRejit(std::vector<MethodIdentifier>& rejitRequests, const ModuleInfo& moduleInfo,
