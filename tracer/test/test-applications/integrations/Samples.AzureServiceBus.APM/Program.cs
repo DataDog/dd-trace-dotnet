@@ -10,7 +10,8 @@ namespace Samples.AzureServiceBus.APM
         ReceiveMessages,
         ReceiveMessagesMultiple,
         ScheduleMessages,
-        TestServiceBusMessageBatch
+        TestServiceBusMessageBatch,
+        Processor
     }
 
     public class Program
@@ -26,6 +27,15 @@ namespace Samples.AzureServiceBus.APM
             Console.WriteLine($"Starting Azure Service Bus APM Test Sample - Mode: {testModeString ?? "NONE"}");
             Console.WriteLine($"Connecting to: {ConnectionString}");
             Console.WriteLine($"Using queue: {QueueName}");
+
+            // The Azure SDK only emits its ActivitySource spans (ServiceBusProcessor.ProcessMessage,
+            // ServiceBusReceiver.Receive, etc.) when this switch is enabled. This mirrors a customer
+            // running with AZURE_EXPERIMENTAL_ENABLE_ACTIVITY_SOURCE=true and DD_TRACE_OTEL_ENABLED=true,
+            // and is required to reproduce the ServiceBusProcessor consumer scenario.
+            if (string.Equals(testModeString, nameof(TestMode.Processor), StringComparison.OrdinalIgnoreCase))
+            {
+                AppContext.SetSwitch("Azure.Experimental.EnableActivitySource", true);
+            }
 
             try
             {
@@ -58,6 +68,9 @@ namespace Samples.AzureServiceBus.APM
                         break;
                     case TestMode.TestServiceBusMessageBatch:
                         await TestServiceBusMessageBatchAsync(sender, receiver);
+                        break;
+                    case TestMode.Processor:
+                        await TestProcessorAsync(client, sender);
                         break;
                     default:
                         throw new ArgumentOutOfRangeException(nameof(testMode), testMode, "Unhandled test mode");
@@ -236,6 +249,53 @@ namespace Samples.AzureServiceBus.APM
             Console.WriteLine($"Completed processing {receivedMessages.Count} messages");
 
             Console.WriteLine("Service Bus Message Batch test completed");
+        }
+
+        private static async Task TestProcessorAsync(ServiceBusClient client, ServiceBusSender sender)
+        {
+            Console.WriteLine("\n=== Processor Test ===");
+
+            var messageId = Guid.NewGuid().ToString();
+            var testMessage = new ServiceBusMessage("Hello from Processor test!")
+            {
+                MessageId = messageId
+            };
+            await sender.SendMessageAsync(testMessage);
+            Console.WriteLine($"Sent message with ID: {messageId}");
+
+            await using var processor = client.CreateProcessor(QueueName, new ServiceBusProcessorOptions
+            {
+                MaxConcurrentCalls = 1,
+                AutoCompleteMessages = true,
+            });
+
+            var processed = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+
+            processor.ProcessMessageAsync += args =>
+            {
+                Console.WriteLine($"Processing message ID: {args.Message.MessageId}, Body: {args.Message.Body}");
+                processed.TrySetResult(true);
+                return Task.CompletedTask;
+            };
+            processor.ProcessErrorAsync += args =>
+            {
+                Console.WriteLine($"Processor error: {args.Exception.Message}");
+                processed.TrySetException(args.Exception);
+                return Task.CompletedTask;
+            };
+
+            await processor.StartProcessingAsync();
+            var completed = await Task.WhenAny(processed.Task, Task.Delay(TimeSpan.FromSeconds(30)));
+            await processor.StopProcessingAsync();
+
+            if (completed != processed.Task)
+            {
+                throw new TimeoutException("Processor did not process the message within the timeout");
+            }
+
+            // Observe any exception captured in the handler
+            await processed.Task;
+            Console.WriteLine("Processor test completed");
         }
 
         private static async Task PurgeQueue(ServiceBusReceiver receiver)
