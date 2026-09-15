@@ -91,6 +91,7 @@ namespace Datadog.Trace.Tests.Configuration
 
             yield return (s => s.TraceId128BitGenerationEnabled, true);
             yield return (s => s.TraceId128BitLoggingEnabled, true);
+            yield return (s => s.AzureEventGridBatchLinksEnabled, true);
             yield return (s => s.AgentFeaturePollingEnabled, true);
         }
 
@@ -117,6 +118,8 @@ namespace Datadog.Trace.Tests.Configuration
 
             yield return (ConfigurationKeys.ServiceName, "web-service", s => s.Manager.InitialMutableSettings.ServiceName, "web-service");
             yield return ("DD_SERVICE_NAME", "web-service", s => s.Manager.InitialMutableSettings.ServiceName, "web-service");
+
+            yield return (ConfigurationKeys.AzureEventGridBatchLinksEnabled, "false", s => s.AzureEventGridBatchLinksEnabled, false);
 
             yield return (ConfigurationKeys.DisabledIntegrations, "integration1;integration2;;INTEGRATION2", s => s.Manager.InitialMutableSettings.DisabledIntegrationNames.Count, 3); // The OpenTelemetry integration is disabled by defau)t
 
