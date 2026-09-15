@@ -191,6 +191,10 @@ private:
     // (signal-handler read path backing off instead of blocking).
     std::shared_ptr<CounterMetric> _lockFailureMetric;
 
+    // Counts the code ranges removed because a new one overlaps them
+    // (i.e. the code memory was recycled by the CLR).
+    std::shared_ptr<CounterMetric> _rangeOverwriteMetric;
+
     std::optional<FunctionID> GetFunctionIdImpl(std::uintptr_t ip) const noexcept;
     std::optional<bool> IsCodeInR2RModule(std::uintptr_t ip, bool signalSafe) const noexcept;
     std::optional<FunctionID> GetFunctionFromIP_Original(std::uintptr_t ip) noexcept;

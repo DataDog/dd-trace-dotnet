@@ -92,7 +92,8 @@ struct IMAGE_NT_HEADERS_GENERIC
 
 ManagedCodeCache::ManagedCodeCache(ICorProfilerInfo4* pProfilerInfo, MetricsRegistry& metricsRegistry)
     : _profilerInfo(pProfilerInfo),
-      _lockFailureMetric(metricsRegistry.GetOrRegister<CounterMetric>("dotnet_managed_code_cache_lock_failures"))
+      _lockFailureMetric(metricsRegistry.GetOrRegister<CounterMetric>("dotnet_managed_code_cache_lock_failures")),
+      _rangeOverwriteMetric(metricsRegistry.GetOrRegister<CounterMetric>("dotnet_managed_code_cache_range_overwrites"))
 {
 }
 
@@ -397,7 +398,29 @@ void ManagedCodeCache::InsertCodeRangeIntoPage(PagesMap::iterator pageIt,
 {
     std::unique_lock<CodeCacheMutex> pageLock(pageIt->second.lock);
     auto& ranges = pageIt->second.ranges;
-    ranges.insert(std::upper_bound(ranges.begin(), ranges.end(), range), range);
+
+    // Look for the first range starting at or after the new one
+    auto it = std::lower_bound(ranges.begin(), ranges.end(), range);
+
+    // The previous range might still overlap the new one. Since the ranges stored in a page
+    // never overlap each other, there is at most one such predecessor.
+    if (it != ranges.begin() && std::prev(it)->endAddress >= range.startAddress)
+    {
+        --it;
+    }
+
+    // Remove all the ranges overlapping the new one: their code has been reclaimed and its
+    // memory reused (the CLR recycles freed LCG/IL stub code memory and can merge adjacent
+    // free blocks, so one new range can cover several old ones).
+    auto overlapEnd = it;
+    while (overlapEnd != ranges.end() && overlapEnd->startAddress <= range.endAddress)
+    {
+        _rangeOverwriteMetric->Incr();
+        ++overlapEnd;
+    }
+
+    it = ranges.erase(it, overlapEnd);
+    ranges.insert(it, range);
 }
 
 void ManagedCodeCache::AddFunctionRangesToCache(std::vector<CodeRange> newRanges)
