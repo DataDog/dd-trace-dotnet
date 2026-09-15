@@ -418,8 +418,15 @@ void RejitHandler::EnqueueForRejit(std::vector<RejitRequest> rejitRequests,
         }
     };
 
+    std::function<void()> abandon = [localPromise = promise]() {
+        if (localPromise != nullptr)
+        {
+            localPromise->set_value();
+        }
+    };
+
     // Enqueue
-    if (!Enqueue(std::make_unique<RejitWorkItem>(std::move(action))) && promise != nullptr)
+    if (!Enqueue(std::make_unique<RejitWorkItem>(std::move(action), std::move(abandon))) && promise != nullptr)
     {
         promise->set_value();
     }

@@ -501,8 +501,16 @@ void RejitPreprocessor<RejitRequestDefinition>::EnqueueRequestRejit(std::vector<
         }
     };
 
+    std::function<void()> abandon = [localPromise = promise]() {
+        if (localPromise != nullptr)
+        {
+            localPromise->set_value();
+        }
+    };
+
     // Enqueue
-    if (!m_rejit_handler->Enqueue(std::make_unique<RejitWorkItem>(std::move(action))) && promise != nullptr)
+    if (!m_rejit_handler->Enqueue(std::make_unique<RejitWorkItem>(std::move(action), std::move(abandon))) &&
+        promise != nullptr)
     {
         promise->set_value();
     }
@@ -553,8 +561,16 @@ void RejitPreprocessor<RejitRequestDefinition>::EnqueueRequestRejitForLoadedModu
         enqueueMeasure.Refresh();
     };
 
+    std::function<void()> abandon = [localPromise = promise]() {
+        if (localPromise != nullptr)
+        {
+            localPromise->set_value(0);
+        }
+    };
+
     // Enqueue
-    if (!m_rejit_handler->Enqueue(std::make_unique<RejitWorkItem>(std::move(action))) && promise != nullptr)
+    if (!m_rejit_handler->Enqueue(std::make_unique<RejitWorkItem>(std::move(action), std::move(abandon))) &&
+        promise != nullptr)
     {
         promise->set_value(0);
     }
@@ -921,8 +937,16 @@ void RejitPreprocessor<RejitRequestDefinition>::EnqueuePreprocessRejitRequests(
         }
     };
 
+    std::function<void()> abandon = [localPromise = promise, rejitRequests]() {
+        if (localPromise != nullptr)
+        {
+            localPromise->set_value(rejitRequests);
+        }
+    };
+
     // Enqueue
-    if (!m_rejit_handler->Enqueue(std::make_unique<RejitWorkItem>(std::move(action))) && promise != nullptr)
+    if (!m_rejit_handler->Enqueue(std::make_unique<RejitWorkItem>(std::move(action), std::move(abandon))) &&
+        promise != nullptr)
     {
         promise->set_value(rejitRequests);
     }
