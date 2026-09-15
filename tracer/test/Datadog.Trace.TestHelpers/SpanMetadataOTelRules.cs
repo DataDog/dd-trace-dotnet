@@ -39,5 +39,57 @@ namespace Datadog.Trace.TestHelpers
                 .IsOptional("_dd.tags.process")
                 .IsOptional("_dd.svc_src")
                 .Matches("span.kind", "client"));
+
+        // See: https://opentelemetry.io/docs/specs/semconv/database/database-spans/
+        //  and https://opentelemetry.io/docs/specs/semconv/database/sql/
+        /// <param name="span">The database client span.</param>
+        /// <param name="operationName">The Datadog operation name, or <c>null</c> for a custom ADO.NET provider, whose operation name is derived from its command type.</param>
+        /// <param name="dbSystemName">The expected "db.system.name", or <c>null</c> for a custom ADO.NET provider, which has no fixed value.</param>
+        public static Result IsDatabaseClientOTel(this MockSpan span, string operationName = null, string dbSystemName = null) => Result.FromSpan(span)
+            .Properties(s =>
+            {
+                if (operationName is not null)
+                {
+                    s.Matches(Name, operationName);
+                }
+
+                s.Matches(Type, "sql");
+            })
+            .Tags(s =>
+            {
+                // Required. A custom ADO.NET provider reports the name we derived from its command
+                // type, so the caller only supplies one when the specification names the provider.
+                if (dbSystemName is null)
+                {
+                    s.IsPresent("db.system.name");
+                }
+                else
+                {
+                    s.Matches("db.system.name", dbSystemName);
+                }
+
+                s
+                // Conditionally required
+                .IsOptional("db.namespace")
+                .IsOptional("db.response.status_code")
+                .IsOptional("error.type")
+                .IsOptional("server.port")
+                // Recommended
+                .IsOptional("db.collection.name")
+                .IsOptional("db.operation.name")
+                .IsOptional("db.query.summary")
+                .IsOptional("db.query.text")
+                .IsOptional("db.stored_procedure.name")
+                .IsOptional("server.address")
+                // DD Only
+                .IsPresent("component")
+                .IsOptional("_dd.base_service")
+                .IsOptional("_dd.dbm_trace_injected")
+                .IsOptional("_dd.propagated_hash")
+                .IsOptional("_dd.svc_src")
+                .IsOptional("_dd.tags.process")
+                .IsOptional("dd.instrumentation.time_ms")
+                .Matches("span.kind", "client");
+            });
     }
 }

@@ -132,6 +132,7 @@
       "tracer\\test\\test-applications\\integrations\\Samples.NUnitTestsRetries\\Samples.NUnitTestsRetries.csproj",
       "tracer\\test\\test-applications\\integrations\\Samples.NUnitTests\\Samples.NUnitTests.csproj",
       "tracer\\test\\test-applications\\integrations\\Samples.OpenTelemetry.HttpClient\\Samples.OpenTelemetry.HttpClient.csproj",
+      "tracer\\test\\test-applications\\integrations\\Samples.OpenTelemetry.Sqlite\\Samples.OpenTelemetry.Sqlite.csproj",
       "tracer\\test\\test-applications\\integrations\\Samples.OpenTelemetrySdk\\Samples.OpenTelemetrySdk.csproj",
       "tracer\\test\\test-applications\\integrations\\Samples.OpenTracing\\Samples.OpenTracing.csproj",
       "tracer\\test\\test-applications\\integrations\\Samples.OracleMDA\\Samples.OracleMDA.csproj",
