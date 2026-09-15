@@ -11,6 +11,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using Datadog.Trace.AppSec;
 
 namespace Datadog.Trace.Iast;
 

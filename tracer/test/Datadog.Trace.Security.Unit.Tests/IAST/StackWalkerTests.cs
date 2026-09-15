@@ -8,6 +8,7 @@
 using System;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
+using Datadog.Trace.AppSec;
 using Datadog.Trace.Iast;
 using FluentAssertions;
 using Xunit;
