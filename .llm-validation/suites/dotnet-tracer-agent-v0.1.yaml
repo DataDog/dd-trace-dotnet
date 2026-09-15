@@ -303,19 +303,21 @@ cases:
 
       ```csharp
       // Called from OnMethodBegin on every instrumented request.
-      static void TagAll(Span span, params object[] tags)
+      static void TagIds(Span span, params int[] ids)
       {
-          for (var i = 0; i < tags.Length; i += 2)
+          for (var i = 0; i < ids.Length; i++)
           {
-              span.SetTag((string)tags[i], tags[i + 1]?.ToString());
+              span.SetTag("id." + i, ids[i].ToString());
           }
       }
       ```
     expected_criteria:
-      - Flags the `params object[]` helper on a per-request instrumentation callback.
-      - Names the concrete cost — a new array (and boxed values) on every request.
+      - Flags the `params int[]` helper on a per-request instrumentation callback (not only `params object[]`).
+      - Names the concrete cost — a new array on every request.
       - Recommends overloads for the common 0/1/2-arg cases instead of `params`.
-      - Classifies the finding as at least P1, not a style nit.
+      - Classifies the finding as P1 (override resolves this allocation to SEV-2 / P1, not P2).
     bad_signals:
-      - Approves `params object[]` as the recommended hot-path helper.
+      - Approves `params int[]` as the recommended hot-path helper.
+      - Treats the allocation as acceptable because the element type is `int`, not `object`.
       - Treats the allocation as acceptable because the method is short.
+      - Reports the finding as P2 / a style nit.
