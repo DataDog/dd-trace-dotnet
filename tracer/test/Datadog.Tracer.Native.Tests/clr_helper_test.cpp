@@ -4,6 +4,7 @@
 #include "test_helpers.h"
 #include "../../../shared/src/native-src/pal.h"
 
+#include <array>
 #include <vector>
 
 using namespace trace;
@@ -216,7 +217,7 @@ TEST_F(CLRHelperTest, GetsTypeInfoFromMethods) {
 }
 
 TEST_F(CLRHelperTest, FindTypeDefsByName) {
-  std::vector<shared::WSTRING> expected_types = {
+  const std::array<shared::WSTRING, 10> expected_types = {
       WStr("Samples.ExampleLibrary.Class1"),
       WStr("Samples.ExampleLibrary.GenericTests.ComprehensiveCaller`2"),
       WStr("Samples.ExampleLibrary.GenericTests.GenericTarget`2"),
@@ -238,7 +239,7 @@ TEST_F(CLRHelperTest, FindTypeDefsByName) {
 }
 
 TEST_F(CLRHelperTest, FindNestedTypeDefsByName) {
-  std::vector<shared::WSTRING> expected_types = {
+  const std::array<shared::WSTRING, 2> expected_types = {
       WStr("Samples.ExampleLibrary.FakeClient.Biscuit+Cookie"),
       WStr("Samples.ExampleLibrary.FakeClient.StructBiscuit+Cookie")};
 

@@ -23,11 +23,9 @@ TEST(DataflowTests, PreloadedModulesAreNotResolvedFromTheConstructor)
     auto runtimeInfo = MakeTestRuntimeInformation();
     std::vector<ModuleID> preloadedModules{42};
 
-    auto dataflow = new iast::Dataflow(&mockProfiler, nullptr, preloadedModules, runtimeInfo);
+    auto dataflow = iast::Dataflow(&mockProfiler, nullptr, preloadedModules, runtimeInfo);
 
     EXPECT_EQ(0, mockProfiler.getModuleInfo2CallCount);
-
-    delete dataflow;
 }
 
 TEST(DataflowTests, PreloadedModulesAreResolvedOnTheNextModuleLoaded)
@@ -36,18 +34,16 @@ TEST(DataflowTests, PreloadedModulesAreResolvedOnTheNextModuleLoaded)
     auto runtimeInfo = MakeTestRuntimeInformation();
     std::vector<ModuleID> preloadedModules{42};
 
-    auto dataflow = new iast::Dataflow(&mockProfiler, nullptr, preloadedModules, runtimeInfo);
+    auto dataflow = iast::Dataflow(&mockProfiler, nullptr, preloadedModules, runtimeInfo);
 
-    dataflow->ModuleLoaded(99);
+    dataflow.ModuleLoaded(99);
 
     // The preloaded module and the newly loaded one, once each.
     EXPECT_EQ(2, mockProfiler.getModuleInfo2CallCount);
 
     // The preloaded list is drained, so a later ModuleLoaded only resolves its own module.
-    dataflow->ModuleLoaded(100);
+    dataflow.ModuleLoaded(100);
     EXPECT_EQ(3, mockProfiler.getModuleInfo2CallCount);
-
-    delete dataflow;
 }
 
 TEST(DataflowTests, UnloadedModulesAreDroppedFromThePendingPreloadList)
@@ -58,15 +54,13 @@ TEST(DataflowTests, UnloadedModulesAreDroppedFromThePendingPreloadList)
     auto runtimeInfo = MakeTestRuntimeInformation();
     std::vector<ModuleID> preloadedModules{42};
 
-    auto dataflow = new iast::Dataflow(&mockProfiler, nullptr, preloadedModules, runtimeInfo);
+    auto dataflow = iast::Dataflow(&mockProfiler, nullptr, preloadedModules, runtimeInfo);
 
-    dataflow->ModuleUnloaded(42);
-    dataflow->ModuleLoaded(99);
+    dataflow.ModuleUnloaded(42);
+    dataflow.ModuleLoaded(99);
 
     // Only the newly loaded module is resolved; the unloaded one is never touched.
     EXPECT_EQ(1, mockProfiler.getModuleInfo2CallCount);
-
-    delete dataflow;
 }
 
 TEST(DataflowTests, ModuleLoadedResolvesNewlyLoadedModules)
@@ -75,14 +69,12 @@ TEST(DataflowTests, ModuleLoadedResolvesNewlyLoadedModules)
     auto runtimeInfo = MakeTestRuntimeInformation();
     std::vector<ModuleID> preloadedModules{};
 
-    auto dataflow = new iast::Dataflow(&mockProfiler, nullptr, preloadedModules, runtimeInfo);
+    auto dataflow = iast::Dataflow(&mockProfiler, nullptr, preloadedModules, runtimeInfo);
     EXPECT_EQ(0, mockProfiler.getModuleInfo2CallCount);
 
-    dataflow->ModuleLoaded(99);
+    dataflow.ModuleLoaded(99);
 
     EXPECT_EQ(1, mockProfiler.getModuleInfo2CallCount);
-
-    delete dataflow;
 }
 
 TEST(DataflowTests, UnresolvedModulesAreResolvedOnDemand)
@@ -94,18 +86,16 @@ TEST(DataflowTests, UnresolvedModulesAreResolvedOnDemand)
     auto runtimeInfo = MakeTestRuntimeInformation();
     std::vector<ModuleID> preloadedModules{42};
 
-    auto dataflow = new iast::Dataflow(&mockProfiler, nullptr, preloadedModules, runtimeInfo);
+    auto dataflow = iast::Dataflow(&mockProfiler, nullptr, preloadedModules, runtimeInfo);
 
-    auto moduleInfo = dataflow->GetModuleInfo(42);
+    auto moduleInfo = dataflow.GetModuleInfo(42);
 
     EXPECT_NE(nullptr, moduleInfo);
     EXPECT_EQ(1, mockProfiler.getModuleInfo2CallCount);
 
     // Served from cache the second time.
-    EXPECT_EQ(moduleInfo, dataflow->GetModuleInfo(42));
+    EXPECT_EQ(moduleInfo, dataflow.GetModuleInfo(42));
     EXPECT_EQ(1, mockProfiler.getModuleInfo2CallCount);
-
-    delete dataflow;
 }
 
 TEST(DataflowTests, ResolvingAModuleOnlyAsksForReadAccess)
@@ -117,10 +107,10 @@ TEST(DataflowTests, ResolvingAModuleOnlyAsksForReadAccess)
     MockCorProfilerInfo mockProfiler;
     auto runtimeInfo = MakeTestRuntimeInformation();
 
-    auto dataflow = new iast::Dataflow(&mockProfiler, nullptr, std::vector<ModuleID>{42}, runtimeInfo);
+    auto dataflow = iast::Dataflow(&mockProfiler, nullptr, std::vector<ModuleID>{42}, runtimeInfo);
 
-    dataflow->ModuleLoaded(99);
-    dataflow->GetModuleInfo(100);
+    dataflow.ModuleLoaded(99);
+    dataflow.GetModuleInfo(100);
 
     EXPECT_FALSE(mockProfiler.moduleMetaDataOpenFlags.empty());
     EXPECT_FALSE(mockProfiler.AskedForWriteAccess());
@@ -128,8 +118,6 @@ TEST(DataflowTests, ResolvingAModuleOnlyAsksForReadAccess)
     {
         EXPECT_EQ(static_cast<DWORD>(ofRead), flags);
     }
-
-    delete dataflow;
 }
 
 TEST(DataflowTests, FailedResolutionIsCachedAndNotRetried)
@@ -164,12 +152,10 @@ TEST(DataflowTests, UnloadingAModuleWithACachedFailureDoesNotDereferenceIt)
     auto runtimeInfo = MakeTestRuntimeInformation();
     std::vector<ModuleID> preloadedModules{};
 
-    auto dataflow = new iast::Dataflow(&mockProfiler, nullptr, preloadedModules, runtimeInfo);
+    auto dataflow = iast::Dataflow(&mockProfiler, nullptr, preloadedModules, runtimeInfo);
 
-    EXPECT_EQ(nullptr, dataflow->GetModuleInfo(42));
-    EXPECT_EQ(S_OK, dataflow->ModuleUnloaded(42));
-
-    delete dataflow;
+    EXPECT_EQ(nullptr, dataflow.GetModuleInfo(42));
+    EXPECT_EQ(S_OK, dataflow.ModuleUnloaded(42));
 }
 
 TEST(DataflowTests, NothingIsResolvedWhenTheProfilerQueryInterfaceFailed)
@@ -181,11 +167,9 @@ TEST(DataflowTests, NothingIsResolvedWhenTheProfilerQueryInterfaceFailed)
     auto runtimeInfo = MakeTestRuntimeInformation();
     std::vector<ModuleID> preloadedModules{42};
 
-    auto dataflow = new iast::Dataflow(&mockProfiler, nullptr, preloadedModules, runtimeInfo);
+    auto dataflow = iast::Dataflow(&mockProfiler, nullptr, preloadedModules, runtimeInfo);
 
-    EXPECT_EQ(nullptr, dataflow->GetModuleInfo(42));
-    dataflow->ModuleLoaded(99);
+    EXPECT_EQ(nullptr, dataflow.GetModuleInfo(42));
+    dataflow.ModuleLoaded(99);
     EXPECT_EQ(0, mockProfiler.getModuleInfo2CallCount);
-
-    delete dataflow;
 }

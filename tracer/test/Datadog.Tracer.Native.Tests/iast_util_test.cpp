@@ -117,13 +117,13 @@ TEST(IastIntegrationTests, Contains)
     EXPECT_FALSE(iast::Contains(stringVector, "String4"));
 
     const std::set<std::string> stringSet = {"String1", "String2", "String3"};
-    EXPECT_TRUE(iast::Contains(stringVector, "String1"));
-    EXPECT_FALSE(iast::Contains(stringVector, "String5"));
+    EXPECT_TRUE(iast::Contains(stringSet, "String1"));
+    EXPECT_FALSE(iast::Contains(stringSet, "String5"));
 
     const std::unordered_map<std::string, std::string> stringMap = {
         {"String1", "1"}, {"String2", "2"}, {"String3", "3"}};
-    EXPECT_TRUE(iast::Contains(stringVector, "String3"));
-    EXPECT_FALSE(iast::Contains(stringVector, "String0"));
+    EXPECT_TRUE(iast::Contains(stringMap, std::make_pair("String3", "3")));
+    EXPECT_FALSE(iast::Contains(stringMap, std::make_pair("String0", "0")));
 }
 
 TEST(IastIntegrationTests, Vector_AddRange)
