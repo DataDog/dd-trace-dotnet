@@ -1,0 +1,6 @@
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <!-- Allow opting out of directory removal -->
+    <RemoveUnusedDatadogFiles Condition="'$(RemoveUnusedDatadogFiles)' == ''">true</RemoveUnusedDatadogFiles>
+  </PropertyGroup>
+</Project>
