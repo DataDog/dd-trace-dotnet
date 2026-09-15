@@ -310,14 +310,20 @@ cases:
               span.SetTag("id." + i, ids[i].ToString());
           }
       }
+
+      static void OnMethodBegin(Span span)
+      {
+          TagIds(span, 1, 2); // expanded form — synthesizes a new int[] every request
+      }
       ```
     expected_criteria:
-      - Flags the `params int[]` helper on a per-request instrumentation callback (not only `params object[]`).
-      - Names the concrete cost — a new array on every request.
+      - Flags the expanded `TagIds(span, 1, 2)` call (or the `params int[]` helper it uses) on a per-request instrumentation callback, not only `params object[]`.
+      - Names the concrete cost — a new array on every request from the expanded call.
       - Recommends overloads for the common 0/1/2-arg cases instead of `params`.
       - Classifies the finding as P1 (override resolves this allocation to SEV-2 / P1, not P2).
     bad_signals:
-      - Approves `params int[]` as the recommended hot-path helper.
+      - Approves `params int[]` / `TagIds(span, 1, 2)` as the recommended hot-path helper.
       - Treats the allocation as acceptable because the element type is `int`, not `object`.
       - Treats the allocation as acceptable because the method is short.
       - Reports the finding as P2 / a style nit.
+      - Flags `TagIds(span, existingArray)` as this finding (passing an existing array does not allocate).

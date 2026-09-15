@@ -8,8 +8,8 @@ The source of truth is **AGENTS.md § "Performance Guidelines"**. Apply that sec
 
 ## No `params` arrays on those paths
 
-A `params` array on a path from that list is a finding, regardless of element type (`object[]`, `int[]`, reference or value) and regardless of whether the helper is new. That includes a new call into an existing `params` helper, or extending one so a critical path now hits it. Provide overloads for the common 0/1/2-arg cases instead.
+A `params` call on a path from that list is a finding when C# synthesizes a new array — expanded arguments such as `TagIds(span, 1, 2)`, or a new `params` helper those paths will invoke that way. Element type does not matter (`object[]`, `int[]`, reference or value). Provide overloads for the common 0/1/2-arg cases instead.
 
-A `params` helper used only in tests is not this finding. Do not treat startup as cold: AGENTS.md names Bootstrap/Startup as critical path #1.
+Passing an existing array into a `params` parameter (`TagIds(span, ids)`) does not allocate and is not this finding. A `params` helper used only in tests is not this finding. Do not treat startup as cold: AGENTS.md names Bootstrap/Startup as critical path #1.
 
 This pattern is **P1** (SEV-2). It resolves the core performance lens's SEV-2/3 straddle for this allocation to SEV-2 — do not report it as P2.

@@ -4,7 +4,7 @@ Read only by the orchestrator (Step 0 of `SKILL.md`), not by individual reviewer
 
 ## Related skills in this repo
 
-Existing skills live under `.claude/skills/` (`bump-libdatadog`, `review-pr`, `analyze-crash`, `analyze-error`, `azure-functions`, `analyze-azdo-build`). This review skill is under `.agents/skills/`; `.claude/skills/dd-apm-sdk-review` is a symlink to it. No name clash.
+Existing skills live under `.claude/skills/` (`bump-libdatadog`, `review-pr`, `analyze-crash`, `analyze-error`, `azure-functions`, `analyze-azdo-build`). This review skill is under `.agents/skills/`. `.claude/skills/dd-apm-sdk-review` and `.cursor/skills/dd-apm-sdk-review` are real forwarding stub directories (`SKILL.md` points at the agents copy), not git symlinks. No name clash.
 
 Cite the others as authoritative for their area. Do not invoke them, and they must not invoke this skill:
 
