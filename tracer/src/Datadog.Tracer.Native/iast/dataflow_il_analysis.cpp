@@ -493,7 +493,7 @@ namespace iast
                 DEL(branch);
             }
         }
-        catch (std::exception err)
+        catch (const std::exception &err)
         {
             _error = err.what();
             trace::Logger::Error("ERROR verfying ", body->GetMethodInfo()->GetFullName(), " : ", _error);
@@ -871,7 +871,7 @@ namespace iast
             DEL_MAP_VALUES(handlers);
             Log(debugLevel, "Dump end");
         }
-        catch (std::exception err)
+        catch (const std::exception &err)
         {
             trace::Logger::Error("ERROR in Dump: ", err.what());
         }
@@ -880,6 +880,8 @@ namespace iast
 
     //----------------------------------------
 
+    static constexpr int default_branch_id_ = -1;
+
     Branch::Branch(InstructionInfo* instruction, std::vector<InstructionInfo*>* stack)
     {
         this->Instruction = instruction;
@@ -887,6 +889,7 @@ namespace iast
         {
             Stack = *stack;
         }
+        Id = default_branch_id_;
     }
 
     InstructionInfo* Branch::Pop(ILAnalysis& analysis, InstructionInfo* instruction)
@@ -927,7 +930,7 @@ namespace iast
     {
         if (force || addedBranches.find(branch->Instruction) == addedBranches.end())
         {
-            if (branch->Id == -1)
+            if (branch->Id == default_branch_id_)
             {
                 branch->Id = (int)addedBranches.size();
             }
