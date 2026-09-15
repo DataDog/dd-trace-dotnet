@@ -6,6 +6,7 @@
 #include <atomic>
 #include <chrono>
 #include <future>
+#include <stdexcept>
 #include <thread>
 #include <vector>
 
@@ -215,6 +216,194 @@ TEST(RejitHandlerShutdown, EnqueueForRejitResolvesPromiseAfterShutdown)
     handler->EnqueueForRejit(modules, methods, promise);
 
     EXPECT_EQ(std::future_status::ready, future.wait_for(1s));
+}
+
+// A throwing work item must still release whoever is waiting on it. The caller keeps its own shared_ptr to
+// the promise (it needs it for the enqueue-refused path), so the promise object outlives the work item and
+// an unresolved promise is a permanent hang, not a broken_promise.
+TEST(RejitWorkOffloader, ThrowingWorkItemReleasesItsWaiterAndTheLoopSurvives)
+{
+    RejitWorkOffloader offloader(nullptr);
+
+    auto promise = std::make_shared<std::promise<void>>();
+    auto future = promise->get_future();
+
+    offloader.Enqueue(std::make_unique<RejitWorkItem>(
+        [] { throw std::runtime_error("boom"); },
+        [localPromise = promise]() mutable { localPromise->set_value(); }));
+
+    EXPECT_EQ(std::future_status::ready, future.wait_for(5s));
+
+    // The worker must still be alive and processing after the failure.
+    auto laterItem = std::make_shared<std::promise<void>>();
+    auto laterItemFuture = laterItem->get_future();
+    offloader.Enqueue(std::make_unique<RejitWorkItem>([laterItem]() mutable { laterItem->set_value(); }));
+
+    EXPECT_EQ(std::future_status::ready, laterItemFuture.wait_for(5s));
+
+    offloader.Enqueue(RejitWorkItem::CreateTerminatingWorkItem());
+    offloader.WaitForTermination();
+}
+
+// An item that throws *after* resolving its promise must not trip promise_already_satisfied by way of the
+// release path.
+TEST(RejitWorkOffloader, ItemThrowingAfterResolvingIsTolerated)
+{
+    RejitWorkOffloader offloader(nullptr);
+
+    auto promise = std::make_shared<std::promise<void>>();
+    auto future = promise->get_future();
+
+    offloader.Enqueue(std::make_unique<RejitWorkItem>(
+        [localPromise = promise]() mutable
+        {
+            localPromise->set_value();
+            throw std::runtime_error("boom");
+        },
+        [localPromise = promise]() mutable { localPromise->set_value(); }));
+
+    EXPECT_EQ(std::future_status::ready, future.wait_for(5s));
+
+    auto laterItem = std::make_shared<std::promise<void>>();
+    auto laterItemFuture = laterItem->get_future();
+    offloader.Enqueue(std::make_unique<RejitWorkItem>([laterItem]() mutable { laterItem->set_value(); }));
+
+    EXPECT_EQ(std::future_status::ready, laterItemFuture.wait_for(5s));
+
+    offloader.Enqueue(RejitWorkItem::CreateTerminatingWorkItem());
+    offloader.WaitForTermination();
+}
+
+// Shutdown sets the flag and enqueues the terminator under the same write lock that Enqueue reads it under,
+// so a successful enqueue must land before the terminator and a refused one must be reported to the caller.
+// Either way the caller has to end up released — never queued behind a terminator that already passed.
+TEST(RejitHandlerShutdown, EnqueueRacingShutdownAlwaysReleasesCallers)
+{
+    constexpr int iterations = 25;
+    constexpr int itemsPerThread = 40;
+
+    for (int i = 0; i < iterations; i++)
+    {
+        auto offloader = std::make_shared<RejitWorkOffloader>(nullptr);
+        auto handler = std::make_unique<RejitHandler>(static_cast<ICorProfilerInfo7*>(nullptr), offloader);
+
+        std::atomic<int> ready{0};
+        std::atomic<int> unreleased{0};
+        const auto waitForStart = [&] { ready++; while (ready < 2) {} };
+
+        std::thread producer(
+            [&]
+            {
+                waitForStart();
+                for (int item = 0; item < itemsPerThread; item++)
+                {
+                    auto promise = std::make_shared<std::promise<void>>();
+                    auto future = promise->get_future();
+
+                    // Mirrors every enqueue-with-promise path: the work resolves the promise, and if the
+                    // handler refuses the item the caller resolves it instead.
+                    if (!handler->Enqueue(std::make_unique<RejitWorkItem>(
+                            [promise]() mutable { promise->set_value(); },
+                            [promise]() mutable { promise->set_value(); })))
+                    {
+                        promise->set_value();
+                    }
+
+                    if (future.wait_for(5s) != std::future_status::ready)
+                    {
+                        unreleased++;
+                    }
+                }
+            });
+
+        std::thread shutdown(
+            [&]
+            {
+                waitForStart();
+                handler->Shutdown();
+            });
+
+        producer.join();
+        shutdown.join();
+
+        ASSERT_EQ(0, unreleased.load());
+    }
+}
+
+// CorProfiler::Shutdown races the CLR callbacks that consult the handler. None of them may crash, hang, or
+// observe a half-torn-down handler, in either interleaving. Covers RemoveModule and RegisterModule racing
+// Shutdown, which the lock protocol proves but nothing exercised.
+TEST(RejitHandlerShutdown, ConcurrentCallbacksDuringShutdownAreSafe)
+{
+    constexpr int iterations = 50;
+    constexpr ModuleID moduleCount = 8;
+
+    for (int i = 0; i < iterations; i++)
+    {
+        auto handler = MakeHandler();
+        for (ModuleID moduleId = 1; moduleId <= moduleCount; moduleId++)
+        {
+            handler->RegisterModule(moduleId);
+        }
+
+        std::atomic<int> ready{0};
+        const auto waitForStart = [&] { ready++; while (ready < 4) {} };
+
+        // Stands in for JITInlining / JITCachedFunctionSearchStarted.
+        std::thread callbacks(
+            [&]
+            {
+                waitForStart();
+                for (ModuleID moduleId = 1; moduleId <= moduleCount; moduleId++)
+                {
+                    handler->HasModuleAndMethod(moduleId, mdMethodDefNil);
+                    handler->AddNGenInlinerModule(moduleId);
+                    handler->HasBeenRejitted(moduleId, mdMethodDefNil);
+                }
+            });
+
+        // Stands in for ModuleUnloadStarted racing the teardown.
+        std::thread unloads(
+            [&]
+            {
+                waitForStart();
+                for (ModuleID moduleId = 1; moduleId <= moduleCount; moduleId++)
+                {
+                    handler->RemoveModule(moduleId);
+                }
+            });
+
+        // Stands in for ModuleLoadFinished still arriving while the tracer is being disabled.
+        std::thread loads(
+            [&]
+            {
+                waitForStart();
+                for (ModuleID moduleId = moduleCount + 1; moduleId <= moduleCount * 2; moduleId++)
+                {
+                    handler->RegisterModule(moduleId);
+                }
+            });
+
+        std::thread shutdown(
+            [&]
+            {
+                waitForStart();
+                handler->Shutdown();
+            });
+
+        callbacks.join();
+        unloads.join();
+        loads.join();
+        shutdown.join();
+
+        ASSERT_TRUE(handler->IsShutdownRequested());
+
+        // Shutdown must leave nothing acquirable, including anything registered while it was running.
+        for (ModuleID moduleId = 1; moduleId <= moduleCount * 2; moduleId++)
+        {
+            ASSERT_FALSE(handler->GetModuleWithLifetime(moduleId).Acquire().has_value());
+        }
+    }
 }
 
 // A module lifetime is a shared lease, so two preprocessors can reach the same module at once. Creating the

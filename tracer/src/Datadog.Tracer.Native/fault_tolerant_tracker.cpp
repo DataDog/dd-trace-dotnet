@@ -2,12 +2,16 @@
 
 void fault_tolerant::FaultTolerantTracker::RequestRejit(ModuleID moduleId, mdMethodDef methodId, std::shared_ptr<RejitHandler> rejit_handler)
 {
-    // Reached from the method rewriters, which run under the module lifetime taken by NotifyReJITParameters, so
-    // this must not wait on the ReJIT worker: the worker can be blocked behind a module unload that is waiting
-    // for that lifetime (APMS-20456). RequestReJIT only schedules the recompilation, so there is nothing useful
-    // to wait for here.
+    // Both callers (ShouldHeal, AddSuccessfulInstrumentationId) are reached by P/Invoke from instrumented
+    // application code, not from a rewriter, so no module lifetime is held here and waiting cannot deadlock
+    // against an unload (APMS-20456). The wait is kept deliberately: ShouldHeal runs in the exception handler
+    // of a faulty-instrumented method and keeps returning true until the instrumentation succeeds, so without
+    // the caller blocking there is no backpressure at all on an unbounded, non-coalescing work queue.
     std::vector<MethodIdentifier> requests = {{moduleId, methodId}};
-    rejit_handler->EnqueueRequestRejit(requests, nullptr, true);
+    auto promise = std::make_shared<std::promise<void>>();
+    auto future = promise->get_future();
+    rejit_handler->EnqueueRequestRejit(requests, promise, true);
+    future.get();
 }
 
 void fault_tolerant::FaultTolerantTracker::AddFaultTolerant(ModuleID fromModuleId, mdMethodDef fromMethodId,

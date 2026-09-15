@@ -48,6 +48,8 @@ HRESULT FaultTolerantRewriter::ApplyKickoffInstrumentation(RejitHandlerModule* m
     // NotifyReJITParameters, so it must not wait on the ReJIT worker: the worker can be blocked behind a module
     // unload that is itself waiting for that lifetime (APMS-20456). Waiting would buy nothing anyway, because
     // RequestReJIT only schedules the recompilation, it does not perform it.
+    // Note: FaultTolerantTracker::RequestRejit deliberately does the opposite and waits. It is reached by
+    // P/Invoke from application code with no lifetime held, where the wait is the only backpressure.
     std::vector<MethodIdentifier> requests = {{moduleId, methodIdOfOriginalMethod}, {moduleId, methodIdOfInstrumentedMethod}};
     m_rejit_handler->EnqueueRequestRejit(requests, nullptr);
 
