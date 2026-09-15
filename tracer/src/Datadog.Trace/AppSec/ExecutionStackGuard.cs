@@ -8,7 +8,7 @@
 using System;
 using System.Runtime.CompilerServices;
 
-namespace Datadog.Trace.Iast;
+namespace Datadog.Trace.AppSec;
 
 /// <summary>
 /// Guards operations that walk the current thread's stack. The runtime walks it on that very thread,
