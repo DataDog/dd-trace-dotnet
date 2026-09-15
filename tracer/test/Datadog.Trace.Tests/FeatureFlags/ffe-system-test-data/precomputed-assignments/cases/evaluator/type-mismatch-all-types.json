@@ -1,0 +1,134 @@
+{
+  "name": "type-mismatch-all-types",
+  "description": "Each flag is evaluated as the wrong type. All must return their default value with a typeMismatch error. Note: the integer-as-float case (fixture.mismatch.int-as-float) is SDK-implementation-dependent — SDKs that allow implicit int-to-float promotion (Java, Swift, Dart) will not return typeMismatch for that evaluation. Add evaluation-level skipForSdks entries for those platforms once verified.",
+  "context": {
+    "targetingKey": "mismatch-user",
+    "attributes": {}
+  },
+  "response": {
+    "data": {
+      "attributes": {
+        "flags": {
+          "fixture.mismatch.bool-as-string": {
+            "allocationKey": "alloc-mm",
+            "variationKey": "var-bool",
+            "variationType": "boolean",
+            "variationValue": true,
+            "reason": "TARGETING_MATCH",
+            "doLog": true
+          },
+          "fixture.mismatch.string-as-int": {
+            "allocationKey": "alloc-mm",
+            "variationKey": "var-str",
+            "variationType": "string",
+            "variationValue": "hello",
+            "reason": "TARGETING_MATCH",
+            "doLog": true
+          },
+          "fixture.mismatch.int-as-float": {
+            "allocationKey": "alloc-mm",
+            "variationKey": "var-int",
+            "variationType": "integer",
+            "variationValue": 7,
+            "reason": "TARGETING_MATCH",
+            "doLog": true
+          },
+          "fixture.mismatch.float-as-bool": {
+            "allocationKey": "alloc-mm",
+            "variationKey": "var-float",
+            "variationType": "float",
+            "variationValue": 3.14,
+            "reason": "TARGETING_MATCH",
+            "doLog": true
+          },
+          "fixture.mismatch.object-as-string": {
+            "allocationKey": "alloc-mm",
+            "variationKey": "var-obj",
+            "variationType": "object",
+            "variationValue": {
+              "key": "value"
+            },
+            "reason": "TARGETING_MATCH",
+            "doLog": true
+          }
+        }
+      }
+    }
+  },
+  "evaluations": [
+    {
+      "flag": "fixture.mismatch.bool-as-string",
+      "variationType": "string",
+      "defaultValue": "fallback",
+      "expectedResult": {
+        "value": "fallback",
+        "reason": null,
+        "errorCode": "TYPE_MISMATCH",
+        "variantKey": null
+      }
+    },
+    {
+      "flag": "fixture.mismatch.string-as-int",
+      "variationType": "integer",
+      "defaultValue": -1,
+      "expectedResult": {
+        "value": -1,
+        "reason": null,
+        "errorCode": "TYPE_MISMATCH",
+        "variantKey": null
+      }
+    },
+    {
+      "flag": "fixture.mismatch.int-as-float",
+      "variationType": "float",
+      "defaultValue": 0.0,
+      "expectedResult": {
+        "value": 0.0,
+        "reason": null,
+        "errorCode": "TYPE_MISMATCH",
+        "variantKey": null
+      },
+      "_skip": [
+        {
+          "reason": "JavaScript does not distinguish integer from float; the web SDK uses getNumberDetails for both types and does not raise typeMismatch for integer-as-float evaluations.",
+          "platform": "web"
+        }
+      ]
+    },
+    {
+      "flag": "fixture.mismatch.float-as-bool",
+      "variationType": "boolean",
+      "defaultValue": false,
+      "expectedResult": {
+        "value": false,
+        "reason": null,
+        "errorCode": "TYPE_MISMATCH",
+        "variantKey": null
+      }
+    },
+    {
+      "flag": "fixture.mismatch.object-as-string",
+      "variationType": "string",
+      "defaultValue": "none",
+      "expectedResult": {
+        "value": "none",
+        "reason": null,
+        "errorCode": "TYPE_MISMATCH",
+        "variantKey": null
+      }
+    }
+  ],
+  "expectations": {
+    "noUnmatchedEvents": true,
+    "evaluationEvents": [
+      {
+        "_count": 5,
+        "_skip": [
+          {
+            "platform": "web"
+          }
+        ]
+      }
+    ]
+  }
+}

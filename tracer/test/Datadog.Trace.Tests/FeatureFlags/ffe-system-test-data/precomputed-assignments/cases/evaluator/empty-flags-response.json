@@ -1,0 +1,63 @@
+{
+  "name": "empty-flags-response",
+  "description": "Server returns an empty flags object. All evaluations must return their default values with a flagNotFound error.",
+  "context": {
+    "targetingKey": "empty-user",
+    "attributes": {}
+  },
+  "response": {
+    "data": {
+      "attributes": {
+        "flags": {}
+      }
+    }
+  },
+  "evaluations": [
+    {
+      "flag": "fixture.bool.missing",
+      "variationType": "boolean",
+      "defaultValue": false,
+      "expectedResult": {
+        "value": false,
+        "reason": null,
+        "errorCode": "FLAG_NOT_FOUND",
+        "variantKey": null
+      }
+    },
+    {
+      "flag": "fixture.string.missing",
+      "variationType": "string",
+      "defaultValue": "fallback",
+      "expectedResult": {
+        "value": "fallback",
+        "reason": null,
+        "errorCode": "FLAG_NOT_FOUND",
+        "variantKey": null
+      }
+    },
+    {
+      "flag": "fixture.int.missing",
+      "variationType": "integer",
+      "defaultValue": 0,
+      "expectedResult": {
+        "value": 0,
+        "reason": null,
+        "errorCode": "FLAG_NOT_FOUND",
+        "variantKey": null
+      }
+    }
+  ],
+  "expectations": {
+    "noUnmatchedEvents": true,
+    "evaluationEvents": [
+      {
+        "_count": 3,
+        "_skip": [
+          {
+            "platform": "web"
+          }
+        ]
+      }
+    ]
+  }
+}
