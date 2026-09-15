@@ -7,11 +7,14 @@ of the real Rust one. Full design/rationale/decision log is in the plan doc
 this was built from (`i-would-like-to-imperative-lemur.md`); this README just
 tracks what actually landed vs. what's still simplified.
 
-It is isolated from the production build on purpose: nothing under
-`shared/CMakeLists.txt` references this directory, so it is built as its own
-standalone CMake project and has zero effect on the real tracer/profiler build
-until something is deliberately wired up to link against it (see "Wrapper
-changes needed" in the plan doc for that step).
+**This is wired into both real profiler builds, not just standalone.** The
+wrapper files under `profiler/src/ProfilerEngine/Datadog.Profiler.Native/`
+(`Profile.cpp`, `AgentProxy.hpp`, `ExporterBuilder.cpp`, `Exporter.cpp`,
+`Tags.cpp`, `TagsImpl.hpp`, `FileSaver.hpp`, `EncodedProfile.hpp`,
+`ProfileImpl.hpp`, `SuccessImpl.hpp`, `FfiHelper.h`/`.cpp`) call this
+library's API instead of real libdatadog's, on every platform - see "Windows"
+and the standalone build instructions below for how each platform actually
+gets this library's code compiled and linked in.
 
 ## Building standalone
 
@@ -27,27 +30,54 @@ libunwind for the real native profiler, just applied to curl/zstd too. Only
 real requirement: network access at first configure time to fetch the two
 tarballs (cached under `build/_deps/` afterwards).
 
-**This `CMakeLists.txt` is Linux/non-Windows only and always vendors from
-source - it has no Windows branch and is never invoked on Windows.** The real
-Windows profiler build is MSBuild/`Datadog.Profiler.Native.Windows.vcxproj`-based,
-not CMake, unlike the Linux build this PoC's M3/M4 milestones actually wired
-into (`Datadog.Profiler.Native.Linux/CMakeLists.txt`), so there was never a
-CMake-on-Windows path to branch for in the first place.
+**This `CMakeLists.txt` itself is Linux/non-Windows only and always vendors
+curl/zstd from source - it has no Windows branch and is never invoked on
+Windows.** The real Windows profiler build is MSBuild/vcxproj-based, not
+CMake, so there was never a CMake-on-Windows path to branch for. Windows gets
+this library a completely different way:
 
-`vcpkg.json` in this directory is a separate, forward-looking manifest for
-*that* eventual Windows integration - declaring curl+zstd the same way the
-real libdatadog Windows dependency is already declared
-(`build/vcpkg_local_ports/libdatadog`), not something this `CMakeLists.txt`
-reads or consumes. **It's pinned to the exact same curl 8.22.0 / zstd 1.5.7**
-as the FetchContent versions above, via `builtin-baseline` + `overrides`
-(vcpkg's current default baseline already happens to resolve to those same
-versions - the overrides just guarantee that stays true if the pinned
-baseline commit is ever bumped without checking). If you ever bump one
-side's version, bump the other to match. Wiring it into the real vcxproj
-build is separate, not-yet-done work - most likely referencing vcpkg's
-output `.lib`/`.dll` via `AdditionalDependencies`/`AdditionalLibraryDirectories`,
-the same way `profiler/Directory.Build.targets` already does for the real
-libdatadog Windows dependency.
+- This library's `.c` files are compiled directly as additional `<ClCompile>`
+  items inside `profiler/src/ProfilerEngine/Datadog.Profiler.Native/Datadog.Profiler.Native.vcxproj`
+  (the same static-lib project that already compiles `Profile.cpp`,
+  `FfiHelper.cpp`, `CrashReporting.cpp`, etc.), each forced to
+  `CompileAs=CompileAsC`/`LanguageStandard_C=stdc11` since that project's
+  C++ settings (`stdcpp20`, `ConformanceMode`) don't apply to C. This
+  project's own `AdditionalIncludeDirectories` was extended with
+  `shared\src\datadog-profiling-poc\include` so `FfiHelper.h`'s
+  `#include "datadog_poc/common.h"` (and this library's own internal
+  includes) resolve. Being a *static* lib, it doesn't need curl/zstd/its own
+  symbols resolved at this stage - unresolved externals here are normal and
+  get resolved later, at whichever project finally links this static lib in
+  (`Datadog.Profiler.Native.Windows.vcxproj`'s DLL, or
+  `Datadog.Profiler.Native.Tests.vcxproj`'s test exe - both already
+  `ProjectReference` it).
+- curl/zstd themselves are declared in the **root** `vcpkg.json` (alongside
+  the existing `libdatadog` entry) - not a manifest local to this directory,
+  since `VcpkgEnableManifest` (set repo-wide in `profiler/Directory.Build.props`)
+  auto-discovers the nearest `vcpkg.json` by walking up from each project
+  file, and the root one is the only one any actual `.vcxproj` will ever find.
+  Pinned via `builtin-baseline` + `overrides` (both including an explicit
+  `port-version` - vcpkg's version files can carry more than one port-version
+  per version string, and omitting it silently defaults to 0, which isn't
+  always the one that exists) to **the exact same curl 8.19.0 / zstd 1.5.7**
+  vendored on the Linux/CMake side above - bump both together if you ever
+  bump one. Note curl is deliberately *not* on the latest available version
+  (8.22.0): curl's own `cmake_minimum_required` jumped from a `3.7...3.16`
+  range to a flat `3.18` starting at 8.20.0, and this repo's CI pins CMake
+  3.13.4 - 8.19.0 is the newest release still building under that. This is
+  exactly the mechanism that already
+  resolves real libdatadog's headers/lib with zero explicit
+  `AdditionalIncludeDirectories`/`AdditionalDependencies` anywhere in this
+  repo's `.vcxproj`/`.props`/`.targets` files (confirmed by their absence) -
+  curl/zstd get the same automatic treatment once declared.
+
+**Caveat, stated plainly: none of the Windows-side changes above have been
+compile-tested.** This session has no Windows environment and no vcpkg
+installed to verify against - the design is based on reading this repo's
+actual `.vcxproj`/`Directory.Build.props`/`.targets` files closely and
+matching their existing, working patterns (especially how real libdatadog
+itself is wired with almost no explicit project configuration), not on a
+green build. The first real signal will be the next Windows CI run.
 
 `build/manual_smoke` is a standalone driver (mirrors libdatadog's own
 `examples/ffi/profiles.c`) that creates a profile, adds a couple of synthetic
