@@ -365,7 +365,36 @@ partial class Build
                 arguments: $"-DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang -B {NativeBuildDirectory} -S {RootDirectory} -DCMAKE_BUILD_TYPE={BuildConfiguration}");
             CMake.Value(
                 arguments: $"--build {NativeBuildDirectory} --parallel {Environment.ProcessorCount} --target {FileNames.NativeTracer}");
+
+            VerifyOtelThreadContextSymbolIsExported();
         });
+
+    /// <summary>
+    /// OTEP 4947 requires `otel_thread_ctx_v1` to be an exported ELF TLS symbol in the dynamic symbol
+    /// table: it is how out-of-process readers locate the thread context. Nothing at runtime would tell
+    /// us if it went missing - readers would simply never find any context - so a change to the compiler,
+    /// the linker or the project's visibility settings could silently break the feature. Assert it here,
+    /// right where the symbol is produced. See docs/OTelContextPropagation.md.
+    /// </summary>
+    private void VerifyOtelThreadContextSymbolIsExported()
+    {
+        const string symbol = "otel_thread_ctx_v1";
+
+        var (_, extension) = GetUnixArchitectureAndExtension();
+        var nativeTracer = GetNativeOutputDirectory(NativeTracerProject.Name) / $"{NativeTracerProject.Name}.{extension}";
+
+        var symbols = Nm.Value(arguments: $"--dynamic --defined-only \"{nativeTracer}\"", logOutput: false);
+
+        if (!symbols.Any(line => line.Text.Contains(symbol)))
+        {
+            throw new Exception(
+                $"{symbol} is not exported from {nativeTracer}. The OpenTelemetry thread context cannot be " +
+                "discovered by external readers without it. Check that otel_thread_ctx.cpp is part of the " +
+                $"{NativeTracerProject.Name} shared target and that the symbol still has default visibility.");
+        }
+
+        Logger.Information("{Symbol} is exported from {NativeTracer}", symbol, nativeTracer);
+    }
 
     Target CompileTracerNativeTestsLinux => _ => _
         .Unlisted()
