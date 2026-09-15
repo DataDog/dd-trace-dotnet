@@ -106,7 +106,15 @@ internal sealed class TestOptimizationTestCommand
                 Common.Log.Debug("TestOptimizationTestCommand: Exception instrumentation was set or timed out.");
             }
 
-            result = DoRetries(new FlakyRetryBehavior(testOptimization), context, result);
+            if (testOptimization.FlakyRetryFeature?.DynamicAtrEnabled == true)
+            {
+                var dynamicRetries = Common.GetDynamicAtrRetryCountForDuration(duration);
+                result = DoRetries(new DynamicFlakyRetryBehavior(testOptimization, dynamicRetries), context, result);
+            }
+            else
+            {
+                result = DoRetries(new FlakyRetryBehavior(testOptimization), context, result);
+            }
         }
         else if (atfWillRetry)
         {
@@ -168,7 +176,7 @@ internal sealed class TestOptimizationTestCommand
     private static TestRetryMode GetRetryMode(in RetryState retryState)
     {
         return retryState.BehaviorType == typeof(EarlyFlakeDetectionRetryBehavior) ? TestRetryMode.EarlyFlakeDetection
-             : retryState.BehaviorType == typeof(FlakyRetryBehavior) ? TestRetryMode.AutomaticTestRetry
+             : retryState.BehaviorType == typeof(FlakyRetryBehavior) || retryState.BehaviorType == typeof(DynamicFlakyRetryBehavior) ? TestRetryMode.AutomaticTestRetry
              : retryState.BehaviorType == typeof(AttemptToFixRetryBehavior) ? TestRetryMode.AttemptToFix
              : TestRetryMode.None;
     }
@@ -265,7 +273,7 @@ internal sealed class TestOptimizationTestCommand
             }
 
             // Determine if this is the final execution
-            var isAtrBehavior = retryState.BehaviorType == typeof(FlakyRetryBehavior);
+            var isAtrBehavior = retryState.BehaviorType == typeof(FlakyRetryBehavior) || retryState.BehaviorType == typeof(DynamicFlakyRetryBehavior);
             var isAtrEarlyExit = isAtrBehavior &&
                                  resultStatus == TestStatus.Passed &&
                                  !retryState.IsLastRetry;

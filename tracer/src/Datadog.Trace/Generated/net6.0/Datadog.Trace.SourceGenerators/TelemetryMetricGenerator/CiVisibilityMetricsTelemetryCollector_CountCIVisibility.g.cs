@@ -11,7 +11,7 @@ using System.Threading;
 namespace Datadog.Trace.Telemetry;
 internal sealed partial class CiVisibilityMetricsTelemetryCollector
 {
-    private const int CountCIVisibilityLength = 3191;
+    private const int CountCIVisibilityLength = 3193;
 
     /// <summary>
     /// Creates the buffer for the <see cref="Datadog.Trace.Telemetry.Metrics.CountCIVisibility" /> values.
@@ -3245,6 +3245,9 @@ internal sealed partial class CiVisibilityMetricsTelemetryCollector
             new(new[] { "error_type:status_code_4xx_response", "status_code:404" }),
             new(new[] { "error_type:status_code_4xx_response", "status_code:408" }),
             new(new[] { "error_type:status_code_4xx_response", "status_code:429" }),
+            // dynamic_atr_retries.enabled, index = 3191
+            new(new[] { "has_custom_buckets:true" }),
+            new(null),
         };
 
     /// <summary>
@@ -3253,7 +3256,7 @@ internal sealed partial class CiVisibilityMetricsTelemetryCollector
     /// It is equal to the cardinality of the tag combinations (or 1 if there are no tags)
     /// </summary>
     private static int[] CountCIVisibilityEntryCounts { get; }
-        = new int[]{ 40, 2700, 64, 10, 10, 4, 1, 4, 22, 2, 18, 144, 2, 11, 2, 11, 2, 11, 64, 2, 11, 1, 1, 4, 4, 4, 1, 1, 2, 11, 2, 11, 1, 2, 11, };
+        = new int[]{ 40, 2700, 64, 10, 10, 4, 1, 4, 22, 2, 18, 144, 2, 11, 2, 11, 2, 11, 64, 2, 11, 1, 1, 4, 4, 4, 1, 1, 2, 11, 2, 11, 1, 2, 11, 2, };
 
     public void RecordCountCIVisibilityEventCreated(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityTestFramework tag1, Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmark tag2, int increment = 1)
     {
@@ -3456,6 +3459,12 @@ internal sealed partial class CiVisibilityMetricsTelemetryCollector
     public void RecordCountCIVisibilityTestManagementTestsRequestErrors(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityErrorType tag, int increment = 1)
     {
         var index = 3180 + (int)tag;
+        Interlocked.Add(ref _buffer.CountCIVisibility[index], increment);
+    }
+
+    public void RecordCountCIVisibilityDynamicAtrRetries(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityDynamicAtrRetriesHasCustomBuckets tag, int increment = 1)
+    {
+        var index = 3191 + (int)tag;
         Interlocked.Add(ref _buffer.CountCIVisibility[index], increment);
     }
 }

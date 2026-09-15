@@ -335,6 +335,35 @@ internal static class Common
         skippableFeature.RecordTestSkipCoverageBackfill(skippableTest, moduleName);
     }
 
+    /// <summary>
+    /// Computes the number of ATR retry executions for a test based on its initial duration.
+    /// When dynamic ATR is enabled, the retry budget is driven by duration buckets
+    /// (5s/10s/30s/5m/>5m) instead of the flat <c>FlakyRetryCount</c> limit.
+    /// </summary>
+    /// <param name="duration">Duration of the initial test attempt.</param>
+    /// <returns>Number of retry executions (not counting the initial attempt).</returns>
+    internal static int GetDynamicAtrRetryCountForDuration(TimeSpan duration)
+    {
+        var testOptimization = TestOptimization.Instance;
+        var settings = testOptimization.Settings;
+        var seconds = duration.TotalSeconds;
+
+        int retries;
+        if (settings.DynamicAtrBuckets is { } customBuckets)
+        {
+            var efdSettings = testOptimization.EarlyFlakeDetectionFeature?.EarlyFlakeDetectionSettings.SlowTestRetries ?? default;
+            var index = efdSettings.RetryBucketIndexForDuration(seconds);
+            retries = index < customBuckets.Length ? customBuckets[index] : 0;
+        }
+        else
+        {
+            var slowRetriesSettings = testOptimization.EarlyFlakeDetectionFeature?.EarlyFlakeDetectionSettings.SlowTestRetries ?? default;
+            retries = slowRetriesSettings.RetriesForDuration(seconds);
+        }
+
+        return Math.Max(1, retries);
+    }
+
     internal static int GetNumberOfExecutionsForDuration(TimeSpan duration)
     {
         var earlyFlakeDetectionFeature = TestOptimization.Instance.EarlyFlakeDetectionFeature;
@@ -343,27 +372,11 @@ internal static class Common
             return 1;
         }
 
-        int numberOfExecutions;
         var slowRetriesSettings = earlyFlakeDetectionFeature?.EarlyFlakeDetectionSettings.SlowTestRetries ?? default;
-        if (slowRetriesSettings.FiveSeconds.HasValue && duration.TotalSeconds < 5)
+        var numberOfExecutions = slowRetriesSettings.RetriesForDuration(duration.TotalSeconds);
+        if (numberOfExecutions > 0)
         {
-            numberOfExecutions = slowRetriesSettings.FiveSeconds.Value;
-            Log.Information<int>("Common: EFD: Number of executions has been set to {Value} for this test that runs under 5 seconds.", numberOfExecutions);
-        }
-        else if (slowRetriesSettings.TenSeconds.HasValue && duration.TotalSeconds < 10)
-        {
-            numberOfExecutions = slowRetriesSettings.TenSeconds.Value;
-            Log.Information<int>("Common: EFD: Number of executions has been set to {Value} for this test that runs under 10 seconds.", numberOfExecutions);
-        }
-        else if (slowRetriesSettings.ThirtySeconds.HasValue && duration.TotalSeconds < 30)
-        {
-            numberOfExecutions = slowRetriesSettings.ThirtySeconds.Value;
-            Log.Information<int>("Common: EFD: Number of executions has been set to {Value} for this test that runs under 30 seconds.", numberOfExecutions);
-        }
-        else if (slowRetriesSettings.FiveMinutes.HasValue && duration.TotalMinutes < 5)
-        {
-            numberOfExecutions = slowRetriesSettings.FiveMinutes.Value;
-            Log.Information<int>("Common: EFD: Number of executions has been set to {Value} for this test that runs under 5 minutes.", numberOfExecutions);
+            Log.Information<int>("Common: EFD: Number of executions has been set to {Value} for this test that runs under {Duration} seconds.", numberOfExecutions, (int)duration.TotalSeconds);
         }
         else
         {

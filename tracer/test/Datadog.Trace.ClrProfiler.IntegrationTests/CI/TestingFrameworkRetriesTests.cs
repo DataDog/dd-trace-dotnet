@@ -44,11 +44,32 @@ public abstract class TestingFrameworkRetriesTests : TestingFrameworkEvpTest
     public virtual Task<List<MockCIVisibilityTest>> FlakyRetries(string packageVersion)
         => FlakyRetriesWithArguments(packageVersion, arguments: null);
 
+    public virtual Task<List<MockCIVisibilityTest>> DynamicFlakyRetries(string packageVersion)
+    {
+        SetEnvironmentVariable(ConfigurationKeys.CIVisibility.DynamicAtrEnabled, "1");
+        SetEnvironmentVariable(ConfigurationKeys.CIVisibility.DynamicAtrBuckets, "5,1,1,1,1");
+        return FlakyRetriesWithArguments(packageVersion, arguments: null, retryCount: 1, expectedRetryCount: 5, expectedLastRetryCount: 1);
+    }
+
+    public virtual async Task DynamicFlakyRetriesHonorSessionCap(string packageVersion)
+    {
+        SetEnvironmentVariable(ConfigurationKeys.CIVisibility.DynamicAtrEnabled, "1");
+        SetEnvironmentVariable(ConfigurationKeys.CIVisibility.DynamicAtrBuckets, "5,1,1,1,1");
+        var tests = await FlakyRetriesWithArguments(packageVersion, arguments: null, retryCount: 1, totalRetryCount: 2, assertRetryCounts: false);
+        var sessionTests = tests.Where(t => t.Resource is AlwaysFails or TrueAtLastRetry or TrueAtThirdRetry or AlwaysPasses).ToList();
+        sessionTests.Select(t => t.Resource).Should().Contain([AlwaysFails, AlwaysPasses, TrueAtLastRetry, TrueAtThirdRetry]);
+
+        var retryCountForSession = sessionTests.Count - 4;
+        retryCountForSession.Should().BeGreaterThanOrEqualTo(0).And.BeLessThanOrEqualTo(2);
+    }
+
     public virtual Task FlakyRetriesWithExceptionReplay(string packageVersion)
         => FlakyRetriesWithExceptionReplayCore(packageVersion);
 
-    protected async Task<List<MockCIVisibilityTest>> FlakyRetriesWithArguments(string packageVersion, string arguments)
+    protected async Task<List<MockCIVisibilityTest>> FlakyRetriesWithArguments(string packageVersion, string arguments, int retryCount = 5, int? expectedRetryCount = null, int? expectedLastRetryCount = null, int? totalRetryCount = null, bool assertRetryCounts = true)
     {
+        expectedRetryCount ??= retryCount;
+        expectedLastRetryCount ??= expectedRetryCount;
         EnvironmentHelper.EnableDefaultTransport();
         var tests = new List<MockCIVisibilityTest>();
         var testSuites = new List<MockCIVisibilityTestSuite>();
@@ -66,9 +87,12 @@ public abstract class TestingFrameworkRetriesTests : TestingFrameworkEvpTest
         Output.WriteLine("RunId: {0}", runId);
         try
         {
-            var retryCount = 5;
             SetEnvironmentVariable(ConfigurationKeys.CIVisibility.FlakyRetryEnabled, "1");
             SetEnvironmentVariable(ConfigurationKeys.CIVisibility.FlakyRetryCount, retryCount.ToString());
+            if (totalRetryCount.HasValue)
+            {
+                SetEnvironmentVariable(ConfigurationKeys.CIVisibility.TotalFlakyRetryCount, totalRetryCount.Value.ToString());
+            }
 
             using var agent = EnvironmentHelper.GetMockAgent();
             agent.EventPlatformProxyPayloadReceived += (sender, e) =>
@@ -118,25 +142,28 @@ public abstract class TestingFrameworkRetriesTests : TestingFrameworkEvpTest
 
             testSuites.Should().HaveCount(ExpectedTestSuiteCount);
 
-            // AlwaysFails => 1 + 5 retries
-            var alwaysFailsTests = tests.Where(t => t.Resource == AlwaysFails).ToList();
-            alwaysFailsTests.Should().HaveCount(1 + retryCount);
-            alwaysFailsTests.Should().OnlyContain(t => t.Meta[TestTags.Status] == TestTags.StatusFail);
+            if (assertRetryCounts)
+            {
+                // AlwaysFails uses the configured retry budget.
+                var alwaysFailsTests = tests.Where(t => t.Resource == AlwaysFails).ToList();
+                alwaysFailsTests.Should().HaveCount(1 + expectedRetryCount.Value);
+                alwaysFailsTests.Should().OnlyContain(t => t.Meta[TestTags.Status] == TestTags.StatusFail);
 
-            // AlwaysPasses => 1
-            var alwaysPassesTests = tests.Where(t => t.Resource == AlwaysPasses).ToList();
-            alwaysPassesTests.Should().HaveCount(1);
-            alwaysPassesTests.Should().OnlyContain(t => t.Meta[TestTags.Status] == TestTags.StatusPass);
+                // AlwaysPasses => 1
+                var alwaysPassesTests = tests.Where(t => t.Resource == AlwaysPasses).ToList();
+                alwaysPassesTests.Should().HaveCount(1);
+                alwaysPassesTests.Should().OnlyContain(t => t.Meta[TestTags.Status] == TestTags.StatusPass);
 
-            // TrueAtLastRetry => 1 + 5 retries
-            var trueAtLastRetryTests = tests.Where(t => t.Resource == TrueAtLastRetry).ToList();
-            trueAtLastRetryTests.Should().HaveCount(1 + retryCount);
-            trueAtLastRetryTests.Should().Contain(t => t.Meta[TestTags.Status] == TestTags.StatusPass);
+                // TrueAtLastRetry stops after the first successful retry.
+                var trueAtLastRetryTests = tests.Where(t => t.Resource == TrueAtLastRetry).ToList();
+                trueAtLastRetryTests.Should().HaveCount(1 + expectedLastRetryCount.Value);
+                trueAtLastRetryTests.Should().Contain(t => t.Meta[TestTags.Status] == TestTags.StatusPass);
 
-            // TrueAtThirdRetry => 1 + 3 retries
-            var trueAtThirdRetryTests = tests.Where(t => t.Resource == TrueAtThirdRetry).ToList();
-            trueAtThirdRetryTests.Should().HaveCount(1 + 3);
-            trueAtThirdRetryTests.Should().Contain(t => t.Meta[TestTags.Status] == TestTags.StatusPass);
+                // TrueAtThirdRetry => 1 + 3 retries
+                var trueAtThirdRetryTests = tests.Where(t => t.Resource == TrueAtThirdRetry).ToList();
+                trueAtThirdRetryTests.Should().HaveCount(1 + 3);
+                trueAtThirdRetryTests.Should().Contain(t => t.Meta[TestTags.Status] == TestTags.StatusPass);
+            }
         }
         catch
         {
