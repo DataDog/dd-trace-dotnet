@@ -5,6 +5,7 @@
 
 #nullable enable
 
+using System;
 using System.Collections.Concurrent;
 using Datadog.Trace.Activity.DuckTypes;
 using Datadog.Trace.Activity.Handlers;
@@ -89,6 +90,19 @@ namespace Datadog.Trace.Activity
             var sName = sourceName ?? "(null)";
             if (HandlerBySource.TryGetValue(sName, out var handler))
             {
+                var isSourceNameMissing = StringUtil.IsNullOrEmpty(sourceName);
+                var isUsingDefaultHandler = handler is DefaultActivityHandler;
+
+                // If the source lookup only found the default handler, use the operation name as a fallback.
+                if (isSourceNameMissing && isUsingDefaultHandler)
+                {
+                    var integrationHandler = FindIntegrationHandlerByOperationName(activity.OperationName);
+                    if (integrationHandler is not null)
+                    {
+                        handler = integrationHandler;
+                    }
+                }
+
                 handler.ActivityStarted(sName, activity);
             }
             else
@@ -109,6 +123,31 @@ namespace Datadog.Trace.Activity
             {
                 Log.Warning("ActivityListenerHandler: There's no handler to process the ActivityStopped event.  [Source={SourceName}]", sName);
             }
+        }
+
+        private static IActivityHandler? FindIntegrationHandlerByOperationName(string? operationName)
+        {
+            if (StringUtil.IsNullOrEmpty(operationName))
+            {
+                return null;
+            }
+
+            foreach (var handler in ActivityHandlersRegister.Handlers)
+            {
+                if (handler is DefaultActivityHandler)
+                {
+                    return null;
+                }
+
+                if (handler is not DisableActivityHandler
+                 && handler is not IgnoreActivityHandler
+                 && handler.ShouldListenTo(operationName, version: null))
+                {
+                    return handler;
+                }
+            }
+
+            return null;
         }
     }
 }

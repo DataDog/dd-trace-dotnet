@@ -38,7 +38,10 @@ namespace Datadog.Trace.Activity.Handlers
         public void ActivityStarted<T>(string sourceName, T activity)
             where T : IActivity
         {
-            ActivityHandlerCommon.ActivityStarted(sourceName, activity, tags: new OpenTelemetryTags(), out var activityMapping);
+            var integrationId = Tracer.Instance.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId.Quartz)
+                                    ? IntegrationId.Quartz
+                                    : IntegrationId.OpenTelemetry;
+            ActivityHandlerCommon.ActivityStarted(integrationId, sourceName, activity, tags: new OpenTelemetryTags(), out _);
         }
 
         public void ActivityStopped<T>(string sourceName, T activity)
