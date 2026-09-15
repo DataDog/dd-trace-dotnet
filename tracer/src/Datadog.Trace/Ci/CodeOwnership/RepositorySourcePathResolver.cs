@@ -137,15 +137,15 @@ internal sealed class RepositorySourcePathResolver
         var rootWithSeparator = root;
         try
         {
-            var pathComparison = Path.DirectorySeparatorChar == '\\' ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
+            var pathComparison = FrameworkDescription.Instance.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
             var pathWithoutTrailingSeparator = absolutePath.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
-            var rootWithoutTrailingSeparator = rootWithSeparator!.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+            var rootWithoutTrailingSeparator = rootWithSeparator.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
             if (pathWithoutTrailingSeparator.Equals(rootWithoutTrailingSeparator, pathComparison))
             {
                 return ".";
             }
 
-            if (rootWithSeparator![rootWithSeparator.Length - 1] != Path.DirectorySeparatorChar)
+            if (rootWithSeparator[rootWithSeparator.Length - 1] != Path.DirectorySeparatorChar)
             {
                 rootWithSeparator += Path.DirectorySeparatorChar;
             }
