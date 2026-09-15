@@ -14,6 +14,12 @@ endif()
 
 project("Datadog.Tracer.Native" VERSION 3.54.0)
 
+option(RUN_ASAN "Build with Clang Address Sanitizer" OFF)
+option(RUN_UBSAN "Build with Clang Undefined-Behavior Sanitizer" OFF)
+
+message(STATUS "Run Clang Address Sanitizer: " ${RUN_ASAN})
+message(STATUS "Run Clang Undefined-Behavior Sanitizer: " ${RUN_UBSAN})
+
 # ******************************************************
 # Environment detection
 # ******************************************************
@@ -136,6 +142,35 @@ elseif (ISARM)
     add_compile_options(-DARM)
 endif()
 
+# Sanitizers are only wired up for the Linux CI jobs (see RUN_ASAN/RUN_UBSAN in
+# .azure-pipelines/ultimate-pipeline.yml); RUN_ASAN/RUN_UBSAN default OFF so this
+# has no effect on a normal build.
+if (ISLINUX AND RUN_ASAN)
+    add_compile_options(-g -fsanitize=address -fno-omit-frame-pointer -DDD_SANITIZERS)
+endif()
+
+if (ISLINUX AND RUN_UBSAN)
+    add_compile_options(-fsanitize=undefined -g -fno-omit-frame-pointer -fno-sanitize-recover=all -DDD_SANITIZERS)
+
+    # il_rewriter.cpp's by-design unaligned IL-buffer access is suppressed at the file
+    # level (a #pragma clang attribute push/pop around its UNALIGNED-cast reads/writes),
+    # not build-wide, so this build still catches a genuine alignment bug anywhere else.
+    # See the comment there for why.
+
+    # See the identical suppression (and its rationale) in
+    # profiler/src/ProfilerEngine/Datadog.Profiler.Native.Linux/CMakeLists.txt:
+    # on arm64 Linux the CLR exports typeinfo for its COM-interface
+    # implementations, so UBSAN's vptr check fires on every call through an
+    # ICorProfilerInfo*/ICorProfilerCallback* interface -- scattered across too
+    # many call sites in this codebase to suppress individually, and any missed
+    # site aborts under -fno-sanitize-recover=all. On x86_64 the CLR does not
+    # export that typeinfo, so the check is silently skipped there already.
+    if (ISARM64)
+        add_compile_options(-fno-sanitize=vptr)
+        add_link_options(-fno-sanitize=vptr)
+    endif()
+endif()
+
 if (ISLINUX)
     # ------------------------------------------------------
     # Hardening: make sure no target in this project ever
@@ -230,6 +265,14 @@ add_library("Datadog.Tracer.Native.static" STATIC
 
 set_target_properties("Datadog.Tracer.Native.static" PROPERTIES PREFIX "")
 target_compile_definitions("Datadog.Tracer.Native.static" PUBLIC "-D_GLIBCXX_USE_CXX11_ABI=0")
+
+if (ISLINUX AND RUN_UBSAN)
+    target_link_libraries("Datadog.Tracer.Native.static" -fsanitize=undefined)
+endif()
+
+if (ISLINUX AND RUN_ASAN)
+    target_link_libraries("Datadog.Tracer.Native.static" -fsanitize=address)
+endif()
 
 # Define linker libraries
 if (ISMACOS)

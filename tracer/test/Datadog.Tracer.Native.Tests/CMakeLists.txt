@@ -28,6 +28,17 @@ elseif (ISARM)
     add_compile_options(-DARM)
 endif()
 
+# RUN_ASAN/RUN_UBSAN are declared as options() in the sibling
+# Datadog.Tracer.Native.static target's CMakeLists.txt and reused here via
+# CMake's cache -- default OFF, so this has no effect on a normal build.
+if (ISLINUX AND RUN_ASAN)
+    add_compile_options(-g -fsanitize=address -fno-omit-frame-pointer -DDD_SANITIZERS)
+endif()
+
+if (ISLINUX AND RUN_UBSAN)
+    add_compile_options(-fsanitize=undefined -g -fno-omit-frame-pointer -fno-sanitize-recover=all -DDD_SANITIZERS)
+endif()
+
 SET(TEST_EXECUTABLE_NAME "Datadog.Tracer.Native.Tests")
 # Set output folders. Don't use CACHE as variable name is reused across projects.
 SET(OUTPUT_BIN_DIR "${CMAKE_SOURCE_DIR}/artifacts/native-bin/Datadog.Tracer.Native.Tests")
@@ -57,6 +68,14 @@ target_include_directories(${TEST_EXECUTABLE_NAME}
 )
 
 add_dependencies(${TEST_EXECUTABLE_NAME} gtest Datadog.Tracer.Native.static coreclr)
+
+if (ISLINUX AND RUN_ASAN)
+    target_link_libraries(${TEST_EXECUTABLE_NAME} -fsanitize=address)
+endif()
+
+if (ISLINUX AND RUN_UBSAN)
+    target_link_libraries(${TEST_EXECUTABLE_NAME} -fsanitize=undefined)
+endif()
 
 target_link_libraries(${TEST_EXECUTABLE_NAME}
   Datadog.Tracer.Native.static

@@ -3418,6 +3418,248 @@ stages:
       condition: always()
       continueOnError: false
 
+- stage: asan_tracer_tests
+  #address sanitizer tests for the native tracer
+  condition: >
+    and(
+      succeeded(),
+      eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsTracerChanged'], 'True')
+    )
+  dependsOn: [merge_commit_id, generate_variables]
+  variables:
+    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
+    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
+  jobs:
+  - template: steps/update-github-status-jobs.yml
+    parameters:
+      jobs: [Linux]
+
+  - job: Linux
+    timeoutInMinutes: 90
+
+    pool:
+      name: $(linuxX64Pool)
+
+    steps:
+    - template: steps/clone-repo.yml
+      parameters:
+        targetShaId: $(targetShaId)
+        targetBranch: $(targetBranch)
+
+    - script: |
+        sudo sysctl vm.mmap_rnd_bits=28
+
+    - template: steps/run-in-docker.yml
+      parameters:
+        build: true
+        target: builder
+        baseImage: centos7
+        useNativeSdkVersion: true
+        command: "BuildTracerAsanTest -Framework net7.0"
+        apiKey: $(DD_LOGGER_DD_API_KEY)
+        timeoutInMinutesForRunCommand: 30 # No retry: this target also runs the sanitizer unit tests, and retrying could mask a real intermittent finding
+
+    - template: steps/run-in-docker.yml
+      parameters:
+        build: true
+        target: builder
+        baseImage: debian
+        command: "BuildTracerSampleForSanitiserTests -Framework net7.0"
+        apiKey: $(DD_LOGGER_DD_API_KEY)
+        retryCountForRunCommand: 1
+        timeoutInMinutesForRunCommand: 10
+
+    - template: steps/run-in-docker.yml
+      parameters:
+        target: builder
+        baseImage: centos7
+        useNativeSdkVersion: true
+        command: "RunSampleWithTracerAsan -Framework net7.0"
+        apiKey: $(DD_LOGGER_DD_API_KEY)
+
+    - publish: artifacts/build_data
+      displayName: Uploading Address sanitizer test results
+      artifact: _$(System.StageName)_$(Agent.JobName)_test_results_$(System.JobAttempt)
+      condition: always()
+      continueOnError: false
+
+- stage: asan_arm64_tracer_tests
+  #address sanitizer tests for the native tracer on arm64
+  condition: >
+    and(
+      succeeded(),
+      eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsTracerChanged'], 'True')
+    )
+  dependsOn: [merge_commit_id, generate_variables]
+  variables:
+    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
+    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
+  jobs:
+  - template: steps/update-github-status-jobs.yml
+    parameters:
+      jobs: [Linux]
+
+  - job: Linux
+    timeoutInMinutes: 90
+
+    pool:
+      name: $(linuxArm64Pool)
+
+    steps:
+    - template: steps/clone-repo.yml
+      parameters:
+        targetShaId: $(targetShaId)
+        targetBranch: $(targetBranch)
+
+    - template: steps/run-in-docker.yml
+      parameters:
+        build: true
+        baseImage: debian
+        command: "BuildTracerAsanTest -Framework net7.0"
+        apiKey: $(DD_LOGGER_DD_API_KEY)
+        timeoutInMinutesForRunCommand: 30 # No retry: this target also runs the sanitizer unit tests, and retrying could mask a real intermittent finding
+
+    - template: steps/run-in-docker.yml
+      parameters:
+        build: true
+        baseImage: debian
+        command: "BuildTracerSampleForSanitiserTests -Framework net7.0"
+        apiKey: $(DD_LOGGER_DD_API_KEY)
+        retryCountForRunCommand: 1
+        timeoutInMinutesForRunCommand: 10
+
+    - template: steps/run-in-docker.yml
+      parameters:
+        baseImage: debian
+        command: "RunSampleWithTracerAsan -Framework net7.0"
+        apiKey: $(DD_LOGGER_DD_API_KEY)
+
+    - publish: artifacts/build_data
+      displayName: Uploading Address sanitizer test results
+      artifact: _$(System.StageName)_$(Agent.JobName)_test_results_$(System.JobAttempt)
+      condition: always()
+      continueOnError: false
+
+- stage: ubsan_arm64_tracer_tests
+  #undefined behavior sanitizer tests for the native tracer on arm64
+  condition: >
+    and(
+      succeeded(),
+      eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsTracerChanged'], 'True')
+    )
+  dependsOn: [merge_commit_id, generate_variables]
+  variables:
+    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
+    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
+  jobs:
+  - template: steps/update-github-status-jobs.yml
+    parameters:
+      jobs: [Linux]
+
+  - job: Linux
+    timeoutInMinutes: 90
+
+    pool:
+      name: $(linuxArm64Pool)
+
+    steps:
+    - template: steps/clone-repo.yml
+      parameters:
+        targetShaId: $(targetShaId)
+        targetBranch: $(targetBranch)
+
+    - template: steps/run-in-docker.yml
+      parameters:
+        build: true
+        baseImage: debian
+        command: "BuildTracerUbsanTest -Framework net7.0"
+        apiKey: $(DD_LOGGER_DD_API_KEY)
+        timeoutInMinutesForRunCommand: 30 # No retry: this target also runs the sanitizer unit tests, and retrying could mask a real intermittent finding
+
+    - template: steps/run-in-docker.yml
+      parameters:
+        build: true
+        baseImage: debian
+        command: "BuildTracerSampleForSanitiserTests -Framework net7.0"
+        apiKey: $(DD_LOGGER_DD_API_KEY)
+        retryCountForRunCommand: 1
+        timeoutInMinutesForRunCommand: 10
+
+    - template: steps/run-in-docker.yml
+      parameters:
+        baseImage: debian
+        command: "RunSampleWithTracerUbsan -Framework net7.0"
+        apiKey: $(DD_LOGGER_DD_API_KEY)
+
+    - publish: artifacts/build_data
+      displayName: Uploading test results
+      artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
+      condition: always()
+      continueOnError: false
+
+- stage: ubsan_tracer_tests
+#undefined behavior sanitizer tests for the native tracer
+  condition: >
+    and(
+      succeeded(),
+      eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsTracerChanged'], 'True')
+    )
+  dependsOn: [merge_commit_id, generate_variables]
+  variables:
+    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
+    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
+  jobs:
+  - template: steps/update-github-status-jobs.yml
+    parameters:
+      jobs: [Linux]
+
+  - job: Linux
+    timeoutInMinutes: 90
+
+    pool:
+      name: $(linuxX64Pool)
+
+    steps:
+
+    - template: steps/clone-repo.yml
+      parameters:
+        targetShaId: $(targetShaId)
+        targetBranch: $(targetBranch)
+
+    - template: steps/run-in-docker.yml
+      parameters:
+        build: true
+        target: builder
+        baseImage: centos7
+        useNativeSdkVersion: true
+        command: "BuildTracerUbsanTest -Framework net7.0"
+        apiKey: $(DD_LOGGER_DD_API_KEY)
+        timeoutInMinutesForRunCommand: 30 # No retry: this target also runs the sanitizer unit tests, and retrying could mask a real intermittent finding
+
+    - template: steps/run-in-docker.yml
+      parameters:
+        build: true
+        target: builder
+        baseImage: debian
+        command: "BuildTracerSampleForSanitiserTests -Framework net7.0"
+        apiKey: $(DD_LOGGER_DD_API_KEY)
+        retryCountForRunCommand: 1
+        timeoutInMinutesForRunCommand: 10
+
+    - template: steps/run-in-docker.yml
+      parameters:
+        target: builder
+        baseImage: centos7
+        useNativeSdkVersion: true
+        command: "RunSampleWithTracerUbsan -Framework net7.0"
+        apiKey: $(DD_LOGGER_DD_API_KEY)
+
+    - publish: artifacts/build_data
+      displayName: Uploading test results
+      artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
+      condition: always()
+      continueOnError: false
+
 - stage: integration_tests_arm64
   dependsOn: [build_arm64_tracer, build_arm64_universal, build_arm64_profiler, generate_variables, merge_commit_id, build_samples]
   variables:
