@@ -307,7 +307,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                 }
 
                 var resultCallStackTree = shouldCheckWhyThereAreNoFrames ? null : ShadowStackHolder.ShadowStack!.CreateResultReport(exceptionPath: exception);
-                if (resultCallStackTree == null || !resultCallStackTree.Frames.Any())
+                if (resultCallStackTree == null || resultCallStackTree.Frames.Count == 0)
                 {
                     Log.Warning("ExceptionTrackManager: Checking why there are no frames captured for exception: {Exception}.", exception.ToString());
 
