@@ -287,3 +287,43 @@ cases:
       - Claims String.Replace strips or doesn't propagate taint, so nothing is flagged.
       - Requires manual annotation of the source/sink, or invents a non-existent mechanism, flag, or API.
       - Confuses IAST (code-level vulnerability detection) with the WAF / AppSec live-attack (threat) detection.
+
+  # Starter case for the dd-apm-sdk-review skill (one pattern on purpose).
+  - id: dotnet-perf-params-hotpath
+    files:
+      - AGENTS.md
+      - .agents/skills/dd-apm-sdk-review/reviewers/performance.md
+      - .agents/skills/dd-apm-sdk-review/reviewers/_common.md
+      - .agents/dd-apm-sdk-review-overrides/reviewers/performance.md
+    input: |
+      Apply this repo's performance-review criteria (reviewers/performance.md, its
+      .agents/dd-apm-sdk-review-overrides/reviewers/performance.md override, _common.md,
+      and AGENTS.md § "Performance Guidelines") to the following change. No git checkout
+      available — this snippet is the entire change to review.
+
+      ```csharp
+      // Called from OnMethodBegin on every instrumented request.
+      static void TagIds(Span span, params int[] ids)
+      {
+          for (var i = 0; i < ids.Length; i++)
+          {
+              span.SetTag("id." + i, ids[i].ToString());
+          }
+      }
+
+      static void OnMethodBegin(Span span)
+      {
+          TagIds(span, 1, 2); // expanded form — synthesizes a new int[] every request
+      }
+      ```
+    expected_criteria:
+      - Flags the expanded `TagIds(span, 1, 2)` call (or the `params int[]` helper it uses) on a per-request instrumentation callback, not only `params object[]`.
+      - Names the concrete cost — a new array on every request from the expanded call.
+      - Recommends overloads for the common 0/1/2-arg cases instead of `params`.
+      - Classifies the finding as P1 (override resolves this allocation to SEV-2 / P1, not P2).
+    bad_signals:
+      - Approves `params int[]` / `TagIds(span, 1, 2)` as the recommended hot-path helper.
+      - Treats the allocation as acceptable because the element type is `int`, not `object`.
+      - Treats the allocation as acceptable because the method is short.
+      - Reports the finding as P2 / a style nit.
+      - Flags `TagIds(span, existingArray)` as this finding (passing an existing array does not allocate).

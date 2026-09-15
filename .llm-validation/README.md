@@ -1,0 +1,78 @@
+# LLM Validation — `dd-apm-sdk-review`
+
+This folder is how we test the review skill (and the rest of `AGENTS.md`). It is
+**not** an xUnit run. The cases live here; the runner lives in
+[`ddoghq/llm-validation-platform`](https://github.com/ddoghq/llm-validation-platform).
+
+This repo already had a suite (`dotnet-tracer-agent-v0.1.yaml`). The skill landing
+appends one starter case; it does not replace the existing AGENTS.md cases.
+
+Same gate as [`dd-trace-js#10137`](https://github.com/DataDog/dd-trace-js/pull/10137) and
+[`dd-trace-java#12409`](https://github.com/DataDog/dd-trace-java/pull/12409).
+
+It answers: *did an edit to a review rule make the agent better or worse?*
+
+## Add a rule (this is the whole contribution)
+
+Overrides are owned by this repo. The shared core is not — never edit `.agents/skills/dd-apm-sdk-review/`.
+
+1. Create or extend a file under [`.agents/dd-apm-sdk-review-overrides/reviewers/`](../.agents/dd-apm-sdk-review-overrides/reviewers/).
+   Copy the shape of `performance.md`: one pattern, why it matters, the fix.
+2. Add the new override path to `instruction_files` in [`config.yaml`](./config.yaml) so CI
+   watches it.
+3. Add a case in [`suites/dotnet-tracer-agent-v0.1.yaml`](./suites/dotnet-tracer-agent-v0.1.yaml).
+   Copy the starter case `dotnet-perf-params-hotpath`.
+   A good case is a 10-line snippet plus 2–3 `expected_criteria` that would fail if the rule disappeared.
+4. List the new case id under `presets.gate.cases` in [`config.yaml`](./config.yaml) if you want CI to run it.
+5. Open a PR. That is it.
+
+The starter case in this folder is the example. Keep new ones that short.
+
+## Layout
+
+| Path | Role |
+|---|---|
+| [`config.yaml`](./config.yaml) | Monitored instruction files, model, `--level` presets |
+| [`suites/dotnet-tracer-agent-v0.1.yaml`](./suites/dotnet-tracer-agent-v0.1.yaml) | Cases (one file only — the CLI errors if `suites/` has more than one YAML) |
+
+## Run locally (Docker)
+
+From the **`dd-trace-dotnet` repo root**:
+
+```bash
+export LLMVAL_IMAGE=registry.ddbuild.io/ci/llm-validation-platform/llmval:latest
+docker pull "$LLMVAL_IMAGE"
+
+# Offline smoke — no gateway, no Claude (minimum preset)
+docker run --rm -v "$PWD:/repo" "$LLMVAL_IMAGE" \
+  --repo /repo --base-sha master --level minimum --fake
+
+# Cheap real smoke
+export LLMVAL_AUTH_HEADER="$(ddtool auth token rapid-ai-platform --datacenter us1.staging.dog --http-header)"
+docker run --rm -e LLMVAL_AUTH_HEADER -v "$PWD:/repo" "$LLMVAL_IMAGE" \
+  --repo /repo --base-sha master --level minimum --runs 1
+
+# The gate preset (existing AGENTS.md cases + the skill starter)
+docker run --rm -e LLMVAL_AUTH_HEADER -v "$PWD:/repo" "$LLMVAL_IMAGE" \
+  --repo /repo --base-sha master --level gate --runs 1
+
+# One named case
+docker run --rm -e LLMVAL_AUTH_HEADER -v "$PWD:/repo" "$LLMVAL_IMAGE" \
+  --repo /repo --base-sha master --case dotnet-perf-params-hotpath --runs 1
+```
+
+`--level` picks **which cases** run (`minimum` = two existing AGENTS.md cases, `gate` = the
+CI set including `dotnet-perf-params-hotpath`, `full` = every case). `--runs` only repeats
+those cases. Needs `ddtool` on the host for a real (non-`--fake`) run.
+
+CI includes the reusable `"llm validation"` job from the platform repo (see `.gitlab-ci.yml`).
+This repo's default branch is `master`, so the job uses the platform default `LLMVAL_BASE_REF`.
+
+## What a pass means
+
+This is an A/B comparison, not an absolute score:
+
+- **Candidate** = the working tree. Uncommitted edits count.
+- **Baseline** = `git show <base-sha>:<file>`. A file that is not on `master` yet is treated as added.
+
+The gate fails only on a **confident regression**. Noisy changes WARN and do not block.
