@@ -64,6 +64,15 @@
     <ProjectReference Include="..\Datadog.Trace.SourceGenerators\Datadog.Trace.SourceGenerators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- Required by StringCaseInterception -->
+    <CompilerVisibleProperty Include="TargetFrameworkIdentifier" />
+  </ItemGroup>
+
+  <PropertyGroup Condition="'$(TargetFramework)' == 'net461'">
+    <InterceptorsNamespaces>$(InterceptorsNamespaces);Datadog.Trace.Generated.Interceptors</InterceptorsNamespaces>
+  </PropertyGroup>
+
   <ItemGroup Condition=" $(TargetFramework.StartsWith('net4')) ">
     <Reference Include="System.Configuration" />
     <Reference Include="System.Web" />

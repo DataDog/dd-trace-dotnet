@@ -44,4 +44,9 @@ internal class TrackingNames
     public const string ConfigurationKeysGenYamlFile = nameof(ConfigurationKeysGenYamlFile);
     public const string ConfigurationKeysGenParseYaml = nameof(ConfigurationKeysGenParseYaml);
     public const string ConfigurationKeysGenParseConfiguration = nameof(ConfigurationKeysGenParseConfiguration);
+
+    // String case interceptor generator
+    public const string StringCaseCallSites = nameof(StringCaseCallSites);
+    public const string StringCaseIsNetFramework = nameof(StringCaseIsNetFramework);
+    public const string StringCaseCombined = nameof(StringCaseCombined);
 }

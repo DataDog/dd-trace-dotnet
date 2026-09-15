@@ -12,6 +12,7 @@ using Datadog.Trace.Iast.Dataflow;
 using Datadog.Trace.Iast.Helpers;
 using Datadog.Trace.Iast.Propagation;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Util;
 using static Datadog.Trace.Iast.Propagation.StringModuleImpl;
 
 namespace Datadog.Trace.Iast.Aspects.System;
@@ -967,6 +968,7 @@ public sealed class StringAspects
     /// <param name="target"> the target string </param>
     /// <returns> ToUpperInvariant result </returns>
     [AspectMethodReplace("System.String::ToUpperInvariant()", AspectFilter.StringLiteral_0)]
+    [SkipStringCaseInterception] // reproduces the instrumented customer call site exactly - see the attribute's remarks
     public static string ToUpperInvariant(string target)
     {
         var result = target.ToUpperInvariant();
@@ -1031,6 +1033,7 @@ public sealed class StringAspects
     /// <param name="target"> the target string </param>
     /// <returns> ToLowerInvariant result </returns>
     [AspectMethodReplace("System.String::ToLowerInvariant()", AspectFilter.StringLiteral_0)]
+    [SkipStringCaseInterception] // reproduces the instrumented customer call site exactly - see the attribute's remarks
     public static string ToLowerInvariant(string target)
     {
         var result = target.ToLowerInvariant();
