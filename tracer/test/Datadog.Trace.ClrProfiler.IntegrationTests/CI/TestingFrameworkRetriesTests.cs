@@ -87,8 +87,8 @@ public abstract class TestingFrameworkRetriesTests : TestingFrameworkEvpTest
                 useSnapshot: false,
                 validateAction: (in ExecutionData data) =>
                 {
-                    Assert.Single(data.TestModules);
-                    Assert.Single(data.TestSuites);
+                    data.TestModules.Should().ContainSingle();
+                    data.TestSuites.Should().ContainSingle();
                     foreach (var name in testNames)
                     {
                         var executions = data.Tests.Where(test => test.Meta[TestTags.Name] == name).ToList();
@@ -107,7 +107,7 @@ public abstract class TestingFrameworkRetriesTests : TestingFrameworkEvpTest
                         executions.Count(test => test.Meta[TestTags.Status] == TestTags.StatusFail).Should().Be(expectedExecutions - passes);
                         executions.Count(test => test.Meta.TryGetValue(TestTags.TestIsQuarantined, out var value) && value == "true").Should().Be(IsQuarantined(name) ? expectedExecutions : 0);
 
-                        var finalExecution = Assert.Single(executions, test => test.Meta.ContainsKey(TestTags.TestFinalStatus));
+                        var finalExecution = executions.Should().ContainSingle(test => test.Meta.ContainsKey(TestTags.TestFinalStatus)).Subject;
                         finalExecution.Meta[TestTags.TestFinalStatus].Should().Be(IsQuarantined(name) ? TestTags.StatusSkip : passes > 0 ? TestTags.StatusPass : TestTags.StatusFail);
                     }
                 },
