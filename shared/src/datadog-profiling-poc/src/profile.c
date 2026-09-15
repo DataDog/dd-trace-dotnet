@@ -7,15 +7,37 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include <time.h>
 
+#if defined(_WIN32)
+#include <windows.h>
+#else
+#include <time.h>
+#endif
+
+// Not using C11's timespec_get() here: MSVC's UCRT support for it is
+// inconsistent depending on the exact Windows SDK/VS version pairing (still
+// unsupported as of VS2019 16.10; even where present, its linkage changed
+// between SDK revisions) - this repo pins WindowsTargetPlatformVersion
+// 10.0.19041.0, an SDK old enough that it isn't a safe bet. Using the native
+// Win32 API there instead; GetSystemTimePreciseAsFileTime has been available
+// since Windows 8 / Server 2012, well below anything this repo targets.
 static ddog_timespec ddog__now(void)
 {
+    ddog_timespec out;
+#if defined(_WIN32)
+    FILETIME ft;
+    GetSystemTimePreciseAsFileTime(&ft);
+    uint64_t ticks = ((uint64_t)ft.dwHighDateTime << 32) | ft.dwLowDateTime; // 100ns intervals since 1601-01-01
+    static const uint64_t EPOCH_DIFF_100NS = 116444736000000000ULL;          // 1601-01-01 -> 1970-01-01
+    uint64_t unix_100ns = ticks - EPOCH_DIFF_100NS;
+    out.seconds = (int64_t)(unix_100ns / 10000000ULL);
+    out.nanoseconds = (uint32_t)((unix_100ns % 10000000ULL) * 100);
+#else
     struct timespec ts;
     timespec_get(&ts, TIME_UTC);
-    ddog_timespec out;
     out.seconds = (int64_t)ts.tv_sec;
     out.nanoseconds = (uint32_t)ts.tv_nsec;
+#endif
     return out;
 }
 

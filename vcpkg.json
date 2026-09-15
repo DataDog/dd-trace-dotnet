@@ -3,9 +3,16 @@
     "name": "shared-dependencies",
     "version": "1.0.0",
     "description": "Shared dependencies for multiple projects.",
+    "builtin-baseline": "9e44ec0e9f247d77c230ced0ee66c76296837807",
     "dependencies": [
         {
             "name": "libdatadog"
-        }
+        },
+        "curl",
+        "zstd"
+    ],
+    "overrides": [
+        { "name": "curl", "version": "8.19.0", "port-version": 0 },
+        { "name": "zstd", "version": "1.5.7", "port-version": 0 }
     ]
 }
