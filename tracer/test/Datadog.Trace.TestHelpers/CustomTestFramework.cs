@@ -17,6 +17,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.TestHelpers.FluentAssertionsExtensions;
+using Internal.Datadog.Trace.Ci;
 using Xunit;
 using Xunit.Abstractions;
 using Xunit.Sdk;
@@ -25,9 +26,16 @@ namespace Datadog.Trace.TestHelpers
 {
     public class CustomTestFramework : XunitTestFramework
     {
+        private static bool _hasFailures;
+        private readonly TestSession _session;
+
         public CustomTestFramework(IMessageSink messageSink)
             : base(messageSink)
         {
+            messageSink.OnMessage(new DiagnosticMessage("Creating TestSession"));
+            _session = TestSession.GetOrCreate(Environment.CommandLine);
+            DisposalTracker.Add(new TestSessionDisposable(_session));
+
             FluentAssertions.Formatting.Formatter.AddFormatter(new DiffPaneModelFormatter());
 
             if (bool.Parse(Environment.GetEnvironmentVariable("enable_crash_dumps") ?? "false"))
@@ -48,8 +56,11 @@ namespace Datadog.Trace.TestHelpers
         public CustomTestFramework(IMessageSink messageSink, Type typeTestedAssembly)
             : this(messageSink)
         {
-            var targetPath = GetMonitoringHomeTargetFrameworkFolder();
+            messageSink.OnMessage(new DiagnosticMessage("Creating TestSession"));
+            _session = TestSession.GetOrCreate(Environment.CommandLine);
+            DisposalTracker.Add(new TestSessionDisposable(_session));
 
+            var targetPath = GetMonitoringHomeTargetFrameworkFolder();
             if (targetPath != null)
             {
                 var file = typeTestedAssembly.Assembly.Location;
@@ -89,23 +100,45 @@ namespace Datadog.Trace.TestHelpers
 
         protected override ITestFrameworkExecutor CreateExecutor(AssemblyName assemblyName)
         {
-            return new CustomExecutor(assemblyName, SourceInformationProvider, DiagnosticMessageSink, RunTestCollectionsCallback);
+            return new CustomExecutor(_session, assemblyName, SourceInformationProvider, DiagnosticMessageSink, RunTestCollectionsCallback);
+        }
+
+        private class TestSessionDisposable : IDisposable
+        {
+            private readonly TestSession _session;
+
+            public TestSessionDisposable(TestSession session)
+            {
+                _session = session;
+            }
+
+            public void Dispose()
+            {
+                _session.Close(_hasFailures ? TestStatus.Fail : TestStatus.Pass);
+            }
         }
 
         private class CustomExecutor : XunitTestFrameworkExecutor
         {
             private readonly Func<IMessageSink, IEnumerable<IXunitTestCase>, Task> _runTestCollectionsCallback;
+            private readonly TestSession _session;
 
-            public CustomExecutor(AssemblyName assemblyName, ISourceInformationProvider sourceInformationProvider, IMessageSink diagnosticMessageSink, Func<IMessageSink, IEnumerable<IXunitTestCase>, Task> runTestCollectionsCallback)
+            public CustomExecutor(TestSession session, AssemblyName assemblyName, ISourceInformationProvider sourceInformationProvider, IMessageSink diagnosticMessageSink, Func<IMessageSink, IEnumerable<IXunitTestCase>, Task> runTestCollectionsCallback)
                 : base(assemblyName, sourceInformationProvider, diagnosticMessageSink)
             {
+                _session = session;
                 _runTestCollectionsCallback = runTestCollectionsCallback;
             }
 
             protected override async void RunTestCases(IEnumerable<IXunitTestCase> testCases, IMessageSink executionMessageSink, ITestFrameworkExecutionOptions executionOptions)
             {
+                executionMessageSink.OnMessage(new DiagnosticMessage("Creating TestModule for: {0}", TestAssembly.Assembly.Name));
+                var module = _session.InternalCreateModule(TestAssembly.Assembly.Name, "XUnit", typeof(XunitTestFramework).Assembly.GetName().Version?.ToString() ?? string.Empty);
                 using var assemblyRunner = new CustomAssemblyRunner(TestAssembly, testCases, DiagnosticMessageSink, executionMessageSink, executionOptions, _runTestCollectionsCallback);
-                await assemblyRunner.RunAsync();
+                var results = await assemblyRunner.RunAsync();
+                _hasFailures |= results.Failed > 0;
+                await module.CloseAsync();
+                executionMessageSink.OnMessage(new DiagnosticMessage("Closing TestModule"));
             }
         }
 
