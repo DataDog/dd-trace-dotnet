@@ -331,6 +331,29 @@ TEST(RejitHandler, RequestRejitKeepsAllModuleGenerationsAliveThroughClrCalls)
     handler->Shutdown();
 }
 
+TEST(RejitWorkOffloader, ThrowingWorkItemReleasesWaiterAndLoopSurvives)
+{
+    MockCorProfilerInfo profilerInfo;
+    RejitWorkOffloader offloader(&profilerInfo);
+
+    auto promise = std::make_shared<std::promise<void>>();
+    auto future = promise->get_future();
+    offloader.Enqueue(std::make_unique<RejitWorkItem>(
+        [] { throw std::runtime_error("boom"); },
+        [promise] { promise->set_value(); }));
+
+    EXPECT_EQ(std::future_status::ready, future.wait_for(5s));
+
+    auto laterItem = std::make_shared<std::promise<void>>();
+    auto laterItemFuture = laterItem->get_future();
+    offloader.Enqueue(std::make_unique<RejitWorkItem>([laterItem] { laterItem->set_value(); }));
+
+    EXPECT_EQ(std::future_status::ready, laterItemFuture.wait_for(5s));
+
+    offloader.Enqueue(RejitWorkItem::CreateTerminatingWorkItem());
+    offloader.WaitForTermination();
+}
+
 TEST(RejitHandlerModule, ConcurrentMetadataCreationPublishesExactlyOneInstance)
 {
     constexpr int iterations = 100;
