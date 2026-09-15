@@ -360,7 +360,7 @@ namespace iast
     std::vector<WSTRING> SplitParams(const WSTRING& subject)
     {
         std::vector<WSTRING> res;
-        for (auto part : SplitParams(ToString(subject)))
+        for (auto &part : SplitParams(ToString(subject)))
         {
             res.push_back(ToWSTRING(part));
         }
@@ -653,7 +653,7 @@ namespace iast
         auto in = Trim(str, WStr("[]"));
         if (in.length() > 0)
         {
-            for (auto v : Split(in, WStr(',')))
+            for (auto &v : Split(in, WStr(',')))
             {
                 res.push_back(ConvertToInt(v));
             }
@@ -666,7 +666,7 @@ namespace iast
         auto in = Trim(str, WStr("[]"));
         if (in.length() > 0)
         {
-            for (auto v : Split(in, WStr(',')))
+            for (auto &v : Split(in, WStr(',')))
             {
                 res.push_back(ConvertToBool(v));
             }
