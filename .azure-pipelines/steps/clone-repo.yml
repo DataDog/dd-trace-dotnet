@@ -6,6 +6,35 @@ parameters:
     type: string
 
 steps:
+- powershell: |
+    $ErrorActionPreference = 'Stop'
+    $repo = $env:BUILD_REPOSITORY_LOCALPATH
+    if ([string]::IsNullOrWhiteSpace($repo)) {
+        throw 'BUILD_REPOSITORY_LOCALPATH is empty'
+    }
+
+    # These directory symlinks can prevent Windows PowerShell 5.1 from cleaning reused workspaces.
+    # Remove only the links, including dangling links left by a previous partial cleanup.
+    foreach ($relative in @(
+        '.claude\skills\dd-apm-sdk-review',
+        '.cursor\skills\dd-apm-sdk-review'
+    )) {
+        $path = Join-Path $repo $relative
+        try {
+            $attributes = [IO.File]::GetAttributes($path)
+        }
+        catch [IO.FileNotFoundException] { continue }
+        catch [IO.DirectoryNotFoundException] { continue }
+
+        if (($attributes -band [IO.FileAttributes]::ReparsePoint) -and
+            ($attributes -band [IO.FileAttributes]::Directory)) {
+            Write-Host "Removing directory link: $path"
+            [IO.Directory]::Delete($path, $false)
+        }
+    }
+  displayName: Remove stale review-skill links
+  condition: and(succeeded(), eq(variables['Agent.OS'], 'Windows_NT'))
+
 - ${{ if endsWith(variables['build.sourceBranch'], '/merge') }}:
   - checkout: none
   - bash: |
