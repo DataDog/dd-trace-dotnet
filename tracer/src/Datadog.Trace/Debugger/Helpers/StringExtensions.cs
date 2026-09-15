@@ -4,6 +4,10 @@
 // </copyright>
 
 using System;
+#if NETFRAMEWORK
+using System.Security.Cryptography;
+#endif
+using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Debugger.Helpers
@@ -15,13 +19,30 @@ namespace Datadog.Trace.Debugger.Helpers
         // https://stackoverflow.com/questions/18021808/uuid-interop-with-c-sharp-code
         public static string ToUUID(this string input)
         {
-            // 1. To MD5
-#if NETCOREAPP
-            // MD5 always produces a 16 byte hash
-            Span<byte> bytes = stackalloc byte[16];
-            Md5Helper.ComputeMd5Hash(input, bytes);
+#if NETFRAMEWORK
+            return ToUUID(input, CryptoConfig.AllowOnlyFipsAlgorithms);
 #else
-            var bytes = Md5Helper.ComputeMd5Hash(input);
+            return ToUUID(input, useFipsCompliantAlgorithm: false);
+#endif
+        }
+
+        [TestingAndPrivateOnly]
+        internal static string ToUUID(string input, bool useFipsCompliantAlgorithm)
+        {
+            // Preserve backend-compatible MD5 identifiers unless FIPS enforcement requires
+            // a compliant algorithm. Only the first 16 bytes are formatted below.
+#if NETCOREAPP
+            Span<byte> bytes = stackalloc byte[32];
+            if (useFipsCompliantAlgorithm)
+            {
+                Sha256Helper.ComputeHash(input, bytes);
+            }
+            else
+            {
+                Md5Helper.ComputeMd5Hash(input, bytes.Slice(0, 16));
+            }
+#else
+            var bytes = useFipsCompliantAlgorithm ? Sha256Helper.ComputeHash(input) : Md5Helper.ComputeMd5Hash(input);
 #endif
 
             // version (3) and variant (RFC 4122)
