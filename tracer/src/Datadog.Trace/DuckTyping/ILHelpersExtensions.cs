@@ -20,6 +20,7 @@ namespace Datadog.Trace.DuckTyping
     internal static class ILHelpersExtensions
     {
         private static readonly List<DynamicMethod> DynamicMethods = new();
+        private static readonly Func<Type, bool>? RuntimeIsFunctionPointer = CreateRuntimeIsFunctionPointerGetter();
 
         internal static DynamicMethod GetDynamicMethodForIndex(int index)
         {
@@ -275,6 +276,16 @@ namespace Datadog.Trace.DuckTyping
                 return null;
             }
 
+            // Managed references, unmanaged pointers and function pointers are special evaluation-stack
+            // categories. They are not object references, even though reflection reports them as non-value
+            // types, and castclass, box or an omitted conversion cannot change one special category into
+            // another. Their exact reflected types must match before IL emission; otherwise the generated body
+            // can be unverifiable or make the runtime consume an address using the wrong calling convention.
+            if (RequiresExactTypeMatch(actualUnderlyingType) || RequiresExactTypeMatch(expectedUnderlyingType))
+            {
+                return DuckTypeInvalidTypeConversionException.Create(actualType, expectedType);
+            }
+
             if (actualUnderlyingType.IsValueType)
             {
                 if (expectedUnderlyingType.IsValueType)
@@ -365,6 +376,16 @@ namespace Datadog.Trace.DuckTyping
                 return null;
             }
 
+            // Managed references, unmanaged pointers and function pointers are special evaluation-stack
+            // categories. They are not object references, even though reflection reports them as non-value
+            // types, and castclass, box or an omitted conversion cannot change one special category into
+            // another. Their exact reflected types must match before IL emission; otherwise the generated body
+            // can be unverifiable or make the runtime consume an address using the wrong calling convention.
+            if (RequiresExactTypeMatch(actualUnderlyingType) || RequiresExactTypeMatch(expectedUnderlyingType))
+            {
+                return DuckTypeInvalidTypeConversionException.Create(actualType, expectedType);
+            }
+
             if (actualUnderlyingType.IsValueType)
             {
                 if (expectedUnderlyingType.IsValueType)
@@ -389,6 +410,35 @@ namespace Datadog.Trace.DuckTyping
             }
 
             return null;
+        }
+
+        /// <summary>
+        /// Returns whether a reflected type represents an evaluation-stack category that cannot participate in
+        /// the boxing and reference conversions supported by <see cref="WriteTypeConversion"/>.
+        /// </summary>
+        /// <param name="type">Type to inspect.</param>
+        /// <returns><c>true</c> when only an exact type match can be emitted safely.</returns>
+        private static bool RequiresExactTypeMatch(Type type)
+        {
+            if (type.IsByRef || type.IsPointer)
+            {
+                return true;
+            }
+
+            return RuntimeIsFunctionPointer?.Invoke(type) is true;
+        }
+
+        /// <summary>
+        /// Creates an open delegate for <c>Type.IsFunctionPointer</c> when the running CLR exposes it.
+        /// </summary>
+        /// <returns>The cached property getter, or <c>null</c> on older runtimes.</returns>
+        private static Func<Type, bool>? CreateRuntimeIsFunctionPointerGetter()
+        {
+            // Type.IsFunctionPointer is not part of every reference assembly targeted by the tracer. The
+            // running runtime can still expose function-pointer metadata for an inspected assembly, so discover
+            // the getter once and invoke it without reflection or boxing for every subsequent conversion.
+            MethodInfo? getter = typeof(Type).GetProperty("IsFunctionPointer", BindingFlags.Instance | BindingFlags.Public)?.GetMethod;
+            return getter is null ? null : (Func<Type, bool>)getter.CreateDelegate(typeof(Func<Type, bool>));
         }
 
         /// <summary>
