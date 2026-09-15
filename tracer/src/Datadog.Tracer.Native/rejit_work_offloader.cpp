@@ -32,12 +32,16 @@ std::unique_ptr<RejitWorkItem> RejitWorkItem::CreateTerminatingWorkItem()
 
 namespace
 {
-// Releases anyone blocked on a work item's promise after the item failed. Catching the exception is not
-// enough on its own: the caller keeps its own reference to the promise (it needs it for the
-// enqueue-refused path), so the promise object outlives the work item and an unresolved promise is a
-// permanent hang rather than a broken_promise. An already-satisfied promise is tolerated, because the
-// item may equally have thrown after resolving it.
-void AbandonWorkItem(const RejitWorkItem& item)
+// Releases anyone blocked on a failed work item's promise. Catching the exception is not enough on its
+// own: the caller keeps its own reference to the promise (it needs it for the enqueue-refused path), so
+// the promise object outlives the work item and an unresolved promise is a permanent hang rather than a
+// broken_promise.
+//
+// This has to be the first thing the failure path does, and it must not throw. Logger::Error formats
+// through an ostringstream and therefore allocates, while the likeliest reason an item failed at all is
+// that allocation is already failing. Logging first would risk an exception escaping the catch handler,
+// unwinding the thread function and terminating the process with the waiter still unreleased.
+void AbandonWorkItem(const RejitWorkItem& item) noexcept
 {
     if (item.abandon == nullptr)
     {
@@ -48,12 +52,29 @@ void AbandonWorkItem(const RejitWorkItem& item)
     {
         item.abandon();
     }
-    catch (const std::future_error&)
+    catch (...)
     {
+        // An item that threw after resolving its promise lands here as promise_already_satisfied. There
+        // is nothing useful left to do on any of these paths, and deliberately no logging: see above.
+    }
+}
+
+// Best effort by design — failing to report a failure must not take the process down.
+void LogWorkItemFailure(const char* what) noexcept
+{
+    try
+    {
+        if (what == nullptr)
+        {
+            Logger::Error("Unknown exception while executing a ReJIT work item.");
+        }
+        else
+        {
+            Logger::Error("Exception while executing a ReJIT work item: ", what);
+        }
     }
     catch (...)
     {
-        Logger::Error("Unknown exception while releasing a failed ReJIT work item.");
     }
 }
 } // namespace
@@ -133,13 +154,14 @@ void RejitWorkOffloader::EnqueueThreadLoop(RejitWorkOffloader* offloader)
             }
             catch (const std::exception& ex)
             {
-                Logger::Error("Exception while executing a ReJIT work item: ", ex.what());
+                // Release the waiter before logging, never after: see AbandonWorkItem.
                 AbandonWorkItem(*item);
+                LogWorkItemFailure(ex.what());
             }
             catch (...)
             {
-                Logger::Error("Unknown exception while executing a ReJIT work item.");
                 AbandonWorkItem(*item);
+                LogWorkItemFailure(nullptr);
             }
         }
     }

@@ -274,6 +274,25 @@ TEST(RejitWorkOffloader, ItemThrowingAfterResolvingIsTolerated)
     offloader.WaitForTermination();
 }
 
+// The release path is noexcept and swallows whatever the callback throws, so a failure while releasing
+// cannot unwind the worker thread and terminate the process.
+TEST(RejitWorkOffloader, ThrowingReleaseCallbackDoesNotKillTheWorker)
+{
+    RejitWorkOffloader offloader(nullptr);
+
+    offloader.Enqueue(std::make_unique<RejitWorkItem>([] { throw std::runtime_error("boom"); },
+                                                      [] { throw std::runtime_error("release boom"); }));
+
+    auto laterItem = std::make_shared<std::promise<void>>();
+    auto laterItemFuture = laterItem->get_future();
+    offloader.Enqueue(std::make_unique<RejitWorkItem>([laterItem]() mutable { laterItem->set_value(); }));
+
+    EXPECT_EQ(std::future_status::ready, laterItemFuture.wait_for(5s));
+
+    offloader.Enqueue(RejitWorkItem::CreateTerminatingWorkItem());
+    offloader.WaitForTermination();
+}
+
 // Shutdown sets the flag and enqueues the terminator under the same write lock that Enqueue reads it under,
 // so a successful enqueue must land before the terminator and a refused one must be reported to the caller.
 // Either way the caller has to end up released — never queued behind a terminator that already passed.
