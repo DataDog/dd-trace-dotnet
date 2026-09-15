@@ -51,9 +51,10 @@ private:
                       std::set<MethodIdentifier>& revertRequests);
     void AddMethodProbes(debugger::DebuggerMethodProbeDefinition* methodProbes, int methodProbesLength,
                          debugger::DebuggerMethodSpanProbeDefinition* spanProbes, int spanProbesLength,
-                         std::set<trace::MethodIdentifier>& rejitRequests);
+                         std::set<trace::MethodIdentifier>& rejitRequests,
+                         const std::vector<ModuleID>& modules);
     void AddLineProbes(debugger::DebuggerLineProbeDefinition* lineProbes, int lineProbesLength,
-                       std::set<MethodIdentifier>& rejitRequests);
+                       std::set<MethodIdentifier>& rejitRequests, const std::vector<ModuleID>& modules);
     void DetermineReInstrumentProbes(std::set<MethodIdentifier>& revertRequests,
                                      std::set<MethodIdentifier>& reInstrumentRequests) const;
 
@@ -73,10 +74,13 @@ public:
     auto& GetExplorationTestLineProbes(const WSTRING& filename);
     const std::vector<std::shared_ptr<ProbeDefinition>>& GetProbes() const;
     DebuggerRejitPreprocessor* GetPreprocessor();
-    void RequestRejitForLoadedModule(ModuleID moduleId);
+    std::vector<std::shared_ptr<MethodProbeDefinition>> GetMethodProbesSnapshot();
+    void RequestRejitForLoadedModule(
+        ModuleID moduleId, const std::vector<std::shared_ptr<MethodProbeDefinition>>& methodProbes);
 
     void ModuleLoadFinished_AddMetadataToModule(ModuleID moduleId);
-    HRESULT STDMETHODCALLTYPE ModuleLoadFinished(const ModuleID moduleId);
+    HRESULT STDMETHODCALLTYPE ModuleLoadFinished(
+        ModuleID moduleId, const std::vector<std::shared_ptr<MethodProbeDefinition>>& methodProbes);
 
     static HRESULT NotifyReJITError(ModuleID moduleId, mdMethodDef methodId, FunctionID functionId, HRESULT hrStatus);
 };

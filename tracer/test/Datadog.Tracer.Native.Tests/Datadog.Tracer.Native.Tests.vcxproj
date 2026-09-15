@@ -104,6 +104,7 @@
     </ClCompile>
     <ClCompile Include="signature_builder_test.cpp" />
     <ClCompile Include="string_test.cpp" />
+    <ClCompile Include="cor_profiler_locking_test.cpp" />
     <ClCompile Include="test_link_stubs.cpp" />
     <ClCompile Include="util_test.cpp" />
     <ClCompile Include="version_struct_test.cpp" />

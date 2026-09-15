@@ -13,6 +13,7 @@
 #include "fault_tolerant_tracker.h"
 #include "iast/iast_util.h"
 #include "logger.h"
+#include "module_load_lock.h"
 
 #include <fstream>
 #include <map>
@@ -472,7 +473,8 @@ void DebuggerProbesInstrumentationRequester::AddMethodProbes(debugger::DebuggerM
                                                              int methodProbesLength,
                                                              debugger::DebuggerMethodSpanProbeDefinition* spanProbes,
                                                              int spanProbesLength,
-                                                             std::set<MethodIdentifier>& rejitRequests)
+                                                             std::set<MethodIdentifier>& rejitRequests,
+                                                             const std::vector<ModuleID>& modules)
 {
     std::vector<std::shared_ptr<MethodProbeDefinition>> methodProbeDefinitions;
 
@@ -582,11 +584,9 @@ void DebuggerProbesInstrumentationRequester::AddMethodProbes(debugger::DebuggerM
         return;
     }
 
-    auto modules = m_corProfiler->module_ids.Get();
-
     auto promise = std::make_shared<std::promise<std::vector<MethodIdentifier>>>();
     std::future<std::vector<MethodIdentifier>> future = promise->get_future();
-    m_debugger_rejit_preprocessor->EnqueuePreprocessRejitRequests(modules.Ref(), methodProbeDefinitions, promise);
+    m_debugger_rejit_preprocessor->EnqueuePreprocessRejitRequests(modules, methodProbeDefinitions, promise);
 
     const auto& methodProbeRequests = future.get();
 
@@ -610,7 +610,8 @@ void DebuggerProbesInstrumentationRequester::AddMethodProbes(debugger::DebuggerM
 
 void DebuggerProbesInstrumentationRequester::AddLineProbes(debugger::DebuggerLineProbeDefinition* lineProbes,
                                                            int lineProbesLength,
-                                                           std::set<MethodIdentifier>& rejitRequests)
+                                                           std::set<MethodIdentifier>& rejitRequests,
+                                                           const std::vector<ModuleID>& modules)
 {
     if (lineProbes != nullptr)
     {
@@ -644,11 +645,9 @@ void DebuggerProbesInstrumentationRequester::AddLineProbes(debugger::DebuggerLin
             return;
         }
 
-        auto modules = m_corProfiler->module_ids.Get();
-
         std::promise<std::vector<MethodIdentifier>> promise;
         std::future<std::vector<MethodIdentifier>> future = promise.get_future();
-        m_debugger_rejit_preprocessor->EnqueuePreprocessLineProbes(modules.Ref(), lineProbeDefinitions, &promise);
+        m_debugger_rejit_preprocessor->EnqueuePreprocessLineProbes(modules, lineProbeDefinitions, &promise);
 
         const auto& lineProbeRequests = future.get();
 
@@ -739,17 +738,21 @@ void DebuggerProbesInstrumentationRequester::InstrumentProbes(
     debugger::DebuggerMethodSpanProbeDefinition* spanProbes, int spanProbesLength,
     debugger::DebuggerRemoveProbesDefinition* removeProbes, int removeProbesLength)
 {
-    std::lock_guard lock(m_probes_mutex);
+    std::unique_lock probesLock(m_probes_mutex, std::defer_lock);
 
     std::set<MethodIdentifier> revertRequests{};
-    RemoveProbes(removeProbes, removeProbesLength, revertRequests);
-
     std::set<MethodIdentifier> rejitRequests{};
-    AddMethodProbes(methodProbes, methodProbesLength, spanProbes, spanProbesLength, rejitRequests);
-    AddLineProbes(lineProbes, lineProbesLength, rejitRequests);
-
     std::set<MethodIdentifier> reInstrumentRequests{};
-    DetermineReInstrumentProbes(revertRequests, reInstrumentRequests);
+
+    {
+        trace::ModuleLoadLock moduleLock(m_corProfiler->module_ids, [&]() { probesLock.lock(); });
+        const auto& modules = moduleLock.Modules();
+
+        RemoveProbes(removeProbes, removeProbesLength, revertRequests);
+        AddMethodProbes(methodProbes, methodProbesLength, spanProbes, spanProbesLength, rejitRequests, modules);
+        AddLineProbes(lineProbes, lineProbesLength, rejitRequests, modules);
+        DetermineReInstrumentProbes(revertRequests, reInstrumentRequests);
+    }
 
     if (!rejitRequests.empty())
     {
@@ -859,9 +862,15 @@ DebuggerRejitPreprocessor* DebuggerProbesInstrumentationRequester::GetPreprocess
     return m_debugger_rejit_preprocessor.get();
 }
 
-void DebuggerProbesInstrumentationRequester::RequestRejitForLoadedModule(const ModuleID moduleId)
+std::vector<std::shared_ptr<MethodProbeDefinition>>
+DebuggerProbesInstrumentationRequester::GetMethodProbesSnapshot()
 {
     std::vector<std::shared_ptr<MethodProbeDefinition>> methodProbes;
+
+    if (!is_debugger_or_exception_replay_hot_standby)
+    {
+        return methodProbes;
+    }
 
     std::lock_guard lock(m_probes_mutex);
 
@@ -874,6 +883,12 @@ void DebuggerProbesInstrumentationRequester::RequestRejitForLoadedModule(const M
         }
     }
 
+    return methodProbes;
+}
+
+void DebuggerProbesInstrumentationRequester::RequestRejitForLoadedModule(
+    const ModuleID moduleId, const std::vector<std::shared_ptr<MethodProbeDefinition>>& methodProbes)
+{
     if (methodProbes.empty())
     {
         Logger::Debug("[Debugger] There are no Method Probes");
@@ -1039,7 +1054,8 @@ void DebuggerProbesInstrumentationRequester::ModuleLoadFinished_AddMetadataToMod
     }
 }
 
-HRESULT STDMETHODCALLTYPE DebuggerProbesInstrumentationRequester::ModuleLoadFinished(const ModuleID moduleId)
+HRESULT STDMETHODCALLTYPE DebuggerProbesInstrumentationRequester::ModuleLoadFinished(
+    const ModuleID moduleId, const std::vector<std::shared_ptr<MethodProbeDefinition>>& methodProbes)
 {
     if (!is_debugger_or_exception_replay_hot_standby)
     {
@@ -1049,7 +1065,7 @@ HRESULT STDMETHODCALLTYPE DebuggerProbesInstrumentationRequester::ModuleLoadFini
     // IMPORTANT: The call to `ModuleLoadFinished_AddMetadataToModule` must be in `ModuleLoadFinished` as mutating the
     // layout of types is only feasible prior the type is loaded.
     ModuleLoadFinished_AddMetadataToModule(moduleId);
-    RequestRejitForLoadedModule(moduleId);
+    RequestRejitForLoadedModule(moduleId, methodProbes);
     return S_OK;
 }
 
