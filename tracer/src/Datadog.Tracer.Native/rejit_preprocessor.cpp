@@ -4,6 +4,7 @@
 #include "function_control_wrapper.h"
 #include "integration.h"
 #include "logger.h"
+#include "rejit_handler.h"
 #include "stats.h"
 
 namespace trace
@@ -26,12 +27,11 @@ Rejitter::~Rejitter()
 template <class RejitRequestDefinition>
 RejitPreprocessor<RejitRequestDefinition>::RejitPreprocessor(CorProfiler* corProfiler,
                                                              std::shared_ptr<RejitHandler> rejit_handler,
-                                                             std::shared_ptr<RejitWorkOffloader> work_offloader,
+                                                             std::shared_ptr<RejitWorkOffloader>,
                                                              RejitterPriority priority) :
     Rejitter(rejit_handler, priority),
     m_corProfiler(corProfiler),
-    m_rejit_handler(std::move(rejit_handler)),
-    m_work_offloader(std::move(work_offloader))
+    m_rejit_handler(std::move(rejit_handler))
 {
 }
 
@@ -433,44 +433,40 @@ ULONG RejitPreprocessor<RejitRequestDefinition>::RequestRejitForLoadedModules(
     const std::vector<ModuleID>& modules, const std::vector<RejitRequestDefinition>& definitions,
     bool enqueueInSameThread)
 {
-    std::vector<MethodIdentifier> rejitRequests{};
+    const auto modulesWithLifetime = m_rejit_handler->GetModulesWithLifetime(modules);
+    return RequestRejitForLoadedModules(modulesWithLifetime, definitions, enqueueInSameThread);
+}
+
+template <class RejitRequestDefinition>
+ULONG RejitPreprocessor<RejitRequestDefinition>::RequestRejitForLoadedModules(
+    const std::vector<ModuleIDWithLifetime>& modules, const std::vector<RejitRequestDefinition>& definitions,
+    bool enqueueInSameThread)
+{
+    std::vector<RejitRequest> rejitRequests{};
     const auto rejitCount = PreprocessRejitRequests(modules, definitions, rejitRequests);
-    RequestRejit(rejitRequests, enqueueInSameThread);
+    RequestRejit(std::move(rejitRequests), enqueueInSameThread);
     return rejitCount;
 }
 
 template <class RejitRequestDefinition>
-void RejitPreprocessor<RejitRequestDefinition>::RequestRejit(std::vector<MethodIdentifier>& rejitRequests,
+void RejitPreprocessor<RejitRequestDefinition>::RequestRejit(std::vector<RejitRequest> rejitRequests,
                                                              bool enqueueInSameThread, bool callRevertExplicitly)
 {
     if (!rejitRequests.empty())
     {
-        std::vector<ModuleID> vtModules;
-        std::vector<mdMethodDef> vtMethodDefs;
-
-        const auto rejitCount = rejitRequests.size();
-        vtModules.reserve(rejitCount);
-        vtMethodDefs.reserve(rejitCount);
-
-        for (const auto& rejitRequest : rejitRequests)
-        {
-            vtModules.push_back(rejitRequest.moduleId);
-            vtMethodDefs.push_back(rejitRequest.methodToken);
-        }
-
         if (enqueueInSameThread)
         {
-            m_rejit_handler->RequestRejit(vtModules, vtMethodDefs, callRevertExplicitly);
+            m_rejit_handler->RequestRejit(rejitRequests, callRevertExplicitly);
         }
         else
         {
-            m_rejit_handler->EnqueueForRejit(vtModules, vtMethodDefs, nullptr, callRevertExplicitly);
+            m_rejit_handler->EnqueueForRejit(std::move(rejitRequests), nullptr, callRevertExplicitly);
         }
     }
 }
 
 template <class RejitRequestDefinition>
-void RejitPreprocessor<RejitRequestDefinition>::EnqueueRequestRejit(std::vector<MethodIdentifier>& rejitRequests,
+void RejitPreprocessor<RejitRequestDefinition>::EnqueueRequestRejit(std::vector<RejitRequest> rejitRequests,
                                                                     std::shared_ptr<std::promise<void>> promise,
                                                                     bool callRevertExplicitly)
 {
@@ -486,6 +482,11 @@ void RejitPreprocessor<RejitRequestDefinition>::EnqueueRequestRejit(std::vector<
 
     if (rejitRequests.size() == 0)
     {
+        if (promise != nullptr)
+        {
+            promise->set_value();
+        }
+
         return;
     }
 
@@ -494,7 +495,7 @@ void RejitPreprocessor<RejitRequestDefinition>::EnqueueRequestRejit(std::vector<
     std::function<void()> action = [=, requests = std::move(rejitRequests), localPromise = promise,
                                     callRevertExplicitly = callRevertExplicitly]() mutable {
         // Process modules for rejit
-        RequestRejit(requests, true, callRevertExplicitly);
+        RequestRejit(std::move(requests), true, callRevertExplicitly);
 
         // Resolve promise
         if (localPromise != nullptr)
@@ -504,12 +505,15 @@ void RejitPreprocessor<RejitRequestDefinition>::EnqueueRequestRejit(std::vector<
     };
 
     // Enqueue
-    m_work_offloader->Enqueue(std::make_unique<RejitWorkItem>(std::move(action)));
+    if (!m_rejit_handler->Enqueue(std::make_unique<RejitWorkItem>(std::move(action))) && promise != nullptr)
+    {
+        promise->set_value();
+    }
 }
 
 template <class RejitRequestDefinition>
 void RejitPreprocessor<RejitRequestDefinition>::EnqueueRequestRejitForLoadedModules(
-    const std::vector<ModuleID>& modulesVector, const std::vector<RejitRequestDefinition>& definitions,
+    const std::vector<ModuleID>& modulesVector, std::vector<RejitRequestDefinition> definitions,
     std::shared_ptr<std::promise<ULONG>> promise)
 {
     if (m_rejit_handler->IsShutdownRequested())
@@ -524,16 +528,24 @@ void RejitPreprocessor<RejitRequestDefinition>::EnqueueRequestRejitForLoadedModu
 
     if (modulesVector.size() == 0 || definitions.size() == 0)
     {
+        if (promise != nullptr)
+        {
+            promise->set_value(0);
+        }
+
         return;
     }
 
     DBG("RejitHandler::EnqueueRequestRejitForLoadedModules");
     auto enqueueMeasure = trace::Stats::Instance()->EnqueueRequestRejitForLoadedModulesMeasure();
+    auto modulesWithLifetime = m_rejit_handler->GetModulesWithLifetime(modulesVector);
 
-    std::function<void()> action = [=, modules = std::move(modulesVector), definitions = std::move(definitions),
+    std::function<void()> action = [=, modules = std::move(modulesWithLifetime), definitions = std::move(definitions),
                                     localPromise = promise, enqueueMeasure = std::move(enqueueMeasure)]() mutable {
         // Process modules for rejit
-        const auto rejitCount = RequestRejitForLoadedModules(modules, definitions, true);
+        std::vector<RejitRequest> rejitRequests;
+        const auto rejitCount = PreprocessRejitRequests(modules, definitions, rejitRequests);
+        RequestRejit(std::move(rejitRequests), true);
 
         // Resolve promise
         if (localPromise != nullptr)
@@ -545,13 +557,16 @@ void RejitPreprocessor<RejitRequestDefinition>::EnqueueRequestRejitForLoadedModu
     };
 
     // Enqueue
-    m_work_offloader->Enqueue(std::make_unique<RejitWorkItem>(std::move(action)));
+    if (!m_rejit_handler->Enqueue(std::make_unique<RejitWorkItem>(std::move(action))) && promise != nullptr)
+    {
+        promise->set_value(0);
+    }
 }
 
 template <class RejitRequestDefinition>
 ULONG RejitPreprocessor<RejitRequestDefinition>::PreprocessRejitRequests(
-    const std::vector<ModuleID>& modules, const std::vector<RejitRequestDefinition>& definitions,
-    std::vector<MethodIdentifier>& rejitRequests)
+    const std::vector<ModuleIDWithLifetime>& modules, const std::vector<RejitRequestDefinition>& definitions,
+    std::vector<RejitRequest>& rejitRequests)
 {
     if (m_rejit_handler->IsShutdownRequested())
     {
@@ -560,8 +575,15 @@ ULONG RejitPreprocessor<RejitRequestDefinition>::PreprocessRejitRequests(
 
     auto corProfilerInfo = m_rejit_handler->GetCorProfilerInfo();
 
-    for (const auto& module : modules)
+    for (const auto& moduleWithLifetime : modules)
     {
+        auto moduleLifetime = moduleWithLifetime.Acquire();
+        if (!moduleLifetime.has_value())
+        {
+            continue;
+        }
+
+        const auto module = moduleWithLifetime.id;
         auto _ = trace::Stats::Instance()->CallTargetRequestRejitMeasure();
         const ModuleInfo& moduleInfo = GetModuleInfo(corProfilerInfo, module);
         if (!moduleInfo.IsValid())
@@ -569,6 +591,7 @@ ULONG RejitPreprocessor<RejitRequestDefinition>::PreprocessRejitRequests(
             continue;
         }
 
+        std::vector<MethodIdentifier> moduleRejitRequests;
         DBG("Requesting Rejit for Module: ", moduleInfo.assembly.name);
 
         ComPtr<IUnknown> metadataInterfaces;
@@ -799,7 +822,7 @@ ULONG RejitPreprocessor<RejitRequestDefinition>::PreprocessRejitRequests(
                         // Looking for the method to rewrite
                         //
                         ProcessTypeDefForRejit(definition, metadataImport, metadataEmit, assemblyImport, assemblyEmit,
-                                               moduleInfo, typeDef, rejitRequests);
+                                               moduleInfo, typeDef, moduleRejitRequests);
                     }
                 }
             }
@@ -842,9 +865,15 @@ ULONG RejitPreprocessor<RejitRequestDefinition>::PreprocessRejitRequests(
                     continue;
                 }
 
-                ProcessTypesForRejit(rejitRequests, moduleInfo, metadataImport, metadataEmit, assemblyImport,
+                ProcessTypesForRejit(moduleRejitRequests, moduleInfo, metadataImport, metadataEmit, assemblyImport,
                                      assemblyEmit, definition, target_method);
             }
+        }
+
+        rejitRequests.reserve(rejitRequests.size() + moduleRejitRequests.size());
+        for (const auto& request : moduleRejitRequests)
+        {
+            rejitRequests.emplace_back(moduleWithLifetime, request.methodToken);
         }
     }
 
@@ -856,9 +885,9 @@ ULONG RejitPreprocessor<RejitRequestDefinition>::PreprocessRejitRequests(
 template <class RejitRequestDefinition>
 void RejitPreprocessor<RejitRequestDefinition>::EnqueuePreprocessRejitRequests(
     const std::vector<ModuleID>& modulesVector, const std::vector<RejitRequestDefinition>& definitions,
-    std::shared_ptr<std::promise<std::vector<MethodIdentifier>>> promise)
+    std::shared_ptr<std::promise<std::vector<RejitRequest>>> promise)
 {
-    std::vector<MethodIdentifier> rejitRequests;
+    std::vector<RejitRequest> rejitRequests;
 
     if (m_rejit_handler->IsShutdownRequested())
     {
@@ -872,12 +901,18 @@ void RejitPreprocessor<RejitRequestDefinition>::EnqueuePreprocessRejitRequests(
 
     if (modulesVector.size() == 0 || definitions.size() == 0)
     {
+        if (promise != nullptr)
+        {
+            promise->set_value(rejitRequests);
+        }
+
         return;
     }
 
     DBG("RejitHandler::EnqueuePreprocessRejitRequests");
+    auto modulesWithLifetime = m_rejit_handler->GetModulesWithLifetime(modulesVector);
 
-    std::function<void()> action = [=, modules = std::move(modulesVector), definitions = std::move(definitions),
+    std::function<void()> action = [=, modules = std::move(modulesWithLifetime), definitions = std::move(definitions),
                                     localRejitRequests = rejitRequests, localPromise = promise]() mutable {
         // Process modules for rejit
         const auto rejitCount = PreprocessRejitRequests(modules, definitions, localRejitRequests);
@@ -890,7 +925,10 @@ void RejitPreprocessor<RejitRequestDefinition>::EnqueuePreprocessRejitRequests(
     };
 
     // Enqueue
-    m_work_offloader->Enqueue(std::make_unique<RejitWorkItem>(std::move(action)));
+    if (!m_rejit_handler->Enqueue(std::make_unique<RejitWorkItem>(std::move(action))) && promise != nullptr)
+    {
+        promise->set_value(rejitRequests);
+    }
 }
 
 template <class RejitRequestDefinition>

@@ -8,6 +8,10 @@
 #include "fault_tolerant_method_duplicator.h"
 
 #include <map>
+#include <memory>
+#include <mutex>
+#include <set>
+#include <vector>
 
 // forward declaration
 
@@ -34,6 +38,7 @@ class DebuggerProbesInstrumentationRequester
 {
 private:
     CorProfiler* m_corProfiler;
+    std::mutex m_instrumentation_mutex;
     std::recursive_mutex m_probes_mutex;
     std::vector<ProbeDefinition_S> m_probes;
     std::unique_ptr<DebuggerRejitPreprocessor> m_debugger_rejit_preprocessor = nullptr;
@@ -48,18 +53,24 @@ private:
     static WSTRING GenerateRandomProbeId();
 
     void RemoveProbes(debugger::DebuggerRemoveProbesDefinition* removeProbes, int removeProbesLength,
-                      std::set<MethodIdentifier>& revertRequests);
+                      std::set<RejitRequest>& revertRequests);
     void AddMethodProbes(debugger::DebuggerMethodProbeDefinition* methodProbes, int methodProbesLength,
                          debugger::DebuggerMethodSpanProbeDefinition* spanProbes, int spanProbesLength,
-                         std::set<trace::MethodIdentifier>& rejitRequests);
+                         std::vector<std::shared_ptr<MethodProbeDefinition>>& methodProbeDefinitions);
     void AddLineProbes(debugger::DebuggerLineProbeDefinition* lineProbes, int lineProbesLength,
-                       std::set<MethodIdentifier>& rejitRequests);
-    void DetermineReInstrumentProbes(std::set<MethodIdentifier>& revertRequests,
-                                     std::set<MethodIdentifier>& reInstrumentRequests) const;
+                       std::vector<std::shared_ptr<LineProbeDefinition>>& lineProbeDefinitions);
+    void DetermineReInstrumentProbes(std::set<RejitRequest>& revertRequests,
+                                     std::set<RejitRequest>& reInstrumentRequests) const;
 
     bool ProbeIdExists(const WCHAR* probeId);
 
 public:
+    struct ModuleLoadProbeTransaction
+    {
+        std::unique_lock<std::mutex> instrumentationLock;
+        std::vector<std::shared_ptr<MethodProbeDefinition>> methodProbes;
+    };
+
     DebuggerProbesInstrumentationRequester(CorProfiler* corProfiler, std::shared_ptr<trace::RejitHandler> rejit_handler,
                                            std::shared_ptr<trace::RejitWorkOffloader> work_offloader, std::shared_ptr<fault_tolerant::FaultTolerantMethodDuplicator> fault_tolerant_method_duplicator);
 
@@ -68,15 +79,15 @@ public:
                    debugger::DebuggerMethodSpanProbeDefinition* spanProbes, int spanProbesLength,
                    debugger::DebuggerRemoveProbesDefinition* removeProbes, int removeProbesLength);
     static int GetProbesStatuses(WCHAR** probeIds, int probeIdsLength, debugger::DebuggerProbeStatus* probeStatuses);
-    void PerformInstrumentAllIfNeeded(const ModuleID& module_id, mdToken& function_token);
+    void PerformInstrumentAllIfNeeded(const ModuleIDWithLifetime& module, mdToken& function_token);
     void InitializeExplorationTestLineProbes(const WSTRING& filename);
     auto& GetExplorationTestLineProbes(const WSTRING& filename);
     const std::vector<std::shared_ptr<ProbeDefinition>>& GetProbes() const;
     DebuggerRejitPreprocessor* GetPreprocessor();
-    void RequestRejitForLoadedModule(ModuleID moduleId);
+    ModuleLoadProbeTransaction BeginModuleLoadProbeTransaction();
+    void RequestRejitForLoadedModule(const ModuleIDWithLifetime& module, ModuleLoadProbeTransaction transaction);
 
-    void ModuleLoadFinished_AddMetadataToModule(ModuleID moduleId);
-    HRESULT STDMETHODCALLTYPE ModuleLoadFinished(const ModuleID moduleId);
+    void ModuleLoadFinished_AddMetadataToModule(const ModuleIDWithLifetime& module);
 
     static HRESULT NotifyReJITError(ModuleID moduleId, mdMethodDef methodId, FunctionID functionId, HRESULT hrStatus);
 };

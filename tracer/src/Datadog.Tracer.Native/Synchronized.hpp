@@ -38,6 +38,13 @@ public:
         return {*this};
     }
 
+    // Short exclusive copy for readers that must not keep the mutex across a wait.
+    T Copy()
+    {
+        std::lock_guard<std::mutex> lock(_mutex);
+        return _obj;
+    }
+
     std::optional<Scope> TryGet()
     {
         try

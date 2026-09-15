@@ -19,8 +19,8 @@ DebuggerRejitPreprocessor::DebuggerRejitPreprocessor(CorProfiler* corProfiler,
 }
 
 ULONG DebuggerRejitPreprocessor::PreprocessLineProbes(
-    const std::vector<ModuleID>& modules, const std::vector<std::shared_ptr<LineProbeDefinition>>& lineProbes,
-    std::vector<MethodIdentifier>& rejitRequests)
+    const std::vector<ModuleIDWithLifetime>& modules, const std::vector<std::shared_ptr<LineProbeDefinition>>& lineProbes,
+    std::vector<RejitRequest>& rejitRequests)
 {
     if (m_rejit_handler->IsShutdownRequested())
     {
@@ -32,14 +32,22 @@ ULONG DebuggerRejitPreprocessor::PreprocessLineProbes(
     auto enable_by_ref_instrumentation = m_rejit_handler->GetEnableByRefInstrumentation();
     auto enable_calltarget_state_by_ref = m_rejit_handler->GetEnableCallTargetStateByRef();
 
-    for (const auto& module : modules)
+    for (const auto& moduleWithLifetime : modules)
     {
+        auto moduleLifetime = moduleWithLifetime.Acquire();
+        if (!moduleLifetime.has_value())
+        {
+            continue;
+        }
+
+        const auto module = moduleWithLifetime.id;
         const ModuleInfo& moduleInfo = GetModuleInfo(corProfilerInfo, module);
         if (!moduleInfo.IsValid())
         {
             continue;
         }
 
+        std::vector<MethodIdentifier> moduleRejitRequests;
         Logger::Debug("Requesting Rejit for Module: ", moduleInfo.assembly.name);
 
         ComPtr<IUnknown> metadataInterfaces;
@@ -137,7 +145,13 @@ ULONG DebuggerRejitPreprocessor::PreprocessLineProbes(
 
             moduleHandler->CreateMethodIfNotExists(methodDef, creator, updater);
 
-            rejitRequests.emplace_back(MethodIdentifier(moduleInfo.id, methodDef));
+            moduleRejitRequests.emplace_back(MethodIdentifier(moduleInfo.id, methodDef));
+        }
+
+        rejitRequests.reserve(rejitRequests.size() + moduleRejitRequests.size());
+        for (const auto& request : moduleRejitRequests)
+        {
+            rejitRequests.emplace_back(moduleWithLifetime, request.methodToken);
         }
     }
 
@@ -148,9 +162,16 @@ ULONG DebuggerRejitPreprocessor::PreprocessLineProbes(
 
 void DebuggerRejitPreprocessor::EnqueuePreprocessLineProbes(
     const std::vector<ModuleID>& modulesVector, const std::vector<std::shared_ptr<LineProbeDefinition>>& lineProbes,
-    std::promise<std::vector<MethodIdentifier>>* promise)
+    std::shared_ptr<std::promise<std::vector<RejitRequest>>> promise)
 {
-    std::vector<MethodIdentifier> rejitRequests;
+    EnqueuePreprocessLineProbes(m_rejit_handler->GetModulesWithLifetime(modulesVector), lineProbes, promise);
+}
+
+void DebuggerRejitPreprocessor::EnqueuePreprocessLineProbes(
+    const std::vector<ModuleIDWithLifetime>& modules, const std::vector<std::shared_ptr<LineProbeDefinition>>& lineProbes,
+    std::shared_ptr<std::promise<std::vector<RejitRequest>>> promise)
+{
+    std::vector<RejitRequest> rejitRequests;
 
     if (m_rejit_handler->IsShutdownRequested())
     {
@@ -162,17 +183,22 @@ void DebuggerRejitPreprocessor::EnqueuePreprocessLineProbes(
         return;
     }
 
-    if (modulesVector.size() == 0 || lineProbes.size() == 0)
+    if (modules.empty() || lineProbes.empty())
     {
+        if (promise != nullptr)
+        {
+            promise->set_value(rejitRequests);
+        }
+
         return;
     }
 
     Logger::Debug("RejitHandler::EnqueuePreprocessRejitRequests");
 
-    std::function<void()> action = [=, modules = std::move(modulesVector), definitions = std::move(lineProbes),
+    std::function<void()> action = [=, capturedModules = modules, definitions = lineProbes,
                                     localRejitRequests = rejitRequests, localPromise = promise]() mutable {
         // Process modules for rejit
-        const auto rejitCount = PreprocessLineProbes(modules, definitions, localRejitRequests);
+        const auto rejitCount = PreprocessLineProbes(capturedModules, definitions, localRejitRequests);
 
         // Resolve promise
         if (localPromise != nullptr)
@@ -182,7 +208,10 @@ void DebuggerRejitPreprocessor::EnqueuePreprocessLineProbes(
     };
 
     // Enqueue
-    m_work_offloader->Enqueue(std::make_unique<RejitWorkItem>(std::move(action)));
+    if (!m_rejit_handler->Enqueue(std::make_unique<RejitWorkItem>(std::move(action))) && promise != nullptr)
+    {
+        promise->set_value(rejitRequests);
+    }
 }
 
 void DebuggerRejitPreprocessor::ProcessTypesForRejit(
