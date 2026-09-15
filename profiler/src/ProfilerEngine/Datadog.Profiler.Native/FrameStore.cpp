@@ -86,7 +86,7 @@ std::pair<bool, FrameInfoView> FrameStore::GetFrame(uintptr_t instructionPointer
     static const std::string UnknownFrameType("|lm:Unknown-Assembly |ns: |ct:Unknown-Type |cg: |fn:Unknown-Frame-Type |fg: |sg:(?)");
 
     // check for fake IPs used in tests
-    if (instructionPointer <= MaxFakeIP)
+    if (instructionPointer < MaxFakeIP)
     {
         // switch/case does not support compile-time constants
         if (instructionPointer == FrameStore::FakeLockContentionIP)
