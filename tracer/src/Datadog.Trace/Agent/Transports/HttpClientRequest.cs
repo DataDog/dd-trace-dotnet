@@ -24,13 +24,15 @@ namespace Datadog.Trace.Agent.Transports
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<HttpClientRequest>();
 
         private readonly HttpClient _client;
+        private readonly HttpClientHandler _apiKeyProtectedHandler;
         private readonly HttpRequestMessage _postRequest;
         private readonly HttpRequestMessage _getRequest;
         private readonly Uri _uri;
 
-        public HttpClientRequest(HttpClient client, Uri endpoint)
+        public HttpClientRequest(HttpClient client, HttpClientHandler apiKeyProtectedHandler, Uri endpoint)
         {
             _client = client;
+            _apiKeyProtectedHandler = apiKeyProtectedHandler;
             _postRequest = new HttpRequestMessage(HttpMethod.Post, endpoint);
             _getRequest = new HttpRequestMessage(HttpMethod.Get, endpoint);
             _uri = endpoint;
@@ -38,6 +40,7 @@ namespace Datadog.Trace.Agent.Transports
 
         public void AddHeader(string name, string value)
         {
+            ApiKeyHttpTransportGuard.RejectLateApiKeyHeader(name);
             _postRequest.Headers.Add(name, value);
             _getRequest.Headers.Add(name, value);
         }
@@ -46,7 +49,7 @@ namespace Datadog.Trace.Agent.Transports
         {
             _getRequest.Content = null;
 
-            return new HttpClientResponse(await _client.SendAsync(_getRequest).ConfigureAwait(false));
+            return new HttpClientResponse(await SendAsync(_getRequest).ConfigureAwait(false));
         }
 
         public Task<IApiResponse> PostAsync(ArraySegment<byte> bytes, string contentType)
@@ -65,7 +68,7 @@ namespace Datadog.Trace.Agent.Transports
 
                 _postRequest.Content = content;
 
-                var response = await _client.SendAsync(_postRequest).ConfigureAwait(false);
+                var response = await SendAsync(_postRequest).ConfigureAwait(false);
 
                 return new HttpClientResponse(response);
             }
@@ -91,7 +94,7 @@ namespace Datadog.Trace.Agent.Transports
 
             _postRequest.Content = content;
 
-            var response = await _client.SendAsync(_postRequest).ConfigureAwait(false);
+            var response = await SendAsync(_postRequest).ConfigureAwait(false);
             return new HttpClientResponse(response);
         }
 
@@ -114,7 +117,7 @@ namespace Datadog.Trace.Agent.Transports
             }
 
             _postRequest.Content = content;
-            var response = await _client.SendAsync(_postRequest).ConfigureAwait(false);
+            var response = await SendAsync(_postRequest).ConfigureAwait(false);
 
             return new HttpClientResponse(response);
         }
@@ -175,8 +178,34 @@ namespace Datadog.Trace.Agent.Transports
                 _postRequest.Content = formDataContent;
             }
 
-            var response = await _client.SendAsync(_postRequest).ConfigureAwait(false);
+            var response = await SendAsync(_postRequest).ConfigureAwait(false);
             return new HttpClientResponse(response);
+        }
+
+        private Task<HttpResponseMessage> SendAsync(HttpRequestMessage request)
+        {
+            if (_apiKeyProtectedHandler is not null)
+            {
+                ApiKeyHttpTransportGuard.EnsureSafe(
+                    _uri,
+                    isProxyDisabled: IsProxyDisabledForEndpoint(),
+                    redirectsDisabled: AreRedirectsDisabled());
+            }
+
+            return _client.SendAsync(request);
+        }
+
+        private bool AreRedirectsDisabled()
+            => !_apiKeyProtectedHandler.AllowAutoRedirect;
+
+        private bool IsProxyDisabledForEndpoint()
+        {
+            if (!ApiKeyHttpTransportGuard.IsPlaintextLoopback(_uri))
+            {
+                return true;
+            }
+
+            return !_apiKeyProtectedHandler.UseProxy;
         }
     }
 }

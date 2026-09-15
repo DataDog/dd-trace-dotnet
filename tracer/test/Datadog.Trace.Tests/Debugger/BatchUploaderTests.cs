@@ -9,6 +9,7 @@ using System.Linq;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
+using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.Debugger.Sink;
 using Datadog.Trace.Debugger.Upload;
 using FluentAssertions;
@@ -130,6 +131,18 @@ public class BatchUploaderTests
     }
 
     [Fact]
+    public async Task ApiKeyTransportFailureDisablesSubsequentUploads()
+    {
+        var api = new UnsafeApiKeyTransport();
+        var uploader = BatchUploader.Create(api);
+
+        await uploader.Upload(new[] { "Test1" });
+        await uploader.Upload(new[] { "Test2" });
+
+        api.SendCount.Should().Be(1);
+    }
+
+    [Fact]
     public async Task CheckMediumOutput()
     {
         var str = GenerateString(1023 * 1024);
@@ -165,6 +178,17 @@ public class BatchUploaderTests
         {
             Segments.Add(symbols.ToArray());
             return Task.FromResult(true);
+        }
+    }
+
+    private sealed class UnsafeApiKeyTransport : IBatchUploadApi
+    {
+        public int SendCount { get; private set; }
+
+        public Task<bool> SendBatchAsync(ArraySegment<byte> symbols)
+        {
+            SendCount++;
+            return Task.FromException<bool>(new ApiKeyHttpTransportException("unsafe endpoint"));
         }
     }
 }
