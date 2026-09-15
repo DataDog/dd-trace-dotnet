@@ -508,7 +508,7 @@ void RejitPreprocessor<RejitRequestDefinition>::EnqueueRequestRejit(std::vector<
 
 template <class RejitRequestDefinition>
 void RejitPreprocessor<RejitRequestDefinition>::EnqueueRequestRejitForLoadedModules(
-    const std::vector<ModuleID>& modulesVector, const std::vector<RejitRequestDefinition>& definitions,
+    const std::vector<ModuleID>& modulesVector, std::shared_ptr<const std::vector<RejitRequestDefinition>> definitions,
     std::shared_ptr<std::promise<ULONG>> promise)
 {
     if (m_rejit_handler->IsShutdownRequested())
@@ -521,30 +521,77 @@ void RejitPreprocessor<RejitRequestDefinition>::EnqueueRequestRejitForLoadedModu
         return;
     }
 
-    if (modulesVector.size() == 0 || definitions.size() == 0)
+    if (modulesVector.size() == 0 || definitions == nullptr || definitions->size() == 0)
     {
+        // Pre-existing gap: this used to return without resolving the promise at all, unlike the
+        // IsShutdownRequested() branch above -- a latent hang risk for a caller blocked on
+        // future.get()/wait_for(). Resolve it the same way.
+        if (promise != nullptr)
+        {
+            promise->set_value(0);
+        }
+
         return;
     }
 
     DBG("RejitHandler::EnqueueRequestRejitForLoadedModules");
     auto enqueueMeasure = trace::Stats::Instance()->EnqueueRequestRejitForLoadedModulesMeasure();
 
-    std::function<void()> action = [=, modules = std::move(modulesVector), definitions = std::move(definitions),
-                                    localPromise = promise, enqueueMeasure = std::move(enqueueMeasure)]() mutable {
-        // Process modules for rejit
-        const auto rejitCount = RequestRejitForLoadedModules(modules, definitions, true);
+    try
+    {
+        // `definitions` is a shared_ptr now: capturing it here is a noexcept refcount bump, never
+        // a deep copy of the (potentially large) backing vector -- see CorProfiler::integration_definitions_.
+        // `modulesVector` is captured by value (small, bounded by how many modules are in one
+        // batch, often exactly one) -- not the source of the allocation risk this fix addresses.
+        std::function<void()> action = [=, modules = modulesVector, definitions = std::move(definitions),
+                                        localPromise = promise, enqueueMeasure = std::move(enqueueMeasure)]() mutable {
+            ULONG rejitCount = 0;
+            try
+            {
+                // Process modules for rejit
+                rejitCount = RequestRejitForLoadedModules(modules, *definitions, true);
+            }
+            catch (const std::exception& ex)
+            {
+                Logger::Error("RejitPreprocessor::EnqueueRequestRejitForLoadedModules: uncaught exception "
+                              "while processing queued rejit work, dropping this batch: ", ex.what());
+            }
+            catch (...)
+            {
+                Logger::Error("RejitPreprocessor::EnqueueRequestRejitForLoadedModules: uncaught non-standard "
+                              "exception while processing queued rejit work, dropping this batch.");
+            }
 
-        // Resolve promise
-        if (localPromise != nullptr)
+            // Resolve promise
+            if (localPromise != nullptr)
+            {
+                localPromise->set_value(rejitCount);
+            }
+
+            enqueueMeasure.Refresh();
+        };
+
+        // Enqueue
+        m_work_offloader->Enqueue(std::make_unique<RejitWorkItem>(std::move(action)));
+    }
+    catch (const std::exception& ex)
+    {
+        Logger::Error("RejitPreprocessor::EnqueueRequestRejitForLoadedModules: failed to enqueue rejit work, "
+                      "dropping this batch: ", ex.what());
+        if (promise != nullptr)
         {
-            localPromise->set_value(rejitCount);
+            promise->set_value(0);
         }
-
-        enqueueMeasure.Refresh();
-    };
-
-    // Enqueue
-    m_work_offloader->Enqueue(std::make_unique<RejitWorkItem>(std::move(action)));
+    }
+    catch (...)
+    {
+        Logger::Error("RejitPreprocessor::EnqueueRequestRejitForLoadedModules: failed to enqueue rejit work "
+                      "(non-standard exception), dropping this batch.");
+        if (promise != nullptr)
+        {
+            promise->set_value(0);
+        }
+    }
 }
 
 template <class RejitRequestDefinition>
@@ -854,7 +901,7 @@ ULONG RejitPreprocessor<RejitRequestDefinition>::PreprocessRejitRequests(
 
 template <class RejitRequestDefinition>
 void RejitPreprocessor<RejitRequestDefinition>::EnqueuePreprocessRejitRequests(
-    const std::vector<ModuleID>& modulesVector, const std::vector<RejitRequestDefinition>& definitions,
+    const std::vector<ModuleID>& modulesVector, std::shared_ptr<const std::vector<RejitRequestDefinition>> definitions,
     std::shared_ptr<std::promise<std::vector<MethodIdentifier>>> promise)
 {
     std::vector<MethodIdentifier> rejitRequests;
@@ -869,27 +916,71 @@ void RejitPreprocessor<RejitRequestDefinition>::EnqueuePreprocessRejitRequests(
         return;
     }
 
-    if (modulesVector.size() == 0 || definitions.size() == 0)
+    if (modulesVector.size() == 0 || definitions == nullptr || definitions->size() == 0)
     {
+        // Pre-existing gap: this used to return without resolving the promise at all, unlike the
+        // IsShutdownRequested() branch above -- a latent hang risk for a caller blocked on
+        // future.get()/wait_for(). Resolve it the same way.
+        if (promise != nullptr)
+        {
+            promise->set_value(rejitRequests);
+        }
+
         return;
     }
 
     DBG("RejitHandler::EnqueuePreprocessRejitRequests");
 
-    std::function<void()> action = [=, modules = std::move(modulesVector), definitions = std::move(definitions),
-                                    localRejitRequests = rejitRequests, localPromise = promise]() mutable {
-        // Process modules for rejit
-        const auto rejitCount = PreprocessRejitRequests(modules, definitions, localRejitRequests);
+    try
+    {
+        // `definitions` is a shared_ptr now: capturing it here is a noexcept refcount bump, never
+        // a deep copy of the backing vector.
+        std::function<void()> action = [=, modules = modulesVector, definitions = std::move(definitions),
+                                        localRejitRequests = rejitRequests, localPromise = promise]() mutable {
+            try
+            {
+                // Process modules for rejit
+                const auto rejitCount = PreprocessRejitRequests(modules, *definitions, localRejitRequests);
+            }
+            catch (const std::exception& ex)
+            {
+                Logger::Error("RejitPreprocessor::EnqueuePreprocessRejitRequests: uncaught exception while "
+                              "processing queued rejit work, dropping this batch: ", ex.what());
+            }
+            catch (...)
+            {
+                Logger::Error("RejitPreprocessor::EnqueuePreprocessRejitRequests: uncaught non-standard "
+                              "exception while processing queued rejit work, dropping this batch.");
+            }
 
-        // Resolve promise
-        if (localPromise != nullptr)
+            // Resolve promise
+            if (localPromise != nullptr)
+            {
+                localPromise->set_value(localRejitRequests);
+            }
+        };
+
+        // Enqueue
+        m_work_offloader->Enqueue(std::make_unique<RejitWorkItem>(std::move(action)));
+    }
+    catch (const std::exception& ex)
+    {
+        Logger::Error("RejitPreprocessor::EnqueuePreprocessRejitRequests: failed to enqueue rejit work, "
+                      "dropping this batch: ", ex.what());
+        if (promise != nullptr)
         {
-            localPromise->set_value(localRejitRequests);
+            promise->set_value(rejitRequests);
         }
-    };
-
-    // Enqueue
-    m_work_offloader->Enqueue(std::make_unique<RejitWorkItem>(std::move(action)));
+    }
+    catch (...)
+    {
+        Logger::Error("RejitPreprocessor::EnqueuePreprocessRejitRequests: failed to enqueue rejit work "
+                      "(non-standard exception), dropping this batch.");
+        if (promise != nullptr)
+        {
+            promise->set_value(rejitRequests);
+        }
+    }
 }
 
 template <class RejitRequestDefinition>

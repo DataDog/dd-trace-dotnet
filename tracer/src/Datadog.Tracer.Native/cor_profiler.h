@@ -51,7 +51,13 @@ class CorProfiler : public CorProfilerBase
 private:
     std::atomic_bool is_attached_ = {false};
     RuntimeInformation runtime_information_;
-    std::vector<IntegrationDefinition> integration_definitions_; // All APM Calltargets
+    // All APM Calltargets. Copy-on-write: readers (the rejit-enqueue path) share this snapshot
+    // cheaply via a noexcept shared_ptr copy instead of deep-copying the whole (only ever
+    // growing) vector on every module load. Writers build a new vector and swap the shared_ptr
+    // in, under the same module_ids lock that already serializes every access to this member.
+    // Never null.
+    std::shared_ptr<const std::vector<IntegrationDefinition>> integration_definitions_ =
+        std::make_shared<const std::vector<IntegrationDefinition>>();
     std::deque<std::pair<ModuleID, std::vector<MethodReference>>> rejit_module_method_pairs;
 
     Synchronized<std::unordered_set<shared::WSTRING>> definitions_ids;
