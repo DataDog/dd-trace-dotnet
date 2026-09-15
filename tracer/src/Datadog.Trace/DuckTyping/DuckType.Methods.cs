@@ -990,7 +990,7 @@ namespace Datadog.Trace.DuckTyping
                 }
 
                 Type parameterType = parameter.ParameterType;
-                object? defaultValue = parameter.RawDefaultValue;
+                object? defaultValue = GetOptionalParameterDefault(parameter);
                 if (defaultValue is null || ReferenceEquals(defaultValue, Missing.Value))
                 {
                     // A null metadata constant represents either a null reference or default(T) for a value type.
@@ -1021,6 +1021,29 @@ namespace Datadog.Trace.DuckTyping
                 };
             }
 
+            /// <summary>
+            /// Gets the metadata value for an optional target parameter.
+            /// </summary>
+            /// <param name="parameter">The target parameter.</param>
+            /// <returns>The value that the generated method must pass to the target.</returns>
+            private static object? GetOptionalParameterDefault(ParameterInfo parameter)
+            {
+#if NETFRAMEWORK
+                // Roslyn represents default(DateTime) with a null metadata constant. The .NET Framework
+                // reflection decoder special-cases DateTime and rejects that valid encoding with a
+                // FormatException before returning the value. Non-default DateTime constants use
+                // DateTimeConstantAttribute and must continue through RawDefaultValue to preserve their ticks.
+                if (parameter.ParameterType == typeof(DateTime)
+                 && (parameter.Attributes & ParameterAttributes.HasDefault) != 0
+                 && !parameter.IsDefined(typeof(DateTimeConstantAttribute), inherit: false))
+                {
+                    return null;
+                }
+#endif
+
+                return parameter.RawDefaultValue;
+            }
+
             private static bool HasCallerInfoAttribute(ParameterInfo parameter)
                 // These values describe the source call site rather than a declared constant. A generated proxy
                 // has no reliable source file or line to reproduce, so the metadata fallback would be misleading.
@@ -1043,7 +1066,7 @@ namespace Datadog.Trace.DuckTyping
             private static void AddIlToLoadOptionalParameterDefault(LazyILGenerator il, ParameterInfo parameter)
             {
                 Type parameterType = parameter.ParameterType;
-                object? defaultValue = parameter.RawDefaultValue;
+                object? defaultValue = GetOptionalParameterDefault(parameter);
                 if (defaultValue is null)
                 {
                     AddIlToLoadDefaultValue(il, parameterType);

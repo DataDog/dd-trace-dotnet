@@ -38,10 +38,17 @@ public class OptionalParameterMethodTests
         proxy.NullReference().Should().BeTrue();
         proxy.Enum().Should().Be(200);
         proxy.Nullable().Should().BeTrue();
-        proxy.DateTime().Should().Be(0);
         proxy.DateTimeConstant().Should().Be(638_000_000_000_000_000);
         proxy.Struct().Should().Be(0);
         proxy.Multiple().Should().Be(42);
+    }
+
+    [Fact]
+    public void OmittedDefaultDateTimeUsesDefaultValue()
+    {
+        var proxy = new OptionalParameterTarget().DuckCast<IOptionalParameterProxy>();
+
+        proxy.DateTime().Should().Be(0);
     }
 
     [Fact]
