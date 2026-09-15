@@ -1107,8 +1107,10 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
         if (original.ConfigurationResult is { IsValid: true, Result: { } values })
         {
             // Update well-known service information resources
-            if (values.TryGetValue("deployment.environment", out var envValue))
+            if (values.TryGetValue("deployment.environment.name", out var envValue) ||
+                values.TryGetValue("deployment.environment", out envValue))
             {
+                values.Remove("deployment.environment.name");
                 values.Remove("deployment.environment");
                 values[Tags.Env] = envValue;
             }
