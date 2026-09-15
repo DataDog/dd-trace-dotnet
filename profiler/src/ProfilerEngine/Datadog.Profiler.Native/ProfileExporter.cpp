@@ -523,8 +523,6 @@ void ProfileExporter::AddUpscalingPoissonRules(libdatadog::Profile* profile, std
 {
     for (auto const& upscalingInfo : upscalingInfos)
     {
-        ddog_prof_Slice_Usize offsets_slice = { upscalingInfo.Offsets.data(), upscalingInfo.Offsets.size() };
-
         auto succeeded =
             profile->AddUpscalingRulePoisson(
                 upscalingInfo.Offsets,
