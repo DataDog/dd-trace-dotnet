@@ -57,6 +57,7 @@ public:
 using RejitHandlerModuleMethodCreatorFunc =
     std::function<std::unique_ptr<RejitHandlerModuleMethod>(const mdMethodDef, RejitHandlerModule*)>;
 using RejitHandlerModuleMethodUpdaterFunc = std::function<void(RejitHandlerModuleMethod*)>;
+using RejitHandlerModuleMetadataCreatorFunc = std::function<std::unique_ptr<ModuleMetadata>()>;
 
 /// <summary>
 /// Rejit handler representation of a module
@@ -65,6 +66,7 @@ class RejitHandlerModule
 {
 private:
     ModuleID m_moduleId;
+    std::mutex m_metadata_lock;
     std::unique_ptr<ModuleMetadata> m_metadata;
     std::mutex m_methods_lock;
     std::unordered_map<mdMethodDef, std::unique_ptr<RejitHandlerModuleMethod>> m_methods;
@@ -80,7 +82,7 @@ public:
     RejitHandler* GetHandler();
 
     ModuleMetadata* GetModuleMetadata();
-    void SetModuleMetadata(ModuleMetadata* metadata);
+    bool CreateModuleMetadataIfNotExists(RejitHandlerModuleMetadataCreatorFunc creator);
 
     bool CreateMethodIfNotExists(mdMethodDef methodDef, RejitHandlerModuleMethodCreatorFunc creator,
                                  RejitHandlerModuleMethodUpdaterFunc updater);
