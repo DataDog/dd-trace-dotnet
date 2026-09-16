@@ -31,11 +31,7 @@ if (ISMACOS)
     set_property(TARGET re2 PROPERTY JOB_SERVER_AWARE TRUE)
 
 elseif(ISLINUX)
-    # CC=/CXX= are threaded through explicitly (matching whatever the outer CMake configure
-    # was given via -DCMAKE_C_COMPILER=/-DCMAKE_CXX_COMPILER=), same reasoning as
-    # FindLibunwind.cmake: re2's plain Makefile has no configure step to inherit a compiler
-    # from, so without this it would fall back to GNU Make's own default (usually system
-    # `cc`), which can silently differ from the rest of the project's toolchain.
+    # Pass CC/CXX explicitly — re2's Makefile doesn't inherit the compiler from CMake.
     ExternalProject_Add(re2
         DOWNLOAD_COMMAND ${DOWNLOAD_COMMAND}
         TIMEOUT 5
