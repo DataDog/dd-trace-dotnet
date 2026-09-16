@@ -11,11 +11,11 @@ SHELL ["powershell", "-Command", "$ErrorActionPreference = 'Stop'; $ProgressPref
 
 USER ContainerAdministrator
 
-# VS Build tool link found from https://learn.microsoft.com/en-gb/visualstudio/releases/2022/release-history#release-dates-and-build-numbers
+# VS Build tool link found from https://learn.microsoft.com/en-gb/visualstudio/releases/2026/release-history#release-dates-and-build-numbers
 # You can grab the SHA for the downloaded file using (Get-FileHash -Algorithm SHA256 $out).Hash
-ENV VSBUILDTOOLS_VERSION="17.14.36310.24" \
-    VSBUILDTOOLS_SHA256="A783199025439D65F310BFF041E278B966A6DBED8DBCD7FC96B55389F574EF41" \
-    VSBUILDTOOLS_DOWNLOAD_URL="https://download.visualstudio.microsoft.com/download/pr/ae7ac791-9759-4076-bba7-47ff510c57af/a783199025439d65f310bff041e278b966a6dbed8dbcd7fc96b55389f574ef41/vs_BuildTools.exe" \
+ENV VSBUILDTOOLS_VERSION="18.10.12210.168" \
+    VSBUILDTOOLS_SHA256="160F5E9C319E3408867CAE9DE83F5D8803BDF7C34FCC8463E8FC28286E49D99E" \
+    VSBUILDTOOLS_DOWNLOAD_URL="https://download.visualstudio.microsoft.com/download/pr/7437128c-6580-48ab-9c69-f7452be2ee7f/160f5e9c319e3408867cae9de83f5d8803bdf7c34fcc8463e8fc28286e49d99e/vs_BuildTools.exe" \
     VSBUILDTOOLS_INSTALL_ROOT="c:\devtools\vstudio"
 
 # Install VS
