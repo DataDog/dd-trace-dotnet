@@ -20,6 +20,7 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 {
+    [Trait("Area", "CIVisibility")]
     [UsesVerify]
     public class MsTestV2EvpTests : TestingFrameworkEvpTest
     {
@@ -52,7 +53,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                 if (string.IsNullOrEmpty(packageVersion) ||
                     packageVersion == "2.2.10" ||
                     packageVersion == "3.11.1" ||
-                    packageVersion == "4.3.3")
+                    packageVersion == "4.4.0")
                 {
                     yield return version.Concat("evp_proxy/v4", false);
                 }
@@ -338,7 +339,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                                       "suite": "{{TestSuiteName}}",
                                       "name": "SimpleParameterizedTest",
                                       "parameters": "{{skippedRowParameters.Replace("\"", "\\\"")}}",
-                                      "_missing_line_code_coverage": false
+                                      "_is_missing_line_code_coverage": false
                                     }
                                   }
                                 ],
@@ -510,6 +511,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 
                         var testSuite = testSuites[0];
                         var testModule = testModules[0];
+
+                        ValidateTestSessionFingerprintInputs(testModule, testSuites, tests, sessionWorkingDirectory, gitRepositoryUrl);
 
                         // Check Suite
                         testSuites.Select(ts => ts.TestSuiteId)

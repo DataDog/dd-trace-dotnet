@@ -175,6 +175,10 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Benchmarks.Trace", "tracer\
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.DuckTyping.Tests", "tracer\test\Datadog.Trace.DuckTyping.Tests\Datadog.Trace.DuckTyping.Tests.csproj", "{91E50134-0E55-4D22-B180-6967174FCE0B}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.DuckTyping.Tests.Fixtures.Shared", "tracer\test\Datadog.Trace.DuckTyping.Tests.Fixtures\Shared\Datadog.Trace.DuckTyping.Tests.Fixtures.Shared.csproj", "{AF81B51B-C799-468D-9488-2D30C7A435B6}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.DuckTyping.Tests.Fixtures.Target", "tracer\test\Datadog.Trace.DuckTyping.Tests.Fixtures\Target\Datadog.Trace.DuckTyping.Tests.Fixtures.Target.csproj", "{DE30EF39-4373-4485-8DC2-8CC08233CEA1}"
+EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CallTargetNativeTest", "tracer\test\test-applications\instrumentation\CallTargetNativeTest\CallTargetNativeTest.csproj", "{021EFBA6-C4BA-4DE5-BF3F-C263EE9E20DB}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.AspNet472.LoaderOptimizationRegKey", "tracer\test\test-applications\aspnet\Samples.AspNet472.LoaderOptimizationRegKey\Samples.AspNet472.LoaderOptimizationRegKey.csproj", "{BBB60B0F-BF01-4499-936A-4A299A9ACFD4}"
@@ -369,6 +373,14 @@ Global
 		{91E50134-0E55-4D22-B180-6967174FCE0B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{91E50134-0E55-4D22-B180-6967174FCE0B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{91E50134-0E55-4D22-B180-6967174FCE0B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AF81B51B-C799-468D-9488-2D30C7A435B6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AF81B51B-C799-468D-9488-2D30C7A435B6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AF81B51B-C799-468D-9488-2D30C7A435B6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AF81B51B-C799-468D-9488-2D30C7A435B6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DE30EF39-4373-4485-8DC2-8CC08233CEA1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DE30EF39-4373-4485-8DC2-8CC08233CEA1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DE30EF39-4373-4485-8DC2-8CC08233CEA1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DE30EF39-4373-4485-8DC2-8CC08233CEA1}.Release|Any CPU.Build.0 = Release|Any CPU
 		{021EFBA6-C4BA-4DE5-BF3F-C263EE9E20DB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{021EFBA6-C4BA-4DE5-BF3F-C263EE9E20DB}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{021EFBA6-C4BA-4DE5-BF3F-C263EE9E20DB}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -602,6 +614,8 @@ Global
 		{C00D8070-A38A-4267-9730-E9985CAE77DF} = {9E5F0022-0A50-40BF-AC6A-C3078585ECAB}
 		{B8D132F6-43E3-44D9-902C-78051DBAD01C} = {E5439139-6F94-44FA-9590-C32FCC1C7A93}
 		{91E50134-0E55-4D22-B180-6967174FCE0B} = {8CEC2042-F11C-49F5-A674-2355793B600A}
+		{AF81B51B-C799-468D-9488-2D30C7A435B6} = {8CEC2042-F11C-49F5-A674-2355793B600A}
+		{DE30EF39-4373-4485-8DC2-8CC08233CEA1} = {8CEC2042-F11C-49F5-A674-2355793B600A}
 		{021EFBA6-C4BA-4DE5-BF3F-C263EE9E20DB} = {933F1D4B-1216-4BC1-956E-8C30818BAA0F}
 		{BBB60B0F-BF01-4499-936A-4A299A9ACFD4} = {AFA0AB23-64F0-4AC1-9050-6CE8FE06F580}
 		{78004AA7-26DD-44DB-A2C7-C287A5BBE5D6} = {A0C5FBBB-CFB2-4FB9-B8F0-55676E9DCF06}

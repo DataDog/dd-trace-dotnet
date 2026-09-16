@@ -16,6 +16,16 @@ on:
         description: 'Is this a hotfix release? If true, skips vNext milestone renaming'
         required: true
         type: boolean
+    # These must be declared (and explicitly passed by the caller below) even though their
+    # actual values come from the job's `environment: publish-debug-symbols-env` secrets, not
+    # from the caller's own secrets. Without a declared+passed secret of the same name, the
+    # `secrets.X` context inside this reusable workflow resolves empty regardless of the
+    # environment secret's value - see https://github.com/actions/runner/issues/1490.
+    secrets:
+      AZURE_DEVOPS_TOKEN:
+        required: true
+      NUGET_TRUSTED_PUBLISHING_USERNAME:
+        required: true
 
 jobs:
   create_draft_release:
@@ -75,7 +85,7 @@ jobs:
            echo "The NUGET_TRUSTED_PUBLISHING_USERNAME contains the username that should have the trusted policy configured on nuget.org." >&2
            echo "If this user is no longer part of the datadog organisation on nuget.org: create a new trusted policy using your nuget user " >&2
            echo "  1. Create a new trusted policy using your nuget user. Follow the example in https://github.com/DataDog/dd-trace-dotnet/pull/8209" >&2
-           echo "  2. Replace the NUGET_TRUSTED_PUBLISHING_USERNAME GitHub secret with your nuget.org username (not email) at https://github.com/DataDog/dd-trace-dotnet/settings/secrets/actions " >&2
+           echo "  2. Replace the NUGET_TRUSTED_PUBLISHING_USERNAME secret on the publish-debug-symbols-env environment with your nuget.org username (not email) at https://github.com/DataDog/dd-trace-dotnet/settings/environments " >&2
            echo "  3. Try running this release again" >&2
             exit 1
           fi

@@ -20,6 +20,7 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 {
+    [Trait("Area", "CIVisibility")]
     [UsesVerify]
     public class NUnitEvpTests : TestingFrameworkEvpTest
     {
@@ -376,6 +377,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                         Assert.Equal(ExpectedTestSuiteCount, testSuites.Count);
                         Assert.Single(testModules);
                         var testModule = testModules[0];
+
+                        ValidateTestSessionFingerprintInputs(testModule, testSuites, tests, sessionWorkingDirectory, gitRepositoryUrl);
 
                         // Check suites
                         Assert.True(tests.All(t => testSuites.Find(s => s.TestSuiteId == t.TestSuiteId) != null));

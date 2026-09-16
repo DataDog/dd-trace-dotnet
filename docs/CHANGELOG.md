@@ -55,6 +55,88 @@
 
 
 
+
+## [Release 3.53.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v3.53.0)
+
+## Summary
+
+* [Tracing] Improve memory_load metric in .NET 10
+* [Tracing] Reduce buffer contention when writing spans
+* [CI Visibility] Improve CODEOWNERS parsing
+* [Continuous Profiling] Bug fixes and performance improvements
+* [Feature Flagging] Send split serial ids on exposure events 
+
+## Changes
+
+### Tracer
+* Avoid unobserved tasks for synchronous delegate exceptions (#9071)
+* Reduce locking in `AgentWriter` to avoid contention (#9107)
+* Expose the `TrailerSize` of an `ISpanBufferSerializer` (#9115)
+* Fix lock-contention causing trace to be "stranded" (#9120)
+* Improve `GcMemoryLoadCalculator` by using `GC.GetConfigurationVariables()` where possible (#9146)
+
+
+### CI Visibility
+* [CI Visibility] Refactor CODEOWNERS parsing and source ownership resolution (#9099)
+* [CI Visibility] Fix coverage rewrites with shared framework dependencies (#9102)
+* [CI Visibility] Keep CODEOWNERS matches inside repository (#9127)
+* [CI Visibility] Stabilize CODEOWNERS concurrency test (#9143)
+* [CI Visibility] Resolve CODEOWNERS from matching local checkout (#9148)
+
+### Continuous Profiler
+* [Profiler] ManagedCodeCache updates synchronously (#8840)
+* [Profiler] Fix flaky tests caused by failing`timer_create` (#8988)
+* [Profiler] Fix start/stop crash at shutdown (#9037)
+* [Profiler] Fix crashes at shutdown (#9050)
+* [Profiler] Measure and reduce GC profiling impact (#9119)
+* [Profiler] Fix flacky tests (#9126)
+* [Profiler] Fix bug in FrameStore (#9140)
+
+### Feature Flags and Experimentation
+* [Feature Flags] Send the split serial id on exposure events (#9088)
+* feat(feature-flags): add agentless configuration keys, settings, and endpoint derivation (#9040)
+* feat(feature-flags): add UFC parser and agentless HTTP poller (#9042)
+* feat(openfeature): support arbitrary semver parts (#9122)
+
+### Build / Test
+* Migrate remaining integration tests to CombinatorialOrPairwiseData (#8528)
+* Move secrets to be protected environment secrets (#8865)
+* Try to make it so that CODEOWNERs triggers tests (#9092)
+* Split system-test docker image creation to work in both protected and unprotected environments (#9094)
+* [Test Package Versions Bump] Updating package versions (#9100)
+* Consolidate and fix bugs in GitLab "download from Azure" scripts (#9103)
+* Don't need to download and sign when pushing a tag (#9105)
+* Mark DSM TransportsWorkCorrectly as flaky (#9116)
+* Mark DSM ContextPropagation as flaky (#9117)
+* [Test Package Versions Bump] Updating package versions (#9124)
+* Bump test logger to latest (to try to fix codeowners) (#9128)
+* Add `new Random()` to the banned API list, to discourage using those APIs (#9129)
+* Add SDK capabilities and LP as owners in addition to tracing-dotnet (#9130)
+* Bump SLO for throughput tests (#9131)
+* [Smoke Test Docker Image Bump] Updating docker image tags (#9134)
+* Add many timeouts and retries to build stages in Azure DevOps (#9141)
+* Move CI uploads to new subscription (#9142)
+* Refine listed non-IDM tests to single owner (#9149)
+* [CI Visibility] Bump Datadog test packages to 0.0.59 (#9151)
+* [Test Package Versions Bump] Updating package versions (#9152)
+* [Smoke Test Docker Image Bump] Updating docker image tags (#9153)
+* Increase profiler integration test timeout (#9158)
+* Bump the gh-actions-packages group across 2 directories with 4 updates (#9161)
+* [Test Package Versions Bump] Updating package versions (#9163)
+* Don't run high-concurrency tests in parallel with other tests (#9166)
+* Fix release creation (#9190)
+* Fix broken unit tests in `GcMemoryLoadCalculatorTests` (#9101)
+
+### Miscellaneous
+* [Propagators] Add OpenTelemetry consistent probability sampling (#8983)
+* Revert "[Propagators] Add OpenTelemetry consistent probability sampling" (#9171)
+* feat(otel): Emit OpenTelemetry HTTP semantic conventions on HTTP server spans (ASP.NET Core) (#8995)
+* [Propagators] Generalize tracestate parsing (#9000)
+* Remove exception throwing from `CanCreate()` paths in DuckTyping (#9005)
+* Revert "[Propagators] Add OpenTelemetry consistent probability sampling" (#9171)
+
+[Changes since 3.52.0](https://github.com/DataDog/dd-trace-dotnet/compare/v3.52.0...v3.53.0)
+
 ## [Release 3.52.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v3.52.0)
 
 ## Summary

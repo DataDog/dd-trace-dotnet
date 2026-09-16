@@ -19,6 +19,7 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI;
 
+[Trait("Area", "CIVisibility")]
 public abstract class TestingFrameworkTest : TestHelper
 {
     private readonly GacFixture _gacFixture;

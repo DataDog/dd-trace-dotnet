@@ -652,7 +652,17 @@ namespace Datadog.Trace.AppSec
             return false;
         }
 
-        internal IContext? CreateAdditiveContext() => _waf?.CreateContext();
+        internal IContext? CreateAdditiveContext(out WafOutcome outcome, bool isRasp = false)
+        {
+            if (_waf is null)
+            {
+                // AppSec is enabled but the WAF never initialized, or an update left us without one
+                outcome = WafOutcome.WafUnavailable;
+                return null;
+            }
+
+            return _waf.CreateContext(out outcome, isRasp);
+        }
 
         private void RunShutdown(Exception? ex)
         {
