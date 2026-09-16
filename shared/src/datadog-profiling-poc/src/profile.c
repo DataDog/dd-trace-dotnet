@@ -322,6 +322,10 @@ ddog_error_code ddog_prof_profile_add(ddog_prof_profile* profile, const ddog_pro
     {
         return ddog__fail(DDOG_ERR_INVALID_ARGUMENT, "sample is NULL");
     }
+    if (sample->values_len != profile->sample_types_len)
+    {
+        return ddog__fail(DDOG_ERR_INVALID_ARGUMENT, "sample has %zu values but profile declares %zu sample types", sample->values_len, profile->sample_types_len);
+    }
 
     if (profile->samples_len == profile->samples_capacity)
     {

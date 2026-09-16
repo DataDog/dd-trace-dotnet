@@ -4,6 +4,17 @@ project(libdatadog_profiling_poc C)
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 
+# find_package(PPDB REQUIRED) in the root CMakeLists.txt (called before this
+# add_subdirectory) runs build/cmake/FindPPDB.cmake, which calls
+# add_compile_options(-std=c++20 ...) in the ROOT scope - find_package()
+# doesn't create a new directory scope, so that flag is inherited by every
+# add_subdirectory() the root file calls afterward, this one included. Every
+# other such subdirectory in this repo is C++, so it's harmless there; this
+# is a pure C project, and clang rejects -std=c++20 outright when compiling a
+# .c file. Reset the inherited property before defining any targets so
+# nothing here (or curl/zstd, added below) sees it.
+set_directory_properties(PROPERTIES COMPILE_OPTIONS "")
+
 # This CMakeLists.txt is never invoked on Windows - the real Windows profiler
 # build is MSBuild/vcxproj-based, not CMake (see README). curl/zstd for a
 # future Windows integration are declared separately in vcpkg.json in this
