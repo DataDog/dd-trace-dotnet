@@ -61,7 +61,11 @@ public class DurableFunctions
     }
 
     [Function(nameof(DurableActivity))]
-    public static string DurableActivity([ActivityTrigger] string name) => $"Hello, {name}!";
+    public static string DurableActivity([ActivityTrigger] string name)
+    {
+        using var scope = SampleHelpers.CreateScope("Manual inside DurableActivity");
+        return $"Hello, {name}!";
+    }
 
     [Function(nameof(FailingDurableWorkflow))]
     public static async Task<string> FailingDurableWorkflow([OrchestrationTrigger] TaskOrchestrationContext context)

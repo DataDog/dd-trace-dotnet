@@ -35,13 +35,27 @@
     }
   },
   {
-    TraceId: Id_4,
-    SpanId: Id_5,
+    TraceId: Id_1,
+    SpanId: Id_4,
+    Name: Manual inside DurableActivity,
+    Resource: Manual inside DurableActivity,
+    Service: AzureFunctionsDurableTriggerTests,
+    ParentId: Id_2,
+    Tags: {
+      aas.site.name: AzureFunctionsDurableTriggerTests,
+      aas.site.type: function,
+      env: integration_tests,
+      language: dotnet
+    }
+  },
+  {
+    TraceId: Id_5,
+    SpanId: Id_6,
     Name: azure_functions.invoke,
     Resource: DurableEntity DurableCounter,
     Service: AzureFunctionsDurableTriggerTests,
     Type: serverless,
-    ParentId: Id_6,
+    ParentId: Id_7,
     Tags: {
       aas.function.method: Samples.AzureFunctions.Durable.DurableCounter.Run,
       aas.function.name: DurableCounter,
@@ -56,12 +70,12 @@
   },
   {
     TraceId: Id_1,
-    SpanId: Id_7,
+    SpanId: Id_8,
     Name: azure_functions.invoke,
     Resource: DurableOrchestration DurableWorkflow,
     Service: AzureFunctionsDurableTriggerTests,
     Type: serverless,
-    ParentId: Id_8,
+    ParentId: Id_9,
     Tags: {
       aas.environment.extension_version: unknown,
       aas.environment.instance_id: unknown,

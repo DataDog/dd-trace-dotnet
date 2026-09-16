@@ -30,9 +30,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests;
 [Trait("Category", "ArmUnsupported")]
 public class AzureFunctionsDurableTriggerTests : AzureFunctionsTests
 {
-    private const int ExpectedDurableSpanCount = 3;
+    private const int ExpectedDurableSpanCount = 4;
     private const int ExpectedFailingDurableSpanCount = 3;
     private const string ExpectedFailureMessage = "Unable to greet World.";
+    private const string ManualActivitySpanName = "Manual inside DurableActivity";
     private const string LocalDurableTaskSchedulerConnectionString = "Endpoint=http://localhost:8080;TaskHub=default;Authentication=None";
     private const string AzuriteAccountKey = "Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==";
     private static readonly string[] ExpectedDurableResources =
@@ -40,6 +41,7 @@ public class AzureFunctionsDurableTriggerTests : AzureFunctionsTests
         "DurableOrchestration DurableWorkflow",
         "DurableActivity DurableActivity",
         "DurableEntity DurableCounter",
+        ManualActivitySpanName,
     ];
 
     private static readonly string[] ExpectedFailingDurableResources =
@@ -82,8 +84,11 @@ public class AzureFunctionsDurableTriggerTests : AzureFunctionsTests
 
             spans.Should().HaveCount(ExpectedDurableSpanCount);
             spans.Should().ContainSingle(s => HasTrigger(s, "DurableOrchestration")).Which.Error.Should().Be(0);
-            spans.Should().ContainSingle(s => HasTrigger(s, "DurableActivity"));
+            var activitySpan = spans.Should().ContainSingle(s => HasTrigger(s, "DurableActivity")).Subject;
             spans.Should().ContainSingle(s => HasTrigger(s, "DurableEntity"));
+            var manualSpan = spans.Should().ContainSingle(s => s.Name == ManualActivitySpanName).Subject;
+            manualSpan.TraceId.Should().Be(activitySpan.TraceId);
+            manualSpan.ParentId.Should().Be(activitySpan.SpanId);
 
             var workflowTraceId = spans.First(s => HasTrigger(s, "DurableOrchestration")).TraceId;
             spans.Where(s => HasTrigger(s, "DurableOrchestration") || HasTrigger(s, "DurableActivity"))
@@ -147,10 +152,11 @@ public class AzureFunctionsDurableTriggerTests : AzureFunctionsTests
 
     private static IImmutableList<MockSpan> GetDurableSpans(IImmutableList<MockSpan> spans, string[] expectedResources)
         => spans.Where(
-                    s => s.Name == "azure_functions.invoke"
-                      && expectedResources.Contains(s.Resource)
-                      && s.Tags.TryGetValue("aas.function.trigger", out var trigger)
-                      && trigger.StartsWith("Durable", StringComparison.Ordinal))
+                    s => expectedResources.Contains(s.Resource)
+                      && (s.Name == ManualActivitySpanName
+                       || (s.Name == "azure_functions.invoke"
+                        && s.Tags.TryGetValue("aas.function.trigger", out var trigger)
+                        && trigger.StartsWith("Durable", StringComparison.Ordinal))))
                 .ToImmutableList();
 
     private static Task<IImmutableList<MockSpan>> WaitForDurableSpansAsync(MockTracerAgent agent)
