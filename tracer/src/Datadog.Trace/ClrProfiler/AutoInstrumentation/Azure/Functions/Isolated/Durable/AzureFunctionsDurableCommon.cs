@@ -35,7 +35,7 @@ internal static class AzureFunctionsDurableCommon
 
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(AzureFunctionsDurableCommon));
 
-    internal static CallTargetState OnFunctionExecutionBegin<TFunctionContext>(TFunctionContext functionContext)
+    internal static CallTargetState OnFunctionExecutionBegin<TFunctionContext>(TFunctionContext functionContext, DateTimeOffset? startTime = null)
         where TFunctionContext : IDurableFunctionContext
     {
         var tracer = Tracer.Instance;
@@ -61,7 +61,7 @@ internal static class AzureFunctionsDurableCommon
             };
 
             var extractedContext = ExtractPropagatedContext(functionContext).MergeBaggageInto(Baggage.Current);
-            scope = tracer.StartActiveInternal(OperationName, parent: extractedContext.SpanContext, tags: tags);
+            scope = tracer.StartActiveInternal(OperationName, parent: extractedContext.SpanContext, startTime: startTime, tags: tags);
             scope.Span.ResourceName = $"{triggerType} {functionContext.FunctionDefinition.Name}";
             scope.Span.Type = SpanType;
 
@@ -79,6 +79,10 @@ internal static class AzureFunctionsDurableCommon
 
         return new CallTargetState(scope);
     }
+
+    internal static bool IsOrchestration<TFunctionContext>(TFunctionContext functionContext)
+        where TFunctionContext : IDurableFunctionContext
+        => GetTriggerType(functionContext) == OrchestrationTrigger;
 
     [TestingAndPrivateOnly]
     internal static string? GetTriggerType<TFunctionContext>(TFunctionContext functionContext)

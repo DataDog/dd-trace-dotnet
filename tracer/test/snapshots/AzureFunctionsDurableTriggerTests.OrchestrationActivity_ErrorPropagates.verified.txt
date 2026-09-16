@@ -1,0 +1,120 @@
+﻿[
+  {
+    TraceId: Id_1,
+    SpanId: Id_2,
+    Name: azure_functions.invoke,
+    Resource: DurableActivity FailingDurableActivity,
+    Service: AzureFunctionsDurableTriggerTests,
+    Type: serverless,
+    ParentId: Id_3,
+    Error: 1,
+    Tags: {
+      aas.environment.extension_version: unknown,
+      aas.environment.instance_id: unknown,
+      aas.environment.instance_name: IntegrationTestHost,
+      aas.environment.os: unknown,
+      aas.environment.runtime: .NET,
+      aas.function.method: Samples.AzureFunctions.Durable.DurableFunctions.FailingDurableActivity,
+      aas.function.name: FailingDurableActivity,
+      aas.function.trigger: DurableActivity,
+      aas.site.kind: functionapp,
+      aas.site.name: AzureFunctionsDurableTriggerTests,
+      aas.site.type: function,
+      component: AzureFunctions,
+      env: integration_tests,
+      error.msg: { "errorType": "System.InvalidOperationException", "errorMessage": "Unable to greet World.", "stackTrace": "   at Samples.AzureFunctions.Durable.DurableFunctions.FailingDurableActivity(String name)" },
+      error.stack:
+{ "errorType": "System.InvalidOperationException", "errorMessage": "Unable to greet World.", "stackTrace": "   at Samples.AzureFunctions.Durable.DurableFunctions.FailingDurableActivity(String name)" }
+,
+      error.type: Microsoft.Azure.Functions.Worker.Extensions.DurableTask.Exceptions.DurableSerializationException,
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: server
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.limit_psr: 1.0,
+      _dd.rule_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 2.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_4,
+    Name: azure_functions.invoke,
+    Resource: DurableOrchestration FailingDurableWorkflow,
+    Service: AzureFunctionsDurableTriggerTests,
+    Type: serverless,
+    ParentId: Id_5,
+    Tags: {
+      aas.environment.extension_version: unknown,
+      aas.environment.instance_id: unknown,
+      aas.environment.instance_name: IntegrationTestHost,
+      aas.environment.os: unknown,
+      aas.environment.runtime: .NET,
+      aas.function.method: Samples.AzureFunctions.Durable.DurableFunctions.FailingDurableWorkflow,
+      aas.function.name: FailingDurableWorkflow,
+      aas.function.trigger: DurableOrchestration,
+      aas.site.kind: functionapp,
+      aas.site.name: AzureFunctionsDurableTriggerTests,
+      aas.site.type: function,
+      component: AzureFunctions,
+      env: integration_tests,
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: server
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.limit_psr: 1.0,
+      _dd.rule_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 2.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_6,
+    Name: azure_functions.invoke,
+    Resource: DurableOrchestration FailingDurableWorkflow,
+    Service: AzureFunctionsDurableTriggerTests,
+    Type: serverless,
+    ParentId: Id_5,
+    Error: 1,
+    Tags: {
+      aas.environment.extension_version: unknown,
+      aas.environment.instance_id: unknown,
+      aas.environment.instance_name: IntegrationTestHost,
+      aas.environment.os: unknown,
+      aas.environment.runtime: .NET,
+      aas.function.method: Samples.AzureFunctions.Durable.DurableFunctions.FailingDurableWorkflow,
+      aas.function.name: FailingDurableWorkflow,
+      aas.function.trigger: DurableOrchestration,
+      aas.site.kind: functionapp,
+      aas.site.name: AzureFunctionsDurableTriggerTests,
+      aas.site.type: function,
+      component: AzureFunctions,
+      env: integration_tests,
+      error.msg: Task 'FailingDurableActivity' (#0) failed with an unhandled exception: Unable to greet World.,
+      error.stack:
+Microsoft.DurableTask.TaskFailedException: Task 'FailingDurableActivity' (#0) failed with an unhandled exception: Unable to greet World.
+---> DurableTask.Core.Exceptions.TaskFailedException: Exception of type 'DurableTask.Core.Exceptions.TaskFailedException' was thrown.
+at DurableTask.Core.TaskOrchestrationContext.ScheduleTaskInternal(String name, String version, String taskList, Type resultType, ScheduleTaskOptions options, Object[] parameters),
+      error.type: Microsoft.DurableTask.TaskFailedException,
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: server
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.limit_psr: 1.0,
+      _dd.rule_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 2.0
+    }
+  }
+]

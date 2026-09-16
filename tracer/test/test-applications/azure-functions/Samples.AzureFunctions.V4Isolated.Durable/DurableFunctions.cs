@@ -25,22 +25,24 @@ public class DurableFunctions
     }
 
     [Function(nameof(StartDurableWorkflow))]
-    public async Task<HttpResponseData> StartDurableWorkflow(
+    public Task<HttpResponseData> StartDurableWorkflow(
         [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "seed/durable")] HttpRequestData request,
         [DurableClient] DurableTaskClient client)
+        => StartWorkflowAsync(request, client, nameof(DurableWorkflow));
+
+    [Function(nameof(StartFailingDurableWorkflow))]
+    public Task<HttpResponseData> StartFailingDurableWorkflow(
+        [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "seed/durable/error")] HttpRequestData request,
+        [DurableClient] DurableTaskClient client)
+        => StartWorkflowAsync(request, client, nameof(FailingDurableWorkflow));
+
+    private async Task<HttpResponseData> StartWorkflowAsync(HttpRequestData request, DurableTaskClient client, string orchestrationName)
     {
         try
         {
-            var instanceId = await client.ScheduleNewOrchestrationInstanceAsync(nameof(DurableWorkflow));
-            var metadata = await client.WaitForInstanceCompletionAsync(instanceId, getInputsAndOutputs: true);
-            var response = request.CreateResponse(
-                metadata.RuntimeStatus == OrchestrationRuntimeStatus.Completed
-                    ? HttpStatusCode.OK
-                    : HttpStatusCode.InternalServerError);
-            await response.WriteStringAsync(
-                metadata.SerializedOutput
-             ?? metadata.FailureDetails?.ErrorMessage
-             ?? metadata.RuntimeStatus.ToString());
+            var instanceId = await client.ScheduleNewOrchestrationInstanceAsync(orchestrationName);
+            var response = request.CreateResponse(HttpStatusCode.Accepted);
+            await response.WriteStringAsync(instanceId);
             return response;
         }
         finally
@@ -60,6 +62,14 @@ public class DurableFunctions
 
     [Function(nameof(DurableActivity))]
     public static string DurableActivity([ActivityTrigger] string name) => $"Hello, {name}!";
+
+    [Function(nameof(FailingDurableWorkflow))]
+    public static async Task<string> FailingDurableWorkflow([OrchestrationTrigger] TaskOrchestrationContext context)
+        => await context.CallActivityAsync<string>(nameof(FailingDurableActivity), "World");
+
+    [Function(nameof(FailingDurableActivity))]
+    public static string FailingDurableActivity([ActivityTrigger] string name)
+        => throw new InvalidOperationException($"Unable to greet {name}.");
 
     private void ScheduleShutdown()
     {

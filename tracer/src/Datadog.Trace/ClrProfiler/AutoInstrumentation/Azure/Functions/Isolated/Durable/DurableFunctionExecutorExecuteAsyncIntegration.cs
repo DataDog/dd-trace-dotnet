@@ -31,6 +31,13 @@ public sealed class DurableFunctionExecutorExecuteAsyncIntegration
     internal static CallTargetState OnMethodBegin<TTarget, TFunctionContext>(TTarget instance, TFunctionContext functionContext)
         where TFunctionContext : IDurableFunctionContext
     {
+        // Orchestrations are traced around FunctionsOrchestrator.RunAsync, where Durable exposes
+        // whether the execution is a replay.
+        if (AzureFunctionsDurableCommon.IsOrchestration(functionContext))
+        {
+            return CallTargetState.GetDefault();
+        }
+
         return AzureFunctionsDurableCommon.OnFunctionExecutionBegin(functionContext);
     }
 

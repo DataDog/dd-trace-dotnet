@@ -3788,6 +3788,56 @@
   },
   {
     "IntegrationName": "AzureFunctions",
+    "AssemblyName": "Microsoft.Azure.Functions.Worker.Extensions.DurableTask",
+    "TargetTypeName": "Microsoft.Azure.Functions.Worker.Extensions.DurableTask.Execution.WrapperOrchestrator",
+    "TargetMethodName": "RunAsync",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[System.Object]",
+    "TargetParameterTypes": [
+      "Microsoft.DurableTask.TaskOrchestrationContext",
+      "System.Object"
+    ],
+    "MinimumVersion": {
+      "Item1": 1,
+      "Item2": 12,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 1,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions.FunctionsOrchestratorRunAsyncIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "AzureFunctions",
+    "AssemblyName": "Microsoft.Azure.Functions.Worker.Extensions.DurableTask",
+    "TargetTypeName": "Microsoft.Azure.Functions.Worker.Extensions.DurableTask.FunctionsOrchestrator",
+    "TargetMethodName": "RunAsync",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[System.Object]",
+    "TargetParameterTypes": [
+      "Microsoft.DurableTask.TaskOrchestrationContext",
+      "System.Object"
+    ],
+    "MinimumVersion": {
+      "Item1": 1,
+      "Item2": 12,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 1,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions.FunctionsOrchestratorRunAsyncIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "AzureFunctions",
     "AssemblyName": "Microsoft.Azure.WebJobs.Host",
     "TargetTypeName": "Microsoft.Azure.WebJobs.Host.Executors.FunctionExecutor",
     "TargetMethodName": "TryExecuteAsync",
