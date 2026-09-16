@@ -31,7 +31,7 @@ jobs:
       contents: read
 
     steps:
-      - uses: DataDog/team-freeze-guard@d28a2e357903b426122feaae225629bd63fcd2c5  # 0.0.5
+      - uses: DataDog/team-freeze-guard@d28a2e357903b426122feaae225629bd63fcd2c5  # v0.0.5
         with:
           bypass-labels: |
             area:benchmarks
