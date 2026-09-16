@@ -139,11 +139,7 @@ partial class Build
             }
             else
             {
-                // Same shared-NativeBuildDirectory reasoning as CompileNativeLoaderLinux (see the
-                // comment there): only the FIRST configure of that directory actually sources a
-                // toolchain file, so every target that configures it has to pass the same one or
-                // the glibc-2.17 redirect silently stops applying depending on target order.
-                // Mutually exclusive with the Universal/musl toolchain above, hence the else.
+                // Must match the toolchain passed by CompileNativeLoaderLinux (shared build dir).
                 additionalArgs += Glibc217SysrootCMakeArgs;
             }
 
@@ -176,9 +172,7 @@ partial class Build
         {
             EnsureExistingDirectory(NativeBuildDirectory);
 
-            // Same shared-NativeBuildDirectory reasoning as CompileNativeLoaderLinux - see the
-            // comment there for why every configure of that directory must pass the same
-            // toolchain args.
+            // Must match the toolchain passed by CompileNativeLoaderLinux (shared build dir).
             CMake.Value(
                 arguments: $"-DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang -B {NativeBuildDirectory} -S {RootDirectory} -DCMAKE_BUILD_TYPE={BuildConfiguration}{Glibc217SysrootCMakeArgs}");
 

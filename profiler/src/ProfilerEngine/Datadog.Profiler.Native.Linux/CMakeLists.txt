@@ -4,16 +4,8 @@
 
 project("Datadog.Profiler.Native.Linux" VERSION 3.55.0)
 
-# USE_GLIBC217_SYSROOT (Approach A of docs/development/rfc-linux-x64-build-host.md)
-# deliberately does NOT link the ORIGINAL glibc-compat, despite that shim existing for a
-# similar-sounding "compiled with newer headers" reason under the Universal build. Verified
-# in CI: glibc-compat.c's strerror_r override uses the POSIX/XSI int-returning signature,
-# which hard-conflicts with real glibc's _GNU_SOURCE-declared char*-returning strerror_r
-# ("conflicting types for 'strerror_r'") - it was written for musl, which only has the XSI
-# variant. Separately verified empirically (see the RFC) that stat/fstat/lstat/ceil/pow/malloc
-# all already resolve to the correct old glibc symbol versions on this path with no shim
-# active at all. It DOES link a separate, purpose-built glibc217-compat (below) for a
-# different, real problem: see shared/src/glibc217-compat/glibc217-compat.c.
+# USE_GLIBC217_SYSROOT links glibc217-compat (not glibc-compat, which conflicts with real
+# glibc's strerror_r). See glibc217-compat.c.
 
 option(RUN_ASAN "Build with Clang Undefined-Behavior Sanitizer" OFF)
 option(RUN_UBSAN "Build with Clang Undefined-Behavior Sanitizer" OFF)
