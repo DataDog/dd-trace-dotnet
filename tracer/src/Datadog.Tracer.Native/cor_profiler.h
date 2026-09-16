@@ -132,7 +132,7 @@ private:
     HRESULT RewriteForTelemetry(const ModuleMetadata& module_metadata, ModuleID module_id);
     HRESULT RewriteIsManualInstrumentationOnly(const ModuleMetadata& module_metadata, ModuleID module_id);
     HRESULT EmitDistributedTracerTargetMethod(const ModuleMetadata& module_metadata, ModuleID module_id);
-    HRESULT TryRejitModule(ModuleID module_id, std::vector<ModuleID>& modules);
+    HRESULT TryRejitModule(ModuleID module_id, std::vector<ModuleID>& modules, bool& enqueue_rejit);
     static bool TypeNameMatchesTraceAttribute(WCHAR type_name[], DWORD type_name_len);
     static bool EnsureCallTargetBubbleUpExceptionTypeAvailable(const ModuleMetadata& module_metadata, mdTypeDef* mdTypeDefToken);
     static bool EnsureIsCallTargetBubbleUpExceptionFunctionAvailable(const ModuleMetadata& module_metadata, mdTypeDef typeDef);
