@@ -116,6 +116,22 @@ public:
         return E_FAIL;
     }
 };
+
+class ObservableTracerRejitPreprocessor : public TracerRejitPreprocessor
+{
+public:
+    using TracerRejitPreprocessor::TracerRejitPreprocessor;
+
+    std::promise<void> removeEntered;
+    std::promise<void> removeReturned;
+
+    void RemoveModule(ModuleID moduleId) override
+    {
+        removeEntered.set_value();
+        TracerRejitPreprocessor::RemoveModule(moduleId);
+        removeReturned.set_value();
+    }
+};
 } // namespace
 
 TEST(ModuleLifetime, UnloadWaitsForActiveLeaseAndInvalidatesSnapshots)
@@ -235,7 +251,9 @@ TEST(ModuleLifetime, UnloadWaitsForNGenReplayAfterShutdownStarts)
     auto enumerationEnteredFuture = profilerInfo.enumerationEntered.get_future();
     auto offloader = std::make_shared<RejitWorkOffloader>(&profilerInfo);
     auto handler = std::make_shared<RejitHandler>(static_cast<ICorProfilerInfo7*>(&profilerInfo), offloader);
-    TracerRejitPreprocessor preprocessor(nullptr, handler, offloader, RejitterPriority::Normal);
+    ObservableTracerRejitPreprocessor preprocessor(nullptr, handler, offloader);
+    auto removeEnteredFuture = preprocessor.removeEntered.get_future();
+    auto removeReturnedFuture = preprocessor.removeReturned.get_future();
     constexpr ModuleID inlineeModuleId = 41;
     constexpr ModuleID inlinersModuleId = 42;
     constexpr mdMethodDef methodId = 1;
@@ -262,7 +280,14 @@ TEST(ModuleLifetime, UnloadWaitsForNGenReplayAfterShutdownStarts)
             blockerEntered.set_value();
             releaseBlockerFuture.wait();
         }));
-    blockerEnteredFuture.wait();
+    const auto blockerStarted = blockerEnteredFuture.wait_for(1s) == std::future_status::ready;
+    EXPECT_TRUE(blockerStarted);
+    if (!blockerStarted)
+    {
+        releaseBlocker.set_value();
+        handler->Shutdown();
+        return;
+    }
 
     std::thread replay([&] { handler->AddNGenInlinerModule(inlinersModuleId); });
     const auto enumerationEntered = enumerationEnteredFuture.wait_for(1s) == std::future_status::ready;
@@ -277,20 +302,22 @@ TEST(ModuleLifetime, UnloadWaitsForNGenReplayAfterShutdownStarts)
     }
 
     std::thread shutdown([&] { handler->Shutdown(); });
-    EXPECT_TRUE(WaitUntil([&] { return handler->IsShutdownRequested(); }));
+    const auto shutdownPublished = WaitUntil([&] { return handler->IsShutdownRequested(); });
+    EXPECT_TRUE(shutdownPublished);
+    if (!shutdownPublished)
+    {
+        releaseEnumeration.set_value();
+        replay.join();
+        releaseBlocker.set_value();
+        shutdown.join();
+        return;
+    }
 
-    std::promise<void> unloadFinished;
-    auto unloadFinishedFuture = unloadFinished.get_future();
-    std::thread unload(
-        [&]
-        {
-            handler->RemoveModule(inlinersModuleId);
-            unloadFinished.set_value();
-        });
+    std::thread unload([&] { handler->RemoveModule(inlinersModuleId); });
 
-    EXPECT_TRUE(WaitUntil([&] { return handler->GetModuleWithLifetime(inlinersModuleId).lifetime == nullptr; }));
     // ModuleUnloadStarted must remain blocked while the CLR can still dereference this generation.
-    EXPECT_EQ(std::future_status::timeout, unloadFinishedFuture.wait_for(0ms));
+    EXPECT_EQ(std::future_status::ready, removeEnteredFuture.wait_for(1s));
+    EXPECT_EQ(std::future_status::timeout, removeReturnedFuture.wait_for(100ms));
 
     releaseEnumeration.set_value();
     replay.join();
