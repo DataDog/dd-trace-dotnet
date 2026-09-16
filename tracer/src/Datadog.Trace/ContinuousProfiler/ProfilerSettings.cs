@@ -84,7 +84,14 @@ internal sealed class ProfilerSettings
             {
                 ProfilerState = ProfilerState.Disabled;
                 telemetry.Record(ConfigurationKeys.Profiler.ProfilingEnabled, "false", recordValue: true, ConfigurationOrigins.Calculated);
-                Log.Warning("The Continuous Profiler was requested but is disabled on Linux ARM64: set {Setting}=1 to enable it. On ARM64 the Continuous Profiler is gated behind this setting (default off).", ConfigurationKeys.ContinuousProfiler.InternalProfilingEnabledArm64);
+
+                // Only surface the "set the flag" hint where the Continuous Profiler is actually available.
+                // In serverless (AWS Lambda / Linux Azure Functions) the native profiling library isn't deployed,
+                // so the flag cannot help there - suggesting it would only mislead.
+                if (ProfilerAvailabilityHelper.IsContinuousProfilerAvailable)
+                {
+                    Log.Warning("The Continuous Profiler was requested but is disabled on Linux ARM64: set {Setting}=1 to enable it. On ARM64 the Continuous Profiler is gated behind this setting (default off).", ConfigurationKeys.ContinuousProfiler.InternalProfilingEnabledArm64);
+                }
             }
         }
     }
