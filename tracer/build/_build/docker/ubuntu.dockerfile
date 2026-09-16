@@ -1,13 +1,3 @@
-# Approach A of docs/development/rfc-linux-x64-build-host.md: a plain, current Ubuntu LTS
-# build host for the x86_64 Linux Datadog.Tracer.Native / Datadog.Profiler.Native build,
-# replacing the real CentOS 7 container (centos7.dockerfile/centos7.build.dockerfile) that
-# task requires today. The glibc-2.17 floor is enforced at link time via
-# build/cmake/Glibc217.cmake.x86_64 plus a frozen, harvested sysroot (see
-# glibc217-sysroot.harvest.dockerfile) - not by this image's own glibc version. Unlike
-# centos7.build.dockerfile, there is no from-source LLVM/cmake bootstrap here: Ubuntu already
-# ships a new enough cmake, and clang comes from the stock apt.llvm.org packages (the same
-# recipe debian.dockerfile already uses to compile this exact native source for
-# cppcheck/clang-tidy passes).
 FROM ubuntu:22.04 AS base
 
 ARG DOTNETSDK_VERSION
@@ -34,14 +24,8 @@ ENV \
     # Disable LTTng tracing with QUIC
     QUIC_LTTng=0
 
-# nfpm (below) isn't in Ubuntu's own repos - it needs GoReleaser's dedicated, HTTPS-only apt
-# repo registered first, same as debian.dockerfile does. Missing this registration is what
-# broke the first CI run of this Dockerfile ("E: Unable to locate package nfpm"). Registering
-# it and installing ca-certificates in the SAME apt-get install doesn't work either
-# (verified) - a fresh ubuntu:22.04 has no CA bundle at all, so apt can't validate the
-# HTTPS repo's certificate until ca-certificates is already installed. Hence two passes:
-# ca-certificates first via Ubuntu's own (plain HTTP) mirrors, then add the goreleaser repo
-# and update again before installing everything else.
+# Install ca-certificates first (fresh ubuntu:22.04 has no CA bundle), then register
+# GoReleaser's HTTPS apt repo for nfpm before installing everything else.
 RUN apt-get update \
     && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends ca-certificates \
     && echo 'deb [trusted=yes] https://repo.goreleaser.com/apt/ /' | tee /etc/apt/sources.list.d/goreleaser.list \
@@ -73,9 +57,7 @@ RUN apt-get update \
         nfpm \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Clang - stock apt.llvm.org packages, no from-source build needed (unlike
-# centos7.build.dockerfile, which has to bootstrap its own compiler because CentOS 7 has
-# nothing new enough to build a modern clang with).
+# Install Clang
 RUN wget https://apt.llvm.org/llvm.sh \
     && chmod u+x llvm.sh \
     && ./llvm.sh 16 all \
@@ -85,15 +67,9 @@ RUN wget https://apt.llvm.org/llvm.sh \
     && ln -s `which clang-tidy-16` /usr/bin/clang-tidy \
     && ln -s `which run-clang-tidy-16` /usr/bin/run-clang-tidy
 
-# Fetch and verify the frozen glibc-2.17 sysroot harvested once, offline, from a real
-# CentOS 7 container (see glibc217-sysroot.harvest.dockerfile) - the only piece of CentOS 7
-# that survives into this image is a handful of old .so's and headers, not a whole container.
-#
-# TODO(stage-0 spike): replace REPLACE_WITH_PINNED_SHA512 with the real sha512sum of the
-# tarball once glibc217-sysroot.harvest.dockerfile has actually been run and the tarball
-# uploaded to apmdotnetbuildstorage.blob.core.windows.net/build-dependencies/.
+# Fetch and verify the frozen glibc-2.17 sysroot (see glibc217-sysroot.harvest.dockerfile)
 RUN curl -sSL https://apmdotnetbuildstorage.blob.core.windows.net/build-dependencies/glibc217-sysroot-x86_64.tar.gz --output glibc217-sysroot-x86_64.tar.gz \
-    && echo 'REPLACE_WITH_PINNED_SHA512  glibc217-sysroot-x86_64.tar.gz' | sha512sum --check \
+    && echo '2e891242b066fe3c7d0c95cc68412a24b4f80bb8ae9d92226877a5c5b84226141425d70e920eeefe5205655f9669de7bb77f529089c72332f3a656fdbc72cc30  glibc217-sysroot-x86_64.tar.gz' | sha512sum --check \
     && mkdir -p /sysroot/x86_64-glibc217 \
     && tar -xzf glibc217-sysroot-x86_64.tar.gz -C /sysroot/x86_64-glibc217 \
     && rm glibc217-sysroot-x86_64.tar.gz
@@ -116,6 +92,7 @@ ENV \
 
 FROM base AS builder
 
+# TODO: not sure if we need this anymore
 ENV USE_NATIVE_SDK_VERSION=true
 
 # Copy the build project in and build it
