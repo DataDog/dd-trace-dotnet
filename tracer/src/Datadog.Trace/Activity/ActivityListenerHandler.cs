@@ -134,14 +134,8 @@ namespace Datadog.Trace.Activity
 
             foreach (var handler in ActivityHandlersRegister.Handlers)
             {
-                if (handler is DefaultActivityHandler)
-                {
-                    return null;
-                }
-
-                if (handler is not DisableActivityHandler
-                 && handler is not IgnoreActivityHandler
-                 && handler.ShouldListenTo(operationName, version: null))
+                if (handler is IActivityHandlerWithOperationName operationNameHandler
+                 && operationNameHandler.ShouldListenToOperationName(operationName))
                 {
                     return handler;
                 }

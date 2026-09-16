@@ -13,17 +13,22 @@ namespace Datadog.Trace.Activity.Handlers
 {
     internal sealed class AzureServiceBusActivityHandler : IActivityHandler
     {
+        private static readonly DefaultActivityHandler DefaultHandler = new();
+
         public bool ShouldListenTo(string sourceName, string? version)
             => sourceName.StartsWith("Azure.Messaging.ServiceBus");
 
         public void ActivityStarted<T>(string sourceName, T activity)
             where T : IActivity
         {
-            var integrationId = Tracer.Instance.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId.AzureServiceBus)
-                                    ? IntegrationId.AzureServiceBus
-                                    : IntegrationId.OpenTelemetry;
+            if (!Tracer.Instance.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId.AzureServiceBus))
+            {
+                DefaultHandler.ActivityStarted(sourceName, activity);
+                return;
+            }
+
             var tags = Tracer.Instance.CurrentTraceSettings.Schema.Client.CreateAzureServiceBusTags();
-            ActivityHandlerCommon.ActivityStarted(integrationId, sourceName, activity, tags: tags, out _);
+            ActivityHandlerCommon.ActivityStarted(IntegrationId.AzureServiceBus, sourceName, activity, tags: tags, out _);
         }
 
         public void ActivityStopped<T>(string sourceName, T activity)

@@ -9,6 +9,7 @@ using Datadog.Trace.Activity.Handlers;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Tagging;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.TestHelpers.TestTracer;
@@ -47,6 +48,17 @@ public class IntegrationActivityHandlerTests
         await AssertGeneratedSpan(handler, "Azure.Messaging.ServiceBus", nameof(IntegrationId.AzureServiceBus), IntegrationId.AzureServiceBus, !initiallyEnabled);
     }
 
+    [Theory]
+    [InlineData("Quartz.Job.Execute", true)]
+    [InlineData("Quartz.Job.Veto", true)]
+    [InlineData("Quartz", false)]
+    [InlineData("Quartz.Job.Execute.Unrelated", false)]
+    [InlineData("Azure.Messaging.ServiceBus.Send", false)]
+    public void QuartzHandlerOnlyMatchesKnownLegacyOperationNames(string operationName, bool expected)
+    {
+        new QuartzActivityHandler().ShouldListenToOperationName(operationName).Should().Be(expected);
+    }
+
     private static async Task AssertGeneratedSpan(
         IActivityHandler handler,
         string sourceName,
@@ -66,11 +78,32 @@ public class IntegrationActivityHandlerTests
 
         var activity = new SD.Activity(sourceName);
         activity.Start();
-        var duckActivity = activity.DuckCast<IActivity>();
+        var duckActivity = activity.DuckCast<IActivity5>();
 
         handler.ActivityStarted(sourceName, duckActivity);
-        activity.Stop();
+        tracer.ActiveScope.Should().NotBeNull();
+        var span = (Span)tracer.ActiveScope!.Span;
+        if (enabled && integrationId == IntegrationId.AzureServiceBus)
+        {
+            span.Tags.Should().BeAssignableTo<AzureServiceBusTags>();
+        }
+        else
+        {
+            span.Tags.Should().BeOfType<OpenTelemetryTags>();
+        }
+
         handler.ActivityStopped(sourceName, duckActivity);
+        activity.Stop();
+
+        var expectedInstrumentationName = enabled
+                                              ? integrationId switch
+                                              {
+                                                  IntegrationId.Quartz => "quartz",
+                                                  IntegrationId.AzureServiceBus => nameof(IntegrationId.AzureServiceBus),
+                                                  _ => null,
+                                              }
+                                              : null;
+        span.GetTag(Trace.Tags.InstrumentationName).Should().Be(expectedInstrumentationName);
 
         var expectedIntegrationId = enabled ? integrationId : IntegrationId.OpenTelemetry;
         telemetry.Verify(x => x.IntegrationGeneratedSpan(expectedIntegrationId), Times.Once);

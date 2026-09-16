@@ -25,9 +25,13 @@ namespace Datadog.Trace.Activity.Handlers
     /// - tracer/src/Datadog.Trace/DiagnosticListeners/QuartzDiagnosticObserver.cs
     /// - tracer/src/Datadog.Trace/Activity/Handlers/DefaultActivityHandler.cs
     /// </summary>
-    internal sealed class QuartzActivityHandler : IActivityHandler
+    internal sealed class QuartzActivityHandler : IActivityHandlerWithOperationName
     {
+        private const string ExecuteOperationName = "Quartz.Job.Execute";
+        private const string VetoOperationName = "Quartz.Job.Veto";
+
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<QuartzActivityHandler>();
+        private static readonly DefaultActivityHandler DefaultHandler = new();
 
         public bool ShouldListenTo(string sourceName, string? version)
         {
@@ -35,18 +39,30 @@ namespace Datadog.Trace.Activity.Handlers
             return sourceName.StartsWith("Quartz");
         }
 
+        public bool ShouldListenToOperationName(string operationName)
+            => operationName is ExecuteOperationName or VetoOperationName;
+
         public void ActivityStarted<T>(string sourceName, T activity)
             where T : IActivity
         {
-            var integrationId = Tracer.Instance.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId.Quartz)
-                                    ? IntegrationId.Quartz
-                                    : IntegrationId.OpenTelemetry;
-            ActivityHandlerCommon.ActivityStarted(integrationId, sourceName, activity, tags: new OpenTelemetryTags(), out _);
+            if (!Tracer.Instance.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId.Quartz))
+            {
+                DefaultHandler.ActivityStarted(sourceName, activity);
+                return;
+            }
+
+            ActivityHandlerCommon.ActivityStarted(IntegrationId.Quartz, sourceName, activity, tags: new OpenTelemetryTags(), out _);
         }
 
         public void ActivityStopped<T>(string sourceName, T activity)
             where T : IActivity
         {
+            if (!Tracer.Instance.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId.Quartz))
+            {
+                DefaultHandler.ActivityStopped(sourceName, activity);
+                return;
+            }
+
             // Find the span and update it before the common handler processes it
             ActivityKey key = activity switch
             {
