@@ -17,6 +17,7 @@ internal sealed class BitBucketServerSourceLinkUrlParser : SourceLinkUrlParser
     /// Supports two URL forms:
     ///   >= 4.7: https://{host}[/base]/projects/{project}/repos/{repo}/raw/*?at={sha}
     ///   &lt;  4.7: https://{host}[/base]/projects/{project}/repos/{repo}/browse/*?at={sha}&amp;raw
+    /// The trailing '*' is the literal SourceLink substitution token, not a wildcard.
     /// </summary>
     internal override bool TryParseSourceLinkUrl(Uri uri, [NotNullWhen(true)] out string? commitSha, [NotNullWhen(true)] out string? repositoryUrl)
     {
@@ -29,16 +30,16 @@ internal sealed class BitBucketServerSourceLinkUrlParser : SourceLinkUrlParser
             var query = uri.Query;
 
             bool isBrowseForm;
-            string repoUrlPath;
+            ReadOnlySpan<char> repoUrlPath;
             if (path.EndsWith("/raw/*", StringComparison.Ordinal))
             {
                 isBrowseForm = false;
-                repoUrlPath = path.Substring(0, path.Length - "/raw/*".Length);
+                repoUrlPath = path.AsSpan(0, path.Length - "/raw/*".Length);
             }
             else if (path.EndsWith("/browse/*", StringComparison.Ordinal))
             {
                 isBrowseForm = true;
-                repoUrlPath = path.Substring(0, path.Length - "/browse/*".Length);
+                repoUrlPath = path.AsSpan(0, path.Length - "/browse/*".Length);
             }
             else
             {
@@ -56,7 +57,7 @@ internal sealed class BitBucketServerSourceLinkUrlParser : SourceLinkUrlParser
             var hasRawFlag = false;
             foreach (var pair in query.SplitIntoSpans('&'))
             {
-                ReadOnlySpan<char> pairSpan = ((ReadOnlySpan<char>)pair).TrimStart('?');
+                var pairSpan = pair.AsSpan().TrimStart('?');
                 var eqIndex = pairSpan.IndexOf('=');
                 var key = eqIndex < 0 ? pairSpan : pairSpan.Slice(0, eqIndex);
 
@@ -80,7 +81,11 @@ internal sealed class BitBucketServerSourceLinkUrlParser : SourceLinkUrlParser
                 return false;
             }
 
+#if NET6_0_OR_GREATER
             repositoryUrl = $"{uri.Scheme}://{uri.Authority}{repoUrlPath}";
+#else
+            repositoryUrl = $"{uri.Scheme}://{uri.Authority}{repoUrlPath.ToString()}";
+#endif
             commitSha = shaSpan.ToString();
             return true;
         }
@@ -92,7 +97,7 @@ internal sealed class BitBucketServerSourceLinkUrlParser : SourceLinkUrlParser
         return false;
     }
 
-    private static bool IsValidRepositoryPath(string path)
+    private static bool IsValidRepositoryPath(ReadOnlySpan<char> path)
     {
         // Parse the fixed trailing structure from right to left so marker-like base path,
         // project, or repository names do not get mistaken for structural markers.
@@ -102,21 +107,21 @@ internal sealed class BitBucketServerSourceLinkUrlParser : SourceLinkUrlParser
             return false;
         }
 
-        var reposStart = path.LastIndexOf('/', repoStart - 1);
+        var reposStart = path.Slice(0, repoStart).LastIndexOf('/');
         if (reposStart <= 0 ||
-            !path.AsSpan(reposStart + 1, repoStart - reposStart - 1).SequenceEqual("repos".AsSpan()))
+            !path.Slice(reposStart + 1, repoStart - reposStart - 1).SequenceEqual("repos".AsSpan()))
         {
             return false;
         }
 
-        var projectStart = path.LastIndexOf('/', reposStart - 1);
+        var projectStart = path.Slice(0, reposStart).LastIndexOf('/');
         if (projectStart <= 0 || projectStart == reposStart - 1)
         {
             return false;
         }
 
-        var projectsStart = path.LastIndexOf('/', projectStart - 1);
+        var projectsStart = path.Slice(0, projectStart).LastIndexOf('/');
         return projectsStart >= 0 &&
-               path.AsSpan(projectsStart + 1, projectStart - projectsStart - 1).SequenceEqual("projects".AsSpan());
+               path.Slice(projectsStart + 1, projectStart - projectsStart - 1).SequenceEqual("projects".AsSpan());
     }
 }

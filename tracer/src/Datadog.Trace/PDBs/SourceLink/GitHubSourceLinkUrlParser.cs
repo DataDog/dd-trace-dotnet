@@ -41,8 +41,7 @@ internal sealed class GitHubSourceLinkUrlParser : SourceLinkUrlParser
             // Case 2: GHE with subdomain isolation — https://raw.{host}/{owner}/{repo}/{sha}/*
             if (uri.Host.StartsWith("raw.", StringComparison.OrdinalIgnoreCase) && uri.Host.Length > 4)
             {
-                var enterpriseHost = uri.Host.Substring(4);
-                return TryParseStandardPath(uri, BuildBaseUrl(uri, enterpriseHost), out commitSha, out repositoryUrl);
+                return TryParseStandardPath(uri, BuildBaseUrl(uri, uri.Host.AsSpan(4)), out commitSha, out repositoryUrl);
             }
 
             // Case 3: GHE without subdomain isolation — https://{host}/raw/{owner}/{repo}/{sha}/*
@@ -160,7 +159,7 @@ internal sealed class GitHubSourceLinkUrlParser : SourceLinkUrlParser
             return false;
         }
 
-        var repoUrlBase = BuildBaseUrl(uri, uri.Host);
+        var repoUrlBase = BuildBaseUrl(uri, uri.Host.AsSpan());
 #if NET6_0_OR_GREATER
         repositoryUrl = $"{repoUrlBase}/{owner}/{repo}";
 #else
@@ -170,6 +169,10 @@ internal sealed class GitHubSourceLinkUrlParser : SourceLinkUrlParser
         return true;
     }
 
-    private static string BuildBaseUrl(Uri uri, string host)
+    private static string BuildBaseUrl(Uri uri, ReadOnlySpan<char> host)
+#if NET6_0_OR_GREATER
         => uri.IsDefaultPort ? $"{uri.Scheme}://{host}" : $"{uri.Scheme}://{host}:{uri.Port}";
+#else
+        => uri.IsDefaultPort ? $"{uri.Scheme}://{host.ToString()}" : $"{uri.Scheme}://{host.ToString()}:{uri.Port}";
+#endif
 }

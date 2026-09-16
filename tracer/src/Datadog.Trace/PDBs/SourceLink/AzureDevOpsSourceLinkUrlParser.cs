@@ -103,19 +103,25 @@ internal sealed class AzureDevOpsSourceLinkUrlParser : SourceLinkUrlParser
             return null;
         }
 
+        var span = path.AsSpan();
+
         // The prefix path (project and any virtual dir/collection) is everything before /_apis
-        var prefixPath = path.Substring(0, markerPos);
+        var prefixPath = span.Slice(0, markerPos);
 
         // Extract the repo name after /_apis/git/repositories/
-        var afterMarker = path.Substring(markerPos + marker.Length);
+        var afterMarker = span.Slice(markerPos + marker.Length);
         var repoEndSlash = afterMarker.IndexOf('/');
         if (repoEndSlash <= 0)
         {
             return null;
         }
 
-        var repo = afterMarker.Substring(0, repoEndSlash);
+        var repo = afterMarker.Slice(0, repoEndSlash);
 
+#if NET6_0_OR_GREATER
         return $"{uri.Scheme}://{uri.Authority}{prefixPath}/_git/{repo}";
+#else
+        return $"{uri.Scheme}://{uri.Authority}{prefixPath.ToString()}/_git/{repo.ToString()}";
+#endif
     }
 }

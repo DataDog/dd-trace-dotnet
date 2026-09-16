@@ -70,7 +70,7 @@ internal sealed class GitLabSourceLinkUrlParser : SourceLinkUrlParser
 
             // Require at least 2 non-empty segments before the raw marker (group + repo, or group/sub/repo).
             // After trimming the leading/trailing '/', an inner '/' proves two segments exist.
-            var repoPath = path.AsSpan(0, repoPathEnd).TrimStart('/').TrimEnd('/');
+            var repoPath = path.AsSpan(0, repoPathEnd).Trim('/');
             if (repoPath.IndexOf('/') <= 0)
             {
                 return false;
@@ -86,7 +86,11 @@ internal sealed class GitLabSourceLinkUrlParser : SourceLinkUrlParser
                 return false;
             }
 
+#if NET6_0_OR_GREATER
+            repositoryUrl = $"{uri.Scheme}://{uri.Authority}{path.AsSpan(0, repoPathEnd)}";
+#else
             repositoryUrl = $"{uri.Scheme}://{uri.Authority}{path.Substring(0, repoPathEnd)}";
+#endif
             commitSha = sha.ToString();
             return true;
         }
