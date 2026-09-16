@@ -24,25 +24,24 @@ public class DurableFunctions
         _lifetime = lifetime;
     }
 
-    [Function(nameof(StartDurableWorkflow))]
-    public Task<HttpResponseData> StartDurableWorkflow(
+    [Function(nameof(StartDurableWorkflows))]
+    public Task<HttpResponseData> StartDurableWorkflows(
         [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "seed/durable")] HttpRequestData request,
         [DurableClient] DurableTaskClient client)
-        => StartWorkflowAsync(request, client, nameof(DurableWorkflow));
+        => StartWorkflowsAsync(request, client);
 
-    [Function(nameof(StartFailingDurableWorkflow))]
-    public Task<HttpResponseData> StartFailingDurableWorkflow(
-        [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "seed/durable/error")] HttpRequestData request,
-        [DurableClient] DurableTaskClient client)
-        => StartWorkflowAsync(request, client, nameof(FailingDurableWorkflow));
-
-    private async Task<HttpResponseData> StartWorkflowAsync(HttpRequestData request, DurableTaskClient client, string orchestrationName)
+    private async Task<HttpResponseData> StartWorkflowsAsync(HttpRequestData request, DurableTaskClient client)
     {
         try
         {
-            var instanceId = await client.ScheduleNewOrchestrationInstanceAsync(orchestrationName);
+            string[] instanceIds =
+            [
+                await client.ScheduleNewOrchestrationInstanceAsync(nameof(DurableWorkflow)),
+                await client.ScheduleNewOrchestrationInstanceAsync(nameof(FailingDurableWorkflow)),
+            ];
+
             var response = request.CreateResponse(HttpStatusCode.Accepted);
-            await response.WriteStringAsync(instanceId);
+            await response.WriteStringAsync(string.Join(Environment.NewLine, instanceIds));
             return response;
         }
         finally

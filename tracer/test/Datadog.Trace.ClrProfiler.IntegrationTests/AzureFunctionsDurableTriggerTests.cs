@@ -30,8 +30,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests;
 [Trait("Category", "ArmUnsupported")]
 public class AzureFunctionsDurableTriggerTests : AzureFunctionsTests
 {
-    private const int ExpectedDurableSpanCount = 4;
-    private const int ExpectedFailingDurableSpanCount = 3;
+    private const int ExpectedDurableSpanCount = 7;
     private const string ExpectedFailureMessage = "Unable to greet World.";
     private const string ManualActivitySpanName = "Manual inside DurableActivity";
     private const string LocalDurableTaskSchedulerConnectionString = "Endpoint=http://localhost:8080;TaskHub=default;Authentication=None";
@@ -42,10 +41,6 @@ public class AzureFunctionsDurableTriggerTests : AzureFunctionsTests
         "DurableActivity DurableActivity",
         "DurableEntity DurableCounter",
         ManualActivitySpanName,
-    ];
-
-    private static readonly string[] ExpectedFailingDurableResources =
-    [
         "DurableOrchestration FailingDurableWorkflow",
         "DurableActivity FailingDurableActivity",
     ];
@@ -77,70 +72,47 @@ public class AzureFunctionsDurableTriggerTests : AzureFunctionsTests
         using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
         using (await RunAzureFunctionAndWaitForExit(
                    agent,
-                   seedAsync: () => SeedViaHttpAsync("seed/durable", HttpStatusCode.Accepted),
+                   seedAsync: SeedViaHttpAsync,
                    expectedExitCode: ExpectedFuncKillExitCode))
         {
             var spans = await WaitForDurableSpansAsync(agent);
 
             spans.Should().HaveCount(ExpectedDurableSpanCount);
-            spans.Should().ContainSingle(s => HasTrigger(s, "DurableOrchestration")).Which.Error.Should().Be(0);
-            var activitySpan = spans.Should().ContainSingle(s => HasTrigger(s, "DurableActivity")).Subject;
+            var orchestrationSpan = spans.Should().ContainSingle(s => s.Resource == "DurableOrchestration DurableWorkflow").Subject;
+            orchestrationSpan.Error.Should().Be(0);
+            var activitySpan = spans.Should().ContainSingle(s => s.Resource == "DurableActivity DurableActivity").Subject;
             spans.Should().ContainSingle(s => HasTrigger(s, "DurableEntity"));
             var manualSpan = spans.Should().ContainSingle(s => s.Name == ManualActivitySpanName).Subject;
             manualSpan.TraceId.Should().Be(activitySpan.TraceId);
             manualSpan.ParentId.Should().Be(activitySpan.SpanId);
 
-            var workflowTraceId = spans.First(s => HasTrigger(s, "DurableOrchestration")).TraceId;
-            spans.Where(s => HasTrigger(s, "DurableOrchestration") || HasTrigger(s, "DurableActivity"))
+            spans.Where(s => s.Resource is "DurableOrchestration DurableWorkflow" or "DurableActivity DurableActivity")
                  .Should()
-                 .OnlyContain(s => s.TraceId == workflowTraceId)
+                 .OnlyContain(s => s.TraceId == orchestrationSpan.TraceId)
                  .And
                  .OnlyContain(
                       s => HasPositiveSamplingPriority(s),
                       "Azure's implicit rejection must not prevent local Datadog sampling");
 
-            await AssertIsolatedSpans(
-                spans,
-                $"{nameof(AzureFunctionsDurableTriggerTests)}.{nameof(OrchestrationActivityEntity_SubmitsTrace)}");
-        }
-    }
+            var failingActivitySpan = spans.Should().ContainSingle(s => s.Resource == "DurableActivity FailingDurableActivity").Subject;
+            failingActivitySpan.Error.Should().Be(1);
+            failingActivitySpan.Tags.Should().ContainKey(Tags.ErrorMsg).WhoseValue.Should().Contain(ExpectedFailureMessage);
 
-    [SkippableFact]
-    public async Task OrchestrationActivity_ErrorPropagates()
-    {
-        Skip.If(EnvironmentHelper.IsAlpine(), "Azure Functions Core Tools are not installed in the Alpine integration test image.");
-
-        var testId = Guid.NewGuid().ToString("N");
-        SetEnvironmentVariable("AzureFunctionsWebHost__hostid", "afdurable" + testId.Substring(0, 23));
-
-        using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
-        using (await RunAzureFunctionAndWaitForExit(
-                   agent,
-                   seedAsync: () => SeedViaHttpAsync("seed/durable/error", HttpStatusCode.Accepted),
-                   expectedExitCode: ExpectedFuncKillExitCode))
-        {
-            var spans = await WaitForDurableSpansAsync(agent, ExpectedFailingDurableResources, ExpectedFailingDurableSpanCount);
-
-            spans.Should().HaveCount(ExpectedFailingDurableSpanCount);
-            var activitySpan = spans.Should().ContainSingle(s => HasTrigger(s, "DurableActivity")).Subject;
-            activitySpan.Error.Should().Be(1);
-            activitySpan.Tags.Should().ContainKey(Tags.ErrorMsg).WhoseValue.Should().Contain(ExpectedFailureMessage);
-
-            var orchestrationSpans = spans.Where(s => HasTrigger(s, "DurableOrchestration")).ToList();
-            orchestrationSpans.Should().HaveCount(2, "only the initial execution and the failed replay should be traced");
-            orchestrationSpans.Should().ContainSingle(s => s.Error == 0);
-            var failedOrchestrationSpan = orchestrationSpans.Should().ContainSingle(s => s.Error == 1).Subject;
+            var failingOrchestrationSpans = spans.Where(s => s.Resource == "DurableOrchestration FailingDurableWorkflow").ToList();
+            failingOrchestrationSpans.Should().HaveCount(2, "only the initial execution and the failed replay should be traced");
+            failingOrchestrationSpans.Should().ContainSingle(s => s.Error == 0);
+            var failedOrchestrationSpan = failingOrchestrationSpans.Should().ContainSingle(s => s.Error == 1).Subject;
             failedOrchestrationSpan.Tags.Should().ContainKey(Tags.ErrorMsg).WhoseValue.Should().Contain(ExpectedFailureMessage);
 
-            var workflowTraceId = spans.First(s => HasTrigger(s, "DurableOrchestration")).TraceId;
-            spans.Should()
-                 .OnlyContain(s => s.TraceId == workflowTraceId)
+            spans.Where(s => s.Resource is "DurableOrchestration FailingDurableWorkflow" or "DurableActivity FailingDurableActivity")
+                 .Should()
+                 .OnlyContain(s => s.TraceId == failedOrchestrationSpan.TraceId)
                  .And
                  .OnlyContain(s => HasPositiveSamplingPriority(s));
 
             await AssertIsolatedSpans(
                 spans,
-                $"{nameof(AzureFunctionsDurableTriggerTests)}.{nameof(OrchestrationActivity_ErrorPropagates)}");
+                $"{nameof(AzureFunctionsDurableTriggerTests)}.{nameof(OrchestrationActivityEntity_SubmitsTrace)}");
         }
     }
 
@@ -150,26 +122,23 @@ public class AzureFunctionsDurableTriggerTests : AzureFunctionsTests
     private static bool HasPositiveSamplingPriority(MockSpan span)
         => span.Metrics.TryGetValue(Metrics.SamplingPriority, out var samplingPriority) && samplingPriority > 0;
 
-    private static IImmutableList<MockSpan> GetDurableSpans(IImmutableList<MockSpan> spans, string[] expectedResources)
+    private static IImmutableList<MockSpan> GetDurableSpans(IImmutableList<MockSpan> spans)
         => spans.Where(
-                    s => expectedResources.Contains(s.Resource)
+                    s => ExpectedDurableResources.Contains(s.Resource)
                       && (s.Name == ManualActivitySpanName
                        || (s.Name == "azure_functions.invoke"
                         && s.Tags.TryGetValue("aas.function.trigger", out var trigger)
                         && trigger.StartsWith("Durable", StringComparison.Ordinal))))
                 .ToImmutableList();
 
-    private static Task<IImmutableList<MockSpan>> WaitForDurableSpansAsync(MockTracerAgent agent)
-        => WaitForDurableSpansAsync(agent, ExpectedDurableResources, ExpectedDurableSpanCount);
-
-    private static async Task<IImmutableList<MockSpan>> WaitForDurableSpansAsync(MockTracerAgent agent, string[] expectedResources, int expectedSpanCount)
+    private static async Task<IImmutableList<MockSpan>> WaitForDurableSpansAsync(MockTracerAgent agent)
     {
         var deadline = DateTime.UtcNow.AddSeconds(30);
         IImmutableList<MockSpan> spans;
         do
         {
-            spans = GetDurableSpans(agent.Spans, expectedResources);
-            if (spans.Count >= expectedSpanCount)
+            spans = GetDurableSpans(agent.Spans);
+            if (spans.Count >= ExpectedDurableSpanCount)
             {
                 return spans;
             }
@@ -181,14 +150,14 @@ public class AzureFunctionsDurableTriggerTests : AzureFunctionsTests
         return spans;
     }
 
-    private static async Task SeedViaHttpAsync(string route, HttpStatusCode expectedStatusCode)
+    private static async Task SeedViaHttpAsync()
     {
         using var http = new HttpClient { Timeout = TimeSpan.FromSeconds(60) };
-        using var response = await http.PostAsync($"http://localhost:7071/api/{route}", content: null);
+        using var response = await http.PostAsync("http://localhost:7071/api/seed/durable", content: null);
         var responseBody = await response.Content.ReadAsStringAsync();
-        if (response.StatusCode != expectedStatusCode)
+        if (response.StatusCode != HttpStatusCode.Accepted)
         {
-            throw new InvalidOperationException($"Durable workflow returned {(int)response.StatusCode}, expected {(int)expectedStatusCode}: {responseBody}");
+            throw new InvalidOperationException($"Durable workflows returned {(int)response.StatusCode}, expected {(int)HttpStatusCode.Accepted}: {responseBody}");
         }
     }
 
