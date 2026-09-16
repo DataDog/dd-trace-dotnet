@@ -4,10 +4,7 @@
 // This product includes software developed at Datadog
 // (https://www.datadoghq.com/). Copyright 2026 Datadog, Inc.
 
-// Stub shadowing glibc's real sys/single_threaded.h (introduced in glibc 2.32) via -isystem
-// ahead of the build host's own system include path - see glibc217-compat.c (this directory)
-// for why, and build/cmake/Glibc217.cmake.x86_64 for how it's wired in. Declaration shape
-// matches glibc's real header exactly.
+// Stub for glibc's sys/single_threaded.h (glibc 2.32+). See glibc217-compat.c.
 #ifndef _SYS_SINGLE_THREADED_H
 #define _SYS_SINGLE_THREADED_H
 

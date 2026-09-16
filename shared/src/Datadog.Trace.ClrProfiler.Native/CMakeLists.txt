@@ -14,10 +14,7 @@ endif()
 
 project("Datadog.Trace.ClrProfiler.Native" VERSION 3.55.0)
 
-# glibc-compat is now defined once at the root CMakeLists.txt (needed by more than one
-# subdirectory when USE_GLIBC217_SYSROOT is also in play - see
-# docs/development/rfc-linux-x64-build-host.md) - this file only references the resulting
-# target further down, it doesn't call find_package(GlibcCompat) itself anymore.
+# glibc-compat is defined once at the root CMakeLists.txt (shared across subdirectories).
 
 # ******************************************************
 # Environment detection
