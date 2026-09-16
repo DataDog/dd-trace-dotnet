@@ -107,6 +107,11 @@ public class NativeValidationHelper
         // 0000000000003e30 T accept4
         //                  U access
         //
+        // When linking against glibc (including the glibc 2.17 sysroot / lld), nm may
+        // instead print versioned names such as:
+        //                  U __errno_location@GLIBC_2.2.5
+        //                  U memcpy@GLIBC_2.14
+        //
         // The types of symbols are:
         // D: Data section symbol. These symbols are initialized global variables.
         // w: Weak symbol. These symbols are weakly referenced and can be overridden by other symbols.
@@ -114,14 +119,16 @@ public class NativeValidationHelper
         // T: Text section symbol. These symbols are functions or executable code.
         // B: BSS (Block Started by Symbol) section symbol. These symbols are uninitialized global variables.
         //
-        // We only care about the Undefined symbols - we don't want to accidentally add more of them
+        // We only care about the Undefined symbols - we don't want to accidentally add more of them.
+        // Alpine/musl snapshots and allowlists use unversioned names, so strip @VERSION.
 
         Logger.Debug("NM output: {Output}", string.Join(Environment.NewLine, output));
 
         var symbols = output
                      .Select(x => x.Trim())
                      .Where(x => x.StartsWith("U "))
-                     .Select(x => x.TrimStart("U "))
+                     .Select(x => StripElfSymbolVersion(x.TrimStart("U ")))
+                     .Distinct()
                      .OrderBy(x => x)
                      .ToList();
 
@@ -201,5 +208,14 @@ public class NativeValidationHelper
 
             return false;
         }
+    }
+
+    // nm may print ELF symbol versions ("malloc@GLIBC_2.2.5" or "malloc@@GLIBC_2.2.5")
+    // depending on nm (GNU vs LLVM) and linker (bfd vs lld). Snapshots and the musl
+    // allowlist compare unversioned libc function names.
+    static string StripElfSymbolVersion(string symbol)
+    {
+        var at = symbol.IndexOf('@');
+        return at >= 0 ? symbol.Substring(0, at) : symbol;
     }
 }
