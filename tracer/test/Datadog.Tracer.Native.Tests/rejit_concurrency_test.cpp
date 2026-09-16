@@ -2,6 +2,7 @@
 
 #include "../../src/Datadog.Tracer.Native/debugger_rejit_handler_module_method.h"
 #include "../../src/Datadog.Tracer.Native/rejit_handler.h"
+#include "../../src/Datadog.Tracer.Native/tracer_rejit_preprocessor.h"
 #include "mock_cor_profiler_info.h"
 
 #include <atomic>
@@ -91,6 +92,28 @@ public:
         requestEntered.set_value();
         m_release.wait();
         return S_OK;
+    }
+};
+
+class BlockingNGenProfilerInfo : public MockCorProfilerInfo
+{
+private:
+    std::shared_future<void> m_release;
+
+public:
+    explicit BlockingNGenProfilerInfo(std::shared_future<void> release) : m_release(std::move(release))
+    {
+    }
+
+    std::promise<void> enumerationEntered;
+
+    HRESULT STDMETHODCALLTYPE EnumNgenModuleMethodsInliningThisMethod(
+        ModuleID inlinersModuleId, ModuleID inlineeModuleId, mdMethodDef inlineeMethodId, BOOL* incompleteData,
+        ICorProfilerMethodEnum** ppEnum) override
+    {
+        enumerationEntered.set_value();
+        m_release.wait();
+        return E_FAIL;
     }
 };
 } // namespace
@@ -200,6 +223,78 @@ TEST(ModuleLifetime, UnloadInvalidatesGenerationWhileShutdownWaitsForWorker)
     handler->RemoveModule(moduleId);
     EXPECT_EQ(nullptr, handler->GetModuleWithLifetime(moduleId).lifetime);
     EXPECT_FALSE(module.Acquire().has_value());
+
+    releaseBlocker.set_value();
+    shutdown.join();
+}
+
+TEST(ModuleLifetime, UnloadWaitsForNGenReplayAfterShutdownStarts)
+{
+    std::promise<void> releaseEnumeration;
+    BlockingNGenProfilerInfo profilerInfo(releaseEnumeration.get_future().share());
+    auto enumerationEnteredFuture = profilerInfo.enumerationEntered.get_future();
+    auto offloader = std::make_shared<RejitWorkOffloader>(&profilerInfo);
+    auto handler = std::make_shared<RejitHandler>(static_cast<ICorProfilerInfo7*>(&profilerInfo), offloader);
+    TracerRejitPreprocessor preprocessor(nullptr, handler, offloader, RejitterPriority::Normal);
+    constexpr ModuleID inlineeModuleId = 41;
+    constexpr ModuleID inlinersModuleId = 42;
+    constexpr mdMethodDef methodId = 1;
+    handler->RegisterModule(inlineeModuleId);
+    handler->RegisterModule(inlinersModuleId);
+
+    auto module = preprocessor.GetOrAddModule(inlineeModuleId);
+    module->CreateMethodIfNotExists(
+        methodId,
+        [](mdMethodDef methodDef, RejitHandlerModule* moduleHandler)
+        {
+            return std::make_unique<RejitHandlerModuleMethod>(
+                methodDef, moduleHandler, FunctionInfo{}, std::unique_ptr<MethodRewriter>{});
+        },
+        [](RejitHandlerModuleMethod*) {});
+
+    std::promise<void> blockerEntered;
+    auto blockerEnteredFuture = blockerEntered.get_future();
+    std::promise<void> releaseBlocker;
+    auto releaseBlockerFuture = releaseBlocker.get_future().share();
+    offloader->Enqueue(std::make_unique<RejitWorkItem>(
+        [&]
+        {
+            blockerEntered.set_value();
+            releaseBlockerFuture.wait();
+        }));
+    blockerEnteredFuture.wait();
+
+    std::thread replay([&] { handler->AddNGenInlinerModule(inlinersModuleId); });
+    const auto enumerationEntered = enumerationEnteredFuture.wait_for(1s) == std::future_status::ready;
+    EXPECT_TRUE(enumerationEntered);
+    if (!enumerationEntered)
+    {
+        releaseEnumeration.set_value();
+        replay.join();
+        releaseBlocker.set_value();
+        handler->Shutdown();
+        return;
+    }
+
+    std::thread shutdown([&] { handler->Shutdown(); });
+    EXPECT_TRUE(WaitUntil([&] { return handler->IsShutdownRequested(); }));
+
+    std::promise<void> unloadFinished;
+    auto unloadFinishedFuture = unloadFinished.get_future();
+    std::thread unload(
+        [&]
+        {
+            handler->RemoveModule(inlinersModuleId);
+            unloadFinished.set_value();
+        });
+
+    EXPECT_TRUE(WaitUntil([&] { return handler->GetModuleWithLifetime(inlinersModuleId).lifetime == nullptr; }));
+    // ModuleUnloadStarted must remain blocked while the CLR can still dereference this generation.
+    EXPECT_EQ(std::future_status::timeout, unloadFinishedFuture.wait_for(0ms));
+
+    releaseEnumeration.set_value();
+    replay.join();
+    unload.join();
 
     releaseBlocker.set_value();
     shutdown.join();
