@@ -2,8 +2,7 @@
 #
 # One-time (or once-every-great-while - glibc 2.17 doesn't change) extraction tool. This
 # image is NEVER pushed to any registry and nothing ever does `FROM` on it - its only job is
-# to let a human pull /sysroot/x86_64-glibc217 out onto disk as a tarball. See "Harvest the
-# sysroot" in docs/development/rfc-linux-x64-build-host.md.
+# to let a human pull /sysroot/x86_64-glibc217 out onto disk as a tarball.
 #
 # --platform=linux/amd64 is pinned explicitly below - do not rely on `docker build
 # --platform=` to get this right, the daemon's default platform depends on the host running

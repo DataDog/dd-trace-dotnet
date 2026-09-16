@@ -25,14 +25,7 @@ project("Datadog.APM.Native" VERSION 2.18.0)
 option(UNIVERSAL "Build as Universal binary" ON)
 message(STATUS "Building Native Loader and Wrapper as Universal binary: " ${UNIVERSAL})
 
-# Mutually exclusive by construction: UNIVERSAL builds the native loader and wrapper against
-# musl (hence the glibc-compat shim below), USE_GLIBC217_SYSROOT builds against a frozen
-# glibc 2.17 sysroot. There is no "both" - a single loader/wrapper binary can only have one
-# libc. Glibc217.cmake.x86_64 already seeds UNIVERSAL=OFF in the cache so the ordinary
-# configure picks the right one on its own; reaching here with both ON means someone passed
-# -DUNIVERSAL=ON explicitly alongside the glibc217 toolchain. Fail loudly at configure time,
-# because the alternative is a confusing compile error deep in the musl shim
-# ("conflicting types for 'strerror_r'") that doesn't hint at the real cause.
+# UNIVERSAL (musl) and USE_GLIBC217_SYSROOT are mutually exclusive.
 if (UNIVERSAL AND USE_GLIBC217_SYSROOT)
     message(FATAL_ERROR "UNIVERSAL and USE_GLIBC217_SYSROOT are mutually exclusive: the "
                         "Universal build targets musl, the glibc217 sysroot build targets "
@@ -42,14 +35,8 @@ if (UNIVERSAL AND USE_GLIBC217_SYSROOT)
                         "them as Universal/musl binaries.")
 endif()
 
-# The C++ standard-library selection flag used by every native target's ISLINUX branch.
-# Empty under USE_GLIBC217_SYSROOT: Glibc217.cmake.x86_64 already sets -nostdinc++ plus
-# -cxx-isystem <devtoolset-11 headers>, and links devtoolset-11's own libstdc++.a via
-# -static-libstdc++ with -B/-L pointing at it, so header search AND the library are both
-# already fully determined - -stdlib=libstdc++ on top is redundant, and clang warns
-# "argument unused during compilation" for it on every single translation unit (71 in a full
-# build, which drowns out real diagnostics). Centralized here rather than re-deriving the
-# same condition at each of the seven ISLINUX sites that need the flag.
+# Centralized C++ stdlib flag. Empty under USE_GLIBC217_SYSROOT (Glibc217.cmake.x86_64
+# already controls header search and linking; -stdlib=libstdc++ on top triggers warnings).
 if (USE_GLIBC217_SYSROOT)
     set(DD_CXX_STDLIB_COMPILE_OPTIONS "")
 else()
@@ -60,23 +47,8 @@ if (CMAKE_TOOLCHAIN_FILE)
     message(STATUS "Using toolchain file ${CMAKE_TOOLCHAIN_FILE}")
 endif()
 
-# Catch a silent-wrong-artifact trap. CMake only SOURCES a toolchain file when it first
-# configures a build directory (it is included from the generated CMakeFiles/*/CMakeSystem.cmake
-# during project()); passing -DCMAKE_TOOLCHAIN_FILE= at a build dir that already has a cache
-# stores the variable but never includes the file, with no warning of any kind. Every
-# Compile*/Build* Nuke target shares one NativeBuildDirectory, so whichever one configures it
-# first decides the toolchain for all of them.
-#
-# The consequence is worse than a build failure: with the toolchain silently skipped, none of
-# the -nostdinc++/-cxx-isystem/--sysroot flags apply, so the native libs compile and link
-# cleanly against the build host's own modern glibc and the build REPORTS SUCCESS - just with a
-# GLIBC_2.36 floor instead of 2.17 (observed exactly this way: a full profiler build succeeded
-# and `nm --with-symbol-versions` then showed pthread_create@GLIBC_2.34, dlopen@GLIBC_2.34,
-# arc4random@GLIBC_2.36 ...). Only the separate ValidateNative*GlibcCompatibility step would
-# notice, and only if it runs.
-#
-# Detect it precisely: CMAKE_TOOLCHAIN_FILE names the glibc217 file, yet the variable that file
-# unconditionally sets is absent - which can only mean it was never actually sourced.
+# Detect stale build directory: CMake only sources a toolchain file on first configure.
+# Re-running with -DCMAKE_TOOLCHAIN_FILE on an existing cache silently ignores it.
 if (CMAKE_TOOLCHAIN_FILE MATCHES "Glibc217" AND NOT USE_GLIBC217_SYSROOT)
     message(FATAL_ERROR
         "CMAKE_TOOLCHAIN_FILE is set to '${CMAKE_TOOLCHAIN_FILE}' but that file was never "
@@ -159,21 +131,13 @@ message(STATUS "GoogleTest library")
 find_package(PPDB REQUIRED)
 message(STATUS "PPDB library")
 
-# Defined exactly once here, not per-subdirectory: glibc-compat (build/cmake/FindGlibcCompat.cmake)
-# is needed by shared/ under UNIVERSAL. add_subdirectory(tracer) and add_subdirectory(profiler)
-# below run in the SAME configure pass, so more than one subdirectory calling
-# find_package(GlibcCompat REQUIRED) independently would fail with "add_library cannot create
-# target glibc-compat because another target with the same name already exists" (this is
-# exactly why USE_GLIBC217_SYSROOT was removed from this condition below - see that note).
+# Defined once here (not per-subdirectory) to avoid duplicate target names in a single configure.
 if (UNIVERSAL)
     find_package(GlibcCompat REQUIRED)
     message(STATUS "Glibc Compat objects")
 endif()
 
-# Separate from the glibc-compat above (see FindGlibc217Compat.cmake for why) - needed by
-# tracer/ and profiler/ when USE_GLIBC217_SYSROOT is set (Approach A of
-# docs/development/rfc-linux-x64-build-host.md). Defined once here for the same
-# add_subdirectory-runs-in-one-configure-pass reason as the glibc-compat block above.
+# Separate from glibc-compat above (see FindGlibc217Compat.cmake). Same once-here pattern.
 if (USE_GLIBC217_SYSROOT)
     find_package(Glibc217Compat REQUIRED)
     message(STATUS "Glibc217 Compat objects")
