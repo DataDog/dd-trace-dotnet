@@ -32,8 +32,8 @@ public class IntegrationActivityHandlerTests
         var handler = new QuartzActivityHandler();
 
         handler.ShouldListenTo("Quartz", version: null).Should().BeTrue();
-        await AssertGeneratedSpan(handler, "Quartz", nameof(IntegrationId.Quartz), IntegrationId.Quartz, initiallyEnabled);
-        await AssertGeneratedSpan(handler, "Quartz", nameof(IntegrationId.Quartz), IntegrationId.Quartz, !initiallyEnabled);
+        await AssertQuartzGeneratedSpan(handler, initiallyEnabled);
+        await AssertQuartzGeneratedSpan(handler, !initiallyEnabled);
     }
 
     [Theory]
@@ -44,8 +44,8 @@ public class IntegrationActivityHandlerTests
         var handler = new AzureServiceBusActivityHandler();
 
         handler.ShouldListenTo("Azure.Messaging.ServiceBus", version: null).Should().BeTrue();
-        await AssertGeneratedSpan(handler, "Azure.Messaging.ServiceBus", nameof(IntegrationId.AzureServiceBus), IntegrationId.AzureServiceBus, initiallyEnabled);
-        await AssertGeneratedSpan(handler, "Azure.Messaging.ServiceBus", nameof(IntegrationId.AzureServiceBus), IntegrationId.AzureServiceBus, !initiallyEnabled);
+        await AssertAzureServiceBusGeneratedSpan(handler, initiallyEnabled);
+        await AssertAzureServiceBusGeneratedSpan(handler, !initiallyEnabled);
     }
 
     [Theory]
@@ -59,16 +59,11 @@ public class IntegrationActivityHandlerTests
         new QuartzActivityHandler().ShouldListenToOperationName(operationName).Should().Be(expected);
     }
 
-    private static async Task AssertGeneratedSpan(
-        IActivityHandler handler,
-        string sourceName,
-        string integrationName,
-        IntegrationId integrationId,
-        bool enabled)
+    private static async Task AssertQuartzGeneratedSpan(QuartzActivityHandler handler, bool enabled)
     {
         var settings = TracerSettings.Create(new()
         {
-            [string.Format(IntegrationSettings.IntegrationEnabledKey, integrationName.ToUpperInvariant())] = enabled,
+            [string.Format(IntegrationSettings.IntegrationEnabledKey, nameof(IntegrationId.Quartz).ToUpperInvariant())] = enabled,
         });
         var telemetry = new Mock<ITelemetryController>();
         telemetry.Setup(x => x.DisposeAsync()).Returns(Task.CompletedTask);
@@ -76,14 +71,42 @@ public class IntegrationActivityHandlerTests
         await using var tracer = TracerHelper.Create(settings, agentWriter: Mock.Of<IAgentWriter>(), telemetryController: telemetry.Object);
         TracerRestorerAttribute.SetTracer(tracer);
 
-        var activity = new SD.Activity(sourceName);
+        var activity = new SD.Activity("Quartz");
         activity.Start();
         var duckActivity = activity.DuckCast<IActivity5>();
 
-        handler.ActivityStarted(sourceName, duckActivity);
+        handler.ActivityStarted("Quartz", duckActivity);
         tracer.ActiveScope.Should().NotBeNull();
         var span = (Span)tracer.ActiveScope!.Span;
-        if (enabled && integrationId == IntegrationId.AzureServiceBus)
+        span.Tags.Should().BeOfType<OpenTelemetryTags>();
+
+        handler.ActivityStopped("Quartz", duckActivity);
+        activity.Stop();
+
+        span.GetTag(Trace.Tags.InstrumentationName).Should().Be(enabled ? "quartz" : null);
+        AssertGeneratedSpanTelemetry(telemetry, IntegrationId.Quartz, enabled);
+    }
+
+    private static async Task AssertAzureServiceBusGeneratedSpan(AzureServiceBusActivityHandler handler, bool enabled)
+    {
+        var settings = TracerSettings.Create(new()
+        {
+            [string.Format(IntegrationSettings.IntegrationEnabledKey, nameof(IntegrationId.AzureServiceBus).ToUpperInvariant())] = enabled,
+        });
+        var telemetry = new Mock<ITelemetryController>();
+        telemetry.Setup(x => x.DisposeAsync()).Returns(Task.CompletedTask);
+
+        await using var tracer = TracerHelper.Create(settings, agentWriter: Mock.Of<IAgentWriter>(), telemetryController: telemetry.Object);
+        TracerRestorerAttribute.SetTracer(tracer);
+
+        var activity = new SD.Activity("Azure.Messaging.ServiceBus");
+        activity.Start();
+        var duckActivity = activity.DuckCast<IActivity>();
+
+        handler.ActivityStarted("Azure.Messaging.ServiceBus", duckActivity);
+        tracer.ActiveScope.Should().NotBeNull();
+        var span = (Span)tracer.ActiveScope!.Span;
+        if (enabled)
         {
             span.Tags.Should().BeAssignableTo<AzureServiceBusTags>();
         }
@@ -92,19 +115,15 @@ public class IntegrationActivityHandlerTests
             span.Tags.Should().BeOfType<OpenTelemetryTags>();
         }
 
-        handler.ActivityStopped(sourceName, duckActivity);
         activity.Stop();
+        handler.ActivityStopped("Azure.Messaging.ServiceBus", duckActivity);
 
-        var expectedInstrumentationName = enabled
-                                              ? integrationId switch
-                                              {
-                                                  IntegrationId.Quartz => "quartz",
-                                                  IntegrationId.AzureServiceBus => nameof(IntegrationId.AzureServiceBus),
-                                                  _ => null,
-                                              }
-                                              : null;
-        span.GetTag(Trace.Tags.InstrumentationName).Should().Be(expectedInstrumentationName);
+        span.GetTag(Trace.Tags.InstrumentationName).Should().Be(enabled ? nameof(IntegrationId.AzureServiceBus) : null);
+        AssertGeneratedSpanTelemetry(telemetry, IntegrationId.AzureServiceBus, enabled);
+    }
 
+    private static void AssertGeneratedSpanTelemetry(Mock<ITelemetryController> telemetry, IntegrationId integrationId, bool enabled)
+    {
         var expectedIntegrationId = enabled ? integrationId : IntegrationId.OpenTelemetry;
         telemetry.Verify(x => x.IntegrationGeneratedSpan(expectedIntegrationId), Times.Once);
         telemetry.Verify(x => x.IntegrationGeneratedSpan(It.IsAny<IntegrationId>()), Times.Once);
