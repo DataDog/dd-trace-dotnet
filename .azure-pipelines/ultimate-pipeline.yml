@@ -3473,8 +3473,9 @@ stages:
               -e IncludeTestsRequiringDocker=false \
               -e Filter=$(IntegrationTestFilter) \
               -e SampleName=$(IntegrationTestSampleName) \
+              -e Area=$(area) \
               IntegrationTests.ARM64
-          displayName: docker-compose run --no-deps IntegrationTests
+          displayName: docker-compose run --no-deps IntegrationTests ($(area))
           env:
             DD_LOGGER_DD_API_KEY: $(ddApiKey)
             baseImage: $(baseImage) # for interpolation in the docker-compose file
@@ -3556,8 +3557,9 @@ stages:
               -e IncludeTestsRequiringDocker=true \
               -e Filter=$(IntegrationTestFilter) \
               -e SampleName=$(IntegrationTestSampleName) \
+              -e Area=$(area) \
               IntegrationTests.ARM64 \
-          displayName: docker-compose run IntegrationTests
+          displayName: docker-compose run IntegrationTests ($(area))
           env:
             DD_LOGGER_DD_API_KEY: $(ddApiKey)
             baseImage: $(baseImage) # for interpolation in the docker-compose file
