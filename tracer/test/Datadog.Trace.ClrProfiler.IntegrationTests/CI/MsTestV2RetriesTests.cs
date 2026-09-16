@@ -49,7 +49,8 @@ public class MsTestV2RetriesTests : TestingFrameworkRetriesTests
     [Trait("Category", "FlakyRetries")]
     public override Task<List<MockCIVisibilityTest>> FlakyRetries(string packageVersion)
     {
-        return base.FlakyRetries(packageVersion);
+        // Native retry scenarios share the assembly but have their own integration tests.
+        return FlakyRetriesWithArguments(packageVersion, "--TestCaseFilter:FullyQualifiedName~Samples.MSTestTestsRetries.TestSuite.");
     }
 
     [SkippableTheory]

@@ -8,7 +8,7 @@ using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace Samples.MSTestTestsNativeRetries;
+namespace Samples.MSTestTestsRetries.NativeRetries;
 
 #pragma warning disable MSTESTEXP // Custom retry policies are the contract exercised by this sample.
 

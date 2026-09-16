@@ -11,7 +11,7 @@ using Microsoft.Testing.Platform.Builder;
 using Microsoft.Testing.Platform.Extensions;
 using Microsoft.Testing.Platform.Extensions.Messages;
 
-namespace Samples.MSTestTestsNativeRetriesMtp;
+namespace Samples.MSTestTestsRetries.NativeRetries;
 
 public sealed class RetryReporter : IDataConsumer
 {

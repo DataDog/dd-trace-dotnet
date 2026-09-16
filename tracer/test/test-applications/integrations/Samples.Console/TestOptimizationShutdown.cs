@@ -1,20 +1,24 @@
-// <copyright file="Program.cs" company="Datadog">
+// <copyright file="TestOptimizationShutdown.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 using System.Reflection;
 
-namespace Samples.TestOptimizationShutdown;
+namespace Samples.Console_;
 
-internal static class Program
+internal static class TestOptimizationShutdown
 {
-    public static void Main(string[] args)
+    /// <summary>
+    /// Starts Test Optimization before any tracer access, then exercises the selected session shutdown path.
+    /// </summary>
+    public static void Run(string tracerPath, string shutdownTrigger)
     {
         // Load the full tracer without auto-instrumentation so the sample controls initialization order.
-        var tracerAssembly = Assembly.LoadFrom(args[0]);
-        var shutdownTrigger = args[1];
+        var tracerAssembly = Assembly.LoadFrom(tracerPath);
         var optimizationType = tracerAssembly.GetType("Datadog.Trace.Ci.TestOptimization", throwOnError: true)!;
         var instanceProperty = optimizationType.GetProperty("Instance")!;
         var optimization = instanceProperty.GetValue(null)!;
