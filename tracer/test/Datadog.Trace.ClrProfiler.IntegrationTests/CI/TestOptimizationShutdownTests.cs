@@ -23,7 +23,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI;
 [Trait("Category", "EndToEnd")]
 [Trait("Category", "TestIntegrations")]
 [Trait("RunOnWindows", "True")]
-public class TestOptimizationShutdownTests(ITestOutputHelper output) : TestingFrameworkEvpTest("TestOptimizationShutdown", output)
+public class TestOptimizationShutdownTests(ITestOutputHelper output) : TestingFrameworkEvpTest("Console", output)
 {
     [Theory]
     [InlineData("explicit-close")]
@@ -56,7 +56,7 @@ public class TestOptimizationShutdownTests(ITestOutputHelper output) : TestingFr
         };
 
         var tracerPath = Path.Combine(EnvironmentHelper.GetMonitoringHomePath(), EnvironmentHelper.IsCoreClr() ? "net6.0" : "net461", "Datadog.Trace.dll");
-        using var result = await RunSampleAndWaitForExit(agent, $"\"{tracerPath}\" {shutdownTrigger}");
+        using var result = await RunSampleAndWaitForExit(agent, $"test-optimization-shutdown \"{tracerPath}\" {shutdownTrigger}");
 
         sessions.Should().ContainSingle();
         var session = sessions.Single();

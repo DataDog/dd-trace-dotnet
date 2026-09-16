@@ -25,14 +25,25 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI;
 [Trait("Category", "EndToEnd")]
 [Trait("Category", "TestIntegrations")]
 [Trait("RunOnWindows", "True")]
-public class MsTestV2DiscoveryTests(ITestOutputHelper output) : TestingFrameworkEvpTest("MSTestTestsDiscovery", output)
+public class MsTestV2DiscoveryTests(ITestOutputHelper output) : TestingFrameworkEvpTest("MSTestTests", output)
 {
+    // Run three existing passing tests. Only SimplePassTest is known; the other two exercise EFD.
+    // Discovery must still count the entire assembly, including the tests excluded by this filter.
+    private const string PassingTestsFilter = "FullyQualifiedName=Samples.MSTestTests.TestSuite.SimplePassTest|" +
+                                              "FullyQualifiedName=Samples.MSTestTests.TestSuite.TraitPassTest|" +
+                                              "FullyQualifiedName=Samples.MSTestTests.TestSuite.UnskippableTest";
+
     public static IEnumerable<object[]> InputSources()
     {
-        foreach (var version in PackageVersions.MSTestDiscovery)
+        foreach (var version in PackageVersions.MSTest)
         {
             var packageVersion = (string)version[0];
-            yield return [packageVersion, "MSTestTestsDiscovery"];
+            if (packageVersion.Length > 0 && new Version(packageVersion) < new Version(4, 3, 3))
+            {
+                continue;
+            }
+
+            yield return [packageVersion, "MSTestTests"];
             // The second assembly is available at matching versions only in the versioned matrix.
             if (packageVersion.Length > 0 && PackageVersions.MSTest2.Any(other => (string)other[0] == packageVersion))
             {
@@ -43,27 +54,34 @@ public class MsTestV2DiscoveryTests(ITestOutputHelper output) : TestingFramework
 
     public static IEnumerable<object[]> DiscoveryScenarios()
     {
-        foreach (var version in PackageVersions.MSTestDiscovery)
+        // There are 21 discovered cases and two new tests among the three we run. Thresholds of
+        // 1%, 5%, and 10% allow zero, one, or both new tests to receive their two extra attempts.
+        foreach (var version in PackageVersions.MSTest)
         {
             var packageVersion = (string)version[0];
-            yield return [packageVersion, 20, 14, true, string.Empty, 10, false];
+            if (packageVersion.Length > 0 && new Version(packageVersion) < new Version(4, 3, 3))
+            {
+                continue;
+            }
+
+            yield return [packageVersion, 5, 5, true, PassingTestsFilter, 3, false];
             // Keep the pre-4.4 discovery regression; the remaining cases exercise the new async hook.
             if (packageVersion.Length > 0 && new Version(packageVersion) < new Version(4, 4))
             {
                 continue;
             }
 
-            yield return [packageVersion, 10, 12, true, string.Empty, 10, false];
-            yield return [packageVersion, 30, 16, false, string.Empty, 10, false];
-            yield return [packageVersion, 0, 16, false, string.Empty, 10, false];
-            yield return [packageVersion, 10, 3, false, "FullyQualifiedName~Case10", 1, false];
+            yield return [packageVersion, 1, 3, true, PassingTestsFilter, 3, false];
+            yield return [packageVersion, 10, 7, false, PassingTestsFilter, 3, false];
+            yield return [packageVersion, 0, 7, false, PassingTestsFilter, 3, false];
+            yield return [packageVersion, 5, 3, false, "FullyQualifiedName=Samples.MSTestTests.TestSuite.UnskippableTest", 1, false];
             yield return [packageVersion, 20, 0, false, "FullyQualifiedName~MissingTest", 0, false];
 #if NET8_0_OR_GREATER
-            yield return [packageVersion, 10, 12, true, string.Empty, 10, true];
-            yield return [packageVersion, 20, 14, true, string.Empty, 10, true];
-            yield return [packageVersion, 30, 16, false, string.Empty, 10, true];
-            yield return [packageVersion, 0, 16, false, string.Empty, 10, true];
-            yield return [packageVersion, 10, 3, false, "FullyQualifiedName~Case10", 1, true];
+            yield return [packageVersion, 1, 3, true, PassingTestsFilter, 3, true];
+            yield return [packageVersion, 5, 5, true, PassingTestsFilter, 3, true];
+            yield return [packageVersion, 10, 7, false, PassingTestsFilter, 3, true];
+            yield return [packageVersion, 0, 7, false, PassingTestsFilter, 3, true];
+            yield return [packageVersion, 5, 3, false, "FullyQualifiedName=Samples.MSTestTests.TestSuite.UnskippableTest", 1, true];
             yield return [packageVersion, 20, 0, false, "FullyQualifiedName~MissingTest", 0, true];
 #endif
         }
@@ -72,7 +90,12 @@ public class MsTestV2DiscoveryTests(ITestOutputHelper output) : TestingFramework
     [Theory]
     [MemberData(nameof(InputSources))]
     public Task InputSourcesPreserveTheDiscoveryThreshold(string packageVersion, string additionalSample)
-        => RunDiscoveryScenario(packageVersion, 20, 14, true, additionalSample == "MSTestTestsDiscovery" ? string.Empty : "FullyQualifiedName~Samples.MSTestTestsDiscovery", 10, useMtp: false, additionalSample: additionalSample);
+    {
+        // VSTest deduplicates a repeated source. With two assemblies, each executes three tests
+        // and retries one of them: both its 21-case and 20-case discovery totals allow one at 5%.
+        var repeatedSource = additionalSample == "MSTestTests";
+        return RunDiscoveryScenario(packageVersion, 5, repeatedSource ? 5 : 10, true, PassingTestsFilter, repeatedSource ? 3 : 6, useMtp: false, additionalSample: additionalSample);
+    }
 
     [Theory]
     [MemberData(nameof(DiscoveryScenarios))]
@@ -111,7 +134,8 @@ public class MsTestV2DiscoveryTests(ITestOutputHelper output) : TestingFramework
                 e.Value.Response = new MockTracerResponse(
                     """
                     {"data":{"type":"ci_app_libraries_tests","attributes":{"tests":{
-                      "Samples.MSTestTestsDiscovery":{"Samples.MSTestTestsDiscovery.TestSuite":["Case01","Case02","Case03","Case04","Case05","Case06","Case07"]}
+                      "Samples.MSTestTests":{"Samples.MSTestTests.TestSuite":["SimplePassTest"]},
+                      "Samples.MSTestTests2":{"Samples.MSTestTests.TestSuite":["SimplePassTest"]}
                     }}}}
                     """,
                     200);
@@ -147,7 +171,9 @@ public class MsTestV2DiscoveryTests(ITestOutputHelper output) : TestingFramework
 #endif
             using var result = await RunDotnetTestSampleAndWaitForExit(agent, arguments: arguments, packageVersion: packageVersion, expectedExitCode: useMtp && expectedTests == 0 ? 8 : 0, useDotnetExec: useMtp);
             tests.Should().HaveCount(expectedAttempts);
-            tests.Select(test => test.Meta[TestTags.Name]).Distinct().Should().HaveCount(expectedTests);
+            tests.GroupBy(test => test.Meta[TestTags.Bundle])
+                 .Sum(module => module.Select(test => test.Meta[TestTags.Name]).Distinct().Count())
+                 .Should().Be(expectedTests);
             if (expectedTests > 0)
             {
                 tests.Should().OnlyContain(test => test.Meta[TestTags.Status] == TestTags.StatusPass);

@@ -11,7 +11,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 [assembly: Parallelize(Workers = 2, Scope = ExecutionScope.MethodLevel)]
 
-namespace Samples.MSTestTestsNativeRetries;
+namespace Samples.MSTestTestsRetries.NativeRetries;
 
 [TestClass]
 public class TestSuite

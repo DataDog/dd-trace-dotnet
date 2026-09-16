@@ -717,37 +717,6 @@
     }]
   },
   {
-    "IntegrationName": "MSTestNativeRetries",
-    "SampleProjectName": "Samples.MSTestTestsNativeRetries",
-    "NugetPackageSearchName": "MSTest.TestFramework",
-    "MinVersion": "4.4.0",
-    "MaxVersionExclusive": "5.0.0",
-    "SpecificVersions": [
-      "4.4.0"
-    ]
-  },
-  {
-    "IntegrationName": "MSTestNativeRetriesMtp",
-    "SampleProjectName": "Samples.MSTestTestsNativeRetriesMtp",
-    "NugetPackageSearchName": "MSTest.TestFramework",
-    "MinVersion": "4.4.0",
-    "MaxVersionExclusive": "5.0.0",
-    "SpecificVersions": [
-      "4.4.0"
-    ]
-  },
-  {
-    "IntegrationName": "MSTestDiscovery",
-    "SampleProjectName": "Samples.MSTestTestsDiscovery",
-    "NugetPackageSearchName": "MSTest.TestFramework",
-    "MinVersion": "4.3.3",
-    "MaxVersionExclusive": "5.0.0",
-    "SpecificVersions": [
-      "4.3.3",
-      "4.4.0"
-    ]
-  },
-  {
     "IntegrationName": "Kafka",
     "SampleProjectName": "Samples.Kafka",
     "NugetPackageSearchName": "Confluent.Kafka",
