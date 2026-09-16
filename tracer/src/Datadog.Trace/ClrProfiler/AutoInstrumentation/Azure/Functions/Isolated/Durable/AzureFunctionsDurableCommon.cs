@@ -61,7 +61,13 @@ internal static class AzureFunctionsDurableCommon
             };
 
             var extractedContext = ExtractPropagatedContext(functionContext).MergeBaggageInto(Baggage.Current);
-            scope = tracer.StartActiveInternal(OperationName, parent: extractedContext.SpanContext, startTime: startTime, tags: tags);
+            ISpanContext? parentContext = extractedContext.SpanContext;
+            if (parentContext is null && extractedContext.Links is not null)
+            {
+                parentContext = SpanContext.None;
+            }
+
+            scope = tracer.StartActiveInternal(OperationName, parent: parentContext, startTime: startTime, tags: tags, links: extractedContext.Links);
             scope.Span.ResourceName = $"{triggerType} {functionContext.FunctionDefinition.Name}";
             scope.Span.Type = SpanType;
 
