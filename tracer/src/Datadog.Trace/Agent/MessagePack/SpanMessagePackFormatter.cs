@@ -80,6 +80,8 @@ namespace Datadog.Trace.Agent.MessagePack
         private static ReadOnlySpan<byte> LastParentIdBytes => "_dd.parent_id"u8; // Tags.LastParentId
         private static ReadOnlySpan<byte> BaseServiceNameBytes => "_dd.base_service"u8; // Tags.BaseService
         private static ReadOnlySpan<byte> ServiceNameSourceNameBytes => "_dd.svc_src"u8; // Tags.ServiceNameSource
+        private static ReadOnlySpan<byte> SdkOtlpExportNameBytes => "_dd.sdk.otlp_export"u8; // Tags.SdkOtlpExport
+        private static ReadOnlySpan<byte> SdkOtlpExportValueBytes => "false"u8;
 
         // numeric tags
         private static ReadOnlySpan<byte> MetricsBytes => "metrics"u8;
@@ -579,6 +581,13 @@ namespace Datadog.Trace.Agent.MessagePack
             count++;
             offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, LanguageNameBytes);
             offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, LanguageValueBytes);
+
+            // add "_dd.sdk.otlp_export=false" tag to all spans. Reaching this formatter means the span
+            // is being serialized with the native Datadog encoding, so OTLP export is not in use.
+            // The OTLP serializers write "true" instead (see OtlpMapper.EmitAttributesFromSpan).
+            count++;
+            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, SdkOtlpExportNameBytes);
+            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, SdkOtlpExportValueBytes);
 
             // add "version" tags to all spans whose service name is the default service name
             var serviceNameEqualsDefault = string.Equals(span.Context.ServiceName, model.TraceChunk.DefaultServiceName, StringComparison.OrdinalIgnoreCase);

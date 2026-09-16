@@ -234,6 +234,22 @@ internal static class OtlpMapper
             }
         }
 
+        // add "_dd.sdk.otlp_export=true" tag to all spans. Reaching this mapper means the span is
+        // being serialized with OTLP encoding. The MessagePack formatter writes "false" instead
+        // (see SpanMessagePackFormatter.WriteTags). Emitted regardless of semantics mode, since it
+        // describes the export mode rather than the span's semantic conventions.
+        // Ordered after the ffe_* enrichment so their reserved slots keep priority, but before the
+        // span tags below so a heavily-tagged span cannot spill the marker the trace intake reads.
+        if (count < limit)
+        {
+            writeKeyValue(ref state, new KeyValue(Trace.Tags.SdkOtlpExport, "true"));
+            count++;
+        }
+        else
+        {
+            droppedAttributesCount++;
+        }
+
         // Notes for later:
         // - Do we actually need to add _dd.base_service tag even though the OTLP span shares the same service name?
 
