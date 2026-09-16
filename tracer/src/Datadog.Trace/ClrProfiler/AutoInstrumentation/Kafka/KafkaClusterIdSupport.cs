@@ -42,7 +42,7 @@ internal static class KafkaClusterIdSupport
             var versionProperty = libraryType?.GetProperty("Version", BindingFlags.Public | BindingFlags.Static);
             if (versionProperty?.PropertyType != typeof(int) || versionProperty.GetValue(null) is not int nativeVersion)
             {
-                Log.Debug("Skipping Kafka cluster_id discovery: the loaded librdkafka version could not be read");
+                Log.Error("Unable to determine the loaded librdkafka version: expected Confluent.Kafka.Library.Version to be a public static Int32 property. Skipping Kafka cluster_id discovery");
                 return null;
             }
 
