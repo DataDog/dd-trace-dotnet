@@ -339,7 +339,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                                       "suite": "{{TestSuiteName}}",
                                       "name": "SimpleParameterizedTest",
                                       "parameters": "{{skippedRowParameters.Replace("\"", "\\\"")}}",
-                                      "_missing_line_code_coverage": false
+                                      "_is_missing_line_code_coverage": false
                                     }
                                   }
                                 ],
@@ -511,6 +511,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 
                         var testSuite = testSuites[0];
                         var testModule = testModules[0];
+
+                        ValidateTestSessionFingerprintInputs(testModule, testSuites, tests, sessionWorkingDirectory, gitRepositoryUrl);
 
                         // Check Suite
                         testSuites.Select(ts => ts.TestSuiteId)

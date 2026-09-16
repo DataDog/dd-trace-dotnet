@@ -27,8 +27,10 @@ internal static partial class ConfigurationKeys
         /// Configuration key for how long, in milliseconds, provider initialization waits for the first
         /// flag configuration to arrive before returning.
         /// Default value is <c>30000</c> (30 seconds), matching the other tracers.
-        /// Initialization does not fail when the timeout expires: the provider stays not-ready, evaluations
-        /// return the caller's default value, and the provider becomes ready when configuration arrives.
+        /// Initialization does not fail when the timeout expires: it returns, and evaluations return the
+        /// caller's default value until the configuration arrives.
+        /// The application is blocked for up to this long, because the OpenFeature SDK awaits provider
+        /// initialization, so keep it below the budget the application's readiness probe allows.
         /// </summary>
         public const string FlaggingProviderInitializationTimeoutMs = "DD_EXPERIMENTAL_FLAGGING_PROVIDER_INITIALIZATION_TIMEOUT_MS";
 
