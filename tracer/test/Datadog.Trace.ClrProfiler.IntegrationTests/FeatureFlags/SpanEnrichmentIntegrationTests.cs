@@ -202,7 +202,9 @@ public class SpanEnrichmentIntegrationTests : TestHelper
     private async Task<string> RunTest(MockTracerAgent agent, bool spanEnrichmentEnabled)
     {
         SetEnvironmentVariable(ConfigurationKeys.Rcm.PollInterval, "0.5");
+#pragma warning disable 618 // superseded, but still honoured for existing adopters
         SetEnvironmentVariable(ConfigurationKeys.FeatureFlags.FlaggingProviderEnabled, "1");
+#pragma warning restore 618
         SetEnvironmentVariable(ConfigurationKeys.FeatureFlags.SpanEnrichmentEnabled, spanEnrichmentEnabled ? "1" : "0");
 
         using var telemetry = this.ConfigureTelemetry();

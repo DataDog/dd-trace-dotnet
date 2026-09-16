@@ -1451,7 +1451,7 @@ namespace Datadog.Trace.DuckTyping
                 [MethodImpl(MethodImplOptions.AggressiveInlining)]
                 get
                 {
-                    _exceptionInfo?.Throw();
+                    ThrowCachedException();
                     return _proxyType;
                 }
             }
@@ -1517,8 +1517,35 @@ namespace Datadog.Trace.DuckTyping
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             private T? ThrowOnError<T>(object? instance)
             {
-                _exceptionInfo?.Throw();
+                ThrowCachedException();
                 return default;
+            }
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            private void ThrowCachedException()
+            {
+                var exceptionInfo = _exceptionInfo;
+                if (exceptionInfo is null)
+                {
+                    return;
+                }
+
+#if NET6_0_OR_GREATER
+                exceptionInfo.Throw();
+#else
+                // WORKAROUND: https://github.com/dotnet/runtime/issues/45929
+                // Fixed in the runtime by https://github.com/dotnet/runtime/pull/46636.
+                //
+                // Failed proxy creations are cached, so every caller for the same proxy/target type pair receives
+                // the same ExceptionDispatchInfo and therefore the same Exception instance. Windows CoreCLR
+                // versions before .NET 6 have a confirmed race when that instance is rethrown concurrently,
+                // which can cause a crash.
+                //
+                // Instead, make a shallow copy of the cached DuckTypeException and capture that copy immediately
+                // before every throw. MemberwiseClone preserves the exact internal details, so concurrent
+                // throws no longer cause a crash. Fixed in .NET 6+.
+                ExceptionDispatchInfo.Capture(((DuckTypeException)exceptionInfo.SourceException).CloneForThrow()).Throw();
+#endif
             }
         }
 

@@ -28,6 +28,16 @@ public class TestSuite
     }
 
     [Test]
+    public void AlwaysFailsWithAssertions()
+    {
+        Assert.Multiple(() =>
+        {
+            Assert.That(false, Is.True, "First failing assertion");
+            Assert.That(false, Is.True, "Second failing assertion");
+        });
+    }
+
+    [Test]
     public void TrueAtLastRetry()
     {
         if (Interlocked.Increment(ref _trueAtLastRetryCount) != _retryCount)
