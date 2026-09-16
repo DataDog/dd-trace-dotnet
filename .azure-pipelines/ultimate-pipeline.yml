@@ -3342,7 +3342,6 @@ stages:
       parameters:
         build: true
         target: builder
-        # ubuntu (frozen glibc-2.17 sysroot) — same as asan_profiler_tests above
         baseImage: ubuntu
         useNativeSdkVersion: true
         command: "BuildProfilerUbsanTest -Framework net7.0"
@@ -3362,7 +3361,6 @@ stages:
     - template: steps/run-in-docker.yml
       parameters:
         target: builder
-        # ubuntu (frozen glibc-2.17 sysroot) to match the build step above
         baseImage: ubuntu
         useNativeSdkVersion: true
         command: "RunSampleWithProfilerUbsan -Framework net7.0"
@@ -3411,7 +3409,6 @@ stages:
       parameters:
         build: true
         target: builder
-        # ubuntu (frozen glibc-2.17 sysroot) — same as asan_profiler_tests above
         baseImage: ubuntu
         useNativeSdkVersion: true
         command: "BuildProfilerTsanTest RunUnitTestsWithTsanLinux -Framework net7.0"
