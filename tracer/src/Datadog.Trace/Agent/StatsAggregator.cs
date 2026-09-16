@@ -157,14 +157,14 @@ namespace Datadog.Trace.Agent
                 }
             });
 
+            var initialTimestampNs = DateTimeOffset.UtcNow.ToUnixTimeNanoseconds();
             for (int i = 0; i < _buffers.Length; i++)
             {
-                _buffers[i] = new(header, new(settings), new(TelemetryFactory.Metrics));
-            }
-
-            if (_isOtlp)
-            {
-                _buffers[_currentBuffer].SetStartTime(DateTimeOffset.UtcNow.ToUnixTimeNanoseconds());
+                var cardinalityLimiter = new StatsCardinalityLimiter(settings);
+                var cardinalityReporter = new StatsCardinalityReporter(TelemetryFactory.Metrics);
+                _buffers[i] = _isOtlp
+                                  ? new StatsBuffer.OtlpStatsBuffer(header, cardinalityLimiter, cardinalityReporter, initialTimestampNs)
+                                  : new StatsBuffer.DatadogStatsBuffer(header, cardinalityLimiter, cardinalityReporter, initialTimestampNs);
             }
 
             _flushTask = Task.Run(Flush);
@@ -672,18 +672,12 @@ namespace Datadog.Trace.Agent
 
                 var buffer = CurrentBuffer;
                 var nextBufferIndex = (_currentBuffer + 1) % BufferCount;
-                var statsDurationNs = bucketDurationNs;
+                long statsDurationNs;
 
                 lock (_buffers)
                 {
-                    if (_isOtlp)
-                    {
-                        // Keep the delta interval valid if the wall clock moves backwards.
-                        var boundaryNs = Math.Max(buffer.Start + 1, DateTimeOffset.UtcNow.ToUnixTimeNanoseconds());
-                        statsDurationNs = boundaryNs - buffer.Start;
-                        _buffers[nextBufferIndex].SetStartTime(boundaryNs);
-                    }
-
+                    var boundaryNs = DateTimeOffset.UtcNow.ToUnixTimeNanoseconds();
+                    statsDurationNs = buffer.CloseWindow(_buffers[nextBufferIndex], boundaryNs, bucketDurationNs);
                     _currentBuffer = nextBufferIndex;
                 }
 
@@ -703,10 +697,6 @@ namespace Datadog.Trace.Agent
                 }
 
                 buffer.Reset();
-                if (!_isOtlp)
-                {
-                    buffer.SetMinStartTime();
-                }
             }
             while (!_processExit.Task.IsCompleted);
         }

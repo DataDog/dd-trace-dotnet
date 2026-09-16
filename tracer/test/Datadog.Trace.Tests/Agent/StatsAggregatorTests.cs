@@ -130,7 +130,7 @@ namespace Datadog.Trace.Tests.Agent
         }
 
         [Fact]
-        public async Task IdleFlush_StillResetsStartTimestamp()
+        public async Task IdleFlush_StillAdvancesStartAndResetsBuffer()
         {
             var api = new Mock<IApi>();
             var aggregator = new StatsAggregator(api.Object, GetSettings(), new StubDiscoveryService(), Mock.Of<IStatsdManager>(), isOtlp: false);
@@ -141,22 +141,15 @@ namespace Datadog.Trace.Tests.Agent
             await aggregator.Flush();
             api.Reset();
 
-            // Record the Start timestamp after the first flush (buffer was swapped, so
-            // the "current" buffer is the one that will receive new spans next).
-            var buffer = aggregator.CurrentBuffer;
-            var startAfterFirstFlush = buffer.Start;
+            var bufferAfterFirstFlush = aggregator.CurrentBuffer;
+            var startAfterFirstFlush = bufferAfterFirstFlush.Start;
 
-            // Flush with no new spans — no API call, but Reset must still run to
-            // re-align Start and prune stale keys.
+            // Flush with no new spans. The next window must still advance and the flushed
+            // buffer must still be reset so stale keys are pruned.
             await aggregator.Flush();
 
-            // The buffer has been swapped again; grab the one that was just flushed.
-            // After the second flush, the buffer that was "current" has been reset.
-            // Its Start should have been updated (re-aligned to the current 10s boundary).
-            // Because at least a few nanoseconds have elapsed, or at the very least the
-            // stale keys from the first flush should have been pruned.
-            buffer.Start.Should().BeGreaterOrEqualTo(startAfterFirstFlush);
-            buffer.Buckets.Should().BeEmpty("stale keys with zero hits should be pruned by Reset");
+            aggregator.CurrentBuffer.Start.Should().BeGreaterOrEqualTo(startAfterFirstFlush);
+            bufferAfterFirstFlush.Buckets.Should().BeEmpty("stale keys with zero hits should be pruned by Reset");
         }
 
         [Fact]

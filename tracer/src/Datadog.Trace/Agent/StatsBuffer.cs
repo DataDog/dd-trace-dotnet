@@ -12,19 +12,19 @@ using Datadog.Trace.Vendors.MessagePack;
 
 namespace Datadog.Trace.Agent
 {
-    internal sealed class StatsBuffer
+    internal abstract class StatsBuffer
     {
         private readonly List<StatsAggregationKey> _keysToRemove;
 
-        public StatsBuffer(ClientStatsPayload header, StatsCardinalityLimiter cardinalityLimiter, StatsCardinalityReporter cardinalityReporter)
+        protected StatsBuffer(ClientStatsPayload header, StatsCardinalityLimiter cardinalityLimiter, StatsCardinalityReporter cardinalityReporter, long start)
         {
             Header = header;
             CardinalityLimiter = cardinalityLimiter;
             _keysToRemove = new();
             Buckets = new();
             CardinalityReporter = cardinalityReporter;
+            Start = start;
             Reset();
-            SetMinStartTime();
         }
 
         public Dictionary<StatsAggregationKey, StatsBucket> Buckets { get; }
@@ -144,15 +144,6 @@ namespace Datadog.Trace.Agent
             CardinalityReporter.Reset();
         }
 
-        public void SetMinStartTime(long minimumStart = 0)
-        {
-            // Align to 10-second boundary to match the Go tracer's alignTs: ts - ts % bucketSize
-            var nowNs = DateTimeOffset.UtcNow.ToUnixTimeNanoseconds();
-            Start = Math.Max(minimumStart, nowNs - (nowNs % 10_000_000_000));
-        }
-
-        public void SetStartTime(long start) => Start = start;
-
         public void Serialize(Stream stream, long bucketDuration)
         {
             var count = 10; // Base: Hostname, Env, Version, Stats, Lang, TracerVersion, RuntimeID, Sequence, Service, TracerDdTags
@@ -228,6 +219,13 @@ namespace Datadog.Trace.Agent
                 MessagePackBinary.WriteString(stream, details.GitCommitSha);
             }
         }
+
+        /// <summary>
+        /// Closes this window, initializes the next buffer, and returns the export duration.
+        /// </summary>
+        internal abstract long CloseWindow(StatsBuffer nextBuffer, long boundaryNs, long configuredDurationNs);
+
+        protected static void SetStart(StatsBuffer buffer, long start) => buffer.Start = start;
 
         private static void SerializeBucket(Stream stream, StatsBucket bucket)
         {
@@ -358,6 +356,39 @@ namespace Datadog.Trace.Agent
                 {
                     SerializeBucket(stream, bucket);
                 }
+            }
+        }
+
+        internal sealed class DatadogStatsBuffer : StatsBuffer
+        {
+            private const long AlignmentNs = 10_000_000_000;
+
+            public DatadogStatsBuffer(ClientStatsPayload header, StatsCardinalityLimiter cardinalityLimiter, StatsCardinalityReporter cardinalityReporter, long initialTimestampNs)
+                : base(header, cardinalityLimiter, cardinalityReporter, Align(initialTimestampNs))
+            {
+            }
+
+            internal override long CloseWindow(StatsBuffer nextBuffer, long boundaryNs, long configuredDurationNs)
+            {
+                SetStart(nextBuffer, Align(boundaryNs));
+                return configuredDurationNs;
+            }
+
+            private static long Align(long timestampNs) => timestampNs - (timestampNs % AlignmentNs);
+        }
+
+        internal sealed class OtlpStatsBuffer : StatsBuffer
+        {
+            public OtlpStatsBuffer(ClientStatsPayload header, StatsCardinalityLimiter cardinalityLimiter, StatsCardinalityReporter cardinalityReporter, long initialTimestampNs)
+                : base(header, cardinalityLimiter, cardinalityReporter, initialTimestampNs)
+            {
+            }
+
+            internal override long CloseWindow(StatsBuffer nextBuffer, long boundaryNs, long configuredDurationNs)
+            {
+                var endNs = Math.Max(Start + 1, boundaryNs);
+                SetStart(nextBuffer, endNs);
+                return endNs - Start;
             }
         }
     }
