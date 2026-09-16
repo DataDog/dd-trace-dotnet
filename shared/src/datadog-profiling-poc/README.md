@@ -45,39 +45,62 @@ this library a completely different way:
   project's own `AdditionalIncludeDirectories` was extended with
   `shared\src\datadog-profiling-poc\include` so `FfiHelper.h`'s
   `#include "datadog_poc/common.h"` (and this library's own internal
-  includes) resolve. Being a *static* lib, it doesn't need curl/zstd/its own
-  symbols resolved at this stage - unresolved externals here are normal and
-  get resolved later, at whichever project finally links this static lib in
-  (`Datadog.Profiler.Native.Windows.vcxproj`'s DLL, or
-  `Datadog.Profiler.Native.Tests.vcxproj`'s test exe - both already
-  `ProjectReference` it).
-- curl/zstd themselves are declared in the **root** `vcpkg.json` (alongside
-  the existing `libdatadog` entry) - not a manifest local to this directory,
-  since `VcpkgEnableManifest` (set repo-wide in `profiler/Directory.Build.props`)
-  auto-discovers the nearest `vcpkg.json` by walking up from each project
-  file, and the root one is the only one any actual `.vcxproj` will ever find.
-  Pinned via `builtin-baseline` + `overrides` (both including an explicit
-  `port-version` - vcpkg's version files can carry more than one port-version
-  per version string, and omitting it silently defaults to 0, which isn't
-  always the one that exists) to **the exact same curl 8.19.0 / zstd 1.5.7**
-  vendored on the Linux/CMake side above - bump both together if you ever
-  bump one. Note curl is deliberately *not* on the latest available version
-  (8.22.0): curl's own `cmake_minimum_required` jumped from a `3.7...3.16`
-  range to a flat `3.18` starting at 8.20.0, and this repo's CI pins CMake
-  3.13.4 - 8.19.0 is the newest release still building under that. This is
-  exactly the mechanism that already
-  resolves real libdatadog's headers/lib with zero explicit
-  `AdditionalIncludeDirectories`/`AdditionalDependencies` anywhere in this
-  repo's `.vcxproj`/`.props`/`.targets` files (confirmed by their absence) -
-  curl/zstd get the same automatic treatment once declared.
+  includes) resolve.
+- **No vcpkg, no CMake, and no libcurl at all on Windows** - deliberately.
+  This repo's Windows CI machines have vcpkg pre-installed at a fixed,
+  frozen version outside this repo's control (not bootstrapped by the Nuke
+  targets that download a fresh copy for other platforms/local dev) - its
+  bundled registry snapshot caps out at ancient package versions (curl
+  ~7.6x-8.11 depending on exactly which snapshot), with no way to get newer
+  packages through it without touching CI machine provisioning, which is
+  out of scope here. Rather than fight that, Windows sources its two
+  dependencies differently from Linux entirely:
+  - **zstd**: `vendor/zstd/{zstd.c,zstd.h,zstd_errors.h}` is zstd's own
+    official single-file amalgamation (generated via zstd's
+    `build/single_file_libs/create_single_file_library.sh` at the same
+    1.5.7 pinned on the Linux/CMake side - regenerate from that script if
+    ever bumping the version, and bump both platforms together). Verified
+    correct via zstd's own `build_library_test.sh` roundtrip test, not just
+    by generating it. `zstd.c` is compiled as one more `<ClCompile>` item
+    right alongside this library's own files; `vendor\zstd` was added to
+    `AdditionalIncludeDirectories` so `zstd_compress.c`'s `#include <zstd.h>`
+    resolves. Linux is unaffected - it still vendors zstd via CMake
+    `FetchContent` as before; this amalgamation exists only for Windows.
+  - **HTTP transport**: `exporter_win.c` reimplements the same
+    `ddog_prof_exporter_*` functions as `exporter.c` (the Linux/libcurl
+    version) using WinHTTP instead - `winhttp.lib`/`winhttp.dll` ship with
+    every Windows install since XP, and Microsoft documents WinHTTP (not
+    WinINet) as the recommended choice for services/non-interactive
+    processes, which matches how this library gets loaded into arbitrary
+    customer processes. No libcurl anywhere on Windows as a result. Linked
+    via `#pragma comment(lib, "winhttp.lib")` inside `exporter_win.c`
+    itself, so no `AdditionalDependencies` edit was needed. The multipart
+    body framing is hand-rolled to byte-for-byte match what `exporter.c`
+    produces via libcurl's `curl_mime_*` (including falling back to
+    `application/octet-stream` for the profile part, matching libcurl's own
+    default when no type is set and the filename's extension isn't
+    recognized), so the Agent/`MockDatadogAgent` see identical wire bytes
+    regardless of platform. `exporter.c` and `exporter_win.c` intentionally
+    duplicate a handful of portable helpers (event.json building, tag
+    string building, RFC3339 formatting) rather than share them, to avoid
+    touching the already-tested `exporter.c`.
+  - The root `vcpkg.json` now declares only `libdatadog` (resolved via its
+    overlay port, unaffected by any of the above) - the `curl`/`zstd`
+    entries and their version `overrides` that an earlier iteration of this
+    work added have been removed as unnecessary.
 
-**Caveat, stated plainly: none of the Windows-side changes above have been
-compile-tested.** This session has no Windows environment and no vcpkg
-installed to verify against - the design is based on reading this repo's
-actual `.vcxproj`/`Directory.Build.props`/`.targets` files closely and
-matching their existing, working patterns (especially how real libdatadog
-itself is wired with almost no explicit project configuration), not on a
-green build. The first real signal will be the next Windows CI run.
+**Caveat, stated plainly:** this session has no Windows environment to
+compile-test against, but the Windows-only pieces above (`exporter_win.c`,
+the vendored `zstd.c`) were cross-compiled and linked into a real PE32+ DLL
+using a MinGW-w64 toolchain and its bundled `winhttp.h`/`libwinhttp.a` against
+every other `.c` file in this library, with zero missing symbols - stronger
+signal than a docs-only review, though still not the real MSVC toolchain.
+The WinHTTP API usage itself (whole-body-in-one-call via `WinHttpSendRequest`,
+`WinHttpCrackUrl` for URL parsing, the services-safety recommendation) is
+sourced from Microsoft's own current documentation, not from memory. The vcxproj
+edits (`<ClCompile>`/`AdditionalIncludeDirectories` entries) are unverified
+beyond visual inspection - the first real signal will be the next Windows CI
+run.
 
 `build/manual_smoke` is a standalone driver (mirrors libdatadog's own
 `examples/ffi/profiles.c`) that creates a profile, adds a couple of synthetic

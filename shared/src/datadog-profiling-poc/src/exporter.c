@@ -1,3 +1,6 @@
+// Linux implementation of the exporter API, using libcurl. See
+// exporter_win.c for the Windows counterpart (WinHTTP - no libcurl there).
+
 #include "datadog_poc/profiling.h"
 #include "encoded_profile.h"
 #include "internal.h"
