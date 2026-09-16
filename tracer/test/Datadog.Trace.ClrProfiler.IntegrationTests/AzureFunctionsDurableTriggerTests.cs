@@ -30,8 +30,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests;
 [Trait("Category", "ArmUnsupported")]
 public class AzureFunctionsDurableTriggerTests : AzureFunctionsTests
 {
-    private const int ExpectedDurableSpanCount = 7;
+    private const int ExpectedDurableSpanCount = 8;
     private const string ExpectedFailureMessage = "Unable to greet World.";
+    private const string ExpectedImmediateFailureMessage = "Unable to start orchestration.";
     private const string ManualActivitySpanName = "Manual inside DurableActivity";
     private const string LocalDurableTaskSchedulerConnectionString = "Endpoint=http://localhost:8080;TaskHub=default;Authentication=None";
     private const string AzuriteAccountKey = "Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==";
@@ -43,6 +44,7 @@ public class AzureFunctionsDurableTriggerTests : AzureFunctionsTests
         ManualActivitySpanName,
         "DurableOrchestration FailingDurableWorkflow",
         "DurableActivity FailingDurableActivity",
+        "DurableOrchestration ImmediatelyFailingDurableWorkflow",
     ];
 
     public AzureFunctionsDurableTriggerTests(ITestOutputHelper output)
@@ -55,7 +57,6 @@ public class AzureFunctionsDurableTriggerTests : AzureFunctionsTests
         SetEnvironmentVariable("DURABLE_TASK_SCHEDULER_CONNECTION_STRING", GetDurableTaskSchedulerConnectionString());
         SetEnvironmentVariable("TASKHUB_NAME", "default");
         SetEnvironmentVariable("DD_TRACE_OTEL_ENABLED", "false");
-        SetEnvironmentVariable("DD_TRACE_SAMPLE_RATE", "1");
     }
 
     private static int ExpectedFuncKillExitCode
@@ -109,6 +110,11 @@ public class AzureFunctionsDurableTriggerTests : AzureFunctionsTests
                  .OnlyContain(s => s.TraceId == failedOrchestrationSpan.TraceId)
                  .And
                  .OnlyContain(s => HasPositiveSamplingPriority(s));
+
+            var immediatelyFailedOrchestrationSpan = spans.Should().ContainSingle(s => s.Resource == "DurableOrchestration ImmediatelyFailingDurableWorkflow").Subject;
+            immediatelyFailedOrchestrationSpan.Error.Should().Be(1);
+            immediatelyFailedOrchestrationSpan.Tags.Should().ContainKey(Tags.ErrorMsg).WhoseValue.Should().Contain(ExpectedImmediateFailureMessage);
+            HasPositiveSamplingPriority(immediatelyFailedOrchestrationSpan).Should().BeTrue();
 
             await AssertIsolatedSpans(
                 spans,

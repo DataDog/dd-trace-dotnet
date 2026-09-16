@@ -38,6 +38,7 @@ public class DurableFunctions
             [
                 await client.ScheduleNewOrchestrationInstanceAsync(nameof(DurableWorkflow)),
                 await client.ScheduleNewOrchestrationInstanceAsync(nameof(FailingDurableWorkflow)),
+                await client.ScheduleNewOrchestrationInstanceAsync(nameof(ImmediatelyFailingDurableWorkflow)),
             ];
 
             var response = request.CreateResponse(HttpStatusCode.Accepted);
@@ -69,6 +70,10 @@ public class DurableFunctions
     [Function(nameof(FailingDurableWorkflow))]
     public static async Task<string> FailingDurableWorkflow([OrchestrationTrigger] TaskOrchestrationContext context)
         => await context.CallActivityAsync<string>(nameof(FailingDurableActivity), "World");
+
+    [Function(nameof(ImmediatelyFailingDurableWorkflow))]
+    public static Task<string> ImmediatelyFailingDurableWorkflow([OrchestrationTrigger] TaskOrchestrationContext context)
+        => Task.FromException<string>(new InvalidOperationException("Unable to start orchestration."));
 
     [Function(nameof(FailingDurableActivity))]
     public static string FailingDurableActivity([ActivityTrigger] string name)
