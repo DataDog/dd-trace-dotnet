@@ -378,6 +378,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                         Assert.Single(testModules);
                         var testModule = testModules[0];
 
+                        ValidateTestSessionFingerprintInputs(testModule, testSuites, tests, sessionWorkingDirectory, gitRepositoryUrl);
+
                         // Check suites
                         Assert.True(tests.All(t => testSuites.Find(s => s.TestSuiteId == t.TestSuiteId) != null));
                         Assert.True(tests.All(t => t.TestModuleId == testModule.TestModuleId));
