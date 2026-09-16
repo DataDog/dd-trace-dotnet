@@ -17,6 +17,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI;
 [Collection(nameof(TransportTestsCollection))]
 public class MsTestV2RetriesTests : TestingFrameworkRetriesTests
 {
+    // Native retry scenarios share the assembly but have their own integration tests.
+    private const string TestSuiteFilter = "--TestCaseFilter:FullyQualifiedName~Samples.MSTestTestsRetries.TestSuite.";
+
     public MsTestV2RetriesTests(ITestOutputHelper output)
         : base("MSTestTestsRetries", output)
     {
@@ -49,8 +52,7 @@ public class MsTestV2RetriesTests : TestingFrameworkRetriesTests
     [Trait("Category", "FlakyRetries")]
     public override Task<List<MockCIVisibilityTest>> FlakyRetries(string packageVersion)
     {
-        // Native retry scenarios share the assembly but have their own integration tests.
-        return FlakyRetriesWithArguments(packageVersion, "--TestCaseFilter:FullyQualifiedName~Samples.MSTestTestsRetries.TestSuite.");
+        return FlakyRetriesWithArguments(packageVersion, TestSuiteFilter);
     }
 
     [SkippableTheory]
@@ -66,7 +68,7 @@ public class MsTestV2RetriesTests : TestingFrameworkRetriesTests
 
     // Quarantine must not depend on the runner treating Inconclusive as a non-blocking outcome.
     protected override string GetTestRunnerArguments(string packageVersion, bool useDotnetExec)
-        => "-- MSTest.MapInconclusiveToFailed=true";
+        => TestSuiteFilter + " -- MSTest.MapInconclusiveToFailed=true";
 }
 
 #endif
