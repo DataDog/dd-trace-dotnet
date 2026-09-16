@@ -87,6 +87,10 @@ endif()
 # would make the dynamic loader silently resolve both to whichever one it
 # finds first.
 file(GLOB POC_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/src/*.c")
+# exporter_win.c is the WinHTTP-based Windows counterpart to exporter.c (see
+# both files) - compiled directly into the Windows .vcxproj instead, never
+# through this CMakeLists.txt (see README "Windows").
+list(REMOVE_ITEM POC_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/src/exporter_win.c")
 add_library(datadog_profiling_poc SHARED ${POC_SOURCES})
 target_include_directories(datadog_profiling_poc PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 target_link_libraries(datadog_profiling_poc PRIVATE CURL::libcurl libzstd_static)
