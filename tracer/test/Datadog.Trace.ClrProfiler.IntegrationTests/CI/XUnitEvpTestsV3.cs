@@ -12,6 +12,7 @@ using System.Threading.Tasks;
 using Datadog.Trace.Ci.Ipc;
 using Datadog.Trace.Ci.Ipc.Messages;
 using Datadog.Trace.Ci.Tags;
+using Datadog.Trace.ClrProfiler.IntegrationTests.Helpers;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Telemetry;
@@ -607,13 +608,19 @@ public class XUnitEvpTestsV3 : TestingFrameworkEvpTest
                        .And.OnlyContain(x => HasCorrectCompressionTag(x.Tags, expectedGzip));
     }
 
-    [SkippableFact]
+    [SkippableTheory]
+    [CombinatorialOrPairwiseData]
     [Trait("Category", "EndToEnd")]
     [Trait("Category", "TestIntegrations")]
-    public Task SubmitTracesWithVSTestAdapterV3_4X()
+    public Task SubmitTracesWithVSTestAdapterV3_4X(
+        [PackageVersionData(nameof(PackageVersions.XUnitV3), minInclusive: "4.0.0")] string packageVersion)
     {
+        // DEFAULT_SAMPLES builds (Visual Studio, TestAllPackageVersions=false) only have the sample's
+        // default 3.x version, which this 4.x-only scenario can't run against.
+        Skip.If(string.IsNullOrEmpty(packageVersion), "Requires the xUnit v3 4.x package-version sample");
+
         return ExecuteTestAsync(
-            "4.0.0",
+            packageVersion,
             "evp_proxy/v4",
             expectedGzip: false,
             new TestScenario(
@@ -631,11 +638,17 @@ public class XUnitEvpTestsV3 : TestingFrameworkEvpTest
                 useDotnetExec: false));
     }
 
-    [SkippableFact]
+    [SkippableTheory]
+    [CombinatorialOrPairwiseData]
     [Trait("Category", "EndToEnd")]
     [Trait("Category", "TestIntegrations")]
-    public async Task SubmitCodeCoverageWithVSTestAdapterV3_4X()
+    public async Task SubmitCodeCoverageWithVSTestAdapterV3_4X(
+        [PackageVersionData(nameof(PackageVersions.XUnitV3), minInclusive: "4.0.0")] string packageVersion)
     {
+        // DEFAULT_SAMPLES builds (Visual Studio, TestAllPackageVersions=false) only have the sample's
+        // default 3.x version, which this 4.x-only scenario can't run against.
+        Skip.If(string.IsNullOrEmpty(packageVersion), "Requires the xUnit v3 4.x package-version sample");
+
         InjectSession(
             out var sessionId,
             out _,
@@ -668,18 +681,24 @@ public class XUnitEvpTestsV3 : TestingFrameworkEvpTest
         using var processResult = await RunDotnetTestSampleAndWaitForExit(
                                       agent,
                                       arguments: "--collect:\"XPlat Code Coverage\" --TestCaseFilter:FullyQualifiedName~Samples.XUnitTestsV3.",
-                                      packageVersion: "4.0.0",
+                                      packageVersion: packageVersion,
                                       expectedExitCode: 1,
                                       useDotnetExec: false);
 
         Volatile.Read(ref coverageReceived).Should().Be(1);
     }
 
-    [SkippableFact]
+    [SkippableTheory]
+    [CombinatorialOrPairwiseData]
     [Trait("Category", "EndToEnd")]
     [Trait("Category", "TestIntegrations")]
-    public Task SubmitTracesWithForcedRunV3_4X()
+    public Task SubmitTracesWithForcedRunV3_4X(
+        [PackageVersionData(nameof(PackageVersions.XUnitV3), minInclusive: "4.0.0")] string packageVersion)
     {
+        // DEFAULT_SAMPLES builds (Visual Studio, TestAllPackageVersions=false) only have the sample's
+        // default 3.x version, which this 4.x-only scenario can't run against.
+        Skip.If(string.IsNullOrEmpty(packageVersion), "Requires the xUnit v3 4.x package-version sample");
+
         const string skippableTestsJson = """
                                               {
                                                   "data": [
@@ -700,7 +719,7 @@ public class XUnitEvpTestsV3 : TestingFrameworkEvpTest
                                               """;
 
         return ExecuteTestAsync(
-            "4.0.0",
+            packageVersion,
             "evp_proxy/v4",
             expectedGzip: false,
             new TestScenario(
@@ -724,11 +743,17 @@ public class XUnitEvpTestsV3 : TestingFrameworkEvpTest
                 useDotnetExec: true));
     }
 
-    [SkippableFact]
+    [SkippableTheory]
+    [CombinatorialOrPairwiseData]
     [Trait("Category", "EndToEnd")]
     [Trait("Category", "TestIntegrations")]
-    public Task SubmitTracesWithDisabledTestV3_4X()
+    public Task SubmitTracesWithDisabledTestV3_4X(
+        [PackageVersionData(nameof(PackageVersions.XUnitV3), minInclusive: "4.0.0")] string packageVersion)
     {
+        // DEFAULT_SAMPLES builds (Visual Studio, TestAllPackageVersions=false) only have the sample's
+        // default 3.x version, which this 4.x-only scenario can't run against.
+        Skip.If(string.IsNullOrEmpty(packageVersion), "Requires the xUnit v3 4.x package-version sample");
+
         const string testManagementTestsJson = """
                                                      {
                                                          "data": {
@@ -756,7 +781,7 @@ public class XUnitEvpTestsV3 : TestingFrameworkEvpTest
                                                      """;
 
         return ExecuteTestAsync(
-            "4.0.0",
+            packageVersion,
             "evp_proxy/v4",
             expectedGzip: false,
             new TestScenario(
@@ -779,11 +804,17 @@ public class XUnitEvpTestsV3 : TestingFrameworkEvpTest
                 useDotnetExec: true));
     }
 
-    [SkippableFact]
+    [SkippableTheory]
+    [CombinatorialOrPairwiseData]
     [Trait("Category", "EndToEnd")]
     [Trait("Category", "TestIntegrations")]
-    public Task SubmitTracesWithItrSkipV3_4X()
+    public Task SubmitTracesWithItrSkipV3_4X(
+        [PackageVersionData(nameof(PackageVersions.XUnitV3), minInclusive: "4.0.0")] string packageVersion)
     {
+        // DEFAULT_SAMPLES builds (Visual Studio, TestAllPackageVersions=false) only have the sample's
+        // default 3.x version, which this 4.x-only scenario can't run against.
+        Skip.If(string.IsNullOrEmpty(packageVersion), "Requires the xUnit v3 4.x package-version sample");
+
         const string correlationId = "2e8a36bda770b683345957cc6c15baf9";
         const string skippableTestsJson = $$"""
                                                {
@@ -805,7 +836,7 @@ public class XUnitEvpTestsV3 : TestingFrameworkEvpTest
                                                """;
 
         return ExecuteTestAsync(
-            "4.0.0",
+            packageVersion,
             "evp_proxy/v4",
             expectedGzip: false,
             new TestScenario(

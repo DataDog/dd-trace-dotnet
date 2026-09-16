@@ -2,9 +2,10 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
-#if NET8_0_OR_GREATER
+#if NET8_0_OR_GREATER && !DEFAULT_SAMPLES
 
 using System.Threading.Tasks;
+using Datadog.Trace.ClrProfiler.IntegrationTests.Helpers;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.TestHelpers.Ci;
 using Xunit;
@@ -34,39 +35,43 @@ public class XUnitV3_4XImpactedTests : TestingFrameworkImpactedTests
         SetServiceVersion("1.0.0");
     }
 
-    [SkippableFact]
+    [SkippableTheory]
+    [CombinatorialOrPairwiseData]
     [Trait("Category", "EndToEnd")]
     [Trait("Category", "TestIntegrations")]
-    public Task BaseShaFromPr()
+    public Task BaseShaFromPr([PackageVersionData(nameof(PackageVersions.XUnitV3), minInclusive: "4.0.0")] string packageVersion)
     {
         InjectGitHubActionsSession();
-        return SubmitTests("4.0.0", 2, TestIsModified);
+        return SubmitTests(packageVersion, 2, TestIsModified);
     }
 
-    [SkippableFact]
+    [SkippableTheory]
+    [CombinatorialOrPairwiseData]
     [Trait("Category", "EndToEnd")]
     [Trait("Category", "TestIntegrations")]
-    public Task DisabledByEnvVar()
+    public Task DisabledByEnvVar([PackageVersionData(nameof(PackageVersions.XUnitV3), minInclusive: "4.0.0")] string packageVersion)
     {
         InjectGitHubActionsSession(true, false);
-        return SubmitTests("4.0.0", 0, TestIsModified);
+        return SubmitTests(packageVersion, 0, TestIsModified);
     }
 
-    [SkippableFact]
+    [SkippableTheory]
+    [CombinatorialOrPairwiseData]
     [Trait("Category", "EndToEnd")]
     [Trait("Category", "TestIntegrations")]
-    public Task EnabledBySettings()
+    public Task EnabledBySettings([PackageVersionData(nameof(PackageVersions.XUnitV3), minInclusive: "4.0.0")] string packageVersion)
     {
         Skip.If(EnvironmentHelper.IsAlpine(), "This test is currently flaky in alpine due to detached HEAD handling.");
         InjectGitHubActionsSession(true, null);
-        return SubmitTests("4.0.0", 2, TestIsModified);
+        return SubmitTests(packageVersion, 2, TestIsModified);
     }
 
-    [SkippableFact]
+    [SkippableTheory]
+    [CombinatorialOrPairwiseData]
     [Trait("Category", "EndToEnd")]
     [Trait("Category", "TestIntegrations")]
-    public Task GitBranchBasedImpactDetection()
-        => SubmitTestsUsingGitBranch("4.0.0", 2, TestIsModified);
+    public Task GitBranchBasedImpactDetection([PackageVersionData(nameof(PackageVersions.XUnitV3), minInclusive: "4.0.0")] string packageVersion)
+        => SubmitTestsUsingGitBranch(packageVersion, 2, TestIsModified);
 
     private static bool TestIsModified(MockCIVisibilityTest test)
         => test.Meta.ContainsKey(IsModifiedTag) && test.Meta[IsModifiedTag] == "true";
