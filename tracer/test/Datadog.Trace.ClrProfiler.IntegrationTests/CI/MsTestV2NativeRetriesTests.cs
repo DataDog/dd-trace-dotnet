@@ -29,15 +29,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI;
 public class MsTestV2NativeRetriesTests : TestingFrameworkEvpTest
 {
     // PackageVersions supplies either the local sample or the versioned 4.4.0 sample.
-    private static readonly string PackageVersion = (string)PackageVersions.MSTestNativeRetries.First(version => version[0] is "" or "4.4.0")[0];
+    private static readonly string PackageVersion = (string)PackageVersions.MSTest2Retries.First(version => version[0] is "" or "4.4.0")[0];
 
     public MsTestV2NativeRetriesTests(ITestOutputHelper output)
-        : this("MSTestTestsNativeRetries", output)
-    {
-    }
-
-    protected MsTestV2NativeRetriesTests(string sample, ITestOutputHelper output)
-        : base(sample, output)
+        : base("MSTestTestsRetries", output)
     {
     }
 
@@ -332,8 +327,8 @@ public class MsTestV2NativeRetriesTests : TestingFrameworkEvpTest
         var isAtr = feature == "efd_and_atr";
         var isItr = feature is "itr" or "itr_row";
         var skipOneRow = feature == "itr_row";
-        var module = UseMtp ? "Samples.MSTestTestsNativeRetriesMtp" : "Samples.MSTestTestsNativeRetries";
-        var suite = name == "CustomPolicySelectsEarlierAttempt" ? "Samples.MSTestTestsNativeRetries.CustomRetryTestSuite" : "Samples.MSTestTestsNativeRetries.TestSuite";
+        const string module = "Samples.MSTestTestsRetries";
+        var suite = name == "CustomPolicySelectsEarlierAttempt" ? "Samples.MSTestTestsRetries.NativeRetries.CustomRetryTestSuite" : "Samples.MSTestTestsRetries.NativeRetries.TestSuite";
         var attemptsFile = Path.GetTempFileName();
         SetEnvironmentVariable("MSTEST_ATTEMPTS_FILE", attemptsFile);
         SetEnvironmentVariable("TESTINGPLATFORM_TELEMETRY_OPTOUT", "1");
@@ -596,6 +591,8 @@ public class MsTestV2NativeRetriesTests : TestingFrameworkEvpTest
 
     private Task<ProcessResult> RunMSTestAsync(MockTracerAgent agent, string testFilter, int expectedExitCode)
     {
+        // The shared sample also contains the older Datadog-only retry scenarios.
+        testFilter = "FullyQualifiedName~Samples.MSTestTestsRetries.NativeRetries.&(" + testFilter + ")";
         var arguments = UseMtp ? "--filter " + testFilter : "--TestCaseFilter:" + testFilter;
 #if NETFRAMEWORK
         // Visual Studio can launch a 64-bit test host even when the fixture uses the x86 profiler.

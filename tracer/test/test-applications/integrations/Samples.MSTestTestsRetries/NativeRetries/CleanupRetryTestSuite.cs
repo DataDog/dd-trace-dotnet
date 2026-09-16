@@ -6,7 +6,7 @@
 using System;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace Samples.MSTestTestsNativeRetries;
+namespace Samples.MSTestTestsRetries.NativeRetries;
 
 [TestClass]
 [TestCategory("CustomRetry")]

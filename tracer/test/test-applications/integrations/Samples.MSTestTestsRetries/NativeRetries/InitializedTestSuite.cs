@@ -7,7 +7,7 @@ using System;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace Samples.MSTestTestsNativeRetries;
+namespace Samples.MSTestTestsRetries.NativeRetries;
 
 [TestClass]
 [Retry(2)]

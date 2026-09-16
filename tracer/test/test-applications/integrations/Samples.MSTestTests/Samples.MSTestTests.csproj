@@ -5,7 +5,10 @@
     <OutputType>Library</OutputType>
     <!-- MSTest 4 requires .NET 8 or .NET Framework. Keep the default sample runnable on older .NET runtimes too. -->
     <ApiVersion Condition="'$(ApiVersion)' == '' And ($(TargetFramework.StartsWith('netcoreapp')) Or '$(TargetFramework)' == 'net5.0' Or '$(TargetFramework)' == 'net6.0' Or '$(TargetFramework)' == 'net7.0')">3.11.1</ApiVersion>
-    <ApiVersion Condition="'$(ApiVersion)' == ''">4.0.1</ApiVersion>
+    <ApiVersion Condition="'$(ApiVersion)' == ''">4.4.0</ApiVersion>
+    <!-- Discovery uses this same binary with either VSTest or MTP. Legacy frameworks keep their runner. -->
+    <EnableMSTestRunner Condition="$([MSBuild]::VersionGreaterThanOrEquals('$(ApiVersion)', '4.3.3')) And !$(TargetFramework.StartsWith('net4'))">true</EnableMSTestRunner>
+    <OutputType Condition="'$(EnableMSTestRunner)' == 'true'">Exe</OutputType>
     <TestSdkVersion>16.7.1</TestSdkVersion>
     <TestSdkVersion Condition="$(ApiVersion.StartsWith('4.'))">18.0.0</TestSdkVersion>
 

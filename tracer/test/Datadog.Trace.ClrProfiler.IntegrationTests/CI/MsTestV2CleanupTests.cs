@@ -30,7 +30,7 @@ public class MsTestV2CleanupTests(ITestOutputHelper output) : TestingFrameworkEv
     {
         // Match the default sample: MSTest 4 on .NET 8+ / Framework, MSTest 3 on older .NET.
 #if NET8_0_OR_GREATER || NETFRAMEWORK
-        var defaultVersion = new Version(4, 0, 1);
+        var defaultVersion = new Version(4, 4, 0);
 #else
         var defaultVersion = new Version(3, 11, 1);
 #endif

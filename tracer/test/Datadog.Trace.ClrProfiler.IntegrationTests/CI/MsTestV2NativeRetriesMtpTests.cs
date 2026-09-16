@@ -9,7 +9,7 @@ using Xunit.Abstractions;
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI;
 
 public class MsTestV2NativeRetriesMtpTests(ITestOutputHelper output)
-    : MsTestV2NativeRetriesTests("MSTestTestsNativeRetriesMtp", output)
+    : MsTestV2NativeRetriesTests(output)
 {
     protected override bool UseMtp => true;
 }

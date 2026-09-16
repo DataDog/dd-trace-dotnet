@@ -9,7 +9,7 @@ using System.IO;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace Samples.MSTestTestsNativeRetries;
+namespace Samples.MSTestTestsRetries.NativeRetries;
 
 [TestClass]
 [DoNotParallelize]
