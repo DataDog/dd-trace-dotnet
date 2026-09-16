@@ -64,11 +64,22 @@ TEST(DebuggerRejitHandlerModuleMethod, ConcurrentAddRemoveAndReadIsSafe)
     debugger::DebuggerRejitHandlerModuleMethod method(mdMethodDefNil, nullptr, FunctionInfo{},
                                                       std::unique_ptr<MethodRewriter>{});
     constexpr int iterations = 1000;
+    std::atomic<int> ready{0};
     std::atomic<bool> sawTornProbe{false};
+
+    const auto waitForStart = [&]
+    {
+        ready++;
+        while (ready < 3)
+        {
+            std::this_thread::yield();
+        }
+    };
 
     std::thread adder(
         [&]
         {
+            waitForStart();
             for (int i = 0; i < iterations; i++)
             {
                 method.AddProbe(MakeProbe(ProbeId(i)));
@@ -78,6 +89,7 @@ TEST(DebuggerRejitHandlerModuleMethod, ConcurrentAddRemoveAndReadIsSafe)
     std::thread remover(
         [&]
         {
+            waitForStart();
             for (int i = 0; i < iterations; i++)
             {
                 method.RemoveProbe(ProbeId(i));
@@ -87,6 +99,7 @@ TEST(DebuggerRejitHandlerModuleMethod, ConcurrentAddRemoveAndReadIsSafe)
     std::thread reader(
         [&]
         {
+            waitForStart();
             for (int i = 0; i < iterations; i++)
             {
                 for (const auto& probe : method.GetProbes())
