@@ -15,7 +15,7 @@ stages:
 include:
   - local: .gitlab/one-pipeline.locked.yml
   - project: 'ddoghq/llm-validation-platform'
-    ref: d59e4af6d6666092f65740b9a4d1bf3651a64321   # v0.1.2 (immutable SHA; a tag could be retargeted)
+    ref: c331696647a78672101002ba48ccebbd41b0fae8   # v0.1.3 (immutable SHA; a tag could be retargeted)
     file: '/ci/llm-validation.gitlab-ci.yml'
   # MIGRATION TOUCHPOINT (GitHub org / GitLab group split):
   # GitLab does not expand top-level `variables:` inside `include:` keywords,
@@ -45,7 +45,7 @@ variables:
 "llm validation":
   variables:
     LLMVAL_PLATFORM_PROJECT: "ddoghq/llm-validation-platform"
-    LLMVAL_PLATFORM_REF: "d59e4af6d6666092f65740b9a4d1bf3651a64321"   # v0.1.2 (must match include ref above)
+    LLMVAL_PLATFORM_REF: "c331696647a78672101002ba48ccebbd41b0fae8"   # v0.1.3 (must match include ref above)
 
 build-windows-ci-image:
   stage: build
@@ -256,11 +256,12 @@ publish:
                 throw "Error uploading artifacts to S3"
               }
 
-              aws s3 cp artifacts-out/nuget/ s3://dd-windowsfilter/builds/tracer/${CI_COMMIT_SHA}/signed-nuget-packages/ --recursive --region us-east-1 --exclude "*" --include "*.nupkg" --grants read=uri=http://acs.amazonaws.com/groups/global/AllUsers full=id=3a6e02b08553fd157ae3fb918945dd1eaae5a1aa818940381ef07a430cf25732
+              aws s3 cp artifacts-out/nuget/ s3://dd-windowsfilter/builds/tracer/${CI_COMMIT_SHA}/signed-nuget-packages/ --recursive --region us-east-1 --exclude "*" --include "*.nupkg" --include "*.snupkg" --grants read=uri=http://acs.amazonaws.com/groups/global/AllUsers full=id=3a6e02b08553fd157ae3fb918945dd1eaae5a1aa818940381ef07a430cf25732
               if ($LASTEXITCODE -ne 0) {
-                throw "Error uploading build-signed NuGet packages to S3"
+                throw "Error uploading build-signed NuGet and symbol packages to S3"
               }
 
+              # No --include "*.snupkg" here: these 3 packages are built by Azure DevOps and don't include symbols
               aws s3 cp signed-out/nuget/ s3://dd-windowsfilter/builds/tracer/${CI_COMMIT_SHA}/signed-nuget-packages/ --recursive --region us-east-1 --exclude "*" --include "*.nupkg" --grants read=uri=http://acs.amazonaws.com/groups/global/AllUsers full=id=3a6e02b08553fd157ae3fb918945dd1eaae5a1aa818940381ef07a430cf25732
               if ($LASTEXITCODE -ne 0) {
                 throw "Error uploading signed NuGet packages to S3"

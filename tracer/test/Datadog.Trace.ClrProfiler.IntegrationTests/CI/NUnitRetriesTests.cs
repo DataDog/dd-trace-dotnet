@@ -31,6 +31,19 @@ public class NUnitRetriesTests : TestingFrameworkRetriesTests
 
     protected override string TrueAtThirdRetry => "Samples.NUnitTestsRetries.TestSuite.TrueAtThirdRetry";
 
+    protected override string[] QuarantineTestNames => [..base.QuarantineTestNames, "AlwaysFailsWithAssertions"];
+
+    public static IEnumerable<object[]> GetQuarantineRetryData() => GetQuarantineRetryData(PackageVersions.NUnitRetries);
+
+    [SkippableTheory]
+    [MemberData(nameof(GetQuarantineRetryData))]
+    [Trait("Category", "EndToEnd")]
+    [Trait("Category", "TestIntegrations")]
+    [Trait("Category", "QuarantinedTests")]
+    [Trait("Category", "FlakyRetries")]
+    public override Task QuarantineWithAutomaticRetries(string packageVersion, bool quarantined, bool retriesEnabled, bool quarantineAlwaysFails)
+        => base.QuarantineWithAutomaticRetries(packageVersion, quarantined, retriesEnabled, quarantineAlwaysFails);
+
     [SkippableTheory]
     [MemberData(nameof(PackageVersions.NUnitRetries), MemberType = typeof(PackageVersions))]
     [Trait("Category", "EndToEnd")]

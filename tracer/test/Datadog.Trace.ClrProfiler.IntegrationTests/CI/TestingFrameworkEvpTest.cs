@@ -406,6 +406,45 @@ public abstract class TestingFrameworkEvpTest : TestHelper
         metadata[SpanTypes.TestSession].Should().Contain(selector);
     }
 
+    protected void ValidateTestSessionFingerprintInputs(
+        MockCIVisibilityTestModule testModule,
+        IReadOnlyCollection<MockCIVisibilityTestSuite> testSuites,
+        IReadOnlyCollection<MockCIVisibilityTest> tests,
+        string sessionWorkingDirectory,
+        string gitRepositoryUrl)
+    {
+        // test_session.name is carried in the event metadata and checked by ValidateMetadata.
+        // git.repository.id_v2 is derived by the backend from git.repository_url.
+        var expectedValues = new Dictionary<string, string>
+        {
+            [CommonTags.GitRepository] = gitRepositoryUrl,
+            [TestTags.CommandWorkingDirectory] = sessionWorkingDirectory,
+        };
+
+        string[] runtimeAndOperatingSystemTags =
+        [
+            CommonTags.OSPlatform,
+            CommonTags.OSVersion,
+            CommonTags.OSArchitecture,
+            CommonTags.RuntimeName,
+            CommonTags.RuntimeVersion,
+            CommonTags.RuntimeArchitecture,
+        ];
+
+        foreach (var tag in runtimeAndOperatingSystemTags)
+        {
+            testModule.Meta.Should().ContainKey(tag);
+            expectedValues[tag] = testModule.Meta[tag];
+        }
+
+        foreach (var expectedValue in expectedValues)
+        {
+            testModule.Meta.Should().Contain(expectedValue);
+            testSuites.Should().AllSatisfy(testSuite => testSuite.Meta.Should().Contain(expectedValue));
+            tests.Should().AllSatisfy(test => test.Meta.Should().Contain(expectedValue));
+        }
+    }
+
     protected void InjectSession(
         out ulong sessionId,
         out string sessionCommand,
@@ -418,11 +457,13 @@ public abstract class TestingFrameworkEvpTest : TestHelper
         // Inject session
         sessionId = RandomIdGenerator.Shared.NextSpanId();
         sessionCommand = "test command";
-        sessionWorkingDirectory = "C:\\evp_demo\\working_directory";
+        var ciValues = (CIEnvironmentValues)CIValues!;
+        var propagatedSessionWorkingDirectory = ciValues.SourceRoot!;
+        sessionWorkingDirectory = ".";
         SetEnvironmentVariable(HttpHeaderNames.TraceId.Replace(".", "_").Replace("-", "_").ToUpperInvariant(), sessionId.ToString(CultureInfo.InvariantCulture));
         SetEnvironmentVariable(HttpHeaderNames.ParentId.Replace(".", "_").Replace("-", "_").ToUpperInvariant(), sessionId.ToString(CultureInfo.InvariantCulture));
         SetEnvironmentVariable(ConfigurationKeys.CIVisibility.TestSessionCommand, sessionCommand);
-        SetEnvironmentVariable(ConfigurationKeys.CIVisibility.TestSessionWorkingDirectory, sessionWorkingDirectory);
+        SetEnvironmentVariable(ConfigurationKeys.CIVisibility.TestSessionWorkingDirectory, propagatedSessionWorkingDirectory);
 
         gitRepositoryUrl = "git@github.com:DataDog/dd-trace-dotnet.git";
         gitBranch = "main";

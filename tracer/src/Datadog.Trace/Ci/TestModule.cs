@@ -154,7 +154,7 @@ public sealed class TestModule
 
                 if (environmentVariables.TryGetValue<string>(ConfigurationKeys.CIVisibility.TestSessionWorkingDirectory, out var testSessionWorkingDirectory))
                 {
-                    tags.WorkingDirectory = testSessionWorkingDirectory;
+                    tags.WorkingDirectory = ciValues.MakeRelativePathFromSourceRoot(testSessionWorkingDirectory, false);
                 }
             }
             else

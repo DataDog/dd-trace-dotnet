@@ -63,27 +63,7 @@ internal static class XUnitIntegration
         var methodParameters = testMethod?.GetParameters();
         if (methodParameters?.Length > 0 && testMethodArguments?.Length > 0)
         {
-            var testParameters = new TestParameters
-            {
-                Metadata = new Dictionary<string, object?>(),
-                Arguments = new Dictionary<string, object?>()
-            };
-            testParameters.Metadata[TestTags.MetadataTestName] = runnerInstance.TestCase.DisplayName ?? string.Empty;
-
-            for (var i = 0; i < methodParameters.Length; i++)
-            {
-                var key = methodParameters[i].Name ?? string.Empty;
-                if (i < testMethodArguments.Length)
-                {
-                    testParameters.Arguments[key] = Common.GetParametersValueData(testMethodArguments[i]);
-                }
-                else
-                {
-                    testParameters.Arguments[key] = "(default)";
-                }
-            }
-
-            test.SetParameters(testParameters);
+            test.SetParameters(Common.CreateTestParameters(testMethodArguments, methodParameters, runnerInstance.TestCase.DisplayName ?? string.Empty));
         }
 
         // Get traits
@@ -504,7 +484,7 @@ internal static class XUnitIntegration
         var testClassName = runnerInstance.TestClass?.ToString() ?? string.Empty;
         var testMethod = runnerInstance.TestMethod;
         var moduleName = GetTestModuleName(ref runnerInstance);
-        var itrShouldSkip = Common.ShouldSkip(testClassName, testMethod?.Name ?? string.Empty, runnerInstance.TestMethodArguments, testMethod?.GetParameters(), out var matchedSkippableTest, moduleName, metadataTestName: runnerInstance.TestCase.DisplayName);
+        var itrShouldSkip = Common.ShouldSkip(testClassName, testMethod?.Name ?? string.Empty, runnerInstance.TestMethodArguments, testMethod?.GetParameters(), out var matchedSkippableTest, moduleName, metadataTestName: runnerInstance.TestCase.DisplayName ?? string.Empty);
         traits ??= runnerInstance.TestCase.Traits;
         isUnskippable = traits?.TryGetValue(IntelligentTestRunnerTags.UnskippableTraitName, out _) == true;
         isForcedRun = matchedSkippableTest is not null && isUnskippable;

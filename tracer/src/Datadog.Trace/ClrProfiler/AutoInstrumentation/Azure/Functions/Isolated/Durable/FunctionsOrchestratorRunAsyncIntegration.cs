@@ -96,7 +96,6 @@ public sealed class FunctionsOrchestratorRunAsyncIntegration
 
         try
         {
-
             var errorState = AzureFunctionsDurableCommon.OnFunctionExecutionBegin(instance.FunctionContext, state.StartTime);
             errorState.Scope.DisposeWithException(exception);
         }

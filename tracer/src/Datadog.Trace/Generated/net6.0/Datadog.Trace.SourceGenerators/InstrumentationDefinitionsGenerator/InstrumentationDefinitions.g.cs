@@ -515,6 +515,7 @@ namespace Datadog.Trace.ClrProfiler
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2.TestClassInfoRunClassInitializeIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2.TestClassInfoRunClassInitializeIntegrationV3_9"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2.TestMethodRunnerExecuteIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2.TestMethodRunnerExecuteIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2.TestMethodRunnerExecuteIntegration3_8"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2.TestMethodRunnerExecuteTestIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2.TestMethodRunnerExecuteTestIntegrationV3_9"
@@ -589,6 +590,8 @@ namespace Datadog.Trace.ClrProfiler
                     => Datadog.Trace.Configuration.IntegrationId.NUnit,
                 "Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.OpenFeature.OpenFeatureSdkAccumulateSpanEnrichmentIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.OpenFeature.OpenFeatureSdkEvaluateIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.OpenFeature.OpenFeatureSdkHasConfigurationIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.OpenFeature.OpenFeatureSdkInitializeAsyncIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.OpenFeature.OpenFeatureSdkIsAvailableIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.OpenFeature.OpenFeatureSdkIsSpanEnrichmentEnabledIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.OpenFeature.OpenFeatureSdkRegisterOnNewConfigEventHandlerIntegration"
