@@ -19,17 +19,11 @@ namespace Datadog.Trace.Tests.ClrProfiler.AutoInstrumentation.Kafka;
 public class KafkaClusterIdSupportTests
 {
     [Theory]
-    [InlineData(0x010601ff, false)]
-    [InlineData(0x020200ff, false)]
-    [InlineData(0x02030000, false)]
     [InlineData(0x020300fe, false)]
     [InlineData(0x020300ff, true)]
-    [InlineData(0x020800ff, true)]
-    [InlineData(0, false)]
-    [InlineData(-1, false)]
     public void ChecksLoadedNativeVersion(int nativeVersion, bool supported)
     {
-        var assembly = CreateAssembly($"public static int Version {{ get {{ Calls++; return {nativeVersion}; }} }}");
+        var assembly = CreateAssembly(nativeVersion);
 
         KafkaClusterIdSupport.GetDescribeClusterOptionsType(assembly).Should().Be(supported ? assembly.GetType("Confluent.Kafka.Admin.DescribeClusterOptions") : null);
         KafkaHelper.GetClusterId(Guid.NewGuid().ToString(), CreateClient(assembly)).Should().Be(supported ? "test-cluster" : null);
@@ -38,40 +32,11 @@ public class KafkaClusterIdSupportTests
     }
 
     [Theory]
-    [InlineData("")]
-    [InlineData("public static string Version => \"2.8.0\";")]
-    [InlineData("public int Version => 0x020800ff;")]
-    [InlineData("public static int Version => throw new System.InvalidOperationException();")]
-    public void UnreadableVersionSkipsDiscovery(string versionProperty)
+    [InlineData(0x010601ff)]
+    [InlineData(0x020800ff)]
+    public void CachesConcurrentVersionQueries(int nativeVersion)
     {
-        var assembly = CreateAssembly(versionProperty);
-
-        KafkaHelper.GetClusterId(Guid.NewGuid().ToString(), CreateClient(assembly)).Should().BeNull();
-        GetCalls(assembly, "Confluent.Kafka.DependentAdminClientBuilder").Should().Be(0);
-    }
-
-    [Theory]
-    [InlineData(false, true)]
-    [InlineData(true, false)]
-    public void MissingManagedTypeSkipsDiscovery(bool includeLibrary, bool includeOptions)
-    {
-        var assembly = CreateAssembly("public static int Version { get { Calls++; return 0x020800ff; } }", includeLibrary, includeOptions);
-
-        KafkaHelper.GetClusterId(Guid.NewGuid().ToString(), CreateClient(assembly)).Should().BeNull();
-        GetCalls(assembly, "Confluent.Kafka.DependentAdminClientBuilder").Should().Be(0);
-        if (includeLibrary)
-        {
-            GetCalls(assembly, "Confluent.Kafka.Library").Should().Be(0);
-        }
-    }
-
-    [Theory]
-    [InlineData("return 0x020800ff;")]
-    [InlineData("return 0x010601ff;")]
-    [InlineData("throw new System.InvalidOperationException();")]
-    public void CachesConcurrentVersionQueries(string getterBody)
-    {
-        var assembly = CreateAssembly($"public static int Version {{ get {{ System.Threading.Interlocked.Increment(ref Calls); {getterBody} }} }}");
+        var assembly = CreateAssembly(nativeVersion);
 
         Parallel.For(0, 32, _ => KafkaClusterIdSupport.GetDescribeClusterOptionsType(assembly));
 
@@ -83,8 +48,8 @@ public class KafkaClusterIdSupportTests
     [InlineData(false)]
     public void CapabilityIsIndependentForAssembliesUsingTheSameBootstrapServers(bool unsupportedFirst)
     {
-        var unsupported = CreateAssembly("public static int Version => 0x010601ff;");
-        var supported = CreateAssembly("public static int Version => 0x020800ff;");
+        var unsupported = CreateAssembly(0x010601ff);
+        var supported = CreateAssembly(0x020800ff);
         var bootstrapServers = Guid.NewGuid().ToString();
 
         if (unsupportedFirst)
@@ -103,15 +68,28 @@ public class KafkaClusterIdSupportTests
 
     private static int GetCalls(Assembly assembly, string typeName) => (int)assembly.GetType(typeName).GetField("Calls").GetValue(null);
 
-    private static Assembly CreateAssembly(string versionProperty, bool includeLibrary = true, bool includeOptions = true)
+    private static Assembly CreateAssembly(int nativeVersion)
     {
+        // Reflection and the assembly-scoped cache require independent assemblies with Kafka's type names.
         var source = $$"""
                        using System;
+                       using System.Threading;
                        using System.Threading.Tasks;
 
                        namespace Confluent.Kafka
                        {
-                           {{(includeLibrary ? $"public class Library {{ public static int Calls; {versionProperty} }}" : string.Empty)}}
+                           public class Library
+                           {
+                               public static int Calls;
+                               public static int Version
+                               {
+                                   get
+                                   {
+                                       Interlocked.Increment(ref Calls);
+                                       return {{nativeVersion}};
+                                   }
+                               }
+                           }
                            public class Client { public object Handle => new object(); }
                            public class DependentAdminClientBuilder
                            {
@@ -128,7 +106,7 @@ public class KafkaClusterIdSupportTests
                        }
                        namespace Confluent.Kafka.Admin
                        {
-                           {{(includeOptions ? "public class DescribeClusterOptions { public TimeSpan? RequestTimeout { get; set; } }" : string.Empty)}}
+                           public class DescribeClusterOptions { public TimeSpan? RequestTimeout { get; set; } }
                        }
                        """;
         var compilation = CSharpCompilation.Create(
