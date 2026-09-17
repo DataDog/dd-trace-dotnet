@@ -27,7 +27,6 @@ using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Util;
-using Datadog.Trace.Vendors.Serilog.Events;
 using Datadog.Trace.Vendors.StatsdClient;
 using NativeInterop = Datadog.Trace.ContinuousProfiler.NativeInterop;
 
@@ -116,14 +115,12 @@ namespace Datadog.Trace
             {
                 Log.Warning(result.Exception, "Failed to create the global configuration source with status: {Status} and error message: {ErrorMessage}", result.Result.ToString(), result.ErrorMessage);
             }
-            else if (result.HandsOffConfiguration is { } handsOffConfiguration && Log.IsEnabled(LogEventLevel.Information))
+            else if (result.HandsOffConfiguration is { } handsOffConfiguration)
             {
-                Log.Information(
-                    "Hands-off configuration read: fleet stable config contributed {FleetEntryCount} entries [{FleetKeys}], local stable config contributed {LocalEntryCount} entries [{LocalKeys}]",
+                Log.Debug<int, int>(
+                    "Hands-off configuration read: fleet stable config contributed {FleetEntryCount} entries, local stable config contributed {LocalEntryCount} entries",
                     handsOffConfiguration.ConfigEntriesFleet.Count,
-                    ConfigurationSuccessResult.FormatKeys(handsOffConfiguration.ConfigEntriesFleet),
-                    handsOffConfiguration.ConfigEntriesLocal.Count,
-                    ConfigurationSuccessResult.FormatKeys(handsOffConfiguration.ConfigEntriesLocal));
+                    handsOffConfiguration.ConfigEntriesLocal.Count);
             }
 
             serviceRemappingHash ??= new ServiceRemappingHash(settings.Manager.InitialMutableSettings.ProcessTags?.SerializedTags);
