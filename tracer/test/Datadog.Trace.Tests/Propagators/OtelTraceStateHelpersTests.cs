@@ -38,6 +38,7 @@ namespace Datadog.Trace.Tests.Propagators
         [InlineData("", null, null)]
         [InlineData("rv:ef284ace7a91e1", 0xef284ace7a91e1UL, null)]
         [InlineData("th:0", null, 0UL)]
+        [InlineData("th:8", null, 0x80000000000000UL)]
         [InlineData("th:e6666666666668", null, 0xe6666666666668UL)]
         [InlineData("unknownkey:whatever", null, null)]
         [InlineData("rv:zz;th:zz", null, null)]
