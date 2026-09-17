@@ -256,6 +256,56 @@ public class FeatureFlagsModuleTests
     }
 
     [Fact]
+    public void RegisterOnNewConfigEventHandler_AfterAConfigurationWasDelivered_DoesNotDeliverItAgain()
+    {
+        using var module = CreateModule(CreateSettings(), new MockRcmSubscriptionManager());
+
+        var invocations = 0;
+        Action handler = () => invocations++;
+        module.RegisterOnNewConfigEventHandler(handler);
+
+        module.ApplyConfiguration(new ServerConfiguration()).Should().BeTrue();
+
+        // The handler already has this configuration from the apply, so registering the same handler
+        // again must not replay it. Each handler gets each configuration exactly once.
+        module.RegisterOnNewConfigEventHandler(handler);
+
+        invocations.Should().Be(1);
+    }
+
+    [Fact]
+    public async Task RegisterOnNewConfigEventHandler_WhenRegistrationRacesWithApply_DeliversEachConfigurationOnce()
+    {
+        // Registration and delivery both look at the handler and the held configuration. One pass
+        // rarely interleaves them, so repeat: an interleaving that hands the same configuration to
+        // both paths invokes the handler twice and fails here.
+        for (var i = 0; i < 200; i++)
+        {
+            using var module = CreateModule(CreateSettings(), new MockRcmSubscriptionManager());
+
+            var invocations = 0;
+            using var start = new ManualResetEventSlim(false);
+
+            var register = Task.Run(() =>
+            {
+                start.Wait();
+                module.RegisterOnNewConfigEventHandler(() => Interlocked.Increment(ref invocations));
+            });
+
+            var apply = Task.Run(() =>
+            {
+                start.Wait();
+                module.ApplyConfiguration(new ServerConfiguration());
+            });
+
+            start.Set();
+            await Task.WhenAll(register, apply);
+
+            invocations.Should().BeLessOrEqualTo(1, "iteration {0} delivered one configuration more than once", i);
+        }
+    }
+
+    [Fact]
     public async Task InitializeAsync_OnTimeout_ReturnsWithoutThrowing()
     {
         var settings = CreateInitializationSettings("1");
