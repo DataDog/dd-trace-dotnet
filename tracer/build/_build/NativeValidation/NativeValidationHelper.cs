@@ -107,11 +107,6 @@ public class NativeValidationHelper
         // 0000000000003e30 T accept4
         //                  U access
         //
-        // When linking against glibc (including the glibc 2.17 sysroot / lld), nm may
-        // instead print versioned names such as:
-        //                  U __errno_location@GLIBC_2.2.5
-        //                  U memcpy@GLIBC_2.14
-        //
         // The types of symbols are:
         // D: Data section symbol. These symbols are initialized global variables.
         // w: Weak symbol. These symbols are weakly referenced and can be overridden by other symbols.
@@ -120,7 +115,9 @@ public class NativeValidationHelper
         // B: BSS (Block Started by Symbol) section symbol. These symbols are uninitialized global variables.
         //
         // We only care about the Undefined symbols - we don't want to accidentally add more of them.
-        // Alpine/musl snapshots and allowlists use unversioned names, so strip @VERSION.
+        // Newer nm (binutils >= 2.35) prints ELF version tags by default (@GLIBC_2.17, @GCC_3.3);
+        // older nm does not. Strip them so snapshots and the musl allowlist always use bare names.
+        // The glibc floor check (FindMaxGlibcVersion) still uses --with-symbol-versions.
 
         Logger.Debug("NM output: {Output}", string.Join(Environment.NewLine, output));
 
@@ -210,9 +207,9 @@ public class NativeValidationHelper
         }
     }
 
-    // nm may print ELF symbol versions ("malloc@GLIBC_2.2.5" or "malloc@@GLIBC_2.2.5")
-    // depending on nm (GNU vs LLVM) and linker (bfd vs lld). Snapshots and the musl
-    // allowlist compare unversioned libc function names.
+    // Newer nm (binutils >= 2.35) prints ELF symbol versions by default
+    // (e.g. "malloc@GLIBC_2.2.5", "_Unwind_Resume@GCC_3.0"). Strip the
+    // @VERSION suffix so we always compare bare symbol names.
     static string StripElfSymbolVersion(string symbol)
     {
         var at = symbol.IndexOf('@');
