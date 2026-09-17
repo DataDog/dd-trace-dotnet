@@ -58,8 +58,8 @@ public class IntegrationActivityHandlerTests
         new QuartzActivityHandler().ShouldListenToOperationName(operationName).Should().Be(expected);
     }
 
-    // Creates a System.Diagnostics.Activity and passes it through the Quartz handler, which creates
-    // and activates the Datadog span through ActivityHandlerCommon before the test verifies the result.
+    // Creates a System.Diagnostics.Activity using the shape available on the current runtime. Quartz metadata
+    // requires IActivity5, but older runtimes still create and activate the span through ActivityHandlerCommon.
     private static async Task AssertQuartzGeneratedSpan(QuartzActivityHandler handler, bool enabled)
     {
         var settings = TracerSettings.Create(new()
@@ -74,7 +74,8 @@ public class IntegrationActivityHandlerTests
 
         var activity = new System.Diagnostics.Activity("Quartz");
         activity.Start();
-        var duckActivity = activity.DuckCast<IActivity5>();
+        var supportsQuartzMetadata = activity.TryDuckCast<IActivity5>(out var activity5);
+        IActivity duckActivity = supportsQuartzMetadata ? activity5 : activity.DuckCast<IActivity>();
 
         handler.ActivityStarted("Quartz", duckActivity);
         var span = (Span)tracer.ActiveScope!.Span;
@@ -82,7 +83,7 @@ public class IntegrationActivityHandlerTests
         handler.ActivityStopped("Quartz", duckActivity);
         activity.Stop();
 
-        span.GetTag(Trace.Tags.InstrumentationName).Should().Be(enabled ? "quartz" : null);
+        span.GetTag(Trace.Tags.InstrumentationName).Should().Be(enabled && supportsQuartzMetadata ? "quartz" : null);
         AssertGeneratedSpanTelemetry(telemetry, IntegrationId.Quartz, enabled);
     }
 
