@@ -12,6 +12,7 @@ using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Debugger;
+using Datadog.Trace.Debugger.Configurations;
 using Datadog.Trace.Debugger.ExceptionAutoInstrumentation;
 using Datadog.Trace.Debugger.Sink;
 using Datadog.Trace.Debugger.Snapshots;
@@ -34,6 +35,53 @@ namespace Datadog.Trace.Tests.Debugger
 
             uploader.Disposed.Should().BeTrue();
             manager.SymbolsUploader.Should().BeNull();
+        }
+
+        [Fact]
+        public async Task RemoteConfigurationCannotReenableExceptionReplayAfterMd5Failure()
+        {
+            var manager = CreateDebuggerManager();
+            var tracerSettings = TracerSettings.Create(new()
+            {
+                { ConfigurationKeys.Rcm.RemoteConfigurationEnabled, "true" },
+            });
+            var debuggerSettings = new DebuggerSettings(
+                new NameValueConfigurationSource(new()
+                {
+                    { ConfigurationKeys.Debugger.DynamicInstrumentationEnabled, "false" },
+                    { ConfigurationKeys.Debugger.CodeOriginForSpansEnabled, "false" },
+                    { ConfigurationKeys.Debugger.SymbolDatabaseUploadEnabled, "false" },
+                }),
+                NullConfigurationTelemetry.Instance);
+
+            manager.ExceptionReplaySettings.CanBeEnabled.Should().BeTrue();
+            using var exceptionReplay = ExceptionReplay.Create(manager.ExceptionReplaySettings);
+            exceptionReplay.Initialize(() => throw new InvalidOperationException("MD5 is unavailable"));
+
+            // The manager publishes the instance after Initialize returns, even when MD5 is unavailable.
+            SetExceptionReplay(manager, exceptionReplay);
+
+            try
+            {
+                // Cover an enable request immediately after failure and another after an explicit disable.
+                foreach (var enabled in new[] { true, false, true })
+                {
+                    await manager.UpdateConfiguration(
+                        tracerSettings,
+                        debuggerSettings with
+                        {
+                            DynamicSettings = new ImmutableDynamicDebuggerSettings { ExceptionReplayEnabled = enabled },
+                        });
+
+                    manager.ExceptionReplay.Should().BeNull();
+                    manager.ExceptionReplaySettings.CanBeEnabled.Should().BeFalse();
+                    GetSnapshotPipelineConfigured(manager).Should().Be(0);
+                }
+            }
+            finally
+            {
+                InvokeShutdownTasks(manager);
+            }
         }
 
         [Fact]
@@ -258,6 +306,13 @@ namespace Datadog.Trace.Tests.Debugger
             var field = typeof(DebuggerManager).GetField("_syncLock", BindingFlags.Instance | BindingFlags.NonPublic);
             field.Should().NotBeNull();
             return field!.GetValue(manager)!;
+        }
+
+        private static void SetExceptionReplay(DebuggerManager manager, ExceptionReplay exceptionReplay)
+        {
+            var property = typeof(DebuggerManager).GetProperty(nameof(DebuggerManager.ExceptionReplay), BindingFlags.Instance | BindingFlags.NonPublic);
+            property.Should().NotBeNull();
+            property!.SetValue(manager, exceptionReplay);
         }
 
         private static void SetSymbolsUploader(DebuggerManager manager, IDebuggerUploader uploader)
