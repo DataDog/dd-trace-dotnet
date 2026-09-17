@@ -10,7 +10,7 @@ using Datadog.Trace.LibDatadog.HandsOffConfiguration;
 
 namespace Datadog.Trace.Configuration.ConfigurationSources;
 
-internal readonly struct GlobalConfigurationSourceResult(CompositeConfigurationSource configurationSource, Result result, string? errorMessage = null, Exception? exception = null)
+internal readonly struct GlobalConfigurationSourceResult(CompositeConfigurationSource configurationSource, Result result, string? errorMessage = null, Exception? exception = null, ConfigurationSuccessResult? handsOffConfiguration = null)
 {
     internal string? ErrorMessage { get; } = errorMessage;
 
@@ -19,4 +19,10 @@ internal readonly struct GlobalConfigurationSourceResult(CompositeConfigurationS
     internal CompositeConfigurationSource ConfigurationSource { get; } = configurationSource;
 
     internal Result Result { get; } = result;
+
+    /// <summary>
+    /// Gets the hands-off configuration entries that were read, so they can be logged once a logger is available.
+    /// Null when no hands-off configuration was read.
+    /// </summary>
+    internal ConfigurationSuccessResult? HandsOffConfiguration { get; } = handsOffConfiguration;
 }

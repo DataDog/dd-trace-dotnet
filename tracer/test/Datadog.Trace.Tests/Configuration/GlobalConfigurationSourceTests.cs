@@ -6,11 +6,13 @@
 #nullable enable
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.ConfigurationSources;
 using Datadog.Trace.Configuration.Telemetry;
+using Datadog.Trace.LibDatadog.HandsOffConfiguration;
 using FluentAssertions;
 using Xunit;
 using Result = Datadog.Trace.LibDatadog.HandsOffConfiguration.Result;
@@ -51,5 +53,47 @@ public class GlobalConfigurationSourceTests
         localConfigSource.GetString("KEY5", NullConfigurationTelemetry.Instance, null, false).IsPresent.Should().BeFalse();
         localConfigSource.GetString("KEY4", NullConfigurationTelemetry.Instance, null, false).Result.Should().Be("true");
         localConfigSource.GetBool("KEY2", NullConfigurationTelemetry.Instance, null).Result.Should().Be(false);
+    }
+
+    [Fact]
+    public void HandsOffConfigurationEntriesAreExposedForLogging()
+    {
+        var result = GlobalConfigurationSource.CreateDefaultConfigurationSource(
+            handsOffLocalConfigPath: Path.Combine("Configuration", "HandsOffConfigData", "application_monitoring.yml"),
+            handsOffFleetConfigPath: Path.Combine("Configuration", "HandsOffConfigData", "application_monitoring_fleet.yml"),
+            isLibdatadogAvailable: true);
+
+        result.Result.Should().Be(Result.Success);
+        result.HandsOffConfiguration.Should().NotBeNull();
+        result.HandsOffConfiguration!.Value.ConfigEntriesFleet.Keys.Should().BeEquivalentTo("KEY1", "KEY5");
+        result.HandsOffConfiguration!.Value.ConfigEntriesLocal.Keys.Should().BeEquivalentTo("KEY2", "KEY4");
+    }
+
+    [Fact]
+    public void HandsOffConfigurationIsNotExposedWhenTheReadFails()
+    {
+        var result = GlobalConfigurationSource.CreateDefaultConfigurationSource(isLibdatadogAvailable: false);
+
+        result.Result.Should().Be(Result.LibDatadogUnavailable);
+        result.HandsOffConfiguration.Should().BeNull();
+    }
+
+    [Theory]
+    [InlineData(new string[0], "")]
+    [InlineData(new[] { "DD_APPSEC_ENABLED" }, "DD_APPSEC_ENABLED")]
+    [InlineData(new[] { "DD_TRACE_DEBUG", "DD_APPSEC_ENABLED" }, "DD_APPSEC_ENABLED, DD_TRACE_DEBUG")]
+    public void FormatKeysListsKeyNamesInOrder(string[] keys, string expected)
+    {
+        var entries = keys.ToDictionary(key => key, _ => "some-value");
+
+        ConfigurationSuccessResult.FormatKeys(entries).Should().Be(expected);
+    }
+
+    [Fact]
+    public void FormatKeysNeverIncludesValues()
+    {
+        var entries = new Dictionary<string, string> { { "DD_API_KEY", "super-secret" } };
+
+        ConfigurationSuccessResult.FormatKeys(entries).Should().Be("DD_API_KEY").And.NotContain("super-secret");
     }
 }
