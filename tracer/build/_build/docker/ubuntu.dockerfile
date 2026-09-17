@@ -67,12 +67,20 @@ RUN wget https://apt.llvm.org/llvm.sh \
     && ln -s `which clang-tidy-16` /usr/bin/clang-tidy \
     && ln -s `which run-clang-tidy-16` /usr/bin/run-clang-tidy
 
-# Fetch and verify the frozen glibc-2.17 sysroot (see glibc217-sysroot.harvest.dockerfile)
-RUN curl -sSL https://apmdotnetbuildstorage.blob.core.windows.net/build-dependencies/glibc217-sysroot-x86_64.tar.gz --output glibc217-sysroot-x86_64.tar.gz \
-    && echo '2e891242b066fe3c7d0c95cc68412a24b4f80bb8ae9d92226877a5c5b84226141425d70e920eeefe5205655f9669de7bb77f529089c72332f3a656fdbc72cc30  glibc217-sysroot-x86_64.tar.gz' | sha512sum --check \
-    && mkdir -p /sysroot/x86_64-glibc217 \
-    && tar -xzf glibc217-sysroot-x86_64.tar.gz -C /sysroot/x86_64-glibc217 \
-    && rm glibc217-sysroot-x86_64.tar.gz
+# Fetch and verify the frozen glibc-2.17 sysroot (architecture-specific).
+# See glibc217-sysroot.harvest.dockerfile (single file, both arches).
+RUN set -eux; \
+    ARCH="$(uname -m)"; \
+    case "$ARCH" in \
+        x86_64) SYSROOT_SHA512='2e891242b066fe3c7d0c95cc68412a24b4f80bb8ae9d92226877a5c5b84226141425d70e920eeefe5205655f9669de7bb77f529089c72332f3a656fdbc72cc30' ;; \
+        aarch64) SYSROOT_SHA512='10d951f73e9e430d93af9510ebc82eb9a63ccb39c4edb06be8cb961565a1ff3414617d5013f785261350ef713fb5a4824055ee889bce4b556e418056388fb983' ;; \
+        *) echo "Unsupported architecture: $ARCH" >&2; exit 1 ;; \
+    esac \
+    && curl -sSL https://apmdotnetbuildstorage.blob.core.windows.net/build-dependencies/glibc217-sysroot-${ARCH}.tar.gz --output glibc217-sysroot.tar.gz \
+    && echo "${SYSROOT_SHA512}  glibc217-sysroot.tar.gz" | sha512sum --check \
+    && mkdir -p /sysroot/${ARCH}-glibc217 \
+    && tar -xzf glibc217-sysroot.tar.gz -C /sysroot/${ARCH}-glibc217 \
+    && rm glibc217-sysroot.tar.gz
 
 # Install the .NET SDK
 RUN curl -sSL https://github.com/dotnet/install-scripts/raw/2bdc7f2c6e00d60be57f552b8a8aab71512dbcb2/src/dotnet-install.sh --output dotnet-install.sh \
