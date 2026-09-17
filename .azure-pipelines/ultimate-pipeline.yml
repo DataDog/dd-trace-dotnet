@@ -709,7 +709,7 @@ stages:
       matrix:
         arm64:
           baseImage: ubuntu
-          useNativeSdkVersion: true
+          useNativeSdkVersion: ""
           artifactSuffix: linux-arm64
         alpine:
           baseImage: alpine
@@ -807,7 +807,7 @@ stages:
       matrix:
         arm64:
           baseImage: ubuntu
-          useNativeSdkVersion: true
+          useNativeSdkVersion: ""
           artifactSuffix: linux-arm64
         alpine:
           baseImage: alpine
@@ -3232,7 +3232,7 @@ stages:
       parameters:
         build: true
         baseImage: ubuntu
-        useNativeSdkVersion: true
+        useNativeSdkVersion: ""
         command: "BuildProfilerAsanTest -Framework net7.0"
         apiKey: $(DD_LOGGER_DD_API_KEY)
         timeoutInMinutesForRunCommand: 30 # No retry: this target also runs the sanitizer unit tests, and retrying could mask a real intermittent finding
@@ -3291,7 +3291,7 @@ stages:
       parameters:
         build: true
         baseImage: ubuntu
-        useNativeSdkVersion: true
+        useNativeSdkVersion: ""
         command: "BuildProfilerUbsanTest -Framework net7.0"
         apiKey: $(DD_LOGGER_DD_API_KEY)
         timeoutInMinutesForRunCommand: 30 # No retry: this target also runs the sanitizer unit tests, and retrying could mask a real intermittent finding
