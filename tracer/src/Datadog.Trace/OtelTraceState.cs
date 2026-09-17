@@ -92,6 +92,7 @@ internal sealed class OtelTraceState
                 }
                 else
                 {
+                    threshold <<= (OtelTraceStateHelpers.MaxHexDigits - value.Length) * 4;
                     traceState.Threshold = threshold;
                 }
             }
