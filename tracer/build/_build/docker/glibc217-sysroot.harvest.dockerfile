@@ -80,6 +80,11 @@ RUN set -eux; \
              crt1.o crti.o crtn.o Scrt1.o gcrt1.o Mcrt1.o; do \
         cp -a /usr/lib64/$f /harvest/usr/lib64/; \
     done; \
+    # On aarch64, libc.so's linker script GROUP() references the interpreter at
+    # /lib/ld-linux-aarch64.so.1 (not /lib64/...) even though the real file - like
+    # everything else here - lives in lib64. Make --sysroot resolve that path too.
+    # x86_64 doesn't need this: its GROUP() references /lib64/ld-linux-x86-64.so.2 directly.
+    if [ "$ARCH" = "aarch64" ]; then ln -s lib64 /harvest/lib; fi; \
     # devtoolset libstdc++/libgcc archives and C++ headers. Output folder name
     # (devtoolset11, devtoolset10, ...) must match what Glibc217.cmake.* expects.
     DT_TRIPLE="${ARCH}-redhat-linux"; \
