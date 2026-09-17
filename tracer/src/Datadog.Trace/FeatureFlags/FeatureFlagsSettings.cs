@@ -88,6 +88,10 @@ internal sealed class FeatureFlagsSettings
         Enabled = enabled != false
                && Source is FeatureFlagsSource.Agentless or FeatureFlagsSource.RemoteConfig;
 
+        // Recorded explicitly: this is computed from two keys, so nothing reports it when neither is
+        // set, which is exactly the case where the product runs on its default.
+        telemetry.Record(ConfigurationKeys.FeatureFlags.FeatureFlagsEnabled, Enabled, ConfigurationOrigins.Calculated);
+
         var agentlessBaseUrl = config
                                 .WithKeys(ConfigurationKeys.FeatureFlags.FeatureFlagsConfigurationSourceAgentlessBaseUrl)
                                 .AsRedactedString();

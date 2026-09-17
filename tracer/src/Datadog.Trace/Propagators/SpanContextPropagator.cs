@@ -228,7 +228,6 @@ namespace Datadog.Trace.Propagators
             if (cumulativeSpanContext.RawTraceId == extractedSpanContext.RawTraceId)
             {
                 cumulativeSpanContext.AdditionalW3CTraceState += extractedSpanContext.AdditionalW3CTraceState;
-                cumulativeSpanContext.OtelTraceState = extractedSpanContext.OtelTraceState;
 
                 if (cumulativeSpanContext.RawSpanId != extractedSpanContext.RawSpanId)
                 {
