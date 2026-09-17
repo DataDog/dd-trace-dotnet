@@ -218,6 +218,44 @@ public class FeatureFlagsModuleTests
     }
 
     [Fact]
+    public void RegisterOnNewConfigEventHandler_WhenConfigurationAlreadyArrived_InvokesTheHandler()
+    {
+        using var module = CreateModule(CreateSettings(), new MockRcmSubscriptionManager());
+
+        module.ApplyConfiguration(new ServerConfiguration()).Should().BeTrue();
+
+        // The handler registers after the configuration landed, which is the ordering an application
+        // gets whenever Remote Configuration delivers before it builds a provider.
+        var callbackInvoked = false;
+        module.RegisterOnNewConfigEventHandler(() => callbackInvoked = true);
+
+        callbackInvoked.Should().BeTrue();
+    }
+
+    [Fact]
+    public void RegisterOnNewConfigEventHandler_WhenNoConfigurationYet_DoesNotInvokeTheHandler()
+    {
+        using var module = CreateModule(CreateSettings(), new MockRcmSubscriptionManager());
+
+        var callbackInvoked = false;
+        module.RegisterOnNewConfigEventHandler(() => callbackInvoked = true);
+
+        callbackInvoked.Should().BeFalse();
+    }
+
+    [Fact]
+    public void RegisterOnNewConfigEventHandler_WhenTheHandlerThrowsOnReplay_DoesNotPropagate()
+    {
+        using var module = CreateModule(CreateSettings(), new MockRcmSubscriptionManager());
+
+        module.ApplyConfiguration(new ServerConfiguration()).Should().BeTrue();
+
+        Action register = () => module.RegisterOnNewConfigEventHandler(() => throw new InvalidOperationException("from application code"));
+
+        register.Should().NotThrow();
+    }
+
+    [Fact]
     public async Task InitializeAsync_OnTimeout_ReturnsWithoutThrowing()
     {
         var settings = CreateInitializationSettings("1");

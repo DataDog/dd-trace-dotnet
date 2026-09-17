@@ -278,6 +278,24 @@ namespace Datadog.Trace.FeatureFlags
         internal void RegisterOnNewConfigEventHandler(Action? onNewConfig)
         {
             _onNewConfigEventHandler = onNewConfig;
+
+            // Configuration can already be held here: the Remote Configuration subscription is live
+            // from construction, long before application code builds a provider and registers a
+            // handler. The handler only fires on a change, so without this replay it never runs for a
+            // configuration that arrived first, and a caller waiting on it waits forever.
+            if (Volatile.Read(ref _evaluator) is null)
+            {
+                return;
+            }
+
+            try
+            {
+                onNewConfig?.Invoke();
+            }
+            catch (Exception ex)
+            {
+                Log.Warning(ex, "FeatureFlagsModule::RegisterOnNewConfigEventHandler -> Error in the configuration event handler");
+            }
         }
 
         internal Evaluation Evaluate(string flagKey, ValueType resultType, object? defaultValue, string targetingKey, IDictionary<string, object?>? attributes)
