@@ -4708,7 +4708,7 @@ stages:
       timeoutInMinutes: 30
 
       pool:
-        vmImage: windows-2022
+        vmImage: windows-2025
 
       steps:
       - template: steps/clone-repo.yml
@@ -4833,7 +4833,7 @@ stages:
     variables:
       GITHUB_APP_TOKEN: $[ dependencies.create_github_token.outputs['retrieve_github_token.GITHUB_APP_TOKEN'] ]
     pool:
-      vmImage: windows-2022
+      vmImage: windows-2025
 
     steps:
     - template: steps/clone-repo.yml
@@ -5064,7 +5064,7 @@ stages:
   #   timeoutInMinutes: 60 #default value
   #   dependsOn: [Windows]
   #   pool:
-  #     vmImage: windows-2022
+  #     vmImage: windows-2025
 
   #   steps:
   #   - template: steps/clone-repo.yml
@@ -5516,7 +5516,7 @@ stages:
   condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true'), eq(variables.isDockerImageBumpPr, 'true')))
   dependsOn: [package_windows, generate_variables, merge_commit_id]
   pool:
-    vmImage: windows-2022
+    vmImage: windows-2025
   jobs:
   - template: steps/run-smoke-tests-windows.yml
     parameters:
@@ -5529,7 +5529,7 @@ stages:
   condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true'), eq(variables.isDockerImageBumpPr, 'true')))
   dependsOn: [dotnet_tool, package_windows, generate_variables, merge_commit_id]
   pool:
-    vmImage: windows-2022
+    vmImage: windows-2025
   jobs:
   - template: steps/run-smoke-tests-windows.yml
     parameters:
@@ -5543,7 +5543,7 @@ stages:
   condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true'), eq(variables.isDockerImageBumpPr, 'true')))
   dependsOn: [dotnet_tool, package_windows, generate_variables, merge_commit_id]
   pool:
-    vmImage: windows-2022
+    vmImage: windows-2025
   jobs:
   - template: steps/run-smoke-tests-windows.yml
     parameters:
@@ -5557,7 +5557,7 @@ stages:
   condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true'), eq(variables.isDockerImageBumpPr, 'true')))
   dependsOn: [dotnet_tool, generate_variables, merge_commit_id]
   pool:
-    vmImage: windows-2022
+    vmImage: windows-2025
   jobs:
   - template: steps/run-smoke-tests-windows.yml
     parameters:
@@ -5569,7 +5569,7 @@ stages:
 - stage: smoke_win_tracer_home_tests
   dependsOn: [package_windows, generate_variables, merge_commit_id]
   pool:
-    vmImage: windows-2022
+    vmImage: windows-2025
   jobs:
   - template: steps/run-smoke-tests-windows.yml
     parameters:
@@ -5581,7 +5581,7 @@ stages:
 - stage: smoke_win_fleet_tests
   dependsOn: [package_windows, generate_variables, merge_commit_id]
   pool:
-    vmImage: windows-2022
+    vmImage: windows-2025
   jobs:
   - template: steps/run-smoke-tests-windows.yml
     parameters:

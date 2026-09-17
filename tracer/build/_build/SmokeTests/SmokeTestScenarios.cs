@@ -1002,13 +1002,12 @@ public static class SmokeTestScenarios
         static (TargetFramework PublishFramework, string Tag, string OsVersion)[] GetWindowsRuntimeImages() =>
             new []
             {
-                // .NET 11 dropped the windowsservercore-ltsc2022 tag; only ltsc2025 is published
+                // .NET 11 dropped the windowsservercore-ltsc2022 tag; only ltsc2025 are published
+                // So everything switches to 2025
                 (TargetFramework.NET11_0, "11.0-windowsservercore-ltsc2025", "servercore-2025"),
-                (TargetFramework.NET10_0, "10.0-windowsservercore-ltsc2022", "servercore-2022"),
-                (TargetFramework.NET9_0, "9.0-windowsservercore-ltsc2022", "servercore-2022"),
-                (TargetFramework.NET8_0, "8.0-windowsservercore-ltsc2022", "servercore-2022"),
-                (TargetFramework.NET7_0, "7.0-windowsservercore-ltsc2022", "servercore-2022"),
-                (TargetFramework.NET6_0, "6.0-windowsservercore-ltsc2022", "servercore-2022"),
+                (TargetFramework.NET10_0, "10.0-windowsservercore-ltsc2025", "servercore-2025"),
+                (TargetFramework.NET9_0, "9.0-windowsservercore-ltsc2025", "servercore-2025"),
+                (TargetFramework.NET8_0, "8.0-windowsservercore-ltsc2025", "servercore-2025"),
             };
 
         static IEnumerable<IEnumerable<SmokeTestScenario>> WindowsMsiScenarios()
@@ -1145,8 +1144,8 @@ public static class SmokeTestScenarios
             var platforms = new[] { "x64", "x86" };
             var runtimeImages = new[]
             {
-                (PublishFramework: TargetFramework.NET9_0, Tag: "4.8-windowsservercore-ltsc2022", OsVersion: "servercore-2022"),
-                (PublishFramework: TargetFramework.NET8_0, Tag: "4.8-windowsservercore-ltsc2022", OsVersion: "servercore-2022"),
+                (PublishFramework: TargetFramework.NET9_0, Tag: "4.8-windowsservercore-ltsc2025", OsVersion: "servercore-2025"),
+                (PublishFramework: TargetFramework.NET8_0, Tag: "4.8-windowsservercore-ltsc2025", OsVersion: "servercore-2025"),
             };
 
             yield return from platform in platforms
