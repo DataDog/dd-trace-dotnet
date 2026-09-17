@@ -59,7 +59,7 @@ namespace Datadog.Trace.Tests.OtelThreadContext
             {
                 // dirty the buffer first, so we can tell that Initialize really clears it
                 buffer.AsSpan().Fill(0xcd);
-                OtelThreadContextRecord.Initialize(record);
+                OtelThreadContextRecord.Initialize((IntPtr)record);
             }
 
             buffer[ValidOffset].Should().Be(0, "a record must not be readable before a context is written");
@@ -85,7 +85,7 @@ namespace Datadog.Trace.Tests.OtelThreadContext
 
             fixed (byte* record = buffer)
             {
-                OtelThreadContextRecord.Initialize(record);
+                OtelThreadContextRecord.Initialize((IntPtr)record);
                 OtelThreadContextRecord.Write((IntPtr)record, activeSpan);
             }
 
@@ -117,7 +117,7 @@ namespace Datadog.Trace.Tests.OtelThreadContext
 
             fixed (byte* record = buffer)
             {
-                OtelThreadContextRecord.Initialize(record);
+                OtelThreadContextRecord.Initialize((IntPtr)record);
                 OtelThreadContextRecord.Write((IntPtr)record, activeSpan);
             }
 
@@ -149,7 +149,7 @@ namespace Datadog.Trace.Tests.OtelThreadContext
 
             fixed (byte* record = buffer)
             {
-                OtelThreadContextRecord.Initialize(record);
+                OtelThreadContextRecord.Initialize((IntPtr)record);
                 OtelThreadContextRecord.Write((IntPtr)record, populatedSpan);
                 OtelThreadContextRecord.Write((IntPtr)record, emptySpan);
             }

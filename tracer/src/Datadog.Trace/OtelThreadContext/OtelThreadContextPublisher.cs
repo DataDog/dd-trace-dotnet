@@ -16,14 +16,14 @@ namespace Datadog.Trace.OtelThreadContext;
 /// <summary>
 /// Publishes the active trace context of the current thread as an OTEP 4947 <i>Thread-Local Context Record</i>.
 /// <para>
-/// Each OS thread owns one record. The address of that record is installed into the thread's
-/// <c>otel_thread_ctx_v1</c> slot once, the first time the thread carries an active span, and is never
-/// changed afterwards - so the only native call on the whole feature happens once per thread, and every
-/// subsequent context change is a handful of managed writes into unmanaged memory. See
-/// docs/OTelContextPropagation.md.
+/// Each OS thread owns one record. The address of that record is set into the thread's
+/// <c>otel_thread_ctx_v1</c> slot once, the first time the thread carries an active span, and remains
+/// set until native thread teardown - so the only native call on the whole feature happens once per
+/// thread, and every subsequent context change is a handful of direct managed writes into unmanaged memory.
+/// See docs/OTelContextPropagation.md.
 /// </para>
 /// </summary>
-internal sealed unsafe class OtelThreadContextPublisher : IOtelThreadContextPublisher
+internal sealed class OtelThreadContextPublisher : IOtelThreadContextPublisher
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<OtelThreadContextPublisher>();
 
@@ -34,12 +34,12 @@ internal sealed unsafe class OtelThreadContextPublisher : IOtelThreadContextPubl
     [ThreadStatic]
     private static ThreadRecord? _threadRecord;
 
-    private readonly IOtelThreadContextSlotProvider _slotProvider;
+    private readonly IOtelThreadContextRecordProvider _recordProvider;
     private int _disabled;
 
-    internal OtelThreadContextPublisher(IOtelThreadContextSlotProvider slotProvider)
+    internal OtelThreadContextPublisher(IOtelThreadContextRecordProvider recordProvider)
     {
-        _slotProvider = slotProvider;
+        _recordProvider = recordProvider;
     }
 
     public bool IsEnabled => Volatile.Read(ref _disabled) == 0;
@@ -74,12 +74,12 @@ internal sealed unsafe class OtelThreadContextPublisher : IOtelThreadContextPubl
             return NullOtelThreadContextPublisher.Instance;
         }
 
-        return new OtelThreadContextPublisher(OtelThreadContextSlotProvider.Instance);
+        return new OtelThreadContextPublisher(OtelThreadContextRecordProvider.Instance);
     }
 
     /// <summary>
-    /// Gets a value indicating whether the current platform can publish thread contexts at all. OTEP 4947
-    /// is deliberately Linux-only: it relies on ELF thread-local storage, and its readers are themselves
+    /// Return true if the current platform can publish thread contexts at all. OTEP 4947
+    /// is Linux-only: it relies on ELF thread-local storage, and its readers are themselves
     /// Linux-specific (the OpenTelemetry eBPF profiler, OBI).
     /// </summary>
     internal static bool IsPlatformSupported(FrameworkDescription framework)
@@ -111,9 +111,8 @@ internal sealed unsafe class OtelThreadContextPublisher : IOtelThreadContextPubl
     public void Reset()
     {
         // Deliberately does not initialize a record: a thread that has never published a context has a
-        // null slot, which already means "no context" to a reader.
+        // null exported per-thread slot, which already means "no context" to a reader.
         var record = _threadRecord;
-
         if (record is null || record.Owner != this || !IsEnabled)
         {
             return;
@@ -145,23 +144,19 @@ internal sealed unsafe class OtelThreadContextPublisher : IOtelThreadContextPubl
     {
         try
         {
-            var slot = _slotProvider.GetSlot();
+            var address = _recordProvider.GetRecord();
 
-            if (slot == IntPtr.Zero)
+            if (address == IntPtr.Zero)
             {
-                Disable("the native tracer did not provide a thread context slot");
+                Disable("the native tracer did not provide a thread context record");
                 return null;
             }
 
-            // The block will be returned when the ThreadRecord is destroyed
-            var block = OtelThreadContextRecordPool.Instance.Rent();
+            // Native code publishes a zeroed, invalid record before returning it.
+            // Initialize the fixed record fields before the first context is written.
+            OtelThreadContextRecord.Initialize(address);
 
-            // Publishing the pointer is a plain store: only this thread writes this slot, and the record
-            // it points at is already initialized and marked invalid, so a reader that samples between
-            // this store and the first Write() sees "no context" rather than garbage.
-            *(byte**)slot = block;
-
-            var record = new ThreadRecord(this, (IntPtr)block);
+            var record = new ThreadRecord(this, address);
             _threadRecord = record;
             return record;
         }
@@ -189,8 +184,7 @@ internal sealed unsafe class OtelThreadContextPublisher : IOtelThreadContextPubl
     }
 
     /// <summary>
-    /// Owns one thread's record. Reachable only from a <c>[ThreadStatic]</c> field, so it becomes
-    /// collectable when its thread dies, and the finalizer hands the record back to the pool.
+    /// Caches one thread's native-owned record and the publisher that acquired it.
     /// </summary>
     private sealed class ThreadRecord
     {
@@ -198,18 +192,6 @@ internal sealed unsafe class OtelThreadContextPublisher : IOtelThreadContextPubl
         {
             Owner = owner;
             Address = address;
-        }
-
-        ~ThreadRecord()
-        {
-            // Note we do NOT clear the thread's slot here: this runs on the finalizer thread, so the
-            // cached slot address belongs to a thread whose TLS block pthread has already reclaimed, and
-            // writing to it would be a use-after-free. Nothing is left dangling, because the slot dies
-            // together with the thread that owned it.
-            //
-            // Finalizers can also run at process shutdown while threads are still alive. Recycling a live
-            // thread's record then makes it read as "no context", which is harmless at that point.
-            OtelThreadContextRecordPool.Instance.Return((byte*)Address);
         }
 
         public OtelThreadContextPublisher Owner { get; }

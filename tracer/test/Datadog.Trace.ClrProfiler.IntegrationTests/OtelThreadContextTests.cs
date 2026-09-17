@@ -47,8 +47,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             spans.Should().NotBeEmpty("turning on thread context publication must not affect tracing");
 
             // The publisher latches itself off and logs a single warning the first time anything fails -
-            // resolving the slot, or writing the record - so the absence of that warning is what tells us
-            // the native symbol resolved and every thread installed its record.
+            // acquiring or writing the record - so the absence of that warning is what tells us the
+            // native symbol resolved and every thread installed its record.
             AssertNoThreadContextFailures(logDir);
 
             // Readers ignore the thread context records entirely unless the process context advertises

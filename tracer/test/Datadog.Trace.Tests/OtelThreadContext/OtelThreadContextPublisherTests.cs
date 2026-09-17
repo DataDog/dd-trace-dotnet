@@ -36,11 +36,11 @@ namespace Datadog.Trace.Tests.OtelThreadContext
         }
 
         [Fact]
-        public void ResolvesTheThreadLocalSlotOnlyOncePerThread()
+        public void AcquiresTheThreadLocalRecordOnlyOncePerThread()
         {
             // This is the whole point of the design: the single native call happens once per OS thread,
             // and every context change after that is a managed write into unmanaged memory.
-            using var provider = new FakeOtelThreadContextSlotProvider();
+            using var provider = new FakeOtelThreadContextRecordProvider();
             var publisher = new OtelThreadContextPublisher(provider);
 
             for (var i = 1; i <= 50; i++)
@@ -55,7 +55,7 @@ namespace Datadog.Trace.Tests.OtelThreadContext
         [Fact]
         public void PublishesTheActiveContext()
         {
-            using var provider = new FakeOtelThreadContextSlotProvider();
+            using var provider = new FakeOtelThreadContextRecordProvider();
             var publisher = new OtelThreadContextPublisher(provider);
 
             var traceId = new TraceId(0x0123456789abcdefUL, 0xfedcba9876543210UL);
@@ -81,7 +81,7 @@ namespace Datadog.Trace.Tests.OtelThreadContext
         [InlineData(SamplingPriorityValues.UserKeep, 1)]
         public void MapsTheSamplingDecisionOntoTheSampledFlag(int? samplingPriority, byte expectedTraceFlags)
         {
-            using var provider = new FakeOtelThreadContextSlotProvider();
+            using var provider = new FakeOtelThreadContextRecordProvider();
             var publisher = new OtelThreadContextPublisher(provider);
 
             publisher.Set(CreateSpan(samplingPriority: samplingPriority));
@@ -92,7 +92,7 @@ namespace Datadog.Trace.Tests.OtelThreadContext
         [Fact]
         public void ResetLeavesTheRecordInvalidWithoutClearingTheContext()
         {
-            using var provider = new FakeOtelThreadContextSlotProvider();
+            using var provider = new FakeOtelThreadContextRecordProvider();
             var publisher = new OtelThreadContextPublisher(provider);
 
             publisher.Set(CreateSpan(spanId: 0x1122334455667788UL));
@@ -109,11 +109,11 @@ namespace Datadog.Trace.Tests.OtelThreadContext
         }
 
         [Fact]
-        public void ResetBeforeAnySetDoesNotResolveTheSlot()
+        public void ResetBeforeAnySetDoesNotAcquireARecord()
         {
-            // A thread that never carried a span has a null slot, which already reads as "no context",
-            // so there is nothing to allocate or publish.
-            using var provider = new FakeOtelThreadContextSlotProvider();
+            // A thread that never carried a span has a null native slot, which already reads as
+            // "no context", so there is no record to acquire.
+            using var provider = new FakeOtelThreadContextRecordProvider();
             var publisher = new OtelThreadContextPublisher(provider);
 
             publisher.Reset();
@@ -125,7 +125,7 @@ namespace Datadog.Trace.Tests.OtelThreadContext
         [Fact]
         public void KeepsPublishingToTheSameRecordAcrossContextChanges()
         {
-            using var provider = new FakeOtelThreadContextSlotProvider();
+            using var provider = new FakeOtelThreadContextRecordProvider();
             var publisher = new OtelThreadContextPublisher(provider);
 
             publisher.Set(CreateSpan(spanId: 1));
@@ -142,7 +142,7 @@ namespace Datadog.Trace.Tests.OtelThreadContext
         [Fact]
         public void EachThreadPublishesItsOwnRecord()
         {
-            using var provider = new FakeOtelThreadContextSlotProvider();
+            using var provider = new FakeOtelThreadContextRecordProvider();
             var publisher = new OtelThreadContextPublisher(provider);
 
             var barrier = new Barrier(2);
@@ -174,7 +174,7 @@ namespace Datadog.Trace.Tests.OtelThreadContext
                 thread.Join(TimeSpan.FromSeconds(30)).Should().BeTrue();
             }
 
-            provider.CallCount.Should().Be(2, "one slot per thread");
+            provider.CallCount.Should().Be(2, "one record per thread");
             records[0].Should().NotBe(IntPtr.Zero);
             records[0].Should().NotBe(records[1], "records must not be shared between threads");
             observed[0].Should().Be(HexString.ToHexString(spanIds[0]));
@@ -182,9 +182,9 @@ namespace Datadog.Trace.Tests.OtelThreadContext
         }
 
         [Fact]
-        public void DisablesItselfWhenTheSlotIsUnavailable()
+        public void DisablesItselfWhenTheRecordIsUnavailable()
         {
-            using var provider = new FakeOtelThreadContextSlotProvider(returnNull: true);
+            using var provider = new FakeOtelThreadContextRecordProvider(returnNull: true);
             var publisher = new OtelThreadContextPublisher(provider);
 
             publisher.Set(CreateSpan());
@@ -202,7 +202,7 @@ namespace Datadog.Trace.Tests.OtelThreadContext
         {
             // Reading the sampled flag must not make the sampling decision happen earlier than it would
             // otherwise, because that is an observable change in tracer behaviour.
-            using var provider = new FakeOtelThreadContextSlotProvider();
+            using var provider = new FakeOtelThreadContextRecordProvider();
             var publisher = new OtelThreadContextPublisher(provider);
 
             await using var tracer = TracerHelper.Create(new TracerSettings(), Mock.Of<IAgentWriter>(), Mock.Of<ITraceSampler>());
@@ -221,7 +221,7 @@ namespace Datadog.Trace.Tests.OtelThreadContext
         [Fact]
         public async Task PublishesTheLocalRootSpanIdOfNestedSpans()
         {
-            using var provider = new FakeOtelThreadContextSlotProvider();
+            using var provider = new FakeOtelThreadContextRecordProvider();
             var publisher = new OtelThreadContextPublisher(provider);
 
             await using var tracer = TracerHelper.Create(new TracerSettings(), Mock.Of<IAgentWriter>(), Mock.Of<ITraceSampler>());

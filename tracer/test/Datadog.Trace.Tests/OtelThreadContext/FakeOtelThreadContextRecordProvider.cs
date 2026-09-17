@@ -1,4 +1,4 @@
-// <copyright file="FakeOtelThreadContextSlotProvider.cs" company="Datadog">
+// <copyright file="FakeOtelThreadContextRecordProvider.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -12,30 +12,31 @@ using Datadog.Trace.OtelThreadContext;
 namespace Datadog.Trace.Tests.OtelThreadContext
 {
     /// <summary>
-    /// Stands in for the native <c>otel_thread_ctx_v1</c> thread-local slot, so the publisher can be
-    /// exercised on any platform without the native tracer. Hands out one distinct pointer-sized slot per
-    /// calling thread, exactly as ELF thread-local storage would.
+    /// Stands in for the native owner of OTEP 4947 records, so the publisher can be exercised on any
+    /// platform without the native tracer. Hands out one stable, zeroed record per calling thread.
     /// </summary>
-    internal sealed unsafe class FakeOtelThreadContextSlotProvider : IOtelThreadContextSlotProvider, IDisposable
+    internal sealed class FakeOtelThreadContextRecordProvider : IOtelThreadContextRecordProvider, IDisposable
     {
+        private static readonly byte[] EmptyRecord = new byte[OtelThreadContextRecord.Size];
+
         private readonly object _lock = new();
-        private readonly Dictionary<int, IntPtr> _slotsByThread = new();
+        private readonly Dictionary<int, IntPtr> _recordsByThread = new();
         private readonly List<IntPtr> _allocations = new();
         private readonly bool _returnNull;
         private int _callCount;
 
-        public FakeOtelThreadContextSlotProvider(bool returnNull = false)
+        public FakeOtelThreadContextRecordProvider(bool returnNull = false)
         {
             _returnNull = returnNull;
         }
 
         /// <summary>
-        /// Gets the number of times a slot has been requested. The design guarantees this is once per
+        /// Gets the number of times a record has been requested. The publisher requests it once per
         /// thread, no matter how many spans are activated.
         /// </summary>
         public int CallCount => Volatile.Read(ref _callCount);
 
-        public IntPtr GetSlot()
+        public IntPtr GetRecord()
         {
             Interlocked.Increment(ref _callCount);
 
@@ -46,29 +47,35 @@ namespace Datadog.Trace.Tests.OtelThreadContext
 
             lock (_lock)
             {
-                var slot = Marshal.AllocHGlobal(IntPtr.Size);
-                *(IntPtr*)slot = IntPtr.Zero;
-                _allocations.Add(slot);
-                _slotsByThread[Environment.CurrentManagedThreadId] = slot;
-                return slot;
+                var threadId = Environment.CurrentManagedThreadId;
+                if (_recordsByThread.TryGetValue(threadId, out var existing))
+                {
+                    return existing;
+                }
+
+                var record = Marshal.AllocHGlobal(OtelThreadContextRecord.Size);
+                Marshal.Copy(EmptyRecord, 0, record, EmptyRecord.Length);
+                _allocations.Add(record);
+                _recordsByThread[threadId] = record;
+                return record;
             }
         }
 
         /// <summary>
-        /// Gets the address of the record the current thread published, or zero if it published none.
+        /// Gets the current thread's record, or zero if it has not acquired one.
         /// </summary>
         public IntPtr GetPublishedRecord()
         {
             lock (_lock)
             {
-                return _slotsByThread.TryGetValue(Environment.CurrentManagedThreadId, out var slot)
-                           ? *(IntPtr*)slot
+                return _recordsByThread.TryGetValue(Environment.CurrentManagedThreadId, out var record)
+                           ? record
                            : IntPtr.Zero;
             }
         }
 
         /// <summary>
-        /// Copies the record the current thread published. Fails if nothing has been published.
+        /// Copies the current thread's record. Fails if nothing has been published.
         /// </summary>
         public byte[] ReadPublishedRecord()
         {
@@ -94,7 +101,7 @@ namespace Datadog.Trace.Tests.OtelThreadContext
                 }
 
                 _allocations.Clear();
-                _slotsByThread.Clear();
+                _recordsByThread.Clear();
             }
         }
     }

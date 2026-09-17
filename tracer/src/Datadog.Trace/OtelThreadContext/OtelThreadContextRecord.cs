@@ -13,9 +13,10 @@ using Datadog.Trace.Util;
 namespace Datadog.Trace.OtelThreadContext;
 
 /// <summary>
-/// Reads and writes the OTEP 4947 <i>Thread-Local Context Record</i>. This is the only type that knows
-/// the byte layout of the record, which is normative and shared with every other reader and writer of
-/// the format (libdatadog's <c>libdd-otel-thread-ctx</c>, the Java profiler, the OpenTelemetry eBPF profiler).
+/// Reads and writes the OTEP 4947 <i>Thread-Local Context Record</i>. This is the only managed type that
+/// knows the semantic byte layout of the record, which is normative and shared with every other reader
+/// and writer of the format (libdatadog's <c>libdd-otel-thread-ctx</c>, the Java profiler, the
+/// OpenTelemetry eBPF profiler).
 /// <para>
 /// The record is byte-packed with no padding. Multi-byte scalars use native (host) endianness, while the
 /// trace id and span id are stored in W3C Trace Context format, i.e. big endian.
@@ -36,7 +37,7 @@ namespace Datadog.Trace.OtelThreadContext;
 /// <c>LOCAL_ROOT_SPAN_ATTR_INDEX</c>), which keeps our records byte-compatible with the other Datadog writers.
 /// </para>
 /// </summary>
-internal static unsafe class OtelThreadContextRecord
+internal static class OtelThreadContextRecord
 {
     /// <summary>
     /// Total size of the record. Only the first <c>28 + <see cref="AttrsDataSize"/></c> bytes are meaningful,
@@ -79,13 +80,17 @@ internal static unsafe class OtelThreadContextRecord
     private const ushort AttrsDataSize = 2 + LocalRootSpanIdLength;
 
     /// <summary>
-    /// Prepares a freshly rented block: zeroes it, then writes the parts of the record that never change.
-    /// The record is left invalid, so a reader that sees it before the first <see cref="Write"/> reports
-    /// "no context" rather than a half-written one.
+    /// Prepares an acquired native record: invalidates and zeroes it, then writes the parts of the record that
+    /// never change. The record is left invalid, so a reader that sees it before the first
+    /// <see cref="Write"/> reports "no context" rather than a half-written one.
     /// </summary>
-    public static void Initialize(byte* record)
+    public static void Initialize(IntPtr address)
     {
-        var span = AsSpan(record);
+        var span = AsSpan(address);
+
+        // A second publisher can acquire the record already attached to this OS thread. Invalidate it
+        // before clearing so an external reader cannot observe a partially reset context as valid.
+        Volatile.Write(ref span[ValidOffset], Invalid);
         span.Clear();
 
         span[AttrsDataOffset] = LocalRootSpanIdKeyIndex;
@@ -96,7 +101,7 @@ internal static unsafe class OtelThreadContextRecord
     }
 
     /// <summary>
-    /// Publishes a trace context into the record.
+    /// Publish a trace context into the record.
     /// <para>
     /// Only the owning thread ever writes the record, and readers are required to observe it while that
     /// thread is stopped or interrupted, so there is no cross-thread race to guard against - the only
@@ -106,7 +111,7 @@ internal static unsafe class OtelThreadContextRecord
     /// </summary>
     public static void Write(IntPtr address, Span activeSpan)
     {
-        var record = AsSpan((byte*)address);
+        var record = AsSpan(address);
         var traceId = activeSpan.Context.TraceId128;
 
         Volatile.Write(ref record[ValidOffset], Invalid);
@@ -123,19 +128,19 @@ internal static unsafe class OtelThreadContextRecord
     }
 
     /// <summary>
-    /// Marks the record as carrying no context. Per the spec this is a valid way to detach: the alternative
-    /// is clearing the thread-local pointer, and a writer must pick one mechanism or the other, not both.
-    /// We own a fixed record per thread, so we always use the flag.
+    /// Marks the record as carrying no context. Per the spec this is a valid way to detach.
+    /// The native layer still owns the record for the current thread, but it is not storing1
+    /// any context until the next <see cref="Write"/> call.
     /// </summary>
     public static void Invalidate(IntPtr address)
     {
-        Volatile.Write(ref AsSpan((byte*)address)[ValidOffset], Invalid);
+        Volatile.Write(ref AsSpan(address)[ValidOffset], Invalid);
     }
 
     /// <summary>
     /// Builds the W3C trace-flags byte.
     /// <para>
-    /// This reads the sampling decision only if one has already been made. Calling
+    /// Read the sampling decision only if one has already been made. Calling
     /// <c>GetOrMakeSamplingDecision()</c> here - as the W3C propagator does - would force the decision at
     /// span activation time instead of when the trace is propagated or flushed, which is an observable
     /// change in tracer behaviour. An undecided trace is reported as not sampled.
@@ -150,5 +155,11 @@ internal static unsafe class OtelThreadContextRecord
                    : (byte)0;
     }
 
-    private static Span<byte> AsSpan(byte* record) => new(record, Size);
+    private static Span<byte> AsSpan(IntPtr address)
+    {
+        unsafe
+        {
+            return new Span<byte>((void*)address, Size);
+        }
+    }
 }

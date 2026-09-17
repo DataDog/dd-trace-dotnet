@@ -48,9 +48,9 @@ AsyncLocalScopeManager.OnScopeChanged            (the existing AsyncLocal<Scope>
         +--> Profiler.Instance.ContextTracker.Set(...)          Continuous Profiler, unchanged
         +--> OtelThreadContextPublisher.Set(span)
                  |
-                 +-- [ThreadStatic] record  -- miss --> rent a 640B block from the pool,
-                 |                                      GetOtelThreadContextSlot()   <-- the only P/Invoke
-                 |                                      *slot = block                <-- managed store
+                 +-- [ThreadStatic] record  -- miss --> GetOrCreateOtelThreadContextRecord()
+                 |                                      rent and publish a native-owned 640B block,
+                 |                                      register its pthread destructor
                  |
                  +-- hit --> write the record in place, no interop at all
 ```
@@ -69,9 +69,10 @@ attrs-data = hex(localRootSpanId)
 valid = 1                       // offset 24, Volatile.Write
 ```
 
-Because the pointer is installed once and never changed, detaching is done by clearing `valid`. The spec
-requires a writer to pick one mechanism or the other — swapping the pointer, or toggling the flag — and
-never both.
+During the OS thread's usable lifetime the pointer remains installed, so context detachment is done by
+clearing `valid`. The native pthread destructor clears the pointer only as part of thread teardown. The
+spec requires a writer to pick one mechanism or the other for context transitions — swapping the pointer,
+or toggling the flag — and never both.
 
 Only the owning thread writes its record, and the spec requires readers to observe a thread while it is
 stopped or interrupted, so there is no cross-thread race to guard against. The only hazard is reordering,
@@ -81,7 +82,9 @@ and skips it rather than reading a torn one.
 ### Record layout
 
 Byte-packed with no padding. Multi-byte scalars use native endianness; the trace and span ids use W3C
-Trace Context format, i.e. big endian. `OtelThreadContextRecord` is the only type that knows this layout.
+Trace Context format, i.e. big endian. `OtelThreadContextRecord` owns the semantic encoding; native
+lifecycle code mirrors only the total size, alignment, and `valid` offset needed to allocate and retire a
+record safely.
 
 | Offset | Size | Field             | What we write                                      |
 | -----: | ---: | ----------------- | -------------------------------------------------- |
@@ -104,27 +107,25 @@ so the meaningful prefix never straddles two lines.
 
 ### Record lifetime
 
-Records are pooled by `OtelThreadContextRecordPool` and **never returned to the allocator**. Threads die
-at arbitrary points and an out-of-process reader may hold the address of a record, so freeing the memory
-would risk a use-after-free across a process boundary. Recycling instead bounds the footprint by the peak
-number of threads that have carried an active span, at 640 bytes each.
+Records are owned and pooled by `otel_thread_ctx.cpp`, and are **never returned to the allocator**.
+`GetOrCreateOtelThreadContextRecord()` rents a cache-line-aligned block, publishes it through the calling
+thread's `otel_thread_ctx_v1` slot, and stores it in a process-lifetime pthread key. The managed
+`[ThreadStatic]` field is only a fast address cache; it has no ownership responsibility.
 
-A thread's record is owned by a finalizable object held in a `[ThreadStatic]` field, so it becomes
-collectable when the thread dies and the finalizer returns the block to the pool. Three subtleties:
+The pthread-key destructor runs on the exiting OS thread. It first invalidates the record, clears that
+thread's exported TLS slot, zeroes the record, and only then returns the block to the native free list.
+This ties recycling to the lifetime of the actual ELF TLS slot instead of relying on managed finalizer
+ordering.
 
-- The finalizer **must not** clear the thread's slot. It runs on the finalizer thread, so the cached slot
-  address belongs to a thread whose TLS block pthread has already reclaimed. Nothing is left dangling
-  anyway, because the slot dies together with its thread.
-- Blocks are zeroed **on release**, not just on rent. A new thread's `.tbss` is zero-initialized by the
-  loader, so it should never observe a recycled block at all — but if it somehow did, a zeroed block reads
-  as "no context" rather than as another thread's context.
-- The free list is guarded by a plain `lock`, not a lock-free CAS. A block is rented once per thread and
-  returned once that thread is gone, so contention is negligible and the lock avoids having to reason about
-  ABA on a recycled node.
+The native key, mutex, and free list deliberately have process lifetime: thread destructors may run during
+shutdown, so destroying the pool itself would introduce an ordering race. A plain pthread mutex guards the
+free list; allocation happens once per participating OS thread and there is no contention on span
+activation.
 
 ## The native surface
 
-`tracer/src/Datadog.Tracer.Native/otel_thread_ctx.cpp`, in full:
+`tracer/src/Datadog.Tracer.Native/otel_thread_ctx.cpp` defines the exported slot and the one native entry
+point:
 
 ```cpp
 extern "C"
@@ -132,11 +133,14 @@ extern "C"
     __attribute__((visibility("default"))) __thread void* otel_thread_ctx_v1;
 }
 
-extern "C" __attribute__((visibility("default"))) void** GetOtelThreadContextSlot()
-{
-    return &otel_thread_ctx_v1;
-}
+extern "C" __attribute__((visibility("default")))
+void* GetOrCreateOtelThreadContextRecord();
 ```
+
+The implementation owns a process-lifetime pthread key and native record pool. The first call on an OS
+thread rents a zeroed record, registers it with `pthread_setspecific`, and publishes its pointer. Repeated
+calls return the same address. The key destructor clears the TLS pointer and recycles the record on the
+owning thread.
 
 The braced linkage block matters. `extern "C" __thread void* otel_thread_ctx_v1;` is only a
 *declaration* — a declaration directly contained in a linkage-specification is treated as if it carried
@@ -157,8 +161,8 @@ How the export is produced:
 - The spec prefers the TLSDESC dialect but also supports traditional Global Dynamic, and requires readers
   to handle initial-exec/local-exec relaxation. CMake probes for `-mtls-dialect=gnu2` (x86-64) or
   `-mtls-dialect=desc` (arm64) and applies it to this one file, falling back silently — support depends on
-  the compiler version, and since the slot address is resolved once per thread the dialect has no
-  measurable cost either way.
+  the compiler version, and since native TLS access is limited to record acquisition and teardown the
+  dialect has no measurable cost either way.
 - `--export-dynamic-symbol` is not needed. That is the spec's advice for symbols defined in an executable
   or a statically linked binary; ours is a definition with default visibility inside a shared object.
 
@@ -261,12 +265,12 @@ has already been made. Calling `GetOrMakeSamplingDecision()` here, as the W3C pr
 the decision to span activation time, which is an observable change in tracer behaviour. An undecided trace
 is reported as not sampled.
 
-**No P/Invoke-map registration was needed.** `GetOtelThreadContextSlot` lives in the existing
+**No P/Invoke-map registration was needed.** `GetOrCreateOtelThreadContextRecord` lives in the existing
 `Datadog.Trace.ClrProfiler.NativeMethods+NonWindows` class, which `cor_profiler.cpp` already rewrites to
 point at the deployed native library.
 
-**Self-disabling.** The first failure — the slot not resolving, or a write throwing — latches the publisher
-off permanently and logs one warning. It never probes again.
+**Self-disabling.** The first failure — a record not being provided, or a write throwing — latches the
+publisher off permanently and logs one warning. It never probes again.
 
 **A parked thread keeps its last context.** The record is per OS thread, the context is per
 `ExecutionContext`. A thread parked in the thread pool keeps `valid == 1` from its last work item until the
@@ -278,14 +282,13 @@ next restore. `Reset` on a null scope covers normal completion.
 
 | Path | Role |
 | --- | --- |
-| `tracer/src/Datadog.Tracer.Native/otel_thread_ctx.cpp` | The TLS slot and its address getter |
+| `tracer/src/Datadog.Tracer.Native/otel_thread_ctx.cpp`, `.h` | The TLS slot, native record pool, and pthread lifetime |
 | `tracer/src/Datadog.Tracer.Native/CMakeLists.txt` | Adds it to the SHARED target; probes the TLS dialect |
-| `tracer/src/Datadog.Trace/OtelThreadContext/OtelThreadContextRecord.cs` | The only code that knows the byte layout |
-| `.../OtelThreadContext/OtelThreadContextPublisher.cs` | Per-thread lifecycle, publication, platform gate, self-disabling |
-| `.../OtelThreadContext/OtelThreadContextRecordPool.cs` | Free list of aligned unmanaged blocks |
+| `tracer/src/Datadog.Trace/OtelThreadContext/OtelThreadContextRecord.cs` | Managed record encoding and updates |
+| `.../OtelThreadContext/OtelThreadContextPublisher.cs` | Per-thread address cache, publication, platform gate, self-disabling |
 | `.../OtelThreadContext/IOtelThreadContextPublisher.cs`, `NullOtelThreadContextPublisher.cs` | The publisher abstraction and its no-op |
-| `.../OtelThreadContext/IOtelThreadContextSlotProvider.cs`, `OtelThreadContextSlotProvider.cs` | The single point of contact with native code |
-| `tracer/src/Datadog.Trace/ClrProfiler/NativeMethods.cs` | `GetOtelThreadContextSlot` P/Invoke |
+| `.../OtelThreadContext/IOtelThreadContextRecordProvider.cs`, `OtelThreadContextRecordProvider.cs` | The single point of contact with native code |
+| `tracer/src/Datadog.Trace/ClrProfiler/NativeMethods.cs` | `GetOrCreateOtelThreadContextRecord` P/Invoke |
 | `tracer/src/Datadog.Trace/AsyncLocalScopeManager.cs` | Drives the publisher from the scope-changed callback |
 | `tracer/src/Datadog.Trace/TracerManagerFactory.cs` | Creates the publisher and passes it to the scope manager |
 
@@ -307,17 +310,15 @@ next restore. `Reset` on a null scope covers normal completion.
 
 ## Tests
 
-48 unit test cases, all runnable on any platform — the native slot is stood in for by
-`FakeOtelThreadContextSlotProvider`, and the process context by a hand-built header laid out like the real
-mapping. They live in `tracer/test/Datadog.Trace.Tests/OtelThreadContext/`:
+Managed unit tests are runnable on any platform — the native record provider is stood in for by
+`FakeOtelThreadContextRecordProvider`, and the process context by a hand-built header laid out like the
+real mapping. They live in `tracer/test/Datadog.Trace.Tests/OtelThreadContext/`:
 
 - `OtelThreadContextRecordTests.cs` — the record layout, with offsets hard-coded from the spec rather than
   read back from the implementation, since the layout is an inter-process contract.
-- `OtelThreadContextRecordPoolTests.cs` — alignment, recycling, that a reused block carries nothing from
-  its previous owner, and concurrent rent/return.
-- `OtelThreadContextPublisherTests.cs` — that the slot is resolved exactly once per thread, that each
+- `OtelThreadContextPublisherTests.cs` — that the record is acquired exactly once per thread, that each
   thread gets its own record, that `Reset` only clears `valid`, that the publisher disables itself when the
-  slot is unavailable, and that publishing does not force a sampling decision.
+  record is unavailable, and that publishing does not force a sampling decision.
 - `ThreadLocalMetadataPayloadTests.cs` — the protobuf wire format, asserted against tags, lengths and
   offsets worked out by hand rather than round-tripped through the same encoder.
 - `OtelProcessContextAnnouncerTests.cs` — `/proc/self/maps` parsing, and the update protocol: that unknown
@@ -328,6 +329,10 @@ mapping. They live in `tracer/test/Datadog.Trace.Tests/OtelThreadContext/`:
 Plus `tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/OtelThreadContextTests.cs`, Linux only: that
 the native symbol resolves in a real instrumented process, that the announcement succeeds, that tracing is
 undisturbed, and that nothing at all is logged when the feature is off.
+
+`tracer/test/Datadog.Tracer.Native.Tests/otel_thread_ctx_test.cpp` creates and joins real pthreads to verify
+that an address is stable for an owning thread, concurrent threads receive distinct records, and thread
+exit returns a zeroed, aligned record for reuse.
 
 Useful checks against a built library:
 

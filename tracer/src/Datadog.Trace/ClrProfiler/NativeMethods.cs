@@ -274,16 +274,16 @@ namespace Datadog.Trace.ClrProfiler
         }
 
         /// <summary>
-        /// Gets the address of the calling thread's <c>otel_thread_ctx_v1</c> slot, as required by OTEP 4947,
-        /// or <see cref="IntPtr.Zero"/> when the current platform does not publish the symbol.
+        /// Gets the calling thread's OTEP 4947 Thread-Local Context Record, creating and publishing it on
+        /// first use, or <see cref="IntPtr.Zero"/> when the current platform cannot provide one.
         /// See docs/OTelContextPropagation.md.
         /// </summary>
-        public static IntPtr GetOtelThreadContextSlot()
+        public static IntPtr GetOrCreateOtelThreadContextRecord()
         {
             // the symbol is only defined on Linux, matching the scope of OTEP 4947
             if (IsLinux)
             {
-                return NonWindows.GetOtelThreadContextSlot();
+                return NonWindows.GetOrCreateOtelThreadContextRecord();
             }
 
             return IntPtr.Zero;
@@ -381,7 +381,7 @@ namespace Datadog.Trace.ClrProfiler
             public static extern long GetInodeForPath([MarshalAs(UnmanagedType.LPWStr)]string path);
 
             [DllImport("Datadog.Tracer.Native")]
-            public static extern IntPtr GetOtelThreadContextSlot();
+            public static extern IntPtr GetOrCreateOtelThreadContextRecord();
         }
     }
 }

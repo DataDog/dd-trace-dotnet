@@ -93,6 +93,10 @@ else()
     message(STATUS "CLANG++ was found")
 endif()
 
+if (ISLINUX)
+    find_package(Threads REQUIRED)
+endif()
+
 # ******************************************************
 # Output folders
 # ******************************************************
@@ -274,13 +278,14 @@ else()
     )
 endif()
 
-# otel_thread_ctx.cpp defines the `otel_thread_ctx_v1` ELF TLS symbol required by OTEP 4947.
-# It belongs to the SHARED target (not the static library) so the definition can never be
-# dropped as an unreferenced archive member. OTEP 4947 prefers the TLSDESC dialect but also
-# supports traditional Global Dynamic, and requires readers to handle initial-exec/local-exec
-# relaxation - and we resolve the slot address only once per thread, so the dialect has no
-# measurable cost either way. Ask for TLSDESC when the toolchain understands it, and fall back
-# silently otherwise, since the flag depends on the clang version.
+# otel_thread_ctx.cpp defines the `otel_thread_ctx_v1` ELF TLS symbol and owns each
+# thread's record lifetime. It belongs to the SHARED target (not the static library) so
+# the definition can never be dropped as an unreferenced archive member. OTEP 4947
+# prefers the TLSDESC dialect but also supports traditional Global Dynamic, and requires
+# readers to handle initial-exec/local-exec relaxation - and we access the TLS slot only
+# while acquiring or destroying a record, so the dialect has no measurable cost either
+# way. Ask for TLSDESC when the toolchain understands it, and fall back silently
+# otherwise, since the flag depends on the clang version.
 if (ISLINUX)
     include(CheckCXXCompilerFlag)
     if (ISARM64)
@@ -301,3 +306,6 @@ set_target_properties("Datadog.Tracer.Native" PROPERTIES PREFIX "")
 
 # Define linker libraries
 target_link_libraries("Datadog.Tracer.Native" "Datadog.Tracer.Native.static")
+if (ISLINUX)
+    target_link_libraries("Datadog.Tracer.Native" Threads::Threads)
+endif()

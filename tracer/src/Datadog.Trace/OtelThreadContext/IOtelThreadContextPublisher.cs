@@ -9,7 +9,7 @@ namespace Datadog.Trace.OtelThreadContext;
 
 /// <summary>
 /// Publishes the active trace context of the current thread using the OTEP 4947 thread context protocol,
-/// so out-of-process readers can attribute their observations to the same trace and span.
+/// so in/out-of-process readers can attribute their observations to the same trace and span.
 /// </summary>
 internal interface IOtelThreadContextPublisher
 {
