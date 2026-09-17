@@ -758,10 +758,12 @@ stages:
     strategy:
       matrix:
         arm64:
-          baseImage: debian
+          baseImage: ubuntu
+          useNativeSdkVersion: true
           artifactSuffix: linux-arm64
         alpine:
           baseImage: alpine
+          useNativeSdkVersion: ""
           artifactSuffix: linux-musl-arm64
     pool:
       name: $(linuxArm64Pool)
@@ -777,6 +779,7 @@ stages:
         build: true
         target: builder
         baseImage: $(baseImage)
+        useNativeSdkVersion: $(useNativeSdkVersion)
         command: "Clean CompileManagedLoader BuildNativeTracerHome BuildManagedTracerHome ExtractDebugInfoLinux ValidateNativeTracerGlibcCompatibility"
         retryCountForRunCommand: 1
         timeoutInMinutesForRunCommand: 20
@@ -853,10 +856,12 @@ stages:
     strategy:
       matrix:
         arm64:
-          baseImage: debian
+          baseImage: ubuntu
+          useNativeSdkVersion: true
           artifactSuffix: linux-arm64
         alpine:
           baseImage: alpine
+          useNativeSdkVersion: ""
           artifactSuffix: linux-musl-arm64
     pool:
       name: $(linuxArm64Pool)
@@ -872,6 +877,7 @@ stages:
         build: true
         target: builder
         baseImage: $(baseImage)
+        useNativeSdkVersion: $(useNativeSdkVersion)
         command: "Clean BuildProfilerHome ExtractDebugInfoLinux ValidateNativeProfilerGlibcCompatibility"
         retryCountForRunCommand: 1
         timeoutInMinutesForRunCommand: 15
@@ -3220,7 +3226,6 @@ stages:
     - template: steps/run-in-docker.yml
       parameters:
         target: builder
-        # ubuntu (frozen glibc-2.17 sysroot) to match the build step above
         baseImage: ubuntu
         useNativeSdkVersion: true
         command: "RunSampleWithProfilerAsan -Framework net7.0"
@@ -3285,7 +3290,8 @@ stages:
     - template: steps/run-in-docker.yml
       parameters:
         build: true
-        baseImage: debian
+        baseImage: ubuntu
+        useNativeSdkVersion: true
         command: "BuildProfilerAsanTest -Framework net7.0"
         apiKey: $(DD_LOGGER_DD_API_KEY)
         timeoutInMinutesForRunCommand: 30 # No retry: this target also runs the sanitizer unit tests, and retrying could mask a real intermittent finding
@@ -3301,7 +3307,8 @@ stages:
 
     - template: steps/run-in-docker.yml
       parameters:
-        baseImage: debian
+        baseImage: ubuntu
+        useNativeSdkVersion: true
         command: "RunSampleWithProfilerAsan -Framework net7.0"
         apiKey: $(DD_LOGGER_DD_API_KEY)
 
@@ -3342,7 +3349,8 @@ stages:
     - template: steps/run-in-docker.yml
       parameters:
         build: true
-        baseImage: debian
+        baseImage: ubuntu
+        useNativeSdkVersion: true
         command: "BuildProfilerUbsanTest -Framework net7.0"
         apiKey: $(DD_LOGGER_DD_API_KEY)
         timeoutInMinutesForRunCommand: 30 # No retry: this target also runs the sanitizer unit tests, and retrying could mask a real intermittent finding
@@ -3358,7 +3366,9 @@ stages:
 
     - template: steps/run-in-docker.yml
       parameters:
-        baseImage: debian
+        # ubuntu (frozen glibc-2.17 sysroot) to match the build step above
+        baseImage: ubuntu
+        useNativeSdkVersion: true
         command: "RunSampleWithProfilerUbsan -Framework net7.0"
         apiKey: $(DD_LOGGER_DD_API_KEY)
 
