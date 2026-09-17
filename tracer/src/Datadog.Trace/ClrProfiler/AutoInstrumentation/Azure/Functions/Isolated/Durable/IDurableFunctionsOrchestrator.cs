@@ -11,7 +11,7 @@ using Datadog.Trace.DuckTyping;
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions;
 
 /// <summary>
-/// Duck type for the FunctionsOrchestrator and WrapperOrchestrator function-context fields.
+/// Duck type for the FunctionsOrchestrator function-context field.
 /// </summary>
 internal interface IDurableFunctionsOrchestrator
 {
