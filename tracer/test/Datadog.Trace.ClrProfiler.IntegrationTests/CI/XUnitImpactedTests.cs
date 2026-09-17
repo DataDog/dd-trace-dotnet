@@ -74,34 +74,37 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             // Check for Git availability
             Skip.IfNot(gitAvailable, "Git not available or not properly configured in current environment");
 
+            // Check before entering cleanup so existing staged or working-tree edits are untouched.
+            var testFile = GetTestFile();
+            var statusOutput = RunGitCommand($"status --porcelain -- \"{testFile}\"");
+            statusOutput.ExitCode.Should().Be(0, $"Failed to check test file changes: {statusOutput.Error}");
+            Skip.If(!StringUtil.IsNullOrEmpty(statusOutput.Output.Trim()), "The sample test file has uncommitted changes");
+
+            var currentBranchOutput = RunGitCommand("branch --show-current");
+            currentBranchOutput.ExitCode.Should().Be(0, "Failed to get current branch");
+            var originalBranch = currentBranchOutput.Output.Trim();
+            Output.WriteLine($"Original branch: {originalBranch}");
+
+            var originalCommitOutput = RunGitCommand("rev-parse HEAD");
+            originalCommitOutput.ExitCode.Should().Be(0, "Failed to get current commit");
+            var originalCommit = originalCommitOutput.Output.Trim();
+
+            // Only enter cleanup after successfully creating and checking out the test branch.
             var testBranchName = $"test-impact-detection-{Guid.NewGuid():N}";
-            var originalBranch = string.Empty;
-            var originalCommit = string.Empty;
+            var createBranchOutput = RunGitCommand($"checkout -b {testBranchName}");
+            createBranchOutput.ExitCode.Should().Be(0, $"Failed to create test branch: {createBranchOutput.Error}");
 
             try
             {
-                // Get the current branch name
-                var currentBranchOutput = RunGitCommand("branch --show-current");
-                currentBranchOutput.ExitCode.Should().Be(0, "Failed to get current branch");
-                originalBranch = currentBranchOutput.Output.Trim();
-                Output.WriteLine($"Original branch: {originalBranch}");
-
-                var originalCommitOutput = RunGitCommand("rev-parse HEAD");
-                originalCommitOutput.ExitCode.Should().Be(0, "Failed to get current commit");
-                originalCommit = originalCommitOutput.Output.Trim();
-
-                // Create and checkout a new test branch
-                var createBranchOutput = RunGitCommand($"checkout -b {testBranchName}");
-                createBranchOutput.ExitCode.Should().Be(0, $"Failed to create test branch: {createBranchOutput.Error}");
-
                 // Modify the test file
                 ModifyFile();
 
                 // Stage and commit the changes
-                var addOutput = RunGitCommand($"add {GetTestFile()}");
+                var addOutput = RunGitCommand($"add -- \"{testFile}\"");
                 addOutput.ExitCode.Should().Be(0, $"Failed to stage changes: {addOutput.Error}");
 
-                var commitOutput = RunGitCommand("-c user.name=DatadogCI -c user.email=ci@datadoghq.com commit -m \"Test modifications for impact detection test\"");
+                // Leave unrelated staged changes out of the temporary commit.
+                var commitOutput = RunGitCommand($"-c user.name=DatadogCI -c user.email=ci@datadoghq.com commit --only -m \"Test modifications for impact detection test\" -- \"{testFile}\"");
                 commitOutput.ExitCode.Should().Be(0, $"Failed to commit changes: {commitOutput.Error}");
 
                 // Enable impact detection
@@ -123,23 +126,23 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 
                     // Discard only this test's staged and working-tree changes. Do not stash
                     // unrelated files from a developer's checkout.
-                    RunGitCommand($"reset HEAD -- {GetTestFile()}");
-                    RunGitCommand($"checkout -- {GetTestFile()}");
+                    RunGitCommand($"reset HEAD -- \"{testFile}\"");
+                    RunGitCommand($"checkout -- \"{testFile}\"");
 
                     // Switch back to the original branch, or restore the original detached HEAD.
-                    if (!string.IsNullOrEmpty(originalBranch))
+                    if (!StringUtil.IsNullOrEmpty(originalBranch))
                     {
                         var output = RunGitCommand($"checkout {originalBranch}");
                         output.ExitCode.Should().Be(0, $"Failed to checkout changes: {output.Error}");
                     }
-                    else if (!string.IsNullOrEmpty(originalCommit))
+                    else if (!StringUtil.IsNullOrEmpty(originalCommit))
                     {
                         var output = RunGitCommand($"checkout --detach {originalCommit}");
                         output.ExitCode.Should().Be(0, $"Failed to restore detached HEAD: {output.Error}");
                     }
 
                     // Delete the test branch
-                    if (!string.IsNullOrEmpty(testBranchName))
+                    if (!StringUtil.IsNullOrEmpty(testBranchName))
                     {
                         RunGitCommand($"branch -D {testBranchName}");
                     }
