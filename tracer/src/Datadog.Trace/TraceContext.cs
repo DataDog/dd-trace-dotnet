@@ -17,6 +17,7 @@ using Datadog.Trace.Ci;
 using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ContinuousProfiler;
+using Datadog.Trace.Debugger.RateLimiting;
 using Datadog.Trace.FeatureFlags;
 using Datadog.Trace.Iast;
 using Datadog.Trace.Logging;
@@ -42,6 +43,7 @@ namespace Datadog.Trace
         private IastRequestContext? _iastRequestContext;
         private AppSecRequestContext? _appSecRequestContext;
         private OtelTraceState? _otelTraceState;
+		private DebuggerSamplingCoordinator.State? _debuggerSamplingState;
 
         // Lazily created on the first feature-flag evaluation for this trace; null until then, so
         // traces that never evaluate a flag pay nothing. State dies with the TraceContext.
@@ -191,6 +193,10 @@ namespace Datadog.Trace
 
             return _featureFlagEnrichment;
         }
+
+        internal bool TrySampleDebuggerSnapshot<TSamplingDecisionProvider>(string probeId, TSamplingDecisionProvider samplingDecisionProvider)
+            where TSamplingDecisionProvider : struct, IDebuggerSamplingDecisionProvider
+            => DebuggerSamplingCoordinator.TrySample(ref _debuggerSamplingState, _rootSpan, probeId, samplingDecisionProvider);
 
         internal void EnableIastInRequest()
         {
