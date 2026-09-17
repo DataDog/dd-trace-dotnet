@@ -161,10 +161,13 @@ public class AzureFunctionsDurableTriggerTests : AzureFunctionsTests
         using var http = new HttpClient { Timeout = TimeSpan.FromSeconds(60) };
         using var response = await http.PostAsync("http://localhost:7071/api/seed/durable", content: null);
         var responseBody = await response.Content.ReadAsStringAsync();
-        if (response.StatusCode != HttpStatusCode.Accepted)
+        if (response.StatusCode != HttpStatusCode.OK)
         {
-            throw new InvalidOperationException($"Durable workflows returned {(int)response.StatusCode}, expected {(int)HttpStatusCode.Accepted}: {responseBody}");
+            throw new InvalidOperationException($"Durable workflows returned {(int)response.StatusCode}, expected {(int)HttpStatusCode.OK}: {responseBody}");
         }
+
+        responseBody.Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries)
+                    .Should().Equal("Completed", "Failed", "Failed");
     }
 
     private static string GetDurableTaskSchedulerConnectionString()

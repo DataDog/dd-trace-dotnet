@@ -41,8 +41,11 @@ public class DurableFunctions
                 await client.ScheduleNewOrchestrationInstanceAsync(nameof(ImmediatelyFailingDurableWorkflow)),
             ];
 
-            var response = request.CreateResponse(HttpStatusCode.Accepted);
-            await response.WriteStringAsync(string.Join(Environment.NewLine, instanceIds));
+            using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+            var instances = await Task.WhenAll(instanceIds.Select(id => client.WaitForInstanceCompletionAsync(id, timeout.Token)));
+
+            var response = request.CreateResponse(HttpStatusCode.OK);
+            await response.WriteStringAsync(string.Join(Environment.NewLine, instances.Select(instance => instance.RuntimeStatus)));
             return response;
         }
         finally

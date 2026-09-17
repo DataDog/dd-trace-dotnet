@@ -76,6 +76,8 @@ public sealed class FunctionsOrchestratorRunAsyncIntegration
         return new CallTargetReturn<TReturn?>(returnValue);
     }
 
+    // https://github.com/DataDog/dd-trace-dotnet/pull/7640
+    [PreserveContext]
     internal static TReturn? OnAsyncMethodEnd<TTarget, TReturn>(
         TTarget instance,
         TReturn? returnValue,
