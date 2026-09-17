@@ -62,7 +62,8 @@ public class EncoderUnitTests : WafLibraryRequiredTest
         resultDic["ListStrings"].Should().BeOfType<List<object>>();
         resultDic["ListStrings"].Should().BeEquivalentTo(listStrings);
         resultDic["ListDecimals"].Should().BeOfType<List<object>>();
-        resultDic["ListDecimals"].Should().BeEquivalentTo(listDecimals);
+        // the WAF has no decimal type, so decimals are narrowed to doubles when encoded (see Encoder.Encode)
+        resultDic["ListDecimals"].Should().BeEquivalentTo(listDecimals.Select(d => (double)d));
         resultDic["ListUlongs"].Should().BeOfType<List<object>>();
         resultDic["ListUlongs"].Should().BeEquivalentTo(listUlongs);
         resultDic["ListFloats"].Should().BeOfType<List<object>>();
