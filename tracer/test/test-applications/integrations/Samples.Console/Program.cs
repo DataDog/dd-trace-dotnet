@@ -16,6 +16,13 @@ namespace Samples.Console_
     {
         private static void Main(string[] args)
         {
+            if (args.Length > 0 && args[0] == "test-optimization-shutdown")
+            {
+                // This regression must control initialization order, before Ready() touches the tracer.
+                TestOptimizationShutdown.Run(args[1], args[2]);
+                return;
+            }
+
             if (args.Length > 0 && args[0].StartsWith("crash"))
             {
                 Ready();

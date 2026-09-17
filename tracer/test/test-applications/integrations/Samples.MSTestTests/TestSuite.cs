@@ -18,6 +18,16 @@ public class TestSuite
         context.WriteLine(string.Empty);
     }
 
+    [ClassCleanup]
+    public static void ClassCleanup()
+    {
+        // The cleanup regression runs the existing passing test, without changing the normal sample's test count.
+        if (Environment.GetEnvironmentVariable("MSTEST_FAIL_CLASS_CLEANUP") == "1")
+        {
+            throw new InvalidOperationException("MSTest class cleanup failed.");
+        }
+    }
+
     [TestMethod]
     public void SimplePassTest()
     {
