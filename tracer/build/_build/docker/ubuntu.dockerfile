@@ -73,7 +73,7 @@ RUN set -eux; \
     ARCH="$(uname -m)"; \
     case "$ARCH" in \
         x86_64) SYSROOT_SHA512='2e891242b066fe3c7d0c95cc68412a24b4f80bb8ae9d92226877a5c5b84226141425d70e920eeefe5205655f9669de7bb77f529089c72332f3a656fdbc72cc30' ;; \
-        aarch64) SYSROOT_SHA512='10d951f73e9e430d93af9510ebc82eb9a63ccb39c4edb06be8cb961565a1ff3414617d5013f785261350ef713fb5a4824055ee889bce4b556e418056388fb983' ;; \
+        aarch64) SYSROOT_SHA512='c1476e9afb0fd62b3ba19b1dbfcaa46a74a282b90354561bdf1cad24ff2398eb807f05945087473359830473691a26c6ca73855770c8227da682ebf1e4265aba' ;; \
         *) echo "Unsupported architecture: $ARCH" >&2; exit 1 ;; \
     esac \
     && curl -sSL https://apmdotnetbuildstorage.blob.core.windows.net/build-dependencies/glibc217-sysroot-${ARCH}.tar.gz --output glibc217-sysroot.tar.gz \
@@ -99,9 +99,6 @@ ENV \
     UseGlibc217Sysroot=true
 
 FROM base AS builder
-
-# TODO: not sure if we need this anymore
-ENV USE_NATIVE_SDK_VERSION=true
 
 # Copy the build project in and build it
 COPY *.csproj *.props *.targets /build/
