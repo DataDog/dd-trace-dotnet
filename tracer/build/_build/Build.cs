@@ -118,8 +118,9 @@ partial class Build : NukeBuild
     // Mirrors how CompileNativeWrapper threads -DCMAKE_TOOLCHAIN_FILE= for AsUniversal.
     // Uses an absolute path (CMake resolves relative paths against its own cwd, not RootDirectory).
     // No -DUSE_GLIBC217_SYSROOT needed — the toolchain file defines it itself.
+    // Arm64 uses Glibc217.cmake.aarch64 (devtoolset-10); x64 uses Glibc217.cmake.x86_64.
     string Glibc217SysrootCMakeArgs =>
-        UseGlibc217Sysroot ? $" -DCMAKE_TOOLCHAIN_FILE={RootDirectory / "build" / "cmake" / "Glibc217.cmake.x86_64"}" : "";
+        UseGlibc217Sysroot ? $" -DCMAKE_TOOLCHAIN_FILE={RootDirectory / "build" / "cmake" / $"Glibc217.cmake.{(IsArm64 ? "aarch64" : "x86_64")}"}" : "";
 
     [Parameter("RuntimeIdentifier sets the target platform for ReadyToRun assemblies in 'PublishManagedTracerR2R'." +
                "See https://learn.microsoft.com/en-us/dotnet/core/rid-catalog")]
