@@ -88,7 +88,7 @@ services:
   aspnet-10_0-noble-chiseled-composite:
     image: mcr.microsoft.com/dotnet/aspnet:10.0-noble-chiseled-composite@sha256:5a0d362adce2b676c2729d50e01031a7f10dc0c16075c3039fa0e8ba1f89de5f
   aspnet-10_0-resolute:
-    image: mcr.microsoft.com/dotnet/aspnet:10.0-resolute@sha256:e12b240891f34144edd813a11e86649dca6120165adfb5ad0a29bbde6753a975
+    image: mcr.microsoft.com/dotnet/aspnet:10.0-resolute@sha256:b453713e8c47a86b41add243419d0005850989bfceee2075ace124d94164868d
   aspnet-10_0-resolute-chiseled:
     image: mcr.microsoft.com/dotnet/aspnet:10.0-resolute-chiseled@sha256:99a0fe6f3e933a3d170aa38d8be4237125b72c644a9229889ee842628cbaf845
   aspnet-10_0-resolute-chiseled-composite:
@@ -128,7 +128,7 @@ services:
   sdk-10_0-noble:
     image: mcr.microsoft.com/dotnet/sdk:10.0-noble@sha256:2fa828c68761b1b8c23d7662dc134421b9d3b59fe1425fdbc80804e390cdb24d
   sdk-10_0-resolute:
-    image: mcr.microsoft.com/dotnet/sdk:10.0-resolute@sha256:17d5b93701079599eb771cf72f2aaa45a5826d9802f2cfbae565fd2eecf72073
+    image: mcr.microsoft.com/dotnet/sdk:10.0-resolute@sha256:4bd809877fc795924d30c686774a3c2136710f0e923f15224c5fbb70a09cfb2f
 
   # andrewlock/dotnet-centos
   dotnet-centos-7-2_1:
