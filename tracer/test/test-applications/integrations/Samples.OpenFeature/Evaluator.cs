@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics;
+using System.Threading.Tasks;
 using OpenFeature.Model;
 
 namespace Samples.FeatureFlags;
@@ -9,20 +10,20 @@ class Evaluator
     static global::OpenFeature.FeatureClient client = null!; // assigned by Init()
     static Action? _onNewConfig = null;
 
-    public static bool Init()
+    public static async Task<bool> Init()
     {
         Console.WriteLine("OpenFeature FeatureFlags SDK Sample");
-        if (Datadog.FeatureFlags.OpenFeature.DatadogProvider.IsAvailable)
+        if (!Datadog.FeatureFlags.OpenFeature.DatadogProvider.IsAvailable)
         {
-
-            global::OpenFeature.Api.Instance.SetProviderAsync(new Datadog.FeatureFlags.OpenFeature.DatadogProvider()).Wait();
-            client = global::OpenFeature.Api.Instance.GetClient();
-            Datadog.FeatureFlags.OpenFeature.DatadogProvider.RegisterOnNewConfigEventHandler(() => _onNewConfig?.Invoke());
-            return true;
+            return false;
         }
 
-        return false;
-
+        // SetProviderAsync awaits the provider's InitializeAsync, which starts agentless delivery
+        // and waits for the first configuration.
+        await global::OpenFeature.Api.Instance.SetProviderAsync(new Datadog.FeatureFlags.OpenFeature.DatadogProvider());
+        client = global::OpenFeature.Api.Instance.GetClient();
+        Datadog.FeatureFlags.OpenFeature.DatadogProvider.RegisterOnNewConfigEventHandler(() => _onNewConfig?.Invoke());
+        return true;
     }
 
     public static void RegisterOnNewConfigEventHandler(Action onNewConfig)
