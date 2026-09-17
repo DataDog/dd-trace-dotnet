@@ -37,6 +37,7 @@ namespace Datadog.Trace.Debugger.Snapshots
         private readonly CaptureLimitInfo _limitInfo;
         private readonly Func<string> _serviceNameProvider;
         private readonly Func<string?> _processTagsProvider;
+        private readonly SpanContext? _activeSpanContext;
 
         private long _lastSampledTime;
         private TimeSpan _accumulatedDuration;
@@ -60,6 +61,11 @@ namespace Datadog.Trace.Debugger.Snapshots
         private LocalsOrArgsContainer _localsOrArgsOpen;
 
         public DebuggerSnapshotCreator(bool isFullSnapshot, ProbeLocation location, bool hasCondition, string[] tags, CaptureLimitInfo limitInfo, Func<string?> processTagsProvider, Func<string> serviceNameProvider)
+            : this(isFullSnapshot, location, hasCondition, tags, limitInfo, processTagsProvider, serviceNameProvider, ProbeProcessor.GetActiveScope()?.Span.Context)
+        {
+        }
+
+        private DebuggerSnapshotCreator(bool isFullSnapshot, ProbeLocation location, bool hasCondition, string[] tags, CaptureLimitInfo limitInfo, Func<string?> processTagsProvider, Func<string> serviceNameProvider, SpanContext? activeSpanContext)
         {
             _isFullSnapshot = isFullSnapshot;
             _probeLocation = location;
@@ -75,13 +81,14 @@ namespace Datadog.Trace.Debugger.Snapshots
             _limitInfo = limitInfo;
             _processTagsProvider = processTagsProvider;
             _serviceNameProvider = serviceNameProvider;
+            _activeSpanContext = activeSpanContext;
             _accumulatedDuration = new TimeSpan(0, 0, 0, 0, 0);
             _scopeMembersPool = new ObjectPool<MethodScopeMembers, MethodScopeMembersParameters>();
             Initialize();
         }
 
-        internal DebuggerSnapshotCreator(ProbeProcessor.ProbeProcessorState probeProcessorState)
-            : this(probeProcessorState.ProbeInfo.IsFullSnapshot, probeProcessorState.ProbeInfo.ProbeLocation, probeProcessorState.ProbeInfo.HasCondition, probeProcessorState.ProbeInfo.Tags, probeProcessorState.ProbeInfo.CaptureLimitInfo, DebuggerManager.ProcessTagsProvider, DebuggerManager.ServiceNameProvider)
+        internal DebuggerSnapshotCreator(ProbeProcessor.ProbeProcessorState probeProcessorState, SpanContext? activeSpanContext)
+            : this(probeProcessorState.ProbeInfo.IsFullSnapshot, probeProcessorState.ProbeInfo.ProbeLocation, probeProcessorState.ProbeInfo.HasCondition, probeProcessorState.ProbeInfo.Tags, probeProcessorState.ProbeInfo.CaptureLimitInfo, DebuggerManager.ProcessTagsProvider, DebuggerManager.ServiceNameProvider, activeSpanContext)
         {
             ProbeProcessorState = probeProcessorState;
         }
@@ -113,6 +120,8 @@ namespace Datadog.Trace.Debugger.Snapshots
         internal MethodScopeMembers? MethodScopeMembers { get; private set; }
 
         internal ProbeProcessor.ProbeProcessorState? ProbeProcessorState { get; }
+
+        internal TraceContext? TraceContext => _activeSpanContext?.TraceContext;
 
         internal uint IncompleteReasons => _incompleteReasons;
 
@@ -952,11 +961,9 @@ namespace Datadog.Trace.Debugger.Snapshots
 
         internal void FinalizeSnapshot(string? methodName, string? typeFullName, string? probeFilePath)
         {
-            var activeScope = Tracer.Instance.InternalActiveScope;
-
             // TODO: support 128-bit trace ids?
-            var traceId = activeScope?.Span.TraceId128.Lower.ToString(CultureInfo.InvariantCulture);
-            var spanId = activeScope?.Span.SpanId.ToString(CultureInfo.InvariantCulture);
+            var traceId = _activeSpanContext?.TraceId128.Lower.ToString(CultureInfo.InvariantCulture);
+            var spanId = _activeSpanContext?.SpanId.ToString(CultureInfo.InvariantCulture);
 
             AddStackInfo()
             .EndSnapshot()
