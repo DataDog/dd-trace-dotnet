@@ -1288,11 +1288,13 @@ EHClause* DebuggerMethodRewriter::FindInnermostCatchContaining(ILRewriter* rewri
     return best;
 }
 
-HRESULT DebuggerMethodRewriter::TryGetSetExceptionCatchClause(ILRewriterWrapper& rewriterWrapper,
-                                                              ModuleMetadata& module_metadata, FunctionInfo* caller,
-                                                              EHClause** setExceptionCatch)
+HRESULT DebuggerMethodRewriter::TryGetSetExceptionCatchInfo(ILRewriterWrapper& rewriterWrapper,
+                                                            ModuleMetadata& module_metadata, FunctionInfo* caller,
+                                                            EHClause** setExceptionCatch,
+                                                            ILInstr** setExceptionInsertionPoint)
 {
     *setExceptionCatch = nullptr;
+    *setExceptionInsertionPoint = nullptr;
     auto rewriter = rewriterWrapper.GetILRewriter();
     ILInstr* setExceptionCall = nullptr;
 
@@ -1315,7 +1317,7 @@ HRESULT DebuggerMethodRewriter::TryGetSetExceptionCatchClause(ILRewriterWrapper&
 
     if (setExceptionCall == nullptr)
     {
-        Logger::Warn("*** DebuggerMethodRewriter::TryGetSetExceptionCatchClause() no async method builder SetException "
+        Logger::Warn("*** DebuggerMethodRewriter::TryGetSetExceptionCatchInfo() no async method builder SetException "
                      "call. Aborting rewrite. method=",
                      caller->type.name, ".", caller->name);
         return E_FAIL;
@@ -1324,13 +1326,25 @@ HRESULT DebuggerMethodRewriter::TryGetSetExceptionCatchClause(ILRewriterWrapper&
     auto catchClause = FindInnermostCatchContaining(rewriter, setExceptionCall);
     if (catchClause == nullptr || catchClause->m_pHandlerBegin == nullptr || catchClause->m_pHandlerEnd == nullptr)
     {
-        Logger::Warn("*** DebuggerMethodRewriter::TryGetSetExceptionCatchClause() SetException is not inside a catch "
+        Logger::Warn("*** DebuggerMethodRewriter::TryGetSetExceptionCatchInfo() SetException is not inside a catch "
                      "handler. Aborting rewrite. method=",
                      caller->type.name, ".", caller->name);
         return E_FAIL;
     }
 
+    auto insertionPoint =
+        ILRewriter::GetStackNeutralCatchHandlerInsertionPoint(*catchClause, rewriter->GetILList());
+    if (insertionPoint == nullptr)
+    {
+        Logger::Warn("*** DebuggerMethodRewriter::TryGetSetExceptionCatchInfo() SetException catch handler does not "
+                     "begin with optional nop instructions followed by stloc or pop. Aborting rewrite to avoid "
+                     "InvalidProgramException. method=",
+                     caller->type.name, ".", caller->name);
+        return E_FAIL;
+    }
+
     *setExceptionCatch = catchClause;
+    *setExceptionInsertionPoint = insertionPoint;
     return S_OK;
 }
 
@@ -1350,7 +1364,9 @@ HRESULT DebuggerMethodRewriter::EndAsyncMethodProbe(ILRewriterWrapper& rewriterW
     ILInstr* endMethodOriginalCodeFirstInstr = nullptr;
 
     EHClause* setExceptionCatch = nullptr;
-    HRESULT bindHr = TryGetSetExceptionCatchClause(rewriterWrapper, module_metadata, caller, &setExceptionCatch);
+    ILInstr* setExceptionInsertionPoint = nullptr;
+    HRESULT bindHr = TryGetSetExceptionCatchInfo(rewriterWrapper, module_metadata, caller, &setExceptionCatch,
+                                                 &setExceptionInsertionPoint);
     if (FAILED(bindHr))
     {
         unsupportedCompletionValueLoad = true;
@@ -1428,7 +1444,7 @@ HRESULT DebuggerMethodRewriter::EndAsyncMethodProbe(ILRewriterWrapper& rewriterW
         }
         else if (functionInfo.name == WStr("SetException"))
         {
-            rewriterWrapper.SetILPosition(setExceptionCatch->m_pHandlerBegin->m_pNext);
+            rewriterWrapper.SetILPosition(setExceptionInsertionPoint);
             LoadInstanceIntoStack(caller, isStatic, rewriterWrapper, &endMethodTryStartInstr, debuggerTokens);
             if (elementType != ELEMENT_TYPE_VOID)
             {
@@ -1544,7 +1560,9 @@ HRESULT DebuggerMethodRewriter::EndAsyncMethodSpanProbe(ILRewriterWrapper& rewri
     ILInstr* endMethodOriginalCodeFirstInstr = nullptr;
 
     EHClause* setExceptionCatch = nullptr;
-    HRESULT bindHr = TryGetSetExceptionCatchClause(rewriterWrapper, module_metadata, caller, &setExceptionCatch);
+    ILInstr* setExceptionInsertionPoint = nullptr;
+    HRESULT bindHr = TryGetSetExceptionCatchInfo(rewriterWrapper, module_metadata, caller, &setExceptionCatch,
+                                                 &setExceptionInsertionPoint);
     if (FAILED(bindHr))
     {
         unsupportedCompletionValueLoad = true;
@@ -1596,7 +1614,7 @@ HRESULT DebuggerMethodRewriter::EndAsyncMethodSpanProbe(ILRewriterWrapper& rewri
         }
         else if (functionInfo.name == WStr("SetException"))
         {
-            rewriterWrapper.SetILPosition(setExceptionCatch->m_pHandlerBegin->m_pNext);
+            rewriterWrapper.SetILPosition(setExceptionInsertionPoint);
             // create the instruction that load the exception value
             ILInstr* exceptionInstruction = rewriterWrapper.GetILRewriter()->NewILInstr();
             memcpy(exceptionInstruction, pInstr->m_pPrev, sizeof(*exceptionInstruction));
