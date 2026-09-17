@@ -260,13 +260,13 @@ Directory.Build.props                     @DataDog/apm-dotnet
 /tracer/test/Datadog.Trace.Tests/Agent/                                     @DataDog/apm-sdk-capabilities-dotnet
 /tracer/test/Datadog.Trace.Tests/Agent/MessagePack/AppSec/                  @DataDog/apm-sdk-capabilities-dotnet @DataDog/asm-dotnet
 /tracer/test/Datadog.Trace.Tests/AppSec/                                    @DataDog/asm-dotnet
-/tracer/test/Datadog.Trace.Tests/AspNet/                                    @DataDog/apm-idm-dotnet
+/tracer/test/Datadog.Trace.Tests/AspNet/                                    @DataDog/apm-idm-dotnet @DataDog/tracing-dotnet
 /tracer/test/Datadog.Trace.Tests/CallTarget/                                @DataDog/apm-lang-platform-dotnet
 /tracer/test/Datadog.Trace.Tests/ClrProfiler/Managed/Loader/                @DataDog/apm-lang-platform-dotnet
 /tracer/test/Datadog.Trace.Tests/Configuration/                             @DataDog/apm-sdk-capabilities-dotnet
 /tracer/test/Datadog.Trace.Tests/ContinuousProfiler/                        @DataDog/profiling-dotnet
-/tracer/test/Datadog.Trace.Tests/DatabaseMonitoring/                        @DataDog/apm-idm-dotnet
-/tracer/test/Datadog.Trace.Tests/DiagnosticListeners/                       @DataDog/apm-idm-dotnet
+/tracer/test/Datadog.Trace.Tests/DatabaseMonitoring/                        @DataDog/apm-idm-dotnet @DataDog/tracing-dotnet
+/tracer/test/Datadog.Trace.Tests/DiagnosticListeners/                       @DataDog/apm-idm-dotnet @DataDog/tracing-dotnet
 /tracer/test/Datadog.Trace.Tests/DiagnosticListeners/AspNetCore/            @DataDog/apm-idm-dotnet @DataDog/asm-dotnet @DataDog/debugger-dotnet
 /tracer/test/Datadog.Trace.Tests/DistributedTracer/                         @DataDog/apm-sdk-capabilities-dotnet
 /tracer/test/Datadog.Trace.Tests/DogStatsd/                                 @DataDog/apm-sdk-capabilities-dotnet
@@ -286,7 +286,7 @@ Directory.Build.props                     @DataDog/apm-dotnet
 /tracer/test/Datadog.Trace.Tests/Sampling/                                  @DataDog/apm-sdk-capabilities-dotnet
 /tracer/test/Datadog.Trace.Tests/Serverless/                                @DataDog/apm-serverless
 /tracer/test/Datadog.Trace.Tests/Snapshots/                                 @DataDog/apm-sdk-capabilities-dotnet
-/tracer/test/Datadog.Trace.Tests/Tagging/                                   @DataDog/apm-idm-dotnet
+/tracer/test/Datadog.Trace.Tests/Tagging/                                   @DataDog/apm-idm-dotnet @DataDog/tracing-dotnet
 /tracer/test/Datadog.Trace.Tests/Telemetry/                                 @DataDog/apm-sdk-capabilities-dotnet
 /tracer/test/Datadog.Trace.Tests/TraceProcessors/                           @DataDog/apm-sdk-capabilities-dotnet
 /tracer/test/Datadog.Trace.Tests/Util/                                      @DataDog/apm-lang-platform-dotnet
@@ -297,7 +297,7 @@ Directory.Build.props                     @DataDog/apm-dotnet
 /tracer/test/Datadog.Trace.ClrProfiler.Managed.Tests/Serverless/                             @DataDog/apm-serverless
 
 ## Shared ownership conventions
-/tracer/test/**/AutoInstrumentation/                                  @DataDog/apm-idm-dotnet
+/tracer/test/**/AutoInstrumentation/                                  @DataDog/apm-idm-dotnet @DataDog/tracing-dotnet
 /tracer/test/**/CI/                                                   @DataDog/ci-app-libraries-dotnet
 /tracer/test/**/Ci/                                                   @DataDog/ci-app-libraries-dotnet
 /tracer/test/Datadog.Trace.*Tests/DataStreamsMonitoring/              @DataDog/data-streams-monitoring
@@ -331,7 +331,7 @@ Directory.Build.props                     @DataDog/apm-dotnet
 /tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/AutoInstrumentation/AspNet/            @DataDog/apm-idm-dotnet @DataDog/asm-dotnet
 /tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/AutoInstrumentation/AspNetCore/        @DataDog/apm-idm-dotnet @DataDog/asm-dotnet
 /tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/AutoInstrumentation/ProcessStartTests/ @DataDog/asm-dotnet
-/tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/PackageVersionsLatest*.g.cs             @DataDog/apm-idm-dotnet
+/tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/PackageVersionsLatest*.g.cs             @DataDog/apm-idm-dotnet @DataDog/tracing-dotnet
 
 ### Tool projects
 /tracer/test/Datadog.Trace.Tools.Analyzers.Tests/AspectAnalyzers/ @DataDog/asm-dotnet
