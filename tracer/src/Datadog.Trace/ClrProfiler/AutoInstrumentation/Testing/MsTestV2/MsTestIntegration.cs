@@ -7,7 +7,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.IO;
 using System.Reflection;
 using System.Runtime.CompilerServices;
@@ -170,33 +169,7 @@ internal static class MsTestIntegration
         var hasDisplayName = !string.IsNullOrEmpty(displayName) && displayName != testName;
         if (methodParameters?.Length > 0 || hasDisplayName)
         {
-            var testParameters = new TestParameters
-            {
-                Metadata = new Dictionary<string, object?>(),
-                Arguments = new Dictionary<string, object?>()
-            };
-
-            if (hasDisplayName)
-            {
-                testParameters.Metadata[TestTags.MetadataTestName] = displayName;
-            }
-
-            if (methodParameters is not null)
-            {
-                for (var i = 0; i < methodParameters.Length; i++)
-                {
-                    if (testMethodArguments != null && i < testMethodArguments.Length)
-                    {
-                        testParameters.Arguments[methodParameters[i].Name ?? i.ToString(CultureInfo.InvariantCulture)] = Common.GetParametersValueData(testMethodArguments[i]);
-                    }
-                    else
-                    {
-                        testParameters.Arguments[methodParameters[i].Name ?? i.ToString(CultureInfo.InvariantCulture)] = "(default)";
-                    }
-                }
-            }
-
-            test.SetParameters(testParameters);
+            test.SetParameters(Common.CreateTestParameters(testMethodArguments, methodParameters, hasDisplayName ? displayName : null, useParameterIndexForUnnamedParameters: true));
         }
     }
 
@@ -311,7 +284,9 @@ internal static class MsTestIntegration
             out var matchedSkippableTest,
             moduleName,
             metadataTestName: hasResolvedDisplayName ? metadataTestName : null,
-            allowParametersMetadataMismatch: !hasResolvedDisplayName && hasRowIdentity);
+            allowParametersMetadataMismatch: !hasResolvedDisplayName && hasRowIdentity,
+            includeMetadataTestNameInFingerprint: false,
+            useParameterIndexForUnnamedParameters: true);
         traits ??= GetTraits(testMethod);
         isUnskippable = traits?.TryGetValue(IntelligentTestRunnerTags.UnskippableTraitName, out _) == true;
         isForcedRun = matchedSkippableTest is not null && isUnskippable;

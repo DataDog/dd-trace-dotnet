@@ -1,15 +1,16 @@
-// <copyright file="IEvaluation.Manual.cs" company="Datadog">
+// <copyright file="IRunSummaryV3_4X.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using Datadog.Trace.DuckTyping;
 
-namespace Datadog.Trace.FeatureFlags;
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.V3_4X;
 
-/// <summary> A Evaluate result. </summary>
-[DuckType("Datadog.Trace.FeatureFlags.Evaluation", "Datadog.Trace")]
-[DuckAsClass]
-public partial interface IEvaluation
+internal interface IRunSummaryV3_4X
 {
+    [DuckField]
+    int Skipped { get; }
 }

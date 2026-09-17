@@ -59,7 +59,9 @@ public class MetricTests
         { "impacted_tests_detection.response_bytes", ["rs_compressed"] },
         { "rasp.rule.eval", ["rule_variant"] },
         { "rasp.rule.match", ["rule_variant"] },
+        { "rasp.rule.skipped", ["rule_variant"] },
         { "rasp.timeout", ["rule_variant"] },
+        { "rasp.error", ["rule_variant"] },
         // Both dimensions are independently optional: a span can be cardinality-collapsed, oversized-truncated, or both.
         { "stats_collapsed_spans", ["collapsed", "oversized"] },
     };

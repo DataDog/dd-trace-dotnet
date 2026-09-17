@@ -320,8 +320,7 @@ namespace Datadog.Trace.AspNet
                         if (security.AppsecEnabled)
                         {
                             var securityCoordinator = SecurityCoordinator.Get(security, rootSpan, app.Context);
-                            var args = securityCoordinator.GetBasicRequestArgsForWaf();
-                            args.Add(AddressesConstants.RequestPathParams, securityCoordinator.GetPathParams());
+                            var args = securityCoordinator.GetEndRequestArgsForWaf();
 
                             if (HttpRuntime.UsingIntegratedPipeline && _canAccessHttpHeaders)
                             {

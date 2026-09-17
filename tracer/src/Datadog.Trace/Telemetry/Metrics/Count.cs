@@ -296,6 +296,17 @@ internal enum Count
     [TelemetryMetric<RaspRuleType>("rasp.timeout", isCommon: true, NS.ASM)] RaspTimeout,
 
     /// <summary>
+    /// Counts the number of times the WAF returned an error when evaluating a specific rule type.
+    /// </summary>
+    [TelemetryMetric<MetricTags.RaspError>("rasp.error", isCommon: true, NS.ASM)] RaspError,
+
+    /// <summary>
+    /// Counts the number of times the evaluation of a RASP instrumentation had to be skipped
+    /// because of the request lifecycle, tagged by the rule type and the reason.
+    /// </summary>
+    [TelemetryMetric<RaspRuleTypeSkipped>("rasp.rule.skipped", isCommon: true, NS.ASM)] RaspRuleSkipped,
+
+    /// <summary>
     /// Counts the number of times a user id hasn't been found  as part of the login success, login failure or signup event
     /// </summary>
     [TelemetryMetric<AuthenticationFrameworkWithEventType>("instrum.user_auth.missing_user_id", isCommon: true, NS.ASM)] MissingUserId,
