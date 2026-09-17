@@ -19,13 +19,18 @@ class Program
         int configUpdates = 0;
         Evaluator.RegisterOnNewConfigEventHandler(() => Interlocked.Increment(ref configUpdates));
 
-        if (!Evaluator.Init())
+        if (!await Evaluator.Init())
         {
             Console.WriteLine($"<NOT INSTRUMENTED>");
             return;
         }
 
         Console.WriteLine($"<INSTRUMENTED>");
+
+        // Init() has awaited InitializeAsync, so a known flag resolves now. If the CallTarget stops
+        // substituting the real task, this prints NOT_READY.
+        var probe = Evaluator.Evaluate("simple-string");
+        Console.WriteLine($"<INITIALIZED: {(probe is { Error: null } ? "READY" : "NOT_READY")}>");
 
         var ev = Evaluator.Evaluate("nonexistent");
         if (ev == null || ev.Value.Error is "FeatureFlagsSdk is disabled")
