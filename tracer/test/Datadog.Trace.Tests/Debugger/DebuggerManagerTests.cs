@@ -37,10 +37,17 @@ namespace Datadog.Trace.Tests.Debugger
             manager.SymbolsUploader.Should().BeNull();
         }
 
-        [Fact]
-        public async Task RemoteConfigurationCannotReenableExceptionReplayAfterMd5Failure()
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
+        public async Task Md5FailureDoesNotPublishExceptionReplayOrAllowRemoteReenablement(bool enabledLocally)
         {
-            var manager = CreateDebuggerManager();
+            var manager = CreateDebuggerManager(
+                enabledLocally
+                    ? new ExceptionReplaySettings(
+                        new NameValueConfigurationSource(new() { { ConfigurationKeys.Debugger.ExceptionReplayEnabled, "true" } }),
+                        NullConfigurationTelemetry.Instance)
+                    : null);
             var tracerSettings = TracerSettings.Create(new()
             {
                 { ConfigurationKeys.Rcm.RemoteConfigurationEnabled, "true" },
@@ -55,14 +62,27 @@ namespace Datadog.Trace.Tests.Debugger
                 NullConfigurationTelemetry.Instance);
 
             manager.ExceptionReplaySettings.CanBeEnabled.Should().BeTrue();
-            using var exceptionReplay = ExceptionReplay.Create(manager.ExceptionReplaySettings);
-            exceptionReplay.Initialize(() => throw new InvalidOperationException("MD5 is unavailable"));
-
-            // The manager publishes the instance after Initialize returns, even when MD5 is unavailable.
-            SetExceptionReplay(manager, exceptionReplay);
 
             try
             {
+                var probeCalls = 0;
+                manager.SetExceptionReplayState(
+                    debuggerSettings with
+                    {
+                        DynamicSettings = new ImmutableDynamicDebuggerSettings { ExceptionReplayEnabled = enabledLocally ? null : true },
+                    },
+                    md5Probe: () =>
+                    {
+                        probeCalls++;
+                        throw new InvalidOperationException("MD5 is unavailable");
+                    });
+
+                // A failed instance must never be published, even if no remote-config update follows.
+                probeCalls.Should().Be(1);
+                manager.ExceptionReplay.Should().BeNull();
+                manager.HasActiveDynamicDebuggerProduct.Should().BeFalse();
+                manager.ExceptionReplaySettings.CanBeEnabled.Should().BeFalse();
+
                 // Cover an enable request immediately after failure and another after an explicit disable.
                 foreach (var enabled in new[] { true, false, true })
                 {
@@ -74,13 +94,14 @@ namespace Datadog.Trace.Tests.Debugger
                         });
 
                     manager.ExceptionReplay.Should().BeNull();
+                    manager.HasActiveDynamicDebuggerProduct.Should().BeFalse();
                     manager.ExceptionReplaySettings.CanBeEnabled.Should().BeFalse();
-                    GetSnapshotPipelineConfigured(manager).Should().Be(0);
                 }
             }
             finally
             {
                 InvokeShutdownTasks(manager);
+                Redaction.Instance.ResetInstance();
             }
         }
 
@@ -270,7 +291,7 @@ namespace Datadog.Trace.Tests.Debugger
             }
         }
 
-        private static DebuggerManager CreateDebuggerManager()
+        private static DebuggerManager CreateDebuggerManager(ExceptionReplaySettings? exceptionReplaySettings = null)
         {
             var constructor = typeof(DebuggerManager).GetConstructor(
                 BindingFlags.Instance | BindingFlags.NonPublic,
@@ -280,7 +301,7 @@ namespace Datadog.Trace.Tests.Debugger
             constructor.Should().NotBeNull();
 
             var debuggerSettings = new DebuggerSettings(NullConfigurationSource.Instance, NullConfigurationTelemetry.Instance);
-            var exceptionReplaySettings = new ExceptionReplaySettings(NullConfigurationSource.Instance, NullConfigurationTelemetry.Instance);
+            exceptionReplaySettings ??= new ExceptionReplaySettings(NullConfigurationSource.Instance, NullConfigurationTelemetry.Instance);
             return (DebuggerManager)constructor!.Invoke([debuggerSettings, exceptionReplaySettings]);
         }
 
@@ -306,13 +327,6 @@ namespace Datadog.Trace.Tests.Debugger
             var field = typeof(DebuggerManager).GetField("_syncLock", BindingFlags.Instance | BindingFlags.NonPublic);
             field.Should().NotBeNull();
             return field!.GetValue(manager)!;
-        }
-
-        private static void SetExceptionReplay(DebuggerManager manager, ExceptionReplay exceptionReplay)
-        {
-            var property = typeof(DebuggerManager).GetProperty(nameof(DebuggerManager.ExceptionReplay), BindingFlags.Instance | BindingFlags.NonPublic);
-            property.Should().NotBeNull();
-            property!.SetValue(manager, exceptionReplay);
         }
 
         private static void SetSymbolsUploader(DebuggerManager manager, IDebuggerUploader uploader)
