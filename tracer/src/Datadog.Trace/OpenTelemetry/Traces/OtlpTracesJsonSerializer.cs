@@ -438,8 +438,8 @@ internal sealed class OtlpTracesJsonSerializer : ISpanBufferSerializer
 
     internal void WriteSpans(JsonTextWriter writer, in TraceChunkModel traceChunk, bool emitStartingComma)
     {
-        var otelTraceState = traceChunk.SpanCount > 0 ? traceChunk.GetSpanModel(0).Span.Context.OtelTraceState : null;
-        var otlpTraceState = StringUtil.IsNullOrEmpty(otelTraceState) ? null : "ot=" + otelTraceState;
+        var otelTraceStateHeader = traceChunk.SpanCount > 0 ? traceChunk.GetSpanModel(0).Span.Context.OtelTraceState?.ToHeaderString() : null;
+        var otlpTraceState = otelTraceStateHeader is null ? null : "ot=" + otelTraceStateHeader;
 
         for (var i = 0; i < traceChunk.SpanCount; i++)
         {
@@ -466,8 +466,8 @@ internal sealed class OtlpTracesJsonSerializer : ISpanBufferSerializer
 
         if (otlpTraceState is null)
         {
-            var otelTraceState = spanModel.Span.Context.OtelTraceState;
-            otlpTraceState = StringUtil.IsNullOrEmpty(otelTraceState) ? null : "ot=" + otelTraceState;
+            var otelTraceStateHeader = spanModel.Span.Context.OtelTraceState?.ToHeaderString();
+            otlpTraceState = otelTraceStateHeader is null ? null : "ot=" + otelTraceStateHeader;
         }
 
         writer.WriteStartObject();

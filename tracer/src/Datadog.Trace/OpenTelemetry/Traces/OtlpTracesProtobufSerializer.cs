@@ -70,8 +70,8 @@ internal sealed class OtlpTracesProtobufSerializer : ISpanBufferSerializer
         // Initialize the temporary buffer to the initial size deemed best by the OpenTelemetry .NET SDK
         MessagePackBinary.EnsureCapacity(ref bytes, temporaryBufferOffset, Math.Min(InitialBufferSize, maxSize));
 
-        var otelTraceState = traceChunk.SpanCount > 0 ? traceChunk.GetSpanModel(0).Span.Context.OtelTraceState : null;
-        var otlpTraceState = StringUtil.IsNullOrEmpty(otelTraceState) ? null : "ot=" + otelTraceState;
+        var otelTraceStateHeader = traceChunk.SpanCount > 0 ? traceChunk.GetSpanModel(0).Span.Context.OtelTraceState?.ToHeaderString() : null;
+        var otlpTraceState = otelTraceStateHeader is null ? null : "ot=" + otelTraceStateHeader;
 
         // Snapshot length-position fields before mutating them, so we can roll back on overflow.
         int savedResourceSpansLengthPos = _resourceSpansLengthPos;

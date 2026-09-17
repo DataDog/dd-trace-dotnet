@@ -7,6 +7,7 @@
 
 using System;
 using Datadog.Trace.Propagators;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace;
 
@@ -103,6 +104,26 @@ internal sealed class OtelTraceState
             }
 
             remaining = remaining.Slice(separatorIndex + 1);
+        }
+    }
+
+    internal string? ToHeaderString()
+    {
+        if (!IsModified)
+        {
+            return CachedHeaderString;
+        }
+
+        var sb = StringBuilderCache.Acquire();
+
+        try
+        {
+            OtelTraceStateHelpers.SetRvTh(sb, CachedHeaderString, RandomValue, Threshold);
+            return sb.Length == 0 ? null : StringBuilderCache.GetStringAndRelease(sb);
+        }
+        finally
+        {
+            StringBuilderCache.Release(sb);
         }
     }
 }
