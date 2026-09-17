@@ -676,6 +676,37 @@ namespace Datadog.Trace.Tests.Configuration
         }
 
         [Fact]
+        public void EmptyStableEnvironmentNameFallsBackToLegacyEnvironment()
+        {
+            var source = new NameValueConfigurationSource(new()
+            {
+                { ConfigurationKeys.OpenTelemetry.ResourceAttributes, "deployment.environment.name=,deployment.environment=legacy_env" },
+            });
+
+            var tracerSettings = new TracerSettings(source);
+            var mutable = GetMutableSettings(source, tracerSettings);
+
+            mutable.Environment.Should().Be("legacy_env");
+            mutable.GlobalTags.Should().NotContainKey("deployment.environment.name");
+            mutable.GlobalTags.Should().NotContainKey("deployment.environment");
+        }
+
+        [Fact]
+        public void EmptyStableEnvironmentNameWithNoLegacyEnvironmentIsUnset()
+        {
+            var source = new NameValueConfigurationSource(new()
+            {
+                { ConfigurationKeys.OpenTelemetry.ResourceAttributes, "deployment.environment.name=" },
+            });
+
+            var tracerSettings = new TracerSettings(source);
+            var mutable = GetMutableSettings(source, tracerSettings);
+
+            mutable.Environment.Should().BeNullOrEmpty();
+            mutable.GlobalTags.Should().NotContainKey("deployment.environment.name");
+        }
+
+        [Fact]
         public void DDEnvTakesPrecedenceOverOTELTags()
         {
             var source = new NameValueConfigurationSource(new()
