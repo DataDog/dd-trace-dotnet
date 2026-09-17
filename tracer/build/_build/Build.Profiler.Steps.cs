@@ -902,7 +902,7 @@ partial class Build
             var libdatadogAllowedSymbols = IsArm64 && IsAlpine ? new[] { "__register_frame_info@GLIBC_2.0", "__deregister_frame_info@GLIBC_2.0" } : null;
             var filesAndVersion = new []
             {
-                (FileNames.NativeProfiler, IsArm64 ? new Version(2, 18) : new Version(2, 17), null, $"native-profiler-symbols-alpine-{UnixArchitectureIdentifier}"),
+                (FileNames.NativeProfiler, IsArm64 ? new Version(2, 17) : new Version(2, 17), null, $"native-profiler-symbols-alpine-{UnixArchitectureIdentifier}"),
                 ("libdatadog_profiling", IsArm64 ? new Version(2, 17) : new Version(2, 15), libdatadogAllowedSymbols, $"native-libdatadog-symbols-alpine-{UnixArchitectureIdentifier}")
             };
 
