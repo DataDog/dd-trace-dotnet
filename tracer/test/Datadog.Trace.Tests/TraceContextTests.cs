@@ -4,9 +4,12 @@
 // </copyright>
 
 using System;
+using System.Text;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Headers;
+using Datadog.Trace.Propagators;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.TestHelpers.TestTracer;
@@ -20,6 +23,27 @@ namespace Datadog.Trace.Tests
 {
     public class TraceContextTests
     {
+        // Values shared by the OpenTelemetry trace-state sampling tests below.
+        private const ulong OtelTraceStateExampleTraceIdLower = 0xfff972474538efff;
+        private const ulong OtelTraceStateImprecisionClampTraceIdLower = 0x03a93ee8b1999f00;
+        private const ulong OtelTraceStateMinimumTraceIdLower = 1;
+        private const double OtelTraceStateExampleSamplingRate = 0.1;
+        private const double OtelTraceStateImprecisionClampSamplingRate = 0.1;
+        private const float OtelTraceStateRateLimiterRate = 0.05f;
+        private const float NeverSampleRate = 0f;
+        private const float AlwaysSampleRate = 1f;
+
+        // Expected values generated from the fixed trace ID at the sampling rate.
+        private const string OtelTraceStateExampleRandomValue = "ef284ace7a91e1";
+        private const string OtelTraceStateExampleThreshold = "e6666666666668";
+        private const string OtelTraceStateMaximumThreshold = "ffffffffffffff";
+        private const string OtelTraceStateMinimumThreshold = "0";
+        private const string OtelTraceStateUnrelatedValue = "foo:bar";
+        private const string OtelTraceStateExample = "rv:" + OtelTraceStateExampleRandomValue + ";th:" + OtelTraceStateExampleThreshold;
+        private const string OtelTraceStateExampleWithoutThreshold = "rv:" + OtelTraceStateExampleRandomValue;
+        private const string OtelTraceStateExampleWithUnrelatedValue = OtelTraceStateExample + ";" + OtelTraceStateUnrelatedValue;
+        private const string OtelTraceStateExampleWithoutThresholdWithUnrelatedValue = OtelTraceStateExampleWithoutThreshold + ";" + OtelTraceStateUnrelatedValue;
+
         private readonly StubDatadogTracer _tracerMock = new();
 
         [Fact]
@@ -216,6 +240,219 @@ namespace Datadog.Trace.Tests
             var span = tracer.StartSpan("operation");
             span.SetService(null, null);
             span.Finish(); // should not throw
+        }
+
+        [Fact]
+        public void SetSamplingPriority_RootProbabilityKeep_DerivesRvTh_MatchesRfcWorkedExample()
+        {
+            var traceContext = TraceContextTestHelpers.CreateTraceContextWithRootSpan(traceIdLower: OtelTraceStateExampleTraceIdLower);
+
+            traceContext.SetSamplingPriority(
+                priority: SamplingPriorityValues.UserKeep,
+                mechanism: SamplingMechanism.LocalTraceSamplingRule,
+                rate: OtelTraceStateExampleSamplingRate,
+                sample: true);
+
+            WriteOtelTraceStateHeader(traceContext.OtelTraceState).Should().Be(OtelTraceStateExample);
+        }
+
+        [Fact]
+        public void SetSamplingPriority_RootProbabilityDrop_StillEmitsTh()
+        {
+            var traceContext = TraceContextTestHelpers.CreateTraceContextWithRootSpan(traceIdLower: OtelTraceStateExampleTraceIdLower);
+
+            traceContext.SetSamplingPriority(
+                priority: SamplingPriorityValues.UserReject,
+                mechanism: SamplingMechanism.LocalTraceSamplingRule,
+                rate: OtelTraceStateExampleSamplingRate,
+                sample: false);
+
+            WriteOtelTraceStateHeader(traceContext.OtelTraceState).Should().Contain("th:" + OtelTraceStateExampleThreshold);
+        }
+
+        [Fact]
+        public void SetSamplingPriority_WithoutW3CInjection_DoesNotDeriveOtelTraceState()
+        {
+            var settings = TracerSettings.Create(new() { { ConfigurationKeys.PropagationStyleInject, ContextPropagationHeaderStyle.Datadog } });
+            var traceContext = new TraceContext(new StubDatadogTracer(settings));
+            var spanContext = new SpanContext(parent: SpanContext.None, traceContext, serviceName: null, traceId: (TraceId)OtelTraceStateMinimumTraceIdLower, spanId: RandomIdGenerator.Shared.NextSpanId());
+            traceContext.AddSpan(new Span(spanContext, DateTimeOffset.UtcNow));
+
+            traceContext.SetSamplingPriority(SamplingPriorityValues.UserKeep, SamplingMechanism.LocalTraceSamplingRule, rate: OtelTraceStateExampleSamplingRate, sample: true);
+
+            WriteOtelTraceStateHeader(traceContext.OtelTraceState).Should().Be(string.Empty);
+        }
+
+        [Fact]
+        public void SetSamplingPriority_ImprecisionClamp_ForcesAgreementWithDdDecision()
+        {
+            // The Datadog decision and the 56-bit OTel representation can land on
+            // opposite sides of a sampling boundary after rate conversion.
+            var sample = SamplingHelpers.SampleByRate(OtelTraceStateImprecisionClampTraceIdLower, OtelTraceStateImprecisionClampSamplingRate);
+            var traceContext = TraceContextTestHelpers.CreateTraceContextWithRootSpan(OtelTraceStateImprecisionClampTraceIdLower);
+
+            traceContext.SetSamplingPriority(
+                priority: sample ? SamplingPriorityValues.UserKeep : SamplingPriorityValues.UserReject,
+                mechanism: SamplingMechanism.LocalTraceSamplingRule,
+                rate: (float)OtelTraceStateImprecisionClampSamplingRate,
+                sample: sample);
+
+            var rv = traceContext.OtelTraceState!.RandomValue;
+            var th = traceContext.OtelTraceState.Threshold;
+            (rv >= th).Should().Be(sample);
+        }
+
+        [Theory]
+        [InlineData(SamplingMechanism.Manual)]
+        [InlineData(SamplingMechanism.Asm)]
+        public void SetSamplingPriority_NonProbabilityOverride_RemovesLocallyGeneratedRv(string mechanism)
+        {
+            var traceContext = TraceContextTestHelpers.CreateTraceContextWithRootSpan(traceIdLower: OtelTraceStateMinimumTraceIdLower);
+            traceContext.SetSamplingPriority(
+                SamplingPriorityValues.UserKeep,
+                SamplingMechanism.LocalTraceSamplingRule,
+                rate: OtelTraceStateExampleSamplingRate,
+                sample: true);
+
+            traceContext.SetSamplingPriority(SamplingPriorityValues.UserKeep, mechanism);
+
+            WriteOtelTraceStateHeader(traceContext.OtelTraceState).Should().Be(string.Empty);
+        }
+
+        [Fact]
+        public void SetSamplingPriority_RateLimiterDemotesKeep_StripsThButKeepsLocallyGeneratedRv()
+        {
+            var traceContext = TraceContextTestHelpers.CreateTraceContextWithRootSpan(traceIdLower: OtelTraceStateExampleTraceIdLower);
+
+            traceContext.SetSamplingPriority(
+                priority: SamplingPriorityValues.UserReject,
+                mechanism: SamplingMechanism.LocalTraceSamplingRule,
+                rate: OtelTraceStateExampleSamplingRate,
+                limiterRate: OtelTraceStateRateLimiterRate,
+                sample: true);
+
+            WriteOtelTraceStateHeader(traceContext.OtelTraceState).Should().Be(OtelTraceStateExampleWithoutThreshold);
+        }
+
+        [Fact]
+        public void TraceSampler_LimiterDemotesKeep_KeepsRv_ViaGetOrMakeSamplingDecision()
+        {
+            var builder = new TraceSampler.Builder(new TracerRateLimiter(maxTracesPerInterval: 0, intervalMilliseconds: null));
+            builder.RegisterRule(new GlobalSamplingRateRule(AlwaysSampleRate));
+            var sampler = builder.Build();
+
+            var tracer = new StubDatadogTracer(sampler);
+            var rootSpan = new Span(new SpanContext(OtelTraceStateExampleTraceIdLower, RandomIdGenerator.Shared.NextSpanId()), DateTimeOffset.UtcNow);
+            var traceContext = new TraceContext(tracer);
+            traceContext.AddSpan(rootSpan);
+
+            traceContext.GetOrMakeSamplingDecision();
+
+            WriteOtelTraceStateHeader(traceContext.OtelTraceState).Should().Be(OtelTraceStateExampleWithoutThreshold);
+        }
+
+        [Fact]
+        public void SetSamplingPriority_RateLimiterDemotesKeep_StripsInheritedThButKeepsRvAndUnknownItems()
+        {
+            var traceContext = TraceContextTestHelpers.CreateTraceContextWithRootSpan(traceIdLower: OtelTraceStateExampleTraceIdLower);
+            traceContext.OtelTraceState = OtelTraceState.Parse(OtelTraceStateExampleWithUnrelatedValue);
+
+            traceContext.SetSamplingPriority(
+                priority: SamplingPriorityValues.UserReject,
+                mechanism: SamplingMechanism.LocalTraceSamplingRule,
+                rate: OtelTraceStateExampleSamplingRate,
+                limiterRate: OtelTraceStateRateLimiterRate,
+                sample: true);
+
+            WriteOtelTraceStateHeader(traceContext.OtelTraceState).Should().Be(OtelTraceStateExampleWithoutThresholdWithUnrelatedValue);
+        }
+
+        [Theory]
+        // `th:ffffffffffffff` encodes a zero sampling rate, so the trace must drop.
+        [InlineData(NeverSampleRate, OtelTraceStateExampleRandomValue, OtelTraceStateMaximumThreshold)]
+        // `th:0` encodes a 100% sampling rate, so the trace must keep; `rv:0` is
+        // valid, but also represents a keep decision at this threshold.
+        [InlineData(AlwaysSampleRate, OtelTraceStateExampleRandomValue, OtelTraceStateMinimumThreshold)]
+        public void SetSamplingPriority_BoundaryRate_ProducesValidOtelTraceState(double rate, string expectedRandomValue, string expectedThreshold)
+        {
+            var traceContext = TraceContextTestHelpers.CreateTraceContextWithRootSpan(traceIdLower: OtelTraceStateExampleTraceIdLower);
+            var sample = SamplingHelpers.SampleByRate(OtelTraceStateExampleTraceIdLower, rate);
+
+            traceContext.SetSamplingPriority(
+                priority: sample ? SamplingPriorityValues.UserKeep : SamplingPriorityValues.UserReject,
+                mechanism: SamplingMechanism.LocalTraceSamplingRule,
+                rate: rate,
+                sample: sample);
+
+            WriteOtelTraceStateHeader(traceContext.OtelTraceState).Should().Be($"rv:{expectedRandomValue};th:{expectedThreshold}");
+        }
+
+        [Fact]
+        public void SetSamplingPriority_ManualOverride_StripsInheritedThButKeepsRv()
+        {
+            var traceContext = TraceContextTestHelpers.CreateTraceContextWithRootSpan(traceIdLower: OtelTraceStateMinimumTraceIdLower);
+            traceContext.OtelTraceState = OtelTraceState.Parse(OtelTraceStateExample);
+
+            traceContext.SetSamplingPriority(SamplingPriorityValues.UserKeep, SamplingMechanism.Manual);
+
+            WriteOtelTraceStateHeader(traceContext.OtelTraceState).Should().Be(OtelTraceStateExampleWithoutThreshold);
+        }
+
+        /// <summary>
+        /// Two traces continued from the same extracted <see cref="SpanContext"/> must each own their
+        /// <see cref="OtelTraceState"/>. Otherwise a sampling override on one trace mutates the other.
+        /// </summary>
+        [Fact]
+        public async Task OtelTraceState_IsNotSharedBetweenTracesContinuedFromTheSameExtractedContext()
+        {
+            const string inboundTraceState = "foo=1,ot=rv:aaaaaaaaaaaaaa;th:8,congo=2";
+
+            var propagator = SpanContextPropagatorFactory.GetSpanContextPropagator(
+                [ContextPropagationHeaderStyle.W3CTraceContext],
+                [ContextPropagationHeaderStyle.W3CTraceContext],
+                propagationExtractFirst: false);
+
+            var headers = new Mock<IHeadersCollection>(MockBehavior.Strict);
+            headers.Setup(h => h.GetValues("traceparent")).Returns(new[] { "00-11111111111111111111111111111111-1111111111111111-01" });
+            headers.Setup(h => h.GetValues("tracestate")).Returns(new[] { inboundTraceState });
+
+            var extracted = propagator.Extract(headers.Object).SpanContext;
+
+            await using var tracer = TracerHelper.Create();
+
+            var spanA = tracer.StartSpan("a", parent: extracted);
+            var spanB = tracer.StartSpan("b", parent: extracted);
+
+            // a manual override applies to trace A only, and must not disturb trace B
+            spanA.Context.TraceContext.SetSamplingPriority(SamplingPriorityValues.UserKeep, SamplingMechanism.Manual);
+
+            // trace A drops "th" and moves "ot" to the front, as a rewritten member should
+            W3CTraceContextPropagator.CreateTraceStateHeader(spanA.Context)
+                                     .Should().Contain("ot=rv:aaaaaaaaaaaaaa,").And.NotContain("th:8");
+
+            // trace B keeps its inherited "th" and its original member ordering.
+            W3CTraceContextPropagator.CreateTraceStateHeader(spanB.Context)
+                                     .Should().Contain("foo=1,ot=rv:aaaaaaaaaaaaaa;th:8,congo=2");
+        }
+
+        private static ulong ParseThForTest(string otelTraceState)
+        {
+            foreach (var item in otelTraceState.Split(';'))
+            {
+                if (item.StartsWith("th:", StringComparison.Ordinal))
+                {
+                    return Convert.ToUInt64(item.Substring(3), 16);
+                }
+            }
+
+            throw new InvalidOperationException("no th found");
+        }
+
+        private static string WriteOtelTraceStateHeader(OtelTraceState traceState)
+        {
+            var sb = new StringBuilder();
+            OtelTraceStateHelpers.SetRvTh(sb, traceState?.CachedHeaderString, traceState?.RandomValue, traceState?.Threshold);
+            return sb.ToString();
         }
     }
 }

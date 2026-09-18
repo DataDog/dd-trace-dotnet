@@ -743,13 +743,18 @@ internal static partial class IastModule
     private static Location? GetLocation(StackTrace? stack = null, Span? currentSpan = null)
     {
         stack ??= StackWalker.GetStackTrace();
+        if (stack is null)
+        {
+            return null;
+        }
+
         if (!StackWalker.TryGetFrame(stack, out var stackFrame))
         {
             return null;
         }
 
         string? stackId = null;
-        if (stack != null && Security.Instance.Settings.StackTraceEnabled)
+        if (Security.Instance.Settings.StackTraceEnabled)
         {
             if (currentSpan is null)
             {
