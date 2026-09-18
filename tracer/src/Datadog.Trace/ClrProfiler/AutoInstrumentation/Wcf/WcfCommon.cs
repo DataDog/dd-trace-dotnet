@@ -76,7 +76,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
                     // we're using an http transport
                     host = webHeaderCollection[HttpRequestHeader.Host];
                     userAgent = webHeaderCollection[HttpRequestHeader.UserAgent];
-                    httpMethod = httpRequestPropertyProxy.Method?.ToUpperInvariant();
+                    httpMethod = StringUtil.ToUpperInvariant(httpRequestPropertyProxy.Method);
 
                     // try to extract propagated context values from http headers
                     if (tracer.ActiveScope is { } activeScope)
