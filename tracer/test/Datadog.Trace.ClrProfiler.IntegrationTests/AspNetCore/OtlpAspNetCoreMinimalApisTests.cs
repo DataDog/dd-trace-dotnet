@@ -15,8 +15,6 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
 {
-    [Trait("RequiresDockerDependency", "true")]
-    [Trait("DockerGroup", "1")]
     public class OtlpAspNetCoreMinimalApisTestsCallTarget : OtlpAspNetCoreMinimalApisTests
     {
         public OtlpAspNetCoreMinimalApisTestsCallTarget(AspNetCoreTestFixture fixture, ITestOutputHelper output)
@@ -25,8 +23,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
         }
     }
 
-    [Trait("RequiresDockerDependency", "true")]
-    [Trait("DockerGroup", "1")]
     public class OtlpAspNetCoreMinimalApisTestsCallTargetWithFeatureFlag : OtlpAspNetCoreMinimalApisTests
     {
         public OtlpAspNetCoreMinimalApisTestsCallTargetWithFeatureFlag(AspNetCoreTestFixture fixture, ITestOutputHelper output)
@@ -35,8 +31,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
         }
     }
 
-    [Trait("RequiresDockerDependency", "true")]
-    [Trait("DockerGroup", "1")]
     public class OtlpAspNetCoreMinimalApisTestsCallTargetSingleSpan : OtlpAspNetCoreMinimalApisTests
     {
         public OtlpAspNetCoreMinimalApisTestsCallTargetSingleSpan(AspNetCoreTestFixture fixture, ITestOutputHelper output)
@@ -45,8 +39,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
         }
     }
 
-    [Trait("RequiresDockerDependency", "true")]
-    [Trait("DockerGroup", "1")]
     public class OtlpAspNetCoreMinimalApisTestsCallTargetWithOpenTelemetrySemantics : OtlpAspNetCoreMinimalApisTests
     {
         public OtlpAspNetCoreMinimalApisTestsCallTargetWithOpenTelemetrySemantics(AspNetCoreTestFixture fixture, ITestOutputHelper output)
@@ -55,8 +47,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
         }
     }
 
-    [Trait("RequiresDockerDependency", "true")]
-    [Trait("DockerGroup", "1")]
     public class OtlpAspNetCoreMinimalApisTestsCallTargetWithFeatureFlagWithOpenTelemetrySemantics : OtlpAspNetCoreMinimalApisTests
     {
         public OtlpAspNetCoreMinimalApisTestsCallTargetWithFeatureFlagWithOpenTelemetrySemantics(AspNetCoreTestFixture fixture, ITestOutputHelper output)
@@ -65,8 +55,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
         }
     }
 
-    [Trait("RequiresDockerDependency", "true")]
-    [Trait("DockerGroup", "1")]
     public class OtlpAspNetCoreMinimalApisTestsCallTargetSingleSpanWithOpenTelemetrySemantics : OtlpAspNetCoreMinimalApisTests
     {
         public OtlpAspNetCoreMinimalApisTestsCallTargetSingleSpanWithOpenTelemetrySemantics(AspNetCoreTestFixture fixture, ITestOutputHelper output)
@@ -84,9 +72,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
         private const string MinimalApiRoute = "/api/delay";
 
         /// <summary>
-        /// The prefix the application is mounted under for the path-base row in <see cref="Data"/>,
-        /// which <c>UsePathBase</c> strips before routing runs, so it must be stripped here too when
-        /// deciding which endpoint a path resolves to.
+        /// The path base Samples.AspNetCoreMinimalApis is mounted under, matching the sample's own
+        /// <c>app.UsePathBase("/path-base")</c>. The "/path-base/api/delay/0" row in
+        /// <see cref="OtlpAspNetCoreTestBase.Data"/> reaches the same minimal-API endpoint as
+        /// "/api/delay/0", just through the mounted path base, so it must be stripped before matching
+        /// <see cref="MinimalApiRoute"/> below.
         /// </summary>
         private const string PathBasePrefix = "/path-base";
 
@@ -113,13 +103,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
         /// <param name="handledByEndpoint">Whether an endpoint handled the request.</param>
         private int GetExpectedSpanCount(string path, bool handledByEndpoint)
         {
-            var pathAfterRouting = path.StartsWith(PathBasePrefix, StringComparison.Ordinal)
-                ? path.Substring(PathBasePrefix.Length)
-                : path;
+            var routePath = path.StartsWith(PathBasePrefix, StringComparison.Ordinal)
+                                 ? path[PathBasePrefix.Length..]
+                                 : path;
 
-            if (!handledByEndpoint
-                || path.StartsWith(MinimalApiRoute, StringComparison.Ordinal)
-                || path.StartsWith(PathBasePrefix + MinimalApiRoute, StringComparison.Ordinal))
+            if (!handledByEndpoint || routePath.StartsWith(MinimalApiRoute, StringComparison.Ordinal))
             {
                 return 1;
             }

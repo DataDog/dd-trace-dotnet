@@ -8,13 +8,23 @@
     <PackageReference Include="HttpMultipartParser" Version="5.1.0" />
     <PackageReference Include="PublicApiGenerator" Version="10.2.0" />
     <PackageReference Include="DiffPlex" Version="1.7.1" />
-    <!-- Added this package to make use of the locally generated OTEL `.proto files by: 
+    <!-- Added this package to make use of the locally generated OTEL `.proto files by:
     1. Downloading protoc from: https://github.com/protocolbuffers/protobuf/releases and adding it to the PATH
     2. Cloning the opentelemetry-proto repository: git clone https://github.com/open-telemetry/opentelemetry-proto.git && cd into opentelemetry-proto
     3. Creating a folder where generated files will be placed: mkdir Generated
-    4. Running the command to generate the files to paste where needed: protoc -I. \-\-csharp_out=./Generated opentelemetry/proto/metrics/v1/metrics.proto opentelemetry/proto/common/v1/common.proto opentelemetry/proto/resource/v1/resource.proto 
+    4. Running the command to generate the files to paste where needed: protoc -I. \-\-csharp_out=./Generated opentelemetry/proto/metrics/v1/metrics.proto opentelemetry/proto/common/v1/common.proto opentelemetry/proto/resource/v1/resource.proto
     (Excaped the double `-` command above with `\` when running the command remove them.)-->
-    <PackageReference Include="Google.Protobuf" Version="3.25.1" />
+    <PackageReference Include="Google.Protobuf" Version="3.27.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- OTLP .proto files vendored from open-telemetry/opentelemetry-proto@v1.10.0. The matching
+         C# bindings under OpenTelemetry\Generated\ are pre-generated and committed so OTLP
+         serializer/mock-agent tests can decode wire bytes via Google.Protobuf parsers without
+         invoking protoc at build time (Grpc.Tools does not ship a musl/Alpine binary, and NuGet
+         does not preserve the executable bit on Unix). See OpenTelemetry\Generated\README.md for
+         the regeneration command. -->
+    <None Include="OpenTelemetry\proto\**\*.proto" />
   </ItemGroup>
 
   <ItemGroup>
