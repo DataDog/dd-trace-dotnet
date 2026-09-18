@@ -79,10 +79,14 @@ internal static class AzureFunctionsDurablePropagation
         }
 
         var sampledFlags = (flags | RecordedFlag).ToString("x2", CultureInfo.InvariantCulture);
-        var updatedTraceParent = traceParent.ToCharArray();
-        updatedTraceParent[flagsStart] = sampledFlags[0];
-        updatedTraceParent[flagsStart + 1] = sampledFlags[1];
-        return new string(updatedTraceParent);
+
+        // The span-based overload is unavailable on some target frameworks. Follow the existing pattern:
+        // https://github.com/DataDog/dd-trace-dotnet/blob/efb6c5c17d589f01b54e96f67f99bb334ac0d91d/tracer/src/Datadog.Trace/Debugger/Symbols/SymbolsUploader.cs#L414-L418
+#if NETCOREAPP
+        return string.Concat(traceParent.AsSpan(0, flagsStart), sampledFlags);
+#else
+        return traceParent.Substring(0, flagsStart) + sampledFlags;
+#endif
     }
 
     private static PropagationContext ExtractHeaders(string traceParent, string? traceState)
