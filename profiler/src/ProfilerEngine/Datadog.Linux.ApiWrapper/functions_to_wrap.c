@@ -196,6 +196,11 @@ char* getSubfolder(const char* path)
 static void check_init();
 
 static char* originalMiniDumpName = NULL;
+// The minidump name configured by the user (DOTNET_DbgMiniDumpName/COMPlus_DbgMiniDumpName),
+// captured before it is potentially replaced by datadogCrashMarker.
+// It is used at execve time to recognize a crash-triggered createdump invocation
+// when the call is not redirected to the Datadog crash handler (ex: crashtracking is disabled).
+static char* userMiniDumpName = NULL;
 static const char* datadogCrashMarker = "datadog_crashtracking";
 #define DD_CRASHTRACKING_ENABLED "DD_CRASHTRACKING_ENABLED"
 #define DD_INTERNAL_CRASHTRACKING_PASSTHROUGH "DD_INTERNAL_CRASHTRACKING_PASSTHROUGH"
@@ -210,6 +215,26 @@ void initLibrary(void)
 {
     check_init();
 
+    // Bash provides its own version of the getenv/setenv functions
+    // Fetch the original ones and use those instead
+    char *(*real_getenv)(const char *) = __dd_dlsym(RTLD_NEXT, "getenv");
+    int (*real_setenv)(const char *, const char *, int) = __dd_dlsym(RTLD_NEXT, "setenv");
+
+    if (real_getenv == NULL || real_setenv == NULL)
+    {
+        return;
+    }
+
+    // Capture the minidump name configured by the user, even when crashtracking is disabled:
+    // the execve interception uses it to detect a crash-triggered createdump invocation
+    // and notify the profiler that the application is crashing.
+    userMiniDumpName = real_getenv(DOTNET_DbgMiniDumpName);
+
+    if (userMiniDumpName == NULL)
+    {
+        userMiniDumpName = real_getenv(COMPlus_DbgMiniDumpName);
+    }
+
     const char* crashHandlerEnabled = getenv(DD_CRASHTRACKING_ENABLED);
 
     if (crashHandlerEnabled != NULL)
@@ -221,16 +246,6 @@ void initLibrary(void)
             // Early nope
             return;
         }
-    }
-
-    // Bash provides its own version of the getenv/setenv functions
-    // Fetch the original ones and use those instead
-    char *(*real_getenv)(const char *) = __dd_dlsym(RTLD_NEXT, "getenv");
-    int (*real_setenv)(const char *, const char *, int) = __dd_dlsym(RTLD_NEXT, "setenv");
-
-    if (real_getenv == NULL || real_setenv == NULL)
-    {
-        return;
     }
 
     // If crashtracking is enabled, check the value of DOTNET_DbgEnableMiniDump
@@ -444,16 +459,22 @@ int dladdr(const void* addr_arg, Dl_info* info)
 static int (*__real_execve)(const char* pathname, char* const argv[], char* const envp[]) = NULL;
 
 __attribute__((visibility("hidden")))
-int ShouldCallCustomCreatedump(const char* pathname, char* const argv[])
+int IsCreatedump(const char* pathname)
 {
-    if (crashHandler == NULL || pathname == NULL)
+    if (pathname == NULL)
     {
         return 0;
     }
 
     size_t length = strlen(pathname);
 
-    if (length < 11 || strcmp(pathname + length - 11, "/createdump") != 0)
+    return length >= 11 && strcmp(pathname + length - 11, "/createdump") == 0;
+}
+
+__attribute__((visibility("hidden")))
+int ShouldCallCustomCreatedump(const char* pathname, char* const argv[])
+{
+    if (crashHandler == NULL || IsCreatedump(pathname) == 0)
     {
         return 0;
     }
@@ -472,6 +493,34 @@ int ShouldCallCustomCreatedump(const char* pathname, char* const argv[])
     return 0;
 }
 
+// Tells whether this createdump invocation was triggered by the runtime handling a crash,
+// when the datadogCrashMarker mechanism is not in place (ex: crashtracking is disabled).
+// Following a crash, the runtime forwards the value of DOTNET_DbgMiniDumpName/COMPlus_DbgMiniDumpName
+// through the --name argument (and passes no --name at all when the variable is not set).
+// Dump generation requests (ex: dotnet-dump) instead carry the file name chosen by the client.
+__attribute__((visibility("hidden")))
+int IsCrashTriggeredCreatedump(const char* pathname, char* const argv[])
+{
+    if (IsCreatedump(pathname) == 0)
+    {
+        return 0;
+    }
+
+    int previousWasNameOpt = 0;
+    for (int i = 0; argv[i] != NULL; i++)
+    {
+        if (previousWasNameOpt != 0)
+        {
+            return userMiniDumpName != NULL && strcmp(argv[i], userMiniDumpName) == 0;
+        }
+        previousWasNameOpt = strncmp(argv[i], "--name", strlen("--name")) == 0;
+    }
+
+    // No --name argument: only the crash path can omit the dump file name
+    // (dump generation requests always specify it)
+    return 1;
+}
+
 int execve(const char* pathname, char* const argv[], char* const envp[])
 {
     check_init();
@@ -480,6 +529,16 @@ int execve(const char* pathname, char* const argv[], char* const envp[])
 
     if (callCustomCreatedump == 0)
     {
+        // Even when the call is not redirected to the Datadog crash handler
+        // (typically because crashtracking is disabled), the runtime spawning createdump
+        // following a crash still means the application is crashing.
+        // Raise the flag so that the profiler stops collecting callstacks in the crashing
+        // (parent) process, then let the original invocation go through unchanged.
+        if (IsCrashTriggeredCreatedump(pathname, argv) != 0 && is_app_crashing != NULL)
+        {
+            *is_app_crashing = 1;
+        }
+
         return __real_execve(pathname, argv, envp);
     }
 
