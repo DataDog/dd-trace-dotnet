@@ -84,27 +84,17 @@ public class IntegrationActivityHandlerTests
         activity.Start();
         var supportsQuartzMetadata = activity.TryDuckCast<IActivity5>(out var activity5);
         IActivity duckActivity = supportsQuartzMetadata ? activity5 : activity.DuckCast<IActivity>();
+        IActivityHandler registeredHandler = useOperationNameFallback ? new DefaultActivityHandler() : handler;
 
-        if (useOperationNameFallback)
-        {
-            ActivityListenerHandler.OnShouldListenTo(Mock.Of<ISource>(source => source.Name == sourceName));
-            ActivityListenerHandler.OnActivityWithSourceStarted(sourceName, duckActivity);
-        }
-        else
-        {
-            handler.ActivityStarted(sourceName, duckActivity);
-        }
+        var startHandler = ActivityListenerHandler.ResolveHandler(sourceName, duckActivity.OperationName, registeredHandler);
+        startHandler.Should().BeOfType<QuartzActivityHandler>();
+        startHandler.ActivityStarted(sourceName, duckActivity);
 
         var span = (Span)tracer.ActiveScope!.Span;
 
-        if (useOperationNameFallback)
-        {
-            ActivityListenerHandler.OnActivityWithSourceStopped(sourceName, duckActivity);
-        }
-        else
-        {
-            handler.ActivityStopped(sourceName, duckActivity);
-        }
+        var stopHandler = ActivityListenerHandler.ResolveHandler(sourceName, duckActivity.OperationName, registeredHandler);
+        stopHandler.Should().BeOfType<QuartzActivityHandler>();
+        stopHandler.ActivityStopped(sourceName, duckActivity);
 
         activity.Stop();
 

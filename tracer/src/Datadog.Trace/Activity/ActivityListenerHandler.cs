@@ -114,7 +114,7 @@ namespace Datadog.Trace.Activity
             }
         }
 
-        private static IActivityHandler ResolveHandler(string? sourceName, string? operationName, IActivityHandler handler)
+        internal static IActivityHandler ResolveHandler(string? sourceName, string? operationName, IActivityHandler handler)
         {
             // If the source lookup only found the default handler, use the operation name as a fallback.
             if (StringUtil.IsNullOrEmpty(sourceName) && handler is DefaultActivityHandler)
