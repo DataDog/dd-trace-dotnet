@@ -8,6 +8,7 @@
 #include "environment_variables_util.h"
 #include "dd_profiler_constants.h"
 #include "tracer_handler_module_method.h"
+#include "runtime_async.h"
 
 namespace trace
 {
@@ -110,6 +111,7 @@ HRESULT TracerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHa
     tracerTokens->SetCorProfilerInfo(m_corProfiler->info_);
     mdToken function_token = caller->id;
     TypeSignature retFuncArg = caller->method_signature.GetReturnValue();
+    const bool isRuntimeAsync = IsMiAsync(caller->method_impl_flags);
     IntegrationDefinition* integration_definition = tracerMethodHandler->GetIntegrationDefinition();
     bool is_integration_method =
         integration_definition->target_method.type.assembly.name != tracemethodintegration_assemblyname;
@@ -140,9 +142,23 @@ HRESULT TracerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHa
     }
 
     DBG("*** CallTarget_RewriterCallback() Start: ", caller->type.name, ".", caller->name,
-        "() [IsVoid=", isVoid, ", IsStatic=", isStatic,
+        "() [IsVoid=", isVoid, ", IsStatic=", isStatic, ", IsRuntimeAsync=", isRuntimeAsync,
         ", IntegrationType=", integration_definition->integration_type.name, ", Arguments=", numArgs,
         "]");
+
+    // .NET 11 runtime-async methods do not return their declared Task from the method body: at `ret`
+    // the stack holds the unwrapped value (or nothing, for a non-generic Task/ValueTask). Rewriting
+    // them as if they returned the declared type emits a `stloc` against the wrong type - or against
+    // an empty stack - and the JIT raises InvalidProgramException when the method is first called.
+    // Until the effective-return-type support lands, leave these methods alone: returning S_FALSE
+    // means we never call SetILFunctionBody, so ReJIT installs the original IL.
+    if (isRuntimeAsync)
+    {
+        Logger::Warn("*** CallTarget_RewriterCallback() skipping method: .NET 11 runtime-async methods "
+                     "(MethodImplAttributes.Async) are not supported by this instrumentation. token=",
+                     function_token, " caller_name=", caller->type.name, ".", caller->name, "()");
+        return S_FALSE;
+    }
 
     // First we check if the managed profiler has not been loaded yet
     if (!m_corProfiler->ProfilerAssemblyIsLoadedIntoAppDomain(module_metadata.app_domain_id))
@@ -783,7 +799,7 @@ HRESULT TracerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHa
     }
 
     Logger::Info("*** CallTarget_RewriterCallback() Finished: ", caller->type.name, ".", caller->name,
-                 "() [IsVoid=", isVoid, ", IsStatic=", isStatic,
+                 "() [IsVoid=", isVoid, ", IsStatic=", isStatic, ", IsRuntimeAsync=", isRuntimeAsync,
                  ", IntegrationType=", integration_definition->integration_type.name, ", Arguments=", numArgs, "]");
     return S_OK;
 }
