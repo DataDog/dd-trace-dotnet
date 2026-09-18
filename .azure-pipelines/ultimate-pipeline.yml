@@ -3143,7 +3143,7 @@ stages:
         target: builder
         baseImage: ubuntu
         useNativeSdkVersion: true
-        command: "BuildProfilerAsanTest -Framework net7.0"
+        command: "BuildProfilerAsanTest"
         apiKey: $(DD_LOGGER_DD_API_KEY)
         timeoutInMinutesForRunCommand: 30 # No retry: this target also runs the sanitizer unit tests, and retrying could mask a real intermittent finding
 
@@ -3152,7 +3152,7 @@ stages:
         build: true
         target: builder
         baseImage: debian
-        command: "BuildProfilerSampleForSanitiserTests -Framework net7.0"
+        command: "BuildProfilerSampleForSanitiserTests"
         apiKey: $(DD_LOGGER_DD_API_KEY)
         retryCountForRunCommand: 1
         timeoutInMinutesForRunCommand: 10
@@ -3162,7 +3162,7 @@ stages:
         target: builder
         baseImage: ubuntu
         useNativeSdkVersion: true
-        command: "RunSampleWithProfilerAsan -Framework net7.0"
+        command: "RunSampleWithProfilerAsan"
         apiKey: $(DD_LOGGER_DD_API_KEY)
 
     - publish: profiler/build_data
@@ -3226,7 +3226,7 @@ stages:
         build: true
         baseImage: ubuntu
         useNativeSdkVersion: ""
-        command: "BuildProfilerAsanTest -Framework net7.0"
+        command: "BuildProfilerAsanTest"
         apiKey: $(DD_LOGGER_DD_API_KEY)
         timeoutInMinutesForRunCommand: 30 # No retry: this target also runs the sanitizer unit tests, and retrying could mask a real intermittent finding
 
@@ -3234,7 +3234,7 @@ stages:
       parameters:
         build: true
         baseImage: debian
-        command: "BuildProfilerSampleForSanitiserTests -Framework net7.0"
+        command: "BuildProfilerSampleForSanitiserTests"
         apiKey: $(DD_LOGGER_DD_API_KEY)
         retryCountForRunCommand: 1
         timeoutInMinutesForRunCommand: 10
@@ -3243,7 +3243,7 @@ stages:
       parameters:
         baseImage: ubuntu
         useNativeSdkVersion: true
-        command: "RunSampleWithProfilerAsan -Framework net7.0"
+        command: "RunSampleWithProfilerAsan"
         apiKey: $(DD_LOGGER_DD_API_KEY)
 
     - publish: profiler/build_data
@@ -3285,7 +3285,7 @@ stages:
         build: true
         baseImage: ubuntu
         useNativeSdkVersion: ""
-        command: "BuildProfilerUbsanTest -Framework net7.0"
+        command: "BuildProfilerUbsanTest"
         apiKey: $(DD_LOGGER_DD_API_KEY)
         timeoutInMinutesForRunCommand: 30 # No retry: this target also runs the sanitizer unit tests, and retrying could mask a real intermittent finding
 
@@ -3293,7 +3293,7 @@ stages:
       parameters:
         build: true
         baseImage: debian
-        command: "BuildProfilerSampleForSanitiserTests -Framework net7.0"
+        command: "BuildProfilerSampleForSanitiserTests"
         apiKey: $(DD_LOGGER_DD_API_KEY)
         retryCountForRunCommand: 1
         timeoutInMinutesForRunCommand: 10
@@ -3302,7 +3302,7 @@ stages:
       parameters:
         baseImage: ubuntu
         useNativeSdkVersion: true
-        command: "RunSampleWithProfilerUbsan -Framework net7.0"
+        command: "RunSampleWithProfilerUbsan"
         apiKey: $(DD_LOGGER_DD_API_KEY)
 
     - publish: profiler/build_data
@@ -3346,7 +3346,7 @@ stages:
         target: builder
         baseImage: ubuntu
         useNativeSdkVersion: true
-        command: "BuildProfilerUbsanTest -Framework net7.0"
+        command: "BuildProfilerUbsanTest"
         apiKey: $(DD_LOGGER_DD_API_KEY)
         timeoutInMinutesForRunCommand: 30 # No retry: this target also runs the sanitizer unit tests, and retrying could mask a real intermittent finding
 
@@ -3355,7 +3355,7 @@ stages:
         build: true
         target: builder
         baseImage: debian
-        command: "BuildProfilerSampleForSanitiserTests -Framework net7.0"
+        command: "BuildProfilerSampleForSanitiserTests"
         apiKey: $(DD_LOGGER_DD_API_KEY)
         retryCountForRunCommand: 1
         timeoutInMinutesForRunCommand: 10
@@ -3365,7 +3365,7 @@ stages:
         target: builder
         baseImage: ubuntu
         useNativeSdkVersion: true
-        command: "RunSampleWithProfilerUbsan -Framework net7.0"
+        command: "RunSampleWithProfilerUbsan"
         apiKey: $(DD_LOGGER_DD_API_KEY)
 
     - publish: profiler/build_data
@@ -3413,7 +3413,7 @@ stages:
         target: builder
         baseImage: ubuntu
         useNativeSdkVersion: true
-        command: "BuildProfilerTsanTest RunUnitTestsWithTsanLinux -Framework net7.0"
+        command: "BuildProfilerTsanTest RunUnitTestsWithTsanLinux"
         apiKey: $(DD_LOGGER_DD_API_KEY)
 
     - publish: profiler/build_data
