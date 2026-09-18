@@ -59,7 +59,8 @@ internal abstract class SkipTestMethodExecutor
 
     private static ExecutorMetadata FindExecutorMetadata(Type executorType)
     {
-        for (var currentType = executorType; currentType is not null; currentType = currentType.BaseType)
+        var currentType = executorType;
+        while (currentType is not null)
         {
             if (currentType.FullName == TestMethodAttributeTypeName &&
                 currentType.Assembly.GetType(TestResultTypeName, throwOnError: false) is { } testResultType)
@@ -76,6 +77,8 @@ internal abstract class SkipTestMethodExecutor
                     modifiers: null);
                 return new ExecutorMetadata(testResultType, publicExecuteAsync is not null);
             }
+
+            currentType = currentType.BaseType;
         }
 
         throw new TypeLoadException($"Could not find '{TestMethodAttributeTypeName}' in the type hierarchy of '{executorType.FullName}'.");
