@@ -112,6 +112,16 @@ partial class Build : NukeBuild
     [Parameter("Should we build native binaries as Universal. Default to false, so we can still build native libs outside of docker.")]
     readonly bool AsUniversal = false;
 
+    [Parameter("Link against a frozen glibc 2.17 sysroot. Set by ubuntu.dockerfile's ENV var.")]
+    readonly bool UseGlibc217Sysroot = false;
+
+    // Mirrors how CompileNativeWrapper threads -DCMAKE_TOOLCHAIN_FILE= for AsUniversal.
+    // Uses an absolute path (CMake resolves relative paths against its own cwd, not RootDirectory).
+    // No -DUSE_GLIBC217_SYSROOT needed — the toolchain file defines it itself.
+    // Arm64 uses Glibc217.cmake.aarch64 (devtoolset-10); x64 uses Glibc217.cmake.x86_64.
+    string Glibc217SysrootCMakeArgs =>
+        UseGlibc217Sysroot ? $" -DCMAKE_TOOLCHAIN_FILE={RootDirectory / "build" / "cmake" / $"Glibc217.cmake.{(IsArm64 ? "aarch64" : "x86_64")}"}" : "";
+
     [Parameter("RuntimeIdentifier sets the target platform for ReadyToRun assemblies in 'PublishManagedTracerR2R'." +
                "See https://learn.microsoft.com/en-us/dotnet/core/rid-catalog")]
     string RuntimeIdentifier { get; }
