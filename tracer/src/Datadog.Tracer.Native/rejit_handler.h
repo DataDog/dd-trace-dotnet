@@ -146,6 +146,9 @@ public:
     AssemblyProperty* GetCorAssemblyProperty();
 
     bool HasModuleAndMethod(ModuleID moduleId, mdMethodDef methodDef);
+    void NotifyModuleLoaded(ModuleID moduleId);
+    void AcquireInFlightRequest();
+    void ReleaseInFlightRequest();
     void RemoveModule(ModuleID moduleId);
     void AddNGenInlinerModule(ModuleID moduleId);
 
