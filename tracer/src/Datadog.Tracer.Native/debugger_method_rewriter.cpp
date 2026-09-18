@@ -271,7 +271,11 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, Rejit
 
     const auto debuggerMethodHandler = dynamic_cast<DebuggerRejitHandlerModuleMethod*>(methodHandler);
 
-    if (debuggerMethodHandler->GetProbes().empty())
+    // Snapshot the probes once: they can be added during preprocessing and removed from the managed thread
+    // while this method is being rewritten.
+    const auto probes = debuggerMethodHandler->GetProbes();
+
+    if (probes.empty())
     {
         Logger::Warn("NotifyReJITCompilationStarted: Probes are missing for "
                      "MethodDef: ",
@@ -285,14 +289,6 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, Rejit
     MethodProbeDefinitions methodProbes;
     LineProbeDefinitions lineProbes;
     SpanProbeOnMethodDefinitions spanOnMethodProbes;
-
-    const auto& probes = debuggerMethodHandler->GetProbes();
-
-    if (probes.empty())
-    {
-        Logger::Debug("There are no probes for methodDef: ", methodHandler->GetMethodDef());
-        return S_OK;
-    }
 
     Logger::Info("About to apply debugger instrumentation on ", probes.size(),
                  " probes for methodDef: ", methodHandler->GetMethodDef());
@@ -362,7 +358,7 @@ WSTRING DebuggerMethodRewriter::GetInstrumentationId(RejitHandlerModule* moduleH
         return EmptyWStr;
     }
 
-    const auto& probes = debuggerMethodHandler->GetProbes();
+    const auto probes = debuggerMethodHandler->GetProbes();
 
     if (probes.empty())
     {

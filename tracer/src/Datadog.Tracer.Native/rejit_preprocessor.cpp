@@ -375,19 +375,19 @@ void RejitPreprocessor<RejitRequestDefinition>::ProcessTypeDefForRejit(
             Logger::Warn("Module handler is null, this only happens if the RejitHandler has been shutdown.");
             break;
         }
-        if (moduleHandler->GetModuleMetadata() == nullptr)
-        {
+        const auto metadataCreated = moduleHandler->CreateModuleMetadataIfNotExists([&]() {
             DBG("Creating ModuleMetadata...");
 
-            const auto moduleMetadata =
-                new ModuleMetadata(metadataImport, metadataEmit, assemblyImport, assemblyEmit, moduleInfo.assembly.name,
-                                   moduleInfo.assembly.app_domain_id, pCorAssemblyProperty,
-                                   enable_by_ref_instrumentation, enable_calltarget_state_by_ref);
+            return std::make_unique<ModuleMetadata>(metadataImport, metadataEmit, assemblyImport, assemblyEmit,
+                                                    moduleInfo.assembly.name, moduleInfo.assembly.app_domain_id,
+                                                    pCorAssemblyProperty, enable_by_ref_instrumentation,
+                                                    enable_calltarget_state_by_ref);
+        });
 
+        if (metadataCreated)
+        {
             DBG("ReJIT handler stored metadata for ", moduleInfo.id, " ", moduleInfo.assembly.name,
                 " AppDomain ", moduleInfo.assembly.app_domain_id, " ", moduleInfo.assembly.app_domain_name);
-
-            moduleHandler->SetModuleMetadata(moduleMetadata);
         }
 
         DBG("Method enqueued for ReJIT for ", caller.type.name, ".", caller.name, "(", caller.method_signature.NumberOfArguments(), " params).");
