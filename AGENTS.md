@@ -276,6 +276,7 @@ Debugger code runs inside customer processes while inspecting live customer obje
 - `docs/development/UpdatingTheSdk.md` — SDK updates
 - `docs/development/QueryingDatadogAPIs.md` — Querying Datadog APIs for debugging (spans, logs)
 - `docs/development/GitHubActionsSecurity.md` — GitHub Actions SHA-pinning policy, action allowlist, and reviewer checklist
+- `docs/OTelContextPropagation.md` — OpenTelemetry thread context propagation (OTEP 4947): record layout, the ELF TLS symbol, and per-thread lifecycle
 
 **CI & Testing:**
 - `docs/development/CI/TroubleshootingCIFailures.md` — Investigating build/test failures in Azure DevOps

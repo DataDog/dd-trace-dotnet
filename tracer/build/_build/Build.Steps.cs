@@ -124,6 +124,7 @@ partial class Build
     [LazyPathExecutable(name: "run-clang-tidy")] readonly Lazy<Tool> RunClangTidy;
     [LazyPathExecutable(name: "patchelf")] readonly Lazy<Tool> PatchElf;
     [LazyPathExecutable(name: "nm")] readonly Lazy<Tool> Nm;
+    [LazyPathExecutable(name: "readelf")] readonly Lazy<Tool> ReadElf;
 
     //OSX Tools
     readonly string[] OsxArchs = { "arm64", "x86_64" };
@@ -365,7 +366,43 @@ partial class Build
                 arguments: $"-DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang -B {NativeBuildDirectory} -S {RootDirectory} -DCMAKE_BUILD_TYPE={BuildConfiguration}");
             CMake.Value(
                 arguments: $"--build {NativeBuildDirectory} --parallel {Environment.ProcessorCount} --target {FileNames.NativeTracer}");
+
+            VerifyOtelThreadContextSymbolIsExported();
         });
+
+    /// <summary>
+    /// OTEP 4947 requires `otel_thread_ctx_v1` to be an exported ELF TLS symbol in the dynamic symbol
+    /// table: it is how out-of-process readers locate the thread context. Nothing at runtime would tell
+    /// us if it went missing - readers would simply never find any context - so a change to the compiler,
+    /// the linker or the project's visibility settings could silently break the feature. Assert it here,
+    /// right where the symbol is produced. See docs/OTelContextPropagation.md.
+    /// </summary>
+    private void VerifyOtelThreadContextSymbolIsExported()
+    {
+        const string symbol = "otel_thread_ctx_v1";
+
+        var (_, extension) = GetUnixArchitectureAndExtension();
+        var nativeTracer = GetNativeOutputDirectory(NativeTracerProject.Name) / $"{NativeTracerProject.Name}.{extension}";
+
+        var symbols = ReadElf.Value(arguments: $"--dyn-syms --wide \"{nativeTracer}\"", logOutput: false);
+        var expectedSymbol = new Regex(
+            $@"^\s*\d+:\s+[0-9a-fA-F]+\s+8\s+TLS\s+GLOBAL\s+DEFAULT\s+\d+\s+{Regex.Escape(symbol)}\s*$",
+            RegexOptions.CultureInvariant);
+
+        if (!symbols.Any(line => expectedSymbol.IsMatch(line.Text)))
+        {
+            throw new Exception(
+                $"{symbol} is not exported from {nativeTracer} as an 8-byte TLS GLOBAL DEFAULT symbol. " +
+                "The OpenTelemetry thread context cannot be discovered by external readers without it. " +
+                "Check that otel_thread_ctx.cpp is part of the " +
+                $"{NativeTracerProject.Name} shared target and that the symbol still has default visibility.");
+        }
+
+        Logger.Information(
+            "{Symbol} is exported from {NativeTracer} as an 8-byte TLS GLOBAL DEFAULT symbol",
+            symbol,
+            nativeTracer);
+    }
 
     Target CompileTracerNativeTestsLinux => _ => _
         .Unlisted()
