@@ -100,6 +100,12 @@ message(STATUS "GoogleTest library")
 find_package(PPDB REQUIRED)
 message(STATUS "PPDB library")
 
+# PoC C replacement for libdatadog's profile-upload path (see
+# shared/src/datadog-profiling-poc/README.md) - added before profiler/ so its
+# datadog_profiling_poc target exists by the time Datadog.Profiler.Native.Linux's
+# CMakeLists.txt links against it.
+add_subdirectory(shared/src/datadog-profiling-poc)
+
 add_subdirectory(tracer)
 
 # profiler cannot be built on MacOS (yet)
