@@ -880,6 +880,27 @@ bool CorProfilerCallback::SetConfiguration(shared::StableConfig::SharedConfig co
         if (config.profilingEnabled == shared::StableConfig::ProfilingEnabled::ProfilingDisabled)
         {
             Log::Info("Profiler is disabled via Stable Configuration");
+#ifdef ARM64
+            // The managed layer collapses the enablement decision to "disabled" before sending it here,
+            // so ProfilingDisabled also covers "not requested" / "explicitly disabled". Only surface the
+            // ARM64 gate hint when the Continuous Profiler was actually requested (DD_PROFILING_ENABLED=true|auto),
+            // mirroring Configuration::ExtractEnablementStatus, so we don't claim the gate blocked profiling
+            // on processes that never asked for it.
+            auto requestValue = shared::GetEnvironmentValue(EnvironmentVariables::ProfilerEnabled);
+            bool isEnabled = false;
+            bool parsed = shared::TryParseBooleanEnvironmentValue(requestValue, isEnabled);
+            bool profilingRequested = parsed ? isEnabled : (requestValue == WStr("auto"));
+            if (profilingRequested)
+            {
+                bool arm64ProfilingEnabled = false;
+                shared::TryParseBooleanEnvironmentValue(
+                    shared::GetEnvironmentValue(EnvironmentVariables::EnableProfilerArchitectureArm64), arm64ProfilingEnabled);
+                if (!arm64ProfilingEnabled)
+                {
+                    Log::Info("Continuous Profiler is not enabled for ARM64 architecture. If you want to use it, set the environment variable DD_INTERNAL_PROFILING_ENABLED_ARM64 to 1.");
+                }
+            }
+#endif
             return true;
         }
         else
