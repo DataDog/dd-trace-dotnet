@@ -37,7 +37,7 @@ std::vector<VulnerabilityType> ParseVulnerabilityTypes(const std::string& txt)
     std::vector<VulnerabilityType> res;
     res.reserve(2);
     auto parts = Split(TrimEnd(TrimStart(txt, "["), "]"), ",");
-    for (auto part : parts)
+    for (auto &part : parts)
     {
         res.push_back(ParseVulnerabilityType(Trim(part)));
     }

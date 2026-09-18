@@ -58,7 +58,6 @@ WSTRING DebuggerProbesInstrumentationRequester::GenerateRandomProbeId()
     std::random_device rd;
     std::mt19937 gen(rd());
     std::uniform_int_distribution<> dis(0, 15);
-    std::uniform_int_distribution<> dis8(8, 11);
 
     std::wstringstream ss;
     int i;
@@ -500,7 +499,7 @@ void DebuggerProbesInstrumentationRequester::AddMethodProbes(debugger::DebuggerM
                 const auto& currentSignature = current.targetParameterTypes[sIdx];
                 if (currentSignature != nullptr)
                 {
-                    signatureTypes.push_back(shared::WSTRING(currentSignature));
+                    signatureTypes.emplace_back(currentSignature);
                 }
             }
 
@@ -550,7 +549,7 @@ void DebuggerProbesInstrumentationRequester::AddMethodProbes(debugger::DebuggerM
                 const auto& currentSignature = current.targetParameterTypes[sIdx];
                 if (currentSignature != nullptr)
                 {
-                    signatureTypes.push_back(shared::WSTRING(currentSignature));
+                    signatureTypes.emplace_back(currentSignature);
                 }
             }
 
