@@ -2123,8 +2123,7 @@ partial class Build
         .Executes(() =>
         {
             var isDebugRun = IsDebugRun();
-            const string regressionFilter = "(Category=Smoke)&(LoadFromGAC!=True)&(Category!=AzureFunctions)&(SkipInCI!=True)";
-            var filter = AddAreaFilter(string.IsNullOrWhiteSpace(Filter) ? regressionFilter : $"({Filter})&{regressionFilter}");
+            var filter = AddAreaFilter(string.IsNullOrWhiteSpace(Filter) ? "(Category=Smoke)&(LoadFromGAC!=True)&(Category!=AzureFunctions)&(SkipInCI!=True)" : Filter);
 
             try
             {
