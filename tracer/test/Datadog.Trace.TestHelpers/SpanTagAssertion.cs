@@ -25,6 +25,7 @@ namespace Datadog.Trace.TestHelpers
             .IsPresent("env")
             .IsOptional("runtime-id") // TODO: Make runtime-id required on all spans, per our span attributes push
             .IsOptional("language")   // TODO: Make language required on all spans, per our span attributes push
+            .IsOptional("_dd.sdk.otlp_export") // export-mode marker written to every span by the serializer in use; absent for CI Visibility spans, which use their own formatter
             .IsOptional("version")
             .IsOptional("events")
             .IsOptional("_dd.p.dm")   // "decision maker", but contains the sampling mechanism

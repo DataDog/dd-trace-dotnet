@@ -92,23 +92,25 @@ public class SpanMessagePackFormatterTests
             var tagsProcessor = new TagsProcessor(actual.Tags);
             expected.Tags.EnumerateTags(ref tagsProcessor, expected.OpenTelemetrySemanticsEnabled);
 
-            // runtime-id and language are added during serialization
+            // runtime-id, language and _dd.sdk.otlp_export are added during serialization
+            var otlpExportMarker = new KeyValuePair<string, string>("_dd.sdk.otlp_export", "false");
+
             if (actual.ParentId == null)
             {
                 tagsProcessor.Remaining.Should()
-                    .HaveCount(2).And.Contain(new KeyValuePair<string, string>("runtime-id", RuntimeId.Get()), new KeyValuePair<string, string>("language", "dotnet"));
+                    .HaveCount(3).And.Contain(new KeyValuePair<string, string>("runtime-id", RuntimeId.Get()), new KeyValuePair<string, string>("language", "dotnet"), otlpExportMarker);
             }
             else
             {
                 if (!string.IsNullOrEmpty(expected.Context.LastParentId))
                 {
                     tagsProcessor.Remaining.Should()
-                                 .HaveCount(2).And.Contain(new KeyValuePair<string, string>("language", "dotnet"), new KeyValuePair<string, string>("_dd.parent_id", "0123456789abcdef"));
+                                 .HaveCount(3).And.Contain(new KeyValuePair<string, string>("language", "dotnet"), new KeyValuePair<string, string>("_dd.parent_id", "0123456789abcdef"), otlpExportMarker);
                 }
                 else
                 {
                     tagsProcessor.Remaining.Should()
-                                 .HaveCount(1).And.Contain(new KeyValuePair<string, string>("language", "dotnet"));
+                                 .HaveCount(2).And.Contain(new KeyValuePair<string, string>("language", "dotnet"), otlpExportMarker);
                 }
             }
 
@@ -725,6 +727,47 @@ public class SpanMessagePackFormatterTests
         foreach (var span in result)
         {
             span.GetMetric("_dd.apm.enabled").Should().Be(0d);
+        }
+    }
+
+    [Fact]
+    public void NativeExport_WritesOtlpExportFalse_OnAllSpans()
+    {
+        // Reaching this formatter means the span is serialized with the native Datadog encoding,
+        // so "_dd.sdk.otlp_export":"false" must be written to EVERY span (not just service-entry
+        // spans), because the trace intake reads the marker per span to measure OTLP adoption.
+        var traceContext = new TraceContext(_stubTracer);
+
+        // local root, service A -> service-entry span
+        var rootContext = new SpanContext(null, traceContext, "service-A");
+        var root = new Span(rootContext, DateTimeOffset.UtcNow);
+        root.OperationName = "root";
+
+        // child in the SAME service A -> not a service-entry span
+        var childContext = new SpanContext(rootContext, traceContext, "service-A");
+        var child = new Span(childContext, DateTimeOffset.UtcNow);
+        child.OperationName = "child";
+
+        foreach (var span in new[] { root, child })
+        {
+            span.SetDuration(TimeSpan.FromSeconds(1));
+        }
+
+        var traceChunk = new TraceChunkModel(new SpanCollection(new[] { root, child }));
+        var formatter = SpanFormatterResolver.Instance.GetFormatter<TraceChunkModel>();
+        byte[] bytes = [];
+
+        var length = formatter.Serialize(ref bytes, 0, traceChunk, SpanFormatterResolver.Instance);
+        var result = global::MessagePack.MessagePackSerializer.Deserialize<MockSpan[]>(new ArraySegment<byte>(bytes, 0, length));
+
+        result.Should().HaveCount(2);
+
+        // Asserted as a literal rather than via Tags.SdkOtlpExport: this is a wire contract the
+        // intake reads by name. It must be a string tag and not a metric, since the intake never
+        // reads the metrics map.
+        foreach (var span in result)
+        {
+            span.GetTag("_dd.sdk.otlp_export").Should().Be("false");
         }
     }
 

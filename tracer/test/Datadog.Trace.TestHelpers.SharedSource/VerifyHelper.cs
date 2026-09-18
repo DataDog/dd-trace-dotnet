@@ -227,7 +227,12 @@ namespace Datadog.Trace.TestHelpers
                              // Also ignoring `_dd.parent_id` since we test specific headers combinations which check for the value, hence why not adding it to the snapshots
                           && kvp.Key != Tags.LastParentId
                              // same as git related tags above, process tags are only added to the first span of each payload, which makes snapshots unstable.
-                          && kvp.Key != Tags.ProcessTags)
+                          && kvp.Key != Tags.ProcessTags
+                             // `_dd.sdk.otlp_export` is written to every span by the serializer for the encoding in use,
+                             // so it is a constant for a given snapshot and adds no coverage. Excluded to avoid churning
+                             // every snapshot in the repo; the tag is asserted directly in OtlpMapperTests and
+                             // SpanMessagePackFormatterTests instead.
+                          && kvp.Key != Tags.SdkOtlpExport)
                   .Select(
                        kvp => kvp.Key switch
                        {

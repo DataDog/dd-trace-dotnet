@@ -884,6 +884,14 @@ namespace Datadog.Trace
         internal const string ServiceNameSource = "_dd.svc_src";
 
         /// <summary>
+        /// Declares the export mode the tracer used for this span: "true" when the span was
+        /// exported with OTLP encoding, "false" when it was exported with the native Datadog
+        /// encoding. Written by the serializer for the encoding in use, so it cannot disagree
+        /// with how the span actually left the process.
+        /// </summary>
+        internal const string SdkOtlpExport = "_dd.sdk.otlp_export";
+
+        /// <summary>
         /// Tag used to propagate the unsigned  64 bits last parent Id
         /// lower-case 16 characters hexadecimal string
         /// </summary>

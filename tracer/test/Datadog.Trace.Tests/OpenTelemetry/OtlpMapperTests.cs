@@ -184,6 +184,22 @@ public class OtlpMapperTests
         attributes.Should().NotContain(kv => kv.Key == "span.type");
     }
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void EmitAttributesFromSpan_EmitsOtlpExportMarker(bool openTelemetrySemanticsEnabled)
+    {
+        var span = CreateSpan(openTelemetrySemanticsEnabled: openTelemetrySemanticsEnabled);
+
+        var attributes = new List<KeyValue>();
+        OtlpMapper.EmitAttributesFromSpan(kv => attributes.Add(kv), CreateSpanModel(span), limit: 128);
+
+        // Asserted as a literal rather than via Tags.SdkOtlpExport: this is a wire contract the
+        // trace intake reads by name. The value must be the string "true" and not a boolean, so it
+        // lands in the span's string tags rather than the metrics map, which the intake never reads.
+        attributes.Should().Contain(kv => kv.Key == "_dd.sdk.otlp_export" && (string)kv.Value! == "true");
+    }
+
     [Fact]
     public void EmitAttributesFromSpan_EmitsStringTags()
     {

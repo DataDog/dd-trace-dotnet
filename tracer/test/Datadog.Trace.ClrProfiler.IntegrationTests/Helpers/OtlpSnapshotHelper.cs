@@ -142,6 +142,18 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Helpers
                     span[parentSpanIdKey] = "normalized-parent-span-id";
                 }
 
+                // `_dd.sdk.otlp_export` is emitted on every span by OtlpMapper, so it is a constant
+                // here and adds no snapshot coverage. Dropped to avoid churning every OTLP snapshot;
+                // the attribute is asserted directly in OtlpMapperTests instead. This runs before the
+                // empty-array normalization below so a span left with no attributes still collapses.
+                if (span["attributes"] is JArray spanAttributes)
+                {
+                    foreach (var marker in spanAttributes.Where(a => a["key"]?.ToString() == "_dd.sdk.otlp_export").ToList())
+                    {
+                        marker.Remove();
+                    }
+                }
+
                 // Our JSON and Protobuf OTLP exporters differ in serialization behavior when there are no attributes.
                 // Standardize them here by removing an empty array
                 if (span["attributes"] is JArray attributes && attributes.Count == 0)

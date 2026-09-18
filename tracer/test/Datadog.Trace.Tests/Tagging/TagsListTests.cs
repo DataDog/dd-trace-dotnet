@@ -353,7 +353,8 @@ namespace Datadog.Trace.Tests.Tagging
             deserializedSpan.Tags.Should().Contain(Tags.Propagated.DecisionMaker, SamplingMechanism.Default);
             deserializedSpan.Tags.Should().Contain(Tags.Propagated.TraceIdUpper, hexStringTraceId);
             deserializedSpan.Tags.Should().ContainKey(Tags.ProcessTags);
-            deserializedSpan.Tags.Should().HaveCount(customTagCount + 6);
+            deserializedSpan.Tags.Should().Contain(Tags.SdkOtlpExport, "false");
+            deserializedSpan.Tags.Should().HaveCount(customTagCount + 7);
 
             deserializedSpan.Metrics.Should().Contain(Metrics.SamplingPriority, 1);
             deserializedSpan.Metrics.Should().Contain(Metrics.SamplingLimitDecision, 0.75);
@@ -398,7 +399,8 @@ namespace Datadog.Trace.Tests.Tagging
             deserializedSpan.Tags.Should().ContainKey(Tags.BaseService);
             deserializedSpan.Tags[Tags.BaseService].Should().Be(_tracer.DefaultServiceName);
             deserializedSpan.Tags.Should().ContainKey(Tags.ProcessTags);
-            deserializedSpan.Tags.Should().HaveCount(customTagCount + 7);
+            deserializedSpan.Tags.Should().Contain(Tags.SdkOtlpExport, "false");
+            deserializedSpan.Tags.Should().HaveCount(customTagCount + 8);
 
             deserializedSpan.Metrics.Should().Contain(Metrics.SamplingLimitDecision, 0.75);
             deserializedSpan.Metrics.Should().Contain(Metrics.TopLevelSpan, 1);
@@ -439,7 +441,8 @@ namespace Datadog.Trace.Tests.Tagging
             deserializedSpan.Tags.Should().ContainKey(Tags.BaseService);
             deserializedSpan.Tags[Tags.BaseService].Should().Be(_tracer.DefaultServiceName);
             deserializedSpan.Tags.Should().ContainKey(Tags.ProcessTags);
-            deserializedSpan.Tags.Should().HaveCount(customTagCount + 6);
+            deserializedSpan.Tags.Should().Contain(Tags.SdkOtlpExport, "false");
+            deserializedSpan.Tags.Should().HaveCount(customTagCount + 7);
 
             deserializedSpan.Metrics.Should().Contain(Metrics.SamplingLimitDecision, 0.75);
             deserializedSpan.Metrics.Should().HaveCount(customTagCount + 1);
