@@ -56,4 +56,21 @@ internal static class ProxyTestHelpers
         headers.Set(InferredProxyHeaders.Region, "canada central");
         return headers;
     }
+
+    internal static NameValueHeadersCollection CreateValidAzureFrontDoorHeaders(string? start = null)
+    {
+        var headers = new NameValueHeadersCollection([]);
+        headers.Set(InferredProxyHeaders.Name, "azure-fd");
+        if (start is not null)
+        {
+            headers.Set(InferredProxyHeaders.StartTime, start);
+        }
+
+        headers.Set(InferredProxyHeaders.Domain, "myapp.azurefd.net");
+        headers.Set(InferredProxyHeaders.HttpMethod, "GET");
+        headers.Set(InferredProxyHeaders.Path, "/api/test");
+        headers.Set(InferredProxyHeaders.Stage, "prod");
+        headers.Set(InferredProxyHeaders.Region, "canada central");
+        return headers;
+    }
 }
