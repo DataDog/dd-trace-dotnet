@@ -79,8 +79,10 @@ internal static class AzureFunctionsDurablePropagation
         }
 
         var sampledFlags = (flags | RecordedFlag).ToString("x2", CultureInfo.InvariantCulture);
-
-        return traceParent.Substring(0, flagsStart) + sampledFlags;
+        var updatedTraceParent = traceParent.ToCharArray();
+        updatedTraceParent[flagsStart] = sampledFlags[0];
+        updatedTraceParent[flagsStart + 1] = sampledFlags[1];
+        return new string(updatedTraceParent);
     }
 
     private static PropagationContext ExtractHeaders(string traceParent, string? traceState)
