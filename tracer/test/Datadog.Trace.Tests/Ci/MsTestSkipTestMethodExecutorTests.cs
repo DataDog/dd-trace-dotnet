@@ -181,8 +181,10 @@ namespace Datadog.Trace.Tests.Ci
             }
         }
 
-        [Fact]
-        public async Task AsyncRunnerWithSyncExecutorApiRecordsExactCoverageBackfillCandidate()
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public async Task AsyncRunnerWithSyncExecutorApiRecordsExactCoverageBackfillCandidate(bool useSealedExecutor)
         {
             var skippableFeature = new Mock<ITestOptimizationSkippableFeature>();
             skippableFeature.Setup(x => x.IsCoverageBackfillRequired()).Returns(true);
@@ -211,7 +213,7 @@ namespace Datadog.Trace.Tests.Ci
                     }));
             var testMethodInfo = new TestMethodInfoV3_9Stub(method)
             {
-                Executor = new OriginalV3ExecutorStub()
+                Executor = useSealedExecutor ? new SealedCustomTestMethodAttributeStub() : new DataTestMethodAttributeV3_9Stub()
             };
             var runner = new TestMethodRunnerV3_9Stub(testMethodInfo);
             var reason = string.Empty;
@@ -232,7 +234,7 @@ namespace Datadog.Trace.Tests.Ci
 
                 state.Should().NotBe(CallTargetState.GetDefault());
                 testMethodInfo.Executor.Should().NotBeSameAs(originalExecutor);
-                var replacementExecutor = testMethodInfo.Executor.Should().BeAssignableTo<OriginalV3ExecutorStub>().Subject;
+                var replacementExecutor = testMethodInfo.Executor.Should().BeAssignableTo<Microsoft.VisualStudio.TestTools.UnitTesting.TestMethodAttribute>().Subject;
                 SkipTestMethodExecutor.IsReplacement(replacementExecutor).Should().BeTrue();
 
                 var result = await replacementExecutor.ExecuteAsync(testMethodInfo);
@@ -343,8 +345,13 @@ namespace Datadog.Trace.Tests.Ci
             }
         }
 
-        private class OriginalV3ExecutorStub : Microsoft.VisualStudio.TestTools.UnitTesting.TestMethodAttribute
+        private sealed class SealedCustomTestMethodAttributeStub : Microsoft.VisualStudio.TestTools.UnitTesting.TestMethodAttribute
         {
+        }
+
+        private class DataTestMethodAttributeV3_9Stub : Microsoft.VisualStudio.TestTools.UnitTesting.TestMethodAttribute
+        {
+            private protected override bool UseAsync => true;
         }
     }
 }

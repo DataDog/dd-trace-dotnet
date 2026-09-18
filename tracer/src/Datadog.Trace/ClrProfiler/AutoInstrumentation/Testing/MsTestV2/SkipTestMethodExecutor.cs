@@ -28,7 +28,9 @@ internal abstract class SkipTestMethodExecutor
 
     protected SkipTestMethodExecutor(Type executorType, string skipReason, bool recordCoverageBackfillSkip = false, SkippableTest? skippableTest = null)
     {
-        var testResultType = GetExecutorMetadata(executorType).TestResultType;
+        var metadata = GetExecutorMetadata(executorType);
+        TestMethodAttributeType = metadata.TestMethodAttributeType;
+        var testResultType = metadata.TestResultType;
         var array = Array.CreateInstance(testResultType, 1);
         var result = Activator.CreateInstance(testResultType);
         if (DuckType.Create<ITestResult>(result) is { } iResult)
@@ -42,6 +44,8 @@ internal abstract class SkipTestMethodExecutor
         _recordCoverageBackfillSkip = recordCoverageBackfillSkip;
         _skippableTest = skippableTest;
     }
+
+    internal Type TestMethodAttributeType { get; }
 
     internal static SkipTestMethodExecutor Create(Type executorType, string skipReason, bool recordCoverageBackfillSkip = false, SkippableTest? skippableTest = null)
     {
@@ -75,7 +79,7 @@ internal abstract class SkipTestMethodExecutor
                     binder: null,
                     types: [testMethodType],
                     modifiers: null);
-                return new ExecutorMetadata(testResultType, publicExecuteAsync is not null);
+                return new ExecutorMetadata(currentType, testResultType, publicExecuteAsync is not null);
             }
 
             currentType = currentType.BaseType;
@@ -146,8 +150,10 @@ internal abstract class SkipTestMethodExecutor
         }
     }
 
-    private sealed class ExecutorMetadata(Type testResultType, bool useAsyncExecutor)
+    private sealed class ExecutorMetadata(Type testMethodAttributeType, Type testResultType, bool useAsyncExecutor)
     {
+        public Type TestMethodAttributeType { get; } = testMethodAttributeType;
+
         public Type TestResultType { get; } = testResultType;
 
         public bool UseAsyncExecutor { get; } = useAsyncExecutor;

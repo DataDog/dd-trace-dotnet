@@ -11,8 +11,16 @@ namespace Microsoft.VisualStudio.TestTools.UnitTesting
 {
     internal class TestMethodAttribute
     {
+        public TestMethodAttribute()
+        {
+            UseAsync = GetType() == typeof(TestMethodAttribute);
+        }
+
+        private protected virtual bool UseAsync { get; }
+
         public virtual TestResult[] Execute(ITestMethod testMethod) => [];
 
-        internal virtual Task<TestResult[]> ExecuteAsync(ITestMethod testMethod) => Task.FromResult(Execute(testMethod));
+        internal virtual Task<TestResult[]> ExecuteAsync(ITestMethod testMethod)
+            => UseAsync ? Task.FromResult<TestResult[]>([]) : Task.FromResult(Execute(testMethod));
     }
 }

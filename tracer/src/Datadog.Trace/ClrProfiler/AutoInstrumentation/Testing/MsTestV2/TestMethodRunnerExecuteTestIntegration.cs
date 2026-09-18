@@ -62,7 +62,7 @@ public static class TestMethodRunnerExecuteTestIntegration
 
             if (newExecutor is not null)
             {
-                var replacementExecutor = DuckType.CreateReverse(executorType, newExecutor);
+                var replacementExecutor = DuckType.CreateReverse(newExecutor.TestMethodAttributeType, newExecutor);
                 testMethodInfo.TestMethodOptions.Executor = replacementExecutor;
                 return TestMethodExecutorRestore.Create(testMethodInfo.TestMethodOptions, executor, replacementExecutor);
             }
@@ -138,7 +138,7 @@ public static class TestMethodRunnerExecuteTestIntegrationV3_9
 
             if (newExecutor is not null)
             {
-                var replacementExecutor = DuckType.CreateReverse(executorType, newExecutor);
+                var replacementExecutor = DuckType.CreateReverse(newExecutor.TestMethodAttributeType, newExecutor);
                 testMethodInfo.Executor = replacementExecutor;
                 return TestMethodExecutorRestore.Create(testMethodInfo, executor, replacementExecutor);
             }
