@@ -6,6 +6,7 @@
 
 using System;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.Tags;
@@ -15,14 +16,19 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2;
 
 internal abstract class SkipTestMethodExecutor
 {
+    private const string TestMethodAttributeTypeName = "Microsoft.VisualStudio.TestTools.UnitTesting.TestMethodAttribute";
+    private const string TestMethodTypeName = "Microsoft.VisualStudio.TestTools.UnitTesting.ITestMethod";
+    private const string TestResultTypeName = "Microsoft.VisualStudio.TestTools.UnitTesting.TestResult";
+    private static readonly ConditionalWeakTable<Type, ExecutorMetadata> ExecutorMetadataCache = new();
+
     private readonly object _arrayInstance;
     private readonly string _skipReason;
     private readonly bool _recordCoverageBackfillSkip;
     private readonly SkippableTest? _skippableTest;
 
-    protected SkipTestMethodExecutor(Assembly assembly, string skipReason, bool recordCoverageBackfillSkip = false, SkippableTest? skippableTest = null)
+    protected SkipTestMethodExecutor(Type executorType, string skipReason, bool recordCoverageBackfillSkip = false, SkippableTest? skippableTest = null)
     {
-        var testResultType = assembly.GetType("Microsoft.VisualStudio.TestTools.UnitTesting.TestResult", throwOnError: true)!;
+        var testResultType = GetExecutorMetadata(executorType).TestResultType;
         var array = Array.CreateInstance(testResultType, 1);
         var result = Activator.CreateInstance(testResultType);
         if (DuckType.Create<ITestResult>(result) is { } iResult)
@@ -35,6 +41,44 @@ internal abstract class SkipTestMethodExecutor
         _skipReason = skipReason;
         _recordCoverageBackfillSkip = recordCoverageBackfillSkip;
         _skippableTest = skippableTest;
+    }
+
+    internal static SkipTestMethodExecutor Create(Type executorType, string skipReason, bool recordCoverageBackfillSkip = false, SkippableTest? skippableTest = null)
+    {
+        return GetExecutorMetadata(executorType).UseAsyncExecutor
+                   ? new AsyncImpl(executorType, skipReason, recordCoverageBackfillSkip, skippableTest)
+                   : new SyncImpl(executorType, skipReason, recordCoverageBackfillSkip, skippableTest);
+    }
+
+    internal static bool IsReplacement(object? executor)
+        => executor is SkipTestMethodExecutor ||
+           executor is IDuckType { Instance: SkipTestMethodExecutor };
+
+    private static ExecutorMetadata GetExecutorMetadata(Type executorType)
+        => ExecutorMetadataCache.GetValue(executorType, static type => FindExecutorMetadata(type));
+
+    private static ExecutorMetadata FindExecutorMetadata(Type executorType)
+    {
+        for (var currentType = executorType; currentType is not null; currentType = currentType.BaseType)
+        {
+            if (currentType.FullName == TestMethodAttributeTypeName &&
+                currentType.Assembly.GetType(TestResultTypeName, throwOnError: false) is { } testResultType)
+            {
+                var testMethodType = currentType.Assembly.GetType(TestMethodTypeName, throwOnError: true)!;
+
+                // MSTest 3.9-3.11 has an internal ExecuteAsync that dispatches to public Execute.
+                // MSTest 4 exposes ExecuteAsync publicly, so select only a method the proxy can override.
+                var publicExecuteAsync = currentType.GetMethod(
+                    "ExecuteAsync",
+                    BindingFlags.DeclaredOnly | BindingFlags.Instance | BindingFlags.Public,
+                    binder: null,
+                    types: [testMethodType],
+                    modifiers: null);
+                return new ExecutorMetadata(testResultType, publicExecuteAsync is not null);
+            }
+        }
+
+        throw new TypeLoadException($"Could not find '{TestMethodAttributeTypeName}' in the type hierarchy of '{executorType.FullName}'.");
     }
 
     protected void ProcessTestMethod(object testMethod)
@@ -64,8 +108,8 @@ internal abstract class SkipTestMethodExecutor
         }
     }
 
-    internal sealed class SyncImpl(Assembly assembly, string skipReason, bool recordCoverageBackfillSkip = false, SkippableTest? skippableTest = null)
-        : SkipTestMethodExecutor(assembly, skipReason, recordCoverageBackfillSkip, skippableTest)
+    internal sealed class SyncImpl(Type executorType, string skipReason, bool recordCoverageBackfillSkip = false, SkippableTest? skippableTest = null)
+        : SkipTestMethodExecutor(executorType, skipReason, recordCoverageBackfillSkip, skippableTest)
     {
         [DuckReverseMethod(Name = "Execute", ParameterTypeNames = ["Microsoft.VisualStudio.TestTools.UnitTesting.ITestMethod"])]
         public object Execute(object testMethod)
@@ -75,8 +119,8 @@ internal abstract class SkipTestMethodExecutor
         }
     }
 
-    internal sealed class AsyncImpl(Assembly assembly, string skipReason, bool recordCoverageBackfillSkip = false, SkippableTest? skippableTest = null)
-        : SkipTestMethodExecutor(assembly, skipReason, recordCoverageBackfillSkip, skippableTest)
+    internal sealed class AsyncImpl(Type executorType, string skipReason, bool recordCoverageBackfillSkip = false, SkippableTest? skippableTest = null)
+        : SkipTestMethodExecutor(executorType, skipReason, recordCoverageBackfillSkip, skippableTest)
     {
         private object? _resultInstance;
 
@@ -97,5 +141,12 @@ internal abstract class SkipTestMethodExecutor
         {
             public override object Result { get; } = Task.FromResult(value);
         }
+    }
+
+    private sealed class ExecutorMetadata(Type testResultType, bool useAsyncExecutor)
+    {
+        public Type TestResultType { get; } = testResultType;
+
+        public bool UseAsyncExecutor { get; } = useAsyncExecutor;
     }
 }
