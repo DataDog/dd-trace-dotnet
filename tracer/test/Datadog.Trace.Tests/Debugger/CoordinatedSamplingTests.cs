@@ -33,7 +33,7 @@ public class CoordinatedSamplingTests
     [Theory]
     [InlineData(true)]
     [InlineData(false)]
-    public async Task SnapshotProbesAcrossSpansShareFirstDecisionAndCapEachProbe(bool firstDecision)
+    public async Task SnapshotAndCaptureExpressionProbesShareFirstDecisionAndCapEachProbe(bool firstDecision)
     {
         await using var tracer = TracerHelper.CreateWithFakeAgent();
         Tracer.UnsafeSetTracerInstance(tracer);
@@ -47,7 +47,7 @@ public class CoordinatedSamplingTests
         var thirdGlobalLimiter = new GlobalRateLimiterMock(!firstDecision);
         var first = CreateProcessor(CreateLogProbe("probe-1", captureSnapshot: true), firstGlobalLimiter);
         var second = CreateProcessor(CreateLogProbe("probe-2", captureSnapshot: true), secondGlobalLimiter);
-        var third = CreateProcessor(CreateLogProbe("probe-3", captureSnapshot: true), thirdGlobalLimiter);
+        var third = CreateProcessor(CreateCaptureExpressionProbe("probe-3"), thirdGlobalLimiter);
 
         Assert.Equal(firstDecision, TryBeginAndDispose(first, firstSampler));
         using (tracer.StartActive("child"))
@@ -71,11 +71,10 @@ public class CoordinatedSamplingTests
     }
 
     [Theory]
-    [InlineData(false, false, false, true, 0)]
-    [InlineData(true, false, true, true, 2)]
-    [InlineData(false, true, true, true, 2)]
-    [InlineData(true, true, true, false, 0)]
-    public async Task ConditionalSnapshotsCoordinateAfterFirstTrueCondition(bool firstCondition, bool secondCondition, bool thirdCondition, bool firstDecision, int expectedSnapshots)
+    [InlineData(false, false, false, true, 0, 0)]
+    [InlineData(false, true, true, true, 2, 1)]
+    [InlineData(true, true, true, false, 0, 1)]
+    public async Task ConditionalSnapshotsCoordinateAfterFirstTrueCondition(bool firstCondition, bool secondCondition, bool thirdCondition, bool firstDecision, int expectedSnapshots, int expectedSampleCalls)
     {
         await using var tracer = TracerHelper.CreateWithFakeAgent();
         Tracer.UnsafeSetTracerInstance(tracer);
@@ -98,28 +97,8 @@ public class CoordinatedSamplingTests
         }
 
         Assert.Equal(expectedSnapshots, snapshots);
-        Assert.Equal(expectedSnapshots == 0 && !firstCondition && !secondCondition && !thirdCondition ? 0 : 1, sampler.SampleCalls);
-        Assert.Equal(sampler.SampleCalls, globalLimiter.ShouldSampleCallCount);
-    }
-
-    [Fact]
-    public async Task CaptureExpressionProbesParticipateInCoordinatedSampling()
-    {
-        await using var tracer = TracerHelper.CreateWithFakeAgent();
-        Tracer.UnsafeSetTracerInstance(tracer);
-        using var scope = (Scope)tracer.StartActive("root");
-
-        var firstSampler = new CountingSampler(true);
-        var secondSampler = new CountingSampler(false);
-        var globalLimiter = new GlobalRateLimiterMock(true);
-        var first = CreateProcessor(CreateCaptureExpressionProbe("probe-1"), globalLimiter);
-        var second = CreateProcessor(CreateCaptureExpressionProbe("probe-2"), globalLimiter);
-
-        Assert.True(TryBeginAndDispose(first, firstSampler));
-        Assert.True(TryBeginAndDispose(second, secondSampler));
-        Assert.Equal(1, firstSampler.SampleCalls);
-        Assert.Equal(0, secondSampler.SampleCalls);
-        Assert.Equal(1, globalLimiter.ShouldSampleCallCount);
+        Assert.Equal(expectedSampleCalls, sampler.SampleCalls);
+        Assert.Equal(expectedSampleCalls, globalLimiter.ShouldSampleCallCount);
     }
 
     [Fact]
@@ -143,7 +122,7 @@ public class CoordinatedSamplingTests
     }
 
     [Fact]
-    public async Task SnapshotProbesWithoutAnActiveTraceSampleIndependently()
+    public async Task CoordinatedDecisionIsLocalToEachTrace()
     {
         await using var tracer = TracerHelper.CreateWithFakeAgent();
         Tracer.UnsafeSetTracerInstance(tracer);
@@ -156,17 +135,6 @@ public class CoordinatedSamplingTests
         Assert.True(TryBeginAndDispose(processor, sampler));
         Assert.Equal(2, sampler.SampleCalls);
         Assert.Equal(2, globalLimiter.ShouldSampleCallCount);
-    }
-
-    [Fact]
-    public async Task CoordinatedDecisionIsScopedToTrace()
-    {
-        await using var tracer = TracerHelper.CreateWithFakeAgent();
-        Tracer.UnsafeSetTracerInstance(tracer);
-
-        var sampler = new CountingSampler(true);
-        var globalLimiter = new GlobalRateLimiterMock(true);
-        var processor = CreateProcessor(CreateLogProbe("probe-1", captureSnapshot: true), globalLimiter);
 
         using (tracer.StartActive("first-root"))
         {
@@ -179,40 +147,59 @@ public class CoordinatedSamplingTests
             Assert.True(TryBeginAndDispose(processor, sampler));
         }
 
-        Assert.Equal(2, sampler.SampleCalls);
-        Assert.Equal(2, globalLimiter.ShouldSampleCallCount);
+        Assert.Equal(4, sampler.SampleCalls);
+        Assert.Equal(4, globalLimiter.ShouldSampleCallCount);
     }
 
     [Theory]
-    [InlineData(false, true, 32)]
+    [InlineData(false, true, 8)]
     [InlineData(true, true, 1)]
     [InlineData(false, false, 0)]
-    public async Task ConcurrentFirstHitsConsultSamplerOnce(bool sameProbeId, bool samplerResult, int expectedEmissions)
+    public async Task ConcurrentFirstHitsShareTraceDecisionAndCapEachProbe(bool sameProbeId, bool samplerResult, int expectedEmissions)
     {
         await using var tracer = TracerHelper.CreateWithFakeAgent();
         Tracer.UnsafeSetTracerInstance(tracer);
         using var scope = (Scope)tracer.StartActive("root");
 
-        const int probeCount = 32;
-        var sampler = new CountingSampler(samplerResult, delayMilliseconds: 50);
+        const int probeCount = 8;
+        var enteredSample = new ManualResetEventSlim();
+        var releaseSample = new ManualResetEventSlim();
+        var sampler = new BlockingSampler(samplerResult, enteredSample, releaseSample);
         var globalLimiter = new GlobalRateLimiterMock(true);
-        var gate = new ManualResetEventSlim();
-        var tasks = new Task<bool>[probeCount];
+        var start = new Barrier(probeCount + 1);
+        var results = new bool[probeCount];
+        var threads = new Thread[probeCount];
 
         for (var i = 0; i < probeCount; i++)
         {
-            var probeId = sameProbeId ? "probe" : $"probe-{i}";
+            var index = i;
+            var probeId = sameProbeId ? "probe" : $"probe-{index}";
             var processor = CreateProcessor(CreateLogProbe(probeId, captureSnapshot: true), globalLimiter);
-            tasks[i] = Task.Run(
+            threads[i] = new Thread(
                 () =>
                 {
-                    gate.Wait();
-                    return TryBeginAndDispose(processor, sampler);
-                });
+                    start.SignalAndWait();
+                    results[index] = TryBeginAndDispose(processor, sampler);
+                })
+            {
+                IsBackground = true
+            };
+            threads[i].Start();
         }
 
-        gate.Set();
-        var results = await Task.WhenAll(tasks);
+        Assert.True(start.SignalAndWait(TimeSpan.FromSeconds(10)));
+        Assert.True(enteredSample.Wait(TimeSpan.FromSeconds(10)));
+        Assert.True(
+            SpinWait.SpinUntil(
+                () => threads.All(static thread => (thread.ThreadState & ThreadState.WaitSleepJoin) != 0),
+                TimeSpan.FromSeconds(10)),
+            "Expected every first hit to wait for the in-flight Sample()");
+
+        releaseSample.Set();
+        foreach (var thread in threads)
+        {
+            Assert.True(thread.Join(TimeSpan.FromSeconds(10)));
+        }
 
         Assert.Equal(expectedEmissions, results.Count(static result => result));
         Assert.Equal(1, sampler.SampleCalls);
@@ -220,7 +207,165 @@ public class CoordinatedSamplingTests
     }
 
     [Fact]
-    public async Task SnapshotUsesSpanThatWasActiveAtBegin()
+    public void CreatingDecisionPreventsReentrantSamplerConsult()
+    {
+        DebuggerSamplingCoordinator.State state = null;
+        var calls = 0;
+
+        bool Sample()
+        {
+            Interlocked.Increment(ref calls);
+            Assert.False(DebuggerSamplingCoordinator.TrySample(ref state, "nested", new DelegateProvider(Sample)));
+            return true;
+        }
+
+        Assert.True(DebuggerSamplingCoordinator.TrySample(ref state, "outer", new DelegateProvider(Sample)));
+        Assert.Equal(1, calls);
+        Assert.True(DebuggerSamplingCoordinator.TrySample(ref state, "nested", new DelegateProvider(Sample)));
+        Assert.Equal(1, calls);
+    }
+
+    [Fact]
+    public void ThrownSampleClearsCreatingDecisionSoALaterCallerCanRetry()
+    {
+        DebuggerSamplingCoordinator.State state = null;
+        var calls = 0;
+
+        bool Sample()
+        {
+            var call = Interlocked.Increment(ref calls);
+            if (call == 1)
+            {
+                throw new InvalidOperationException("first-hit sample failed");
+            }
+
+            return true;
+        }
+
+        var provider = new DelegateProvider(Sample);
+        Assert.Throws<InvalidOperationException>(() => DebuggerSamplingCoordinator.TrySample(ref state, "first", provider));
+        Assert.Equal(1, calls);
+        Assert.True(DebuggerSamplingCoordinator.TrySample(ref state, "retry", provider));
+        Assert.Equal(2, calls);
+    }
+
+    [Fact]
+    public void WaitingCallerRetriesAfterFirstSamplerThrows()
+    {
+        DebuggerSamplingCoordinator.State state = null;
+        var enteredFirstSample = new ManualResetEventSlim();
+        var releaseFirstSample = new ManualResetEventSlim();
+        Exception firstException = null;
+        var secondSampleCalls = 0;
+        var secondResult = false;
+
+        var first = new Thread(
+            () =>
+            {
+                try
+                {
+                    DebuggerSamplingCoordinator.TrySample(
+                        ref state,
+                        "first",
+                        new DelegateProvider(
+                            () =>
+                            {
+                                enteredFirstSample.Set();
+                                releaseFirstSample.Wait();
+                                throw new InvalidOperationException("first-hit sample failed");
+                            }));
+                }
+                catch (Exception exception)
+                {
+                    firstException = exception;
+                }
+            })
+        {
+            IsBackground = true
+        };
+        var second = new Thread(
+            () =>
+            {
+                secondResult = DebuggerSamplingCoordinator.TrySample(
+                    ref state,
+                    "second",
+                    new DelegateProvider(
+                        () =>
+                        {
+                            Interlocked.Increment(ref secondSampleCalls);
+                            return true;
+                        }));
+            })
+        {
+            IsBackground = true
+        };
+
+        first.Start();
+        try
+        {
+            Assert.True(enteredFirstSample.Wait(TimeSpan.FromSeconds(10)));
+            second.Start();
+            Assert.True(
+                SpinWait.SpinUntil(
+                    () => (second.ThreadState & ThreadState.WaitSleepJoin) != 0,
+                    TimeSpan.FromSeconds(10)),
+                "Expected the second caller to wait for the in-flight Sample()");
+        }
+        finally
+        {
+            releaseFirstSample.Set();
+        }
+
+        Assert.True(first.Join(TimeSpan.FromSeconds(10)));
+        Assert.True(second.Join(TimeSpan.FromSeconds(10)));
+        Assert.IsType<InvalidOperationException>(firstException);
+        Assert.True(secondResult);
+        Assert.Equal(1, secondSampleCalls);
+        var unexpectedProvider = new DelegateProvider(() => throw new InvalidOperationException());
+        Assert.False(DebuggerSamplingCoordinator.TrySample(ref state, "second", unexpectedProvider));
+        Assert.True(DebuggerSamplingCoordinator.TrySample(ref state, "first", unexpectedProvider));
+    }
+
+    [Fact]
+    public async Task FirstHitSamplingDoesNotBlockSpanClose()
+    {
+        await using var tracer = TracerHelper.CreateWithFakeAgent();
+        Tracer.UnsafeSetTracerInstance(tracer);
+        using (tracer.StartActive("root"))
+        {
+            var child = (Scope)tracer.StartActive("child");
+            var entered = new ManualResetEventSlim();
+            var release = new ManualResetEventSlim();
+            var sampler = new BlockingSampler(result: true, entered, release);
+            var processor = CreateProcessor(CreateLogProbe("probe-1", captureSnapshot: true), new GlobalRateLimiterMock(true));
+            var emitted = false;
+            var sampling = new Thread(() => emitted = TryBeginAndDispose(processor, sampler))
+            {
+                IsBackground = true
+            };
+
+            sampling.Start();
+            try
+            {
+                Assert.True(entered.Wait(TimeSpan.FromSeconds(10)));
+                var closing = Task.Run(() => child.Span.Finish());
+                var completed = await Task.WhenAny(closing, Task.Delay(TimeSpan.FromSeconds(10)));
+                Assert.True(completed == closing, "CloseSpan waited on debugger first-hit sampling");
+                await closing;
+            }
+            finally
+            {
+                release.Set();
+            }
+
+            Assert.True(sampling.Join(TimeSpan.FromSeconds(10)));
+            Assert.True(emitted);
+            Assert.Equal(1, sampler.SampleCalls);
+        }
+    }
+
+    [Fact]
+    public async Task SnapshotsUseSpanContextCapturedAtBegin()
     {
         await using var tracer = TracerHelper.CreateWithFakeAgent();
         Tracer.UnsafeSetTracerInstance(tracer);
@@ -250,20 +395,11 @@ public class CoordinatedSamplingTests
 
         Assert.Equal(expectedTraceId, snapshot["dd.trace_id"]?.Value<string>());
         Assert.Equal(expectedSpanId, snapshot["dd.span_id"]?.Value<string>());
-    }
 
-    [Fact]
-    public async Task ExceptionReplaySnapshotKeepsSpanContextFromConstruction()
-    {
-        await using var tracer = TracerHelper.CreateWithFakeAgent();
-        Tracer.UnsafeSetTracerInstance(tracer);
-
-        ExceptionReplaySnapshotCreator snapshotCreator;
-        string expectedTraceId;
-        string expectedSpanId;
-        using (var scope = (Scope)tracer.StartActive("root"))
+        ExceptionReplaySnapshotCreator exceptionReplayCreator;
+        using (var scope = (Scope)tracer.StartActive("exception-replay"))
         {
-            snapshotCreator = new ExceptionReplaySnapshotCreator(
+            exceptionReplayCreator = new ExceptionReplaySnapshotCreator(
                 isFullSnapshot: true,
                 ProbeLocation.Method,
                 hasCondition: false,
@@ -275,8 +411,7 @@ public class CoordinatedSamplingTests
             expectedSpanId = scope.Span.SpanId.ToString();
         }
 
-        var snapshot = FinalizeSnapshot(snapshotCreator);
-
+        snapshot = FinalizeSnapshot(exceptionReplayCreator);
         Assert.Equal(expectedTraceId, snapshot["dd.trace_id"]?.Value<string>());
         Assert.Equal(expectedSpanId, snapshot["dd.span_id"]?.Value<string>());
     }
@@ -379,7 +514,12 @@ public class CoordinatedSamplingTests
     {
     }
 
-    private sealed class CountingSampler(bool result, int delayMilliseconds = 0) : IAdaptiveSampler
+    private readonly struct DelegateProvider(Func<bool> sample) : IDebuggerSamplingDecisionProvider
+    {
+        public bool Sample() => sample();
+    }
+
+    private sealed class BlockingSampler(bool result, ManualResetEventSlim entered, ManualResetEventSlim release) : IAdaptiveSampler
     {
         private int _sampleCalls;
 
@@ -388,11 +528,31 @@ public class CoordinatedSamplingTests
         public bool Sample()
         {
             Interlocked.Increment(ref _sampleCalls);
-            if (delayMilliseconds > 0)
-            {
-                Thread.Sleep(delayMilliseconds);
-            }
+            entered.Set();
+            release.Wait();
+            return result;
+        }
 
+        public bool Keep() => Sample();
+
+        public bool Drop() => !Sample();
+
+        public double NextDouble() => 0;
+
+        public void Dispose()
+        {
+        }
+    }
+
+    private sealed class CountingSampler(bool result) : IAdaptiveSampler
+    {
+        private int _sampleCalls;
+
+        public int SampleCalls => Volatile.Read(ref _sampleCalls);
+
+        public bool Sample()
+        {
+            Interlocked.Increment(ref _sampleCalls);
             return result;
         }
 
