@@ -31,6 +31,10 @@ namespace Datadog.Trace.FeatureFlags
         // module, and a disposal interleaved with activation leaks the delivery path it started.
         private readonly object _stateLock = new();
 
+        // Guards the configuration handler and its generation counters. Separate from _stateLock,
+        // which covers activation and disposal: a configuration event must not wait on either.
+        private readonly object _handlerLock = new();
+
         private readonly FeatureFlagsSettings _settings;
 
         // The agentless source targets flags by environment, which customers can change in code
@@ -51,6 +55,13 @@ namespace Datadog.Trace.FeatureFlags
         private ISubscription? _rcmSubscription;
 
         private Action? _onNewConfigEventHandler;
+
+        // Counts configuration events, and records the last one handed to the current handler. A
+        // registration can run at the same time as an arriving configuration, and without these two
+        // the registration replay and the delivery path both hand the handler the same configuration.
+        private long _configGeneration;
+        private long _handlerDeliveredGeneration;
+
         private FeatureFlagsEvaluator? _evaluator;
         private IFeatureFlagsDeliverySource? _agentlessSource;
         private ExposureApi? _exposureApi;
@@ -277,7 +288,31 @@ namespace Datadog.Trace.FeatureFlags
 
         internal void RegisterOnNewConfigEventHandler(Action? onNewConfig)
         {
-            _onNewConfigEventHandler = onNewConfig;
+            Action? replay;
+
+            lock (_handlerLock)
+            {
+                if (!ReferenceEquals(_onNewConfigEventHandler, onNewConfig))
+                {
+                    // A handler that was never called cannot have received a configuration.
+                    _handlerDeliveredGeneration = 0;
+                }
+
+                _onNewConfigEventHandler = onNewConfig;
+
+                // Configuration can already be held here: the Remote Configuration subscription is
+                // live from construction, long before application code builds a provider and registers
+                // a handler. The handler only fires on a change, so without this replay it never runs
+                // for a configuration that arrived first, and a caller waiting on it waits forever.
+                // A withdrawal is not replayed: no configuration is the state a fresh handler assumes.
+                replay = onNewConfig is not null
+                      && Volatile.Read(ref _evaluator) is not null
+                      && _handlerDeliveredGeneration != _configGeneration
+                             ? ClaimHandler()
+                             : null;
+            }
+
+            InvokeConfigurationHandler(replay, "RegisterOnNewConfigEventHandler");
         }
 
         internal Evaluation Evaluate(string flagKey, ValueType resultType, object? defaultValue, string targetingKey, IDictionary<string, object?>? attributes)
@@ -307,20 +342,61 @@ namespace Datadog.Trace.FeatureFlags
                 return false;
             }
 
-            // The handler comes from application code, and the agentless source reads the return value
-            // to decide whether to advance its ETag. Reporting a failed apply because a handler threw
-            // would make every later poll re-download the whole payload instead of getting a 304, so
-            // the configuration is already applied by this point and the handler cannot change that.
+            NotifyNewConfiguration("ApplyConfiguration");
+
+            return true;
+        }
+
+        /// <summary>
+        /// Hands one configuration event to the registered handler, whether a configuration arrived or
+        /// was withdrawn. Claiming the event under the lock and calling the handler outside it keeps
+        /// application code off the lock, and stops a concurrent registration from replaying the same
+        /// configuration the handler has just been given.
+        /// </summary>
+        private void NotifyNewConfiguration(string caller)
+        {
+            Action? handler;
+
+            lock (_handlerLock)
+            {
+                _configGeneration++;
+                handler = _onNewConfigEventHandler is null ? null : ClaimHandler();
+            }
+
+            InvokeConfigurationHandler(handler, caller);
+        }
+
+        /// <summary>
+        /// Records the current configuration as delivered to the current handler and returns that
+        /// handler. Callers hold <see cref="_handlerLock"/>.
+        /// </summary>
+        private Action? ClaimHandler()
+        {
+            _handlerDeliveredGeneration = _configGeneration;
+            return _onNewConfigEventHandler;
+        }
+
+        /// <summary>
+        /// Calls the handler, which is application code. The agentless source reads the return value of
+        /// <see cref="ApplyConfiguration"/> to decide whether to advance its ETag. Reporting a failed
+        /// apply because a handler threw would make every later poll re-download the whole payload
+        /// instead of getting a 304, and the configuration is applied before the handler runs anyway.
+        /// </summary>
+        private void InvokeConfigurationHandler(Action? handler, string caller)
+        {
+            if (handler is null)
+            {
+                return;
+            }
+
             try
             {
-                _onNewConfigEventHandler?.Invoke();
+                handler();
             }
             catch (Exception ex)
             {
-                Log.Warning(ex, "FeatureFlagsModule::ApplyConfiguration -> Error in the configuration event handler");
+                Log.Warning<string>(ex, "FeatureFlagsModule::{Caller} -> Error in the configuration event handler", caller);
             }
-
-            return true;
         }
 
         /// <summary>
@@ -371,7 +447,7 @@ namespace Datadog.Trace.FeatureFlags
                     // from here on. The handler is notified either way, and reads HasConfiguration to
                     // tell a withdrawal from an update.
                     Interlocked.Exchange(ref _evaluator, null);
-                    _onNewConfigEventHandler?.Invoke();
+                    NotifyNewConfiguration("ApplyRemoteConfigurations");
                 }
             }
             catch (Exception ex)
