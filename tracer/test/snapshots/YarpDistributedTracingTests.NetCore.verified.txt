@@ -9,7 +9,7 @@
     Tags: {
       component: HttpMessageHandler,
       env: integration_tests,
-      http-client-handler-type: System.Net.Http.SocketsHttpHandler,
+      http-client-handler-type: System.Net.Http.HttpClientHandler,
       http.method: GET,
       http.status_code: 200,
       http.url: http://localhost:00000/proxy,
@@ -104,14 +104,7 @@
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server,
-      version: 1.0.0,
-      _dd.code_origin.frames.0.column: 0,
-      _dd.code_origin.frames.0.file: tracer\test\test-applications\integrations\Samples.Yarp.DistributedTracing\Startup.cs,
-      _dd.code_origin.frames.0.index: 0,
-      _dd.code_origin.frames.0.line: 0,
-      _dd.code_origin.frames.0.method: <Configure>b__3_1,
-      _dd.code_origin.frames.0.type: Samples.Yarp.DistributedTracing.Startup+<>c,
-      _dd.code_origin.type: entry
+      version: 1.0.0
     },
     Metrics: {
       process_id: 0,
