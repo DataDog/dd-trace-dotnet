@@ -27,6 +27,7 @@ using VerifyTests;
 using VerifyXunit;
 using Xunit;
 using Xunit.Abstractions;
+using ProbeSampling = Datadog.Trace.Debugger.Configurations.Models.Sampling;
 
 namespace Datadog.Trace.Debugger.IntegrationTests;
 
@@ -493,6 +494,107 @@ public class ProbesTests : TestHelper
     {
         var testDescription = DebuggerTestHelper.SpecificTestDescription(testType);
         await RunCaptureExpressionProbeTest(testDescription);
+    }
+
+    [SkippableFact]
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
+    public async Task CoordinatedSnapshotProbesEmitCompleteChains()
+    {
+        const int ExpectedProbeCount = 3;
+        const int TraceCount = 30;
+        var testDescription = DebuggerTestHelper.SpecificTestDescription(typeof(CoordinatedSamplingTest));
+        var probes = GetProbeConfiguration(testDescription.TestType, unlisted: true, new DeterministicGuidGenerator())
+                    .Where(probe => probe.Probe.Where.MethodName is not null)
+                    .Select(probe => (LogProbe)probe.Probe)
+                    .ToArray();
+        probes.Should().HaveCount(ExpectedProbeCount);
+
+        foreach (var probe in probes)
+        {
+            probe.Sampling = new ProbeSampling { SnapshotsPerSecond = 1 };
+        }
+
+        using var agent = EnvironmentHelper.GetMockAgent();
+        SetDebuggerEnvironment(agent);
+        using var logEntryWatcher = CreateLogEntryWatcher();
+        using var sample = await DebuggerTestHelper.StartSample(this, agent, testDescription.TestType.FullName);
+        try
+        {
+            SetProbeConfiguration(agent, probes);
+            await logEntryWatcher.WaitForLogEntry(AddedProbesInstrumentedLogEntry);
+            agent.ClearSnapshots();
+
+            // Keep each trace alive long enough for the requests to span multiple one-second sampler
+            // windows. A tight loop would pass before coordination because every sampler starts with
+            // the same full budget.
+            for (var i = 0; i < TraceCount; i++)
+            {
+                await sample.RunCodeSample();
+            }
+
+            await Task.Delay(TimeSpan.FromSeconds(3));
+
+            var expectedProbeIds = probes.Select(probe => probe.Id).ToArray();
+            var snapshotsByTrace = agent.Snapshots
+                                        .Select(JToken.Parse)
+                                        .GroupBy(snapshot => snapshot["dd.trace_id"]?.Value<string>())
+                                        .ToArray();
+
+            snapshotsByTrace.Should().NotBeEmpty();
+            snapshotsByTrace.Length.Should().BeLessThan(TraceCount);
+            foreach (var traceSnapshots in snapshotsByTrace)
+            {
+                traceSnapshots.Key.Should().NotBeNullOrEmpty();
+                traceSnapshots.Select(snapshot => snapshot.SelectToken("debugger.snapshot.probe.id")?.Value<string>())
+                              .Should()
+                              .BeEquivalentTo(expectedProbeIds);
+            }
+        }
+        finally
+        {
+            await sample.StopSample();
+        }
+    }
+
+    [SkippableFact]
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
+    public async Task CoordinatedLineProbesEmitOncePerTrace()
+    {
+        var testDescription = DebuggerTestHelper.SpecificTestDescription(typeof(CoordinatedSamplingTest));
+        var probes = GetProbeConfiguration(testDescription.TestType, unlisted: true, new DeterministicGuidGenerator())
+                    .Where(probe => probe.Probe.Where.MethodName is null)
+                    .Select(probe => (LogProbe)probe.Probe)
+                    .ToArray();
+        probes.Should().HaveCount(2);
+
+        using var agent = EnvironmentHelper.GetMockAgent();
+        SetDebuggerEnvironment(agent);
+        using var logEntryWatcher = CreateLogEntryWatcher();
+        using var sample = await DebuggerTestHelper.StartSample(this, agent, testDescription.TestType.FullName);
+        try
+        {
+            SetProbeConfiguration(agent, probes);
+            await logEntryWatcher.WaitForLogEntry(AddedProbesInstrumentedLogEntry);
+            agent.ClearSnapshots();
+
+            await sample.RunCodeSample();
+
+            await agent.WaitForSnapshots(probes.Length, TimeSpan.FromSeconds(15));
+            await Task.Delay(TimeSpan.FromSeconds(3));
+
+            var snapshots = agent.Snapshots.ToArray();
+            snapshots.Should().HaveCount(probes.Length);
+            snapshots.Select(JToken.Parse)
+                     .Select(snapshot => snapshot.SelectToken("debugger.snapshot.probe.id")?.Value<string>())
+                     .Should()
+                     .BeEquivalentTo(probes.Select(probe => probe.Id));
+        }
+        finally
+        {
+            await sample.StopSample();
+        }
     }
 
     [SkippableFact]

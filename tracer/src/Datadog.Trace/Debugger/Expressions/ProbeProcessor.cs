@@ -122,35 +122,87 @@ namespace Datadog.Trace.Debugger.Expressions
                 or MethodState.ExitStartAsync;
         }
 
+        private static bool ApplySamplingDecision(ProbeType probeType, DebuggerSamplingDecision samplingDecision)
+        {
+            switch (samplingDecision)
+            {
+                case DebuggerSamplingDecision.Keep:
+                    return true;
+                case DebuggerSamplingDecision.DropGlobal:
+                    DebuggerGuardrailMetrics.RecordEventsSkipped(probeType, MetricTags.DebuggerEventsSkippedReason.RateLimitGlobal);
+                    return false;
+                case DebuggerSamplingDecision.DropProbe:
+                    DebuggerGuardrailMetrics.RecordEventsSkipped(probeType, MetricTags.DebuggerEventsSkippedReason.RateLimitProbe);
+                    return false;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(samplingDecision), samplingDecision, null);
+            }
+        }
+
         public bool TryBeginProcess(in ProbeData probeData, [NotNullWhen(true)] out IDebuggerSnapshotCreator? snapshotCreator)
         {
             var state = _state;
-            if (!state.HasCondition && !SamplePayload(state.ProbeInfo, probeData.Sampler))
+            SpanContext? activeSpanContext = null;
+            var activeSpanContextResolved = false;
+            if (!state.HasCondition && state.ShouldCoordinateSampling)
+            {
+                activeSpanContext = GetActiveScope()?.Span.Context;
+                activeSpanContextResolved = true;
+            }
+
+            if (!state.HasCondition && !SamplePayload(state, probeData.Sampler, activeSpanContext?.TraceContext))
             {
                 snapshotCreator = null;
                 return false;
             }
 
-            snapshotCreator = new DebuggerSnapshotCreator(state);
+            if (!activeSpanContextResolved &&
+                state.ProbeInfo.ProbeType is ProbeType.Log or ProbeType.Snapshot)
+            {
+                activeSpanContext = GetActiveScope()?.Span.Context;
+            }
+
+            snapshotCreator = new DebuggerSnapshotCreator(state, activeSpanContext);
             return true;
         }
 
-        private bool SamplePayload(in ProbeInfo probeInfo, IAdaptiveSampler sampler)
+        private bool SamplePayload(ProbeProcessorState state, IAdaptiveSampler sampler, TraceContext? traceContext)
+        {
+            if (!state.ShouldCoordinateSampling || traceContext is null)
+            {
+                return SamplePayloadIndependently(state, sampler);
+            }
+
+            // The first capturing probe is intentionally a trace-admission decision. Once the trace is kept,
+            // other capturing probes bypass their global and per-probe samplers and are capped once per probe.
+            var samplingDecisionProvider = new SamplingDecisionProvider(this, state, sampler);
+            if (traceContext.TrySampleDebuggerSnapshot(state.ProbeInfo.ProbeId, samplingDecisionProvider, out var samplingDecision))
+            {
+                return true;
+            }
+
+            return ApplySamplingDecision(state.ProbeInfo.ProbeType, samplingDecision);
+        }
+
+        private bool SamplePayloadIndependently(ProbeProcessorState state, IAdaptiveSampler sampler)
+        {
+            return ApplySamplingDecision(state.ProbeInfo.ProbeType, GetSamplingDecision(state, sampler));
+        }
+
+        private DebuggerSamplingDecision GetSamplingDecision(ProbeProcessorState state, IAdaptiveSampler sampler)
         {
             // Global-first matches Java; it can affect per-probe fairness and may be improved later.
-            if (probeInfo.ProbeType == ProbeType.Snapshot && !_globalRateLimiter.ShouldSampleSnapshot(probeInfo.ProbeId))
+            if (state.ShouldCoordinateSampling && !_globalRateLimiter.ShouldSampleSnapshot(state.ProbeInfo.ProbeId))
             {
-                DebuggerGuardrailMetrics.RecordEventsSkipped(probeInfo.ProbeType, MetricTags.DebuggerEventsSkippedReason.RateLimitGlobal);
-                return false;
+                return DebuggerSamplingDecision.DropGlobal;
             }
 
             if (!sampler.Sample())
             {
-                DebuggerGuardrailMetrics.RecordEventsSkipped(probeInfo.ProbeType, MetricTags.DebuggerEventsSkippedReason.RateLimitProbe);
-                return false;
+                return DebuggerSamplingDecision.DropProbe;
             }
 
-            return true;
+            return DebuggerSamplingDecision.Keep;
         }
 
         public bool Process<TCapture>(ref CaptureInfo<TCapture> info, IDebuggerSnapshotCreator inSnapshotCreator, in ProbeData probeData)
@@ -340,6 +392,12 @@ namespace Datadog.Trace.Debugger.Expressions
         {
             var evaluationResult = EvaluateCore(state, probeInfo, snapshotCreator, out shouldStopCapture, sampler);
 
+            if (evaluationResult.HasError &&
+                probeInfo.ProbeType is ProbeType.Metric or ProbeType.SpanDecoration)
+            {
+                snapshotCreator.SetActiveSpanContext(GetActiveScope()?.Span.Context);
+            }
+
             // An exceeded time budget fails open: the event is still emitted with its evaluation errors so the
             // customer can see why the probe is too slow. Only report it as skipped when the event is dropped.
             if (shouldStopCapture && evaluationResult.EvaluationBudget.TimedOut)
@@ -396,6 +454,11 @@ namespace Datadog.Trace.Debugger.Expressions
 
             if (captureExpressionsEvaluated && evaluationResult.IsNull())
             {
+                if (!state.HasCondition)
+                {
+                    snapshotCreator.TraceContext?.ReleaseDebuggerSnapshotReservation(state.ProbeInfo.ProbeId);
+                }
+
                 shouldStopCapture = true;
                 return evaluationResult;
             }
@@ -446,7 +509,7 @@ namespace Datadog.Trace.Debugger.Expressions
 
             if (evaluationResult.Condition != null && // i.e. not a metric, span probe, or span decoration
                 (evaluationResult.Condition is false ||
-                !SamplePayload(in probeInfo, sampler)))
+                !SamplePayload(state, sampler, snapshotCreator.TraceContext)))
             {
                 // if the expression evaluated to false, or there is a rate limit, stop capture
                 shouldStopCapture = true;
@@ -545,28 +608,18 @@ namespace Datadog.Trace.Debugger.Expressions
         {
             try
             {
-                if (Tracer.Instance.ActiveScope is Scope activeScope)
+                scope = GetActiveScopeCore();
+                if (scope is not null)
                 {
-                    scope = activeScope;
                     return true;
                 }
-#if NETFRAMEWORK
-                var ctx = WcfCommon.GetCurrentOperationContext?.Invoke();
-                if (ctx?.DuckCast<IOperationContextStruct>() is { } ctxProxy
-                 && ((IDuckType?)ctxProxy.RequestContext)?.Instance is { } requestContextInstance
-                 && WcfCommon.Scopes.TryGetValue(requestContextInstance, out scope))
-                {
-                    return scope != null;
-                }
 
+#if NETFRAMEWORK
                 Log.Warning("Unable to find active scope in WCF context for span decoration. Probe ID: {ProbeId}", probeInfo.ProbeId);
-                scope = null;
-                return false;
 #else
                 Log.Warning("No active scope available for span decoration. Probe ID: {ProbeId}", probeInfo.ProbeId);
-                scope = null;
-                return false;
 #endif
+                return false;
             }
             catch (Exception e)
             {
@@ -574,6 +627,39 @@ namespace Datadog.Trace.Debugger.Expressions
                 scope = null;
                 return false;
             }
+        }
+
+        internal static Scope? GetActiveScope()
+        {
+            try
+            {
+                return GetActiveScopeCore();
+            }
+            catch (Exception e)
+            {
+                Log.Error(e, "Error while trying to get the active scope for debugger probe processing");
+                return null;
+            }
+        }
+
+        private static Scope? GetActiveScopeCore()
+        {
+            if (Tracer.Instance.InternalActiveScope is { } activeScope)
+            {
+                return activeScope;
+            }
+
+#if NETFRAMEWORK
+            var ctx = WcfCommon.GetCurrentOperationContext?.Invoke();
+            if (ctx?.DuckCast<IOperationContextStruct>() is { } ctxProxy
+             && ((IDuckType?)ctxProxy.RequestContext)?.Instance is { } requestContextInstance
+             && WcfCommon.Scopes.TryGetValue(requestContextInstance, out var scope))
+            {
+                return scope;
+            }
+#endif
+
+            return null;
         }
 
         internal static void AddAsyncMethodArguments<T>(DebuggerSnapshotCreator snapshotCreator, ref CaptureInfo<T> captureInfo)
@@ -765,6 +851,22 @@ namespace Datadog.Trace.Debugger.Expressions
             }
         }
 
+        private readonly struct SamplingDecisionProvider : IDebuggerSamplingDecisionProvider
+        {
+            private readonly ProbeProcessor _processor;
+            private readonly ProbeProcessorState _state;
+            private readonly IAdaptiveSampler _sampler;
+
+            public SamplingDecisionProvider(ProbeProcessor processor, ProbeProcessorState state, IAdaptiveSampler sampler)
+            {
+                _processor = processor;
+                _state = state;
+                _sampler = sampler;
+            }
+
+            public DebuggerSamplingDecision Sample() => _processor.GetSamplingDecision(_state, _sampler);
+        }
+
         internal sealed class ProbeProcessorState
         {
             private ProbeExpressionEvaluator? _evaluator;
@@ -789,6 +891,7 @@ namespace Datadog.Trace.Debugger.Expressions
                 HasCondition = condition.HasValue;
                 IsMetricCountWithoutExpression = probeInfo.ProbeType == ProbeType.Metric && (metric?.Json == null) && probeInfo.MetricKind == MetricKind.COUNT;
                 ShouldCaptureExpressions = !probeInfo.IsFullSnapshot && captureExpressions is { Length: > 0 };
+                ShouldCoordinateSampling = probeInfo.IsFullSnapshot || ShouldCaptureExpressions;
                 ShouldEvaluateExpressions =
                     HasCondition ||
                     templates is { Length: > 0 } ||
@@ -817,6 +920,8 @@ namespace Datadog.Trace.Debugger.Expressions
             internal bool IsMetricCountWithoutExpression { get; }
 
             internal bool ShouldCaptureExpressions { get; }
+
+            internal bool ShouldCoordinateSampling { get; }
 
             internal bool ShouldEvaluateExpressions { get; }
 
