@@ -156,7 +156,8 @@ namespace Datadog.Trace.Debugger.Expressions
                 return false;
             }
 
-            if (!activeSpanContextResolved)
+            if (!activeSpanContextResolved &&
+                state.ProbeInfo.ProbeType is ProbeType.Log or ProbeType.Snapshot)
             {
                 activeSpanContext = GetActiveScope()?.Span.Context;
             }
@@ -390,6 +391,12 @@ namespace Datadog.Trace.Debugger.Expressions
         private ExpressionEvaluationResult Evaluate(ProbeProcessorState state, ProbeInfo probeInfo, DebuggerSnapshotCreator snapshotCreator, out bool shouldStopCapture, IAdaptiveSampler sampler)
         {
             var evaluationResult = EvaluateCore(state, probeInfo, snapshotCreator, out shouldStopCapture, sampler);
+
+            if (evaluationResult.HasError &&
+                probeInfo.ProbeType is ProbeType.Metric or ProbeType.SpanDecoration)
+            {
+                snapshotCreator.SetActiveSpanContext(GetActiveScope()?.Span.Context);
+            }
 
             // An exceeded time budget fails open: the event is still emitted with its evaluation errors so the
             // customer can see why the probe is too slow. Only report it as skipped when the event is dropped.

@@ -37,7 +37,7 @@ namespace Datadog.Trace.Debugger.Snapshots
         private readonly CaptureLimitInfo _limitInfo;
         private readonly Func<string> _serviceNameProvider;
         private readonly Func<string?> _processTagsProvider;
-        private readonly SpanContext? _activeSpanContext;
+        private SpanContext? _activeSpanContext;
 
         private long _lastSampledTime;
         private TimeSpan _accumulatedDuration;
@@ -141,6 +141,11 @@ namespace Datadog.Trace.Debugger.Snapshots
 
                 _captureBehaviour = value;
             }
+        }
+
+        internal void SetActiveSpanContext(SpanContext? activeSpanContext)
+        {
+            _activeSpanContext = activeSpanContext;
         }
 
         internal void StartSampling()
