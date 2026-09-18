@@ -4,9 +4,13 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using System.Net;
 using System.Reflection;
+using System.Threading.Tasks;
+using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.Transports;
+using FluentAssertions;
 using Xunit;
 
 namespace Datadog.Trace.Tests.Agent.Transports
@@ -46,6 +50,72 @@ namespace Datadog.Trace.Tests.Agent.Transports
 
             // Make sure we properly restored the old WebRequest factory
             Assert.IsType<HttpWebRequest>(WebRequest.Create("http://localhost/"));
+        }
+
+        [Fact]
+        public async Task RejectsUnsafeDefaultApiKeyHeader()
+        {
+            var factory = new ApiWebRequestFactory(
+                new Uri("http://example.com"),
+                [new KeyValuePair<string, string>(ApiKeyHttpTransportGuard.ApiKeyHeaderName, "test-key")]);
+            var request = factory.Create(factory.GetEndpoint("/intake"));
+
+            GetHttpWebRequest(request).AllowAutoRedirect.Should().BeFalse();
+            await Assert.ThrowsAsync<ApiKeyHttpTransportException>(() => request.GetAsync());
+        }
+
+        [Fact]
+        public void RejectsApiKeyAddedToKeylessFactoryRequest()
+        {
+            var factory = new ApiWebRequestFactory(
+                new Uri("https://example.com"),
+                []);
+            var request = factory.Create(factory.GetEndpoint("/intake"));
+
+            var action = () => request.AddHeader(ApiKeyHttpTransportGuard.ApiKeyHeaderName.ToLowerInvariant(), "test-key");
+
+            action.Should().Throw<ApiKeyHttpTransportException>();
+        }
+
+        [Fact]
+        public void DisablesProxyForPlaintextLoopbackWithApiKey()
+        {
+            var factory = new ApiWebRequestFactory(
+                new Uri("http://localhost"),
+                [new KeyValuePair<string, string>(ApiKeyHttpTransportGuard.ApiKeyHeaderName, "test-key")]);
+            factory.SetProxy(new WebProxy("http://example.com"), credential: null);
+
+            var request = factory.Create(factory.GetEndpoint("/intake"));
+
+            GetHttpWebRequest(request).Proxy.Should().BeNull();
+        }
+
+        [Fact]
+        public async Task RejectsPlaintextLoopbackIfProxyIsReenabled()
+        {
+            var factory = new ApiWebRequestFactory(
+                new Uri("http://localhost"),
+                [new KeyValuePair<string, string>(ApiKeyHttpTransportGuard.ApiKeyHeaderName, "test-key")]);
+            var request = factory.Create(factory.GetEndpoint("/intake"));
+            GetHttpWebRequest(request).Proxy = new NeverBypassProxy();
+
+            await Assert.ThrowsAsync<ApiKeyHttpTransportException>(() => request.GetAsync());
+        }
+
+        private static HttpWebRequest GetHttpWebRequest(IApiRequest request)
+        {
+            var field = typeof(ApiWebRequest).GetField("_request", BindingFlags.Instance | BindingFlags.NonPublic);
+            field.Should().NotBeNull();
+            return field!.GetValue(request).Should().BeOfType<HttpWebRequest>().Subject;
+        }
+
+        private sealed class NeverBypassProxy : IWebProxy
+        {
+            public ICredentials Credentials { get; set; }
+
+            public Uri GetProxy(Uri destination) => new("http://example.com");
+
+            public bool IsBypassed(Uri host) => false;
         }
 
         private class CustomWebRequestCreator : IWebRequestCreate
