@@ -65,6 +65,16 @@ namespace Datadog.Trace.Processors
 
         public Span Process(Span span)
         {
+            if (span.OpenTelemetrySemanticsEnabled)
+            {
+                // The resource name is the low-cardinality span name the OpenTelemetry semantic
+                // conventions define, not a query, so obfuscating it would only corrupt it. The
+                // query itself is reported in "db.query.text", already sanitized. Note that this
+                // only covers the client-side pass: the Datadog agent runs its own obfuscator over
+                // the resource name of a "sql" span it receives over msgpack.
+                return span;
+            }
+
             if (span.Type == "sql" || span.Type == "cassandra")
             {
                 span.ResourceName = ObfuscateSqlResource(span.ResourceName);
@@ -85,6 +95,8 @@ namespace Datadog.Trace.Processors
             {
                 return string.Empty;
             }
+
+            sqlQuery = RemoveComments(sqlQuery);
 
             var sqlChars = sqlQuery.ToCharArray();
 
@@ -115,7 +127,8 @@ namespace Datadog.Trace.Processors
                     {
                         if (IsQuoted(sqlChars, sequenceStart, sequenceEnd)
                             || IsNumericLiteralPrefix(sqlChars[sequenceStart])
-                            || IsHexLiteralPrefix(sqlChars, sequenceStart, sequenceEnd))
+                            || IsPrefixedLiteral(sqlChars, sequenceStart, sequenceEnd)
+                            || IsDollarQuoted(sqlChars, sequenceStart, sequenceEnd))
                         {
                             var length = sequenceEnd - sequenceStart;
                             Array.Copy(sqlChars, end, sqlChars, sequenceStart + 1, outputLength - end);
@@ -143,6 +156,81 @@ namespace Datadog.Trace.Processors
             }
 
             return sqlQuery;
+        }
+
+        /// <summary>
+        /// Removes the SQL comments from a query. A comment can hold anything the application put
+        /// there, so it is dropped rather than replaced with a placeholder, which is also what the
+        /// Datadog agent's obfuscator does. Only the two portable forms are recognized: MySQL's
+        /// <c>#</c> is left alone because it also introduces a SQL Server temporary table name.
+        /// </summary>
+        internal static string RemoveComments(string sqlQuery)
+        {
+            StringBuilder? sb = null;
+            var quoted = false;
+            var escaped = false;
+            var copiedTo = 0;
+
+            for (var i = 0; i < sqlQuery.Length; i++)
+            {
+                var c = sqlQuery[i];
+
+                if (quoted)
+                {
+                    if (c == '\'' && !escaped)
+                    {
+                        quoted = false;
+                    }
+
+                    escaped = (c == '\\') & !escaped;
+                    continue;
+                }
+
+                if (c == '\'')
+                {
+                    quoted = true;
+                    escaped = false;
+                    continue;
+                }
+
+                if (i + 1 >= sqlQuery.Length)
+                {
+                    break;
+                }
+
+                var next = sqlQuery[i + 1];
+                int end;
+
+                if (c == '-' && next == '-')
+                {
+                    // A line comment runs to the end of the line, or to the end of the query
+                    end = sqlQuery.IndexOf('\n', i + 2);
+                    end = end < 0 ? sqlQuery.Length : end;
+                }
+                else if (c == '/' && next == '*')
+                {
+                    // An unterminated block comment runs to the end of the query
+                    end = sqlQuery.IndexOf("*/", i + 2, StringComparison.Ordinal);
+                    end = end < 0 ? sqlQuery.Length : end + 2;
+                }
+                else
+                {
+                    continue;
+                }
+
+                sb ??= StringBuilderCache.Acquire();
+                sb.Append(sqlQuery, copiedTo, i - copiedTo);
+                copiedTo = end;
+                i = end - 1;
+            }
+
+            if (sb is null)
+            {
+                return sqlQuery;
+            }
+
+            sb.Append(sqlQuery, copiedTo, sqlQuery.Length - copiedTo);
+            return StringBuilderCache.GetStringAndRelease(sb);
         }
 
         internal static string ObfuscateRedisResource(string redisResource)
@@ -181,17 +269,16 @@ namespace Datadog.Trace.Processors
 
         private static bool IsSplitter(char c)
         {
-            if (Convert.ToInt16(c) < 256)
-            {
-                return Splitters.Get(c);
-            }
-
-            return false;
+            // Note: the comparison must not go through Convert, which throws for a char that does
+            // not fit an Int16. A query holding one (any CJK character from U+8000, or either half
+            // of an emoji surrogate pair) would otherwise abort obfuscation and leave every literal
+            // in the query untouched.
+            return c < 256 && Splitters.Get(c);
         }
 
         private static bool IsNumericLiteralPrefix(char c)
         {
-            return NumericLiteralPrefix.Get(Convert.ToByte(c));
+            return c < 256 && NumericLiteralPrefix.Get(c);
         }
 
         /// <summary>
@@ -255,10 +342,50 @@ namespace Datadog.Trace.Processors
             return (sqlChars[start] == '\'' && sqlChars[end] == '\'');
         }
 
-        private static bool IsHexLiteralPrefix(char[] sqlChars, int start, int end)
+        /// <summary>
+        /// Determines whether the sequence is a string literal introduced by a type prefix, which
+        /// every SQL dialect we instrument has some form of: hexadecimal (<c>x'..'</c>), national
+        /// character (<c>N'..'</c>), escaped (<c>E'..'</c>), bit (<c>B'..'</c>), Oracle quoted
+        /// (<c>q'[..]'</c>), and MySQL character set introducers (<c>_utf8'..'</c>). Without this
+        /// the literal is left in place, so the value it holds is reported verbatim.
+        /// </summary>
+        private static bool IsPrefixedLiteral(char[] sqlChars, int start, int end)
         {
-            // | 0x20 converts ASCII characters to lowercase
-            return (sqlChars[start] | 0x20) == 'x' && start + 1 < end && sqlChars[start + 1] == '\'';
+            if (sqlChars[end] != '\'')
+            {
+                return false;
+            }
+
+            // The prefix is the identifier characters between the start of the sequence and the
+            // opening quote, and there has to be at least one of them and at least one after it.
+            for (var i = start; i < end; i++)
+            {
+                var c = sqlChars[i];
+                if (c == '\'')
+                {
+                    return i > start;
+                }
+
+                // | 0x20 converts ASCII characters to lowercase. A digit is only allowed after the
+                // first character, so that a numeric literal is not mistaken for a prefix.
+                var isLetter = (c | 0x20) is >= 'a' and <= 'z';
+                if (!isLetter && c != '_' && !(i > start && c is >= '0' and <= '9'))
+                {
+                    return false;
+                }
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Determines whether the sequence is a PostgreSQL dollar-quoted string (<c>$$..$$</c> or
+        /// <c>$tag$..$tag$</c>), which is how a value holding a quote is written. A positional
+        /// parameter (<c>$1</c>) does not end with a dollar sign, so it is left alone.
+        /// </summary>
+        private static bool IsDollarQuoted(char[] sqlChars, int start, int end)
+        {
+            return sqlChars[start] == '$' && sqlChars[end] == '$' && end > start;
         }
 
         private static int PreviousSetBit(BitArray array, int fromIndex)
