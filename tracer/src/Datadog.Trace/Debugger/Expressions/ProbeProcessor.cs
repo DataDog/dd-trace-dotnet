@@ -122,6 +122,23 @@ namespace Datadog.Trace.Debugger.Expressions
                 or MethodState.ExitStartAsync;
         }
 
+        private static bool ApplySamplingDecision(ProbeType probeType, DebuggerSamplingDecision samplingDecision)
+        {
+            switch (samplingDecision)
+            {
+                case DebuggerSamplingDecision.Keep:
+                    return true;
+                case DebuggerSamplingDecision.DropGlobal:
+                    DebuggerGuardrailMetrics.RecordEventsSkipped(probeType, MetricTags.DebuggerEventsSkippedReason.RateLimitGlobal);
+                    return false;
+                case DebuggerSamplingDecision.DropProbe:
+                    DebuggerGuardrailMetrics.RecordEventsSkipped(probeType, MetricTags.DebuggerEventsSkippedReason.RateLimitProbe);
+                    return false;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(samplingDecision), samplingDecision, null);
+            }
+        }
+
         public bool TryBeginProcess(in ProbeData probeData, [NotNullWhen(true)] out IDebuggerSnapshotCreator? snapshotCreator)
         {
             var state = _state;
@@ -155,26 +172,36 @@ namespace Datadog.Trace.Debugger.Expressions
                 return SamplePayloadIndependently(state, sampler);
             }
 
+            // The first capturing probe is intentionally a trace-admission decision. Once the trace is kept,
+            // other capturing probes bypass their global and per-probe samplers and are capped once per probe.
             var samplingDecisionProvider = new SamplingDecisionProvider(this, state, sampler);
-            return traceContext.TrySampleDebuggerSnapshot(state.ProbeInfo.ProbeId, samplingDecisionProvider);
+            if (traceContext.TrySampleDebuggerSnapshot(state.ProbeInfo.ProbeId, samplingDecisionProvider, out var samplingDecision))
+            {
+                return true;
+            }
+
+            return ApplySamplingDecision(state.ProbeInfo.ProbeType, samplingDecision);
         }
 
         private bool SamplePayloadIndependently(ProbeProcessorState state, IAdaptiveSampler sampler)
         {
+            return ApplySamplingDecision(state.ProbeInfo.ProbeType, GetSamplingDecision(state, sampler));
+        }
+
+        private DebuggerSamplingDecision GetSamplingDecision(ProbeProcessorState state, IAdaptiveSampler sampler)
+        {
             // Global-first matches Java; it can affect per-probe fairness and may be improved later.
             if (state.ShouldCoordinateSampling && !_globalRateLimiter.ShouldSampleSnapshot(state.ProbeInfo.ProbeId))
             {
-                DebuggerGuardrailMetrics.RecordEventsSkipped(state.ProbeInfo.ProbeType, MetricTags.DebuggerEventsSkippedReason.RateLimitGlobal);
-                return false;
+                return DebuggerSamplingDecision.DropGlobal;
             }
 
             if (!sampler.Sample())
             {
-                DebuggerGuardrailMetrics.RecordEventsSkipped(state.ProbeInfo.ProbeType, MetricTags.DebuggerEventsSkippedReason.RateLimitProbe);
-                return false;
+                return DebuggerSamplingDecision.DropProbe;
             }
 
-            return true;
+            return DebuggerSamplingDecision.Keep;
         }
 
         public bool Process<TCapture>(ref CaptureInfo<TCapture> info, IDebuggerSnapshotCreator inSnapshotCreator, in ProbeData probeData)
@@ -420,6 +447,11 @@ namespace Datadog.Trace.Debugger.Expressions
 
             if (captureExpressionsEvaluated && evaluationResult.IsNull())
             {
+                if (!state.HasCondition)
+                {
+                    snapshotCreator.TraceContext?.ReleaseDebuggerSnapshotReservation(state.ProbeInfo.ProbeId);
+                }
+
                 shouldStopCapture = true;
                 return evaluationResult;
             }
@@ -825,7 +857,7 @@ namespace Datadog.Trace.Debugger.Expressions
                 _sampler = sampler;
             }
 
-            public bool Sample() => _processor.SamplePayloadIndependently(_state, _sampler);
+            public DebuggerSamplingDecision Sample() => _processor.GetSamplingDecision(_state, _sampler);
         }
 
         internal sealed class ProbeProcessorState

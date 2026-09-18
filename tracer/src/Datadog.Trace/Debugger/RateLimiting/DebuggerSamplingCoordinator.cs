@@ -5,6 +5,7 @@
 
 #nullable enable
 
+using System;
 using System.Collections.Generic;
 using System.Threading;
 
@@ -14,6 +15,10 @@ namespace Datadog.Trace.Debugger.RateLimiting
     {
         internal static bool TrySample<TSamplingDecisionProvider>(ref State? state, string probeId, TSamplingDecisionProvider samplingDecisionProvider)
             where TSamplingDecisionProvider : struct, IDebuggerSamplingDecisionProvider
+            => TrySample(ref state, probeId, samplingDecisionProvider, out _);
+
+        internal static bool TrySample<TSamplingDecisionProvider>(ref State? state, string probeId, TSamplingDecisionProvider samplingDecisionProvider, out DebuggerSamplingDecision samplingDecision)
+            where TSamplingDecisionProvider : struct, IDebuggerSamplingDecisionProvider
         {
             var current = Volatile.Read(ref state);
             if (current is null)
@@ -22,8 +27,12 @@ namespace Datadog.Trace.Debugger.RateLimiting
                 current = Interlocked.CompareExchange(ref state, created, null) ?? created;
             }
 
-            return current.TrySample(probeId, samplingDecisionProvider);
+            samplingDecision = current.TrySample(probeId, samplingDecisionProvider);
+            return samplingDecision == DebuggerSamplingDecision.Keep;
         }
+
+        internal static void ReleaseProbe(ref State? state, string probeId)
+            => Volatile.Read(ref state)?.ReleaseProbe(probeId);
 
         internal sealed class State
         {
@@ -34,16 +43,18 @@ namespace Datadog.Trace.Debugger.RateLimiting
             {
                 Undecided,
                 Creating,
-                Drop,
+                DropGlobal,
+                DropProbe,
                 Keep
             }
 
-            internal bool TrySample<TSamplingDecisionProvider>(string probeId, TSamplingDecisionProvider samplingDecisionProvider)
+            internal DebuggerSamplingDecision TrySample<TSamplingDecisionProvider>(string probeId, TSamplingDecisionProvider samplingDecisionProvider)
                 where TSamplingDecisionProvider : struct, IDebuggerSamplingDecisionProvider
             {
-                if ((Decision)Volatile.Read(ref _decision) == Decision.Drop)
+                var currentDecision = (Decision)Volatile.Read(ref _decision);
+                if (currentDecision is Decision.DropGlobal or Decision.DropProbe)
                 {
-                    return false;
+                    return ToSamplingDecision(currentDecision);
                 }
 
                 lock (this)
@@ -55,25 +66,38 @@ namespace Datadog.Trace.Debugger.RateLimiting
                         case Decision.Creating:
                             // Monitor locks are reentrant, so this is a nested sample on the deciding
                             // thread. Other threads cannot enter until the decision is published.
-                            return false;
-                        case Decision.Drop:
-                            return false;
+                            return DebuggerSamplingDecision.DropProbe;
+                        case Decision.DropGlobal:
+                            return DebuggerSamplingDecision.DropGlobal;
+                        case Decision.DropProbe:
+                            return DebuggerSamplingDecision.DropProbe;
                         case Decision.Keep:
-                            return _emittedProbeIds!.Add(probeId);
+                            return _emittedProbeIds!.Add(probeId)
+                                       ? DebuggerSamplingDecision.Keep
+                                       : DebuggerSamplingDecision.DropProbe;
                     }
 
                     _decision = (int)Decision.Creating;
                     try
                     {
-                        if (!samplingDecisionProvider.Sample())
+                        var samplingDecision = samplingDecisionProvider.Sample();
+                        switch (samplingDecision)
                         {
-                            Volatile.Write(ref _decision, (int)Decision.Drop);
-                            return false;
+                            case DebuggerSamplingDecision.DropGlobal:
+                                Volatile.Write(ref _decision, (int)Decision.DropGlobal);
+                                return samplingDecision;
+                            case DebuggerSamplingDecision.DropProbe:
+                                Volatile.Write(ref _decision, (int)Decision.DropProbe);
+                                return samplingDecision;
+                            case DebuggerSamplingDecision.Keep:
+                                break;
+                            default:
+                                throw new ArgumentOutOfRangeException(nameof(samplingDecision), samplingDecision, null);
                         }
 
                         _emittedProbeIds = new HashSet<string> { probeId };
                         Volatile.Write(ref _decision, (int)Decision.Keep);
-                        return true;
+                        return DebuggerSamplingDecision.Keep;
                     }
                     catch
                     {
@@ -82,6 +106,22 @@ namespace Datadog.Trace.Debugger.RateLimiting
                     }
                 }
             }
+
+            internal void ReleaseProbe(string probeId)
+            {
+                lock (this)
+                {
+                    if ((Decision)_decision == Decision.Keep)
+                    {
+                        _emittedProbeIds!.Remove(probeId);
+                    }
+                }
+            }
+
+            private static DebuggerSamplingDecision ToSamplingDecision(Decision decision)
+                => decision == Decision.DropGlobal
+                       ? DebuggerSamplingDecision.DropGlobal
+                       : DebuggerSamplingDecision.DropProbe;
         }
     }
 }
