@@ -1,0 +1,128 @@
+{
+  "name": "falsy-values",
+  "description": "Flags whose variation values are falsy (false, 0, 0.0, empty string, empty object). SDK must return these as real values, not fall back to defaults.",
+  "context": {
+    "targetingKey": "falsy-user",
+    "attributes": {}
+  },
+  "response": {
+    "data": {
+      "attributes": {
+        "flags": {
+          "fixture.falsy.bool": {
+            "allocationKey": "alloc-falsy",
+            "variationKey": "off",
+            "variationType": "boolean",
+            "variationValue": false,
+            "reason": "TARGETING_MATCH",
+            "doLog": true
+          },
+          "fixture.falsy.int": {
+            "allocationKey": "alloc-falsy",
+            "variationKey": "zero",
+            "variationType": "integer",
+            "variationValue": 0,
+            "reason": "TARGETING_MATCH",
+            "doLog": true
+          },
+          "fixture.falsy.float": {
+            "allocationKey": "alloc-falsy",
+            "variationKey": "zero-f",
+            "variationType": "float",
+            "variationValue": 0.0,
+            "reason": "TARGETING_MATCH",
+            "doLog": true
+          },
+          "fixture.falsy.string": {
+            "allocationKey": "alloc-falsy",
+            "variationKey": "empty",
+            "variationType": "string",
+            "variationValue": "",
+            "reason": "TARGETING_MATCH",
+            "doLog": true
+          },
+          "fixture.falsy.object": {
+            "allocationKey": "alloc-falsy",
+            "variationKey": "empty-obj",
+            "variationType": "object",
+            "variationValue": {},
+            "reason": "TARGETING_MATCH",
+            "doLog": true
+          }
+        }
+      }
+    }
+  },
+  "evaluations": [
+    {
+      "flag": "fixture.falsy.bool",
+      "variationType": "boolean",
+      "defaultValue": true,
+      "expectedResult": {
+        "value": false,
+        "reason": "TARGETING_MATCH",
+        "errorCode": null,
+        "variantKey": "off"
+      }
+    },
+    {
+      "flag": "fixture.falsy.int",
+      "variationType": "integer",
+      "defaultValue": 99,
+      "expectedResult": {
+        "value": 0,
+        "reason": "TARGETING_MATCH",
+        "errorCode": null,
+        "variantKey": "zero"
+      }
+    },
+    {
+      "flag": "fixture.falsy.float",
+      "variationType": "float",
+      "defaultValue": 1.0,
+      "expectedResult": {
+        "value": 0.0,
+        "reason": "TARGETING_MATCH",
+        "errorCode": null,
+        "variantKey": "zero-f"
+      }
+    },
+    {
+      "flag": "fixture.falsy.string",
+      "variationType": "string",
+      "defaultValue": "non-empty",
+      "expectedResult": {
+        "value": "",
+        "reason": "TARGETING_MATCH",
+        "errorCode": null,
+        "variantKey": "empty"
+      }
+    },
+    {
+      "flag": "fixture.falsy.object",
+      "variationType": "object",
+      "defaultValue": {
+        "fallback": true
+      },
+      "expectedResult": {
+        "value": {},
+        "reason": "TARGETING_MATCH",
+        "errorCode": null,
+        "variantKey": "empty-obj"
+      }
+    }
+  ],
+  "expectations": {
+    "noUnmatchedEvents": true,
+    "exposures": [
+      {
+        "_count": 5
+      }
+    ],
+    "evaluationEvents": [
+      {
+        "_count": 5
+      }
+    ]
+  }
+}
