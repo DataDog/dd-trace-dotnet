@@ -62,6 +62,15 @@ internal partial class ProbeExpressionParser<T>
                (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(KeyValuePair<,>));
     }
 
+    private static bool IsImplicitlyConvertibleToInt32(Type type)
+    {
+        return type == typeof(sbyte) ||
+               type == typeof(byte) ||
+               type == typeof(short) ||
+               type == typeof(ushort) ||
+               type == typeof(char);
+    }
+
     private Expression HasAny(JsonTextReader reader, List<ParameterExpression> parameters, ParameterExpression itParameter)
     {
         return Predicate(reader, parameters, PredicateOperation.Any, itParameter);
@@ -471,8 +480,10 @@ internal partial class ProbeExpressionParser<T>
             return indexOrKey;
         }
 
-        // Expression.Call does not box value-type keys (e.g. int -> object on IDictionary.get_Item).
-        if (indexOrKey.Type.IsValueType || !parameterType.IsAssignableFrom(indexOrKey.Type))
+        // Expression.Call does not apply C# implicit conversions, including boxing.
+        if (indexOrKey.Type.IsValueType &&
+            (parameterType.IsAssignableFrom(indexOrKey.Type) ||
+             (parameterType == typeof(int) && IsImplicitlyConvertibleToInt32(indexOrKey.Type))))
         {
             return Expression.Convert(indexOrKey, parameterType);
         }
