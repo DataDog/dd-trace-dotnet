@@ -69,11 +69,11 @@
       aas.site.type: function,
       component: AzureFunctions,
       env: integration_tests,
-      error.msg: { "errorType": "System.InvalidOperationException", "errorMessage": "Unable to greet World.", "stackTrace": "   at Samples.AzureFunctions.Durable.DurableFunctions.FailingDurableActivity(String name)" },
+      error.msg: Unable to greet World.,
       error.stack:
-{ "errorType": "System.InvalidOperationException", "errorMessage": "Unable to greet World.", "stackTrace": "   at Samples.AzureFunctions.Durable.DurableFunctions.FailingDurableActivity(String name)" }
-,
-      error.type: Microsoft.Azure.Functions.Worker.Extensions.DurableTask.Exceptions.DurableSerializationException,
+System.InvalidOperationException: Unable to greet World.
+at Samples.AzureFunctions.Durable.DurableFunctions.FailingDurableActivity(String name),
+      error.type: System.InvalidOperationException,
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server

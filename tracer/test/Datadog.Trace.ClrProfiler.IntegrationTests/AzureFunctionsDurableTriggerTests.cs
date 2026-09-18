@@ -97,7 +97,9 @@ public class AzureFunctionsDurableTriggerTests : AzureFunctionsTests
 
             var failingActivitySpan = spans.Should().ContainSingle(s => s.Resource == "DurableActivity FailingDurableActivity").Subject;
             failingActivitySpan.Error.Should().Be(1);
-            failingActivitySpan.Tags.Should().ContainKey(Tags.ErrorMsg).WhoseValue.Should().Contain(ExpectedFailureMessage);
+            failingActivitySpan.Tags.Should().ContainKey(Tags.ErrorType).WhoseValue.Should().Be(typeof(InvalidOperationException).FullName);
+            failingActivitySpan.Tags.Should().ContainKey(Tags.ErrorMsg).WhoseValue.Should().Be(ExpectedFailureMessage);
+            failingActivitySpan.Tags.Should().ContainKey(Tags.ErrorStack).WhoseValue.Should().Contain("DurableFunctions.FailingDurableActivity");
 
             var failingOrchestrationSpans = spans.Where(s => s.Resource == "DurableOrchestration FailingDurableWorkflow").ToList();
             failingOrchestrationSpans.Should().HaveCount(2, "only the initial execution and the failed replay should be traced");

@@ -9,6 +9,7 @@
 using System;
 using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
+using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions;
 
@@ -43,6 +44,16 @@ public sealed class DurableFunctionExecutorExecuteAsyncIntegration
 
     internal static TReturn? OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn? returnValue, Exception? exception, in CallTargetState state)
     {
+        // Durable serializes activity failures into the wrapper's Message and ToString().
+        // Its InnerException is the original exception's inner cause, not the original exception.
+        if (state.Scope is not null
+         && exception?.GetType().FullName == "Microsoft.Azure.Functions.Worker.Extensions.DurableTask.Exceptions.DurableSerializationException"
+         && exception.TryDuckCast<IDurableSerializationException>(out var wrapper)
+         && wrapper.FromException is { } originalException)
+        {
+            exception = originalException;
+        }
+
         state.Scope.DisposeWithException(exception);
         return returnValue;
     }
