@@ -29,6 +29,7 @@ public class CoordinatedSamplingTests
     private const int TestMaxEvaluationTimeInMilliseconds = 30_000;
     private const string TrueConditionJson = @"{ ""eq"": [1, 1] }";
     private const string FalseConditionJson = @"{ ""eq"": [1, 0] }";
+    private const string NonNumericMetricJson = @"{ ""ref"": ""argument"" }";
 
     [Theory]
     [InlineData(true)]
@@ -461,7 +462,44 @@ public class CoordinatedSamplingTests
         Assert.Equal(expectedSpanId, snapshot["dd.span_id"]?.Value<string>());
     }
 
-    private static ProbeProcessor CreateProcessor(LogProbe probe, IDebuggerGlobalRateLimiter globalRateLimiter)
+    [Theory]
+    [InlineData((int)ProbeType.Metric)]
+    [InlineData((int)ProbeType.SpanDecoration)]
+    public async Task NonPayloadProbesDoNotCaptureSpanContextAtBegin(int probeTypeValue)
+    {
+        await using var tracer = TracerHelper.CreateWithFakeAgent();
+        Tracer.UnsafeSetTracerInstance(tracer);
+        using var scope = (Scope)tracer.StartActive("root");
+
+        var probe = CreateNonPayloadProbe((ProbeType)probeTypeValue);
+        var processor = CreateProcessor(probe, new GlobalRateLimiterMock(true));
+        var probeData = new ProbeData(probe.Id, new CountingSampler(true), processor);
+        Assert.True(processor.TryBeginProcess(in probeData, out var creator));
+        using var snapshotCreator = (DebuggerSnapshotCreator)creator;
+
+        Assert.Null(snapshotCreator.TraceContext);
+    }
+
+    [Fact]
+    public async Task MetricErrorSnapshotCapturesSpanContextAtEvaluation()
+    {
+        await using var tracer = TracerHelper.CreateWithFakeAgent();
+        Tracer.UnsafeSetTracerInstance(tracer);
+        using var scope = (Scope)tracer.StartActive("root");
+
+        var probe = CreateMetricErrorProbe();
+        var processor = CreateProcessor(probe, new GlobalRateLimiterMock(true));
+        var probeData = new ProbeData(probe.Id, new CountingSampler(true), processor);
+        Assert.True(processor.TryBeginProcess(in probeData, out var creator));
+        var snapshotCreator = (DebuggerSnapshotCreator)creator;
+
+        Assert.Null(snapshotCreator.TraceContext);
+        var captureInfo = CreateAsyncEvaluateCaptureInfo("qwerty");
+        Assert.True(processor.Process(ref captureInfo, snapshotCreator, in probeData));
+        Assert.Same(scope.Span.Context.TraceContext, snapshotCreator.TraceContext);
+    }
+
+    private static ProbeProcessor CreateProcessor(ProbeDefinition probe, IDebuggerGlobalRateLimiter globalRateLimiter)
         => new(probe, TestMaxEvaluationTimeInMilliseconds, globalRateLimiter);
 
     private static LogProbe CreateLogProbe(string probeId, bool captureSnapshot)
@@ -506,6 +544,56 @@ public class CoordinatedSamplingTests
         return probe;
     }
 
+    private static ProbeDefinition CreateNonPayloadProbe(ProbeType probeType)
+    {
+        var where = new Where
+        {
+            TypeName = typeof(CoordinatedSamplingTests).FullName!,
+            MethodName = nameof(DummyMethod)
+        };
+
+        return probeType switch
+        {
+            ProbeType.Metric => new MetricProbe
+            {
+                Id = "metric-probe",
+                Kind = MetricKind.COUNT,
+                MetricName = "metric",
+                EvaluateAt = EvaluateAt.Entry,
+                Where = where,
+                Tags = [],
+            },
+            ProbeType.SpanDecoration => new SpanDecorationProbe
+            {
+                Id = "span-decoration-probe",
+                TargetSpan = TargetSpan.Active,
+                Decorations = [],
+                EvaluateAt = EvaluateAt.Entry,
+                Where = where,
+                Tags = [],
+            },
+            _ => throw new ArgumentOutOfRangeException(nameof(probeType), probeType, null)
+        };
+    }
+
+    private static MetricProbe CreateMetricErrorProbe()
+    {
+        return new MetricProbe
+        {
+            Id = "metric-error-probe",
+            Kind = MetricKind.COUNT,
+            MetricName = "metric",
+            Value = new SnapshotSegment(string.Empty, NonNumericMetricJson, null),
+            EvaluateAt = EvaluateAt.Entry,
+            Where = new Where
+            {
+                TypeName = typeof(CoordinatedSamplingTests).FullName!,
+                MethodName = nameof(DummyMethod)
+            },
+            Tags = [],
+        };
+    }
+
     private static bool TryBeginAndDispose(ProbeProcessor processor, IAdaptiveSampler sampler)
     {
         var probeData = new ProbeData("unused", sampler, processor);
@@ -519,14 +607,21 @@ public class CoordinatedSamplingTests
         var probeData = new ProbeData("unused", sampler, processor);
         Assert.True(processor.TryBeginProcess(in probeData, out var creator));
         using var snapshotCreator = (DebuggerSnapshotCreator)creator;
-        var captureInfo = new CaptureInfo<object>(
+        var captureInfo = CreateAsyncEvaluateCaptureInfo(new object());
+
+        return processor.Process(ref captureInfo, snapshotCreator, in probeData);
+    }
+
+    private static CaptureInfo<T> CreateAsyncEvaluateCaptureInfo<T>(T value)
+    {
+        return new CaptureInfo<T>(
             methodMetadataIndex: 0,
             methodState: MethodState.EntryAsync,
-            value: new object(),
+            value: value,
             method: typeof(CoordinatedSamplingTests).GetMethod(nameof(DummyMethod), BindingFlags.Static | BindingFlags.NonPublic)!,
             invocationTargetType: typeof(object),
             memberKind: ScopeMemberKind.Argument,
-            type: typeof(object),
+            type: value?.GetType() ?? typeof(T),
             name: "argument",
             localsCount: 0,
             argumentsCount: 0,
@@ -536,8 +631,6 @@ public class CoordinatedSamplingTests
                 kickoffInvocationTargetType: typeof(CoordinatedSamplingTests),
                 hoistedArgs: [],
                 hoistedLocals: []));
-
-        return processor.Process(ref captureInfo, snapshotCreator, in probeData);
     }
 
     private static JObject FinalizeSnapshot(DebuggerSnapshotCreator snapshotCreator)
