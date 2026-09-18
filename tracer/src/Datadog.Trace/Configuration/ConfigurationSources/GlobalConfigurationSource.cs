@@ -43,6 +43,7 @@ internal static class GlobalConfigurationSource
     {
         string? message = null;
         Exception? exception = null;
+        ConfigurationSuccessResult? handsOffConfiguration = null;
         var resultType = Result.Success;
         var configurationSource = new CompositeConfigurationSource();
         var environmentSource = new EnvironmentConfigurationSource();
@@ -53,6 +54,7 @@ internal static class GlobalConfigurationSource
             var configsResult = ConfiguratorHelper.GetConfiguration(handsOffLocalConfigPath, handsOffFleetConfigPath, isLibdatadogAvailable);
             if (configsResult is { ConfigurationSuccessResult: { } configsValue })
             {
+                handsOffConfiguration = configsValue;
                 // fleet managed hands-off config
                 configurationSource.Add(new HandsOffConfigurationSource(configsValue.ConfigEntriesFleet, false));
                 // env vars
@@ -88,7 +90,7 @@ internal static class GlobalConfigurationSource
             configurationSource.Add(jsonConfigurationSource);
         }
 
-        return new(configurationSource, resultType, message, exception);
+        return new(configurationSource, resultType, message, exception, handsOffConfiguration);
     }
 
     internal static bool TryLoadJsonConfigurationFile(IConfigurationSource configurationSource, string? baseDirectory, [NotNullWhen(true)] out IConfigurationSource? jsonConfigurationSource)

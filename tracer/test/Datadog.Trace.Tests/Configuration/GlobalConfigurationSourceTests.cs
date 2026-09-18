@@ -52,4 +52,27 @@ public class GlobalConfigurationSourceTests
         localConfigSource.GetString("KEY4", NullConfigurationTelemetry.Instance, null, false).Result.Should().Be("true");
         localConfigSource.GetBool("KEY2", NullConfigurationTelemetry.Instance, null).Result.Should().Be(false);
     }
+
+    [Fact]
+    public void HandsOffConfigurationEntriesAreExposedForLogging()
+    {
+        var result = GlobalConfigurationSource.CreateDefaultConfigurationSource(
+            handsOffLocalConfigPath: Path.Combine("Configuration", "HandsOffConfigData", "application_monitoring.yml"),
+            handsOffFleetConfigPath: Path.Combine("Configuration", "HandsOffConfigData", "application_monitoring_fleet.yml"),
+            isLibdatadogAvailable: true);
+
+        result.Result.Should().Be(Result.Success);
+        result.HandsOffConfiguration.Should().NotBeNull();
+        result.HandsOffConfiguration!.Value.ConfigEntriesFleet.Keys.Should().BeEquivalentTo("KEY1", "KEY5");
+        result.HandsOffConfiguration!.Value.ConfigEntriesLocal.Keys.Should().BeEquivalentTo("KEY2", "KEY4");
+    }
+
+    [Fact]
+    public void HandsOffConfigurationIsNotExposedWhenTheReadFails()
+    {
+        var result = GlobalConfigurationSource.CreateDefaultConfigurationSource(isLibdatadogAvailable: false);
+
+        result.Result.Should().Be(Result.LibDatadogUnavailable);
+        result.HandsOffConfiguration.Should().BeNull();
+    }
 }

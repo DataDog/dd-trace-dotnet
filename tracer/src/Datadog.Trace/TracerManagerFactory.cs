@@ -115,6 +115,13 @@ namespace Datadog.Trace
             {
                 Log.Warning(result.Exception, "Failed to create the global configuration source with status: {Status} and error message: {ErrorMessage}", result.Result.ToString(), result.ErrorMessage);
             }
+            else if (result.HandsOffConfiguration is { } handsOffConfiguration)
+            {
+                Log.Debug<int, int>(
+                    "Hands-off configuration read: fleet stable config contributed {FleetEntryCount} entries, local stable config contributed {LocalEntryCount} entries",
+                    handsOffConfiguration.ConfigEntriesFleet.Count,
+                    handsOffConfiguration.ConfigEntriesLocal.Count);
+            }
 
             serviceRemappingHash ??= new ServiceRemappingHash(settings.Manager.InitialMutableSettings.ProcessTags?.SerializedTags);
             discoveryService ??= GetDiscoveryService(settings, serviceRemappingHash);
