@@ -70,6 +70,51 @@ public class CoordinatedSamplingTests
         Assert.Equal(0, thirdGlobalLimiter.ShouldSampleCallCount);
     }
 
+    [Fact]
+    public async Task CaptureExpressionWithoutValuesReleasesProbeSlot()
+    {
+        await using var tracer = TracerHelper.CreateWithFakeAgent();
+        Tracer.UnsafeSetTracerInstance(tracer);
+        using var scope = (Scope)tracer.StartActive("root");
+
+        var sampler = new CountingSampler(true);
+        var globalLimiter = new GlobalRateLimiterMock(true);
+        var processor = CreateProcessor(CreateUndefinedCaptureExpressionProbe("probe"), globalLimiter);
+
+        Assert.False(EvaluateConditionalAtEntry(processor, sampler));
+
+        processor.UpdateProbeProcessor(CreateCaptureExpressionProbe("probe"), TestMaxEvaluationTimeInMilliseconds);
+
+        Assert.True(EvaluateConditionalAtEntry(processor, sampler));
+        Assert.Equal(1, sampler.SampleCalls);
+        Assert.Equal(1, globalLimiter.ShouldSampleCallCount);
+    }
+
+    [Fact]
+    public async Task CoordinatedDropRecordsEverySkippedSnapshot()
+    {
+        await using var tracer = TracerHelper.CreateWithFakeAgent();
+        Tracer.UnsafeSetTracerInstance(tracer);
+        using var metricsScope = DebuggerGuardrailMetricTestHelpers.OverrideMetrics(out var collector);
+        using var scope = (Scope)tracer.StartActive("root");
+
+        var firstSampler = new CountingSampler(true);
+        var secondSampler = new CountingSampler(true);
+        var firstGlobalLimiter = new GlobalRateLimiterMock(false);
+        var secondGlobalLimiter = new GlobalRateLimiterMock(true);
+        var first = CreateProcessor(CreateLogProbe("snapshot-probe-1", captureSnapshot: true), firstGlobalLimiter);
+        var second = CreateProcessor(CreateLogProbe("snapshot-probe-2", captureSnapshot: true), secondGlobalLimiter);
+
+        Assert.False(TryBeginAndDispose(first, firstSampler));
+        Assert.False(TryBeginAndDispose(second, secondSampler));
+
+        Assert.Equal(0, firstSampler.SampleCalls);
+        Assert.Equal(0, secondSampler.SampleCalls);
+        Assert.Equal(1, firstGlobalLimiter.ShouldSampleCallCount);
+        Assert.Equal(0, secondGlobalLimiter.ShouldSampleCallCount);
+        collector.AssertHasCount("events.skipped", "reason:rateLimitGlobal", "event_type:snapshot", expected: 2);
+    }
+
     [Theory]
     [InlineData(false, false, false, true, 0, 0)]
     [InlineData(false, true, true, true, 2, 1)]
@@ -448,9 +493,16 @@ public class CoordinatedSamplingTests
             new CaptureExpression
             {
                 Name = "value",
-                Expr = new SnapshotSegment(string.Empty, @"{ ""ref"": ""value"" }", null)
+                Expr = new SnapshotSegment(string.Empty, @"{ ""ref"": ""argument"" }", null)
             }
         ];
+        return probe;
+    }
+
+    private static LogProbe CreateUndefinedCaptureExpressionProbe(string probeId)
+    {
+        var probe = CreateLogProbe(probeId, captureSnapshot: false);
+        probe.CaptureExpressions = [new CaptureExpression { Name = "missingValue" }];
         return probe;
     }
 
@@ -516,7 +568,8 @@ public class CoordinatedSamplingTests
 
     private readonly struct DelegateProvider(Func<bool> sample) : IDebuggerSamplingDecisionProvider
     {
-        public bool Sample() => sample();
+        public DebuggerSamplingDecision Sample()
+            => sample() ? DebuggerSamplingDecision.Keep : DebuggerSamplingDecision.DropProbe;
     }
 
     private sealed class BlockingSampler(bool result, ManualResetEventSlim entered, ManualResetEventSlim release) : IAdaptiveSampler

@@ -7,8 +7,15 @@
 
 namespace Datadog.Trace.Debugger.RateLimiting
 {
+    internal enum DebuggerSamplingDecision
+    {
+        Keep,
+        DropGlobal,
+        DropProbe
+    }
+
     internal interface IDebuggerSamplingDecisionProvider
     {
-        bool Sample();
+        DebuggerSamplingDecision Sample();
     }
 }

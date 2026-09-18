@@ -194,9 +194,12 @@ namespace Datadog.Trace
             return _featureFlagEnrichment;
         }
 
-        internal bool TrySampleDebuggerSnapshot<TSamplingDecisionProvider>(string probeId, TSamplingDecisionProvider samplingDecisionProvider)
+        internal bool TrySampleDebuggerSnapshot<TSamplingDecisionProvider>(string probeId, TSamplingDecisionProvider samplingDecisionProvider, out DebuggerSamplingDecision samplingDecision)
             where TSamplingDecisionProvider : struct, IDebuggerSamplingDecisionProvider
-            => DebuggerSamplingCoordinator.TrySample(ref _debuggerSamplingState, probeId, samplingDecisionProvider);
+            => DebuggerSamplingCoordinator.TrySample(ref _debuggerSamplingState, probeId, samplingDecisionProvider, out samplingDecision);
+
+        internal void ReleaseDebuggerSnapshotReservation(string probeId)
+            => DebuggerSamplingCoordinator.ReleaseProbe(ref _debuggerSamplingState, probeId);
 
         internal void EnableIastInRequest()
         {
