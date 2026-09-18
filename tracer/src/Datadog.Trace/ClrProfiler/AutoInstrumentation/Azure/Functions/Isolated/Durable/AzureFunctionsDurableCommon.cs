@@ -8,8 +8,6 @@
 
 using System;
 using System.Collections;
-using System.Globalization;
-using System.Linq;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Shared;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
@@ -18,7 +16,6 @@ using Datadog.Trace.Logging;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Tagging;
-using Datadog.Trace.Util;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions;
 
@@ -60,7 +57,7 @@ internal static class AzureFunctionsDurableCommon
                 FullName = functionContext.FunctionDefinition.EntryPoint,
             };
 
-            var extractedContext = ExtractPropagatedContext(functionContext).MergeBaggageInto(Baggage.Current);
+            var extractedContext = AzureFunctionsDurablePropagation.ExtractPropagatedContext(functionContext).MergeBaggageInto(Baggage.Current);
             ISpanContext? parentContext = extractedContext.SpanContext;
             if (parentContext is null && extractedContext.Links is not null)
             {
@@ -121,105 +118,6 @@ internal static class AzureFunctionsDurableCommon
         }
 
         return null;
-    }
-
-    [TestingAndPrivateOnly]
-    internal static PropagationContext ExtractPropagatedContext<TFunctionContext>(TFunctionContext functionContext)
-        where TFunctionContext : IDurableFunctionContext
-    {
-        try
-        {
-            if (functionContext.TraceContext is not { } rawTraceContext
-             || !rawTraceContext.TryDuckCast<IWorkerTraceContext>(out var traceContext)
-             || StringUtil.IsNullOrEmpty(traceContext.TraceParent))
-            {
-                return default;
-            }
-
-            // The Durable Functions Application Insights listener requests AllData instead of AllDataAndRecorded.
-            // System.Diagnostics.Activity therefore clears the inherited W3C recorded flag while retaining
-            // Datadog's positive sampling decision in tracestate. Reconcile the two values before extraction.
-            // If there is no Datadog decision, remove Azure's implicit rejection and let the local sampler decide.
-            var datadogSamplingPriority = W3CTraceContextPropagator.ParseTraceState(traceContext.TraceState).SamplingPriority;
-            var carrier = (
-                TraceParent: ReconcileTraceParentSampling(traceContext.TraceParent!, traceContext.TraceState),
-                TraceState: traceContext.TraceState);
-
-            var extractedContext = Tracer.Instance.TracerManager.SpanContextPropagator.Extract(
-                carrier,
-                static (context, name) =>
-                {
-                    if (name.Equals("traceparent", StringComparison.OrdinalIgnoreCase))
-                    {
-                        return new[] { context.TraceParent };
-                    }
-
-                    if (name.Equals("tracestate", StringComparison.OrdinalIgnoreCase))
-                    {
-                        return new[] { context.TraceState };
-                    }
-
-                    return Enumerable.Empty<string?>();
-                });
-
-            return RemoveImplicitAzureSamplingDecision(extractedContext, datadogSamplingPriority);
-        }
-        catch (Exception ex)
-        {
-            Log.Error(ex, "Error extracting Azure Durable Functions trace context");
-            return default;
-        }
-    }
-
-    [TestingAndPrivateOnly]
-    internal static string ReconcileTraceParentSampling(string traceParent, string? traceState)
-    {
-        if (W3CTraceContextPropagator.ParseTraceState(traceState).SamplingPriority is not > 0)
-        {
-            return traceParent;
-        }
-
-        var flagsStart = traceParent.LastIndexOf('-') + 1;
-        if (flagsStart <= 0
-         || traceParent.Length - flagsStart != 2
-         || !HexString.TryParseByte(traceParent.AsSpan(flagsStart, 2), out var flags)
-         || (flags & 1) != 0)
-        {
-            return traceParent;
-        }
-
-        var reconciledTraceParent = traceParent.ToCharArray();
-        var reconciledFlags = (flags | 1).ToString("x2", CultureInfo.InvariantCulture);
-        reconciledTraceParent[flagsStart] = reconciledFlags[0];
-        reconciledTraceParent[flagsStart + 1] = reconciledFlags[1];
-        return new string(reconciledTraceParent);
-    }
-
-    private static PropagationContext RemoveImplicitAzureSamplingDecision(PropagationContext context, int? datadogSamplingPriority)
-    {
-        if (datadogSamplingPriority is not null
-         || context.SpanContext is not { SamplingPriority: SamplingPriorityValues.AutoReject } spanContext)
-        {
-            return context;
-        }
-
-        var contextWithoutSamplingDecision = new SpanContext(
-            traceId: spanContext.TraceId128,
-            spanId: spanContext.SpanId,
-            samplingPriority: null,
-            serviceName: spanContext.ServiceName,
-            origin: spanContext.Origin,
-            rawTraceId: spanContext.RawTraceId,
-            rawSpanId: spanContext.RawSpanId,
-            isRemote: spanContext.IsRemote)
-        {
-            PropagatedTags = spanContext.PropagatedTags,
-            AdditionalW3CTraceState = spanContext.AdditionalW3CTraceState,
-            LastParentId = spanContext.LastParentId,
-            ServiceNameSource = spanContext.ServiceNameSource,
-        };
-
-        return new PropagationContext(contextWithoutSamplingDecision, context.Baggage, context.Links);
     }
 }
 

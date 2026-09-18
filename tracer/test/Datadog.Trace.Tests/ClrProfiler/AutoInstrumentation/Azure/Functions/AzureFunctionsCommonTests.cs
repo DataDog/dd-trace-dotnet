@@ -125,7 +125,7 @@ namespace Datadog.Trace.Tests.ClrProfiler.AutoInstrumentation.Azure.Functions
                 TraceState = traceState,
             };
 
-            var extractedContext = AzureFunctionsDurableCommon.ExtractPropagatedContext(context);
+            var extractedContext = AzureFunctionsDurablePropagation.ExtractPropagatedContext(context);
 
             extractedContext.SpanContext.Should().NotBeNull();
             extractedContext.SpanContext!.RawTraceId.Should().Be(traceId);
@@ -135,15 +135,13 @@ namespace Datadog.Trace.Tests.ClrProfiler.AutoInstrumentation.Azure.Functions
         }
 
         [Theory]
-        [InlineData("00-00000000000000000000000000000001-0000000000000001-00", "dd=s:1;p:0000000000000001", "00-00000000000000000000000000000001-0000000000000001-01")]
-        [InlineData("00-00000000000000000000000000000001-0000000000000001-02", "dd=s:2", "00-00000000000000000000000000000001-0000000000000001-03")]
-        [InlineData("00-00000000000000000000000000000001-0000000000000001-01", "dd=s:1", "00-00000000000000000000000000000001-0000000000000001-01")]
-        [InlineData("00-00000000000000000000000000000001-0000000000000001-00", "dd=s:0", "00-00000000000000000000000000000001-0000000000000001-00")]
-        [InlineData("00-00000000000000000000000000000001-0000000000000001-00", null, "00-00000000000000000000000000000001-0000000000000001-00")]
-        [InlineData("invalid", "dd=s:1", "invalid")]
-        public void DurableReconcileTraceParentSampling_UsesPositiveDatadogDecision(string traceParent, string? traceState, string expected)
+        [InlineData("00-00000000000000000000000000000001-0000000000000001-00", "00-00000000000000000000000000000001-0000000000000001-01")]
+        [InlineData("00-00000000000000000000000000000001-0000000000000001-02", "00-00000000000000000000000000000001-0000000000000001-03")]
+        [InlineData("00-00000000000000000000000000000001-0000000000000001-01", "00-00000000000000000000000000000001-0000000000000001-01")]
+        [InlineData("invalid", "invalid")]
+        public void DurableRestoreRecordedFlag_PreservesOtherFlagsAndInvalidInput(string traceParent, string expected)
         {
-            AzureFunctionsDurableCommon.ReconcileTraceParentSampling(traceParent, traceState).Should().Be(expected);
+            AzureFunctionsDurablePropagation.RestoreRecordedFlag(traceParent).Should().Be(expected);
         }
 
         private static MockFunctionContext CreateMockFunctionContext(string propertyKey, Dictionary<string, object>? headerProperties)
