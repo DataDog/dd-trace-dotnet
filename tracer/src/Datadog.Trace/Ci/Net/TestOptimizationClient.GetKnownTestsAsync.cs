@@ -6,6 +6,7 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Threading.Tasks;
 using Datadog.Trace.Ci.Telemetry;
 using Datadog.Trace.Telemetry;
@@ -42,6 +43,8 @@ internal sealed partial class TestOptimizationClient
         // An explicit empty "tests": {} payload keeps known-tests enabled, so we must
         // preserve that distinction from an invalid or missing known-tests response.
         var sawExplicitTestsPayload = false;
+        var totalRequestMs = 0.0; // Accumulator for sum of per-request durations
+        var fetchStopwatch = Stopwatch.StartNew();
         string? pageState = null;
         var pageNumber = 0;
 
@@ -61,7 +64,26 @@ internal sealed partial class TestOptimizationClient
             string? queryResponse;
             try
             {
-                queryResponse = await SendJsonRequestAsync<KnownTestsCallbacks>(_knownTestsUrl, jsonQuery).ConfigureAwait(false);
+                queryResponse = await SendJsonRequestAsync(
+                    _knownTestsUrl,
+                    jsonQuery,
+                    new ActionCallbacks(
+                        onBeforeSend: () => TelemetryFactory.Metrics.RecordCountCIVisibilityKnownTestsRequest(MetricTags.CIVisibilityRequestCompressed.Uncompressed),
+                        onStatusCodeReceived: (statusCode, responseLength) =>
+                        {
+                            TelemetryFactory.Metrics.RecordDistributionCIVisibilityKnownTestsResponseBytes(MetricTags.CIVisibilityResponseCompressed.Uncompressed, responseLength);
+                            if (TelemetryHelper.GetErrorTypeFromStatusCode(statusCode) is { } errorType)
+                            {
+                                TelemetryFactory.Metrics.RecordCountCIVisibilityKnownTestsRequestErrors(errorType);
+                            }
+                        },
+                        onError: ex => TelemetryFactory.Metrics.RecordCountCIVisibilityKnownTestsRequestErrors(MetricTags.CIVisibilityErrorType.Network),
+                        onAfterSend: totalMs =>
+                        {
+                            totalRequestMs += totalMs;
+                            TelemetryFactory.Metrics.RecordDistributionCIVisibilityKnownTestsRequestMs(totalMs);
+                        }))
+                    .ConfigureAwait(false);
             }
             catch (Exception ex)
             {
@@ -126,6 +148,8 @@ internal sealed partial class TestOptimizationClient
         }
         while (pageNumber < MaxKnownTestsPages);
 
+        fetchStopwatch.Stop();
+
         if (pageNumber >= MaxKnownTestsPages)
         {
             Log.Warning<int>("TestOptimizationClient: Known tests pagination exceeded maximum of {MaxPages} pages. Returning data collected so far.", MaxKnownTestsPages);
@@ -155,6 +179,9 @@ internal sealed partial class TestOptimizationClient
         }
 
         TelemetryFactory.Metrics.RecordDistributionCIVisibilityKnownTestsResponseTests(testsCount);
+        TelemetryFactory.Metrics.RecordDistributionCIVisibilityKnownTestsPagesFetched(pageNumber);
+        TelemetryFactory.Metrics.RecordDistributionCIVisibilityKnownTestsTotalFetchMs(fetchStopwatch.Elapsed.TotalMilliseconds);
+        TelemetryFactory.Metrics.RecordDistributionCIVisibilityKnownTestsTotalRequestMs(totalRequestMs);
         return finalResponse;
     }
 
@@ -206,33 +233,6 @@ internal sealed partial class TestOptimizationClient
         }
 
         return aggregate;
-    }
-
-    private readonly struct KnownTestsCallbacks : ICallbacks
-    {
-        public void OnBeforeSend()
-        {
-            TelemetryFactory.Metrics.RecordCountCIVisibilityKnownTestsRequest(MetricTags.CIVisibilityRequestCompressed.Uncompressed);
-        }
-
-        public void OnStatusCodeReceived(int statusCode, int responseLength)
-        {
-            TelemetryFactory.Metrics.RecordDistributionCIVisibilityKnownTestsResponseBytes(MetricTags.CIVisibilityResponseCompressed.Uncompressed, responseLength);
-            if (TelemetryHelper.GetErrorTypeFromStatusCode(statusCode) is { } errorType)
-            {
-                TelemetryFactory.Metrics.RecordCountCIVisibilityKnownTestsRequestErrors(errorType);
-            }
-        }
-
-        public void OnError(Exception ex)
-        {
-            TelemetryFactory.Metrics.RecordCountCIVisibilityKnownTestsRequestErrors(MetricTags.CIVisibilityErrorType.Network);
-        }
-
-        public void OnAfterSend(double totalMs)
-        {
-            TelemetryFactory.Metrics.RecordDistributionCIVisibilityKnownTestsRequestMs(totalMs);
-        }
     }
 
     private readonly struct KnownTestsQuery
