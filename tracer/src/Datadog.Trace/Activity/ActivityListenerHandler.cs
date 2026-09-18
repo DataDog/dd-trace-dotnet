@@ -90,19 +90,7 @@ namespace Datadog.Trace.Activity
             var sName = sourceName ?? "(null)";
             if (HandlerBySource.TryGetValue(sName, out var handler))
             {
-                var isSourceNameMissing = StringUtil.IsNullOrEmpty(sourceName);
-                var isUsingDefaultHandler = handler is DefaultActivityHandler;
-
-                // If the source lookup only found the default handler, use the operation name as a fallback.
-                if (isSourceNameMissing && isUsingDefaultHandler)
-                {
-                    var integrationHandler = FindIntegrationHandlerByOperationName(activity.OperationName);
-                    if (integrationHandler is not null)
-                    {
-                        handler = integrationHandler;
-                    }
-                }
-
+                handler = ResolveHandler(sourceName, activity.OperationName, handler);
                 handler.ActivityStarted(sName, activity);
             }
             else
@@ -117,12 +105,24 @@ namespace Datadog.Trace.Activity
             var sName = sourceName ?? "(null)";
             if (HandlerBySource.TryGetValue(sName, out var handler))
             {
+                handler = ResolveHandler(sourceName, activity.OperationName, handler);
                 handler.ActivityStopped(sName, activity);
             }
             else
             {
                 Log.Warning("ActivityListenerHandler: There's no handler to process the ActivityStopped event.  [Source={SourceName}]", sName);
             }
+        }
+
+        private static IActivityHandler ResolveHandler(string? sourceName, string? operationName, IActivityHandler handler)
+        {
+            // If the source lookup only found the default handler, use the operation name as a fallback.
+            if (StringUtil.IsNullOrEmpty(sourceName) && handler is DefaultActivityHandler)
+            {
+                return FindIntegrationHandlerByOperationName(operationName) ?? handler;
+            }
+
+            return handler;
         }
 
         private static IActivityHandler? FindIntegrationHandlerByOperationName(string? operationName)

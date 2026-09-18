@@ -4,6 +4,7 @@
 // </copyright>
 
 using System.Threading.Tasks;
+using Datadog.Trace.Activity;
 using Datadog.Trace.Activity.DuckTypes;
 using Datadog.Trace.Activity.Handlers;
 using Datadog.Trace.Agent;
@@ -35,6 +36,12 @@ public class IntegrationActivityHandlerTests
         await AssertQuartzGeneratedSpan(handler, !initiallyEnabled);
     }
 
+    [Fact]
+    public async Task QuartzHandlerIsResolvedByOperationNameWhenSourceNameIsMissing()
+    {
+        await AssertQuartzGeneratedSpan(new QuartzActivityHandler(), enabled: true, useOperationNameFallback: true);
+    }
+
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
@@ -58,9 +65,9 @@ public class IntegrationActivityHandlerTests
         new QuartzActivityHandler().ShouldListenToOperationName(operationName).Should().Be(expected);
     }
 
-    // Creates a System.Diagnostics.Activity using the shape available on the current runtime. Quartz metadata
-    // requires IActivity5, but older runtimes still create and activate the span through ActivityHandlerCommon.
-    private static async Task AssertQuartzGeneratedSpan(QuartzActivityHandler handler, bool enabled)
+    // Creates a System.Diagnostics.Activity using the shape available on the current runtime and passes it
+    // through the Quartz handler, which creates, enriches, and closes the Datadog span.
+    private static async Task AssertQuartzGeneratedSpan(QuartzActivityHandler handler, bool enabled, bool useOperationNameFallback = false)
     {
         var settings = TracerSettings.Create(new()
         {
@@ -72,18 +79,37 @@ public class IntegrationActivityHandlerTests
         await using var tracer = TracerHelper.Create(settings, agentWriter: Mock.Of<IAgentWriter>(), telemetryController: telemetry.Object);
         TracerRestorerAttribute.SetTracer(tracer);
 
-        var activity = new System.Diagnostics.Activity("Quartz");
+        var sourceName = useOperationNameFallback ? string.Empty : "Quartz";
+        var activity = new System.Diagnostics.Activity(useOperationNameFallback ? "Quartz.Job.Execute" : "Quartz");
         activity.Start();
         var supportsQuartzMetadata = activity.TryDuckCast<IActivity5>(out var activity5);
         IActivity duckActivity = supportsQuartzMetadata ? activity5 : activity.DuckCast<IActivity>();
 
-        handler.ActivityStarted("Quartz", duckActivity);
+        if (useOperationNameFallback)
+        {
+            ActivityListenerHandler.OnShouldListenTo(Mock.Of<ISource>(source => source.Name == sourceName));
+            ActivityListenerHandler.OnActivityWithSourceStarted(sourceName, duckActivity);
+        }
+        else
+        {
+            handler.ActivityStarted(sourceName, duckActivity);
+        }
+
         var span = (Span)tracer.ActiveScope!.Span;
 
-        handler.ActivityStopped("Quartz", duckActivity);
+        if (useOperationNameFallback)
+        {
+            ActivityListenerHandler.OnActivityWithSourceStopped(sourceName, duckActivity);
+        }
+        else
+        {
+            handler.ActivityStopped(sourceName, duckActivity);
+        }
+
         activity.Stop();
 
-        span.GetTag(Trace.Tags.InstrumentationName).Should().Be(enabled && supportsQuartzMetadata ? "quartz" : null);
+        tracer.ActiveScope.Should().BeNull();
+        span.GetTag(Trace.Tags.InstrumentationName).Should().Be(enabled ? "quartz" : null);
         AssertGeneratedSpanTelemetry(telemetry, IntegrationId.Quartz, enabled);
     }
 

@@ -48,11 +48,6 @@ internal sealed class QuartzDiagnosticObserver : DiagnosticObserver
                     Log.Debug("The loaded System.Diagnostics.Activity type does not have a Kind property. Unable to populate the Kind property.");
                 }
 
-                if (activity?.Instance is not null)
-                {
-                    QuartzCommon.EnhanceActivityMetadata(activity);
-                }
-
                 break;
             case "Quartz.Job.Execute.Stop":
             case "Quartz.Job.Veto.Stop":
