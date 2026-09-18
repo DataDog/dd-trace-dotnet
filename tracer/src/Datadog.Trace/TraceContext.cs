@@ -196,7 +196,7 @@ namespace Datadog.Trace
 
         internal bool TrySampleDebuggerSnapshot<TSamplingDecisionProvider>(string probeId, TSamplingDecisionProvider samplingDecisionProvider)
             where TSamplingDecisionProvider : struct, IDebuggerSamplingDecisionProvider
-            => DebuggerSamplingCoordinator.TrySample(ref _debuggerSamplingState, _rootSpan, probeId, samplingDecisionProvider);
+            => DebuggerSamplingCoordinator.TrySample(ref _debuggerSamplingState, probeId, samplingDecisionProvider);
 
         internal void EnableIastInRequest()
         {

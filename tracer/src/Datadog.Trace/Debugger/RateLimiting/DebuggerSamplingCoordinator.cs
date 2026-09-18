@@ -12,56 +12,74 @@ namespace Datadog.Trace.Debugger.RateLimiting
 {
     internal static class DebuggerSamplingCoordinator
     {
-        internal static bool TrySample<TSamplingDecisionProvider>(ref State? state, Span? rootSpan, string probeId, TSamplingDecisionProvider samplingDecisionProvider)
+        internal static bool TrySample<TSamplingDecisionProvider>(ref State? state, string probeId, TSamplingDecisionProvider samplingDecisionProvider)
             where TSamplingDecisionProvider : struct, IDebuggerSamplingDecisionProvider
         {
             var current = Volatile.Read(ref state);
             if (current is null)
             {
-                if (rootSpan is null)
-                {
-                    return samplingDecisionProvider.Sample();
-                }
-
-                lock (rootSpan)
-                {
-                    current = Volatile.Read(ref state);
-                    if (current is null)
-                    {
-                        var created = State.Create(samplingDecisionProvider.Sample());
-                        current = Interlocked.CompareExchange(ref state, created, null) ?? created;
-                    }
-                }
+                var created = new State();
+                current = Interlocked.CompareExchange(ref state, created, null) ?? created;
             }
 
-            return current.TryEmit(probeId);
+            return current.TrySample(probeId, samplingDecisionProvider);
         }
 
         internal sealed class State
         {
-            private static readonly State Drop = new(shouldEmit: false);
+            private HashSet<string>? _emittedProbeIds;
+            private int _decision;
 
-            private readonly HashSet<string>? _emittedProbeIds;
-
-            private State(bool shouldEmit)
+            private enum Decision
             {
-                _emittedProbeIds = shouldEmit ? new HashSet<string>() : null;
+                Undecided,
+                Creating,
+                Drop,
+                Keep
             }
 
-            public static State Create(bool shouldEmit)
-                => shouldEmit ? new State(shouldEmit: true) : Drop;
-
-            public bool TryEmit(string probeId)
+            internal bool TrySample<TSamplingDecisionProvider>(string probeId, TSamplingDecisionProvider samplingDecisionProvider)
+                where TSamplingDecisionProvider : struct, IDebuggerSamplingDecisionProvider
             {
-                var emittedProbeIds = _emittedProbeIds;
-                if (emittedProbeIds is null)
+                if ((Decision)Volatile.Read(ref _decision) == Decision.Drop)
                 {
                     return false;
                 }
 
-                lock (emittedProbeIds)
+                lock (this)
                 {
-                    return emittedProbeIds.Add(probeId);
+                    switch ((Decision)_decision)
+                    {
+                        case Decision.Undecided:
+                            break;
+                        case Decision.Creating:
+                            // Monitor locks are reentrant, so this is a nested sample on the deciding
+                            // thread. Other threads cannot enter until the decision is published.
+                            return false;
+                        case Decision.Drop:
+                            return false;
+                        case Decision.Keep:
+                            return _emittedProbeIds!.Add(probeId);
+                    }
+
+                    _decision = (int)Decision.Creating;
+                    try
+                    {
+                        if (!samplingDecisionProvider.Sample())
+                        {
+                            Volatile.Write(ref _decision, (int)Decision.Drop);
+                            return false;
+                        }
+
+                        _emittedProbeIds = new HashSet<string> { probeId };
+                        Volatile.Write(ref _decision, (int)Decision.Keep);
+                        return true;
+                    }
+                    catch
+                    {
+                        _decision = (int)Decision.Undecided;
+                        throw;
+                    }
                 }
             }
         }
