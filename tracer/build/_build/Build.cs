@@ -321,8 +321,7 @@ partial class Build : NukeBuild
         .DependsOn(BuildIntegrationTests)
         .DependsOn(CompileSamples)
         .DependsOn(CompileTrimmingSamples)
-        .DependsOn(RunIntegrationTests)
-        .DependsOn(RunLinuxDdDotnetIntegrationTests);
+        .DependsOn(RunIntegrationTests);
 
     Target BuildAndRunWindowsRegressionTests => _ => _
         .Requires(() => IsWin)

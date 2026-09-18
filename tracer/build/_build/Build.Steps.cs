@@ -1928,6 +1928,8 @@ partial class Build
             {
                 // filter out fleet installer tests unless we're on netframework and x64
                 var parallelJobs = ParallelIntegrationTests
+                   // These projects have no Docker dependencies and belong in the non-Docker test jobs.
+                   .Where(_ => IncludeTestsRequiringDocker != true)
                    .Where(project => project.Name switch
                     {
                         Projects.FleetInstallerTests => Framework == TargetFramework.NET48 && TargetPlatform == MSBuildTargetPlatform.x64,
