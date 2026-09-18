@@ -11,6 +11,8 @@
 #include <pthread.h>
 #include <sched.h>
 
+extern "C" __thread void* otel_thread_ctx_v1;
+
 namespace
 {
 constexpr std::size_t RecordSize = 640;
@@ -20,6 +22,8 @@ constexpr std::size_t ThreadCount = 16;
 struct RecordObservation
 {
     void* Address = nullptr;
+    bool SlotWasInitiallyNull = false;
+    bool SlotPointsToRecord = false;
     bool AddressIsStable = false;
     bool RecordWasZeroed = false;
 };
@@ -27,7 +31,9 @@ struct RecordObservation
 void* AcquireAndDirtyRecord(void* state)
 {
     auto* observation = static_cast<RecordObservation*>(state);
+    observation->SlotWasInitiallyNull = otel_thread_ctx_v1 == nullptr;
     observation->Address = GetOrCreateOtelThreadContextRecord();
+    observation->SlotPointsToRecord = otel_thread_ctx_v1 == observation->Address;
     observation->AddressIsStable = observation->Address == GetOrCreateOtelThreadContextRecord();
 
     if (observation->Address == nullptr)
@@ -61,13 +67,17 @@ struct ConcurrentRecordObservation
 {
     ConcurrentRecordState* State;
     void* Address = nullptr;
+    bool SlotWasInitiallyNull = false;
+    bool SlotPointsToRecord = false;
 };
 
 void* AcquireAndWait(void* state)
 {
     auto* observation = static_cast<ConcurrentRecordObservation*>(state);
+    observation->SlotWasInitiallyNull = otel_thread_ctx_v1 == nullptr;
     observation->Address = GetOrCreateOtelThreadContextRecord();
-    observation->State->Ready.fetch_add(1, std::memory_order_release);
+    observation->SlotPointsToRecord = otel_thread_ctx_v1 == observation->Address;
+    observation->State->Ready.fetch_add(1, std::memory_order_acq_rel);
 
     while (!observation->State->Release.load(std::memory_order_acquire))
     {
@@ -86,6 +96,8 @@ TEST(OtelThreadContextTest, RecyclesAZeroedRecordAfterTheOwningThreadExits)
     ASSERT_EQ(0, pthread_join(first_thread, nullptr));
 
     ASSERT_NE(nullptr, first.Address);
+    EXPECT_TRUE(first.SlotWasInitiallyNull);
+    EXPECT_TRUE(first.SlotPointsToRecord);
     EXPECT_TRUE(first.AddressIsStable);
     EXPECT_TRUE(first.RecordWasZeroed);
     EXPECT_EQ(0, reinterpret_cast<std::uintptr_t>(first.Address) % RecordAlignment);
@@ -96,6 +108,8 @@ TEST(OtelThreadContextTest, RecyclesAZeroedRecordAfterTheOwningThreadExits)
     ASSERT_EQ(0, pthread_join(second_thread, nullptr));
 
     ASSERT_NE(nullptr, second.Address);
+    EXPECT_TRUE(second.SlotWasInitiallyNull);
+    EXPECT_TRUE(second.SlotPointsToRecord);
     EXPECT_TRUE(second.AddressIsStable);
     EXPECT_TRUE(second.RecordWasZeroed);
     EXPECT_EQ(first.Address, second.Address);
@@ -136,10 +150,14 @@ TEST(OtelThreadContextTest, HandsOutDistinctRecordsToConcurrentThreads)
 
     bool all_records_are_valid = true;
     bool all_records_are_distinct = true;
+    bool all_slots_were_initially_null = true;
+    bool all_slots_point_to_their_record = true;
 
     for (std::size_t i = 0; i < ThreadCount; i++)
     {
         all_records_are_valid &= observations[i].Address != nullptr;
+        all_slots_were_initially_null &= observations[i].SlotWasInitiallyNull;
+        all_slots_point_to_their_record &= observations[i].SlotPointsToRecord;
 
         for (std::size_t j = 0; j < i; j++)
         {
@@ -156,6 +174,8 @@ TEST(OtelThreadContextTest, HandsOutDistinctRecordsToConcurrentThreads)
 
     EXPECT_TRUE(all_records_are_valid);
     EXPECT_TRUE(all_records_are_distinct);
+    EXPECT_TRUE(all_slots_were_initially_null);
+    EXPECT_TRUE(all_slots_point_to_their_record);
 }
 
 #endif

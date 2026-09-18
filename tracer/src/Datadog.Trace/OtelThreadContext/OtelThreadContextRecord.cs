@@ -91,6 +91,7 @@ internal static class OtelThreadContextRecord
         // A second publisher can acquire the record already attached to this OS thread. Invalidate it
         // before clearing so an external reader cannot observe a partially reset context as valid.
         Volatile.Write(ref span[ValidOffset], Invalid);
+        Thread.MemoryBarrier();
         span.Clear();
 
         span[AttrsDataOffset] = LocalRootSpanIdKeyIndex;
@@ -112,9 +113,11 @@ internal static class OtelThreadContextRecord
     public static void Write(IntPtr address, Span activeSpan)
     {
         var record = AsSpan(address);
-        var traceId = activeSpan.Context.TraceId128;
 
         Volatile.Write(ref record[ValidOffset], Invalid);
+        Thread.MemoryBarrier();
+
+        var traceId = activeSpan.Context.TraceId128;
 
         // trace id and span id are big endian, per the W3C Trace Context format. Note that Upper is
         // always the most significant half regardless of machine endianness, so it is written first.
@@ -129,7 +132,7 @@ internal static class OtelThreadContextRecord
 
     /// <summary>
     /// Marks the record as carrying no context. Per the spec this is a valid way to detach.
-    /// The native layer still owns the record for the current thread, but it is not storing1
+    /// The native layer still owns the record for the current thread, but it is not storing
     /// any context until the next <see cref="Write"/> call.
     /// </summary>
     public static void Invalidate(IntPtr address)

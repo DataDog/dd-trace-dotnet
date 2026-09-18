@@ -35,14 +35,14 @@ internal sealed class OtelThreadContextPublisher : IOtelThreadContextPublisher
     private static ThreadRecord? _threadRecord;
 
     private readonly IOtelThreadContextRecordProvider _recordProvider;
-    private int _disabled;
+    private int _failureLogged;
 
     internal OtelThreadContextPublisher(IOtelThreadContextRecordProvider recordProvider)
     {
         _recordProvider = recordProvider;
     }
 
-    public bool IsEnabled => Volatile.Read(ref _disabled) == 0;
+    public bool IsEnabled => true;
 
     /// <summary>
     /// Creates a publisher, or <see cref="NullOtelThreadContextPublisher"/> when the feature is turned off
@@ -104,7 +104,7 @@ internal sealed class OtelThreadContextPublisher : IOtelThreadContextPublisher
         }
         catch (Exception ex)
         {
-            Disable(ex);
+            MarkCurrentThreadUnavailable(ex);
         }
     }
 
@@ -113,7 +113,7 @@ internal sealed class OtelThreadContextPublisher : IOtelThreadContextPublisher
         // Deliberately does not initialize a record: a thread that has never published a context has a
         // null exported per-thread slot, which already means "no context" to a reader.
         var record = _threadRecord;
-        if (record is null || record.Owner != this || !IsEnabled)
+        if (record is null || record.Owner != this || !record.IsAvailable)
         {
             return;
         }
@@ -124,7 +124,7 @@ internal sealed class OtelThreadContextPublisher : IOtelThreadContextPublisher
         }
         catch (Exception ex)
         {
-            Disable(ex);
+            MarkCurrentThreadUnavailable(ex);
         }
     }
 
@@ -134,10 +134,10 @@ internal sealed class OtelThreadContextPublisher : IOtelThreadContextPublisher
 
         if (record is not null && record.Owner == this)
         {
-            return record;
+            return record.IsAvailable ? record : null;
         }
 
-        return IsEnabled ? InitializeThreadRecord() : null;
+        return InitializeThreadRecord();
     }
 
     private ThreadRecord? InitializeThreadRecord()
@@ -148,7 +148,8 @@ internal sealed class OtelThreadContextPublisher : IOtelThreadContextPublisher
 
             if (address == IntPtr.Zero)
             {
-                Disable("the native tracer did not provide a thread context record");
+                _threadRecord = new ThreadRecord(this, IntPtr.Zero);
+                LogFailure("the native tracer did not provide a thread context record");
                 return null;
             }
 
@@ -162,29 +163,36 @@ internal sealed class OtelThreadContextPublisher : IOtelThreadContextPublisher
         }
         catch (Exception ex)
         {
-            Disable(ex);
+            _threadRecord = new ThreadRecord(this, IntPtr.Zero);
+            LogFailure(ex);
             return null;
         }
     }
 
-    private void Disable(Exception exception)
+    private void MarkCurrentThreadUnavailable(Exception exception)
     {
-        if (Interlocked.Exchange(ref _disabled, 1) == 0)
+        _threadRecord = new ThreadRecord(this, IntPtr.Zero);
+        LogFailure(exception);
+    }
+
+    private void LogFailure(Exception exception)
+    {
+        if (Interlocked.Exchange(ref _failureLogged, 1) == 0)
         {
-            Log.Warning(exception, "Unable to publish the OpenTelemetry thread context. Publication is now disabled.");
+            Log.Warning(exception, "Unable to publish the OpenTelemetry thread context. Further attempts will be skipped on this thread.");
         }
     }
 
-    private void Disable(string reason)
+    private void LogFailure(string reason)
     {
-        if (Interlocked.Exchange(ref _disabled, 1) == 0)
+        if (Interlocked.Exchange(ref _failureLogged, 1) == 0)
         {
-            Log.Warning("Unable to publish the OpenTelemetry thread context because {Reason}. Publication is now disabled.", reason);
+            Log.Warning("Unable to publish the OpenTelemetry thread context because {Reason}. Further attempts will be skipped on this thread.", reason);
         }
     }
 
     /// <summary>
-    /// Caches one thread's native-owned record and the publisher that acquired it.
+    /// Caches one thread's native-owned record, or an unavailable result, and the publisher that acquired it.
     /// </summary>
     private sealed class ThreadRecord
     {
@@ -197,5 +205,7 @@ internal sealed class OtelThreadContextPublisher : IOtelThreadContextPublisher
         public OtelThreadContextPublisher Owner { get; }
 
         public IntPtr Address { get; }
+
+        public bool IsAvailable => Address != IntPtr.Zero;
     }
 }

@@ -124,6 +124,7 @@ partial class Build
     [LazyPathExecutable(name: "run-clang-tidy")] readonly Lazy<Tool> RunClangTidy;
     [LazyPathExecutable(name: "patchelf")] readonly Lazy<Tool> PatchElf;
     [LazyPathExecutable(name: "nm")] readonly Lazy<Tool> Nm;
+    [LazyPathExecutable(name: "readelf")] readonly Lazy<Tool> ReadElf;
 
     //OSX Tools
     readonly string[] OsxArchs = { "arm64", "x86_64" };
@@ -383,17 +384,24 @@ partial class Build
         var (_, extension) = GetUnixArchitectureAndExtension();
         var nativeTracer = GetNativeOutputDirectory(NativeTracerProject.Name) / $"{NativeTracerProject.Name}.{extension}";
 
-        var symbols = Nm.Value(arguments: $"--dynamic --defined-only \"{nativeTracer}\"", logOutput: false);
+        var symbols = ReadElf.Value(arguments: $"--dyn-syms --wide \"{nativeTracer}\"", logOutput: false);
+        var expectedSymbol = new Regex(
+            $@"^\s*\d+:\s+[0-9a-fA-F]+\s+8\s+TLS\s+GLOBAL\s+DEFAULT\s+\d+\s+{Regex.Escape(symbol)}\s*$",
+            RegexOptions.CultureInvariant);
 
-        if (!symbols.Any(line => line.Text.Contains(symbol)))
+        if (!symbols.Any(line => expectedSymbol.IsMatch(line.Text)))
         {
             throw new Exception(
-                $"{symbol} is not exported from {nativeTracer}. The OpenTelemetry thread context cannot be " +
-                "discovered by external readers without it. Check that otel_thread_ctx.cpp is part of the " +
+                $"{symbol} is not exported from {nativeTracer} as an 8-byte TLS GLOBAL DEFAULT symbol. " +
+                "The OpenTelemetry thread context cannot be discovered by external readers without it. " +
+                "Check that otel_thread_ctx.cpp is part of the " +
                 $"{NativeTracerProject.Name} shared target and that the symbol still has default visibility.");
         }
 
-        Logger.Information("{Symbol} is exported from {NativeTracer}", symbol, nativeTracer);
+        Logger.Information(
+            "{Symbol} is exported from {NativeTracer} as an 8-byte TLS GLOBAL DEFAULT symbol",
+            symbol,
+            nativeTracer);
     }
 
     Target CompileTracerNativeTestsLinux => _ => _

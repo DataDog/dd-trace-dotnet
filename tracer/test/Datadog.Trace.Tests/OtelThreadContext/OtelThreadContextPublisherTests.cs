@@ -182,19 +182,67 @@ namespace Datadog.Trace.Tests.OtelThreadContext
         }
 
         [Fact]
-        public void DisablesItselfWhenTheRecordIsUnavailable()
+        public void CachesAnUnavailableRecordForTheCurrentThread()
         {
             using var provider = new FakeOtelThreadContextRecordProvider(returnNull: true);
             var publisher = new OtelThreadContextPublisher(provider);
 
             publisher.Set(CreateSpan());
 
-            publisher.IsEnabled.Should().BeFalse();
+            publisher.IsEnabled.Should().BeTrue("a failure on one thread must not disable the publisher");
 
-            // and it stops trying, rather than probing on every span
+            // The unavailable result is cached for this thread, rather than probing on every span.
             publisher.Set(CreateSpan());
             publisher.Reset();
             provider.CallCount.Should().Be(1);
+        }
+
+        [Fact]
+        public void RecordFailureOnOneThreadDoesNotAffectAnotherThread()
+        {
+            var failingThreadId = Environment.CurrentManagedThreadId;
+            using var records = new FakeOtelThreadContextRecordProvider();
+            var provider = new Mock<IOtelThreadContextRecordProvider>();
+            provider.Setup(p => p.GetRecord())
+                    .Returns(
+                         () => Environment.CurrentManagedThreadId == failingThreadId
+                                   ? IntPtr.Zero
+                                   : records.GetRecord());
+            var publisher = new OtelThreadContextPublisher(provider.Object);
+
+            publisher.Set(CreateSpan());
+
+            IntPtr successfulRecord = IntPtr.Zero;
+            byte publishedValid = 0;
+            Exception threadException = null;
+
+            var successfulThread = new Thread(
+                () =>
+                {
+                    try
+                    {
+                        publisher.Set(CreateSpan());
+                        successfulRecord = records.GetPublishedRecord();
+                        publishedValid = records.ReadPublishedRecord()[ValidOffset];
+                    }
+                    catch (Exception ex)
+                    {
+                        threadException = ex;
+                    }
+                });
+
+            successfulThread.Start();
+            successfulThread.Join(TimeSpan.FromSeconds(30)).Should().BeTrue();
+
+            threadException.Should().BeNull();
+            successfulRecord.Should().NotBe(IntPtr.Zero);
+            publishedValid.Should().Be(1);
+            publisher.IsEnabled.Should().BeTrue();
+            provider.Verify(p => p.GetRecord(), Times.Exactly(2), "each thread should make one independent acquisition attempt");
+
+            publisher.Set(CreateSpan());
+            publisher.Reset();
+            provider.Verify(p => p.GetRecord(), Times.Exactly(2), "the failed acquisition should remain cached on its owning thread");
         }
 
         [Fact]

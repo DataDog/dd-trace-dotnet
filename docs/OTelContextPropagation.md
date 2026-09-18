@@ -12,9 +12,10 @@ Other Datadog libraries implement the same spec: [libdatadog's `libdd-otel-threa
 There are two halves to the feature, and both are needed: **publishing** a record per thread, and
 **announcing** in the process context that the records exist. A reader ignores the first without the second.
 
-Almost all of it is managed code. The one thing the BCL cannot do is emit an ELF TLS symbol or compute a
-TLS address, so the native tracer contributes a thread-local slot and a getter for its address — and
-nothing else.
+Managed code owns the record layout and all hot-path context writes. Native code owns the parts tied to
+ELF and OS-thread lifetime: it exports the thread-local pointer, allocates and pools the records, and
+registers their pthread cleanup. Managed code enters the native layer only when a thread first needs a
+record.
 
 ## Configuration
 
@@ -181,9 +182,10 @@ The slot deliberately holds an 8-byte pointer rather than the record itself. Thi
 if the linker relaxes the access to initial-exec the slot has to fit in glibc's static TLS surplus: 8 bytes
 always does, 640 would consume most of it.
 
-`CompileTracerNativeSrcLinux` asserts with `nm --dynamic --defined-only` that the symbol is actually
-exported. Without that check a compiler, linker or visibility change could drop it silently — readers would
-just never find any context, and nothing at runtime would say why.
+`CompileTracerNativeSrcLinux` checks the actual shared object with `readelf --dyn-syms --wide` and asserts
+that the symbol is an 8-byte, global, default-visible ELF TLS symbol. Without that check a compiler, linker
+or visibility change could silently make it unusable — readers would just never find any context, and
+nothing at runtime would say why.
 
 ## Announcing the schema in the process context
 
@@ -269,8 +271,9 @@ is reported as not sampled.
 `Datadog.Trace.ClrProfiler.NativeMethods+NonWindows` class, which `cor_profiler.cpp` already rewrites to
 point at the deployed native library.
 
-**Self-disabling.** The first failure — a record not being provided, or a write throwing — latches the
-publisher off permanently and logs one warning. It never probes again.
+**Per-thread failure caching.** Each OS thread makes at most one record-acquisition attempt. If no record
+is available, or a record operation throws, that thread caches an unavailable result and skips subsequent
+publication attempts. Other threads continue publishing normally, and the first failure is logged once.
 
 **A parked thread keeps its last context.** The record is per OS thread, the context is per
 `ExecutionContext`. A thread parked in the thread pool keeps `valid == 1` from its last work item until the
@@ -285,7 +288,7 @@ next restore. `Reset` on a null scope covers normal completion.
 | `tracer/src/Datadog.Tracer.Native/otel_thread_ctx.cpp`, `.h` | The TLS slot, native record pool, and pthread lifetime |
 | `tracer/src/Datadog.Tracer.Native/CMakeLists.txt` | Adds it to the SHARED target; probes the TLS dialect |
 | `tracer/src/Datadog.Trace/OtelThreadContext/OtelThreadContextRecord.cs` | Managed record encoding and updates |
-| `.../OtelThreadContext/OtelThreadContextPublisher.cs` | Per-thread address cache, publication, platform gate, self-disabling |
+| `.../OtelThreadContext/OtelThreadContextPublisher.cs` | Per-thread address/failure cache, publication, and platform gate |
 | `.../OtelThreadContext/IOtelThreadContextPublisher.cs`, `NullOtelThreadContextPublisher.cs` | The publisher abstraction and its no-op |
 | `.../OtelThreadContext/IOtelThreadContextRecordProvider.cs`, `OtelThreadContextRecordProvider.cs` | The single point of contact with native code |
 | `tracer/src/Datadog.Trace/ClrProfiler/NativeMethods.cs` | `GetOrCreateOtelThreadContextRecord` P/Invoke |
@@ -317,8 +320,8 @@ real mapping. They live in `tracer/test/Datadog.Trace.Tests/OtelThreadContext/`:
 - `OtelThreadContextRecordTests.cs` — the record layout, with offsets hard-coded from the spec rather than
   read back from the implementation, since the layout is an inter-process contract.
 - `OtelThreadContextPublisherTests.cs` — that the record is acquired exactly once per thread, that each
-  thread gets its own record, that `Reset` only clears `valid`, that the publisher disables itself when the
-  record is unavailable, and that publishing does not force a sampling decision.
+  thread gets its own record, that `Reset` only clears `valid`, that acquisition failure is isolated and
+  cached per thread, and that publishing does not force a sampling decision.
 - `ThreadLocalMetadataPayloadTests.cs` — the protobuf wire format, asserted against tags, lengths and
   offsets worked out by hand rather than round-tripped through the same encoder.
 - `OtelProcessContextAnnouncerTests.cs` — `/proc/self/maps` parsing, and the update protocol: that unknown

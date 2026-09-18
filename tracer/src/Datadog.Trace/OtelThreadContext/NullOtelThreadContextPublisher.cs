@@ -8,7 +8,7 @@
 namespace Datadog.Trace.OtelThreadContext;
 
 /// <summary>
-/// Used when thread context publication is disabled, unsupported on the current platform, or has failed.
+/// Used when thread context publication is disabled or unavailable in the current process.
 /// </summary>
 internal sealed class NullOtelThreadContextPublisher : IOtelThreadContextPublisher
 {

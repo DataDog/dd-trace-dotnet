@@ -85,14 +85,14 @@ internal static class OtelProcessContextAnnouncer
             }
             else
             {
-                Log.Warning(
+                Log.Error(
                     "Could not announce the OpenTelemetry thread context schema ({Reason}). Thread contexts are still published, but external readers will not discover them.",
                     failure);
             }
         }
         catch (Exception ex)
         {
-            Log.Warning(ex, "Failed to announce the OpenTelemetry thread context schema in the process context.");
+            Log.Error(ex, "Failed to announce the OpenTelemetry thread context schema in the process context.");
         }
     }
 
