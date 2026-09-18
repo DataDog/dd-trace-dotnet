@@ -79,8 +79,10 @@ partial class Build : NukeBuild
 
                 // Directories that are not explicitelly owned by ASM but are common to both teams
                 string[] commonDirectories = new[]
-{
+                {
                     "tracer/test/Datadog.Trace.TestHelpers/",
+                    "tracer/test/Datadog.Trace.TestHelpers.AutoInstrumentation/",
+                    "tracer/test/Datadog.Trace.TestHelpers.SharedSource/",
                 };
 
                 foreach (var file in changedFiles)
