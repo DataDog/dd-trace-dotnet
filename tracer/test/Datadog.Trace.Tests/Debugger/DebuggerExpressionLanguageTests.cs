@@ -256,6 +256,29 @@ namespace Datadog.Trace.Tests.Debugger
         }
 
         [Fact]
+        public void ProbeExpressionParser_IntKeyDictionaryIndex_ReturnsValue()
+        {
+            var scopeMembers = CreateScopeMembers();
+            var dictionary = new Dictionary<int, int> { { 1, 1 }, { 4, 4 } };
+            scopeMembers.AddMember(new ScopeMember("IntDictionaryLocal", dictionary.GetType(), dictionary, ScopeMemberKind.Local));
+
+            const string json = """
+                                {
+                                  "index": [
+                                    { "ref": "IntDictionaryLocal" },
+                                    4
+                                  ]
+                                }
+                                """;
+
+            var compiled = ProbeExpressionParser<int>.ParseExpression(json, scopeMembers);
+            var result = EvaluateCompiled(compiled, scopeMembers);
+
+            Assert.Equal(4, result);
+            Assert.True(compiled.Errors == null || compiled.Errors.Length == 0);
+        }
+
+        [Fact]
         public void ProbeExpressionParser_NonNullableValueTypeComparedToNull_DoesNotThrow()
         {
             var scopeMembers = CreateScopeMembers();

@@ -431,22 +431,14 @@ internal partial class ProbeExpressionParser<T>
         }
         else if (assignableFrom == typeof(IDictionary))
         {
-            Type keyType;
-            switch (genericTypeArguments.Length)
+            if (genericTypeArguments.Length == 2)
             {
-                case 2:
-                    keyType = genericTypeArguments[0];
-                    convertToType = genericTypeArguments[1];
-                    break;
-                case 1:
-                    keyType = genericTypeArguments[0];
-                    break;
-                default:
-                    keyType = typeof(object);
-                    break;
+                convertToType = genericTypeArguments[1];
             }
 
-            getItemMethod = ProbeExpressionParserHelper.GetMethodByReflection(assignableFrom, "get_Item", new[] { keyType });
+            // IDictionary.get_Item takes object. Looking up get_Item(TKey) does not match
+            // that signature, and Expression.Call cannot box value-type keys such as int.
+            getItemMethod = ProbeExpressionParserHelper.GetMethodByReflection(assignableFrom, "get_Item", new[] { typeof(object) });
         }
 
         if (getItemMethod == null)
@@ -454,6 +446,7 @@ internal partial class ProbeExpressionParser<T>
             throw new InvalidOperationException("Unsupported collection");
         }
 
+        indexOrKey = ConvertIndexerArgument(indexOrKey, getItemMethod);
         var getItemCall = Expression.Call(source, getItemMethod, indexOrKey);
         Expression result;
         if (getItemCall.Type == convertToType)
@@ -468,6 +461,23 @@ internal partial class ProbeExpressionParser<T>
         return IsDictionaryEntryType(result.Type)
                    ? TrackRedactedDictionaryEntry(result)
                    : result;
+    }
+
+    private Expression ConvertIndexerArgument(Expression indexOrKey, MethodInfo getItemMethod)
+    {
+        var parameterType = getItemMethod.GetParameters()[0].ParameterType;
+        if (indexOrKey.Type == parameterType)
+        {
+            return indexOrKey;
+        }
+
+        // Expression.Call does not box value-type keys (e.g. int -> object on IDictionary.get_Item).
+        if (indexOrKey.Type.IsValueType || !parameterType.IsAssignableFrom(indexOrKey.Type))
+        {
+            return Expression.Convert(indexOrKey, parameterType);
+        }
+
+        return indexOrKey;
     }
 
     private Expression Length(JsonTextReader reader, List<ParameterExpression> parameters, ParameterExpression itParameter)
