@@ -10,7 +10,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions;
 
 internal interface IDurableFunctionContext : IFunctionContext
 {
-    object? TraceContext { get; }
+    IWorkerTraceContext? TraceContext { get; }
 }
 
 #endif

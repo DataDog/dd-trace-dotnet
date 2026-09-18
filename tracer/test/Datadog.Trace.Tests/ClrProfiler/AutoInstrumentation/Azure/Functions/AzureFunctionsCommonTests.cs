@@ -11,6 +11,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions;
+using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using FluentAssertions;
@@ -100,7 +101,7 @@ namespace Datadog.Trace.Tests.ClrProfiler.AutoInstrumentation.Azure.Functions
         {
             var context = CreateMockFunctionContext(bindingType);
 
-            AzureFunctionsDurableCommon.GetTriggerType(context).Should().Be(expected);
+            AzureFunctionsDurableCommon.GetTriggerType(context.DuckCast<IDurableFunctionContext>()).Should().Be(expected);
         }
 
         [Theory]
@@ -125,7 +126,7 @@ namespace Datadog.Trace.Tests.ClrProfiler.AutoInstrumentation.Azure.Functions
                 TraceState = traceState,
             };
 
-            var extractedContext = AzureFunctionsDurablePropagation.ExtractPropagatedContext(context);
+            var extractedContext = AzureFunctionsDurablePropagation.ExtractPropagatedContext(context.DuckCast<IDurableFunctionContext>());
 
             extractedContext.SpanContext.Should().NotBeNull();
             extractedContext.SpanContext!.RawTraceId.Should().Be(traceId);
@@ -139,9 +140,9 @@ namespace Datadog.Trace.Tests.ClrProfiler.AutoInstrumentation.Azure.Functions
         [InlineData("00-00000000000000000000000000000001-0000000000000001-02", "00-00000000000000000000000000000001-0000000000000001-03")]
         [InlineData("00-00000000000000000000000000000001-0000000000000001-01", "00-00000000000000000000000000000001-0000000000000001-01")]
         [InlineData("invalid", "invalid")]
-        public void DurableRestoreRecordedFlag_PreservesOtherFlagsAndInvalidInput(string traceParent, string expected)
+        public void DurableEnsureTraceParentSampledFlag_PreservesOtherFlagsAndInvalidInput(string traceParent, string expected)
         {
-            AzureFunctionsDurablePropagation.RestoreRecordedFlag(traceParent).Should().Be(expected);
+            AzureFunctionsDurablePropagation.EnsureTraceParentSampledFlag(traceParent).Should().Be(expected);
         }
 
         private static MockFunctionContext CreateMockFunctionContext(string propertyKey, Dictionary<string, object>? headerProperties)
@@ -193,7 +194,7 @@ namespace Datadog.Trace.Tests.ClrProfiler.AutoInstrumentation.Azure.Functions
         }
 
         // This duck types with the isolated-worker FunctionContext contracts.
-        private class MockFunctionContext : IDurableFunctionContext
+        private class MockFunctionContext : IFunctionContext
         {
             public FunctionDefinitionStruct FunctionDefinition { get; set; }
 
@@ -201,7 +202,7 @@ namespace Datadog.Trace.Tests.ClrProfiler.AutoInstrumentation.Azure.Functions
 
             public IDictionary<object, object?>? Items { get; }
 
-            public object? TraceContext { get; set; }
+            public MockWorkerTraceContext? TraceContext { get; set; }
         }
 
         private class MockBindingMetadata

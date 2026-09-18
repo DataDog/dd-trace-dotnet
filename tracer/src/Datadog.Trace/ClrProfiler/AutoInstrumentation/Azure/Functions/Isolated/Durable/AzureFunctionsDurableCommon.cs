@@ -7,13 +7,11 @@
 #nullable enable
 
 using System;
-using System.Collections;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Shared;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
-using Datadog.Trace.Propagators;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Tagging;
 
@@ -32,6 +30,7 @@ internal static class AzureFunctionsDurableCommon
 
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(AzureFunctionsDurableCommon));
 
+    // Starts an active span for a Durable function execution using propagated context and function metadata.
     internal static CallTargetState OnFunctionExecutionBegin<TFunctionContext>(TFunctionContext functionContext, DateTimeOffset? startTime = null)
         where TFunctionContext : IDurableFunctionContext
     {
@@ -57,7 +56,7 @@ internal static class AzureFunctionsDurableCommon
                 FullName = functionContext.FunctionDefinition.EntryPoint,
             };
 
-            var extractedContext = AzureFunctionsDurablePropagation.ExtractPropagatedContext(functionContext).MergeBaggageInto(Baggage.Current);
+            var extractedContext = AzureFunctionsDurablePropagation.ExtractPropagatedContext(functionContext);
             ISpanContext? parentContext = extractedContext.SpanContext;
             if (parentContext is null && extractedContext.Links is not null)
             {
@@ -87,15 +86,14 @@ internal static class AzureFunctionsDurableCommon
         where TFunctionContext : IDurableFunctionContext
         => GetTriggerType(functionContext) == OrchestrationTrigger;
 
+    // Finds the first Durable trigger in the function's input bindings and returns its tracing label
     [TestingAndPrivateOnly]
     internal static string? GetTriggerType<TFunctionContext>(TFunctionContext functionContext)
         where TFunctionContext : IDurableFunctionContext
     {
-#pragma warning disable CS8605 // Unboxing a possibly null value. InputBindings contains non-null BindingMetadata values.
-        foreach (DictionaryEntry entry in functionContext.FunctionDefinition.InputBindings)
-#pragma warning restore CS8605
+        foreach (var bindingMetadata in functionContext.FunctionDefinition.InputBindings.Values)
         {
-            var binding = entry.Value.DuckCast<BindingMetadata>();
+            var binding = bindingMetadata.DuckCast<BindingMetadata>();
             if (binding.Direction != BindingDirection.In || binding.BindingType is null)
             {
                 continue;

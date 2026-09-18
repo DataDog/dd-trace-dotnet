@@ -9,7 +9,6 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
-using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.SourceGenerators;
@@ -28,8 +27,7 @@ internal static class AzureFunctionsDurablePropagation
     {
         try
         {
-            if (functionContext.TraceContext is not { } rawTraceContext
-             || !rawTraceContext.TryDuckCast<IWorkerTraceContext>(out var traceContext))
+            if (functionContext.TraceContext is not { } traceContext)
             {
                 return default;
             }
@@ -43,17 +41,16 @@ internal static class AzureFunctionsDurablePropagation
             var traceState = traceContext.TraceState;
             var datadogSamplingPriority = W3CTraceContextPropagator.ParseTraceState(traceState).SamplingPriority;
 
-            // Durable's AllData listener can clear the W3C recorded flag while retaining Datadog's
-            // positive sampling decision. Restore the flag before extraction can override that decision.
+            // W3C recorded flag always reaches us as 0, use the datadog decision when positive.
             if (datadogSamplingPriority is > 0)
             {
-                traceParent = RestoreRecordedFlag(traceParent);
+                traceParent = EnsureTraceParentSampledFlag(traceParent);
             }
 
             var context = ExtractHeaders(traceParent, traceState);
 
             // Without a Datadog decision, let the local sampler decide instead of inheriting
-            // Azure's implicit rejection. W3C headers cannot represent an undecided sampling priority.
+            // Azure's implicit rejection.
             if (datadogSamplingPriority is null)
             {
                 context = ClearImplicitSamplingRejection(context);
@@ -68,23 +65,22 @@ internal static class AzureFunctionsDurablePropagation
         }
     }
 
+    // Sets the W3C recorded (sampled) bit when the trace-flags field is valid, preserving the rest of traceparent.
     [TestingAndPrivateOnly]
-    internal static string RestoreRecordedFlag(string traceParent)
+    internal static string EnsureTraceParentSampledFlag(string traceParent)
     {
         var flagsStart = traceParent.LastIndexOf('-') + 1;
+
         if (flagsStart <= 0
-         || traceParent.Length - flagsStart != 2
-         || !HexString.TryParseByte(traceParent.AsSpan(flagsStart, 2), out var flags)
+         || !HexString.TryParseByte(traceParent.AsSpan(flagsStart), out var flags)
          || (flags & RecordedFlag) != 0)
         {
             return traceParent;
         }
 
-        var reconciledTraceParent = traceParent.ToCharArray();
-        var reconciledFlags = (flags | RecordedFlag).ToString("x2", CultureInfo.InvariantCulture);
-        reconciledTraceParent[flagsStart] = reconciledFlags[0];
-        reconciledTraceParent[flagsStart + 1] = reconciledFlags[1];
-        return new string(reconciledTraceParent);
+        var sampledFlags = (flags | RecordedFlag).ToString("x2", CultureInfo.InvariantCulture);
+
+        return traceParent.Substring(0, flagsStart) + sampledFlags;
     }
 
     private static PropagationContext ExtractHeaders(string traceParent, string? traceState)
@@ -107,6 +103,7 @@ internal static class AzureFunctionsDurablePropagation
         return [];
     }
 
+    // Clears Azure Durable's implicit sampling rejection so the local sampler can decide.
     private static PropagationContext ClearImplicitSamplingRejection(PropagationContext context)
     {
         if (context.SpanContext is not { SamplingPriority: SamplingPriorityValues.AutoReject } spanContext)
@@ -114,7 +111,7 @@ internal static class AzureFunctionsDurablePropagation
             return context;
         }
 
-        // SamplingPriority is read-only. Copy the context to clear it while preserving all propagated metadata.
+        // SamplingPriority is read-only
         var contextWithoutSamplingDecision = new SpanContext(
             traceId: spanContext.TraceId128,
             spanId: spanContext.SpanId,
