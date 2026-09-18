@@ -950,12 +950,12 @@ partial class Build
         {
             if (sanitizer is SanitizerKind.Asan)
             {
-                // libasan SONAME differs between the two ASAN CI images:
-                //   - arm64: older Ubuntu/Debian base shipping gcc 9 -> libasan.so.5.
-                //   - x64:   newer image shipping gcc 10+ -> libasan.so.6.
-                // If/when the arm64 image is upgraded to gcc 10+, this can be
-                // collapsed to libasan.so.6 unconditionally.
-                envVars["LD_PRELOAD"] = IsArm64 ? "libasan.so.5" : "libasan.so.6";
+                // Both x64 and arm64 ASAN images now build on ubuntu.dockerfile (Ubuntu 22.04,
+                // gcc 11), which ships libasan.so.6 on both architectures - confirmed present
+                // at /usr/lib/<triple>/libasan.so.6 in the actual container. Previously arm64
+                // ran on an older Ubuntu/Debian base shipping gcc 9 (libasan.so.5); that's no
+                // longer the case now that arm64 ASAN also uses ubuntu.dockerfile.
+                envVars["LD_PRELOAD"] = "libasan.so.6";
                 // detect_leaks set to 0 to avoid false positive since not all libs are compiled against ASAN (ex. CLR binaries)
                 envVars["ASAN_OPTIONS"] = "detect_leaks=0";
             }
