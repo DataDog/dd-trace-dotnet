@@ -2006,10 +2006,7 @@ partial class Build
                     (true, true) => "(RunOnWindows=True)&(LoadFromGAC!=True)&(IIS!=True)&(Category!=AzureFunctions)&(SkipInCI!=True)",
                 };
 
-                // Exclude smoke tests only when the regression target is also in this run's execution plan.
-                return IsWin && ExecutionPlan.Any(target => target.Name == nameof(RunWindowsRegressionTests))
-                           ? $"{filter}&(Category!=Smoke)"
-                           : filter;
+                return filter;
             }
         });
 
