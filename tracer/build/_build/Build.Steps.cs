@@ -2006,7 +2006,8 @@ partial class Build
                     (true, true) => "(RunOnWindows=True)&(LoadFromGAC!=True)&(IIS!=True)&(Category!=AzureFunctions)&(SkipInCI!=True)",
                 };
 
-                return filter;
+                // Windows smoke tests run separately in RunWindowsRegressionTests, including when a custom filter is provided.
+                return IsWin ? $"{filter}&(Category!=Smoke)" : filter;
             }
         });
 
@@ -2030,7 +2031,7 @@ partial class Build
             return areaFilter;
         }
 
-        return filter + $"&{areaFilter}";
+        return $"({filter})&{areaFilter}";
     }
 
     Target CompileAzureFunctionsSamplesWindows => _ => _
@@ -2114,7 +2115,8 @@ partial class Build
         .Executes(() =>
         {
             var isDebugRun = IsDebugRun();
-            var filter = AddAreaFilter(string.IsNullOrWhiteSpace(Filter) ? "(Category=Smoke)&(LoadFromGAC!=True)&(Category!=AzureFunctions)&(SkipInCI!=True)" : Filter);
+            const string regressionFilter = "(Category=Smoke)&(LoadFromGAC!=True)&(Category!=AzureFunctions)&(SkipInCI!=True)";
+            var filter = AddAreaFilter(string.IsNullOrWhiteSpace(Filter) ? regressionFilter : $"({Filter})&{regressionFilter}");
 
             try
             {
