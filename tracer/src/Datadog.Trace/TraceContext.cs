@@ -43,7 +43,7 @@ namespace Datadog.Trace
         private IastRequestContext? _iastRequestContext;
         private AppSecRequestContext? _appSecRequestContext;
         private OtelTraceState? _otelTraceState;
-		private DebuggerSamplingCoordinator.State? _debuggerSamplingState;
+        private DebuggerSamplingCoordinator.State? _debuggerSamplingState;
 
         // Lazily created on the first feature-flag evaluation for this trace; null until then, so
         // traces that never evaluate a flag pay nothing. State dies with the TraceContext.
