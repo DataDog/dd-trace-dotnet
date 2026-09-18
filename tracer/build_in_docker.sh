@@ -12,7 +12,11 @@ docker build \
    --file "$BUILD_DIR/docker/alpine.dockerfile" \
    "$BUILD_DIR"
 
-docker run -it --rm \
+# Use -t only when stdin is a terminal so this script works in CI / no-TTY agent harnesses.
+TTY_FLAGS=(-i)
+[[ -t 0 ]] && TTY_FLAGS+=(-t)
+
+docker run "${TTY_FLAGS[@]}" --rm \
     --mount type=bind,source="$ROOT_DIR",target=/project \
     --env NugetPackageDirectory=/project/packages \
     --env artifacts=/project/tracer/bin/artifacts \
