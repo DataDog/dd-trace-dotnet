@@ -62,6 +62,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             InitSnapshotsSink();
             if (_isDisabled)
             {
+                Settings.Disable();
                 return false;
             }
 
