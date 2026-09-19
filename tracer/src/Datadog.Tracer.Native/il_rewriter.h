@@ -147,6 +147,8 @@ public:
 
     static bool IsLoadLocalDirectInstruction(unsigned opcode);
 
+    static bool IsStoreLocalDirectInstruction(unsigned opcode);
+
     static uint32_t GetLocalIndexFromOpcode(const ILInstr* pInstr);
 
     static bool IsLoadConstantInstruction(unsigned opcode);
@@ -156,6 +158,11 @@ public:
     // ldloc/ldc/ldnull/ldstr are; ldsfld is not (rereads a mutable static, and
     // does not copy a volatile. prefix). ldfld/ldobj/call/nop are not.
     static bool IsCloneableStandaloneValueLoad(unsigned opcode);
+
+    // Catch handlers begin with the exception object on the evaluation stack.
+    // Returns the first instruction after optional nops and the stloc/pop that
+    // consumes it, or nullptr when that stack-neutral point is not proven.
+    static ILInstr* GetStackNeutralCatchHandlerInsertionPoint(const EHClause& clause, const ILInstr* sentinel);
 
     static void SortEHClauses(EHClause* pEH, unsigned nEH);
 };

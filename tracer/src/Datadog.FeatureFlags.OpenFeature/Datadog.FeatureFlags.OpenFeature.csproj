@@ -17,7 +17,7 @@
     <!-- OpenFeature v2.3.0  = Datadog.FeatureFlags.OpenFeature 2.3.1 (patch release)-->    
     <!-- OpenFeature v2.3.1  = Datadog.FeatureFlags.OpenFeature 2.3.100 (Open Feature patch)-->    
     <!-- OpenFeature v2.3.1  = Datadog.FeatureFlags.OpenFeature 2.3.101 (Open Feature patch + dd patch)-->    
-    <Version>2.3.0</Version>
+    <Version>2.3.1</Version>
     <!-- These target frameworks should match the values exposed in the OpenFeature package referenced below-->
     <TargetFrameworks>net462;netstandard2.0;net8.0;net9.0</TargetFrameworks>
   </PropertyGroup>

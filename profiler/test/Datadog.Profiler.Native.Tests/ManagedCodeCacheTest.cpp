@@ -56,29 +56,35 @@ protected:
         auto metrics = metric->GetMetrics();
         return metrics.empty() ? 0 : static_cast<uint64_t>(metrics.front().second);
     }
+
+    // Shortcut to get only the function id from the returned FunctionInfo
+    FunctionID GetFuncIdOr0(uintptr_t ip) {
+        auto info = cache->GetFunctionInfo(ip);
+        return info.has_value() ? info->FunctionId : 0;
+    }
 };
 
 // Test: Single code range
-TEST_F(ManagedCodeCacheTest, AddFunction_SingleRange_GetFunctionIdReturnsCorrect) {
+TEST_F(ManagedCodeCacheTest, AddFunction_SingleRange_GetFunctionInfoReturnsCorrect) {
     FunctionID testFuncId = 12345;
     uintptr_t codeStart = 0x1000;
     ULONG32 codeSize = 0x200;
 
     SetupMockCodeInfo(testFuncId, codeStart, codeSize);
 
-    cache->AddFunction(testFuncId);
+    cache->AddFunction(testFuncId, /*isDynamic*/ false);
     // Test IPs within range
-    EXPECT_EQ(testFuncId, cache->GetFunctionId(codeStart).value_or(0));
-    EXPECT_EQ(testFuncId, cache->GetFunctionId(codeStart + 0x100).value_or(0));
-    EXPECT_EQ(testFuncId, cache->GetFunctionId(codeStart + codeSize - 1).value_or(0));
+    EXPECT_EQ(testFuncId, GetFuncIdOr0(codeStart));
+    EXPECT_EQ(testFuncId, GetFuncIdOr0(codeStart + 0x100));
+    EXPECT_EQ(testFuncId, GetFuncIdOr0(codeStart + codeSize - 1));
 
-    // IPs outside range should return nullopt
-    auto beforeStartIp = cache->GetFunctionId(codeStart - 1);
+    // IPs outside range should return InvalidFunctionId (still "found", just not managed)
+    auto beforeStartIp = cache->GetFunctionInfo(codeStart - 1);
     EXPECT_TRUE(beforeStartIp.has_value());
-    EXPECT_EQ(ManagedCodeCache::InvalidFunctionId, *beforeStartIp);
-    auto borderIp = cache->GetFunctionId(codeStart + codeSize);
+    EXPECT_EQ(ManagedCodeCache::InvalidFunctionId, beforeStartIp->FunctionId);
+    auto borderIp = cache->GetFunctionInfo(codeStart + codeSize);
     EXPECT_TRUE(borderIp.has_value());
-    EXPECT_EQ(ManagedCodeCache::InvalidFunctionId, *borderIp);
+    EXPECT_EQ(ManagedCodeCache::InvalidFunctionId, borderIp->FunctionId);
 }
 
 // Test: Multiple ranges (tiered JIT simulation)
@@ -91,16 +97,16 @@ TEST_F(ManagedCodeCacheTest, AddFunction_MultipleRanges_AccumulatesCorrectly) {
 
     // First JIT (Tier 0)
     SetupMockCodeInfo(testFuncId, tier0Start, tier0Size);
-    cache->AddFunction(testFuncId);
+    cache->AddFunction(testFuncId, /*isDynamic*/ false);
     // Verify Tier 0 works
-    EXPECT_EQ(testFuncId, cache->GetFunctionId(tier0Start + 0x50).value_or(0));
+    EXPECT_EQ(testFuncId, GetFuncIdOr0(tier0Start + 0x50));
 
     // Second JIT (Tier 1)
     SetupMockCodeInfo(testFuncId, tier1Start, tier1Size);
-    cache->AddFunction(testFuncId);
+    cache->AddFunction(testFuncId, /*isDynamic*/ false);
     // Both ranges should work (accumulation)
-    EXPECT_EQ(testFuncId, cache->GetFunctionId(tier0Start + 0x50).value_or(0));
-    EXPECT_EQ(testFuncId, cache->GetFunctionId(tier1Start + 0x100).value_or(0));
+    EXPECT_EQ(testFuncId, GetFuncIdOr0(tier0Start + 0x50));
+    EXPECT_EQ(testFuncId, GetFuncIdOr0(tier1Start + 0x100));
 }
 
 // Test: IsManaged for valid managed IP
@@ -110,7 +116,7 @@ TEST_F(ManagedCodeCacheTest, IsManaged_ValidManagedIP_ReturnsTrue) {
     ULONG32 codeSize = 0x150;
 
     SetupMockCodeInfo(testFuncId, codeStart, codeSize);
-    cache->AddFunction(testFuncId);
+    cache->AddFunction(testFuncId, /*isDynamic*/ false);
     EXPECT_TRUE(cache->IsManaged(codeStart + 0x50));
 }
 
@@ -135,15 +141,15 @@ TEST_F(ManagedCodeCacheTest, AddFunction_MultipleFunctions_NoInterference) {
     SetupMockCodeInfo(func1, code1Start, codeSize);
     SetupMockCodeInfo(func2, code2Start, codeSize);
 
-    cache->AddFunction(func1);
-    cache->AddFunction(func2);
-    EXPECT_EQ(func1, cache->GetFunctionId(code1Start + 0x50).value_or(0));
-    EXPECT_EQ(func2, cache->GetFunctionId(code2Start + 0x50).value_or(0));
+    cache->AddFunction(func1, /*isDynamic*/ false);
+    cache->AddFunction(func2, /*isDynamic*/ false);
+    EXPECT_EQ(func1, GetFuncIdOr0(code1Start + 0x50));
+    EXPECT_EQ(func2, GetFuncIdOr0(code2Start + 0x50));
 
     // No cross-contamination
-    auto outside = cache->GetFunctionId(code1Start + codeSize + 10);
+    auto outside = cache->GetFunctionInfo(code1Start + codeSize + 10);
     EXPECT_TRUE(outside.has_value());
-    EXPECT_EQ(ManagedCodeCache::InvalidFunctionId, outside.value());
+    EXPECT_EQ(ManagedCodeCache::InvalidFunctionId, outside->FunctionId);
 }
 
 // Test: Thread safety (concurrent AddFunction calls)
@@ -168,7 +174,7 @@ TEST_F(ManagedCodeCacheTest, AddFunction_ConcurrentCalls_ThreadSafe) {
         threads.emplace_back([this, t, functionsPerThread]() {
             for (int i = 0; i < functionsPerThread; i++) {
                 FunctionID funcId = (t * 1000) + i;
-                cache->AddFunction(funcId);
+                cache->AddFunction(funcId, /*isDynamic*/ false);
             }
         });
     }
@@ -183,10 +189,10 @@ TEST_F(ManagedCodeCacheTest, AddFunction_ConcurrentCalls_ThreadSafe) {
             FunctionID funcId = (t * 1000) + i;
             uintptr_t codeStart = 0x10000 + (funcId * 0x1000);
 
-            auto result = cache->GetFunctionId(codeStart + 0x50);
+            auto result = cache->GetFunctionInfo(codeStart + 0x50);
             EXPECT_TRUE(result.has_value())
                 << "Function " << funcId << " not found at IP 0x" << std::hex << (codeStart + 0x50);
-            EXPECT_EQ(funcId, result.value_or(0))
+            EXPECT_EQ(funcId, result.has_value() ? result->FunctionId : 0)
                 << "Wrong FunctionID for function " << funcId;
 
             EXPECT_TRUE(cache->IsManaged(codeStart + 0x50))
@@ -194,10 +200,10 @@ TEST_F(ManagedCodeCacheTest, AddFunction_ConcurrentCalls_ThreadSafe) {
         }
     }
 
-    // Verify an IP outside all registered ranges returns empty
-    auto outside = cache->GetFunctionId(0xDEAD);
+    // Verify an IP outside all registered ranges returns InvalidFunctionId
+    auto outside = cache->GetFunctionInfo(0xDEAD);
     EXPECT_TRUE(outside.has_value());
-    EXPECT_EQ(ManagedCodeCache::InvalidFunctionId, outside.value());
+    EXPECT_EQ(ManagedCodeCache::InvalidFunctionId, outside->FunctionId);
     auto outsideIsManaged = cache->IsManaged(0xDEAD);
     EXPECT_TRUE(outsideIsManaged.has_value());
     EXPECT_FALSE(outsideIsManaged.value());
@@ -210,7 +216,7 @@ TEST_F(ManagedCodeCacheTest, IsManaged_ConcurrentAccess) {
     ULONG32 codeSize = 0x200;
 
     SetupMockCodeInfo(testFuncId, codeStart, codeSize);
-    cache->AddFunction(testFuncId);
+    cache->AddFunction(testFuncId, /*isDynamic*/ false);
     // Concurrent IsManaged calls (simulating signal handler scenario)
     const int numCalls = 1000;
     std::atomic<int> successCount{0};
@@ -235,24 +241,24 @@ TEST_F(ManagedCodeCacheTest, IsManaged_ConcurrentAccess) {
 }
 
 // Test: Boundary conditions
-TEST_F(ManagedCodeCacheTest, GetFunctionId_BoundaryIPs_CorrectBehavior) {
+TEST_F(ManagedCodeCacheTest, GetFunctionInfo_BoundaryIPs_CorrectBehavior) {
     FunctionID testFuncId = 555;
     uintptr_t codeStart = 0x8000;
     ULONG32 codeSize = 0x100;
 
     SetupMockCodeInfo(testFuncId, codeStart, codeSize);
-    cache->AddFunction(testFuncId);
+    cache->AddFunction(testFuncId, /*isDynamic*/ false);
     // Exact boundaries
-    EXPECT_EQ(testFuncId, cache->GetFunctionId(codeStart).value_or(0));  // First byte (inclusive)
-    EXPECT_EQ(testFuncId, cache->GetFunctionId(codeStart + codeSize - 1).value_or(0));  // Last byte (inclusive)
+    EXPECT_EQ(testFuncId, GetFuncIdOr0(codeStart));  // First byte (inclusive)
+    EXPECT_EQ(testFuncId, GetFuncIdOr0(codeStart + codeSize - 1));  // Last byte (inclusive)
 
     // Just outside boundaries
-    auto beforeStartIp = cache->GetFunctionId(codeStart - 1);
+    auto beforeStartIp = cache->GetFunctionInfo(codeStart - 1);
     EXPECT_TRUE(beforeStartIp.has_value());
-    EXPECT_EQ(ManagedCodeCache::InvalidFunctionId, *beforeStartIp);
-    auto borderIp = cache->GetFunctionId(codeStart + codeSize);
+    EXPECT_EQ(ManagedCodeCache::InvalidFunctionId, beforeStartIp->FunctionId);
+    auto borderIp = cache->GetFunctionInfo(codeStart + codeSize);
     EXPECT_TRUE(borderIp.has_value());
-    EXPECT_EQ(ManagedCodeCache::InvalidFunctionId, *borderIp);
+    EXPECT_EQ(ManagedCodeCache::InvalidFunctionId, borderIp->FunctionId);
 }
 
 // Regression: GetCodeRanges used `startAddress + size - 1` without guarding
@@ -267,7 +273,7 @@ TEST_F(ManagedCodeCacheTest, AddFunction_ZeroSizeRange_DoesNotPolluteCacheNonZer
     ULONG32 codeSize = 0;
 
     SetupMockCodeInfo(testFuncId, codeStart, codeSize);
-    cache->AddFunction(testFuncId);
+    cache->AddFunction(testFuncId, /*isDynamic*/ false);
     // A zero-size range has no valid code; no IP should be reported as managed.
     auto codeStartIp = cache->IsManaged(codeStart);
     EXPECT_TRUE(codeStartIp.has_value());
@@ -293,7 +299,7 @@ TEST_F(ManagedCodeCacheTest, AddFunction_ZeroSizeRangeAtAddressZero_DoesNotHang)
 
     SetupMockCodeInfo(testFuncId, codeStart, codeSize);
     // If the synchronous insert is stuck this call blocks until the test times out.
-    cache->AddFunction(testFuncId);
+    cache->AddFunction(testFuncId, /*isDynamic*/ false);
 
     auto codeStartPlusOneThousand = cache->IsManaged(0x1000);
     EXPECT_TRUE(codeStartPlusOneThousand.has_value());
@@ -308,18 +314,18 @@ TEST_F(ManagedCodeCacheTest, AddFunction_LargeCodeRange_WorksCorrectly) {
     ULONG32 codeSize = 0x10000;  // 64KB
 
     SetupMockCodeInfo(testFuncId, codeStart, codeSize);
-    cache->AddFunction(testFuncId);
+    cache->AddFunction(testFuncId, /*isDynamic*/ false);
     // Test various points in large range
-    EXPECT_EQ(testFuncId, cache->GetFunctionId(codeStart).value_or(0));
-    EXPECT_EQ(testFuncId, cache->GetFunctionId(codeStart + 0x8000).value_or(0));
-    EXPECT_EQ(testFuncId, cache->GetFunctionId(codeStart + codeSize - 1).value_or(0));  // End
+    EXPECT_EQ(testFuncId, GetFuncIdOr0(codeStart));
+    EXPECT_EQ(testFuncId, GetFuncIdOr0(codeStart + 0x8000));
+    EXPECT_EQ(testFuncId, GetFuncIdOr0(codeStart + codeSize - 1));  // End
 }
 
 // Test: Null IP
-TEST_F(ManagedCodeCacheTest, GetFunctionId_NullIP_ReturnsEmpty) {
-    auto nullIp = cache->GetFunctionId(0);
+TEST_F(ManagedCodeCacheTest, GetFunctionInfo_NullIP_ReturnsInvalidFunctionId) {
+    auto nullIp = cache->GetFunctionInfo(0);
     EXPECT_TRUE(nullIp.has_value());
-    EXPECT_EQ(ManagedCodeCache::InvalidFunctionId, nullIp.value());
+    EXPECT_EQ(ManagedCodeCache::InvalidFunctionId, nullIp->FunctionId);
 }
 
 // Test: GetCodeInfo2 failure handling
@@ -329,19 +335,76 @@ TEST_F(ManagedCodeCacheTest, AddFunction_GetCodeInfo2Fails_HandledGracefully) {
     EXPECT_CALL(*mockProfiler, GetCodeInfo2(testFuncId, _, _, _))
         .WillOnce(Return(E_FAIL));
 
-    cache->AddFunction(testFuncId);
+    cache->AddFunction(testFuncId, /*isDynamic*/ false);
     // Should not crash
-    auto nullIp = cache->GetFunctionId(0x1000);
+    auto nullIp = cache->GetFunctionInfo(0x1000);
     EXPECT_TRUE(nullIp.has_value());
-    EXPECT_EQ(ManagedCodeCache::InvalidFunctionId, nullIp.value());
+    EXPECT_EQ(ManagedCodeCache::InvalidFunctionId, nullIp->FunctionId);
+}
+
+// Test: isDynamic given to AddFunction is returned by GetFunctionInfo
+TEST_F(ManagedCodeCacheTest, AddFunction_DynamicMethod_IsDynamicPropagatedToLookup) {
+    FunctionID testFuncId = 424242;
+    uintptr_t codeStart = 0xE000;
+    ULONG32 codeSize = 0x100;
+
+    SetupMockCodeInfo(testFuncId, codeStart, codeSize);
+    cache->AddFunction(testFuncId, /*isDynamic*/ true);
+
+    auto info = cache->GetFunctionInfo(codeStart + 0x50);
+    ASSERT_TRUE(info.has_value());
+    EXPECT_EQ(testFuncId, info->FunctionId);
+    EXPECT_TRUE(info->IsDynamic)
+        << "isDynamic passed to AddFunction must be carried through to GetFunctionInfo";
+}
+
+// Test: the regular (non-dynamic) registration path reports IsDynamic == false.
+TEST_F(ManagedCodeCacheTest, AddFunction_RegularMethod_IsDynamicFalse) {
+    FunctionID testFuncId = 434343;
+    uintptr_t codeStart = 0xF000;
+    ULONG32 codeSize = 0x100;
+
+    SetupMockCodeInfo(testFuncId, codeStart, codeSize);
+    cache->AddFunction(testFuncId, /*isDynamic*/ false);
+
+    auto info = cache->GetFunctionInfo(codeStart + 0x50);
+    ASSERT_TRUE(info.has_value());
+    EXPECT_EQ(testFuncId, info->FunctionId);
+    EXPECT_FALSE(info->IsDynamic);
+}
+
+// Test: the R2R fallback path (GetFunctionFromIP_Original) always returns IsDynamic = false
+// because precompiled code is never dynamic.
+TEST_F(ManagedCodeCacheTest, GetFunctionInfo_R2RFallbackSucceeds_IsDynamicFalse) {
+    uintptr_t r2rCodeStart = 0xB1000000;
+    uintptr_t r2rCodeEnd   = 0xB100FFFF;
+    uintptr_t ipInR2R      = r2rCodeStart + 0x500;
+    FunctionID r2rFuncId = 0xABCD;
+
+    std::vector<ModuleCodeRange> moduleRanges;
+    moduleRanges.emplace_back(r2rCodeStart, r2rCodeEnd);
+    cache->AddModuleRangesToCache(std::move(moduleRanges));
+
+    EXPECT_CALL(*mockProfiler, GetFunctionFromIP(reinterpret_cast<LPCBYTE>(ipInR2R), _))
+        .WillOnce([r2rFuncId](LPCBYTE, FunctionID* pFunctionId) -> HRESULT {
+            *pFunctionId = r2rFuncId;
+            return S_OK;
+        });
+    // On success, the range is synchronously added to the cache: this calls GetCodeInfo2
+    SetupMockCodeInfo(r2rFuncId, r2rCodeStart, static_cast<ULONG32>(r2rCodeEnd - r2rCodeStart + 1));
+
+    auto info = cache->GetFunctionInfo(ipInR2R);
+    ASSERT_TRUE(info.has_value());
+    EXPECT_EQ(r2rFuncId, info->FunctionId);
+    EXPECT_FALSE(info->IsDynamic);
 }
 
 #ifdef _WINDOWS
 // Test: On Windows, GetFunctionFromIP can crash (e.g. module unloaded concurrently).
 // The SEH __try/__except in GetFunctionFromIP_Original must catch the access violation
-// and GetFunctionId must return std::nullopt to signal the failure to the caller.
-TEST_F(ManagedCodeCacheTest, GetFunctionId_GetFunctionFromIPRaisesAccessViolation_ReturnsNullopt) {
-    // Register an R2R module range so that GetFunctionId falls through to
+// and GetFunctionInfo must return std::nullopt to signal the failure to the caller.
+TEST_F(ManagedCodeCacheTest, GetFunctionInfo_GetFunctionFromIPRaisesAccessViolation_ReturnsNullopt) {
+    // Register an R2R module range so that GetFunctionInfo falls through to
     // GetFunctionFromIP_Original (which wraps the ICorProfilerInfo call in __try/__except).
     uintptr_t r2rCodeStart = 0xB0000000;
     uintptr_t r2rCodeEnd   = 0xB000FFFF;
@@ -360,9 +423,9 @@ TEST_F(ManagedCodeCacheTest, GetFunctionId_GetFunctionFromIPRaisesAccessViolatio
             return S_OK; // unreachable
         });
 
-    auto result = cache->GetFunctionId(ipInR2R);
+    auto result = cache->GetFunctionInfo(ipInR2R);
     EXPECT_FALSE(result.has_value())
-        << "GetFunctionId should return std::nullopt when GetFunctionFromIP raises an access violation";
+        << "GetFunctionInfo should return std::nullopt when GetFunctionFromIP raises an access violation";
 }
 #endif
 
@@ -375,7 +438,7 @@ TEST_F(ManagedCodeCacheTest, IsManaged_WriterHoldsPagesMutex_ReturnsNullopt) {
     ULONG32 codeSize = 0x100;
 
     SetupMockCodeInfo(testFuncId, codeStart, codeSize);
-    cache->AddFunction(testFuncId);
+    cache->AddFunction(testFuncId, /*isDynamic*/ false);
     // Sanity: with no contention, IsManaged returns a concrete value.
     auto baseline = cache->IsManaged(codeStart + 0x50);
     ASSERT_TRUE(baseline.has_value());
@@ -424,7 +487,7 @@ TEST_F(ManagedCodeCacheTest, IsManaged_LockAcquisitionFailure_IncrementsMetric) 
     ULONG32 codeSize = 0x100;
 
     SetupMockCodeInfo(testFuncId, codeStart, codeSize);
-    cache->AddFunction(testFuncId);
+    cache->AddFunction(testFuncId, /*isDynamic*/ false);
 
     // Success path must not increment the failure metric.
     ASSERT_TRUE(cache->IsManaged(codeStart + 0x50).value_or(false));
