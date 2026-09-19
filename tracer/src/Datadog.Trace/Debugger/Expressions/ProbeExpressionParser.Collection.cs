@@ -443,6 +443,10 @@ internal partial class ProbeExpressionParser<T>
             if (genericTypeArguments.Length == 2)
             {
                 convertToType = genericTypeArguments[1];
+                if (convertToType.IsValueType && Nullable.GetUnderlyingType(convertToType) is null)
+                {
+                    convertToType = typeof(Nullable<>).MakeGenericType(convertToType);
+                }
             }
 
             // IDictionary.get_Item takes object. Looking up get_Item(TKey) does not match

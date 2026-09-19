@@ -287,6 +287,29 @@ namespace Datadog.Trace.Tests.Debugger
             Assert.True(compiled.Errors == null || compiled.Errors.Length == 0);
         }
 
+        [Fact]
+        public void ProbeExpressionParser_MissingIntKeyDictionaryIndex_ReturnsNull()
+        {
+            var scopeMembers = CreateScopeMembers();
+            var dictionary = new Dictionary<int, int> { { 1, 1 } };
+            scopeMembers.AddMember(new ScopeMember("IntDictionaryLocal", dictionary.GetType(), dictionary, ScopeMemberKind.Local));
+
+            const string json = """
+                                {
+                                  "index": [
+                                    { "ref": "IntDictionaryLocal" },
+                                    4
+                                  ]
+                                }
+                                """;
+
+            var compiled = ProbeExpressionParser<object>.ParseExpression(json, scopeMembers);
+            var result = EvaluateCompiled(compiled, scopeMembers);
+
+            Assert.Null(result);
+            Assert.True(compiled.Errors == null || compiled.Errors.Length == 0);
+        }
+
         [Theory]
         [MemberData(nameof(IndexerArgumentsImplicitlyConvertibleToInt32))]
         public void ProbeExpressionParser_ImplicitInt32ListIndex_ReturnsValue(object index)
