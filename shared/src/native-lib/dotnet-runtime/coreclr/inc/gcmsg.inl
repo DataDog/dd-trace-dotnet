@@ -41,16 +41,37 @@
         return "%d gc thread waiting... Done";
     }
 
-    static const char* gcDetailedStartMsg()
+#define GC_DETAILED_START_PREFIX "*GC* %d(gen0:%d)(%d)"
+#define GC_DETAILED_START_STRESSLOG "(alloced for %.3fms, g0 %zd (b: %zd, %zd/h) (%.3fmb/ms), g3 %zd (%.3fmb/ms), g4 %zd (%.3fmb/ms))(%s)(%d)(%d)"
+#define GC_DETAILED_START_DPRINTF_EXTRA "(heap size: %.3fmb max: %.3fmb)"
+
+    static const char* gcDetailedStartPrefix()
     {
         STATIC_CONTRACT_LEAF;
-        return "*GC* %d(gen0:%d)(%d)(alloc: %Id)(%s)(%d)";
+        return GC_DETAILED_START_PREFIX;
     }
+
+    static const char* gcDetailedStartMsg(bool compatibleWithStressLog)
+    {
+        STATIC_CONTRACT_LEAF;
+        if (compatibleWithStressLog)
+        {
+            return GC_DETAILED_START_PREFIX GC_DETAILED_START_STRESSLOG;
+        }
+        else
+        {
+            return GC_DETAILED_START_PREFIX GC_DETAILED_START_STRESSLOG GC_DETAILED_START_DPRINTF_EXTRA;
+        }
+    }
+
+#undef GC_DETAILED_START_PREFIX
+#undef GC_DETAILED_START_STRESSLOG
+#undef GC_DETAILED_START_DPRINTF_EXTRA
 
     static const char* gcDetailedEndMsg()
     {
         STATIC_CONTRACT_LEAF;
-        return "*EGC* %Id(gen0:%Id)(%Id)(%d)(%s)(%s)(%s)(ml: %d->%d)";
+        return "*EGC* %zd(gen0:%zd)(heap size: %.3fmb)(%d)(%s)(%s)(%s)(ml: %d->%d)\n";
     }
 
     static const char* gcStartMarkMsg()
@@ -80,7 +101,7 @@
     static const char* gcStartCompactMsg()
     {
         STATIC_CONTRACT_LEAF;
-        return "---- Compact Phase on heap %d: %Ix(%Ix)----";
+        return "---- Compact Phase on heap %d: %zx(%zx)----";
     }
 
     static const char* gcEndCompactMsg()
@@ -92,31 +113,31 @@
     static const char* gcMemCopyMsg()
     {
         STATIC_CONTRACT_LEAF;
-        return " mc: [%Ix->%Ix, %Ix->%Ix[";
+        return " mc: [%zx->%zx, %zx->%zx[";
     }
 
     static const char* gcPlanPlugMsg()
     {
         STATIC_CONTRACT_LEAF;
-        return "(%Ix)[%Ix->%Ix, NA: [%Ix(%Id), %Ix[: %Ix(%d), x: %Ix (%s)";
+        return "(%zx)[%zx->%zx, NA: [%zx(%zd), %zx[: %zx(%d), x: %zx (%s)";
     }
 
     static const char* gcPlanPinnedPlugMsg()
     {
         STATIC_CONTRACT_LEAF;
-        return "(%Ix)PP: [%Ix, %Ix[%Ix](m:%d)";
+        return "(%zx)PP: [%zx, %zx[%zx](m:%d)";
     }
 
     static const char* gcDesiredNewAllocationMsg()
     {
         STATIC_CONTRACT_LEAF;
-        return "h%d g%d surv: %Id current: %Id alloc: %Id (%d%%) f: %d%% new-size: %Id new-alloc: %Id";
+        return "h%d g%d surv: %zd current: %zd alloc: %zd (%d%%) f: %d%% new-size: %zd new-alloc: %zd";
     }
 
     static const char* gcMakeUnusedArrayMsg()
     {
         STATIC_CONTRACT_LEAF;
-        return "Making unused array [%Ix, %Ix[";
+        return "Making unused array [%zx, %zx[";
     }
 
     static const char* gcStartBgcThread()
@@ -129,4 +150,10 @@
     {
         STATIC_CONTRACT_LEAF;
         return "Relocating reference *(%p) from %p to %p";
+    }
+
+    static const char* gcLoggingIsOffMsg()
+    {
+        STATIC_CONTRACT_LEAF;
+        return "TraceGC is not turned on";
     }

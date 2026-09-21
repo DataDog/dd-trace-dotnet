@@ -42,11 +42,16 @@ typedef int mdToken;
 typedef unsigned int size_t;
 typedef int ModuleMapType;
 typedef int VCSHeapType;
+typedef int LoaderHeapKind;
+typedef int MethodTableInitializationFlags;
 cpp_quote("#endif")
 
 
 cpp_quote("typedef enum { TYPEDEFTOMETHODTABLE, TYPEREFTOMETHODTABLE } ModuleMapType;")
-cpp_quote("typedef enum {IndcellHeap, LookupHeap, ResolveHeap, DispatchHeap, CacheEntryHeap} VCSHeapType;")
+cpp_quote("typedef enum {IndcellHeap, LookupHeap, ResolveHeap, DispatchHeap, CacheEntryHeap, VtableHeap} VCSHeapType;")
+cpp_quote("typedef enum {LoaderHeapKindNormal = 0, LoaderHeapKindExplicitControl = 1} LoaderHeapKind;")
+cpp_quote("typedef enum {MethodTableInitialized = 1, MethodTableInitializationFailed = 2} MethodTableInitializationFlags;")
+cpp_quote("typedef enum {FreeUnknownRegion = 0, FreeGlobalHugeRegion = 1, FreeGlobalRegion = 2, FreeRegion = 3, FreeSohSegment = 4, FreeUohSegment = 5 } FreeRegionKind;")
 
 typedef void (*MODULEMAPTRAVERSE)(UINT index, CLRDATA_ADDRESS methodTable,LPVOID token);
 typedef void (*VISITHEAP)(CLRDATA_ADDRESS blockData,size_t blockSize,BOOL blockIsCurrentBlock);
@@ -106,6 +111,7 @@ typedef enum SOSStackSourceType
 {
     SOS_StackSourceIP,     // Instruction pointer in managed code
     SOS_StackSourceFrame,  // clr!Frame
+    SOS_StackSourceOther,  // Roots which do not come from managed code or Frames
 } SOSStackSourceType;
 
 typedef enum SOSRefFlags
@@ -167,6 +173,32 @@ interface ISOSStackRefEnum  : ISOSEnum
      /* Reports all frames which we could not enumerate gc references for.
       */
      HRESULT EnumerateErrors([out] ISOSStackRefErrorEnum **ppEnum);
+}
+
+
+cpp_quote("#ifndef _SOS_MemoryRegion_")
+cpp_quote("#define _SOS_MemoryRegion_")
+
+typedef struct _SOSMemoryRegion
+{
+    CLRDATA_ADDRESS Start;
+    CLRDATA_ADDRESS Size;
+    CLRDATA_ADDRESS ExtraData;
+    int Heap;
+} SOSMemoryRegion;
+
+cpp_quote("#endif // _SOS_MemoryRegion_")
+
+[
+    object,
+    local,
+    uuid(E4B860EC-337A-40C0-A591-F09A9680690F)
+]
+interface ISOSMemoryEnum : ISOSEnum
+{
+    HRESULT Next([in] unsigned int count,
+                 [out, size_is(count), length_is(*pNeeded)] SOSMemoryRegion memRegion[],
+                 [out] unsigned int *pNeeded);
 }
 
 
@@ -413,7 +445,7 @@ interface ISOSDacInterface8 : IUnknown
 // Increment anytime there is a change in the data structures that SOS depends on like
 // stress log structs (StressMsg, StressLogChunck, ThreadStressLog, etc), exception
 // stack traces (StackTraceElement), the PredefinedTlsSlots enums, etc.
-cpp_quote("#define SOS_BREAKING_CHANGE_VERSION 3")
+cpp_quote("#define SOS_BREAKING_CHANGE_VERSION 5")
 
 [
     object,
@@ -458,4 +490,249 @@ interface ISOSDacInterface11 : IUnknown
 interface ISOSDacInterface12 : IUnknown
 {
     HRESULT GetGlobalAllocationContext(CLRDATA_ADDRESS* allocPtr, CLRDATA_ADDRESS* allocLimit);
+}
+
+[
+    object,
+    local,
+    uuid(3176a8ed-597b-4f54-a71f-83695c6a8c5e)
+]
+interface ISOSDacInterface13 : IUnknown
+{
+    HRESULT TraverseLoaderHeap(CLRDATA_ADDRESS loaderHeapAddr, LoaderHeapKind kind, VISITHEAP pCallback);
+    HRESULT GetDomainLoaderAllocator(CLRDATA_ADDRESS domainAddress, CLRDATA_ADDRESS *pLoaderAllocator);
+    HRESULT GetLoaderAllocatorHeapNames(int count, const char **ppNames, int *pNeeded);
+    HRESULT GetLoaderAllocatorHeaps(CLRDATA_ADDRESS loaderAllocator, int count, CLRDATA_ADDRESS *pLoaderHeaps, LoaderHeapKind *pKinds, int *pNeeded);
+    HRESULT GetHandleTableMemoryRegions(ISOSMemoryEnum **ppEnum);
+    HRESULT GetGCBookkeepingMemoryRegions(ISOSMemoryEnum **ppEnum);
+    HRESULT GetGCFreeRegions(ISOSMemoryEnum **ppEnum);
+    HRESULT LockedFlush();
+}
+
+[
+    object,
+    local,
+    uuid(9aa22aca-6dc6-4a0c-b4e0-70d2416b9837)
+]
+interface ISOSDacInterface14 : IUnknown
+{
+    HRESULT GetStaticBaseAddress(CLRDATA_ADDRESS methodTable, CLRDATA_ADDRESS *nonGCStaticsAddress, CLRDATA_ADDRESS *GCStaticsAddress);
+    HRESULT GetThreadStaticBaseAddress(CLRDATA_ADDRESS methodTable, CLRDATA_ADDRESS thread, CLRDATA_ADDRESS *nonGCStaticsAddress, CLRDATA_ADDRESS *GCStaticsAddress);
+    HRESULT GetMethodTableInitializationFlags(CLRDATA_ADDRESS methodTable, MethodTableInitializationFlags *initializationStatus);
+}
+
+cpp_quote("#ifndef _SOS_MethodData")
+cpp_quote("#define _SOS_MethodData")
+
+typedef struct _SOSMethodData
+{
+    // At least one of MethodDesc, Entrypoint, or Token/DefiningMethodTable/DefiningModule is guaranteed to be set.
+    // Multiple of them may be set as well
+    CLRDATA_ADDRESS MethodDesc;
+
+    CLRDATA_ADDRESS Entrypoint;
+
+    CLRDATA_ADDRESS DefininingMethodTable; // Useful for when the method is inherited from a parent type which is instantiated
+    CLRDATA_ADDRESS DefiningModule;
+    unsigned int Token;
+
+    // Slot data, a given MethodDesc may be present in multiple slots for a single MethodTable
+    unsigned int Slot; // Will be set to 0xFFFFFFFF for EnC added methods
+} SOSMethodData;
+
+cpp_quote("#endif //_SOS_MethodData")
+
+[
+    object,
+    local,
+    uuid(3c0fe725-c324-4a4f-8100-d399588a662e)
+]
+interface ISOSMethodEnum : ISOSEnum
+{
+    HRESULT Next([in] unsigned int count,
+                 [out, size_is(count), length_is(*pNeeded)] SOSMethodData handles[],
+                 [out] unsigned int *pNeeded);
+}
+
+[
+    object,
+    local,
+    uuid(7ed81261-52a9-4a23-a358-c3313dea30a8)
+]
+interface ISOSDacInterface15 : IUnknown
+{
+    HRESULT GetMethodTableSlotEnumerator(CLRDATA_ADDRESS mt, ISOSMethodEnum **enumerator);
+}
+
+[
+    object,
+    local,
+    uuid(4ba12ff8-daac-4e43-ac56-98cf8d5c595d)
+]
+interface ISOSDacInterface16 : IUnknown
+{
+    HRESULT GetGCDynamicAdaptationMode(int* pDynamicAdaptationMode);
+}
+
+cpp_quote("#ifndef _SOS_StressLogData")
+cpp_quote("#define _SOS_StressLogData")
+
+typedef struct _SOSStressLogData
+{
+    unsigned int LoggedFacilities;
+    unsigned int Level;
+    unsigned int MaxSizePerThread;
+    unsigned int MaxSizeTotal;
+    int TotalChunks;
+    UINT64 TickFrequency;
+    UINT64 StartTimestamp;
+    UINT64 StartTime;
+} SOSStressLogData;
+
+cpp_quote("#endif //_SOS_StressLogData")
+
+cpp_quote("#ifndef _SOS_ThreadStressLogData")
+cpp_quote("#define _SOS_ThreadStressLogData")
+
+typedef struct _SOSThreadStressLogData
+{
+    CLRDATA_ADDRESS ThreadLogAddress;
+    UINT64 ThreadId;
+} SOSThreadStressLogData;
+
+cpp_quote("#endif //_SOS_ThreadStressLogData")
+
+cpp_quote("#ifndef _SOS_StressMsgData")
+cpp_quote("#define _SOS_StressMsgData")
+
+typedef struct _SOSStressMsgData
+{
+    unsigned int Facility;
+    CLRDATA_ADDRESS FormatString;
+    UINT64 Timestamp;
+    unsigned int ArgumentCount;
+} SOSStressMsgData;
+
+cpp_quote("#endif //_SOS_StressMsgData")
+
+[
+    object,
+    local,
+    uuid(94a2bd3d-ab3d-43bf-81d8-3ae96b8e33cd)
+]
+interface ISOSStressLogThreadEnum : ISOSEnum
+{
+    HRESULT Next([in] unsigned int count,
+                 [out, size_is(count), length_is(*pFetched)] SOSThreadStressLogData values[],
+                 [out] unsigned int *pFetched);
+}
+
+[
+    object,
+    local,
+    uuid(437cb033-afe7-4c0f-a4a7-82c891bc049e)
+]
+interface ISOSStressLogMsgEnum : ISOSEnum
+{
+    HRESULT Next([in] unsigned int count,
+                 [out, size_is(count), length_is(*pFetched)] SOSStressMsgData values[],
+                 [out] unsigned int *pFetched);
+
+    HRESULT GetArguments([in] unsigned int messageIndex,
+                         [in] unsigned int argCount,
+                         [out, size_is(argCount), length_is(*pFetched)] CLRDATA_ADDRESS args[],
+                         [out] unsigned int *pFetched);
+}
+
+[
+    object,
+    local,
+    uuid(2f4bb585-ed50-479e-bbe0-10a95a5da3bb)
+]
+interface ISOSDacInterface17 : IUnknown
+{
+    HRESULT GetStressLogData([out] SOSStressLogData *data);
+    HRESULT GetStressLogThreadEnumerator([out] ISOSStressLogThreadEnum **ppEnum);
+    HRESULT GetStressLogMessageEnumerator([in] CLRDATA_ADDRESS threadStressLogAddress,
+                                          [out] ISOSStressLogMsgEnum **ppEnum);
+    HRESULT GetStressLogMemoryRanges([out] ISOSMemoryEnum **ppEnum);
+}
+
+cpp_quote("#ifndef _SOS_GCInfoData")
+cpp_quote("#define _SOS_GCInfoData")
+
+typedef struct _SOSCodeRange
+{
+    unsigned int BeginOffset;
+    unsigned int EndOffset;
+} SOSCodeRange;
+
+typedef struct _SOSGCInfoHeader
+{
+    ULONG  SizeOf;
+
+    unsigned int GcInfoVersion;
+    unsigned int CodeSize;
+    unsigned int PrologSize;
+    unsigned int StackBaseRegister;
+    unsigned int SizeOfStackParameterArea;
+
+    BOOL   IsVarArg;
+    BOOL   WantsReportOnlyLeaf;
+    BOOL   HasTailCalls;
+
+    BOOL   GSCookieIsPresent;
+    int    GSCookieStackSlot;
+    unsigned int GSCookieValidRangeStart;
+    unsigned int GSCookieValidRangeEnd;
+
+    BOOL   PSPSymIsPresent;
+    int    PSPSymStackSlot;
+
+    BOOL   GenericsInstContextIsPresent;
+    int    GenericsInstContextStackSlot;
+    unsigned int GenericsInstContextKind;
+} SOSGCInfoHeader;
+
+typedef struct _SOSGCSlotLifetime
+{
+    unsigned int BeginOffset;
+    unsigned int EndOffset;
+    int          IsRegister;
+    unsigned int RegisterNumber;
+    int          SpOffset;
+    unsigned int BaseRegister;
+    unsigned int GcFlags;
+} SOSGCSlotLifetime;
+
+cpp_quote("#endif //_SOS_GCInfoData")
+
+[
+    object,
+    local,
+    uuid(3dccf95b-bca2-40ee-8b83-d8d7574a1df0)
+]
+interface ISOSDacInterface18 : IUnknown
+{
+    HRESULT GetGCInfoHeader(
+        [in]      CLRDATA_ADDRESS ip,
+        [in, out] SOSGCInfoHeader* header);
+
+    HRESULT GetGCInfoInterruptibleRanges(
+        [in]  CLRDATA_ADDRESS ip,
+        [in]  ULONG count,
+        [out, size_is(count), length_is(*pNeeded)] SOSCodeRange* ranges,
+        [out] ULONG* pNeeded);
+
+    HRESULT GetGCInfoSafePoints(
+        [in]  CLRDATA_ADDRESS ip,
+        [in]  ULONG count,
+        [out, size_is(count), length_is(*pNeeded)] unsigned int* offsets,
+        [out] ULONG* pNeeded);
+
+    HRESULT GetGCInfoSlotLifetimes(
+        [in]  CLRDATA_ADDRESS ip,
+        [in]  ULONG count,
+        [out, size_is(count), length_is(*pNeeded)] SOSGCSlotLifetime* lifetimes,
+        [out] ULONG* pNeeded);
 }

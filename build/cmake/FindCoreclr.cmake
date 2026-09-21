@@ -7,6 +7,9 @@ target_include_directories(coreclr PUBLIC
     ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-lib/dotnet-runtime/coreclr/pal/prebuilt/inc
     ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-lib/dotnet-runtime/coreclr/pal/inc
     ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-lib/dotnet-runtime/coreclr/inc
+    # Parent of minipal/, not coreclr/ itself: pal.h includes <minipal/utils.h> and
+    # pal_mstypes.h includes <minipal/guid.h>. Appended, so it can't shadow anything above.
+    ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-lib/dotnet-runtime
 )
 
 target_compile_options(coreclr PUBLIC

@@ -43,7 +43,8 @@
     <CORECLR_PATH>..\..\..\shared\src\native-lib\dotnet-runtime\coreclr</CORECLR_PATH>
     <ProjectName>Datadog.Tracer.Native</ProjectName>
     <LIB_PATH>..\..\..\shared\src\native-lib\</LIB_PATH>
-    <LIB_INCLUDES>$(CORECLR_PATH)\pal\prebuilt\inc;$(CORECLR_PATH)\inc;$(VC_IncludePath);$(WindowsSDK_IncludePath)</LIB_INCLUDES>
+    <!-- $(CORECLR_PATH)\.. (dotnet-runtime) is also needed: pal.h includes <minipal/utils.h>. -->
+    <LIB_INCLUDES>$(CORECLR_PATH)\pal\prebuilt\inc;$(CORECLR_PATH)\inc;$(CORECLR_PATH)\..;$(VC_IncludePath);$(WindowsSDK_IncludePath)</LIB_INCLUDES>
     <!-- Forced ahead of any file that reaches the vendored pal headers: they require the build
          to define HOST_AMD64/HOST_ARM64/HOST_X86 itself from .NET 11 onwards. See the header. -->
     <HOST_ARCH_HEADER>$([System.IO.Path]::GetFullPath('$(MSBuildProjectDirectory)\$(CORECLR_PATH)\..\host_arch.h'))</HOST_ARCH_HEADER>

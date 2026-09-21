@@ -62,10 +62,9 @@ typedef HRESULT (__stdcall * PFN_DestroyICeeFileGen)(ICeeFileGen ** ceeFileGen);
 #define ICEE_CREATE_MACHINE_MASK       0x0000FF00  // space for up to 256 machine targets (note: most users just do a bit check, not an equality compare after applying the mask)
 #define ICEE_CREATE_MACHINE_ILLEGAL    0x00000000  // An illegal machine name
 #define ICEE_CREATE_MACHINE_I386       0x00000100  // Create a IMAGE_FILE_MACHINE_I386
-#define ICEE_CREATE_MACHINE_IA64       0x00000200  // Create a IMAGE_FILE_MACHINE_IA64
-#define ICEE_CREATE_MACHINE_AMD64      0x00000400  // Create a IMAGE_FILE_MACHINE_AMD64
-#define ICEE_CREATE_MACHINE_ARM        0x00000800  // Create a IMAGE_FILE_MACHINE_ARMNT
-#define ICEE_CREATE_MACHINE_ARM64      0x00001000  // Create a IMAGE_FILE_MACHINE_ARM64
+#define ICEE_CREATE_MACHINE_AMD64      0x00000200  // Create a IMAGE_FILE_MACHINE_AMD64
+#define ICEE_CREATE_MACHINE_ARM        0x00000400  // Create a IMAGE_FILE_MACHINE_ARMNT
+#define ICEE_CREATE_MACHINE_ARM64      0x00000800  // Create a IMAGE_FILE_MACHINE_ARM64
 
     // Pass this to CreateCeeFileEx to create a pure IL Exe or DLL
 #define ICEE_CREATE_FILE_PURE_IL  ICEE_CREATE_FILE_PE32         | \
@@ -115,18 +114,11 @@ class ICeeFileGen {
     virtual HRESULT SetComImageFlags (HCEEFILE ceeFile, DWORD mask);
     virtual HRESULT GetComImageFlags (HCEEFILE ceeFile, DWORD *mask);
 
-    // get IMapToken interface for tracking mapped tokens
-    virtual HRESULT GetIMapTokenIface(HCEEFILE ceeFile, IMetaDataEmit *emitter, IUnknown **pIMapToken);
     virtual HRESULT SetDirectoryEntry (HCEEFILE ceeFile, HCEESECTION section, ULONG num, ULONG size, ULONG offset = 0);
 
     // Write out the metadata in "emitter" to the metadata section in "ceeFile"
     // Use EmitMetaDataAt() for more control
     virtual HRESULT EmitMetaDataEx (HCEEFILE ceeFile, IMetaDataEmit *emitter);
-
-    virtual HRESULT GetIMapTokenIfaceEx(HCEEFILE ceeFile, IMetaDataEmit *emitter, IUnknown **pIMapToken);
-
-    virtual HRESULT CreateCeeFileFromICeeGen(
-        ICeeGenInternal *pFromICeeGen, HCEEFILE *ceeFile, DWORD createFlags = ICEE_CREATE_FILE_PURE_IL); // call this to instantiate a file handle
 
     virtual HRESULT SetManifestEntry(HCEEFILE ceeFile, ULONG size, ULONG offset);
 
@@ -157,18 +149,13 @@ class ICeeFileGen {
     // Emit the metadata from "emitter".
     // If 'section != 0, it will put the data in 'buffer'.  This
     // buffer is assumed to be in 'section' at 'offset' and of size 'buffLen'
-    // (should use GetSaveSize to insure that buffer is big enough
+    // (should use GetSaveSize to ensure that buffer is big enough
     virtual HRESULT EmitMetaDataAt (HCEEFILE ceeFile, IMetaDataEmit *emitter,
                                     HCEESECTION section, DWORD offset,
                                     BYTE* buffer, unsigned buffLen);
 
     virtual HRESULT GetFileTimeStamp (HCEEFILE ceeFile, DWORD *pTimeStamp);
-
-    // Add a notification handler. If it implements an interface that
-    // the ICeeFileGen understands, S_OK is returned. Otherwise,
-    // E_NOINTERFACE.
-    virtual HRESULT AddNotificationHandler(HCEEFILE ceeFile,
-                                           IUnknown *pHandler);
+    virtual HRESULT SetFileHeaderTimeStamp(HCEEFILE ceeFile, DWORD timeStamp);
 
     virtual HRESULT SetFileAlignment(HCEEFILE ceeFile, ULONG fileAlignment);
 
@@ -181,13 +168,6 @@ class ICeeFileGen {
     virtual HRESULT GetHeaderInfo (HCEEFILE ceeFile, PIMAGE_NT_HEADERS *ppNtHeaders,
                                                      PIMAGE_SECTION_HEADER *ppSections,
                                                      ULONG *pNumSections);
-
-    // Seed file is a base file which is copied over into the output file
-    // Note that there are restrictions on the seed file (the sections
-    // cannot be relocated), and that the copy is not complete as the new
-    // headers overwrite the seed file headers.
-    virtual HRESULT CreateCeeFileEx2(HCEEFILE *ceeFile, ULONG createFlags,
-                                     LPCWSTR seedFileName = NULL);
 
     virtual HRESULT SetVTableEntry64(HCEEFILE ceeFile, ULONG size, void* ptr);
 };

@@ -4,12 +4,26 @@
 // crosscomp.h - cross-compilation enablement structures.
 //
 
-
 #pragma once
+
+#include <minipal/mutex.h>
 
 #if (!defined(HOST_64BIT) && defined(TARGET_64BIT)) || (defined(HOST_64BIT) && !defined(TARGET_64BIT))
 #define CROSSBITNESS_COMPILE
+
+#ifndef CROSS_COMPILE
+#define CROSS_COMPILE
+#endif // !CROSS_COMPILE
+
 #endif
+
+#if defined(TARGET_WINDOWS) && !defined(HOST_WINDOWS) && !defined(CROSS_COMPILE)
+#define CROSS_COMPILE
+#endif // TARGET_WINDOWS && !HOST_WINDOWS && !CROSS_COMPILE
+
+#if defined(TARGET_UNIX) && !defined(HOST_UNIX) && !defined(CROSS_COMPILE)
+#define CROSS_COMPILE
+#endif // TARGET_UNIX && !HOST_UNIX && !CROSS_COMPILE
 
 // Target platform-specific library naming
 //
@@ -17,7 +31,7 @@
 #define MAKE_TARGET_DLLNAME_W(name) name W(".dll")
 #define MAKE_TARGET_DLLNAME_A(name) name ".dll"
 #else // TARGET_WINDOWS
-#ifdef TARGET_OSX
+#ifdef TARGET_APPLE
 #define MAKE_TARGET_DLLNAME_W(name) W("lib") name W(".dylib")
 #define MAKE_TARGET_DLLNAME_A(name)  "lib" name  ".dylib"
 #else
@@ -196,7 +210,9 @@ typedef struct _T_DISPATCHER_CONTEXT {
 #define ARM64_MAX_BREAKPOINTS     8
 #define ARM64_MAX_WATCHPOINTS     2
 
+#ifndef CONTEXT_UNWOUND_TO_CALL
 #define CONTEXT_UNWOUND_TO_CALL 0x20000000
+#endif
 
 typedef union _NEON128 {
     struct {
@@ -282,7 +298,8 @@ typedef struct DECLSPEC_ALIGN(16) _T_CONTEXT {
 } T_CONTEXT, *PT_CONTEXT;
 
 // _IMAGE_ARM64_RUNTIME_FUNCTION_ENTRY (see ExternalAPIs\Win9CoreSystem\inc\winnt.h)
-typedef struct _T_RUNTIME_FUNCTION {
+#ifdef HOST_UNIX
+typedef struct _IMAGE_ARM64_RUNTIME_FUNCTION_ENTRY {
     DWORD BeginAddress;
     union {
         DWORD UnwindData;
@@ -294,12 +311,11 @@ typedef struct _T_RUNTIME_FUNCTION {
             DWORD H : 1;
             DWORD CR : 2;
             DWORD FrameSize : 9;
-        } PackedUnwindData;
+        };
     };
-} T_RUNTIME_FUNCTION, *PT_RUNTIME_FUNCTION;
+} IMAGE_ARM64_RUNTIME_FUNCTION_ENTRY, * PIMAGE_ARM64_RUNTIME_FUNCTION_ENTRY;
 
 
-#ifdef HOST_UNIX
 
 typedef
 EXCEPTION_DISPOSITION
@@ -310,6 +326,8 @@ EXCEPTION_DISPOSITION
     PVOID DispatcherContext
     );
 #endif
+
+typedef IMAGE_ARM64_RUNTIME_FUNCTION_ENTRY T_RUNTIME_FUNCTION, * PT_RUNTIME_FUNCTION;
 //
 // Define exception dispatch context structure.
 //
@@ -397,7 +415,9 @@ enum
 #define LOONGARCH64_MAX_BREAKPOINTS     8
 #define LOONGARCH64_MAX_WATCHPOINTS     2
 
+#ifndef CONTEXT_UNWOUND_TO_CALL
 #define CONTEXT_UNWOUND_TO_CALL 0x20000000
+#endif
 
 typedef struct DECLSPEC_ALIGN(16) _T_CONTEXT {
 
@@ -445,10 +465,10 @@ typedef struct DECLSPEC_ALIGN(16) _T_CONTEXT {
     DWORD64 Pc;
 
     //
-    // Floating Point Registers
+    // Floating Point Registers: FPR64/LSX/LASX.
     //
-    //TODO-LoongArch64: support the SIMD.
-    ULONGLONG F[32];
+    ULONGLONG F[4*32];
+    DWORD64 Fcc;
     DWORD   Fcsr;
 } T_CONTEXT, *PT_CONTEXT;
 
@@ -504,7 +524,6 @@ typedef struct _T_KNONVOLATILE_CONTEXT_POINTERS {
     PDWORD64 S7;
     PDWORD64 S8;
     PDWORD64 Fp;
-    PDWORD64 Tp;
     PDWORD64 Ra;
 
     PDWORD64 F24;
@@ -517,6 +536,149 @@ typedef struct _T_KNONVOLATILE_CONTEXT_POINTERS {
     PDWORD64 F31;
 } T_KNONVOLATILE_CONTEXT_POINTERS, *PT_KNONVOLATILE_CONTEXT_POINTERS;
 
+#elif defined(HOST_AMD64) && defined(TARGET_RISCV64)  // Host amd64 managing RISCV64 related code
+
+#ifndef CROSS_COMPILE
+#define CROSS_COMPILE
+#endif
+
+//
+// Specify the number of breakpoints and watchpoints that the OS
+// will track.
+//
+
+#define RISCV64_MAX_BREAKPOINTS     8
+#define RISCV64_MAX_WATCHPOINTS     2
+
+#ifndef CONTEXT_UNWOUND_TO_CALL
+#define CONTEXT_UNWOUND_TO_CALL 0x20000000
+#endif
+
+typedef struct DECLSPEC_ALIGN(16) _T_CONTEXT {
+
+    //
+    // Control flags.
+    //
+
+    /* +0x000 */ DWORD ContextFlags;
+
+    //
+    // Integer registers
+    //
+    DWORD64 R0;
+    DWORD64 Ra;
+    DWORD64 Sp;
+    DWORD64 Gp;
+    DWORD64 Tp;
+    DWORD64 T0;
+    DWORD64 T1;
+    DWORD64 T2;
+    DWORD64 Fp;
+    DWORD64 S1;
+    DWORD64 A0;
+    DWORD64 A1;
+    DWORD64 A2;
+    DWORD64 A3;
+    DWORD64 A4;
+    DWORD64 A5;
+    DWORD64 A6;
+    DWORD64 A7;
+    DWORD64 S2;
+    DWORD64 S3;
+    DWORD64 S4;
+    DWORD64 S5;
+    DWORD64 S6;
+    DWORD64 S7;
+    DWORD64 S8;
+    DWORD64 S9;
+    DWORD64 S10;
+    DWORD64 S11;
+    DWORD64 T3;
+    DWORD64 T4;
+    DWORD64 T5;
+    DWORD64 T6;
+    DWORD64 Pc;
+
+    //
+    // Floating Point Registers
+    //
+    //TODO-RISCV64: support the SIMD.
+    ULONGLONG F[32];
+    DWORD Fcsr;
+} T_CONTEXT, *PT_CONTEXT;
+
+// _IMAGE_RISCV64_RUNTIME_FUNCTION_ENTRY (see ExternalAPIs\Win9CoreSystem\inc\winnt.h)
+typedef struct _T_RUNTIME_FUNCTION {
+    DWORD BeginAddress;
+    union {
+        DWORD UnwindData;
+        struct {
+            DWORD Flag : 2;
+            DWORD FunctionLength : 11;
+            DWORD RegF : 3;
+            DWORD RegI : 4;
+            DWORD H : 1;
+            DWORD CR : 2;
+            DWORD FrameSize : 9;
+        } PackedUnwindData;
+    };
+} T_RUNTIME_FUNCTION, *PT_RUNTIME_FUNCTION;
+
+//
+// Define exception dispatch context structure.
+//
+
+typedef struct _T_DISPATCHER_CONTEXT {
+    DWORD64 ControlPc;
+    DWORD64 ImageBase;
+    PT_RUNTIME_FUNCTION FunctionEntry;
+    DWORD64 EstablisherFrame;
+    DWORD64 TargetPc;
+    PCONTEXT ContextRecord;
+    PEXCEPTION_ROUTINE LanguageHandler;
+    PVOID HandlerData;
+    PVOID HistoryTable;
+    DWORD ScopeIndex;
+    BOOLEAN ControlPcIsUnwound;
+    PBYTE  NonVolatileRegisters;
+} T_DISPATCHER_CONTEXT, *PT_DISPATCHER_CONTEXT;
+
+//
+// Nonvolatile context pointer record.
+//
+
+typedef struct _T_KNONVOLATILE_CONTEXT_POINTERS {
+
+    PDWORD64 S1;
+    PDWORD64 S2;
+    PDWORD64 S3;
+    PDWORD64 S4;
+    PDWORD64 S5;
+    PDWORD64 S6;
+    PDWORD64 S7;
+    PDWORD64 S8;
+    PDWORD64 S9;
+    PDWORD64 S10;
+    PDWORD64 S11;
+    PDWORD64 Fp;
+    PDWORD64 Gp;
+    PDWORD64 Tp;
+    PDWORD64 Ra;
+
+    PDWORD64 F8;
+    PDWORD64 F9;
+    PDWORD64 F18;
+    PDWORD64 F19;
+    PDWORD64 F20;
+    PDWORD64 F21;
+    PDWORD64 F22;
+    PDWORD64 F23;
+    PDWORD64 F24;
+    PDWORD64 F25;
+    PDWORD64 F26;
+    PDWORD64 F27;
+} T_KNONVOLATILE_CONTEXT_POINTERS, *PT_KNONVOLATILE_CONTEXT_POINTERS;
+
 #else
 
 #define T_CONTEXT CONTEXT
@@ -525,6 +687,36 @@ typedef struct _T_KNONVOLATILE_CONTEXT_POINTERS {
 #define T_DISPATCHER_CONTEXT DISPATCHER_CONTEXT
 #define PT_DISPATCHER_CONTEXT PDISPATCHER_CONTEXT
 
+#if defined(HOST_WINDOWS) && defined(TARGET_X86)
+typedef struct _KNONVOLATILE_CONTEXT {
+
+    DWORD Edi;
+    DWORD Esi;
+    DWORD Ebx;
+    DWORD Ebp;
+
+} KNONVOLATILE_CONTEXT, *PKNONVOLATILE_CONTEXT;
+
+typedef struct _KNONVOLATILE_CONTEXT_POINTERS_EX
+{
+    // The ordering of these fields should be aligned with that
+    // of corresponding fields in CONTEXT
+    //
+    // (See FillRegDisplay in inc/regdisp.h for details)
+    PDWORD Edi;
+    PDWORD Esi;
+    PDWORD Ebx;
+    PDWORD Edx;
+    PDWORD Ecx;
+    PDWORD Eax;
+
+    PDWORD Ebp;
+
+} KNONVOLATILE_CONTEXT_POINTERS_EX, *PKNONVOLATILE_CONTEXT_POINTERS_EX;
+
+#define KNONVOLATILE_CONTEXT_POINTERS KNONVOLATILE_CONTEXT_POINTERS_EX
+#define PKNONVOLATILE_CONTEXT_POINTERS PKNONVOLATILE_CONTEXT_POINTERS_EX
+#endif
 #define T_KNONVOLATILE_CONTEXT_POINTERS KNONVOLATILE_CONTEXT_POINTERS
 #define PT_KNONVOLATILE_CONTEXT_POINTERS PKNONVOLATILE_CONTEXT_POINTERS
 
@@ -533,72 +725,42 @@ typedef struct _T_KNONVOLATILE_CONTEXT_POINTERS {
 
 #endif
 
-#if defined(DACCESS_COMPILE) && defined(TARGET_UNIX)
-// This is a TARGET oriented copy of CRITICAL_SECTION and PAL_CS_NATIVE_DATA_SIZE
-// It is configured based on TARGET configuration rather than HOST configuration
-// There is validation code in src/coreclr/vm/crst.cpp to keep these from
-// getting out of sync
-
-#define T_CRITICAL_SECTION_VALIDATION_MESSAGE "T_CRITICAL_SECTION validation failed. It is not in sync with CRITICAL_SECTION"
-
-#if defined(TARGET_OSX) && defined(TARGET_X86)
-#define DAC_CS_NATIVE_DATA_SIZE 76
-#elif defined(TARGET_OSX) && defined(TARGET_AMD64)
-#define DAC_CS_NATIVE_DATA_SIZE 120
-#elif defined(TARGET_OSX) && defined(TARGET_ARM64)
-#define DAC_CS_NATIVE_DATA_SIZE 120
-#elif defined(TARGET_FREEBSD) && defined(TARGET_X86)
-#define DAC_CS_NATIVE_DATA_SIZE 12
-#elif defined(TARGET_FREEBSD) && defined(TARGET_AMD64)
-#define DAC_CS_NATIVE_DATA_SIZE 24
-#elif defined(TARGET_LINUX) && defined(TARGET_ARM)
-#define DAC_CS_NATIVE_DATA_SIZE 80
-#elif defined(TARGET_LINUX) && defined(TARGET_ARM64)
-#define DAC_CS_NATIVE_DATA_SIZE 116
-#elif defined(TARGET_LINUX) && defined(TARGET_LOONGARCH64)
-#define DAC_CS_NATIVE_DATA_SIZE 96
-#elif defined(TARGET_LINUX) && defined(TARGET_X86)
-#define DAC_CS_NATIVE_DATA_SIZE 76
-#elif defined(TARGET_LINUX) && defined(TARGET_AMD64)
-#define DAC_CS_NATIVE_DATA_SIZE 96
-#elif defined(TARGET_LINUX) && defined(TARGET_S390X)
-#define DAC_CS_NATIVE_DATA_SIZE 96
-#elif defined(TARGET_LINUX) && defined(TARGET_LOONGARCH64)
-#define DAC_CS_NATIVE_DATA_SIZE 96
-#elif defined(TARGET_LINUX) && defined(TARGET_POWERPC64)
-#define DAC_CS_NATIVE_DATA_SIZE 96
-#elif defined(TARGET_NETBSD) && defined(TARGET_AMD64)
-#define DAC_CS_NATIVE_DATA_SIZE 96
-#elif defined(TARGET_NETBSD) && defined(TARGET_ARM)
-#define DAC_CS_NATIVE_DATA_SIZE 56
-#elif defined(TARGET_NETBSD) && defined(TARGET_X86)
-#define DAC_CS_NATIVE_DATA_SIZE 56
-#elif defined(__sun) && defined(TARGET_AMD64)
-#define DAC_CS_NATIVE_DATA_SIZE 48
+#if defined(TARGET_APPLE)
+#define DAC_MUTEX_MAX_SIZE 96
+#elif defined(TARGET_FREEBSD)
+#define DAC_MUTEX_MAX_SIZE 16
+#elif defined(TARGET_LINUX)
+#define DAC_MUTEX_MAX_SIZE 64
+#elif defined(TARGET_WINDOWS)
+#ifdef TARGET_64BIT
+#define DAC_MUTEX_MAX_SIZE 40
 #else
-#warning
-#error  DAC_CS_NATIVE_DATA_SIZE is not defined for this architecture. This should be same value as PAL_CS_NATIVE_DATA_SIZE (aka sizeof(PAL_CS_NATIVE_DATA)).
+#define DAC_MUTEX_MAX_SIZE 24
+#endif // TARGET_64BIT
+#else
+// Fallback to a conservative default value
+#define DAC_MUTEX_MAX_SIZE 128
 #endif
 
-struct T_CRITICAL_SECTION {
-    PVOID DebugInfo;
-    LONG LockCount;
-    LONG RecursionCount;
-    HANDLE OwningThread;
-    ULONG_PTR SpinCount;
+#ifndef CROSS_COMPILE
+static_assert(DAC_MUTEX_MAX_SIZE >= sizeof(minipal_mutex), "DAC_MUTEX_MAX_SIZE must be greater than or equal to the size of minipal_mutex");
+#endif // !CROSS_COMPILE
 
-#ifdef PAL_TRACK_CRITICAL_SECTIONS_DATA
-    BOOL bInternal;
-#endif // PAL_TRACK_CRITICAL_SECTIONS_DATA
-    volatile DWORD dwInitState;
-
-    union CSNativeDataStorage
+// This type is used to ensure a consistent size of mutexes
+// contained with our Crst types.
+// We have this requirement for cross OS compiling the DAC.
+struct tgt_minipal_mutex final
+{
+    union
     {
-        BYTE rgNativeDataStorage[DAC_CS_NATIVE_DATA_SIZE];
-        PVOID pvAlign; // make sure the storage is machine-pointer-size aligned
-    } csnds;
-};
-#else
-#define T_CRITICAL_SECTION CRITICAL_SECTION
-#endif
+        // DAC builds want to have the data layout of the target system.
+        // Make sure that the host minipal_mutex does not influence
+        // the target data layout
+#ifndef DACCESS_COMPILE
+        minipal_mutex _mtx;
+#endif // !DACCESS_COMPILE
 
+        // This is unused padding to ensure struct size.
+        alignas(void*) BYTE _dacPadding[DAC_MUTEX_MAX_SIZE];
+    };
+};

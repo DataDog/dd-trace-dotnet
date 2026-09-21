@@ -465,9 +465,9 @@ namespace UpdateVendors
 
             Add(
                 libraryName: "coreclr",
-                version: "7.0.0",
-                downloadUrl: "https://github.com/dotnet/runtime/archive/refs/tags/v7.0.0.zip",
-                pathToSrc: new[] { "runtime-7.0.0", "src", "coreclr" },
+                version: "11.0.0-rc.1.26425.128",
+                downloadUrl: "https://github.com/dotnet/runtime/archive/refs/tags/v11.0.0-rc.1.26425.128.zip",
+                pathToSrc: new[] { "runtime-11.0.0-rc.1.26425.128", "src", "coreclr" },
                 transform: PatchCoreClrFile,
                 relativePathsToExclude: new[]
                 {
@@ -482,6 +482,18 @@ namespace UpdateVendors
                     "pal/inc/",
                     "pal/prebuilt/",
                 },
+                relativePathToVendorDirectoryOverride: (RelativePath) "shared/src/native-lib/dotnet-runtime",
+                isNuGetPackage: false);
+
+            Add(
+                libraryName: "minipal",
+                version: "11.0.0-rc.1.26425.128",
+                downloadUrl: "https://github.com/dotnet/runtime/archive/refs/tags/v11.0.0-rc.1.26425.128.zip",
+                pathToSrc: new[] { "runtime-11.0.0-rc.1.26425.128", "src", "native", "minipal" },
+                // No local patches needed - this is a sibling of coreclr/ purely so pal.h's unconditional
+                // #include <minipal/utils.h> (and pal_mstypes.h's <minipal/guid.h>) resolve. See
+                // shared/src/native-lib/dotnet-runtime/README.md.
+                transform: _ => { },
                 relativePathToVendorDirectoryOverride: (RelativePath) "shared/src/native-lib/dotnet-runtime",
                 isNuGetPackage: false);
         }
@@ -1275,48 +1287,28 @@ namespace UpdateVendors
                 case "corprof_i.cpp":
                     RewriteFileWithTransform(filePath, content =>
                         // g_arm64_atomics_present (referenced by pal.h's ARM64 atomics dispatch) has no
-                        // definition anywhere in this MIDL-generated file at this version - add one
-                        // here, since this is the one file from the vendored tree we actually compile.
+                        // definition anywhere in this MIDL-generated file - add one here, since this is
+                        // the one file from the vendored tree we actually compile.
                         ReplaceOrThrow(
                             filePath,
                             content,
                             "extern \"C\"{\n#endif\n\n\n#include <rpc.h>\n#include <rpcndr.h>\n\n#ifdef _MIDL_USE_GUIDDEF_",
-                            "extern \"C\"{\n#endif\n\n// Add missing definition in .NET 7\n// no need to #if defined(HOST_ARM64)\nbool g_arm64_atomics_present = false;\n\n#include <rpc.h>\n#include <rpcndr.h>\n\n\n#ifdef _MIDL_USE_GUIDDEF_",
-                            "adding the g_arm64_atomics_present definition missing in .NET 7"));
-                    break;
-
-                case "pal.h":
-                    RewriteFileWithTransform(filePath, content =>
-                    {
-                        // Move the g_arm64_atomics_present declaration past the "Processor-specific
-                        // glue" block, so it sees HOST_ARM64 defined (that block is what defines it on
-                        // non-MSVC compilers) rather than always taking the "not declared" branch.
-                        content = ReplaceOrThrow(
-                            filePath,
-                            content,
-                            "typedef PVOID NATIVE_LIBRARY_HANDLE;\n\n#if defined(HOST_ARM64)\n// Flag to check if atomics feature is available on\n// the machine\nextern bool g_arm64_atomics_present;\n#endif\n\n/******************* Processor-specific glue  *****************************/",
-                            "typedef PVOID NATIVE_LIBRARY_HANDLE;\n\n/******************* Processor-specific glue  *****************************/",
-                            "removing g_arm64_atomics_present from its original location, ahead of the move below");
-                        content = ReplaceOrThrow(
-                            filePath,
-                            content,
-                            "#endif // !_MSC_VER\n\n/******************* ABI-specific glue *******************************/",
-                            "#endif // !_MSC_VER\n\n// DATADOG: Moved here to ensure that HOST_ARM64 is define on ARM64 builds\n#if defined(HOST_ARM64)\n// Flag to check if atomics feature is available on\n// the machine\nextern bool g_arm64_atomics_present;\n#endif\n\n\n/******************* ABI-specific glue *******************************/",
-                            "re-adding g_arm64_atomics_present after the Processor-specific glue block");
-                        return content;
-                    });
+                            "extern \"C\"{\n#endif\n\n// Add missing definition - see shared/src/native-lib/dotnet-runtime/README.md\n// no need to #if defined(HOST_ARM64)\nbool g_arm64_atomics_present = false;\n\n#include <rpc.h>\n#include <rpcndr.h>\n\n\n#ifdef _MIDL_USE_GUIDDEF_",
+                            "adding the g_arm64_atomics_present definition missing from this MIDL output"));
                     break;
 
                 case "corhlpr.cpp":
                     RewriteFileWithTransform(filePath, content =>
-                        // origBuff is only declared under #ifdef _DEBUG a few lines up; this assert's
-                        // use of it must be guarded the same way, or it fails to compile in Release.
+                        // Upstream dropped this guard; without it, #include "utilcode.h" pulls in ~15
+                        // headers we don't vendor (dn_xxhash.h, cdacdata.h, <minipal/*>, clr_std/*, ...).
+                        // We never define _BLD_CLR (we're not building the real CLR), so restoring the
+                        // guard is equivalent to deleting the include for our build.
                         ReplaceOrThrow(
                             filePath,
                             content,
-                            "fatHeader->SetSize(sizeof(COR_ILMETHOD_FAT) / 4);\n    }\n#ifndef SOS_INCLUDE\n    assert(&origBuff[size] == outBuff);\n#endif // !SOS_INCLUDE\n    return(size);\n}\n",
-                            "fatHeader->SetSize(sizeof(COR_ILMETHOD_FAT) / 4);\n    }\n#ifndef SOS_INCLUDE\n#ifdef _DEBUG\n    assert(&origBuff[size] == outBuff);\n#endif\n#endif // !SOS_INCLUDE\n    return(size);\n}\n",
-                            "guarding the origBuff assert with #ifdef _DEBUG to match its declaration"));
+                            "#ifndef SOS_INCLUDE\n\n#include \"utilcode.h\"\n#include \"corhlpr.h\"\n#include <stdlib.h>\n\n#endif // !SOS_INCLUDE",
+                            "#ifndef SOS_INCLUDE\n\n#ifdef _BLD_CLR\n#include \"utilcode.h\"\n#endif\n#include \"corhlpr.h\"\n#include <stdlib.h>\n\n#endif // !SOS_INCLUDE",
+                            "restoring the #ifdef _BLD_CLR guard around #include \"utilcode.h\" that upstream dropped"));
                     break;
             }
         }

@@ -65,6 +65,33 @@ enum
     DACSTACKPRIV_REQUEST_FRAME_DATA = 0xf0000000
 };
 
+#ifdef CDAC_STRESS
+// Private requests for the cDAC stress harness.
+enum
+{
+    DACSTRESSPRIV_REQUEST_FLUSH_TARGET_STATE   = 0xf2000000,
+    DACSTRESSPRIV_REQUEST_COMPUTE_ARG_GCREFMAP = 0xf2000001
+};
+
+// In/out request descriptor for DACSTRESSPRIV_REQUEST_COMPUTE_ARG_GCREFMAP.
+// outBuffer is unused; the caller-allocated blob destination + size are
+// carried by this struct, and the handler writes cbFilled and cbNeeded in
+// place.
+//   S_OK                                              blob fit; cbFilled bytes written to *BlobBuffer; cbNeeded == cbFilled.
+//   HRESULT_FROM_WIN32(ERROR_INSUFFICIENT_BUFFER)    cbFilled = 0, cbNeeded = required size; *BlobBuffer untouched.
+//   E_NOTIMPL                                         encoder declined this MD (bucketed as ARG_SKIP).
+//   E_FAIL                                            encoder threw (bucketed as ARG_ERROR).
+//   E_INVALIDARG                                      bad inBuffer.
+struct DacStressArgGCRefMapRequest
+{
+    CLRDATA_ADDRESS MethodDesc;     // [in]
+    CLRDATA_ADDRESS BlobBuffer;     // [in]  caller-allocated destination (in-proc pointer)
+    ULONG32         BlobBufferLen;  // [in]  capacity at BlobBuffer
+    ULONG32         cbFilled;       // [out] bytes actually written to *BlobBuffer
+    ULONG32         cbNeeded;       // [out] total bytes the blob requires
+};
+#endif // CDAC_STRESS
+
 enum DacpObjectType { OBJ_STRING=0,OBJ_FREE,OBJ_OBJECT,OBJ_ARRAY,OBJ_OTHER };
 struct MSLAYOUT DacpObjectData
 {
@@ -226,11 +253,15 @@ struct MSLAYOUT DacpThreadLocalModuleData
     CLRDATA_ADDRESS pNonGCStaticDataStart = 0;
 };
 
-
 struct MSLAYOUT DacpModuleData
 {
+    enum TransientFlags
+    {
+        IsEditAndContinue = 0x00000208, // Flags for .NET Framework (0x00000200) and .NET Core (0x00000008)
+    };
+
     CLRDATA_ADDRESS Address = 0;
-    CLRDATA_ADDRESS PEAssembly = 0; // A PEAssembly addr
+    CLRDATA_ADDRESS PEAssembly = 0; // Actually the module address in .NET 9+
     CLRDATA_ADDRESS ilBase = 0;
     CLRDATA_ADDRESS metadataStart = 0;
     ULONG64 metadataSize = 0;
@@ -250,8 +281,8 @@ struct MSLAYOUT DacpModuleData
     CLRDATA_ADDRESS FileReferencesMap = 0;
     CLRDATA_ADDRESS ManifestModuleReferencesMap = 0;
 
-    CLRDATA_ADDRESS pLookupTableHeap = 0;
-    CLRDATA_ADDRESS pThunkHeap = 0;
+    CLRDATA_ADDRESS LoaderAllocator = 0;
+    CLRDATA_ADDRESS ThunkHeap = 0;
 
     ULONG64 dwModuleIndex = 0;
 
@@ -274,11 +305,14 @@ struct MSLAYOUT DacpMethodTableData
 {
     BOOL bIsFree = FALSE; // everything else is NULL if this is true.
     CLRDATA_ADDRESS Module = 0;
+    // Note: DacpMethodTableData::Class is really a pointer to the canonical method table
     CLRDATA_ADDRESS Class = 0;
     CLRDATA_ADDRESS ParentMethodTable = 0;
     WORD wNumInterfaces = 0;
     WORD wNumMethods = 0;
+    // Note: Always 0, since .NET 9
     WORD wNumVtableSlots = 0;
+    // Note: Always 0, since .NET 9
     WORD wNumVirtuals = 0;
     DWORD BaseSize = 0;
     DWORD ComponentSize = 0;
@@ -422,11 +456,11 @@ enum DacpAppDomainDataStage {
     STAGE_CLOSED
 };
 
-// Information about a BaseDomain (AppDomain, SharedDomain or SystemDomain).
+// Information about an AppDomain or SystemDomain.
 // For types other than AppDomain, some fields (like dwID, DomainLocalBlock, etc.) will be 0/null.
 struct MSLAYOUT DacpAppDomainData
 {
-    // The pointer to the BaseDomain (not necessarily an AppDomain).
+    // The pointer to the AppDomain or SystemDomain.
     // It's useful to keep this around in the structure
     CLRDATA_ADDRESS AppDomainPtr = 0;
     CLRDATA_ADDRESS AppSecDesc = 0;
@@ -452,7 +486,7 @@ struct MSLAYOUT DacpAssemblyData
     CLRDATA_ADDRESS AssemblyPtr = 0; //useful to have
     CLRDATA_ADDRESS ClassLoader = 0;
     CLRDATA_ADDRESS ParentDomain = 0;
-    CLRDATA_ADDRESS BaseDomainPtr = 0;
+    CLRDATA_ADDRESS DomainPtr = 0;
     CLRDATA_ADDRESS AssemblySecDesc = 0;
     BOOL isDynamic = FALSE;
     UINT ModuleCount = FALSE;
@@ -460,14 +494,14 @@ struct MSLAYOUT DacpAssemblyData
     BOOL isDomainNeutral = FALSE; // Always false, preserved for backward compatibility
     DWORD dwLocationFlags = 0;
 
-    HRESULT Request(ISOSDacInterface *sos, CLRDATA_ADDRESS addr, CLRDATA_ADDRESS baseDomainPtr)
+    HRESULT Request(ISOSDacInterface *sos, CLRDATA_ADDRESS addr, CLRDATA_ADDRESS domainPtr)
     {
-        return sos->GetAssemblyData(baseDomainPtr, addr, this);
+        return sos->GetAssemblyData(domainPtr, addr, this);
     }
 
     HRESULT Request(ISOSDacInterface *sos, CLRDATA_ADDRESS addr)
     {
-        return Request(sos, addr, NULL);
+        return Request(sos, addr, 0);
     }
 };
 
@@ -577,7 +611,7 @@ struct MSLAYOUT DacpMethodDescData
     {
         return sos->GetMethodDescData(
             addr,
-            NULL,   // IP address
+            0,      // IP address
             this,
             0,      // cRejitData
             NULL,   // rejitData[]
@@ -610,6 +644,8 @@ struct MSLAYOUT DacpTieredVersionData
         OptimizationTier_OptimizedTier1,
         OptimizationTier_ReadyToRun,
         OptimizationTier_OptimizedTier1OSR,
+        OptimizationTier_QuickJittedInstrumented,
+        OptimizationTier_OptimizedTier1Instrumented,
     };
 
     CLRDATA_ADDRESS NativeCodeAddr;
@@ -618,7 +654,7 @@ struct MSLAYOUT DacpTieredVersionData
 };
 
 // for JITType
-enum JITTypes {TYPE_UNKNOWN=0,TYPE_JIT,TYPE_PJIT};
+enum JITTypes {TYPE_UNKNOWN=0,TYPE_JIT,TYPE_PJIT,TYPE_INTERPRETER};
 
 struct MSLAYOUT DacpCodeHeaderData
 {
@@ -962,7 +998,7 @@ struct MSLAYOUT DACEHInfo
     CLRDATA_ADDRESS tryEndOffset = 0;
     CLRDATA_ADDRESS handlerStartOffset = 0;
     CLRDATA_ADDRESS handlerEndOffset = 0;
-    BOOL isDuplicateClause = FALSE;
+    BOOL isDuplicateClause = FALSE;     // unused
     CLRDATA_ADDRESS filterOffset = 0;   // valid when clauseType is EHFilter
     BOOL isCatchAllHandler = FALSE;     // valid when clauseType is EHTyped
     CLRDATA_ADDRESS moduleAddr = 0;     // when == 0 mtCatch contains a MethodTable, when != 0 tokCatch contains a type token
@@ -984,7 +1020,7 @@ struct MSLAYOUT DacpGetModuleData
     BOOL IsDynamic = FALSE;
     BOOL IsInMemory = FALSE;
     BOOL IsFileLayout = FALSE;
-    CLRDATA_ADDRESS PEAssembly = 0;
+    CLRDATA_ADDRESS PEAssembly = 0; // Actually the module address in .NET 9+
     CLRDATA_ADDRESS LoadedPEAddress = 0;
     ULONG64 LoadedPESize = 0;
     CLRDATA_ADDRESS InMemoryPdbAddress = 0;
@@ -1034,8 +1070,6 @@ struct MSLAYOUT DacpJitCodeHeapInfo
 
     DacpJitCodeHeapInfo() : codeHeapType(0), LoaderHeap(0) {}
 };
-
-#include "static_assert.h"
 
 /* DAC datastructures are frozen as of dev11 shipping.  Do NOT add fields, remove fields, or change the fields of
  * these structs in any way.  The correct way to get new data out of the runtime is to create a new struct and

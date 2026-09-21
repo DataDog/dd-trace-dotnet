@@ -87,18 +87,18 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <TargetExt>.so</TargetExt>
-    <IncludePath>$(DOTNET-TRACER-REPO-ROOT-PATH);$(CORECLR-PATH)\inc;$(CORECLR-PATH)\pal\inc;$(CORECLR-PATH)\pal\inc\rt;$(CORECLR-PATH)\pal\prebuilt\inc</IncludePath>
+    <IncludePath>$(DOTNET-TRACER-REPO-ROOT-PATH);$(CORECLR-PATH)\inc;$(CORECLR-PATH)\pal\inc;$(CORECLR-PATH)\pal\inc\rt;$(CORECLR-PATH)\pal\prebuilt\inc;$(CORECLR-PATH)\..</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <TargetExt>.so</TargetExt>
-    <IncludePath>$(DOTNET-TRACER-REPO-ROOT-PATH);$(CORECLR-PATH)\inc;$(CORECLR-PATH)\pal\inc;$(CORECLR-PATH)\pal\inc\rt;$(CORECLR-PATH)\pal\prebuilt\inc</IncludePath>
+    <IncludePath>$(DOTNET-TRACER-REPO-ROOT-PATH);$(CORECLR-PATH)\inc;$(CORECLR-PATH)\pal\inc;$(CORECLR-PATH)\pal\inc\rt;$(CORECLR-PATH)\pal\prebuilt\inc;$(CORECLR-PATH)\..</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x86'">
-    <IncludePath>$(DOTNET-TRACER-REPO-ROOT-PATH);$(CORECLR-PATH)\inc;$(CORECLR-PATH)\pal\inc;$(CORECLR-PATH)\pal\inc\rt;$(CORECLR-PATH)\pal\prebuilt\inc;</IncludePath>
+    <IncludePath>$(DOTNET-TRACER-REPO-ROOT-PATH);$(CORECLR-PATH)\inc;$(CORECLR-PATH)\pal\inc;$(CORECLR-PATH)\pal\inc\rt;$(CORECLR-PATH)\pal\prebuilt\inc;$(CORECLR-PATH)\..;</IncludePath>
     <TargetExt>.so</TargetExt>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x86'">
-    <IncludePath>$(DOTNET-TRACER-REPO-ROOT-PATH);$(CORECLR-PATH)\inc;$(CORECLR-PATH)\pal\inc;$(CORECLR-PATH)\pal\inc\rt;$(CORECLR-PATH)\pal\prebuilt\inc;</IncludePath>
+    <IncludePath>$(DOTNET-TRACER-REPO-ROOT-PATH);$(CORECLR-PATH)\inc;$(CORECLR-PATH)\pal\inc;$(CORECLR-PATH)\pal\inc\rt;$(CORECLR-PATH)\pal\prebuilt\inc;$(CORECLR-PATH)\..;</IncludePath>
     <TargetExt>.so</TargetExt>
   </PropertyGroup>
   <PropertyGroup>

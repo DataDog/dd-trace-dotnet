@@ -23,35 +23,6 @@
 extern "C" {
 #endif
 
-// {BED7F4EA-1A96-11d2-8F08-00A0C9A6186D}
-EXTERN_GUID(LIBID_ComPlusRuntime, 0xbed7f4ea, 0x1a96, 0x11d2, 0x8f, 0x8, 0x0, 0xa0, 0xc9, 0xa6, 0x18, 0x6d);
-
-// {90883F05-3D28-11D2-8F17-00A0C9A6186D}
-EXTERN_GUID(GUID_ExportedFromComPlus, 0x90883f05, 0x3d28, 0x11d2, 0x8f, 0x17, 0x0, 0xa0, 0xc9, 0xa6, 0x18, 0x6d);
-
-// {0F21F359-AB84-41e8-9A78-36D110E6D2F9}
-EXTERN_GUID(GUID_ManagedName, 0xf21f359, 0xab84, 0x41e8, 0x9a, 0x78, 0x36, 0xd1, 0x10, 0xe6, 0xd2, 0xf9);
-
-// {54FC8F55-38DE-4703-9C4E-250351302B1C}
-EXTERN_GUID(GUID_Function2Getter, 0x54fc8f55, 0x38de, 0x4703, 0x9c, 0x4e, 0x25, 0x3, 0x51, 0x30, 0x2b, 0x1c);
-
-// CLSID_CorMetaDataDispenserRuntime: {1EC2DE53-75CC-11d2-9775-00A0C9B4D50C}
-//  Dispenser coclass for version 1.5 and 2.0 meta data.  To get the "latest" bind
-//  to CLSID_MetaDataDispenser.
-EXTERN_GUID(CLSID_CorMetaDataDispenserRuntime, 0x1ec2de53, 0x75cc, 0x11d2, 0x97, 0x75, 0x0, 0xa0, 0xc9, 0xb4, 0xd5, 0xc);
-
-// {CD2BC5C9-F452-4326-B714-F9C539D4DA58}
-EXTERN_GUID(GUID_DispIdOverride, 0xcd2bc5c9, 0xf452, 0x4326, 0xb7, 0x14, 0xf9, 0xc5, 0x39, 0xd4, 0xda, 0x58);
-
-// {B64784EB-D8D4-4d9b-9ACD-0E30806426F7}
-EXTERN_GUID(GUID_ForceIEnumerable, 0xb64784eb, 0xd8d4, 0x4d9b, 0x9a, 0xcd, 0x0e, 0x30, 0x80, 0x64, 0x26, 0xf7);
-
-// {2941FF83-88D8-4F73-B6A9-BDF8712D000D}
-EXTERN_GUID(GUID_PropGetCA, 0x2941ff83, 0x88d8, 0x4f73, 0xb6, 0xa9, 0xbd, 0xf8, 0x71, 0x2d, 0x00, 0x0d);
-
-// {29533527-3683-4364-ABC0-DB1ADD822FA2}
-EXTERN_GUID(GUID_PropPutCA, 0x29533527, 0x3683, 0x4364, 0xab, 0xc0, 0xdb, 0x1a, 0xdd, 0x82, 0x2f, 0xa2);
-
 // CLSID_CLR_v1_MetaData: {005023CA-72B1-11D3-9FC4-00C04F79A0A3}
 //  Used to generate v1 metadata (for v1.0 and v1.1 CLR compatibility).
 EXTERN_GUID(CLSID_CLR_v1_MetaData, 0x005023ca, 0x72b1, 0x11d3, 0x9f, 0xc4, 0x0, 0xc0, 0x4f, 0x79, 0xa0, 0xa3);
@@ -150,35 +121,15 @@ typedef UNALIGNED void const *UVCP_CONSTANT;
 //*****************************************************************************
 
 
-//
-#ifndef _WINDOWS_UPDATES_
 #include <corhdr.h>
-#endif // <windows.h> updates
 
 //*****************************************************************************
 //*****************************************************************************
-
-// CLSID_Cor: {bee00000-ee77-11d0-a015-00c04fbbb884}
-EXTERN_GUID(CLSID_Cor, 0xbee00010, 0xee77, 0x11d0, 0xa0, 0x15, 0x00, 0xc0, 0x4f, 0xbb, 0xb8, 0x84);
 
 // CLSID_CorMetaDataDispenser: {E5CB7A31-7512-11d2-89CE-0080C792E5D8}
 //  This is the "Master Dispenser", always guaranteed to be the most recent
 //  dispenser on the machine.
 EXTERN_GUID(CLSID_CorMetaDataDispenser, 0xe5cb7a31, 0x7512, 0x11d2, 0x89, 0xce, 0x0, 0x80, 0xc7, 0x92, 0xe5, 0xd8);
-
-
-// CLSID_CorMetaDataDispenserReg: {435755FF-7397-11d2-9771-00A0C9B4D50C}
-//  Dispenser coclass for version 1.0 meta data.  To get the "latest" bind
-//  to CLSID_CorMetaDataDispenser.
-EXTERN_GUID(CLSID_CorMetaDataDispenserReg, 0x435755ff, 0x7397, 0x11d2, 0x97, 0x71, 0x0, 0xa0, 0xc9, 0xb4, 0xd5, 0xc);
-
-
-// CLSID_CorMetaDataReg: {87F3A1F5-7397-11d2-9771-00A0C9B4D50C}
-// For COM+ Meta Data, Data Driven Registration
-EXTERN_GUID(CLSID_CorMetaDataReg, 0x87f3a1f5, 0x7397, 0x11d2, 0x97, 0x71, 0x0, 0xa0, 0xc9, 0xb4, 0xd5, 0xc);
-
-
-interface IMetaDataDispenser;
 
 //-------------------------------------
 //--- IMetaDataError
@@ -287,7 +238,7 @@ DECLARE_INTERFACE_(IMetaDataEmit, IUnknown)
         mdTypeDef   td,                     // Parent TypeDef
         LPCWSTR     szName,                 // Name of member
         DWORD       dwMethodFlags,          // Member attributes
-        PCCOR_SIGNATURE pvSigBlob,          // [IN] point to a blob value of CLR signature
+        PCCOR_SIGNATURE pvSigBlob,          // [IN] point to a blob value of signature
         ULONG       cbSigBlob,              // [IN] count of bytes in the signature blob
         ULONG       ulCodeRVA,
         DWORD       dwImplFlags,
@@ -315,7 +266,7 @@ DECLARE_INTERFACE_(IMetaDataEmit, IUnknown)
     STDMETHOD(DefineMemberRef)(             // S_OK or error
         mdToken     tkImport,               // [IN] ClassRef or ClassDef importing a member.
         LPCWSTR     szName,                 // [IN] member's name
-        PCCOR_SIGNATURE pvSigBlob,          // [IN] point to a blob value of CLR signature
+        PCCOR_SIGNATURE pvSigBlob,          // [IN] point to a blob value of signature
         ULONG       cbSigBlob,              // [IN] count of bytes in the signature blob
         mdMemberRef *pmr) PURE;             // [OUT] memberref token
 
@@ -459,7 +410,7 @@ DECLARE_INTERFACE_(IMetaDataEmit, IUnknown)
         mdTypeDef   td,                     // Parent TypeDef
         LPCWSTR     szName,                 // Name of member
         DWORD       dwFieldFlags,           // Member attributes
-        PCCOR_SIGNATURE pvSigBlob,          // [IN] point to a blob value of CLR signature
+        PCCOR_SIGNATURE pvSigBlob,          // [IN] point to a blob value of signature
         ULONG       cbSigBlob,              // [IN] count of bytes in the signature blob
         DWORD       dwCPlusTypeFlag,        // [IN] flag for value type. selected ELEMENT_TYPE_*
         void const  *pValue,                // [IN] constant value
@@ -570,7 +521,7 @@ DECLARE_INTERFACE_(IMetaDataEmit2, IMetaDataEmit)
 {
     STDMETHOD(DefineMethodSpec)(
         mdToken     tkParent,               // [IN] MethodDef or MemberRef
-        PCCOR_SIGNATURE pvSigBlob,          // [IN] point to a blob value of COM+ signature
+        PCCOR_SIGNATURE pvSigBlob,          // [IN] point to a blob value of signature
         ULONG       cbSigBlob,              // [IN] count of bytes in the signature blob
         mdMethodSpec *pmi) PURE;            // [OUT] method instantiation token
 
@@ -750,28 +701,28 @@ DECLARE_INTERFACE_(IMetaDataImport, IUnknown)
     STDMETHOD(FindMember)(
         mdTypeDef   td,                     // [IN] given typedef
         LPCWSTR     szName,                 // [IN] member name
-        PCCOR_SIGNATURE pvSigBlob,          // [IN] point to a blob value of CLR signature
+        PCCOR_SIGNATURE pvSigBlob,          // [IN] point to a blob value of signature
         ULONG       cbSigBlob,              // [IN] count of bytes in the signature blob
         mdToken     *pmb) PURE;             // [OUT] matching memberdef
 
     STDMETHOD(FindMethod)(
         mdTypeDef   td,                     // [IN] given typedef
         LPCWSTR     szName,                 // [IN] member name
-        PCCOR_SIGNATURE pvSigBlob,          // [IN] point to a blob value of CLR signature
+        PCCOR_SIGNATURE pvSigBlob,          // [IN] point to a blob value of signature
         ULONG       cbSigBlob,              // [IN] count of bytes in the signature blob
         mdMethodDef *pmb) PURE;             // [OUT] matching memberdef
 
     STDMETHOD(FindField)(
         mdTypeDef   td,                     // [IN] given typedef
         LPCWSTR     szName,                 // [IN] member name
-        PCCOR_SIGNATURE pvSigBlob,          // [IN] point to a blob value of CLR signature
+        PCCOR_SIGNATURE pvSigBlob,          // [IN] point to a blob value of signature
         ULONG       cbSigBlob,              // [IN] count of bytes in the signature blob
         mdFieldDef  *pmb) PURE;             // [OUT] matching memberdef
 
     STDMETHOD(FindMemberRef)(
         mdTypeRef   td,                     // [IN] given typeRef
         LPCWSTR     szName,                 // [IN] member name
-        PCCOR_SIGNATURE pvSigBlob,          // [IN] point to a blob value of CLR signature
+        PCCOR_SIGNATURE pvSigBlob,          // [IN] point to a blob value of signature
         ULONG       cbSigBlob,              // [IN] count of bytes in the signature blob
         mdMemberRef *pmr) PURE;             // [OUT] matching memberref
 
@@ -1631,17 +1582,8 @@ DECLARE_INTERFACE_(IMetaDataInfo, IUnknown)
 //**********************************************************************
 
 //
-// Native Link method custom value definitions. This is for N-direct support.
+// Native Link method custom value definitions. This is for P/Invoke support.
 //
-
-#include <pshpack1.h>
-typedef struct
-{
-    BYTE        m_linkType;       // see CorNativeLinkType below
-    BYTE        m_flags;          // see CorNativeLinkFlags below
-    mdMemberRef m_entryPoint;     // member ref token giving entry point, format is lib:entrypoint
-} COR_NATIVE_LINK;
-#include <poppack.h>
 
 typedef enum
 {
@@ -1706,14 +1648,6 @@ typedef enum
 //*****************************************************************************
 //*****************************************************************************
 
-#ifndef FORCEINLINE
- #if _MSC_VER < 1200
-   #define FORCEINLINE inline
- #else
-   #define FORCEINLINE __forceinline
- #endif
-#endif
-
 
 // We need a version that is FORCEINLINE on retail and NOINLINE on debug
 
@@ -1725,20 +1659,18 @@ typedef enum
 #endif
 #endif
 
-#ifndef NOINLINE
-#ifdef _MSC_VER
-#define NOINLINE __declspec(noinline)
-#elif defined __GNUC__
-#define NOINLINE __attribute__ ((noinline))
-#else
-#define NOINLINE
-#endif
-#endif // !NOINLINE
-
 // return true if it is a primitive type, i.e. only need to store CorElementType
 FORCEINLINE int CorIsPrimitiveType(CorElementType elementtype)
 {
     return (elementtype < ELEMENT_TYPE_PTR || elementtype == ELEMENT_TYPE_I || elementtype == ELEMENT_TYPE_U);
+}
+
+// Returns true if the element type is a real or integer type.
+FORCEINLINE bool CorIsNumericalType(CorElementType elementType)
+{
+    return ((elementType >= ELEMENT_TYPE_I1) && (elementType <= ELEMENT_TYPE_R8))
+        || (elementType == ELEMENT_TYPE_I)
+        || (elementType == ELEMENT_TYPE_U);
 }
 
 

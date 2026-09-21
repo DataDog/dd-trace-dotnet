@@ -1,11 +1,11 @@
 // Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 
-// This describes information about the COM+ primitive types
+// This describes information about the CLR primitive types
 
 //
-// Note: This file gets parsed by the Mono IL Linker (https://github.com/mono/linker/) which may throw an exception during parsing.
-// Specifically, this (https://github.com/mono/linker/blob/master/corebuild/integration/ILLink.Tasks/CreateRuntimeRootDescriptorFile.cs) will try to
+// Note: This file gets parsed by the IL Linker (https://github.com/dotnet/runtime/tree/main/src/tools/illink) which may throw an exception during parsing.
+// Specifically, this (https://github.com/dotnet/runtime/blob/main/src/tools/illink/src/ILLink.Tasks/CreateRuntimeRootDescriptorFile.cs) will try to
 // parse this header, and it may throw an exception while doing that. If you edit this file and get a build failure on msbuild.exe D:\repos\coreclr\build.proj
 // you might want to check out the parser linked above.
 //
@@ -54,3 +54,4 @@ TYPEINFO(ELEMENT_TYPE_MVAR,         NULL, NULL,                TARGET_POINTER_SI
 TYPEINFO(ELEMENT_TYPE_CMOD_REQD,    NULL, NULL,                0,                    TYPE_GC_NONE,   false,  false,  false,  false,  false) // 0x1f
 TYPEINFO(ELEMENT_TYPE_CMOD_OPT,     NULL, NULL,                0,                    TYPE_GC_NONE,   false,  false,  false,  false,  false) // 0x20
 TYPEINFO(ELEMENT_TYPE_INTERNAL,     NULL, NULL,                0,                    TYPE_GC_OTHER,  false,  false,  false,  false,  false) // 0x21
+TYPEINFO(ELEMENT_TYPE_CMOD_INTERNAL,NULL, NULL,                0,                    TYPE_GC_NONE,   false,  false,  false,  false,  false) // 0x22

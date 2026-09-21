@@ -2,11 +2,6 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 // ---------------------------------------------------------------------------
 // Contract.inl
-//
-
-// ! I am the owner for issues in the contract *infrastructure*, not for every
-// ! CONTRACT_VIOLATION dialog that comes up. If you interrupt my work for a routine
-// ! CONTRACT_VIOLATION, you will become the new owner of this file.
 // ---------------------------------------------------------------------------
 
 #ifndef CONTRACT_INL_
@@ -352,7 +347,7 @@ inline void DbgStateLockData::LockTaken(DbgStateLockType dbgStateLockType,
 
     // Remember as many of these new entrances in m_rgTakenLockInfos as we can
     for (UINT i = cCombinedLocks;
-         i < min (ARRAY_SIZE(m_rgTakenLockInfos), cCombinedLocks + cTakes);
+         i < std::min (ARRAY_SIZE(m_rgTakenLockInfos), (size_t)(cCombinedLocks + cTakes));
          i++)
     {
         m_rgTakenLockInfos[i].m_pvLock = pvLock;
@@ -377,7 +372,7 @@ inline void DbgStateLockData::LockReleased(DbgStateLockType dbgStateLockType, UI
     // If lock count is within range of our m_rgTakenLockInfos buffer size, then
     // make sure we're releasing locks in reverse order of how we took them
     for (UINT i = cCombinedLocks - cReleases;
-         i < min (ARRAY_SIZE(m_rgTakenLockInfos), cCombinedLocks);
+         i < std::min (ARRAY_SIZE(m_rgTakenLockInfos), (size_t)cCombinedLocks);
          i++)
     {
         if (m_rgTakenLockInfos[i].m_pvLock != pvLock)
@@ -417,9 +412,9 @@ inline UINT DbgStateLockData::GetCombinedLockCount()
 {
     // If this fires, the set of lock types must have changed.  You'll need to
     // fix the sum below to include all lock types
-    _ASSERTE(kDbgStateLockType_Count == 3);
+    _ASSERTE(kDbgStateLockType_Count == 2);
 
-    return m_rgcLocksTaken[0] + m_rgcLocksTaken[1] + m_rgcLocksTaken[2];
+    return m_rgcLocksTaken[0] + m_rgcLocksTaken[1];
 }
 
 inline void DbgStateLockState::SetStartingValues()
@@ -443,7 +438,7 @@ inline BOOL DbgStateLockState::IsLockRetaken(void * pvLock)
     // m_cLocksEnteringCannotRetakeLock records the number of locks that were taken
     // when CANNOT_RETAKE_LOCK contract was constructed.
     for (UINT i = 0;
-        i < min(ARRAY_SIZE(m_pLockData->m_rgTakenLockInfos), m_cLocksEnteringCannotRetakeLock);
+        i < std::min(ARRAY_SIZE(m_pLockData->m_rgTakenLockInfos), (size_t)m_cLocksEnteringCannotRetakeLock);
         ++i)
     {
         if (m_pLockData->m_rgTakenLockInfos[i].m_pvLock == pvLock)
@@ -492,8 +487,7 @@ void CONTRACT_ASSERT(const char *szElaboration,
     if (_check.EnterAssert())
     {
         char Buf[512*20 + 2048 + 1024];
-
-        sprintf_s(Buf,ARRAY_SIZE(Buf), "CONTRACT VIOLATION by %s at \"%s\" @ %d\n\n%s\n", szFunction, szFile, lineNum, szElaboration);
+        sprintf_s(Buf,ARRAY_SIZE(Buf), "CONTRACT VIOLATION by %s at \"%s\":%d\n\n%s\n", szFunction, szFile, lineNum, szElaboration);
 
         int count = 20;
         ContractStackRecord *pRec = CheckClrDebugState() ? CheckClrDebugState()->GetContractStackTrace() : NULL;
@@ -530,7 +524,7 @@ void CONTRACT_ASSERT(const char *szElaboration,
                     }
 
                     sprintf_s(tmpbuf,ARRAY_SIZE(tmpbuf),
-                            "\n%s  %s in %s at \"%s\" @ %d",
+                            "\n%s  %s in %s at \"%s\":%d",
                             fshowconflict ? "VIOLATED-->" : "                      ",
                             pRec->m_construct,
                             pRec->m_szFunction,
@@ -585,7 +579,7 @@ void CONTRACT_ASSERT(const char *szElaboration,
             }
             else
             {
-                strcat_s(Buf,ARRAY_SIZE(Buf), "We can't find the violated contract. Look for an old-style non-holder-based contract.\n");
+                strcat_s(Buf,ARRAY_SIZE(Buf), "Missing tracking information. Look for data structures that manipulate contract state (i.e., CrstHolder).\n");
             }
         }
 
@@ -619,15 +613,12 @@ inline UINT GetDbgStateLockCount(DbgStateLockType dbgStateLockType)
 
 #define ASSERT_NO_USER_LOCKS_HELD()   \
     _ASSERTE(GetDbgStateLockCount(kDbgStateLockType_User) == 0)
-#define ASSERT_NO_HOST_BREAKABLE_CRSTS_HELD()   \
-    _ASSERTE(GetDbgStateLockCount(kDbgStateLockType_HostBreakableCrst) == 0)
 #define ASSERT_NO_EE_LOCKS_HELD()   \
     _ASSERTE(GetDbgStateLockCount(kDbgStateLockType_EE) == 0)
 
 #else  // ENABLE_CONTRACTS_IMPL
 
 #define ASSERT_NO_USER_LOCKS_HELD()
-#define ASSERT_NO_HOST_BREAKABLE_CRSTS_HELD()
 #define ASSERT_NO_EE_LOCKS_HELD()
 
 #endif  // ENABLE_CONTRACTS_IMPL

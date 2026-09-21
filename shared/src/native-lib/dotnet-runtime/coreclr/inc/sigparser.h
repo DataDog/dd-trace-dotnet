@@ -2,9 +2,6 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 //
 // sigparser.h
-//
-
-//
 
 #ifndef _H_SIGPARSER
 #define _H_SIGPARSER
@@ -119,7 +116,7 @@ class SigParser
         void
         GetSignature(
             PCCOR_SIGNATURE * pSig,
-            uint32_t           * pcbSigSize)
+            uint32_t           * pcbSigSize) const
         {
             *pSig = m_ptr;
             *pcbSigSize = m_dwLen;
@@ -585,19 +582,32 @@ class SigParser
                 return hr;
 
             while ((ELEMENT_TYPE_CMOD_REQD == bElementType) ||
-                   (ELEMENT_TYPE_CMOD_OPT == bElementType))
+                   (ELEMENT_TYPE_CMOD_OPT == bElementType) ||
+                   (ELEMENT_TYPE_CMOD_INTERNAL == bElementType))
             {
                 sigTemp.SkipBytes(1);
+                if (ELEMENT_TYPE_CMOD_INTERNAL == bElementType)
+                {
+                    void * pMT;
+                    // If this custom modifier is required or optional
+                    uint8_t required;
+                    if (FAILED(hr = sigTemp.GetByte(&required)))
+                        return hr;
+                    
+                    if (FAILED(hr = sigTemp.GetPointer(&pMT)))
+                        return hr;
+                }
+                else
+                {
+                    mdToken token;
 
-                mdToken token;
+                    hr = sigTemp.GetToken(&token);
 
-                hr = sigTemp.GetToken(&token);
+                    if (FAILED(hr))
+                        return hr;
+                }
 
-                if (FAILED(hr))
-                    return hr;
-
-                hr = sigTemp.PeekByte(&bElementType);
-                if (FAILED(hr))
+                if (FAILED(hr = sigTemp.PeekByte(&bElementType)))
                     return hr;
             }
 
@@ -646,19 +656,31 @@ class SigParser
             while (ELEMENT_TYPE_CMOD_REQD == bElementType ||
                    ELEMENT_TYPE_CMOD_OPT == bElementType ||
                    ELEMENT_TYPE_MODIFIER == bElementType ||
-                   ELEMENT_TYPE_PINNED == bElementType)
+                   ELEMENT_TYPE_PINNED == bElementType ||
+                   ELEMENT_TYPE_CMOD_INTERNAL == bElementType)
             {
                 sigTemp.SkipBytes(1);
+                if (ELEMENT_TYPE_CMOD_INTERNAL == bElementType)
+                {
+                    void * pMT;
+                    uint8_t required;
+                    if (FAILED(hr = sigTemp.GetByte(&required)))
+                        return hr;
+                    
+                    if (FAILED(hr = sigTemp.GetPointer(&pMT)))
+                        return hr;
+                }
+                else
+                {
+                    mdToken token;
 
-                mdToken token;
+                    hr = sigTemp.GetToken(&token);
 
-                hr = sigTemp.GetToken(&token);
+                    if (FAILED(hr))
+                        return hr;
+                }
 
-                if (FAILED(hr))
-                    return hr;
-
-                hr = sigTemp.PeekByte(&bElementType);
-                if (FAILED(hr))
+                if (FAILED(hr = sigTemp.PeekByte(&bElementType)))
                     return hr;
             }
 
@@ -716,7 +738,7 @@ class SigParser
         // the arguments.
         //------------------------------------------------------------------------
         __checkReturn
-        HRESULT SkipMethodHeaderSignature(uint32_t *pcArgs);
+        HRESULT SkipMethodHeaderSignature(uint32_t *pcArgs, bool skipReturnType = true);
 
         //------------------------------------------------------------------------
         // Skip a sub signature (as immediately follows an ELEMENT_TYPE_FNPTR).

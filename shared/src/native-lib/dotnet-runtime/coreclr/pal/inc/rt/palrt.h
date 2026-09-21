@@ -2,27 +2,12 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 //
 
-//
-// ===========================================================================
-// File: palrt.h
-//
-// ===========================================================================
-
 /*++
-
-
 Abstract:
 
     PAL runtime functions.  These are functions which are ordinarily
     implemented as part of the Win32 API set, but when compiling CoreCLR for
     Unix-like systems, are implemented as a runtime library on top of the PAL.
-
-Author:
-
-
-
-Revision History:
-
 --*/
 
 #ifndef __PALRT_H__
@@ -135,18 +120,6 @@ typedef enum tagEFaultRepRetVal
 
 #include "pal.h"
 
-#ifndef PAL_STDCPP_COMPAT
-#ifdef __cplusplus
-#ifndef __PLACEMENT_NEW_INLINE
-#define __PLACEMENT_NEW_INLINE
-inline void *__cdecl operator new(size_t, void *_P)
-{
-    return (_P);
-}
-#endif // __PLACEMENT_NEW_INLINE
-#endif // __cplusplus
-#endif // !PAL_STDCPP_COMPAT
-
 #include <pal_assert.h>
 
 #define NTAPI       __cdecl
@@ -156,21 +129,11 @@ inline void *__cdecl operator new(size_t, void *_P)
 
 #define _WINNT_
 
-#ifndef offsetof
-#define offsetof(type, field) __builtin_offsetof(type, field)
-#endif
-
 #define CONTAINING_RECORD(address, type, field) \
     ((type *)((LONG_PTR)(address) - offsetof(type, field)))
 
 #define ARGUMENT_PRESENT(ArgumentPointer)    (\
     (CHAR *)(ArgumentPointer) != (CHAR *)(NULL) )
-
-#if defined(HOST_64BIT)
-#define MAX_NATURAL_ALIGNMENT sizeof(ULONGLONG)
-#else
-#define MAX_NATURAL_ALIGNMENT sizeof(ULONG)
-#endif
 
 #define DECLARE_HANDLE(name) struct name##__ { int unused; }; typedef struct name##__ *name
 
@@ -225,19 +188,7 @@ EXTERN_C const GUID GUID_NULL;
 typedef GUID *LPGUID;
 typedef const GUID FAR *LPCGUID;
 
-#ifdef __cplusplus
-extern "C++" {
-#if !defined _SYS_GUID_OPERATOR_EQ_ && !defined _NO_SYS_GUID_OPERATOR_EQ_
-#define _SYS_GUID_OPERATOR_EQ_
-inline int IsEqualGUID(REFGUID rguid1, REFGUID rguid2)
-    { return !memcmp(&rguid1, &rguid2, sizeof(GUID)); }
-inline int operator==(REFGUID guidOne, REFGUID guidOther)
-    { return IsEqualGUID(guidOne,guidOther); }
-inline int operator!=(REFGUID guidOne, REFGUID guidOther)
-    { return !IsEqualGUID(guidOne,guidOther); }
-#endif
-};
-#endif // __cplusplus
+#define IsEqualGUID(guid1, guid2) guid1 == guid2
 
 #define DEFINE_GUID(name, l, w1, w2, b1, b2, b3, b4, b5, b6, b7, b8) \
     EXTERN_C const GUID FAR name
@@ -280,18 +231,12 @@ typedef union _ULARGE_INTEGER {
         DWORD HighPart;
 #endif
     }
-#ifndef PAL_STDCPP_COMPAT
     u
-#endif // PAL_STDCPP_COMPAT
      ;
     ULONGLONG QuadPart;
 } ULARGE_INTEGER, *PULARGE_INTEGER;
 
 /******************* OLE, BSTR, VARIANT *************************/
-
-STDAPI_VIS(DLLEXPORT, LPVOID) CoTaskMemAlloc(SIZE_T cb);
-STDAPI_VIS(DLLEXPORT, void) CoTaskMemFree(LPVOID pv);
-
 typedef SHORT VARIANT_BOOL;
 #define VARIANT_TRUE ((VARIANT_BOOL)-1)
 #define VARIANT_FALSE ((VARIANT_BOOL)0)
@@ -364,11 +309,6 @@ typedef struct tagDEC {
 #define DECIMAL_LO64_SET(dec,value)   {(dec).v.Lo64 = value; }
 
 #define DECIMAL_SETZERO(dec) {DECIMAL_LO32(dec) = 0; DECIMAL_MID32(dec) = 0; DECIMAL_HI32(dec) = 0; DECIMAL_SIGNSCALE(dec) = 0;}
-
-typedef struct tagBLOB {
-    ULONG cbSize;
-    BYTE *pBlobData;
-} BLOB, *LPBLOB;
 
 interface IStream;
 interface IRecordInfo;
@@ -503,9 +443,6 @@ struct tagVARIANT
 
 typedef VARIANT VARIANTARG, *LPVARIANTARG;
 
-STDAPI_(void) VariantInit(VARIANT * pvarg);
-STDAPI_(HRESULT) VariantClear(VARIANT * pvarg);
-
 #define V_VT(X)         ((X)->n1.n2.vt)
 #define V_UNION(X, Y)   ((X)->n1.n2.n3.Y)
 #define V_RECORDINFO(X) ((X)->n1.n2.n3.brecVal.pRecInfo)
@@ -570,8 +507,6 @@ STDAPI_(HRESULT) VariantClear(VARIANT * pvarg);
 
 #define V_ISBYREF(X)     (V_VT(X)&VT_BYREF)
 
-STDAPI CreateStreamOnHGlobal(PVOID hGlobal, BOOL fDeleteOnRelease, interface IStream** ppstm);
-
 #define STGM_DIRECT             0x00000000L
 
 #define STGM_READ               0x00000000L
@@ -590,9 +525,6 @@ STDAPI CreateStreamOnHGlobal(PVOID hGlobal, BOOL fDeleteOnRelease, interface ISt
 #define STGM_FAILIFTHERE        0x00000000L
 
 #define STGM_NOSNAPSHOT         0x00200000L
-
-STDAPI IIDFromString(LPOLESTR lpsz, IID* lpiid);
-STDAPI_(int) StringFromGUID2(REFGUID rguid, LPOLESTR lpsz, int cchMax);
 
 /******************* CRYPT **************************************/
 
@@ -625,37 +557,6 @@ typedef unsigned int ALG_ID;
 #define LCMAP_LOWERCASE           0x00000100
 #define LCMAP_UPPERCASE           0x00000200
 
-// 8 characters for language
-// 8 characters for region
-// 64 characters for suffix (script)
-// 2 characters for '-' separators
-// 2 characters for prefix like "i-" or "x-"
-// 1 null termination
-#define LOCALE_NAME_MAX_LENGTH   85
-
-#define CSTR_LESS_THAN            1
-#define CSTR_EQUAL                2
-#define CSTR_GREATER_THAN         3
-
-/******************* shlwapi ************************************/
-
-// note: diff in NULL handing and calling convetion
-#define StrChrW                 (WCHAR*)PAL_wcschr
-
-STDAPI_(LPWSTR) StrRChrW(LPCWSTR lpStart, LPCWSTR lpEnd, WCHAR wMatch);
-
-#define lstrcmpW                PAL_wcscmp
-#define lstrcmpiW               _wcsicmp
-
-#ifdef UNICODE
-#define StrChr                  StrChrW
-
-#define StrRChr                 StrRChrW
-
-#define lstrcmp                 lstrcmpW
-#define lstrcmpi                lstrcmpiW
-#endif
-
 
 #ifdef __cplusplus
 /*
@@ -675,9 +576,6 @@ The wrappers below are simple implementations that may not be as robust as compl
 Remember to fix the errcode definition in safecrt.h.
 */
 
-#define swscanf_s swscanf
-
-#define _wfopen_s _wfopen_unsafe
 #define fopen_s _fopen_unsafe
 
 #define _vscprintf _vscprintf_unsafe
@@ -709,20 +607,9 @@ inline int __cdecl _vscprintf_unsafe(const char *_Format, va_list _ArgList)
     }
 }
 
-inline errno_t __cdecl _wfopen_unsafe(PAL_FILE * *ff, const WCHAR *fileName, const WCHAR *mode)
+inline errno_t __cdecl _fopen_unsafe(FILE * *ff, const char *fileName, const char *mode)
 {
-    PAL_FILE *result = _wfopen(fileName, mode);
-    if(result == 0) {
-        return 1;
-    } else {
-        *ff = result;
-        return 0;
-    }
-}
-
-inline errno_t __cdecl _fopen_unsafe(PAL_FILE * *ff, const char *fileName, const char *mode)
-{
-  PAL_FILE *result = PAL_fopen(fileName, mode);
+  FILE *result = fopen(fileName, mode);
   if(result == 0) {
     return 1;
   } else {
@@ -734,27 +621,7 @@ inline errno_t __cdecl _fopen_unsafe(PAL_FILE * *ff, const char *fileName, const
 }
 #endif /* __cplusplus */
 
-STDAPI_(BOOL) PathIsUNCW(LPCWSTR pszPath);
-STDAPI_(BOOL) PathCanonicalizeW(LPWSTR lpszDst, LPCWSTR lpszSrc);
-
-#ifdef UNICODE
-#define PathIsUNC           PathIsUNCW
-#define PathCanonicalize    PathCanonicalizeW
-
-#endif // UNICODE
-
 /******************* misc ***************************************/
-
-#ifdef __cplusplus
-namespace std
-{
-    typedef decltype(nullptr) nullptr_t;
-}
-
-extern "C++"
-template< class T >
-typename std::remove_reference<T>::type&& move( T&& t );
-#endif // __cplusplus
 
 #define __RPC__out
 #define __RPC__in
@@ -767,23 +634,10 @@ typename std::remove_reference<T>::type&& move( T&& t );
 #define __RPC__inout
 #define __RPC__deref_out_ecount_full_opt(x)
 
-typedef DWORD OLE_COLOR;
-
-#define PF_COMPARE_EXCHANGE_DOUBLE          2
-
-typedef VOID (NTAPI * WAITORTIMERCALLBACKFUNC) (PVOID, BOOLEAN );
-
-typedef HANDLE HWND;
-
-#define IS_TEXT_UNICODE_SIGNATURE             0x0008
-#define IS_TEXT_UNICODE_UNICODE_MASK          0x000F
-
 typedef struct _LIST_ENTRY {
    struct _LIST_ENTRY *Flink;
    struct _LIST_ENTRY *Blink;
 } LIST_ENTRY, *PLIST_ENTRY;
-
-typedef VOID (NTAPI *WAITORTIMERCALLBACK)(PVOID, BOOLEAN);
 
 // PORTABILITY_ASSERT and PORTABILITY_WARNING macros are meant to be used to
 // mark places in the code that needs attention for portability. The usual
@@ -849,8 +703,6 @@ typedef VOID (NTAPI *WAITORTIMERCALLBACK)(PVOID, BOOLEAN);
 #define RUNTIME_FUNCTION_INDIRECT 0x1
 #endif
 
-#define _ReturnAddress() __builtin_return_address(0)
-
 #define DIRECTORY_SEPARATOR_CHAR_A '/'
 #define DIRECTORY_SEPARATOR_CHAR_W W('/')
 #define DIRECTORY_SEPARATOR_STR_A "/"
@@ -867,24 +719,6 @@ typedef VOID (NTAPI *WAITORTIMERCALLBACK)(PVOID, BOOLEAN);
 #define IMAGE_COR20_HEADER_FIELD(obj, f)    ((obj).f)
 #endif
 
-// copied from winnt.h
-#define PROCESSOR_ARCHITECTURE_INTEL            0
-#define PROCESSOR_ARCHITECTURE_MIPS             1
-#define PROCESSOR_ARCHITECTURE_ALPHA            2
-#define PROCESSOR_ARCHITECTURE_PPC              3
-#define PROCESSOR_ARCHITECTURE_SHX              4
-#define PROCESSOR_ARCHITECTURE_ARM              5
-#define PROCESSOR_ARCHITECTURE_IA64             6
-#define PROCESSOR_ARCHITECTURE_ALPHA64          7
-#define PROCESSOR_ARCHITECTURE_MSIL             8
-#define PROCESSOR_ARCHITECTURE_AMD64            9
-#define PROCESSOR_ARCHITECTURE_IA32_ON_WIN64    10
-#define PROCESSOR_ARCHITECTURE_NEUTRAL          11
-#define PROCESSOR_ARCHITECTURE_ARM64            12
-#define PROCESSOR_ARCHITECTURE_LOONGARCH64      13
-
-#define PROCESSOR_ARCHITECTURE_UNKNOWN 0xFFFF
-
 //
 // JIT Debugging Info. This structure is defined to have constant size in
 // both the emulated and native environment.
@@ -892,7 +726,6 @@ typedef VOID (NTAPI *WAITORTIMERCALLBACK)(PVOID, BOOLEAN);
 
 typedef struct _JIT_DEBUG_INFO {
     DWORD dwSize;
-    DWORD dwProcessorArchitecture;
     DWORD dwThreadID;
     DWORD dwReserved0;
     ULONG64 lpExceptionAddress;
@@ -917,11 +750,6 @@ interface IDispatch;
 interface ITypeInfo;
 interface ITypeLib;
 interface IMoniker;
-
-typedef VOID (WINAPI *LPOVERLAPPED_COMPLETION_ROUTINE)(
-    DWORD dwErrorCode,
-    DWORD dwNumberOfBytesTransferred,
-    LPOVERLAPPED lpOverlapped);
 
 //
 // Debug APIs
@@ -1061,7 +889,7 @@ typedef struct _DISPATCHER_CONTEXT {
     DWORD Reserved;
 } DISPATCHER_CONTEXT, *PDISPATCHER_CONTEXT;
 
-#elif defined(HOST_ARM64)
+#elif defined(HOST_ARM64) || defined(HOST_LOONGARCH64) || defined(HOST_RISCV64)
 
 typedef struct _DISPATCHER_CONTEXT {
     ULONG64 ControlPc;
@@ -1109,24 +937,6 @@ typedef struct _DISPATCHER_CONTEXT {
     BOOLEAN ControlPcIsUnwound;
 } DISPATCHER_CONTEXT, *PDISPATCHER_CONTEXT;
 
-#elif defined(HOST_LOONGARCH64)
-
-typedef struct _DISPATCHER_CONTEXT {
-    ULONG64 ControlPc;
-    ULONG64 ImageBase;
-    PRUNTIME_FUNCTION FunctionEntry;
-    ULONG64 EstablisherFrame;
-    ULONG64 TargetPc;
-    PCONTEXT ContextRecord;
-    PEXCEPTION_ROUTINE LanguageHandler;
-    PVOID HandlerData;
-    PVOID HistoryTable;
-    ULONG64 ScopeIndex;
-    BOOLEAN ControlPcIsUnwound;
-    PBYTE  NonVolatileRegisters;
-    ULONG64 Reserved;
-} DISPATCHER_CONTEXT, *PDISPATCHER_CONTEXT;
-
 #elif defined(HOST_S390X)
 
 typedef struct _DISPATCHER_CONTEXT {
@@ -1143,13 +953,19 @@ typedef struct _DISPATCHER_CONTEXT {
     DWORD Reserved;
 } DISPATCHER_CONTEXT, *PDISPATCHER_CONTEXT;
 
+#elif defined(HOST_WASM)
+
+typedef struct _DISPATCHER_CONTEXT {
+    // WASM does not build the JIT at this point,
+    // so we only add necessary fields.
+    UINT32 ControlPc;
+} DISPATCHER_CONTEXT, *PDISPATCHER_CONTEXT;
+
 #else
 
 #error Unknown architecture for defining DISPATCHER_CONTEXT.
 
 #endif
-
-// #endif // !defined(TARGET_OSX)
 
 typedef DISPATCHER_CONTEXT *PDISPATCHER_CONTEXT;
 
@@ -1161,8 +977,6 @@ typedef struct _EXCEPTION_REGISTRATION_RECORD EXCEPTION_REGISTRATION_RECORD;
 typedef EXCEPTION_REGISTRATION_RECORD *PEXCEPTION_REGISTRATION_RECORD;
 
 typedef LPVOID HKEY;
-typedef LPVOID PACL;
-typedef LPVOID LPBC;
 typedef LPVOID PSECURITY_DESCRIPTOR;
 
 typedef struct _EXCEPTION_RECORD64 {
@@ -1179,53 +993,6 @@ typedef LONG (WINAPI *PTOP_LEVEL_EXCEPTION_FILTER)(
     IN struct _EXCEPTION_POINTERS *ExceptionInfo
     );
 typedef PTOP_LEVEL_EXCEPTION_FILTER LPTOP_LEVEL_EXCEPTION_FILTER;
-
-/******************* ntdef ************************************/
-
-#ifndef ANYSIZE_ARRAY
-#define ANYSIZE_ARRAY 1       // winnt
-#endif
-
-/******************* winnt ************************************/
-
-typedef struct LIST_ENTRY32 {
-    ULONG Flink;
-    ULONG Blink;
-} LIST_ENTRY32;
-typedef LIST_ENTRY32 *PLIST_ENTRY32;
-
-typedef struct LIST_ENTRY64 {
-    ULONGLONG Flink;
-    ULONGLONG Blink;
-} LIST_ENTRY64;
-typedef LIST_ENTRY64 *PLIST_ENTRY64;
-
-/******************** PAL RT APIs *******************************/
-
-typedef struct _HSATELLITE *HSATELLITE;
-
-EXTERN_C HSATELLITE PALAPI PAL_LoadSatelliteResourceW(LPCWSTR SatelliteResourceFileName);
-EXTERN_C HSATELLITE PALAPI PAL_LoadSatelliteResourceA(LPCSTR SatelliteResourceFileName);
-EXTERN_C BOOL PALAPI PAL_FreeSatelliteResource(HSATELLITE SatelliteResource);
-EXTERN_C UINT PALAPI PAL_LoadSatelliteStringW(HSATELLITE SatelliteResource,
-             UINT uID,
-             LPWSTR lpBuffer,
-             UINT nBufferMax);
-EXTERN_C UINT PALAPI PAL_LoadSatelliteStringA(HSATELLITE SatelliteResource,
-             UINT uID,
-             LPSTR lpBuffer,
-             UINT nBufferMax);
-
-EXTERN_C HRESULT PALAPI PAL_CoCreateInstance(REFCLSID   rclsid,
-                             REFIID     riid,
-                             void     **ppv);
-
-// So we can have CoCreateInstance in most of the code base,
-// instead of spreading around of if'def FEATURE_PALs for PAL_CoCreateInstance.
-#define CoCreateInstance(rclsid, pUnkOuter, dwClsContext, riid, ppv) PAL_CoCreateInstance(rclsid, riid, ppv)
-
-STDAPI
-CoCreateGuid(OUT GUID * pguid);
 
 /************** Byte swapping & unaligned access ******************/
 

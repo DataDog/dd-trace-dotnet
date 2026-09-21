@@ -5,6 +5,8 @@
 #define _WIN_PATH_APIS_WRAPPER_
 class SString;
 
+#ifdef HOST_WINDOWS
+
 HMODULE
 LoadLibraryExWrapper(
     _In_ LPCWSTR lpLibFileName,
@@ -23,23 +25,8 @@ CreateFileWrapper(
     _In_opt_ HANDLE hTemplateFile
     );
 
-DWORD
-GetFileAttributesWrapper(
-    _In_ LPCWSTR lpFileName
-    );
+int u16_fopen_wrapper(FILE** stream, const WCHAR* filename, const WCHAR* mode);
 
-BOOL
-GetFileAttributesExWrapper(
-    _In_ LPCWSTR lpFileName,
-    _In_ GET_FILEEX_INFO_LEVELS fInfoLevelId,
-    _Out_writes_bytes_(sizeof(WIN32_FILE_ATTRIBUTE_DATA)) LPVOID lpFileInformation
-    );
-BOOL
-DeleteFileWrapper(
-    _In_ LPCWSTR lpFileName
-    );
-
-#ifndef HOST_UNIX
 BOOL
 CopyFileExWrapper(
     _In_        LPCWSTR lpExistingFileName,
@@ -50,7 +37,7 @@ CopyFileExWrapper(
     _Inout_opt_ LPBOOL pbCancel,
     _In_        DWORD dwCopyFlags
     );
-#endif //HOST_UNIX
+#endif //HOST_WINDOWS
 
 DWORD
 SearchPathWrapper(
@@ -60,14 +47,6 @@ SearchPathWrapper(
     _In_ BOOL getPath,
     SString& lpBuffer,
     _Out_opt_ LPWSTR * lpFilePart
-    );
-
-DWORD WINAPI GetTempPathWrapper(
-    SString& lpBuffer
-    );
-
-DWORD WINAPI GetCurrentDirectoryWrapper(
-    SString&  lpBuffer
     );
 
 DWORD

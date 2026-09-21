@@ -29,13 +29,11 @@
 #endif
 #endif
 
-#include "static_assert.h"
-
-#ifdef PAL_STDCPP_COMPAT
 #include <type_traits>
-#else
-#include "clr_std/type_traits"
-#endif
+
+#ifdef FEATURE_PAL
+#include "pal_mstypes.h"
+#endif // FEATURE_PAL
 
 //==================================================================
 // Semantics: if val can be represented as the exact same value
@@ -48,18 +46,12 @@
 // function are based on static type information and as such will
 // be optimized away. In particular, the case where the signs are
 // identical will result in no code branches.
-
-#ifdef _PREFAST_
-#pragma warning(push)
-#pragma warning(disable:6326) // PREfast warning: Potential comparison of a constant with another constant
-#endif // _PREFAST_
-
 template <typename Dst, typename Src>
 inline bool FitsIn(Src val)
 {
 #ifdef _MSC_VER
-    static_assert_no_msg(!__is_class(Dst));
-    static_assert_no_msg(!__is_class(Src));
+    static_assert(!__is_class(Dst));
+    static_assert(!__is_class(Src));
 #endif
 
     if (std::is_signed<Src>::value == std::is_signed<Dst>::value)
@@ -139,10 +131,6 @@ inline bool DoubleFitsInIntType(double val)
     double DstMaxD = static_cast<double>(DstMax);
     return DstMinD <= val && val <= DstMaxD;
 }
-
-#ifdef _PREFAST_
-#pragma warning(pop)
-#endif //_PREFAST_
 
 #define ovadd_lt(a, b, rhs) (((a) + (b) <  (rhs) ) && ((a) + (b) >= (a)))
 #define ovadd_le(a, b, rhs) (((a) + (b) <= (rhs) ) && ((a) + (b) >= (a)))

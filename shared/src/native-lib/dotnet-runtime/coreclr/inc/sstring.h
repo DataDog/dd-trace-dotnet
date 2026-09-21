@@ -45,6 +45,7 @@
 #include "utilcode.h"
 #include "sbuffer.h"
 #include "debugmacros.h"
+#include <minipal/types.h>
 
 // ==========================================================================================
 // Documentational typedefs: use these to indicate specific representations of 8 bit strings:
@@ -70,7 +71,7 @@ typedef const UTF8 *LPCUTF8;
 
 
 typedef DPTR(class SString) PTR_SString;
-class EMPTY_BASES_DECL SString : private SBuffer
+class EMPTY_BASES SString : private SBuffer
 {
     friend struct _DacGlobals;
 
@@ -127,19 +128,20 @@ private:
     SString();
 
     explicit SString(const SString &s);
+    SString(SString&& string) = default;
 
     SString(const SString &s1, const SString &s2);
     SString(const SString &s1, const SString &s2, const SString &s3);
     SString(const SString &s1, const SString &s2, const SString &s3, const SString &s4);
     SString(const SString &s, const CIterator &i, COUNT_T length);
     SString(const SString &s, const CIterator &start, const CIterator &end);
-    SString(const WCHAR *string);
+    explicit SString(const WCHAR *string);
     SString(const WCHAR *string, COUNT_T count);
     SString(enum tagASCII dummyTag, const ASCII *string);
     SString(enum tagASCII dummyTag, const ASCII *string, COUNT_T count);
     SString(enum tagUTF8 dummytag, const UTF8 *string);
     SString(enum tagUTF8 dummytag, const UTF8 *string, COUNT_T count);
-    SString(WCHAR character);
+    explicit SString(WCHAR character);
 
     // NOTE: Literals MUST be read-only never-freed strings.
     SString(enum tagLiteral dummytag, const CHAR *literal);
@@ -192,7 +194,7 @@ private:
 
     // Normalizes the string representation to unicode.  This can be used to
     // make basic read-only operations non-failing.
-    void Normalize() const;
+    void Normalize();
 
     // Return the number of characters in the string (excluding the terminating NULL).
     COUNT_T GetCount() const;
@@ -301,10 +303,10 @@ private:
     void Replace(const Iterator &i, COUNT_T length, const SString &s);
 
     // Make sure that string buffer has room to grow
-    void Preallocate(COUNT_T characters) const;
+    void Preallocate(COUNT_T characters);
 
     // Shrink buffer size as much as possible (reallocate if necessary.)
-    void Trim() const;
+    void Trim();
 
     // ------------------------------------------------------------------
     // Iterators:
@@ -332,7 +334,7 @@ private:
 
  protected:
 
-    class EMPTY_BASES_DECL Index : public SBuffer::Index
+    class EMPTY_BASES Index : public SBuffer::Index
     {
         friend class SString;
 
@@ -364,7 +366,7 @@ private:
 
  public:
 
-    class EMPTY_BASES_DECL CIterator : public Index, public Indexer<const WCHAR, CIterator>
+    class EMPTY_BASES CIterator : public Index, public Indexer<const WCHAR, CIterator>
     {
         friend class SString;
 
@@ -404,7 +406,7 @@ private:
         WCHAR operator[](int index) const { return Index::operator[](index); }
     };
 
-    class EMPTY_BASES_DECL Iterator : public Index, public Indexer<WCHAR, Iterator>
+    class EMPTY_BASES Iterator : public Index, public Indexer<WCHAR, Iterator>
     {
         friend class SString;
 
@@ -518,6 +520,9 @@ private:
     //Returns the unicode string, the caller is responsible for lifetime of the string
     WCHAR *GetCopyOfUnicodeString();
 
+    //Returns the UTF8 string, the caller is responsible for the lifetime of the string
+    UTF8 *GetCopyOfUTF8String();
+
     // Get the max size that can be passed to OpenUnicodeBuffer without causing allocations.
     COUNT_T GetUnicodeAllocation();
 
@@ -562,20 +567,14 @@ private:
     // Utilities
     //---------------------------------------------------------------------
 
-    // WARNING: The MBCS version of printf function are factory for globalization
-    // issues when used to format Unicode strings (%S). The Unicode versions are
-    // preferred in this case.
-    void Printf(const CHAR *format, ...);
+    void Printf(const CHAR *format, ...) MINIPAL_ATTR_FORMAT_PRINTF(2, 3);
     void VPrintf(const CHAR *format, va_list args);
-    void AppendPrintf(const CHAR *format, ...);
+    void AppendPrintf(const CHAR *format, ...) MINIPAL_ATTR_FORMAT_PRINTF(2, 3);
     void AppendVPrintf(const CHAR *format, va_list args);
 
-    void Printf(const WCHAR *format, ...);
-
 public:
-    BOOL LoadResource(CCompRC::ResourceCategory eCategory, int resourceID);
-    HRESULT LoadResourceAndReturnHR(CCompRC::ResourceCategory eCategory, int resourceID);
-    HRESULT LoadResourceAndReturnHR(CCompRC* pResourceDLL, CCompRC::ResourceCategory eCategory, int resourceID);
+    BOOL LoadResource(int resourceID);
+    HRESULT LoadResourceAndReturnHR(int resourceID);
     BOOL FormatMessage(DWORD dwFlags, LPCVOID lpSource, DWORD dwMessageId, DWORD dwLanguageId,
                        const SString &arg1 = Empty(), const SString &arg2 = Empty(),
                        const SString &arg3 = Empty(), const SString &arg4 = Empty(),
@@ -594,11 +593,9 @@ public:
 
     operator const WCHAR * () const { WRAPPER_NO_CONTRACT; return GetUnicode(); }
 
-    WCHAR operator[](int index) { WRAPPER_NO_CONTRACT; return Begin()[index]; }
     WCHAR operator[](int index) const { WRAPPER_NO_CONTRACT; return Begin()[index]; }
 
     SString &operator= (const SString &s) { WRAPPER_NO_CONTRACT; Set(s); return *this; }
-    SString &operator+= (const SString &s) { WRAPPER_NO_CONTRACT; Append(s); return *this; }
 
     // -------------------------------------------------------------------
     // Check functions
@@ -621,11 +618,11 @@ public:
 #endif  // CHECK_INVARIANTS
 
     // Helpers for CRT function equivalance.
-    static int __cdecl _stricmp(const CHAR *buffer1, const CHAR *buffer2);
-    static int __cdecl _strnicmp(const CHAR *buffer1, const CHAR *buffer2, COUNT_T count);
+    static int _stricmp(const CHAR *buffer1, const CHAR *buffer2);
+    static int _strnicmp(const CHAR *buffer1, const CHAR *buffer2, COUNT_T count);
 
-    static int __cdecl _wcsicmp(const WCHAR *buffer1, const WCHAR *buffer2);
-    static int __cdecl _wcsnicmp(const WCHAR *buffer1, const WCHAR *buffer2, COUNT_T count);
+    static int _wcsicmp(const WCHAR *buffer1, const WCHAR *buffer2);
+    static int _wcsnicmp(const WCHAR *buffer1, const WCHAR *buffer2, COUNT_T count);
 
     // C++ convenience overloads
     static int _tstricmp(const CHAR *buffer1, const CHAR *buffer2);
@@ -650,8 +647,6 @@ public:
     // Internal helpers:
 
     static const BYTE s_EmptyBuffer[2];
-
-    static UINT s_ACP;
 
     SPTR_DECL(SString,s_Empty);
 
@@ -685,7 +680,9 @@ public:
     BOOL IsASCIIScanned() const;
     void SetASCIIScanned() const;
     void SetNormalized() const;
+public:
     BOOL IsNormalized() const;
+private:
     void ClearNormalized() const;
 
     void EnsureWritable() const;
@@ -715,7 +712,7 @@ public:
 // ===========================================================================
 
 template <COUNT_T MEMSIZE>
-class EMPTY_BASES_DECL InlineSString : public SString
+class EMPTY_BASES InlineSString : public SString
 {
 private:
     DAC_ALIGNAS(SString)
@@ -782,6 +779,13 @@ public:
     {
         WRAPPER_NO_CONTRACT;
         Set(string, count);
+    }
+
+    FORCEINLINE InlineSString(enum tagLiteral, const WCHAR *string)
+      : SString(m_inline, SBUFFER_PADDED_SIZE(MEMSIZE))
+    {
+        WRAPPER_NO_CONTRACT;
+        Set(string);
     }
 
     FORCEINLINE InlineSString(enum tagASCII, const CHAR *string)
@@ -869,7 +873,7 @@ typedef InlineSString<2 * 260> LongPathString;
 //        s = SL("My literal String");
 // ================================================================================
 
-#define SL(_literal) SString(SString::Literal, _literal)
+#define SL(_literal) SString{ SString::Literal, _literal }
 
 // ================================================================================
 // Special contract definition - THROWS_UNLESS_NORMALIZED

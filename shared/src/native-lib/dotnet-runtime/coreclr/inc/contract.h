@@ -4,9 +4,6 @@
 // Contract.h
 //
 
-// ! I am the owner for issues in the contract *infrastructure*, not for every
-// ! CONTRACT_VIOLATION dialog that comes up. If you interrupt my work for a routine
-// ! CONTRACT_VIOLATION, you will become the new owner of this file.
 //--------------------------------------------------------------------------------
 // CONTRACTS - User Reference
 //
@@ -69,19 +66,9 @@
 //      PRECONDITION(X) -   generic CHECK or BOOL expression which should be true
 //                          on function entry
 //
-//      POSTCONDITION(X) -  generic CHECK or BOOL expression which should be true
-//                          on function entry.  Note that variable RETVAL will be
-//                          available for use in the expression.
-//
 //
 //      INSTANCE_CHECK -    equivalent of:
 //                          PRECONDITION(CheckPointer(this));
-//                          POSTCONDITION(CheckInvariant(this));
-//      INSTANCE_CHECK_NULL - equivalent of:
-//                          PRECONDITION(CheckPointer(this, NULL_OK));
-//                          POSTCONDITION(CheckInvariant(this, NULL_OK));
-//      CONSTRUCTOR_CHECK - equivalent of:
-//                          POSTCONDITION(CheckPointer(this));
 //      DESTRUCTOR_CHECK -  equivalent of:
 //                          PRECONDITION(CheckPointer(this));
 //
@@ -91,17 +78,7 @@
 //   Contracts come in the following flavors:
 //
 //     Dynamic:
-//        CONTRACTL          the standard version used for all dynamic contracts
-//                           except those including postconditions.
-//
-//        CONTRACT(rettype)  an uglier version of CONTRACTL that's unfortunately
-//                           needed to support postconditions. You must specify
-//                           the correct return type and it cannot be "void."
-//                           (Use CONTRACT_VOID instead) You must use the
-//                           RETURN macro rather than the "return" keyword.
-//
-//        CONTRACT_VOID      you can't supply "void" to a CONTRACT - use this
-//                           instead.
+//        CONTRACTL          the standard version used for all dynamic contracts.
 //
 //     Static:
 //        LIMITED_METHOD_CONTRACT
@@ -140,7 +117,6 @@
 //              ModeViolation
 //              FaultViolation
 //              FaultNotFatal
-//              HostViolation
 //              LoadsTypeViolation
 //              TakesLockViolation
 //
@@ -205,9 +181,6 @@
 //
 //--------------------------------------------------------------------------------
 
-
-
-
 #ifndef CONTRACT_H_
 #define CONTRACT_H_
 
@@ -233,10 +206,10 @@
 
 #include "specstrings.h"
 #include "clrtypes.h"
-#include "malloc.h"
 #include "check.h"
-#include "debugreturn.h"
 #include "staticcontract.h"
+#include "volatile.h"
+#include "cor.h"
 
 #ifdef ENABLE_CONTRACTS_DATA
 
@@ -299,14 +272,8 @@ struct TakenLockInfo
 
 enum DbgStateLockType
 {
-    // EE locks (used to sync EE structures).  These do not include
-    // CRST_HOST_BREAKABLE Crsts, and are thus not held while managed
-    // code runs
+    // EE locks (used to sync EE structures).
     kDbgStateLockType_EE,
-
-    // CRST_HOST_BREAKABLE Crsts.  These can be held while arbitrary
-    // managed code runs.
-    kDbgStateLockType_HostBreakableCrst,
 
     // User locks (e.g., Monitor.Enter, ReaderWriterLock class)
     kDbgStateLockType_User,
@@ -378,7 +345,7 @@ public:
 
 #define CONTRACT_BITMASK_OK_TO_THROW          0x1 << 0
 #define CONTRACT_BITMASK_FAULT_FORBID         0x1 << 1
-#define CONTRACT_BITMASK_HOSTCALLS            0x1 << 2
+// Unused                                     0x1 << 2
 #define CONTRACT_BITMASK_SOTOLERANT           0x1 << 3
 #define CONTRACT_BITMASK_DEBUGONLY            0x1 << 4
 #define CONTRACT_BITMASK_SONOTMAINLINE        0x1 << 5
@@ -422,7 +389,6 @@ public:
         // By default, GetThread() is perfectly fine to call
         // By default, it's ok to take a lock (or call someone who does)
         m_flags             = CONTRACT_BITMASK_OK_TO_THROW|
-                              CONTRACT_BITMASK_HOSTCALLS|
                               CONTRACT_BITMASK_SOTOLERANT|
                               CONTRACT_BITMASK_OK_TO_LOCK|
                               CONTRACT_BITMASK_OK_TO_RETAKE_LOCK;
@@ -510,30 +476,6 @@ public:
     void ResetFaultForbid()
     {
         CONTRACT_BITMASK_RESET(CONTRACT_BITMASK_FAULT_FORBID);
-    }
-
-    //--//
-    BOOL IsHostCaller()
-    {
-        return CONTRACT_BITMASK_IS_SET(CONTRACT_BITMASK_HOSTCALLS);
-    }
-
-    void SetHostCaller()
-    {
-        CONTRACT_BITMASK_SET(CONTRACT_BITMASK_HOSTCALLS);
-    }
-
-
-    BOOL SetHostCaller(BOOL value)
-    {
-        BOOL prevState = CONTRACT_BITMASK_IS_SET(CONTRACT_BITMASK_HOSTCALLS);
-        CONTRACT_BITMASK_UPDATE(CONTRACT_BITMASK_HOSTCALLS,value);
-        return prevState;
-    }
-
-    void ResetHostCaller()
-    {
-        CONTRACT_BITMASK_RESET(CONTRACT_BITMASK_HOSTCALLS);
     }
 
     //--//
@@ -689,7 +631,7 @@ public:
     UINT GetCombinedLockCount();
 };
 
-#endif // ENABLE_CONTRACTS
+#endif // ENABLE_CONTRACTS_DATA
 
 #ifdef ENABLE_CONTRACTS_IMPL
 // Create ClrDebugState.
@@ -715,8 +657,7 @@ void CONTRACT_ASSERT(const char *szElaboration,
                      const char *szFile,
                      int   lineNum
                      );
-
-#endif
+#endif // ENABLE_CONTRACTS_IMPL
 
 // This needs to be defined up here b/c it is used by ASSERT_CHECK which is used by the contract impl
 #ifdef _DEBUG
@@ -737,7 +678,6 @@ public:
     // we don't recreated one on exit if its been deleted.
     DEBUG_NOINLINE void Enter()
     {
-        SCAN_SCOPE_BEGIN;
         STATIC_CONTRACT_DEBUG_ONLY;
 
         m_pClrDebugState = GetClrDebugState();
@@ -750,7 +690,6 @@ public:
 
     DEBUG_NOINLINE void Leave()
     {
-        SCAN_SCOPE_END;
         STATIC_CONTRACT_DEBUG_ONLY;
 
         m_pClrDebugState = CheckClrDebugState();
@@ -778,7 +717,6 @@ class AutoCleanupDebugOnlyCodeHolder : public DebugOnlyCodeHolder
 public:
     DEBUG_NOINLINE AutoCleanupDebugOnlyCodeHolder()
     {
-        SCAN_SCOPE_BEGIN;
         STATIC_CONTRACT_DEBUG_ONLY;
 
         Enter();
@@ -786,8 +724,6 @@ public:
 
     DEBUG_NOINLINE ~AutoCleanupDebugOnlyCodeHolder()
     {
-        SCAN_SCOPE_END;
-
         Leave();
     };
 };
@@ -814,7 +750,7 @@ public:
 #define END_DEBUG_ONLY_CODE
 #define ENTER_DEBUG_ONLY_CODE
 #define LEAVE_DEBUG_ONLY_CODE
-#endif
+#endif // ENABLE_CONTRACTS_IMPL
 
 #else // _DEBUG
 #define DEBUG_ONLY_REGION()
@@ -839,18 +775,6 @@ inline LPVOID GetViolationMask()
         return 0;
     }
 }
-
-// This is the default binding of the MAYBETEMPLATE identifier,
-// used in the RETURN macro
-template <int DUMMY>
-class ___maybetemplate
-{
-  public:
-    FORCEINLINE void *operator new (size_t size)
-    {
-        return NULL;
-    }
-};
 
 // This is an abstract base class for contracts. The main reason we have this is so that the dtor for many derived class can
 // be performant. If this class was not abstract and had a dtor, then the dtor for the derived class adds EH overhead (even if the derived
@@ -896,11 +820,8 @@ class BaseContract
 
         SO_MAINLINE_No          = 0x00000800,  // code is not part of our mainline SO scenario
 
-        // Any place where we can't safely call into the host should have a HOST_NoCalls contract
-        HOST_Mask               = 0x00003000,
-        HOST_Calls              = 0x00002000,
-        HOST_NoCalls            = 0x00001000,
-        HOST_Disabled           = 0x00000000,   // the default
+        // Unused               = 0x00002000,
+        // Unused               = 0x00001000,
 
         // These enforce the CAN_TAKE_LOCK / CANNOT_TAKE_LOCK contracts
         CAN_TAKE_LOCK_Mask      = 0x00060000,
@@ -920,7 +841,7 @@ class BaseContract
         LOADS_TYPE_Disabled     = 0x00000000,   // the default
 
         ALL_Disabled            = THROWS_Disabled|GC_Disabled|FAULT_Disabled|MODE_Disabled|LOADS_TYPE_Disabled|
-                                  HOST_Disabled|CAN_TAKE_LOCK_Disabled|CAN_RETAKE_LOCK_No_Disabled
+                                  CAN_TAKE_LOCK_Disabled|CAN_RETAKE_LOCK_No_Disabled
 
     };
 
@@ -928,7 +849,6 @@ class BaseContract
     {
         Setup = 0x01,
         Preconditions = 0x02,
-        Postconditions = 0x04,
     };
 
 
@@ -969,124 +889,6 @@ class BaseContract
     ContractStackRecord m_contractStackRecord;
 
   public:
-    // --------------------------------------------------------------------------------
-    // These classes and declarations are used to implement our fake return keyword.
-    // --------------------------------------------------------------------------------
-
-    // ___box is used to protect the "detected" return value from being combined with other parts
-    // of the return expression after we have processed it.  This can happen if the return
-    // expression is a non-parenthesized expression with an operator of lower precedence than
-    // ">".
-    //
-    // If you have such a case (and see this class listed in an error message),
-    // parenthesize your return value expression.
-    template <typename T>
-    class Box__USE_PARENS_WITH_THIS_EXPRESSION
-    {
-        const T &value;
-
-    public:
-
-        FORCEINLINE Box__USE_PARENS_WITH_THIS_EXPRESSION(const T &value)
-          : value(value)
-          {
-          }
-
-        FORCEINLINE const T& Unbox()
-          {
-              return value;
-          }
-    };
-
-    // PseudoTemplate is a class which can be instantiated with a template-like syntax, resulting
-    // in an expression which simply boxes a following value in a Box
-
-    template <typename T>
-    class PseudoTemplate
-    {
-      public:
-        FORCEINLINE void *operator new (size_t size)
-        {
-            return NULL;
-        }
-
-        FORCEINLINE Box__USE_PARENS_WITH_THIS_EXPRESSION<T> operator>(const T &value)
-        {
-            return Box__USE_PARENS_WITH_THIS_EXPRESSION<T>(value);
-        }
-
-        FORCEINLINE PseudoTemplate operator<(int dummy)
-        {
-            return PseudoTemplate();
-        }
-    };
-
-    // Returner is used to assign the return value to the RETVAL local.  Note the use of
-    // operator , because of its low precedence.
-
-    template <typename RETURNTYPE>
-    class Returner
-    {
-        RETURNTYPE      &m_value;
-        BOOL            m_got;
-    public:
-
-        FORCEINLINE Returner(RETURNTYPE &value)
-          : m_value(value),
-            m_got(FALSE)
-        {
-        }
-
-        template <typename T>
-        FORCEINLINE RETURNTYPE operator,(Box__USE_PARENS_WITH_THIS_EXPRESSION<T> value)
-        {
-            m_value = value.Unbox();
-            m_got = TRUE;
-            return m_value;
-        }
-
-        FORCEINLINE void operator,(___maybetemplate<0> &dummy)
-        {
-            m_got = TRUE;
-        }
-
-        FORCEINLINE BOOL GotReturn()
-        {
-            return m_got;
-        }
-    };
-
-    // This type ensures that postconditions were run via RETURN or RETURN_VOID
-    class RanPostconditions
-    {
-    public:
-        bool ran;
-        int count;
-        const char *function;
-
-        FORCEINLINE RanPostconditions(const char *function)
-          : ran(false),
-            count(0),
-            function(function)
-        {
-        }
-
-        FORCEINLINE int operator++()
-        {
-            return ++count;
-        }
-
-        FORCEINLINE ~RanPostconditions()
-        {
-            // Note: __uncaught_exception() is not a perfect check. It will return TRUE during any exception
-            // processing. So, if there is a contract called from an exception filter (like our
-            // COMPlusFrameHandler) then it will return TRUE and the saftey check below will not be performed.
-            if (!__uncaught_exception())
-                ASSERT_CHECK(count == 0 || ran, function, "Didn't run postconditions - be sure to use RETURN at the end of the function");
-        }
-
-    };
-
     // Set contract enforcement level
     static void SetUnconditionalContractEnforcement(BOOL enforceUnconditionally);
 
@@ -1124,7 +926,6 @@ enum ContractViolationBits
     FaultNotFatal   = 0x00000010,  // suppress INJECT_FAULT but not fault injection by harness
     LoadsTypeViolation      = 0x00000040,  // suppress LOADS_TYPE tags in this scope
     TakesLockViolation      = 0x00000080,  // suppress CAN_TAKE_LOCK tags in this scope
-    HostViolation           = 0x00000100,  // suppress HOST_CALLS tags in this scope
 
     //These are not violation bits. We steal some bits out of the violation mask to serve as
     // general flag bits.
@@ -1154,9 +955,8 @@ enum ContractViolationBits
 
 #ifdef ENABLE_CONTRACTS_IMPL
 
-// Global variables allow PRECONDITION and POSTCONDITION to be used outside contracts
-static const BaseContract::Operation ___op = (Contract::Operation) (Contract::Preconditions
-                                                                |Contract::Postconditions);
+// Global variables allow PRECONDITION to be used outside contracts
+static const BaseContract::Operation ___op = Contract::Preconditions;
 enum {
     ___disabled = 0
 };
@@ -1165,65 +965,10 @@ static UINT ___testmask;
 
 // End of global variables
 
-static int ___ran;
-
-class __SafeToUsePostCondition {
-public:
-    static int safe_to_use_postcondition() {return 0;};
-};
-
-class __YouCannotUseAPostConditionHere {
-private:
-    static int safe_to_use_postcondition() {return 0;};
-};
-
-typedef __SafeToUsePostCondition __PostConditionOK;
-
-// Uncomment the following line to disable runtime contracts completely - PRE/POST conditions will still be present
+// Uncomment the following line to disable runtime contracts completely
 //#define __FORCE_NORUNTIME_CONTRACTS__ 1
 
 #ifndef __FORCE_NORUNTIME_CONTRACTS__
-
-#define CONTRACT_SETUP(_contracttype, _returntype, _returnexp)          \
-    _returntype RETVAL;                                                 \
-    _contracttype ___contract;                                          \
-    Contract::Returner<_returntype> ___returner(RETVAL);                \
-    Contract::RanPostconditions ___ran(__FUNCTION__);                   \
-    Contract::Operation ___op = Contract::Setup;                        \
-    BOOL ___contract_enabled = FALSE;                                   \
-    DEBUG_ASSURE_NO_RETURN_BEGIN(CONTRACT)                              \
-    ___contract_enabled = Contract::EnforceContract();                  \
-    enum {___disabled = 0};                                             \
-    if (!___contract_enabled)                                           \
-        ___contract.Disable();                                          \
-    else                                                                \
-    {                                                                   \
-        enum { ___CheckMustBeInside_CONTRACT = 1 };                     \
-        if (0)                                                          \
-        {                                                               \
-        /* If you see an "unreferenced label" warning with this name, */\
-        /* Be sure that you have a RETURN at the end of your */         \
-        /* CONTRACT_VOID function */                                    \
-        ___run_postconditions_DID_YOU_FORGET_A_RETURN:                  \
-            if (___contract_enabled)                                    \
-            {                                                           \
-                ___op = Contract::Postconditions;                       \
-                ___ran.ran = true;                                      \
-            }                                                           \
-            else                                                        \
-            {                                                           \
-                DEBUG_OK_TO_RETURN_BEGIN(CONTRACT)                      \
-              ___run_return:                                            \
-                return _returnexp;                                      \
-                DEBUG_OK_TO_RETURN_END(CONTRACT)                        \
-            }                                                           \
-        }                                                               \
-        if (0)                                                          \
-        {                                                               \
-        ___run_preconditions:                                           \
-            ___op = Contract::Preconditions;                            \
-        }                                                               \
-        UINT ___testmask = 0;                                           \
 
 #define CONTRACTL_SETUP(_contracttype)                                  \
     _contracttype ___contract;                                          \
@@ -1233,7 +978,6 @@ typedef __SafeToUsePostCondition __PostConditionOK;
         ___contract.Disable();                                          \
     else                                                                \
     {                                                                   \
-        typedef __YouCannotUseAPostConditionHere __PostConditionOK;     \
         enum { ___CheckMustBeInside_CONTRACT = 1 };                     \
         Contract::Operation ___op = Contract::Setup;                    \
         enum {___disabled = 0};                                         \
@@ -1242,60 +986,14 @@ typedef __SafeToUsePostCondition __PostConditionOK;
           ___run_preconditions:                                         \
             ___op = Contract::Preconditions;                            \
         }                                                               \
-        if (0)                                                          \
-        {                                                               \
-        /* define for CONTRACT_END even though we can't get here */     \
-          ___run_return:                                                \
-            UNREACHABLE();                                              \
-        }                                                               \
         UINT ___testmask = 0;                                           \
 
 #else // #ifndef __FORCE_NORUNTIME_CONTRACTS__
-
-#define CONTRACT_SETUP(_contracttype, _returntype, _returnexp)              \
-        _returntype RETVAL;                                                 \
-        Contract::Returner<_returntype> ___returner(RETVAL);                \
-        Contract::RanPostconditions ___ran(__FUNCTION__);                   \
-        Contract::Operation ___op = Contract::Setup;                        \
-        DEBUG_ASSURE_NO_RETURN_BEGIN(CONTRACT)                              \
-        BOOL ___contract_enabled = Contract::EnforceContract();             \
-        enum {___disabled = 0};                                             \
-        {                                                                   \
-            enum { ___CheckMustBeInside_CONTRACT = 1 };                     \
-            if (0)                                                          \
-            {                                                               \
-            /* If you see an "unreferenced label" warning with this name, */\
-            /* Be sure that you have a RETURN at the end of your */         \
-            /* CONTRACT_VOID function */                                    \
-            ___run_postconditions_DID_YOU_FORGET_A_RETURN:                  \
-                if (___contract_enabled)                                    \
-                {                                                           \
-                    ___op = Contract::Postconditions;                       \
-                    ___ran.ran = true;                                      \
-                }                                                           \
-                else                                                        \
-                {                                                           \
-                    DEBUG_OK_TO_RETURN_BEGIN(CONTRACT)                      \
-                  ___run_return:                                            \
-                    return _returnexp;                                      \
-                    DEBUG_OK_TO_RETURN_END(CONTRACT)                        \
-                }                                                           \
-            }                                                               \
-            if (0)                                                          \
-            {                                                               \
-            ___run_preconditions:                                           \
-                ___op = Contract::Preconditions;                            \
-            }                                                               \
-            UINT ___testmask = 0;                                           \
-
-
-
 
 #define CONTRACTL_SETUP(_contracttype)                                  \
     BOOL ___contract_enabled = Contract::EnforceContract();             \
     enum {___disabled = 0};                                             \
     {                                                                   \
-        typedef __YouCannotUseAPostConditionHere __PostConditionOK;     \
             enum { ___CheckMustBeInside_CONTRACT = 1 };                 \
         Contract::Operation ___op = Contract::Setup;                    \
         enum {___disabled = 0};                                         \
@@ -1304,23 +1002,16 @@ typedef __SafeToUsePostCondition __PostConditionOK;
           ___run_preconditions:                                         \
             ___op = Contract::Preconditions;                            \
         }                                                               \
-        if (0)                                                          \
-        {                                                               \
-        /* define for CONTRACT_END even though we can't get here */     \
-          ___run_return:                                                \
-            UNREACHABLE();                                              \
-        }                                                               \
         UINT ___testmask = 0;                                           \
 
 #endif // __FORCE_NORUNTIME_CONTRACTS__
 
 
 #define CUSTOM_CONTRACT(_contracttype, _returntype)                     \
-        typedef Contract::PseudoTemplate<_returntype> ___maybetemplate; \
-        CONTRACT_SETUP(_contracttype, _returntype, RETVAL)
+        CONTRACTL_SETUP(_contracttype)
 
 #define CUSTOM_CONTRACT_VOID(_contracttype)                             \
-        CONTRACT_SETUP(_contracttype, int, ;)
+        CONTRACTL_SETUP(_contracttype)
 
 #define CUSTOM_CONTRACTL(_contracttype)                                 \
         CONTRACTL_SETUP(_contracttype)
@@ -1385,39 +1076,10 @@ typedef __SafeToUsePostCondition __PostConditionOK;
 #define PRECONDITION(_expression)                                                           \
         PRECONDITION_MSG(_expression, NULL)
 
-#define POSTCONDITION_MSG(_expression, _message)                                            \
-        ++___ran;                                                                           \
-        if ((!(0 && __PostConditionOK::safe_to_use_postcondition())) &&                     \
-            (___op&Contract::Postconditions) &&                                             \
-            !___disabled)                                                                   \
-        {                                                                                   \
-            ASSERT_CHECK(_expression, _message, "Postcondition failure");                   \
-        }
-
-#define POSTCONDITION(_expression)                                                          \
-        POSTCONDITION_MSG(_expression, NULL)
-
 #define INSTANCE_CHECK                                                                      \
         ___CheckMustBeInside_CONTRACT;                                                      \
         if ((___op&Contract::Preconditions) && !___disabled)                                \
-            ASSERT_CHECK(CheckPointer(this), NULL, "Instance precheck failure");            \
-        ++___ran;                                                                           \
-        if ((___op&Contract::Postconditions) && !___disabled)                               \
-            ASSERT_CHECK(CheckPointer(this), NULL, "Instance postcheck failure");
-
-#define INSTANCE_CHECK_NULL                                                                 \
-        ___CheckMustBeInside_CONTRACT;                                                      \
-        if ((___op&Contract::Preconditions) && !___disabled)                                \
-            ASSERT_CHECK(CheckPointer(this, NULL_OK), NULL, "Instance precheck failure");   \
-        ++___ran;                                                                           \
-        if ((___op&Contract::Postconditions) && !___disabled)                               \
-            ASSERT_CHECK(CheckPointer(this, NULL_OK), NULL, "Instance postcheck failure");
-
-#define CONSTRUCTOR_CHECK                                                                   \
-        ___CheckMustBeInside_CONTRACT;                                                      \
-        ++___ran;                                                                           \
-        if ((___op&Contract::Postconditions) && !___disabled)                               \
-            ASSERT_CHECK(CheckPointer(this), NULL, "Instance postcheck failure");
+            ASSERT_CHECK(CheckPointer(this), NULL, "Instance precheck failure");
 
 #define DESTRUCTOR_CHECK                                                                    \
         ___CheckMustBeInside_CONTRACT;                                                      \
@@ -1429,18 +1091,13 @@ typedef __SafeToUsePostCondition __PostConditionOK;
 
 #define PRECONDITION_MSG(_expression, _message)     do { } while(0)
 #define PRECONDITION(_expression)                   do { } while(0)
-#define POSTCONDITION_MSG(_expression, _message)    do { } while(0)
-#define POSTCONDITION(_expression)                  do { } while(0)
 #define INSTANCE_CHECK
-#define INSTANCE_CHECK_NULL
-#define CONSTRUCTOR_CHECK
 #define DESTRUCTOR_CHECK
 
 #endif // __DISABLE_PREPOST_CONDITIONS__
 
 #define UNCHECKED(thecheck)                                                                 \
         do {                                                                                \
-            ANNOTATION_UNCHECKED(thecheck);                                                 \
             enum {___disabled = 1 };                                                        \
             thecheck;                                                                       \
         } while(0)
@@ -1465,10 +1122,6 @@ typedef __SafeToUsePostCondition __PostConditionOK;
                 goto ___run_preconditions;                                                  \
             }                                                                               \
         }                                                                                   \
-        else if (___op & Contract::Postconditions)                                          \
-        {                                                                                   \
-            goto ___run_return;                                                             \
-        }                                                                                   \
         ___CheckMustBeInside_CONTRACT;                                                      \
    }
 
@@ -1482,63 +1135,13 @@ typedef __SafeToUsePostCondition __PostConditionOK;
                 goto ___run_preconditions;                                                  \
             }                                                                               \
         }                                                                                   \
-        else if (___op & Contract::Postconditions)                                          \
-        {                                                                                   \
-            goto ___run_return;                                                             \
-        }                                                                                   \
         ___CheckMustBeInside_CONTRACT;                                                      \
    }                                                                                        \
 
 #endif // __FORCE_NORUNTIME_CONTRACTS__
 
-#define CONTRACT_END   CONTRACTL_END                                                        \
-   DEBUG_ASSURE_NO_RETURN_END(CONTRACT)                                                     \
+#define CONTRACT_END   CONTRACTL_END
 
-
-// The final expression in the RETURN macro deserves special explanation (or something.)
-// The expression is constructed so as to be syntactically ambiguous, depending on whether
-// __maybetemplate is a template or not.  If it is a template, the expression is syntactically
-// correct as-is.  If it is not, the angle brackets are interpreted as
-// less than & greater than, and the expression is incomplete.  This is the point - we can
-// choose whether we need an expression or not based on the context in which the macro is used.
-// This allows the same RETURN macro to be used both in value-returning and void-returning
-// contracts.
-//
-// The "__returner ," portion of the expression is used instead of "RETVAL =", since ","
-// has lower precedence than "=". (Ain't overloaded operators fun.)
-//
-// Also note that the < and > operators on the non-template version of __maybetemplate
-// are overridden to "box" the return value in a special type and pass it
-// through to the __returner's "," operator.  This is so we can detect a case where an
-// operator with lower precedence than ">" is in the return expression - in such a case we
-// will get a type error message, which instructs that parens be placed around the return
-// value expression.
-
-#define RETURN_BODY                                                                         \
-    if (___returner.GotReturn())                                                            \
-        goto ___run_postconditions_DID_YOU_FORGET_A_RETURN;                                 \
-    else                                                                                    \
-        ___returner, * new ___maybetemplate < 0 >
-
-
-// We have two versions of the RETURN macro.  CONTRACT_RETURN is for use inside the CONTRACT
-// scope where it is OK to return this way, even though the CONTRACT macro itself does not
-// allow a return.  RETURN is for use inside the function body where it might not be OK
-// to return and we need to ensure that we don't allow a return where one should not happen
-//
-#define RETURN                                                                              \
-    while (DEBUG_ASSURE_SAFE_TO_RETURN, TRUE)                                               \
-        RETURN_BODY                                                                         \
-
-#define RETURN_VOID                                                                         \
-    RETURN
-
-#define CONTRACT_RETURN                                                                     \
-    while (___CheckMustBeInside_CONTRACT, TRUE)                                             \
-        RETURN_BODY                                                                         \
-
-#define CONTRACT_RETURN_VOID                                                                \
-    CONTRACT_RETURN                                                                         \
 
 #if 0
 #define CUSTOM_LIMITED_METHOD_CONTRACT(_contracttype)                                                 \
@@ -1595,11 +1198,7 @@ typedef __SafeToUsePostCondition __PostConditionOK;
 
 #define PRECONDITION_MSG(_expression, _message)     do { } while(0)
 #define PRECONDITION(_expression)                   do { } while(0)
-#define POSTCONDITION_MSG(_expression, _message)    do { } while(0)
-#define POSTCONDITION(_expression)                  do { } while(0)
 #define INSTANCE_CHECK
-#define INSTANCE_CHECK_NULL
-#define CONSTRUCTOR_CHECK
 #define DESTRUCTOR_CHECK
 #define UNCHECKED(thecheck)
 #define DISABLED(thecheck)
@@ -1620,8 +1219,6 @@ typedef __SafeToUsePostCondition __PostConditionOK;
     }
 
 
-#define RETURN return
-#define RETURN_VOID RETURN
 
 #define CONTRACT_THROWS()
 #define CONTRACT_THROWSEX(__func, __file, __line)
@@ -1639,7 +1236,7 @@ typedef __SafeToUsePostCondition __PostConditionOK;
 #define WRAPPER_NO_CONTRACT CUSTOM_WRAPPER_NO_CONTRACT(Contract)
 
 // GC_NOTRIGGER allowed but not currently enforced at runtime
-#define GC_NOTRIGGER STATIC_CONTRACT_GC_NOTRIGGER
+#define GC_NOTRIGGER do { STATIC_CONTRACT_GC_NOTRIGGER; } while(0)
 #define GC_TRIGGERS static_assert(false, "TriggersGC not supported in utilcode contracts")
 
 #ifdef ENABLE_CONTRACTS_IMPL
@@ -1657,7 +1254,6 @@ public:
 
     DEBUG_NOINLINE void Leave()
     {
-        SCAN_SCOPE_END;
         LeaveInternal();
     };
 
@@ -1667,7 +1263,7 @@ protected:
     FORCEINLINE void EnterInternal(UINT_PTR violationMask)
     {
         _ASSERTE(0 == (violationMask & ~(ThrowsViolation | GCViolation | ModeViolation | FaultViolation |
-            FaultNotFatal | HostViolation |
+            FaultNotFatal |
             TakesLockViolation | LoadsTypeViolation)) ||
             violationMask == AllViolation);
 
@@ -1698,7 +1294,6 @@ public:
 
     DEBUG_NOINLINE ~AutoCleanupContractViolationHolder()
     {
-        SCAN_SCOPE_END;
         this->LeaveInternal();
     };
 };
@@ -1710,7 +1305,6 @@ public:
     {                                                                       \
         ContractViolationHolder<violationmask> __violationHolder_onlyOneAllowedPerScope;   \
         __violationHolder_onlyOneAllowedPerScope.Enter();                   \
-        DEBUG_ASSURE_NO_RETURN_BEGIN(CONTRACT)                              \
 
 // Use this to jump out prematurely from a violation.  Used for EH
 // when the function might not return
@@ -1718,7 +1312,6 @@ public:
         __violationHolder_onlyOneAllowedPerScope.Leave();                   \
 
 #define END_CONTRACT_VIOLATION                                              \
-        DEBUG_ASSURE_NO_RETURN_END(CONTRACT)                                \
         __violationHolder_onlyOneAllowedPerScope.Leave();                   \
     }                                                                       \
 
@@ -1738,9 +1331,6 @@ enum PermanentContractViolationReason
     ReasonIBC,                           // Code runs in IBC scenarios only and the violation is safe.
     ReasonNGEN,                          // Code runs in NGEN scenarios only and the violation is safe.
     ReasonProfilerCallout,               // Profiler implementers are guaranteed not to throw.
-    ReasonUnsupportedForSQLF1Profiling,  // This code path violates HOST_NOCALLS, but that's ok b/c SQL will never
-                                         // invoke it, and thus SQL/F1 profiling (the primary reason to enforce
-                                         // HOST_NOCALLS) is not in danger.
     ReasonRuntimeReentrancy,             // e.g. SafeQueryInterface
     ReasonShutdownOnly,                  // Code path only runs as part of Shutdown and the violation is safe.
     ReasonSOTolerance,                   // We would like to redesign SO contracts anyways
@@ -1780,7 +1370,6 @@ class FaultForbidHolder
  public:
     DEBUG_NOINLINE FaultForbidHolder(BOOL fConditional, BOOL fAlloc, const char *szFunction, const char *szFile, int lineNum)
     {
-        SCAN_SCOPE_BEGIN;
         STATIC_CONTRACT_FORBID_FAULT;
 
         m_fConditional = fConditional;
@@ -1815,8 +1404,6 @@ class FaultForbidHolder
 
     DEBUG_NOINLINE ~FaultForbidHolder()
     {
-        SCAN_SCOPE_END;
-
         if (m_fConditional)
         {
             *m_pClrDebugState = m_oldClrDebugState;
@@ -1957,7 +1544,6 @@ class ClrTryMarkerHolder
 public:
     DEBUG_NOINLINE ClrTryMarkerHolder()
     {
-        SCAN_SCOPE_BEGIN;
         STATIC_CONTRACT_THROWS;
 
         m_pClrDebugState = GetClrDebugState();
@@ -1967,8 +1553,6 @@ public:
 
     DEBUG_NOINLINE ~ClrTryMarkerHolder()
     {
-        SCAN_SCOPE_END;
-
         m_pClrDebugState->SetOkToThrow( m_oldOkayToThrowValue );
     }
 
@@ -2006,54 +1590,6 @@ inline ClrDebugState *GetClrDebugState(BOOL fAlloc)
 
     return NULL;
 }
-#endif // ENABLE_CONTRACTS_IMPL
-
-#ifdef ENABLE_CONTRACTS_IMPL
-
-class HostNoCallHolder
-{
-    public:
-    DEBUG_NOINLINE HostNoCallHolder()
-        {
-        SCAN_SCOPE_BEGIN;
-        STATIC_CONTRACT_HOST_NOCALLS;
-
-            m_clrDebugState = GetClrDebugState();
-            m_previousState = m_clrDebugState->SetHostCaller(FALSE);
-        }
-
-    DEBUG_NOINLINE ~HostNoCallHolder()
-        {
-        SCAN_SCOPE_END;
-
-            m_clrDebugState->SetHostCaller(m_previousState);
-        }
-
-     private:
-        BOOL m_previousState;
-        ClrDebugState* m_clrDebugState;
-
-};
-
-#define BEGIN_HOST_NOCALL_CODE \
-    {                             \
-        HostNoCallHolder __hostNoCallHolder;        \
-        CantAllocHolder __cantAlloc;
-
-#define END_HOST_NOCALL_CODE   \
-    }
-
-#else // ENABLE_CONTRACTS_IMPL
-#define BEGIN_HOST_NOCALL_CODE                      \
-    {                                               \
-        CantAllocHolder __cantAlloc;                \
-
-#define END_HOST_NOCALL_CODE                        \
-    }
-#endif
-
-
-#if defined(ENABLE_CONTRACTS_IMPL)
 
 // Macros to indicate we're taking or releasing locks
 
@@ -2063,30 +1599,11 @@ class HostNoCallHolder
 #define LOCK_RELEASED_MULTIPLE(dbgStateLockType, cExits, pvLock)     \
     ::GetClrDebugState()->LockReleased((dbgStateLockType), (cExits), (void*) (pvLock))
 
-// Use these only if you need to force multiple entrances or exits in a single
-// line (e.g., to restore the lock to a previous state). CRWLock in vm\rwlock.cpp does this
-#define EE_LOCK_TAKEN_MULTIPLE(cEntrances, pvLock)                          \
-    LOCK_TAKEN_MULTIPLE(kDbgStateLockType_EE, cEntrances, pvLock)
-#define EE_LOCK_RELEASED_MULTIPLE(cExits, pvLock)                           \
-    LOCK_RELEASED_MULTIPLE(kDbgStateLockType_EE, cExits, pvLock)
-#define HOST_BREAKABLE_CRST_TAKEN_MULTIPLE(cEntrances, pvLock)              \
-    LOCK_TAKEN_MULTIPLE(kDbgStateLockType_HostBreakableCrst, cEntrances, pvLock)
-#define HOST_BREAKABLE_CRST_RELEASED_MULTIPLE(cExits, pvLock)               \
-    LOCK_RELEASED_MULTIPLE(kDbgStateLockType_HostBreakableCrst, cExits, pvLock)
-#define USER_LOCK_TAKEN_MULTIPLE(cEntrances, pvLock)                        \
-    LOCK_TAKEN_MULTIPLE(kDbgStateLockType_User, cEntrances, pvLock)
-#define USER_LOCK_RELEASED_MULTIPLE(cExits, pvLock)                         \
-    LOCK_RELEASED_MULTIPLE(kDbgStateLockType_User, cExits, pvLock)
-
 // These are most typically used
 #define EE_LOCK_TAKEN(pvLock)                   \
     LOCK_TAKEN_MULTIPLE(kDbgStateLockType_EE, 1, pvLock)
 #define EE_LOCK_RELEASED(pvLock)                \
     LOCK_RELEASED_MULTIPLE(kDbgStateLockType_EE, 1, pvLock)
-#define HOST_BREAKABLE_CRST_TAKEN(pvLock)       \
-    LOCK_TAKEN_MULTIPLE(kDbgStateLockType_HostBreakableCrst, 1, pvLock)
-#define HOST_BREAKABLE_CRST_RELEASED(pvLock)    \
-    LOCK_RELEASED_MULTIPLE(kDbgStateLockType_HostBreakableCrst, 1, pvLock)
 #define USER_LOCK_TAKEN(pvLock)                 \
     LOCK_TAKEN_MULTIPLE(kDbgStateLockType_User, 1, pvLock)
 #define USER_LOCK_RELEASED(pvLock)              \
@@ -2096,16 +1613,8 @@ class HostNoCallHolder
 
 #define LOCK_TAKEN_MULTIPLE(dbgStateLockType, cEntrances, pvLock)
 #define LOCK_RELEASED_MULTIPLE(dbgStateLockType, cExits, pvLock)
-#define EE_LOCK_TAKEN_MULTIPLE(cEntrances, pvLock)
-#define EE_LOCK_RELEASED_MULTIPLE(cExits, pvLock)
-#define HOST_BREAKABLE_CRST_TAKEN_MULTIPLE(cEntrances, pvLock)
-#define HOST_BREAKABLE_CRST_RELEASED_MULTIPLE(cExits, pvLock)
-#define USER_LOCK_TAKEN_MULTIPLE(cEntrances, pvLock)
-#define USER_LOCK_RELEASED_MULTIPLE(cExits, pvLock)
 #define EE_LOCK_TAKEN(pvLock)
 #define EE_LOCK_RELEASED(pvLock)
-#define HOST_BREAKABLE_CRST_TAKEN(pvLock)
-#define HOST_BREAKABLE_CRST_RELEASED(pvLock)
 #define USER_LOCK_TAKEN(pvLock)
 #define USER_LOCK_RELEASED(pvLock)
 
@@ -2230,7 +1739,5 @@ extern Volatile<LONG> g_DbgSuppressAllocationAsserts;
     STATIC_CONTRACT_GC_TRIGGERS;        \
     STATIC_CONTRACT_MODE_PREEMPTIVE;
 
-#define AFTER_CONTRACTS
-#include "volatile.h"
 
 #endif  // CONTRACT_H_
