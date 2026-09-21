@@ -3,7 +3,7 @@ The files here were copied from https://github.com/dotnet/runtime/tree/v7.0.0/sr
 This is to allow using the runtime's Platform Adaptation Layer.
 
 Commented #define statements because there is naming conflicts when compiling with the stdlibc++ 8 (+ C++17)
-in `dotnet-runtime-coreclr\pal\inc\rt\sal.h`
+in `dotnet-runtime\coreclr\pal\inc\rt\sal.h`
 l.2612    // commented because it conflicts with stdlibc++ 8
 l.2613    //#define __valid
 
@@ -27,4 +27,4 @@ in `pal.h`, add the definition of g_arm64_atomics_present after Processor-specif
 extern bool g_arm64_atomics_present;
 #endif
 
-in `shared/src/native-lib/coreclr/src/pal/inc/rt/specstrings.h` (l.317) commented `#define __bound` to fix linux compilation
+in `shared/src/native-lib/dotnet-runtime/coreclr/pal/inc/rt/specstrings.h` (l.317) commented `#define __bound` to fix linux compilation

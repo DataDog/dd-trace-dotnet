@@ -35,7 +35,7 @@
     <PlatformToolset>v143</PlatformToolset>
     <DOTNET-TRACER-REPO-ROOT-PATH>..\..\..\</DOTNET-TRACER-REPO-ROOT-PATH>
     <SHARED-LIB-PATH>$(DOTNET-TRACER-REPO-ROOT-PATH)shared/src/native-lib/</SHARED-LIB-PATH>
-    <LIB_INCLUDES>$(SHARED-LIB-PATH)coreclr\src\pal\prebuilt\inc</LIB_INCLUDES>
+    <LIB_INCLUDES>$(SHARED-LIB-PATH)dotnet-runtime\coreclr\pal\prebuilt\inc</LIB_INCLUDES>
     <SHARED-LIB-INCLUDES>$(SHARED-LIB-PATH)fmt\include;$(SHARED-LIB-PATH)spdlog\include</SHARED-LIB-INCLUDES>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />

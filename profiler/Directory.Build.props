@@ -187,7 +187,7 @@
     <PropertyGroup Condition=" '$(MSBuildProjectExtension)' == '.vcxproj' ">
       <DOTNET-TRACER-REPO-ROOT-PATH>$([System.IO.Path]::GetFullPath( $(EnlistmentRoot)/ ))</DOTNET-TRACER-REPO-ROOT-PATH>
       <SHARED-LIB-PATH>$(DOTNET-TRACER-REPO-ROOT-PATH)shared\src\native-lib\</SHARED-LIB-PATH>
-      <CORECLR-PATH>$(SHARED-LIB-PATH)coreclr\src</CORECLR-PATH>
+      <CORECLR-PATH>$(SHARED-LIB-PATH)dotnet-runtime\coreclr</CORECLR-PATH>
       <!-- Suppress warnings from vendored headers without suppressing warnings in Datadog code. -->
       <ExternalIncludePath>$(SHARED-LIB-PATH)fmt\include;$(SHARED-LIB-PATH)spdlog\include;$(ExternalIncludePath)</ExternalIncludePath>
       <!-- VCPKG setup -->
