@@ -81,6 +81,7 @@ private:
     bool call_target_bubble_up_exception_available = false;
     bool call_target_bubble_up_exception_function_available = false;
     bool call_target_state_skip_method_body_function_available = false;
+    bool call_target_runtime_async_endmethod_available = false;
 
     //
     // Debugger Members
@@ -137,6 +138,7 @@ private:
     static bool EnsureCallTargetBubbleUpExceptionTypeAvailable(const ModuleMetadata& module_metadata, mdTypeDef* mdTypeDefToken);
     static bool EnsureIsCallTargetBubbleUpExceptionFunctionAvailable(const ModuleMetadata& module_metadata, mdTypeDef typeDef);
     static bool EnsureCallTargetStateSkipMethodBodyFunctionAvailable(const ModuleMetadata& module_metadata);
+    static bool EnsureCallTargetRuntimeAsyncEndMethodAvailable(const ModuleMetadata& module_metadata);
     //
     // Startup methods
     //

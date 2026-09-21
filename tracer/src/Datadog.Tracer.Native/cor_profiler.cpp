@@ -856,6 +856,8 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id, std::vector<ModuleID>& m
 
         call_target_state_skip_method_body_function_available = IsSkipMethodBodyEnabled() && EnsureCallTargetStateSkipMethodBodyFunctionAvailable(module_metadata);
 
+        call_target_runtime_async_endmethod_available = EnsureCallTargetRuntimeAsyncEndMethodAvailable(module_metadata);
+
         if (!asyncmethoddebuggerinvokerv2_type_available)
         {
             asyncmethoddebuggerinvokerv2_type_available = EnsureAsyncMethodDebuggerInvokerV2TypeAvailable(module_metadata);
@@ -3208,6 +3210,23 @@ bool CorProfiler::EnsureCallTargetStateSkipMethodBodyFunctionAvailable(const Mod
     }
 
     DBG("CallTargetState.SkipMethodBody property not found: ", type_found);
+    return false;
+}
+
+bool CorProfiler::EnsureCallTargetRuntimeAsyncEndMethodAvailable(const ModuleMetadata& module_metadata)
+{
+    mdTypeDef typeDef;
+    const auto type_found = module_metadata.metadata_import->FindTypeDefByName(calltargetinvoker_type_name.c_str(), mdTokenNil, &typeDef);
+    if (SUCCEEDED(type_found))
+    {
+        mdMethodDef methodDef = mdTokenNil;
+        const auto function_found = module_metadata.metadata_import->FindMethod(typeDef, calltargetinvoker_endmethod_runtimeasync_function_name.c_str(), 0, 0, &methodDef);
+        const auto res = SUCCEEDED(function_found);
+        DBG("CallTargetInvoker.EndMethodRuntimeAsync method found: ", res);
+        return res;
+    }
+
+    DBG("CallTargetInvoker.EndMethodRuntimeAsync method not found: ", type_found);
     return false;
 }
 
