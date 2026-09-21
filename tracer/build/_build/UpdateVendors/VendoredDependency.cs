@@ -462,6 +462,28 @@ namespace UpdateVendors
                 },
                 relativePathToVendorDirectoryOverride: (RelativePath) "shared/src/native-lib/spdlog/include",
                 isNuGetPackage: false);
+
+            Add(
+                libraryName: "coreclr",
+                version: "7.0.0",
+                downloadUrl: "https://github.com/dotnet/runtime/archive/refs/tags/v7.0.0.zip",
+                pathToSrc: new[] { "runtime-7.0.0", "src", "coreclr" },
+                transform: PatchCoreClrFile,
+                relativePathsToExclude: new[]
+                {
+                    "inc/CrstTypeTool/",
+                    "inc/genheaders/",
+                },
+                onlyIncludePaths: new[]
+                {
+                    // The runtime's Platform Adaptation Layer, and the small slice of inc/ it depends
+                    // on. See shared/src/native-lib/dotnet-runtime/README.md for why we vendor this.
+                    "inc/",
+                    "pal/inc/",
+                    "pal/prebuilt/",
+                },
+                relativePathToVendorDirectoryOverride: (RelativePath) "shared/src/native-lib/dotnet-runtime",
+                isNuGetPackage: false);
         }
 
         public static List<VendoredDependency> All { get; set; } = new List<VendoredDependency>();
@@ -1188,6 +1210,115 @@ namespace UpdateVendors
                 filePath,
                 fileContent,
                 new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
+        }
+
+        // string.Replace() silently no-ops if oldValue isn't found, so a patch whose anchor text moved
+        // upstream would fail _silently_ instead of failing the build. Use this instead of a bare
+        // content.Replace() for every local patch applied to vendored native (non-C#) sources, so a
+        // future resync that invalidates the anchor is a loud build failure, not a quietly-dropped patch.
+        // Operates on the file's in-memory content (rather than the file itself), so multiple patches to
+        // the same file can be chained inside a single RewriteFileWithTransform call - that matters
+        // because RewriteFileWithTransform normalizes line endings to CRLF on every write, which would
+        // otherwise break a second \n-anchored ReplaceOrThrow reading the file back.
+        private static string ReplaceOrThrow(string filePath, string content, string oldValue, string newValue, string because)
+        {
+            if (!content.Contains(oldValue))
+            {
+                throw new InvalidOperationException(
+                    $"Expected to find the following text in '{filePath}' ({because}), but it was not " +
+                    "present. The upstream file has likely changed - update PatchCoreClrFile in " +
+                    $"tracer/build/_build/UpdateVendors/VendoredDependency.cs to match:{Environment.NewLine}{oldValue}");
+            }
+
+            return content.Replace(oldValue, newValue);
+        }
+
+        // Local patches applied on top of the pristine upstream CoreCLR sources. Keep this in sync with
+        // shared/src/native-lib/dotnet-runtime/README.md, which documents *why* each patch exists.
+        private static void PatchCoreClrFile(string filePath)
+        {
+            switch (Path.GetFileName(filePath).ToLowerInvariant())
+            {
+                case "sal.h":
+                    RewriteFileWithTransform(filePath, content =>
+                    {
+                        // __valid and __pre are bare macros here that conflict with stdlibc++ 8 (+
+                        // C++17) when compiling on Linux. We don't use SAL2 __valid/__pre annotations,
+                        // so comment them out rather than working around the conflict some other way.
+                        content = ReplaceOrThrow(
+                            filePath,
+                            content,
+                            "    #define __valid\n",
+                            "    //#define __valid\n",
+                            "commenting out __valid, which conflicts with stdlibc++ 8");
+                        content = ReplaceOrThrow(
+                            filePath,
+                            content,
+                            "    #define __pre\n",
+                            "    //#define __pre\n",
+                            "commenting out __pre, which conflicts with stdlibc++ 8");
+                        return content;
+                    });
+                    break;
+
+                case "specstrings.h":
+                    RewriteFileWithTransform(filePath, content =>
+                        // Same conflict as __valid/__pre above, for __bound.
+                        ReplaceOrThrow(
+                            filePath,
+                            content,
+                            "#define __bound                             __inner_bound\n",
+                            "//#define __bound                             __inner_bound\n",
+                            "commenting out __bound to fix Linux compilation"));
+                    break;
+
+                case "corprof_i.cpp":
+                    RewriteFileWithTransform(filePath, content =>
+                        // g_arm64_atomics_present (referenced by pal.h's ARM64 atomics dispatch) has no
+                        // definition anywhere in this MIDL-generated file at this version - add one
+                        // here, since this is the one file from the vendored tree we actually compile.
+                        ReplaceOrThrow(
+                            filePath,
+                            content,
+                            "extern \"C\"{\n#endif\n\n\n#include <rpc.h>\n#include <rpcndr.h>\n\n#ifdef _MIDL_USE_GUIDDEF_",
+                            "extern \"C\"{\n#endif\n\n// Add missing definition in .NET 7\n// no need to #if defined(HOST_ARM64)\nbool g_arm64_atomics_present = false;\n\n#include <rpc.h>\n#include <rpcndr.h>\n\n\n#ifdef _MIDL_USE_GUIDDEF_",
+                            "adding the g_arm64_atomics_present definition missing in .NET 7"));
+                    break;
+
+                case "pal.h":
+                    RewriteFileWithTransform(filePath, content =>
+                    {
+                        // Move the g_arm64_atomics_present declaration past the "Processor-specific
+                        // glue" block, so it sees HOST_ARM64 defined (that block is what defines it on
+                        // non-MSVC compilers) rather than always taking the "not declared" branch.
+                        content = ReplaceOrThrow(
+                            filePath,
+                            content,
+                            "typedef PVOID NATIVE_LIBRARY_HANDLE;\n\n#if defined(HOST_ARM64)\n// Flag to check if atomics feature is available on\n// the machine\nextern bool g_arm64_atomics_present;\n#endif\n\n/******************* Processor-specific glue  *****************************/",
+                            "typedef PVOID NATIVE_LIBRARY_HANDLE;\n\n/******************* Processor-specific glue  *****************************/",
+                            "removing g_arm64_atomics_present from its original location, ahead of the move below");
+                        content = ReplaceOrThrow(
+                            filePath,
+                            content,
+                            "#endif // !_MSC_VER\n\n/******************* ABI-specific glue *******************************/",
+                            "#endif // !_MSC_VER\n\n// DATADOG: Moved here to ensure that HOST_ARM64 is define on ARM64 builds\n#if defined(HOST_ARM64)\n// Flag to check if atomics feature is available on\n// the machine\nextern bool g_arm64_atomics_present;\n#endif\n\n\n/******************* ABI-specific glue *******************************/",
+                            "re-adding g_arm64_atomics_present after the Processor-specific glue block");
+                        return content;
+                    });
+                    break;
+
+                case "corhlpr.cpp":
+                    RewriteFileWithTransform(filePath, content =>
+                        // origBuff is only declared under #ifdef _DEBUG a few lines up; this assert's
+                        // use of it must be guarded the same way, or it fails to compile in Release.
+                        ReplaceOrThrow(
+                            filePath,
+                            content,
+                            "fatHeader->SetSize(sizeof(COR_ILMETHOD_FAT) / 4);\n    }\n#ifndef SOS_INCLUDE\n    assert(&origBuff[size] == outBuff);\n#endif // !SOS_INCLUDE\n    return(size);\n}\n",
+                            "fatHeader->SetSize(sizeof(COR_ILMETHOD_FAT) / 4);\n    }\n#ifndef SOS_INCLUDE\n#ifdef _DEBUG\n    assert(&origBuff[size] == outBuff);\n#endif\n#endif // !SOS_INCLUDE\n    return(size);\n}\n",
+                            "guarding the origBuff assert with #ifdef _DEBUG to match its declaration"));
+                    break;
+            }
         }
 
         private static string AddOpenTelemetryUsings(string filePath, string contents)
