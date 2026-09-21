@@ -8,9 +8,14 @@
 #if !NETFRAMEWORK
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
+using Datadog.Trace;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.Propagators;
+using Datadog.Trace.TestHelpers;
+using Datadog.Trace.TestHelpers.TestTracer;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using FluentAssertions;
 using Xunit;
@@ -29,8 +34,52 @@ namespace Datadog.Trace.Tests.ClrProfiler.AutoInstrumentation.Azure.Functions
 {
 #pragma warning restore SA1403
 
+    [Collection(nameof(Datadog.Trace.Tests.TracerInstanceTestCollection))]
+    [TracerRestorer]
     public class AzureFunctionsCommonTests
     {
+        [Fact]
+        public async System.Threading.Tasks.Task OnIsolatedFunctionBegin_DoesNotOverwriteInferredProxyRootSpan()
+        {
+            // Regression test for the guard in CreateIsolatedFunctionScope: when an inferred proxy
+            // span (e.g. azure.frontdoor) is the trace root and the function span is created as a
+            // *child* of it, the function tags/type/resource must NOT be copied onto the proxy root.
+            var settings = new TracerSettings();
+            await using var scopedTracer = TracerHelper.CreateWithFakeAgent(settings);
+            TracerRestorerAttribute.SetTracer(scopedTracer);
+
+            // Simulate the inferred proxy span as the active trace root.
+            using var proxyScope = scopedTracer.StartActiveInternal("azure.frontdoor");
+            proxyScope.Span.Type = SpanTypes.Web;
+            proxyScope.Span.ResourceName = "GET /api/test";
+
+            // A minimal isolated-function context: no ASP.NET Core bridge (Items is null) and no
+            // input bindings, so the function span is parented to the active (proxy) scope and the
+            // "not the local root" branch is exercised.
+            var context = new MockFunctionContext
+            {
+                FunctionDefinition = new FunctionDefinitionStruct
+                {
+                    Name = "MyFunction",
+                    EntryPoint = "MyNamespace.MyFunction",
+                    InputBindings = new Hashtable(),
+                },
+            };
+
+            var state = AzureFunctionsCommon.OnIsolatedFunctionBegin(context);
+
+            // A child function span was created, rooted at the proxy span.
+            state.Scope.Should().NotBeNull();
+            var functionSpan = state.Scope!.Span;
+            functionSpan.Should().NotBeSameAs(proxyScope.Span);
+            state.Scope.Root.Span.Should().BeSameAs(proxyScope.Span);
+
+            // The proxy root span must be untouched by the function instrumentation.
+            proxyScope.Span.OperationName.Should().Be("azure.frontdoor");
+            proxyScope.Span.Type.Should().Be(SpanTypes.Web);
+            proxyScope.Span.ResourceName.Should().Be("GET /api/test");
+        }
+
         [Fact]
         public void ExtractPropagatedContextFromMessaging_MergesIntoEmptyBaggageCurrent()
         {
