@@ -144,14 +144,16 @@ namespace Datadog.Trace.Tests.Agent
         }
 
         [Fact]
-        public void DatadogStatsBuffer_CloseWindow_AlignsNextStartAndUsesConfiguredDuration()
+        public void DatadogStatsBuffer_AlignsNextStartAndUsesConfiguredDuration()
         {
             const long secondNs = 1_000_000_000;
             var payload = new ClientStatsPayload(MutableSettings.CreateForTesting(new(), []));
             var current = CreateDatadogBuffer(payload, initialTimestampNs: 15 * secondNs);
             var next = CreateDatadogBuffer(payload, initialTimestampNs: 15 * secondNs);
 
-            var duration = current.CloseWindow(next, boundaryNs: 27 * secondNs, configuredDurationNs: 10 * secondNs);
+            var nextStart = current.GetNextStart(boundaryNs: 27 * secondNs);
+            var duration = current.GetDuration(nextStart, configuredDurationNs: 10 * secondNs);
+            next.SetStart(nextStart);
 
             current.Start.Should().Be(10 * secondNs);
             next.Start.Should().Be(20 * secondNs);
@@ -159,19 +161,23 @@ namespace Datadog.Trace.Tests.Agent
         }
 
         [Fact]
-        public void OtlpStatsBuffer_CloseWindow_UsesContiguousBoundaries()
+        public void OtlpStatsBuffer_UsesContiguousBoundaries()
         {
             const long secondNs = 1_000_000_000;
             var payload = new ClientStatsPayload(MutableSettings.CreateForTesting(new(), []));
             var current = CreateOtlpBuffer(payload, initialTimestampNs: 15 * secondNs);
             var next = CreateOtlpBuffer(payload, initialTimestampNs: 15 * secondNs);
 
-            var duration = current.CloseWindow(next, boundaryNs: 27 * secondNs, configuredDurationNs: 10 * secondNs);
+            var nextStart = current.GetNextStart(boundaryNs: 27 * secondNs);
+            var duration = current.GetDuration(nextStart, configuredDurationNs: 10 * secondNs);
+            next.SetStart(nextStart);
 
             duration.Should().Be(12 * secondNs);
             next.Start.Should().Be(27 * secondNs);
 
-            var backwardsDuration = next.CloseWindow(current, boundaryNs: 26 * secondNs, configuredDurationNs: 10 * secondNs);
+            nextStart = next.GetNextStart(boundaryNs: 26 * secondNs);
+            var backwardsDuration = next.GetDuration(nextStart, configuredDurationNs: 10 * secondNs);
+            current.SetStart(nextStart);
             backwardsDuration.Should().Be(1);
             current.Start.Should().Be((27 * secondNs) + 1);
         }

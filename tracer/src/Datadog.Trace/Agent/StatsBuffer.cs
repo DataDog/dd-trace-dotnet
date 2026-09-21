@@ -220,12 +220,11 @@ namespace Datadog.Trace.Agent
             }
         }
 
-        /// <summary>
-        /// Closes this window, initializes the next buffer, and returns the export duration.
-        /// </summary>
-        internal abstract long CloseWindow(StatsBuffer nextBuffer, long boundaryNs, long configuredDurationNs);
+        internal abstract long GetNextStart(long boundaryNs);
 
-        protected static void SetStart(StatsBuffer buffer, long start) => buffer.Start = start;
+        internal abstract long GetDuration(long endNs, long configuredDurationNs);
+
+        internal void SetStart(long start) => Start = start;
 
         private static void SerializeBucket(Stream stream, StatsBucket bucket)
         {
@@ -368,11 +367,9 @@ namespace Datadog.Trace.Agent
             {
             }
 
-            internal override long CloseWindow(StatsBuffer nextBuffer, long boundaryNs, long configuredDurationNs)
-            {
-                SetStart(nextBuffer, Align(boundaryNs));
-                return configuredDurationNs;
-            }
+            internal override long GetNextStart(long boundaryNs) => Align(boundaryNs);
+
+            internal override long GetDuration(long endNs, long configuredDurationNs) => configuredDurationNs;
 
             private static long Align(long timestampNs) => timestampNs - (timestampNs % AlignmentNs);
         }
@@ -384,12 +381,9 @@ namespace Datadog.Trace.Agent
             {
             }
 
-            internal override long CloseWindow(StatsBuffer nextBuffer, long boundaryNs, long configuredDurationNs)
-            {
-                var endNs = Math.Max(Start + 1, boundaryNs);
-                SetStart(nextBuffer, endNs);
-                return endNs - Start;
-            }
+            internal override long GetNextStart(long boundaryNs) => Math.Max(Start + 1, boundaryNs);
+
+            internal override long GetDuration(long endNs, long configuredDurationNs) => endNs - Start;
         }
     }
 }

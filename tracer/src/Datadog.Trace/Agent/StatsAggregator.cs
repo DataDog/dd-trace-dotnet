@@ -677,7 +677,9 @@ namespace Datadog.Trace.Agent
                 lock (_buffers)
                 {
                     var boundaryNs = DateTimeOffset.UtcNow.ToUnixTimeNanoseconds();
-                    statsDurationNs = buffer.CloseWindow(_buffers[nextBufferIndex], boundaryNs, bucketDurationNs);
+                    var nextStartNs = buffer.GetNextStart(boundaryNs);
+                    statsDurationNs = buffer.GetDuration(nextStartNs, bucketDurationNs);
+                    _buffers[nextBufferIndex].SetStart(nextStartNs);
                     _currentBuffer = nextBufferIndex;
                 }
 
