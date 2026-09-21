@@ -190,6 +190,7 @@ add_library("Datadog.Tracer.Native.static" STATIC
         debugger_tokens.cpp
         rejit_preprocessor.cpp
         rejit_work_offloader.cpp
+        runtime_async.cpp
         environment_variables_util.cpp
         method_rewriter.cpp
         tracer_tokens.cpp

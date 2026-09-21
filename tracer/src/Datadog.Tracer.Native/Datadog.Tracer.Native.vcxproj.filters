@@ -11,6 +11,7 @@
     <ClCompile Include="metadata_builder.cpp" />
     <ClCompile Include="rejit_handler.cpp" />
     <ClCompile Include="rejit_work_offloader.cpp" />
+    <ClCompile Include="runtime_async.cpp" />
     <ClCompile Include="rejit_preprocessor.cpp" />
     <ClCompile Include="debugger_rejit_preprocessor.cpp">
       <Filter>Debugger</Filter>
