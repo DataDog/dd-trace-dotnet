@@ -4,11 +4,17 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Text;
 using Datadog.Trace.OtelThreadContext;
 using FluentAssertions;
 using Xunit;
+#if NETCOREAPP3_1_OR_GREATER
+using MemoryExtensions = System.MemoryExtensions;
+#else
+using MemoryExtensions = Datadog.Trace.VendoredMicrosoftCode.System.MemoryExtensions;
+#endif
 
 namespace Datadog.Trace.Tests.OtelThreadContext
 {
@@ -54,9 +60,9 @@ namespace Datadog.Trace.Tests.OtelThreadContext
         [Fact]
         public void AppendsTheThreadLocalAttributesToTheExistingPayload()
         {
-            var original = Encoding.UTF8.GetBytes("pretend this is an encoded ProcessContext");
+            var original = EncodeStringAttribute("datadog.process_tags", "team:tracing");
             using var context = new FakeProcessContext(original, timestamp: 1000);
-            var extra = ThreadLocalMetadataPayload.Encode([ThreadLocalMetadataPayload.LocalRootSpanIdKey]);
+            var extra = ThreadLocalMetadataPayload.Encode(new[] { ThreadLocalMetadataPayload.LocalRootSpanIdKey });
 
             OtelProcessContextAnnouncer.TryExtendPayload(context.Header, extra, out var failure)
                                        .Should().BeTrue(failure);
@@ -66,15 +72,15 @@ namespace Datadog.Trace.Tests.OtelThreadContext
             // the bytes we did not write must survive verbatim - we never parse them, precisely so that
             // fields we do not know about cannot be lost
             payload.Should().HaveCount(original.Length + extra.Length);
-            payload.AsSpan(0, original.Length).ToArray().Should().Equal(original);
-            payload.AsSpan(original.Length).ToArray().Should().Equal(extra);
+            MemoryExtensions.AsSpan(payload, 0, original.Length).ToArray().Should().Equal(original);
+            MemoryExtensions.AsSpan(payload, original.Length).ToArray().Should().Equal(extra);
         }
 
         [Fact]
         public void LeavesTheOriginalPayloadBufferUntouched()
         {
             // libdatadog owns the buffer it published; we must point away from it, not overwrite it
-            var original = Encoding.UTF8.GetBytes("owned by libdatadog");
+            var original = EncodeStringAttribute("datadog.process_tags", "owner:libdatadog");
             using var context = new FakeProcessContext(original, timestamp: 1000);
             var originalAddress = context.PayloadAddress;
 
@@ -87,7 +93,7 @@ namespace Datadog.Trace.Tests.OtelThreadContext
         [Fact]
         public void PublishesANewerNonZeroTimestamp()
         {
-            using var context = new FakeProcessContext(Encoding.UTF8.GetBytes("payload"), timestamp: 1000);
+            using var context = new FakeProcessContext(CreateValidPayload(), timestamp: 1000);
 
             OtelProcessContextAnnouncer.TryExtendPayload(context.Header, [1, 2, 3], out _).Should().BeTrue();
 
@@ -101,7 +107,7 @@ namespace Datadog.Trace.Tests.OtelThreadContext
         {
             // a CLOCK_BOOTTIME value written by libdatadog can be ahead of our monotonic reading on a
             // machine that has been suspended, and the spec still requires the new value to be later
-            using var context = new FakeProcessContext(Encoding.UTF8.GetBytes("payload"), timestamp: long.MaxValue - 1);
+            using var context = new FakeProcessContext(CreateValidPayload(), timestamp: long.MaxValue - 1);
 
             OtelProcessContextAnnouncer.TryExtendPayload(context.Header, [1, 2, 3], out _).Should().BeTrue();
 
@@ -111,18 +117,19 @@ namespace Datadog.Trace.Tests.OtelThreadContext
         [Fact]
         public void RefusesAMappingWithoutTheSignature()
         {
-            using var context = new FakeProcessContext(Encoding.UTF8.GetBytes("payload"), timestamp: 1000);
+            var original = CreateValidPayload();
+            using var context = new FakeProcessContext(original, timestamp: 1000);
             Marshal.WriteByte(context.Header, 0, (byte)'X');
 
             OtelProcessContextAnnouncer.TryExtendPayload(context.Header, [1], out var failure).Should().BeFalse();
             failure.Should().Contain("signature");
-            context.PayloadSize.Should().Be(7, "nothing may be modified when validation fails");
+            context.PayloadSize.Should().Be((uint)original.Length, "nothing may be modified when validation fails");
         }
 
         [Fact]
         public void RefusesAnUnsupportedVersion()
         {
-            using var context = new FakeProcessContext(Encoding.UTF8.GetBytes("payload"), timestamp: 1000, version: 99);
+            using var context = new FakeProcessContext(CreateValidPayload(), timestamp: 1000, version: 99);
 
             OtelProcessContextAnnouncer.TryExtendPayload(context.Header, [1], out var failure).Should().BeFalse();
             failure.Should().Contain("version");
@@ -132,7 +139,7 @@ namespace Datadog.Trace.Tests.OtelThreadContext
         public void RefusesAContextThatIsBeingUpdated()
         {
             // zero means another writer is mid-update; a reader would skip it and so do we
-            using var context = new FakeProcessContext(Encoding.UTF8.GetBytes("payload"), timestamp: 0);
+            using var context = new FakeProcessContext(CreateValidPayload(), timestamp: 0);
 
             OtelProcessContextAnnouncer.TryExtendPayload(context.Header, [1], out var failure).Should().BeFalse();
             failure.Should().Contain("being updated");
@@ -142,12 +149,46 @@ namespace Datadog.Trace.Tests.OtelThreadContext
         public void DoesNotAnnounceTwiceIfTheKeysAreAlreadyPresent()
         {
             // guards against a future libdatadog that emits the threadlocal.* keys itself
-            var already = ThreadLocalMetadataPayload.Encode([ThreadLocalMetadataPayload.LocalRootSpanIdKey]);
+            var already = ThreadLocalMetadataPayload.Encode(new[] { ThreadLocalMetadataPayload.LocalRootSpanIdKey });
             using var context = new FakeProcessContext(already, timestamp: 1000);
 
             OtelProcessContextAnnouncer.TryExtendPayload(context.Header, already, out var failure).Should().BeFalse();
             failure.Should().Contain("already advertises");
             context.PayloadSize.Should().Be((uint)already.Length);
+        }
+
+        private static byte[] CreateValidPayload() => EncodeStringAttribute("datadog.process_tags", "test:value");
+
+        private static byte[] EncodeStringAttribute(string key, string value)
+        {
+            var anyValue = new List<byte>();
+            WriteLengthDelimited(anyValue, fieldNumber: 1, Encoding.UTF8.GetBytes(value));
+
+            var keyValue = new List<byte>();
+            WriteLengthDelimited(keyValue, fieldNumber: 1, Encoding.UTF8.GetBytes(key));
+            WriteLengthDelimited(keyValue, fieldNumber: 2, anyValue.ToArray());
+
+            var processContext = new List<byte>();
+            WriteLengthDelimited(processContext, fieldNumber: 2, keyValue.ToArray());
+            return processContext.ToArray();
+        }
+
+        private static void WriteLengthDelimited(List<byte> destination, int fieldNumber, byte[] value)
+        {
+            destination.Add((byte)((fieldNumber << 3) | 2));
+            WriteVarInt(destination, (uint)value.Length);
+            destination.AddRange(value);
+        }
+
+        private static void WriteVarInt(List<byte> destination, uint value)
+        {
+            while (value >= 0x80)
+            {
+                destination.Add((byte)(value | 0x80));
+                value >>= 7;
+            }
+
+            destination.Add((byte)value);
         }
 
         /// <summary>

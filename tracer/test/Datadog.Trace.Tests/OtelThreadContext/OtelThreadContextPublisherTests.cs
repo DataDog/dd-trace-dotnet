@@ -16,6 +16,11 @@ using Datadog.Trace.Util;
 using FluentAssertions;
 using Moq;
 using Xunit;
+#if NETCOREAPP3_1_OR_GREATER
+using MemoryExtensions = System.MemoryExtensions;
+#else
+using MemoryExtensions = Datadog.Trace.VendoredMicrosoftCode.System.MemoryExtensions;
+#endif
 
 namespace Datadog.Trace.Tests.OtelThreadContext
 {
@@ -65,8 +70,8 @@ namespace Datadog.Trace.Tests.OtelThreadContext
 
             record[ValidOffset].Should().Be(1);
             record[TraceFlagsOffset].Should().Be(1, "the trace is sampled");
-            HexString.ToHexString(record.AsSpan(0, 16)).Should().Be(HexString.ToHexString(traceId, pad16To32: true));
-            HexString.ToHexString(record.AsSpan(SpanIdOffset, 8)).Should().Be(HexString.ToHexString(0x1122334455667788UL));
+            HexString.ToHexString(MemoryExtensions.AsSpan(record, 0, 16)).Should().Be(HexString.ToHexString(traceId, pad16To32: true));
+            HexString.ToHexString(MemoryExtensions.AsSpan(record, SpanIdOffset, 8)).Should().Be(HexString.ToHexString(0x1122334455667788UL));
 
             // with no TraceContext the local root span is the span itself
             Encoding.ASCII.GetString(record, AttrsDataOffset + 2, 16)
@@ -135,7 +140,7 @@ namespace Datadog.Trace.Tests.OtelThreadContext
             var second = provider.GetPublishedRecord();
 
             second.Should().Be(first);
-            HexString.ToHexString(provider.ReadPublishedRecord().AsSpan(SpanIdOffset, 8))
+            HexString.ToHexString(MemoryExtensions.AsSpan(provider.ReadPublishedRecord(), SpanIdOffset, 8))
                      .Should().Be(HexString.ToHexString(2UL));
         }
 
@@ -155,7 +160,7 @@ namespace Datadog.Trace.Tests.OtelThreadContext
                 barrier.SignalAndWait();
                 publisher.Set(CreateSpan(spanId: spanIds[index]));
                 records[index] = provider.GetPublishedRecord();
-                observed[index] = HexString.ToHexString(provider.ReadPublishedRecord().AsSpan(SpanIdOffset, 8));
+                observed[index] = HexString.ToHexString(MemoryExtensions.AsSpan(provider.ReadPublishedRecord(), SpanIdOffset, 8));
             }
 
             var threads = new[]
@@ -282,7 +287,7 @@ namespace Datadog.Trace.Tests.OtelThreadContext
 
             var record = provider.ReadPublishedRecord();
 
-            HexString.ToHexString(record.AsSpan(SpanIdOffset, 8))
+            HexString.ToHexString(MemoryExtensions.AsSpan(record, SpanIdOffset, 8))
                      .Should().Be(HexString.ToHexString(childSpan.SpanId));
             Encoding.ASCII.GetString(record, AttrsDataOffset + 2, 16)
                     .Should().Be(HexString.ToHexString(root.Span.SpanId), "attribute 0 carries the local root span id");

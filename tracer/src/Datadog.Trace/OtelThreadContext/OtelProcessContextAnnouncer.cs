@@ -9,7 +9,6 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
-using System.Text;
 using System.Threading;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
@@ -77,7 +76,7 @@ internal static class OtelProcessContextAnnouncer
 
         try
         {
-            var payload = ThreadLocalMetadataPayload.Encode([ThreadLocalMetadataPayload.LocalRootSpanIdKey]);
+            var payload = ThreadLocalMetadataPayload.Encode(new[] { ThreadLocalMetadataPayload.LocalRootSpanIdKey });
 
             if (TryAnnounce(payload, out var failure))
             {
@@ -136,7 +135,7 @@ internal static class OtelProcessContextAnnouncer
             {
                 var separator = line.IndexOf('-');
 
-                if (separator > 0 && HexString.TryParseUInt64(line.Slice(0, separator), out var start))
+                if (separator > 0 && TryParseAddress(line.Slice(0, separator), out var start))
                 {
                     address = (IntPtr)start;
                     return true;
@@ -153,6 +152,22 @@ internal static class OtelProcessContextAnnouncer
 
         address = IntPtr.Zero;
         return false;
+    }
+
+    private static bool TryParseAddress(ReadOnlySpan<char> value, out ulong address)
+    {
+        const int addressWidth = sizeof(ulong) * 2;
+
+        if (value.IsEmpty || value.Length > addressWidth)
+        {
+            address = 0;
+            return false;
+        }
+
+        Span<char> padded = stackalloc char[addressWidth];
+        padded.Fill('0');
+        value.CopyTo(padded.Slice(addressWidth - value.Length));
+        return HexString.TryParseUInt64(padded, out address);
     }
 
     // The names /proc/<pid>/maps gives the mapping, depending on which of memfd_create and
@@ -254,7 +269,6 @@ internal static class OtelProcessContextAnnouncer
     {
         // Guards against a future libdatadog that emits the threadlocal.* keys itself, which would
         // otherwise leave two copies of each key in the payload.
-        ReadOnlySpan<byte> key = Encoding.UTF8.GetBytes(ThreadLocalMetadataPayload.SchemaVersionAttribute);
-        return payload.IndexOf(key) >= 0;
+        return payload.IndexOf(ThreadLocalMetadataPayload.SchemaVersionAttributeUtf8) >= 0;
     }
 }

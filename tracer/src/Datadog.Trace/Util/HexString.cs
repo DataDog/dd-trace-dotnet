@@ -6,6 +6,7 @@
 #nullable enable
 
 using System;
+using System.Diagnostics;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -73,19 +74,20 @@ internal static class HexString
     /// <param name="lowerCase"><c>true</c> to generate lower-case characters, <c>false</c> otherwise.</param>
     public static void ToHexBytes(ulong value, Span<byte> bytes, bool lowerCase = true)
     {
-        if (bytes.Length < sizeof(ulong) * 2)
+        const int HexLength = sizeof(ulong) * 2;
+
+        if (bytes.Length < HexLength)
         {
             ThrowHelper.ThrowArgumentException("Target buffer is too small for the provided value.", nameof(bytes));
         }
 
-        var casing = lowerCase ? HexConverter.Casing.Lower : HexConverter.Casing.Upper;
+        var success = Utf8Formatter.TryFormat(
+            value,
+            bytes,
+            out var bytesWritten,
+            new StandardFormat(lowerCase ? 'x' : 'X', HexLength));
 
-        // walk the value from the most significant byte down, so the output is big endian
-        // regardless of the endianness of the machine we are running on
-        for (var i = 0; i < sizeof(ulong); i++)
-        {
-            HexConverter.ToBytesBuffer((byte)(value >> ((sizeof(ulong) - 1 - i) * 8)), bytes, i * 2, casing);
-        }
+        Debug.Assert(success && bytesWritten == HexLength, "Formatting a ulong as 16 hexadecimal bytes should always succeed.");
     }
 
     /// <summary>

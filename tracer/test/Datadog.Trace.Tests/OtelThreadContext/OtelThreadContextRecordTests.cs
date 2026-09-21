@@ -10,6 +10,11 @@ using Datadog.Trace.Tests.Util;
 using Datadog.Trace.Util;
 using FluentAssertions;
 using Xunit;
+#if NETCOREAPP3_1_OR_GREATER
+using MemoryExtensions = System.MemoryExtensions;
+#else
+using MemoryExtensions = Datadog.Trace.VendoredMicrosoftCode.System.MemoryExtensions;
+#endif
 
 namespace Datadog.Trace.Tests.OtelThreadContext
 {
@@ -58,12 +63,12 @@ namespace Datadog.Trace.Tests.OtelThreadContext
             fixed (byte* record = buffer)
             {
                 // dirty the buffer first, so we can tell that Initialize really clears it
-                buffer.AsSpan().Fill(0xcd);
+                MemoryExtensions.AsSpan(buffer).Fill(0xcd);
                 OtelThreadContextRecord.Initialize((IntPtr)record);
             }
 
             buffer[ValidOffset].Should().Be(0, "a record must not be readable before a context is written");
-            buffer.AsSpan(TraceIdOffset, 24).ToArray().Should().OnlyContain(b => b == 0);
+            MemoryExtensions.AsSpan(buffer, TraceIdOffset, 24).ToArray().Should().OnlyContain(b => b == 0);
             buffer[TraceFlagsOffset].Should().Be(0);
             ReadAttrsDataSize(buffer).Should().Be(ExpectedAttrsDataSize);
 
@@ -72,7 +77,7 @@ namespace Datadog.Trace.Tests.OtelThreadContext
             buffer[AttrsDataOffset + 1].Should().Be(16);
 
             // nothing beyond the one attribute we publish
-            buffer.AsSpan(AttrsDataOffset + ExpectedAttrsDataSize).ToArray().Should().OnlyContain(b => b == 0);
+            MemoryExtensions.AsSpan(buffer, AttrsDataOffset + ExpectedAttrsDataSize).ToArray().Should().OnlyContain(b => b == 0);
         }
 
         [Theory]
@@ -95,10 +100,10 @@ namespace Datadog.Trace.Tests.OtelThreadContext
 
             // trace id and span id are big endian, as in the W3C traceparent header. Cross-check against
             // the tracer's own hex rendering, which is defined to use network byte order.
-            HexString.ToHexString(buffer.AsSpan(TraceIdOffset, 16))
+            HexString.ToHexString(MemoryExtensions.AsSpan(buffer, TraceIdOffset, 16))
                      .Should().Be(HexString.ToHexString(traceId, pad16To32: true));
 
-            HexString.ToHexString(buffer.AsSpan(SpanIdOffset, 8))
+            HexString.ToHexString(MemoryExtensions.AsSpan(buffer, SpanIdOffset, 8))
                      .Should().Be(HexString.ToHexString(spanId));
 
             // the local root span id is published as 16 lower-case hex characters at key index 0
@@ -156,7 +161,7 @@ namespace Datadog.Trace.Tests.OtelThreadContext
 
             buffer[ValidOffset].Should().Be(1);
             buffer[TraceFlagsOffset].Should().Be(0);
-            buffer.AsSpan(TraceIdOffset, 24).ToArray().Should().OnlyContain(b => b == 0, "no bytes of the previous context may survive");
+            MemoryExtensions.AsSpan(buffer, TraceIdOffset, 24).ToArray().Should().OnlyContain(b => b == 0, "no bytes of the previous context may survive");
             Encoding.ASCII.GetString(buffer, AttrsDataOffset + 2, 16).Should().Be("0000000000000000");
         }
 

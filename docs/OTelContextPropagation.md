@@ -329,9 +329,12 @@ real mapping. They live in `tracer/test/Datadog.Trace.Tests/OtelThreadContext/`:
   (including when the existing one is already ahead of our clock), and that a bad signature, wrong version
   or in-progress update is refused without touching anything.
 
-Plus `tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/OtelThreadContextTests.cs`, Linux only: that
-the native symbol resolves in a real instrumented process, that the announcement succeeds, that tracing is
-undisturbed, and that nothing at all is logged when the feature is off.
+Plus `tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/OtelThreadContextTests.cs`, Linux only. It
+keeps a real instrumented process alive, reads its `OTEL_CTX` mapping with `process_vm_readv`, and decodes
+the protobuf payload using a test-only reader that shares no parsing code with the tracer. This verifies
+that libdatadog's resource metadata survives, that the two `threadlocal.*` attributes are externally
+readable exactly once, that the native symbol resolves, that tracing is undisturbed, and that the
+attributes are absent when the feature is off.
 
 `tracer/test/Datadog.Tracer.Native.Tests/otel_thread_ctx_test.cpp` creates and joins real pthreads to verify
 that an address is stable for an owning thread, concurrent threads receive distinct records, and thread

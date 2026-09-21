@@ -29,7 +29,7 @@ namespace Datadog.Trace.Tests.OtelThreadContext
         [Fact]
         public void EncodesTheSchemaVersionAttribute()
         {
-            var encoded = ThreadLocalMetadataPayload.Encode([ThreadLocalMetadataPayload.LocalRootSpanIdKey]);
+            var encoded = ThreadLocalMetadataPayload.Encode(new[] { ThreadLocalMetadataPayload.LocalRootSpanIdKey });
 
             // KeyValue { key = "threadlocal.schema_version", value = AnyValue { string_value = "tlsdesc_v1_dev" } }
             encoded[0].Should().Be(AttributesTag);
@@ -49,7 +49,7 @@ namespace Datadog.Trace.Tests.OtelThreadContext
         [Fact]
         public void EncodesTheAttributeKeyMapAsAnArrayOfStrings()
         {
-            var encoded = ThreadLocalMetadataPayload.Encode([ThreadLocalMetadataPayload.LocalRootSpanIdKey]);
+            var encoded = ThreadLocalMetadataPayload.Encode(new[] { ThreadLocalMetadataPayload.LocalRootSpanIdKey });
 
             // KeyValue { key = "threadlocal.attribute_key_map", value = AnyValue { array_value = [ ... ] } }
             encoded[48].Should().Be(AttributesTag);
@@ -77,7 +77,7 @@ namespace Datadog.Trace.Tests.OtelThreadContext
         {
             // The record writer tags its only attribute with key index 0, so index 0 of this table has to
             // be datadog.local_root_span_id or readers will mislabel it.
-            var encoded = ThreadLocalMetadataPayload.Encode([ThreadLocalMetadataPayload.LocalRootSpanIdKey, "http.route"]);
+            var encoded = ThreadLocalMetadataPayload.Encode(new[] { ThreadLocalMetadataPayload.LocalRootSpanIdKey, "http.route" });
             var text = Encoding.UTF8.GetString(encoded);
 
             text.IndexOf("datadog.local_root_span_id", System.StringComparison.Ordinal)
@@ -99,7 +99,7 @@ namespace Datadog.Trace.Tests.OtelThreadContext
         [Fact]
         public void EncodesAnEmptyKeyMap()
         {
-            var encoded = ThreadLocalMetadataPayload.Encode([]);
+            var encoded = ThreadLocalMetadataPayload.Encode(System.Array.Empty<string>());
 
             // still a well-formed, if empty, array: AnyValue { array_value = ArrayValue { } }
             encoded[83].Should().Be(ArrayValueTag);

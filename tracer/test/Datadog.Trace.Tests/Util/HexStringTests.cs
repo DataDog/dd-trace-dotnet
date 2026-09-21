@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Text;
 using Datadog.Trace.Util;
 using FluentAssertions;
 using Xunit;
@@ -34,6 +35,32 @@ public class HexStringTests
         HexString.ToHexChars(new ArraySegment<byte>(bytes, offset: 0, count: bytes.Length), actual, lowerCase);
 
         actual.Should().BeEquivalentTo(expected.ToCharArray());
+    }
+
+    [Theory]
+    [InlineData(0x0000000000000000, /* lowerCase */ true,  "0000000000000000")]
+    [InlineData(0x0000000000000001, /* lowerCase */ true,  "0000000000000001")]
+    [InlineData(0x1234567890abcdef, /* lowerCase */ true,  "1234567890abcdef")]
+    [InlineData(0x1234567890abcdef, /* lowerCase */ false, "1234567890ABCDEF")]
+    [InlineData(0xffffffffffffffff, /* lowerCase */ false, "FFFFFFFFFFFFFFFF")]
+    public void ToHexBytes(ulong value, bool lowerCase, string expected)
+    {
+        var actual = new byte[sizeof(ulong) * 2];
+
+        HexString.ToHexBytes(value, actual, lowerCase);
+
+        Encoding.ASCII.GetString(actual).Should().Be(expected);
+    }
+
+    [Fact]
+    public void ToHexBytes_ThrowsForShortBuffer()
+    {
+        var bytes = new byte[(sizeof(ulong) * 2) - 1];
+        Action action = () => HexString.ToHexBytes(0, bytes);
+
+        action.Should()
+              .Throw<ArgumentException>()
+              .WithParameterName("bytes");
     }
 
     [Theory]
