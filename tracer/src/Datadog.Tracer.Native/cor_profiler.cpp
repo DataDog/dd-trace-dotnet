@@ -4055,7 +4055,10 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
         mdToken token = 0;
         TypeInfo typeInfo{};
         shared::WSTRING methodName = WStr("__DDVoidMethodCall__");
-        FunctionInfo caller(token, methodName, typeInfo, MethodSignature(), FunctionMethodSignature());
+        // miIL: __DDVoidMethodCall__ is ordinary IL that we generated ourselves. This FunctionInfo
+        // exists only to label the IL dump below, and is never used to rewrite anything.
+        FunctionInfo caller(token, methodName, typeInfo, MethodSignature(), FunctionMethodSignature(),
+                            miIL | miManaged);
         Logger::Info(
             GetILCodes("*** GenerateVoidILStartupMethod(): Modified Code: ", &rewriter_void, caller, metadata_import));
     }

@@ -141,6 +141,7 @@
       <Filter>Debugger</Filter>
     </ClInclude>
     <ClInclude Include="rejit_work_offloader.h" />
+    <ClInclude Include="runtime_async.h" />
     <ClInclude Include="rejit_preprocessor.h" />
     <ClInclude Include="debugger_rejit_preprocessor.h">
       <Filter>Debugger</Filter>
