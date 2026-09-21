@@ -4,6 +4,10 @@
 
 namespace iast
 {
+    // Sentinel for "not yet read", independent of IMAGE_CEE_CS_CALLCONV_MAX (which shifts
+    // whenever corhdr.h adds a new calling convention, e.g. IMAGE_CEE_CS_CALLCONV_ASYNC in .NET 11).
+    constexpr ULONG kUnsetCallingConvention = 0xFFFFFFFF;
+
     SignatureInfo::SignatureInfo(ModuleInfo* moduleInfo, PCCOR_SIGNATURE pSig, DWORD nSig)
     {
         //SignatureParser parser;
@@ -15,7 +19,7 @@ namespace iast
         ULONG cbRead = 0;
         HRESULT hr = S_OK;
         // Read the calling convention
-        _callingConvention = IMAGE_CEE_CS_CALLCONV_MAX;
+        _callingConvention = (CorCallingConvention)kUnsetCallingConvention;
         CorSigUncompressData(pSig, (ULONG*)&_callingConvention);
         if (_callingConvention == IMAGE_CEE_CS_CALLCONV_FIELD)
         {
@@ -39,6 +43,8 @@ namespace iast
         }
         else if (_callingConvention == IMAGE_CEE_CS_CALLCONV_MAX)
         {
+            // "First invalid" sentinel from corhdr.h, not the kUnsetCallingConvention sentinel above:
+            // a signature can legitimately read back this exact value.
             trace::Logger::Error("ERROR: Unexpected calling convention on method signature.");
         }
         else
@@ -202,7 +208,7 @@ namespace iast
         case ELEMENT_TYPE_FNPTR:
         {
             SignatureType* pReturnType;
-            ULONG convention = IMAGE_CEE_CS_CALLCONV_MAX;
+            ULONG convention = kUnsetCallingConvention;
             std::vector<SignatureType*> parameterTypes;
             DWORD genericCount = 0;
 
@@ -472,7 +478,7 @@ namespace iast
         {
             return E_POINTER;
         }
-        if (pCallingConvention) { *pCallingConvention = IMAGE_CEE_CS_CALLCONV_MAX; }
+        if (pCallingConvention) { *pCallingConvention = kUnsetCallingConvention; }
         if (ppReturnType) { *ppReturnType = nullptr; }
         if (pcGenericTypeParameters) { *pcGenericTypeParameters = 0; }
         if (pcbRead) { *pcbRead = 0; }
@@ -482,7 +488,7 @@ namespace iast
         ULONG cbRead = 0;
 
         // Read the calling convention
-        ULONG callingConvention = IMAGE_CEE_CS_CALLCONV_MAX;
+        ULONG callingConvention = kUnsetCallingConvention;
         cbRead = CorSigUncompressData(pSignature, &callingConvention);
         if (callingConvention == IMAGE_CEE_CS_CALLCONV_FIELD)
         {
@@ -510,9 +516,14 @@ namespace iast
         }
         else if (callingConvention == IMAGE_CEE_CS_CALLCONV_MAX)
         {
+            // "First invalid" sentinel from corhdr.h, not the kUnsetCallingConvention sentinel above:
+            // a signature can legitimately read back this exact value.
             trace::Logger::Error("ERROR: Unexpected calling convention on method signature.");
             return E_UNEXPECTED;
         }
+        // TODO: these comparisons (and the four ParseXxxSignature checks above/below) test the raw
+        // byte without masking with IMAGE_CEE_CS_CALLCONV_MASK (0x0f), so a signature also carrying
+        // HASTHIS/EXPLICITTHIS/GENERIC never matches its intended convention. Pre-existing, out of scope.
         IfFailRet(cbSignature > cbRead ? S_OK : E_UNEXPECTED);
         _signatureType = SignatureTypes::Method;
 
@@ -555,7 +566,7 @@ namespace iast
         HRESULT hr = S_OK;
         ULONG cbRead = 0;
         // Read the calling convention
-        ULONG callingConvention = IMAGE_CEE_CS_CALLCONV_MAX;
+        ULONG callingConvention = kUnsetCallingConvention;
         cbRead = CorSigUncompressData(pSignature, &callingConvention);
         if (callingConvention != IMAGE_CEE_CS_CALLCONV_FIELD)
         {
@@ -569,7 +580,7 @@ namespace iast
         HRESULT hr = S_OK;
         ULONG cbRead = 0;
         // Read the calling convention
-        ULONG callingConvention = IMAGE_CEE_CS_CALLCONV_MAX;
+        ULONG callingConvention = kUnsetCallingConvention;
         cbRead = CorSigUncompressData(pSignature, &callingConvention);
         if (callingConvention != IMAGE_CEE_CS_CALLCONV_GENERICINST)
         {
@@ -584,7 +595,7 @@ namespace iast
         HRESULT hr = S_OK;
         ULONG cbRead = 0;
         // Read the calling convention
-        ULONG callingConvention = IMAGE_CEE_CS_CALLCONV_MAX;
+        ULONG callingConvention = kUnsetCallingConvention;
         cbRead = CorSigUncompressData(pSignature, &callingConvention);
         if (callingConvention != IMAGE_CEE_CS_CALLCONV_LOCAL_SIG)
         {
@@ -609,7 +620,7 @@ namespace iast
         HRESULT hr = S_OK;
         ULONG cbRead = 0;
         // Read the calling convention
-        ULONG callingConvention = IMAGE_CEE_CS_CALLCONV_MAX;
+        ULONG callingConvention = kUnsetCallingConvention;
         cbRead = CorSigUncompressData(pSignature, &callingConvention);
         if (callingConvention != IMAGE_CEE_CS_CALLCONV_PROPERTY)
         {

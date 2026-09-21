@@ -43,6 +43,7 @@ namespace iast
         DefCorType(ELEMENT_TYPE_MVAR, WStr("MVAR"));
         DefCorType(ELEMENT_TYPE_CMOD_REQD, WStr("CMOD_REQD"));
         DefCorType(ELEMENT_TYPE_CMOD_OPT, WStr("CMOD_OPT"));
+        DefCorType(ELEMENT_TYPE_CMOD_INTERNAL, WStr("CMOD_INTERNAL"));
         DefCorType(ELEMENT_TYPE_INTERNAL, WStr("INTERNA"));
         DefCorType(ELEMENT_TYPE_MAX, WStr("MAX"));
         DefCorType(ELEMENT_TYPE_MODIFIER, WStr("MODIFIER"));
