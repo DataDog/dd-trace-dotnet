@@ -1,0 +1,328 @@
+# CI test selection, independent of reviewer ownership in CODEOWNERS.
+# Format: <path pattern> [Tracer ASM CIVisibility Debugger Profiler]
+# The last matching rule wins. A rule with no components clears earlier matches.
+# Shared tracer changes and tracer/test/ are also handled in Build.VariableGenerations.cs.
+# Keep patterns and ordering intact to preserve existing selection, including legacy glob behavior.
+
+# Repository root files
+/*
+
+# Repository infrastructure
+/.azure-pipelines/
+/.claude/
+/.devcontainer/
+/.github/
+/.gitlab/
+/.llm-validation/
+/.nuke/
+/.vscode/
+/build/
+/docker/
+/docs/
+/shared/
+/tools/
+
+# Tracer
+tracer/ Tracer
+/tracer/build/
+/tracer/test/Datadog.Trace.TestHelpers*/
+
+# IDM
+/tracer/test/test-applications/integrations/ Tracer
+/tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/ Tracer
+
+# Capabilities, API, and OpenTelemetry
+
+/tracer/src/Datadog.Trace.Manual/ Tracer
+/tracer/src/Datadog.Trace.Manual/DataStreams.cs Tracer
+/tracer/src/Datadog.Trace/Activity/ Tracer
+/tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/OpenTelemetry/ Tracer
+/tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/ManualInstrumentation/ Tracer
+/tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/TraceAnnotations/ Tracer
+
+/tracer/test/test-applications/integrations/Samples.ManualInstrumentation/ Tracer
+/tracer/test/test-applications/integrations/Samples.NetActivitySdk/ Tracer
+/tracer/test/test-applications/integrations/Samples.OpenTelemetrySdk/ Tracer
+/tracer/test/test-applications/integrations/Samples.TraceAnnotations/ Tracer
+/tracer/test/test-applications/integrations/Samples.TraceAnnotations.VersionMismatch.AfterFeature/ Tracer
+/tracer/test/test-applications/integrations/Samples.TraceAnnotations.VersionMismatch.BeforeFeature/ Tracer
+
+## DBM and DSM
+/tracer/src/Datadog.Trace/DatabaseMonitoring/ Tracer
+/tracer/src/Datadog.Trace/DataStreamsMonitoring/ Tracer
+/tracer/test/Datadog.Trace.TestHelpers/DataStreamsMonitoring/ Tracer
+
+## auto instrumentations
+/tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/ManualInstrumentation/DataStreams/ Tracer
+
+## Shared auto instrumentations
+/tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AspNet/ Tracer ASM
+/tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/AspNetCore/ Tracer ASM
+
+## tagging
+/tracer/src/Datadog.Trace/Tagging/ Tracer
+
+## sample applications
+
+/tracer/test/test-applications/integrations/Samples.DataStreams.*/ Tracer
+
+## Serverless (AWS Lambda)
+/tracer/src/**/*Lambda* Tracer
+/tracer/test/**/*Lambda* Tracer
+/tracer/build/_build/docker/serverless.lambda.dockerfile Tracer
+/docker-compose.serverless.yml Tracer
+/.gitlab/download-serverless-artifacts.sh Tracer
+/docs/development/**/*Lambda*.md Tracer
+
+## Serverless (Azure)
+/tracer/src/**/*AzureAppService*.cs Tracer
+/tracer/src/**/*AzureFunctions*.cs Tracer
+/tracer/src/Datadog.AzureFunctions/ Tracer
+/tracer/test/**/*AzureAppService*.cs Tracer
+/tracer/test/**/*AzureFunctions*.cs Tracer
+/tracer/test/test-applications/azure-functions/ Tracer
+/tracer/samples/AzureFunctionsWithAgentLessLogging/ Tracer
+/docs/development/**/AzureFunctions*.md Tracer
+/tracer/tools/Build-AzureFunctionsNuget.ps1 Tracer
+
+## Serverless (GCP)
+/tracer/src/**/*GCP*.cs Tracer
+/tracer/src/**/*Gcp*.cs Tracer
+/tracer/test/**/*GCP*.cs Tracer
+/tracer/test/**/*Gcp*.cs Tracer
+
+# ASM
+/tracer/src/Datadog.Trace/AppSec/ ASM
+/tracer/src/Datadog.Tracer.Native/iast/ ASM
+/tracer/src/Datadog.Tracer.Native/Generated/generated_callsites.g.h ASM
+/tracer/test/test-applications/security/ ASM
+/tracer/test/Datadog.Trace.Security.IntegrationTests/ ASM
+/tracer/test/Datadog.Trace.Security.Unit.Tests/ ASM
+/tracer/test/snapshots/Security* ASM
+/tracer/test/snapshots/Iast* ASM
+/tracer/test/snapshots/iast* ASM
+/tracer/test/snapshots/Rasp* ASM
+/tracer/src/Datadog.Trace/Iast/ ASM
+/tracer/test/test-applications/integrations/Samples.InstrumentedTests/ ASM
+/tracer/src/Datadog.Trace/Tags.AppSec.cs ASM
+/tracer/test/benchmarks/Benchmarks.Trace/
+/tracer/test/benchmarks/Benchmarks.Trace/*.*
+/tracer/test/benchmarks/Benchmarks.Trace/Asm/ ASM
+/tracer/test/benchmarks/Benchmarks.Trace/Iast/ ASM
+/tracer/test/benchmarks/Benchmarks.Trace/microbenchmarks/
+/tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/CryptographyAlgorithm/ ASM
+/tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/HashAlgorithm/ ASM
+/tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Process/ ASM Tracer
+/tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/StackTraceLeak/ ASM
+/tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/RestSharp/ ASM
+/tracer/test/test-applications/integrations/Samples.ProcessStart/ ASM Tracer
+/tracer/test/test-applications/integrations/Samples.GrpcDotNet/ ASM Tracer
+
+# Profiler
+/profiler/ Profiler
+/tracer/src/Datadog.Trace/ContinuousProfiler/ Profiler Tracer
+/tracer/build/_build/Build.Profiler.Steps.cs Profiler Tracer
+
+# Debugger
+/tracer/src/Datadog.Trace/Debugger/ Debugger
+/tracer/src/Datadog.Trace/PDBs/ Debugger
+/tracer/test/test-applications/debugger/ Debugger
+debugger_*.cpp Debugger
+debugger_*.h Debugger
+/tracer/test/Datadog.Trace.Debugger.IntegrationTests/ Debugger
+/tracer/src/Datadog.InstrumentedAssemblyGenerator/ Debugger
+/tracer/src/Datadog.InstrumentedAssemblyVerification/ Debugger
+fault_tolerant_*.cpp Debugger
+fault_tolerant_*.h Debugger
+/tracer/src/Datadog.Trace/FaultTolerant/ Debugger
+Datadog.Trace.Debugger.slnf Debugger
+/tracer/build/_build/Build.Steps.Debugger.cs Debugger
+
+# Exploration tests
+/tracer/build/_build/Build.ExplorationTests.cs Debugger Tracer Profiler
+
+## Feature Flagging and Experimentation
+/docs/Datadog.FeatureFlags.OpenFeature/ Tracer
+/tracer/src/Datadog.FeatureFlags.OpenFeature/ Tracer
+/tracer/src/Datadog.Trace/FeatureFlags/ Tracer
+/tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/ManualInstrumentation/OpenFeature/ Tracer
+/tracer/test/test-applications/integrations/Samples.OpenFeature/ Tracer
+
+# CI
+/tracer/src/Datadog.Trace/Ci/ CIVisibility
+/tracer/test/benchmarks/Benchmarks.Trace/CI/ CIVisibility
+/tracer/src/Datadog.Trace/PDBs/MethodSymbolResolver.cs CIVisibility
+/tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/Testing/ CIVisibility
+/tracer/src/Datadog.Trace.BenchmarkDotNet/ CIVisibility
+/tracer/src/Datadog.Trace.Coverage.collector/ CIVisibility
+/tracer/src/Datadog.Trace.MSBuild/ CIVisibility
+/tracer/test/test-applications/integrations/Samples.XUnit*/ CIVisibility
+/tracer/test/test-applications/integrations/Samples.NUnit*/ CIVisibility
+/tracer/test/test-applications/integrations/Samples.MSTest*/ CIVisibility
+/tracer/test/test-applications/integrations/Samples.Selenium/ CIVisibility
+/tracer/test/test-applications/integrations/Samples.CIVisibilityIpc/ CIVisibility
+/tracer/test/snapshots/MsTestV2* CIVisibility
+/tracer/test/snapshots/NUnit* CIVisibility
+/tracer/test/snapshots/XUnit* CIVisibility
+/tracer/test/snapshots/Selenium* CIVisibility
+/tracer/src/Datadog.Trace.Tools.Runner/Ci* CIVisibility
+/tracer/src/Datadog.Trace.Tools.Runner/CI* CIVisibility
+/tracer/src/Datadog.Trace.Tools.Runner/ConfigureCiCommand.cs CIVisibility
+/tracer/src/Datadog.Trace.Tools.Runner/Coverage* CIVisibility
+/tracer/src/Datadog.Trace.Tools.Runner/RunCiCommand.cs CIVisibility
+/tracer/test/Datadog.Trace.Tools.Runner.IntegrationTests/CiRunCommandTests.cs CIVisibility
+/tracer/test/Datadog.Trace.Tools.Runner.IntegrationTests/ConfigureCiCommandTests.cs CIVisibility
+
+# Common Files
+Datadog.Trace.Trimming.xml
+Directory.Build.props
+/tracer/missing-nullability-files.csv ASM CIVisibility Debugger Profiler
+/tracer/src/Datadog.Trace/Generated/
+/tracer/src/Datadog.Trace/Configuration/IntegrationId.cs
+/tracer/src/Datadog.Trace/Telemetry/Metrics/MetricTags.cs
+/tracer/src/Datadog.Trace/Telemetry/Metrics/IntegrationIdExtensions.cs
+
+# Native loader
+/shared/src/Datadog.Trace.ClrProfiler.Native/ Profiler
+
+# Version bump files
+
+/profiler/src/ProfilerEngine/Datadog.Linux.ApiWrapper/CMakeLists.txt Profiler
+/profiler/src/ProfilerEngine/Datadog.Profiler.Native.Linux/CMakeLists.txt Profiler
+/profiler/src/ProfilerEngine/Datadog.Profiler.Native.Windows/Resource.rc Profiler
+/profiler/src/ProfilerEngine/Datadog.Profiler.Native/dd_profiler_version.h Profiler
+/profiler/src/ProfilerEngine/ProductVersion.props Profiler
+/tracer/samples/AutomaticTraceIdInjection/Log4NetExample/Log4NetExample.csproj
+/tracer/samples/AutomaticTraceIdInjection/MicrosoftExtensionsExample/MicrosoftExtensionsExample.csproj
+/tracer/samples/AutomaticTraceIdInjection/NLog40Example/NLog40Example.csproj
+/tracer/samples/AutomaticTraceIdInjection/NLog45Example/NLog45Example.csproj
+/tracer/samples/AutomaticTraceIdInjection/NLog46Example/NLog46Example.csproj
+/tracer/samples/AutomaticTraceIdInjection/SerilogExample/SerilogExample.csproj
+/tracer/samples/ConsoleApp/Alpine3.10.dockerfile
+/tracer/samples/ConsoleApp/Alpine3.9.dockerfile
+/tracer/samples/ConsoleApp/Debian.dockerfile
+/tracer/samples/OpenTelemetry/Debian.dockerfile
+/tracer/samples/WindowsContainer/Dockerfile
+/tracer/src/Datadog.Trace.BenchmarkDotNet/Datadog.Trace.BenchmarkDotNet.csproj
+/tracer/src/Datadog.Trace.Bundle/Datadog.Trace.Bundle.csproj
+/tracer/src/Datadog.Trace.ClrProfiler.Managed.Loader/Datadog.Trace.ClrProfiler.Managed.Loader.csproj
+/tracer/src/Datadog.Trace.ClrProfiler.Managed.Loader/Startup*.cs
+/tracer/src/Datadog.Trace.MSBuild/Datadog.Trace.MSBuild.csproj
+/tracer/src/Datadog.Trace.Manual/Datadog.Trace.Manual.csproj
+/tracer/src/Datadog.Trace.OpenTracing/Datadog.Trace.OpenTracing.csproj
+/tracer/src/Datadog.Trace.Tools.Runner/Datadog.Trace.Tools.Runner.csproj
+/tracer/src/Datadog.Trace.Tools.dd_dotnet/Datadog.Trace.Tools.dd_dotnet.csproj
+/tracer/src/Datadog.Trace.Trimming/Datadog.Trace.Trimming.csproj
+/tracer/src/Datadog.Trace/Datadog.Trace.csproj
+/tracer/src/Datadog.Trace/TracerConstants.cs
+/tracer/src/Datadog.Tracer.Native/CMakeLists.txt
+/tracer/src/Datadog.Tracer.Native/Resource.rc
+/tracer/src/Datadog.Tracer.Native/dd_profiler_constants.h
+
+/tracer/src/Datadog.Trace/ClrProfiler/Instrumentation.cs CIVisibility Tracer ASM Debugger
+
+# Test projects
+
+## Component-specific projects
+/tracer/test/benchmarks/Benchmarks.OpenTelemetry.*/
+/tracer/test/benchmarks/Benchmarks.OpenTelemetry.*/Directory.Build.props
+/tracer/test/Datadog.FleetInstaller.IntegrationTests/
+/tracer/test/Datadog.Trace.BenchmarkDotNet.Tests/ CIVisibility
+/tracer/test/Datadog.Trace.DuckTyping.Tests/
+/tracer/test/Datadog.Trace.OpenTracing.Tests/
+/tracer/test/Datadog.Trace.Tools.*Tests/
+/tracer/test/Datadog.Trace.Tools.Runner.Tests/ CIVisibility
+
+## Shared projects
+/tracer/test/Datadog.Trace.SourceGenerators.Tests/
+/tracer/test/Datadog.Trace.Tests/
+/tracer/test/Datadog.Trace.ClrProfiler.*Tests/
+
+/tracer/test/Datadog.Trace.SourceGenerators.Tests/*.*
+/tracer/test/Datadog.Trace.Tests/*.*
+/tracer/test/Datadog.Trace.ClrProfiler.*Tests/*.*
+
+### Datadog.Trace.Tests
+/tracer/test/Datadog.Trace.Tests/Activity/
+/tracer/test/Datadog.Trace.Tests/Agent/
+/tracer/test/Datadog.Trace.Tests/Agent/MessagePack/AppSec/ ASM
+/tracer/test/Datadog.Trace.Tests/AppSec/ ASM
+/tracer/test/Datadog.Trace.Tests/AspNet/ Tracer
+/tracer/test/Datadog.Trace.Tests/CallTarget/
+/tracer/test/Datadog.Trace.Tests/ClrProfiler/Managed/Loader/
+/tracer/test/Datadog.Trace.Tests/Configuration/
+/tracer/test/Datadog.Trace.Tests/ContinuousProfiler/ Profiler
+/tracer/test/Datadog.Trace.Tests/DatabaseMonitoring/ Tracer
+/tracer/test/Datadog.Trace.Tests/DiagnosticListeners/ Tracer
+/tracer/test/Datadog.Trace.Tests/DiagnosticListeners/AspNetCore/ ASM Debugger
+/tracer/test/Datadog.Trace.Tests/DistributedTracer/
+/tracer/test/Datadog.Trace.Tests/DogStatsd/
+/tracer/test/Datadog.Trace.Tests/ExtensionMethods/
+/tracer/test/Datadog.Trace.Tests/Headers/
+/tracer/test/Datadog.Trace.Tests/Headers/Ip/ ASM
+/tracer/test/Datadog.Trace.Tests/HttpOverStreams/
+/tracer/test/Datadog.Trace.Tests/Logging/
+/tracer/test/Datadog.Trace.Tests/ManualInstrumentation/
+/tracer/test/Datadog.Trace.Tests/OpenTelemetry/
+/tracer/test/Datadog.Trace.Tests/Pdb/ Debugger
+/tracer/test/Datadog.Trace.Tests/PlatformHelpers/
+/tracer/test/Datadog.Trace.Tests/Propagators/
+/tracer/test/Datadog.Trace.Tests/Propagators/AppSec/ ASM
+/tracer/test/Datadog.Trace.Tests/RemoteConfigurationManagement/
+/tracer/test/Datadog.Trace.Tests/RuntimeMetrics/
+/tracer/test/Datadog.Trace.Tests/Sampling/
+/tracer/test/Datadog.Trace.Tests/Serverless/
+/tracer/test/Datadog.Trace.Tests/Snapshots/
+/tracer/test/Datadog.Trace.Tests/Tagging/ Tracer
+/tracer/test/Datadog.Trace.Tests/Telemetry/
+/tracer/test/Datadog.Trace.Tests/TraceProcessors/
+/tracer/test/Datadog.Trace.Tests/Util/
+/tracer/test/Datadog.Trace.Tests/Util/AppSec/ ASM
+/tracer/test/Datadog.Trace.Tests/Util/PeerService/
+
+### Datadog.Trace.ClrProfiler.Managed.Tests
+/tracer/test/Datadog.Trace.ClrProfiler.Managed.Tests/Serverless/
+
+## Shared test conventions
+/tracer/test/**/AutoInstrumentation/ Tracer
+/tracer/test/**/CI/ CIVisibility
+/tracer/test/**/Ci/ CIVisibility
+/tracer/test/Datadog.Trace.*Tests/DataStreamsMonitoring/
+/tracer/test/**/Debugger/ Debugger
+/tracer/test/**/FeatureFlags/
+/tracer/test/**/TestInfrastructure/
+/tracer/test/**/Tracing/
+/tracer/test/**/Serverless/AWS/
+/tracer/test/**/Serverless/Azure/
+/tracer/test/**/Serverless/GCP/
+
+## Project-specific exceptions
+
+### Datadog.Trace.Tests
+/tracer/test/Datadog.Trace.Tests/ClrProfiler/AutoInstrumentation/Azure/
+/tracer/test/Datadog.Trace.Tests/Configuration/Debugger/ Debugger
+/tracer/test/Datadog.Trace.Tests/Configuration/Serverless/AWS/
+/tracer/test/Datadog.Trace.Tests/Configuration/Serverless/Azure/
+/tracer/test/Datadog.Trace.Tests/Configuration/Serverless/GCP/
+/tracer/test/Datadog.Trace.Tests/DataStreamsMonitoring/ManualInstrumentation/ Tracer
+/tracer/test/Datadog.Trace.Tests/Telemetry/Collectors/Debugger/ Debugger
+/tracer/test/Datadog.Trace.Tests/Tracing/DataStreamsMonitoring/
+/tracer/test/Datadog.Trace.Tests/Tracing/ProcessTags/
+/tracer/test/Datadog.Trace.Tests/Tracing/ServiceRemapping/
+
+### Datadog.Trace.ClrProfiler.Managed.Tests
+/tracer/test/Datadog.Trace.ClrProfiler.Managed.Tests/DataStreamsMonitoring/
+/tracer/test/Datadog.Trace.ClrProfiler.Managed.Tests/Serverless/Azure/HttpBypassTests.cs Tracer
+
+### Datadog.Trace.ClrProfiler.IntegrationTests
+/tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/AutoInstrumentation/AspNet/ ASM
+/tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/AutoInstrumentation/AspNetCore/ ASM
+/tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/AutoInstrumentation/ProcessStartTests/ ASM
+/tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/PackageVersionsLatest*.g.cs Tracer
+
+### Tool projects
+/tracer/test/Datadog.Trace.Tools.Analyzers.Tests/AspectAnalyzers/ ASM
+/tracer/test/Datadog.Trace.Tools.Analyzers.Tests/ConfigurationAnalyzers/
+/tracer/test/Datadog.Trace.Tools.Runner.IntegrationTests/*Ci* CIVisibility
+/tracer/test/Datadog.Trace.Tools.Runner.IntegrationTests/CrankImporterCommandTests.cs CIVisibility
+/tracer/test/Datadog.Trace.Tools.Runner.IntegrationTests/coverage.*.xml CIVisibility

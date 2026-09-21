@@ -1,4 +1,4 @@
-// <copyright file="CodeOwners.cs" company="Datadog">
+// <copyright file="CiTestSelectionParser.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -11,19 +11,19 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using Serilog;
 
-namespace CodeOwners;
+namespace CiTestSelection;
 
-internal class CodeOwnersParser
+internal class CiTestSelectionParser
 {
     private List<Entry> _entriesList = new List<Entry>();
 
-    public CodeOwnersParser(string filePath)
+    public CiTestSelectionParser(string filePath)
     {
         if (string.IsNullOrEmpty(filePath) || !File.Exists(filePath))
         {
             Log.Error($"Current Directory: {Environment.CurrentDirectory}");
             Log.Error(Path.GetFullPath(filePath));
-            throw new ArgumentException("The CODEOWNERS file path is invalid.", filePath);
+            throw new ArgumentException("The CI test selection rules file path is invalid.", filePath);
         }
 
         _entriesList = File.ReadLines(filePath)
@@ -37,8 +37,8 @@ internal class CodeOwnersParser
     {
         var parts = line.Split(new[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries);
         var pattern = parts.First();
-        var owners = parts.Skip(1).Where(p => p.Contains('@')).ToArray();
-        return new Entry(pattern, owners);
+        var components = parts.Skip(1).ToArray();
+        return new Entry(pattern, components);
     }
 
     private static bool IsFileIncluded(string fileName, string pattern)
@@ -76,22 +76,12 @@ internal class CodeOwnersParser
     internal readonly struct Entry
     {
         public readonly string Pattern;
-        public readonly string[] Owners;
+        public readonly string[] Components;
 
-        public Entry(string pattern, string[] owners)
+        public Entry(string pattern, string[] components)
         {
             Pattern = pattern;
-            Owners = owners ?? Array.Empty<string>();
-        }
-
-        public string? GetOwnersString()
-        {
-            if (Owners is null || !Owners.Any())
-            {
-                return null;
-            }
-
-            return Owners.Length == 0 ? null : $"[\"{string.Join("\",\"", Owners)}\"]";
+            Components = components ?? Array.Empty<string>();
         }
     }
 }
