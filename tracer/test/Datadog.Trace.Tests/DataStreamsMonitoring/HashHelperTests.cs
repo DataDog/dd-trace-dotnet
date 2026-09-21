@@ -16,13 +16,42 @@ namespace Datadog.Trace.Tests.DataStreamsMonitoring;
 public class HashHelperTests
 {
     [Theory]
+    [InlineData("service-1", "env-1", null)]
+    [InlineData("service-1", "env-1", "d:1")]
+    [InlineData("service-1", "env-1", "d:1", "edge-1")]
+    [InlineData("service-1", "env-1", "d:1", "edge-1", "edge-2")]
+    public void NodeHashSanityCheck(string service, string env, string primaryTag, params string[] edgeArgs)
+    {
+        // naive implementation (similar to e.g. go/java)
+        var sb = new StringBuilder()
+                .Append(service)
+                .Append(env);
+        if (!string.IsNullOrEmpty(primaryTag))
+        {
+            sb.Append(primaryTag);
+        }
+
+        var sortedArgs = new List<string>(edgeArgs);
+        sortedArgs.Sort(StringComparer.Ordinal);
+
+        foreach (var sortedArg in sortedArgs)
+        {
+            sb.Append(sortedArg);
+        }
+
+        var expectedHash = FnvHash64.GenerateHash(sb.ToString(), FnvHash64.Version.V1);
+        var baseHash = HashHelper.CalculateNodeHashBase(service, env, primaryTag);
+        var actual = HashHelper.CalculateNodeHash(baseHash, sortedArgs);
+
+        actual.Value.Should().Be(expectedHash);
+    }
+
+    [Theory]
     [InlineData("service-1", "env-1", null, null, null)]
     [InlineData("service-1", "env-1", "d:1", null, null)]
     [InlineData("service-1", "env-1", "d:1", "entrypoint.name:hello", null)]
     [InlineData("service-1", "env-1", "d:1", "entrypoint.name:hello", "aGVsbG8gd29ybGQ=")]
-    [InlineData("service-1", "env-1", "d:1", "entrypoint.name:hello", "aGVsbG8gd29ybGQ=", "edge-1")]
-    [InlineData("service-1", "env-1", "d:1", "entrypoint.name:hello", "aGVsbG8gd29ybGQ=", "edge-1", "edge-2")]
-    public void NodeHashSanityCheck(string service, string env, string primaryTag, string processTags, string containerTagsHash, params string[] edgeArgs)
+    public void BaseHashSanityCheck(string service, string env, string primaryTag, string processTags, string containerTagsHash)
     {
         // naive implementation (similar to e.g. go/java)
         var sb = new StringBuilder()
@@ -43,19 +72,24 @@ public class HashHelperTests
             sb.Append(containerTagsHash);
         }
 
-        var sortedArgs = new List<string>(edgeArgs);
-        sortedArgs.Sort(StringComparer.Ordinal);
-
-        foreach (var sortedArg in sortedArgs)
-        {
-            sb.Append(sortedArg);
-        }
-
         var expectedHash = FnvHash64.GenerateHash(sb.ToString(), FnvHash64.Version.V1);
-        var baseHash = HashHelper.CalculateNodeHashBase(service, env, primaryTag, processTags, containerTagsHash);
-        var actual = HashHelper.CalculateNodeHash(baseHash, sortedArgs);
+        var actual = HashHelper.CalculateBaseHash(service, env, primaryTag, processTags, containerTagsHash);
 
-        actual.Value.Should().Be(expectedHash);
+        actual.Should().Be(expectedHash);
+    }
+
+    [Fact]
+    public void BaseHashIsIndependentOfNodeHashBase()
+    {
+        // guards DSM2-335: process tags and the agent-reported container-tags hash must not
+        // affect CalculateNodeHashBase (used for DSM's pathway hash), even though they still
+        // affect CalculateBaseHash (the standardized, DBM-facing base hash).
+        var nodeHashBaseWithoutExtras = HashHelper.CalculateNodeHashBase("service-1", "env-1", primaryTag: null);
+        var baseHashWithoutExtras = HashHelper.CalculateBaseHash("service-1", "env-1", primaryTag: null, processTags: null, containerTagsHash: null);
+        var baseHashWithExtras = HashHelper.CalculateBaseHash("service-1", "env-1", primaryTag: null, processTags: "entrypoint.name:hello", containerTagsHash: "aGVsbG8gd29ybGQ=");
+
+        nodeHashBaseWithoutExtras.Value.Should().Be(baseHashWithoutExtras);
+        baseHashWithExtras.Should().NotBe(baseHashWithoutExtras);
     }
 
     [Fact]
