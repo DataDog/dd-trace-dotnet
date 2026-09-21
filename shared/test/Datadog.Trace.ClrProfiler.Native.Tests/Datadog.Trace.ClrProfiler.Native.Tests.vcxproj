@@ -36,6 +36,9 @@
     <DOTNET-TRACER-REPO-ROOT-PATH>..\..\..\</DOTNET-TRACER-REPO-ROOT-PATH>
     <SHARED-LIB-PATH>$(DOTNET-TRACER-REPO-ROOT-PATH)shared/src/native-lib/</SHARED-LIB-PATH>
     <LIB_INCLUDES>$(SHARED-LIB-PATH)dotnet-runtime\coreclr\pal\prebuilt\inc;$(SHARED-LIB-PATH)dotnet-runtime\coreclr\inc</LIB_INCLUDES>
+    <!-- Forced ahead of any file that reaches the vendored pal headers: they require the build
+         to define HOST_AMD64/HOST_ARM64/HOST_X86 itself from .NET 11 onwards. See the header. -->
+    <HOST_ARCH_HEADER>$([System.IO.Path]::GetFullPath('$(MSBuildProjectDirectory)\$(SHARED-LIB-PATH)dotnet-runtime\host_arch.h'))</HOST_ARCH_HEADER>
     <SHARED-LIB-INCLUDES>$(SHARED-LIB-PATH)fmt\include;$(SHARED-LIB-PATH)spdlog\include</SHARED-LIB-INCLUDES>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -164,6 +167,7 @@
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <AdditionalIncludeDirectories>$(LIB_INCLUDES);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <ForcedIncludeFiles>$(HOST_ARCH_HEADER);%(ForcedIncludeFiles)</ForcedIncludeFiles>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -182,6 +186,7 @@
       <LanguageStandard>stdcpp20</LanguageStandard>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <AdditionalIncludeDirectories>$(LIB_INCLUDES);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <ForcedIncludeFiles>$(HOST_ARCH_HEADER);%(ForcedIncludeFiles)</ForcedIncludeFiles>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -200,6 +205,7 @@
       <LanguageStandard>stdcpp20</LanguageStandard>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <AdditionalIncludeDirectories>$(LIB_INCLUDES);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <ForcedIncludeFiles>$(HOST_ARCH_HEADER);%(ForcedIncludeFiles)</ForcedIncludeFiles>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -218,6 +224,7 @@
       <LanguageStandard>stdcpp20</LanguageStandard>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <AdditionalIncludeDirectories>$(LIB_INCLUDES);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <ForcedIncludeFiles>$(HOST_ARCH_HEADER);%(ForcedIncludeFiles)</ForcedIncludeFiles>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -236,6 +243,7 @@
       <LanguageStandard>stdcpp20</LanguageStandard>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <AdditionalIncludeDirectories>$(LIB_INCLUDES);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <ForcedIncludeFiles>$(HOST_ARCH_HEADER);%(ForcedIncludeFiles)</ForcedIncludeFiles>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -254,6 +262,7 @@
       <LanguageStandard>stdcpp20</LanguageStandard>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <AdditionalIncludeDirectories>$(LIB_INCLUDES);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <ForcedIncludeFiles>$(HOST_ARCH_HEADER);%(ForcedIncludeFiles)</ForcedIncludeFiles>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>

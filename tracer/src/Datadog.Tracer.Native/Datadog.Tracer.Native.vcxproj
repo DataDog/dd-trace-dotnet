@@ -44,6 +44,9 @@
     <ProjectName>Datadog.Tracer.Native</ProjectName>
     <LIB_PATH>..\..\..\shared\src\native-lib\</LIB_PATH>
     <LIB_INCLUDES>$(CORECLR_PATH)\pal\prebuilt\inc;$(CORECLR_PATH)\inc;$(VC_IncludePath);$(WindowsSDK_IncludePath)</LIB_INCLUDES>
+    <!-- Forced ahead of any file that reaches the vendored pal headers: they require the build
+         to define HOST_AMD64/HOST_ARM64/HOST_X86 itself from .NET 11 onwards. See the header. -->
+    <HOST_ARCH_HEADER>$([System.IO.Path]::GetFullPath('$(MSBuildProjectDirectory)\$(CORECLR_PATH)\..\host_arch.h'))</HOST_ARCH_HEADER>
     <ExternalIncludePath>$(LIB_PATH)spdlog\include;$(ExternalIncludePath)</ExternalIncludePath>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -146,6 +149,7 @@
       <MultiProcessorCompilation Condition=" '$(ENABLE_MULTIPROCESSOR_COMPILATION)' == '' ">true</MultiProcessorCompilation>
       <PreprocessorDefinitions>_UNICODE;UNICODE;X86;HOST_X86;_SILENCE_STDEXT_ARR_ITERS_DEPRECATION_WARNING;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(LIB_INCLUDES);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <ForcedIncludeFiles>$(HOST_ARCH_HEADER);%(ForcedIncludeFiles)</ForcedIncludeFiles>
     </ClCompile>
     <Lib>
       <AdditionalLibraryDirectories>$(LIB_INCLUDES);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
@@ -172,6 +176,7 @@
       <MultiProcessorCompilation Condition=" '$(ENABLE_MULTIPROCESSOR_COMPILATION)' == '' ">true</MultiProcessorCompilation>
       <PreprocessorDefinitions>_UNICODE;UNICODE;X86;HOST_X86;_SILENCE_STDEXT_ARR_ITERS_DEPRECATION_WARNING;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(LIB_INCLUDES);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <ForcedIncludeFiles>$(HOST_ARCH_HEADER);%(ForcedIncludeFiles)</ForcedIncludeFiles>
       <AdditionalOptions>/FS %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Lib>
@@ -196,6 +201,7 @@
       <MultiProcessorCompilation Condition=" '$(ENABLE_MULTIPROCESSOR_COMPILATION)' == '' ">true</MultiProcessorCompilation>
       <PreprocessorDefinitions>BIT64;HOST_64BIT;AMD64;_UNICODE;UNICODE;_SILENCE_STDEXT_ARR_ITERS_DEPRECATION_WARNING;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(LIB_INCLUDES);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <ForcedIncludeFiles>$(HOST_ARCH_HEADER);%(ForcedIncludeFiles)</ForcedIncludeFiles>
       <AdditionalOptions>/FS %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Lib>
@@ -223,6 +229,7 @@
       <MultiProcessorCompilation Condition=" '$(ENABLE_MULTIPROCESSOR_COMPILATION)' == '' ">true</MultiProcessorCompilation>
       <PreprocessorDefinitions>TARGET_64BIT;BIT64;HOST_64BIT;AMD64;_UNICODE;UNICODE;_SILENCE_STDEXT_ARR_ITERS_DEPRECATION_WARNING;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(LIB_INCLUDES);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <ForcedIncludeFiles>$(HOST_ARCH_HEADER);%(ForcedIncludeFiles)</ForcedIncludeFiles>
       <AdditionalOptions>/FS %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Lib>
@@ -247,6 +254,7 @@
       <MultiProcessorCompilation Condition=" '$(ENABLE_MULTIPROCESSOR_COMPILATION)' == '' ">true</MultiProcessorCompilation>
       <PreprocessorDefinitions>BIT64;HOST_64BIT;ARM64;_UNICODE;UNICODE;_SILENCE_STDEXT_ARR_ITERS_DEPRECATION_WARNING;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(LIB_INCLUDES);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <ForcedIncludeFiles>$(HOST_ARCH_HEADER);%(ForcedIncludeFiles)</ForcedIncludeFiles>
       <AdditionalOptions>/FS %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Lib>
@@ -274,6 +282,7 @@
       <MultiProcessorCompilation Condition=" '$(ENABLE_MULTIPROCESSOR_COMPILATION)' == '' ">true</MultiProcessorCompilation>
       <PreprocessorDefinitions>_TARGET_64BIT;BIT64;HOST_64BIT;ARM64;_UNICODE;UNICODE;_SILENCE_STDEXT_ARR_ITERS_DEPRECATION_WARNING;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(LIB_INCLUDES);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <ForcedIncludeFiles>$(HOST_ARCH_HEADER);%(ForcedIncludeFiles)</ForcedIncludeFiles>
       <AdditionalOptions>/FS %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Lib>

@@ -188,6 +188,9 @@
       <DOTNET-TRACER-REPO-ROOT-PATH>$([System.IO.Path]::GetFullPath( $(EnlistmentRoot)/ ))</DOTNET-TRACER-REPO-ROOT-PATH>
       <SHARED-LIB-PATH>$(DOTNET-TRACER-REPO-ROOT-PATH)shared\src\native-lib\</SHARED-LIB-PATH>
       <CORECLR-PATH>$(SHARED-LIB-PATH)dotnet-runtime\coreclr</CORECLR-PATH>
+      <!-- Forced ahead of any file that reaches the vendored pal headers: they require the build
+           to define HOST_AMD64/HOST_ARM64/HOST_X86 itself from .NET 11 onwards. See the header. -->
+      <HOST_ARCH_HEADER>$(SHARED-LIB-PATH)dotnet-runtime\host_arch.h</HOST_ARCH_HEADER>
       <!-- Suppress warnings from vendored headers without suppressing warnings in Datadog code. -->
       <ExternalIncludePath>$(SHARED-LIB-PATH)fmt\include;$(SHARED-LIB-PATH)spdlog\include;$(ExternalIncludePath)</ExternalIncludePath>
       <!-- VCPKG setup -->
@@ -209,6 +212,7 @@
                Defined here on Windows for consistency. -->
         <PreprocessorDefinitions>%(PreprocessorDefinitions);MICROSOFT_WINDOWS_WINBASE_H_DEFINE_INTERLOCKED_CPLUSPLUS_OVERLOADS=1;FMT_UNICODE=0;DD_SPDLOG_NO_MDC</PreprocessorDefinitions>
         <ExternalWarningLevel>TurnOffAllWarnings</ExternalWarningLevel>
+        <ForcedIncludeFiles>$(HOST_ARCH_HEADER);%(ForcedIncludeFiles)</ForcedIncludeFiles>
 	      <BuildStlModules>false</BuildStlModules>
 	      <EnableModules>false</EnableModules>
       </ClCompile>

@@ -42,6 +42,9 @@
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
     <LIB_PATH>..\..\..\shared\src\native-lib\</LIB_PATH>
     <LIB_INCLUDES>$(LIB_PATH)dotnet-runtime\coreclr\pal\prebuilt\inc;$(LIB_PATH)dotnet-runtime\coreclr\inc</LIB_INCLUDES>
+    <!-- Forced ahead of any file that reaches the vendored pal headers: they require the build
+         to define HOST_AMD64/HOST_ARM64/HOST_X86 itself from .NET 11 onwards. See the header. -->
+    <HOST_ARCH_HEADER>$([System.IO.Path]::GetFullPath('$(MSBuildProjectDirectory)\$(LIB_PATH)dotnet-runtime\host_arch.h'))</HOST_ARCH_HEADER>
     <ExternalIncludePath>$(LIB_PATH)spdlog\include;$(ExternalIncludePath)</ExternalIncludePath>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -168,6 +171,7 @@
       <MultiProcessorCompilation>$(ENABLE_MULTIPROCESSOR_COMPILATION)</MultiProcessorCompilation>
       <MultiProcessorCompilation Condition=" '$(ENABLE_MULTIPROCESSOR_COMPILATION)' == '' ">true</MultiProcessorCompilation>
       <AdditionalIncludeDirectories>$(LIB_INCLUDES);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <ForcedIncludeFiles>$(HOST_ARCH_HEADER);%(ForcedIncludeFiles)</ForcedIncludeFiles>
       <AdditionalOptions>/FS %(AdditionalOptions)</AdditionalOptions>
       <PreprocessorDefinitions>%(PreprocessorDefinitions);_SILENCE_STDEXT_ARR_ITERS_DEPRECATION_WARNING</PreprocessorDefinitions>
     </ClCompile>
@@ -196,6 +200,7 @@
       <MultiProcessorCompilation>$(ENABLE_MULTIPROCESSOR_COMPILATION)</MultiProcessorCompilation>
       <MultiProcessorCompilation Condition=" '$(ENABLE_MULTIPROCESSOR_COMPILATION)' == '' ">true</MultiProcessorCompilation>
       <AdditionalIncludeDirectories>$(LIB_INCLUDES);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <ForcedIncludeFiles>$(HOST_ARCH_HEADER);%(ForcedIncludeFiles)</ForcedIncludeFiles>
       <AdditionalOptions>/FS %(AdditionalOptions)</AdditionalOptions>
       <PreprocessorDefinitions>%(PreprocessorDefinitions);_SILENCE_STDEXT_ARR_ITERS_DEPRECATION_WARNING</PreprocessorDefinitions>
     </ClCompile>
@@ -223,6 +228,7 @@
       <MultiProcessorCompilation>$(ENABLE_MULTIPROCESSOR_COMPILATION)</MultiProcessorCompilation>
       <MultiProcessorCompilation Condition=" '$(ENABLE_MULTIPROCESSOR_COMPILATION)' == '' ">true</MultiProcessorCompilation>
       <AdditionalIncludeDirectories>$(LIB_INCLUDES);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <ForcedIncludeFiles>$(HOST_ARCH_HEADER);%(ForcedIncludeFiles)</ForcedIncludeFiles>
       <AdditionalOptions>/FS %(AdditionalOptions)</AdditionalOptions>
       <PreprocessorDefinitions>%(PreprocessorDefinitions);_SILENCE_STDEXT_ARR_ITERS_DEPRECATION_WARNING</PreprocessorDefinitions>
     </ClCompile>
@@ -253,6 +259,7 @@
       <MultiProcessorCompilation>$(ENABLE_MULTIPROCESSOR_COMPILATION)</MultiProcessorCompilation>
       <MultiProcessorCompilation Condition=" '$(ENABLE_MULTIPROCESSOR_COMPILATION)' == '' ">true</MultiProcessorCompilation>
       <AdditionalIncludeDirectories>$(LIB_INCLUDES);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <ForcedIncludeFiles>$(HOST_ARCH_HEADER);%(ForcedIncludeFiles)</ForcedIncludeFiles>
       <AdditionalOptions>/FS %(AdditionalOptions)</AdditionalOptions>
       <PreprocessorDefinitions>%(PreprocessorDefinitions);_SILENCE_STDEXT_ARR_ITERS_DEPRECATION_WARNING</PreprocessorDefinitions>
     </ClCompile>
@@ -280,6 +287,7 @@
       <MultiProcessorCompilation>$(ENABLE_MULTIPROCESSOR_COMPILATION)</MultiProcessorCompilation>
       <MultiProcessorCompilation Condition=" '$(ENABLE_MULTIPROCESSOR_COMPILATION)' == '' ">true</MultiProcessorCompilation>
       <AdditionalIncludeDirectories>$(LIB_INCLUDES);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <ForcedIncludeFiles>$(HOST_ARCH_HEADER);%(ForcedIncludeFiles)</ForcedIncludeFiles>
       <PreprocessorDefinitions>%(PreprocessorDefinitions);_SILENCE_STDEXT_ARR_ITERS_DEPRECATION_WARNING</PreprocessorDefinitions>
       <AdditionalOptions>/FS %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
@@ -310,6 +318,7 @@
       <MultiProcessorCompilation>$(ENABLE_MULTIPROCESSOR_COMPILATION)</MultiProcessorCompilation>
       <MultiProcessorCompilation Condition=" '$(ENABLE_MULTIPROCESSOR_COMPILATION)' == '' ">true</MultiProcessorCompilation>
       <AdditionalIncludeDirectories>$(LIB_INCLUDES);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <ForcedIncludeFiles>$(HOST_ARCH_HEADER);%(ForcedIncludeFiles)</ForcedIncludeFiles>
       <PreprocessorDefinitions>%(PreprocessorDefinitions);_SILENCE_STDEXT_ARR_ITERS_DEPRECATION_WARNING</PreprocessorDefinitions>
       <AdditionalOptions>/FS %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>

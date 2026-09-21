@@ -37,6 +37,9 @@
     <DOTNET-TRACER-REPO-ROOT-PATH>..\..\..\</DOTNET-TRACER-REPO-ROOT-PATH>
     <LIB_PATH>$(DOTNET-TRACER-REPO-ROOT-PATH)shared/src/native-lib/</LIB_PATH>
     <LIB_INCLUDES>$(LIB_PATH)spdlog\include;$(LIB_PATH)dotnet-runtime\coreclr\pal\prebuilt\inc;$(LIB_PATH)dotnet-runtime\coreclr\inc</LIB_INCLUDES>
+    <!-- Forced ahead of any file that reaches the vendored pal headers: they require the build
+         to define HOST_AMD64/HOST_ARM64/HOST_X86 itself from .NET 11 onwards. See the header. -->
+    <HOST_ARCH_HEADER>$([System.IO.Path]::GetFullPath('$(MSBuildProjectDirectory)\$(LIB_PATH)dotnet-runtime\host_arch.h'))</HOST_ARCH_HEADER>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Label="Configuration" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -151,6 +154,7 @@
       <WarningLevel>Level3</WarningLevel>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <AdditionalIncludeDirectories>$(LIB_INCLUDES);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <ForcedIncludeFiles>$(HOST_ARCH_HEADER);%(ForcedIncludeFiles)</ForcedIncludeFiles>
       <PreprocessorDefinitions>_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
@@ -174,6 +178,7 @@
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <AdditionalIncludeDirectories>$(LIB_INCLUDES);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <ForcedIncludeFiles>$(HOST_ARCH_HEADER);%(ForcedIncludeFiles)</ForcedIncludeFiles>
       <PreprocessorDefinitions>_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
@@ -197,6 +202,7 @@
       <WarningLevel>Level3</WarningLevel>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <AdditionalIncludeDirectories>$(LIB_INCLUDES);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <ForcedIncludeFiles>$(HOST_ARCH_HEADER);%(ForcedIncludeFiles)</ForcedIncludeFiles>
       <PreprocessorDefinitions>_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
@@ -220,6 +226,7 @@
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <AdditionalIncludeDirectories>$(LIB_INCLUDES);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <ForcedIncludeFiles>$(HOST_ARCH_HEADER);%(ForcedIncludeFiles)</ForcedIncludeFiles>
       <PreprocessorDefinitions>_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
@@ -243,6 +250,7 @@
       <WarningLevel>Level3</WarningLevel>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <AdditionalIncludeDirectories>$(LIB_INCLUDES);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <ForcedIncludeFiles>$(HOST_ARCH_HEADER);%(ForcedIncludeFiles)</ForcedIncludeFiles>
       <PreprocessorDefinitions>_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
@@ -266,6 +274,7 @@
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <AdditionalIncludeDirectories>$(LIB_INCLUDES);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <ForcedIncludeFiles>$(HOST_ARCH_HEADER);%(ForcedIncludeFiles)</ForcedIncludeFiles>
       <PreprocessorDefinitions>_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
