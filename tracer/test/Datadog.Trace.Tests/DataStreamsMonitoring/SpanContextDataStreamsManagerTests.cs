@@ -3,7 +3,6 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.DataStreamsMonitoring.Hashes;
@@ -80,6 +79,6 @@ public class SpanContextDataStreamsManagerTests
                 { ConfigurationKeys.ServiceName, "service" },
                 { ConfigurationKeys.DataStreamsMonitoring.Enabled, "1" },
             });
-        return new DataStreamsManager(settings, Mock.Of<IDataStreamsWriter>(), Mock.Of<IDiscoveryService>());
+        return new DataStreamsManager(settings, Mock.Of<IDataStreamsWriter>());
     }
 }

@@ -16,10 +16,39 @@ internal static class HashHelper
     private const FnvHash64.Version HashVersion = FnvHash64.Version.V1;
 
     /// <summary>
-    /// Calculates the base NodeHash for a service.
-    /// This can be used to create a <see cref="NodeHash"/> by calling <see cref="CalculateNodeHash"/>
+    /// Calculates the base NodeHash for a service, from its identity alone (service, env, primary tag).
+    /// This can be used to create a <see cref="NodeHash"/> by calling <see cref="CalculateNodeHash"/>.
+    /// Unlike <see cref="CalculateBaseHash"/>, this excludes process tags and the agent-reported
+    /// container-tags hash: those are agent/process metadata that can change on every rolling deploy
+    /// without any real change in topology, and folding them in here would needlessly inflate the
+    /// cardinality of the pathway hashes DSM's stats are keyed and quota-limited on (DSM2-335).
     /// </summary>
-    public static NodeHashBase CalculateNodeHashBase(string service, string? env, string? primaryTag, string? processTags, string? containerTagsHash)
+    public static NodeHashBase CalculateNodeHashBase(string service, string? env, string? primaryTag)
+    {
+        var hash = FnvHash64.GenerateHash(service, HashVersion);
+        if (!StringUtil.IsNullOrEmpty(env))
+        {
+            hash = FnvHash64.GenerateHash(env, HashVersion, hash);
+        }
+
+        if (!StringUtil.IsNullOrEmpty(primaryTag))
+        {
+            hash = FnvHash64.GenerateHash(primaryTag, HashVersion, hash);
+        }
+
+        return new NodeHashBase(hash);
+    }
+
+    /// <summary>
+    /// Calculates a base hash of service, env, primary tag, process tags and the agent-reported
+    /// container-tags hash, using the same algorithm as <see cref="CalculateNodeHashBase"/> but also
+    /// folding in process tags and container-tags hash. This mirrors the standardized "base hash"
+    /// pattern used by the Go and Java tracers (<c>BaseHash</c> / <c>getBaseHash()</c>), which those
+    /// tracers use for DBM's per-container SQL comment attribution. Not currently consumed by DSM or
+    /// DBM in .NET (see <see cref="Datadog.Trace.ServiceRemappingHash"/> for .NET's current DBM hash), but kept
+    /// here, unused, as a standardized, reusable primitive should a future DBM implementation adopt it.
+    /// </summary>
+    public static ulong CalculateBaseHash(string service, string? env, string? primaryTag, string? processTags, string? containerTagsHash)
     {
         var hash = FnvHash64.GenerateHash(service, HashVersion);
         if (!StringUtil.IsNullOrEmpty(env))
@@ -42,7 +71,7 @@ internal static class HashHelper
             }
         }
 
-        return new NodeHashBase(hash);
+        return hash;
     }
 
     /// <summary>

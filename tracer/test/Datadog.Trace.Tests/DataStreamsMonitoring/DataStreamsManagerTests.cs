@@ -8,7 +8,6 @@ using System.Collections.Concurrent;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.EventBridge;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNS;
@@ -185,7 +184,7 @@ public class DataStreamsManagerTests
         var context = dsm.SetCheckpoint(parentPathway: null, CheckpointKind.Consume, edgeTags, 100, 100);
         context.Should().NotBeNull();
 
-        var baseHash = HashHelper.CalculateNodeHashBase(service, env, primaryTag: null, processTags: null, containerTagsHash: null);
+        var baseHash = HashHelper.CalculateNodeHashBase(service, env, primaryTag: null);
         var nodeHash = HashHelper.CalculateNodeHash(baseHash, edgeTags);
         var hash = HashHelper.CalculatePathwayHash(nodeHash, parentHash: new PathwayHash(0));
 
@@ -204,11 +203,26 @@ public class DataStreamsManagerTests
         var context = dsm.SetCheckpoint(parent, CheckpointKind.Consume, edgeTags, 100, 100);
         context.Should().NotBeNull();
 
-        var baseHash = HashHelper.CalculateNodeHashBase(service, env, primaryTag: null, processTags: null, containerTagsHash: null);
+        var baseHash = HashHelper.CalculateNodeHashBase(service, env, primaryTag: null);
         var nodeHash = HashHelper.CalculateNodeHash(baseHash, edgeTags);
         var hash = HashHelper.CalculatePathwayHash(nodeHash, parentHash: parent.Hash);
 
         context.Value.Hash.Value.Should().Be(hash.Value);
+    }
+
+    [Fact]
+    public void ProcessTagsAndContainerTagsHashDoNotAffectNodeHashBase()
+    {
+        // guards DSM2-335: process tags and the agent-reported container-tags hash must not
+        // affect the DSM pathway hash's node-hash base, even though they still affect
+        // HashHelper.CalculateBaseHash (the standardized, DBM-facing base hash).
+        var env = "foo";
+        var service = "bar";
+
+        var hashWithout = HashHelper.CalculateNodeHashBase(service, env, primaryTag: null);
+        var baseHashWith = HashHelper.CalculateBaseHash(service, env, primaryTag: null, "hello:world", "12345ABCDE");
+
+        hashWithout.Value.Should().NotBe(baseHashWith);
     }
 
     [Fact]
@@ -217,10 +231,10 @@ public class DataStreamsManagerTests
         var env = "foo";
         var service = "bar";
 
-        var hashWithout = HashHelper.CalculateNodeHashBase(service, env, primaryTag: null, processTags: null, containerTagsHash: null);
-        var hashWith = HashHelper.CalculateNodeHashBase(service, env, primaryTag: null, "hello:world", containerTagsHash: null);
+        var hashWithout = HashHelper.CalculateBaseHash(service, env, primaryTag: null, processTags: null, containerTagsHash: null);
+        var hashWith = HashHelper.CalculateBaseHash(service, env, primaryTag: null, "hello:world", containerTagsHash: null);
 
-        hashWith.Value.Should().NotBe(hashWithout.Value);
+        hashWith.Should().NotBe(hashWithout);
     }
 
     [Fact]
@@ -229,10 +243,10 @@ public class DataStreamsManagerTests
         var env = "foo";
         var service = "bar";
 
-        var hashWithout = HashHelper.CalculateNodeHashBase(service, env, primaryTag: null, processTags: "hello:world", containerTagsHash: null);
-        var hashWith = HashHelper.CalculateNodeHashBase(service, env, primaryTag: null, processTags: "hello:world", "12345ABCDE");
+        var hashWithout = HashHelper.CalculateBaseHash(service, env, primaryTag: null, processTags: "hello:world", containerTagsHash: null);
+        var hashWith = HashHelper.CalculateBaseHash(service, env, primaryTag: null, processTags: "hello:world", "12345ABCDE");
 
-        hashWith.Value.Should().NotBe(hashWithout.Value);
+        hashWith.Should().NotBe(hashWithout);
     }
 
     [Fact]
@@ -241,10 +255,10 @@ public class DataStreamsManagerTests
         var env = "foo";
         var service = "bar";
 
-        var hashWithout = HashHelper.CalculateNodeHashBase(service, env, primaryTag: null, processTags: null, containerTagsHash: null);
-        var hashWith = HashHelper.CalculateNodeHashBase(service, env, primaryTag: null, processTags: null, "12345ABCDE");
+        var hashWithout = HashHelper.CalculateBaseHash(service, env, primaryTag: null, processTags: null, containerTagsHash: null);
+        var hashWith = HashHelper.CalculateBaseHash(service, env, primaryTag: null, processTags: null, "12345ABCDE");
 
-        hashWith.Value.Should().Be(hashWithout.Value);
+        hashWith.Should().Be(hashWithout);
     }
 
     [Fact]
@@ -305,7 +319,7 @@ public class DataStreamsManagerTests
             { ConfigurationKeys.ServiceName, "bar" },
             // DD_DATA_STREAMS_MONITORING_ENABLED intentionally absent → IsInDefaultState = true
         });
-        var dsm = new DataStreamsManager(settings, writer, Mock.Of<IDiscoveryService>());
+        var dsm = new DataStreamsManager(settings, writer);
         dsm.IsInDefaultState.Should().BeTrue("precondition: DSM must be in default state");
 
         var span = new Span(new SpanContext(traceId: 123, spanId: 456), DateTimeOffset.UtcNow);
@@ -594,7 +608,7 @@ public class DataStreamsManagerTests
                 // but it'd be cleaner not to have exclusions like this
                 { ConfigurationKeys.PropagateProcessTags, "false" }
             });
-        return new DataStreamsManager(settings, writer, Mock.Of<IDiscoveryService>());
+        return new DataStreamsManager(settings, writer);
     }
 
     /// <summary>

@@ -38,7 +38,6 @@ internal sealed class DataStreamsManager
     private static readonly AsyncLocal<PathwayContext?> LastConsumePathway = new(); // saves the context on consume checkpointing only
     private readonly object _nodeHashUpdateLock = new();
     private readonly ConcurrentDictionary<string, RateLimiter> _schemaRateLimiters = new();
-    private readonly IDiscoveryService _discoveryService;
     private readonly DataStreamsExtractorRegistry _registry;
     private readonly IDisposable _updateSubscription;
     private readonly bool _isLegacyDsmHeadersEnabled;
@@ -49,19 +48,16 @@ internal sealed class DataStreamsManager
 
     private long _nodeHashBase; // note that this actually represents a `ulong` that we have done an unsafe cast for
     private MutableSettings _previousMutableSettings;
-    private string? _previousContainerTagsHash;
     private bool _isEnabled;
     private IDataStreamsWriter? _writer;
 
     public DataStreamsManager(
         TracerSettings tracerSettings,
-        IDataStreamsWriter? writer,
-        IDiscoveryService discoveryService)
+        IDataStreamsWriter? writer)
     {
         _isEnabled = writer is not null;
         _isLegacyDsmHeadersEnabled = tracerSettings.IsDataStreamsLegacyHeadersEnabled;
         _writer = writer;
-        _discoveryService = discoveryService;
         _isInDefaultState = tracerSettings.IsDataStreamsMonitoringInDefaultState;
         _registry = new DataStreamsExtractorRegistry(tracerSettings.DataStreamsTransactionExtractors);
 
@@ -71,11 +67,7 @@ internal sealed class DataStreamsManager
         }
 
         _previousMutableSettings = tracerSettings.Manager.InitialMutableSettings;
-        // even though the value will probably get updated by a callback when subscriptions happen just after,
-        // we still need to initialize it to a value from initial settings in case no callback fire
-        UpdateNodeHash(_previousMutableSettings, containerTagsHash: null);
-        // subscribing to changes calls the callback immediately if a value is present
-        discoveryService.SubscribeToChanges(UpdateHashWithContainerTags);
+        UpdateNodeHash(_previousMutableSettings);
         _updateSubscription = tracerSettings.Manager.SubscribeToChanges(UpdateHashWithNewSettings);
     }
 
@@ -88,21 +80,6 @@ internal sealed class DataStreamsManager
 
     public bool IsTransactionTrackingEnabled => !_isInDefaultState && IsEnabled;
 
-    /// <summary> Callback for AgentConfiguration updates </summary>
-    private void UpdateHashWithContainerTags(AgentConfiguration conf)
-    {
-        lock (_nodeHashUpdateLock)
-        {
-            if (conf.ContainerTagsHash == _previousContainerTagsHash)
-            {
-                return;
-            }
-
-            UpdateNodeHash(_previousMutableSettings, conf.ContainerTagsHash);
-            _previousContainerTagsHash = conf.ContainerTagsHash;
-        }
-    }
-
     /// <summary> Callback for MutableSettings updates </summary>
     private void UpdateHashWithNewSettings(TracerSettings.SettingsManager.SettingChanges updates)
     {
@@ -110,16 +87,22 @@ internal sealed class DataStreamsManager
         {
             lock (_nodeHashUpdateLock)
             {
-                UpdateNodeHash(updated, _previousContainerTagsHash);
+                UpdateNodeHash(updated);
                 _previousMutableSettings = updated;
             }
         }
     }
 
-    private void UpdateNodeHash(MutableSettings settings, string? containerTagsHash)
+    private void UpdateNodeHash(MutableSettings settings)
     {
-        // We don't yet support primary tag in .NET yet
-        var value = HashHelper.CalculateNodeHashBase(settings.DefaultServiceName, settings.Environment, primaryTag: null, settings.ProcessTags?.SerializedTags, containerTagsHash);
+        // We don't yet support primary tag in .NET yet.
+        // Process tags and the agent-reported container-tags hash are intentionally excluded here
+        // (DSM2-335): they can change on every rolling deploy without any real change in topology,
+        // and folding them in would needlessly inflate the cardinality of the pathway hashes DSM's
+        // stats are keyed and quota-limited on. See HashHelper.CalculateBaseHash for the standardized,
+        // DBM-facing hash that still folds those in (unused today; see ServiceRemappingHash for .NET's
+        // current DBM hash).
+        var value = HashHelper.CalculateNodeHashBase(settings.DefaultServiceName, settings.Environment, primaryTag: null);
         // Working around the fact we can't do Interlocked.Exchange with the struct
         // and also that we can't do Interlocked.Exchange with a ulong in < .NET 5
         Interlocked.Exchange(
@@ -137,13 +120,12 @@ internal sealed class DataStreamsManager
                          ? DataStreamsWriter.Create(settings, profilerSettings, discoveryService)
                          : null;
 
-        return new DataStreamsManager(settings, writer, discoveryService);
+        return new DataStreamsManager(settings, writer);
     }
 
     public async Task DisposeAsync()
     {
         _updateSubscription.Dispose();
-        _discoveryService.RemoveSubscription(UpdateHashWithContainerTags);
         Volatile.Write(ref _isEnabled, false);
         var writer = Interlocked.Exchange(ref _writer, null);
 
