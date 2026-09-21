@@ -386,6 +386,7 @@ internal static class MetricTags
         [Description("integration_name:emailhtmlinjection")] EmailHtmlInjection,
         [Description("integration_name:protobuf")] Protobuf,
         [Description("integration_name:hangfire")] Hangfire,
+        [Description("integration_name:quartz")] Quartz,
         [Description("integration_name:serverlesscompat")] ServerlessCompat
     }
 
