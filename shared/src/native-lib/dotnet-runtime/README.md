@@ -89,3 +89,11 @@ doesn't produce. We never generate GUIDs, only compare ones the CLR profiling AP
 `shared/src/native-src/minipal_guid.cpp` provides just `minipal_guid_equals` ourselves (identical
 to `guid.c`'s own one-line `memcmp` implementation) and is compiled as part of the `coreclr`
 CMake target (`build/cmake/FindCoreclr.cmake`) instead.
+
+Since v11, upstream `pal.h` also no longer `#undef`s/redefines `NULL` to the integer literal `0`
+in C++ mode. Our toolchain's own `NULL` can expand to `nullptr`, and comparing an integral CLR
+handle type (`ModuleID`, `mdMethodDef`, `mdToken`, ...) against `nullptr` doesn't compile
+(`invalid operands to binary expression`). This isn't patched in the vendored tree — it's fixed at
+the two call sites that did this (`tracer/src/Datadog.Tracer.Native/rejit_handler.cpp`,
+`shared/src/native-src/loader.cpp`) by comparing against `0` instead, which is what these
+comparisons always meant.

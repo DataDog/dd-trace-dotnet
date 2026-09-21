@@ -443,7 +443,7 @@ namespace shared
             // Rewrite Module EntryPoint
             //
             const mdToken moduleEntryPoint = GetModuleEntryPointToken(moduleBaseLoadAddress, moduleFlags);
-            if (moduleEntryPoint != NULL && moduleEntryPoint != mdTokenNil && _corlibMetadata.Token != mdAssemblyNil)
+            if (moduleEntryPoint != 0 && moduleEntryPoint != mdTokenNil && _corlibMetadata.Token != mdAssemblyNil)
             {
                 constexpr DWORD NameBuffSize = 1024;
 

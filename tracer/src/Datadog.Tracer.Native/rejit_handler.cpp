@@ -51,9 +51,9 @@ bool RejitHandlerModuleMethod::RequestRejitForInlinersInModule(ModuleID moduleId
     mdMethodDef currentMethodDef = m_methodDef;
 
     // Let's validate the vars before calling `EnumNgenModuleMethodsInliningThisMethod`
-    if (currentModuleId == NULL ||
-        moduleId == NULL ||
-        currentMethodDef == NULL ||
+    if (currentModuleId == 0 ||
+        moduleId == 0 ||
+        currentMethodDef == 0 ||
         currentMethodDef == mdMethodDefNil)
     {
         // we just return true to avoid the retry by the handler.
