@@ -253,6 +253,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                     }
 
                     var type = binding.BindingType;
+                    if (AzureFunctionsDurableCommon.IsDurableTrigger(type))
+                    {
+                        // The Durable executor and orchestrator integrations own these spans
+                        return null;
+                    }
+
                     triggerType = type switch
                     {
                         _ when type.Equals("httpTrigger", StringComparison.OrdinalIgnoreCase) => "Http",             // Microsoft.Azure.Functions.Worker.Extensions.Http

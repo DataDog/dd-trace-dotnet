@@ -7,6 +7,7 @@
 #nullable enable
 
 using System;
+using System.Collections.Generic;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Shared;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
@@ -27,6 +28,13 @@ internal static class AzureFunctionsDurableCommon
     private const string OrchestrationTrigger = "DurableOrchestration";
     private const string ActivityTrigger = "DurableActivity";
     private const string EntityTrigger = "DurableEntity";
+
+    private static readonly Dictionary<string, string> TriggerTypes = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ["orchestrationTrigger"] = OrchestrationTrigger,
+        ["activityTrigger"] = ActivityTrigger,
+        ["entityTrigger"] = EntityTrigger,
+    };
 
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(AzureFunctionsDurableCommon));
 
@@ -86,6 +94,9 @@ internal static class AzureFunctionsDurableCommon
         where TFunctionContext : IDurableFunctionContext
         => GetTriggerType(functionContext) == OrchestrationTrigger;
 
+    internal static bool IsDurableTrigger(string bindingType)
+        => TriggerTypes.ContainsKey(bindingType);
+
     // Finds the first Durable trigger in the function's input bindings and returns its tracing label
     [TestingAndPrivateOnly]
     internal static string? GetTriggerType<TFunctionContext>(TFunctionContext functionContext)
@@ -99,19 +110,9 @@ internal static class AzureFunctionsDurableCommon
                 continue;
             }
 
-            if (binding.BindingType.Equals("orchestrationTrigger", StringComparison.OrdinalIgnoreCase))
+            if (TriggerTypes.TryGetValue(binding.BindingType, out var triggerType))
             {
-                return OrchestrationTrigger;
-            }
-
-            if (binding.BindingType.Equals("activityTrigger", StringComparison.OrdinalIgnoreCase))
-            {
-                return ActivityTrigger;
-            }
-
-            if (binding.BindingType.Equals("entityTrigger", StringComparison.OrdinalIgnoreCase))
-            {
-                return EntityTrigger;
+                return triggerType;
             }
         }
 

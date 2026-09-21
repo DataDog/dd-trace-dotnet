@@ -69,10 +69,16 @@ internal static class AzureFunctionsDurablePropagation
     [TestingAndPrivateOnly]
     internal static string EnsureTraceParentSampledFlag(string traceParent)
     {
-        var flagsStart = traceParent.LastIndexOf('-') + 1;
+        // W3C trace-flags occupy positions 53-54
+        // https://github.com/DataDog/dd-trace-dotnet/blob/v3.53.0/tracer/src/Datadog.Trace/Propagators/W3CTraceContextPropagator.cs#L289
+        const int flagsStart = 53;
+        const int flagsEnd = flagsStart + 2;
+        var header = traceParent.Trim();
 
-        if (flagsStart <= 0
-         || !HexString.TryParseByte(traceParent.AsSpan(flagsStart), out var flags)
+        if (header.Length < flagsEnd
+         || header[flagsStart - 1] != '-'
+         || (header.Length > flagsEnd && header[flagsEnd] != '-')
+         || !HexString.TryParseByte(header.AsSpan(flagsStart, 2), out var flags)
          || (flags & RecordedFlag) != 0)
         {
             return traceParent;
@@ -81,11 +87,11 @@ internal static class AzureFunctionsDurablePropagation
         var sampledFlags = (flags | RecordedFlag).ToString("x2", CultureInfo.InvariantCulture);
 
         // The span-based overload is unavailable on some target frameworks. Follow the existing pattern:
-        // https://github.com/DataDog/dd-trace-dotnet/blob/efb6c5c17d589f01b54e96f67f99bb334ac0d91d/tracer/src/Datadog.Trace/Debugger/Symbols/SymbolsUploader.cs#L414-L418
+        // https://github.com/DataDog/dd-trace-dotnet/blob/v3.53.0/tracer/src/Datadog.Trace/Debugger/Symbols/SymbolsUploader.cs#L443-L447
 #if NETCOREAPP
-        return string.Concat(traceParent.AsSpan(0, flagsStart), sampledFlags);
+        return string.Concat(header.AsSpan(0, flagsStart), sampledFlags, header.AsSpan(flagsEnd));
 #else
-        return traceParent.Substring(0, flagsStart) + sampledFlags;
+        return header.Substring(0, flagsStart) + sampledFlags + header.Substring(flagsEnd);
 #endif
     }
 
@@ -130,6 +136,7 @@ internal static class AzureFunctionsDurablePropagation
         {
             PropagatedTags = spanContext.PropagatedTags,
             AdditionalW3CTraceState = spanContext.AdditionalW3CTraceState,
+            OtelTraceState = spanContext.OtelTraceState,
             LastParentId = spanContext.LastParentId,
             ServiceNameSource = spanContext.ServiceNameSource,
         };

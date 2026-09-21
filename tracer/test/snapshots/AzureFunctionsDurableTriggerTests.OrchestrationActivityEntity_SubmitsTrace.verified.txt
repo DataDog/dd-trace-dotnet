@@ -92,27 +92,39 @@ at Samples.AzureFunctions.Durable.DurableFunctions.FailingDurableActivity(String
     Resource: DurableEntity DurableCounter,
     Service: AzureFunctionsDurableTriggerTests,
     Type: serverless,
-    ParentId: Id_10,
     Tags: {
+      aas.environment.extension_version: unknown,
+      aas.environment.instance_id: unknown,
+      aas.environment.instance_name: IntegrationTestHost,
+      aas.environment.os: unknown,
+      aas.environment.runtime: .NET,
       aas.function.method: Samples.AzureFunctions.Durable.DurableCounter.Run,
       aas.function.name: DurableCounter,
       aas.function.trigger: DurableEntity,
+      aas.site.kind: functionapp,
       aas.site.name: AzureFunctionsDurableTriggerTests,
       aas.site.type: function,
       component: AzureFunctions,
       env: integration_tests,
       language: dotnet,
+      runtime-id: Guid_1,
       span.kind: server
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
     }
   },
   {
     TraceId: Id_1,
-    SpanId: Id_11,
+    SpanId: Id_10,
     Name: azure_functions.invoke,
     Resource: DurableOrchestration DurableWorkflow,
     Service: AzureFunctionsDurableTriggerTests,
     Type: serverless,
-    ParentId: Id_12,
+    ParentId: Id_11,
     Tags: {
       aas.environment.extension_version: unknown,
       aas.environment.instance_id: unknown,
@@ -140,12 +152,12 @@ at Samples.AzureFunctions.Durable.DurableFunctions.FailingDurableActivity(String
   },
   {
     TraceId: Id_5,
-    SpanId: Id_13,
+    SpanId: Id_12,
     Name: azure_functions.invoke,
     Resource: DurableOrchestration FailingDurableWorkflow,
     Service: AzureFunctionsDurableTriggerTests,
     Type: serverless,
-    ParentId: Id_14,
+    ParentId: Id_13,
     Tags: {
       aas.environment.extension_version: unknown,
       aas.environment.instance_id: unknown,
@@ -173,12 +185,12 @@ at Samples.AzureFunctions.Durable.DurableFunctions.FailingDurableActivity(String
   },
   {
     TraceId: Id_5,
-    SpanId: Id_15,
+    SpanId: Id_14,
     Name: azure_functions.invoke,
     Resource: DurableOrchestration FailingDurableWorkflow,
     Service: AzureFunctionsDurableTriggerTests,
     Type: serverless,
-    ParentId: Id_14,
+    ParentId: Id_13,
     Error: 1,
     Tags: {
       aas.environment.extension_version: unknown,
@@ -212,13 +224,13 @@ at DurableTask.Core.TaskOrchestrationContext.ScheduleTaskInternal(String name, S
     }
   },
   {
-    TraceId: Id_16,
-    SpanId: Id_17,
+    TraceId: Id_15,
+    SpanId: Id_16,
     Name: azure_functions.invoke,
     Resource: DurableOrchestration ImmediatelyFailingDurableWorkflow,
     Service: AzureFunctionsDurableTriggerTests,
     Type: serverless,
-    ParentId: Id_18,
+    ParentId: Id_17,
     Error: 1,
     Tags: {
       aas.environment.extension_version: unknown,
