@@ -25,7 +25,7 @@ public interface IAspNetFixture
     /// the class, so a token generated per test case would stop matching what the running
     /// application actually sends.
     /// </summary>
-    OtlpTestAgentSession OtlpSession { get; }
+    OtlpTestAgentSession? OtlpSession { get; }
 
     /// <summary>
     /// Points the fixture's diagnostics at the test case that is currently running, or at nothing
@@ -49,4 +49,11 @@ public interface IAspNetFixture
     /// has already been shown not to work.</param>
     /// <returns>The single initialization task, shared by every test case in the class.</returns>
     Task EnsureInitializedAsync(Func<Task> initialize);
+
+    /// <summary>
+    /// Creates the fixture-owned OTLP test-agent session if it has not already been created. This
+    /// must be called before the application starts so its session token can be added to the
+    /// application's environment.
+    /// </summary>
+    void InitializeOtlpTestSession();
 }

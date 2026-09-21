@@ -46,16 +46,11 @@ public sealed class OtlpTestAgentSession : IAsyncDisposable
     /// span start times are stamped by <c>TraceClock</c> in the application under test, which
     /// derives them from a monotonic stopwatch that it re-anchors to wall clock only every five
     /// minutes -- and which tolerates up to 16ms of skew when it does anchor. The two clocks
-    /// therefore disagree by a few milliseconds, so without a margin a span created just after the
-    /// bound can report a timestamp just before it, be filtered out as belonging to a previous test
-    /// case, and leave the caller polling until it times out.
-    /// </para>
-    /// <para>
-    /// Comfortably larger than that skew and comfortably smaller than the gap to the previous test
-    /// case, whose spans have in any case already been removed by <see cref="ClearSessionAsync"/>.
+    /// therefore disagree by up to 16ms, so introduce a tolerance narrow enough to be precise but
+    /// unlikely to belong to a previous test case.
     /// </para>
     /// </summary>
-    public const long StartTimeToleranceNanoseconds = 250L * 1_000_000L;
+    public const long StartTimeToleranceNanoseconds = 32L * 1_000_000L;
 
     /// <summary>
     /// The port the ddapm test-agent receives OTLP/HTTP on, and also serves its session API on.

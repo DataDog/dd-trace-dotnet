@@ -50,7 +50,16 @@ namespace Datadog.Trace.TestHelpers
         /// <c>OTEL_EXPORTER_OTLP_HEADERS</c> when the process starts, and that process is shared by
         /// every test case in the class.
         /// </summary>
-        public OtlpTestAgentSession OtlpSession { get; } = new();
+        public OtlpTestAgentSession OtlpSession { get; private set; }
+
+        /// <inheritdoc />
+        public void InitializeOtlpTestSession()
+        {
+            lock (_initializationLock)
+            {
+                OtlpSession ??= new OtlpTestAgentSession();
+            }
+        }
 
         /// <inheritdoc />
         public void SetOutput(ITestOutputHelper output)

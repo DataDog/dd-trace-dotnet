@@ -8,6 +8,7 @@
 using System;
 using System.Collections.Generic;
 using System.Web;
+using Datadog.Trace.OpenTelemetry;
 
 namespace Datadog.Trace.AspNet
 {
@@ -45,26 +46,26 @@ namespace Datadog.Trace.AspNet
 
         internal static Scope? TryPopScope(HttpContext? context, string key) => ExtractScope(context, key, Pop);
 
-        internal static Scope? TryPeekScope(HttpContext? context, string key) => ExtractScope(context, key, Peek);
-
         /// <summary>
-        /// Gets the scope an AppSec check should report against. With OpenTelemetry semantics the MVC
-        /// and Web API integrations don't create a span of their own -- a request has a single HTTP
-        /// server span -- so there is nothing under <paramref name="key"/> and the active span, which is
-        /// that server span, is used instead.
+        /// Gets the scope from the HttpContext with the provided key, corresponding to the integration that created it.
+        /// When using OpenTelemetry semantics, the MVC and Web API integrations don't create a span of their own if a
+        /// root HTTP span exists, so there is nothing under <paramref name="key"/>. To unify all behaviors on the HTTP
+        /// server span, the active root  HTTP span is returned when <paramref name="fallbackToActiveOtelHttpServerScope"/>
+        /// is set to true (by default). This fallback can be explicitly disabled, if needed.
         /// </summary>
         /// <param name="context">The context of the current request</param>
         /// <param name="key">The <see cref="HttpContext.Items"/> key the integration pushes its scope under</param>
-        internal static Scope? TryPeekScopeOrServerScope(HttpContext? context, string key)
+        /// <param name="fallbackToActiveOtelHttpServerScope">When OTel semantics are enabled, should the active HTTP server scope be used.</param>
+        internal static Scope? TryPeekScope(HttpContext? context, string key, bool fallbackToActiveOtelHttpServerScope = true)
         {
-            var scope = TryPeekScope(context, key);
-            if (scope is not null)
+            var scope = ExtractScope(context, key, Peek);
+            if (scope is not null || !fallbackToActiveOtelHttpServerScope)
             {
                 return scope;
             }
 
             var tracer = Tracer.Instance;
-            return tracer.Settings.OtelSemanticsEnabled ? tracer.InternalActiveScope : null;
+            return tracer.Settings.OtelSemanticsEnabled ? HttpSemanticConventions.GetActiveHttpServerScope(tracer) : null;
         }
 
         private static Scope? ExtractScope(HttpContext? context, string key, Func<Stack<Scope>, Scope> getter)

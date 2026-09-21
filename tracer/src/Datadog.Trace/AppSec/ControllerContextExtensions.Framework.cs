@@ -32,7 +32,7 @@ namespace Datadog.Trace.AppSec
                 return;
             }
 
-            var scope = SharedItems.TryPeekScopeOrServerScope(context, peekScopeKey);
+            var scope = SharedItems.TryPeekScope(context, peekScopeKey);
             if (scope == null)
             {
                 return;

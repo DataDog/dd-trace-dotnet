@@ -112,11 +112,18 @@ namespace Datadog.Trace.AspNet
             }
 
             var iastInstance = Iast.Iast.Instance;
-            if (iastInstance.Settings.Enabled && iastInstance.OverheadController.AcquireRequest())
+            var traceContext = scope.Span?.Context?.TraceContext;
+
+            // Note: For transferred requests that already have an existing TraceContext
+            // and an existing overhead-controller slot, short-circuit the AcquireRequest
+            // so we do not leak IAST request slots
+            if (iastInstance.Settings.Enabled
+                && traceContext is not null
+                && (traceContext.IastRequestContext is not null
+                    || iastInstance.OverheadController.AcquireRequest()))
             {
-                var traceContext = scope.Span?.Context?.TraceContext;
-                traceContext?.EnableIastInRequest();
-                traceContext?.IastRequestContext?.AddRequestData(httpRequest);
+                traceContext.EnableIastInRequest();
+                traceContext.IastRequestContext?.AddRequestData(httpRequest);
             }
         }
 

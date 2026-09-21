@@ -99,13 +99,17 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             // OTEL_TRACES_EXPORTER=otlp is what makes the Datadog SDK emit OTLP instead of msgpack.
             // Everything else is left at its default dd-trace-dotnet value.
-            ConfigureOtlpExport(fixture.OtlpSession);
+            fixture.InitializeOtlpTestSession();
+            OtlpSession = fixture.OtlpSession ?? throw new InvalidOperationException("The fixture did not initialize its OTLP test-agent session.");
+            ConfigureOtlpExport(OtlpSession);
 
             Fixture = fixture;
             Fixture.SetOutput(output);
         }
 
         protected IAspNetFixture Fixture { get; }
+
+        protected OtlpTestAgentSession OtlpSession { get; }
 
         protected bool OpenTelemetrySemanticsEnabled { get; }
 
@@ -134,9 +138,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             Fixture.SetOutput(null);
 
             // Clear the session at the end of the test to avoid leaking spans between test cases.
-            if (Fixture.OtlpSession.IsAvailable)
+            if (OtlpSession.IsAvailable)
             {
-                await Fixture.OtlpSession.ClearSessionAsync();
+                await OtlpSession.ClearSessionAsync();
             }
         }
 
@@ -235,7 +239,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         /// </summary>
         private async Task StartApplicationAsync()
         {
-            if (!await Fixture.OtlpSession.CheckAvailabilityAsync(Output))
+            if (!await OtlpSession.CheckAvailabilityAsync(Output))
             {
                 // Don't pay for starting the application under test (which for IIS Express also means
                 // installing into the GAC) for a test that is about to skip.
@@ -246,20 +250,20 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             await WarmUpApplicationAsync();
 
             // Clear the session so the warm-up request is not returned in the next test case.
-            await Fixture.OtlpSession.ClearSessionWhenQuietAsync(Output);
+            await OtlpSession.ClearSessionWhenQuietAsync(Output);
         }
 
         private async Task<JToken> SendRequestAndCollectSpansAsync(string httpMethod, string path, int statusCode, int expectedSpanCount)
         {
             // The IIS integration-test job doesn't filter on RequiresDockerDependency the way the
             // other jobs do, so it would run this test without a test-agent to export OTLP to.
-            Skip.IfNot(Fixture.OtlpSession.IsAvailable, $"The ddapm test-agent is not reachable at {Fixture.OtlpSession.TracesUrl}.");
+            Skip.IfNot(OtlpSession.IsAvailable, $"The ddapm test-agent is not reachable at {OtlpSession.TracesUrl}.");
 
             var names = OtlpFieldNames.For(isJson: false);
 
             // DisposeAsync already clears after every case, but clear again to ensure that
             // spans still in-flight due to a previous failure do not leak into the next test case
-            await Fixture.OtlpSession.ClearSessionAsync();
+            await OtlpSession.ClearSessionAsync();
 
             // Captured before the request is sent, so it is a lower bound for every span the server
             // creates while handling it.
@@ -267,7 +271,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             await SendRequestAsync(httpMethod, path, (HttpStatusCode)statusCode);
 
-            var tracesRequests = await Fixture.OtlpSession.WaitForSpansAsync(expectedSpanCount, testStartTimeUnixNano, names.StartTimeUnixNano);
+            var tracesRequests = await OtlpSession.WaitForSpansAsync(expectedSpanCount, testStartTimeUnixNano, names.StartTimeUnixNano);
             tracesRequests.Should().NotBeNullOrEmpty();
             OtlpTestAgentSession.CountSpans(tracesRequests).Should().Be(expectedSpanCount);
 

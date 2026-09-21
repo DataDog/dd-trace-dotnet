@@ -45,7 +45,16 @@ namespace Datadog.Trace.TestHelpers
         /// whole lifetime -- a token generated per test case would stop matching what the running site
         /// actually sends after the first one.
         /// </summary>
-        public OtlpTestAgentSession OtlpSession { get; } = new();
+        public OtlpTestAgentSession OtlpSession { get; private set; }
+
+        /// <inheritdoc />
+        public void InitializeOtlpTestSession()
+        {
+            lock (_initializationLock)
+            {
+                OtlpSession ??= new OtlpTestAgentSession();
+            }
+        }
 
         /// <inheritdoc />
         public void SetOutput(ITestOutputHelper output)
