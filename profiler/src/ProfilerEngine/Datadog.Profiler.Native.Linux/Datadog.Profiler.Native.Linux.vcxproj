@@ -111,7 +111,6 @@
     <DeployDirectoryBase Condition=" '$(Platform)' == ''">$(TopLevelDeployDirectoryBase)\linux-unknown</DeployDirectoryBase>
   </PropertyGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\dotnet-runtime-coreclr\pal\prebuilt\idl\corprof_i.cpp" />
     <ClCompile Include="CrashReportingLinux.cpp" />
     <ClCompile Include="LinuxStackFramesCollector.cpp" />
     <ClCompile Include="LinuxThreadInfo.cpp" />
