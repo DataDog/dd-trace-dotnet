@@ -515,7 +515,7 @@ HRESULT TracerTokens::WriteBeginMethod(void* rewriterWrapperPtr, mdTypeRef integ
 // endmethod with void return
 HRESULT TracerTokens::WriteEndVoidReturnMemberRef(void* rewriterWrapperPtr, mdTypeRef integrationTypeRef,
                                                       const TypeInfo* currentType, ILInstr** instruction,
-                                                      bool isRuntimeAsync, TypeSignature* declaredReturnArgument)
+                                                      const TypeSignature* declaredRuntimeAsyncReturn)
 {
     auto hr = EnsureBaseCalltargetTokens();
     if (FAILED(hr))
@@ -524,6 +524,8 @@ HRESULT TracerTokens::WriteEndVoidReturnMemberRef(void* rewriterWrapperPtr, mdTy
     }
     ILRewriterWrapper* rewriterWrapper = (ILRewriterWrapper*) rewriterWrapperPtr;
     ModuleMetadata* module_metadata = GetMetadata();
+
+    const bool isRuntimeAsync = declaredRuntimeAsyncReturn != nullptr;
 
     // EndMethod and EndMethodRuntimeAsync have identical signatures here, so they need separate
     // cache slots. Bound by reference, not by value, so the DefineMemberRef below populates
@@ -610,7 +612,7 @@ HRESULT TracerTokens::WriteEndVoidReturnMemberRef(void* rewriterWrapperPtr, mdTy
     ULONG declaredReturnSignatureLength = 0;
     if (isRuntimeAsync)
     {
-        declaredReturnSignatureLength = declaredReturnArgument->GetSignature(declaredReturnSignatureBuffer);
+        declaredReturnSignatureLength = declaredRuntimeAsyncReturn->GetSignature(declaredReturnSignatureBuffer);
     }
 
     // SignatureBuilder rather than the fixed signatureBufferSize array used elsewhere in this file:
@@ -646,17 +648,20 @@ HRESULT TracerTokens::WriteEndVoidReturnMemberRef(void* rewriterWrapperPtr, mdTy
 // endmethod with return type
 HRESULT TracerTokens::WriteEndReturnMemberRef(void* rewriterWrapperPtr, mdTypeRef integrationTypeRef,
                                                   const TypeInfo* currentType, TypeSignature* returnArgument,
-                                                  ILInstr** instruction, bool isRuntimeAsync,
-                                                  TypeSignature* declaredReturnArgument)
+                                                  ILInstr** instruction,
+                                                  const TypeSignature* declaredRuntimeAsyncReturn)
 {
     auto hr = EnsureBaseCalltargetTokens();
     if (FAILED(hr))
     {
         return hr;
     }
+
     ILRewriterWrapper* rewriterWrapper = (ILRewriterWrapper*) rewriterWrapperPtr;
     ModuleMetadata* module_metadata = GetMetadata();
     GetTargetReturnValueTypeRef(returnArgument);
+
+    const bool isRuntimeAsync = declaredRuntimeAsyncReturn != nullptr;
 
     // *** Define base MethodMemberRef for the type
 
@@ -749,7 +754,7 @@ HRESULT TracerTokens::WriteEndReturnMemberRef(void* rewriterWrapperPtr, mdTypeRe
     ULONG declaredReturnSignatureLength = 0;
     if (isRuntimeAsync)
     {
-        declaredReturnSignatureLength = declaredReturnArgument->GetSignature(declaredReturnSignatureBuffer);
+        declaredReturnSignatureLength = declaredRuntimeAsyncReturn->GetSignature(declaredReturnSignatureBuffer);
     }
 
     // SignatureBuilder rather than the fixed signatureBufferSize array: this method spec carries up

@@ -111,11 +111,42 @@ HRESULT TracerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHa
     tracerTokens->SetCorProfilerInfo(m_corProfiler->info_);
     mdToken function_token = caller->id;
     TypeSignature retFuncArg = caller->method_signature.GetReturnValue();
+    // What the signature says, which for a runtime-async method is not what the body returns.
+    // The managed EndMethodRuntimeAsync takes this as a generic argument so that OnMethodEnd is
+    // still bound against the declared Task/ValueTask, as it is for a state-machine async method.
+    TypeSignature declaredRetFuncArg = retFuncArg;
     const bool isRuntimeAsync = IsMiAsync(caller->method_impl_flags);
     IntegrationDefinition* integration_definition = tracerMethodHandler->GetIntegrationDefinition();
     bool is_integration_method =
         integration_definition->target_method.type.assembly.name != tracemethodintegration_assemblyname;
     bool ignoreByRefInstrumentation = !is_integration_method;
+
+    // A .NET 11 runtime-async method does not return its declared Task from the method body: at
+    // `ret` the stack holds the unwrapped value, or nothing at all for a non-generic Task/ValueTask.
+    // So everything downstream that keys off the return type has to use the *effective* type - what
+    // the body actually leaves on the stack - rather than what the signature declares. For any other
+    // method the two are the same, which is what makes this substitution a no-op elsewhere.
+    if (isRuntimeAsync)
+    {
+        TypeSignature effectiveRetFuncArg{};
+        if (!m_corProfiler->call_target_runtime_async_endmethod_available ||
+            FAILED(GetRuntimeAsyncEffectiveReturnType(retFuncArg, module_metadata.metadata_import,
+                                                      effectiveRetFuncArg)))
+        {
+            // Either we are paired with a Datadog.Trace.dll too old to have EndMethodRuntimeAsync, or
+            // the declared return is not one of the four shapes MethodImplAttributes.Async actually applies to.
+            // Decline rather than guess: a wrong guess emits the invalid IL we are avoiding.
+            // Returning S_FALSE means SetILFunctionBody is never called, so ReJIT installs the
+            // original IL and the method runs uninstrumented.
+            Logger::Warn("*** CallTarget_RewriterCallback() skipping method: cannot instrument "
+                         "runtime-async method. token=",
+                         function_token, " caller_name=", caller->type.name, ".", caller->name, "()");
+            return S_FALSE;
+        }
+
+        retFuncArg = effectiveRetFuncArg;
+    }
+
     const auto [retFuncElementType, retTypeFlags] = retFuncArg.GetElementTypeAndFlags();
     bool isVoid = (retTypeFlags & TypeFlagVoid) > 0;
     bool isStatic = !(caller->method_signature.CallingConvention() & IMAGE_CEE_CS_CALLCONV_HASTHIS);
@@ -145,20 +176,6 @@ HRESULT TracerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHa
         "() [IsVoid=", isVoid, ", IsStatic=", isStatic, ", IsRuntimeAsync=", isRuntimeAsync,
         ", IntegrationType=", integration_definition->integration_type.name, ", Arguments=", numArgs,
         "]");
-
-    // .NET 11 runtime-async methods do not return their declared Task from the method body: at `ret`
-    // the stack holds the unwrapped value (or nothing, for a non-generic Task/ValueTask). Rewriting
-    // them as if they returned the declared type emits a `stloc` against the wrong type - or against
-    // an empty stack - and the JIT raises InvalidProgramException when the method is first called.
-    // Until the effective-return-type support lands, leave these methods alone: returning S_FALSE
-    // means we never call SetILFunctionBody, so ReJIT installs the original IL.
-    if (isRuntimeAsync)
-    {
-        Logger::Warn("*** CallTarget_RewriterCallback() skipping method: .NET 11 runtime-async methods "
-                     "(MethodImplAttributes.Async) are not supported by this instrumentation. token=",
-                     function_token, " caller_name=", caller->type.name, ".", caller->name, "()");
-        return S_FALSE;
-    }
 
     // First we check if the managed profiler has not been loaded yet
     if (!m_corProfiler->ProfilerAssemblyIsLoadedIntoAppDomain(module_metadata.app_domain_id))
@@ -206,7 +223,10 @@ HRESULT TracerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHa
     mdToken exceptionToken = mdTokenNil;
     mdToken callTargetReturnToken = mdTokenNil;
     ILInstr* firstInstruction = nullptr;
-    auto returnType = caller->method_signature.GetReturnValue();
+    // Must be the same value isVoid was derived from. Re-reading the declared return here would
+    // skip the runtime-async substitution above, leaving the local signature and the EndMethod
+    // methodspec disagreeing about the return type - which shows up as a stloc type mismatch.
+    auto returnType = retFuncArg;
 
     tracerTokens->ModifyLocalSigAndInitialize(
         &reWriterWrapper, &returnType, &methodArguments, caller, &callTargetStateIndex, &exceptionIndex, &callTargetReturnIndex, &staticValueTypeIndex,
@@ -629,16 +649,21 @@ HRESULT TracerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHa
         reWriterWrapper.LoadLocal(callTargetStateIndex);
     }
 
+    // Non-null only for a runtime-async method, where it selects EndMethodRuntimeAsync and supplies
+    // TDeclaredReturn. retFuncArg has been substituted for the effective type by this point, so the
+    // declared one has to be passed separately.
+    const TypeSignature* declaredRuntimeAsyncReturn = isRuntimeAsync ? &declaredRetFuncArg : nullptr;
+
     ILInstr* endMethodCallInstr;
     if (isVoid)
     {
         tracerTokens->WriteEndVoidReturnMemberRef(&reWriterWrapper, integration_type_ref, &caller->type,
-                                                  &endMethodCallInstr);
+                                                  &endMethodCallInstr, declaredRuntimeAsyncReturn);
     }
     else
     {
         tracerTokens->WriteEndReturnMemberRef(&reWriterWrapper, integration_type_ref, &caller->type, &retFuncArg,
-                                              &endMethodCallInstr);
+                                              &endMethodCallInstr, declaredRuntimeAsyncReturn);
     }
     reWriterWrapper.StLocal(callTargetReturnIndex);
 
