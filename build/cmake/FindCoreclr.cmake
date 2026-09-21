@@ -1,5 +1,10 @@
 add_library(coreclr OBJECT
     ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-lib/dotnet-runtime/coreclr/pal/prebuilt/idl/corprof_i.cpp
+    # Provides minipal_guid_equals (see the file for why we don't compile the vendored
+    # minipal/guid.c directly). Needed because pal_mstypes.h's <minipal/guid.h> is now GUID's
+    # only definition on non-Windows, and its operator==/!= for GUID call this function - which
+    # every REFIID comparison (e.g. QueryInterface) goes through.
+    ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-src/minipal_guid.cpp
 )
 
 target_include_directories(coreclr PUBLIC

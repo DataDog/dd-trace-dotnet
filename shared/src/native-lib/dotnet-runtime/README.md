@@ -77,3 +77,15 @@ built-in macros — our build defines them itself via
 `shared/src/native-lib/dotnet-runtime/host_arch.h`, forced-included on every native project that
 uses these headers (see `build/cmake/FindCoreclr.cmake` and the `HOST_ARCH_HEADER`/
 `ForcedIncludeFiles` properties in the Windows vcxprojs).
+
+We also don't compile `minipal/guid.c` itself, even though we vendor it. On non-Windows, GUID
+equality (`operator==`/`!=`, used by every `REFIID` comparison such as `QueryInterface`) is
+implemented in `minipal/guid.h` via `minipal_guid_equals`, which needs a definition from
+somewhere. `guid.c` provides one, but in the same translation unit it also defines
+`minipal_guid_v4_create`, which calls into `minipal/random.c` for RNG — and `random.c` needs
+upstream's generated `minipalconfig.h` (`HAVE_GETRANDOM`/`HAVE_ARC4RANDOM_BUF`/`HAVE_BCRYPT_H`/...
+capability probing via CMake `configure_file`) that our simplified single-`CMakeLists.txt` build
+doesn't produce. We never generate GUIDs, only compare ones the CLR profiling APIs give us, so
+`shared/src/native-src/minipal_guid.cpp` provides just `minipal_guid_equals` ourselves (identical
+to `guid.c`'s own one-line `memcmp` implementation) and is compiled as part of the `coreclr`
+CMake target (`build/cmake/FindCoreclr.cmake`) instead.
