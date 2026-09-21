@@ -72,6 +72,7 @@ schedules:
 # Global variables
 variables:
   buildConfiguration: Release
+  ContinuousIntegrationBuild: true
   dotnetCoreSdkLatestVersion: 10.0.100
   # This is required until we're out of rc.
   # After GA we can do a find and replace and get rid of this

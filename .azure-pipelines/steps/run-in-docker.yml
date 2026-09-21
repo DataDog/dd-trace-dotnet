@@ -135,7 +135,7 @@ steps:
         --env SMOKETESTOS \
         --env SMOKETESTOSVERSION \
         --env PUBLISHFRAMEWORK \
-        --env TF_BUILD \
+        --env ContinuousIntegrationBuild=true \
         ${{ parameters.extraArgs }} \
         dd-trace-dotnet/${{ parameters.baseImage }}-${{ parameters.target }}:$sdkVersion \
         dotnet /build/bin/Debug/_build.dll ${{ parameters.command }}

@@ -376,7 +376,7 @@ services:
       - DD_CLR_ENABLE_NGEN=${DD_CLR_ENABLE_NGEN:-1}
       - IncludeMinorPackageVersions=${IncludeMinorPackageVersions:-false}
       - enable_crash_dumps=${enable_crash_dumps:-true}
-      - TF_BUILD
+      - ContinuousIntegrationBuild=${TF_BUILD:-false}
       - DD_LOGGER_DD_API_KEY
       - DD_LOGGER_DD_TRACE_LOG_DIRECTORY=/project/artifacts/build_data/infra_logs
       - DD_LOGGER_DD_SERVICE
@@ -433,7 +433,7 @@ services:
       - TestAllPackageVersions=${TestAllPackageVersions:-true}
       - IncludeMinorPackageVersions=${IncludeMinorPackageVersions:-false}
       - enable_crash_dumps=${enable_crash_dumps:-true}
-      - TF_BUILD
+      - ContinuousIntegrationBuild=${TF_BUILD:-false}
       - Verify_DisableClipboard=true
       - DiffEngine_Disabled=true
       - IncludeAllTestFrameworks
@@ -512,7 +512,7 @@ services:
       - CodeCoverageEnabled=${CodeCoverageEnabled:-false}
       - DD_CLR_ENABLE_NGEN=${DD_CLR_ENABLE_NGEN:-1}
       - enable_crash_dumps=${enable_crash_dumps:-true}
-      - TF_BUILD
+      - ContinuousIntegrationBuild=${TF_BUILD:-false}
       - Verify_DisableClipboard=true
       - DiffEngine_Disabled=true
       - TESTCONTAINERS_RYUK_DISABLED
@@ -569,7 +569,7 @@ services:
       - TestAllPackageVersions=${TestAllPackageVersions:-true}
       - IncludeMinorPackageVersions=${IncludeMinorPackageVersions:-false}
       - enable_crash_dumps=${enable_crash_dumps:-true}
-      - TF_BUILD
+      - ContinuousIntegrationBuild=${TF_BUILD:-false}
       - Verify_DisableClipboard=true
       - DiffEngine_Disabled=true
       - TESTCONTAINERS_RYUK_DISABLED
@@ -716,7 +716,7 @@ services:
       - TestAllPackageVersions=${TestAllPackageVersions:-true}
       - IncludeMinorPackageVersions=${IncludeMinorPackageVersions:-false}
       - enable_crash_dumps=${enable_crash_dumps:-true}
-      - TF_BUILD
+      - ContinuousIntegrationBuild=${TF_BUILD:-false}
       - Verify_DisableClipboard=true
       - DiffEngine_Disabled=true
       - TESTCONTAINERS_RYUK_DISABLED
@@ -818,7 +818,7 @@ services:
       - baseImage=${baseImage:-debian}
       - targetplatform=${targetplatform:-x64}
       - enable_crash_dumps=${enable_crash_dumps:-true}
-      - TF_BUILD
+      - ContinuousIntegrationBuild=${TF_BUILD:-false}
       - Verify_DisableClipboard=true
       - DiffEngine_Disabled=true
       - TESTCONTAINERS_RYUK_DISABLED

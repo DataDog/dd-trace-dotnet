@@ -29,6 +29,7 @@ variables:
   DOTNET_PACKAGE_VERSION:
     description: "Used by the package stage when triggered manually"
   REPO_NOTIFICATION_CHANNEL: "#apm-dotnet-bots"
+  ContinuousIntegrationBuild: "true"
   # GitLab org for internal cross-repo references - parameterized for org migration resilience
   GITLAB_GROUP: DataDog
   # GitLab group path for OSS projects in CI - may differ from GITLAB_GROUP after org split
@@ -184,6 +185,7 @@ build:
         -v "$(Get-Location):c:\mnt" `
         -e CI_JOB_ID=${CI_JOB_ID} `
         -e ENABLE_MULTIPROCESSOR_COMPILATION=true `
+        -e ContinuousIntegrationBuild=true `
         -e CL_MPCount=16 `
         -e WINDOWS_BUILDER=true `
         -e AWS_NETWORKING=true `
