@@ -56,6 +56,10 @@ const auto GetTypeFromHandleMethodName = WStr("GetTypeFromHandle");
 const auto RuntimeTypeHandleTypeName = WStr("System.RuntimeTypeHandle");
 const auto RuntimeMethodHandleTypeName = WStr("System.RuntimeMethodHandle");
 const shared::WSTRING IAsyncStateMachineName = WStr("System.Runtime.CompilerServices.IAsyncStateMachine");
+const shared::WSTRING SystemThreadingTasksTask = WStr("System.Threading.Tasks.Task");
+const shared::WSTRING SystemThreadingTasksTaskGeneric = WStr("System.Threading.Tasks.Task`1");
+const shared::WSTRING SystemThreadingTasksValueTask = WStr("System.Threading.Tasks.ValueTask");
+const shared::WSTRING SystemThreadingTasksValueTaskGeneric = WStr("System.Threading.Tasks.ValueTask`1");
 
 
 template <typename T>
@@ -672,6 +676,14 @@ HRESULT ResolveType(ICorProfilerInfo4* info, const ComPtr<IMetaDataImport2>& met
                     mdTypeRef typeRefToken, mdTypeDef& resolvedTypeDefToken,
                     ComPtr<IMetaDataImport2>& resolvedMetadataImport);
 shared::WSTRING GetStringValueFromBlob(PCCOR_SIGNATURE& signature);
+
+// Signature blob readers. Each advances pbCur on success and returns false if pbEnd is reached.
+bool ParseByte(PCCOR_SIGNATURE& pbCur, PCCOR_SIGNATURE pbEnd, unsigned char* pbOut);
+bool ParseNumber(PCCOR_SIGNATURE& pbCur, PCCOR_SIGNATURE pbEnd, unsigned* pOut);
+
+// Advances pbCur past a single Type in a signature blob, per ECMA-335 II.23.2.12.
+// Returns false for the type forms we don't support (see the comment on the definition).
+bool ParseType(PCCOR_SIGNATURE& pbCur, PCCOR_SIGNATURE pbEnd);
 
 void LogManagedProfilerAssemblyDetails();
 

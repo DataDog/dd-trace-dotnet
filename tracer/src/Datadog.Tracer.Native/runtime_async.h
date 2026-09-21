@@ -3,6 +3,8 @@
 
 #include <corhlpr.h>
 
+#include "clr_helpers.h"
+
 namespace trace
 {
 
@@ -23,6 +25,24 @@ inline bool IsMiAsync(DWORD methodImplFlags)
 {
     return (methodImplFlags & miAsync) != 0;
 }
+
+// Walks a declared return TypeSignature looking for Task-shaped syntax, without resolving any
+// names. On success `openTypeToken` is the TypeDef/TypeRef of the (possibly generic) return type,
+// and when `isGenericInst` is true with exactly one generic argument, `typeArg` is a slice of the
+// same signature blob covering that argument.
+//
+// Returns E_FAIL for every other shape, including generic instantiations with an argument count
+// other than one. Public for testing.
+HRESULT ParseTaskLikeReturnShape(const TypeSignature& declared, mdToken& openTypeToken, bool& isGenericInst,
+                                 bool& isValueTypeShape, TypeSignature& typeArg);
+
+// Maps a runtime-async method's declared return type to the type its body actually leaves on the
+// evaluation stack at `ret`: void for Task/ValueTask, T for Task<T>/ValueTask<T>.
+//
+// Returns E_FAIL when the declared return is not one of those four. MethodImplAttributes.Async can
+// be set on a method it has no effect on, and we must not guess unknown types.
+HRESULT GetRuntimeAsyncEffectiveReturnType(const TypeSignature& declared,
+                                           const ComPtr<IMetaDataImport2>& metadata_import, TypeSignature& effective);
 
 } // namespace trace
 
