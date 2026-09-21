@@ -133,7 +133,7 @@
   </ItemGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
-      <PreprocessorDefinitions>LINUX;PLATFORM_UNIX;PAL_STDCPP_COMPAT;BIT64;UNICODE;HOST_64BIT;</PreprocessorDefinitions>
+      <PreprocessorDefinitions>LINUX;PLATFORM_UNIX;BIT64;UNICODE;HOST_64BIT;</PreprocessorDefinitions>
       <PreprocessorDefinitions>_SILENCE_STDEXT_ARR_ITERS_DEPRECATION_WARNING;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalOptions>-fms-extensions   -stdlib=libc++ </AdditionalOptions>
       <CppLanguageStandard>c++17</CppLanguageStandard>
@@ -149,7 +149,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
-      <PreprocessorDefinitions>LINUX;PLATFORM_UNIX;PAL_STDCPP_COMPAT;BIT64;UNICODE;HOST_64BIT;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>LINUX;PLATFORM_UNIX;BIT64;UNICODE;HOST_64BIT;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions>_SILENCE_STDEXT_ARR_ITERS_DEPRECATION_WARNING;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalOptions>-fms-extensions   -stdlib=libc++ %(AdditionalOptions)</AdditionalOptions>
       <CppLanguageStandard>c++17</CppLanguageStandard>
@@ -169,14 +169,14 @@
     </Link>
     <ClCompile>
       <AdditionalOptions>-fms-extensions   -stdlib=libc++ </AdditionalOptions>
-      <PreprocessorDefinitions>LINUX;PLATFORM_UNIX;PAL_STDCPP_COMPAT;UNICODE;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>LINUX;PLATFORM_UNIX;UNICODE;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions>_SILENCE_STDEXT_ARR_ITERS_DEPRECATION_WARNING;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <CppLanguageStandard>c++17</CppLanguageStandard>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x86'">
     <ClCompile>
-      <PreprocessorDefinitions>LINUX;PLATFORM_UNIX;PAL_STDCPP_COMPAT;UNICODE;</PreprocessorDefinitions>
+      <PreprocessorDefinitions>LINUX;PLATFORM_UNIX;UNICODE;</PreprocessorDefinitions>
       <PreprocessorDefinitions>_SILENCE_STDEXT_ARR_ITERS_DEPRECATION_WARNING;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalOptions>-fms-extensions   -stdlib=libc++ %(AdditionalOptions)</AdditionalOptions>
       <CppLanguageStandard>c++17</CppLanguageStandard>

@@ -8,7 +8,7 @@ set(CMAKE_CXX_STANDARD 20)
 
 # Sets compiler options
 add_compile_options(-fPIC -fms-extensions)
-add_compile_options(-DPAL_STDCPP_COMPAT -DPLATFORM_UNIX -DUNICODE)
+add_compile_options(-DPLATFORM_UNIX -DUNICODE)
 add_compile_options(-Wno-invalid-noreturn -Wno-macro-redefined -Wc++20-extensions -DDD_TEST)
 
 target_compile_options(Datadog.Profiler.Native.static PRIVATE -DDD_TEST)
