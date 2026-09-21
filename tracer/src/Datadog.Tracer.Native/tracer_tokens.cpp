@@ -23,6 +23,7 @@ static const shared::WSTRING managed_profiler_calltarget_refstruct = WStr("Datad
 
 static const shared::WSTRING managed_profiler_calltarget_beginmethod_name = WStr("BeginMethod");
 static const shared::WSTRING managed_profiler_calltarget_endmethod_name = WStr("EndMethod");
+static const shared::WSTRING managed_profiler_calltarget_endmethod_runtimeasync_name = WStr("EndMethodRuntimeAsync");
 static const shared::WSTRING managed_profiler_calltarget_logexception_name = WStr("LogException");
 static const shared::WSTRING managed_profiler_calltarget_createrefstruct_name = WStr("CreateRefStruct");
 
@@ -513,7 +514,8 @@ HRESULT TracerTokens::WriteBeginMethod(void* rewriterWrapperPtr, mdTypeRef integ
 
 // endmethod with void return
 HRESULT TracerTokens::WriteEndVoidReturnMemberRef(void* rewriterWrapperPtr, mdTypeRef integrationTypeRef,
-                                                      const TypeInfo* currentType, ILInstr** instruction)
+                                                      const TypeInfo* currentType, ILInstr** instruction,
+                                                      bool isRuntimeAsync, TypeSignature* declaredReturnArgument)
 {
     auto hr = EnsureBaseCalltargetTokens();
     if (FAILED(hr))
@@ -522,6 +524,12 @@ HRESULT TracerTokens::WriteEndVoidReturnMemberRef(void* rewriterWrapperPtr, mdTy
     }
     ILRewriterWrapper* rewriterWrapper = (ILRewriterWrapper*) rewriterWrapperPtr;
     ModuleMetadata* module_metadata = GetMetadata();
+
+    // The two overloads have identical signatures, so they need separate cache slots.
+    mdMemberRef& endVoidMemberRef = isRuntimeAsync ? endVoidRuntimeAsyncMemberRef : this->endVoidMemberRef;
+    const shared::WSTRING& endMethodName =
+        isRuntimeAsync ? managed_profiler_calltarget_endmethod_runtimeasync_name
+                       : managed_profiler_calltarget_endmethod_name;
 
     if (endVoidMemberRef == mdMemberRefNil)
     {
@@ -543,8 +551,12 @@ HRESULT TracerTokens::WriteEndVoidReturnMemberRef(void* rewriterWrapperPtr, mdTy
         COR_SIGNATURE signature[signatureBufferSize];
         unsigned offset = 0;
 
+        // EndMethodRuntimeAsync takes an extra generic parameter, TDeclaredReturn, carrying the
+        // Task/ValueTask the method declares. It does not appear in the signature - the managed
+        // handler uses it only to bind OnMethodEnd against the declared type, so that an
+        // integration sees the same shape whether or not the target is runtime-async.
         signature[offset++] = IMAGE_CEE_CS_CALLCONV_GENERIC;
-        signature[offset++] = 0x02;
+        signature[offset++] = isRuntimeAsync ? 0x03 : 0x02;
         signature[offset++] = 0x03;
 
         signature[offset++] = ELEMENT_TYPE_VALUETYPE;
@@ -567,9 +579,8 @@ HRESULT TracerTokens::WriteEndVoidReturnMemberRef(void* rewriterWrapperPtr, mdTy
         memcpy(&signature[offset], &callTargetStateBuffer, callTargetStateSize);
         offset += callTargetStateSize;
 
-        auto hr = module_metadata->metadata_emit->DefineMemberRef(callTargetTypeRef,
-                                                                  managed_profiler_calltarget_endmethod_name.data(),
-                                                                  signature, signatureLength, &endVoidMemberRef);
+        auto hr = module_metadata->metadata_emit->DefineMemberRef(callTargetTypeRef, endMethodName.data(), signature,
+                                                                  signatureLength, &endVoidMemberRef);
         if (FAILED(hr))
         {
             Logger::Warn("Wrapper endVoidMemberRef could not be defined.");
@@ -593,11 +604,18 @@ HRESULT TracerTokens::WriteEndVoidReturnMemberRef(void* rewriterWrapperPtr, mdTy
     unsigned currentTypeBuffer;
     ULONG currentTypeSize = CorSigCompressToken(currentTypeRef, &currentTypeBuffer);
 
-    auto signatureLength = 4 + integrationTypeSize + currentTypeSize;
+    PCCOR_SIGNATURE declaredReturnSignatureBuffer = nullptr;
+    ULONG declaredReturnSignatureLength = 0;
+    if (isRuntimeAsync)
+    {
+        declaredReturnSignatureLength = declaredReturnArgument->GetSignature(declaredReturnSignatureBuffer);
+    }
+
+    auto signatureLength = 4 + integrationTypeSize + currentTypeSize + declaredReturnSignatureLength;
     COR_SIGNATURE signature[signatureBufferSize];
     unsigned offset = 0;
     signature[offset++] = IMAGE_CEE_CS_CALLCONV_GENERICINST;
-    signature[offset++] = 0x02;
+    signature[offset++] = isRuntimeAsync ? 0x03 : 0x02;
 
     signature[offset++] = ELEMENT_TYPE_CLASS;
     memcpy(&signature[offset], &integrationTypeBuffer, integrationTypeSize);
@@ -614,6 +632,12 @@ HRESULT TracerTokens::WriteEndVoidReturnMemberRef(void* rewriterWrapperPtr, mdTy
     memcpy(&signature[offset], &currentTypeBuffer, currentTypeSize);
     offset += currentTypeSize;
 
+    if (isRuntimeAsync)
+    {
+        memcpy(&signature[offset], declaredReturnSignatureBuffer, declaredReturnSignatureLength);
+        offset += declaredReturnSignatureLength;
+    }
+
     hr = module_metadata->metadata_emit->DefineMethodSpec(endVoidMemberRef, signature, signatureLength,
                                                           &endVoidMethodSpec);
     if (FAILED(hr))
@@ -629,7 +653,8 @@ HRESULT TracerTokens::WriteEndVoidReturnMemberRef(void* rewriterWrapperPtr, mdTy
 // endmethod with return type
 HRESULT TracerTokens::WriteEndReturnMemberRef(void* rewriterWrapperPtr, mdTypeRef integrationTypeRef,
                                                   const TypeInfo* currentType, TypeSignature* returnArgument,
-                                                  ILInstr** instruction)
+                                                  ILInstr** instruction, bool isRuntimeAsync,
+                                                  TypeSignature* declaredReturnArgument)
 {
     auto hr = EnsureBaseCalltargetTokens();
     if (FAILED(hr))
@@ -662,8 +687,10 @@ HRESULT TracerTokens::WriteEndReturnMemberRef(void* rewriterWrapperPtr, mdTypeRe
     COR_SIGNATURE signature[signatureBufferSize];
     unsigned offset = 0;
 
+    // As in the void case, EndMethodRuntimeAsync takes an extra TDeclaredReturn generic parameter
+    // that does not appear in the signature; see the comment there.
     signature[offset++] = IMAGE_CEE_CS_CALLCONV_GENERIC;
-    signature[offset++] = 0x03;
+    signature[offset++] = isRuntimeAsync ? 0x04 : 0x03;
     signature[offset++] = 0x04;
 
     signature[offset++] = ELEMENT_TYPE_GENERICINST;
@@ -692,8 +719,11 @@ HRESULT TracerTokens::WriteEndReturnMemberRef(void* rewriterWrapperPtr, mdTypeRe
     memcpy(&signature[offset], &callTargetStateBuffer, callTargetStateSize);
     offset += callTargetStateSize;
 
-    hr = module_metadata->metadata_emit->DefineMemberRef(callTargetTypeRef,
-                                                         managed_profiler_calltarget_endmethod_name.data(), signature,
+    const shared::WSTRING& endMethodName =
+        isRuntimeAsync ? managed_profiler_calltarget_endmethod_runtimeasync_name
+                       : managed_profiler_calltarget_endmethod_name;
+
+    hr = module_metadata->metadata_emit->DefineMemberRef(callTargetTypeRef, endMethodName.data(), signature,
                                                          signatureLength, &endMethodMemberRef);
     if (FAILED(hr))
     {
@@ -722,11 +752,19 @@ HRESULT TracerTokens::WriteEndReturnMemberRef(void* rewriterWrapperPtr, mdTypeRe
     PCCOR_SIGNATURE returnSignatureBuffer;
     auto returnSignatureLength = returnArgument->GetSignature(returnSignatureBuffer);
 
-    signatureLength = 4 + integrationTypeSize + currentTypeSize + returnSignatureLength;
+    PCCOR_SIGNATURE declaredReturnSignatureBuffer = nullptr;
+    ULONG declaredReturnSignatureLength = 0;
+    if (isRuntimeAsync)
+    {
+        declaredReturnSignatureLength = declaredReturnArgument->GetSignature(declaredReturnSignatureBuffer);
+    }
+
+    signatureLength =
+        4 + integrationTypeSize + currentTypeSize + returnSignatureLength + declaredReturnSignatureLength;
     offset = 0;
 
     signature[offset++] = IMAGE_CEE_CS_CALLCONV_GENERICINST;
-    signature[offset++] = 0x03;
+    signature[offset++] = isRuntimeAsync ? 0x04 : 0x03;
 
     signature[offset++] = ELEMENT_TYPE_CLASS;
     memcpy(&signature[offset], &integrationTypeBuffer, integrationTypeSize);
@@ -745,6 +783,12 @@ HRESULT TracerTokens::WriteEndReturnMemberRef(void* rewriterWrapperPtr, mdTypeRe
 
     memcpy(&signature[offset], returnSignatureBuffer, returnSignatureLength);
     offset += returnSignatureLength;
+
+    if (isRuntimeAsync)
+    {
+        memcpy(&signature[offset], declaredReturnSignatureBuffer, declaredReturnSignatureLength);
+        offset += declaredReturnSignatureLength;
+    }
 
     hr = module_metadata->metadata_emit->DefineMethodSpec(endMethodMemberRef, signature, signatureLength,
                                                           &endMethodSpec);
