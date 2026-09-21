@@ -23,7 +23,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions;
     MethodName = "RunAsync",
     ReturnTypeName = "System.Threading.Tasks.Task`1[System.Object]",
     ParameterTypeNames = ["Microsoft.DurableTask.TaskOrchestrationContext", ClrNames.Object],
-    MinimumVersion = "1.12.0",
+    MinimumVersion = "1.13.0",
     MaximumVersion = "1.*.*",
     IntegrationName = AzureFunctionsDurableCommon.IntegrationName)]
 [Browsable(false)]

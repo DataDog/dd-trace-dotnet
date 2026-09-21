@@ -62,8 +62,9 @@ public class AzureFunctionsDurableTriggerTests : AzureFunctionsTests
     private static int ExpectedFuncKillExitCode
         => EnvironmentTools.IsWindows() ? -1 : 137;
 
-    [SkippableFact]
-    public async Task OrchestrationActivityEntity_SubmitsTrace()
+    [SkippableTheory]
+    [MemberData(nameof(PackageVersions.AzureFunctionsDurable), MemberType = typeof(PackageVersions))]
+    public async Task OrchestrationActivityEntity_SubmitsTrace(string packageVersion)
     {
         Skip.If(EnvironmentHelper.IsAlpine(), "Azure Functions Core Tools are not installed in the Alpine integration test image.");
 
@@ -74,7 +75,8 @@ public class AzureFunctionsDurableTriggerTests : AzureFunctionsTests
         using (await RunAzureFunctionAndWaitForExit(
                    agent,
                    seedAsync: SeedViaHttpAsync,
-                   expectedExitCode: ExpectedFuncKillExitCode))
+                   expectedExitCode: ExpectedFuncKillExitCode,
+                   packageVersion: packageVersion))
         {
             var spans = await WaitForDurableSpansAsync(agent);
 
