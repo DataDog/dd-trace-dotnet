@@ -490,10 +490,10 @@ namespace UpdateVendors
                 version: "11.0.0-rc.1.26425.128",
                 downloadUrl: "https://github.com/dotnet/runtime/archive/refs/tags/v11.0.0-rc.1.26425.128.zip",
                 pathToSrc: new[] { "runtime-11.0.0-rc.1.26425.128", "src", "native", "minipal" },
-                // No local patches needed - this is a sibling of coreclr/ purely so pal.h's unconditional
-                // #include <minipal/utils.h> (and pal_mstypes.h's <minipal/guid.h>) resolve. See
+                // This is a sibling of coreclr/ purely so pal.h's unconditional #include
+                // <minipal/utils.h> (and pal_mstypes.h's <minipal/guid.h>) resolve. See
                 // shared/src/native-lib/dotnet-runtime/README.md.
-                transform: _ => { },
+                transform: PatchMinipalFile,
                 relativePathToVendorDirectoryOverride: (RelativePath) "shared/src/native-lib/dotnet-runtime",
                 isNuGetPackage: false);
         }
@@ -1309,6 +1309,29 @@ namespace UpdateVendors
                             "#ifndef SOS_INCLUDE\n\n#include \"utilcode.h\"\n#include \"corhlpr.h\"\n#include <stdlib.h>\n\n#endif // !SOS_INCLUDE",
                             "#ifndef SOS_INCLUDE\n\n#ifdef _BLD_CLR\n#include \"utilcode.h\"\n#endif\n#include \"corhlpr.h\"\n#include <stdlib.h>\n\n#endif // !SOS_INCLUDE",
                             "restoring the #ifdef _BLD_CLR guard around #include \"utilcode.h\" that upstream dropped"));
+                    break;
+            }
+        }
+
+        // Local patches applied on top of the pristine upstream minipal sources. Keep this in sync
+        // with shared/src/native-lib/dotnet-runtime/README.md.
+        private static void PatchMinipalFile(string filePath)
+        {
+            switch (Path.GetFileName(filePath).ToLowerInvariant())
+            {
+                case "guid.h":
+                    RewriteFileWithTransform(filePath, content =>
+                        // The non-Windows GUID typedef here never sets GUID_DEFINED (unlike Windows'
+                        // own guiddef.h, and unlike the v7 PAL's pal_mstypes.h, which defined GUID
+                        // itself and set this macro). Our shared/src/native-src/dd_guid.h guards its
+                        // own struct GUID definition on "#if !defined(GUID_DEFINED)"; without this,
+                        // that guard never trips and dd_guid.h's struct GUID collides with this typedef.
+                        ReplaceOrThrow(
+                            filePath,
+                            content,
+                            "} GUID;\n#endif // _WIN32",
+                            "} GUID;\n#define GUID_DEFINED\n#endif // _WIN32",
+                            "defining GUID_DEFINED after the non-Windows GUID typedef, matching guiddef.h's own convention"));
                     break;
             }
         }

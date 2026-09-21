@@ -38,10 +38,16 @@ in `build/cmake/FindCoreclr.cmake` and the Windows vcxprojs' `LIB_INCLUDES`/`Add
 
 ## Local patches
 
-Applied by `PatchCoreClrFile` in `VendoredDependency.cs` on every refresh, each guarded by
-`ReplaceOrThrow` so a patch whose anchor text has moved upstream fails the vendoring run loudly
-instead of silently no-op'ing:
+Applied by `PatchCoreClrFile` (coreclr) / `PatchMinipalFile` (minipal) in `VendoredDependency.cs`
+on every refresh, each guarded by `ReplaceOrThrow` so a patch whose anchor text has moved upstream
+fails the vendoring run loudly instead of silently no-op'ing:
 
+- **`minipal/guid.h`** — adds `#define GUID_DEFINED` after the non-Windows `GUID` typedef.
+  Upstream never sets this macro there (unlike Windows' own `guiddef.h`, and unlike the v7 PAL's
+  `pal_mstypes.h`, which defined `GUID` itself and set it). Our
+  `shared/src/native-src/dd_guid.h` guards its own `struct GUID` definition on
+  `#if !defined(GUID_DEFINED)`; without this patch that guard never trips and collides with this
+  typedef (`error: definition of type 'GUID' conflicts with typedef of the same name`).
 - **`inc/corhlpr.cpp`** — restores `#ifdef _BLD_CLR` around `#include "utilcode.h"`. Upstream
   dropped this guard; without it, `utilcode.h` transitively pulls in ~15 headers we don't vendor
   (`dn_xxhash.h`, `cdacdata.h`, `crsttypes_generated.h`, `<minipal/*>` beyond what we vendor,

@@ -23,6 +23,7 @@ typedef struct minipal_guid__
     uint16_t Data3;
     uint8_t  Data4[8];
 } GUID;
+#define GUID_DEFINED
 #endif // _WIN32
 
 /**
