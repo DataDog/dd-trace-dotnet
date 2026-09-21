@@ -915,6 +915,13 @@ void ILRewriter::SortEHClauses(EHClause* pEH, unsigned nEH)
     // We compute a nesting depth for each clause: the number of other clauses whose
     // try or handler region encloses this clause's try region. Then we sort by
     // depth descending so that the most deeply nested clauses appear first.
+    //
+    // Note on COR_ILEXCEPTION_CLAUSE_SAMETRY (.NET 11+): this comparator never looks
+    // at m_Flags, so it is agnostic to that bit. It doesn't need to be: a SAMETRY
+    // clause has, by definition, the exact same try region as its predecessor, so it
+    // always gets the same depth and the same try-begin offset as that predecessor and
+    // falls through to the original-index tiebreaker below -- the same mechanism that
+    // already keeps multiple catch/filter clauses for one try block in compiler order.
 
     std::unique_ptr<unsigned[]> depth(new unsigned[nEH]());  // zero-initialized
 

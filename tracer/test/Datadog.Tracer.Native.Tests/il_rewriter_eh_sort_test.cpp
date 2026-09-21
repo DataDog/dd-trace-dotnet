@@ -505,6 +505,62 @@ TEST(ILRewriterEHSortTest, FilterAndTypedCatchPreservesOrder)
 }
 
 // ============================================================================
+// Test: COR_ILEXCEPTION_CLAUSE_SAMETRY (.NET 11+) -- order and flags preserved
+//
+// SAMETRY marks a clause as sharing its predecessor's try region; it is decoded
+// as an ordinary flag bit (see corhlpr.cpp's SectEH_EHClause), so TryOffset/
+// TryLength remain fully populated per clause. The sort never inspects m_Flags,
+// so a SAMETRY group -- having identical depth and try-begin offset -- must fall
+// through to the original-index tiebreaker like any other same-try group. This
+// locks that in and confirms Flags survive the reorder unchanged.
+// ============================================================================
+TEST(ILRewriterEHSortTest, SameTryFlagPreservesOrderAndFlags)
+{
+    auto* instrs = MakeInstrChain({10, 50, 55, 60, 65, 70, 75, 80, 85});
+    const size_t instrCount = 9;
+
+    EHClause clauses[3];
+    memset(clauses, 0, sizeof(clauses));
+
+    // catch (ArgumentNullException) -- try [10,50), handler [50,55). First clause
+    // for this try region, so it does not carry SAMETRY.
+    clauses[0].m_Flags = COR_ILEXCEPTION_CLAUSE_NONE;
+    clauses[0].m_pTryBegin = FindInstr(instrs, instrCount, 10);
+    clauses[0].m_pTryEnd = FindInstr(instrs, instrCount, 50);
+    clauses[0].m_pHandlerBegin = FindInstr(instrs, instrCount, 50);
+    clauses[0].m_pHandlerEnd = FindInstr(instrs, instrCount, 55); // m_pNext = 60
+
+    // catch (InvalidOperationException) -- same try [10,50), handler [60,65). Shares
+    // the try region with the clause immediately before it, so it carries SAMETRY.
+    clauses[1].m_Flags = COR_ILEXCEPTION_CLAUSE_SAMETRY;
+    clauses[1].m_pTryBegin = FindInstr(instrs, instrCount, 10);
+    clauses[1].m_pTryEnd = FindInstr(instrs, instrCount, 50);
+    clauses[1].m_pHandlerBegin = FindInstr(instrs, instrCount, 60);
+    clauses[1].m_pHandlerEnd = FindInstr(instrs, instrCount, 65); // m_pNext = 70
+
+    // catch (Exception) -- same try [10,50), handler [70,75). Also SAMETRY.
+    clauses[2].m_Flags = COR_ILEXCEPTION_CLAUSE_SAMETRY;
+    clauses[2].m_pTryBegin = FindInstr(instrs, instrCount, 10);
+    clauses[2].m_pTryEnd = FindInstr(instrs, instrCount, 50);
+    clauses[2].m_pHandlerBegin = FindInstr(instrs, instrCount, 70);
+    clauses[2].m_pHandlerEnd = FindInstr(instrs, instrCount, 75); // m_pNext = 80
+
+    ILRewriter::SortEHClauses(clauses, 3);
+
+    // Same depth and try offset -- original order must be preserved regardless of SAMETRY.
+    EXPECT_EQ(clauses[0].m_pHandlerBegin->m_offset, 50u);  // ArgumentNullException
+    EXPECT_EQ(clauses[1].m_pHandlerBegin->m_offset, 60u);  // InvalidOperationException
+    EXPECT_EQ(clauses[2].m_pHandlerBegin->m_offset, 70u);  // Exception
+
+    // Flags must survive the reorder unchanged, per clause.
+    EXPECT_EQ(clauses[0].m_Flags, COR_ILEXCEPTION_CLAUSE_NONE);
+    EXPECT_EQ(clauses[1].m_Flags, COR_ILEXCEPTION_CLAUSE_SAMETRY);
+    EXPECT_EQ(clauses[2].m_Flags, COR_ILEXCEPTION_CLAUSE_SAMETRY);
+
+    delete[] instrs;
+}
+
+// ============================================================================
 // Test: single clause -- no sorting needed, should not crash
 // ============================================================================
 TEST(ILRewriterEHSortTest, SingleClause)
