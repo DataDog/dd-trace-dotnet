@@ -57,6 +57,22 @@ RUN apt-get update \
         nfpm \
     && rm -rf /var/lib/apt/lists/*
 
+# libssl1.1 for .NET Core 3.1 and older. Jammy ships OpenSSL 3 and dropped the package
+# from its repos, so install the .deb from the Ubuntu security/ports pool.
+RUN set -eux; \
+    ARCH="$(dpkg --print-architecture)"; \
+    case "$ARCH" in \
+        amd64) LIBSSL_URL=http://security.ubuntu.com/ubuntu/pool/main/o/openssl/libssl1.1_1.1.1f-1ubuntu2.24_amd64.deb; \
+               LIBSSL_SHA256=7cf39d70a639017d1dd7c8d36daa2258063608688e449fddf40ffdd46f992a78 ;; \
+        arm64) LIBSSL_URL=http://ports.ubuntu.com/pool/main/o/openssl/libssl1.1_1.1.1f-1ubuntu2.24_arm64.deb; \
+               LIBSSL_SHA256=dded4572af8b0a9e0310909f211a519cc6409fda31ea81132a77e268b0ec0f2f ;; \
+        *) echo "Unsupported architecture: $ARCH" >&2; exit 1 ;; \
+    esac; \
+    curl -sSL "$LIBSSL_URL" --output libssl1.1.deb; \
+    echo "${LIBSSL_SHA256}  libssl1.1.deb" | sha256sum --check; \
+    dpkg -i libssl1.1.deb; \
+    rm libssl1.1.deb
+
 # Install Clang
 RUN wget https://apt.llvm.org/llvm.sh \
     && chmod u+x llvm.sh \
@@ -69,18 +85,34 @@ RUN wget https://apt.llvm.org/llvm.sh \
 
 # Fetch and verify the frozen glibc-2.17 sysroot (architecture-specific).
 # See glibc217-sysroot.harvest.dockerfile (single file, both arches).
+#
+# For local iteration on the harvest itself, skip the fetch (SkipGlibc217SysrootFetch=true)
+# and bind-mount your local harvest output at /sysroot/<arch>-glibc217 instead - avoids the
+# harvest/tar/sha512sum/upload cycle entirely while you're still debugging the sysroot. e.g.:
+#   docker build --platform linux/arm64 --build-arg SkipGlibc217SysrootFetch=true \
+#       --target base -t ubuntu217-local -f tracer/build/_build/docker/ubuntu.dockerfile \
+#       tracer/build/_build/docker
+#   docker run --rm -it -v $(pwd)/glibc217-sysroot-out-aarch64:/sysroot/aarch64-glibc217 \
+#       -v $(pwd):/project -w /project ubuntu217-local bash
+# (targeting `base`, not `builder` - no need to build the Nuke project itself for this)
+ARG SkipGlibc217SysrootFetch=false
+
 RUN set -eux; \
     ARCH="$(uname -m)"; \
-    case "$ARCH" in \
-        x86_64) SYSROOT_SHA512='2e891242b066fe3c7d0c95cc68412a24b4f80bb8ae9d92226877a5c5b84226141425d70e920eeefe5205655f9669de7bb77f529089c72332f3a656fdbc72cc30' ;; \
-        aarch64) SYSROOT_SHA512='c1476e9afb0fd62b3ba19b1dbfcaa46a74a282b90354561bdf1cad24ff2398eb807f05945087473359830473691a26c6ca73855770c8227da682ebf1e4265aba' ;; \
-        *) echo "Unsupported architecture: $ARCH" >&2; exit 1 ;; \
-    esac \
-    && curl -sSL https://apmdotnetbuildstorage.blob.core.windows.net/build-dependencies/glibc217-sysroot-${ARCH}.tar.gz --output glibc217-sysroot.tar.gz \
-    && echo "${SYSROOT_SHA512}  glibc217-sysroot.tar.gz" | sha512sum --check \
-    && mkdir -p /sysroot/${ARCH}-glibc217 \
-    && tar -xzf glibc217-sysroot.tar.gz -C /sysroot/${ARCH}-glibc217 \
-    && rm glibc217-sysroot.tar.gz
+    mkdir -p /sysroot/${ARCH}-glibc217; \
+    if [ "$SkipGlibc217SysrootFetch" = "true" ]; then \
+        echo "Skipping glibc217 sysroot fetch - mount your local harvest output at /sysroot/${ARCH}-glibc217 when running this image."; \
+    else \
+        case "$ARCH" in \
+            x86_64) SYSROOT_SHA512='2e891242b066fe3c7d0c95cc68412a24b4f80bb8ae9d92226877a5c5b84226141425d70e920eeefe5205655f9669de7bb77f529089c72332f3a656fdbc72cc30' ;; \
+            aarch64) SYSROOT_SHA512='c1476e9afb0fd62b3ba19b1dbfcaa46a74a282b90354561bdf1cad24ff2398eb807f05945087473359830473691a26c6ca73855770c8227da682ebf1e4265aba' ;; \
+            *) echo "Unsupported architecture: $ARCH" >&2; exit 1 ;; \
+        esac; \
+        curl -sSL https://apmdotnetbuildstorage.blob.core.windows.net/build-dependencies/glibc217-sysroot-${ARCH}.tar.gz --output glibc217-sysroot.tar.gz; \
+        echo "${SYSROOT_SHA512}  glibc217-sysroot.tar.gz" | sha512sum --check; \
+        tar -xzf glibc217-sysroot.tar.gz -C /sysroot/${ARCH}-glibc217; \
+        rm glibc217-sysroot.tar.gz; \
+    fi
 
 # Install the .NET SDK
 RUN curl -sSL https://github.com/dotnet/install-scripts/raw/2bdc7f2c6e00d60be57f552b8a8aab71512dbcb2/src/dotnet-install.sh --output dotnet-install.sh \
