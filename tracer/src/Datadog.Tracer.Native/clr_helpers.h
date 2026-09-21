@@ -573,13 +573,19 @@ struct FunctionInfo
     const mdToken method_def_id;
     FunctionMethodSignature method_signature;
 
+    // The method's CorMethodImpl flags, as reported by IMetaDataImport::GetMemberProps.
+    // Only populated for MethodDefs (and MethodSpecs, from their MethodDef); MemberRefs leave it 0,
+    // since we never rewrite the body of a cross-module reference. This must stay *per-method* state;
+    // never hoist it onto IntegrationDefinition or CallTargetDefinition, which are matched against many methods.
+    DWORD method_impl_flags = 0;
+
     FunctionInfo() : id(0), name(shared::EmptyWStr), type({}), is_generic(false), method_def_id(0), method_signature({})
     {
     }
 
     FunctionInfo(mdToken id, const shared::WSTRING& name, const TypeInfo& type, const MethodSignature& signature,
                  const MethodSignature& function_spec_signature, mdToken method_def_id,
-                 const FunctionMethodSignature& method_signature) :
+                 const FunctionMethodSignature& method_signature, DWORD method_impl_flags = 0) :
         id(id),
         name(name),
         type(type),
@@ -587,22 +593,24 @@ struct FunctionInfo
         signature(signature),
         function_spec_signature(function_spec_signature),
         method_def_id(method_def_id),
-        method_signature(method_signature)
+        method_signature(method_signature),
+        method_impl_flags(method_impl_flags)
     {
     }
 
     FunctionInfo(mdToken id, const shared::WSTRING& name, const TypeInfo& type, const MethodSignature& signature,
-                 const FunctionMethodSignature& method_signature) :
+                 const FunctionMethodSignature& method_signature, DWORD method_impl_flags = 0) :
         id(id),
         name(name),
         type(type),
         is_generic(false),
         signature(signature),
         method_def_id(0),
-        method_signature(method_signature)
+        method_signature(method_signature),
+        method_impl_flags(method_impl_flags)
     {
     }
-    
+
     bool IsValid() const
     {
         return id != 0;

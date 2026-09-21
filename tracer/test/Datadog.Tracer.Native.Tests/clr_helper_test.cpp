@@ -1,6 +1,7 @@
 #include "pch.h"
 
 #include "../../src/Datadog.Tracer.Native/clr_helpers.h"
+#include "../../src/Datadog.Tracer.Native/runtime_async.h"
 #include "test_helpers.h"
 #include "../../../shared/src/native-src/pal.h"
 
@@ -344,4 +345,48 @@ TEST_F(CLRHelperTest, FunctionLocalSignatureTryParse) {
     EXPECT_EQ(hr, S_OK);
     EXPECT_EQ(locals.size(), 1) << "Failed test input is params=" << std::get<2>(test) << std::endl;
   }
+}
+
+// GetFunctionInfo reads the impl flags out of one of GetMemberProps' thirteen out-params. Getting
+// that argument position wrong would silently hand us the code RVA (or nothing) instead, so this
+// cross-checks every method in the sample library against an independent GetMethodProps call.
+TEST_F(CLRHelperTest, GetFunctionInfoPopulatesMethodImplFlags) {
+  size_t methodsChecked = 0;
+
+  for (auto& type_def : EnumTypeDefs(metadata_import_)) {
+    for (auto& method_def : EnumMethods(metadata_import_, type_def)) {
+      DWORD expected_impl_flags = 0;
+      auto hr = metadata_import_->GetMethodProps(method_def, nullptr, nullptr, 0, nullptr, nullptr,
+                                                 nullptr, nullptr, nullptr, &expected_impl_flags);
+      ASSERT_TRUE(SUCCEEDED(hr));
+
+      const auto function_info = GetFunctionInfo(metadata_import_, method_def);
+      ASSERT_TRUE(function_info.IsValid());
+
+      EXPECT_EQ(expected_impl_flags, function_info.method_impl_flags)
+          << "Failed method is : " << shared::ToString(function_info.name) << std::endl;
+
+      // The sample library is ordinary C#, so every method is plain IL and none is runtime-async.
+      EXPECT_TRUE(IsMiIL(function_info.method_impl_flags));
+      EXPECT_FALSE(IsMiAsync(function_info.method_impl_flags));
+
+      methodsChecked++;
+    }
+  }
+
+  EXPECT_GT(methodsChecked, 0u);
+}
+
+TEST_F(CLRHelperTest, IsMiAsyncMatchesTheMethodImplAttributesAsyncBit) {
+  EXPECT_EQ(0x2000, miAsync);
+
+  EXPECT_TRUE(IsMiAsync(miAsync));
+  EXPECT_TRUE(IsMiAsync(miAsync | miNoInlining));
+  EXPECT_TRUE(IsMiAsync(miAsync | miIL | miManaged));
+
+  EXPECT_FALSE(IsMiAsync(0));
+  EXPECT_FALSE(IsMiAsync(miIL | miManaged));
+  EXPECT_FALSE(IsMiAsync(miInternalCall | miAggressiveInlining));
+  // miUserMask predates .NET 11 and does not include the async bit
+  EXPECT_FALSE(IsMiAsync(miUserMask));
 }
