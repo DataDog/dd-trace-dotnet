@@ -917,16 +917,18 @@ namespace Datadog.Trace.Debugger
                 Log.Warning($"{nameof(SendMetrics)}: Metrics are not enabled");
             }
 
+            // probe-id stays for existing queries; debugger.probeid matches the span debugger and every other tracer.
+            var tags = new[] { $"probe-id:{probeId}", $"debugger.probeid:{probeId}" };
             switch (metricKind)
             {
                 case MetricKind.COUNT:
-                    _dogStats.Counter(statName: metricName, value: value, tags: new[] { $"probe-id:{probeId}" });
+                    _dogStats.Counter(statName: metricName, value: value, tags: tags);
                     break;
                 case MetricKind.GAUGE:
-                    _dogStats.Gauge(statName: metricName, value: value, tags: new[] { $"probe-id:{probeId}" });
+                    _dogStats.Gauge(statName: metricName, value: value, tags: tags);
                     break;
                 case MetricKind.HISTOGRAM:
-                    _dogStats.Histogram(statName: metricName, value: value, tags: new[] { $"probe-id:{probeId}" });
+                    _dogStats.Histogram(statName: metricName, value: value, tags: tags);
                     break;
                 default:
                     throw new ArgumentOutOfRangeException(
