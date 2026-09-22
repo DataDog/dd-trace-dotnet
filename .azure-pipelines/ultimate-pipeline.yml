@@ -2959,6 +2959,12 @@ stages:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
         baseImage: $(baseImage) # for interpolation in the docker-compose file
 
+    - script: |
+        docker-compose -f docker-compose.yml -p $(DockerComposeProjectName) logs -t openldap
+      displayName: Dump openldap container logs (diagnostic for OpenLdapTests failures)
+      condition: always()
+      continueOnError: true
+
     - publish: profiler/build_data
       artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
       condition: always()
@@ -3079,6 +3085,12 @@ stages:
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
         baseImage: $(baseImage) # for interpolation in the docker-compose file
+
+    - script: |
+        docker-compose -f docker-compose.yml -p $(DockerComposeProjectName) logs -t openldap
+      displayName: Dump openldap container logs (diagnostic for OpenLdapTests failures)
+      condition: always()
+      continueOnError: true
 
     - publish: profiler/build_data
       artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)

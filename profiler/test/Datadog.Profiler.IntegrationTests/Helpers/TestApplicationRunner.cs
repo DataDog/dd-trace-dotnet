@@ -69,6 +69,20 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
 
         public string AppListenerPort => _appListenerPort;
 
+        // TEMPORARY diagnostic (see OpenLdapTests.CheckOpenLdapCrash): run the sample app
+        // under strace instead of directly, and dump its output into the xunit log afterwards.
+        public bool UseStrace { get; set; }
+
+        public string StraceOutputPath => Path.Combine(_testBaseOutputDir, "strace.log");
+
+        // TEMPORARY diagnostic (see OpenLdapTests.CheckOpenLdapCrash): ask glibc's dynamic
+        // linker to log every symbol binding decision (LD_DEBUG=bindings), to see whether
+        // libldap's own `poll` reference actually resolves against our LD_PRELOAD wrapper
+        // in the real process, independent of our own local repro attempts.
+        public bool UseLdDebug { get; set; }
+
+        public string LdDebugOutputPrefix => Path.Combine(_testBaseOutputDir, "ld_debug");
+
         public static string GetApplicationOutputFolderPath(string appName)
         {
             var configurationAndPlatform = $"{EnvironmentHelper.GetConfiguration()}-{EnvironmentHelper.GetPlatform()}";
@@ -126,6 +140,20 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
             return match.Success ? match.Groups[1].Value : null;
         }
 
+        // TEMPORARY diagnostic (see OpenLdapTests.CheckOpenLdapCrash): when running under
+        // strace, `process.Id` is strace's own pid, not the .NET app's -- recover the app's
+        // real pid from its own "Process Id: <pid>" startup log line instead.
+        private static int? ParseProcessId(string output)
+        {
+            if (output is null)
+            {
+                return null;
+            }
+
+            var match = Regex.Match(output, @"Process Id:\s*(\d+)");
+            return match.Success && int.TryParse(match.Groups[1].Value, out var pid) ? pid : (int?)null;
+        }
+
         private void PrintTestInfo()
         {
             _output.WriteLine("Test information:");
@@ -169,6 +197,17 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
                 arguments += $" {_commandLine}";
             }
 
+            if (UseStrace)
+            {
+                // TEMPORARY diagnostic (see OpenLdapTests.CheckOpenLdapCrash): trace every
+                // connect/fcntl/poll/select/read/write/close call plus every signal delivery,
+                // to see exactly what happens to the profiler's SIGUSR1 relative to OpenLDAP's
+                // blocking calls. -f follows all threads (the signal and the LDAP calls can be
+                // on different OS threads); -tt adds microsecond timestamps.
+                var straceArguments = $"-f -tt -e trace=connect,poll,select,fcntl,read,write,close,recvfrom,recvmsg,sendto,sendmsg,getsockopt,setsockopt -o {StraceOutputPath} -- {applicationPath} {arguments}";
+                return ("strace", straceArguments);
+            }
+
             return (applicationPath, arguments);
         }
 
@@ -185,6 +224,14 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
 
             SetEnvironmentVariables(process.StartInfo.EnvironmentVariables, agent);
 
+            if (UseLdDebug)
+            {
+                // TEMPORARY diagnostic (see OpenLdapTests.CheckOpenLdapCrash). glibc appends
+                // ".<pid>" to whatever prefix LD_DEBUG_OUTPUT is given.
+                process.StartInfo.EnvironmentVariables["LD_DEBUG"] = "bindings";
+                process.StartInfo.EnvironmentVariables["LD_DEBUG_OUTPUT"] = LdDebugOutputPrefix;
+            }
+
             process.StartInfo.FileName = executor;
             process.StartInfo.Arguments = arguments;
             process.StartInfo.UseShellExecute = false;
@@ -199,12 +246,42 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
 
             var ranToCompletion = process.WaitForExit((int)_maxTestRunDuration.TotalMilliseconds) && processHelper.Drain((int)_maxTestRunDuration.TotalMilliseconds / 2);
 
-            agent.ProfiledProcessId = process.Id;
-
             var standardOutput = processHelper.StandardOutput;
             var errorOutput = processHelper.ErrorOutput;
             ProcessOutput = standardOutput;
             _appListenerPort = ParseListeningUrl(standardOutput);
+
+            // TEMPORARY diagnostic (see OpenLdapTests.CheckOpenLdapCrash): under strace,
+            // `process` is strace itself -- recover the app's real pid, and dump the trace.
+            agent.ProfiledProcessId = UseStrace ? (ParseProcessId(standardOutput) ?? process.Id) : process.Id;
+
+            if (UseStrace && File.Exists(StraceOutputPath))
+            {
+                _output.WriteLine($"[TestRunner] strace output ({StraceOutputPath}):\n{File.ReadAllText(StraceOutputPath)}");
+            }
+
+            if (UseLdDebug)
+            {
+                // TEMPORARY diagnostic (see OpenLdapTests.CheckOpenLdapCrash). glibc writes one
+                // file per process that inherits LD_DEBUG_OUTPUT (the app itself, and strace's
+                // own forked child if UseStrace is also set) -- dump every matching file, filtered
+                // down to the "poll" binding decisions since the full log can be huge.
+                var ldDebugDir = Path.GetDirectoryName(LdDebugOutputPrefix);
+                var ldDebugFilePattern = Path.GetFileName(LdDebugOutputPrefix) + ".*";
+                foreach (var ldDebugFile in Directory.GetFiles(ldDebugDir, ldDebugFilePattern))
+                {
+                    var pollLines = new System.Text.StringBuilder();
+                    foreach (var line in File.ReadAllLines(ldDebugFile))
+                    {
+                        if (line.Contains("`poll'") || line.Contains("`recvfrom'"))
+                        {
+                            pollLines.AppendLine(line);
+                        }
+                    }
+
+                    _output.WriteLine($"[TestRunner] LD_DEBUG=bindings poll/recvfrom-related lines from {ldDebugFile}:\n{pollLines}");
+                }
+            }
 
             if (!ranToCompletion)
             {
