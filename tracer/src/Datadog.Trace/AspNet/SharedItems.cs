@@ -7,6 +7,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Web;
 using Datadog.Trace.OpenTelemetry;
 
@@ -15,9 +16,17 @@ namespace Datadog.Trace.AspNet
     internal static class SharedItems
     {
         public const string HttpContextPropagatedResourceNameKey = "__Datadog.Trace.ClrProfiler.Managed.AspNetMvcIntegration-aspnet.resourcename";
-        private const string HttpContextRecordedExceptionKey = "__Datadog.Trace.ClrProfiler.Managed.AspNetIntegration-recorded-exception";
+
+        // When ASP.NET TransferRequest is invoked during error handling, both independent pipelines may report exceptions.
+        // When using OpenTelemetry semantics, this can cause duplicate exceptions to be reported since the same singular
+        // ASP.NET span is updated by Datadog integrations across both ASP.NET request pipelines.
+        // De-duplicate recorded exceptions by storing a mapping of Span => Exceptions.
+        private static readonly ConditionalWeakTable<ISpan, RecordedExceptions> RecordedExceptionsBySpan = new();
         private static readonly Func<Stack<Scope>, Scope> Pop = stack => stack.Pop();
         private static readonly Func<Stack<Scope>, Scope> Peek = stack => stack.Peek();
+
+        internal static bool TryMarkExceptionRecorded(ISpan span, Exception exception)
+            => RecordedExceptionsBySpan.GetValue(span, static _ => new RecordedExceptions()).TryAdd(exception);
 
         internal static void PushScope(HttpContext? context, string key, Scope item)
         {
@@ -46,19 +55,6 @@ namespace Datadog.Trace.AspNet
         }
 
         internal static Scope? TryPopScope(HttpContext? context, string key) => ExtractScope(context, key, Pop);
-
-        internal static void MarkExceptionRecorded(HttpContext? context, ISpan span, Exception exception)
-        {
-            if (context is not null)
-            {
-                context.Items[HttpContextRecordedExceptionKey] = new RecordedException(span, exception);
-            }
-        }
-
-        internal static bool IsExceptionRecorded(HttpContext? context, ISpan span, Exception exception)
-            => context?.Items[HttpContextRecordedExceptionKey] is RecordedException recordedException
-                && ReferenceEquals(recordedException.Span, span)
-                && ReferenceEquals(recordedException.Exception, exception);
 
         /// <summary>
         /// Gets the scope from the HttpContext with the provided key, corresponding to the integration that created it.
@@ -97,17 +93,26 @@ namespace Datadog.Trace.AspNet
             return default;
         }
 
-        private sealed class RecordedException
+        private sealed class RecordedExceptions
         {
-            public RecordedException(ISpan span, Exception exception)
+            private readonly HashSet<Exception> _exceptions = new(ExceptionReferenceEqualityComparer.Instance);
+
+            public bool TryAdd(Exception exception)
             {
-                Span = span;
-                Exception = exception;
+                lock (_exceptions)
+                {
+                    return _exceptions.Add(exception);
+                }
             }
+        }
 
-            public ISpan Span { get; }
+        private sealed class ExceptionReferenceEqualityComparer : IEqualityComparer<Exception>
+        {
+            public static readonly ExceptionReferenceEqualityComparer Instance = new();
 
-            public Exception Exception { get; }
+            public bool Equals(Exception? x, Exception? y) => ReferenceEquals(x, y);
+
+            public int GetHashCode(Exception obj) => RuntimeHelpers.GetHashCode(obj);
         }
     }
 }

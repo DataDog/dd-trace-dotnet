@@ -573,7 +573,7 @@ namespace Datadog.Trace.AspNet
                     {
                         // The Web API exception handler may already have recorded this exception on the
                         // same span when OpenTelemetry semantics coalesce the ASP.NET and Web API spans.
-                        if (!SharedItems.IsExceptionRecorded(httpContext, scope.Span, exception))
+                        if (SharedItems.TryMarkExceptionRecorded(scope.Span, exception))
                         {
                             scope.Span.SetException(exception);
                         }

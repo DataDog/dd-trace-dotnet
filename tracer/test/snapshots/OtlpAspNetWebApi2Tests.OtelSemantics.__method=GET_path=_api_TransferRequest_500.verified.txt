@@ -197,30 +197,6 @@
                       }
                     }
                   ]
-                },
-                {
-                  "timeUnixNano": "0",
-                  "name": "exception",
-                  "attributes": [
-                    {
-                      "key": "exception.type",
-                      "value": {
-                        "stringValue": "System.Exception"
-                      }
-                    },
-                    {
-                      "key": "exception.message",
-                      "value": {
-                        "stringValue": "Oops, it broke. Specified status code was: 500"
-                      }
-                    },
-                    {
-                      "key": "exception.stacktrace",
-                      "value": {
-                        "stringValue": "normalized-exception.stacktrace"
-                      }
-                    }
-                  ]
                 }
               ],
               "status": {
