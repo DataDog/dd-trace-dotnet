@@ -15,7 +15,7 @@ stages:
 include:
   - local: .gitlab/one-pipeline.locked.yml
   - project: 'ddoghq/llm-validation-platform'
-    ref: c331696647a78672101002ba48ccebbd41b0fae8   # v0.1.3 (immutable SHA; a tag could be retargeted)
+    ref: 4bb157a2cbb50ef608b9ec8e14b886e0cf838ca3   # v0.1.4 (immutable SHA; a tag could be retargeted)
     file: '/ci/llm-validation.gitlab-ci.yml'
   # MIGRATION TOUCHPOINT (GitHub org / GitLab group split):
   # GitLab does not expand top-level `variables:` inside `include:` keywords,
@@ -44,13 +44,8 @@ variables:
 
 "llm validation":
   variables:
-    # Override the template's default image. Its pinned digest is an Aug 2025 build whose signature was pruned, and
-    # ddbuild now enforces image-signature verification, so that digest is blocked at pod startup (incident-61046).
-    # Pinned to the current signed :newest (multi-arch index resolved 2026-09-22); immutable + reproducible. Rebump
-    # by re-resolving :newest if a future build ever drops this digest's signature the same way.
-    LLMVAL_IMAGE: "registry.ddbuild.io/images/benchmarking-platform-tools-ubuntu@sha256:ea36981d607aaf598a8bc7ed4dc6f48f8f295dc732d066d4095475174bcf044a"
     LLMVAL_PLATFORM_PROJECT: "ddoghq/llm-validation-platform"
-    LLMVAL_PLATFORM_REF: "c331696647a78672101002ba48ccebbd41b0fae8"   # v0.1.3 (must match include ref above)
+    LLMVAL_PLATFORM_REF: "4bb157a2cbb50ef608b9ec8e14b886e0cf838ca3"   # v0.1.4 (must match include ref above)
 
 build-windows-ci-image:
   stage: build
