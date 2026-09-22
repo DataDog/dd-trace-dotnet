@@ -331,9 +331,13 @@ real mapping. They live in `tracer/test/Datadog.Trace.Tests/OtelThreadContext/`:
 
 Plus `tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/OtelThreadContextTests.cs`, Linux only. It
 keeps a real instrumented process alive, reads its `OTEL_CTX` mapping with `process_vm_readv`, and decodes
-the protobuf payload using a test-only reader that shares no parsing code with the tracer. This verifies
-that libdatadog's resource metadata survives, that the two `threadlocal.*` attributes are externally
-readable exactly once, that the native symbol resolves, that tracing is undisturbed, and that the
+the protobuf payload using a test-only reader that shares no parsing code with the tracer. With nested
+root and child scopes active, the sample also resolves its current thread's public `otel_thread_ctx_v1`
+TLS-slot address and blocks. The test process uses `process_vm_readv` to follow the slot's record pointer
+and independently decode the record, checking the trace id, active child span id, trace flags, and local
+root span id against the spans received by the mock agent. This verifies that libdatadog's resource
+metadata survives, that the two `threadlocal.*` attributes are externally readable exactly once, that the
+native TLS slot and record contain the expected active context, that tracing is undisturbed, and that the
 attributes are absent when the feature is off.
 
 `tracer/test/Datadog.Tracer.Native.Tests/otel_thread_ctx_test.cpp` creates and joins real pthreads to verify

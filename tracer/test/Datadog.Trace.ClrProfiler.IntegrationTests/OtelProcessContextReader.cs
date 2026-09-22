@@ -60,6 +60,61 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 lastFailure);
         }
 
+        internal static byte[] ReadRemoteMemory(int processId, ulong address, int length)
+        {
+            var buffer = new byte[length];
+            var handle = GCHandle.Alloc(buffer, GCHandleType.Pinned);
+
+            try
+            {
+                var offset = 0;
+                while (offset < length)
+                {
+                    var local = new IoVector
+                    {
+                        Base = IntPtr.Add(handle.AddrOfPinnedObject(), offset),
+                        Length = new UIntPtr((uint)(length - offset)),
+                    };
+
+                    var remoteAddress = checked(address + (ulong)offset);
+                    if (remoteAddress > long.MaxValue)
+                    {
+                        throw new InvalidOperationException($"Remote address 0x{remoteAddress:x} cannot be represented by IntPtr.");
+                    }
+
+                    var remote = new IoVector
+                    {
+                        Base = new IntPtr((long)remoteAddress),
+                        Length = new UIntPtr((uint)(length - offset)),
+                    };
+
+                    var read = ProcessVmReadV(
+                                   processId,
+                                   ref local,
+                                   new UIntPtr(1),
+                                   ref remote,
+                                   new UIntPtr(1),
+                                   UIntPtr.Zero)
+                              .ToInt64();
+
+                    if (read <= 0)
+                    {
+                        throw new Win32Exception(
+                            Marshal.GetLastWin32Error(),
+                            $"process_vm_readv failed while reading process {processId} at 0x{remoteAddress:x}.");
+                    }
+
+                    offset += checked((int)read);
+                }
+            }
+            finally
+            {
+                handle.Free();
+            }
+
+            return buffer;
+        }
+
         private static OtelProcessContextSnapshot Read(int processId)
         {
             var headerAddress = FindMappingAddress(processId);
@@ -151,61 +206,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             {
                 throw new InvalidOperationException($"Process-context version {version} is not supported by the test reader.");
             }
-        }
-
-        private static byte[] ReadRemoteMemory(int processId, ulong address, int length)
-        {
-            var buffer = new byte[length];
-            var handle = GCHandle.Alloc(buffer, GCHandleType.Pinned);
-
-            try
-            {
-                var offset = 0;
-                while (offset < length)
-                {
-                    var local = new IoVector
-                    {
-                        Base = IntPtr.Add(handle.AddrOfPinnedObject(), offset),
-                        Length = new UIntPtr((uint)(length - offset)),
-                    };
-
-                    var remoteAddress = checked(address + (ulong)offset);
-                    if (remoteAddress > long.MaxValue)
-                    {
-                        throw new InvalidOperationException($"Remote address 0x{remoteAddress:x} cannot be represented by IntPtr.");
-                    }
-
-                    var remote = new IoVector
-                    {
-                        Base = new IntPtr((long)remoteAddress),
-                        Length = new UIntPtr((uint)(length - offset)),
-                    };
-
-                    var read = ProcessVmReadV(
-                                   processId,
-                                   ref local,
-                                   new UIntPtr(1),
-                                   ref remote,
-                                   new UIntPtr(1),
-                                   UIntPtr.Zero)
-                              .ToInt64();
-
-                    if (read <= 0)
-                    {
-                        throw new Win32Exception(
-                            Marshal.GetLastWin32Error(),
-                            $"process_vm_readv failed while reading process {processId} at 0x{remoteAddress:x}.");
-                    }
-
-                    offset += checked((int)read);
-                }
-            }
-            finally
-            {
-                handle.Free();
-            }
-
-            return buffer;
         }
 
         private static OtelProcessContextSnapshot ParsePayload(byte[] payload)
