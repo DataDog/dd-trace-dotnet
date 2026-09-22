@@ -80,9 +80,6 @@ namespace Datadog.Trace.ClrProfiler
                 return;
             }
 
-            // On Linux ARM64 the Continuous Profiler is gated behind DD_INTERNAL_PROFILING_ENABLED_ARM64 (default off).
-            // If it was requested but disabled by that gate, surface an actionable reason. We are past the availability
-            // check above, so this only logs where the profiler is actually available in this environment.
             if (profilerSettings.WasDisabledByArm64Gate)
             {
                 Log.Warning("The Continuous Profiler was requested but is disabled on Linux ARM64: set {Setting}=1 to enable it. On ARM64 the Continuous Profiler is gated behind this setting (default off).", ConfigurationKeys.ContinuousProfiler.InternalProfilingEnabledArm64);

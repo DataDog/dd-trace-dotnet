@@ -81,10 +81,6 @@ internal sealed class ProfilerSettings
             {
                 ProfilerState = ProfilerState.Disabled;
                 telemetry.Record(ConfigurationKeys.Profiler.ProfilingEnabled, "false", recordValue: true, ConfigurationOrigins.Calculated);
-
-                // The Continuous Profiler was requested (true/auto) but is forced off by the Linux ARM64 gate.
-                // Record it so the diagnostic can be emitted from Instrumentation.PropagateStableConfiguration,
-                // which knows whether the profiler is actually available in this environment.
                 WasDisabledByArm64Gate = true;
             }
         }
@@ -117,9 +113,5 @@ internal sealed class ProfilerSettings
 
     public bool IsManagedActivationEnabled => _isManagedActivationEnabled;
 
-    /// <summary>
-    /// Gets a value indicating whether the Continuous Profiler was requested (true/auto) but forced
-    /// off by the Linux ARM64 gate (DD_INTERNAL_PROFILING_ENABLED_ARM64 unset or disabled).
-    /// </summary>
     public bool WasDisabledByArm64Gate { get; }
 }
