@@ -57,6 +57,13 @@ namespace Datadog.Trace.TestHelpers
         private static readonly Regex CodeOriginFilePathRegex = new(@"(?<prefix>_dd\.code_origin\.frames\.\d+\.file:\s*)(?<path>[^,\r\n]+)", RegOptions);
 
         /// <summary>
+        /// Gets the suffix to add to a snapshot file name for tests whose spans differ on .NET 11.
+        /// It's empty everywhere else, so that only the divergent target framework needs its own
+        /// snapshot and the existing file names are left alone.
+        /// </summary>
+        public static string Net11SnapshotSuffix { get; } = Environment.Version.Major >= 11 ? ".NET_11" : string.Empty;
+
+        /// <summary>
         /// With <see cref="Verify"/>, parameters are used as part of the filename.
         /// This method produces a "sanitised" version to remove problematic values
         /// </summary>
