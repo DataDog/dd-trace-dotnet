@@ -70,7 +70,7 @@ public class ApiRequestTests
         using var agent = MockTracerAgent.Create(_output, new UnixDomainSocketConfig(Path.Combine(Path.GetTempPath(), Path.GetRandomFileName()), null));
         var factory = new HttpStreamRequestFactory(
             new UnixDomainSocketStreamFactory(agent.TracesUdsPath),
-            new DatadogHttpClient(new TraceAgentHttpHeaderHelper()),
+            new DatadogHttpClient(TraceAgentHttpHeaderHelper.Instance),
             Localhost);
         await RunTest(agent, () => factory.Create(Localhost), useGzip);
     }
@@ -101,7 +101,7 @@ public class ApiRequestTests
         using var agent = MockTracerAgent.Create(_output, new WindowsPipesConfig($"trace-{Guid.NewGuid()}", null));
         var factory = new HttpStreamRequestFactory(
             new NamedPipeClientStreamFactory(agent.TracesWindowsPipeName, timeoutMs: 100),
-            new DatadogHttpClient(new TraceAgentHttpHeaderHelper()),
+            new DatadogHttpClient(TraceAgentHttpHeaderHelper.Instance),
             Localhost);
         await RunTest(agent, () => factory.Create(Localhost), useGzip);
     }

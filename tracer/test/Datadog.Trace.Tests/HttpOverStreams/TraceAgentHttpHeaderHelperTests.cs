@@ -30,7 +30,7 @@ namespace Datadog.Trace.Tests.HttpOverStreams
                 headers,
                 content);
 
-            var helper = new TraceAgentHttpHeaderHelper();
+            var helper = TraceAgentHttpHeaderHelper.Instance;
 
             var tracerVersion = TracerConstants.AssemblyVersion;
             var lang = FrameworkDescription.Instance.Name;
@@ -52,7 +52,7 @@ namespace Datadog.Trace.Tests.HttpOverStreams
         public async Task WriteHeader()
         {
             var header = new HttpHeaders.HttpHeader("my-key", "my-value");
-            var helper = new TraceAgentHttpHeaderHelper();
+            var helper = TraceAgentHttpHeaderHelper.Instance;
             var expected = "my-key: my-value\r\n";
 
             var sb = new StringBuilder();

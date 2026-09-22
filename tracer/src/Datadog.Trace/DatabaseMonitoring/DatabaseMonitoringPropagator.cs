@@ -10,10 +10,10 @@ using System.Text;
 using System.Threading;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
+using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
-using Datadog.Trace.VendoredMicrosoftCode.System.Buffers.Binary;
 using Datadog.Trace.Vendors.Serilog.Events;
 
 #nullable enable
@@ -29,6 +29,7 @@ namespace Datadog.Trace.DatabaseMonitoring
         private const string SqlCommentOuthost = "ddh";
         private const string SqlCommentVersion = "ddpv";
         private const string SqlCommentEnv = "dde";
+        private const string SqlCommentBaseHash = "ddsh";
         internal const string DbmPrefix = $"/*{SqlCommentSpanService}='";
         private const string ContextInfoParameterName = "@dd_trace_context";
         internal const string SetContextCommand = $"set context_info {ContextInfoParameterName}";
@@ -42,7 +43,8 @@ namespace Datadog.Trace.DatabaseMonitoring
         private static int _remainingDirectionErrorLogs = 100;
         private static int _remainingQuoteErrorLogs = 100;
 
-        internal static bool PropagateDataViaComment(DbmPropagationLevel propagationLevel, IntegrationId integrationId, IDbCommand command, string configuredServiceName, string? dbName, string? outhost, Span span, bool injectStoredProcedure)
+        // baseHash should be null if hash injection is disabled, config is not checked in this method
+        internal static bool PropagateDataViaComment(DbmPropagationLevel propagationLevel, IntegrationId integrationId, IDbCommand command, string configuredServiceName, string? dbName, string? outhost, Span span, bool injectStoredProcedure, string? baseHash)
         {
             if (integrationId is not (IntegrationId.MySql or IntegrationId.Npgsql or IntegrationId.SqlClient or IntegrationId.Oracle) ||
                 propagationLevel is not (DbmPropagationLevel.Service or DbmPropagationLevel.Full))
@@ -102,6 +104,11 @@ namespace Datadog.Trace.DatabaseMonitoring
             if (span.Context.TraceContext?.ServiceVersion is { } versionTag)
             {
                 propagatorStringBuilder.Append(',').Append(SqlCommentVersion).Append("='").Append(Uri.EscapeDataString(versionTag)).Append('\'');
+            }
+
+            if (!string.IsNullOrEmpty(baseHash))
+            {
+                propagatorStringBuilder.Append(',').Append(SqlCommentBaseHash).Append("='").Append(Uri.EscapeDataString(baseHash)).Append('\'');
             }
 
             var traceParentInjected = false;
@@ -351,7 +358,8 @@ namespace Datadog.Trace.DatabaseMonitoring
                         var actualRemaining = Interlocked.Decrement(ref _remainingErrorLogs);
                         if (actualRemaining >= 0)
                         {
-                            Log.Error<string, int>(e, "Error setting context_info [{ContextValue}] for DB query, falling back to service only propagation mode. There won't be any link with APM traces. (will log this error {N} more time and then stop)", HexConverter.ToString(contextValue), actualRemaining);
+                            // We're making a SQL call, so this could fail for all sorts of reasons out of our control.
+                            Log.ErrorSkipTelemetry<string, int>(e, "Error setting context_info [{ContextValue}] for DB query, falling back to service only propagation mode. There won't be any link with APM traces. (will log this error {N} more time and then stop)", HexConverter.ToString(contextValue), actualRemaining);
                         }
                     }
 
@@ -376,7 +384,7 @@ namespace Datadog.Trace.DatabaseMonitoring
             var versionAndSampling = (byte)(((version << 4) & 0b1111_0000) | (sampled & 0b0000_0001));
             var contextBytes = new byte[1 + sizeof(ulong) + TraceId.Size];
 
-            var span = new VendoredMicrosoftCode.System.Span<byte>(contextBytes) { [0] = versionAndSampling };
+            var span = new Span<byte>(contextBytes) { [0] = versionAndSampling };
             BinaryPrimitives.WriteUInt64BigEndian(span.Slice(1), spanId);
             BinaryPrimitives.WriteUInt64BigEndian(span.Slice(1 + sizeof(ulong)), traceId.Upper);
             BinaryPrimitives.WriteUInt64BigEndian(span.Slice(1 + sizeof(ulong) + sizeof(ulong)), traceId.Lower);

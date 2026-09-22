@@ -74,8 +74,21 @@ internal sealed partial class ChunkedEncodingReadStream : DelegatingStream
     public override int Read(byte[] buffer, int offset, int count)
         => ReadAsync(buffer, offset, count, default).GetAwaiter().GetResult();
 
+#if NETCOREAPP
+    public override ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken cancellationToken = default)
+        => new(ReadAsyncCore(buffer, cancellationToken));
+
+    public override Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
+        => ReadAsyncCore(buffer.AsMemory(offset, count), cancellationToken);
+
+    private async Task<int> ReadAsyncCore(Memory<byte> buffer, CancellationToken cancellationToken)
+    {
+        const int offset = 0;
+        var count = buffer.Length;
+#else
     public override async Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
     {
+#endif
         cancellationToken.ThrowIfCancellationRequested();
 
         while (true)
@@ -137,7 +150,11 @@ internal sealed partial class ChunkedEncodingReadStream : DelegatingStream
                     {
                         // We don't have enough for the whole chunk, so just read what we can, directly into the output buffer
                         var bytesToRead = (int)Math.Min((ulong)count, _bytesRemainingInChunk);
+#if NETCOREAPP
+                        var bytesReadFromStream = await _innerStream.ReadAsync(buffer.Slice(offset, bytesToRead), cancellationToken).ConfigureAwait(false);
+#else
                         var bytesReadFromStream = await _innerStream.ReadAsync(buffer, offset, bytesToRead, cancellationToken).ConfigureAwait(false);
+#endif
 
                         // we might not have read the whole expected values, so just return what we have
                         _bytesRemainingInChunk -= (ulong)bytesReadFromStream;
@@ -164,12 +181,16 @@ internal sealed partial class ChunkedEncodingReadStream : DelegatingStream
                     Debug.Assert(_currentPosition.Offset + bytesToConsume <= _streamBuffer.Length, "Should not try to consume more data than we have to read from");
 
                     // Copy the data we have into the buffer
+#if NETCOREAPP
+                    _streamBuffer.AsSpan(_currentPosition.Offset, bytesToConsume).CopyTo(buffer.Span);
+#else
                     Array.Copy(
                         sourceArray: _streamBuffer,
                         sourceIndex: _currentPosition.Offset,
                         destinationArray: buffer,
                         destinationIndex: offset,
                         length: bytesToConsume);
+#endif
 
                     // update the currentPosition and expected bytes to reflect the consumed bytes
                     _bytesRemainingInChunk -= (ulong)bytesToConsume;

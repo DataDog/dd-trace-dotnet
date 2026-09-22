@@ -43,6 +43,8 @@ namespace Datadog.Profiler.SmokeTests
                 runner.EnvironmentHelper.SetVariable(EnvironmentVariables.EtwEnabled, "0");
             }
 
+            runner.EnvironmentHelper.SetVariable(EnvironmentVariables.MemoryFootprintEnabled, "1");
+
             runner.RunAndCheck();
         }
 
@@ -54,6 +56,8 @@ namespace Datadog.Profiler.SmokeTests
             {
                 runner.EnvironmentHelper.SetVariable(EnvironmentVariables.EtwEnabled, "0");
             }
+
+            runner.EnvironmentHelper.SetVariable(EnvironmentVariables.MemoryFootprintEnabled, "1");
 
             runner.RunAndCheck();
         }
@@ -67,6 +71,8 @@ namespace Datadog.Profiler.SmokeTests
                 runner.EnvironmentHelper.SetVariable(EnvironmentVariables.EtwEnabled, "0");
             }
 
+            runner.EnvironmentHelper.SetVariable(EnvironmentVariables.MemoryFootprintEnabled, "1");
+
             runner.RunAndCheck();
         }
 
@@ -79,6 +85,8 @@ namespace Datadog.Profiler.SmokeTests
                 runner.EnvironmentHelper.SetVariable(EnvironmentVariables.EtwEnabled, "0");
             }
 
+            runner.EnvironmentHelper.SetVariable(EnvironmentVariables.MemoryFootprintEnabled, "1");
+
             runner.RunAndCheck();
         }
 
@@ -89,7 +97,10 @@ namespace Datadog.Profiler.SmokeTests
             var runner = new SmokeTestRunner(appName, framework, appAssembly, commandLine: "--scenario 1", output: _output);
             runner.EnvironmentHelper.SetVariable(EnvironmentVariables.CpuProfilerType, "TimerCreate");
             runner.EnvironmentHelper.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "1");
+            runner.EnvironmentHelper.SetVariable(EnvironmentVariables.MemoryFootprintEnabled, "1");
             runner.RunAndCheck();
+
+            CpuProfilerHelper.SkipIfTimerCreateWasDowngraded(runner.EnvironmentHelper.LogDir);
         }
 
         [Trait("Category", "LinuxOnly")]
@@ -99,7 +110,10 @@ namespace Datadog.Profiler.SmokeTests
             var runner = new SmokeTestRunner(appName, framework, appAssembly, commandLine: "--scenario 2", output: _output);
             runner.EnvironmentHelper.SetVariable(EnvironmentVariables.CpuProfilerType, "TimerCreate");
             runner.EnvironmentHelper.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "1");
+            runner.EnvironmentHelper.SetVariable(EnvironmentVariables.MemoryFootprintEnabled, "1");
             runner.RunAndCheck();
+
+            CpuProfilerHelper.SkipIfTimerCreateWasDowngraded(runner.EnvironmentHelper.LogDir);
         }
 
         [Trait("Category", "LinuxOnly")]
@@ -109,7 +123,10 @@ namespace Datadog.Profiler.SmokeTests
             var runner = new SmokeTestRunner(appName, framework, appAssembly, commandLine: "--scenario 4", output: _output);
             runner.EnvironmentHelper.SetVariable(EnvironmentVariables.CpuProfilerType, "TimerCreate");
             runner.EnvironmentHelper.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "1");
+            runner.EnvironmentHelper.SetVariable(EnvironmentVariables.MemoryFootprintEnabled, "1");
             runner.RunAndCheck();
+
+            CpuProfilerHelper.SkipIfTimerCreateWasDowngraded(runner.EnvironmentHelper.LogDir);
         }
 
         [Trait("Category", "LinuxOnly")]
@@ -119,7 +136,10 @@ namespace Datadog.Profiler.SmokeTests
             var runner = new SmokeTestRunner(appName, framework, appAssembly, commandLine: "--scenario 5", output: _output);
             runner.EnvironmentHelper.SetVariable(EnvironmentVariables.CpuProfilerType, "TimerCreate");
             runner.EnvironmentHelper.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "1");
+            runner.EnvironmentHelper.SetVariable(EnvironmentVariables.MemoryFootprintEnabled, "1");
             runner.RunAndCheck();
+
+            CpuProfilerHelper.SkipIfTimerCreateWasDowngraded(runner.EnvironmentHelper.LogDir);
         }
 
         [TestAppFact("Samples.Computer01")]
@@ -127,12 +147,13 @@ namespace Datadog.Profiler.SmokeTests
         {
             var runner = new SmokeTestRunner(appName, framework, appAssembly, commandLine: "--scenario 0", output: _output);
             runner.EnvironmentHelper.SetVariable(EnvironmentVariables.UseManagedCodeCache, "1");
+            runner.EnvironmentHelper.SetVariable(EnvironmentVariables.MemoryFootprintEnabled, "1");
             if (framework == "net48")
             {
                 runner.EnvironmentHelper.SetVariable(EnvironmentVariables.EtwEnabled, "0");
             }
 
-            // First, check for no error  
+            // First, check for no error
             runner.RunAndCheck();
 
             // Then check for custom get function from IP enabled

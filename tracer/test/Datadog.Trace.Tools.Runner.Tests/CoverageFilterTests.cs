@@ -3,10 +3,14 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using Datadog.Trace.Coverage.Collector;
+using Datadog.Trace.TestHelpers;
 using FluentAssertions;
+using Mono.Cecil;
 using Xunit;
 
 namespace Datadog.Trace.Tools.Runner.Tests;
@@ -58,6 +62,32 @@ public class CoverageFilterTests
     public void TestIsValidFilterExpression(string filter, bool result)
     {
         FiltersHelper.IsValidFilterExpression(filter).Should().Be(result);
+    }
+
+    [Theory]
+    [InlineData("coverlet.collector.deps.json", true)]
+    [InlineData("coverlet.core.deps.json", true)]
+    [InlineData("Samples.XUnitTests.deps.json", false)]
+    public void TestIsIgnoredAssemblyDependencyManifest(string depsJsonFileName, bool expected)
+    {
+        AssemblyProcessor.IsIgnoredAssemblyDependencyManifest(depsJsonFileName).Should().Be(expected);
+    }
+
+    [Fact]
+    public void TestStrongNameKeyMatchesAssemblyPublicKey()
+    {
+        var snkFilePath = Path.Combine(EnvironmentTools.GetSolutionDirectory(), "Datadog.Trace.snk");
+        var strongNameKeyBlob = File.ReadAllBytes(snkFilePath);
+
+        AssemblyProcessor.TryGetStrongNamePublicKey(strongNameKeyBlob, out var publicKey).Should().BeTrue();
+
+        var assemblyName = new AssemblyNameDefinition("Sample", new Version(1, 0, 0, 0)) { PublicKey = publicKey };
+        AssemblyProcessor.StrongNameKeyMatchesAssemblyPublicKey(assemblyName, strongNameKeyBlob).Should().BeTrue();
+
+        var mismatchingPublicKey = publicKey.ToArray();
+        mismatchingPublicKey[mismatchingPublicKey.Length - 1] ^= 0x01;
+        var mismatchingAssemblyName = new AssemblyNameDefinition("Sample", new Version(1, 0, 0, 0)) { PublicKey = mismatchingPublicKey };
+        AssemblyProcessor.StrongNameKeyMatchesAssemblyPublicKey(mismatchingAssemblyName, strongNameKeyBlob).Should().BeFalse();
     }
 
     [Theory]

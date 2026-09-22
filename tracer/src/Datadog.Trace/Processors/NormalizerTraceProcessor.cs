@@ -71,7 +71,7 @@ namespace Datadog.Trace.Processors
         public Span Process(Span span)
         {
             // https://github.com/DataDog/datadog-agent/blob/eac2327c5574da7f225f9ef0f89eaeb05ed10382/pkg/trace/agent/normalizer.go#L51-L63
-            span.ServiceName = NormalizeService(span.ServiceName);
+            span.SetService(NormalizeService(span.ServiceName), span.Context.ServiceNameSource);
 
             // https://github.com/DataDog/datadog-agent/blob/eac2327c5574da7f225f9ef0f89eaeb05ed10382/pkg/trace/agent/normalizer.go#L76-L87
             span.OperationName = NormalizeName(span.OperationName);
@@ -133,16 +133,17 @@ namespace Datadog.Trace.Processors
                 if (!TraceUtil.IsValidStatusCode(statusCodeTags.HttpStatusCode))
                 {
                     Log.Debug("Fixing malformed trace. HTTP status code is invalid (reason:invalid_http_status_code), dropping invalid http.status_code={InvalidStatusCode}: {Span}", statusCodeTags.HttpStatusCode, span);
-                    statusCodeTags.HttpStatusCode = string.Empty;
+                    statusCodeTags.HttpStatusCode = null;
                 }
             }
             else
             {
-                string httpStatusCode = span.GetTag(Tags.HttpStatusCode);
-                if (!string.IsNullOrEmpty(httpStatusCode) && !TraceUtil.IsValidStatusCode(httpStatusCode))
+                var rawHttpStatusCode = span.GetHttpStatusCodeString();
+                if (!string.IsNullOrEmpty(rawHttpStatusCode) && !TraceUtil.IsValidStatusCode(span.GetHttpStatusCode()))
                 {
-                    Log.Debug("Fixing malformed trace. HTTP status code is invalid (reason:invalid_http_status_code), dropping invalid http.status_code={InvalidStatusCode}: {Span}", httpStatusCode, span);
+                    Log.Debug("Fixing malformed trace. HTTP status code is invalid (reason:invalid_http_status_code), dropping invalid http.status_code={InvalidStatusCode}: {Span}", rawHttpStatusCode, span);
                     span.Tags.SetTag(Tags.HttpStatusCode, null);
+                    span.Tags.SetTag(Tags.HttpResponseStatusCode, null);
                 }
             }
 

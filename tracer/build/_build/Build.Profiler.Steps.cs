@@ -253,6 +253,11 @@ partial class Build
         .After(CompileProfilerNativeSrc)
         .Executes(() =>
         {
+            // arch resolves via GetUnixArchitectureAndExtension() to one of:
+            //   linux-x64, linux-arm64, linux-musl-x64, linux-musl-arm64.
+            // On arm64 specifically, this target runs on both the glibc and the
+            // Alpine/musl CI legs, which together populate both linux-arm64 and
+            // linux-musl-arm64 RID folders in the aggregated monitoring home.
             var (arch, _) = GetUnixArchitectureAndExtension();
             var sourceDir = ProfilerDeployDirectory / arch;
             EnsureExistingDirectory(MonitoringHomeDirectory / arch);
@@ -329,20 +334,28 @@ partial class Build
     Target BuildAndRunProfilerCpuLimitTests => _ => _
         .After(BuildProfilerSamples)
         .Description("Run the profiler container tests")
-        .Requires(() => IsLinux && !IsArm64)
+        .Requires(() => IsLinux)
         .Executes(() =>
         {
             BuildAndRunProfilerIntegrationTestsInternal("(Category=CpuLimitTest)");
         });
 
+    Target BuildAndRunProfilerSigPendingLimitTests => _ => _
+        .After(BuildProfilerSamples)
+        .Description("Run the profiler tests that need a constrained RLIMIT_SIGPENDING")
+        .Requires(() => IsLinux)
+        .Executes(() =>
+        {
+            BuildAndRunProfilerIntegrationTestsInternal("(Category=SigPendingLimitTest)");
+        });
+
     Target BuildAndRunProfilerIntegrationTests => _ => _
         .After(BuildProfilerSamples)
         .Description("Builds and runs the profiler integration tests")
-        .Requires(() => !IsArm64)
         .Executes(() =>
         {
-            // Exclude CpuLimitTest from this path: They are already launched in a specific step + specific setup
-            var filter = string.IsNullOrWhiteSpace(Filter) ? $"{(IsLinux ? "(Category!=WindowsOnly)" : "(Category!=LinuxOnly)")}&(Category!=CpuLimitTest)" : Filter;
+            // Exclude CpuLimitTest and SigPendingLimitTest from this path: They are already launched in a specific step + specific setup
+            var filter = string.IsNullOrWhiteSpace(Filter) ? $"{(IsLinux ? "(Category!=WindowsOnly)" : "(Category!=LinuxOnly)")}&(Category!=CpuLimitTest)&(Category!=SigPendingLimitTest)" : Filter;
             BuildAndRunProfilerIntegrationTestsInternal(filter);
         });
 
@@ -381,7 +394,7 @@ partial class Build
         finally
         {
             CopyDumpsTo(ProfilerBuildDataDirectory);
-            // A crashed occured on linux and the memory dump copy failed due a lack of permission.
+            // A crashed occurred on linux and the memory dump copy failed due a lack of permission.
             Chmod.Value.Invoke("-R 777 " + ProfilerBuildDataDirectory);
         }
     }
@@ -681,7 +694,7 @@ partial class Build
             var platforms =
                 IsWin
                 ? new[] { MSBuildTargetPlatform.x64, MSBuildTargetPlatform.x86 }
-                : new[] { MSBuildTargetPlatform.x64 };
+                : new[] { IsArm64 ? ARM64TargetPlatform : MSBuildTargetPlatform.x64 };
 
             foreach (var platform in platforms)
             {
@@ -696,7 +709,7 @@ partial class Build
             var platforms =
                 IsWin
                 ? new[] { MSBuildTargetPlatform.x64, MSBuildTargetPlatform.x86 }
-                : new[] { MSBuildTargetPlatform.x64 };
+                : new[] { IsArm64 ? ARM64TargetPlatform : MSBuildTargetPlatform.x64 };
 
             foreach (var platform in platforms)
             {
@@ -784,7 +797,11 @@ partial class Build
 
     Target CompileProfilerWithTsanLinux => _ => _
         .Unlisted()
-        .OnlyWhenStatic(() => IsLinux)
+        // TODO: re-enable on arm64 once CI images/kernels expose enough user virtual
+        // address space for TSAN's aarch64 shadow-memory layout (often described as
+        // needing ~48-bit VMA; narrow 39- or 42-bit VA is common on arm64 cloud VMs
+        // regardless of CPU vendor—e.g. Graviton, Ampere, Azure Cobalt).
+        .OnlyWhenStatic(() => IsLinux && !IsArm64) // TSAN requires 48-bit VMA, unavailable on arm64 CI
         .Before(PublishProfiler)
         .Executes(() =>
         {
@@ -799,14 +816,19 @@ partial class Build
 
     Target RunUnitTestsWithTsanLinux => _ => _
         .Unlisted()
-        .OnlyWhenStatic(() => IsLinux)
+        // Same arm64 VMA / TSAN limitation as CompileProfilerWithTsanLinux (see comment there).
+        .OnlyWhenStatic(() => IsLinux && !IsArm64) // TSAN requires 48-bit VMA, unavailable on arm64 CI
         .Executes(() =>
         {
             // Filtering tests is temporary.
             // For now, false negatives are reported by the tool because dependencies are not built
             // against thread sanitizer lib (ex: libdatadog).
-            // For now we focus on the ring buffer unit tests.
-            RunProfilerUnitTests("Datadog.Profiler.Native.Tests", Configuration.Release, MSBuildTargetPlatform.x64, SanitizerKind.Tsan, testsFilter: "*RingBuffer*");
+            // For now we focus on the ring buffer unit tests, plus the StackSamplerLoop/
+            // StackSamplerLoopManager lifecycle tests added for the shutdown-crash fix - they stub
+            // out the stack-walking/collector path entirely (see StubOutSamplingConfig() in
+            // StackSamplerLoopManagerTest.cpp), so they shouldn't hit the same libdatadog-related
+            // noise the rest of the unfiltered suite can.
+            RunProfilerUnitTests("Datadog.Profiler.Native.Tests", Configuration.Release, MSBuildTargetPlatform.x64, SanitizerKind.Tsan, testsFilter: "*RingBuffer*:*StackSamplerLoop*");
         });
 
     Target BuildProfilerSampleForSanitiserTests => _ => _
@@ -823,7 +845,7 @@ partial class Build
             var platforms =
                 IsWin
                 ? new[] { MSBuildTargetPlatform.x64, MSBuildTargetPlatform.x86 }
-                : new[] { MSBuildTargetPlatform.x64 };
+                : new[] { IsArm64 ? ARM64TargetPlatform : MSBuildTargetPlatform.x64 };
 
             var sampleApp = ProfilerSamplesSolution.GetProject("Samples.Computer01");
 
@@ -848,7 +870,7 @@ partial class Build
         .Triggers(CheckTestResultForProfilerWithSanitizer)
         .Executes(() =>
         {
-            RunSampleWithSanitizer(MSBuildTargetPlatform.x64, SanitizerKind.Ubsan);
+            RunSampleWithSanitizer(IsArm64 ? ARM64TargetPlatform : MSBuildTargetPlatform.x64, SanitizerKind.Ubsan);
         });
 
     Target ValidateNativeProfilerGlibcCompatibility => _ => _
@@ -875,7 +897,7 @@ partial class Build
             var filesAndVersion = new []
             {
                 (FileNames.NativeProfiler, IsArm64 ? new Version(2, 18) : new Version(2, 17), null, $"native-profiler-symbols-alpine-{UnixArchitectureIdentifier}"),
-                ("libdatadog_profiling", IsArm64 ? new Version(2, 17) : new Version(2, 16), libdatadogAllowedSymbols, $"native-libdatadog-symbols-alpine-{UnixArchitectureIdentifier}")
+                ("libdatadog_profiling", IsArm64 ? new Version(2, 17) : new Version(2, 15), libdatadogAllowedSymbols, $"native-libdatadog-symbols-alpine-{UnixArchitectureIdentifier}")
             };
 
             var helper = new NativeValidationHelper(Nm, IsAlpine, BuildProjectDirectory);
@@ -909,13 +931,25 @@ partial class Build
                 { "DD_INTERNAL_PROFILING_DEBUG_INFO_ENABLED", "1" },
                 { "DD_INTERNAL_GC_THREADS_CPUTIME_ENABLED", "1" },
                 { "DD_PROFILING_MANAGED_ACTIVATION_ENABLED", "0" },  // disable StableConfig (i.e. don't wait for the tracer to set the configuration)
+                { "DD_INTERNAL_PROFILING_LIBRARIES_CACHE_START_TIMEOUT", "10000" }, // 10 seconds to avoid flakiness in CI
             };
+
+        if (IsArm64)
+        {
+            // Temporary flag to enable profiling on arm64. This will be removed when the native profiler is updated to support arm64.
+            envVars["DD_INTERNAL_PROFILING_ENABLED_ARM64"] = "1";
+        }
 
         if (IsLinux)
         {
             if (sanitizer is SanitizerKind.Asan)
             {
-                envVars["LD_PRELOAD"] = "libasan.so.6";
+                // libasan SONAME differs between the two ASAN CI images:
+                //   - arm64: older Ubuntu/Debian base shipping gcc 9 -> libasan.so.5.
+                //   - x64:   newer image shipping gcc 10+ -> libasan.so.6.
+                // If/when the arm64 image is upgraded to gcc 10+, this can be
+                // collapsed to libasan.so.6 unconditionally.
+                envVars["LD_PRELOAD"] = IsArm64 ? "libasan.so.5" : "libasan.so.6";
                 // detect_leaks set to 0 to avoid false positive since not all libs are compiled against ASAN (ex. CLR binaries)
                 envVars["ASAN_OPTIONS"] = "detect_leaks=0";
             }

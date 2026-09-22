@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 
-<Include>
+<Include xmlns="http://wixtoolset.org/schemas/v4/wxs">
   <?define BaseProductName = ".NET Tracer" ?>
   <?define ArpManufacturer = "Datadog, Inc." ?>
   <?define Company = "Datadog" ?>
@@ -11,9 +11,11 @@
   <?define ProductName = "Datadog $(var.BaseProductName) 64-bit" ?>
   <?define Win64 = "yes" ?>
   <?define PlatformProgramFilesFolder = "ProgramFiles64Folder" ?>
+  <?define WIXUIARCH = "X64" ?>
   <?else ?>
   <?define ProductName = "Datadog $(var.BaseProductName) 32-bit" ?>
   <?define Win64 = "no" ?>
   <?define PlatformProgramFilesFolder = "ProgramFilesFolder" ?>
+  <?define WIXUIARCH = "X86" ?>
   <?endif ?>
 </Include>

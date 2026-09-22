@@ -38,7 +38,7 @@ internal static class Program
     private static void RegisterShutdownHook(string? shutdownFile)
     {
         var tracerAssembly = WaitForTracerAssembly();
-        var lifetimeManagerType = tracerAssembly.GetType("Datadog.Trace.LifetimeManager", throwOnError: true);
+        var lifetimeManagerType = tracerAssembly.GetType("Datadog.Trace.LifetimeManager", throwOnError: true)!;
         var instanceProperty = lifetimeManagerType.GetProperty("Instance", BindingFlags.Public | BindingFlags.Static);
         var addShutdownTaskMethod = lifetimeManagerType.GetMethod("AddShutdownTask", BindingFlags.Public | BindingFlags.Instance, null, new[] { typeof(Action<Exception?>) }, null);
 
@@ -108,6 +108,16 @@ internal static class Program
 
     private static void WriteShutdown(string? shutdownFile, Exception? exception)
     {
+        // Simulate a slow shutdown hook so that subsequent SIGTERMs arrive while
+        // shutdown is still in progress. Controlled via DD_LIFETIME_SHUTDOWN_DELAY_MS.
+        var delayEnv = Environment.GetEnvironmentVariable("DD_LIFETIME_SHUTDOWN_DELAY_MS");
+        if (!string.IsNullOrEmpty(delayEnv)
+            && int.TryParse(delayEnv, NumberStyles.Integer, CultureInfo.InvariantCulture, out var delayMs)
+            && delayMs > 0)
+        {
+            Thread.Sleep(delayMs);
+        }
+
         Console.WriteLine(ShutdownMarker);
         if (string.IsNullOrEmpty(shutdownFile))
         {

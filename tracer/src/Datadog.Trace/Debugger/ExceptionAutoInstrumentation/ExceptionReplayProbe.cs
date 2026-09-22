@@ -22,7 +22,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
         private readonly int _hashCode;
         private readonly object _locker = new();
         private readonly List<ExceptionCase> _exceptionCases = new();
-        private int _isInstrumented = 0;
+        private int _isInstrumented;
         private int _maxFramesToCapture;
 
         public ExceptionReplayProbe(MethodUniqueIdentifier method, int maxFramesToCapture)

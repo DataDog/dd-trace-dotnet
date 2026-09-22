@@ -4,29 +4,36 @@
 // </copyright>
 
 #nullable enable
-using System.Linq;
-using Datadog.Trace.Agent.Transports;
+using System;
+using System.Collections.Generic;
 using Datadog.Trace.HttpOverStreams;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.DataStreamsMonitoring.Transport;
 
 internal sealed class DataStreamsHttpHeaderHelper : HttpHeaderHelperBase
 {
-    private static string? _metadataHeaders = null;
+    public static readonly DataStreamsHttpHeaderHelper Instance = new();
+    private readonly Lazy<string> _serializedHeaders;
 
-    protected override string MetadataHeaders
+    private DataStreamsHttpHeaderHelper()
     {
-        get
+        _serializedHeaders = new(static () =>
         {
-            if (_metadataHeaders is null)
+            var sb = StringBuilderCache.Acquire();
+            foreach (var kvp in DataStreamsHttpHeaderNames.GetDefaultAgentHeaders())
             {
-                var headers = DataStreamsHttpHeaderNames.GetDefaultAgentHeaders().Select(kvp => $"{kvp.Key}: {kvp.Value}{DatadogHttpValues.CrLf}");
-                _metadataHeaders = string.Concat(headers);
+                sb.Append(kvp.Key);
+                sb.Append(": ");
+                sb.Append(kvp.Value);
+                sb.Append(DatadogHttpValues.CrLf);
             }
 
-            return _metadataHeaders;
-        }
+            return StringBuilderCache.GetStringAndRelease(sb);
+        });
     }
 
-    protected override string ContentType => MimeTypes.MsgPack;
+    public override KeyValuePair<string, string>[] DefaultHeaders => DataStreamsHttpHeaderNames.GetDefaultAgentHeaders();
+
+    protected override string HttpSerializedDefaultHeaders => _serializedHeaders.Value;
 }

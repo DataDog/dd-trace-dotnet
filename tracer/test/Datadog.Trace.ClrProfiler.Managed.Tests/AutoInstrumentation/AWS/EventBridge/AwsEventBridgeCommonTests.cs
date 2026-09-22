@@ -46,6 +46,14 @@ public class AwsEventBridgeCommonTests
     }
 
     [Fact]
+    public void GetEventBusNameOrDefault_ReturnsDefaultBusWhenMissing()
+    {
+        AwsEventBridgeCommon.GetEventBusNameOrDefault("custom-bus").Should().Be("custom-bus");
+        AwsEventBridgeCommon.GetEventBusNameOrDefault(string.Empty).Should().Be(AwsEventBridgeCommon.DefaultEventBusName);
+        AwsEventBridgeCommon.GetEventBusNameOrDefault(null).Should().Be(AwsEventBridgeCommon.DefaultEventBusName);
+    }
+
+    [Fact]
     public async Task GetCorrectOperationName()
     {
         await using var tracerV0 = GetTracer("v0");

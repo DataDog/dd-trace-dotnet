@@ -199,16 +199,39 @@ namespace Datadog.Trace.Propagators
                     sb.Length--;
                 }
 
-                var additionalState = context.AdditionalW3CTraceState;
+                var otelTraceState = context.OtelTraceState;
+                var additionalTraceState = context.AdditionalW3CTraceState;
 
-                if (!string.IsNullOrWhiteSpace(additionalState))
+                if (otelTraceState is { IsModified: true })
                 {
-                    if (sb.Length > 0)
+                    ExtractMember(
+                        additionalTraceState.AsSpan(),
+                        "ot=",
+                        out _,
+                        out var precedingMembers,
+                        out var succeedingMembers,
+                        out _);
+
+                    // Save the position prior to emitting the "ot" so we can "rewind" the length
+                    // in case the actual contents are empty.
+                    var rewindPosition = sb.Length;
+
+                    sb.Append(TraceStateHeaderValuesSeparator);
+                    sb.Append("ot=");
+
+                    var otPosition = sb.Length;
+                    OtelTraceStateHelpers.SetRvTh(sb, otelTraceState.CachedHeaderString, otelTraceState.RandomValue, otelTraceState.Threshold);
+                    if (sb.Length == otPosition)
                     {
-                        sb.Append(TraceStateHeaderValuesSeparator);
+                        sb.Length = rewindPosition;
                     }
 
-                    sb.Append(additionalState);
+                    AppendTraceStateMembers(sb, precedingMembers);
+                    AppendTraceStateMembers(sb, succeedingMembers);
+                }
+                else
+                {
+                    AppendTraceStateMembers(sb, additionalTraceState.AsSpan());
                 }
 
                 return StringBuilderCache.GetStringAndRelease(sb);
@@ -269,7 +292,6 @@ namespace Datadog.Trace.Propagators
             string rawTraceId;
             string rawSpanId;
 
-#if NETCOREAPP
             var w3cTraceId = header.AsSpan(start: 3, length: 32);
             var w3cSpanId = header.AsSpan(start: 36, length: 16);
 
@@ -295,31 +317,6 @@ namespace Datadog.Trace.Propagators
             {
                 return false;
             }
-#else
-            rawTraceId = header.Substring(startIndex: 3, length: 32);
-            rawSpanId = header.Substring(startIndex: 36, length: 16);
-
-            if (!HexString.TryParseTraceId(rawTraceId, out traceId) || traceId == TraceId.Zero)
-            {
-                return false;
-            }
-
-            if (!HexString.TryParseUInt64(rawSpanId, out parentId) || parentId == 0)
-            {
-                return false;
-            }
-
-            bool sampled;
-
-            if (HexString.TryParseByte(header.Substring(53, 2), out var traceFlags))
-            {
-                sampled = ((TraceFlags)traceFlags).HasFlagFast(TraceFlags.Sampled);
-            }
-            else
-            {
-                return false;
-            }
-#endif
 
             traceParent = new W3CTraceParent(
                 traceId: traceId,
@@ -337,122 +334,76 @@ namespace Datadog.Trace.Propagators
             // header format: "[*,]dd=s:1;o:rum;t.dm:-4;t.usr.id:12345[,*]"
             if (string.IsNullOrWhiteSpace(header))
             {
-                return new W3CTraceState(samplingPriority: null, origin: null, lastParent: ZeroLastParent, propagatedTags: null, additionalValues: null);
+                return new W3CTraceState(samplingPriority: null, origin: null, lastParent: ZeroLastParent, propagatedTags: null, additionalValues: null, otTraceState: null);
             }
 
-            SplitTraceStateValues(header!, out var ddValues, out var additionalValues);
+            var traceState = header!.AsSpan().Trim();
+            ExtractMember(
+                traceState,
+                "dd=",
+                out var ddValues,
+                out var precedingMembers,
+                out var succeedingMembers,
+                out _);
+            ExtractMember(
+                traceState,
+                "ot=",
+                out var otTraceState,
+                out _,
+                out _,
+                out var hasOtTraceState);
+            var additionalValues = GetAdditionalValues(precedingMembers, succeedingMembers);
 
-            if (ddValues is null or { Length: < 6 })
+            return ParseDdMember(ddValues, additionalValues, hasOtTraceState ? otTraceState.ToString() : null);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static W3CTraceState ParseDdMember(ReadOnlySpan<char> ddValues, string? additionalValues, string? otTraceState)
+        {
+            if (ddValues.Length < 3)
             {
                 // "dd" section not found or it is too short
-                // shortest valid length is 6 as in "dd=a:b"
+                // shortest valid length is 3 as in "a:b" ("dd=" prefix already stripped)
                 // note for this case the p will be viewed as 0 if added as a span tag
-                return new W3CTraceState(samplingPriority: null, origin: null, lastParent: ZeroLastParent, propagatedTags: null, additionalValues);
+                return new W3CTraceState(samplingPriority: null, origin: null, lastParent: ZeroLastParent, propagatedTags: null, additionalValues, otTraceState);
             }
 
             int? samplingPriority = null;
-            string? origin = null;
-            string? lastParent = null;
+            ReadOnlySpan<char> origin = default;
+            ReadOnlySpan<char> lastParent = default;
             var propagatedTagsBuilder = StringBuilderCache.Acquire();
 
             try
             {
-                // skip "dd="
-                var startIndex = 3;
-
-                // name1:value1;
-                //             ^ endIndex
-                //      ^ colonIndex
-                // ^ startIndex
-                while (true)
+                foreach (var member in new SpanCharSplitter(ddValues, TraceStateDatadogPairsSeparator, count: int.MaxValue))
                 {
-                    if (startIndex > ddValues.Length - 3)
+                    if (!ExtractKeyValue(member.AsSpan(), out var name, out var value))
                     {
-                        // not enough chars left, we need at least 3, "a:b"
-                        break;
-                    }
-
-                    // search for next separator semicolon
-                    var endIndex = ddValues.IndexOf(TraceStateDatadogPairsSeparator, startIndex);
-
-                    if (endIndex < 0)
-                    {
-                        // no more semicolons left,
-                        // this key/value pair goes on to the end of ddValues
-                        endIndex = ddValues.Length;
-                    }
-
-                    var colonIndex = ddValues.IndexOf(TraceStateDatadogKeyValueSeparator, startIndex, endIndex - startIndex);
-
-                    if (colonIndex <= startIndex || endIndex - 1 <= colonIndex)
-                    {
-                        // not a valid key/value pair, skip past the semicolon
-                        // conditions:
-                        // - colon not found, or
-                        // - key length is 0, or
-                        // - value length is 0
-                        startIndex = endIndex + 1;
                         continue;
                     }
 
-#if NETCOREAPP
-                    var name = ddValues.AsSpan(start: startIndex, length: colonIndex - startIndex);
-                    var value = ddValues.AsSpan(start: colonIndex + 1, length: endIndex - colonIndex - 1);
-
-                    if (name.Equals(TraceStateSamplingPriorityKey, StringComparison.Ordinal))
+                    if (name.Equals(TraceStateSamplingPriorityKey.AsSpan(), StringComparison.Ordinal))
                     {
-                        // SamplingPriorityToInt32(ReadOnlySpan<char>)
                         samplingPriority = SamplingPriorityToInt32(value);
                     }
-                    else if (name.Equals(TraceStateOriginKey, StringComparison.Ordinal))
-                    {
-                        origin = value.ToString();
-                    }
-                    else if (name.Equals(TraceStateLastParentKey, StringComparison.Ordinal))
-                    {
-                        lastParent = value.ToString();
-                    }
-                    else if (name.StartsWith(PropagatedTagPrefix, StringComparison.Ordinal))
-                    {
-                        value = ReplaceCharacters(value, LowerBound, UpperBound, OutOfBoundsReplacement, ExtractPropagatedTagValueReplacements);
-
-                        propagatedTagsBuilder.Append(TagPropagation.PropagatedTagPrefix)
-                                             .Append(name[2..]) // tag name without "t." prefix
-                                             .Append(TagPropagation.KeyValueSeparator)
-                                             .Append(value)
-                                             .Append(TagPropagation.TagPairSeparator);
-                    }
-#else
-                    var name = ddValues.Substring(startIndex: startIndex, length: colonIndex - startIndex);
-                    var value = ddValues.Substring(startIndex: colonIndex + 1, length: endIndex - colonIndex - 1);
-
-                    if (name == TraceStateSamplingPriorityKey)
-                    {
-                        // SamplingPriorityToInt32(string)
-                        samplingPriority = SamplingPriorityToInt32(value);
-                    }
-                    else if (name == TraceStateOriginKey)
+                    else if (name.Equals(TraceStateOriginKey.AsSpan(), StringComparison.Ordinal))
                     {
                         origin = value;
                     }
-                    else if (name == TraceStateLastParentKey)
+                    else if (name.Equals(TraceStateLastParentKey.AsSpan(), StringComparison.Ordinal))
                     {
                         lastParent = value;
                     }
-                    else if (name.StartsWith(PropagatedTagPrefix, StringComparison.Ordinal))
+                    else if (name.StartsWith(PropagatedTagPrefix.AsSpan(), StringComparison.Ordinal))
                     {
                         value = ReplaceCharacters(value, LowerBound, UpperBound, OutOfBoundsReplacement, ExtractPropagatedTagValueReplacements);
 
                         propagatedTagsBuilder.Append(TagPropagation.PropagatedTagPrefix)
-                                             .Append(name.Substring(2)) // tag name without "t." prefix
+                                             .Append(name.Slice(2)) // tag name without "t." prefix
                                              .Append(TagPropagation.KeyValueSeparator)
                                              .Append(value)
                                              .Append(TagPropagation.TagPairSeparator);
                     }
-#endif
-
-                    // skip past the semicolon
-                    startIndex = endIndex + 1;
                 }
 
                 string? propagatedTags;
@@ -473,9 +424,7 @@ namespace Datadog.Trace.Propagators
                     propagatedTags = null;
                 }
 
-                lastParent ??= ZeroLastParent;
-
-                return new W3CTraceState(samplingPriority, origin, lastParent, propagatedTags, additionalValues);
+                return new W3CTraceState(samplingPriority, origin.IsEmpty ? null : origin.ToString(), lastParent.IsEmpty ? ZeroLastParent : lastParent.ToString(), propagatedTags, additionalValues, otTraceState);
             }
             finally
             {
@@ -483,121 +432,119 @@ namespace Datadog.Trace.Propagators
             }
         }
 
-        internal static void SplitTraceStateValues(string header, out string? ddValues, out string? additionalValues)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static bool ExtractKeyValue(ReadOnlySpan<char> source, out ReadOnlySpan<char> name, out ReadOnlySpan<char> value)
         {
-            // header format: "[*,]dd=s:1;o:rum;t.dm:-4;t.usr.id:12345[,*]"
+            var colonIndex = source.IndexOf(TraceStateDatadogKeyValueSeparator);
 
-            if (string.IsNullOrWhiteSpace(header))
+            if (colonIndex <= 0 || colonIndex >= source.Length - 1)
             {
-                ddValues = null;
-                additionalValues = null;
-                return;
+                name = default;
+                value = default;
+                return false;
             }
 
-            header = header.Trim();
-            int ddStartIndex;
-
-            if (header.StartsWith("dd=", StringComparison.Ordinal))
-            {
-                ddStartIndex = 0;
-            }
-            else
-            {
-                // if "dd=" is not at start of header, make sure we find the one preceded by comma
-                // in case there is something like "key1=valuedd=whatisthis,dd=..."
-                //                                                          ^ take this one
-                //                                            ^ ignore this one
-                ddStartIndex = header.IndexOf(",dd=", StringComparison.Ordinal);
-
-                if (ddStartIndex >= 0)
-                {
-                    // if ",dd=" was found, skip the ','
-                    ddStartIndex++;
-                }
-            }
-
-            if (ddStartIndex < 0)
-            {
-                // "dd=" was not found in header, the entire header is "additional values"
-                // example tracestate: "foo=bar"
-                //                      ^^^^^^^
-                ddValues = null;
-                additionalValues = header;
-                return;
-            }
-
-            // search for end of "dd="
-            var ddEndIndex = header.IndexOf(TraceStateHeaderValuesSeparator, ddStartIndex + 3);
-
-            if (ddEndIndex < 0)
-            {
-                // "dd=" reaches the end of header
-                ddEndIndex = header.Length;
-            }
-
-            ddValues = header.Substring(ddStartIndex, ddEndIndex - ddStartIndex);
-
-            if (ddStartIndex == 0 && ddEndIndex == header.Length)
-            {
-                // "dd" was the only key, no additional values
-                // example tracestate: "dd=s:1;o:rum"
-                additionalValues = null;
-            }
-            else if (ddStartIndex == 0)
-            {
-                // "dd" first, additional values later
-                // example tracestate: "dd=s:1;o:rum,foo=bar"
-                //                                   ^^^^^^^
-                additionalValues = header.Substring(ddEndIndex + 1, header.Length - ddEndIndex - 1);
-            }
-            else if (ddEndIndex == header.Length)
-            {
-                // additional values first, "dd" later
-                // example tracestate: "foo=bar,dd=s:1;o:rum"
-                //                      ^^^^^^^
-                additionalValues = header.Substring(0, ddStartIndex - 1);
-            }
-            else
-            {
-                // additional values on both sides, "dd" in the middle
-                // example tracestate: "foo1=bar1,dd=s:1;o:rum,foo2=bar2" => "foo1=bar1,foo2=bar2"
-                //                      ^^^^^^^^^              ^^^^^^^^^
-                var otherValuesLeft = header.Substring(0, ddStartIndex - 1);
-                var otherValuesRight = header.Substring(ddEndIndex + 1, header.Length - ddEndIndex - 1);
-
-                var sb = StringBuilderCache.Acquire(otherValuesLeft.Length + otherValuesRight.Length + 1);
-                sb.Append(otherValuesLeft).Append(TraceStateHeaderValuesSeparator).Append(otherValuesRight);
-                additionalValues = StringBuilderCache.GetStringAndRelease(sb);
-            }
+            name = source.Slice(0, colonIndex);
+            value = source.Slice(colonIndex + 1);
+            return true;
         }
 
-#if NETCOREAPP
+        private static void ExtractMember(
+            ReadOnlySpan<char> header,
+            string prefix,
+            out ReadOnlySpan<char> value,
+            out ReadOnlySpan<char> precedingMembers,
+            out ReadOnlySpan<char> succeedingMembers,
+            out bool found)
+        {
+            var startIndex = 0;
+
+            while (startIndex < header.Length && !header.Slice(startIndex).StartsWith(prefix.AsSpan(), StringComparison.Ordinal))
+            {
+                var separatorIndex = header.Slice(startIndex).IndexOf(TraceStateHeaderValuesSeparator);
+
+                if (separatorIndex < 0)
+                {
+                    value = default;
+                    precedingMembers = header;
+                    succeedingMembers = default;
+                    found = false;
+                    return;
+                }
+
+                startIndex += separatorIndex + 1;
+            }
+
+            if (startIndex == header.Length)
+            {
+                value = default;
+                precedingMembers = header;
+                succeedingMembers = default;
+                found = false;
+                return;
+            }
+
+            var endIndex = header.Slice(startIndex + prefix.Length).IndexOf(TraceStateHeaderValuesSeparator);
+            endIndex = endIndex < 0 ? -1 : startIndex + prefix.Length + endIndex;
+            endIndex = endIndex < 0 ? header.Length : endIndex;
+
+            value = header.Slice(startIndex + prefix.Length, endIndex - startIndex - prefix.Length);
+            found = true;
+
+            precedingMembers = startIndex == 0 ? default : header.Slice(0, startIndex - 1);
+            succeedingMembers = endIndex == header.Length ? default : header.Slice(endIndex + 1);
+        }
+
+        private static string? GetAdditionalValues(ReadOnlySpan<char> precedingMembers, ReadOnlySpan<char> succeedingMembers)
+        {
+            if (precedingMembers.IsEmpty)
+            {
+                return succeedingMembers.IsEmpty ? null : succeedingMembers.ToString();
+            }
+
+            return succeedingMembers.IsEmpty ? precedingMembers.ToString() : CombineMembers(precedingMembers, succeedingMembers);
+        }
+
+        private static string CombineMembers(ReadOnlySpan<char> precedingMembers, ReadOnlySpan<char> succeedingMembers)
+        {
+            var sb = StringBuilderCache.Acquire(precedingMembers.Length + succeedingMembers.Length + 1);
+            sb.Append(precedingMembers)
+              .Append(TraceStateHeaderValuesSeparator)
+              .Append(succeedingMembers);
+            return StringBuilderCache.GetStringAndRelease(sb);
+        }
+
+        private static void AppendTraceStateMembers(StringBuilder sb, ReadOnlySpan<char> members)
+        {
+            if (members.Trim().IsEmpty)
+            {
+                return;
+            }
+
+            if (sb.Length > 0)
+            {
+                sb.Append(TraceStateHeaderValuesSeparator);
+            }
+
+            sb.Append(members);
+        }
+
         private static int? SamplingPriorityToInt32(ReadOnlySpan<char> samplingPriority)
         {
-            return samplingPriority switch
+            return samplingPriority.Length switch
                    {
-                       "2" => 2,
-                       "1" => 1,
-                       "0" => 0,
-                       "-1" => -1,
-                       "" => null,
-                       _ => int.TryParse(samplingPriority, out var result) ? result : null
-                   };
-        }
+                       0 => null,
+                       1 when samplingPriority[0] == '2' => 2,
+                       1 when samplingPriority[0] == '1' => 1,
+                       1 when samplingPriority[0] == '0' => 0,
+                       2 when samplingPriority[0] == '-' && samplingPriority[1] == '1' => -1,
+#if NETCOREAPP
+                       _ => int.TryParse(samplingPriority, out var result) ? result : null,
 #else
-        private static int? SamplingPriorityToInt32(string? samplingPriority)
-        {
-            return samplingPriority switch
-                   {
-                       "2" => 2,
-                       "1" => 1,
-                       "0" => 0,
-                       "-1" => -1,
-                       null or "" => null,
-                       not null => int.TryParse(samplingPriority, out var result) ? result : null
+                       _ => int.TryParse(samplingPriority.ToString(), out var result) ? result : null,
+#endif
                    };
         }
-#endif
 
         public bool TryExtract<TCarrier, TCarrierGetter>(
             TCarrier carrier,
@@ -657,6 +604,7 @@ namespace Datadog.Trace.Propagators
 
             spanContext.PropagatedTags = traceTags;
             spanContext.AdditionalW3CTraceState = traceState.AdditionalValues;
+            spanContext.OtelTraceState = OtelTraceState.Parse(traceState.OtTraceState);
             spanContext.LastParentId = traceState.LastParent;
 
             context = new PropagationContext(spanContext, baggage: null);
@@ -783,22 +731,26 @@ namespace Datadog.Trace.Propagators
             return StringBuilderCache.GetStringAndRelease(sb);
         }
 
-#if NETCOREAPP
-        public static bool NeedsCharacterReplacement(ReadOnlySpan<char> value, char lowerBound, char upperBound, KeyValuePair<char, char>[] replacements)
-#else
         public static bool NeedsCharacterReplacement(string value, char lowerBound, char upperBound, KeyValuePair<char, char>[] replacements)
-#endif
+            => NeedsCharacterReplacement(value.AsSpan(), lowerBound, upperBound, replacements);
+
+        public static string ReplaceCharacters(string value, char lowerBound, char upperBound, char outOfBoundsReplacement, KeyValuePair<char, char>[] replacements)
+            => ReplaceCharacters(value.AsSpan(), lowerBound, upperBound, outOfBoundsReplacement, replacements).ToString();
+
+        private static bool NeedsCharacterReplacement(ReadOnlySpan<char> value, char lowerBound, char upperBound, KeyValuePair<char, char>[] replacements)
         {
-            foreach (var c in value)
+            for (var index = 0; index < value.Length; index++)
             {
-                if (c < lowerBound || c > upperBound)
+                var character = value[index];
+
+                if (character < lowerBound || character > upperBound)
                 {
                     return true;
                 }
 
                 foreach (var pair in replacements)
                 {
-                    if (c == pair.Key)
+                    if (character == pair.Key)
                     {
                         return true;
                     }
@@ -808,28 +760,21 @@ namespace Datadog.Trace.Propagators
             return false;
         }
 
-#if NETCOREAPP
-        public static ReadOnlySpan<char> ReplaceCharacters(ReadOnlySpan<char> value, char lowerBound, char upperBound, char outOfBoundsReplacement, KeyValuePair<char, char>[] replacements)
-#else
-        public static string ReplaceCharacters(string value, char lowerBound, char upperBound, char outOfBoundsReplacement, KeyValuePair<char, char>[] replacements)
-#endif
+        private static ReadOnlySpan<char> ReplaceCharacters(ReadOnlySpan<char> value, char lowerBound, char upperBound, char outOfBoundsReplacement, KeyValuePair<char, char>[] replacements)
         {
             if (!NeedsCharacterReplacement(value, lowerBound, upperBound, replacements))
             {
-                // common case, no replacements
                 return value;
             }
 
             var sb = StringBuilderCache.Acquire(value.Length);
             sb.Append(value);
 
-            for (var i = 0; i < sb.Length; i++)
+            for (var index = 0; index < sb.Length; index++)
             {
-                var c = value[i];
-
-                if (c < lowerBound || c > upperBound)
+                if (value[index] < lowerBound || value[index] > upperBound)
                 {
-                    sb[i] = outOfBoundsReplacement;
+                    sb[index] = outOfBoundsReplacement;
                 }
             }
 
@@ -838,7 +783,7 @@ namespace Datadog.Trace.Propagators
                 sb.Replace(replacement.Key, replacement.Value);
             }
 
-            return StringBuilderCache.GetStringAndRelease(sb);
+            return StringBuilderCache.GetStringAndRelease(sb).AsSpan();
         }
 
         internal readonly struct TraceTagAppender : TraceTagCollection.ITagEnumerator
@@ -859,15 +804,14 @@ namespace Datadog.Trace.Propagators
                 if (tag.Key.StartsWith(TagPropagation.PropagatedTagPrefix, StringComparison.Ordinal) &&
                     !tag.Key.Equals(Tags.Propagated.TraceIdUpper, StringComparison.Ordinal))
                 {
-#if NETCOREAPP
-                    var key = tag.Key.AsSpan(start: 6);
-#else
-                    var key = tag.Key.Substring(startIndex: 6);
-#endif
-
+                    var key = tag.Key.AsSpan(6);
                     var tagKey = ReplaceCharacters(key, LowerBound, UpperBound, OutOfBoundsReplacement, InjectPropagatedTagKeyReplacements);
-                    var tagValue = ReplaceCharacters(tag.Value, LowerBound, UpperBound, OutOfBoundsReplacement, InjectPropagatedTagValueReplacements);
-                    _sb.Append(PropagatedTagPrefix).Append(tagKey).Append(TraceStateDatadogKeyValueSeparator).Append(tagValue).Append(TraceStateDatadogPairsSeparator);
+                    var tagValue = ReplaceCharacters(tag.Value.AsSpan(), LowerBound, UpperBound, OutOfBoundsReplacement, InjectPropagatedTagValueReplacements);
+                    _sb.Append(PropagatedTagPrefix)
+                       .Append(tagKey)
+                       .Append(TraceStateDatadogKeyValueSeparator)
+                       .Append(tagValue)
+                       .Append(TraceStateDatadogPairsSeparator);
                 }
             }
         }

@@ -45,7 +45,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
                     return;
                 }
 
-                if (Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.IsNullRef(ref arg))
+                if (Unsafe.IsNullRef(ref arg))
                 {
                     if (Log.IsEnabled(Vendors.Serilog.Events.LogEventLevel.Debug))
                     {
@@ -93,7 +93,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
                     return;
                 }
 
-                if (Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.IsNullRef(ref local))
+                if (Unsafe.IsNullRef(ref local))
                 {
                     if (Log.IsEnabled(Vendors.Serilog.Events.LogEventLevel.Debug))
                     {
@@ -198,12 +198,12 @@ namespace Datadog.Trace.Debugger.Instrumentation
                     return CreateInvalidatedLineDebuggerState();
                 }
 
-                if (!probeData.Processor.ShouldProcess(in probeData))
+                if (!probeData.Processor.TryBeginProcess(in probeData, out var snapshotCreator))
                 {
                     return CreateInvalidatedLineDebuggerState();
                 }
 
-                var state = new LineDebuggerState(probeId, scope: default, methodMetadataIndex, ref probeData, lineNumber, probeFilePath, instance);
+                var state = new LineDebuggerState(probeId, scope: default, methodMetadataIndex, ref probeData, lineNumber, probeFilePath, instance, snapshotCreator);
                 var captureInfo = new CaptureInfo<Type>(state.MethodMetadataIndex, invocationTargetType: state.MethodMetadataInfo.DeclaringType, methodState: MethodState.BeginLine, localsCount: state.MethodMetadataInfo.LocalVariableNames.Length, argumentsCount: state.MethodMetadataInfo.ParameterNames.Length, lineCaptureInfo: new LineCaptureInfo(lineNumber, probeFilePath));
 
                 if (!state.ProbeData.Processor.Process(ref captureInfo, state.SnapshotCreator, in probeData))

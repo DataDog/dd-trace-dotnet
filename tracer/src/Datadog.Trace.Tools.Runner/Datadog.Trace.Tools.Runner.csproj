@@ -32,8 +32,8 @@
       <PropertyGroup>
         <!-- When building standalone we have to exclude <netcoreapp3.1 from the targets otherwise the SDK has a fit -->
         <TargetFrameworks>net10.0;net9.0;net8.0;net7.0;net6.0;net5.0;netcoreapp3.1;</TargetFrameworks>
-        <OutputPath>bin\$(Configuration)\Console</OutputPath>
-        <PublishDir Condition="'$(PublishDir)' == '' ">bin\$(Configuration)\Console\publish\$(RuntimeIdentifier)</PublishDir>
+        <!-- Distinguish the two variants under UseArtifactsOutput so console and tool builds don't clobber each other. -->
+        <ArtifactsProjectName>Datadog.Trace.Tools.Runner.Console</ArtifactsProjectName>
         <AssemblyName>dd-trace</AssemblyName>
         <RuntimeIdentifiers>win-x64;win-x86;linux-x64;linux-musl-x64;osx-x64;linux-arm64;linux-musl-arm64</RuntimeIdentifiers>
         <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
@@ -131,7 +131,8 @@
         <EmbedUntrackedSources>true</EmbedUntrackedSources>
         <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
         <PackageId>dd-trace</PackageId>
-        <OutputPath>bin\$(Configuration)\Tool</OutputPath>
+        <!-- Distinguish the two variants under UseArtifactsOutput so console and tool builds don't clobber each other. -->
+        <ArtifactsProjectName>Datadog.Trace.Tools.Runner.Tool</ArtifactsProjectName>
       </PropertyGroup>
       <ItemGroup>
         <Content Include="..\Datadog.Trace.Bundle\home\**\*.*" Pack="true" PackagePath="\home" LinkBase="home">
@@ -170,10 +171,12 @@
   <Target Name="RemoveDuplicate" AfterTargets="ComputeFilesToPublish" BeforeTargets="_HandleFileConflictsForPublish">
 
     <!-- Required for StrongNamer: https://github.com/dsplaisted/strongnamer/issues/61 -->
+    <!-- $(IntermediateOutputPath) is the fully-resolved obj path (with pivot/TFM/RID applied), -->
+    <!-- so it works for both the legacy obj\<Config>\<TFM>\<RID>\ layout and UseArtifactsOutput. -->
     <Message Text="Removing $(DuplicateFileToRemove) from publish output" Importance="high" />
     <ItemGroup>
-      <ResolvedFileToPublish Remove="$(MSBuildThisFileDirectory)$(BaseIntermediateOutputPath)$(Configuration)\$(TargetFramework)\$(RuntimeIdentifier)\SignedAssemblies\Spectre.Console.dll" />
-      <ResolvedFileToPublish Remove="$(MSBuildThisFileDirectory)$(BaseIntermediateOutputPath)$(Configuration)\$(TargetFramework)\$(RuntimeIdentifier)\SignedAssemblies\ILVerification.dll" />
+      <ResolvedFileToPublish Remove="$(IntermediateOutputPath)SignedAssemblies\Spectre.Console.dll" />
+      <ResolvedFileToPublish Remove="$(IntermediateOutputPath)SignedAssemblies\ILVerification.dll" />
     </ItemGroup>
   </Target>
 

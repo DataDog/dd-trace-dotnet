@@ -25,7 +25,7 @@ namespace Datadog.Profiler.IntegrationTests
         public void CheckHeapSnapshot(string appName, string framework, string appAssembly)
         {
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: "--scenario 13");
-            //runner.Environment.SetVariable(EnvironmentVariables.ManagedActivationEnabled, "0");
+            // runner.Environment.SetVariable(EnvironmentVariables.ManagedActivationEnabled, "0");
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotEnabled, "1");
             runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotMemoryPressureThreshold, "0");
 

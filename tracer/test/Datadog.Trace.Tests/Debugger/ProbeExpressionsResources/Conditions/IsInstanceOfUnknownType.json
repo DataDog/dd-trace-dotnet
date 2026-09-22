@@ -1,5 +1,5 @@
 {
-  "dsl": "{instanceof(this.String, string)}",
+  "dsl": "{instanceof(this.String, Missing.Type)}",
   "instanceof": [
     {
       "getmember": [
@@ -9,6 +9,6 @@
         "String"
       ]
     },
-    "string"
+    "Missing.Type"
   ]
 }

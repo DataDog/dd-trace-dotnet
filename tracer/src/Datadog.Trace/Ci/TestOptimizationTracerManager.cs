@@ -47,7 +47,8 @@ namespace Datadog.Trace.Ci
             IDynamicConfigurationManager dynamicConfigurationManager,
             ITracerFlareManager tracerFlareManager,
             ISpanEventsManager spanEventsManager,
-            FeatureFlagsModule featureFlags)
+            FeatureFlagsModule featureFlags,
+            ServiceRemappingHash serviceRemappingHash)
             : base(
                 settings,
                 agentWriter,
@@ -66,6 +67,7 @@ namespace Datadog.Trace.Ci
                 tracerFlareManager,
                 spanEventsManager,
                 featureFlags,
+                serviceRemappingHash,
                 GetProcessors(settings.PartialFlushEnabled, agentWriter is CIVisibilityProtocolWriter))
         {
         }
@@ -165,7 +167,8 @@ namespace Datadog.Trace.Ci
                 IDynamicConfigurationManager dynamicConfigurationManager,
                 ITracerFlareManager tracerFlareManager,
                 ISpanEventsManager spanEventsManager,
-                FeatureFlagsModule featureFlags)
+                FeatureFlagsModule featureFlags,
+                ServiceRemappingHash serviceRemappingHash)
             : base(
                 settings,
                 agentWriter,
@@ -183,7 +186,8 @@ namespace Datadog.Trace.Ci
                 dynamicConfigurationManager,
                 tracerFlareManager,
                 spanEventsManager,
-                featureFlags)
+                featureFlags,
+                serviceRemappingHash)
             {
             }
         }

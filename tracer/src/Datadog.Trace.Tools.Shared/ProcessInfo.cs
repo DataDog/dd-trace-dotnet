@@ -117,7 +117,7 @@ public class ProcessInfo
         }
         catch (Exception ex)
         {
-            throw new InvalidOperationException($"An error occured while parsing the configuration file {configPath}: {ex.Message}", ex);
+            throw new InvalidOperationException($"An error occurred while parsing the configuration file {configPath}: {ex.Message}", ex);
         }
     }
 

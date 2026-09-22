@@ -6,6 +6,7 @@
 #nullable enable
 
 using System.IO;
+using Datadog.Trace.Util.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.RemoteConfigurationManagement
@@ -26,7 +27,11 @@ namespace Datadog.Trace.RemoteConfigurationManagement
         {
             using var stream = new MemoryStream(RawFile);
             using var streamReader = new StreamReader(stream);
-            using var jsonReader = new JsonTextReader(streamReader);
+            using var jsonReader = new JsonTextReader(streamReader)
+            {
+                ArrayPool = JsonArrayPool.Shared,
+            };
+
             return new NamedTypedFile<T?>(Path.Path, JsonSerializer.CreateDefault().Deserialize<T>(jsonReader));
         }
     }

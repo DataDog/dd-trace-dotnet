@@ -45,6 +45,7 @@ internal sealed partial class TestSpanTags : TestSuiteSpanTags
         CIJobUrl = suiteTags.CIJobUrl;
         CIPipelineId = suiteTags.CIPipelineId;
         CIPipelineName = suiteTags.CIPipelineName;
+        CIPipelineDisplayName = suiteTags.CIPipelineDisplayName;
         CIPipelineNumber = suiteTags.CIPipelineNumber;
         CIPipelineUrl = suiteTags.CIPipelineUrl;
         CIWorkspacePath = suiteTags.CIWorkspacePath;
@@ -56,6 +57,7 @@ internal sealed partial class TestSpanTags : TestSuiteSpanTags
         GitCommitCommitterName = suiteTags.GitCommitCommitterName;
         Command = suiteTags.Command;
         WorkingDirectory = suiteTags.WorkingDirectory;
+        IntelligentTestRunnerTestsSkippingEnabled = suiteTags.IntelligentTestRunnerTestsSkippingEnabled;
     }
 
     [Tag(TestTags.Name)]
@@ -126,6 +128,9 @@ internal sealed partial class TestSpanTags : TestSuiteSpanTags
 
     [Tag(TestTags.TestAttemptToFixPassed)]
     public string? AttemptToFixPassed { get; set; }
+
+    [Tag(TestTags.TestFinalStatus)]
+    public string? FinalStatus { get; set; }
 
     [Tag(CapabilitiesTags.LibraryCapabilitiesTestImpactAnalysis)]
     public string? CapabilitiesTestImpactAnalysis { get; set; }

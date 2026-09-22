@@ -56,6 +56,14 @@ bool AutoResetEvent::Wait(std::chrono::milliseconds timeout)
         clock_gettime(CLOCK_REALTIME, &ts);
         ts.tv_nsec += timeout.count() % 1000 * 1'000'000;
         ts.tv_sec += timeout.count() / 1000;
+
+        // pthread_cond_timedwait rejects tv_nsec >= 1s with EINVAL, which this loop would
+        // spin on instead of timing out. Both operands are < 1s, so one carry is enough.
+        if (ts.tv_nsec >= 1'000'000'000)
+        {
+            ts.tv_nsec -= 1'000'000'000;
+            ts.tv_sec += 1;
+        }
     }
 
     while(!_impl->_isSet)

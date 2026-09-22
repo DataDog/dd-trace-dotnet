@@ -225,6 +225,45 @@ public interface IMyProxy
 }
 ```
 
+### Specifying `BindingFlags` for controlling how to find duck-type target members
+
+The duck typing infrastructure uses standard Reflection to find the target members, and then emits efficient IL to access these members at runtime. By default, the duck-type infrastructure uses [a wide range of `BindingFlags`](https://github.com/DataDog/dd-trace-dotnet/blob/ba8408447a6f5cfa4fc6eb99fa6ad3508ba7a23e/tracer/src/Datadog.Trace/DuckTyping/DuckAttribute.cs#L43) to try to find the target member. However, sometimes you need to be more explicit.  
+
+The `[Duck]` attribute (and derived `[DuckField]`/`[DuckProperty]` attributes) allow specifying the `BindingFlags` to use to find a target member via the `BindingFlags` property. [For example](https://github.com/DataDog/dd-trace-dotnet/blob/ba8408447a6f5cfa4fc6eb99fa6ad3508ba7a23e/tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/CosmosDb/ContainerStruct.cs#L23):
+
+```csharp
+[DuckCopy]
+internal struct ContainerStruct
+{
+    [Duck(BindingFlags = DuckAttribute.DefaultFlags | BindingFlags.IgnoreCase)]
+    public string Id;
+}
+```
+
+As shown in the example above, this adds the `IgnoreCase` flag to the set of default flags. You should not need to change the binding flags often; the default flags cover a wide range of cases. The example above shows a good example where the use of  `IgnoreCase` allows supporting a wider range of target library versions, where the case changed between versions.
+
+### Duck typing private fields from base types
+
+As described in the previous section, the duck-typing infrastructure uses standard reflection to "find" the target members on a runtime type, based on the provided `BindingFlags`. However, that means that it can also _only_ find members returned by the standard reflection APIs, as controlled by [the `BindingFlags`](https://learn.microsoft.com/en-us/dotnet/api/system.reflection.bindingflags)
+APIs. This has some limitations, particularly when it comes to _private_ members on base types.
+
+For example, if you want to duck type a private field, which is defined on a _base_ type, you can't do that solely with `BindingFlags`. Instead, the duck-typing infrastructure must "walk" the type hierarchy to find it. This behavior is opt-in, and can be enabled by setting `FallbackToBaseTypes = true` on the `[Duck]`/`[DuckField]`/`[DuckProperty]` attribute:
+
+```csharp
+public class SomeBase
+{
+    private int _thisIsTheFieldWeWant; // Private field, defined in a base type 
+}
+
+public class TypeToDuckType : SomeBase {} // The type you have at runtime
+
+[DuckType]
+public struct MyDuckType
+{                                              // 👇 Add this, otherwise ducktyping fails
+    [DuckField(Name = "_thisIsTheFieldWeWant", FallbackToBaseTypes = true))]
+    public int MyField;
+}
+```
 
 ## Accessor modifiers (AM)
 
@@ -436,7 +475,7 @@ flowchart LR
 <details>
 <summary>Best practices benchmarks</summary>
         
-[Benchmark Code](../../tracer/test/benchmarks/Benchmarks.Trace/DuckTyping/DuckTypeMethodCallComparisonBenchmark.cs)
+[Benchmark Code](../../tracer/test/benchmarks/Benchmarks.Trace/TestInfrastructure/DuckTyping/DuckTypeMethodCallComparisonBenchmark.cs)
         
 ``` ini
 BenchmarkDotNet=v0.12.1, OS=Windows 10.0.22000
@@ -555,7 +594,16 @@ public int GetMaxConnections(object someObject)
 ```
 
 The above behaviour is often unexpected. It means you need to be particularly careful when accessing duck-chained properties for the first time. Be particularly careful when these are used in code paths that are not _always_ executed, as it's easy to miss these during manual testing and implementation.
- 
+
+#### 4. Reference-type mismatches are not detected when the proxy is created
+
+Duck typing checks that the target has a member with the right name and shape, but it does _not_ check that a reference type on one side can actually be converted to the reference type on the other. That conversion is emitted as a `castclass` and left to the runtime. So a proxy declaring `string Name { get; }` against a target whose `Name` is a `Uri` is considered creatable — `DuckIs<T>()`, `DuckType.CanCreate` and `TryDuckCast<T>` all report success — and the `InvalidCastException` surfaces later:
+
+- for an interface proxy, when that member is first accessed;
+- for a `[DuckCopy]` `struct` proxy, at _cast_ time, because it copies every field eagerly. So `TryDuckCast<T>` _can_ throw for this case, despite its name.
+
+Deferring is necessary for interfaces and generic parameters: a proxy property typed `IEnumerable<T>` against a target member typed `IList<T>` is perfectly satisfiable at runtime, and assignability involving a generic parameter is unknowable when the proxy type is built. 
+
 ### Handling nullability
 
 We have already discussed several different _types_ of duck-typing proxies, each of which can be used for different scenarios to give the best performance. Generally speaking, the following are the most common scenarios:

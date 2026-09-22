@@ -5,13 +5,15 @@
 
 #nullable enable
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
+using Datadog.Trace.Ci.Coverage.Backfill;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
-using Datadog.Trace.VendoredMicrosoftCode.System.Diagnostics.CodeAnalysis;
+using Datadog.Trace.Util.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.Ci.Net;
@@ -21,11 +23,13 @@ internal sealed class FileTestOptimizationClient : ITestOptimizationClient
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(FileTestOptimizationClient));
     private static readonly SHA256 Hasher = SHA256.Create();
     private readonly ITestOptimizationClient _testOptimizationClient;
+    private readonly ITestOptimization _testOptimization;
     private readonly string _cacheFolder;
 
     internal FileTestOptimizationClient(ITestOptimizationClient testOptimizationClient, ITestOptimization testOptimization)
     {
         _testOptimizationClient = testOptimizationClient;
+        _testOptimization = testOptimization;
 
         string cacheFolder;
         try
@@ -38,8 +42,8 @@ internal sealed class FileTestOptimizationClient : ITestOptimizationClient
                 salt = BitConverter.ToString(hash).ToLowerInvariant();
             }
 
-            var workingDirectory = testOptimization.CIValues.WorkspacePath ?? Environment.CurrentDirectory;
-            cacheFolder = Path.Combine(workingDirectory, ".dd", testOptimization.RunId, salt, "http");
+            var runFolder = CoverageBackfillDataStore.GetOrCreateRunFolder(testOptimization);
+            cacheFolder = Path.Combine(runFolder, salt, "http");
             if (!Directory.Exists(cacheFolder))
             {
                 Directory.CreateDirectory(cacheFolder);
@@ -104,17 +108,22 @@ internal sealed class FileTestOptimizationClient : ITestOptimizationClient
         return response;
     }
 
-    public async Task<TestOptimizationClient.SkippableTestsResponse> GetSkippableTestsAsync()
+    public async Task<TestOptimizationClient.SkippableTestsResponse> GetSkippableTestsAsync(SkippableTestsRequestScope scope = default)
     {
         using var cd = CodeDuration.Create();
-        const string key = "getSkippableTests.json";
-        if (TryReadPayload<TestOptimizationClient.SkippableTestsResponse>(key, out var payload))
+        var key = GetSkippableTestsCacheKey(scope);
+        var bypassCache = ShouldBypassSkippableTestsCacheForCoverageBackfill(scope);
+        if (!bypassCache && TryReadPayload<TestOptimizationClient.SkippableTestsResponse>(key, out var payload))
         {
             return payload;
         }
 
-        var response = await _testOptimizationClient.GetSkippableTestsAsync().ConfigureAwait(false);
-        WritePayload(key, response);
+        var response = await _testOptimizationClient.GetSkippableTestsAsync(scope).ConfigureAwait(false);
+        if (!bypassCache)
+        {
+            WritePayload(key, response);
+        }
+
         return response;
     }
 
@@ -142,6 +151,21 @@ internal sealed class FileTestOptimizationClient : ITestOptimizationClient
         return response;
     }
 
+    /// <summary>
+    /// Builds the file-cache key for the skippable-tests response without sharing coverage aggregates across request scopes.
+    /// </summary>
+    /// <param name="scope">Skippable-tests request scope.</param>
+    /// <returns>Cache file name for the supplied scope.</returns>
+    private string GetSkippableTestsCacheKey(SkippableTestsRequestScope scope)
+    {
+        if (scope.HasFingerprint)
+        {
+            return $"getSkippableTests-{scope.Fingerprint}.json";
+        }
+
+        return "getSkippableTests.json";
+    }
+
     private bool TryReadPayload<T>(string name, [NotNullWhen(true)] out T? payload)
     {
         if (string.IsNullOrEmpty(_cacheFolder))
@@ -157,9 +181,9 @@ internal sealed class FileTestOptimizationClient : ITestOptimizationClient
             if (File.Exists(file))
             {
                 var value = File.ReadAllText(file);
-                payload = JsonConvert.DeserializeObject<T>(value);
+                payload = JsonHelper.DeserializeObject<T>(value);
                 Log.Debug("FileTestOptimizationClient: Loaded from: {File}", file);
-                return true;
+                return payload is not null;
             }
         }
         catch (Exception ex)
@@ -183,11 +207,21 @@ internal sealed class FileTestOptimizationClient : ITestOptimizationClient
         {
             var file = Path.Combine(_cacheFolder, name);
             Log.Debug("FileTestOptimizationClient: Writing to: {File}", file);
-            File.WriteAllText(file, JsonConvert.SerializeObject(value));
+            File.WriteAllText(file, JsonHelper.SerializeObject(value));
         }
         catch (Exception ex)
         {
             Log.Warning(ex, "FileTestOptimizationClient: Error writing the cache file.");
         }
+    }
+
+    /// <summary>
+    /// Gets whether the skippable-tests cache is unsafe because coverage backfill is required but no scoped fingerprint is available.
+    /// </summary>
+    /// <param name="scope">Skippable-tests request scope.</param>
+    /// <returns>True when the request should bypass the shared cache.</returns>
+    private bool ShouldBypassSkippableTestsCacheForCoverageBackfill(SkippableTestsRequestScope scope)
+    {
+        return CoverageBackfillCapability.IsCoverageBackfillRequired(_testOptimization.Settings) && !scope.HasFingerprint;
     }
 }

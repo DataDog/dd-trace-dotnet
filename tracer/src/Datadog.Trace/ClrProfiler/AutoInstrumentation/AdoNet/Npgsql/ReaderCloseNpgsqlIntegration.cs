@@ -33,7 +33,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.Npgsql
     [EditorBrowsable(EditorBrowsableState.Never)]
     public sealed class ReaderCloseNpgsqlIntegration
     {
-        private static bool errorLogged = false;
+        private static bool errorLogged;
 
         internal static TReturn OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
         {

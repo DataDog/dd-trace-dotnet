@@ -5,7 +5,11 @@
 
 using System;
 using System.Threading;
+using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Logging;
+using Datadog.Trace.SourceGenerators;
+using Datadog.Trace.Telemetry;
 
 namespace Datadog.Trace.Util
 {
@@ -13,8 +17,14 @@ namespace Datadog.Trace.Util
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(RuntimeId));
         private static string _runtimeId;
+        private static string _rootSessionId;
 
         public static string Get() => LazyInitializer.EnsureInitialized(ref _runtimeId, () => GetImpl());
+
+        public static string GetRootSessionId() => LazyInitializer.EnsureInitialized(ref _rootSessionId, () => GetRootSessionIdImpl());
+
+        [TestingAndPrivateOnly]
+        internal static void ResetForTests() => _rootSessionId = null;
 
         private static string GetImpl()
         {
@@ -28,6 +38,21 @@ namespace Datadog.Trace.Util
             Log.Debug("Unable to get the runtime id from native. Fallback to Guid.NewGuid() : {NewGuid}", guid);
 
             return guid;
+        }
+
+        private static string GetRootSessionIdImpl()
+        {
+            var config = new ConfigurationBuilder(new EnvironmentConfigurationSource(), TelemetryFactory.Config);
+            var inherited = config.WithKeys(ConfigurationKeys.Telemetry.RootSessionId).AsString();
+            if (!string.IsNullOrEmpty(inherited))
+            {
+                Log.Debug("Inherited root session ID from parent: {RootSessionId}", inherited);
+                return inherited;
+            }
+
+            var rootId = Get();
+            EnvironmentHelpers.SetEnvironmentVariable(ConfigurationKeys.Telemetry.RootSessionId, rootId);
+            return rootId;
         }
     }
 }

@@ -68,8 +68,16 @@ namespace Samples.SqlServer
                 }
 
                 await RelationalDatabaseTestHarness.RunAllAsync<SqlCommand>(connection, commandFactory, commandExecutor, cts.Token);
+
+                // RunAllAsync produces a single large trace. Flush it before starting the next trace so
+                // it cannot be dropped while competing with the SqlCommandVb trace for the writer's buffers.
+                await SampleHelpers.ForceTracerFlushAsync();
+
                 await RelationalDatabaseTestHarness.RunSingleAsync(connection, commandFactory, commandExecutorVb, cts.Token);
             }
+
+            // Flush the SqlCommandVb trace before starting the next phase.
+            await SampleHelpers.ForceTracerFlushAsync();
 
             // Test the result when the ADO.NET provider assembly is loaded through Assembly.LoadFile
             // On .NET Core this results in a new assembly being loaded whose types are not considered the same
@@ -91,8 +99,8 @@ namespace Samples.SqlServer
             // we don't have tests for stored procedures
             await StoredProcedure.RunStoredProcedureTestAsync(connectionString, cts.Token);
 
-            // allow time to flush
-            await Task.Delay(2000, cts.Token);
+            // Flush before exit so all spans are delivered (deterministic, unlike a fixed delay).
+            await SampleHelpers.ForceTracerFlushAsync();
 
             return 0;
         }

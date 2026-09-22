@@ -15,6 +15,7 @@ using Datadog.Trace.ContinuousProfiler;
 using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.DataStreamsMonitoring.Aggregation;
 using Datadog.Trace.DataStreamsMonitoring.Hashes;
+using Datadog.Trace.DataStreamsMonitoring.TransactionTracking;
 using Datadog.Trace.DataStreamsMonitoring.Transport;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.TestHelpers.DataStreamsMonitoring;
@@ -68,6 +69,52 @@ public class DataStreamsWriterTests
     }
 
     [Fact]
+    public async Task WhenSupported_TracksTransactions()
+    {
+        var bucketDurationMs = 100;
+        var api = new StubApi();
+        var writer = CreateWriter(api, out var discovery, bucketDurationMs);
+        TriggerSupportUpdate(discovery, isSupported: true);
+
+        writer.AddTransaction(new DataStreamsTransactionInfo("id", 1, "checkpoint"));
+        await api.WaitForSend(30_000);
+
+        HasOneOrTwoPoints(api);
+        await writer.DisposeAsync();
+    }
+
+    [Fact]
+    public async Task WhenSupported_TriggersEarlyFlush_WhenTransactionsExceedThreshold()
+    {
+        // The periodic timer never fires (int.MaxValue), so the only thing that can request a
+        // flush here is the transaction byte-threshold check in the writer's processing loop.
+        // That loop runs on a dedicated (LongRunning) thread, so observing the flush *request*
+        // is deterministic and does not depend on the thread pool that drives the actual send.
+        // Asserting on api.Sent would instead race a (potentially starved) thread pool.
+        var bucketDuration = int.MaxValue; // timer will never fire
+        var api = new StubApi();
+        var writer = CreateWriter(api, out var discovery, bucketDuration);
+        TriggerSupportUpdate(discovery, isSupported: true);
+
+        var flushRequested = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        writer.FlushRequested += () => flushRequested.TrySetResult(true);
+
+        var id = new string('x', 512);
+        var byteCount = new DataStreamsTransactionInfo(id, 0L, "cp").GetByteCount();
+        var count = (512 * 1024 / byteCount) + 1;
+
+        for (var i = 0; i < count; i++)
+        {
+            writer.AddTransaction(new DataStreamsTransactionInfo(id, (long)i, "cp"));
+        }
+
+        var requested = await Task.WhenAny(flushRequested.Task, Task.Delay(30_000)) == flushRequested.Task;
+        requested.Should().BeTrue("crossing the transaction byte threshold should request an early flush");
+
+        await writer.DisposeAsync();
+    }
+
+    [Fact]
     public async Task WhenSupported_WritesAStatsPointAfterDelay()
     {
         var bucketDurationMs = 100;
@@ -75,17 +122,30 @@ public class DataStreamsWriterTests
         var writer = CreateWriter(api, out var discovery, bucketDurationMs);
         TriggerSupportUpdate(discovery, isSupported: true);
 
-        // stats and backlogs will be sent as the same payload
-        writer.Add(CreateStatsPoint());
-        writer.AddBacklog(CreateBacklogPoint());
+        // Keep both points in the same bucket even if the test crosses a bucket boundary.
+        var timestampNs = DateTimeOffset.UtcNow.ToUnixTimeNanoseconds();
+        var statsPoint = CreateStatsPoint(timestampNs);
+        var backlogPoint = CreateBacklogPoint(timestampNs);
+        writer.Add(statsPoint);
+        writer.AddBacklog(backlogPoint);
 
-        await api.WaitForCount(1, 30_000);
-
-        HasOneOrTwoPoints(api);
+        await api.WaitForSend(30_000);
 
         await writer.DisposeAsync();
 
-        HasOneOrTwoPoints(api);
+        var payloads = await DeserializePayloadsAsync(api);
+        var stats = payloads.SelectMany(x => x.Stats)
+                            .Where(x => x.Stats is not null)
+                            .SelectMany(x => x.Stats)
+                            .ToList();
+        var backlogs = payloads.SelectMany(x => x.Stats)
+                               .Where(x => x.Backlogs is not null)
+                               .SelectMany(x => x.Backlogs)
+                               .ToList();
+
+        stats.Should().ContainSingle(x => x.TimestampType == "current" && x.Hash == statsPoint.Hash.Value && x.ParentHash == statsPoint.ParentHash.Value);
+        stats.Should().ContainSingle(x => x.TimestampType == "origin" && x.Hash == statsPoint.Hash.Value && x.ParentHash == statsPoint.ParentHash.Value);
+        backlogs.Should().ContainSingle(x => x.Value == backlogPoint.Value && x.Tags.Contains(backlogPoint.Tags));
     }
 
     [Fact]
@@ -192,6 +252,41 @@ public class DataStreamsWriterTests
     }
 
     [Fact]
+    public async Task WhenSupported_WritesTransaction_OnClose()
+    {
+        // mirrors WhenSupported_WritesAStatsPoint_OnClose for transactions
+        var bucketDuration = 100_000_000;
+        var api = new StubApi();
+        var writer = CreateWriter(api, out var discovery, bucketDuration);
+        TriggerSupportUpdate(discovery, isSupported: true);
+
+        writer.AddTransaction(new DataStreamsTransactionInfo("tx-id", 1L, "cp"));
+
+        await writer.DisposeAsync();
+
+        api.Sent.Should().ContainSingle();
+    }
+
+    [Fact]
+    public async Task FlushAsync_DrainsPendingTransactions()
+    {
+        // int.MaxValue bucket: timer will never fire and ShouldFlushTransactions
+        // won't trigger for a small payload.  FlushAsync must drain _transactionBuffer
+        // directly — it is called immediately so ProcessQueueLoop has not yet woken
+        // from its initial 10 ms sleep.
+        var bucketDuration = int.MaxValue;
+        var api = new StubApi();
+        var writer = CreateWriter(api, out var discovery, bucketDuration);
+        TriggerSupportUpdate(discovery, isSupported: true);
+
+        writer.AddTransaction(new DataStreamsTransactionInfo("tx-id", 1L, "cp"));
+        await writer.FlushAsync();
+
+        api.Sent.Should().NotBeEmpty("FlushAsync must drain the transaction buffer");
+        await writer.DisposeAsync();
+    }
+
+    [Fact]
     public async Task CanCreateWriterWithDefaultBucket()
     {
         var writer = CreateWriter(new StubApi(), out _, DataStreamsConstants.DefaultBucketDurationMs);
@@ -234,7 +329,7 @@ public class DataStreamsWriterTests
 
         writer.Add(CreateStatsPoint());
 
-        await api.WaitForCount(1, 30_000);
+        await api.WaitForSend(30_000);
 
         HasOneOrTwoPoints(api);
 
@@ -262,18 +357,7 @@ public class DataStreamsWriterTests
 
         HasOneOrTwoPoints(api);
 
-        var payloads = new List<MockDataStreamsPayload>();
-        foreach (var payload in api.Sent)
-        {
-            using var compressed = new MemoryStream(payload.Array!);
-            using var gzip = new GZipStream(compressed, CompressionMode.Decompress);
-            using var decompressed = new MemoryStream();
-            await gzip.CopyToAsync(decompressed);
-
-            var result = MessagePackSerializer.Deserialize<MockDataStreamsPayload>(decompressed.GetBuffer());
-
-            payloads.Add(result);
-        }
+        var payloads = await DeserializePayloadsAsync(api);
 
         payloads.Should().OnlyContain(x => x.Env == Environment);
         payloads.Should().OnlyContain(x => x.Service == Service);
@@ -370,17 +454,39 @@ public class DataStreamsWriterTests
     }
 
     private static StatsPoint CreateStatsPoint()
+        => CreateStatsPoint(DateTimeOffset.UtcNow.ToUnixTimeNanoseconds());
+
+    private static BacklogPoint CreateBacklogPoint()
+        => CreateBacklogPoint(DateTimeOffset.UtcNow.ToUnixTimeNanoseconds());
+
+    private static StatsPoint CreateStatsPoint(long timestampNs)
         => new StatsPoint(
             edgeTags: new[] { "direction:out", "type:kafka" },
             hash: new PathwayHash((ulong)Math.Abs(ThreadSafeRandom.Shared.Next(int.MaxValue))),
             parentHash: new PathwayHash((ulong)Math.Abs(ThreadSafeRandom.Shared.Next(int.MaxValue))),
-            timestampNs: DateTimeOffset.UtcNow.ToUnixTimeNanoseconds(),
+            timestampNs,
             pathwayLatencyNs: 5_000_000_000,
             edgeLatencyNs: 2_000_000_000,
             payloadSizeBytes: 1024);
 
-    private static BacklogPoint CreateBacklogPoint()
-        => new BacklogPoint("type:produce", 100, DateTimeOffset.UtcNow.ToUnixTimeNanoseconds());
+    private static BacklogPoint CreateBacklogPoint(long timestampNs)
+        => new BacklogPoint("type:produce", 100, timestampNs);
+
+    private static async Task<List<MockDataStreamsPayload>> DeserializePayloadsAsync(StubApi api)
+    {
+        var payloads = new List<MockDataStreamsPayload>();
+        foreach (var payload in api.Sent)
+        {
+            using var compressed = new MemoryStream(payload.Array!, payload.Offset, payload.Count);
+            using var gzip = new GZipStream(compressed, CompressionMode.Decompress);
+            using var decompressed = new MemoryStream();
+            await gzip.CopyToAsync(decompressed);
+
+            payloads.Add(MessagePackSerializer.Deserialize<MockDataStreamsPayload>(decompressed.ToArray()));
+        }
+
+        return payloads;
+    }
 
     private async Task WaitForFlushCount(int timeout, int flushCount = 2)
     {
@@ -394,6 +500,7 @@ public class DataStreamsWriterTests
     private class StubApi : IDataStreamsApi
     {
         private readonly List<ArraySegment<byte>> _sent = new();
+        private readonly TaskCompletionSource<bool> _firstSend = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
         public List<ArraySegment<byte>> Sent
         {
@@ -408,20 +515,25 @@ public class DataStreamsWriterTests
 
         public virtual Task<bool> SendAsync(ArraySegment<byte> bytes)
         {
+            // The writer reuses its serialization buffer, so snapshot each request before returning.
+            var copy = new byte[bytes.Count];
+            Buffer.BlockCopy(bytes.Array!, bytes.Offset, copy, 0, bytes.Count);
+
             lock (_sent)
             {
-                _sent.Add(bytes);
+                _sent.Add(new ArraySegment<byte>(copy));
             }
 
+            _firstSend.TrySetResult(true);
             return Task.FromResult(true);
         }
 
-        public async Task WaitForCount(int count, int timeoutMs)
+        public async Task WaitForSend(int timeoutMs)
         {
-            var end = DateTime.UtcNow.AddMilliseconds(timeoutMs);
-            while (Sent.Count < count && DateTime.UtcNow < end)
+            var completedTask = await Task.WhenAny(_firstSend.Task, Task.Delay(timeoutMs));
+            if (completedTask != _firstSend.Task)
             {
-                await Task.Delay(100);
+                throw new TimeoutException($"Data streams API was not called within {timeoutMs}ms");
             }
         }
     }

@@ -33,6 +33,7 @@ public class DebuggerManagerTests : TestHelper
     private const string RemoteConfigNotAvailableLogEntry = "Remote configuration is not available in this environment";
     private const string DebuggerConfigurationLogEntry = "DATADOG DEBUGGER CONFIGURATION";
     private const string TracerInitialized = "The profiler has been initialized";
+    private const string ClrMdLiveHeapSnapshotAssertionSkipReason = "ClrMD live-heap snapshots are unstable for Windows x86 on .NET Core 3.0, so tests that rely on live-heap snapshot assertions are skipped in that configuration.";
 
     public DebuggerManagerTests(ITestOutputHelper output)
         : base("Probes", Path.Combine("test", "test-applications", "debugger"), output)
@@ -45,7 +46,7 @@ public class DebuggerManagerTests : TestHelper
     [Trait("Category", "ArmUnsupported")]
     [Trait("RunOnWindows", "True")]
     [Trait("Category", "LinuxUnsupported")]
-    public async Task DebuggerManager_AllFeaturesByDefault_NoDebuggerObjectsCreated()
+    public async Task DebuggerManager_AllFeaturesByDefault_CreatesOnlyNonDiDebuggerObjects()
     {
         await RunDebuggerManagerTestWithMemoryAssertions(memoryAssertions =>
         {
@@ -63,7 +64,7 @@ public class DebuggerManagerTests : TestHelper
     [Trait("Category", "ArmUnsupported")]
     [Trait("RunOnWindows", "True")]
     [Trait("Category", "LinuxUnsupported")]
-    public async Task DebuggerManager_DynamicInstrumentationExplicitlyDisabled_NoDebuggerObjectsCreated()
+    public async Task DebuggerManager_DynamicInstrumentationExplicitlyDisabled_DoesNotCreateDynamicInstrumentationObjects()
     {
         // at least one product should be enabled to initialize the debugger manager
         SetEnvironmentVariable(ConfigurationKeys.Debugger.CodeOriginForSpansEnabled, "true");
@@ -73,6 +74,24 @@ public class DebuggerManagerTests : TestHelper
             memoryAssertions.NoObjectsExist<SnapshotSink>();
             memoryAssertions.NoObjectsExist<LineProbeResolver>();
             memoryAssertions.NoObjectsExist<DynamicInstrumentation>();
+        });
+    }
+
+    [SkippableFact]
+    [Trait("Category", "EndToEnd")]
+    [Trait("Category", "ArmUnsupported")]
+    [Trait("RunOnWindows", "True")]
+    [Trait("Category", "LinuxUnsupported")]
+    public async Task DebuggerManager_DynamicInstrumentationExplicitlyDisabled_SymbolDatabaseEnabledByDefault_DoesNotCreateSymbolUploaderBeforeRemoteConfig()
+    {
+        SetEnvironmentVariable(ConfigurationKeys.Debugger.DynamicInstrumentationEnabled, "false");
+
+        await RunDebuggerManagerTestWithMemoryAssertions(memoryAssertions =>
+        {
+            memoryAssertions.NoObjectsExist<SnapshotSink>();
+            memoryAssertions.NoObjectsExist<LineProbeResolver>();
+            memoryAssertions.NoObjectsExist<DynamicInstrumentation>();
+            memoryAssertions.NoObjectsExist<Symbols.SymbolsUploader>();
         });
     }
 
@@ -102,6 +121,8 @@ public class DebuggerManagerTests : TestHelper
         // at least one product should be enabled to initialize the debugger manager
         SetEnvironmentVariable(ConfigurationKeys.Debugger.ExceptionReplayEnabled, "true");
         SetEnvironmentVariable(ConfigurationKeys.Debugger.CodeOriginForSpansEnabled, "false");
+        Skip.If(ShouldSkipClrMdLiveHeapSnapshotAssertions(), ClrMdLiveHeapSnapshotAssertionSkipReason);
+
         await RunDebuggerManagerTestWithMemoryAssertions(memoryAssertions =>
         {
             memoryAssertions.NoObjectsExist<SpanCodeOrigin.SpanCodeOrigin>();
@@ -123,6 +144,23 @@ public class DebuggerManagerTests : TestHelper
             memoryAssertions.NoObjectsExist<Pdb.DatadogMetadataReader>();
             memoryAssertions.NoObjectsExist<Symbols.SymbolsUploader>();
             memoryAssertions.NoObjectsExist<Symbols.SymbolExtractor>();
+        });
+    }
+
+    [SkippableFact]
+    [Trait("Category", "EndToEnd")]
+    [Trait("Category", "ArmUnsupported")]
+    [Trait("RunOnWindows", "True")]
+    [Trait("Category", "LinuxUnsupported")]
+    public async Task DebuggerManager_SymbolDatabaseUploadEnabled_WithoutDynamicInstrumentation_DoesNotCreateSymbolUploaderBeforeRemoteConfig()
+    {
+        SetEnvironmentVariable(ConfigurationKeys.Debugger.CodeOriginForSpansEnabled, "true");
+        SetEnvironmentVariable(ConfigurationKeys.Debugger.SymbolDatabaseUploadEnabled, "true");
+
+        await RunDebuggerManagerTestWithMemoryAssertions(memoryAssertions =>
+        {
+            memoryAssertions.NoObjectsExist<DynamicInstrumentation>();
+            memoryAssertions.NoObjectsExist<Symbols.SymbolsUploader>();
         });
     }
 
@@ -188,6 +226,8 @@ public class DebuggerManagerTests : TestHelper
     [Trait("Category", "LinuxUnsupported")]
     public async Task DebuggerManager_MultipleFeaturesCombined_CreatesAppropriateObjects()
     {
+        Skip.If(ShouldSkipClrMdLiveHeapSnapshotAssertions(), ClrMdLiveHeapSnapshotAssertionSkipReason);
+
         SetEnvironmentVariable(ConfigurationKeys.Debugger.ExceptionReplayEnabled, "true");
         SetEnvironmentVariable(ConfigurationKeys.Debugger.CodeOriginForSpansEnabled, "false");
         SetEnvironmentVariable(ConfigurationKeys.Debugger.DynamicInstrumentationEnabled, "true");
@@ -198,7 +238,7 @@ public class DebuggerManagerTests : TestHelper
             memoryAssertions.ObjectsExist<ExceptionAutoInstrumentation.ExceptionReplay>();
             memoryAssertions.NoObjectsExist<SpanCodeOrigin.SpanCodeOrigin>();
             memoryAssertions.ObjectsExist<DynamicInstrumentation>();
-            memoryAssertions.ObjectsExist<Symbols.SymbolsUploader>();
+            memoryAssertions.NoObjectsExist<Symbols.SymbolsUploader>();
         });
     }
 
@@ -214,6 +254,15 @@ public class DebuggerManagerTests : TestHelper
         // at least one product should be enabled to initialize the debugger manager
         SetEnvironmentVariable(ConfigurationKeys.Debugger.DynamicInstrumentationEnabled, "true");
         await RunDebuggerManagerTestWithMemoryAssertions(null, DebuggerConfigurationLogEntry);
+    }
+
+    private static bool ShouldSkipClrMdLiveHeapSnapshotAssertions()
+    {
+#if NETCOREAPP3_0
+        return !EnvironmentTools.IsTestTarget64BitProcess();
+#else
+        return false;
+#endif
     }
 
     private async Task RunDebuggerManagerTestWithMemoryAssertions(

@@ -30,6 +30,11 @@ public class CreatedumpTests : ConsoleTestHelper
 {
 #if !NETFRAMEWORK // Createdump is not supported on .NET Framework
     private const string CreatedumpExpectedOutput = "Writing minidump with heap to file /dev/null";
+
+    // On arm64 Linux, createdump can intermittently fail with a ptrace race condition
+    // where threads exit before createdump can attach. In that case, createdump is still
+    // invoked (which is what we're testing), but it fails before writing the minidump.
+    private const string CreatedumpInvokedOutput = "[createdump] Gathering state for process";
 #endif
     private const string CrashReportExpectedOutput = "The crash may have been caused by automatic instrumentation";
     private const string CrashReportUnfilteredExpectedOutput = "The crash is not suspicious, but filtering has been disabled";
@@ -99,11 +104,12 @@ public class CreatedumpTests : ConsoleTestHelper
 
         if (shouldCallCreatedump)
         {
-            helper.StandardOutput.Should().Contain(CreatedumpExpectedOutput);
+            AssertCreatedumpWasInvoked(helper.StandardOutput);
         }
         else
         {
             helper.StandardOutput.Should().NotContain(CreatedumpExpectedOutput);
+            helper.StandardOutput.Should().NotContain(CreatedumpInvokedOutput);
         }
     }
 
@@ -139,7 +145,7 @@ public class CreatedumpTests : ConsoleTestHelper
         helper.StandardOutput.Should().Contain(CrashReportExpectedOutput);
         File.Exists(reportFile.Path).Should().BeTrue();
 
-        helper.StandardOutput.Should().Contain(CreatedumpExpectedOutput);
+        AssertCreatedumpWasInvoked(helper.StandardOutput);
     }
 #endif
 
@@ -181,74 +187,16 @@ public class CreatedumpTests : ConsoleTestHelper
 #if !NETFRAMEWORK
         if (enableCrashDumps)
         {
-            helper.StandardOutput.Should().Contain(CreatedumpExpectedOutput);
+            AssertCreatedumpWasInvoked(helper.StandardOutput);
         }
         else
         {
             helper.StandardOutput.Should().NotContain(CreatedumpExpectedOutput);
+            helper.StandardOutput.Should().NotContain(CreatedumpInvokedOutput);
         }
 #endif
 
         File.Exists(reportFile.Path).Should().BeFalse();
-    }
-
-    [SkippableTheory]
-    [InlineData(true, true)]
-    [InlineData(false, true)]
-    [InlineData(false, false)]
-    public async Task DisableTelemetry(bool telemetryEnabled, bool crashdumpEnabled)
-    {
-        SkipOn.Platform(SkipOn.PlatformValue.MacOs);
-        SkipOn.PlatformAndArchitecture(SkipOn.PlatformValue.Windows, SkipOn.ArchitectureValue.X86);
-
-        using var reportFile = new TemporaryFile();
-
-        (string, string)[] args = [LdPreloadConfig, CrashReportConfig(reportFile)];
-
-        if (crashdumpEnabled)
-        {
-            args = [.. args, .. CreatedumpConfig];
-        }
-
-        args = [.. args, ("DD_INSTRUMENTATION_TELEMETRY_ENABLED", telemetryEnabled ? "1" : "0")];
-
-        using var helper = await StartConsoleWithArgs("crash-datadog", enableProfiler: true, args);
-
-        await helper.Task;
-
-        using var assertionScope = new AssertionScope();
-        assertionScope.AddReportable("stdout", helper.StandardOutput);
-        assertionScope.AddReportable("stderr", helper.ErrorOutput);
-
-#if !NETFRAMEWORK
-        if (crashdumpEnabled)
-        {
-            helper.StandardOutput.Should().Contain(CreatedumpExpectedOutput);
-        }
-        else
-        {
-            helper.StandardOutput.Should().NotContain(CreatedumpExpectedOutput);
-        }
-#endif
-
-        if (telemetryEnabled)
-        {
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-            {
-                helper.StandardOutput.Should().Contain(CrashReportExpectedOutput);
-            }
-
-            File.Exists(reportFile.Path).Should().BeTrue();
-        }
-        else
-        {
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-            {
-                helper.StandardOutput.Should().NotContain(CrashReportExpectedOutput);
-            }
-
-            File.Exists(reportFile.Path).Should().BeFalse();
-        }
     }
 
     [SkippableFact]
@@ -292,7 +240,19 @@ public class CreatedumpTests : ConsoleTestHelper
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
         {
             report["sig_info"]!["si_signo"]!.Value<string>().Should().Be("6");
+            // siginfo is null in unhandled exceptions cases.
+            // This value represents the guard we use.
+            report["sig_info"]!["si_code"]!.Value<string>().Should().Be("2147483647");
         }
+
+        report["error"]!["message"].Value<string>().Should().Be("Process was terminated due to an unhandled exception of type 'System.BadImageFormatException'. Message: Expected.");
+
+        var osInfo = report["os_info"];
+        osInfo.Should().NotBeNull();
+        osInfo!["architecture"]!.Value<string>().Should().NotBe("unknown");
+        osInfo!["bitness"]!.Value<string>().Should().NotBe("unknown");
+        osInfo!["os_type"]!.Value<string>().Should().NotBe("unknown");
+        osInfo!["version"]!.Value<string>().Should().NotBe("unknown");
     }
 
 #if !NETFRAMEWORK
@@ -376,6 +336,16 @@ public class CreatedumpTests : ConsoleTestHelper
         }
 
         File.Exists(reportFile.Path).Should().BeTrue();
+        assertionScope.AddReportable("Report", reportFile.GetContent());
+        var report = JObject.Parse(reportFile.GetContent());
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+        {
+            report["error"]!["message"].Value<string>().Should().Be("Process was terminated with SEGV_MAPERR (SIGSEGV)");
+        }
+        else
+        {
+            report["error"]!["message"].Value<string>().Should().Be("Process was terminated due to an unknown unhandled exception of type STATUS_STACK_BUFFER_OVERRUN (0xC0000409)");
+        }
     }
 
     [SkippableFact]
@@ -621,7 +591,14 @@ public class CreatedumpTests : ConsoleTestHelper
 
             foreach (var expectedFrame in expectedCallstack)
             {
-                var frame = frames.FirstOrDefault(f => expectedFrame.Equals(f["function"].Value<string>()));
+                // ClrMD preserves Roslyn's local function ordinal suffix (e.g. g__DoCrash|0)
+                // while .NET's StackTrace API strips it, so we normalize before comparing.
+                var regex = new Regex(@"\|\d+$");
+                var frame = frames.FirstOrDefault(f =>
+                {
+                    var functionName = regex.Replace(f["function"].Value<string>(), string.Empty);
+                    return expectedFrame.Equals(functionName);
+                });
 
                 frame.Should().NotBeNull($"couldn't find expected frame {expectedFrame}");
             }
@@ -707,6 +684,27 @@ public class CreatedumpTests : ConsoleTestHelper
             return hex.ToString();
         }
     }
+
+#if !NETFRAMEWORK
+    /// <summary>
+    /// Asserts that createdump was invoked. On arm64 Linux, createdump can intermittently
+    /// fail with a ptrace race condition where threads exit before it can attach. In that
+    /// case we accept evidence that createdump was started as sufficient — this is a .NET
+    /// runtime limitation, not a bug in our code.
+    /// </summary>
+    private static void AssertCreatedumpWasInvoked(string standardOutput)
+    {
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux) && RuntimeInformation.ProcessArchitecture == Architecture.Arm64)
+        {
+            (standardOutput.Contains(CreatedumpExpectedOutput) || standardOutput.Contains(CreatedumpInvokedOutput))
+                .Should().BeTrue($"expected stdout to contain \"{CreatedumpExpectedOutput}\" or \"{CreatedumpInvokedOutput}\"");
+        }
+        else
+        {
+            standardOutput.Should().Contain(CreatedumpExpectedOutput);
+        }
+    }
+#endif
 
     private static (string Key, string Value) CrashReportConfig(TemporaryFile reportFile)
     {

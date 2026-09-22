@@ -14,6 +14,9 @@ using System.Runtime.InteropServices;
 #endif
 using Datadog.Trace.Ci;
 using Datadog.Trace.Logging;
+#if NETFRAMEWORK
+using Datadog.Trace.PlatformHelpers;
+#endif
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace
@@ -27,6 +30,15 @@ namespace Datadog.Trace
         private static LifetimeManager? _instance;
         private readonly ConcurrentQueue<object> _shutdownHooks = new();
 
+        // Signaled when RunShutdownTasks finishes. Subsequent callers wait on this
+        // instead of returning early, preventing the runtime from tearing down the process prematurely.
+        private readonly ManualResetEventSlim _shutdownComplete = new(false);
+
+#if NETFRAMEWORK
+        // Our Ctrl+C / Ctrl+Break registration. See ConsoleControlHandler for why we don't use Console.CancelKeyPress.
+        private readonly ConsoleControlHandler? _consoleControlHandler;
+#endif
+
         // We can be triggered by multiple shutdown paths (ProcessExit, CancelKeyPress, signal handlers, etc).
         // This flag ensures shutdown hooks run at most once.
         private int _shutdownStarted;
@@ -39,8 +51,8 @@ namespace Datadog.Trace
         // and Windows equivalents). Without a custom handler, the OS default behavior can terminate the process
         // immediately, skipping managed shutdown events like AppDomain.ProcessExit. We keep these registrations
         // alive for the lifetime of the process to restore the previous behavior.
-        private IDisposable? _sigtermRegistration;
-        private IDisposable? _sighupRegistration;
+        private PosixSignalRegistration? _sigtermRegistration;
+        private PosixSignalRegistration? _sighupRegistration;
 
         // Prevent multiple concurrent calls to Environment.Exit if multiple termination signals are received.
         private int _terminationExitInitiated;
@@ -63,6 +75,14 @@ namespace Datadog.Trace
                 Log.Warning(ex, "Unable to register a callback to the AppDomain.UnhandledException event.");
             }
 
+#if NETFRAMEWORK
+            // Do NOT use Console.CancelKeyPress on .NET Framework. On .NET FX, subscribing to it builds a
+            // System.Console.ControlCHooker, whose critical finalizer throws an uncatchable IOException - killing the
+            // process with exit code 0xE0434352 - if anything in the process has reset the console control handler
+            // list via AllocConsole / FreeConsole / AttachConsole etc. Register the Win32 handler directly instead,
+            // similar to how .NET Core does. See ConsoleControlHandler for details.
+            _consoleControlHandler = ConsoleControlHandler.TryRegister(() => RunShutdownTasks());
+#else
             try
             {
                 // Registering for the cancel key press event requires the System.Security.Permissions.UIPermission
@@ -72,6 +92,7 @@ namespace Datadog.Trace
             {
                 Log.Warning(ex, "Unable to register a callback to the Console.CancelKeyPress event.");
             }
+#endif
 
 #if NET6_0_OR_GREATER
             // Work around the .NET 10 termination signal change described here:
@@ -88,7 +109,7 @@ namespace Datadog.Trace
             }
         }
 
-        public TimeSpan TaskTimeout { get; set; } = TimeSpan.FromSeconds(30);
+        public TimeSpan TaskTimeout { get; } = TimeSpan.FromSeconds(30);
 
         public void AddShutdownTask(Action<Exception?> action)
         {
@@ -104,6 +125,10 @@ namespace Datadog.Trace
         {
             RunShutdownTasks();
             AppDomain.CurrentDomain.ProcessExit -= CurrentDomain_ProcessExit;
+#if NETFRAMEWORK
+            // Unregister last, so a second Ctrl+C arriving while shutdown hooks were running was still handled.
+            _consoleControlHandler?.Unregister();
+#endif
         }
 
         private void CurrentDomain_UnhandledException(object? sender, UnhandledExceptionEventArgs e)
@@ -119,16 +144,25 @@ namespace Datadog.Trace
             AppDomain.CurrentDomain.UnhandledException -= CurrentDomain_UnhandledException;
         }
 
+#if !NETFRAMEWORK
         private void Console_CancelKeyPress(object? sender, ConsoleCancelEventArgs e)
         {
+            // Note: we intentionally stay subscribed, for the same reason we don't dispose the signal
+            // registrations below — a second Ctrl+C arriving during shutdown must still be handled.
             RunShutdownTasks();
-            Console.CancelKeyPress -= Console_CancelKeyPress;
         }
+#endif
 
         private void CurrentDomain_DomainUnload(object? sender, EventArgs e)
         {
             RunShutdownTasks();
             AppDomain.CurrentDomain.DomainUnload -= CurrentDomain_DomainUnload;
+#if NETFRAMEWORK
+            // This is important: the native _consoleControlHandler registration uses a stub owned by this
+            // AppDomain, so it must not outlive the domain. ConsoleControlHandler's critical finalizer is
+            // the backstop, but handling here is better.
+            _consoleControlHandler?.Unregister();
+#endif
         }
 
         public void RunShutdownTasks(Exception? exception = null)
@@ -136,35 +170,18 @@ namespace Datadog.Trace
             // Ensure shutdown runs once even if multiple events fire.
             if (Interlocked.Exchange(ref _shutdownStarted, 1) != 0)
             {
+                // Shutdown already started — wait for it to finish instead of returning immediately.
+                // This prevents the runtime from tearing down the process (e.g. after ProcessExit returns)
+                // before hooks have completed.
+                _shutdownComplete.Wait();
                 return;
             }
 
-#if NET6_0_OR_GREATER
-            // Unregister our termination handlers once shutdown begins (best-effort).
-            // This avoids re-entrancy and keeps the intent clear: after shutdown starts, we don't want to
-            // initiate additional termination paths.
-            try
-            {
-                _sigtermRegistration?.Dispose();
-                _sigtermRegistration = null;
-            }
-            catch (Exception ex)
-            {
-                // Best-effort: logging during shutdown should never prevent shutdown from continuing.
-                Log.Warning(ex, "Failed to dispose SIGTERM termination signal handler registration.");
-            }
-
-            try
-            {
-                _sighupRegistration?.Dispose();
-                _sighupRegistration = null;
-            }
-            catch (Exception ex)
-            {
-                // Best-effort: logging during shutdown should never prevent shutdown from continuing.
-                Log.Warning(ex, "Failed to dispose SIGHUP termination signal handler registration.");
-            }
-#endif
+            // Note: we intentionally do NOT dispose signal registrations here.
+            // They must stay alive so that duplicate signals arriving during shutdown
+            // are still handled (and canceled) by our handler, preventing the OS from
+            // killing the process before hooks finish. They'll be cleaned up by the
+            // GC/finalizer when the process exits.
 
             try
             {
@@ -210,6 +227,10 @@ namespace Datadog.Trace
             {
                 // Swallow as there's nothing we can with it anyway
             }
+            finally
+            {
+                _shutdownComplete.Set();
+            }
 
             static void SetSynchronizationContext(SynchronizationContext? context)
             {
@@ -236,7 +257,7 @@ namespace Datadog.Trace
             try
             {
                 // We only need this workaround on .NET 10+ runtimes.
-                if (Environment.Version.Major < 10)
+                if (FrameworkDescription.Instance.RuntimeVersion.Major < 10)
                 {
                     // On .NET <= 9, the runtime provided default termination handlers that result in graceful exit,
                     // so we do not install our own to avoid changing long-standing behavior.
@@ -263,50 +284,32 @@ namespace Datadog.Trace
 
         private void TerminationSignalHandler(PosixSignalContext context)
         {
-            // Ensure this handler initiates termination at most once.
             if (Interlocked.Exchange(ref _terminationExitInitiated, 1) != 0)
             {
-                // Another signal already initiated termination; do nothing.
+                // Duplicate signal while shutdown is in progress.
+                // Wait for the first handler to finish running shutdown tasks.
+                _shutdownComplete.Wait();
                 return;
             }
 
-            try
-            {
-                // On Unix, Cancel prevents the OS default handler from immediately terminating the process.
-                // (On Windows, SIGTERM/SIGHUP can't be canceled.)
-                if (!OperatingSystem.IsWindows())
-                {
-                    // See PosixSignalRegistration.Create remarks:
-                    // https://learn.microsoft.com/en-us/dotnet/api/system.runtime.interopservices.posixsignalregistration.create
-                    context.Cancel = true; // Keep the process alive long enough to take the managed shutdown path.
-                }
-            }
-            catch (Exception ex)
-            {
-                // Best-effort. If we can't cancel default handling, still attempt a managed exit.
-                Log.Warning(ex, "Failed to cancel default termination signal handling. Graceful shutdown may not run.");
-            }
+            // Calling Environment.Exit(0); caused an issue in Microsoft Orleans (look https://github.com/DataDog/dd-trace-dotnet/issues/8165)
+            // The Posix signals registration mechanism doesn't use a normal MulticastDelegate kind of list; it's using a HashSet<Token> internally.
+            // meaning that the call order is not deterministic, creating a flaky behavior between all the handlers.
+            // The fact that there's no way to guarantee that we are the last handler means that we cannot force the exit of the process to raise
+            // the finalization events calls because that means other handlers will not be called, for that reason we will just proceed with a manual
+            // cleanup of our tasks without forcing the exit so other handlers can be executed as well.
 
-            // Intentionally do NOT call RunShutdownTasks() directly here.
-            //
-            // Reason: pre-.NET 10 behavior was "termination signal => graceful managed exit => ProcessExit event".
-            // Our existing shutdown flow is attached to AppDomain.CurrentDomain.ProcessExit (CurrentDomain_ProcessExit),
-            // so we initiate a managed shutdown and let ProcessExit invoke RunShutdownTasks just like before.
-            //
-            // Supporting runtime source references:
-            // - Environment.Exit is an internal runtime call:
-            //   https://github.com/dotnet/runtime/blob/main/src/coreclr/System.Private.CoreLib/src/System/Environment.CoreCLR.cs
-            // - ProcessExit is raised by the runtime via AppDomain.OnProcessExit():
-            //   https://github.com/dotnet/runtime/blob/main/src/libraries/System.Private.CoreLib/src/System/AppDomain.cs
+            // First signal: run shutdown tasks synchronously before the handler returns.
+            // We intentionally do NOT set context.Cancel here — after the handler returns,
+            // the runtime/OS will perform the default action (terminate the process with
+            // exit code 143), which is the desired behavior once hooks have completed.
             try
             {
-                Environment.Exit(0);
+                RunShutdownTasks();
             }
             catch (Exception ex)
             {
-                // Best-effort. If this fails, the OS default handling will likely terminate the process.
-                Log.Warning(ex, "Failed to initiate managed shutdown via Environment.Exit(0). Attempting best-effort tracer shutdown.");
-                RunShutdownTasks();
+                Log.Warning(ex, "Failed to call tracer shutdown with RunShutdownTasks()");
             }
         }
 #endif

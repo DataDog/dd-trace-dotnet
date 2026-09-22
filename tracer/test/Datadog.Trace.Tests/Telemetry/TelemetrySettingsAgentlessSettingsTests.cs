@@ -4,38 +4,25 @@
 // </copyright>
 
 using System;
-using System.Collections.Generic;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.Telemetry;
+using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using Xunit;
 
 namespace Datadog.Trace.Tests.Telemetry;
 
+[EnvironmentRestorer(
+    PlatformKeys.GcpFunction.FunctionNameKey,
+    PlatformKeys.AzureAppService.ContainerAppName,
+    PlatformKeys.AzureAppService.RunFromZipKey,
+    PlatformKeys.AzureAppService.AppServiceApplogsTraceEnabledKey,
+    PlatformKeys.AzureAppService.SiteNameKey)]
 [Collection(nameof(EnvironmentVariablesTestCollection))]
-public class TelemetrySettingsAgentlessSettingsTests : IDisposable
+public class TelemetrySettingsAgentlessSettingsTests
 {
     private const string ApiKey = "some-key";
     private static readonly Uri Uri = new("http://localhost:8080");
-    private static readonly string[] CloudVariables = { "K_SERVICE", "CONTAINER_APP_NAME", "APPSVC_RUN_ZIP", "WEBSITE_APPSERVICEAPPLOGS_TRACE_ENABLED", "WEBSITE_SITE_NAME" };
-    private readonly Dictionary<string, string> _originalVariables = new();
-
-    public TelemetrySettingsAgentlessSettingsTests()
-    {
-        foreach (var variable in CloudVariables)
-        {
-            _originalVariables[variable] = Environment.GetEnvironmentVariable(variable);
-            // clear variable
-            Environment.SetEnvironmentVariable(variable, null);
-        }
-    }
-
-    public void Dispose()
-    {
-        foreach (var variable in _originalVariables)
-        {
-            Environment.SetEnvironmentVariable(variable.Key, variable.Value);
-        }
-    }
 
     [Fact]
     public void CloudDetection_WhenNoCloudVariables()

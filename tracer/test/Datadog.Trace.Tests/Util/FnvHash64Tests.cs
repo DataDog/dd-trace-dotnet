@@ -10,6 +10,11 @@ using Datadog.Trace.Util;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using Xunit;
+#if NETCOREAPP3_1_OR_GREATER
+using MemoryExtensions = System.MemoryExtensions;
+#else
+using MemoryExtensions = Datadog.Trace.VendoredMicrosoftCode.System.MemoryExtensions;
+#endif
 
 namespace Datadog.Trace.Tests.Util;
 
@@ -244,6 +249,40 @@ public class FnvHash64Tests
         using var a = new AssertionScope();
         v1.ToString("x16").Should().Be("82c6d3f3a0ccdf7d");
         v1A.ToString("x16").Should().Be("0803564445050395");
+    }
+
+    [Theory]
+    [MemberData(nameof(BinaryData))]
+    public void CalculatesOffsetCountHashCorrectly(byte[] data, string v1HashAsHex, string v1AHashAsHex)
+    {
+        // not calling as extension method to avoid namespace ambiguity
+        var span = MemoryExtensions.AsSpan(data, 0, data.Length);
+        var v1 = FnvHash64.GenerateHash(span, FnvHash64.Version.V1);
+        var v1A = FnvHash64.GenerateHash(span, FnvHash64.Version.V1A);
+
+        using var a = new AssertionScope();
+        v1.ToString("x16").Should().Be(v1HashAsHex);
+        v1A.ToString("x16").Should().Be(v1AHashAsHex);
+    }
+
+    [Theory]
+    [MemberData(nameof(BinaryData))]
+    public void CalculatesOffsetCountHashCorrectlyWithOffset(byte[] data, string v1HashAsHex, string v1AHashAsHex)
+    {
+        // Embed the data in the middle of a larger array to test that offset is handled correctly
+        const int padding = 5;
+        var padded = new byte[data.Length + (padding * 2)];
+        new Random().NextBytes(padded);
+        Array.Copy(data, 0, padded, padding, data.Length);
+
+        var span = MemoryExtensions.AsSpan(padded, padding, data.Length);
+
+        var v1 = FnvHash64.GenerateHash(span, FnvHash64.Version.V1);
+        var v1A = FnvHash64.GenerateHash(span, FnvHash64.Version.V1A);
+
+        using var a = new AssertionScope();
+        v1.ToString("x16").Should().Be(v1HashAsHex);
+        v1A.ToString("x16").Should().Be(v1AHashAsHex);
     }
 
 #if NETCOREAPP3_1_OR_GREATER

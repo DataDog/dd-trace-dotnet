@@ -41,15 +41,15 @@ namespace Datadog.Trace.Telemetry.Transports
 
         public bool HasTransports => AgentTransportFactory is not null || AgentlessTransport is not null;
 
-        private static ITelemetryTransport GetAgentFactory(ExporterSettings exporterSettings, TelemetrySettings telemetrySettings)
-            => new AgentTelemetryTransport(
+        private static AgentTelemetryTransport GetAgentFactory(ExporterSettings exporterSettings, TelemetrySettings telemetrySettings)
+            => new(
                 TelemetryTransportStrategy.GetAgentIntakeFactory(exporterSettings),
                 debugEnabled: telemetrySettings.DebugEnabled,
                 telemetrySettings.CompressionMethod,
                 ContainerMetadata.Instance);
 
-        private static ITelemetryTransport GetAgentlessFactory(TelemetrySettings.AgentlessSettings agentlessSettings, TelemetrySettings telemetrySettings)
-            => new AgentlessTelemetryTransport(
+        private static AgentlessTelemetryTransport GetAgentlessFactory(TelemetrySettings.AgentlessSettings agentlessSettings, TelemetrySettings telemetrySettings)
+            => new(
                 TelemetryTransportStrategy.GetDirectIntakeFactory(agentlessSettings),
                 debugEnabled: telemetrySettings.DebugEnabled,
                 telemetrySettings.CompressionMethod,

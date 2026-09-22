@@ -16,13 +16,16 @@ namespace Datadog.Trace.DuckTyping
     /// </summary>
     public static partial class DuckType
     {
-        private static MethodBuilder? GetFieldGetMethod(
+        private static DuckTypeInvalidTypeConversionException? GetFieldGetMethod(
             TypeBuilder? proxyTypeBuilder,
             Type targetType,
             MemberInfo proxyMember,
             FieldInfo targetField,
-            FieldInfo? instanceField)
+            FieldInfo? instanceField,
+            out MethodBuilder? proxyMethodResult)
         {
+            proxyMethodResult = null;
+
             string proxyMemberName = proxyMember.Name;
             Type proxyMemberReturnType = proxyMember is PropertyInfo pinfo ? pinfo.PropertyType : proxyMember is FieldInfo finfo ? finfo.FieldType : typeof(object);
 
@@ -44,7 +47,10 @@ namespace Datadog.Trace.DuckTyping
             Type returnType = targetField.FieldType;
 
             // Load the field value to the stack
-            if (UseDirectAccessTo(proxyTypeBuilder, targetType))
+            // Use targetField.DeclaringType (not targetType) to ensure IgnoresAccessChecksToAttribute
+            // is added for the assembly that actually owns the field. When targetType is a derived type
+            // in a different assembly, using targetType would miss the base type's assembly.
+            if (UseDirectAccessTo(proxyTypeBuilder, targetField.DeclaringType ?? targetType))
             {
                 // Load the instance
                 if (!targetField.IsStatic)
@@ -99,7 +105,12 @@ namespace Datadog.Trace.DuckTyping
 
                 // Emit the field and convert before returning (in case of boxing)
                 dynIL.Emit(targetField.IsStatic ? OpCodes.Ldsfld : OpCodes.Ldfld, targetField);
-                dynIL.WriteTypeConversion(targetField.FieldType, returnType);
+
+                if (dynIL.WriteTypeConversion(targetField.FieldType, returnType) is { } conversionError)
+                {
+                    return conversionError;
+                }
+
                 dynIL.Emit(OpCodes.Ret);
                 dynIL.Flush();
 
@@ -110,7 +121,10 @@ namespace Datadog.Trace.DuckTyping
             {
                 // Dry run: We enable all checks done in the preview if branch
                 returnType = UseDirectAccessTo(proxyTypeBuilder, targetField.FieldType) ? targetField.FieldType : typeof(object);
-                ILHelpersExtensions.CheckTypeConversion(targetField.FieldType, returnType);
+                if (ILHelpersExtensions.CheckTypeConversion(targetField.FieldType, returnType) is { } conversionError)
+                {
+                    return conversionError;
+                }
             }
 
             // Check if the type can be converted or if we need to enable duck chaining
@@ -126,7 +140,10 @@ namespace Datadog.Trace.DuckTyping
             else if (returnType != proxyMemberReturnType)
             {
                 // If the type is not the expected type we try a conversion.
-                il.WriteTypeConversion(returnType, proxyMemberReturnType);
+                if (il.WriteTypeConversion(returnType, proxyMemberReturnType) is { } conversionError)
+                {
+                    return conversionError;
+                }
             }
 
             if (isValueWithType)
@@ -143,16 +160,20 @@ namespace Datadog.Trace.DuckTyping
                 MethodBuilderGetToken.Invoke(proxyMethod, null);
             }
 
-            return proxyMethod;
+            proxyMethodResult = proxyMethod;
+            return null;
         }
 
-        private static MethodBuilder? GetFieldSetMethod(
+        private static DuckTypeInvalidTypeConversionException? GetFieldSetMethod(
             TypeBuilder? proxyTypeBuilder,
             Type targetType,
             MemberInfo proxyMember,
             FieldInfo targetField,
-            FieldInfo? instanceField)
+            FieldInfo? instanceField,
+            out MethodBuilder? proxyMethodResult)
         {
+            proxyMethodResult = null;
+
             string proxyMemberName = proxyMember.Name;
             Type proxyMemberReturnType = proxyMember is PropertyInfo pinfo ? pinfo.PropertyType : proxyMember is FieldInfo finfo ? finfo.FieldType : typeof(object);
 
@@ -194,7 +215,10 @@ namespace Datadog.Trace.DuckTyping
                     il.Emit(OpCodes.Ldfld, originalproxyMemberReturnType.GetField("Value")!);
                 }
 
-                il.WriteTypeConversion(proxyMemberReturnType, typeof(IDuckType));
+                if (il.WriteTypeConversion(proxyMemberReturnType, typeof(IDuckType)) is { } conversionError)
+                {
+                    return conversionError;
+                }
 
                 // Call IDuckType.Instance property to get the actual value
                 il.EmitCall(OpCodes.Callvirt, DuckTypeInstancePropertyInfo.GetMethod!, null!);
@@ -212,10 +236,15 @@ namespace Datadog.Trace.DuckTyping
             }
 
             // We set the field value
-            if (UseDirectAccessTo(proxyTypeBuilder, targetType))
+            // Use targetField.DeclaringType (not targetType) to ensure IgnoresAccessChecksToAttribute
+            // is added for the assembly that actually owns the field.
+            if (UseDirectAccessTo(proxyTypeBuilder, targetField.DeclaringType ?? targetType))
             {
                 // If the instance and the field are public then is easy to set.
-                il.WriteTypeConversion(currentValueType, targetField.FieldType);
+                if (il.WriteTypeConversion(currentValueType, targetField.FieldType) is { } conversionError)
+                {
+                    return conversionError;
+                }
 
                 il.Emit(targetField.IsStatic ? OpCodes.Stsfld : OpCodes.Stfld, targetField);
             }
@@ -226,7 +255,10 @@ namespace Datadog.Trace.DuckTyping
 
                 // Convert the field type for the dynamic method
                 Type dynValueType = UseDirectAccessTo(proxyTypeBuilder, targetField.FieldType) ? targetField.FieldType : typeof(object);
-                il.WriteTypeConversion(currentValueType, dynValueType);
+                if (il.WriteTypeConversion(currentValueType, dynValueType) is { } directAccessError)
+                {
+                    return directAccessError;
+                }
 
                 // Create dynamic method
                 Type[] dynParameters = targetField.IsStatic ? new[] { dynValueType } : new[] { typeof(object), dynValueType };
@@ -238,7 +270,11 @@ namespace Datadog.Trace.DuckTyping
 
                 if (targetField.IsStatic)
                 {
-                    dynIL.WriteTypeConversion(dynValueType, targetField.FieldType);
+                    if (dynIL.WriteTypeConversion(dynValueType, targetField.FieldType) is { } conversionError)
+                    {
+                        return conversionError;
+                    }
+
                     dynIL.Emit(OpCodes.Stsfld, targetField);
                 }
                 else
@@ -249,7 +285,12 @@ namespace Datadog.Trace.DuckTyping
                     }
 
                     dynIL.Emit(OpCodes.Ldarg_1);
-                    dynIL.WriteTypeConversion(dynValueType, targetField.FieldType);
+
+                    if (dynIL.WriteTypeConversion(dynValueType, targetField.FieldType) is { } conversionError)
+                    {
+                        return conversionError;
+                    }
+
                     dynIL.Emit(OpCodes.Stfld, targetField);
                 }
 
@@ -263,8 +304,15 @@ namespace Datadog.Trace.DuckTyping
             {
                 // Dry run: We enable all checks done in the preview if branch
                 Type dynValueType = UseDirectAccessTo(proxyTypeBuilder, targetField.FieldType) ? targetField.FieldType : typeof(object);
-                ILHelpersExtensions.CheckTypeConversion(currentValueType, dynValueType);
-                ILHelpersExtensions.CheckTypeConversion(dynValueType, targetField.FieldType);
+                if (ILHelpersExtensions.CheckTypeConversion(currentValueType, dynValueType) is { } conversionError)
+                {
+                    return conversionError;
+                }
+
+                if (ILHelpersExtensions.CheckTypeConversion(dynValueType, targetField.FieldType) is { } fieldTypeError)
+                {
+                    return fieldTypeError;
+                }
             }
 
             il.Emit(OpCodes.Ret);
@@ -274,7 +322,8 @@ namespace Datadog.Trace.DuckTyping
                 MethodBuilderGetToken.Invoke(method, null);
             }
 
-            return method;
+            proxyMethodResult = method;
+            return null;
         }
     }
 }

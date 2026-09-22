@@ -48,6 +48,8 @@ public:
     inline bool AddFakeFrame();
 
     inline shared::span<uintptr_t> Data();
+    inline Callstack& GetCallstackRef();
+
     inline Callstack GetCallstack();
     inline void SetCallstack(Callstack callstack);
 
@@ -139,6 +141,11 @@ inline bool StackSnapshotResultBuffer::AddFakeFrame()
 inline shared::span<uintptr_t> StackSnapshotResultBuffer::Data()
 {
     return _callstack.AsSpan();
+}
+
+inline Callstack& StackSnapshotResultBuffer::GetCallstackRef()
+{
+    return _callstack;
 }
 
 inline Callstack StackSnapshotResultBuffer::GetCallstack()

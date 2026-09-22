@@ -190,7 +190,7 @@ namespace Datadog.Trace.MSBuild
 
                 if (projectName != null)
                 {
-                    projectSpan.ServiceName = projectName;
+                    projectSpan.SetService(projectName, Datadog.Trace.Configuration.Schema.ServiceNameMetadata.Manual);
                 }
 
                 projectSpan.Context.TraceContext?.SetSamplingPriority(SamplingPriorityValues.AutoKeep);

@@ -9,7 +9,6 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.Metrics;
-using System.Reflection;
 using System.Threading;
 using Datadog.Trace.DogStatsd;
 using Datadog.Trace.Logging;
@@ -65,29 +64,12 @@ internal sealed class DiagnosticsMetricsRuntimeMetricsListener : IRuntimeMetrics
             // System.Runtime metrics are only available on .NET 9+, but the only one we need it for is GC pause time
             _getGcPauseTimeFunc = GetGcPauseTime_RuntimeMetrics;
         }
-        else if (version.Major > 6
-                 || version is { Major: 6, Build: >= 21 })
-        {
-            // .NET 6.0.21 introduced the GC.GetTotalPauseDuration() method https://github.com/dotnet/runtime/pull/87143
-            // Which is what OTel uses where required: https://github.com/open-telemetry/opentelemetry-dotnet-contrib/blob/5aa6d868/src/OpenTelemetry.Instrumentation.Runtime/RuntimeMetrics.cs#L105C40-L107
-            // We could use ducktyping instead of reflection, but this is such a simple case that it's kind of easier
-            // to just go with the delegate approach
-            var methodInfo = typeof(GC).GetMethod("GetTotalPauseDuration", BindingFlags.Public | BindingFlags.Static);
-            if (methodInfo is null)
-            {
-                // strange, but we failed to get the delegate
-                _getGcPauseTimeFunc = GetGcPauseTime_Noop;
-            }
-            else
-            {
-                var getTotalPauseDuration = methodInfo.CreateDelegate<Func<TimeSpan>>();
-                _getGcPauseTimeFunc = _ => getTotalPauseDuration().TotalMilliseconds;
-            }
-        }
         else
         {
-            // can't get pause time
-            _getGcPauseTimeFunc = GetGcPauseTime_Noop;
+            var del = GcPauseTimeReflection.TryCreateDelegate();
+            _getGcPauseTimeFunc = del is null
+                ? GetGcPauseTime_Noop
+                : (_ => del().TotalMilliseconds);
         }
 
         // The .NET runtime instruments we listen to only produce long or double values
@@ -138,25 +120,12 @@ internal sealed class DiagnosticsMetricsRuntimeMetricsListener : IRuntimeMetrics
             }
 
             // memory load
-            // This is attempting to emulate the GcGlobalHeapHistory.MemoryLoad event details
-            // That value is calculated using
-            // - `current_gc_data_global->mem_pressure` (src/coreclr/gc/gc.cpp#L3288)
-            // - which fetches the value set via `history->mem_pressure = entry_memory_load` (src/coreclr/gc/gc.cpp#L7912)
-            // - which is set by calling `gc_heap::get_memory_info()` (src/coreclr/gc/gc.cpp#L29438)
-            // - which then calls GCToOSInterface::GetMemoryStatus(...) which has platform-specific implementations
-            // - On linux, memory_load is calculated differently depending if there's a restriction (src/coreclr/gc/unix/gcenv.unix.cpp#L1191)
-            //   - Physical Memory Used / Limit
-            //   - (g_totalPhysicalMemSize - GetAvailablePhysicalMemory()) / total
-            // - On Windows, memory_load is calculated differently depending if there's a restriction (src/coreclr/gc/unix/gcenv.windows.cpp#L1000)
-            //   - Working Set Size / Limit
-            //   - GlobalMemoryStatusEx -> (ullTotalVirtual - ullAvailVirtual) * 100.0 / (float)ms.ullTotalVirtual
-            //
-            // We try to roughly emulate that using the info in gcInfo:
-            var availableBytes = gcInfo.TotalAvailableMemoryBytes;
-
-            if (availableBytes > 0)
+            // GCMemoryInfo.MemoryLoadBytes and GCMemoryInfo.HighMemoryLoadThresholdBytes are both scaled by the
+            // GC's total_physical_mem, but TotalAvailableMemoryBytes switches to heap_hard_limit whenever a GC
+            // hard limit is in play, so getting the memory load is not simple
+            if (GcMemoryLoadCalculator.TryGetMemoryLoadPercentage(gcInfo) is { } memoryLoad)
             {
-                statsd.Gauge(MetricsNames.GcMemoryLoad, (double)gcInfo.MemoryLoadBytes * 100.0 / availableBytes);
+                statsd.Gauge(MetricsNames.GcMemoryLoad, memoryLoad);
             }
         }
         else
@@ -165,12 +134,17 @@ internal sealed class DiagnosticsMetricsRuntimeMetricsListener : IRuntimeMetrics
         }
 
         var gcPauseTimeMilliSeconds = _getGcPauseTimeFunc(this);
-        // We don't record 0-length pauses, so that we match RuntimeEventListener behaviour
-        // We don't worry about the floating point comparison, as reporting close to zero is fine
-        if (gcPauseTimeMilliSeconds.HasValue && _previousGcPauseTime.HasValue
-                                             && gcPauseTimeMilliSeconds.Value != _previousGcPauseTime.Value)
+
+        if (gcPauseTimeMilliSeconds.HasValue && _previousGcPauseTime.HasValue)
         {
-            statsd.Timer(MetricsNames.GcPauseTime, gcPauseTimeMilliSeconds.Value - _previousGcPauseTime.Value);
+            var totalPauseDeltaMs = (long)Math.Round(gcPauseTimeMilliSeconds.Value - _previousGcPauseTime.Value);
+
+            if (totalPauseDeltaMs > 0)
+            {
+                // Send total pause as a Counter. Avg per-GC pause can be computed at query time:
+                // pause_time.total / (gc.count.gen0 + gc.count.gen1 + gc.count.gen2)
+                statsd.Counter(MetricsNames.GcPauseTimeTotal, totalPauseDeltaMs);
+            }
         }
 
         _previousGcPauseTime = gcPauseTimeMilliSeconds;

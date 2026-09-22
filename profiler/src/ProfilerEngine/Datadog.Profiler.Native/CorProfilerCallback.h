@@ -10,6 +10,8 @@
 
 #include "AllocationsProvider.h"
 #include "ApplicationStore.h"
+#include "CallstackProvider.h"
+#include "EngineActiveGuard.h"
 #include "EventPipeEventsManager.h"
 #include "ExceptionsProvider.h"
 #include "IAppDomainStore.h"
@@ -50,14 +52,18 @@
 
 #include <atomic>
 #include <memory>
+#include <shared_mutex>
 #include <vector>
 
 class ContentionProvider;
+class CoreLibModuleProvider;
 class IService;
 class IThreadsCpuManager;
 class IManagedThreadList;
 class INativeThreadList;
+class StackSamplerLoop;
 class StackSamplerLoopManager;
+class StackFramesCollectorBase;
 class IConfiguration;
 class IExporter;
 class RawSampleTransformer;
@@ -66,6 +72,7 @@ class CpuSampleProvider;
 class ManagedCodeCache;
 class NetworkProvider;
 class IUnwinder;
+class UnwindingRecorderFactory;
 
 #ifdef LINUX
 class SystemCallsShield;
@@ -245,10 +252,15 @@ private :
     std::shared_ptr<IMetricsSender> _metricsSender;
     std::atomic<bool> _isInitialized{false}; // pay attention to keeping ProfilerEngineStatus::IsProfilerEngiveActive in sync with this!
 
+    // Synchronizes access to the services below, and the engine lifetime flag.
+    mutable std::shared_mutex _engineLifetimeMutex;
+    bool _isServicesShutdown = false;
+
     // The pointer here are observable pointer which means that they are used only to access the data.
     // Their lifetime is managed by the _services vector.
     IThreadsCpuManager* _pThreadsCpuManager = nullptr;
     StackSamplerLoopManager* _pStackSamplerLoopManager = nullptr;
+    StackSamplerLoop* _pStackSamplerLoop = nullptr;
     IManagedThreadList* _pManagedThreadList = nullptr;
     IManagedThreadList* _pCodeHotspotsThreadList = nullptr;
     IApplicationStore* _pApplicationStore = nullptr;
@@ -273,15 +285,25 @@ private :
     std::unique_ptr<IUnwinder> _pUnwinder = nullptr;
     CpuSampleProvider* _pCpuSampleProvider = nullptr;
     std::unique_ptr<RingBuffer> _pCpuProfilerRb = nullptr;
-#endif
+    std::unique_ptr<UnwindingRecorderFactory> _pUnwindingRecorderFactory = nullptr;
+#endif // LINUX
 
     std::vector<std::unique_ptr<IService>> _services;
+
+    // Shared by StackSamplerLoopManager and StackSamplerLoop (both registered in _services above).
+    // StackFramesCollectorBase is not itself an IService (no Start/Stop lifecycle), so it - and the
+    // CallstackProvider backing it - are owned directly here instead, and handed to both as a raw,
+    // non-owning pointer.
+    CallstackProvider _callstackProvider;
+    std::unique_ptr<StackFramesCollectorBase> _pStackFramesCollector;
 
     std::unique_ptr<IExporter> _pExporter = nullptr;
     std::shared_ptr<IConfiguration> _pConfiguration = nullptr;
     bool _IsManagedConfigurationSet = false; // profiler can't start before this becomes true
     std::unique_ptr<IAppDomainStore> _pAppDomainStore = nullptr;
     std::unique_ptr<IFrameStore> _pFrameStore = nullptr;
+    // shared by the components that need to resolve types defined in the core library
+    std::unique_ptr<CoreLibModuleProvider> _pCoreLibModuleProvider = nullptr;
     std::unique_ptr<IRuntimeInfo> _pRuntimeInfo = nullptr;
     bool _isFrameworkVersionKnown = false;
     std::unique_ptr<IEnabledProfilers> _pEnabledProfilers = nullptr;

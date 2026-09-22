@@ -70,12 +70,6 @@ namespace LogsInjection.NLog
             // Disabling the startup log at the process level should prevent this.
             Environment.SetEnvironmentVariable("DD_TRACE_STARTUP_LOGS", "0");
 
-            var env = SampleHelpers.GetDatadogEnvironmentVariables();
-            foreach(var kvp in env)
-            {
-                Console.WriteLine($"{kvp.Key}: {kvp.Value}");
-            }
-
             bool isAttached = SampleHelpers.IsProfilerAttached();
             Console.WriteLine(" * Checking if the profiler is attached: {0}", isAttached);
 
@@ -299,21 +293,6 @@ namespace LogsInjection.NLog
                     }
                 }
             }
-        }
-
-        public static IEnumerable<KeyValuePair<string,string>> GetDatadogEnvironmentVariables()
-        {
-            var prefixes = new[] { "COR_", "CORECLR_", "DD_", "DATADOG_" };
-
-            var envVars = from envVar in Environment.GetEnvironmentVariables().Cast<DictionaryEntry>()
-                          from prefix in prefixes
-                          let key = (envVar.Key as string)?.ToUpperInvariant()
-                          let value = envVar.Value as string
-                          where key.StartsWith(prefix)
-                          orderby key
-                          select new KeyValuePair<string, string>(key, value);
-
-            return envVars.ToList();
         }
     }
 }

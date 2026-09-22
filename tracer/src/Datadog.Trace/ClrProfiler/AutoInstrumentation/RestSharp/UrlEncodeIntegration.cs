@@ -30,7 +30,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RestSharp;
 [EditorBrowsable(EditorBrowsableState.Never)]
 public sealed class UrlEncodeIntegration
 {
-    private static bool errorLogged = false;
+    private static bool errorLogged;
 
     /// <summary>
     /// OnMethodBegin callback

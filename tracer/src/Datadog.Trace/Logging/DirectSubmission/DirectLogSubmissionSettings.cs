@@ -14,6 +14,7 @@ using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Logging.DirectSubmission.Sink.PeriodicBatching;
 using Datadog.Trace.PlatformHelpers;
+using Datadog.Trace.Serverless;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Logging.DirectSubmission
@@ -171,7 +172,7 @@ namespace Datadog.Trace.Logging.DirectSubmission
 
             var isEnabled = enabledIntegrations is not null;
 
-            if (!AzureFunctionsHostEnabled && EnvironmentHelpers.IsRunningInAzureFunctionsHost())
+            if (!AzureFunctionsHostEnabled && AzureInfo.Instance.IsIsolatedFunctionHostProcess)
             {
                 isEnabled = false;
             }
@@ -274,7 +275,7 @@ namespace Datadog.Trace.Logging.DirectSubmission
         /// Gets a value indicating whether direct log submission is enabled for the Azure Functions host.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.DirectLogSubmission.AzureFunctionsHostEnabled"/>
-        internal bool AzureFunctionsHostEnabled { get; } = false;
+        internal bool AzureFunctionsHostEnabled { get; }
 
         /// <summary>
         /// Gets the Datadog API key

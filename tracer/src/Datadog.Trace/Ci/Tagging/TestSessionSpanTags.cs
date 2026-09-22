@@ -9,6 +9,7 @@ using System.Globalization;
 using Datadog.Trace.Ci.CiEnvironment;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.SourceGenerators;
+using Datadog.Trace.Util.Json;
 
 namespace Datadog.Trace.Ci.Tagging;
 
@@ -47,6 +48,9 @@ internal partial class TestSessionSpanTags : Trace.Tagging.TagsList
 
     [Tag(CommonTags.CIPipelineName)]
     public string? CIPipelineName { get; set; }
+
+    [Tag(CommonTags.CIPipelineDisplayName)]
+    public string? CIPipelineDisplayName { get; set; }
 
     [Tag(CommonTags.CIPipelineNumber)]
     public string? CIPipelineNumber { get; set; }
@@ -111,6 +115,9 @@ internal partial class TestSessionSpanTags : Trace.Tagging.TagsList
     [Tag(IntelligentTestRunnerTags.TestsSkipped)]
     public string? TestsSkipped { get; set; }
 
+    [Tag(IntelligentTestRunnerTags.TestTestsSkippingEnabled)]
+    public string? IntelligentTestRunnerTestsSkippingEnabled { get; set; }
+
     [Tag(IntelligentTestRunnerTags.SkippingType)]
     public string? IntelligentTestRunnerSkippingType { get; set; }
 
@@ -166,6 +173,7 @@ internal partial class TestSessionSpanTags : Trace.Tagging.TagsList
             CIProvider = environmentValues.Provider;
             CIPipelineId = environmentValues.PipelineId;
             CIPipelineName = environmentValues.PipelineName;
+            CIPipelineDisplayName = environmentValues.PipelineDisplayName;
             CIPipelineNumber = environmentValues.PipelineNumber;
             CIPipelineUrl = environmentValues.PipelineUrl;
             CIJobId = environmentValues.JobId;
@@ -200,7 +208,7 @@ internal partial class TestSessionSpanTags : Trace.Tagging.TagsList
 
             if (environmentValues.VariablesToBypass is { } variablesToBypass)
             {
-                CiEnvVars = Vendors.Newtonsoft.Json.JsonConvert.SerializeObject(variablesToBypass);
+                CiEnvVars = JsonHelper.SerializeObject(variablesToBypass);
             }
         }
     }

@@ -9,6 +9,7 @@
     ParentId: Id_3,
     Tags: {
       aspnet.route: api/home/null-action/{pathparam}/{pathparam2},
+      component: aspnet,
       env: integration_tests,
       http.method: GET,
       http.request.headers.host: localhost:00000,
@@ -27,6 +28,7 @@
     Service: sample,
     Type: web,
     Tags: {
+      component: aspnet,
       env: integration_tests,
       http.method: GET,
       http.request.headers.host: localhost:00000,
@@ -36,7 +38,14 @@
       http.useragent: Mistake Not...,
       language: dotnet,
       runtime-id: Guid_1,
-      span.kind: server
+      span.kind: server,
+      _dd.code_origin.frames.0.column: 0,
+      _dd.code_origin.frames.0.file: tracer\test\test-applications\security\aspnet\Samples.Security.WebApi\Controllers\HomeController.cs,
+      _dd.code_origin.frames.0.index: 0,
+      _dd.code_origin.frames.0.line: 0,
+      _dd.code_origin.frames.0.method: NullAction,
+      _dd.code_origin.frames.0.type: Samples.Security.WebApi.Controllers.HomeController,
+      _dd.code_origin.type: entry
     },
     Metrics: {
       process_id: 0,
@@ -55,6 +64,7 @@
     ParentId: Id_6,
     Tags: {
       aspnet.route: api/home/null-action-async/{pathparam}/{pathparam2},
+      component: aspnet,
       env: integration_tests,
       http.method: GET,
       http.request.headers.host: localhost:00000,
@@ -73,6 +83,7 @@
     Service: sample,
     Type: web,
     Tags: {
+      component: aspnet,
       env: integration_tests,
       http.method: GET,
       http.request.headers.host: localhost:00000,
@@ -82,7 +93,14 @@
       http.useragent: Mistake Not...,
       language: dotnet,
       runtime-id: Guid_1,
-      span.kind: server
+      span.kind: server,
+      _dd.code_origin.frames.0.column: 0,
+      _dd.code_origin.frames.0.file: tracer\test\test-applications\security\aspnet\Samples.Security.WebApi\Controllers\HomeController.cs,
+      _dd.code_origin.frames.0.index: 0,
+      _dd.code_origin.frames.0.line: 0,
+      _dd.code_origin.frames.0.method: NullActionAsync,
+      _dd.code_origin.frames.0.type: Samples.Security.WebApi.Controllers.HomeController,
+      _dd.code_origin.type: entry
     },
     Metrics: {
       process_id: 0,

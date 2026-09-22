@@ -5,8 +5,10 @@
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Reflection;
+using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
@@ -32,13 +34,251 @@ namespace Datadog.Trace.Tests.Tagging
         {
             var settings = new TracerSettings();
             _testApi = new MockApi();
-            var agentWriter = new AgentWriter(_testApi, statsAggregator: null, statsd: TestStatsdManager.NoOp, automaticFlush: false);
+            var agentWriter = AgentWriterHelper.CreateWithManualFlush(_testApi);
             _tracer = TracerHelper.Create(settings, agentWriter);
         }
 
         public Task InitializeAsync() => Task.CompletedTask;
 
         public async Task DisposeAsync() => await _tracer.DisposeAsync();
+
+        [Fact]
+        public void SetTags_WithOnlyNullValues_DoesNotInitializeBackingTagsList()
+        {
+            var tags = new TagsList();
+
+            tags.SetTags(
+                new("k1", null),
+                new("k2", null),
+                new("k3", null));
+
+            GetBackingTagsList(tags).Should().BeNull();
+        }
+
+        [Theory]
+        [InlineData(typeof(HttpTags))]
+        [InlineData(typeof(HttpV1Tags))]
+        [InlineData(typeof(WebTags))]
+        [InlineData(typeof(AspNetCoreTags))]
+        [InlineData(typeof(AwsSqsTags))]
+        [InlineData(typeof(InferredProxyTags))]
+        public void SetTag_WithNullValue_RemovesIntBackedTag(Type tagsType)
+        {
+            var tags = (TagsList)Activator.CreateInstance(tagsType);
+
+            tags.SetTag(Tags.HttpStatusCode, "200");
+
+            ((IHasStatusCode)tags).HttpStatusCode.Should().Be(200);
+            tags.GetTag(Tags.HttpStatusCode).Should().Be("200");
+
+            tags.SetTag(Tags.HttpStatusCode, null);
+
+            ((IHasStatusCode)tags).HttpStatusCode.Should().BeNull();
+            tags.GetTag(Tags.HttpStatusCode).Should().BeNull();
+            GetTagsSnapshot(tags).Select(x => x.Key).Should().NotContain(Tags.HttpStatusCode);
+        }
+
+        [Theory]
+        [InlineData(typeof(HttpTags))]
+        [InlineData(typeof(HttpV1Tags))]
+        [InlineData(typeof(WebTags))]
+        [InlineData(typeof(AspNetCoreTags))]
+        [InlineData(typeof(AwsSqsTags))]
+        [InlineData(typeof(InferredProxyTags))]
+        public void SetTag_WithUnparseableValue_RemovesIntBackedTag(Type tagsType)
+        {
+            var tags = (TagsList)Activator.CreateInstance(tagsType);
+
+            tags.SetTag(Tags.HttpStatusCode, "200");
+            tags.SetTag(Tags.HttpStatusCode, "not-an-int");
+
+            ((IHasStatusCode)tags).HttpStatusCode.Should().BeNull();
+            tags.GetTag(Tags.HttpStatusCode).Should().BeNull();
+            GetTagsSnapshot(tags).Select(x => x.Key).Should().NotContain(Tags.HttpStatusCode);
+        }
+
+        [Fact]
+        public void StronglyTypedStatusCodeAliasesCanBeReadAndWrittenByEitherName()
+        {
+            var tags = new WebTags();
+
+            tags.SetTag(Tags.HttpStatusCode, "200");
+            tags.GetTag(Tags.HttpResponseStatusCode).Should().Be("200");
+
+            tags.SetTag(Tags.HttpResponseStatusCode, "201");
+            tags.GetTag(Tags.HttpStatusCode).Should().Be("201");
+        }
+
+        [Theory]
+        [InlineData(false, Tags.HttpStatusCode)]
+        [InlineData(true, Tags.HttpResponseStatusCode)]
+        public void StronglyTypedStatusCodeAliasEnumeratesSelectedName(bool openTelemetrySemanticsEnabled, string expectedKey)
+        {
+            var tags = new WebTags { HttpStatusCode = 202 };
+
+            var snapshot = GetTagsSnapshot(tags, openTelemetrySemanticsEnabled);
+
+            snapshot
+               .Where(x => x.Key == Tags.HttpStatusCode || x.Key == Tags.HttpResponseStatusCode)
+               .Should()
+               .ContainSingle()
+               .Which
+               .Should()
+               .Be(new KeyValuePair<string, string>(expectedKey, "202"));
+        }
+
+        [Theory]
+        [InlineData(Tags.HttpMethod, Tags.HttpRequestMethod)]
+        [InlineData(Tags.HttpUserAgent, Tags.UserAgentOriginal)]
+        [InlineData(Tags.HttpClientIp, Tags.ClientAddress)]
+        [InlineData(Tags.NetworkClientIp, Tags.NetworkPeerAddress)]
+        public void WebTagsAliasesCanBeReadAndWrittenByEitherName(string datadogName, string otelName)
+        {
+            var tags = new WebTags();
+
+            tags.SetTag(datadogName, "first");
+            tags.GetTag(otelName).Should().Be("first");
+
+            tags.SetTag(otelName, "second");
+            tags.GetTag(datadogName).Should().Be("second");
+
+            // clearing via either name clears the single backing value
+            tags.SetTag(otelName, null);
+            tags.GetTag(datadogName).Should().BeNull();
+        }
+
+        [Theory]
+        [InlineData(false, Tags.HttpMethod, Tags.HttpRequestMethod)]
+        [InlineData(true, Tags.HttpRequestMethod, Tags.HttpMethod)]
+        public void WebTagsAliasesEnumerateExactlyOneName(bool openTelemetrySemanticsEnabled, string expectedKey, string unexpectedKey)
+        {
+            var tags = new WebTags { HttpMethod = "GET", HttpUserAgent = "ua", HttpClientIp = "1.2.3.4", NetworkClientIp = "5.6.7.8" };
+
+            var keys = GetTagsSnapshot(tags, openTelemetrySemanticsEnabled).Select(x => x.Key).ToList();
+
+            keys.Should().Contain(expectedKey).And.NotContain(unexpectedKey);
+
+            // the other three aliases follow the same flag
+            var otelKeys = new[] { Tags.UserAgentOriginal, Tags.ClientAddress, Tags.NetworkPeerAddress };
+            var datadogKeys = new[] { Tags.HttpUserAgent, Tags.HttpClientIp, Tags.NetworkClientIp };
+            var expected = openTelemetrySemanticsEnabled ? otelKeys : datadogKeys;
+            var unexpected = openTelemetrySemanticsEnabled ? datadogKeys : otelKeys;
+
+            keys.Should().Contain(expected).And.NotContain(unexpected);
+        }
+
+        [Fact]
+        public void WebTagsOtelOnlyTagsAreEmittedUnderTheirOwnName()
+        {
+            // These have no Datadog equivalent, so they are emitted under the same name in both
+            // modes. The instrumentation only populates them when OTel semantics are enabled.
+            var tags = new WebTags
+            {
+                UrlScheme = "https",
+                UrlPath = "/api/value",
+                UrlQuery = "q=1",
+                ServerAddress = "example.com",
+                ServerPort = 8443,
+                HttpRequestMethodOriginal = "GeT",
+            };
+
+            foreach (var openTelemetrySemanticsEnabled in new[] { false, true })
+            {
+                GetTagsSnapshot(tags, openTelemetrySemanticsEnabled)
+                   .Should()
+                   .Contain(
+                    [
+                        new KeyValuePair<string, string>(Tags.UrlScheme, "https"),
+                        new KeyValuePair<string, string>(Tags.UrlPath, "/api/value"),
+                        new KeyValuePair<string, string>(Tags.UrlQuery, "q=1"),
+                        new KeyValuePair<string, string>(Tags.ServerAddress, "example.com"),
+                        new KeyValuePair<string, string>(Tags.ServerPort, "8443"),
+                        new KeyValuePair<string, string>(Tags.HttpRequestMethodOriginal, "GeT"),
+                    ]);
+            }
+        }
+
+        [Fact]
+        public void StronglyTypedStatusCodeAliasCanBeClearedByEitherName()
+        {
+            var tags = new WebTags();
+
+            tags.SetTag(Tags.HttpStatusCode, "203");
+            tags.SetTag(Tags.HttpResponseStatusCode, null);
+            tags.GetTag(Tags.HttpStatusCode).Should().BeNull();
+            tags.GetTag(Tags.HttpResponseStatusCode).Should().BeNull();
+
+            tags.SetTag(Tags.HttpResponseStatusCode, "204");
+            tags.SetTag(Tags.HttpStatusCode, null);
+            tags.GetTag(Tags.HttpStatusCode).Should().BeNull();
+            tags.GetTag(Tags.HttpResponseStatusCode).Should().BeNull();
+        }
+
+        [Theory]
+        [InlineData(false, Tags.HttpMethod, Tags.HttpUrl, Tags.OutHost)]
+        [InlineData(true, Tags.HttpRequestMethod, Tags.UrlFull, Tags.ServerAddress)]
+        public void HttpClientTagAliasesEnumerateSelectedNames(bool openTelemetrySemanticsEnabled, string methodKey, string urlKey, string hostKey)
+        {
+            const string url = "http://localhost/api";
+            var tags = new HttpTags { HttpMethod = "GET", HttpUrl = url, Host = "localhost" };
+
+            var snapshot = GetTagsSnapshot(tags, openTelemetrySemanticsEnabled);
+
+            snapshot.Should().Contain(
+            [
+                new KeyValuePair<string, string>(methodKey, "GET"),
+                new KeyValuePair<string, string>(urlKey, url),
+                new KeyValuePair<string, string>(hostKey, "localhost"),
+            ]);
+
+            // the aliases are mutually exclusive, so only one name is reported for each concept
+            var aliases = new[] { Tags.HttpMethod, Tags.HttpRequestMethod, Tags.HttpUrl, Tags.UrlFull, Tags.OutHost, Tags.ServerAddress };
+            snapshot.Select(x => x.Key)
+                    .Where(aliases.Contains)
+                    .Should()
+                    .BeEquivalentTo(new[] { methodKey, urlKey, hostKey });
+        }
+
+        [Fact]
+        public void HttpClientTagAliasesCanBeReadAndWrittenByEitherName()
+        {
+            var tags = new HttpTags();
+
+            tags.SetTag(Tags.HttpMethod, "GET");
+            tags.GetTag(Tags.HttpRequestMethod).Should().Be("GET");
+            tags.SetTag(Tags.HttpRequestMethod, "POST");
+            tags.GetTag(Tags.HttpMethod).Should().Be("POST");
+            tags.HttpMethod.Should().Be("POST");
+
+            tags.SetTag(Tags.HttpUrl, "http://localhost/1");
+            tags.GetTag(Tags.UrlFull).Should().Be("http://localhost/1");
+            tags.SetTag(Tags.UrlFull, "http://localhost/2");
+            tags.GetTag(Tags.HttpUrl).Should().Be("http://localhost/2");
+            tags.HttpUrl.Should().Be("http://localhost/2");
+
+            tags.SetTag(Tags.OutHost, "host1");
+            tags.GetTag(Tags.ServerAddress).Should().Be("host1");
+            tags.SetTag(Tags.ServerAddress, "host2");
+            tags.GetTag(Tags.OutHost).Should().Be("host2");
+            tags.Host.Should().Be("host2");
+        }
+
+        [Fact]
+        public void ServerPortIsOnlyReportedWhenSet()
+        {
+            var tags = new HttpTags();
+
+            GetTagsSnapshot(tags, openTelemetrySemanticsEnabled: true)
+               .Select(x => x.Key)
+               .Should()
+               .NotContain(Tags.ServerPort);
+
+            tags.ServerPort = 8080;
+
+            GetTagsSnapshot(tags, openTelemetrySemanticsEnabled: true)
+               .Should()
+               .Contain(new KeyValuePair<string, string>(Tags.ServerPort, "8080"));
+        }
 
         [Fact]
         public void GetTag_GetMetric_ReturnUpdatedValues()
@@ -112,7 +352,8 @@ namespace Datadog.Trace.Tests.Tagging
             deserializedSpan.Tags.Should().Contain(Tags.RuntimeId, Tracer.RuntimeId);
             deserializedSpan.Tags.Should().Contain(Tags.Propagated.DecisionMaker, SamplingMechanism.Default);
             deserializedSpan.Tags.Should().Contain(Tags.Propagated.TraceIdUpper, hexStringTraceId);
-            deserializedSpan.Tags.Should().HaveCount(customTagCount + 5);
+            deserializedSpan.Tags.Should().ContainKey(Tags.ProcessTags);
+            deserializedSpan.Tags.Should().HaveCount(customTagCount + 6);
 
             deserializedSpan.Metrics.Should().Contain(Metrics.SamplingPriority, 1);
             deserializedSpan.Metrics.Should().Contain(Metrics.SamplingLimitDecision, 0.75);
@@ -156,7 +397,8 @@ namespace Datadog.Trace.Tests.Tagging
             deserializedSpan.Tags.Should().Contain(Tags.Propagated.TraceIdUpper, hexStringTraceId);
             deserializedSpan.Tags.Should().ContainKey(Tags.BaseService);
             deserializedSpan.Tags[Tags.BaseService].Should().Be(_tracer.DefaultServiceName);
-            deserializedSpan.Tags.Should().HaveCount(customTagCount + 6);
+            deserializedSpan.Tags.Should().ContainKey(Tags.ProcessTags);
+            deserializedSpan.Tags.Should().HaveCount(customTagCount + 7);
 
             deserializedSpan.Metrics.Should().Contain(Metrics.SamplingLimitDecision, 0.75);
             deserializedSpan.Metrics.Should().Contain(Metrics.TopLevelSpan, 1);
@@ -196,7 +438,8 @@ namespace Datadog.Trace.Tests.Tagging
             deserializedSpan.Tags.Should().Contain(Tags.Propagated.TraceIdUpper, hexStringTraceId);
             deserializedSpan.Tags.Should().ContainKey(Tags.BaseService);
             deserializedSpan.Tags[Tags.BaseService].Should().Be(_tracer.DefaultServiceName);
-            deserializedSpan.Tags.Should().HaveCount(customTagCount + 5);
+            deserializedSpan.Tags.Should().ContainKey(Tags.ProcessTags);
+            deserializedSpan.Tags.Should().HaveCount(customTagCount + 6);
 
             deserializedSpan.Metrics.Should().Contain(Metrics.SamplingLimitDecision, 0.75);
             deserializedSpan.Metrics.Should().HaveCount(customTagCount + 1);
@@ -355,6 +598,92 @@ namespace Datadog.Trace.Tests.Tagging
                 remainingValues.Remove(tagValue)
                                .Should()
                                .BeTrue($"Property {propertyAndTag.property.Name} of type {type.Name} is not mapped");
+            }
+        }
+
+        private static List<KeyValuePair<string, string>> GetTagsSnapshot(TagsList tags, bool openTelemetrySemanticsEnabled = false)
+        {
+            var result = new List<KeyValuePair<string, string>>();
+            var processor = new TagCollectorProcessor(result);
+            tags.EnumerateTags(ref processor, openTelemetrySemanticsEnabled);
+            return result;
+        }
+
+        private static object GetBackingTagsList(TagsList tags)
+        {
+            var field = typeof(TagsList).GetField("_tags", BindingFlags.Instance | BindingFlags.NonPublic);
+            field.Should().NotBeNull();
+            return field.GetValue(tags);
+        }
+
+        private readonly struct TagCollectorProcessor : IItemProcessor<string>, IItemProcessor<int>
+        {
+            private readonly List<KeyValuePair<string, string>> _items;
+
+            public TagCollectorProcessor(List<KeyValuePair<string, string>> items)
+            {
+                _items = items;
+            }
+
+            public void Process(TagItem<string> item)
+            {
+                _items.Add(new(item.Key, item.Value));
+            }
+
+            public void Process(TagItem<int> item)
+            {
+                _items.Add(new(item.Key, item.Value.ToString(CultureInfo.InvariantCulture)));
+            }
+        }
+
+        [Collection(nameof(HighConcurrencyTestCollection))]
+        public class ConcurrencyTests
+        {
+            [Fact]
+            [Flaky("This concurrency test can time out on saturated CI agents")]
+            public async Task SetTagAndSetTags_WhenCalledConcurrently_ShouldKeepSingleEntryPerKey()
+            {
+                var tags = new TagsList();
+
+                const int workerCount = 4;
+                const int iterationsPerWorker = 1_000;
+                var timeout = TimeSpan.FromSeconds(20);
+                var expectedKeys = new[] { "k1", "k2", "k3", "k4" };
+
+                using var startSignal = new ManualResetEventSlim(false);
+                var workers = Enumerable.Range(0, workerCount)
+                                        .Select(
+                                             workerId => Task.Run(
+                                                 () =>
+                                                 {
+                                                     startSignal.Wait();
+
+                                                     for (var i = 0; i < iterationsPerWorker; i++)
+                                                     {
+                                                         tags.SetTags(
+                                                             new("k1", workerId.ToString()),
+                                                             new("k2", i.ToString()),
+                                                             new("k3", "stable"));
+                                                         tags.SetTag("k4", workerId.ToString());
+                                                     }
+                                                 }))
+                                        .ToArray();
+
+                startSignal.Set();
+
+                var allWorkers = Task.WhenAll(workers);
+                var completedTask = await Task.WhenAny(allWorkers, Task.Delay(timeout));
+                if (completedTask != allWorkers)
+                {
+                    throw new TimeoutException($"Concurrent tag updates exceeded {timeout}. Worker statuses: {string.Join(", ", workers.Select(w => w.Status))}");
+                }
+
+                await allWorkers;
+
+                var snapshot = GetTagsSnapshot(tags);
+
+                snapshot.Select(x => x.Key).Should().BeEquivalentTo(expectedKeys);
+                snapshot.Select(x => x.Key).Should().OnlyHaveUniqueItems();
             }
         }
     }

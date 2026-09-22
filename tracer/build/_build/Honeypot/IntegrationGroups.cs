@@ -26,6 +26,7 @@ namespace Honeypot
             NugetPackages.Add("System", new string[] { });
             NugetPackages.Add("System.Diagnostics.Process", new string[] { });
             NugetPackages.Add("System.Runtime.Remoting", new string[] {  });
+            NugetPackages.Add("System.Runtime.Serialization", new string[] { });
             NugetPackages.Add("System.Security.Cryptography", new string[] { });
             NugetPackages.Add("System.Security.Cryptography.Primitives", new string[] { });
 
@@ -50,6 +51,7 @@ namespace Honeypot
             NugetPackages.Add("GraphQL", new [] { "GraphQL" });
             NugetPackages.Add("GraphQL.SystemReactive", new [] { "GraphQL.SystemReactive" });
             NugetPackages.Add("HotChocolate.Execution", new[] { "HotChocolate.AspNetCore" });
+            NugetPackages.Add("HotChocolate.Types", new[] { "HotChocolate.AspNetCore" });
             NugetPackages.Add("System.Net.Http", new [] { "System.Net.Http" });
             NugetPackages.Add("System.Net.Http.WinHttpHandler", new [] { "System.Net.Http.WinHttpHandler" });
             NugetPackages.Add("Microsoft.Extensions.Logging.Abstractions", new [] { "Microsoft.Extensions.Logging.Abstractions" });
@@ -76,7 +78,7 @@ namespace Honeypot
             NugetPackages.Add("System.Data.SQLite", new [] { "System.Data.SQLite" });
             NugetPackages.Add("StackExchange.Redis", new [] { "StackExchange.Redis" });
             NugetPackages.Add("StackExchange.Redis.StrongName", new [] { "StackExchange.Redis.StrongName" });
-            NugetPackages.Add("System.ServiceModel", new [] { "System.ServiceModel.Http" });
+            NugetPackages.Add("System.ServiceModel", new string[] { });
             NugetPackages.Add("System.Net.Requests", new [] { "System.Net.Requests" });
             NugetPackages.Add("xunit.execution.dotnet", new [] { "xunit.extensibility.execution" });
             NugetPackages.Add("xunit.execution.desktop", new [] { "xunit" });
@@ -108,6 +110,7 @@ namespace Honeypot
             NugetPackages.Add("Azure.Messaging.ServiceBus", new string[] { "Azure.Messaging.ServiceBus" });
             NugetPackages.Add("Azure.Messaging.EventHubs", new string[] { "Azure.Messaging.EventHubs" });
             NugetPackages.Add("amqmdnetstd", new [] { "IBMMQDotnetClient" });
+            NugetPackages.Add("Ocelot", new [] { "Ocelot" });
             NugetPackages.Add("Yarp.ReverseProxy", new [] { "Yarp.ReverseProxy" });
             NugetPackages.Add("Microsoft.AspNetCore.Html.Abstractions", new [] { "Microsoft.AspNetCore.Html.Abstractions" });
             NugetPackages.Add("dotnet", Array.Empty<string>());
@@ -115,37 +118,48 @@ namespace Honeypot
             NugetPackages.Add("vstest.console.arm64", Array.Empty<string>());
             NugetPackages.Add("WebDriver", new[] { "Selenium.WebDriver" });
             NugetPackages.Add("Microsoft.AspNetCore.StaticFiles", new [] { "Microsoft.AspNetCore.StaticFiles" });
-            NugetPackages.Add("coverlet.core", Array.Empty<string>());
+            NugetPackages.Add("coverlet.core", new[] { "coverlet.collector" });
             NugetPackages.Add("Microsoft.AspNetCore.Session", new [] { "Microsoft.AspNetCore.Session" });
             NugetPackages.Add("Microsoft.TestPlatform.PlatformAbstractions", Array.Empty<string>());
             NugetPackages.Add("Microsoft.VisualStudio.TraceDataCollector", Array.Empty<string>());
             NugetPackages.Add("Microsoft.TestPlatform.CrossPlatEngine", Array.Empty<string>());
-            NugetPackages.Add("MSTest.TestFramework", Array.Empty<string>());
-            NugetPackages.Add("MSTestAdapter.PlatformServices", Array.Empty<string>());
+            NugetPackages.Add("MSTest.TestFramework", new [] { "MSTest.TestFramework" });
+            NugetPackages.Add("MSTestAdapter.PlatformServices", new [] { "MSTest.TestAdapter" });
             NugetPackages.Add("RestSharp", Array.Empty<string>());
-            NugetPackages.Add("Hangfire.Core", new [] { "Hangfire" });
+            NugetPackages.Add("Hangfire.Core", new [] { "Hangfire.Core" });
 
             // Manual instrumentation
             NugetPackages.Add("Datadog.Trace", new string[] { });
             NugetPackages.Add("Datadog.Trace.Manual", new string[] { });
             NugetPackages.Add("Datadog.Trace.OpenTracing", new string[] { });
-            
+
+            // Serverless
+            NugetPackages.Add("Datadog.Serverless.Compat", new string[] { });
+
             // Feature Flags
-            NugetPackages.Add("Datadog.FeatureFlags.OpenFeature", new string[] { });
-            NugetPackages.Add("OpenFeature", new string[] { });
+            NugetPackages.Add("Datadog.FeatureFlags.OpenFeature", new [] { "OpenFeature" });
+            NugetPackages.Add("OpenFeature", Array.Empty<string>());
         }
 
         private IntegrationMap()
         { 
         }
 
-        public static async Task<IntegrationMap> Create(string name, string integrationId, string assemblyName, Version minimumVersion, Version maximumVersion, List<PackageVersionGenerator.TestedPackage> testedVersions)
+        public static async Task<IntegrationMap> Create(
+            string name,
+            string integrationId,
+            string assemblyName,
+            Version minimumVersion,
+            Version maximumVersion,
+            List<PackageVersionGenerator.TestedPackage> testedVersions,
+            Func<string, bool> shouldUpdatePackage,
+            Dictionary<(string AssemblyName, string PackageName), GenerateSupportMatrix.SupportedNuGetPackage> previousSupportedVersions)
         {
             if (!NugetPackages.ContainsKey(name))
             {
                 throw new Exception($"Missing key: {name} - Every integration must be represented in the packages map.");
             }
-            
+
             var instance = new IntegrationMap
             {
                 Name = name,
@@ -155,7 +169,7 @@ namespace Honeypot
                 MaximumSupportedAssemblyVersion = maximumVersion
             };
 
-            await instance.PopulatePackages(testedVersions);
+            await instance.PopulatePackages(testedVersions, shouldUpdatePackage, previousSupportedVersions);
 
             return instance;
         }
@@ -172,20 +186,37 @@ namespace Honeypot
 
         public List<IntegrationPackage> Packages { get; } = new();
 
-        private async Task PopulatePackages(List<PackageVersionGenerator.TestedPackage> testedVersions)
+        private async Task PopulatePackages(
+            List<PackageVersionGenerator.TestedPackage> testedVersions,
+            Func<string, bool> shouldUpdatePackage,
+            Dictionary<(string AssemblyName, string PackageName), GenerateSupportMatrix.SupportedNuGetPackage> previousSupportedVersions)
         {
             var packageNames = NugetPackages[Name];
             foreach (var packageName in packageNames)
             {
-                var searchCriteria = new PackageSearchCriteria
+                if (!shouldUpdatePackage(packageName)
+                    && previousSupportedVersions.TryGetValue((AssemblyName, packageName), out var prev))
                 {
-                    IntegrationName = Name,
-                    NugetPackageSearchName = packageName,
-                    MinVersion = "0.0.1",
-                    MaxVersionExclusive = "255.255.255"
-                };
+                    // Use cached data from previous supported_versions.json
+                    var cachedAllTestedVersions = testedVersions
+                                           .Where(x => x.NugetPackageSearchName.Equals(packageName))
+                                           .ToList();
+                    var cachedFirstTestedVersion = cachedAllTestedVersions.MinBy(x => x.MinVersion)?.MinVersion;
+                    var cachedLatestTestedVersion = cachedAllTestedVersions.MaxBy(x => x.MaxVersion)?.MaxVersion;
 
-                var packages = await NuGetPackageHelper.GetPackageMetadatas(searchCriteria);
+                    Packages.Add(new IntegrationPackage(
+                                     NugetName: packageName,
+                                     LatestVersion: Version.Parse(prev.MaxVersionAvailableInclusive),
+                                     LatestSupportedVersion: Version.Parse(prev.MaxVersionSupportedInclusive),
+                                     LatestTestedVersion: cachedLatestTestedVersion ?? (prev.MaxVersionTestedInclusive is not null ? Version.Parse(prev.MaxVersionTestedInclusive) : null),
+                                     FirstVersion: Version.Parse(prev.MinVersionAvailableInclusive),
+                                     FirstSupportedVersion: Version.Parse(prev.MinVersionSupportedInclusive),
+                                     FirstTestedVersion: cachedFirstTestedVersion ?? (prev.MinVersionTestedInclusive is not null ? Version.Parse(prev.MinVersionTestedInclusive) : null)));
+                    continue;
+                }
+
+                // Query NuGet for this package
+                var packages = await NuGetPackageHelper.GetPackageMetadatas(packageName);
 
                 var potentiallySupportedPackages = packages
                                                   .Where(p => p.Identity.HasVersion)

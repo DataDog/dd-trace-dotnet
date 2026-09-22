@@ -147,7 +147,7 @@ internal static class ExceptionRedactor
             if (t != null)
             {
                 sb.Append(t.FullName!.Replace('+', '.'));
-                sb.Append(".");
+                sb.Append('.');
             }
 
             sb.Append(mb.Name);
@@ -156,14 +156,14 @@ internal static class ExceptionRedactor
             if (mb is MethodInfo && ((MethodInfo)mb).IsGenericMethod)
             {
                 Type[] typars = ((MethodInfo)mb).GetGenericArguments();
-                sb.Append("[");
+                sb.Append('[');
                 var k = 0;
                 var fFirstTyParam = true;
                 while (k < typars.Length)
                 {
                     if (fFirstTyParam == false)
                     {
-                        sb.Append(",");
+                        sb.Append(',');
                     }
                     else
                     {
@@ -174,11 +174,11 @@ internal static class ExceptionRedactor
                     k++;
                 }
 
-                sb.Append("]");
+                sb.Append(']');
             }
 
             // arguments printing
-            sb.Append("(");
+            sb.Append('(');
             ParameterInfo[] pi = mb.GetParameters();
             var fFirstParam = true;
             for (var j = 0; j < pi.Length; j++)
@@ -201,7 +201,7 @@ internal static class ExceptionRedactor
                 sb.Append(typeName + " " + pi[j].Name);
             }
 
-            sb.Append(")");
+            sb.Append(')');
 
             // source location printing
             if (displayFilenames && sf.GetILOffset() != -1)

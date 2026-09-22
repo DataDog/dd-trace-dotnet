@@ -15,11 +15,7 @@ namespace Datadog.Trace.Tagging
     partial class AspNetCoreEndpointTags
     {
         // AspNetCoreEndpointBytes = MessagePack.Serialize("aspnet_core.endpoint");
-#if NETCOREAPP
-        private static ReadOnlySpan<byte> AspNetCoreEndpointBytes => new byte[] { 180, 97, 115, 112, 110, 101, 116, 95, 99, 111, 114, 101, 46, 101, 110, 100, 112, 111, 105, 110, 116 };
-#else
-        private static readonly byte[] AspNetCoreEndpointBytes = new byte[] { 180, 97, 115, 112, 110, 101, 116, 95, 99, 111, 114, 101, 46, 101, 110, 100, 112, 111, 105, 110, 116 };
-#endif
+        private static ReadOnlySpan<byte> AspNetCoreEndpointBytes => [180, 97, 115, 112, 110, 101, 116, 95, 99, 111, 114, 101, 46, 101, 110, 100, 112, 111, 105, 110, 116];
 
         public override string? GetTag(string key)
         {
@@ -43,14 +39,14 @@ namespace Datadog.Trace.Tagging
             }
         }
 
-        public override void EnumerateTags<TProcessor>(ref TProcessor processor)
+        public override void EnumerateTags<TProcessor>(ref TProcessor processor, bool openTelemetrySemanticsEnabled)
         {
             if (AspNetCoreEndpoint is not null)
             {
                 processor.Process(new TagItem<string>("aspnet_core.endpoint", AspNetCoreEndpoint, AspNetCoreEndpointBytes));
             }
 
-            base.EnumerateTags(ref processor);
+            base.EnumerateTags(ref processor, openTelemetrySemanticsEnabled);
         }
 
         protected override void WriteAdditionalTags(System.Text.StringBuilder sb)

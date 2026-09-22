@@ -37,7 +37,7 @@ internal static class IntegrationOptions<TIntegration, TTarget>
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(IntegrationOptions<TIntegration, TTarget>));
 
     private static readonly Lazy<IntegrationId?> _integrationId = new(() => InstrumentationDefinitions.GetIntegrationId(typeof(TIntegration).FullName, typeof(TTarget)));
-    private static volatile bool _disableIntegration = false;
+    private static volatile bool _disableIntegration;
 
     internal static bool IsIntegrationEnabled => !_disableIntegration;
 

@@ -7,7 +7,6 @@ using System;
 using System.Reflection;
 using System.Reflection.Emit;
 using Datadog.Trace.Debugger.Symbols;
-using Datadog.Trace.VendoredMicrosoftCode.System.Collections.Immutable;
 
 #nullable enable
 namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation

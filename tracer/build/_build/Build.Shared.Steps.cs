@@ -80,8 +80,8 @@ partial class Build
         {
             foreach (var architecture in ArchitecturesForPlatformForTracer)
             {
-                var workingDirectory = NativeLoaderTestsProject.Directory / "bin" / BuildConfiguration / architecture.ToString();
-                var testsResultFile = BuildDataDirectory / "tests" / $"{FileNames.NativeLoaderTests}.Results.{BuildConfiguration}.{TargetPlatform}.xml";
+                var workingDirectory = GetNativeOutputDirectory(NativeLoaderTestsProject.Name) / BuildConfiguration / architecture.ToString();
+                var testsResultFile = BuildDataDirectory / "tests" / $"{FileNames.NativeLoaderTests}.Results.{BuildConfiguration}.{architecture}.xml";
                 var exePath = workingDirectory / $"{FileNames.NativeLoaderTests}.exe";
                 var testExe = ToolResolver.GetLocalTool(exePath);
                 testExe($"--gtest_output=xml:{testsResultFile}", workingDirectory: workingDirectory);
@@ -129,7 +129,7 @@ partial class Build
         .OnlyWhenStatic(() => IsLinux)
         .Executes(() =>
         {
-            var workingDirectory = SharedTestsDirectory / FileNames.NativeLoaderTests / "bin";
+            var workingDirectory = GetNativeOutputDirectory(FileNames.NativeLoaderTests);
             EnsureExistingDirectory(workingDirectory);
 
             var exePath = workingDirectory / FileNames.NativeLoaderTests;
@@ -149,7 +149,7 @@ partial class Build
         .Executes(() =>
         {
             // Compare the symbols in the native loader with the snapshot
-            var libraryPath = NativeLoaderProject.Directory / "bin" / $"{NativeLoaderProject.Name}.so";
+            var libraryPath = GetNativeOutputDirectory(NativeLoaderProject.Name) / $"{NativeLoaderProject.Name}.so";
             var snapshotName = $"native-loader-symbols-{UnixArchitectureIdentifier}";
             var nativeLibHelper = new NativeValidationHelper(Nm, IsAlpine, BuildProjectDirectory);
             nativeLibHelper.ValidateNativeSymbols(libraryPath, snapshotName);
@@ -160,11 +160,19 @@ partial class Build
         .OnlyWhenStatic(() => IsOsx)
         .Executes(() =>
         {
-            DeleteDirectory(NativeLoaderProject.Directory / "bin");
+            DeleteDirectory(GetNativeOutputDirectory(NativeLoaderProject.Name));
 
             var finalArchs = string.Join(';', OsxArchs);
             var buildDirectory = NativeBuildDirectory + "_" + finalArchs.Replace(';', '_');
             EnsureExistingDirectory(buildDirectory);
+
+            // Resolve the macOS SDK path so we can point the linker at it.
+            // Homebrew llvm@15 installs an x86_64-only libunwind.dylib in
+            // /usr/local/lib which shadows the system's universal version.
+            // Passing the SDK sysroot ensures the linker finds the real one.
+            var sdkProcess = ProcessTasks.StartProcess("xcrun", "--show-sdk-path");
+            sdkProcess.WaitForExit();
+            var sdkPath = sdkProcess.Output.Select(o => o.Text).First().Trim();
 
             var envVariables = new Dictionary<string, string>
             {
@@ -174,17 +182,21 @@ partial class Build
                 ["CMAKE_MAKE_PROGRAM"] = "make",
                 ["CMAKE_CXX_COMPILER"] = "clang++",
                 ["CMAKE_C_COMPILER"] = "clang",
+                // Clear Homebrew-injected flags that can cause linker failures when
+                // cross-compiling for arm64 (e.g. llvm@15's x86_64-only libunwind).
+                ["LDFLAGS"] = "",
+                ["LIBRARY_PATH"] = "",
             };
 
             // Build native
             CMake.Value(
-                arguments: $"-B {buildDirectory} -S {RootDirectory} -DCMAKE_BUILD_TYPE={BuildConfiguration} -DUNIVERSAL=OFF",
+                arguments: $"-B {buildDirectory} -S {RootDirectory} -DCMAKE_BUILD_TYPE={BuildConfiguration} -DUNIVERSAL=OFF -DCMAKE_OSX_SYSROOT={sdkPath}",
                 environmentVariables: envVariables);
             CMake.Value(
                 arguments: $"--build {buildDirectory} --parallel {Environment.ProcessorCount} --target {FileNames.NativeLoader}",
                 environmentVariables: envVariables);
 
-            var sourceFile = NativeLoaderProject.Directory / "bin" / $"{NativeLoaderProject.Name}.dylib";
+            var sourceFile = GetNativeOutputDirectory(NativeLoaderProject.Name) / $"{NativeLoaderProject.Name}.dylib";
 
             foreach (var arch in finalArchs.Split(';'))
             {
@@ -230,20 +242,11 @@ partial class Build
                 var archFolder = $"win-{architecture}";
 
                 // Copy native loader assets
-                var source = NativeLoaderProject.Directory / "bin" / BuildConfiguration / architecture.ToString() /
-                             "loader.conf";
+                var nativeOut = GetNativeOutputDirectory(NativeLoaderProject.Name) / BuildConfiguration / architecture.ToString();
                 var dest = MonitoringHomeDirectory / archFolder;
-                CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
-
-                source = NativeLoaderProject.Directory / "bin" / BuildConfiguration / architecture.ToString() /
-                             $"{NativeLoaderProject.Name}.dll";
-                dest = MonitoringHomeDirectory / archFolder;
-                CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
-
-                source = NativeLoaderProject.Directory / "bin" / BuildConfiguration / architecture.ToString() /
-                             $"{NativeLoaderProject.Name}.pdb";
-                dest = SymbolsDirectory / archFolder;
-                CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
+                CopyFileToDirectory(nativeOut / "loader.conf", dest, FileExistsPolicy.Overwrite);
+                CopyFileToDirectory(nativeOut / $"{NativeLoaderProject.Name}.dll", dest, FileExistsPolicy.Overwrite);
+                CopyFileToDirectory(nativeOut / $"{NativeLoaderProject.Name}.pdb", SymbolsDirectory / archFolder, FileExistsPolicy.Overwrite);
             }
         });
 
@@ -255,11 +258,12 @@ partial class Build
         {
             // Copy native loader assets
             var (arch, ext) = GetUnixArchitectureAndExtension();
-            var source = NativeLoaderProject.Directory / "bin" / "loader.conf";
+            var nativeOut = GetNativeOutputDirectory(NativeLoaderProject.Name);
+            var source = nativeOut / "loader.conf";
             var dest = MonitoringHomeDirectory / arch;
             CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
 
-            source = NativeLoaderProject.Directory / "bin" / $"{NativeLoaderProject.Name}.{ext}";
+            source = nativeOut / $"{NativeLoaderProject.Name}.{ext}";
             dest = MonitoringHomeDirectory / arch;
             CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
 
@@ -279,14 +283,15 @@ partial class Build
             var dest = MonitoringHomeDirectory / "osx";
 
             // Copy loader.conf
+            var nativeOut = GetNativeOutputDirectory(NativeLoaderProject.Name);
             CopyFileToDirectory(
-                NativeLoaderProject.Directory / "bin" / "loader.conf",
+                nativeOut / "loader.conf",
                 dest,
                 FileExistsPolicy.Overwrite);
 
             // Copy the universal binary to the output folder
             CopyFileToDirectory(
-                NativeLoaderProject.Directory / "bin" / $"{NativeLoaderProject.Name}.dylib",
+                nativeOut / $"{NativeLoaderProject.Name}.dylib",
                 dest,
                 FileExistsPolicy.Overwrite,
                 true);
@@ -315,5 +320,13 @@ partial class Build
 
             var nativeLibHelper = new NativeValidationHelper(Nm, IsAlpine, BuildProjectDirectory);
             nativeLibHelper.ValidateNativeLibraryCompatibility(dest, expectedGlibcVersion, $"native-tracer-symbols-alpine-{UnixArchitectureIdentifier}");
+        });
+
+    Target ValidateNativeConfigurations => _ => _
+        .Description("Validates that every DD_* environment variable read by native code is registered in supported-configurations.yaml with native scope")
+        .Executes(() =>
+        {
+            var supportedConfigurationsPath = TracerDirectory / "src" / "Datadog.Trace" / "Configuration" / "supported-configurations.yaml";
+            new NativeConfigValidator().Validate(RootDirectory, supportedConfigurationsPath);
         });
 }

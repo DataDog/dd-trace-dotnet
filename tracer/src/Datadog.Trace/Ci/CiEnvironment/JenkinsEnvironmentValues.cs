@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Telemetry.Metrics;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Ci.CiEnvironment;
 
@@ -86,12 +87,13 @@ internal sealed class JenkinsEnvironmentValues<TValueProvider>(TValueProvider va
 
         // Node
         NodeName = ValueProvider.GetValue(PlatformKeys.Ci.Jenkins.NodeName);
-        NodeLabels = ValueProvider.GetValue(PlatformKeys.Ci.Jenkins.NodeLabels)?.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+        NodeLabels = ValueProvider.GetValue(PlatformKeys.Ci.Jenkins.NodeLabels)?.Split(Separators.Space, StringSplitOptions.RemoveEmptyEntries);
 
         VariablesToBypass = new Dictionary<string, string?>();
         SetVariablesIfNotEmpty(
             VariablesToBypass,
-            ConfigurationKeys.CIVisibility.CustomTraceId);
+            ConfigurationKeys.CIVisibility.CustomTraceId,
+            ConfigurationKeys.CIVisibility.CustomParentId);
 
         PrBaseBranch = ValueProvider.GetValue(PlatformKeys.Ci.Jenkins.ChangeTarget);
         PrNumber = ValueProvider.GetValue(PlatformKeys.Ci.Jenkins.ChangeId);

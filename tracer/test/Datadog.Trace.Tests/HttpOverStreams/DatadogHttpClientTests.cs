@@ -21,7 +21,7 @@ namespace Datadog.Trace.Tests.HttpOverStreams
         [Fact]
         public async Task DatadogHttpClient_CanParseResponse()
         {
-            var client = new DatadogHttpClient(new TraceAgentHttpHeaderHelper());
+            var client = new DatadogHttpClient(TraceAgentHttpHeaderHelper.Instance);
             var requestContent = new BufferContent(new ArraySegment<byte>(new byte[0]));
             var htmlResponse = string.Join("\r\n", HtmlResponseLines());
             using var requestStream = new MemoryStream();
@@ -52,7 +52,7 @@ namespace Datadog.Trace.Tests.HttpOverStreams
         [InlineData(100)]
         public async Task DatadogHttpClient_WhenOnlyPartOfResponseIsAvailable_ParsesCorrectly(int bytesToRead)
         {
-            var client = new DatadogHttpClient(new TraceAgentHttpHeaderHelper());
+            var client = new DatadogHttpClient(TraceAgentHttpHeaderHelper.Instance);
             var requestContent = new BufferContent(new ArraySegment<byte>(new byte[0]));
             var htmlResponse = string.Join("\r\n", HtmlResponseLines());
             using var requestStream = new MemoryStream();
@@ -103,7 +103,7 @@ namespace Datadog.Trace.Tests.HttpOverStreams
             // expected is the "un-chunked" response
             var expected = string.Join(string.Empty, Enumerable.Repeat(chunk, chunks));
 
-            var client = new DatadogHttpClient(new TraceAgentHttpHeaderHelper());
+            var client = new DatadogHttpClient(TraceAgentHttpHeaderHelper.Instance);
             var requestContent = new BufferContent(new ArraySegment<byte>(new byte[0]));
             using var requestStream = new MemoryStream();
             var responseBytes = EncodingHelpers.Utf8NoBom.GetBytes(httpResponse);

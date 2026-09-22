@@ -16,14 +16,12 @@ using Datadog.Trace.Debugger.PInvoke;
 using Datadog.Trace.Debugger.Sink.Models;
 using Datadog.Trace.Debugger.Snapshots;
 using Datadog.Trace.Logging;
-using Fnv1aHash = Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Internal.Hash;
 
 #nullable enable
 namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 {
     internal sealed class ExceptionProbeProcessor
     {
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ExceptionProbeProcessor));
         private readonly HashSet<Type> _exceptionTypes;
         private readonly Type? _singleExceptionType;
         private readonly ExceptionReplayProbe[] _childProbes;
@@ -116,17 +114,17 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                 Array.Reverse(installedProbes);
             }
 
-            var hash = Fnv1aHash.FnvOffsetBias;
+            var hash = SimpleHash.FnvOffsetBias;
 
-            if (installedProbes.Any())
+            if (installedProbes.Length != 0)
             {
                 foreach (var probe in installedProbes)
                 {
-                    hash = Fnv1aHash.Combine(probe.Method.Method.MetadataToken, hash);
+                    hash = SimpleHash.Combine(probe.Method.Method.MetadataToken, hash);
                 }
             }
 
-            return Fnv1aHash.Combine(ExceptionReplayProcessor.Method.Method.MetadataToken, hash);
+            return SimpleHash.Combine(ExceptionReplayProcessor.Method.Method.MetadataToken, hash);
         }
 
         internal void InvalidateEnterLeave()

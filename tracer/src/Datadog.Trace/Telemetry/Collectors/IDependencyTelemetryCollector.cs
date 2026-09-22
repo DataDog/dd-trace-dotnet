@@ -21,7 +21,7 @@ internal interface IDependencyTelemetryCollector
     /// Get the latest data to send to the intake.
     /// </summary>
     /// <returns>Null if there are no changes, or the collector is not yet initialized</returns>
-    List<DependencyTelemetryData>? GetData();
+    List<DependencyTelemetryData>? GetIncrementalData();
 
     /// <summary>
     /// Gets all the assembly data recorded so far

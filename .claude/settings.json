@@ -1,0 +1,13 @@
+{
+  "env": {
+    "OTEL_RESOURCE_ATTRIBUTES": "repo.owner=DataDog,repo.name=dd-trace-dotnet"
+  },
+  "extraKnownMarketplaces": {
+    "datadog-claude-plugins": {
+      "source": {
+        "source": "github",
+        "repo": "DataDog/claude-marketplace"
+      }
+    }
+  }
+}

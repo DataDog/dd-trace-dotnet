@@ -14,7 +14,7 @@ namespace Datadog.Trace.Iast;
 
 internal readonly struct Range : IComparable<Range>
 {
-    private static readonly SecureMarks NotMarked = SecureMarks.None;
+    private const SecureMarks NotMarked = SecureMarks.None;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="Range"/> struct with a WHOLE range.

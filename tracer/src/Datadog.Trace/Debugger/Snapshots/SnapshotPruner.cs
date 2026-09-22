@@ -48,10 +48,18 @@ namespace DatadogDebugger.Util
             }
         }
 
-        public static string Prune(string snapshot, int maxTargetedSize, int minLevel)
+        internal static string Prune(string snapshot, int maxTargetedSize, int minLevel, out bool inputIsTooLarge)
         {
-            var delta = Encoding.UTF8.GetByteCount(snapshot) - maxTargetedSize;
-            if (delta <= 0)
+            if (snapshot is null)
+            {
+                inputIsTooLarge = false;
+                return snapshot;
+            }
+
+            // BatchUploader rejects payloads at the limit, so pruning must produce a payload strictly below it.
+            var delta = Encoding.UTF8.GetByteCount(snapshot) - maxTargetedSize + 1;
+            inputIsTooLarge = delta > 0;
+            if (!inputIsTooLarge)
             {
                 return snapshot;
             }
@@ -65,9 +73,15 @@ namespace DatadogDebugger.Util
                 sortedLeaves.Add(leaf);
             }
 
+            if (sortedLeaves.Count == 0)
+            {
+                // Nothing to prune (could be invalid JSON, or it doesn't contain any objects deep enough)
+                return snapshot;
+            }
+
             var total = 0;
             var nodes = new Dictionary<int, Node>();
-            while (sortedLeaves.Any())
+            while (sortedLeaves.Count != 0)
             {
                 Node leaf = sortedLeaves.Min;
                 sortedLeaves.Remove(leaf);
@@ -100,24 +114,42 @@ namespace DatadogDebugger.Util
             }
 
             var prunedNodes = nodes.Values.OrderBy(n => n.Start).ToList();
+            if (prunedNodes.Count == 0)
+            {
+                return snapshot;
+            }
+
             var sb = StringBuilderCache.Acquire();
-            sb.Append(snapshot.Substring(0, prunedNodes[0].Start));
-            for (var i = 1; i < prunedNodes.Count; i++)
+            try
             {
+                sb.Append(snapshot, 0, prunedNodes[0].Start);
+                for (var i = 1; i < prunedNodes.Count; i++)
+                {
+                    var nextSegmentStart = prunedNodes[i - 1].End + 1;
+                    var nextSegmentLength = prunedNodes[i].Start - nextSegmentStart;
+                    if (nextSegmentStart < 0 || nextSegmentStart > snapshot.Length || nextSegmentLength < 0 || (nextSegmentStart + nextSegmentLength) > snapshot.Length)
+                    {
+                        // Malformed segment boundaries - abort pruning
+                        return snapshot;
+                    }
+
+                    sb.Append(Pruned);
+                    sb.Append(snapshot, nextSegmentStart, nextSegmentLength);
+                }
+
                 sb.Append(Pruned);
-                var nextSegmentStart = prunedNodes[i - 1].End + 1;
-                var nextSegmentLength = prunedNodes[i].Start - nextSegmentStart;
-                sb.Append(snapshot.Substring(nextSegmentStart, nextSegmentLength));
-            }
+                var lastSegmentStart = prunedNodes[prunedNodes.Count - 1].End + 1;
+                if (lastSegmentStart < snapshot.Length)
+                {
+                    sb.Append(snapshot, lastSegmentStart, snapshot.Length - lastSegmentStart);
+                }
 
-            sb.Append(Pruned);
-            var lastSegmentStart = prunedNodes[prunedNodes.Count - 1].End + 1;
-            if (lastSegmentStart < Encoding.UTF8.GetByteCount(snapshot))
+                return sb.ToString();
+            }
+            finally
             {
-                sb.Append(snapshot.Substring(lastSegmentStart));
+                StringBuilderCache.Release(sb);
             }
-
-            return StringBuilderCache.GetStringAndRelease(sb);
         }
 
         private IEnumerable<Node> GetLeaves(int minLevel)
@@ -148,7 +180,7 @@ namespace DatadogDebugger.Util
             {
                 case '{':
                     var node = new Node(index, pruner._currentLevel++);
-                    if (pruner._stack.Any())
+                    if (pruner._stack.Count != 0)
                     {
                         node.Parent = pruner._stack.Peek();
                         node.Parent.Children.Add(node);
@@ -161,7 +193,7 @@ namespace DatadogDebugger.Util
                     var completedNode = pruner._stack.Pop();
                     completedNode.End = index;
                     pruner._currentLevel--;
-                    if (!pruner._stack.Any())
+                    if (pruner._stack.Count == 0)
                     {
                         pruner._root = completedNode;
                         return null;
@@ -197,7 +229,7 @@ namespace DatadogDebugger.Util
             switch (c)
             {
                 case '"':
-                    if (pruner._strMatchIdx == Encoding.UTF8.GetByteCount(pruner._matchingString))
+                    if (pruner._strMatchIdx == pruner._matchingString.Length)
                     {
                         return NotCapturedAction();
                     }
@@ -306,7 +338,7 @@ namespace DatadogDebugger.Util
 
             public IEnumerable<Node> GetLeaves(int minLevel)
             {
-                if (!Children.Any() && Level >= minLevel)
+                if (Children.Count == 0 && Level >= minLevel)
                 {
                     return new[] { this };
                 }

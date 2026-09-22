@@ -8,6 +8,7 @@
 using System;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.RuntimeMetrics;
+using Datadog.Trace.TestHelpers;
 using Datadog.Trace.TestHelpers.Stats;
 using Datadog.Trace.Vendors.StatsdClient;
 using Moq;
@@ -15,6 +16,7 @@ using Xunit;
 
 namespace Datadog.Trace.Tests.RuntimeMetrics
 {
+    [EnvironmentRestorer(PlatformKeys.AzureAppService.CountersKey)]
     public class AzurePerformanceCountersListenerTests
     {
         [Fact]

@@ -8,6 +8,8 @@ using System.Collections.Generic;
 using System.CommandLine;
 using System.CommandLine.Invocation;
 using System.Threading.Tasks;
+using Datadog.Trace.Configuration;
+using Datadog.Trace.Util;
 using Spectre.Console;
 
 namespace Datadog.Trace.Tools.Runner
@@ -45,7 +47,7 @@ namespace Datadog.Trace.Tools.Runner
         {
             ciName = null;
 
-            if (string.IsNullOrEmpty(name))
+            if (StringUtil.IsNullOrEmpty(name))
             {
                 return true;
             }
@@ -60,12 +62,23 @@ namespace Datadog.Trace.Tools.Runner
             return false;
         }
 
+        private static void RemoveRunScopedEnvironmentVariables(Dictionary<string, string> environmentVariables)
+        {
+            environmentVariables.Remove(ConfigurationKeys.CIVisibility.TestOptimizationRunId);
+            environmentVariables.Remove(ConfigurationKeys.CIVisibility.TestSessionCommand);
+            environmentVariables.Remove(ConfigurationKeys.CIVisibility.TestSessionWorkingDirectory);
+            environmentVariables.Remove(ConfigurationKeys.CIVisibilityItrCoverageBackfillActualSkip);
+            environmentVariables.Remove(ConfigurationKeys.CIVisibilityItrCoverageBackfillCommand);
+            environmentVariables.Remove(ConfigurationKeys.CIVisibilityItrCoverageBackfillPath);
+            environmentVariables.Remove(ConfigurationKeys.CIVisibilityItrCoverageBackfillRunFolder);
+        }
+
         private async Task ExecuteAsync(InvocationContext context)
         {
             var name = _nameArgument.GetValue(context);
 
             // Initialize and configure CI Visibility for this command
-            var initResults = await CiUtils.InitializeCiCommandsAsync(_applicationContext, context, _commonTracerSettings, null, string.Empty, [], true).ConfigureAwait(false);
+            var initResults = await CiUtils.InitializeCiCommandsAsync(_applicationContext, context, _commonTracerSettings, null, string.Empty, [], includeRunScopedBackfillEnvironment: false, reducePathLength: true).ConfigureAwait(false);
             if (!initResults.Success)
             {
                 return;
@@ -80,6 +93,7 @@ namespace Datadog.Trace.Tools.Runner
             }
 
             AnsiConsole.WriteLine("Setting up the environment variables.");
+            RemoveRunScopedEnvironmentVariables(initResults.ProfilerEnvironmentVariables);
 
             if (!CIConfiguration.SetupCIEnvironmentVariables(initResults.ProfilerEnvironmentVariables, ciName))
             {

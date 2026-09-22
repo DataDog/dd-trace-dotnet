@@ -14,8 +14,6 @@ using Datadog.Trace.ContinuousProfiler;
 using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.DogStatsd;
 using Datadog.Trace.FeatureFlags;
-using Datadog.Trace.LibDatadog;
-using Datadog.Trace.LibDatadog.DataPipeline;
 using Datadog.Trace.LibDatadog.HandsOffConfiguration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Logging.DirectSubmission;
@@ -91,7 +89,7 @@ namespace Datadog.Trace
 
         /// <summary>
         /// Internal for use in tests that create "standalone" <see cref="TracerManager"/> by
-        /// <see cref="Tracer(TracerSettings, IAgentWriter, ITraceSampler, IScopeManager, IStatsdManager, ITelemetryController, IDiscoveryService)"/>
+        /// <see cref="Tracer(TracerSettings, IAgentWriter, ITraceSampler, IScopeManager, IStatsdManager, ITelemetryController, IDiscoveryService, ServiceRemappingHash)"/>
         /// </summary>
         internal TracerManager CreateTracerManager(
             TracerSettings settings,
@@ -108,7 +106,8 @@ namespace Datadog.Trace
             IDynamicConfigurationManager dynamicConfigurationManager,
             ITracerFlareManager tracerFlareManager,
             ISpanEventsManager spanEventsManager,
-            FeatureFlagsModule featureFlags)
+            FeatureFlagsModule featureFlags,
+            ServiceRemappingHash serviceRemappingHash = null)
         {
             settings ??= TracerSettings.FromDefaultSourcesInternal();
             var result = GlobalConfigurationSource.CreationResult;
@@ -117,18 +116,13 @@ namespace Datadog.Trace
                 Log.Warning(result.Exception, "Failed to create the global configuration source with status: {Status} and error message: {ErrorMessage}", result.Result.ToString(), result.ErrorMessage);
             }
 
-            var libdatadogAvailaibility = LibDatadogAvailabilityHelper.IsLibDatadogAvailable;
-            if (libdatadogAvailaibility.Exception is not null)
-            {
-                Log.Warning(libdatadogAvailaibility.Exception, "An exception occurred while checking if libdatadog is available");
-            }
-
-            discoveryService ??= GetDiscoveryService(settings);
+            serviceRemappingHash ??= new ServiceRemappingHash(settings.Manager.InitialMutableSettings.ProcessTags?.SerializedTags);
+            discoveryService ??= GetDiscoveryService(settings, serviceRemappingHash);
             var telemetrySettings = CreateTelemetrySettings(settings);
             telemetry ??= CreateTelemetryController(settings, discoveryService, telemetrySettings);
 
             statsd ??= new StatsdManager(settings);
-            runtimeMetrics ??= settings.RuntimeMetricsEnabled && !DistributedTracer.Instance.IsChildTracer
+            runtimeMetrics ??= settings.RuntimeMetricsEnabled && !settings.OtlpRuntimeMetricsEnabled && !DistributedTracer.Instance.IsChildTracer
                                    ? new RuntimeMetricsWriter(statsd, TimeSpan.FromSeconds(10), settings.IsRunningInAzureAppService, settings.RuntimeMetricsDiagnosticsMetricsApiEnabled)
                                    : null;
 
@@ -214,7 +208,8 @@ namespace Datadog.Trace
                 dynamicConfigurationManager,
                 tracerFlareManager,
                 spanEventsManager,
-                featureFlags);
+                featureFlags,
+                serviceRemappingHash);
         }
 
         protected virtual TelemetrySettings CreateTelemetrySettings(TracerSettings settings) =>
@@ -255,8 +250,11 @@ namespace Datadog.Trace
             IDynamicConfigurationManager dynamicConfigurationManager,
             ITracerFlareManager tracerFlareManager,
             ISpanEventsManager spanEventsManager,
-            FeatureFlagsModule featureFlagsModule)
-            => new TracerManager(settings, agentWriter, scopeManager, statsd, runtimeMetrics, logSubmissionManager, telemetry, discoveryService, dataStreamsManager, gitMetadataTagsProvider, traceSampler, spanSampler, remoteConfigurationManager, dynamicConfigurationManager, tracerFlareManager, spanEventsManager, featureFlagsModule);
+            FeatureFlagsModule featureFlagsModule,
+            ServiceRemappingHash serviceRemappingHash)
+        {
+            return new TracerManager(settings, agentWriter, scopeManager, statsd, runtimeMetrics, logSubmissionManager, telemetry, discoveryService, dataStreamsManager, gitMetadataTagsProvider, traceSampler, spanSampler, remoteConfigurationManager, dynamicConfigurationManager, tracerFlareManager, spanEventsManager, featureFlagsModule, serviceRemappingHash);
+        }
 
         protected virtual ITraceSampler GetSampler(TracerSettings settings)
         {
@@ -287,19 +285,25 @@ namespace Datadog.Trace
 
         protected virtual IAgentWriter GetAgentWriter(TracerSettings settings, IStatsdManager statsd, Action<Dictionary<string, float>> updateSampleRates, Action<string> updateConfigHash, IDiscoveryService discoveryService, TelemetrySettings telemetrySettings)
         {
-            // Currently we assume this _can't_ toggle at runtime, may need to revisit this if that changes
-            IApi api = settings.DataPipelineEnabled && ManagedTraceExporter.TryCreateTraceExporter(settings, updateSampleRates, telemetrySettings, out var traceExporter)
-                           ? traceExporter
-                           : new ManagedApi(settings.Manager, statsd, updateSampleRates, updateConfigHash, settings.PartialFlushEnabled);
+            if (settings.Manager.InitialExporterSettings.IsOtlpTraceExport)
+            {
+                var otlpApi = new ManagedApiOtlp(settings);
+                var otlpStatsAggregator = StatsAggregator.Create(otlpApi, settings, discoveryService, statsd, isOtlp: true);
+                return new AgentWriter(otlpApi, otlpStatsAggregator, statsd, settings);
+            }
 
-            var statsAggregator = StatsAggregator.Create(api, settings, discoveryService);
+            var api = new ManagedApi(settings.Manager, statsd, updateSampleRates, updateConfigHash, settings.PartialFlushEnabled);
+
+            var statsAggregator = StatsAggregator.Create(api, settings, discoveryService, statsd, isOtlp: false);
 
             return new AgentWriter(api, statsAggregator, statsd, settings);
         }
 
-        internal virtual IDiscoveryService GetDiscoveryService(TracerSettings settings)
-            => settings.AgentFeaturePollingEnabled ? DiscoveryService.CreateManaged(settings, ContainerMetadata.Instance)
-                   :
-                   NullDiscoveryService.Instance;
+        internal virtual IDiscoveryService GetDiscoveryService(TracerSettings settings, ServiceRemappingHash serviceRemappingHash)
+        {
+            return settings.AgentFeaturePollingEnabled
+                       ? DiscoveryService.CreateManaged(settings, ContainerMetadata.Instance, serviceRemappingHash)
+                       : NullDiscoveryService.Instance;
+        }
     }
 }

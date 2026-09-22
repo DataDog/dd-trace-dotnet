@@ -97,7 +97,7 @@ bool DynamicLibraryBase::Unload()
     if (_instance == nullptr)
     {
         _logger->Warn("Unload: Unable to unload dynamic library '", _filePath,
-                      ". Reason: An issue occured while loading it. See previous message.");
+                      ". Reason: An issue occurred while loading it. See previous message.");
         return false;
     }
 

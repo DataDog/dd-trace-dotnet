@@ -3,7 +3,10 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System.Resources;
 using System.Runtime.CompilerServices;
+
+[assembly: NeutralResourcesLanguage("en-US")]
 
 [assembly: Datadog.Trace.Ci.Coverage.Attributes.AvoidCoverage]
 

@@ -22,7 +22,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.StackExchange
         ReturnTypeName = "System.Threading.Tasks.Task`1<!!0>",
         ParameterTypeNames = new[] { "StackExchange.Redis.Message", "StackExchange.Redis.ResultProcessor`1[!!0]", "StackExchange.Redis.ServerEndPoint" },
         MinimumVersion = "1.0.0",
-        MaximumVersion = "2.*.*",
+        MaximumVersion = "3.*.*",
         TypeNames = new[] { "StackExchange.Redis.RedisBase", "StackExchange.Redis.RedisBatch", "StackExchange.Redis.RedisTransaction" },
         IntegrationName = IntegrationName)]
     [Browsable(false)]

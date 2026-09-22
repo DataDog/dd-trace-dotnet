@@ -27,6 +27,9 @@ namespace Datadog.Trace.Telemetry
         public const string InstrumentationSource = "instrumentation_source";
         public const string SsiAllowUnsupportedRuntimesEnabled = "ssi_forced_injection_enabled";
 
+        public const string TrimmedAppDetected = "app_trimming_detected";
+        public const string TrimmedAppMissingTrimmingFile = "app_trimming_missing_trim_file_detected";
+
         // We intentionally are using specific values here, not OR_GREATER_THAN
 #if NET6_0
         public const string ManagedTracerTfmValue = "net6.0";

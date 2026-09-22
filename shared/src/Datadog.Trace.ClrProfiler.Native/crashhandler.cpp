@@ -378,7 +378,9 @@ namespace datadog::shared::nativeloader
             }
 
             std::wstringstream ss;
-            ss << ddDotnetPath << " createdump " << pid << " --crashthread " << tid;
+            // Note that this automatically quotes the fs::path string, so spaces don't cause issues here
+            // https://en.cppreference.com/w/cpp/filesystem/path/operator_ltltgtgt
+            ss << ddDotnetPath << " createdump " << pid << " --crashthread " << tid << " --dd-native-exception-code " << std::dec << pExceptionInformation->exceptionRecord.ExceptionCode;
             auto commandLine = ss.str();
 
             // Spawn dd-dotnet

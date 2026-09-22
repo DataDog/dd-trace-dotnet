@@ -17,7 +17,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
         /// <returns>The path to the CI/Data directory</returns>
         public static string GetCiDataDirectory()
         {
-            static string BuildPath(string basePath) => Path.Combine(basePath, "CI", "Data");
+            static string BuildPath(string basePath) => Path.Combine(basePath, "tracer", "test", "Datadog.Trace.ClrProfiler.IntegrationTests", "CI", "Data");
 
             var currentDirectory = Environment.CurrentDirectory;
 

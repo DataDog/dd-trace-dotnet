@@ -26,7 +26,7 @@ internal static class StatsdFactory
     {
         var customTagCount = settings.GlobalTags.Count;
         var processTags = settings.ProcessTags?.TagsList;
-        var tagsCount = (includeDefaultTags ? 5 + customTagCount : 0) + processTags?.Count ?? 0;
+        var tagsCount = (includeDefaultTags ? 5 + customTagCount : 0) + (processTags?.Count ?? 0);
         var constantTags = new List<string>(tagsCount);
         if (includeDefaultTags)
         {

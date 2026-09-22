@@ -15,7 +15,7 @@ namespace Datadog.Trace.AppSec.AttackerFingerprint;
 internal static class AttackerFingerprintHelper
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(AttackerFingerprintHelper));
-    private static bool _warningLogged = false;
+    private static bool _warningLogged;
 
     public static void AddSpanTags(Span span, IResult result)
     {

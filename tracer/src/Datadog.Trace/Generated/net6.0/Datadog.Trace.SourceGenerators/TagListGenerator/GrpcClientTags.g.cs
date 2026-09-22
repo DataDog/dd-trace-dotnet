@@ -15,17 +15,10 @@ namespace Datadog.Trace.Tagging
     partial class GrpcClientTags
     {
         // HostBytes = MessagePack.Serialize("out.host");
-#if NETCOREAPP
-        private static ReadOnlySpan<byte> HostBytes => new byte[] { 168, 111, 117, 116, 46, 104, 111, 115, 116 };
-#else
-        private static readonly byte[] HostBytes = new byte[] { 168, 111, 117, 116, 46, 104, 111, 115, 116 };
-#endif
+        private static ReadOnlySpan<byte> HostBytes => [168, 111, 117, 116, 46, 104, 111, 115, 116];
+
         // PeerHostnameBytes = MessagePack.Serialize("peer.hostname");
-#if NETCOREAPP
-        private static ReadOnlySpan<byte> PeerHostnameBytes => new byte[] { 173, 112, 101, 101, 114, 46, 104, 111, 115, 116, 110, 97, 109, 101 };
-#else
-        private static readonly byte[] PeerHostnameBytes = new byte[] { 173, 112, 101, 101, 114, 46, 104, 111, 115, 116, 110, 97, 109, 101 };
-#endif
+        private static ReadOnlySpan<byte> PeerHostnameBytes => [173, 112, 101, 101, 114, 46, 104, 111, 115, 116, 110, 97, 109, 101];
 
         public override string? GetTag(string key)
         {
@@ -53,7 +46,7 @@ namespace Datadog.Trace.Tagging
             }
         }
 
-        public override void EnumerateTags<TProcessor>(ref TProcessor processor)
+        public override void EnumerateTags<TProcessor>(ref TProcessor processor, bool openTelemetrySemanticsEnabled)
         {
             if (Host is not null)
             {
@@ -65,7 +58,7 @@ namespace Datadog.Trace.Tagging
                 processor.Process(new TagItem<string>("peer.hostname", PeerHostname, PeerHostnameBytes));
             }
 
-            base.EnumerateTags(ref processor);
+            base.EnumerateTags(ref processor, openTelemetrySemanticsEnabled);
         }
 
         protected override void WriteAdditionalTags(System.Text.StringBuilder sb)

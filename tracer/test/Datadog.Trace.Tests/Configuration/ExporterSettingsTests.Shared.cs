@@ -47,7 +47,7 @@ public partial class ExporterSettingsTests
     {
         var uri = new Uri($"unix://{path}");
 
-        var settingsFromSource = Setup(FileExistsMock(path.Replace("\\", "/")), $"DD_TRACE_AGENT_URL:unix://{path}");
+        var settingsFromSource = Setup(FileExistsMock(path.Replace("\\", "/")), $"DD_TRACE_AGENT_URL:unix://{path}", "OTEL_EXPORTER_OTLP_ENDPOINT:http://localhost:4318");
         AssertUdsIsConfigured(settingsFromSource, path.Replace("\\", "/"));
         settingsFromSource.AgentUri.Should().Be(uri);
         settingsFromSource.ValidationWarnings.Should().BeEmpty();

@@ -1,4 +1,4 @@
-﻿// <copyright file="MetricPoint.cs" company="Datadog">
+// <copyright file="MetricPoint.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -13,10 +13,12 @@ using System.Threading;
 
 namespace Datadog.Trace.OpenTelemetry.Metrics;
 
-internal sealed class MetricPoint(string instrumentName, string meterName, string meterVersion, KeyValuePair<string, object?>[] meterTags, InstrumentType instrumentType, AggregationTemporality? temporality, Dictionary<string, object?> tags, string unit = "", string description = "", bool isLongType = false)
+internal sealed class MetricPoint(string instrumentName, string meterName, string meterVersion, KeyValuePair<string, object?>[] meterTags, InstrumentType instrumentType, AggregationTemporality? temporality, Dictionary<string, object?> tags, string unit = "", string description = "", bool isLongType = false, double[]? explicitBounds = null, bool isOverflow = false)
 {
     internal static readonly double[] DefaultHistogramBounds = [0, 5, 10, 25, 50, 75, 100, 250, 500, 750, 1000, 2500, 5000, 7500, 10000];
     private readonly long[] _runningBucketCounts = instrumentType == InstrumentType.Histogram ? new long[DefaultHistogramBounds.Length + 1] : [];
+    private readonly double[] _runningBucketBounds = instrumentType == InstrumentType.Histogram ? (explicitBounds ?? DefaultHistogramBounds) : [];
+    private readonly bool _isOverflow = isOverflow;
     private readonly object _histogramLock = new();
     private long _runningCountValue;
     private double _runningDoubleValue;
@@ -55,21 +57,25 @@ internal sealed class MetricPoint(string instrumentName, string meterName, strin
 
     internal long[] RunningBucketCounts => _runningBucketCounts;
 
-    public DateTimeOffset StartTime { get; private set; } = DateTimeOffset.UtcNow;
+    internal double[] RunningBucketBounds => _runningBucketBounds;
 
-    public DateTimeOffset EndTime { get; private set; } = DateTimeOffset.UtcNow;
+    public DateTimeOffset StartTime { get; internal set; } = DateTimeOffset.UtcNow;
 
-    public long SnapshotCount { get; private set; }
+    public DateTimeOffset EndTime { get; internal set; } = DateTimeOffset.UtcNow;
 
-    public double SnapshotSum { get; private set; }
+    public long SnapshotCount { get; internal set; }
 
-    public double SnapshotGaugeValue { get; private set; }
+    public double SnapshotSum { get; internal set; }
 
-    public double SnapshotMin { get; private set; }
+    public double SnapshotGaugeValue { get; internal set; }
 
-    public double SnapshotMax { get; private set; }
+    public double SnapshotMin { get; internal set; }
 
-    public long[] SnapshotBucketCounts { get; private set; } = [];
+    public double SnapshotMax { get; internal set; }
+
+    public long[] SnapshotBucketCounts { get; internal set; } = [];
+
+    public double[] SnapshotBucketBounds { get; internal set; } = [];
 
     internal void UpdateCounter(double value)
     {
@@ -84,6 +90,18 @@ internal sealed class MetricPoint(string instrumentName, string meterName, strin
     {
         lock (_histogramLock)
         {
+            if (_isOverflow)
+            {
+                // Multiple distinct series fold into this single overflow bucket. Each observable
+                // callback reports its series' current cumulative once per collection cycle, so SUM
+                // them (rather than overwrite) to get the bucket's cumulative for this cycle. The
+                // accumulator is cleared each cycle in CreateSnapshotAndReset, so the next cycle
+                // re-sums from zero.
+                _runningDoubleValue += currentValue;
+                _hasMeasurements = true;
+                return;
+            }
+
             if (double.IsNaN(_lastObservedCumulative))
             {
                 _hasMeasurements = true;
@@ -127,17 +145,17 @@ internal sealed class MetricPoint(string instrumentName, string meterName, strin
 
     public bool HasDataToExport() => _hasMeasurements;
 
-    private static int FindBucketIndex(double value)
+    private int FindBucketIndex(double value)
     {
-        for (var i = 0; i < DefaultHistogramBounds.Length; i++)
+        for (var i = 0; i < _runningBucketBounds.Length; i++)
         {
-            if (value <= DefaultHistogramBounds[i])
+            if (value <= _runningBucketBounds[i])
             {
                 return i;
             }
         }
 
-        return DefaultHistogramBounds.Length;
+        return _runningBucketBounds.Length;
     }
 
     /// <summary>
@@ -158,13 +176,37 @@ internal sealed class MetricPoint(string instrumentName, string meterName, strin
             if (InstrumentType is InstrumentType.ObservableCounter or InstrumentType.ObservableUpDownCounter)
             {
                 var previousCumulative = double.IsNaN(_lastObservedCumulative) ? 0 : _lastObservedCumulative;
-                var delta = _runningDoubleValue - previousCumulative;
+
+                // The overflow bucket folds many series and re-sums their absolute cumulatives each
+                // cycle. A monotonic counter must never regress, so if a folded series stops reporting,
+                // we clamp to the previously reported cumulative (a high-water mark).
+                // _lastObservedCumulative already holds that previous value, so no extra state is needed.
+                // This also keeps delta >= 0, avoiding the single-series reset heuristic below (which
+                // would otherwise re-emit the whole bucket as one delta). ObservableUpDownCounter is
+                // non-monotonic, so it is intentionally excluded.
+                var effectiveCumulative = _runningDoubleValue;
+                if (_isOverflow && InstrumentType is InstrumentType.ObservableCounter)
+                {
+                    effectiveCumulative = Math.Max(_runningDoubleValue, previousCumulative);
+                }
+
+                var delta = effectiveCumulative - previousCumulative;
+
+                // OTel spec: for a single-series monotonic ObservableCounter, a negative delta
+                // indicates a counter reset (e.g. process restart). Report the current value as the
+                // delta, as if the previous cumulative was 0. The overflow bucket cannot reach here
+                // (its delta is clamped >= 0 above). ObservableUpDownCounter is non-monotonic so
+                // negative deltas are expected and left untouched.
+                if (delta < 0 && InstrumentType is InstrumentType.ObservableCounter)
+                {
+                    delta = effectiveCumulative;
+                }
 
                 sumForSnapshot = AggregationTemporality == Metrics.AggregationTemporality.Delta
                     ? delta
-                    : _runningDoubleValue;
+                    : effectiveCumulative;
 
-                _lastObservedCumulative = _runningDoubleValue;
+                _lastObservedCumulative = effectiveCumulative;
             }
 
             var snapshot = new MetricPoint(InstrumentName, MeterName, MeterVersion, MeterTags, InstrumentType, AggregationTemporality, Tags, Unit, Description, IsLongType)
@@ -184,6 +226,12 @@ internal sealed class MetricPoint(string instrumentName, string meterName, strin
                 Array.Copy(_runningBucketCounts, snapshot.SnapshotBucketCounts, _runningBucketCounts.Length);
             }
 
+            if (_runningBucketBounds.Length > 0)
+            {
+                snapshot.SnapshotBucketBounds = new double[_runningBucketBounds.Length];
+                Array.Copy(_runningBucketBounds, snapshot.SnapshotBucketBounds, _runningBucketBounds.Length);
+            }
+
             if (AggregationTemporality == Metrics.AggregationTemporality.Delta)
             {
                 _runningCountValue = 0;
@@ -196,6 +244,15 @@ internal sealed class MetricPoint(string instrumentName, string meterName, strin
                 }
 
                 StartTime = endTime;
+            }
+
+            // The overflow bucket folds multiple observable series; unlike a normal point (single
+            // series -> overwrite) it _sums_ the per-series absolute cumulative totals. Since every series
+            // re-reports its full cumulative total each cycle, the raw accumulator must be cleared each
+            // cycle to avoid double-counting across cycles.
+            if (_isOverflow && InstrumentType is InstrumentType.ObservableCounter or InstrumentType.ObservableUpDownCounter)
+            {
+                _runningDoubleValue = 0.0;
             }
 
             _hasMeasurements = false;

@@ -102,6 +102,8 @@ public:
     inline int32_t SetTimerId(int32_t timerId);
     inline int32_t GetTimerId() const;
     inline bool CanBeInterrupted() const;
+    inline void SetStackBounds(std::uintptr_t stackBase, std::uintptr_t stackEnd);
+    inline std::pair<std::uintptr_t, std::uintptr_t> GetStackBounds() const;
 #endif
 
 #ifdef DD_TEST
@@ -124,6 +126,9 @@ public:
     inline std::chrono::nanoseconds GetWaitStart() { return _waitStartTimestamp; }
     inline void SetContentionType(ContentionType contentionType) { _contentionType = contentionType; }
     ContentionType GetContentionType() { return _contentionType; }
+
+    // Memory measurement
+    inline size_t GetMemorySize() const;
 
 private:
     inline std::string BuildProfileThreadId();
@@ -167,6 +172,8 @@ private:
     // doing a syscalls.
     volatile int* _sharedMemoryArea;
     std::int32_t _timerId;
+    std::uintptr_t _stackBase = 0;
+    std::uintptr_t _stackEnd = 0;
 #endif
     uint64_t _blockingThreadId;
     shared::WSTRING _blockingThreadName;
@@ -220,7 +227,7 @@ inline void ManagedThreadInfo::ReleaseLock()
 inline std::string ManagedThreadInfo::BuildProfileThreadId()
 {
     std::stringstream builder;
-    builder << "<" << std::dec << _profilerThreadInfoId << "> [#" << _osThreadId << "]";
+    builder << std::dec << _osThreadId;
 
     return builder.str();
 }
@@ -231,13 +238,10 @@ inline std::string ManagedThreadInfo::BuildProfileThreadName()
     auto threadName = _threadName;
     if (threadName.empty())
     {
-        nameBuilder << "Managed thread (name unknown)";
+        return "";
     }
-    else
-    {
-        nameBuilder << shared::ToString(std::move(threadName));
-    }
-    nameBuilder << " [#" << _osThreadId << "]";
+
+    nameBuilder << shared::ToString(std::move(threadName));
 
     return nameBuilder.str();
 }
@@ -430,6 +434,17 @@ inline std::int32_t ManagedThreadInfo::GetTimerId() const
 {
     return _timerId;
 }
+
+inline void ManagedThreadInfo::SetStackBounds(std::uintptr_t stackBase, std::uintptr_t stackEnd)
+{
+    _stackBase = stackBase;
+    _stackEnd = stackEnd;
+}
+
+inline std::pair<std::uintptr_t, std::uintptr_t> ManagedThreadInfo::GetStackBounds() const
+{
+    return {_stackBase, _stackEnd};
+}
 #endif
 
 inline AppDomainID ManagedThreadInfo::GetAppDomainId()
@@ -459,4 +474,18 @@ inline std::pair<std::uint64_t, std::uint64_t> ManagedThreadInfo::GetTracingCont
     }
 
     return {localRootSpanId, spanId};
+}
+
+inline size_t ManagedThreadInfo::GetMemorySize() const
+{
+    // Base size of the object
+    size_t size = sizeof(ManagedThreadInfo);
+
+    // Add dynamic string allocations
+    size += _threadName.capacity() * sizeof(shared::WSTRING::value_type);
+    size += _profileThreadId.capacity();
+    size += _profileThreadName.capacity();
+    size += _blockingThreadName.capacity() * sizeof(shared::WSTRING::value_type);
+
+    return size;
 }

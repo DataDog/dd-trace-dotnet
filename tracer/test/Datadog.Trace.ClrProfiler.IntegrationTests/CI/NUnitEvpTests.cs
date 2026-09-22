@@ -20,6 +20,7 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 {
+    [Trait("Area", "CIVisibility")]
     [UsesVerify]
     public class NUnitEvpTests : TestingFrameworkEvpTest
     {
@@ -84,6 +85,25 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                     1,
                     249,
                     "all_efd");
+
+                yield return row.Concat(
+                    new MockData(
+                        GetSettingsJson("true", "true", "false", "0", "true"),
+                        """
+                        {
+                            "data":{
+                                "id":"lNemDTwOV8U",
+                                "type":"ci_app_libraries_tests",
+                                "attributes":{
+                                    "tests":{}
+                                }
+                            }
+                        }
+                        """,
+                        string.Empty),
+                    1,
+                    249,
+                    "all_efd_with_atr");
 
                 // EFD with 1 test to bypass (TraitPassTest)
                 yield return row.Concat(
@@ -358,11 +378,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                         Assert.Single(testModules);
                         var testModule = testModules[0];
 
+                        ValidateTestSessionFingerprintInputs(testModule, testSuites, tests, sessionWorkingDirectory, gitRepositoryUrl);
+
                         // Check suites
                         Assert.True(tests.All(t => testSuites.Find(s => s.TestSuiteId == t.TestSuiteId) != null));
                         Assert.True(tests.All(t => t.TestModuleId == testModule.TestModuleId));
                         testSuites.Should().AllSatisfy(testSuite => testSuite.Meta.Should().ContainKey(TestTags.SourceFile));
                         testSuites.Should().AllSatisfy(testSuite => testSuite.Meta.Should().ContainKey(TestTags.CodeOwners));
+                        testSuites.Should().AllSatisfy(testSuite => testSuite.Meta.Should().Contain(IntelligentTestRunnerTags.TestTestsSkippingEnabled, "true"));
 
                         // Check Module
                         Assert.True(tests.All(t => t.TestModuleId == testSuites[0].TestModuleId));
@@ -371,6 +394,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                         testModule.Metrics.Should().Contain(IntelligentTestRunnerTags.SkippingCount, 1);
                         testModule.Meta.Should().Contain(IntelligentTestRunnerTags.SkippingType, IntelligentTestRunnerTags.SkippingTypeTest);
                         testModule.Meta.Should().Contain(IntelligentTestRunnerTags.TestsSkipped, "true");
+                        testModule.Meta.Should().Contain(IntelligentTestRunnerTags.TestTestsSkippingEnabled, "true");
+                        tests.Should().AllSatisfy(test => test.Meta.Should().Contain(IntelligentTestRunnerTags.TestTestsSkippingEnabled, "true"));
 
                         // Check Session
                         tests.Should().OnlyContain(t => t.TestSessionId == testSuites[0].TestSessionId);
@@ -406,6 +431,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                             targetTest.Meta.Remove(TestTags.TestIsNew);
                             targetTest.Meta.Remove(TestTags.TestIsRetry);
 
+                            // Remove test final status
+                            targetTest.Meta.Remove(TestTags.TestFinalStatus);
+
                             // Remove capabilities
                             targetTest.Meta.Remove(CapabilitiesTags.LibraryCapabilitiesAutoTestRetries);
                             targetTest.Meta.Remove(CapabilitiesTags.LibraryCapabilitiesTestManagementQuarantine);
@@ -416,6 +444,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 
                             // Remove user provided service tag
                             targetTest.Meta.Remove(CommonTags.UserProvidedTestServiceTag);
+
+                            // Remove tags validated outside the per-span checklist
+                            Assert.True(targetTest.Meta.Remove(IntelligentTestRunnerTags.TestTestsSkippingEnabled));
 
                             // check the name
                             Assert.Equal("nunit.test", targetTest.Name);
@@ -630,6 +661,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                             // Check the tests, suites and modules count
                             Assert.Equal(ExpectedTestSuiteCount, data.TestSuites.Count);
                             Assert.Single(data.TestModules);
+
+                            if (friendlyName == "all_efd_with_atr")
+                            {
+                                AssertEfdSelectedOverAtr(data, "Samples.NUnitTests.TestSuite.SimplePassTest");
+                            }
                         },
                         useDotnetExec: false))
                .ConfigureAwait(false);

@@ -29,37 +29,31 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink
         private static readonly TimeSpan TinyWait = TimeSpan.FromMilliseconds(50);
 
         [Fact]
-        public void SinkSendsLogsToOtlpExporter()
+        public async Task SinkSendsLogsToOtlpExporter()
         {
-            using var mutex = new ManualResetEventSlim();
             var capturedLogs = new List<LogPoint>();
 
             var options = new BatchingSinkOptions(batchSizeLimit: 2, queueLimit: DefaultQueueLimit, period: TinyWait);
             var exporter = new TestOtlpExporter(logs =>
             {
                 capturedLogs.AddRange(logs);
-                mutex.Set();
                 return Task.FromResult(ExportResult.Success);
             });
-            var sink = new OtlpSubmissionLogSink(options, exporter);
-
+            await using var sink = new OtlpSubmissionLogSink(options, exporter, startBackgroundLoop: false);
             sink.Start();
 
             var logEvent = CreateTestLogEvent("First OTLP message", logLevel: 2); // Information
             sink.EnqueueLog(logEvent);
+            await sink.RunOneIterationAsync(noDelay: true);
 
-            // Wait for the logs to be sent
-            mutex.Wait(TimeSpan.FromSeconds(10)).Should().BeTrue();
             capturedLogs.Should().ContainSingle();
             capturedLogs[0].Message.Should().Be("First OTLP message");
             capturedLogs[0].LogLevel.Should().Be(2);
         }
 
         [Fact]
-        [Flaky("Identified as flaky in error tracking. Marked as flaky until solved.")]
-        public void SinkBatchesMultipleLogs()
+        public async Task SinkBatchesMultipleLogs()
         {
-            using var mutex = new ManualResetEventSlim();
             var capturedLogs = new List<LogPoint>();
             int batchCount = 0;
 
@@ -68,22 +62,16 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink
             {
                 capturedLogs.AddRange(logs);
                 Interlocked.Increment(ref batchCount);
-                if (capturedLogs.Count >= 3)
-                {
-                    mutex.Set();
-                }
-
                 return Task.FromResult(ExportResult.Success);
             });
-            var sink = new OtlpSubmissionLogSink(options, exporter);
-
+            await using var sink = new OtlpSubmissionLogSink(options, exporter, startBackgroundLoop: false);
             sink.Start();
 
             sink.EnqueueLog(CreateTestLogEvent("Log 1", logLevel: 1)); // Debug
             sink.EnqueueLog(CreateTestLogEvent("Log 2", logLevel: 2)); // Information
             sink.EnqueueLog(CreateTestLogEvent("Log 3", logLevel: 3)); // Warning
+            await sink.RunOneIterationAsync(noDelay: true);
 
-            mutex.Wait(TimeSpan.FromSeconds(10)).Should().BeTrue();
             capturedLogs.Should().HaveCount(3);
             capturedLogs[0].Message.Should().Be("Log 1");
             capturedLogs[1].Message.Should().Be("Log 2");
@@ -91,20 +79,17 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink
         }
 
         [Fact]
-        public void SinkIncludesTraceContextWhenAvailable()
+        public async Task SinkIncludesTraceContextWhenAvailable()
         {
-            using var mutex = new ManualResetEventSlim();
             var capturedLogs = new List<LogPoint>();
 
             var options = new BatchingSinkOptions(batchSizeLimit: 1, queueLimit: DefaultQueueLimit, period: TinyWait);
             var exporter = new TestOtlpExporter(logs =>
             {
                 capturedLogs.AddRange(logs);
-                mutex.Set();
                 return Task.FromResult(ExportResult.Success);
             });
-            var sink = new OtlpSubmissionLogSink(options, exporter);
-
+            await using var sink = new OtlpSubmissionLogSink(options, exporter, startBackgroundLoop: false);
             sink.Start();
 
             var traceId = RandomIdGenerator.Shared.NextTraceId(useAllBits: true);
@@ -112,28 +97,25 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink
             var logEvent = CreateTestLogEvent("Log with trace context", logLevel: 4, traceId: traceId, spanId: spanId);
 
             sink.EnqueueLog(logEvent);
+            await sink.RunOneIterationAsync(noDelay: true);
 
-            mutex.Wait(TimeSpan.FromSeconds(10)).Should().BeTrue();
             capturedLogs.Should().ContainSingle();
             capturedLogs[0].TraceId.Should().Be(traceId);
             capturedLogs[0].SpanId.Should().Be(spanId);
         }
 
         [Fact]
-        public void SinkIncludesAttributesInLogs()
+        public async Task SinkIncludesAttributesInLogs()
         {
-            using var mutex = new ManualResetEventSlim();
             var capturedLogs = new List<LogPoint>();
 
             var options = new BatchingSinkOptions(batchSizeLimit: 1, queueLimit: DefaultQueueLimit, period: TinyWait);
             var exporter = new TestOtlpExporter(logs =>
             {
                 capturedLogs.AddRange(logs);
-                mutex.Set();
                 return Task.FromResult(ExportResult.Success);
             });
-            var sink = new OtlpSubmissionLogSink(options, exporter);
-
+            await using var sink = new OtlpSubmissionLogSink(options, exporter, startBackgroundLoop: false);
             sink.Start();
 
             var attributes = new Dictionary<string, object>
@@ -146,8 +128,8 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink
             var logEvent = CreateTestLogEvent("Log with attributes", logLevel: 2, attributes: attributes);
 
             sink.EnqueueLog(logEvent);
+            await sink.RunOneIterationAsync(noDelay: true);
 
-            mutex.Wait(TimeSpan.FromSeconds(10)).Should().BeTrue();
             capturedLogs.Should().ContainSingle();
             capturedLogs[0].Attributes.Should().ContainKey("CustomAttribute");
             capturedLogs[0].Attributes["CustomAttribute"].Should().Be("CustomValue");
@@ -156,24 +138,17 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink
         }
 
         [Fact]
-        public void SinkIgnoresNonOtlpLogEvents()
+        public async Task SinkIgnoresNonOtlpLogEvents()
         {
-            using var mutex = new ManualResetEventSlim();
             var capturedLogs = new List<LogPoint>();
 
             var options = new BatchingSinkOptions(batchSizeLimit: 2, queueLimit: DefaultQueueLimit, period: TinyWait);
             var exporter = new TestOtlpExporter(logs =>
             {
                 capturedLogs.AddRange(logs);
-                if (capturedLogs.Count > 0)
-                {
-                    mutex.Set();
-                }
-
                 return Task.FromResult(ExportResult.Success);
             });
-            var sink = new OtlpSubmissionLogSink(options, exporter);
-
+            await using var sink = new OtlpSubmissionLogSink(options, exporter, startBackgroundLoop: false);
             sink.Start();
 
             // Create a log event without OtlpLog (like a regular Datadog log)
@@ -184,30 +159,24 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink
             var otlpLogEvent = CreateTestLogEvent("OTLP log", logLevel: 2);
             sink.EnqueueLog(otlpLogEvent);
 
-            mutex.Wait(TimeSpan.FromSeconds(10)).Should().BeTrue();
+            await sink.RunOneIterationAsync(noDelay: true);
+
             capturedLogs.Should().ContainSingle(); // Only OTLP log should be captured
             capturedLogs[0].Message.Should().Be("OTLP log");
         }
 
         [Fact]
-        public void SinkHandlesAllLogLevels()
+        public async Task SinkHandlesAllLogLevels()
         {
-            using var mutex = new ManualResetEventSlim();
             var capturedLogs = new List<LogPoint>();
 
             var options = new BatchingSinkOptions(batchSizeLimit: 6, queueLimit: DefaultQueueLimit, period: TinyWait);
             var exporter = new TestOtlpExporter(logs =>
             {
                 capturedLogs.AddRange(logs);
-                if (capturedLogs.Count >= 6)
-                {
-                    mutex.Set();
-                }
-
                 return Task.FromResult(ExportResult.Success);
             });
-            var sink = new OtlpSubmissionLogSink(options, exporter);
-
+            await using var sink = new OtlpSubmissionLogSink(options, exporter, startBackgroundLoop: false);
             sink.Start();
 
             sink.EnqueueLog(CreateTestLogEvent("Trace", logLevel: 0));
@@ -216,8 +185,8 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink
             sink.EnqueueLog(CreateTestLogEvent("Warning", logLevel: 3));
             sink.EnqueueLog(CreateTestLogEvent("Error", logLevel: 4));
             sink.EnqueueLog(CreateTestLogEvent("Critical", logLevel: 5));
+            await sink.RunOneIterationAsync(noDelay: true);
 
-            mutex.Wait(TimeSpan.FromSeconds(10)).Should().BeTrue();
             capturedLogs.Should().HaveCount(6);
             capturedLogs.Select(l => l.LogLevel).Should().BeEquivalentTo(new[] { 0, 1, 2, 3, 4, 5 });
         }
@@ -263,7 +232,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink
                 return await _exportFunc(logs).ConfigureAwait(false);
             }
 
-            public bool Shutdown(int timeoutMilliseconds)
+            public bool Shutdown()
             {
                 return true;
             }
@@ -272,4 +241,3 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink
 }
 
 #endif
-

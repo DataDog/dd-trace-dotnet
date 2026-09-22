@@ -42,7 +42,8 @@
       queuename: MyAsyncSQSQueue,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.AWS.SQS
+      _dd.base_service: Samples.AWS.SQS,
+      _dd.svc_src: aws-sqs
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -73,7 +74,8 @@
       queuename: MyAsyncSQSQueue2,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.AWS.SQS
+      _dd.base_service: Samples.AWS.SQS,
+      _dd.svc_src: aws-sqs
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -97,7 +99,8 @@
       out.host: aws_sqs,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.AWS.SQS
+      _dd.base_service: Samples.AWS.SQS,
+      _dd.svc_src: http-client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -121,7 +124,8 @@
       out.host: aws_sqs,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.AWS.SQS
+      _dd.base_service: Samples.AWS.SQS,
+      _dd.svc_src: http-client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -145,7 +149,8 @@
       out.host: aws_sqs,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.AWS.SQS
+      _dd.base_service: Samples.AWS.SQS,
+      _dd.svc_src: http-client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -169,7 +174,8 @@
       out.host: aws_sqs,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.AWS.SQS
+      _dd.base_service: Samples.AWS.SQS,
+      _dd.svc_src: http-client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -193,7 +199,8 @@
       out.host: aws_sqs,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.AWS.SQS
+      _dd.base_service: Samples.AWS.SQS,
+      _dd.svc_src: http-client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -224,7 +231,8 @@
       queuename: MyAsyncSQSQueue,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.AWS.SQS
+      _dd.base_service: Samples.AWS.SQS,
+      _dd.svc_src: aws-sqs
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -255,7 +263,8 @@
       queuename: MyAsyncSQSQueue,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.AWS.SQS
+      _dd.base_service: Samples.AWS.SQS,
+      _dd.svc_src: aws-sqs
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -286,7 +295,8 @@
       queuename: MyAsyncSQSQueue,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.AWS.SQS
+      _dd.base_service: Samples.AWS.SQS,
+      _dd.svc_src: aws-sqs
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -317,7 +327,8 @@
       queuename: MyAsyncSQSQueue2,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.AWS.SQS
+      _dd.base_service: Samples.AWS.SQS,
+      _dd.svc_src: aws-sqs
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -348,7 +359,8 @@
       queuename: MyAsyncSQSQueue2,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.AWS.SQS
+      _dd.base_service: Samples.AWS.SQS,
+      _dd.svc_src: aws-sqs
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -379,7 +391,8 @@
       queuename: MyAsyncSQSQueue,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.AWS.SQS
+      _dd.base_service: Samples.AWS.SQS,
+      _dd.svc_src: aws-sqs
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -410,7 +423,8 @@
       queuename: MyAsyncSQSQueue,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.AWS.SQS
+      _dd.base_service: Samples.AWS.SQS,
+      _dd.svc_src: aws-sqs
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -441,7 +455,8 @@
       queuename: MyAsyncSQSQueue,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.AWS.SQS
+      _dd.base_service: Samples.AWS.SQS,
+      _dd.svc_src: aws-sqs
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -472,7 +487,8 @@
       queuename: MyAsyncSQSQueue,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.AWS.SQS
+      _dd.base_service: Samples.AWS.SQS,
+      _dd.svc_src: aws-sqs
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -503,7 +519,8 @@
       queuename: MyAsyncSQSQueue2,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.AWS.SQS
+      _dd.base_service: Samples.AWS.SQS,
+      _dd.svc_src: aws-sqs
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -534,7 +551,8 @@
       queuename: MyAsyncSQSQueue2,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.AWS.SQS
+      _dd.base_service: Samples.AWS.SQS,
+      _dd.svc_src: aws-sqs
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -565,7 +583,8 @@
       queuename: MyAsyncSQSQueue,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.AWS.SQS
+      _dd.base_service: Samples.AWS.SQS,
+      _dd.svc_src: aws-sqs
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -596,7 +615,8 @@
       queuename: MyAsyncSQSQueue,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.AWS.SQS
+      _dd.base_service: Samples.AWS.SQS,
+      _dd.svc_src: aws-sqs
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -627,7 +647,8 @@
       queuename: MyAsyncSQSQueue,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.AWS.SQS
+      _dd.base_service: Samples.AWS.SQS,
+      _dd.svc_src: aws-sqs
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -658,7 +679,8 @@
       queuename: MyAsyncSQSQueue,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.AWS.SQS
+      _dd.base_service: Samples.AWS.SQS,
+      _dd.svc_src: aws-sqs
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -689,7 +711,8 @@
       queuename: MyAsyncSQSQueue2,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.AWS.SQS
+      _dd.base_service: Samples.AWS.SQS,
+      _dd.svc_src: aws-sqs
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -720,7 +743,8 @@
       queuename: MyAsyncSQSQueue2,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.AWS.SQS
+      _dd.base_service: Samples.AWS.SQS,
+      _dd.svc_src: aws-sqs
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -751,7 +775,8 @@
       queuename: MyAsyncSQSQueue2,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.AWS.SQS
+      _dd.base_service: Samples.AWS.SQS,
+      _dd.svc_src: aws-sqs
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -782,7 +807,8 @@
       queuename: MyAsyncSQSQueue,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.AWS.SQS
+      _dd.base_service: Samples.AWS.SQS,
+      _dd.svc_src: aws-sqs
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -813,7 +839,8 @@
       queuename: MyAsyncSQSQueue2,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.AWS.SQS
+      _dd.base_service: Samples.AWS.SQS,
+      _dd.svc_src: aws-sqs
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -862,7 +889,8 @@
       queuename: MySyncSQSQueue,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.AWS.SQS
+      _dd.base_service: Samples.AWS.SQS,
+      _dd.svc_src: aws-sqs
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -893,7 +921,8 @@
       queuename: MySyncSQSQueue2,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.AWS.SQS
+      _dd.base_service: Samples.AWS.SQS,
+      _dd.svc_src: aws-sqs
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -917,7 +946,8 @@
       out.host: aws_sqs,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.AWS.SQS
+      _dd.base_service: Samples.AWS.SQS,
+      _dd.svc_src: http-client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -941,7 +971,8 @@
       out.host: aws_sqs,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.AWS.SQS
+      _dd.base_service: Samples.AWS.SQS,
+      _dd.svc_src: http-client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -965,7 +996,8 @@
       out.host: aws_sqs,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.AWS.SQS
+      _dd.base_service: Samples.AWS.SQS,
+      _dd.svc_src: http-client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -989,7 +1021,8 @@
       out.host: aws_sqs,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.AWS.SQS
+      _dd.base_service: Samples.AWS.SQS,
+      _dd.svc_src: http-client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1013,7 +1046,8 @@
       out.host: aws_sqs,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.AWS.SQS
+      _dd.base_service: Samples.AWS.SQS,
+      _dd.svc_src: http-client
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1044,7 +1078,8 @@
       queuename: MySyncSQSQueue,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.AWS.SQS
+      _dd.base_service: Samples.AWS.SQS,
+      _dd.svc_src: aws-sqs
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1075,7 +1110,8 @@
       queuename: MySyncSQSQueue,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.AWS.SQS
+      _dd.base_service: Samples.AWS.SQS,
+      _dd.svc_src: aws-sqs
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1106,7 +1142,8 @@
       queuename: MySyncSQSQueue,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.AWS.SQS
+      _dd.base_service: Samples.AWS.SQS,
+      _dd.svc_src: aws-sqs
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1137,7 +1174,8 @@
       queuename: MySyncSQSQueue2,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.AWS.SQS
+      _dd.base_service: Samples.AWS.SQS,
+      _dd.svc_src: aws-sqs
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1168,7 +1206,8 @@
       queuename: MySyncSQSQueue2,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.AWS.SQS
+      _dd.base_service: Samples.AWS.SQS,
+      _dd.svc_src: aws-sqs
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1199,7 +1238,8 @@
       queuename: MySyncSQSQueue,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.AWS.SQS
+      _dd.base_service: Samples.AWS.SQS,
+      _dd.svc_src: aws-sqs
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1230,7 +1270,8 @@
       queuename: MySyncSQSQueue,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.AWS.SQS
+      _dd.base_service: Samples.AWS.SQS,
+      _dd.svc_src: aws-sqs
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1261,7 +1302,8 @@
       queuename: MySyncSQSQueue,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.AWS.SQS
+      _dd.base_service: Samples.AWS.SQS,
+      _dd.svc_src: aws-sqs
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1292,7 +1334,8 @@
       queuename: MySyncSQSQueue,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.AWS.SQS
+      _dd.base_service: Samples.AWS.SQS,
+      _dd.svc_src: aws-sqs
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1323,7 +1366,8 @@
       queuename: MySyncSQSQueue2,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.AWS.SQS
+      _dd.base_service: Samples.AWS.SQS,
+      _dd.svc_src: aws-sqs
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1354,7 +1398,8 @@
       queuename: MySyncSQSQueue2,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.AWS.SQS
+      _dd.base_service: Samples.AWS.SQS,
+      _dd.svc_src: aws-sqs
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1385,7 +1430,8 @@
       queuename: MySyncSQSQueue,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.AWS.SQS
+      _dd.base_service: Samples.AWS.SQS,
+      _dd.svc_src: aws-sqs
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1416,7 +1462,8 @@
       queuename: MySyncSQSQueue,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.AWS.SQS
+      _dd.base_service: Samples.AWS.SQS,
+      _dd.svc_src: aws-sqs
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1447,7 +1494,8 @@
       queuename: MySyncSQSQueue,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.AWS.SQS
+      _dd.base_service: Samples.AWS.SQS,
+      _dd.svc_src: aws-sqs
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1478,7 +1526,8 @@
       queuename: MySyncSQSQueue,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.AWS.SQS
+      _dd.base_service: Samples.AWS.SQS,
+      _dd.svc_src: aws-sqs
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1509,7 +1558,8 @@
       queuename: MySyncSQSQueue,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.AWS.SQS
+      _dd.base_service: Samples.AWS.SQS,
+      _dd.svc_src: aws-sqs
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1540,7 +1590,8 @@
       queuename: MySyncSQSQueue,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.AWS.SQS
+      _dd.base_service: Samples.AWS.SQS,
+      _dd.svc_src: aws-sqs
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1571,7 +1622,8 @@
       queuename: MySyncSQSQueue,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.AWS.SQS
+      _dd.base_service: Samples.AWS.SQS,
+      _dd.svc_src: aws-sqs
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1602,7 +1654,8 @@
       queuename: MySyncSQSQueue2,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.AWS.SQS
+      _dd.base_service: Samples.AWS.SQS,
+      _dd.svc_src: aws-sqs
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1633,7 +1686,8 @@
       queuename: MySyncSQSQueue2,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.AWS.SQS
+      _dd.base_service: Samples.AWS.SQS,
+      _dd.svc_src: aws-sqs
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1664,7 +1718,8 @@
       queuename: MySyncSQSQueue2,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.AWS.SQS
+      _dd.base_service: Samples.AWS.SQS,
+      _dd.svc_src: aws-sqs
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1695,7 +1750,8 @@
       queuename: MySyncSQSQueue2,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.AWS.SQS
+      _dd.base_service: Samples.AWS.SQS,
+      _dd.svc_src: aws-sqs
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1726,7 +1782,8 @@
       queuename: MySyncSQSQueue2,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.AWS.SQS
+      _dd.base_service: Samples.AWS.SQS,
+      _dd.svc_src: aws-sqs
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1757,7 +1814,8 @@
       queuename: MySyncSQSQueue2,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.AWS.SQS
+      _dd.base_service: Samples.AWS.SQS,
+      _dd.svc_src: aws-sqs
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1788,7 +1846,8 @@
       queuename: MySyncSQSQueue,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.AWS.SQS
+      _dd.base_service: Samples.AWS.SQS,
+      _dd.svc_src: aws-sqs
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1819,7 +1878,8 @@
       queuename: MySyncSQSQueue2,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.AWS.SQS
+      _dd.base_service: Samples.AWS.SQS,
+      _dd.svc_src: aws-sqs
     },
     Metrics: {
       _dd.top_level: 1.0

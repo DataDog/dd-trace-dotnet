@@ -7,8 +7,16 @@ using Datadog.Trace.SourceGenerators;
 
 namespace Datadog.Trace.Tagging
 {
-    internal sealed partial class AspNetCoreMvcTags : AspNetCoreTags
+    internal sealed partial class AspNetCoreMvcTags : InstrumentationTags
     {
+        private const string ComponentName = "aspnet_core";
+
+        [Tag(Trace.Tags.SpanKind)]
+        public override string SpanKind => SpanKinds.Server;
+
+        [Tag(Trace.Tags.InstrumentationName)]
+        public string InstrumentationName => ComponentName;
+
         [Tag(Trace.Tags.AspNetCoreController)]
         public string AspNetCoreController { get; set; }
 
@@ -20,5 +28,8 @@ namespace Datadog.Trace.Tagging
 
         [Tag(Trace.Tags.AspNetCorePage)]
         public string AspNetCorePage { get; set; }
+
+        [Tag(Trace.Tags.AspNetCoreRoute)]
+        public string AspNetCoreRoute { get; set; }
     }
 }

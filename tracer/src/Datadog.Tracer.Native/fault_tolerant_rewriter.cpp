@@ -83,7 +83,7 @@ HRESULT FaultTolerantRewriter::ApplyKickoffInstrumentation(RejitHandlerModule* m
     if (caller->type.isGeneric)
     {
         isGenericOrNestedType = true;
-        std::string str(caller->type.name.begin(), caller->type.name.end());
+        const auto str = shared::ToString(caller->type.name);
         int number = std::stoi(str.substr(str.find('`') + 1));
         argGenericCount += number;
     }
@@ -94,7 +94,7 @@ HRESULT FaultTolerantRewriter::ApplyKickoffInstrumentation(RejitHandlerModule* m
         if (currentType->isGeneric)
         {
             isGenericOrNestedType = true;
-            std::string str(currentType->name.begin(), currentType->name.end());
+            const auto str = shared::ToString(currentType->name);
             int number = std::stoi(str.substr(str.find('`') + 1));
             argGenericCount += number;
         }
@@ -191,7 +191,8 @@ HRESULT FaultTolerantRewriter::ApplyKickoffInstrumentation(RejitHandlerModule* m
 
     // Get new locals token
     mdToken newLocalVarSig;
-    hr = moduleHandler->GetModuleMetadata()->metadata_emit->GetTokenFromSig(newSignature.GetSignature(), newSignature.Size(),
+    hr = moduleHandler->GetModuleMetadata()->metadata_emit->GetTokenFromSig(newSignature.GetSignature(),
+                                                                            static_cast<ULONG>(newSignature.Size()),
                                                                             &newLocalVarSig);
     if (FAILED(hr))
     {

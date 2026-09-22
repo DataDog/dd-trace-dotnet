@@ -14,18 +14,9 @@ namespace Datadog.Trace
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(NativeLoader));
 
-        private static bool IsAvailable
-        {
-            get
-            {
-                var fd = FrameworkDescription.Instance;
-                return fd.ProcessArchitecture != ProcessArchitecture.Arm && fd.ProcessArchitecture != ProcessArchitecture.Arm64;
-            }
-        }
-
         public static bool TryGetRuntimeIdFromNative(out string runtimeId)
         {
-            if (!IsAvailable)
+            if (FrameworkDescription.Instance.ProcessArchitecture == ProcessArchitecture.Arm)
             {
                 runtimeId = default;
                 return false;

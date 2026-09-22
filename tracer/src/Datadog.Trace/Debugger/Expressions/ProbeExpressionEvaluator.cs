@@ -19,6 +19,8 @@ namespace Datadog.Trace.Debugger.Expressions;
 internal sealed class ProbeExpressionEvaluator
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ProbeExpressionEvaluator));
+    private static readonly CompiledExpressionDelegate<bool> FalseDelegate = ReturnFalse;
+    private static readonly CompiledExpressionDelegate<bool> TrueDelegate = ReturnTrue;
 
     // Hot-path cache:
     // - Single dictionary lookup per Evaluate()
@@ -30,12 +32,16 @@ internal sealed class ProbeExpressionEvaluator
         DebuggerExpression?[]? templates,
         DebuggerExpression? condition,
         DebuggerExpression? metric,
-        KeyValuePair<DebuggerExpression?, KeyValuePair<string?, DebuggerExpression?[]>[]>[]? spanDecorations)
+        KeyValuePair<DebuggerExpression?, KeyValuePair<string?, DebuggerExpression?[]>[]>[]? spanDecorations,
+        CaptureExpressionDefinition[]? captureExpressions,
+        int maxEvaluationTimeInMilliseconds = Debugger.DebuggerSettings.DefaultMaxEvaluationTimeInMilliseconds)
     {
         Templates = templates;
         Condition = condition;
         Metric = metric;
         SpanDecorations = spanDecorations;
+        CaptureExpressions = captureExpressions;
+        MaxEvaluationTimeInMilliseconds = maxEvaluationTimeInMilliseconds;
     }
 
     /// <summary>
@@ -128,13 +134,99 @@ internal sealed class ProbeExpressionEvaluator
 
     internal KeyValuePair<DebuggerExpression?, KeyValuePair<string?, DebuggerExpression?[]>[]>[]? SpanDecorations { get; }
 
+    internal CaptureExpressionDefinition[]? CaptureExpressions { get; }
+
+    internal int MaxEvaluationTimeInMilliseconds { get; }
+
+    private static bool ReturnFalse(ScopeMember invocationTarget, ScopeMember returnValue, ScopeMember duration, Exception exception, ScopeMember[] members, ref EvaluationBudget budget)
+    {
+        budget.ThrowIfExceededImmediately();
+        return false;
+    }
+
+    private static bool ReturnTrue(ScopeMember invocationTarget, ScopeMember returnValue, ScopeMember duration, Exception exception, ScopeMember[] members, ref EvaluationBudget budget)
+    {
+        budget.ThrowIfExceededImmediately();
+        return true;
+    }
+
     internal ExpressionEvaluationResult Evaluate(MethodScopeMembers scopeMembers)
     {
-        if (Templates == null && Condition == null && Metric == null && SpanDecorations == null)
+        return Evaluate(scopeMembers, out _);
+    }
+
+    internal ExpressionEvaluationResult Evaluate(MethodScopeMembers scopeMembers, out ProbeExpressionsCacheEntry? entry)
+    {
+        if (Templates == null && Condition == null && Metric == null && SpanDecorations == null && CaptureExpressions == null)
         {
+            entry = null;
             return default;
         }
 
+        entry = GetCacheEntry(scopeMembers);
+        var compiled = entry.GetOrCompile(this, scopeMembers);
+
+        var result = new ExpressionEvaluationResult { EvaluationBudget = CreateBudget() };
+        EvaluateTemplates(ref result, scopeMembers, compiled.Templates);
+        if (!result.EvaluationBudget.TimedOut)
+        {
+            EvaluateCondition(ref result, scopeMembers, compiled.Condition);
+        }
+
+        if (!result.EvaluationBudget.TimedOut)
+        {
+            EvaluateMetric(ref result, scopeMembers, compiled.Metric);
+        }
+
+        if (!result.EvaluationBudget.TimedOut)
+        {
+            EvaluateSpanDecorations(ref result, scopeMembers, compiled.Decorations);
+        }
+
+        if (result.EvaluationBudget.TimedOut && Condition is not null && result.Condition is null)
+        {
+            result.Condition = true;
+            result.HasConditionError = true;
+        }
+
+        if (CaptureExpressions is not null)
+        {
+            result.EvaluationBudget.Pause();
+        }
+
+        return result;
+    }
+
+    internal void EvaluateCaptureExpressions(ref ExpressionEvaluationResult result, MethodScopeMembers scopeMembers)
+    {
+        EvaluateCaptureExpressions(ref result, scopeMembers, entry: null);
+    }
+
+    internal void EvaluateCaptureExpressions(ref ExpressionEvaluationResult result, MethodScopeMembers scopeMembers, ProbeExpressionsCacheEntry? entry)
+    {
+        if (CaptureExpressions == null)
+        {
+            return;
+        }
+
+        if (result.EvaluationBudget.TimedOut)
+        {
+            return;
+        }
+
+        entry ??= GetCacheEntry(scopeMembers);
+        var compiledExpressions = entry.GetOrCompileCaptureExpressions(this, scopeMembers);
+        if (!result.EvaluationBudget.IsInitialized)
+        {
+            result.EvaluationBudget = CreateBudget();
+        }
+
+        result.EvaluationBudget.Resume();
+        EvaluateCaptureExpressionsCore(ref result, scopeMembers, compiledExpressions, CaptureExpressions);
+    }
+
+    private ProbeExpressionsCacheEntry GetCacheEntry(MethodScopeMembers scopeMembers)
+    {
         // Use runtime types for caching/compilation safety (polymorphic calls can break casts if we compile for declared types).
         var invocationTarget = scopeMembers.InvocationTarget;
         var thisType = invocationTarget.Value?.GetType() ?? invocationTarget.Type ?? typeof(object);
@@ -147,15 +239,7 @@ internal sealed class ProbeExpressionEvaluator
         var memberCount = scopeMembers.MemberCount;
         var bucketKey = new ProbeExpressionsBucketKey(thisType, returnRuntimeType, memberCount);
         var bucket = _cache.GetOrAdd(bucketKey, static _ => new ProbeExpressionsBucket(Log));
-        var entry = bucket.GetOrAdd(scopeMembers, memberCount);
-        var compiled = entry.GetOrCompile(this, scopeMembers);
-
-        ExpressionEvaluationResult result = default;
-        EvaluateTemplates(ref result, scopeMembers, compiled.Templates);
-        EvaluateCondition(ref result, scopeMembers, compiled.Condition);
-        EvaluateMetric(ref result, scopeMembers, compiled.Metric);
-        EvaluateSpanDecorations(ref result, scopeMembers, compiled.Decorations);
-        return result;
+        return bucket.GetOrAdd(scopeMembers, memberCount);
     }
 
     private void EvaluateTemplates(ref ExpressionEvaluationResult result, MethodScopeMembers scopeMembers, CompiledExpression<string>[]? compiledExpressions)
@@ -189,10 +273,16 @@ internal sealed class ProbeExpressionEvaluator
                     }
                     else if (IsExpression(template) == true)
                     {
-                        resultBuilder.Append(compiledExpressions[i].Delegate(scopeMembers.InvocationTarget, scopeMembers.Return, scopeMembers.Duration, scopeMembers.Exception, scopeMembers.Members));
-                        if (compiledExpressions[i].Errors != null)
+                        var compiledExpression = compiledExpressions[i];
+                        if (compiledExpression.BudgetedDelegate is null)
                         {
-                            (result.Errors ??= new List<EvaluationError>()).AddRange(compiledExpressions[i].Errors);
+                            continue;
+                        }
+
+                        resultBuilder.Append(compiledExpression.BudgetedDelegate(scopeMembers.InvocationTarget, scopeMembers.Return, scopeMembers.Duration, scopeMembers.Exception, scopeMembers.Members, ref result.EvaluationBudget));
+                        if (compiledExpression.Errors is { } errors)
+                        {
+                            (result.Errors ??= new List<EvaluationError>()).AddRange(errors);
                         }
                     }
                     else
@@ -203,6 +293,10 @@ internal sealed class ProbeExpressionEvaluator
                 catch (Exception e)
                 {
                     HandleException(ref result, compiledExpressions[i], e);
+                    if (result.EvaluationBudget.TimedOut)
+                    {
+                        break;
+                    }
                 }
             }
 
@@ -227,7 +321,6 @@ internal sealed class ProbeExpressionEvaluator
         }
 
         CompiledExpression<bool> compiledExpression = default;
-
         try
         {
             if (!cached.HasValue)
@@ -236,17 +329,24 @@ internal sealed class ProbeExpressionEvaluator
             }
 
             compiledExpression = cached.Value;
-            var condition = compiledExpression.Delegate(scopeMembers.InvocationTarget, scopeMembers.Return, scopeMembers.Duration, scopeMembers.Exception, scopeMembers.Members);
+            if (compiledExpression.BudgetedDelegate is null)
+            {
+                return;
+            }
+
+            var condition = compiledExpression.BudgetedDelegate(scopeMembers.InvocationTarget, scopeMembers.Return, scopeMembers.Duration, scopeMembers.Exception, scopeMembers.Members, ref result.EvaluationBudget);
             result.Condition = condition;
             if (compiledExpression.Errors != null)
             {
                 (result.Errors ??= new List<EvaluationError>()).AddRange(compiledExpression.Errors);
+                result.HasConditionError = true;
             }
         }
         catch (Exception e)
         {
             HandleException(ref result, compiledExpression, e);
             result.Condition = true;
+            result.HasConditionError = true;
         }
     }
 
@@ -266,7 +366,12 @@ internal sealed class ProbeExpressionEvaluator
             }
 
             compiledExpression = cached.Value;
-            var metric = compiledExpression.Delegate(scopeMembers.InvocationTarget, scopeMembers.Return, scopeMembers.Duration, scopeMembers.Exception, scopeMembers.Members);
+            if (compiledExpression.BudgetedDelegate is null)
+            {
+                return;
+            }
+
+            var metric = compiledExpression.BudgetedDelegate(scopeMembers.InvocationTarget, scopeMembers.Return, scopeMembers.Duration, scopeMembers.Exception, scopeMembers.Members, ref result.EvaluationBudget);
             result.Metric = metric;
             if (compiledExpression.Errors != null)
             {
@@ -303,15 +408,20 @@ internal sealed class ProbeExpressionEvaluator
                     if (current.Key != default || IsExpression(current.Key))
                     {
                         // span decoration has an expression condition
-                        var when = current.Key.Delegate(scopeMembers.InvocationTarget, scopeMembers.Return, scopeMembers.Duration, scopeMembers.Exception, scopeMembers.Members);
-                        if (compiledDecorations[i].Key.Errors != null)
+                        if (current.Key.BudgetedDelegate is null)
+                        {
+                            continue;
+                        }
+
+                        var when = current.Key.BudgetedDelegate(scopeMembers.InvocationTarget, scopeMembers.Return, scopeMembers.Duration, scopeMembers.Exception, scopeMembers.Members, ref result.EvaluationBudget);
+                        if (current.Key.Errors is { } whenErrors)
                         {
                             if (Log.IsEnabled(LogEventLevel.Debug))
                             {
-                                Log.Debug("{Class}.{Method}: Error when evaluating an expression. {Errors}", nameof(ProbeExpressionEvaluator), nameof(EvaluateSpanDecorations), string.Join(";", compiledDecorations[i].Key.Errors));
+                                Log.Debug("{Class}.{Method}: Error when evaluating an expression. {Errors}", nameof(ProbeExpressionEvaluator), nameof(EvaluateSpanDecorations), string.Join(";", whenErrors));
                             }
 
-                            (result.Errors ??= new List<EvaluationError>()).AddRange(current.Key.Errors);
+                            (result.Errors ??= new List<EvaluationError>()).AddRange(whenErrors);
                             continue;
                         }
 
@@ -330,6 +440,11 @@ internal sealed class ProbeExpressionEvaluator
                 catch (Exception e)
                 {
                     HandleException(ref result, current.Key, e);
+                    if (result.EvaluationBudget.TimedOut)
+                    {
+                        break;
+                    }
+
                     continue;
                 }
 
@@ -355,7 +470,12 @@ internal sealed class ProbeExpressionEvaluator
                                 }
                                 else if (IsExpression(compiledExpression))
                                 {
-                                    var value = compiledExpression.Delegate(scopeMembers.InvocationTarget, scopeMembers.Return, scopeMembers.Duration, scopeMembers.Exception, scopeMembers.Members);
+                                    if (compiledExpression.BudgetedDelegate is null)
+                                    {
+                                        continue;
+                                    }
+
+                                    var value = compiledExpression.BudgetedDelegate(scopeMembers.InvocationTarget, scopeMembers.Return, scopeMembers.Duration, scopeMembers.Exception, scopeMembers.Members, ref result.EvaluationBudget);
                                     resultBuilder.Append(value);
                                     if (compiledExpression.Errors != null)
                                     {
@@ -369,10 +489,17 @@ internal sealed class ProbeExpressionEvaluator
                             }
                             catch (Exception e)
                             {
-                                (errors ??= new List<EvaluationError>()).Add(new() { Message = e.Message, Expression = GetRelevantExpression(compiledExpression) });
+                                var message = e is EvaluationTimeBudgetExceededException ? EvaluationTimeBudgetExceededException.ErrorMessage : e.Message;
+                                (errors ??= new List<EvaluationError>()).Add(new() { Message = message, Expression = GetRelevantExpression(compiledExpression) });
                                 if (compiledExpression.Errors != null)
                                 {
                                     errors.AddRange(compiledExpression.Errors);
+                                }
+
+                                if (result.EvaluationBudget.TimedOut)
+                                {
+                                    HandleException(ref result, compiledExpression, e);
+                                    break;
                                 }
 
                                 if (Log.IsEnabled(LogEventLevel.Debug))
@@ -391,6 +518,16 @@ internal sealed class ProbeExpressionEvaluator
                     {
                         StringBuilderCache.Release(resultBuilder);
                     }
+
+                    if (result.EvaluationBudget.TimedOut)
+                    {
+                        break;
+                    }
+                }
+
+                if (result.EvaluationBudget.TimedOut)
+                {
+                    break;
                 }
             }
 
@@ -404,6 +541,72 @@ internal sealed class ProbeExpressionEvaluator
                 Log.Debug("{Class}.{Method}: Error when evaluating an expression. {Errors}", nameof(ProbeExpressionEvaluator), nameof(EvaluateSpanDecorations), e.Message);
             }
         }
+    }
+
+    private void EvaluateCaptureExpressionsCore(ref ExpressionEvaluationResult result, MethodScopeMembers scopeMembers, CompiledExpression<object>[]? compiledExpressions, CaptureExpressionDefinition[] captureExpressions)
+    {
+        if (compiledExpressions == null)
+        {
+            return;
+        }
+
+        ExpressionEvaluationResult.CaptureExpressionResult[]? capturedValues = null;
+        var capturedValuesCount = 0;
+        for (int i = 0; i < compiledExpressions.Length; i++)
+        {
+            var compiledExpression = compiledExpressions[i];
+            try
+            {
+                var captureExpression = captureExpressions[i];
+                // CreateCaptureExpressions guarantees Name is a non-empty, non-null string.
+                var name = captureExpression.Name;
+
+                if (!IsExpression(compiledExpression))
+                {
+                    continue;
+                }
+
+                if (compiledExpression.BudgetedDelegate is null)
+                {
+                    continue;
+                }
+
+                var value = compiledExpression.BudgetedDelegate(scopeMembers.InvocationTarget, scopeMembers.Return, scopeMembers.Duration, scopeMembers.Exception, scopeMembers.Members, ref result.EvaluationBudget);
+                if (value is UndefinedValue)
+                {
+                    if (compiledExpression.Errors != null)
+                    {
+                        (result.Errors ??= new List<EvaluationError>()).AddRange(compiledExpression.Errors);
+                    }
+
+                    continue;
+                }
+
+                // Runtime failures can leave slack in the array; CaptureExpressionCount is the authoritative length.
+                (capturedValues ??= new ExpressionEvaluationResult.CaptureExpressionResult[compiledExpressions.Length])[capturedValuesCount++] =
+                    new ExpressionEvaluationResult.CaptureExpressionResult(
+                    name,
+                    value,
+                    value?.GetType() ?? typeof(object),
+                    captureExpression.CaptureLimitInfo);
+
+                if (compiledExpression.Errors != null)
+                {
+                    (result.Errors ??= new List<EvaluationError>()).AddRange(compiledExpression.Errors);
+                }
+            }
+            catch (Exception e)
+            {
+                HandleException(ref result, compiledExpression, e);
+                if (result.EvaluationBudget.TimedOut)
+                {
+                    break;
+                }
+            }
+        }
+
+        result.CaptureExpressions = capturedValues;
+        result.CaptureExpressionCount = capturedValuesCount;
     }
 
     private CompiledExpression<string>[]? CompileTemplates(MethodScopeMembers scopeMembers)
@@ -475,7 +678,7 @@ internal sealed class ProbeExpressionEvaluator
             if (IsLiteral(current.Key) == true)
             {
                 when = new CompiledExpression<bool>(
-                    (_, _, _, _, _) => false,
+                    FalseDelegate,
                     null,
                     null,
                     new EvaluationError[] { new() { Expression = null, Message = "'when' should be a boolean expression, not a literal" } });
@@ -483,7 +686,7 @@ internal sealed class ProbeExpressionEvaluator
             else
             {
                 when = current.Key == null // span decoration doesn't must have a condition
-                           ? new CompiledExpression<bool>((_, _, _, _, _) => true, null, null, null)
+                           ? new CompiledExpression<bool>(TrueDelegate, null, null, null)
                            : ProbeExpressionParser<bool>.ParseExpression(current.Key.Value.Json, scopeMembers);
             }
 
@@ -524,6 +727,28 @@ internal sealed class ProbeExpressionEvaluator
         return compiledExpressions;
     }
 
+    internal CompiledExpression<object>[]? CompileCaptureExpressions(MethodScopeMembers scopeMembers)
+    {
+        if (CaptureExpressions == null)
+        {
+            return null;
+        }
+
+        // Keep this array index-aligned with CaptureExpressions; evaluation uses the same index to read
+        // the capture name and limits for each compiled delegate.
+        var compiledExpressions = new CompiledExpression<object>[CaptureExpressions.Length];
+        for (int i = 0; i < CaptureExpressions.Length; i++)
+        {
+            var expression = CaptureExpressions[i].Expression;
+            if (expression?.Json != null && IsExpression(expression) == true)
+            {
+                compiledExpressions[i] = ProbeExpressionParser<object>.ParseCaptureExpression(expression.Value.Json, scopeMembers, CaptureExpressions[i].CaptureLimitInfo);
+            }
+        }
+
+        return compiledExpressions;
+    }
+
     private bool? IsLiteral(DebuggerExpression? expression)
     {
         if (expression is null)
@@ -531,12 +756,12 @@ internal sealed class ProbeExpressionEvaluator
             return null;
         }
 
-        return string.IsNullOrEmpty(expression.Value.Json);
+        return StringUtil.IsNullOrEmpty(expression.Value.Json);
     }
 
     private bool IsLiteral<T>(CompiledExpression<T> expression)
     {
-        return expression.Delegate == null && expression.ParsedExpression == null && expression.Errors == null && expression.RawExpression != null;
+        return expression.BudgetedDelegate == null && expression.ParsedExpression == null && expression.Errors == null && expression.RawExpression != null;
     }
 
     private bool? IsExpression(DebuggerExpression? expression)
@@ -546,12 +771,12 @@ internal sealed class ProbeExpressionEvaluator
             return null;
         }
 
-        return !string.IsNullOrEmpty(expression.Value.Json) && string.IsNullOrEmpty(expression.Value.Str);
+        return !StringUtil.IsNullOrEmpty(expression.Value.Json) && StringUtil.IsNullOrEmpty(expression.Value.Str);
     }
 
     private bool IsExpression<T>(CompiledExpression<T> expression)
     {
-        return expression.Delegate != null && expression.ParsedExpression != null && expression.RawExpression != null;
+        return expression.BudgetedDelegate != null && expression.ParsedExpression != null && expression.RawExpression != null;
     }
 
     private void HandleException<T>(ref ExpressionEvaluationResult result, CompiledExpression<T> compiledExpression, Exception e)
@@ -562,7 +787,12 @@ internal sealed class ProbeExpressionEvaluator
             result.Errors.AddRange(compiledExpression.Errors);
         }
 
-        result.Errors.Add(new EvaluationError { Expression = GetRelevantExpression(compiledExpression), Message = e.Message });
+        result.Errors.Add(new EvaluationError { Expression = GetRelevantExpression(compiledExpression), Message = e is EvaluationTimeBudgetExceededException ? EvaluationTimeBudgetExceededException.ErrorMessage : e.Message });
+    }
+
+    private EvaluationBudget CreateBudget()
+    {
+        return EvaluationBudget.Create(MaxEvaluationTimeInMilliseconds);
     }
 
     private string GetRelevantExpression<T>(CompiledExpression<T> compiledExpression)
@@ -604,9 +834,9 @@ internal sealed class ProbeExpressionEvaluator
     internal CompiledProbeExpressions CompileAll(MethodScopeMembers scopeMembers)
     {
         return new CompiledProbeExpressions(
-            templates: Templates == null ? null : CompileTemplates(scopeMembers),
-            condition: Condition == null ? null : CompileCondition(scopeMembers),
-            metric: Metric == null ? null : CompileMetric(scopeMembers),
-            decorations: SpanDecorations == null ? null : CompileDecorations(scopeMembers));
+            CompileTemplates(scopeMembers),
+            CompileCondition(scopeMembers),
+            CompileMetric(scopeMembers),
+            CompileDecorations(scopeMembers));
     }
 }

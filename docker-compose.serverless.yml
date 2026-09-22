@@ -84,7 +84,7 @@ services:
     - DUMMY_API_HOST=http://serverless-dummy-api:9005
 
   StartDependencies.Serverless:
-    image: andrewlock/wait-for-dependencies
+    image: andrewlock/wait-for-dependencies:latest@sha256:5d87561de8c019c3954298f707c1f6d7087f620a1ce36c3ec38cdfbc1ec4066e
     depends_on:
     - serverless-lambda-no-param-sync
     - serverless-lambda-one-param-sync
@@ -1348,7 +1348,7 @@ services:
 
   # The serverless function calls this API, which always returns 200 OK
   serverless-dummy-api:
-    image: andrewlock/ok-api:latest
+    image: andrewlock/ok-api:latest@sha256:ca0149fef76574b72116add387a1b395e3bafc56cb58b5e45b3c825f742e3911
     ports:
     - "9005:9005"
     environment:

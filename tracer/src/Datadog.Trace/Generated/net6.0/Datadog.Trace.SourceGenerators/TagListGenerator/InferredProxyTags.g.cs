@@ -15,53 +15,34 @@ namespace Datadog.Trace.Tagging
     partial class InferredProxyTags
     {
         // InferredSpanBytes = MessagePack.Serialize("_dd.inferred_span");
-#if NETCOREAPP
-        private static ReadOnlySpan<byte> InferredSpanBytes => new byte[] { 177, 95, 100, 100, 46, 105, 110, 102, 101, 114, 114, 101, 100, 95, 115, 112, 97, 110 };
-#else
-        private static readonly byte[] InferredSpanBytes = new byte[] { 177, 95, 100, 100, 46, 105, 110, 102, 101, 114, 114, 101, 100, 95, 115, 112, 97, 110 };
-#endif
+        private static ReadOnlySpan<byte> InferredSpanBytes => [177, 95, 100, 100, 46, 105, 110, 102, 101, 114, 114, 101, 100, 95, 115, 112, 97, 110];
+
         // SpanKindBytes = MessagePack.Serialize("span.kind");
-#if NETCOREAPP
-        private static ReadOnlySpan<byte> SpanKindBytes => new byte[] { 169, 115, 112, 97, 110, 46, 107, 105, 110, 100 };
-#else
-        private static readonly byte[] SpanKindBytes = new byte[] { 169, 115, 112, 97, 110, 46, 107, 105, 110, 100 };
-#endif
+        private static ReadOnlySpan<byte> SpanKindBytes => [169, 115, 112, 97, 110, 46, 107, 105, 110, 100];
+
         // InstrumentationNameBytes = MessagePack.Serialize("component");
-#if NETCOREAPP
-        private static ReadOnlySpan<byte> InstrumentationNameBytes => new byte[] { 169, 99, 111, 109, 112, 111, 110, 101, 110, 116 };
-#else
-        private static readonly byte[] InstrumentationNameBytes = new byte[] { 169, 99, 111, 109, 112, 111, 110, 101, 110, 116 };
-#endif
+        private static ReadOnlySpan<byte> InstrumentationNameBytes => [169, 99, 111, 109, 112, 111, 110, 101, 110, 116];
+
         // HttpMethodBytes = MessagePack.Serialize("http.method");
-#if NETCOREAPP
-        private static ReadOnlySpan<byte> HttpMethodBytes => new byte[] { 171, 104, 116, 116, 112, 46, 109, 101, 116, 104, 111, 100 };
-#else
-        private static readonly byte[] HttpMethodBytes = new byte[] { 171, 104, 116, 116, 112, 46, 109, 101, 116, 104, 111, 100 };
-#endif
+        private static ReadOnlySpan<byte> HttpMethodBytes => [171, 104, 116, 116, 112, 46, 109, 101, 116, 104, 111, 100];
+
         // HttpUrlBytes = MessagePack.Serialize("http.url");
-#if NETCOREAPP
-        private static ReadOnlySpan<byte> HttpUrlBytes => new byte[] { 168, 104, 116, 116, 112, 46, 117, 114, 108 };
-#else
-        private static readonly byte[] HttpUrlBytes = new byte[] { 168, 104, 116, 116, 112, 46, 117, 114, 108 };
-#endif
+        private static ReadOnlySpan<byte> HttpUrlBytes => [168, 104, 116, 116, 112, 46, 117, 114, 108];
+
         // HttpRouteBytes = MessagePack.Serialize("http.route");
-#if NETCOREAPP
-        private static ReadOnlySpan<byte> HttpRouteBytes => new byte[] { 170, 104, 116, 116, 112, 46, 114, 111, 117, 116, 101 };
-#else
-        private static readonly byte[] HttpRouteBytes = new byte[] { 170, 104, 116, 116, 112, 46, 114, 111, 117, 116, 101 };
-#endif
+        private static ReadOnlySpan<byte> HttpRouteBytes => [170, 104, 116, 116, 112, 46, 114, 111, 117, 116, 101];
+
         // HttpStatusCodeBytes = MessagePack.Serialize("http.status_code");
-#if NETCOREAPP
-        private static ReadOnlySpan<byte> HttpStatusCodeBytes => new byte[] { 176, 104, 116, 116, 112, 46, 115, 116, 97, 116, 117, 115, 95, 99, 111, 100, 101 };
-#else
-        private static readonly byte[] HttpStatusCodeBytes = new byte[] { 176, 104, 116, 116, 112, 46, 115, 116, 97, 116, 117, 115, 95, 99, 111, 100, 101 };
-#endif
+        private static ReadOnlySpan<byte> HttpStatusCodeBytes => [176, 104, 116, 116, 112, 46, 115, 116, 97, 116, 117, 115, 95, 99, 111, 100, 101];
+
+        // HttpStatusCodeOtelBytes = MessagePack.Serialize("http.response.status_code");
+        private static ReadOnlySpan<byte> HttpStatusCodeOtelBytes => [185, 104, 116, 116, 112, 46, 114, 101, 115, 112, 111, 110, 115, 101, 46, 115, 116, 97, 116, 117, 115, 95, 99, 111, 100, 101];
+
         // StageBytes = MessagePack.Serialize("stage");
-#if NETCOREAPP
-        private static ReadOnlySpan<byte> StageBytes => new byte[] { 165, 115, 116, 97, 103, 101 };
-#else
-        private static readonly byte[] StageBytes = new byte[] { 165, 115, 116, 97, 103, 101 };
-#endif
+        private static ReadOnlySpan<byte> StageBytes => [165, 115, 116, 97, 103, 101];
+
+        // RegionBytes = MessagePack.Serialize("region");
+        private static ReadOnlySpan<byte> RegionBytes => [166, 114, 101, 103, 105, 111, 110];
 
         public override string? GetTag(string key)
         {
@@ -72,8 +53,9 @@ namespace Datadog.Trace.Tagging
                 "http.method" => HttpMethod,
                 "http.url" => HttpUrl,
                 "http.route" => HttpRoute,
-                "http.status_code" => HttpStatusCode,
+                "http.status_code" or "http.response.status_code" => HttpStatusCode is null ? null : Datadog.Trace.Util.IntStringCache.ToInvariantString(HttpStatusCode.Value),
                 "stage" => Stage,
+                "region" => Region,
                 _ => base.GetTag(key),
             };
         }
@@ -94,11 +76,23 @@ namespace Datadog.Trace.Tagging
                 case "http.route": 
                     HttpRoute = value;
                     break;
-                case "http.status_code": 
-                    HttpStatusCode = value;
+                case "http.status_code":
+                case "http.response.status_code":
+                    if (int.TryParse(value, System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out var parsedHttpStatusCode))
+                    {
+                        HttpStatusCode = parsedHttpStatusCode;
+                    }
+                    else
+                    {
+                        HttpStatusCode = null;
+                    }
+
                     break;
                 case "stage": 
                     Stage = value;
+                    break;
+                case "region": 
+                    Region = value;
                     break;
                 case "span.kind": 
                     Logger.Value.Warning("Attempted to set readonly tag {TagName} on {TagType}. Ignoring.", key, nameof(InferredProxyTags));
@@ -109,7 +103,7 @@ namespace Datadog.Trace.Tagging
             }
         }
 
-        public override void EnumerateTags<TProcessor>(ref TProcessor processor)
+        public override void EnumerateTags<TProcessor>(ref TProcessor processor, bool openTelemetrySemanticsEnabled)
         {
             if (SpanKind is not null)
             {
@@ -138,7 +132,14 @@ namespace Datadog.Trace.Tagging
 
             if (HttpStatusCode is not null)
             {
-                processor.Process(new TagItem<string>("http.status_code", HttpStatusCode, HttpStatusCodeBytes));
+                if (openTelemetrySemanticsEnabled)
+                {
+                    processor.Process(new TagItem<int>("http.response.status_code", HttpStatusCode.Value, HttpStatusCodeOtelBytes));
+                }
+                else
+                {
+                    processor.Process(new TagItem<int>("http.status_code", HttpStatusCode.Value, HttpStatusCodeBytes));
+                }
             }
 
             if (Stage is not null)
@@ -146,7 +147,12 @@ namespace Datadog.Trace.Tagging
                 processor.Process(new TagItem<string>("stage", Stage, StageBytes));
             }
 
-            base.EnumerateTags(ref processor);
+            if (Region is not null)
+            {
+                processor.Process(new TagItem<string>("region", Region, RegionBytes));
+            }
+
+            base.EnumerateTags(ref processor, openTelemetrySemanticsEnabled);
         }
 
         protected override void WriteAdditionalTags(System.Text.StringBuilder sb)
@@ -189,7 +195,7 @@ namespace Datadog.Trace.Tagging
             if (HttpStatusCode is not null)
             {
                 sb.Append("http.status_code (tag):")
-                  .Append(HttpStatusCode)
+                  .Append(HttpStatusCode.Value.ToString(System.Globalization.CultureInfo.InvariantCulture))
                   .Append(',');
             }
 
@@ -197,6 +203,13 @@ namespace Datadog.Trace.Tagging
             {
                 sb.Append("stage (tag):")
                   .Append(Stage)
+                  .Append(',');
+            }
+
+            if (Region is not null)
+            {
+                sb.Append("region (tag):")
+                  .Append(Region)
                   .Append(',');
             }
 

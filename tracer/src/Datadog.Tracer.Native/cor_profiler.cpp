@@ -361,7 +361,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::AssemblyLoadFinished(AssemblyID assembly_
         {
             Logger::Info("AssemblyLoadFinished: Datadog.Trace.dll v", assembly_version, " matched profiler version v",
                          expected_version);
-            managed_profiler_loaded_app_domains.insert({assembly_info.app_domain_id, assembly_info.manifest_module_id});
+            managed_profiler_loaded_app_domains.Get()->insert(
+                {assembly_info.app_domain_id, assembly_info.manifest_module_id});
 
             // Load defaults values if the version are the same as expected
             if (assembly_metadata.version == expected_assembly_reference.version)
@@ -839,9 +840,6 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id, std::vector<ModuleID>& m
         {
             auto libdatadog_filepath = shared::ToWSTRING(libdatadog_library_path);
             RewritingPInvokeMaps(module_metadata, libdatadog_common_nativemethods_type, libdatadog_filepath);
-            RewritingPInvokeMaps(module_metadata, libdatadog_exporter_nativemethods_type, libdatadog_filepath);
-            RewritingPInvokeMaps(module_metadata, libdatadog_config_nativemethods_type, libdatadog_filepath);
-            RewritingPInvokeMaps(module_metadata, libdatadog_logger_nativemethods_type, libdatadog_filepath);
             RewritingPInvokeMaps(module_metadata, libdatadog_libraryconfig_nativemethods_type, libdatadog_filepath);
         }
         else
@@ -1259,24 +1257,36 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleUnloadStarted(ModuleID module_id)
     auto new_end = std::remove(modules.begin(), modules.end(), module_id);
     modules.erase(new_end, modules.end());
 
-    const auto& moduleInfo = GetModuleInfo(this->info_, module_id);
-    if (!moduleInfo.IsValid())
+    auto new_internal_end = std::remove(managedInternalModules_.begin(), managedInternalModules_.end(), module_id);
+    managedInternalModules_.erase(new_internal_end, managedInternalModules_.end());
+
+    // Clear the cached domain-neutral Datadog.Trace.dll module id if this is it.
+    if (managed_profiler_domain_neutral_module_id == module_id)
     {
-        DBG("ModuleUnloadStarted: ", module_id);
-        return S_OK;
+        managed_profiler_domain_neutral_module_id = 0;
     }
 
-    DBG("ModuleUnloadStarted: ", module_id, " ", moduleInfo.assembly.name, " AppDomain ",
-        moduleInfo.assembly.app_domain_id, " ", moduleInfo.assembly.app_domain_name);
-
-    const auto is_instrumentation_assembly = moduleInfo.assembly.name == managed_profiler_name;
-    if (is_instrumentation_assembly)
+    // Datadog.Trace.dll can unload without AppDomainShutdownFinished, such as from a collectible
+    // AssemblyLoadContext. Remove entries pointing at this module without querying CLR metadata.
+    // Pre-existing limitation: the map tracks one profiler module per AppDomain.
     {
-        const auto appDomainId = moduleInfo.assembly.app_domain_id;
-
-        // remove appdomain id from managed_profiler_loaded_app_domains set
-        managed_profiler_loaded_app_domains.erase(appDomainId);
+        auto loadedAppDomains = managed_profiler_loaded_app_domains.Get();
+        auto& loadedAppDomainsMap = loadedAppDomains.Ref();
+        for (auto it = loadedAppDomainsMap.begin(); it != loadedAppDomainsMap.end();)
+        {
+            if (it->second == module_id)
+            {
+                it = loadedAppDomainsMap.erase(it);
+            }
+            else
+            {
+                ++it;
+            }
+        }
     }
+
+    // Do not query CLR metadata here; ModuleUnloadStarted can run after module state is partially torn down.
+    DBG("ModuleUnloadStarted: ", module_id);
 
     return S_OK;
 }
@@ -1310,7 +1320,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Shutdown()
         Logger::Debug("   ModuleIds: ", modules->size());
         Logger::Debug("   IntegrationDefinitions: ", integration_definitions_.size());
         Logger::Debug("   DefinitionsIds: ", definitions->size());
-        Logger::Debug("   ManagedProfilerLoadedAppDomains: ", managed_profiler_loaded_app_domains.size());
+        Logger::Debug("   ManagedProfilerLoadedAppDomains: ", managed_profiler_loaded_app_domains.Get()->size());
         Logger::Debug("   FirstJitCompilationAppDomains: ", first_jit_compilation_app_domains.size());
     }
     Logger::Info("Stats: ", Stats::Instance()->ToString());
@@ -1660,12 +1670,22 @@ HRESULT STDMETHODCALLTYPE CorProfiler::AppDomainShutdownFinished(AppDomainID app
         return S_OK;
     }
 
+    // A failed AppDomain unload can leave the domain alive, so preserve per-domain state unless unload succeeds.
+    if (FAILED(hrStatus))
+    {
+        DBG("AppDomainShutdownFinished: AppDomain: ", appDomainId,
+            " reported a failed unload (hrStatus=", hrStatus,
+            "); leaving AppDomain-scoped state intact in case the domain is still alive");
+        return S_OK;
+    }
+
     if (_dataflow != nullptr)
     {
         _dataflow->AppDomainShutdown(appDomainId);
     }
 
-    // remove appdomain metadata from map
+    // remove appdomain metadata from maps
+    managed_profiler_loaded_app_domains.Get()->erase(appDomainId);
     const auto& count = first_jit_compilation_app_domains.erase(appDomainId);
 
     DBG("AppDomainShutdownFinished: AppDomain: ", appDomainId, ", removed ", count, " elements");
@@ -1903,7 +1923,7 @@ void CorProfiler::InternalAddInstrumentation(WCHAR* id, CallTargetDefinition* it
     }
 }
 
-long CorProfiler::RegisterCallTargetDefinitions(WCHAR* id, CallTargetDefinition3* items, int size, UINT32 enabledCategories, UINT32 platform)
+long CorProfiler::RegisterCallTargetDefinitions(WCHAR* id, CallTargetDefinition3* items, size_t size, UINT32 enabledCategories, UINT32 platform)
 {
     long numReJITs = 0;
     long enabledTargets = 0;
@@ -1922,7 +1942,7 @@ long CorProfiler::RegisterCallTargetDefinitions(WCHAR* id, CallTargetDefinition3
     {
         std::vector<IntegrationDefinition> integrationDefinitions;
 
-        for (int i = 0; i < size; i++)
+        for (size_t i = 0; i < size; i++)
         {
             const auto& current = items[i];
 
@@ -2012,6 +2032,10 @@ long CorProfiler::EnableCallTargetDefinitions(UINT32 enabledCategories)
         auto _ = trace::Stats::Instance()->InitializeProfilerMeasure();
         Logger::Info("EnableCallTargetDefinitions: enabledCategories: ", enabledCategories, " from managed side.");
 
+        // Hold module_ids lock while iterating and mutating integration_definitions_
+        // to prevent concurrent modification from ModuleLoadFinished or RegisterCallTargetDefinitions
+        auto modules = module_ids.Get();
+
         std::vector<IntegrationDefinition> affectedDefinitions;
         for (auto& integration : integration_definitions_)
         {
@@ -2023,7 +2047,6 @@ long CorProfiler::EnableCallTargetDefinitions(UINT32 enabledCategories)
 
         if (affectedDefinitions.size() > 0)
         {
-            auto modules = module_ids.Get();
             auto promise = std::make_shared<std::promise<ULONG>>();
             std::future<ULONG> future = promise->get_future();
             tracer_integration_preprocessor->EnqueueRequestRejitForLoadedModules(modules.Ref(), affectedDefinitions,
@@ -2044,6 +2067,10 @@ long CorProfiler::DisableCallTargetDefinitions(UINT32 disabledCategories)
         auto _ = trace::Stats::Instance()->InitializeProfilerMeasure();
         Logger::Info("DisableCallTargetDefinitions: enabledCategories: ", disabledCategories, " from managed side.");
 
+        // Hold module_ids lock while iterating and mutating integration_definitions_
+        // to prevent concurrent modification from ModuleLoadFinished or RegisterCallTargetDefinitions
+        auto modules = module_ids.Get();
+
         std::vector<IntegrationDefinition> affectedDefinitions;
         for (auto& integration : integration_definitions_)
         {
@@ -2055,7 +2082,6 @@ long CorProfiler::DisableCallTargetDefinitions(UINT32 disabledCategories)
 
         if (affectedDefinitions.size() > 0)
         {
-            auto modules = module_ids.Get();
             auto promise = std::make_shared<std::promise<ULONG>>();
             std::future<ULONG> future = promise->get_future();
             tracer_integration_preprocessor->EnqueueRequestRejitForLoadedModules(modules.Ref(), affectedDefinitions, promise);
@@ -2068,7 +2094,7 @@ long CorProfiler::DisableCallTargetDefinitions(UINT32 disabledCategories)
     return numReverts;
 }
 
-int CorProfiler::RegisterIastAspects(WCHAR** aspects, int aspectsLength, UINT32 enabledCategories, UINT32 platform)
+int CorProfiler::RegisterIastAspects(WCHAR** aspects, size_t aspectsLength, UINT32 enabledCategories, UINT32 platform)
 {
     auto _ = trace::Stats::Instance()->InitializeProfilerMeasure();
     auto definitions = definitions_ids.Get(); // Synchronize Aspects loading
@@ -2086,7 +2112,7 @@ int CorProfiler::RegisterIastAspects(WCHAR** aspects, int aspectsLength, UINT32 
         Logger::Info("Registering Callsite Aspects.");
         dataflow->LoadAspects(aspects, aspectsLength, enabledCategories, platform);
         _dataflow = dataflow;
-        return aspectsLength;
+        return static_cast<int>(aspectsLength);
     }
     else
     {
@@ -2283,8 +2309,21 @@ HRESULT STDMETHODCALLTYPE CorProfiler::GetAssemblyReferences(const WCHAR* wszAss
     {
         if (assembly_name.rfind(skip_assembly_pattern, 0) == 0)
         {
-            DBG("GetAssemblyReferences skipping module by pattern: Name=", assembly_name, " Path=", wszAssemblyPath);
-            return S_OK;
+            bool is_included = false;
+            for (auto&& include_assembly : include_assemblies)
+            {
+                if (assembly_name == include_assembly)
+                {
+                    is_included = true;
+                    break;
+                }
+            }
+            if (!is_included)
+            {
+                DBG("GetAssemblyReferences skipping module by pattern: Name=", assembly_name, " Path=", wszAssemblyPath);
+                return S_OK;
+            }
+            break;
         }
     }
 
@@ -2409,8 +2448,13 @@ bool CorProfiler::GetIntegrationTypeRef(ModuleMetadata& module_metadata, ModuleI
 
 bool CorProfiler::ProfilerAssemblyIsLoadedIntoAppDomain(AppDomainID app_domain_id)
 {
-    return managed_profiler_domain_neutral_module_id > 0 ||
-           managed_profiler_loaded_app_domains.find(app_domain_id) != managed_profiler_loaded_app_domains.end();
+    if (managed_profiler_domain_neutral_module_id > 0)
+    {
+        return true;
+    }
+
+    auto loadedAppDomains = managed_profiler_loaded_app_domains.Get();
+    return loadedAppDomains->find(app_domain_id) != loadedAppDomains->end();
 }
 
 ModuleID CorProfiler::GetProfilerAssemblyModuleId(AppDomainID appDomainId)
@@ -2420,8 +2464,9 @@ ModuleID CorProfiler::GetProfilerAssemblyModuleId(AppDomainID appDomainId)
         return managed_profiler_domain_neutral_module_id;
     }
 
-    auto it = managed_profiler_loaded_app_domains.find(appDomainId);
-    if (it != managed_profiler_loaded_app_domains.end())
+    auto loadedAppDomains = managed_profiler_loaded_app_domains.Get();
+    auto it = loadedAppDomains->find(appDomainId);
+    if (it != loadedAppDomains->end())
     {
         return it->second;
     }
@@ -3567,13 +3612,13 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
     }
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    // Create a string representing "An error occured in the managed loader: "
+    // Create a string representing "An error occurred in the managed loader: "
 
 #ifdef _WIN32
-    LPCWSTR error_str = L"An error occured in the managed loader: ";
+    LPCWSTR error_str = L"An error occurred in the managed loader: ";
     auto error_str_size = wcslen(error_str);
 #else
-    char16_t error_str[] = u"An error occured in the managed loader: ";
+    char16_t error_str[] = u"An error occurred in the managed loader: ";
     auto error_str_size = std::char_traits<char16_t>::length(error_str);
 #endif
 
@@ -3771,7 +3816,7 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
         // Catch block
         // catch (Exception ex)
         // {
-        //      var message = "An error occured in the managed loader: " + ex.ToString();
+        //      var message = "An error occurred in the managed loader: " + ex.ToString();
         //      var chars = message.ToCharArray();
         //
         //      fixed (char* p = chars)

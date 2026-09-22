@@ -121,7 +121,7 @@ internal sealed partial class TestOptimizationClient : ITestOptimizationClient
             if (tag.Key.StartsWith(testConfigKey, StringComparison.OrdinalIgnoreCase))
             {
                 var key = tag.Key.Substring(testConfigKey.Length);
-                if (string.IsNullOrEmpty(key))
+                if (StringUtil.IsNullOrEmpty(key))
                 {
                     continue;
                 }
@@ -235,7 +235,7 @@ internal sealed partial class TestOptimizationClient : ITestOptimizationClient
         return true;
     }
 
-    private TestsConfigurations GetTestConfigurations(bool skipFrameworkInfo = false)
+    private TestsConfigurations GetTestConfigurations(bool skipFrameworkInfo = false, string? testBundle = null)
     {
         var framework = FrameworkDescription.Instance;
         return new TestsConfigurations(
@@ -245,7 +245,8 @@ internal sealed partial class TestOptimizationClient : ITestOptimizationClient
             skipFrameworkInfo ? null : framework.Name,
             skipFrameworkInfo ? null : framework.ProductVersion,
             skipFrameworkInfo ? null : framework.ProcessArchitecture,
-            _customConfigurations);
+            _customConfigurations,
+            testBundle);
     }
 
     private Uri GetUriFromPath(string uriPath)
@@ -667,16 +668,47 @@ internal sealed partial class TestOptimizationClient : ITestOptimizationClient
         [JsonProperty("correlation_id")]
         public readonly string? CorrelationId;
 
+        /// <summary>
+        /// Backend line coverage map for skippable tests, when the endpoint returns coverage backfill data.
+        /// </summary>
+        [JsonProperty("coverage")]
+        public readonly Dictionary<string, string>? Coverage;
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Metadata"/> struct for endpoints that need only the repository URL.
+        /// </summary>
+        /// <param name="repositoryUrl">Repository URL associated with the request.</param>
         public Metadata(string repositoryUrl)
         {
             RepositoryUrl = repositoryUrl;
             CorrelationId = null;
+            Coverage = null;
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Metadata"/> struct for cached response metadata that carries a backend correlation id but no coverage map.
+        /// </summary>
+        /// <param name="repositoryUrl">Repository URL associated with the response, when available.</param>
+        /// <param name="correlationId">Backend correlation id for the request.</param>
         public Metadata(string repositoryUrl, string? correlationId)
         {
             RepositoryUrl = repositoryUrl;
             CorrelationId = correlationId;
+            Coverage = null;
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Metadata"/> struct from JSON, including the skippable-tests coverage backfill map.
+        /// </summary>
+        /// <param name="repositoryUrl">Repository URL associated with the response, when available.</param>
+        /// <param name="correlationId">Backend correlation id for the request.</param>
+        /// <param name="coverage">Backend line coverage map for tests skipped by Intelligent Test Runner.</param>
+        [JsonConstructor]
+        public Metadata(string repositoryUrl, string? correlationId, Dictionary<string, string>? coverage)
+        {
+            RepositoryUrl = repositoryUrl;
+            CorrelationId = correlationId;
+            Coverage = coverage;
         }
     }
 

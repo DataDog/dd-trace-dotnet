@@ -5,6 +5,8 @@
 
 #nullable enable
 
+using System.Collections.Generic;
+
 namespace Datadog.Trace.Agent.DiscoveryService;
 
 internal sealed record AgentConfiguration
@@ -21,9 +23,14 @@ internal sealed record AgentConfiguration
         string? eventPlatformProxyEndpoint,
         string? telemetryProxyEndpoint,
         string? tracerFlareEndpoint,
+        string? containerTagsHash,
         bool clientDropP0,
         bool spanMetaStructs,
-        bool? spanEvents)
+        bool? spanEvents,
+        List<string>? peerTags = null,
+        int obfuscationVersion = 0,
+        AgentTraceFilterConfig? traceFilterConfig = null,
+        List<string>? featureFlags = null)
     {
         ConfigurationEndpoint = configurationEndpoint;
         DebuggerEndpoint = debuggerEndpoint;
@@ -36,9 +43,14 @@ internal sealed record AgentConfiguration
         EventPlatformProxyEndpoint = eventPlatformProxyEndpoint;
         TelemetryProxyEndpoint = telemetryProxyEndpoint;
         TracerFlareEndpoint = tracerFlareEndpoint;
+        ContainerTagsHash = containerTagsHash;
         ClientDropP0s = clientDropP0;
         SpanMetaStructs = spanMetaStructs;
         SpanEvents = spanEvents ?? false;
+        PeerTags = peerTags;
+        ObfuscationVersion = obfuscationVersion;
+        TraceFilterConfig = traceFilterConfig ?? AgentTraceFilterConfig.Empty;
+        FeatureFlags = featureFlags;
     }
 
     public string? ConfigurationEndpoint { get; }
@@ -75,9 +87,19 @@ internal sealed record AgentConfiguration
 
     public string? TracerFlareEndpoint { get; }
 
+    public string? ContainerTagsHash { get; }
+
     public bool ClientDropP0s { get; }
 
     public bool SpanMetaStructs { get; }
 
     public bool SpanEvents { get; }
+
+    public List<string>? PeerTags { get; }
+
+    public int ObfuscationVersion { get; }
+
+    public AgentTraceFilterConfig TraceFilterConfig { get; }
+
+    public List<string>? FeatureFlags { get; }
 }

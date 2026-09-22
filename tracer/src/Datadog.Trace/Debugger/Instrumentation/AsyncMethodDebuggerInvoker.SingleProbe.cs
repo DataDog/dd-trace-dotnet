@@ -172,13 +172,13 @@ namespace Datadog.Trace.Debugger.Instrumentation
                 return;
             }
 
-            if (!probeData.Processor.ShouldProcess(in probeData))
+            if (!probeData.Processor.TryBeginProcess(in probeData, out var snapshotCreator))
             {
                 state = AsyncMethodDebuggerState.CreateInvalidatedDebuggerState();
                 return;
             }
 
-            var asyncState = new AsyncMethodDebuggerState(probeId, ref probeData)
+            var asyncState = new AsyncMethodDebuggerState(probeId, ref probeData, snapshotCreator)
             {
                 KickoffInvocationTarget = kickoffInfo.KickoffParentObject,
                 StartTime = DateTimeOffset.UtcNow,
@@ -219,7 +219,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
                 return;
             }
 
-            if (Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.IsNullRef(ref local))
+            if (Unsafe.IsNullRef(ref local))
             {
                 if (Log.IsEnabled(Vendors.Serilog.Events.LogEventLevel.Debug))
                 {

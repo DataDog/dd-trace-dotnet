@@ -11,22 +11,22 @@ namespace Datadog.Trace.Iast.Dataflow;
 internal class AspectMethodReplaceAttribute : AspectAttribute
 {
     public AspectMethodReplaceAttribute(string targetMethod)
-        : base(targetMethod, string.Empty, new int[0], new bool[0], new AspectFilter[0], AspectType.Default)
+        : base(targetMethod, string.Empty, [], [], [], AspectType.Default)
     {
     }
 
     public AspectMethodReplaceAttribute(string targetMethod, params AspectFilter[] filters)
-        : base(targetMethod, string.Empty, new int[0], new bool[0], filters, AspectType.Default)
+        : base(targetMethod, string.Empty, [], [], filters, AspectType.Default)
     {
     }
 
     public AspectMethodReplaceAttribute(string targetMethod, string targetType, params AspectFilter[] filters)
-        : base(targetMethod, targetType, new int[0], new bool[0], filters, AspectType.Default)
+        : base(targetMethod, targetType, [], [], filters, AspectType.Default)
     {
     }
 
     public AspectMethodReplaceAttribute(string targetMethod, int[] paramShift, bool[] boxParam)
-       : base(targetMethod, string.Empty, paramShift, boxParam, new AspectFilter[0], AspectType.Default)
+       : base(targetMethod, string.Empty, paramShift, boxParam, [], AspectType.Default)
     {
     }
 }

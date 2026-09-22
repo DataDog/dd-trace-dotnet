@@ -7,46 +7,62 @@ namespace Datadog.Trace.DuckTyping.Tests.Properties.TypeChaining.ProxiesDefiniti
 {
     public class ObscureDuckTypeVirtualClass
     {
+        [Duck(FallbackToBaseTypes = true)]
         public virtual IDummyFieldObject PublicStaticGetSelfType { get; }
 
+        [Duck(FallbackToBaseTypes = true)]
         public virtual IDummyFieldObject InternalStaticGetSelfType { get; }
 
+        [Duck(FallbackToBaseTypes = true)]
         public virtual IDummyFieldObject ProtectedStaticGetSelfType { get; }
 
+        [Duck(FallbackToBaseTypes = true)]
         public virtual IDummyFieldObject PrivateStaticGetSelfType { get; }
 
         // *
 
+        [Duck(FallbackToBaseTypes = true)]
         public virtual IDummyFieldObject PublicStaticGetSetSelfType { get; set; }
 
+        [Duck(FallbackToBaseTypes = true)]
         public virtual IDummyFieldObject InternalStaticGetSetSelfType { get; set; }
 
+        [Duck(FallbackToBaseTypes = true)]
         public virtual IDummyFieldObject ProtectedStaticGetSetSelfType { get; set; }
 
+        [Duck(FallbackToBaseTypes = true)]
         public virtual IDummyFieldObject PrivateStaticGetSetSelfType { get; set; }
 
         // *
 
+        [Duck(FallbackToBaseTypes = true)]
         public virtual IDummyFieldObject PublicGetSelfType { get; }
 
+        [Duck(FallbackToBaseTypes = true)]
         public virtual IDummyFieldObject InternalGetSelfType { get; }
 
+        [Duck(FallbackToBaseTypes = true)]
         public virtual IDummyFieldObject ProtectedGetSelfType { get; }
 
+        [Duck(FallbackToBaseTypes = true)]
         public virtual IDummyFieldObject PrivateGetSelfType { get; }
 
         // *
 
+        [Duck(FallbackToBaseTypes = true)]
         public virtual IDummyFieldObject PublicGetSetSelfType { get; set; }
 
+        [Duck(FallbackToBaseTypes = true)]
         public virtual IDummyFieldObject InternalGetSetSelfType { get; set; }
 
+        [Duck(FallbackToBaseTypes = true)]
         public virtual IDummyFieldObject ProtectedGetSetSelfType { get; set; }
 
+        [Duck(FallbackToBaseTypes = true)]
         public virtual IDummyFieldObject PrivateGetSetSelfType { get; set; }
 
         // *
-        [Duck(Name = "PublicGetSetSelfType")]
+        [Duck(FallbackToBaseTypes = true, Name = "PublicGetSetSelfType")]
         public virtual ValueWithType<IDummyFieldObject> PublicGetSetSelfTypeWithType { get; set; }
     }
 }

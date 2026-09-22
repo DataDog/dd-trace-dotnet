@@ -1,0 +1,86 @@
+// <copyright file="GitHubSourceLinkUrlParserTests.cs" company="Datadog">
+// Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
+// This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
+// </copyright>
+
+#nullable enable
+
+using System;
+using Datadog.Trace.Pdb.SourceLink;
+using FluentAssertions;
+using Xunit;
+
+namespace Datadog.Trace.Tests.Pdb.SourceLink;
+
+public class GitHubSourceLinkUrlParserTests
+{
+    private const string ValidSha = "dd35903c688a74b62d1c6a9e4f41371c65704db8";
+
+    private readonly GitHubSourceLinkUrlParser _parser = new();
+
+    [Theory]
+    [InlineData(
+        "https://raw.githubusercontent.com/DataDog/dd-trace-dotnet/" + ValidSha + "/*",
+        ValidSha,
+        "https://github.com/DataDog/dd-trace-dotnet")]
+    [InlineData(
+        "https://raw.githubusercontent.com/my-org/my-repo/" + ValidSha + "/*",
+        ValidSha,
+        "https://github.com/my-org/my-repo")]
+    [InlineData(
+        "https://raw.githubusercontent.com/some.org/some.repo-name/" + ValidSha + "/*",
+        ValidSha,
+        "https://github.com/some.org/some.repo-name")]
+    // GitHub Enterprise with subdomain isolation (raw.{host} form)
+    [InlineData(
+        "https://raw.github.ecorp.example.com/taggac/vsphere-automation-sdk-.net/" + ValidSha + "/*",
+        ValidSha,
+        "https://github.ecorp.example.com/taggac/vsphere-automation-sdk-.net")]
+    [InlineData(
+        "https://raw.ghe.internal/my-org/my-repo/" + ValidSha + "/*",
+        ValidSha,
+        "https://ghe.internal/my-org/my-repo")]
+    // GitHub Enterprise without subdomain isolation (/raw/ path form)
+    [InlineData(
+        "https://github.ecorp.test/raw/taggac/vsphere-automation-sdk-.net/" + ValidSha + "/*",
+        ValidSha,
+        "https://github.ecorp.test/taggac/vsphere-automation-sdk-.net")]
+    [InlineData(
+        "https://ghe.internal:8443/raw/my-org/my-repo/" + ValidSha + "/*",
+        ValidSha,
+        "https://ghe.internal:8443/my-org/my-repo")]
+    public void TryParseSourceLinkUrl_ValidUrl_ReturnsTrue(string url, string expectedSha, string expectedRepoUrl)
+    {
+        var result = _parser.TryParseSourceLinkUrl(new Uri(url), out var commitSha, out var repositoryUrl);
+
+        result.Should().BeTrue();
+        commitSha.Should().Be(expectedSha);
+        repositoryUrl.Should().Be(expectedRepoUrl);
+    }
+
+    [Theory]
+    [InlineData("https://raw.githubusercontent.com/DataDog/dd-trace-dotnet/*")] // missing sha
+    [InlineData("https://raw.githubusercontent.com/DataDog/dd-trace-dotnet/" + ValidSha + "/extra/*")] // too many segments
+    [InlineData("https://raw.githubusercontent.com/DataDog/dd-trace-dotnet/abc123/*")] // sha too short
+    [InlineData("https://raw.githubusercontent.com/DataDog/dd-trace-dotnet/zz35903c688a74b62d1c6a9e4f41371c65704db!/*")] // non-hex chars
+    [InlineData("https://raw.githubusercontent.com/")] // empty path
+    [InlineData("https://raw./owner/repo/" + ValidSha + "/*")] // raw. with empty enterprise host
+    [InlineData("https://raw.ghe.internal/owner/repo/" + ValidSha)] // GHE subdomain isolation with too few segments (no trailing /*)
+    [InlineData("https://raw.ghe.internal/owner/" + ValidSha + "/*")] // GHE subdomain isolation with too few segments (3 instead of 4)
+    [InlineData("https://example.com/raw/owner/repo/not-a-sha/*")] // GHE /raw/ form with invalid sha
+    [InlineData("https://example.com/raw/owner/" + ValidSha + "/*")] // GHE /raw/ form with missing repo (4 segments, not 5)
+    [InlineData("https://example.com/notraw/owner/repo/" + ValidSha + "/*")] // /notraw/ is not /raw/
+    [InlineData("https://raw.githubusercontent.com/owner/repo/" + ValidSha + "/README.md")] // GitHub.com without wildcard
+    [InlineData("https://raw.ghe.internal/owner/repo/" + ValidSha + "/README.md")] // GHE subdomain isolation without wildcard
+    [InlineData("https://ghe.internal/raw/owner/repo/" + ValidSha + "/README.md")] // GHE /raw/ form without wildcard
+    [InlineData("https://gitlab.com/raw/myrepo/raw/" + ValidSha + "/*")] // GitLab old format with group named "raw" — not GHE
+    [InlineData("https://gitlab.com/raw/myrepo/-/raw/" + ValidSha + "/*")] // GitLab /-/raw/ format — not GHE
+    public void TryParseSourceLinkUrl_InvalidUrl_ReturnsFalse(string url)
+    {
+        var result = _parser.TryParseSourceLinkUrl(new Uri(url), out var commitSha, out var repositoryUrl);
+
+        result.Should().BeFalse();
+        commitSha.Should().BeNull();
+        repositoryUrl.Should().BeNull();
+    }
+}

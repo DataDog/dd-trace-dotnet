@@ -34,16 +34,10 @@ bool RuntimeIdStore::StartImpl()
     {    // variable not set - try to infer the location instead
         Log::Debug("DD_INTERNAL_NATIVE_LOADER_PATH variable not found. Inferring native loader path");
 
-        // the native loader is always available in the same directory
-#ifdef _WINDOWS
-        auto nativeLoaderFilename = NativeLoaderFilename;
-#else
+        // the native loader is always available in the same directory as the current module
         auto currentModulePath = fs::path(shared::GetCurrentModuleFileName());
-        // the native loader is in the parent directory
         auto nativeLoaderPath = currentModulePath.parent_path() / NativeLoaderFilename;
-        auto nativeLoaderFilename = nativeLoaderPath.string();
-#endif
-        _instance = LoadDynamicLibrary(nativeLoaderFilename);
+        _instance = LoadDynamicLibrary(nativeLoaderPath.string());
     }
 
 
@@ -178,4 +172,39 @@ bool RuntimeIdStore::FreeDynamicLibrary(void* handle)
 #else
     return dlclose(handle) == 0;
 #endif
+}
+
+RuntimeIdStore::MemoryStats RuntimeIdStore::ComputeMemoryStats() const
+{
+    std::lock_guard<std::mutex> lock(_cacheLock);
+
+    MemoryStats stats{};
+    stats.baseSize = sizeof(RuntimeIdStore);
+    stats.cacheMapBuckets = _runtimeIdPerAppdomain.bucket_count();
+    stats.entryCount = _runtimeIdPerAppdomain.size();
+    stats.cacheMapSize = stats.cacheMapBuckets * (sizeof(AppDomainID) + sizeof(std::string) + sizeof(void*));
+
+    // Calculate string capacities
+    for (const auto& [appDomainId, runtimeId] : _runtimeIdPerAppdomain)
+    {
+        stats.runtimeIdsSize += runtimeId.capacity();
+    }
+
+    return stats;
+}
+
+size_t RuntimeIdStore::GetMemorySize() const
+{
+    return ComputeMemoryStats().GetTotal();
+}
+
+void RuntimeIdStore::LogMemoryBreakdown() const
+{
+    auto stats = ComputeMemoryStats();
+
+    Log::Debug("RuntimeIdStore Memory Breakdown:");
+    Log::Debug("  Base object size:        ", stats.baseSize, " bytes");
+    Log::Debug("  Cache map storage:       ", stats.cacheMapSize, " bytes (", stats.entryCount, " entries, ", stats.cacheMapBuckets, " buckets)");
+    Log::Debug("  Runtime IDs content:     ", stats.runtimeIdsSize, " bytes");
+    Log::Debug("  Total memory:            ", stats.GetTotal(), " bytes (", (stats.GetTotal() / 1024.0), " KB)");
 }

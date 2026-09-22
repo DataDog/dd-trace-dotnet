@@ -9,6 +9,10 @@
     <!-- We don't need Docker for this sample on Windows -->
     <RequiresDockerDependency>LinuxAndMac</RequiresDockerDependency>
 
+    <!-- CS0618: this sample intentionally exercises the legacy System.Data.SqlClient integration -->
+    <!-- NETSDK1206: transitive native dep (runtime.win7-*.runtime.native.System.Data.SqlClient.sni) uses deprecated win7-x64/win7-x86 RIDs -->
+    <NoWarn>$(NoWarn);CS0618;NETSDK1206</NoWarn>
+
   </PropertyGroup>
 
   <ItemGroup Condition="$(TargetFramework.StartsWith('net4'))">

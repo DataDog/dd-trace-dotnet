@@ -27,7 +27,7 @@ namespace Datadog.Trace.Pdb
                    .SelectMany(s => s.Locals);
         }
 
-        private static IList<SymbolScope> GetAllScopes(SymbolMethod method)
+        private static List<SymbolScope> GetAllScopes(SymbolMethod method)
         {
             var result = new List<SymbolScope>();
             RetrieveAllNestedScopes(method.RootScope, result);

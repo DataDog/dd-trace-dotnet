@@ -155,7 +155,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
 
         public static IDictionary<string, object?>? GetContextProperties()
         {
-            IDictionary<string, object?>? properties = null;
+            Dictionary<string, object?>? properties = null;
             if (_hasMappedDiagnosticsContext)
             {
                 if (_isModernMappedDiagnosticsContext)

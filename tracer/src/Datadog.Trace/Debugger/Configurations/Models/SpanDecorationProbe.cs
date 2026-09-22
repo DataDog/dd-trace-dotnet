@@ -57,7 +57,7 @@ namespace Datadog.Trace.Debugger.Configurations.Models
 
         public override int GetHashCode()
         {
-            return HashCode.Combine(base.GetHashCode(), (int)TargetSpan, Decorations);
+            return HashCode.Combine(base.GetHashCode(), (int)TargetSpan, Decorations.NullableSequentialHashCode());
         }
     }
 }

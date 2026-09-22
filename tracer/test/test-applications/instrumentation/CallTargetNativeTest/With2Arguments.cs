@@ -41,6 +41,26 @@ partial class Program
         RunMethod(() => w2g2.ReturnGenericMethod<int>(42, 99));
         Console.WriteLine();
         //
+        Console.WriteLine($"{typeof(With2ArgumentsGenericStatic<string>).FullName}.VoidMethod");
+        RunMethod(() => With2ArgumentsGenericStatic<string>.VoidMethod("Hello World", 42));
+        Console.WriteLine($"{typeof(With2ArgumentsGenericStatic<string>).FullName}.ReturnValueMethod");
+        RunMethod(() => With2ArgumentsGenericStatic<string>.ReturnValueMethod("Hello World", 42));
+        Console.WriteLine($"{typeof(With2ArgumentsGenericStatic<string>).FullName}.ReturnReferenceMethod");
+        RunMethod(() => With2ArgumentsGenericStatic<string>.ReturnReferenceMethod("Hello World", 42));
+        Console.WriteLine($"{typeof(With2ArgumentsGenericStatic<string>).FullName}.ReturnGenericMethod");
+        RunMethod(() => With2ArgumentsGenericStatic<string>.ReturnGenericMethod<string>("Hello World", 42));
+        Console.WriteLine();
+        //
+        Console.WriteLine($"{typeof(With2ArgumentsGenericStatic<int>).FullName}.VoidMethod");
+        RunMethod(() => With2ArgumentsGenericStatic<int>.VoidMethod("Hello world", 42));
+        Console.WriteLine($"{typeof(With2ArgumentsGenericStatic<int>).FullName}.ReturnValueMethod");
+        RunMethod(() => With2ArgumentsGenericStatic<int>.ReturnValueMethod("Hello world", 42));
+        Console.WriteLine($"{typeof(With2ArgumentsGenericStatic<int>).FullName}.ReturnReferenceMethod");
+        RunMethod(() => With2ArgumentsGenericStatic<int>.ReturnReferenceMethod("Hello world", 42));
+        Console.WriteLine($"{typeof(With2ArgumentsGenericStatic<int>).FullName}.ReturnGenericMethod");
+        RunMethod(() => With2ArgumentsGenericStatic<int>.ReturnGenericMethod<int>(42, 99));
+        Console.WriteLine();
+        //
         var w2in = new With2ArgumentsInherits();
         Console.WriteLine($"{typeof(With2ArgumentsInherits).FullName}.VoidMethod");
         RunMethod(() => w2in.VoidMethod("Hello World", 42));
@@ -88,6 +108,40 @@ partial class Program
         RunMethod(() => With2ArgumentsStatic.ReturnGenericMethod<string, int>(42, 99));
         Console.WriteLine($"{typeof(With2ArgumentsStatic).FullName}.ReturnGenericMethod<int>");
         RunMethod(() => With2ArgumentsStatic.ReturnGenericMethod<int, string>("Hello World", 42));
+        Console.WriteLine();
+        //
+        Console.WriteLine($"{typeof(With2ArgumentsStaticStruct).FullName}.VoidMethod");
+        RunMethod(() => With2ArgumentsStaticStruct.VoidMethod("Hello World", 42));
+        Console.WriteLine($"{typeof(With2ArgumentsStaticStruct).FullName}.ReturnValueMethod");
+        RunMethod(() => With2ArgumentsStaticStruct.ReturnValueMethod("Hello World", 42));
+        Console.WriteLine($"{typeof(With2ArgumentsStaticStruct).FullName}.ReturnReferenceMethod");
+        RunMethod(() => With2ArgumentsStaticStruct.ReturnReferenceMethod("Hello World", 42));
+        Console.WriteLine($"{typeof(With2ArgumentsStaticStruct).FullName}.ReturnGenericMethod<string>");
+        RunMethod(() => With2ArgumentsStaticStruct.ReturnGenericMethod<string, int>(42, 99));
+        Console.WriteLine($"{typeof(With2ArgumentsStaticStruct).FullName}.ReturnGenericMethod<int>");
+        RunMethod(() => With2ArgumentsStaticStruct.ReturnGenericMethod<int, string>("Hello World", 42));
+        Console.WriteLine();
+        //
+        // Note: We skip instrumentation today for generic value types.
+        Console.WriteLine($"{typeof(With2ArgumentsGenericStaticStruct<string>).FullName}.VoidMethod");
+        RunMethod(() => With2ArgumentsGenericStaticStruct<string>.VoidMethod("Hello World", 42), checkInstrumented: false);
+        Console.WriteLine($"{typeof(With2ArgumentsGenericStaticStruct<string>).FullName}.ReturnValueMethod");
+        RunMethod(() => With2ArgumentsGenericStaticStruct<string>.ReturnValueMethod("Hello World", 42), checkInstrumented: false);
+        Console.WriteLine($"{typeof(With2ArgumentsGenericStaticStruct<string>).FullName}.ReturnReferenceMethod");
+        RunMethod(() => With2ArgumentsGenericStaticStruct<string>.ReturnReferenceMethod("Hello World", 42), checkInstrumented: false);
+        Console.WriteLine($"{typeof(With2ArgumentsGenericStaticStruct<string>).FullName}.ReturnGenericMethod");
+        RunMethod(() => With2ArgumentsGenericStaticStruct<string>.ReturnGenericMethod<string>("Hello World", 42), checkInstrumented: false);
+        Console.WriteLine();
+        //
+        // Note: We skip instrumentation today for generic value types.
+        Console.WriteLine($"{typeof(With2ArgumentsGenericStaticStruct<int>).FullName}.VoidMethod");
+        RunMethod(() => With2ArgumentsGenericStaticStruct<int>.VoidMethod("Hello world", 42), checkInstrumented: false);
+        Console.WriteLine($"{typeof(With2ArgumentsGenericStaticStruct<int>).FullName}.ReturnValueMethod");
+        RunMethod(() => With2ArgumentsGenericStaticStruct<int>.ReturnValueMethod("Hello world", 42), checkInstrumented: false);
+        Console.WriteLine($"{typeof(With2ArgumentsGenericStaticStruct<int>).FullName}.ReturnReferenceMethod");
+        RunMethod(() => With2ArgumentsGenericStaticStruct<int>.ReturnReferenceMethod("Hello world", 42), checkInstrumented: false);
+        Console.WriteLine($"{typeof(With2ArgumentsGenericStaticStruct<int>).FullName}.ReturnGenericMethod");
+        RunMethod(() => With2ArgumentsGenericStaticStruct<int>.ReturnGenericMethod<int>(42, 99), checkInstrumented: false);
         Console.WriteLine();
         //
         var w2TBegin = new With2ArgumentsThrowOnBegin();
@@ -154,6 +208,26 @@ partial class Program
         RunMethod(() => w2g2.ReturnGenericMethod<int>(42, 99));
         Console.WriteLine();
         //
+        Console.WriteLine($"{typeof(ArgumentsParentType.With2ArgumentsGenericStatic<string>).FullName}.VoidMethod");
+        RunMethod(() => ArgumentsParentType.With2ArgumentsGenericStatic<string>.VoidMethod("Hello World", 42));
+        Console.WriteLine($"{typeof(ArgumentsParentType.With2ArgumentsGenericStatic<string>).FullName}.ReturnValueMethod");
+        RunMethod(() => ArgumentsParentType.With2ArgumentsGenericStatic<string>.ReturnValueMethod("Hello World", 42));
+        Console.WriteLine($"{typeof(ArgumentsParentType.With2ArgumentsGenericStatic<string>).FullName}.ReturnReferenceMethod");
+        RunMethod(() => ArgumentsParentType.With2ArgumentsGenericStatic<string>.ReturnReferenceMethod("Hello World", 42));
+        Console.WriteLine($"{typeof(ArgumentsParentType.With2ArgumentsGenericStatic<string>).FullName}.ReturnGenericMethod");
+        RunMethod(() => ArgumentsParentType.With2ArgumentsGenericStatic<string>.ReturnGenericMethod<string>("Hello World", 42));
+        Console.WriteLine();
+        //
+        Console.WriteLine($"{typeof(ArgumentsParentType.With2ArgumentsGenericStatic<int>).FullName}.VoidMethod");
+        RunMethod(() => ArgumentsParentType.With2ArgumentsGenericStatic<int>.VoidMethod("Hello world", 42));
+        Console.WriteLine($"{typeof(ArgumentsParentType.With2ArgumentsGenericStatic<int>).FullName}.ReturnValueMethod");
+        RunMethod(() => ArgumentsParentType.With2ArgumentsGenericStatic<int>.ReturnValueMethod("Hello world", 42));
+        Console.WriteLine($"{typeof(ArgumentsParentType.With2ArgumentsGenericStatic<int>).FullName}.ReturnReferenceMethod");
+        RunMethod(() => ArgumentsParentType.With2ArgumentsGenericStatic<int>.ReturnReferenceMethod("Hello world", 42));
+        Console.WriteLine($"{typeof(ArgumentsParentType.With2ArgumentsGenericStatic<int>).FullName}.ReturnGenericMethod");
+        RunMethod(() => ArgumentsParentType.With2ArgumentsGenericStatic<int>.ReturnGenericMethod<int>(42, 99));
+        Console.WriteLine();
+        //
         var w2in = new ArgumentsParentType.With2ArgumentsInherits();
         Console.WriteLine($"{typeof(ArgumentsParentType.With2ArgumentsInherits).FullName}.VoidMethod");
         RunMethod(() => w2in.VoidMethod("Hello World", 42));
@@ -202,6 +276,41 @@ partial class Program
         Console.WriteLine($"{typeof(ArgumentsParentType.With2ArgumentsStatic).FullName}.ReturnGenericMethod<int>");
         RunMethod(() => ArgumentsParentType.With2ArgumentsStatic.ReturnGenericMethod<int, string>("Hello World", 42));
         Console.WriteLine();
+        //
+        Console.WriteLine($"{typeof(ArgumentsParentType.With2ArgumentsStaticStruct).FullName}.VoidMethod");
+        RunMethod(() => ArgumentsParentType.With2ArgumentsStaticStruct.VoidMethod("Hello World", 42));
+        Console.WriteLine($"{typeof(ArgumentsParentType.With2ArgumentsStaticStruct).FullName}.ReturnValueMethod");
+        RunMethod(() => ArgumentsParentType.With2ArgumentsStaticStruct.ReturnValueMethod("Hello World", 42));
+        Console.WriteLine($"{typeof(ArgumentsParentType.With2ArgumentsStaticStruct).FullName}.ReturnReferenceMethod");
+        RunMethod(() => ArgumentsParentType.With2ArgumentsStaticStruct.ReturnReferenceMethod("Hello World", 42));
+        Console.WriteLine($"{typeof(ArgumentsParentType.With2ArgumentsStaticStruct).FullName}.ReturnGenericMethod<string>");
+        RunMethod(() => ArgumentsParentType.With2ArgumentsStaticStruct.ReturnGenericMethod<string, int>(42, 99));
+        Console.WriteLine($"{typeof(ArgumentsParentType.With2ArgumentsStaticStruct).FullName}.ReturnGenericMethod<int>");
+        RunMethod(() => ArgumentsParentType.With2ArgumentsStaticStruct.ReturnGenericMethod<int, string>("Hello World", 42));
+        Console.WriteLine();
+        //
+        // Note: We skip instrumentation today for generic value types.
+        Console.WriteLine($"{typeof(ArgumentsParentType.With2ArgumentsGenericStaticStruct<string>).FullName}.VoidMethod");
+        RunMethod(() => ArgumentsParentType.With2ArgumentsGenericStaticStruct<string>.VoidMethod("Hello World", 42), checkInstrumented: false);
+        Console.WriteLine($"{typeof(ArgumentsParentType.With2ArgumentsGenericStaticStruct<string>).FullName}.ReturnValueMethod");
+        RunMethod(() => ArgumentsParentType.With2ArgumentsGenericStaticStruct<string>.ReturnValueMethod("Hello World", 42), checkInstrumented: false);
+        Console.WriteLine($"{typeof(ArgumentsParentType.With2ArgumentsGenericStaticStruct<string>).FullName}.ReturnReferenceMethod");
+        RunMethod(() => ArgumentsParentType.With2ArgumentsGenericStaticStruct<string>.ReturnReferenceMethod("Hello World", 42), checkInstrumented: false);
+        Console.WriteLine($"{typeof(ArgumentsParentType.With2ArgumentsGenericStaticStruct<string>).FullName}.ReturnGenericMethod");
+        RunMethod(() => ArgumentsParentType.With2ArgumentsGenericStaticStruct<string>.ReturnGenericMethod<string>("Hello World", 42), checkInstrumented: false);
+        Console.WriteLine();
+        //
+        // Note: We skip instrumentation today for generic value types.
+        Console.WriteLine($"{typeof(ArgumentsParentType.With2ArgumentsGenericStaticStruct<int>).FullName}.VoidMethod");
+        RunMethod(() => ArgumentsParentType.With2ArgumentsGenericStaticStruct<int>.VoidMethod("Hello world", 42), checkInstrumented: false);
+        Console.WriteLine($"{typeof(ArgumentsParentType.With2ArgumentsGenericStaticStruct<int>).FullName}.ReturnValueMethod");
+        RunMethod(() => ArgumentsParentType.With2ArgumentsGenericStaticStruct<int>.ReturnValueMethod("Hello world", 42), checkInstrumented: false);
+        Console.WriteLine($"{typeof(ArgumentsParentType.With2ArgumentsGenericStaticStruct<int>).FullName}.ReturnReferenceMethod");
+        RunMethod(() => ArgumentsParentType.With2ArgumentsGenericStaticStruct<int>.ReturnReferenceMethod("Hello world", 42), checkInstrumented: false);
+        Console.WriteLine($"{typeof(ArgumentsParentType.With2ArgumentsGenericStaticStruct<int>).FullName}.ReturnGenericMethod");
+        RunMethod(() => ArgumentsParentType.With2ArgumentsGenericStaticStruct<int>.ReturnGenericMethod<int>(42, 99), checkInstrumented: false);
+        Console.WriteLine();
+        //
         //
         var w2TBegin = new ArgumentsParentType.With2ArgumentsThrowOnBegin();
         Console.WriteLine($"{typeof(ArgumentsParentType.With2ArgumentsThrowOnBegin).FullName}.VoidMethod");
@@ -267,6 +376,26 @@ partial class Program
         RunMethod(() => w2g2.ReturnGenericMethod<int>(42, 99));
         Console.WriteLine();
         //
+        Console.WriteLine($"{typeof(ArgumentsStructParentType.With2ArgumentsGenericStatic<string>).FullName}.VoidMethod");
+        RunMethod(() => ArgumentsStructParentType.With2ArgumentsGenericStatic<string>.VoidMethod("Hello World", 42));
+        Console.WriteLine($"{typeof(ArgumentsStructParentType.With2ArgumentsGenericStatic<string>).FullName}.ReturnValueMethod");
+        RunMethod(() => ArgumentsStructParentType.With2ArgumentsGenericStatic<string>.ReturnValueMethod("Hello World", 42));
+        Console.WriteLine($"{typeof(ArgumentsStructParentType.With2ArgumentsGenericStatic<string>).FullName}.ReturnReferenceMethod");
+        RunMethod(() => ArgumentsStructParentType.With2ArgumentsGenericStatic<string>.ReturnReferenceMethod("Hello World", 42));
+        Console.WriteLine($"{typeof(ArgumentsStructParentType.With2ArgumentsGenericStatic<string>).FullName}.ReturnGenericMethod");
+        RunMethod(() => ArgumentsStructParentType.With2ArgumentsGenericStatic<string>.ReturnGenericMethod<string>("Hello World", 42));
+        Console.WriteLine();
+        //
+        Console.WriteLine($"{typeof(ArgumentsStructParentType.With2ArgumentsGenericStatic<int>).FullName}.VoidMethod");
+        RunMethod(() => ArgumentsStructParentType.With2ArgumentsGenericStatic<int>.VoidMethod("Hello world", 42));
+        Console.WriteLine($"{typeof(ArgumentsStructParentType.With2ArgumentsGenericStatic<int>).FullName}.ReturnValueMethod");
+        RunMethod(() => ArgumentsStructParentType.With2ArgumentsGenericStatic<int>.ReturnValueMethod("Hello world", 42));
+        Console.WriteLine($"{typeof(ArgumentsStructParentType.With2ArgumentsGenericStatic<int>).FullName}.ReturnReferenceMethod");
+        RunMethod(() => ArgumentsStructParentType.With2ArgumentsGenericStatic<int>.ReturnReferenceMethod("Hello world", 42));
+        Console.WriteLine($"{typeof(ArgumentsStructParentType.With2ArgumentsGenericStatic<int>).FullName}.ReturnGenericMethod");
+        RunMethod(() => ArgumentsStructParentType.With2ArgumentsGenericStatic<int>.ReturnGenericMethod<int>(42, 99));
+        Console.WriteLine();
+        //
         var w2in = new ArgumentsStructParentType.With2ArgumentsInherits();
         Console.WriteLine($"{typeof(ArgumentsStructParentType.With2ArgumentsInherits).FullName}.VoidMethod");
         RunMethod(() => w2in.VoidMethod("Hello World", 42));
@@ -315,6 +444,41 @@ partial class Program
         Console.WriteLine($"{typeof(ArgumentsStructParentType.With2ArgumentsStatic).FullName}.ReturnGenericMethod<int>");
         RunMethod(() => ArgumentsStructParentType.With2ArgumentsStatic.ReturnGenericMethod<int, string>("Hello World", 42));
         Console.WriteLine();
+        //
+        Console.WriteLine($"{typeof(ArgumentsStructParentType.With2ArgumentsStaticStruct).FullName}.VoidMethod");
+        RunMethod(() => ArgumentsStructParentType.With2ArgumentsStaticStruct.VoidMethod("Hello World", 42));
+        Console.WriteLine($"{typeof(ArgumentsStructParentType.With2ArgumentsStaticStruct).FullName}.ReturnValueMethod");
+        RunMethod(() => ArgumentsStructParentType.With2ArgumentsStaticStruct.ReturnValueMethod("Hello World", 42));
+        Console.WriteLine($"{typeof(ArgumentsStructParentType.With2ArgumentsStaticStruct).FullName}.ReturnReferenceMethod");
+        RunMethod(() => ArgumentsStructParentType.With2ArgumentsStaticStruct.ReturnReferenceMethod("Hello World", 42));
+        Console.WriteLine($"{typeof(ArgumentsStructParentType.With2ArgumentsStaticStruct).FullName}.ReturnGenericMethod<string>");
+        RunMethod(() => ArgumentsStructParentType.With2ArgumentsStaticStruct.ReturnGenericMethod<string, int>(42, 99));
+        Console.WriteLine($"{typeof(ArgumentsStructParentType.With2ArgumentsStaticStruct).FullName}.ReturnGenericMethod<int>");
+        RunMethod(() => ArgumentsStructParentType.With2ArgumentsStaticStruct.ReturnGenericMethod<int, string>("Hello World", 42));
+        Console.WriteLine();
+        //
+        // Note: We skip instrumentation today for generic value types.
+        Console.WriteLine($"{typeof(ArgumentsStructParentType.With2ArgumentsGenericStaticStruct<string>).FullName}.VoidMethod");
+        RunMethod(() => ArgumentsStructParentType.With2ArgumentsGenericStaticStruct<string>.VoidMethod("Hello World", 42), checkInstrumented: false);
+        Console.WriteLine($"{typeof(ArgumentsStructParentType.With2ArgumentsGenericStaticStruct<string>).FullName}.ReturnValueMethod");
+        RunMethod(() => ArgumentsStructParentType.With2ArgumentsGenericStaticStruct<string>.ReturnValueMethod("Hello World", 42), checkInstrumented: false);
+        Console.WriteLine($"{typeof(ArgumentsStructParentType.With2ArgumentsGenericStaticStruct<string>).FullName}.ReturnReferenceMethod");
+        RunMethod(() => ArgumentsStructParentType.With2ArgumentsGenericStaticStruct<string>.ReturnReferenceMethod("Hello World", 42), checkInstrumented: false);
+        Console.WriteLine($"{typeof(ArgumentsStructParentType.With2ArgumentsGenericStaticStruct<string>).FullName}.ReturnGenericMethod");
+        RunMethod(() => ArgumentsStructParentType.With2ArgumentsGenericStaticStruct<string>.ReturnGenericMethod<string>("Hello World", 42), checkInstrumented: false);
+        Console.WriteLine();
+        //
+        // Note: We skip instrumentation today for generic value types.
+        Console.WriteLine($"{typeof(ArgumentsStructParentType.With2ArgumentsGenericStaticStruct<int>).FullName}.VoidMethod");
+        RunMethod(() => ArgumentsStructParentType.With2ArgumentsGenericStaticStruct<int>.VoidMethod("Hello world", 42), checkInstrumented: false);
+        Console.WriteLine($"{typeof(ArgumentsStructParentType.With2ArgumentsGenericStaticStruct<int>).FullName}.ReturnValueMethod");
+        RunMethod(() => ArgumentsStructParentType.With2ArgumentsGenericStaticStruct<int>.ReturnValueMethod("Hello world", 42), checkInstrumented: false);
+        Console.WriteLine($"{typeof(ArgumentsStructParentType.With2ArgumentsGenericStaticStruct<int>).FullName}.ReturnReferenceMethod");
+        RunMethod(() => ArgumentsStructParentType.With2ArgumentsGenericStaticStruct<int>.ReturnReferenceMethod("Hello world", 42), checkInstrumented: false);
+        Console.WriteLine($"{typeof(ArgumentsStructParentType.With2ArgumentsGenericStaticStruct<int>).FullName}.ReturnGenericMethod");
+        RunMethod(() => ArgumentsStructParentType.With2ArgumentsGenericStaticStruct<int>.ReturnGenericMethod<int>(42, 99), checkInstrumented: false);
+        Console.WriteLine();
+        //
         //
         var w2TBegin = new ArgumentsStructParentType.With2ArgumentsThrowOnBegin();
         Console.WriteLine($"{typeof(ArgumentsStructParentType.With2ArgumentsThrowOnBegin).FullName}.VoidMethod");
@@ -380,6 +544,26 @@ partial class Program
         RunMethod(() => w2g2.ReturnGenericMethod<int>(42, 99));
         Console.WriteLine();
         //
+        Console.WriteLine($"{typeof(ArgumentsGenericParentType<object>.With2ArgumentsGenericStatic<string>).FullName}.VoidMethod");
+        RunMethod(() => ArgumentsGenericParentType<object>.With2ArgumentsGenericStatic<string>.VoidMethod("Hello World", 42));
+        Console.WriteLine($"{typeof(ArgumentsGenericParentType<object>.With2ArgumentsGenericStatic<string>).FullName}.ReturnValueMethod");
+        RunMethod(() => ArgumentsGenericParentType<object>.With2ArgumentsGenericStatic<string>.ReturnValueMethod("Hello World", 42));
+        Console.WriteLine($"{typeof(ArgumentsGenericParentType<object>.With2ArgumentsGenericStatic<string>).FullName}.ReturnReferenceMethod");
+        RunMethod(() => ArgumentsGenericParentType<object>.With2ArgumentsGenericStatic<string>.ReturnReferenceMethod("Hello World", 42));
+        Console.WriteLine($"{typeof(ArgumentsGenericParentType<object>.With2ArgumentsGenericStatic<string>).FullName}.ReturnGenericMethod");
+        RunMethod(() => ArgumentsGenericParentType<object>.With2ArgumentsGenericStatic<string>.ReturnGenericMethod<string>("Hello World", 42));
+        Console.WriteLine();
+        //
+        Console.WriteLine($"{typeof(ArgumentsGenericParentType<object>.With2ArgumentsGenericStatic<int>).FullName}.VoidMethod");
+        RunMethod(() => ArgumentsGenericParentType<object>.With2ArgumentsGenericStatic<int>.VoidMethod("Hello world", 42));
+        Console.WriteLine($"{typeof(ArgumentsGenericParentType<object>.With2ArgumentsGenericStatic<int>).FullName}.ReturnValueMethod");
+        RunMethod(() => ArgumentsGenericParentType<object>.With2ArgumentsGenericStatic<int>.ReturnValueMethod("Hello world", 42));
+        Console.WriteLine($"{typeof(ArgumentsGenericParentType<object>.With2ArgumentsGenericStatic<int>).FullName}.ReturnReferenceMethod");
+        RunMethod(() => ArgumentsGenericParentType<object>.With2ArgumentsGenericStatic<int>.ReturnReferenceMethod("Hello world", 42));
+        Console.WriteLine($"{typeof(ArgumentsGenericParentType<object>.With2ArgumentsGenericStatic<int>).FullName}.ReturnGenericMethod");
+        RunMethod(() => ArgumentsGenericParentType<object>.With2ArgumentsGenericStatic<int>.ReturnGenericMethod<int>(42, 99));
+        Console.WriteLine();
+        //
         var w2in = new ArgumentsGenericParentType<object>.With2ArgumentsInherits();
         Console.WriteLine($"{typeof(ArgumentsGenericParentType<object>.With2ArgumentsInherits).FullName}.VoidMethod");
         RunMethod(() => w2in.VoidMethod("Hello World", 42));
@@ -429,6 +613,38 @@ partial class Program
         RunMethod(() => ArgumentsGenericParentType<object>.With2ArgumentsStatic.ReturnGenericMethod<int, string>("Hello World", 42));
         Console.WriteLine();
         //
+        Console.WriteLine($"{typeof(ArgumentsGenericParentType<object>.With2ArgumentsStaticStruct).FullName}.VoidMethod");
+        RunMethod(() => ArgumentsGenericParentType<object>.With2ArgumentsStaticStruct.VoidMethod("Hello World", 42));
+        Console.WriteLine($"{typeof(ArgumentsGenericParentType<object>.With2ArgumentsStaticStruct).FullName}.ReturnValueMethod");
+        RunMethod(() => ArgumentsGenericParentType<object>.With2ArgumentsStaticStruct.ReturnValueMethod("Hello World", 42));
+        Console.WriteLine($"{typeof(ArgumentsGenericParentType<object>.With2ArgumentsStaticStruct).FullName}.ReturnReferenceMethod");
+        RunMethod(() => ArgumentsGenericParentType<object>.With2ArgumentsStaticStruct.ReturnReferenceMethod("Hello World", 42));
+        Console.WriteLine($"{typeof(ArgumentsGenericParentType<object>.With2ArgumentsStaticStruct).FullName}.ReturnGenericMethod<string>");
+        RunMethod(() => ArgumentsGenericParentType<object>.With2ArgumentsStaticStruct.ReturnGenericMethod<string, int>(42, 99));
+        Console.WriteLine($"{typeof(ArgumentsGenericParentType<object>.With2ArgumentsStaticStruct).FullName}.ReturnGenericMethod<int>");
+        RunMethod(() => ArgumentsGenericParentType<object>.With2ArgumentsStaticStruct.ReturnGenericMethod<int, string>("Hello World", 42));
+        Console.WriteLine();
+        //
+        Console.WriteLine($"{typeof(ArgumentsGenericParentType<object>.With2ArgumentsGenericStaticStruct<string>).FullName}.VoidMethod");
+        RunMethod(() => ArgumentsGenericParentType<object>.With2ArgumentsGenericStaticStruct<string>.VoidMethod("Hello World", 42));
+        Console.WriteLine($"{typeof(ArgumentsGenericParentType<object>.With2ArgumentsGenericStaticStruct<string>).FullName}.ReturnValueMethod");
+        RunMethod(() => ArgumentsGenericParentType<object>.With2ArgumentsGenericStaticStruct<string>.ReturnValueMethod("Hello World", 42));
+        Console.WriteLine($"{typeof(ArgumentsGenericParentType<object>.With2ArgumentsGenericStaticStruct<string>).FullName}.ReturnReferenceMethod");
+        RunMethod(() => ArgumentsGenericParentType<object>.With2ArgumentsGenericStaticStruct<string>.ReturnReferenceMethod("Hello World", 42));
+        Console.WriteLine($"{typeof(ArgumentsGenericParentType<object>.With2ArgumentsGenericStaticStruct<string>).FullName}.ReturnGenericMethod");
+        RunMethod(() => ArgumentsGenericParentType<object>.With2ArgumentsGenericStaticStruct<string>.ReturnGenericMethod<string>("Hello World", 42));
+        Console.WriteLine();
+        //
+        Console.WriteLine($"{typeof(ArgumentsGenericParentType<object>.With2ArgumentsGenericStaticStruct<int>).FullName}.VoidMethod");
+        RunMethod(() => ArgumentsGenericParentType<object>.With2ArgumentsGenericStaticStruct<int>.VoidMethod("Hello world", 42));
+        Console.WriteLine($"{typeof(ArgumentsGenericParentType<object>.With2ArgumentsGenericStaticStruct<int>).FullName}.ReturnValueMethod");
+        RunMethod(() => ArgumentsGenericParentType<object>.With2ArgumentsGenericStaticStruct<int>.ReturnValueMethod("Hello world", 42));
+        Console.WriteLine($"{typeof(ArgumentsGenericParentType<object>.With2ArgumentsGenericStaticStruct<int>).FullName}.ReturnReferenceMethod");
+        RunMethod(() => ArgumentsGenericParentType<object>.With2ArgumentsGenericStaticStruct<int>.ReturnReferenceMethod("Hello world", 42));
+        Console.WriteLine($"{typeof(ArgumentsGenericParentType<object>.With2ArgumentsGenericStaticStruct<int>).FullName}.ReturnGenericMethod");
+        RunMethod(() => ArgumentsGenericParentType<object>.With2ArgumentsGenericStaticStruct<int>.ReturnGenericMethod<int>(42, 99));
+        Console.WriteLine();
+        //
         var w2TBegin = new ArgumentsGenericParentType<object>.With2ArgumentsThrowOnBegin();
         Console.WriteLine($"{typeof(ArgumentsGenericParentType<object>.With2ArgumentsThrowOnBegin).FullName}.VoidMethod");
         RunMethod(() => w2TBegin.VoidMethod("Hello world", 42));
@@ -471,6 +687,13 @@ class With2ArgumentsGeneric<T>
     public string ReturnReferenceMethod(string arg1, int arg2) => "Hello World";
     public T ReturnGenericMethod<TArg1>(TArg1 arg1, int arg2) => default;
 }
+static class With2ArgumentsGenericStatic<T>
+{
+    public static void VoidMethod(string arg1, int arg2) { }
+    public static int ReturnValueMethod(string arg1, int arg2) => 42;
+    public static string ReturnReferenceMethod(string arg1, int arg2) => "Hello World";
+    public static T ReturnGenericMethod<TArg1>(TArg1 arg1, int arg2) => default;
+}
 class With2ArgumentsInherits : With2Arguments { }
 class With2ArgumentsInheritsGeneric : With2ArgumentsGeneric<int> { }
 struct With2ArgumentsStruct
@@ -486,6 +709,20 @@ static class With2ArgumentsStatic
     public static int ReturnValueMethod(string arg1, int arg2) => 42;
     public static string ReturnReferenceMethod(string arg1, int arg2) => "Hello World";
     public static T ReturnGenericMethod<T, TArg1>(TArg1 arg1, int arg2) => default;
+}
+struct With2ArgumentsStaticStruct
+{
+    public static void VoidMethod(string arg1, int arg2) { }
+    public static int ReturnValueMethod(string arg1, int arg2) => 42;
+    public static string ReturnReferenceMethod(string arg1, int arg2) => "Hello World";
+    public static T ReturnGenericMethod<T, TArg1>(TArg1 arg1, int arg2) => default;
+}
+struct With2ArgumentsGenericStaticStruct<T>
+{
+    public static void VoidMethod(string arg1, int arg2) { }
+    public static int ReturnValueMethod(string arg1, int arg2) => 42;
+    public static string ReturnReferenceMethod(string arg1, int arg2) => "Hello World";
+    public static T ReturnGenericMethod<TArg1>(TArg1 arg1, int arg2) => default;
 }
 class With2ArgumentsThrowOnBegin : With2Arguments { }
 class With2ArgumentsThrowOnEnd : With2Arguments { }
@@ -506,6 +743,13 @@ partial class ArgumentsParentType
         public string ReturnReferenceMethod(string arg1, int arg2) => "Hello World";
         public T ReturnGenericMethod<TArg1>(TArg1 arg1, int arg2) => default;
     }
+    public static class With2ArgumentsGenericStatic<T>
+    {
+        public static void VoidMethod(string arg1, int arg2) { }
+        public static int ReturnValueMethod(string arg1, int arg2) => 42;
+        public static string ReturnReferenceMethod(string arg1, int arg2) => "Hello World";
+        public static T ReturnGenericMethod<TArg1>(TArg1 arg1, int arg2) => default;
+    }
     public class With2ArgumentsInherits : With2Arguments { }
     public class With2ArgumentsInheritsGeneric : With2ArgumentsGeneric<int> { }
     public struct With2ArgumentsStruct
@@ -521,6 +765,20 @@ partial class ArgumentsParentType
         public static int ReturnValueMethod(string arg1, int arg2) => 42;
         public static string ReturnReferenceMethod(string arg1, int arg2) => "Hello World";
         public static T ReturnGenericMethod<T, TArg1>(TArg1 arg1, int arg2) => default;
+    }
+    public struct With2ArgumentsStaticStruct
+    {
+        public static void VoidMethod(string arg1, int arg2) { }
+        public static int ReturnValueMethod(string arg1, int arg2) => 42;
+        public static string ReturnReferenceMethod(string arg1, int arg2) => "Hello World";
+        public static T ReturnGenericMethod<T, TArg1>(TArg1 arg1, int arg2) => default;
+    }
+    public struct With2ArgumentsGenericStaticStruct<T>
+    {
+        public static void VoidMethod(string arg1, int arg2) { }
+        public static int ReturnValueMethod(string arg1, int arg2) => 42;
+        public static string ReturnReferenceMethod(string arg1, int arg2) => "Hello World";
+        public static T ReturnGenericMethod<TArg1>(TArg1 arg1, int arg2) => default;
     }
     public class With2ArgumentsThrowOnBegin : With2Arguments { }
     public class With2ArgumentsThrowOnEnd : With2Arguments { }
@@ -542,6 +800,13 @@ partial struct ArgumentsStructParentType
         public string ReturnReferenceMethod(string arg1, int arg2) => "Hello World";
         public T ReturnGenericMethod<TArg1>(TArg1 arg1, int arg2) => default;
     }
+    public static class With2ArgumentsGenericStatic<T>
+    {
+        public static void VoidMethod(string arg1, int arg2) { }
+        public static int ReturnValueMethod(string arg1, int arg2) => 42;
+        public static string ReturnReferenceMethod(string arg1, int arg2) => "Hello World";
+        public static T ReturnGenericMethod<TArg1>(TArg1 arg1, int arg2) => default;
+    }
     public class With2ArgumentsInherits : With2Arguments { }
     public class With2ArgumentsInheritsGeneric : With2ArgumentsGeneric<int> { }
     public struct With2ArgumentsStruct
@@ -557,6 +822,20 @@ partial struct ArgumentsStructParentType
         public static int ReturnValueMethod(string arg1, int arg2) => 42;
         public static string ReturnReferenceMethod(string arg1, int arg2) => "Hello World";
         public static T ReturnGenericMethod<T, TArg1>(TArg1 arg1, int arg2) => default;
+    }
+    public struct With2ArgumentsStaticStruct
+    {
+        public static void VoidMethod(string arg1, int arg2) { }
+        public static int ReturnValueMethod(string arg1, int arg2) => 42;
+        public static string ReturnReferenceMethod(string arg1, int arg2) => "Hello World";
+        public static T ReturnGenericMethod<T, TArg1>(TArg1 arg1, int arg2) => default;
+    }
+    public struct With2ArgumentsGenericStaticStruct<T>
+    {
+        public static void VoidMethod(string arg1, int arg2) { }
+        public static int ReturnValueMethod(string arg1, int arg2) => 42;
+        public static string ReturnReferenceMethod(string arg1, int arg2) => "Hello World";
+        public static T ReturnGenericMethod<TArg1>(TArg1 arg1, int arg2) => default;
     }
     public class With2ArgumentsThrowOnBegin : With2Arguments { }
     public class With2ArgumentsThrowOnEnd : With2Arguments { }
@@ -578,6 +857,13 @@ partial class ArgumentsGenericParentType<PType>
         public string ReturnReferenceMethod(string arg1, int arg2) => "Hello World";
         public T ReturnGenericMethod<TArg1>(TArg1 arg1, int arg2) => default;
     }
+    public static class With2ArgumentsGenericStatic<T>
+    {
+        public static void VoidMethod(string arg1, int arg2) { }
+        public static int ReturnValueMethod(string arg1, int arg2) => 42;
+        public static string ReturnReferenceMethod(string arg1, int arg2) => "Hello World";
+        public static T ReturnGenericMethod<TArg1>(TArg1 arg1, int arg2) => default;
+    }
     public class With2ArgumentsInherits : With2Arguments { }
     public class With2ArgumentsInheritsGeneric : With2ArgumentsGeneric<int> { }
     public struct With2ArgumentsStruct
@@ -593,6 +879,20 @@ partial class ArgumentsGenericParentType<PType>
         public static int ReturnValueMethod(string arg1, int arg2) => 42;
         public static string ReturnReferenceMethod(string arg1, int arg2) => "Hello World";
         public static T ReturnGenericMethod<T, TArg1>(TArg1 arg1, int arg2) => default;
+    }
+    public struct With2ArgumentsStaticStruct
+    {
+        public static void VoidMethod(string arg1, int arg2) { }
+        public static int ReturnValueMethod(string arg1, int arg2) => 42;
+        public static string ReturnReferenceMethod(string arg1, int arg2) => "Hello World";
+        public static T ReturnGenericMethod<T, TArg1>(TArg1 arg1, int arg2) => default;
+    }
+    public struct With2ArgumentsGenericStaticStruct<T>
+    {
+        public static void VoidMethod(string arg1, int arg2) { }
+        public static int ReturnValueMethod(string arg1, int arg2) => 42;
+        public static string ReturnReferenceMethod(string arg1, int arg2) => "Hello World";
+        public static T ReturnGenericMethod<TArg1>(TArg1 arg1, int arg2) => default;
     }
     public class With2ArgumentsThrowOnBegin : With2Arguments { }
     public class With2ArgumentsThrowOnEnd : With2Arguments { }

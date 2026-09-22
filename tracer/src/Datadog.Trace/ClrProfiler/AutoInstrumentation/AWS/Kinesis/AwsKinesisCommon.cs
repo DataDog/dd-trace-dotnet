@@ -7,6 +7,7 @@
 
 using System;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.Schema;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Tagging;
 
@@ -16,7 +17,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
     {
         private const string DatadogAwsKinesisServiceName = "aws-kinesis";
         private const string KinesisServiceName = "Kinesis";
-        private const string KinesisOperationName = "aws.kinesis";
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(AwsKinesisCommon));
 
         internal const string IntegrationName = nameof(IntegrationId.AwsKinesis);
@@ -60,9 +60,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
             try
             {
                 tags = perTraceSettings.Schema.Messaging.CreateAwsKinesisTags(spanKind);
-                string serviceName = perTraceSettings.GetServiceName(DatadogAwsKinesisServiceName);
-                string operationName = perTraceSettings.Schema.Messaging.GetOutboundOperationName(KinesisOperationName);
-                scope = tracer.StartActiveInternal(operationName, parent: parentContext, tags: tags, serviceName: serviceName);
+                var (serviceName, serviceNameSource) = perTraceSettings.GetServiceNameMetadata(DatadogAwsKinesisServiceName);
+                string operationName = perTraceSettings.Schema.Messaging.GetOutboundOperationName(MessagingSchema.OperationType.AwsKinesis);
+                scope = tracer.StartActiveInternal(operationName, parent: parentContext, tags: tags, serviceName: serviceName, serviceNameSource: serviceNameSource);
                 var span = scope.Span;
 
                 span.Type = SpanTypes.Http;

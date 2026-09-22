@@ -5,7 +5,6 @@
 
 using System;
 using Datadog.Trace.Debugger.Helpers;
-using Datadog.Trace.VendoredMicrosoftCode.System.Buffers;
 
 namespace Datadog.Trace.Debugger.Expressions;
 

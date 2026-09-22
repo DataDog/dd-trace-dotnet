@@ -214,17 +214,39 @@ internal static class StringModuleImpl
             var delimiterRanges = PropagationModuleImpl.GetTainted(taintedObjects, delimiter)?.Ranges;
             var delimiterHasRanges = delimiterRanges?.Length > 0;
             var delimiterLength = delimiter?.Length ?? 0;
-            var valuesCount = values.Count();
 
-            int i = 0;
-            foreach (var element in values)
+            using (var e = values.GetEnumerator())
             {
-                if (i >= startIndex && (count < 0 || i < startIndex + count))
+                if (e.MoveNext())
                 {
-                    pos = GetPositionAndUpdateRangesInStringJoin(taintedObjects, newRanges, pos, delimiterRanges, delimiterLength, element?.ToString() ?? string.Empty, delimiterHasRanges && i < valuesCount - 1);
-                }
+                    var element = e.Current;
+                    var i = 0;
 
-                i++;
+                    while (true)
+                    {
+                        var hasNext = e.MoveNext();
+
+                        if (i >= startIndex && (count < 0 || i < startIndex + count))
+                        {
+                            pos = GetPositionAndUpdateRangesInStringJoin(
+                                taintedObjects,
+                                newRanges,
+                                pos,
+                                delimiterRanges,
+                                delimiterLength,
+                                element?.ToString() ?? string.Empty,
+                                delimiterHasRanges && hasNext);
+                        }
+
+                        if (!hasNext)
+                        {
+                            break;
+                        }
+
+                        element = e.Current;
+                        i++;
+                    }
+                }
             }
 
             if (newRanges.Count > 0)

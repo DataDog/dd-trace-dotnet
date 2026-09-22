@@ -5,27 +5,29 @@
 
 #if !NETFRAMEWORK
 using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics.CodeAnalysis;
-using System.Linq;
 using Datadog.Trace.Activity;
 using Datadog.Trace.Activity.DuckTypes;
 using Datadog.Trace.Activity.Helpers;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Coordinator;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.Http;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Proxy;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.DataStreamsMonitoring;
+using Datadog.Trace.DataStreamsMonitoring.TransactionTracking;
 using Datadog.Trace.DiagnosticListeners;
 using Datadog.Trace.DuckTyping;
-using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Headers;
-using Datadog.Trace.Iast;
 using Datadog.Trace.Logging;
+using Datadog.Trace.OpenTelemetry;
 using Datadog.Trace.Propagators;
+using Datadog.Trace.Serverless;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
 using Datadog.Trace.Util.Http;
+using Datadog.Trace.Vendors.Serilog.Events;
 using Microsoft.AspNetCore.Http;
 
 namespace Datadog.Trace.PlatformHelpers
@@ -33,6 +35,7 @@ namespace Datadog.Trace.PlatformHelpers
     internal sealed class AspNetCoreHttpRequestHandler
     {
         internal const string HttpContextTrackingKey = "__Datadog.AspNetCoreHttpRequestHandler.Tracking";
+        internal const string HttpContextActiveScopeKey = "__Datadog.AspNetCoreHttpRequestHandler.ActiveScope";
 
         private readonly IDatadogLogger _log;
         private readonly IntegrationId _integrationId;
@@ -48,8 +51,16 @@ namespace Datadog.Trace.PlatformHelpers
             _requestInOperationName = requestInOperationName;
         }
 
-        public string GetDefaultResourceName(HttpRequest request)
+        public string GetDefaultResourceName(HttpRequest request, bool otelSemanticsEnabled = false)
         {
+            if (otelSemanticsEnabled)
+            {
+                // The OpenTelemetry HTTP span specification requires the span name to be "{method} {http.route}",
+                // or just "{method}" when no route is available. Instrumentation MUST NOT fall back to the URI path.
+                HttpSemanticConventions.GetRequestMethodAttributeValues(request.Method, out string httpRequestMethod, out _);
+                return HttpSemanticConventions.GetResourceName(httpRequestMethod);
+            }
+
             string httpMethod = request.Method?.ToUpperInvariant() ?? "UNKNOWN";
 
             string absolutePath = request.PathBase.HasValue
@@ -102,8 +113,7 @@ namespace Datadog.Trace.PlatformHelpers
 
         public Scope StartAspNetCorePipelineScope(Tracer tracer, Security security, Iast.Iast iast, HttpContext httpContext, string resourceName)
         {
-            var routeTemplateResourceNames = tracer.Settings.RouteTemplateResourceNamesEnabled;
-            var tags = routeTemplateResourceNames ? new AspNetCoreEndpointTags() : new AspNetCoreTags();
+            var tags = tracer.Settings.RouteTemplateResourceNamesEnabled ? new AspNetCoreEndpointTags() : new AspNetCoreTags();
             return StartAspNetCorePipelineScope(tracer, security, iast, httpContext, resourceName, tags, useSingleSpanRequestTracking: false);
         }
 
@@ -112,16 +122,13 @@ namespace Datadog.Trace.PlatformHelpers
             => StartAspNetCorePipelineScope(tracer, security, iast, httpContext, resourceName, new AspNetCoreSingleSpanTags(), useSingleSpanRequestTracking: true);
 #endif
 
-        private Scope StartAspNetCorePipelineScope<T>(Tracer tracer, Security security, Iast.Iast iast, HttpContext httpContext, string resourceName, T tags, bool useSingleSpanRequestTracking)
-            where T : WebTags
+        private Scope StartAspNetCorePipelineScope(Tracer tracer, Security security, Iast.Iast iast, HttpContext httpContext, string resourceName, WebTags tags, bool useSingleSpanRequestTracking)
         {
             var request = httpContext.Request;
-            string host = request.Host.Value;
-            string httpMethod = request.Method?.ToUpperInvariant() ?? "UNKNOWN";
-            string url = request.GetUrlForSpan(tracer.TracerManager.QueryStringManager);
+            var otelSemanticsEnabled = tracer.Settings.OtelSemanticsEnabled;
             var userAgent = request.Headers[HttpHeaderNames.UserAgent];
 
-            resourceName ??= GetDefaultResourceName(request);
+            resourceName ??= GetDefaultResourceName(request, otelSemanticsEnabled);
             var extractedContext = ExtractPropagatedContext(tracer, request).MergeBaggageInto(Baggage.Current);
             InferredProxyScopePropagationContext? proxyContext = null;
 
@@ -135,12 +142,64 @@ namespace Datadog.Trace.PlatformHelpers
             }
 
             var scope = tracer.StartActiveInternal(_requestInOperationName, extractedContext.SpanContext, tags: tags, links: extractedContext.Links);
-            scope.Span.DecorateWebServerSpan(resourceName, httpMethod, host, url, userAgent, tags);
+
+            if (otelSemanticsEnabled)
+            {
+                HttpSemanticConventions.SetHttpServerRequestValues(
+                    scope.Span,
+                    tags,
+                    resourceName: resourceName,
+                    originalMethod: request.Method,
+                    userAgent: userAgent,
+                    scheme: request.Scheme,
+                    host: request.Host.Host,
+                    port: request.Host.Port,
+                    pathBase: request.PathBase.ToUriComponent(),
+                    path: request.Path.ToUriComponent(),
+                    queryString: RequestDataHelper.GetQueryString(request).Value,
+                    queryStringManager: tracer.TracerManager.QueryStringManager);
+            }
+            else
+            {
+                var httpMethod = request.Method?.ToUpperInvariant() ?? "UNKNOWN";
+                var host = request.Host.Value;
+                var url = request.GetUrlForSpan(tracer.TracerManager.QueryStringManager);
+                scope.Span.DecorateWebServerSpan(resourceName, httpMethod, host, url, userAgent, tags);
+            }
+
+            var dataStreamsManager = tracer.TracerManager.DataStreamsManager;
+            if (dataStreamsManager.IsTransactionTrackingEnabled)
+            {
+                var extractors = dataStreamsManager.GetExtractorsByType(DataStreamsTransactionExtractor.ExtractorType.HttpInHeaders);
+                if (extractors != null)
+                {
+                    foreach (var extractor in extractors)
+                    {
+                        if (request.Headers.TryGetValue(extractor.Value, out var headerValues))
+                        {
+                            foreach (var headerValue in headerValues)
+                            {
+                                scope.Span.TrackTransaction(dataStreamsManager, headerValue, extractor.Name);
+                            }
+                        }
+                    }
+                }
+            }
 
             var headerTagsInternal = tracer.CurrentTraceSettings.Settings.HeaderTags;
             if (headerTagsInternal.Count != 0)
             {
                 AddHeaderTagsToSpan(scope.Span, request, tracer, headerTagsInternal);
+            }
+
+            if (request.Headers is { } requestHeaders)
+            {
+                var headersAdapter = new HeadersCollectionAdapter(requestHeaders);
+                tracer.TracerManager.SpanContextPropagator.AddSecurityTestingHeadersAsTags(scope.Span, headersAdapter);
+                if (proxyContext?.Scope?.Span is { } proxySpan)
+                {
+                    tracer.TracerManager.SpanContextPropagator.AddSecurityTestingHeadersAsTags(proxySpan, headersAdapter);
+                }
             }
 
             tracer.TracerManager.SpanContextPropagator.AddBaggageToSpanAsTags(scope.Span, extractedContext.Baggage, tracer.Settings.BaggageTagKeys);
@@ -153,6 +212,21 @@ namespace Datadog.Trace.PlatformHelpers
 #else
             httpContext.Items[HttpContextTrackingKey] = new RequestTrackingFeature(originalPath, scope, proxyContext?.Scope);
 #endif
+
+            if (AzureInfo.Instance.IsAzureFunction)
+            {
+                // Store scope in HttpContext.Items for Azure Functions middleware to retrieve
+                httpContext.Items[HttpContextActiveScopeKey] = scope;
+
+                if (_log.IsEnabled(LogEventLevel.Debug) && scope.Span.Context is { } spanContext)
+                {
+                    _log.Debug(
+                        "AspNetCore: Stored scope in HttpContext.Items, {TraceId}-{SpanId}, path: {Path}",
+                        spanContext.RawTraceId,
+                        spanContext.RawSpanId,
+                        request.Path);
+                }
+            }
 
             if (tracer.Settings.IpHeaderEnabled || security.AppsecEnabled)
             {
@@ -189,7 +263,7 @@ namespace Datadog.Trace.PlatformHelpers
                 // Tracer.Instance.ActiveScope, but if a customer is not disposing a span somewhere,
                 // that will not necessarily be true, so make sure you use the RequestTrackingFeature.
                 var span = rootScope.Span;
-                CopyAspNetCoreActivityTagsIfRequired(span);
+                CopyAspNetCoreActivityTagsIfRequired(span, tracer.Settings.OtelSemanticsEnabled);
                 var isMissingHttpStatusCode = !span.HasHttpStatusCode();
 
                 var settings = tracer.CurrentTraceSettings.Settings;
@@ -197,7 +271,7 @@ namespace Datadog.Trace.PlatformHelpers
                 {
                     if (string.IsNullOrEmpty(span.ResourceName))
                     {
-                        span.ResourceName = GetDefaultResourceName(httpContext.Request);
+                        span.ResourceName = GetDefaultResourceName(httpContext.Request, tracer.Settings.OtelSemanticsEnabled);
                     }
 
                     if (isMissingHttpStatusCode)
@@ -217,6 +291,7 @@ namespace Datadog.Trace.PlatformHelpers
                 if (security.AppsecEnabled)
                 {
                     var securityCoordinator = SecurityCoordinator.Get(security, span, new SecurityCoordinator.HttpTransport(httpContext));
+                    securityCoordinator.CheckResponseAtRequestEnd(httpContext);
                     securityCoordinator.Reporter.AddResponseHeadersToSpan();
                 }
 
@@ -266,7 +341,7 @@ namespace Datadog.Trace.PlatformHelpers
             }
         }
 
-        public void CopyAspNetCoreActivityTagsIfRequired(Span span)
+        public void CopyAspNetCoreActivityTagsIfRequired(Span span, bool openTelemetrySemanticsEnabled)
         {
             // Extract data from the Activity if there is one, and it's the one we expect
             // We're using GetCurrentActivityObject rather than GetCurrentActivity because
@@ -279,10 +354,10 @@ namespace Datadog.Trace.PlatformHelpers
                 return;
             }
 
-            AddActivityTags(span, rawActivity, _log);
+            AddActivityTags(span, rawActivity, _log, openTelemetrySemanticsEnabled);
 
             // Extracted to method as not invoked in default config (only when otel enabled)
-            static void AddActivityTags(Span span, object rawActivity, IDatadogLogger log)
+            static void AddActivityTags(Span span, object rawActivity, IDatadogLogger log, bool openTelemetrySemanticsEnabled)
             {
                 // AFAICT this has been static since at least .NET Core 2.1
                 // https://github.com/dotnet/aspnetcore/blob/v2.1.33/src/Hosting/Hosting/src/Internal/HostingApplicationDiagnostics.cs#L18C46-L18C88
@@ -295,7 +370,7 @@ namespace Datadog.Trace.PlatformHelpers
                      && string.Equals(activity5.OperationName, aspnetcoreActivityOperationName, StringComparison.Ordinal)
                      && activity5.HasTagObjects())
                     {
-                        var state = new OtelTagsEnumerationState(span);
+                        var state = new OtelTagsEnumerationState(span, openTelemetrySemanticsEnabled);
                         ActivityEnumerationHelper.EnumerateTagObjects(
                             activity5,
                             ref state,
@@ -305,9 +380,9 @@ namespace Datadog.Trace.PlatformHelpers
                                 // with the status code, resource name, operation name etc that we set
                                 // by default on aspnetcore spans when _not_ using activities
                                 // We also don't want to override our standard aspnetcore/web tags.
-                                if (!IsKnownWebTag(kvp.Key))
+                                if (!IsKnownWebTag(kvp.Key, s.OpenTelemetrySemanticsEnabled))
                                 {
-                                    OtlpHelpers.SetTagObject(s.Span, kvp.Key, kvp.Value, setKnownValues: false);
+                                    OtlpHelpers.SetTagObject(s.Span, kvp.Key, kvp.Value, setKnownValues: false, remapOtelKeys: !s.OpenTelemetrySemanticsEnabled);
                                 }
 
                                 return true;
@@ -317,7 +392,7 @@ namespace Datadog.Trace.PlatformHelpers
                           && string.Equals(activity.OperationName, aspnetcoreActivityOperationName, StringComparison.Ordinal)
                           && activity.HasTags())
                     {
-                        var state = new OtelTagsEnumerationState(span);
+                        var state = new OtelTagsEnumerationState(span, openTelemetrySemanticsEnabled);
                         ActivityEnumerationHelper.EnumerateTags(
                             activity,
                             ref state,
@@ -327,9 +402,9 @@ namespace Datadog.Trace.PlatformHelpers
                                 // with the status code, resource name, operation name etc that we set
                                 // by default on aspnetcore spans when _not_ using activities
                                 // We also don't want to override our standard aspnetcore/web tags.
-                                if (!IsKnownWebTag(kvp.Key))
+                                if (!IsKnownWebTag(kvp.Key, s.OpenTelemetrySemanticsEnabled))
                                 {
-                                    OtlpHelpers.SetTagObject(s.Span, kvp.Key, kvp.Value, setKnownValues: false);
+                                    OtlpHelpers.SetTagObject(s.Span, kvp.Key, kvp.Value, setKnownValues: false, remapOtelKeys: !s.OpenTelemetrySemanticsEnabled);
                                 }
 
                                 return true;
@@ -346,14 +421,30 @@ namespace Datadog.Trace.PlatformHelpers
             // for _all_ the tags we might set on aspnetcore root spans,
             // but we only both to check tags that are likely to be set here
             // (i.e. don't bother checking the aspnetcore. tags)
-            static bool IsKnownWebTag(string tagName) =>
+            // The OpenTelemetry semantic convention names are only known/set by this
+            // instrumentation when OTel semantics are enabled, so only filter those out
+            // in that case. Otherwise we'd drop the activity's own values instead of
+            // deduplicating them.
+            static bool IsKnownWebTag(string tagName, bool openTelemetrySemanticsEnabled) =>
                 tagName == Tags.HttpRoute
              || tagName == Tags.HttpUserAgent
              || tagName == Tags.HttpMethod
              || tagName == Tags.HttpUrl
              || tagName == Tags.HttpStatusCode
+             || tagName == Tags.HttpResponseStatusCode
              || tagName == Tags.NetworkClientIp
-             || tagName == Tags.HttpClientIp;
+             || tagName == Tags.HttpClientIp
+             || (openTelemetrySemanticsEnabled
+              && (tagName == Tags.HttpRequestMethod
+               || tagName == Tags.HttpRequestMethodOriginal
+               || tagName == Tags.UrlScheme
+               || tagName == Tags.UrlPath
+               || tagName == Tags.UrlQuery
+               || tagName == Tags.ServerAddress
+               || tagName == Tags.ServerPort
+               || tagName == Tags.UserAgentOriginal
+               || tagName == Tags.ClientAddress
+               || tagName == Tags.NetworkPeerAddress));
         }
 
         /// <summary>

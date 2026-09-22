@@ -17,6 +17,10 @@ public:
     std::string_view GetName(AppDomainID appDomainId) override;
     void Register(AppDomainID appDomainId) override;
 
+    // IMemoryFootprintProvider
+    size_t GetMemorySize() const override { return 0; }
+    void LogMemoryBreakdown() const override {}
+
 private:
     std::unordered_map<AppDomainID, std::string> _mapping;
 };

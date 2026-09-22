@@ -6,6 +6,7 @@
 #if !NETFRAMEWORK
 #nullable enable
 
+using System.Collections;
 using System.ComponentModel;
 using System.Data;
 using Datadog.Trace.AppSec;
@@ -69,48 +70,44 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
 
                         if (defaultModelBindingContext.BindingSource.Id == "Body")
                         {
-                            object? bodyExtracted = null;
-
-                            if (security.AppsecEnabled)
-                            {
-                                bodyExtracted = security.CheckBody(defaultModelBindingContext.HttpContext, span, defaultModelBindingContext.Result.Model, false);
-                            }
-
-                            if (iast.Settings.Enabled)
-                            {
-                                span.Context?.TraceContext?.IastRequestContext?.AddRequestBody(defaultModelBindingContext.Result.Model, bodyExtracted);
-                            }
+                            CheckBody(defaultModelBindingContext, security, iast, span);
                         }
-                        else
+                        else if (defaultModelBindingContext.ValueProvider is IList valueProviderList)
                         {
-                            for (var i = 0; i < defaultModelBindingContext.ValueProvider.Count; i++)
+                            for (var i = 0; i < valueProviderList.Count; i++)
                             {
-                                var provider = defaultModelBindingContext.ValueProvider[i];
-                                if (provider.TryDuckCast(out BindingSourceValueProvider prov))
+                                var provider = valueProviderList[i];
+                                if (provider.TryDuckCast(out BindingSourceValueProvider prov) && prov.BindingSource.Id is "Form" or "Body")
                                 {
-                                    if (prov.BindingSource.Id is "Form" or "Body")
-                                    {
-                                        object? bodyExtracted = null;
-                                        if (security.AppsecEnabled)
-                                        {
-                                            bodyExtracted = security.CheckBody(defaultModelBindingContext.HttpContext, span, defaultModelBindingContext.Result.Model, false);
-                                        }
-
-                                        if (iast.Settings.Enabled)
-                                        {
-                                            span.Context?.TraceContext?.IastRequestContext?.AddRequestBody(defaultModelBindingContext.Result.Model, bodyExtracted);
-                                        }
-
-                                        break;
-                                    }
+                                    CheckBody(defaultModelBindingContext, security, iast, span);
+                                    break;
                                 }
                             }
+                        }
+                        else if (defaultModelBindingContext.ValueProvider.TryDuckCast(out BindingSourceValueProvider prov) && prov.BindingSource.Id is "Form" or "Body")
+                        {
+                            CheckBody(defaultModelBindingContext, security, iast, span);
                         }
                     }
                 }
             }
 
             return CallTargetReturn.GetDefault();
+        }
+
+        private static void CheckBody(DefaultModelBindingContext context, Security security, Iast.Iast iast, Datadog.Trace.Span span)
+        {
+            object? bodyExtracted = null;
+
+            if (security.AppsecEnabled)
+            {
+                bodyExtracted = security.CheckBody(context.HttpContext, span, context.Result.Model, false);
+            }
+
+            if (iast.Settings.Enabled)
+            {
+                span.Context?.TraceContext?.IastRequestContext?.AddRequestBody(context.Result.Model, bodyExtracted);
+            }
         }
     }
 }

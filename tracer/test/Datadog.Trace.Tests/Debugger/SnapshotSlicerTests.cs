@@ -10,7 +10,9 @@ using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Debugger;
 using Datadog.Trace.Debugger.Snapshots;
 using Datadog.Trace.TestHelpers;
+using DatadogDebugger.Util;
 using Newtonsoft.Json.Linq;
+using VerifyTests;
 using VerifyXunit;
 using Xunit;
 
@@ -24,8 +26,35 @@ namespace Datadog.Trace.Tests.Debugger
         {
             var snapshot = SnapshotHelper.GenerateSnapshot(new SimpleClass(), false);
             var slicer = GetSlicer(3, snapshot.Length + 1);
-            var modifiedSnapshot = slicer.SliceIfNeeded("id", snapshot);
+            var modifiedSnapshot = Slice(slicer, snapshot);
             Assert.Equal(snapshot, modifiedSnapshot);
+        }
+
+        [Fact]
+        public void NullSnapshot_ReturnsNull()
+        {
+            var modifiedSnapshot = SnapshotPruner.Prune(null, 0, 0, out _);
+            Assert.Null(modifiedSnapshot);
+        }
+
+        [Fact]
+        public void InvalidJsonWithNoLeaves_ReturnsOriginalSnapshot()
+        {
+            var snapshot = "{\"debugger\":{\"snapshot\":{\"captures\":{";
+            var modifiedSnapshot = SnapshotPruner.Prune(snapshot, 1, 1, out _);
+            Assert.Equal(snapshot, modifiedSnapshot);
+        }
+
+        [Fact]
+        public void SnapshotWithNonAsciiCharacters_PrunesUsingCharIndexes()
+        {
+            var snapshot = "{\"debugger\":{\"snapshot\":{\"captures\":{\"message\":\"é\",\"value\":{\"notCapturedReason\":\"depth\",\"type\":\"String\",\"value\":\"é\"}}}}}";
+
+            var modifiedSnapshot = SnapshotPruner.Prune(snapshot, 1, 4, out _);
+
+            var captures = JObject.Parse(modifiedSnapshot).SelectToken("debugger.snapshot.captures");
+            Assert.Equal("é", captures["message"].Value<string>());
+            Assert.Contains("\"pruned\":true", modifiedSnapshot);
         }
 
         [Fact]
@@ -34,10 +63,12 @@ namespace Datadog.Trace.Tests.Debugger
         {
             var snapshot = SnapshotHelper.GenerateSnapshot(new ComplexClass(), false);
             var slicer = GetSlicer(3, snapshot.Length - 1);
-            var modifiedSnapshot = slicer.SliceIfNeeded("id", snapshot);
+            var modifiedSnapshot = Slice(slicer, snapshot);
 
             var captures = JObject.Parse(modifiedSnapshot).SelectToken("debugger.snapshot.captures");
-            await Verifier.Verify(captures);
+            var settings = new VerifySettings();
+            settings.DisableRequireUniquePrefix();
+            await Verifier.Verify(captures, settings);
         }
 
         [Fact]
@@ -46,10 +77,12 @@ namespace Datadog.Trace.Tests.Debugger
         {
             var snapshot = SnapshotHelper.GenerateSnapshot(new VeryComplexClass() { ComplexClass = new ComplexClass() { SimpleClass = new SimpleClass() } }, false);
             var slicer = GetSlicer(3, snapshot.Length - 1);
-            var modifiedSnapshot = slicer.SliceIfNeeded("id", snapshot);
+            var modifiedSnapshot = Slice(slicer, snapshot);
 
             var captures = JObject.Parse(modifiedSnapshot).SelectToken("debugger.snapshot.captures");
-            await Verifier.Verify(captures);
+            var settings = new VerifySettings();
+            settings.DisableRequireUniquePrefix();
+            await Verifier.Verify(captures, settings);
         }
 
         [Fact]
@@ -58,10 +91,18 @@ namespace Datadog.Trace.Tests.Debugger
         {
             var snapshot = SnapshotHelper.GenerateSnapshot(new VeryComplexClass() { Class = new VeryComplexClass() { Class = new VeryComplexClass()  { ComplexClass = new ComplexClass() { SimpleClass = new SimpleClass() } } } }, false);
             var slicer = GetSlicer(3, snapshot.Length - 326);
-            var modifiedSnapshot = slicer.SliceIfNeeded("id", snapshot);
+            var modifiedSnapshot = Slice(slicer, snapshot);
 
             var captures = JObject.Parse(modifiedSnapshot).SelectToken("debugger.snapshot.captures");
-            await Verifier.Verify(captures);
+            var settings = new VerifySettings();
+            settings.DisableRequireUniquePrefix();
+            await Verifier.Verify(captures, settings);
+        }
+
+        private static string Slice(SnapshotSlicer slicer, string snapshot)
+        {
+            var incompleteReasons = 0u;
+            return slicer.SliceIfNeeded("id", snapshot, ref incompleteReasons);
         }
 
         private SnapshotSlicer GetSlicer(int maxDepth, int maxSize)

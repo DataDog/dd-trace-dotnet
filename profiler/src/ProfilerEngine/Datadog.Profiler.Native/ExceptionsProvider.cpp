@@ -4,7 +4,7 @@
 #include "ExceptionsProvider.h"
 
 #include "COMHelpers.h"
-#include "FrameStore.h"
+#include "CoreLibModuleProvider.h"
 #include "HResultConverter.h"
 #include "IConfiguration.h"
 #include "Log.h"
@@ -12,7 +12,6 @@
 #include "RawSampleTransformer.h"
 #include "ScopeFinalizer.h"
 #include "SampleValueTypeProvider.h"
-#include "shared/src/native-src/com_ptr.h"
 #include "shared/src/native-src/string.h"
 
 
@@ -26,6 +25,7 @@ ExceptionsProvider::ExceptionsProvider(
     ICorProfilerInfo4* pCorProfilerInfo,
     IManagedThreadList* pManagedThreadList,
     IFrameStore* pFrameStore,
+    CoreLibModuleProvider* pCoreLibModuleProvider,
     IConfiguration* pConfiguration,
     RawSampleTransformer* rawSampleTransformer,
     MetricsRegistry& metricsRegistry,
@@ -36,10 +36,11 @@ ExceptionsProvider::ExceptionsProvider(
     _pCorProfilerInfo(pCorProfilerInfo),
     _pManagedThreadList(pManagedThreadList),
     _pFrameStore(pFrameStore),
+    _pCoreLibModuleProvider(pCoreLibModuleProvider),
     _messageFieldOffset(),
     _stringLengthOffset(0),
     _stringBufferOffset(0),
-    _mscorlibModuleId(0),
+    _isStringLayoutLoaded(false),
     _exceptionClassId(0),
     _loggedMscorlibError(false),
     _sampler(pConfiguration->ExceptionSampleLimit(), pConfiguration->GetUploadInterval(), true),
@@ -53,28 +54,21 @@ ExceptionsProvider::ExceptionsProvider(
 
 bool ExceptionsProvider::OnModuleLoaded(const ModuleID moduleId)
 {
-    if (_mscorlibModuleId != 0)
+    if (_isStringLayoutLoaded)
     {
         return false;
     }
 
-    // Check if it's mscorlib. In that case, locate the System.Exception type
-    std::string assemblyName;
-
-    if (!FrameStore::GetAssemblyName(_pCorProfilerInfo, moduleId, assemblyName))
-    {
-        Log::Warn("Failed to retrieve assembly name for module ", moduleId);
-        return false;
-    }
-
-    if (assemblyName != "System.Private.CoreLib" && assemblyName != "mscorlib")
+    // The core library detection is done by the CoreLibModuleProvider, called before this method.
+    // Once it is loaded, the string layout can be fetched: it is needed to read exception messages.
+    if (_pCoreLibModuleProvider->GetModuleId() == 0)
     {
         return false;
     }
-
-    _mscorlibModuleId = moduleId;
 
     INVOKE(_pCorProfilerInfo->GetStringLayout2(&_stringLengthOffset, &_stringBufferOffset))
+
+    _isStringLayoutLoaded = true;
 
     return true;
 }
@@ -83,7 +77,7 @@ bool ExceptionsProvider::OnExceptionThrown(ObjectID thrownObjectId)
 {
     _exceptionsCountMetric->Incr();
 
-    if (_mscorlibModuleId == 0)
+    if (!_isStringLayoutLoaded)
     {
         if (!_loggedMscorlibError)
         {
@@ -213,10 +207,12 @@ std::list<UpscalingInfo> ExceptionsProvider::GetInfos()
 bool ExceptionsProvider::LoadExceptionMetadata()
 {
     // This is the first observed exception, lazy-load the exception metadata
-    ComPtr<IMetaDataImport2> metadataImportMscorlib;
-
-    INVOKE(
-        _pCorProfilerInfo->GetModuleMetaData(_mscorlibModuleId, CorOpenFlags::ofRead, IID_IMetaDataImport2, reinterpret_cast<IUnknown**>(metadataImportMscorlib.GetAddressOf())))
+    auto metadataImportMscorlib = _pCoreLibModuleProvider->GetMetadata();
+    if (!metadataImportMscorlib)
+    {
+        Log::Warn("Failed to get the core library metadata: exception types will not be resolved");
+        return false;
+    }
 
     mdTypeDef exceptionTypeDef;
 
@@ -224,7 +220,7 @@ bool ExceptionsProvider::LoadExceptionMetadata()
 
     ClassID exceptionClassId;
 
-    INVOKE(_pCorProfilerInfo->GetClassFromTokenAndTypeArgs(_mscorlibModuleId, exceptionTypeDef, 0, nullptr, &exceptionClassId));
+    INVOKE(_pCorProfilerInfo->GetClassFromTokenAndTypeArgs(_pCoreLibModuleProvider->GetModuleId(), exceptionTypeDef, 0, nullptr, &exceptionClassId));
 
     ULONG numberOfFields;
     ULONG classSize;
@@ -255,4 +251,46 @@ bool ExceptionsProvider::LoadExceptionMetadata()
     }
 
     return false;
+}
+
+ExceptionsProvider::MemoryStats ExceptionsProvider::ComputeMemoryStats() const
+{
+    std::lock_guard<std::mutex> lock(_exceptionTypesLock);
+
+    MemoryStats stats{};
+    stats.baseSize = sizeof(ExceptionsProvider);
+    stats.exceptionTypesBuckets = _exceptionTypes.bucket_count();
+    stats.exceptionTypesCount = _exceptionTypes.size();
+    stats.exceptionTypesMapSize = stats.exceptionTypesBuckets * (sizeof(ClassID) + sizeof(std::string) + sizeof(void*));
+
+    // Calculate memory for exception type strings
+    for (const auto& [classId, typeName] : _exceptionTypes)
+    {
+        stats.exceptionTypesStringsSize += typeName.capacity();
+    }
+
+    // Estimate GroupSampler memory (contains two unordered_map/set)
+    // This is an approximation since GroupSampler is a template and we can't easily access its internals
+    stats.samplerSize = sizeof(GroupSampler<std::string>);
+    // Add estimated overhead for the internal maps (rough estimate)
+    stats.samplerSize += stats.exceptionTypesCount * (sizeof(std::string) + sizeof(GroupSampler<std::string>::GroupInfo) + sizeof(void*) * 2);
+
+    return stats;
+}
+
+size_t ExceptionsProvider::GetMemorySize() const
+{
+    return ComputeMemoryStats().GetTotal();
+}
+
+void ExceptionsProvider::LogMemoryBreakdown() const
+{
+    auto stats = ComputeMemoryStats();
+
+    Log::Debug("ExceptionsProvider Memory Breakdown:");
+    Log::Debug("  Base object size:        ", stats.baseSize, " bytes");
+    Log::Debug("  Exception types map:     ", stats.exceptionTypesMapSize, " bytes (", stats.exceptionTypesCount, " entries, ", stats.exceptionTypesBuckets, " buckets)");
+    Log::Debug("  Exception type strings:  ", stats.exceptionTypesStringsSize, " bytes");
+    Log::Debug("  GroupSampler (estimate): ", stats.samplerSize, " bytes");
+    Log::Debug("  Total memory:            ", stats.GetTotal(), " bytes (", (stats.GetTotal() / 1024.0), " KB)");
 }

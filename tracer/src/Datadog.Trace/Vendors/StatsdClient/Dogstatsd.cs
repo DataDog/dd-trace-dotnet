@@ -239,13 +239,5 @@ namespace Datadog.Trace.Vendors.StatsdClient
             _dogStatsdService.Flush();
         }
 
-        /// <summary>
-        /// Disposes the instance of DogStatsdService.
-        /// Flushes all metrics.
-        /// </summary>
-        public static void Dispose()
-        {
-            _dogStatsdService.Dispose();
-        }
     }
 }

@@ -14,6 +14,7 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging.DirectSubmission.Sink.PeriodicBatching;
 using Datadog.Trace.OpenTelemetry;
 using Datadog.Trace.OpenTelemetry.Logs;
+using Datadog.Trace.SourceGenerators;
 
 namespace Datadog.Trace.Logging.DirectSubmission.Sink;
 
@@ -28,7 +29,13 @@ internal sealed class OtlpSubmissionLogSink : BatchingSink<DirectSubmissionLogEv
     }
 
     internal OtlpSubmissionLogSink(BatchingSinkOptions sinkOptions, IOtlpExporter exporter)
-        : base(sinkOptions, null)
+        : this(sinkOptions, exporter, startBackgroundLoop: true)
+    {
+    }
+
+    [TestingAndPrivateOnly]
+    internal OtlpSubmissionLogSink(BatchingSinkOptions sinkOptions, IOtlpExporter exporter, bool startBackgroundLoop)
+        : base(sinkOptions, disableSinkAction: null, startBackgroundLoop)
     {
         _otlpExporter = exporter;
     }
@@ -76,7 +83,13 @@ internal sealed class OtlpSubmissionLogSink : BatchingSink<DirectSubmissionLogEv
 
     public override async Task DisposeAsync()
     {
-        await DisposeAsync(true).ConfigureAwait(false);
+        // Final flush is awaited by base.DisposeAsync() and bounded by the HTTP
+        // client timeout; Shutdown() just releases the HTTP client resources.
+        await base.DisposeAsync().ConfigureAwait(false);
+        if (!_otlpExporter.Shutdown())
+        {
+            _logger.Warning("OTLP exporter shutdown did not complete successfully.");
+        }
     }
 }
 #endif

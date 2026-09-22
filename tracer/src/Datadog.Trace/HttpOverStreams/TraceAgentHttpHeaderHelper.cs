@@ -5,28 +5,36 @@
 
 #nullable enable
 
-using System.Linq;
+using System;
+using System.Collections.Generic;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.HttpOverStreams
 {
     internal sealed class TraceAgentHttpHeaderHelper : HttpHeaderHelperBase
     {
-        private static string? _metadataHeaders = null;
+        public static readonly TraceAgentHttpHeaderHelper Instance = new();
+        private readonly Lazy<string> _serializedHeaders;
 
-        protected override string MetadataHeaders
+        private TraceAgentHttpHeaderHelper()
         {
-            get
+            _serializedHeaders = new(static () =>
             {
-                if (_metadataHeaders == null)
+                var sb = StringBuilderCache.Acquire();
+                foreach (var kvp in AgentHttpHeaderNames.DefaultHeaders)
                 {
-                    var headers = AgentHttpHeaderNames.DefaultHeaders.Select(kvp => $"{kvp.Key}: {kvp.Value}{DatadogHttpValues.CrLf}");
-                    _metadataHeaders = string.Concat(headers);
+                    sb.Append(kvp.Key);
+                    sb.Append(": ");
+                    sb.Append(kvp.Value);
+                    sb.Append(DatadogHttpValues.CrLf);
                 }
 
-                return _metadataHeaders;
-            }
+                return StringBuilderCache.GetStringAndRelease(sb);
+            });
         }
 
-        protected override string ContentType => "application/msgpack";
+        public override KeyValuePair<string, string>[] DefaultHeaders => AgentHttpHeaderNames.DefaultHeaders;
+
+        protected override string HttpSerializedDefaultHeaders => _serializedHeaders.Value;
     }
 }

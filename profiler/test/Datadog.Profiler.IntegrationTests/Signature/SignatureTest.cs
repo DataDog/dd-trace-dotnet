@@ -6,6 +6,7 @@
 using System;
 using System.Linq;
 using Datadog.Profiler.IntegrationTests.Helpers;
+using Datadog.Profiler.IntegrationTests.Xunit;
 using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
@@ -14,6 +15,11 @@ namespace Datadog.Profiler.IntegrationTests.Signature
 {
     public class SignatureTest
     {
+        // On Linux/ARM64 the unwinder sometimes yields a single Unknown-Frame-Type frame instead of the
+        // full managed stack. When that happens, retry the whole run to get a complete stack.
+        private const string UnknownFrameType =
+            "|lm:Unknown-Assembly |ns: |ct:Unknown-Type |cg: |fn:Unknown-Frame-Type |fg: |sg:(?)";
+
         private readonly ITestOutputHelper _output;
 
         public SignatureTest(ITestOutputHelper output)
@@ -21,20 +27,74 @@ namespace Datadog.Profiler.IntegrationTests.Signature
             _output = output;
         }
 
+        [Flaky("On Linux/ARM64 the unwinder sometimes yields a single Unknown-Frame-Type frame; retry to get a full stack")]
         [TestAppFact("Samples.Computer01", new[] { "net48", "netcoreapp3.1", "net6.0", "net8.0", })] // FIXME: .NET 9 skipping .NET 9 for now
         public void ValidateSignatures(string appName, string framework, string appAssembly)
         {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: "--scenario 20");
-            EnvironmentHelper.DisableDefaultProfilers(runner);
-            runner.Environment.SetVariable(EnvironmentVariables.TimestampsAsLabelEnabled, "0");
-            runner.Environment.SetVariable(EnvironmentVariables.ExceptionProfilerEnabled, "1");
+            CheckExceptionsInProfiles(framework, GetExceptionSamples(appName, framework, appAssembly));
+        }
 
-            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
-            runner.Run(agent);
-            Assert.True(agent.NbCallsOnProfilingEndpoint > 0);
+        [Flaky("On Linux/ARM64 the unwinder sometimes yields a single Unknown-Frame-Type frame; retry to get a full stack")]
+        [TestAppFact("Samples.Computer01", new[] { "net48", "netcoreapp3.1", "net6.0", "net8.0", })] // FIXME: .NET 9 skipping .NET 9 for now
+        public void ValidateAsyncStateMachineSignatures(string appName, string framework, string appAssembly)
+        {
+            CheckAsyncStateMachineFrames(GetExceptionSamples(appName, framework, appAssembly));
+        }
 
-            var exceptionSamples = SamplesHelper.ExtractExceptionSamples(runner.Environment.PprofDir).ToArray();
-            CheckExceptionsInProfiles(framework, exceptionSamples);
+        // On Linux/ARM64, the unwinder can degrade to a single "Unknown-Frame-Type" placeholder frame.
+        // In that case we prefer retrying the run (via the Flaky attribute) over accepting a useless stack.
+        private static bool IsArm64DegradedStack(StackTrace actualStack)
+        {
+            return Environment.OSVersion.Platform == PlatformID.Unix
+                && EnvironmentHelper.GetPlatform() == "ARM64"
+                && actualStack.FramesCount == 1
+                && actualStack[0].ToString() == UnknownFrameType;
+        }
+
+        private static void CheckAsyncStateMachineFrames((string Type, string Message, long Count, StackTrace Stacktrace)[] exceptionSamples)
+        {
+            if (exceptionSamples.Any(sample => IsArm64DegradedStack(sample.Stacktrace)))
+            {
+                // Fail so ProfilerTestCase retries the whole run on Linux/ARM64 (see Flaky attribute).
+                Assert.Fail("Linux/ARM64 produced a single Unknown-Frame-Type frame; retrying to get a full stack.");
+            }
+
+            // A state machine is a type nested in the type declaring the async method: the generic
+            // parameter of Start<TStateMachine> must carry its namespace and its enclosing type, exactly
+            // like the signature already does. The frame is AsyncMethodBuilderCore.Start on .NET Core
+            // and AsyncTaskMethodBuilder.Start on .NET Framework.
+            var frames = exceptionSamples
+                .SelectMany(sample => Enumerable.Range(0, sample.Stacktrace.FramesCount).Select(i => sample.Stacktrace[i]))
+                .Distinct()
+                .ToArray();
+
+            // split code to debug more easily outside of LINQ
+            var startFrames = frames
+                .Where(frame => frame.Function == "Start")
+                .Distinct()
+                .ToArray();
+
+            var startAdornments = startFrames
+                .Select(frame => frame.FunctionAdornment)
+                .Distinct()
+                .ToArray();
+
+#if DEBUG
+            // MethodsSignature drives its own state machine: a struct is never shared between
+            // instantiations so its exact type is always known, whatever the configuration used to
+            // build the sample
+            startAdornments.Should().Contain("<Samples.Computer01.MethodsSignature.SyncOverAsyncStateMachine>");
+
+            // the state machines generated by the compiler are structs in release builds but classes in
+            // debug builds: in the latter case, only the shared canonical instantiation is known (<T0>)
+            startAdornments.Should().Contain("<T0>");
+#else
+            startAdornments.Should().Contain("<Samples.Computer01.MethodsSignature.<GetSyncOverAsync>d__2>");
+            startAdornments.Should().Contain("<Samples.Computer01.MethodsSignature.<WithResult>d__1>");
+#endif
+
+            // regression test to check the "type with empty namespace" bug is fixed
+            frames.Should().OnlyContain(frame => !frame.FunctionAdornment.StartsWith("<."));
         }
 
         private static void CheckExceptionsInProfiles(string framework, (string Type, string Message, long Count, StackTrace Stacktrace)[] exceptionSamples)
@@ -47,15 +107,16 @@ namespace Datadog.Profiler.IntegrationTests.Signature
             StackTrace stack;
             if (os == PlatformID.Unix && framework != "net8.0")
             {
-                // BUG on Linux: invalid TKey instead of TVal
+                // BUG on Linux: invalid TKey instead of TValue
                 stack = new StackTrace(
-                    new StackFrame("|lm:Samples.Computer01 |ns:Samples.Computer01 |ct:GenericClass |cg:<TKey, TKey> |fn:ThrowFromGeneric |fg:<T0> |sg:(T0 element, TKey key1, TKey value, TKey key2)"),
-                    new StackFrame("|lm:Samples.Computer01 |ns:Samples.Computer01 |ct:GenericClass |cg:<TKey, TKey> |fn:ThrowGenericFromGeneric |fg:<T0> |sg:(T0 element)"),
-                    new StackFrame("|lm:Samples.Computer01 |ns:Samples.Computer01 |ct:GenericClass |cg:<TKey, TKey> |fn:ThrowOneGeneric |fg: |sg:(TKey value)"),
+                    new StackFrame("|lm:Samples.Computer01 |ns:Samples.Computer01 |ct:GenericClass |cg:<TKey, TValue> |fn:ThrowFromGeneric |fg:<T0> |sg:(T0 element, TKey key1, TValue value, TKey key2)"),
+                    new StackFrame("|lm:Samples.Computer01 |ns:Samples.Computer01 |ct:GenericClass |cg:<TKey, TValue> |fn:ThrowGenericFromGeneric |fg:<T0> |sg:(T0 element)"),
+                    new StackFrame("|lm:Samples.Computer01 |ns:Samples.Computer01 |ct:GenericClass |cg:<TKey, TValue> |fn:ThrowOneGeneric |fg: |sg:(TValue value)"),
                     new StackFrame("|lm:Samples.Computer01 |ns:Samples.Computer01 |ct:GenericClassForValueTypeTest |cg:<System.Int32, System.Boolean> |fn:ThrowOneGenericFromMethod |fg:<System.Boolean> |sg:(System.Boolean value)"),
-                    new StackFrame("|lm:Samples.Computer01 |ns:Samples.Computer01 |ct:GenericClassForValueTypeTest |cg:<System.Int32, System.Boolean> |fn:ThrowOneGenericFromType |fg: |sg:(TKey value)"),
+                    new StackFrame("|lm:Samples.Computer01 |ns:Samples.Computer01 |ct:GenericClassForValueTypeTest |cg:<System.Int32, System.Boolean> |fn:ThrowOneGenericFromType |fg: |sg:(TValue value)"),
                     new StackFrame("|lm:Samples.Computer01 |ns:Samples.Computer01 |ct:MethodsSignature |cg: |fn:ThrowGenericMethod2 |fg:<T0, System.Int32, T2, T3> |sg:(T0 key1, System.Int32 value1, System.Int32 value2, T2 key2, T3 key3, System.Collections.Generic.List<System.Int32> listOfTValue)"),
                     new StackFrame("|lm:Samples.Computer01 |ns:Samples.Computer01 |ct:MethodsSignature |cg: |fn:ThrowGenericMethod1 |fg:<T0> |sg:(T0 element)"),
+                    new StackFrame("|lm:Samples.Computer01 |ns:Samples.Computer01 |ct:MethodsSignature |cg: |fn:ThrowGenericMethod1 |fg:<GlobalStruct> |sg:(GlobalStruct element)"),
                     new StackFrame("|lm:Samples.Computer01 |ns:Samples.Computer01 |ct:MethodsSignature |cg: |fn:ThrowGenericMethod1 |fg:<Samples.Computer01.MyStruct> |sg:(Samples.Computer01.MyStruct element)"),
                     new StackFrame("|lm:Samples.Computer01 |ns:Samples.Computer01 |ct:MethodsSignature |cg: |fn:ThrowGenericMethod1 |fg:<T0> |sg:(T0 element)"),
                     new StackFrame("|lm:Samples.Computer01 |ns:Samples.Computer01 |ct:MethodsSignature |cg: |fn:ThrowGenericMethod1 |fg:<System.Boolean> |sg:(System.Boolean element)"),
@@ -73,13 +134,14 @@ namespace Datadog.Profiler.IntegrationTests.Signature
             else
             {
                 stack = new StackTrace(
-                    new StackFrame("|lm:Samples.Computer01 |ns:Samples.Computer01 |ct:GenericClass |cg:<TKey, TVal> |fn:ThrowFromGeneric |fg:<T0> |sg:(T0 element, TKey key1, TVal value, TKey key2)"),
-                    new StackFrame("|lm:Samples.Computer01 |ns:Samples.Computer01 |ct:GenericClass |cg:<TKey, TVal> |fn:ThrowGenericFromGeneric |fg:<T0> |sg:(T0 element)"),
-                    new StackFrame("|lm:Samples.Computer01 |ns:Samples.Computer01 |ct:GenericClass |cg:<TKey, TVal> |fn:ThrowOneGeneric |fg: |sg:(TVal value)"),
+                    new StackFrame("|lm:Samples.Computer01 |ns:Samples.Computer01 |ct:GenericClass |cg:<TKey, TValue> |fn:ThrowFromGeneric |fg:<T0> |sg:(T0 element, TKey key1, TValue value, TKey key2)"),
+                    new StackFrame("|lm:Samples.Computer01 |ns:Samples.Computer01 |ct:GenericClass |cg:<TKey, TValue> |fn:ThrowGenericFromGeneric |fg:<T0> |sg:(T0 element)"),
+                    new StackFrame("|lm:Samples.Computer01 |ns:Samples.Computer01 |ct:GenericClass |cg:<TKey, TValue> |fn:ThrowOneGeneric |fg: |sg:(TValue value)"),
                     new StackFrame("|lm:Samples.Computer01 |ns:Samples.Computer01 |ct:GenericClassForValueTypeTest |cg:<System.Int32, System.Boolean> |fn:ThrowOneGenericFromMethod |fg:<System.Boolean> |sg:(System.Boolean value)"),
-                    new StackFrame("|lm:Samples.Computer01 |ns:Samples.Computer01 |ct:GenericClassForValueTypeTest |cg:<System.Int32, System.Boolean> |fn:ThrowOneGenericFromType |fg: |sg:(TVal value)"),
+                    new StackFrame("|lm:Samples.Computer01 |ns:Samples.Computer01 |ct:GenericClassForValueTypeTest |cg:<System.Int32, System.Boolean> |fn:ThrowOneGenericFromType |fg: |sg:(TValue value)"),
                     new StackFrame("|lm:Samples.Computer01 |ns:Samples.Computer01 |ct:MethodsSignature |cg: |fn:ThrowGenericMethod2 |fg:<T0, System.Int32, T2, T3> |sg:(T0 key1, System.Int32 value1, System.Int32 value2, T2 key2, T3 key3, System.Collections.Generic.List<System.Int32> listOfTValue)"),
                     new StackFrame("|lm:Samples.Computer01 |ns:Samples.Computer01 |ct:MethodsSignature |cg: |fn:ThrowGenericMethod1 |fg:<T0> |sg:(T0 element)"),
+                    new StackFrame("|lm:Samples.Computer01 |ns:Samples.Computer01 |ct:MethodsSignature |cg: |fn:ThrowGenericMethod1 |fg:<GlobalStruct> |sg:(GlobalStruct element)"),
                     new StackFrame("|lm:Samples.Computer01 |ns:Samples.Computer01 |ct:MethodsSignature |cg: |fn:ThrowGenericMethod1 |fg:<Samples.Computer01.MyStruct> |sg:(Samples.Computer01.MyStruct element)"),
                     new StackFrame("|lm:Samples.Computer01 |ns:Samples.Computer01 |ct:MethodsSignature |cg: |fn:ThrowGenericMethod1 |fg:<T0> |sg:(T0 element)"),
                     new StackFrame("|lm:Samples.Computer01 |ns:Samples.Computer01 |ct:MethodsSignature |cg: |fn:ThrowGenericMethod1 |fg:<System.Boolean> |sg:(System.Boolean element)"),
@@ -99,8 +161,29 @@ namespace Datadog.Profiler.IntegrationTests.Signature
             {
                 sample.Message.Should().Be("IOE - False");
                 sample.Type.Should().Be("System.InvalidOperationException");
-                Assert.True(sample.Stacktrace.EndWith(stack));
+
+                if (IsArm64DegradedStack(sample.Stacktrace))
+                {
+                    // Fail so ProfilerTestCase retries the whole run on Linux/ARM64 (see Flaky attribute).
+                    Assert.Fail("Linux/ARM64 produced a single Unknown-Frame-Type frame; retrying to get a full stack.");
+                }
+
+                Assert.True(sample.Stacktrace.EndWith(stack, out var stackEndWithMessage), stackEndWithMessage);
             }
+        }
+
+        private (string Type, string Message, long Count, StackTrace Stacktrace)[] GetExceptionSamples(string appName, string framework, string appAssembly)
+        {
+            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: "--scenario 20");
+            EnvironmentHelper.DisableDefaultProfilers(runner);
+            runner.Environment.SetVariable(EnvironmentVariables.TimestampsAsLabelEnabled, "0");
+            runner.Environment.SetVariable(EnvironmentVariables.ExceptionProfilerEnabled, "1");
+
+            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
+            runner.Run(agent);
+            Assert.True(agent.NbCallsOnProfilingEndpoint > 0);
+
+            return SamplesHelper.ExtractExceptionSamples(runner.Environment.PprofDir).ToArray();
         }
     }
 }

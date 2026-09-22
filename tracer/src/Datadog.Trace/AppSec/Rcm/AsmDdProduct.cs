@@ -9,6 +9,7 @@ using System.Linq;
 using Datadog.Trace.AppSec.Rcm.Models.AsmDd;
 using Datadog.Trace.Logging;
 using Datadog.Trace.RemoteConfigurationManagement;
+using Datadog.Trace.Util.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 
 namespace Datadog.Trace.AppSec.Rcm;
@@ -40,7 +41,7 @@ internal sealed class AsmDdProduct : IAsmConfigUpdater
                     RuleSet ruleSet;
                     if (!result.TypedFile.HasValues)
                     {
-                        var o = JObject.Parse(result.TypedFile!.Value<string>() ?? string.Empty);
+                        var o = JsonHelper.ParseJObject(result.TypedFile!.Value<string>() ?? string.Empty);
                         ruleSet = RuleSet.From(o);
                     }
                     else

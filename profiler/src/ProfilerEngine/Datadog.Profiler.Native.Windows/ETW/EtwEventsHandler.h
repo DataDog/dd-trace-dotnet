@@ -20,7 +20,7 @@ class EtwEventsHandler : public INamedPipeHandler
 {
 public:
     EtwEventsHandler();
-    EtwEventsHandler(IIpcLogger* logger, IEtwEventsReceiver* pClrEventsReceiver, FILE* pEventsFile);
+    EtwEventsHandler(std::shared_ptr<IIpcLogger> logger, IEtwEventsReceiver* pClrEventsReceiver, FILE* pEventsFile);
     ~EtwEventsHandler();
     void Cleanup();
 
@@ -38,6 +38,6 @@ private:
     std::atomic<bool> _stopRequested = false;
     bool _showMessages;
     IEtwEventsReceiver* _pReceiver;
-    IIpcLogger* _logger;
+    std::shared_ptr<IIpcLogger> _logger;
     FILE* _pEventsFile;
 };

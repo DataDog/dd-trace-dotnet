@@ -23,7 +23,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.IbmMq
         ReturnTypeName = ClrNames.Void,
         ParameterTypeNames = [IbmMqConstants.MqMessageTypeName, IbmMqConstants.MqMessagePutOptionsTypeName],
         MinimumVersion = "9.0.0",
-        MaximumVersion = "9.*.*",
+        MaximumVersion = "10.*.*",
         IntegrationName = IbmMqConstants.IntegrationName)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
@@ -45,7 +45,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.IbmMq
                 if (dataStreams.IsEnabled && (instance).Instance != null && (msg).Instance != null)
                 {
                     var queueName = IbmMqHelper.SanitizeQueueName(instance.Name);
-                    var edgeTags = new[] { "direction:out", $"topic:{queueName}", $"type:{IbmMqConstants.QueueType}" };
+                    var edgeTags = dataStreams.GetOrCreateEdgeTags(
+                        new IbmMqEdgeTagCacheKey(queueName, IsConsume: false),
+                        static k => ["direction:out", $"topic:{k.QueueName}", "type:ibmmq"]);
                     scope.Span.SetDataStreamsCheckpoint(dataStreams, CheckpointKind.Produce, edgeTags, msg.MessageLength, 0);
                     dataStreams.InjectPathwayContextAsBase64String(scope.Span.Context.PathwayContext, IbmMqHelper.GetHeadersAdapter(msg));
                 }

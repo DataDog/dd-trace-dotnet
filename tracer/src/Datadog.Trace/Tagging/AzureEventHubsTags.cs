@@ -66,7 +66,7 @@ namespace Datadog.Trace.Tagging
 
     internal sealed partial class AzureEventHubsV1Tags : AzureEventHubsTags
     {
-        private string? _peerServiceOverride = null;
+        private string? _peerServiceOverride;
 
         public AzureEventHubsV1Tags()
             : base()

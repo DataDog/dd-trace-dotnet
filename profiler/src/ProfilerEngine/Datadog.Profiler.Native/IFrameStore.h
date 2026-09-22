@@ -5,6 +5,8 @@
 #include "cor.h"
 #include "corprof.h"
 
+#include "IMemoryFootprintProvider.h"
+
 #include <string>
 #include <cstdint>
 
@@ -17,7 +19,7 @@ public:
     std::uint32_t StartLine;
 };
 
-class IFrameStore
+class IFrameStore : public IMemoryFootprintProvider
 {
 public:
     virtual ~IFrameStore() = default;

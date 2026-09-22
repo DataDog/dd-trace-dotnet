@@ -4,7 +4,6 @@
 // </copyright>
 
 using System.Collections.Generic;
-using System.Linq;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Schema;
 using Datadog.Trace.Tagging;
@@ -20,30 +19,29 @@ namespace Datadog.Trace.Tests.Configuration.Schema
             { "localhost", "AFancyServer" },
         };
 
-        public static IEnumerable<object[]> GetAllConfigs()
-            => from schemaVersion in new object[] { SchemaVersion.V0, SchemaVersion.V1 }
-               from peerServiceTagsEnabled in new[] { true, false }
-               from removeClientServiceNamesEnabled in new[] { true, false }
-               select new[] { schemaVersion, peerServiceTagsEnabled, removeClientServiceNamesEnabled };
+        public static IEnumerable<(int SchemaVersion, bool PeerServiceTagsEnabled, string ExpectedPeerServiceValue)> GetPeerServiceRemapData()
+        {
+            // When V1 or peerServiceTagsEnabled, should remap to the mapped value
+            yield return (1, true, "AFancyServer");
+            yield return (1, false, "AFancyServer");
+            yield return (0, true, "AFancyServer");
+            // When V0 and peerServiceTagsEnabled is false, should not remap
+            yield return (0, false, "localhost");
+        }
 
         [Theory]
-        [MemberData(nameof(GetAllConfigs))]
-        public void SetMappedPeerServiceNames(object schemaVersionObject, bool peerServiceTagsEnabled, bool removeClientServiceNamesEnabled)
+        [CombinatorialData]
+        public void SetMappedPeerServiceNames(
+            [CombinatorialMemberData(nameof(GetPeerServiceRemapData))] (int SchemaVersion, bool PeerServiceTagsEnabled, string ExpectedPeerServiceValue) values,
+            bool removeClientServiceNamesEnabled)
         {
-            var schemaVersion = (SchemaVersion)schemaVersionObject; // Unbox SchemaVersion, which is only defined internally
-            var namingSchema = new NamingSchema(schemaVersion, peerServiceTagsEnabled, removeClientServiceNamesEnabled, "DefaultServiceName", new Dictionary<string, string>(), _peerServiceMappings);
+            var schemaVersion = (SchemaVersion)values.SchemaVersion;
+            var namingSchema = new NamingSchema(schemaVersion, values.PeerServiceTagsEnabled, removeClientServiceNamesEnabled, "DefaultServiceName", new Dictionary<string, string>(), _peerServiceMappings);
 
             var tags = new TagsList();
             tags.SetTag(Tags.PeerService, "localhost");
             namingSchema.RemapPeerService(tags);
-            if (schemaVersion == SchemaVersion.V1 || peerServiceTagsEnabled)
-            {
-                tags.GetTag(Tags.PeerService).Should().Be("AFancyServer");
-            }
-            else
-            {
-                tags.GetTag(Tags.PeerService).Should().Be("localhost");
-            }
+            tags.GetTag(Tags.PeerService).Should().Be(values.ExpectedPeerServiceValue);
         }
 
         [Fact]

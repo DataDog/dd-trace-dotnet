@@ -19,6 +19,7 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI;
 
+[Trait("Area", "CIVisibility")]
 public abstract class TestingFrameworkTest : TestHelper
 {
     private readonly GacFixture _gacFixture;
@@ -183,8 +184,9 @@ public abstract class TestingFrameworkTest : TestHelper
             if (span.GetTag(key) is { } tagValue)
             {
                 targetSpan.Tags[key].Should().Be(tagValue);
-                targetSpan.Tags.Remove(key);
             }
+
+            targetSpan.Tags.Remove(key);
         }
     }
 

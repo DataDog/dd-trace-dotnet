@@ -3,63 +3,85 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System;
+#nullable enable
 
-namespace Datadog.Trace.Agent
+namespace Datadog.Trace.Agent;
+
+internal readonly record struct StatsAggregationKey
 {
-    internal readonly struct StatsAggregationKey : IEquatable<StatsAggregationKey>
+    public StatsAggregationKey(
+        string resource,
+        string service,
+        string operationName,
+        string type,
+        int httpStatusCode,
+        bool isSyntheticsRequest,
+        string spanKind,
+        bool isError,
+        bool isTopLevel,
+        bool? isTraceRoot,
+        string httpMethod,
+        string httpEndpoint,
+        string grpcStatusCode,
+        string serviceSource,
+        ulong peerTagsHash,
+        ulong additionalMetricTagsHash,
+        StatsCardinalityTruncatedFields truncatedFields)
     {
-        public readonly string Resource;
-        public readonly string Service;
-        public readonly string OperationName;
-        public readonly string Type;
-        public readonly int HttpStatusCode;
-        public readonly bool IsSyntheticsRequest;
-
-        public StatsAggregationKey(
-            string resource,
-            string service,
-            string operationName,
-            string type,
-            int httpStatusCode,
-            bool isSyntheticsRequest)
-        {
-            Resource = resource;
-            Service = service;
-            OperationName = operationName;
-            Type = type;
-            HttpStatusCode = httpStatusCode;
-            IsSyntheticsRequest = isSyntheticsRequest;
-        }
-
-        public bool Equals(StatsAggregationKey other)
-        {
-            return
-                Resource == other.Resource
-                && Service == other.Service
-                && OperationName == other.OperationName
-                && Type == other.Type
-                && HttpStatusCode == other.HttpStatusCode
-                && IsSyntheticsRequest == other.IsSyntheticsRequest;
-        }
-
-        public override bool Equals(object obj)
-        {
-            return obj is StatsAggregationKey other && Equals(other);
-        }
-
-        public override int GetHashCode()
-        {
-            unchecked
-            {
-                var hashCode = (Resource != null ? Resource.GetHashCode() : 0);
-                hashCode = (hashCode * 397) ^ (Service != null ? Service.GetHashCode() : 0);
-                hashCode = (hashCode * 397) ^ (OperationName != null ? OperationName.GetHashCode() : 0);
-                hashCode = (hashCode * 397) ^ (Type != null ? Type.GetHashCode() : 0);
-                hashCode = (hashCode * 397) ^ HttpStatusCode;
-                hashCode = (hashCode * 397) ^ IsSyntheticsRequest.GetHashCode();
-                return hashCode;
-            }
-        }
+        Resource = resource;
+        Service = service;
+        OperationName = operationName;
+        Type = type;
+        HttpStatusCode = httpStatusCode;
+        IsSyntheticsRequest = isSyntheticsRequest;
+        IsError = isError;
+        IsTopLevel = isTopLevel;
+        SpanKind = spanKind;
+        IsTraceRoot = isTraceRoot;
+        HttpMethod = httpMethod;
+        HttpEndpoint = httpEndpoint;
+        GrpcStatusCode = grpcStatusCode;
+        ServiceSource = serviceSource;
+        PeerTagsHash = peerTagsHash;
+        AdditionalMetricTagsHash = additionalMetricTagsHash;
+        TruncatedFields = truncatedFields;
     }
+
+    public string Resource { get; init; }
+
+    public string Service { get; }
+
+    public string OperationName { get; }
+
+    public string Type { get; }
+
+    public int HttpStatusCode { get; }
+
+    public bool IsSyntheticsRequest { get; }
+
+    public bool IsError { get; }
+
+    public bool IsTopLevel { get; }
+
+    public string SpanKind { get; }
+
+    public bool? IsTraceRoot { get; }
+
+    public string HttpMethod { get; }
+
+    public string HttpEndpoint { get; init; }
+
+    public string GrpcStatusCode { get; }
+
+    public string ServiceSource { get; }
+
+    public ulong PeerTagsHash { get; init; }
+
+    public ulong AdditionalMetricTagsHash { get; init; }
+
+    // This field must remain here to disambiguate between keys without peer tags
+    // or additional metric tags, and the case where these have hit cardinality limits.
+    public StatsCardinalityLimitedFields CardinalityLimitedFields { get; init; }
+
+    public StatsCardinalityTruncatedFields TruncatedFields { get; }
 }

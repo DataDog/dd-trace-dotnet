@@ -8,6 +8,7 @@
 using System;
 using System.Collections.Generic;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Util.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.Sampling;
@@ -47,7 +48,7 @@ internal sealed class LocalCustomSamplingRule : CustomSamplingRule
         try
         {
             if (!string.IsNullOrWhiteSpace(configuration) &&
-                JsonConvert.DeserializeObject<List<RuleConfigJsonModel>>(configuration) is { Count: > 0 } ruleModels)
+                JsonHelper.DeserializeObject<List<RuleConfigJsonModel>>(configuration) is { Count: > 0 } ruleModels)
             {
                 var samplingRules = new LocalCustomSamplingRule[ruleModels.Count];
 

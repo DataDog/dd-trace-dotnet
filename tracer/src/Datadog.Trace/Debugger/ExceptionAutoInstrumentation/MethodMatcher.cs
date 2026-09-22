@@ -11,6 +11,7 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text;
+using Datadog.Trace.Debugger.Helpers;
 using Datadog.Trace.Util;
 
 #nullable enable
@@ -19,6 +20,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation;
 internal static class MethodMatcher
 {
     private static readonly ConcurrentDictionary<MethodBase, MethodBase?> AsyncMethodCache = new();
+    private static readonly char[] LambdaIdentifierMatchCandidates = ['>', '(', '.', 'd'];
 
     /// <summary>
     /// Attempts to match a method name from a stack trace with a MethodBase,
@@ -214,7 +216,7 @@ internal static class MethodMatcher
         var startIndex = methodName.LastIndexOf('<', lambdaMarkerIndex);
         startIndex = startIndex >= 0 ? startIndex + 1 : lambdaMarkerIndex;
 
-        var endIndex = methodName.IndexOfAny(new[] { '>', '(', '.', 'd' }, lambdaMarkerIndex);
+        var endIndex = methodName.IndexOfAny(LambdaIdentifierMatchCandidates, lambdaMarkerIndex);
         if (endIndex < 0)
         {
             endIndex = methodName.Length;
@@ -255,7 +257,7 @@ internal static class MethodMatcher
         return method.Name.StartsWith("<") && method.Name.Contains(">");
     }
 
-    private static MethodBase? ResolveAsyncMethod(MethodBase moveNextMethod)
+    private static MethodInfo? ResolveAsyncMethod(MethodBase moveNextMethod)
     {
         var stateMachineType = moveNextMethod.DeclaringType;
         if (stateMachineType == null)
@@ -329,11 +331,10 @@ internal static class MethodMatcher
 
     private static bool HasMatchingAsyncMethodBuilder(MethodInfo method)
     {
-        return method.GetCustomAttributes()
-                    .Any(attr => attr.GetType().Name.EndsWith("AsyncStateMachineAttribute"));
+        return StateMachineAttributeHelper.HasAsyncStateMachineAttribute(method);
     }
 
-    private static MethodBase? ResolveIteratorMethod(MethodBase moveNextMethod)
+    private static MethodInfo? ResolveIteratorMethod(MethodBase moveNextMethod)
     {
         // Similar to async method resolution but looking for iterator patterns
         var stateMachineType = moveNextMethod.DeclaringType;
@@ -367,7 +368,7 @@ internal static class MethodMatcher
                (returnType.IsGenericType && returnType.GetGenericTypeDefinition() == typeof(IEnumerable<>));
     }
 
-    private static MethodBase? ResolveLocalFunction(MethodBase method)
+    private static MethodInfo? ResolveLocalFunction(MethodBase method)
     {
         // Extract the original method name from the local function name
         var localFunctionName = method.Name;
@@ -403,9 +404,16 @@ internal static class MethodMatcher
                 var lastDotBeforeStateMachine = fullName.LastIndexOf('.', stateMachineIndex);
                 if (lastDotBeforeStateMachine > 0)
                 {
+#if NETCOREAPP
+                    normalizedName = string.Concat(
+                        fullName.AsSpan(0, lastDotBeforeStateMachine),
+                        "+",
+                        fullName.AsSpan(lastDotBeforeStateMachine + 1));
+#else
                     normalizedName = fullName.Substring(0, lastDotBeforeStateMachine) +
                                      "+" +
                                      fullName.Substring(lastDotBeforeStateMachine + 1);
+#endif
                 }
             }
         }

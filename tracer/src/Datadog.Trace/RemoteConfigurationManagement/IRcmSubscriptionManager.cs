@@ -5,7 +5,6 @@
 
 #nullable enable
 using System;
-using System.Collections.Generic;
 using System.Numerics;
 using System.Threading.Tasks;
 using Datadog.Trace.RemoteConfigurationManagement.Protocol;
@@ -16,8 +15,6 @@ internal interface IRcmSubscriptionManager
 {
     bool HasAnySubscription { get; }
 
-    ICollection<string> ProductKeys { get; }
-
     void SubscribeToChanges(ISubscription subscription);
 
     void Replace(ISubscription oldSubscription, ISubscription newSubscription);
@@ -25,8 +22,6 @@ internal interface IRcmSubscriptionManager
     void Unsubscribe(ISubscription subscription);
 
     void SetCapability(BigInteger index, bool available);
-
-    byte[] GetCapabilities();
 
     Task SendRequest(RcmClientTracer rcmTracer, Func<GetRcmRequest, Task<GetRcmResponse?>> callback);
 }

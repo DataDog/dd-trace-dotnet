@@ -10,14 +10,20 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Shared;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.Proxy;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
-using Datadog.Trace.Headers;
+using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
+using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Tagging;
+using Datadog.Trace.Util;
+using Datadog.Trace.Util.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Vendors.Serilog.Events;
 
 #nullable enable
 
@@ -25,10 +31,17 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
 {
     internal static class AzureFunctionsCommon
     {
-        public const string IntegrationName = nameof(Configuration.IntegrationId.AzureFunctions);
+        // Key used by the Azure Functions .NET Worker to store the ASP.NET Core HttpContext in FunctionContext.Items.
+        // Defined in Microsoft.Azure.Functions.Worker.Extensions.Http.AspNetCore:
+        //   https://github.com/Azure/azure-functions-dotnet-worker/blob/596a94ef97f458d68381678fec6d92585e80d83d/extensions/Worker.Extensions.Http.AspNetCore/src/Constants.cs#L14
+        // Set by FunctionsHttpProxyingMiddleware:
+        //   https://github.com/Azure/azure-functions-dotnet-worker/blob/596a94ef97f458d68381678fec6d92585e80d83d/extensions/Worker.Extensions.Http.AspNetCore/src/FunctionsMiddleware/FunctionsHttpProxyingMiddleware.cs#L124
+        private const string HttpRequestContextKey = "HttpRequestContext";
+        private const string SpanType = SpanTypes.Serverless;
 
-        public const string OperationName = "azure_functions.invoke";
-        public const string SpanType = SpanTypes.Serverless;
+        public const string IntegrationName = nameof(Configuration.IntegrationId.AzureFunctions);
+        public const string OperationName = AzureFunctionsConstants.AzureFunctionName;
+        public const string AzureApim = AzureFunctionsConstants.AzureApimName;
         public const IntegrationId IntegrationId = Configuration.IntegrationId.AzureFunctions;
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(AzureFunctionsCommon));
@@ -55,7 +68,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
             return new CallTargetState(scope);
         }
 
-        internal static Scope? CreateScope<TFunction>(Tracer tracer, TFunction instanceParam)
+        private static Scope? CreateScope<TFunction>(Tracer tracer, TFunction instanceParam)
             where TFunction : IFunctionInstance
         {
             Scope? scope = null;
@@ -116,29 +129,32 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                 }
 
                 var functionName = instanceParam.FunctionDescriptor.ShortName;
-
+                // Check if there's an inferred proxy span (e.g., azure.apim) that we shouldn't overwrite
+                var isProxySpan = tracer.InternalActiveScope?.Root.Span.OperationName == AzureApim;
                 // Ignoring null because guaranteed running in AAS
                 if (tracer.Settings.AzureAppServiceMetadata is { IsIsolatedFunctionsApp: true }
                  && tracer.InternalActiveScope is { } activeScope)
                 {
                     // We don't want to create a new scope here when running isolated functions,
                     // otherwise it is essentially a duplicate of the span created inside the
-                    // isolated app, but we _do_ want to populate the "root" span here with the appropriate names
+                    // isolated app. We _do_ want to populate the "root" span here with the appropriate names
                     // and update it to be a "serverless" span.
-                    var rootSpan = activeScope.Root.Span;
+                    if (!isProxySpan)
+                    {
+                        var rootSpan = activeScope.Root.Span;
+                        // The shortname is prefixed with "Functions.", so strip that off
+                        var remoteFunctionName = functionName?.StartsWith("Functions.") == true
+                                                     ? functionName.Substring(10)
+                                                     : functionName;
+                        AzureFunctionsTags.SetRootSpanTags(
+                            rootSpan.Tags,
+                            shortName: remoteFunctionName,
+                            fullName: rootSpan.Tags is AzureFunctionsTags t ? t.FullName : null, // can't get anything meaningful here, so leave it as-is
+                            bindingSource: bindingSourceType.FullName,
+                            triggerType: triggerType);
+                        rootSpan.Type = SpanType;
+                    }
 
-                    // The shortname is prefixed with "Functions.", so strip that off
-                    var remoteFunctionName = functionName?.StartsWith("Functions.") == true
-                                                 ? functionName.Substring(10)
-                                                 : functionName;
-
-                    AzureFunctionsTags.SetRootSpanTags(
-                        rootSpan,
-                        shortName: remoteFunctionName,
-                        fullName: rootSpan.Tags is AzureFunctionsTags t ? t.FullName : null, // can't get anything meaningful here, so leave it as-is
-                        bindingSource: bindingSourceType.FullName,
-                        triggerType: triggerType);
-                    rootSpan.Type = SpanType;
                     return null;
                 }
 
@@ -159,15 +175,23 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                 else
                 {
                     scope = tracer.StartActiveInternal(OperationName);
-                    AzureFunctionsTags.SetRootSpanTags(
-                        scope.Root.Span,
-                        shortName: functionName,
-                        fullName: instanceParam.FunctionDescriptor.FullName,
-                        bindingSource: bindingSourceType.FullName,
-                        triggerType: triggerType);
+
+                    if (!isProxySpan)
+                    {
+                        AzureFunctionsTags.SetRootSpanTags(
+                            scope.Root.Span.Tags,
+                            shortName: functionName,
+                            fullName: instanceParam.FunctionDescriptor.FullName,
+                            bindingSource: bindingSourceType.FullName,
+                            triggerType: triggerType);
+                    }
                 }
 
-                scope.Root.Span.Type = SpanType;
+                if (!isProxySpan)
+                {
+                    scope.Root.Span.Type = SpanType;
+                }
+
                 scope.Span.ResourceName = $"{triggerType} {functionName}";
                 scope.Span.Type = SpanType;
                 tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
@@ -187,20 +211,27 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
         {
             var tracer = Tracer.Instance;
 
-            if (tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId))
+            if (!tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId))
             {
-                var scope = CreateIsolatedFunctionScope(tracer, functionContext);
-
-                if (scope != null)
-                {
-                    return new CallTargetState(scope);
-                }
+                return CallTargetState.GetDefault();
             }
 
-            return CallTargetState.GetDefault();
+            // Look up the aspnet_core.request scope once so we can both use it as parent
+            // (in CreateIsolatedFunctionScope) and propagate exceptions onto it later
+            // (in OnAsyncMethodEnd of the calling integration).
+            var aspNetCoreScope = GetAspNetCoreScope(functionContext);
+
+            var scope = CreateIsolatedFunctionScope(tracer, functionContext, aspNetCoreScope);
+
+            if (scope == null && aspNetCoreScope == null)
+            {
+                return CallTargetState.GetDefault();
+            }
+
+            return new CallTargetState(scope, state: aspNetCoreScope);
         }
 
-        private static Scope? CreateIsolatedFunctionScope<T>(Tracer tracer, T functionContext)
+        private static Scope? CreateIsolatedFunctionScope<T>(Tracer tracer, T functionContext, Scope? aspNetCoreScope)
             where T : IFunctionContext
         {
             Scope? scope = null;
@@ -238,8 +269,43 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                     switch (triggerType)
                     {
                         case "Http":
-                            extractedContext = ExtractPropagatedContextFromHttp(functionContext, entry.Key as string).MergeBaggageInto(Baggage.Current);
+                        {
+                            // Detect ASP.NET Core integration by checking for HttpContext in FunctionContext.Items.
+                            // In ASP.NET Core mode, HTTP requests are proxied directly (not via gRPC).
+                            // The headers in the gRPC message are STALE (contain host's root span context).
+                            // The key "HttpRequestContext" is set by FunctionsHttpProxyingMiddleware in the worker.
+                            // Only skip gRPC extraction when we successfully retrieved the ASP.NET Core scope bridge,
+                            // otherwise fall back to the (stale) gRPC headers to at least keep the spans in the same trace.
+                            var isAspNetCoreIntegration = functionContext.Items?.ContainsKey(HttpRequestContextKey) == true;
+
+                            if (isAspNetCoreIntegration && aspNetCoreScope is not null)
+                            {
+                                // Skip gRPC header extraction in HTTP proxying mode. We already have the
+                                // ASP.NET Core scope from the HttpContext.Items bridge and will use it as
+                                // the parent below.
+                                Log.Debug("Skipping header extraction - HTTP trigger with ASP.NET Core integration detected (HTTP proxying mode)");
+                            }
+                            else
+                            {
+                                // Fall back to gRPC message extraction when not using ASP.NET Core integration,
+                                // or when proxying is detected but the ASP.NET Core scope bridge is unavailable.
+                                extractedContext = ExtractPropagatedContextFromHttp(functionContext, entry.Key as string).MergeBaggageInto(Baggage.Current);
+
+                                if (isAspNetCoreIntegration)
+                                {
+                                    // ASP.NET Core integration detected but the scope bridge was not available
+                                    // (GetAspNetCoreScope returned null). Fall back to gRPC headers: the parent
+                                    // will be the host's root span (wrong, but keeps the spans in the same trace).
+                                    Log.Debug("HTTP trigger detected ASP.NET Core integration, but no active scope was found. Falling back to gRPC header extraction for trace correlation.");
+                                }
+                                else
+                                {
+                                    Log.Debug("Extracted trace context from gRPC message (non-ASP.NET Core mode)");
+                                }
+                            }
+
                             break;
+                        }
 
                         case "ServiceBus" when tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId.AzureServiceBus):
                             extractedContext = ExtractPropagatedContextFromMessaging(functionContext, "UserProperties", "UserPropertiesArray").MergeBaggageInto(Baggage.Current);
@@ -253,39 +319,72 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                     break;
                 }
 
-                var functionName = functionContext.FunctionDefinition.Name;
-
                 var tags = new AzureFunctionsTags
                 {
                     TriggerType = triggerType,
-                    ShortName = functionName,
+                    ShortName = functionContext.FunctionDefinition.Name,
                     FullName = functionContext.FunctionDefinition.EntryPoint,
                 };
 
-                if (tracer.InternalActiveScope == null)
+                // Use the supplied aspnet_core.request scope (from HttpContext.Items bridge)
+                // if available, otherwise fall back to the existing local active scope.
+                var activeScope = tracer.InternalActiveScope;
+
+                // Check if the ASP.NET Core scope is already active
+                if (aspNetCoreScope != null && activeScope == aspNetCoreScope)
                 {
-                    // This is the root scope
-                    tags.SetAnalyticsSampleRate(IntegrationId, tracer.CurrentTraceSettings.Settings, enabledWithGlobalSetting: false);
-                    scope = tracer.StartActiveInternal(OperationName, tags: tags, parent: extractedContext.SpanContext);
+                    // The ASP.NET Core span is already active - don't create a new span,
+                    // just update the existing root span's tags to make it a "serverless" span.
+                    // Don't assign to `scope`: the ASP.NET Core middleware owns this scope's
+                    // lifetime, and returning it here would cause OnAsyncMethodEnd to dispose it.
+                    var rootSpan = activeScope.Root.Span;
+
+                    AzureFunctionsTags.SetRootSpanTags(
+                        rootSpan.Tags,
+                        shortName: tags.ShortName,
+                        fullName: tags.FullName,
+                        bindingSource: rootSpan.Tags is AzureFunctionsTags t ? t.BindingSource : null,
+                        triggerType: tags.TriggerType);
+
+                    rootSpan.Type = SpanType; // "serverless"
+                    rootSpan.ResourceName = $"{tags.TriggerType} {tags.ShortName}";
                 }
                 else
                 {
-                    // shouldn't be hit, but better safe than sorry
-                    scope = tracer.StartActiveInternal(OperationName);
+                    // Create a new span with the appropriate parent context from:
+                    // 1. Extracted from propagation headers (gRPC message from the host process).
+                    // 2. ASP.NET Core scope (if available but not active - shouldn't happen).
+                    // 3. Existing local span (fallback).
+                    var parentSpanContext = extractedContext.SpanContext ??
+                                            aspNetCoreScope?.Span.Context ??
+                                            activeScope?.Span.Context;
+
+                    scope = tracer.StartActiveInternal(OperationName, parent: parentSpanContext, tags: tags);
+                    var span = scope.Span;
                     var rootSpan = scope.Root.Span;
-                    AzureFunctionsTags.SetRootSpanTags(
-                        rootSpan,
-                        shortName: functionName,
-                        fullName: functionContext.FunctionDefinition.EntryPoint,
-                        bindingSource: rootSpan.Tags is AzureFunctionsTags t ? t.BindingSource : null,
-                        triggerType: triggerType);
+
+                    if (span == rootSpan)
+                    {
+                        // this is the local root span
+                        tags.SetAnalyticsSampleRate(IntegrationId, tracer.CurrentTraceSettings.Settings, enabledWithGlobalSetting: false);
+                    }
+                    else
+                    {
+                        // this is NOT the local root span, copy some tags to the root span
+                        AzureFunctionsTags.SetRootSpanTags(
+                            rootSpan.Tags,
+                            shortName: tags.ShortName,
+                            fullName: tags.FullName,
+                            bindingSource: rootSpan.Tags is AzureFunctionsTags t ? t.BindingSource : null,
+                            triggerType: tags.TriggerType);
+
+                        rootSpan.Type = SpanType; // "serverless"
+                    }
+
+                    span.ResourceName = $"{tags.TriggerType} {tags.ShortName}";
+                    span.Type = SpanType;
                 }
 
-                // change root span's type to "serverless"
-                scope.Root.Span.Type = SpanType;
-
-                scope.Span.ResourceName = $"{triggerType} {functionName}";
-                scope.Span.Type = SpanType;
                 tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
             }
             catch (Exception ex)
@@ -298,7 +397,78 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
             return scope;
         }
 
-        private static PropagationContext ExtractPropagatedContextFromHttp<T>(T context, string? bindingName)
+        private static Scope? GetAspNetCoreScope<T>(T functionContext)
+            where T : IFunctionContext
+        {
+            // Try to retrieve the aspnet_core.request scope via the HttpContext.Items bridge.
+            // This is needed because AsyncLocal context doesn't reliably flow between the worker's
+            // ASP.NET Core pipeline and the Azure Functions worker middleware pipeline.
+            Scope? parentScope = null;
+
+            try
+            {
+                if (functionContext.Items is not null &&
+                    functionContext.Items.TryGetValue(HttpRequestContextKey, out var httpContextObj) &&
+                    httpContextObj is not null &&
+                    httpContextObj.TryDuckCast<IHttpContextItems>(out var httpContext) &&
+                    httpContext is not null &&
+                    httpContext.Items.TryGetValue(AspNetCoreHttpRequestHandler.HttpContextActiveScopeKey, out var scopeObj) &&
+                    scopeObj is Scope aspNetCoreScope)
+                {
+                    parentScope = aspNetCoreScope;
+
+                    if (Log.IsEnabled(LogEventLevel.Debug))
+                    {
+                        var spanContext = parentScope.Span.Context;
+
+                        Log.Debug(
+                            "Azure Functions: retrieved AspNetCore scope from HttpContext.Items {TraceId}-{SpanId}",
+                            spanContext.RawTraceId,
+                            spanContext.RawSpanId);
+                    }
+                }
+                else
+                {
+                    Log.Debug("Azure Functions: could not retrieve AspNetCore scope from HttpContext.Items");
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Azure Functions: error retrieving AspNetCore scope from HttpContext.Items");
+            }
+
+            return parentScope;
+        }
+
+        /// <summary>
+        /// Propagates an exception thrown by an isolated worker user function onto the
+        /// aspnet_core.request span. The exception is caught internally by the worker's
+        /// FunctionExecutionMiddleware, so the ASP.NET Core diagnostic observer never sees it
+        /// and the worker's HttpContext.Response.StatusCode remains at the default 200. Mirror
+        /// what AspNetCoreHttpRequestHandler.HandleAspNetCoreException does, without the AppSec
+        /// side effects (which already ran when the request entered ASP.NET Core).
+        /// </summary>
+        public static void SetExceptionOnAspNetCoreScope(Scope aspNetCoreScope, Exception exception, Tracer tracer)
+        {
+            try
+            {
+                var span = aspNetCoreScope.Span;
+                var settings = tracer.CurrentTraceSettings.Settings;
+
+                if (!span.HasHttpStatusCode())
+                {
+                    span.SetHttpStatusCode(statusCode: 500, isServer: true, settings);
+                }
+
+                span.SetException(exception);
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Azure Functions: error propagating user function exception to AspNetCore scope");
+            }
+        }
+
+        private static PropagationContext ExtractPropagatedContextFromHttp<T>(T functionContext, string? bindingName)
             where T : IFunctionContext
         {
             // Need to try and grab the headers from the context
@@ -306,7 +476,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
             // directly from the grpc call instead. This is... interesting. It
             // is effectively doing the equivalent of context.GetHttpRequestDataAsync() which is
             // the suggested approach in the docs.
-            if (context.Features is null || string.IsNullOrEmpty(bindingName))
+            if (functionContext.Features is null || string.IsNullOrEmpty(bindingName))
             {
                 return default;
             }
@@ -314,7 +484,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
             try
             {
                 object? feature = null;
-                foreach (var keyValuePair in context.Features)
+                foreach (var keyValuePair in functionContext.Features)
                 {
                     if (keyValuePair.Key.FullName?.Equals("Microsoft.Azure.Functions.Worker.Context.Features.IFunctionBindingsFeature") == true)
                     {
@@ -354,21 +524,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
         {
             try
             {
-                if (context.Features == null)
-                {
-                    return default;
-                }
-
-                GrpcBindingsFeatureStruct? bindingsFeature = null;
-                foreach (var kvp in context.Features)
-                {
-                    if (kvp.Key.FullName?.Equals("Microsoft.Azure.Functions.Worker.Context.Features.IFunctionBindingsFeature") == true)
-                    {
-                        bindingsFeature = kvp.Value?.TryDuckCast<GrpcBindingsFeatureStruct>(out var feature) == true ? feature : null;
-                        break;
-                    }
-                }
-
+                var bindingsFeature = GetFeatureFromContext<T, FunctionBindingsFeatureStruct>(context, "Microsoft.Azure.Functions.Worker.Context.Features.IFunctionBindingsFeature");
                 if (bindingsFeature == null)
                 {
                     return default;
@@ -435,7 +591,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
 
             try
             {
-                result = JsonConvert.DeserializeObject<T>(jsonString);
+                result = JsonHelper.DeserializeObject<T>(jsonString);
                 return result != null;
             }
             catch (Exception ex)
@@ -458,6 +614,26 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                 ctx.SpanContext != null &&
                 ctx.SpanContext.TraceId128 == first!.TraceId128 &&
                 ctx.SpanContext.SpanId == first.SpanId);
+        }
+
+        private static TFeature? GetFeatureFromContext<T, TFeature>(T context, string featureTypeName)
+            where T : IFunctionContext
+            where TFeature : struct
+        {
+            if (context.Features == null)
+            {
+                return null;
+            }
+
+            foreach (var kvp in context.Features)
+            {
+                if (kvp.Key.FullName == featureTypeName)
+                {
+                    return kvp.Value?.TryDuckCast<TFeature>(out var feature) == true ? feature : null;
+                }
+            }
+
+            return null;
         }
     }
 }

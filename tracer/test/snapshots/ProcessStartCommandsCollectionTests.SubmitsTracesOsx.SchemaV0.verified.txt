@@ -17,7 +17,8 @@ Path=testPath,
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: internal,
-      _dd.base_service: Samples.ProcessStart
+      _dd.base_service: Samples.ProcessStart,
+      _dd.svc_src: command
     },
     Metrics: {
       process_id: 0,
@@ -40,7 +41,8 @@ Path=testPath,
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: internal,
-      _dd.base_service: Samples.ProcessStart
+      _dd.base_service: Samples.ProcessStart,
+      _dd.svc_src: command
     },
     Metrics: {
       process_id: 0,
@@ -67,7 +69,8 @@ Path=testPath,
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: internal,
-      _dd.base_service: Samples.ProcessStart
+      _dd.base_service: Samples.ProcessStart,
+      _dd.svc_src: command
     },
     Metrics: {
       process_id: 0,
@@ -90,7 +93,8 @@ Path=testPath,
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: internal,
-      _dd.base_service: Samples.ProcessStart
+      _dd.base_service: Samples.ProcessStart,
+      _dd.svc_src: command
     },
     Metrics: {
       process_id: 0,
@@ -118,7 +122,8 @@ Path=testPath,
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: internal,
-      _dd.base_service: Samples.ProcessStart
+      _dd.base_service: Samples.ProcessStart,
+      _dd.svc_src: command
     },
     Metrics: {
       process_id: 0,
@@ -142,7 +147,8 @@ Path=testPath,
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: internal,
-      _dd.base_service: Samples.ProcessStart
+      _dd.base_service: Samples.ProcessStart,
+      _dd.svc_src: command
     },
     Metrics: {
       process_id: 0,
@@ -169,7 +175,8 @@ Path=testPath,
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: internal,
-      _dd.base_service: Samples.ProcessStart
+      _dd.base_service: Samples.ProcessStart,
+      _dd.svc_src: command
     },
     Metrics: {
       process_id: 0,
@@ -192,7 +199,8 @@ Path=testPath,
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: internal,
-      _dd.base_service: Samples.ProcessStart
+      _dd.base_service: Samples.ProcessStart,
+      _dd.svc_src: command
     },
     Metrics: {
       process_id: 0,
@@ -220,7 +228,8 @@ Path=testPath,
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: internal,
-      _dd.base_service: Samples.ProcessStart
+      _dd.base_service: Samples.ProcessStart,
+      _dd.svc_src: command
     },
     Metrics: {
       process_id: 0,
@@ -244,7 +253,8 @@ Path=testPath,
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: internal,
-      _dd.base_service: Samples.ProcessStart
+      _dd.base_service: Samples.ProcessStart,
+      _dd.svc_src: command
     },
     Metrics: {
       process_id: 0,

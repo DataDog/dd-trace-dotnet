@@ -12,7 +12,7 @@ namespace Datadog.Trace.AppSec.Waf.ReturnTypes.Managed
 {
     internal sealed class InitResult
     {
-        private int _firstReport = 0;
+        private int _firstReport;
 
         private InitResult(ref UpdateResult updateResult)
         {
@@ -25,7 +25,7 @@ namespace Datadog.Trace.AppSec.Waf.ReturnTypes.Managed
 
         internal UpdateResult UpdateResult { get; }
 
-        internal Waf? Waf { get; } = null;
+        internal Waf? Waf { get; }
 
         internal bool Success => Waf is not null;
 

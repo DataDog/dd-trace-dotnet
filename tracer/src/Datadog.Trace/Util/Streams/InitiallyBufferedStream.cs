@@ -9,7 +9,6 @@ using System;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-using Datadog.Trace.VendoredMicrosoftCode.System.Buffers;
 
 namespace Datadog.Trace.Util.Streams;
 
@@ -21,7 +20,7 @@ internal sealed class InitiallyBufferedStream(Stream innerStream) : LeaveOpenDel
 {
     internal const int MaxInitialBufferSize = 128;
 
-    private ArraySegment<byte>? _buffer = null;
+    private ArraySegment<byte>? _buffer;
 
     public string? GetBufferedContent()
     {
@@ -59,6 +58,15 @@ internal sealed class InitiallyBufferedStream(Stream innerStream) : LeaveOpenDel
                    : base.ReadAsync(buffer, offset, count, cancellationToken);
     }
 
+#if NETCOREAPP
+    public override ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken cancellationToken = default)
+    {
+        return _buffer is null
+                   ? ReadAndSaveBufferAsync(buffer, cancellationToken)
+                   : base.ReadAsync(buffer, cancellationToken);
+    }
+#endif
+
     protected override void Dispose(bool disposing)
     {
         ReturnBuffer();
@@ -95,6 +103,23 @@ internal sealed class InitiallyBufferedStream(Stream innerStream) : LeaveOpenDel
 
         _buffer = new ArraySegment<byte>(localBuffer, offset: 0, count: bufferSize);
     }
+
+#if NETCOREAPP
+    private async ValueTask<int> ReadAndSaveBufferAsync(Memory<byte> buffer, CancellationToken cancellationToken)
+    {
+        var bytesRead = await base.ReadAsync(buffer, cancellationToken).ConfigureAwait(false);
+        SaveToLocalBuffer(buffer.Span.Slice(0, bytesRead));
+        return bytesRead;
+    }
+
+    private void SaveToLocalBuffer(ReadOnlySpan<byte> data)
+    {
+        var bufferSize = Math.Min(MaxInitialBufferSize, data.Length);
+        var localBuffer = ArrayPool<byte>.Shared.Rent(bufferSize);
+        data.Slice(0, bufferSize).CopyTo(localBuffer);
+        _buffer = new ArraySegment<byte>(localBuffer, offset: 0, count: bufferSize);
+    }
+#endif
 
     private void ReturnBuffer()
     {

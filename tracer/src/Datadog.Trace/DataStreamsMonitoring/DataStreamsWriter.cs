@@ -13,6 +13,7 @@ using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ContinuousProfiler;
 using Datadog.Trace.DataStreamsMonitoring.Aggregation;
+using Datadog.Trace.DataStreamsMonitoring.TransactionTracking;
 using Datadog.Trace.DataStreamsMonitoring.Transport;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
@@ -23,13 +24,19 @@ internal sealed class DataStreamsWriter : IDataStreamsWriter
 {
     private const TaskCreationOptions TaskOptions = TaskCreationOptions.RunContinuationsAsynchronously;
 
+    // Drain the queues when this many items accumulate OR after DrainTimeoutMs — whichever comes first.
+    private const int DrainThreshold = 1_000;
+    private const int DrainTimeoutMs = 500;
+
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<DataStreamsWriter>();
 
     private readonly object _initLock = new();
     private readonly long _bucketDurationMs;
+
     private readonly BoundedConcurrentQueue<StatsPoint> _buffer = new(queueLimit: 10_000);
     private readonly BoundedConcurrentQueue<BacklogPoint> _backlogBuffer = new(queueLimit: 10_000);
-    private readonly TimeSpan _waitTimeSpan = TimeSpan.FromMilliseconds(10);
+    private readonly BoundedConcurrentQueue<DataStreamsTransactionInfo> _transactionBuffer = new(queueLimit: 10_000);
+    private readonly ManualResetEventSlim _drainSignal = new(false);
     private readonly TimeSpan _flushSemaphoreWaitTime = TimeSpan.FromSeconds(1);
     private readonly DataStreamsAggregator _aggregator;
     private readonly IDiscoveryService _discoveryService;
@@ -69,6 +76,13 @@ internal sealed class DataStreamsWriter : IDataStreamsWriter
     public event EventHandler<EventArgs>? FlushComplete;
 
     /// <summary>
+    /// Raised when a flush is requested, before the asynchronous flush runs. For testing only:
+    /// lets tests observe that the transaction byte-threshold requested an early flush on the
+    /// dedicated processing thread, independently of the thread pool that performs the send.
+    /// </summary>
+    internal event Action? FlushRequested;
+
+    /// <summary>
     /// Gets the number of points dropped due to a full buffer or disabled DSM.
     /// Public for testing only
     /// </summary>
@@ -96,7 +110,7 @@ internal sealed class DataStreamsWriter : IDataStreamsWriter
                 return;
             }
 
-            _processTask = Task.Factory.StartNew(ProcessQueueLoop, TaskCreationOptions.LongRunning);
+            _processTask = Task.Factory.StartNew(ProcessQueueLoop, CancellationToken.None, TaskCreationOptions.LongRunning, TaskScheduler.Default);
             _processTask.ContinueWith(t => Log.Error(t.Exception, "Error in processing task"), TaskContinuationOptions.OnlyOnFaulted);
 
             _flushTask = Task.Run(FlushTaskLoopAsync);
@@ -123,6 +137,34 @@ internal sealed class DataStreamsWriter : IDataStreamsWriter
 
             if (_buffer.TryEnqueue(point))
             {
+                if (!_drainSignal.IsSet && _buffer.Count >= DrainThreshold)
+                {
+                    _drainSignal.Set();
+                }
+
+                return;
+            }
+        }
+
+        Interlocked.Increment(ref _pointsDropped);
+    }
+
+    public void AddTransaction(in DataStreamsTransactionInfo transaction)
+    {
+        if (!Volatile.Read(ref _isInitialized))
+        {
+            Initialize();
+        }
+
+        if (Volatile.Read(ref _isSupported) != SupportState.Unsupported)
+        {
+            if (_transactionBuffer.TryEnqueue(transaction))
+            {
+                if (!_drainSignal.IsSet && _transactionBuffer.Count >= DrainThreshold)
+                {
+                    _drainSignal.Set();
+                }
+
                 return;
             }
         }
@@ -160,7 +202,17 @@ internal sealed class DataStreamsWriter : IDataStreamsWriter
         _flushTimer?.Dispose();
 #endif
         await FlushAndCloseAsync().ConfigureAwait(false);
-        _flushSemaphore.Dispose();
+
+        // We deliberately do NOT dispose _flushSemaphore or _drainSignal here.
+        // FlushAndCloseAsync waits for the process/flush tasks to complete, but has a 1s
+        // fallback so process exit can never hang. On an overloaded host that fallback can
+        // fire while the flush task is still inside FlushAggregatorAsync (e.g. blocked in
+        // _api.SendAsync). Disposing the primitives would then cause the task's
+        // _flushSemaphore.Release()/_drainSignal.Wait() to throw ObjectDisposedException,
+        // faulting the task and logging a spurious error during shutdown.
+        // Neither primitive's wait handle is ever materialized (we only use
+        // WaitAsync/Wait/Release/Set/Reset/IsSet, never AvailableWaitHandle/WaitHandle), so
+        // they hold no unmanaged resources and Dispose() is unnecessary here.
     }
 
     private async Task FlushAndCloseAsync()
@@ -169,6 +221,9 @@ internal sealed class DataStreamsWriter : IDataStreamsWriter
         {
             return;
         }
+
+        // Wake ProcessQueueLoop immediately so it can observe _processExit and return.
+        _drainSignal.Set();
 
         // nothing else to do, since the writer was not fully initialized
         if (!Volatile.Read(ref _isInitialized) || _processTask == null || _flushTask == null)
@@ -193,6 +248,7 @@ internal sealed class DataStreamsWriter : IDataStreamsWriter
     private void RequestFlush()
     {
         _forceFlush.TrySetResult(true);
+        FlushRequested?.Invoke();
     }
 
     private async Task FlushTaskLoopAsync()
@@ -227,7 +283,7 @@ internal sealed class DataStreamsWriter : IDataStreamsWriter
             return;
         }
 
-        if (await _flushSemaphore.WaitAsync(TimeSpan.FromMilliseconds(100)).ConfigureAwait(false))
+        if (await _flushSemaphore.WaitAsync(_flushSemaphoreWaitTime).ConfigureAwait(false))
         {
             try
             {
@@ -239,6 +295,14 @@ internal sealed class DataStreamsWriter : IDataStreamsWriter
                 while (_backlogBuffer.TryDequeue(out var backlogPoint))
                 {
                     _aggregator.AddBacklog(in backlogPoint);
+                }
+
+                while (_transactionBuffer.TryDequeue(out var transactionPoint))
+                {
+                    if (!_aggregator.AddTransaction(transactionPoint))
+                    {
+                        Interlocked.Increment(ref _pointsDropped);
+                    }
                 }
             }
             catch (Exception ex)
@@ -319,7 +383,8 @@ internal sealed class DataStreamsWriter : IDataStreamsWriter
     {
         while (true)
         {
-            Thread.Sleep(_waitTimeSpan);
+            _drainSignal.Wait(DrainTimeoutMs);
+            _drainSignal.Reset();
 
             if (!_flushSemaphore.Wait(_flushSemaphoreWaitTime))
             {
@@ -341,6 +406,19 @@ internal sealed class DataStreamsWriter : IDataStreamsWriter
                 while (_backlogBuffer.TryDequeue(out var backlogPoint))
                 {
                     _aggregator.AddBacklog(in backlogPoint);
+                }
+
+                while (_transactionBuffer.TryDequeue(out var transactionPoint))
+                {
+                    if (!_aggregator.AddTransaction(transactionPoint))
+                    {
+                        Interlocked.Increment(ref _pointsDropped);
+                    }
+                }
+
+                if (_aggregator.ShouldFlushTransactions)
+                {
+                    RequestFlush();
                 }
             }
             catch (Exception ex)

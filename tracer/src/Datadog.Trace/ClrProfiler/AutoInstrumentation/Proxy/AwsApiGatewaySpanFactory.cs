@@ -24,7 +24,7 @@ internal sealed class AwsApiGatewaySpanFactory : IInferredSpanFactory
     {
         try
         {
-            var resourceUrl = UriHelpers.GetCleanUriPath(data.Path).ToLowerInvariant();
+            var resourceUrl = data.Path is null ? string.Empty : UriHelpers.GetCleanUriPath(data.Path).ToLowerInvariant();
 
             var tags = new InferredProxyTags
             {
@@ -36,8 +36,8 @@ internal sealed class AwsApiGatewaySpanFactory : IInferredSpanFactory
                 InferredSpan = 1,
             };
 
-            var scope = tracer.StartActiveInternal(operationName: OperationName, parent: parent, startTime: data.StartTime, tags: tags, serviceName: data.DomainName);
-            scope.Span.ResourceName = data.HttpMethod is null ? resourceUrl : $"{data.HttpMethod.ToUpperInvariant()} {resourceUrl}";
+            var scope = tracer.StartActiveInternal(operationName: OperationName, parent: parent, startTime: data.StartTime, tags: tags, serviceName: data.DomainName, serviceNameSource: "aws-apigateway");
+            scope.Span.ResourceName = data.HttpMethod is null ? resourceUrl : $"{data.HttpMethod} {resourceUrl}";
             scope.Span.Type = SpanTypes.Web;
 
             return scope;

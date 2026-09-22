@@ -50,11 +50,11 @@ internal class AppSecBenchmarkUtils
             _ => throw new Exception($"RID not detected or supported: {fDesc.OSPlatform} / {fDesc.ProcessArchitecture}")
         };
 
-        var folder = new DirectoryInfo(Environment.CurrentDirectory);
-        var path = Environment.CurrentDirectory;
+        var folder = new DirectoryInfo(AppContext.BaseDirectory);
+        var path = AppContext.BaseDirectory;
         while (folder.Exists)
         {
-            path = Path.Combine(folder.FullName, "./shared/bin/monitoring-home");
+            path = Path.Combine(folder.FullName, "./artifacts/monitoring-home");
             if (Directory.Exists(path))
             {
                 break;

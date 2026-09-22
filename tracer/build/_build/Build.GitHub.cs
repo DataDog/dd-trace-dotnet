@@ -43,7 +43,8 @@ partial class Build
     [Parameter("Git repository name", Name = "GITHUB_REPOSITORY_NAME", List = false)]
     readonly string GitHubRepositoryName = "dd-trace-dotnet";
 
-    [Parameter("An Azure Devops PAT (for use in GitHub Actions)", Name = "AZURE_DEVOPS_TOKEN")]
+    [Parameter("An Azure Devops PAT (for use in GitHub Actions). Optional - if not provided, "
+             + "artifacts are downloaded anonymously (works for public projects, tighter rate limits)", Name = "AZURE_DEVOPS_TOKEN")]
     readonly string AzureDevopsToken;
 
     [Parameter("Azure Devops pipeline id", Name = "AZURE_DEVOPS_PIPELINE_ID", List = false)]
@@ -746,15 +747,12 @@ partial class Build
         .Unlisted()
         .Description("Downloads the release artifacts from the specified Azure DevOps BuildId")
         .DependsOn(CreateRequiredDirectories)
-        .Requires(() => AzureDevopsToken)
         .Requires(() => Version)
         .Requires(() => AzureDevopsBuildId)
         .Executes(async () =>
         {
             // Connect to Azure DevOps Services
-            var connection = new VssConnection(
-                new Uri(AzureDevopsOrganisation),
-                new VssBasicCredential(string.Empty, AzureDevopsToken));
+            var connection = CreateAzureDevopsConnection();
 
             // Get an Azure devops client
             using var buildHttpClient = connection.GetClient<BuildHttpClient>();
@@ -763,7 +761,7 @@ partial class Build
 
             var resourceDownloadUrl = artifact.Resource.DownloadUrl;
 
-            Console.WriteLine("::set-output name=artifacts_path::" + OutputDirectory / artifact.Name);
+            Console.WriteLine("::set-output name=artifacts_path::" + ReleaseArtifactsDirectory / artifact.Name);
         });
 
     Target DownloadReleaseArtifacts => _ => _
@@ -776,9 +774,7 @@ partial class Build
        .Executes(async () =>
        {
             // Connect to Azure DevOps Services
-            var connection = new VssConnection(
-                new Uri(AzureDevopsOrganisation),
-                new VssBasicCredential(string.Empty, AzureDevopsToken));
+            var connection = CreateAzureDevopsConnection();
 
             // Get an Azure devops client
             using var buildHttpClient = connection.GetClient<BuildHttpClient>();
@@ -788,12 +784,12 @@ partial class Build
 
             var resourceDownloadUrl = artifact.Resource.DownloadUrl;
 
-            var artifactsPath = OutputDirectory / artifact.Name;
+            var artifactsPath = ReleaseArtifactsDirectory / artifact.Name;
             Console.WriteLine("::set-output name=artifacts_link::" + resourceDownloadUrl);
             Console.WriteLine("::set-output name=artifacts_path::" + artifactsPath);
 
-            var gitlabPath = OutputDirectory / CommitSha;
-            await DownloadGitlabArtifacts(OutputDirectory, CommitSha, FullVersion);
+            var gitlabPath = ReleaseArtifactsDirectory / CommitSha;
+            await DownloadGitlabArtifacts(ReleaseArtifactsDirectory, CommitSha, FullVersion, artifactsPath);
             Console.WriteLine("::set-output name=gitlab_artifacts_path::" + gitlabPath);
 
             var files = artifactsPath.GlobFiles("*.*")
@@ -817,7 +813,7 @@ partial class Build
                 checksums.Add(checksumLine);
             }
 
-            var checksumPath = OutputDirectory / "sha512.txt";
+            var checksumPath = ReleaseArtifactsDirectory / "sha512.txt";
 
             // Use LF so can be read on linux
             File.WriteAllText(checksumPath, string.Join("\n", checksums));
@@ -833,16 +829,14 @@ partial class Build
          .Requires(() => GitHubToken)
          .Executes(async () =>
           {
-              var newReportdir = OutputDirectory / "CodeCoverage" / "New";
-              var oldReportdir = OutputDirectory / "CodeCoverage" / "Old";
+              var newReportdir = BuildDataDirectory / "CodeCoverage" / "New";
+              var oldReportdir = BuildDataDirectory / "CodeCoverage" / "Old";
 
               FileSystemTasks.EnsureCleanDirectory(newReportdir);
               FileSystemTasks.EnsureCleanDirectory(oldReportdir);
 
               // Connect to Azure DevOps Services
-              var connection = new VssConnection(
-                  new Uri(AzureDevopsOrganisation),
-                  new VssBasicCredential(string.Empty, AzureDevopsToken));
+              var connection = CreateAzureDevopsConnection();
 
               // Get a GitHttpClient to talk to the Git endpoints
               using var buildHttpClient = connection.GetClient<BuildHttpClient>();
@@ -911,7 +905,6 @@ partial class Build
          .DependsOn(CreateRequiredDirectories)
          .Requires(() => AzureDevopsToken)
          .Requires(() => GitHubRepositoryName)
-         .Requires(() => GitHubToken)
          .Executes(async () =>
          {
              var isPr = int.TryParse(Environment.GetEnvironmentVariable("PR_NUMBER"), out var prNumber);
@@ -924,9 +917,7 @@ partial class Build
              FileSystemTasks.EnsureCleanDirectory(masterDir);
 
              // Connect to Azure DevOps Services
-             var connection = new VssConnection(
-                 new Uri(AzureDevopsOrganisation),
-                 new VssBasicCredential(string.Empty, AzureDevopsToken));
+             var connection = CreateAzureDevopsConnection();
 
              using var buildHttpClient = connection.GetClient<BuildHttpClient>();
 
@@ -944,14 +935,13 @@ partial class Build
 
              Logger.Information("Markdown build complete, writing report");
 
-             // save the report so we can upload it as an atefact for prosperity
+             // save the report so we can upload it as an artifact for prosperity
              await File.WriteAllTextAsync(executionDir / "execution_time_report.md", markdown);
 
-             if(isPr)
-             {
-                 Logger.Information("Updating PR comment on GitHub");
-                 await ReplaceCommentInPullRequest(prNumber, "## Execution-Time Benchmarks Report", markdown);
-             }
+             // save a concise summary for the PR comment (posted by the next step, after the artifact is published)
+             var summaryMarkdown = CompareExecutionTime.GetCommentSummary(sources);
+             Logger.Information("Summary build complete, writing comment summary");
+             await File.WriteAllTextAsync(executionDir / "execution_time_summary.md", summaryMarkdown);
 
              async Task<Microsoft.TeamFoundation.Build.WebApi.Build> GetExecutionBenchmarkArtifacts(BuildHttpClient httpClient, string branch, AbsolutePath directory)
              {
@@ -979,6 +969,97 @@ partial class Build
                  return build;
              }
          });
+
+    /// <summary>
+    /// Posts the execution-time benchmark comparison as a PR comment, with a direct link to the
+    /// full report artifact. Must run <i>after</i> the <c>execution_time_report</c> artifact has
+    /// been published so that the single-file download URL can be resolved.
+    /// </summary>
+    Target PostExecutionTimeBenchmarkResultsComment => _ => _
+        .Unlisted()
+        .Requires(() => AzureDevopsToken)
+        .Requires(() => GitHubToken)
+        .Requires(() => AzureDevopsBuildId)
+        .Executes(async () =>
+        {
+            var isPr = int.TryParse(Environment.GetEnvironmentVariable("PR_NUMBER"), out var prNumber);
+            if (!isPr)
+            {
+                Logger.Information("Not a PR build, skipping comment posting");
+                return;
+            }
+
+            var executionDir = BuildDataDirectory / "execution_benchmarks";
+            var summaryPath = executionDir / "execution_time_summary.md";
+
+            if (!File.Exists(summaryPath))
+            {
+                throw new Exception($"No execution time summary found at {summaryPath}, skipping comment");
+            }
+
+            var summaryMarkdown = await File.ReadAllTextAsync(summaryPath);
+
+            // Resolve the single-file download URL for the execution_time_report artifact.
+            // This requires the artifact to already be published (guaranteed by pipeline step ordering).
+            string reportUrl = null;
+            var connection = new VssConnection(
+                new Uri(AzureDevopsOrganisation),
+                new VssBasicCredential(string.Empty, AzureDevopsToken));
+
+            using var buildHttpClient = connection.GetClient<BuildHttpClient>();
+
+            // Retry a few times: artifact registration can lag the publish step by a moment.
+            for (var attempt = 0; attempt < 5 && reportUrl is null; attempt++)
+            {
+                if (attempt > 0)
+                {
+                    await Task.Delay(TimeSpan.FromSeconds(5 * attempt));
+                    Logger.Information("Retrying artifact lookup (attempt {Attempt}/5)", attempt + 1);
+                }
+
+                try
+                {
+                    var artifact = await buildHttpClient.GetArtifactAsync(
+                        project: AzureDevopsProjectId,
+                        buildId: AzureDevopsBuildId.Value,
+                        artifactName: "execution_time_report");
+
+                    // Convert the zip downloadUrl to a single-file download URL.
+                    reportUrl = artifact.Resource.DownloadUrl
+                        .Replace("?format=zip", "?format=file&subPath=/execution_time_report.md");
+
+                    Logger.Information("Resolved report URL: {Url}", reportUrl);
+                }
+                catch (ArtifactNotFoundException)
+                {
+                    Logger.Information("Artifact not yet available (attempt {Attempt}/5)", attempt + 1);
+                }
+                catch (VssServiceException ex)
+                {
+                    Logger.Information(ex, "Error looking up artifact (attempt {Attempt}/5)", attempt + 1);
+                }
+            }
+
+            string reportLink;
+            if (reportUrl is null)
+            {
+                // Fall back to the build's artifacts page: not a direct link to the report, but it's
+                // deterministic, so we can always give people _some_ way to get to the full report.
+                var artifactsPageUrl = $"{AzureDevopsOrganisation}/{GitHubRepositoryName}/_build/results?buildId={AzureDevopsBuildId.Value}&view=artifacts&pathAsName=false&type=publishedArtifacts";
+                Logger.Warning("Could not resolve single-file report URL, linking to the build artifacts page instead");
+                reportLink = $"📄 **[Download the full report from the build artifacts →]({artifactsPageUrl})**";
+            }
+            else
+            {
+                var viewerUrl = $"https://andrewlock.github.io/merview/?zen=1&url={Uri.EscapeDataString(reportUrl)}";
+                reportLink = $"📄 **[View the full report (charts + all metrics) →]({viewerUrl})**";
+            }
+
+            var fullMarkdown = summaryMarkdown + "\n\n" + reportLink;
+
+            Logger.Information("Updating PR comment on GitHub");
+            await ReplaceCommentInPullRequest(prNumber, "## Execution-Time Benchmarks Report", fullMarkdown);
+        });
 
     Target VerifyReleaseReadiness => _ => _
             .Unlisted()
@@ -1189,6 +1270,22 @@ partial class Build
         return (artifactBuild, artifact);
     }
 
+    /// <summary>
+    /// Connects to Azure DevOps Services. If <see cref="AzureDevopsToken"/> is not provided, connects
+    /// anonymously instead - this works for public projects, but is subject to tighter rate limits.
+    /// </summary>
+    VssConnection CreateAzureDevopsConnection()
+    {
+        if (string.IsNullOrEmpty(AzureDevopsToken))
+        {
+            Logger.Information($"No AZURE_DEVOPS_TOKEN provided - connecting to {AzureDevopsOrganisation} anonymously");
+        }
+
+        return new VssConnection(
+            new Uri(AzureDevopsOrganisation),
+            new VssBasicCredential(string.Empty, AzureDevopsToken ?? string.Empty));
+    }
+
     static async Task DownloadAzureArtifact(AbsolutePath outputDirectory, BuildArtifact artifact, string token)
     {
         var zipPath = outputDirectory / $"{artifact.Name}.zip";
@@ -1200,7 +1297,10 @@ partial class Build
         var temporary = new HttpClient();
         // some of these files are _huge_ so give a long time to download them
         temporary.Timeout = TimeSpan.FromMinutes(10);
-        temporary.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", Convert.ToBase64String(Encoding.ASCII.GetBytes($":{token}")));
+        if (!string.IsNullOrEmpty(token))
+        {
+            temporary.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", Convert.ToBase64String(Encoding.ASCII.GetBytes($":{token}")));
+        }
 
         var resourceDownloadUrl = artifact.Resource.DownloadUrl;
         var response = await temporary.GetAsync(resourceDownloadUrl);
@@ -1222,7 +1322,7 @@ partial class Build
         Console.WriteLine($"Artifact download complete");
     }
 
-    async Task DownloadGitlabArtifacts(AbsolutePath outputDirectory, string commitSha, string version)
+    async Task DownloadGitlabArtifacts(AbsolutePath outputDirectory, string commitSha, string version, AbsolutePath artifactsPath)
     {
         var awsUri = $"https://dd-windowsfilter.s3.amazonaws.com/builds/tracer/{commitSha}/";
         var artifactsFiles= new []
@@ -1250,6 +1350,14 @@ partial class Build
         Directory.CreateDirectory(tempDir);
         await DownloadArtifact(client, tempDir, $"{awsUri}fleet-installer.zip");
 
+        // Overwrite the NuGet packages Azure DevOps built (in `artifactsPath`, what we actually push
+        // to nuget.org) with the copies GitLab built and Authenticode-signed - see SignDlls and
+        // SignNuGetPackageContents in Build.Gitlab.cs. This includes the .snupkg symbol packages,
+        // which must come from the same build as the .nupkg files they describe. Do this before the
+        // sha512.txt checksums are computed by the caller, so the recorded hashes describe what
+        // actually gets pushed.
+        await ReplaceWithGitlabNuGetPackages(client, destination, awsUri, artifactsPath);
+
         return;
 
         static async Task DownloadArtifact(HttpClient client, AbsolutePath outDir, string fileUrl)
@@ -1257,19 +1365,69 @@ partial class Build
             var fileName = Path.GetFileName(fileUrl);
             var destinationFile = outDir / fileName;
 
-            Console.WriteLine($"Downloading {fileUrl} to {destinationFile}...");
-            var response = await client.GetAsync(fileUrl);
-
-            if (!response.IsSuccessStatusCode)
-            {
-                throw new Exception($"Error downloading GitLab artifacts: {response.StatusCode}:{response.ReasonPhrase}");
-            }
-
-            await using (var file = File.Create(destinationFile))
-            {
-                await response.Content.CopyToAsync(file);
-            }
+            await DownloadFileWithRetry(client, fileUrl, destinationFile, "Error downloading GitLab artifacts");
             Console.WriteLine($"{fileName} downloaded");
+        }
+    }
+
+    // Downloads the NuGet packages (and symbol packages) that GitLab published to S3 for this commit
+    // and replaces every .nupkg/.snupkg in `artifactsPath` with its GitLab counterpart.
+    static async Task ReplaceWithGitlabNuGetPackages(HttpClient client, AbsolutePath destination, string awsUri, AbsolutePath artifactsPath)
+    {
+        var gitlabDir = destination / "signed-nuget-packages";
+        EnsureExistingDirectory(gitlabDir);
+
+        // `dotnet nuget push *.nupkg` implicitly pushes the sibling .snupkg, so we have to replace both
+        var azurePackages = artifactsPath.GlobFiles("*.nupkg", "*.snupkg");
+        if (azurePackages.Count == 0)
+        {
+            throw new Exception($"No .nupkg or .snupkg files found in {artifactsPath}");
+        }
+
+        foreach (var azureFile in azurePackages)
+        {
+            var name = azureFile.Name;
+            var gitlabUrl = $"{awsUri}signed-nuget-packages/{name}";
+            var gitlabFile = gitlabDir / name;
+
+            await DownloadFileWithRetry(
+                client,
+                gitlabUrl,
+                gitlabFile,
+                $"Error downloading '{name}' from GitLab. Check that the 'publish' GitLab job uploaded this file for this commit (the .nupkg files come from the 'build' and 'sign-nuget-packages' jobs, the .snupkg files from 'build')");
+
+            File.Copy(gitlabFile, azureFile, overwrite: true);
+            Console.WriteLine($"Replaced {name} with the GitLab copy from {gitlabUrl}");
+        }
+    }
+
+    // GitLab's artifacts are served from S3 via a plain HTTPS GET (see the callers), which
+    // occasionally flakes transiently. Retry a few times with backoff before giving up.
+    static async Task DownloadFileWithRetry(HttpClient client, string url, AbsolutePath destinationFile, string errorContext, int maxAttempts = 3)
+    {
+        for (var attempt = 1; ; attempt++)
+        {
+            try
+            {
+                Console.WriteLine($"Downloading {url} to {destinationFile} (attempt {attempt}/{maxAttempts})...");
+                var response = await client.GetAsync(url);
+                if (!response.IsSuccessStatusCode)
+                {
+                    throw new Exception($"{errorContext}: {response.StatusCode}:{response.ReasonPhrase}");
+                }
+
+                await using (var file = File.Create(destinationFile))
+                {
+                    await response.Content.CopyToAsync(file);
+                }
+
+                return;
+            }
+            catch (Exception ex) when (attempt < maxAttempts)
+            {
+                Console.WriteLine($"Attempt {attempt}/{maxAttempts} to download {url} failed ({ex.Message}), retrying in {attempt}s...");
+                await Task.Delay(TimeSpan.FromSeconds(attempt));
+            }
         }
     }
 
@@ -1417,7 +1575,7 @@ partial class Build
                             artifactName: artifactName);
 
             Logger.Information("Release artifacts found, downloading...");
-            await DownloadAzureArtifact(OutputDirectory, artifact, AzureDevopsToken);
+            await DownloadAzureArtifact(ReleaseArtifactsDirectory, artifact, AzureDevopsToken);
 
             return artifact;
         }

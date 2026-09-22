@@ -142,12 +142,12 @@ namespace Datadog.Trace.TestHelpers
         /// <summary>
         /// Wait for the given number of spans to appear.
         /// </summary>
-        /// <param name="count">The expected number of spans.</param>
+        /// <param name="count">The minimum number of spans to wait for.</param>
         /// <param name="timeoutInMilliseconds">The timeout</param>
         /// <param name="operationName">The integration we're testing</param>
         /// <param name="minDateTime">Minimum time to check for spans from</param>
         /// <param name="returnAllOperations">When true, returns every span regardless of operation name</param>
-        /// <param name="assertExpectedCount">When true, asserts that the number of spans to return matches the count</param>
+        /// <param name="failOnTimeout">When true, fails if the requested number of spans is not received before the timeout.</param>
         /// <returns>The list of spans.</returns>
         public async Task<IImmutableList<MockSpan>> WaitForSpansAsync(
             int count,
@@ -155,7 +155,7 @@ namespace Datadog.Trace.TestHelpers
             string operationName = null,
             DateTimeOffset? minDateTime = null,
             bool returnAllOperations = false,
-            bool assertExpectedCount = true)
+            bool failOnTimeout = true)
         {
             var deadline = DateTime.UtcNow.AddMilliseconds(timeoutInMilliseconds);
             var minimumOffset = (minDateTime ?? DateTimeOffset.MinValue).ToUnixTimeNanoseconds();
@@ -196,9 +196,11 @@ namespace Datadog.Trace.TestHelpers
                 await Task.Delay(250);
             }
 
-            if (assertExpectedCount)
+            if (failOnTimeout)
             {
-                relevantSpans.Should().HaveCountGreaterThanOrEqualTo(count, "because we want to ensure that we don't timeout while waiting for spans from the mock tracer agent");
+                relevantSpans.Count(s => operationName is null || s.Name == operationName)
+                             .Should()
+                             .BeGreaterThanOrEqualTo(count, "because the requested spans should be received before the timeout");
             }
 
             foreach (var headers in TraceRequestHeaders)
@@ -333,6 +335,16 @@ namespace Datadog.Trace.TestHelpers
                 {
                     return stats.Sum(s => s.Stats.Sum(bucket => bucket.Stats.Length)) >= statsCount;
                 });
+        }
+
+        public async Task<IImmutableList<MockDataStreamsPayload>> WaitForDataStreamsTransactionsAsync(
+            int timeoutInMilliseconds = 20000)
+        {
+            return await WaitForDataStreamsAsync(
+                timeoutInMilliseconds,
+                stats => stats.Any(
+                    p => p.Stats != null &&
+                         p.Stats.Any(b => b.Transactions is { Length: > 0 })));
         }
 
         public async Task<IImmutableList<MockDataStreamsPayload>> WaitForDataStreamsAsync(
@@ -558,6 +570,11 @@ namespace Datadog.Trace.TestHelpers
             {
                 HandleTracerFlarePayload(request);
                 responseType = MockTracerResponseType.TracerFlare;
+            }
+            else if (request.PathAndQuery.StartsWith("/symdb/v1/input"))
+            {
+                HandlePotentialSymbolDbData(request);
+                responseType = MockTracerResponseType.SymbolDb;
             }
             else
             {
@@ -869,6 +886,27 @@ namespace Datadog.Trace.TestHelpers
             }
         }
 
+        private void HandlePotentialSymbolDbData(MockHttpRequest request)
+        {
+            try
+            {
+                _ = request.ReadStreamBody();
+            }
+            catch (Exception ex)
+            {
+                var message = ex.Message.ToLowerInvariant();
+
+                if (message.Contains("beyond the end of the stream"))
+                {
+                    // Accept call is likely interrupted by a dispose
+                    // Swallow the exception and let the test finish
+                    return;
+                }
+
+                throw;
+            }
+        }
+
         private MockTracerResponse HandleEvpProxyPayload(MockHttpRequest request)
         {
             if (ShouldDeserializeTraces)
@@ -1072,13 +1110,16 @@ namespace Datadog.Trace.TestHelpers
             public bool ClientDropP0s { get; set; } = true;
 
             [JsonProperty("version")]
-            public string AgentVersion { get; set; }
+            public string AgentVersion { get; set; } = "7.65.0";
 
             [JsonProperty("span_meta_structs")]
             public bool SpanMetaStructs { get; set; } = true;
 
             [JsonProperty("span_events")]
             public bool SpanEvents { get; set; } = false;
+
+            [JsonProperty("obfuscation_version")]
+            public int ObfuscationVersion { get; set; } = 1;
         }
 
         public class TcpUdpAgent : MockTracerAgent
@@ -1584,7 +1625,8 @@ namespace Datadog.Trace.TestHelpers
                 {
                     try
                     {
-                        var bytesReceived = new byte[0x1000];
+                        // Must be at least StatsdMaxUnixDomainSocketPacketSize
+                        var bytesReceived = new byte[0x2000];
                         // Connectionless protocol doesn't need Accept, Receive will block until we get something
                         var byteCount = _udsStatsSocket.Receive(bytesReceived);
                         var stats = Encoding.UTF8.GetString(bytesReceived, 0, byteCount);

@@ -5,8 +5,8 @@
 
 #nullable enable
 using System;
-using System.Collections.Specialized;
 using System.Diagnostics.CodeAnalysis;
+using Datadog.Trace.Util;
 
 #pragma warning disable CS1570
 
@@ -45,17 +45,34 @@ internal sealed class AzureDevOpsSourceLinkUrlParser : SourceLinkUrlParser
                 return false;
             }
 
-            // Extract the query string of the URI and check if the required parameters exist.
-            var query = ParseQueryString(uri.Query);
-            commitSha = query["version"];
-            if (!IsValidCommitSha(commitSha))
+            // Extract the commit sha from the query string.
+            ReadOnlySpan<char> shaSpan = default;
+            foreach (var pair in uri.Query.SplitIntoSpans('&'))
+            {
+                ReadOnlySpan<char> pairSpan = pair;
+                var eqIndex = pairSpan.IndexOf('=');
+                if (eqIndex < 0)
+                {
+                    continue;
+                }
+
+                var key = pairSpan.Slice(0, eqIndex).TrimStart('?');
+                if (key.SequenceEqual("version".AsSpan()))
+                {
+                    shaSpan = pairSpan.Slice(eqIndex + 1);
+                    break;
+                }
+            }
+
+            if (!IsValidCommitSha(shaSpan))
             {
                 return false;
             }
 
+            commitSha = shaSpan.ToString();
             repositoryUrl = BuildRepositoryUrl(uri);
 
-            return repositoryUrl != null;
+            return repositoryUrl is not null;
         }
         catch (Exception ex)
         {
@@ -65,51 +82,46 @@ internal sealed class AzureDevOpsSourceLinkUrlParser : SourceLinkUrlParser
         return false;
     }
 
+    /// <summary>
+    /// Builds the repository URL by locating /_apis/git/repositories/ in the path.
+    /// Works for all Azure DevOps variants:
+    ///   visualstudio.com: /{project}/_apis/git/repositories/{repo}/items
+    ///   dev.azure.com:    /{org}/{project}/_apis/git/repositories/{repo}/items
+    ///   TFS on-prem:      [/{vdir}][/{collection}]/{project}/_apis/git/repositories/{repo}/items
+    /// The repo URL is everything before _apis, plus /_git/{repo}.
+    /// </summary>
     private static string? BuildRepositoryUrl(Uri uri)
     {
-        var segments = uri.AbsolutePath.Split(new char[] { '/' }, StringSplitOptions.RemoveEmptyEntries);
-        if (segments.Length < 5)
+        var path = uri.AbsolutePath;
+
+        // Find /_apis/git/repositories/ in the path
+        const string marker = "/_apis/git/repositories/";
+        var markerPos = path.IndexOf(marker, StringComparison.Ordinal);
+        if (markerPos <= 0)
+        {
+            // markerPos == 0 means nothing before _apis (no project); < 0 means not found
+            return null;
+        }
+
+        var span = path.AsSpan();
+
+        // The prefix path (project and any virtual dir/collection) is everything before /_apis
+        var prefixPath = span.Slice(0, markerPos);
+
+        // Extract the repo name after /_apis/git/repositories/
+        var afterMarker = span.Slice(markerPos + marker.Length);
+        var repoEndSlash = afterMarker.IndexOf('/');
+        if (repoEndSlash <= 0)
         {
             return null;
         }
 
-        if (uri.Host.EndsWith("visualstudio.com", StringComparison.OrdinalIgnoreCase))
-        {
-            // Legacy format: https://{organization}.visualstudio.com
-            var project = segments[0];
-            var repoName = segments[4];
-            return $"https://{uri.Host}/{project}/_git/{repoName}";
-        }
+        var repo = afterMarker.Slice(0, repoEndSlash);
 
-        if (uri.Host.EndsWith("dev.azure.com", StringComparison.OrdinalIgnoreCase))
-        {
-            // New format: https://dev.azure.com/{organization}
-            var organization = segments[0];
-            var project = segments[1];
-            var repoName = segments[5];
-            return $"https://{uri.Host}/{organization}/{project}/_git/{repoName}";
-        }
-
-        Log.Error("Unsupported Azure DevOps host: {Host}", uri.Host);
-        return null;
-    }
-
-    private static NameValueCollection ParseQueryString(string queryString)
-    {
-        // We can't use HttpUtility.ParseQueryString because it would mean taking a dependency on System.Web.
-        // Instead, we parse the query string manually by simply splitting on the '&' character,
-        // as in our particular use case, there is no need to decode the values.
-        var query = new NameValueCollection();
-        var pairs = queryString.Split(new[] { '&' }, StringSplitOptions.RemoveEmptyEntries);
-        foreach (var pair in pairs)
-        {
-            var parts = pair.Split(new char[] { '=' }, 2);
-            if (parts.Length == 2)
-            {
-                query.Add(parts[0], parts[1]);
-            }
-        }
-
-        return query;
+#if NET6_0_OR_GREATER
+        return $"{uri.Scheme}://{uri.Authority}{prefixPath}/_git/{repo}";
+#else
+        return $"{uri.Scheme}://{uri.Authority}{prefixPath.ToString()}/_git/{repo.ToString()}";
+#endif
     }
 }

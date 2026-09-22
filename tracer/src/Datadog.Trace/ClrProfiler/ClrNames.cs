@@ -42,6 +42,8 @@ namespace Datadog.Trace.ClrProfiler
         public const string HttpResponseMessage = "System.Net.Http.HttpResponseMessage";
         public const string HttpResponseMessageTask = "System.Threading.Tasks.Task`1[System.Net.Http.HttpResponseMessage]";
 
+        public const string IEnumerableKeyValuePairStringString = "System.Collections.Generic.IEnumerable`1[System.Collections.Generic.KeyValuePair`2[System.String,System.String]]";
+
         public const string GenericTask = "System.Threading.Tasks.Task`1";
         public const string GenericTaskWithGenericClassParameter = "System.Threading.Tasks.Task`1[!0]";
         public const string GenericTaskWithGenericMethodParameter = "System.Threading.Tasks.Task`1[!!0]";

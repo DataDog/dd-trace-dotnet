@@ -95,7 +95,7 @@ public partial class CalculatorClient : System.ServiceModel.ClientBase<ICalculat
     {
         using (OperationContextScope ocs = new OperationContextScope(this.InnerChannel))
         {
-            Samples.SampleHelpers.InjectScope(OperationContext.Current.OutgoingMessageHeaders, SetHeaderValues, Samples.SampleHelpers.GetActiveSpanContext());
+            ManuallyInjectScopeIntoHeaders();
             return base.Channel.ServerEmptyActionAdd(n1, n2);
         }
     }
@@ -104,7 +104,7 @@ public partial class CalculatorClient : System.ServiceModel.ClientBase<ICalculat
     {
         using (OperationContextScope ocs = new OperationContextScope(this.InnerChannel))
         {
-            Samples.SampleHelpers.InjectScope(OperationContext.Current.OutgoingMessageHeaders, SetHeaderValues, Samples.SampleHelpers.GetActiveSpanContext());
+            ManuallyInjectScopeIntoHeaders();
             return base.Channel.ServerEmptyActionAddAsync(n1, n2);
         }
     }
@@ -113,7 +113,7 @@ public partial class CalculatorClient : System.ServiceModel.ClientBase<ICalculat
     {
         using (OperationContextScope ocs = new OperationContextScope(this.InnerChannel))
         {
-            Samples.SampleHelpers.InjectScope(OperationContext.Current.OutgoingMessageHeaders, SetHeaderValues, Samples.SampleHelpers.GetActiveSpanContext());
+            ManuallyInjectScopeIntoHeaders();
             return base.Channel.Sync_ServerSyncAdd(n1, n2);
         }
     }
@@ -122,7 +122,7 @@ public partial class CalculatorClient : System.ServiceModel.ClientBase<ICalculat
     {
         using (OperationContextScope ocs = new OperationContextScope(this.InnerChannel))
         {
-            Samples.SampleHelpers.InjectScope(OperationContext.Current.OutgoingMessageHeaders, SetHeaderValues, Samples.SampleHelpers.GetActiveSpanContext());
+            ManuallyInjectScopeIntoHeaders();
             return base.Channel.Task_ServerSyncAdd(n1, n2);
         }
     }
@@ -131,7 +131,7 @@ public partial class CalculatorClient : System.ServiceModel.ClientBase<ICalculat
     {
         using (OperationContextScope ocs = new OperationContextScope(this.InnerChannel))
         {
-            Samples.SampleHelpers.InjectScope(OperationContext.Current.OutgoingMessageHeaders, SetHeaderValues, Samples.SampleHelpers.GetActiveSpanContext());
+            ManuallyInjectScopeIntoHeaders();
             return base.Channel.Begin_ServerSyncAdd(n1, n2, callback, state);
         }
     }
@@ -140,7 +140,7 @@ public partial class CalculatorClient : System.ServiceModel.ClientBase<ICalculat
     {
         using (OperationContextScope ocs = new OperationContextScope(this.InnerChannel))
         {
-            Samples.SampleHelpers.InjectScope(OperationContext.Current.OutgoingMessageHeaders, SetHeaderValues, Samples.SampleHelpers.GetActiveSpanContext());
+            ManuallyInjectScopeIntoHeaders();
             return base.Channel.End_ServerSyncAdd(result);
         }
     }
@@ -149,7 +149,7 @@ public partial class CalculatorClient : System.ServiceModel.ClientBase<ICalculat
     {
         using (OperationContextScope ocs = new OperationContextScope(this.InnerChannel))
         {
-            Samples.SampleHelpers.InjectScope(OperationContext.Current.OutgoingMessageHeaders, SetHeaderValues, Samples.SampleHelpers.GetActiveSpanContext());
+            ManuallyInjectScopeIntoHeaders();
             return base.Channel.Sync_ServerTaskAdd(n1, n2);
         }
     }
@@ -158,7 +158,7 @@ public partial class CalculatorClient : System.ServiceModel.ClientBase<ICalculat
     {
         using (OperationContextScope ocs = new OperationContextScope(this.InnerChannel))
         {
-            Samples.SampleHelpers.InjectScope(OperationContext.Current.OutgoingMessageHeaders, SetHeaderValues, Samples.SampleHelpers.GetActiveSpanContext());
+            ManuallyInjectScopeIntoHeaders();
             return base.Channel.Task_ServerTaskAdd(n1, n2);
         }
     }
@@ -167,7 +167,7 @@ public partial class CalculatorClient : System.ServiceModel.ClientBase<ICalculat
     {
         using (OperationContextScope ocs = new OperationContextScope(this.InnerChannel))
         {
-            Samples.SampleHelpers.InjectScope(OperationContext.Current.OutgoingMessageHeaders, SetHeaderValues, Samples.SampleHelpers.GetActiveSpanContext());
+            ManuallyInjectScopeIntoHeaders();
             return base.Channel.Begin_ServerTaskAdd(n1, n2, callback, state);
         }
     }
@@ -176,7 +176,7 @@ public partial class CalculatorClient : System.ServiceModel.ClientBase<ICalculat
     {
         using (OperationContextScope ocs = new OperationContextScope(this.InnerChannel))
         {
-            Samples.SampleHelpers.InjectScope(OperationContext.Current.OutgoingMessageHeaders, SetHeaderValues, Samples.SampleHelpers.GetActiveSpanContext());
+            ManuallyInjectScopeIntoHeaders();
             return base.Channel.End_ServerTaskAdd(result);
         }
     }
@@ -185,7 +185,7 @@ public partial class CalculatorClient : System.ServiceModel.ClientBase<ICalculat
     {
         using (OperationContextScope ocs = new OperationContextScope(this.InnerChannel))
         {
-            Samples.SampleHelpers.InjectScope(OperationContext.Current.OutgoingMessageHeaders, SetHeaderValues, Samples.SampleHelpers.GetActiveSpanContext());
+            ManuallyInjectScopeIntoHeaders();
             return base.Channel.Sync_ServerAsyncAdd(n1, n2, throwsException, synchronouslyCompletes);
         }
     }
@@ -194,7 +194,7 @@ public partial class CalculatorClient : System.ServiceModel.ClientBase<ICalculat
     {
         using (OperationContextScope ocs = new OperationContextScope(this.InnerChannel))
         {
-            Samples.SampleHelpers.InjectScope(OperationContext.Current.OutgoingMessageHeaders, SetHeaderValues, Samples.SampleHelpers.GetActiveSpanContext());
+            ManuallyInjectScopeIntoHeaders();
             return base.Channel.Task_ServerAsyncAdd(n1, n2, throwsException, synchronouslyCompletes);
         }
     }
@@ -203,7 +203,7 @@ public partial class CalculatorClient : System.ServiceModel.ClientBase<ICalculat
     {
         using (OperationContextScope ocs = new OperationContextScope(this.InnerChannel))
         {
-            Samples.SampleHelpers.InjectScope(OperationContext.Current.OutgoingMessageHeaders, SetHeaderValues, Samples.SampleHelpers.GetActiveSpanContext());
+            ManuallyInjectScopeIntoHeaders();
             return base.Channel.Begin_ServerAsyncAdd(n1, n2, throwsException, synchronouslyCompletes, callback, state);
         }
     }
@@ -212,8 +212,17 @@ public partial class CalculatorClient : System.ServiceModel.ClientBase<ICalculat
     {
         using (OperationContextScope ocs = new OperationContextScope(this.InnerChannel))
         {
-            Samples.SampleHelpers.InjectScope(OperationContext.Current.OutgoingMessageHeaders, SetHeaderValues, Samples.SampleHelpers.GetActiveSpanContext());
+            ManuallyInjectScopeIntoHeaders();
             return base.Channel.End_ServerAsyncAdd(result);
+        }
+    }
+
+    void ManuallyInjectScopeIntoHeaders()
+    {
+        // This "Manual" injection is required _unless_ you're using the OTel client instrumentation, which adds activities automatically
+        if (Environment.GetEnvironmentVariable("USE_OTEL_CLIENT_INSTRUMENTATION") != "1")
+        {
+            Samples.SampleHelpers.InjectScope(OperationContext.Current.OutgoingMessageHeaders, SetHeaderValues, Samples.SampleHelpers.GetActiveSpanContext());
         }
     }
 

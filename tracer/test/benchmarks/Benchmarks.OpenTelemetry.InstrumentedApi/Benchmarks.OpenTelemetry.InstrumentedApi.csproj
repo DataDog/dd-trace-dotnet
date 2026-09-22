@@ -9,7 +9,7 @@
     <RootNamespace>Benchmarks.OpenTelemetry.InstrumentedApi</RootNamespace>
 
     <!-- benchmarkdotnet only support numberic values, not "latest"-->
-    <LangVersion>11</LangVersion>
+    <LangVersion>14</LangVersion>
 
     <!-- Strong name signature -->
     <SignAssembly>true</SignAssembly>
@@ -24,8 +24,8 @@
   <ItemGroup>
     <Compile Include="..\Benchmarks.OpenTelemetry.Api\*.cs" />
     <Compile Include="..\Benchmarks.OpenTelemetry.Api\Trace\**\*.cs" Link="Trace\%(RecursiveDir)%(Filename)%(Extension)" />
-    <Compile Include="..\Benchmarks.Trace\DummyAgentWriter.cs" />
-    <Compile Include="..\Benchmarks.Trace\TracerHelper.cs" />
+    <Compile Include="..\Benchmarks.Trace\TestInfrastructure\DummyAgentWriter.cs" />
+    <Compile Include="..\Benchmarks.Trace\TestInfrastructure\TracerHelper.cs" />
   </ItemGroup>
 
   <ItemGroup>

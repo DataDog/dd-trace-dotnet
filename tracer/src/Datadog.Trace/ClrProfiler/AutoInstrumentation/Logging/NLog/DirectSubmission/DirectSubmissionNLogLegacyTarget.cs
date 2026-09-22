@@ -26,7 +26,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
         private readonly IDirectSubmissionLogSink _sink;
         private readonly int _minimumLevel;
         private readonly LogFormatter? _formatter;
-        private Func<IDictionary<string, object?>?>? _getProperties = null;
+        private Func<IDictionary<string, object?>?>? _getProperties;
 
         internal DirectSubmissionNLogLegacyTarget(IDirectSubmissionLogSink sink, DirectSubmissionLogLevel minimumLevel)
             : this(sink, minimumLevel, formatter: null)

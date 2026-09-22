@@ -29,7 +29,15 @@ public class DataStreamsMessagePackFormatterTests
         var service = "service=name";
         var bucketDuration = 10_000_000_000;
         var edgeTags = new[] { "edge-1" };
-        var settings = TracerSettings.Create(new() { { ConfigurationKeys.Environment, "my-env" }, { ConfigurationKeys.ServiceName, service } });
+        var settings = TracerSettings.Create(new Dictionary<string, object>
+        {
+            { ConfigurationKeys.Environment, "my-env" },
+            { ConfigurationKeys.ServiceName, service },
+            // TODO: inject a deterministic value for process tags instead, to make test closer to reality
+            // there are already tests about process tags, so this one is not required to "prove" it works
+            // but it'd be cleaner not to have exclusions like this
+            { ConfigurationKeys.PropagateProcessTags, "false" }
+        });
         var formatter = new DataStreamsMessagePackFormatter(settings, new ProfilerSettings(ProfilerState.Disabled));
 
         var timeNs = DateTimeOffset.UtcNow.ToUnixTimeNanoseconds();
@@ -91,7 +99,7 @@ public class DataStreamsMessagePackFormatterTests
         };
 
         using var ms = new MemoryStream();
-        formatter.Serialize(ms, bucketDurationNs: bucketDuration, statsBuckets: buckets, backlogBuckets);
+        formatter.Serialize(ms, bucketDurationNs: bucketDuration, statsBuckets: buckets, backlogBuckets, System.Array.Empty<byte>());
 
         var data = new ArraySegment<byte>(ms.GetBuffer());
 
@@ -192,7 +200,7 @@ public class DataStreamsMessagePackFormatterTests
         var formatter = new DataStreamsMessagePackFormatter(settings, new ProfilerSettings(ProfilerState.Disabled));
 
         using var ms = new MemoryStream();
-        formatter.Serialize(ms, bucketDuration, [], []);
+        formatter.Serialize(ms, bucketDuration, [], [], System.Array.Empty<byte>());
         var result = MessagePackSerializer.Deserialize<MockDataStreamsPayload>(new ArraySegment<byte>(ms.GetBuffer()));
 
         // content varies depending on how the tests are run, so we cannot really assert on the content.

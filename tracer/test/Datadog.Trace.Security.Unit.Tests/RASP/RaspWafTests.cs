@@ -46,7 +46,7 @@ public class RaspWafTests : WafLibraryRequiredTest
         var args = CreateArgs(etcPasswd);
         var context = InitWaf(true, "rasp-rule-set.json", args, out _);
         var argsVulnerable = new Dictionary<string, object> { { AddressesConstants.FileAccess, file } };
-        var resultEph = context.RunWithEphemeral(argsVulnerable, timeout, true);
+        var resultEph = context.RunWithEphemeral(argsVulnerable, timeout, true, out _);
         resultEph.Timeout.Should().Be(shouldRaiseTimeout);
         if (!shouldRaiseTimeout)
         {
@@ -64,7 +64,7 @@ public class RaspWafTests : WafLibraryRequiredTest
 
         // Default config does not block
         var argsVulnerable = new Dictionary<string, object> { { AddressesConstants.FileAccess, value } };
-        var resultEph = context.RunWithEphemeral(argsVulnerable, TimeoutMicroSeconds, true);
+        var resultEph = context.RunWithEphemeral(argsVulnerable, TimeoutMicroSeconds, true, out _);
         resultEph.BlockInfo["status_code"].Should().Be(403);
         resultEph.Timeout.Should().BeFalse("Timeout should be false");
         var jsonString = JsonConvert.SerializeObject(resultEph.Data);
@@ -78,7 +78,7 @@ public class RaspWafTests : WafLibraryRequiredTest
         var updateRes1 = UpdateWaf(configurationState, waf, ref context);
         updateRes1.Success.Should().BeTrue();
         context.Run(args, TimeoutMicroSeconds);
-        var resultEph1 = context.RunWithEphemeral(argsVulnerable, TimeoutMicroSeconds, true);
+        var resultEph1 = context.RunWithEphemeral(argsVulnerable, TimeoutMicroSeconds, true, out _);
         resultEph1.Timeout.Should().BeFalse("Timeout should be false");
         resultEph1.BlockInfo["status_code"].Should().Be(500);
         resultEph1.AggregatedTotalRuntimeRasp.Should().BeGreaterThan(0);
@@ -88,7 +88,7 @@ public class RaspWafTests : WafLibraryRequiredTest
     [Theory]
     [InlineData("select * from employees where name = 'John' or '1' = '1'", "John' or '1' = '1", "rasp-942-100", BlockingAction.BlockDefaultActionName, BlockingAction.BlockRequestType, AddressesConstants.DBStatement)]
     [InlineData("../../../../../../../../../etc/passwd", "../../../../../../../../../etc/passwd", "rasp-001-001", "customBlock", BlockingAction.BlockRequestType, AddressesConstants.FileAccess)]
-    [InlineData("https://169.254.169.254/somewhere/in/the/app", "169.254.169.254", "rasp-002-001", BlockingAction.BlockDefaultActionName, BlockingAction.BlockRequestType, AddressesConstants.UrlAccess)]
+    [InlineData("https://169.254.169.254/somewhere/in/the/app", "169.254.169.254", "rasp-002-001", BlockingAction.BlockDefaultActionName, BlockingAction.BlockRequestType, AddressesConstants.DownstreamUrl)]
     [InlineData("ls; echo hello", "echo hello", "rasp-932-100", BlockingAction.BlockDefaultActionName, BlockingAction.BlockRequestType, AddressesConstants.ShellInjection)]
     [InlineData("ls &> file; echo hello", "&> file", "rasp-932-100", BlockingAction.BlockDefaultActionName, BlockingAction.BlockRequestType, AddressesConstants.ShellInjection)]
     [InlineData(new string[] { "/usr/bin/reboot" }, "/usr/bin/reboot", "rasp-932-110", BlockingAction.BlockDefaultActionName, BlockingAction.BlockRequestType, AddressesConstants.CommandInjection)]
@@ -150,7 +150,7 @@ public class RaspWafTests : WafLibraryRequiredTest
 
         for (int i = 0; i < runNtimes; i++)
         {
-            var resultEph = context.RunWithEphemeral(argsVulnerable, TimeoutMicroSeconds, true);
+            var resultEph = context.RunWithEphemeral(argsVulnerable, TimeoutMicroSeconds, true, out _);
             CheckResult(rule, expectedAction, resultEph, actionType);
         }
     }
@@ -165,7 +165,7 @@ public class RaspWafTests : WafLibraryRequiredTest
     {
         var initResult = CreateWaf(configurationState, newEncoder, wafDebugEnabled: enableDebug);
         waf = initResult.Waf;
-        var context = waf.CreateContext();
+        var context = waf.CreateContext(out _);
         var result = context.Run(args, TimeoutMicroSeconds);
         result.Timeout.Should().BeFalse("Timeout should be false");
         return context;

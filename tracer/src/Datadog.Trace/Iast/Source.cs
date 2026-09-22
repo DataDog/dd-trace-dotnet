@@ -89,7 +89,7 @@ internal sealed class Source
 
     private static int ComputeLength(string value)
     {
-        if (value == null || value == string.Empty)
+        if (string.IsNullOrEmpty(value))
         {
             return 0;
         }

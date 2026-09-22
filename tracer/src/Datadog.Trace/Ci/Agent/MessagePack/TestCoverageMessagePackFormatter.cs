@@ -4,6 +4,7 @@
 // </copyright>
 #nullable enable
 
+using System;
 using Datadog.Trace.Ci.Coverage.Models.Tests;
 using Datadog.Trace.Vendors.MessagePack;
 
@@ -11,12 +12,14 @@ namespace Datadog.Trace.Ci.Agent.MessagePack;
 
 internal sealed class TestCoverageMessagePackFormatter : EventMessagePackFormatter<TestCoverage>
 {
-    private readonly byte[] _testSessionIdBytes = StringEncoding.UTF8.GetBytes("test_session_id");
-    private readonly byte[] _testSuiteIdBytes = StringEncoding.UTF8.GetBytes("test_suite_id");
-    private readonly byte[] _spanIdBytes = StringEncoding.UTF8.GetBytes("span_id");
-    private readonly byte[] _filesBytes = StringEncoding.UTF8.GetBytes("files");
-    private readonly byte[] _filenameBytes = StringEncoding.UTF8.GetBytes("filename");
-    private readonly byte[] _bitmapBytes = StringEncoding.UTF8.GetBytes("bitmap");
+#pragma warning disable SA1516 // Elements should be separated by blank line
+    private static ReadOnlySpan<byte> TestSessionIdBytes => "test_session_id"u8;
+    private static ReadOnlySpan<byte> TestSuiteIdBytes => "test_suite_id"u8;
+    private static ReadOnlySpan<byte> SpanIdBytes => "span_id"u8;
+    private static ReadOnlySpan<byte> FilesBytes => "files"u8;
+    private static ReadOnlySpan<byte> FilenameBytes => "filename"u8;
+    private static ReadOnlySpan<byte> BitmapBytes => "bitmap"u8;
+#pragma warning restore SA1516
 
     public override int Serialize(ref byte[] bytes, int offset, TestCoverage value, IFormatterResolver formatterResolver)
     {
@@ -47,23 +50,23 @@ internal sealed class TestCoverageMessagePackFormatter : EventMessagePackFormatt
 
         if (value.SessionId != 0)
         {
-            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _testSessionIdBytes);
+            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, TestSessionIdBytes);
             offset += MessagePackBinary.WriteUInt64(ref bytes, offset, value.SessionId);
         }
 
         if (value.SuiteId != 0)
         {
-            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _testSuiteIdBytes);
+            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, TestSuiteIdBytes);
             offset += MessagePackBinary.WriteUInt64(ref bytes, offset, value.SuiteId);
         }
 
         if (value.SpanId != 0)
         {
-            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _spanIdBytes);
+            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, SpanIdBytes);
             offset += MessagePackBinary.WriteUInt64(ref bytes, offset, value.SpanId);
         }
 
-        offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _filesBytes);
+        offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, FilesBytes);
         if (value.Files is { Count: > 0 } files)
         {
             offset += MessagePackBinary.WriteArrayHeader(ref bytes, offset, (uint)files.Count);
@@ -71,10 +74,10 @@ internal sealed class TestCoverageMessagePackFormatter : EventMessagePackFormatt
             {
                 offset += MessagePackBinary.WriteMapHeader(ref bytes, offset, 2);
 
-                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _filenameBytes);
+                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, FilenameBytes);
                 offset += MessagePackBinary.WriteString(ref bytes, offset, file.FileName);
 
-                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _bitmapBytes);
+                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, BitmapBytes);
                 offset += MessagePackBinary.WriteBytes(ref bytes, offset, file.Bitmap);
             }
         }

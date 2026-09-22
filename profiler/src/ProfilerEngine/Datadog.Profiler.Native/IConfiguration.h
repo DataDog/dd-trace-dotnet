@@ -55,6 +55,7 @@ public:
     virtual int32_t CpuThreadsThreshold() const = 0;
     virtual int32_t CodeHotspotsThreadsThreshold() const = 0;
     virtual bool IsGarbageCollectionProfilingEnabled() const = 0;
+    virtual bool IsGcLifecycleEventsProcessingSkipped() const = 0;
     virtual bool IsHeapProfilingEnabled() const = 0;
     virtual bool IsAllocationRecorderEnabled() const = 0;
     virtual bool IsDebugInfoEnabled() const = 0;
@@ -84,9 +85,14 @@ public:
     virtual void SetEnablementStatus(EnablementStatus status) = 0;
 
     virtual bool IsHeapSnapshotEnabled() const = 0;
+    virtual bool IsHeapSnapshotSkipTraversal() const = 0;
     virtual std::chrono::minutes GetHeapSnapshotInterval() const = 0;
     virtual std::chrono::milliseconds GetHeapSnapshotCheckInterval() const = 0;
     virtual uint32_t GetHeapSnapshotMemoryPressureThreshold() const = 0;
+    virtual std::chrono::seconds GetTestHeapSnapshotInterval() const = 0;
+    virtual std::chrono::milliseconds GetLibrariesInfoCacheStartTimeout() const = 0;
     virtual uint32_t GetHeapHandleLimit() const = 0;
     virtual bool UseManagedCodeCache() const = 0;
+    virtual bool IsMemoryFootprintEnabled() const = 0;
+    virtual uint32_t GetReferenceTreeFormat() const = 0;
 };

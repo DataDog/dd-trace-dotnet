@@ -7,10 +7,10 @@
 
 using System;
 using System.Threading.Tasks;
-using Datadog.Trace.Debugger.ExceptionAutoInstrumentation.ThirdParty;
 using Datadog.Trace.Debugger.Helpers;
 using Datadog.Trace.Debugger.Sink;
 using Datadog.Trace.Debugger.Snapshots;
+using Datadog.Trace.Debugger.ThirdParty;
 using Datadog.Trace.Debugger.Upload;
 using Datadog.Trace.Logging;
 
@@ -36,19 +36,38 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             return new ExceptionReplay(settings);
         }
 
-        public void Initialize()
+        public bool Initialize(Action? md5Probe = null)
         {
             Log.Information("Initializing Exception Replay");
 
-            if (!ThirdPartyModules.IsValid)
+            try
             {
-                Log.Warning("Third party modules load has failed. Disabling Exception Debugging.");
+                if (md5Probe is null)
+                {
+                    _ = string.Empty.ToUUID();
+                }
+                else
+                {
+                    md5Probe();
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Warning(ex, "Exception Replay has been disabled because MD5 hashing is unavailable.");
                 _isDisabled = true;
-                return;
+                Settings.Disable();
+                return false;
             }
 
             InitSnapshotsSink();
+            if (_isDisabled)
+            {
+                Settings.Disable();
+                return false;
+            }
+
             _exceptionTrackManager = ExceptionTrackManager.Create(Settings);
+            return true;
         }
 
         private void InitSnapshotsSink()
@@ -56,13 +75,10 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             var tracer = Tracer.Instance;
             var debuggerSettings = DebuggerSettings.FromDefaultSource();
 
-            // Set configs relevant for DI and Exception Debugging, using DI's environment keys.
-            DebuggerSnapshotSerializer.SetConfig(debuggerSettings);
-            Redaction.Instance.SetConfig(debuggerSettings.RedactedIdentifiers, debuggerSettings.RedactedExcludedIdentifiers, debuggerSettings.RedactedTypes);
-
             // Set up the snapshots sink.
             var snapshotSlicer = SnapshotSlicer.Create(debuggerSettings);
-            _snapshotSink = SnapshotSink.Create(debuggerSettings, snapshotSlicer);
+            // Exception Replay shares the snapshot pipeline but is not part of the Dynamic Instrumentation guardrail metrics.
+            _snapshotSink = SnapshotSink.Create(debuggerSettings, snapshotSlicer, eventType: null);
             // TODO: respond to changes in exporter settings
             var discoveryService = tracer.TracerManager.DiscoveryService;
             var gitMetadataTagsProvider = tracer.TracerManager.GitMetadataTagsProvider;

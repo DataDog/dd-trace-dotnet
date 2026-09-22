@@ -1,4 +1,4 @@
-﻿// <copyright file="TestingFrameworkEvpTest.cs" company="Datadog">
+// <copyright file="TestingFrameworkEvpTest.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -8,6 +8,7 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
@@ -26,6 +27,7 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI;
 
+[Trait("Area", "CIVisibility")]
 public abstract class TestingFrameworkEvpTest : TestHelper
 {
     private readonly GacFixture _gacFixture;
@@ -72,7 +74,7 @@ public abstract class TestingFrameworkEvpTest : TestHelper
     protected static bool IsMacOS()
         => string.Equals(FrameworkDescription.Instance.OSPlatform, OSPlatformName.MacOS, StringComparison.OrdinalIgnoreCase);
 
-    protected static string GetSettingsJson(string earlyFlakeDetection, string testsSkipping, string testManagementEnabled, string attemptToFixRetries)
+    protected static string GetSettingsJson(string earlyFlakeDetection, string testsSkipping, string testManagementEnabled, string attemptToFixRetries, string flakyTestRetriesEnabled = "false")
     {
         return $$"""
                  {
@@ -91,7 +93,7 @@ public abstract class TestingFrameworkEvpTest : TestHelper
                                  },
                                  "faulty_session_threshold": 100
                              },
-                             "flaky_test_retries_enabled": false,
+                             "flaky_test_retries_enabled": {{flakyTestRetriesEnabled}},
                              "itr_enabled": true,
                              "require_git": false,
                              "tests_skipping": {{testsSkipping}},
@@ -104,6 +106,20 @@ public abstract class TestingFrameworkEvpTest : TestHelper
                      }
                  }
                  """;
+    }
+
+    protected static void AssertEfdSelectedOverAtr(ExecutionData data, string simplePassResource)
+    {
+        var retryTests = data.Tests.Where(t => t.Meta.TryGetValue(TestTags.TestIsRetry, out var isRetry) && isRetry == "true").ToList();
+        retryTests.Should().NotBeEmpty();
+        foreach (var retryTest in retryTests)
+        {
+            retryTest.Meta.Should().ContainKey(TestTags.TestRetryReason);
+            retryTest.Meta[TestTags.TestRetryReason].Should().Be(TestTags.TestRetryReasonEfd);
+        }
+
+        var simplePassTests = data.Tests.Where(t => t.Resource == simplePassResource).ToList();
+        simplePassTests.Should().HaveCountGreaterThan(1);
     }
 
     protected virtual void WriteSpans(List<MockCIVisibilityTest>? tests)
@@ -267,14 +283,14 @@ public abstract class TestingFrameworkEvpTest : TestHelper
                 if (span.GetTag(key) is { } tagValue)
                 {
                     targetTest.Meta[key].Should().Be(tagValue);
-                    targetTest.Meta.Remove(key);
                 }
             }
             else
             {
                 targetTest.Meta[key].Should().Be(value);
-                targetTest.Meta.Remove(key);
             }
+
+            targetTest.Meta.Remove(key);
         }
 
         void AssertEqualDate(string key)
@@ -282,8 +298,9 @@ public abstract class TestingFrameworkEvpTest : TestHelper
             if (span.GetTag(key) is { } keyValue)
             {
                 DateTimeOffset.Parse(targetTest.Meta[key]).Should().Be(DateTimeOffset.Parse(keyValue));
-                targetTest.Meta.Remove(key);
             }
+
+            targetTest.Meta.Remove(key);
         }
     }
 
@@ -389,6 +406,45 @@ public abstract class TestingFrameworkEvpTest : TestHelper
         metadata[SpanTypes.TestSession].Should().Contain(selector);
     }
 
+    protected void ValidateTestSessionFingerprintInputs(
+        MockCIVisibilityTestModule testModule,
+        IReadOnlyCollection<MockCIVisibilityTestSuite> testSuites,
+        IReadOnlyCollection<MockCIVisibilityTest> tests,
+        string sessionWorkingDirectory,
+        string gitRepositoryUrl)
+    {
+        // test_session.name is carried in the event metadata and checked by ValidateMetadata.
+        // git.repository.id_v2 is derived by the backend from git.repository_url.
+        var expectedValues = new Dictionary<string, string>
+        {
+            [CommonTags.GitRepository] = gitRepositoryUrl,
+            [TestTags.CommandWorkingDirectory] = sessionWorkingDirectory,
+        };
+
+        string[] runtimeAndOperatingSystemTags =
+        [
+            CommonTags.OSPlatform,
+            CommonTags.OSVersion,
+            CommonTags.OSArchitecture,
+            CommonTags.RuntimeName,
+            CommonTags.RuntimeVersion,
+            CommonTags.RuntimeArchitecture,
+        ];
+
+        foreach (var tag in runtimeAndOperatingSystemTags)
+        {
+            testModule.Meta.Should().ContainKey(tag);
+            expectedValues[tag] = testModule.Meta[tag];
+        }
+
+        foreach (var expectedValue in expectedValues)
+        {
+            testModule.Meta.Should().Contain(expectedValue);
+            testSuites.Should().AllSatisfy(testSuite => testSuite.Meta.Should().Contain(expectedValue));
+            tests.Should().AllSatisfy(test => test.Meta.Should().Contain(expectedValue));
+        }
+    }
+
     protected void InjectSession(
         out ulong sessionId,
         out string sessionCommand,
@@ -401,11 +457,13 @@ public abstract class TestingFrameworkEvpTest : TestHelper
         // Inject session
         sessionId = RandomIdGenerator.Shared.NextSpanId();
         sessionCommand = "test command";
-        sessionWorkingDirectory = "C:\\evp_demo\\working_directory";
+        var ciValues = (CIEnvironmentValues)CIValues!;
+        var propagatedSessionWorkingDirectory = ciValues.SourceRoot!;
+        sessionWorkingDirectory = ".";
         SetEnvironmentVariable(HttpHeaderNames.TraceId.Replace(".", "_").Replace("-", "_").ToUpperInvariant(), sessionId.ToString(CultureInfo.InvariantCulture));
         SetEnvironmentVariable(HttpHeaderNames.ParentId.Replace(".", "_").Replace("-", "_").ToUpperInvariant(), sessionId.ToString(CultureInfo.InvariantCulture));
         SetEnvironmentVariable(ConfigurationKeys.CIVisibility.TestSessionCommand, sessionCommand);
-        SetEnvironmentVariable(ConfigurationKeys.CIVisibility.TestSessionWorkingDirectory, sessionWorkingDirectory);
+        SetEnvironmentVariable(ConfigurationKeys.CIVisibility.TestSessionWorkingDirectory, propagatedSessionWorkingDirectory);
 
         gitRepositoryUrl = "git@github.com:DataDog/dd-trace-dotnet.git";
         gitBranch = "main";
@@ -419,6 +477,7 @@ public abstract class TestingFrameworkEvpTest : TestHelper
 
         runId = Guid.NewGuid().ToString("n");
         SetEnvironmentVariable(ConfigurationKeys.CIVisibility.TestOptimizationRunId, runId);
+        SetEnvironmentVariable(ConfigurationKeys.CIVisibilityItrCoverageBackfillRunFolder, Path.Combine(Environment.CurrentDirectory, ".dd", runId));
     }
 
     protected virtual async Task ExecuteTestAsync(string packageVersion, string evpVersionToRemove, bool expectedGzip, TestScenario testScenario)
@@ -444,6 +503,7 @@ public abstract class TestingFrameworkEvpTest : TestHelper
             agent.Configuration.Endpoints = agent.Configuration.Endpoints.Where(e => !e.Contains(evpVersionToRemove)).ToArray();
 
             const string correlationId = "2e8a36bda770b683345957cc6c15baf9";
+            var knownTestsPageIndex = 0;
             agent.EventPlatformProxyPayloadReceived += (sender, e) =>
             {
                 if (e.Value.PathAndQuery.EndsWith("api/v2/libraries/tests/services/setting"))
@@ -454,7 +514,27 @@ public abstract class TestingFrameworkEvpTest : TestHelper
 
                 if (e.Value.PathAndQuery.EndsWith("api/v2/ci/libraries/tests"))
                 {
-                    e.Value.Response = string.IsNullOrEmpty(testScenario.MockData.TestsJson) ? new MockTracerResponse(string.Empty, 404) : new MockTracerResponse(testScenario.MockData.TestsJson, 200);
+                    if (testScenario.MockData.KnownTestsJsonPages is { Length: > 0 } pages)
+                    {
+                        // Serve paginated responses sequentially
+                        var idx = knownTestsPageIndex++;
+                        if (idx < pages.Length)
+                        {
+                            e.Value.Response = new MockTracerResponse(pages[idx], 200);
+                        }
+                        else
+                        {
+                            // The mock HTTP transports cannot emit an empty response body.
+                            // Use an invalid payload instead to simulate a missing continuation page
+                            // while still exercising the Known Tests invalid-payload handling path.
+                            e.Value.Response = new MockTracerResponse("{\"data\":null}", 404);
+                        }
+                    }
+                    else
+                    {
+                        e.Value.Response = string.IsNullOrEmpty(testScenario.MockData.TestsJson) ? new MockTracerResponse(string.Empty, 404) : new MockTracerResponse(testScenario.MockData.TestsJson, 200);
+                    }
+
                     return;
                 }
 
@@ -466,7 +546,9 @@ public abstract class TestingFrameworkEvpTest : TestHelper
 
                 if (e.Value.PathAndQuery.EndsWith("api/v2/ci/tests/skippable"))
                 {
-                    e.Value.Response = new MockTracerResponse($"{{\"data\":[],\"meta\":{{\"correlation_id\":\"{correlationId}\"}}}}", 200);
+                    e.Value.Response = string.IsNullOrEmpty(testScenario.MockData.SkippableTestsJson)
+                                           ? new MockTracerResponse($"{{\"data\":[],\"meta\":{{\"correlation_id\":\"{correlationId}\"}}}}", 200)
+                                           : new MockTracerResponse(testScenario.MockData.SkippableTestsJson, 200);
                     return;
                 }
 
@@ -508,7 +590,12 @@ public abstract class TestingFrameworkEvpTest : TestHelper
                 }
             };
 
-            using var processResult = await RunDotnetTestSampleAndWaitForExit(agent, packageVersion: packageVersion, expectedExitCode: testScenario.ExpectedExitCode, useDotnetExec: testScenario.UseDotnetExec);
+            using var processResult = await RunDotnetTestSampleAndWaitForExit(
+                                          agent,
+                                          arguments: GetTestRunnerArguments(packageVersion, testScenario.UseDotnetExec),
+                                          packageVersion: packageVersion,
+                                          expectedExitCode: testScenario.ExpectedExitCode,
+                                          useDotnetExec: testScenario.UseDotnetExec);
             Assert.Equal(testScenario.ExpectedSpans, executionData.Tests.Count);
 
             // Call the validate action
@@ -534,6 +621,7 @@ public abstract class TestingFrameworkEvpTest : TestHelper
                                  .ThenBy(s => GetValueOrDefault(s.Meta, TestTags.TestIsRetry))
                                  .ThenBy(s => GetValueOrDefault(s.Meta, TestTags.TestAttemptToFixPassed))
                                  .ThenBy(s => GetValueOrDefault(s.Meta, TestTags.TestHasFailedAllRetries))
+                                 .ThenBy(s => GetValueOrDefault(s.Meta, TestTags.TestFinalStatus))
                                  .ThenBy(s => GetValueOrDefault(s.Meta, EarlyFlakeDetectionTags.AbortReason)),
                     settings);
             }
@@ -551,6 +639,8 @@ public abstract class TestingFrameworkEvpTest : TestHelper
         }
     }
 
+    protected virtual string? GetTestRunnerArguments(string packageVersion, bool useDotnetExec) => null;
+
     private static TValue? GetValueOrDefault<TKey, TValue>(IDictionary<TKey, TValue> dictionary, TKey key)
         where TKey : notnull => dictionary.TryGetValue(key, out var value) ? value : default;
 
@@ -559,17 +649,45 @@ public abstract class TestingFrameworkEvpTest : TestHelper
         public readonly string SettingsJson;
         public readonly string TestsJson;
         public readonly string TestManagementTestsJson;
+        public readonly string SkippableTestsJson;
+
+        /// <summary>
+        /// Optional paginated known tests responses. When non-null, the handler returns these
+        /// raw page bodies sequentially instead of <see cref="TestsJson"/>. Negative-path tests
+        /// may intentionally omit fields such as attributes or page_info.
+        /// </summary>
+        public readonly string[]? KnownTestsJsonPages;
 
         public MockData(string settingsJson, string testsJson, string testManagementTestsJson)
         {
             SettingsJson = settingsJson;
             TestsJson = testsJson;
             TestManagementTestsJson = testManagementTestsJson;
+            SkippableTestsJson = string.Empty;
+            KnownTestsJsonPages = null;
+        }
+
+        public MockData(string settingsJson, string testsJson, string testManagementTestsJson, string skippableTestsJson)
+        {
+            SettingsJson = settingsJson;
+            TestsJson = testsJson;
+            TestManagementTestsJson = testManagementTestsJson;
+            SkippableTestsJson = skippableTestsJson;
+            KnownTestsJsonPages = null;
+        }
+
+        public MockData(string settingsJson, string[] knownTestsJsonPages, string testManagementTestsJson)
+        {
+            SettingsJson = settingsJson;
+            TestsJson = string.Empty;
+            TestManagementTestsJson = testManagementTestsJson;
+            SkippableTestsJson = string.Empty;
+            KnownTestsJsonPages = knownTestsJsonPages;
         }
 
         public override string ToString()
         {
-            return $"SettingsJson: {SettingsJson}, TestsJson: {TestsJson}, TestManagementTestsJson: {TestManagementTestsJson}";
+            return $"SettingsJson: {SettingsJson}, TestsJson: {TestsJson}, TestManagementTestsJson: {TestManagementTestsJson}, SkippableTestsJson: {SkippableTestsJson}";
         }
     }
 

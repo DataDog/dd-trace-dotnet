@@ -17,6 +17,7 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.FeatureFlags.Exposure.Model;
 using Datadog.Trace.HttpOverStreams;
 using Datadog.Trace.Logging;
+using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Serialization;
 
@@ -28,7 +29,8 @@ internal sealed class ExposureApi : IDisposable
 
     private const int DefaultCapacity = 1 << 16; // 65536 elements
     public const string ExposurePath = "evp_proxy/v2/api/v2/exposures";
-    private static readonly JsonSerializerSettings SerializerSettings = new()
+    [TestingAndPrivateOnly]
+    internal static readonly JsonSerializerSettings SerializerSettings = new()
     {
         NullValueHandling = NullValueHandling.Include,
         ContractResolver = new DefaultContractResolver
@@ -41,20 +43,13 @@ internal sealed class ExposureApi : IDisposable
     private readonly TimeSpan _sendInterval = TimeSpan.FromSeconds(10);
     private readonly Queue<ExposureEvent> _exposures = new Queue<ExposureEvent>();
 
-    private ExposureCache _exposureCache = new ExposureCache(DefaultCapacity);
-    private KeyValuePair<string, string>[] _apiRequestHeaders;
+    private readonly ExposureCache _exposureCache = new ExposureCache(DefaultCapacity);
     private IApiRequestFactory _apiRequestFactory;
     private Dictionary<string, string> _context;
-    private int _started = 0;
+    private int _started;
 
     internal ExposureApi(TracerSettings tracerSettings)
     {
-        _apiRequestHeaders =
-        [
-            new("X-Datadog-EVP-Subdomain", "event-platform-intake"),
-            .. AgentHttpHeaderNames.MinimalHeaders
-        ];
-
         UpdateApi(tracerSettings.Manager.InitialExporterSettings);
         UpdateContext(tracerSettings.Manager.InitialMutableSettings);
 
@@ -79,9 +74,7 @@ internal sealed class ExposureApi : IDisposable
                 exporterSettings,
                 productName: "FeatureFlags exposure",
                 tcpTimeout: TimeSpan.FromSeconds(5),
-                _apiRequestHeaders,
-                () => new MinimalAgentHeaderHelper(),
-                uri => uri);
+                httpHeaderHelper: EventPlatformHeaderHelper.Instance);
             Interlocked.Exchange(ref _apiRequestFactory!, apiRequestFactory);
         }
 

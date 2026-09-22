@@ -3,28 +3,17 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System;
-using System.IO;
-using System.Linq;
-using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
-using Datadog.Trace.Agent.Transports;
-using Datadog.Trace.AppSec.Rcm.Models.AsmFeatures;
-using Datadog.Trace.Ci;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.FeatureFlags.Rcm.Model;
 using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.TestHelpers;
-using Datadog.Trace.TestHelpers.Ci;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using FluentAssertions;
 using FluentAssertions.Execution;
-using VerifyXunit;
 using Xunit;
 using Xunit.Abstractions;
-
-#pragma warning disable SA1402 // File may only contain a single type
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.FeatureFlags;
 
@@ -33,29 +22,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.FeatureFlags;
 // Include these tests in the ManualInstrumentation batch
 [Collection(nameof(ManualInstrumentationTests))]
 #endif
-public class FeatureFlagsTests : FeatureFlagsTestsBase
+public class FeatureFlagsTests : TestHelper
 {
     public FeatureFlagsTests(ITestOutputHelper output)
-        : base("FeatureFlags", output)
-    {
-    }
-}
-
-#if NETFRAMEWORK
-[Collection(nameof(ManualInstrumentationTests))]
-#endif
-public class OpenFeatureFeatureFlagsTests : FeatureFlagsTestsBase
-{
-    public OpenFeatureFeatureFlagsTests(ITestOutputHelper output)
         : base("OpenFeature", output)
-    {
-    }
-}
-
-public abstract class FeatureFlagsTestsBase : TestHelper
-{
-    public FeatureFlagsTestsBase(string sampleName, ITestOutputHelper output)
-        : base(sampleName, output)
     {
     }
 
@@ -91,6 +61,7 @@ public abstract class FeatureFlagsTestsBase : TestHelper
 
         Assert.NotNull(output);
         Assert.Contains("<INSTRUMENTED>", output);
+        Assert.Contains("<INITIALIZED: READY>", output);
         Assert.Contains("Eval (nonexistent) : ", output);
         Assert.Contains("Eval (simple-string) : <OK: ", output);
         Assert.Contains("Eval (rule-based-flag) : <OK: ", output);
@@ -123,5 +94,3 @@ public abstract class FeatureFlagsTestsBase : TestHelper
         return process.StandardOutput.ToString();
     }
 }
-
-#pragma warning restore SA1402 // File may only contain a single type

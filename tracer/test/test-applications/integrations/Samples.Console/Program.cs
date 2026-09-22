@@ -125,6 +125,16 @@ namespace Samples.Console_
                     Thread.Sleep(Timeout.Infinite);
                     return;
                 }
+
+                if (args[0].StartsWith("console-ctrl", StringComparison.OrdinalIgnoreCase))
+                {
+#if NETFRAMEWORK
+                    ConsoleCtrlHandlerHelper.RunConsoleCtrlScenario(args[0]);
+                    return;
+#else
+                    throw new NotSupportedException($"'{args[0]}' only applies to .NET Framework, where System.Console.ControlCHooker exists.");
+#endif
+                }
             }
         }
 
@@ -141,7 +151,7 @@ namespace Samples.Console_
                 var declaringType = method.DeclaringType.FullName;
                 var methodName = method.Name;
 
-                var symbol = method.Module.Assembly == typeof(Program).Assembly ? "REDACTED" : $"{declaringType}.{methodName}";
+                var symbol =$"{declaringType}.{methodName}";
 
                 // .NET and ClrMD reports generics with a different syntax
                 symbol = symbol.Replace("Progress`1", "Progress<System.__Canon>");

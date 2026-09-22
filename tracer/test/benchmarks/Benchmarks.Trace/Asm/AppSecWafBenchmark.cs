@@ -38,7 +38,7 @@ public class AppSecWafBenchmark
         AppSecBenchmarkUtils.SetupDummyAgent();
         var wafLibraryInvoker = AppSecBenchmarkUtils.CreateWafLibraryInvoker();
 
-        var rulesPath = Path.Combine(Directory.GetCurrentDirectory(), "Asm", "rule-set.1.10.0.json");
+        var rulesPath = Path.Combine(AppContext.BaseDirectory, "Asm", "rule-set.1.10.0.json");
         var config = new NameValueCollection
         {
             { ConfigurationKeys.AppSec.Rules, rulesPath },
@@ -154,7 +154,7 @@ public class AppSecWafBenchmark
     [Benchmark]
     public void RunWafRealisticBenchmark()
     {
-        var context = _waf.CreateContext();
+        var context = _waf.CreateContext(out _);
         context!.Run(_stage1, TimeoutMicroSeconds);
         context!.Run(_stage2, TimeoutMicroSeconds);
         context!.Run(_stage3, TimeoutMicroSeconds);
@@ -164,7 +164,7 @@ public class AppSecWafBenchmark
     [Benchmark]
     public void RunWafRealisticBenchmarkWithAttack()
     {
-        var context = _waf.CreateContext();
+        var context = _waf.CreateContext(out _);
         context!.Run(_stage1Attack, TimeoutMicroSeconds);
         context.Dispose();
     }

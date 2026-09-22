@@ -1,4 +1,4 @@
-﻿// <copyright file="Span.cs" company="Datadog">
+// <copyright file="Span.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -9,6 +9,7 @@ using System.Globalization;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
+using Datadog.Trace.Activity;
 using Datadog.Trace.Debugger;
 using Datadog.Trace.Debugger.ExceptionAutoInstrumentation;
 using Datadog.Trace.ExtensionMethods;
@@ -39,11 +40,12 @@ namespace Datadog.Trace
         {
         }
 
-        internal Span(SpanContext context, DateTimeOffset? start, ITags tags, IEnumerable<SpanLink> links = null)
+        internal Span(SpanContext context, DateTimeOffset? start, ITags tags, IEnumerable<SpanLink> links = null, bool openTelemetrySemanticsEnabled = false)
         {
             Tags = tags ?? new TagsList();
             Context = context;
             StartTime = start ?? Context.TraceContext.Clock.UtcNow;
+            OpenTelemetrySemanticsEnabled = openTelemetrySemanticsEnabled;
 
             if (links is not null)
             {
@@ -80,15 +82,21 @@ namespace Datadog.Trace
         internal bool Error { get; set; }
 
         /// <summary>
+        /// Gets a value indicating whether OpenTelemetry trace semantics are enabled for this span.
+        /// </summary>
+        internal bool OpenTelemetrySemanticsEnabled { get; }
+
+        /// <summary>
         /// Gets or sets the service name.
+        /// The setter marks the source as manual ("m") and exists as the
+        /// duck-typed entry point for Datadog.Trace.Manual.dll users.
+        /// Internal code should call <see cref="SetService"/> with an explicit source instead.
         /// </summary>
         internal string ServiceName
         {
             get => Context.ServiceName;
-            set
-            {
-                Context.ServiceName = value;
-            }
+            [Obsolete("Use SetService(serviceName, source) instead to explicitly provide a source.")]
+            set => SetService(value, value is not null ? Configuration.Schema.ServiceNameMetadata.Manual : null);
         }
 
         /// <summary>
@@ -155,6 +163,15 @@ namespace Datadog.Trace
         }
 
         /// <summary>
+        /// Sets the service name with an explicit source for <c>_dd.svc_src</c>.
+        /// </summary>
+        internal void SetService(string serviceName, string source)
+        {
+            Context.ServiceName = serviceName;
+            Context.ServiceNameSource = source;
+        }
+
+        /// <summary>
         /// Returns a <see cref="string" /> that represents this instance.
         /// </summary>
         /// <returns>
@@ -197,7 +214,11 @@ namespace Datadog.Trace
         {
             if (IsFinished)
             {
-                Log.Warning("SetTag should not be called after the span was closed");
+                Log.Warning(
+                    "SetTag should not be called after the span was closed. key: {Key}, span_id: {SpanId}, trace_id: {TraceId}",
+                    property0: key,
+                    property1: SpanId,
+                    property2: TraceId128);
                 return this;
             }
 
@@ -400,23 +421,23 @@ namespace Datadog.Trace
         /// <param name="exception">The exception.</param>
         internal void SetException(Exception exception)
         {
-            // We do not log BlockExceptions as errors
-            if (exception is not AppSec.BlockException)
-            {
-                Error = true;
-                SetExceptionTags(exception);
-            }
+            SetException(exception, markAsError: true);
         }
 
         /// <summary>
-        /// Add the StackTrace and other exception metadata to the span,
-        /// but does not mark the span as an error.
+        /// Add the StackTrace and other exception metadata to the span.
         /// </summary>
         /// <param name="exception">The exception.</param>
-        internal void SetExceptionTags(Exception exception)
+        /// <param name="markAsError">Whether to mark the span as an error. BlockExceptions are never marked as errors.</param>
+        internal void SetException(Exception exception, bool markAsError)
         {
             if (exception != null && exception is not AppSec.BlockException)
             {
+                if (markAsError)
+                {
+                    Error = true;
+                }
+
                 try
                 {
                     // for AggregateException, use the first inner exception until we can support multiple errors.
@@ -427,9 +448,23 @@ namespace Datadog.Trace
                         exception = aggregateException.InnerExceptions[0];
                     }
 
-                    SetTag(Trace.Tags.ErrorMsg, exception.Message);
-                    SetTag(Trace.Tags.ErrorType, exception.GetType().ToString());
-                    SetTag(Trace.Tags.ErrorStack, exception.ToString());
+                    if (OpenTelemetrySemanticsEnabled)
+                    {
+                        AddEvent(new SpanEvent(
+                            OtlpHelpers.OpenTelemetryException,
+                            attributes:
+                            [
+                                new(OtlpHelpers.OpenTelemetryErrorType, exception.GetType().ToString()),
+                                new(OtlpHelpers.OpenTelemetryErrorMsg, exception.Message),
+                                new(OtlpHelpers.OpenTelemetryErrorStack, exception.ToString()),
+                            ]));
+                    }
+                    else
+                    {
+                        SetTag(Trace.Tags.ErrorMsg, exception.Message);
+                        SetTag(Trace.Tags.ErrorType, exception.GetType().ToString());
+                        SetTag(Trace.Tags.ErrorStack, exception.ToString());
+                    }
 
                     DebuggerManager.Instance.ExceptionReplay?.Report(this, exception);
                 }

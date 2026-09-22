@@ -23,6 +23,8 @@ namespace Datadog.Trace.Debugger.Configurations.Models
 
         public SnapshotSegment? When { get; set; }
 
+        public CaptureExpression[]? CaptureExpressions { get; set; }
+
         public bool Equals(LogProbe? other)
         {
             if (ReferenceEquals(null, other))
@@ -35,7 +37,7 @@ namespace Datadog.Trace.Debugger.Configurations.Models
                 return true;
             }
 
-            return base.Equals(other) && Equals(Capture, other.Capture) && Equals(Sampling, other.Sampling) && Template == other.Template && CaptureSnapshot == other.CaptureSnapshot && Segments.NullableSequentialEquals(other.Segments) && Equals(When, other.When);
+            return base.Equals(other) && Equals(Capture, other.Capture) && Equals(Sampling, other.Sampling) && Template == other.Template && CaptureSnapshot == other.CaptureSnapshot && Segments.NullableSequentialEquals(other.Segments) && Equals(When, other.When) && CaptureExpressions.NullableSequentialEquals(other.CaptureExpressions);
         }
 
         public override bool Equals(object? obj)
@@ -60,13 +62,7 @@ namespace Datadog.Trace.Debugger.Configurations.Models
 
         public override int GetHashCode()
         {
-            return HashCode.Combine(
-                base.GetHashCode(),
-                Capture,
-                Sampling,
-                Template,
-                CaptureSnapshot,
-                Segments);
+            return HashCode.Combine(base.GetHashCode(), Capture, Sampling, Template, CaptureSnapshot, Segments.NullableSequentialHashCode(), When, CaptureExpressions.NullableSequentialHashCode());
         }
     }
 }

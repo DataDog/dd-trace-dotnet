@@ -11,6 +11,7 @@ using Datadog.Trace.Debugger.PInvoke;
 using Datadog.Trace.Logging;
 
 #nullable enable
+
 namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
 {
     internal sealed class ExceptionCaseInstrumentationManager

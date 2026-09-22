@@ -9,11 +9,17 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Datadog.Trace;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.DogStatsd;
 using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.Sampling;
+using Datadog.Trace.TestHelpers.Stats;
+using Datadog.Trace.TestHelpers.TestTracer;
 using Datadog.Trace.Tests.Util;
+using Datadog.Trace.Util;
 using FluentAssertions;
 using Moq;
 using Xunit;
@@ -33,7 +39,7 @@ namespace Datadog.Trace.Tests.Agent
             int invocationCount = 0;
 
             var api = new Mock<IApi>();
-            api.Setup(a => a.SendStatsAsync(It.IsAny<StatsBuffer>(), bucketDuration.ToNanoseconds()))
+            api.Setup(a => a.SendStatsAsync(It.IsAny<StatsBuffer>(), bucketDuration.ToNanoseconds(), It.IsAny<int>()))
                 .Callback(
                     () =>
                     {
@@ -45,7 +51,7 @@ namespace Datadog.Trace.Tests.Agent
                 .Returns(Task.FromResult(true));
 
             // Mock the DiscoveryService so StatsAggregator.CanComputeStats = true and Api.SendStatsAsync will be called
-            var aggregator = new StatsAggregator(api.Object, GetSettings(bucketDurationSeconds), new StubDiscoveryService());
+            var aggregator = new StatsAggregator(api.Object, GetSettings(bucketDurationSeconds), new StubDiscoveryService(), Mock.Of<IStatsdManager>(), isOtlp: false);
 
             try
             {
@@ -56,7 +62,7 @@ namespace Datadog.Trace.Tests.Agent
                 while (stopwatch.Elapsed.Minutes < 1)
                 {
                     // Flush is not called if no spans are processed
-                    aggregator.Add(new Span(new SpanContext(1, 1), DateTime.UtcNow));
+                    aggregator.Add(CreateTopLevelSpan(DateTime.UtcNow));
 
                     if (mutex.Wait(TimeSpan.FromMilliseconds(100)))
                     {
@@ -80,27 +86,94 @@ namespace Datadog.Trace.Tests.Agent
 
             // First, validate that Flush does call SendStatsAsync even if disposed
             // If this behavior change then the test needs to be rewritten
-            var aggregator = new StatsAggregator(api.Object, GetSettings(), new StubDiscoveryService());
+            var aggregator = new StatsAggregator(api.Object, GetSettings(), new StubDiscoveryService(), Mock.Of<IStatsdManager>(), isOtlp: false);
 
             // Dispose immediately to make Flush complete without delay
             await aggregator.DisposeAsync();
 
-            aggregator.Add(new Span(new SpanContext(1, 2), DateTimeOffset.UtcNow));
+            aggregator.Add(CreateTopLevelSpan(DateTimeOffset.UtcNow));
 
             await aggregator.Flush();
 
             // Make sure that SendStatsAsync was called
-            api.Verify(a => a.SendStatsAsync(It.IsAny<StatsBuffer>(), It.IsAny<long>()), Times.Once);
+            api.Verify(a => a.SendStatsAsync(It.IsAny<StatsBuffer>(), It.IsAny<long>(), It.IsAny<int>()), Times.Once);
             api.Reset();
 
             // Now the actual test
-            aggregator = new StatsAggregator(api.Object, GetSettings(), new StubDiscoveryService());
+            aggregator = new StatsAggregator(api.Object, GetSettings(), new StubDiscoveryService(), Mock.Of<IStatsdManager>(), isOtlp: false);
             await aggregator.DisposeAsync();
 
             await aggregator.Flush();
 
             // No span is pushed so SendStatsAsync shouldn't be called
-            api.Verify(a => a.SendStatsAsync(It.IsAny<StatsBuffer>(), It.IsAny<long>()), Times.Never);
+            api.Verify(a => a.SendStatsAsync(It.IsAny<StatsBuffer>(), It.IsAny<long>(), It.IsAny<int>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task StaleBuckets_DoNotTriggerFlush()
+        {
+            var api = new Mock<IApi>();
+            var aggregator = new StatsAggregator(api.Object, GetSettings(), new StubDiscoveryService(), Mock.Of<IStatsdManager>(), isOtlp: false);
+            await aggregator.DisposeAsync();
+
+            // Add a span and flush — this should send stats
+            aggregator.Add(CreateTopLevelSpan(DateTimeOffset.UtcNow));
+            await aggregator.Flush();
+            api.Verify(a => a.SendStatsAsync(It.IsAny<StatsBuffer>(), It.IsAny<long>(), It.IsAny<int>()), Times.Once);
+            api.Reset();
+
+            // Flush again with no new spans. The buffer still has stale keys (retained
+            // for DDSketch reuse) but with Hits == 0. This should NOT trigger a send,
+            // otherwise the agent receives an empty stats array.
+            await aggregator.Flush();
+            api.Verify(a => a.SendStatsAsync(It.IsAny<StatsBuffer>(), It.IsAny<long>(), It.IsAny<int>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task IdleFlush_StillAdvancesStartAndResetsBuffer()
+        {
+            var api = new Mock<IApi>();
+            var aggregator = new StatsAggregator(api.Object, GetSettings(), new StubDiscoveryService(), Mock.Of<IStatsdManager>(), isOtlp: false);
+            await aggregator.DisposeAsync();
+
+            // Add a span and flush to populate the buffer
+            aggregator.Add(CreateTopLevelSpan(DateTimeOffset.UtcNow));
+            await aggregator.Flush();
+            api.Reset();
+
+            var bufferAfterFirstFlush = aggregator.CurrentBuffer;
+            var startAfterFirstFlush = bufferAfterFirstFlush.Start;
+
+            // Flush with no new spans. The next window must still advance and the flushed
+            // buffer must still be reset so stale keys are pruned.
+            await aggregator.Flush();
+
+            aggregator.CurrentBuffer.Start.Should().BeGreaterOrEqualTo(startAfterFirstFlush);
+            bufferAfterFirstFlush.Buckets.Should().BeEmpty("stale keys with zero hits should be pruned by Reset");
+        }
+
+        [Fact]
+        public async Task Otlp_FlushesUseContiguousTimestamps()
+        {
+            const int bucketDurationSeconds = 60;
+            var windows = new List<(long Start, long Duration)>();
+            var api = new Mock<IApi>();
+            api.Setup(a => a.SendStatsAsync(It.IsAny<StatsBuffer>(), It.IsAny<long>(), It.IsAny<int>()))
+               .Callback<StatsBuffer, long, int>((buffer, duration, _) => windows.Add((buffer.Start, duration)))
+               .Returns(Task.FromResult(true));
+
+            var aggregator = new StatsAggregator(api.Object, GetSettings(bucketDurationSeconds), NullDiscoveryService.Instance, Mock.Of<IStatsdManager>(), isOtlp: true);
+            await aggregator.DisposeAsync();
+
+            aggregator.Add(CreateTopLevelSpan(DateTimeOffset.UtcNow));
+            await aggregator.Flush();
+            aggregator.Add(CreateTopLevelSpan(DateTimeOffset.UtcNow));
+            await aggregator.Flush();
+
+            windows.Should().HaveCount(2);
+            windows[0].Duration.Should().BePositive();
+            windows[0].Duration.Should().BeLessThan(TimeSpan.FromSeconds(bucketDurationSeconds).ToNanoseconds());
+            windows[1].Start.Should().Be(windows[0].Start + windows[0].Duration);
         }
 
         [Fact]
@@ -110,33 +183,32 @@ namespace Datadog.Trace.Tests.Agent
             const long durationMs = 100;
             const long duration = durationMs * millisecondsToNanoseconds;
 
-            ulong id = 0;
             var start = DateTimeOffset.UtcNow;
 
-            var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Mock.Of<IDiscoveryService>());
+            var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Mock.Of<IDiscoveryService>(), Mock.Of<IStatsdManager>(), isOtlp: false);
 
             try
             {
                 // Baseline
-                var baselineSpan = CreateSpan(id++, start, durationMs);
+                var baselineSpan = CreateSpan(start, durationMs);
 
                 // Unique Name (Operation)
-                var operationSpan = CreateSpan(id++, start, durationMs, operationName: "unique-name");
+                var operationSpan = CreateSpan(start, durationMs, operationName: "unique-name");
 
                 // Unique Resource
-                var resourceSpan = CreateSpan(id++, start, durationMs, resourceName: "unique-resource");
+                var resourceSpan = CreateSpan(start, durationMs, resourceName: "unique-resource");
 
                 // Unique Service
-                var serviceSpan = CreateSpan(id++, start, durationMs, serviceName: "unique-service");
+                var serviceSpan = CreateSpan(start, durationMs, serviceName: "unique-service");
 
                 // Unique Type
-                var typeSpan = CreateSpan(id++, start, durationMs, type: "unique-type");
+                var typeSpan = CreateSpan(start, durationMs, type: "unique-type");
 
                 // Unique Synthetics
-                var syntheticsSpan = CreateSpan(id++, start, durationMs, origin: "synthetics");
+                var syntheticsSpan = CreateSpan(start, durationMs, origin: "synthetics");
 
                 // Unique HTTP Status Code
-                var httpSpan = CreateSpan(id++, start, durationMs, httpStatusCode: "400");
+                var httpSpan = CreateSpan(start, durationMs, httpStatusCode: "400");
 
                 var spans = new Span[] { baselineSpan, operationSpan, resourceSpan, serviceSpan, typeSpan, syntheticsSpan, httpSpan };
                 aggregator.Add(spans);
@@ -146,7 +218,7 @@ namespace Datadog.Trace.Tests.Agent
 
                 foreach (var span in spans)
                 {
-                    var key = StatsAggregator.BuildKey(span);
+                    var key = aggregator.BuildKey(span);
                     buffer.Buckets.Should().ContainKey(key);
 
                     var bucket = buffer.Buckets[key];
@@ -166,13 +238,12 @@ namespace Datadog.Trace.Tests.Agent
                 await aggregator.DisposeAsync();
             }
 
-            Span CreateSpan(ulong id, DateTimeOffset start, long durationMs, string operationName = "name", string resourceName = "resource", string serviceName = "service", string type = "http", string httpStatusCode = "200", string origin = "rum")
+            Span CreateSpan(DateTimeOffset start, long durationMs, string operationName = "name", string resourceName = "resource", string serviceName = "service", string type = "http", string httpStatusCode = "200", string origin = "rum")
             {
-                var span = new Span(new SpanContext(id, id), start);
+                var span = CreateTopLevelSpan(start, serviceName);
                 span.SetDuration(TimeSpan.FromMilliseconds(durationMs));
 
                 span.ResourceName = resourceName;
-                span.ServiceName = serviceName;
                 span.OperationName = operationName;
                 span.Type = type;
                 span.SetTag(Tags.HttpStatusCode, httpStatusCode);
@@ -193,11 +264,11 @@ namespace Datadog.Trace.Tests.Agent
 
             var start = DateTimeOffset.UtcNow;
 
-            var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Mock.Of<IDiscoveryService>());
+            var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Mock.Of<IDiscoveryService>(), Mock.Of<IStatsdManager>(), isOtlp: false);
 
             try
             {
-                var parentSpan = new Span(new SpanContext(1, 1, serviceName: "service"), start);
+                var parentSpan = CreateTopLevelSpan(start, "service");
                 parentSpan.OperationName = "web.request";
                 parentSpan.SetDuration(TimeSpan.FromMilliseconds(100));
 
@@ -256,18 +327,18 @@ namespace Datadog.Trace.Tests.Agent
 
             var start = DateTimeOffset.UtcNow;
 
-            var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Mock.Of<IDiscoveryService>());
+            var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Mock.Of<IDiscoveryService>(), Mock.Of<IStatsdManager>(), isOtlp: false);
 
             try
             {
-                var simpleSpan = new Span(new SpanContext(1, 1, serviceName: "service"), start);
+                var simpleSpan = CreateTopLevelSpan(start, "service");
                 simpleSpan.SetDuration(TimeSpan.FromMilliseconds(100));
 
-                var parentSpan = new Span(new SpanContext(2, 2, serviceName: "service"), start);
+                var parentSpan = CreateTopLevelSpan(start, "service");
                 parentSpan.SetDuration(TimeSpan.FromMilliseconds(200));
 
                 // snapshotSpan shouldn't be recorded, because it has the PartialSnapshot metric (even though it is top-level)
-                var snapshotSpan = new Span(new SpanContext(5, 5, serviceName: "service"), start);
+                var snapshotSpan = CreateTopLevelSpan(start, "service");
                 snapshotSpan.SetMetric(Tags.PartialSnapshot, 1.0);
                 snapshotSpan.SetDuration(TimeSpan.FromMilliseconds(300));
 
@@ -281,7 +352,7 @@ namespace Datadog.Trace.Tests.Agent
 
                 buffer.Buckets.Should().HaveCount(2);
 
-                var serviceKey = StatsAggregator.BuildKey(simpleSpan);
+                var serviceKey = aggregator.BuildKey(simpleSpan);
                 buffer.Buckets.Should().ContainKey(serviceKey);
                 var serviceBucket = buffer.Buckets[serviceKey];
 
@@ -295,7 +366,7 @@ namespace Datadog.Trace.Tests.Agent
                 serviceBucket.OkSummary.GetSum().Should().BeApproximately(
                     expectedOkDuration, expectedOkDuration * serviceBucket.OkSummary.IndexMapping.RelativeAccuracy);
 
-                var httpClientServiceKey = StatsAggregator.BuildKey(httpClientServiceSpan);
+                var httpClientServiceKey = aggregator.BuildKey(httpClientServiceSpan);
                 buffer.Buckets.Should().ContainKey(httpClientServiceKey);
                 var httpClientServiceBucket = buffer.Buckets[httpClientServiceKey];
 
@@ -316,6 +387,42 @@ namespace Datadog.Trace.Tests.Agent
         }
 
         [Fact]
+        public async Task ExcludesSpanWithPartialVersionZero_TS014()
+        {
+            // A span with _dd.partial_version=0 must be excluded from stats (spec §7: partial_version >= 0 means excluded)
+            var expectedTotalDuration = TimeSpan.FromMilliseconds(100).ToNanoseconds();
+
+            var start = DateTimeOffset.UtcNow;
+
+            var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Mock.Of<IDiscoveryService>(), Mock.Of<IStatsdManager>(), isOtlp: false);
+
+            try
+            {
+                var normalSpan = CreateTopLevelSpan(start, "service");
+                normalSpan.SetDuration(TimeSpan.FromMilliseconds(100));
+
+                // partialVersionZeroSpan should be excluded because _dd.partial_version=0 (>= 0)
+                var partialVersionZeroSpan = CreateTopLevelSpan(start, "service");
+                partialVersionZeroSpan.SetMetric(Tags.PartialSnapshot, 0.0);
+                partialVersionZeroSpan.SetDuration(TimeSpan.FromMilliseconds(200));
+
+                aggregator.Add(normalSpan, partialVersionZeroSpan);
+
+                var buffer = aggregator.CurrentBuffer;
+
+                buffer.Buckets.Should().HaveCount(1);
+                var bucket = buffer.Buckets.Values.Single();
+
+                bucket.Hits.Should().Be(1);
+                bucket.Duration.Should().Be(expectedTotalDuration);
+            }
+            finally
+            {
+                await aggregator.DisposeAsync();
+            }
+        }
+
+        [Fact]
         public async Task RecordsSuccessesAndErrorsSeparately_TS006()
         {
             const int millisecondsToNanoseconds = 1_000_000;
@@ -326,17 +433,17 @@ namespace Datadog.Trace.Tests.Agent
 
             var start = DateTimeOffset.UtcNow;
 
-            var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Mock.Of<IDiscoveryService>());
+            var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Mock.Of<IDiscoveryService>(), Mock.Of<IStatsdManager>(), isOtlp: false);
 
             try
             {
-                var success1Span = new Span(new SpanContext(1, 1, serviceName: "service"), start);
+                var success1Span = CreateTopLevelSpan(start, "service");
                 success1Span.SetDuration(TimeSpan.FromMilliseconds(100));
 
-                var success2Span = new Span(new SpanContext(2, 2, serviceName: "service"), start);
+                var success2Span = CreateTopLevelSpan(start, "service");
                 success2Span.SetDuration(TimeSpan.FromMilliseconds(200));
 
-                var errorSpan = new Span(new SpanContext(3, 3, serviceName: "service"), start);
+                var errorSpan = CreateTopLevelSpan(start, "service");
                 errorSpan.Error = true;
                 errorSpan.SetDuration(TimeSpan.FromMilliseconds(400));
 
@@ -369,7 +476,7 @@ namespace Datadog.Trace.Tests.Agent
         {
             var start = DateTimeOffset.UtcNow;
 
-            var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Mock.Of<IDiscoveryService>());
+            var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Mock.Of<IDiscoveryService>(), Mock.Of<IStatsdManager>(), isOtlp: false);
 
             try
             {
@@ -377,7 +484,7 @@ namespace Datadog.Trace.Tests.Agent
                 var durations = new double[sampleCount];
                 for (int i = 0; i < sampleCount; i++)
                 {
-                    var span = new Span(new SpanContext((ulong)i, (ulong)i, serviceName: "service"), start);
+                    var span = CreateTopLevelSpan(start, "service");
                     var duration = TimeSpan.FromMilliseconds(i * 100);
 
                     span.SetDuration(duration);
@@ -415,6 +522,1506 @@ namespace Datadog.Trace.Tests.Agent
             }
         }
 
+        [Fact]
+        public void CreateStatsAggregator_Otlp_AlwaysComputesStats()
+        {
+            var aggregator = StatsAggregator.Create(Mock.Of<IApi>(), GetSettings(), NullDiscoveryService.Instance, Mock.Of<IStatsdManager>(), isOtlp: true);
+            aggregator.CanComputeStats.Should().BeTrue();
+        }
+
+        [Fact]
+        public async Task Otlp_ProcessTrace_WhenTraceSampled_ReturnsAggregateAndExport()
+        {
+            var aggregator = StatsAggregator.Create(Mock.Of<IApi>(), GetSettings(), NullDiscoveryService.Instance, Mock.Of<IStatsdManager>(), isOtlp: true);
+            await using var tracer = TracerHelper.CreateWithFakeAgent();
+
+            var traceContext = new TraceContext(tracer);
+            var spanContext = new SpanContext(null, traceContext, "service");
+            var span = new Span(spanContext, DateTimeOffset.UtcNow) { OperationName = "operation" };
+            traceContext.AddSpan(span);
+            traceContext.SetSamplingPriority(priority: SamplingPriorityValues.AutoKeep, mechanism: SamplingMechanism.LocalTraceSamplingRule, rate: null, limiterRate: null);
+
+            var traceChunk = new SpanCollection([span]);
+            var dropReason = aggregator.ProcessTrace(ref traceChunk);
+            dropReason.Should().Be(TraceKeepState.AggregateAndExport);
+        }
+
+        [Fact]
+        public async Task Otlp_ProcessTrace_WhenTraceNotSampled_ReturnsAggregateOnly()
+        {
+            var aggregator = StatsAggregator.Create(Mock.Of<IApi>(), GetSettings(), NullDiscoveryService.Instance, Mock.Of<IStatsdManager>(), isOtlp: true);
+            await using var tracer = TracerHelper.CreateWithFakeAgent();
+
+            var traceContext = new TraceContext(tracer);
+            var spanContext = new SpanContext(null, traceContext, "service");
+            var span = new Span(spanContext, DateTimeOffset.UtcNow) { OperationName = "operation" };
+            traceContext.AddSpan(span);
+            traceContext.SetSamplingPriority(priority: SamplingPriorityValues.AutoReject, mechanism: SamplingMechanism.LocalTraceSamplingRule, rate: null, limiterRate: null);
+
+            var traceChunk = new SpanCollection([span]);
+            var dropReason = aggregator.ProcessTrace(ref traceChunk);
+            dropReason.Should().Be(TraceKeepState.AggregateOnly);
+        }
+
+        [Fact]
+        public async Task Otlp_UnmeasuredChildSpan_ExcludedFromStats()
+        {
+// SEMCON-1093 FR04: only service-entry (top-level) or explicitly measured (_dd.measured=1) spans
+// should generate OTLP trace metrics — unmeasured child spans must be excluded.
+            var start = DateTimeOffset.UtcNow;
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), NullDiscoveryService.Instance, Mock.Of<IStatsdManager>(), isOtlp: true);
+
+            var parentSpan = CreateTopLevelSpan(start, "service");
+            parentSpan.OperationName = "web.request";
+            parentSpan.SetDuration(TimeSpan.FromMilliseconds(100));
+
+            // Non-top-level, non-measured child — must not produce a stats bucket
+            var childSpan = new Span(new SpanContext(parentSpan.Context, new TraceContext(new StubDatadogTracer()), "service"), start);
+            childSpan.OperationName = "child.op";
+            childSpan.SetDuration(TimeSpan.FromMilliseconds(50));
+
+            aggregator.Add(parentSpan, childSpan);
+
+            var buffer = aggregator.CurrentBuffer;
+            buffer.Buckets.Should().HaveCount(1);
+            buffer.Buckets.Should().ContainKey(aggregator.BuildKey(parentSpan));
+            buffer.Buckets.Should().NotContainKey(aggregator.BuildKey(childSpan));
+        }
+
+        [Fact]
+        public async Task Otlp_MeasuredChildSpan_IncludedInStats()
+        {
+            // FR04: spans with _dd.measured=1 should be included in OTLP mode even when non-top-level.
+            var start = DateTimeOffset.UtcNow;
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), NullDiscoveryService.Instance, Mock.Of<IStatsdManager>(), isOtlp: true);
+
+            var parentSpan = CreateTopLevelSpan(start, "service");
+            parentSpan.OperationName = "web.request";
+            parentSpan.SetDuration(TimeSpan.FromMilliseconds(100));
+
+            var measuredChild = new Span(new SpanContext(parentSpan.Context, new TraceContext(new StubDatadogTracer()), "service"), start);
+            measuredChild.OperationName = "measured.child";
+            measuredChild.SetTag(Tags.Measured, "1");
+            measuredChild.SetDuration(TimeSpan.FromMilliseconds(50));
+
+            aggregator.Add(parentSpan, measuredChild);
+
+            var buffer = aggregator.CurrentBuffer;
+            buffer.Buckets.Should().HaveCount(2);
+            buffer.Buckets.Should().ContainKey(aggregator.BuildKey(parentSpan));
+            buffer.Buckets.Should().ContainKey(aggregator.BuildKey(measuredChild));
+        }
+
+        [Fact]
+        public async Task Otlp_SpanKindEligibleChildSpan_ExcludedFromStats()
+        {
+            // FR04: span-kind-eligible (client/server) is a Datadog stats concept; for OTLP only
+            // top-level and _dd.measured=1 spans are included — span kind alone is not enough.
+            var start = DateTimeOffset.UtcNow;
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), NullDiscoveryService.Instance, Mock.Of<IStatsdManager>(), isOtlp: true);
+
+            var parentSpan = CreateTopLevelSpan(start, "service");
+            parentSpan.OperationName = "web.request";
+            parentSpan.SetDuration(TimeSpan.FromMilliseconds(100));
+
+            var clientChild = new Span(new SpanContext(parentSpan.Context, new TraceContext(new StubDatadogTracer()), "service"), start);
+            clientChild.OperationName = "http.client";
+            clientChild.SetTag(Tags.SpanKind, SpanKinds.Client);
+            clientChild.SetDuration(TimeSpan.FromMilliseconds(50));
+
+            aggregator.Add(parentSpan, clientChild);
+
+            var buffer = aggregator.CurrentBuffer;
+            buffer.Buckets.Should().HaveCount(1);
+            buffer.Buckets.Should().ContainKey(aggregator.BuildKey(parentSpan));
+            buffer.Buckets.Should().NotContainKey(aggregator.BuildKey(clientChild));
+        }
+
+        [Fact]
+        public async Task ProcessTrace_WhenSampled_ReturnsAggregateAndExport()
+        {
+            var discoveryService = new StubDiscoveryService(obfuscationVersion: 1);
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), discoveryService, Mock.Of<IStatsdManager>(), isOtlp: false);
+
+            var tracer = new StubDatadogTracer();
+            var traceContext = new TraceContext(tracer);
+            var spanContext = new SpanContext(null, traceContext, "service");
+            var span = new Span(spanContext, DateTimeOffset.UtcNow) { OperationName = "operation" };
+            span.Type = "sql";
+            span.ResourceName = "SELECT * FROM users WHERE id = 123";
+            traceContext.AddSpan(span);
+            traceContext.SetSamplingPriority(SamplingPriorityValues.AutoKeep, SamplingMechanism.LocalTraceSamplingRule, rate: null, limiterRate: null);
+            span.SetService(string.Empty, "manual");
+            span.Finish();
+
+            span.ServiceName.Should().BeEmpty();
+            var traceChunk = new SpanCollection([span]);
+            var result = aggregator.ProcessTrace(ref traceChunk);
+            result.Should().Be(TraceKeepState.AggregateAndExport);
+            traceChunk.Count.Should().Be(1);
+            // normalized
+            span.ServiceName.Should().NotBeEmpty();
+            // obfuscated
+            traceChunk[0].ResourceName.Should().NotBe("SELECT * FROM users WHERE id = 123");
+        }
+
+        [Fact]
+        public async Task ProcessTrace_WhenFilterRejects_ReturnsRejected()
+        {
+            var filterConfig = new AgentTraceFilterConfig(
+                FilterTagsRequire: null,
+                FilterTagsReject: ["env:production"],
+                FilterTagsRegexRequire: null,
+                FilterTagsRegexReject: null,
+                IgnoreResourcesRegex: null);
+
+            var discoveryService = new StubDiscoveryService(traceFilterConfig: filterConfig);
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), discoveryService, Mock.Of<IStatsdManager>(), isOtlp: false);
+
+            var tracer = new StubDatadogTracer();
+            var traceContext = new TraceContext(tracer);
+            var spanContext = new SpanContext(null, traceContext, "service");
+            var span = new Span(spanContext, DateTimeOffset.UtcNow) { OperationName = "operation" };
+            span.SetTag("env", "production");
+            traceContext.AddSpan(span);
+
+            var traceChunk = new SpanCollection([span]);
+            var result = aggregator.ProcessTrace(ref traceChunk);
+            result.Should().Be(TraceKeepState.Rejected);
+        }
+
+        [Fact]
+        public async Task ProcessTrace_WhenFilterKeepsAndSampled_ReturnsAggregateAndExport()
+        {
+            // Configure a reject filter that does NOT match → trace passes filter, then goes to sampling
+            var filterConfig = new AgentTraceFilterConfig(
+                FilterTagsRequire: null,
+                FilterTagsReject: ["env:staging"],
+                FilterTagsRegexRequire: null,
+                FilterTagsRegexReject: null,
+                IgnoreResourcesRegex: null);
+
+            var discoveryService = new StubDiscoveryService(traceFilterConfig: filterConfig);
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), discoveryService, Mock.Of<IStatsdManager>(), isOtlp: false);
+
+            var tracer = new StubDatadogTracer();
+            var traceContext = new TraceContext(tracer);
+            var spanContext = new SpanContext(null, traceContext, "service");
+            var span = new Span(spanContext, DateTimeOffset.UtcNow) { OperationName = "operation" };
+            span.SetTag("env", "production");
+            traceContext.AddSpan(span);
+            traceContext.SetSamplingPriority(SamplingPriorityValues.AutoKeep, SamplingMechanism.LocalTraceSamplingRule, rate: null, limiterRate: null);
+
+            var traceChunk = new SpanCollection([span]);
+            var result = aggregator.ProcessTrace(ref traceChunk);
+            result.Should().Be(TraceKeepState.AggregateAndExport);
+        }
+
+        [Fact]
+        public async Task ProcessTrace_WhenFilterKeepsAndNotSampled_ReturnsAggregateOnly()
+        {
+            // Configure a reject filter that does NOT match → trace passes filter, then goes to sampling
+            var filterConfig = new AgentTraceFilterConfig(
+                FilterTagsRequire: null,
+                FilterTagsReject: ["env:staging"],
+                FilterTagsRegexRequire: null,
+                FilterTagsRegexReject: null,
+                IgnoreResourcesRegex: null);
+
+            var discoveryService = new StubDiscoveryService(traceFilterConfig: filterConfig);
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), discoveryService, Mock.Of<IStatsdManager>(), isOtlp: false);
+
+            var tracer = new StubDatadogTracer();
+            var traceContext = new TraceContext(tracer);
+            var spanContext = new SpanContext(null, traceContext, "service");
+            var span = new Span(spanContext, DateTimeOffset.UtcNow) { OperationName = "operation" };
+            span.SetTag("env", "production");
+            traceContext.AddSpan(span);
+            traceContext.SetSamplingPriority(SamplingPriorityValues.AutoReject, SamplingMechanism.LocalTraceSamplingRule, rate: null, limiterRate: null);
+
+            var traceChunk = new SpanCollection([span]);
+            var result = aggregator.ProcessTrace(ref traceChunk);
+            result.Should().Be(TraceKeepState.AggregateOnly);
+        }
+
+        [Fact]
+        public async Task ShouldFilterTrace_WhenNoFilter_ReturnsFalse()
+        {
+            // No discovery service → no trace filter configured
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Mock.Of<IDiscoveryService>(), Mock.Of<IStatsdManager>(), isOtlp: false);
+
+            var span = CreateTopLevelSpan(DateTimeOffset.UtcNow, "service");
+            span.OperationName = "operation";
+            span.SetDuration(TimeSpan.FromMilliseconds(100));
+
+            var traceChunk = new SpanCollection([span]);
+            aggregator.ShouldFilterTrace(in traceChunk).Should().BeFalse();
+        }
+
+        [Fact]
+        public async Task ShouldFilterTrace_WhenFilterKeepsTrace_ReturnsFalse()
+        {
+            // Configure a reject filter that does NOT match the span → trace should be kept (not filtered)
+            var filterConfig = new AgentTraceFilterConfig(
+                FilterTagsRequire: null,
+                FilterTagsReject: ["env:staging"],
+                FilterTagsRegexRequire: null,
+                FilterTagsRegexReject: null,
+                IgnoreResourcesRegex: null);
+
+            var discoveryService = new StubDiscoveryService(traceFilterConfig: filterConfig);
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), discoveryService, Mock.Of<IStatsdManager>(), isOtlp: false);
+
+            var tracer = new StubDatadogTracer();
+            var traceContext = new TraceContext(tracer);
+            var spanContext = new SpanContext(null, traceContext, "service");
+            var span = new Span(spanContext, DateTimeOffset.UtcNow) { OperationName = "operation" };
+            span.SetTag("env", "production");
+            traceContext.AddSpan(span);
+
+            var traceChunk = new SpanCollection([span]);
+            aggregator.ShouldFilterTrace(in traceChunk).Should().BeFalse();
+        }
+
+        [Fact]
+        public async Task ShouldFilterTrace_WhenFilterRejectsTrace_ReturnsTrue()
+        {
+            // Configure a reject filter that matches the span → trace should be filtered
+            var filterConfig = new AgentTraceFilterConfig(
+                FilterTagsRequire: null,
+                FilterTagsReject: ["env:production"],
+                FilterTagsRegexRequire: null,
+                FilterTagsRegexReject: null,
+                IgnoreResourcesRegex: null);
+
+            var discoveryService = new StubDiscoveryService(traceFilterConfig: filterConfig);
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), discoveryService, Mock.Of<IStatsdManager>(), isOtlp: false);
+
+            var tracer = new StubDatadogTracer();
+            var traceContext = new TraceContext(tracer);
+            var spanContext = new SpanContext(null, traceContext, "service");
+            var span = new Span(spanContext, DateTimeOffset.UtcNow) { OperationName = "operation" };
+            span.SetTag("env", "production");
+            traceContext.AddSpan(span);
+
+            var traceChunk = new SpanCollection([span]);
+            aggregator.ShouldFilterTrace(in traceChunk).Should().BeTrue();
+        }
+
+        [Fact]
+        public async Task ShouldFilterTrace_WhenIgnoreResourceMatches_ReturnsTrue()
+        {
+            var filterConfig = new AgentTraceFilterConfig(
+                FilterTagsRequire: null,
+                FilterTagsReject: null,
+                FilterTagsRegexRequire: null,
+                FilterTagsRegexReject: null,
+                IgnoreResourcesRegex: ["^GET /health"]);
+
+            var discoveryService = new StubDiscoveryService(traceFilterConfig: filterConfig);
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), discoveryService, Mock.Of<IStatsdManager>(), isOtlp: false);
+
+            var tracer = new StubDatadogTracer();
+            var traceContext = new TraceContext(tracer);
+            var spanContext = new SpanContext(null, traceContext, "service");
+            var span = new Span(spanContext, DateTimeOffset.UtcNow) { OperationName = "http.request" };
+            span.ResourceName = "GET /healthcheck";
+            traceContext.AddSpan(span);
+
+            var traceChunk = new SpanCollection([span]);
+            aggregator.ShouldFilterTrace(in traceChunk).Should().BeTrue();
+        }
+
+        [Fact]
+        public async Task ShouldKeepTrace_WhenPrioritySampled_ReturnsTrue()
+        {
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Mock.Of<IDiscoveryService>(), Mock.Of<IStatsdManager>(), isOtlp: false);
+
+            var tracer = new StubDatadogTracer();
+            var traceContext = new TraceContext(tracer);
+            var spanContext = new SpanContext(null, traceContext, "service");
+            var span = new Span(spanContext, DateTimeOffset.UtcNow) { OperationName = "operation" };
+            traceContext.AddSpan(span);
+            traceContext.SetSamplingPriority(SamplingPriorityValues.AutoKeep, SamplingMechanism.LocalTraceSamplingRule, rate: null, limiterRate: null);
+
+            var traceChunk = new SpanCollection([span]);
+            aggregator.ShouldKeepTrace(in traceChunk).Should().BeTrue();
+        }
+
+        [Fact]
+        public async Task ShouldKeepTrace_WhenNotSampled_ReturnsFalse()
+        {
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Mock.Of<IDiscoveryService>(), Mock.Of<IStatsdManager>(), isOtlp: false);
+
+            var tracer = new StubDatadogTracer();
+            var traceContext = new TraceContext(tracer);
+            var spanContext = new SpanContext(null, traceContext, "service");
+            var span = new Span(spanContext, DateTimeOffset.UtcNow) { OperationName = "operation" };
+            traceContext.AddSpan(span);
+            traceContext.SetSamplingPriority(SamplingPriorityValues.AutoReject, SamplingMechanism.LocalTraceSamplingRule, rate: null, limiterRate: null);
+
+            var traceChunk = new SpanCollection([span]);
+            aggregator.ShouldKeepTrace(in traceChunk).Should().BeFalse();
+        }
+
+        [Fact]
+        public async Task ShouldKeepTrace_Otlp_WhenSampled_ReturnsTrue()
+        {
+            await using var aggregator = (StatsAggregator)StatsAggregator.Create(Mock.Of<IApi>(), GetSettings(), NullDiscoveryService.Instance, Mock.Of<IStatsdManager>(), isOtlp: true);
+
+            var tracer = new StubDatadogTracer();
+            var traceContext = new TraceContext(tracer);
+            var spanContext = new SpanContext(null, traceContext, "service");
+            var span = new Span(spanContext, DateTimeOffset.UtcNow) { OperationName = "operation" };
+            traceContext.AddSpan(span);
+            traceContext.SetSamplingPriority(SamplingPriorityValues.AutoKeep, SamplingMechanism.LocalTraceSamplingRule, rate: null, limiterRate: null);
+
+            var traceChunk = new SpanCollection([span]);
+            aggregator.ShouldKeepTrace(in traceChunk).Should().BeTrue();
+        }
+
+        [Fact]
+        public async Task ObfuscateTrace_WhenNotEnabled_ReturnsUnmodified()
+        {
+            // Default: obfuscation version is 0 (not enabled), so ObfuscateTrace should return the same collection
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Mock.Of<IDiscoveryService>(), Mock.Of<IStatsdManager>(), isOtlp: false);
+
+            var span = CreateTopLevelSpan(DateTimeOffset.UtcNow, "service");
+            span.OperationName = "operation";
+            span.Type = "sql";
+            span.ResourceName = "SELECT * FROM users WHERE id = 123";
+            span.SetDuration(TimeSpan.FromMilliseconds(100));
+
+            var traceChunk = new SpanCollection([span]);
+            var result = aggregator.ObfuscateTrace(in traceChunk);
+
+            result.Count.Should().Be(1);
+            // The SQL should not have been obfuscated (numeric literal replaced)
+            result[0].ResourceName.Should().Be("SELECT * FROM users WHERE id = 123");
+        }
+
+        [Fact]
+        public async Task ObfuscateTrace_WhenEnabled_RunsObfuscation()
+        {
+            // Use StubDiscoveryService with obfuscation version 1 to enable tracer obfuscation
+            var discoveryService = new StubDiscoveryService(obfuscationVersion: 1);
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), discoveryService, Mock.Of<IStatsdManager>(), isOtlp: false);
+
+            var span = CreateTopLevelSpan(DateTimeOffset.UtcNow, "service");
+            span.OperationName = "operation";
+            span.Type = "sql";
+            span.ResourceName = "SELECT * FROM users WHERE id = 123";
+            span.SetDuration(TimeSpan.FromMilliseconds(100));
+
+            var traceChunk = new SpanCollection([span]);
+            var result = aggregator.ObfuscateTrace(in traceChunk);
+
+            // Obfuscation should run and not throw; it should return a valid collection
+            result.Count.Should().Be(1);
+            // The SQL should have been obfuscated (numeric literal replaced)
+            result[0].ResourceName.Should().NotBe("SELECT * FROM users WHERE id = 123");
+        }
+
+        [Fact]
+        public async Task SpanKindEligibility_ServerAndClientSpansAreIncluded()
+        {
+            var start = DateTimeOffset.UtcNow;
+            var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Mock.Of<IDiscoveryService>(), Mock.Of<IStatsdManager>(), isOtlp: false);
+
+            try
+            {
+                var parentSpan = CreateTopLevelSpan(start, "service");
+                parentSpan.SetDuration(TimeSpan.FromMilliseconds(100));
+
+                // Child span with span.kind = "server" — should be included even though not top-level
+                var serverChildSpan = new Span(new SpanContext(parentSpan.Context, new TraceContext(new StubDatadogTracer()), "service"), start);
+                serverChildSpan.SetTag(Tags.SpanKind, SpanKinds.Server);
+                serverChildSpan.OperationName = "server.child";
+                serverChildSpan.SetDuration(TimeSpan.FromMilliseconds(100));
+
+                // Child span with span.kind = "client" — should be included
+                var clientChildSpan = new Span(new SpanContext(parentSpan.Context, new TraceContext(new StubDatadogTracer()), "service"), start);
+                clientChildSpan.SetTag(Tags.SpanKind, SpanKinds.Client);
+                clientChildSpan.OperationName = "client.child";
+                clientChildSpan.SetDuration(TimeSpan.FromMilliseconds(100));
+
+                // Child span with span.kind = "internal" — should NOT be included
+                var internalChildSpan = new Span(new SpanContext(parentSpan.Context, new TraceContext(new StubDatadogTracer()), "service"), start);
+                internalChildSpan.SetTag(Tags.SpanKind, SpanKinds.Internal);
+                internalChildSpan.OperationName = "internal.child";
+                internalChildSpan.SetDuration(TimeSpan.FromMilliseconds(100));
+
+                // Child span with no span.kind — should NOT be included
+                var noKindChildSpan = new Span(new SpanContext(parentSpan.Context, new TraceContext(new StubDatadogTracer()), "service"), start);
+                noKindChildSpan.OperationName = "nokind.child";
+                noKindChildSpan.SetDuration(TimeSpan.FromMilliseconds(100));
+
+                aggregator.Add(parentSpan, serverChildSpan, clientChildSpan, internalChildSpan, noKindChildSpan);
+
+                var buffer = aggregator.CurrentBuffer;
+
+                // parent, server child, client child are included; internal and no-kind are not
+                buffer.Buckets.Should().HaveCount(3);
+                buffer.Buckets.Should().ContainKey(aggregator.BuildKey(parentSpan));
+                buffer.Buckets.Should().ContainKey(aggregator.BuildKey(serverChildSpan));
+                buffer.Buckets.Should().ContainKey(aggregator.BuildKey(clientChildSpan));
+                buffer.Buckets.Should().NotContainKey(aggregator.BuildKey(internalChildSpan));
+                buffer.Buckets.Should().NotContainKey(aggregator.BuildKey(noKindChildSpan));
+            }
+            finally
+            {
+                await aggregator.DisposeAsync();
+            }
+        }
+
+        [Fact]
+        public async Task SpanKindCreatesDistinctBuckets()
+        {
+            var start = DateTimeOffset.UtcNow;
+            var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Mock.Of<IDiscoveryService>(), Mock.Of<IStatsdManager>(), isOtlp: false);
+
+            try
+            {
+                // Two top-level spans identical except span.kind
+                var clientSpan = CreateTopLevelSpan(start, "service");
+                clientSpan.OperationName = "op";
+                clientSpan.SetTag(Tags.SpanKind, SpanKinds.Client);
+                clientSpan.SetDuration(TimeSpan.FromMilliseconds(100));
+
+                var serverSpan = CreateTopLevelSpan(start, "service");
+                serverSpan.OperationName = "op";
+                serverSpan.SetTag(Tags.SpanKind, SpanKinds.Server);
+                serverSpan.SetDuration(TimeSpan.FromMilliseconds(100));
+
+                aggregator.Add(clientSpan, serverSpan);
+
+                var buffer = aggregator.CurrentBuffer;
+                buffer.Buckets.Should().HaveCount(2);
+            }
+            finally
+            {
+                await aggregator.DisposeAsync();
+            }
+        }
+
+        [Fact]
+        public async Task IsTraceRootCreatesDistinctBuckets()
+        {
+            var start = DateTimeOffset.UtcNow;
+            var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Mock.Of<IDiscoveryService>(), Mock.Of<IStatsdManager>(), isOtlp: false);
+
+            try
+            {
+                // Span A: no parent (IsTraceRoot = true)
+                var rootSpan = CreateTopLevelSpan(start, "svc");
+                rootSpan.OperationName = "op";
+                rootSpan.SetDuration(TimeSpan.FromMilliseconds(100));
+
+                // Span B: has a parent from a different trace (IsTraceRoot = false, but IsTopLevel = true via service boundary)
+                var upstreamContext = new SpanContext(traceId: 2, spanId: 999, serviceName: "upstream-svc");
+                var entrySpan = new Span(new SpanContext(upstreamContext, new TraceContext(new StubDatadogTracer()), "svc"), start);
+                entrySpan.OperationName = "op";
+                entrySpan.SetDuration(TimeSpan.FromMilliseconds(100));
+
+                aggregator.Add(rootSpan, entrySpan);
+
+                var buffer = aggregator.CurrentBuffer;
+                // They have the same resource/operation/type but different IsTraceRoot → 2 buckets
+                buffer.Buckets.Should().HaveCount(2);
+
+                var rootKey = aggregator.BuildKey(rootSpan);
+                var entryKey = aggregator.BuildKey(entrySpan);
+                rootKey.IsTraceRoot.Should().BeTrue();
+                entryKey.IsTraceRoot.Should().BeFalse();
+            }
+            finally
+            {
+                await aggregator.DisposeAsync();
+            }
+        }
+
+        [Fact]
+        public async Task HttpMethodCreatesDistinctBuckets()
+        {
+            var start = DateTimeOffset.UtcNow;
+            var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Mock.Of<IDiscoveryService>(), Mock.Of<IStatsdManager>(), isOtlp: false);
+
+            try
+            {
+                var getSpan = CreateTopLevelSpan(start, "svc");
+                getSpan.OperationName = "http.request";
+                getSpan.SetTag(Tags.HttpMethod, "GET");
+                getSpan.SetDuration(TimeSpan.FromMilliseconds(100));
+
+                var postSpan = CreateTopLevelSpan(start, "svc");
+                postSpan.OperationName = "http.request";
+                postSpan.SetTag(Tags.HttpMethod, "POST");
+                postSpan.SetDuration(TimeSpan.FromMilliseconds(100));
+
+                aggregator.Add(getSpan, postSpan);
+
+                var buffer = aggregator.CurrentBuffer;
+                buffer.Buckets.Should().HaveCount(2);
+            }
+            finally
+            {
+                await aggregator.DisposeAsync();
+            }
+        }
+
+        [Fact]
+        public async Task HttpEndpointCreatesDistinctBuckets()
+        {
+            var start = DateTimeOffset.UtcNow;
+            var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Mock.Of<IDiscoveryService>(), Mock.Of<IStatsdManager>(), isOtlp: false);
+
+            try
+            {
+                var usersSpan = CreateTopLevelSpan(start, "svc");
+                usersSpan.OperationName = "http.request";
+                usersSpan.SetTag(Tags.HttpRoute, "/users/{id}");
+                usersSpan.SetDuration(TimeSpan.FromMilliseconds(100));
+
+                var ordersSpan = CreateTopLevelSpan(start, "svc");
+                ordersSpan.OperationName = "http.request";
+                ordersSpan.SetTag(Tags.HttpRoute, "/orders/{id}");
+                ordersSpan.SetDuration(TimeSpan.FromMilliseconds(100));
+
+                aggregator.Add(usersSpan, ordersSpan);
+
+                var buffer = aggregator.CurrentBuffer;
+                buffer.Buckets.Should().HaveCount(2);
+            }
+            finally
+            {
+                await aggregator.DisposeAsync();
+            }
+        }
+
+        [Fact]
+        public async Task GrpcStatusCodeCreatesDistinctBuckets()
+        {
+            var start = DateTimeOffset.UtcNow;
+            var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Mock.Of<IDiscoveryService>(), Mock.Of<IStatsdManager>(), isOtlp: false);
+
+            try
+            {
+                var okSpan = CreateTopLevelSpan(start, "svc");
+                okSpan.OperationName = "grpc.call";
+                okSpan.SetTag(Tags.GrpcStatusCode, "0");
+                okSpan.SetDuration(TimeSpan.FromMilliseconds(100));
+
+                var errorSpan = CreateTopLevelSpan(start, "svc");
+                errorSpan.OperationName = "grpc.call";
+                errorSpan.SetTag(Tags.GrpcStatusCode, "2");
+                errorSpan.SetDuration(TimeSpan.FromMilliseconds(100));
+
+                aggregator.Add(okSpan, errorSpan);
+
+                var buffer = aggregator.CurrentBuffer;
+                buffer.Buckets.Should().HaveCount(2);
+            }
+            finally
+            {
+                await aggregator.DisposeAsync();
+            }
+        }
+
+        [Theory]
+        [InlineData("rpc.grpc.status_code", "5")]
+        [InlineData("grpc.code", "5")]
+        [InlineData("rpc.grpc.status.code", "5")]
+        [InlineData("grpc.status.code", "5")]
+        public async Task GrpcStatusCodeFallbackTags(string tagName, string tagValue)
+        {
+            var start = DateTimeOffset.UtcNow;
+            var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Mock.Of<IDiscoveryService>(), Mock.Of<IStatsdManager>(), isOtlp: false);
+
+            try
+            {
+                var span = CreateTopLevelSpan(start, "svc");
+                span.OperationName = "grpc.call";
+                span.SetTag(tagName, tagValue);
+                span.SetDuration(TimeSpan.FromMilliseconds(100));
+
+                aggregator.Add(span);
+
+                var buffer = aggregator.CurrentBuffer;
+                buffer.Buckets.Should().HaveCount(1);
+                var key = buffer.Buckets.Keys.First();
+                key.GrpcStatusCode.Should().Be("5");
+            }
+            finally
+            {
+                await aggregator.DisposeAsync();
+            }
+        }
+
+        [Fact]
+        public async Task GrpcStatusCodePriorityOrder()
+        {
+            var start = DateTimeOffset.UtcNow;
+            var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Mock.Of<IDiscoveryService>(), Mock.Of<IStatsdManager>(), isOtlp: false);
+
+            try
+            {
+                // When multiple gRPC tags are present, the highest priority one wins
+                var span = CreateTopLevelSpan(start, "svc");
+                span.OperationName = "grpc.call";
+                span.SetTag("rpc.grpc.status_code", "1");
+                span.SetTag("grpc.status.code", "2");
+                span.SetDuration(TimeSpan.FromMilliseconds(100));
+
+                aggregator.Add(span);
+
+                var buffer = aggregator.CurrentBuffer;
+                buffer.Buckets.Should().HaveCount(1);
+                var key = buffer.Buckets.Keys.First();
+                key.GrpcStatusCode.Should().Be("1");
+            }
+            finally
+            {
+                await aggregator.DisposeAsync();
+            }
+        }
+
+        [Fact]
+        public async Task ServiceSourceCreatesDistinctBuckets()
+        {
+            var start = DateTimeOffset.UtcNow;
+            var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Mock.Of<IDiscoveryService>(), Mock.Of<IStatsdManager>(), isOtlp: false);
+
+            try
+            {
+                var span1 = CreateTopLevelSpan(start, "svc");
+                span1.OperationName = "op";
+                span1.Context.ServiceNameSource = "integration";
+                span1.SetDuration(TimeSpan.FromMilliseconds(100));
+
+                var span2 = CreateTopLevelSpan(start, "svc");
+                span2.OperationName = "op";
+                span2.Context.ServiceNameSource = "user";
+                span2.SetDuration(TimeSpan.FromMilliseconds(100));
+
+                aggregator.Add(span1, span2);
+
+                var buffer = aggregator.CurrentBuffer;
+                buffer.Buckets.Should().HaveCount(2);
+            }
+            finally
+            {
+                await aggregator.DisposeAsync();
+            }
+        }
+
+        [Fact]
+        public async Task PeerTagsCreateDistinctBuckets()
+        {
+            var start = DateTimeOffset.UtcNow;
+            var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), new StubDiscoveryService(), Mock.Of<IStatsdManager>(), isOtlp: false);
+
+            try
+            {
+                // Two client spans with same resource but different peer.service values
+                // Use Tags.SetTag directly to avoid PeerService special handling in Span.SetTag that requires TraceContext
+                var span1 = CreateTopLevelSpan(start, "svc");
+                span1.OperationName = "http.client";
+                span1.SetTag(Tags.SpanKind, SpanKinds.Client);
+                span1.Tags.SetTag(Tags.PeerService, "service-a");
+                span1.SetDuration(TimeSpan.FromMilliseconds(100));
+
+                var span2 = CreateTopLevelSpan(start, "svc");
+                span2.OperationName = "http.client";
+                span2.SetTag(Tags.SpanKind, SpanKinds.Client);
+                span2.Tags.SetTag(Tags.PeerService, "service-b");
+                span2.SetDuration(TimeSpan.FromMilliseconds(100));
+
+                aggregator.Add(span1, span2);
+
+                var buffer = aggregator.CurrentBuffer;
+                // Different peer.service → 2 distinct buckets
+                buffer.Buckets.Should().HaveCount(2);
+            }
+            finally
+            {
+                await aggregator.DisposeAsync();
+            }
+        }
+
+        [Theory]
+        [InlineData(SpanKinds.Client)]
+        [InlineData(SpanKinds.Producer)]
+        public async Task PeerTagsHash_MatchesGoAgent_SingleTag(string spanKind)
+        {
+            // Golden value from Go agent's TestNewAggregation in aggregation_test.go:
+            // peer.service:remote-service → hash 3430395298086625290
+            // https://github.com/DataDog/datadog-agent/blob/4c45a7cf23b97bf6b904565f88d16e73da83842a/pkg/trace/stats/aggregation_test.go
+            var start = DateTimeOffset.UtcNow;
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Mock.Of<IDiscoveryService>(), Mock.Of<IStatsdManager>(), isOtlp: false);
+
+            var span = CreateTopLevelSpan(start, "svc");
+            span.SetTag(Tags.SpanKind, spanKind);
+            span.Tags.SetTag("peer.service", "remote-service");
+
+            List<StatsAggregator.PeerTagKey> peerTagKeys = [new("peer.service")];
+            var key = aggregator.BuildKey(span, peerTagKeys, out _, out _);
+
+            key.PeerTagsHash.Should().Be(3430395298086625290UL);
+        }
+
+        [Fact]
+        public async Task PeerTagsHash_MatchesGoAgent_MultipleTags()
+        {
+            // Golden value from Go agent's TestNewAggregation in aggregation_test.go:
+            // db.instance:i-1234, db.system:postgres, peer.service:remote-service → hash 9894752672193411515
+            // https://github.com/DataDog/datadog-agent/blob/4c45a7cf23b97bf6b904565f88d16e73da83842a/pkg/trace/stats/aggregation_test.go
+            var start = DateTimeOffset.UtcNow;
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Mock.Of<IDiscoveryService>(), Mock.Of<IStatsdManager>(), isOtlp: false);
+
+            var span = CreateTopLevelSpan(start, "svc");
+            span.SetTag(Tags.SpanKind, SpanKinds.Client);
+            span.Tags.SetTag("peer.service", "remote-service");
+            span.Tags.SetTag("db.instance", "i-1234");
+            span.Tags.SetTag("db.system", "postgres");
+
+            // Keys must be pre-sorted (matching agent behavior)
+            List<StatsAggregator.PeerTagKey> peerTagKeys = [new("db.instance"), new("db.system"), new("peer.service")];
+            var key = aggregator.BuildKey(span, peerTagKeys, out _, out _);
+
+            key.PeerTagsHash.Should().Be(9894752672193411515UL);
+        }
+
+        [Fact]
+        public async Task PeerTagsHash_MatchesGoAgent_ConsumerMessagingTags()
+        {
+            // Golden value from Go agent's TestNewAggregation in aggregation_test.go:
+            // messaging.destination:topic-foo, messaging.system:kafka → hash 0xf5eeb51fbe7929b4
+            // https://github.com/DataDog/datadog-agent/blob/4c45a7cf23b97bf6b904565f88d16e73da83842a/pkg/trace/stats/aggregation_test.go
+            var start = DateTimeOffset.UtcNow;
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Mock.Of<IDiscoveryService>(), Mock.Of<IStatsdManager>(), isOtlp: false);
+
+            var span = CreateTopLevelSpan(start, "svc");
+            span.SetTag(Tags.SpanKind, SpanKinds.Consumer);
+            span.Tags.SetTag("messaging.destination", "topic-foo");
+            span.Tags.SetTag("messaging.system", "kafka");
+
+            List<StatsAggregator.PeerTagKey> peerTagKeys = [new("db.instance"), new("db.system"), new("messaging.destination"), new("messaging.system")];
+            var key = aggregator.BuildKey(span, peerTagKeys, out _, out _);
+
+            key.PeerTagsHash.Should().Be(0xf5eeb51fbe7929b4UL);
+        }
+
+        [Fact]
+        public async Task PeerTagsHash_MatchesGoAgent_EmptyTagsSkipped()
+        {
+            // Same hash as single tag — empty db.instance and db.system values are skipped
+            // https://github.com/DataDog/datadog-agent/blob/4c45a7cf23b97bf6b904565f88d16e73da83842a/pkg/trace/stats/aggregation_test.go
+            var start = DateTimeOffset.UtcNow;
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Mock.Of<IDiscoveryService>(), Mock.Of<IStatsdManager>(), isOtlp: false);
+
+            var span = CreateTopLevelSpan(start, "svc");
+            span.SetTag(Tags.SpanKind, SpanKinds.Client);
+            span.Tags.SetTag("peer.service", "remote-service");
+            span.Tags.SetTag("db.instance", string.Empty);
+            span.Tags.SetTag("db.system", string.Empty);
+
+            List<StatsAggregator.PeerTagKey> peerTagKeys = [new("db.instance"), new("db.system"), new("peer.service")];
+            var key = aggregator.BuildKey(span, peerTagKeys, out _, out _);
+
+            key.PeerTagsHash.Should().Be(3430395298086625290UL);
+        }
+
+        [Fact]
+        public async Task PeerTagsHash_MatchesEncodedPeerTags_MultipleTags()
+        {
+            // Verify that the fast-path hash from BuildKey matches
+            // what you'd get by hashing the GetEncodedPeerTags output directly
+            var start = DateTimeOffset.UtcNow;
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Mock.Of<IDiscoveryService>(), Mock.Of<IStatsdManager>(), isOtlp: false);
+
+            var span = CreateTopLevelSpan(start, "svc");
+            span.SetTag(Tags.SpanKind, SpanKinds.Client);
+            span.Tags.SetTag("peer.service", "remote-service");
+            span.Tags.SetTag("db.instance", "i-1234");
+            span.Tags.SetTag("db.system", "postgres");
+
+            List<StatsAggregator.PeerTagKey> peerTagKeys = [new("db.instance"), new("db.system"), new("peer.service")];
+            var key = aggregator.BuildKey(span, peerTagKeys, out var peerTagResults, out _);
+            var encodedTags = StatsAggregator.GetEncodedPeerTags(span, peerTagKeys, in peerTagResults);
+
+            // Hash the encoded tags the same way the Go agent does:
+            // FNV-1a of each tag's bytes, chained with a [0] separator
+            var expectedHash = FnvHash64.GenerateHash(encodedTags[0], FnvHash64.Version.V1A);
+            for (var i = 1; i < encodedTags.Count; i++)
+            {
+                expectedHash = FnvHash64.GenerateHash(new byte[] { 0 }, FnvHash64.Version.V1A, expectedHash);
+                expectedHash = FnvHash64.GenerateHash(encodedTags[i], FnvHash64.Version.V1A, expectedHash);
+            }
+
+            key.PeerTagsHash.Should().Be(expectedHash);
+        }
+
+        [Fact]
+        public async Task PeerTagsHash_MatchesEncodedPeerTags_BaseService()
+        {
+            // Verify that the fast-path hash from BuildKey matches the encoded base service tag
+            var start = DateTimeOffset.UtcNow;
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Mock.Of<IDiscoveryService>(), Mock.Of<IStatsdManager>(), isOtlp: false);
+
+            var span = CreateTopLevelSpan(start, "svc");
+            span.Tags.SetTag(Tags.BaseService, "my-base-service");
+
+            List<StatsAggregator.PeerTagKey> peerTagKeys = [new("peer.service")];
+            var key = aggregator.BuildKey(span, peerTagKeys, out var peerTagResults, out _);
+            var encodedTags = StatsAggregator.GetEncodedPeerTags(span, peerTagKeys, in peerTagResults);
+
+            encodedTags.Should().HaveCount(1);
+            var expectedHash = FnvHash64.GenerateHash(encodedTags[0], FnvHash64.Version.V1A);
+
+            key.PeerTagsHash.Should().Be(expectedHash);
+        }
+
+        [Fact]
+        public async Task PeerTagsHash_NoMatchingTags_ReturnsZero()
+        {
+            var start = DateTimeOffset.UtcNow;
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Mock.Of<IDiscoveryService>(), Mock.Of<IStatsdManager>(), isOtlp: false);
+
+            var span = CreateTopLevelSpan(start, "svc");
+            span.SetTag(Tags.SpanKind, SpanKinds.Client);
+            // No peer tags set on the span
+
+            List<StatsAggregator.PeerTagKey> peerTagKeys = [new("peer.service")];
+            var key = aggregator.BuildKey(span, peerTagKeys, out _, out _);
+
+            key.PeerTagsHash.Should().Be(0UL);
+        }
+
+        [Fact]
+        public async Task AdditionalTags_PresentValuesDistinguishBuckets()
+        {
+            var start = DateTimeOffset.UtcNow;
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettingsWithAdditionalTags("region"), Mock.Of<IDiscoveryService>(), Mock.Of<IStatsdManager>(), isOtlp: false);
+
+            var span1 = CreateTopLevelSpan(start, "svc");
+            span1.SetTag("region", "us-east-1");
+
+            var span2 = CreateTopLevelSpan(start, "svc");
+            span2.SetTag("region", "eu-west-1");
+
+            aggregator.Add(span1, span2);
+
+            // Otherwise-identical spans aggregate separately because their region values differ
+            aggregator.CurrentBuffer.Buckets.Should().HaveCount(2);
+            aggregator.BuildKey(span1).AdditionalMetricTagsHash.Should().NotBe(aggregator.BuildKey(span2).AdditionalMetricTagsHash);
+        }
+
+        [Fact]
+        public async Task AdditionalTags_MissingTagBucketsSeparatelyFromPresent()
+        {
+            var start = DateTimeOffset.UtcNow;
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettingsWithAdditionalTags("region"), Mock.Of<IDiscoveryService>(), Mock.Of<IStatsdManager>(), isOtlp: false);
+
+            var withRegion = CreateTopLevelSpan(start, "svc");
+            withRegion.SetTag("region", "us-east-1");
+
+            var withoutRegion = CreateTopLevelSpan(start, "svc");
+
+            aggregator.Add(withRegion, withoutRegion);
+
+            aggregator.CurrentBuffer.Buckets.Should().HaveCount(2);
+
+            // The span without the configured tag contributes no additional-tags dimension (hash 0, empty map)
+            var withoutKey = aggregator.BuildKey(withoutRegion);
+            withoutKey.AdditionalMetricTagsHash.Should().Be(0UL);
+            aggregator.CurrentBuffer.Buckets[withoutKey].AdditionalMetricTags.Should().BeEmpty();
+
+            var withKey = aggregator.BuildKey(withRegion);
+            withKey.AdditionalMetricTagsHash.Should().NotBe(0UL);
+            DecodeTags(aggregator.CurrentBuffer.Buckets[withKey].AdditionalMetricTags).Should().Equal("region:us-east-1");
+        }
+
+        [Fact]
+        public async Task AdditionalTags_HashIsConsistentAndOrderIndependent()
+        {
+            var start = DateTimeOffset.UtcNow;
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettingsWithAdditionalTags("region,tenant"), Mock.Of<IDiscoveryService>(), Mock.Of<IStatsdManager>(), isOtlp: false);
+
+            // Same values, but set on the span in a different order: the hash must match because
+            // hashing iterates the configured (sorted) key order, not the span's tag insertion order.
+            var span1 = CreateTopLevelSpan(start, "svc");
+            span1.SetTag("region", "us-east-1");
+            span1.SetTag("tenant", "acme");
+
+            var span2 = CreateTopLevelSpan(start, "svc");
+            span2.SetTag("tenant", "acme");
+            span2.SetTag("region", "us-east-1");
+
+            aggregator.BuildKey(span1).AdditionalMetricTagsHash
+                      .Should().Be(aggregator.BuildKey(span2).AdditionalMetricTagsHash)
+                      .And.NotBe(0UL);
+        }
+
+        [Fact]
+        public async Task AdditionalTags_MultipleKeysAggregateIndependently()
+        {
+            var start = DateTimeOffset.UtcNow;
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettingsWithAdditionalTags("region,tenant"), Mock.Of<IDiscoveryService>(), Mock.Of<IStatsdManager>(), isOtlp: false);
+
+            Span Make(string region, string tenant)
+            {
+                var span = CreateTopLevelSpan(start, "svc");
+                span.SetTag("region", region);
+                span.SetTag("tenant", tenant);
+                return span;
+            }
+
+            // Four distinct (region, tenant) combinations => four buckets
+            aggregator.Add(Make("us", "acme"), Make("us", "beta"), Make("eu", "acme"), Make("eu", "beta"));
+
+            aggregator.CurrentBuffer.Buckets.Should().HaveCount(4);
+        }
+
+        [Fact]
+        public async Task AdditionalTags_ValueExceedingLengthCap_SubstitutesBlockedByTracer()
+        {
+            var start = DateTimeOffset.UtcNow;
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettingsWithAdditionalTags("region"), Mock.Of<IDiscoveryService>(), Mock.Of<IStatsdManager>(), isOtlp: false);
+
+            var span = CreateTopLevelSpan(start, "svc");
+            span.SetDuration(TimeSpan.FromMilliseconds(100));
+            span.SetTag("region", new string('x', 201)); // one over the 200-char cap
+
+            aggregator.Add(span);
+
+            var key = aggregator.BuildKey(span);
+            var bucket = aggregator.CurrentBuffer.Buckets[key];
+
+            // The oversized value is masked, but the dimension key and the span's base stats survive
+            DecodeTags(bucket.AdditionalMetricTags).Should().Equal("region:tracer_blocked_value");
+            bucket.Hits.Should().Be(1);
+            bucket.Duration.Should().Be(100 * 1_000_000);
+        }
+
+        [Fact]
+        public async Task AdditionalTags_ValueAtLengthCap_IsNotBlocked()
+        {
+            var start = DateTimeOffset.UtcNow;
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettingsWithAdditionalTags("region"), Mock.Of<IDiscoveryService>(), Mock.Of<IStatsdManager>(), isOtlp: false);
+
+            var value = new string('x', 200); // exactly at the cap is allowed
+            var span = CreateTopLevelSpan(start, "svc");
+            span.SetTag("region", value);
+
+            aggregator.Add(span);
+
+            var bucket = aggregator.CurrentBuffer.Buckets[aggregator.BuildKey(span)];
+            DecodeTags(bucket.AdditionalMetricTags).Should().Equal($"region:{value}");
+        }
+
+        [Fact]
+        public async Task AdditionalTags_EncodedTagsAreSortedByConfiguredKeyOrder()
+        {
+            var start = DateTimeOffset.UtcNow;
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettingsWithAdditionalTags("tenant,region,az"), Mock.Of<IDiscoveryService>(), Mock.Of<IStatsdManager>(), isOtlp: false);
+
+            var span = CreateTopLevelSpan(start, "svc");
+            span.SetTag("region", "us-east-1");
+            span.SetTag("tenant", "acme");
+            span.SetTag("az", "az-1");
+
+            aggregator.Add(span);
+
+            var bucket = aggregator.CurrentBuffer.Buckets[aggregator.BuildKey(span)];
+            // Configured keys are deduped+sorted in settings, so encoding is alphabetical: az, region, tenant
+            DecodeTags(bucket.AdditionalMetricTags).Should().Equal("az:az-1", "region:us-east-1", "tenant:acme");
+        }
+
+        [Fact]
+        public async Task AdditionalTags_DisabledFeature_NoHashContribution()
+        {
+            var start = DateTimeOffset.UtcNow;
+            // No additional tags configured (feature off)
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Mock.Of<IDiscoveryService>(), Mock.Of<IStatsdManager>(), isOtlp: false);
+
+            var span = CreateTopLevelSpan(start, "svc");
+            span.SetTag("region", "us-east-1");
+
+            aggregator.Add(span);
+
+            var key = aggregator.BuildKey(span);
+            key.AdditionalMetricTagsHash.Should().Be(0UL);
+            aggregator.CurrentBuffer.Buckets[key].AdditionalMetricTags.Should().BeEmpty();
+        }
+
+        [Fact]
+        public async Task AdditionalTags_PerBucketCap_BlocksOverflowAndMergesAdmitted()
+        {
+            var start = DateTimeOffset.UtcNow;
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettingsWithAdditionalTags("tenant", cardinalityLimit: 3), Mock.Of<IDiscoveryService>(), Mock.Of<IStatsdManager>(), isOtlp: false);
+
+            Span MakeTenant(string tenant)
+            {
+                var span = CreateTopLevelSpan(start, "svc");
+                span.SetTag("tenant", tenant);
+                return span;
+            }
+
+            // First 3 distinct tenants are admitted; "d" and "e" overflow into one masked "blocked" bucket.
+            aggregator.Add(MakeTenant("a"), MakeTenant("b"), MakeTenant("c"), MakeTenant("d"), MakeTenant("e"));
+
+            // 3 admitted + 1 blocked sink
+            aggregator.CurrentBuffer.Buckets.Should().HaveCount(4);
+
+            var blockedBucket = aggregator.CurrentBuffer.Buckets.Values
+                                          .Single(b => DecodeTags(b.AdditionalMetricTags).SequenceEqual(new[] { "tracer_blocked_value" }));
+            blockedBucket.Hits.Should().Be(2); // d + e merged into the blocked bucket
+
+            // A repeat of an already-admitted key still merges into its existing entry, regardless of the cap.
+            aggregator.Add(MakeTenant("a"));
+            aggregator.CurrentBuffer.Buckets.Should().HaveCount(4);
+            aggregator.CurrentBuffer.Buckets[aggregator.BuildKey(MakeTenant("a"))].Hits.Should().Be(2);
+        }
+
+        [Fact]
+        public async Task AdditionalTags_PerBucketCap_DoesNotApplyToSpansWithoutAdditionalTags()
+        {
+            var start = DateTimeOffset.UtcNow;
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettingsWithAdditionalTags("region", cardinalityLimit: 1), Mock.Of<IDiscoveryService>(), Mock.Of<IStatsdManager>(), isOtlp: false);
+
+            // Five distinct buckets (by resource) but none carry the configured tag, so the cap never triggers.
+            for (var i = 0; i < 5; i++)
+            {
+                var span = CreateTopLevelSpan(start, "svc");
+                span.ResourceName = $"resource-{i}";
+                aggregator.Add(span);
+            }
+
+            aggregator.CurrentBuffer.Buckets.Should().HaveCount(5);
+            aggregator.CurrentBuffer.Buckets.Values.Should().OnlyContain(b => b.AdditionalMetricTags.Count == 0);
+
+            // A span that does carry the tag is still admitted, since the budget was never consumed.
+            var withRegion = CreateTopLevelSpan(start, "svc");
+            withRegion.ResourceName = "resource-with-region";
+            withRegion.SetTag("region", "us-east-1");
+            aggregator.Add(withRegion);
+
+            DecodeTags(aggregator.CurrentBuffer.Buckets[aggregator.BuildKey(withRegion)].AdditionalMetricTags)
+                .Should().Equal("region:us-east-1");
+        }
+
+        [Fact]
+        public async Task AdditionalTags_PerBucketCap_OverflowDropsConfiguredKeyNames()
+        {
+            var start = DateTimeOffset.UtcNow;
+            // Two configured keys, cap of 1 so the second distinct combination overflows.
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettingsWithAdditionalTags("region,tenant", cardinalityLimit: 1), Mock.Of<IDiscoveryService>(), Mock.Of<IStatsdManager>(), isOtlp: false);
+
+            // First combination admitted; the second collapses into the masked overflow bucket.
+            aggregator.Add(MakeSpan("us", "acme"), MakeSpan("eu", "globex"));
+
+            var blocked = aggregator.CurrentBuffer.Buckets.Values
+                                    .Single(b => DecodeTags(b.AdditionalMetricTags).SequenceEqual(new[] { "tracer_blocked_value" }));
+
+            DecodeTags(blocked.AdditionalMetricTags).Should().Equal("tracer_blocked_value");
+            blocked.Hits.Should().Be(1); // just the overflowing span
+
+            Span MakeSpan(string region, string tenant)
+            {
+                var span = CreateTopLevelSpan(start, "svc");
+                span.SetTag("region", region);
+                span.SetTag("tenant", tenant);
+                return span;
+            }
+        }
+
+        [Fact]
+        public async Task AdditionalTags_FlushResetsCardinalityBudget()
+        {
+            var start = DateTimeOffset.UtcNow;
+            var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettingsWithAdditionalTags("region", cardinalityLimit: 1), new StubDiscoveryService(), Mock.Of<IStatsdManager>(), isOtlp: false);
+
+            // Dispose so the background flush completes and explicit Flush() runs synchronously without delay.
+            await aggregator.DisposeAsync();
+
+            Span MakeRegion(string region)
+            {
+                var span = CreateTopLevelSpan(start, "svc");
+                span.SetTag("region", region);
+                return span;
+            }
+
+            aggregator.Add(MakeRegion("a")); // admitted (budget now full)
+            aggregator.Add(MakeRegion("b")); // blocked: budget of 1 exhausted
+
+            var bufferBeforeFlush = aggregator.CurrentBuffer;
+            bufferBeforeFlush.Buckets.Should().HaveCount(2); // region=a + blocked sink
+
+            // Flush swaps the buffer and resets the per-bucket cardinality budget.
+            await aggregator.Flush();
+
+            aggregator.Add(MakeRegion("c")); // fresh budget => admitted with its real value, not masked
+
+            var bufferAfterFlush = aggregator.CurrentBuffer;
+            bufferAfterFlush.Should().NotBeSameAs(bufferBeforeFlush);
+            DecodeTags(bufferAfterFlush.Buckets[aggregator.BuildKey(MakeRegion("c"))].AdditionalMetricTags)
+                .Should().Equal("region:c");
+        }
+
+        [Fact]
+        public async Task AdditionalTags_RetainedBucketIsGatedByCapWhenReactivated()
+        {
+            var start = DateTimeOffset.UtcNow;
+            var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettingsWithAdditionalTags("region", cardinalityLimit: 1), new StubDiscoveryService(), Mock.Of<IStatsdManager>(), isOtlp: false);
+
+            // Dispose so the background flush completes and explicit Flush() runs synchronously without delay.
+            await aggregator.DisposeAsync();
+
+            // Admit one real additional-tag bucket, then rotate two flushes back to the same buffer. region=a
+            // had hits, so it is retained (with Hits == 0) and the per-flush budget is reset to 0.
+            aggregator.Add(MakeRegion("a"));
+            var retainingBuffer = aggregator.CurrentBuffer;
+            await aggregator.Flush();
+            await aggregator.Flush();
+            aggregator.CurrentBuffer.Should().BeSameAs(retainingBuffer);
+
+            // In the new interval, activate two distinct additional-tag values. The first consumes the budget of
+            // 1; re-activating the retained region=a is over budget, so it is masked into the blocked sink rather
+            // than serializing its retained real bucket. This is the hard cap holding across the rotation.
+            aggregator.Add(MakeRegion("b")); // new, admitted real (budget now full)
+            aggregator.Add(MakeRegion("a")); // retained, first hit this interval, over budget => masked
+
+            var buckets = aggregator.CurrentBuffer.Buckets.Values.ToList();
+
+            // Exactly one real additional-tag bucket has hits this interval; region=a's retained real bucket got none.
+            buckets.Count(b => b.AdditionalMetricTags.Count > 0 && b.Hits > 0 && DecodeTags(b.AdditionalMetricTags)[0] != "tracer_blocked_value")
+                   .Should().Be(1);
+            buckets.Single(b => DecodeTags(b.AdditionalMetricTags).SequenceEqual(new[] { "region:b" })).Hits.Should().Be(1);
+            buckets.Single(b => DecodeTags(b.AdditionalMetricTags).SequenceEqual(new[] { "region:a" })).Hits.Should().Be(0);
+            buckets.Single(b => DecodeTags(b.AdditionalMetricTags).SequenceEqual(new[] { "tracer_blocked_value" })).Hits.Should().Be(1);
+
+            Span MakeRegion(string region)
+            {
+                var span = CreateTopLevelSpan(start, "svc");
+                span.SetTag("region", region);
+                return span;
+            }
+        }
+
+        [Fact]
+        public async Task Resource_PerFieldCap_FoldsOverflowToSentinel()
+        {
+            var start = DateTimeOffset.UtcNow;
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettingsWithCardinalityLimits(resourceLimit: 2), Mock.Of<IDiscoveryService>(), Mock.Of<IStatsdManager>(), isOtlp: false);
+
+            Span MakeResource(string resource)
+            {
+                var span = CreateTopLevelSpan(start, "svc");
+                span.ResourceName = resource;
+                return span;
+            }
+
+            // First 2 distinct resources are admitted; "c" and "d" fold into one sentinel-resource bucket.
+            aggregator.Add(MakeResource("a"), MakeResource("b"), MakeResource("c"), MakeResource("d"));
+
+            var buckets = aggregator.CurrentBuffer.Buckets.Values.ToList();
+            buckets.Should().HaveCount(3); // a, b, + sentinel sink
+            buckets.Count(b => b.Key.Resource is "a" or "b").Should().Be(2);
+            buckets.Single(b => b.Key.Resource == "tracer_blocked_value").Hits.Should().Be(2); // c + d merged
+        }
+
+        [Fact]
+        public async Task HttpEndpoint_PerFieldCap_FoldsOverflowToSentinel()
+        {
+            var start = DateTimeOffset.UtcNow;
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettingsWithCardinalityLimits(httpEndpointLimit: 2), Mock.Of<IDiscoveryService>(), Mock.Of<IStatsdManager>(), isOtlp: false);
+
+            Span MakeEndpoint(string route)
+            {
+                var span = CreateTopLevelSpan(start, "svc");
+                span.OperationName = "http.request";
+                span.SetTag(Tags.HttpRoute, route);
+                return span;
+            }
+
+            // First 2 distinct endpoints are admitted; "/c" and "/d" fold into one sentinel-endpoint bucket.
+            aggregator.Add(MakeEndpoint("/a"), MakeEndpoint("/b"), MakeEndpoint("/c"), MakeEndpoint("/d"));
+
+            var buckets = aggregator.CurrentBuffer.Buckets.Values.ToList();
+            buckets.Count(b => b.Key.HttpEndpoint is "/a" or "/b").Should().Be(2);
+            buckets.Single(b => b.Key.HttpEndpoint == "tracer_blocked_value").Hits.Should().Be(2); // /c + /d merged
+        }
+
+        [Fact]
+        public async Task PeerTags_PerFieldCap_ClearsOverflowCombinations()
+        {
+            var start = DateTimeOffset.UtcNow;
+            // StubDiscoveryService advertises peer.service as a peer tag, so peer-tag hashing is active.
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettingsWithCardinalityLimits(peerTagsLimit: 2), new StubDiscoveryService(), Mock.Of<IStatsdManager>(), isOtlp: false);
+
+            Span MakePeer(string peer)
+            {
+                var span = CreateTopLevelSpan(start, "svc");
+                span.SetTag(Tags.SpanKind, SpanKinds.Client);
+                span.Tags.SetTag("peer.service", peer);
+                return span;
+            }
+
+            // First 2 distinct peer-tag combinations are admitted; p3/p4 have their peer tags collapsed
+            // to the sentinel and merge into the single collapsed peer-tags row.
+            aggregator.Add(MakePeer("p1"), MakePeer("p2"), MakePeer("p3"), MakePeer("p4"));
+
+            var buckets = aggregator.CurrentBuffer.Buckets.Values.ToList();
+            buckets.Count(b => b.Key.PeerTagsHash != 0).Should().Be(2); // p1, p2 admitted with real peer tags
+
+            var collapsed = buckets.Single(b => b.Key.PeerTagsHash == 0); // p3 + p4 merged
+            collapsed.Hits.Should().Be(2);
+            DecodeTags(collapsed.PeerTags).Should().Equal("tracer_blocked_value");
+        }
+
+        [Fact]
+        public async Task WholeKeyCap_CollapsesNewBucketsToOverflowRow()
+        {
+            var start = DateTimeOffset.UtcNow;
+            // Drive cardinality through the service dimension, which has no per-field cap, so only the
+            // whole-key backstop can bound it.
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettingsWithCardinalityLimits(bucketsLimit: 2), Mock.Of<IDiscoveryService>(), Mock.Of<IStatsdManager>(), isOtlp: false);
+
+            aggregator.Add(
+                CreateTopLevelSpan(start, "s1"),
+                CreateTopLevelSpan(start, "s2"),
+                CreateTopLevelSpan(start, "s3"),
+                CreateTopLevelSpan(start, "s4"));
+
+            var buckets = aggregator.CurrentBuffer.Buckets.Values.ToList();
+            buckets.Should().HaveCount(3); // s1, s2 admitted + the single overflow row
+
+            var overflow = buckets.Single(b => b.Key.Service == "tracer_blocked_value");
+            overflow.Key.Resource.Should().Be("tracer_blocked_value");
+            overflow.Key.OperationName.Should().Be("tracer_blocked_value");
+            overflow.Hits.Should().Be(2); // s3 + s4 merged into the overflow row
+        }
+
+        [Fact]
+        public async Task WholeKeyCap_ResetsAcrossFlushWindow_DoesNotCollapseRetainedBuckets()
+        {
+            var start = DateTimeOffset.UtcNow;
+            var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettingsWithCardinalityLimits(bucketsLimit: 2), new StubDiscoveryService(), Mock.Of<IStatsdManager>(), isOtlp: false);
+
+            // Dispose so the background flush completes and explicit Flush() runs synchronously without delay.
+            await aggregator.DisposeAsync();
+
+            // Fill the whole-key budget of 2 with services that receive hits, so both buckets are retained
+            // (cleared to Hits == 0) for sketch reuse rather than pruned when the buffer is reused.
+            aggregator.Add(CreateTopLevelSpan(start, "s1"));
+            aggregator.Add(CreateTopLevelSpan(start, "s2"));
+
+            var retainingBuffer = aggregator.CurrentBuffer;
+            retainingBuffer.Buckets.Should().HaveCount(2);
+
+            // Two flushes rotate back to the same buffer (BufferCount == 2); s1/s2 are retained with Hits == 0.
+            await aggregator.Flush();
+            await aggregator.Flush();
+            aggregator.CurrentBuffer.Should().BeSameAs(retainingBuffer);
+            retainingBuffer.Buckets.Should().HaveCount(2, "retained buckets survive across the rotation for sketch reuse");
+            retainingBuffer.ActiveBucketCount.Should().Be(0, "the per-window active-bucket count resets each flush");
+
+            // A new distinct service in the fresh window must get its own real bucket, not be collapsed into
+            // the overflow row by the stale retained buckets that still occupy Buckets.Count.
+            aggregator.Add(CreateTopLevelSpan(start, "s3"));
+
+            var newBucket = aggregator.CurrentBuffer.Buckets.Values.Single(b => b.Key.Service == "s3");
+            newBucket.Hits.Should().Be(1);
+            aggregator.CurrentBuffer.Buckets.Values.Should().NotContain(
+                b => b.Key.Service == "tracer_blocked_value" && b.Hits > 0,
+                "normal endpoint churn under the cap must not be collapsed in a fresh window");
+        }
+
+        [Fact]
+        public async Task WholeKeyCap_OverflowRow_EncodesSentinelPeerAndAdditionalTags()
+        {
+            var start = DateTimeOffset.UtcNow;
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettingsWithCardinalityLimits(bucketsLimit: 1), Mock.Of<IDiscoveryService>(), Mock.Of<IStatsdManager>(), isOtlp: false);
+
+            // s1 fills the single-bucket budget; s2 collapses into the whole-key overflow row.
+            aggregator.Add(
+                CreateTopLevelSpan(start, "s1"),
+                CreateTopLevelSpan(start, "s2"));
+
+            var overflow = aggregator.CurrentBuffer.Buckets.Values.Single(b => b.Key.Service == "tracer_blocked_value");
+
+            DecodeTags(overflow.PeerTags).Should().Equal("tracer_blocked_value");
+            DecodeTags(overflow.AdditionalMetricTags).Should().Equal("tracer_blocked_value");
+        }
+
+        [Fact]
+        public async Task Resource_PerFieldCap_ResetsOnFlush()
+        {
+            var start = DateTimeOffset.UtcNow;
+            var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettingsWithCardinalityLimits(resourceLimit: 1), new StubDiscoveryService(), Mock.Of<IStatsdManager>(), isOtlp: false);
+
+            // Dispose so the background flush completes and explicit Flush() runs synchronously without delay.
+            await aggregator.DisposeAsync();
+
+            Span MakeResource(string resource)
+            {
+                var span = CreateTopLevelSpan(start, "svc");
+                span.ResourceName = resource;
+                return span;
+            }
+
+            aggregator.Add(MakeResource("a")); // admitted (budget now full)
+            aggregator.Add(MakeResource("b")); // folded: budget of 1 exhausted
+
+            var bufferBeforeFlush = aggregator.CurrentBuffer;
+            bufferBeforeFlush.Buckets.Should().HaveCount(2); // resource=a + sentinel sink
+
+            // Flush swaps the buffer and resets the per-field admission set.
+            await aggregator.Flush();
+
+            aggregator.Add(MakeResource("c")); // fresh budget => admitted with its real resource
+
+            var bufferAfterFlush = aggregator.CurrentBuffer;
+            bufferAfterFlush.Should().NotBeSameAs(bufferBeforeFlush);
+            bufferAfterFlush.Buckets.Values.Should().ContainSingle(b => b.Key.Resource == "c");
+        }
+
+        [Theory]
+        [InlineData(false, 5000)]
+        [InlineData(true, 15000)]
+        public async Task ResourceLength_TruncatedToConfiguredByteCap(bool bigResource, int expectedMaxBytes)
+        {
+            // Resource truncation only runs when the tracer owns obfuscation (version 1).
+            var discovery = new StubDiscoveryService(obfuscationVersion: 1, featureFlags: bigResource ? ["big_resource"] : null);
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), discovery, Mock.Of<IStatsdManager>(), isOtlp: false);
+
+            var span = CreateTopLevelSpan(DateTimeOffset.UtcNow, "svc");
+            span.OperationName = "op";
+            span.ResourceName = new string('x', 20000); // ASCII: 1 byte per char
+            var chunk = new SpanCollection([span]);
+
+            aggregator.ProcessTrace(ref chunk);
+
+            // ASCII => byte length == char length, truncated to exactly the configured cap.
+            System.Text.Encoding.UTF8.GetByteCount(chunk[0].ResourceName).Should().BeLessOrEqualTo(expectedMaxBytes);
+            chunk[0].ResourceName.Length.Should().Be(expectedMaxBytes);
+        }
+
+        [Fact]
+        public async Task ResourceLength_NotTruncatedWhenObfuscationDisabled()
+        {
+            // Obfuscation disabled (version 0): the tracer does not own normalization/obfuscation, so the
+            // RFC §4 resource length cap is not applied and the agent caps the resource instead.
+            var discovery = new StubDiscoveryService(obfuscationVersion: 0);
+            await using var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), discovery, Mock.Of<IStatsdManager>(), isOtlp: false);
+
+            var span = CreateTopLevelSpan(DateTimeOffset.UtcNow, "svc");
+            span.OperationName = "op";
+            span.ResourceName = new string('x', 20000);
+            var chunk = new SpanCollection([span]);
+
+            aggregator.ProcessTrace(ref chunk);
+
+            chunk[0].ResourceName.Length.Should().Be(20000); // left untouched
+        }
+
+        [Fact]
+        public async Task CollapsedSpans_RecordedOnStatsdHealthMetric()
+        {
+            var start = DateTimeOffset.UtcNow;
+            var dogStatsd = new Mock<Vendors.StatsdClient.IDogStatsd>();
+            var statsd = new TestStatsdManager(dogStatsd.Object);
+            var settings = TracerSettings.Create(new Dictionary<string, object>
+            {
+                { ConfigurationKeys.TracerMetricsEnabled, true },
+                { ConfigurationKeys.StatsResourceCardinalityLimit, 1 },
+            });
+
+            var aggregator = new StatsAggregator(Mock.Of<IApi>(), settings, new StubDiscoveryService(), statsd, isOtlp: false);
+
+            // Dispose so the explicit Flush() below runs synchronously without waiting on the interval.
+            await aggregator.DisposeAsync();
+
+            Span MakeResource(string resource)
+            {
+                var span = CreateTopLevelSpan(start, "svc");
+                span.ResourceName = resource;
+                return span;
+            }
+
+            aggregator.Add(MakeResource("a")); // admitted (budget of 1 now full)
+            aggregator.Add(MakeResource("b")); // folded => one collapsed span
+
+            await aggregator.Flush();
+
+            // The statsd health metric is aggregated per cardinality-tag combination and emitted once per flush.
+            dogStatsd.Verify(
+                s => s.Counter(
+                    TracerMetricNames.Stats.CollapsedSpans,
+                    1d,
+                    It.IsAny<double>(),
+                    It.Is<string[]>(tags => tags.Contains("collapsed:resource"))),
+                Times.Once());
+        }
+
+        [Fact]
+        public async Task CollapsedSpans_HealthMetricIsScopedPerFlushWindow()
+        {
+            var start = DateTimeOffset.UtcNow;
+            var dogStatsd = new Mock<Vendors.StatsdClient.IDogStatsd>();
+            var statsd = new TestStatsdManager(dogStatsd.Object);
+            var settings = TracerSettings.Create(new Dictionary<string, object>
+            {
+                { ConfigurationKeys.TracerMetricsEnabled, true },
+                { ConfigurationKeys.StatsResourceCardinalityLimit, 1 },
+            });
+
+            var aggregator = new StatsAggregator(Mock.Of<IApi>(), settings, new StubDiscoveryService(), statsd, isOtlp: false);
+
+            // Dispose so the explicit Flush() calls below run synchronously without waiting on the interval.
+            await aggregator.DisposeAsync();
+
+            // Three flush windows that all reuse the same two buffers (BufferCount == 2). Each window collapses
+            // exactly one span ("b" folds into the sentinel resource), so each flush must emit the counter with
+            // value 1. Without resetting the reporter per window, the reused buffer's count would accumulate and
+            // the third window would emit value 2.
+            for (var i = 0; i < 3; i++)
+            {
+                aggregator.Add(MakeResource("a")); // admitted (budget of 1 now full)
+                aggregator.Add(MakeResource("b")); // folded => one collapsed span this window
+                await aggregator.Flush();
+            }
+
+            dogStatsd.Verify(
+                s => s.Counter(
+                    TracerMetricNames.Stats.CollapsedSpans,
+                    1d,
+                    It.IsAny<double>(),
+                    It.Is<string[]>(tags => tags.Contains("collapsed:resource"))),
+                Times.Exactly(3));
+
+            Span MakeResource(string resource)
+            {
+                var span = CreateTopLevelSpan(start, "svc");
+                span.ResourceName = resource;
+                return span;
+            }
+        }
+
+        private static List<string> DecodeTags(List<byte[]> encoded)
+            => encoded.Select(bytes => System.Text.Encoding.UTF8.GetString(bytes)).ToList();
+
+        /// <summary>
+        /// Creates a top-level span with a TraceContext.
+        /// </summary>
+        private static Span CreateTopLevelSpan(DateTimeOffset start, string serviceName = null)
+        {
+            var tracer = new StubDatadogTracer();
+            var traceContext = new TraceContext(tracer);
+            var context = new SpanContext(null, traceContext, serviceName);
+            return new Span(context, start);
+        }
+
         private static TracerSettings GetSettings(int? statsComputationIntervalSeconds = null)
         {
             var settings = statsComputationIntervalSeconds.HasValue
@@ -422,6 +2029,53 @@ namespace Datadog.Trace.Tests.Agent
                                : new TracerSettings();
 
             return settings;
+        }
+
+        private static TracerSettings GetSettingsWithAdditionalTags(string additionalTags, int? cardinalityLimit = null)
+        {
+            var config = new Dictionary<string, object>
+            {
+                { ConfigurationKeys.ExperimentalFeaturesEnabled, ConfigurationKeys.StatsAdditionalTags },
+                { ConfigurationKeys.StatsAdditionalTags, additionalTags },
+            };
+
+            if (cardinalityLimit.HasValue)
+            {
+                config[ConfigurationKeys.StatsAdditionalTagsCardinalityLimit] = cardinalityLimit.Value;
+            }
+
+            return TracerSettings.Create(config);
+        }
+
+        private static TracerSettings GetSettingsWithCardinalityLimits(
+            int? resourceLimit = null,
+            int? httpEndpointLimit = null,
+            int? peerTagsLimit = null,
+            int? bucketsLimit = null)
+        {
+            var config = new Dictionary<string, object>();
+
+            if (resourceLimit.HasValue)
+            {
+                config[ConfigurationKeys.StatsResourceCardinalityLimit] = resourceLimit.Value;
+            }
+
+            if (httpEndpointLimit.HasValue)
+            {
+                config[ConfigurationKeys.StatsHttpEndpointCardinalityLimit] = httpEndpointLimit.Value;
+            }
+
+            if (peerTagsLimit.HasValue)
+            {
+                config[ConfigurationKeys.StatsPeerTagsCardinalityLimit] = peerTagsLimit.Value;
+            }
+
+            if (bucketsLimit.HasValue)
+            {
+                config[ConfigurationKeys.StatsComputationBucketsCardinalityLimit] = bucketsLimit.Value;
+            }
+
+            return TracerSettings.Create(config);
         }
 
         // Re-implement timestamp conversion to independently verify the operation
@@ -441,7 +2095,10 @@ namespace Datadog.Trace.Tests.Agent
             return ns << shift;
         }
 
-        private class StubDiscoveryService : IDiscoveryService
+        private class StubDiscoveryService(
+            int obfuscationVersion = 0,
+            AgentTraceFilterConfig traceFilterConfig = null,
+            List<string> featureFlags = null) : IDiscoveryService
         {
             public void SubscribeToChanges(Action<AgentConfiguration> callback)
             {
@@ -451,15 +2108,20 @@ namespace Datadog.Trace.Tests.Agent
                              debuggerV2Endpoint: "debuggerV2Endpoint",
                              diagnosticsEndpoint: "diagnosticsEndpoint",
                              symbolDbEndpoint: "symbolDbEndpoint",
-                             agentVersion: "agentVersion",
+                             agentVersion: null,
                              statsEndpoint: "traceStatsEndpoint",
                              dataStreamsMonitoringEndpoint: "dataStreamsMonitoringEndpoint",
                              eventPlatformProxyEndpoint: "eventPlatformProxyEndpoint",
                              telemetryProxyEndpoint: "telemetryProxyEndpoint",
                              tracerFlareEndpoint: "tracerFlareEndpoint",
+                             containerTagsHash: "containerTagsHash",
                              clientDropP0: true,
                              spanMetaStructs: true,
-                             spanEvents: true));
+                             spanEvents: true,
+                             peerTags: [Tags.PeerService],
+                             obfuscationVersion: obfuscationVersion,
+                             traceFilterConfig: traceFilterConfig,
+                             featureFlags: featureFlags));
             }
 
             public void RemoveSubscription(Action<AgentConfiguration> callback)

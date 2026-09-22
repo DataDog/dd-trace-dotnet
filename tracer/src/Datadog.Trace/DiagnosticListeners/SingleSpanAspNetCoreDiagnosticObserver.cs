@@ -10,11 +10,13 @@ using System;
 using System.Reflection;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Coordinator;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.Http;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Debugger;
 using Datadog.Trace.Debugger.SpanCodeOrigin;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
+using Datadog.Trace.OpenTelemetry;
 using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Tagging;
 using Microsoft.AspNetCore.Routing;
@@ -233,19 +235,13 @@ namespace Datadog.Trace.DiagnosticListeners
 
                 if (CurrentCodeOrigin is { Settings.CodeOriginForSpansEnabled: true } codeOrigin)
                 {
-                    var method = routeEndpoint.Value.RequestDelegate?.Method;
-                    if (method != null)
+                    if (AspNetCoreEndpointCodeOrigin.TryGetTypeAndMethod(routeEndpoint.Value, out var type, out var method))
                     {
-                        codeOrigin.SetCodeOriginForEntrySpan(rootSpan, routeEndpoint.Value.RequestDelegate?.Target?.GetType() ?? method.DeclaringType, method);
-                    }
-                    else if (routeEndpoint.Value.RequestDelegate?.TryDuckCast<Target>(out var target) == true && target is { Handler: { } handler })
-                    {
-                        Log.Debug("RouteEndpoint?.RequestDelegate?.Method is null. Extracting code origin from RouteEndpoint.RequestDelegate.Target.Handler {Handler}", handler);
-                        codeOrigin.SetCodeOriginForEntrySpan(rootSpan, handler.Target?.GetType(), handler.Method);
+                        codeOrigin.SetCodeOriginForEntrySpan(rootSpan, type, method);
                     }
                     else
                     {
-                        Log.Debug("RouteEndpoint?.RequestDelegate?.Method is null and could not extract handler from RouteEndpoint.RequestDelegate.Target");
+                        Log.Debug("Could not extract type and method for endpoint code origin. Endpoint: {EndpointDisplayName}", routeEndpoint.Value.DisplayName);
                     }
                 }
 
@@ -259,22 +255,39 @@ namespace Datadog.Trace.DiagnosticListeners
                 {
                     tags.AspNetCoreEndpoint = routeEndpoint.Value.DisplayName;
                     var routePattern = routeEndpoint.Value.RoutePattern.DuckCast<RoutePattern>();
-                    // No need to ToLowerInvariant() these strings, as we lower case
-                    // the whole route later
 
-                    var resourcePathName = AspNetCoreResourceNameHelper.SimplifyRoutePattern(
-                        routePattern,
-                        routeValues,
-                        _tracer.Settings.ExpandRouteTemplatesEnabled);
+                    string? normalizedRoute;
+                    if (_tracer.Settings.OtelSemanticsEnabled)
+                    {
+                        // The OTel span name must be "{method} {http.route}", so use the route verbatim
+                        // (as stored by ASP.NET Core) instead of the Datadog simplified route pattern.
+                        // If there's no route, fall back to the method-only resource name instead of
+                        // appending a null route.
+                        normalizedRoute = HttpSemanticConventions.GetHttpRoute(routePattern.RawText);
+                        rootSpan.ResourceName = normalizedRoute is not null
+                                                     ? $"{HttpSemanticConventions.GetResourceName(tags.HttpMethod)} {normalizedRoute}"
+                                                     : HttpSemanticConventions.GetResourceName(tags.HttpMethod);
+                    }
+                    else
+                    {
+                        // No need to ToLowerInvariant() these strings, as we lower case
+                        // the whole route later
+                        normalizedRoute = routePattern.RawText?.ToLowerInvariant();
 
-                    // If we have a PathBase, then we need to do a bunch of encoding etc which requires allocating buffers
-                    // and various other things. We could look at optimizing that later by inlining ToUriComponent and using a ValueStringBuilder,
-                    // but for now, we just fast-path the no-path base case
-                    rootSpan.ResourceName = !request.PathBase.HasValue && tags.HttpMethod.Length + 1 + resourcePathName.Length <= 1024
-                                                ? string.Create(null, stackalloc char[1024], $"{tags.HttpMethod} {resourcePathName}")
-                                                : $"{tags.HttpMethod} {request.PathBase.ToUriComponent()}{resourcePathName}";
+                        var resourcePathName = AspNetCoreResourceNameHelper.SimplifyRoutePattern(
+                            routePattern,
+                            routeValues,
+                            _tracer.Settings.ExpandRouteTemplatesEnabled);
 
-                    tags.AspNetCoreRoute = routePattern.RawText?.ToLowerInvariant();
+                        // If we have a PathBase, then we need to do a bunch of encoding etc which requires allocating buffers
+                        // and various other things. We could look at optimizing that later by inlining ToUriComponent and using a ValueStringBuilder,
+                        // but for now, we just fast-path the no-path base case
+                        rootSpan.ResourceName = !request.PathBase.HasValue && tags.HttpMethod.Length + 1 + resourcePathName.Length <= 1024
+                                                    ? string.Create(null, stackalloc char[1024], $"{tags.HttpMethod} {resourcePathName}")
+                                                    : $"{tags.HttpMethod} {request.PathBase.ToUriComponent()}{resourcePathName}";
+                    }
+
+                    tags.AspNetCoreRoute = normalizedRoute;
                 }
 
                 // We check appsec enabled in here, but this avoids the method call if it's not needed
@@ -294,7 +307,8 @@ namespace Datadog.Trace.DiagnosticListeners
         {
             var appsecEnabled = _security.AppsecEnabled;
             var iastEnabled = _iast.Settings.Enabled;
-            var isCodeOriginEnabled = CurrentCodeOrigin is { Settings.CodeOriginForSpansEnabled: true };
+            var codeOrigin = CurrentCodeOrigin;
+            var isCodeOriginEnabled = codeOrigin is { Settings.CodeOriginForSpansEnabled: true };
 
             if (!appsecEnabled && !iastEnabled && !isCodeOriginEnabled)
             {
@@ -305,11 +319,11 @@ namespace Datadog.Trace.DiagnosticListeners
              && typedArg.HttpContext is { } httpContext
              && httpContext.Items[AspNetCoreHttpRequestHandler.HttpContextTrackingKey] is AspNetCoreHttpRequestHandler.SingleSpanRequestTrackingFeature { RootScope.Span: { } rootSpan })
             {
-                if (isCodeOriginEnabled)
+                if (isCodeOriginEnabled && !codeOrigin!.HasCodeOrigin(rootSpan))
                 {
-                    if (AspNetCoreDiagnosticObserver.TryGetTypeAndMethod(typedArg, out var type, out var method))
+                    if (AspNetCoreEndpointCodeOrigin.TryGetTypeAndMethod(typedArg, out var type, out var method))
                     {
-                        CurrentCodeOrigin!.SetCodeOriginForEntrySpan(rootSpan, type, method);
+                        codeOrigin.SetCodeOriginForEntrySpan(rootSpan, type, method);
                     }
                     else
                     {
@@ -328,6 +342,8 @@ namespace Datadog.Trace.DiagnosticListeners
 
         private void OnHostingHttpRequestInStop(object arg)
         {
+            CoreHttpContextStore.Instance.Remove();
+
             if (!_tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId))
             {
                 return;

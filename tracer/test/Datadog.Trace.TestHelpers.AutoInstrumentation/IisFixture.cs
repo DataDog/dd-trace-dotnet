@@ -33,6 +33,16 @@ namespace Datadog.Trace.TestHelpers
 
         public bool UseLegacyCasModel { get; set; } = false;
 
+        /// <summary>
+        /// Gets the ddapm test-agent session the application under test exports OTLP to, for suites
+        /// that use <c>OTEL_TRACES_EXPORTER=otlp</c>. Owned by the fixture rather than by each test
+        /// case, because the fixture starts one IIS Express site shared by every test case, and that
+        /// site's <c>OTEL_EXPORTER_OTLP_HEADERS</c> (which carries the session token) is fixed for its
+        /// whole lifetime -- a token generated per test case would stop matching what the running site
+        /// actually sends after the first one.
+        /// </summary>
+        public OtlpTestAgentSession OtlpSession { get; } = new();
+
         public async Task TryStartIis(TestHelper helper, IisAppType appType, bool sendHealthCheck = true, string url = "")
         {
             if (IisExpress.Process == null)
@@ -129,8 +139,8 @@ namespace Datadog.Trace.TestHelpers
 
                         if (responseCode == HttpStatusCode.OK)
                         {
-                            await Agent.WaitForSpansAsync(1, minDateTime: dateTime);
-                            serverReady = true;
+                            var spans = await Agent.WaitForSpansAsync(1, minDateTime: dateTime);
+                            serverReady = spans.Count > 0;
                         }
                     }
                     else

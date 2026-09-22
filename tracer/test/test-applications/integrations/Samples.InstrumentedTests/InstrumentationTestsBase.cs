@@ -53,7 +53,7 @@ public class InstrumentationTestsBase : IDisposable
     private static MethodInfo _vulnerabilityTypeProperty = _vulnerabilityType.GetProperty("Type", BindingFlags.Public | BindingFlags.Instance)?.GetMethod;
     private static MethodInfo _evidenceProperty = _vulnerabilityType.GetProperty("Evidence", BindingFlags.Public | BindingFlags.Instance)?.GetMethod;
     private static MethodInfo _locationProperty = _vulnerabilityType.GetProperty("Location", BindingFlags.Public | BindingFlags.Instance)?.GetMethod;
-    private static MethodInfo _pathProperty = _locationType.GetProperty("Path", BindingFlags.Public | BindingFlags.Instance)?.GetMethod;
+    private static MethodInfo _classProperty = _locationType.GetProperty("Class", BindingFlags.Public | BindingFlags.Instance)?.GetMethod;
     private static MethodInfo _lineProperty = _locationType.GetProperty("Line", BindingFlags.Public | BindingFlags.Instance)?.GetMethod;
     private static MethodInfo _taintMethod = _taintedObjectsType.GetMethod("Taint", BindingFlags.Instance | BindingFlags.Public);
     private static MethodInfo _enableIastInRequestMethod = _traceContextType.GetMethod("EnableIastInRequest", BindingFlags.Instance | BindingFlags.NonPublic);
@@ -215,7 +215,7 @@ public class InstrumentationTestsBase : IDisposable
         foreach (var vulnerability in vulnerabilities)
         {
             var locationProperty = _locationProperty.Invoke(vulnerability, Array.Empty<object>());
-            var path = _pathProperty.Invoke(locationProperty, Array.Empty<object>());
+            var className = _classProperty.Invoke(locationProperty, Array.Empty<object>());
             var line = _lineProperty.Invoke(locationProperty, Array.Empty<object>());
 
             if (line != null)
@@ -223,11 +223,11 @@ public class InstrumentationTestsBase : IDisposable
                 ((int)line).Should().BeGreaterThan(0);
             }
 
-            locations?.Add(path.ToString());
+            locations?.Add(className?.ToString());
 
-            if (!string.IsNullOrEmpty(path as string))
+            if (!string.IsNullOrEmpty(className as string))
             {
-                if (!path.ToString().Contains(location))
+                if (!className.ToString().Contains(location))
                 {
                     return false;
                 }

@@ -15,23 +15,13 @@ namespace Datadog.Trace.Tagging
     partial class IbmMqTags
     {
         // SpanKindBytes = MessagePack.Serialize("span.kind");
-#if NETCOREAPP
-        private static ReadOnlySpan<byte> SpanKindBytes => new byte[] { 169, 115, 112, 97, 110, 46, 107, 105, 110, 100 };
-#else
-        private static readonly byte[] SpanKindBytes = new byte[] { 169, 115, 112, 97, 110, 46, 107, 105, 110, 100 };
-#endif
+        private static ReadOnlySpan<byte> SpanKindBytes => [169, 115, 112, 97, 110, 46, 107, 105, 110, 100];
+
         // InstrumentationNameBytes = MessagePack.Serialize("component");
-#if NETCOREAPP
-        private static ReadOnlySpan<byte> InstrumentationNameBytes => new byte[] { 169, 99, 111, 109, 112, 111, 110, 101, 110, 116 };
-#else
-        private static readonly byte[] InstrumentationNameBytes = new byte[] { 169, 99, 111, 109, 112, 111, 110, 101, 110, 116 };
-#endif
+        private static ReadOnlySpan<byte> InstrumentationNameBytes => [169, 99, 111, 109, 112, 111, 110, 101, 110, 116];
+
         // TopicNameBytes = MessagePack.Serialize("topicname");
-#if NETCOREAPP
-        private static ReadOnlySpan<byte> TopicNameBytes => new byte[] { 169, 116, 111, 112, 105, 99, 110, 97, 109, 101 };
-#else
-        private static readonly byte[] TopicNameBytes = new byte[] { 169, 116, 111, 112, 105, 99, 110, 97, 109, 101 };
-#endif
+        private static ReadOnlySpan<byte> TopicNameBytes => [169, 116, 111, 112, 105, 99, 110, 97, 109, 101];
 
         public override string? GetTag(string key)
         {
@@ -61,7 +51,7 @@ namespace Datadog.Trace.Tagging
             }
         }
 
-        public override void EnumerateTags<TProcessor>(ref TProcessor processor)
+        public override void EnumerateTags<TProcessor>(ref TProcessor processor, bool openTelemetrySemanticsEnabled)
         {
             if (SpanKind is not null)
             {
@@ -78,7 +68,7 @@ namespace Datadog.Trace.Tagging
                 processor.Process(new TagItem<string>("topicname", TopicName, TopicNameBytes));
             }
 
-            base.EnumerateTags(ref processor);
+            base.EnumerateTags(ref processor, openTelemetrySemanticsEnabled);
         }
 
         protected override void WriteAdditionalTags(System.Text.StringBuilder sb)

@@ -28,7 +28,6 @@ using Datadog.Trace.Iast.Telemetry;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.Tagging;
-using Datadog.Trace.VendoredMicrosoftCode.System;
 using static Datadog.Trace.Configuration.ConfigurationKeys;
 using static Datadog.Trace.Telemetry.Metrics.MetricTags;
 
@@ -621,7 +620,7 @@ internal static partial class IastModule
         if (span?.Type == SpanTypes.Web)
         {
             var route = span.GetTag(Tags.HttpRoute) ?? string.Empty;
-            var method = span.GetTag(Tags.HttpMethod) ?? string.Empty;
+            var method = span.GetHttpMethod() ?? string.Empty;
             var key = $"{method}#{route}";
             if (key.Length > 1)
             {
@@ -744,13 +743,18 @@ internal static partial class IastModule
     private static Location? GetLocation(StackTrace? stack = null, Span? currentSpan = null)
     {
         stack ??= StackWalker.GetStackTrace();
+        if (stack is null)
+        {
+            return null;
+        }
+
         if (!StackWalker.TryGetFrame(stack, out var stackFrame))
         {
             return null;
         }
 
         string? stackId = null;
-        if (stack != null && Security.Instance.Settings.StackTraceEnabled)
+        if (Security.Instance.Settings.StackTraceEnabled)
         {
             if (currentSpan is null)
             {
@@ -1075,7 +1079,7 @@ internal static partial class IastModule
 
         private sealed class DbRecordData
         {
-            public int Count { get; set; } = 0;
+            public int Count { get; set; }
         }
     }
 }

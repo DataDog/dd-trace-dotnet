@@ -52,7 +52,7 @@ internal sealed class InferredProxyCoordinator
     {
         try
         {
-            if (!_extractor.TryExtract(carrier, carrierGetter, tracer, out var proxyData))
+            if (!_extractor.TryExtract(carrier, carrierGetter, out var proxyData))
             {
                 return null;
             }

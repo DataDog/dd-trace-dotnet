@@ -69,7 +69,7 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
                     }
                 }
 
-                if (_scheduledExceptions.Any())
+                if (_scheduledExceptions.Count != 0)
                 {
                     SetNextTimer(_scheduledExceptions[0].DueTime);
                 }

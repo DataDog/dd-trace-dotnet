@@ -54,6 +54,11 @@ internal sealed class MetricReaderHandler
             shouldEnable = !meterName.StartsWith("System.", StringComparison.Ordinal) && !meterName.StartsWith("Microsoft.", StringComparison.Ordinal);
         }
 
+        if (!shouldEnable && _settings.OtlpRuntimeMetricsEnabled)
+        {
+            shouldEnable = meterName is "System.Runtime";
+        }
+
         if (!shouldEnable)
         {
             return;
@@ -83,7 +88,7 @@ internal sealed class MetricReaderHandler
             Log.Warning("Duplicate metric stream detected: {MetricStreamName}. Measurements from this instrument will still be exported but may result in conflicts.", identity.MetricStreamName);
         }
 
-        var state = new MetricState(identity, temporality);
+        var state = new MetricState(identity, temporality, _settings.OpenTelemetryMetricsCardinalityLimit);
 
         if (_streams.TryAdd(identity, state))
         {

@@ -37,6 +37,7 @@
       http.client_ip: 127.0.0.1,
       http.method: GET,
       http.request.headers.host: localhost:00000,
+      http.response.headers.content-type: text/html; charset=utf-8,
       http.route: {controller}/{action}/{id},
       http.status_code: 200,
       http.url: http://localhost:00000/Health/?arg&[$slice],
@@ -45,6 +46,10 @@
       network.client.ip: ::1,
       runtime-id: Guid_1,
       span.kind: server,
+      _dd.code_origin.frames.0.index: 0,
+      _dd.code_origin.frames.0.method: Index,
+      _dd.code_origin.frames.0.type: Samples.AspNetMvc5.Controllers.HealthController,
+      _dd.code_origin.type: entry,
       _dd.runtime_family: dotnet
     },
     Metrics: {
@@ -93,6 +98,7 @@
       http.client_ip: 127.0.0.1,
       http.method: GET,
       http.request.headers.host: localhost:00000,
+      http.response.headers.content-type: text/html; charset=utf-8,
       http.route: {controller}/{action}/{id},
       http.status_code: 200,
       http.url: http://localhost:00000/Health/?arg&[$slice],
@@ -101,6 +107,10 @@
       network.client.ip: ::1,
       runtime-id: Guid_1,
       span.kind: server,
+      _dd.code_origin.frames.0.index: 0,
+      _dd.code_origin.frames.0.method: Index,
+      _dd.code_origin.frames.0.type: Samples.AspNetMvc5.Controllers.HealthController,
+      _dd.code_origin.type: entry,
       _dd.runtime_family: dotnet
     },
     Metrics: {
@@ -149,6 +159,7 @@
       http.client_ip: 127.0.0.1,
       http.method: GET,
       http.request.headers.host: localhost:00000,
+      http.response.headers.content-type: text/html; charset=utf-8,
       http.route: {controller}/{action}/{id},
       http.status_code: 200,
       http.url: http://localhost:00000/Health/?arg&[$slice],
@@ -157,6 +168,10 @@
       network.client.ip: ::1,
       runtime-id: Guid_1,
       span.kind: server,
+      _dd.code_origin.frames.0.index: 0,
+      _dd.code_origin.frames.0.method: Index,
+      _dd.code_origin.frames.0.type: Samples.AspNetMvc5.Controllers.HealthController,
+      _dd.code_origin.type: entry,
       _dd.runtime_family: dotnet
     },
     Metrics: {
@@ -205,6 +220,7 @@
       http.client_ip: 127.0.0.1,
       http.method: GET,
       http.request.headers.host: localhost:00000,
+      http.response.headers.content-type: text/html; charset=utf-8,
       http.route: {controller}/{action}/{id},
       http.status_code: 200,
       http.url: http://localhost:00000/Health/?arg&[$slice],
@@ -213,6 +229,10 @@
       network.client.ip: ::1,
       runtime-id: Guid_1,
       span.kind: server,
+      _dd.code_origin.frames.0.index: 0,
+      _dd.code_origin.frames.0.method: Index,
+      _dd.code_origin.frames.0.type: Samples.AspNetMvc5.Controllers.HealthController,
+      _dd.code_origin.type: entry,
       _dd.runtime_family: dotnet
     },
     Metrics: {
@@ -261,6 +281,7 @@
       http.client_ip: 127.0.0.1,
       http.method: GET,
       http.request.headers.host: localhost:00000,
+      http.response.headers.content-type: text/html; charset=utf-8,
       http.route: {controller}/{action}/{id},
       http.status_code: 200,
       http.url: http://localhost:00000/Health/?arg&[$slice],
@@ -269,6 +290,10 @@
       network.client.ip: ::1,
       runtime-id: Guid_1,
       span.kind: server,
+      _dd.code_origin.frames.0.index: 0,
+      _dd.code_origin.frames.0.method: Index,
+      _dd.code_origin.frames.0.type: Samples.AspNetMvc5.Controllers.HealthController,
+      _dd.code_origin.type: entry,
       _dd.runtime_family: dotnet
     },
     Metrics: {

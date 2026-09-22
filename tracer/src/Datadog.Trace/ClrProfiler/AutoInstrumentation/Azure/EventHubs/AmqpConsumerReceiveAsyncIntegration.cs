@@ -12,6 +12,7 @@ using System.Threading;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Shared;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.Schema;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Tagging;
@@ -76,7 +77,7 @@ public sealed class AmqpConsumerReceiveAsyncIntegration
         scope?.Dispose();
     }
 
-    private static IEnumerable<SpanLink>? ExtractSpanLinksFromMessages(Tracer tracer, IReadOnlyList<object> eventsList)
+    private static List<SpanLink>? ExtractSpanLinksFromMessages(Tracer tracer, IReadOnlyList<object> eventsList)
     {
         var extractedContexts = new HashSet<SpanContext>(new SpanContextComparer());
 
@@ -117,8 +118,8 @@ public sealed class AmqpConsumerReceiveAsyncIntegration
         var tags = Tracer.Instance.CurrentTraceSettings.Schema.Messaging.CreateAzureEventHubsTags(SpanKinds.Consumer);
         tags.MessagingOperation = OperationName;
 
-        string serviceName = tracer.CurrentTraceSettings.Schema.Messaging.GetServiceName("azureeventhubs");
-        var scope = tracer.StartActiveInternal(SpanOperationName, tags: tags, serviceName: serviceName, links: spanLinks);
+        var (serviceName, serviceNameSource) = tracer.CurrentTraceSettings.Schema.Messaging.GetServiceNameMetadata(MessagingSchema.ServiceType.AzureEventHubs);
+        var scope = tracer.StartActiveInternal(SpanOperationName, tags: tags, serviceName: serviceName, serviceNameSource: serviceNameSource, links: spanLinks);
         var span = scope.Span;
 
         var eventHubName = consumerInstance.EventHubName;

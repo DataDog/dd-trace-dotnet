@@ -8,6 +8,7 @@
 #include <type_traits>
 
 #include "EnvironmentVariables.h"
+#include "IHeapSnapshotManager.h"
 #include "Log.h"
 #include "OpSysTools.h"
 
@@ -34,6 +35,14 @@ CpuProfilerType const Configuration::DefaultCpuProfilerType =
 #endif
 std::chrono::minutes const Configuration::DefaultDevHeapSnapshotInterval = 1min;
 std::chrono::minutes const Configuration::DefaultProdHeapSnapshotInterval = 5min;
+std::chrono::milliseconds const Configuration::DefaultLibrariesInfoCacheStartTimeout =
+#if defined(DD_SANITIZERS)
+    // Sanitizers instrument every allocation and memory access, so populating the
+    // cache takes considerably longer than in a regular build.
+    10s;
+#else
+    2s;
+#endif
 
 Configuration::Configuration()
 {
@@ -48,6 +57,7 @@ Configuration::Configuration()
     _isAllocationProfilingEnabled = GetEnvironmentValue(EnvironmentVariables::AllocationProfilingEnabled, false, true);
     _isContentionProfilingEnabled = GetContention();
     _isGarbageCollectionProfilingEnabled = GetEnvironmentValue(EnvironmentVariables::GCProfilingEnabled, true, true);
+    _isGcLifecycleEventsProcessingSkipped = GetEnvironmentValue(EnvironmentVariables::GcLifecycleEventsSkipProcessing, false);
     _isHeapProfilingEnabled = GetEnvironmentValue(EnvironmentVariables::HeapProfilingEnabled, false, true);
     _uploadPeriod = ExtractUploadInterval();
     _userTags = ExtractUserTags();
@@ -117,12 +127,15 @@ Configuration::Configuration()
         );
     _httpRequestDurationThreshold = ExtractHttpRequestDurationThreshold();
     _forceHttpSampling = GetEnvironmentValue(EnvironmentVariables::ForceHttpSampling, false);
-    _cpuProfilerType = GetEnvironmentValue(EnvironmentVariables::CpuProfilerType, DefaultCpuProfilerType);
+    _cpuProfilerType = ExtractCpuProfilerType(_isCpuProfilingEnabled, OpSysTools::GetAvailableSignalQueueSlots());
     _isWaitHandleProfilingEnabled = GetEnvironmentValue(EnvironmentVariables::WaitHandleProfilingEnabled, false);
     _isHeapSnapshotEnabled = GetEnvironmentValue(EnvironmentVariables::HeapSnapshotEnabled, false);
+    _isHeapSnapshotSkipTraversal = GetEnvironmentValue(EnvironmentVariables::HeapSnapshotSkipTraversal, false);
     _heapSnapshotInterval = ExtractHeapSnapshotInterval();
     _heapSnapshotCheckInterval = ExtractHeapSnapshotCheckInterval();
-    _heapSnapshotMemoryPressureThreshold = GetEnvironmentValue(EnvironmentVariables::HeapSnapshotMemoryPressureThreshold, 85);
+    _heapSnapshotMemoryPressureThreshold = GetEnvironmentValue(EnvironmentVariables::HeapSnapshotMemoryPressureThreshold, 50);
+    _testHeapSnapshotInterval = ExtractTestHeapSnapshotInterval();
+    _librariesInfoCacheStartTimeout = ExtractLibrariesInfoCacheStartTimeout();
     _heapHandleLimit = ExtractHeapHandleLimit();
     bool defaultUseManagedCodeCache =
     #if ARM64
@@ -131,6 +144,9 @@ Configuration::Configuration()
         false;
     #endif
     _useManagedCodeCache = GetEnvironmentValue(EnvironmentVariables::UseManagedCodeCache, defaultUseManagedCodeCache);
+    _isMemoryFootprintEnabled = GetEnvironmentValue(EnvironmentVariables::MemoryFootprintEnabled, false);
+
+    _referenceTreeFormat = ExtractReferenceTreeFormat();
 }
 
 fs::path Configuration::ExtractLogDirectory()
@@ -209,6 +225,11 @@ bool Configuration::IsContentionProfilingEnabled() const
 bool Configuration::IsGarbageCollectionProfilingEnabled() const
 {
     return _isGarbageCollectionProfilingEnabled;
+}
+
+bool Configuration::IsGcLifecycleEventsProcessingSkipped() const
+{
+    return _isGcLifecycleEventsProcessingSkipped;
 }
 
 bool Configuration::IsGcThreadsCpuTimeEnabled() const
@@ -324,6 +345,16 @@ std::string const& Configuration::GetServiceName() const
 bool Configuration::UseManagedCodeCache() const
 {
     return _useManagedCodeCache;
+}
+
+bool Configuration::IsMemoryFootprintEnabled() const
+{
+    return _isMemoryFootprintEnabled;
+}
+
+uint32_t Configuration::GetReferenceTreeFormat() const
+{
+    return _referenceTreeFormat;
 }
 
 bool Configuration::IsAllocationRecorderEnabled() const
@@ -503,6 +534,42 @@ std::chrono::milliseconds Configuration::ExtractCpuProfilingInterval(std::chrono
     return std::max(interval, minimum);
 }
 
+CpuProfilerType Configuration::ExtractCpuProfilerType(bool isCpuProfilingEnabled, std::optional<std::uint64_t> availableSignalQueueSlots)
+{
+    auto cpuProfilerType = GetEnvironmentValue(EnvironmentVariables::CpuProfilerType, DefaultCpuProfilerType);
+
+#ifdef LINUX
+    // Every timer_create timer holds a signal queue slot for its whole lifetime, and the kernel
+    // accounts those slots per real user id: the budget is shared with all the other processes
+    // running as the same user. Without enough headroom for this process' threads, timer creation
+    // fails and those threads silently produce no CPU sample. The manual profiler is a safe
+    // destination because it relies on a standard signal, which the kernel keeps delivering (minus
+    // its siginfo) once the queue is full.
+    if (isCpuProfilingEnabled && cpuProfilerType == CpuProfilerType::TimerCreate)
+    {
+        if (!availableSignalQueueSlots.has_value())
+        {
+            Log::Warn("Unable to determine how many signal queue slots are available (see RLIMIT_SIGPENDING). ",
+                      "Falling back to the manual CPU profiler.");
+            return CpuProfilerType::ManualCpuTime;
+        }
+
+        if (availableSignalQueueSlots.value() < MinimumFreeSignalQueueSlots)
+        {
+            Log::Warn("Only ", availableSignalQueueSlots.value(), " signal queue slots are available out of the ",
+                      MinimumFreeSignalQueueSlots, " required (see RLIMIT_SIGPENDING). ",
+                      "Falling back to the manual CPU profiler.");
+            return CpuProfilerType::ManualCpuTime;
+        }
+    }
+#else
+    (void)isCpuProfilingEnabled;
+    (void)availableSignalQueueSlots;
+#endif
+
+    return cpuProfilerType;
+}
+
 std::chrono::nanoseconds Configuration::ExtractCpuWallTimeSamplingRate(int minimum)
 {
     // default sampling rate is 9 ms; could be changed via env vars but down to a minimum of 5 ms
@@ -655,6 +722,17 @@ static bool convert_to(shared::WSTRING const& s, int32_t& result)
     return TryParse(s, result);
 }
 
+static bool convert_to(shared::WSTRING const& s, uint32_t& result)
+{
+    int32_t value;
+    if (!TryParse(s, value) || value < 0)
+    {
+        return false;
+    }
+    result = static_cast<uint32_t>(value);
+    return true;
+}
+
 static bool convert_to(shared::WSTRING const& s, uint64_t& result)
 {
     return TryParse(s, result);
@@ -748,6 +826,14 @@ EnablementStatus Configuration::ExtractEnablementStatus()
         return EnablementStatus::Standby;
     }
 
+#ifdef ARM64
+    if (!GetEnvironmentValue(EnvironmentVariables::EnableProfilerArchitectureArm64, false))
+    {
+        Log::Info("Continuous Profiler is not enabled for ARM64 architecture. If you want to use it, set the environment variable DD_INTERNAL_PROFILING_ENABLED_ARM64 to 1.");
+        return EnablementStatus::ManuallyDisabled;
+    }
+#endif
+
     // kill switch for local environment variables
     if (shared::EnvironmentExist(EnvironmentVariables::ProfilerEnabled))
     {
@@ -830,6 +916,11 @@ bool Configuration::IsHeapSnapshotEnabled() const
     return _isHeapSnapshotEnabled;
 }
 
+bool Configuration::IsHeapSnapshotSkipTraversal() const
+{
+    return _isHeapSnapshotSkipTraversal;
+}
+
 std::chrono::minutes Configuration::GetDefaultHeapSnapshotInterval() const
 {
     auto r = shared::GetEnvironmentValue(EnvironmentVariables::DevelopmentConfiguration);
@@ -867,7 +958,7 @@ std::chrono::milliseconds Configuration::ExtractHeapSnapshotCheckInterval() cons
         return std::chrono::milliseconds(interval);
     }
 
-    return 250ms;
+    return 500ms;
 }
 
 std::chrono::milliseconds Configuration::GetHeapSnapshotCheckInterval() const
@@ -878,6 +969,44 @@ std::chrono::milliseconds Configuration::GetHeapSnapshotCheckInterval() const
 uint32_t Configuration::GetHeapSnapshotMemoryPressureThreshold() const
 {
     return _heapSnapshotMemoryPressureThreshold;
+}
+
+std::chrono::seconds Configuration::ExtractTestHeapSnapshotInterval() const
+{
+    auto r = shared::GetEnvironmentValue(EnvironmentVariables::TestHeapSnapshotInterval);
+    int32_t interval;
+    if (TryParse(r, interval) && interval > 0)
+    {
+        return std::chrono::seconds(interval);
+    }
+
+    return 0s;
+}
+
+std::chrono::seconds Configuration::GetTestHeapSnapshotInterval() const
+{
+    return _testHeapSnapshotInterval;
+}
+
+std::chrono::milliseconds Configuration::ExtractLibrariesInfoCacheStartTimeout() const
+{
+    // A negative value parses into a negative duration, and zero would make the wait
+    // return immediately, silently disabling the cache: neither is ever intended.
+    auto timeout = GetEnvironmentValue(EnvironmentVariables::LibrariesInfoCacheStartTimeout, DefaultLibrariesInfoCacheStartTimeout);
+    if (timeout <= 0ms)
+    {
+        Log::Warn("Configuration: ", EnvironmentVariables::LibrariesInfoCacheStartTimeout,
+                  " env var must be strictly positive but is set to '", timeout,
+                  "' - '", DefaultLibrariesInfoCacheStartTimeout, "' is used instead");
+        return DefaultLibrariesInfoCacheStartTimeout;
+    }
+
+    return timeout;
+}
+
+std::chrono::milliseconds Configuration::GetLibrariesInfoCacheStartTimeout() const
+{
+    return _librariesInfoCacheStartTimeout;
 }
 
 int32_t Configuration::ExtractHeapHandleLimit() const
@@ -893,4 +1022,21 @@ int32_t Configuration::ExtractHeapHandleLimit() const
 uint32_t Configuration::GetHeapHandleLimit() const
 {
     return _heapHandleLimit;
+}
+
+uint32_t Configuration::ExtractReferenceTreeFormat() const
+{
+    // The format is a bitfield combining ReferenceTreeFormat_Binary (1) and ReferenceTreeFormat_Json (2).
+    // Only 1 (Binary), 2 (Json) and 3 (Binary + Json) are valid; anything else falls back to the
+    // default binary format.
+    constexpr uint32_t defaultFormat = ReferenceTreeFormat_Binary;
+    constexpr uint32_t validMask = ReferenceTreeFormat_Binary | ReferenceTreeFormat_Json;
+
+    uint32_t format = GetEnvironmentValue(EnvironmentVariables::HeapSnapshotReferenceTreeFormat, defaultFormat);
+    if (format == 0 || (format & ~validMask) != 0)
+    {
+        return defaultFormat;
+    }
+
+    return format;
 }

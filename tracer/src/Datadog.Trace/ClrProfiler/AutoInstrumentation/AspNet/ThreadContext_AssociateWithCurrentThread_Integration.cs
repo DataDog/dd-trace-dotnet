@@ -44,10 +44,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
             // AssociateWithCurrentThread can only be used when HttpContext is non-null
             var httpContext = instance.HttpContext;
             if (httpContext.Items is not null
-                && httpContext.Items[HttpContextScopeKey] is Scope scope
+                && httpContext.Items[HttpContextScopeKey] is Trace.AspNet.TracingHttpModule.ScopeContainer container
                 && Tracer.Instance.ScopeManager is IScopeRawAccess rawAccess)
             {
-                rawAccess.Active = scope;
+                rawAccess.Active = container.Scope;
             }
 
             return CallTargetState.GetDefault();

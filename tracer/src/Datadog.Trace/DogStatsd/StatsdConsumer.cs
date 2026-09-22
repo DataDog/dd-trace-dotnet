@@ -17,4 +17,5 @@ internal enum StatsdConsumer
     RuntimeMetricsWriter = 1 << 0,
     TraceApi = 1 << 1,
     AgentWriter = 1 << 2,
+    StatsAggregator = 1 << 3,
 }

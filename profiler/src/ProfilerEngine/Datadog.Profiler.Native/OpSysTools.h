@@ -8,6 +8,8 @@
 #include "shared/src/native-src/string.h"
 
 #include <chrono>
+#include <iosfwd>
+#include <optional>
 #include <string>
 #include <thread>
 
@@ -60,7 +62,24 @@ public:
     static std::string GetHostname();
     static std::string GetProcessName();
 
+    /// <summary>
+    /// Number of signal queue slots still available, read from /proc/self/status.
+    /// Returns nothing when the information cannot be determined, which is always the case on
+    /// platforms where signal queues are not a concern.
+    /// </summary>
+    static std::optional<std::uint64_t> GetAvailableSignalQueueSlots();
+
 #ifdef LINUX
+    /// <summary>
+    /// Parses the "SigQ:  &lt;queued&gt;/&lt;limit&gt;" line of a /proc/&lt;pid&gt;/status stream and returns
+    /// the number of signal queue slots still available.
+    /// &lt;queued&gt; is the number of queued signals for the real user id, which is shared by every
+    /// process running as that user, while &lt;limit&gt; is this process' soft RLIMIT_SIGPENDING. They
+    /// are accounted independently, so &lt;queued&gt; can exceed &lt;limit&gt; and the subtraction saturates.
+    /// Returns nothing when the line is missing or cannot be parsed.
+    /// </summary>
+    static std::optional<std::uint64_t> ParseAvailableSignalQueueSlots(std::istream& status);
+
     static bool ParseThreadInfo(char const* line, char& state, int32_t& userTime, int32_t& kernelTime)
     {
         // based on https://linux.die.net/man/5/proc

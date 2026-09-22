@@ -3,48 +3,65 @@
 
 #pragma once
 
-#include "ServiceBase.h"
-#include "AutoResetEvent.h"
-
 #include <atomic>
-#include <future>
+#include <memory>
 #include <vector>
 #include <unordered_map>
 #include <unordered_set>
 #include <optional>
 #include <shared_mutex>
-#include <thread>
 #include <mutex>
 #include <set>
 #include <algorithm>
-#include <forward_list>
-#include <functional>
 
 
 #include "cor.h"
 #include "corprof.h"
 
+#ifndef _WINDOWS
+#include "ReaderWriterSpinningMutex.hpp"
+#endif
+
+class CounterMetric;
+class MetricsRegistry;
+
+// The cache read paths can run inside the profiler's signal handlers (SIGPROF for
+// the timer_create CPU profiler, SIGUSR1 for wall-time stack collection). The timed
+// acquire of std::shared_timed_mutex lowers to pthread_rwlock_timedrdlock, which
+// POSIX does not list as async-signal-safe. ReaderWriterSpinningMutex implements the
+// same SharedTimedMutex requirements using only atomics, so it can be used with
+// std::shared_lock/std::unique_lock unchanged.
+// Windows has no signal-based sampling, so the standard type is used there.
+#ifdef _WINDOWS
+using CodeCacheMutex = std::shared_timed_mutex;
+#else
+using CodeCacheMutex = ReaderWriterSpinningMutex;
+#endif
+
 // Represents a single contiguous code range
 struct CodeRange {
     UINT_PTR startAddress;
-    UINT_PTR endAddress;  // Exclusive
+    UINT_PTR endAddress;  // Inclusive
     FunctionID functionId;
-    
+    // true when the range was registered from DynamicMethodJITCompilationFinished
+    // (IL stubs, DynamicMethod/LCG)
+    bool isDynamic = false;
+
     // For binary search
     bool operator<(const CodeRange& other) const {
         return startAddress < other.startAddress;
     }
-    
+
     // Check if IP is within this range
     bool contains(UINT_PTR ip) const {
-        return ip >= startAddress && ip < endAddress;
+        return ip >= startAddress && ip <= endAddress;
     }
 };
 
 
 struct ModuleCodeRange {
     UINT_PTR startAddress;
-    UINT_PTR endAddress;
+    UINT_PTR endAddress; // Inclusive
     bool isRemoved = false;
     // For binary search
     bool operator<(const ModuleCodeRange& other) const {
@@ -53,7 +70,7 @@ struct ModuleCodeRange {
     
     // Check if IP is within this range
     bool contains(std::uintptr_t ip) const {
-        return ip >= startAddress && ip < endAddress;
+        return ip >= startAddress && ip <= endAddress;
     }
 };
 
@@ -80,16 +97,22 @@ class ManagedCodeCache {
 public:
     static constexpr FunctionID InvalidFunctionId = -1;
 
-    explicit ManagedCodeCache(ICorProfilerInfo4* pProfilerInfo);
+    struct FunctionInfo {
+        FunctionID FunctionId;
+        bool IsDynamic;
+    };
+
+    ManagedCodeCache(ICorProfilerInfo4* pProfilerInfo, MetricsRegistry& metricsRegistry);
     ~ManagedCodeCache();
 
     // Signal-safe lookup methods (no allocation)
-    [[nodiscard]] bool IsManaged(std::uintptr_t ip) const noexcept;
+    [[nodiscard]] std::optional<bool> IsManaged(std::uintptr_t ip) const noexcept;
 
     // Not signal-safe
-    [[nodiscard]] std::optional<FunctionID> GetFunctionId(std::uintptr_t ip) noexcept;
+    [[nodiscard]] std::optional<FunctionInfo> GetFunctionInfo(std::uintptr_t ip) noexcept;
 
-    void AddFunction(FunctionID functionId);
+    // isDynamic is true only when called from DynamicMethodJITCompilationFinished
+    void AddFunction(FunctionID functionId, bool isDynamic);
     void AddModule(ModuleID moduleId);
     void RemoveModule(ModuleID moduleId);
 
@@ -99,7 +122,7 @@ private:
     // Each page has its own data + lock for fine-grained concurrency
     struct PageEntry {
         std::vector<CodeRange> ranges;  // Sorted by startAddress
-        mutable std::shared_mutex lock;  // Reader-writer lock
+        mutable CodeCacheMutex lock;  // Reader-writer lock (timed for signal-handler reads)
         
         PageEntry() = default;
         
@@ -129,49 +152,58 @@ private:
     
     // Query the runtime for code ranges for a specific version
     // This is called when a new tier is compiled
-    std::vector<CodeRange> GetCodeRanges(FunctionID functionId);
+    std::vector<CodeRange> GetCodeRanges(FunctionID functionId, bool isDynamic);
     
     // Append new ranges to the cache (accumulative - never removes old ranges)
     // This preserves old tier code that might still be on the stack
     void AddFunctionRangesToCache(std::vector<CodeRange> newRanges);
+
+// Expose the helpers below to tests without duplicating the declarations.
+#ifdef DD_TEST
+public:
+#endif
     void AddModuleRangesToCache(std::vector<ModuleCodeRange> moduleCodeRanges);
-    void AddModuleCodeRangesAsync(std::vector<ModuleCodeRange> moduleCodeRanges);
-    void AddFunctionCodeRangesAsync(std::vector<CodeRange> ranges);
+#ifdef DD_TEST
+    // Test-only hooks to simulate signal-handler contention. IsManaged uses
+    // a time-based acquire on these two mutexes and returns std::nullopt when
+    // ownership cannot be acquired within the timeout. Holding an exclusive lock
+    // on either mutex from another thread deterministically reproduces that
+    // "contended" state.
+    std::unique_lock<CodeCacheMutex> LockPagesMutexExclusiveForTest()
+    {
+        return std::unique_lock<CodeCacheMutex>(_pagesMutex);
+    }
+    std::unique_lock<CodeCacheMutex> LockModulesMutexExclusiveForTest()
+    {
+        return std::unique_lock<CodeCacheMutex>(_modulesMutex);
+    }
+private:
+#endif
     std::vector<ModuleCodeRange> GetModuleCodeRanges(ModuleID moduleId);
     void InsertCodeRangeIntoPage(PagesMap::iterator pageIt, const CodeRange& range);
 
-    void WorkerThread(std::promise<void> startPromise);
-    
-    // Helper: Ensure a page exists in the map
-    void EnsurePageExists(uint64_t page);
-    
+    std::optional<bool> IsManagedImpl(std::uintptr_t ip) const noexcept;
+
     // Map from page number -> page entry (with its own lock)
-
-
     PagesMap _pagesMap;
     std::vector<ModuleCodeRange> _modulesCodeRanges;
-    mutable std::shared_mutex _modulesMutex;
+    mutable CodeCacheMutex _modulesMutex;
     
     // Coarse lock ONLY for modifying the map structure itself
     // (adding/removing pages, not modifying page contents)
-    mutable std::shared_mutex _pagesMutex;
+    mutable CodeCacheMutex _pagesMutex;
     
     // Profiler interface (ICorProfilerInfo4 is available in .NET Framework 4.5+)
     ICorProfilerInfo4* _profilerInfo;
-    std::thread _worker;
-    std::atomic<bool> _requestStop;
-    
-    std::forward_list<std::function<void()>> _workerQueue;
-    std::mutex _queueMutex;
 
-    template<typename WorkType>
-    void EnqueueWork(WorkType work);
-    std::optional<FunctionID> GetFunctionIdImpl(std::uintptr_t ip) const noexcept;
-    bool IsCodeInR2RModule(std::uintptr_t ip) const noexcept;
+    // Counts how many times IsManaged failed to acquire a lock within the timeout
+    // (signal-handler read path backing off instead of blocking).
+    std::shared_ptr<CounterMetric> _lockFailureMetric;
+
+    std::optional<FunctionInfo> GetFunctionInfoImpl(std::uintptr_t ip) const noexcept;
+    std::optional<bool> IsCodeInR2RModule(std::uintptr_t ip, bool signalSafe) const noexcept;
     std::optional<FunctionID> GetFunctionFromIP_Original(std::uintptr_t ip) noexcept;
-    void AddFunctionImpl(FunctionID functionId, bool isAsync);
-    
-    AutoResetEvent _workerQueueEvent;
+    void AddFunctionImpl(FunctionID functionId, bool isDynamic);
 };
 
 // Compile-time checks for signal-safety

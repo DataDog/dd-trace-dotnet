@@ -32,7 +32,7 @@ public:
 
     ~FileSaver() = default;
 
-    Success WriteToDisk(EncodedProfile& profile, std::string const& serviceName, std::vector<std::pair<std::string, std::string>> const& files, std::string const& metadata, std::string const& info)
+    Success WriteToDisk(EncodedProfile& profile, std::string const& serviceName, std::vector<std::pair<std::string, std::vector<uint8_t>>> const& files, std::string const& metadata, std::string const& info)
     {
         auto const& profileId = profile.GetId();
         auto success = WriteProfileToDisk(profile, serviceName, profileId);
@@ -48,7 +48,7 @@ public:
 
         for (auto const& [filename, content] : files)
         {
-            success = WriteTextFileToDisk(filename, content, serviceName, profileId);
+            success = WriteBinaryFileToDisk(filename, content, serviceName, profileId);
 
             if (!success)
             {
@@ -114,6 +114,16 @@ private:
         auto filepath = GenerateFilePath(filename, extension, serviceName, uid);
 
         return WriteFileToDisk(filepath, content.c_str(), content.size());
+    }
+
+    Success WriteBinaryFileToDisk(const std::string& filenameWithExt, const std::vector<uint8_t>& content, std::string const& serviceName, std::string const& uid)
+    {
+        assert(fs::path(filenameWithExt).has_extension());
+
+        auto [filename, extension] = SplitFilenameAndExtension(filenameWithExt);
+        auto filepath = GenerateFilePath(filename, extension, serviceName, uid);
+
+        return WriteFileToDisk(filepath, reinterpret_cast<const char*>(content.data()), content.size());
     }
 
     Success WriteFileToDisk(fs::path const& filePath, char const* ptr, std::size_t size)

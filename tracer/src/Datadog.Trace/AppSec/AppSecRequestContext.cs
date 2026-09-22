@@ -1,16 +1,18 @@
-﻿// <copyright file="AppSecRequestContext.cs" company="Datadog">
+// <copyright file="AppSecRequestContext.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
 #nullable enable
 
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading;
 using Datadog.Trace.AppSec.Rasp;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Tagging;
+using Datadog.Trace.Util.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.AppSec;
@@ -25,9 +27,10 @@ internal sealed partial class AppSecRequestContext
     private readonly object _sync = new();
     private readonly RaspMetricsHelper? _raspMetricsHelper = Security.Instance.RaspEnabled ? new RaspMetricsHelper() : null;
     private readonly List<object> _wafSecurityEvents = new();
-    private int _wafTimeout = 0;
-    private int? _wafError = null;
-    private int? _wafRaspError = null;
+    private readonly ConcurrentDictionary<ulong, bool> _sampledHttpClientRequests = new();
+    private int _wafTimeout;
+    private int? _wafError;
+    private int? _wafRaspError;
     private Dictionary<string, List<Dictionary<string, object>>>? _raspStackTraces;
 
     internal void CloseWebSpan(Span span)
@@ -44,7 +47,7 @@ internal sealed partial class AppSecRequestContext
                 }
                 else
                 {
-                    var triggers = JsonConvert.SerializeObject(_wafSecurityEvents);
+                    var triggers = JsonHelper.SerializeObject(_wafSecurityEvents);
                     span.Tags.SetTag(Tags.AppSecJson, "{\"triggers\":" + triggers + "}");
                 }
             }
@@ -127,11 +130,11 @@ internal sealed partial class AppSecRequestContext
         {
             _raspStackTraces ??= new();
 
-            if (!_raspStackTraces.ContainsKey(stackCategory))
+            if (!_raspStackTraces.TryGetValue(stackCategory, out var value))
             {
                 _raspStackTraces.Add(stackCategory, new());
             }
-            else if (maxStackTraces > 0 && _raspStackTraces[stackCategory].Count >= maxStackTraces)
+            else if (maxStackTraces > 0 && value.Count >= maxStackTraces)
             {
                 return;
             }
@@ -139,37 +142,103 @@ internal sealed partial class AppSecRequestContext
             _raspStackTraces[stackCategory].Add(stackTrace);
         }
     }
+
+    public bool IsHttpClientRequestSampled(ulong id)
+    {
+        if (_sampledHttpClientRequests.TryGetValue(id, out bool value))
+        {
+            return value;
+        }
+
+        if (Security.Instance.SampleDownstreamRequest(this, id))
+        {
+            if (_sampledHttpClientRequests.Count < Security.Instance.ApiSecurityMaxDownstreamRequestBodyAnalysis)
+            {
+                _sampledHttpClientRequests[id] = true;
+                return true;
+            }
+        }
+
+        _sampledHttpClientRequests[id] = false;
+        return false;
+    }
 }
 
 internal partial class AppSecRequestContext
 {
+    // dedicated lock: _sync is held while CloseWebSpan serializes
+    private readonly object _contextSync = new();
+
     private bool _isAdditiveContextDisposed;
 
+    private int _requestAddressesSent;
+
+    private int _responseScanned;
+
     private IContext? _context;
+
+    internal static AppSecRequestContext CreateWithDisposedAdditiveContext()
+        => new() { _isAdditiveContextDisposed = true };
+
+    /// <summary>
+    /// The WAF keeps the addresses it was given for the whole life of the context, so the request address
+    /// set only has to be supplied once: a later run of the same request re-evaluates the rules and
+    /// processors that need them against the values already stored. Returns true only for the first
+    /// caller, which is the one that has to supply them.
+    /// </summary>
+    internal bool ShouldSendRequestAddresses() => Interlocked.CompareExchange(ref _requestAddressesSent, 1, 0) == 0;
+
+    /// <summary>
+    /// Returns true only for the first caller, which is the one that has to send the response addresses.
+    /// The response start hook only exists for Kestrel and IIS, so every other server relies on the
+    /// end of request fallback, which is also what covers a response that never started.
+    /// </summary>
+    internal bool ShouldScanResponse() => Interlocked.CompareExchange(ref _responseScanned, 1, 0) == 0;
 
     /// <summary>
     /// Disposes the WAF's context stored in HttpContext.Items[]. If it doesn't exist, nothing happens, no crash
     /// </summary>
     internal void DisposeAdditiveContext()
     {
-        _context?.Dispose();
-        _isAdditiveContextDisposed = true;
+        lock (_contextSync)
+        {
+            _context?.Dispose();
+            _isAdditiveContextDisposed = true;
+        }
     }
 
-    internal IContext? GetOrCreateAdditiveContext(Security security)
+    // raspAddress is set for a RASP run only, and a context that cannot be handed out is then reported
+    // under it. The cause is captured while _contextSync is held because it is not observable
+    // afterwards: a concurrent disposal would make an ended request and a failed creation look alike.
+    internal IContext? GetOrCreateAdditiveContext(Security security, string? raspAddress = null)
     {
-        if (_isAdditiveContextDisposed)
+        IContext? context;
+        var outcome = WafOutcome.Success;
+
+        lock (_contextSync)
+        {
+            if (_isAdditiveContextDisposed)
+            {
+                outcome = WafOutcome.RequestEnded;
+                context = null;
+            }
+            else
+            {
+                // an already created context keeps the Success it was handed out with
+                context = _context ??= security.CreateAdditiveContext(out outcome, raspAddress is not null);
+            }
+        }
+
+        if (outcome is WafOutcome.RequestEnded)
         {
             Log.Debug("Additive context was requested when already disposed");
-            return null;
         }
 
-        if (_context is not null)
+        if (raspAddress is not null)
         {
-            return _context;
+            RaspModule.RecordRaspOutcome(raspAddress, outcome);
         }
 
-        _context = security.CreateAdditiveContext();
-        return _context;
+        return context;
     }
 }

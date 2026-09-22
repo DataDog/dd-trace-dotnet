@@ -15,7 +15,8 @@
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Couchbase3
+      _dd.base_service: Samples.Couchbase3,
+      _dd.svc_src: couchbase
     },
     Metrics: {
       process_id: 0,
@@ -46,7 +47,8 @@ at Couchbase.Core.ClusterNode.ExecuteOp(Func`4 sender, IOperation op, Object sta
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Couchbase3
+      _dd.base_service: Samples.Couchbase3,
+      _dd.svc_src: couchbase
     },
     Metrics: {
       process_id: 0,
@@ -71,7 +73,8 @@ at Couchbase.Core.ClusterNode.ExecuteOp(Func`4 sender, IOperation op, Object sta
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Couchbase3
+      _dd.base_service: Samples.Couchbase3,
+      _dd.svc_src: couchbase
     },
     Metrics: {
       process_id: 0,
@@ -96,7 +99,8 @@ at Couchbase.Core.ClusterNode.ExecuteOp(Func`4 sender, IOperation op, Object sta
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Couchbase3
+      _dd.base_service: Samples.Couchbase3,
+      _dd.svc_src: couchbase
     },
     Metrics: {
       process_id: 0,
@@ -121,7 +125,8 @@ at Couchbase.Core.ClusterNode.ExecuteOp(Func`4 sender, IOperation op, Object sta
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Couchbase3
+      _dd.base_service: Samples.Couchbase3,
+      _dd.svc_src: couchbase
     },
     Metrics: {
       process_id: 0,
@@ -146,7 +151,8 @@ at Couchbase.Core.ClusterNode.ExecuteOp(Func`4 sender, IOperation op, Object sta
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Couchbase3
+      _dd.base_service: Samples.Couchbase3,
+      _dd.svc_src: couchbase
     },
     Metrics: {
       process_id: 0,
@@ -171,7 +177,8 @@ at Couchbase.Core.ClusterNode.ExecuteOp(Func`4 sender, IOperation op, Object sta
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Couchbase3
+      _dd.base_service: Samples.Couchbase3,
+      _dd.svc_src: couchbase
     },
     Metrics: {
       process_id: 0,
@@ -196,7 +203,8 @@ at Couchbase.Core.ClusterNode.ExecuteOp(Func`4 sender, IOperation op, Object sta
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Couchbase3
+      _dd.base_service: Samples.Couchbase3,
+      _dd.svc_src: couchbase
     },
     Metrics: {
       process_id: 0,
@@ -221,7 +229,8 @@ at Couchbase.Core.ClusterNode.ExecuteOp(Func`4 sender, IOperation op, Object sta
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Couchbase3
+      _dd.base_service: Samples.Couchbase3,
+      _dd.svc_src: couchbase
     },
     Metrics: {
       process_id: 0,
@@ -247,7 +256,8 @@ at Couchbase.Core.ClusterNode.ExecuteOp(Func`4 sender, IOperation op, Object sta
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.base_service: Samples.Couchbase3
+      _dd.base_service: Samples.Couchbase3,
+      _dd.svc_src: couchbase
     },
     Metrics: {
       process_id: 0,

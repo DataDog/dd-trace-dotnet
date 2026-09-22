@@ -274,6 +274,36 @@ internal readonly partial struct SecurityCoordinator
 
     internal object? GetPathParams() => ObjectExtractor.Extract(_httpTransport.Context.Request.RequestContext.RouteData.Values);
 
+    // The WAF context keeps the request addresses BeginRequest already sent, so this only carries what
+    // wasn't available back then.
+    internal Dictionary<string, object> GetEndRequestArgsForWaf()
+    {
+        var args = new Dictionary<string, object>(3);
+
+        // ASP.NET puts its session cookie in Request.Cookies only once the session id is read, which
+        // SessionStateModule normally does at AcquireRequestState, long before this. This read is the guard
+        // for the hosts where that hasn't happened: it has to come before the cookies below, or the cookie
+        // halves of the session fingerprint go empty. BlockAndReport reads the same id again for the waf.
+        _ = _httpTransport.Context.Session?.SessionID;
+
+        if (_httpTransport.StatusCode is { } statusCode)
+        {
+            args[AddressesConstants.ResponseStatus] = statusCode.ToString();
+        }
+
+        if (GetPathParams() is { } pathParams)
+        {
+            args[AddressesConstants.RequestPathParams] = pathParams;
+        }
+
+        if (ExtractCookiesFromRequest(_httpTransport.Context.Request) is { } cookies)
+        {
+            args[AddressesConstants.RequestCookies] = cookies;
+        }
+
+        return args;
+    }
+
     /// <summary>
     /// Framework can do it all at once, but framework only unfortunately
     /// </summary>
@@ -410,8 +440,10 @@ internal readonly partial struct SecurityCoordinator
     public Dictionary<string, object> GetBasicRequestArgsForWaf()
     {
         var request = _httpTransport.Context.Request;
-        var headers = request.Headers;
-        var headersDic = ExtractHeaders(headers.AllKeys, key => GetHeaderValueForWaf(headers, key));
+        var headers = RequestDataHelper.GetHeaders(request);
+        var headersDic = headers is not null
+                             ? ExtractHeaders(headers.AllKeys, headers, static (collection, key) => GetHeaderValueForWaf((NameValueCollection)collection, key))
+                             : null;
         var cookiesDic = ExtractCookiesFromRequest(request);
 
         var queryString = RequestDataHelper.GetQueryString(request);
@@ -447,11 +479,10 @@ internal readonly partial struct SecurityCoordinator
             }
         }
 
-        var dict = new Dictionary<string, object>(capacity: 7)
+        var dict = new Dictionary<string, object>(capacity: 6)
         {
             { AddressesConstants.RequestMethod, request.HttpMethod },
-            { AddressesConstants.ResponseStatus, request.RequestContext.HttpContext.Response.StatusCode.ToString() },
-            { AddressesConstants.RequestClientIp, _localRootSpan.GetTag(Tags.HttpClientIp) ?? _localRootSpan.GetTag(Tags.NetworkClientIp) }
+            { AddressesConstants.RequestClientIp, _localRootSpan.GetHttpClientIp() ?? _localRootSpan.GetNetworkClientIp() }
         };
 
         var url = RequestDataHelper.GetUrl(request);

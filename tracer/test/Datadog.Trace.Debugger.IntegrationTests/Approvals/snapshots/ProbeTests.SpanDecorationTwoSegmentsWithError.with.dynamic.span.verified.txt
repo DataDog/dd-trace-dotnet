@@ -11,7 +11,7 @@
       env: integration_tests,
       language: dotnet,
       runtime-id: Guid_2,
-      SpanDecorationTwoSegments: Instance=Datadog.Trace.Debugger.Expressions.UndefinedValueRun,
+      SpanDecorationTwoSegments: UndefinedValueRun,
       version: 1.0.0,
       _dd.di.SpanDecorationTwoSegments.evaluation_error: EvaluationError { Expression = this.Arg =  },
       _dd.di.SpanDecorationTwoSegments.probe_id: Guid_3

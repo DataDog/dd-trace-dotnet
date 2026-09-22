@@ -96,12 +96,12 @@ namespace Datadog.Trace.Debugger.Instrumentation
                 return CreateInvalidatedDebuggerState();
             }
 
-            if (!probeData.Processor.ShouldProcess(in probeData))
+            if (!probeData.Processor.TryBeginProcess(in probeData, out var snapshotCreator))
             {
                 return CreateInvalidatedDebuggerState();
             }
 
-            var state = new MethodDebuggerState(probeId, scope: default, methodMetadataIndex, ref probeData, instance);
+            var state = new MethodDebuggerState(probeId, scope: default, methodMetadataIndex, ref probeData, instance, snapshotCreator);
 
             var captureInfo = new CaptureInfo<Type>(state.MethodMetadataIndex, value: null, method: state.MethodMetadataInfo.Method, type: state.MethodMetadataInfo.DeclaringType, invocationTargetType: state.MethodMetadataInfo.DeclaringType, methodState: MethodState.EntryStart, localsCount: state.MethodMetadataInfo.LocalVariableNames.Length, argumentsCount: state.MethodMetadataInfo.ParameterNames.Length);
 
@@ -155,7 +155,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
                 return;
             }
 
-            if (Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.IsNullRef(ref arg))
+            if (Unsafe.IsNullRef(ref arg))
             {
                 if (Log.IsEnabled(Vendors.Serilog.Events.LogEventLevel.Debug))
                 {
@@ -196,7 +196,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
                 return;
             }
 
-            if (Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe.IsNullRef(ref local))
+            if (Unsafe.IsNullRef(ref local))
             {
                 if (Log.IsEnabled(Vendors.Serilog.Events.LogEventLevel.Debug))
                 {

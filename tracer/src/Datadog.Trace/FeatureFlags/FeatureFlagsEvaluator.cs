@@ -9,11 +9,14 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
 using Datadog.Trace.FeatureFlags.Rcm.Model;
 using Datadog.Trace.Logging;
+using Datadog.Trace.SourceGenerators;
+using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 
@@ -21,17 +24,22 @@ namespace Datadog.Trace.FeatureFlags
 {
     internal sealed class FeatureFlagsEvaluator
     {
-        internal const string MetadataAllocationKey = "dd_allocationKey";
+        internal const string MetadataAllocationKey = "__dd_allocation_key";
+
+        internal const string MetadataSplitSerialId = FeatureFlagMetadataKeys.SplitSerialId;
+        internal const string MetadataDoLog = FeatureFlagMetadataKeys.DoLog;
 
         internal static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(FeatureFlagsEvaluator));
 
         private readonly ReportExposureDelegate? _onExposureEvent;
         private readonly ServerConfiguration? _config;
+        private readonly bool _spanEnrichmentEnabled;
 
-        public FeatureFlagsEvaluator(ReportExposureDelegate? onExposureEvent, ServerConfiguration? config)
+        public FeatureFlagsEvaluator(ReportExposureDelegate? onExposureEvent, ServerConfiguration? config, bool spanEnrichmentEnabled = false)
         {
             _onExposureEvent = onExposureEvent;
             _config = config;
+            _spanEnrichmentEnabled = spanEnrichmentEnabled;
             if (_config is null)
             {
                 Log.Debug("Creating Evaluator without config");
@@ -62,7 +70,9 @@ namespace Datadog.Trace.FeatureFlags
                         });
                 }
 
-                if (config.Flags is null || !config.Flags.TryGetValue(flagKey, out var flag) || flag is null)
+                Flag? flag = null;
+                var lookupResult = config.Flags?.Find(flagKey, out flag) ?? FlagLookupResult.NotFound;
+                if (lookupResult == FlagLookupResult.NotFound)
                 {
                     return new Evaluation(
                         flagKey,
@@ -72,6 +82,19 @@ namespace Datadog.Trace.FeatureFlags
                         metadata: new Dictionary<string, string>
                         {
                             ["errorCode"] = "FLAG_NOT_FOUND"
+                        });
+                }
+
+                if (lookupResult == FlagLookupResult.Invalid || flag is null)
+                {
+                    return new Evaluation(
+                        flagKey,
+                        defaultValue,
+                        EvaluationReason.Error,
+                        error: "PARSE_ERROR",
+                        metadata: new Dictionary<string, string>
+                        {
+                            ["errorCode"] = "PARSE_ERROR"
                         });
                 }
 
@@ -114,9 +137,11 @@ namespace Datadog.Trace.FeatureFlags
                         continue;
                     }
 
-                    if (allocation.Rules is { Count: > 0 } allocationRules)
+                    // Track whether this allocation has targeting rules
+                    var hadRules = allocation.Rules is { Count: > 0 };
+                    if (hadRules)
                     {
-                        if (!EvaluateRules(allocationRules, context))
+                        if (!EvaluateRules(allocation.Rules!, context))
                         {
                             continue;
                         }
@@ -132,9 +157,10 @@ namespace Datadog.Trace.FeatureFlags
                             }
 
                             var allShardsMatch = true;
-                            if (split.Shards is { Count: > 0 } splitShards)
+                            var hadShards = split.Shards is { Count: > 0 };
+                            if (hadShards)
                             {
-                                foreach (var shard in splitShards)
+                                foreach (var shard in split.Shards!)
                                 {
                                     if (!MatchesShard(shard, targetingKey))
                                     {
@@ -146,7 +172,22 @@ namespace Datadog.Trace.FeatureFlags
 
                             if (allShardsMatch)
                             {
-                                return ResolveVariant(flagKey, resultType, defaultValue, flag, split.VariationKey, allocation, now, context);
+                                // Determine reason based on how the flag was resolved.
+                                // - TargetingMatch: Allocation had targeting rules that matched
+                                // - Default: A temporal allocation with one unsharded split matched
+                                // - Split: Resolved via percentage split without targeting rules
+                                // - Static: No rules, no shards - simple static value
+                                var isTemporalDefault = !hadRules &&
+                                                        !hadShards &&
+                                                        allocation.Splits.Count == 1 &&
+                                                        (!StringUtil.IsNullOrEmpty(allocation.StartAt) ||
+                                                         !StringUtil.IsNullOrEmpty(allocation.EndAt));
+                                var reason = hadRules ? EvaluationReason.TargetingMatch
+                                           : isTemporalDefault ? EvaluationReason.Default
+                                           : hadShards ? EvaluationReason.Split
+                                           : EvaluationReason.Static;
+
+                                return ResolveVariant(flagKey, resultType, defaultValue, flag, split, allocation, reason, now, context);
                             }
                         }
                     }
@@ -282,6 +323,18 @@ namespace Datadog.Trace.FeatureFlags
                     return CompareNumber(attributeValue, condition.Value, (a, b) => a <= b);
                 case ConditionOperator.LT:
                     return CompareNumber(attributeValue, condition.Value, (a, b) => a < b);
+                case ConditionOperator.SEMVER_EQ:
+                    return CompareSemanticVersion(attributeValue, condition.Value, result => result == 0);
+                case ConditionOperator.SEMVER_NEQ:
+                    return CompareSemanticVersion(attributeValue, condition.Value, result => result != 0);
+                case ConditionOperator.SEMVER_LT:
+                    return CompareSemanticVersion(attributeValue, condition.Value, result => result < 0);
+                case ConditionOperator.SEMVER_LTE:
+                    return CompareSemanticVersion(attributeValue, condition.Value, result => result <= 0);
+                case ConditionOperator.SEMVER_GT:
+                    return CompareSemanticVersion(attributeValue, condition.Value, result => result > 0);
+                case ConditionOperator.SEMVER_GTE:
+                    return CompareSemanticVersion(attributeValue, condition.Value, result => result >= 0);
                 default:
                     throw new FormatException($"Unknown condition operator {condition.Operator.ToString()}");
             }
@@ -351,6 +404,15 @@ namespace Datadog.Trace.FeatureFlags
             return comparator(a, b);
         }
 
+        private static bool CompareSemanticVersion(object attributeValue, object? conditionValue, Func<int, bool> comparator)
+        {
+            return attributeValue is string attributeText
+                && conditionValue is string conditionText
+                && SemanticVersion.TryParse(attributeText, out var attributeVersion)
+                && SemanticVersion.TryParse(conditionText, out var conditionVersion)
+                && comparator(attributeVersion.CompareTo(conditionVersion));
+        }
+
         private static bool MatchesShard(Shard shard, string? targetingKey)
         {
             if (shard.Ranges is null)
@@ -370,7 +432,8 @@ namespace Datadog.Trace.FeatureFlags
             return false;
         }
 
-        private static int GetShard(string salt, string? targetingKey, int totalShards)
+        [TestingAndPrivateOnly]
+        internal static int GetShard(string salt, string? targetingKey, int totalShards)
         {
             if (StringUtil.IsNullOrEmpty(targetingKey))
             {
@@ -378,24 +441,15 @@ namespace Datadog.Trace.FeatureFlags
             }
 
             var hashKey = $"{salt}-{targetingKey}";
-            var md5Hash = GetMd5Hash(hashKey);
-            var first8Chars = md5Hash.Substring(0, Math.Min(8, md5Hash.Length));
-            var intFromHash = Convert.ToInt64(first8Chars, 16);
+#if NETCOREAPP
+            // MD5 always produces a 16 byte hash
+            Span<byte> hashBytes = stackalloc byte[16];
+            Md5Helper.ComputeMd5Hash(hashKey, hashBytes);
+#else
+            var hashBytes = Md5Helper.ComputeMd5Hash(hashKey);
+#endif
+            var intFromHash = (long)BinaryPrimitives.ReadUInt32BigEndian(hashBytes);
             return (int)(intFromHash % totalShards);
-        }
-
-        private static string GetMd5Hash(string input)
-        {
-            using var md5 = MD5.Create();
-            var bytes = Encoding.UTF8.GetBytes(input);
-            var hashBytes = md5.ComputeHash(bytes);
-            var sb = new StringBuilder();
-            foreach (var b in hashBytes)
-            {
-                sb.Append(b.ToString("x2"));
-            }
-
-            return sb.ToString();
         }
 
         private static DateTime? ParseDate(string? dateString)
@@ -422,12 +476,7 @@ namespace Datadog.Trace.FeatureFlags
             // Special case "id": if not present, use targeting key
             if (name == "id" && !context.Attributes.ContainsKey(name))
             {
-                if (StringUtil.IsNullOrEmpty(context.TargetingKey))
-                {
-                    throw new MissingTargetingKeyException();
-                }
-
-                return context.TargetingKey;
+                return StringUtil.IsNullOrEmpty(context.TargetingKey) ? null : context.TargetingKey;
             }
 
             return context.GetAttribute(name);
@@ -472,18 +521,49 @@ namespace Datadog.Trace.FeatureFlags
                 return (double)number;
             }
 
+            // We return a BCL based representation of the object (basic types, object[] for JTokenType.Array and Dictionary<string, object> for JTokenType.Object
             if (target == ValueType.Json)
             {
-                if (value is JObject)
+                if (value is JObject json)
                 {
-                    return value.ToString();
+                    return ConvertToken(json);
                 }
 
-                var json = JsonConvert.SerializeObject(value);
-                return json;
+                return value;
             }
 
             throw new ArgumentException($"Type not supported: {target}");
+
+            static object? ConvertToken(JToken token) => token.Type switch
+            {
+                JTokenType.Object => ConvertObject((JObject)token),
+                JTokenType.Array => ConvertArray((JArray)token),
+                JTokenType.Integer => (long)token,
+                JTokenType.Float => (double)token,
+                JTokenType.String => token.ToString(),
+                JTokenType.Boolean => (bool)token,
+                JTokenType.Null => null,
+                _ => ConvertObject(null)
+            };
+
+            static Dictionary<string, object?> ConvertObject(JObject? obj)
+            {
+                var dict = new Dictionary<string, object?>();
+                if (obj is not null)
+                {
+                    foreach (var property in obj.Properties())
+                    {
+                        dict.Add(property.Name, ConvertToken(property.Value));
+                    }
+                }
+
+                return dict;
+            }
+
+            static object?[] ConvertArray(JArray array)
+            {
+                return array.Select(ConvertToken).ToArray();
+            }
         }
 
         private static double ParseDouble(object value)
@@ -588,11 +668,14 @@ namespace Datadog.Trace.FeatureFlags
             ValueType resultType,
             object? defaultValue,
             Flag flag,
-            string variationKey,
+            Split split,
             Allocation allocation,
+            EvaluationReason reason,
             DateTime evalTime,
             EvaluationContext? context)
         {
+            var variationKey = split.VariationKey!;
+
             if (StringUtil.IsNullOrEmpty(flag.Key))
             {
                 return ParseError($"Variant not found for: {variationKey}");
@@ -609,22 +692,35 @@ namespace Datadog.Trace.FeatureFlags
             }
 
             var mappedValue = MapValue(resultType, variant.Value);
+            var doLog = allocation.DoLog.HasValue && allocation.DoLog.Value;
             var metadata = new Dictionary<string, string>
             {
-                [MetadataAllocationKey] = allocation.Key
+                [MetadataAllocationKey] = allocation.Key,
             };
+
+            // do_log and the split serial id are only consumed by APM span enrichment, so emit them
+            // (and the serial-id ToString) only when that feature is enabled. doLog itself is still
+            // needed below to drive exposure dispatch.
+            if (_spanEnrichmentEnabled)
+            {
+                metadata[MetadataDoLog] = doLog ? "true" : "false";
+
+                if (split.SerialId.HasValue)
+                {
+                    metadata[MetadataSplitSerialId] = split.SerialId.Value.ToString(CultureInfo.InvariantCulture);
+                }
+            }
 
             var evaluation = new Evaluation(
                 flagKey,
                 mappedValue,
-                EvaluationReason.TargetingMatch,
+                reason,
                 variant: variant.Key,
                 metadata: metadata);
 
-            var doLog = allocation.DoLog.HasValue && allocation.DoLog.Value;
             if (doLog)
             {
-                DispatchExposure(flagKey, evaluation, evalTime, context);
+                DispatchExposure(flagKey, evaluation, evalTime, context, split.SerialId);
             }
 
             return evaluation;
@@ -648,7 +744,8 @@ namespace Datadog.Trace.FeatureFlags
             string flagKey,
             Evaluation evaluation,
             DateTime evalTime,
-            EvaluationContext? context)
+            EvaluationContext? context,
+            long? serialId)
         {
             var allocationKey = AllocationKey(evaluation);
             var variantKey = evaluation.Variant;
@@ -663,7 +760,8 @@ namespace Datadog.Trace.FeatureFlags
                 new Exposure.Model.Allocation(allocationKey),
                 new Exposure.Model.Flag(flagKey),
                 new Exposure.Model.Variant(variantKey),
-                new Exposure.Model.Subject(context?.TargetingKey ?? string.Empty, FlattenContext(context)));
+                new Exposure.Model.Subject(context?.TargetingKey ?? string.Empty, FlattenContext(context)),
+                serialId);
 
             _onExposureEvent?.Invoke(in evt);
         }

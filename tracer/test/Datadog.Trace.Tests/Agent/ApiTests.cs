@@ -13,6 +13,7 @@ using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.PlatformHelpers;
+using Datadog.Trace.Telemetry;
 using Datadog.Trace.TestHelpers.Stats;
 using Datadog.Trace.TestHelpers.TransportHelpers;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
@@ -219,9 +220,9 @@ namespace Datadog.Trace.Tests.Agent
 
             var api = new Api(factoryMock.Object, TestStatsdManager.NoOp, new ContainerMetadata(containerId: null, entityId: null), updateSampleRates: null, updateConfigState: null, partialFlushEnabled: false, healthMetricsEnabled: false);
 
-            var statsBuffer = new StatsBuffer(new ClientStatsPayload(MutableSettings.CreateForTesting(new(), [])));
+            var statsBuffer = new StatsBuffer.DatadogStatsBuffer(new ClientStatsPayload(MutableSettings.CreateForTesting(new(), [])), new StatsCardinalityLimiter(new TracerSettings()), new StatsCardinalityReporter(NullMetricsTelemetryCollector.Instance), initialTimestampNs: 0);
 
-            await api.SendStatsAsync(statsBuffer, 1);
+            await api.SendStatsAsync(statsBuffer, 1, 0);
 
             requestMock.Verify(x => x.PostAsync(It.IsAny<ArraySegment<byte>>(), MimeTypes.MsgPack), Times.Once());
         }
@@ -242,11 +243,12 @@ namespace Datadog.Trace.Tests.Agent
 
             var api = new Api(factoryMock.Object, TestStatsdManager.NoOp, new ContainerMetadata(containerId: null, entityId: null), updateSampleRates: null, updateConfigState: null, partialFlushEnabled: false, healthMetricsEnabled: false);
 
-            var statsBuffer = new StatsBuffer(new ClientStatsPayload(MutableSettings.CreateForTesting(new(), [])));
+            var statsBuffer = new StatsBuffer.DatadogStatsBuffer(new ClientStatsPayload(MutableSettings.CreateForTesting(new(), [])), new StatsCardinalityLimiter(new TracerSettings()), new StatsCardinalityReporter(NullMetricsTelemetryCollector.Instance), initialTimestampNs: 0);
 
-            await api.SendStatsAsync(statsBuffer, 1);
+            await api.SendStatsAsync(statsBuffer, 1, 0);
 
-            requestMock.Verify(x => x.PostAsync(It.IsAny<ArraySegment<byte>>(), MimeTypes.MsgPack), Times.Exactly(5));
+            // Stats are fire-and-forget (no retries per CSS v1.2.0 spec), so only 1 attempt
+            requestMock.Verify(x => x.PostAsync(It.IsAny<ArraySegment<byte>>(), MimeTypes.MsgPack), Times.Once());
         }
 
         [Theory]

@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
 using System.IO;
 using System.Net.Sockets;
 using System.Threading;
@@ -18,6 +19,7 @@ using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Util.Http;
+using Datadog.Trace.Util.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Serilog.Events;
 using Datadog.Trace.Vendors.StatsdClient;
@@ -31,6 +33,7 @@ namespace Datadog.Trace.Agent
         internal const string FailedToSendMessageTemplate = "An error occurred while sending data to the agent at {AgentEndpoint}. If the error isn't transient, please check https://docs.datadoghq.com/tracing/troubleshooting/connection_errors/?code-lang=dotnet for guidance.";
 
         private static readonly IDatadogLogger StaticLog = DatadogLogging.GetLoggerFor<Api>();
+        private static readonly ArraySegment<byte> EmptyPayload = new([0x90]);
 
         private readonly IDatadogLogger _log;
         private readonly IApiRequestFactory _apiRequestFactory;
@@ -85,6 +88,8 @@ namespace Datadog.Trace.Agent
             Failed_DontRetry,
         }
 
+        public TracesEncoding TracesEncoding => TracesEncoding.DatadogV0_4;
+
         [MemberNotNull(nameof(_statsd))]
         public void ToggleTracerHealthMetrics(bool enabled)
         {
@@ -92,13 +97,16 @@ namespace Datadog.Trace.Agent
             _statsd.SetRequired(StatsdConsumer.TraceApi, enabled);
         }
 
-        public Task<bool> SendStatsAsync(StatsBuffer stats, long bucketDuration)
+        public Task<bool> Ping() => SendTracesAsync(EmptyPayload, 0, false, 0, 0);
+
+        public Task<bool> SendStatsAsync(StatsBuffer stats, long bucketDuration, int tracerObfuscationVersion)
         {
             _log.Debug("Sending stats to the Datadog Agent.");
 
-            var state = new SendStatsState(stats, bucketDuration);
+            var state = new SendStatsState(stats, bucketDuration, tracerObfuscationVersion);
 
-            return SendWithRetry(_statsEndpoint, _sendStats, state);
+            // We are supposed to be fire and forget for these stats, with no retries
+            return SendWithRetry(_statsEndpoint, _sendStats, state, retryLimit: 0);
         }
 
         public Task<bool> SendTracesAsync(ArraySegment<byte> traces, int numberOfTraces, bool statsComputationEnabled, long numberOfDroppedP0Traces, long numberOfDroppedP0Spans, bool apmTracingEnabled = true)
@@ -132,10 +140,9 @@ namespace Datadog.Trace.Agent
             return false;
         }
 
-        private async Task<bool> SendWithRetry<T>(Uri endpoint, SendCallback<T> callback, T state)
+        private async Task<bool> SendWithRetry<T>(Uri endpoint, SendCallback<T> callback, T state, int retryLimit = 5)
         {
             // retry up to 5 times with exponential back-off
-            var retryLimit = 5;
             var retryCount = 1;
             var sleepDuration = 100; // in milliseconds
 
@@ -211,6 +218,11 @@ namespace Datadog.Trace.Agent
             IApiResponse response = null;
 
             request.AddContainerMetadataHeaders(_containerMetadata);
+
+            if (state.TracerObfuscationVersion > 0)
+            {
+                request.AddHeader("Datadog-Obfuscation-Version", state.TracerObfuscationVersion.ToString(CultureInfo.InvariantCulture));
+            }
 
             using var stream = new MemoryStream();
             state.Stats.Serialize(stream, state.BucketDuration);
@@ -368,7 +380,7 @@ namespace Datadog.Trace.Agent
 
                         if (responseContent != _cachedResponse)
                         {
-                            var apiResponse = JsonConvert.DeserializeObject<ApiResponse>(responseContent);
+                            var apiResponse = JsonHelper.DeserializeObject<ApiResponse>(responseContent);
 
                             _updateSampleRates(apiResponse.RateByService);
 
@@ -435,11 +447,13 @@ namespace Datadog.Trace.Agent
         {
             public readonly StatsBuffer Stats;
             public readonly long BucketDuration;
+            public readonly int TracerObfuscationVersion;
 
-            public SendStatsState(StatsBuffer stats, long bucketDuration)
+            public SendStatsState(StatsBuffer stats, long bucketDuration, int tracerObfuscationVersion)
             {
                 Stats = stats;
                 BucketDuration = bucketDuration;
+                TracerObfuscationVersion = tracerObfuscationVersion;
             }
         }
     }

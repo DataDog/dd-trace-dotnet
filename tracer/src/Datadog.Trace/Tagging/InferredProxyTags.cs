@@ -9,10 +9,10 @@ using Datadog.Trace.SourceGenerators;
 
 namespace Datadog.Trace.Tagging;
 
-internal sealed partial class InferredProxyTags : InstrumentationTags, IHasStatusCode
+internal sealed partial class InferredProxyTags : InstrumentationTags, IHasStatusCode, IHasHttpMethod
 {
     [Tag(Trace.Tags.SpanKind)]
-    public override string SpanKind => SpanKinds.Internal;
+    public override string SpanKind => SpanKinds.Server;
 
     [Tag(Trace.Tags.InstrumentationName)]
     public string? InstrumentationName { get; set; }
@@ -26,12 +26,15 @@ internal sealed partial class InferredProxyTags : InstrumentationTags, IHasStatu
     [Tag(Trace.Tags.HttpRoute)]
     public string? HttpRoute { get; set; }
 
-    [Tag(Trace.Tags.HttpStatusCode)]
-    public string? HttpStatusCode { get; set; }
+    [Tag(Trace.Tags.HttpStatusCode, OtelName = Trace.Tags.HttpResponseStatusCode)]
+    public int? HttpStatusCode { get; set; }
 
     [Tag(Trace.Tags.ProxyStage)]
     public string? Stage { get; set; }
 
     [Metric(Metrics.InferredSpan)]
     public double? InferredSpan { get; set; }
+
+    [Tag(Trace.Tags.Region)]
+    public string? Region { get; set; }
 }

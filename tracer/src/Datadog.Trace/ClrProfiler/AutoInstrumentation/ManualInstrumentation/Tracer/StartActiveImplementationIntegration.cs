@@ -48,6 +48,7 @@ public sealed class StartActiveImplementationIntegration
             operationName,
             parent: parentContext,
             serviceName: serviceName,
+            serviceNameSource: serviceName is not null ? Datadog.Trace.Configuration.Schema.ServiceNameMetadata.Manual : null,
             startTime: startTime,
             finishOnClose: finishOnClose ?? true);
 

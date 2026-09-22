@@ -10,6 +10,7 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI;
 
+[Trait("Area", "CIVisibility")]
 [Collection(nameof(TransportTestsCollection))]
 public class TcpXUnitEvpTests(ITestOutputHelper output) : XUnitEvpTests(output)
 {
@@ -21,6 +22,38 @@ public class TcpXUnitEvpTests(ITestOutputHelper output) : XUnitEvpTests(output)
     {
         EnvironmentHelper.EnableDefaultTransport();
         return base.SubmitTraces(packageVersion, evpVersionToRemove, expectedGzip);
+    }
+
+    /// <summary>
+    /// Runs the TCP transport variant for the ITR coverage-backfill integration smoke test.
+    /// </summary>
+    /// <remarks>
+    /// This smoke test depends on Coverlet's in-process data-collector hook emitting a coverage message; the runner tests cover the post-command XML fallback used when that callback is unavailable.
+    /// </remarks>
+    /// <param name="packageVersion">XUnit package version under test.</param>
+    /// <param name="evpVersionToRemove">EVP endpoint version removed from the mock agent to force the target path.</param>
+    /// <param name="expectedGzip">Whether the target EVP path should use gzip.</param>
+    /// <returns>A task that completes when the sample process and assertions finish.</returns>
+    [SkippableTheory]
+    [MemberData(nameof(GetDataForCoverageBackfill))]
+    [Trait("Category", "EndToEnd")]
+    [Trait("Category", "TestIntegrations")]
+    [Trait("Category", "ArmUnsupported")]
+    public override Task ItrCoverageBackfillSendsBackfilledCoverletCoverage(string packageVersion, string evpVersionToRemove, bool expectedGzip)
+    {
+        EnvironmentHelper.EnableDefaultTransport();
+        return base.ItrCoverageBackfillSendsBackfilledCoverletCoverage(packageVersion, evpVersionToRemove, expectedGzip);
+    }
+
+    [SkippableTheory]
+    [MemberData(nameof(GetDataForCoverageBackfillMatrix))]
+    [Trait("Category", "EndToEnd")]
+    [Trait("Category", "TestIntegrations")]
+    [Trait("Category", "ArmUnsupported")]
+    public override Task ItrCoverageBackfillSkippableDecisionMatrixMatchesJavaBehavior(string packageVersion, string evpVersionToRemove, bool expectedGzip, string matrixCase)
+    {
+        EnvironmentHelper.EnableDefaultTransport();
+        return base.ItrCoverageBackfillSkippableDecisionMatrixMatchesJavaBehavior(packageVersion, evpVersionToRemove, expectedGzip, matrixCase);
     }
 
     [SkippableTheory]

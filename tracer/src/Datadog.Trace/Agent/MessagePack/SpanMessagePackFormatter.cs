@@ -1,4 +1,4 @@
-﻿// <copyright file="SpanMessagePackFormatter.cs" company="Datadog">
+// <copyright file="SpanMessagePackFormatter.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -13,6 +13,7 @@ using Datadog.Trace.Propagators;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
+using Datadog.Trace.Util.Json;
 using Datadog.Trace.Vendors.MessagePack;
 using Datadog.Trace.Vendors.MessagePack.Formatters;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
@@ -34,7 +35,8 @@ namespace Datadog.Trace.Agent.MessagePack
         private readonly byte[] _runtimeIdValueBytes = MessagePackSerializer.Serialize(Tracer.RuntimeId);
         private readonly Dictionary<string, byte[]> _wafRuleFileVersionValues = new();
 
-        // Azure App Service tag value bytes (initialized lazily from environment variables, cached for process lifetime)
+        // Azure App Service tag value bytes (initialized lazily and cached per configuration instance)
+        private ImmutableAzureAppServiceSettings _aasSettings;
         private byte[] _aasSiteNameValueBytes;
         private byte[] _aasSiteKindValueBytes;
         private byte[] _aasSiteTypeValueBytes;
@@ -50,6 +52,15 @@ namespace Datadog.Trace.Agent.MessagePack
         private SpanMessagePackFormatter()
         {
         }
+
+        private static ReadOnlySpan<byte> ServiceNameSourceNameBytes => "_dd.svc_src"u8; // Tags.ServiceNameSource
+
+        // Feature-flag span enrichment tag names (frozen cross-SDK contract; bare names, never _dd.-prefixed)
+        private static ReadOnlySpan<byte> FfeFlagsEncNameBytes => "ffe_flags_enc"u8; // SpanEnrichmentState.TagFlagsEnc
+
+        private static ReadOnlySpan<byte> FfeSubjectsEncNameBytes => "ffe_subjects_enc"u8; // SpanEnrichmentState.TagSubjectsEnc
+
+        private static ReadOnlySpan<byte> FfeRuntimeDefaultsNameBytes => "ffe_runtime_defaults"u8; // SpanEnrichmentState.TagRuntimeDefaults
 
         int IMessagePackFormatter<TraceChunkModel>.Serialize(ref byte[] bytes, int offset, TraceChunkModel traceChunk, IFormatterResolver formatterResolver)
         {
@@ -395,7 +406,7 @@ namespace Datadog.Trace.Agent.MessagePack
             int originalOffset = offset;
 
             var settings = new JsonSerializerSettings { Converters = new List<JsonConverter> { new SpanEventConverter() }, Formatting = Formatting.None };
-            var eventsJson = JsonConvert.SerializeObject(spanModel.Span.SpanEvents, settings);
+            var eventsJson = JsonHelper.SerializeObject(spanModel.Span.SpanEvents, settings);
 
             offset += MessagePackBinary.WriteRaw(ref bytes, offset, MessagePackConstants.EventsBytes);
             offset += MessagePackBinary.WriteString(ref bytes, offset, eventsJson);
@@ -447,7 +458,7 @@ namespace Datadog.Trace.Agent.MessagePack
 
             // Write span tags
             var tagWriter = new TagWriter(this, tagProcessors, bytes, offset);
-            span.Tags.EnumerateTags(ref tagWriter);
+            span.Tags.EnumerateTags(ref tagWriter, span.OpenTelemetrySemanticsEnabled);
             bytes = tagWriter.Bytes;
             offset = tagWriter.Offset;
             count += tagWriter.Count;
@@ -544,10 +555,26 @@ namespace Datadog.Trace.Agent.MessagePack
                 }
             }
 
+            // add _dd.svc_src tag to indicate which integration set the service name
+            // Safety: if the service name equals the default, clear the source — unless it's a
+            // configuration-driven override (opt.*), which should always be preserved.
+            var serviceNameSource = span.Context.ServiceNameSource;
+            if (serviceNameEqualsDefault && serviceNameSource?.StartsWith("opt.", StringComparison.Ordinal) != true)
+            {
+                serviceNameSource = null;
+            }
+
+            if (serviceNameSource is not null)
+            {
+                count++;
+                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, ServiceNameSourceNameBytes);
+                offset += MessagePackBinary.WriteString(ref bytes, offset, serviceNameSource);
+            }
+
             // Process tags will be sent only once per buffer/payload (one payload can contain many chunks from different traces)
             if (model.IsFirstSpanInChunk && model.TraceChunk.IsFirstChunkInPayload && model.TraceChunk.ProcessTags is not null)
             {
-                var processTagsRawBytes = MessagePackStringCache.GetProcessTagsBytes(model.TraceChunk.ProcessTags?.SerializedTags);
+                var processTagsRawBytes = MessagePackStringCache.GetProcessTagsBytes(model.TraceChunk.ProcessTags.SerializedTags);
 
                 if (processTagsRawBytes is not null)
                 {
@@ -588,9 +615,40 @@ namespace Datadog.Trace.Agent.MessagePack
                 offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, GetAppSecRulesetVersion(Security.Instance.WafRuleFileVersion));
             }
 
+            if (model.IsLocalRoot &&
+                span.Context.TraceContext?.FeatureFlagEnrichment is { } featureFlagEnrichment &&
+                featureFlagEnrichment.HasData())
+            {
+                var ffeTags = featureFlagEnrichment.BuildSpanTags();
+
+                if (!StringUtil.IsNullOrEmpty(ffeTags.FlagsEnc))
+                {
+                    count++;
+                    offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, FfeFlagsEncNameBytes);
+                    offset += MessagePackBinary.WriteString(ref bytes, offset, ffeTags.FlagsEnc);
+                }
+
+                if (!StringUtil.IsNullOrEmpty(ffeTags.SubjectsEnc))
+                {
+                    count++;
+                    offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, FfeSubjectsEncNameBytes);
+                    offset += MessagePackBinary.WriteString(ref bytes, offset, ffeTags.SubjectsEnc);
+                }
+
+                if (!StringUtil.IsNullOrEmpty(ffeTags.RuntimeDefaults))
+                {
+                    count++;
+                    offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, FfeRuntimeDefaultsNameBytes);
+                    offset += MessagePackBinary.WriteString(ref bytes, offset, ffeTags.RuntimeDefaults);
+                }
+            }
+
             // AAS tags need to be set on any span for the backend to properly handle the billing.
             // That said, it's more intuitive to find it on the local root for the customer.
-            if (model.TraceChunk.IsRunningInAzureAppService && model.TraceChunk.AzureAppServiceSettings is { } azureAppServiceSettings)
+            // Skip adding AAS tags to inferred proxy spans as they represent infrastructure outside the AAS environment
+            if (model.TraceChunk.IsRunningInAzureAppService &&
+                model.TraceChunk.AzureAppServiceSettings is { } azureAppServiceSettings &&
+                span.Tags is not InferredProxyTags { InferredSpan: 1.0 })
             {
                 // Done here to avoid initializing in most cases
                 InitializeAasTags(azureAppServiceSettings);
@@ -792,9 +850,9 @@ namespace Datadog.Trace.Agent.MessagePack
                 }
             }
 
-            // add the "apm.enabled" tag with a value of 0
-            // to the first span in the chunk when APM is disabled
-            if (!model.TraceChunk.IsApmEnabled && model.IsLocalRoot)
+            // add the "apm.enabled" tag with a value of 0 to every span when APM tracing is disabled,
+            // so the backend flags every span in the trace as APM-disabled (not just service-entry spans).
+            if (!model.TraceChunk.IsApmEnabled)
             {
                 count++;
                 offset += MessagePackBinary.WriteRaw(ref bytes, offset, MessagePackConstants.ApmEnabledBytes);
@@ -893,9 +951,9 @@ namespace Datadog.Trace.Agent.MessagePack
 
         private void InitializeAasTags(ImmutableAzureAppServiceSettings azureAppServiceSettings)
         {
-            if (_aasSiteNameValueBytes == null)
+            if (!ReferenceEquals(_aasSettings, azureAppServiceSettings))
             {
-                // Cache value bytes (these are constant for the lifetime of the process)
+                // Refresh cached values when a different tracer configuration is serialized.
                 _aasSiteNameValueBytes = SerializeIfNotNullOrWhiteSpace(azureAppServiceSettings.SiteName);
                 _aasSiteKindValueBytes = SerializeIfNotNullOrWhiteSpace(azureAppServiceSettings.SiteKind);
                 _aasSiteTypeValueBytes = SerializeIfNotNullOrWhiteSpace(azureAppServiceSettings.SiteType);
@@ -907,10 +965,11 @@ namespace Datadog.Trace.Agent.MessagePack
                 _aasOperatingSystemValueBytes = SerializeIfNotNullOrWhiteSpace(azureAppServiceSettings.OperatingSystem);
                 _aasRuntimeValueBytes = SerializeIfNotNullOrWhiteSpace(FrameworkDescription.Instance.Name);
                 _aasExtensionVersionValueBytes = SerializeIfNotNullOrWhiteSpace(azureAppServiceSettings.SiteExtensionVersion);
+                _aasSettings = azureAppServiceSettings;
             }
         }
 
-        internal struct TagWriter : IItemProcessor<string>, IItemProcessor<double>, IItemProcessor<byte[]>
+        internal struct TagWriter : IItemProcessor<string>, IItemProcessor<int>, IItemProcessor<double>, IItemProcessor<byte[]>
         {
             private readonly SpanMessagePackFormatter _formatter;
             private readonly ITagProcessor[] _tagProcessors;
@@ -939,6 +998,24 @@ namespace Datadog.Trace.Agent.MessagePack
                 else
                 {
                     _formatter.WriteTag(ref Bytes, ref Offset, item.SerializedKey, item.Value, _tagProcessors);
+                }
+
+                Count++;
+            }
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public void Process(TagItem<int> item)
+            {
+                // int-backed tags are serialized as strings; IntStringCache keeps this allocation-free
+                var value = IntStringCache.ToInvariantString(item.Value);
+
+                if (item.SerializedKey.IsEmpty)
+                {
+                    _formatter.WriteTag(ref Bytes, ref Offset, item.Key, value, _tagProcessors);
+                }
+                else
+                {
+                    _formatter.WriteTag(ref Bytes, ref Offset, item.SerializedKey, value, _tagProcessors);
                 }
 
                 Count++;

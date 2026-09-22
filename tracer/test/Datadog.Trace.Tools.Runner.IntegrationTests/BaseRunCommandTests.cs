@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -13,7 +14,7 @@ using Xunit;
 
 namespace Datadog.Trace.Tools.Runner.IntegrationTests
 {
-    public abstract class BaseRunCommandTests
+    public abstract class BaseRunCommandTests : IDisposable
     {
         protected BaseRunCommandTests(string commandPrefix, bool enableCiVisibilityMode)
         {
@@ -24,6 +25,11 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
         protected string CommandPrefix { get; }
 
         protected bool EnableCiVisibilityMode { get; }
+
+        public virtual void Dispose()
+        {
+            Program.CallbackForTests = null;
+        }
 
         [SkippableFact]
         [Trait("RunOnWindows", "True")]

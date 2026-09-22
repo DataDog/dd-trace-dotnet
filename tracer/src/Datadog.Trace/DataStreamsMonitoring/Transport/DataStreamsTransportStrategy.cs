@@ -16,7 +16,5 @@ internal static class DataStreamsTransportStrategy
             settings,
             productName: "data streams monitoring",
             tcpTimeout: TimeSpan.FromSeconds(5), // Short timeout, because we don't want to get "overlapping" flushes if the agent is being slow
-            DataStreamsHttpHeaderNames.GetDefaultAgentHeaders(),
-            () => new DataStreamsHttpHeaderHelper(),
-            uri => uri);
+            httpHeaderHelper: DataStreamsHttpHeaderHelper.Instance);
 }

@@ -13,11 +13,9 @@ internal sealed class GitLabSourceLinkUrlParser : SourceLinkUrlParser
 {
     /// <summary>
     /// Extract the git commit sha and repository url from a GitLab SourceLink mapping string.
-    /// For example, for the following SourceLink mapping string:
-    ///     https://test-gitlab-domain/test-org/test-repo/raw/dd35903c688a74b62d1c6a9e4f41371c65704db8/*
-    /// It will return:
-    ///     - commit sha: dd35903c688a74b62d1c6a9e4f41371c65704db8
-    ///     - repository URL: https://test-gitlab-domain/test-org/test-repo
+    /// Supports both old and new GitLab URL formats, including nested groups/subgroups:
+    ///   GitLab &gt;= 12.0: https://{host}/{group}[/{subgroup}/...]/{repo}/-/raw/{sha}/*
+    ///   GitLab &lt;  12.0: https://{host}/{group}[/{subgroup}/...]/{repo}/raw/{sha}/*
     /// </summary>
     internal override bool TryParseSourceLinkUrl(Uri uri, [NotNullWhen(true)] out string? commitSha, [NotNullWhen(true)] out string? repositoryUrl)
     {
@@ -26,14 +24,74 @@ internal sealed class GitLabSourceLinkUrlParser : SourceLinkUrlParser
 
         try
         {
-            var segments = uri.AbsolutePath.Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries);
-            if (segments.Length != 5 || segments[2] != "raw" || segments[4] != "*" || !IsValidCommitSha(segments[3]))
+            var path = uri.AbsolutePath;
+
+            // Try /-/raw/ first (GitLab >= 12.0), then /raw/ (GitLab < 12.0).
+            // Use LastIndexOf so that repo paths containing "raw" as a segment name don't confuse us.
+            int rawMarkerIndex = path.LastIndexOf("/-/raw/", StringComparison.Ordinal);
+            var isNewFormat = rawMarkerIndex >= 0;
+            int repoPathEnd;
+            int afterRawStart;
+
+            if (isNewFormat)
+            {
+                // /-/raw/ found — new format
+                repoPathEnd = rawMarkerIndex;
+                afterRawStart = rawMarkerIndex + "/-/raw/".Length;
+            }
+            else
+            {
+                rawMarkerIndex = path.LastIndexOf("/raw/", StringComparison.Ordinal);
+                if (rawMarkerIndex <= 0)
+                {
+                    // Not found, or /raw/ is at position 0 (which is the GHE pattern, not GitLab)
+                    return false;
+                }
+
+                repoPathEnd = rawMarkerIndex;
+                afterRawStart = rawMarkerIndex + "/raw/".Length;
+            }
+
+            // After the raw marker we expect "{sha}/*"
+            var afterRaw = path.AsSpan().Slice(afterRawStart);
+            var slashIdx = afterRaw.IndexOf('/');
+            if (slashIdx <= 0)
             {
                 return false;
             }
 
-            repositoryUrl = $"{uri.Scheme}://{uri.Authority}/{segments[0]}/{segments[1]}";
-            commitSha = segments[3];
+            var sha = afterRaw.Slice(0, slashIdx);
+            var rest = afterRaw.Slice(slashIdx + 1);
+
+            if (!rest.SequenceEqual("*".AsSpan()) || !IsValidCommitSha(sha))
+            {
+                return false;
+            }
+
+            // Require at least 2 non-empty segments before the raw marker (group + repo, or group/sub/repo).
+            // After trimming the leading/trailing '/', an inner '/' proves two segments exist.
+            var repoPath = path.AsSpan(0, repoPathEnd).Trim('/');
+            if (repoPath.IndexOf('/') <= 0)
+            {
+                return false;
+            }
+
+            // On self-hosted instances, /raw/{name}/raw/{sha}/* could be either an old-format
+            // GitLab repository under the "raw" group or a GHE repository named "raw".
+            // Without canonical host evidence, fail closed instead of returning incorrect metadata.
+            if (!isNewFormat &&
+                !uri.Host.Equals("gitlab.com", StringComparison.OrdinalIgnoreCase) &&
+                IsAmbiguousWithGitHubEnterprise(repoPath))
+            {
+                return false;
+            }
+
+#if NET6_0_OR_GREATER
+            repositoryUrl = $"{uri.Scheme}://{uri.Authority}{path.AsSpan(0, repoPathEnd)}";
+#else
+            repositoryUrl = $"{uri.Scheme}://{uri.Authority}{path.Substring(0, repoPathEnd)}";
+#endif
+            commitSha = sha.ToString();
             return true;
         }
         catch (Exception ex)
@@ -42,5 +100,13 @@ internal sealed class GitLabSourceLinkUrlParser : SourceLinkUrlParser
         }
 
         return false;
+    }
+
+    private static bool IsAmbiguousWithGitHubEnterprise(ReadOnlySpan<char> repoPath)
+    {
+        var slashIndex = repoPath.IndexOf('/');
+        return slashIndex == "raw".Length &&
+               repoPath.Slice(0, slashIndex).SequenceEqual("raw".AsSpan()) &&
+               repoPath.Slice(slashIndex + 1).IndexOf('/') < 0;
     }
 }

@@ -14,6 +14,6 @@ internal partial class ProbeExpressionParser<T>
     private Expression Not(JsonTextReader reader, List<ParameterExpression> parameters, ParameterExpression itParameter)
     {
         var ex = ParseTree(reader, parameters, itParameter);
-        return Expression.Not(ex);
+        return RedactDictionaryOperation(ex, Expression.Not(ex));
     }
 }

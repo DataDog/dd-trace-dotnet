@@ -42,6 +42,13 @@
       network.client.ip: ::1,
       runtime-id: Guid_1,
       span.kind: server,
+      _dd.code_origin.frames.0.column: 0,
+      _dd.code_origin.frames.0.file: tracer\test\test-applications\security\aspnet\Samples.Security.WebApi\Controllers\HealthController.cs,
+      _dd.code_origin.frames.0.index: 0,
+      _dd.code_origin.frames.0.line: 0,
+      _dd.code_origin.frames.0.method: Get,
+      _dd.code_origin.frames.0.type: Samples.Security.WebApi.Controllers.HealthController,
+      _dd.code_origin.type: entry,
       _dd.runtime_family: dotnet
     },
     Metrics: {
@@ -95,6 +102,13 @@
       network.client.ip: ::1,
       runtime-id: Guid_1,
       span.kind: server,
+      _dd.code_origin.frames.0.column: 0,
+      _dd.code_origin.frames.0.file: tracer\test\test-applications\security\aspnet\Samples.Security.WebApi\Controllers\HealthController.cs,
+      _dd.code_origin.frames.0.index: 0,
+      _dd.code_origin.frames.0.line: 0,
+      _dd.code_origin.frames.0.method: Get,
+      _dd.code_origin.frames.0.type: Samples.Security.WebApi.Controllers.HealthController,
+      _dd.code_origin.type: entry,
       _dd.runtime_family: dotnet
     },
     Metrics: {
@@ -148,6 +162,13 @@
       network.client.ip: ::1,
       runtime-id: Guid_1,
       span.kind: server,
+      _dd.code_origin.frames.0.column: 0,
+      _dd.code_origin.frames.0.file: tracer\test\test-applications\security\aspnet\Samples.Security.WebApi\Controllers\HealthController.cs,
+      _dd.code_origin.frames.0.index: 0,
+      _dd.code_origin.frames.0.line: 0,
+      _dd.code_origin.frames.0.method: Get,
+      _dd.code_origin.frames.0.type: Samples.Security.WebApi.Controllers.HealthController,
+      _dd.code_origin.type: entry,
       _dd.runtime_family: dotnet
     },
     Metrics: {
@@ -201,6 +222,13 @@
       network.client.ip: ::1,
       runtime-id: Guid_1,
       span.kind: server,
+      _dd.code_origin.frames.0.column: 0,
+      _dd.code_origin.frames.0.file: tracer\test\test-applications\security\aspnet\Samples.Security.WebApi\Controllers\HealthController.cs,
+      _dd.code_origin.frames.0.index: 0,
+      _dd.code_origin.frames.0.line: 0,
+      _dd.code_origin.frames.0.method: Get,
+      _dd.code_origin.frames.0.type: Samples.Security.WebApi.Controllers.HealthController,
+      _dd.code_origin.type: entry,
       _dd.runtime_family: dotnet
     },
     Metrics: {
@@ -254,6 +282,13 @@
       network.client.ip: ::1,
       runtime-id: Guid_1,
       span.kind: server,
+      _dd.code_origin.frames.0.column: 0,
+      _dd.code_origin.frames.0.file: tracer\test\test-applications\security\aspnet\Samples.Security.WebApi\Controllers\HealthController.cs,
+      _dd.code_origin.frames.0.index: 0,
+      _dd.code_origin.frames.0.line: 0,
+      _dd.code_origin.frames.0.method: Get,
+      _dd.code_origin.frames.0.type: Samples.Security.WebApi.Controllers.HealthController,
+      _dd.code_origin.type: entry,
       _dd.runtime_family: dotnet
     },
     Metrics: {

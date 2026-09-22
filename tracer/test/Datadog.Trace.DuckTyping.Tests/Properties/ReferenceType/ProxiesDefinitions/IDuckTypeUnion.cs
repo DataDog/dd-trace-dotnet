@@ -16,21 +16,25 @@ namespace Datadog.Trace.DuckTyping.Tests.Properties.ReferenceType.ProxiesDefinit
 
     public interface IPublicReferenceType
     {
+        [Duck(FallbackToBaseTypes = true)]
         string PublicGetSetReferenceType { get; set; }
     }
 
     public interface IInternalReferenceType
     {
+        [Duck(FallbackToBaseTypes = true)]
         string InternalGetSetReferenceType { get; set; }
     }
 
     public interface IProtectedReferenceType
     {
+        [Duck(FallbackToBaseTypes = true)]
         string ProtectedGetSetReferenceType { get; set; }
     }
 
     public interface IPrivateReferenceType
     {
+        [Duck(FallbackToBaseTypes = true)]
         string PrivateGetSetReferenceType { get; set; }
     }
 }

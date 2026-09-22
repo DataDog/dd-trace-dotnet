@@ -1,4 +1,4 @@
-﻿// <copyright file="ManagedTraceSampler.cs" company="Datadog">
+// <copyright file="ManagedTraceSampler.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -8,6 +8,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading;
+using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 
@@ -26,18 +27,19 @@ internal sealed class ManagedTraceSampler : ITraceSampler
 
     public ManagedTraceSampler(TracerSettings settings)
     {
-        _current = CreateSampler(settings.Manager.InitialMutableSettings, settings.CustomSamplingRulesFormat);
+        _current = CreateSampler(settings.Manager.InitialMutableSettings, settings.Manager.InitialExporterSettings, settings.CustomSamplingRulesFormat);
         // Sampler lifetime is same as app lifetime, so don't bother worrying about disposal.
         settings.Manager.SubscribeToChanges(changes =>
         {
             // only update the sampling rules if there are changes to things we care about
-            if (changes.UpdatedMutable is { } updated
-             && (updated.MaxTracesSubmittedPerSecond != changes.PreviousMutable.MaxTracesSubmittedPerSecond
-              || updated.CustomSamplingRulesIsRemote != changes.PreviousMutable.CustomSamplingRulesIsRemote
-              || !string.Equals(updated.CustomSamplingRules, changes.PreviousMutable.CustomSamplingRules)
-              || AreDifferent(updated.GlobalSamplingRate, changes.PreviousMutable.GlobalSamplingRate)))
+            if ((changes.UpdatedMutable is { } updated
+                    && (updated.MaxTracesSubmittedPerSecond != changes.PreviousMutable.MaxTracesSubmittedPerSecond
+                        || updated.CustomSamplingRulesIsRemote != changes.PreviousMutable.CustomSamplingRulesIsRemote
+                        || !string.Equals(updated.CustomSamplingRules, changes.PreviousMutable.CustomSamplingRules)
+                        || AreDifferent(updated.GlobalSamplingRate, changes.PreviousMutable.GlobalSamplingRate)))
+                || (changes.UpdatedExporter is { } updatedExporter && updatedExporter.TracesEncoding != changes.PreviousExporter.TracesEncoding))
             {
-                var newSampler = CreateSampler(changes.UpdatedMutable,  settings.CustomSamplingRulesFormat);
+                var newSampler = CreateSampler(changes.UpdatedMutable ?? changes.PreviousMutable, changes.UpdatedExporter ?? changes.PreviousExporter,  settings.CustomSamplingRulesFormat);
                 // Use a lock to avoid edge cases with setting the default sample rates
                 lock (_lock)
                 {
@@ -86,7 +88,7 @@ internal sealed class ManagedTraceSampler : ITraceSampler
     // used for testing
     internal IReadOnlyList<ISamplingRule> GetRules() => Volatile.Read(ref _current).GetRules();
 
-    private static TraceSampler CreateSampler(MutableSettings settings, string customSamplingRulesFormat)
+    private static TraceSampler CreateSampler(MutableSettings settings, ExporterSettings exporterSettings, string customSamplingRulesFormat)
     {
         // ISamplingRule is used to implement, in order of precedence:
         // - custom sampling rules
@@ -96,7 +98,7 @@ internal sealed class ManagedTraceSampler : ITraceSampler
         // - global sampling rate
         //   - remote
         //   - local = DD_TRACE_SAMPLE_RATE
-        // - agent sampling rates (as a single rule)
+        // - agent sampling rates, if using a Datadog encoding (as a single rule)
 
         // Note: the order that rules are registered is important, as they are evaluated in order.
         // The first rule that matches will be used to determine the sampling rate.
@@ -153,9 +155,13 @@ internal sealed class ManagedTraceSampler : ITraceSampler
             }
         }
 
-        // AgentSamplingRule handles all sampling rates received from the agent as a single "rule".
-        // This rule is always present, even if the agent has not yet provided any sampling rates.
-        sampler.RegisterAgentSamplingRule(new AgentSamplingRule());
+        // If OTLP traces are enabled, don't register agent sampling rules
+        if (exporterSettings.TracesEncoding is TracesEncoding.DatadogV0_4)
+        {
+            // AgentSamplingRule handles all sampling rates received from the agent as a single "rule".
+            // This rule is always present, even if the agent has not yet provided any sampling rates.
+            sampler.RegisterAgentSamplingRule(new AgentSamplingRule());
+        }
 
         return sampler.Build();
     }

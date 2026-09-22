@@ -97,7 +97,7 @@ namespace Datadog.Trace.Debugger.Models
     internal sealed record CapturedValue : IComparable<CapturedValue>
     {
         [JsonExtensionData]
-        private IDictionary<string, JToken> _additionalData = new Dictionary<string, JToken>();
+        private Dictionary<string, JToken> _additionalData = new Dictionary<string, JToken>();
 
         public string Name { get; set; }
 
@@ -150,7 +150,7 @@ namespace Datadog.Trace.Debugger.Models
     internal sealed record CapturedContext
     {
         [JsonExtensionData]
-        private IDictionary<string, JToken> _additionalData = new Dictionary<string, JToken>();
+        private Dictionary<string, JToken> _additionalData = new Dictionary<string, JToken>();
 
         [JsonIgnore]
         public CapturedValue[] Fields { get; set; }

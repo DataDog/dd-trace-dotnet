@@ -10,7 +10,6 @@
   <ItemGroup>
     <PackageReference Include="AWSSDK.Kinesis" Version="$(ApiVersion)" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.2" />
-    <PackageReference Include="System.Net.Requests" Version="4.3.0" />
   </ItemGroup>
 
 </Project>

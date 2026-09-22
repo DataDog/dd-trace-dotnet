@@ -29,7 +29,8 @@ FrameStore::FrameStore(ICorProfilerInfo4* pCorProfilerInfo,
     ManagedCodeCache* pManagedCodeCache) :
     _pCorProfilerInfo{pCorProfilerInfo},
     _pDebugInfoStore{debugInfoStore},
-    _pManagedCodeCache{pManagedCodeCache}
+    _pManagedCodeCache{pManagedCodeCache},
+    _cachedItemsSize(0)
 {
     if (_pManagedCodeCache == nullptr)
     {
@@ -76,26 +77,32 @@ std::optional<std::pair<HRESULT, FunctionID>> FrameStore::GetFunctionFromIP(uint
 std::pair<bool, FrameInfoView> FrameStore::GetFrame(uintptr_t instructionPointer)
 {
     static const std::string NotResolvedModuleName("NotResolvedModule");
-    static const std::string NotResolvedFrame("NotResolvedFrame");
+    static const std::string NotResolvedFrame("|lm:Unknown-Assembly |ns: |ct:Unknown-Type |cg: |fn:NotResolvedFrame |fg: |sg:(?)");
     static const std::string UnloadedModuleName("UnloadedModule");
     static const std::string FakeModuleName("FakeModule");
 
     static const std::string FakeContentionFrame("|lm:Unknown-Assembly |ns: |ct:Unknown-Type |cg: |fn:lock-contention |fg: |sg:(?)");
     static const std::string FakeAllocationFrame("|lm:Unknown-Assembly |ns: |ct:Unknown-Type |cg: |fn:allocation |fg: |sg:(?)");
-
+    static const std::string UnknownFrameType("|lm:Unknown-Assembly |ns: |ct:Unknown-Type |cg: |fn:Unknown-Frame-Type |fg: |sg:(?)");
 
     // check for fake IPs used in tests
-    if (instructionPointer <= MaxFakeIP)
+    if (instructionPointer < MaxFakeIP)
     {
         // switch/case does not support compile-time constants
         if (instructionPointer == FrameStore::FakeLockContentionIP)
         {
             return { true, {FakeModuleName, FakeContentionFrame, "", 0} };
         }
-        else
-        if (instructionPointer == FrameStore::FakeAllocationIP)
+        else if (instructionPointer == FrameStore::FakeAllocationIP)
         {
             return { true, {FakeModuleName, FakeAllocationFrame, "", 0} };
+        }
+        else if (instructionPointer == FrameStore::UnknownFrameTypeIP)
+        {
+            // We log it only when it debug to identify truncated callstack
+            // Example: during tests
+            const auto recordFrame = Log::IsDebugEnabled();
+            return { recordFrame, {FakeModuleName, UnknownFrameType, "", 0} };
         }
         else
         {
@@ -110,32 +117,50 @@ std::pair<bool, FrameInfoView> FrameStore::GetFrame(uintptr_t instructionPointer
         std::optional<std::pair<HRESULT, FunctionID>> result = GetFunctionFromIP(instructionPointer);
         if (!result.has_value())
         {
+            // Windows-only: GetFunctionFromIP was wrapped in __try/__except and caught an
+            // SEH exception coming out of the CLR. Surface the frame as resolved
+            // (isResolved=true) so the existing Windows pipeline keeps its placeholder
+            // frame rather than silently dropping it.
             return {true, {NotResolvedModuleName, NotResolvedFrame, "", 0}};
         }
         std::tie(hr, functionId) = result.value();
-        // if native frame
         if (FAILED(hr))
         {
+            // IP is not in managed ranges (native frame). Return isResolved=false so
+            // RawSampleTransformer drops it from the final callstack.
             return {false, {NotResolvedModuleName, NotResolvedFrame, "", 0}};
         }
     }
     else
     {
-        functionId = _pManagedCodeCache->GetFunctionId(instructionPointer);
+        auto functionInfo = _pManagedCodeCache->GetFunctionInfo(instructionPointer);
 
-        if (!functionId.has_value())
+        if (!functionInfo.has_value())
         {
+            // Windows-only: the ICorProfilerInfo::GetFunctionFromIP call inside
+            // ManagedCodeCache was wrapped in __try/__except and caught an SEH
+            // exception from the CLR. Keep isResolved=true so the Windows pipeline
+            // preserves the placeholder frame (legacy semantic).
+            return {true, {NotResolvedModuleName, NotResolvedFrame, "", 0}};
+        }
+
+        if (functionInfo->FunctionId == ManagedCodeCache::InvalidFunctionId)
+        {
+            // IP is not in managed ranges (native frame). Return isResolved=false so
+            // RawSampleTransformer drops it from the final callstack.
             return {false, {NotResolvedModuleName, NotResolvedFrame, "", 0}};
         }
 
-        if (functionId.value() == ManagedCodeCache::InvalidFunctionId)
+        if (functionInfo->IsDynamic)
         {
-            // We have a value but not a valid one. This is fake function ID.
-            // This can occur when the calling into the CLR from managed code cache
-            // resulted in a crash(lucky us on windows, we can catch on linux ....:grimacing:)
-            // This is to preserve the current semantic
-            return {true, {NotResolvedModuleName, NotResolvedFrame, "", 0}};
+            // Dynamic methods (IL stubs, DynamicMethod/LCG) have no metadata token,
+            // so the metadata path below can never give them a name.
+            // Return isResolved=false to drop the frame instead of showing a
+            // misleading "unknown method" placeholder.
+            return {false, {NotResolvedModuleName, NotResolvedFrame, "", 0}};
         }
+
+        functionId = functionInfo->FunctionId;
     }
 
     auto frameInfo = GetManagedFrame(functionId.value());
@@ -177,7 +202,7 @@ FrameInfoView FrameStore::GetManagedFrame(FunctionID functionId)
     }
 
     // method name is resolved first because we also get the mdDefToken of its class
-    auto [methodName, methodGenericParameters, mdTokenType] = GetMethodName(functionId, pMetadataImport.Get(), mdTokenFunc, genericParametersCount, genericParameters.get());
+    auto [rva, methodName, methodGenericParameters, mdTokenType] = GetMethodName(functionId, pMetadataImport.Get(), mdTokenFunc, genericParametersCount, genericParameters.get());
     if (methodName.empty())
     {
         return {UnknownManagedAssembly, UnknownManagedFrame, {}, 0};
@@ -208,6 +233,11 @@ FrameInfoView FrameStore::GetManagedFrame(FunctionID functionId)
             std::stringstream builder;
             builder << UnknownManagedType << " |fn:" << std::move(methodName) << " |fg:" << std::move(methodGenericParameters) << " |sg:" << std::move(signature);
             value = {UnknownManagedAssembly, builder.str(), "", 0};
+
+            // Incrementally track item size
+            size_t itemSize = value.ModuleName.capacity() + value.Frame.capacity();
+            _cachedItemsSize.fetch_add(itemSize, std::memory_order_relaxed);
+
             return value;
         }
 
@@ -236,6 +266,11 @@ FrameInfoView FrameStore::GetManagedFrame(FunctionID functionId)
 
         // store it into the function cache and return an iterator to the stored elements
         auto [it, _] = _methods.emplace(functionId, FrameInfo{pTypeDesc->Assembly, managedFrame, debugInfo.File, debugInfo.StartLine});
+
+        // Incrementally track item size
+        size_t itemSize = it->second.ModuleName.capacity() + it->second.Frame.capacity();
+        _cachedItemsSize.fetch_add(itemSize, std::memory_order_relaxed);
+
         // first is the key, second is the associated value
         return it->second;
     }
@@ -296,6 +331,9 @@ bool FrameStore::GetTypeName(ClassID classId, std::string_view& name)
     auto& entry = _fullTypeNames[classId];
     entry = pTypeDesc->Type + pTypeDesc->Parameters;
     name = {entry.data(), entry.size()};
+
+    // Incrementally track item size
+    _cachedItemsSize.fetch_add(entry.capacity(), std::memory_order_relaxed);
 
     return true;
 }
@@ -412,6 +450,11 @@ bool FrameStore::GetTypeDesc(ClassID classId, TypeDesc*& pTypeDesc)
             }
 
             pTypeDesc = &(_types[originalClassId] = typeDesc);
+
+            // Incrementally track item size
+            size_t itemSize = pTypeDesc->Assembly.capacity() + pTypeDesc->Namespace.capacity() +
+                              pTypeDesc->Type.capacity() + pTypeDesc->Parameters.capacity();
+            _cachedItemsSize.fetch_add(itemSize, std::memory_order_relaxed);
         }
         else
         {
@@ -543,17 +586,17 @@ bool FrameStore::GetMetadataApi(ModuleID moduleId, FunctionID functionId, ComPtr
     return true;
 }
 
-std::tuple<std::string, std::string, mdTypeDef> FrameStore::GetMethodName(
+std::tuple<ULONG, std::string, std::string, mdTypeDef> FrameStore::GetMethodName(
     FunctionID functionId,
     IMetaDataImport2* pMetadataImport,
     mdMethodDef mdTokenFunc,
     ULONG32 genericParametersCount,
     ClassID* genericParameters)
 {
-    auto [methodName, mdTokenType] = GetMethodNameFromMetadata(pMetadataImport, mdTokenFunc);
+    auto [methodName, mdTokenType, rva] = GetMethodNameFromMetadata(pMetadataImport, mdTokenFunc);
     if ((methodName.empty()) || (genericParametersCount == 0))
     {
-        return std::make_tuple(std::move(methodName), std::string(), mdTokenType);
+        return std::make_tuple(rva, std::move(methodName), std::string(), mdTokenType);
     }
 
     // Get generic parameters if any
@@ -577,12 +620,13 @@ std::tuple<std::string, std::string, mdTypeDef> FrameStore::GetMethodName(
         }
         else // normal namespace.type case
         {
+            // a type declared outside of any namespace has no namespace: don't prefix it with a '.'
             if (!ns.empty())
             {
-                builder << ns;
+                builder << ns << ".";
             }
 
-            builder << "." << typeName;
+            builder << typeName;
         }
 
         if (i < genericParametersCount - 1)
@@ -592,7 +636,7 @@ std::tuple<std::string, std::string, mdTypeDef> FrameStore::GetMethodName(
     }
     builder << ">";
 
-    return std::make_tuple(methodName, builder.str(), mdTokenType);
+    return std::make_tuple(rva, methodName, builder.str(), mdTokenType);
 }
 
 bool FrameStore::GetAssemblyName(ICorProfilerInfo4* pInfo, ModuleID moduleId, std::string& assemblyName)
@@ -726,7 +770,7 @@ std::vector<std::string> GetGenericTypeParameters(IMetaDataImport2* pMetadata, m
         {
             ULONG index;
             DWORD flags;
-            hr = pMetadata->GetGenericParamProps(genericParams[currentParam], &index, &flags, nullptr, nullptr, paramName, paramNameLen, &paramNameLen);
+            hr = pMetadata->GetGenericParamProps(genericParams[currentParam], &index, &flags, nullptr, nullptr, paramName, ARRAY_LEN(paramName), &paramNameLen);
             if (SUCCEEDED(hr))
             {
                 // need to convert from UTF16 to UTF8
@@ -921,27 +965,28 @@ std::tuple<std::string, std::string, std::string> FrameStore::GetManagedTypeName
     }
 }
 
-std::pair<std::string, mdTypeDef> FrameStore::GetMethodNameFromMetadata(IMetaDataImport2* pMetadataImport, mdMethodDef mdTokenFunc)
+std::tuple<std::string, mdTypeDef, ULONG> FrameStore::GetMethodNameFromMetadata(IMetaDataImport2* pMetadataImport, mdMethodDef mdTokenFunc)
 {
     // get the method name
     ULONG nameCharCount = 0;
+    ULONG rva = 0;
     HRESULT hr = pMetadataImport->GetMethodProps(mdTokenFunc, nullptr, nullptr, 0, &nameCharCount, nullptr, nullptr, nullptr, nullptr, nullptr);
     if (FAILED(hr))
     {
-        return std::make_pair(std::string(), mdTokenNil);
+        return std::make_tuple(std::string(), mdTokenNil, rva);
     }
 
     auto buffer = std::make_unique<WCHAR[]>(nameCharCount);
     mdTypeDef mdTokenType;
 
-    hr = pMetadataImport->GetMethodProps(mdTokenFunc, &mdTokenType, buffer.get(), nameCharCount, &nameCharCount, nullptr, nullptr, nullptr, nullptr, nullptr);
+    hr = pMetadataImport->GetMethodProps(mdTokenFunc, &mdTokenType, buffer.get(), nameCharCount, &nameCharCount, nullptr, nullptr, nullptr, &rva, nullptr);
     if (FAILED(hr))
     {
-        return std::make_pair(std::string(), mdTokenNil);
+        return std::make_tuple(std::string(), mdTokenNil, rva);
     }
 
     // convert from UTF16 to UTF8
-    return std::make_pair(shared::ToString(buffer.get()), mdTokenType);
+    return std::make_tuple(shared::ToString(buffer.get()), mdTokenType, rva);
 }
 
 std::string FrameStore::GetMethodSignature(ICorProfilerInfo4* pInfo, IMetaDataImport2* pMetaData, mdTypeDef mdTokenType, FunctionID functionId, mdMethodDef mdTokenFunc)
@@ -1084,30 +1129,17 @@ std::pair<std::string, std::string> FrameStore::GetManagedTypeName(ICorProfilerI
         return std::make_pair("", "T");
     }
 
-    IMetaDataImport2* pMetadata;
-    hr = pInfo->GetModuleMetaData(moduleId, ofRead, IID_IMetaDataImport2, reinterpret_cast<IUnknown**>(&pMetadata));
+    ComPtr<IMetaDataImport2> pMetadata;
+    hr = pInfo->GetModuleMetaData(moduleId, ofRead, IID_IMetaDataImport2, reinterpret_cast<IUnknown**>(pMetadata.GetAddressOf()));
     if (FAILED(hr))
     {
         return std::make_pair("", "T");
     }
 
-    std::string typeName = GetTypeNameFromMetadata(pMetadata, mdTypeToken);
-    pMetadata->Release();
-    if (typeName.empty())
-    {
-        return std::make_pair("", "T");
-    }
-
-    // look for the namespace
-    auto const pos = typeName.find_last_of('.');
-    if (pos == std::string::npos)
-    {
-        // no namespace
-        return std::make_pair("", std::move(typeName));
-    }
-
-    // need to split to get the namespace and type name
-    return std::make_pair(typeName.substr(0, pos), typeName.substr(pos + 1));
+    // the namespace and the enclosing types are not part of the metadata name of a nested type
+    // (such as the state machine generated for an async method): GetTypeWithNamespace() rebuilds
+    // them and, for a type that is not nested, splits the namespace from the type name
+    return GetTypeWithNamespace(pMetadata.Get(), mdTypeToken);
 }
 
 // use Peter Sollich way in ClrProfiler to parse the binary signature
@@ -1527,4 +1559,110 @@ PCCOR_SIGNATURE ParseByte(PCCOR_SIGNATURE pbSig, BYTE* pByte)
 {
     *pByte = *pbSig++;
     return pbSig;
+}
+
+FrameStore::MemoryStats FrameStore::ComputeMemoryStats() const
+{
+    MemoryStats stats{};
+    stats.baseSize = sizeof(FrameStore);
+
+    // Calculate memory for _methods cache
+    {
+        std::lock_guard<std::mutex> lock(_methodsLock);
+        stats.methodsBuckets = _methods.bucket_count();
+        stats.methodsCount = _methods.size();
+        stats.methodsCacheSize = stats.methodsBuckets * (sizeof(FunctionID) + sizeof(FrameInfo) + sizeof(void*));
+        for (const auto& [key, frameInfo] : _methods)
+        {
+            stats.methodsCacheSize += frameInfo.ModuleName.capacity();
+            stats.methodsCacheSize += frameInfo.Frame.capacity();
+            // Filename is a string_view, no additional memory
+        }
+    }
+
+    // Calculate memory for _types cache
+    {
+        std::lock_guard<std::mutex> lock(_typesLock);
+        stats.typesBuckets = _types.bucket_count();
+        stats.typesCount = _types.size();
+        stats.typesCacheSize = stats.typesBuckets * (sizeof(ClassID) + sizeof(TypeDesc) + sizeof(void*));
+        for (const auto& [key, typeDesc] : _types)
+        {
+            stats.typesCacheSize += typeDesc.Assembly.capacity();
+            stats.typesCacheSize += typeDesc.Namespace.capacity();
+            stats.typesCacheSize += typeDesc.Type.capacity();
+            stats.typesCacheSize += typeDesc.Parameters.capacity();
+        }
+    }
+
+    // Calculate memory for _framePerNativeModule cache
+    {
+        std::lock_guard<std::mutex> lock(_nativeLock);
+        stats.nativeFramesBuckets = _framePerNativeModule.bucket_count();
+        stats.nativeFramesCount = _framePerNativeModule.size();
+        stats.nativeFramesCacheSize = stats.nativeFramesBuckets * (sizeof(std::string) + sizeof(std::string) + sizeof(void*));
+        for (const auto& [key, value] : _framePerNativeModule)
+        {
+            stats.nativeFramesCacheSize += key.capacity();
+            stats.nativeFramesCacheSize += value.capacity();
+        }
+    }
+
+    // Calculate memory for _fullTypeNames cache
+    {
+        std::lock_guard<std::mutex> lock(_fullTypeNamesLock);
+        stats.fullTypeNamesBuckets = _fullTypeNames.bucket_count();
+        stats.fullTypeNamesCount = _fullTypeNames.size();
+        stats.fullTypeNamesCacheSize = stats.fullTypeNamesBuckets * (sizeof(ClassID) + sizeof(std::string) + sizeof(void*));
+        for (const auto& [key, value] : _fullTypeNames)
+        {
+            stats.fullTypeNamesCacheSize += value.capacity();
+        }
+    }
+
+    return stats;
+}
+
+size_t FrameStore::GetMemorySize() const
+{
+    size_t totalSize = sizeof(FrameStore);
+
+    // Calculate container overhead on-demand
+    {
+        std::lock_guard<std::mutex> lock(_methodsLock);
+        totalSize += _methods.bucket_count() * (sizeof(FunctionID) + sizeof(FrameInfo) + sizeof(void*));
+    }
+
+    {
+        std::lock_guard<std::mutex> lock(_typesLock);
+        totalSize += _types.bucket_count() * (sizeof(ClassID) + sizeof(TypeDesc) + sizeof(void*));
+    }
+
+    {
+        std::lock_guard<std::mutex> lock(_nativeLock);
+        totalSize += _framePerNativeModule.bucket_count() * (sizeof(std::string) * 2 + sizeof(void*));
+    }
+
+    {
+        std::lock_guard<std::mutex> lock(_fullTypeNamesLock);
+        totalSize += _fullTypeNames.bucket_count() * (sizeof(ClassID) + sizeof(std::string) + sizeof(void*));
+    }
+
+    // Add cached items size (updated incrementally at add time)
+    totalSize += _cachedItemsSize.load(std::memory_order_relaxed);
+
+    return totalSize;
+}
+
+void FrameStore::LogMemoryBreakdown() const
+{
+    auto stats = ComputeMemoryStats();
+
+    Log::Debug("FrameStore Memory Breakdown:");
+    Log::Debug("  Base object size:        ", stats.baseSize, " bytes");
+    Log::Debug("  Methods cache:           ", stats.methodsCacheSize, " bytes (", stats.methodsCount, " entries, ", stats.methodsBuckets, " buckets)");
+    Log::Debug("  Types cache:             ", stats.typesCacheSize, " bytes (", stats.typesCount, " entries, ", stats.typesBuckets, " buckets)");
+    Log::Debug("  Native frames cache:     ", stats.nativeFramesCacheSize, " bytes (", stats.nativeFramesCount, " entries, ", stats.nativeFramesBuckets, " buckets)");
+    Log::Debug("  Full type names cache:   ", stats.fullTypeNamesCacheSize, " bytes (", stats.fullTypeNamesCount, " entries, ", stats.fullTypeNamesBuckets, " buckets)");
+    Log::Debug("  Total memory:            ", stats.GetTotal(), " bytes (", (stats.GetTotal() / 1024.0), " KB)");
 }

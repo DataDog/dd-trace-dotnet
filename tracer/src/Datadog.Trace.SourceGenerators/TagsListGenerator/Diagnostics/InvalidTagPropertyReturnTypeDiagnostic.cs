@@ -11,7 +11,7 @@ namespace Datadog.Trace.SourceGenerators.TagsListGenerator.Diagnostics
     internal static class InvalidTagPropertyReturnTypeDiagnostic
     {
         internal const string Id = "TL3";
-        private const string Message = "A tag property must return a string";
+        private const string Message = "A tag property must return a string or a nullable int";
         private const string Title = "Invalid return type";
 
         public static Diagnostic Create(SyntaxNode? currentNode) =>

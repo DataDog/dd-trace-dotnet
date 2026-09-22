@@ -7,6 +7,7 @@
 #include "Configuration.h"
 #include "EnvironmentHelper.h"
 #include "EnvironmentVariables.h"
+#include "IHeapSnapshotManager.h"
 #include "OpSysTools.h"
 
 #include "shared/src/native-src/string.h"
@@ -658,6 +659,26 @@ TEST_F(ConfigurationTest, CheckGarbageCollectionProfilingIsDisabledIfEnvVarSetTo
     ASSERT_THAT(configuration.IsGarbageCollectionProfilingEnabled(), false);
 }
 
+TEST_F(ConfigurationTest, CheckGcLifecycleEventsProcessingIsNotSkippedByDefault)
+{
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.IsGcLifecycleEventsProcessingSkipped(), false);
+}
+
+TEST_F(ConfigurationTest, CheckGcLifecycleEventsProcessingIsSkippedIfEnvVarSetToTrue)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::GcLifecycleEventsSkipProcessing, WStr("1"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.IsGcLifecycleEventsProcessingSkipped(), true);
+}
+
+TEST_F(ConfigurationTest, CheckGcLifecycleEventsProcessingIsNotSkippedIfEnvVarSetToFalse)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::GcLifecycleEventsSkipProcessing, WStr("0"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.IsGcLifecycleEventsProcessingSkipped(), false);
+}
+
 TEST_F(ConfigurationTest, CheckHeapProfilingIsDisabledByDefault)
 {
     auto configuration = Configuration{};
@@ -1068,6 +1089,9 @@ TEST_F(ConfigurationTest, CheckProfilerEnablementIfEnvVarIsToFalseAndStableConfi
 // use the Stable Configuration kill switch to validate per env vars enablement configuration
 TEST_F(ConfigurationTest, CheckNoMoreSupportedSsiActivationModeIfEnvVarConstainsProfiler)
 {
+#ifdef ARM64
+    EnvironmentHelper::EnvironmentVariable arArm64(EnvironmentVariables::EnableProfilerArchitectureArm64, WStr("1"));
+#endif
     EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::ManagedActivationEnabled, WStr("0"));
     EnvironmentHelper::EnvironmentVariable ar2(EnvironmentVariables::SsiDeployed, WStr("profiler"));
     auto configuration = Configuration{};
@@ -1077,6 +1101,9 @@ TEST_F(ConfigurationTest, CheckNoMoreSupportedSsiActivationModeIfEnvVarConstains
 
 TEST_F(ConfigurationTest, CheckSsiIsDisableddIfEnvVarDoesNotContainProfiler)
 {
+#ifdef ARM64
+    EnvironmentHelper::EnvironmentVariable arArm64(EnvironmentVariables::EnableProfilerArchitectureArm64, WStr("1"));
+#endif
     EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::ManagedActivationEnabled, WStr("0"));
     EnvironmentHelper::EnvironmentVariable ar2(EnvironmentVariables::SsiDeployed, WStr("tracer"));
     auto configuration = Configuration{};
@@ -1086,6 +1113,9 @@ TEST_F(ConfigurationTest, CheckSsiIsDisableddIfEnvVarDoesNotContainProfiler)
 
 TEST_F(ConfigurationTest, CheckSsiIsDisabledIfEnvVarIsEmpty)
 {
+#ifdef ARM64
+    EnvironmentHelper::EnvironmentVariable arArm64(EnvironmentVariables::EnableProfilerArchitectureArm64, WStr("1"));
+#endif
     EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::ManagedActivationEnabled, WStr("0"));
     EnvironmentHelper::EnvironmentVariable ar2(EnvironmentVariables::SsiDeployed, WStr(""));
     auto configuration = Configuration{};
@@ -1095,6 +1125,9 @@ TEST_F(ConfigurationTest, CheckSsiIsDisabledIfEnvVarIsEmpty)
 
 TEST_F(ConfigurationTest, CheckSsiIsActivatedIfProfilerEnvVarConstainsAuto)
 {
+#ifdef ARM64
+    EnvironmentHelper::EnvironmentVariable arArm64(EnvironmentVariables::EnableProfilerArchitectureArm64, WStr("1"));
+#endif
     EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::ManagedActivationEnabled, WStr("0"));
     EnvironmentHelper::EnvironmentVariable ar2(EnvironmentVariables::ProfilerEnabled, WStr("auto"));
     auto configuration = Configuration{};
@@ -1104,6 +1137,9 @@ TEST_F(ConfigurationTest, CheckSsiIsActivatedIfProfilerEnvVarConstainsAuto)
 
 TEST_F(ConfigurationTest, CheckProfilerEnablementIfEnvVarIsNotSet)
 {
+#ifdef ARM64
+    EnvironmentHelper::EnvironmentVariable arArm64(EnvironmentVariables::EnableProfilerArchitectureArm64, WStr("1"));
+#endif
     EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::ManagedActivationEnabled, WStr("0"));
     auto configuration = Configuration{};
     ASSERT_THAT(configuration.GetEnablementStatus(), EnablementStatus::NotSet) << "Env var is not set. Profiler enablement should be the default one.";
@@ -1119,6 +1155,9 @@ TEST_F(ConfigurationTest, CheckProfilerIsDisabledIfEnvVarIsEmpty)
 
 TEST_F(ConfigurationTest, CheckProfilerEnablementIfEnvVarIsToTrue)
 {
+#ifdef ARM64
+    EnvironmentHelper::EnvironmentVariable arArm64(EnvironmentVariables::EnableProfilerArchitectureArm64, WStr("1"));
+#endif
     EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::ManagedActivationEnabled, WStr("0"));
     EnvironmentHelper::EnvironmentVariable ar2(EnvironmentVariables::ProfilerEnabled, WStr("1 ")); // add a space on purpose to ensure that it's correctly parsed
     auto configuration = Configuration{};
@@ -1160,63 +1199,104 @@ TEST_F(ConfigurationTest, CheckEtwLoggingIsEnabledIfEnvVarSetToTrue)
     ASSERT_THAT(configuration.IsEtwLoggingEnabled(), expectedValue);
 }
 
+// The signal queue is a host-wide resource shared by every process of the same user, so the cases
+// checking how the environment variable is parsed pass a headroom large enough to never trigger the
+// fallback, whatever state the machine running the tests is in.
+static constexpr std::optional<std::uint64_t> PlentyOfSignalQueueSlots = 10 * Configuration::MinimumFreeSignalQueueSlots;
+
 TEST_F(ConfigurationTest, CheckDefaultCpuProfilerType)
 {
     EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::CpuProfilerType, WStr(""));
-    auto configuration = Configuration{};
     auto expected =
 #ifdef _WINDOWS
         CpuProfilerType::ManualCpuTime;
 #else
         CpuProfilerType::TimerCreate;
 #endif
-    ASSERT_THAT(configuration.GetCpuProfilerType(), expected);
+    ASSERT_THAT(Configuration::ExtractCpuProfilerType(true, PlentyOfSignalQueueSlots), expected);
 }
 
 TEST_F(ConfigurationTest, CheckDefaultCpuProfilerTypeWhenEnvVarNotSet)
 {
-    auto configuration = Configuration{};
     auto expected =
 #ifdef _WINDOWS
         CpuProfilerType::ManualCpuTime;
 #else
         CpuProfilerType::TimerCreate;
 #endif
-    ASSERT_THAT(configuration.GetCpuProfilerType(), expected);
+    ASSERT_THAT(Configuration::ExtractCpuProfilerType(true, PlentyOfSignalQueueSlots), expected);
 }
 
 TEST_F(ConfigurationTest, CheckUnknownCpuProfilerType)
 {
     EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::CpuProfilerType, WStr("UnknownCpuProfilerType"));
-    auto configuration = Configuration{};
     auto expected =
 #ifdef _WINDOWS
         CpuProfilerType::ManualCpuTime;
 #else
         CpuProfilerType::TimerCreate;
 #endif
-    ASSERT_THAT(configuration.GetCpuProfilerType(), expected);
+    ASSERT_THAT(Configuration::ExtractCpuProfilerType(true, PlentyOfSignalQueueSlots), expected);
 }
 
 TEST_F(ConfigurationTest, CheckManualCpuProfilerType)
 {
     EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::CpuProfilerType, WStr("ManualCpuTime"));
-    auto configuration = Configuration{};
-    ASSERT_THAT(configuration.GetCpuProfilerType(), CpuProfilerType::ManualCpuTime);
+    ASSERT_THAT(Configuration::ExtractCpuProfilerType(true, PlentyOfSignalQueueSlots), CpuProfilerType::ManualCpuTime);
 }
 
 TEST_F(ConfigurationTest, CheckTimerCreateCpuProfilerType)
 {
     EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::CpuProfilerType, WStr("TimerCreate"));
-    auto configuration = Configuration{};
     auto expected =
 #ifdef LINUX
         CpuProfilerType::TimerCreate;
 #else
         CpuProfilerType::ManualCpuTime;
 #endif
-    ASSERT_THAT(configuration.GetCpuProfilerType(), expected);
+    ASSERT_THAT(Configuration::ExtractCpuProfilerType(true, PlentyOfSignalQueueSlots), expected);
 }
+
+#ifdef LINUX
+TEST_F(ConfigurationTest, CheckCpuProfilerTypeFallsBackWhenSignalQueueIsTooSmall)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::CpuProfilerType, WStr("TimerCreate"));
+    auto availableSlots = Configuration::MinimumFreeSignalQueueSlots - 1;
+    ASSERT_THAT(Configuration::ExtractCpuProfilerType(true, availableSlots), CpuProfilerType::ManualCpuTime);
+}
+
+TEST_F(ConfigurationTest, CheckCpuProfilerTypeFallsBackWhenSignalQueueIsExhausted)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::CpuProfilerType, WStr("TimerCreate"));
+    ASSERT_THAT(Configuration::ExtractCpuProfilerType(true, 0), CpuProfilerType::ManualCpuTime);
+}
+
+TEST_F(ConfigurationTest, CheckCpuProfilerTypeIsKeptWhenSignalQueueIsJustLargeEnough)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::CpuProfilerType, WStr("TimerCreate"));
+    auto availableSlots = Configuration::MinimumFreeSignalQueueSlots;
+    ASSERT_THAT(Configuration::ExtractCpuProfilerType(true, availableSlots), CpuProfilerType::TimerCreate);
+}
+
+TEST_F(ConfigurationTest, CheckCpuProfilerTypeToManualWhenSignalQueueIsUnknown)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::CpuProfilerType, WStr("TimerCreate"));
+    ASSERT_THAT(Configuration::ExtractCpuProfilerType(true, std::nullopt), CpuProfilerType::ManualCpuTime);
+}
+
+// No timer is ever created when CPU profiling is off, so there is nothing to fall back from.
+TEST_F(ConfigurationTest, CheckCpuProfilerTypeIsKeptWhenCpuProfilingIsDisabled)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::CpuProfilerType, WStr("TimerCreate"));
+    ASSERT_THAT(Configuration::ExtractCpuProfilerType(false, 0), CpuProfilerType::TimerCreate);
+}
+
+TEST_F(ConfigurationTest, CheckManualCpuProfilerTypeIsKeptWhenSignalQueueIsExhausted)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::CpuProfilerType, WStr("ManualCpuTime"));
+    ASSERT_THAT(Configuration::ExtractCpuProfilerType(true, 0), CpuProfilerType::ManualCpuTime);
+}
+#endif
 
 TEST_F(ConfigurationTest, CheckDefaultCpuProfilingInterval)
 {
@@ -1379,6 +1459,56 @@ TEST_F(ConfigurationTest, CheckForceHttpSamplingIsEnabledIfEnvVarIsEnabled)
     ASSERT_THAT(configuration.ForceHttpSampling(), expectedValue);
 }
 
+// Mirrors Configuration::DefaultLibrariesInfoCacheStartTimeout, which is private
+#if defined(DD_SANITIZERS)
+static constexpr auto ExpectedDefaultLibrariesInfoCacheStartTimeout = 10s;
+#else
+static constexpr auto ExpectedDefaultLibrariesInfoCacheStartTimeout = 2s;
+#endif
+
+#if defined(DD_SANITIZERS)
+TEST_F(ConfigurationTest, CheckLibrariesInfoCacheStartTimeoutWhenEnvVarNotSetUnderSanitizers)
+{
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.GetLibrariesInfoCacheStartTimeout(), 10s);
+}
+#else
+TEST_F(ConfigurationTest, CheckLibrariesInfoCacheStartTimeoutWhenEnvVarNotSet)
+{
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.GetLibrariesInfoCacheStartTimeout(), 2s);
+}
+#endif
+
+TEST_F(ConfigurationTest, CheckLibrariesInfoCacheStartTimeoutWhenEnvVarIsCorrectlySet)
+{
+    // Deliberately not one of the defaults, so the test fails if the env var is ignored
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::LibrariesInfoCacheStartTimeout, WStr("4200"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.GetLibrariesInfoCacheStartTimeout(), 4200ms);
+}
+
+TEST_F(ConfigurationTest, CheckLibrariesInfoCacheStartTimeoutIsDefaultWhenEnvVarIsNotParsable)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::LibrariesInfoCacheStartTimeout, WStr("not_an_int"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.GetLibrariesInfoCacheStartTimeout(), ExpectedDefaultLibrariesInfoCacheStartTimeout);
+}
+
+TEST_F(ConfigurationTest, CheckLibrariesInfoCacheStartTimeoutIsDefaultWhenEnvVarIsZero)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::LibrariesInfoCacheStartTimeout, WStr("0"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.GetLibrariesInfoCacheStartTimeout(), ExpectedDefaultLibrariesInfoCacheStartTimeout);
+}
+
+TEST_F(ConfigurationTest, CheckLibrariesInfoCacheStartTimeoutIsDefaultWhenEnvVarIsNegative)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::LibrariesInfoCacheStartTimeout, WStr("-5000"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.GetLibrariesInfoCacheStartTimeout(), ExpectedDefaultLibrariesInfoCacheStartTimeout);
+}
+
 TEST_F(ConfigurationTest, CheckWaitHandleProfilingIsDisabledByDefault)
 {
     auto configuration = Configuration{};
@@ -1419,6 +1549,26 @@ TEST_F(ConfigurationTest, CheckHeapSnapshotIsDisabledIfEnvVarSetToFalse)
     ASSERT_THAT(configuration.IsHeapSnapshotEnabled(), false);
 }
 
+TEST_F(ConfigurationTest, CheckHeapSnapshotSkipTraversalIsDisabledByDefault)
+{
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.IsHeapSnapshotSkipTraversal(), false);
+}
+
+TEST_F(ConfigurationTest, CheckHeapSnapshotSkipTraversalIsEnabledIfEnvVarSetToTrue)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::HeapSnapshotSkipTraversal, WStr("1"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.IsHeapSnapshotSkipTraversal(), true);
+}
+
+TEST_F(ConfigurationTest, CheckHeapSnapshotSkipTraversalIsDisabledIfEnvVarSetToFalse)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::HeapSnapshotSkipTraversal, WStr("0"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.IsHeapSnapshotSkipTraversal(), false);
+}
+
 TEST_F(ConfigurationTest, CheckHeapHandleLimitIfNoValue)
 {
     auto configuration = Configuration{};
@@ -1449,3 +1599,123 @@ TEST_F(ConfigurationTest, CheckHeapHandleLimitIfCorrectValue)
     auto threshold = configuration.GetHeapHandleLimit();
     ASSERT_THAT(threshold, 8000);
 }
+
+TEST_F(ConfigurationTest, CheckMemoryFootprintIsDisabledByDefault)
+{
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.IsMemoryFootprintEnabled(), false);
+}
+
+TEST_F(ConfigurationTest, CheckMemoryFootprintIsEnabledIfEnvVarSetToTrue)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::MemoryFootprintEnabled, WStr("1"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.IsMemoryFootprintEnabled(), true);
+}
+
+TEST_F(ConfigurationTest, CheckMemoryFootprintIsDisabledIfEnvVarSetToFalse)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::MemoryFootprintEnabled, WStr("0"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.IsMemoryFootprintEnabled(), false);
+}
+
+TEST_F(ConfigurationTest, CheckIfUseManagedCodeCacheIsEnabledWhenEnvVariableIsSetToTrue)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::UseManagedCodeCache, WStr("1"));
+    auto configuration = Configuration{};
+    ASSERT_TRUE(configuration.UseManagedCodeCache());
+}
+
+TEST_F(ConfigurationTest, CheckIfUseManagedCodeCacheIsDisabledWhenEnvVariableIsSetToFalse)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::UseManagedCodeCache, WStr("0"));
+    auto configuration = Configuration{};
+    ASSERT_FALSE(configuration.UseManagedCodeCache());
+}
+
+TEST_F(ConfigurationTest, CheckIfUseManagedCodeCacheIsDisabledWhenEnvVariableIsSetEmptyString)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::UseManagedCodeCache, WStr(""));
+    auto configuration = Configuration{};
+    #ifdef ARM64
+        ASSERT_TRUE(configuration.UseManagedCodeCache());
+    #else
+        ASSERT_FALSE(configuration.UseManagedCodeCache());
+    #endif
+}
+
+TEST_F(ConfigurationTest, CheckIfUseManagedCodeCacheUsesDefaultWhenVariableIsNotSet)
+{
+    unsetenv(EnvironmentVariables::UseManagedCodeCache);
+    auto configuration = Configuration{};
+#ifdef ARM64
+    ASSERT_TRUE(configuration.UseManagedCodeCache());
+#else
+    ASSERT_FALSE(configuration.UseManagedCodeCache());
+#endif
+}
+
+TEST_F(ConfigurationTest, CheckReferenceTreeFormatDefaultsToBinaryWhenVariableIsNotSet)
+{
+    unsetenv(EnvironmentVariables::HeapSnapshotReferenceTreeFormat);
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.GetReferenceTreeFormat(), ReferenceTreeFormat_Binary);
+}
+
+TEST_F(ConfigurationTest, CheckReferenceTreeFormatIsBinaryWhenEnvVarSetToBinary)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::HeapSnapshotReferenceTreeFormat, WStr("1"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.GetReferenceTreeFormat(), ReferenceTreeFormat_Binary);
+}
+
+TEST_F(ConfigurationTest, CheckReferenceTreeFormatIsJsonWhenEnvVarSetToJson)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::HeapSnapshotReferenceTreeFormat, WStr("2"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.GetReferenceTreeFormat(), ReferenceTreeFormat_Json);
+}
+
+TEST_F(ConfigurationTest, CheckReferenceTreeFormatIsBinaryAndJsonWhenEnvVarSetToThree)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::HeapSnapshotReferenceTreeFormat, WStr("3"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.GetReferenceTreeFormat(), ReferenceTreeFormat_Binary | ReferenceTreeFormat_Json);
+}
+
+TEST_F(ConfigurationTest, CheckReferenceTreeFormatFallsBackToBinaryWhenEnvVarSetToZero)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::HeapSnapshotReferenceTreeFormat, WStr("0"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.GetReferenceTreeFormat(), ReferenceTreeFormat_Binary);
+}
+
+TEST_F(ConfigurationTest, CheckReferenceTreeFormatFallsBackToBinaryWhenEnvVarSetToInvalidBit)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::HeapSnapshotReferenceTreeFormat, WStr("4"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.GetReferenceTreeFormat(), ReferenceTreeFormat_Binary);
+}
+
+TEST_F(ConfigurationTest, CheckReferenceTreeFormatFallsBackToBinaryWhenEnvVarHasValidAndInvalidBits)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::HeapSnapshotReferenceTreeFormat, WStr("5"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.GetReferenceTreeFormat(), ReferenceTreeFormat_Binary);
+}
+
+TEST_F(ConfigurationTest, CheckReferenceTreeFormatFallsBackToBinaryWhenEnvVarSetToLargeValue)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::HeapSnapshotReferenceTreeFormat, WStr("255"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.GetReferenceTreeFormat(), ReferenceTreeFormat_Binary);
+}
+
+TEST_F(ConfigurationTest, CheckReferenceTreeFormatFallsBackToBinaryWhenEnvVarSetToEmptyString)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::HeapSnapshotReferenceTreeFormat, WStr(""));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.GetReferenceTreeFormat(), ReferenceTreeFormat_Binary);
+}
+

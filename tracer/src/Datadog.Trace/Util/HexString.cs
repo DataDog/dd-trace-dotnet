@@ -8,13 +8,10 @@
 using System;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
-using Datadog.Trace.VendoredMicrosoftCode.System.Buffers.Binary;
-#if NETCOREAPP
-using BitConverter = System.BitConverter;
-using MemoryMarshal = System.Runtime.InteropServices.MemoryMarshal;
-#else
+using System.Runtime.InteropServices;
+
+#if !NETCOREAPP3_1_OR_GREATER
 using BitConverter = Datadog.Trace.Util.BitConverterShim;
-using MemoryMarshal = Datadog.Trace.VendoredMicrosoftCode.System.Runtime.InteropServices.MemoryMarshal;
 #endif
 
 namespace Datadog.Trace.Util;

@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -23,6 +24,25 @@ namespace Datadog.Trace.Debugger.Helpers
             }
 
             return @this.SequenceEqual(other);
+        }
+
+        // Array-only by design: every caller currently passes a T[] property.
+        // An IEnumerable<T> overload would allocate an enumerator and dispatch through the
+        // interface on every iteration, so we deliberately don't provide one.
+        public static int NullableSequentialHashCode<T>(this T[] @this)
+        {
+            if (@this is null)
+            {
+                return 0;
+            }
+
+            var hashCode = new HashCode();
+            for (var i = 0; i < @this.Length; i++)
+            {
+                hashCode.Add(@this[i]);
+            }
+
+            return hashCode.ToHashCode();
         }
     }
 }

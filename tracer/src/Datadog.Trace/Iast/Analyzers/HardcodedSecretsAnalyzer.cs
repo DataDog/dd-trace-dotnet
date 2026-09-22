@@ -22,11 +22,11 @@ internal sealed class HardcodedSecretsAnalyzer : IDisposable
 {
     private const int UserStringsArraySize = 100;
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<HardcodedSecretsAnalyzer>();
-    private static HardcodedSecretsAnalyzer? _instance = null;
+    private static HardcodedSecretsAnalyzer? _instance;
 
     private readonly TaskCompletionSource<bool> _processExit = new();
     private readonly TimeSpan _regexTimeout;
-    private List<SecretRegex>? _secretRules = null;
+    private List<SecretRegex>? _secretRules;
 
     [TestingAndPrivateOnly]
     internal HardcodedSecretsAnalyzer(TimeSpan regexTimeout)

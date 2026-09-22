@@ -12,8 +12,8 @@ namespace Datadog.Trace.Processors
         // MaxMetaKeyLen the maximum length of metadata key
         internal const int MaxMetaKeyLen = 200;
 
-        // MaxMetaValLen the maximum length of metadata value
-        internal const int MaxMetaValLen = 25000;
+        // MaxMetaValLen the maximum length of metadata value minus the elipsis length
+        internal const int MaxMetaValLen = 5000 - 3;
 
         // MaxMetricsKeyLen the maximum length of a metric name key
         internal const int MaxMetricsKeyLen = MaxMetaKeyLen;
@@ -33,6 +33,16 @@ namespace Datadog.Trace.Processors
             {
                 value += "...";
                 Log.Debug<int, string>("span.truncate: truncating `Meta` value (max {MaxMetaValLen} chars): {Value}", MaxMetaValLen, value);
+            }
+        }
+
+        // https://github.com/DataDog/datadog-agent/blob/eac2327c5574da7f225f9ef0f89eaeb05ed10382/pkg/trace/agent/truncator.go#L45-L53
+        public void ProcessMeta(ref string key, ref int value)
+        {
+            if (TraceUtil.TruncateUTF8(ref key, MaxMetaKeyLen))
+            {
+                key += "...";
+                Log.Debug<int, string>("span.truncate: truncating `Meta` key (max {MaxMetaKeyLen} chars): {Key}", MaxMetaKeyLen, key);
             }
         }
 

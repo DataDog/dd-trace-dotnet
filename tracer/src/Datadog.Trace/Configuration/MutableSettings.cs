@@ -1,4 +1,4 @@
-﻿// <copyright file="MutableSettings.cs" company="Datadog">
+// <copyright file="MutableSettings.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -421,6 +421,7 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
                KafkaCreateConsumerScopeEnabled == other.KafkaCreateConsumerScopeEnabled &&
                GitRepositoryUrl == other.GitRepositoryUrl &&
                GitCommitSha == other.GitCommitSha &&
+               ProcessTags?.SerializedTags == other.ProcessTags?.SerializedTags &&
                // Do collection comparisons at the end, as generally more expensive
                AreEqual(GlobalTags, other.GlobalTags) &&
                AreEqual(HeaderTags, other.HeaderTags) &&
@@ -520,6 +521,7 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
         // hashCode.Add(ServiceNameMappings);
         hashCode.Add(GitRepositoryUrl);
         hashCode.Add(GitCommitSha);
+        hashCode.Add(ProcessTags?.SerializedTags);
         return hashCode.ToHashCode();
     }
 
@@ -960,7 +962,9 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
                               .WithKeys(ConfigurationKeys.OpenTelemetry.TracesExporter)
                               .AsBoolResult(value => string.Equals(value, "none", StringComparison.OrdinalIgnoreCase)
                                                          ? ParsingResult<bool>.Success(result: false)
-                                                         : ParsingResult<bool>.Failure());
+                                                         : string.Equals(value, "otlp", StringComparison.OrdinalIgnoreCase)
+                                                           ? ParsingResult<bool>.Success(result: true)
+                                                           : ParsingResult<bool>.Failure());
         var traceEnabled = config
                           .WithKeys(ConfigurationKeys.TraceEnabled)
                           .AsBoolResult()
@@ -1041,9 +1045,10 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
 
         var httpServerErrorStatusCodes = ParseHttpCodesToArray(httpServerErrorStatusCodesString);
 
+        var defaultHttpClientErrorStatusCodes = tracerSettings.OtelSemanticsEnabled ? "400-599" : "400-499";
         var httpClientErrorStatusCodesString = config
                                               .WithKeys(ConfigurationKeys.HttpClientErrorStatusCodes)
-                                              .AsString(defaultValue: "400-499");
+                                              .AsString(defaultValue: defaultHttpClientErrorStatusCodes);
 
         var httpClientErrorStatusCodes = ParseHttpCodesToArray(httpClientErrorStatusCodesString);
 
@@ -1102,8 +1107,11 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
         if (original.ConfigurationResult is { IsValid: true, Result: { } values })
         {
             // Update well-known service information resources
-            if (values.TryGetValue("deployment.environment", out var envValue))
+            // an empty "deployment.environment.name" falls back to the legacy "deployment.environment"
+            if ((values.TryGetValue("deployment.environment.name", out var envValue) && !string.IsNullOrEmpty(envValue)) ||
+                values.TryGetValue("deployment.environment", out envValue))
             {
+                values.Remove("deployment.environment.name");
                 values.Remove("deployment.environment");
                 values[Tags.Env] = envValue;
             }
@@ -1150,6 +1158,7 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
         var ddSampleRate = config.WithKeys(ConfigurationKeys.GlobalSamplingRate).AsDoubleResult();
         var otelSampleType = config.WithKeys(ConfigurationKeys.OpenTelemetry.TracesSampler).AsStringResult();
         var otelSampleRate = config.WithKeys(ConfigurationKeys.OpenTelemetry.TracesSamplerArg).AsDoubleResult();
+        var otlpTracesExporter = config.WithKeys(ConfigurationKeys.OpenTelemetry.TracesExporter).AsStringResult();
 
         double? ddResult = ddSampleRate.ConfigurationResult.IsValid ? ddSampleRate.ConfigurationResult.Result : null;
 
@@ -1214,6 +1223,13 @@ internal sealed class MutableSettings : IEquatable<MutableSettings>
             }
 
             log.LogInvalidConfiguration(otelSampleRate.Key);
+        }
+
+        if (!ddSampleRate.ConfigurationResult.IsPresent &&
+                otlpTracesExporter.ConfigurationResult is { IsValid: true, Result: { } exporter }
+                 && string.Equals(exporter, "otlp", StringComparison.OrdinalIgnoreCase))
+        {
+            return 1.0;
         }
 
         return ddResult;

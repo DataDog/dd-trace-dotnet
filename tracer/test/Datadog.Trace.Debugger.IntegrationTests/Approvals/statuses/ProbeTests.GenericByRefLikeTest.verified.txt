@@ -181,7 +181,6 @@
       "diagnostics": {
         "exception": {
           "message": "Dynamic Instrumentation of methods in a `ref-struct` is not yet supported.",
-          "stacktrace": null,
           "type": "NO_TYPE"
         },
         "probeId": "03da93fa-95b1-4bbc-89e2-6c29cb8f1744",
@@ -201,7 +200,6 @@
       "diagnostics": {
         "exception": {
           "message": "Dynamic Instrumentation of methods that return a `ref struct` is not yet supported.",
-          "stacktrace": null,
           "type": "NO_TYPE"
         },
         "probeId": "22df6346-f993-1027-bd1a-f25f3a06ca56",
@@ -221,7 +219,6 @@
       "diagnostics": {
         "exception": {
           "message": "Dynamic Instrumentation of methods in a `ref-struct` is not yet supported.",
-          "stacktrace": null,
           "type": "NO_TYPE"
         },
         "probeId": "23827d5e-fc78-6898-4039-dec54409f8c4",
@@ -241,7 +238,6 @@
       "diagnostics": {
         "exception": {
           "message": "Dynamic Instrumentation of methods that return a `ref struct` is not yet supported.",
-          "stacktrace": null,
           "type": "NO_TYPE"
         },
         "probeId": "35543785-ac9a-85ea-44af-13938dff3136",
@@ -261,7 +257,6 @@
       "diagnostics": {
         "exception": {
           "message": "Dynamic Instrumentation of methods that return a `ref struct` is not yet supported.",
-          "stacktrace": null,
           "type": "NO_TYPE"
         },
         "probeId": "b16773f7-ded8-a522-43ce-b51d18f9205e",

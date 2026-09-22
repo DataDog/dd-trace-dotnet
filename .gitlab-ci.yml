@@ -1,19 +1,93 @@
 stages:
   - build
-  - publish
   - package
-  - shared-pipeline
+  - sign-nuget
+  - publish-artifacts
+  - shared-pipeline-build
+  - shared-pipeline-test
+  - shared-pipeline-publish
   - publish
   - benchmarks
+  # These benchmarks are running in parallel with the legacy ones
+  - dotnet-aspnet-realworld-parallel
+  - dotnet-aspnet-realworld-parallel-slo
 
 include:
   - local: .gitlab/one-pipeline.locked.yml
+  - project: 'ddoghq/llm-validation-platform'
+    ref: 4bb157a2cbb50ef608b9ec8e14b886e0cf838ca3   # v0.1.4 (immutable SHA; a tag could be retargeted)
+    file: '/ci/llm-validation.gitlab-ci.yml'
+  # MIGRATION TOUCHPOINT (GitHub org / GitLab group split):
+  # GitLab does not expand top-level `variables:` inside `include:` keywords,
+  # so we cannot parameterize this group path the way we do for trigger jobs
+  # and scripts below. Update this line by hand at org-split cutover.
+  - project: 'DataDog/apm-reliability/apm-sdks-benchmarks'
+    file: '.gitlab/ci-dotnet-aspnet-realworld-parallel.yml'
+    ref: 'main'
 
 variables:
   DOTNET_PACKAGE_VERSION:
     description: "Used by the package stage when triggered manually"
   REPO_NOTIFICATION_CHANNEL: "#apm-dotnet-bots"
-  CI_IDENTITIES_CLIENT_URL: s3://binaries-ddbuild-io-prod/ci-identities/ci-identities-gitlab-job-client/versions/v0.2.0/ci-identities-gitlab-job-client-windows-amd64.exe
+  # GitLab org for internal cross-repo references - parameterized for org migration resilience
+  GITLAB_GROUP: DataDog
+  # GitLab group path for OSS projects in CI - may differ from GITLAB_GROUP after org split
+  GITLAB_GROUP_OSS: DataDog
+  # GitHub org for internal repos (used in git insteadOf redirects) - update to new org after the split
+  GITHUB_ORG_INTERNAL: DataDog
+  CI_IDENTITIES_CLIENT_URL: s3://binaries-ddbuild-io-prod/ci-identities/ci-identities-gitlab-job-client/versions/v0.6.3/ci-identities-gitlab-job-client-windows-amd64.exe
+  SUPPORTED_CONFIG_PATH: "tracer/src/Datadog.Trace/Configuration/supported-configurations.yaml"
+  OCI_PACKAGE_MAX_SIZE_BYTES: 43000000
+  LIB_INJECTION_IMAGE_MAX_SIZE_BYTES: 43000000
+  SLS_CI_BRANCH: main
+  WINDOWS_BUILD_IMAGE_BASE: "registry.ddbuild.io/ci/dd-trace-dotnet/dd-trace-dotnet-docker-build"
+
+"llm validation":
+  variables:
+    LLMVAL_PLATFORM_PROJECT: "ddoghq/llm-validation-platform"
+    LLMVAL_PLATFORM_REF: "4bb157a2cbb50ef608b9ec8e14b886e0cf838ca3"   # v0.1.4 (must match include ref above)
+
+build-windows-ci-image:
+  stage: build
+  timeout: 2h
+  tags: ["windows-v2:2022"]
+  when: manual
+  hooks:
+    pre_get_sources_script:
+      - git config --system core.longpaths true
+  script:
+    - |
+      $hash = & tracer/build/_build/docker/gitlab/compute-image-hash.ps1
+      if ($LASTEXITCODE -ne 0 -or $hash -notmatch '^[0-9a-f]{12}$') {
+        throw "compute-image-hash.ps1 did not produce a valid hash (exit=$LASTEXITCODE, output='$hash')"
+      }
+      $base = $env:WINDOWS_BUILD_IMAGE_BASE
+      $image = "${base}:${hash}"
+      Write-Output "Target image: $image"
+
+      docker manifest inspect $image
+      if ($LASTEXITCODE -eq 0) {
+        Write-Output "Image $image already exists in the registry - skipping rebuild."
+        exit 0
+      }
+      Write-Output "Image does not exist yet - building."
+
+      docker pull "${base}:latest"
+      docker build --cache-from "${base}:latest" `
+        -f tracer/build/_build/docker/gitlab/gitlab.windows.dockerfile `
+        --tag $image `
+        --tag "${base}:latest" `
+        tracer/build/_build/docker/gitlab
+      if ($LASTEXITCODE -ne 0) { throw "docker build failed" }
+
+      docker push $image
+      if ($LASTEXITCODE -ne 0) { throw "docker push $image failed" }
+
+      docker push "${base}:latest"
+      if ($LASTEXITCODE -ne 0) { throw "docker push ${base}:latest failed" }
+  id_tokens:
+    CI_IDENTITIES_GITLAB_ID_TOKEN:
+      aud: ci-identities
 
 build:
   except:
@@ -22,7 +96,7 @@ build:
       - $CI_COMMIT_TAG # We don't need to build/publish when building a release tag
   stage: build
   timeout: 2h
-  tags: ["windows-v2:2019"]
+  tags: ["windows-v2:2022"]
   hooks:
     pre_get_sources_script:
       - git config --system core.longpaths true
@@ -30,18 +104,109 @@ build:
     - if (Test-Path build-out) { remove-item -recurse -force build-out }
     - if (Test-Path artifacts-out) { remove-item -recurse -force artifacts-out }
     - |
-      docker run --rm -m 10240M `
+      $hash = & tracer/build/_build/docker/gitlab/compute-image-hash.ps1
+      if ($LASTEXITCODE -ne 0 -or $hash -notmatch '^[0-9a-f]{12}$') {
+        throw "compute-image-hash.ps1 did not produce a valid hash (exit=$LASTEXITCODE, output='$hash')"
+      }
+      $env:WINDOWS_BUILD_IMAGE = "${env:WINDOWS_BUILD_IMAGE_BASE}:${hash}"
+      Write-Output "Expected Windows build image: $env:WINDOWS_BUILD_IMAGE"
+
+      docker manifest inspect $env:WINDOWS_BUILD_IMAGE
+      if ($LASTEXITCODE -ne 0) {
+        Write-Host "ERROR: Windows build image not found at $env:WINDOWS_BUILD_IMAGE."
+        Write-Host "The Dockerfile or install scripts under tracer/build/_build/docker/gitlab/ have changed."
+        Write-Host "Manually trigger the 'build-windows-ci-image' job in this pipeline, wait for it to finish, then re-run this job."
+        exit 1
+      }
+    - |
+      try {
+        $computerSystem = Get-CimInstance Win32_ComputerSystem
+        $operatingSystem = Get-CimInstance Win32_OperatingSystem
+        Write-Output ("Runner memory: {0:N1} GB total, {1:N1} GB free" -f ($computerSystem.TotalPhysicalMemory / 1GB), ($operatingSystem.FreePhysicalMemory * 1KB / 1GB))
+        Write-Output "Runner logical processors: $($computerSystem.NumberOfLogicalProcessors)"
+      } catch {
+        Write-Warning "Unable to retrieve runner information: $_"
+      }
+
+      $containerName = "dd-trace-build-$env:CI_JOB_ID"
+      $containerMemoryLimit = 20GB
+      $dockerPath = (Get-Command docker).Source
+      $statsJob = Start-Job -ArgumentList $containerName, $containerMemoryLimit, $dockerPath -ScriptBlock {
+        param($name, $memoryLimit, $docker)
+
+        function ConvertTo-Bytes([string] $value) {
+          if ($value -notmatch '^\s*([0-9]+(?:\.[0-9]+)?)\s*([KMGT]?i?B)\s*$') {
+            return $null
+          }
+
+          $factors = @{
+            B   = 1
+            KB  = 1KB
+            KiB = 1KB
+            MB  = 1MB
+            MiB = 1MB
+            GB  = 1GB
+            GiB = 1GB
+            TB  = 1TB
+            TiB = 1TB
+          }
+
+          return [double]$Matches[1] * $factors[$Matches[2]]
+        }
+
+        $containerSeen = $false
+        $peakBytes = 0.0
+        $peakUsage = "unknown"
+
+        while ($true) {
+          $stats = & $docker stats $name --no-stream --format "{{.MemUsage}}" 2>$null
+          if ($LASTEXITCODE -eq 0 -and $stats) {
+            $containerSeen = $true
+            $usage = ($stats -split '/', 2)[0].Trim()
+            $usageBytes = ConvertTo-Bytes $usage
+            if ($null -ne $usageBytes -and $usageBytes -gt $peakBytes) {
+              $peakBytes = $usageBytes
+              $peakUsage = $usage
+            }
+          } elseif ($containerSeen) {
+            break
+          }
+
+          Start-Sleep -Seconds 5
+        }
+
+        $peakPercent = 100 * $peakBytes / $memoryLimit
+        Write-Output ("Peak container memory: {0} ({1:N1}% of limit)" -f $peakUsage, $peakPercent)
+      }
+
+      # Enable MSVC /MP, capped at the runner's logical processor count.
+      docker run --name $containerName --rm -m 20480M `
         -v "$(Get-Location):c:\mnt" `
         -e CI_JOB_ID=${CI_JOB_ID} `
-        -e ENABLE_MULTIPROCESSOR_COMPILATION=false `
+        -e ENABLE_MULTIPROCESSOR_COMPILATION=true `
+        -e CL_MPCount=16 `
         -e WINDOWS_BUILDER=true `
         -e AWS_NETWORKING=true `
         -e SIGN_WINDOWS=true `
         -e NUGET_CERT_REVOCATION_MODE=offline `
         -e CI_IDENTITIES_GITLAB_ID_TOKEN `
         -e CI_PROJECT_NAME `
-        registry.ddbuild.io/images/mirror/datadog/dd-trace-dotnet-docker-build:ci-identities `
+        -e CI_JOB_NAME_SLUG `
+        $env:WINDOWS_BUILD_IMAGE `
         Info Clean BuildTracerHome BuildProfilerHome BuildNativeLoader BuildDdDotnet PublishFleetInstaller PackageTracerHome ZipSymbols SignDlls SignMsi DownloadWinSsiTelemetryForwarder
+      $buildExitCode = $LASTEXITCODE
+
+      Wait-Job $statsJob -Timeout 15 | Out-Null
+      if ($statsJob.State -eq 'Running') {
+        Stop-Job $statsJob
+      }
+
+      Receive-Job $statsJob
+      Remove-Job $statsJob -Force
+
+      if ($buildExitCode -ne 0) {
+        throw "Docker build container exited with code $buildExitCode"
+      }
     - mkdir artifacts-out
     - xcopy /e/s build-out\${CI_JOB_ID}\*.* artifacts-out
     - remove-item -recurse -force build-out\${CI_JOB_ID}
@@ -65,10 +230,14 @@ publish:
     variables:
       - $DEPLOY_TO_REL_ENV == "true"
       - $CI_COMMIT_TAG # We don't need to build/publish when building a release tag
-  stage: publish
-  tags: ["windows-v2:2019"]
-  dependencies:
-    - build
+      - $DOTNET_PACKAGE_VERSION
+  stage: publish-artifacts
+  tags: ["windows-v2:2022"]
+  needs:
+    - job: build
+      artifacts: true
+    - job: sign-nuget-packages
+      artifacts: true
   hooks:
     pre_get_sources_script:
       - git config --system core.longpaths true
@@ -83,11 +252,22 @@ publish:
           try {
               # The grants option at the end is used to allow public access on the files we upload as the acls only aren't enough.
               aws s3 cp artifacts-out/ s3://dd-windowsfilter/builds/tracer/${CI_COMMIT_SHA} --recursive --region us-east-1 --exclude "*" --include "*.zip" --include "*.msi" --include "telemetry_forwarder.exe" --grants read=uri=http://acs.amazonaws.com/groups/global/AllUsers full=id=3a6e02b08553fd157ae3fb918945dd1eaae5a1aa818940381ef07a430cf25732
-              If ($LASTEXITCODE -eq 0) {
-                return
+              if ($LASTEXITCODE -ne 0) {
+                throw "Error uploading artifacts to S3"
               }
 
-              throw "Error uploading artifacts to S3"
+              aws s3 cp artifacts-out/nuget/ s3://dd-windowsfilter/builds/tracer/${CI_COMMIT_SHA}/signed-nuget-packages/ --recursive --region us-east-1 --exclude "*" --include "*.nupkg" --include "*.snupkg" --grants read=uri=http://acs.amazonaws.com/groups/global/AllUsers full=id=3a6e02b08553fd157ae3fb918945dd1eaae5a1aa818940381ef07a430cf25732
+              if ($LASTEXITCODE -ne 0) {
+                throw "Error uploading build-signed NuGet and symbol packages to S3"
+              }
+
+              # No --include "*.snupkg" here: these 3 packages are built by Azure DevOps and don't include symbols
+              aws s3 cp signed-out/nuget/ s3://dd-windowsfilter/builds/tracer/${CI_COMMIT_SHA}/signed-nuget-packages/ --recursive --region us-east-1 --exclude "*" --include "*.nupkg" --grants read=uri=http://acs.amazonaws.com/groups/global/AllUsers full=id=3a6e02b08553fd157ae3fb918945dd1eaae5a1aa818940381ef07a430cf25732
+              if ($LASTEXITCODE -ne 0) {
+                throw "Error uploading signed NuGet packages to S3"
+              }
+
+              return;
           } catch {
               $msg = $Error[0].Exception.Message
               Write-Output "Encountered error during while publishing to S3. Error Message is $msg."
@@ -105,11 +285,91 @@ publish:
     CI_IDENTITIES_GITLAB_ID_TOKEN:
       aud: ci-identities
 
+download-nuget-packages-to-sign:
+  stage: package
+  image: registry.ddbuild.io/images/ci/images:1.2.6
+  timeout: 2h15m # based on 3 attempts x40min
+  tags: [ "arch:amd64" ]
+  needs:
+    - job: build
+      optional: true
+      artifacts: false
+  rules:
+    - if: $DOTNET_PACKAGE_VERSION
+      when: never
+    - if: $CI_COMMIT_TAG
+      when: never      # We don't need to build/publish when building a release tag
+    - when: on_success # Artifacts come from the Azure pipeline, but as we already depend on build, we already have a delayed start
+  script:
+    - .gitlab/download-nuget-packages-to-sign.sh
+  artifacts:
+    expire_in: 2 weeks
+    paths:
+      - packages-to-sign
+
+sign-nuget-packages:
+  stage: sign-nuget
+  timeout: 15m
+  tags: ["windows-v2:2022"]
+  rules:
+    - if: $DOTNET_PACKAGE_VERSION
+      when: never
+    - if: $CI_COMMIT_TAG
+      when: never      # We don't need to build/publish when building a release tag
+    - when: on_success
+  needs:
+    - job: build
+      optional: true
+      artifacts: false # only needed for timing reasons
+    - job: download-nuget-packages-to-sign
+      artifacts: true
+  hooks:
+    pre_get_sources_script:
+      - git config --system core.longpaths true
+  script:
+    - if (Test-Path signed-out) { remove-item -recurse -force signed-out }
+    - |
+      $hash = & tracer/build/_build/docker/gitlab/compute-image-hash.ps1
+      if ($LASTEXITCODE -ne 0 -or $hash -notmatch '^[0-9a-f]{12}$') {
+        throw "compute-image-hash.ps1 did not produce a valid hash (exit=$LASTEXITCODE, output='$hash')"
+      }
+      $env:WINDOWS_BUILD_IMAGE = "${env:WINDOWS_BUILD_IMAGE_BASE}:${hash}"
+    - |
+      New-Item -ItemType Directory -Force -Path "build-out\$env:CI_JOB_ID\nuget" | Out-Null
+      New-Item -ItemType Directory -Force -Path "build-out\$env:CI_JOB_ID\packages-to-sign" | Out-Null
+      Copy-Item packages-to-sign\*.nupkg "build-out\$env:CI_JOB_ID\packages-to-sign\" -Force
+    - |
+      docker run --rm `
+        -v "$(Get-Location):c:\mnt" `
+        -e CI_JOB_ID=$env:CI_JOB_ID `
+        -e WINDOWS_BUILDER=true `
+        -e AWS_NETWORKING=true `
+        -e SIGN_WINDOWS=true `
+        -e NUGET_CERT_REVOCATION_MODE=offline `
+        -e CI_IDENTITIES_GITLAB_ID_TOKEN `
+        -e CI_PROJECT_NAME `
+        -e CI_JOB_NAME_SLUG `
+        $env:WINDOWS_BUILD_IMAGE `
+        SignNuGetPackageContents
+      if ($LASTEXITCODE -ne 0) {
+        throw "Docker sign-nuget-packages container exited with code $LASTEXITCODE"
+      }
+    - New-Item -ItemType Directory -Force -Path signed-out\nuget | Out-Null
+    - Copy-Item "build-out\$env:CI_JOB_ID\nuget\*.nupkg" signed-out\nuget\ -Force
+    - remove-item -recurse -force "build-out\$env:CI_JOB_ID"
+    - get-childitem signed-out\nuget
+  artifacts:
+    expire_in: 2 weeks
+    paths:
+      - signed-out
+  id_tokens:
+    CI_IDENTITIES_GITLAB_ID_TOKEN:
+      aud: ci-identities
 
 download-single-step-artifacts:
   stage: package
-  image: registry.ddbuild.io/docker:20.10.13-gbi-focal
-  timeout: 45m
+  image: registry.ddbuild.io/images/ci/images:1.2.6
+  timeout: 2h15m # based on 3 attempts x40min
   tags: [ "arch:amd64" ]
   needs:
     - job: build
@@ -155,7 +415,8 @@ deploy_to_reliability_env:
 
 download-serverless-artifacts:
   stage: package
-  image: registry.ddbuild.io/docker:20.10.13-gbi-focal
+  image: registry.ddbuild.io/images/ci/images:1.2.6
+  timeout: 2h15m # based on 3 attempts x40min
   tags: [ "arch:amd64" ]
   needs: []
   rules:
@@ -178,7 +439,7 @@ aws-lambda-layer:
   needs: [download-serverless-artifacts]
   when: manual
   trigger:
-    project: DataDog/dd-trace-dotnet-aws-lambda-layer
+    project: ${GITLAB_GROUP_OSS}/dd-trace-dotnet-aws-lambda-layer
     strategy: depend
   variables:
     UPSTREAM_PIPELINE_ID: $CI_PIPELINE_ID
@@ -193,14 +454,25 @@ benchmark-serverless:
   needs:
     - benchmark-serverless-trigger
   script:
-    - git clone https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/DataDog/serverless-tools.git ./serverless-tools && cd ./serverless-tools
+    - curl -OL "https://binaries.ddbuild.io/dd-source/authanywhere/LATEST/authanywhere-linux-amd64" 
+    - mv "authanywhere-linux-amd64" /bin/authanywhere 
+    - chmod +x /bin/authanywhere
+    - BTI_CI_API_TOKEN=$(authanywhere --audience rapid-devex-ci)
+    - >-
+      BTI_RESPONSE=$(curl --silent --request GET \
+        --header "$BTI_CI_API_TOKEN" \  --header "Content-Type: application/vnd.api+json" \
+        "https://bti-ci-api.us1.ddbuild.io/internal/ci/gitlab/token?owner=${GITLAB_GROUP}&repository=serverless-tools")
+    - GITLAB_TOKEN=$(echo "$BTI_RESPONSE" | jq -r '.token // empty')
+    - git clone https://gitlab-ci-token:${GITLAB_TOKEN}@gitlab.ddbuild.io/${GITLAB_GROUP}/serverless-tools.git ./serverless-tools
+    - cd ./serverless-tools
     - ./ci/check_trigger_status.sh
 
 benchmark-serverless-trigger:
   stage: benchmarks
   needs: []
   trigger:
-    project: DataDog/serverless-tools
+    project: ${GITLAB_GROUP}/serverless-tools
+    branch: $SLS_CI_BRANCH
     strategy: depend
   allow_failure: true
   variables:
@@ -213,6 +485,9 @@ benchmark-serverless-trigger:
     UPSTREAM_PROJECT_NAME: $CI_PROJECT_NAME
     UPSTREAM_GITLAB_USER_LOGIN: $GITLAB_USER_LOGIN
     UPSTREAM_GITLAB_USER_EMAIL: $GITLAB_USER_EMAIL
+    # only available on Merge Requests
+    UPSTREAM_MERGE_TARGET_BRANCH: $CI_MERGE_REQUEST_TARGET_BRANCH_NAME
+    DD_TAGS: "SLS_CI_BRANCH:$SLS_CI_BRANCH"
 
 macrobenchmarks:
   stage: benchmarks
@@ -234,6 +509,10 @@ microbenchmarks:
     include: .gitlab/benchmarks/microbenchmarks.yml
     strategy: depend
   allow_failure: true
+  rules:
+    - if: $CI_COMMIT_TAG
+      when: never
+    - when: always
 
 dsm_throughput:
   stage: benchmarks
@@ -248,10 +527,18 @@ dsm_throughput:
     - when: manual
 
 
-validate_supported_configurations_local_file:
+validate_supported_configurations_v2_local_file:
   stage: build
   rules:
     - when: on_success
-  extends: .validate_supported_configurations_local_file
+  extends: .validate_supported_configurations_v2_local_file
   variables:
-    LOCAL_JSON_PATH: "tracer/src/Datadog.Trace/Configuration/supported-configurations.json"
+    LOCAL_CONFIG_PATH: $SUPPORTED_CONFIG_PATH
+    BACKFILLED: true
+  
+update_central_configurations_version_range_v2:
+  extends: .update_central_configurations_version_range_v2
+  variables:
+    LOCAL_CONFIG_PATH: $SUPPORTED_CONFIG_PATH
+    LANGUAGE_NAME: "dotnet"
+    SEND_ALIASES: true

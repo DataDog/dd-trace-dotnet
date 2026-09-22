@@ -29,8 +29,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.Tr
 [EditorBrowsable(EditorBrowsableState.Never)]
 public sealed class StartSpanIntegration
 {
-    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(StartSpanIntegration));
-
     internal static CallTargetState OnMethodBegin<TTarget, TSpanContext>(TTarget instance, string operationName, TSpanContext parent, string serviceName, DateTimeOffset? startTime, bool ignoreActiveScope)
         where TTarget : ITracerProxy
     {

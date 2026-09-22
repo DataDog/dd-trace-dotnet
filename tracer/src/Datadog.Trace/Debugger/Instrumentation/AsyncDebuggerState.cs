@@ -54,6 +54,8 @@ namespace Datadog.Trace.Debugger.Instrumentation
         /// <summary>
         /// Gets or sets the log states for multi-probe
         /// </summary>
+#pragma warning disable CA1819 // Properties should not return arrays - meh, it's fine, you just have to be aware that they're mutable
         public AsyncMethodDebuggerState[] LogStates { get; set; }
+#pragma warning restore CA1819
     }
 }

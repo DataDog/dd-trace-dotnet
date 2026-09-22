@@ -6,8 +6,12 @@
 #nullable enable
 
 using Datadog.Trace.Util;
-using Datadog.Trace.VendoredMicrosoftCode.System.Collections.Immutable;
+
+#if NETCOREAPP
+using System.Reflection.Metadata;
+#else
 using Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Metadata;
+#endif
 
 namespace Datadog.Trace.Debugger.Symbols
 {

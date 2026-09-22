@@ -11,13 +11,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -35,13 +37,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -59,13 +63,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -83,13 +89,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -107,13 +115,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -131,13 +141,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -155,13 +167,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -179,13 +193,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -203,13 +219,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -227,13 +245,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -251,13 +271,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -275,13 +297,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -299,13 +323,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -323,13 +349,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -347,13 +375,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -371,13 +401,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -395,13 +427,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -419,13 +453,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -443,13 +479,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -467,13 +505,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -491,13 +531,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -515,13 +557,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -539,13 +583,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -563,13 +609,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -587,13 +635,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -611,13 +661,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -635,13 +687,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -659,13 +713,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -683,13 +739,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -707,13 +765,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -731,13 +791,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -755,13 +817,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -779,13 +843,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -803,13 +869,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -827,13 +895,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -851,13 +921,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -875,13 +947,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -899,13 +973,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -923,13 +999,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -947,13 +1025,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -971,13 +1051,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -995,13 +1077,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1019,13 +1103,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1043,13 +1129,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1067,13 +1155,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1091,13 +1181,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1115,13 +1207,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1139,13 +1233,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1163,13 +1259,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1187,13 +1285,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1211,13 +1311,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1235,13 +1337,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1259,13 +1363,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1283,13 +1389,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1307,13 +1415,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1331,13 +1441,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1355,13 +1467,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1379,13 +1493,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1403,13 +1519,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1427,13 +1545,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1451,13 +1571,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1475,13 +1597,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1499,13 +1623,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1523,13 +1649,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1547,13 +1675,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1571,13 +1701,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1595,13 +1727,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1619,13 +1753,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1643,13 +1779,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1667,13 +1805,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1691,13 +1831,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1715,13 +1857,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1739,13 +1883,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1763,13 +1909,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1787,13 +1935,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1811,13 +1961,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1835,13 +1987,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1859,13 +2013,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1883,13 +2039,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1907,13 +2065,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1931,13 +2091,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1955,13 +2117,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1979,13 +2143,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2003,13 +2169,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2027,13 +2195,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2051,13 +2221,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2075,13 +2247,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2099,13 +2273,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2123,13 +2299,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2147,13 +2325,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2171,13 +2351,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2195,13 +2377,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2219,13 +2403,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2243,13 +2429,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2267,13 +2455,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2291,13 +2481,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2315,13 +2507,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2339,13 +2533,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2363,13 +2559,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2387,13 +2585,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2411,13 +2611,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2435,13 +2637,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2459,13 +2663,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2483,13 +2689,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2507,13 +2715,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2531,13 +2741,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2555,13 +2767,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2579,13 +2793,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2603,13 +2819,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2627,13 +2845,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2651,13 +2871,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2675,13 +2897,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2699,13 +2923,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2723,13 +2949,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2747,13 +2975,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2771,13 +3001,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2795,13 +3027,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2819,13 +3053,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2843,13 +3079,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2867,13 +3105,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2891,13 +3131,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2915,13 +3157,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2939,13 +3183,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2963,13 +3209,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2987,13 +3235,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3011,13 +3261,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3035,13 +3287,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3059,13 +3313,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3083,13 +3339,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3107,13 +3365,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3131,13 +3391,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3155,13 +3417,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3179,13 +3443,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3203,13 +3469,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3227,13 +3495,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3251,13 +3521,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3275,13 +3547,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3299,13 +3573,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3323,13 +3599,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3347,13 +3625,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3371,13 +3651,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3395,13 +3677,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3419,13 +3703,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3443,13 +3729,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3467,13 +3755,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3491,13 +3781,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3515,13 +3807,15 @@
       component: Npgsql,
       db.name: postgres,
       db.type: postgres,
+      db.user: postgres,
       env: integration_tests,
       language: dotnet,
       out.host: postgres,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.base_service: Samples.Npgsql,
-      _dd.dbm_trace_injected: true
+      _dd.dbm_trace_injected: true,
+      _dd.svc_src: postgres
     },
     Metrics: {
       _dd.top_level: 1.0

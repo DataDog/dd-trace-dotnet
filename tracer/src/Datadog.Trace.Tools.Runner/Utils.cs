@@ -422,6 +422,7 @@ namespace Datadog.Trace.Tools.Runner
             var discoveryService = DiscoveryService.CreateUnmanaged(
                 settings.Manager.InitialExporterSettings,
                 ContainerMetadata.Instance,
+                new ServiceRemappingHash(null),
                 tcpTimeout: TimeSpan.FromSeconds(5),
                 initialRetryDelayMs: 200,
                 maxRetryDelayMs: 1000,

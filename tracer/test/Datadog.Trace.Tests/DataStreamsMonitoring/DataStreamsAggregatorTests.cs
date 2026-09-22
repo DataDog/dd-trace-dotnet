@@ -11,6 +11,7 @@ using Datadog.Trace.ContinuousProfiler;
 using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.DataStreamsMonitoring.Aggregation;
 using Datadog.Trace.DataStreamsMonitoring.Hashes;
+using Datadog.Trace.DataStreamsMonitoring.TransactionTracking;
 using Datadog.Trace.DataStreamsMonitoring.Utils;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.TestHelpers.TestTracer;
@@ -125,6 +126,68 @@ public class DataStreamsAggregatorTests
         AssertStats(stats, TimestampType.Origin, BucketStartTimeForTimestamp(T2 - (5 * OneSecondNs)));
         AssertBucket(stats, hash: 2, CreateSketch(1, 5), CreateSketch(1, 2));
         AssertBucket(stats, hash: 3, CreateSketch(5), CreateSketch(2));
+    }
+
+    [Fact]
+    public async Task Serialize_ReturnsTrue_WhenOnlyTransactionsPresent()
+    {
+        await using var tracer = TracerHelper.Create();
+        var aggregator = new DataStreamsAggregator(
+            new DataStreamsMessagePackFormatter(tracer.Settings, new ProfilerSettings(ProfilerState.Disabled)),
+            BucketDurationMs);
+
+        aggregator.AddTransaction(new DataStreamsTransactionInfo("tx-1", DateTimeOffset.UtcNow.ToUnixTimeNanoseconds(), "checkpoint"));
+
+        using var stream = new MemoryStream();
+        aggregator.Serialize(stream, long.MaxValue).Should().BeTrue();
+
+        // second call must return false — transactions were already consumed on the first call
+        using var stream2 = new MemoryStream();
+        aggregator.Serialize(stream2, long.MaxValue).Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task Serialize_ReturnsFalse_WhenEmpty()
+    {
+        await using var tracer = TracerHelper.Create();
+        var aggregator = new DataStreamsAggregator(
+            new DataStreamsMessagePackFormatter(tracer.Settings, new ProfilerSettings(ProfilerState.Disabled)),
+            BucketDurationMs);
+
+        using var stream = new MemoryStream();
+        aggregator.Serialize(stream, long.MaxValue).Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task ShouldFlushTransactions_ReturnsFalse_WhenContainerIsSmall()
+    {
+        await using var tracer = TracerHelper.Create();
+        var aggregator = new DataStreamsAggregator(
+            new DataStreamsMessagePackFormatter(tracer.Settings, new ProfilerSettings(ProfilerState.Disabled)),
+            BucketDurationMs);
+
+        aggregator.AddTransaction(new DataStreamsTransactionInfo("id", 1L, "cp"));
+        aggregator.ShouldFlushTransactions.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task ShouldFlushTransactions_ReturnsTrue_WhenContainerExceedsThreshold()
+    {
+        await using var tracer = TracerHelper.Create();
+        var aggregator = new DataStreamsAggregator(
+            new DataStreamsMessagePackFormatter(tracer.Settings, new ProfilerSettings(ProfilerState.Disabled)),
+            BucketDurationMs);
+
+        var id = new string('x', 512);
+        var byteCount = new DataStreamsTransactionInfo(id, 0L, "cp").GetByteCount();
+        var count = (512 * 1024 / byteCount) + 1;
+
+        for (var i = 0; i < count; i++)
+        {
+            aggregator.AddTransaction(new DataStreamsTransactionInfo(id, (long)i, "cp"));
+        }
+
+        aggregator.ShouldFlushTransactions.Should().BeTrue();
     }
 
     private static DataStreamsAggregator CreateAggregatorWithData(Tracer tracer, long t1, long t2)

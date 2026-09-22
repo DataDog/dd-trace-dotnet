@@ -19,7 +19,7 @@
       "type": "WEAK_HASH",
       "hash": -788071420,
       "location": {
-        "path": "Samples.Deduplication.Program",
+        "class": "Samples.Deduplication.Program",
         "method": "ComputeHashNTimes"
       },
       "evidence": {

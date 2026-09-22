@@ -17,6 +17,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions;
 [DuckCopy]
 internal struct FunctionBindingsFeatureStruct
 {
+    public IDictionary<string, object?>? TriggerMetadata;
     public IDictionary<string, object?>? InputData;
 }
 

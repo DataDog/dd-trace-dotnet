@@ -10,7 +10,6 @@ using System.Reflection;
 using Datadog.Trace.Debugger.Expressions;
 using Datadog.Trace.Debugger.Instrumentation.Collections;
 using Datadog.Trace.Debugger.Snapshots;
-using Fnv1aHash = Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Internal.Hash;
 
 #nullable enable
 namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
@@ -29,13 +28,13 @@ namespace Datadog.Trace.Debugger.ExceptionAutoInstrumentation
             {
                 ClearNonRelevantChildNodes();
 
-                if (ActiveChildNodes?.Any() == true)
+                if (ActiveChildNodes?.Count > 0)
                 {
                     var firstChild = ActiveChildNodes.First();
                     return firstChild.LeaveSequenceHash;
                 }
 
-                return Fnv1aHash.Combine(Method.MetadataToken, Fnv1aHash.FnvOffsetBias);
+                return SimpleHash.Combine(Method.MetadataToken, SimpleHash.FnvOffsetBias);
             }
         }
 

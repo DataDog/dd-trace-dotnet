@@ -22,6 +22,7 @@
 
 #include <memory>
 
+class CoreLibModuleProvider;
 class IConfiguration;
 class SampleValueTypeProvider;
 class RawSampleTransformer;
@@ -36,6 +37,7 @@ public:
         ICorProfilerInfo4* pCorProfilerInfo,
         IManagedThreadList* pManagedThreadList,
         IFrameStore* pFrameStore,
+        CoreLibModuleProvider* pCoreLibModuleProvider,
         IConfiguration* pConfiguration,
         RawSampleTransformer* rawSampleTransformer,
         MetricsRegistry& metricsRegistry,
@@ -47,6 +49,10 @@ public:
 
     std::list<UpscalingInfo> GetInfos() override;
 
+    // Memory measurement
+    size_t GetMemorySize() const;
+    void LogMemoryBreakdown() const;
+
 private:
     struct ExceptionBucket
     {
@@ -55,6 +61,23 @@ private:
     };
 
 private:
+    struct MemoryStats
+    {
+        size_t baseSize;
+        size_t exceptionTypesMapSize;
+        size_t exceptionTypesCount;
+        size_t exceptionTypesBuckets;
+        size_t exceptionTypesStringsSize;
+        size_t samplerSize;
+
+        size_t GetTotal() const
+        {
+            return baseSize + exceptionTypesMapSize + exceptionTypesStringsSize + samplerSize;
+        }
+    };
+
+    MemoryStats ComputeMemoryStats() const;
+
     bool LoadExceptionMetadata();
     bool GetExceptionType(ClassID classId, std::string& exceptionType);
 
@@ -65,14 +88,16 @@ private:
     ICorProfilerInfo4* _pCorProfilerInfo;
     IManagedThreadList* _pManagedThreadList;
     IFrameStore* _pFrameStore;
+    CoreLibModuleProvider* _pCoreLibModuleProvider;
     COR_FIELD_OFFSET _messageFieldOffset;
     ULONG _stringLengthOffset;
     ULONG _stringBufferOffset;
-    ModuleID _mscorlibModuleId;
+    bool _isStringLayoutLoaded;
     ClassID _exceptionClassId;
     bool _loggedMscorlibError;
     std::unordered_map<ClassID, std::string> _exceptionTypes;
-    std::mutex _exceptionTypesLock;
+    // mutable to allow locking in const methods (e.g., GetMemorySize, LogMemoryBreakdown)
+    mutable std::mutex _exceptionTypesLock;
     GroupSampler<std::string> _sampler;
     IConfiguration const* const _pConfiguration;
     std::shared_ptr<CounterMetric> _exceptionsCountMetric;

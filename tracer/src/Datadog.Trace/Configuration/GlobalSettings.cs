@@ -92,8 +92,6 @@ namespace Datadog.Trace.Configuration
                 DatadogLogging.UseDefaultLevel();
             }
 
-            LibDatadog.Logging.Logger.Instance.SetLogLevel(debugEnabled: enabled);
-
             TelemetryFactory.Config.Record(ConfigurationKeys.DebugEnabled, enabled, ConfigurationOrigins.Code);
         }
 

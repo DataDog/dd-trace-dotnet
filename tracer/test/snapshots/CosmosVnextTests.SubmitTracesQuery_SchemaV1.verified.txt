@@ -217,7 +217,7 @@
     TraceId: Id_15,
     SpanId: Id_16,
     Name: cosmosdb.query,
-    Resource: Read dbs/db/colls/items/docs/Andersen.1,
+    Resource: Read dbs/db/colls/items/docs/?,
     Service: Samples.CosmosDb.Vnext,
     Type: sql,
     Tags: {
@@ -249,7 +249,7 @@
     TraceId: Id_17,
     SpanId: Id_18,
     Name: cosmosdb.query,
-    Resource: Read dbs/db/colls/items/docs/Wakefield.7,
+    Resource: Read dbs/db/colls/items/docs/?,
     Service: Samples.CosmosDb.Vnext,
     Type: sql,
     Tags: {

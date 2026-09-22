@@ -8,6 +8,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Datadog.Trace.Configuration.Telemetry;
+using Datadog.Trace.Util.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 
@@ -47,7 +48,7 @@ namespace Datadog.Trace.Configuration.ConfigurationSources
 
         private static JToken? Deserialize(string config)
         {
-            var jobject = JsonConvert.DeserializeObject(config) as JObject;
+            var jobject = JsonHelper.DeserializeObject(config) as JObject;
 
             if (jobject != null)
             {

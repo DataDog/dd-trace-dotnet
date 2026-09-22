@@ -86,9 +86,9 @@ internal unsafe class ICrashReport : Datadog.Trace.Tools.dd_dotnet.ICrashReport
             throw new System.ComponentModel.Win32Exception(result);
         }
     }
-    public int SetSignalInfo(int a0, nint a1)
+    public int SetSignalInfo(int a0, int a1)
     {
-        var func = (delegate* unmanaged[Stdcall]<IntPtr, int, nint, out int, int>)*(VTable + 6);
+        var func = (delegate* unmanaged[Stdcall]<IntPtr, int, int, out int, int>)*(VTable + 6);
         var result = func(_implementation, a0, a1, out var returnvalue);
         if (result != 0)
         {
@@ -140,6 +140,16 @@ internal unsafe class ICrashReport : Datadog.Trace.Tools.dd_dotnet.ICrashReport
     {
         var func = (delegate* unmanaged[Stdcall]<IntPtr, out int, int>)*(VTable + 11);
         var result = func(_implementation, out var returnvalue);
+        if (result != 0)
+        {
+            throw new System.ComponentModel.Win32Exception(result);
+        }
+        return returnvalue;
+    }
+    public int SetCrashMessage(nint a0)
+    {
+        var func = (delegate* unmanaged[Stdcall]<IntPtr, nint, out int, int>)*(VTable + 12);
+        var result = func(_implementation, a0, out var returnvalue);
         if (result != 0)
         {
             throw new System.ComponentModel.Win32Exception(result);

@@ -4,13 +4,13 @@
 // </copyright>
 using System;
 using System.Diagnostics;
-using System.Net;
-using System.Net.Sockets;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Demos.Util;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.Extensions.Configuration;
+using Microsoft.AspNetCore.Hosting.Server;
+using Microsoft.AspNetCore.Hosting.Server.Features;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
@@ -38,6 +38,8 @@ namespace BuggyBits
         GetAwaiterGetResult = 1024, // using GetAwaiter().GetResult() instead of await
         UseResultProperty = 2048, // using Result property instead of GetAwaiter().GetResult()
         ShortLived = 4096,      // short lived threads
+        EndpointProfiling = 8192, // lightweight CPU work for endpoint profiling tests
+        Allocations = 16384, // allocate configured arrays
     }
 
     public class Program
@@ -52,39 +54,21 @@ namespace BuggyBits
 
             EnvironmentInfo.PrintDescriptionToConsole();
 
-            ParseCommandLine(args, out _disableLogs, out var timeout, out var iterations, out var scenario, out var nbIdleThreads);
+            ParseCommandLine(args, out _disableLogs, out var timeout, out var iterations, out var scenario, out var nbIdleThreads, out var allocationCount, out var allocationSize);
 
             using (var host = CreateHostBuilder(args).Build())
             {
-                // ASP.NET Core accepts listening url via what is set by Visual Studio
-                // (from the launchsettings.json). It could be overriden by --Urls
-                // on the command line
-                var configuration = host.Services.GetService(typeof(IConfiguration)) as IConfiguration;
-                var rootUrl = configuration["urls"];
-
-                // otherwise, use the default ASP.NET Core value
-                if (string.IsNullOrEmpty(rootUrl))
-                {
-                    rootUrl = "http://localhost:5000";
-                }
-
-                // avoid race condition in CI to find an available port
-                int port = -1;
-                if (int.TryParse(rootUrl.Substring(rootUrl.LastIndexOf(':') + 1), out port))
-                {
-                    port = GetValidPort(port, 3);
-                    if (port != -1)
-                    {
-                        rootUrl = rootUrl.Substring(0, rootUrl.LastIndexOf(':') + 1) + port;
-                    }
-                }
-
-                WriteLine($"Listening to {rootUrl}");
-
                 var cts = new CancellationTokenSource();
-                using (var selfInvoker = new SelfInvoker(cts.Token, scenario, nbIdleThreads, _disableLogs))
+                using (var selfInvoker = new SelfInvoker(cts.Token, scenario, nbIdleThreads, allocationCount, allocationSize, _disableLogs))
                 {
                     await host.StartAsync();
+
+                    var server = (IServer)host.Services.GetService(typeof(IServer));
+                    var addressFeature = server.Features.Get<IServerAddressesFeature>();
+                    var rootUrl = addressFeature.Addresses.FirstOrDefault() ?? "http://localhost:5000";
+
+                    WriteLine($"Listening to {rootUrl}");
+                    Console.WriteLine($"##LISTENING_URL:{rootUrl}##");
 
                     WriteLine();
                     WriteLine($"Started at {DateTime.UtcNow}.");
@@ -147,64 +131,6 @@ namespace BuggyBits
             WriteLine($"The application exited after: {sw.Elapsed} at {DateTime.UtcNow}");
         }
 
-        public static int GetOpenPort()
-        {
-            TcpListener tcpListener = null;
-            try
-            {
-                tcpListener = new TcpListener(IPAddress.Loopback, 0);
-                tcpListener.Start();
-                var port = ((IPEndPoint)tcpListener.LocalEndpoint).Port;
-                return port;
-            }
-            finally
-            {
-                tcpListener?.Stop();
-            }
-        }
-
-        private static int GetValidPort(int initialPort, int retries)
-        {
-            var port = initialPort;
-            bool isPortValid = false;
-            while (true)
-            {
-                // seems like we can't reuse a listener if it fails to start,
-                // so create a new listener each time we retry
-                var listener = new HttpListener();
-                listener.Prefixes.Add($"http://127.0.0.1:{port}/");
-                listener.Prefixes.Add($"http://localhost:{port}/");
-
-                try
-                {
-                    listener.Start();
-
-                    // success
-                    isPortValid = true;
-                    break;
-                }
-                catch (HttpListenerException) when (retries > 0)
-                {
-                    // only catch the exception if there are retries left
-                    port = GetOpenPort();
-                    retries--;
-                }
-                finally
-                {
-                    listener.Close();
-                }
-            }
-
-            if (isPortValid)
-            {
-                return port;
-            }
-            else
-            {
-                return -1; // no valid port found
-            }
-        }
-
         public static IHostBuilder CreateHostBuilder(string[] args) =>
             Host.CreateDefaultBuilder(args)
                 .ConfigureWebHostDefaults(webBuilder =>
@@ -219,13 +145,15 @@ namespace BuggyBits
                     }
                 });
 
-        private static void ParseCommandLine(string[] args, out bool disableLogs, out TimeSpan timeout, out int iterations, out Scenario scenario, out int nbIdleThreads)
+        private static void ParseCommandLine(string[] args, out bool disableLogs, out TimeSpan timeout, out int iterations, out Scenario scenario, out int nbIdleThreads, out int allocationCount, out int allocationSize)
         {
             // by default, need interactive action to exit and string.Concat scenario
             timeout = TimeSpan.MinValue;
             iterations = 0;
             scenario = Scenario.StringConcat;
             nbIdleThreads = 0;
+            allocationCount = 360_000;
+            allocationSize = 64;
             disableLogs = false;
 
             for (int i = 0; i < args.Length; i++)
@@ -283,6 +211,28 @@ namespace BuggyBits
                     if (nbThreadsArgument >= args.Length || !int.TryParse(args[nbThreadsArgument], out nbIdleThreads))
                     {
                         throw new InvalidOperationException($"Invalid or missing count after --with-idle-threads");
+                    }
+                }
+                else
+                if ("--allocation-count".Equals(arg, StringComparison.OrdinalIgnoreCase))
+                {
+                    var allocationCountArgument = i + 1;
+                    if (allocationCountArgument >= args.Length ||
+                        !int.TryParse(args[allocationCountArgument], out allocationCount) ||
+                        allocationCount <= 0)
+                    {
+                        throw new InvalidOperationException("Invalid or missing positive count after --allocation-count");
+                    }
+                }
+                else
+                if ("--allocation-size".Equals(arg, StringComparison.OrdinalIgnoreCase))
+                {
+                    var allocationSizeArgument = i + 1;
+                    if (allocationSizeArgument >= args.Length ||
+                        !int.TryParse(args[allocationSizeArgument], out allocationSize) ||
+                        allocationSize <= 0)
+                    {
+                        throw new InvalidOperationException("Invalid or missing positive size after --allocation-size");
                     }
                 }
             }

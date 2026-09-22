@@ -6,10 +6,13 @@
 #nullable enable
 
 using System;
+using System.Collections.Generic;
+using System.Globalization;
 using System.Reflection;
 using System.Threading;
 using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.Net;
+using Datadog.Trace.Ci.Tagging;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
@@ -19,6 +22,33 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing;
 internal static class Common
 {
     internal static readonly IDatadogLogger Log = TestOptimization.Instance.Log;
+
+    internal static void ApplyRetryTags(TestSpanTags tags, bool isRetry, TestRetryMode retryMode)
+    {
+        if (!isRetry || retryMode == TestRetryMode.None)
+        {
+            tags.TestIsRetry = null;
+            tags.TestRetryReason = null;
+            return;
+        }
+
+        tags.TestIsRetry = "true";
+        tags.TestRetryReason = retryMode switch
+        {
+            TestRetryMode.EarlyFlakeDetection => TestTags.TestRetryReasonEfd,
+            TestRetryMode.AutomaticTestRetry => TestTags.TestRetryReasonAtr,
+            TestRetryMode.AttemptToFix => TestTags.TestRetryReasonAttemptToFix,
+            _ => null
+        };
+    }
+
+    internal static bool IsDisabledByTestManagement(TestOptimizationClient.TestManagementResponseTestPropertiesAttributes? testManagementProperties)
+        => testManagementProperties is { Disabled: true, AttemptToFix: false };
+
+    internal static bool CanApplyItrSkip(TestOptimizationClient.TestManagementResponseTestPropertiesAttributes? testManagementProperties)
+        => testManagementProperties is not { Quarantined: true } &&
+           testManagementProperties is not { AttemptToFix: true } &&
+           !IsDisabledByTestManagement(testManagementProperties);
 
     internal static string GetParametersValueData(object? paramValue)
     {
@@ -54,30 +84,94 @@ internal static class Common
         return paramValue.ToString() ?? "(null)";
     }
 
-    internal static bool ShouldSkip(string testSuite, string testName, object[]? testMethodArguments, ParameterInfo[]? methodParameters)
+    internal static TestParameters CreateTestParameters(object[]? testMethodArguments, ParameterInfo[]? methodParameters, string? metadataTestName, bool useParameterIndexForUnnamedParameters = false)
     {
+        var testParameters = new TestParameters
+        {
+            Metadata = new Dictionary<string, object?>(),
+            Arguments = new Dictionary<string, object?>()
+        };
+
+        if (metadataTestName is not null)
+        {
+            testParameters.Metadata[TestTags.MetadataTestName] = metadataTestName;
+        }
+
+        if (methodParameters is null)
+        {
+            return testParameters;
+        }
+
+        for (var i = 0; i < methodParameters.Length; i++)
+        {
+            var key = methodParameters[i].Name ?? (useParameterIndexForUnnamedParameters ? i.ToString(CultureInfo.InvariantCulture) : string.Empty);
+            testParameters.Arguments[key] = testMethodArguments is not null && i < testMethodArguments.Length
+                                                ? GetParametersValueData(testMethodArguments[i])
+                                                : "(default)";
+        }
+
+        return testParameters;
+    }
+
+    internal static bool ShouldSkip(string testSuite, string testName, object[]? testMethodArguments, ParameterInfo[]? methodParameters, string? moduleName = null, string? metadataTestName = null, bool allowParametersMetadataMismatch = false, bool includeMetadataTestNameInFingerprint = true, bool useParameterIndexForUnnamedParameters = false)
+        => ShouldSkip(testSuite, testName, testMethodArguments, methodParameters, out _, moduleName, metadataTestName, allowParametersMetadataMismatch, includeMetadataTestNameInFingerprint, useParameterIndexForUnnamedParameters);
+
+    internal static bool ShouldSkip(string testSuite, string testName, object[]? testMethodArguments, ParameterInfo[]? methodParameters, out SkippableTest? skippableTest, string? moduleName = null, string? metadataTestName = null, bool allowParametersMetadataMismatch = false, bool includeMetadataTestNameInFingerprint = true, bool useParameterIndexForUnnamedParameters = false)
+    {
+        skippableTest = null;
         var currentContext = SynchronizationContext.Current;
         try
         {
             SynchronizationContext.SetSynchronizationContext(null);
-            var skippableTests = TestOptimization.Instance.SkippableFeature?.GetSkippableTestsFromSuiteAndName(testSuite, testName) ?? [];
+            moduleName ??= TestModule.Current?.Tags.Bundle ?? TestModule.Current?.Tags.Module;
+            var skippableTests = GetSkippableTestsFromSuiteAndNames(testSuite, testName, moduleName, metadataTestName);
             if (skippableTests.Count > 0)
             {
-                foreach (var skippableTest in skippableTests)
+                TestParameters? localTestParameters = null;
+                string? localTestParametersFingerprint = null;
+                foreach (var candidate in skippableTests)
                 {
-                    var parameters = skippableTest.GetParameters();
+                    TestParameters? parameters = null;
+                    if (!StringUtil.IsNullOrWhiteSpace(candidate.RawParameters) &&
+                        !candidate.TryGetParameters(out parameters))
+                    {
+                        Log.Debug("Common: Ignoring a skippable test candidate because its parameters are not valid JSON.");
+                        continue;
+                    }
+
+                    if (parameters?.TryGetFingerprint(out var expectedFingerprint) == true)
+                    {
+                        localTestParameters ??= CreateTestParameters(
+                            testMethodArguments,
+                            methodParameters,
+                            includeMetadataTestNameInFingerprint ? metadataTestName : null,
+                            useParameterIndexForUnnamedParameters);
+                        localTestParametersFingerprint ??= localTestParameters.GetFingerprint();
+                        if (string.Equals(expectedFingerprint, localTestParametersFingerprint, StringComparison.Ordinal))
+                        {
+                            return CanSkipForCoverage(candidate, moduleName, out skippableTest);
+                        }
+
+                        continue;
+                    }
 
                     // Same test name and no parameters
                     if ((parameters?.Arguments is null || parameters.Arguments.Count == 0) &&
-                        (testMethodArguments is null || testMethodArguments.Length == 0))
+                        (testMethodArguments is null || testMethodArguments.Length == 0) &&
+                        ParametersMetadataMatches(parameters, metadataTestName, allowParametersMetadataMismatch))
                     {
-                        return true;
+                        return CanSkipForCoverage(candidate, moduleName, out skippableTest);
                     }
 
                     if (parameters?.Arguments is not null &&
                         testMethodArguments is not null &&
                         methodParameters is not null)
                     {
+                        if (parameters.Arguments.Count != methodParameters.Length)
+                        {
+                            continue;
+                        }
+
                         var matchSignature = true;
                         for (var i = 0; i < methodParameters.Length; i++)
                         {
@@ -107,7 +201,10 @@ internal static class Common
 
                         if (matchSignature)
                         {
-                            return true;
+                            if (ParametersMetadataMatches(parameters, metadataTestName, allowParametersMetadataMismatch))
+                            {
+                                return CanSkipForCoverage(candidate, moduleName, out skippableTest);
+                            }
                         }
                     }
                 }
@@ -119,6 +216,123 @@ internal static class Common
         }
 
         return false;
+    }
+
+    private static List<SkippableTest> GetSkippableTestsFromSuiteAndNames(string testSuite, string testName, string? moduleName, string? metadataTestName)
+    {
+        var skippableFeature = TestOptimization.Instance.SkippableFeature;
+        if (skippableFeature is null)
+        {
+            return [];
+        }
+
+        var skippableTests = new List<SkippableTest>();
+        var seen = new HashSet<SkippableTest>();
+        AddSkippableTests(skippableTests, seen, skippableFeature.GetSkippableTestsFromSuiteAndName(testSuite, testName, moduleName));
+        if (!StringUtil.IsNullOrEmpty(metadataTestName) &&
+            !metadataTestName!.Equals(testName, StringComparison.Ordinal))
+        {
+            AddSkippableTests(skippableTests, seen, skippableFeature.GetSkippableTestsFromSuiteAndName(testSuite, metadataTestName, moduleName));
+        }
+
+        return skippableTests;
+    }
+
+    private static void AddSkippableTests(List<SkippableTest> skippableTests, HashSet<SkippableTest> seen, IList<SkippableTest>? candidates)
+    {
+        if (candidates is null)
+        {
+            return;
+        }
+
+        foreach (var candidate in candidates)
+        {
+            if (seen.Add(candidate))
+            {
+                skippableTests.Add(candidate);
+            }
+        }
+    }
+
+    private static bool ParametersMetadataMatches(TestParameters? parameters, string? metadataTestName, bool allowParametersMetadataMismatch)
+    {
+        if (parameters?.Metadata is null ||
+            !parameters.Metadata.TryGetValue(TestTags.MetadataTestName, out var expectedMetadataTestName))
+        {
+            return true;
+        }
+
+        var expectedTestName = expectedMetadataTestName?.ToString();
+        if (StringUtil.IsNullOrEmpty(expectedTestName))
+        {
+            return true;
+        }
+
+        if (allowParametersMetadataMismatch && StringUtil.IsNullOrEmpty(metadataTestName))
+        {
+            return false;
+        }
+
+        return !StringUtil.IsNullOrEmpty(metadataTestName) &&
+               string.Equals(expectedTestName, metadataTestName, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// Checks whether an ITR candidate can be skipped without making the active coverage report inaccurate.
+    /// </summary>
+    /// <param name="skippableTest">Backend skippable candidate matched to the current framework test.</param>
+    /// <param name="moduleName">Local test module or bundle that is about to skip the test.</param>
+    /// <param name="matchedSkippableTest">Backend candidate matched to the current framework test.</param>
+    /// <returns>True when the test can be skipped safely.</returns>
+    private static bool CanSkipForCoverage(SkippableTest skippableTest, string? moduleName, out SkippableTest? matchedSkippableTest)
+    {
+        matchedSkippableTest = skippableTest;
+        var skippableFeature = TestOptimization.Instance.SkippableFeature;
+        if (skippableFeature?.IsCoverageBackfillRequired() != true)
+        {
+            return true;
+        }
+
+        if (!skippableFeature.CanSkipWithCoverageBackfill(skippableTest, moduleName, out var reason))
+        {
+            Log.Debug("Common: Test cannot be skipped because coverage backfill is required but unsafe: {Reason}", reason);
+            return false;
+        }
+
+        return true;
+    }
+
+    /// <summary>
+    /// Records coverage-backfill state once a framework integration has committed to skipping a test by ITR.
+    /// </summary>
+    /// <param name="moduleName">Local test module or bundle that skipped the test, or null to use the current module.</param>
+    internal static void RecordTestSkipCoverageBackfill(string? moduleName = null)
+    {
+        var skippableFeature = TestOptimization.Instance.SkippableFeature;
+        if (skippableFeature?.IsCoverageBackfillRequired() != true)
+        {
+            return;
+        }
+
+        moduleName ??= TestModule.Current?.Tags.Bundle ?? TestModule.Current?.Tags.Module;
+        skippableFeature.RecordTestSkipCoverageBackfill(moduleName);
+    }
+
+    /// <summary>
+    /// Records coverage-backfill state for the exact backend candidate that a framework actually skipped by ITR.
+    /// </summary>
+    /// <param name="skippableTest">Backend skippable candidate that was skipped.</param>
+    /// <param name="moduleName">Local test module or bundle that skipped the test, or null to use the current module.</param>
+    internal static void RecordTestSkipCoverageBackfill(SkippableTest skippableTest, string? moduleName)
+    {
+        var skippableFeature = TestOptimization.Instance.SkippableFeature;
+        if (skippableFeature?.IsCoverageBackfillRequired() != true)
+        {
+            return;
+        }
+
+        moduleName ??= TestModule.Current?.Tags.Bundle ?? TestModule.Current?.Tags.Module;
+        skippableFeature.RecordTestSkipCoverageBackfill(skippableTest, moduleName);
     }
 
     internal static int GetNumberOfExecutionsForDuration(TimeSpan duration)
@@ -187,8 +401,7 @@ internal static class Common
             {
                 if (isRetry)
                 {
-                    testTags.TestIsRetry = "true";
-                    testTags.TestRetryReason = "efd";
+                    ApplyRetryTags(testTags, isRetry, TestRetryMode.EarlyFlakeDetection);
                 }
                 else
                 {
@@ -209,9 +422,7 @@ internal static class Common
         var flakyRetryFeature = TestOptimization.Instance.FlakyRetryFeature?.Enabled == true;
         if (flakyRetryFeature && isRetry)
         {
-            var testTags = test.GetTags();
-            testTags.TestIsRetry = "true";
-            testTags.TestRetryReason = "atr";
+            ApplyRetryTags(test.GetTags(), isRetry, TestRetryMode.AutomaticTestRetry);
         }
 
         return flakyRetryFeature;
@@ -243,8 +454,7 @@ internal static class Common
                 testTags.IsAttemptToFix = "true";
                 if (isRetry)
                 {
-                    testTags.TestIsRetry = "true";
-                    testTags.TestRetryReason = "attempt_to_fix";
+                    ApplyRetryTags(testTags, isRetry, TestRetryMode.AttemptToFix);
                 }
             }
 
@@ -272,5 +482,50 @@ internal static class Common
                 Log.Warning<long, long, int>("EFD: The number of new tests goes above the Faulty Session Threshold. Disabling early flake detection for this session. [NewCases={NewCases}/TotalCases={TotalCases} | {FaltyThreshold}%]", nTestCases, tTestCases, faultySessionThreshold);
             }
         }
+    }
+
+    /// <summary>
+    /// Calculates the final status for a test based on execution results and test management tags.
+    /// Priority order (first match wins):
+    /// 1. Quarantined/disabled -> skip (always mask to skip)
+    /// 2. For ATF tests: any execution failed -> fail (flaky test = fix didn't work)
+    /// 3. Any execution passed -> pass
+    /// 4. Skip/inconclusive AND no pass -> skip
+    /// 5. All executions failed -> fail
+    /// </summary>
+    /// <param name="anyExecutionPassed">True if any execution (initial or retry) passed.</param>
+    /// <param name="anyExecutionFailed">True if any execution (initial or retry) failed.</param>
+    /// <param name="isSkippedOrInconclusive">True if the current/last execution was skip or inconclusive.</param>
+    /// <param name="testTags">The test tags to check for quarantine/disabled/ATF status.</param>
+    /// <returns>The final status string: "pass", "fail", or "skip".</returns>
+    internal static string CalculateFinalStatus(bool anyExecutionPassed, bool anyExecutionFailed, bool isSkippedOrInconclusive, TestSpanTags? testTags)
+    {
+        // Priority 1: Quarantined/disabled tests always mask to skip
+        if (testTags?.IsQuarantined == "true" || testTags?.IsDisabled == "true")
+        {
+            return TestTags.StatusSkip;
+        }
+
+        // Priority 2: For ATF tests, any failure means fix didn't work (test is still flaky)
+        // This must be checked BEFORE anyPassed for ATF tests
+        if (testTags?.IsAttemptToFix == "true" && anyExecutionFailed)
+        {
+            return TestTags.StatusFail;
+        }
+
+        // Priority 3: Any execution passed -> pass (pass takes precedence over skip)
+        if (anyExecutionPassed)
+        {
+            return TestTags.StatusPass;
+        }
+
+        // Priority 4: Skip/inconclusive AND no pass -> skip
+        if (isSkippedOrInconclusive)
+        {
+            return TestTags.StatusSkip;
+        }
+
+        // Priority 5: All executions failed -> fail
+        return TestTags.StatusFail;
     }
 }

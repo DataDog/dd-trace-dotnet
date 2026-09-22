@@ -3,17 +3,14 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-#if NET6_0_OR_GREATER
+#nullable enable
+
 // Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 
 using System;
-using System.Buffers;
-using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-
-#nullable enable
 
 namespace Datadog.Trace.Util
 {
@@ -236,6 +233,15 @@ namespace Datadog.Trace.Util
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void AppendAsLowerInvariant(string? value)
+        {
+            if (value is not null)
+            {
+                AppendAsLowerInvariant(value.AsSpan());
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void AppendAsLowerInvariant(scoped ReadOnlySpan<char> value)
         {
             int pos = _pos;
@@ -299,6 +305,7 @@ namespace Datadog.Trace.Util
             }
         }
 
+#if NET6_0_OR_GREATER
         internal void AppendSpanFormattable<T>(T value, string? format = null, IFormatProvider? provider = null)
             where T : ISpanFormattable
         {
@@ -311,6 +318,6 @@ namespace Datadog.Trace.Util
                 Append(value.ToString(format, provider));
             }
         }
+#endif
     }
 }
-#endif

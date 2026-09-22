@@ -18,15 +18,15 @@ using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Debugger.Upload;
 
-internal abstract class DebuggerUploadApiBase : IBatchUploadApi
+internal abstract class DebuggerUploadApiBase
 {
     protected const string DebuggerV1Endpoint = "debugger/v1/input";
 
     private readonly IApiRequestFactory _apiRequestFactory;
     private readonly IGitMetadataTagsProvider? _gitMetadataTagsProvider;
 
-    private string? _endpoint = null;
-    private string? _tags = null;
+    private string? _endpoint;
+    private string? _tags;
 
     protected DebuggerUploadApiBase(IApiRequestFactory apiRequestFactory, IGitMetadataTagsProvider? gitMetadataTagsProvider)
     {
@@ -37,10 +37,8 @@ internal abstract class DebuggerUploadApiBase : IBatchUploadApi
     protected string? Endpoint
     {
         get => _endpoint;
-        set => _endpoint = value;
+        set => Volatile.Write(ref _endpoint, value);
     }
-
-    public abstract Task<bool> SendBatchAsync(ArraySegment<byte> data);
 
     protected string? BuildUri()
     {

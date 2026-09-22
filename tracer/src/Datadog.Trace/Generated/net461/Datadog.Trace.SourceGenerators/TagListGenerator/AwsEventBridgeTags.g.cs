@@ -15,17 +15,10 @@ namespace Datadog.Trace.Tagging
     partial class AwsEventBridgeTags
     {
         // RuleNameBytes = MessagePack.Serialize("rulename");
-#if NETCOREAPP
-        private static ReadOnlySpan<byte> RuleNameBytes => new byte[] { 168, 114, 117, 108, 101, 110, 97, 109, 101 };
-#else
-        private static readonly byte[] RuleNameBytes = new byte[] { 168, 114, 117, 108, 101, 110, 97, 109, 101 };
-#endif
+        private static ReadOnlySpan<byte> RuleNameBytes => [168, 114, 117, 108, 101, 110, 97, 109, 101];
+
         // SpanKindBytes = MessagePack.Serialize("span.kind");
-#if NETCOREAPP
-        private static ReadOnlySpan<byte> SpanKindBytes => new byte[] { 169, 115, 112, 97, 110, 46, 107, 105, 110, 100 };
-#else
-        private static readonly byte[] SpanKindBytes = new byte[] { 169, 115, 112, 97, 110, 46, 107, 105, 110, 100 };
-#endif
+        private static ReadOnlySpan<byte> SpanKindBytes => [169, 115, 112, 97, 110, 46, 107, 105, 110, 100];
 
         public override string? GetTag(string key)
         {
@@ -53,7 +46,7 @@ namespace Datadog.Trace.Tagging
             }
         }
 
-        public override void EnumerateTags<TProcessor>(ref TProcessor processor)
+        public override void EnumerateTags<TProcessor>(ref TProcessor processor, bool openTelemetrySemanticsEnabled)
         {
             if (RuleName is not null)
             {
@@ -65,7 +58,7 @@ namespace Datadog.Trace.Tagging
                 processor.Process(new TagItem<string>("span.kind", SpanKind, SpanKindBytes));
             }
 
-            base.EnumerateTags(ref processor);
+            base.EnumerateTags(ref processor, openTelemetrySemanticsEnabled);
         }
 
         protected override void WriteAdditionalTags(System.Text.StringBuilder sb)

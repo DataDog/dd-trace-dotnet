@@ -1,0 +1,82 @@
+name: Auto bump smoke test docker images
+
+on:
+  schedule:
+    - cron: "0 0 * * 1" # Every Monday at midnight
+    - cron: "0 0 * * 4" # Every Thursday at midnight
+  workflow_dispatch:
+
+jobs:
+  bump_smoke_test_docker_images:
+    runs-on: windows-latest
+    environment: version-bump-env
+    permissions:
+      actions: read # read secrets
+      id-token: write # Required for dd-octo-sts authentication
+
+    steps:
+      - name: Support longpaths
+        run: git config --system core.longpaths true
+
+      - name: Get dd-octo-sts token
+        uses: DataDog/dd-octo-sts-action@c85802a58e202b7e764b5441e4378c76043c8108 # v1.0.5
+        id: octo-sts
+        with:
+          scope: DataDog/dd-trace-dotnet
+          policy: self.auto_bump_smoke_test_docker_images.create-pr
+
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          global-json-file: global.json
+
+      - name: "Regenerating docker image versions"
+        run: .\tracer\build.ps1 UpdateSmokeTestImageDigests --PackageVersionCooldownDays 2
+
+      - name: Read cooldown report
+        id: cooldown
+        if: always()
+        shell: pwsh
+        run: |
+          $report = ""
+          $reportPath = ".nuke/temp/smoke_test_image_cooldown_report.md"
+          if (Test-Path $reportPath) {
+            $report = Get-Content $reportPath -Raw
+          }
+          "report<<EOF" >> $env:GITHUB_OUTPUT
+          $report >> $env:GITHUB_OUTPUT
+          "EOF" >> $env:GITHUB_OUTPUT
+
+      - name: Create Pull Request
+        id: pr
+        uses: ./.github/actions/create-signed-pull-request
+        with:
+          token: ${{ steps.octo-sts.outputs.token }}
+          # The branch name is referenced in .azure-pipelines/ultimate-pipeline.yml
+          # (isDockerImageBumpPr) to force-enable the installer tests on this PR.
+          # Keep the two in sync if this ever changes.
+          branch: "bot/smoke-test-docker-image-bump"
+          commit-message: "[Smoke Test Docker Image Bump]"
+          base: master
+          title: "[Smoke Test Docker Image Bump] Updating docker image tags "
+          labels: "area:dependabot,area:test-apps,dependencies"
+          body: |
+            Updates the docker images used for smoke tests.
+
+            ${{ steps.cooldown.outputs.report }}
+
+      - name: Send Slack notification about generating failure
+        if: failure()
+        uses: slackapi/slack-github-action@dcb1066f776dd043e64d0e8ba94ca15cc7e1875d # v4.0.0
+        with:
+          # This data can be any valid JSON from a previous step in the GitHub Action
+          payload: |
+            {
+              "github_url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}",
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL_GENERATEPACKAGEVERSIONS }}

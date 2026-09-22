@@ -8,11 +8,16 @@
 
   <ItemGroup>
     <Compile Include="..\Samples.AspNetCoreMvc21\Controllers\**\HomeController.cs" Link="Controllers\%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="..\Samples.AspNetCoreMvc21\Controllers\**\OtelBaggageController.cs" Link="Controllers\%(RecursiveDir)%(Filename)%(Extension)" />
     <Compile Include="..\Samples.AspNetCoreMvc21\Shared\**\*.*" Link="Shared\%(RecursiveDir)%(Filename)%(Extension)" />
     <Content Include="..\Samples.AspNetCoreMvc21\Views\**\*.*" Link="Views\%(RecursiveDir)%(Filename)%(Extension)" />
   </ItemGroup>
 
   <ItemGroup>
     <Content Include="..\Samples.AspNetCoreMvc21\web.config" Link="web.config" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="OpenTelemetry.Api" Version="1.10.0" />
   </ItemGroup>
 </Project>

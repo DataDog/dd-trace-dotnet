@@ -45,8 +45,11 @@ elseif (CMAKE_SYSTEM_PROCESSOR STREQUAL armv7l OR CMAKE_SYSTEM_PROCESSOR STREQUA
     SET(ISARM true)
 endif()
 
-# Out of source build directory
-SET(OUTPUT_BUILD_DIR ${CMAKE_CURRENT_SOURCE_DIR}/_build)
+# Out of source build directory. Matches BuildOutputRoot in
+# profiler/Directory.Build.props so MSBuild and CMake-built profiler
+# bits land in the same tree (where PublishNativeWrapper / PublishProfilerLinux
+# / ValidateNativeProfilerGlibcCompatibility expect to find them).
+SET(OUTPUT_BUILD_DIR ${CMAKE_SOURCE_DIR}/artifacts/profiler-build)
 
 if (DEFINED RUN_ANALYSIS AND NOT RUN_ANALYSIS EQUAL 0)
     SET(CMAKE_EXPORT_COMPILE_COMMANDS 1)

@@ -41,6 +41,12 @@ namespace Datadog.Trace.TestHelpers.Stats
         [Key("Service")]
         public string Service { get; set; }
 
+        [Key("GitCommitSha")]
+        public string GitCommitSha { get; set; }
+
+        [Key("TracerDdTags")]
+        public string[] TracerDdTags { get; set; }
+
         [Key("Stats")]
         public List<MockClientStatsBucket> Stats { get; set; }
     }

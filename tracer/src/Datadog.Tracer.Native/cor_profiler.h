@@ -62,8 +62,10 @@ private:
     bool corlib_module_loaded = false;
     ModuleID corlib_module_id = 0;
     AppDomainID corlib_app_domain_id = 0;
-    ModuleID managed_profiler_domain_neutral_module_id = 0;
-    std::unordered_map<AppDomainID, ModuleID> managed_profiler_loaded_app_domains;
+    // Written and read from different CLR callback threads.
+    std::atomic<ModuleID> managed_profiler_domain_neutral_module_id{0};
+    // Uses a dedicated lock because these accesses do not all happen under module_ids.
+    Synchronized<std::unordered_map<AppDomainID, ModuleID>> managed_profiler_loaded_app_domains;
     std::unordered_set<AppDomainID> first_jit_compilation_app_domains;
     bool is_desktop_iis = false;
 
@@ -208,14 +210,14 @@ public:
     //
     // Tracer Integration methods #2
     //
-    long RegisterCallTargetDefinitions(WCHAR* id, CallTargetDefinition3* items, int size, UINT32 enabledCategories, UINT32 platform);
+    long RegisterCallTargetDefinitions(WCHAR* id, CallTargetDefinition3* items, size_t size, UINT32 enabledCategories, UINT32 platform);
     long EnableCallTargetDefinitions(UINT32 enabledCategories);
     long DisableCallTargetDefinitions(UINT32 disabledCategories);
 
     //
     // Register Aspects into Dataflow
     //
-    int RegisterIastAspects(WCHAR** aspects, int aspectsLength, UINT32 enabledCategories = 0xFFFFFFFF, UINT32 platform = 0xFFFFFFFF);
+    int RegisterIastAspects(WCHAR** aspects, size_t aspectsLength, UINT32 enabledCategories = 0xFFFFFFFF, UINT32 platform = 0xFFFFFFFF);
 
     //
     // Live Debugger Integration methods

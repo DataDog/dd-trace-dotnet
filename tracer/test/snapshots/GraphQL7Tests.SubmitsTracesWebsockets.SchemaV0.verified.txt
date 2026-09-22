@@ -118,7 +118,8 @@
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server,
-      _dd.base_service: Samples.GraphQL7
+      _dd.base_service: Samples.GraphQL7,
+      _dd.svc_src: graphql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -141,7 +142,8 @@
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server,
-      _dd.base_service: Samples.GraphQL7
+      _dd.base_service: Samples.GraphQL7,
+      _dd.svc_src: graphql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -162,7 +164,8 @@
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server,
-      _dd.base_service: Samples.GraphQL7
+      _dd.base_service: Samples.GraphQL7,
+      _dd.svc_src: graphql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -185,15 +188,15 @@
 errors: [
 {
 "message": "This API purposely throws a NotImplementedException",
-"path": "System.Object[]",
+"path": "throwNotImplementedException",
 "code": "NOT_IMPLEMENTED",
 "locations": [
 {
 "line": 1,
 "column": 32
-},
+}
 ]
-},
+}
 ]
 ,
       error.type: GraphQL.ExecutionError,
@@ -204,7 +207,8 @@ errors: [
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server,
-      _dd.base_service: Samples.GraphQL7
+      _dd.base_service: Samples.GraphQL7,
+      _dd.svc_src: graphql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -232,7 +236,7 @@ errors: [
 {
 "line": 1,
 "column": 24
-},
+}
 ]
 },
 {
@@ -242,9 +246,9 @@ errors: [
 {
 "line": 1,
 "column": 35
-},
+}
 ]
-},
+}
 ]
 ,
       error.type: GraphQL.Validation.ValidationError,
@@ -253,7 +257,8 @@ errors: [
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server,
-      _dd.base_service: Samples.GraphQL7
+      _dd.base_service: Samples.GraphQL7,
+      _dd.svc_src: graphql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -274,7 +279,8 @@ errors: [
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server,
-      _dd.base_service: Samples.GraphQL7
+      _dd.base_service: Samples.GraphQL7,
+      _dd.svc_src: graphql
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -297,7 +303,8 @@ errors: [
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server,
-      _dd.base_service: Samples.GraphQL7
+      _dd.base_service: Samples.GraphQL7,
+      _dd.svc_src: graphql
     },
     Metrics: {
       _dd.top_level: 1.0

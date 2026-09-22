@@ -39,7 +39,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
                 {
                     if (IsAllowedVariable(variable.Key))
                     {
-                        variableLine.Append(variable.Key).Append("=").AppendLine(variable.Value);
+                        variableLine.Append(variable.Key).Append('=').AppendLine(variable.Value);
                     }
                 }
 

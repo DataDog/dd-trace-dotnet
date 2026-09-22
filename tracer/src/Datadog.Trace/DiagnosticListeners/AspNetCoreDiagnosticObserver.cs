@@ -7,13 +7,13 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Coordinator;
 using Datadog.Trace.AppSec.Waf;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.Http;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Debugger;
 using Datadog.Trace.Debugger.SpanCodeOrigin;
@@ -22,6 +22,7 @@ using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Iast;
 using Datadog.Trace.Logging;
+using Datadog.Trace.OpenTelemetry;
 using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Tagging;
@@ -50,7 +51,9 @@ namespace Datadog.Trace.DiagnosticListeners
         private const string HttpRequestInOperationName = "aspnet_core.request";
         private const string MvcOperationName = "aspnet_core_mvc.request";
 
+#if NETCOREAPP
         private static readonly int PrefixLength = "Microsoft.AspNetCore.".Length;
+#endif
 
         private static readonly Type EndpointFeatureType =
             Assembly.GetAssembly(typeof(RouteValueDictionary))
@@ -301,12 +304,7 @@ namespace Datadog.Trace.DiagnosticListeners
             HttpContext httpContext,
             HttpRequest request)
         {
-            // Create a child span for the MVC action
-            var mvcSpanTags = new AspNetCoreMvcTags();
-            var mvcScope = tracer.StartActiveInternal(MvcOperationName, tags: mvcSpanTags);
-            tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
-            var span = mvcScope.Span;
-            span.Type = SpanTypes.Web;
+            var otelSemanticsEnabled = tracer.Settings.OtelSemanticsEnabled;
 
             // StartMvcCoreSpan is only called with new route names, so parent tags are always AspNetCoreEndpointTags
             var rootSpan = trackingFeature.RootScope.Span;
@@ -370,42 +368,66 @@ namespace Datadog.Trace.DiagnosticListeners
 
                 if (routeTemplate is not null)
                 {
-                    // If we have a route, overwrite the existing resource name
-                    var resourcePathName = AspNetCoreResourceNameHelper.SimplifyRouteTemplate(
-                        routeTemplate,
-                        typedArg.RouteData.Values,
-                        areaName: areaName,
-                        controllerName: controllerName,
-                        actionName: actionName,
-                        expandRouteParameters: tracer.Settings.ExpandRouteTemplatesEnabled);
+                    if (otelSemanticsEnabled)
+                    {
+                        // The OTel span name must be "{method} {http.route}", so use the route verbatim
+                        // (as stored by ASP.NET Core), instead of lower-casing it like the Datadog semantics do.
+                        aspNetRoute = HttpSemanticConventions.GetHttpRoute(routeTemplate.TemplateText);
+                        resourceName = $"{HttpSemanticConventions.GetResourceName(rootSpanTags.HttpMethod)} {aspNetRoute}";
+                    }
+                    else
+                    {
+                        aspNetRoute = routeTemplate.TemplateText.ToLowerInvariant();
 
-                    resourceName = $"{rootSpanTags.HttpMethod} {request.PathBase.ToUriComponent()}{resourcePathName}";
+                        // If we have a route, overwrite the existing resource name
+                        var resourcePathName = AspNetCoreResourceNameHelper.SimplifyRouteTemplate(
+                            routeTemplate,
+                            typedArg.RouteData.Values,
+                            areaName: areaName,
+                            controllerName: controllerName,
+                            actionName: actionName,
+                            expandRouteParameters: tracer.Settings.ExpandRouteTemplatesEnabled);
 
-                    aspNetRoute = routeTemplate?.TemplateText.ToLowerInvariant();
+                        resourceName = $"{rootSpanTags.HttpMethod} {request.PathBase.ToUriComponent()}{resourcePathName}";
+                    }
                 }
             }
 
             // mirror the parent if we couldn't extract a route for some reason
             // (and the parent is not using the placeholder resource name)
-            span.ResourceName = resourceName
-                             ?? (string.IsNullOrEmpty(rootSpan.ResourceName)
-                                     ? AspNetCoreRequestHandler.GetDefaultResourceName(httpContext.Request)
-                                     : rootSpan.ResourceName);
-
-            mvcSpanTags.AspNetCoreAction = actionName;
-            mvcSpanTags.AspNetCoreController = controllerName;
-            mvcSpanTags.AspNetCoreArea = areaName;
-            mvcSpanTags.AspNetCorePage = pagePath;
-            mvcSpanTags.AspNetCoreRoute = aspNetRoute;
+            var effectiveResourceName = resourceName
+                                     ?? (string.IsNullOrEmpty(rootSpan.ResourceName)
+                                             ? AspNetCoreRequestHandler.GetDefaultResourceName(httpContext.Request, otelSemanticsEnabled)
+                                             : rootSpan.ResourceName);
 
             if (!isUsingEndpointRouting && isFirstExecution)
             {
                 // If we're using endpoint routing or this is a pipeline re-execution,
                 // these will already be set correctly
                 rootSpanTags.AspNetCoreRoute = aspNetRoute;
-                rootSpan.ResourceName = span.ResourceName;
-                rootSpanTags.HttpRoute = aspNetRoute;
+                rootSpan.ResourceName = effectiveResourceName;
             }
+
+            if (otelSemanticsEnabled)
+            {
+                // The OpenTelemetry semantic conventions call for a single HTTP server span per request,
+                // so don't create the aspnet_core_mvc.request child span.
+                return null;
+            }
+
+            // Create a child span for the MVC action
+            var mvcSpanTags = new AspNetCoreMvcTags();
+            var mvcScope = tracer.StartActiveInternal(MvcOperationName, tags: mvcSpanTags);
+            tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
+            var span = mvcScope.Span;
+            span.Type = SpanTypes.Web;
+            span.ResourceName = effectiveResourceName;
+
+            mvcSpanTags.AspNetCoreAction = actionName;
+            mvcSpanTags.AspNetCoreController = controllerName;
+            mvcSpanTags.AspNetCoreArea = areaName;
+            mvcSpanTags.AspNetCorePage = pagePath;
+            mvcSpanTags.AspNetCoreRoute = aspNetRoute;
 
             return span;
         }
@@ -443,8 +465,7 @@ namespace Datadog.Trace.DiagnosticListeners
 
         private void OnRoutingEndpointMatched(object arg)
         {
-            if (!_tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId) ||
-                !_tracer.Settings.RouteTemplateResourceNamesEnabled)
+            if (!_tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId))
             {
                 return;
             }
@@ -453,14 +474,10 @@ namespace Datadog.Trace.DiagnosticListeners
              && typedArg.HttpContext is { } httpContext
              && httpContext.Items[AspNetCoreHttpRequestHandler.HttpContextTrackingKey] is AspNetCoreHttpRequestHandler.RequestTrackingFeature { RootScope.Span: { } rootSpan } trackingFeature)
             {
-                if (rootSpan.Tags is not AspNetCoreEndpointTags tags)
-                {
-                    // customer is using legacy resource names
-                    return;
-                }
-
+                var routeTemplateResourceNamesEnabled = _tracer.Settings.RouteTemplateResourceNamesEnabled;
                 var isFirstExecution = trackingFeature.IsFirstPipelineExecution;
-                if (isFirstExecution)
+                // Only modify tracking feature if _not_ using legacy feature names
+                if (isFirstExecution && routeTemplateResourceNamesEnabled)
                 {
                     trackingFeature.IsUsingEndpointRouting = true;
                     trackingFeature.IsFirstPipelineExecution = false;
@@ -511,22 +528,28 @@ namespace Datadog.Trace.DiagnosticListeners
                     return;
                 }
 
-                if (CurrentCodeOrigin is { Settings.CodeOriginForSpansEnabled: true })
+                var codeOrigin = CurrentCodeOrigin;
+                var isCodeOriginEnabled = codeOrigin is { Settings.CodeOriginForSpansEnabled: true };
+
+                if (isCodeOriginEnabled &&
+                    AspNetCoreEndpointCodeOrigin.TryGetTypeAndMethod(routeEndpoint.Value, out var endpointType, out var endpointMethod))
                 {
-                    var method = routeEndpoint?.RequestDelegate?.Method;
-                    if (method != null)
-                    {
-                        CurrentCodeOrigin?.SetCodeOriginForEntrySpan(rootSpan, routeEndpoint?.RequestDelegate?.Target?.GetType() ?? method.DeclaringType, method);
-                    }
-                    else if (routeEndpoint?.RequestDelegate?.TryDuckCast<Target>(out var target) == true && target is { Handler: { } handler })
-                    {
-                        Log.Debug("RouteEndpoint?.RequestDelegate?.Method is null. Extracting code origin from RouteEndpoint.RequestDelegate.Target.Handler {Handler}", handler);
-                        CurrentCodeOrigin?.SetCodeOriginForEntrySpan(rootSpan, handler.Target?.GetType(), handler.Method);
-                    }
-                    else
-                    {
-                        Log.Debug("RouteEndpoint?.RequestDelegate?.Method is null and could not extract handler from RouteEndpoint.RequestDelegate.Target");
-                    }
+                    codeOrigin.SetCodeOriginForEntrySpan(rootSpan, endpointType, endpointMethod);
+                }
+                else if (isCodeOriginEnabled)
+                {
+                    Log.Debug("Could not extract type and method for endpoint code origin. Endpoint: {EndpointDisplayName}", routeEndpoint.Value.DisplayName);
+                }
+
+                if (!routeTemplateResourceNamesEnabled)
+                {
+                    return;
+                }
+
+                if (rootSpan.Tags is not AspNetCoreEndpointTags tags)
+                {
+                    // customer is using legacy resource names
+                    return;
                 }
 
                 if (isFirstExecution)
@@ -537,7 +560,11 @@ namespace Datadog.Trace.DiagnosticListeners
                 var routePattern = routeEndpoint.Value.RoutePattern.DuckCast<RoutePattern>();
 
                 // Have to pass this value through to the MVC span, as not available there
-                var normalizedRoute = routePattern.RawText?.ToLowerInvariant();
+                // OpenTelemetry semantics should report the route verbatim (as stored by ASP.NET Core),
+                // while Datadog semantics lower-case it for consistency with the rest of the resource name.
+                var normalizedRoute = _tracer.Settings.OtelSemanticsEnabled
+                                           ? HttpSemanticConventions.GetHttpRoute(routePattern.RawText)
+                                           : routePattern.RawText?.ToLowerInvariant();
                 trackingFeature.Route = normalizedRoute;
 
                 var request = httpContext.Request.DuckCast<HttpRequestStruct>();
@@ -555,27 +582,39 @@ namespace Datadog.Trace.DiagnosticListeners
                                       ? raw as string
                                       : null;
 
-                var resourcePathName = AspNetCoreResourceNameHelper.SimplifyRoutePattern(
-                    routePattern,
-                    routeValues,
-                    areaName: areaName,
-                    controllerName: controllerName,
-                    actionName: actionName,
-                    _tracer.Settings.ExpandRouteTemplatesEnabled);
+                string resourceName;
+                if (_tracer.Settings.OtelSemanticsEnabled)
+                {
+                    // The OTel span name must be "{method} {http.route}", so use the route verbatim
+                    // instead of the Datadog simplified route pattern. If there's no route, fall back
+                    // to the method-only resource name instead of appending a null route.
+                    resourceName = normalizedRoute is not null
+                                       ? $"{HttpSemanticConventions.GetResourceName(tags.HttpMethod)} {normalizedRoute}"
+                                       : HttpSemanticConventions.GetResourceName(tags.HttpMethod);
+                }
+                else
+                {
+                    var resourcePathName = AspNetCoreResourceNameHelper.SimplifyRoutePattern(
+                        routePattern,
+                        routeValues,
+                        areaName: areaName,
+                        controllerName: controllerName,
+                        actionName: actionName,
+                        _tracer.Settings.ExpandRouteTemplatesEnabled);
 
-                var resourceName = $"{tags.HttpMethod} {request.PathBase.ToUriComponent()}{resourcePathName}";
+                    resourceName = $"{tags.HttpMethod} {request.PathBase.ToUriComponent()}{resourcePathName}";
+                }
 
                 // NOTE: We could set the controller/action/area tags on the parent span
                 // But instead we re-extract them in the MVC endpoint as these are MVC
                 // constructs. this is likely marginally less efficient, but simplifies the
                 // already complex logic in the MVC handler
-                // Overwrite the route in the parent span
                 trackingFeature.ResourceName = resourceName;
                 if (isFirstExecution)
                 {
+                    // Overwrite the route in the parent span
                     rootSpan.ResourceName = resourceName;
                     tags.AspNetCoreRoute = normalizedRoute;
-                    tags.HttpRoute = normalizedRoute;
                 }
 
                 _security.CheckPathParamsAndSessionId(httpContext, rootSpan, routeValues);
@@ -592,7 +631,8 @@ namespace Datadog.Trace.DiagnosticListeners
             var integrationEnabled = _tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId);
             var appsecEnabled = _security.AppsecEnabled;
             var iastEnabled = _iast.Settings.Enabled;
-            var isCodeOriginEnabled = CurrentCodeOrigin is { Settings.CodeOriginForSpansEnabled: true };
+            var codeOrigin = CurrentCodeOrigin;
+            var isCodeOriginEnabled = codeOrigin is { Settings.CodeOriginForSpansEnabled: true };
 
             if (!integrationEnabled && !appsecEnabled && !iastEnabled && !isCodeOriginEnabled)
             {
@@ -617,25 +657,32 @@ namespace Datadog.Trace.DiagnosticListeners
                     }
                     else
                     {
+                        // Returns null when OTel semantics are enabled: a single server span is generated
                         span = StartMvcCoreSpan(_tracer, trackingFeature, typedArg, httpContext, request);
+                    }
+                }
+
+                if (isCodeOriginEnabled && !codeOrigin.HasCodeOrigin(rootSpan))
+                {
+                    if (AspNetCoreEndpointCodeOrigin.TryGetTypeAndMethod(typedArg, out var type, out var method))
+                    {
+                        codeOrigin.SetCodeOriginForEntrySpan(rootSpan, type, method);
+                    }
+                    else
+                    {
+                        Log.Debug("Could not extract type and method from {ActionDescriptor}", typedArg.ActionDescriptor?.DisplayName);
                     }
                 }
 
                 if (span is not null)
                 {
-                    if (isCodeOriginEnabled)
-                    {
-                        if (TryGetTypeAndMethod(typedArg, out var type, out var method))
-                        {
-                            CurrentCodeOrigin?.SetCodeOriginForEntrySpan(rootSpan, type, method);
-                        }
-                        else
-                        {
-                            Log.Debug("Could not extract type and method from {ActionDescriptor}", typedArg.ActionDescriptor?.DisplayName);
-                        }
-                    }
-
                     _security.CheckPathParamsFromAction(httpContext, span, typedArg.ActionDescriptor?.Parameters, typedArg.RouteData.Values);
+                }
+                else if (_tracer.Settings.OtelSemanticsEnabled)
+                {
+                    // With OTel semantics there is no MVC child span, so report against the root span
+                    // (this is what SingleSpanAspNetCoreDiagnosticObserver already does)
+                    _security.CheckPathParamsFromAction(httpContext, rootSpan, typedArg.ActionDescriptor?.Parameters, typedArg.RouteData.Values);
                 }
 
                 if (iastEnabled)
@@ -643,49 +690,6 @@ namespace Datadog.Trace.DiagnosticListeners
                     rootSpan.Context?.TraceContext?.IastRequestContext?.AddRequestData(request, typedArg.RouteData?.Values);
                 }
             }
-        }
-
-        internal static bool TryGetTypeAndMethod(BeforeActionStruct beforeAction, [NotNullWhen(true)] out Type type, [NotNullWhen(true)] out MethodInfo method)
-        {
-            try
-            {
-                if (beforeAction.ActionDescriptor.TryDuckCast<ControllerActionDescriptorStruct>(out var controllerActionDescriptor))
-                {
-                    type = controllerActionDescriptor.ControllerTypeInfo;
-                    method = controllerActionDescriptor.MethodInfo;
-                    return true;
-                }
-
-                if (beforeAction.ActionDescriptor.TryDuckCast<CompiledPageActionDescriptorStruct>(out var compiledPageActionDescriptor))
-                {
-                    foreach (var part in compiledPageActionDescriptor.HandlerMethods)
-                    {
-                        if (part.TryDuckCast(out HandlerMethodDescriptorStruct methodDesc))
-                        {
-                            if (string.Equals(methodDesc.HttpMethod, beforeAction.HttpContext.Request.Method, StringComparison.OrdinalIgnoreCase))
-                            {
-                                type = compiledPageActionDescriptor.HandlerTypeInfo;
-                                method = methodDesc.MethodInfo;
-                                return true;
-                            }
-                            else
-                            {
-                                Log.Debug("Ignoring handler method {Method} for HTTP method {HttpMethod}", methodDesc.MethodInfo.Name, methodDesc.HttpMethod);
-                            }
-                        }
-                    }
-
-                    Log.Debug("No matching handler method found for HTTP method {HttpMethod}", beforeAction.HttpContext.Request.Method);
-                }
-            }
-            catch (Exception e)
-            {
-                Log.Error(e, "Fail to extract type and method from ActionDescriptor");
-            }
-
-            type = null;
-            method = null;
-            return false;
         }
 
         private void OnMvcAfterAction(object arg)
@@ -708,6 +712,8 @@ namespace Datadog.Trace.DiagnosticListeners
 
         private void OnHostingHttpRequestInStop(object arg)
         {
+            CoreHttpContextStore.Instance.Remove();
+
             if (!_tracer.CurrentTraceSettings.Settings.IsIntegrationEnabled(IntegrationId))
             {
                 return;
@@ -719,7 +725,6 @@ namespace Datadog.Trace.DiagnosticListeners
                 AspNetCoreRequestHandler.StopAspNetCorePipelineScope(_tracer, _security, rootScope, httpContext);
             }
 
-            CoreHttpContextStore.Instance.Remove();
             // If we don't have a scope, no need to call Stop pipeline
         }
 

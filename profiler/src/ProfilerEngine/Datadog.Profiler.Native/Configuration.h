@@ -3,7 +3,9 @@
 #pragma once
 
 #include <chrono>
+#include <cstdint>
 #include <memory>
+#include <optional>
 #include <string>
 
 #include "DeploymentMode.h"
@@ -59,6 +61,7 @@ public:
     int32_t CpuThreadsThreshold() const override;
     int32_t CodeHotspotsThreadsThreshold() const override;
     bool IsGarbageCollectionProfilingEnabled() const override;
+    bool IsGcLifecycleEventsProcessingSkipped() const override;
     bool IsHeapProfilingEnabled() const override;
     bool IsAllocationRecorderEnabled() const override;
     bool IsDebugInfoEnabled() const override;
@@ -85,11 +88,16 @@ public:
     bool IsManagedActivationEnabled() const override;
     void SetEnablementStatus(EnablementStatus status) override;
     bool IsHeapSnapshotEnabled() const override;
+    bool IsHeapSnapshotSkipTraversal() const override;
     std::chrono::minutes GetHeapSnapshotInterval() const override;
     std::chrono::milliseconds GetHeapSnapshotCheckInterval() const override;
     uint32_t GetHeapSnapshotMemoryPressureThreshold() const override;
+    std::chrono::seconds GetTestHeapSnapshotInterval() const override;
+    std::chrono::milliseconds GetLibrariesInfoCacheStartTimeout() const override;
     uint32_t GetHeapHandleLimit() const override;
     bool UseManagedCodeCache() const override;
+    bool IsMemoryFootprintEnabled() const override;
+    uint32_t GetReferenceTreeFormat() const override;
 
 private:
     static tags ExtractUserTags();
@@ -118,7 +126,20 @@ private:
     std::chrono::minutes ExtractHeapSnapshotInterval() const;
     std::chrono::milliseconds ExtractHeapSnapshotCheckInterval() const;
     std::chrono::minutes GetDefaultHeapSnapshotInterval() const;
+    std::chrono::seconds ExtractTestHeapSnapshotInterval() const;
+    std::chrono::milliseconds ExtractLibrariesInfoCacheStartTimeout() const;
     int32_t ExtractHeapHandleLimit() const;
+    uint32_t ExtractReferenceTreeFormat() const;
+
+// The decision below is a pure function of the environment variable and of the number of signal
+// queue slots available on the host, so tests can drive every outcome by passing a slot count.
+#ifdef DD_TEST
+public:
+#endif
+    static CpuProfilerType ExtractCpuProfilerType(bool isCpuProfilingEnabled, std::optional<std::uint64_t> availableSignalQueueSlots);
+
+    // Headroom, in signal queue slots, below which timer_create-based CPU profiling is not attempted.
+    static constexpr std::uint64_t MinimumFreeSignalQueueSlots = 512;
 
 private:
     static std::string const DefaultProdSite;
@@ -134,6 +155,7 @@ private:
     static CpuProfilerType const DefaultCpuProfilerType;
     static std::chrono::minutes const DefaultDevHeapSnapshotInterval;
     static std::chrono::minutes const DefaultProdHeapSnapshotInterval;
+    static std::chrono::milliseconds const DefaultLibrariesInfoCacheStartTimeout;
 
     bool _isProfilingEnabled;
     bool _isCpuProfilingEnabled;
@@ -142,6 +164,7 @@ private:
     bool _isAllocationProfilingEnabled;
     bool _isContentionProfilingEnabled;
     bool _isGarbageCollectionProfilingEnabled;
+    bool _isGcLifecycleEventsProcessingSkipped;
     bool _isHeapProfilingEnabled;
     bool _isThreadLifetimeEnabled;
     bool _debugLogEnabled;
@@ -200,8 +223,13 @@ private:
     bool _isWaitHandleProfilingEnabled;
 
     bool _isHeapSnapshotEnabled;
+    bool _isHeapSnapshotSkipTraversal;
     std::chrono::minutes _heapSnapshotInterval;
     std::chrono::milliseconds _heapSnapshotCheckInterval;
     uint32_t _heapSnapshotMemoryPressureThreshold; // in % of used memory
+    std::chrono::seconds _testHeapSnapshotInterval;
+    std::chrono::milliseconds _librariesInfoCacheStartTimeout;
     bool _useManagedCodeCache;
+    bool _isMemoryFootprintEnabled;
+    uint32_t _referenceTreeFormat;
 };

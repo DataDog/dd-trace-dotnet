@@ -1,0 +1,1072 @@
+﻿[
+  {
+    "resourceSpans": [
+      {
+        "resource": {
+          "attributes": [
+            {
+              "key": "service.name",
+              "value": {
+                "stringValue": "MyServiceName"
+              }
+            },
+            {
+              "key": "service.version",
+              "value": {
+                "stringValue": "1.0.x"
+              }
+            },
+            {
+              "key": "service.instance.id",
+              "value": {
+                "stringValue": "Guid_1"
+              }
+            },
+            {
+              "key": "telemetry.sdk.name",
+              "value": {
+                "stringValue": "sdk-name"
+              }
+            },
+            {
+              "key": "telemetry.sdk.language",
+              "value": {
+                "stringValue": "dotnet"
+              }
+            },
+            {
+              "key": "telemetry.sdk.version",
+              "value": {
+                "stringValue": "sdk-version"
+              }
+            }
+          ]
+        },
+        "scopeSpans": [
+          {
+            "scope": {
+              "name": "MyServiceName"
+            },
+            "spans": [
+              {
+                "traceId": "normalized-trace-id",
+                "spanId": "normalized-span-id",
+                "trace_state": "app=hello",
+                "parentSpanId": "normalized-parent-span-id",
+                "name": "DeprecatedHttpStatusTagName",
+                "kind": 1,
+                "startTimeUnixNano": "0",
+                "endTimeUnixNano": "0",
+                "attributes": [
+                  {
+                    "key": "http.status_code",
+                    "value": {
+                      "intValue": "404"
+                    }
+                  }
+                ],
+                "flags": 257
+              },
+              {
+                "traceId": "normalized-trace-id",
+                "spanId": "normalized-span-id",
+                "trace_state": "app=hello",
+                "parentSpanId": "normalized-parent-span-id",
+                "name": "InnerSpanError",
+                "kind": 1,
+                "startTimeUnixNano": "0",
+                "endTimeUnixNano": "0",
+                "status": {
+                  "message": "Something went wrong",
+                  "code": 2
+                },
+                "flags": 257
+              },
+              {
+                "traceId": "normalized-trace-id",
+                "spanId": "normalized-span-id",
+                "trace_state": "app=hello",
+                "parentSpanId": "normalized-parent-span-id",
+                "name": "InnerSpanOk",
+                "kind": 1,
+                "startTimeUnixNano": "0",
+                "endTimeUnixNano": "0",
+                "status": {
+                  "code": 1
+                },
+                "flags": 257
+              },
+              {
+                "traceId": "normalized-trace-id",
+                "spanId": "normalized-span-id",
+                "trace_state": "app=hello",
+                "parentSpanId": "normalized-parent-span-id",
+                "name": "InnerSpanUpdated",
+                "kind": 1,
+                "startTimeUnixNano": "0",
+                "endTimeUnixNano": "0",
+                "events": [
+                  {
+                    "timeUnixNano": "0",
+                    "name": "exception",
+                    "attributes": [
+                      {
+                        "key": "exception.type",
+                        "value": {
+                          "stringValue": "ArgumentException"
+                        }
+                      },
+                      {
+                        "key": "exception.stacktrace",
+                        "value": {
+                          "stringValue": "System.ArgumentException: Example argument exception"
+                        }
+                      },
+                      {
+                        "key": "exception.message",
+                        "value": {
+                          "stringValue": "Example argument exception"
+                        }
+                      }
+                    ]
+                  }
+                ],
+                "status": {
+                  "message": "Example argument exception",
+                  "code": 2
+                },
+                "flags": 257
+              },
+              {
+                "traceId": "normalized-trace-id",
+                "spanId": "normalized-span-id",
+                "name": "OperationNameRootSpan",
+                "kind": 1,
+                "startTimeUnixNano": "0",
+                "endTimeUnixNano": "0",
+                "flags": 257
+              },
+              {
+                "traceId": "normalized-trace-id",
+                "spanId": "normalized-span-id",
+                "parentSpanId": "normalized-parent-span-id",
+                "name": "ResourceName",
+                "kind": 2,
+                "startTimeUnixNano": "0",
+                "endTimeUnixNano": "0",
+                "attributes": [
+                  {
+                    "key": "http.request.method",
+                    "value": {
+                      "stringValue": "GET"
+                    }
+                  }
+                ],
+                "flags": 257
+              },
+              {
+                "traceId": "normalized-trace-id",
+                "spanId": "normalized-span-id",
+                "parentSpanId": "normalized-parent-span-id",
+                "name": "ResourceName",
+                "kind": 3,
+                "startTimeUnixNano": "0",
+                "endTimeUnixNano": "0",
+                "attributes": [
+                  {
+                    "key": "http.request.method",
+                    "value": {
+                      "stringValue": "GET"
+                    }
+                  }
+                ],
+                "flags": 257
+              },
+              {
+                "traceId": "normalized-trace-id",
+                "spanId": "normalized-span-id",
+                "parentSpanId": "normalized-parent-span-id",
+                "name": "ResourceName",
+                "kind": 3,
+                "startTimeUnixNano": "0",
+                "endTimeUnixNano": "0",
+                "attributes": [
+                  {
+                    "key": "db.system",
+                    "value": {
+                      "stringValue": "Redis"
+                    }
+                  }
+                ],
+                "flags": 257
+              },
+              {
+                "traceId": "normalized-trace-id",
+                "spanId": "normalized-span-id",
+                "parentSpanId": "normalized-parent-span-id",
+                "name": "ResourceName",
+                "kind": 3,
+                "startTimeUnixNano": "0",
+                "endTimeUnixNano": "0",
+                "attributes": [
+                  {
+                    "key": "messaging.system",
+                    "value": {
+                      "stringValue": "Kafka"
+                    }
+                  },
+                  {
+                    "key": "messaging.operation",
+                    "value": {
+                      "stringValue": "Receive"
+                    }
+                  }
+                ],
+                "flags": 257
+              },
+              {
+                "traceId": "normalized-trace-id",
+                "spanId": "normalized-span-id",
+                "parentSpanId": "normalized-parent-span-id",
+                "name": "ResourceName",
+                "kind": 2,
+                "startTimeUnixNano": "0",
+                "endTimeUnixNano": "0",
+                "attributes": [
+                  {
+                    "key": "messaging.system",
+                    "value": {
+                      "stringValue": "Kafka"
+                    }
+                  },
+                  {
+                    "key": "messaging.operation",
+                    "value": {
+                      "stringValue": "Receive"
+                    }
+                  }
+                ],
+                "flags": 257
+              },
+              {
+                "traceId": "normalized-trace-id",
+                "spanId": "normalized-span-id",
+                "parentSpanId": "normalized-parent-span-id",
+                "name": "ResourceName",
+                "kind": 4,
+                "startTimeUnixNano": "0",
+                "endTimeUnixNano": "0",
+                "attributes": [
+                  {
+                    "key": "messaging.system",
+                    "value": {
+                      "stringValue": "Kafka"
+                    }
+                  },
+                  {
+                    "key": "messaging.operation",
+                    "value": {
+                      "stringValue": "Receive"
+                    }
+                  }
+                ],
+                "flags": 257
+              },
+              {
+                "traceId": "normalized-trace-id",
+                "spanId": "normalized-span-id",
+                "parentSpanId": "normalized-parent-span-id",
+                "name": "ResourceName",
+                "kind": 5,
+                "startTimeUnixNano": "0",
+                "endTimeUnixNano": "0",
+                "attributes": [
+                  {
+                    "key": "messaging.system",
+                    "value": {
+                      "stringValue": "Kafka"
+                    }
+                  },
+                  {
+                    "key": "messaging.operation",
+                    "value": {
+                      "stringValue": "Receive"
+                    }
+                  }
+                ],
+                "flags": 257
+              },
+              {
+                "traceId": "normalized-trace-id",
+                "spanId": "normalized-span-id",
+                "parentSpanId": "normalized-parent-span-id",
+                "name": "ResourceName",
+                "kind": 3,
+                "startTimeUnixNano": "0",
+                "endTimeUnixNano": "0",
+                "attributes": [
+                  {
+                    "key": "rpc.system",
+                    "value": {
+                      "stringValue": "aws-api"
+                    }
+                  },
+                  {
+                    "key": "rpc.service",
+                    "value": {
+                      "stringValue": "S3"
+                    }
+                  }
+                ],
+                "flags": 257
+              },
+              {
+                "traceId": "normalized-trace-id",
+                "spanId": "normalized-span-id",
+                "parentSpanId": "normalized-parent-span-id",
+                "name": "ResourceName",
+                "kind": 3,
+                "startTimeUnixNano": "0",
+                "endTimeUnixNano": "0",
+                "attributes": [
+                  {
+                    "key": "rpc.system",
+                    "value": {
+                      "stringValue": "aws-api"
+                    }
+                  }
+                ],
+                "flags": 257
+              },
+              {
+                "traceId": "normalized-trace-id",
+                "spanId": "normalized-span-id",
+                "parentSpanId": "normalized-parent-span-id",
+                "name": "ResourceName",
+                "kind": 3,
+                "startTimeUnixNano": "0",
+                "endTimeUnixNano": "0",
+                "attributes": [
+                  {
+                    "key": "rpc.system",
+                    "value": {
+                      "stringValue": "GRPC"
+                    }
+                  }
+                ],
+                "flags": 257
+              },
+              {
+                "traceId": "normalized-trace-id",
+                "spanId": "normalized-span-id",
+                "parentSpanId": "normalized-parent-span-id",
+                "name": "ResourceName",
+                "kind": 2,
+                "startTimeUnixNano": "0",
+                "endTimeUnixNano": "0",
+                "attributes": [
+                  {
+                    "key": "rpc.system",
+                    "value": {
+                      "stringValue": "GRPC"
+                    }
+                  }
+                ],
+                "flags": 257
+              },
+              {
+                "traceId": "normalized-trace-id",
+                "spanId": "normalized-span-id",
+                "parentSpanId": "normalized-parent-span-id",
+                "name": "ResourceName",
+                "kind": 3,
+                "startTimeUnixNano": "0",
+                "endTimeUnixNano": "0",
+                "attributes": [
+                  {
+                    "key": "faas.invoked_provider",
+                    "value": {
+                      "stringValue": "aws"
+                    }
+                  },
+                  {
+                    "key": "faas.invoked_name",
+                    "value": {
+                      "stringValue": "My-Function"
+                    }
+                  }
+                ],
+                "flags": 257
+              },
+              {
+                "traceId": "normalized-trace-id",
+                "spanId": "normalized-span-id",
+                "parentSpanId": "normalized-parent-span-id",
+                "name": "ResourceName",
+                "kind": 2,
+                "startTimeUnixNano": "0",
+                "endTimeUnixNano": "0",
+                "attributes": [
+                  {
+                    "key": "faas.trigger",
+                    "value": {
+                      "stringValue": "Datasource"
+                    }
+                  }
+                ],
+                "flags": 257
+              },
+              {
+                "traceId": "normalized-trace-id",
+                "spanId": "normalized-span-id",
+                "parentSpanId": "normalized-parent-span-id",
+                "name": "ResourceName",
+                "kind": 2,
+                "startTimeUnixNano": "0",
+                "endTimeUnixNano": "0",
+                "attributes": [
+                  {
+                    "key": "graphql.operation.type",
+                    "value": {
+                      "stringValue": "query"
+                    }
+                  }
+                ],
+                "flags": 257
+              },
+              {
+                "traceId": "normalized-trace-id",
+                "spanId": "normalized-span-id",
+                "parentSpanId": "normalized-parent-span-id",
+                "name": "ResourceName",
+                "kind": 2,
+                "startTimeUnixNano": "0",
+                "endTimeUnixNano": "0",
+                "attributes": [
+                  {
+                    "key": "network.protocol.name",
+                    "value": {
+                      "stringValue": "Amqp"
+                    }
+                  }
+                ],
+                "flags": 257
+              },
+              {
+                "traceId": "normalized-trace-id",
+                "spanId": "normalized-span-id",
+                "parentSpanId": "normalized-parent-span-id",
+                "name": "ResourceName",
+                "kind": 2,
+                "startTimeUnixNano": "0",
+                "endTimeUnixNano": "0",
+                "flags": 257
+              },
+              {
+                "traceId": "normalized-trace-id",
+                "spanId": "normalized-span-id",
+                "parentSpanId": "normalized-parent-span-id",
+                "name": "ResourceName",
+                "kind": 3,
+                "startTimeUnixNano": "0",
+                "endTimeUnixNano": "0",
+                "attributes": [
+                  {
+                    "key": "network.protocol.name",
+                    "value": {
+                      "stringValue": "Amqp"
+                    }
+                  }
+                ],
+                "flags": 257
+              },
+              {
+                "traceId": "normalized-trace-id",
+                "spanId": "normalized-span-id",
+                "parentSpanId": "normalized-parent-span-id",
+                "name": "ResourceName",
+                "kind": 3,
+                "startTimeUnixNano": "0",
+                "endTimeUnixNano": "0",
+                "flags": 257
+              },
+              {
+                "traceId": "normalized-trace-id",
+                "spanId": "normalized-span-id",
+                "parentSpanId": "normalized-parent-span-id",
+                "name": "ResourceName",
+                "kind": 1,
+                "startTimeUnixNano": "0",
+                "endTimeUnixNano": "0",
+                "flags": 257
+              },
+              {
+                "traceId": "normalized-trace-id",
+                "spanId": "normalized-span-id",
+                "parentSpanId": "normalized-parent-span-id",
+                "name": "ResourceName",
+                "kind": 5,
+                "startTimeUnixNano": "0",
+                "endTimeUnixNano": "0",
+                "flags": 257
+              },
+              {
+                "traceId": "normalized-trace-id",
+                "spanId": "normalized-span-id",
+                "parentSpanId": "normalized-parent-span-id",
+                "name": "ResourceName",
+                "kind": 4,
+                "startTimeUnixNano": "0",
+                "endTimeUnixNano": "0",
+                "flags": 257
+              },
+              {
+                "traceId": "normalized-trace-id",
+                "spanId": "normalized-span-id",
+                "trace_state": "app=hello",
+                "name": "SayHello",
+                "kind": 1,
+                "startTimeUnixNano": "0",
+                "endTimeUnixNano": "0",
+                "attributes": [
+                  {
+                    "key": "operation.name",
+                    "value": {
+                      "stringValue": "Saying hello!"
+                    }
+                  },
+                  {
+                    "key": "attribute-string",
+                    "value": {
+                      "stringValue": "\"str"
+                    }
+                  },
+                  {
+                    "key": "attribute-int",
+                    "value": {
+                      "intValue": "1"
+                    }
+                  },
+                  {
+                    "key": "attribute-bool",
+                    "value": {
+                      "boolValue": true
+                    }
+                  },
+                  {
+                    "key": "attribute-double",
+                    "value": {
+                      "doubleValue": 2.0
+                    }
+                  },
+                  {
+                    "key": "attribute-stringArray",
+                    "value": {
+                      "arrayValue": {
+                        "values": [
+                          {
+                            "stringValue": "\"str1\""
+                          },
+                          {
+                            "stringValue": "str2"
+                          },
+                          {
+                            "stringValue": "str3"
+                          }
+                        ]
+                      }
+                    }
+                  },
+                  {
+                    "key": "attribute-stringArrayEmpty",
+                    "value": {
+                      "arrayValue": {}
+                    }
+                  },
+                  {
+                    "key": "attribute-intArray",
+                    "value": {
+                      "arrayValue": {
+                        "values": [
+                          {
+                            "intValue": "1"
+                          },
+                          {
+                            "intValue": "2"
+                          },
+                          {
+                            "intValue": "3"
+                          }
+                        ]
+                      }
+                    }
+                  },
+                  {
+                    "key": "attribute-intArrayEmpty",
+                    "value": {
+                      "arrayValue": {}
+                    }
+                  },
+                  {
+                    "key": "attribute-boolArray",
+                    "value": {
+                      "arrayValue": {
+                        "values": [
+                          {
+                            "boolValue": false
+                          },
+                          {
+                            "boolValue": true
+                          },
+                          {
+                            "boolValue": false
+                          }
+                        ]
+                      }
+                    }
+                  },
+                  {
+                    "key": "attribute-boolArrayEmpty",
+                    "value": {
+                      "arrayValue": {}
+                    }
+                  },
+                  {
+                    "key": "attribute-doubleArray",
+                    "value": {
+                      "arrayValue": {
+                        "values": [
+                          {
+                            "doubleValue": 4.1
+                          },
+                          {
+                            "doubleValue": 5.0
+                          },
+                          {
+                            "doubleValue": 6.0
+                          }
+                        ]
+                      }
+                    }
+                  },
+                  {
+                    "key": "attribute-doubleArrayEmpty",
+                    "value": {
+                      "arrayValue": {}
+                    }
+                  }
+                ],
+                "events": [
+                  {
+                    "timeUnixNano": "0",
+                    "name": "event-message"
+                  },
+                  {
+                    "timeUnixNano": "0",
+                    "name": "event-messageWithDateTime"
+                  },
+                  {
+                    "timeUnixNano": "0",
+                    "name": "event-messageWithAttributes",
+                    "attributes": [
+                      {
+                        "key": "foo",
+                        "value": {
+                          "intValue": "1"
+                        }
+                      },
+                      {
+                        "key": "bar",
+                        "value": {
+                          "stringValue": "Hello, World!"
+                        }
+                      },
+                      {
+                        "key": "baz",
+                        "value": {
+                          "arrayValue": {
+                            "values": [
+                              {
+                                "intValue": "1"
+                              },
+                              {
+                                "intValue": "2"
+                              },
+                              {
+                                "intValue": "3"
+                              }
+                            ]
+                          }
+                        }
+                      },
+                      {
+                        "key": "strings",
+                        "value": {
+                          "arrayValue": {
+                            "values": [
+                              {
+                                "stringValue": "str"
+                              },
+                              {
+                                "stringValue": "1"
+                              }
+                            ]
+                          }
+                        }
+                      },
+                      {
+                        "key": "ignored_array_of_object",
+                        "value": {
+                          "arrayValue": {
+                            "values": [
+                              {
+                                "stringValue": "str"
+                              },
+                              {
+                                "intValue": "2"
+                              }
+                            ]
+                          }
+                        }
+                      },
+                      {
+                        "key": "ignored_array_of_arrays",
+                        "value": {
+                          "arrayValue": {
+                            "values": [
+                              {
+                                "stringValue": "System.String[]"
+                              },
+                              {
+                                "stringValue": "System.String[]"
+                              }
+                            ]
+                          }
+                        }
+                      },
+                      {
+                        "key": "ignored_dict",
+                        "value": {
+                          "stringValue": "System.Collections.Generic.Dictionary`2[System.String,System.String]"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "timeUnixNano": "0",
+                    "name": "event-messageWithDateTimeAndAttributes",
+                    "attributes": [
+                      {
+                        "key": "foo",
+                        "value": {
+                          "intValue": "1"
+                        }
+                      },
+                      {
+                        "key": "bar",
+                        "value": {
+                          "stringValue": "Hello, World!"
+                        }
+                      },
+                      {
+                        "key": "baz",
+                        "value": {
+                          "arrayValue": {
+                            "values": [
+                              {
+                                "intValue": "1"
+                              },
+                              {
+                                "intValue": "2"
+                              },
+                              {
+                                "intValue": "3"
+                              }
+                            ]
+                          }
+                        }
+                      },
+                      {
+                        "key": "strings",
+                        "value": {
+                          "arrayValue": {
+                            "values": [
+                              {
+                                "stringValue": "str"
+                              },
+                              {
+                                "stringValue": "1"
+                              }
+                            ]
+                          }
+                        }
+                      },
+                      {
+                        "key": "ignored_array_of_object",
+                        "value": {
+                          "arrayValue": {
+                            "values": [
+                              {
+                                "stringValue": "str"
+                              },
+                              {
+                                "intValue": "2"
+                              }
+                            ]
+                          }
+                        }
+                      },
+                      {
+                        "key": "ignored_array_of_arrays",
+                        "value": {
+                          "arrayValue": {
+                            "values": [
+                              {
+                                "stringValue": "System.String[]"
+                              },
+                              {
+                                "stringValue": "System.String[]"
+                              }
+                            ]
+                          }
+                        }
+                      },
+                      {
+                        "key": "ignored_dict",
+                        "value": {
+                          "stringValue": "System.Collections.Generic.Dictionary`2[System.String,System.String]"
+                        }
+                      }
+                    ]
+                  }
+                ],
+                "flags": 257
+              },
+              {
+                "traceId": "normalized-trace-id",
+                "spanId": "normalized-span-id",
+                "name": "SayHello2",
+                "kind": 1,
+                "startTimeUnixNano": "0",
+                "endTimeUnixNano": "0",
+                "links": [
+                  {
+                    "traceId": "normalized-trace-id",
+                    "spanId": "normalized-span-id",
+                    "trace_state": "app=hello",
+                    "flags": 257
+                  }
+                ],
+                "flags": 257
+              },
+              {
+                "traceId": "normalized-trace-id",
+                "spanId": "normalized-span-id",
+                "parentSpanId": "normalized-parent-span-id",
+                "name": "SayHello3",
+                "kind": 1,
+                "startTimeUnixNano": "0",
+                "endTimeUnixNano": "0",
+                "links": [
+                  {
+                    "traceId": "normalized-trace-id",
+                    "spanId": "normalized-span-id",
+                    "trace_state": "app=hello",
+                    "flags": 257
+                  },
+                  {
+                    "traceId": "normalized-trace-id",
+                    "spanId": "normalized-span-id",
+                    "flags": 257
+                  }
+                ],
+                "flags": 257
+              },
+              {
+                "traceId": "normalized-trace-id",
+                "spanId": "normalized-span-id",
+                "trace_state": "app=hello",
+                "parentSpanId": "normalized-parent-span-id",
+                "name": "SomeHttpSpan",
+                "kind": 1,
+                "startTimeUnixNano": "0",
+                "endTimeUnixNano": "0",
+                "attributes": [
+                  {
+                    "key": "http.response.status_code",
+                    "value": {
+                      "intValue": "404"
+                    }
+                  }
+                ],
+                "flags": 257
+              },
+              {
+                "traceId": "normalized-trace-id",
+                "spanId": "normalized-span-id",
+                "trace_state": "app=hello",
+                "parentSpanId": "normalized-parent-span-id",
+                "name": "StartActiveSpan.Child",
+                "kind": 1,
+                "startTimeUnixNano": "0",
+                "endTimeUnixNano": "0",
+                "flags": 257
+              },
+              {
+                "traceId": "normalized-trace-id",
+                "spanId": "normalized-span-id",
+                "parentSpanId": "normalized-parent-span-id",
+                "name": "StartRootSpan",
+                "kind": 1,
+                "startTimeUnixNano": "0",
+                "endTimeUnixNano": "0",
+                "flags": 257
+              },
+              {
+                "traceId": "normalized-trace-id",
+                "spanId": "normalized-span-id",
+                "trace_state": "app=hello",
+                "parentSpanId": "normalized-parent-span-id",
+                "name": "StartSpan",
+                "kind": 1,
+                "startTimeUnixNano": "0",
+                "endTimeUnixNano": "0",
+                "flags": 257
+              },
+              {
+                "traceId": "normalized-trace-id",
+                "spanId": "normalized-span-id",
+                "trace_state": "app=hello",
+                "parentSpanId": "normalized-parent-span-id",
+                "name": "StartSpan2",
+                "kind": 1,
+                "startTimeUnixNano": "0",
+                "endTimeUnixNano": "0",
+                "flags": 257
+              },
+              {
+                "traceId": "normalized-trace-id",
+                "spanId": "normalized-span-id",
+                "parentSpanId": "normalized-parent-span-id",
+                "name": "This name should not be in the snapshot",
+                "kind": 2,
+                "startTimeUnixNano": "0",
+                "endTimeUnixNano": "0",
+                "attributes": [
+                  {
+                    "key": "http.request.method",
+                    "value": {
+                      "stringValue": "GET"
+                    }
+                  },
+                  {
+                    "key": "resource.name",
+                    "value": {
+                      "stringValue": "ResourceNameOverride"
+                    }
+                  },
+                  {
+                    "key": "operation.name",
+                    "value": {
+                      "stringValue": "OperationNameOverride"
+                    }
+                  },
+                  {
+                    "key": "service.name",
+                    "value": {
+                      "stringValue": "ServiceNameOverride"
+                    }
+                  },
+                  {
+                    "key": "span.type",
+                    "value": {
+                      "stringValue": "SpanTypeOverride"
+                    }
+                  },
+                  {
+                    "key": "analytics.event",
+                    "value": {
+                      "stringValue": "true"
+                    }
+                  }
+                ],
+                "flags": 257
+              }
+            ]
+          },
+          {
+            "scope": {
+              "name": "OtherLibrary",
+              "version": "4.0.0"
+            },
+            "spans": [
+              {
+                "traceId": "normalized-trace-id",
+                "spanId": "normalized-span-id",
+                "trace_state": "app=hello",
+                "parentSpanId": "normalized-parent-span-id",
+                "name": "Response",
+                "kind": 1,
+                "startTimeUnixNano": "0",
+                "endTimeUnixNano": "0",
+                "flags": 257
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "resourceSpans": [
+      {
+        "resource": {
+          "attributes": [
+            {
+              "key": "telemetry.sdk.name",
+              "value": {
+                "stringValue": "sdk-name"
+              }
+            },
+            {
+              "key": "telemetry.sdk.language",
+              "value": {
+                "stringValue": "dotnet"
+              }
+            },
+            {
+              "key": "telemetry.sdk.version",
+              "value": {
+                "stringValue": "sdk-version"
+              }
+            },
+            {
+              "key": "service.name",
+              "value": {
+                "stringValue": "unknown_service:dotnet"
+              }
+            }
+          ]
+        },
+        "scopeSpans": [
+          {
+            "scope": {
+              "name": "MissingServiceName"
+            },
+            "spans": [
+              {
+                "traceId": "normalized-trace-id",
+                "spanId": "normalized-span-id",
+                "name": "service.name should be the DefaultServiceName value",
+                "kind": 1,
+                "startTimeUnixNano": "0",
+                "endTimeUnixNano": "0",
+                "flags": 257
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+]

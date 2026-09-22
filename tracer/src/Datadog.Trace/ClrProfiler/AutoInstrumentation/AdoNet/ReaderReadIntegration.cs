@@ -21,7 +21,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
     [EditorBrowsable(EditorBrowsableState.Never)]
     public sealed class ReaderReadIntegration
     {
-        private static bool errorLogged = false;
+        private static bool errorLogged;
 
         /// <summary>
         /// OnMethodEnd callback

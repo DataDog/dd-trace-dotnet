@@ -10,8 +10,6 @@ using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using Datadog.Trace.Debugger.SpanCodeOrigin;
-using Datadog.Trace.Pdb;
-using Datadog.Trace.VendoredMicrosoftCode.System.Collections.Immutable;
 using FluentAssertions;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -19,6 +17,14 @@ using Microsoft.CodeAnalysis.Emit;
 using Microsoft.CodeAnalysis.Text;
 using Xunit;
 using Xunit.Abstractions;
+
+#if NETCOREAPP3_1_OR_GREATER
+using System.Reflection.Metadata;
+using System.Reflection.PortableExecutable;
+#else
+using Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Metadata;
+using Datadog.Trace.VendoredMicrosoftCode.System.Reflection.PortableExecutable;
+#endif
 
 namespace Datadog.Trace.Tests.Debugger
 {
@@ -33,7 +39,7 @@ namespace Datadog.Trace.Tests.Debugger
         {
             _output = output;
             _assemblyPath = CreateTestAssembly();
-            _assembly = Assembly.LoadFile(_assemblyPath);
+            _assembly = Assembly.Load(File.ReadAllBytes(_assemblyPath));
         }
 
         public void Dispose()
@@ -54,11 +60,8 @@ namespace Datadog.Trace.Tests.Debugger
         [Fact]
         public void GetEndpointMethodTokens_FindsAllEndpoints()
         {
-            // Arrange
-            var datadogMetadataReader = DatadogMetadataReader.CreatePdbReader(_assembly);
-
             // Act
-            var endpointTokens = EndpointDetector.GetEndpointMethodTokens(datadogMetadataReader);
+            var endpointTokens = GetEndpointMethodTokens(_assemblyPath);
 
             // Create a mapping of method tokens to more friendly names for debugging
             var tokenToMethodMap = new Dictionary<int, string>();
@@ -76,6 +79,14 @@ namespace Datadog.Trace.Tests.Debugger
                     // Add to expected endpoints for the types and methods we expect to be detected
                     bool isExpectedEndpoint = false;
 
+#if NETFRAMEWORK
+                    // .NET Framework MVC/Web API controllers are convention-based.
+                    if (type.Name is "NetFxMvcController" or "NetFxMvcDerivedController" or "SystemWebHttpApiController" &&
+                        method.Name is "Index" or "Get" or "AsyncAction")
+                    {
+                        isExpectedEndpoint = true;
+                    }
+#else
                     // Controllers with action attributes
                     if (type.Name is "ControllerAttributeController" or "ApiControllerAttributeController" or "RouteAttributeController" &&
                         method.Name == "Get")
@@ -90,17 +101,30 @@ namespace Datadog.Trace.Tests.Debugger
                         isExpectedEndpoint = true;
                     }
 
-                    // Controller with HTTP methods
-                    else if (type.Name == "HttpMethodController" &&
-                            method.Name is "Get" or "Post" or "Put" or "Delete" or "Patch" or "Head" or "Options" or "Custom")
+                    // Leaf controller that inherits [ApiController] through a custom base type
+                    else if (type.Name == "InheritedAttributeController" && method.Name == "Get")
                     {
                         isExpectedEndpoint = true;
                     }
 
-                    // PageModel handlers
+                    // Controller with HTTP methods
+                    else if (type.Name == "HttpMethodController" &&
+                            method.Name is "Get" or "Post" or "Put" or "Delete" or "Patch" or "Head" or "Options" or "Custom" or "AcceptVerbs" or "RouteOnly")
+                    {
+                        isExpectedEndpoint = true;
+                    }
+
+                    // WebApiCompatShim preserves the System.Web.Http.ApiController type name on ASP.NET Core.
+                    else if (type.Name == "SystemWebHttpApiController" &&
+                             method.Name is "Get" or "AsyncAction")
+                    {
+                        isExpectedEndpoint = true;
+                    }
+
+                    // PageModel handlers (OnGetWithNonHandlerAttribute is excluded by the list
+                    // pattern itself - it's covered by the negative-case test, not here).
                     else if (type.Name == "TestPageModel" &&
-                            method.Name is "OnGet" or "OnGetAsync" or "OnPost" or "OnPostAsync" or "OnPut" or "OnPutAsync" or "OnDelete" or "OnDeleteAsync" or "OnHead" or "OnHeadAsync" or "OnPatch" or "OnPatchAsync" or "OnOptions" or "OnOptionsAsync" &&
-                            method.Name != "OnGetWithNonHandlerAttribute")
+                            method.Name is "OnGet" or "OnGetAsync" or "OnPost" or "OnPostAsync" or "OnPut" or "OnPutAsync" or "OnDelete" or "OnDeleteAsync" or "OnHead" or "OnHeadAsync" or "OnPatch" or "OnPatchAsync" or "OnOptions" or "OnOptionsAsync")
                     {
                         isExpectedEndpoint = true;
                     }
@@ -121,6 +145,7 @@ namespace Datadog.Trace.Tests.Debugger
                             isExpectedEndpoint = true;
                         }
                     }
+#endif
 
                     if (isExpectedEndpoint)
                     {
@@ -132,17 +157,65 @@ namespace Datadog.Trace.Tests.Debugger
             // Log and assert
             LogEndpointDetails(endpointTokens, tokenToMethodMap, expectedEndpoints);
 
-            endpointTokens.Count.Should().BeGreaterThanOrEqualTo(expectedEndpoints.Count, "The EndpointDetector should find all controller, page handler, and SignalR hub methods");
+            // Each expected endpoint must be detected. We don't assert exact equality because the
+            // intentionally-fuzzy minimal-API path can produce additional compiler-generated lambda hits.
+            endpointTokens.Should().Contain(expectedEndpoints, "The EndpointDetector should find every endpoint for the current runtime");
+
+            // Soft upper bound: the minimal-API fuzzy path is allowed to over-detect a handful of
+            // compiler-generated lambdas, but a runaway result set (e.g. every public instance method
+            // on a compiler-generated type) would indicate a regression in the classification logic.
+            endpointTokens.Count.Should().BeLessThan(expectedEndpoints.Count + 25, "the minimal-API fuzzy detection must not blow up the result set");
         }
+
+        [Fact]
+        public void GetEndpointMethodTokens_DoesNotDetectEndpointsFromOtherRuntime()
+        {
+            // Arrange
+#if NETFRAMEWORK
+            const string TypeName = "EndpointDetectorTestNamespace.ControllerAttributeController";
+            const string MethodName = "Get";
+#else
+            const string TypeName = "EndpointDetectorTestNamespace.NetFxMvcController";
+            const string MethodName = "Index";
+#endif
+            var type = _assembly.GetType(TypeName);
+            type.Should().NotBeNull();
+            var method = type.GetMethod(MethodName);
+            method.Should().NotBeNull();
+
+            // Act
+            var endpointTokens = GetEndpointMethodTokens(_assemblyPath);
+
+            // Assert
+            endpointTokens.Should().NotContain(method.MetadataToken);
+        }
+
+#if !NETFRAMEWORK
+        [Fact]
+        public void GetEndpointMethodTokens_DetectsWebApiCompatShimController()
+        {
+            // Arrange
+            var type = _assembly.GetType("EndpointDetectorTestNamespace.SystemWebHttpApiController");
+            type.Should().NotBeNull();
+            var action = type.GetMethod("Get");
+            action.Should().NotBeNull();
+            var nonAction = type.GetMethod("CompatHelper");
+            nonAction.Should().NotBeNull();
+
+            // Act
+            var endpointTokens = GetEndpointMethodTokens(_assemblyPath);
+
+            // Assert
+            endpointTokens.Should().Contain(action.MetadataToken);
+            endpointTokens.Should().NotContain(nonAction.MetadataToken);
+        }
+#endif
 
         [Fact]
         public void GetEndpointMethodTokens_DoesNotDetectNonEndpoints()
         {
-            // Arrange
-            var datadogMetadataReader = DatadogMetadataReader.CreatePdbReader(_assembly);
-
             // Act
-            var endpointTokens = EndpointDetector.GetEndpointMethodTokens(datadogMetadataReader);
+            var endpointTokens = GetEndpointMethodTokens(_assemblyPath);
 
             // Create a list of methods that should NOT be endpoints
             var nonEndpointTokens = new List<int>();
@@ -186,6 +259,13 @@ namespace Datadog.Trace.Tests.Debugger
                         shouldNotBeEndpoint = true;
                     }
 
+                    // Convention-based MVC/Web API non-actions
+                    else if ((type.Name == "NetFxMvcController" && method.Name == "Helper") ||
+                             (type.Name == "SystemWebHttpApiController" && method.Name is "Helper" or "CompatHelper"))
+                    {
+                        shouldNotBeEndpoint = true;
+                    }
+
                     // PageModel methods with NonHandler attribute
                     else if (type.Name == "TestPageModel" && method.Name == "OnGetWithNonHandlerAttribute")
                     {
@@ -221,7 +301,131 @@ namespace Datadog.Trace.Tests.Debugger
             nonEndpointTokens.Should().NotContain(token => endpointTokens.Contains(token), "Non-endpoints should not be detected as endpoints");
         }
 
-        private void LogEndpointDetails(ImmutableHashSet<int> endpointTokens, Dictionary<int, string> tokenToMethodMap, HashSet<int> expectedEndpoints)
+#if !NETFRAMEWORK
+        [Fact]
+        public void GetEndpointMethodTokens_DetectsInheritedCustomControllerAttribute()
+        {
+            // Act
+            var endpointTokens = GetEndpointMethodTokens(_assemblyPath);
+
+            // Assert: the leaf controller carries no attribute itself; the chain-walk must find
+            // [ApiController] on CustomApiBaseController to recognize InheritedAttributeController.
+            var leafController = _assembly.GetType("EndpointDetectorTestNamespace.InheritedAttributeController");
+            leafController.Should().NotBeNull();
+
+            var getMethod = leafController.GetMethod("Get");
+            getMethod.Should().NotBeNull();
+
+            endpointTokens.Should().Contain(getMethod.MetadataToken, "the inherited [ApiController] on the base type must be discovered by the chain walk");
+        }
+
+        [Theory]
+        [InlineData("AcceptVerbs")]
+        [InlineData("RouteOnly")]
+        public void GetEndpointMethodTokens_DetectsAdditionalMvcActionAttributes(string methodName)
+        {
+            // Act
+            var endpointTokens = GetEndpointMethodTokens(_assemblyPath);
+
+            // Assert
+            var controller = _assembly.GetType("EndpointDetectorTestNamespace.HttpMethodController");
+            controller.Should().NotBeNull();
+
+            var method = controller.GetMethod(methodName);
+            method.Should().NotBeNull();
+
+            endpointTokens.Should().Contain(method.MetadataToken, "[AcceptVerbs] and method-level [Route] should identify MVC controller actions");
+        }
+
+        [Fact]
+        public void GetEndpointMethodTokens_DetectsGenericSignalRHubBaseType()
+        {
+            // Act
+            var endpointTokens = GetEndpointMethodTokens(_assemblyPath);
+
+            // Assert: TestGenericHub : Hub<string> drives the TypeSpecification path through
+            // BaseTypeMatcher. The open-generic Hub`1 candidate must match the decoded
+            // signature even though the immediate base is a TypeSpec, not a TypeReference.
+            var hubType = _assembly.GetType("EndpointDetectorTestNamespace.TestGenericHub");
+            hubType.Should().NotBeNull();
+
+            var sendMethod = hubType.GetMethod("Send");
+            sendMethod.Should().NotBeNull();
+
+            endpointTokens.Should().Contain(sendMethod.MetadataToken, "Hub<T> base must resolve through TypeSpecification + ISignatureTypeProvider");
+        }
+
+        [Fact]
+        public void GetEndpointMethodTokens_DoesNotDetectHubNestedInsideGenericArgument()
+        {
+            // Act
+            var endpointTokens = GetEndpointMethodTokens(_assemblyPath);
+
+            // Assert: NestedGenericHubInheritor's immediate base is SomeWrapper<Hub<string>>.
+            // Hub appears only as a nested generic argument, so the type must NOT be
+            // classified as a Hub. This locks in BaseTypeMatcher.GetGenericInstantiation
+            // returning genericType (the outer match) rather than propagating type-arg matches.
+            var nestedType = _assembly.GetType("EndpointDetectorTestNamespace.NestedGenericHubInheritor");
+            nestedType.Should().NotBeNull();
+
+            var notEndpointMethod = nestedType.GetMethod("ShouldNotBeEndpoint");
+            notEndpointMethod.Should().NotBeNull();
+
+            endpointTokens.Should().NotContain(notEndpointMethod.MetadataToken, "Hub appearing only as a nested generic argument must not promote the leaf type to an endpoint");
+        }
+#endif
+
+        [Fact]
+        public void GetEndpointMethodTokens_ReturnsEmptyCollectionForAssemblyWithoutEndpoints()
+        {
+            // Arrange
+            var assemblyPath = CreateAssemblyWithoutEndpoints();
+
+            try
+            {
+                using (var assemblyStream = File.OpenRead(assemblyPath))
+                using (var peReader = new PEReader(assemblyStream, PEStreamOptions.PrefetchMetadata | PEStreamOptions.PrefetchEntireImage))
+                {
+                    var metadataReader = peReader.GetMetadataReader();
+
+                    // Act
+                    var endpointTokens = GetEndpointMethodTokens(metadataReader);
+
+                    // Assert
+                    endpointTokens.Should().BeEmpty();
+                }
+            }
+            finally
+            {
+                try
+                {
+                    if (File.Exists(assemblyPath))
+                    {
+                        File.Delete(assemblyPath);
+                    }
+                }
+                catch
+                {
+                    // Ignore cleanup errors
+                }
+            }
+        }
+
+        private static IReadOnlyList<int> GetEndpointMethodTokens(MetadataReader reader)
+        {
+            var consumer = new ListEndpointTokenConsumer(new List<int>());
+            EndpointDetector.GetEndpointMethodTokens(reader, ref consumer);
+            return consumer.Tokens;
+        }
+
+        private static IReadOnlyList<int> GetEndpointMethodTokens(string assemblyPath)
+        {
+            using var assemblyStream = File.OpenRead(assemblyPath);
+            using var peReader = new PEReader(assemblyStream, PEStreamOptions.PrefetchMetadata | PEStreamOptions.PrefetchEntireImage);
+            return GetEndpointMethodTokens(peReader.GetMetadataReader());
+        }
+
+        private void LogEndpointDetails(IReadOnlyList<int> endpointTokens, Dictionary<int, string> tokenToMethodMap, HashSet<int> expectedEndpoints)
         {
             // Log expected endpoints (using the HashSet to avoid duplicates)
             _output.WriteLine($"\nExpected {expectedEndpoints.Count} endpoints:");
@@ -284,6 +488,32 @@ namespace Datadog.Trace.Tests.Debugger
             return assemblyPath;
         }
 
+        private string CreateAssemblyWithoutEndpoints()
+        {
+            var compilation = CSharpCompilation.Create(
+                $"{TestAssemblyName}NoEndpoints",
+                syntaxTrees: new[] { CSharpSyntaxTree.ParseText(GetAssemblyWithoutEndpointsCode()) },
+                references: GetMetadataReferences(),
+                options: new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
+
+            var uniqueId = Guid.NewGuid().ToString("N").Substring(0, 8);
+            var assemblyPath = Path.Combine(Path.GetTempPath(), $"{TestAssemblyName}_NoEndpoints_{uniqueId}.dll");
+
+            EmitResult emitResult = compilation.Emit(assemblyPath);
+            if (!emitResult.Success)
+            {
+                string errors = string.Join(
+                    Environment.NewLine,
+                    emitResult.Diagnostics
+                              .Where(d => d.Severity == DiagnosticSeverity.Error)
+                              .Select(d => $"{d.Id}: {d.GetMessage()}"));
+
+                throw new InvalidOperationException($"Failed to create no-endpoints test assembly: {errors}");
+            }
+
+            return assemblyPath;
+        }
+
         private MetadataReference[] GetMetadataReferences()
         {
             return
@@ -309,10 +539,19 @@ namespace Microsoft.AspNetCore.Mvc
     [AttributeUsage(AttributeTargets.Class)]
     public class ApiControllerAttribute : Attribute { }
 
+    [AttributeUsage(AttributeTargets.Method)]
+    public class NonActionAttribute : Attribute { }
+
     [AttributeUsage(AttributeTargets.Class | AttributeTargets.Method)]
     public class RouteAttribute : Attribute
     {
         public RouteAttribute(string template = null) { }
+    }
+
+    [AttributeUsage(AttributeTargets.Method)]
+    public class AcceptVerbsAttribute : Attribute
+    {
+        public AcceptVerbsAttribute(params string[] verbs) { }
     }
 
     [AttributeUsage(AttributeTargets.Method)]
@@ -409,6 +648,24 @@ namespace Microsoft.AspNetCore.Builder
     }
 }
 
+namespace System.Web.Mvc
+{
+    [AttributeUsage(AttributeTargets.Method)]
+    public class NonActionAttribute : Attribute { }
+
+    public class ControllerBase { }
+
+    public class Controller : ControllerBase { }
+}
+
+namespace System.Web.Http
+{
+    [AttributeUsage(AttributeTargets.Method)]
+    public class NonActionAttribute : Attribute { }
+
+    public class ApiController { }
+}
+
 namespace EndpointDetectorTestNamespace
 {
     // Controller with ControllerAttribute
@@ -449,6 +706,17 @@ namespace EndpointDetectorTestNamespace
         public object Get() => null;
     }
 
+    // Custom base controller decorated with [ApiController] - leaf inherits the attribute through the base chain.
+    [Microsoft.AspNetCore.Mvc.ApiControllerAttribute]
+    public class CustomApiBaseController { }
+
+    // Leaf controller with no attribute that inherits [ApiController] from CustomApiBaseController.
+    public class InheritedAttributeController : CustomApiBaseController
+    {
+        [Microsoft.AspNetCore.Mvc.HttpGet]
+        public object Get() => null;
+    }
+
     // Controller with various HTTP method attributes
     public class HttpMethodController : Microsoft.AspNetCore.Mvc.ControllerBase
     {
@@ -475,6 +743,12 @@ namespace EndpointDetectorTestNamespace
 
         [Microsoft.AspNetCore.Mvc.Routing.HttpMethodAttribute]
         public object Custom() => null;
+
+        [Microsoft.AspNetCore.Mvc.AcceptVerbs(""GET"", ""POST"")]
+        public object AcceptVerbs() => null;
+
+        [Microsoft.AspNetCore.Mvc.Route(""route-only"")]
+        public object RouteOnly() => null;
     }
 
     // PageModel with handler methods
@@ -517,6 +791,16 @@ namespace EndpointDetectorTestNamespace
         public void Receive() { }
     }
 
+    // Generic non-hub wrapper used to test nested-generic detection semantics.
+    public class SomeWrapper<T> { }
+
+    // Leaf type whose immediate base is SomeWrapper<Hub<string>>. Hub appears only as a
+    // nested generic argument; the detector must NOT classify the leaf as a Hub.
+    public class NestedGenericHubInheritor : SomeWrapper<Microsoft.AspNetCore.SignalR.Hub<string>>
+    {
+        public void ShouldNotBeEndpoint() { }
+    }
+
     // Abstract controller - should be ignored
     [Microsoft.AspNetCore.Mvc.ApiControllerAttribute]
     public abstract class AbstractController
@@ -548,6 +832,46 @@ namespace EndpointDetectorTestNamespace
         public object RegularMethod() => null;
     }
 
+    // .NET Framework MVC controller
+    public class NetFxMvcController : System.Web.Mvc.Controller
+    {
+        public object Index() => null;
+
+        public Task<object> AsyncAction() => Task.FromResult<object>(null);
+
+        [System.Web.Mvc.NonAction]
+        public object Helper() => null;
+
+        public string Name { get; set; }
+
+        private object PrivateMethod() => null;
+
+        public static object StaticMethod() => null;
+    }
+
+    public class NetFxMvcBaseController : System.Web.Mvc.Controller
+    {
+    }
+
+    public class NetFxMvcDerivedController : NetFxMvcBaseController
+    {
+        public object Index() => null;
+    }
+
+    // Classic Web API 2 on .NET Framework and WebApiCompatShim on ASP.NET Core share this base type name.
+    public class SystemWebHttpApiController : System.Web.Http.ApiController
+    {
+        public object Get() => null;
+
+        public Task<object> AsyncAction() => Task.FromResult<object>(null);
+
+        [System.Web.Http.NonAction]
+        public object Helper() => null;
+
+        [Microsoft.AspNetCore.Mvc.NonAction]
+        public object CompatHelper() => null;
+    }
+
     // Minimal API setup to generate compiler-generated methods
     public static class MinimalApiProgram
     {
@@ -573,6 +897,54 @@ namespace EndpointDetectorTestNamespace
         }
     }
 }");
+        }
+
+        private SourceText GetAssemblyWithoutEndpointsCode()
+        {
+            return SourceText.From(@"
+using System;
+
+namespace EndpointDetectorNoEndpoints
+{
+    [AttributeUsage(AttributeTargets.Class | AttributeTargets.Method)]
+    public class DebuggerStepThroughAttribute : Attribute { }
+
+    [AttributeUsage(AttributeTargets.Class | AttributeTargets.Method)]
+    public class NullableContextAttribute : Attribute
+    {
+        public NullableContextAttribute(byte flag) { }
+    }
+
+    [DebuggerStepThrough]
+    [NullableContext(1)]
+    public class PlainService
+    {
+        [DebuggerStepThrough]
+        public object Get() => null;
+
+        public object Post() => null;
+    }
+
+    public class PlainControllerNameOnly
+    {
+        public object Get() => null;
+    }
+}");
+        }
+
+        private struct ListEndpointTokenConsumer : EndpointDetector.IEndpointMethodTokenConsumer
+        {
+            internal ListEndpointTokenConsumer(List<int> tokens)
+            {
+                Tokens = tokens;
+            }
+
+            internal List<int> Tokens { get; }
+
+            public void OnEndpointMethodToken(int token)
+            {
+                Tokens.Add(token);
+            }
         }
     }
 }

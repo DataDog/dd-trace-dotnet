@@ -28,8 +28,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ;
 [EditorBrowsable(EditorBrowsableState.Never)]
 public sealed class BasicConsumeAsyncIntegration
 {
-    private const string Command = "basic.consume";
-
     internal static CallTargetState OnMethodBegin<TTarget, TConsumer>(TTarget instance, string? queue, bool autoAck, string? consumerTag, bool noLocal, bool exclusive, IDictionary<string, object>? arguments, TConsumer consumer, in CancellationToken cancellationToken)
     {
         return BasicConsumeIntegration.OnMethodBegin(instance, queue, autoAck, consumerTag, noLocal, exclusive, arguments, consumer);

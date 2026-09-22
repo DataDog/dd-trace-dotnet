@@ -26,10 +26,13 @@ internal sealed class DefaultTaintedMap : ITaintedMap
     private const int PurgeMask = PurgeCount - 1;
     // Map containing the tainted objects
     private ConcurrentDictionary<int, ITaintedObject> _map;
+    // Same instance as _map: ICollection.Remove is an atomic compare-and-remove, and
+    // TryRemove(KeyValuePair<,>) does not exist on net461/netstandard2.0.
+    private ICollection<KeyValuePair<int, ITaintedObject>> _mapAsCollection;
     // Bitmask for fast modulo with table length.
-    private int _lengthMask = 0;
+    private int _lengthMask;
     // Flag to ensure we do not run multiple purges concurrently.
-    private bool _isPurging = false;
+    private bool _isPurging;
     private object _purgingLock = new();
     // Number of hash table entries. If the hash table switches to flat mode, it stops counting elements.
     private int _entriesCount;
@@ -39,6 +42,7 @@ internal sealed class DefaultTaintedMap : ITaintedMap
     public DefaultTaintedMap()
     {
         _map = new ConcurrentDictionary<int, ITaintedObject>();
+        _mapAsCollection = _map;
         _lengthMask = DefaultCapacity - 1;
         _flatModeThreshold = DefaultFlatModeThresold;
     }
@@ -47,7 +51,7 @@ internal sealed class DefaultTaintedMap : ITaintedMap
     /// Gets a value indicating whether flat mode is enabled or not. Once this is set to true, it is not set to false again unless clear() is called.
     /// The get accessor is only intended for testing purposes.
     /// </summary>
-    public bool IsFlat { get; private set; } = false;
+    public bool IsFlat { get; private set; }
 
     /// <summary>
     /// Returns the ITaintedObject for the given input object.
@@ -100,26 +104,41 @@ internal sealed class DefaultTaintedMap : ITaintedMap
 
         var index = Index(entry.PositiveHashCode);
 
-        if (!IsFlat)
+        if (IsFlat)
+        {
+            // If we flipped to flat mode:
+            // - Always override elements ignoring chaining.
+            // - Stop updating the estimated size.
+            _map[index] = entry;
+        }
+        else
         {
             // By default, add the new entry to the head of the chain.
             // We do not control duplicate entries.
-            _map.TryGetValue(index, out var existingValue);
-            entry.Next = existingValue;
-
-            // If there are two callers calling Put on the same map and the objects have the same index and we are not flat,
-            // then one of the ITaintedObjects could potentially be lost because of racing conditions.
-            // We assume that the corresponding lock mechanism benefits would not compensate the performance loss.
+            // CAS + retry: a plain read-modify-write dropped entries when two callers shared an index.
+            while (true)
+            {
+                if (_map.TryGetValue(index, out var existingValue))
+                {
+                    entry.Next = existingValue;
+                    if (_map.TryUpdate(index, entry, existingValue))
+                    {
+                        break;
+                    }
+                }
+                else
+                {
+                    entry.Next = null;
+                    if (_map.TryAdd(index, entry))
+                    {
+                        break;
+                    }
+                }
+            }
 
             // We only count the entries if we are not in flat mode
             Interlocked.Increment(ref _entriesCount);
         }
-
-        // If we flipped to flat mode:
-        // - Always override elements ignoring chaining.
-        // - Stop updating the estimated size.
-
-        _map[index] = entry;
 
         if ((entry.PositiveHashCode & PurgeMask) == 0)
         {
@@ -171,49 +190,54 @@ internal sealed class DefaultTaintedMap : ITaintedMap
     private int RemoveDeadKeys()
     {
         var removed = 0;
-        List<int> deadKeys = new();
-        ITaintedObject? previous;
 
         foreach (var key in _map.Keys.ToArray())
         {
-            var current = _map[key];
-            previous = null;
+            if (!_map.TryGetValue(key, out var current))
+            {
+                continue;
+            }
+
+            ITaintedObject? previous = null;
 
             while (current is not null)
             {
-                if (!current.IsAlive)
+                var next = current.Next;
+
+                if (current.IsAlive)
                 {
-                    if (previous is null)
+                    previous = current;
+                }
+                else if (previous is not null)
+                {
+                    // Only ever moves `Next` forward, so a concurrent Get() cannot loop or go backwards.
+                    previous.Next = next;
+                    removed++;
+                }
+                else if (next is null)
+                {
+                    // Compare-and-remove: a plain TryRemove would also delete an entry that a
+                    // concurrent Put() published on this key.
+                    if (_mapAsCollection.Remove(new KeyValuePair<int, ITaintedObject>(key, current)))
                     {
-                        // We can delete the map key
-                        if (current.Next is null)
-                        {
-                            deadKeys.Add(key);
-                        }
-                        else
-                        {
-                            _map[key] = current.Next;
-                        }
-                    }
-                    else
-                    {
-                        previous.Next = current.Next;
+                        removed++;
                     }
 
-                    current = current.Next;
+                    break;
+                }
+                else if (_map.TryUpdate(key, next, current))
+                {
                     removed++;
                 }
                 else
                 {
-                    previous = current;
-                    current = current.Next;
+                    // A concurrent Put() replaced the head; its chain still holds the dead nodes,
+                    // so the next purge picks them up.
+                    break;
                 }
-            }
-        }
 
-        foreach (var key in deadKeys)
-        {
-            _map.TryRemove(key, out _);
+                current = next;
+            }
         }
 
         return removed;

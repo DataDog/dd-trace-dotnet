@@ -10,6 +10,9 @@
     <!-- Required to build multiple projects with the same Configuration|Platform -->
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
+
+    <!-- NU1510: System.Net.NameResolution / System.Net.Primitives below are flagged as framework-provided, but they're retained for RabbitMQ.Client < 5.0.0 matrix rows to resolve package downgrade (NU1605) -->
+    <NoWarn>$(NoWarn);NU1510</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>

@@ -96,8 +96,8 @@ bool RejitHandlerModuleMethod::RequestRejitForInlinersInModule(ModuleID moduleId
             if (total > 0)
             {
                 handler->EnqueueForRejit(modules, methods);
-                Logger::Info("NGEN:: Processed with ", total, " inliners [ModuleId=", currentModuleId,
-                             ",MethodDef=", currentMethodDef, "]");
+                Logger::Debug("NGEN:: Processed with ", total, " inliners [ModuleId=", currentModuleId,
+                              ",MethodDef=", currentMethodDef, "]");
             }
 
             if (incompleteData)
@@ -288,7 +288,7 @@ void RejitHandler::RequestRejit(std::vector<ModuleID>& modulesVector, std::vecto
         }
         if (SUCCEEDED(hr))
         {
-            Logger::Info("Request ReJIT done for ", modulesVector.size(), " methods");
+            Logger::Debug("Request ReJIT done for ", modulesVector.size(), " methods");
 
             if (enable_rejit_tracking)
             {
@@ -374,7 +374,7 @@ void RejitHandler::Shutdown()
     WriteLock w_lock(m_shutdown_lock);
     m_shutdown.store(true);
 
-    for (auto x = 0; x < m_rejittersCount; x++)
+    for (size_t x = 0; x < m_rejittersCount; x++)
     {
         m_rejitters[x]->Shutdown();
     }
@@ -428,7 +428,7 @@ HRESULT RejitHandler::NotifyReJITParameters(ModuleID moduleId, mdMethodDef metho
 
     // Call all rejitters sequentially
     Rejitter* prev = nullptr;
-    for (auto x = 0; x < m_rejittersCount; x++)
+    for (size_t x = 0; x < m_rejittersCount; x++)
     {
         const auto current = m_rejitters[x];
         if (current != prev)
@@ -483,7 +483,7 @@ bool RejitHandler::HasModuleAndMethod(ModuleID moduleId, mdMethodDef methodDef)
     }
 
     Rejitter* prev = nullptr;
-    for (auto x = 0; x < m_rejittersCount; x++)
+    for (size_t x = 0; x < m_rejittersCount; x++)
     {
         const auto current = m_rejitters[x];
         if (current != prev && current->HasModuleAndMethod(moduleId, methodDef))
@@ -504,7 +504,7 @@ void RejitHandler::RemoveModule(ModuleID moduleId)
 
 
     Rejitter* prev = nullptr;
-    for (auto x = 0; x < m_rejittersCount; x++)
+    for (size_t x = 0; x < m_rejittersCount; x++)
     {
         const auto current = m_rejitters[x];
         if (current != prev)
@@ -522,7 +522,7 @@ void RejitHandler::AddNGenInlinerModule(ModuleID moduleId)
     }
 
     Rejitter* prev = nullptr;
-    for (auto x = 0; x < m_rejittersCount; x++)
+    for (size_t x = 0; x < m_rejittersCount; x++)
     {
         const auto current = m_rejitters[x];
         if (current != prev)
