@@ -55,7 +55,7 @@ internal sealed class LambdaRequestBuilder : ILambdaExtensionRequest
 
             if (span.Context.TraceContext is { } traceContext)
             {
-                var samplingPriority = traceContext.GetOrMakeSamplingDecision(span);
+                var samplingPriority = traceContext.GetOrMakeSamplingDecision();
                 request.Headers.Set(HttpHeaderNames.SamplingPriority, SamplingPriorityValues.ToString(samplingPriority));
             }
 
