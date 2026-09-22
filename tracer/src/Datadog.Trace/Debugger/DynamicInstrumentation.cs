@@ -38,6 +38,11 @@ namespace Datadog.Trace.Debugger
 
     internal sealed class DynamicInstrumentation : IDisposable
     {
+        private const string ProbeIdTag = "debugger.probeid";
+
+        // Legacy metric-only alias of ProbeIdTag, deprecated; remove once queries migrate to the canonical tag.
+        private const string LegacyProbeIdTag = "probe-id";
+
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DynamicInstrumentation));
 
         // Completed when this DI instance is being disposed (runtime disable via remote config, or process shutdown).
@@ -917,8 +922,7 @@ namespace Datadog.Trace.Debugger
                 Log.Warning($"{nameof(SendMetrics)}: Metrics are not enabled");
             }
 
-            // probe-id stays for existing queries; debugger.probeid matches the span debugger and every other tracer.
-            var tags = new[] { $"probe-id:{probeId}", $"debugger.probeid:{probeId}" };
+            var tags = new[] { $"{LegacyProbeIdTag}:{probeId}", $"{ProbeIdTag}:{probeId}" };
             switch (metricKind)
             {
                 case MetricKind.COUNT:
