@@ -6,6 +6,7 @@
     <IncludeBuildOutput>true</IncludeBuildOutput>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <PackageReadmeFile>README.md</PackageReadmeFile>
+    <IncludeSymbols>true</IncludeSymbols>
     <!-- NU* are workaround for Rider bug: https://youtrack.jetbrains.com/issue/RIDER-103207/Cannot-suppress-vulnerable-package-errors -->
     <NoWarn>$(NoWarn);NU5100;NU5128;NU1901;NU1902;NU1903;NU1904</NoWarn>
     <SignAssembly>False</SignAssembly>
@@ -27,29 +28,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="home\**\*.*" Pack="true" PackagePath="content\datadog;contentFiles\any\any\datadog">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-      <PackageCopyToOutput>true</PackageCopyToOutput>
-    </Content>
-  </ItemGroup>
-
-  <ItemGroup>
     <Compile Include="..\Datadog.Trace\FeatureFlags\EvaluationReason.cs" Link="Sdk\EvaluationReason.cs" />
     <Compile Include="..\Datadog.Trace\FeatureFlags\FeatureFlagMetadataKeys.cs" Link="Sdk\FeatureFlagMetadataKeys.cs" />
     <Compile Include="..\Datadog.Trace\FeatureFlags\IEvaluation.cs" Link="Sdk\IEvaluation.cs" />
     <Compile Include="..\Datadog.Trace\FeatureFlags\ValueType.cs" Link="Sdk\ValueType.cs" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Content Update="home\**\readme.txt" Pack="false">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-      <CopyToPublishDirectory>Never</CopyToPublishDirectory>
-    </Content>
-
-    <Content Update="home\**\*.xml" Pack="false">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-      <CopyToPublishDirectory>Never</CopyToPublishDirectory>
-    </Content>
   </ItemGroup>
 
   <ItemGroup>

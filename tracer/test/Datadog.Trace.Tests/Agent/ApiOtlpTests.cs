@@ -83,10 +83,11 @@ public class ApiOtlpTests
 
     private static StatsBuffer CreateBufferWithOneHit()
     {
-        var buffer = new StatsBuffer(
+        var buffer = new StatsBuffer.OtlpStatsBuffer(
             new ClientStatsPayload(MutableSettings.CreateForTesting(new(), [])),
             new StatsCardinalityLimiter(new TracerSettings()),
-            new StatsCardinalityReporter(NullMetricsTelemetryCollector.Instance));
+            new StatsCardinalityReporter(NullMetricsTelemetryCollector.Instance),
+            initialTimestampNs: 1);
 
         var key = new StatsAggregationKey(
             resource: "GET /",
