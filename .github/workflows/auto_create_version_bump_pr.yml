@@ -33,14 +33,13 @@ jobs:
 
       - name: "Select branch"
         id: select_branch
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
         run: |
-          if( "${{ github.event.release.tag_name}}".StartsWith("v1.")) {
-            echo "::set-output name=ref::release/1.x"
-          } elseif("${{ github.event.release.tag_name}}".StartsWith("v2.")) {
-            echo "::set-output name=ref::release/2.x"
-          } else {
-            echo "::set-output name=ref::master"
-          }
+          $ref = if ($env:RELEASE_TAG.StartsWith("v1.")) { "release/1.x" }
+                 elseif ($env:RELEASE_TAG.StartsWith("v2.")) { "release/2.x" }
+                 else { "master" }
+          "ref=$ref" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
 
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
