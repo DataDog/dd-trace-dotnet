@@ -511,7 +511,7 @@ public partial class FeatureFlagsEvaluatorTests
     [Fact]
     public void NullTargetingKey_StaticFlag_ReturnsValue()
     {
-        var flags = new Dictionary<string, Flag>
+        var flags = new FlagCollection
         {
             ["static-flag"] = FeatureFlagsHelpers.CreateStaticFlag("static-flag", ValueType.String, "static-value", "on")
         };
@@ -522,14 +522,14 @@ public partial class FeatureFlagsEvaluatorTests
         var result = evaluator.Evaluate("static-flag", Trace.FeatureFlags.ValueType.String, "default", ctx);
 
         Assert.Equal("static-value", result.Value);
-        Assert.NotEqual(EvaluationReason.Error, result.Reason);
+        Assert.Equal(EvaluationReason.Static, result.Reason);
         Assert.Null(result.Error);
     }
 
     [Fact]
     public void NullTargetingKey_ShardedFlag_ReturnsTargetingKeyMissing()
     {
-        var flags = new Dictionary<string, Flag>
+        var flags = new FlagCollection
         {
             ["simple-string"] = FeatureFlagsHelpers.CreateSimpleFlag("simple-string", ValueType.String, "default", "on")
         };
@@ -547,7 +547,7 @@ public partial class FeatureFlagsEvaluatorTests
     [Fact]
     public void NullTargetingKey_RuleMatchFlag_ReturnsValue()
     {
-        var flags = new Dictionary<string, Flag>
+        var flags = new FlagCollection
         {
             ["rule-based-flag"] = FeatureFlagsHelpers.CreateRuleBasedFlag()
         };
@@ -562,11 +562,11 @@ public partial class FeatureFlagsEvaluatorTests
         Assert.Null(result.Error);
     }
 
-    [Fact]
-    public void NullTargetingKey_RuleWithIdAttribute_ReturnsTargetingKeyMissing()
+    [Theory]
+    [InlineData(null, "default", EvaluationReason.Default)]
+    [InlineData("", "matched-value", EvaluationReason.TargetingMatch)]
+    public void RuleWithIdAttribute_DistinguishesNullAndEmptyTargetingKey(string? targetingKey, string expectedValue, EvaluationReason expectedReason)
     {
-        // Rule that matches on "id" attribute — with null targeting key, the "id" fallback
-        // throws MissingTargetingKeyException because there's no targeting key to use
         var variants = new Dictionary<string, Variant>
         {
             ["matched"] = new Variant { Key = "matched", Value = "matched-value" },
@@ -582,21 +582,21 @@ public partial class FeatureFlagsEvaluatorTests
         var alloc = new Allocation { Key = "id-alloc", Rules = rules, Splits = splits, DoLog = false };
         var flag = new Flag { Key = "id-rule-flag", Enabled = true, VariationType = ValueType.String, Variations = variants, Allocations = new List<Allocation> { alloc } };
 
-        var flags = new Dictionary<string, Flag> { ["id-rule-flag"] = flag };
+        var flags = new FlagCollection { ["id-rule-flag"] = flag };
         var evaluator = new FeatureFlagsEvaluator(null, new ServerConfiguration { Flags = flags });
-        var ctx = new EvaluationContext(null);
+        var ctx = new EvaluationContext(targetingKey);
 
         var result = evaluator.Evaluate("id-rule-flag", Trace.FeatureFlags.ValueType.String, "default", ctx);
 
-        Assert.Equal("default", result.Value);
-        Assert.Equal(EvaluationReason.Error, result.Reason);
-        Assert.Equal("TARGETING_KEY_MISSING", result.Error);
+        Assert.Equal(expectedValue, result.Value);
+        Assert.Equal(expectedReason, result.Reason);
+        Assert.Null(result.Error);
     }
 
     [Fact]
     public void EmptyStringTargetingKey_ShardedFlag_ReturnsValue()
     {
-        var flags = new Dictionary<string, Flag>
+        var flags = new FlagCollection
         {
             ["simple-string"] = FeatureFlagsHelpers.CreateSimpleFlag("simple-string", ValueType.String, "sharded-value", "on")
         };
@@ -607,7 +607,7 @@ public partial class FeatureFlagsEvaluatorTests
         var result = evaluator.Evaluate("simple-string", Trace.FeatureFlags.ValueType.String, "fallback", ctx);
 
         Assert.Equal("sharded-value", result.Value);
-        Assert.NotEqual(EvaluationReason.Error, result.Reason);
+        Assert.Equal(EvaluationReason.Split, result.Reason);
         Assert.Equal("on", result.Variant);
         Assert.Null(result.Error);
     }
