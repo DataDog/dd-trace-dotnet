@@ -215,7 +215,7 @@ internal sealed class GlobalCoverageInputReader
 
         public override long Position
         {
-            get => throw new NotSupportedExcepNotSupportedException();
+            get => throw new NotSupportedException();
             set => throw new NotSupportedException();
         }
 
