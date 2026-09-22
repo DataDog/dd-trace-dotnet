@@ -2,6 +2,14 @@
 
 #include <pthread.h>
 
+// TEMPORARY diagnostic instrumentation to root-cause the OpenLDAP / wall-time-profiler
+// interaction (see OpenLdapTests.CheckOpenLdapCrash). Remove once resolved.
+// Deliberately a compile-time constant, not a new DD_* env var: env vars need
+// registering in the config registry, which isn't worth it for a throwaway
+// investigation flag. Flip to 0 (or delete this whole diagnostic) to disable.
+// Shared via this header so socket_operations.c and filesystem_operations.c agree.
+#define DD_TRACE_SYSCALLS_SHIELD 1
+
 #define END(...) END_(__VA_ARGS__)
 // cppcheck-suppress preprocessorErrorDirective
 #define END_(...) __VA_ARGS__##_END
