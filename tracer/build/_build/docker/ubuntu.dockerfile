@@ -73,6 +73,13 @@ RUN set -eux; \
     dpkg -i libssl1.1.deb; \
     rm libssl1.1.deb
 
+# System.DirectoryServices.Protocols (LDAP client) dlopens libldap-2.4.so.2 by name; jammy
+# ships OpenLDAP 2.5 (libldap-2.5.so.0) via curl's transitive dep instead. The client ABI for
+# bind/search (what .NET's interop actually calls) stayed compatible across the SONAME bump,
+# so a symlink is the standard workaround - see dotnet/runtime#69456.
+RUN MULTIARCH="$(dpkg-architecture -qDEB_HOST_MULTIARCH)" \
+    && ln -s "/usr/lib/$MULTIARCH/libldap-2.5.so.0" "/usr/lib/$MULTIARCH/libldap-2.4.so.2"
+
 # Install Clang
 RUN wget https://apt.llvm.org/llvm.sh \
     && chmod u+x llvm.sh \
