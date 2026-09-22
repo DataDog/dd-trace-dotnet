@@ -43,15 +43,6 @@ variables:
   WINDOWS_BUILD_IMAGE_BASE: "registry.ddbuild.io/ci/dd-trace-dotnet/dd-trace-dotnet-docker-build"
 
 "llm validation":
-  # The gate is a stochastic LLM eval with no side effects, so a superseded run is pure waste. Mark it
-  # interruptible so a newer commit on the same ref auto-cancels the old commit's gate job instead of letting it
-  # race to completion (which can briefly show a stale verdict before the newer run replaces the PR comment).
-  # This matches the repo convention for expensive/stochastic jobs (see .gitlab/benchmarks/*.yml). Those run as
-  # standalone child pipelines that each carry `workflow: auto_cancel: on_new_commit: interruptible`; this gate
-  # runs in the MAIN pipeline, so the cancel only actually fires if the main pipeline also auto-cancels — via the
-  # project's "Auto-cancel redundant pipelines" setting, or a main-pipeline `workflow: auto_cancel` (a one-pipeline
-  # decision, not added here). Only interruptible jobs are cancelled, so this stays scoped to the gate regardless.
-  interruptible: true
   variables:
     # Override the template's default image. Its pinned digest is an Aug 2025 build whose signature was pruned, and
     # ddbuild now enforces image-signature verification, so that digest is blocked at pod startup (incident-61046).
