@@ -5,6 +5,7 @@
 #nullable enable
 
 using System;
+using System.Diagnostics.CodeAnalysis;
 using Datadog.Trace.Util;
 using Datadog.Trace.Util.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
@@ -28,7 +29,7 @@ internal readonly struct SkippableTest
     /// <summary>
     /// Indicates whether the backend explicitly reported missing line coverage for this skippable test.
     /// </summary>
-    [JsonProperty("_missing_line_code_coverage")]
+    [JsonProperty("_is_missing_line_code_coverage")]
     public readonly bool? MissingLineCodeCoverage;
 
     /// <summary>
@@ -49,12 +50,35 @@ internal readonly struct SkippableTest
     }
 
     /// <summary>
-    /// Gets parsed test parameters for matching framework test cases to backend skippable candidates.
+    /// Tries to parse test parameters for matching framework test cases to backend skippable candidates.
     /// </summary>
-    /// <returns>Parsed test parameters, or null when the backend candidate has no parameter payload.</returns>
-    public TestParameters? GetParameters()
+    /// <param name="parameters">Parsed test parameters when the method returns true; otherwise, null.</param>
+    /// <returns>True when the payload contains valid test parameters; otherwise, false.</returns>
+    public bool TryGetParameters([NotNullWhen(true)] out TestParameters? parameters)
     {
-        return StringUtil.IsNullOrWhiteSpace(RawParameters) ? null : JsonHelper.DeserializeObject<TestParameters>(RawParameters!);
+        if (StringUtil.IsNullOrWhiteSpace(RawParameters))
+        {
+            parameters = null;
+            return false;
+        }
+
+        try
+        {
+            var parsedParameters = JsonHelper.DeserializeObject<TestParameters>(RawParameters);
+            if (parsedParameters is null)
+            {
+                parameters = null;
+                return false;
+            }
+
+            parameters = parsedParameters;
+            return true;
+        }
+        catch (JsonException)
+        {
+            parameters = null;
+            return false;
+        }
     }
 
     /// <summary>

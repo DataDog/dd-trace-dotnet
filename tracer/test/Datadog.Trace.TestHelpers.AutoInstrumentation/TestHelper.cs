@@ -376,15 +376,19 @@ namespace Datadog.Trace.TestHelpers
             EnvironmentHelper.CustomEnvironmentVariables[key] = value;
         }
 
-        public void ConfigureContainers(params ContainerFixture[] containers)
+        public Task ConfigureContainers(params ContainerFixture[] containers)
         {
             foreach (var container in containers)
             {
+                container.SkipIfUnavailable();
+
                 foreach (var variable in container.GetEnvironmentVariables())
                 {
                     SetEnvironmentVariable(variable.Key, variable.Value);
                 }
             }
+
+            return Task.CompletedTask;
         }
 
         public void ConfigureOtlpExport(OtlpTestAgentSession otlpSession, string protocol = "http/protobuf")

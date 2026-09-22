@@ -115,6 +115,10 @@ internal partial interface IMetricsTelemetryCollector
 
     public void RecordCountRaspTimeout(Datadog.Trace.Telemetry.Metrics.MetricTags.RaspRuleType tag, int increment = 1);
 
+    public void RecordCountRaspError(Datadog.Trace.Telemetry.Metrics.MetricTags.RaspError tag, int increment = 1);
+
+    public void RecordCountRaspRuleSkipped(Datadog.Trace.Telemetry.Metrics.MetricTags.RaspRuleTypeSkipped tag, int increment = 1);
+
     public void RecordCountMissingUserId(Datadog.Trace.Telemetry.Metrics.MetricTags.AuthenticationFrameworkWithEventType tag, int increment = 1);
 
     public void RecordCountMissingUserLogin(Datadog.Trace.Telemetry.Metrics.MetricTags.AuthenticationFrameworkWithEventType tag, int increment = 1);

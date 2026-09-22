@@ -15,7 +15,7 @@ stages:
 include:
   - local: .gitlab/one-pipeline.locked.yml
   - project: 'ddoghq/llm-validation-platform'
-    ref: 0f48ca35f0b3dfd19d5c0dc9f92aa977c99bebbf   # v0.1.1 (immutable SHA; a tag could be retargeted)
+    ref: 4bb157a2cbb50ef608b9ec8e14b886e0cf838ca3   # v0.1.4 (immutable SHA; a tag could be retargeted)
     file: '/ci/llm-validation.gitlab-ci.yml'
   # MIGRATION TOUCHPOINT (GitHub org / GitLab group split):
   # GitLab does not expand top-level `variables:` inside `include:` keywords,
@@ -45,7 +45,7 @@ variables:
 "llm validation":
   variables:
     LLMVAL_PLATFORM_PROJECT: "ddoghq/llm-validation-platform"
-    LLMVAL_PLATFORM_REF: "0f48ca35f0b3dfd19d5c0dc9f92aa977c99bebbf"   # v0.1.1 (must match include ref above)
+    LLMVAL_PLATFORM_REF: "4bb157a2cbb50ef608b9ec8e14b886e0cf838ca3"   # v0.1.4 (must match include ref above)
 
 build-windows-ci-image:
   stage: build
@@ -256,11 +256,12 @@ publish:
                 throw "Error uploading artifacts to S3"
               }
 
-              aws s3 cp artifacts-out/nuget/ s3://dd-windowsfilter/builds/tracer/${CI_COMMIT_SHA}/signed-nuget-packages/ --recursive --region us-east-1 --exclude "*" --include "*.nupkg" --grants read=uri=http://acs.amazonaws.com/groups/global/AllUsers full=id=3a6e02b08553fd157ae3fb918945dd1eaae5a1aa818940381ef07a430cf25732
+              aws s3 cp artifacts-out/nuget/ s3://dd-windowsfilter/builds/tracer/${CI_COMMIT_SHA}/signed-nuget-packages/ --recursive --region us-east-1 --exclude "*" --include "*.nupkg" --include "*.snupkg" --grants read=uri=http://acs.amazonaws.com/groups/global/AllUsers full=id=3a6e02b08553fd157ae3fb918945dd1eaae5a1aa818940381ef07a430cf25732
               if ($LASTEXITCODE -ne 0) {
-                throw "Error uploading build-signed NuGet packages to S3"
+                throw "Error uploading build-signed NuGet and symbol packages to S3"
               }
 
+              # No --include "*.snupkg" here: these 3 packages are built by Azure DevOps and don't include symbols
               aws s3 cp signed-out/nuget/ s3://dd-windowsfilter/builds/tracer/${CI_COMMIT_SHA}/signed-nuget-packages/ --recursive --region us-east-1 --exclude "*" --include "*.nupkg" --grants read=uri=http://acs.amazonaws.com/groups/global/AllUsers full=id=3a6e02b08553fd157ae3fb918945dd1eaae5a1aa818940381ef07a430cf25732
               if ($LASTEXITCODE -ne 0) {
                 throw "Error uploading signed NuGet packages to S3"
@@ -493,12 +494,6 @@ macrobenchmarks:
   needs: []
   trigger:
     include: .gitlab/benchmarks/macrobenchmarks.yml
-  variables:
-    # Forward BP_EXTERNAL_S3_URL so an external orchestrator can override the S3 destination.
-    # This avoids 'forward: pipeline_variables: true', which forwards every parent variable and may be unsafe.
-    # When the orchestrator leaves it unset, GitLab forwards the literal '$BP_EXTERNAL_S3_URL' (not empty),
-    # so downstream code must treat that literal as unset.
-    BP_EXTERNAL_S3_URL: $BP_EXTERNAL_S3_URL
   allow_failure: true
   rules:
     - if: '$CI_PIPELINE_SOURCE == "push" && ($CI_COMMIT_BRANCH == "master" || $CI_COMMIT_BRANCH =~ /^hotfix/)'
@@ -513,12 +508,6 @@ microbenchmarks:
   trigger:
     include: .gitlab/benchmarks/microbenchmarks.yml
     strategy: depend
-  variables:
-    # Forward BP_EXTERNAL_S3_URL so an external orchestrator can override the S3 destination.
-    # This avoids 'forward: pipeline_variables: true', which forwards every parent variable and may be unsafe.
-    # When the orchestrator leaves it unset, GitLab forwards the literal '$BP_EXTERNAL_S3_URL' (not empty),
-    # so downstream code must treat that literal as unset.
-    BP_EXTERNAL_S3_URL: $BP_EXTERNAL_S3_URL
   allow_failure: true
   rules:
     - if: $CI_COMMIT_TAG
@@ -529,12 +518,6 @@ dsm_throughput:
   stage: benchmarks
   trigger:
     include: .gitlab/benchmarks/dsm-throughput.yml
-  variables:
-    # Forward BP_EXTERNAL_S3_URL so an external orchestrator can override the S3 destination.
-    # This avoids 'forward: pipeline_variables: true', which forwards every parent variable and may be unsafe.
-    # When the orchestrator leaves it unset, GitLab forwards the literal '$BP_EXTERNAL_S3_URL' (not empty),
-    # so downstream code must treat that literal as unset.
-    BP_EXTERNAL_S3_URL: $BP_EXTERNAL_S3_URL
   allow_failure: true
   rules:
     - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == "master"'

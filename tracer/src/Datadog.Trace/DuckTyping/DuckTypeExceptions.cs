@@ -38,6 +38,10 @@ namespace Datadog.Trace.DuckTyping
         [DebuggerHidden]
         [DoesNotReturn]
         internal static void Throw(string message) => throw Create(message);
+
+#if !NET6_0_OR_GREATER
+        internal DuckTypeException CloneForThrow() => (DuckTypeException)MemberwiseClone();
+#endif
     }
 
     /// <summary>

@@ -11,6 +11,8 @@ namespace Datadog.Trace.Util
     internal static class SamplingHelpers
     {
         private const ulong KnuthFactor = 1_111_111_111_111_111_111;
+        private const ulong OtelTraceStateValueRange = 1UL << 56;
+        private const ulong OtelTraceStateMaxValue = OtelTraceStateValueRange - 1;
 
         /// <summary>
         /// Determines if a trace should be kept based on its trace id and the given sampling rate.
@@ -41,7 +43,20 @@ namespace Datadog.Trace.Util
                 return false;
             }
 
-            return (id * KnuthFactor) <= (rate * ulong.MaxValue);
+            return ComputeKnuthHash(id) <= (rate * ulong.MaxValue);
+        }
+
+        internal static ulong ComputeKnuthHash(ulong id) => id * KnuthFactor;
+
+        internal static ulong ComputeOtelTraceStateRandomValue(ulong traceId) =>
+            (~ComputeKnuthHash(traceId)) >> 8;
+
+        internal static ulong ComputeOtelTraceStateThreshold(double samplingRate)
+        {
+            var threshold = (ulong)Math.Round(
+                (1.0 - samplingRate) * OtelTraceStateValueRange,
+                MidpointRounding.AwayFromZero);
+            return Math.Min(threshold, OtelTraceStateMaxValue);
         }
 
         internal static bool IsKeptBySamplingPriority(in SpanCollection trace)
