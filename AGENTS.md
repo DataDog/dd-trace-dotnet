@@ -143,8 +143,7 @@ The full managed tracer (`Datadog.Trace.dll`) contains all auto-instrumentation 
 - Never manually edit generated files (`.g.` in the file extension). Read the file header for regeneration instructions instead.
 
 **C/C++ style:**
-
-- See `.clang-format`; keep consistent naming
+- See `.clang-format`; keep consistent naming.
 
 ## Windows Command Line Best Practices
 
