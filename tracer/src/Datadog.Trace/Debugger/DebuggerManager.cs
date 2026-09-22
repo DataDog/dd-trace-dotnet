@@ -18,6 +18,7 @@ using Datadog.Trace.Debugger.Symbols;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Processors;
 using Datadog.Trace.RemoteConfigurationManagement;
+using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Util;
 using Datadog.Trace.Util.Json;
@@ -511,7 +512,8 @@ namespace Datadog.Trace.Debugger
             }
         }
 
-        private void SetExceptionReplayState(DebuggerSettings debuggerSettings)
+        [TestingAndPrivateOnly]
+        internal void SetExceptionReplayState(DebuggerSettings debuggerSettings, Action? md5Probe = null)
         {
             try
             {
@@ -547,8 +549,14 @@ namespace Datadog.Trace.Debugger
                 {
                     EnsureSnapshotPipelineConfigured(debuggerSettings);
                     var exceptionReplay = ExceptionReplay.Create(ExceptionReplaySettings);
-                    exceptionReplay.Initialize();
-                    ExceptionReplay = exceptionReplay;
+                    if (exceptionReplay.Initialize(md5Probe))
+                    {
+                        ExceptionReplay = exceptionReplay;
+                    }
+                    else
+                    {
+                        SafeDisposal.TryDispose(exceptionReplay);
+                    }
                 }
             }
             catch (Exception ex)
