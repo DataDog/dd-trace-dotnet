@@ -16,7 +16,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions;
 internal interface IDurableFunctionsOrchestrator
 {
     [DuckField(Name = "functionContext")]
-    IDurableFunctionContext FunctionContext { get; }
+    IFunctionContext FunctionContext { get; }
 }
 
 #endif

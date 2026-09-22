@@ -2631,13 +2631,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { string.Empty },
 #else
 #if NET8_0
-                new object[] { "1.19.0" },
+                new object[] { "1.19.1" },
 #endif
 #if NET9_0
-                new object[] { "1.19.0" },
+                new object[] { "1.19.1" },
 #endif
 #if NET10_0
-                new object[] { "1.19.0" },
+                new object[] { "1.19.1" },
 #endif
 #endif
             };

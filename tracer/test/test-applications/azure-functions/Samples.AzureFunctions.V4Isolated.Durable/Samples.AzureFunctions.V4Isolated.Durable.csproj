@@ -1,9 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <ApiVersion Condition="'$(ApiVersion)' == ''">1.19.0</ApiVersion>
-    <!-- Azure Managed 1.9.0 requires the host dependencies included with DurableTask 1.16.5 or later. -->
-    <AzureManagedVersion Condition="$(ApiVersion) &lt; 1.16.5">1.5.0</AzureManagedVersion>
-    <AzureManagedVersion Condition="'$(AzureManagedVersion)' == ''">1.9.0</AzureManagedVersion>
     <TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
     <AzureFunctionsVersion>v4</AzureFunctionsVersion>
     <OutputType>Exe</OutputType>
@@ -13,7 +10,6 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.Azure.Functions.Worker" Version="2.52.0" />
     <PackageReference Include="Microsoft.Azure.Functions.Worker.Extensions.DurableTask" Version="$(ApiVersion)" />
-    <PackageReference Include="Microsoft.Azure.Functions.Worker.Extensions.DurableTask.AzureManaged" Version="$(AzureManagedVersion)" />
     <PackageReference Include="Microsoft.Azure.Functions.Worker.Extensions.Http" Version="3.3.0" />
     <PackageReference Include="Microsoft.Azure.Functions.Worker.Sdk" Version="2.1.0" />
     <PackageReference Include="System.Diagnostics.DiagnosticSource" Version="10.0.2" />

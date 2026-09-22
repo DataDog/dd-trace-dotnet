@@ -23,7 +23,7 @@ internal static class AzureFunctionsDurablePropagation
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(AzureFunctionsDurablePropagation));
 
     internal static PropagationContext ExtractPropagatedContext<TFunctionContext>(TFunctionContext functionContext)
-        where TFunctionContext : IDurableFunctionContext
+        where TFunctionContext : IFunctionContext
     {
         try
         {

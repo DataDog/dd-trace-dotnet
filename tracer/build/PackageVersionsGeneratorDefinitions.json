@@ -954,10 +954,10 @@
     "IntegrationName": "AzureFunctionsDurable",
     "SampleProjectName": "Samples.AzureFunctions.V4Isolated.Durable",
     "NugetPackageSearchName": "Microsoft.Azure.Functions.Worker.Extensions.DurableTask",
-    "MinVersion": "1.13.0",
+    "MinVersion": "1.1.0",
     "MaxVersionExclusive": "2.0.0",
     "SpecificVersions": [
-      "1.13.*",
+      "1.1.0",
       "1.*.*"
     ]
   },

@@ -93,18 +93,6 @@ namespace Datadog.Trace.Tests.ClrProfiler.AutoInstrumentation.Azure.Functions
         }
 
         [Theory]
-        [InlineData("orchestrationTrigger", "DurableOrchestration")]
-        [InlineData("activityTrigger", "DurableActivity")]
-        [InlineData("entityTrigger", "DurableEntity")]
-        [InlineData("httpTrigger", null)]
-        public void DurableGetTriggerType_ClassifiesOnlyDurableInputs(string bindingType, string? expected)
-        {
-            var context = CreateMockFunctionContext(bindingType);
-
-            AzureFunctionsDurableCommon.GetTriggerType(context.DuckCast<IDurableFunctionContext>()).Should().Be(expected);
-        }
-
-        [Theory]
         [InlineData("00", null, null, null)]
         [InlineData("00", "vendor=value", null, "vendor=value")]
         [InlineData("00", "dd=s:0", 0, null)]
@@ -121,12 +109,12 @@ namespace Datadog.Trace.Tests.ClrProfiler.AutoInstrumentation.Azure.Functions
             const string spanId = "0000000000000002";
             var context = CreateMockFunctionContext("activityTrigger");
             context.TraceContext = new MockWorkerTraceContext
-            {
-                TraceParent = $"00-{traceId}-{spanId}-{traceFlags}",
-                TraceState = traceState,
-            };
+                                   {
+                                       TraceParent = $"00-{traceId}-{spanId}-{traceFlags}",
+                                       TraceState = traceState,
+                                   }.DuckCast<IWorkerTraceContext>();
 
-            var extractedContext = AzureFunctionsDurablePropagation.ExtractPropagatedContext(context.DuckCast<IDurableFunctionContext>());
+            var extractedContext = AzureFunctionsDurablePropagation.ExtractPropagatedContext(context);
 
             extractedContext.SpanContext.Should().NotBeNull();
             extractedContext.SpanContext!.RawTraceId.Should().Be(traceId);
@@ -202,7 +190,7 @@ namespace Datadog.Trace.Tests.ClrProfiler.AutoInstrumentation.Azure.Functions
 
             public IDictionary<object, object?>? Items { get; }
 
-            public MockWorkerTraceContext? TraceContext { get; set; }
+            public IWorkerTraceContext? TraceContext { get; set; }
         }
 
         private class MockBindingMetadata

@@ -80,7 +80,7 @@ public class DurableFunctions
 
     [Function(nameof(FailingDurableActivity))]
     public static string FailingDurableActivity([ActivityTrigger] string name)
-        => throw new InvalidOperationException($"Unable to greet {name}.");
+        => throw new InvalidOperationException($"Unable to greet {name.Trim('"')}.");
 
     private void ScheduleShutdown()
     {

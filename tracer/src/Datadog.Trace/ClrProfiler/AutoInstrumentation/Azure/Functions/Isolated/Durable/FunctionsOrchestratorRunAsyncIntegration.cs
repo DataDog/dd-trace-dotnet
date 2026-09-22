@@ -23,9 +23,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions;
     MethodName = "RunAsync",
     ReturnTypeName = "System.Threading.Tasks.Task`1[System.Object]",
     ParameterTypeNames = ["Microsoft.DurableTask.TaskOrchestrationContext", ClrNames.Object],
-    MinimumVersion = "1.13.0",
+    MinimumVersion = "1.1.0",
     MaximumVersion = "1.*.*",
-    IntegrationName = AzureFunctionsDurableCommon.IntegrationName)]
+    IntegrationName = AzureFunctionsCommon.IntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
 public sealed class FunctionsOrchestratorRunAsyncIntegration
@@ -47,7 +47,7 @@ public sealed class FunctionsOrchestratorRunAsyncIntegration
             return new CallTargetState(scope: null, state: null, startTime);
         }
 
-        var initialState = AzureFunctionsDurableCommon.OnFunctionExecutionBegin(instance.FunctionContext, startTime);
+        var initialState = AzureFunctionsCommon.OnIsolatedFunctionBegin(instance.FunctionContext, AzureFunctionsCommon.DurableOrchestrationTrigger, startTime);
         return new CallTargetState(initialState.Scope, new InitialOrchestrationScope(initialState.Scope), startTime);
     }
 
@@ -89,7 +89,7 @@ public sealed class FunctionsOrchestratorRunAsyncIntegration
 
         try
         {
-            var errorState = AzureFunctionsDurableCommon.OnFunctionExecutionBegin(instance.FunctionContext, state.StartTime);
+            var errorState = AzureFunctionsCommon.OnIsolatedFunctionBegin(instance.FunctionContext, AzureFunctionsCommon.DurableOrchestrationTrigger, state.StartTime);
             errorState.Scope.DisposeWithException(exception);
         }
         catch (Exception ex)

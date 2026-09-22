@@ -86,13 +86,12 @@ at Samples.AzureFunctions.Durable.DurableFunctions.FailingDurableActivity(String
     }
   },
   {
-    TraceId: Id_1,
-    SpanId: Id_8,
+    TraceId: Id_8,
+    SpanId: Id_9,
     Name: azure_functions.invoke,
     Resource: DurableEntity DurableCounter,
     Service: AzureFunctionsDurableTriggerTests,
     Type: serverless,
-    ParentId: Id_9,
     Tags: {
       aas.environment.extension_version: unknown,
       aas.environment.instance_id: unknown,
@@ -211,7 +210,7 @@ at Samples.AzureFunctions.Durable.DurableFunctions.FailingDurableActivity(String
       error.stack:
 Microsoft.DurableTask.TaskFailedException: Task 'FailingDurableActivity' (#0) failed with an unhandled exception: Unable to greet World.
 ---> DurableTask.Core.Exceptions.TaskFailedException: Exception of type 'DurableTask.Core.Exceptions.TaskFailedException' was thrown.
-at DurableTask.Core.TaskOrchestrationContext.ScheduleTaskInternal(String name, String version, String taskList, Type resultType, ScheduleTaskOptions options, Object[] parameters),
+at DurableTask.Core.TaskOrchestrationContext.ScheduleTaskInternal(String name, String version, String taskList, Type resultType, Object[] parameters),
       error.type: Microsoft.DurableTask.TaskFailedException,
       language: dotnet,
       runtime-id: Guid_1,

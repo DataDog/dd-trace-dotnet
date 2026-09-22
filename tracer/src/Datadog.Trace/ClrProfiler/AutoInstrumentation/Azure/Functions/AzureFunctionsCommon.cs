@@ -39,6 +39,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
         private const string HttpRequestContextKey = "HttpRequestContext";
         private const string SpanType = SpanTypes.Serverless;
 
+        internal const string DurableOrchestrationTrigger = "DurableOrchestration";
+        internal const string DurableActivityTrigger = "DurableActivity";
+        internal const string DurableEntityTrigger = "DurableEntity";
+
         public const string IntegrationName = nameof(Configuration.IntegrationId.AzureFunctions);
         public const string OperationName = AzureFunctionsConstants.AzureFunctionName;
         public const string AzureApim = AzureFunctionsConstants.AzureApimName;
@@ -208,6 +212,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
 
         public static CallTargetState OnIsolatedFunctionBegin<T>(T functionContext)
             where T : IFunctionContext
+            => OnIsolatedFunctionBegin(functionContext, triggerType: null, startTime: null);
+
+        internal static CallTargetState OnIsolatedFunctionBegin<T>(T functionContext, string? triggerType, DateTimeOffset? startTime)
+            where T : IFunctionContext
         {
             var tracer = Tracer.Instance;
 
@@ -221,7 +229,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
             // (in OnAsyncMethodEnd of the calling integration).
             var aspNetCoreScope = GetAspNetCoreScope(functionContext);
 
-            var scope = CreateIsolatedFunctionScope(tracer, functionContext, aspNetCoreScope);
+            var scope = CreateIsolatedFunctionScope(tracer, functionContext, aspNetCoreScope, triggerType, startTime);
 
             if (scope == null && aspNetCoreScope == null)
             {
@@ -231,7 +239,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
             return new CallTargetState(scope, state: aspNetCoreScope);
         }
 
-        private static Scope? CreateIsolatedFunctionScope<T>(Tracer tracer, T functionContext, Scope? aspNetCoreScope)
+        private static Scope? CreateIsolatedFunctionScope<T>(Tracer tracer, T functionContext, Scope? aspNetCoreScope, string? triggerType, DateTimeOffset? startTime)
             where T : IFunctionContext
         {
             Scope? scope = null;
@@ -239,13 +247,19 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
             try
             {
                 // Try to work out which trigger type it is
-                var triggerType = "Unknown";
+                var detectTriggerType = triggerType is null;
+                triggerType ??= "Unknown";
                 PropagationContext extractedContext = default;
 
 #pragma warning disable CS8605 // Unboxing a possibly null value. This is a lie, that only affects .NET Core 3.1
                 foreach (DictionaryEntry entry in functionContext.FunctionDefinition.InputBindings)
 #pragma warning restore CS8605 // Unboxing a possibly null value.
                 {
+                    if (!detectTriggerType)
+                    {
+                        break;
+                    }
+
                     var binding = entry.Value.DuckCast<BindingMetadata>();
                     if (binding.Direction != BindingDirection.In || binding.BindingType is null)
                     {
@@ -253,9 +267,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                     }
 
                     var type = binding.BindingType;
-                    if (AzureFunctionsDurableCommon.IsDurableTrigger(type))
+                    if (type.Equals("orchestrationTrigger", StringComparison.OrdinalIgnoreCase))
                     {
-                        // The Durable executor and orchestrator integrations own these spans
+                        // FunctionsOrchestrator.RunAsync owns orchestration spans because only it exposes IsReplaying.
                         return null;
                     }
 
@@ -269,6 +283,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                         _ when type.StartsWith("eventHub", StringComparison.OrdinalIgnoreCase) => "EventHub",        // Microsoft.Azure.Functions.Worker.Extensions.EventHubs
                         _ when type.StartsWith("cosmosDb", StringComparison.OrdinalIgnoreCase) => "Cosmos",          // Microsoft.Azure.Functions.Worker.Extensions.CosmosDB
                         _ when type.StartsWith("eventGrid", StringComparison.OrdinalIgnoreCase) => "EventGrid",      // Microsoft.Azure.Functions.Worker.Extensions.EventGrid.CosmosDB
+                        _ when type.Equals("activityTrigger", StringComparison.OrdinalIgnoreCase) => DurableActivityTrigger,
+                        _ when type.Equals("entityTrigger", StringComparison.OrdinalIgnoreCase) => DurableEntityTrigger,
                         _ => "Automatic",                                                                            // Automatic is the catch all for any triggers we don't explicitly handle
                     };
 
@@ -325,6 +341,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                     break;
                 }
 
+                if (triggerType is DurableOrchestrationTrigger or DurableActivityTrigger or DurableEntityTrigger)
+                {
+                    extractedContext = AzureFunctionsDurablePropagation.ExtractPropagatedContext(functionContext);
+                }
+
                 var tags = new AzureFunctionsTags
                 {
                     TriggerType = triggerType,
@@ -361,11 +382,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
                     // 1. Extracted from propagation headers (gRPC message from the host process).
                     // 2. ASP.NET Core scope (if available but not active - shouldn't happen).
                     // 3. Existing local span (fallback).
-                    var parentSpanContext = extractedContext.SpanContext ??
-                                            aspNetCoreScope?.Span.Context ??
-                                            activeScope?.Span.Context;
+                    ISpanContext? parentSpanContext = extractedContext.SpanContext;
+                    if (parentSpanContext is null && extractedContext.Links is not null)
+                    {
+                        parentSpanContext = SpanContext.None;
+                    }
 
-                    scope = tracer.StartActiveInternal(OperationName, parent: parentSpanContext, tags: tags);
+                    parentSpanContext ??= aspNetCoreScope?.Span.Context ?? activeScope?.Span.Context;
+
+                    scope = tracer.StartActiveInternal(OperationName, parent: parentSpanContext, startTime: startTime, tags: tags, links: extractedContext.Links);
                     var span = scope.Span;
                     var rootSpan = scope.Root.Span;
 

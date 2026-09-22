@@ -445,17 +445,17 @@
   {
     "integrationName": "AzureFunctions",
     "assemblyName": "Microsoft.Azure.Functions.Worker.Extensions.DurableTask",
-    "minAssemblyVersionInclusive": "1.13.0",
+    "minAssemblyVersionInclusive": "1.1.0",
     "maxAssemblyVersionInclusive": "1.65535.65535",
     "packages": [
       {
         "name": "Microsoft.Azure.Functions.Worker.Extensions.DurableTask",
         "minVersionAvailableInclusive": "1.0.0",
-        "minVersionSupportedInclusive": "1.13.0",
-        "minVersionTestedInclusive": "1.13.1",
-        "maxVersionSupportedInclusive": "1.19.0",
-        "maxVersionAvailableInclusive": "1.19.0",
-        "maxVersionTestedInclusive": "1.19.0"
+        "minVersionSupportedInclusive": "1.1.0",
+        "minVersionTestedInclusive": "1.1.0",
+        "maxVersionSupportedInclusive": "1.19.1",
+        "maxVersionAvailableInclusive": "1.19.1",
+        "maxVersionTestedInclusive": "1.19.1"
       }
     ]
   },

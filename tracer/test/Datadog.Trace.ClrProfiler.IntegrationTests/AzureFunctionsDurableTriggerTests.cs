@@ -34,7 +34,6 @@ public class AzureFunctionsDurableTriggerTests : AzureFunctionsTests
     private const string ExpectedFailureMessage = "Unable to greet World.";
     private const string ExpectedImmediateFailureMessage = "Unable to start orchestration.";
     private const string ManualActivitySpanName = "Manual inside DurableActivity";
-    private const string LocalDurableTaskSchedulerConnectionString = "Endpoint=http://localhost:8080;TaskHub=default;Authentication=None";
     private const string AzuriteAccountKey = "Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==";
     private static readonly string[] ExpectedDurableResources =
     [
@@ -54,7 +53,6 @@ public class AzureFunctionsDurableTriggerTests : AzureFunctionsTests
         SetEnvironmentVariable("FUNCTIONS_EXTENSION_VERSION", "~4");
         SetEnvironmentVariable("WEBSITE_SITE_NAME", nameof(AzureFunctionsDurableTriggerTests));
         SetEnvironmentVariable("AzureWebJobsStorage", GetAzuriteConnectionString());
-        SetEnvironmentVariable("DURABLE_TASK_SCHEDULER_CONNECTION_STRING", GetDurableTaskSchedulerConnectionString());
         SetEnvironmentVariable("TASKHUB_NAME", "default");
         SetEnvironmentVariable("DD_TRACE_OTEL_ENABLED", "false");
     }
@@ -120,9 +118,12 @@ public class AzureFunctionsDurableTriggerTests : AzureFunctionsTests
             immediatelyFailedOrchestrationSpan.Tags.Should().ContainKey(Tags.ErrorMsg).WhoseValue.Should().Contain(ExpectedImmediateFailureMessage);
             HasPositiveSamplingPriority(immediatelyFailedOrchestrationSpan).Should().BeTrue();
 
+            var snapshotSuffix = Version.TryParse(packageVersion, out var version) && version < new Version(1, 4, 0)
+                                     ? ".OlderPackageVersion"
+                                     : string.Empty;
             await AssertIsolatedSpans(
                 spans,
-                $"{nameof(AzureFunctionsDurableTriggerTests)}.{nameof(OrchestrationActivityEntity_SubmitsTrace)}");
+                $"{nameof(AzureFunctionsDurableTriggerTests)}.{nameof(OrchestrationActivityEntity_SubmitsTrace)}{snapshotSuffix}");
         }
     }
 
@@ -174,14 +175,9 @@ public class AzureFunctionsDurableTriggerTests : AzureFunctionsTests
                     .Should().Equal("Completed", "Failed", "Failed");
     }
 
-    private static string GetDurableTaskSchedulerConnectionString()
-        => Environment.GetEnvironmentVariable("DURABLE_TASK_SCHEDULER_CONNECTION_STRING") ?? LocalDurableTaskSchedulerConnectionString;
-
     private static string GetAzuriteConnectionString()
     {
-        var host = GetDurableTaskSchedulerConnectionString().Contains("durabletask-scheduler", StringComparison.OrdinalIgnoreCase)
-                       ? "azurite"
-                       : "127.0.0.1";
+        var host = Environment.GetEnvironmentVariable("CONTAINER_HOSTNAME") is null ? "127.0.0.1" : "azurite";
         return $"DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey={AzuriteAccountKey};BlobEndpoint=http://{host}:10000/devstoreaccount1;QueueEndpoint=http://{host}:10001/devstoreaccount1;TableEndpoint=http://{host}:10002/devstoreaccount1;";
     }
 }

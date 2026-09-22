@@ -3765,30 +3765,6 @@
   {
     "IntegrationName": "AzureFunctions",
     "AssemblyName": "Microsoft.Azure.Functions.Worker.Extensions.DurableTask",
-    "TargetTypeName": "Microsoft.Azure.Functions.Worker.Extensions.DurableTask.Execution.DurableFunctionExecutor",
-    "TargetMethodName": "ExecuteAsync",
-    "TargetReturnType": "System.Threading.Tasks.ValueTask",
-    "TargetParameterTypes": [
-      "Microsoft.Azure.Functions.Worker.FunctionContext"
-    ],
-    "MinimumVersion": {
-      "Item1": 1,
-      "Item2": 13,
-      "Item3": 0
-    },
-    "MaximumVersion": {
-      "Item1": 1,
-      "Item2": 65535,
-      "Item3": 65535
-    },
-    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions.DurableFunctionExecutorExecuteAsyncIntegration",
-    "IntegrationKind": 0,
-    "IsAdoNetIntegration": false,
-    "InstrumentationCategory": 1
-  },
-  {
-    "IntegrationName": "AzureFunctions",
-    "AssemblyName": "Microsoft.Azure.Functions.Worker.Extensions.DurableTask",
     "TargetTypeName": "Microsoft.Azure.Functions.Worker.Extensions.DurableTask.FunctionsOrchestrator",
     "TargetMethodName": "RunAsync",
     "TargetReturnType": "System.Threading.Tasks.Task`1[System.Object]",
@@ -3798,7 +3774,7 @@
     ],
     "MinimumVersion": {
       "Item1": 1,
-      "Item2": 13,
+      "Item2": 1,
       "Item3": 0
     },
     "MaximumVersion": {
