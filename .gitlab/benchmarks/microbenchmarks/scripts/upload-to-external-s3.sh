@@ -19,5 +19,5 @@ converted_files=("$ARTIFACTS_DIR"/candidate*.converted.json)
 shopt -u nullglob
 
 for file in "${converted_files[@]}"; do
-    aws s3 cp --acl bucket-owner-full-control "$file" "$S3_URL"
+    aws s3 cp --acl bucket-owner-full-control "$file" "$S3_URL" || echo "WARNING: failed to upload $(basename "$file") to external S3" >&2
 done
