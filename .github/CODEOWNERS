@@ -277,6 +277,7 @@ Directory.Build.props                     @DataDog/apm-dotnet
 /tracer/test/Datadog.Trace.Tests/Logging/                                   @DataDog/apm-lang-platform-dotnet
 /tracer/test/Datadog.Trace.Tests/ManualInstrumentation/                     @DataDog/apm-sdk-capabilities-dotnet
 /tracer/test/Datadog.Trace.Tests/OpenTelemetry/                             @DataDog/apm-sdk-capabilities-dotnet
+/tracer/test/Datadog.Trace.Tests/OtelThreadContext/                         @DataDog/apm-sdk-capabilities-dotnet
 /tracer/test/Datadog.Trace.Tests/Pdb/                                       @DataDog/debugger-dotnet
 /tracer/test/Datadog.Trace.Tests/PlatformHelpers/                           @DataDog/apm-lang-platform-dotnet
 /tracer/test/Datadog.Trace.Tests/Propagators/                               @DataDog/apm-sdk-capabilities-dotnet
