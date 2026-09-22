@@ -189,11 +189,24 @@ namespace Samples.Console_
 
         private static IntPtr GetOtelThreadContextTlsAddress()
         {
-            // dlsym returns the calling thread's address for an ELF TLS symbol. Invoke it through the
-            // tracer's existing native-library shim so this works on both glibc and musl.
+            // The profiler loads Datadog.Tracer.Native.so with local visibility, so RTLD_DEFAULT cannot
+            // resolve its symbols. Open the already-loaded DSO explicitly, then dlsym returns this
+            // calling thread's address for the ELF TLS symbol. Keep the extra reference until process exit
+            // so the returned TLS address remains valid while the external test reader inspects it.
             var nativeLibraryType = Type.GetType("Datadog.Trace.AppSec.Waf.NativeBindings.NativeLibrary, Datadog.Trace", throwOnError: true);
+            var tryLoad = nativeLibraryType.GetMethod("TryLoad", BindingFlags.NonPublic | BindingFlags.Static);
             var getExport = nativeLibraryType.GetMethod("GetExport", BindingFlags.NonPublic | BindingFlags.Static);
-            return (IntPtr)getExport.Invoke(null, new object[] { IntPtr.Zero, "otel_thread_ctx_v1" });
+            var profilerPath = Environment.GetEnvironmentVariable("CORECLR_PROFILER_PATH");
+            var nativeTracerPath = Path.Combine(Path.GetDirectoryName(profilerPath), "Datadog.Tracer.Native.so");
+            var loadArguments = new object[] { nativeTracerPath, null };
+
+            if (tryLoad.Invoke(null, loadArguments) is not true)
+            {
+                return IntPtr.Zero;
+            }
+
+            var handle = (IntPtr)loadArguments[1];
+            return (IntPtr)getExport.Invoke(null, new object[] { handle, "otel_thread_ctx_v1" });
         }
 
         private static bool WaitForFile(string path, TimeSpan timeout)
