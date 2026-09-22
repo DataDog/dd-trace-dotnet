@@ -9,6 +9,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Text;
+using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Util.Json;
@@ -48,6 +49,8 @@ internal static class AwsMessageAttributesHeadersAdapters
 
         public void Add(string key, byte[] value)
         {
+            // Preserve the existing wire format, including the extra Base64 layer on the Base64
+            // pathway header, until consumers that require that layer have upgraded.
             _carrier
                .Append(value: '"')
                .Append(key)
@@ -103,9 +106,19 @@ internal static class AwsMessageAttributesHeadersAdapters
 
         public byte[] TryGetLastBytes(string name)
         {
-            if (_ddAttributes != null && _ddAttributes.TryGetValue(name, out var b64))
+            if (_ddAttributes != null && _ddAttributes.TryGetValue(name, out var b64) && !StringUtil.IsNullOrEmpty(b64))
             {
-                return Convert.FromBase64String(b64);
+                var decodedBytes = Convert.FromBase64String(b64);
+                if (name == DataStreamsPropagationHeaders.PropagationKeyBase64 && PathwayContextEncoder.IsCompleteEncoding(decodedBytes))
+                {
+                    // Other tracers encode the pathway once. The binary propagator expects the Base64 text,
+                    // so preserve that layer when the decoded value is a complete binary pathway.
+                    return Encoding.UTF8.GetBytes(b64);
+                }
+
+                // Existing .NET producers encode the Base64 header again when writing this JSON.
+                // Remove that outer layer, or the single layer used to transport the legacy binary header.
+                return decodedBytes;
             }
 
             return Array.Empty<byte>();

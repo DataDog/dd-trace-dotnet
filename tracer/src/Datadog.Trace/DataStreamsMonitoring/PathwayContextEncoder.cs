@@ -27,6 +27,9 @@ internal static class PathwayContextEncoder
     /// </summary>
     internal const long MaxClockSkewNs = 60L * 1_000_000_000L;
 
+    // Node.js emits a fixed-size context, zero-padding after shorter timestamps.
+    private const int NodeJsEncodedSize = 20;
+
     /// <summary>
     /// Encodes a <see cref="PathwayContext"/> as a series of bytes
     /// NOTE: the encoding is lossy, in that we convert <see cref="PathwayContext.PathwayStart"/>
@@ -70,6 +73,20 @@ internal static class PathwayContextEncoder
 #endif
 
     /// <summary>
+    /// Checks that the buffer contains a hash and two encoded timestamps, optionally zero-padded
+    /// to the fixed 20-byte size emitted by Node.js.
+    /// Used to distinguish binary pathways from an extra Base64 layer in AWS message attributes.
+    /// Timestamp values are validated by <see cref="Decode(byte[])"/>.
+    /// </summary>
+    internal static bool IsCompleteEncoding(byte[] bytes)
+    {
+        return bytes.Length is >= 10 and <= MaxEncodedSize
+            && VarEncodingHelper.ReadVarLongZigZag(bytes, offset: 8, out var pathwayBytes) is not null
+            && VarEncodingHelper.ReadVarLongZigZag(bytes, offset: 8 + pathwayBytes, out var edgeBytes) is not null
+            && HasValidPadding(bytes, 8 + pathwayBytes + edgeBytes);
+    }
+
+    /// <summary>
     /// Tries to decode a <see cref="PathwayContext"/> from a <c>byte[]</c>.
     /// NOTE: the encoding process is lossy, so the decoded <see cref="PathwayContext"/>
     /// contains truncated values for <see cref="PathwayContext.PathwayStart"/>
@@ -95,10 +112,16 @@ internal static class PathwayContextEncoder
             return null;
         }
 
-        var edgeStartMs = VarEncodingHelper.ReadVarLongZigZag(bytes, offset: 8 + bytesRead, out _);
+        var edgeStartMs = VarEncodingHelper.ReadVarLongZigZag(bytes, offset: 8 + bytesRead, out var edgeBytesRead);
         if (edgeStartMs is null)
         {
             Log.Warning("Error decoding Data Stream PathwayContext from bytes {Base64EncodedBytes}: invalid edge start", Convert.ToBase64String(bytes));
+            return null;
+        }
+
+        if (!HasValidPadding(bytes, 8 + bytesRead + edgeBytesRead))
+        {
+            Log.Warning("Error decoding Data Stream PathwayContext from bytes: unexpected trailing bytes");
             return null;
         }
 
@@ -149,10 +172,16 @@ internal static class PathwayContextEncoder
             return null;
         }
 
-        var edgeStartMs = VarEncodingHelper.ReadVarLongZigZag(bytes.Slice(8 + bytesRead), out _);
+        var edgeStartMs = VarEncodingHelper.ReadVarLongZigZag(bytes.Slice(8 + bytesRead), out var edgeBytesRead);
         if (edgeStartMs is null)
         {
             Log.Warning("Error decoding Data Stream PathwayContext from bytes: invalid edge start");
+            return null;
+        }
+
+        if (!HasValidPadding(bytes, 8 + bytesRead + edgeBytesRead))
+        {
+            Log.Warning("Error decoding Data Stream PathwayContext from bytes: unexpected trailing bytes");
             return null;
         }
 
@@ -177,6 +206,29 @@ internal static class PathwayContextEncoder
         return new PathwayContext(new PathwayHash(hash), pathwayStartNs, edgeStartNs);
     }
 #endif
+
+    private static bool HasValidPadding(ReadOnlySpan<byte> bytes, int encodedLength)
+    {
+        if (encodedLength == bytes.Length)
+        {
+            return true;
+        }
+
+        if (bytes.Length != NodeJsEncodedSize)
+        {
+            return false;
+        }
+
+        for (var i = encodedLength; i < bytes.Length; i++)
+        {
+            if (bytes[i] != 0)
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
 
     private static long ToNanoseconds(long milliseconds)
         => milliseconds * 1_000_000;
