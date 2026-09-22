@@ -11,38 +11,30 @@ namespace Datadog.Trace.FeatureFlags;
 
 internal readonly struct SemanticVersion : IComparable<SemanticVersion>
 {
-    private readonly string _major;
-    private readonly string _minor;
-    private readonly string _patch;
+    private readonly string[] _core;
     private readonly string[] _prerelease;
 
-    private SemanticVersion(string major, string minor, string patch, string[] prerelease)
+    private SemanticVersion(string[] core, string[] prerelease)
     {
-        _major = major;
-        _minor = minor;
-        _patch = patch;
+        _core = core;
         _prerelease = prerelease;
     }
 
     public int CompareTo(SemanticVersion other)
     {
-        var result = CompareNumericIdentifier(_major, other._major);
-        if (result != 0)
+        var coreLength = Math.Max(_core.Length, other._core.Length);
+        for (var i = 0; i < coreLength; i++)
         {
-            return result;
+            var left = i < _core.Length ? _core[i] : "0";
+            var right = i < other._core.Length ? other._core[i] : "0";
+            var coreComparison = CompareNumericIdentifier(left, right);
+            if (coreComparison != 0)
+            {
+                return coreComparison;
+            }
         }
 
-        result = CompareNumericIdentifier(_minor, other._minor);
-        if (result != 0)
-        {
-            return result;
-        }
-
-        result = CompareNumericIdentifier(_patch, other._patch);
-        if (result != 0)
-        {
-            return result;
-        }
+        var result = 0;
 
         if (_prerelease.Length == 0 || other._prerelease.Length == 0)
         {
@@ -106,12 +98,12 @@ internal readonly struct SemanticVersion : IComparable<SemanticVersion>
         }
 
         var core = value.Split('.');
-        if (core.Length != 3 || !IsValidCoreIdentifier(core[0]) || !IsValidCoreIdentifier(core[1]) || !IsValidCoreIdentifier(core[2]))
+        if (core.Length == 0 || Array.Exists(core, static identifier => !IsValidCoreIdentifier(identifier)))
         {
             return false;
         }
 
-        version = new SemanticVersion(core[0], core[1], core[2], prerelease);
+        version = new SemanticVersion(core, prerelease);
         return true;
     }
 

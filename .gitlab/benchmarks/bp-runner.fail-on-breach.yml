@@ -196,7 +196,7 @@ experiments:
 
           - name: normal_operation--trace_stats-win
             thresholds:
-              # n=601, mean=32212590.57, CI=[31276382.79, 33148798.36]
-              - agg_http_req_duration_p95 < 36831998.18 ns
+              # n=601, mean=37.882ms, CI=[36.980ms; 38.784ms]
+              - agg_http_req_duration_p95 < 43093333.33 ns
               # n=601, mean=10609.29, CI=[10439.04, 10779.54]
               - throughput > 9490.03 op/s

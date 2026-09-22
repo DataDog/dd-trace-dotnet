@@ -16,6 +16,7 @@ btowc
 calloc
 ceil
 clock_gettime
+clock_nanosleep
 close
 closedir
 ddog_crasht_CrashInfo_upload_to_endpoint

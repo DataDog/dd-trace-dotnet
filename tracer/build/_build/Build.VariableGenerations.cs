@@ -19,10 +19,12 @@ partial class Build : NukeBuild
 {
     private const string TracerArea = "Tracer";
     private const string AsmArea = "ASM";
+    private const string CiVisibilityArea = "CIVisibility";
     private const string TracingDotnet = "@DataDog/tracing-dotnet";
     private const string ASMDotnet = "@DataDog/asm-dotnet";
     private const string DebuggerDotnet = "@DataDog/debugger-dotnet";
     private const string ProfilerDotnet = "@DataDog/profiling-dotnet";
+    private const string CiAppLibrariesDotnet = "@DataDog/ci-app-libraries-dotnet";
 
     class ChangedTeamValue
     {
@@ -37,6 +39,7 @@ partial class Build : NukeBuild
         new ChangedTeamValue { VariableName = "isTracerChanged", TeamName = TracingDotnet},
         new ChangedTeamValue { VariableName = "isDebuggerChanged", TeamName = DebuggerDotnet},
         new ChangedTeamValue { VariableName = "isProfilerChanged", TeamName = ProfilerDotnet},
+        new ChangedTeamValue { VariableName = "isCiVisibilityChanged", TeamName = CiAppLibrariesDotnet},
     };
 
     Target GenerateGitlabWindowsUnitTestsPipeline
@@ -144,6 +147,7 @@ partial class Build : NukeBuild
             {
                 AppendWindowsJob($"integration-tests-windows-{targetPlatform}:{framework}:tracer", framework, targetPlatform, "integration", TracerArea);
                 AppendWindowsJob($"integration-tests-windows-{targetPlatform}:{framework}:asm", framework, targetPlatform, "integration", AsmArea);
+                AppendWindowsJob($"integration-tests-windows-{targetPlatform}:{framework}:ci-visibility", framework, targetPlatform, "integration", CiVisibilityArea);
 
                 // These combinations fail in Azure because the x86 apphost is unavailable.
                 if (targetPlatform == "x86" && (framework.Equals(TargetFramework.NETCOREAPP3_1) || framework.Equals(TargetFramework.NET6_0)))
@@ -179,7 +183,7 @@ partial class Build : NukeBuild
         {
             // Chrome requires Windows components that are absent from Server Core,
             // so this cell runs directly on the Windows runner with checkout-local tools.
-            AppendWindowsJob("integration-tests-windows-selenium-x64:net10.0:tracer", TargetFramework.NET10_0, "x64", "selenium", TracerArea);
+            AppendWindowsJob("integration-tests-windows-selenium-x64:net10.0:ci-visibility", TargetFramework.NET10_0, "x64", "selenium", CiVisibilityArea);
         }
 
         // Match Azure's dedicated Windows Azure Functions matrix. These jobs are
@@ -350,6 +354,7 @@ partial class Build : NukeBuild
 
             AppendLinuxJob($"integration-tests-{artifactSuffix}:{framework}:tracer", "integration", TracerArea);
             AppendLinuxJob($"integration-tests-{artifactSuffix}:{framework}:asm", "integration", AsmArea);
+            AppendLinuxJob($"integration-tests-{artifactSuffix}:{framework}:ci-visibility", "integration", CiVisibilityArea);
 
             if (isArm64)
             {
@@ -497,16 +502,17 @@ partial class Build : NukeBuild
 
                 // Directories that are not explicitelly owned by ASM but are common to both teams
                 string[] commonDirectories = new[]
-{
+                {
                     "tracer/test/Datadog.Trace.TestHelpers/",
+                    "tracer/test/Datadog.Trace.TestHelpers.AutoInstrumentation/",
+                    "tracer/test/Datadog.Trace.TestHelpers.SharedSource/",
                 };
 
                 foreach (var file in changedFiles)
                 {
-                    if ((codeOwners.Match("/" + file)?.Owners.Contains(TracingDotnet) is true) &&
-                        (commonDirectories.Any(x => file.StartsWith(x, StringComparison.OrdinalIgnoreCase)) ||
-                        !nonCommonDirectories.Any(x => file.StartsWith(x, StringComparison.OrdinalIgnoreCase))
-                        ))
+                    if (commonDirectories.Any(x => file.StartsWith(x, StringComparison.OrdinalIgnoreCase)) ||
+                        ((codeOwners.Match("/" + file)?.Owners.Contains(TracingDotnet) is true) &&
+                         !nonCommonDirectories.Any(x => file.StartsWith(x, StringComparison.OrdinalIgnoreCase))))
                     {
                         Logger.Information($"File {file} was detected as common.");
                         return true;
@@ -552,18 +558,21 @@ partial class Build : NukeBuild
                         var changedFiles = GetGitChangedFiles(baseBranch);
                         // Choose changedFiles that meet any of the filters => Choose changedFiles that DON'T meet any of the exclusion filters
 
-                        if (changedTeamValue.TeamName == ASMDotnet && CommonTracerChanges(changedFiles, codeOwners))
+                        if ((changedTeamValue.TeamName == ASMDotnet || changedTeamValue.TeamName == CiAppLibrariesDotnet)
+                         && CommonTracerChanges(changedFiles, codeOwners))
                         {
                             isChanged = true;
-                            Logger.Information($"ASM tests will be launched based on common changes.");
+                            Logger.Information($"{changedTeamValue.VariableName} tests will be launched based on common changes.");
                         }
                         else
                         {
                             foreach (var changedFile in changedFiles)
                             {
-                                if (codeOwners.Match("/" + changedFile)?.Owners.Contains(changedTeamValue.TeamName) == true)
+                                if ((changedTeamValue.TeamName == TracingDotnet &&
+                                     changedFile.StartsWith("tracer/test/", StringComparison.OrdinalIgnoreCase)) ||
+                                    codeOwners.Match("/" + changedFile)?.Owners.Contains(changedTeamValue.TeamName) == true)
                                 {
-                                    Logger.Information($"File {changedFile} is owned by {changedTeamValue.TeamName}");
+                                    Logger.Information($"File {changedFile} affects {changedTeamValue.VariableName}");
                                     isChanged = true;
                                     break;
                                 }
@@ -620,12 +629,17 @@ partial class Build : NukeBuild
 
             }
 
-            // We only call this method for the tracer and ASM areas
+            // We only call this method for the tracer, ASM, and CI Visibility areas
             bool ShouldBeIncluded(string area)
             {
                 if (area == AsmArea)
                 {
                     return _changedTeamValue.First(x => x.TeamName == ASMDotnet).IsChanged;
+                }
+
+                if (area == CiVisibilityArea)
+                {
+                    return _changedTeamValue.First(x => x.TeamName == CiAppLibrariesDotnet).IsChanged;
                 }
 
                 return true;
@@ -644,7 +658,7 @@ partial class Build : NukeBuild
             {
                 var targetFrameworks = GetTestingFrameworks(PlatformFamily.Windows);
                 var targetPlatforms = new[] { "x86", "x64" };
-                var areas = new[] { TracerArea, AsmArea };
+                var areas = new[] { TracerArea, AsmArea, CiVisibilityArea };
                 var matrix = new Dictionary<string, object>();
 
                 foreach (var framework in targetFrameworks)
@@ -796,7 +810,7 @@ partial class Build : NukeBuild
                     }
                     else
                     {
-                        var areas = new[] { TracerArea, AsmArea };
+                        var areas = new[] { TracerArea, AsmArea, CiVisibilityArea };
                         foreach (var area in areas)
                         {
                             if (ShouldBeIncluded(area))
@@ -828,13 +842,13 @@ partial class Build : NukeBuild
                 {
                     foreach (var (baseImage, artifactSuffix) in baseImages)
                     {
-                        if (ShouldBeIncluded(AsmArea))
+                        var areas = new[] { TracerArea, AsmArea, CiVisibilityArea };
+                        foreach (var area in areas)
                         {
-                            matrix.Add($"{baseImage}_{framework}", new { publishTargetFramework = framework, baseImage = baseImage, artifactSuffix = artifactSuffix });
-                        }
-                        else
-                        {
-                            matrix.Add($"{baseImage}_{framework}", new { publishTargetFramework = framework, baseImage = baseImage, artifactSuffix = artifactSuffix, area = TracerArea });
+                            if (ShouldBeIncluded(area))
+                            {
+                                matrix.Add($"{baseImage}_{framework}_{area}", new { publishTargetFramework = framework, baseImage = baseImage, artifactSuffix = artifactSuffix, area = area });
+                            }
                         }
                     }
                 }

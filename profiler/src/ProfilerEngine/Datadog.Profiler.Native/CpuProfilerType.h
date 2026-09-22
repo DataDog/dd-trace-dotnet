@@ -13,6 +13,17 @@ enum CpuProfilerType : int
 #endif
 };
 
+inline char const* to_string(CpuProfilerType profilerType)
+{
+#ifdef LINUX
+    if (profilerType == CpuProfilerType::TimerCreate)
+    {
+        return "TimerCreate";
+    }
+#endif
+    return "ManualCpuTime";
+}
+
 inline bool convert_to(shared::WSTRING const& s, CpuProfilerType& profilerType)
 {
     if (shared::string_iequal(s, WStr("ManualCpuTime")))

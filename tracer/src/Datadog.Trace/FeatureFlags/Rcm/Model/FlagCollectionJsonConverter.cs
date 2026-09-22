@@ -25,6 +25,15 @@ internal sealed class FlagCollectionJsonConverter : JsonConverter<FlagCollection
             return null;
         }
 
+        if (reader.TokenType != JsonToken.StartObject)
+        {
+            // A value that is not an object is not a collection of flags. The token is skipped and
+            // no collection is produced, so the caller decides how to report the document, rather
+            // than the whole deserialization failing here.
+            reader.Skip();
+            return null;
+        }
+
         var result = existingValue ?? new FlagCollection();
         var flags = JObject.Load(reader);
         foreach (var property in flags.Properties())

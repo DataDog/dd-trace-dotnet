@@ -38,6 +38,9 @@ internal sealed class OtlpTracesJsonSerializer : ISpanBufferSerializer
 
     public int HeaderSize => 0;
 
+    // FinishBody appends the closing brackets, so every write reserves room for them
+    public int TrailerSize => ClosingTracesBytes.Length;
+
     internal static void WriteSpanEvent(JsonTextWriter writer, Datadog.Trace.SpanEvent evt)
     {
         writer.WriteStartObject();

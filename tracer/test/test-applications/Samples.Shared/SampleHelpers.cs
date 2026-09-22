@@ -50,7 +50,7 @@ namespace Samples
         private static readonly MethodInfo? SetServiceNameProperty = SpanType?.GetProperty("ServiceName", BindingFlags.NonPublic | BindingFlags.Instance)?.SetMethod;
         private static readonly MethodInfo? SetResourceNameProperty = SpanType?.GetProperty("ResourceName", BindingFlags.NonPublic | BindingFlags.Instance)?.SetMethod;
         private static readonly MethodInfo? SetTagMethod = SpanType?.GetMethod("SetTag", BindingFlags.NonPublic | BindingFlags.Instance);
-        private static readonly MethodInfo? SetExceptionMethod = SpanType?.GetMethod("SetException", BindingFlags.NonPublic | BindingFlags.Instance, null, new[] { typeof(Exception) }, null);
+        private static readonly MethodInfo? SetExceptionMethod = SpanType?.GetMethod("SetException", BindingFlags.NonPublic | BindingFlags.Instance, null, new[] { typeof(Exception), typeof(bool) }, null);
         private static readonly MethodInfo? FromDefaultSourcesMethod = TracerSettingsType?.GetMethod("FromDefaultSources", BindingFlags.Public | BindingFlags.Static);
         private static readonly MethodInfo? SetServiceName = TracerSettingsType?.GetProperty("ServiceName")?.SetMethod;
         private static readonly MethodInfo? GetMetricMethod = SpanType?.GetMethod("GetMetric", BindingFlags.NonPublic | BindingFlags.Instance);
@@ -433,7 +433,7 @@ namespace Samples
                 return;
             }
 
-            SetExceptionMethod.Invoke(span, new object[] { new Exception() });
+            SetExceptionMethod.Invoke(span, new object[] { new Exception(), true });
         }
 
         public static List<KeyValuePair<string, string>> GetDatadogEnvironmentVariables()

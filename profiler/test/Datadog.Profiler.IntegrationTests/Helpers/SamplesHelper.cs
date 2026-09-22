@@ -207,7 +207,7 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
         {
             var s = File.OpenRead(filename);
             var buffer = new byte[4];
-            s.Read(buffer.AsSpan());
+            s.ReadExactly(buffer.AsSpan());
             s.Position = 0;
             if (Lz4MagicNumber.SequenceEqual(buffer))
             {

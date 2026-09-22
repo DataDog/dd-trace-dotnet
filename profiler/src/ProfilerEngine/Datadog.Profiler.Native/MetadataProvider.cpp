@@ -25,6 +25,7 @@ const std::string MetadataProvider::CodeHotspotsThreadsThreshold("DD_INTERNAL_PR
 const std::string MetadataProvider::TimestampsAsLabelEnabled("DD_INTERNAL_PROFILING_TIMESTAMPS_AS_LABEL_ENABLED"); // should never be 0
 const std::string MetadataProvider::CoreMinimumOverride("DD_PROFILING_MIN_CORES_THRESHOLD");
 const std::string MetadataProvider::DebugInfoEnabled("DD_INTERNAL_PROFILING_DEBUG_INFO_ENABLED");
+const std::string MetadataProvider::GcLifecycleEventsSkipProcessing("DD_INTERNAL_PROFILING_GC_LIFECYCLE_EVENTS_SKIP_PROCESSING");
 const std::string MetadataProvider::GcThreadsCpuTimeEnabled("DD_INTERNAL_GC_THREADS_CPUTIME_ENABLED");
 const std::string MetadataProvider::InternalMetricsEnabled("DD_INTERNAL_METRICS_ENABLED");
 const std::string MetadataProvider::ThreadLifetimeEnabled("DD_INTERNAL_THREAD_LIFETIME_ENABLED");
@@ -59,6 +60,9 @@ const std::string MetadataProvider::StartTime("Start Time");
 const std::string MetadataProvider::NbCores("Number of Cores");
 const std::string MetadataProvider::CpuLimit("Cpu Limit");
 const std::string MetadataProvider::ClrVersion("Clr Version");
+// The DD_INTERNAL_CPU_PROFILER_TYPE entry above is the requested type; this one is the type actually
+// in use, which differs when the environment forces a fallback.
+const std::string MetadataProvider::EffectiveCpuProfilerType("Cpu Profiler Type");
 
 
 MetadataProvider::MetadataProvider()
@@ -76,6 +80,7 @@ void MetadataProvider::Initialize()
     AddEnvVar(SectionEnvVars, CpuTimeThreadsThreshold, EnvironmentVariables::CpuTimeThreadsThreshold);
     AddEnvVar(SectionEnvVars, CodeHotspotsThreadsThreshold, EnvironmentVariables::CodeHotspotsThreadsThreshold);
     AddEnvVar(SectionEnvVars, DebugInfoEnabled, EnvironmentVariables::DebugInfoEnabled);
+    AddEnvVar(SectionEnvVars, GcLifecycleEventsSkipProcessing, EnvironmentVariables::GcLifecycleEventsSkipProcessing);
     AddEnvVar(SectionEnvVars, GcThreadsCpuTimeEnabled, EnvironmentVariables::GcThreadsCpuTimeEnabled);
     AddEnvVar(SectionEnvVars, InternalMetricsEnabled, EnvironmentVariables::InternalMetricsEnabled);
     AddEnvVar(SectionEnvVars, CpuWallTimeSamplingRate, EnvironmentVariables::CpuWallTimeSamplingRate);

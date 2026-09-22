@@ -65,63 +65,67 @@ public class CircularChannelTests
         writer.TryWrite(in valueSegment).Should().BeFalse();
     }
 
-    [Theory]
-    [MemberData(nameof(GetWriteData), DisableDiscoveryEnumeration = true)]
-    public void CircularChannelReadAndWriteTest(byte[] value)
+    [Collection(nameof(HighConcurrencyTestCollection))]
+    public class ConcurrencyTests
     {
-        var name = nameof(CircularChannelReadAndWriteTest) + "-" + Guid.NewGuid().ToString("n");
-        using var channel = new CircularChannel(name, new CircularChannelSettings { BufferSize = BufferSize, PollingInterval = 100 });
-        using var writer = channel.GetWriter();
-        using var reader = channel.GetReader();
-
-        var valueSegment = new ArraySegment<byte>(value);
-
-        // Message size
-        var messageSize = writer.GetMessageSize(in valueSegment);
-
-        // Calculate how many messages we can write
-        var messagesCount = AvailableBufferSize / messageSize;
-
-        // we duplicate the number of messages to test the circular buffer
-        messagesCount *= 2;
-
-        ExceptionDispatchInfo? exceptionDispatchInfo = null;
-        var countdownEvent = new CountdownEvent(messagesCount);
-        reader.SetCallback(bytes =>
+        [Theory]
+        [MemberData(nameof(GetWriteData), MemberType = typeof(CircularChannelTests), DisableDiscoveryEnumeration = true)]
+        public void CircularChannelReadAndWriteTest(byte[] value)
         {
-            try
-            {
-                using var scope = new AssertionScope();
-                var cValue = new byte[bytes.Count];
-                Array.Copy(bytes.Array!, bytes.Offset, cValue, 0, bytes.Count);
-                cValue.Should().HaveCount(value.Length);
-                cValue.Should().Equal(value);
-                countdownEvent.Signal();
-            }
-            catch (Exception ex)
-            {
-                exceptionDispatchInfo = ExceptionDispatchInfo.Capture(ex);
-            }
-        });
+            var name = nameof(CircularChannelReadAndWriteTest) + "-" + Guid.NewGuid().ToString("n");
+            using var channel = new CircularChannel(name, new CircularChannelSettings { BufferSize = BufferSize, PollingInterval = 100 });
+            using var writer = channel.GetWriter();
+            using var reader = channel.GetReader();
 
-        for (var i = 0; i < messagesCount; i++)
-        {
-            var retries = 0;
-            while (!writer.TryWrite(in valueSegment))
+            var valueSegment = new ArraySegment<byte>(value);
+
+            // Message size
+            var messageSize = writer.GetMessageSize(in valueSegment);
+
+            // Calculate how many messages we can write
+            var messagesCount = AvailableBufferSize / messageSize;
+
+            // we duplicate the number of messages to test the circular buffer
+            messagesCount *= 2;
+
+            ExceptionDispatchInfo? exceptionDispatchInfo = null;
+            var countdownEvent = new CountdownEvent(messagesCount);
+            reader.SetCallback(bytes =>
             {
-                // Wait for the receiver to process the messages before trying again
-                Thread.Sleep(500);
-                if (retries++ == 20)
+                try
                 {
-                    throw new Exception("Error writing messages to the channel. After 20 retries, the channel is still full.");
+                    using var scope = new AssertionScope();
+                    var cValue = new byte[bytes.Count];
+                    Array.Copy(bytes.Array!, bytes.Offset, cValue, 0, bytes.Count);
+                    cValue.Should().HaveCount(value.Length);
+                    cValue.Should().Equal(value);
+                    countdownEvent.Signal();
+                }
+                catch (Exception ex)
+                {
+                    exceptionDispatchInfo = ExceptionDispatchInfo.Capture(ex);
+                }
+            });
+
+            for (var i = 0; i < messagesCount; i++)
+            {
+                var retries = 0;
+                while (!writer.TryWrite(in valueSegment))
+                {
+                    // Wait for the receiver to process the messages before trying again
+                    Thread.Sleep(500);
+                    if (retries++ == 20)
+                    {
+                        throw new Exception("Error writing messages to the channel. After 20 retries, the channel is still full.");
+                    }
                 }
             }
-        }
 
-        if (!countdownEvent.Wait(10_000))
-        {
-            exceptionDispatchInfo?.Throw();
-            throw new Exception("Timeout waiting for messages");
+            if (!countdownEvent.Wait(10_000))
+            {
+                exceptionDispatchInfo?.Throw();
+                throw new Exception("Timeout waiting for messages");
+            }
         }
     }
 }

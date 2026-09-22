@@ -122,6 +122,8 @@ namespace Datadog.Profiler.IntegrationTests.CpuProfiler
 
             runner.Run(agent);
 
+            CpuProfilerHelper.SkipIfTimerCreateWasDowngraded(runner.Environment.LogDir);
+
             // Ensure that we don't count too much CPU like when that nano/milli sec bug was introduced
             var cpuDuration = SamplesHelper.GetValueSum(runner.Environment.PprofDir, 0);
             // Test is supposed to run 10s so count additional seconds both for extended duration + more than 1 managed thread (tracing code for example)

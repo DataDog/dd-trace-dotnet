@@ -9,7 +9,7 @@ using Datadog.Trace.SourceGenerators;
 
 namespace Datadog.Trace.Tagging
 {
-    internal abstract partial class AwsSdkTags : InstrumentationTags, IHasStatusCode
+    internal abstract partial class AwsSdkTags : InstrumentationTags, IHasStatusCode, IHasHttpMethod
     {
         [Tag(Trace.Tags.InstrumentationName)]
         public string InstrumentationName => "aws-sdk";

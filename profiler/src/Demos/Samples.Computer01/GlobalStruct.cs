@@ -5,7 +5,6 @@
 
 #pragma warning disable SA1401 // Fields should be private
 
-
 // This value type is deliberately declared outside of any namespace: when it is given as the type
 // argument of a generic method, the |fg: part of the frame must not be prefixed by a '.' standing
 // for the empty namespace.

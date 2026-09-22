@@ -269,6 +269,30 @@ namespace Datadog.Profiler.IntegrationTests
                 _namedPipeServer?.Dispose();
             }
 
+            // The HTTP request body is left unread by MockHttpParser.ReadRequest, so consume the
+            // declared Content-Length bytes to keep the stream aligned for the next read.
+            private static async Task DrainBodyAsync(Stream stream, long? contentLength, CancellationToken cancellationToken)
+            {
+                if (contentLength is not > 0)
+                {
+                    return;
+                }
+
+                var remaining = contentLength.Value;
+                var buffer = new byte[8192];
+                while (remaining > 0)
+                {
+                    var toRead = (int)Math.Min(buffer.Length, remaining);
+                    var read = await stream.ReadAsync(buffer, 0, toRead, cancellationToken).ConfigureAwait(false);
+                    if (read == 0)
+                    {
+                        break;
+                    }
+
+                    remaining -= read;
+                }
+            }
+
             // Reads each HTTP request from the pipe and writes back a canned HTTP response.
             private async Task HandleNamedPipeProfiles(NamedPipeServerStream ss, CancellationToken cancellationToken)
             {
@@ -306,30 +330,6 @@ namespace Datadog.Profiler.IntegrationTests
                     // abrupt one surfaces as IOException ("Pipe is broken"); OperationCanceledException
                     // happens during shutdown/dispose. These all mark the normal end of a
                     // request/response cycle, so swallow them instead of surfacing an "Unexpected exception".
-                }
-            }
-
-            // The HTTP request body is left unread by MockHttpParser.ReadRequest, so consume the
-            // declared Content-Length bytes to keep the stream aligned for the next read.
-            private static async Task DrainBodyAsync(Stream stream, long? contentLength, CancellationToken cancellationToken)
-            {
-                if (contentLength is not > 0)
-                {
-                    return;
-                }
-
-                var remaining = contentLength.Value;
-                var buffer = new byte[8192];
-                while (remaining > 0)
-                {
-                    var toRead = (int)Math.Min(buffer.Length, remaining);
-                    var read = await stream.ReadAsync(buffer, 0, toRead, cancellationToken).ConfigureAwait(false);
-                    if (read == 0)
-                    {
-                        break;
-                    }
-
-                    remaining -= read;
                 }
             }
         }
@@ -397,6 +397,21 @@ namespace Datadog.Profiler.IntegrationTests
                 Task.WaitAll(_tasks.ToArray(), TimeSpan.FromSeconds(10));
             }
 
+            private static bool IsExpectedPipeDisconnect(IOException ex)
+            {
+                // IOExceptions raised for pipe I/O wrap a Win32 error code as an HRESULT
+                // (HRESULT_FROM_WIN32 => facility 7, code in the low 16 bits). Prefer matching the
+                // code; fall back to the message text if this isn't a Win32-derived HRESULT.
+                const int facilityWin32 = 7;
+                if (((ex.HResult >> 16) & 0x1FFF) == facilityWin32)
+                {
+                    var win32Code = ex.HResult & 0xFFFF;
+                    return win32Code is ErrorBrokenPipe or ErrorNoData or ErrorPipeNotConnected;
+                }
+
+                return ex.Message.Contains("The pipe is being closed") || ex.Message.Contains("Pipe is broken");
+            }
+
             private async Task StartNamedPipeServer(ManualResetEventSlim stopEvent)
             {
                 var instance = $" ({_pipeName}:{Interlocked.Increment(ref _instanceCount)})";
@@ -449,21 +464,6 @@ namespace Datadog.Profiler.IntegrationTests
                     _tasks.Add(Task.Run(() => StartNamedPipeServer(m)));
                     m.Wait(5_000);
                 }
-            }
-
-            private static bool IsExpectedPipeDisconnect(IOException ex)
-            {
-                // IOExceptions raised for pipe I/O wrap a Win32 error code as an HRESULT
-                // (HRESULT_FROM_WIN32 => facility 7, code in the low 16 bits). Prefer matching the
-                // code; fall back to the message text if this isn't a Win32-derived HRESULT.
-                const int facilityWin32 = 7;
-                if (((ex.HResult >> 16) & 0x1FFF) == facilityWin32)
-                {
-                    var win32Code = ex.HResult & 0xFFFF;
-                    return win32Code is ErrorBrokenPipe or ErrorNoData or ErrorPipeNotConnected;
-                }
-
-                return ex.Message.Contains("The pipe is being closed") || ex.Message.Contains("Pipe is broken");
             }
         }
     }

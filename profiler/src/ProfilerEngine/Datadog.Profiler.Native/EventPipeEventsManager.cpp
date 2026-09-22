@@ -52,6 +52,15 @@ void EventPipeEventsManager::ParseEvent(
     ULONG numStackFrames,
     UINT_PTR stackFrames[])
 {
+    // The provider identity is resolved once (in OnProviderCreated) and cached, keyed by the
+    // EVENTPIPE_PROVIDER pointer, so the hot event-delivery path avoids calling
+    // EventPipeGetProviderInfo and comparing the provider name on every event.
+    DotnetEventsProvider dotnetProvider = GetProvider(provider);
+    if (dotnetProvider == DotnetEventsProvider::Unknown)
+    {
+        return;
+    }
+
     // These should be the same as eventId and eventVersion.
     // However it was not the case for the last event received from "Microsoft-DotNETCore-EventPipe".
     DWORD id;
@@ -63,60 +72,6 @@ void EventPipeEventsManager::ParseEvent(
         return;
     }
 
-    // Now that the BCL events are also received through EventPipe, it is needed to know which provider is sending each event.
-    // It is possible to get the provider name from ICorProfilerInfo::EventPipeGetProviderInfo but the characters will
-    // be copied each time an event is received: this could have a perf impact.
-    // If this is the case, we could use the undocumented implementation details behind the EVENTPIPE_PROVIDER pointer
-    // to the internal _EventPipeProvider structure from ep-provider.h:
-    //    struct _EventPipeProvider {
-    //        // Bit vector containing the currently enabled keywords.
-    //        int64_t keywords;
-    //        // Bit mask of sessions for which this provider is enabled.
-    //        uint64_t sessions;
-    //        // The name of the provider.
-    //        ep_char8_t* provider_name;
-    //        ep_char16_t* provider_name_utf16;
-    // so the provider ANSI name is at offset 16 from the "provider" pointer
-    ULONG nameLength = 256;
-    WCHAR providerName[256];
-    HRESULT hr = _pCorProfilerInfo->EventPipeGetProviderInfo(provider, nameLength, &nameLength, providerName);
-    if (FAILED(hr))
-    {
-        return;
-    }
-
-    DotnetEventsProvider dotnetProvider = DotnetEventsProvider::Unknown;
-
-    // CLR events: "Microsoft-Windows-DotNETRuntime"
-    if (WStrCmp(providerName, WStr("Microsoft-Windows-DotNETRuntime")) == 0)
-    {
-        dotnetProvider = DotnetEventsProvider::Clr;
-    }
-    else
-    // BCL events: "System.Net.Http"
-    //             "System.Net.Sockets"
-    //             "System.Net.NameResolution"
-    //             "System.Net.Security"
-    if (WStrCmp(providerName, WStr("System.Net.Http")) == 0)
-    {
-        dotnetProvider = DotnetEventsProvider::Http;
-    }
-    else
-    if (WStrCmp(providerName, WStr("System.Net.Sockets")) == 0)
-    {
-        dotnetProvider = DotnetEventsProvider::Sockets;
-    }
-    else
-    if (WStrCmp(providerName, WStr("System.Net.NameResolution")) == 0)
-    {
-        dotnetProvider = DotnetEventsProvider::NameResolution;
-    }
-    else
-    if (WStrCmp(providerName, WStr("System.Net.Security")) == 0)
-    {
-        dotnetProvider = DotnetEventsProvider::NetSecurity;
-    }
-
     // Also, during the test, a last (keyword=0 id=1 V1) event is sent from "Microsoft-DotNETCore-EventPipe"
     if (dotnetProvider == DotnetEventsProvider::Clr)
     {
@@ -124,11 +79,112 @@ void EventPipeEventsManager::ParseEvent(
         _clrParser->ParseEvent(OpSysTools::GetHighPrecisionTimestamp(), version, keywords, id, cbEventData, eventData);
     }
     else
-    if (dotnetProvider != DotnetEventsProvider::Unknown)
     {
         // The events are expected to be processed synchronously so the current time is used as timestamp
         _bclParser->ParseEvent(dotnetProvider, provider, OpSysTools::GetHighPrecisionTimestamp(), version, keywords, id, eventData, cbEventData, pActivityId, pRelatedActivityId, eventThread);
     }
+}
+
+void EventPipeEventsManager::OnProviderCreated(EVENTPIPE_PROVIDER provider)
+{
+    std::unique_lock lock(_providersMutex);
+
+    DotnetEventsProvider resolved;
+    if (TryResolveProvider(provider, resolved))
+    {
+        // Overwrite unconditionally (including with Unknown) so that a reused EVENTPIPE_PROVIDER
+        // address that now belongs to a different provider replaces any stale entry.
+        _providers[provider] = resolved;
+    }
+    // else: EventPipeGetProviderInfo API itself failed. Leave the cache untouched rather than caching
+    // Unknown: caching a transient failure would misclassify this provider and drop every one of its
+    // events for the rest of the process. GetProvider's fallback below gets another chance to resolve
+    // it once real events start flowing.
+}
+
+DotnetEventsProvider EventPipeEventsManager::GetProvider(EVENTPIPE_PROVIDER provider)
+{
+    {
+        std::shared_lock lock(_providersMutex);
+        auto it = _providers.find(provider);
+        if (it != _providers.end())
+        {
+            return it->second;
+        }
+    }
+
+    std::unique_lock lock(_providersMutex);
+
+    // Re-check under the exclusive lock: another thread may have resolved this provider while this
+    // thread was waiting for the lock.
+    auto it = _providers.find(provider);
+    if (it != _providers.end())
+    {
+        return it->second;
+    }
+
+    DotnetEventsProvider resolved;
+    if (!TryResolveProvider(provider, resolved))
+    {
+        // the call to the CLR failed so don't update the cache: the provider may be resolved later when events are received
+        return DotnetEventsProvider::Unknown;
+    }
+
+    _providers[provider] = resolved;
+    return resolved;
+}
+
+bool EventPipeEventsManager::TryResolveProvider(EVENTPIPE_PROVIDER provider, DotnetEventsProvider& result)
+{
+    // Now that the BCL events are also received through EventPipe, it is needed to know which provider is sending each event.
+    // It is possible to get the provider name from ICorProfilerInfo::EventPipeGetProviderInfo but the characters will
+    // be copied each time it is called: this is why the result is cached per provider.
+    ULONG nameLength = 256;
+    WCHAR providerName[256];
+    HRESULT hr = _pCorProfilerInfo->EventPipeGetProviderInfo(provider, nameLength, &nameLength, providerName);
+    if (FAILED(hr))
+    {
+        return false;
+    }
+
+    // CLR events: "Microsoft-Windows-DotNETRuntime"
+    if (WStrCmp(providerName, WStr("Microsoft-Windows-DotNETRuntime")) == 0)
+    {
+        result = DotnetEventsProvider::Clr;
+        return true;
+    }
+
+    // BCL events: "System.Net.Http"
+    //             "System.Net.Sockets"
+    //             "System.Net.NameResolution"
+    //             "System.Net.Security"
+    if (WStrCmp(providerName, WStr("System.Net.Http")) == 0)
+    {
+        result = DotnetEventsProvider::Http;
+        return true;
+    }
+
+    if (WStrCmp(providerName, WStr("System.Net.Sockets")) == 0)
+    {
+        result = DotnetEventsProvider::Sockets;
+        return true;
+    }
+
+    if (WStrCmp(providerName, WStr("System.Net.NameResolution")) == 0)
+    {
+        result = DotnetEventsProvider::NameResolution;
+        return true;
+    }
+
+    if (WStrCmp(providerName, WStr("System.Net.Security")) == 0)
+    {
+        result = DotnetEventsProvider::NetSecurity;
+        return true;
+    }
+
+    // Resolved successfully, but not a provider we track
+    result = DotnetEventsProvider::Unknown;
+    return true;
 }
 
 bool EventPipeEventsManager::TryGetEventInfo(LPCBYTE pMetadata, ULONG cbMetadata, WCHAR*& name, DWORD& id, INT64& keywords, DWORD& version)

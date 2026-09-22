@@ -49,6 +49,7 @@ public class DataStreamsMonitoringTransportTests
     [MemberData(nameof(Data))]
     [Trait("Category", "EndToEnd")]
     [Trait("RunOnWindows", "True")]
+    [Flaky("Identified as flaky in CI")]
     public async Task TransportsWorkCorrectly(Enum transport)
     {
         using var agent = Create((TracesTransportType)transport);

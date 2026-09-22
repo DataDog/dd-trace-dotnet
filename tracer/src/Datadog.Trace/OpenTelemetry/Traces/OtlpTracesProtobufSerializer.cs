@@ -58,6 +58,8 @@ internal sealed class OtlpTracesProtobufSerializer : ISpanBufferSerializer
 
     public int HeaderSize => 0;
 
+    public int TrailerSize => 0;
+
     public void WriteHeader(ref byte[] bytes, int offset, int traceCount)
     {
         // No fixed header; the outer envelope is opened on the first SerializeSpans call.

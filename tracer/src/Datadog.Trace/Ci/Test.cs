@@ -245,9 +245,10 @@ public sealed class Test
             }
 
             var ciValues = TestOptimization.Instance.CIValues;
+            var sourceOwnership = ciValues.ResolveSourceOwnership(methodSymbol.File, useOSSeparator: false);
 
             var tags = (TestSpanTags)_scope.Span.Tags;
-            tags.SourceFile = ciValues.MakeRelativePathFromSourceRootWithFallback(methodSymbol.File, false);
+            tags.SourceFile = sourceOwnership.RepositoryRelativePath;
             tags.SourceStart = startLine;
             tags.SourceEnd = methodSymbol.EndLine;
             _testOptimization.ImpactedTestsDetectionFeature?.ImpactedTestsAnalyzer.Analyze(this);
@@ -259,17 +260,9 @@ public sealed class Test
                 static suiteTags => suiteTags.SourceFile,
                 static (suiteTags, value) => suiteTags.SourceFile = value);
 
-            string[]? owners;
-            if (ciValues.CodeOwners is { } codeOwners &&
-                (owners = codeOwners.Match("/" + tags.SourceFile).ToArray()) is { Length: > 0 })
+            if (sourceOwnership.CodeOwnersTag is { } codeOwnersTag)
             {
-                SetCodeOwnersOnTags(tags, Suite.Tags, owners);
-            }
-            else if (ciValues.TryGetCodeOwnersRelativePath(methodSymbol.File, false, out var codeOwnersRelativePath) &&
-                     ciValues.CodeOwners is { } fallbackCodeOwners &&
-                     (owners = fallbackCodeOwners.Match("/" + codeOwnersRelativePath).ToArray()) is { Length: > 0 })
-            {
-                SetCodeOwnersOnTags(tags, Suite.Tags, owners);
+                SetCodeOwnersOnTags(tags, Suite.Tags, sourceOwnership.MatchingOwners, codeOwnersTag);
             }
         }
     }
@@ -330,9 +323,12 @@ public sealed class Test
         }
     }
 
-    internal static void SetCodeOwnersOnTags(TestSpanTags testTags, TestSuiteSpanTags suiteTags, IEnumerable<string> codeOwners)
+    internal static void SetCodeOwnersOnTags(TestSpanTags testTags, TestSuiteSpanTags suiteTags, string[] codeOwners)
+        => SetCodeOwnersOnTags(testTags, suiteTags, codeOwners, "[\"" + string.Join("\",\"", codeOwners) + "\"]");
+
+    private static void SetCodeOwnersOnTags(TestSpanTags testTags, TestSuiteSpanTags suiteTags, string[] codeOwners, string codeOwnersTag)
     {
-        testTags.CodeOwners = "[\"" + string.Join("\",\"", codeOwners) + "\"]";
+        testTags.CodeOwners = codeOwnersTag;
         if (StringUtil.IsNullOrEmpty(suiteTags.CodeOwners))
         {
             suiteTags.CodeOwners = testTags.CodeOwners;

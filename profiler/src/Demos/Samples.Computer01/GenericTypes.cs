@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -135,6 +136,9 @@ namespace Samples.Computer01
                 // container.LongGenericParameterList<byte, bool, bool, bool, bool, bool, bool, bool>(i, out _);
                 container.LongGenericParameterList<byte, bool, bool, bool, string, bool, bool, bool>(i, out _);
             }
+
+            // Check the profiler can handle long generic parameter names
+            new GenericTypeWithLongParameterNames<string, object>().ThrowFromLongParameterNames(null, null);
         }
 
         private void RunValueAndReferenceTypes(IEnumerable<int> numbers)
@@ -186,6 +190,25 @@ namespace Samples.Computer01
         public bool LongGenericParameterList<MT1, MT2, MT3, MT4, MT5, MT6, MT7, MT8>(K key, out V val)
         {
             return TryGet(key, out val);
+        }
+    }
+
+    public class GenericTypeWithLongParameterNames<
+        TParam1ThatIsDeliberatelyLongerThanTheBufferTheProfilerUsesWhenItReadsGenericParameterNamesFromTheAssemblyMetadata,
+        TParam2ThatIsDeliberatelyLongerThanTheBufferTheProfilerUsesWhenItReadsGenericParameterNamesFromTheAssemblyMetadata>
+    {
+        [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
+        public void ThrowFromLongParameterNames(
+            TParam1ThatIsDeliberatelyLongerThanTheBufferTheProfilerUsesWhenItReadsGenericParameterNamesFromTheAssemblyMetadata first,
+            TParam2ThatIsDeliberatelyLongerThanTheBufferTheProfilerUsesWhenItReadsGenericParameterNamesFromTheAssemblyMetadata second)
+        {
+            try
+            {
+                throw new InvalidOperationException("long generic parameter names");
+            }
+            catch (Exception)
+            {
+            }
         }
     }
 

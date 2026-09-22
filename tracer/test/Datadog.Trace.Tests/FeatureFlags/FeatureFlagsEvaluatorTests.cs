@@ -279,6 +279,40 @@ public partial class FeatureFlagsEvaluatorTests
         Assert.Single(events);
     }
 
+    [Fact]
+    public void EvaluateExposureFlagSendsTheSplitSerialIdOnTheExposureEvent()
+    {
+        var flags = new FlagCollection
+        {
+            ["exposure-flag"] = FeatureFlagsHelpers.CreateExposureFlag()
+        };
+
+        List<Trace.FeatureFlags.Exposure.Model.ExposureEvent> events = new List<Trace.FeatureFlags.Exposure.Model.ExposureEvent>();
+        var evaluator = new FeatureFlagsEvaluator((in Trace.FeatureFlags.Exposure.Model.ExposureEvent e) => events.Add(e), new ServerConfiguration { Flags = flags });
+
+        evaluator.Evaluate("exposure-flag", Trace.FeatureFlags.ValueType.String, "default", new EvaluationContext("user-123"));
+
+        events.Should().HaveCount(1);
+        events[0].SerialId.Should().Be(FeatureFlagsHelpers.ExposureSerialId);
+    }
+
+    [Fact]
+    public void EvaluateExposureFlagSendsNoSerialIdWhenTheSplitCarriesNone()
+    {
+        var flag = FeatureFlagsHelpers.CreateExposureFlag();
+        flag.Allocations![0].Splits![0].SerialId = null;
+
+        var flags = new FlagCollection { ["exposure-flag"] = flag };
+
+        List<Trace.FeatureFlags.Exposure.Model.ExposureEvent> events = new List<Trace.FeatureFlags.Exposure.Model.ExposureEvent>();
+        var evaluator = new FeatureFlagsEvaluator((in Trace.FeatureFlags.Exposure.Model.ExposureEvent e) => events.Add(e), new ServerConfiguration { Flags = flags });
+
+        evaluator.Evaluate("exposure-flag", Trace.FeatureFlags.ValueType.String, "default", new EvaluationContext("user-123"));
+
+        events.Should().HaveCount(1);
+        events[0].SerialId.Should().BeNull();
+    }
+
     // ---------------------------------------------------------------------
     // ISO 8601 Date Parsing tests
     // ---------------------------------------------------------------------

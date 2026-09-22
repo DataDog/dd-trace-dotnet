@@ -27,6 +27,7 @@ internal sealed class CoverageAssemblyResolver : BaseAssemblyResolver
     private readonly ICollectorLogger _logger;
     private readonly string _assemblyFilePath;
     private readonly string _preferredSearchDirectory;
+    private readonly string? _sharedFrameworkRoot;
     private string _tracerAssemblyLocation;
     private bool _disposed;
 
@@ -36,10 +37,16 @@ internal sealed class CoverageAssemblyResolver : BaseAssemblyResolver
     /// <param name="logger">Logger used to report resolution failures.</param>
     /// <param name="assemblyFilePath">The target assembly currently being rewritten.</param>
     public CoverageAssemblyResolver(ICollectorLogger logger, string assemblyFilePath)
+        : this(logger, assemblyFilePath, sharedFrameworkRoot: null)
+    {
+    }
+
+    internal CoverageAssemblyResolver(ICollectorLogger logger, string assemblyFilePath, string? sharedFrameworkRoot)
     {
         _logger = logger;
         _assemblyFilePath = assemblyFilePath;
         _preferredSearchDirectory = Path.GetDirectoryName(assemblyFilePath) ?? string.Empty;
+        _sharedFrameworkRoot = sharedFrameworkRoot;
         _tracerAssemblyLocation = string.Empty;
     }
 
@@ -106,6 +113,12 @@ internal sealed class CoverageAssemblyResolver : BaseAssemblyResolver
         base.Dispose(disposing);
     }
 
+    private static bool AssemblyNamesMatch(AssemblyNameReference requestedName, AssemblyNameDefinition candidateName)
+        => string.Equals(requestedName.Name, candidateName.Name, StringComparison.OrdinalIgnoreCase) &&
+           requestedName.Version == candidateName.Version &&
+           string.Equals(requestedName.Culture ?? string.Empty, candidateName.Culture ?? string.Empty, StringComparison.OrdinalIgnoreCase) &&
+           (requestedName.PublicKeyToken ?? []).SequenceEqual(candidateName.PublicKeyToken ?? []);
+
     private AssemblyDefinition ResolveAndCache(AssemblyNameReference name)
     {
         var tracerAssemblyName = TracerAssembly.GetName();
@@ -118,6 +131,13 @@ internal sealed class CoverageAssemblyResolver : BaseAssemblyResolver
         if (assemblyFromSearchDirectory is not null)
         {
             return assemblyFromSearchDirectory;
+        }
+
+        var sharedFrameworkDirectories = SharedFrameworkLocator.GetDirectories(_preferredSearchDirectory, _sharedFrameworkRoot);
+        var assemblyFromSharedFramework = ResolveFromDirectories(name, sharedFrameworkDirectories, requireMatchingIdentity: true);
+        if (assemblyFromSharedFramework is not null)
+        {
+            return assemblyFromSharedFramework;
         }
 
         if (IsTracerAssembly(name, tracerAssemblyName))
@@ -139,9 +159,12 @@ internal sealed class CoverageAssemblyResolver : BaseAssemblyResolver
     }
 
     private AssemblyDefinition? ResolveFromSearchDirectories(AssemblyNameReference name)
+        => ResolveFromDirectories(name, GetSearchDirectoryCandidates(), requireMatchingIdentity: false);
+
+    private AssemblyDefinition? ResolveFromDirectories(AssemblyNameReference name, IEnumerable<string> directories, bool requireMatchingIdentity)
     {
         var extensions = name.IsWindowsRuntime ? WindowsRuntimeAssemblyExtensions : ManagedAssemblyExtensions;
-        foreach (var directory in GetSearchDirectoryCandidates())
+        foreach (var directory in directories)
         {
             foreach (var extension in extensions)
             {
@@ -154,7 +177,14 @@ internal sealed class CoverageAssemblyResolver : BaseAssemblyResolver
 
                 try
                 {
-                    return ReadAndCache(name.FullName, path);
+                    var assembly = ReadAssembly(path);
+                    if (requireMatchingIdentity && !AssemblyNamesMatch(name, assembly.Name))
+                    {
+                        assembly.Dispose();
+                        continue;
+                    }
+
+                    return CacheAssembly(name.FullName, assembly);
                 }
                 catch (BadImageFormatException)
                 {
@@ -183,10 +213,12 @@ internal sealed class CoverageAssemblyResolver : BaseAssemblyResolver
     }
 
     private AssemblyDefinition ReadAndCache(string requestedFullName, string assemblyPath)
+        => CacheAssembly(requestedFullName, ReadAssembly(assemblyPath));
+
+    private AssemblyDefinition ReadAssembly(string assemblyPath)
     {
         using var assemblyLock = CoverageAssemblyPathLock.EnterRead(assemblyPath);
-        var assembly = AssemblyDefinition.ReadAssembly(assemblyPath, CreateDependencyReaderParameters());
-        return CacheAssembly(requestedFullName, assembly);
+        return AssemblyDefinition.ReadAssembly(assemblyPath, CreateDependencyReaderParameters());
     }
 
     private AssemblyDefinition CacheAssembly(string requestedFullName, AssemblyDefinition assembly)

@@ -458,6 +458,7 @@ namespace Datadog.Profiler.IntegrationTests.SingleStepInstrumentation
             Assert.True(found, $"No log line contains: {expectedContent}");
         }
 
+#pragma warning disable SA1204 // Static elements should appear before instance elements
         private static string GetStableConfigFilePath(TestApplicationRunner runner, string profilingEnabledValue)
         {
             var filePath = Path.Combine(runner.TestOutputDir, "stableconfig.json");
@@ -524,5 +525,6 @@ namespace Datadog.Profiler.IntegrationTests.SingleStepInstrumentation
             public string Metric { get; set; }
             public string[] Tags { get; set; }
         }
+#pragma warning restore SA1204 // Static elements should appear before instance elements
     }
 }

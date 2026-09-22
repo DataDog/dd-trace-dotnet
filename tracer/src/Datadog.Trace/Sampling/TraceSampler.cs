@@ -97,7 +97,7 @@ namespace Datadog.Trace.Sampling
                 }
             }
 
-            return new SamplingDecision(priority, mechanism, rate, limiterRate);
+            return new SamplingDecision(priority, mechanism, rate, limiterRate, sample);
         }
 
         public sealed class Builder(IRateLimiter limiter)
