@@ -181,7 +181,7 @@ bool LiveObjectsProvider::IsAlive(ObjectHandleID handle) const
         return false;
     }
 
-    static ObjectID NullObjectID = static_cast<ObjectID>(NULL);
+    static ObjectID NullObjectID = static_cast<ObjectID>(0);
 
     auto object = NullObjectID;
     auto hr = _pCorProfilerInfo->GetObjectIDFromHandle(handle, &object);
