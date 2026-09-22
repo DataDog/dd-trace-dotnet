@@ -53,6 +53,20 @@ namespace Datadog.Profiler.SmokeTests
             get => _testApplicationRunner.Environment;
         }
 
+        // TEMPORARY diagnostic (see OpenLdapTests.CheckOpenLdapCrash).
+        internal bool UseStrace
+        {
+            get => _testApplicationRunner.UseStrace;
+            set => _testApplicationRunner.UseStrace = value;
+        }
+
+        // TEMPORARY diagnostic (see OpenLdapTests.CheckOpenLdapCrash).
+        internal bool UseLdDebug
+        {
+            get => _testApplicationRunner.UseLdDebug;
+            set => _testApplicationRunner.UseLdDebug = value;
+        }
+
         public void RunAndCheckWithRetries(int retryCount, string[] errorExceptions = null)
         {
             // allow retries for the test to pass due to named pipe flackiness in CI
