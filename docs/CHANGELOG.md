@@ -56,6 +56,89 @@
 
 
 
+
+## [Release 3.54.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v3.54.0)
+
+## Summary
+
+* [Propagators] Add OpenTelemetry consistent probability sampling (#9178)
+* [CI Visibility] Add support for MSTest 4.4.0 (#9189)
+* [CI Visibility] Add xUnit v4 support (#9162)
+
+## Changes
+
+### Tracer
+* [DuckTyping] Generate proxies in target AssemblyLoadContext (#9167)
+* [DuckTyping] Prevent memory corruption for by-ref value types (#9221)
+* [DuckTyping] Reject incompatible open generic method signatures (#9226)
+* [DuckTyping] Work around concurrent ExceptionDispatchInfo runtime crash (#9209)
+* [FeatureFlags] Remove the manual (non-OpenFeature) Feature Flags API (#9260)
+* [tracer] Fix heap corruption (#9199)
+* [Propagators] Add OpenTelemetry consistent probability sampling (#9178)
+* [ASP.NET MVC] Handle malformed request URLs when creating scopes (#9212)
+* Support stable OTel deployment environment attribute (#9150)
+* feat(feature-flags): wire source-agnostic activation and OpenFeature InitializeAsync (#9044)
+* [FeatureFlags] Replay the configuration handler on registration and bump the OpenFeature package (#9264)
+
+### CI Visibility
+* [CI Visibility] Add xUnit v4 support (#9162)
+* [CI Visibility] Fix TIA missing line coverage response field (#9165)
+* [CI Visibility] Add support for MSTest 4.4.0 (#9189)
+* [CI Visibility] Preserve oversized test parameters for ITR (#9214)
+* [CI Visibility] Fix quarantine with automatic retries across test frameworks (#9229)
+* [CI Visibility] Stabilize test session working directory fingerprint (#9243)
+* [CI Visibility] Fix custom MSTest attribute skipping across MSTest 2-4 (#9271)
+
+### ASM
+* [AppSec] Send the real response status to the WAF and stop resending the request addresses (#9082)
+* [AppSec] Emit rasp.error and rasp.rule.skipped telemetry (#9090)
+* [IAST] Guard stack walks against stack exhaustion (#9227)
+
+### Continuous Profiler
+* [Profiler] Fix `Unknown-Method` bug (Arm64 only) (#9232)
+* [Profiler] Fix `Unknown-Method` part2 (#9244)
+
+### Debugger
+* Support GitHub/GitLab/Azure DevOps/Bitbucket Server SourceLink variants (#8505)
+* [Debugger] Skip nested byref-like locals after type-forward resolution (#9205)
+* [Debugger] Fail closed when async Exception Replay cannot clone SetException args (#9225)
+* [Debugger] Guard async catch-entry instrumentation (#9242)
+
+### Serverless
+* [Serverless] Bump Datadog.Serverless.Compat to 1.9.0 (#9248)
+
+### Data Streams Monitoring
+* Add additional guards to Kafka cluster ID discovery (#9261)
+
+### Build / Test
+* Drop V1 schema rows in pairwise mode (#8536)
+* Add `[Trait("Area", "CiVisibility")]` to CI Vis tests, and run in dedicated jobs only when required (#9169)
+* Fix RunNativeLoaderTestsWindows artifact name (#9170)
+* Split ARM64 integration tests by area (#9172)
+* [Test Package Versions Bump] Updating package versions (#9187)
+* [Smoke Test Docker Image Bump] Updating docker image tags (#9188)
+* Build managed samples as AnyCPU (#9193)
+* Ensure we push the correct symbol packages as part of a release (#9196)
+* [CI] Skip Aerospike tests on transient Docker failures (#9202)
+* Allow choosing which system test branch to run (#9208)
+* [Test Package Versions Bump] Updating package versions (#9216)
+* Remove deleted projects from OSX and Security solution filters (#9218)
+* [Smoke Test Docker Image Bump] Updating docker image tags (#9224)
+* [CI] bump llm-validation-platform to v0.1.3 (#9230)
+* [CI] Bump LLM validation platform to v0.1.2 (#9177)
+* [Smoke Test Docker Image Bump] Updating docker image tags (#9241)
+* Skip ExceptionReplayRewrite_DoesNotThrowInvalidProgramException (#9251)
+* Stop hardcoding the sample version in XUnit V3_X4 tests (#9259)
+* [Smoke Test Docker Image Bump] Updating docker image tags (#9263)
+* ci: update one-pipeline to 1.5.1 (#9257)
+* ci: update one-pipeline to 1.5.3 (#9268)
+
+### Miscellaneous
+* Add non-allocating `ToLowerInvariant()` / `ToUpperInvariant()` for .NET Framework (#9173)
+* [Native] Downgrade high-frequency ReJIT logs to debug (#9215)
+
+[Changes since 3.53.0](https://github.com/DataDog/dd-trace-dotnet/compare/v3.53.0...v3.54.0)
+
 ## [Release 3.53.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v3.53.0)
 
 ## Summary
