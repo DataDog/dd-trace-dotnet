@@ -78,7 +78,6 @@ run-benchmarks:
       - runner_system_failure
       - scheduler_failure
       - api_failure
-      - script_failure
   rules:
     - if: $CI_COMMIT_REF_NAME =~ /^v[0-9]+\.[0-9]+\.[0-9]+(-prerelease)?$/
       when: never

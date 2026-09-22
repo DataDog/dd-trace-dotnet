@@ -44,7 +44,6 @@ dsm_throughput:
       - runner_system_failure
       - scheduler_failure
       - api_failure
-      - script_failure
   script:
     - source build-id.txt
     - export ARTIFACTS_DIR="$(pwd)/artifacts" && (mkdir "${ARTIFACTS_DIR}" || :)
