@@ -14,4 +14,10 @@ ARTIFACTS_DIR="${ARTIFACTS_DIR:-./artifacts}"
 S3_URL="${BP_EXTERNAL_S3_URL:-s3://relenv-benchmarking-data/${PROJECT}/${BRANCH}/${CI_JOB_ID}/}"
 [[ "$S3_URL" == s3://relenv-benchmarking-data/* ]] || { echo "BP_EXTERNAL_S3_URL must stay within relenv-benchmarking-data" >&2; exit 1; }
 
-aws s3 cp --recursive --acl bucket-owner-full-control "$ARTIFACTS_DIR/" "$S3_URL"
+shopt -s nullglob
+converted_files=("$ARTIFACTS_DIR"/candidate*.converted.json)
+shopt -u nullglob
+
+for file in "${converted_files[@]}"; do
+    aws s3 cp --acl bucket-owner-full-control "$file" "$S3_URL"
+done
