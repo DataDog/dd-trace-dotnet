@@ -55,8 +55,9 @@ variables:
   variables:
     # Override the template's default image. Its pinned digest is an Aug 2025 build whose signature was pruned, and
     # ddbuild now enforces image-signature verification, so that digest is blocked at pod startup (incident-61046).
-    # `:newest` is a currently-signed build. Revert to a verified signed digest once the template pins a fresh one.
-    LLMVAL_IMAGE: "registry.ddbuild.io/images/benchmarking-platform-tools-ubuntu:newest"
+    # Pinned to the current signed :newest (multi-arch index resolved 2026-09-22); immutable + reproducible. Rebump
+    # by re-resolving :newest if a future build ever drops this digest's signature the same way.
+    LLMVAL_IMAGE: "registry.ddbuild.io/images/benchmarking-platform-tools-ubuntu@sha256:ea36981d607aaf598a8bc7ed4dc6f48f8f295dc732d066d4095475174bcf044a"
     LLMVAL_PLATFORM_PROJECT: "ddoghq/llm-validation-platform"
     LLMVAL_PLATFORM_REF: "c331696647a78672101002ba48ccebbd41b0fae8"   # v0.1.3 (must match include ref above)
 
