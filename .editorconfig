@@ -89,7 +89,7 @@ dotnet_diagnostic.RS0030.severity = error
 
 ## Exceptions for banned apis:
 # - EnvironmentHelpers.GetEnvironmentVariable (DD0011/DD0012)
-# - EnvironmentHelpersNoLogging.GetEnvironmentVariable (DD0011/DD0012)
+# - EnvironmentHelpersNoLogging.GetEnvironmentVariable (DA0011/DD0012)
 # - EnvironmentHelpers.EnvironmentVariableExists (DD0011/DD0012)
 # - EnvironmentHelpersNoLogging.EnvironmentVariableExists (DD0011/DD0012)
 # - EnvironmentVariablesProvider.GetValue (DD0011/DD0012)
@@ -99,3 +99,8 @@ dotnet_diagnostic.RS0030.severity = error
 # Disables static analyzer errors for a specific folder
 [/tracer/src/Datadog.Trace/Vendors/**.*]
 dotnet_diagnostic.RS0030.severity = none
+
+# The vendored Newtonsoft.Json library's own internal usages of JsonTextReader/JsonTextWriter
+# (e.g. in JToken.cs, JArray.cs, JsonConvert.cs) predate and are unrelated to our JsonArrayPool
+# convention, so DD0016 is not applicable there.
+dotnet_diagnostic.ED0016.severity = none
