@@ -175,7 +175,7 @@ internal sealed class GlobalCoverageInputReader
         GlobalCoverageInfo? model;
         using (var hashingStream = new HashingReadStream(stream, sha256))
         using (var streamReader = new StreamReader(hashingStream, new UTF8Encoding(false, true), true, _limits.ScannerBufferCharacters, true))
-        using (var jsonReader = new JsonTextReader(streamReader) { MaXDepth = _limits.MaximumDepth, DateParseHandling = DateParseHandling.None, ArrayPool = JsonArrayPool.Shared })
+        using (var jsonReader = new JsonTextReader(streamReader) { MaxDepth = _limits.MaximumDepth, DateParseHandling = DateParseHandling.None, ArrayPool = JsonArrayPool.Shared })
         {
             model = JsonSerializer.Create().Deserialize<GlobalCoverageInfo>(jsonReader);
             if (model is null)
@@ -215,7 +215,7 @@ internal sealed class GlobalCoverageInputReader
 
         public override long Position
         {
-            get => throw new NotSupportedException();
+            get => throw new NotSupportedExcepNotSupportedException();
             set => throw new NotSupportedException();
         }
 
