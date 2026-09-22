@@ -29,7 +29,19 @@ namespace Datadog.Profiler.IntegrationTests.LinuxOnly
                 return;
             }
 
-            var runner = new SmokeTestRunner(appName, framework, appAssembly, commandLine: "--scenario 21", output: _output);
+            // Wall-time profiling stays at its default (enabled). The SystemCallsShield wrapper
+            // (Datadog.Linux.ApiWrapper/socket_operations.c and filesystem_operations.c) has
+            // temporary trace instrumentation to see whether a raw EINTR is leaking through to
+            // OpenLDAP while it's running. Running under strace too, as ground truth for every
+            // syscall and every signal delivery, independent of what we've chosen to wrap.
+            // LD_DEBUG=bindings shows how the dynamic linker actually resolves libldap's poll
+            // (and recvfrom) references in this real process, since a local repro didn't
+            // reproduce the bypass we're seeing here.
+            var runner = new SmokeTestRunner(appName, framework, appAssembly, commandLine: "--scenario 21", output: _output)
+            {
+                UseStrace = true,
+                UseLdDebug = true
+            };
             runner.RunAndCheck();
         }
     }

@@ -50,6 +50,8 @@ RUN apt-get update \
         libicu-dev \
         zlib1g-dev \
         cppcheck \
+        # TEMPORARY diagnostic (see OpenLdapTests.CheckOpenLdapCrash): trace syscalls/signals
+        strace \
         # required to install clang
         lsb-release \
         software-properties-common \

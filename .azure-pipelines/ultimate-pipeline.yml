@@ -2958,6 +2958,12 @@ stages:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
         baseImage: $(baseImage) # for interpolation in the docker-compose file
 
+    - script: |
+        docker-compose -f docker-compose.yml -p $(DockerComposeProjectName) logs -t openldap
+      displayName: Dump openldap container logs (diagnostic for OpenLdapTests failures)
+      condition: always()
+      continueOnError: true
+
     - publish: profiler/build_data
       artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
       condition: always()
@@ -3079,6 +3085,12 @@ stages:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
         baseImage: $(baseImage) # for interpolation in the docker-compose file
 
+    - script: |
+        docker-compose -f docker-compose.yml -p $(DockerComposeProjectName) logs -t openldap
+      displayName: Dump openldap container logs (diagnostic for OpenLdapTests failures)
+      condition: always()
+      continueOnError: true
+
     - publish: profiler/build_data
       artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
       condition: always()
@@ -3128,7 +3140,7 @@ stages:
         build: true
         target: builder
         baseImage: ubuntu
-        command: "BuildProfilerAsanTest -Framework net10.0"
+        command: "BuildProfilerAsanTest -Framework net11.0"
         apiKey: $(DD_LOGGER_DD_API_KEY)
         timeoutInMinutesForRunCommand: 30 # No retry: this target also runs the sanitizer unit tests, and retrying could mask a real intermittent finding
 
@@ -3137,7 +3149,7 @@ stages:
         build: true
         target: builder
         baseImage: debian
-        command: "BuildProfilerSampleForSanitiserTests -Framework net10.0"
+        command: "BuildProfilerSampleForSanitiserTests -Framework net11.0"
         apiKey: $(DD_LOGGER_DD_API_KEY)
         retryCountForRunCommand: 1
         timeoutInMinutesForRunCommand: 10
@@ -3146,7 +3158,7 @@ stages:
       parameters:
         target: builder
         baseImage: ubuntu
-        command: "RunSampleWithProfilerAsan -Framework net10.0"
+        command: "RunSampleWithProfilerAsan -Framework net11.0"
         apiKey: $(DD_LOGGER_DD_API_KEY)
 
     - publish: profiler/build_data
@@ -4246,7 +4258,7 @@ stages:
     - template: steps/run-in-docker.yml
       parameters:
         baseImage: $(baseImage)
-        command: "BuildAndRunDdDotnetArtifactTests --framework net7.0"
+        command: "BuildAndRunDdDotnetArtifactTests --framework net11.0"
 
     - template: steps/make-artifacts-uploadable.yml
     - publish: artifacts/build_data
