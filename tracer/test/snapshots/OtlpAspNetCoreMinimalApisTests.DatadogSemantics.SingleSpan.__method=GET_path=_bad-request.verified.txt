@@ -65,6 +65,7 @@
             {
               "traceId": "normalized-trace-id",
               "spanId": "normalized-span-id",
+              "traceState": "ot=rv:normalized-random-value;th:0",
               "name": "GET /bad-request",
               "kind": 2,
               "startTimeUnixNano": "0",
