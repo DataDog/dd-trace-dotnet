@@ -7,6 +7,8 @@
 
 using System.ComponentModel;
 using System.Threading;
+using System.Web;
+using Datadog.Trace.AspNet;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 
@@ -56,6 +58,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                 // Only try setting an exception if there's an active span
                 // The rest of the instrumentation will handle disposing the scope
                 scope.Span.SetException(exception);
+                SharedItems.MarkExceptionRecorded(HttpContext.Current, scope.Span, exception);
             }
 
             return CallTargetState.GetDefault();

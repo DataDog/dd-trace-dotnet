@@ -15,6 +15,7 @@ namespace Datadog.Trace.AspNet
     internal static class SharedItems
     {
         public const string HttpContextPropagatedResourceNameKey = "__Datadog.Trace.ClrProfiler.Managed.AspNetMvcIntegration-aspnet.resourcename";
+        private const string HttpContextRecordedExceptionKey = "__Datadog.Trace.ClrProfiler.Managed.AspNetIntegration-recorded-exception";
         private static readonly Func<Stack<Scope>, Scope> Pop = stack => stack.Pop();
         private static readonly Func<Stack<Scope>, Scope> Peek = stack => stack.Peek();
 
@@ -45,6 +46,19 @@ namespace Datadog.Trace.AspNet
         }
 
         internal static Scope? TryPopScope(HttpContext? context, string key) => ExtractScope(context, key, Pop);
+
+        internal static void MarkExceptionRecorded(HttpContext? context, ISpan span, Exception exception)
+        {
+            if (context is not null)
+            {
+                context.Items[HttpContextRecordedExceptionKey] = new RecordedException(span, exception);
+            }
+        }
+
+        internal static bool IsExceptionRecorded(HttpContext? context, ISpan span, Exception exception)
+            => context?.Items[HttpContextRecordedExceptionKey] is RecordedException recordedException
+                && ReferenceEquals(recordedException.Span, span)
+                && ReferenceEquals(recordedException.Exception, exception);
 
         /// <summary>
         /// Gets the scope from the HttpContext with the provided key, corresponding to the integration that created it.
@@ -81,6 +95,19 @@ namespace Datadog.Trace.AspNet
             }
 
             return default;
+        }
+
+        private sealed class RecordedException
+        {
+            public RecordedException(ISpan span, Exception exception)
+            {
+                Span = span;
+                Exception = exception;
+            }
+
+            public ISpan Span { get; }
+
+            public Exception Exception { get; }
         }
     }
 }

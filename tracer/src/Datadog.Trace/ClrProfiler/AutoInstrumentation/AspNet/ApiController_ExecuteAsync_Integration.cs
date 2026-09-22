@@ -110,7 +110,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
             {
                 // When the instrumentation did not produce a new span but we are tracking the controller context,
                 // then we are operating with OpenTelemetry semantics to generate only one HTTP server span:
-                // Update the existing ASP.NET span with the resolved route information
+                // Update the existing ASP.NET span with the resolved route information.
+                // Regarding exception handling: exceptions are recorded on that span by ExceptionHandlerExtensions_HandleAsync_Integration
+                // or TracingHttpModule.OnError. Recording them here would duplicate OpenTelemetry exception events and
+                // incorrectly record exceptions such as HttpResponseException that Web API handles as responses.
                 AspNetWebApi2Integration.SetRouteOnActiveServerSpan(Tracer.Instance, controllerContext);
                 return responseMessage;
             }

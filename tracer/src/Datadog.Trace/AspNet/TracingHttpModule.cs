@@ -571,7 +571,13 @@ namespace Datadog.Trace.AspNet
 
                     if (exception != null && !is404 && exception is not AppSec.BlockException)
                     {
-                        scope.Span.SetException(exception);
+                        // The Web API exception handler may already have recorded this exception on the
+                        // same span when OpenTelemetry semantics coalesce the ASP.NET and Web API spans.
+                        if (!SharedItems.IsExceptionRecorded(httpContext, scope.Span, exception))
+                        {
+                            scope.Span.SetException(exception);
+                        }
+
                         proxyScope?.Span.SetException(exception);
                         if (!HttpRuntime.UsingIntegratedPipeline)
                         {
