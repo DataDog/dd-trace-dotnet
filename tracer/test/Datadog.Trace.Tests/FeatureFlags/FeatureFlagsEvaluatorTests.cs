@@ -504,6 +504,114 @@ public partial class FeatureFlagsEvaluatorTests
         FeatureFlagsEvaluator.GetShard(salt, targetingKey, int.MaxValue).Should().Be(expected);
     }
 
+    // ---------------------------------------------------------------------
+    // Null and empty targeting key tests
+    // ---------------------------------------------------------------------
+
+    [Fact]
+    public void NullTargetingKey_StaticFlag_ReturnsValue()
+    {
+        var flags = new FlagCollection
+        {
+            ["static-flag"] = FeatureFlagsHelpers.CreateStaticFlag("static-flag", ValueType.String, "static-value", "on")
+        };
+
+        var evaluator = new FeatureFlagsEvaluator(null, new ServerConfiguration { Flags = flags });
+        var ctx = new EvaluationContext(null);
+
+        var result = evaluator.Evaluate("static-flag", Trace.FeatureFlags.ValueType.String, "default", ctx);
+
+        Assert.Equal("static-value", result.Value);
+        Assert.Equal(EvaluationReason.Static, result.Reason);
+        Assert.Null(result.Error);
+    }
+
+    [Fact]
+    public void NullTargetingKey_ShardedFlag_ReturnsTargetingKeyMissing()
+    {
+        var flags = new FlagCollection
+        {
+            ["simple-string"] = FeatureFlagsHelpers.CreateSimpleFlag("simple-string", ValueType.String, "default", "on")
+        };
+
+        var evaluator = new FeatureFlagsEvaluator(null, new ServerConfiguration { Flags = flags });
+        var ctx = new EvaluationContext(null);
+
+        var result = evaluator.Evaluate("simple-string", Trace.FeatureFlags.ValueType.String, "default", ctx);
+
+        Assert.Equal("default", result.Value);
+        Assert.Equal(EvaluationReason.Error, result.Reason);
+        Assert.Equal("TARGETING_KEY_MISSING", result.Error);
+    }
+
+    [Fact]
+    public void NullTargetingKey_RuleMatchFlag_ReturnsValue()
+    {
+        var flags = new FlagCollection
+        {
+            ["rule-based-flag"] = FeatureFlagsHelpers.CreateRuleBasedFlag()
+        };
+
+        var evaluator = new FeatureFlagsEvaluator(null, new ServerConfiguration { Flags = flags });
+        var ctx = new EvaluationContext(null, new Dictionary<string, object?> { { "email", "test@company.com" } });
+
+        var result = evaluator.Evaluate("rule-based-flag", Trace.FeatureFlags.ValueType.String, "default", ctx);
+
+        Assert.Equal("premium", result.Value);
+        Assert.Equal(EvaluationReason.TargetingMatch, result.Reason);
+        Assert.Null(result.Error);
+    }
+
+    [Theory]
+    [InlineData(null, "default", EvaluationReason.Default)]
+    [InlineData("", "matched-value", EvaluationReason.TargetingMatch)]
+    public void RuleWithIdAttribute_DistinguishesNullAndEmptyTargetingKey(string? targetingKey, string expectedValue, EvaluationReason expectedReason)
+    {
+        var variants = new Dictionary<string, Variant>
+        {
+            ["matched"] = new Variant { Key = "matched", Value = "matched-value" },
+        };
+
+        var conditions = new List<ConditionConfiguration>
+        {
+            new ConditionConfiguration { Operator = ConditionOperator.MATCHES, Attribute = "id", Value = ".*" },
+        };
+
+        var rules = new List<Rule> { new Rule(conditions) };
+        var splits = new List<Split> { new Split { Shards = new List<Shard>(), VariationKey = "matched" } };
+        var alloc = new Allocation { Key = "id-alloc", Rules = rules, Splits = splits, DoLog = false };
+        var flag = new Flag { Key = "id-rule-flag", Enabled = true, VariationType = ValueType.String, Variations = variants, Allocations = new List<Allocation> { alloc } };
+
+        var flags = new FlagCollection { ["id-rule-flag"] = flag };
+        var evaluator = new FeatureFlagsEvaluator(null, new ServerConfiguration { Flags = flags });
+        var ctx = new EvaluationContext(targetingKey);
+
+        var result = evaluator.Evaluate("id-rule-flag", Trace.FeatureFlags.ValueType.String, "default", ctx);
+
+        Assert.Equal(expectedValue, result.Value);
+        Assert.Equal(expectedReason, result.Reason);
+        Assert.Null(result.Error);
+    }
+
+    [Fact]
+    public void EmptyStringTargetingKey_ShardedFlag_ReturnsValue()
+    {
+        var flags = new FlagCollection
+        {
+            ["simple-string"] = FeatureFlagsHelpers.CreateSimpleFlag("simple-string", ValueType.String, "sharded-value", "on")
+        };
+
+        var evaluator = new FeatureFlagsEvaluator(null, new ServerConfiguration { Flags = flags });
+        var ctx = new EvaluationContext(string.Empty);
+
+        var result = evaluator.Evaluate("simple-string", Trace.FeatureFlags.ValueType.String, "fallback", ctx);
+
+        Assert.Equal("sharded-value", result.Value);
+        Assert.Equal(EvaluationReason.Split, result.Reason);
+        Assert.Equal("on", result.Variant);
+        Assert.Null(result.Error);
+    }
+
     private static Flag CreateTimeBasedFlagWithDates(string key, string startAt, string endAt)
     {
         var variants = new Dictionary<string, Variant>

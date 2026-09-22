@@ -7,14 +7,7 @@
 #pragma warning disable SA1402 // File may only contain a single class
 #pragma warning disable SA1649 // File name must match first type name
 
-using System;
 using System.Collections.Generic;
-using System.Collections.Immutable;
-using System.Diagnostics;
-using System.Linq;
-using System.Net;
-using System.Net.Http;
-using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
@@ -52,7 +45,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     }
 
     [UsesVerify]
-    public abstract class OwinWebApi2Tests : TracingIntegrationTest, IClassFixture<OwinWebApi2Tests.OwinFixture>
+    public abstract class OwinWebApi2Tests : TracingIntegrationTest, IClassFixture<OwinFixture>
     {
         private readonly OwinFixture _fixture;
         private readonly string _testName;
@@ -136,157 +129,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             // Overriding the parameters to remove the expectedSpanCount parameter, which is necessary for operation but unnecessary for the filename
             await Verifier.Verify(spans, settings)
                           .UseFileName($"{_testName}.__path={sanitisedPath}_statusCode={statusCode}");
-        }
-
-        public sealed class OwinFixture : IDisposable
-        {
-            private readonly HttpClient _httpClient;
-            private Process _process;
-
-            public OwinFixture()
-            {
-                _httpClient = new HttpClient();
-                _httpClient.DefaultRequestHeaders.Add(HttpHeaderNames.TracingEnabled, "false");
-                _httpClient.DefaultRequestHeaders.Add(HttpHeaderNames.UserAgent, "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/95.0.4638.69 Safari/537.36");
-                _httpClient.DefaultRequestHeaders.Add("baggage", "user.id=doggo");
-            }
-
-            public MockTracerAgent.TcpUdpAgent Agent { get; private set; }
-
-            public int HttpPort { get; private set; }
-
-            public async Task TryStartApp(TestHelper helper, ITestOutputHelper output)
-            {
-                if (_process is not null)
-                {
-                    return;
-                }
-
-                if (_process is null)
-                {
-                    var initialAgentPort = TcpPortProvider.GetOpenPort();
-                    HttpPort = TcpPortProvider.GetOpenPort();
-
-                    Agent = MockTracerAgent.Create(output, initialAgentPort);
-                    Agent.SpanFilters.Add(IsNotServerLifeCheck);
-                    output.WriteLine($"Starting OWIN sample, agentPort: {Agent.Port}, samplePort: {HttpPort}");
-                    _process = await helper.StartSample(Agent, arguments: null, packageVersion: string.Empty, aspNetCorePort: HttpPort);
-                }
-
-                await EnsureServerStarted(output);
-            }
-
-            public void Dispose()
-            {
-                if (_process is not null)
-                {
-                    try
-                    {
-                        if (!_process.HasExited)
-                        {
-                            SubmitRequest(null, "/shutdown").GetAwaiter().GetResult();
-
-                            _process.Kill();
-                        }
-                    }
-                    catch
-                    {
-                        // in some circumstances the HasExited property throws, this means the process probably hasn't even started correctly
-                    }
-
-                    _process.Dispose();
-                }
-
-                Agent?.Dispose();
-            }
-
-            public async Task<IImmutableList<MockSpan>> WaitForSpans(ITestOutputHelper output, string path, int expectedSpanCount)
-            {
-                var testStart = DateTimeOffset.UtcNow;
-
-                await SubmitRequest(output, path);
-                return await Agent.WaitForSpansAsync(count: expectedSpanCount, minDateTime: testStart, returnAllOperations: true);
-            }
-
-            private async Task EnsureServerStarted(ITestOutputHelper output)
-            {
-                var wh = new EventWaitHandle(false, EventResetMode.AutoReset);
-
-                _process.OutputDataReceived += (sender, args) =>
-                {
-                    if (args.Data != null)
-                    {
-                        if (args.Data.Contains("Webserver started"))
-                        {
-                            wh.Set();
-                        }
-
-                        output.WriteLine($"[webserver][stdout] {args.Data}");
-                    }
-                };
-                _process.BeginOutputReadLine();
-
-                _process.ErrorDataReceived += (sender, args) =>
-                {
-                    if (args.Data != null)
-                    {
-                        output.WriteLine($"[webserver][stderr] {args.Data}");
-                    }
-                };
-
-                _process.BeginErrorReadLine();
-
-                wh.WaitOne(5000);
-
-                var maxMillisecondsToWait = 30_000;
-                var intervalMilliseconds = 500;
-                var intervals = maxMillisecondsToWait / intervalMilliseconds;
-                var serverReady = false;
-
-                // wait for server to be ready to receive requests
-                while (intervals-- > 0)
-                {
-                    try
-                    {
-                        serverReady = await SubmitRequest(output, "/alive-check") == HttpStatusCode.OK;
-                    }
-                    catch
-                    {
-                        // ignore
-                    }
-
-                    if (serverReady)
-                    {
-                        break;
-                    }
-
-                    await Task.Delay(intervalMilliseconds);
-                }
-
-                if (!serverReady)
-                {
-                    throw new Exception("Couldn't verify the application is ready to receive requests.");
-                }
-            }
-
-            private bool IsNotServerLifeCheck(MockSpan span)
-            {
-                span.Tags.TryGetValue(Tags.HttpUrl, out var url);
-                if (url == null)
-                {
-                    return true;
-                }
-
-                return !url.Contains("alive-check") && !url.Contains("shutdown");
-            }
-
-            private async Task<HttpStatusCode> SubmitRequest(ITestOutputHelper output, string path)
-            {
-                HttpResponseMessage response = await _httpClient.GetAsync($"http://localhost:{HttpPort}{path}");
-                string responseText = await response.Content.ReadAsStringAsync();
-                output?.WriteLine($"[http] {response.StatusCode} {responseText}");
-                return response.StatusCode;
-            }
         }
     }
 }
