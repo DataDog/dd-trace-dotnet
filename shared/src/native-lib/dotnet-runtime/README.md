@@ -64,6 +64,12 @@ fails the vendoring run loudly instead of silently no-op'ing:
   they conflict with stdlibc++ 8 (C++17) on Linux. We don't use SAL2 `__valid`/`__pre` annotations.
 - **`pal/inc/rt/specstrings.h`** — comments out `#define __bound` for the same stdlibc++ 8
   conflict, applied to `__bound`.
+- **`pal/inc/rt/palrt.h`** — restores the `PROCESSOR_ARCHITECTURE_*` defines ("copied from
+  winnt.h", never Windows-gated even in v7). Upstream dropped the whole block; our own
+  `profiler/src/ProfilerEngine/Datadog.Profiler.Native/CorProfilerCallback.cpp`
+  (`SysInfoProcessorArchitectureToStr`) switches on `PROCESSOR_ARCHITECTURE_AMD64/ARM/ARM64/
+  IA64/INTEL`, which only ever came from this file on non-Windows (`pal/inc/rt` isn't on the
+  include path for any Windows project - they see the real SDK `winnt.h` via `<windows.h>`).
 
 Two patches that were needed at v7.0.0 are **no longer applied** as of the v11 RC1 resync, because
 upstream now does the equivalent itself: the `#ifdef _DEBUG` guard around the `origBuff`/`outBuff`

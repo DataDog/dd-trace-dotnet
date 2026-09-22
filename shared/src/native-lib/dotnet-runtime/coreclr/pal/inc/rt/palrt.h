@@ -719,6 +719,24 @@ typedef struct _LIST_ENTRY {
 #define IMAGE_COR20_HEADER_FIELD(obj, f)    ((obj).f)
 #endif
 
+// copied from winnt.h - see shared/src/native-lib/dotnet-runtime/README.md
+#define PROCESSOR_ARCHITECTURE_INTEL            0
+#define PROCESSOR_ARCHITECTURE_MIPS             1
+#define PROCESSOR_ARCHITECTURE_ALPHA            2
+#define PROCESSOR_ARCHITECTURE_PPC              3
+#define PROCESSOR_ARCHITECTURE_SHX              4
+#define PROCESSOR_ARCHITECTURE_ARM              5
+#define PROCESSOR_ARCHITECTURE_IA64             6
+#define PROCESSOR_ARCHITECTURE_ALPHA64          7
+#define PROCESSOR_ARCHITECTURE_MSIL             8
+#define PROCESSOR_ARCHITECTURE_AMD64            9
+#define PROCESSOR_ARCHITECTURE_IA32_ON_WIN64    10
+#define PROCESSOR_ARCHITECTURE_NEUTRAL          11
+#define PROCESSOR_ARCHITECTURE_ARM64            12
+#define PROCESSOR_ARCHITECTURE_LOONGARCH64      13
+
+#define PROCESSOR_ARCHITECTURE_UNKNOWN 0xFFFF
+
 //
 // JIT Debugging Info. This structure is defined to have constant size in
 // both the emulated and native environment.

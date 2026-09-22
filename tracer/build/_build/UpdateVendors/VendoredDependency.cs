@@ -1310,6 +1310,22 @@ namespace UpdateVendors
                             "#ifndef SOS_INCLUDE\n\n#ifdef _BLD_CLR\n#include \"utilcode.h\"\n#endif\n#include \"corhlpr.h\"\n#include <stdlib.h>\n\n#endif // !SOS_INCLUDE",
                             "restoring the #ifdef _BLD_CLR guard around #include \"utilcode.h\" that upstream dropped"));
                     break;
+
+                case "palrt.h":
+                    RewriteFileWithTransform(filePath, content =>
+                        // Upstream dropped this block entirely (it was never Windows-gated - "copied
+                        // from winnt.h" for use on non-Windows, where the real winnt.h isn't available).
+                        // pal/inc/rt is only on the include path for non-Windows builds (Windows projects
+                        // never reference pal/inc/rt; they see the real SDK winnt.h via <windows.h>), so
+                        // profiler/src/ProfilerEngine/Datadog.Profiler.Native/CorProfilerCallback.cpp's
+                        // PROCESSOR_ARCHITECTURE_* switch only needs these on non-Windows too.
+                        ReplaceOrThrow(
+                            filePath,
+                            content,
+                            "#ifndef IMAGE_COR20_HEADER_FIELD\n#define IMAGE_COR20_HEADER_FIELD(obj, f)    ((obj).f)\n#endif\n",
+                            "#ifndef IMAGE_COR20_HEADER_FIELD\n#define IMAGE_COR20_HEADER_FIELD(obj, f)    ((obj).f)\n#endif\n\n// copied from winnt.h - see shared/src/native-lib/dotnet-runtime/README.md\n#define PROCESSOR_ARCHITECTURE_INTEL            0\n#define PROCESSOR_ARCHITECTURE_MIPS             1\n#define PROCESSOR_ARCHITECTURE_ALPHA            2\n#define PROCESSOR_ARCHITECTURE_PPC              3\n#define PROCESSOR_ARCHITECTURE_SHX              4\n#define PROCESSOR_ARCHITECTURE_ARM              5\n#define PROCESSOR_ARCHITECTURE_IA64             6\n#define PROCESSOR_ARCHITECTURE_ALPHA64          7\n#define PROCESSOR_ARCHITECTURE_MSIL             8\n#define PROCESSOR_ARCHITECTURE_AMD64            9\n#define PROCESSOR_ARCHITECTURE_IA32_ON_WIN64    10\n#define PROCESSOR_ARCHITECTURE_NEUTRAL          11\n#define PROCESSOR_ARCHITECTURE_ARM64            12\n#define PROCESSOR_ARCHITECTURE_LOONGARCH64      13\n\n#define PROCESSOR_ARCHITECTURE_UNKNOWN 0xFFFF\n",
+                            "restoring the PROCESSOR_ARCHITECTURE_* defines that upstream dropped, which CorProfilerCallback.cpp's SysInfoProcessorArchitectureToStr needs on non-Windows"));
+                    break;
             }
         }
 
