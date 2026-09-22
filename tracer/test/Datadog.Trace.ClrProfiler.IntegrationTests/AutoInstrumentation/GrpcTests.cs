@@ -345,7 +345,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                     await VerifyHelper.VerifySpans(spans, settings)
                                     .UseTypeName(EnvironmentHelper.SampleName)
-                                    .UseTextForParameters($"httpclient={httpInstrumentationEnabled}.Schema{metadataSchemaVersion.ToUpper()}")
+                                    .UseTextForParameters($"httpclient={httpInstrumentationEnabled}.Schema{metadataSchemaVersion.ToUpper()}{VerifyHelper.Net11SnapshotSuffix}")
                                     .DisableRequireUniquePrefix();
 
                     static void FixVerySlowServerSpans(IImmutableList<MockSpan> spans, HttpClientIntegrationType httpClientIntegrationType)
