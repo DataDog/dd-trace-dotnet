@@ -117,7 +117,22 @@ internal sealed class DataStreamsContextPropagator
 
                 if (status != OperationStatus.Done)
                 {
-                    Log.Error("Failed to decode Base64 data streams context. OperationStatus: {Status}", status);
+                    switch (status)
+                    {
+                        case OperationStatus.InvalidData:
+                            Log.Error("Failed to decode Base64 data streams context: invalid Base64 data.");
+                            break;
+                        case OperationStatus.DestinationTooSmall:
+                            Log.Error("Failed to decode Base64 data streams context: destination buffer is too small.");
+                            break;
+                        case OperationStatus.NeedMoreData:
+                            Log.Error("Failed to decode Base64 data streams context: incomplete Base64 data.");
+                            break;
+                        default:
+                            Log.Error("Failed to decode Base64 data streams context. OperationStatus: {Status}", status);
+                            break;
+                    }
+
                     return null;
                 }
 
@@ -133,7 +148,22 @@ internal sealed class DataStreamsContextPropagator
 
                 if (status != OperationStatus.Done)
                 {
-                    Log.Error("Failed to decode Base64 data streams context. OperationStatus: {Status}", status);
+                    switch (status)
+                    {
+                        case OperationStatus.InvalidData:
+                            Log.Error("Failed to decode Base64 data streams context: invalid Base64 data.");
+                            break;
+                        case OperationStatus.DestinationTooSmall:
+                            Log.Error("Failed to decode Base64 data streams context: destination buffer is too small.");
+                            break;
+                        case OperationStatus.NeedMoreData:
+                            Log.Error("Failed to decode Base64 data streams context: incomplete Base64 data.");
+                            break;
+                        default:
+                            Log.Error("Failed to decode Base64 data streams context. OperationStatus: {Status}", status);
+                            break;
+                    }
+
                     return null;
                 }
                 else
