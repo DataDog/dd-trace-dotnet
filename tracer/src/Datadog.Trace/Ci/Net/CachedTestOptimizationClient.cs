@@ -5,6 +5,7 @@
 
 #nullable enable
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace Datadog.Trace.Ci.Net;
@@ -14,7 +15,7 @@ internal sealed class CachedTestOptimizationClient : ITestOptimizationClient
     private readonly ITestOptimizationClient _client;
     private readonly Lazy<Task<TestOptimizationClient.KnownTestsResponse>> _knownTests;
     private readonly Lazy<Task<TestOptimizationClient.SearchCommitResponse>> _commits;
-    private readonly Lazy<Task<TestOptimizationClient.SkippableTestsResponse>> _skippableTests;
+    private readonly Dictionary<SkippableTestsRequestScope, Lazy<Task<TestOptimizationClient.SkippableTestsResponse>>> _skippableTestsByScope = new();
     private readonly Lazy<Task<TestOptimizationClient.TestManagementResponse>> _testManagementTests;
     private readonly Lazy<Task<long>> _uploadRepositoryChanges;
 
@@ -28,7 +29,6 @@ internal sealed class CachedTestOptimizationClient : ITestOptimizationClient
         _settingsWithFrameworkInfo = new(() => _client.GetSettingsAsync(false));
         _knownTests = new(_client.GetKnownTestsAsync);
         _commits = new(_client.GetCommitsAsync);
-        _skippableTests = new(_client.GetSkippableTestsAsync);
         _uploadRepositoryChanges = new(_client.UploadRepositoryChangesAsync);
         _testManagementTests = new(_client.GetTestManagementTests);
     }
@@ -63,8 +63,20 @@ internal sealed class CachedTestOptimizationClient : ITestOptimizationClient
     public async Task<TestOptimizationClient.SearchCommitResponse> GetCommitsAsync()
         => await _commits.Value.ConfigureAwait(false);
 
-    public async Task<TestOptimizationClient.SkippableTestsResponse> GetSkippableTestsAsync()
-        => await _skippableTests.Value.ConfigureAwait(false);
+    public async Task<TestOptimizationClient.SkippableTestsResponse> GetSkippableTestsAsync(SkippableTestsRequestScope scope = default)
+    {
+        Lazy<Task<TestOptimizationClient.SkippableTestsResponse>>? skippableTests;
+        lock (_skippableTestsByScope)
+        {
+            if (!_skippableTestsByScope.TryGetValue(scope, out skippableTests))
+            {
+                skippableTests = new(() => _client.GetSkippableTestsAsync(scope));
+                _skippableTestsByScope[scope] = skippableTests;
+            }
+        }
+
+        return await skippableTests!.Value.ConfigureAwait(false);
+    }
 
     public async Task<long> SendPackFilesAsync(string commitSha, string[]? commitsToInclude, string[]? commitsToExclude)
         => await _client.SendPackFilesAsync(commitSha, commitsToInclude, commitsToExclude).ConfigureAwait(false);

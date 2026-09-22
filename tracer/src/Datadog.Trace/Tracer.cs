@@ -333,6 +333,7 @@ namespace Datadog.Trace
                     traceContext.SetSamplingPriority(samplingPriority);
                     traceContext.Origin = parentSpanContext.Origin;
                     traceContext.AdditionalW3CTraceState = parentSpanContext.AdditionalW3CTraceState;
+                    traceContext.OtelTraceState = parentSpanContext.OtelTraceState;
                 }
 
                 // if the parent is a remote context, set the last parent id that came from the distributed header
@@ -415,7 +416,7 @@ namespace Datadog.Trace
         {
             var spanContext = CreateSpanContext(parent, serviceName, traceId, spanId, rawTraceId, rawSpanId, serviceNameSource);
 
-            var span = new Span(spanContext, startTime, tags, links)
+            var span = new Span(spanContext, startTime, tags, links, Settings.OtelSemanticsEnabled)
             {
                 OperationName = operationName,
             };
@@ -441,8 +442,6 @@ namespace Datadog.Trace
             // However, to reduce memory consumption, we don't actually add the result as tags on the span, and instead
             // write them directly to the <see cref="TraceChunkModel"/>.
             TracerManager.GitMetadataTagsProvider.TryExtractGitMetadata(out _);
-
-            DebuggerManager.Instance.CodeOrigin?.SetCodeOriginForExitSpan(span);
 
             return span;
         }

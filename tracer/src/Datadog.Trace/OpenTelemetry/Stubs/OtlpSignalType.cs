@@ -4,7 +4,6 @@
 // </copyright>
 
 #nullable enable
-#if NETCOREAPP3_1_OR_GREATER
 
 namespace Datadog.Trace.Vendors.OpenTelemetry.Exporter.OpenTelemetryProtocol.Implementation.Serializer
 {
@@ -35,6 +34,3 @@ namespace Datadog.Trace.Vendors.OpenTelemetry.Exporter.OpenTelemetryProtocol.Imp
         Logs = 3,
     }
 }
-
-#endif
-

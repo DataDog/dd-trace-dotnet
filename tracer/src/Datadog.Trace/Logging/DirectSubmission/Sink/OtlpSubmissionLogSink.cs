@@ -14,6 +14,7 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging.DirectSubmission.Sink.PeriodicBatching;
 using Datadog.Trace.OpenTelemetry;
 using Datadog.Trace.OpenTelemetry.Logs;
+using Datadog.Trace.SourceGenerators;
 
 namespace Datadog.Trace.Logging.DirectSubmission.Sink;
 
@@ -28,7 +29,13 @@ internal sealed class OtlpSubmissionLogSink : BatchingSink<DirectSubmissionLogEv
     }
 
     internal OtlpSubmissionLogSink(BatchingSinkOptions sinkOptions, IOtlpExporter exporter)
-        : base(sinkOptions, null)
+        : this(sinkOptions, exporter, startBackgroundLoop: true)
+    {
+    }
+
+    [TestingAndPrivateOnly]
+    internal OtlpSubmissionLogSink(BatchingSinkOptions sinkOptions, IOtlpExporter exporter, bool startBackgroundLoop)
+        : base(sinkOptions, disableSinkAction: null, startBackgroundLoop)
     {
         _otlpExporter = exporter;
     }

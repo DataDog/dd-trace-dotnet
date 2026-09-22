@@ -3,11 +3,11 @@ set(LIBDATADOG_VERSION ${VERSION})
 if(TARGET_TRIPLET STREQUAL "x64-windows" OR
    TARGET_TRIPLET STREQUAL "x64-windows-static")
     set(PLATFORM "x64")
-    set(LIBDATADOG_HASH "6ce5906245733f1fc80a2912e259e771e94285e8945fde6cfe3e5090330428288502966bd7e7fa785a57973a8f93c40f29e75105e95e6ebed3e9f9c85a269cb7")
+    set(LIBDATADOG_HASH "049f5013fd63a25faf7f456cf6f22d9e3f1e887e5c59e6c5a515f66eb551431793963ed96753c1ce21e3eb09e516c3353aff87932c99538041401cf1fd640fd1")
 elseif(TARGET_TRIPLET STREQUAL "x86-windows" OR
        TARGET_TRIPLET STREQUAL "x86-windows-static")
     set(PLATFORM "x86")
-    set(LIBDATADOG_HASH "3ab7d4d7acc6f6b328a86daf9ba17856f01eb37b9e7f06c0f1c4c4c318f04223026eb59457a31ca6549c910ada38dbaf59714d77b4f13d9a95ead499ac29e3e4")
+    set(LIBDATADOG_HASH "8bbde9b960170bf89b3efdd9a36606bc984bfe2a617ebabac401723bb602f49b94bd5d90c4dd901875492c8ed89624236d2c5b2033e8250b29c9b3271214ff72")
 else()
     message(FATAL_ERROR "Unsupported triplet: ${TARGET_TRIPLET}")
 endif()
@@ -15,7 +15,7 @@ endif()
 # Define the version and download URL for the prebuilt binaries
 set(LIBDATADOG_FILENAME "libdatadog-${PLATFORM}-windows")
 set(LIBDATADOG_ARTIFACT "${LIBDATADOG_FILENAME}.zip")
-set(LIBDATADOG_URL "https://github.com/DataDog/libdatadog/releases/download/v${LIBDATADOG_VERSION}/${LIBDATADOG_ARTIFACT}")
+set(LIBDATADOG_URL "https://github.com/DataDog/libdatadog-dotnet/releases/download/v${LIBDATADOG_VERSION}/${LIBDATADOG_ARTIFACT}")
 
 # Download and extract the prebuilt binaries
 vcpkg_download_distfile(ARCHIVE

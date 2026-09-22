@@ -20,6 +20,7 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 {
+    [Trait("Area", "CIVisibility")]
     [UsesVerify]
     public class NUnitTests : TestingFrameworkTest
     {
@@ -270,6 +271,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                                     CheckSimpleTestSpan(targetSpan);
                                     break;
                             }
+
+                            Assert.True(targetSpan.Tags.Remove(IntelligentTestRunnerTags.TestTestsSkippingEnabled));
 
                             // check remaining tag (only the name)
                             targetSpan.Tags.Should().ContainSingle();

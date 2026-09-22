@@ -27,6 +27,7 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI;
 
+[Trait("Area", "CIVisibility")]
 [UsesVerify]
 public class SeleniumTests : TestingFrameworkEvpTest
 {
@@ -78,7 +79,7 @@ public class SeleniumTests : TestingFrameworkEvpTest
         ipcServer.SetMessageReceivedCallback(
             o =>
             {
-                codeCoverageReceived.Value = codeCoverageReceived.Value || o is SessionCodeCoverageMessage;
+                codeCoverageReceived.Value = codeCoverageReceived.Value || o is SessionCodeCoverageMessage or SessionCodeCoverageReferenceMessage;
             });
 
         using var agent = MockTracerAgent.Create(Output);

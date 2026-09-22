@@ -63,6 +63,7 @@
     <ClCompile Include="CallstackTest.cpp" />
     <ClCompile Include="ClrEventsParserTest.cpp" />
     <ClCompile Include="ConfigurationTest.cpp" />
+    <ClCompile Include="CoreLibModuleProviderTest.cpp" />
     <ClCompile Include="CpuProfilerTypeTest.cpp" />
     <ClCompile Include="CpuSamplePRoviderTest.cpp" />
     <ClCompile Include="CrashReportingTest.cpp" />
@@ -75,6 +76,7 @@
     <ClCompile Include="FakeSamples.cpp" />
     <ClCompile Include="FrameStoreHelper.cpp" />
     <ClCompile Include="IMetricsSenderFactoryTest.cpp" />
+    <ClCompile Include="InlineVTCacheTest.cpp" />
     <ClCompile Include="LinkedListTest.cpp" />
     <ClCompile Include="ManagedThreadInfoTest.cpp" />
     <ClCompile Include="ProfileExporterTest.cpp" />
@@ -99,6 +101,9 @@
     <ClCompile Include="TagsTest.cpp" />
     <ClCompile Include="TagsHelperTest.cpp" />
     <ClCompile Include="ProviderTest.cpp" />
+    <ClCompile Include="ReferenceChainTest.cpp" />
+    <ClCompile Include="ReferenceChainTraverserFaultTest.cpp" />
+    <ClCompile Include="SnapshotCooldownTest.cpp" />
     <ClCompile Include="ThreadsCpuManagerHelper.cpp" />
     <ClCompile Include="ChronoHelperTest.cpp" />
     <ClInclude Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native.Windows\DbgHelpParser.h" />
@@ -107,6 +112,7 @@
     <ClCompile Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native\HResultConverter.cpp" />
     <ClCompile Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native\IMetricsSenderFactory.cpp" />
     <ClInclude Include="AppDomainStoreHelper.h" />
+    <ClInclude Include="CoreLibMockProfilerInfo.h" />
     <ClInclude Include="EnvironmentHelper.h" />
     <ClInclude Include="FakeSamples.h" />
     <ClInclude Include="FrameStoreHelper.h" />

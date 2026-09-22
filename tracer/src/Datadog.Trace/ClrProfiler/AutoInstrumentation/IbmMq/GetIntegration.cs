@@ -24,7 +24,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.IbmMq
         ReturnTypeName = ClrNames.Void,
         ParameterTypeNames = [IbmMqConstants.MqMessageTypeName, IbmMqConstants.MqMessageGetOptionsTypeName, ClrNames.Int32],
         MinimumVersion = "9.0.0",
-        MaximumVersion = "9.*.*",
+        MaximumVersion = "10.*.*",
         IntegrationName = IbmMqConstants.IntegrationName)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]

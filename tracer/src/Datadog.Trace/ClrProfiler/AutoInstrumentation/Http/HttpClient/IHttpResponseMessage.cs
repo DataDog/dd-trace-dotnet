@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient
@@ -16,5 +17,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient
         /// Gets the status code of the http response
         /// </summary>
         int StatusCode { get; }
+
+        /// <summary>
+        /// Gets the HTTP version of the http response
+        /// </summary>
+        Version Version { get; }
     }
 }

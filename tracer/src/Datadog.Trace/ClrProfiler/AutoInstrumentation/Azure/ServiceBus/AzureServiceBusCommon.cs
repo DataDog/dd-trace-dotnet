@@ -8,9 +8,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Runtime.CompilerServices;
 using System.Text;
-using System.Threading;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Schema;
@@ -21,22 +19,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
 {
     internal static class AzureServiceBusCommon
     {
-        private static readonly ConditionalWeakTable<object, object?> ApplicationPropertiesToMessageMap = new();
-
-        internal static readonly AsyncLocal<IDictionary<string, object>?> ActiveMessageProperties = new();
-
-        public static void SetMessage(object applicationProperties, object? message)
-        {
-#if NETCOREAPP3_1_OR_GREATER
-            ApplicationPropertiesToMessageMap.AddOrUpdate(applicationProperties, message);
-#else
-            ApplicationPropertiesToMessageMap.GetValue(applicationProperties, x => message);
-#endif
-        }
-
-        public static bool TryGetMessage(object applicationProperties, out object? message)
-            => ApplicationPropertiesToMessageMap.TryGetValue(applicationProperties, out message);
-
         internal static long GetMessageSize<T>(T message)
             where T : IServiceBusMessage
         {

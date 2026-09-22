@@ -31,7 +31,8 @@ namespace GeneratePackageVersions
                 {
                     packageVersions.Add(new VersionWithDate(
                         md.Identity.Version.ToNormalizedString(),
-                        md.Published));
+                        md.Published,
+                        md.IsListed));
                 }
             }
 

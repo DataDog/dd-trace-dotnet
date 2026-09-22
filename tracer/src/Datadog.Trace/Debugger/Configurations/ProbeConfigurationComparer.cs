@@ -33,8 +33,7 @@ namespace Datadog.Trace.Debugger.Configurations
 
             HasProbeRelatedChanges = AddedDefinitions.Any() || isFilteredListChanged;
             HasRateLimitChanged =
-                (!currentConfiguration.ServiceConfiguration?.Sampling?.Equals(incomingConfiguration.ServiceConfiguration?.Sampling) ?? incomingConfiguration.ServiceConfiguration?.Sampling != null)
-             || HasProbeRelatedChanges;
+                (!currentConfiguration.ServiceConfiguration?.Sampling?.Equals(incomingConfiguration.ServiceConfiguration?.Sampling) ?? incomingConfiguration.ServiceConfiguration?.Sampling != null);
         }
 
         public IReadOnlyList<ProbeDefinition> AddedDefinitions { get; }

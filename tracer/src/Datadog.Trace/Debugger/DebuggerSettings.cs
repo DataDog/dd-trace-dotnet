@@ -21,13 +21,16 @@ namespace Datadog.Trace.Debugger
         public const string DebuggerMetricPrefix = "dynamic.instrumentation.metric.probe";
         public const int DefaultMaxDepthToSerialize = 3;
         public const int DefaultMaxSerializationTimeInMilliseconds = 200;
+        public const int DefaultMaxEvaluationTimeInMilliseconds = 50;
         public const int DefaultMaxNumberOfItemsInCollectionToCopy = 100;
         public const int DefaultMaxNumberOfFieldsToCopy = 20;
-        public const int DefaultMaxStringLength = 1000;
+        public const int DefaultMaxStringLength = 255;
         public const int DefaultMaxProbesPerType = 0;
 
+        private const int MinAllowedEvaluationTimeInMilliseconds = 10;
+        private const int MaxAllowedEvaluationTimeInMilliseconds = 1000;
         private const int DefaultUploadBatchSize = 100;
-        public const int DefaultSymbolBatchSizeInBytes = 100000;
+        public const int DefaultSymbolBatchSizeInBytes = 1 * 1024 * 1024; // 1 MB
         private const int DefaultDiagnosticsIntervalSeconds = 60 * 60; // 1 hour
         private const int DefaultUploadFlushIntervalMilliseconds = 0;
         public const int DefaultCodeOriginExitSpanFrames = 8;
@@ -54,6 +57,13 @@ namespace Datadog.Trace.Debugger
                                                      DefaultMaxSerializationTimeInMilliseconds,
                                                      serializationTimeThreshold => serializationTimeThreshold > 0)
                                                 .Value;
+
+            MaxEvaluationTimeInMilliseconds = config
+                                             .WithKeys(ConfigurationKeys.Debugger.EvaluationTimeoutMs)
+                                             .AsInt32(
+                                                  DefaultMaxEvaluationTimeInMilliseconds,
+                                                  evaluationTimeThreshold => evaluationTimeThreshold is >= MinAllowedEvaluationTimeInMilliseconds and <= MaxAllowedEvaluationTimeInMilliseconds)
+                                             .Value;
 
             UploadBatchSize = config
                              .WithKeys(ConfigurationKeys.Debugger.UploadBatchSize)
@@ -144,7 +154,7 @@ namespace Datadog.Trace.Debugger
 
             var coEnabledResult = config.WithKeys(ConfigurationKeys.Debugger.CodeOriginForSpansEnabled).AsBoolResult();
             CodeOriginForSpansCanBeEnabled = coEnabledResult.ConfigurationResult is not { IsValid: true, Result: false };
-            CodeOriginForSpansEnabled = CodeOriginForSpansCanBeEnabled && (coEnabledResult.WithDefault(false) || DynamicInstrumentationEnabled);
+            CodeOriginForSpansEnabled = CodeOriginForSpansCanBeEnabled && (coEnabledResult.WithDefault(true) || DynamicInstrumentationEnabled);
 
             CodeOriginMaxUserFrames = config
                                          .WithKeys(ConfigurationKeys.Debugger.CodeOriginMaxUserFrames)
@@ -152,6 +162,8 @@ namespace Datadog.Trace.Debugger
                                          .Value;
 
             SymbolDatabaseCompressionEnabled = config.WithKeys(ConfigurationKeys.Debugger.SymbolDatabaseCompressionEnabled).AsBool(true);
+
+            ProbeFile = config.WithKeys(ConfigurationKeys.Debugger.DynamicInstrumentationProbeFile).AsString() ?? string.Empty;
         }
 
         internal ImmutableDynamicDebuggerSettings DynamicSettings { get; init; } = new();
@@ -165,6 +177,8 @@ namespace Datadog.Trace.Debugger
         public bool SymbolDatabaseCompressionEnabled { get; }
 
         public int MaxSerializationTimeInMilliseconds { get; }
+
+        public int MaxEvaluationTimeInMilliseconds { get; }
 
         public int MaximumDepthOfMembersToCopy { get; }
 
@@ -197,6 +211,8 @@ namespace Datadog.Trace.Debugger
         public bool CodeOriginForSpansCanBeEnabled { get; }
 
         public int CodeOriginMaxUserFrames { get; }
+
+        public string ProbeFile { get; }
 
         public static DebuggerSettings FromSource(IConfigurationSource source, IConfigurationTelemetry telemetry)
         {

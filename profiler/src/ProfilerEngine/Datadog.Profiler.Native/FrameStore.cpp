@@ -77,26 +77,32 @@ std::optional<std::pair<HRESULT, FunctionID>> FrameStore::GetFunctionFromIP(uint
 std::pair<bool, FrameInfoView> FrameStore::GetFrame(uintptr_t instructionPointer)
 {
     static const std::string NotResolvedModuleName("NotResolvedModule");
-    static const std::string NotResolvedFrame("NotResolvedFrame");
+    static const std::string NotResolvedFrame("|lm:Unknown-Assembly |ns: |ct:Unknown-Type |cg: |fn:NotResolvedFrame |fg: |sg:(?)");
     static const std::string UnloadedModuleName("UnloadedModule");
     static const std::string FakeModuleName("FakeModule");
 
     static const std::string FakeContentionFrame("|lm:Unknown-Assembly |ns: |ct:Unknown-Type |cg: |fn:lock-contention |fg: |sg:(?)");
     static const std::string FakeAllocationFrame("|lm:Unknown-Assembly |ns: |ct:Unknown-Type |cg: |fn:allocation |fg: |sg:(?)");
-
+    static const std::string UnknownFrameType("|lm:Unknown-Assembly |ns: |ct:Unknown-Type |cg: |fn:Unknown-Frame-Type |fg: |sg:(?)");
 
     // check for fake IPs used in tests
-    if (instructionPointer <= MaxFakeIP)
+    if (instructionPointer < MaxFakeIP)
     {
         // switch/case does not support compile-time constants
         if (instructionPointer == FrameStore::FakeLockContentionIP)
         {
             return { true, {FakeModuleName, FakeContentionFrame, "", 0} };
         }
-        else
-        if (instructionPointer == FrameStore::FakeAllocationIP)
+        else if (instructionPointer == FrameStore::FakeAllocationIP)
         {
             return { true, {FakeModuleName, FakeAllocationFrame, "", 0} };
+        }
+        else if (instructionPointer == FrameStore::UnknownFrameTypeIP)
+        {
+            // We log it only when it debug to identify truncated callstack
+            // Example: during tests
+            const auto recordFrame = Log::IsDebugEnabled();
+            return { recordFrame, {FakeModuleName, UnknownFrameType, "", 0} };
         }
         else
         {
@@ -111,32 +117,50 @@ std::pair<bool, FrameInfoView> FrameStore::GetFrame(uintptr_t instructionPointer
         std::optional<std::pair<HRESULT, FunctionID>> result = GetFunctionFromIP(instructionPointer);
         if (!result.has_value())
         {
+            // Windows-only: GetFunctionFromIP was wrapped in __try/__except and caught an
+            // SEH exception coming out of the CLR. Surface the frame as resolved
+            // (isResolved=true) so the existing Windows pipeline keeps its placeholder
+            // frame rather than silently dropping it.
             return {true, {NotResolvedModuleName, NotResolvedFrame, "", 0}};
         }
         std::tie(hr, functionId) = result.value();
-        // if native frame
         if (FAILED(hr))
         {
+            // IP is not in managed ranges (native frame). Return isResolved=false so
+            // RawSampleTransformer drops it from the final callstack.
             return {false, {NotResolvedModuleName, NotResolvedFrame, "", 0}};
         }
     }
     else
     {
-        functionId = _pManagedCodeCache->GetFunctionId(instructionPointer);
+        auto functionInfo = _pManagedCodeCache->GetFunctionInfo(instructionPointer);
 
-        if (!functionId.has_value())
+        if (!functionInfo.has_value())
         {
+            // Windows-only: the ICorProfilerInfo::GetFunctionFromIP call inside
+            // ManagedCodeCache was wrapped in __try/__except and caught an SEH
+            // exception from the CLR. Keep isResolved=true so the Windows pipeline
+            // preserves the placeholder frame (legacy semantic).
+            return {true, {NotResolvedModuleName, NotResolvedFrame, "", 0}};
+        }
+
+        if (functionInfo->FunctionId == ManagedCodeCache::InvalidFunctionId)
+        {
+            // IP is not in managed ranges (native frame). Return isResolved=false so
+            // RawSampleTransformer drops it from the final callstack.
             return {false, {NotResolvedModuleName, NotResolvedFrame, "", 0}};
         }
 
-        if (functionId.value() == ManagedCodeCache::InvalidFunctionId)
+        if (functionInfo->IsDynamic)
         {
-            // We have a value but not a valid one. This is fake function ID.
-            // This can occur when the calling into the CLR from managed code cache
-            // resulted in a crash(lucky us on windows, we can catch on linux ....:grimacing:)
-            // This is to preserve the current semantic
-            return {true, {NotResolvedModuleName, NotResolvedFrame, "", 0}};
+            // Dynamic methods (IL stubs, DynamicMethod/LCG) have no metadata token,
+            // so the metadata path below can never give them a name.
+            // Return isResolved=false to drop the frame instead of showing a
+            // misleading "unknown method" placeholder.
+            return {false, {NotResolvedModuleName, NotResolvedFrame, "", 0}};
         }
+
+        functionId = functionInfo->FunctionId;
     }
 
     auto frameInfo = GetManagedFrame(functionId.value());
@@ -596,12 +620,13 @@ std::tuple<ULONG, std::string, std::string, mdTypeDef> FrameStore::GetMethodName
         }
         else // normal namespace.type case
         {
+            // a type declared outside of any namespace has no namespace: don't prefix it with a '.'
             if (!ns.empty())
             {
-                builder << ns;
+                builder << ns << ".";
             }
 
-            builder << "." << typeName;
+            builder << typeName;
         }
 
         if (i < genericParametersCount - 1)
@@ -745,7 +770,7 @@ std::vector<std::string> GetGenericTypeParameters(IMetaDataImport2* pMetadata, m
         {
             ULONG index;
             DWORD flags;
-            hr = pMetadata->GetGenericParamProps(genericParams[currentParam], &index, &flags, nullptr, nullptr, paramName, paramNameLen, &paramNameLen);
+            hr = pMetadata->GetGenericParamProps(genericParams[currentParam], &index, &flags, nullptr, nullptr, paramName, ARRAY_LEN(paramName), &paramNameLen);
             if (SUCCEEDED(hr))
             {
                 // need to convert from UTF16 to UTF8
@@ -1104,30 +1129,17 @@ std::pair<std::string, std::string> FrameStore::GetManagedTypeName(ICorProfilerI
         return std::make_pair("", "T");
     }
 
-    IMetaDataImport2* pMetadata;
-    hr = pInfo->GetModuleMetaData(moduleId, ofRead, IID_IMetaDataImport2, reinterpret_cast<IUnknown**>(&pMetadata));
+    ComPtr<IMetaDataImport2> pMetadata;
+    hr = pInfo->GetModuleMetaData(moduleId, ofRead, IID_IMetaDataImport2, reinterpret_cast<IUnknown**>(pMetadata.GetAddressOf()));
     if (FAILED(hr))
     {
         return std::make_pair("", "T");
     }
 
-    std::string typeName = GetTypeNameFromMetadata(pMetadata, mdTypeToken);
-    pMetadata->Release();
-    if (typeName.empty())
-    {
-        return std::make_pair("", "T");
-    }
-
-    // look for the namespace
-    auto const pos = typeName.find_last_of('.');
-    if (pos == std::string::npos)
-    {
-        // no namespace
-        return std::make_pair("", std::move(typeName));
-    }
-
-    // need to split to get the namespace and type name
-    return std::make_pair(typeName.substr(0, pos), typeName.substr(pos + 1));
+    // the namespace and the enclosing types are not part of the metadata name of a nested type
+    // (such as the state machine generated for an async method): GetTypeWithNamespace() rebuilds
+    // them and, for a type that is not nested, splits the namespace from the type name
+    return GetTypeWithNamespace(pMetadata.Get(), mdTypeToken);
 }
 
 // use Peter Sollich way in ClrProfiler to parse the binary signature

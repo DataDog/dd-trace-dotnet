@@ -87,4 +87,23 @@ public class DatadogMetadataReaderTests
             localTypes.IsDefault.Should().BeTrue();
         }
     }
+
+    [Fact]
+    public void CreatePdbReader_MetadataOnly_StillReadsPdb()
+    {
+        // Regression guard: metadataOnly: true must still find the associated PDB.
+        // The PE Debug Directory lives outside the metadata blob, so PEStreamOptions.PrefetchMetadata alone would close
+        // the underlying stream and break TryOpenAssociatedPortablePdb. PEStreamOptions.Default keeps the stream open.
+        //
+        // We compare metadataOnly:true against the default (full-prefetch) path on the same assembly so the test asserts
+        // equivalence rather than a platform-specific outcome. If the default path can find a PDB for the test assembly,
+        // the metadata-only path must too. On targets where the default path can't find a PDB either (e.g. .NET Framework
+        // running on a build where the standalone .pdb cannot be located), the test still passes because both paths agree.
+        using var baseline = DatadogMetadataReader.CreatePdbReader(typeof(DatadogMetadataReaderTests).Assembly, metadataOnly: false);
+        using var metadataOnly = DatadogMetadataReader.CreatePdbReader(typeof(DatadogMetadataReaderTests).Assembly, metadataOnly: true);
+
+        baseline.Should().NotBeNull();
+        metadataOnly.Should().NotBeNull();
+        metadataOnly!.IsPdbExist.Should().Be(baseline!.IsPdbExist);
+    }
 }

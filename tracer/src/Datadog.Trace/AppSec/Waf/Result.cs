@@ -30,15 +30,32 @@ namespace Datadog.Trace.AppSec.Waf
             }
 
             Actions = (Dictionary<string, object?>?)actionsObj;
-            ShouldReportSecurityResult = returnCode >= WafReturnCode.Match;
+
+            // Since libddwaf 2.x a run that only produces attributes or actions also returns DDWAF_MATCH,
+            // so the return code alone is no longer enough: requiring events keeps this to actual rule
+            // matches and stops API Security runs from being reported as security results.
+            var events = eventsObj as IReadOnlyCollection<object>;
+            ShouldReportSecurityResult = returnCode >= WafReturnCode.Match && events is { Count: > 0 };
+
+            if (keepObj is bool keepValue)
+            {
+                HasKeep = true;
+                Keep = keepValue;
+            }
+            else
+            {
+                HasKeep = false;
+                Keep = ShouldReportSecurityResult;
+            }
+
             if (attributesObj is Dictionary<string, object?> attributesValue)
             {
                 BuildDerivatives(attributesValue);
             }
 
-            if (ShouldReportSecurityResult && eventsObj is IReadOnlyCollection<object> eventsValue)
+            if (ShouldReportSecurityResult)
             {
-                Data = eventsValue;
+                Data = events;
             }
 
             if (Actions is { Count: > 0 })
@@ -90,6 +107,12 @@ namespace Datadog.Trace.AppSec.Waf
 
         public Dictionary<string, object?>? FingerprintDerivatives { get; private set; }
 
+        public Dictionary<string, object?>? WafSpanAttributes { get; private set; }
+
+        public bool Keep { get; }
+
+        public bool HasKeep { get; }
+
         /// <summary>
         /// Gets the total runtime in nanoseconds
         /// </summary>
@@ -135,21 +158,15 @@ namespace Datadog.Trace.AppSec.Waf
             {
                 if ((derivative.Key == Tags.AppSecFpEndpoint) || (derivative.Key == Tags.AppSecFpHeader) || (derivative.Key == Tags.AppSecFpHttpNetwork) || (derivative.Key == Tags.AppSecFpSession))
                 {
-                    if (FingerprintDerivatives is null)
-                    {
-                        FingerprintDerivatives = new Dictionary<string, object?>();
-                    }
-
-                    FingerprintDerivatives.Add(derivative.Key, derivative.Value);
+                    (FingerprintDerivatives ??= new Dictionary<string, object?>()).Add(derivative.Key, derivative.Value);
+                }
+                else if (derivative.Key.StartsWith(WafConstants.AppSecSchemaPrefix, StringComparison.Ordinal))
+                {
+                    (ExtractSchemaDerivatives ??= new Dictionary<string, object?>()).Add(derivative.Key, derivative.Value);
                 }
                 else
                 {
-                    if (ExtractSchemaDerivatives is null)
-                    {
-                        ExtractSchemaDerivatives = new Dictionary<string, object?>();
-                    }
-
-                    ExtractSchemaDerivatives.Add(derivative.Key, derivative.Value);
+                    (WafSpanAttributes ??= new Dictionary<string, object?>()).Add(derivative.Key, derivative.Value);
                 }
             }
         }

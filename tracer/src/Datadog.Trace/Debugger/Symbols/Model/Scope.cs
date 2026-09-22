@@ -28,6 +28,13 @@ internal record struct Scope
     [JsonProperty("end_line")]
     internal int EndLine { get; set; }
 
+    // SymDB uses the existing "injectible" spelling in its cross-language schema.
+    [JsonProperty("has_injectible_lines")]
+    internal bool? HasInjectibleLines { get; set; }
+
+    [JsonProperty("injectible_lines")]
+    internal LineRange[]? InjectibleLines { get; set; }
+
     [JsonProperty("language_specifics")]
     internal LanguageSpecifics? LanguageSpecifics { get; set; }
 

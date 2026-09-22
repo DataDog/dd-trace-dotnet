@@ -166,12 +166,12 @@ internal static class DebuggerTestHelper
 
     internal static ProbeDefinition CreateDefaultLogProbe(string typeName, string methodName, DeterministicGuidGenerator guidGenerator, MethodProbeTestDataAttribute probeTestData = null)
     {
-        return CreateBasicProbe<LogProbe>(probeTestData?.ProbeId ?? guidGenerator.New().ToString()).WithSampling().WithDefaultTemplate().WithCapture(probeTestData?.CaptureSnapshot).WithMethodWhere(typeName, methodName, probeTestData: probeTestData);
+        return CreateBasicProbe<LogProbe>(probeTestData?.ProbeId ?? guidGenerator.New().ToString()).WithSampling().WithDefaultTemplate().WithCapture(probeTestData?.CaptureSnapshot).WithCaptureExpressions(probeTestData).WithMethodWhere(typeName, methodName, probeTestData: probeTestData);
     }
 
     internal static ProbeDefinition CreateLogLineProbe(Type type, LineProbeTestDataAttribute line, DeterministicGuidGenerator guidGenerator)
     {
-        return CreateBasicProbe<LogProbe>(line?.ProbeId ?? guidGenerator.New().ToString()).WithCapture(line?.CaptureSnapshot).WithSampling().WithTemplate(line).WithWhen(line).WithLineProbeWhere(type, line);
+        return CreateBasicProbe<LogProbe>(line?.ProbeId ?? guidGenerator.New().ToString()).WithCapture(line?.CaptureSnapshot).WithSampling().WithTemplate(line).WithWhen(line).WithCaptureExpressions(line).WithLineProbeWhere(type, line);
     }
 
     private static ProbeDefinition WithMethodWhere(this ProbeDefinition snapshot, string typeName, string methodName, MethodBase method = null, MethodProbeTestDataAttribute probeTestData = null)
@@ -266,6 +266,22 @@ internal static class DebuggerTestHelper
 
         snapshot.When = new SnapshotSegment(string.Empty, att.ConditionJson, null);
         snapshot.EvaluateAt = ParseEnum<EvaluateAt>(att.EvaluateAt);
+        return snapshot;
+    }
+
+    private static LogProbe WithCaptureExpressions(this LogProbe snapshot, ProbeAttributeBase att)
+    {
+        if (att == null || string.IsNullOrEmpty(att.CaptureExpressionsJson))
+        {
+            return snapshot;
+        }
+
+        snapshot.CaptureExpressions = JsonConvert.DeserializeObject<CaptureExpression[]>(att.CaptureExpressionsJson);
+        if (!string.IsNullOrEmpty(att.EvaluateAt))
+        {
+            snapshot.EvaluateAt = ParseEnum<EvaluateAt>(att.EvaluateAt);
+        }
+
         return snapshot;
     }
 
@@ -379,7 +395,7 @@ internal static class DebuggerTestHelper
             throw new InvalidOperationException("Probe attribute is null");
         }
 
-        return CreateBasicProbe<LogProbe>(probeTestData.ProbeId ?? guidGenerator.New().ToString()).WithCapture(probeTestData.CaptureSnapshot).WithSampling().WithTemplate(probeTestData).WithWhen(probeTestData).WithMethodWhere(typeName, method.Name, method, probeTestData);
+        return CreateBasicProbe<LogProbe>(probeTestData.ProbeId ?? guidGenerator.New().ToString()).WithCapture(probeTestData.CaptureSnapshot).WithSampling().WithTemplate(probeTestData).WithWhen(probeTestData).WithCaptureExpressions(probeTestData).WithMethodWhere(typeName, method.Name, method, probeTestData);
     }
 
     private static MethodProbeTestDataAttribute GetProbeTestData<T>(MethodBase method, int testIndex, out string typeName)

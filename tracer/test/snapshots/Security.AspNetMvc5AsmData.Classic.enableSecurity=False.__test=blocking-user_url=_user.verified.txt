@@ -42,7 +42,11 @@
       runtime-id: Guid_1,
       span.kind: server,
       usr.id: user3,
-      _dd.appsec.user.collection_mode: sdk
+      _dd.appsec.user.collection_mode: sdk,
+      _dd.code_origin.frames.0.index: 0,
+      _dd.code_origin.frames.0.method: Index,
+      _dd.code_origin.frames.0.type: Samples.AspNetMvc5.Controllers.UserController,
+      _dd.code_origin.type: entry
     },
     Metrics: {
       process_id: 0,
@@ -94,7 +98,11 @@
       runtime-id: Guid_1,
       span.kind: server,
       usr.id: user3,
-      _dd.appsec.user.collection_mode: sdk
+      _dd.appsec.user.collection_mode: sdk,
+      _dd.code_origin.frames.0.index: 0,
+      _dd.code_origin.frames.0.method: Index,
+      _dd.code_origin.frames.0.type: Samples.AspNetMvc5.Controllers.UserController,
+      _dd.code_origin.type: entry
     },
     Metrics: {
       process_id: 0,

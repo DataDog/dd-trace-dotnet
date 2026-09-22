@@ -5,7 +5,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
@@ -44,6 +43,11 @@ namespace Datadog.Trace.ExtensionMethods
             }
         }
 
+        /// <summary>
+        /// Decorates an HTTP server span using the Datadog HTTP semantics. Callers using OpenTelemetry
+        /// semantics must call <see cref="Datadog.Trace.OpenTelemetry.HttpSemanticConventions.SetHttpServerRequestValues"/>
+        /// instead: use exactly one of the two for a given span, never both.
+        /// </summary>
         internal static void DecorateWebServerSpan(
             this ISpan span,
             string resourceName,
@@ -59,9 +63,9 @@ namespace Datadog.Trace.ExtensionMethods
             if (tags is not null)
             {
                 tags.HttpMethod = method;
+                tags.HttpUserAgent = userAgent;
                 tags.HttpRequestHeadersHost = host;
                 tags.HttpUrl = httpUrl;
-                tags.HttpUserAgent = userAgent;
             }
         }
 
@@ -89,9 +93,59 @@ namespace Datadog.Trace.ExtensionMethods
             }
             else
             {
-                return span.GetTag(Tags.HttpStatusCode) is not null;
+                return span.GetHttpStatusCodeString() is not null;
             }
         }
+
+        internal static string GetHttpStatusCodeString(this Span span)
+            => span.OpenTelemetrySemanticsEnabled
+                   ? span.GetTag(Tags.HttpResponseStatusCode)
+                   : span.GetTag(Tags.HttpStatusCode);
+
+        internal static int? GetHttpStatusCode(this Span span)
+        {
+            if (span.Tags is IHasStatusCode statusCodeTags)
+            {
+                return statusCodeTags.HttpStatusCode;
+            }
+            else
+            {
+                var rawHttpStatusCode = span.GetHttpStatusCodeString();
+                if (rawHttpStatusCode == null || !int.TryParse(rawHttpStatusCode, out var httpStatusCode))
+                {
+                    return null;
+                }
+
+                return httpStatusCode;
+            }
+        }
+
+        /// <summary>
+        /// Gets the HTTP request method, reading the strongly-typed <see cref="IHasHttpMethod"/> property when
+        /// available so that the caller doesn't have to know which of the Datadog/OpenTelemetry tag names is in use.
+        /// </summary>
+        internal static string GetHttpMethod(this Span span)
+            => span.Tags is IHasHttpMethod httpMethodTags
+                   ? httpMethodTags.HttpMethod
+                   : span.GetTag(span.OpenTelemetrySemanticsEnabled ? Tags.HttpRequestMethod : Tags.HttpMethod);
+
+        /// <summary>
+        /// Gets the client IP extracted from the request headers, reading the strongly-typed <see cref="WebTags"/>
+        /// property when available.
+        /// </summary>
+        internal static string GetHttpClientIp(this Span span)
+            => span.Tags is WebTags webTags
+                   ? webTags.HttpClientIp
+                   : span.GetTag(span.OpenTelemetrySemanticsEnabled ? Tags.ClientAddress : Tags.HttpClientIp);
+
+        /// <summary>
+        /// Gets the peer IP of the socket connection, reading the strongly-typed <see cref="WebTags"/>
+        /// property when available.
+        /// </summary>
+        internal static string GetNetworkClientIp(this Span span)
+            => span.Tags is WebTags webTags
+                   ? webTags.NetworkClientIp
+                   : span.GetTag(span.OpenTelemetrySemanticsEnabled ? Tags.NetworkPeerAddress : Tags.NetworkClientIp);
 
         internal static void SetHttpStatusCode(this Span span, int statusCode, bool isServer, MutableSettings tracerSettings)
         {
@@ -101,15 +155,14 @@ namespace Datadog.Trace.ExtensionMethods
                 return;
             }
 
-            string statusCodeString = ConvertStatusCodeToString(statusCode);
-
             if (span.Tags is IHasStatusCode statusCodeTags)
             {
-                statusCodeTags.HttpStatusCode = statusCodeString;
+                statusCodeTags.HttpStatusCode = statusCode;
             }
             else
             {
-                span.SetTag(Tags.HttpStatusCode, statusCodeString);
+                var tagName = span.OpenTelemetrySemanticsEnabled ? Tags.HttpResponseStatusCode : Tags.HttpStatusCode;
+                span.SetTag(tagName, IntStringCache.ToInvariantString(statusCode));
             }
 
             // Check the customers http statuses that should be marked as errors
@@ -117,52 +170,22 @@ namespace Datadog.Trace.ExtensionMethods
             {
                 span.Error = true;
 
-                // if an error message already exists (e.g. from a previous exception), don't replace it
-                if (string.IsNullOrEmpty(span.GetTag(Tags.ErrorMsg)))
+                if (span.OpenTelemetrySemanticsEnabled)
                 {
-                    span.SetTag(Tags.ErrorMsg, $"The HTTP response has status code {statusCodeString}.");
+                    if (string.IsNullOrEmpty(span.GetTag(Tags.ErrorType)))
+                    {
+                        span.SetTag(Tags.ErrorType, IntStringCache.ToInvariantString(statusCode));
+                    }
+                }
+                else
+                {
+                    // if an error message already exists (e.g. from a previous exception), don't replace it
+                    if (string.IsNullOrEmpty(span.GetTag(Tags.ErrorMsg)))
+                    {
+                        span.SetTag(Tags.ErrorMsg, $"The HTTP response has status code {IntStringCache.ToInvariantString(statusCode)}.");
+                    }
                 }
             }
-        }
-
-        private static string ConvertStatusCodeToString(int statusCode)
-        {
-            if (statusCode == 200)
-            {
-                return "200";
-            }
-
-            if (statusCode == 302)
-            {
-                return "302";
-            }
-
-            if (statusCode == 401)
-            {
-                return "401";
-            }
-
-            if (statusCode == 403)
-            {
-                return "403";
-            }
-
-            if (statusCode == 404)
-            {
-                return "404";
-            }
-
-            if (statusCode == 500)
-            {
-                return "500";
-            }
-
-            if (statusCode == 503)
-            {
-                return "503";
-            }
-
-            return statusCode.ToString();
         }
     }
 }

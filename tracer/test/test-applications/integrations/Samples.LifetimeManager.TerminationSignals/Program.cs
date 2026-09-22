@@ -38,7 +38,7 @@ internal static class Program
     private static void RegisterShutdownHook(string? shutdownFile)
     {
         var tracerAssembly = WaitForTracerAssembly();
-        var lifetimeManagerType = tracerAssembly.GetType("Datadog.Trace.LifetimeManager", throwOnError: true);
+        var lifetimeManagerType = tracerAssembly.GetType("Datadog.Trace.LifetimeManager", throwOnError: true)!;
         var instanceProperty = lifetimeManagerType.GetProperty("Instance", BindingFlags.Public | BindingFlags.Static);
         var addShutdownTaskMethod = lifetimeManagerType.GetMethod("AddShutdownTask", BindingFlags.Public | BindingFlags.Instance, null, new[] { typeof(Action<Exception?>) }, null);
 

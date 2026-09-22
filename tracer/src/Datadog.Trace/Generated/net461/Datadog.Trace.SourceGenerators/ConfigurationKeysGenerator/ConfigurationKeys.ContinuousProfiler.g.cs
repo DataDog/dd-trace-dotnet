@@ -18,6 +18,12 @@ internal static partial class ConfigurationKeys
     internal static class ContinuousProfiler
     {
         /// <summary>
+        /// Internal gate: on Linux ARM64, the continuous profiler is only considered enabled in managed settings
+        /// when this is set to <c>true</c>. Must match the native profiler <c>DD_INTERNAL_PROFILING_ENABLED_ARM64</c> check.
+        /// </summary>
+        public const string InternalProfilingEnabledArm64 = "DD_INTERNAL_PROFILING_ENABLED_ARM64";
+
+        /// <summary>
         /// This variable is set by the native loader after trying to load the profiler.
         /// It means the profiler is _there_ though it may not be _loaded_. This only works
         /// on Windows at the moment. We assume that the CLR profiler must be attached in this scenario.

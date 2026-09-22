@@ -7,6 +7,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Datadog.Trace.AppSec.Rcm.Models.Asm;
 using Datadog.Trace.AppSec.Rcm.Models.AsmData;
@@ -24,10 +25,16 @@ using Action = Datadog.Trace.AppSec.Rcm.Models.Asm.Action;
 namespace Datadog.Trace.AppSec.Rcm;
 
 /// <summary>
-/// This class represents the state of RCM for ASM.
-/// It has 2 possible status:
-/// - ASM is not activated, and _fileUpdates/_fileRemoves contain some pending non-deserialized changes to apply when ASM_FEATURES activate ASM. Every time an RC payload is received here, pending changes are reset to the last ones
-/// - ASM is activated, stored configs in _fileUpdates/_fileRemoves are applied every time.
+/// This class represents the state of RCM for ASM. `_pendingByProduct` accumulates RCM operations
+/// (updates and removes) keyed by config path, with "latest op wins" semantics. RCM only forwards
+/// deltas, so configs received while ASM is disabled must persist across polls — otherwise they'd
+/// be silently dropped when ASM finally activates.
+///
+/// Each product slot is drained by its last consumer:
+/// - ASM_FEATURES is drained inside `ApplyAsmFeatures` (the FEATURES updater is its only consumer).
+/// - ASM_DD / ASM / ASM_DATA are drained at the end of `BuildWafUpdatePayload`, which is the last
+///   reader of those slots in the cycle. When ASM is disabled and that method isn't called, the
+///   WAF-relevant slots persist across polls (which is what enables the accumulator behavior).
 /// </summary>
 internal sealed record ConfigurationState
 {
@@ -41,8 +48,13 @@ internal sealed record ConfigurationState
 
     private readonly string? _rulesPath;
     private readonly bool _canBeToggled;
-    private readonly Dictionary<string, List<RemoteConfiguration>> _fileUpdates = new();
-    private readonly Dictionary<string, List<RemoteConfigurationPath>> _fileRemoves = new();
+
+    // Pending RCM operations grouped by product. Outer key is product, inner key is the full config path.
+    // Each path can hold one pending op (later update or remove overwrites whatever was there) — the RCM
+    // "latest delta wins" semantics. Drained per-product by the last consumer: ASM_FEATURES inside
+    // ApplyAsmFeatures, WAF-relevant products at the end of BuildWafUpdatePayload.
+    private readonly Dictionary<string, Dictionary<string, PendingOperation>> _pendingByProduct = new();
+
     private bool _defaultRulesetApplied;
 
     public ConfigurationState(SecuritySettings settings, IConfigurationTelemetry telemetry, bool wafIsNull)
@@ -130,15 +142,29 @@ internal sealed record ConfigurationState
         return [.. subscriptionsKeys];
     }
 
-    internal RemoteConfigWafFiles GetWafConfigurations(bool updating = false)
+    /// <summary>
+    /// Builds the payload to push to the WAF (updates + removes) by reading pending RCM operations
+    /// and the deserialized destination dictionaries.
+    /// </summary>
+    /// <remarks>
+    /// This method is the last consumer of WAF-relevant pending entries in an RCM cycle, so it
+    /// DRAINS the ASM_DD / ASM / ASM_DATA slots of <see cref="_pendingByProduct"/> on its way out.
+    /// Calling it twice in the same cycle will return an empty delta the second time.
+    /// </remarks>
+    internal RemoteConfigWafFiles BuildWafUpdatePayload(bool updating = false)
     {
         updating &= !IncomingUpdateState.ShouldInitAppsec; // If we need to init AppSec we don't want to skip any config
         var configurations = new Dictionary<string, object>();
         List<string>? removes = null;
 
-        if (updating && _fileRemoves is { Count: > 0 })
+        if (updating && _pendingByProduct.Count > 0)
         {
-            removes = _fileRemoves.SelectMany(p => p.Value).Where(p => p.Product != RcmProducts.AsmFeatures).Select(v => v.Path).ToList();
+            removes = _pendingByProduct
+                     .Where(entry => entry.Key != RcmProducts.AsmFeatures)
+                     .SelectMany(p => p.Value.Values)
+                     .Where(op => op.IsRemove)
+                     .Select(v => v.Path.Path)
+                     .ToList();
         }
 
         if (AsmConfigs is { Count: > 0 })
@@ -190,13 +216,22 @@ internal sealed record ConfigurationState
             }
         }
 
+        // Drain WAF-relevant pending slots. ASM_FEATURES is handled separately in ApplyAsmFeatures.
+        foreach (var entry in _pendingByProduct)
+        {
+            if (entry.Key == RcmProducts.AsmFeatures) { continue; }
+            entry.Value.Clear();
+        }
+
         return new(configurations.Count > 0 ? configurations : null, removes);
 
+        // True if `path` has a pending update (not a remove) in any WAF-relevant product slot.
         bool IsNewUpdate(string path)
         {
-            foreach (var productUpdates in _fileUpdates)
+            foreach (var entry in _pendingByProduct)
             {
-                if (productUpdates.Value.Any(u => u.Path.Path == path))
+                if (entry.Key == RcmProducts.AsmFeatures) { continue; }
+                if (entry.Value.TryGetValue(path, out var op) && !op.IsRemove)
                 {
                     return true;
                 }
@@ -207,79 +242,98 @@ internal sealed record ConfigurationState
     }
 
     /// <summary>
-    /// Calls each product updater to deserialize all remote config payloads and store them properly in dictionaries which might involve various logical merges
-    /// This method deserializes everything stored in _fileUpdates. ConfigurationStatus will have a *bigger* memory footprint.
+    /// Hands each product's pending batch to its updater, which deserializes and merges into the destination
+    /// dictionaries (RulesetConfigs / AsmConfigs / AsmDataConfigs). Pending entries are NOT cleared here —
+    /// <see cref="BuildWafUpdatePayload"/> still needs to read them to know what's new in this cycle's delta,
+    /// and is responsible for draining them on the way out.
     /// </summary>
     public void ApplyStoredFiles()
     {
-        // no need to clear _fileUpdates / _fileRemoves after they've been applied, as when we receive a new config, `StoreLastConfigState` method will clear anything remaining anyway.
         foreach (var updater in _productConfigUpdaters)
         {
-            var fileRemoves = _fileRemoves.TryGetValue(updater.Key, out var removes);
-            var fileUpdates = _fileUpdates.TryGetValue(updater.Key, out var updates);
-            if (fileRemoves || fileUpdates)
+            if (_pendingByProduct.TryGetValue(updater.Key, out var pending) && pending.Count != 0)
             {
+                SplitPending(pending, out var removes, out var updates);
                 updater.Value.ProcessUpdates(this, removes, updates);
             }
         }
     }
 
     /// <summary>
-    /// This method just stores the config state without deserializing anything, this state will be ready to use and deserialized if ASM is enabled later on.
-    /// This method considers that RC sends us everything again, the whole state together. That's why it's clearing all unapplied updates / removals before processing the last ones received.
-    /// In case ASM remained disabled, we discard previous updates and removals stored here that were never applied.
+    /// Merges an incoming RCM delta into the per-product pending state without deserializing payloads.
+    /// If ASM is enabled (or this delta turns it on), the merged state is applied immediately; otherwise it stays pending until ASM activates.
     /// </summary>
-    /// <param name="configsByProduct">configsByProduct</param>
-    /// <param name="removedConfigs">removedConfigs</param>
+    /// <remarks>
+    /// Background: RCM forwards only the DELTA versus what we last acknowledged — not the full backend state.
+    /// A config received in an earlier poll is NOT re-sent on the next poll if it hasn't changed.
+    /// So while ASM is disabled, we must accumulate deltas across polls, otherwise configs received
+    /// before activation would be silently dropped (they're already in RCM's _appliedConfigurations
+    /// and won't be re-forwarded). Each path holds exactly one pending op in _pendingByProduct;
+    /// a later update or remove for the same path overwrites whatever was there.
+    /// </remarks>
     public void ReceivedNewConfig(Dictionary<string, List<RemoteConfiguration>> configsByProduct, Dictionary<string, List<RemoteConfigurationPath>>? removedConfigs)
     {
-        _fileUpdates.Clear();
-        _fileRemoves.Clear();
-        // if we just have asm features, it might only be to toggle appsec. Other products bring actual configurations to the waf.
-        var hasUpdateConfigurations = false;
         var anyChange = configsByProduct.Count > 0 || removedConfigs?.Count > 0;
         if (anyChange)
         {
-            if (removedConfigs != null)
+            // Tracks whether this delta touches any product OTHER than ASM_FEATURES. A pure ASM_FEATURES
+            // delta might only toggle AppSec on/off, it doesn't carry WAF rules, so when that's all we get,
+            // there's no reason to push a config update through to the WAF below.
+            var hasUpdateConfigurations = false;
+
+            if (removedConfigs is not null)
             {
-                foreach (var configByProductToRemove in removedConfigs)
+                foreach (var entry in removedConfigs)
                 {
-                    if (configByProductToRemove.Key != RcmProducts.AsmFeatures)
+                    var productKey = entry.Key;
+                    if (productKey != RcmProducts.AsmFeatures)
                     {
                         hasUpdateConfigurations = true;
                     }
 
-                    if (_fileRemoves.TryGetValue(configByProductToRemove.Key, out var remove))
+                    if (!_pendingByProduct.TryGetValue(productKey, out var pending))
                     {
-                        remove.AddRange(configByProductToRemove.Value);
+                        pending = new Dictionary<string, PendingOperation>();
+                        _pendingByProduct[productKey] = pending;
                     }
-                    else
+
+                    foreach (var removed in entry.Value)
                     {
-                        _fileRemoves[configByProductToRemove.Key] = configByProductToRemove.Value;
+                        // Overwrites any pending update OR pending remove for this path. Later op wins.
+                        pending[removed.Path] = new PendingOperation(removed, update: null);
                     }
                 }
             }
 
-            foreach (var configByProduct in configsByProduct)
+            foreach (var entry in configsByProduct)
             {
-                if (configByProduct.Key != RcmProducts.AsmFeatures)
+                var productKey = entry.Key;
+                if (productKey != RcmProducts.AsmFeatures)
                 {
                     hasUpdateConfigurations = true;
                 }
 
-                if (_fileUpdates.TryGetValue(configByProduct.Key, out var update))
+                if (!_pendingByProduct.TryGetValue(productKey, out var pending))
                 {
-                    update.AddRange(configByProduct.Value);
+                    pending = new Dictionary<string, PendingOperation>();
+                    _pendingByProduct[productKey] = pending;
                 }
-                else
+
+                foreach (var update in entry.Value)
                 {
-                    _fileUpdates[configByProduct.Key] = configByProduct.Value;
+                    // Same overwrite semantics — replaces any prior op for this path.
+                    pending[update.Path.Path] = new PendingOperation(update.Path, update);
                 }
             }
 
+            // ASM_FEATURES is processed eagerly because it can flip AppsecEnabled and decide whether
+            // we initialize the WAF, update an already-running WAF, or do nothing.
             ApplyAsmFeatures(AppsecEnabled);
             IncomingUpdateState.ShouldUpdateAppsec = !IncomingUpdateState.ShouldInitAppsec && AppsecEnabled && hasUpdateConfigurations;
 
+            // If ASM just turned on, or it was already on and we got real WAF config, deserialize pending
+            // state into the per-product output dictionaries (RulesetConfigs, AsmConfigs, AsmDataConfigs).
+            // The pending entries themselves stay around until BuildWafUpdatePayload drains them.
             if (IncomingUpdateState.ShouldUpdateAppsec || IncomingUpdateState.ShouldInitAppsec)
             {
                 ApplyStoredFiles();
@@ -291,15 +345,14 @@ internal sealed record ConfigurationState
     {
         // only deserialize and apply asm_features as it will decide if asm gets toggled on and if we deserialize all the others
         // (the enable of auto user instrumentation as added to asm_features)
-        var change = _fileRemoves.TryGetValue(RcmProducts.AsmFeatures, out var removals);
-        change |= _fileUpdates.TryGetValue(RcmProducts.AsmFeatures, out var updates);
-
-        if (change)
+        if (!_pendingByProduct.TryGetValue(RcmProducts.AsmFeatures, out var pending) || pending.Count == 0)
         {
-            _asmFeatureProduct.ProcessUpdates(this, removals, updates);
+            return;
         }
 
-        if (!change) { return; }
+        SplitPending(pending, out var removals, out var updates);
+        _asmFeatureProduct.ProcessUpdates(this, removals, updates);
+        pending.Clear();
 
         // normally CanBeToggled should not need a check as asm_features capacity is only sent if AppSec env var is null, but still guards it in case
         if (_canBeToggled)
@@ -339,6 +392,39 @@ internal sealed record ConfigurationState
         {
             AutoUserInstrumMode = autoUserInstrumMode?.Mode?.ToLowerInvariant();
         }
+    }
+
+    // Splits the per-product pending map into the (removes, updates) shape that IAsmConfigUpdater.ProcessUpdates expects.
+    // Either out parameter may be null when that side is empty — matching the interface contract.
+    private static void SplitPending(Dictionary<string, PendingOperation> pending, out List<RemoteConfigurationPath>? removes, out List<RemoteConfiguration>? updates)
+    {
+        removes = null;
+        updates = null;
+        foreach (var op in pending.Values)
+        {
+            if (op.IsRemove)
+            {
+                removes ??= [];
+                removes.Add(op.Path);
+            }
+            else
+            {
+                updates ??= [];
+                updates.Add(op.Update);
+            }
+        }
+    }
+
+    // A pending RCM operation for one config path: either an update carrying a fresh payload,
+    // or a removal marker. The Update field is null iff this entry represents a removal.
+    private readonly struct PendingOperation(RemoteConfigurationPath path, RemoteConfiguration? update)
+    {
+        public RemoteConfigurationPath Path { get; } = path;
+
+        public RemoteConfiguration? Update { get; } = update;
+
+        [MemberNotNullWhen(false, nameof(Update))]
+        public bool IsRemove => Update is null;
     }
 
     internal sealed record IncomingUpdateStatus : IDisposable

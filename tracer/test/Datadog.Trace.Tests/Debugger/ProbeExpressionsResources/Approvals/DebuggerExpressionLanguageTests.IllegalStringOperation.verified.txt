@@ -1,13 +1,12 @@
 Template:
-Segments: 
+Segments:
 
 {
     "reverse": [
         "SomeLocal"
     ]
 }
-Expressions: 
-(
+Expressions: (
     scopeMember,
     scopeMember,
     scopeMember,

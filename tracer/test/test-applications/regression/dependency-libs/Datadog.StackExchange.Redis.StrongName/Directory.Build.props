@@ -7,5 +7,10 @@
   <PropertyGroup>
     <!-- Stop complaining about obsolete/vulnerable packages, we know they are -->
     <NoWarn>SYSLIB0014;NU1901;NU1902;NU1903;NU1904</NoWarn>
+
+    <!-- Send obj/ output to the repo-root artifacts/ tree, matching the rest of the tracer. -->
+    <UseArtifactsOutput>true</UseArtifactsOutput>
+    <!-- Normalize so that downstream tools that string-compare paths don't trip on `tracer\..\` segments -->
+    <ArtifactsPath>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\..\..\..\..\..\artifacts'))</ArtifactsPath>
   </PropertyGroup>
 </Project>

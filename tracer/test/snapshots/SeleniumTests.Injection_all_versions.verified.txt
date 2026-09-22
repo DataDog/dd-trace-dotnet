@@ -48,6 +48,7 @@
       test.framework_version: FrameworkVersion,
       test.is_rum_active: true,
       test.itr.forced_run: false,
+      test.itr.tests_skipping.enabled: true,
       test.itr.unskippable: false,
       test.module: Samples.Selenium,
       test.name: SeleniumTest,

@@ -136,7 +136,7 @@ std::unique_ptr<SamplesEnumerator> LiveObjectsProvider::GetSamples()
         auto sample = info.GetSample();
 
         // update samples lifetime
-        sample->ReplaceLabel(StringLabel{Sample::ObjectLifetimeLabel, std::to_string((sample->GetTimeStamp() - currentTimestamp).count())});
+        sample->ReplaceLabel(StringLabel{Sample::ObjectLifetimeLabel, std::to_string((currentTimestamp - sample->GetTimeStamp()).count())});
         sample->ReplaceLabel(StringLabel{Sample::ObjectGenerationLabel, info.IsGen2() ? Gen2 : Gen1});
 
         samples->Add(sample);

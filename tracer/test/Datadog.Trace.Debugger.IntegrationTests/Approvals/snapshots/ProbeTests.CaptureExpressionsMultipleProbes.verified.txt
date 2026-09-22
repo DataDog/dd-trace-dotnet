@@ -1,0 +1,151 @@
+﻿[
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "return": {
+            "captureExpressions": {
+              "collection_first_element": {
+                "type": "String",
+                "value": "one"
+              },
+              "dictionary_value": {
+                "type": "String",
+                "value": "second"
+              },
+              "nested_field": {
+                "type": "String",
+                "value": "testValue"
+              }
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "method": "Method",
+            "type": "Samples.Probes.TestRuns.ExpressionTests.CaptureExpressionsMultipleProbes"
+          },
+          "version": 0
+        },
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "debugger.product": "di",
+    "debugger.type": "snapshot",
+    "logger": {
+      "method": "Method",
+      "name": "Samples.Probes.TestRuns.ExpressionTests.CaptureExpressionsMultipleProbes",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "ScrubbedValue",
+    "service": "probes"
+  },
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "return": {
+            "captureExpressions": {
+              "inputValue": {
+                "type": "String",
+                "value": "testValue"
+              },
+              "localValue": {
+                "type": "Int32",
+                "value": "9"
+              },
+              "testStruct": {
+                "fields": {
+                  "Collection": {
+                    "elements": [
+                      {
+                        "type": "String",
+                        "value": "one"
+                      },
+                      {
+                        "type": "String",
+                        "value": "two"
+                      },
+                      {
+                        "type": "String",
+                        "value": "three"
+                      }
+                    ],
+                    "size": 3,
+                    "type": "List`1"
+                  },
+                  "Dictionary": {
+                    "entries": [
+                      [
+                        {
+                          "type": "String",
+                          "value": "one"
+                        },
+                        {
+                          "type": "String",
+                          "value": "first"
+                        }
+                      ],
+                      [
+                        {
+                          "type": "String",
+                          "value": "two"
+                        },
+                        {
+                          "type": "String",
+                          "value": "second"
+                        }
+                      ]
+                    ],
+                    "size": 2,
+                    "type": "Dictionary`2"
+                  },
+                  "StringValue": {
+                    "type": "String",
+                    "value": "testValue"
+                  }
+                },
+                "type": "CaptureExpressionTestStruct"
+              }
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "method": "Method",
+            "type": "Samples.Probes.TestRuns.ExpressionTests.CaptureExpressionsMultipleProbes"
+          },
+          "version": 0
+        },
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "debugger.product": "di",
+    "debugger.type": "snapshot",
+    "logger": {
+      "method": "Method",
+      "name": "Samples.Probes.TestRuns.ExpressionTests.CaptureExpressionsMultipleProbes",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "ScrubbedValue",
+    "service": "probes"
+  }
+]

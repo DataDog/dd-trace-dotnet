@@ -33,6 +33,7 @@ public class DebuggerManagerTests : TestHelper
     private const string RemoteConfigNotAvailableLogEntry = "Remote configuration is not available in this environment";
     private const string DebuggerConfigurationLogEntry = "DATADOG DEBUGGER CONFIGURATION";
     private const string TracerInitialized = "The profiler has been initialized";
+    private const string ClrMdLiveHeapSnapshotAssertionSkipReason = "ClrMD live-heap snapshots are unstable for Windows x86 on .NET Core 3.0, so tests that rely on live-heap snapshot assertions are skipped in that configuration.";
 
     public DebuggerManagerTests(ITestOutputHelper output)
         : base("Probes", Path.Combine("test", "test-applications", "debugger"), output)
@@ -53,7 +54,7 @@ public class DebuggerManagerTests : TestHelper
             memoryAssertions.NoObjectsExist<LineProbeResolver>();
             memoryAssertions.NoObjectsExist<DynamicInstrumentation>();
             memoryAssertions.NoObjectsExist<ExceptionAutoInstrumentation.ExceptionReplay>();
-            memoryAssertions.ObjectsExist<Symbols.SymbolsUploader>();
+            memoryAssertions.NoObjectsExist<Symbols.SymbolsUploader>();
             memoryAssertions.ObjectsExist<SpanCodeOrigin.SpanCodeOrigin>();
         });
     }
@@ -81,7 +82,7 @@ public class DebuggerManagerTests : TestHelper
     [Trait("Category", "ArmUnsupported")]
     [Trait("RunOnWindows", "True")]
     [Trait("Category", "LinuxUnsupported")]
-    public async Task DebuggerManager_DynamicInstrumentationExplicitlyDisabled_SymbolDatabaseEnabledByDefault_CreatesSymbolUploader()
+    public async Task DebuggerManager_DynamicInstrumentationExplicitlyDisabled_SymbolDatabaseEnabledByDefault_DoesNotCreateSymbolUploaderBeforeRemoteConfig()
     {
         SetEnvironmentVariable(ConfigurationKeys.Debugger.DynamicInstrumentationEnabled, "false");
 
@@ -90,7 +91,7 @@ public class DebuggerManagerTests : TestHelper
             memoryAssertions.NoObjectsExist<SnapshotSink>();
             memoryAssertions.NoObjectsExist<LineProbeResolver>();
             memoryAssertions.NoObjectsExist<DynamicInstrumentation>();
-            memoryAssertions.ObjectsExist<Symbols.SymbolsUploader>();
+            memoryAssertions.NoObjectsExist<Symbols.SymbolsUploader>();
         });
     }
 
@@ -120,6 +121,8 @@ public class DebuggerManagerTests : TestHelper
         // at least one product should be enabled to initialize the debugger manager
         SetEnvironmentVariable(ConfigurationKeys.Debugger.ExceptionReplayEnabled, "true");
         SetEnvironmentVariable(ConfigurationKeys.Debugger.CodeOriginForSpansEnabled, "false");
+        Skip.If(ShouldSkipClrMdLiveHeapSnapshotAssertions(), ClrMdLiveHeapSnapshotAssertionSkipReason);
+
         await RunDebuggerManagerTestWithMemoryAssertions(memoryAssertions =>
         {
             memoryAssertions.NoObjectsExist<SpanCodeOrigin.SpanCodeOrigin>();
@@ -149,7 +152,7 @@ public class DebuggerManagerTests : TestHelper
     [Trait("Category", "ArmUnsupported")]
     [Trait("RunOnWindows", "True")]
     [Trait("Category", "LinuxUnsupported")]
-    public async Task DebuggerManager_SymbolDatabaseUploadEnabled_WithoutDynamicInstrumentation_CreatesSymbolUploader()
+    public async Task DebuggerManager_SymbolDatabaseUploadEnabled_WithoutDynamicInstrumentation_DoesNotCreateSymbolUploaderBeforeRemoteConfig()
     {
         SetEnvironmentVariable(ConfigurationKeys.Debugger.CodeOriginForSpansEnabled, "true");
         SetEnvironmentVariable(ConfigurationKeys.Debugger.SymbolDatabaseUploadEnabled, "true");
@@ -157,7 +160,7 @@ public class DebuggerManagerTests : TestHelper
         await RunDebuggerManagerTestWithMemoryAssertions(memoryAssertions =>
         {
             memoryAssertions.NoObjectsExist<DynamicInstrumentation>();
-            memoryAssertions.ObjectsExist<Symbols.SymbolsUploader>();
+            memoryAssertions.NoObjectsExist<Symbols.SymbolsUploader>();
         });
     }
 
@@ -223,6 +226,8 @@ public class DebuggerManagerTests : TestHelper
     [Trait("Category", "LinuxUnsupported")]
     public async Task DebuggerManager_MultipleFeaturesCombined_CreatesAppropriateObjects()
     {
+        Skip.If(ShouldSkipClrMdLiveHeapSnapshotAssertions(), ClrMdLiveHeapSnapshotAssertionSkipReason);
+
         SetEnvironmentVariable(ConfigurationKeys.Debugger.ExceptionReplayEnabled, "true");
         SetEnvironmentVariable(ConfigurationKeys.Debugger.CodeOriginForSpansEnabled, "false");
         SetEnvironmentVariable(ConfigurationKeys.Debugger.DynamicInstrumentationEnabled, "true");
@@ -233,7 +238,7 @@ public class DebuggerManagerTests : TestHelper
             memoryAssertions.ObjectsExist<ExceptionAutoInstrumentation.ExceptionReplay>();
             memoryAssertions.NoObjectsExist<SpanCodeOrigin.SpanCodeOrigin>();
             memoryAssertions.ObjectsExist<DynamicInstrumentation>();
-            memoryAssertions.ObjectsExist<Symbols.SymbolsUploader>();
+            memoryAssertions.NoObjectsExist<Symbols.SymbolsUploader>();
         });
     }
 
@@ -249,6 +254,15 @@ public class DebuggerManagerTests : TestHelper
         // at least one product should be enabled to initialize the debugger manager
         SetEnvironmentVariable(ConfigurationKeys.Debugger.DynamicInstrumentationEnabled, "true");
         await RunDebuggerManagerTestWithMemoryAssertions(null, DebuggerConfigurationLogEntry);
+    }
+
+    private static bool ShouldSkipClrMdLiveHeapSnapshotAssertions()
+    {
+#if NETCOREAPP3_0
+        return !EnvironmentTools.IsTestTarget64BitProcess();
+#else
+        return false;
+#endif
     }
 
     private async Task RunDebuggerManagerTestWithMemoryAssertions(

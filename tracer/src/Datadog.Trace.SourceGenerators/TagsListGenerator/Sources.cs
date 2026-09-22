@@ -24,14 +24,22 @@ internal sealed class TagAttribute : System.Attribute
     /// <summary>
     /// Initializes a new instance of the <see cref=""TagAttribute""/> class.
     /// </summary>
-    /// <param name=""tagName"">The name of the datadog tag the property corresponds to</param>
+    /// <param name=""tagName"">The name of the datadog tag the property corresponds to.
+    /// For tags only present in OpenTelemetry semantics, this is the OpenTelemetry tag.</param>
     public TagAttribute(string tagName) =>
         this.TagName = tagName;
 
     /// <summary>
-    /// Gets the name of the datadog tag the property corresponds to
+    /// Gets the name of the datadog tag the property corresponds to.
+    /// For tags only present in OpenTelemetry semantics, this is the OpenTelemetry tag.
     /// </summary>
     public string TagName { get; }
+
+    /// <summary>
+    /// Gets or sets the OpenTelemetry semantic convention name that aliases <see cref=""TagName""/>.
+    /// This is only used when a tag name is present in both Datadog and OpenTelemetry semantics.
+    /// </summary>
+    public string? OtelName { get; set; }
 }
 
 /// <summary>
@@ -118,6 +126,27 @@ namespace ");
                       .Append(@"Bytes => [")
                       .Append(tagByteArray)
                       .AppendLine(@"];");
+
+                    if (property.OtelTagValue is not null)
+                    {
+                        var oTelTagByteArray = string.Join(", ", MessagePackHelper.GetValueInRawMessagePackIEnumerable(property.OtelTagValue));
+
+                        sb.Append(
+                               @"
+        // ")
+                          .Append(property.PropertyName)
+                          .Append(@"OtelBytes = MessagePack.Serialize(""")
+                          .Append(property.OtelTagValue)
+                          .Append(@""");");
+
+                        sb.Append(
+                               @"
+        private static ReadOnlySpan<byte> ")
+                          .Append(property.PropertyName)
+                          .Append(@"OtelBytes => [")
+                          .Append(oTelTagByteArray)
+                          .AppendLine(@"];");
+                    }
                 }
 
                 sb.Append(
@@ -133,9 +162,28 @@ namespace ");
                     var property = tagList.TagProperties[i];
                     sb.Append('"')
                       .Append(property.TagValue)
-                      .Append(@""" => ")
-                      .Append(property.PropertyName)
-                      .Append(
+                      .Append('"');
+
+                    if (property.OtelTagValue is not null)
+                    {
+                        sb.Append(@" or """)
+                          .Append(property.OtelTagValue)
+                          .Append('"');
+                    }
+
+                    sb.Append(" => ")
+                      .Append(property.PropertyName);
+
+                    switch (property.PropertyType)
+                    {
+                        case TagListGenerator.PropertyType.NullableInt:
+                            sb.Append(" is null ? null : Datadog.Trace.Util.IntStringCache.ToInvariantString(")
+                              .Append(property.PropertyName)
+                              .Append(".Value)");
+                            break;
+                    }
+
+                    sb.Append(
                            @",
                 ");
                 }
@@ -159,16 +207,61 @@ namespace ");
                         continue;
                     }
 
-                    sb.Append(@"case """)
-                      .Append(property.TagValue)
-                      .Append(
-                           @""": 
-                    ")
-                      .Append(property.PropertyName)
-                      .Append(
-                           @" = value;
+                    if (property.OtelTagValue is not null)
+                    {
+                        sb.Append(@"case """)
+                          .Append(property.TagValue)
+                          .Append(@""":")
+                          .Append(@"
+                case """)
+                          .Append(property.OtelTagValue)
+                          .Append(
+                               @""":
+                    ");
+                    }
+                    else
+                    {
+                        sb.Append(@"case """)
+                          .Append(property.TagValue)
+                          .Append(
+                               @""": 
+                    ");
+                    }
+
+                    if (property.PropertyType is TagListGenerator.PropertyType.NullableInt)
+                    {
+                        // Invalid values (null and anything that isn't a valid integer) remove the tag
+                        sb.Append("if (int.TryParse(value, System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out var parsed")
+                          .Append(property.PropertyName)
+                          .Append(
+                               @"))
+                    {
+                        ")
+                          .Append(property.PropertyName)
+                          .Append(@" = parsed")
+                          .Append(property.PropertyName)
+                          .Append(
+                               @";
+                    }
+                    else
+                    {
+                        ")
+                          .Append(property.PropertyName)
+                          .Append(
+                               @" = null;
+                    }
+
                     break;
                 ");
+                    }
+                    else
+                    {
+                        sb.Append(property.PropertyName)
+                          .Append(
+                               @" = value;
+                    break;
+                ");
+                    }
                 }
 
                 var haveReadOnlyTags = false;
@@ -183,6 +276,15 @@ namespace ");
                           .Append(
                                @""": 
                 ");
+
+                        if (property.OtelTagValue is not null)
+                        {
+                            sb.Append(@"case """)
+                              .Append(property.OtelTagValue)
+                              .Append(
+                                   @""":
+                ");
+                        }
                     }
                 }
 
@@ -204,29 +306,104 @@ namespace ");
             }
         }
 
-        public override void EnumerateTags<TProcessor>(ref TProcessor processor)
+        public override void EnumerateTags<TProcessor>(ref TProcessor processor, bool openTelemetrySemanticsEnabled)
         {
             ");
                 foreach (var property in tagList.TagProperties)
                 {
-                    sb.Append(@"if (")
-                      .Append(property.PropertyName)
-                      .Append(@" is not null)
+                    switch (property.PropertyType)
+                    {
+                        case TagListGenerator.PropertyType.NullableInt:
+                            sb.Append(@"if (")
+                              .Append(property.PropertyName)
+                              .Append(@" is not null)
             {
-                processor.Process(new TagItem<string>(""")
-                      .Append(property.TagValue)
-                      .Append(@""", ")
-                      .Append(property.PropertyName)
-                      .Append(@", ")
-                      .Append(property.PropertyName)
-                      .Append(@"Bytes));
+                ");
+
+                            if (property.OtelTagValue is not null)
+                            {
+                                sb.Append(@"if (openTelemetrySemanticsEnabled)
+                {
+                    processor.Process(new TagItem<int>(""")
+                                  .Append(property.OtelTagValue)
+                                  .Append(@""", ")
+                                  .Append(property.PropertyName)
+                                  .Append(@".Value, ")
+                                  .Append(property.PropertyName)
+                                  .Append(@"OtelBytes));
+                }
+                else
+                {
+                    ");
+                            }
+
+                            sb.Append(@"processor.Process(new TagItem<int>(""")
+                              .Append(property.TagValue)
+                              .Append(@""", ")
+                              .Append(property.PropertyName)
+                              .Append(@".Value, ")
+                              .Append(property.PropertyName)
+                              .Append(@"Bytes));");
+
+                            if (property.OtelTagValue is not null)
+                            {
+                                sb.Append(@"
+                }");
+                            }
+
+                            sb.Append(@"
             }
 
             ");
+                            break;
+                        default:
+                            sb.Append(@"if (")
+                              .Append(property.PropertyName)
+                              .Append(@" is not null)
+            {
+                ");
+
+                            if (property.OtelTagValue is not null)
+                            {
+                                sb.Append(@"if (openTelemetrySemanticsEnabled)
+                {
+                    processor.Process(new TagItem<string>(""")
+                                  .Append(property.OtelTagValue)
+                                  .Append(@""", ")
+                                  .Append(property.PropertyName)
+                                  .Append(@", ")
+                                  .Append(property.PropertyName)
+                                  .Append(@"OtelBytes));
+                }
+                else
+                {
+                    ");
+                            }
+
+                            sb.Append(@"processor.Process(new TagItem<string>(""")
+                              .Append(property.TagValue)
+                              .Append(@""", ")
+                              .Append(property.PropertyName)
+                              .Append(@", ")
+                              .Append(property.PropertyName)
+                              .Append(@"Bytes));");
+
+                            if (property.OtelTagValue is not null)
+                            {
+                                sb.Append(@"
+                }");
+                            }
+
+                            sb.Append(@"
+            }
+
+            ");
+                            break;
+                    }
                 }
 
                 sb.Append(
-                    @"base.EnumerateTags(ref processor);
+                    @"base.EnumerateTags(ref processor, openTelemetrySemanticsEnabled);
         }
 
         protected override void WriteAdditionalTags(System.Text.StringBuilder sb)
@@ -234,22 +411,45 @@ namespace ");
             ");
                 foreach (var property in tagList.TagProperties)
                 {
-                    sb.Append(@"if (")
-                      .Append(property.PropertyName)
-                      .Append(
-                           @" is not null)
+                    switch (property.PropertyType)
+                    {
+                        case TagListGenerator.PropertyType.NullableInt:
+                            sb.Append(@"if (")
+                              .Append(property.PropertyName)
+                              .Append(
+                                   @" is not null)
             {
                 sb.Append(""")
-                      .Append(property.TagValue)
-                      .Append(@" (tag):"")
+                              .Append(property.TagValue)
+                              .Append(@" (tag):"")
                   .Append(")
-                      .Append(property.PropertyName)
-                      .Append(
-                           @")
+                              .Append(property.PropertyName)
+                              .Append(
+                                   @".Value.ToString(System.Globalization.CultureInfo.InvariantCulture))
                   .Append(',');
             }
 
             ");
+                            break;
+                        default:
+                            sb.Append(@"if (")
+                              .Append(property.PropertyName)
+                              .Append(
+                                   @" is not null)
+            {
+                sb.Append(""")
+                              .Append(property.TagValue)
+                              .Append(@" (tag):"")
+                  .Append(")
+                              .Append(property.PropertyName)
+                              .Append(
+                                   @")
+                  .Append(',');
+            }
+
+            ");
+                            break;
+                    }
                 }
 
                 sb.Append(@"base.WriteAdditionalTags(sb);

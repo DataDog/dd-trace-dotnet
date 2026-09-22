@@ -4,6 +4,9 @@
 // </copyright>
 #nullable enable
 
+using System;
+using System.Diagnostics.CodeAnalysis;
+using Datadog.Trace.Util;
 using Datadog.Trace.Util.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
@@ -23,16 +26,91 @@ internal readonly struct SkippableTest
     [JsonProperty("configurations")]
     public readonly TestsConfigurations? Configurations;
 
-    public SkippableTest(string name, string suite, string? parameters, TestsConfigurations? configurations)
+    /// <summary>
+    /// Indicates whether the backend explicitly reported missing line coverage for this skippable test.
+    /// </summary>
+    [JsonProperty("_is_missing_line_code_coverage")]
+    public readonly bool? MissingLineCodeCoverage;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="SkippableTest"/> struct.
+    /// </summary>
+    /// <param name="name">Test name returned by the backend.</param>
+    /// <param name="suite">Test suite returned by the backend.</param>
+    /// <param name="parameters">Serialized test parameters returned by the backend.</param>
+    /// <param name="configurations">Backend test configurations used to scope the candidate.</param>
+    /// <param name="missingLineCodeCoverage">Whether the backend is missing line coverage for this candidate, or null when the backend did not declare the flag.</param>
+    public SkippableTest(string name, string suite, string? parameters, TestsConfigurations? configurations, bool? missingLineCodeCoverage = false)
     {
         Name = name;
         Suite = suite;
         RawParameters = parameters;
         Configurations = configurations;
+        MissingLineCodeCoverage = missingLineCodeCoverage;
     }
 
-    public TestParameters? GetParameters()
+    /// <summary>
+    /// Tries to parse test parameters for matching framework test cases to backend skippable candidates.
+    /// </summary>
+    /// <param name="parameters">Parsed test parameters when the method returns true; otherwise, null.</param>
+    /// <returns>True when the payload contains valid test parameters; otherwise, false.</returns>
+    public bool TryGetParameters([NotNullWhen(true)] out TestParameters? parameters)
     {
-        return string.IsNullOrWhiteSpace(RawParameters) ? null : JsonHelper.DeserializeObject<TestParameters>(RawParameters!);
+        if (StringUtil.IsNullOrWhiteSpace(RawParameters))
+        {
+            parameters = null;
+            return false;
+        }
+
+        try
+        {
+            var parsedParameters = JsonHelper.DeserializeObject<TestParameters>(RawParameters);
+            if (parsedParameters is null)
+            {
+                parameters = null;
+                return false;
+            }
+
+            parameters = parsedParameters;
+            return true;
+        }
+        catch (JsonException)
+        {
+            parameters = null;
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Gets whether this backend candidate belongs to the supplied local module or bundle scope.
+    /// </summary>
+    /// <param name="moduleName">Local test module or bundle name. Null means no local module scope is available.</param>
+    /// <returns>True when the candidate has no backend module scope or when it matches the local module.</returns>
+    internal bool MatchesModuleScope(string? moduleName)
+    {
+        if (!TryGetModuleScope(out var scopedModuleName))
+        {
+            return true;
+        }
+
+        return !StringUtil.IsNullOrEmpty(moduleName) &&
+               string.Equals(scopedModuleName, moduleName, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// Gets the backend module or bundle scope attached to this candidate.
+    /// </summary>
+    /// <param name="moduleName">Scoped module or bundle name, when present.</param>
+    /// <returns>True when the backend candidate is scoped to a non-empty module or bundle.</returns>
+    internal bool TryGetModuleScope(out string moduleName)
+    {
+        if (Configurations?.TestBundle is { Length: > 0 } testBundle)
+        {
+            moduleName = testBundle;
+            return true;
+        }
+
+        moduleName = string.Empty;
+        return false;
     }
 }

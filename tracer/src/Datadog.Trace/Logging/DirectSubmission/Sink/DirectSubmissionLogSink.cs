@@ -59,7 +59,19 @@ namespace Datadog.Trace.Logging.DirectSubmission.Sink
             BatchingSinkOptions sinkOptions,
             Action<DirectSubmissionLogEvent>? oversizeLogCallback,
             Action? sinkDisabledCallback)
-            : base(sinkOptions, sinkDisabledCallback)
+            : this(api, formatter, sinkOptions, oversizeLogCallback, sinkDisabledCallback, startBackgroundLoop: true)
+        {
+        }
+
+        [TestingAndPrivateOnly]
+        internal DirectSubmissionLogSink(
+            ILogsApi api,
+            LogFormatter formatter,
+            BatchingSinkOptions sinkOptions,
+            Action<DirectSubmissionLogEvent>? oversizeLogCallback,
+            Action? sinkDisabledCallback,
+            bool startBackgroundLoop)
+            : base(sinkOptions, sinkDisabledCallback, startBackgroundLoop)
         {
             _api = api;
             _formatter = formatter;

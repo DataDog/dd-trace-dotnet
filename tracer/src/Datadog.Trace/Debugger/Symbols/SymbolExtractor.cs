@@ -616,6 +616,7 @@ namespace Datadog.Trace.Debugger.Symbols
                 ScopeType = ScopeType.Method,
                 Name = methodName,
                 LanguageSpecifics = methodLanguageSpecifics,
+                HasInjectibleLines = false,
                 Symbols = argsSymbol,
                 Scopes = closureScopes,
                 SourceFile = null,

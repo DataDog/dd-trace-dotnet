@@ -82,64 +82,46 @@ internal sealed class AzureDevOpsSourceLinkUrlParser : SourceLinkUrlParser
         return false;
     }
 
+    /// <summary>
+    /// Builds the repository URL by locating /_apis/git/repositories/ in the path.
+    /// Works for all Azure DevOps variants:
+    ///   visualstudio.com: /{project}/_apis/git/repositories/{repo}/items
+    ///   dev.azure.com:    /{org}/{project}/_apis/git/repositories/{repo}/items
+    ///   TFS on-prem:      [/{vdir}][/{collection}]/{project}/_apis/git/repositories/{repo}/items
+    /// The repo URL is everything before _apis, plus /_git/{repo}.
+    /// </summary>
     private static string? BuildRepositoryUrl(Uri uri)
     {
-        ReadOnlySpan<char> segment0 = default;
-        ReadOnlySpan<char> segment1 = default;
-        ReadOnlySpan<char> segment4 = default;
-        ReadOnlySpan<char> segment5 = default;
-        var segmentCount = 0;
+        var path = uri.AbsolutePath;
 
-        foreach (var segment in uri.AbsolutePath.SplitIntoSpans('/'))
+        // Find /_apis/git/repositories/ in the path
+        const string marker = "/_apis/git/repositories/";
+        var markerPos = path.IndexOf(marker, StringComparison.Ordinal);
+        if (markerPos <= 0)
         {
-            ReadOnlySpan<char> span = segment;
-            if (span.IsEmpty)
-            {
-                continue;
-            }
-
-            switch (segmentCount)
-            {
-                case 0: segment0 = span; break;
-                case 1: segment1 = span; break;
-                case 4: segment4 = span; break;
-                case 5: segment5 = span; break;
-            }
-
-            segmentCount++;
+            // markerPos == 0 means nothing before _apis (no project); < 0 means not found
+            return null;
         }
 
-        if (uri.Host.EndsWith("visualstudio.com", StringComparison.OrdinalIgnoreCase))
-        {
-            if (segmentCount < 5)
-            {
-                return null;
-            }
+        var span = path.AsSpan();
 
-            // Legacy format: https://{organization}.visualstudio.com
+        // The prefix path (project and any virtual dir/collection) is everything before /_apis
+        var prefixPath = span.Slice(0, markerPos);
+
+        // Extract the repo name after /_apis/git/repositories/
+        var afterMarker = span.Slice(markerPos + marker.Length);
+        var repoEndSlash = afterMarker.IndexOf('/');
+        if (repoEndSlash <= 0)
+        {
+            return null;
+        }
+
+        var repo = afterMarker.Slice(0, repoEndSlash);
+
 #if NET6_0_OR_GREATER
-            return $"https://{uri.Host}/{segment0}/_git/{segment4}";
+        return $"{uri.Scheme}://{uri.Authority}{prefixPath}/_git/{repo}";
 #else
-            return $"https://{uri.Host}/{segment0.ToString()}/_git/{segment4.ToString()}";
+        return $"{uri.Scheme}://{uri.Authority}{prefixPath.ToString()}/_git/{repo.ToString()}";
 #endif
-        }
-
-        if (uri.Host.EndsWith("dev.azure.com", StringComparison.OrdinalIgnoreCase))
-        {
-            if (segmentCount < 6)
-            {
-                return null;
-            }
-
-            // New format: https://dev.azure.com/{organization}
-#if NET6_0_OR_GREATER
-            return $"https://{uri.Host}/{segment0}/{segment1}/_git/{segment5}";
-#else
-            return $"https://{uri.Host}/{segment0.ToString()}/{segment1.ToString()}/_git/{segment5.ToString()}";
-#endif
-        }
-
-        Log.Error("Unsupported Azure DevOps host: {Host}", uri.Host);
-        return null;
     }
 }

@@ -176,15 +176,13 @@ namespace Datadog.Trace.Coverage.Collector
                         return;
                     }
 
-                    var extension = Path.GetExtension(file).ToLowerInvariant();
-                    if (extension is ".dll" or ".exe" or "")
+                    if (HasAssemblyExtension(file))
                     {
                         if (File.Exists(Path.Combine(path, fileWithoutExtension + ".pdb")) || File.Exists(Path.Combine(path, fileWithoutExtension + ".PDB")))
                         {
+                            const int maxAttempts = 3;
                             List<Exception>? exceptions = null;
-                            var remain = 3;
-                        Retry:
-                            if (--remain > 0)
+                            for (var attempt = 1; attempt <= maxAttempts; attempt++)
                             {
                                 try
                                 {
@@ -198,17 +196,24 @@ namespace Datadog.Trace.Coverage.Collector
                                             processedDirectories.Add(Path.GetDirectoryName(file) ?? string.Empty);
                                         }
                                     }
+
+                                    exceptions = null;
+                                    break;
                                 }
                                 catch (PdbNotFoundException)
                                 {
                                     // If the PDB file was not found, we skip the assembly without throwing error.
                                     _logger?.Debug($"{nameof(PdbNotFoundException)} processing file: {file}");
+                                    exceptions = null;
+                                    break;
                                 }
                                 catch (BadImageFormatException)
                                 {
                                     // If the Assembly has not the correct format (eg. native dll / exe)
                                     // We skip processing the assembly.
                                     _logger?.Debug($"{nameof(BadImageFormatException)} processing file: {file}");
+                                    exceptions = null;
+                                    break;
                                 }
                                 catch (IOException ioException)
                                 {
@@ -217,12 +222,16 @@ namespace Datadog.Trace.Coverage.Collector
                                     // it is being used by another process`
                                     exceptions ??= new List<Exception>();
                                     exceptions.Add(ioException);
-                                    Thread.Sleep(1000);
-                                    goto Retry;
+                                    if (attempt < maxAttempts)
+                                    {
+                                        Thread.Sleep(1000);
+                                    }
                                 }
                                 catch (Exception ex)
                                 {
                                     _logger?.Error(ex);
+                                    exceptions = null;
+                                    break;
                                 }
                             }
 
@@ -242,6 +251,12 @@ namespace Datadog.Trace.Coverage.Collector
                     var version = typeof(Instrumentation).Assembly.GetName().Version?.ToString();
                     foreach (var depsJsonPath in Directory.EnumerateFiles(directory, "*.deps.json", SearchOption.TopDirectoryOnly))
                     {
+                        if (AssemblyProcessor.IsIgnoredAssemblyDependencyManifest(Path.GetFileName(depsJsonPath)))
+                        {
+                            _logger?.Debug($"Skipping dependency manifest for ignored assembly: {depsJsonPath}");
+                            continue;
+                        }
+
                         try
                         {
                             var json = JObject.Parse(File.ReadAllText(depsJsonPath));
@@ -327,6 +342,20 @@ namespace Datadog.Trace.Coverage.Collector
             {
                 _logger?.Debug("CoverageCollector.Test session context cannot be found, skipping IPC client and sending injection tags");
             }
+        }
+
+        internal static bool HasAssemblyExtension(string filePath)
+        {
+            if (Path.GetDirectoryName(filePath) is { } directory &&
+                Path.GetFileName(directory).StartsWith(AssemblyProcessor.StagingDirectoryPrefix, StringComparison.Ordinal))
+            {
+                return false;
+            }
+
+            var extension = Path.GetExtension(filePath);
+            return extension is "" ||
+                   string.Equals(extension, ".dll", StringComparison.OrdinalIgnoreCase) ||
+                   string.Equals(extension, ".exe", StringComparison.OrdinalIgnoreCase);
         }
 
         /// <inheritdoc />

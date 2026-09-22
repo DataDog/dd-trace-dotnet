@@ -10,6 +10,7 @@ using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Debugger.Configurations;
 using Datadog.Trace.Debugger.ProbeStatuses;
+using Datadog.Trace.Debugger.RateLimiting;
 using Datadog.Trace.Debugger.Sink;
 using Datadog.Trace.Debugger.Snapshots;
 using Datadog.Trace.Debugger.Symbols;
@@ -18,6 +19,7 @@ using Datadog.Trace.DogStatsd;
 using Datadog.Trace.HttpOverStreams;
 using Datadog.Trace.Logging;
 using Datadog.Trace.RemoteConfigurationManagement;
+using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Vendors.StatsdClient;
 using Datadog.Trace.Vendors.StatsdClient.Transport;
 
@@ -29,9 +31,10 @@ internal sealed class DebuggerFactory
 
     internal static DynamicInstrumentation CreateDynamicInstrumentation(IDiscoveryService discoveryService, IRcmSubscriptionManager remoteConfigurationManager, TracerSettings tracerSettings, Func<string> serviceNameProvider, DebuggerSettings debuggerSettings, IGitMetadataTagsProvider gitMetadataTagsProvider)
     {
+        var globalRateLimiter = DebuggerGlobalRateLimiter.Instance;
         var snapshotSlicer = SnapshotSlicer.Create(debuggerSettings);
-        var snapshotSink = SnapshotSink.Create(debuggerSettings, snapshotSlicer);
-        var logSink = SnapshotSink.Create(debuggerSettings, snapshotSlicer);
+        var snapshotSink = SnapshotSink.Create(debuggerSettings, snapshotSlicer, MetricTags.DebuggerCaptureEventType.Snapshot);
+        var logSink = SnapshotSink.Create(debuggerSettings, snapshotSlicer, MetricTags.DebuggerCaptureEventType.Log);
         var diagnosticsSink = DiagnosticsSink.Create(serviceNameProvider, debuggerSettings);
 
         var snapshotUploader = CreateSnapshotUploader(discoveryService, debuggerSettings, gitMetadataTagsProvider, GetApiFactory(tracerSettings, true), snapshotSink);
@@ -39,7 +42,8 @@ internal sealed class DebuggerFactory
         var diagnosticsUploader = CreateDiagnosticsUploader(discoveryService, debuggerSettings, gitMetadataTagsProvider, GetApiFactory(tracerSettings, true), diagnosticsSink);
         var lineProbeResolver = LineProbeResolver.Create(debuggerSettings.ThirdPartyDetectionExcludes, debuggerSettings.ThirdPartyDetectionIncludes);
         var probeStatusPoller = ProbeStatusPoller.Create(diagnosticsSink, debuggerSettings);
-        var configurationUpdater = ConfigurationUpdater.Create(tracerSettings.Manager.InitialMutableSettings.Environment, tracerSettings.Manager.InitialMutableSettings.ServiceVersion, debuggerSettings.MaxProbesPerType);
+        var configurationUpdater = ConfigurationUpdater.Create(tracerSettings.Manager.InitialMutableSettings.Environment, tracerSettings.Manager.InitialMutableSettings.ServiceVersion, debuggerSettings.MaxProbesPerType, globalRateLimiter);
+        var memoryPressureMonitor = new MemoryPressureMonitor(MemoryPressureConfig.Default);
 
         var statsd = GetDogStatsd(tracerSettings);
 
@@ -53,7 +57,9 @@ internal sealed class DebuggerFactory
             diagnosticsUploader: diagnosticsUploader,
             probeStatusPoller: probeStatusPoller,
             configurationUpdater: configurationUpdater,
-            dogStats: statsd);
+            dogStats: statsd,
+            globalRateLimiter: globalRateLimiter,
+            memoryPressureMonitor: memoryPressureMonitor);
     }
 
     private static IDogStatsd GetDogStatsd(TracerSettings tracerSettings)
@@ -108,10 +114,10 @@ internal sealed class DebuggerFactory
         return debuggerSink;
     }
 
-    internal static IDebuggerUploader CreateSymbolsUploader(IDiscoveryService discoveryService, IRcmSubscriptionManager remoteConfigurationManager, Func<string> serviceNameProvider, TracerSettings tracerSettings, DebuggerSettings settings, IGitMetadataTagsProvider gitMetadataTagsProvider)
+    internal static IDebuggerUploader CreateSymbolsUploader(IDiscoveryService discoveryService, Func<string> serviceNameProvider, TracerSettings tracerSettings, DebuggerSettings settings, IGitMetadataTagsProvider gitMetadataTagsProvider)
     {
-        var symbolBatchApi = DebuggerUploadApiFactory.CreateSymbolsUploadApi(GetApiFactory(tracerSettings, true), discoveryService, gitMetadataTagsProvider, serviceNameProvider, settings.SymbolDatabaseCompressionEnabled);
-        var symbolsUploader = SymbolsUploader.Create(symbolBatchApi, discoveryService, remoteConfigurationManager, tracerSettings, settings, serviceNameProvider);
+        var symbolBatchApi = DebuggerUploadApiFactory.CreateSymbolsUploadApi(GetApiFactory(tracerSettings, true), discoveryService, gitMetadataTagsProvider, settings.SymbolDatabaseCompressionEnabled);
+        var symbolsUploader = SymbolsUploader.Create(symbolBatchApi, discoveryService, tracerSettings, settings, serviceNameProvider);
         return symbolsUploader;
     }
 

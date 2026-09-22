@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Datadog.Trace.Debugger.Configurations.Models;
+using Datadog.Trace.Debugger.RateLimiting;
 using Datadog.Trace.Logging;
 using Datadog.Trace.RemoteConfigurationManagement;
 
@@ -20,53 +21,114 @@ namespace Datadog.Trace.Debugger.Configurations
         private readonly string? _env;
         private readonly string? _version;
         private readonly int _maxProbesPerType;
+        private readonly IDebuggerGlobalRateLimiter _globalRateLimiter;
+        private readonly HashSet<string> _removedRcmProbeIds = new();
+        private Func<IReadOnlyList<ProbeDefinition>, List<UpdateResult>>? _handleAddedProbesChanges;
+        private Action<string[]>? _handleRemovedProbesChanges;
 
         private ProbeConfiguration _currentConfiguration;
+        private ProbeConfiguration? _fileConfiguration;
+        private ProbeConfiguration _rcmConfiguration;
 
-        private ConfigurationUpdater(string? env, string? version, int maxProbesPerType)
+        private ConfigurationUpdater(string? env, string? version, int maxProbesPerType, IDebuggerGlobalRateLimiter? globalRateLimiter)
         {
             _env = env;
             _version = version;
             _maxProbesPerType = maxProbesPerType;
+            _globalRateLimiter = globalRateLimiter ?? DebuggerGlobalRateLimiter.Instance;
             _currentConfiguration = new ProbeConfiguration();
+            _rcmConfiguration = new ProbeConfiguration();
         }
 
-        public static ConfigurationUpdater Create(string? environment, string? serviceVersion, int maxProbesPerType)
+        public static ConfigurationUpdater Create(string? environment, string? serviceVersion, int maxProbesPerType, IDebuggerGlobalRateLimiter? globalRateLimiter = null)
         {
-            return new ConfigurationUpdater(environment, serviceVersion, maxProbesPerType);
+            return new ConfigurationUpdater(environment, serviceVersion, maxProbesPerType, globalRateLimiter);
+        }
+
+        public void SetProbeInstrumentationHandlers(Func<IReadOnlyList<ProbeDefinition>, List<UpdateResult>> handleAddedProbesChanges, Action<string[]> handleRemovedProbesChanges)
+        {
+            _handleAddedProbesChanges = handleAddedProbesChanges;
+            _handleRemovedProbesChanges = handleRemovedProbesChanges;
         }
 
         public List<UpdateResult> AcceptAdded(ProbeConfiguration configuration)
         {
-            var result = new List<UpdateResult>();
-            var filteredConfiguration = ApplyConfigurationFilters(configuration);
-            var comparer = new ProbeConfigurationComparer(_currentConfiguration, filteredConfiguration);
-
-            if (comparer.HasProbeRelatedChanges)
+            foreach (var probeId in ProbeConfigurationUtils.GetProbeIds(configuration))
             {
-                result = HandleAddedProbesChanges(comparer);
+                _removedRcmProbeIds.Remove(probeId);
             }
 
-            if (comparer.HasRateLimitChanged)
-            {
-                HandleRateLimitChanged(comparer);
-            }
+            _rcmConfiguration = ProbeConfigurationUtils.Merge(_rcmConfiguration, configuration);
+            return ApplyEffectiveConfiguration();
+        }
 
-            _currentConfiguration = configuration;
+        public List<UpdateResult> AcceptFile(ProbeConfiguration configuration)
+        {
+            _fileConfiguration = configuration;
+            return ApplyEffectiveConfiguration();
+        }
 
-            return result;
+        public bool HasAnyEffectiveProbeForFile(ProbeConfiguration configuration)
+        {
+            var effectiveConfiguration = GetEffectiveConfiguration(configuration);
+            return HasAnyEffectiveProbe(effectiveConfiguration.LogProbes)
+                || HasAnyEffectiveProbe(effectiveConfiguration.MetricProbes)
+                || HasAnyEffectiveProbe(effectiveConfiguration.SpanProbes)
+                || HasAnyEffectiveProbe(effectiveConfiguration.SpanDecorationProbes);
         }
 
         public void AcceptRemoved(List<RemoteConfigurationPath> paths)
         {
             try
             {
-                HandleRemovedProbesChanges(paths);
+                var removedProbeIds = paths.Where(ProbeConfigurationUtils.IsProbePath).Select(ProbeConfigurationUtils.GetProbeIdFromPath).ToArray();
+                var isServiceConfigurationRemoved = paths.Any(path => path.Id.StartsWith(DefinitionPaths.ServiceConfiguration, StringComparison.Ordinal));
+                foreach (var probeId in removedProbeIds)
+                {
+                    _removedRcmProbeIds.Add(probeId);
+                }
+
+                _rcmConfiguration = ProbeConfigurationUtils.RemoveItems(_rcmConfiguration, removedProbeIds, isServiceConfigurationRemoved);
+                HandleRemovedProbesChanges(removedProbeIds);
+                _ = ApplyEffectiveConfiguration();
             }
             catch (Exception ex)
             {
                 Log.Error(ex, "Failed to remove configurations");
             }
+        }
+
+        private List<UpdateResult> ApplyEffectiveConfiguration()
+        {
+            var result = new List<UpdateResult>();
+            var filteredConfiguration = ApplyConfigurationFilters(GetEffectiveConfiguration());
+            var comparer = new ProbeConfigurationComparer(_currentConfiguration, filteredConfiguration);
+
+            // Apply the global limiter before making new probes live.
+            if (comparer.HasRateLimitChanged)
+            {
+                HandleRateLimitChanged(filteredConfiguration);
+            }
+
+            if (comparer.HasProbeRelatedChanges)
+            {
+                result = HandleAddedProbesChanges(comparer);
+            }
+
+            _currentConfiguration = filteredConfiguration;
+
+            return result;
+        }
+
+        private ProbeConfiguration GetEffectiveConfiguration(ProbeConfiguration? fileConfigurationOverride = null)
+        {
+            var fileConfiguration = fileConfigurationOverride ?? _fileConfiguration;
+            if (fileConfiguration != null && _removedRcmProbeIds.Count != 0)
+            {
+                fileConfiguration = ProbeConfigurationUtils.RemoveItems(fileConfiguration, _removedRcmProbeIds, removeServiceConfiguration: false);
+            }
+
+            return ProbeConfigurationUtils.Merge(fileConfiguration, _rcmConfiguration);
         }
 
         private ProbeConfiguration ApplyConfigurationFilters(ProbeConfiguration configuration)
@@ -85,8 +147,7 @@ namespace Datadog.Trace.Debugger.Configurations
             {
                 var filtered =
                     probes
-                       .Where(probe => probe.Language == TracerConstants.Language)
-                       .Where(IsEnvAndVersionMatch);
+                       .Where(IsProbeIncluded);
 
                 if (_maxProbesPerType > 0)
                 {
@@ -94,42 +155,53 @@ namespace Datadog.Trace.Debugger.Configurations
                 }
 
                 return filtered.ToArray();
-
-                bool IsEnvAndVersionMatch(ProbeDefinition probe)
-                {
-                    if (probe.Tags == null || probe.Tags.Length == 0)
-                    {
-                        return true;
-                    }
-
-                    var tagMap =
-                            probe.Tags
-                                 .Distinct()
-                                 .Select(Tag.FromString)
-                                 .ToDictionary(tag => tag.Key, tag => tag.Value)
-                        ;
-
-                    var envNotExistsOrMatch = !tagMap.TryGetValue("env", out var probeEnv) || probeEnv == _env;
-                    var versionNotExistsOrMatch = !tagMap.TryGetValue("version", out var probeVersion) || probeVersion == _version;
-
-                    return envNotExistsOrMatch && versionNotExistsOrMatch;
-                }
             }
+        }
+
+        private bool HasAnyEffectiveProbe<T>(T[] probes)
+            where T : ProbeDefinition
+        {
+            return probes.Any(IsProbeIncluded);
+        }
+
+        private bool IsProbeIncluded(ProbeDefinition probe)
+        {
+            return probe.Language == TracerConstants.Language && IsEnvAndVersionMatch(probe);
+        }
+
+        private bool IsEnvAndVersionMatch(ProbeDefinition probe)
+        {
+            if (probe.Tags == null || probe.Tags.Length == 0)
+            {
+                return true;
+            }
+
+            var tagMap =
+                    probe.Tags
+                         .Distinct()
+                         .Select(Tag.FromString)
+                         .ToDictionary(tag => tag.Key, tag => tag.Value)
+                ;
+
+            var envNotExistsOrMatch = !tagMap.TryGetValue("env", out var probeEnv) || probeEnv == _env;
+            var versionNotExistsOrMatch = !tagMap.TryGetValue("version", out var probeVersion) || probeVersion == _version;
+
+            return envNotExistsOrMatch && versionNotExistsOrMatch;
         }
 
         private List<UpdateResult> HandleAddedProbesChanges(ProbeConfigurationComparer comparer)
         {
-            return DebuggerManager.Instance.DynamicInstrumentation?.UpdateAddedProbeInstrumentations(comparer.AddedDefinitions) ?? [];
+            return _handleAddedProbesChanges?.Invoke(comparer.AddedDefinitions) ?? [];
         }
 
-        private void HandleRemovedProbesChanges(List<RemoteConfigurationPath> paths)
+        private void HandleRemovedProbesChanges(string[] probeIds)
         {
-            DebuggerManager.Instance.DynamicInstrumentation?.UpdateRemovedProbeInstrumentations(paths);
+            _handleRemovedProbesChanges?.Invoke(probeIds);
         }
 
-        private void HandleRateLimitChanged(ProbeConfigurationComparer comparer)
+        private void HandleRateLimitChanged(ProbeConfiguration configuration)
         {
-            // todo handle rate limited changes
+            _globalRateLimiter.SetRate(configuration.ServiceConfiguration?.Sampling?.SnapshotsPerSecond);
         }
 
         internal sealed record UpdateResult(string Id, string? Error);

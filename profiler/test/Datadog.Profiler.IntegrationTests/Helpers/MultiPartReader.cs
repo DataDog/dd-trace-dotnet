@@ -19,8 +19,10 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
         private const string ContentTypeBoundary = "boundary=";
         private const int NewLibeBytesSize = 2;
 
+#pragma warning disable SA1306 // Field names should begin with lower-case letter
         private readonly byte[] MinusBytes = Encoding.ASCII.GetBytes("-");
         private readonly byte[] NewLineBytes = { 0x0d, 0x0a };
+#pragma warning restore SA1306 // Field names should begin with lower-case letter
 
         private HttpListenerRequest _request;
         private byte[] _buffer;
@@ -147,6 +149,36 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
             return "--" + contentType.Substring(pos + ContentTypeBoundary.Length);
         }
 
+        private static string GetContentDispositionValue(string headerValue, string key)
+        {
+            var segments = headerValue.Split(';');
+            foreach (var segment in segments)
+            {
+                var trimmed = segment.Trim();
+                var separator = trimmed.IndexOf('=');
+                if (separator == -1)
+                {
+                    continue;
+                }
+
+                var currentKey = trimmed.Substring(0, separator).Trim();
+                if (!currentKey.Equals(key, StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                var value = trimmed.Substring(separator + 1).Trim();
+                if (value.Length >= 2 && value[0] == '"' && value[^1] == '"')
+                {
+                    value = value.Substring(1, value.Length - 2);
+                }
+
+                return value;
+            }
+
+            return null;
+        }
+
         // return the position in _buffer AFTER the given array of bytes
         private int IndexAfter(int pos, byte[] bytes, int size)
         {
@@ -224,36 +256,6 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
                 name = GetContentDispositionValue(headerValue, "name") ?? name;
                 filename = GetContentDispositionValue(headerValue, "filename") ?? filename;
             }
-        }
-
-        private static string GetContentDispositionValue(string headerValue, string key)
-        {
-            var segments = headerValue.Split(';');
-            foreach (var segment in segments)
-            {
-                var trimmed = segment.Trim();
-                var separator = trimmed.IndexOf('=');
-                if (separator == -1)
-                {
-                    continue;
-                }
-
-                var currentKey = trimmed.Substring(0, separator).Trim();
-                if (!currentKey.Equals(key, StringComparison.OrdinalIgnoreCase))
-                {
-                    continue;
-                }
-
-                var value = trimmed.Substring(separator + 1).Trim();
-                if (value.Length >= 2 && value[0] == '"' && value[^1] == '"')
-                {
-                    value = value.Substring(1, value.Length - 2);
-                }
-
-                return value;
-            }
-
-            return null;
         }
 
         internal class MultiPartFileInfo

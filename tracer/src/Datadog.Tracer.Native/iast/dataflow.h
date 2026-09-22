@@ -88,9 +88,11 @@ namespace iast
 
         ICorProfilerInfo* GetCorProfilerInfo();
 
-        HRESULT GetModuleInterfaces(ModuleID moduleID, IMetaDataImport2** ppMetadataImport,
-                                    IMetaDataEmit2** ppMetadataEmit, IMetaDataAssemblyImport** ppAssemblyImport,
-                                    IMetaDataAssemblyEmit** ppAssemblyEmit);
+        // Split in two on purpose: only the modules we rewrite get their metadata opened for writing.
+        HRESULT GetModuleImportInterfaces(ModuleID moduleID, IMetaDataImport2** ppMetadataImport,
+                                         IMetaDataAssemblyImport** ppAssemblyImport);
+        HRESULT GetModuleEmitInterfaces(ModuleID moduleID, IMetaDataEmit2** ppMetadataEmit,
+                                        IMetaDataAssemblyEmit** ppAssemblyEmit);
 
         bool IsAppDomainExcluded(const WSTRING& appDomainName, MatchResult* includedMatch = nullptr,
                                  MatchResult* excludedMatch = nullptr);

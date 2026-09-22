@@ -48,15 +48,15 @@ namespace Datadog.Trace.Debugger.Instrumentation
         /// <param name="methodMetadataIndex">The unique index of the method's <see cref="Collections.MethodMetadataInfo"/></param>
         /// <param name="probeData">The <see cref="ProbeData"/> associated with the executing instrumentation</param>
         /// <param name="invocationTarget">The current invocation target ('this' object)</param>
-        internal MethodDebuggerState(string probeId, Scope scope, int methodMetadataIndex, ref ProbeData probeData, object invocationTarget)
+        /// <param name="snapshotCreator">The snapshot creator associated with the executing probe configuration</param>
+        internal MethodDebuggerState(string probeId, Scope scope, int methodMetadataIndex, ref ProbeData probeData, object invocationTarget, IDebuggerSnapshotCreator snapshotCreator)
         {
             _probeId = probeId;
             _scope = scope;
             _methodMetadataIndex = methodMetadataIndex;
             HasLocalsOrReturnValue = false;
             InvocationTarget = invocationTarget;
-            var processor = probeData.Processor;
-            SnapshotCreator = processor.CreateSnapshotCreator();
+            SnapshotCreator = snapshotCreator;
             ProbeData = probeData;
             MethodPhase = EvaluateAt.Entry;
         }

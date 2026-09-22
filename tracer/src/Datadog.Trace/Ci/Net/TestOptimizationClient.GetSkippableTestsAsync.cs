@@ -7,9 +7,11 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Datadog.Trace.Ci.Coverage.Backfill;
 using Datadog.Trace.Ci.Telemetry;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
+using Datadog.Trace.Util;
 using Datadog.Trace.Util.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Serilog.Events;
@@ -26,7 +28,7 @@ internal sealed partial class TestOptimizationClient
     private const string SkippableType = "test_params";
     private Uri? _skippableTestsUrl;
 
-    public async Task<SkippableTestsResponse> GetSkippableTestsAsync()
+    public async Task<SkippableTestsResponse> GetSkippableTestsAsync(SkippableTestsRequestScope scope = default)
     {
         Log.Debug("TestOptimizationClient: Getting skippable tests...");
         if (!EnsureRepositoryUrl() || !EnsureCommitSha())
@@ -39,7 +41,7 @@ internal sealed partial class TestOptimizationClient
             new Data<SkippableTestsQuery>(
                 null,
                 SkippableType,
-                new SkippableTestsQuery(_serviceName, _environment, _repositoryUrl, _commitSha, GetTestConfigurations())),
+                new SkippableTestsQuery(_serviceName, _environment, _repositoryUrl, _commitSha, GetTestConfigurations(testBundle: scope.TestBundle), SkippableTestsRequestScope.TestLevel)),
             null);
 
         var jsonQuery = JsonHelper.SerializeObject(query, SerializerSettings);
@@ -58,45 +60,58 @@ internal sealed partial class TestOptimizationClient
         }
 
         Log.Debug("TestOptimizationClient: Skippable.JSON RS = {Json}", queryResponse);
-        if (string.IsNullOrEmpty(queryResponse))
+        return ParseSkippableTestsResponse(queryResponse, scope);
+    }
+
+    /// <summary>
+    /// Parses the skippable-tests backend response and decodes the backend coverage map.
+    /// </summary>
+    /// <param name="queryResponse">Raw JSON response returned by the skippable-tests endpoint.</param>
+    /// <param name="scope">Request scope used to ask for the backend candidates.</param>
+    /// <returns>The skippable tests, correlation id, and decoded coverage backfill data.</returns>
+    internal static SkippableTestsResponse ParseSkippableTestsResponse(string? queryResponse, SkippableTestsRequestScope scope = default)
+    {
+        if (StringUtil.IsNullOrEmpty(queryResponse))
         {
             return default;
         }
 
         var deserializedResult = JsonHelper.DeserializeObject<DataArrayEnvelope<Data<SkippableTest>>>(queryResponse);
+        var coverageBackfillData = CoverageBackfillData.FromBackendCoverage(deserializedResult.Meta?.Coverage);
+        if (coverageBackfillData.IsPresent)
+        {
+            if (Log.IsEnabled(LogEventLevel.Debug))
+            {
+                Log.Debug<int, int, bool>(
+                    "TestOptimizationClient: Skippable coverage map received. Files={Files}, Bytes={Bytes}, Valid={Valid}",
+                    coverageBackfillData.ExecutedLinesByRelativePath.Count,
+                    coverageBackfillData.TotalBitmapBytes,
+                    coverageBackfillData.IsValid);
+            }
+
+            if (!coverageBackfillData.IsValid)
+            {
+                TelemetryFactory.Metrics.RecordCountCIVisibilityCodeCoverageErrors();
+            }
+        }
+
         if (deserializedResult.Data is null || deserializedResult.Data.Length == 0)
         {
-            return new SkippableTestsResponse(deserializedResult.Meta?.CorrelationId, []);
+            return new SkippableTestsResponse(deserializedResult.Meta?.CorrelationId, [], coverageBackfillData, isCoverageBackfillSafe: coverageBackfillData.IsValid);
         }
 
         var testAttributes = new List<SkippableTest>(deserializedResult.Data.Length);
-        var customConfigurations = _customConfigurations;
         for (var i = 0; i < deserializedResult.Data.Length; i++)
         {
-            var includeItem = true;
             var item = deserializedResult.Data[i].Attributes;
-            if (item.Configurations?.Custom is { } itemCustomConfiguration)
+            if (scope.HasTestBundle &&
+                item.TryGetModuleScope(out var itemScope) &&
+                !string.Equals(itemScope, scope.TestBundle, StringComparison.Ordinal))
             {
-                if (customConfigurations is null)
-                {
-                    continue;
-                }
-
-                foreach (var rsCustomConfigurationItem in itemCustomConfiguration)
-                {
-                    if (!customConfigurations.TryGetValue(rsCustomConfigurationItem.Key, out var customConfigValue) ||
-                        rsCustomConfigurationItem.Value != customConfigValue)
-                    {
-                        includeItem = false;
-                        break;
-                    }
-                }
+                continue;
             }
 
-            if (includeItem)
-            {
-                testAttributes.Add(item);
-            }
+            testAttributes.Add(item);
         }
 
         if (Log.IsEnabled(LogEventLevel.Debug) && deserializedResult.Data.Length != testAttributes.Count)
@@ -105,7 +120,7 @@ internal sealed partial class TestOptimizationClient
         }
 
         TelemetryFactory.Metrics.RecordCountCIVisibilityITRSkippableTestsResponseTests(testAttributes.Count);
-        return new SkippableTestsResponse(deserializedResult.Meta?.CorrelationId, testAttributes);
+        return new SkippableTestsResponse(deserializedResult.Meta?.CorrelationId, testAttributes, coverageBackfillData, isCoverageBackfillSafe: coverageBackfillData.IsValid);
     }
 
     private readonly struct SkippableCallbacks : ICallbacks
@@ -152,13 +167,29 @@ internal sealed partial class TestOptimizationClient
         [JsonProperty("configurations")]
         public readonly TestsConfigurations? Configurations;
 
-        public SkippableTestsQuery(string service, string environment, string repositoryUrl, string sha, TestsConfigurations? configurations)
+        /// <summary>
+        /// Test granularity used by the local tracer when applying backend skippable candidates.
+        /// </summary>
+        [JsonProperty("test_level")]
+        public readonly string TestLevel;
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="SkippableTestsQuery"/> struct.
+        /// </summary>
+        /// <param name="service">Service name used to query skippable tests.</param>
+        /// <param name="environment">Environment name used to query skippable tests.</param>
+        /// <param name="repositoryUrl">Repository URL used to scope skippable tests.</param>
+        /// <param name="sha">Commit SHA used to scope skippable tests.</param>
+        /// <param name="configurations">Runtime and custom test configurations.</param>
+        /// <param name="testLevel">Test granularity applied by the local tracer.</param>
+        public SkippableTestsQuery(string service, string environment, string repositoryUrl, string sha, TestsConfigurations? configurations, string testLevel)
         {
             Service = service;
             Environment = environment;
             RepositoryUrl = repositoryUrl;
             Sha = sha;
             Configurations = configurations;
+            TestLevel = testLevel;
         }
     }
 
@@ -170,16 +201,32 @@ internal sealed partial class TestOptimizationClient
         [JsonProperty("tests")]
         public readonly ICollection<SkippableTest> Tests;
 
+        /// <summary>
+        /// Decoded backend coverage used to correct coverage when ITR skips tests.
+        /// </summary>
+        [JsonProperty("coverage")]
+        public readonly CoverageBackfillData Coverage;
+
+        /// <summary>
+        /// Indicates whether the backend coverage aggregate was decoded successfully.
+        /// </summary>
+        [JsonProperty("coverage_backfill_safe")]
+        public readonly bool IsCoverageBackfillSafe;
+
         public SkippableTestsResponse()
         {
             CorrelationId = null;
             Tests = [];
+            Coverage = CoverageBackfillData.Missing;
+            IsCoverageBackfillSafe = false;
         }
 
-        public SkippableTestsResponse(string? correlationId, ICollection<SkippableTest> tests)
+        public SkippableTestsResponse(string? correlationId, ICollection<SkippableTest> tests, CoverageBackfillData? coverageBackfillData = null, bool isCoverageBackfillSafe = false)
         {
             CorrelationId = correlationId;
             Tests = tests;
+            Coverage = coverageBackfillData ?? CoverageBackfillData.Missing;
+            IsCoverageBackfillSafe = isCoverageBackfillSafe;
         }
     }
 }

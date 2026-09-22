@@ -16,7 +16,7 @@ internal interface ITestOptimizationClient
 
     Task<TestOptimizationClient.SearchCommitResponse> GetCommitsAsync();
 
-    Task<TestOptimizationClient.SkippableTestsResponse> GetSkippableTestsAsync();
+    Task<TestOptimizationClient.SkippableTestsResponse> GetSkippableTestsAsync(SkippableTestsRequestScope scope = default);
 
     Task<long> SendPackFilesAsync(string commitSha, string[]? commitsToInclude, string[]? commitsToExclude);
 

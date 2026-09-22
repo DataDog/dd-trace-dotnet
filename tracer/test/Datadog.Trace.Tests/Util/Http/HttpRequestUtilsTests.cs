@@ -201,6 +201,57 @@ public class HttpRequestUtilsTests
     }
 
     [Theory]
+    // No credentials, so the value is identical to GetUrl()
+    [InlineData("http://localhost/path", false, "http://localhost/path")]
+    [InlineData("https://example.com/api/users", false, "https://example.com/api/users")]
+    [InlineData("http://localhost:8080/test", false, "http://localhost:8080/test")]
+    [InlineData("http://localhost/path?key=value", false, "http://localhost/path")]
+    [InlineData("http://localhost/path?key=value", true, "http://localhost/path?key=value")]
+
+    // Credentials are redacted instead of dropped
+    [InlineData("http://user:pass@localhost/path", false, "http://REDACTED:REDACTED@localhost/path")]
+    [InlineData("https://user:pass@example.com/api/users", false, "https://REDACTED:REDACTED@example.com/api/users")]
+    [InlineData("http://user:pass@localhost:8080/path", false, "http://REDACTED:REDACTED@localhost:8080/path")]
+    [InlineData("http://user:pass@localhost", false, "http://REDACTED:REDACTED@localhost/")]
+
+    // A username without a password is redacted without inventing a password
+    [InlineData("http://user@localhost/path", false, "http://REDACTED@localhost/path")]
+
+    // The query string is still truncated and obfuscated
+    [InlineData("http://user:pass@localhost/path?q=1", false, "http://REDACTED:REDACTED@localhost/path")]
+    [InlineData("http://user:pass@localhost/path?q=1", true, "http://REDACTED:REDACTED@localhost/path?q=1")]
+    [InlineData("http://user:pass@localhost/login?password=secret123", true, "http://REDACTED:REDACTED@localhost/login?<redacted>")]
+
+    // The rows below pin KNOWN DEVIATIONS from the OpenTelemetry semantic conventions for
+    // "url.full" (https://opentelemetry.io/docs/specs/semconv/registry/attributes/url/), so that
+    // they are recorded rather than mistaken for compliance. Update them if the behaviour is fixed.
+    //
+    // Deviation 1: query scrubbing uses DD_TRACE_OBFUSCATION_QUERY_STRING_REGEXP, which replaces the
+    // match with "<redacted>" and does not preserve the key (see the "password" row above), whereas
+    // the spec asks for "sig=REDACTED" with the key preserved. Its default key list also differs
+    // from ours: of the five keys the spec redacts by default, "sig" and "X-Amz-Credential" are not
+    // matched at all, so they are reported verbatim. That part of the spec is Development stability,
+    // and it allows the default list to be fully overridden, which is what our regex effectively does.
+    [InlineData("http://localhost/path?sig=abc123", true, "http://localhost/path?sig=abc123")]
+    [InlineData("http://localhost/path?color=blue&sig=abc123", true, "http://localhost/path?color=blue&sig=abc123")]
+
+    // Deviation 2: a known fragment is dropped, whereas the spec says that although it is not
+    // transmitted over HTTP it SHOULD be included when known. Asserted on both code paths, because
+    // only the credential path builds the URL by hand instead of delegating to GetUrl().
+    [InlineData("http://localhost/path?q=1#SemConv", true, "http://localhost/path?q=1")]
+    [InlineData("http://user:pass@localhost/path?q=1#SemConv", true, "http://REDACTED:REDACTED@localhost/path?q=1")]
+    public void GetUrlFull_ShouldRedactCredentials(string url, bool useQueryManager, string expected)
+    {
+        var uri = new Uri(url);
+        var queryStringManager = useQueryManager
+            ? new QueryStringManager(reportQueryString: true, timeout: 30_000, maxSizeBeforeObfuscation: 50, pattern: TracerSettingsConstants.DefaultObfuscationQueryStringRegex)
+            : null;
+
+        var result = HttpRequestUtils.GetUrlFull(uri, queryStringManager);
+        result.Should().Be(expected);
+    }
+
+    [Theory]
     [InlineData("http://localhost/path", "http://localhost/path")]
     [InlineData("https://example.com/api/users?id=123", "https://example.com/api/users")]
     [InlineData("http://localhost:8080/test", "http://localhost:8080/test")]

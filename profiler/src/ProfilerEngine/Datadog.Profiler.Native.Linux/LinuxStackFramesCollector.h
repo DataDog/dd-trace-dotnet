@@ -88,7 +88,7 @@ private:
 
     static std::mutex s_stackWalkInProgressMutex;
 
-    static LinuxStackFramesCollector* s_pInstanceCurrentlyStackWalking;
+    static std::atomic<LinuxStackFramesCollector*> s_pInstanceCurrentlyStackWalking;
 
     std::int32_t CollectCallStackCurrentThread(void* ctx);
 

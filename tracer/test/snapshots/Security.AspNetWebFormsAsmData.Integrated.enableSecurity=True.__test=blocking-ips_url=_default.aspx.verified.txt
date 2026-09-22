@@ -12,6 +12,7 @@
       http.client_ip: 86.242.244.246,
       http.method: GET,
       http.request.headers.host: localhost:00000,
+      http.response.headers.content-type: text/html; charset=utf-8,
       http.status_code: 301,
       http.url: http://localhost:00000/default.aspx,
       http.useragent: Mistake Not...,

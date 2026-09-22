@@ -32,14 +32,26 @@ namespace Datadog.Trace.TestHelpers
             // bytes differ slightly depending on platform
             (new(@"http.response.headers.content-length\: 2\d{3}", RegOptions), "http.response.headers.content-length: 2xxx"),
             (new(@"127.0.0.1\:\d+", RegOptions), "localhost:00000"),
+            // tests bind a dynamic port, so server.port changes between runs. The optional ".0"
+            // covers the spans that record the port as a metric rather than as a string tag
+            (new(@"server\.port: \d+(\.0)?", RegOptions), "server.port: 00000"),
             (new(@"_dd.tracer_kr: \d\.\d+", RegOptions), "_dd.tracer_kr: 1.0"),
             (new(@"process_id: \d+\.0", RegOptions), "process_id: 0"),
             (new(@"http.client_ip: (.)*(?=,)", RegOptions), "http.client_ip: 127.0.0.1"),
             (new(@"http.useragent: grpc-dotnet\/(.)*(?=,)", RegOptions), "http.useragent: grpc-dotnet/123"),
+            // OpenTelemetry semantic convention equivalents of the above (DD_TRACE_OTEL_SEMANTICS_ENABLED=true)
+            (new(@"client.address: (.)*(?=,)", RegOptions), "client.address: 127.0.0.1"),
+            (new(@"network.peer.address: (.)*(?=,)", RegOptions), "network.peer.address: 127.0.0.1"),
+            (new(@"user_agent.original: grpc-dotnet\/(.)*(?=,)", RegOptions), "user_agent.original: grpc-dotnet/123"),
+            (new(@"server.port: \d+", RegOptions), "server.port: 00000"),
             (new(@"git.commit.sha: [0-9a-f]{40}", RegOptions), "git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbb"),
             (new(@"_dd\.p\.tid: [0-9a-f]{16}", RegOptions), "_dd.p.tid: 1234567890abcdef"),
+            (new(@"(_dd\.code_origin\.frames\.\d+\.line:\s*)\d+", RegOptions), "${1}0"),
+            (new(@"(_dd\.code_origin\.frames\.\d+\.column:\s*)\d+", RegOptions), "${1}0"),
             (new("x-datadog-trace-id\":\\[\\[\\[8,({\"category\":\"pii\",\"type\":\"vin\"})\\]\\]", RegOptions), "x-datadog-trace-id\":[[[8]]") // api security, sometimes we can get "x-datadog-trace-id":[[[8,{"category":"pii","type":"vin"}]], and not everytime depending on the number, should be removed with waf 1.15.1, bug is fixed
         };
+
+        private static readonly Regex CodeOriginFilePathRegex = new(@"(?<prefix>_dd\.code_origin\.frames\.\d+\.file:\s*)(?<path>[^,\r\n]+)", RegOptions);
 
         /// <summary>
         /// With <see cref="Verify"/>, parameters are used as part of the filename.
@@ -124,6 +136,7 @@ namespace Datadog.Trace.TestHelpers
                 settings.AddRegexScrubber(regexPattern, replacement);
             }
 
+            settings.AddScrubber(ScrubCodeOriginFilePaths);
             settings.ScrubInlineGuids();
             settings.ScrubEmptyLines();
             VerifyDiffPlex.UseDiffPlex(settings);
@@ -339,10 +352,47 @@ namespace Datadog.Trace.TestHelpers
                 });
         }
 
+        internal static string NormalizeCodeOriginFilePaths(string value)
+        {
+            return CodeOriginFilePathRegex.Replace(
+                value,
+                static match =>
+                {
+                    var path = match.Groups["path"].Value;
+                    var tracerIndex = path.IndexOf("tracer\\", StringComparison.OrdinalIgnoreCase);
+                    if (tracerIndex < 0)
+                    {
+                        tracerIndex = path.IndexOf("tracer/", StringComparison.OrdinalIgnoreCase);
+                    }
+
+                    if (tracerIndex < 0)
+                    {
+                        return match.Value;
+                    }
+
+                    var normalizedPath = path.Substring(tracerIndex).Replace('/', '\\');
+                    return match.Groups["prefix"].Value + normalizedPath;
+                });
+        }
+
         private static void ReplaceRegex(StringBuilder builder, Regex regex, string replacement)
         {
             var value = builder.ToString();
             var result = regex.Replace(value, replacement);
+
+            if (value.Equals(result, StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            builder.Clear();
+            builder.Append(result);
+        }
+
+        private static void ScrubCodeOriginFilePaths(StringBuilder builder)
+        {
+            var value = builder.ToString();
+            var result = NormalizeCodeOriginFilePaths(value);
 
             if (value.Equals(result, StringComparison.Ordinal))
             {

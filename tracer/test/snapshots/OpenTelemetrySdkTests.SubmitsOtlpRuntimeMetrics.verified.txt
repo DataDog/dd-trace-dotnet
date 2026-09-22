@@ -1,0 +1,234 @@
+[
+  {
+    "resource_metrics": [
+      {
+        "resource": {
+          "attributes": [
+            {
+              "key": "telemetry.sdk.name",
+              "value": {
+                "string_value": "<telemetry.sdk.name>"
+              }
+            },
+            {
+              "key": "telemetry.sdk.language",
+              "value": {
+                "string_value": "<telemetry.sdk.language>"
+              }
+            },
+            {
+              "key": "telemetry.sdk.version",
+              "value": {
+                "string_value": "<telemetry.sdk.version>"
+              }
+            },
+            {
+              "key": "service.name",
+              "value": {
+                "string_value": "<service.name>"
+              }
+            },
+            {
+              "key": "deployment.environment.name",
+              "value": {
+                "string_value": "<deployment.environment.name>"
+              }
+            }
+          ]
+        },
+        "scope_metrics": [
+          {
+            "scope": {
+              "name": "System.Runtime"
+            },
+            "metrics": [
+              {
+                "name": "dotnet.assembly.count",
+                "description": "The number of .NET assemblies that are currently loaded.",
+                "unit": "{assembly}",
+                "sum": {
+                  "data_points": [],
+                  "aggregation_temporality": "AGGREGATION_TEMPORALITY_CUMULATIVE"
+                }
+              },
+              {
+                "name": "dotnet.exceptions",
+                "description": "The number of exceptions that have been thrown in managed code.",
+                "unit": "{exception}",
+                "sum": {
+                  "data_points": [],
+                  "aggregation_temporality": "AGGREGATION_TEMPORALITY_DELTA",
+                  "is_monotonic": true
+                }
+              },
+              {
+                "name": "dotnet.gc.collections",
+                "description": "The number of garbage collections that have occurred since the process has started.",
+                "unit": "{collection}",
+                "sum": {
+                  "data_points": [],
+                  "aggregation_temporality": "AGGREGATION_TEMPORALITY_DELTA",
+                  "is_monotonic": true
+                }
+              },
+              {
+                "name": "dotnet.gc.heap.total_allocated",
+                "description": "The approximate number of bytes allocated on the managed GC heap since the process has started. The returned value does not include any native allocations.",
+                "unit": "By",
+                "sum": {
+                  "data_points": [],
+                  "aggregation_temporality": "AGGREGATION_TEMPORALITY_DELTA",
+                  "is_monotonic": true
+                }
+              },
+              {
+                "name": "dotnet.gc.last_collection.heap.fragmentation.size",
+                "description": "The heap fragmentation, as observed during the latest garbage collection.",
+                "unit": "By",
+                "sum": {
+                  "data_points": [],
+                  "aggregation_temporality": "AGGREGATION_TEMPORALITY_CUMULATIVE"
+                }
+              },
+              {
+                "name": "dotnet.gc.last_collection.heap.size",
+                "description": "The managed GC heap size (including fragmentation), as observed during the latest garbage collection.",
+                "unit": "By",
+                "sum": {
+                  "data_points": [],
+                  "aggregation_temporality": "AGGREGATION_TEMPORALITY_CUMULATIVE"
+                }
+              },
+              {
+                "name": "dotnet.gc.last_collection.memory.committed_size",
+                "description": "The amount of committed virtual memory in use by the .NET GC, as observed during the latest garbage collection.",
+                "unit": "By",
+                "sum": {
+                  "data_points": [],
+                  "aggregation_temporality": "AGGREGATION_TEMPORALITY_CUMULATIVE"
+                }
+              },
+              {
+                "name": "dotnet.gc.pause.time",
+                "description": "The total amount of time paused in GC since the process has started.",
+                "unit": "s",
+                "sum": {
+                  "data_points": [],
+                  "aggregation_temporality": "AGGREGATION_TEMPORALITY_DELTA",
+                  "is_monotonic": true
+                }
+              },
+              {
+                "name": "dotnet.jit.compilation.time",
+                "description": "The number of times the JIT compiler (re)compiled methods since the process has started.",
+                "unit": "s",
+                "sum": {
+                  "data_points": [],
+                  "aggregation_temporality": "AGGREGATION_TEMPORALITY_DELTA",
+                  "is_monotonic": true
+                }
+              },
+              {
+                "name": "dotnet.jit.compiled_il.size",
+                "description": "Count of bytes of intermediate language that have been compiled since the process has started.",
+                "unit": "By",
+                "sum": {
+                  "data_points": [],
+                  "aggregation_temporality": "AGGREGATION_TEMPORALITY_DELTA",
+                  "is_monotonic": true
+                }
+              },
+              {
+                "name": "dotnet.jit.compiled_methods",
+                "description": "The number of times the JIT compiler (re)compiled methods since the process has started.",
+                "unit": "{method}",
+                "sum": {
+                  "data_points": [],
+                  "aggregation_temporality": "AGGREGATION_TEMPORALITY_DELTA",
+                  "is_monotonic": true
+                }
+              },
+              {
+                "name": "dotnet.monitor.lock_contentions",
+                "description": "The number of times there was contention when trying to acquire a monitor lock since the process has started.",
+                "unit": "{contention}",
+                "sum": {
+                  "data_points": [],
+                  "aggregation_temporality": "AGGREGATION_TEMPORALITY_DELTA",
+                  "is_monotonic": true
+                }
+              },
+              {
+                "name": "dotnet.process.cpu.count",
+                "description": "The number of processors available to the process.",
+                "unit": "{cpu}",
+                "sum": {
+                  "data_points": [],
+                  "aggregation_temporality": "AGGREGATION_TEMPORALITY_CUMULATIVE"
+                }
+              },
+              {
+                "name": "dotnet.process.cpu.time",
+                "description": "CPU time used by the process.",
+                "unit": "s",
+                "sum": {
+                  "data_points": [],
+                  "aggregation_temporality": "AGGREGATION_TEMPORALITY_DELTA",
+                  "is_monotonic": true
+                }
+              },
+              {
+                "name": "dotnet.process.memory.working_set",
+                "description": "The number of bytes of physical memory mapped to the process context.",
+                "unit": "By",
+                "sum": {
+                  "data_points": [],
+                  "aggregation_temporality": "AGGREGATION_TEMPORALITY_CUMULATIVE"
+                }
+              },
+              {
+                "name": "dotnet.thread_pool.queue.length",
+                "description": "The number of work items that are currently queued to be processed by the thread pool.",
+                "unit": "{work_item}",
+                "sum": {
+                  "data_points": [],
+                  "aggregation_temporality": "AGGREGATION_TEMPORALITY_DELTA",
+                  "is_monotonic": true
+                }
+              },
+              {
+                "name": "dotnet.thread_pool.thread.count",
+                "description": "The number of thread pool threads that currently exist.",
+                "unit": "{thread}",
+                "sum": {
+                  "data_points": [],
+                  "aggregation_temporality": "AGGREGATION_TEMPORALITY_DELTA",
+                  "is_monotonic": true
+                }
+              },
+              {
+                "name": "dotnet.thread_pool.work_item.count",
+                "description": "The number of work items that the thread pool has completed since the process has started.",
+                "unit": "{work_item}",
+                "sum": {
+                  "data_points": [],
+                  "aggregation_temporality": "AGGREGATION_TEMPORALITY_DELTA",
+                  "is_monotonic": true
+                }
+              },
+              {
+                "name": "dotnet.timer.count",
+                "description": "The number of timer instances that are currently active. An active timer is registered to tick at some point in the future and has not yet been canceled.",
+                "unit": "{timer}",
+                "sum": {
+                  "data_points": [],
+                  "aggregation_temporality": "AGGREGATION_TEMPORALITY_CUMULATIVE"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+]

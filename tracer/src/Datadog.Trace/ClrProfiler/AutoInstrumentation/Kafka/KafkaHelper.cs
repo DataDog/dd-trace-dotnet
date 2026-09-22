@@ -262,9 +262,18 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
 
                 if (message?.Instance is not null && message.Timestamp.Type != 0)
                 {
-                    var consumeTime = span.StartTime.UtcDateTime;
-                    var produceTime = message.Timestamp.UtcDateTime;
-                    tags.MessageQueueTimeMs = Math.Max(0, (consumeTime - produceTime).TotalMilliseconds);
+                    try
+                    {
+                        var consumeTime = span.StartTime.UtcDateTime;
+                        var produceTime = message.Timestamp.UtcDateTime;
+                        tags.MessageQueueTimeMs = Math.Max(0, (consumeTime - produceTime).TotalMilliseconds);
+                    }
+                    catch (Exception)
+                    {
+                        // The stored timestamp resulted in an out-of-range value when converting to DateTime;
+                        // likely due to an invalid timestamp. Skip the tag rather than abort the whole scope.
+                        // Using Exception here, because the method could throw ArgumentOutOfRangeException or OverflowException
+                    }
                 }
 
                 if (message?.Instance is not null && message.Value is null)
@@ -468,22 +477,20 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                 return null;
             }
 
-            if (ClusterIdCache.TryGetValue(bootstrapServers, out var cached))
-            {
-                return cached;
-            }
-
             try
             {
                 var kafkaAssembly = clientInstance.GetType().Assembly;
-
-                // DescribeClusterAsync and DescribeClusterOptions were added in Confluent.Kafka 2.3.0
-                var describeClusterOptionsType = kafkaAssembly.GetType("Confluent.Kafka.Admin.DescribeClusterOptions");
+                var describeClusterOptionsType = KafkaClusterIdSupport.GetDescribeClusterOptionsType(kafkaAssembly);
                 if (describeClusterOptionsType is null)
                 {
-                    Log.Debug("Confluent.Kafka.Admin.DescribeClusterOptions not found; cluster_id tag requires Confluent.Kafka >= 2.3.0");
-                    ClusterIdCache.TryAdd(bootstrapServers, string.Empty);
-                    return string.Empty;
+                    // Capability failures belong to the assembly, not the bootstrap servers. Another
+                    // loaded Confluent.Kafka assembly may support discovery for these same servers.
+                    return null;
+                }
+
+                if (ClusterIdCache.TryGetValue(bootstrapServers, out var cached))
+                {
+                    return cached;
                 }
 
                 var builderType = kafkaAssembly.GetType("Confluent.Kafka.DependentAdminClientBuilder");

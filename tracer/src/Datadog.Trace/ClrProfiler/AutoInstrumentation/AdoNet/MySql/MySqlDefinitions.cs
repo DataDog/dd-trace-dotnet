@@ -34,7 +34,7 @@ using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetClientIn
     AssemblyName = "MySql.Data",
     TypeName = "MySql.Data.MySqlClient.MySqlCommand",
     MinimumVersion = "8.0.0",
-    MaximumVersion = "9.*.*",
+    MaximumVersion = "26.*.*",
     IntegrationName = nameof(IntegrationId.MySql),
     DataReaderType = "MySql.Data.MySqlClient.MySqlDataReader",
     DataReaderTaskType = "System.Threading.Tasks.Task`1[MySql.Data.MySqlClient.MySqlDataReader]",
@@ -124,7 +124,7 @@ using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetClientIn
 
 [assembly: AdoNetClientInstrumentMethods(
     AssemblyName = "MySql.Data",
-    TypeName = "MySql.Data.MySqlClient.MySqlCommand",
+    TypeName = "MySql.Data.MySqlClient.MySqlDataReader",
     MinimumVersion = "6.7.0",
     MaximumVersion = "6.*.*",
     IntegrationName = nameof(IntegrationId.MySql),
@@ -143,7 +143,7 @@ using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetClientIn
     AssemblyName = "MySql.Data",
     TypeName = "MySql.Data.MySqlClient.MySqlDataReader",
     MinimumVersion = "8.0.0",
-    MaximumVersion = "9.*.*",
+    MaximumVersion = "26.*.*",
     IntegrationName = nameof(IntegrationId.MySql),
     DataReaderType = "MySql.Data.MySqlClient.MySqlDataReader",
     DataReaderTaskType = "System.Threading.Tasks.Task`1[MySql.Data.MySqlClient.MySqlDataReader]",

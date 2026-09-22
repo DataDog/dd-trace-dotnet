@@ -4,9 +4,8 @@
 // </copyright>
 
 using System;
-using System.IO;
+using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.Coverage;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel.DataCollection;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel.DataCollector.InProcDataCollector;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel.InProcDataCollector;
@@ -38,7 +37,6 @@ namespace Datadog.Trace.Coverage.Collector;
 public class InProcCoverageCollector : InProcDataCollection
 {
     private const string OutputPathKey = "OutputPath";
-    private string? _outputPathValue = null;
 
     /// <summary>
     /// Initialize inproc coverage collector
@@ -54,9 +52,11 @@ public class InProcCoverageCollector : InProcDataCollection
     /// <param name="testSessionStartArgs">Test session start arguments</param>
     public void TestSessionStart(TestSessionStartArgs testSessionStartArgs)
     {
-        if (testSessionStartArgs.GetPropertyValue(OutputPathKey) is string outputPath)
+        if (CoverageReporter.Handler is DefaultWithGlobalCoverageEventHandler coverageHandler)
         {
-            _outputPathValue = outputPath;
+            var configuredOutputPath = testSessionStartArgs.GetPropertyValue(OutputPathKey) as string;
+            var outputDirectory = CoverageReporter.ResolveCollectorOutputDirectory(configuredOutputPath, Environment.CurrentDirectory);
+            coverageHandler.RegisterCollectorOutputDirectory(outputDirectory);
         }
     }
 
@@ -82,20 +82,6 @@ public class InProcCoverageCollector : InProcDataCollection
     /// <param name="testSessionEndArgs">Test session end arguments</param>
     public void TestSessionEnd(TestSessionEndArgs testSessionEndArgs)
     {
-        if (CoverageReporter.Handler is DefaultWithGlobalCoverageEventHandler coverageHandler)
-        {
-            var globalCoverage = coverageHandler.GetCodeCoveragePercentage();
-            var outputPath = $"coverage-{DateTime.Now:yyyy-MM-dd_HH_mm_ss}-{Guid.NewGuid():n}.json";
-            if (!string.IsNullOrEmpty(_outputPathValue))
-            {
-                outputPath = Path.Combine(_outputPathValue, outputPath);
-            }
-
-            using var fileStream = File.OpenWrite(outputPath);
-            using var streamWriter = new StreamWriter(fileStream);
-            using var jsonWriter = new JsonTextWriter(streamWriter) { CloseOutput = true };
-            var jsonSerializer = new JsonSerializer();
-            jsonSerializer.Serialize(jsonWriter, globalCoverage);
-        }
+        CoverageReporter.FinalizeGlobalCoverage();
     }
 }

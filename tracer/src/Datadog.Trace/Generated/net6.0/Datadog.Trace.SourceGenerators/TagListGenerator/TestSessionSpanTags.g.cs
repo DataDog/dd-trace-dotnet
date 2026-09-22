@@ -41,6 +41,9 @@ namespace Datadog.Trace.Ci.Tagging
         // CIPipelineNameBytes = MessagePack.Serialize("ci.pipeline.name");
         private static ReadOnlySpan<byte> CIPipelineNameBytes => [176, 99, 105, 46, 112, 105, 112, 101, 108, 105, 110, 101, 46, 110, 97, 109, 101];
 
+        // CIPipelineDisplayNameBytes = MessagePack.Serialize("ci.pipeline.display_name");
+        private static ReadOnlySpan<byte> CIPipelineDisplayNameBytes => [184, 99, 105, 46, 112, 105, 112, 101, 108, 105, 110, 101, 46, 100, 105, 115, 112, 108, 97, 121, 95, 110, 97, 109, 101];
+
         // CIPipelineNumberBytes = MessagePack.Serialize("ci.pipeline.number");
         private static ReadOnlySpan<byte> CIPipelineNumberBytes => [178, 99, 105, 46, 112, 105, 112, 101, 108, 105, 110, 101, 46, 110, 117, 109, 98, 101, 114];
 
@@ -104,6 +107,9 @@ namespace Datadog.Trace.Ci.Tagging
         // TestsSkippedBytes = MessagePack.Serialize("_dd.ci.itr.tests_skipped");
         private static ReadOnlySpan<byte> TestsSkippedBytes => [184, 95, 100, 100, 46, 99, 105, 46, 105, 116, 114, 46, 116, 101, 115, 116, 115, 95, 115, 107, 105, 112, 112, 101, 100];
 
+        // IntelligentTestRunnerTestsSkippingEnabledBytes = MessagePack.Serialize("test.itr.tests_skipping.enabled");
+        private static ReadOnlySpan<byte> IntelligentTestRunnerTestsSkippingEnabledBytes => [191, 116, 101, 115, 116, 46, 105, 116, 114, 46, 116, 101, 115, 116, 115, 95, 115, 107, 105, 112, 112, 105, 110, 103, 46, 101, 110, 97, 98, 108, 101, 100];
+
         // IntelligentTestRunnerSkippingTypeBytes = MessagePack.Serialize("test.itr.tests_skipping.type");
         private static ReadOnlySpan<byte> IntelligentTestRunnerSkippingTypeBytes => [188, 116, 101, 115, 116, 46, 105, 116, 114, 46, 116, 101, 115, 116, 115, 95, 115, 107, 105, 112, 112, 105, 110, 103, 46, 116, 121, 112, 101];
 
@@ -161,6 +167,7 @@ namespace Datadog.Trace.Ci.Tagging
                 "ci.provider.name" => CIProvider,
                 "ci.pipeline.id" => CIPipelineId,
                 "ci.pipeline.name" => CIPipelineName,
+                "ci.pipeline.display_name" => CIPipelineDisplayName,
                 "ci.pipeline.number" => CIPipelineNumber,
                 "ci.pipeline.url" => CIPipelineUrl,
                 "ci.job.url" => CIJobUrl,
@@ -182,6 +189,7 @@ namespace Datadog.Trace.Ci.Tagging
                 "git.commit.committer.date" => GitCommitCommitterDate,
                 "_dd.ci.env_vars" => CiEnvVars,
                 "_dd.ci.itr.tests_skipped" => TestsSkipped,
+                "test.itr.tests_skipping.enabled" => IntelligentTestRunnerTestsSkippingEnabled,
                 "test.itr.tests_skipping.type" => IntelligentTestRunnerSkippingType,
                 "test.early_flake.enabled" => EarlyFlakeDetectionTestEnabled,
                 "test.early_flake.abort_reason" => EarlyFlakeDetectionTestAbortReason,
@@ -225,6 +233,9 @@ namespace Datadog.Trace.Ci.Tagging
                     break;
                 case "ci.pipeline.name": 
                     CIPipelineName = value;
+                    break;
+                case "ci.pipeline.display_name": 
+                    CIPipelineDisplayName = value;
                     break;
                 case "ci.pipeline.number": 
                     CIPipelineNumber = value;
@@ -289,6 +300,9 @@ namespace Datadog.Trace.Ci.Tagging
                 case "_dd.ci.itr.tests_skipped": 
                     TestsSkipped = value;
                     break;
+                case "test.itr.tests_skipping.enabled": 
+                    IntelligentTestRunnerTestsSkippingEnabled = value;
+                    break;
                 case "test.itr.tests_skipping.type": 
                     IntelligentTestRunnerSkippingType = value;
                     break;
@@ -343,7 +357,7 @@ namespace Datadog.Trace.Ci.Tagging
             }
         }
 
-        public override void EnumerateTags<TProcessor>(ref TProcessor processor)
+        public override void EnumerateTags<TProcessor>(ref TProcessor processor, bool openTelemetrySemanticsEnabled)
         {
             if (Command is not null)
             {
@@ -383,6 +397,11 @@ namespace Datadog.Trace.Ci.Tagging
             if (CIPipelineName is not null)
             {
                 processor.Process(new TagItem<string>("ci.pipeline.name", CIPipelineName, CIPipelineNameBytes));
+            }
+
+            if (CIPipelineDisplayName is not null)
+            {
+                processor.Process(new TagItem<string>("ci.pipeline.display_name", CIPipelineDisplayName, CIPipelineDisplayNameBytes));
             }
 
             if (CIPipelineNumber is not null)
@@ -490,6 +509,11 @@ namespace Datadog.Trace.Ci.Tagging
                 processor.Process(new TagItem<string>("_dd.ci.itr.tests_skipped", TestsSkipped, TestsSkippedBytes));
             }
 
+            if (IntelligentTestRunnerTestsSkippingEnabled is not null)
+            {
+                processor.Process(new TagItem<string>("test.itr.tests_skipping.enabled", IntelligentTestRunnerTestsSkippingEnabled, IntelligentTestRunnerTestsSkippingEnabledBytes));
+            }
+
             if (IntelligentTestRunnerSkippingType is not null)
             {
                 processor.Process(new TagItem<string>("test.itr.tests_skipping.type", IntelligentTestRunnerSkippingType, IntelligentTestRunnerSkippingTypeBytes));
@@ -565,7 +589,7 @@ namespace Datadog.Trace.Ci.Tagging
                 processor.Process(new TagItem<string>("git.commit.head.message", GitHeadCommitMessage, GitHeadCommitMessageBytes));
             }
 
-            base.EnumerateTags(ref processor);
+            base.EnumerateTags(ref processor, openTelemetrySemanticsEnabled);
         }
 
         protected override void WriteAdditionalTags(System.Text.StringBuilder sb)
@@ -623,6 +647,13 @@ namespace Datadog.Trace.Ci.Tagging
             {
                 sb.Append("ci.pipeline.name (tag):")
                   .Append(CIPipelineName)
+                  .Append(',');
+            }
+
+            if (CIPipelineDisplayName is not null)
+            {
+                sb.Append("ci.pipeline.display_name (tag):")
+                  .Append(CIPipelineDisplayName)
                   .Append(',');
             }
 
@@ -770,6 +801,13 @@ namespace Datadog.Trace.Ci.Tagging
             {
                 sb.Append("_dd.ci.itr.tests_skipped (tag):")
                   .Append(TestsSkipped)
+                  .Append(',');
+            }
+
+            if (IntelligentTestRunnerTestsSkippingEnabled is not null)
+            {
+                sb.Append("test.itr.tests_skipping.enabled (tag):")
+                  .Append(IntelligentTestRunnerTestsSkippingEnabled)
                   .Append(',');
             }
 

@@ -1,4 +1,4 @@
-﻿// <copyright file="WafLibraryInvoker.cs" company="Datadog">
+// <copyright file="WafLibraryInvoker.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -6,6 +6,7 @@
 using System;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using System.Text;
 using Datadog.Trace.AppSec.Waf.Initialization;
 using Datadog.Trace.Logging;
 
@@ -15,6 +16,13 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
 {
     internal sealed class WafLibraryInvoker : IWafLibraryInvoker
     {
+        /// <summary>
+        /// Lowest libddwaf major version this binding can talk to. libddwaf 2.0 redesigned the C API
+        /// (allocators, 16 byte objects, subcontexts), so 1.x is not merely deprecated, it is ABI
+        /// incompatible and must be rejected rather than loaded.
+        /// </summary>
+        private const int MinimumWafMajorVersion = 2;
+
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(WafLibraryInvoker));
         private readonly GetVersionDelegate _getVersionField;
 
@@ -22,30 +30,37 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
         private readonly BuilderAddOrUpdateConfigDelegate _builderAddOrUpdateConfigField;
         private readonly BuilderRemoveConfigDelegate _builderRemoveConfigDelegate;
         private readonly BuilderBuildInstanceDelegate _builderBuildInstanceDelegate;
+        private readonly BuilderDestroyDelegate _builderDestroyDelegate;
 
         private readonly InitContextDelegate _initContextField;
-        private readonly RunDelegate _runField;
-        private readonly DestroyDelegate _destroyField;
+        private readonly ContextEvalDelegate _contextEvalField;
         private readonly ContextDestroyDelegate _contextDestroyField;
-        private readonly ObjectInvalidDelegate _objectInvalidField;
-        private readonly ObjectStringLengthDelegate _objectStringLengthField;
-        private readonly ObjectBoolDelegate _objectBoolField;
-        private readonly ObjectUlongDelegate _objectUlongField;
-        private readonly ObjectLongDelegate _objectLongField;
-        private readonly ObjectDoubleDelegate _objectDoubleField;
-        private readonly ObjectNullDelegate _objectNullField;
-        private readonly ObjectArrayDelegate _objectArrayField;
-        private readonly ObjectMapDelegate _objectMapField;
-        private readonly ObjectArrayAddDelegate _objectArrayAddField;
-        private readonly ObjectArrayGetAtIndexDelegate _objectArrayGetIndex;
-        private readonly ObjectMapAddDelegateX64 _objectMapAddFieldX64;
-        private readonly ObjectMapAddDelegateX86 _objectMapAddFieldX86;
-        private readonly FreeObjectDelegate _freeObjectField;
+        private readonly SubcontextInitDelegate _subcontextInitField;
+        private readonly SubcontextEvalDelegate _subcontextEvalField;
+        private readonly SubcontextDestroyDelegate _subcontextDestroyField;
+        private readonly DestroyDelegate _destroyField;
+
+        private readonly GetDefaultAllocatorDelegate _getDefaultAllocatorField;
+        private readonly ObjectDestroyDelegate _objectDestroyField;
+
+        private readonly ObjectSetInvalidDelegate _objectSetInvalidField;
+        private readonly ObjectSetNullDelegate _objectSetNullField;
+        private readonly ObjectSetStringDelegate _objectSetStringField;
+        private readonly ObjectSetBoolDelegate _objectSetBoolField;
+        private readonly ObjectSetSignedDelegate _objectSetSignedField;
+        private readonly ObjectSetUnsignedDelegate _objectSetUnsignedField;
+        private readonly ObjectSetFloatDelegate _objectSetFloatField;
+        private readonly ObjectSetArrayDelegate _objectSetArrayField;
+        private readonly ObjectSetMapDelegate _objectSetMapField;
+        private readonly ObjectInsertDelegate _objectInsertField;
+        private readonly ObjectInsertKeyDelegate _objectInsertKeyField;
+
         private readonly SetupLoggingDelegate _setupLogging;
         private readonly SetupLogCallbackDelegate _setupLogCallbackField;
         private readonly GetKnownAddressesDelegate _getKnownAddresses;
         private string _version;
         private bool _isKnownAddressesSuported;
+        private IntPtr _defaultAllocator;
 
         private WafLibraryInvoker(IntPtr libraryHandle, string libVersion = null)
         {
@@ -55,27 +70,31 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
             _builderAddOrUpdateConfigField = GetDelegateForNativeFunction<BuilderAddOrUpdateConfigDelegate>(libraryHandle, "ddwaf_builder_add_or_update_config");
             _builderRemoveConfigDelegate = GetDelegateForNativeFunction<BuilderRemoveConfigDelegate>(libraryHandle, "ddwaf_builder_remove_config");
             _builderBuildInstanceDelegate = GetDelegateForNativeFunction<BuilderBuildInstanceDelegate>(libraryHandle, "ddwaf_builder_build_instance");
+            _builderDestroyDelegate = GetDelegateForNativeFunction<BuilderDestroyDelegate>(libraryHandle, "ddwaf_builder_destroy");
 
             _initContextField = GetDelegateForNativeFunction<InitContextDelegate>(libraryHandle, "ddwaf_context_init");
-            _runField = GetDelegateForNativeFunction<RunDelegate>(libraryHandle, "ddwaf_run");
-            _destroyField = GetDelegateForNativeFunction<DestroyDelegate>(libraryHandle, "ddwaf_destroy");
+            _contextEvalField = GetDelegateForNativeFunction<ContextEvalDelegate>(libraryHandle, "ddwaf_context_eval");
             _contextDestroyField = GetDelegateForNativeFunction<ContextDestroyDelegate>(libraryHandle, "ddwaf_context_destroy");
-            _objectInvalidField = GetDelegateForNativeFunction<ObjectInvalidDelegate>(libraryHandle, "ddwaf_object_invalid");
-            _objectStringLengthField = GetDelegateForNativeFunction<ObjectStringLengthDelegate>(libraryHandle, "ddwaf_object_stringl");
-            _objectBoolField = GetDelegateForNativeFunction<ObjectBoolDelegate>(libraryHandle, "ddwaf_object_bool");
-            _objectLongField = GetDelegateForNativeFunction<ObjectLongDelegate>(libraryHandle, "ddwaf_object_signed");
-            _objectUlongField = GetDelegateForNativeFunction<ObjectUlongDelegate>(libraryHandle, "ddwaf_object_unsigned");
-            _objectDoubleField = GetDelegateForNativeFunction<ObjectDoubleDelegate>(libraryHandle, "ddwaf_object_float");
-            _objectNullField = GetDelegateForNativeFunction<ObjectNullDelegate>(libraryHandle, "ddwaf_object_null");
-            _objectArrayField = GetDelegateForNativeFunction<ObjectArrayDelegate>(libraryHandle, "ddwaf_object_array");
-            _objectMapField = GetDelegateForNativeFunction<ObjectMapDelegate>(libraryHandle, "ddwaf_object_map");
-            _objectArrayAddField = GetDelegateForNativeFunction<ObjectArrayAddDelegate>(libraryHandle, "ddwaf_object_array_add");
-            _objectArrayGetIndex = GetDelegateForNativeFunction<ObjectArrayGetAtIndexDelegate>(libraryHandle, "ddwaf_object_get_index");
-            _objectMapAddFieldX64 =
-                Environment.Is64BitProcess ? GetDelegateForNativeFunction<ObjectMapAddDelegateX64>(libraryHandle, "ddwaf_object_map_addl") : null;
-            _objectMapAddFieldX86 =
-                Environment.Is64BitProcess ? null : GetDelegateForNativeFunction<ObjectMapAddDelegateX86>(libraryHandle, "ddwaf_object_map_addl");
-            _freeObjectField = GetDelegateForNativeFunction<FreeObjectDelegate>(libraryHandle, "ddwaf_object_free");
+            _subcontextInitField = GetDelegateForNativeFunction<SubcontextInitDelegate>(libraryHandle, "ddwaf_subcontext_init");
+            _subcontextEvalField = GetDelegateForNativeFunction<SubcontextEvalDelegate>(libraryHandle, "ddwaf_subcontext_eval");
+            _subcontextDestroyField = GetDelegateForNativeFunction<SubcontextDestroyDelegate>(libraryHandle, "ddwaf_subcontext_destroy");
+            _destroyField = GetDelegateForNativeFunction<DestroyDelegate>(libraryHandle, "ddwaf_destroy");
+
+            _getDefaultAllocatorField = GetDelegateForNativeFunction<GetDefaultAllocatorDelegate>(libraryHandle, "ddwaf_get_default_allocator");
+            _objectDestroyField = GetDelegateForNativeFunction<ObjectDestroyDelegate>(libraryHandle, "ddwaf_object_destroy");
+
+            _objectSetInvalidField = GetDelegateForNativeFunction<ObjectSetInvalidDelegate>(libraryHandle, "ddwaf_object_set_invalid");
+            _objectSetNullField = GetDelegateForNativeFunction<ObjectSetNullDelegate>(libraryHandle, "ddwaf_object_set_null");
+            _objectSetStringField = GetDelegateForNativeFunction<ObjectSetStringDelegate>(libraryHandle, "ddwaf_object_set_string");
+            _objectSetBoolField = GetDelegateForNativeFunction<ObjectSetBoolDelegate>(libraryHandle, "ddwaf_object_set_bool");
+            _objectSetSignedField = GetDelegateForNativeFunction<ObjectSetSignedDelegate>(libraryHandle, "ddwaf_object_set_signed");
+            _objectSetUnsignedField = GetDelegateForNativeFunction<ObjectSetUnsignedDelegate>(libraryHandle, "ddwaf_object_set_unsigned");
+            _objectSetFloatField = GetDelegateForNativeFunction<ObjectSetFloatDelegate>(libraryHandle, "ddwaf_object_set_float");
+            _objectSetArrayField = GetDelegateForNativeFunction<ObjectSetArrayDelegate>(libraryHandle, "ddwaf_object_set_array");
+            _objectSetMapField = GetDelegateForNativeFunction<ObjectSetMapDelegate>(libraryHandle, "ddwaf_object_set_map");
+            _objectInsertField = GetDelegateForNativeFunction<ObjectInsertDelegate>(libraryHandle, "ddwaf_object_insert");
+            _objectInsertKeyField = GetDelegateForNativeFunction<ObjectInsertKeyDelegate>(libraryHandle, "ddwaf_object_insert_key");
+
             _getVersionField = GetDelegateForNativeFunction<GetVersionDelegate>(libraryHandle, "ddwaf_get_version");
             // setup logging
             _setupLogging = GetDelegateForNativeFunction<SetupLoggingDelegate>(libraryHandle, "ddwaf_set_log_cb");
@@ -89,52 +108,89 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
             _setupLogCallbackField = new SetupLogCallbackDelegate(LoggingCallback);
         }
 
+        // Every delegate below binds a C export of libddwaf, which is cdecl. The default convention
+        // is Winapi, i.e. stdcall on Windows, so on win-x86 the callee wouldn't clean up the stack the
+        // way the caller expects. It makes no difference on x64/arm64, where there is a single
+        // convention, but it has to be spelled out for the 32-bit targets we still ship.
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         private delegate IntPtr GetVersionDelegate();
 
-        private delegate IntPtr BuilderInitDelegate(ref DdwafConfigStruct config);
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        private delegate IntPtr BuilderInitDelegate();
 
-        private delegate bool BuilderAddOrUpdateConfigDelegate(IntPtr builder, string path, uint pathLen, ref DdwafObjectStruct config, ref DdwafObjectStruct diagnostics);
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        private delegate bool BuilderAddOrUpdateConfigDelegate(IntPtr builder, byte[] path, uint pathLen, ref DdwafObjectStruct config, ref DdwafObjectStruct diagnostics);
 
-        private delegate bool BuilderRemoveConfigDelegate(IntPtr builder, string path, uint pathLen);
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        private delegate bool BuilderRemoveConfigDelegate(IntPtr builder, byte[] path, uint pathLen);
 
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         private delegate IntPtr BuilderBuildInstanceDelegate(IntPtr builder);
 
-        private delegate IntPtr InitContextDelegate(IntPtr wafHandle);
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        private delegate void BuilderDestroyDelegate(IntPtr builder);
 
-        private unsafe delegate WafReturnCode RunDelegate(IntPtr context, DdwafObjectStruct* rawPersistentData, DdwafObjectStruct* rawEphemeralData, ref DdwafObjectStruct result, ulong timeLeftInUs);
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        private delegate IntPtr InitContextDelegate(IntPtr wafHandle, IntPtr outputAlloc);
 
-        private delegate void DestroyDelegate(IntPtr handle);
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        private unsafe delegate WafReturnCode ContextEvalDelegate(IntPtr context, DdwafObjectStruct* data, IntPtr alloc, ref DdwafObjectStruct result, ulong timeLeftInUs);
 
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         private delegate void ContextDestroyDelegate(IntPtr context);
 
-        private delegate IntPtr ObjectInvalidDelegate(ref DdwafObjectStruct emptyObjPtr);
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        private delegate IntPtr SubcontextInitDelegate(IntPtr context);
 
-        private delegate IntPtr ObjectStringLengthDelegate(ref DdwafObjectStruct emptyObjPtr, string s, ulong length);
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        private unsafe delegate WafReturnCode SubcontextEvalDelegate(IntPtr subcontext, DdwafObjectStruct* data, IntPtr alloc, ref DdwafObjectStruct result, ulong timeLeftInUs);
 
-        private delegate IntPtr ObjectBoolDelegate(ref DdwafObjectStruct emptyObjPtr, bool b);
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        private delegate void SubcontextDestroyDelegate(IntPtr subcontext);
 
-        private delegate IntPtr ObjectDoubleDelegate(ref DdwafObjectStruct emptyObjPtr, double value);
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        private delegate void DestroyDelegate(IntPtr handle);
 
-        private delegate IntPtr ObjectNullDelegate(ref DdwafObjectStruct emptyObjPtr);
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        private delegate IntPtr GetDefaultAllocatorDelegate();
 
-        private delegate IntPtr ObjectUlongDelegate(ref DdwafObjectStruct emptyObjPtr, ulong value);
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        private delegate void ObjectDestroyDelegate(ref DdwafObjectStruct obj, IntPtr alloc);
 
-        private delegate IntPtr ObjectLongDelegate(ref DdwafObjectStruct emptyObjPtr, long value);
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        private unsafe delegate DdwafObjectStruct* ObjectSetInvalidDelegate(DdwafObjectStruct* obj);
 
-        private delegate IntPtr ObjectArrayDelegate(ref DdwafObjectStruct emptyObjPtr);
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        private unsafe delegate DdwafObjectStruct* ObjectSetNullDelegate(DdwafObjectStruct* obj);
 
-        private delegate IntPtr ObjectMapDelegate(ref DdwafObjectStruct emptyObjPtr);
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        private unsafe delegate DdwafObjectStruct* ObjectSetStringDelegate(DdwafObjectStruct* obj, byte[] str, uint length, IntPtr alloc);
 
-        private delegate bool ObjectArrayAddDelegate(ref DdwafObjectStruct array, ref DdwafObjectStruct entry);
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        private unsafe delegate DdwafObjectStruct* ObjectSetBoolDelegate(DdwafObjectStruct* obj, bool value);
 
-        private delegate IntPtr ObjectArrayGetAtIndexDelegate(ref DdwafObjectStruct array, long index);
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        private unsafe delegate DdwafObjectStruct* ObjectSetSignedDelegate(DdwafObjectStruct* obj, long value);
 
-        private delegate bool ObjectMapAddDelegateX64(ref DdwafObjectStruct map, string entryName, ulong entryNameLength, ref DdwafObjectStruct entry);
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        private unsafe delegate DdwafObjectStruct* ObjectSetUnsignedDelegate(DdwafObjectStruct* obj, ulong value);
 
-        private delegate bool ObjectMapAddDelegateX86(ref DdwafObjectStruct map, string entryName, uint entryNameLength, ref DdwafObjectStruct entry);
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        private unsafe delegate DdwafObjectStruct* ObjectSetFloatDelegate(DdwafObjectStruct* obj, double value);
 
-        private delegate void FreeObjectDelegate(ref DdwafObjectStruct input);
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        private unsafe delegate DdwafObjectStruct* ObjectSetArrayDelegate(DdwafObjectStruct* obj, ushort capacity, IntPtr alloc);
 
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        private unsafe delegate DdwafObjectStruct* ObjectSetMapDelegate(DdwafObjectStruct* obj, ushort capacity, IntPtr alloc);
+
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        private unsafe delegate DdwafObjectStruct* ObjectInsertDelegate(DdwafObjectStruct* array, IntPtr alloc);
+
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        private unsafe delegate DdwafObjectStruct* ObjectInsertKeyDelegate(DdwafObjectStruct* map, byte[] key, uint length, IntPtr alloc);
+
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         private delegate IntPtr GetKnownAddressesDelegate(IntPtr wafHandle, ref uint size);
 
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
@@ -146,19 +202,38 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
             string message,
             ulong message_len);
 
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         private delegate bool SetupLoggingDelegate(SetupLogCallbackDelegate cb, DDWAF_LOG_LEVEL min_level);
 
         private enum DDWAF_LOG_LEVEL
         {
-            DDWAF_TRACE,
-            DDWAF_DEBUG,
-            DDWAF_INFO,
-            DDWAF_WARN,
-            DDWAF_ERROR,
-            DDWAF_AFTER_LAST,
+            DDWAF_LOG_TRACE = 0,
+            DDWAF_LOG_DEBUG = 1,
+            DDWAF_LOG_INFO = 2,
+            DDWAF_LOG_WARN = 3,
+            DDWAF_LOG_ERROR = 4,
+            DDWAF_LOG_OFF = 5,
         }
 
         internal bool ExportErrorHappened { get; private set; }
+
+        /// <summary>
+        /// Gets the default allocator, used for every object libddwaf allocates on our behalf
+        /// (eval results, diagnostics) and for the objects the legacy encoder asks it to build.
+        /// Destroying it is a no-op, so it never needs to be released.
+        /// </summary>
+        internal IntPtr DefaultAllocator
+        {
+            get
+            {
+                if (_defaultAllocator == IntPtr.Zero)
+                {
+                    _defaultAllocator = _getDefaultAllocatorField();
+                }
+
+                return _defaultAllocator;
+            }
+        }
 
         /// <summary>
         /// Initializes static members of the <see cref="WafLibraryInvoker"/> class.
@@ -219,7 +294,7 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
                 return false;
             }
 
-            var canParse = int.TryParse(versionWafSplit[1], out var wafMinor);
+            var canParse = int.TryParse(versionWafSplit[1], out _);
             canParse &= int.TryParse(versionWafSplit[0], out var wafMajor);
             var tracerVersion = Assembly.GetExecutingAssembly().GetName().Version;
             if (tracerVersion is null || !canParse)
@@ -228,8 +303,8 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
                 return false;
             }
 
-            // Waf version 1.25 or higher needed
-            if (wafMajor < 1 || (wafMajor == 1 && wafMinor < 25))
+            // Waf version 2.0 or higher needed: 1.x has an incompatible ABI
+            if (wafMajor < MinimumWafMajorVersion)
             {
                 Log.Warning("Waf version {WafVersion} is not compatible with tracer version {TracerVersion}", versionWaf, tracerVersion);
                 return false;
@@ -240,7 +315,7 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
 
         internal void SetupLogging(bool wafDebugEnabled)
         {
-            var logLevel = wafDebugEnabled ? DDWAF_LOG_LEVEL.DDWAF_DEBUG : DDWAF_LOG_LEVEL.DDWAF_INFO;
+            var logLevel = wafDebugEnabled ? DDWAF_LOG_LEVEL.DDWAF_LOG_DEBUG : DDWAF_LOG_LEVEL.DDWAF_LOG_INFO;
             _setupLogging(_setupLogCallbackField, logLevel);
         }
 
@@ -289,8 +364,9 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
                 if (_version is null)
                 {
                     GetVersion();
-                    _isKnownAddressesSuported = !string.IsNullOrEmpty(_version) && new Version(_version) >= new Version("1.19.0");
                 }
+
+                _isKnownAddressesSuported = !string.IsNullOrEmpty(_version) && new Version(_version).Major >= MinimumWafMajorVersion;
             }
             catch (Exception ex)
             {
@@ -312,103 +388,134 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
             return _version;
         }
 
-        internal IntPtr InitBuilder(ref DdwafConfigStruct config) => _builderInitField(ref config);
+        internal IntPtr InitBuilder() => _builderInitField();
 
-        internal bool BuilderAddOrUpdateConfig(IntPtr builder, string path, ref DdwafObjectStruct config, ref DdwafObjectStruct diagnostics) => _builderAddOrUpdateConfigField(builder, path, (uint)path.Length, ref config, ref diagnostics);
+        internal bool BuilderAddOrUpdateConfig(IntPtr builder, string path, ref DdwafObjectStruct config, ref DdwafObjectStruct diagnostics)
+        {
+            var pathBytes = GetConfigPathBytes(path, out var pathLen);
+            return _builderAddOrUpdateConfigField(builder, pathBytes, pathLen, ref config, ref diagnostics);
+        }
 
-        internal bool BuilderRemoveConfig(IntPtr builder, string path) => _builderRemoveConfigDelegate(builder, path, (uint)path.Length);
+        internal bool BuilderRemoveConfig(IntPtr builder, string path)
+        {
+            var pathBytes = GetConfigPathBytes(path, out var pathLen);
+            return _builderRemoveConfigDelegate(builder, pathBytes, pathLen);
+        }
 
         internal IntPtr BuilderBuildInstance(IntPtr builder) => _builderBuildInstanceDelegate(builder);
 
-        internal IntPtr InitContext(IntPtr powerwafHandle) => _initContextField(powerwafHandle);
+        /// <summary>
+        /// Releases a builder and every configuration it holds. Any WAF instance already built from it
+        /// stays valid, as instances own their own copy of the ruleset.
+        /// </summary>
+        internal void DestroyBuilder(IntPtr builder) => _builderDestroyDelegate(builder);
 
         /// <summary>
-        /// WARNING: do not dispose newArgs until the Context is discarded as well
+        /// Converts a builder configuration path to the bytes libddwaf expects. The native side takes
+        /// the path as a length delimited byte string (<c>std::string_view{path, path_len}</c>), so the
+        /// length has to be a byte count: a character count would truncate, or overrun, any path that
+        /// isn't pure ASCII. Encoding it ourselves also keeps the bytes identical on every platform,
+        /// which matters because paths are compared byte for byte when a configuration is removed.
+        /// </summary>
+        private static byte[] GetConfigPathBytes(string path, out uint length)
+        {
+            var bytes = Encoding.UTF8.GetBytes(path);
+            length = (uint)bytes.Length;
+            return bytes;
+        }
+
+        /// <summary>
+        /// Creates an evaluation context. The output allocator given here is the one libddwaf uses to
+        /// allocate every eval result, so results must be released with the same allocator.
+        /// </summary>
+        /// <param name="powerwafHandle">the waf handle</param>
+        /// <returns>the context handle, or <see cref="IntPtr.Zero"/> on failure</returns>
+        internal IntPtr InitContext(IntPtr powerwafHandle) => _initContextField(powerwafHandle, DefaultAllocator);
+
+        /// <summary>
+        /// Evaluates persistent data on the context.
+        /// WARNING: the data is retained by the context, so it must stay alive until the context is
+        /// destroyed. We deliberately pass a null allocator so that libddwaf never frees it: ownership
+        /// of the input buffers stays with the encoder, which releases them through IEncodeResult.
         /// </summary>
         /// <param name="context">waf context, can sustain multiple runs, args are cached</param>
-        /// <param name="rawPersistentData">these pointers SHOULD remain alive until the context is disposed</param>
-        /// <param name="rawEphemeralData">these pointers are not cached so can be disposed</param>
-        /// <param name="result">Result</param>
+        /// <param name="data">these pointers SHOULD remain alive until the context is disposed</param>
+        /// <param name="result">Result, allocated with the context's output allocator</param>
         /// <param name="timeLeftInUs">timeout</param>
         /// <returns>Return waf code</returns>
-        internal unsafe WafReturnCode Run(IntPtr context, DdwafObjectStruct* rawPersistentData, DdwafObjectStruct* rawEphemeralData, ref DdwafObjectStruct result, ulong timeLeftInUs)
-            => _runField(context, rawPersistentData, rawEphemeralData, ref result, timeLeftInUs);
+        internal unsafe WafReturnCode ContextEval(IntPtr context, DdwafObjectStruct* data, ref DdwafObjectStruct result, ulong timeLeftInUs)
+            => _contextEvalField(context, data, IntPtr.Zero, ref result, timeLeftInUs);
+
+        internal IntPtr SubcontextInit(IntPtr context) => _subcontextInitField(context);
+
+        /// <summary>
+        /// Evaluates data on a subcontext, which is how ephemeral data is modelled since libddwaf 2.0.
+        /// The same null allocator rule as <see cref="ContextEval"/> applies: the data must outlive the
+        /// subcontext and is freed by us, not by libddwaf.
+        /// </summary>
+        /// <param name="subcontext">waf subcontext</param>
+        /// <param name="data">these pointers SHOULD remain alive until the subcontext is destroyed</param>
+        /// <param name="result">Result, allocated with the parent context's output allocator</param>
+        /// <param name="timeLeftInUs">timeout</param>
+        /// <returns>Return waf code</returns>
+        internal unsafe WafReturnCode SubcontextEval(IntPtr subcontext, DdwafObjectStruct* data, ref DdwafObjectStruct result, ulong timeLeftInUs)
+            => _subcontextEvalField(subcontext, data, IntPtr.Zero, ref result, timeLeftInUs);
 
         internal void Destroy(IntPtr wafHandle) => _destroyField(wafHandle);
 
         public void ContextDestroy(IntPtr handle) => _contextDestroyField(handle);
 
-        public void ObjectFree(ref DdwafObjectStruct input) => _freeObjectField(ref input);
+        public void SubcontextDestroy(IntPtr handle) => _subcontextDestroyField(handle);
 
-        internal IntPtr ObjectArrayGetIndex(ref DdwafObjectStruct array, long index) => _objectArrayGetIndex(ref array, index);
+        /// <summary>
+        /// Releases an object and everything it owns. The allocator must be the one the object was
+        /// built with, otherwise the heap is corrupted.
+        /// </summary>
+        public void ObjectDestroy(ref DdwafObjectStruct input, IntPtr alloc) => _objectDestroyField(ref input, alloc);
 
-        internal DdwafObjectStruct ObjectInvalid()
-        {
-            var item = new DdwafObjectStruct();
-            _objectInvalidField(ref item);
-            return item;
-        }
+        /// <summary>
+        /// Releases an object allocated by libddwaf on our behalf (an eval result or diagnostics),
+        /// all of which use the default allocator.
+        /// </summary>
+        public void ObjectDestroy(ref DdwafObjectStruct input) => _objectDestroyField(ref input, DefaultAllocator);
 
-        internal DdwafObjectStruct ObjectStringLength(string s, ulong length)
-        {
-            var item = new DdwafObjectStruct();
-            _objectStringLengthField(ref item, s, length);
-            return item;
-        }
+        internal unsafe void ObjectSetInvalid(DdwafObjectStruct* obj) => _objectSetInvalidField(obj);
 
-        internal DdwafObjectStruct ObjectBool(bool b)
-        {
-            var item = new DdwafObjectStruct();
-            _objectBoolField(ref item, b);
-            return item;
-        }
+        internal unsafe void ObjectSetNull(DdwafObjectStruct* obj) => _objectSetNullField(obj);
 
-        internal DdwafObjectStruct ObjectLong(long l)
-        {
-            var item = new DdwafObjectStruct();
-            _objectLongField(ref item, l);
-            return item;
-        }
+        /// <summary>
+        /// Sets a string value. libddwaf copies the bytes, inlining them in the object itself when
+        /// there are 14 or fewer (a small string, which needs no allocation).
+        /// </summary>
+        /// <param name="obj">the object to write into</param>
+        /// <param name="utf8Bytes">the UTF-8 bytes of the string</param>
+        /// <param name="length">the number of bytes to copy, which must not exceed <paramref name="utf8Bytes"/></param>
+        internal unsafe void ObjectSetString(DdwafObjectStruct* obj, byte[] utf8Bytes, uint length) => _objectSetStringField(obj, utf8Bytes, length, DefaultAllocator);
 
-        internal DdwafObjectStruct ObjectUlong(ulong l)
-        {
-            var item = new DdwafObjectStruct();
-            _objectUlongField(ref item, l);
-            return item;
-        }
+        internal unsafe void ObjectSetBool(DdwafObjectStruct* obj, bool value) => _objectSetBoolField(obj, value);
 
-        internal DdwafObjectStruct ObjectDouble(double b)
-        {
-            var item = new DdwafObjectStruct();
-            _objectDoubleField(ref item, b);
-            return item;
-        }
+        internal unsafe void ObjectSetSigned(DdwafObjectStruct* obj, long value) => _objectSetSignedField(obj, value);
 
-        internal DdwafObjectStruct ObjectNull()
-        {
-            var item = new DdwafObjectStruct();
-            _objectNullField(ref item);
-            return item;
-        }
+        internal unsafe void ObjectSetUnsigned(DdwafObjectStruct* obj, ulong value) => _objectSetUnsignedField(obj, value);
 
-        internal DdwafObjectStruct ObjectArray()
-        {
-            var item = new DdwafObjectStruct();
-            _objectArrayField(ref item);
-            return item;
-        }
+        internal unsafe void ObjectSetFloat(DdwafObjectStruct* obj, double value) => _objectSetFloatField(obj, value);
 
-        internal DdwafObjectStruct ObjectMap()
-        {
-            var item = new DdwafObjectStruct();
-            _objectMapField(ref item);
-            return item;
-        }
+        internal unsafe void ObjectSetArray(DdwafObjectStruct* obj, ushort capacity) => _objectSetArrayField(obj, capacity, DefaultAllocator);
 
-        internal bool ObjectArrayAdd(ref DdwafObjectStruct array, ref DdwafObjectStruct entry) => _objectArrayAddField(ref array, ref entry);
+        internal unsafe void ObjectSetMap(DdwafObjectStruct* obj, ushort capacity) => _objectSetMapField(obj, capacity, DefaultAllocator);
 
-        // Setting entryNameLength to 0 will result in the entryName length being re-computed with strlen
-        internal bool ObjectMapAdd(ref DdwafObjectStruct map, string entryName, ulong entryNameLength, ref DdwafObjectStruct entry) => Environment.Is64BitProcess ? _objectMapAddFieldX64!(ref map, entryName, entryNameLength, ref entry) : _objectMapAddFieldX86!(ref map, entryName, (uint)entryNameLength, ref entry);
+        /// <summary>
+        /// Appends an element to an array and returns a pointer to the (uninitialised) slot to fill in.
+        /// </summary>
+        /// <returns>the slot to write the value into, or null if the array is full</returns>
+        internal unsafe DdwafObjectStruct* ObjectInsert(DdwafObjectStruct* array) => _objectInsertField(array, DefaultAllocator);
+
+        /// <summary>
+        /// Adds a key to a map and returns a pointer to the (uninitialised) value slot to fill in.
+        /// The key is copied by libddwaf.
+        /// </summary>
+        /// <returns>the value slot to write into, or null if the map is full</returns>
+        internal unsafe DdwafObjectStruct* ObjectInsertKey(DdwafObjectStruct* map, byte[] utf8Key, uint length) => _objectInsertKeyField(map, utf8Key, length, DefaultAllocator);
 
         private void LoggingCallback(
             DDWAF_LOG_LEVEL level,
@@ -421,18 +528,18 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
             var location = $"[{function}]{file}({line})";
             switch (level)
             {
-                case DDWAF_LOG_LEVEL.DDWAF_TRACE:
-                case DDWAF_LOG_LEVEL.DDWAF_DEBUG:
+                case DDWAF_LOG_LEVEL.DDWAF_LOG_TRACE:
+                case DDWAF_LOG_LEVEL.DDWAF_LOG_DEBUG:
                     Log.Debug("{Level}: {Location}: {Message}", level, location, message);
                     break;
-                case DDWAF_LOG_LEVEL.DDWAF_INFO:
+                case DDWAF_LOG_LEVEL.DDWAF_LOG_INFO:
                     Log.Information("{Level}: {Location}: {Message}", level, location, message);
                     break;
-                case DDWAF_LOG_LEVEL.DDWAF_WARN:
+                case DDWAF_LOG_LEVEL.DDWAF_LOG_WARN:
                     Log.Warning("{Level}: {Location}: {Message}", level, location, message);
                     break;
-                case DDWAF_LOG_LEVEL.DDWAF_ERROR:
-                case DDWAF_LOG_LEVEL.DDWAF_AFTER_LAST:
+                case DDWAF_LOG_LEVEL.DDWAF_LOG_ERROR:
+                case DDWAF_LOG_LEVEL.DDWAF_LOG_OFF:
                     Log.Error("{Level}: {Location}: {Message}", level, location, message);
                     break;
                 default:

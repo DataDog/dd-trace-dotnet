@@ -18,38 +18,68 @@ if [ ${#converted_files[@]} -eq 0 ]; then
     exit 1
 fi
 
-upload_failed=false
+result_dir=$(mktemp -d)
+trap 'rm -rf "$result_dir"' EXIT
 
-for CONVERTED_JSON in "${converted_files[@]}"; do
-    echo "Uploading $(basename "$CONVERTED_JSON") to Benchmarking Platform..."
+upload_one() {
+    local file="$1" result_file="$2"
+    local basename
+    basename=$(basename "$file")
 
-    set +e
-    response=$(curl --retry 3 --retry-max-time 300 \
+    echo "Uploading $basename to Benchmarking Platform..."
+
+    local response status_code response_body curl_exit=0
+    response=$(curl --retry 3 --retry-all-errors --retry-max-time 300 \
         -s -w "\n%{http_code}" \
-        --form file=@"$CONVERTED_JSON" \
-        "https://benchmarking-service.us1.prod.dog/benchmarks/upload/$CI_PROJECT_NAME?baseline_commit_sha=${BASELINE_CI_COMMIT_SHORT_SHA:-}&baseline_ci_pipeline_id=${BASELINE_CI_PIPELINE_ID:-}")
-    curl_exit=$?
-    set -e
+        --form file=@"$file" \
+        "https://benchmarking-service.us1.prod.dog/benchmarks/upload/$CI_PROJECT_NAME?baseline_commit_sha=${BASELINE_CI_COMMIT_SHORT_SHA:-}&baseline_ci_pipeline_id=${BASELINE_CI_PIPELINE_ID:-}") || curl_exit=$?
 
-    STATUS_CODE=$(echo "$response" | tail -n1)
-    RESPONSE_BODY=$(echo "$response" | head -n-1)
+    status_code=$(echo "$response" | tail -n1)
+    response_body=$(echo "$response" | head -n-1)
 
     if [ $curl_exit -ne 0 ]; then
-        echo "WARNING: curl failed (exit $curl_exit) while uploading $(basename "$CONVERTED_JSON")"
-        upload_failed=true
-        continue
+        echo "WARNING: curl failed (exit $curl_exit) while uploading $basename"
+        echo "fail" > "$result_file"
+        return
     fi
 
-    if [ "$STATUS_CODE" -ne 200 ]; then
-        echo "WARNING: Upload of $(basename "$CONVERTED_JSON") failed with status $STATUS_CODE"
-        if [ -n "$RESPONSE_BODY" ]; then
-            echo "  Response: $RESPONSE_BODY"
+    if [ "$status_code" -ne 200 ]; then
+        echo "WARNING: Upload of $basename failed with status $status_code"
+        if [ -n "$response_body" ]; then
+            echo "  Response: $response_body"
         fi
-        upload_failed=true
-        continue
+        echo "fail" > "$result_file"
+        return
     fi
 
-    echo "  Uploaded successfully."
+    echo "Uploaded $basename successfully."
+    echo "ok" > "$result_file"
+}
+
+MAX_PARALLEL=4
+
+pids=()
+for CONVERTED_JSON in "${converted_files[@]}"; do
+    result_file="$result_dir/$(basename "$CONVERTED_JSON").result"
+    upload_one "$CONVERTED_JSON" "$result_file" &
+    pids+=($!)
+
+    if (( ${#pids[@]} >= MAX_PARALLEL )); then
+        wait "${pids[0]}" || true
+        pids=("${pids[@]:1}")
+    fi
+done
+
+for pid in "${pids[@]}"; do
+    wait "$pid" || true
+done
+
+upload_failed=false
+for result_file in "$result_dir"/*.result; do
+    if [ "$(cat "$result_file" 2>/dev/null)" != "ok" ]; then
+        upload_failed=true
+        break
+    fi
 done
 
 if [ "$upload_failed" = true ]; then

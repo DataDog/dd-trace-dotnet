@@ -680,6 +680,7 @@ namespace iast
             }
         }
 
+        bool anyAspectCallInserted = false;
         if (instructionsToProcess.size() > 0)
         {
             for (auto instructionToProcess : instructionsToProcess)
@@ -689,7 +690,10 @@ namespace iast
                 //Replace call function with aspect
 
                 mdToken memberRef = GetAspectMemberRef(methodSpec);
-                if (memberRef == 0) { continue; } //Disabled Spot
+                if (memberRef == 0) { continue; } //Disabled Spot: no member ref means the module couldn't be
+                                                   //written to (e.g. writable metadata was refused), so no
+                                                   //instruction is actually rewritten here.
+                anyAspectCallInserted = true;
                 if (instructionToProcess.behavior == AspectBehavior::InsertBefore)
                 {
                     aspectInstruction = processor->NewILInstr(CEE_CALL, memberRef, true);
@@ -759,7 +763,7 @@ namespace iast
             }
         }
 
-        return process;
+        return instructionsToProcess.size() > 0 ? anyAspectCallInserted : process;
     }
 
 //------------------------------------

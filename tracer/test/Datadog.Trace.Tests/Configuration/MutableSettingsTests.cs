@@ -600,36 +600,38 @@ namespace Datadog.Trace.Tests.Configuration
                 (httpServerErrorStatusCodes, newServerErrorKeyValue),
                 (deprecatedHttpServerErrorStatusCodes, deprecatedServerErrorKeyValue));
 
-            var errorLog = new OverrideErrorLog();
-            var settings = new TracerSettings(source, NullConfigurationTelemetry.Instance, errorLog);
             var tracerSettings = new TracerSettings(source);
             var mutable = GetMutableSettings(source, tracerSettings);
             var result = mutable.HttpServerErrorStatusCodes;
 
-            ValidateErrorStatusCodes(result, newServerErrorKeyValue, deprecatedServerErrorKeyValue, expectedServerErrorCodes);
+            ValidateErrorStatusCodes(result, expectedServerErrorCodes);
         }
 
         [Theory]
-        [InlineData(null, null, "400-499")]
-        [InlineData(null, "500", "500")]
-        [InlineData("555", null, "555")]
-        [InlineData("555", "525", "555")]
-        public void ValidateClientErrorStatusCodes(string newClientErrorKeyValue, string deprecatedClientErrorKeyValue, string expectedClientErrorCodes)
+        [InlineData(null, null, null, "400-499")]
+        [InlineData(null, null, "false", "400-499")]
+        [InlineData(null, null, "true", "400-599")]
+        [InlineData(null, "500", null, "500")]
+        [InlineData("555", null, null, "555")]
+        [InlineData("555", "525", null, "555")]
+        [InlineData(null, "500", "true", "500")]
+        [InlineData("555", null, "true", "555")]
+        [InlineData("555", "525", "true", "555")]
+        public void ValidateClientErrorStatusCodes(string newClientErrorKeyValue, string deprecatedClientErrorKeyValue, string otelSemanticsEnabled, string expectedClientErrorCodes)
         {
             const string httpClientErrorStatusCodes = "DD_TRACE_HTTP_CLIENT_ERROR_STATUSES";
             const string deprecatedHttpClientErrorStatusCodes = "DD_HTTP_CLIENT_ERROR_STATUSES";
 
             var source = CreateConfigurationSource(
                 (httpClientErrorStatusCodes, newClientErrorKeyValue),
-                (deprecatedHttpClientErrorStatusCodes, deprecatedClientErrorKeyValue));
+                (deprecatedHttpClientErrorStatusCodes, deprecatedClientErrorKeyValue),
+                (ConfigurationKeys.OpenTelemetry.OtelSemanticsEnabled, otelSemanticsEnabled));
 
-            var errorLog = new OverrideErrorLog();
-            var settings = new TracerSettings(source, NullConfigurationTelemetry.Instance, errorLog);
             var tracerSettings = new TracerSettings(source);
             var mutable = GetMutableSettings(source, tracerSettings);
             var result = mutable.HttpClientErrorStatusCodes;
 
-            ValidateErrorStatusCodes(result, newClientErrorKeyValue, deprecatedClientErrorKeyValue, expectedClientErrorCodes);
+            ValidateErrorStatusCodes(result, expectedClientErrorCodes);
         }
 
         [Fact]
@@ -650,20 +652,75 @@ namespace Datadog.Trace.Tests.Configuration
             mutable.GitCommitSha.Should().Be("42");
         }
 
-        [Fact]
-        public void OTELTagsSetsServiceInformation()
+        [Theory]
+        [InlineData("deployment.environment.name=stable_env", "stable_env")]
+        [InlineData("deployment.environment=legacy_env", "legacy_env")]
+        [InlineData("deployment.environment.name=stable_env,deployment.environment=legacy_env", "stable_env")]
+        [InlineData("deployment.environment=legacy_env,deployment.environment.name=stable_env", "stable_env")]
+        public void OTELTagsSetServiceInformation(string environmentAttributes, string expectedEnvironment)
         {
             var source = new NameValueConfigurationSource(new()
             {
-                { "OTEL_RESOURCE_ATTRIBUTES", "deployment.environment=datadog_env,service.name=datadog_service,service.version=datadog_version" },
+                { ConfigurationKeys.OpenTelemetry.ResourceAttributes, $"{environmentAttributes},service.name=datadog_service,service.version=datadog_version,custom.attribute=custom_value" },
+            });
+
+            var tracerSettings = new TracerSettings(source);
+            var mutable = GetMutableSettings(source, tracerSettings);
+
+            mutable.Environment.Should().Be(expectedEnvironment);
+            mutable.ServiceVersion.Should().Be("datadog_version");
+            mutable.ServiceName.Should().Be("datadog_service");
+            mutable.GlobalTags.Should().NotContainKey("deployment.environment.name");
+            mutable.GlobalTags.Should().NotContainKey("deployment.environment");
+            mutable.GlobalTags.Should().Contain("custom.attribute", "custom_value");
+        }
+
+        [Fact]
+        public void EmptyStableEnvironmentNameFallsBackToLegacyEnvironment()
+        {
+            var source = new NameValueConfigurationSource(new()
+            {
+                { ConfigurationKeys.OpenTelemetry.ResourceAttributes, "deployment.environment.name=,deployment.environment=legacy_env" },
+            });
+
+            var tracerSettings = new TracerSettings(source);
+            var mutable = GetMutableSettings(source, tracerSettings);
+
+            mutable.Environment.Should().Be("legacy_env");
+            mutable.GlobalTags.Should().NotContainKey("deployment.environment.name");
+            mutable.GlobalTags.Should().NotContainKey("deployment.environment");
+        }
+
+        [Fact]
+        public void EmptyStableEnvironmentNameWithNoLegacyEnvironmentIsUnset()
+        {
+            var source = new NameValueConfigurationSource(new()
+            {
+                { ConfigurationKeys.OpenTelemetry.ResourceAttributes, "deployment.environment.name=" },
+            });
+
+            var tracerSettings = new TracerSettings(source);
+            var mutable = GetMutableSettings(source, tracerSettings);
+
+            mutable.Environment.Should().BeNullOrEmpty();
+            mutable.GlobalTags.Should().NotContainKey("deployment.environment.name");
+        }
+
+        [Fact]
+        public void DDEnvTakesPrecedenceOverOTELTags()
+        {
+            var source = new NameValueConfigurationSource(new()
+            {
+                { ConfigurationKeys.Environment, "datadog_env" },
+                { ConfigurationKeys.OpenTelemetry.ResourceAttributes, "deployment.environment=legacy_env,deployment.environment.name=stable_env" },
             });
 
             var tracerSettings = new TracerSettings(source);
             var mutable = GetMutableSettings(source, tracerSettings);
 
             mutable.Environment.Should().Be("datadog_env");
-            mutable.ServiceVersion.Should().Be("datadog_version");
-            mutable.ServiceName.Should().Be("datadog_service");
+            mutable.GlobalTags.Should().NotContainKey("deployment.environment.name");
+            mutable.GlobalTags.Should().NotContainKey("deployment.environment");
         }
 
         [Fact]
@@ -764,19 +821,26 @@ namespace Datadog.Trace.Tests.Configuration
                 new OverrideErrorLog(),
                 tracerSettings);
 
-        private static void ValidateErrorStatusCodes(bool[] result, string newErrorKeyValue, string deprecatedErrorKeyValue, string expectedErrorRange)
+        /// <summary>
+        /// Asserts that <paramref name="result"/> marks exactly the status codes in
+        /// <paramref name="expectedErrorRange"/> as errors, and no others. Asserting the whole
+        /// array matters here: only checking the expected codes would still pass if a wider
+        /// default (such as the OTel client default of 400-599) leaked in.
+        /// </summary>
+        /// <param name="result">The parsed error status code array under test.</param>
+        /// <param name="expectedErrorRange">A single status code ("500") or an inclusive range ("400-499").</param>
+        private static void ValidateErrorStatusCodes(bool[] result, string expectedErrorRange)
         {
-            if (newErrorKeyValue is not null || deprecatedErrorKeyValue is not null)
+            var statusCodeLimitsRange = expectedErrorRange.Split('-');
+            var lowerBound = int.Parse(statusCodeLimitsRange[0]);
+            var upperBound = statusCodeLimitsRange.Length > 1 ? int.Parse(statusCodeLimitsRange[1]) : lowerBound;
+
+            for (var statusCode = 0; statusCode < result.Length; statusCode++)
             {
-                Assert.True(result[int.Parse(expectedErrorRange)]);
-            }
-            else
-            {
-                var statusCodeLimitsRange = expectedErrorRange.Split('-');
-                for (var i = int.Parse(statusCodeLimitsRange[0]); i <= int.Parse(statusCodeLimitsRange[1]); i++)
-                {
-                    Assert.True(result[i]);
-                }
+                var isExpectedToBeAnError = statusCode >= lowerBound && statusCode <= upperBound;
+                result[statusCode]
+                   .Should()
+                   .Be(isExpectedToBeAnError, "status code {0} should{1} be treated as an error for the range '{2}'", statusCode, isExpectedToBeAnError ? string.Empty : " not", expectedErrorRange);
             }
         }
     }

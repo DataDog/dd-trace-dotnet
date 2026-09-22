@@ -80,10 +80,12 @@
   <Target Name="RemoveDuplicate" AfterTargets="ComputeFilesToPublish" BeforeTargets="_HandleFileConflictsForPublish">
 
     <!-- Required for StrongNamer: https://github.com/dsplaisted/strongnamer/issues/61 -->
+    <!-- $(IntermediateOutputPath) is the fully-resolved obj path (with pivot/TFM/RID applied), -->
+    <!-- so it works for both the legacy obj\<Config>\<TFM>\<RID>\ layout and UseArtifactsOutput. -->
     <Message Text="Removing $(DuplicateFileToRemove) from publish output" Importance="high" />
     <ItemGroup>
-      <ResolvedFileToPublish Remove="$(BaseIntermediateOutputPath)$(Configuration)\$(TargetFramework)\$(RuntimeIdentifier)\linked\Spectre.Console.dll" />
-      <ResolvedFileToPublish Remove="$(BaseIntermediateOutputPath)$(Configuration)\$(TargetFramework)\$(RuntimeIdentifier)\linked\ILVerification.dll" />
+      <ResolvedFileToPublish Remove="$(IntermediateOutputPath)linked\Spectre.Console.dll" />
+      <ResolvedFileToPublish Remove="$(IntermediateOutputPath)linked\ILVerification.dll" />
     </ItemGroup>
   </Target>
 </Project>

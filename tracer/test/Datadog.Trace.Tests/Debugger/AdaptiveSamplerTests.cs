@@ -113,4 +113,37 @@ public class AdaptiveSamplerTests
         Assert.Equal(expected: 3.0, state.TotalAverage);
         Assert.Equal(2.0 / 3.0, state.Probability);
     }
+
+    [Fact]
+    public void SetRate_UpdatesBudgetWithoutResettingHistory()
+    {
+        const int initialRate = 2;
+        const int budgetLookback = 4;
+        var sampler = new AdaptiveSampler(WindowDuration, samplesPerWindow: initialRate, averageLookback: 1, budgetLookback: budgetLookback, rollWindowCallback: null);
+
+        // Accumulate running stats; SetRate must preserve them (not behave like a re-create).
+        sampler.Keep();
+        sampler.Drop();
+        sampler.RollWindow();
+
+        var beforeUpdate = sampler.GetInternalState();
+        Assert.NotEqual(expected: 0.0, beforeUpdate.TotalAverage);
+
+        const int newRate = 50;
+        sampler.SetRate(newRate);
+
+        var afterUpdate = sampler.GetInternalState();
+        Assert.Equal(newRate + (budgetLookback * newRate), afterUpdate.Budget);
+        Assert.Equal(beforeUpdate.TotalAverage, afterUpdate.TotalAverage);
+        Assert.Equal(beforeUpdate.Probability, afterUpdate.Probability);
+    }
+
+    [Fact]
+    public void Dispose_IsIdempotentAndStopsTimer()
+    {
+        var sampler = new AdaptiveSampler(WindowDuration, samplesPerWindow: 1, averageLookback: 1, budgetLookback: 1, rollWindowCallback: null);
+
+        sampler.Dispose();
+        sampler.Dispose();
+    }
 }

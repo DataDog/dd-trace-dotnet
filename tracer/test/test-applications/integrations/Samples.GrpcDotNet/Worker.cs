@@ -288,6 +288,6 @@ public class Worker : BackgroundService
         };
     }
 
-    private static IDisposable CreateScope([CallerMemberName] string? name = null)
+    private static IDisposable CreateScope([CallerMemberName] string name = "")
         => SampleHelpers.CreateScope(name);
 }

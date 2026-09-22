@@ -43,6 +43,7 @@ internal partial class TestSuiteSpanTags : TestModuleSpanTags
         CIJobUrl = moduleTags.CIJobUrl;
         CIPipelineId = moduleTags.CIPipelineId;
         CIPipelineName = moduleTags.CIPipelineName;
+        CIPipelineDisplayName = moduleTags.CIPipelineDisplayName;
         CIPipelineNumber = moduleTags.CIPipelineNumber;
         CIPipelineUrl = moduleTags.CIPipelineUrl;
         CIWorkspacePath = moduleTags.CIWorkspacePath;
@@ -54,6 +55,7 @@ internal partial class TestSuiteSpanTags : TestModuleSpanTags
         GitCommitCommitterName = moduleTags.GitCommitCommitterName;
         Command = moduleTags.Command;
         WorkingDirectory = moduleTags.WorkingDirectory;
+        IntelligentTestRunnerTestsSkippingEnabled = moduleTags.IntelligentTestRunnerTestsSkippingEnabled;
     }
 
     public ulong SuiteId { get; set; }

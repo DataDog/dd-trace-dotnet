@@ -13,7 +13,7 @@ using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.Debugger.Upload
 {
-    internal sealed class DiagnosticsUploadApi : DebuggerUploadApiBase
+    internal sealed class DiagnosticsUploadApi : DebuggerUploadApiBase, IBatchUploadApi
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<DiagnosticsUploadApi>();
 
@@ -38,7 +38,7 @@ namespace Datadog.Trace.Debugger.Upload
             return new DiagnosticsUploadApi(apiRequestFactory, discoveryService, gitMetadataTagsProvider);
         }
 
-        public override async Task<bool> SendBatchAsync(ArraySegment<byte> data)
+        public async Task<bool> SendBatchAsync(ArraySegment<byte> data)
         {
             var uri = BuildUri();
             if (string.IsNullOrEmpty(uri))

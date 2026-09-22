@@ -4,7 +4,9 @@
 // </copyright>
 #nullable enable
 
+using System;
 using System.ComponentModel;
+using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.DuckTyping;
@@ -27,7 +29,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2;
 [EditorBrowsable(EditorBrowsableState.Never)]
 public static class TestMethodRunnerExecuteTestIntegration
 {
-    private static SkipTestMethodExecutor? _itrSkipTestMethodExecutor;
     private static SkipTestMethodExecutor? _disabledSkipTestMethodExecutor;
 
     internal static CallTargetState OnMethodBegin<TTarget, TTestMethod>(TTarget instance, TTestMethod testMethod)
@@ -39,26 +40,41 @@ public static class TestMethodRunnerExecuteTestIntegration
         if (MsTestIntegration.IsEnabled &&
             instance.TestMethodInfo is { TestMethodOptions: { Executor: { } executor } } testMethodInfo)
         {
+            var executorType = executor.GetType();
             SkipTestMethodExecutor? newExecutor = null;
+            SkippableTest? skippableTest = null;
+            var testManagementProperties = MsTestIntegration.GetTestProperties(testMethod);
 
-            if (MsTestIntegration.ShouldSkip(testMethod, out _, out _))
+            if (Common.IsDisabledByTestManagement(testManagementProperties))
             {
-                _itrSkipTestMethodExecutor ??= new SkipTestMethodExecutor.SyncImpl(executor.GetType().Assembly, IntelligentTestRunnerTags.SkippedByReason);
-                newExecutor = _itrSkipTestMethodExecutor;
-            }
-            else if (MsTestIntegration.GetTestProperties(testMethod) is { Disabled: true, AttemptToFix: false })
-            {
-                _disabledSkipTestMethodExecutor ??= new SkipTestMethodExecutor.SyncImpl(executor.GetType().Assembly, "Flaky test is disabled by Datadog.");
+                _disabledSkipTestMethodExecutor ??= new SkipTestMethodExecutor.SyncImpl(executorType, "Flaky test is disabled by Datadog.");
                 newExecutor = _disabledSkipTestMethodExecutor;
+            }
+            else if (Common.CanApplyItrSkip(testManagementProperties) &&
+                     MsTestIntegration.ShouldSkip(testMethod, out _, out _, out skippableTest))
+            {
+                newExecutor = new SkipTestMethodExecutor.SyncImpl(
+                    executorType,
+                    IntelligentTestRunnerTags.SkippedByReason,
+                    recordCoverageBackfillSkip: true,
+                    skippableTest: skippableTest);
             }
 
             if (newExecutor is not null)
             {
-                testMethodInfo.TestMethodOptions.Executor = DuckType.CreateReverse(executor.GetType(), newExecutor);
+                var replacementExecutor = DuckType.CreateReverse(newExecutor.TestMethodAttributeType, newExecutor);
+                testMethodInfo.TestMethodOptions.Executor = replacementExecutor;
+                return TestMethodExecutorRestore.Create(testMethodInfo.TestMethodOptions, executor, replacementExecutor);
             }
         }
 
         return CallTargetState.GetDefault();
+    }
+
+    internal static CallTargetReturn<TReturn?> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn? returnValue, Exception? exception, in CallTargetState state)
+    {
+        TestMethodExecutorRestore.Restore(state);
+        return new CallTargetReturn<TReturn?>(returnValue);
     }
 }
 
@@ -81,7 +97,7 @@ public static class TestMethodRunnerExecuteTestIntegration
     ReturnTypeName = "System.Threading.Tasks.Task`1[Microsoft.VisualStudio.TestTools.UnitTesting.TestResult[]]",
     ParameterTypeNames = ["Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestMethodInfo"],
     MinimumVersion = "4.0.0",
-    MaximumVersion = "4.*.*",
+    MaximumVersion = "4.2.*",
     IntegrationName = MsTestIntegration.IntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
@@ -89,7 +105,6 @@ public static class TestMethodRunnerExecuteTestIntegration
 public static class TestMethodRunnerExecuteTestIntegrationV3_9
 #pragma warning restore SA1402
 {
-    private static SkipTestMethodExecutor? _itrSkipTestMethodExecutor;
     private static SkipTestMethodExecutor? _disabledSkipTestMethodExecutor;
 
     internal static CallTargetState OnMethodBegin<TTarget, TTestMethod>(TTarget instance, TTestMethod testMethod)
@@ -101,25 +116,80 @@ public static class TestMethodRunnerExecuteTestIntegrationV3_9
         if (MsTestIntegration.IsEnabled &&
             instance.TestMethodInfo is { Executor: { } executor } testMethodInfo)
         {
+            var executorType = executor.GetType();
             SkipTestMethodExecutor? newExecutor = null;
+            SkippableTest? skippableTest = null;
+            var testManagementProperties = MsTestIntegration.GetTestProperties(testMethod);
 
-            if (MsTestIntegration.ShouldSkip(testMethod, out _, out _))
+            if (Common.IsDisabledByTestManagement(testManagementProperties))
             {
-                _itrSkipTestMethodExecutor ??= new SkipTestMethodExecutor.AsyncImpl(executor.GetType().Assembly, IntelligentTestRunnerTags.SkippedByReason);
-                newExecutor = _itrSkipTestMethodExecutor;
-            }
-            else if (MsTestIntegration.GetTestProperties(testMethod) is { Disabled: true, AttemptToFix: false })
-            {
-                _disabledSkipTestMethodExecutor ??= new SkipTestMethodExecutor.AsyncImpl(executor.GetType().Assembly, "Flaky test is disabled by Datadog.");
+                _disabledSkipTestMethodExecutor ??= SkipTestMethodExecutor.Create(executorType, "Flaky test is disabled by Datadog.");
                 newExecutor = _disabledSkipTestMethodExecutor;
+            }
+            else if (Common.CanApplyItrSkip(testManagementProperties) &&
+                     MsTestIntegration.ShouldSkip(testMethod, out _, out _, out skippableTest))
+            {
+                newExecutor = SkipTestMethodExecutor.Create(
+                    executorType,
+                    IntelligentTestRunnerTags.SkippedByReason,
+                    recordCoverageBackfillSkip: true,
+                    skippableTest: skippableTest);
             }
 
             if (newExecutor is not null)
             {
-                testMethodInfo.Executor = DuckType.CreateReverse(executor.GetType(), newExecutor);
+                var replacementExecutor = DuckType.CreateReverse(newExecutor.TestMethodAttributeType, newExecutor);
+                testMethodInfo.Executor = replacementExecutor;
+                return TestMethodExecutorRestore.Create(testMethodInfo, executor, replacementExecutor);
             }
         }
 
         return CallTargetState.GetDefault();
     }
+
+    internal static CallTargetReturn<TReturn?> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn? returnValue, Exception? exception, in CallTargetState state)
+    {
+        if (exception is not null)
+        {
+            TestMethodExecutorRestore.Restore(state);
+        }
+
+        return new CallTargetReturn<TReturn?>(returnValue);
+    }
+
+    internal static TReturn? OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn? returnValue, Exception? exception, in CallTargetState state)
+    {
+        TestMethodExecutorRestore.Restore(state);
+        return returnValue;
+    }
+}
+
+/// <summary>
+/// Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestMethodRunner.ExecuteTestAsync calltarget instrumentation
+/// </summary>
+[InstrumentMethod(
+    AssemblyNames = ["MSTestAdapter.PlatformServices"],
+    TypeName = "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestMethodRunner",
+    MethodName = "ExecuteTestAsync",
+    ReturnTypeName = "System.Threading.Tasks.Task`1[Microsoft.VisualStudio.TestTools.UnitTesting.TestResult[]]",
+    ParameterTypeNames = ["Microsoft.VisualStudio.TestPlatform.MSTestAdapter.PlatformServices.Interface.ITestContext", "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestMethodInfo"],
+    MinimumVersion = "4.3.0",
+    MaximumVersion = "4.*.*",
+    IntegrationName = MsTestIntegration.IntegrationName)]
+[Browsable(false)]
+[EditorBrowsable(EditorBrowsableState.Never)]
+#pragma warning disable SA1402
+public static class TestMethodRunnerExecuteTestIntegrationV4_3
+#pragma warning restore SA1402
+{
+    internal static CallTargetState OnMethodBegin<TTarget, TTestContext, TTestMethod>(TTarget instance, TTestContext testContext, TTestMethod testMethod)
+        where TTarget : ITestMethodRunnerV3_9
+        where TTestMethod : ITestMethod
+        => TestMethodRunnerExecuteTestIntegrationV3_9.OnMethodBegin(instance, testMethod);
+
+    internal static CallTargetReturn<TReturn?> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn? returnValue, Exception? exception, in CallTargetState state)
+        => TestMethodRunnerExecuteTestIntegrationV3_9.OnMethodEnd(instance, returnValue, exception, in state);
+
+    internal static TReturn? OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn? returnValue, Exception? exception, in CallTargetState state)
+        => TestMethodRunnerExecuteTestIntegrationV3_9.OnAsyncMethodEnd(instance, returnValue, exception, in state);
 }

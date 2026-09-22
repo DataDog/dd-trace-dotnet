@@ -13,6 +13,7 @@ using System.Net;
 using System.Threading;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.OpenTelemetry;
 using Datadog.Trace.Propagators;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.WebRequest;
@@ -95,15 +96,17 @@ public sealed class HttpWebRequest_EndGetResponseV9_Integration
                     if (returnValue is HttpWebResponse response)
                     {
                         scope.Span.SetHttpStatusCode((int)response.StatusCode, isServer: false, Tracer.Instance.CurrentTraceSettings.Settings);
+                        HttpSemanticConventions.SetHttpClientResponseValues(scope.Span, response.ProtocolVersion);
                         scope.Dispose();
                     }
                     else if (exception is WebException { Status: WebExceptionStatus.ProtocolError, Response: HttpWebResponse exceptionResponse })
                     {
                         // Add the exception tags without setting the Error property
                         // SetHttpStatusCode will mark the span with an error if the StatusCode is within the configured range
-                        scope.Span.SetExceptionTags(exception);
+                        scope.Span.SetException(exception, markAsError: false);
 
                         scope.Span.SetHttpStatusCode((int)exceptionResponse.StatusCode, isServer: false, Tracer.Instance.CurrentTraceSettings.Settings);
+                        HttpSemanticConventions.SetHttpClientResponseValues(scope.Span, exceptionResponse.ProtocolVersion);
                         scope.Dispose();
                     }
                     else

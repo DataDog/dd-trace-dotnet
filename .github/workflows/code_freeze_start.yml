@@ -23,9 +23,9 @@ jobs:
 
     steps:
       - name: Clone dd-trace-dotnet repository
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - uses: octokit/request-action@786351db496fa66730d8faa09ef279108da175a3 # v2.x
+      - uses: octokit/request-action@b91aabaa861c777dcdb14e2387e30eddf04619ae # v3.0.0
         name: 'Open Code Freeze Milestone'
         id: milestones
         if: github.event_name == 'workflow_dispatch'
@@ -46,7 +46,7 @@ jobs:
 
       - name: Get GitHub Token via dd-octo-sts
         id: octo-sts
-        uses: DataDog/dd-octo-sts-action@96a25462dbcb10ebf0bfd6e2ccc917d2ab235b9a # v1.0.4
+        uses: DataDog/dd-octo-sts-action@c85802a58e202b7e764b5441e4378c76043c8108 # v1.0.5
         with:
           scope: DataDog/datadog-aas-extension
           policy: dd-trace-dotnet.github.deploy-aas-dev-apps

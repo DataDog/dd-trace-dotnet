@@ -14,6 +14,7 @@ using System.Net;
 using System.Runtime.Remoting.Channels;
 using System.Runtime.Remoting.Messaging;
 using Datadog.Trace.ClrProfiler.CallTarget;
+using Datadog.Trace.OpenTelemetry;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
 using Datadog.Trace.Util.Http;
@@ -72,6 +73,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Remoting.Client
             if (state.Scope?.Span is Span span && span.Tags is HttpTags httpTags && returnValue is HttpWebRequest request)
             {
                 var requestUri = request.RequestUri;
+
+                if (span.OpenTelemetrySemanticsEnabled)
+                {
+                    HttpSemanticConventions.SetHttpClientRequestValues(span, httpTags, request.Method, requestUri, Tracer.Instance.TracerManager.QueryStringManager);
+                    return new CallTargetReturn<TReturn>(returnValue);
+                }
+
                 var requestMethod = request.Method.ToUpperInvariant();
 
                 if (requestUri != null)

@@ -9,6 +9,8 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Threading;
+using System.Threading.Tasks;
 using Datadog.Trace.FeatureFlags;
 using OpenFeature.Constant;
 using OpenFeature.Model;
@@ -27,6 +29,29 @@ internal static class FeatureFlagsSdk
     [MethodImpl(MethodImplOptions.NoInlining)]
     public static bool IsAvailable() => false;
 
+    /// <summary>Gets a value indicating whether APM span enrichment is enabled.</summary>
+    /// <returns> True when the span-enrichment gate is on </returns>
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    internal static bool IsSpanEnrichmentEnabled() => false;
+
+    /// <summary>
+    /// Gets a value indicating whether flag configuration is currently held, so the provider can
+    /// resolve flags. Goes back to <c>false</c> when configuration is withdrawn.
+    /// </summary>
+    /// <returns> True while configuration is held </returns>
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    internal static bool HasConfiguration() => false;
+
+    /// <summary>
+    /// Activates flag configuration delivery and waits for the first configuration to arrive.
+    /// Delivery only starts here, because requesting configuration is billable and installing the
+    /// tracer alone must not do it.
+    /// </summary>
+    /// <param name="cancellationToken"> Cancellation token. OpenFeature 2.3.0 does not forward one through SetProviderAsync, so only a direct caller supplies it </param>
+    /// <returns> A task that completes once configuration has arrived or the initialization timeout has elapsed, and that faults when no source could start delivery at all </returns>
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    public static Task InitializeAsync(CancellationToken cancellationToken) => Task.CompletedTask;
+
     /// <summary> Installs an event handler to be fired when a new config has been received </summary>
     /// <param name="onNewConfig"> Action to be called when the event is fired </param>
     [MethodImpl(MethodImplOptions.NoInlining)]
@@ -43,6 +68,18 @@ internal static class FeatureFlagsSdk
         }
 
         return null;
+    }
+
+    /// <summary>Accumulates a single flag evaluation into the active root span's FFE span-enrichment state.</summary>
+    /// <param name="serialId"> Split serial id, or null when absent </param>
+    /// <param name="doLog"> Whether the allocation authorizes subject logging </param>
+    /// <param name="targetingKey"> Evaluation-context targeting key, or null </param>
+    /// <param name="hasVariant"> Whether the evaluation produced a non-empty variant </param>
+    /// <param name="flagKey"> The flag key (used for runtime defaults) </param>
+    /// <param name="value"> The evaluated value (used for runtime defaults) </param>
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    internal static void AccumulateSpanEnrichment(long? serialId, bool doLog, string? targetingKey, bool hasVariant, string flagKey, object? value)
+    {
     }
 
     public static ResolutionDetails<T> Resolve<T>(string flagKey, Trace.FeatureFlags.ValueType targetType, object? defaultValue, EvaluationContext? context) =>
@@ -86,7 +123,7 @@ internal static class FeatureFlagsSdk
             evaluation.FlagKey,
             (T)value,
             ToErrorType(evaluation.Reason, evaluation.Error),
-            evaluation.Reason.ToString(),
+            ReasonToLowerSnakeCase(evaluation.Reason),
             evaluation.Variant,
             evaluation.Error,
             ToMetadata(evaluation.FlagMetadata));
@@ -108,6 +145,21 @@ internal static class FeatureFlagsSdk
             _ => ErrorType.None,
         };
     }
+
+    // Converts EvaluationReason enum to lower_snake_case string for OpenFeature Reason field.
+    // Uses cached strings to avoid allocation.
+    private static string ReasonToLowerSnakeCase(Datadog.Trace.FeatureFlags.EvaluationReason reason) => reason switch
+    {
+        Datadog.Trace.FeatureFlags.EvaluationReason.Static => "static",
+        Datadog.Trace.FeatureFlags.EvaluationReason.Default => "default",
+        Datadog.Trace.FeatureFlags.EvaluationReason.TargetingMatch => "targeting_match",
+        Datadog.Trace.FeatureFlags.EvaluationReason.Split => "split",
+        Datadog.Trace.FeatureFlags.EvaluationReason.Disabled => "disabled",
+        Datadog.Trace.FeatureFlags.EvaluationReason.Cached => "cached",
+        Datadog.Trace.FeatureFlags.EvaluationReason.Unknown => "unknown",
+        Datadog.Trace.FeatureFlags.EvaluationReason.Error => "error",
+        _ => "unknown"
+    };
 
     private static ImmutableMetadata ToMetadata(IDictionary<string, string>? metadata)
     {

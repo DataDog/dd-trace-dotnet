@@ -15,6 +15,7 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Telemetry;
+using Datadog.Trace.Telemetry.Metrics;
 using static Datadog.Trace.Telemetry.Metrics.MetricTags;
 
 namespace Datadog.Trace.AppSec.Rasp;
@@ -34,6 +35,19 @@ internal static class RaspModule
         Irrelevant = 0,
         Success = 1,
         Failure = 2
+    }
+
+    /// <summary>
+    /// Why a RASP evaluation never reached the WAF. The values are the subset of the reasons defined
+    /// in RFC-1012 that can happen in .NET.
+    /// </summary>
+    internal enum SkipReason
+    {
+        /// <summary>The request this evaluation belongs to has already ended.</summary>
+        AfterRequest = 0,
+
+        /// <summary>The evaluation happened outside of any web request, or its context was not reachable.</summary>
+        OutOfRequest = 1,
     }
 
     private static RaspRuleType? TryGetAddressRuleType(string address)
@@ -88,6 +102,88 @@ internal static class RaspModule
         _ => null,
     };
 
+    private static RaspRuleTypeSkipped? TryGetAddressRuleTypeSkipped(string address, SkipReason reason)
+    => address switch
+    {
+        AddressesConstants.FileAccess => reason switch
+        {
+            SkipReason.AfterRequest => RaspRuleTypeSkipped.LfiAfterRequest,
+            SkipReason.OutOfRequest => RaspRuleTypeSkipped.LfiOutOfRequest,
+            _ => null,
+        },
+        AddressesConstants.DownstreamUrl => reason switch
+        {
+            SkipReason.AfterRequest => RaspRuleTypeSkipped.SsrfAfterRequest,
+            SkipReason.OutOfRequest => RaspRuleTypeSkipped.SsrfOutOfRequest,
+            _ => null,
+        },
+        AddressesConstants.DBStatement => reason switch
+        {
+            SkipReason.AfterRequest => RaspRuleTypeSkipped.SQlIAfterRequest,
+            SkipReason.OutOfRequest => RaspRuleTypeSkipped.SQlIOutOfRequest,
+            _ => null,
+        },
+        AddressesConstants.ShellInjection => reason switch
+        {
+            SkipReason.AfterRequest => RaspRuleTypeSkipped.CommandInjectionShellAfterRequest,
+            SkipReason.OutOfRequest => RaspRuleTypeSkipped.CommandInjectionShellOutOfRequest,
+            _ => null,
+        },
+        AddressesConstants.CommandInjection => reason switch
+        {
+            SkipReason.AfterRequest => RaspRuleTypeSkipped.CommandInjectionExecAfterRequest,
+            SkipReason.OutOfRequest => RaspRuleTypeSkipped.CommandInjectionExecOutOfRequest,
+            _ => null,
+        },
+        _ => null,
+    };
+
+    private static RaspError? TryGetRaspErrorTag(string address, WafError wafError)
+    => address switch
+    {
+        AddressesConstants.FileAccess => wafError switch
+        {
+            WafError.BindingError => RaspError.LfiBindingError,
+            WafError.Internal => RaspError.LfiInternal,
+            WafError.InvalidObject => RaspError.LfiInvalidObject,
+            WafError.InvalidArgument => RaspError.LfiInvalidArgument,
+            _ => null,
+        },
+        AddressesConstants.DownstreamUrl => wafError switch
+        {
+            WafError.BindingError => RaspError.SsrfBindingError,
+            WafError.Internal => RaspError.SsrfInternal,
+            WafError.InvalidObject => RaspError.SsrfInvalidObject,
+            WafError.InvalidArgument => RaspError.SsrfInvalidArgument,
+            _ => null,
+        },
+        AddressesConstants.DBStatement => wafError switch
+        {
+            WafError.BindingError => RaspError.SQlIBindingError,
+            WafError.Internal => RaspError.SQlIInternal,
+            WafError.InvalidObject => RaspError.SQlIInvalidObject,
+            WafError.InvalidArgument => RaspError.SQlIInvalidArgument,
+            _ => null,
+        },
+        AddressesConstants.ShellInjection => wafError switch
+        {
+            WafError.BindingError => RaspError.CommandInjectionShellBindingError,
+            WafError.Internal => RaspError.CommandInjectionShellInternal,
+            WafError.InvalidObject => RaspError.CommandInjectionShellInvalidObject,
+            WafError.InvalidArgument => RaspError.CommandInjectionShellInvalidArgument,
+            _ => null,
+        },
+        AddressesConstants.CommandInjection => wafError switch
+        {
+            WafError.BindingError => RaspError.CommandInjectionExecBindingError,
+            WafError.Internal => RaspError.CommandInjectionExecInternal,
+            WafError.InvalidObject => RaspError.CommandInjectionExecInvalidObject,
+            WafError.InvalidArgument => RaspError.CommandInjectionExecInvalidArgument,
+            _ => null,
+        },
+        _ => null,
+    };
+
     internal static void OnLfi(string file)
     {
         CheckVulnerability(new Dictionary<string, object> { [AddressesConstants.FileAccess] = file }, AddressesConstants.FileAccess);
@@ -134,12 +230,95 @@ internal static class RaspModule
 
         rootSpan??= Tracer.Instance.InternalActiveScope?.Root?.Span;
 
-        if (rootSpan is null || rootSpan.IsFinished || rootSpan.Type != SpanTypes.Web)
+        if (rootSpan is null || rootSpan.Type != SpanTypes.Web)
         {
+            RecordRaspSkipped(address, SkipReason.OutOfRequest);
+            return;
+        }
+
+        if (rootSpan.IsFinished)
+        {
+            RecordRaspSkipped(address, SkipReason.AfterRequest);
             return;
         }
 
         RunWafRasp(arguments, rootSpan, address);
+    }
+
+    internal static void RecordRaspOutcome(string address, WafOutcome outcome)
+        => RecordRaspOutcome(address, outcome, TelemetryFactory.Metrics);
+
+    /// <summary>
+    /// Turns the cause of a RASP evaluation that produced no result into its metric. This is the only
+    /// place that decides, so that context creation and the run itself cannot classify the same cause
+    /// differently.
+    /// </summary>
+    internal static void RecordRaspOutcome(string address, WafOutcome outcome, IMetricsTelemetryCollector metrics)
+    {
+        switch (outcome)
+        {
+            case WafOutcome.RequestEnded:
+                RecordRaspSkipped(address, SkipReason.AfterRequest, metrics);
+                break;
+
+            case WafOutcome.BindingFailed:
+                RecordRaspError(address, result: null, metrics);
+                break;
+
+            case WafOutcome.WafUnavailable:
+                // a WAF that is gone (disposed, replaced by an update, or never initialized) never got
+                // to evaluate anything, so counting it as a RASP error would turn every remote
+                // configuration update into a burst of phantom binding errors
+                break;
+
+            case WafOutcome.Success:
+                // the result carries the return code, so RecordRaspError classifies it instead
+                break;
+        }
+    }
+
+    internal static void RecordRaspSkipped(string address, SkipReason reason)
+        => RecordRaspSkipped(address, reason, TelemetryFactory.Metrics);
+
+    internal static void RecordRaspSkipped(string address, SkipReason reason, IMetricsTelemetryCollector metrics)
+    {
+        var ruleTypeSkipped = TryGetAddressRuleTypeSkipped(address, reason);
+
+        if (ruleTypeSkipped is null)
+        {
+            Log.Warning("RASP: Rule skipped type not found for address {Address} {Reason}", address, reason);
+            return;
+        }
+
+        metrics.RecordCountRaspRuleSkipped(ruleTypeSkipped.Value);
+    }
+
+    internal static void RecordRaspError(string address, IResult? result, IMetricsTelemetryCollector metrics)
+    {
+        // a timeout is already reported through rasp.timeout, and takes precedence over the return
+        // code, the same way it does in SecurityReporter.RecordWafTelemetry
+        if (result is { Timeout: true })
+        {
+            return;
+        }
+
+        // a null result means the WAF never produced one: the bindings failed, or the context was gone
+        var wafError = result is null ? WafError.BindingError : result.ReturnCode.ToWafErrorTag();
+
+        if (wafError is null)
+        {
+            return;
+        }
+
+        var raspError = TryGetRaspErrorTag(address, wafError.Value);
+
+        if (raspError is null)
+        {
+            Log.Warning("RASP: Error type not found for address {Address} {WafError}", address, wafError);
+            return;
+        }
+
+        metrics.RecordCountRaspError(raspError.Value);
     }
 
     private static void RecordRaspTelemetry(string address, bool isMatch, bool timeOut, BlockType matchType)
@@ -190,10 +369,19 @@ internal static class RaspModule
                 Log.Debug("Tried to run Rasp but security coordinator couldn't be instantiated, probably because of httpcontext missing");
             }
 
+            RecordRaspSkipped(address, SkipReason.OutOfRequest);
             return;
         }
 
-        var result = securityCoordinator.Value.RunWaf(arguments, runWithEphemeral: true, isRasp: true);
+        var result = securityCoordinator.Value.RunWaf(arguments, runWithEphemeral: true, raspAddress: address);
+
+        // a null result carries no return code to classify, and RunWaf has already reported it from the
+        // outcome the failing step returned: the context it could not hand out, the run that produced
+        // nothing, or a thrown binding failure
+        if (result is not null)
+        {
+            RecordRaspError(address, result, TelemetryFactory.Metrics);
+        }
 
         try
         {
@@ -225,17 +413,19 @@ internal static class RaspModule
             // the blockings, so we report first and then block
             try
             {
-                var matchSuccesCode = result.ReturnCode == WafReturnCode.Match && result.ShouldBlock ?
+                // since libddwaf 2.x a run that only produces attributes or actions also returns
+                // DDWAF_MATCH, so the rule match metrics have to go by the event aware status
+                var matchSuccesCode = result.ShouldReportSecurityResult && result.ShouldBlock ?
                     BlockType.Success : BlockType.Irrelevant;
 
-                securityCoordinator.Value.ReportAndBlock(result, () => RecordRaspTelemetry(address, result.ReturnCode == Waf.WafReturnCode.Match, result.Timeout, matchSuccesCode));
+                securityCoordinator.Value.ReportAndBlock(result, () => RecordRaspTelemetry(address, result.ShouldReportSecurityResult, result.Timeout, matchSuccesCode));
             }
             catch (Exception ex) when (ex is not BlockException)
             {
-                var matchFailureCode = result.ReturnCode == WafReturnCode.Match && result.ShouldBlock ?
+                var matchFailureCode = result.ShouldReportSecurityResult && result.ShouldBlock ?
                     BlockType.Failure : BlockType.Irrelevant;
 
-                RecordRaspTelemetry(address, result.ReturnCode == Waf.WafReturnCode.Match, result.Timeout, matchFailureCode);
+                RecordRaspTelemetry(address, result.ShouldReportSecurityResult, result.Timeout, matchFailureCode);
                 Log.Error(ex, "RASP: Error while reporting and blocking.");
             }
         }
@@ -337,21 +527,26 @@ internal static class RaspModule
                 _processDownstreamRequest = false;
                 var security = Security.Instance;
 
-                if (!security.RaspEnabled)
+                // the address check must happen before any telemetry is recorded, otherwise a
+                // ruleset without SSRF rules reports skips for an instrumentation that is not active
+                if (!security.RaspEnabled || !security.AddressEnabled(AddressesConstants.DownstreamUrl))
                 {
                     return false;
                 }
 
-                if (rootSpan is null || rootSpan.IsFinished || rootSpan.Type != SpanTypes.Web)
+                if (rootSpan is null || rootSpan.Type != SpanTypes.Web)
                 {
+                    RecordRaspSkipped(AddressesConstants.DownstreamUrl, SkipReason.OutOfRequest);
+                    return false;
+                }
+
+                if (rootSpan.IsFinished)
+                {
+                    RecordRaspSkipped(AddressesConstants.DownstreamUrl, SkipReason.AfterRequest);
                     return false;
                 }
 
                 var context = rootSpan.Context.TraceContext.AppSecRequestContext;
-                if (context is null)
-                {
-                    return false;
-                }
 
                 var wafArgs = new Dictionary<string, object>();
                 wafArgs[AddressesConstants.DownstreamUrl] = requestMessage.RequestUri?.ToString() ?? string.Empty;
@@ -390,22 +585,25 @@ internal static class RaspModule
             _processDownstreamRequest = false;
             var security = Security.Instance;
 
-            if (!security.RaspEnabled)
+            if (!security.RaspEnabled || !security.AddressEnabled(AddressesConstants.DownstreamUrl))
             {
                 return;
             }
 
             var rootSpan = Tracer.Instance.InternalActiveScope?.Root?.Span;
-            if (rootSpan is null || rootSpan.IsFinished || rootSpan.Type != SpanTypes.Web)
+            if (rootSpan is null || rootSpan.Type != SpanTypes.Web)
             {
+                RecordRaspSkipped(AddressesConstants.DownstreamUrl, SkipReason.OutOfRequest);
+                return;
+            }
+
+            if (rootSpan.IsFinished)
+            {
+                RecordRaspSkipped(AddressesConstants.DownstreamUrl, SkipReason.AfterRequest);
                 return;
             }
 
             var context = rootSpan.Context.TraceContext.AppSecRequestContext;
-            if (context is null)
-            {
-                return;
-            }
 
             var wafArgs = new Dictionary<string, object>();
             wafArgs[AddressesConstants.DownstreamResponseStatus] = responseMessage.StatusCode;
@@ -435,28 +633,47 @@ internal static class RaspModule
     {
         try
         {
-            if (content is not null)
+            if (content is null)
             {
-                var contentType = content.Headers?.ContentType?.MediaType;
-                if (contentType is "application/json")
-                {
-                    // This attempts to read the content length from the Content-Length header
-                    // if provided. That tells us if the content is too large
-                    // before we do anything expensive, and also ensures that we can safely
-                    // load the data into the buffer (so that it cab be re-read later)
-                    var len = content.Headers?.ContentLength ?? 0;
-                    if (len == 0 || len > bodySizeLimit)
-                    {
-                        return;
-                    }
+                return;
+            }
 
-                    await content.LoadIntoBufferAsync(len).ConfigureAwait(false);
-                    using var stream = await content.ReadAsStreamAsync().ConfigureAwait(false);
-                    if (BodyParser.Parse(stream) is { } parsedBody)
-                    {
-                        wafArgs[wafAddress] = parsedBody;
-                    }
+            var contentType = content.Headers?.ContentType?.MediaType;
+            if (contentType is not "application/json")
+            {
+                return;
+            }
+
+            // This attempts to read the content length from the Content-Length header
+            // if provided. That tells us if the content is too large
+            // before we do anything expensive, and also ensures that we can safely
+            // load the data into the buffer (so that it can be re-read later)
+            var len = content.Headers?.ContentLength ?? 0;
+            if (len == 0 || len > bodySizeLimit)
+            {
+                return;
+            }
+
+            await content.LoadIntoBufferAsync(len).ConfigureAwait(false);
+            var stream = await content.ReadAsStreamAsync().ConfigureAwait(false);
+            long? originalPosition = stream.CanSeek ? stream.Position : null;
+
+            object? parsedBody;
+            try
+            {
+                parsedBody = BodyParser.Parse(stream);
+            }
+            finally
+            {
+                if (originalPosition.HasValue && stream.CanSeek)
+                {
+                    stream.Position = originalPosition.Value;
                 }
+            }
+
+            if (parsedBody is not null)
+            {
+                wafArgs[wafAddress] = parsedBody;
             }
         }
         catch (Exception ex)

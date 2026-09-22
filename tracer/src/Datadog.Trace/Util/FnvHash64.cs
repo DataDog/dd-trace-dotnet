@@ -33,6 +33,11 @@ internal static class FnvHash64
         V1A,
     }
 
+    /// <summary>
+    /// Gets the value of hashing an empty string
+    /// </summary>
+    public static ulong Empty => OffsetBasis;
+
 #if NETCOREAPP
     /// <summary>
     /// Generates the 64-bit FNV hash of <paramref name="data"/> using hash version <paramref name="version"/>

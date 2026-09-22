@@ -25,6 +25,7 @@ public:
         static const std::string CodeHotspotsThreadsThreshold;
         static const std::string TimestampsAsLabelEnabled;
         static const std::string DebugInfoEnabled;
+        static const std::string GcLifecycleEventsSkipProcessing;
         static const std::string GcThreadsCpuTimeEnabled;
         static const std::string InternalMetricsEnabled;
         static const std::string CoreMinimumOverride;
@@ -39,6 +40,7 @@ public:
         static const std::string HeapSnapshotInterval;
         static const std::string HeapSnapshotCheckInterval;
         static const std::string HeapSnapshotMemoryPressureThreshold;
+        static const std::string HeapSnapshotSkipTraversal;
         static const std::string ForceHttpSampling;
 
     static const std::string SectionOverrides;
@@ -59,6 +61,7 @@ public:
         static const std::string CpuLimit;
         static const std::string ClrVersion;
         static const std::string StartTime;
+        static const std::string EffectiveCpuProfilerType;
 
 public:
     MetadataProvider();

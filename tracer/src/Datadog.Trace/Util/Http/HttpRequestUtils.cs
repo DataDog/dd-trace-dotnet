@@ -14,6 +14,10 @@ namespace Datadog.Trace.Util.Http
     {
         private const string NoHostSpecified = "UNKNOWN_HOST";
 
+        // These include the '@' delimiter so they can be inserted into a URL as-is
+        private const string RedactedUserName = "REDACTED@";
+        private const string RedactedUserNameAndPassword = "REDACTED:REDACTED@";
+
 #if NET6_0_OR_GREATER
         // In .NET 6+, we could theoretically bypass a bunch of allocations by using the GetComponents() method which is heavily
         // optimized. Unfortunately, in .NET FX and < .NET 6, this approach allocates a _lot_ more. And what's more
@@ -91,6 +95,30 @@ namespace Datadog.Trace.Util.Http
                        : FormattableString.Invariant($"{uri.Scheme}://{uri.Host}:{uri.Port}{uri.AbsolutePath}{queryString}");
         }
 #endif
+
+        /// <summary>
+        /// Gets the absolute URL reported in the OpenTelemetry "url.full" attribute. This is the
+        /// same value as <see cref="GetUrl(Uri, QueryStringManager?)"/>, except that credentials
+        /// passed in the URL are redacted rather than dropped, as required by the OpenTelemetry
+        /// HTTP semantic conventions.
+        /// </summary>
+        /// <param name="uri">The absolute URI of the request</param>
+        /// <param name="queryStringManager">Used to truncate and obfuscate the query string</param>
+        internal static string GetUrlFull(Uri uri, QueryStringManager? queryStringManager = null)
+        {
+            var userInfo = uri.UserInfo;
+            if (StringUtil.IsNullOrEmpty(userInfo))
+            {
+                return GetUrl(uri, queryStringManager);
+            }
+
+            var redacted = userInfo.IndexOf(':') >= 0 ? RedactedUserNameAndPassword : RedactedUserName;
+            var queryString = queryStringManager?.TruncateAndObfuscate(uri.Query) ?? string.Empty;
+
+            return uri.IsDefaultPort
+                    ? $"{uri.Scheme}://{redacted}{uri.Host}{uri.AbsolutePath}{queryString}"
+                    : FormattableString.Invariant($"{uri.Scheme}://{redacted}{uri.Host}:{uri.Port}{uri.AbsolutePath}{queryString}");
+        }
 
         internal static string GetUrl(string scheme, string host, int? port, string pathBase, string path, string queryString, QueryStringManager? queryStringManager = null)
         {

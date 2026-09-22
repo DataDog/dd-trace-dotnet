@@ -160,9 +160,13 @@ internal static class NUnitIntegration
     }
 
     internal static bool ShouldSkip(ITest currentTest, out bool isUnskippable, out bool isForcedRun, Dictionary<string, List<string>?>? traits = null)
+        => ShouldSkip(currentTest, out isUnskippable, out isForcedRun, out _, traits);
+
+    internal static bool ShouldSkip(ITest currentTest, out bool isUnskippable, out bool isForcedRun, out SkippableTest? skippableTest, Dictionary<string, List<string>?>? traits = null)
     {
         isUnskippable = false;
         isForcedRun = false;
+        skippableTest = null;
 
         if (TestOptimization.Instance.Settings.IntelligentTestRunnerEnabled != true)
         {
@@ -176,15 +180,19 @@ internal static class NUnitIntegration
         }
 
         var testSuite = testMethod.DeclaringType?.FullName ?? string.Empty;
-        var itrShouldSkip = Common.ShouldSkip(testSuite, testMethod.Name, currentTest.Arguments, testMethod.GetParameters());
+        var module = GetTestModuleFrom(currentTest);
+        var moduleName = module?.Tags.Bundle ?? module?.Tags.Module;
+        var itrShouldSkip = Common.ShouldSkip(testSuite, testMethod.Name, currentTest.Arguments, testMethod.GetParameters(), out var matchedSkippableTest, moduleName, currentTest.Name ?? string.Empty);
         if (traits is null)
         {
             ExtractTraits(currentTest, ref traits);
         }
 
         isUnskippable = traits?.TryGetValue(IntelligentTestRunnerTags.UnskippableTraitName, out _) == true;
-        isForcedRun = itrShouldSkip && isUnskippable;
-        return itrShouldSkip && !isUnskippable;
+        isForcedRun = matchedSkippableTest is not null && isUnskippable;
+        var shouldSkip = itrShouldSkip && !isUnskippable;
+        skippableTest = shouldSkip ? matchedSkippableTest : null;
+        return shouldSkip;
     }
 
     internal static void GetExceptionAndMessage(ITestResult result, out string exceptionType, out string resultMessage)
@@ -244,27 +252,7 @@ internal static class NUnitIntegration
         var methodParameters = testMethod.GetParameters();
         if (methodParameters?.Length > 0)
         {
-            var testParameters = new TestParameters
-            {
-                Metadata = new Dictionary<string, object?>(),
-                Arguments = new Dictionary<string, object?>()
-            };
-            testParameters.Metadata[TestTags.MetadataTestName] = currentTest.Name ?? string.Empty;
-
-            for (int i = 0; i < methodParameters.Length; i++)
-            {
-                var key = methodParameters[i].Name ?? string.Empty;
-                if (testMethodArguments != null && i < testMethodArguments.Length)
-                {
-                    testParameters.Arguments[key] = Common.GetParametersValueData(testMethodArguments[i]);
-                }
-                else
-                {
-                    testParameters.Arguments[key] = "(default)";
-                }
-            }
-
-            test.SetParameters(testParameters);
+            test.SetParameters(Common.CreateTestParameters(testMethodArguments, methodParameters, currentTest.Name ?? string.Empty));
         }
 
         // Get traits

@@ -95,6 +95,20 @@ public class DockerService
 
     public static async Task PullImageAsync(string image, bool skipIfImageExists)
     {
+        // A reference may be "repo", "repo:tag", "repo@sha256:...", or "repo:tag@sha256:...".
+        // When a digest is present it is authoritative (the tag is ignored), so pull and inspect
+        // by the canonical "repo@sha256:..." form — that's what a digest pull stores locally.
+        var atIndex = image.IndexOf('@');
+        var digest = atIndex >= 0 ? image[(atIndex + 1)..] : null;
+        var name = atIndex >= 0 ? image[..atIndex] : image;
+
+        var firstColon = name.IndexOf(':');
+        var repo = firstColon >= 0 ? name[..firstColon] : name;
+
+        // Docker's images/create pulls by digest when Tag is set to the "sha256:..." value.
+        var tag = digest ?? (firstColon >= 0 ? name[(firstColon + 1)..] : "latest");
+        var inspectRef = digest is null ? image : $"{repo}@{digest}";
+
         if (skipIfImageExists)
         {
             var exists = await RetryAsync(
@@ -104,7 +118,7 @@ public class DockerService
                     try
                     {
                         using var client = CreateDockerClient();
-                        await client.Images.InspectImageAsync(image);
+                        await client.Images.InspectImageAsync(inspectRef);
                         return true;
                     }
                     catch (DockerImageNotFoundException)
@@ -122,10 +136,6 @@ public class DockerService
 
             Logger.Information("Image {Image} not found locally, pulling...", image);
         }
-
-        var firstColon = image.IndexOf(':');
-        var repo = firstColon >= 0 ? image[..firstColon] : image;
-        var tag = firstColon >= 0 ? image[(firstColon + 1)..] : "latest";
 
         await RetryAsync(
             $"Pull image {image}",

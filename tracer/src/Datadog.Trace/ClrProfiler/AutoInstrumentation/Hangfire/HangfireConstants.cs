@@ -14,6 +14,7 @@ internal static class HangfireConstants
     internal const string OnPerformOperation = "hangfire.perform";
     internal const string DatadogScopeKey = "datadog_scope_key";
     internal const string DatadogContextKey = "datadog_context_key";
+    internal const string DatadogBaggageKey = "datadog_baggage_key";
     internal const string JobIdTag = "job.id";
     internal const string JobCreatedAtTag = "job.createdat";
     internal const string ResourceNamePrefix = "job ";

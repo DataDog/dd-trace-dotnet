@@ -50,7 +50,7 @@ partial class Build : NukeBuild
     [Parameter("Should minor versions of integration NuGet packages be included")]
     readonly bool IncludeMinorPackageVersions;
 
-    [Parameter("The location to create the monitoring home directory. Default is ./shared/bin/monitoring-home ")]
+    [Parameter("The location to create the monitoring home directory. Default is ./artifacts/monitoring-home ")]
     readonly AbsolutePath MonitoringHome;
     [Parameter("The location to place NuGet packages and other packages. Default is ./bin/artifacts ")]
     readonly AbsolutePath Artifacts;
@@ -65,7 +65,7 @@ partial class Build : NukeBuild
     const int LatestMajorVersion = 3;
 
     [Parameter("The current version of the source and build")]
-    readonly string Version = "3.43.0";
+    readonly string Version = "3.55.0";
 
     [Parameter("Whether the current build version is a prerelease(for packaging purposes)")]
     readonly bool IsPrerelease = false;
@@ -165,10 +165,8 @@ partial class Build : NukeBuild
             BenchmarkHomeDirectory.GlobFiles("**").ForEach(x => DeleteFile(x));
             EnsureCleanDirectory(BuildArtifactsDirectory);
             EnsureCleanDirectory(MonitoringHomeDirectory);
-            EnsureCleanDirectory(OutputDirectory);
             EnsureCleanDirectory(ArtifactsDirectory);
-            EnsureCleanDirectory(NativeTracerProject.Directory / "build");
-            EnsureCleanDirectory(NativeTracerProject.Directory / "deps");
+            EnsureCleanDirectory(NativeArtifactsDirectory);
             EnsureCleanDirectory(BuildDataDirectory);
             EnsureCleanDirectory(ExplorationTestsDirectory);
             DeleteFile(WindowsTracerHomeZip);
@@ -293,14 +291,15 @@ partial class Build : NukeBuild
         .DependsOn(CreateRequiredDirectories)
         .DependsOn(RunNativeTests);
 
-    Target BuildWindowsIntegrationTests => _ => _
+    Target BuildIntegrationTests => _ => _
         .Unlisted()
-        .Requires(() => IsWin)
-        .Description("Builds the integration tests for Windows")
+        .Description("Builds the integration tests")
         .DependsOn(CompileManagedTestHelpers)
         .DependsOn(CompileIntegrationTests)
+        .DependsOn(CompileLinuxDdDotnetIntegrationTests)
         .DependsOn(CopyNativeFilesForTests)
-        .DependsOn(BuildRunnerTool);
+        .DependsOn(BuildRunnerTool)
+        .DependsOn(CopyServerlessArtifacts);
 
     Target BuildAspNetIntegrationTests => _ => _
         .Unlisted()
@@ -317,13 +316,13 @@ partial class Build : NukeBuild
         .DependsOn(CompileManagedTestHelpers)
         .DependsOn(CompileIntegrationTests);
 
-    Target BuildAndRunWindowsIntegrationTests => _ => _
-        .Requires(() => IsWin)
-        .Description("Builds and runs the Windows (non-IIS) integration tests")
-        .DependsOn(BuildWindowsIntegrationTests)
+    Target BuildAndRunIntegrationTests => _ => _
+        .Description("Builds and runs the integration tests")
+        .DependsOn(BuildIntegrationTests)
         .DependsOn(CompileSamples)
         .DependsOn(CompileTrimmingSamples)
-        .DependsOn(RunIntegrationTests);
+        .DependsOn(RunIntegrationTests)
+        .DependsOn(RunLinuxDdDotnetIntegrationTests);
 
     Target BuildAndRunWindowsRegressionTests => _ => _
         .Requires(() => IsWin)
@@ -340,40 +339,6 @@ partial class Build : NukeBuild
         .DependsOn(BuildRunnerTool)
         .DependsOn(CompileIntegrationTests)
         .DependsOn(RunWindowsAzureFunctionsTests);
-
-    Target BuildLinuxIntegrationTests => _ => _
-        .Requires(() => !IsWin)
-        .Description("Builds the linux integration tests")
-        .DependsOn(CompileManagedTestHelpers)
-        .DependsOn(CompileLinuxOrOsxIntegrationTests)
-        .DependsOn(CompileLinuxDdDotnetIntegrationTests)
-        .DependsOn(BuildRunnerTool)
-        .DependsOn(CopyNativeFilesForTests)
-        .DependsOn(CopyServerlessArtifacts);
-
-    Target BuildAndRunLinuxIntegrationTests => _ => _
-        .Requires(() => !IsWin)
-        .Description("Builds and runs the linux integration tests. Requires docker-compose dependencies")
-        .DependsOn(BuildLinuxIntegrationTests)
-        .DependsOn(RunIntegrationTests)
-        .DependsOn(RunLinuxDdDotnetIntegrationTests);
-
-    Target BuildOsxIntegrationTests => _ => _
-        .Requires(() => IsOsx)
-        .Description("Builds the osx integration tests")
-        .DependsOn(CompileManagedTestHelpers)
-        .DependsOn(CompileLinuxOrOsxIntegrationTests)
-        .DependsOn(BuildRunnerTool)
-        .DependsOn(CopyNativeFilesForTests)
-        .DependsOn(CopyServerlessArtifacts);
-
-    Target BuildAndRunOsxIntegrationTests => _ => _
-        .Requires(() => IsOsx)
-        .Description("Builds and runs the osx integration tests. Requires docker-compose dependencies")
-        .DependsOn(BuildOsxIntegrationTests)
-        .DependsOn(CompileSamples)
-        .DependsOn(CompileTrimmingSamples)
-        .DependsOn(RunIntegrationTests);
 
     Target BuildAndRunToolArtifactTests => _ => _
        .Description("Builds and runs the tool artifacts tests")
@@ -710,7 +675,7 @@ partial class Build : NukeBuild
                 Logger.Information("Debugging...");
                 // Execute whatever you want to debug here
                 var nativeGeneratedFilesOutputPath = NativeTracerProject.Directory / "Generated";
-                CallTargetsGenerator.GenerateCallTargets(TargetFrameworks, tfm => DatadogTraceDirectory / "bin" / BuildConfiguration / tfm / Projects.DatadogTrace + ".dll", nativeGeneratedFilesOutputPath, Version);
+                CallTargetsGenerator.GenerateCallTargets(TargetFrameworks, tfm => GetProjectBinDirectory(Projects.DatadogTrace, tfm) / Projects.DatadogTrace + ".dll", nativeGeneratedFilesOutputPath, Version);
             });
     //*/
 }

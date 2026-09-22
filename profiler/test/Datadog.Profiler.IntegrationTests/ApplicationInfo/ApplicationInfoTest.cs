@@ -77,6 +77,54 @@ namespace Datadog.Profiler.IntegrationTests.ApplicationInfo
             infos.Select(x => x.ToJsonString()).Should().OnlyContain(x => x != "{}");
         }
 
+        [TestAppFact("Samples.Computer01")]
+        public void CheckInfoJsonContainsEnvVarsAndOverrides(string appName, string framework, string appAssembly)
+        {
+            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: "--scenario 1", enableProfiler: true);
+
+            runner.Environment.SetVariable(EnvironmentVariables.SsiDeployed, "tracer");
+
+            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
+
+            var infoJsons = new List<JsonNode>();
+
+            agent.ProfilerRequestReceived += (_, ctx) =>
+            {
+                var info = ExtractJsonField(GetRequestText(ctx.Value.Request), "info");
+                if (info is not null)
+                {
+                    infoJsons.Add(info);
+                }
+            };
+
+            runner.Run(agent);
+
+            agent.NbCallsOnProfilingEndpoint.Should().BeGreaterThan(0);
+            infoJsons.Should().NotBeEmpty();
+
+            var lastInfo = infoJsons.Last();
+
+            lastInfo["profiler"].Should().NotBeNull();
+            lastInfo["profiler"]["version"].Should().NotBeNull();
+            lastInfo["profiler"]["ssi"].Should().NotBeNull();
+            lastInfo["profiler"]["activation"].Should().NotBeNull();
+            lastInfo["profiler"]["runtime"].Should().NotBeNull();
+            lastInfo["GC Config"].Should().NotBeNull();
+            lastInfo["GC Config"]["GC Mode"].Should().NotBeNull();
+
+            // DD_PROFILING_UPLOAD_PERIOD is always set by the test framework (SectionEnvVars)
+            lastInfo["System Properties"].Should().NotBeNull();
+            lastInfo["System Properties"]["DD_PROFILING_UPLOAD_PERIOD"].Should().NotBeNull();
+
+            // DD_PROFILING_ENABLED is set to "1" when enableProfiler: true (SectionOverrides)
+            lastInfo["System Overrides"].Should().NotBeNull();
+            lastInfo["System Overrides"]["DD_PROFILING_ENABLED"].Should().NotBeNull();
+
+            // no trailing comma in the raw JSON
+            var rawJson = lastInfo.ToJsonString();
+            rawJson.Should().NotContain(",}");
+        }
+
         private static (string ServiceName, string Environment, string Version) ExtractServiceFromProfilerRequest(HttpListenerRequest request)
         {
             var text = GetRequestText(request);
@@ -111,57 +159,49 @@ namespace Datadog.Profiler.IntegrationTests.ApplicationInfo
         private static JsonNode ExtractMetadataFromProfilerRequest(HttpListenerRequest request)
         {
             var text = GetRequestText(request);
+            return ExtractJsonField(text, "internal") ?? JsonNode.Parse("{}");
+        }
 
-            /*
-             we want to extract the "tags_profiler" attribute from the http body. The format is as followed:
-             {
-                 "internal": <METADATA>,
-                 "start":"<START DATE>",
-                 "end":"<END DATE>",
-                 "attachments":["<ATTACHMENT1>", "<ATTACHMENT2>"],
-                 "tags_profiler":"<PROFILER TAGS>",
-                 "family":"<FAMILY>",
-                 "version":"4"
-             }
-             <METADATA> json string
-             */
-
-            var offset = text.IndexOf("\"internal\":");
+        private static JsonNode ExtractJsonField(string text, string fieldName)
+        {
+            var marker = $"\"{fieldName}\":";
+            var offset = text.IndexOf(marker);
             if (offset == -1)
             {
-                return JsonNode.Parse(string.Empty);
+                return null;
             }
 
-            offset += 11; // move after ':';
+            offset += marker.Length;
 
-            // skip whitespaces if any
-            while (text[offset] == ' ')
+            while (offset < text.Length && text[offset] == ' ')
             {
                 offset++;
             }
 
-            // next character must be the open-curly braces
-            if (text[offset] != '{')
+            if (offset >= text.Length || text[offset] != '{')
             {
-                return JsonNode.Parse(string.Empty);
+                return null;
             }
 
             var start = offset;
             var end = start + 1;
-
-            var nbCurlyBraces = 1;
-            var curlyBraces = new[] { '{', '}' };
-            while (nbCurlyBraces != 0)
+            var depth = 1;
+            var braces = new[] { '{', '}' };
+            while (depth != 0)
             {
-                int current = text.IndexOfAny(curlyBraces, end);
-                if (text[current] == '{')
+                int current = text.IndexOfAny(braces, end);
+                if (current == -1)
                 {
-                    nbCurlyBraces++;
+                    return null;
                 }
 
-                if (text[current] == '}')
+                if (text[current] == '{')
                 {
-                    nbCurlyBraces--;
+                    depth++;
+                }
+                else
+                {
+                    depth--;
                 }
 
                 end = current + 1;

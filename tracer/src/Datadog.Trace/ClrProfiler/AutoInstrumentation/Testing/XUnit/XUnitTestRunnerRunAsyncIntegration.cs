@@ -67,20 +67,33 @@ public static class XUnitTestRunnerRunAsyncIntegration
             return CallTargetState.GetDefault();
         }
 
+        var isEarlyFlakeDetectionEnabled = testOptimization.EarlyFlakeDetectionFeature?.Enabled == true;
+        var isFlakyRetryEnabled = testOptimization.FlakyRetryFeature?.Enabled == true;
+        var isTestManagementEnabled = testOptimization.TestManagementFeature?.Enabled == true;
+        var testManagementProperties = isTestManagementEnabled ? XUnitIntegration.GetTestManagementProperties(ref runnerInstance) : null;
+        var isDisabledByTestManagement = Common.IsDisabledByTestManagement(testManagementProperties);
+
         // Check if the test should be skipped by the ITR
-        if (XUnitIntegration.ShouldSkip(ref runnerInstance, out _, out _))
+        if (Common.CanApplyItrSkip(testManagementProperties) &&
+            XUnitIntegration.ShouldSkip(ref runnerInstance, out _, out _, out var skippableTest))
         {
             Common.Log.Debug("XUnitTestRunnerRunAsyncIntegration: Test skipped by test skipping feature: {Class}.{Name}", runnerInstance.TestClass?.ToString() ?? string.Empty, runnerInstance.TestMethod?.Name ?? string.Empty);
             // Refresh values after skip reason change, and create Skip by ITR span.
             runnerInstance.SkipReason = IntelligentTestRunnerTags.SkippedByReason;
             testRunnerInstance.SkipReason = runnerInstance.SkipReason;
+            if (skippableTest is { } matchedSkippableTest)
+            {
+                var moduleName = XUnitIntegration.GetTestModuleName(ref runnerInstance);
+                Common.RecordTestSkipCoverageBackfill(matchedSkippableTest, moduleName);
+            }
+            else
+            {
+                Common.RecordTestSkipCoverageBackfill();
+            }
+
             XUnitIntegration.CreateTest(ref runnerInstance);
             return CallTargetState.GetDefault();
         }
-
-        var isEarlyFlakeDetectionEnabled = testOptimization.EarlyFlakeDetectionFeature?.Enabled == true;
-        var isFlakyRetryEnabled = testOptimization.FlakyRetryFeature?.Enabled == true;
-        var isTestManagementEnabled = testOptimization.TestManagementFeature?.Enabled == true;
 
         // If there's no...
         // - EarlyFlakeDetectionFeature enabled
@@ -125,7 +138,7 @@ public static class XUnitTestRunnerRunAsyncIntegration
         }
 
         // We skip the test if the tesk management property is set to Disabled and there's no attempt to fix
-        if (XUnitIntegration.GetTestManagementProperties(ref runnerInstance) is { Disabled: true, AttemptToFix: false })
+        if (isDisabledByTestManagement)
         {
             runnerInstance.SkipReason = "Flaky test is disabled by Datadog";
             testRunnerInstance.SkipReason = runnerInstance.SkipReason;
@@ -134,8 +147,8 @@ public static class XUnitTestRunnerRunAsyncIntegration
             XUnitIntegration.CreateTest(ref runnerInstance, testCaseMetadata);
         }
 
-        // Decrement the execution number (the method body will do the execution)
-        testCaseMetadata.CountDownExecutionNumber--;
+        // Reset the previous attempt's outcome before the method body executes again.
+        testCaseMetadata.PrepareForRetry();
 
         return new CallTargetState(null, new TestRunnerState(testRunnerInstance, retryMessageBus, testCaseMetadata));
     }
@@ -181,7 +194,8 @@ public static class XUnitTestRunnerRunAsyncIntegration
 
                 if (testCaseMetadata.CountDownExecutionNumber > 0)
                 {
-                    var retryDecision = XUnitIntegration.GetRetryExecutionDecision(testCaseMetadata, hasFailures: runSummary.Failed > 0, hasNotRun: false, ref _totalRetries);
+                    // Quarantine clears the framework's exceptions, but ATR still needs the actual attempt's outcome.
+                    var retryDecision = XUnitIntegration.GetRetryExecutionDecision(testCaseMetadata, hasFailures: runSummary.Failed > 0 || testCaseMetadata.HasAnException, hasNotRun: false, ref _totalRetries);
                     if (retryDecision == XUnitRetryExecutionDecision.Retry)
                     {
                         if (XUnitIntegration.ShouldWaitForExceptionInstrumentation(testOptimization, testCaseMetadata))
@@ -308,9 +322,9 @@ public static class XUnitTestRunnerRunAsyncIntegration
 
     /// <summary>
     /// Read-only snapshot of remaining ATR budget for pre-close checks (XUnit v2).
-    /// Value meanings: -1 = uninitialized, 0 = exhausted, positive = nominally available.
-    /// This value is observed before retry scheduling decrements budget, so values of 1 or 0 mean no
-    /// further retry can run after the current failed execution.
+    /// Value meanings: -1 = uninitialized, 0 = exhausted, positive = available retry slots.
+    /// This value is observed before retry scheduling consumes a slot, so a value of 1 permits one
+    /// final retry and a value of 0 permits none.
     /// </summary>
     internal static int GetRemainingAtrBudget()
         => Interlocked.CompareExchange(ref _totalRetries, 0, 0);

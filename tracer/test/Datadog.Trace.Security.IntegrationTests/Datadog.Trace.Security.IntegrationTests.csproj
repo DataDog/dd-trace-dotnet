@@ -10,7 +10,7 @@
   <ItemGroup>
     <None Remove="applicationHost.config" />
     <None Remove="xunit.runner.json" />
-    <Compile Include="..\Datadog.Trace.ClrProfiler.IntegrationTests\Helpers\TelemetryHelper.cs" Link="Helpers\TelemetryHelper.cs" />
+    <Compile Include="..\Datadog.Trace.ClrProfiler.IntegrationTests\TestInfrastructure\Helpers\TelemetryHelper.cs" Link="Helpers\TelemetryHelper.cs" />
     <Compile Include="..\Datadog.Trace.TestHelpers.SharedSource\VerifyHelper.cs" Link="VerifyHelper.cs" />
     <Content Include="applicationHost.config">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
@@ -21,8 +21,6 @@
     <ProjectReference Include="..\..\src\Datadog.Trace\Datadog.Trace.csproj" />
     <ProjectReference Include="..\Datadog.Trace.TestHelpers.AutoInstrumentation\Datadog.Trace.TestHelpers.AutoInstrumentation.csproj" />
     <ProjectReference Include="..\Datadog.Trace.TestHelpers\Datadog.Trace.TestHelpers.csproj" />
-    <PackageReference Include="libddwaf" Version="1.8.2" GeneratePathProperty="true" />
-
     <PackageReference Include="Newtonsoft.Json" Version="13.0.2" />
 
     <None Update="Data\app.db-shm">
@@ -54,6 +52,10 @@
     </None>
 
     <None Update="ruleset.blocked.users.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+
+    <None Update="trace-tagging-rules.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>

@@ -7,10 +7,8 @@ using System;
 using System.Collections.Concurrent;
 using System.Threading;
 using Datadog.Trace.Debugger.Configurations.Models;
-using Datadog.Trace.Debugger.Snapshots;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util.Json;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.Debugger.Expressions
@@ -38,7 +36,7 @@ namespace Datadog.Trace.Debugger.Expressions
             }
         }
 
-        internal void AddProbeProcessor(ProbeDefinition probe)
+        internal void AddProbeProcessor(ProbeDefinition probe, int maxEvaluationTimeInMilliseconds)
         {
             if (DebuggerManager.Instance.DynamicInstrumentation?.IsInitialized == false)
             {
@@ -49,12 +47,13 @@ namespace Datadog.Trace.Debugger.Expressions
             {
                 _processors.AddOrUpdate(
                     probe.Id,
-                    _ => new ProbeProcessor(probe),
-                    (s, processor) => processor.UpdateProbeProcessor(probe));
+                    _ => new ProbeProcessor(probe, maxEvaluationTimeInMilliseconds),
+                    (s, processor) => processor.UpdateProbeProcessor(probe, maxEvaluationTimeInMilliseconds));
             }
             catch (Exception e)
             {
                 Log.Error(e, "Failed to create probe processor for probe: {Id}", probe.Id);
+                return;
             }
 
             if (Log.IsEnabled(LogEventLevel.Debug))

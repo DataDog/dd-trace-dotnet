@@ -30,10 +30,16 @@ internal readonly struct TestsConfigurations
     [JsonProperty(CommonTags.RuntimeArchitecture)]
     public readonly string? RuntimeArchitecture;
 
+    /// <summary>
+    /// Test bundle used by backend endpoints to scope tests and line coverage to a single test module.
+    /// </summary>
+    [JsonProperty(TestTags.Bundle)]
+    public readonly string? TestBundle;
+
     [JsonProperty("custom")]
     public readonly Dictionary<string, string>? Custom;
 
-    public TestsConfigurations(string osPlatform, string osVersion, string osArchitecture, string?runtimeName, string? runtimeVersion, string? runtimeArchitecture, Dictionary<string, string>? custom)
+    public TestsConfigurations(string osPlatform, string osVersion, string osArchitecture, string? runtimeName, string? runtimeVersion, string? runtimeArchitecture, Dictionary<string, string>? custom, string? testBundle = null)
     {
         OSPlatform = osPlatform;
         OSVersion = osVersion;
@@ -41,6 +47,7 @@ internal readonly struct TestsConfigurations
         RuntimeName = runtimeName;
         RuntimeVersion = runtimeVersion;
         RuntimeArchitecture = runtimeArchitecture;
+        TestBundle = testBundle;
         Custom = custom;
     }
 }

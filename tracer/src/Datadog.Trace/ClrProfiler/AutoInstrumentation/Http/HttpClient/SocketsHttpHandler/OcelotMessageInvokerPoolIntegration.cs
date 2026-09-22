@@ -22,6 +22,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient.SocketsH
 /// <para>
 /// v23.0.0 introduced SocketsHttpHandler (previously HttpClientHandler was used).
 /// v24.1.0 changed the return type from HttpMessageHandler to SocketsHttpHandler.
+/// v25.0.0 keeps the SocketsHttpHandler return type unchanged (only adds net10.0 support).
 /// </para>
 /// <para>
 /// Target method: <see href="https://github.com/ThreeMammals/Ocelot/blob/23.0.0/src/Ocelot/Requester/MessageInvokerPool.cs">MessageInvokerPool.CreateHandler</see>
@@ -43,7 +44,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient.SocketsH
     ReturnTypeName = "System.Net.Http.SocketsHttpHandler",
     ParameterTypeNames = ["Ocelot.Configuration.DownstreamRoute"],
     MinimumVersion = "24.1.0",
-    MaximumVersion = "24.*.*",
+    MaximumVersion = "25.*.*",
     IntegrationName = IntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]

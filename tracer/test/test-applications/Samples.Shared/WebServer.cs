@@ -1,3 +1,5 @@
+#nullable enable
+
 using System;
 using System.Net;
 using System.Net.Sockets;
@@ -16,9 +18,9 @@ namespace Samples
             _ = Task.Run(() => HandleHttpRequests(listener));
         }
 
-        public Action<HttpListenerContext> RequestHandler { get; set; }
+        public Action<HttpListenerContext>? RequestHandler { get; set; }
 
-        public static WebServer Start(string port, out string uri)
+        public static WebServer Start(string? port, out string uri)
         {
             if (port == null)
             {
@@ -64,7 +66,7 @@ namespace Samples
 
         public static int GetOpenPort()
         {
-            TcpListener tcpListener = null;
+            TcpListener? tcpListener = null;
 
             try
             {

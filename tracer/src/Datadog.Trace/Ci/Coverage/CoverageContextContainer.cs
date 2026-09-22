@@ -2,114 +2,248 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+
 #nullable enable
 
+using System;
 using System.Collections.Generic;
 using System.Reflection;
-using System.Runtime.CompilerServices;
+using System.Runtime.ExceptionServices;
+using System.Threading;
+using Datadog.Trace.Ci.Coverage.Metadata;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Ci.Coverage;
 
-/// <summary>
-/// Coverage context container instance
-/// </summary>
-internal sealed class CoverageContextContainer
+internal sealed class CoverageContextContainer : IDisposable
 {
-    private readonly List<ModuleValue> _container = new();
+    private readonly object _gate = new();
+    private readonly List<ModuleValue> _modules = new();
+    private readonly ModuleValue.BufferKind _bufferKind;
     private ModuleValue? _currentModuleValue;
+    private Action<IReadOnlyList<ModuleValue>>? _onBeforeDisposed;
+    private Action? _onDisposed;
+    private CoverageContextAdmission? _deferredAdmission;
+    private int _activeExecutionContexts;
+    private int _closed;
+    private int _disposeRequested;
+    private int _disposed;
 
-    /// <summary>
-    /// Initializes a new instance of the <see cref="CoverageContextContainer"/> class.
-    /// </summary>
-    /// <param name="state">State instance</param>
-    public CoverageContextContainer(object? state = null)
+    public CoverageContextContainer(object? state = null, ModuleValue.BufferKind bufferKind = ModuleValue.BufferKind.Context)
     {
         State = state;
+        _bufferKind = bufferKind;
     }
 
-    /// <summary>
-    /// Gets or sets the context container state
-    /// </summary>
     public object? State { get; set; }
 
-    /// <summary>
-    /// Gets the current module value
-    /// </summary>
-    /// <param name="module">Module instance</param>
-    /// <returns>Current module instance</returns>
-    internal ModuleValue? GetModuleValue(Module module)
-    {
-        if (_currentModuleValue is { } moduleValue && moduleValue.Module == module)
-        {
-            return moduleValue;
-        }
+    public bool IsClosed => Volatile.Read(ref _closed) != 0;
 
-        return GetModuleValueSlow(module);
+    public bool HasActiveExecutionContexts => Volatile.Read(ref _activeExecutionContexts) != 0;
+
+    public void OnExecutionContextEntered() => Interlocked.Increment(ref _activeExecutionContexts);
+
+    public void OnExecutionContextExited()
+    {
+        if (Interlocked.Decrement(ref _activeExecutionContexts) == 0 && Volatile.Read(ref _disposeRequested) != 0)
+        {
+            Dispose();
+        }
     }
 
-    private ModuleValue? GetModuleValueSlow(Module module)
+    public ModuleValue? GetModuleValue(Module module)
     {
-        var container = _container;
-        lock (container)
+        // This is the normal probe path. Session closure is coordinated by the test lifecycle,
+        // so preserve the historical lock-free lookup and reserve the lock for cache misses.
+        if (_closed != 0)
         {
-            for (var i = 0; i < container.Count; i++)
+            return null;
+        }
+
+        if (_currentModuleValue is { } current && current.Module == module)
+        {
+            return current;
+        }
+
+        lock (_gate)
+        {
+            if (_closed != 0)
             {
-                if (container[i] is { } moduleValueItem && moduleValueItem.Module == module)
+                return null;
+            }
+
+            return FindModuleValue(module);
+        }
+    }
+
+    public bool TryGetOrAddModuleValue(
+        ModuleCoverageMetadata metadata,
+        Module module,
+        int rawByteLength,
+        out ModuleValue? moduleValue)
+    {
+        moduleValue = GetModuleValue(module);
+        if (moduleValue is not null)
+        {
+            return true;
+        }
+
+        lock (_gate)
+        {
+            if (_closed != 0)
+            {
+                moduleValue = null;
+                return false;
+            }
+
+            moduleValue = FindModuleValue(module);
+            if (moduleValue is not null)
+            {
+                return true;
+            }
+
+            var provisional = new ModuleValue(metadata, module, rawByteLength, _bufferKind);
+            try
+            {
+                _modules.Add(provisional);
+            }
+            catch
+            {
+                // List growth can fail after the native buffer was allocated, so the unpublished value must release it here.
+                provisional.Dispose();
+                throw;
+            }
+
+            _currentModuleValue = provisional;
+            moduleValue = provisional;
+            return true;
+        }
+    }
+
+    public bool TryCloseAndGetModules(out IReadOnlyList<ModuleValue> modules)
+    {
+        lock (_gate)
+        {
+            if (_closed != 0)
+            {
+                modules = Array.Empty<ModuleValue>();
+                return false;
+            }
+
+            _closed = 1;
+            _currentModuleValue = null;
+            modules = _modules;
+            return true;
+        }
+    }
+
+    public ModuleValue[] SnapshotModules(int maximumModules = int.MaxValue)
+    {
+        lock (_gate)
+        {
+            if (_modules.Count > maximumModules)
+            {
+                ThrowHelper.ThrowInvalidOperationException("The global coverage fallback contains too many modules.");
+            }
+
+            return _modules.Count == 0 ? Array.Empty<ModuleValue>() : _modules.ToArray();
+        }
+    }
+
+    public void Clear() => Dispose();
+
+    public void DisposeWhenExecutionContextsAreInactive(
+        Action<IReadOnlyList<ModuleValue>>? onBeforeDisposed,
+        Action onDisposed,
+        CoverageContextAdmission? deferredAdmission = null)
+    {
+        // A flowed ExecutionContext may still be executing instrumented code with a raw pointer cached
+        // in an IL local. Inactive contexts cannot hold a live probe frame, and future probes observe
+        // the closed flag and use the global fallback, so the last active exit is the safe reclamation point.
+        _onBeforeDisposed = onBeforeDisposed;
+        _onDisposed = onDisposed;
+        _deferredAdmission = deferredAdmission;
+        Volatile.Write(ref _disposeRequested, 1);
+        if (Volatile.Read(ref _activeExecutionContexts) == 0)
+        {
+            Dispose();
+        }
+    }
+
+    public void Dispose()
+    {
+        ExceptionDispatchInfo? firstException = null;
+        Action<IReadOnlyList<ModuleValue>>? onBeforeDisposed = null;
+        Action? onDisposed = null;
+        CoverageContextAdmission? deferredAdmission = null;
+        lock (_gate)
+        {
+            if (_disposed != 0)
+            {
+                return;
+            }
+
+            _disposed = 1;
+            _closed = 1;
+            _currentModuleValue = null;
+            try
+            {
+                onBeforeDisposed = _onBeforeDisposed;
+                try
                 {
-                    _currentModuleValue = moduleValueItem;
-                    return moduleValueItem;
+                    onBeforeDisposed?.Invoke(_modules);
                 }
+                catch (Exception ex)
+                {
+                    firstException ??= ExceptionDispatchInfo.Capture(ex);
+                }
+
+                foreach (var moduleValue in _modules)
+                {
+                    try
+                    {
+                        moduleValue.Dispose();
+                    }
+                    catch (Exception ex)
+                    {
+                        firstException ??= ExceptionDispatchInfo.Capture(ex);
+                    }
+                }
+            }
+            finally
+            {
+                _modules.Clear();
+                _onBeforeDisposed = null;
+                onDisposed = _onDisposed;
+                _onDisposed = null;
+                deferredAdmission = _deferredAdmission;
+                _deferredAdmission = null;
+            }
+        }
+
+        try
+        {
+            onDisposed?.Invoke();
+        }
+        finally
+        {
+            deferredAdmission?.Release();
+        }
+
+        firstException?.Throw();
+    }
+
+    private ModuleValue? FindModuleValue(Module module)
+    {
+        for (var i = 0; i < _modules.Count; i++)
+        {
+            if (_modules[i] is { } item && item.Module == module)
+            {
+                _currentModuleValue = item;
+                return item;
             }
         }
 
         return null;
-    }
-
-    /// <summary>
-    /// Stores module data into the context
-    /// </summary>
-    /// <param name="module">Module instance</param>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal void Add(ModuleValue module)
-    {
-        var container = _container;
-        lock (container)
-        {
-            container.Add(module);
-            _currentModuleValue = module;
-        }
-    }
-
-    /// <summary>
-    /// Clear context data
-    /// </summary>
-    internal void Clear()
-    {
-        var container = _container;
-        lock (container)
-        {
-            foreach (var moduleValue in container)
-            {
-                moduleValue.Dispose();
-            }
-
-            container.Clear();
-            _currentModuleValue = null;
-        }
-    }
-
-    /// <summary>
-    /// Gets modules data from the context
-    /// </summary>
-    /// <returns>Instruction array from the context</returns>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public ModuleValue[] CloseContext()
-    {
-        var container = _container;
-        lock (container)
-        {
-            _currentModuleValue = null;
-            return container.Count == 0 ? [] : container.ToArray();
-        }
     }
 }

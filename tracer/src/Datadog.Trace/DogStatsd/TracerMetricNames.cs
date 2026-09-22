@@ -73,6 +73,15 @@ namespace Datadog.Trace.DogStatsd
             public const string DequeuedBytes = "datadog.tracer.queue.dequeued_bytes";
         }
 
+        public static class Stats
+        {
+            /// <summary>
+            /// Count: The number of spans whose client-side stats dimensions were collapsed to the
+            /// "tracer_blocked_value" sentinel to enforce a cardinality limit.
+            /// </summary>
+            public const string CollapsedSpans = "datadog.tracer.stats.collapsed_spans";
+        }
+
         public static class Health
         {
             /// <summary>

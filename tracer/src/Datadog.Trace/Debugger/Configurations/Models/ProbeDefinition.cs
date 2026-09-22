@@ -69,10 +69,10 @@ namespace Datadog.Trace.Debugger.Configurations.Models
             var hashCode = new HashCode();
             hashCode.Add(Language);
             hashCode.Add(Id);
-            hashCode.Add(Tags);
+            hashCode.Add(Tags.NullableSequentialHashCode());
             hashCode.Add(Where);
             hashCode.Add(EvaluateAt);
-            hashCode.Add(AdditionalIds);
+            hashCode.Add(AdditionalIds.NullableSequentialHashCode());
             hashCode.Add(Version);
             return hashCode.ToHashCode();
         }

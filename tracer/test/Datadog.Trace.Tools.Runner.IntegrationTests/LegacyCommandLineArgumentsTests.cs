@@ -16,8 +16,13 @@ using Xunit.Abstractions;
 namespace Datadog.Trace.Tools.Runner.IntegrationTests
 {
     [Collection(nameof(ConsoleTestsCollection))]
-    public class LegacyCommandLineArgumentsTests(ITestOutputHelper output)
+    public class LegacyCommandLineArgumentsTests(ITestOutputHelper output) : IDisposable
     {
+        public void Dispose()
+        {
+            Program.CallbackForTests = null;
+        }
+
         [SkippableFact]
         [Trait("RunOnWindows", "True")]
         public void InvalidArgument()

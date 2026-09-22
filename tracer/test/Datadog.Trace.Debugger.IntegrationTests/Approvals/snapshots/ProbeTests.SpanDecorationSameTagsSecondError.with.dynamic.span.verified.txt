@@ -11,7 +11,7 @@
       env: integration_tests,
       language: dotnet,
       runtime-id: Guid_2,
-      SpanDecorationSameTagsSecondError: Instance=Datadog.Trace.Debugger.Expressions.UndefinedValue,
+      SpanDecorationSameTagsSecondError: UndefinedValue,
       version: 1.0.0,
       _dd.di.SpanDecorationSameTagsSecondError.evaluation_error: EvaluationError { Expression = this.error },
       _dd.di.SpanDecorationSameTagsSecondError.probe_id: Guid_3

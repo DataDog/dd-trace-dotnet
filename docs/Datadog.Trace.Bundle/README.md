@@ -9,7 +9,7 @@ Do **not** install this package if any of the following are true:
 - You have already installed the [Datadog .NET Tracer MSI](https://docs.datadoghq.com/tracing/trace_collection/dd_libraries/dotnet-core/?tab=windows#install-the-tracer) on Windows. Install [Datadog.Trace](https://www.nuget.org/packages/Datadog.Trace) instead if you need custom instrumentation.
 - You have already installed the [Datadog .NET package on Linux](https://docs.datadoghq.com/tracing/trace_collection/dd_libraries/dotnet-core/?tab=linux#install-the-tracer). Install [Datadog.Trace](https://www.nuget.org/packages/Datadog.Trace) instead if you need custom instrumentation.
 - You instrument your application using the .NET dd-trace tool. Install [Datadog.Trace](https://www.nuget.org/packages/Datadog.Trace) instead if you need custom instrumentation.
-- Your application is running in Azure App Services. Install [the AAS extension](https://docs.datadoghq.com/serverless/azure_app_services/?tab=net) instead.
+- Your application is running in Azure App Services. Follow [our AAS guide](https://docs.datadoghq.com/serverless/azure_app_services/) instead.
 - Your application is running in IIS on Windows. This package is not supported; [install the MSI](https://docs.datadoghq.com/tracing/trace_collection/dd_libraries/dotnet-core/?tab=windows#install-the-tracer) instead, and install [Datadog.Trace](https://www.nuget.org/packages/Datadog.Trace) if you also need custom instrumentation.
 
 Install this package if:

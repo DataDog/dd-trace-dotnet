@@ -21,6 +21,7 @@
       http.request.headers.host: localhost:00000,
       http.request.headers.user-agent: Mistake Not...,
       http.request.headers.x-forwarded-for: 86.242.244.246,
+      http.response.headers.content-length: 0,
       http.route: {controller=home}/{action=index}/{id?},
       http.status_code: 302,
       http.url: http://localhost:00000/Account/Index?userIdSdk=not-blocked-user,
@@ -38,6 +39,10 @@
       _dd.appsec.fp.session: ssn-ef8eb89f---<SessionFp>,
       _dd.appsec.usr.id: anon_7bcd1c9fc4f6e4c2460e0ad38d6ad0d9,
       _dd.appsec.usr.login: anon_eb97d409396a3e5392936dad92b909da,
+      _dd.code_origin.frames.0.index: 0,
+      _dd.code_origin.frames.0.method: Index,
+      _dd.code_origin.frames.0.type: Samples.Security.AspNetCore5.Controllers.AccountController,
+      _dd.code_origin.type: entry,
       _dd.runtime_family: dotnet
     },
     Metrics: {

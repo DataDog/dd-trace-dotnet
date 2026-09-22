@@ -31,6 +31,8 @@ namespace Datadog.Profiler.SmokeTests
                 runner.EnvironmentHelper.SetVariable(EnvironmentVariables.EtwEnabled, "0");
             }
 
+            runner.EnvironmentHelper.SetVariable(EnvironmentVariables.MemoryFootprintEnabled, "1");
+
             runner.RunAndCheck();
         }
     }

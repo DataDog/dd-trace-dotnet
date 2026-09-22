@@ -18,7 +18,7 @@
       "type": "DIRECTORY_LISTING_LEAK",
       "hash": 758800904,
       "location": {
-        "path": "Samples.Security.AspNetCore5.Startup",
+        "class": "Samples.Security.AspNetCore5.Startup",
         "method": "Configure"
       },
       "evidence": {

@@ -65,7 +65,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL
             }
         }
 
-        public override void EnumerateTags<TProcessor>(ref TProcessor processor)
+        public override void EnumerateTags<TProcessor>(ref TProcessor processor, bool openTelemetrySemanticsEnabled)
         {
             if (SpanKind is not null)
             {
@@ -92,7 +92,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL
                 processor.Process(new TagItem<string>("graphql.operation.type", OperationType, OperationTypeBytes));
             }
 
-            base.EnumerateTags(ref processor);
+            base.EnumerateTags(ref processor, openTelemetrySemanticsEnabled);
         }
 
         protected override void WriteAdditionalTags(System.Text.StringBuilder sb)

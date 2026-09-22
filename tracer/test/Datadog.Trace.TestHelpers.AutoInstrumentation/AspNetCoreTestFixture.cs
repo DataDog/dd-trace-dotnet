@@ -11,6 +11,7 @@ using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Net.Sockets;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit.Abstractions;
@@ -25,8 +26,10 @@ namespace Datadog.Trace.TestHelpers
         private const string TracingHeaderValue2 = "0000-0000-0000";
 
         private readonly HttpClient _httpClient;
+        private readonly object _initializationLock = new();
         private ITestOutputHelper _currentOutput;
         private object _outputLock = new();
+        private Task _initialization;
 
         public AspNetCoreTestFixture()
         {
@@ -47,6 +50,16 @@ namespace Datadog.Trace.TestHelpers
         public MockTracerAgent.TcpUdpAgent Agent { get; private set; }
 
         public int HttpPort { get; private set; }
+
+        /// <summary>
+        /// Gets the ddapm test-agent session the application under test exports OTLP to, for suites
+        /// that use <c>OTEL_TRACES_EXPORTER=otlp</c>. Owned by the fixture rather than by each test
+        /// case, because the fixture starts one process shared by every test case, and that process's
+        /// <c>OTEL_EXPORTER_OTLP_HEADERS</c> (which carries the session token) is fixed for its whole
+        /// lifetime -- a token generated per test case would stop matching what the running process
+        /// actually sends after the first one.
+        /// </summary>
+        public OtlpTestAgentSession OtlpSession { get; } = new();
 
         public void SetOutput(ITestOutputHelper output)
         {
@@ -78,8 +91,11 @@ namespace Datadog.Trace.TestHelpers
                 return;
             }
 
-            if (Process is null)
+            const int maxAttempts = 3;
+
+            for (int attempt = 1; attempt <= maxAttempts; attempt++)
             {
+                var capturedStderr = new StringBuilder();
                 var initialAgentPort = TcpPortProvider.GetOpenPort();
 
                 Agent = MockTracerAgent.Create(_currentOutput, initialAgentPort, agentConfiguration: agentConfiguration, useTelemetry: useTelemetry);
@@ -118,6 +134,7 @@ namespace Datadog.Trace.TestHelpers
                 {
                     if (args.Data != null)
                     {
+                        capturedStderr.AppendLine(args.Data);
                         WriteToOutput($"[webserver][stderr] {args.Data}");
                     }
                 };
@@ -132,16 +149,37 @@ namespace Datadog.Trace.TestHelpers
 
                 if (port == null)
                 {
+                    if (await CheckRaceAndCleanupForRetryAsync(attempt, maxAttempts, capturedStderr, helper))
+                    {
+                        continue;
+                    }
+
                     WriteToOutput("Unable to determine port application is listening on");
                     throw new Exception("Unable to determine port application is listening on");
                 }
 
                 HttpPort = port.Value;
                 WriteToOutput($"Started aspnetcore sample, listening on {HttpPort}");
-            }
 
-            await EnsureServerStarted(sendHealthCheck);
-            Agent.SpanFilters.Add(IsNotServerLifeCheck);
+                try
+                {
+                    await EnsureServerStarted(sendHealthCheck);
+                }
+                catch
+                {
+                    // Sample bound a port but never served the health check — could be the race
+                    // firing post-bind (gate thread dies after Kestrel is up).
+                    if (await CheckRaceAndCleanupForRetryAsync(attempt, maxAttempts, capturedStderr, helper))
+                    {
+                        continue;
+                    }
+
+                    throw;
+                }
+
+                Agent.SpanFilters.Add(IsNotServerLifeCheck);
+                return;
+            }
         }
 
         public void Dispose()
@@ -220,6 +258,92 @@ namespace Datadog.Trace.TestHelpers
                        returnAllOperations: true);
         }
 
+        /// <summary>
+        /// Runs <paramref name="initialize"/> the first time it is called and awaits that same task
+        /// on every later call, so a test class's one-time setup happens once no matter how many test
+        /// cases it has. xUnit builds a fresh instance of the test class - and so runs
+        /// <c>IAsyncLifetime.InitializeAsync</c> - for every test case, while this fixture is created
+        /// once per test class, which makes it the only place a once-per-class latch can live.
+        /// This allows consumers of AspNetCoreTestFixture to use custom initialization logic for their
+        /// test class.
+        /// </summary>
+        /// <param name="initialize">The setup to run once. A failure is cached along with the task,
+        /// so the remaining test cases fail with the same exception instead of each retrying a setup
+        /// that has already been shown not to work.</param>
+        /// <returns>The single initialization task, shared by every test case in the class.</returns>
+        public Task EnsureInitializedAsync(Func<Task> initialize)
+        {
+            lock (_initializationLock)
+            {
+                if (_initialization is null)
+                {
+                    try
+                    {
+                        _initialization = initialize();
+                    }
+                    catch (Exception ex)
+                    {
+                        // A delegate that throws before reaching its first await throws out of the
+                        // call rather than returning a faulted task, which would leave the latch
+                        // unset and send the next test case back through the same failing setup.
+                        _initialization = Task.FromException(ex);
+                    }
+                }
+
+                return _initialization;
+            }
+        }
+
+        // Returns true when a known race fingerprint was detected in the captured stderr and the
+        // caller should retry the launch (process and agent have been torn down). Returns false
+        // when no fingerprint matched. Throws if the fingerprint persisted past the retry budget.
+        private async Task<bool> CheckRaceAndCleanupForRetryAsync(int attempt, int maxAttempts, StringBuilder capturedStderr, TestHelper helper)
+        {
+            // Reset HttpPort up-front: whether we retry or rethrow, the port we bound earlier
+            // is now stale (process died) and Dispose() must not target it.
+            HttpPort = 0;
+
+            // 5s grace for createdump. Parameterless WaitForExit() after a successful timed
+            // wait drains async stdout/stderr handlers — otherwise capturedStderr may miss
+            // the final lines that carry the fingerprint.
+            int exitCode = -1;
+            try
+            {
+                if (Process.WaitForExit(5000))
+                {
+                    Process.WaitForExit();
+                    exitCode = Process.ExitCode;
+                }
+            }
+            catch
+            {
+                // best-effort
+            }
+
+            if (!await ErrorHelpers.HandleRuntimeSkippableErrorsAsync(attempt, maxAttempts, exitCode, capturedStderr.ToString(), helper, WriteToOutput))
+            {
+                return false;
+            }
+
+            try
+            {
+                if (!Process.HasExited)
+                {
+                    Process.Kill();
+                }
+            }
+            catch
+            {
+                // best-effort cleanup
+            }
+
+            Process.Dispose();
+            Process = null;
+            Agent.Dispose();
+            Agent = null;
+            return true;
+        }
+
         private async Task EnsureServerStarted(bool sendHealthCheck)
         {
             var maxMillisecondsToWait = 30_000;
@@ -243,8 +367,8 @@ namespace Datadog.Trace.TestHelpers
 
                         if (responseCode == HttpStatusCode.OK)
                         {
-                            await Agent.WaitForSpansAsync(1, minDateTime: dateTime);
-                            serverReady = true;
+                            var spans = await Agent.WaitForSpansAsync(1, minDateTime: dateTime);
+                            serverReady = spans.Count > 0;
                         }
                     }
                     else

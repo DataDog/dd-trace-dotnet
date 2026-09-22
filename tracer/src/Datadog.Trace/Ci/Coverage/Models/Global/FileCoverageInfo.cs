@@ -15,14 +15,33 @@ namespace Datadog.Trace.Ci.Coverage.Models.Global;
 
 internal sealed class FileCoverageInfo(string? path) : CoverageInfo
 {
+    private byte[]? _executableBitmap;
+    private byte[]? _executedBitmap;
+
     [JsonProperty("path")]
     public string? Path { get; set; } = path;
 
     [JsonProperty("executableBitmap")]
-    public byte[]? ExecutableBitmap { get; set; }
+    public byte[]? ExecutableBitmap
+    {
+        get => _executableBitmap;
+        set
+        {
+            _executableBitmap = value;
+            ClearData();
+        }
+    }
 
     [JsonProperty("executedBitmap")]
-    public byte[]? ExecutedBitmap { get; set; }
+    public byte[]? ExecutedBitmap
+    {
+        get => _executedBitmap;
+        set
+        {
+            _executedBitmap = value;
+            ClearData();
+        }
+    }
 
     public static FileCoverageInfo? operator +(FileCoverageInfo? a, FileCoverageInfo? b)
     {
@@ -76,7 +95,7 @@ internal sealed class FileCoverageInfo(string? path) : CoverageInfo
         {
             using var currentBitmap = new FileBitmap(currentBitmapBytes);
             using var bitmap = new FileBitmap(bitmapBytes);
-            using var newBitmap = currentBitmap | bitmap;
+            var newBitmap = currentBitmap | bitmap;
             ExecutableBitmap = newBitmap.GetInternalArrayOrToArrayAndDispose();
         }
         else
@@ -91,7 +110,7 @@ internal sealed class FileCoverageInfo(string? path) : CoverageInfo
         {
             using var currentBitmap = new FileBitmap(currentBitmapBytes);
             using var bitmap = new FileBitmap(bitmapBytes);
-            using var newBitmap = currentBitmap | bitmap;
+            var newBitmap = currentBitmap | bitmap;
             ExecutedBitmap = newBitmap.GetInternalArrayOrToArrayAndDispose();
         }
         else

@@ -13,6 +13,7 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 {
+    [Trait("Area", "CIVisibility")]
     public class GitParserTests
     {
         public static IEnumerable<object[]> GetData()
@@ -156,6 +157,16 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                 var errors = string.Join(Environment.NewLine, gitInfo?.Errors ?? []);
                 throw new Exception($"Error parsing git info from provider: {nameof(GitCommandGitInfoProvider)}{Environment.NewLine}{errors}");
             }
+        }
+
+        [SkippableFact]
+        public void GitInfoCurrentReadsCurrentCheckoutMetadata()
+        {
+            var gitInfo = GitInfo.GetCurrent();
+
+            gitInfo.Commit.Should().NotBeNullOrEmpty();
+            gitInfo.Repository.Should().NotBeNullOrEmpty();
+            gitInfo.SourceRoot.Should().NotBeNullOrEmpty();
         }
 
         public class TestItem : IXunitSerializable

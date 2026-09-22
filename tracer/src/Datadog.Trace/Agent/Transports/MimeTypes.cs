@@ -9,6 +9,7 @@ namespace Datadog.Trace.Agent.Transports
     {
         public const string MsgPack = "application/msgpack";
         public const string Json = "application/json";
+        public const string XProtobuf = "application/x-protobuf";
         public const string MultipartFormData = "multipart/form-data";
         public const string PlainText = "text/plain";
         public const string Gzip = "application/gzip";

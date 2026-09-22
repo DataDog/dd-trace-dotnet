@@ -1,0 +1,388 @@
+// <copyright file="GlobalCoverageAccumulator.cs" company="Datadog">
+// Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
+// This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
+// </copyright>
+
+#nullable enable
+
+using System;
+using System.Collections.Generic;
+using System.Reflection;
+using System.Runtime.ExceptionServices;
+using System.Threading;
+using Datadog.Trace.Ci.Coverage.Metadata;
+using Datadog.Trace.Ci.Coverage.Models.Global;
+using Datadog.Trace.Ci.Coverage.Util;
+
+namespace Datadog.Trace.Ci.Coverage;
+
+internal enum GlobalCoverageMergeResult
+{
+    Merged,
+    AlreadySuppressed,
+    BecameSuppressedIncomplete,
+}
+
+internal enum GlobalCoverageSnapshotStatus
+{
+    Success,
+    SuppressedIncomplete,
+}
+
+internal sealed class GlobalCoverageAccumulator
+{
+    private readonly object _mergeGate = new();
+    private readonly object _completenessGate = new();
+    private readonly SemaphoreSlim _snapshotGate = new(1, 1);
+    private readonly GlobalCoverageAccumulatorLimits _limits;
+    private CoverageState? _coverage;
+    private int _suppressed;
+    private int _failureReason;
+    private long _completenessEpoch;
+    private long _acceptedContextCount;
+    private bool _completenessFinalized;
+
+    public GlobalCoverageAccumulator(GlobalCoverageAccumulatorLimits? limits = null)
+    {
+        _limits = limits ?? GlobalCoverageAccumulatorLimits.Default;
+        _coverage = new CoverageState();
+    }
+
+    public bool IsSuppressed => Volatile.Read(ref _suppressed) != 0;
+
+    public GlobalCoverageFailureReason FailureReason => (GlobalCoverageFailureReason)Volatile.Read(ref _failureReason);
+
+    public long AcceptedContextCount => Volatile.Read(ref _acceptedContextCount);
+
+    // Global coverage is optional. Suppressing an OutOfMemoryException only abandons its retained
+    // state; it does not claim that the process recovered or retry the failed allocation.
+    private static bool ShouldSuppressGlobalCoverage(Exception exception)
+        => exception is OutOfMemoryException or OverflowException or GlobalCoverageLimitException or GlobalCoverageMetadataException;
+
+    private static GlobalCoverageInfo Materialize(CoverageState coverage)
+    {
+        var globalCoverage = new GlobalCoverageInfo();
+        foreach (var pair in coverage.Modules)
+        {
+            var component = new ComponentCoverageInfo(pair.Key.Name);
+            var metadata = pair.Value.Metadata;
+            for (var i = 0; i < metadata.Files.Length; i++)
+            {
+                var fileMetadata = metadata.Files[i];
+                component.Files.Add(
+                    new FileCoverageInfo(fileMetadata.Path)
+                    {
+                        ExecutableBitmap = fileMetadata.Bitmap,
+                        // A snapshot outlives the merge lock, so it must not expose mutable accumulator storage.
+                        ExecutedBitmap = pair.Value.ExecutedBitmaps[i] is { } bitmap ? (byte[])bitmap.Clone() : null
+                    });
+            }
+
+            globalCoverage.Components.Add(component);
+        }
+
+        return globalCoverage;
+    }
+
+    public GlobalCoverageMergeResult TryMerge(IReadOnlyList<ModuleCoverageData> modules)
+    {
+        if (IsSuppressed)
+        {
+            return GlobalCoverageMergeResult.AlreadySuppressed;
+        }
+
+        try
+        {
+            lock (_mergeGate)
+            {
+                if (IsSuppressed || _coverage is null)
+                {
+                    return GlobalCoverageMergeResult.AlreadySuppressed;
+                }
+
+                MergeIntoCoverage(_coverage, modules);
+                _coverage.AcceptedContextCount++;
+                _acceptedContextCount++;
+
+                return GlobalCoverageMergeResult.Merged;
+            }
+        }
+        catch (Exception ex) when (ShouldSuppressGlobalCoverage(ex))
+        {
+            Suppress(GlobalCoverageFailureReason.MergeFailed);
+            return GlobalCoverageMergeResult.BecameSuppressedIncomplete;
+        }
+    }
+
+    public void Suppress(GlobalCoverageFailureReason reason)
+    {
+        lock (_completenessGate)
+        {
+            SuppressUnderCompletenessGate(reason);
+        }
+
+        ClearCoverage();
+    }
+
+    public bool TryCommit(GlobalCoverageSnapshot snapshot, Action action)
+    {
+        ExceptionDispatchInfo? exception = null;
+        var committed = false;
+        lock (_completenessGate)
+        {
+            if (!IsSuppressed && !snapshot.IsDisposed && snapshot.CompletenessEpoch == _completenessEpoch)
+            {
+                try
+                {
+                    action();
+                    committed = true;
+                }
+                catch (Exception ex)
+                {
+                    SuppressUnderCompletenessGate(GlobalCoverageFailureReason.OutputCommitFailed);
+                    exception = ExceptionDispatchInfo.Capture(ex);
+                }
+            }
+        }
+
+        if (exception is not null)
+        {
+            ClearCoverage();
+            exception.Throw();
+        }
+
+        return committed;
+    }
+
+    // Keep artifact publication and the final completeness transition under one lock. Otherwise a
+    // concurrent failure could invalidate coverage after its pending marker has already been removed.
+    public bool TryFinalizeSnapshot(GlobalCoverageSnapshot snapshot, Func<bool> commit)
+    {
+        var failed = false;
+        ExceptionDispatchInfo? exception = null;
+        lock (_completenessGate)
+        {
+            if (IsSuppressed || snapshot.IsDisposed || snapshot.CompletenessEpoch != _completenessEpoch)
+            {
+                return false;
+            }
+
+            try
+            {
+                if (!commit())
+                {
+                    SuppressUnderCompletenessGate(GlobalCoverageFailureReason.OutputCommitFailed);
+                    failed = true;
+                }
+                else
+                {
+                    _completenessFinalized = true;
+                    return true;
+                }
+            }
+            catch (Exception ex)
+            {
+                SuppressUnderCompletenessGate(GlobalCoverageFailureReason.OutputCommitFailed);
+                failed = true;
+                exception = ExceptionDispatchInfo.Capture(ex);
+            }
+        }
+
+        if (failed)
+        {
+            ClearCoverage();
+        }
+
+        exception?.Throw();
+
+        return false;
+    }
+
+    private void ClearCoverage()
+    {
+        lock (_mergeGate)
+        {
+            _coverage = null;
+        }
+    }
+
+    private void SuppressUnderCompletenessGate(GlobalCoverageFailureReason reason)
+    {
+        if (_completenessFinalized)
+        {
+            return;
+        }
+
+        if (Interlocked.CompareExchange(ref _suppressed, 1, 0) == 0)
+        {
+            Volatile.Write(ref _failureReason, (int)reason);
+            _completenessEpoch = checked(_completenessEpoch + 1);
+        }
+    }
+
+    public GlobalCoverageSnapshotResult AcquireSnapshot(CoverageContextContainer? globalContainer, Action? releaseAdmission = null)
+    {
+        _snapshotGate.Wait();
+        var releaseSnapshotGate = true;
+        try
+        {
+            if (IsSuppressed)
+            {
+                return GlobalCoverageSnapshotResult.Suppressed(FailureReason);
+            }
+
+            GlobalCoverageInfo model;
+            long acceptedContextCount;
+            lock (_mergeGate)
+            {
+                if (IsSuppressed || _coverage is null)
+                {
+                    return GlobalCoverageSnapshotResult.Suppressed(FailureReason);
+                }
+
+                if (globalContainer is not null)
+                {
+                    var globalModules = globalContainer.SnapshotModules(_limits.MaximumModules);
+                    var globalCoverage = new ModuleCoverageData[globalModules.Length];
+                    for (var i = 0; i < globalModules.Length; i++)
+                    {
+                        globalCoverage[i] = ModuleCoverageData.Capture(globalModules[i]);
+                    }
+
+                    MergeIntoCoverage(_coverage, globalCoverage);
+                }
+
+                model = Materialize(_coverage);
+                _ = model.GetTotalPercentage();
+                acceptedContextCount = _coverage.AcceptedContextCount;
+            }
+
+            lock (_completenessGate)
+            {
+                if (IsSuppressed)
+                {
+                    return GlobalCoverageSnapshotResult.Suppressed(FailureReason);
+                }
+
+                var snapshot = new GlobalCoverageSnapshot(model, acceptedContextCount, _completenessEpoch, _snapshotGate, releaseAdmission);
+                releaseSnapshotGate = false;
+                return GlobalCoverageSnapshotResult.Success(snapshot);
+            }
+        }
+        catch (Exception ex) when (ShouldSuppressGlobalCoverage(ex))
+        {
+            Suppress(GlobalCoverageFailureReason.SnapshotFailed);
+            return GlobalCoverageSnapshotResult.Suppressed(FailureReason);
+        }
+        catch
+        {
+            Suppress(GlobalCoverageFailureReason.SnapshotFailed);
+            throw;
+        }
+        finally
+        {
+            if (releaseSnapshotGate)
+            {
+                _snapshotGate.Release();
+            }
+        }
+    }
+
+    private void MergeIntoCoverage(CoverageState coverage, IReadOnlyList<ModuleCoverageData> modules)
+    {
+        foreach (var moduleCoverage in modules)
+        {
+            var metadata = moduleCoverage.Metadata;
+
+            if (!coverage.Modules.TryGetValue(moduleCoverage.Module, out var moduleEntry))
+            {
+                if (coverage.Modules.Count >= _limits.MaximumModules)
+                {
+                    throw new GlobalCoverageLimitException("The global coverage module limit was exceeded.");
+                }
+
+                var newFileSlotCount = checked(coverage.FileSlotCount + metadata.Files.Length);
+                if (newFileSlotCount > _limits.MaximumFileSlots)
+                {
+                    throw new GlobalCoverageLimitException("The global coverage file-slot limit was exceeded.");
+                }
+
+                moduleEntry = new ModuleEntry(metadata);
+                coverage.Modules.Add(moduleCoverage.Module, moduleEntry);
+                coverage.FileSlotCount = newFileSlotCount;
+            }
+            else if (!ReferenceEquals(moduleEntry.Metadata, metadata))
+            {
+                throw new GlobalCoverageMetadataException("The same module was observed with different coverage metadata.");
+            }
+
+            for (var fileIndex = 0; fileIndex < metadata.Files.Length; fileIndex++)
+            {
+                var file = metadata.Files[fileIndex];
+                var sourceBitmap = moduleCoverage.ExecutedBitmaps[fileIndex];
+                if (sourceBitmap is null)
+                {
+                    continue;
+                }
+
+                var expectedBitmapLength = FileBitmap.GetSize(file.LastExecutableLine);
+                if (sourceBitmap.Length != expectedBitmapLength)
+                {
+                    throw new GlobalCoverageMetadataException("A captured coverage bitmap length does not match its metadata.");
+                }
+
+                var executedBitmap = moduleEntry.ExecutedBitmaps[fileIndex];
+                executedBitmap ??= AllocateBitmap(coverage, file.LastExecutableLine);
+                for (var byteIndex = 0; byteIndex < sourceBitmap.Length; byteIndex++)
+                {
+                    executedBitmap[byteIndex] |= sourceBitmap[byteIndex];
+                }
+
+                moduleEntry.ExecutedBitmaps[fileIndex] = executedBitmap;
+            }
+        }
+    }
+
+    private byte[] AllocateBitmap(CoverageState coverage, int lineCount)
+    {
+        var byteLength = FileBitmap.GetSize(lineCount);
+        if (byteLength > _limits.MaximumSingleBitmapBytes)
+        {
+            throw new GlobalCoverageLimitException("A global coverage bitmap exceeds the per-file limit.");
+        }
+
+        var retainedBytes = checked(coverage.RetainedBitmapBytes + byteLength);
+        if (retainedBytes > _limits.MaximumRetainedBitmapBytes)
+        {
+            throw new GlobalCoverageLimitException("The global coverage bitmap budget was exceeded.");
+        }
+
+        var bitmap = new byte[byteLength];
+        coverage.RetainedBitmapBytes = retainedBytes;
+        return bitmap;
+    }
+
+    private sealed class CoverageState
+    {
+        public Dictionary<Module, ModuleEntry> Modules { get; } = new();
+
+        public int RetainedBitmapBytes { get; set; }
+
+        public int FileSlotCount { get; set; }
+
+        public long AcceptedContextCount { get; set; }
+    }
+
+    private sealed class ModuleEntry
+    {
+        public ModuleEntry(ModuleCoverageMetadata metadata)
+        {
+            Metadata = metadata;
+            ExecutedBitmaps = new byte[metadata.Files.Length][];
+        }
+
+        public ModuleCoverageMetadata Metadata { get; }
+
+        public byte[]?[] ExecutedBitmaps { get; }
+    }
+}

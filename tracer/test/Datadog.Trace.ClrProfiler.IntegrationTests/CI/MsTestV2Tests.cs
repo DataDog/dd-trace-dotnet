@@ -24,6 +24,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 
     public class MsTestV2Tests2(ITestOutputHelper output) : MsTestV2TestsBase("MSTestTests2", output, pre224TestCount: 19, post224TestCount: 21);
 
+    [Trait("Area", "CIVisibility")]
     [Collection("MsTestV2Tests")]
     [UsesVerify]
     public abstract class MsTestV2TestsBase : TestingFrameworkTest
@@ -267,8 +268,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                                 case "My Custom 3|1: CustomMultipleResultsTestMethodAttributeTest":
                                 case "My Custom 3|2: CustomMultipleResultsTestMethodAttributeTest":
                                     AssertTargetSpanEqual(targetSpan, TestTags.Status, TestTags.StatusPass);
+                                    AssertTargetSpanEqual(
+                                        targetSpan,
+                                        TestTags.Parameters,
+                                        $"{{\"metadata\":{{\"test_name\":\"{targetSpan.Tags[TestTags.Name]}\"}},\"arguments\":{{}}}}");
                                     break;
                             }
+
+                            Assert.True(targetSpan.Tags.Remove(IntelligentTestRunnerTags.TestTestsSkippingEnabled));
 
                             // check remaining tag (only the name)
                             Assert.Single(targetSpan.Tags);

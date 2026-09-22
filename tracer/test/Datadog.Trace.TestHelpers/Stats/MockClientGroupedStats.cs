@@ -69,4 +69,7 @@ public class MockClientGroupedStats
 
     [Key("PeerTags")]
     public string[] PeerTags { get; set; }
+
+    [Key("AdditionalMetricTags")]
+    public string[] AdditionalMetricTags { get; set; }
 }

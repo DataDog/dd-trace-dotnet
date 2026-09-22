@@ -26,6 +26,7 @@
 #include "ClrLifetime.h"
 #include "Configuration.h"
 #include "ContentionProvider.h"
+#include "CoreLibModuleProvider.h"
 #include "CpuTimeProvider.h"
 #include "DebugInfoStore.h"
 #include "EnabledProfilers.h"
@@ -52,16 +53,24 @@
 #include "Sample.h"
 #include "SampleValueTypeProvider.h"
 #include "SsiManager.h"
+#include "StackFramesCollectorBase.h"
+#include "StackSamplerLoop.h"
 #include "StackSamplerLoopManager.h"
 #include "ThreadsCpuManager.h"
 #include "WallTimeProvider.h"
 #ifdef LINUX
+#ifdef ARM64
+#include "HybridUnwinder.h"
+#else
 #include "Backtrace2Unwinder.h"
+#endif
+#include "UnwindingRecorderFactory.h"
 #include "ProfilerSignalManager.h"
 #include "SystemCallsShield.h"
 #include "TimerCreateCpuProfiler.h"
 #include "LibrariesInfoCache.h"
 #include "CpuSampleProvider.h"
+#include <pthread.h>
 #endif
 
 #include "shared/src/native-src/pal.h"
@@ -176,12 +185,14 @@ void CorProfilerCallback::InitializeServices()
     // Like the SystemCallsShield, this service must be started before any profiler.
     // For now we asked for a memory resource that will have maximum 100 blocks of 1KiB per block.
     // (before it uses the default memory resource a.k.a new/delete for allocation)
-    // TODO add metrics to measure if it's ok or not
-    RegisterService<LibrariesInfoCache>(_memoryResourceManager.GetSynchronizedPool(100, 1024));
+    RegisterService<LibrariesInfoCache>(_pConfiguration.get(), _memoryResourceManager.GetSynchronizedPool(100, 1024), _metricsRegistry);
 #endif
 
     _pFrameStore = std::make_unique<FrameStore>(
         _pCorProfilerInfo, _pConfiguration.get(), _pDebugInfoStore.get(), _managedCodeCache.get());
+
+    // must be created before the components that resolve core library types (i.e. exceptions and heap snapshot)
+    _pCoreLibModuleProvider = std::make_unique<CoreLibModuleProvider>(_pCorProfilerInfo);
 
     // Create service instances
     _pThreadsCpuManager = RegisterService<ThreadsCpuManager>();
@@ -300,6 +311,7 @@ void CorProfilerCallback::InitializeServices()
             _pCorProfilerInfo,
             _pManagedThreadList,
             _pFrameStore.get(),
+            _pCoreLibModuleProvider.get(),
             _pConfiguration.get(),
             _rawSampleTransformer.get(),
             _metricsRegistry,
@@ -394,9 +406,11 @@ void CorProfilerCallback::InitializeServices()
                 _pConfiguration.get(),
                 _pCorProfilerInfoEvents,
                 _pFrameStore.get(),
+                _pCoreLibModuleProvider.get(),
                 _pThreadsCpuManager,
                 _metricsRegistry,
-                _pNativeThreadList
+                _pNativeThreadList,
+                _pRuntimeInfo.get()
                 );
 
             if (_pConfiguration->IsMemoryFootprintEnabled())
@@ -457,6 +471,8 @@ void CorProfilerCallback::InitializeServices()
             }
         }
 
+        IGCDumpListener* pGCDumpListener = _pHeapSnapshotManager;
+
         // TODO: add new CLR events-based providers to the event parser
         _pEventPipeEventsManager = std::make_unique<EventPipeEventsManager>(
             _pCorProfilerInfoEvents,
@@ -464,7 +480,8 @@ void CorProfilerCallback::InitializeServices()
             _pContentionProvider,
             _pStopTheWorldProvider,
             _pNetworkProvider,
-            _pHeapSnapshotManager
+            _pConfiguration.get(),
+            pGCDumpListener
         );
 
         if (_pGarbageCollectionProvider != nullptr)
@@ -604,23 +621,50 @@ void CorProfilerCallback::InitializeServices()
     auto const& sampleTypeDefinitions = valueTypeProvider.GetValueTypes();
     Sample::ValuesCount = sampleTypeDefinitions.size();
 
+    // Stack frames collector is shared by StackSamplerLoopManager and StackSamplerLoop
+    //  (registered separately below), so it's constructed here rather than by either of them.
+    _callstackProvider = CallstackProvider(_memoryResourceManager.GetSynchronizedPool(100, Callstack::MaxSize));
+    _pStackFramesCollector = OsSpecificApi::CreateNewStackFramesCollectorInstance(
+        _pCorProfilerInfo, _pConfiguration.get(), &_callstackProvider, _metricsRegistry);
+
     _pStackSamplerLoopManager = RegisterService<StackSamplerLoopManager>(
         _pCorProfilerInfo,
-        _pConfiguration.get(),
         _metricsSender,
         _pClrLifetime.get(),
+        _pThreadsCpuManager,
+        _pStackFramesCollector.get(),
+        _metricsRegistry);
+
+    _pStackSamplerLoop = RegisterService<StackSamplerLoop>(
+        _pCorProfilerInfo,
+        _pConfiguration.get(),
+        _pStackFramesCollector.get(),
+        _pStackSamplerLoopManager,
         _pThreadsCpuManager,
         _pManagedThreadList,
         _pCodeHotspotsThreadList,
         _pWallTimeProvider,
         _pCpuTimeProvider,
-        _metricsRegistry,
-        CallstackProvider(_memoryResourceManager.GetSynchronizedPool(100, Callstack::MaxSize)));
+        _metricsRegistry);
 
+    _pStackSamplerLoopManager->SetStackSamplerLoop(_pStackSamplerLoop);
+
+#ifdef ARM64
+    if (Log::IsDebugEnabled())
+    {
+        // For now just 50 is a magic number. We should size based on the number of
+        // cores + extra.
+        _pUnwindingRecorderFactory = std::make_unique<UnwindingRecorderFactory>(50);
+    }
+#endif
 #ifdef LINUX
     if (_pConfiguration->IsCpuProfilingEnabled() && _pConfiguration->GetCpuProfilerType() == CpuProfilerType::TimerCreate)
     {
+#ifdef ARM64
+        _pUnwinder = std::make_unique<HybridUnwinder>(_managedCodeCache.get());
+#else
         _pUnwinder = std::make_unique<Backtrace2Unwinder>();
+#endif
         // Other alternative in case of crash-at-shutdown, do not register it as a service
         // we will have to start it by hand (already stopped by hand)
         _pCpuProfiler = std::make_unique<TimerCreateCpuProfiler>(
@@ -629,7 +673,8 @@ void CorProfilerCallback::InitializeServices()
             _pManagedThreadList,
             _pCpuSampleProvider,
             _metricsRegistry,
-            _pUnwinder.get());
+            _pUnwinder.get(),
+            _pUnwindingRecorderFactory.get());
     }
 #endif
 
@@ -950,6 +995,7 @@ bool CorProfilerCallback::DisposeServices()
 
     _pThreadsCpuManager = nullptr;
     _pStackSamplerLoopManager = nullptr;
+    _pStackSamplerLoop = nullptr;
     _pManagedThreadList = nullptr;
     _pNativeThreadList = nullptr;
     _pCodeHotspotsThreadList = nullptr;
@@ -1029,7 +1075,17 @@ void CorProfilerCallback::DisposeInternal()
             _pEtwEventsManager->Stop();
         }
 
-        DisposeServices();
+        {
+            // _isServicesShutdown must be set to true before this lock releases, not after - see
+            // EngineActiveGuard.h. From this point on, no EngineActiveGuard can ever report
+            // IsActive() again (the mutex's own synchronizes-with guarantee ensures every future
+            // lock acquisition, on any thread, observes _isServicesShutdown == true), so no guarded
+            // ICorProfilerCallback method can race DisposeServices() below, or run after it and
+            // find already-destroyed service pointers.
+            std::unique_lock<std::shared_mutex> exclusiveLock(_engineLifetimeMutex);
+            _isServicesShutdown = true;
+            DisposeServices();
+        }
 
         ICorProfilerInfo5* pCorProfilerInfo = _pCorProfilerInfo;
         if (pCorProfilerInfo != nullptr)
@@ -1403,6 +1459,8 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
 
     _pMetadataProvider = std::make_unique<MetadataProvider>();
     _pMetadataProvider->Initialize();
+    _pMetadataProvider->Add(MetadataProvider::SectionRuntimeSettings, MetadataProvider::EffectiveCpuProfilerType,
+                            to_string(_pConfiguration->GetCpuProfilerType()));
     PrintEnvironmentVariables();
 
     _pSsiManager = std::make_unique<SsiManager>(_pConfiguration.get(), this);
@@ -1449,6 +1507,13 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
     COR_PRF_RUNTIME_TYPE runtimeType;
     CorProfilerCallback::InspectRuntimeVersion(_pCorProfilerInfo, major, minor, runtimeType);
 
+#if !defined(_WINDOWS) && defined(ARM64)
+    if (major < 5)
+    {
+        Log::Warn("The Continuous Profiler has been disabled on arm64 Linux: .NET 5.0 or greater is required.");
+        return E_FAIL;
+    }
+#endif
     // We only need to get the complete version for .NET Framework
     // For the other runtimes, no need to wait for mscorlib to be loaded
     if (runtimeType != COR_PRF_DESKTOP_CLR)
@@ -1538,13 +1603,15 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
     // Use managed code cache
     if (_pConfiguration->UseManagedCodeCache())
     {
-        _managedCodeCache = std::make_unique<ManagedCodeCache>(_pCorProfilerInfo);
+        _managedCodeCache = std::make_unique<ManagedCodeCache>(_pCorProfilerInfo, _metricsRegistry);
         if (!_managedCodeCache->Initialize())
         {
             Log::Error("Failed to initialize managed code cache. The profiler will not run.");
             return E_FAIL;
         }
     }
+
+    OsSpecificApi::InitializeUnwinder(_managedCodeCache.get());
 
     // create services without starting them
     InitializeServices();
@@ -1565,6 +1632,15 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
     if (_pConfiguration->IsWaitHandleProfilingEnabled())
     {
         eventMask |= COR_PRF_MONITOR_MODULE_LOADS | COR_PRF_MONITOR_CLASS_LOADS;
+    }
+
+    if (_pConfiguration->IsHeapSnapshotEnabled())
+    {
+        // CoreLibModuleProvider is fed from ModuleLoadFinished and InlineVTCache needs it
+        // to resolve the primitive types of inline value type fields. Exception profiling
+        // asks for the same flag and is enabled by default, so this only matters when it
+        // has been turned off.
+        eventMask |= COR_PRF_MONITOR_MODULE_LOADS;
     }
 
     if (_pConfiguration->IsAllocationRecorderEnabled() && !_pConfiguration->GetProfilesOutputDirectory().empty())
@@ -1788,8 +1864,23 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Shutdown()
 
     // A final .pprof should be generated before exiting
     // The aggregator must be stopped before the provider, since it will call them to get the last samples
+    // (StopServices() will also call Stop() on both of these again later, in the correct reverse-of-
+    // registration order; both are one-shot services, so those later calls are guaranteed no-ops.)
+    _pStackSamplerLoop->Stop();
     _pStackSamplerLoopManager->Stop();
 
+
+#ifdef LINUX
+if (_pCpuProfiler != nullptr)
+{
+    // if we failed at stopping the time_create-based CPU profiler,
+    // it's safer to not release the memory.
+    // Otherwise, we might crash the application.
+    // Reason: one thread could be executing the signal handler and accessing some field
+    auto success = _pCpuProfiler->Stop();
+    LogServiceStop(success, _pCpuProfiler->GetName());
+}
+#endif
     // TODO: maybe move the following 2 lines AFTER stopping the providers
     // --> to ensure that the last samples are collected
     _pSamplesCollector->Stop();
@@ -1954,6 +2045,15 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::AppDomainCreationStarted(AppDomai
 
 HRESULT STDMETHODCALLTYPE CorProfilerCallback::AppDomainCreationFinished(AppDomainID appDomainId, HRESULT hrStatus)
 {
+    // Previously unguarded entirely (unlike its siblings below, which at least had the racy
+    // _isInitialized check) - _pRuntimeIdStore is a _services-managed pointer DisposeServices()
+    // can free concurrently. See EngineActiveGuard.h.
+    EngineActiveGuard engineGuard(_isInitialized, _engineLifetimeMutex, _isServicesShutdown);
+    if (!engineGuard.IsActive())
+    {
+        return S_OK;
+    }
+
     _pAppDomainStore->Register(appDomainId);
     if (_pConfiguration->GetDeploymentMode() == DeploymentMode::SingleStepInstrumentation)
     {
@@ -2002,9 +2102,9 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ModuleLoadStarted(ModuleID module
 
 HRESULT STDMETHODCALLTYPE CorProfilerCallback::ModuleLoadFinished(ModuleID moduleId, HRESULT hrStatus)
 {
-    if (false == _isInitialized.load())
+    EngineActiveGuard engineGuard(_isInitialized, _engineLifetimeMutex, _isServicesShutdown);
+    if (!engineGuard.IsActive())
     {
-        // If this CorProfilerCallback has not yet initialized, or if it has already shut down, then this callback is a No-Op.
         return S_OK;
     }
 
@@ -2015,6 +2115,12 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ModuleLoadFinished(ModuleID modul
         GetFullFrameworkVersion(moduleId);
     }
 #endif
+
+    // must be done first: the other consumers rely on the core library module id being set
+    if (_pCoreLibModuleProvider != nullptr)
+    {
+        _pCoreLibModuleProvider->OnModuleLoaded(moduleId);
+    }
 
     if (_pConfiguration->IsExceptionProfilingEnabled())
     {
@@ -2031,6 +2137,13 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ModuleLoadFinished(ModuleID modul
 
 HRESULT STDMETHODCALLTYPE CorProfilerCallback::ModuleUnloadStarted(ModuleID moduleId)
 {
+    if (_pHeapSnapshotManager != nullptr)
+    {
+        // Notified here rather than from ModuleUnloadFinished so that the ClassIDs of the
+        // module stop being used before the runtime starts freeing what they point to.
+        _pHeapSnapshotManager->OnModuleUnloaded();
+    }
+
     return S_OK;
 }
 
@@ -2082,7 +2195,7 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::JITCompilationFinished(FunctionID
 {
     if (_managedCodeCache != nullptr && SUCCEEDED(hrStatus))
     {
-        _managedCodeCache->AddFunction(functionId);
+        _managedCodeCache->AddFunction(functionId, /*isDynamic*/ false);
     }
     return S_OK;
 }
@@ -2111,9 +2224,9 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ThreadCreated(ThreadID threadId)
 {
     Log::Debug("Callback invoked: ThreadCreated(threadId=0x", std::hex, threadId, std::dec, ")");
 
-    if (false == _isInitialized.load())
+    EngineActiveGuard engineGuard(_isInitialized, _engineLifetimeMutex, _isServicesShutdown);
+    if (!engineGuard.IsActive())
     {
-        // If this CorProfilerCallback has not yet initialized, or if it has already shut down, then this callback is a No-Op.
         return S_OK;
     }
 
@@ -2165,9 +2278,9 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ThreadDestroyed(ThreadID threadId
 {
     Log::Debug("Callback invoked: ThreadDestroyed(threadId=0x", std::hex, threadId, std::dec, ")");
 
-    if (false == _isInitialized.load())
+    EngineActiveGuard engineGuard(_isInitialized, _engineLifetimeMutex, _isServicesShutdown);
+    if (!engineGuard.IsActive())
     {
-        // If this CorProfilerCallback has not yet initialized, or if it has already shut down, then this callback is a No-Op.
         return S_OK;
     }
 
@@ -2201,7 +2314,9 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ThreadDestroyed(ThreadID threadId
         _systemCallsShield->Unregister();
     }
 
-    if (_pCpuProfiler != nullptr)
+    // pThreadInfo is only set when the thread was still in the managed thread list: there is no timer
+    // to delete otherwise, and UnregisterThread would dereference a null pointer.
+    if (_pCpuProfiler != nullptr && pThreadInfo != nullptr)
     {
         _pCpuProfiler->UnregisterThread(pThreadInfo);
     }
@@ -2214,9 +2329,9 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ThreadAssignedToOSThread(ThreadID
 {
     Log::Debug("Callback invoked: ThreadAssignedToOSThread(managedThreadId=0x", std::hex, managedThreadId, ", osThreadId=", std::dec, osThreadId, ")");
 
-    if (false == _isInitialized.load())
+    EngineActiveGuard engineGuard(_isInitialized, _engineLifetimeMutex, _isServicesShutdown);
+    if (!engineGuard.IsActive())
     {
-        // If this CorProfilerCallback has not yet initialized, or if it has already shut down, then this callback is a No-Op.
         return S_OK;
     }
 
@@ -2257,7 +2372,23 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ThreadAssignedToOSThread(ThreadID
     _pManagedThreadList->SetThreadOsInfo(managedThreadId, osThreadId, dupOsThreadHandle);
 
 #ifdef LINUX
-    // This call must be made *after* we assigne the SetThreadOsInfo function call.
+    {
+        pthread_attr_t attr;
+        if (pthread_getattr_np(pthread_self(), &attr) == 0)
+        {
+            void* stackAddr;
+            size_t stackSize;
+            if (pthread_attr_getstack(&attr, &stackAddr, &stackSize) == 0)
+            {
+                auto stackBase = reinterpret_cast<std::uintptr_t>(stackAddr);
+                auto stackEnd = stackBase + stackSize;
+                threadInfo->SetStackBounds(stackBase, stackEnd);
+            }
+            pthread_attr_destroy(&attr);
+        }
+    }
+
+    // This call must be made *after* we assign the SetThreadOsInfo function call.
     // Otherwise the threadInfo won't have it's OsThread field set and timer_create
     // will have random behavior.
     if (_pCpuProfiler != nullptr)
@@ -2277,16 +2408,22 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ThreadAssignedToOSThread(ThreadID
     }
 
     // TL;DR prevent the profiler from deadlocking application thread on malloc
-    // Backtrace2Unwinder relies on libunwind. We need to call it to make sure
+    // The unwinder relies on libunwind. We need to call it to make sure
     // libunwind allocates and initializes TLS (Thread Local Storage) data structures for the current
     // thread.
     // Initialization of TLS object does call malloc. Unfortunately, if those calls to malloc
     // occurs in our profiler signal handler, we end up deadlocking the application.
-    // To prevent that, we call unw_backtrace here for the current thread, to force libunwind
+    // To prevent that, we call the unwinder here for the current thread, to force libunwind
     // initializing the TLS'd data structures for the current thread.
-    Backtrace2Unwinder bt2;
+#ifdef ARM64
+    HybridUnwinder warmup(_managedCodeCache.get());
+#else
+    Backtrace2Unwinder warmup;
+#endif
     uintptr_t tab[1];
-    bt2.Unwind(nullptr, tab, 1);
+    Callstack callstack(shared::span<std::uintptr_t>(tab, 1));
+    auto [stackBase, stackEnd] = threadInfo->GetStackBounds();
+    warmup.Unwind(nullptr, callstack, stackBase, stackEnd);
 
     // check if SIGUSR1 signal is blocked for current thread
     sigset_t currentMask;
@@ -2303,9 +2440,9 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ThreadAssignedToOSThread(ThreadID
 
 HRESULT STDMETHODCALLTYPE CorProfilerCallback::ThreadNameChanged(ThreadID threadId, ULONG cchName, WCHAR name[])
 {
-    if (false == _isInitialized.load())
+    EngineActiveGuard engineGuard(_isInitialized, _engineLifetimeMutex, _isServicesShutdown);
+    if (!engineGuard.IsActive())
     {
-        // If this CorProfilerCallback has not yet initialized, or if it has already shut down, then this callback is a No-Op.
         return S_OK;
     }
 
@@ -2440,9 +2577,9 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::RootReferences(ULONG cRootRefs, O
 
 HRESULT STDMETHODCALLTYPE CorProfilerCallback::ExceptionThrown(ObjectID thrownObjectId)
 {
-    if (false == _isInitialized.load())
+    EngineActiveGuard engineGuard(_isInitialized, _engineLifetimeMutex, _isServicesShutdown);
+    if (!engineGuard.IsActive())
     {
-        // If this CorProfilerCallback has not yet initialized, or if it has already shut down, then this callback is a No-Op.
         return S_OK;
     }
 
@@ -2603,7 +2740,7 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ReJITCompilationFinished(Function
 {
     if (_managedCodeCache != nullptr && SUCCEEDED(hrStatus))
     {
-        _managedCodeCache->AddFunction(functionId);
+        _managedCodeCache->AddFunction(functionId, /*isDynamic*/ false);
     }
 
     return S_OK;
@@ -2648,7 +2785,9 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::DynamicMethodJITCompilationFinish
 {
     if (_managedCodeCache != nullptr && SUCCEEDED(hrStatus))
     {
-        _managedCodeCache->AddFunction(functionId);
+        // The CLR calls this callback (and not JITCompilationFinished) for every
+        // dynamic method, so no need to ask it if the function is dynamic or not.
+        _managedCodeCache->AddFunction(functionId, /*isDynamic*/ true);
     }
     return S_OK;
 }
@@ -2706,5 +2845,11 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::EventPipeProviderCreated(EVENTPIP
     }
 
     Log::Debug("Event pipe provider: ", shared::ToString(providerName));
+
+    if (_pEventPipeEventsManager != nullptr)
+    {
+        _pEventPipeEventsManager->OnProviderCreated(provider);
+    }
+
     return S_OK;
 }

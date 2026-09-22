@@ -16,24 +16,15 @@ on:
         description: 'Is this a hotfix release? If true, skips vNext milestone renaming'
         required: true
         type: boolean
+    # These must be declared (and explicitly passed by the caller below) even though their
+    # actual values come from the job's `environment: publish-debug-symbols-env` secrets, not
+    # from the caller's own secrets. Without a declared+passed secret of the same name, the
+    # `secrets.X` context inside this reusable workflow resolves empty regardless of the
+    # environment secret's value - see https://github.com/actions/runner/issues/1490.
     secrets:
       AZURE_DEVOPS_TOKEN:
         required: true
       NUGET_TRUSTED_PUBLISHING_USERNAME:
-        required: true
-      DD_PUBLIC_SYMBOL_PREPROD_API_KEY:
-        required: true
-      DD_PUBLIC_SYMBOL_API_KEY_US1:
-        required: true
-      DD_PUBLIC_SYMBOL_API_KEY_US3:
-        required: true
-      DD_PUBLIC_SYMBOL_API_KEY_US5:
-        required: true
-      DD_PUBLIC_SYMBOL_API_KEY_EU1:
-        required: true
-      DD_PUBLIC_SYMBOL_API_KEY_AP1:
-        required: true
-      DD_PUBLIC_SYMBOL_API_KEY_AP2:
         required: true
 
 jobs:
@@ -45,16 +36,9 @@ jobs:
     permissions:
       contents: read # actions/checkout uses the workflow token to clone
       id-token: write # required for dd-octo-sts OIDC and NuGet trusted publishing
-    env:
-      # Have to use external token with explicit workflow permissions because we are creating
-      # a release from an arbitrary SHA. For "reasons", the built-in token does not _always_
-      # work in that scenario, so using an external token is required. See issue
-      # https://github.com/cli/cli/issues/9514 for more details.
-      AZURE_DEVOPS_TOKEN: "${{ secrets.AZURE_DEVOPS_TOKEN }}"
-
     steps:
       - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
 
@@ -69,7 +53,7 @@ jobs:
           echo "Using sha $commitsha"
           echo "sha=${commitsha}" >> $GITHUB_OUTPUT
 
-      - uses: actions/setup-dotnet@c2fa09f4bde5ebb9d1777cf28262a3eb3db3ced7 # v5.2.0
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
           global-json-file: global.json
 
@@ -80,7 +64,7 @@ jobs:
 
       # Use the ambient GitHub token to login to NuGet and retrieve an API key
       - name: NuGet login (OIDC → temp API key)
-        uses: NuGet/login@d22cc5f58ff5b88bf9bd452535b4335137e24544 # v1.0.0
+        uses: NuGet/login@8d196754b4036150537f80ac539e15c2f1028841 # v1.2.0
         id: nuget_login
         with:
           # Secret is your NuGet username (not email), e.g. andrewlock
@@ -101,7 +85,7 @@ jobs:
            echo "The NUGET_TRUSTED_PUBLISHING_USERNAME contains the username that should have the trusted policy configured on nuget.org." >&2
            echo "If this user is no longer part of the datadog organisation on nuget.org: create a new trusted policy using your nuget user " >&2
            echo "  1. Create a new trusted policy using your nuget user. Follow the example in https://github.com/DataDog/dd-trace-dotnet/pull/8209" >&2
-           echo "  2. Replace the NUGET_TRUSTED_PUBLISHING_USERNAME GitHub secret with your nuget.org username (not email) at https://github.com/DataDog/dd-trace-dotnet/settings/secrets/actions " >&2
+           echo "  2. Replace the NUGET_TRUSTED_PUBLISHING_USERNAME secret on the publish-debug-symbols-env environment with your nuget.org username (not email) at https://github.com/DataDog/dd-trace-dotnet/settings/environments " >&2
            echo "  3. Try running this release again" >&2
             exit 1
           fi
@@ -111,7 +95,7 @@ jobs:
 
       - name: Get GitHub Token via dd-octo-sts
         id: generate-token
-        uses: DataDog/dd-octo-sts-action@96a25462dbcb10ebf0bfd6e2ccc917d2ab235b9a # v1.0.4
+        uses: DataDog/dd-octo-sts-action@c85802a58e202b7e764b5441e4378c76043c8108 # v1.0.5
         with:
           scope: DataDog/dd-trace-dotnet
           policy: self.github.create-draft-release
@@ -134,6 +118,7 @@ jobs:
           TargetBranch: ${{ github.ref }}
           CommitSha: "${{ steps.set_sha.outputs.sha }}"
           GITHUB_TOKEN: "${{ steps.generate-token.outputs.token }}"
+          AZURE_DEVOPS_TOKEN: "${{ secrets.AZURE_DEVOPS_TOKEN }}"
 
       - name: "Generate release notes"
         id: release_notes
@@ -182,10 +167,3 @@ jobs:
         uses: ./.github/actions/publish-debug-symbols
         with:
           artifacts_path: ${{steps.assets.outputs.artifacts_path}}
-          preprod_api_key: ${{ secrets.DD_PUBLIC_SYMBOL_PREPROD_API_KEY }}
-          us1_api_key: ${{ secrets.DD_PUBLIC_SYMBOL_API_KEY_US1 }}
-          us3_api_key: ${{ secrets.DD_PUBLIC_SYMBOL_API_KEY_US3 }}
-          us5_api_key: ${{ secrets.DD_PUBLIC_SYMBOL_API_KEY_US5 }}
-          eu1_api_key: ${{ secrets.DD_PUBLIC_SYMBOL_API_KEY_EU1 }}
-          ap1_api_key: ${{ secrets.DD_PUBLIC_SYMBOL_API_KEY_AP1 }}
-          ap2_api_key: ${{ secrets.DD_PUBLIC_SYMBOL_API_KEY_AP2 }}

@@ -10,7 +10,7 @@
     <!-- Only run older version of HotChocolate for net6.0 and net 7.0 (support dropped in version 13.*.*) -->
     <ApiVersion Condition="'$(ApiVersion)' == '' And ('$(TargetFramework)' == 'net6.0' Or '$(TargetFramework)' == 'net7.0')">14.0.0</ApiVersion>
 
-    <ApiVersion Condition="'$(ApiVersion)' == ''">15.0.3</ApiVersion>
+    <ApiVersion Condition="'$(ApiVersion)' == ''">16.1.3</ApiVersion>
 
     <!-- Required to build multiple projects with the same Configuration|Platform, which is needed for the CI library/version matrix -->
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>

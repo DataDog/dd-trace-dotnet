@@ -60,4 +60,4 @@ Expression: (
 }
 Result: True
 Errors:
-EvaluationError { Expression = this.String > this.Char, Message = The binary operator GreaterThan is not defined for the types 'System.String' and 'System.Char'. }
+EvaluationError { Expression = this.String > this.Char, Message = A reference type cannot be compared to a not nullable value type. }

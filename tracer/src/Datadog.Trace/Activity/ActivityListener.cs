@@ -11,6 +11,7 @@ using System.Reflection.Emit;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Activity.DuckTypes;
+using Datadog.Trace.Activity.Handlers;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
@@ -158,6 +159,9 @@ namespace Datadog.Trace.Activity
                     CreateDiagnosticSourceListenerInstance(diagnosticListenerType);
                 }
 
+                // Kick off the reconciliation sweep that bounds ActivityMappingById growth
+                // when customer code creates Activities without calling Stop.
+                ActivityHandlerCommon.StartReconciliationLoop();
                 return;
             }
 
@@ -192,6 +196,8 @@ namespace Datadog.Trace.Activity
 
         public static void StopListeners()
         {
+            ActivityHandlerCommon.StopReconciliationLoop();
+
             // If there's an activity listener instance we dispose the instance and clear it.
             if (_activityListenerInstance is IDisposable disposableListener)
             {

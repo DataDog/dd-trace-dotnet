@@ -67,6 +67,22 @@ internal sealed class ProfilerSettings
             "true" => ProfilerState.Enabled,
             _ => ProfilerState.Disabled,
         };
+
+        // Linux ARM64: native profiler requires DD_INTERNAL_PROFILING_ENABLED_ARM64; align managed enablement.
+        var fd = FrameworkDescription.Instance;
+        if (fd.OSPlatform == OSPlatformName.Linux &&
+            fd.ProcessArchitecture == ProcessArchitecture.Arm64 &&
+            ProfilerState != ProfilerState.Disabled)
+        {
+            var arm64ProfilingEnabled = profilingConfig
+                                        .WithKeys(ConfigurationKeys.ContinuousProfiler.InternalProfilingEnabledArm64)
+                                        .AsBool(false);
+            if (!arm64ProfilingEnabled)
+            {
+                ProfilerState = ProfilerState.Disabled;
+                telemetry.Record(ConfigurationKeys.Profiler.ProfilingEnabled, "false", recordValue: true, ConfigurationOrigins.Calculated);
+            }
+        }
     }
 
     [TestingOnly]
@@ -86,7 +102,7 @@ internal sealed class ProfilerSettings
             var fd = FrameworkDescription.Instance;
             return
                 (fd.OSPlatform == OSPlatformName.Windows && fd.ProcessArchitecture is ProcessArchitecture.X64 or ProcessArchitecture.X86) ||
-                (fd.OSPlatform == OSPlatformName.Linux && fd.ProcessArchitecture is ProcessArchitecture.X64);
+                (fd.OSPlatform == OSPlatformName.Linux && fd.ProcessArchitecture is ProcessArchitecture.X64 or ProcessArchitecture.Arm64);
         }
     }
 

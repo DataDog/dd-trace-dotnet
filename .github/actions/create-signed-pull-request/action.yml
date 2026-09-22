@@ -1,0 +1,63 @@
+name: 'Create Signed Pull Request'
+description: 'Creates or updates a pull request whose commit is signed by GitHub'
+
+# Thin wrapper over peter-evans/create-pull-request that always sets sign-commits
+# Signing needs a bot token: our dd-octo-sts tokens are GitHub App tokens, so the commit is signed
+# and attributed to the app. A PAT would silently produce unsigned commits.
+
+inputs:
+  token:
+    description: 'GitHub App token used to commit and manage the pull request. Needs contents:write and pull_requests:write.'
+    required: true
+  branch:
+    description: 'Head branch to create or update'
+    required: true
+  commit-message:
+    description: 'Message for the commit'
+    required: true
+  title:
+    description: 'Pull request title'
+    required: true
+  base:
+    description: 'Base branch for the pull request. Defaults to the branch that was checked out.'
+    required: false
+  body:
+    description: 'Pull request body'
+    required: false
+  labels:
+    description: 'Comma-separated labels to apply'
+    required: false
+  reviewers:
+    description: 'Comma-separated reviewers to request. GitHub usernames, not teams.'
+    required: false
+  draft:
+    description: 'Whether to create the pull request as a draft.'
+    required: false
+    default: 'false'
+
+outputs:
+  pull-request-number:
+    description: 'Number of the created or updated pull request'
+    value: ${{ steps.pr.outputs.pull-request-number }}
+  pull-request-url:
+    description: 'URL of the created or updated pull request'
+    value: ${{ steps.pr.outputs.pull-request-url }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Create pull request
+      id: pr
+      uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
+      with:
+        token: ${{ inputs.token }}
+        sign-commits: true
+        branch: ${{ inputs.branch }}
+        commit-message: ${{ inputs.commit-message }}
+        title: ${{ inputs.title }}
+        base: ${{ inputs.base }}
+        body: ${{ inputs.body }}
+        labels: ${{ inputs.labels }}
+        reviewers: ${{ inputs.reviewers }}
+        draft: ${{ inputs.draft }}
+        delete-branch: true
