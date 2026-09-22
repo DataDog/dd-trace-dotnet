@@ -170,6 +170,10 @@ public class ProfilerSettingsTests : SettingsTestsBase
         var source = CreateConfigurationSource((ConfigurationKeys.Profiler.ProfilingEnabled, "1"));
         var settings = new ProfilerSettings(source, source, NullConfigurationTelemetry.Instance);
         settings.ProfilerState.Should().Be(ProfilerState.Disabled);
+
+        // Profiling was requested but forced off by the ARM64 gate: the flag must be set so the
+        // actionable warning is emitted from Instrumentation.PropagateStableConfiguration.
+        settings.WasDisabledByArm64Gate.Should().BeTrue();
     }
 
     [SkippableFact]
@@ -182,6 +186,22 @@ public class ProfilerSettingsTests : SettingsTestsBase
             (ConfigurationKeys.ContinuousProfiler.InternalProfilingEnabledArm64, "true"));
         var settings = new ProfilerSettings(source, source, NullConfigurationTelemetry.Instance);
         settings.ProfilerState.Should().Be(ProfilerState.Enabled);
+
+        // The ARM64 gate did not fire (toggle set), so no warning should be emitted.
+        settings.WasDisabledByArm64Gate.Should().BeFalse();
+    }
+
+    [SkippableFact]
+    public void ProfilerState_OnLinuxArm64_NotGatedWhenProfilingExplicitlyDisabled()
+    {
+        SkipOn.AllExcept(SkipOn.PlatformValue.Linux, SkipOn.ArchitectureValue.ARM64);
+
+        var source = CreateConfigurationSource((ConfigurationKeys.Profiler.ProfilingEnabled, "false"));
+        var settings = new ProfilerSettings(source, source, NullConfigurationTelemetry.Instance);
+        settings.ProfilerState.Should().Be(ProfilerState.Disabled);
+
+        // Profiling was never requested, so the ARM64 gate must not fire and no warning is emitted.
+        settings.WasDisabledByArm64Gate.Should().BeFalse();
     }
 
     /// <summary>

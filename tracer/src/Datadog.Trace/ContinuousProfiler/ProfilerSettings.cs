@@ -8,15 +8,12 @@
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
-using Datadog.Trace.Logging;
 using Datadog.Trace.SourceGenerators;
 
 namespace Datadog.Trace.ContinuousProfiler;
 
 internal sealed class ProfilerSettings
 {
-    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ProfilerSettings));
-
     private readonly bool _isManagedActivationEnabled;
 
     public ProfilerSettings(IConfigurationSource config, IConfigurationTelemetry telemetry)
@@ -85,13 +82,10 @@ internal sealed class ProfilerSettings
                 ProfilerState = ProfilerState.Disabled;
                 telemetry.Record(ConfigurationKeys.Profiler.ProfilingEnabled, "false", recordValue: true, ConfigurationOrigins.Calculated);
 
-                // Only surface the "set the flag" hint where the Continuous Profiler is actually available.
-                // In serverless (AWS Lambda / Linux Azure Functions) the native profiling library isn't deployed,
-                // so the flag cannot help there - suggesting it would only mislead.
-                if (ProfilerAvailabilityHelper.IsContinuousProfilerAvailable)
-                {
-                    Log.Warning("The Continuous Profiler was requested but is disabled on Linux ARM64: set {Setting}=1 to enable it. On ARM64 the Continuous Profiler is gated behind this setting (default off).", ConfigurationKeys.ContinuousProfiler.InternalProfilingEnabledArm64);
-                }
+                // The Continuous Profiler was requested (true/auto) but is forced off by the Linux ARM64 gate.
+                // Record it so the diagnostic can be emitted from Instrumentation.PropagateStableConfiguration,
+                // which knows whether the profiler is actually available in this environment.
+                WasDisabledByArm64Gate = true;
             }
         }
     }
@@ -122,4 +116,10 @@ internal sealed class ProfilerSettings
     public bool IsProfilerEnabled => ProfilerState != ProfilerState.Disabled;
 
     public bool IsManagedActivationEnabled => _isManagedActivationEnabled;
+
+    /// <summary>
+    /// Gets a value indicating whether the Continuous Profiler was requested (true/auto) but forced
+    /// off by the Linux ARM64 gate (DD_INTERNAL_PROFILING_ENABLED_ARM64 unset or disabled).
+    /// </summary>
+    public bool WasDisabledByArm64Gate { get; }
 }
