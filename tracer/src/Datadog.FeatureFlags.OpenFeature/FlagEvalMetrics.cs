@@ -69,12 +69,12 @@ internal sealed class FlagEvalMetrics : IDisposable
             new(TagReason, reason)
         ]);
 
-        if (!string.IsNullOrEmpty(errorType))
+        if (!StringUtil.IsNullOrEmpty(errorType))
         {
             tags.Add(TagErrorType, errorType);
         }
 
-        if (!string.IsNullOrEmpty(allocationKey))
+        if (!StringUtil.IsNullOrEmpty(allocationKey))
         {
             tags.Add(TagAllocationKey, allocationKey);
         }
