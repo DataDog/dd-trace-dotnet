@@ -398,6 +398,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 var metricsData = await _otlpSession.WaitForMetricsAsync();
                 metricsData.Should().NotBeNullOrEmpty();
 
+                // OTel SDK 1.19.0 adds a resource schema URL. Ignore it to share snapshots across SDK versions.
+                foreach (var resourceMetric in metricsData.SelectTokens("$..resource_metrics[*]").OfType<JObject>())
+                {
+                    resourceMetric.Remove("schema_url");
+                }
+
                 foreach (var attribute in metricsData.SelectTokens("$..resource.attributes[?(@.key == 'telemetry.sdk.version')]"))
                 {
                     attribute["value"]!["string_value"] = "sdk-version";
@@ -575,6 +581,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     timeUnixNano.Should().Be(observedTimeUnixNano);
                     timeUnixNano.Should().BeInRange(startTimeNanoseconds, endTimeNanoseconds);
                 });
+
+                // OTel SDK 1.19.0 adds a resource schema URL. Ignore it to share snapshots across SDK versions.
+                foreach (var resourceLog in logsData.SelectTokens("$..resource_logs[*]").OfType<JObject>())
+                {
+                    resourceLog.Remove("schema_url");
+                }
 
                 foreach (var attribute in logsData.SelectTokens("$..resource.attributes[?(@.key == 'telemetry.sdk.version')]"))
                 {
