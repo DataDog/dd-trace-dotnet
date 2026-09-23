@@ -270,7 +270,6 @@ void RejitHandler::RequestRejit(const std::vector<RejitRequest>& rejitRequests, 
     modulesVector.reserve(rejitRequests.size());
     modulesMethodDef.reserve(rejitRequests.size());
     lifetimeLocks.reserve(rejitRequests.size());
-    lifetimeStates.reserve(rejitRequests.size());
 
     // A ModuleID is invalid after ModuleUnloadStarted returns, and Desktop CLR's RequestReJIT path can
     // dereference it directly. Keep every captured module generation alive through the CLR call. Acquire each
