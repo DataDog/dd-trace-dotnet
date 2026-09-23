@@ -333,6 +333,11 @@ Directory.Build.props                     @DataDog/apm-dotnet
 /tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/AutoInstrumentation/AspNetCore/        @DataDog/apm-idm-dotnet @DataDog/asm-dotnet
 /tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/AutoInstrumentation/ProcessStartTests/ @DataDog/asm-dotnet
 /tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/PackageVersionsLatest*.g.cs             @DataDog/apm-idm-dotnet @DataDog/tracing-dotnet
+/tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/TestInfrastructure/Helpers/OtlpFieldNames.cs @DataDog/apm-sdk-capabilities-dotnet
+/tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/TestInfrastructure/Helpers/OtlpSnapshotHelper.cs @DataDog/apm-sdk-capabilities-dotnet
+
+### Datadog.Trace.TestHelpers.AutoInstrumentation
+/tracer/test/Datadog.Trace.TestHelpers.AutoInstrumentation/OtlpTestAgentSession.cs @DataDog/apm-sdk-capabilities-dotnet
 
 ### Tool projects
 /tracer/test/Datadog.Trace.Tools.Analyzers.Tests/AspectAnalyzers/ @DataDog/asm-dotnet
