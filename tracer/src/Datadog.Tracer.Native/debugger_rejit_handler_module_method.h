@@ -29,6 +29,7 @@ public:
     void AddProbe(ProbeDefinition_S probe);
     bool RemoveProbe(const shared::WSTRING& probeId);
     std::vector<ProbeDefinition_S> GetProbes() const;
+    bool HasProbes() const;
 };
 
 } // namespace debugger
