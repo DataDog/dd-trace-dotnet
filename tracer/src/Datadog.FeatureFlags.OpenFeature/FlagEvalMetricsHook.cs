@@ -47,7 +47,7 @@ internal sealed class FlagEvalMetricsHook : Hook, IDisposable
 
             // Reason is already in lower_snake_case format from the provider
             // Use "unknown" as fallback for missing reason (matches OpenFeature SDK telemetry convention)
-            var reason = string.IsNullOrEmpty(details.Reason) ? "unknown" : details.Reason;
+            var reason = StringUtil.IsNullOrEmpty(details.Reason) ? "unknown" : details.Reason;
 
             // Extract error type if present
             string? errorType = null;
