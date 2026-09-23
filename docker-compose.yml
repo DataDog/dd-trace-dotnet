@@ -369,6 +369,7 @@ services:
     cap_add:
       - SYS_PTRACE
     environment:
+      - NUKE_TELEMETRY_OPTOUT=1
       - NugetPackageDirectory=/project/${relativeNugetPackageDirectory:-packages}
       - artifacts=/project/${relativeArtifacts:-artifacts/output}
       - framework=${framework:-netcoreapp3.1}
@@ -421,6 +422,7 @@ services:
     cap_add:
       - SYS_PTRACE
     environment:
+      - NUKE_TELEMETRY_OPTOUT=1
       - NugetPackageDirectory=/project/${relativeNugetPackageDirectory:-packages}
       - artifacts=/project/${relativeArtifacts:-artifacts/output}
       - framework=${framework:-netcoreapp3.1}
@@ -502,6 +504,7 @@ services:
     cap_add:
       - SYS_PTRACE
     environment:
+      - NUKE_TELEMETRY_OPTOUT=1
       - NugetPackageDirectory=/project/${relativeNugetPackageDirectory:-packages}
       - artifacts=/project/${relativeArtifacts:-artifacts/output}
       - framework=${framework:-netcoreapp3.1}
@@ -555,6 +558,7 @@ services:
     cap_add:
       - SYS_PTRACE
     environment:
+      - NUKE_TELEMETRY_OPTOUT=1
       - NugetPackageDirectory=/project/${relativeNugetPackageDirectory:-packages}
       - artifacts=/project/${relativeArtifacts:-artifacts/output}
       - framework=${framework:-net6.0}
@@ -613,6 +617,7 @@ services:
     cap_add:
       - SYS_PTRACE
     environment:
+      - NUKE_TELEMETRY_OPTOUT=1
       - NugetPackageDirectory=/project/${relativeNugetPackageDirectory:-packages}
       - artifacts=/project/${relativeArtifacts:-artifacts/output}
       - framework=${framework:-netcoreapp3.1}
@@ -702,6 +707,7 @@ services:
     cap_add:
       - SYS_PTRACE
     environment:
+      - NUKE_TELEMETRY_OPTOUT=1
       - NugetPackageDirectory=/project/${relativeNugetPackageDirectory:-packages}
       - artifacts=/project/${relativeArtifacts:-artifacts/output}
       - framework=${framework:-netcoreapp3.1}
@@ -807,6 +813,7 @@ services:
     cap_add:
       - SYS_PTRACE
     environment:
+      - NUKE_TELEMETRY_OPTOUT=1
       - NugetPackageDirectory=/project/${relativeNugetPackageDirectory:-packages}
       - artifacts=/project/${relativeArtifacts:-artifacts/output}
       - framework=${framework:-netcoreapp3.1}
