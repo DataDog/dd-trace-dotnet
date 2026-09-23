@@ -31,9 +31,6 @@ namespace Datadog.Trace.Debugger.RateLimiting
             return samplingDecision == DebuggerSamplingDecision.Keep;
         }
 
-        internal static void ReleaseProbe(ref State? state, string probeId)
-            => Volatile.Read(ref state)?.ReleaseProbe(probeId);
-
         internal sealed class State
         {
             private HashSet<string>? _emittedProbeIds;
@@ -103,17 +100,6 @@ namespace Datadog.Trace.Debugger.RateLimiting
                     {
                         _decision = (int)Decision.Undecided;
                         throw;
-                    }
-                }
-            }
-
-            internal void ReleaseProbe(string probeId)
-            {
-                lock (this)
-                {
-                    if ((Decision)_decision == Decision.Keep)
-                    {
-                        _emittedProbeIds!.Remove(probeId);
                     }
                 }
             }

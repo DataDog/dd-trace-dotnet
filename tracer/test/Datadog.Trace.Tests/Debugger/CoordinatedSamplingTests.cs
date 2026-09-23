@@ -72,23 +72,32 @@ public class CoordinatedSamplingTests
     }
 
     [Fact]
-    public async Task CaptureExpressionWithoutValuesReleasesProbeSlot()
+    public async Task CaptureExpressionWithoutValuesKeepsProbeSlot()
     {
         await using var tracer = TracerHelper.CreateWithFakeAgent();
         Tracer.UnsafeSetTracerInstance(tracer);
-        using var scope = (Scope)tracer.StartActive("root");
 
         var sampler = new CountingSampler(true);
         var globalLimiter = new GlobalRateLimiterMock(true);
         var processor = CreateProcessor(CreateUndefinedCaptureExpressionProbe("probe"), globalLimiter);
 
-        Assert.False(EvaluateConditionalAtEntry(processor, sampler));
+        using (tracer.StartActive("first-root"))
+        {
+            Assert.False(EvaluateConditionalAtEntry(processor, sampler));
+            Assert.False(TryBeginAndDispose(processor, sampler));
 
-        processor.UpdateProbeProcessor(CreateCaptureExpressionProbe("probe"), TestMaxEvaluationTimeInMilliseconds);
+            // Updating a probe mid-trace is not supported: the new version doesn't emit until the next trace.
+            processor.UpdateProbeProcessor(CreateCaptureExpressionProbe("probe"), TestMaxEvaluationTimeInMilliseconds);
+            Assert.False(TryBeginAndDispose(processor, sampler));
+        }
 
-        Assert.True(EvaluateConditionalAtEntry(processor, sampler));
-        Assert.Equal(1, sampler.SampleCalls);
-        Assert.Equal(1, globalLimiter.ShouldSampleCallCount);
+        using (tracer.StartActive("second-root"))
+        {
+            Assert.True(EvaluateConditionalAtEntry(processor, sampler));
+        }
+
+        Assert.Equal(2, sampler.SampleCalls);
+        Assert.Equal(2, globalLimiter.ShouldSampleCallCount);
     }
 
     [Fact]

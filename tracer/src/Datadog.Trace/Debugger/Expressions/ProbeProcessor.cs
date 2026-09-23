@@ -454,11 +454,10 @@ namespace Datadog.Trace.Debugger.Expressions
 
             if (captureExpressionsEvaluated && evaluationResult.IsNull())
             {
-                if (!state.HasCondition)
-                {
-                    snapshotCreator.TraceContext?.ReleaseDebuggerSnapshotReservation(state.ProbeInfo.ProbeId);
-                }
-
+                // The per-trace snapshot slot stays claimed even though nothing is emitted. Releasing it would let
+                // every later hit in a kept trace capture again without any sampler throttling.
+                // Not supported: if the probe is updated mid-trace to a version that captures values, it won't emit
+                // for the rest of that trace.
                 shouldStopCapture = true;
                 return evaluationResult;
             }

@@ -198,9 +198,6 @@ namespace Datadog.Trace
             where TSamplingDecisionProvider : struct, IDebuggerSamplingDecisionProvider
             => DebuggerSamplingCoordinator.TrySample(ref _debuggerSamplingState, probeId, samplingDecisionProvider, out samplingDecision);
 
-        internal void ReleaseDebuggerSnapshotReservation(string probeId)
-            => DebuggerSamplingCoordinator.ReleaseProbe(ref _debuggerSamplingState, probeId);
-
         internal void EnableIastInRequest()
         {
             if (Volatile.Read(ref _iastRequestContext) is null)
