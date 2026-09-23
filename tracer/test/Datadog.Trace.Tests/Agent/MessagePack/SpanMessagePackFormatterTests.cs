@@ -671,6 +671,38 @@ public class SpanMessagePackFormatterTests
     }
 
     [Fact]
+    public async Task SerializationKeepsAzureAppServiceSettingsIsolated()
+    {
+        await using var firstTracer = TracerHelper.Create(CreateSettings("first", "first-instance"));
+        await using var secondTracer = TracerHelper.Create(CreateSettings("second", " "));
+
+        SerializeTags(firstTracer).Should().Contain(Tags.AzureAppServicesSiteName, "first")
+                                  .And.Contain(Tags.AzureAppServicesInstanceId, "first-instance");
+        SerializeTags(secondTracer).Should().Contain(Tags.AzureAppServicesSiteName, "second")
+                                   .And.NotContainKey(Tags.AzureAppServicesInstanceId);
+        SerializeTags(firstTracer).Should().Contain(Tags.AzureAppServicesSiteName, "first")
+                                  .And.Contain(Tags.AzureAppServicesInstanceId, "first-instance");
+
+        static TracerSettings CreateSettings(string site, string instance) => new(new NameValueConfigurationSource(new NameValueCollection
+        {
+            { ConfigurationKeys.ApiKey, "1" },
+            { ConfigurationKeys.AzureAppService.AzureAppServicesContextKey, "1" },
+            { "WEBSITE_SITE_NAME", site },
+            { "WEBSITE_INSTANCE_ID", instance },
+        }));
+
+        static Dictionary<string, string> SerializeTags(Tracer tracer)
+        {
+            var span = tracer.StartSpan("http.request");
+            span.SetDuration(TimeSpan.FromMilliseconds(100));
+            var chunk = new TraceChunkModel(new SpanCollection(new[] { span }));
+            byte[] bytes = [];
+            var length = SpanMessagePackFormatter.Instance.Serialize(ref bytes, 0, chunk, SpanFormatterResolver.Instance);
+            return global::MessagePack.MessagePackSerializer.Deserialize<MockSpan[]>(new ArraySegment<byte>(bytes, 0, length))[0].Tags;
+        }
+    }
+
+    [Fact]
     public async Task Serialize_NonProxySpan_InAzureAppServices_IncludesAasTags()
     {
         // Arrange

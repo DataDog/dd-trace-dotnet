@@ -35,19 +35,9 @@ namespace Datadog.Trace.Agent.MessagePack
         private readonly byte[] _runtimeIdValueBytes = MessagePackSerializer.Serialize(Tracer.RuntimeId);
         private readonly Dictionary<string, byte[]> _wafRuleFileVersionValues = new();
 
-        // Azure App Service tag value bytes (initialized lazily and cached per configuration instance)
-        private ImmutableAzureAppServiceSettings _aasSettings;
-        private byte[] _aasSiteNameValueBytes;
-        private byte[] _aasSiteKindValueBytes;
-        private byte[] _aasSiteTypeValueBytes;
-        private byte[] _aasResourceGroupValueBytes;
-        private byte[] _aasSubscriptionIdValueBytes;
-        private byte[] _aasResourceIdValueBytes;
-        private byte[] _aasInstanceIdValueBytes;
-        private byte[] _aasInstanceNameValueBytes;
-        private byte[] _aasOperatingSystemValueBytes;
-        private byte[] _aasRuntimeValueBytes;
-        private byte[] _aasExtensionVersionValueBytes;
+        // Settings are immutable. Cache an immutable snapshot per settings instance so concurrent
+        // writers cannot overwrite each other's tags, without retaining old configurations forever.
+        private readonly ConditionalWeakTable<ImmutableAzureAppServiceSettings, AasTagValues> _aasTagValues = new();
 
         private SpanMessagePackFormatter()
         {
@@ -651,87 +641,87 @@ namespace Datadog.Trace.Agent.MessagePack
                 span.Tags is not InferredProxyTags { InferredSpan: 1.0 })
             {
                 // Done here to avoid initializing in most cases
-                InitializeAasTags(azureAppServiceSettings);
+                var aasTags = _aasTagValues.GetValue(azureAppServiceSettings, static settings => new AasTagValues(settings));
 
                 if (model.IsLocalRoot || model.IsChunkOrphan)
                 {
-                    if (_aasSiteKindValueBytes is not null)
+                    if (aasTags.SiteKind is not null)
                     {
                         count++;
                         offset += MessagePackBinary.WriteRaw(ref bytes, offset, MessagePackConstants.AzureAppServicesSiteKindBytes);
-                        offset += MessagePackBinary.WriteRaw(ref bytes, offset, _aasSiteKindValueBytes);
+                        offset += MessagePackBinary.WriteRaw(ref bytes, offset, aasTags.SiteKind);
                     }
 
-                    if (_aasResourceGroupValueBytes is not null)
+                    if (aasTags.ResourceGroup is not null)
                     {
                         count++;
                         offset += MessagePackBinary.WriteRaw(ref bytes, offset, MessagePackConstants.AzureAppServicesResourceGroupBytes);
-                        offset += MessagePackBinary.WriteRaw(ref bytes, offset, _aasResourceGroupValueBytes);
+                        offset += MessagePackBinary.WriteRaw(ref bytes, offset, aasTags.ResourceGroup);
                     }
 
-                    if (_aasSubscriptionIdValueBytes is not null)
+                    if (aasTags.SubscriptionId is not null)
                     {
                         count++;
                         offset += MessagePackBinary.WriteRaw(ref bytes, offset, MessagePackConstants.AzureAppServicesSubscriptionIdBytes);
-                        offset += MessagePackBinary.WriteRaw(ref bytes, offset, _aasSubscriptionIdValueBytes);
+                        offset += MessagePackBinary.WriteRaw(ref bytes, offset, aasTags.SubscriptionId);
                     }
 
-                    if (_aasResourceIdValueBytes is not null)
+                    if (aasTags.ResourceId is not null)
                     {
                         count++;
                         offset += MessagePackBinary.WriteRaw(ref bytes, offset, MessagePackConstants.AzureAppServicesResourceIdBytes);
-                        offset += MessagePackBinary.WriteRaw(ref bytes, offset, _aasResourceIdValueBytes);
+                        offset += MessagePackBinary.WriteRaw(ref bytes, offset, aasTags.ResourceId);
                     }
 
-                    if (_aasInstanceIdValueBytes is not null)
+                    if (aasTags.InstanceId is not null)
                     {
                         count++;
                         offset += MessagePackBinary.WriteRaw(ref bytes, offset, MessagePackConstants.AzureAppServicesInstanceIdBytes);
-                        offset += MessagePackBinary.WriteRaw(ref bytes, offset, _aasInstanceIdValueBytes);
+                        offset += MessagePackBinary.WriteRaw(ref bytes, offset, aasTags.InstanceId);
                     }
 
-                    if (_aasInstanceNameValueBytes is not null)
+                    if (aasTags.InstanceName is not null)
                     {
                         count++;
                         offset += MessagePackBinary.WriteRaw(ref bytes, offset, MessagePackConstants.AzureAppServicesInstanceNameBytes);
-                        offset += MessagePackBinary.WriteRaw(ref bytes, offset, _aasInstanceNameValueBytes);
+                        offset += MessagePackBinary.WriteRaw(ref bytes, offset, aasTags.InstanceName);
                     }
 
-                    if (_aasOperatingSystemValueBytes is not null)
+                    if (aasTags.OperatingSystem is not null)
                     {
                         count++;
                         offset += MessagePackBinary.WriteRaw(ref bytes, offset, MessagePackConstants.AzureAppServicesOperatingSystemBytes);
-                        offset += MessagePackBinary.WriteRaw(ref bytes, offset, _aasOperatingSystemValueBytes);
+                        offset += MessagePackBinary.WriteRaw(ref bytes, offset, aasTags.OperatingSystem);
                     }
 
-                    if (_aasRuntimeValueBytes is not null)
+                    if (aasTags.Runtime is not null)
                     {
                         count++;
                         offset += MessagePackBinary.WriteRaw(ref bytes, offset, MessagePackConstants.AzureAppServicesRuntimeBytes);
-                        offset += MessagePackBinary.WriteRaw(ref bytes, offset, _aasRuntimeValueBytes);
+                        offset += MessagePackBinary.WriteRaw(ref bytes, offset, aasTags.Runtime);
                     }
 
-                    if (_aasExtensionVersionValueBytes is not null)
+                    if (aasTags.ExtensionVersion is not null)
                     {
                         count++;
                         offset += MessagePackBinary.WriteRaw(ref bytes, offset, MessagePackConstants.AzureAppServicesExtensionVersionBytes);
-                        offset += MessagePackBinary.WriteRaw(ref bytes, offset, _aasExtensionVersionValueBytes);
+                        offset += MessagePackBinary.WriteRaw(ref bytes, offset, aasTags.ExtensionVersion);
                     }
                 }
 
                 // the front-end identify AAS spans using aas.site.name and aas.site.type, so we need them on all spans
-                if (_aasSiteNameValueBytes is not null)
+                if (aasTags.SiteName is not null)
                 {
                     count++;
                     offset += MessagePackBinary.WriteRaw(ref bytes, offset, MessagePackConstants.AzureAppServicesSiteNameBytes);
-                    offset += MessagePackBinary.WriteRaw(ref bytes, offset, _aasSiteNameValueBytes);
+                    offset += MessagePackBinary.WriteRaw(ref bytes, offset, aasTags.SiteName);
                 }
 
-                if (_aasSiteTypeValueBytes is not null)
+                if (aasTags.SiteType is not null)
                 {
                     count++;
                     offset += MessagePackBinary.WriteRaw(ref bytes, offset, MessagePackConstants.AzureAppServicesSiteTypeBytes);
-                    offset += MessagePackBinary.WriteRaw(ref bytes, offset, _aasSiteTypeValueBytes);
+                    offset += MessagePackBinary.WriteRaw(ref bytes, offset, aasTags.SiteType);
                 }
             }
 
@@ -949,26 +939,6 @@ namespace Datadog.Trace.Agent.MessagePack
             }
         }
 
-        private void InitializeAasTags(ImmutableAzureAppServiceSettings azureAppServiceSettings)
-        {
-            if (!ReferenceEquals(_aasSettings, azureAppServiceSettings))
-            {
-                // Refresh cached values when a different tracer configuration is serialized.
-                _aasSiteNameValueBytes = SerializeIfNotNullOrWhiteSpace(azureAppServiceSettings.SiteName);
-                _aasSiteKindValueBytes = SerializeIfNotNullOrWhiteSpace(azureAppServiceSettings.SiteKind);
-                _aasSiteTypeValueBytes = SerializeIfNotNullOrWhiteSpace(azureAppServiceSettings.SiteType);
-                _aasResourceGroupValueBytes = SerializeIfNotNullOrWhiteSpace(azureAppServiceSettings.ResourceGroup);
-                _aasSubscriptionIdValueBytes = SerializeIfNotNullOrWhiteSpace(azureAppServiceSettings.SubscriptionId);
-                _aasResourceIdValueBytes = SerializeIfNotNullOrWhiteSpace(azureAppServiceSettings.ResourceId);
-                _aasInstanceIdValueBytes = SerializeIfNotNullOrWhiteSpace(azureAppServiceSettings.InstanceId);
-                _aasInstanceNameValueBytes = SerializeIfNotNullOrWhiteSpace(azureAppServiceSettings.InstanceName);
-                _aasOperatingSystemValueBytes = SerializeIfNotNullOrWhiteSpace(azureAppServiceSettings.OperatingSystem);
-                _aasRuntimeValueBytes = SerializeIfNotNullOrWhiteSpace(FrameworkDescription.Instance.Name);
-                _aasExtensionVersionValueBytes = SerializeIfNotNullOrWhiteSpace(azureAppServiceSettings.SiteExtensionVersion);
-                _aasSettings = azureAppServiceSettings;
-            }
-        }
-
         internal struct TagWriter : IItemProcessor<string>, IItemProcessor<int>, IItemProcessor<double>, IItemProcessor<byte[]>
         {
             private readonly SpanMessagePackFormatter _formatter;
@@ -1089,6 +1059,46 @@ namespace Datadog.Trace.Agent.MessagePack
                     Count++;
                 }
             }
+        }
+
+        private sealed class AasTagValues
+        {
+            public AasTagValues(ImmutableAzureAppServiceSettings settings)
+            {
+                SiteName = SerializeIfNotNullOrWhiteSpace(settings.SiteName);
+                SiteKind = SerializeIfNotNullOrWhiteSpace(settings.SiteKind);
+                SiteType = SerializeIfNotNullOrWhiteSpace(settings.SiteType);
+                ResourceGroup = SerializeIfNotNullOrWhiteSpace(settings.ResourceGroup);
+                SubscriptionId = SerializeIfNotNullOrWhiteSpace(settings.SubscriptionId);
+                ResourceId = SerializeIfNotNullOrWhiteSpace(settings.ResourceId);
+                InstanceId = SerializeIfNotNullOrWhiteSpace(settings.InstanceId);
+                InstanceName = SerializeIfNotNullOrWhiteSpace(settings.InstanceName);
+                OperatingSystem = SerializeIfNotNullOrWhiteSpace(settings.OperatingSystem);
+                Runtime = SerializeIfNotNullOrWhiteSpace(FrameworkDescription.Instance.Name);
+                ExtensionVersion = SerializeIfNotNullOrWhiteSpace(settings.SiteExtensionVersion);
+            }
+
+            public byte[] SiteName { get; }
+
+            public byte[] SiteKind { get; }
+
+            public byte[] SiteType { get; }
+
+            public byte[] ResourceGroup { get; }
+
+            public byte[] SubscriptionId { get; }
+
+            public byte[] ResourceId { get; }
+
+            public byte[] InstanceId { get; }
+
+            public byte[] InstanceName { get; }
+
+            public byte[] OperatingSystem { get; }
+
+            public byte[] Runtime { get; }
+
+            public byte[] ExtensionVersion { get; }
         }
     }
 }
