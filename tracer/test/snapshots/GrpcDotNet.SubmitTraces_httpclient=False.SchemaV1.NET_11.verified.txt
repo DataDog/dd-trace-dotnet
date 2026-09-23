@@ -68,11 +68,16 @@
       http.url: http://localhost:00000/greet.tester.Greeter/StreamingBothWays,
       http.useragent: grpc-dotnet/123,
       language: dotnet,
+      network.protocol.version: 2,
       runtime-id: Guid_1,
-      span.kind: server
+      server.address: 127.0.0.1,
+      span.kind: server,
+      url.path: /greet.tester.Greeter/StreamingBothWays,
+      url.scheme: https
     },
     Metrics: {
       process_id: 0,
+      server.port: 00000,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
@@ -172,11 +177,16 @@
       http.url: http://localhost:00000/greet.tester.Greeter/StreamingFromClient,
       http.useragent: grpc-dotnet/123,
       language: dotnet,
+      network.protocol.version: 2,
       runtime-id: Guid_1,
-      span.kind: server
+      server.address: 127.0.0.1,
+      span.kind: server,
+      url.path: /greet.tester.Greeter/StreamingFromClient,
+      url.scheme: https
     },
     Metrics: {
       process_id: 0,
+      server.port: 00000,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
@@ -278,11 +288,16 @@
       http.url: http://localhost:00000/greet.tester.Greeter/ErroringMethod,
       http.useragent: grpc-dotnet/123,
       language: dotnet,
+      network.protocol.version: 2,
       runtime-id: Guid_1,
-      span.kind: server
+      server.address: 127.0.0.1,
+      span.kind: server,
+      url.path: /greet.tester.Greeter/ErroringMethod,
+      url.scheme: https
     },
     Metrics: {
       process_id: 0,
+      server.port: 00000,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
@@ -386,11 +401,16 @@
       http.url: http://localhost:00000/greet.tester.Greeter/ErroringMethod,
       http.useragent: grpc-dotnet/123,
       language: dotnet,
+      network.protocol.version: 2,
       runtime-id: Guid_1,
-      span.kind: server
+      server.address: 127.0.0.1,
+      span.kind: server,
+      url.path: /greet.tester.Greeter/ErroringMethod,
+      url.scheme: https
     },
     Metrics: {
       process_id: 0,
+      server.port: 00000,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
@@ -494,11 +514,16 @@
       http.url: http://localhost:00000/greet.tester.Greeter/ErroringMethod,
       http.useragent: grpc-dotnet/123,
       language: dotnet,
+      network.protocol.version: 2,
       runtime-id: Guid_1,
-      span.kind: server
+      server.address: 127.0.0.1,
+      span.kind: server,
+      url.path: /greet.tester.Greeter/ErroringMethod,
+      url.scheme: https
     },
     Metrics: {
       process_id: 0,
+      server.port: 00000,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
@@ -602,11 +627,16 @@
       http.url: http://localhost:00000/greet.tester.Greeter/ErroringMethod,
       http.useragent: grpc-dotnet/123,
       language: dotnet,
+      network.protocol.version: 2,
       runtime-id: Guid_1,
-      span.kind: server
+      server.address: 127.0.0.1,
+      span.kind: server,
+      url.path: /greet.tester.Greeter/ErroringMethod,
+      url.scheme: https
     },
     Metrics: {
       process_id: 0,
+      server.port: 00000,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
@@ -714,11 +744,16 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       http.url: http://localhost:00000/greet.tester.Greeter/ErroringMethod,
       http.useragent: grpc-dotnet/123,
       language: dotnet,
+      network.protocol.version: 2,
       runtime-id: Guid_1,
-      span.kind: server
+      server.address: 127.0.0.1,
+      span.kind: server,
+      url.path: /greet.tester.Greeter/ErroringMethod,
+      url.scheme: https
     },
     Metrics: {
       process_id: 0,
+      server.port: 00000,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
@@ -822,11 +857,16 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       http.url: http://localhost:00000/greet.tester.Greeter/ErroringMethod,
       http.useragent: grpc-dotnet/123,
       language: dotnet,
+      network.protocol.version: 2,
       runtime-id: Guid_1,
-      span.kind: server
+      server.address: 127.0.0.1,
+      span.kind: server,
+      url.path: /greet.tester.Greeter/ErroringMethod,
+      url.scheme: https
     },
     Metrics: {
       process_id: 0,
+      server.port: 00000,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
@@ -930,11 +970,16 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       http.url: http://localhost:00000/greet.tester.Greeter/ErroringMethod,
       http.useragent: grpc-dotnet/123,
       language: dotnet,
+      network.protocol.version: 2,
       runtime-id: Guid_1,
-      span.kind: server
+      server.address: 127.0.0.1,
+      span.kind: server,
+      url.path: /greet.tester.Greeter/ErroringMethod,
+      url.scheme: https
     },
     Metrics: {
       process_id: 0,
+      server.port: 00000,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
@@ -1038,11 +1083,16 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       http.url: http://localhost:00000/greet.tester.Greeter/ErroringMethod,
       http.useragent: grpc-dotnet/123,
       language: dotnet,
+      network.protocol.version: 2,
       runtime-id: Guid_1,
-      span.kind: server
+      server.address: 127.0.0.1,
+      span.kind: server,
+      url.path: /greet.tester.Greeter/ErroringMethod,
+      url.scheme: https
     },
     Metrics: {
       process_id: 0,
+      server.port: 00000,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
@@ -1146,11 +1196,16 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       http.url: http://localhost:00000/greet.tester.Greeter/InvalidContentTypeMethod,
       http.useragent: grpc-dotnet/123,
       language: dotnet,
+      network.protocol.version: 2,
       runtime-id: Guid_1,
-      span.kind: server
+      server.address: 127.0.0.1,
+      span.kind: server,
+      url.path: /greet.tester.Greeter/InvalidContentTypeMethod,
+      url.scheme: https
     },
     Metrics: {
       process_id: 0,
+      server.port: 00000,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
@@ -1250,11 +1305,16 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       http.url: http://localhost:00000/greet.tester.Greeter/StreamingFromServer,
       http.useragent: grpc-dotnet/123,
       language: dotnet,
+      network.protocol.version: 2,
       runtime-id: Guid_1,
-      span.kind: server
+      server.address: 127.0.0.1,
+      span.kind: server,
+      url.path: /greet.tester.Greeter/StreamingFromServer,
+      url.scheme: https
     },
     Metrics: {
       process_id: 0,
+      server.port: 00000,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
@@ -1354,11 +1414,16 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       http.url: http://localhost:00000/greet.tester.Greeter/Unary,
       http.useragent: grpc-dotnet/123,
       language: dotnet,
+      network.protocol.version: 2,
       runtime-id: Guid_1,
-      span.kind: server
+      server.address: 127.0.0.1,
+      span.kind: server,
+      url.path: /greet.tester.Greeter/Unary,
+      url.scheme: https
     },
     Metrics: {
       process_id: 0,
+      server.port: 00000,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
@@ -1458,11 +1523,16 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       http.url: http://localhost:00000/greet.tester.Greeter/Unary,
       http.useragent: grpc-dotnet/123,
       language: dotnet,
+      network.protocol.version: 2,
       runtime-id: Guid_1,
-      span.kind: server
+      server.address: 127.0.0.1,
+      span.kind: server,
+      url.path: /greet.tester.Greeter/Unary,
+      url.scheme: https
     },
     Metrics: {
       process_id: 0,
+      server.port: 00000,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
@@ -1562,11 +1632,16 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       http.url: http://localhost:00000/greet.tester.Greeter/VerySlow,
       http.useragent: grpc-dotnet/123,
       language: dotnet,
+      network.protocol.version: 2,
       runtime-id: Guid_1,
-      span.kind: server
+      server.address: 127.0.0.1,
+      span.kind: server,
+      url.path: /greet.tester.Greeter/VerySlow,
+      url.scheme: https
     },
     Metrics: {
       process_id: 0,
+      server.port: 00000,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
@@ -1668,11 +1743,16 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       http.url: http://localhost:00000/greet.tester.Greeter/VerySlow,
       http.useragent: grpc-dotnet/123,
       language: dotnet,
+      network.protocol.version: 2,
       runtime-id: Guid_1,
-      span.kind: server
+      server.address: 127.0.0.1,
+      span.kind: server,
+      url.path: /greet.tester.Greeter/VerySlow,
+      url.scheme: https
     },
     Metrics: {
       process_id: 0,
+      server.port: 00000,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0

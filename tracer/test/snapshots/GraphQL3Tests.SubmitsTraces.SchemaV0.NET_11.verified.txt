@@ -15,12 +15,17 @@
       http.url: http://localhost:00000/graphql?query=query%7Bhero%7Bname+appearsIn%7D%7D,
       http.useragent: testhelper,
       language: dotnet,
+      network.protocol.version: 1.1,
       runtime-id: Guid_1,
+      server.address: localhost,
       span.kind: server,
+      url.path: /graphql,
+      url.scheme: http,
       version: 1.0.0
     },
     Metrics: {
       process_id: 0,
+      server.port: 00000,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
@@ -87,12 +92,17 @@
       http.url: http://localhost:00000/graphql,
       http.useragent: testhelper,
       language: dotnet,
+      network.protocol.version: 1.1,
       runtime-id: Guid_1,
+      server.address: localhost,
       span.kind: server,
+      url.path: /graphql,
+      url.scheme: http,
       version: 1.0.0
     },
     Metrics: {
       process_id: 0,
+      server.port: 00000,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
@@ -114,12 +124,17 @@
       http.url: http://localhost:00000/graphql,
       http.useragent: testhelper,
       language: dotnet,
+      network.protocol.version: 1.1,
       runtime-id: Guid_1,
+      server.address: localhost,
       span.kind: server,
+      url.path: /graphql,
+      url.scheme: http,
       version: 1.0.0
     },
     Metrics: {
       process_id: 0,
+      server.port: 00000,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
@@ -141,12 +156,17 @@
       http.url: http://localhost:00000/graphql,
       http.useragent: testhelper,
       language: dotnet,
+      network.protocol.version: 1.1,
       runtime-id: Guid_1,
+      server.address: localhost,
       span.kind: server,
+      url.path: /graphql,
+      url.scheme: http,
       version: 1.0.0
     },
     Metrics: {
       process_id: 0,
+      server.port: 00000,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
@@ -168,12 +188,17 @@
       http.url: http://localhost:00000/graphql,
       http.useragent: testhelper,
       language: dotnet,
+      network.protocol.version: 1.1,
       runtime-id: Guid_1,
+      server.address: localhost,
       span.kind: server,
+      url.path: /graphql,
+      url.scheme: http,
       version: 1.0.0
     },
     Metrics: {
       process_id: 0,
+      server.port: 00000,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
@@ -195,12 +220,17 @@
       http.url: http://localhost:00000/graphql,
       http.useragent: testhelper,
       language: dotnet,
+      network.protocol.version: 1.1,
       runtime-id: Guid_1,
+      server.address: localhost,
       span.kind: server,
+      url.path: /graphql,
+      url.scheme: http,
       version: 1.0.0
     },
     Metrics: {
       process_id: 0,
+      server.port: 00000,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
