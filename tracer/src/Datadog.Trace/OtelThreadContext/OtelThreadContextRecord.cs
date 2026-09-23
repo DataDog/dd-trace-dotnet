@@ -142,13 +142,15 @@ internal static class OtelThreadContextRecord
 
     /// <summary>
     /// Builds the W3C trace-flags byte.
-    /// <para>
-    /// Read the sampling decision only if one has already been made. Calling
-    /// <c>GetOrMakeSamplingDecision()</c> here - as the W3C propagator does - would force the decision at
-    /// span activation time instead of when the trace is propagated or flushed, which is an observable
-    /// change in tracer behaviour. An undecided trace is reported as not sampled.
-    /// </para>
+    /// Since the tracer is deciding very late to keep or not a span, the value will most probably be 0.
+    /// We don't want to call <c>GetOrMakeSamplingDecision()</c> here.
     /// </summary>
+    /// <remarks>
+    /// We don't change the flag when the decision will be taken later because it will change the state of the span
+    /// for a very short period of time before the thread context is cleared. There is not chance that an out-of-process
+    /// reader will get that decision. This is a limitation of the model unlike what is done in-process with the
+    /// profiler to notify the endpoint.
+    /// </remarks>
     private static byte GetTraceFlags(Span span)
     {
         var samplingPriority = span.Context.TraceContext?.SamplingPriority ?? span.Context.SamplingPriority;
