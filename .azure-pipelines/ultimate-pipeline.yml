@@ -4820,8 +4820,11 @@ stages:
       condition: succeededOrFailed()
       continueOnError: true
 
-  # Create this token on the linux side (create_github_token doesn't work on Windows currently)
+  # Create this token on the linux side (create_github_token doesn't work on Windows currently).
+  # Depend on Windows so the token (1-hour lifetime) is minted just before compare consumes it,
+  # rather than at stage start where it can expire while Windows queues on self-hosted agents.
   - job: create_github_token
+    dependsOn: [Windows]
     pool:
       vmImage: ubuntu-latest
     steps:
