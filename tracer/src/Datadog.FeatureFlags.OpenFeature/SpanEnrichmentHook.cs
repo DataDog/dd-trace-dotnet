@@ -71,7 +71,7 @@ internal sealed class SpanEnrichmentHook : Hook
         if (value.AsStructure is { } structure)
         {
             var orig = structure.AsDictionary();
-            var dict = new Dictionary<string, object>>(orig.Count);
+            var dict = new Dictionary<string, object?>(orig.Count);
             foreach (var pair in orig)
             {
                 dict[pair.Key] = ToPlainObject(pair.Value);
