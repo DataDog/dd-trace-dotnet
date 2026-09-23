@@ -1,0 +1,9 @@
+# EditorConfig is awesome:http://EditorConfig.org
+
+# Escalate DDSTR001 (use StringUtil.IsNullOrEmpty/IsNullOrWhiteSpace instead of the string.* equivalents)
+# to an error in this actively-developed directory only. This mirrors a review-feedback theme that recurred
+# multiple times in Feature Flags PRs (see StringUtilAnalyzer/Diagnostics.cs for the full rationale). Scoped
+# here (rather than repo-wide) because hundreds of pre-existing call sites elsewhere in the codebase have not
+# yet been migrated, and TreatWarningsAsErrors=true would otherwise break the build for unrelated changes.
+[*.{cs,vb}]
+dotnet_diagnostic.DDSTR001.severity = error
