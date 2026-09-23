@@ -48,8 +48,12 @@
       http.url: http://localhost:00000/status-code/203,
       http.useragent: testhelper,
       language: dotnet,
+      network.protocol.version: 1.1,
       runtime-id: Guid_1,
+      server.address: localhost,
       span.kind: server,
+      url.path: /status-code/203,
+      url.scheme: http,
       version: 1.0.0,
       _dd.code_origin.frames.0.column: 0,
       _dd.code_origin.frames.0.file: tracer\test\test-applications\integrations\Samples.AspNetCoreMvc21\Controllers\HomeController.cs,
@@ -61,6 +65,7 @@
     },
     Metrics: {
       process_id: 0,
+      server.port: 00000,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
