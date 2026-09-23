@@ -19,6 +19,15 @@ namespace Samples.Npgsql
             using (var connection = OpenConnection(typeof(NpgsqlConnection)))
             {
                 await RelationalDatabaseTestHarness.RunAllAsync<NpgsqlCommand>(connection, commandFactory, commandExecutor, cts.Token);
+
+#if HAS_BATCH_SUPPORT && NET6_0_OR_GREATER
+                var batchCommandHandler = new NpgsqlBatchCommandHandler();
+                await RelationalDatabaseTestHarness.RunBatchAsync(
+                    connection,
+                    commandFactory,
+                    batchCommandHandler,
+                    cts.Token);
+#endif
             }
 
             // Flush the first phase's trace before starting the next phase. Each phase produces a single

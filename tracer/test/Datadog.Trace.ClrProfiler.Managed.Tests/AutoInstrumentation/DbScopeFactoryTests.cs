@@ -69,6 +69,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
         public async Task CreateDbCommandScope_ReturnsScopeForEnabledIntegration(Type commandType, string integrationName, string dbType)
         {
             var command = (IDbCommand)Activator.CreateInstance(commandType);
+            command.CommandText = "PLACEHOLDER";
             await using var tracer = CreateTracerWithIntegrationEnabled(integrationName, enabled: true);
 
             // Create scope
@@ -117,6 +118,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
         public async Task CreateDbCommandScope_UsesReplacementServiceNameWhenProvided(Type commandType, string integrationName, string dbType)
         {
             var command = (IDbCommand)Activator.CreateInstance(commandType);
+            command.CommandText = "PLACEHOLDER";
             // HACK: avoid analyzer warning about not using arguments
             _ = integrationName;
 
@@ -136,6 +138,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
         public async Task CreateDbCommandScope_IgnoresReplacementServiceNameWhenNotProvided(Type commandType, string integrationName, string dbType)
         {
             var command = (IDbCommand)Activator.CreateInstance(commandType);
+            command.CommandText = "PLACEHOLDER";
             // HACK: avoid analyzer warning about not using arguments
             _ = dbType;
             _ = integrationName;
