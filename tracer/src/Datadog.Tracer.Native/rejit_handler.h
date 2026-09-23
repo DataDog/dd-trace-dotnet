@@ -156,6 +156,7 @@ public:
     bool TryGetMethod(mdMethodDef methodDef, /* OUT */ RejitHandlerModuleMethod** methodHandler);
 
     void RequestRejitForInlinersInModule(ModuleID moduleId);
+    void RemoveProcessedInlinerModule(ModuleID moduleId);
 };
 
 class Rejitter;

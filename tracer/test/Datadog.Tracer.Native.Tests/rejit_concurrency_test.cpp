@@ -117,6 +117,20 @@ public:
     }
 };
 
+class CountingNGenProfilerInfo : public MockCorProfilerInfo
+{
+public:
+    std::vector<ModuleID> enumeratedInlinerModules;
+
+    HRESULT STDMETHODCALLTYPE EnumNgenModuleMethodsInliningThisMethod(
+        ModuleID inlinersModuleId, ModuleID inlineeModuleId, mdMethodDef inlineeMethodId, BOOL* incompleteData,
+        ICorProfilerMethodEnum** ppEnum) override
+    {
+        enumeratedInlinerModules.push_back(inlinersModuleId);
+        return E_FAIL;
+    }
+};
+
 class ObservableTracerRejitPreprocessor : public TracerRejitPreprocessor
 {
 public:
@@ -325,6 +339,38 @@ TEST(ModuleLifetime, UnloadWaitsForNGenReplayAfterShutdownStarts)
 
     releaseBlocker.set_value();
     shutdown.join();
+}
+
+TEST(ModuleLifetime, ReusedNGenInlinerModuleIdIsEnumeratedAgain)
+{
+    CountingNGenProfilerInfo profilerInfo;
+    auto offloader = std::make_shared<RejitWorkOffloader>(&profilerInfo);
+    auto handler = std::make_shared<RejitHandler>(static_cast<ICorProfilerInfo7*>(&profilerInfo), offloader);
+    TracerRejitPreprocessor preprocessor(nullptr, handler, offloader);
+    constexpr ModuleID inlineeModuleId = 41;
+    constexpr ModuleID inlinersModuleId = 42;
+    constexpr mdMethodDef methodId = 1;
+
+    auto module = preprocessor.GetOrAddModule(inlineeModuleId);
+    module->CreateMethodIfNotExists(
+        methodId,
+        [](mdMethodDef methodDef, RejitHandlerModule* moduleHandler)
+        {
+            return std::make_unique<RejitHandlerModuleMethod>(
+                methodDef, moduleHandler, FunctionInfo{}, std::unique_ptr<MethodRewriter>{});
+        },
+        [](RejitHandlerModuleMethod*) {});
+
+    handler->AddNGenInlinerModule(inlinersModuleId);
+    handler->AddNGenInlinerModule(inlinersModuleId);
+    EXPECT_EQ(std::vector<ModuleID>{inlinersModuleId}, profilerInfo.enumeratedInlinerModules);
+
+    // Desktop CLR hands the unloaded module's ID to a different NGen image.
+    handler->RemoveModule(inlinersModuleId);
+    handler->AddNGenInlinerModule(inlinersModuleId);
+    EXPECT_EQ((std::vector<ModuleID>{inlinersModuleId, inlinersModuleId}), profilerInfo.enumeratedInlinerModules);
+
+    handler->Shutdown();
 }
 
 TEST(RejitHandlerShutdown, EnqueueForRejitResolvesPromiseAfterShutdown)
