@@ -77,7 +77,7 @@
       server.address: 127.0.0.1,
       span.kind: server,
       url.path: /greet.tester.Greeter/StreamingBothWays,
-      url.scheme: https
+      url.scheme: http
     },
     Metrics: {
       process_id: 0,
@@ -190,7 +190,7 @@
       server.address: 127.0.0.1,
       span.kind: server,
       url.path: /greet.tester.Greeter/StreamingFromClient,
-      url.scheme: https
+      url.scheme: http
     },
     Metrics: {
       process_id: 0,
@@ -305,7 +305,7 @@
       server.address: 127.0.0.1,
       span.kind: server,
       url.path: /greet.tester.Greeter/ErroringMethod,
-      url.scheme: https
+      url.scheme: http
     },
     Metrics: {
       process_id: 0,
@@ -422,7 +422,7 @@
       server.address: 127.0.0.1,
       span.kind: server,
       url.path: /greet.tester.Greeter/ErroringMethod,
-      url.scheme: https
+      url.scheme: http
     },
     Metrics: {
       process_id: 0,
@@ -539,7 +539,7 @@
       server.address: 127.0.0.1,
       span.kind: server,
       url.path: /greet.tester.Greeter/ErroringMethod,
-      url.scheme: https
+      url.scheme: http
     },
     Metrics: {
       process_id: 0,
@@ -656,7 +656,7 @@
       server.address: 127.0.0.1,
       span.kind: server,
       url.path: /greet.tester.Greeter/ErroringMethod,
-      url.scheme: https
+      url.scheme: http
     },
     Metrics: {
       process_id: 0,
@@ -777,7 +777,7 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       server.address: 127.0.0.1,
       span.kind: server,
       url.path: /greet.tester.Greeter/ErroringMethod,
-      url.scheme: https
+      url.scheme: http
     },
     Metrics: {
       process_id: 0,
@@ -894,7 +894,7 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       server.address: 127.0.0.1,
       span.kind: server,
       url.path: /greet.tester.Greeter/ErroringMethod,
-      url.scheme: https
+      url.scheme: http
     },
     Metrics: {
       process_id: 0,
@@ -1011,7 +1011,7 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       server.address: 127.0.0.1,
       span.kind: server,
       url.path: /greet.tester.Greeter/ErroringMethod,
-      url.scheme: https
+      url.scheme: http
     },
     Metrics: {
       process_id: 0,
@@ -1128,7 +1128,7 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       server.address: 127.0.0.1,
       span.kind: server,
       url.path: /greet.tester.Greeter/ErroringMethod,
-      url.scheme: https
+      url.scheme: http
     },
     Metrics: {
       process_id: 0,
@@ -1245,7 +1245,7 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       server.address: 127.0.0.1,
       span.kind: server,
       url.path: /greet.tester.Greeter/InvalidContentTypeMethod,
-      url.scheme: https
+      url.scheme: http
     },
     Metrics: {
       process_id: 0,
@@ -1358,7 +1358,7 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       server.address: 127.0.0.1,
       span.kind: server,
       url.path: /greet.tester.Greeter/StreamingFromServer,
-      url.scheme: https
+      url.scheme: http
     },
     Metrics: {
       process_id: 0,
@@ -1471,7 +1471,7 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       server.address: 127.0.0.1,
       span.kind: server,
       url.path: /greet.tester.Greeter/Unary,
-      url.scheme: https
+      url.scheme: http
     },
     Metrics: {
       process_id: 0,
@@ -1584,7 +1584,7 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       server.address: 127.0.0.1,
       span.kind: server,
       url.path: /greet.tester.Greeter/Unary,
-      url.scheme: https
+      url.scheme: http
     },
     Metrics: {
       process_id: 0,
@@ -1697,7 +1697,7 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       server.address: 127.0.0.1,
       span.kind: server,
       url.path: /greet.tester.Greeter/VerySlow,
-      url.scheme: https
+      url.scheme: http
     },
     Metrics: {
       process_id: 0,
@@ -1812,7 +1812,7 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       server.address: 127.0.0.1,
       span.kind: server,
       url.path: /greet.tester.Greeter/VerySlow,
-      url.scheme: https
+      url.scheme: http
     },
     Metrics: {
       process_id: 0,

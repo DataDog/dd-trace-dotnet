@@ -319,6 +319,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     settings.AddSimpleScrubber("DeadlineExceeded", "Deadline Exceeded");
                     // Keep the traces the same between http and https endpoints
                     settings.AddSimpleScrubber("https://", "http://");
+                    // .NET 11's ASP.NET Core sets url.scheme on the server span. It has no "://", so the
+                    // scrubber above doesn't catch it, and the http/https suites share these snapshots.
+                    settings.AddSimpleScrubber("url.scheme: https", "url.scheme: http");
                     // Linux vs Windows have different file paths in stack traces (legacy grpc)
                     settings.AddSimpleScrubber(@"T:\src\github\grpc\workspace_csharp_ext_windows_x64\", @"..\..\..\");
                     settings.AddSimpleScrubber(@"T:\src\github\grpc\workspace_csharp_ext_windows_x86\", @"..\..\..\");
