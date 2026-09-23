@@ -85,6 +85,29 @@ public class StringUtilTests
         StringUtil.ToLowerInvariant(value).Should().Be(value.ToLowerInvariant());
     }
 
+    // These take the code unit as an int, rather than the string directly, so that the unpaired
+    // surrogate never reaches the test's display name. vstest serializes display names over its
+    // JSON IPC channel, and an unpaired surrogate there aborts the entire test run.
+    [Theory]
+    [InlineData(0xD83D)] // lone high surrogate
+    [InlineData(0xDE00)] // lone low surrogate
+    public void ToUpperInvariant_LoneSurrogate_IsSemanticallyEquivalentToBcl(int codeUnit)
+    {
+        var value = ((char)codeUnit).ToString();
+
+        StringUtil.ToUpperInvariant(value).Should().Be(value.ToUpperInvariant());
+    }
+
+    [Theory]
+    [InlineData(0xD83D)] // lone high surrogate
+    [InlineData(0xDE00)] // lone low surrogate
+    public void ToLowerInvariant_LoneSurrogate_IsSemanticallyEquivalentToBcl(int codeUnit)
+    {
+        var value = ((char)codeUnit).ToString();
+
+        StringUtil.ToLowerInvariant(value).Should().Be(value.ToLowerInvariant());
+    }
+
     [Theory]
     [MemberData(nameof(Data.AsciiNoOpInputs), MemberType = typeof(Data))]
     public void ToUpperInvariant_AlreadyUppercaseAscii_ReturnsSameInstance(string value)
@@ -150,8 +173,6 @@ public class StringUtilTests
             ["😀"], // surrogate pair (U+1F600), aligned at index 0
             ["a😀"], // surrogate pair unaligned to the 2-char stride
             ["ab😀"], // surrogate pair aligned again after an even prefix
-            ["\uD83D"], // lone high surrogate
-            ["\uDE00"], // lone low surrogate
             ["\u0000"], // NUL - lowest code point
             ["\u007F"], // DEL - last ASCII code point
             ["\u0080"], // first non-ASCII code point (C1 control range)
