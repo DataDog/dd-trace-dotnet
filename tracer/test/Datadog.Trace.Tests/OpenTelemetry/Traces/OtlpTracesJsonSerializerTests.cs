@@ -240,10 +240,13 @@ public class OtlpTracesJsonSerializerTests
         using var stringWriter = new StringWriter();
         using (var writer = new VendorJsonTextWriter(stringWriter))
         {
-            serializer.WriteSpan(writer, traceChunk.GetSpanModel(0));
+            writer.WriteStartArray();
+            serializer.WriteSpans(writer, traceChunk, emitStartingComma: false);
+            writer.WriteEndArray();
         }
 
-        return JObject.Parse(stringWriter.ToString());
+        var spans = JArray.Parse(stringWriter.ToString());
+        return (JObject)spans[0]!;
     }
 
     private static JObject WriteAnyValue(object? value)

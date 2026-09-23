@@ -459,16 +459,10 @@ internal sealed class OtlpTracesJsonSerializer : ISpanBufferSerializer
         }
     }
 
-    internal void WriteSpan(JsonTextWriter writer, SpanModel spanModel, string? otlpTraceState = null)
+    internal void WriteSpan(JsonTextWriter writer, SpanModel spanModel, string? otlpTraceState)
     {
         static Action<KeyValue> WriteKeyValue(JsonTextWriter writer)
             => keyValue => OtlpTracesJsonSerializer.WriteKeyValue(writer, keyValue);
-
-        if (otlpTraceState is null)
-        {
-            var otelTraceStateHeader = spanModel.Span.Context.OtelTraceState?.ToHeaderString();
-            otlpTraceState = otelTraceStateHeader is null ? null : "ot=" + otelTraceStateHeader;
-        }
 
         writer.WriteStartObject();
 
