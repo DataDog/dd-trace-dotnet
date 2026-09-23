@@ -119,7 +119,7 @@ internal sealed class OtelTraceState
         try
         {
             OtelTraceStateHelpers.SetRvTh(sb, CachedHeaderString, RandomValue, Threshold);
-            return sb.Length == 0 ? null : StringBuilderCache.GetStringAndRelease(sb);
+            return sb.Length == 0 ? null : sb.ToString();
         }
         finally
         {
