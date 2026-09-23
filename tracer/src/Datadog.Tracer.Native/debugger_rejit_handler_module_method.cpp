@@ -41,4 +41,10 @@ std::vector<ProbeDefinition_S> DebuggerRejitHandlerModuleMethod::GetProbes() con
     return m_probes;
 }
 
+bool DebuggerRejitHandlerModuleMethod::HasProbes() const
+{
+    std::lock_guard lock(m_probes_lock);
+    return !m_probes.empty();
+}
+
 } // namespace debugger
