@@ -31,7 +31,7 @@ internal sealed class SpanEnrichmentHook : Hook
 
             long? serialId = null;
             var serialIdStr = metadata?.GetString(FeatureFlagMetadataKeys.SplitSerialId);
-            if (!string.IsNullOrEmpty(serialIdStr) &&
+            if (!StringUtil.IsNullOrEmpty(serialIdStr) &&
                 long.TryParse(serialIdStr, NumberStyles.Integer, CultureInfo.InvariantCulture, out var parsed))
             {
                 serialId = parsed;
@@ -41,7 +41,7 @@ internal sealed class SpanEnrichmentHook : Hook
             var doLog = string.Equals(doLogStr, "true", StringComparison.OrdinalIgnoreCase);
 
             var targetingKey = context.EvaluationContext?.TargetingKey;
-            var hasVariant = !string.IsNullOrEmpty(details.Variant);
+            var hasVariant = !StringUtil.IsNullOrEmpty(details.Variant);
 
             // The value is only recorded as a runtime default (no serial id and no variant); skip the
             // ToPlainObject conversion + boxing in every other case, where it would be ignored.
@@ -71,7 +71,7 @@ internal sealed class SpanEnrichmentHook : Hook
         if (value.AsStructure is { } structure)
         {
             var orig = structure.AsDictionary();
-            var dict = new Dictionary<string, object?>(orig.Count);
+            var dict = new Dictionary<string, object>>(orig.Count);
             foreach (var pair in orig)
             {
                 dict[pair.Key] = ToPlainObject(pair.Value);
