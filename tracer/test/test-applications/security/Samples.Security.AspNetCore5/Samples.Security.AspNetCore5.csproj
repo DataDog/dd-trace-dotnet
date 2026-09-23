@@ -82,15 +82,12 @@
     </Content>
   </ItemGroup>
 
-  <ItemGroup Condition="'$(TargetFramework)' == 'net11.0'">
-    <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="11.0.0-rc.1.26425.128" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite.Core" Version="11.0.0-rc.1.26425.128" />
-    <PackageReference Update="Microsoft.Data.Sqlite.Core" Version="11.0.0-rc.1.26425.128" />
-    <PackageReference Update="SQLitePCLRaw.bundle_e_sqlite3" Version="3.0.5" />
-    <PackageReference Update="SQLitePCLRaw.core" Version="3.0.5" />
-  </ItemGroup>
-
-  <ItemGroup Condition="'$(TargetFramework)' == 'net10.0'">
+  <!--
+    net11.0 deliberately stays on the .NET 10 SQLite packages. Microsoft.Data.Sqlite.Core 11.0.0
+    hard-requires SQLitePCLRaw.core 3.0.5, whose linux-x64 libe_sqlite3.so needs GLIBC_2.34, whic
+    our linux tests don't have available yet. Revisit when the test image moves to a newer glibc.
+  -->
+  <ItemGroup Condition="'$(TargetFramework)' == 'net10.0' or '$(TargetFramework)' == 'net11.0'">
     <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="10.0.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite.Core" Version="10.0.0" />
     <PackageReference Update="Microsoft.Data.Sqlite.Core" Version="10.0.0" />
