@@ -89,10 +89,8 @@ bool RejitPreprocessor<RejitRequestDefinition>::HasModuleAndMethod(ModuleID modu
 template <class RejitRequestDefinition>
 void RejitPreprocessor<RejitRequestDefinition>::RemoveModule(ModuleID moduleId)
 {
-    if (m_rejit_handler->IsShutdownRequested())
-    {
-        return;
-    }
+    // No shutdown early return: AddNGenInlinerModule holds both locks while passing every cached ModuleID to the
+    // CLR, so taking them here is what keeps an unloading module out of an in-flight replay.
 
     // Removes the RejitHandlerModule instance
     std::lock_guard<std::mutex> modulesGuard(m_modules_lock);

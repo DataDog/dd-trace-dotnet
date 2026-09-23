@@ -691,11 +691,9 @@ void RejitHandler::RemoveModule(ModuleID moduleId)
         moduleLifetime->m_unloading = true;
     }
 
-    if (IsShutdownRequested())
-    {
-        return;
-    }
-
+    // Also required after shutdown is published: an NGen inliner replay that passed its shutdown check can still
+    // be passing this ModuleID to the CLR under the rejitter's module locks. Only the rejitter's RemoveModule
+    // blocks on those locks, which keeps ModuleUnloadStarted from returning until the replay is done.
     Rejitter* prev = nullptr;
     for (size_t x = 0; x < m_rejittersCount; x++)
     {
