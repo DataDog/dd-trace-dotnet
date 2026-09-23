@@ -32,6 +32,7 @@
 #       We need to update the test logger to fix this.
 tracer/                                   @DataDog/apm-sdk-capabilities-dotnet @DataDog/apm-lang-platform-dotnet @DataDog/tracing-dotnet
 /tracer/build/                            @DataDog/apm-dotnet
+/tracer/build/timeit/                     @DataDog/apm-lang-platform-dotnet
 /tracer/test/Datadog.Trace.TestHelpers*/  @DataDog/apm-lang-platform-dotnet
 
 # IDM
