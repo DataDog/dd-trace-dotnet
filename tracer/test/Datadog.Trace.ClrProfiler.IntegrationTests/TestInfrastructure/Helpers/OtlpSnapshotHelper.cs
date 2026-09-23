@@ -50,6 +50,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Helpers
 
         private static readonly Regex SpanIdRegex = new(@"^([a-fA-F0-9]{16})$");
 
+        private static readonly Regex OtelTraceStateRandomValueRegex = new(@"^(?<prefix>ot=rv:)[a-fA-F0-9]{14}(?<suffix>;th:[a-fA-F0-9]{1,14})?$");
+
         private static readonly Regex CodeOriginFrameLineOrColumnKeyRegex = new(@"^_dd\.code_origin\.frames\.\d+\.(line|column)$", RegexOptions.Compiled);
 
         private static readonly Regex CodeOriginFrameFileKeyRegex = new(@"^_dd\.code_origin\.frames\.\d+\.file$", RegexOptions.Compiled);
@@ -105,6 +107,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Helpers
             var stringValueKey = names.StringValue;
             var traceIdKey = names.TraceId;
             var spanIdKey = names.SpanId;
+            var traceStateKey = names.TraceState;
             var parentSpanIdKey = names.ParentSpanId;
             var startTimeUnixNanoKey = names.StartTimeUnixNano;
             var endTimeUnixNanoKey = names.EndTimeUnixNano;
@@ -139,6 +142,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Helpers
                 span[endTimeUnixNanoKey] = "0";
                 span[traceIdKey] = "normalized-trace-id";
                 span[spanIdKey] = "normalized-span-id";
+                if (span[traceStateKey] is JValue { Type: JTokenType.String } traceState)
+                {
+                    span[traceStateKey] = OtelTraceStateRandomValueRegex.Replace(traceState.ToString(), "${prefix}normalized-random-value${suffix}");
+                }
+
                 if (span[parentSpanIdKey] is not null)
                 {
                     span[parentSpanIdKey] = "normalized-parent-span-id";

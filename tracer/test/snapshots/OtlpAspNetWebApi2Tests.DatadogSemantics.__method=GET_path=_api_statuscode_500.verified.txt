@@ -65,6 +65,7 @@
             {
               "traceId": "normalized-trace-id",
               "spanId": "normalized-span-id",
+              "traceState": "ot=rv:normalized-random-value;th:0",
               "name": "GET /api/statuscode/{value}",
               "kind": 2,
               "startTimeUnixNano": "0",
@@ -205,6 +206,7 @@
             {
               "traceId": "normalized-trace-id",
               "spanId": "normalized-span-id",
+              "traceState": "ot=rv:normalized-random-value;th:0",
               "parentSpanId": "normalized-parent-span-id",
               "name": "GET /api/statuscode/{value}",
               "kind": 2,
