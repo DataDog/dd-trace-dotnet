@@ -11,103 +11,82 @@ using System.Threading;
 
 namespace Datadog.Trace.Debugger.RateLimiting
 {
-    internal static class DebuggerSamplingCoordinator
+    internal sealed class DebuggerSamplingCoordinator
     {
-        internal static bool TrySample<TSamplingDecisionProvider>(ref State? state, string probeId, TSamplingDecisionProvider samplingDecisionProvider)
-            where TSamplingDecisionProvider : struct, IDebuggerSamplingDecisionProvider
-            => TrySample(ref state, probeId, samplingDecisionProvider, out _);
+        private HashSet<string>? _emittedProbeIds;
+        private int _decision;
 
-        internal static bool TrySample<TSamplingDecisionProvider>(ref State? state, string probeId, TSamplingDecisionProvider samplingDecisionProvider, out DebuggerSamplingDecision samplingDecision)
-            where TSamplingDecisionProvider : struct, IDebuggerSamplingDecisionProvider
+        private enum Decision
         {
-            var current = Volatile.Read(ref state);
-            if (current is null)
-            {
-                var created = new State();
-                current = Interlocked.CompareExchange(ref state, created, null) ?? created;
-            }
-
-            samplingDecision = current.TrySample(probeId, samplingDecisionProvider);
-            return samplingDecision == DebuggerSamplingDecision.Keep;
+            Undecided,
+            Creating,
+            DropGlobal,
+            DropProbe,
+            Keep
         }
 
-        internal sealed class State
+        internal DebuggerSamplingDecision TrySample<TSamplingDecisionProvider>(string probeId, TSamplingDecisionProvider samplingDecisionProvider)
+            where TSamplingDecisionProvider : struct, IDebuggerSamplingDecisionProvider
         {
-            private HashSet<string>? _emittedProbeIds;
-            private int _decision;
-
-            private enum Decision
+            var currentDecision = (Decision)Volatile.Read(ref _decision);
+            if (currentDecision is Decision.DropGlobal or Decision.DropProbe)
             {
-                Undecided,
-                Creating,
-                DropGlobal,
-                DropProbe,
-                Keep
+                return ToSamplingDecision(currentDecision);
             }
 
-            internal DebuggerSamplingDecision TrySample<TSamplingDecisionProvider>(string probeId, TSamplingDecisionProvider samplingDecisionProvider)
-                where TSamplingDecisionProvider : struct, IDebuggerSamplingDecisionProvider
+            lock (this)
             {
-                var currentDecision = (Decision)Volatile.Read(ref _decision);
-                if (currentDecision is Decision.DropGlobal or Decision.DropProbe)
+                switch ((Decision)_decision)
                 {
-                    return ToSamplingDecision(currentDecision);
+                    case Decision.Undecided:
+                        break;
+                    case Decision.Creating:
+                        // Monitor locks are reentrant, so this is a nested sample on the deciding
+                        // thread. Other threads cannot enter until the decision is published.
+                        return DebuggerSamplingDecision.DropProbe;
+                    case Decision.DropGlobal:
+                        return DebuggerSamplingDecision.DropGlobal;
+                    case Decision.DropProbe:
+                        return DebuggerSamplingDecision.DropProbe;
+                    case Decision.Keep:
+                        return _emittedProbeIds!.Add(probeId)
+                                   ? DebuggerSamplingDecision.Keep
+                                   : DebuggerSamplingDecision.DropProbe;
                 }
 
-                lock (this)
+                _decision = (int)Decision.Creating;
+                try
                 {
-                    switch ((Decision)_decision)
+                    var samplingDecision = samplingDecisionProvider.Sample();
+                    switch (samplingDecision)
                     {
-                        case Decision.Undecided:
+                        case DebuggerSamplingDecision.DropGlobal:
+                            Volatile.Write(ref _decision, (int)Decision.DropGlobal);
+                            return samplingDecision;
+                        case DebuggerSamplingDecision.DropProbe:
+                            Volatile.Write(ref _decision, (int)Decision.DropProbe);
+                            return samplingDecision;
+                        case DebuggerSamplingDecision.Keep:
                             break;
-                        case Decision.Creating:
-                            // Monitor locks are reentrant, so this is a nested sample on the deciding
-                            // thread. Other threads cannot enter until the decision is published.
-                            return DebuggerSamplingDecision.DropProbe;
-                        case Decision.DropGlobal:
-                            return DebuggerSamplingDecision.DropGlobal;
-                        case Decision.DropProbe:
-                            return DebuggerSamplingDecision.DropProbe;
-                        case Decision.Keep:
-                            return _emittedProbeIds!.Add(probeId)
-                                       ? DebuggerSamplingDecision.Keep
-                                       : DebuggerSamplingDecision.DropProbe;
+                        default:
+                            throw new ArgumentOutOfRangeException(nameof(samplingDecision), samplingDecision, null);
                     }
 
-                    _decision = (int)Decision.Creating;
-                    try
-                    {
-                        var samplingDecision = samplingDecisionProvider.Sample();
-                        switch (samplingDecision)
-                        {
-                            case DebuggerSamplingDecision.DropGlobal:
-                                Volatile.Write(ref _decision, (int)Decision.DropGlobal);
-                                return samplingDecision;
-                            case DebuggerSamplingDecision.DropProbe:
-                                Volatile.Write(ref _decision, (int)Decision.DropProbe);
-                                return samplingDecision;
-                            case DebuggerSamplingDecision.Keep:
-                                break;
-                            default:
-                                throw new ArgumentOutOfRangeException(nameof(samplingDecision), samplingDecision, null);
-                        }
-
-                        _emittedProbeIds = new HashSet<string> { probeId };
-                        Volatile.Write(ref _decision, (int)Decision.Keep);
-                        return DebuggerSamplingDecision.Keep;
-                    }
-                    catch
-                    {
-                        _decision = (int)Decision.Undecided;
-                        throw;
-                    }
+                    _emittedProbeIds = new HashSet<string> { probeId };
+                    Volatile.Write(ref _decision, (int)Decision.Keep);
+                    return DebuggerSamplingDecision.Keep;
+                }
+                catch
+                {
+                    _decision = (int)Decision.Undecided;
+                    throw;
                 }
             }
-
-            private static DebuggerSamplingDecision ToSamplingDecision(Decision decision)
-                => decision == Decision.DropGlobal
-                       ? DebuggerSamplingDecision.DropGlobal
-                       : DebuggerSamplingDecision.DropProbe;
         }
+
+        private static DebuggerSamplingDecision ToSamplingDecision(Decision decision)
+            => decision == Decision.DropGlobal
+                   ? DebuggerSamplingDecision.DropGlobal
+                   : DebuggerSamplingDecision.DropProbe;
     }
 }

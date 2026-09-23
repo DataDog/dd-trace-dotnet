@@ -176,11 +176,7 @@ namespace Datadog.Trace.Debugger.Expressions
             // The first capturing probe is intentionally a trace-admission decision. Once the trace is kept,
             // other capturing probes bypass their global and per-probe samplers and are capped once per probe.
             var samplingDecisionProvider = new SamplingDecisionProvider(this, state, sampler);
-            if (traceContext.TrySampleDebuggerSnapshot(state.ProbeInfo.ProbeId, samplingDecisionProvider, out var samplingDecision))
-            {
-                return true;
-            }
-
+            var samplingDecision = traceContext.GetOrCreateDebuggerSamplingCoordinator().TrySample(state.ProbeInfo.ProbeId, samplingDecisionProvider);
             return ApplySamplingDecision(state.ProbeInfo.ProbeType, samplingDecision);
         }
 

@@ -264,26 +264,26 @@ public class CoordinatedSamplingTests
     [Fact]
     public void CreatingDecisionPreventsReentrantSamplerConsult()
     {
-        DebuggerSamplingCoordinator.State state = null;
+        var coordinator = new DebuggerSamplingCoordinator();
         var calls = 0;
 
         bool Sample()
         {
             Interlocked.Increment(ref calls);
-            Assert.False(DebuggerSamplingCoordinator.TrySample(ref state, "nested", new DelegateProvider(Sample)));
+            Assert.Equal(DebuggerSamplingDecision.DropProbe, coordinator.TrySample("nested", new DelegateProvider(Sample)));
             return true;
         }
 
-        Assert.True(DebuggerSamplingCoordinator.TrySample(ref state, "outer", new DelegateProvider(Sample)));
+        Assert.Equal(DebuggerSamplingDecision.Keep, coordinator.TrySample("outer", new DelegateProvider(Sample)));
         Assert.Equal(1, calls);
-        Assert.True(DebuggerSamplingCoordinator.TrySample(ref state, "nested", new DelegateProvider(Sample)));
+        Assert.Equal(DebuggerSamplingDecision.Keep, coordinator.TrySample("nested", new DelegateProvider(Sample)));
         Assert.Equal(1, calls);
     }
 
     [Fact]
     public void ThrownSampleClearsCreatingDecisionSoALaterCallerCanRetry()
     {
-        DebuggerSamplingCoordinator.State state = null;
+        var coordinator = new DebuggerSamplingCoordinator();
         var calls = 0;
 
         bool Sample()
@@ -298,29 +298,28 @@ public class CoordinatedSamplingTests
         }
 
         var provider = new DelegateProvider(Sample);
-        Assert.Throws<InvalidOperationException>(() => DebuggerSamplingCoordinator.TrySample(ref state, "first", provider));
+        Assert.Throws<InvalidOperationException>(() => coordinator.TrySample("first", provider));
         Assert.Equal(1, calls);
-        Assert.True(DebuggerSamplingCoordinator.TrySample(ref state, "retry", provider));
+        Assert.Equal(DebuggerSamplingDecision.Keep, coordinator.TrySample("retry", provider));
         Assert.Equal(2, calls);
     }
 
     [Fact]
     public void WaitingCallerRetriesAfterFirstSamplerThrows()
     {
-        DebuggerSamplingCoordinator.State state = null;
+        var coordinator = new DebuggerSamplingCoordinator();
         var enteredFirstSample = new ManualResetEventSlim();
         var releaseFirstSample = new ManualResetEventSlim();
         Exception firstException = null;
         var secondSampleCalls = 0;
-        var secondResult = false;
+        var secondResult = DebuggerSamplingDecision.DropProbe;
 
         var first = new Thread(
             () =>
             {
                 try
                 {
-                    DebuggerSamplingCoordinator.TrySample(
-                        ref state,
+                    coordinator.TrySample(
                         "first",
                         new DelegateProvider(
                             () =>
@@ -341,8 +340,7 @@ public class CoordinatedSamplingTests
         var second = new Thread(
             () =>
             {
-                secondResult = DebuggerSamplingCoordinator.TrySample(
-                    ref state,
+                secondResult = coordinator.TrySample(
                     "second",
                     new DelegateProvider(
                         () =>
@@ -374,11 +372,11 @@ public class CoordinatedSamplingTests
         Assert.True(first.Join(TimeSpan.FromSeconds(10)));
         Assert.True(second.Join(TimeSpan.FromSeconds(10)));
         Assert.IsType<InvalidOperationException>(firstException);
-        Assert.True(secondResult);
+        Assert.Equal(DebuggerSamplingDecision.Keep, secondResult);
         Assert.Equal(1, secondSampleCalls);
         var unexpectedProvider = new DelegateProvider(() => throw new InvalidOperationException());
-        Assert.False(DebuggerSamplingCoordinator.TrySample(ref state, "second", unexpectedProvider));
-        Assert.True(DebuggerSamplingCoordinator.TrySample(ref state, "first", unexpectedProvider));
+        Assert.Equal(DebuggerSamplingDecision.DropProbe, coordinator.TrySample("second", unexpectedProvider));
+        Assert.Equal(DebuggerSamplingDecision.Keep, coordinator.TrySample("first", unexpectedProvider));
     }
 
     [Fact]

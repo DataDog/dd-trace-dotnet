@@ -43,7 +43,7 @@ namespace Datadog.Trace
         private IastRequestContext? _iastRequestContext;
         private AppSecRequestContext? _appSecRequestContext;
         private OtelTraceState? _otelTraceState;
-        private DebuggerSamplingCoordinator.State? _debuggerSamplingState;
+        private DebuggerSamplingCoordinator? _debuggerSamplingCoordinator;
 
         // Lazily created on the first feature-flag evaluation for this trace; null until then, so
         // traces that never evaluate a flag pay nothing. State dies with the TraceContext.
@@ -194,9 +194,17 @@ namespace Datadog.Trace
             return _featureFlagEnrichment;
         }
 
-        internal bool TrySampleDebuggerSnapshot<TSamplingDecisionProvider>(string probeId, TSamplingDecisionProvider samplingDecisionProvider, out DebuggerSamplingDecision samplingDecision)
-            where TSamplingDecisionProvider : struct, IDebuggerSamplingDecisionProvider
-            => DebuggerSamplingCoordinator.TrySample(ref _debuggerSamplingState, probeId, samplingDecisionProvider, out samplingDecision);
+        /// <summary> Gets the Live Debugger sampling coordinator for this trace, creating it on first use. </summary>
+        internal DebuggerSamplingCoordinator GetOrCreateDebuggerSamplingCoordinator()
+        {
+            if (Volatile.Read(ref _debuggerSamplingCoordinator) is { } coordinator)
+            {
+                return coordinator;
+            }
+
+            var created = new DebuggerSamplingCoordinator();
+            return Interlocked.CompareExchange(ref _debuggerSamplingCoordinator, created, null) ?? created;
+        }
 
         internal void EnableIastInRequest()
         {
