@@ -402,61 +402,61 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "3.3.106.47" },
                 new object[] { "3.5.4.38" },
                 new object[] { "3.7.513.4" },
-                new object[] { "4.0.103.8" },
+                new object[] { "4.0.104" },
 #endif
 #if NETCOREAPP2_1
                 new object[] { "3.3.106.47" },
                 new object[] { "3.5.4.38" },
                 new object[] { "3.7.513.4" },
-                new object[] { "4.0.103.8" },
+                new object[] { "4.0.104" },
 #endif
 #if NETCOREAPP3_0
                 new object[] { "3.3.106.47" },
                 new object[] { "3.5.4.38" },
                 new object[] { "3.7.513.4" },
-                new object[] { "4.0.103.8" },
+                new object[] { "4.0.104" },
 #endif
 #if NETCOREAPP3_1
                 new object[] { "3.3.106.47" },
                 new object[] { "3.5.4.38" },
                 new object[] { "3.7.513.4" },
-                new object[] { "4.0.103.8" },
+                new object[] { "4.0.104" },
 #endif
 #if NET5_0
                 new object[] { "3.3.106.47" },
                 new object[] { "3.5.4.38" },
                 new object[] { "3.7.513.4" },
-                new object[] { "4.0.103.8" },
+                new object[] { "4.0.104" },
 #endif
 #if NET6_0
                 new object[] { "3.3.106.47" },
                 new object[] { "3.5.4.38" },
                 new object[] { "3.7.513.4" },
-                new object[] { "4.0.103.8" },
+                new object[] { "4.0.104" },
 #endif
 #if NET7_0
                 new object[] { "3.3.106.47" },
                 new object[] { "3.5.4.38" },
                 new object[] { "3.7.513.4" },
-                new object[] { "4.0.103.8" },
+                new object[] { "4.0.104" },
 #endif
 #if NET8_0
                 new object[] { "3.3.106.47" },
                 new object[] { "3.5.4.38" },
                 new object[] { "3.7.513.4" },
-                new object[] { "4.0.103.8" },
+                new object[] { "4.0.104" },
 #endif
 #if NET9_0
                 new object[] { "3.3.106.47" },
                 new object[] { "3.5.4.38" },
                 new object[] { "3.7.513.4" },
-                new object[] { "4.0.103.8" },
+                new object[] { "4.0.104" },
 #endif
 #if NET10_0
                 new object[] { "3.3.106.47" },
                 new object[] { "3.5.4.38" },
                 new object[] { "3.7.513.4" },
-                new object[] { "4.0.103.8" },
+                new object[] { "4.0.104" },
 #endif
 #endif
             };
@@ -3347,6 +3347,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "6.0.5" },
                 new object[] { "6.1.7" },
                 new object[] { "7.0.3" },
+                new object[] { "7.1.0" },
 #endif
 #if NETCOREAPP2_1
                 new object[] { "1.0.19269.1" },
@@ -3437,6 +3438,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "6.0.5" },
                 new object[] { "6.1.7" },
                 new object[] { "7.0.3" },
+                new object[] { "7.1.0" },
 #endif
 #if NET9_0
                 new object[] { "1.0.19269.1" },
@@ -3453,6 +3455,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "6.0.5" },
                 new object[] { "6.1.7" },
                 new object[] { "7.0.3" },
+                new object[] { "7.1.0" },
 #endif
 #if NET10_0
                 new object[] { "1.0.19269.1" },
@@ -3469,6 +3472,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "6.0.5" },
                 new object[] { "6.1.7" },
                 new object[] { "7.0.3" },
+                new object[] { "7.1.0" },
 #endif
 #endif
             };
@@ -3499,6 +3503,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "3.0.25" },
                 new object[] { "3.1.31" },
                 new object[] { "3.2.15" },
+                new object[] { "3.3.0" },
 #endif
 #if NETCOREAPP2_1
                 new object[] { "1.2.6" },
@@ -3530,6 +3535,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "3.0.25" },
                 new object[] { "3.1.31" },
                 new object[] { "3.2.15" },
+                new object[] { "3.3.0" },
 #endif
 #if NET5_0
                 new object[] { "1.2.6" },
@@ -3548,6 +3554,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "3.0.25" },
                 new object[] { "3.1.31" },
                 new object[] { "3.2.15" },
+                new object[] { "3.3.0" },
 #endif
 #if NET6_0
                 new object[] { "1.2.6" },
@@ -3566,6 +3573,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "3.0.25" },
                 new object[] { "3.1.31" },
                 new object[] { "3.2.15" },
+                new object[] { "3.3.0" },
 #endif
 #if NET7_0
                 new object[] { "1.2.6" },
@@ -3584,6 +3592,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "3.0.25" },
                 new object[] { "3.1.31" },
                 new object[] { "3.2.15" },
+                new object[] { "3.3.0" },
 #endif
 #if NET8_0
                 new object[] { "1.2.6" },
@@ -3602,6 +3611,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "3.0.25" },
                 new object[] { "3.1.31" },
                 new object[] { "3.2.15" },
+                new object[] { "3.3.0" },
 #endif
 #if NET9_0
                 new object[] { "1.2.6" },
@@ -3620,6 +3630,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "3.0.25" },
                 new object[] { "3.1.31" },
                 new object[] { "3.2.15" },
+                new object[] { "3.3.0" },
 #endif
 #if NET10_0
                 new object[] { "1.2.6" },
@@ -3638,6 +3649,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "3.0.25" },
                 new object[] { "3.1.31" },
                 new object[] { "3.2.15" },
+                new object[] { "3.3.0" },
 #endif
 #endif
             };
@@ -6079,7 +6091,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "3.60.0" },
                 new object[] { "3.61.0" },
                 new object[] { "3.62.1" },
-                new object[] { "3.63.0" },
+                new object[] { "3.63.1" },
 #endif
 #if NETCOREAPP2_1
                 new object[] { "3.6.0" },
@@ -6189,7 +6201,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "3.60.0" },
                 new object[] { "3.61.0" },
                 new object[] { "3.62.1" },
-                new object[] { "3.63.0" },
+                new object[] { "3.63.1" },
 #endif
 #if NET5_0
                 new object[] { "3.6.0" },
@@ -6249,7 +6261,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "3.60.0" },
                 new object[] { "3.61.0" },
                 new object[] { "3.62.1" },
-                new object[] { "3.63.0" },
+                new object[] { "3.63.1" },
 #endif
 #if NET6_0
                 new object[] { "3.6.0" },
@@ -6309,7 +6321,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "3.60.0" },
                 new object[] { "3.61.0" },
                 new object[] { "3.62.1" },
-                new object[] { "3.63.0" },
+                new object[] { "3.63.1" },
 #endif
 #if NET7_0
                 new object[] { "3.6.0" },
@@ -6369,7 +6381,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "3.60.0" },
                 new object[] { "3.61.0" },
                 new object[] { "3.62.1" },
-                new object[] { "3.63.0" },
+                new object[] { "3.63.1" },
 #endif
 #if NET8_0
                 new object[] { "3.6.0" },
@@ -6429,7 +6441,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "3.60.0" },
                 new object[] { "3.61.0" },
                 new object[] { "3.62.1" },
-                new object[] { "3.63.0" },
+                new object[] { "3.63.1" },
 #endif
 #if NET9_0
                 new object[] { "3.6.0" },
@@ -6489,7 +6501,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "3.60.0" },
                 new object[] { "3.61.0" },
                 new object[] { "3.62.1" },
-                new object[] { "3.63.0" },
+                new object[] { "3.63.1" },
 #endif
 #if NET10_0
                 new object[] { "3.6.0" },
@@ -6549,7 +6561,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "3.60.0" },
                 new object[] { "3.61.0" },
                 new object[] { "3.62.1" },
-                new object[] { "3.63.0" },
+                new object[] { "3.63.1" },
 #endif
 #endif
             };
@@ -6613,7 +6625,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "3.60.0" },
                 new object[] { "3.61.0" },
                 new object[] { "3.62.1" },
-                new object[] { "3.63.0" },
+                new object[] { "3.63.1" },
 #endif
 #if NETCOREAPP2_1
                 new object[] { "3.12.0" },
@@ -6705,7 +6717,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "3.60.0" },
                 new object[] { "3.61.0" },
                 new object[] { "3.62.1" },
-                new object[] { "3.63.0" },
+                new object[] { "3.63.1" },
 #endif
 #if NET5_0
                 new object[] { "3.12.0" },
@@ -6759,7 +6771,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "3.60.0" },
                 new object[] { "3.61.0" },
                 new object[] { "3.62.1" },
-                new object[] { "3.63.0" },
+                new object[] { "3.63.1" },
 #endif
 #if NET6_0
                 new object[] { "3.12.0" },
@@ -6813,7 +6825,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "3.60.0" },
                 new object[] { "3.61.0" },
                 new object[] { "3.62.1" },
-                new object[] { "3.63.0" },
+                new object[] { "3.63.1" },
 #endif
 #if NET7_0
                 new object[] { "3.12.0" },
@@ -6867,7 +6879,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "3.60.0" },
                 new object[] { "3.61.0" },
                 new object[] { "3.62.1" },
-                new object[] { "3.63.0" },
+                new object[] { "3.63.1" },
 #endif
 #if NET8_0
                 new object[] { "3.12.0" },
@@ -6921,7 +6933,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "3.60.0" },
                 new object[] { "3.61.0" },
                 new object[] { "3.62.1" },
-                new object[] { "3.63.0" },
+                new object[] { "3.63.1" },
 #endif
 #if NET9_0
                 new object[] { "3.12.0" },
@@ -6975,7 +6987,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "3.60.0" },
                 new object[] { "3.61.0" },
                 new object[] { "3.62.1" },
-                new object[] { "3.63.0" },
+                new object[] { "3.63.1" },
 #endif
 #if NET10_0
                 new object[] { "3.12.0" },
@@ -7029,7 +7041,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "3.60.0" },
                 new object[] { "3.61.0" },
                 new object[] { "3.62.1" },
-                new object[] { "3.63.0" },
+                new object[] { "3.63.1" },
 #endif
 #endif
             };
@@ -8716,6 +8728,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "1.16.0" },
                 new object[] { "1.17.0" },
                 new object[] { "1.18.0" },
+                new object[] { "1.19.0" },
 #endif
 #if NETCOREAPP2_1
                 new object[] { "1.0.1" },
@@ -8737,6 +8750,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "1.16.0" },
                 new object[] { "1.17.0" },
                 new object[] { "1.18.0" },
+                new object[] { "1.19.0" },
 #endif
 #if NETCOREAPP3_0
                 new object[] { "1.0.1" },
@@ -8758,6 +8772,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "1.16.0" },
                 new object[] { "1.17.0" },
                 new object[] { "1.18.0" },
+                new object[] { "1.19.0" },
 #endif
 #if NETCOREAPP3_1
                 new object[] { "1.0.1" },
@@ -8779,6 +8794,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "1.16.0" },
                 new object[] { "1.17.0" },
                 new object[] { "1.18.0" },
+                new object[] { "1.19.0" },
 #endif
 #if NET5_0
                 new object[] { "1.0.1" },
@@ -8800,6 +8816,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "1.16.0" },
                 new object[] { "1.17.0" },
                 new object[] { "1.18.0" },
+                new object[] { "1.19.0" },
 #endif
 #if NET6_0
                 new object[] { "1.0.1" },
@@ -8821,6 +8838,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "1.16.0" },
                 new object[] { "1.17.0" },
                 new object[] { "1.18.0" },
+                new object[] { "1.19.0" },
 #endif
 #if NET7_0
                 new object[] { "1.0.1" },
@@ -8842,6 +8860,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "1.16.0" },
                 new object[] { "1.17.0" },
                 new object[] { "1.18.0" },
+                new object[] { "1.19.0" },
 #endif
 #if NET8_0
                 new object[] { "1.0.1" },
@@ -8863,6 +8882,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "1.16.0" },
                 new object[] { "1.17.0" },
                 new object[] { "1.18.0" },
+                new object[] { "1.19.0" },
 #endif
 #if NET9_0
                 new object[] { "1.0.1" },
@@ -8884,6 +8904,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "1.16.0" },
                 new object[] { "1.17.0" },
                 new object[] { "1.18.0" },
+                new object[] { "1.19.0" },
 #endif
 #if NET10_0
                 new object[] { "1.0.1" },
@@ -8905,6 +8926,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "1.16.0" },
                 new object[] { "1.17.0" },
                 new object[] { "1.18.0" },
+                new object[] { "1.19.0" },
 #endif
 #endif
             };
