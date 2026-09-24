@@ -398,8 +398,15 @@ HRESULT Dataflow::AppDomainShutdown(AppDomainID appDomainId)
     return S_FALSE;
 }
 
-HRESULT Dataflow::ModuleLoaded(ModuleID moduleId, ModuleInfo** pModuleInfo)
+HRESULT Dataflow::ModuleLoaded(const trace::ModuleIDWithLifetime& module, ModuleInfo** pModuleInfo)
 {
+    auto moduleLifetime = module.Acquire();
+    if (!moduleLifetime.has_value())
+    {
+        return S_FALSE;
+    }
+
+    const auto moduleId = module.id;
     CSGUARD(_cs);
     // Resolve the modules that were already loaded when Dataflow was created. This is the first
     // safe opportunity to do so: we are inside ModuleLoadFinished, the profiler-callback context
@@ -686,12 +693,27 @@ bool Dataflow::IsInlineEnabled(ModuleID calleeModuleId, mdToken calleeMethodId)
     }
     return true;
 }
-bool Dataflow::JITCompilationStarted(ModuleID moduleId, mdToken methodId)
+bool Dataflow::JITCompilationStarted(const trace::ModuleIDWithLifetime& module, mdToken methodId)
 {
-    auto method = JITProcessMethod(moduleId, methodId);
+    std::vector<RejitRequest> rejitRequests;
+    MethodInfo* method;
+    {
+        auto moduleLifetime = module.Acquire();
+        if (!moduleLifetime.has_value())
+        {
+            return false;
+        }
+
+        method = JITProcessMethod(module.id, methodId, nullptr, &module, &rejitRequests);
+    }
+
+    m_rejitHandler->RequestRejit(rejitRequests);
     return method != nullptr;
 }
-MethodInfo* Dataflow::JITProcessMethod(ModuleID moduleId, mdToken methodId, trace::FunctionControlWrapper* pFunctionControl)
+MethodInfo* Dataflow::JITProcessMethod(ModuleID moduleId, mdToken methodId,
+                                      trace::FunctionControlWrapper* pFunctionControl,
+                                      const trace::ModuleIDWithLifetime* moduleWithLifetime,
+                                      std::vector<RejitRequest>* deferredRejitRequests)
 {
     CSGUARD(_cs);
     MethodInfo* method = nullptr;
@@ -704,7 +726,7 @@ MethodInfo* Dataflow::JITProcessMethod(ModuleID moduleId, mdToken methodId, trac
             if (pFunctionControl || !method->IsProcessed())
             {
                 method->SetProcessed();
-                RewriteMethod(method, pFunctionControl);
+                RewriteMethod(method, pFunctionControl, moduleWithLifetime, deferredRejitRequests);
             }
         }
     }
@@ -720,7 +742,9 @@ HRESULT SetILFunctionBody(MethodInfo* method, ICorProfilerFunctionControl* pFunc
 {
     return method->SetMethodIL(size, pBody, pFunctionControl);
 }
-HRESULT Dataflow::RewriteMethod(MethodInfo* method, trace::FunctionControlWrapper* pFunctionControl)
+HRESULT Dataflow::RewriteMethod(MethodInfo* method, trace::FunctionControlWrapper* pFunctionControl,
+                                const trace::ModuleIDWithLifetime* moduleWithLifetime,
+                                std::vector<RejitRequest>* deferredRejitRequests)
 {
     HRESULT hr = S_OK;
 
@@ -775,10 +799,17 @@ HRESULT Dataflow::RewriteMethod(MethodInfo* method, trace::FunctionControlWrappe
             }
             else
             {
-                std::vector<ModuleID> modulesVector = {module->_id};
-                std::vector<mdMethodDef> methodsVector = {method->GetMemberId()}; // methodId
                 DBG("Dataflow::RewriteMethod -> REJIT requested for ", method->GetKey());
-                m_rejitHandler->RequestRejit(modulesVector, methodsVector);
+                if (deferredRejitRequests != nullptr && moduleWithLifetime != nullptr)
+                {
+                    deferredRejitRequests->emplace_back(*moduleWithLifetime, method->GetMemberId());
+                }
+                else
+                {
+                    std::vector<MethodIdentifier> methods = {{module->_id, method->GetMemberId()}};
+                    auto requests = m_rejitHandler->GetRejitRequests(methods);
+                    m_rejitHandler->RequestRejit(requests);
+                }
             }
         }
     }

@@ -3,6 +3,8 @@
 #include "corhlpr.h"
 #include <corprof.h>
 #include <string>
+#include <future>
+#include <optional>
 #include <typeinfo>
 
 #include "clr_helpers.h"
@@ -525,6 +527,39 @@ void __stdcall CorProfiler::NativeLog(int32_t level, const WCHAR* message, int32
     }
 }
 
+void WaitForPendingRejits(std::vector<std::future<ULONG>>& pending_rejits)
+{
+    for (auto& future : pending_rejits)
+    {
+        const auto status = future.wait_for(200ms);
+
+        if (status != std::future_status::timeout)
+        {
+            const auto& numReJITs = future.get();
+            DBG("Total number of ReJIT Requested: ", numReJITs);
+        }
+        else
+        {
+            Logger::Warn("Timeout while waiting for the rejit requests to be processed. Rejit will continue "
+                         "asynchronously, but some initial calls may not be instrumented");
+        }
+    }
+}
+
+void EnqueueRejitForLoadedModules(TracerRejitPreprocessor* preprocessor, const std::vector<ModuleID>& modules,
+                                  const std::vector<IntegrationDefinition>& definitions,
+                                  std::vector<std::future<ULONG>>& pending_rejits)
+{
+    if (preprocessor == nullptr || modules.empty() || definitions.empty())
+    {
+        return;
+    }
+
+    auto promise = std::make_shared<std::promise<ULONG>>();
+    pending_rejits.push_back(promise->get_future());
+    preprocessor->EnqueueRequestRejitForLoadedModules(modules, definitions, promise);
+}
+
 HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id, HRESULT hr_status)
 {
     if (!is_attached_)
@@ -542,75 +577,99 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id, HR
         return S_OK;
     }
 
-    // keep this lock until we are done using the module,
-    // to prevent it from unloading while in use
-    auto modules = module_ids.Get();
-
-    // double check if is_attached_ has changed to avoid possible race condition with shutdown function
-    if (!is_attached_ || rejit_handler == nullptr)
-    {
-        return S_OK;
-    }
-
-    auto hr = TryRejitModule(module_id, modules.Ref());
-
-    // Push integration definitions from past modules that were unable to be added
-    auto rejit_size = rejit_module_method_pairs.size();
-    if (rejit_size > 0 && trace_annotation_integration_type != nullptr)
-    {
-        std::vector<ModuleID> rejitModuleIds;
-        for (size_t i = 0; i < rejit_size; i++)
-        {
-            auto rejit_module_method_pair = rejit_module_method_pairs.front();
-            rejitModuleIds.push_back(rejit_module_method_pair.first);
-
-            const auto& methodReferences = rejit_module_method_pair.second;
-            integration_definitions_.reserve(integration_definitions_.size() + methodReferences.size());
-
-            DBG("ModuleLoadFinished requesting ReJIT now for ModuleId=", module_id, ", methodReferences.size()=", methodReferences.size());
-
-            // Push integration definitions from the given module
-            for (const auto& methodReference : methodReferences)
-            {
-                integration_definitions_.push_back(
-                    IntegrationDefinition(methodReference, *trace_annotation_integration_type.get(), false, false,
-                                          false));
-            }
-
-            rejit_module_method_pairs.pop_front();
-        }
-
-        // We call the function to analyze the module and request the ReJIT of integrations defined in this module.
-        if (tracer_integration_preprocessor != nullptr && !integration_definitions_.empty())
-        {
-            auto promise = std::make_shared<std::promise<ULONG>>();
-            std::future<ULONG> future = promise->get_future();
-            tracer_integration_preprocessor->EnqueueRequestRejitForLoadedModules(rejitModuleIds, integration_definitions_,
-                                                                                promise);
-
-            // wait and get the value from the future<ULONG>
-            const auto status = future.wait_for(200ms);
-
-            if (status != std::future_status::timeout)
-            {
-                const auto& numReJITs = future.get();
-                DBG("Total number of ReJIT Requested: ", numReJITs);
-            }
-            else
-            {
-                Logger::Warn("Timeout while waiting for the rejit requests to be processed. Rejit will continue asynchronously, but some initial calls may not be instrumented");
-            }
-        }
-    }
-
+    std::optional<debugger::DebuggerProbesInstrumentationRequester::ModuleLoadProbeTransaction>
+        debuggerProbeTransaction;
     if (debugger_instrumentation_requester != nullptr)
     {
-        debugger_instrumentation_requester->ModuleLoadFinished(module_id);
+        // Acquire the debugger transaction before module_ids. InstrumentProbes uses the same order and keeps the
+        // transaction through preprocessing, so exactly one path owns each probe/module pair.
+        debuggerProbeTransaction.emplace(
+            debugger_instrumentation_requester->BeginModuleLoadProbeTransaction());
     }
+
+    HRESULT hr = S_OK;
+    bool enqueue_this_module = false;
+    std::vector<ModuleID> deferred_module_ids;
+    std::vector<std::future<ULONG>> pending_rejits;
+    ModuleIDWithLifetime module{module_id, nullptr};
+
+    {
+        // Registration, metadata preparation, and publication are one transaction with respect to unload.
+        // The ReJIT waits and product callbacks happen after this scope (APMS-20456).
+        auto modules = module_ids.Get();
+
+        // double check if is_attached_ has changed to avoid possible race condition with shutdown function
+        if (!is_attached_ || rejit_handler == nullptr)
+        {
+            return S_OK;
+        }
+
+        module = rejit_handler->RegisterModule(module_id);
+        if (module.lifetime == nullptr)
+        {
+            return S_OK;
+        }
+
+        if (debugger_instrumentation_requester != nullptr)
+        {
+            // Type-layout changes must happen inside ModuleLoadFinished and before this module is published to
+            // InstrumentProbes through module_ids.
+            debugger_instrumentation_requester->ModuleLoadFinished_AddMetadataToModule(module);
+        }
+
+        hr = TryRejitModule(module_id, modules.Ref(), enqueue_this_module);
+
+        // Push integration definitions from past modules that were unable to be added
+        auto rejit_size = rejit_module_method_pairs.size();
+        if (rejit_size > 0 && trace_annotation_integration_type != nullptr)
+        {
+            for (size_t i = 0; i < rejit_size; i++)
+            {
+                auto rejit_module_method_pair = rejit_module_method_pairs.front();
+                deferred_module_ids.push_back(rejit_module_method_pair.first);
+
+                const auto& methodReferences = rejit_module_method_pair.second;
+                integration_definitions_.reserve(integration_definitions_.size() + methodReferences.size());
+
+                DBG("ModuleLoadFinished requesting ReJIT now for ModuleId=", module_id,
+                    ", methodReferences.size()=", methodReferences.size());
+
+                // Push integration definitions from the given module
+                for (const auto& methodReference : methodReferences)
+                {
+                    integration_definitions_.push_back(
+                        IntegrationDefinition(methodReference, *trace_annotation_integration_type.get(), false, false,
+                                              false));
+                }
+
+                rejit_module_method_pairs.pop_front();
+            }
+        }
+
+        if (enqueue_this_module)
+        {
+            EnqueueRejitForLoadedModules(tracer_integration_preprocessor.get(), {module_id}, integration_definitions_,
+                                         pending_rejits);
+        }
+
+        if (!deferred_module_ids.empty())
+        {
+            EnqueueRejitForLoadedModules(tracer_integration_preprocessor.get(), deferred_module_ids,
+                                         integration_definitions_, pending_rejits);
+        }
+    }
+
+    if (debugger_instrumentation_requester != nullptr && debuggerProbeTransaction.has_value())
+    {
+        debugger_instrumentation_requester->RequestRejitForLoadedModule(
+            module, std::move(*debuggerProbeTransaction));
+    }
+
+    WaitForPendingRejits(pending_rejits);
 
     if (_dataflow != nullptr)
     {
-        _dataflow->ModuleLoaded(module_id);
+        _dataflow->ModuleLoaded(module);
     }
 
     return hr;
@@ -660,8 +719,9 @@ std::string GetLibDatadogFilePath()
     return libdatadog_file_path.string();
 }
 
-HRESULT CorProfiler::TryRejitModule(ModuleID module_id, std::vector<ModuleID>& modules)
+HRESULT CorProfiler::TryRejitModule(ModuleID module_id, std::vector<ModuleID>& modules, bool& enqueue_rejit)
 {
+    enqueue_rejit = false;
     const auto& module_info = GetModuleInfo(this->info_, module_id);
     if (!module_info.IsValid())
     {
@@ -955,6 +1015,21 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id, std::vector<ModuleID>& m
         RewriteIsManualInstrumentationOnly(module_metadata, module_id);
     }
 
+    {
+        // The first writable open expands the module's metadata tables in place, and the runtime reads them without
+        // locking. It must happen before the module can run code: later writable opens (ReJIT worker, debugger,
+        // IAST) can overlap with other threads using the module.
+        ComPtr<IUnknown> metadata_interfaces;
+        const auto hr = this->info_->GetModuleMetaData(module_id, ofRead | ofWrite, IID_IMetaDataImport2,
+                                                       metadata_interfaces.GetAddressOf());
+        if (FAILED(hr))
+        {
+            Logger::Warn("ModuleLoadFinished failed to get writable metadata for ", module_id, " ",
+                         module_info.assembly.name);
+            return S_OK;
+        }
+    }
+
     modules.push_back(module_id);
 
     bool searchForTraceAttribute = trace_annotations_enabled;
@@ -1184,28 +1259,8 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id, std::vector<ModuleID>& m
         }
     }
 
-    // We call the function to analyze the module and request the ReJIT of integrations defined in this module.
-    if (tracer_integration_preprocessor != nullptr && !integration_definitions_.empty())
-    {
-        auto promise = std::make_shared<std::promise<ULONG>>();
-        std::future<ULONG> future = promise->get_future();
-        tracer_integration_preprocessor->EnqueueRequestRejitForLoadedModules(std::vector<ModuleID>{module_id}, integration_definitions_,
-                                                                            promise);
-
-        // wait and get the value from the future<ULONG>
-        const auto status = future.wait_for(200ms);
-
-        if (status != std::future_status::timeout)
-        {
-            const auto& numReJITs = future.get();
-            DBG("[Tracer] Total number of ReJIT Requested: ", numReJITs);
-        }
-        else
-        {
-            Logger::Warn("Timeout while waiting for the rejit requests to be processed. Rejit will continue asynchronously, but some initial calls may not be instrumented");
-        }
-    }
-
+    // Snapshot under module_ids; the caller enqueues after dropping the lock (APMS-20456).
+    enqueue_rejit = true;
     return S_OK;
 }
 
@@ -1228,37 +1283,52 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleUnloadStarted(ModuleID module_id)
 {
     if (!is_attached_)
     {
+        // Shutdown joins the ReJIT worker before invalidating all remaining lifetimes. A module can unload
+        // during that join, so its generation must still be invalidated before this callback returns.
+        if (rejit_handler != nullptr)
+        {
+            rejit_handler->RemoveModule(module_id);
+        }
+
         return S_OK;
     }
 
     auto _ = trace::Stats::Instance()->ModuleUnloadStartedMeasure();
 
-    // take this lock so we block until the
-    // module metadata is not longer being used
-    auto scopedModules = module_ids.Get();
-    auto& modules = scopedModules.Ref();
-
-    // double check if is_attached_ has changed to avoid possible race condition with shutdown function
-    if (!is_attached_)
+    bool isAttached;
     {
-        return S_OK;
+        auto scopedModules = module_ids.Get();
+
+        // double check if is_attached_ has changed to avoid possible race condition with shutdown function
+        isAttached = is_attached_;
+        if (isAttached)
+        {
+            auto& modules = scopedModules.Ref();
+            auto new_end = std::remove(modules.begin(), modules.end(), module_id);
+            modules.erase(new_end, modules.end());
+
+            auto new_internal_end =
+                std::remove(managedInternalModules_.begin(), managedInternalModules_.end(), module_id);
+            managedInternalModules_.erase(new_internal_end, managedInternalModules_.end());
+        }
     }
 
+    // Removing the module from the rewrite set prevents new work snapshots. RejitHandler then waits only for
+    // preprocessing that already owns this module's lifetime, without holding module_ids.
     if (rejit_handler != nullptr)
     {
         rejit_handler->RemoveModule(module_id);
+    }
+
+    if (!isAttached)
+    {
+        return S_OK;
     }
 
     if (_dataflow != nullptr)
     {
         _dataflow->ModuleUnloaded(module_id);
     }
-
-    auto new_end = std::remove(modules.begin(), modules.end(), module_id);
-    modules.erase(new_end, modules.end());
-
-    auto new_internal_end = std::remove(managedInternalModules_.begin(), managedInternalModules_.end(), module_id);
-    managedInternalModules_.erase(new_internal_end, managedInternalModules_.end());
 
     // Clear the cached domain-neutral Datadog.Trace.dll module id if this is it.
     if (managed_profiler_domain_neutral_module_id == module_id)
@@ -1293,23 +1363,28 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleUnloadStarted(ModuleID module_id)
 
 HRESULT STDMETHODCALLTYPE CorProfiler::Shutdown()
 {
-    if (!is_attached_)
+    // Shutdown is reachable both from the CLR callback and from the DisableTracerCLRProfiler export, so the
+    // detach has to be a single atomic transition. Otherwise both callers reach RejitHandler::Shutdown and
+    // join the ReJIT worker thread twice.
+    bool attached = true;
+    if (!is_attached_.compare_exchange_strong(attached, false))
     {
         return S_OK;
     }
 
-    is_attached_.store(false);
-
     CorProfilerBase::Shutdown();
 
-    // keep this lock until we are done using the module,
-    // to prevent it from unloading while in use
-    auto modules = module_ids.Get();
+    size_t moduleCount;
+    size_t integrationCount;
+    {
+        auto modules = module_ids.Get();
+        moduleCount = modules->size();
+        integrationCount = integration_definitions_.size();
+    }
 
     if (rejit_handler != nullptr)
     {
         rejit_handler->Shutdown();
-        rejit_handler = nullptr;
     }
 
     auto definitions = definitions_ids.Get();
@@ -1317,8 +1392,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Shutdown()
     Logger::Info("Exiting...");
     if (Logger::IsDebugEnabled())
     {
-        Logger::Debug("   ModuleIds: ", modules->size());
-        Logger::Debug("   IntegrationDefinitions: ", integration_definitions_.size());
+        Logger::Debug("   ModuleIds: ", moduleCount);
+        Logger::Debug("   IntegrationDefinitions: ", integrationCount);
         Logger::Debug("   DefinitionsIds: ", definitions->size());
         Logger::Debug("   ManagedProfilerLoadedAppDomains: ", managed_profiler_loaded_app_domains.Get()->size());
         Logger::Debug("   FirstJitCompilationAppDomains: ", first_jit_compilation_app_domains.size());
@@ -1380,20 +1455,12 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ProfilerDetachSucceeded()
 
     CorProfilerBase::ProfilerDetachSucceeded();
 
-    // keep this lock until we are done using the module,
-    // to prevent it from unloading while in use
-    auto modules = module_ids.Get();
-
-    // double check if is_attached_ has changed to avoid possible race condition with shutdown function
-    if (!is_attached_)
-    {
-        return S_OK;
-    }
-
     Logger::Info("Detaching Instrumentation component");
     Logger::Flush();
-    is_attached_.store(false);
-    return S_OK;
+
+    // Shutdown owns the single is_attached_ transition and the ReJIT worker join, and is idempotent. Clearing
+    // is_attached_ here instead would make any later Shutdown() a no-op and leak the worker thread.
+    return Shutdown();
 }
 
 HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(FunctionID function_id, BOOL is_safe_to_block)
@@ -1410,16 +1477,6 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(FunctionID function
         return S_OK;
     }
 
-    // keep this lock until we are done using the module,
-    // to prevent it from unloading while in use
-    auto modules = module_ids.Get();
-
-    // double check if is_attached_ has changed to avoid possible race condition with shutdown function
-    if (!is_attached_)
-    {
-        return S_OK;
-    }
-
     ModuleID module_id;
     mdToken function_token = mdTokenNil;
 
@@ -1430,229 +1487,250 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(FunctionID function
         return S_OK;
     }
 
-    // we have to check if the Id is in the module_ids_ vector.
-    // In case is True we create a local ModuleMetadata to inject the loader.
-    if (!shared::Contains(modules.Ref(), module_id))
+    bool run_instrument_all = false;
+    bool run_dataflow = false;
+    ModuleIDWithLifetime module{module_id, nullptr};
     {
-        if (debugger_instrumentation_requester != nullptr)
+        // keep this lock until we are done using the module,
+        // to prevent it from unloading while in use
+        auto modules = module_ids.Get();
+
+        // double check if is_attached_ has changed to avoid possible race condition with shutdown function
+        if (!is_attached_)
         {
-            debugger_instrumentation_requester->PerformInstrumentAllIfNeeded(module_id, function_token);
-        }
-
-        return S_OK;
-    }
-
-    const auto& module_info = GetModuleInfo(this->info_, module_id);
-    if (!module_info.IsValid())
-    {
-        return S_OK;
-    }
-
-    bool has_loader_injected_in_appdomain =
-        first_jit_compilation_app_domains.find(module_info.assembly.app_domain_id) !=
-        first_jit_compilation_app_domains.end();
-
-    if (has_loader_injected_in_appdomain)
-    {
-        // Loader was already injected in a calltarget scenario, we don't need to do anything else here
-
-        if (_dataflow != nullptr)
-        {
-            _dataflow->JITCompilationStarted(module_id, function_token);
-        }
-
-        if (debugger_instrumentation_requester != nullptr)
-        {
-            debugger_instrumentation_requester->PerformInstrumentAllIfNeeded(module_id, function_token);
-        }
-
-        return S_OK;
-    }
-
-    ComPtr<IUnknown> metadataInterfaces;
-    hr = this->info_->GetModuleMetaData(module_id, ofRead | ofWrite, IID_IMetaDataImport2,
-                                        metadataInterfaces.GetAddressOf());
-
-    const auto& metadataImport = metadataInterfaces.As<IMetaDataImport2>(IID_IMetaDataImport);
-    const auto& metadataEmit = metadataInterfaces.As<IMetaDataEmit2>(IID_IMetaDataEmit);
-    const auto& assemblyImport = metadataInterfaces.As<IMetaDataAssemblyImport>(IID_IMetaDataAssemblyImport);
-    const auto& assemblyEmit = metadataInterfaces.As<IMetaDataAssemblyEmit>(IID_IMetaDataAssemblyEmit);
-
-    DBG("Temporaly allocating the ModuleMetadata for injection. ModuleId=", module_id, " ModuleName=", module_info.assembly.name);
-
-    std::unique_ptr<ModuleMetadata> module_metadata = std::make_unique<ModuleMetadata>(
-        metadataImport, metadataEmit, assemblyImport, assemblyEmit, module_info.assembly.name,
-        module_info.assembly.app_domain_id, &corAssemblyProperty, enable_by_ref_instrumentation,
-        enable_calltarget_state_by_ref);
-
-    // get function info
-    const auto& caller = GetFunctionInfo(module_metadata->metadata_import, function_token);
-    if (!caller.IsValid())
-    {
-        return S_OK;
-    }
-
-    DBG("JITCompilationStarted: function_id=", function_id, " token=", function_token,
-        " name=", caller.type.name, ".", caller.name, "()");
-
-    // In NETFx, NInject creates a temporary appdomain where the tracer can be loaded
-    // If Runtime metrics are enabled, we can encounter a CannotUnloadAppDomainException
-    // certainly because we are initializing perf counters at that time.
-    // As there are no use case where we would like to load the tracer in that appdomain, just don't
-    if (module_info.assembly.app_domain_name == WStr("NinjectModuleLoader") && !runtime_information_.is_core())
-    {
-        Logger::Info("JITCompilationStarted: NInjectModuleLoader appdomain detected. Not registering startup hook.");
-        return S_OK;
-    }
-
-    // IIS: Ensure that the startup hook is inserted into System.Web.Compilation.BuildManager.InvokePreStartInitMethods.
-    // This will be the first call-site considered for the startup hook injection,
-    // which correctly loads Datadog.Trace.ClrProfiler.Managed.Loader into the application's
-    // own AppDomain because at this point in the code path, the ApplicationImpersonationContext
-    // has been started.
-    //
-    // Note: This check must only run on desktop because it is possible (and the default) to host
-    // ASP.NET Core in-process, so a new .NET Core runtime is instantiated and run in the same w3wp.exe process
-    auto valid_startup_hook_callsite = true;
-    // In some cases we may choose to defer instrumenting a valid startup hook callsite.
-    // For example, if we're instrumenting the entrypoint, but the Program.Main() implementing type
-    // has a static constructor, then the JIT inserts a call to the static constructor at the start of the method.
-    // If we insert the startup hook at the start of the method, we'll miss the static constructor call. This is
-    // particularly problematic if there's any "one time setup" happening in that constructor, e.g. usages of
-    // Datadog.Trace.Manual instrumentation. This behaviour only occurs on .NET Core, so limit the behaviour to there.
-    auto can_skip_startup_hook_callsite = runtime_information_.is_core();
-    if (is_desktop_iis)
-    {
-        valid_startup_hook_callsite = module_metadata->assemblyName == WStr("System.Web") &&
-                                      caller.type.name == WStr("System.Web.Compilation.BuildManager") &&
-                                      caller.name == WStr("InvokePreStartInitMethods");
-        can_skip_startup_hook_callsite = false;
-    }
-    else if (module_metadata->assemblyName == WStr("System") ||
-             module_metadata->assemblyName == WStr("System.Net.Http") ||
-             module_metadata->assemblyName == WStr("System.Security.AccessControl") ||
-             module_metadata->assemblyName == WStr("System.Security.Claims") ||
-             module_metadata->assemblyName == WStr("System.Security.Principal.Windows") ||
-             module_metadata->assemblyName == WStr("System.Linq")) // Avoid instrumenting System.Linq which is used as part of the async state machine
-    {
-        valid_startup_hook_callsite = false;
-    }
-
-    // List individual methods that we know we do not want to instrument
-    if (caller.type.name == WStr("Costura.AssemblyLoader")) // Avoid inserting the startup hook in methods generated by Costura.Fody. It will set up its own AssemblyResolve handlers so we cannot inject yet
-    {
-        valid_startup_hook_callsite = false;
-    }
-
-    // The first time a method is JIT compiled in an AppDomain, insert our startup
-    // hook, which, at a minimum, must add an AssemblyResolve event so we can find
-    // Datadog.Trace.dll and its dependencies on disk.
-    if (valid_startup_hook_callsite && !has_loader_injected_in_appdomain)
-    {
-        // *********************************************************************
-        // Checking if the caller is inside of the <Module> type
-        // *********************************************************************
-
-        // The <Module> typeDef is always the first entry in the typeDef table.
-        // The CLR profiling api can return mdTypeDefNil for the <Module> type, so we skip that as well.
-        constexpr auto moduleTypeDef = mdTypeDefNil + (BYTE)1;
-
-        if (caller.type.id == mdTypeDefNil || caller.type.id == moduleTypeDef)
-        {
-            DBG("JITCompilationStarted: Startup hook skipped from <Module>.", caller.name, "()");
             return S_OK;
         }
 
-        // Look at the type parents in case we are in a nested type
-        auto pType = caller.type.parent_type;
-        while (pType != nullptr)
+        if (rejit_handler != nullptr)
         {
-            if (pType->id == mdTypeDefNil || pType->id == moduleTypeDef)
+            module = rejit_handler->GetModuleWithLifetime(module_id);
+        }
+
+        // we have to check if the Id is in the module_ids_ vector.
+        // In case is True we create a local ModuleMetadata to inject the loader.
+        if (!shared::Contains(modules.Ref(), module_id))
+        {
+            // Membership miss: drop module_ids before any test-only instrument-all wait.
+            run_instrument_all = debugger_instrumentation_requester != nullptr && module.lifetime != nullptr;
+        }
+        else
+        {
+            const auto& module_info = GetModuleInfo(this->info_, module_id);
+            if (!module_info.IsValid())
             {
-                DBG("JITCompilationStarted: Startup hook skipped from a type with <Module> as a parent. ", caller.type.name, ".", caller.name, "()");
                 return S_OK;
             }
 
-            pType = pType->parent_type;
-        }
+            bool has_loader_injected_in_appdomain =
+                first_jit_compilation_app_domains.find(module_info.assembly.app_domain_id) !=
+                first_jit_compilation_app_domains.end();
 
-        // *********************************************************************
-        // Checking if the caller is inside of the <CrtImplementationDetails> type
-        // *********************************************************************
-
-        if (caller.type.name.find(WStr("<CrtImplementationDetails>")) != shared::WSTRING::npos)
-        {
-            DBG("JITCompilationStarted: Startup hook skipped from ", caller.type.name, ".", caller.name, "()");
-            return S_OK;
-        }
-
-        // *********************************************************************
-        // Checking if the caller has an explicit static constructor.
-        // If it does, we delay instrumenting this and let the static constructor get instrumented instead.
-        // Bypassing for calls that we explicitly want to instrument (e.g. IIS startup hook)
-        // *********************************************************************
-        if (can_skip_startup_hook_callsite && caller.name != WStr(".cctor"))
-        {
-            mdMethodDef memberDef;
-            hr = metadataImport->FindMethod(caller.type.id, WStr(".cctor"), 0, 0, &memberDef);
-            if (FAILED(hr))
+            if (has_loader_injected_in_appdomain)
             {
-                DBG("JITCompilationStarted: No .cctor found for type ", caller.type.name);
+                // Loader was already injected in a calltarget scenario, we don't need to do anything else here.
+                // IAST/RASP Dataflow can RequestReJIT; do that after dropping module_ids (APMS-20456).
+                run_dataflow = _dataflow != nullptr && module.lifetime != nullptr;
+                run_instrument_all = debugger_instrumentation_requester != nullptr && module.lifetime != nullptr;
             }
             else
             {
-                // we found a static constructor, so now we need to work out if it's an explicit or implicit
-                // constructor, because we won't be able to inject into an implicit static constructor, so
-                // would inject too late
-                DWORD typeDefFlags;
-                hr = metadataImport->GetTypeDefProps(caller.type.id, nullptr, 0, nullptr, &typeDefFlags, nullptr);
-                if (FAILED(hr))
+                ComPtr<IUnknown> metadataInterfaces;
+                hr = this->info_->GetModuleMetaData(module_id, ofRead | ofWrite, IID_IMetaDataImport2,
+                                                    metadataInterfaces.GetAddressOf());
+
+                const auto& metadataImport = metadataInterfaces.As<IMetaDataImport2>(IID_IMetaDataImport);
+                const auto& metadataEmit = metadataInterfaces.As<IMetaDataEmit2>(IID_IMetaDataEmit);
+                const auto& assemblyImport = metadataInterfaces.As<IMetaDataAssemblyImport>(IID_IMetaDataAssemblyImport);
+                const auto& assemblyEmit = metadataInterfaces.As<IMetaDataAssemblyEmit>(IID_IMetaDataAssemblyEmit);
+
+                DBG("Temporaly allocating the ModuleMetadata for injection. ModuleId=", module_id, " ModuleName=", module_info.assembly.name);
+
+                std::unique_ptr<ModuleMetadata> module_metadata = std::make_unique<ModuleMetadata>(
+                    metadataImport, metadataEmit, assemblyImport, assemblyEmit, module_info.assembly.name,
+                    module_info.assembly.app_domain_id, &corAssemblyProperty, enable_by_ref_instrumentation,
+                    enable_calltarget_state_by_ref);
+
+                // get function info
+                const auto& caller = GetFunctionInfo(module_metadata->metadata_import, function_token);
+                if (!caller.IsValid())
                 {
-                    DBG("JITCompilationStarted: Error calling GetTypeDefProps for type ", caller.type.name, ", allowing injection into ", caller.name, "()");
-                }
-                else if(typeDefFlags & tdBeforeFieldInit)
-                {
-                    DBG("JITCompilationStarted: Found .cctor for type ", caller.type.name, " but allowing startup hook injection as tdBeforeFieldInit indicates an implicit static constructor");
-                }
-                else
-                {
-                    DBG("JITCompilationStarted: Startup hook skipped from ", caller.type.name, ".", caller.name, "() as found .cctor");
                     return S_OK;
                 }
+
+                DBG("JITCompilationStarted: function_id=", function_id, " token=", function_token,
+                    " name=", caller.type.name, ".", caller.name, "()");
+
+                // In NETFx, NInject creates a temporary appdomain where the tracer can be loaded
+                // If Runtime metrics are enabled, we can encounter a CannotUnloadAppDomainException
+                // certainly because we are initializing perf counters at that time.
+                // As there are no use case where we would like to load the tracer in that appdomain, just don't
+                if (module_info.assembly.app_domain_name == WStr("NinjectModuleLoader") && !runtime_information_.is_core())
+                {
+                    Logger::Info("JITCompilationStarted: NInjectModuleLoader appdomain detected. Not registering startup hook.");
+                    return S_OK;
+                }
+
+                // IIS: Ensure that the startup hook is inserted into System.Web.Compilation.BuildManager.InvokePreStartInitMethods.
+                // This will be the first call-site considered for the startup hook injection,
+                // which correctly loads Datadog.Trace.ClrProfiler.Managed.Loader into the application's
+                // own AppDomain because at this point in the code path, the ApplicationImpersonationContext
+                // has been started.
+                //
+                // Note: This check must only run on desktop because it is possible (and the default) to host
+                // ASP.NET Core in-process, so a new .NET Core runtime is instantiated and run in the same w3wp.exe process
+                auto valid_startup_hook_callsite = true;
+                // In some cases we may choose to defer instrumenting a valid startup hook callsite.
+                // For example, if we're instrumenting the entrypoint, but the Program.Main() implementing type
+                // has a static constructor, then the JIT inserts a call to the static constructor at the start of the method.
+                // If we insert the startup hook at the start of the method, we'll miss the static constructor call. This is
+                // particularly problematic if there's any "one time setup" happening in that constructor, e.g. usages of
+                // Datadog.Trace.Manual instrumentation. This behaviour only occurs on .NET Core, so limit the behaviour to there.
+                auto can_skip_startup_hook_callsite = runtime_information_.is_core();
+                if (is_desktop_iis)
+                {
+                    valid_startup_hook_callsite = module_metadata->assemblyName == WStr("System.Web") &&
+                                                  caller.type.name == WStr("System.Web.Compilation.BuildManager") &&
+                                                  caller.name == WStr("InvokePreStartInitMethods");
+                    can_skip_startup_hook_callsite = false;
+                }
+                else if (module_metadata->assemblyName == WStr("System") ||
+                         module_metadata->assemblyName == WStr("System.Net.Http") ||
+                         module_metadata->assemblyName == WStr("System.Security.AccessControl") ||
+                         module_metadata->assemblyName == WStr("System.Security.Claims") ||
+                         module_metadata->assemblyName == WStr("System.Security.Principal.Windows") ||
+                         module_metadata->assemblyName == WStr("System.Linq")) // Avoid instrumenting System.Linq which is used as part of the async state machine
+                {
+                    valid_startup_hook_callsite = false;
+                }
+
+                // List individual methods that we know we do not want to instrument
+                if (caller.type.name == WStr("Costura.AssemblyLoader")) // Avoid inserting the startup hook in methods generated by Costura.Fody. It will set up its own AssemblyResolve handlers so we cannot inject yet
+                {
+                    valid_startup_hook_callsite = false;
+                }
+
+                // The first time a method is JIT compiled in an AppDomain, insert our startup
+                // hook, which, at a minimum, must add an AssemblyResolve event so we can find
+                // Datadog.Trace.dll and its dependencies on disk.
+                if (valid_startup_hook_callsite && !has_loader_injected_in_appdomain)
+                {
+                    // *********************************************************************
+                    // Checking if the caller is inside of the <Module> type
+                    // *********************************************************************
+
+                    // The <Module> typeDef is always the first entry in the typeDef table.
+                    // The CLR profiling api can return mdTypeDefNil for the <Module> type, so we skip that as well.
+                    constexpr auto moduleTypeDef = mdTypeDefNil + (BYTE)1;
+
+                    if (caller.type.id == mdTypeDefNil || caller.type.id == moduleTypeDef)
+                    {
+                        DBG("JITCompilationStarted: Startup hook skipped from <Module>.", caller.name, "()");
+                        return S_OK;
+                    }
+
+                    // Look at the type parents in case we are in a nested type
+                    auto pType = caller.type.parent_type;
+                    while (pType != nullptr)
+                    {
+                        if (pType->id == mdTypeDefNil || pType->id == moduleTypeDef)
+                        {
+                            DBG("JITCompilationStarted: Startup hook skipped from a type with <Module> as a parent. ", caller.type.name, ".", caller.name, "()");
+                            return S_OK;
+                        }
+
+                        pType = pType->parent_type;
+                    }
+
+                    // *********************************************************************
+                    // Checking if the caller is inside of the <CrtImplementationDetails> type
+                    // *********************************************************************
+
+                    if (caller.type.name.find(WStr("<CrtImplementationDetails>")) != shared::WSTRING::npos)
+                    {
+                        DBG("JITCompilationStarted: Startup hook skipped from ", caller.type.name, ".", caller.name, "()");
+                        return S_OK;
+                    }
+
+                    // *********************************************************************
+                    // Checking if the caller has an explicit static constructor.
+                    // If it does, we delay instrumenting this and let the static constructor get instrumented instead.
+                    // Bypassing for calls that we explicitly want to instrument (e.g. IIS startup hook)
+                    // *********************************************************************
+                    if (can_skip_startup_hook_callsite && caller.name != WStr(".cctor"))
+                    {
+                        mdMethodDef memberDef;
+                        hr = metadataImport->FindMethod(caller.type.id, WStr(".cctor"), 0, 0, &memberDef);
+                        if (FAILED(hr))
+                        {
+                            DBG("JITCompilationStarted: No .cctor found for type ", caller.type.name);
+                        }
+                        else
+                        {
+                            // we found a static constructor, so now we need to work out if it's an explicit or implicit
+                            // constructor, because we won't be able to inject into an implicit static constructor, so
+                            // would inject too late
+                            DWORD typeDefFlags;
+                            hr = metadataImport->GetTypeDefProps(caller.type.id, nullptr, 0, nullptr, &typeDefFlags, nullptr);
+                            if (FAILED(hr))
+                            {
+                                DBG("JITCompilationStarted: Error calling GetTypeDefProps for type ", caller.type.name, ", allowing injection into ", caller.name, "()");
+                            }
+                            else if(typeDefFlags & tdBeforeFieldInit)
+                            {
+                                DBG("JITCompilationStarted: Found .cctor for type ", caller.type.name, " but allowing startup hook injection as tdBeforeFieldInit indicates an implicit static constructor");
+                            }
+                            else
+                            {
+                                DBG("JITCompilationStarted: Startup hook skipped from ", caller.type.name, ".", caller.name, "() as found .cctor");
+                                return S_OK;
+                            }
+                        }
+                    }
+
+                    // *********************************************************************
+
+                    bool domain_neutral_assembly = runtime_information_.is_desktop() && corlib_module_loaded &&
+                                                   module_metadata->app_domain_id == corlib_app_domain_id;
+                    Logger::Info("JITCompilationStarted: Startup hook registered in function_id=", function_id,
+                                 " token=", function_token, " name=", caller.type.name, ".", caller.name,
+                                 "(), assembly_name=", module_metadata->assemblyName,
+                                 " app_domain_id=", module_metadata->app_domain_id, " domain_neutral=", domain_neutral_assembly);
+
+                    first_jit_compilation_app_domains.insert(module_metadata->app_domain_id);
+
+                    hr = RunILStartupHook(module_metadata->metadata_emit, module_id, function_token, caller, *module_metadata);
+                    if (FAILED(hr))
+                    {
+                        Logger::Warn("JITCompilationStarted: Call to RunILStartupHook() failed for ", module_id, " ",
+                                     function_token);
+                        return S_OK;
+                    }
+
+                    if (is_desktop_iis)
+                    {
+                        hr = AddIISPreStartInitFlags(module_id, function_token);
+                        if (FAILED(hr))
+                        {
+                            Logger::Warn("JITCompilationStarted: Call to AddIISPreStartInitFlags() failed for ", module_id, " ",
+                                         function_token);
+                            return S_OK;
+                        }
+                    }
+
+                    DBG("JITCompilationStarted: Startup hook registered.");
+                }
             }
         }
+    }
 
-        // *********************************************************************
+    if (run_dataflow)
+    {
+        _dataflow->JITCompilationStarted(module, function_token);
+    }
 
-        bool domain_neutral_assembly = runtime_information_.is_desktop() && corlib_module_loaded &&
-                                       module_metadata->app_domain_id == corlib_app_domain_id;
-        Logger::Info("JITCompilationStarted: Startup hook registered in function_id=", function_id,
-                     " token=", function_token, " name=", caller.type.name, ".", caller.name,
-                     "(), assembly_name=", module_metadata->assemblyName,
-                     " app_domain_id=", module_metadata->app_domain_id, " domain_neutral=", domain_neutral_assembly);
-
-        first_jit_compilation_app_domains.insert(module_metadata->app_domain_id);
-
-        hr = RunILStartupHook(module_metadata->metadata_emit, module_id, function_token, caller, *module_metadata);
-        if (FAILED(hr))
-        {
-            Logger::Warn("JITCompilationStarted: Call to RunILStartupHook() failed for ", module_id, " ",
-                         function_token);
-            return S_OK;
-        }
-
-        if (is_desktop_iis)
-        {
-            hr = AddIISPreStartInitFlags(module_id, function_token);
-            if (FAILED(hr))
-            {
-                Logger::Warn("JITCompilationStarted: Call to AddIISPreStartInitFlags() failed for ", module_id, " ",
-                             function_token);
-                return S_OK;
-            }
-        }
-
-        DBG("JITCompilationStarted: Startup hook registered.");
+    if (run_instrument_all)
+    {
+        debugger_instrumentation_requester->PerformInstrumentAllIfNeeded(module, function_token);
     }
 
     return S_OK;
@@ -1812,114 +1890,128 @@ void CorProfiler::InternalAddInstrumentation(WCHAR* id, CallTargetDefinition* it
                                              bool isInterface, bool enable)
 {
     shared::WSTRING definitionsId = shared::WSTRING(id);
-    auto definitions = definitions_ids.Get();
+    std::optional<std::future<ULONG>> rejit_future;
+    std::optional<size_t> integration_count;
 
-    auto defsIdFound = definitions->find(definitionsId) != definitions->end();
-    if (enable && defsIdFound)
     {
-        Logger::Info("InitializeProfiler: Id already processed.");
-        return;
-    }
-    if (!enable && !defsIdFound)
-    {
-        Logger::Info("UninitializeProfiler: Id not processed.");
-        return;
-    }
+        auto definitions = definitions_ids.Get();
 
-    if (items != nullptr && rejit_handler != nullptr)
-    {
-        std::vector<IntegrationDefinition> integrationDefinitions;
-
-        for (int i = 0; i < size; i++)
+        auto defsIdFound = definitions->find(definitionsId) != definitions->end();
+        if (enable && defsIdFound)
         {
-            const CallTargetDefinition& current = items[i];
+            Logger::Info("InitializeProfiler: Id already processed.");
+            return;
+        }
+        if (!enable && !defsIdFound)
+        {
+            Logger::Info("UninitializeProfiler: Id not processed.");
+            return;
+        }
 
-            const shared::WSTRING& targetAssembly = shared::WSTRING(current.targetAssembly);
-            const shared::WSTRING& targetType = shared::WSTRING(current.targetType);
-            const shared::WSTRING& targetMethod = shared::WSTRING(current.targetMethod);
+        if (items != nullptr && rejit_handler != nullptr)
+        {
+            std::vector<IntegrationDefinition> integrationDefinitions;
 
-            const shared::WSTRING& integrationAssembly = shared::WSTRING(current.integrationAssembly);
-            const shared::WSTRING& integrationType = shared::WSTRING(current.integrationType);
-
-            std::vector<shared::WSTRING> signatureTypes;
-            for (int sIdx = 0; sIdx < current.signatureTypesLength; sIdx++)
+            for (int i = 0; i < size; i++)
             {
-                const auto& currentSignature = current.signatureTypes[sIdx];
-                if (currentSignature != nullptr)
+                const CallTargetDefinition& current = items[i];
+
+                const shared::WSTRING& targetAssembly = shared::WSTRING(current.targetAssembly);
+                const shared::WSTRING& targetType = shared::WSTRING(current.targetType);
+                const shared::WSTRING& targetMethod = shared::WSTRING(current.targetMethod);
+
+                const shared::WSTRING& integrationAssembly = shared::WSTRING(current.integrationAssembly);
+                const shared::WSTRING& integrationType = shared::WSTRING(current.integrationType);
+
+                std::vector<shared::WSTRING> signatureTypes;
+                for (int sIdx = 0; sIdx < current.signatureTypesLength; sIdx++)
                 {
-                    signatureTypes.push_back(shared::WSTRING(currentSignature));
+                    const auto& currentSignature = current.signatureTypes[sIdx];
+                    if (currentSignature != nullptr)
+                    {
+                        signatureTypes.push_back(shared::WSTRING(currentSignature));
+                    }
+                }
+
+                const Version& minVersion =
+                    Version(current.targetMinimumMajor, current.targetMinimumMinor, current.targetMinimumPatch, 0);
+                const Version& maxVersion =
+                    Version(current.targetMaximumMajor, current.targetMaximumMinor, current.targetMaximumPatch, 0);
+
+                const auto& integration = IntegrationDefinition(
+                    MethodReference(targetAssembly, targetType, targetMethod, minVersion, maxVersion, signatureTypes),
+                    TypeReference(integrationAssembly, integrationType, {}, {}),
+                    isDerived,
+                    isInterface,
+                    true,
+                    -1,
+                    enable ? -1 : 0);
+
+                DBG("  * Target: ", targetAssembly, " | ", targetType, ".", targetMethod, "(",
+                    signatureTypes.size(), ") { ", minVersion.str(), " - ", maxVersion.str(), " } [",
+                    integrationAssembly, " | ", integrationType, "]");
+
+                integrationDefinitions.push_back(integration);
+            }
+
+            {
+                auto modules = module_ids.Get();
+
+                if (enable)
+                {
+                    definitions->emplace(definitionsId);
+                }
+                else
+                {
+                    definitions->erase(definitionsId);
+                }
+
+                if (enable)
+                {
+                    integration_definitions_.reserve(integration_definitions_.size() + integrationDefinitions.size());
+                    for (const auto& integration : integrationDefinitions)
+                    {
+                        integration_definitions_.push_back(integration);
+                    }
+                }
+                else
+                {
+                    // remove the call target definitions
+                    std::vector<IntegrationDefinition> integration_definitions = integration_definitions_;
+                    integration_definitions_.clear();
+                    for (auto& integration : integration_definitions)
+                    {
+                        if (std::find(integrationDefinitions.begin(), integrationDefinitions.end(), integration) ==
+                            integrationDefinitions.end())
+                        {
+                            integration_definitions_.push_back(integration);
+                        }
+                    }
+                }
+
+                Logger::Info("Total number of modules to analyze: ", modules->size());
+                integration_count = integration_definitions_.size();
+
+                if (rejit_handler != nullptr && !modules->empty() && !integrationDefinitions.empty())
+                {
+                    auto promise = std::make_shared<std::promise<ULONG>>();
+                    rejit_future = promise->get_future();
+                    tracer_integration_preprocessor->EnqueueRequestRejitForLoadedModules(
+                        modules.Ref(), integrationDefinitions, promise);
                 }
             }
-
-            const Version& minVersion =
-                Version(current.targetMinimumMajor, current.targetMinimumMinor, current.targetMinimumPatch, 0);
-            const Version& maxVersion =
-                Version(current.targetMaximumMajor, current.targetMaximumMinor, current.targetMaximumPatch, 0);
-
-            const auto& integration = IntegrationDefinition(
-                MethodReference(targetAssembly, targetType, targetMethod, minVersion, maxVersion, signatureTypes),
-                TypeReference(integrationAssembly, integrationType, {}, {}),
-                isDerived,
-                isInterface,
-                true,
-                -1,
-                enable ? -1 : 0);
-
-            DBG("  * Target: ", targetAssembly, " | ", targetType, ".", targetMethod, "(",
-                signatureTypes.size(), ") { ", minVersion.str(), " - ", maxVersion.str(), " } [",
-                integrationAssembly, " | ", integrationType, "]");
-
-            integrationDefinitions.push_back(integration);
         }
+    }
 
-        auto modules = module_ids.Get();
+    if (rejit_future.has_value())
+    {
+        const auto& numReJITs = rejit_future->get();
+        DBG("Total number of ReJIT Requested: ", numReJITs);
+    }
 
-        if (enable)
-        {
-            definitions->emplace(definitionsId);
-        }
-        else
-        {
-            definitions->erase(definitionsId);
-        }
-
-        if (enable)
-        {
-            integration_definitions_.reserve(integration_definitions_.size() + integrationDefinitions.size());
-            for (const auto& integration : integrationDefinitions)
-            {
-                integration_definitions_.push_back(integration);
-            }
-        }
-        else
-        {
-            // remove the call target definitions
-            std::vector<IntegrationDefinition> integration_definitions = integration_definitions_;
-            integration_definitions_.clear();
-            for (auto& integration : integration_definitions)
-            {
-                if (std::find(integrationDefinitions.begin(), integrationDefinitions.end(), integration) ==
-                    integrationDefinitions.end())
-                {
-                    integration_definitions_.push_back(integration);
-                }
-            }
-        }
-
-        Logger::Info("Total number of modules to analyze: ", modules->size());
-        if (rejit_handler != nullptr)
-        {
-            auto promise = std::make_shared<std::promise<ULONG>>();
-            std::future<ULONG> future = promise->get_future();
-            tracer_integration_preprocessor->EnqueueRequestRejitForLoadedModules(modules.Ref(), integrationDefinitions,
-                                                                                 promise);
-
-            // wait and get the value from the future<int>
-            const auto& numReJITs = future.get();
-            DBG("Total number of ReJIT Requested: ", numReJITs);
-        }
-
-        Logger::Info("InitializeProfiler: Total integrations in profiler: ", integration_definitions_.size());
+    if (integration_count.has_value())
+    {
+        Logger::Info("InitializeProfiler: Total integrations in profiler: ", *integration_count);
     }
 }
 
@@ -1998,23 +2090,30 @@ long CorProfiler::RegisterCallTargetDefinitions(WCHAR* id, CallTargetDefinition3
             integrationDefinitions.push_back(integration);
         }
 
-        auto modules = module_ids.Get();
-
-        integration_definitions_.reserve(integration_definitions_.size() + integrationDefinitions.size());
-        for (const auto& integration : integrationDefinitions)
+        std::optional<std::future<ULONG>> rejit_future;
         {
-            integration_definitions_.push_back(integration);
+            auto modules = module_ids.Get();
+
+            integration_definitions_.reserve(integration_definitions_.size() + integrationDefinitions.size());
+            for (const auto& integration : integrationDefinitions)
+            {
+                integration_definitions_.push_back(integration);
+            }
+
+            Logger::Info("Total number of modules to analyze: ", modules->size());
+
+            if (rejit_handler != nullptr && !modules->empty() && !integrationDefinitions.empty())
+            {
+                auto promise = std::make_shared<std::promise<ULONG>>();
+                rejit_future = promise->get_future();
+                tracer_integration_preprocessor->EnqueueRequestRejitForLoadedModules(
+                    modules.Ref(), integrationDefinitions, promise);
+            }
         }
 
-        Logger::Info("Total number of modules to analyze: ", modules->size());
-        if (rejit_handler != nullptr)
+        if (rejit_future.has_value())
         {
-            auto promise = std::make_shared<std::promise<ULONG>>();
-            std::future<ULONG> future = promise->get_future();
-            tracer_integration_preprocessor->EnqueueRequestRejitForLoadedModules(modules.Ref(), integrationDefinitions, promise);
-
-            // wait and get the value from the future<int>
-            numReJITs = future.get();
+            numReJITs = rejit_future->get();
             DBG("Total number of ReJIT Requested: ", numReJITs);
         }
 
@@ -2032,28 +2131,33 @@ long CorProfiler::EnableCallTargetDefinitions(UINT32 enabledCategories)
         auto _ = trace::Stats::Instance()->InitializeProfilerMeasure();
         Logger::Info("EnableCallTargetDefinitions: enabledCategories: ", enabledCategories, " from managed side.");
 
-        // Hold module_ids lock while iterating and mutating integration_definitions_
-        // to prevent concurrent modification from ModuleLoadFinished or RegisterCallTargetDefinitions
-        auto modules = module_ids.Get();
-
+        std::optional<std::future<ULONG>> rejit_future;
         std::vector<IntegrationDefinition> affectedDefinitions;
-        for (auto& integration : integration_definitions_)
         {
-            if (!integration.GetEnabled() && integration.SetEnabled(true, enabledCategories))
+            // Hold module_ids while iterating and mutating integration_definitions_
+            // to prevent concurrent modification from ModuleLoadFinished or RegisterCallTargetDefinitions
+            auto modules = module_ids.Get();
+
+            for (auto& integration : integration_definitions_)
             {
-                affectedDefinitions.push_back(integration);
+                if (!integration.GetEnabled() && integration.SetEnabled(true, enabledCategories))
+                {
+                    affectedDefinitions.push_back(integration);
+                }
+            }
+
+            if (!affectedDefinitions.empty() && !modules->empty())
+            {
+                auto promise = std::make_shared<std::promise<ULONG>>();
+                rejit_future = promise->get_future();
+                tracer_integration_preprocessor->EnqueueRequestRejitForLoadedModules(
+                    modules.Ref(), affectedDefinitions, promise);
             }
         }
 
-        if (affectedDefinitions.size() > 0)
+        if (rejit_future.has_value())
         {
-            auto promise = std::make_shared<std::promise<ULONG>>();
-            std::future<ULONG> future = promise->get_future();
-            tracer_integration_preprocessor->EnqueueRequestRejitForLoadedModules(modules.Ref(), affectedDefinitions,
-                                                                                 promise);
-
-            // wait and get the value from the future<int>
-            numReJITs = future.get();
+            numReJITs = rejit_future->get();
         }
         DBG("  Total number of ReJIT Requested: ", numReJITs);
     }
@@ -2067,27 +2171,33 @@ long CorProfiler::DisableCallTargetDefinitions(UINT32 disabledCategories)
         auto _ = trace::Stats::Instance()->InitializeProfilerMeasure();
         Logger::Info("DisableCallTargetDefinitions: enabledCategories: ", disabledCategories, " from managed side.");
 
-        // Hold module_ids lock while iterating and mutating integration_definitions_
-        // to prevent concurrent modification from ModuleLoadFinished or RegisterCallTargetDefinitions
-        auto modules = module_ids.Get();
-
+        std::optional<std::future<ULONG>> revert_future;
         std::vector<IntegrationDefinition> affectedDefinitions;
-        for (auto& integration : integration_definitions_)
         {
-            if (integration.GetEnabled() && !integration.SetEnabled(false, disabledCategories))
+            // Hold module_ids while iterating and mutating integration_definitions_
+            // to prevent concurrent modification from ModuleLoadFinished or RegisterCallTargetDefinitions
+            auto modules = module_ids.Get();
+
+            for (auto& integration : integration_definitions_)
             {
-                affectedDefinitions.push_back(integration);
+                if (integration.GetEnabled() && !integration.SetEnabled(false, disabledCategories))
+                {
+                    affectedDefinitions.push_back(integration);
+                }
+            }
+
+            if (!affectedDefinitions.empty() && !modules->empty())
+            {
+                auto promise = std::make_shared<std::promise<ULONG>>();
+                revert_future = promise->get_future();
+                tracer_integration_preprocessor->EnqueueRequestRejitForLoadedModules(
+                    modules.Ref(), affectedDefinitions, promise);
             }
         }
 
-        if (affectedDefinitions.size() > 0)
+        if (revert_future.has_value())
         {
-            auto promise = std::make_shared<std::promise<ULONG>>();
-            std::future<ULONG> future = promise->get_future();
-            tracer_integration_preprocessor->EnqueueRequestRejitForLoadedModules(modules.Ref(), affectedDefinitions, promise);
-
-            // wait and get the value from the future<int>
-            numReverts = future.get();
+            numReverts = revert_future->get();
         }
         DBG("  Total number of Reverts Requested: ", numReverts);
     }
@@ -2202,29 +2312,38 @@ void CorProfiler::InitializeTraceMethods(WCHAR* id, WCHAR* integration_assembly_
         {
             std::vector<IntegrationDefinition> integrationDefinitions = GetIntegrationsFromTraceMethodsConfiguration(
                 *trace_annotation_integration_type.get(), configuration_string);
-            auto modules = module_ids.Get();
 
-            DBG("InitializeTraceMethods: Total number of modules to analyze: ", modules->size());
-            if (rejit_handler != nullptr)
+            std::optional<std::future<ULONG>> rejit_future;
+            size_t integration_count = 0;
             {
-                auto promise = std::make_shared<std::promise<ULONG>>();
-                std::future<ULONG> future = promise->get_future();
-                tracer_integration_preprocessor->EnqueueRequestRejitForLoadedModules(
-                    modules.Ref(), integrationDefinitions,
-                    promise);
+                auto modules = module_ids.Get();
 
-                // wait and get the value from the future<int>
-                const auto& numReJITs = future.get();
+                DBG("InitializeTraceMethods: Total number of modules to analyze: ", modules->size());
+
+                integration_definitions_.reserve(integration_definitions_.size() + integrationDefinitions.size());
+                for (const auto& integration : integrationDefinitions)
+                {
+                    integration_definitions_.push_back(integration);
+                }
+
+                integration_count = integration_definitions_.size();
+
+                if (rejit_handler != nullptr && !modules->empty() && !integrationDefinitions.empty())
+                {
+                    auto promise = std::make_shared<std::promise<ULONG>>();
+                    rejit_future = promise->get_future();
+                    tracer_integration_preprocessor->EnqueueRequestRejitForLoadedModules(
+                        modules.Ref(), integrationDefinitions, promise);
+                }
+            }
+
+            if (rejit_future.has_value())
+            {
+                const auto& numReJITs = rejit_future->get();
                 DBG("Total number of ReJIT Requested: ", numReJITs);
             }
 
-            integration_definitions_.reserve(integration_definitions_.size() + integrationDefinitions.size());
-            for (const auto& integration : integrationDefinitions)
-            {
-                integration_definitions_.push_back(integration);
-            }
-
-            Logger::Info("InitializeTraceMethods: Total integrations in profiler: ", integration_definitions_.size());
+            Logger::Info("InitializeTraceMethods: Total integrations in profiler: ", integration_count);
         }
     }
 }
