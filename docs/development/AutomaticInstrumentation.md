@@ -297,7 +297,11 @@ A [runtime-async](https://github.com/dotnet/runtime/blob/main/docs/design/specs/
 CallTarget handles this by substituting an *effective* return type in the rewriter and calling `CallTargetInvoker.EndMethodRuntimeAsync`, which invokes the callback directly rather than attaching a continuation. Two consequences for integration authors:
 
 - **`OnAsyncMethodEnd` must be synchronous** (limitation 6 above). The epilog runs inside a `finally`, and the runtime-async spec forbids suspension points in handler blocks, so the callback cannot be awaited. The first call logs an error and disables the integration for that target, so it is cleanly uninstrumented from then on rather than left half-live with an `OnMethodBegin` whose cleanup never runs.
-- **`OnMethodEnd` cannot substitute a result.** It is still bound against the declared `Task`/`Task<T>` and receives an already-completed instance carrying the real result, but a runtime-async body has no task slot for a replacement, so its return value is discarded. Use `OnAsyncMethodEnd`, which can substitute, if you need to change the result.
+- **`OnMethodEnd` cannot replace the returned *task*.** It is still bound against the declared `Task`/`Task<T>` and receives an already-completed instance carrying the real result. A runtime-async body returns the unwrapped value and lets the runtime build the task, so there is no task slot for a replacement to go into. What happens to a replacement depends on the shape:
+  - `Task<T>`/`ValueTask<T>`: honoured if the replacement has **already completed successfully** — we take its result back out. This covers the ordinary case of returning `Task.FromResult(newValue)`.
+  - A still-running, faulted or cancelled replacement, or any replacement at all on a non-generic `Task`/`ValueTask`: cannot be honoured. The original result is kept and the attempt is logged as an error and reported to telemetry (the integration is *not* disabled).
+
+  Use `OnAsyncMethodEnd` to substitute a result; it is bound against the unwrapped `T` and works without restriction.
 
 Everything else — duck typing, generic constraints, proxy creation, the exception path, and running both callbacks when an integration declares both — behaves identically to a state-machine target. See `RuntimeAsyncEndMethodHandler` and its tests under `tracer/test/Datadog.Trace.Tests/CallTarget/`.
 

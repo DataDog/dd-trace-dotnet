@@ -64,6 +64,8 @@ internal static class RuntimeAsyncEndMethodHandler<TIntegration, TTarget, TRetur
     /// </summary>
     private static readonly Exception? UnsupportedAsyncCallback;
 
+    private static bool _reportedUnsupportedSubstitution;
+
     static RuntimeAsyncEndMethodHandler()
     {
         try
@@ -135,16 +137,61 @@ internal static class RuntimeAsyncEndMethodHandler<TIntegration, TTarget, TRetur
             // On the exception path we pass the default value rather than a faulted task, matching
             // what a state-machine target does when it throws before its first suspension: the
             // exception is carried by the exception argument, not by the return value.
-            // Whatever OnMethodEnd returns is discarded - it is a task, and a runtime-async body
-            // has no task slot to put a replacement into. That is inherent, not a choice; an
-            // integration that needs to substitute a result should use OnAsyncMethodEnd, which can.
             var declared = exception is null
                                ? RuntimeAsyncHelper.CreateCompletedFromResult<TReturn, TDeclaredReturn>(returnValue)
                                : default;
-            OnMethodEnd(instance, declared, exception, in state);
+            var returned = OnMethodEnd(instance, declared, exception, in state).GetReturnValue();
+
+            // When an exception is propagating the rewritten method rethrows it, so the return value
+            // never reaches the caller and there is nothing to honour.
+            if (exception is null)
+            {
+                // A runtime-async body returns the unwrapped T and the runtime builds the task from
+                // it, so a replacement task can only be honoured by taking its result back out -
+                // which needs it to be complete already. That covers the ordinary case, where
+                // OnMethodEnd either returns the completed task we handed it or a new completed one
+                // carrying a different result.
+                if (RuntimeAsyncHelper.TryGetCompletedResult<TReturn, TDeclaredReturn>(returned, out var unwrapped))
+                {
+                    returnValue = unwrapped;
+                }
+                else
+                {
+                    ReportUnsupportedSubstitution();
+                }
+            }
         }
 
         return new CallTargetReturn<TReturn>(returnValue);
+    }
+
+    /// <summary>
+    /// Reports an OnMethodEnd that returned a task we cannot take a result from - one that is still
+    /// running, faulted, cancelled, or null.
+    /// </summary>
+    /// <remarks>
+    /// Deliberately not a disable: unlike an async OnAsyncMethodEnd, the callback did run, so
+    /// nothing is left half-initialised and the rest of the integration still works. What is lost
+    /// is only the substitution, so this reports and carries on with the original value. The
+    /// generic <see cref="Exception"/> type matters - <see cref="IntegrationOptions{TIntegration, TTarget}.LogException"/>
+    /// disables the integration for a <see cref="CallTargetInvokerException"/> but not for this.
+    /// <para>
+    /// Latched because it would otherwise fire on every call. The race on the flag is benign: the
+    /// worst case is a duplicate log line.
+    /// </para>
+    /// </remarks>
+    private static void ReportUnsupportedSubstitution()
+    {
+        if (_reportedUnsupportedSubstitution)
+        {
+            return;
+        }
+
+        _reportedUnsupportedSubstitution = true;
+        IntegrationOptions<TIntegration, TTarget>.LogException(new NotSupportedException(
+            $"Integration '{typeof(TIntegration).FullName}' returned a replacement {typeof(TDeclaredReturn).FullName} from 'OnMethodEnd' that had not already completed successfully. "
+          + $"The target '{typeof(TTarget).FullName}' is a .NET 11 runtime-async method, whose body returns the unwrapped result and lets the runtime build the task, so a still-running, faulted or cancelled replacement cannot be honoured and the original result is used instead. "
+          + "Use 'OnAsyncMethodEnd' to substitute a result on a runtime-async target."));
     }
 }
 #endif

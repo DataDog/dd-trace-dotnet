@@ -66,6 +66,8 @@ internal static class RuntimeAsyncEndMethodHandler<TIntegration, TTarget, TDecla
     /// </summary>
     private static readonly TDeclaredReturn? CompletedValue;
 
+    private static bool _reportedUnsupportedSubstitution;
+
     static RuntimeAsyncEndMethodHandler()
     {
         try
@@ -136,12 +138,46 @@ internal static class RuntimeAsyncEndMethodHandler<TIntegration, TTarget, TDecla
             // On the exception path we pass the default value rather than a faulted task, matching
             // what a state-machine target does when it throws before its first suspension: the
             // exception is carried by the exception argument, not by the return value.
-            // Whatever OnMethodEnd returns is discarded - a runtime-async body has no task slot to
-            // put a replacement into. That is inherent, not a choice.
-            OnMethodEnd(instance, exception is null ? CompletedValue : default, exception, in state);
+            var handed = exception is null ? CompletedValue : default;
+            var returned = OnMethodEnd(instance, handed, exception, in state).GetReturnValue();
+
+            // When an exception is propagating the rewritten method rethrows it, so the return
+            // value never reaches the caller and there is nothing to honour.
+            if (exception is null && !RuntimeAsyncHelper.IsUnchanged(returned, handed))
+            {
+                ReportUnsupportedSubstitution();
+            }
         }
 
         return CallTargetReturn.GetDefault();
+    }
+
+    /// <summary>
+    /// Reports an OnMethodEnd that tried to replace the task, which this shape can never honour.
+    /// </summary>
+    /// <remarks>
+    /// Unlike the generic handler there is no partial support to offer: a method declaring a
+    /// non-generic Task or ValueTask leaves nothing on the evaluation stack, the epilog's
+    /// <see cref="CallTargetReturn"/> carries no value, and the runtime builds the task itself.
+    /// There is no slot a replacement could be written into, so all we can do is say so rather
+    /// than drop it in silence.
+    /// <para>
+    /// Not a disable - the callback did run, so only the substitution is lost. See the note on the
+    /// generic handler's equivalent for why the exception type matters.
+    /// </para>
+    /// </remarks>
+    private static void ReportUnsupportedSubstitution()
+    {
+        if (_reportedUnsupportedSubstitution)
+        {
+            return;
+        }
+
+        _reportedUnsupportedSubstitution = true;
+        IntegrationOptions<TIntegration, TTarget>.LogException(new NotSupportedException(
+            $"Integration '{typeof(TIntegration).FullName}' returned a replacement {typeof(TDeclaredReturn).FullName} from 'OnMethodEnd', which cannot be honoured. "
+          + $"The target '{typeof(TTarget).FullName}' is a .NET 11 runtime-async method declaring a non-generic Task or ValueTask: its body returns nothing and the runtime builds the task, so there is no task for the replacement to take the place of. "
+          + "The original task is used instead."));
     }
 }
 #endif

@@ -130,7 +130,7 @@ public class RuntimeAsyncEndMethodHandlerGenericTests
     }
 
     [Fact]
-    public void OnMethodEnd_ReturnValueIsDiscarded()
+    public void OnMethodEnd_CompletedSubstitutionIsHonoured()
     {
         var state = CallTargetState.GetDefault();
 
@@ -138,11 +138,58 @@ public class RuntimeAsyncEndMethodHandlerGenericTests
                       .EndMethodRuntimeAsync<SubstitutingMethodEndIntegration, TestTarget, string, Task<string>>(new TestTarget(), "value", null, in state)
                       .GetReturnValue();
 
-        // OnMethodEnd returns a Task, and a runtime-async body has no task slot to put a
-        // replacement into - the body returns the unwrapped value. So whatever OnMethodEnd hands
-        // back is dropped and the original value flows on. That is inherent, not a choice; an
-        // integration that needs to substitute a result must use OnAsyncMethodEnd.
+        // A runtime-async body returns the unwrapped value and lets the runtime build the task, so
+        // there is no task slot to write a replacement into. We can still honour the substitution
+        // by taking the result back out of the replacement - provided it has already completed,
+        // which it has here, and which is the ordinary case.
+        returned.Should().Be("substituted");
+    }
+
+    [Fact]
+    public void OnMethodEnd_CompletedValueTaskSubstitutionIsHonoured()
+    {
+        var state = CallTargetState.GetDefault();
+
+        var returned = CallTargetInvoker
+                      .EndMethodRuntimeAsync<SubstitutingValueTaskMethodEndIntegration, TestTarget, int, ValueTask<int>>(new TestTarget(), 1, null, in state)
+                      .GetReturnValue();
+
+        returned.Should().Be(99);
+    }
+
+    [Fact]
+    public void OnMethodEnd_IncompleteSubstitutionIsReportedAndTheOriginalValueIsKept()
+    {
+        var state = CallTargetState.GetDefault();
+
+        var returned = CallTargetInvoker
+                      .EndMethodRuntimeAsync<IncompleteSubstitutingMethodEndIntegration, TestTarget, string, Task<string>>(new TestTarget(), "value", null, in state)
+                      .GetReturnValue();
+
+        // Taking the result out of a still-running task would mean waiting for it, and the epilog
+        // runs inside a finally where the runtime-async spec forbids suspending. So the original
+        // value is kept - but the attempt is reported rather than dropped in silence.
         returned.Should().Be("value");
+
+        // Reported, not disabled: OnMethodEnd did run, so nothing is left half-initialised and the
+        // rest of the integration still works. Only the substitution is lost.
+        IntegrationOptions<IncompleteSubstitutingMethodEndIntegration, TestTarget>.IsIntegrationEnabled.Should().BeTrue();
+    }
+
+    [Fact]
+    public void OnMethodEnd_ReturningTheTaskItWasGiven_IsNotTreatedAsASubstitution()
+    {
+        MethodEndIntegration.Reset();
+
+        // MethodEndIntegration hands back exactly what it was given. Unwrapping that yields the
+        // original value, so the pass-through case is unaffected by substitution handling.
+        var state = CallTargetState.GetDefault();
+        var returned = CallTargetInvoker
+                      .EndMethodRuntimeAsync<MethodEndIntegration, TestTarget, string, Task<string>>(new TestTarget(), "value", null, in state)
+                      .GetReturnValue();
+
+        returned.Should().Be("value");
+        IntegrationOptions<MethodEndIntegration, TestTarget>.IsIntegrationEnabled.Should().BeTrue();
     }
 
     [Fact]
@@ -296,6 +343,20 @@ public class RuntimeAsyncEndMethodHandlerGenericTests
     {
         public static CallTargetReturn<Task<string>> OnMethodEnd<TTarget>(TTarget instance, Task<string> returnValue, Exception exception, in CallTargetState state)
             => new CallTargetReturn<Task<string>>(Task.FromResult("substituted"));
+    }
+
+    internal class SubstitutingValueTaskMethodEndIntegration
+    {
+        public static CallTargetReturn<ValueTask<int>> OnMethodEnd<TTarget>(TTarget instance, ValueTask<int> returnValue, Exception exception, in CallTargetState state)
+            => new CallTargetReturn<ValueTask<int>>(new ValueTask<int>(99));
+    }
+
+    internal class IncompleteSubstitutingMethodEndIntegration
+    {
+        // A task that never completes, standing in for any replacement whose result cannot be read
+        // without waiting - still running, faulted, or cancelled.
+        public static CallTargetReturn<Task<string>> OnMethodEnd<TTarget>(TTarget instance, Task<string> returnValue, Exception exception, in CallTargetState state)
+            => new CallTargetReturn<Task<string>>(new TaskCompletionSource<string>().Task);
     }
 
     internal class BothCallbacksIntegration

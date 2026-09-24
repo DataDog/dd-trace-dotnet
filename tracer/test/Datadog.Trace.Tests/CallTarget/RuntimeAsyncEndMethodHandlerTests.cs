@@ -164,6 +164,38 @@ public class RuntimeAsyncEndMethodHandlerTests
     }
 
     [Fact]
+    public void OnMethodEnd_SubstitutionIsReportedAndNotHonoured()
+    {
+        SubstitutingMethodEndIntegration.Reset();
+        var state = CallTargetState.GetDefault();
+
+        CallTargetInvoker.EndMethodRuntimeAsync<SubstitutingMethodEndIntegration, TestTarget, Task>(new TestTarget(), null, in state);
+
+        // A method declaring a non-generic Task leaves nothing on the evaluation stack and the
+        // epilog's CallTargetReturn carries no value, so unlike the generic case there is nothing
+        // to write a replacement into and no result to take back out of it. The attempt is
+        // reported rather than dropped in silence.
+        SubstitutingMethodEndIntegration.Calls.Should().Be(1);
+
+        // Reported, not disabled - OnMethodEnd ran, so only the substitution is lost.
+        IntegrationOptions<SubstitutingMethodEndIntegration, TestTarget>.IsIntegrationEnabled.Should().BeTrue();
+    }
+
+    [Fact]
+    public void OnMethodEnd_ReturningTheTaskItWasGiven_IsNotTreatedAsASubstitution()
+    {
+        MethodEndIntegration.Reset();
+        var state = CallTargetState.GetDefault();
+
+        CallTargetInvoker.EndMethodRuntimeAsync<MethodEndIntegration, TestTarget, Task>(new TestTarget(), null, in state);
+
+        // MethodEndIntegration hands back the completed task it was given, so nothing is reported
+        // and the pass-through case is unaffected by substitution detection.
+        MethodEndIntegration.Calls.Should().Be(1);
+        IntegrationOptions<MethodEndIntegration, TestTarget>.IsIntegrationEnabled.Should().BeTrue();
+    }
+
+    [Fact]
     public void WhenNoCallbacksAreDeclared_DoesNothing()
     {
         // With neither callback bound the handler must be an inert pass-through. There is no return
@@ -206,6 +238,21 @@ public class RuntimeAsyncEndMethodHandlerTests
             ReturnValue = returnValue;
             Exception = exception;
             return returnValue;
+        }
+    }
+
+    internal class SubstitutingMethodEndIntegration
+    {
+        public static int Calls { get; private set; }
+
+        public static void Reset() => Calls = 0;
+
+        // Replaces the task entirely, the way ForceFlushAsyncIntegration does. On a runtime-async
+        // target there is no task to replace, so this can only be reported.
+        public static CallTargetReturn<Task> OnMethodEnd<TTarget>(TTarget instance, Task returnValue, Exception exception, in CallTargetState state)
+        {
+            Calls++;
+            return new CallTargetReturn<Task>(new TaskCompletionSource<object>().Task);
         }
     }
 

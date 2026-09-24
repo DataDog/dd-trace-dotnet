@@ -8,6 +8,7 @@
 #if NET6_0_OR_GREATER // NET 10+ really
 
 using System;
+using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 
@@ -71,5 +72,67 @@ internal static class RuntimeAsyncHelper
 
         return default;
     }
+
+    /// <summary>
+    /// The inverse of <see cref="CreateCompletedFromResult{TResult, TDeclaredReturn}"/>: recovers the
+    /// unwrapped result from a declared Task&lt;T&gt;/ValueTask&lt;T&gt; that has <em>already</em>
+    /// completed successfully.
+    /// </summary>
+    /// <remarks>
+    /// This is what lets an <c>OnMethodEnd</c> substitution be honoured on a runtime-async target.
+    /// A runtime-async body returns the unwrapped value and the runtime builds the task from it, so
+    /// the only way to act on a replacement task is to take its result back out - and the only way
+    /// to do that without suspending (forbidden in the epilog's finally) or blocking is if it is
+    /// already complete. A still-running, faulted or cancelled replacement returns false; the caller
+    /// reports that rather than silently dropping it.
+    /// </remarks>
+    /// <typeparam name="TResult">The unwrapped result type</typeparam>
+    /// <typeparam name="TDeclaredReturn">Task&lt;TResult&gt; or ValueTask&lt;TResult&gt;</typeparam>
+    /// <param name="declared">The value OnMethodEnd returned</param>
+    /// <param name="result">The unwrapped result, when this returns true</param>
+    /// <returns>Whether the result could be recovered without waiting</returns>
+    internal static bool TryGetCompletedResult<TResult, TDeclaredReturn>(TDeclaredReturn? declared, out TResult? result)
+    {
+        if (typeof(TDeclaredReturn) == typeof(Task<TResult>))
+        {
+            if (declared is not null)
+            {
+                var task = Unsafe.As<TDeclaredReturn, Task<TResult>>(ref declared);
+                if (task.IsCompletedSuccessfully)
+                {
+                    result = task.Result;
+                    return true;
+                }
+            }
+        }
+        else if (typeof(TDeclaredReturn) == typeof(ValueTask<TResult>))
+        {
+            var valueTask = Unsafe.As<TDeclaredReturn, ValueTask<TResult>>(ref declared!);
+            if (valueTask.IsCompletedSuccessfully)
+            {
+                result = valueTask.Result;
+                return true;
+            }
+        }
+
+        result = default;
+        return false;
+    }
+
+    /// <summary>
+    /// Whether OnMethodEnd handed back the same value it was given, meaning it did not attempt a
+    /// substitution.
+    /// </summary>
+    /// <remarks>
+    /// The default comparer does the right thing for both shapes: <see cref="Task"/> does not
+    /// override Equals, so it compares by reference against the <see cref="Task.CompletedTask"/>
+    /// singleton, and <c>ValueTask</c> is <c>IEquatable</c>.
+    /// </remarks>
+    /// <typeparam name="TDeclaredReturn">Task or ValueTask</typeparam>
+    /// <param name="returned">What OnMethodEnd returned</param>
+    /// <param name="original">What it was handed</param>
+    /// <returns>True when nothing was substituted</returns>
+    internal static bool IsUnchanged<TDeclaredReturn>(TDeclaredReturn? returned, TDeclaredReturn? original)
+        => EqualityComparer<TDeclaredReturn?>.Default.Equals(returned, original);
 }
 #endif
