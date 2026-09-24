@@ -62,13 +62,14 @@ partial class Build
             var dllsInBin = ProjectsToPack
                            .SelectMany(project => (ArtifactsBinDirectory / project.Name).GlobFiles("**/Datadog*.dll"));
             var homeDlls = MonitoringHomeDirectory.GlobFiles("**/Datadog*.dll");
+            var openTelemetryStartupHookDll = MonitoringHomeDirectory.GlobFiles("**/OpenTelemetry.AutoInstrumentation.StartupHook.dll");
             var waf = MonitoringHomeDirectory.GlobFiles("**/ddwaf.dll");
 
             var ddDotnet = MonitoringHomeDirectory.GlobFiles("**/*.exe")
                                                   .Concat(ArtifactsDirectory.GlobFiles("**/*.exe"))
                                                   .Concat(MonitoringHomeDirectory.GlobFiles("**/dd-dotnet"))
                                                   .Concat(ArtifactsDirectory.GlobFiles("**/dd-dotnet"));
-            var dlls = homeDlls.Concat(dllsInBin).Concat(waf).Concat(ddDotnet);
+            var dlls = homeDlls.Concat(dllsInBin).Concat(waf).Concat(ddDotnet).Concat(openTelemetryStartupHookDll);
             SignFiles(dlls.ToList());
         });
 

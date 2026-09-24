@@ -484,6 +484,16 @@ partial class Build
             DotnetBuild(new[] { Solution.GetProject(Projects.ManagedLoader).Path }, noRestore: false, noDependencies: false);
         });
 
+    Target CompileOpenTelemetryStartupHook => _ => _
+        .Unlisted()
+        .Description("Compiles the OpenTelemetry auto-instrumentation startup hook (stub)")
+        .After(CreateRequiredDirectories)
+        .After(Restore)
+        .Executes(() =>
+        {
+            DotnetBuild(new[] { Solution.GetProject(Projects.OpenTelemetryAutoInstrumentationStartupHook).Path }, noRestore: false, noDependencies: false);
+        });
+
     Target CompileManagedSrc => _ => _
         .Unlisted()
         .Description("Compiles the managed code in the src directory")
@@ -509,6 +519,7 @@ partial class Build
                 "src/Datadog.Trace.Tools.Runner/*.csproj",
                 "src/**/Datadog.InstrumentedAssembly*.csproj",
                 "src/Datadog.AutoInstrumentation.Generator/*.csproj",
+                "src/OpenTelemetry.AutoInstrumentation.StartupHook/*.csproj",
                 $"src/{Projects.ManagedLoader}/*.csproj"
             );
 
@@ -910,6 +921,21 @@ partial class Build
                 .SetFramework(targetFramework)
                 .SetOutput(MonitoringHomeDirectory / targetFramework)
             );
+        });
+
+    Target PublishOpenTelemetryStartupHook => _ => _
+        .Unlisted()
+        .After(CompileOpenTelemetryStartupHook)
+        .Executes(() =>
+        {
+            DotNetPublish(s => s
+                .SetProject(Solution.GetProject(Projects.OpenTelemetryAutoInstrumentationStartupHook))
+                .SetConfiguration(BuildConfiguration)
+                .SetTargetPlatformAnyCPU()
+                .SetFramework(TargetFramework.NETCOREAPP3_1)
+                .SetOutput(MonitoringHomeDirectory / "net")
+                .EnableNoBuild()
+                .EnableNoRestore());
         });
 
     Target PublishNativeSymbolsWindows => _ => _
