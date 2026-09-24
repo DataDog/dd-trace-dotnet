@@ -96,6 +96,12 @@ void RejitPreprocessor<RejitRequestDefinition>::RemoveModule(ModuleID moduleId)
     std::lock_guard<std::mutex> modulesGuard(m_modules_lock);
     m_modules.erase(moduleId);
 
+    // Desktop CLR can reuse the ModuleID for a different NGen image, whose inliners have not been enumerated yet.
+    for (const auto& mod : m_modules)
+    {
+        mod.second->RemoveProcessedInlinerModule(moduleId);
+    }
+
     // Removes the moduleID from the inliners vector
     std::lock_guard<std::mutex> inlinersGuard(m_ngenInlinersModules_lock);
     m_ngenInlinersModules.erase(std::remove(m_ngenInlinersModules.begin(), m_ngenInlinersModules.end(), moduleId),

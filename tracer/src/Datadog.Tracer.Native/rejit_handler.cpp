@@ -251,6 +251,12 @@ void RejitHandlerModule::RequestRejitForInlinersInModule(ModuleID moduleId)
     }
 }
 
+void RejitHandlerModule::RemoveProcessedInlinerModule(ModuleID moduleId)
+{
+    std::lock_guard<std::mutex> moduleGuard(m_ngenProcessedInlinerModulesLock);
+    m_ngenProcessedInlinerModules.erase(moduleId);
+}
+
 //
 // RejitHandler
 //
