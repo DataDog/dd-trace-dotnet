@@ -12,7 +12,6 @@ using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations;
-using Datadog.Trace.Logging;
 #pragma warning disable SA1649 // File name must match first type name
 
 namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers;
@@ -53,10 +52,17 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers;
 /// <typeparam name="TDeclaredReturn">The Task&lt;T&gt; or ValueTask&lt;T&gt; the method declares</typeparam>
 internal static class RuntimeAsyncEndMethodHandler<TIntegration, TTarget, TReturn, TDeclaredReturn>
 {
-    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(RuntimeAsyncEndMethodHandler<TIntegration, TTarget, TReturn, TDeclaredReturn>));
-
     private static readonly ContinuationGenerator<TTarget, TReturn, TReturn>.ContinuationMethodDelegate? OnAsyncMethodEnd;
     private static readonly EndMethodHandler<TIntegration, TTarget, TDeclaredReturn>.InvokeDelegate? OnMethodEnd;
+
+    /// <summary>
+    /// Non-null when the integration's OnAsyncMethodEnd is itself async, which cannot be honoured
+    /// on a runtime-async target. Recorded here rather than thrown from the static constructor,
+    /// because the CLR would wrap that in a TypeInitializationException and
+    /// <see cref="IntegrationOptions{TIntegration, TTarget}.LogException"/> only recognises a
+    /// <see cref="CallTargetInvokerException"/> as a reason to disable the integration.
+    /// </summary>
+    private static readonly Exception? UnsupportedAsyncCallback;
 
     static RuntimeAsyncEndMethodHandler()
     {
@@ -70,11 +76,8 @@ internal static class RuntimeAsyncEndMethodHandler<TIntegration, TTarget, TRetur
                     // We cannot await here. The epilog runs inside the finally of the rewritten
                     // method, and the runtime-async spec forbids suspension points in handler
                     // blocks; blocking instead would risk deadlock on a thread with a sync context.
-                    Log.Error(
-                        "Integration '{IntegrationType}' has an async 'OnAsyncMethodEnd' returning {ReturnType}, which is not supported on .NET 11 runtime-async target '{TargetType}'. The callback will not run.",
-                        typeof(TIntegration).FullName,
-                        asyncMethod.ReturnType.FullName,
-                        typeof(TTarget).FullName);
+                    UnsupportedAsyncCallback = new NotSupportedException(
+                        $"Integration '{typeof(TIntegration).FullName}' has an async 'OnAsyncMethodEnd' returning {asyncMethod.ReturnType.FullName}, which cannot be invoked on the .NET 11 runtime-async target '{typeof(TTarget).FullName}' because the CallTarget epilog runs inside a finally block. The integration will be disabled for this target.");
                 }
                 else
                 {
@@ -100,6 +103,26 @@ internal static class RuntimeAsyncEndMethodHandler<TIntegration, TTarget, TRetur
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static CallTargetReturn<TReturn> Invoke(TTarget? instance, TReturn? returnValue, Exception? exception, in CallTargetState state)
     {
+        // There is deliberately no IntegrationOptions.RestoreScopeFromAsyncExecution call here,
+        // unlike EndMethodHandler<TIntegration, TTarget, TReturn>. That one exists because
+        // CallTarget instruments a state-machine async method via its *stub*: OnMethodBegin runs
+        // before builder.Start(ref stateMachine), outside the ExecutionContext save/restore that
+        // AsyncMethodBuilderCore.Start performs, so its AsyncLocal write escapes to the caller and
+        // has to be undone by hand. A runtime-async method has no stub - the prologue runs inside
+        // the method, within the region the runtime already unwinds - so there is nothing to undo,
+        // and restoring here would clobber any distributed context the body legitimately set.
+        // RuntimeAsyncScopeRestoreTests pins both halves of this.
+        if (UnsupportedAsyncCallback is { } unsupported)
+        {
+            // Turn the integration off for this target rather than leave it half-live. OnMethodBegin
+            // has already run and created state that only the callback we cannot invoke would clean
+            // up, so every later call would leak the same way. LogException records telemetry and
+            // sets the flag that every BeginMethod and EndMethod overload on CallTargetInvoker gates
+            // on, so this runs exactly once: from the next call the target is cleanly uninstrumented.
+            IntegrationOptions<TIntegration, TTarget>.LogException(new CallTargetInvokerException(unsupported));
+            return new CallTargetReturn<TReturn>(returnValue);
+        }
+
         if (OnAsyncMethodEnd is not null)
         {
             // Feeding the substituted value forward mirrors EndMethodHandler, where OnMethodEnd

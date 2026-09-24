@@ -10,6 +10,7 @@
 using System;
 using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.CallTarget;
+using Datadog.Trace.ClrProfiler.CallTarget.Handlers;
 using FluentAssertions;
 using Xunit;
 
@@ -138,17 +139,27 @@ public class RuntimeAsyncEndMethodHandlerTests
     }
 
     [Fact]
-    public void WhenOnAsyncMethodEndIsItselfAsync_NeitherCallbackRuns()
+    public void WhenOnAsyncMethodEndIsItselfAsync_DisablesTheIntegration()
     {
         AsyncCallbackIntegration.Reset();
         var state = CallTargetState.GetDefault();
 
+        IntegrationOptions<AsyncCallbackIntegration, TestTarget>.IsIntegrationEnabled.Should().BeTrue();
+
         CallTargetInvoker.EndMethodRuntimeAsync<AsyncCallbackIntegration, TestTarget, Task>(new TestTarget(), null, in state);
 
         // We cannot await in the epilog: it runs inside a finally, and the runtime-async spec
-        // forbids suspension points in handler blocks. The handler logs an error and skips the
-        // callback instead. Only CI Visibility integrations have async callbacks today, and none
-        // of them target a runtime-async method.
+        // forbids suspension points in handler blocks. Only CI Visibility integrations have async
+        // callbacks today, and none of them target a runtime-async method.
+        AsyncCallbackIntegration.Calls.Should().Be(0);
+
+        // Skipping the callback is not enough on its own: OnMethodBegin has already run and created
+        // state that only that callback would clean up, so leaving the integration live would leak
+        // once per call. Disabling it means every subsequent BeginMethod and EndMethod for this
+        // <integration, target> pair is gated off, and the disable is reported to telemetry.
+        IntegrationOptions<AsyncCallbackIntegration, TestTarget>.IsIntegrationEnabled.Should().BeFalse();
+
+        CallTargetInvoker.EndMethodRuntimeAsync<AsyncCallbackIntegration, TestTarget, Task>(new TestTarget(), null, in state);
         AsyncCallbackIntegration.Calls.Should().Be(0);
     }
 

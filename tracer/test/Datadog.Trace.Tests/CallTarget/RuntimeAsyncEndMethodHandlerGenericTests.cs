@@ -10,6 +10,7 @@
 using System;
 using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.CallTarget;
+using Datadog.Trace.ClrProfiler.CallTarget.Handlers;
 using FluentAssertions;
 using Xunit;
 
@@ -164,19 +165,33 @@ public class RuntimeAsyncEndMethodHandlerGenericTests
     }
 
     [Fact]
-    public void WhenOnAsyncMethodEndIsItselfAsync_NeitherCallbackRunsAndTheResultIsUnchanged()
+    public void WhenOnAsyncMethodEndIsItselfAsync_DisablesTheIntegrationAndLeavesTheResultUnchanged()
     {
         AsyncCallbackIntegration.Reset();
         var state = CallTargetState.GetDefault();
+
+        IntegrationOptions<AsyncCallbackIntegration, TestTarget>.IsIntegrationEnabled.Should().BeTrue();
 
         var returned = CallTargetInvoker
                       .EndMethodRuntimeAsync<AsyncCallbackIntegration, TestTarget, string, Task<string>>(new TestTarget(), "value", null, in state)
                       .GetReturnValue();
 
         // The epilog runs inside a finally and the runtime-async spec forbids suspending there, so
-        // an async callback cannot be honoured. The handler logs an error and skips it.
+        // an async callback cannot be honoured. Skipping it is not enough on its own: OnMethodBegin
+        // has already run and created state that only that callback would clean up, so the
+        // integration is disabled for this target rather than left leaking once per call.
         AsyncCallbackIntegration.Calls.Should().Be(0);
         returned.Should().Be("value");
+        IntegrationOptions<AsyncCallbackIntegration, TestTarget>.IsIntegrationEnabled.Should().BeFalse();
+
+        // Disabled means the gate in CallTargetInvoker short-circuits, and the caller's value still
+        // passes through untouched.
+        CallTargetInvoker
+           .EndMethodRuntimeAsync<AsyncCallbackIntegration, TestTarget, string, Task<string>>(new TestTarget(), "again", null, in state)
+           .GetReturnValue()
+           .Should()
+           .Be("again");
+        AsyncCallbackIntegration.Calls.Should().Be(0);
     }
 
     [Fact]
