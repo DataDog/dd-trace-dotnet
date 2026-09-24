@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
+using Datadog.Trace.Util;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using Xunit;
@@ -85,6 +86,7 @@ public class MetricsTelemetryCollectorTests
     [Theory]
     [InlineData(null, null)]
     [InlineData("1.2.4", null)]
+    [InlineData("1.2.4", "")]
     [InlineData("1.2.3", "10.2")]
     public async Task AllMetricsAreReturned_ForMetricsTelemetryCollector(string wafVersion, string rulesVersion)
     {
@@ -156,7 +158,7 @@ public class MetricsTelemetryCollectorTests
         }
 
         var expectedWafTag = $"waf_version:{wafVersion ?? "unknown"}";
-        var expectedRulesetTag = $"event_rules_version:{rulesVersion ?? "unknown"}";
+        var expectedRulesetTag = $"event_rules_version:{(StringUtil.IsNullOrEmpty(rulesVersion) ? "unknown" : rulesVersion)}";
 
         using var scope = new AssertionScope();
         scope.FormattingOptions.MaxLines = 1000;
