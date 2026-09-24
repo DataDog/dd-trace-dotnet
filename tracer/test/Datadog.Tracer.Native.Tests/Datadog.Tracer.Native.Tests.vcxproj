@@ -84,6 +84,7 @@
   </PropertyGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
+    <ClInclude Include="signature_test_helpers.h" />
     <ClInclude Include="test_helpers.h" />
     <ClInclude Include="mock_cor_profiler_info.h" />
   </ItemGroup>

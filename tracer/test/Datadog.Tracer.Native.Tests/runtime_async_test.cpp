@@ -1,6 +1,7 @@
 #include "pch.h"
 
 #include "../../src/Datadog.Tracer.Native/runtime_async.h"
+#include "signature_test_helpers.h"
 
 #include <vector>
 
@@ -12,52 +13,6 @@ namespace
 // to round-trip them out of the compressed encoding.
 const mdToken kOuterTypeToken = TokenFromRid(7, mdtTypeRef);
 const mdToken kInnerTypeToken = TokenFromRid(9, mdtTypeRef);
-
-class SigBuilder
-{
-public:
-    SigBuilder& Byte(COR_SIGNATURE b)
-    {
-        _bytes.push_back(b);
-        return *this;
-    }
-
-    SigBuilder& Token(mdToken token)
-    {
-        COR_SIGNATURE buffer[8]{};
-        const auto written = CorSigCompressToken(token, buffer);
-        for (ULONG i = 0; i < written; i++)
-        {
-            _bytes.push_back(buffer[i]);
-        }
-        return *this;
-    }
-
-    // Emits `count` filler bytes, so tests can place the return type somewhere other than offset 0
-    // and prove the offsets we hand back are relative to pbBase rather than to the return type.
-    SigBuilder& Filler(size_t count)
-    {
-        for (size_t i = 0; i < count; i++)
-        {
-            _bytes.push_back(0xEE);
-        }
-        return *this;
-    }
-
-    const std::vector<COR_SIGNATURE>& Bytes() const
-    {
-        return _bytes;
-    }
-
-private:
-    std::vector<COR_SIGNATURE> _bytes;
-};
-
-// Builds a TypeSignature covering everything from `offset` to the end of the blob.
-TypeSignature Sig(const std::vector<COR_SIGNATURE>& bytes, ULONG offset = 0)
-{
-    return TypeSignature{offset, static_cast<ULONG>(bytes.size()) - offset, bytes.data()};
-}
 } // namespace
 
 TEST(RuntimeAsyncTest, IsMiAsyncMatchesTheAsyncBit)
@@ -66,10 +21,12 @@ TEST(RuntimeAsyncTest, IsMiAsyncMatchesTheAsyncBit)
 
     EXPECT_TRUE(IsMiAsync(miAsync));
     EXPECT_TRUE(IsMiAsync(miAsync | miNoInlining));
+    EXPECT_TRUE(IsMiAsync(miAsync | miIL | miManaged));
 
     EXPECT_FALSE(IsMiAsync(0));
     EXPECT_FALSE(IsMiAsync(miIL | miManaged));
     EXPECT_FALSE(IsMiAsync(miInternalCall));
+    EXPECT_FALSE(IsMiAsync(miInternalCall | miAggressiveInlining));
     // miUserMask predates .NET 11 and does not cover the async bit
     EXPECT_FALSE(IsMiAsync(miUserMask));
 }
