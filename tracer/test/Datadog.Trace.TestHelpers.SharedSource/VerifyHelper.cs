@@ -234,7 +234,11 @@ namespace Datadog.Trace.TestHelpers
                              // Also ignoring `_dd.parent_id` since we test specific headers combinations which check for the value, hence why not adding it to the snapshots
                           && kvp.Key != Tags.LastParentId
                              // same as git related tags above, process tags are only added to the first span of each payload, which makes snapshots unstable.
-                          && kvp.Key != Tags.ProcessTags)
+                          && kvp.Key != Tags.ProcessTags
+                             // same as process tags: `_dd.sdk.otlp_export` is only written to the first span of each
+                             // payload, which makes snapshots unstable. Payload scoping and value are covered by
+                             // SpanMessagePackFormatterTests and OtlpMapperTests instead.
+                          && kvp.Key != Tags.SdkOtlpExport)
                   .Select(
                        kvp => kvp.Key switch
                        {

@@ -684,6 +684,38 @@ public class SpanMessagePackFormatterTests
     }
 
     [Fact]
+    public async Task SdkOtlpExport_IsWrittenOncePerPayload()
+    {
+        var mockApi = new MockApi();
+        var settings = TracerSettings.Create(new() { { ConfigurationKeys.ServiceName, "test-service" } });
+        var agentWriter = AgentWriterHelper.CreateWithManualFlush(mockApi);
+        await using var tracer = TracerHelper.Create(settings, agentWriter, sampler: null, scopeManager: null, statsd: null, NullTelemetryController.Instance, NullDiscoveryService.Instance);
+
+        using (_ = tracer.StartActive("root"))
+        {
+            using (_ = tracer.StartActive("child1"))
+            {
+            }
+
+            using (_ = tracer.StartActive("child2"))
+            {
+            }
+        }
+
+        await tracer.FlushAsync();
+        var traceChunks = mockApi.Wait(TimeSpan.FromSeconds(1));
+
+        traceChunks.Should().HaveCount(1);
+        var spans = traceChunks[0];
+        spans.Should().HaveCount(3);
+
+        // reaching the MessagePack formatter means the payload uses the native Datadog encoding
+        spans[0].GetTag(Tags.SdkOtlpExport).Should().Be("false", "the OTLP export marker belongs on the first span of the payload");
+        spans[1].GetTag(Tags.SdkOtlpExport).Should().BeNull("the OTLP export marker is payload-scoped, not per-span");
+        spans[2].GetTag(Tags.SdkOtlpExport).Should().BeNull("the OTLP export marker is payload-scoped, not per-span");
+    }
+
+    [Fact]
     public async Task ApmDisabled_WritesApmEnabledZero_OnAllSpans()
     {
         // When APM tracing is disabled, "_dd.apm.enabled":0 must be written to EVERY span

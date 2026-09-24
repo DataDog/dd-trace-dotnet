@@ -80,6 +80,8 @@ namespace Datadog.Trace.Agent.MessagePack
         private static ReadOnlySpan<byte> LastParentIdBytes => "_dd.parent_id"u8; // Tags.LastParentId
         private static ReadOnlySpan<byte> BaseServiceNameBytes => "_dd.base_service"u8; // Tags.BaseService
         private static ReadOnlySpan<byte> ServiceNameSourceNameBytes => "_dd.svc_src"u8; // Tags.ServiceNameSource
+        private static ReadOnlySpan<byte> SdkOtlpExportNameBytes => "_dd.sdk.otlp_export"u8; // Tags.SdkOtlpExport
+        private static ReadOnlySpan<byte> SdkOtlpExportValueBytes => "false"u8;
 
         // numeric tags
         private static ReadOnlySpan<byte> MetricsBytes => "metrics"u8;
@@ -634,6 +636,17 @@ namespace Datadog.Trace.Agent.MessagePack
                     offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, ProcessTagsNameBytes);
                     offset += MessagePackBinary.WriteRaw(ref bytes, offset, processTagsRawBytes);
                 }
+            }
+
+            // The OTLP export marker is sent only once per buffer/payload, like the process tags above.
+            // Reaching this formatter means the payload uses the native Datadog encoding, so the value
+            // is always "false" here. The OTLP serializers write "true" as a resource attribute instead
+            // (see OtlpMapper.EmitResourceAttributesFromTraceChunk).
+            if (model.IsFirstSpanInChunk && model.TraceChunk.IsFirstChunkInPayload)
+            {
+                count++;
+                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, SdkOtlpExportNameBytes);
+                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, SdkOtlpExportValueBytes);
             }
 
             // SCI tags will be sent only once per trace
