@@ -175,6 +175,12 @@ bool ClrEventsParser::ParseAllocationEvent(ULONG cbEventData, LPCBYTE pEventData
     return true;
 }
 
+// AllocationSampled layout is packed the same way as AllocationTick (UInt32 + UInt16
+// then Pointer), so TypeId sits at offset 6. See the no_sanitize note on
+// ParseAllocationEvent.
+#if defined(__clang__) || defined(DD_SANITIZERS)
+__attribute__((no_sanitize("alignment")))
+#endif
 bool ClrEventsParser::ParseAllocationSampledEvent(ULONG cbEventData, LPCBYTE pEventData, AllocationSampledPayload& payload)
 {
     // <template tid = "AllocationSampled">
