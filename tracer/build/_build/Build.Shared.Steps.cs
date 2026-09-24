@@ -329,4 +329,11 @@ partial class Build
             var supportedConfigurationsPath = TracerDirectory / "src" / "Datadog.Trace" / "Configuration" / "supported-configurations.yaml";
             new NativeConfigValidator().Validate(RootDirectory, supportedConfigurationsPath);
         });
+
+    Target ValidateNativeModuleFilterPackages => _ => _
+        .Description("Validates that no assembly in a NuGet package that the native tracer skips derives from or implements a derived or interface integration target")
+        .Executes(async () =>
+        {
+            await new NativeModuleFilterValidator().Validate(TracerDirectory / "src" / "Datadog.Tracer.Native");
+        });
 }
