@@ -142,7 +142,7 @@ namespace Datadog.Trace.AppSec
 
         internal SecuritySettings Settings => _settings;
 
-        internal string? DdlibWafVersion => _waf?.Version;
+        internal string? DdlibWafVersion => _waf?.Version ?? _wafLibraryInvoker?.GetVersion();
 
         internal bool IsTrackUserEventsEnabled =>
             AppsecEnabled && CalculateIsTrackUserEventsEnabled(_configurationState.AutoUserInstrumMode, Settings.UserEventsAutoInstrumentationMode);
@@ -226,7 +226,7 @@ namespace Datadog.Trace.AppSec
                         if (_wafInitResult?.RuleFileVersion is { Length: > 0 })
                         {
                             WafRuleFileVersion = _wafInitResult.RuleFileVersion;
-                            TelemetryFactory.Metrics.SetWafAndRulesVersion(_waf!.Version, WafRuleFileVersion);
+                            TelemetryFactory.Metrics.SetWafAndRulesVersion(DdlibWafVersion!, WafRuleFileVersion);
                         }
 
                         RefreshRcmSubscriptions();
@@ -604,6 +604,11 @@ namespace Datadog.Trace.AppSec
             }
             else
             {
+                if (_waf is null)
+                {
+                    TelemetryFactory.Metrics.SetWafAndRulesVersion(DdlibWafVersion!, _wafInitResult.RuleFileVersion);
+                }
+
                 TelemetryFactory.Metrics.RecordCountWafInit(Telemetry.Metrics.MetricTags.WafStatus.Error);
                 _wafInitResult.Waf?.Dispose();
                 _configurationState.AppsecEnabled = false;
