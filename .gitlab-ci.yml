@@ -15,7 +15,7 @@ stages:
 include:
   - local: .gitlab/one-pipeline.locked.yml
   - project: 'ddoghq/llm-validation-platform'
-    ref: 01a98ef910cfafaeb0da2587e09f0853381cdc45   # Temporary test: llm-validation-platform PR #40
+    ref: fadd5dc04cab60a1aff6db4dbb54f8362baaba4b   # Temporary test: llm-validation-platform PR #40
     file: '/ci/llm-validation.gitlab-ci.yml'
   # MIGRATION TOUCHPOINT (GitHub org / GitLab group split):
   # GitLab does not expand top-level `variables:` inside `include:` keywords,
@@ -45,11 +45,10 @@ variables:
 "llm validation":
   variables:
     LLMVAL_PLATFORM_PROJECT: "ddoghq/llm-validation-platform"
-    LLMVAL_PLATFORM_REF: "01a98ef910cfafaeb0da2587e09f0853381cdc45"   # Must match include ref above
-  # Temporary CI wiring test. Do not merge; inherit the platform's allow_failure policy.
-  script:
-    - echo "Testing infrastructure failure handling (exit 75)"
-    - exit 75
+    # Temporary infra-failure test: deliberately differ from the include ref. Do not merge.
+    # Inherit the platform script to verify fetch failure -> INCONCLUSIVE artifacts -> exit 0.
+    LLMVAL_PLATFORM_REF: "test/nonexistent-infra-ref-9307-fadd5dc0"
+    LLMVAL_WATCH_PATHS: "."   # Include this CI-file change so the validation job does not skip.
 
 build-windows-ci-image:
   stage: build
