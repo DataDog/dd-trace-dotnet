@@ -25,9 +25,8 @@ namespace Datadog.Trace.Tests.CallTarget
             var includeAssemblies = GetStringArray(constants, "include_assemblies");
             var skipAssemblies = GetStringArray(constants, "skip_assemblies");
 
-            // Derived and interface definitions match types in other modules, so only the targets of default definitions can be checked here.
             var definitions = File.ReadAllText(Path.Combine(NativeSourceDirectory, "Generated", "generated_calltargets.g.cpp"));
-            var targetAssemblies = Regex.Matches(definitions, @"\{\(WCHAR\*\)WStr\(""(?<assembly>[^""]+)""\),\(WCHAR\*\)WStr\(""[^""]+""\),\(WCHAR\*\)WStr\(""[^""]+""\),sig\d+,[^}]*CallTargetKind::Default")
+            var targetAssemblies = Regex.Matches(definitions, @"\{\(WCHAR\*\)WStr\(""(?<assembly>[^""]+)""\),\(WCHAR\*\)WStr\(""[^""]+""\),\(WCHAR\*\)WStr\(""[^""]+""\),sig\d+,[^}]*CallTargetKind::")
                                          .Cast<Match>()
                                          .Select(m => m.Groups["assembly"].Value)
                                          .Distinct()
@@ -35,7 +34,7 @@ namespace Datadog.Trace.Tests.CallTarget
 
             targetAssemblies.Should().NotBeEmpty();
 
-            // netstandard only forwards types to the assemblies that define them, so definitions targeting it never match.
+            // netstandard defines no types (it only forwards them), so skipping it never hides a target. Derived definitions on it match types in the modules that reference it.
             var skippedTargets = targetAssemblies
                                 .Where(name => name != "netstandard")
                                 .Where(name => skipAssemblies.Contains(name) ||
