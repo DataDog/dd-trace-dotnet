@@ -2623,6 +2623,25 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #endif
             };
 
+      public static IEnumerable<object[]> AzureFunctionsDurable =>
+
+            new List<object[]>
+            {
+#if DEFAULT_SAMPLES
+                new object[] { string.Empty },
+#else
+#if NET8_0
+                new object[] { "1.19.1" },
+#endif
+#if NET9_0
+                new object[] { "1.19.1" },
+#endif
+#if NET10_0
+                new object[] { "1.19.1" },
+#endif
+#endif
+            };
+
       public static IEnumerable<object[]> AzureServiceBus =>
 
             new List<object[]>

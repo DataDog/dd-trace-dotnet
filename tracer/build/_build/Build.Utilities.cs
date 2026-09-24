@@ -1067,6 +1067,17 @@ partial class Build
             ?? throw new InvalidOperationException("Could not read sdk.version from global.json");
     }
 
+    // MCR only publishes prerelease SDK tags trimmed to "<major>.<minor>.<patch>-<label>.<n>"
+    // (e.g. "11.0.100-rc.1"), never the full global.json version with its trailing build and
+    // revision segments (e.g. "11.0.100-rc.1.26425.128"), so drop anything past the fourth
+    // dot-separated segment when resolving the mcr.microsoft.com/dotnet/sdk tag.
+    static string GetDotnetSdkImageTag(AbsolutePath rootDirectory)
+    {
+        var version = GetDotnetSdkVersion(rootDirectory);
+        var segments = version.Split('.');
+        return segments.Length > 4 ? string.Join(".", segments[..4]) : version;
+    }
+
     static string GetSha512Hash(string filePath)
     {
         using var sha512 = SHA512.Create();
