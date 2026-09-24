@@ -1,0 +1,37 @@
+name: Validate native module filter against NuGet packages
+
+# A failure here means a NuGet package ships an assembly that dd_profiler_constants.h skips,
+# but that assembly defines a subclass or an implementation of a derived or interface
+# integration target, so the native tracer never instruments it. Stop skipping that assembly.
+# Runs weekly because new package versions can introduce such types without any change here.
+
+on:
+  pull_request:
+    paths:
+      - 'tracer/src/Datadog.Tracer.Native/dd_profiler_constants.h'
+      - 'tracer/src/Datadog.Tracer.Native/Generated/generated_calltargets.g.cpp'
+      - 'tracer/build/_build/NativeValidation/NativeModuleFilterValidator.cs'
+      - '.github/workflows/validate_native_module_filter.yml'
+  schedule:
+    - cron: '0 3 * * 1' # Every Monday at 3:00 AM UTC
+  workflow_dispatch:
+
+jobs:
+  validate_native_module_filter:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          global-json-file: global.json
+
+      - name: "Scan NuGet packages for assemblies the native tracer shouldn't skip"
+        run: ./tracer/build.sh ValidateNativeModuleFilterPackages
