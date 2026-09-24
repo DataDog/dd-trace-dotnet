@@ -703,9 +703,15 @@ partial class Build
           {
               var fileName = Path.GetFileNameWithoutExtension(source);
 
-              Logger.Information("Difference found in " + fileName);
+              // A brand new snapshot has no verified file yet, so diff against an empty
+              // string to show the whole thing as an addition, instead of throwing and
+              // hiding the diffs for every other snapshot in the run
+              var verified = source.ToString().Replace("received", "verified");
+              var hasVerified = File.Exists(verified);
+
+              Logger.Information((hasVerified ? "Difference found in " : "New snapshot file ") + fileName);
               var dmp = new diff_match_patch();
-              var diff = dmp.diff_main(File.ReadAllText(source.ToString().Replace("received", "verified")), File.ReadAllText(source));
+              var diff = dmp.diff_main(hasVerified ? File.ReadAllText(verified) : string.Empty, File.ReadAllText(source));
               dmp.diff_cleanupSemantic(diff);
 
               DiffHelper.PrintDiff(diff);
