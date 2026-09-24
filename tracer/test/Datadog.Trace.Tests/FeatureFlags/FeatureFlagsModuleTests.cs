@@ -305,6 +305,21 @@ public class FeatureFlagsModuleTests
         }
     }
 
+    [Theory]
+    [InlineData(FeatureFlagsValueType.String, "fallback")]
+    [InlineData(FeatureFlagsValueType.Boolean, true)]
+    [InlineData(FeatureFlagsValueType.Integer, 42)]
+    [InlineData(FeatureFlagsValueType.Numeric, 1.5)]
+    public void Evaluate_WhenNoConfigurationYet_ReturnsTheDefaultValue(FeatureFlagsValueType type, object defaultValue)
+    {
+        using var module = CreateModule(CreateSettings(), new MockRcmSubscriptionManager());
+
+        var result = module.Evaluate("test-flag", type, defaultValue, "user-1", null);
+
+        result.Error.Should().Be("PROVIDER_NOT_READY");
+        result.Value.Should().Be(defaultValue);
+    }
+
     [Fact]
     public async Task InitializeAsync_OnTimeout_ReturnsWithoutThrowing()
     {
