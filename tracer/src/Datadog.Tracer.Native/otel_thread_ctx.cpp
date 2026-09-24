@@ -179,7 +179,7 @@ void DestroyThreadRecord(void* pThreadRecord)
     auto* pRecord = static_cast<OtelThreadContextRecord*>(pThreadRecord);
 
     // First invalidate the record so that a reader with a pointer to it,
-    // will see that it as invalid. Next, clear the discoverable slot before
+    // will see that it is invalid. Next, clear the discoverable slot before
     // returning the record to the free list
     pRecord->valid.store(0, std::memory_order_release);
     std::atomic_thread_fence(std::memory_order_seq_cst);

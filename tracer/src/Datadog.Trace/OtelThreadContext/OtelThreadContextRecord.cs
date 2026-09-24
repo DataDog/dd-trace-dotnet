@@ -90,8 +90,7 @@ internal static class OtelThreadContextRecord
 
         // A second publisher can acquire the record already attached to this OS thread. Invalidate it
         // before clearing so an external reader cannot observe a partially reset context as valid.
-        Volatile.Write(ref span[ValidOffset], Invalid);
-        Thread.MemoryBarrier();
+        Invalidate(address);
         span.Clear();
 
         span[AttrsDataOffset] = LocalRootSpanIdKeyIndex;
@@ -114,8 +113,7 @@ internal static class OtelThreadContextRecord
     {
         var record = AsSpan(address);
 
-        Volatile.Write(ref record[ValidOffset], Invalid);
-        Thread.MemoryBarrier();
+        Invalidate(address);
 
         var traceId = activeSpan.Context.TraceId128;
 
@@ -138,6 +136,7 @@ internal static class OtelThreadContextRecord
     public static void Invalidate(IntPtr address)
     {
         Volatile.Write(ref AsSpan(address)[ValidOffset], Invalid);
+        Thread.MemoryBarrier();
     }
 
     /// <summary>
@@ -147,7 +146,7 @@ internal static class OtelThreadContextRecord
     /// </summary>
     /// <remarks>
     /// We don't change the flag when the decision will be taken later because it will change the state of the span
-    /// for a very short period of time before the thread context is cleared. There is not chance that an out-of-process
+    /// for a very short period of time before the thread context is cleared. There is no chance that an out-of-process
     /// reader will get that decision. This is a limitation of the model unlike what is done in-process with the
     /// profiler to notify the endpoint.
     /// </remarks>

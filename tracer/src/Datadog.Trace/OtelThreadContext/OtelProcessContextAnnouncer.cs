@@ -76,7 +76,7 @@ internal static class OtelProcessContextAnnouncer
 
         try
         {
-            var payload = ThreadLocalMetadataPayload.Encode(new[] { ThreadLocalMetadataPayload.LocalRootSpanIdKey });
+            var payload = ThreadLocalMetadataPayload.Encode([ThreadLocalMetadataPayload.LocalRootSpanIdKey]);
 
             if (TryAnnounce(payload, out var failure))
             {
@@ -164,18 +164,20 @@ internal static class OtelProcessContextAnnouncer
             return false;
         }
 
+        // Left-pad because TryParseUInt64 requires exactly 16 characters
         Span<char> padded = stackalloc char[addressWidth];
-        padded.Fill('0');
-        value.CopyTo(padded.Slice(addressWidth - value.Length));
+        int paddingLength = addressWidth - value.Length;
+        padded.Slice(0, paddingLength).Fill('0');
+        value.CopyTo(padded.Slice(start: paddingLength));
         return HexString.TryParseUInt64(padded, out address);
     }
 
     // The names /proc/<pid>/maps gives the mapping, depending on which of memfd_create and
     // prctl(PR_SET_VMA_ANON_NAME) the publisher managed to use.
     private static bool HasMappingName(ReadOnlySpan<char> line)
-        => line.IndexOf("[anon_shmem:OTEL_CTX".AsSpan(), StringComparison.Ordinal) >= 0
-        || line.IndexOf("[anon:OTEL_CTX".AsSpan(), StringComparison.Ordinal) >= 0
-        || line.IndexOf("/memfd:OTEL_CTX".AsSpan(), StringComparison.Ordinal) >= 0;
+        => line.Contains("[anon_shmem:OTEL_CTX".AsSpan(), StringComparison.Ordinal)
+        || line.Contains("[anon:OTEL_CTX".AsSpan(), StringComparison.Ordinal)
+        || line.Contains("/memfd:OTEL_CTX".AsSpan(), StringComparison.Ordinal);
 
     /// <summary>
     /// Appends <paramref name="extraAttributes"/> to the payload the header points at, and republishes
@@ -269,6 +271,6 @@ internal static class OtelProcessContextAnnouncer
     {
         // Guards against a future libdatadog that emits the threadlocal.* keys itself, which would
         // otherwise leave two copies of each key in the payload.
-        return payload.IndexOf(ThreadLocalMetadataPayload.SchemaVersionAttributeUtf8) >= 0;
+        return payload.Contains(ThreadLocalMetadataPayload.SchemaVersionAttributeUtf8);
     }
 }

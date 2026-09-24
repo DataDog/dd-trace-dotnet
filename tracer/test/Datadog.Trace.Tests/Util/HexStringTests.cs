@@ -1,4 +1,4 @@
-﻿// <copyright file="HexStringTests.cs" company="Datadog">
+// <copyright file="HexStringTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -15,39 +15,39 @@ public class HexStringTests
 {
     public static TheoryData<byte[], bool, string> BytesToString => new()
     {
-        { [], /* lowerCase */ true,  string.Empty },
-        { [], /* lowerCase */ false, string.Empty },
-        { [0x01, 0x02, 0xab], /* lowerCase */ true,  "0102ab" },
-        { [0x01, 0x02, 0xab], /* lowerCase */ false, "0102AB" },
-        { [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00], /* lowerCase */ true,  "0000000000000000" },
-        { [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00], /* lowerCase */ false, "0000000000000000" },
-        { [0x12, 0x34, 0x56, 0x78, 0x90, 0xab, 0xcd, 0xef], /* lowerCase */ true,  "1234567890abcdef" },
-        { [0x12, 0x34, 0x56, 0x78, 0x90, 0xab, 0xcd, 0xef], /* lowerCase */ false, "1234567890ABCDEF" },
-        { [0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff], /* lowerCase */ true,  "ffffffffffffffff" },
-        { [0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff], /* lowerCase */ false, "FFFFFFFFFFFFFFFF" },
+        { [], /* isLowerCase */ true,  string.Empty },
+        { [], /* isLowerCase */ false, string.Empty },
+        { [0x01, 0x02, 0xab], /* isLowerCase */ true,  "0102ab" },
+        { [0x01, 0x02, 0xab], /* isLowerCase */ false, "0102AB" },
+        { [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00], /* isLowerCase */ true,  "0000000000000000" },
+        { [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00], /* isLowerCase */ false, "0000000000000000" },
+        { [0x12, 0x34, 0x56, 0x78, 0x90, 0xab, 0xcd, 0xef], /* isLowerCase */ true,  "1234567890abcdef" },
+        { [0x12, 0x34, 0x56, 0x78, 0x90, 0xab, 0xcd, 0xef], /* isLowerCase */ false, "1234567890ABCDEF" },
+        { [0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff], /* isLowerCase */ true,  "ffffffffffffffff" },
+        { [0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff], /* isLowerCase */ false, "FFFFFFFFFFFFFFFF" },
     };
 
     [Theory]
     [MemberData(nameof(BytesToString))]
-    public void ToHexChars(byte[] bytes, bool lowerCase, string expected)
+    public void ToHexChars(byte[] bytes, bool isLowerCase, string expected)
     {
         var actual = new char[bytes.Length * 2];
-        HexString.ToHexChars(new ArraySegment<byte>(bytes, offset: 0, count: bytes.Length), actual, lowerCase);
+        HexString.ToHexChars(new ArraySegment<byte>(bytes, offset: 0, count: bytes.Length), actual, isLowerCase);
 
         actual.Should().BeEquivalentTo(expected.ToCharArray());
     }
 
     [Theory]
-    [InlineData(0x0000000000000000, /* lowerCase */ true,  "0000000000000000")]
-    [InlineData(0x0000000000000001, /* lowerCase */ true,  "0000000000000001")]
-    [InlineData(0x1234567890abcdef, /* lowerCase */ true,  "1234567890abcdef")]
-    [InlineData(0x1234567890abcdef, /* lowerCase */ false, "1234567890ABCDEF")]
-    [InlineData(0xffffffffffffffff, /* lowerCase */ false, "FFFFFFFFFFFFFFFF")]
-    public void ToHexBytes(ulong value, bool lowerCase, string expected)
+    [InlineData(0x0000000000000000, /* isLowerCase */ true,  "0000000000000000")]
+    [InlineData(0x0000000000000001, /* isLowerCase */ true,  "0000000000000001")]
+    [InlineData(0x1234567890abcdef, /* isLowerCase */ true,  "1234567890abcdef")]
+    [InlineData(0x1234567890abcdef, /* isLowerCase */ false, "1234567890ABCDEF")]
+    [InlineData(0xffffffffffffffff, /* isLowerCase */ false, "FFFFFFFFFFFFFFFF")]
+    public void ToHexBytes(ulong value, bool isLowerCase, string expected)
     {
         var actual = new byte[sizeof(ulong) * 2];
 
-        HexString.ToHexBytes(value, actual, lowerCase);
+        HexString.ToHexBytes(value, actual, isLowerCase);
 
         Encoding.ASCII.GetString(actual).Should().Be(expected);
     }
@@ -65,35 +65,35 @@ public class HexStringTests
 
     [Theory]
     [MemberData(nameof(BytesToString))]
-    public void ToHexString_Bytes(byte[] bytes, bool lowerCase, string expected)
+    public void ToHexString_Bytes(byte[] bytes, bool isLowerCase, string expected)
     {
-        var actual = HexString.ToHexString(bytes, lowerCase);
+        var actual = HexString.ToHexString(bytes, isLowerCase);
         actual.Should().Be(expected);
     }
 
     [Theory]
-    [InlineData(0x0000000000000000, /* lowerCase */ true,  "0000000000000000")]
-    [InlineData(0x0000000000000000, /* lowerCase */ false, "0000000000000000")]
-    [InlineData(0x1234567890abcdef, /* lowerCase */ true,  "1234567890abcdef")]
-    [InlineData(0x1234567890abcdef, /* lowerCase */ false, "1234567890ABCDEF")]
-    [InlineData(0xffffffffffffffff, /* lowerCase */ true,  "ffffffffffffffff")]
-    [InlineData(0xffffffffffffffff, /* lowerCase */ false, "FFFFFFFFFFFFFFFF")]
-    public void ToHexString_UInt64(ulong value, bool lowerCase, string expected)
+    [InlineData(0x0000000000000000, /* isLowerCase */ true,  "0000000000000000")]
+    [InlineData(0x0000000000000000, /* isLowerCase */ false, "0000000000000000")]
+    [InlineData(0x1234567890abcdef, /* isLowerCase */ true,  "1234567890abcdef")]
+    [InlineData(0x1234567890abcdef, /* isLowerCase */ false, "1234567890ABCDEF")]
+    [InlineData(0xffffffffffffffff, /* isLowerCase */ true,  "ffffffffffffffff")]
+    [InlineData(0xffffffffffffffff, /* isLowerCase */ false, "FFFFFFFFFFFFFFFF")]
+    public void ToHexString_UInt64(ulong value, bool isLowerCase, string expected)
     {
-        var actual = HexString.ToHexString(value, lowerCase);
+        var actual = HexString.ToHexString(value, isLowerCase);
         actual.Should().Be(expected);
     }
 
     [Theory]
-    [InlineData(0x0000000000000000, 0x0000000000000000, /* lowerCase */ true,  "00000000000000000000000000000000")]
-    [InlineData(0x1234567890abcdef, 0x1122334455667788, /* lowerCase */ true,  "1234567890abcdef1122334455667788")]
-    [InlineData(0x1234567890abcdef, 0x1122334455667788, /* lowerCase */ false, "1234567890ABCDEF1122334455667788")]
-    [InlineData(0xffffffffffffffff, 0xffffffffffffffff, /* lowerCase */ true,  "ffffffffffffffffffffffffffffffff")]
-    [InlineData(0xffffffffffffffff, 0xffffffffffffffff, /* lowerCase */ false, "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF")]
-    public void ToHexString_TraceId128(ulong upper, ulong lower, bool lowerCase, string expected)
+    [InlineData(0x0000000000000000, 0x0000000000000000, /* isLowerCase */ true,  "00000000000000000000000000000000")]
+    [InlineData(0x1234567890abcdef, 0x1122334455667788, /* isLowerCase */ true,  "1234567890abcdef1122334455667788")]
+    [InlineData(0x1234567890abcdef, 0x1122334455667788, /* isLowerCase */ false, "1234567890ABCDEF1122334455667788")]
+    [InlineData(0xffffffffffffffff, 0xffffffffffffffff, /* isLowerCase */ true,  "ffffffffffffffffffffffffffffffff")]
+    [InlineData(0xffffffffffffffff, 0xffffffffffffffff, /* isLowerCase */ false, "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF")]
+    public void ToHexString_TraceId128(ulong upper, ulong lower, bool isLowerCase, string expected)
     {
         var traceId = new TraceId(upper, lower);
-        var actual = HexString.ToHexString(traceId, pad16To32: true, lowerCase);
+        var actual = HexString.ToHexString(traceId, pad16To32: true, isLowerCase);
         actual.Should().Be(expected);
     }
 
@@ -115,9 +115,9 @@ public class HexStringTests
 
     [Theory]
     [MemberData(nameof(BytesToString))]
-    public void TryParseBytes_ValidString(byte[] expected, bool lowerCase, string hex)
+    public void TryParseBytes_ValidString(byte[] expected, bool isLowerCase, string hex)
     {
-        _ = lowerCase; // analyzer will complain if not used
+        _ = isLowerCase; // analyzer will complain if not used
 
         var actual = new byte[hex.Length / 2];
         HexString.TryParseBytes(hex, actual).Should().BeTrue();
@@ -148,9 +148,9 @@ public class HexStringTests
 #if NETCOREAPP3_1_OR_GREATER
     [Theory]
     [MemberData(nameof(BytesToString))]
-    public void TryParseBytes_ValidSpan(byte[] expected, bool lowerCase, string hex)
+    public void TryParseBytes_ValidSpan(byte[] expected, bool isLowerCase, string hex)
     {
-        _ = lowerCase; // analyzer will complain if not used
+        _ = isLowerCase; // analyzer will complain if not used
 
         ReadOnlySpan<char> chars = hex;
         var actual = new byte[hex.Length / 2];
