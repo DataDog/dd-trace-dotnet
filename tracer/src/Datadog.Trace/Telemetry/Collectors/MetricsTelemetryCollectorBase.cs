@@ -58,7 +58,7 @@ internal abstract partial class MetricsTelemetryCollectorBase
     public void SetWafAndRulesVersion(string wafVersion, string? eventRulesVersion)
     {
         // Setting this an array so we can reuse it for multiple metrics
-        _wafAndRulesVersionTags = new[] { $"waf_version:{wafVersion}", $"event_rules_version:{(StringUtil.IsNullOrEmpty(eventRulesVersion) ? "unknown" : eventRulesVersion)}" };
+        _wafAndRulesVersionTags = new[] { $"waf_version:{wafVersion}", $"event_rules_version:{eventRulesVersion ?? "unknown"}" };
     }
 
     protected static AggregatedMetric[] GetPublicApiCountBuffer()

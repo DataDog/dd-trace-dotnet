@@ -606,7 +606,7 @@ namespace Datadog.Trace.AppSec
             {
                 if (_waf is null)
                 {
-                    TelemetryFactory.Metrics.SetWafAndRulesVersion(DdlibWafVersion!, _wafInitResult.RuleFileVersion);
+                    TelemetryFactory.Metrics.SetWafAndRulesVersion(DdlibWafVersion!, _wafInitResult.RuleFileVersion is { Length: > 0 } ruleFileVersion ? ruleFileVersion : null);
                 }
 
                 TelemetryFactory.Metrics.RecordCountWafInit(Telemetry.Metrics.MetricTags.WafStatus.Error);
