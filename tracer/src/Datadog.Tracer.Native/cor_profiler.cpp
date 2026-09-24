@@ -1015,6 +1015,21 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id, std::vector<ModuleID>& m
         RewriteIsManualInstrumentationOnly(module_metadata, module_id);
     }
 
+    {
+        // The first writable open expands the module's metadata tables in place, and the runtime reads them without
+        // locking. It must happen before the module can run code: later writable opens (ReJIT worker, debugger,
+        // IAST) can overlap with other threads using the module.
+        ComPtr<IUnknown> metadata_interfaces;
+        const auto hr = this->info_->GetModuleMetaData(module_id, ofRead | ofWrite, IID_IMetaDataImport2,
+                                                       metadata_interfaces.GetAddressOf());
+        if (FAILED(hr))
+        {
+            Logger::Warn("ModuleLoadFinished failed to get writable metadata for ", module_id, " ",
+                         module_info.assembly.name);
+            return S_OK;
+        }
+    }
+
     modules.push_back(module_id);
 
     bool searchForTraceAttribute = trace_annotations_enabled;
