@@ -285,7 +285,7 @@ namespace Datadog.Trace.AspNet
                 }
                 else
                 {
-                    var httpMethod = httpRequest.HttpMethod.ToUpperInvariant();
+                    var httpMethod = StringUtil.ToUpperInvariant(httpRequest.HttpMethod);
                     var url = httpContext.Request.GetUrlForSpan(tracer.TracerManager.QueryStringManager, tracer.Settings.BypassHttpRequestUrlCachingEnabled);
                     scope.Span.DecorateWebServerSpan(resourceName: resourceName, httpMethod, host, url, userAgent, tags);
                 }
