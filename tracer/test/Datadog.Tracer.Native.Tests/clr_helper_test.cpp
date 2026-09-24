@@ -387,7 +387,7 @@ namespace {
 // Resolves a TypeRef by name from the sample library, or defines one if it has none - ValueTask
 // does not exist in netstandard1.0, so there is nothing to find for those. Synthesised refs reuse
 // the resolution scope of a ref the assembly really has, so the token we hand to
-// GetRuntimeAsyncEffectiveReturnType resolves exactly like a real one.
+// TryGetRuntimeAsyncEffectiveReturnType resolves exactly like a real one.
 mdTypeRef GetOrDefineTypeRef(const ComPtr<IMetaDataImport2>& metadata_import,
                              const ComPtr<IMetaDataEmit2>& metadata_emit,
                              const shared::WSTRING& target_name) {
@@ -442,7 +442,7 @@ TEST_F(CLRHelperTest, RuntimeAsyncEffectiveReturnTypeForTaskIsVoid) {
   const auto bytes = SigBuilder().Byte(ELEMENT_TYPE_CLASS).Token(task).Bytes();
 
   TypeSignature effective{};
-  ASSERT_EQ(S_OK, GetRuntimeAsyncEffectiveReturnType(Sig(bytes), metadata_import_, effective));
+  ASSERT_TRUE(TryGetRuntimeAsyncEffectiveReturnType(Sig(bytes), metadata_import_, effective));
   ExpectEffectiveTypeIsVoid(effective);
 }
 
@@ -455,7 +455,7 @@ TEST_F(CLRHelperTest, RuntimeAsyncEffectiveReturnTypeForValueTaskIsVoid) {
   const auto bytes = SigBuilder().Byte(ELEMENT_TYPE_VALUETYPE).Token(value_task).Bytes();
 
   TypeSignature effective{};
-  ASSERT_EQ(S_OK, GetRuntimeAsyncEffectiveReturnType(Sig(bytes), metadata_import_, effective));
+  ASSERT_TRUE(TryGetRuntimeAsyncEffectiveReturnType(Sig(bytes), metadata_import_, effective));
   ExpectEffectiveTypeIsVoid(effective);
 }
 
@@ -473,7 +473,7 @@ TEST_F(CLRHelperTest, RuntimeAsyncEffectiveReturnTypeForGenericTaskIsTheTypeArgu
                          .Bytes();
 
   TypeSignature effective{};
-  ASSERT_EQ(S_OK, GetRuntimeAsyncEffectiveReturnType(Sig(bytes), metadata_import_, effective));
+  ASSERT_TRUE(TryGetRuntimeAsyncEffectiveReturnType(Sig(bytes), metadata_import_, effective));
 
   EXPECT_EQ(bytes.data(), effective.pbBase);
   EXPECT_EQ(bytes.size() - 1, effective.offset);
@@ -495,7 +495,7 @@ TEST_F(CLRHelperTest, RuntimeAsyncEffectiveReturnTypeForGenericValueTaskIsTheTyp
                          .Bytes();
 
   TypeSignature effective{};
-  ASSERT_EQ(S_OK, GetRuntimeAsyncEffectiveReturnType(Sig(bytes), metadata_import_, effective));
+  ASSERT_TRUE(TryGetRuntimeAsyncEffectiveReturnType(Sig(bytes), metadata_import_, effective));
 
   EXPECT_EQ(1u, effective.length);
   EXPECT_EQ(ELEMENT_TYPE_STRING, effective.pbBase[effective.offset]);
@@ -512,8 +512,8 @@ TEST_F(CLRHelperTest, RuntimeAsyncEffectiveReturnTypeForARealTaskOfTMethod) {
 
   // async Task<Biscuit<T1>> StayAndLayDown<TM1, TM2>(...)
   TypeSignature effective{};
-  ASSERT_EQ(S_OK, GetRuntimeAsyncEffectiveReturnType(function.method_signature.GetReturnValue(),
-                                                     metadata_import_, effective));
+  ASSERT_TRUE(TryGetRuntimeAsyncEffectiveReturnType(function.method_signature.GetReturnValue(),
+                                                    metadata_import_, effective));
 
   // The unwrapped Biscuit<T1>, itself a generic instantiation - so the slice length has to come
   // from a real type walk rather than from assuming a single byte.
@@ -538,8 +538,8 @@ TEST_F(CLRHelperTest, RuntimeAsyncEffectiveReturnTypeDeclinesRealNonTaskReturns)
     ASSERT_EQ(S_OK, function.method_signature.TryParse());
 
     TypeSignature effective{};
-    EXPECT_EQ(E_FAIL, GetRuntimeAsyncEffectiveReturnType(function.method_signature.GetReturnValue(),
-                                                         metadata_import_, effective))
+    EXPECT_FALSE(TryGetRuntimeAsyncEffectiveReturnType(function.method_signature.GetReturnValue(),
+                                                       metadata_import_, effective))
         << "Failed method is : " << shared::ToString(method_name) << std::endl;
   }
 }
@@ -559,7 +559,7 @@ TEST_F(CLRHelperTest, RuntimeAsyncEffectiveReturnTypeDeclinesOtherGenericTypes) 
                          .Bytes();
 
   TypeSignature effective{};
-  EXPECT_EQ(E_FAIL, GetRuntimeAsyncEffectiveReturnType(Sig(bytes), metadata_import_, effective));
+  EXPECT_FALSE(TryGetRuntimeAsyncEffectiveReturnType(Sig(bytes), metadata_import_, effective));
 }
 
 // The name alone is not enough: Task is a class and ValueTask is a struct, so the element type has
@@ -604,7 +604,7 @@ TEST_F(CLRHelperTest, RuntimeAsyncEffectiveReturnTypeDeclinesAMismatchedElementT
 
   for (size_t i = 0; i < mismatched.size(); i++) {
     TypeSignature effective{};
-    EXPECT_EQ(E_FAIL, GetRuntimeAsyncEffectiveReturnType(Sig(mismatched[i]), metadata_import_, effective))
+    EXPECT_FALSE(TryGetRuntimeAsyncEffectiveReturnType(Sig(mismatched[i]), metadata_import_, effective))
         << "Signature at index " << i << " should not have been recognised" << std::endl;
   }
 }

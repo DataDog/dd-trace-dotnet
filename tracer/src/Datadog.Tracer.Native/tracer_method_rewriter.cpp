@@ -128,19 +128,37 @@ HRESULT TracerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHa
     // method the two are the same, which is what makes this substitution a no-op elsewhere.
     if (isRuntimeAsync)
     {
-        TypeSignature effectiveRetFuncArg{};
-        if (!m_corProfiler->call_target_runtime_async_endmethod_available ||
-            FAILED(GetRuntimeAsyncEffectiveReturnType(retFuncArg, module_metadata.metadata_import,
-                                                      effectiveRetFuncArg)))
+        // Declining here means returning S_FALSE, so SetILFunctionBody is never called and ReJIT
+        // installs the original IL - the method simply runs uninstrumented. The two reasons for
+        // declining are logged at different levels on purpose; see below.
+        if (!m_corProfiler->call_target_runtime_async_endmethod_available)
         {
-            // Either we are paired with a Datadog.Trace.dll too old to have EndMethodRuntimeAsync, or
-            // the declared return is not one of the four shapes MethodImplAttributes.Async actually applies to.
-            // Decline rather than guess: a wrong guess emits the invalid IL we are avoiding.
-            // Returning S_FALSE means SetILFunctionBody is never called, so ReJIT installs the
-            // original IL and the method runs uninstrumented.
-            Logger::Warn("*** CallTarget_RewriterCallback() skipping method: cannot instrument "
-                         "runtime-async method. token=",
+            // We are paired with a Datadog.Trace.dll too old to have EndMethodRuntimeAsync. That is
+            // an expected consequence of a version conflict rather than a defect, so Warn.
+            Logger::Warn("*** CallTarget_RewriterCallback() skipping method: the loaded "
+                         "Datadog.Trace.dll has no CallTargetInvoker.EndMethodRuntimeAsync, so "
+                         "runtime-async methods cannot be instrumented. token=",
                          function_token, " caller_name=", caller->type.name, ".", caller->name, "()");
+            return S_FALSE;
+        }
+
+        TypeSignature effectiveRetFuncArg{};
+        if (!TryGetRuntimeAsyncEffectiveReturnType(retFuncArg, module_metadata.metadata_import, effectiveRetFuncArg))
+        {
+            // MethodImplAttributes.Async on a return type that is not one of the four shapes it
+            // applies to. Decline rather than guess: a wrong guess emits the invalid IL we are
+            // avoiding.
+            //
+            // Error, not Warn: this means we were asked to instrument a method and silently did
+            // not, which is a gap in our runtime-async support rather than an environmental
+            // problem. CheckBuildLogsForErrors scans the native logs of every integration-test job
+            // at Error level, so this turns "instrumentation quietly disappeared" into a red build
+            // once .NET 11 - whose framework assemblies are compiled runtime-async - is in the
+            // test matrix.
+            Logger::Error("*** CallTarget_RewriterCallback() skipping method: unsupported "
+                          "runtime-async return type. token=",
+                          function_token, " caller_name=", caller->type.name, ".", caller->name,
+                          "() Signature=", caller->method_signature.str());
             return S_FALSE;
         }
 

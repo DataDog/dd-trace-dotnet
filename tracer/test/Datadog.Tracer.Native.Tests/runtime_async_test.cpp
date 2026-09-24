@@ -41,7 +41,7 @@ TEST(RuntimeAsyncTest, ParsesNonGenericTaskShape)
     bool isValueTypeShape = true;
     TypeSignature typeArg{};
 
-    EXPECT_EQ(S_OK, ParseTaskLikeReturnShape(Sig(bytes), openTypeToken, isGenericInst, isValueTypeShape, typeArg));
+    EXPECT_TRUE(ParseTaskLikeReturnShape(Sig(bytes), openTypeToken, isGenericInst, isValueTypeShape, typeArg));
     EXPECT_EQ(kOuterTypeToken, openTypeToken);
     EXPECT_FALSE(isGenericInst);
     EXPECT_FALSE(isValueTypeShape);
@@ -58,7 +58,7 @@ TEST(RuntimeAsyncTest, ParsesNonGenericValueTaskShape)
     bool isValueTypeShape = false;
     TypeSignature typeArg{};
 
-    EXPECT_EQ(S_OK, ParseTaskLikeReturnShape(Sig(bytes), openTypeToken, isGenericInst, isValueTypeShape, typeArg));
+    EXPECT_TRUE(ParseTaskLikeReturnShape(Sig(bytes), openTypeToken, isGenericInst, isValueTypeShape, typeArg));
     EXPECT_EQ(kOuterTypeToken, openTypeToken);
     EXPECT_FALSE(isGenericInst);
     EXPECT_TRUE(isValueTypeShape);
@@ -80,7 +80,7 @@ TEST(RuntimeAsyncTest, ParsesGenericTaskShapeAndSlicesTheTypeArgument)
     bool isValueTypeShape = true;
     TypeSignature typeArg{};
 
-    EXPECT_EQ(S_OK, ParseTaskLikeReturnShape(Sig(bytes), openTypeToken, isGenericInst, isValueTypeShape, typeArg));
+    EXPECT_TRUE(ParseTaskLikeReturnShape(Sig(bytes), openTypeToken, isGenericInst, isValueTypeShape, typeArg));
     EXPECT_EQ(kOuterTypeToken, openTypeToken);
     EXPECT_TRUE(isGenericInst);
     EXPECT_FALSE(isValueTypeShape);
@@ -108,7 +108,7 @@ TEST(RuntimeAsyncTest, ParsesGenericValueTaskOverAMethodGenericParameter)
     bool isValueTypeShape = false;
     TypeSignature typeArg{};
 
-    EXPECT_EQ(S_OK, ParseTaskLikeReturnShape(Sig(bytes), openTypeToken, isGenericInst, isValueTypeShape, typeArg));
+    EXPECT_TRUE(ParseTaskLikeReturnShape(Sig(bytes), openTypeToken, isGenericInst, isValueTypeShape, typeArg));
     EXPECT_TRUE(isGenericInst);
     EXPECT_TRUE(isValueTypeShape);
     EXPECT_EQ(2u, typeArg.length);
@@ -136,7 +136,7 @@ TEST(RuntimeAsyncTest, ParsesNestedGenericTypeArgument)
     bool isValueTypeShape = true;
     TypeSignature typeArg{};
 
-    EXPECT_EQ(S_OK, ParseTaskLikeReturnShape(Sig(bytes), openTypeToken, isGenericInst, isValueTypeShape, typeArg));
+    EXPECT_TRUE(ParseTaskLikeReturnShape(Sig(bytes), openTypeToken, isGenericInst, isValueTypeShape, typeArg));
     EXPECT_EQ(kOuterTypeToken, openTypeToken);
     EXPECT_TRUE(isGenericInst);
 
@@ -166,8 +166,8 @@ TEST(RuntimeAsyncTest, TypeArgumentOffsetIsRelativeToTheWholeBlob)
     bool isValueTypeShape = false;
     TypeSignature typeArg{};
 
-    EXPECT_EQ(S_OK, ParseTaskLikeReturnShape(Sig(bytes, fillerLength), openTypeToken, isGenericInst, isValueTypeShape,
-                                             typeArg));
+    EXPECT_TRUE(ParseTaskLikeReturnShape(Sig(bytes, fillerLength), openTypeToken, isGenericInst, isValueTypeShape,
+                                         typeArg));
     EXPECT_TRUE(isGenericInst);
     EXPECT_EQ(bytes.data(), typeArg.pbBase);
     EXPECT_EQ(bytes.size() - 1, typeArg.offset);
@@ -208,8 +208,8 @@ TEST(RuntimeAsyncTest, RejectsShapesThatAreNotTaskLike)
         bool isValueTypeShape = false;
         TypeSignature typeArg{};
 
-        EXPECT_EQ(E_FAIL, ParseTaskLikeReturnShape(Sig(rejected[i]), openTypeToken, isGenericInst, isValueTypeShape,
-                                                   typeArg))
+        EXPECT_FALSE(ParseTaskLikeReturnShape(Sig(rejected[i]), openTypeToken, isGenericInst, isValueTypeShape,
+                                              typeArg))
             << "Signature at index " << i << " should not have been recognised" << std::endl;
     }
 }
@@ -221,10 +221,10 @@ TEST(RuntimeAsyncTest, RejectsEmptySignatures)
     bool isValueTypeShape = false;
     TypeSignature typeArg{};
 
-    EXPECT_EQ(E_FAIL, ParseTaskLikeReturnShape(TypeSignature{}, openTypeToken, isGenericInst, isValueTypeShape,
-                                               typeArg));
+    EXPECT_FALSE(ParseTaskLikeReturnShape(TypeSignature{}, openTypeToken, isGenericInst, isValueTypeShape,
+                                          typeArg));
 
     const std::vector<COR_SIGNATURE> bytes = {ELEMENT_TYPE_CLASS};
-    EXPECT_EQ(E_FAIL, ParseTaskLikeReturnShape(TypeSignature{0, 0, bytes.data()}, openTypeToken, isGenericInst,
-                                               isValueTypeShape, typeArg));
+    EXPECT_FALSE(ParseTaskLikeReturnShape(TypeSignature{0, 0, bytes.data()}, openTypeToken, isGenericInst,
+                                          isValueTypeShape, typeArg));
 }

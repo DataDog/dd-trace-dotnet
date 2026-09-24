@@ -35,8 +35,8 @@ namespace
     }
 } // namespace
 
-HRESULT ParseTaskLikeReturnShape(const TypeSignature& declared, mdToken& openTypeToken, bool& isGenericInst,
-                                 bool& isValueTypeShape, TypeSignature& typeArg)
+bool ParseTaskLikeReturnShape(const TypeSignature& declared, mdToken& openTypeToken, bool& isGenericInst,
+                              bool& isValueTypeShape, TypeSignature& typeArg)
 {
     openTypeToken = mdTokenNil;
     isGenericInst = false;
@@ -45,7 +45,7 @@ HRESULT ParseTaskLikeReturnShape(const TypeSignature& declared, mdToken& openTyp
 
     if (declared.pbBase == nullptr || declared.length == 0)
     {
-        return E_FAIL;
+        return false;
     }
 
     PCCOR_SIGNATURE const start = &declared.pbBase[declared.offset];
@@ -55,7 +55,7 @@ HRESULT ParseTaskLikeReturnShape(const TypeSignature& declared, mdToken& openTyp
     unsigned char elementType;
     if (!ParseByte(pbCur, end, &elementType))
     {
-        return E_FAIL;
+        return false;
     }
 
     if (elementType == ELEMENT_TYPE_GENERICINST)
@@ -63,12 +63,12 @@ HRESULT ParseTaskLikeReturnShape(const TypeSignature& declared, mdToken& openTyp
         unsigned char genericElementType;
         if (!ParseByte(pbCur, end, &genericElementType))
         {
-            return E_FAIL;
+            return false;
         }
 
         if (genericElementType != ELEMENT_TYPE_CLASS && genericElementType != ELEMENT_TYPE_VALUETYPE)
         {
-            return E_FAIL;
+            return false;
         }
 
         // Using the unbounded CorSigUncompressToken overload because MethodSignature::TryParse has
@@ -77,33 +77,33 @@ HRESULT ParseTaskLikeReturnShape(const TypeSignature& declared, mdToken& openTyp
         const auto tokenLength = CorSigUncompressToken(pbCur, &openTypeToken);
         if (tokenLength == static_cast<ULONG>(-1))
         {
-            return E_FAIL;
+            return false;
         }
         pbCur += tokenLength;
 
         unsigned genericArgCount = 0;
         if (!ParseNumber(pbCur, end, &genericArgCount))
         {
-            return E_FAIL;
+            return false;
         }
 
         // Task`1 and ValueTask`1 take exactly one argument. Anything else is not a shape we know.
         if (genericArgCount != 1)
         {
-            return E_FAIL;
+            return false;
         }
 
         PCCOR_SIGNATURE const typeArgStart = pbCur;
         if (!ParseType(pbCur, end))
         {
-            return E_FAIL;
+            return false;
         }
 
         isGenericInst = true;
         isValueTypeShape = genericElementType == ELEMENT_TYPE_VALUETYPE;
         typeArg = TypeSignature{declared.offset + static_cast<ULONG>(typeArgStart - start),
                                 static_cast<ULONG>(pbCur - typeArgStart), declared.pbBase};
-        return S_OK;
+        return true;
     }
 
     if (elementType == ELEMENT_TYPE_CLASS || elementType == ELEMENT_TYPE_VALUETYPE)
@@ -112,17 +112,17 @@ HRESULT ParseTaskLikeReturnShape(const TypeSignature& declared, mdToken& openTyp
         const auto tokenLength = CorSigUncompressToken(pbCur, &openTypeToken);
         if (tokenLength == static_cast<ULONG>(-1))
         {
-            return E_FAIL;
+            return false;
         }
 
         isValueTypeShape = elementType == ELEMENT_TYPE_VALUETYPE;
-        return S_OK;
+        return true;
     }
 
-    return E_FAIL;
+    return false;
 }
 
-HRESULT GetRuntimeAsyncEffectiveReturnType(const TypeSignature& declared,
+bool TryGetRuntimeAsyncEffectiveReturnType(const TypeSignature& declared,
                                            const ComPtr<IMetaDataImport2>& metadata_import, TypeSignature& effective)
 {
     effective = {};
@@ -132,21 +132,20 @@ HRESULT GetRuntimeAsyncEffectiveReturnType(const TypeSignature& declared,
     bool isValueTypeShape = false;
     TypeSignature typeArg{};
 
-    const auto hr = ParseTaskLikeReturnShape(declared, openTypeToken, isGenericInst, isValueTypeShape, typeArg);
-    if (FAILED(hr))
+    if (!ParseTaskLikeReturnShape(declared, openTypeToken, isGenericInst, isValueTypeShape, typeArg))
     {
-        return hr;
+        return false;
     }
 
     const auto typeInfo = GetTypeInfo(metadata_import, openTypeToken);
     if (!typeInfo.IsValid())
     {
-        return E_FAIL;
+        return false;
     }
 
     if (!IsTaskLike(typeInfo.name, isGenericInst, isValueTypeShape))
     {
-        return E_FAIL;
+        return false;
     }
 
     // Task<T>/ValueTask<T> leave the type argument on the stack at `ret`; Task/ValueTask leave
@@ -154,7 +153,7 @@ HRESULT GetRuntimeAsyncEffectiveReturnType(const TypeSignature& declared,
     effective = isGenericInst
                     ? typeArg
                     : TypeSignature{0, static_cast<ULONG>(sizeof(kVoidReturnSignature)), kVoidReturnSignature};
-    return S_OK;
+    return true;
 }
 
 } // namespace trace
