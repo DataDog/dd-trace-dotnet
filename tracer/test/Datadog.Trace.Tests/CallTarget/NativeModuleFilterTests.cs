@@ -44,10 +44,33 @@ namespace Datadog.Trace.Tests.CallTarget
             skippedTargets.Should().BeEmpty("the native tracer never instruments modules skipped by dd_profiler_constants.h; add these assemblies to include_assemblies");
         }
 
+        [Fact]
+        public void SkippedAssembliesAreExcludedByIast()
+        {
+            var constants = File.ReadAllText(Path.Combine(NativeSourceDirectory, "dd_profiler_constants.h"));
+            var iastExcludeFilters = GetStringArray(File.ReadAllText(Path.Combine(NativeSourceDirectory, "iast", "dataflow.cpp")), "_assemblyExcludeFilters");
+            var iastExcludePrefixes = iastExcludeFilters
+                                     .Where(filter => filter.EndsWith("*"))
+                                     .Select(filter => filter.Substring(0, filter.Length - 1))
+                                     .ToArray();
+
+            // Known gaps: IAST doesn't exclude these skipped assemblies.
+            string[] knownExceptions = ["Anonymously Hosted DynamicMethods Assembly", "ISymWrapper"];
+
+            var notExcluded = GetStringArray(constants, "skip_assemblies")
+                             .Where(name => !knownExceptions.Contains(name) && !iastExcludeFilters.Contains(name) && !MatchesIastPrefix(name))
+                             .Concat(GetStringArray(constants, "skip_assembly_prefixes").Where(prefix => !MatchesIastPrefix(prefix)))
+                             .ToList();
+
+            notExcluded.Should().BeEmpty("IAST can rewrite modules the native tracer skips, but skipped modules don't get the Datadog.Trace reference from GetAssemblyReferences; exclude them in iast/dataflow.cpp or don't skip them");
+
+            bool MatchesIastPrefix(string name) => iastExcludePrefixes.Any(prefix => name.StartsWith(prefix, StringComparison.Ordinal));
+        }
+
         private static string[] GetStringArray(string source, string name)
         {
-            var array = Regex.Match(source, $@"\b{name}\[\]\s*\{{(?<body>[^}}]*)\}}");
-            array.Success.Should().BeTrue($"dd_profiler_constants.h should define {name}");
+            var array = Regex.Match(source, $@"\b{name}(\[\])?\s*=?\s*\{{(?<body>[^}}]*)\}}");
+            array.Success.Should().BeTrue($"{name} should be defined");
 
             return Regex.Matches(array.Groups["body"].Value, @"WStr\(""(?<value>[^""]*)""\)")
                         .Cast<Match>()

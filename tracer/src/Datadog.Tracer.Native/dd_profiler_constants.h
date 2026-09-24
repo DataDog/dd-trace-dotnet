@@ -103,8 +103,6 @@ const shared::WSTRING skip_assemblies[]{WStr("mscorlib"),
                                 WStr("Anonymously Hosted DynamicMethods Assembly"),
                                 WStr("Datadog.AutoInstrumentation.ManagedLoader"),
                                 WStr("ISymWrapper"),
-                                WStr("Accessibility"),
-                                WStr("CustomMarshalers"),
                                 WStr("Microsoft.AspNetCore"),
                                 WStr("Microsoft.JScript"),
                                 WStr("Microsoft.JSInterop"),
@@ -113,9 +111,7 @@ const shared::WSTRING skip_assemblies[]{WStr("mscorlib"),
                                 WStr("Microsoft.VisualBasic"),
                                 WStr("Microsoft.VisualBasic.Activities.Compiler"),
                                 WStr("Microsoft.VisualBasic.Core"),
-                                WStr("NGenTaskLauncher"),
                                 WStr("SMDiagnostics"),
-                                WStr("sysglobl"),
                                 WStr("System.Activities"),
                                 WStr("System.Activities.DurableInstancing"),
                                 WStr("System.Activities.Presentation"),
@@ -158,8 +154,7 @@ const shared::WSTRING skip_assemblies[]{WStr("mscorlib"),
                                 WStr("System.Windows.Forms.DataVisualization"),
                                 WStr("System.WorkflowServices"),
                                 WStr("System.Xaml"),
-                                WStr("System.Xaml.Hosting"),
-                                WStr("WindowsBase")};
+                                WStr("System.Xaml.Hosting")};
 
 const shared::WSTRING mscorlib_assemblyName = WStr("mscorlib");
 const shared::WSTRING system_private_corelib_assemblyName = WStr("System.Private.CoreLib");
