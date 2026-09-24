@@ -1479,7 +1479,6 @@ partial class Build
                             .SetConfiguration(BuildConfiguration)
                             .SetTargetPlatformAnyCPU()
                             .SetDDEnvironmentVariables("dd-tracer-dotnet")
-                            .SetProcessEnvironmentVariable("DD_INSTRUMENTATION_TELEMETRY_ENABLED", "false")
                             .SetFramework(targetFramework)
                             .EnableCrashDumps()
                             .SetLogsDirectory(TestLogsDirectory)
