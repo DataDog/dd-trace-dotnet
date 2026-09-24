@@ -36,6 +36,8 @@ workflow:
 
 variables:
   MACROBENCHMARKS_CI_IMAGE: 486234852809.dkr.ecr.us-east-1.amazonaws.com/ci/benchmarking-platform:dotnet-throughput-8
+  # See https://datadoghq.atlassian.net/wiki/spaces/APMINT/pages/7223313012/Flaky+Benchmarks+Monitoring for more details.
+  FLAKY_BENCHMARKS_REGEX: ""
 
 check-azure-pipeline:
   stage: check-azure-pipeline
