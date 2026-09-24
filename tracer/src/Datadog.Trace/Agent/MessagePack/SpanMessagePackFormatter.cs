@@ -625,28 +625,29 @@ namespace Datadog.Trace.Agent.MessagePack
                 offset += MessagePackBinary.WriteString(ref bytes, offset, serviceNameSource);
             }
 
-            // Process tags will be sent only once per buffer/payload (one payload can contain many chunks from different traces)
-            if (model.IsFirstSpanInChunk && model.TraceChunk.IsFirstChunkInPayload && model.TraceChunk.ProcessTags is not null)
-            {
-                var processTagsRawBytes = MessagePackStringCache.GetProcessTagsBytes(model.TraceChunk.ProcessTags.SerializedTags);
-
-                if (processTagsRawBytes is not null)
-                {
-                    count++;
-                    offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, ProcessTagsNameBytes);
-                    offset += MessagePackBinary.WriteRaw(ref bytes, offset, processTagsRawBytes);
-                }
-            }
-
-            // The OTLP export marker is sent only once per buffer/payload, like the process tags above.
-            // Reaching this formatter means the payload uses the native Datadog encoding, so the value
-            // is always "false" here. The OTLP serializers write "true" as a resource attribute instead
-            // (see OtlpMapper.EmitResourceAttributesFromTraceChunk).
+            // Payload-scoped tags are sent only once per buffer/payload
+            // (one payload can contain many chunks from different traces)
             if (model.IsFirstSpanInChunk && model.TraceChunk.IsFirstChunkInPayload)
             {
+                // Reaching this formatter means the payload uses the native Datadog encoding, so the
+                // export marker is always "false" here. The OTLP serializers write "true" as a resource
+                // attribute instead (see OtlpMapper.EmitResourceAttributesFromTraceChunk). Written
+                // unconditionally: an absent marker is indistinguishable from an older tracer at intake.
                 count++;
                 offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, SdkOtlpExportNameBytes);
                 offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, SdkOtlpExportValueBytes);
+
+                if (model.TraceChunk.ProcessTags is not null)
+                {
+                    var processTagsRawBytes = MessagePackStringCache.GetProcessTagsBytes(model.TraceChunk.ProcessTags.SerializedTags);
+
+                    if (processTagsRawBytes is not null)
+                    {
+                        count++;
+                        offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, ProcessTagsNameBytes);
+                        offset += MessagePackBinary.WriteRaw(ref bytes, offset, processTagsRawBytes);
+                    }
+                }
             }
 
             // SCI tags will be sent only once per trace

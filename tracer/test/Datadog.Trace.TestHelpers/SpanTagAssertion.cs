@@ -25,7 +25,6 @@ namespace Datadog.Trace.TestHelpers
             .IsPresent("env")
             .IsOptional("runtime-id") // TODO: Make runtime-id required on all spans, per our span attributes push
             .IsOptional("language")   // TODO: Make language required on all spans, per our span attributes push
-            .IsOptional("_dd.sdk.otlp_export") // export-mode marker, written once per payload by the serializer in use
             .IsOptional("version")
             .IsOptional("events")
             .IsOptional("_dd.p.dm")   // "decision maker", but contains the sampling mechanism
@@ -36,7 +35,8 @@ namespace Datadog.Trace.TestHelpers
             .IsOptional("error.type")
             .IsOptional("error.stack")
             .IsOptional("_dd.git.repository_url")
-            .IsOptional("_dd.git.commit.sha");
+            .IsOptional("_dd.git.commit.sha")
+            .IsOptional("_dd.sdk.otlp_export"); // export-mode marker, written once per payload by the serializer in use
 
         public static void DefaultMetricAssertions(SpanTagAssertion<T> s) => s
             .IsOptional("_dd.tracer_kr")
