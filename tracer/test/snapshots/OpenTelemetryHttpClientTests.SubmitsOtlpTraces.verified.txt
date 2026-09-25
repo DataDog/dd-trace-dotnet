@@ -1,4 +1,4 @@
-{
+﻿{
   "resourceSpans": [
     {
       "resource": {
@@ -55,6 +55,18 @@
             "key": "runtime-id",
             "value": {
               "stringValue": "Guid_1"
+            }
+          },
+          {
+            "key": "_dd.sdk.otlp_export",
+            "value": {
+              "stringValue": "true"
+            }
+          },
+          {
+            "key": "datadog.sdk.semantics",
+            "value": {
+              "stringValue": "datadog"
             }
           }
         ]
