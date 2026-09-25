@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'An already released version of .NET APM, without the "v" suffix, e.g. "3.3.1"'
+        description: 'An already released version of .NET APM, without the "v" suffix, e.g. "3.3.1" or "3.3.1-prerelease"'
         required: true
 
 jobs:
@@ -13,6 +13,7 @@ jobs:
     environment: publish-debug-symbols-env
     env:
       ARTIFACTS_PATH: ${{ github.workspace }}/artifacts
+      VERSION: ${{ github.event.inputs.version }}
     permissions:
       contents: read # actions/checkout uses the workflow token to clone
       id-token: write # required for dd-sts OIDC token exchange (used by publish-debug-symbols)
@@ -21,16 +22,23 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
+      - name: Validate version input
+        shell: bash
+        run: |
+          if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-prerelease)?$ ]]; then
+            echo "::error::Invalid version '$VERSION'. Expected a released version without the 'v' prefix, e.g. 3.3.1 or 3.3.1-prerelease"
+            exit 1
+          fi
       - name: Download Linux native symbols v${{ github.event.inputs.version }}
         shell: bash
         run: |
-          curl --create-dirs -s -OL --output-dir "$ARTIFACTS_PATH" https://github.com/DataDog/dd-trace-dotnet/releases/download/v${{ github.event.inputs.version }}/linux-native-symbols.tar.gz
+          curl --create-dirs -fs -OL --output-dir "$ARTIFACTS_PATH" "https://github.com/DataDog/dd-trace-dotnet/releases/download/v$VERSION/linux-native-symbols.tar.gz"
       - name: Download Windows native symbols v${{ github.event.inputs.version }}
         shell: bash
         run: |
-          curl --create-dirs -s -OL --output-dir "$ARTIFACTS_PATH" https://github.com/DataDog/dd-trace-dotnet/releases/download/v${{ github.event.inputs.version }}/windows-native-symbols.zip
+          curl --create-dirs -fs -OL --output-dir "$ARTIFACTS_PATH" "https://github.com/DataDog/dd-trace-dotnet/releases/download/v$VERSION/windows-native-symbols.zip"
           # datadog-ci needs the dll to check if we can send the PDB files
-          curl --create-dirs -s -OL --output-dir "$ARTIFACTS_PATH" https://github.com/DataDog/dd-trace-dotnet/releases/download/v${{ github.event.inputs.version }}/windows-tracer-home.zip
+          curl --create-dirs -fs -OL --output-dir "$ARTIFACTS_PATH" "https://github.com/DataDog/dd-trace-dotnet/releases/download/v$VERSION/windows-tracer-home.zip"
 
       - name: 'Push debug symbols to datadog'
         uses: ./.github/actions/publish-debug-symbols
