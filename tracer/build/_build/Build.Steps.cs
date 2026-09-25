@@ -793,8 +793,7 @@ partial class Build
             {
                 Logger.Information("Copying native files for project {ProjectName}", projectName);
                 var project = Solution.GetProject(projectName);
-                var testDir = project!.Directory;
-                var frameworks = project.GetTargetFrameworks();
+                var frameworks = project.TryGetTargetFrameworks();
 
                 if (Framework is not null)
                 {
@@ -834,7 +833,7 @@ partial class Build
                 .Executes(async () =>
                 {
                     var project = Solution.GetProject(Projects.AppSecUnitTests);
-                    var frameworks = project.GetTargetFrameworks();
+                    var frameworks = project.TryGetTargetFrameworks();
                     if (IsGitlab && Framework is not null)
                     {
                         frameworks = frameworks.Where(x => x == Framework).ToList();
@@ -1039,7 +1038,7 @@ partial class Build
         {
             // Build the fleet installer project
             var project = SourceDirectory / "Datadog.FleetInstaller" / "Datadog.FleetInstaller.csproj";
-            var tfms = Solution.GetProject(project).GetTargetFrameworks();
+            var tfms = Solution.GetProject(project).TryGetTargetFrameworks();
             // we should only have a single tfm for fleet installer
             if (tfms.Count != 1)
             {
@@ -1490,7 +1489,7 @@ partial class Build
             if (IsGitlab && Framework is not null)
             {
                 testProjects = testProjects
-                              .Where(path => Solution.GetProject(path).GetTargetFrameworks().Contains(Framework))
+                              .Where(path => Solution.GetProject(path).TryGetTargetFrameworks().Contains(Framework))
                               .ToList();
             }
 
@@ -1508,7 +1507,7 @@ partial class Build
         {
             var testProjects = TracerDirectory.GlobFiles("test/**/*.Tests.csproj")
                 .Select(x => Solution.GetProject(x))
-                .Where(project => !IsGitlab || Framework is null || project.GetTargetFrameworks().Contains(Framework))
+                .Where(project => !IsGitlab || Framework is null || project.TryGetTargetFrameworks().Contains(Framework))
                 .ToList();
 
             testProjects.ForEach(EnsureResultsDirectory);
@@ -1719,7 +1718,7 @@ partial class Build
             var projects = TracerDirectory
                     .GlobFiles("test/*.IntegrationTests/*.csproj")
                     .Where(path => !((string)path).Contains(Projects.DebuggerIntegrationTests))
-                    .Where(project => Solution.GetProject(project).GetTargetFrameworks().Contains(Framework));
+                    .Where(project => Solution.GetProject(project).TryGetTargetFrameworks()?.Contains(Framework) == true);
 
             if (!IsWin)
             {
@@ -2061,7 +2060,7 @@ partial class Build
             {
                 // filter out fleet installer tests unless we're on netframework and x64
                 var parallelJobs = ParallelIntegrationTests
-                   .Where(project => !IsGitlab || project.GetTargetFrameworks().Contains(Framework))
+                   .Where(project => !IsGitlab || project.TryGetTargetFrameworks().Contains(Framework))
                    .Where(project => project.Name switch
                     {
                         Projects.FleetInstallerTests => Framework == TargetFramework.NET48 && TargetPlatform == MSBuildTargetPlatform.x64,
@@ -2069,7 +2068,7 @@ partial class Build
                     });
 
                 var clrProfilerIntegrationTests = ClrProfilerIntegrationTests
-                                                  .Where(project => !IsGitlab || project.GetTargetFrameworks().Contains(Framework));
+                                                  .Where(project => !IsGitlab || project.TryGetTargetFrameworks().Contains(Framework));
 
                 DotNetTest(config => config
                     .SetDotnetPath(TargetPlatform)
@@ -2377,7 +2376,7 @@ partial class Build
         .Executes(() =>
         {
             var project = Solution.GetProject(Projects.DdDotnetIntegrationTests);
-            if (IsGitlab && !project.GetTargetFrameworks().Contains(Framework))
+            if (IsGitlab && !project.TryGetTargetFrameworks().Contains(Framework))
             {
                 Logger.Information("Skipping {Project} because it does not target {Framework}", project.Name, Framework);
                 return;

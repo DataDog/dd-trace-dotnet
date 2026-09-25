@@ -51,6 +51,10 @@ internal sealed class FfeProduct
                     var serverConfigFile = new NamedRawFile(ffeConfig.Path, ffeConfig.Contents).Deserialize<ServerConfiguration>();
                     if (serverConfigFile.TypedFile is not null)
                     {
+                        // A modified file arrives under the path it already has, and never in the
+                        // removed set. The configurations are merged, and a merge cannot delete a
+                        // flag, so a stale version left here keeps serving flags the new one dropped.
+                        _serverConfigurations.RemoveAll(x => x.Key == ffeConfig.Path.Path);
                         _serverConfigurations.Add(new KeyValuePair<string, ServerConfiguration>(ffeConfig.Path.Path, serverConfigFile.TypedFile));
                         res.Add(ApplyDetails.FromOk(ffeConfig.Path.Path));
                         apply = true;

@@ -703,9 +703,15 @@ partial class Build
           {
               var fileName = Path.GetFileNameWithoutExtension(source);
 
-              Logger.Information("Difference found in " + fileName);
+              // A brand new snapshot has no verified file yet, so diff against an empty
+              // string to show the whole thing as an addition, instead of throwing and
+              // hiding the diffs for every other snapshot in the run
+              var verified = source.ToString().Replace("received", "verified");
+              var hasVerified = File.Exists(verified);
+
+              Logger.Information((hasVerified ? "Difference found in " : "New snapshot file ") + fileName);
               var dmp = new diff_match_patch();
-              var diff = dmp.diff_main(File.ReadAllText(source.ToString().Replace("received", "verified")), File.ReadAllText(source));
+              var diff = dmp.diff_main(hasVerified ? File.ReadAllText(verified) : string.Empty, File.ReadAllText(source));
               dmp.diff_cleanupSemantic(diff);
 
               DiffHelper.PrintDiff(diff);
@@ -1065,6 +1071,17 @@ partial class Build
         var json = JsonDocument.Parse(File.ReadAllText(globalJsonPath));
         return json.RootElement.GetProperty("sdk").GetProperty("version").GetString()
             ?? throw new InvalidOperationException("Could not read sdk.version from global.json");
+    }
+
+    // MCR only publishes prerelease SDK tags trimmed to "<major>.<minor>.<patch>-<label>.<n>"
+    // (e.g. "11.0.100-rc.1"), never the full global.json version with its trailing build and
+    // revision segments (e.g. "11.0.100-rc.1.26425.128"), so drop anything past the fourth
+    // dot-separated segment when resolving the mcr.microsoft.com/dotnet/sdk tag.
+    static string GetDotnetSdkImageTag(AbsolutePath rootDirectory)
+    {
+        var version = GetDotnetSdkVersion(rootDirectory);
+        var segments = version.Split('.');
+        return segments.Length > 4 ? string.Join(".", segments[..4]) : version;
     }
 
     static string GetSha512Hash(string filePath)

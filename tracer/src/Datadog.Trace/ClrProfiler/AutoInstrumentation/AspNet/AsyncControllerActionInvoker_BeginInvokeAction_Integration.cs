@@ -54,15 +54,18 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
         /// <returns>Calltarget state value</returns>
         internal static CallTargetState OnMethodBegin<TTarget, TContext>(TTarget instance, TContext controllerContext, string actionName, AsyncCallback callback, object state)
         {
-            Scope scope = null;
-
             try
             {
                 if (HttpContext.Current != null)
                 {
                     var duckedControllerContext = controllerContext.DuckCast<ControllerContextStruct>();
-                    scope = AspNetMvcIntegration.CreateScope(duckedControllerContext);
-                    SharedItems.PushScope(HttpContext.Current, AspNetMvcIntegration.HttpContextKey, scope);
+                    Scope scope = AspNetMvcIntegration.CreateScope(duckedControllerContext);
+
+                    if (scope != null)
+                    {
+                        SharedItems.PushScope(HttpContext.Current, AspNetMvcIntegration.HttpContextKey, scope);
+                        return new CallTargetState(scope);
+                    }
                 }
             }
             catch (Exception ex)
@@ -70,12 +73,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                 Log.Error(ex, "Error instrumenting method {MethodName}", "System.Web.Mvc.Async.AsyncControllerActionInvoker.BeginInvokeAction()");
             }
 
-            if (scope == null)
-            {
-                return CallTargetState.GetDefault();
-            }
-
-            return new CallTargetState(scope);
+            return CallTargetState.GetDefault();
         }
     }
 }
