@@ -450,10 +450,7 @@ benchmark-serverless:
   stage: benchmarks
   image: registry.ddbuild.io/ci/serverless-tools:1
   tags: ["arch:amd64"]
-  # TEMPORARILY DISABLED FOR .NET 11 to avoid breaking other PRs: re-enable by
-  # replacing the `rules` block below with `when: on_success`
-  rules:
-    - when: never
+  when: on_success
   needs:
     - benchmark-serverless-trigger
   script:
@@ -472,9 +469,6 @@ benchmark-serverless:
 
 benchmark-serverless-trigger:
   stage: benchmarks
-  # TEMPORARILY DISABLED FOR .NET 11 to avoid breaking other PRs: re-enable by removing this `rules` block
-  rules:
-    - when: never
   needs: []
   trigger:
     project: ${GITLAB_GROUP}/serverless-tools
@@ -516,8 +510,6 @@ microbenchmarks:
     strategy: depend
   allow_failure: true
   rules:
-    # TEMPORARILY DISABLED FOR .NET 11 to avoid breaking other PRs: re-enable by removing this first rule
-    - when: never
     - if: $CI_COMMIT_TAG
       when: never
     - when: always
