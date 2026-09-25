@@ -139,6 +139,7 @@ target_include_directories(${PROFILER_STATIC_LIB_NAME}
     PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/../Datadog.Profiler.Native.Linux
     PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/../Datadog.Profiler.Native
     PUBLIC ${DOTNET_TRACER_REPO_ROOT_PATH}
+    PUBLIC ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/datadog-profiling-poc/include
 )
 
 # Define linker libraries
@@ -160,6 +161,7 @@ target_compile_definitions(${PROFILER_STATIC_LIB_NAME} PUBLIC "-D_GLIBCXX_USE_CX
 target_link_libraries(${PROFILER_STATIC_LIB_NAME}
     libunwind-lib
     libdatadog-lib
+    datadog_profiling_poc
     coreclr
     PPDB
     spdlog-headers
@@ -171,7 +173,7 @@ target_link_libraries(${PROFILER_STATIC_LIB_NAME}
     -Wl,--build-id=sha1
 )
 
-add_dependencies(${PROFILER_STATIC_LIB_NAME} libdatadog-lib libunwind-lib coreclr spdlog-headers PPDB)
+add_dependencies(${PROFILER_STATIC_LIB_NAME} libdatadog-lib datadog_profiling_poc libunwind-lib coreclr spdlog-headers PPDB)
 
 # ******************************************************
 # Define shared target

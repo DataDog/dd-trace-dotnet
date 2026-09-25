@@ -2960,7 +2960,7 @@ partial class Build
         var vcpkgZip = TempDirectory / "vcpkg.zip";
         using var client = new HttpClient();
         // Keep this version in sync with VCPKG_VERSION in gitlab.windows.dockerfile
-        const string vcpkgVersion = "2024.11.16";
+        const string vcpkgVersion = "2026.07.29";
         while (keepTrying)
         {
             nbTries++;
