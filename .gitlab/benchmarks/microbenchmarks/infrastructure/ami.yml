@@ -8,6 +8,14 @@ init_environment:
   # It includes the final End-of-Life (EOL) versions for .NET Core 3.1 and .NET 6.0 along with the latest .NET version.
   DOTNET_SDK_VERSIONS: "6.0.428,3.1.426,10.0.100,11.0.100-rc.1.26425.128"
 
+  # Visual Studio Build Tools. Keep these in sync with the VSBUILDTOOLS_* values in
+  # tracer/build/_build/docker/gitlab/gitlab.windows.dockerfile, so that the benchmark
+  # AMI builds the tracer with the same toolchain as CI.
+  VSBUILDTOOLS_VERSION: "18.10.12210.168"
+  VSBUILDTOOLS_SHA256: "160F5E9C319E3408867CAE9DE83F5D8803BDF7C34FCC8463E8FC28286E49D99E"
+  VSBUILDTOOLS_DOWNLOAD_URL: "https://download.visualstudio.microsoft.com/download/pr/7437128c-6580-48ab-9c69-f7452be2ee7f/160f5e9c319e3408867cae9de83f5d8803bdf7c34fcc8463e8fc28286e49d99e/vs_BuildTools.exe"
+  VSBUILDTOOLS_INSTALL_ROOT: 'c:\devtools\vstudio'
+
 source_ami:
   # From https://github.com/DataDog/benchmarking-platform-tools/tree/main/bp-infra/src/provisions/windows/apm-windows-tweaked-metal.yaml
   ami_id_ssm_parameter: "/windows-benchmarking/apm-windows-tweaked-metal-ami-id"
@@ -50,106 +58,26 @@ install_dotnet:
 
 install_vs:
   populate_env: true
+  # Reuse the same install script the GitLab build image uses
+  copy_files:
+    - source: "../../../../tracer/build/_build/docker/gitlab/install_vstudio.ps1"
+      destination: "/install_vstudio.ps1"
   remote_command: |
-    $version="17.14.36310.24"
-    $exeUrl="https://download.visualstudio.microsoft.com/download/pr/ae7ac791-9759-4076-bba7-47ff510c57af/a783199025439d65f310bff041e278b966a6dbed8dbcd7fc96b55389f574ef41/vs_BuildTools.exe"
-    $installDir="c:\devtools\vstudio"
+    $ErrorActionPreference = "Stop"
 
-    # Enabled TLS12
-    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+    & powershell -NoProfile -ExecutionPolicy Bypass -File C:\install_vstudio.ps1 `
+      -Version $env:VSBUILDTOOLS_VERSION `
+      -Sha256 $env:VSBUILDTOOLS_SHA256 `
+      -InstallRoot $env:VSBUILDTOOLS_INSTALL_ROOT `
+      -Url $env:VSBUILDTOOLS_DOWNLOAD_URL
 
-    Write-Output -ForegroundColor Green "Installing Visual Studio $($version) from $($exeUrl)"
-
-    # Script directory is $PSScriptRoot
-    $exeOut = "$($PSScriptRoot)\vs_buildtools.exe"
-
-    Write-Output -ForegroundColor Green Downloading $exeUrl to $exeOut
-    (New-Object System.Net.WebClient).DownloadFile($exeUrl, $exeOut)
-
-    # Write file size to make sure it worked
-    Write-Output -ForegroundColor Green "File size is $((get-item $exeOut).length)"
-
-    $VSPackages = @(
-        "Microsoft.VisualStudio.Component.Roslyn.Compiler",
-        "Microsoft.Component.MSBuild",
-        "Microsoft.VisualStudio.Component.CoreBuildTools",
-        "Microsoft.VisualStudio.Workload.MSBuildTools",
-        "Microsoft.VisualStudio.Component.Windows10SDK",
-        "Microsoft.VisualStudio.Component.VC.CoreBuildTools",
-        "Microsoft.VisualStudio.Component.VC.Tools.x86.x64",
-        "Microsoft.VisualStudio.Component.VC.Redist.14.Latest",
-        "Microsoft.VisualStudio.Component.VC.CMake.Project",
-        "Microsoft.VisualStudio.Component.TestTools.BuildTools",
-        "Microsoft.VisualStudio.Component.VC.ATL",
-        "Microsoft.Net.Component.4.8.SDK",
-        "Microsoft.Net.Component.4.7.2.TargetingPack",
-        "Microsoft.VisualStudio.Component.VC.ASAN",
-        "Microsoft.VisualStudio.Component.TextTemplating",
-        "Microsoft.VisualStudio.Component.VC.CoreIde",
-        "Microsoft.VisualStudio.ComponentGroup.NativeDesktop.Core",
-        "Microsoft.VisualStudio.Component.Windows10SDK.20348",
-        "Microsoft.VisualStudio.Component.Windows10SDK.19041",
-        "Microsoft.VisualStudio.Component.Windows10SDK.18362",
-        "Microsoft.VisualStudio.Workload.VCTools",
-        "Microsoft.VisualStudio.Component.NuGet.BuildTools",
-        "Microsoft.VisualStudio.Web.BuildTools.ComponentGroup",
-        "Microsoft.Net.ComponentGroup.DevelopmentPrerequisites",
-        "Microsoft.VisualStudio.Component.TypeScript.TSServer",
-        "Microsoft.Net.Component.4.8.TargetingPack",
-        "Microsoft.Net.ComponentGroup.4.8.DeveloperTools",
-        "Microsoft.NetCore.Component.Runtime.9.0",
-        "Microsoft.NetCore.Component.Runtime.8.0",
-        "Microsoft.NetCore.Component.SDK",
-        "Microsoft.Component.ClickOnce.MSBuild",
-        "Microsoft.VisualStudio.Wcf.BuildTools.ComponentGroup",
-        "Microsoft.VisualStudio.Component.WebDeploy",
-        "Microsoft.Net.Component.4.6.2.TargetingPack",
-        "Microsoft.Net.Component.4.7.TargetingPack",
-        "Microsoft.VisualStudio.Workload.WebBuildTools",
-        "Microsoft.Net.Component.4.6.1.TargetingPack",
-        "Microsoft.VisualStudio.Workload.ManagedDesktopBuildTools",
-        "Microsoft.Net.Component.4.6.TargetingPack",
-        "Microsoft.VisualStudio.Component.NuGet",
-        "Microsoft.VisualStudio.Component.VC.Tools.ARM64EC",
-        "Microsoft.VisualStudio.Component.VC.Tools.ARM64",
-        "Microsoft.VisualStudio.Component.Roslyn.LanguageServices",
-        "Component.LinuxBuildTools",
-        "Microsoft.VisualStudio.Workload.LinuxBuildTools",
-        "Microsoft.VisualStudio.Component.VC.ATL.ARM64",
-        "Microsoft.VisualStudio.Component.VC.Runtimes.x86.x64.Spectre",
-        "Microsoft.NetCore.Component.Runtime.6.0",
-        "Microsoft.NetCore.Component.Runtime.7.0",
-        "Microsoft.VisualStudio.Component.VC.v141.ATL",
-        "Microsoft.VisualStudio.Component.VC.14.29.16.11.x86.x64",
-        "Microsoft.VisualStudio.Component.VC.14.29.16.11.ATL",
-        "Microsoft.VisualStudio.Component.VC.14.35.17.5.ARM64",
-        "Microsoft.VisualStudio.Component.VC.14.35.17.5.x86.x64",
-        "Microsoft.VisualStudio.Component.VC.14.35.17.5.ATL.ARM64",
-        "Microsoft.VisualStudio.Component.VC.14.35.17.5.ATL",
-        "Microsoft.VisualStudio.Component.VC.14.35.17.5.CLI.Support"
-    )
-
-    $VSPackageListParam = $VSPackages -join " --add "
-    $ArgList = "--wait --norestart --nocache --installPath `"$($installDir)`" --add $VSPackageListParam"
-    if(-not $NoQuiet){
-        $ArgList = "--quiet $ArgList"
+    if ($LASTEXITCODE -ne 0) {
+      Write-Error "install_vstudio.ps1 failed with exit code $LASTEXITCODE"
+      exit $LASTEXITCODE
     }
-    $processparams = @{
-        FilePath = $exeOut
-        NoNewWindow = $true
-        Wait = $true
-        ArgumentList = $ArgList
-    }
-    Start-Process @processparams
 
-    setx VSTUDIO_ROOT "$installDir"
-    [Environment]::SetEnvironmentVariable("VSTUDIO_ROOT", "$installDir", [System.EnvironmentVariableTarget]::Machine)
-
-    # Add SDK added above to path for signtool
-    [Environment]::SetEnvironmentVariable("Path", [Environment]::GetEnvironmentVariable("Path", [EnvironmentVariableTarget]::Machine) + ";${env:ProgramFiles(x86)}\Windows Kits\10\bin\10.0.18362.0\x64", [System.EnvironmentVariableTarget]::Machine)
-
-    Remove-Item $exeOut
-    Write-Output -ForegroundColor Green "Visual Studio $($version) installed successfully."
+    Remove-Item C:\install_vstudio.ps1
+    Write-Output "Visual Studio $env:VSBUILDTOOLS_VERSION installed successfully."
 
 test_setup:
   remote_command: |
