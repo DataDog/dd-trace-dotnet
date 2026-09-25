@@ -1076,7 +1076,8 @@ public static class SmokeTestScenarios
             yield return from platform in platforms
                          from image in GetWindowsRuntimeImages()
                         // just test the highest and lowest LTS versions for brevity
-                         where image.PublishFramework == TargetFramework.NET11_0 || image.PublishFramework ==  TargetFramework.NET6_0
+						// Azure Functions doesn't support .NET 11 yet
+                         where image.PublishFramework == TargetFramework.NET10_0 || image.PublishFramework ==  TargetFramework.NET6_0
                          let channel32Bit = platform == "x86"
                              ? GetInstallerChannel(image.PublishFramework)
                              : ""
