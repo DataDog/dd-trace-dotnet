@@ -27,7 +27,6 @@ Rejitter::~Rejitter()
 template <class RejitRequestDefinition>
 RejitPreprocessor<RejitRequestDefinition>::RejitPreprocessor(CorProfiler* corProfiler,
                                                              std::shared_ptr<RejitHandler> rejit_handler,
-                                                             std::shared_ptr<RejitWorkOffloader>,
                                                              RejitterPriority priority) :
     Rejitter(rejit_handler, priority),
     m_corProfiler(corProfiler),
@@ -540,9 +539,7 @@ void RejitPreprocessor<RejitRequestDefinition>::EnqueueRequestRejitForLoadedModu
     std::function<void()> action = [=, modules = std::move(modulesWithLifetime), definitions = std::move(definitions),
                                     localPromise = promise, enqueueMeasure = std::move(enqueueMeasure)]() mutable {
         // Process modules for rejit
-        std::vector<RejitRequest> rejitRequests;
-        const auto rejitCount = PreprocessRejitRequests(modules, definitions, rejitRequests);
-        RequestRejit(std::move(rejitRequests), true);
+        const auto rejitCount = RequestRejitForLoadedModules(modules, definitions, true);
 
         // Resolve promise
         if (localPromise != nullptr)

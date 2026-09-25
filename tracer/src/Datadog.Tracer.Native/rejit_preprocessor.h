@@ -104,7 +104,7 @@ protected:
 
 public:
     RejitPreprocessor(CorProfiler* corProfiler, std::shared_ptr<RejitHandler> rejit_handler,
-                      std::shared_ptr<RejitWorkOffloader> work_offloader, RejitterPriority priority);
+                      RejitterPriority priority);
 
     void Shutdown() override;
     RejitHandlerModule* GetOrAddModule(ModuleID moduleId) override;

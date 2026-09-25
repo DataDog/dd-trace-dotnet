@@ -179,7 +179,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
                         : std::make_shared<RejitHandler>(this->info_, work_offloader);
     rejit_handler->SetRejitTracking(runtime_information_.is_core());
 
-    tracer_integration_preprocessor = std::make_unique<TracerRejitPreprocessor>(this, rejit_handler, work_offloader);
+    tracer_integration_preprocessor = std::make_unique<TracerRejitPreprocessor>(this, rejit_handler);
 
     fault_tolerant_method_duplicator = std::make_shared<fault_tolerant::FaultTolerantMethodDuplicator>(this, rejit_handler, work_offloader);
 
@@ -527,37 +527,40 @@ void __stdcall CorProfiler::NativeLog(int32_t level, const WCHAR* message, int32
     }
 }
 
-void WaitForPendingRejits(std::vector<std::future<ULONG>>& pending_rejits)
+void WaitForPendingRejit(std::optional<std::future<ULONG>>& pending_rejit)
 {
-    for (auto& future : pending_rejits)
-    {
-        const auto status = future.wait_for(200ms);
-
-        if (status != std::future_status::timeout)
-        {
-            const auto& numReJITs = future.get();
-            DBG("Total number of ReJIT Requested: ", numReJITs);
-        }
-        else
-        {
-            Logger::Warn("Timeout while waiting for the rejit requests to be processed. Rejit will continue "
-                         "asynchronously, but some initial calls may not be instrumented");
-        }
-    }
-}
-
-void EnqueueRejitForLoadedModules(TracerRejitPreprocessor* preprocessor, const std::vector<ModuleID>& modules,
-                                  const std::vector<IntegrationDefinition>& definitions,
-                                  std::vector<std::future<ULONG>>& pending_rejits)
-{
-    if (preprocessor == nullptr || modules.empty() || definitions.empty())
+    if (!pending_rejit.has_value())
     {
         return;
     }
 
+    const auto status = pending_rejit->wait_for(200ms);
+
+    if (status != std::future_status::timeout)
+    {
+        const auto& numReJITs = pending_rejit->get();
+        DBG("Total number of ReJIT Requested: ", numReJITs);
+    }
+    else
+    {
+        Logger::Warn("Timeout while waiting for the rejit requests to be processed. Rejit will continue "
+                     "asynchronously, but some initial calls may not be instrumented");
+    }
+}
+
+std::optional<std::future<ULONG>> EnqueueRejitForLoadedModules(TracerRejitPreprocessor* preprocessor,
+                                                               const std::vector<ModuleID>& modules,
+                                                               const std::vector<IntegrationDefinition>& definitions)
+{
+    if (preprocessor == nullptr || modules.empty() || definitions.empty())
+    {
+        return std::nullopt;
+    }
+
     auto promise = std::make_shared<std::promise<ULONG>>();
-    pending_rejits.push_back(promise->get_future());
+    auto future = promise->get_future();
     preprocessor->EnqueueRequestRejitForLoadedModules(modules, definitions, promise);
+    return future;
 }
 
 HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id, HRESULT hr_status)
@@ -590,7 +593,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id, HR
     HRESULT hr = S_OK;
     bool enqueue_this_module = false;
     std::vector<ModuleID> deferred_module_ids;
-    std::vector<std::future<ULONG>> pending_rejits;
+    std::optional<std::future<ULONG>> module_rejit;
+    std::optional<std::future<ULONG>> deferred_modules_rejit;
     ModuleIDWithLifetime module{module_id, nullptr};
 
     {
@@ -648,15 +652,12 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id, HR
 
         if (enqueue_this_module)
         {
-            EnqueueRejitForLoadedModules(tracer_integration_preprocessor.get(), {module_id}, integration_definitions_,
-                                         pending_rejits);
+            module_rejit = EnqueueRejitForLoadedModules(tracer_integration_preprocessor.get(), {module_id},
+                                                        integration_definitions_);
         }
 
-        if (!deferred_module_ids.empty())
-        {
-            EnqueueRejitForLoadedModules(tracer_integration_preprocessor.get(), deferred_module_ids,
-                                         integration_definitions_, pending_rejits);
-        }
+        deferred_modules_rejit = EnqueueRejitForLoadedModules(tracer_integration_preprocessor.get(),
+                                                              deferred_module_ids, integration_definitions_);
     }
 
     if (debugger_instrumentation_requester != nullptr && debuggerProbeTransaction.has_value())
@@ -665,7 +666,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id, HR
             module, std::move(*debuggerProbeTransaction));
     }
 
-    WaitForPendingRejits(pending_rejits);
+    WaitForPendingRejit(module_rejit);
+    WaitForPendingRejit(deferred_modules_rejit);
 
     if (_dataflow != nullptr)
     {
@@ -1992,12 +1994,10 @@ void CorProfiler::InternalAddInstrumentation(WCHAR* id, CallTargetDefinition* it
                 Logger::Info("Total number of modules to analyze: ", modules->size());
                 integration_count = integration_definitions_.size();
 
-                if (rejit_handler != nullptr && !modules->empty() && !integrationDefinitions.empty())
+                if (rejit_handler != nullptr)
                 {
-                    auto promise = std::make_shared<std::promise<ULONG>>();
-                    rejit_future = promise->get_future();
-                    tracer_integration_preprocessor->EnqueueRequestRejitForLoadedModules(
-                        modules.Ref(), integrationDefinitions, promise);
+                    rejit_future = EnqueueRejitForLoadedModules(tracer_integration_preprocessor.get(),
+                                                                modules.Ref(), integrationDefinitions);
                 }
             }
         }
@@ -2102,12 +2102,10 @@ long CorProfiler::RegisterCallTargetDefinitions(WCHAR* id, CallTargetDefinition3
 
             Logger::Info("Total number of modules to analyze: ", modules->size());
 
-            if (rejit_handler != nullptr && !modules->empty() && !integrationDefinitions.empty())
+            if (rejit_handler != nullptr)
             {
-                auto promise = std::make_shared<std::promise<ULONG>>();
-                rejit_future = promise->get_future();
-                tracer_integration_preprocessor->EnqueueRequestRejitForLoadedModules(
-                    modules.Ref(), integrationDefinitions, promise);
+                rejit_future = EnqueueRejitForLoadedModules(tracer_integration_preprocessor.get(), modules.Ref(),
+                                                            integrationDefinitions);
             }
         }
 
@@ -2146,13 +2144,8 @@ long CorProfiler::EnableCallTargetDefinitions(UINT32 enabledCategories)
                 }
             }
 
-            if (!affectedDefinitions.empty() && !modules->empty())
-            {
-                auto promise = std::make_shared<std::promise<ULONG>>();
-                rejit_future = promise->get_future();
-                tracer_integration_preprocessor->EnqueueRequestRejitForLoadedModules(
-                    modules.Ref(), affectedDefinitions, promise);
-            }
+            rejit_future = EnqueueRejitForLoadedModules(tracer_integration_preprocessor.get(), modules.Ref(),
+                                                        affectedDefinitions);
         }
 
         if (rejit_future.has_value())
@@ -2186,13 +2179,8 @@ long CorProfiler::DisableCallTargetDefinitions(UINT32 disabledCategories)
                 }
             }
 
-            if (!affectedDefinitions.empty() && !modules->empty())
-            {
-                auto promise = std::make_shared<std::promise<ULONG>>();
-                revert_future = promise->get_future();
-                tracer_integration_preprocessor->EnqueueRequestRejitForLoadedModules(
-                    modules.Ref(), affectedDefinitions, promise);
-            }
+            revert_future = EnqueueRejitForLoadedModules(tracer_integration_preprocessor.get(), modules.Ref(),
+                                                         affectedDefinitions);
         }
 
         if (revert_future.has_value())
@@ -2328,12 +2316,10 @@ void CorProfiler::InitializeTraceMethods(WCHAR* id, WCHAR* integration_assembly_
 
                 integration_count = integration_definitions_.size();
 
-                if (rejit_handler != nullptr && !modules->empty() && !integrationDefinitions.empty())
+                if (rejit_handler != nullptr)
                 {
-                    auto promise = std::make_shared<std::promise<ULONG>>();
-                    rejit_future = promise->get_future();
-                    tracer_integration_preprocessor->EnqueueRequestRejitForLoadedModules(
-                        modules.Ref(), integrationDefinitions, promise);
+                    rejit_future = EnqueueRejitForLoadedModules(tracer_integration_preprocessor.get(),
+                                                                modules.Ref(), integrationDefinitions);
                 }
             }
 

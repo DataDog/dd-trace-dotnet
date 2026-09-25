@@ -12,9 +12,8 @@ namespace debugger
 // DebuggerRejitPreprocessor
 
 DebuggerRejitPreprocessor::DebuggerRejitPreprocessor(CorProfiler* corProfiler,
-                                                     std::shared_ptr<RejitHandler> rejit_handler,
-                                                     std::shared_ptr<RejitWorkOffloader> work_offloader) :
-    RejitPreprocessor(corProfiler, rejit_handler, work_offloader, RejitterPriority::Critical)
+                                                     std::shared_ptr<RejitHandler> rejit_handler) :
+    RejitPreprocessor(corProfiler, rejit_handler, RejitterPriority::Critical)
 {
 }
 
