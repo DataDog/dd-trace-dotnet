@@ -271,6 +271,6 @@ internal static class OtelProcessContextAnnouncer
     {
         // Guards against a future libdatadog that emits the threadlocal.* keys itself, which would
         // otherwise leave two copies of each key in the payload.
-        return payload.Contains(ThreadLocalMetadataPayload.SchemaVersionAttributeUtf8);
+        return payload.IndexOf(ThreadLocalMetadataPayload.SchemaVersionAttributeUtf8) >= 0;
     }
 }
