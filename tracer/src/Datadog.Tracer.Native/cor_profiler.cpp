@@ -559,29 +559,48 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id, HR
     if (rejit_size > 0 && trace_annotation_integration_type != nullptr)
     {
         std::vector<ModuleID> rejitModuleIds;
-        for (size_t i = 0; i < rejit_size; i++)
+
+        // Copy-on-write: build a new vector (starting from today's snapshot) instead of mutating
+        // integration_definitions_ in place, so readers only ever see a complete, consistent
+        // snapshot via a cheap shared_ptr copy -- see CorProfiler::integration_definitions_.
+        try
         {
-            auto rejit_module_method_pair = rejit_module_method_pairs.front();
-            rejitModuleIds.push_back(rejit_module_method_pair.first);
-
-            const auto& methodReferences = rejit_module_method_pair.second;
-            integration_definitions_.reserve(integration_definitions_.size() + methodReferences.size());
-
-            DBG("ModuleLoadFinished requesting ReJIT now for ModuleId=", module_id, ", methodReferences.size()=", methodReferences.size());
-
-            // Push integration definitions from the given module
-            for (const auto& methodReference : methodReferences)
+            auto newDefinitions = std::make_shared<std::vector<IntegrationDefinition>>(*integration_definitions_);
+            for (size_t i = 0; i < rejit_size; i++)
             {
-                integration_definitions_.push_back(
-                    IntegrationDefinition(methodReference, *trace_annotation_integration_type.get(), false, false,
-                                          false));
-            }
+                auto rejit_module_method_pair = rejit_module_method_pairs.front();
+                rejitModuleIds.push_back(rejit_module_method_pair.first);
 
-            rejit_module_method_pairs.pop_front();
+                const auto& methodReferences = rejit_module_method_pair.second;
+                newDefinitions->reserve(newDefinitions->size() + methodReferences.size());
+
+                DBG("ModuleLoadFinished requesting ReJIT now for ModuleId=", module_id, ", methodReferences.size()=", methodReferences.size());
+
+                // Push integration definitions from the given module
+                for (const auto& methodReference : methodReferences)
+                {
+                    newDefinitions->push_back(
+                        IntegrationDefinition(methodReference, *trace_annotation_integration_type.get(), false, false,
+                                              false));
+                }
+
+                rejit_module_method_pairs.pop_front();
+            }
+            integration_definitions_ = std::move(newDefinitions);
+        }
+        catch (const std::exception& ex)
+        {
+            Logger::Error("ModuleLoadFinished: failed to build the updated integration definitions list, "
+                          "some pending rejit requests for already-loaded modules may be dropped: ", ex.what());
+        }
+        catch (...)
+        {
+            Logger::Error("ModuleLoadFinished: failed to build the updated integration definitions list "
+                          "(non-standard exception), some pending rejit requests for already-loaded modules may be dropped.");
         }
 
         // We call the function to analyze the module and request the ReJIT of integrations defined in this module.
-        if (tracer_integration_preprocessor != nullptr && !integration_definitions_.empty())
+        if (tracer_integration_preprocessor != nullptr && !integration_definitions_->empty())
         {
             auto promise = std::make_shared<std::promise<ULONG>>();
             std::future<ULONG> future = promise->get_future();
@@ -1172,20 +1191,36 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id, std::vector<ModuleID>& m
                     ", ModuleName=", module_info.assembly.name,
                     ", methodReferences.size()=", methodReferences.size());
 
-                integration_definitions_.reserve(integration_definitions_.size() + methodReferences.size());
-
-                // Push integration definitions from this module
-                for (const auto& methodReference : methodReferences)
+                // Copy-on-write: see CorProfiler::integration_definitions_.
+                try
                 {
-                    integration_definitions_.push_back(IntegrationDefinition(
-                        methodReference, *trace_annotation_integration_type.get(), false, false, false));
+                    auto newDefinitions = std::make_shared<std::vector<IntegrationDefinition>>(*integration_definitions_);
+                    newDefinitions->reserve(newDefinitions->size() + methodReferences.size());
+
+                    // Push integration definitions from this module
+                    for (const auto& methodReference : methodReferences)
+                    {
+                        newDefinitions->push_back(IntegrationDefinition(
+                            methodReference, *trace_annotation_integration_type.get(), false, false, false));
+                    }
+                    integration_definitions_ = std::move(newDefinitions);
+                }
+                catch (const std::exception& ex)
+                {
+                    Logger::Error("TryRejitModule: failed to build the updated integration definitions list "
+                                  "for ModuleId=", module_id, ", these methods will not be instrumented this time: ", ex.what());
+                }
+                catch (...)
+                {
+                    Logger::Error("TryRejitModule: failed to build the updated integration definitions list "
+                                  "for ModuleId=", module_id, " (non-standard exception), these methods will not be instrumented this time.");
                 }
             }
         }
     }
 
     // We call the function to analyze the module and request the ReJIT of integrations defined in this module.
-    if (tracer_integration_preprocessor != nullptr && !integration_definitions_.empty())
+    if (tracer_integration_preprocessor != nullptr && !integration_definitions_->empty())
     {
         auto promise = std::make_shared<std::promise<ULONG>>();
         std::future<ULONG> future = promise->get_future();
@@ -1318,7 +1353,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Shutdown()
     if (Logger::IsDebugEnabled())
     {
         Logger::Debug("   ModuleIds: ", modules->size());
-        Logger::Debug("   IntegrationDefinitions: ", integration_definitions_.size());
+        Logger::Debug("   IntegrationDefinitions: ", integration_definitions_->size());
         Logger::Debug("   DefinitionsIds: ", definitions->size());
         Logger::Debug("   ManagedProfilerLoadedAppDomains: ", managed_profiler_loaded_app_domains.Get()->size());
         Logger::Debug("   FirstJitCompilationAppDomains: ", first_jit_compilation_app_domains.size());
@@ -1883,27 +1918,42 @@ void CorProfiler::InternalAddInstrumentation(WCHAR* id, CallTargetDefinition* it
             definitions->erase(definitionsId);
         }
 
-        if (enable)
+        // Copy-on-write: see CorProfiler::integration_definitions_.
+        try
         {
-            integration_definitions_.reserve(integration_definitions_.size() + integrationDefinitions.size());
-            for (const auto& integration : integrationDefinitions)
+            if (enable)
             {
-                integration_definitions_.push_back(integration);
+                auto newDefinitions = std::make_shared<std::vector<IntegrationDefinition>>(*integration_definitions_);
+                newDefinitions->reserve(newDefinitions->size() + integrationDefinitions.size());
+                for (const auto& integration : integrationDefinitions)
+                {
+                    newDefinitions->push_back(integration);
+                }
+                integration_definitions_ = std::move(newDefinitions);
+            }
+            else
+            {
+                // remove the call target definitions
+                auto newDefinitions = std::make_shared<std::vector<IntegrationDefinition>>();
+                newDefinitions->reserve(integration_definitions_->size());
+                for (const auto& integration : *integration_definitions_)
+                {
+                    if (std::find(integrationDefinitions.begin(), integrationDefinitions.end(), integration) ==
+                        integrationDefinitions.end())
+                    {
+                        newDefinitions->push_back(integration);
+                    }
+                }
+                integration_definitions_ = std::move(newDefinitions);
             }
         }
-        else
+        catch (const std::exception& ex)
         {
-            // remove the call target definitions
-            std::vector<IntegrationDefinition> integration_definitions = integration_definitions_;
-            integration_definitions_.clear();
-            for (auto& integration : integration_definitions)
-            {
-                if (std::find(integrationDefinitions.begin(), integrationDefinitions.end(), integration) ==
-                    integrationDefinitions.end())
-                {
-                    integration_definitions_.push_back(integration);
-                }
-            }
+            Logger::Error("InternalAddInstrumentation: failed to build the updated integration definitions list: ", ex.what());
+        }
+        catch (...)
+        {
+            Logger::Error("InternalAddInstrumentation: failed to build the updated integration definitions list (non-standard exception).");
         }
 
         Logger::Info("Total number of modules to analyze: ", modules->size());
@@ -1911,15 +1961,33 @@ void CorProfiler::InternalAddInstrumentation(WCHAR* id, CallTargetDefinition* it
         {
             auto promise = std::make_shared<std::promise<ULONG>>();
             std::future<ULONG> future = promise->get_future();
-            tracer_integration_preprocessor->EnqueueRequestRejitForLoadedModules(modules.Ref(), integrationDefinitions,
-                                                                                 promise);
+            std::shared_ptr<const std::vector<IntegrationDefinition>> integrationDefinitionsPtr;
+            try
+            {
+                integrationDefinitionsPtr =
+                    std::make_shared<const std::vector<IntegrationDefinition>>(std::move(integrationDefinitions));
+            }
+            catch (const std::exception& ex)
+            {
+                Logger::Error("InternalAddInstrumentation: failed to prepare the rejit request, dropping it: ", ex.what());
+            }
+            catch (...)
+            {
+                Logger::Error("InternalAddInstrumentation: failed to prepare the rejit request (non-standard exception), dropping it.");
+            }
 
-            // wait and get the value from the future<int>
-            const auto& numReJITs = future.get();
-            DBG("Total number of ReJIT Requested: ", numReJITs);
+            if (integrationDefinitionsPtr != nullptr)
+            {
+                tracer_integration_preprocessor->EnqueueRequestRejitForLoadedModules(modules.Ref(), integrationDefinitionsPtr,
+                                                                                     promise);
+
+                // wait and get the value from the future<int>
+                const auto& numReJITs = future.get();
+                DBG("Total number of ReJIT Requested: ", numReJITs);
+            }
         }
 
-        Logger::Info("InitializeProfiler: Total integrations in profiler: ", integration_definitions_.size());
+        Logger::Info("InitializeProfiler: Total integrations in profiler: ", integration_definitions_->size());
     }
 }
 
@@ -2000,18 +2068,37 @@ long CorProfiler::RegisterCallTargetDefinitions(WCHAR* id, CallTargetDefinition3
 
         auto modules = module_ids.Get();
 
-        integration_definitions_.reserve(integration_definitions_.size() + integrationDefinitions.size());
-        for (const auto& integration : integrationDefinitions)
+        // Copy-on-write: see CorProfiler::integration_definitions_.
+        std::shared_ptr<const std::vector<IntegrationDefinition>> integrationDefinitionsPtr;
+        try
         {
-            integration_definitions_.push_back(integration);
+            auto newDefinitions = std::make_shared<std::vector<IntegrationDefinition>>(*integration_definitions_);
+            newDefinitions->reserve(newDefinitions->size() + integrationDefinitions.size());
+            for (const auto& integration : integrationDefinitions)
+            {
+                newDefinitions->push_back(integration);
+            }
+            // integrationDefinitions is shared (const&) with the newDefinitions loop above and
+            // the rejit request below, so it can't be moved out of here -- copy it once more into
+            // the shared_ptr the rejit request needs.
+            integrationDefinitionsPtr = std::make_shared<const std::vector<IntegrationDefinition>>(integrationDefinitions);
+            integration_definitions_ = std::move(newDefinitions);
+        }
+        catch (const std::exception& ex)
+        {
+            Logger::Error("RegisterCallTargetDefinitions: failed to build the updated integration definitions list: ", ex.what());
+        }
+        catch (...)
+        {
+            Logger::Error("RegisterCallTargetDefinitions: failed to build the updated integration definitions list (non-standard exception).");
         }
 
         Logger::Info("Total number of modules to analyze: ", modules->size());
-        if (rejit_handler != nullptr)
+        if (rejit_handler != nullptr && integrationDefinitionsPtr != nullptr)
         {
             auto promise = std::make_shared<std::promise<ULONG>>();
             std::future<ULONG> future = promise->get_future();
-            tracer_integration_preprocessor->EnqueueRequestRejitForLoadedModules(modules.Ref(), integrationDefinitions, promise);
+            tracer_integration_preprocessor->EnqueueRequestRejitForLoadedModules(modules.Ref(), integrationDefinitionsPtr, promise);
 
             // wait and get the value from the future<int>
             numReJITs = future.get();
@@ -2036,20 +2123,45 @@ long CorProfiler::EnableCallTargetDefinitions(UINT32 enabledCategories)
         // to prevent concurrent modification from ModuleLoadFinished or RegisterCallTargetDefinitions
         auto modules = module_ids.Get();
 
+        // Copy-on-write: see CorProfiler::integration_definitions_. integration_definitions_ is
+        // now `const`, so each affected element is mutated on a copy (matching today's SetEnabled
+        // semantics exactly) before being placed in the new vector that replaces the member.
         std::vector<IntegrationDefinition> affectedDefinitions;
-        for (auto& integration : integration_definitions_)
+        std::shared_ptr<const std::vector<IntegrationDefinition>> affectedDefinitionsPtr;
+        try
         {
-            if (!integration.GetEnabled() && integration.SetEnabled(true, enabledCategories))
+            auto newDefinitions = std::make_shared<std::vector<IntegrationDefinition>>();
+            newDefinitions->reserve(integration_definitions_->size());
+            for (const auto& integration : *integration_definitions_)
             {
-                affectedDefinitions.push_back(integration);
+                auto copy = integration;
+                if (!copy.GetEnabled() && copy.SetEnabled(true, enabledCategories))
+                {
+                    affectedDefinitions.push_back(copy);
+                }
+                newDefinitions->push_back(std::move(copy));
+            }
+            integration_definitions_ = std::move(newDefinitions);
+            if (!affectedDefinitions.empty())
+            {
+                affectedDefinitionsPtr =
+                    std::make_shared<const std::vector<IntegrationDefinition>>(std::move(affectedDefinitions));
             }
         }
+        catch (const std::exception& ex)
+        {
+            Logger::Error("EnableCallTargetDefinitions: failed to build the updated integration definitions list: ", ex.what());
+        }
+        catch (...)
+        {
+            Logger::Error("EnableCallTargetDefinitions: failed to build the updated integration definitions list (non-standard exception).");
+        }
 
-        if (affectedDefinitions.size() > 0)
+        if (affectedDefinitionsPtr != nullptr)
         {
             auto promise = std::make_shared<std::promise<ULONG>>();
             std::future<ULONG> future = promise->get_future();
-            tracer_integration_preprocessor->EnqueueRequestRejitForLoadedModules(modules.Ref(), affectedDefinitions,
+            tracer_integration_preprocessor->EnqueueRequestRejitForLoadedModules(modules.Ref(), affectedDefinitionsPtr,
                                                                                  promise);
 
             // wait and get the value from the future<int>
@@ -2071,20 +2183,45 @@ long CorProfiler::DisableCallTargetDefinitions(UINT32 disabledCategories)
         // to prevent concurrent modification from ModuleLoadFinished or RegisterCallTargetDefinitions
         auto modules = module_ids.Get();
 
+        // Copy-on-write: see CorProfiler::integration_definitions_. integration_definitions_ is
+        // now `const`, so each affected element is mutated on a copy (matching today's SetEnabled
+        // semantics exactly) before being placed in the new vector that replaces the member.
         std::vector<IntegrationDefinition> affectedDefinitions;
-        for (auto& integration : integration_definitions_)
+        std::shared_ptr<const std::vector<IntegrationDefinition>> affectedDefinitionsPtr;
+        try
         {
-            if (integration.GetEnabled() && !integration.SetEnabled(false, disabledCategories))
+            auto newDefinitions = std::make_shared<std::vector<IntegrationDefinition>>();
+            newDefinitions->reserve(integration_definitions_->size());
+            for (const auto& integration : *integration_definitions_)
             {
-                affectedDefinitions.push_back(integration);
+                auto copy = integration;
+                if (copy.GetEnabled() && !copy.SetEnabled(false, disabledCategories))
+                {
+                    affectedDefinitions.push_back(copy);
+                }
+                newDefinitions->push_back(std::move(copy));
+            }
+            integration_definitions_ = std::move(newDefinitions);
+            if (!affectedDefinitions.empty())
+            {
+                affectedDefinitionsPtr =
+                    std::make_shared<const std::vector<IntegrationDefinition>>(std::move(affectedDefinitions));
             }
         }
+        catch (const std::exception& ex)
+        {
+            Logger::Error("DisableCallTargetDefinitions: failed to build the updated integration definitions list: ", ex.what());
+        }
+        catch (...)
+        {
+            Logger::Error("DisableCallTargetDefinitions: failed to build the updated integration definitions list (non-standard exception).");
+        }
 
-        if (affectedDefinitions.size() > 0)
+        if (affectedDefinitionsPtr != nullptr)
         {
             auto promise = std::make_shared<std::promise<ULONG>>();
             std::future<ULONG> future = promise->get_future();
-            tracer_integration_preprocessor->EnqueueRequestRejitForLoadedModules(modules.Ref(), affectedDefinitions, promise);
+            tracer_integration_preprocessor->EnqueueRequestRejitForLoadedModules(modules.Ref(), affectedDefinitionsPtr, promise);
 
             // wait and get the value from the future<int>
             numReverts = future.get();
@@ -2205,26 +2342,63 @@ void CorProfiler::InitializeTraceMethods(WCHAR* id, WCHAR* integration_assembly_
             auto modules = module_ids.Get();
 
             DBG("InitializeTraceMethods: Total number of modules to analyze: ", modules->size());
-            if (rejit_handler != nullptr)
-            {
-                auto promise = std::make_shared<std::promise<ULONG>>();
-                std::future<ULONG> future = promise->get_future();
-                tracer_integration_preprocessor->EnqueueRequestRejitForLoadedModules(
-                    modules.Ref(), integrationDefinitions,
-                    promise);
 
-                // wait and get the value from the future<int>
-                const auto& numReJITs = future.get();
-                DBG("Total number of ReJIT Requested: ", numReJITs);
+            // integrationDefinitions is needed both for the rejit request below and to extend
+            // integration_definitions_ afterward, so it can't simply be moved into the request --
+            // move it into a shared_ptr once here, and read *integrationDefinitionsPtr for both
+            // uses instead of the (otherwise moved-from) local.
+            std::shared_ptr<const std::vector<IntegrationDefinition>> integrationDefinitionsPtr;
+            try
+            {
+                integrationDefinitionsPtr =
+                    std::make_shared<const std::vector<IntegrationDefinition>>(std::move(integrationDefinitions));
+            }
+            catch (const std::exception& ex)
+            {
+                Logger::Error("InitializeTraceMethods: failed to prepare the integration definitions, dropping this batch: ", ex.what());
+            }
+            catch (...)
+            {
+                Logger::Error("InitializeTraceMethods: failed to prepare the integration definitions (non-standard exception), dropping this batch.");
             }
 
-            integration_definitions_.reserve(integration_definitions_.size() + integrationDefinitions.size());
-            for (const auto& integration : integrationDefinitions)
+            if (integrationDefinitionsPtr != nullptr)
             {
-                integration_definitions_.push_back(integration);
-            }
+                if (rejit_handler != nullptr)
+                {
+                    auto promise = std::make_shared<std::promise<ULONG>>();
+                    std::future<ULONG> future = promise->get_future();
+                    tracer_integration_preprocessor->EnqueueRequestRejitForLoadedModules(
+                        modules.Ref(), integrationDefinitionsPtr,
+                        promise);
 
-            Logger::Info("InitializeTraceMethods: Total integrations in profiler: ", integration_definitions_.size());
+                    // wait and get the value from the future<int>
+                    const auto& numReJITs = future.get();
+                    DBG("Total number of ReJIT Requested: ", numReJITs);
+                }
+
+                // Copy-on-write: see CorProfiler::integration_definitions_.
+                try
+                {
+                    auto newDefinitions = std::make_shared<std::vector<IntegrationDefinition>>(*integration_definitions_);
+                    newDefinitions->reserve(newDefinitions->size() + integrationDefinitionsPtr->size());
+                    for (const auto& integration : *integrationDefinitionsPtr)
+                    {
+                        newDefinitions->push_back(integration);
+                    }
+                    integration_definitions_ = std::move(newDefinitions);
+                }
+                catch (const std::exception& ex)
+                {
+                    Logger::Error("InitializeTraceMethods: failed to build the updated integration definitions list: ", ex.what());
+                }
+                catch (...)
+                {
+                    Logger::Error("InitializeTraceMethods: failed to build the updated integration definitions list (non-standard exception).");
+                }
+
+                Logger::Info("InitializeTraceMethods: Total integrations in profiler: ", integration_definitions_->size());
+            }
         }
     }
 }

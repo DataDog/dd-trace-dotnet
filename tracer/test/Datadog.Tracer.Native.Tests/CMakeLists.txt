@@ -48,6 +48,7 @@ add_executable(${TEST_EXECUTABLE_NAME}
     string_test.cpp
 	util_test.cpp
     signature_builder_test.cpp
+    rejit_enqueue_bad_alloc_fix_test.cpp
     test_link_stubs.cpp
 )
 
