@@ -142,6 +142,7 @@ internal static partial class ConfigurationKeys
     /// It indicates the home directory of the Datadog tracer.
     /// On Windows, it is often set to the installation path, such as C:\Program Files\Datadog\.NET Tracer.
     /// On Linux/Docker, it is typically set to /opt/datadog.
+    /// Falls back to <see cref="ConfigurationKeys.OpenTelemetry.DotNetAutoHome"/> if not set.
     /// </summary>
     public const string DotNetTracerHome = "DD_DOTNET_TRACER_HOME";
 

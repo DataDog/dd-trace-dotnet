@@ -29,6 +29,15 @@ internal static partial class ConfigurationKeys
         public const string OtelSemanticsEnabled = "DD_TRACE_OTEL_SEMANTICS_ENABLED";
 
         /// <summary>
+        /// The install directory of the OpenTelemetry .NET auto-instrumentation, which serves the same
+        /// purpose as <see cref="ConfigurationKeys.DotNetTracerHome"/>: native and managed files live in
+        /// immediate subdirectories. Read as a fallback for <see cref="ConfigurationKeys.DotNetTracerHome"/>
+        /// so that an installation injected by the OpenTelemetry Operator works without any extra
+        /// environment variables.
+        /// </summary>
+        public const string DotNetAutoHome = "OTEL_DOTNET_AUTO_HOME";
+
+        /// <summary>
         /// Configuration key to set the OTLP endpoint URL (fallback for metrics-specific endpoint).
         /// Used when <see cref="ExporterOtlpMetricsEndpoint"/> is not set.
         /// Expects values like `unix:///path/to/socket.sock` for UDS, `\\.\pipename\` for Windows Named Pipes.
