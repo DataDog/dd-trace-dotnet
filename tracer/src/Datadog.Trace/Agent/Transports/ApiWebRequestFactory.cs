@@ -17,16 +17,20 @@ namespace Datadog.Trace.Agent.Transports
     {
         private readonly KeyValuePair<string, string>[] _defaultHeaders;
         private readonly Uri _baseEndpoint;
+        private readonly bool _allowAutoRedirect;
         private WebProxy _proxy;
         private NetworkCredential _credential;
         private TimeSpan? _timeout;
 
-        public ApiWebRequestFactory(Uri baseEndpoint, KeyValuePair<string, string>[] defaultHeaders, TimeSpan? timeout = null)
+        public ApiWebRequestFactory(Uri baseEndpoint, KeyValuePair<string, string>[] defaultHeaders, TimeSpan? timeout = null, bool allowAutoRedirect = true)
         {
             _baseEndpoint = baseEndpoint;
             _defaultHeaders = defaultHeaders;
             _timeout = timeout;
+            _allowAutoRedirect = allowAutoRedirect;
         }
+
+        internal bool AllowAutoRedirect => _allowAutoRedirect;
 
         public string Info(Uri endpoint)
         {
@@ -38,6 +42,7 @@ namespace Datadog.Trace.Agent.Transports
         public IApiRequest Create(Uri endpoint)
         {
             var request = WebRequest.CreateHttp(endpoint);
+            request.AllowAutoRedirect = _allowAutoRedirect;
             if (_proxy is not null)
             {
                 request.Proxy = _proxy;

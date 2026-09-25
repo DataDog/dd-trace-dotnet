@@ -22,9 +22,9 @@ namespace Datadog.Trace.Agent.Transports
         private readonly HttpMessageHandler _handler;
         private readonly Uri _baseEndpoint;
 
-        public HttpClientRequestFactory(Uri baseEndpoint, KeyValuePair<string, string>[] defaultHeaders, HttpMessageHandler handler = null, TimeSpan? timeout = null)
+        public HttpClientRequestFactory(Uri baseEndpoint, KeyValuePair<string, string>[] defaultHeaders, HttpMessageHandler handler = null, TimeSpan? timeout = null, bool allowAutoRedirect = true)
         {
-            _handler = handler ?? new HttpClientHandler();
+            _handler = handler ?? new HttpClientHandler { AllowAutoRedirect = allowAutoRedirect };
             _client = new HttpClient(_handler);
             _baseEndpoint = baseEndpoint;
             if (timeout.HasValue)
@@ -40,6 +40,8 @@ namespace Datadog.Trace.Agent.Transports
             // Disable keep-alive
             _client.DefaultRequestHeaders.ConnectionClose = true;
         }
+
+        internal bool AllowAutoRedirect => _handler is not HttpClientHandler handler || handler.AllowAutoRedirect;
 
         public Uri GetEndpoint(string relativePath) => relativePath is null ? _baseEndpoint : UriHelpers.Combine(_baseEndpoint, relativePath);
 
