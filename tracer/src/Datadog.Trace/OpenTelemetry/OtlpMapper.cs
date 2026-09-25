@@ -70,10 +70,6 @@ internal static class OtlpMapper
 
         writeKeyValue(ref state, new KeyValue(Trace.Tags.RuntimeId, Tracer.RuntimeId));
 
-        // Declares the export mode and the semantic conventions the SDK applied, so the intake can
-        // attribute ingested spans without inferring either from telemetry.sdk.name. Reaching this
-        // mapper means the payload is leaving over OTLP, so the export marker is always "true"
-        // (the MessagePack formatter writes "false" once per payload instead).
         writeKeyValue(ref state, new KeyValue(Trace.Tags.SdkOtlpExport, "true"));
         writeKeyValue(ref state, new KeyValue(Trace.Tags.SdkSemantics, traceChunk.OtelSemanticsEnabled ? "otel" : "datadog"));
 
@@ -316,8 +312,6 @@ internal static class OtlpMapper
             if (key == "telemetry.sdk.name"
                 || key == "telemetry.sdk.language"
                 || key == "telemetry.sdk.version"
-                // the adoption markers are resource-scoped and tracer-owned: a user tag of the
-                // same name must not be echoed onto spans and contradict them
                 || key == Tags.SdkOtlpExport
                 || key == Tags.SdkSemantics)
             {

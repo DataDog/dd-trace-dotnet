@@ -625,14 +625,9 @@ namespace Datadog.Trace.Agent.MessagePack
                 offset += MessagePackBinary.WriteString(ref bytes, offset, serviceNameSource);
             }
 
-            // Payload-scoped tags are sent only once per buffer/payload
-            // (one payload can contain many chunks from different traces)
+            // Payload-scoped tags will be sent only once per buffer/payload (one payload can contain many chunks from different traces)
             if (model.IsFirstSpanInChunk && model.TraceChunk.IsFirstChunkInPayload)
             {
-                // Reaching this formatter means the payload uses the native Datadog encoding, so the
-                // export marker is always "false" here. The OTLP serializers write "true" as a resource
-                // attribute instead (see OtlpMapper.EmitResourceAttributesFromTraceChunk). Written
-                // unconditionally: an absent marker is indistinguishable from an older tracer at intake.
                 count++;
                 offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, SdkOtlpExportNameBytes);
                 offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, SdkOtlpExportValueBytes);
