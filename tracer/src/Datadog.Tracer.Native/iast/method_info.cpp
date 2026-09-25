@@ -228,7 +228,7 @@ namespace iast
         _isExcluded = _module->_dataflow->IsMethodExcluded(GetFullName());
         if (!_isExcluded && _module->_dataflow->HasMethodAttributeExclusions())
         {
-            for (auto methodAttribute : GetCustomAttributes())
+            for (auto &methodAttribute : GetCustomAttributes())
             {
                 if (_module->_dataflow->IsMethodAttributeExcluded(methodAttribute))
                 {
