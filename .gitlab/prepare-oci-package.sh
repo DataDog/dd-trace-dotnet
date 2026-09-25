@@ -39,6 +39,7 @@ if [ "$OS" == "linux" ]; then
   tar --same-owner -pxvzf $SRC_TAR -C sources
 
   # This compatibility hook is only included in the lib-injection OCI package.
+  mkdir -p sources/net
   cp ../artifacts/OpenTelemetry.AutoInstrumentation.StartupHook.dll sources/net/
 
   cp ../artifacts/requirements.json sources/requirements.json
