@@ -62,7 +62,6 @@
       _dd.library_capabilities.test_management.disable: 1,
       _dd.library_capabilities.test_management.quarantine: 1,
       _dd.origin: ciapp-test,
-      _dd.sdk.otlp_export: false,
       _dd.test.is_user_provided_service: true
     },
     Metrics: {
