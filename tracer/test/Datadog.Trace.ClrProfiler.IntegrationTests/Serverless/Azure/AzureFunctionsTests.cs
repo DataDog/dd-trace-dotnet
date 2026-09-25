@@ -11,6 +11,7 @@ using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Telemetry;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using FluentAssertions.Execution;
@@ -66,6 +67,17 @@ public abstract class AzureFunctionsTests : TestHelper
         }
 
         return filteredSpans;
+    }
+
+    protected static async Task WaitForWorkerShutdownAsync(MockTracerAgent agent, MockSpan workerSpan)
+    {
+        // func can exit before the isolated worker finishes its shutdown flush. App-closing
+        // telemetry is sent after the trace writer closes; keep the agent alive until then.
+        var workerRuntimeId = workerSpan.Tags[Tags.RuntimeId];
+        var appClosing = await agent.WaitForLatestTelemetryAsync(
+            x => x is TelemetryData data && data.RuntimeId == workerRuntimeId && data.IsRequestType(TelemetryRequestTypes.AppClosing),
+            timeoutInMilliseconds: 10_000);
+        appClosing.Should().NotBeNull("the worker must finish flushing before the mock agent is disposed");
     }
 
     protected async Task<ProcessResult> RunAzureFunctionAndWaitForExit(MockTracerAgent agent, Func<Task> seedAsync = null, string framework = null, int expectedExitCode = 0, string packageVersion = "")

@@ -80,6 +80,9 @@ public class AzureFunctionsDurableTriggerTests : AzureFunctionsTests
 
             spans.Should().HaveCount(ExpectedDurableSpanCount);
             var orchestrationSpan = spans.Should().ContainSingle(s => s.Resource == "DurableOrchestration DurableWorkflow").Subject;
+
+            await WaitForWorkerShutdownAsync(agent, orchestrationSpan);
+
             orchestrationSpan.Error.Should().Be(0);
             var activitySpan = spans.Should().ContainSingle(s => s.Resource == "DurableActivity DurableActivity").Subject;
             spans.Should().ContainSingle(s => HasTrigger(s, "DurableEntity"));
