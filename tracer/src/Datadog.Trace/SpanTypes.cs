@@ -121,5 +121,10 @@ namespace Datadog.Trace
         /// The span type for a Browser test integration.
         /// </summary>
         internal const string Browser = "browser";
+
+        /// <summary>
+        /// The span type for DNS client integrations.
+        /// </summary>
+        internal const string Dns = "dns";
     }
 }

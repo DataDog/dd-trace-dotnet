@@ -20,6 +20,7 @@
    <assembly fullname="Datadog.Trace" />
    <assembly fullname="Datadog.Trace.Manual" />
    <assembly fullname="Datadog.Trace.OpenTracing" />
+   <assembly fullname="DnsClient" />
    <assembly fullname="dotnet" />
    <assembly fullname="Elasticsearch.Net" />
    <assembly fullname="Google.Protobuf" />

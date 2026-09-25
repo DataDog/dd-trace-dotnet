@@ -7409,6 +7409,59 @@
     "InstrumentationCategory": 1
   },
   {
+    "IntegrationName": "DnsClient",
+    "AssemblyName": "DnsClient",
+    "TargetTypeName": "DnsClient.LookupClient",
+    "TargetMethodName": "QueryInternal",
+    "TargetReturnType": "DnsClient.IDnsQueryResponse",
+    "TargetParameterTypes": [
+      "DnsClient.DnsQuestion",
+      "DnsClient.DnsQuerySettings",
+      "System.Collections.Generic.IReadOnlyCollection`1[DnsClient.NameServer]"
+    ],
+    "MinimumVersion": {
+      "Item1": 1,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 1,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.DnsClient.QueryInternalIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "DnsClient",
+    "AssemblyName": "DnsClient",
+    "TargetTypeName": "DnsClient.LookupClient",
+    "TargetMethodName": "QueryInternalAsync",
+    "TargetReturnType": "System.Threading.Tasks.Task`1[DnsClient.IDnsQueryResponse]",
+    "TargetParameterTypes": [
+      "DnsClient.DnsQuestion",
+      "DnsClient.DnsQuerySettings",
+      "System.Collections.Generic.IReadOnlyCollection`1[DnsClient.NameServer]",
+      "System.Threading.CancellationToken"
+    ],
+    "MinimumVersion": {
+      "Item1": 1,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 1,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.DnsClient.QueryInternalAsyncIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
     "IntegrationName": "DotnetTest",
     "AssemblyName": "coverlet.core",
     "TargetTypeName": "Coverlet.Core.Coverage",

@@ -167,6 +167,13 @@ namespace Datadog.Trace.TestHelpers
                 _ => span.IsCouchbaseV0(),
             };
 
+        public static Result IsDnsClient(this MockSpan span, string metadataSchemaVersion) =>
+            metadataSchemaVersion switch
+            {
+                "v1" => span.IsDnsClientV1(),
+                _ => span.IsDnsClientV0(),
+            };
+
         public static Result IsElasticsearchNet(this MockSpan span, string metadataSchemaVersion) =>
             metadataSchemaVersion switch
             {

@@ -1,5 +1,15 @@
 [
   {
+    "IntegrationName": "DnsClient",
+    "SampleProjectName": "Samples.DnsClient",
+    "NugetPackageSearchName": "DnsClient",
+    "MinVersion": "1.8.0",
+    "MaxVersionExclusive": "2.0.0",
+    "SpecificVersions": [
+      "1.8.*"
+    ]
+  },
+  {
     "IntegrationName": "Hangfire",
     "SampleProjectName": "Samples.Hangfire",
     "NugetPackageSearchName": "Hangfire.Core",
