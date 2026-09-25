@@ -21,6 +21,7 @@ using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Telemetry.Metrics;
+using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.Debugger.Expressions
@@ -135,7 +136,8 @@ namespace Datadog.Trace.Debugger.Expressions
                     DebuggerGuardrailMetrics.RecordEventsSkipped(probeType, MetricTags.DebuggerEventsSkippedReason.RateLimitProbe);
                     return false;
                 default:
-                    throw new ArgumentOutOfRangeException(nameof(samplingDecision), samplingDecision, null);
+                    ThrowHelper.ThrowArgumentOutOfRangeException(nameof(samplingDecision), samplingDecision, null);
+                    return false;
             }
         }
 
@@ -603,7 +605,7 @@ namespace Datadog.Trace.Debugger.Expressions
         {
             try
             {
-                scope = GetActiveScopeCore();
+                scope = GetActiveScope();
                 if (scope is not null)
                 {
                     return true;
@@ -626,36 +628,33 @@ namespace Datadog.Trace.Debugger.Expressions
 
         internal static Scope? GetActiveScope()
         {
-            try
-            {
-                return GetActiveScopeCore();
-            }
-            catch (Exception e)
-            {
-                Log.Error(e, "Error while trying to get the active scope for debugger probe processing");
-                return null;
-            }
-        }
-
-        private static Scope? GetActiveScopeCore()
-        {
             if (Tracer.Instance.InternalActiveScope is { } activeScope)
             {
                 return activeScope;
             }
 
 #if NETFRAMEWORK
-            var ctx = WcfCommon.GetCurrentOperationContext?.Invoke();
-            if (ctx?.DuckCast<IOperationContextStruct>() is { } ctxProxy
-             && ((IDuckType?)ctxProxy.RequestContext)?.Instance is { } requestContextInstance
+            return GetActiveScopeFromWcf();
+#else
+            return null;
+#endif
+        }
+
+#if NETFRAMEWORK
+        private static Scope? GetActiveScopeFromWcf()
+        {
+            var operationContext = WcfCommon.GetCurrentOperationContext?.Invoke();
+            if (operationContext is not null
+             && operationContext.TryDuckCast<IOperationContextStruct>(out var operationContextProxy)
+             && operationContextProxy.RequestContext?.Instance is { } requestContextInstance
              && WcfCommon.Scopes.TryGetValue(requestContextInstance, out var scope))
             {
                 return scope;
             }
-#endif
 
             return null;
         }
+#endif
 
         internal static void AddAsyncMethodArguments<T>(DebuggerSnapshotCreator snapshotCreator, ref CaptureInfo<T> captureInfo)
         {

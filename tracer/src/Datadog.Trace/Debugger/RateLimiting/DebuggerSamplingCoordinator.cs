@@ -18,10 +18,10 @@ namespace Datadog.Trace.Debugger.RateLimiting
         internal DebuggerSamplingDecision TrySample<TSamplingDecisionProvider>(string probeId, TSamplingDecisionProvider samplingDecisionProvider)
             where TSamplingDecisionProvider : struct, IDebuggerSamplingDecisionProvider
         {
-            var decision = Volatile.Read(ref _decision);
-            if (decision is (int)DebuggerSamplingDecision.DropGlobal or (int)DebuggerSamplingDecision.DropProbe)
+            var decision = (DebuggerSamplingDecision)Volatile.Read(ref _decision);
+            if (decision is DebuggerSamplingDecision.DropGlobal or DebuggerSamplingDecision.DropProbe)
             {
-                return (DebuggerSamplingDecision)decision;
+                return decision;
             }
 
             // The lock is reentrant. Holding it here means Sample() ran customer code on this thread
@@ -41,7 +41,7 @@ namespace Datadog.Trace.Debugger.RateLimiting
                         _emittedProbeIds = [probeId];
                     }
 
-                    Volatile.Write(ref _decision, (int)samplingDecision);
+                    _decision = (int)samplingDecision;
                     return samplingDecision;
                 }
 
