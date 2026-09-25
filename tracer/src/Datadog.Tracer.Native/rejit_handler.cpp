@@ -257,7 +257,7 @@ void RejitHandlerModule::RequestRejitForInlinersInModule(ModuleID moduleId)
 
 void RejitHandler::RequestRejit(const std::vector<RejitRequest>& rejitRequests, bool callRevertExplicitly)
 {
-    if (IsShutdownRequested())
+    if (IsShutdownRequested() || rejitRequests.empty())
     {
         return;
     }
@@ -274,8 +274,11 @@ void RejitHandler::RequestRejit(const std::vector<RejitRequest>& rejitRequests, 
     // A ModuleID is invalid after ModuleUnloadStarted returns, and Desktop CLR's RequestReJIT path can
     // dereference it directly. Keep every captured module generation alive through the CLR call. Acquire each
     // generation once so a batch containing several methods from one module never recursively locks its
-    // shared_mutex. Shutdown and RemoveModule take at most one lifetime write lock at a time, so holding the
-    // batch's read leases cannot form a lock cycle.
+    // shared_mutex. Teardown holds at most one lifetime write lock at a time (under m_module_cleanup_lock), so
+    // the batch's read leases cannot form a cycle among themselves. A read lease can still wait behind a queued
+    // writer (SRWLOCK blocks new readers), and that writer waits for every current lease holder. Callers must
+    // therefore not hold a lock that a lease holder can wait on, such as Dataflow::_cs, which rejitters take
+    // under the NotifyReJITParameters lease.
     for (const auto& request : rejitRequests)
     {
         if (request.lifetime == nullptr)

@@ -686,7 +686,10 @@ MethodInfo* Dataflow::GetMethodInfo(ModuleID moduleId, mdMethodDef methodId)
 
 bool Dataflow::IsInlineEnabled(ModuleID calleeModuleId, mdToken calleeMethodId)
 {
-    auto method = JITProcessMethod(calleeModuleId, calleeMethodId);
+    std::vector<RejitRequest> rejitRequests;
+    const auto module = m_rejitHandler->GetModuleWithLifetime(calleeModuleId);
+    auto method = JITProcessMethod(calleeModuleId, calleeMethodId, nullptr, &module, &rejitRequests);
+    m_rejitHandler->RequestRejit(rejitRequests);
     if (method)
     {
         return method->IsInlineEnabled();
@@ -800,16 +803,7 @@ HRESULT Dataflow::RewriteMethod(MethodInfo* method, trace::FunctionControlWrappe
             else
             {
                 DBG("Dataflow::RewriteMethod -> REJIT requested for ", method->GetKey());
-                if (deferredRejitRequests != nullptr && moduleWithLifetime != nullptr)
-                {
-                    deferredRejitRequests->emplace_back(*moduleWithLifetime, method->GetMemberId());
-                }
-                else
-                {
-                    std::vector<MethodIdentifier> methods = {{module->_id, method->GetMemberId()}};
-                    auto requests = m_rejitHandler->GetRejitRequests(methods);
-                    m_rejitHandler->RequestRejit(requests);
-                }
+                deferredRejitRequests->emplace_back(*moduleWithLifetime, method->GetMemberId());
             }
         }
     }
