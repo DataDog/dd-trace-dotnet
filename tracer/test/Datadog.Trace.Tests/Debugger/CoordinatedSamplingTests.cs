@@ -262,7 +262,7 @@ public class CoordinatedSamplingTests
     }
 
     [Fact]
-    public void CreatingDecisionPreventsReentrantSamplerConsult()
+    public void NestedSampleOnDecidingThreadIsDroppedWithoutConsultingSampler()
     {
         var coordinator = new DebuggerSamplingCoordinator();
         var calls = 0;
@@ -281,7 +281,7 @@ public class CoordinatedSamplingTests
     }
 
     [Fact]
-    public void ThrownSampleClearsCreatingDecisionSoALaterCallerCanRetry()
+    public void ThrownSampleLeavesTraceUndecidedSoALaterCallerCanRetry()
     {
         var coordinator = new DebuggerSamplingCoordinator();
         var calls = 0;

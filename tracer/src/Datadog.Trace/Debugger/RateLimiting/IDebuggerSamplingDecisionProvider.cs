@@ -9,6 +9,7 @@ namespace Datadog.Trace.Debugger.RateLimiting
 {
     internal enum DebuggerSamplingDecision
     {
+        Undecided,
         Keep,
         DropGlobal,
         DropProbe
