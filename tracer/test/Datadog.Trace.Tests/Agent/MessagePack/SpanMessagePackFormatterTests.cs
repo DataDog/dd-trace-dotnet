@@ -20,6 +20,7 @@ using Datadog.Trace.Propagators;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.TestHelpers.PlatformHelpers;
 using Datadog.Trace.TestHelpers.Stats;
 using Datadog.Trace.TestHelpers.TestTracer;
 using Datadog.Trace.Tests.Util;
@@ -512,6 +513,97 @@ public class SpanMessagePackFormatterTests
     }
 
     [Fact]
+    public async Task AllCachedValues_AreCorrectlySerialized()
+    {
+        // This test verifies that all cached values in SpanMessagePackFormatter are correctly
+        // initialized and serialized. This includes:
+        // - 11 AAS tag values (moved from MessagePackStringCache in optimization)
+        // - 2 git tag values (moved from MessagePackStringCache in optimization)
+        // - Constant tag names and values (language, runtime-id, etc.)
+
+        var mockApi = new MockApi();
+
+        // Use AzureAppServiceHelper to get proper AAS configuration
+        var aasConfig = AzureAppServiceHelper.GetRequiredAasConfigurationValues(
+            subscriptionId: "test-sub-id",
+            deploymentId: "test-site",
+            planResourceGroup: "test-plan-rg",
+            siteResourceGroup: "test-rg");
+
+        // Add git metadata and other configuration values
+        var configValues = new Dictionary<string, string>
+        {
+            { "DD_GIT_COMMIT_SHA", "abc123def456" },
+            { "DD_GIT_REPOSITORY_URL", "https://github.com/test/repo" },
+            { ConfigurationKeys.Environment, "test-env" },
+            { ConfigurationKeys.ServiceVersion, "1.2.3" }
+        };
+
+        // Combine AAS config with additional config values
+        var compositeSource = new CompositeConfigurationSource
+        {
+            aasConfig,
+            new DictionaryConfigurationSource(configValues)
+        };
+
+        var settings = new TracerSettings(compositeSource);
+        var agentWriter = AgentWriterHelper.CreateWithManualFlush(mockApi);
+        await using var tracer = TracerHelper.Create(settings, agentWriter, sampler: null, scopeManager: null, statsd: null, NullTelemetryController.Instance, NullDiscoveryService.Instance);
+
+        using (_ = tracer.StartActive("test-operation"))
+        {
+        }
+
+        await tracer.FlushAsync();
+        var traceChunks = mockApi.Wait(TimeSpan.FromSeconds(30));
+
+        traceChunks.Should().HaveCount(1);
+        var spans = traceChunks[0];
+        spans.Should().HaveCount(1);
+        var span = spans[0];
+
+        // ===== Verify all 11 AAS tag VALUES (optimized to use cached bytes) =====
+        // These were moved from MessagePackStringCache to SpanMessagePackFormatter fields
+        span.GetTag(Tags.AzureAppServicesSiteName).Should().Be("test-site", "aas.site.name value should be cached");
+        span.GetTag(Tags.AzureAppServicesSiteKind).Should().Be("app", "aas.site.kind value should be cached");
+        span.GetTag(Tags.AzureAppServicesSiteType).Should().Be("app", "aas.site.type value should be cached");
+        span.GetTag(Tags.AzureAppServicesResourceGroup).Should().Be("test-rg", "aas.resource.group value should be cached");
+        span.GetTag(Tags.AzureAppServicesSubscriptionId).Should().Be("test-sub-id", "aas.subscription.id value should be cached");
+        span.GetTag(Tags.AzureAppServicesResourceId).Should().NotBeNullOrEmpty("aas.resource.id value should be cached");
+        span.GetTag(Tags.AzureAppServicesResourceId).Should().Contain("test-sub-id").And.Contain("test-rg");
+        // AzureAppServiceHelper hardcodes these values (see AzureAppServiceHelper.GetRequiredAasConfigurationValues)
+        span.GetTag(Tags.AzureAppServicesInstanceId).Should().Be("instance_id", "aas.instance.id value should be cached");
+        span.GetTag(Tags.AzureAppServicesInstanceName).Should().Be("instance_name", "aas.instance.name value should be cached");
+        span.GetTag(Tags.AzureAppServicesOperatingSystem).Should().NotBeNullOrEmpty("aas.environment.os value should be cached");
+        span.GetTag(Tags.AzureAppServicesRuntime).Should().NotBeNullOrEmpty("aas.environment.runtime value should be cached");
+        span.GetTag(Tags.AzureAppServicesExtensionVersion).Should().Be("3.0.0", "aas.environment.extension_version value should be cached");
+
+        // ===== Verify git tag VALUES (optimized to use cached bytes) =====
+        // These were moved from MessagePackStringCache to SpanMessagePackFormatter fields
+        span.GetTag(Tags.GitCommitSha).Should().Be("abc123def456", "git.commit.sha value should be cached");
+        span.GetTag(Tags.GitRepositoryUrl).Should().Be("https://github.com/test/repo", "git.repository_url value should be cached");
+
+        // ===== Verify other constant cached values =====
+        span.GetTag(Tags.Language).Should().Be(TracerConstants.Language, "language tag should be 'dotnet'");
+        span.GetTag(Tags.RuntimeId).Should().NotBeNullOrEmpty("runtime-id should be present and cached");
+        span.GetTag(Tags.Env).Should().Be("test-env", "env tag should match configured value");
+        span.GetTag(Tags.Version).Should().Be("1.2.3", "version tag should match configured value");
+
+        // ===== Verify metrics (numeric tags) that use cached names =====
+        span.Metrics.Should().ContainKey(Datadog.Trace.Metrics.ProcessId, "process_id metric should be present with cached name");
+        span.Metrics[Datadog.Trace.Metrics.ProcessId].Should().BeGreaterThan(0, "process_id should be valid");
+
+        // ===== Verify span fields that use cached names =====
+        span.Service.Should().NotBeNullOrEmpty("service name should be present");
+        span.Name.Should().Be("test-operation", "operation name should match");
+        span.Resource.Should().Be("test-operation", "resource should match operation name");
+        span.TraceId.Should().BeGreaterThan(0, "trace_id should be valid");
+        span.SpanId.Should().BeGreaterThan(0, "span_id should be valid");
+        span.ParentId.Should().BeNull("root span should have no parent_id");
+        span.Error.Should().Be(0, "error flag should be 0 for successful span");
+    }
+
+    [Fact]
     public async Task Serialize_InferredProxySpan_InAzureAppServices_DoesNotIncludeAasTags()
     {
         // Arrange
@@ -576,6 +668,38 @@ public class SpanMessagePackFormatterTests
         // Verify it DOES have the inferred span metric
         serializedSpan.Metrics.Should().ContainKey("_dd.inferred_span");
         serializedSpan.Metrics["_dd.inferred_span"].Should().Be(1.0);
+    }
+
+    [Fact]
+    public async Task SerializationKeepsAzureAppServiceSettingsIsolated()
+    {
+        await using var firstTracer = TracerHelper.Create(CreateSettings("first", "first-instance"));
+        await using var secondTracer = TracerHelper.Create(CreateSettings("second", " "));
+
+        SerializeTags(firstTracer).Should().Contain(Tags.AzureAppServicesSiteName, "first")
+                                  .And.Contain(Tags.AzureAppServicesInstanceId, "first-instance");
+        SerializeTags(secondTracer).Should().Contain(Tags.AzureAppServicesSiteName, "second")
+                                   .And.NotContainKey(Tags.AzureAppServicesInstanceId);
+        SerializeTags(firstTracer).Should().Contain(Tags.AzureAppServicesSiteName, "first")
+                                  .And.Contain(Tags.AzureAppServicesInstanceId, "first-instance");
+
+        static TracerSettings CreateSettings(string site, string instance) => new(new NameValueConfigurationSource(new NameValueCollection
+        {
+            { ConfigurationKeys.ApiKey, "1" },
+            { ConfigurationKeys.AzureAppService.AzureAppServicesContextKey, "1" },
+            { "WEBSITE_SITE_NAME", site },
+            { "WEBSITE_INSTANCE_ID", instance },
+        }));
+
+        static Dictionary<string, string> SerializeTags(Tracer tracer)
+        {
+            var span = tracer.StartSpan("http.request");
+            span.SetDuration(TimeSpan.FromMilliseconds(100));
+            var chunk = new TraceChunkModel(new SpanCollection(new[] { span }));
+            byte[] bytes = [];
+            var length = SpanMessagePackFormatter.Instance.Serialize(ref bytes, 0, chunk, SpanFormatterResolver.Instance);
+            return global::MessagePack.MessagePackSerializer.Deserialize<MockSpan[]>(new ArraySegment<byte>(bytes, 0, length))[0].Tags;
+        }
     }
 
     [Fact]

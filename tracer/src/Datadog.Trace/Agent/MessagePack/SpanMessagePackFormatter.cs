@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using Datadog.Trace.AppSec;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.Processors;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Sampling;
@@ -23,96 +24,33 @@ namespace Datadog.Trace.Agent.MessagePack
     {
         public static readonly SpanMessagePackFormatter Instance = new();
 
-        private readonly byte[] _runtimeIdValueBytes = StringEncoding.UTF8.GetBytes(Tracer.RuntimeId);
+        // MessagePack-encoded bytes for string constants are now generated at compile-time
+        // by the MessagePackConstantsGenerator source generator and accessed via MessagePackConstants.
+        // These bytes include the MessagePack string prefix, so use WriteRaw() not WriteStringBytes().
+        //
+        // Only instance fields that remain are for values determined at runtime (e.g., Tracer.RuntimeId,
+        // Azure App Service environment variables, and dynamically cached values).
+
+        // Runtime values (determined at process startup)
+        private readonly byte[] _runtimeIdValueBytes = MessagePackSerializer.Serialize(Tracer.RuntimeId);
         private readonly Dictionary<string, byte[]> _wafRuleFileVersionValues = new();
+
+        // Settings are immutable. Cache an immutable snapshot per settings instance so concurrent
+        // writers cannot overwrite each other's tags, without retaining old configurations forever.
+        private readonly ConditionalWeakTable<ImmutableAzureAppServiceSettings, AasTagValues> _aasTagValues = new();
 
         private SpanMessagePackFormatter()
         {
         }
 
-        // UTF-8 bytes for string constants are embedded in the PE as static data via u8 literals.
-        // Using ReadOnlySpan<byte> property getters avoids heap allocations and static field
-        // indirection (important when the assembly is loaded in the shared domain on .NET Framework).
-#pragma warning disable SA1516 // Elements should be separated by blank line
-        // span fields
-        private static ReadOnlySpan<byte> TraceIdBytes => "trace_id"u8;
-        private static ReadOnlySpan<byte> TraceIdHighBytes => "trace_id_high"u8;
-        private static ReadOnlySpan<byte> SpanIdBytes => "span_id"u8;
-        private static ReadOnlySpan<byte> NameBytes => "name"u8;
-        private static ReadOnlySpan<byte> ResourceBytes => "resource"u8;
-        private static ReadOnlySpan<byte> ServiceBytes => "service"u8;
-        private static ReadOnlySpan<byte> TypeBytes => "type"u8;
-        private static ReadOnlySpan<byte> StartBytes => "start"u8;
-        private static ReadOnlySpan<byte> DurationBytes => "duration"u8;
-        private static ReadOnlySpan<byte> ParentIdBytes => "parent_id"u8;
-        private static ReadOnlySpan<byte> ErrorBytes => "error"u8;
-        private static ReadOnlySpan<byte> MetaStructBytes => "meta_struct"u8;
-
-        // span links and span events metadata
-        private static ReadOnlySpan<byte> SpanLinkBytes => "span_links"u8;
-        private static ReadOnlySpan<byte> TraceStateBytes => "tracestate"u8;
-        private static ReadOnlySpan<byte> TraceFlagBytes => "flags"u8;
-        private static ReadOnlySpan<byte> EventBytes => "events"u8;
-        private static ReadOnlySpan<byte> SpanEventBytes => "span_events"u8;
-        private static ReadOnlySpan<byte> TimeUnixNanoBytes => "time_unix_nano"u8;
-        private static ReadOnlySpan<byte> AttributesBytes => "attributes"u8;
-        private static ReadOnlySpan<byte> TypeFieldBytes => "type"u8;
-        private static ReadOnlySpan<byte> StringValueFieldBytes => "string_value"u8;
-        private static ReadOnlySpan<byte> BoolValueFieldBytes => "bool_value"u8;
-        private static ReadOnlySpan<byte> IntValueFieldBytes => "int_value"u8;
-        private static ReadOnlySpan<byte> DoubleValueFieldBytes => "double_value"u8;
-        private static ReadOnlySpan<byte> ArrayValueFieldBytes => "array_value"u8;
-        private static ReadOnlySpan<byte> ValuesFieldBytes => "values"u8;
-
-        // string tags
-        private static ReadOnlySpan<byte> MetaBytes => "meta"u8;
-
-        private static ReadOnlySpan<byte> LanguageNameBytes => "language"u8; // Tags.Language
-        private static ReadOnlySpan<byte> LanguageValueBytes => "dotnet"u8; // TracerConstants.Language
-
-        private static ReadOnlySpan<byte> RuntimeIdNameBytes => "runtime-id"u8; // Tags.RuntimeId
-        private static ReadOnlySpan<byte> ProcessTagsNameBytes => "_dd.tags.process"u8; // Tags.ProcessTags
-        private static ReadOnlySpan<byte> EnvironmentNameBytes => "env"u8; // Tags.Env
-        private static ReadOnlySpan<byte> GitCommitShaNameBytes => "_dd.git.commit.sha"u8; // Tags.GitCommitSha
-        private static ReadOnlySpan<byte> GitRepositoryUrlNameBytes => "_dd.git.repository_url"u8; // Tags.GitRepositoryUrl
-        private static ReadOnlySpan<byte> VersionNameBytes => "version"u8; // Tags.Version
-        private static ReadOnlySpan<byte> OriginNameBytes => "_dd.origin"u8; // Tags.Origin
-        private static ReadOnlySpan<byte> LastParentIdBytes => "_dd.parent_id"u8; // Tags.LastParentId
-        private static ReadOnlySpan<byte> BaseServiceNameBytes => "_dd.base_service"u8; // Tags.BaseService
         private static ReadOnlySpan<byte> ServiceNameSourceNameBytes => "_dd.svc_src"u8; // Tags.ServiceNameSource
 
-        // numeric tags
-        private static ReadOnlySpan<byte> MetricsBytes => "metrics"u8;
-        private static ReadOnlySpan<byte> SamplingPriorityNameBytes => "_sampling_priority_v1"u8; // Metrics.SamplingPriority
-        private static ReadOnlySpan<byte> AgentSamplingRateNameBytes => "_dd.agent_psr"u8; // Metrics.SamplingAgentDecision
-        private static ReadOnlySpan<byte> RuleSamplingRateNameBytes => "_dd.rule_psr"u8; // Metrics.SamplingRuleDecision
-        private static ReadOnlySpan<byte> LimitSamplingRateNameBytes => "_dd.limit_psr"u8; // Metrics.SamplingLimitDecision
-        private static ReadOnlySpan<byte> KeepRateNameBytes => "_dd.tracer_kr"u8; // Metrics.TracesKeepRate
-        private static ReadOnlySpan<byte> ProcessIdNameBytes => "process_id"u8; // Metrics.ProcessId
-        private static ReadOnlySpan<byte> ApmEnabledNameBytes => "_dd.apm.enabled"u8; // Metrics.ApmEnabled
-        private static ReadOnlySpan<byte> TopLevelSpanNameBytes => "_dd.top_level"u8; // Metrics.TopLevelSpan
-
-        // ASM tags
-        private static ReadOnlySpan<byte> AppSecEnabledBytes => "_dd.appsec.enabled"u8; // Metrics.AppSecEnabled
-        private static ReadOnlySpan<byte> WafRuleFileVersionBytes => "_dd.appsec.event_rules.version"u8; // Tags.AppSecRuleFileVersion
-        private static ReadOnlySpan<byte> RuntimeFamilyBytes => "_dd.runtime_family"u8; // Tags.RuntimeFamily
         // Feature-flag span enrichment tag names (frozen cross-SDK contract; bare names, never _dd.-prefixed)
         private static ReadOnlySpan<byte> FfeFlagsEncNameBytes => "ffe_flags_enc"u8; // SpanEnrichmentState.TagFlagsEnc
+
         private static ReadOnlySpan<byte> FfeSubjectsEncNameBytes => "ffe_subjects_enc"u8; // SpanEnrichmentState.TagSubjectsEnc
+
         private static ReadOnlySpan<byte> FfeRuntimeDefaultsNameBytes => "ffe_runtime_defaults"u8; // SpanEnrichmentState.TagRuntimeDefaults
-        // Azure App Service tag names
-        private static ReadOnlySpan<byte> AasSiteNameTagNameBytes => "aas.site.name"u8; // Tags.AzureAppServicesSiteName
-        private static ReadOnlySpan<byte> AasSiteKindTagNameBytes => "aas.site.kind"u8; // Tags.AzureAppServicesSiteKind
-        private static ReadOnlySpan<byte> AasSiteTypeTagNameBytes => "aas.site.type"u8; // Tags.AzureAppServicesSiteType
-        private static ReadOnlySpan<byte> AasResourceGroupTagNameBytes => "aas.resource.group"u8; // Tags.AzureAppServicesResourceGroup
-        private static ReadOnlySpan<byte> AasSubscriptionIdTagNameBytes => "aas.subscription.id"u8; // Tags.AzureAppServicesSubscriptionId
-        private static ReadOnlySpan<byte> AasResourceIdTagNameBytes => "aas.resource.id"u8; // Tags.AzureAppServicesResourceId
-        private static ReadOnlySpan<byte> AasInstanceIdTagNameBytes => "aas.environment.instance_id"u8; // Tags.AzureAppServicesInstanceId
-        private static ReadOnlySpan<byte> AasInstanceNameTagNameBytes => "aas.environment.instance_name"u8; // Tags.AzureAppServicesInstanceName
-        private static ReadOnlySpan<byte> AasOperatingSystemTagNameBytes => "aas.environment.os"u8; // Tags.AzureAppServicesOperatingSystem
-        private static ReadOnlySpan<byte> AasRuntimeTagNameBytes => "aas.environment.runtime"u8; // Tags.AzureAppServicesRuntime
-        private static ReadOnlySpan<byte> AasExtensionVersionTagNameBytes => "aas.environment.extension_version"u8; // Tags.AzureAppServicesExtensionVersion
-#pragma warning restore SA1201
 
         int IMessagePackFormatter<TraceChunkModel>.Serialize(ref byte[] bytes, int offset, TraceChunkModel traceChunk, IFormatterResolver formatterResolver)
         {
@@ -200,39 +138,39 @@ namespace Datadog.Trace.Agent.MessagePack
             offset += MessagePackBinary.WriteMapHeader(ref bytes, offset, len);
 
             // trace_id field is 64-bits, truncate by using TraceId128.Lower
-            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, TraceIdBytes);
+            offset += MessagePackBinary.WriteRaw(ref bytes, offset, MessagePackConstants.TraceIdBytes);
             offset += MessagePackBinary.WriteUInt64(ref bytes, offset, span.Context.TraceId128.Lower);
 
-            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, SpanIdBytes);
+            offset += MessagePackBinary.WriteRaw(ref bytes, offset, MessagePackConstants.SpanIdBytes);
             offset += MessagePackBinary.WriteUInt64(ref bytes, offset, span.Context.SpanId);
 
-            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, NameBytes);
+            offset += MessagePackBinary.WriteRaw(ref bytes, offset, MessagePackConstants.NameBytes);
             offset += MessagePackBinary.WriteString(ref bytes, offset, span.OperationName);
 
-            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, ResourceBytes);
+            offset += MessagePackBinary.WriteRaw(ref bytes, offset, MessagePackConstants.ResourceBytes);
             offset += MessagePackBinary.WriteString(ref bytes, offset, span.ResourceName);
 
-            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, ServiceBytes);
+            offset += MessagePackBinary.WriteRaw(ref bytes, offset, MessagePackConstants.ServiceBytes);
             offset += MessagePackBinary.WriteString(ref bytes, offset, span.ServiceName);
 
-            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, TypeBytes);
+            offset += MessagePackBinary.WriteRaw(ref bytes, offset, MessagePackConstants.TypeBytes);
             offset += MessagePackBinary.WriteString(ref bytes, offset, span.Type);
 
-            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, StartBytes);
+            offset += MessagePackBinary.WriteRaw(ref bytes, offset, MessagePackConstants.StartBytes);
             offset += MessagePackBinary.WriteInt64(ref bytes, offset, span.StartTime.ToUnixTimeNanoseconds());
 
-            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, DurationBytes);
+            offset += MessagePackBinary.WriteRaw(ref bytes, offset, MessagePackConstants.DurationBytes);
             offset += MessagePackBinary.WriteInt64(ref bytes, offset, span.Duration.ToNanoseconds());
 
             if (span.Context.ParentId > 0)
             {
-                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, ParentIdBytes);
+                offset += MessagePackBinary.WriteRaw(ref bytes, offset, MessagePackConstants.ParentIdBytes);
                 offset += MessagePackBinary.WriteUInt64(ref bytes, offset, (ulong)span.Context.ParentId);
             }
 
             if (span.Error)
             {
-                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, ErrorBytes);
+                offset += MessagePackBinary.WriteRaw(ref bytes, offset, MessagePackConstants.ErrorBytes);
                 offset += MessagePackBinary.WriteByte(ref bytes, offset, 1);
             }
 
@@ -267,7 +205,7 @@ namespace Datadog.Trace.Agent.MessagePack
         {
             int originalOffset = offset;
 
-            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, SpanLinkBytes);
+            offset += MessagePackBinary.WriteRaw(ref bytes, offset, MessagePackConstants.SpanLinksBytes);
             offset += MessagePackBinary.WriteArrayHeader(ref bytes, offset, spanModel.Span.SpanLinks.Count);
 
             foreach (var spanLink in spanModel.Span.SpanLinks)
@@ -303,18 +241,18 @@ namespace Datadog.Trace.Agent.MessagePack
 
                 offset += MessagePackBinary.WriteMapHeader(ref bytes, offset, len);
                 // individual key-value pairs - traceid - lower
-                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, TraceIdBytes);
+                offset += MessagePackBinary.WriteRaw(ref bytes, offset, MessagePackConstants.TraceIdBytes);
                 offset += MessagePackBinary.WriteUInt64(ref bytes, offset, context.TraceId128.Lower);
                 // individual key-value pairs - traceid - higher
-                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, TraceIdHighBytes);
+                offset += MessagePackBinary.WriteRaw(ref bytes, offset, MessagePackConstants.TraceIdHighBytes);
                 offset += MessagePackBinary.WriteUInt64(ref bytes, offset, context.TraceId128.Upper);
                 // spanid
-                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, SpanIdBytes);
+                offset += MessagePackBinary.WriteRaw(ref bytes, offset, MessagePackConstants.SpanIdBytes);
                 offset += MessagePackBinary.WriteUInt64(ref bytes, offset, context.SpanId);
                 // optional serialization
                 if (hasAttributes)
                 {
-                    offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, AttributesBytes);
+                    offset += MessagePackBinary.WriteRaw(ref bytes, offset, MessagePackConstants.AttributesBytes);
                     offset += MessagePackBinary.WriteMapHeader(ref bytes, offset, spanLink.Attributes.Count);
                     foreach (var attribute in spanLink.Attributes)
                     {
@@ -327,13 +265,13 @@ namespace Datadog.Trace.Agent.MessagePack
                 if (context.IsRemote)
                 {
                     var traceState = W3CTraceContextPropagator.CreateTraceStateHeader(context);
-                    offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, TraceStateBytes);
+                    offset += MessagePackBinary.WriteRaw(ref bytes, offset, MessagePackConstants.TraceStateBytes);
                     offset += MessagePackBinary.WriteString(ref bytes, offset, traceState);
                 }
 
                 if (traceFlags > 0)
                 {
-                    offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, TraceFlagBytes);
+                    offset += MessagePackBinary.WriteRaw(ref bytes, offset, MessagePackConstants.TraceFlagsBytes);
                     offset += MessagePackBinary.WriteUInt32(ref bytes, offset, traceFlags);
                 }
             }
@@ -345,7 +283,7 @@ namespace Datadog.Trace.Agent.MessagePack
         {
             int originalOffset = offset;
 
-            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, SpanEventBytes);
+            offset += MessagePackBinary.WriteRaw(ref bytes, offset, MessagePackConstants.SpanEventsBytes);
             offset += MessagePackBinary.WriteArrayHeader(ref bytes, offset, spanModel.Span.SpanEvents.Count);
 
             foreach (var spanEvent in spanModel.Span.SpanEvents)
@@ -353,18 +291,18 @@ namespace Datadog.Trace.Agent.MessagePack
                 offset += MessagePackBinary.WriteMapHeader(ref bytes, offset, spanEvent.Attributes?.Count > 0 ? 3 : 2);
 
                 // time_unix_nano
-                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, TimeUnixNanoBytes);
+                offset += MessagePackBinary.WriteRaw(ref bytes, offset, MessagePackConstants.TimeUnixNanoBytes);
                 offset += MessagePackBinary.WriteInt64(ref bytes, offset, spanEvent.Timestamp.ToUnixTimeNanoseconds());
 
                 // name
-                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, NameBytes);
+                offset += MessagePackBinary.WriteRaw(ref bytes, offset, MessagePackConstants.NameBytes);
                 offset += MessagePackBinary.WriteString(ref bytes, offset, spanEvent.Name);
 
                 // attributes (strings only)
                 if (spanEvent.Attributes?.Count > 0)
                 {
                     // Reserve space to patch the correct map header count later
-                    offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, AttributesBytes);
+                    offset += MessagePackBinary.WriteRaw(ref bytes, offset, MessagePackConstants.AttributesBytes);
                     int attributeCountOffset = offset;
                     offset += MessagePackBinary.WriteMapHeaderForceMap32Block(ref bytes, offset, 0); // placeholder
 
@@ -378,7 +316,7 @@ namespace Datadog.Trace.Agent.MessagePack
 
                         offset += MessagePackBinary.WriteString(ref bytes, offset, attribute.Key);
                         offset += MessagePackBinary.WriteMapHeader(ref bytes, offset, 2);
-                        offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, TypeFieldBytes);
+                        offset += MessagePackBinary.WriteRaw(ref bytes, offset, MessagePackConstants.TypeFieldBytes);
 
                         if (attribute.Value is not Array)
                         {
@@ -388,15 +326,15 @@ namespace Datadog.Trace.Agent.MessagePack
                         else if (attribute.Value is Array arrayVal)
                         {
                             offset += MessagePackBinary.WriteInt32(ref bytes, offset, 4);
-                            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, ArrayValueFieldBytes);
+                            offset += MessagePackBinary.WriteRaw(ref bytes, offset, MessagePackConstants.ArrayValueFieldBytes);
                             offset += MessagePackBinary.WriteMapHeader(ref bytes, offset, 1);
-                            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, ValuesFieldBytes);
+                            offset += MessagePackBinary.WriteRaw(ref bytes, offset, MessagePackConstants.ValuesFieldBytes);
                             offset += MessagePackBinary.WriteArrayHeader(ref bytes, offset, arrayVal.Length);
 
                             foreach (var item in arrayVal)
                             {
                                 offset += MessagePackBinary.WriteMapHeader(ref bytes, offset, 2);
-                                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, TypeFieldBytes);
+                                offset += MessagePackBinary.WriteRaw(ref bytes, offset, MessagePackConstants.TypeFieldBytes);
                                 offset += WriteEventAttribute(ref bytes, offset, item);
                             }
 
@@ -410,7 +348,7 @@ namespace Datadog.Trace.Agent.MessagePack
                     }
                     else
                     {
-                        offset = attributeCountOffset - AttributesBytes.Length;
+                        offset = attributeCountOffset - MessagePackConstants.AttributesBytes.Length;
                     }
                 }
             }
@@ -427,25 +365,25 @@ namespace Datadog.Trace.Agent.MessagePack
                 case string stringVal:
                 case char charVal:
                     offset += MessagePackBinary.WriteInt32(ref bytes, offset, 0);
-                    offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, StringValueFieldBytes);
+                    offset += MessagePackBinary.WriteRaw(ref bytes, offset, MessagePackConstants.StringValueFieldBytes);
                     offset += MessagePackBinary.WriteString(ref bytes, offset, value.ToString());
                     break;
 
                 case bool boolVal:
                     offset += MessagePackBinary.WriteInt32(ref bytes, offset, 1);
-                    offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, BoolValueFieldBytes);
+                    offset += MessagePackBinary.WriteRaw(ref bytes, offset, MessagePackConstants.BoolValueFieldBytes);
                     offset += MessagePackBinary.WriteBoolean(ref bytes, offset, boolVal);
                     break;
 
                 case sbyte or byte or short or ushort or int or uint or long:
                     offset += MessagePackBinary.WriteInt32(ref bytes, offset, 2);
-                    offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, IntValueFieldBytes);
+                    offset += MessagePackBinary.WriteRaw(ref bytes, offset, MessagePackConstants.IntValueFieldBytes);
                     offset += MessagePackBinary.WriteInt64(ref bytes, offset, Convert.ToInt64(value));
                     break;
 
                 case float or double:
                     offset += MessagePackBinary.WriteInt32(ref bytes, offset, 3);
-                    offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, DoubleValueFieldBytes);
+                    offset += MessagePackBinary.WriteRaw(ref bytes, offset, MessagePackConstants.DoubleValueFieldBytes);
                     offset += MessagePackBinary.WriteDouble(ref bytes, offset, Convert.ToDouble(value));
                     break;
             }
@@ -460,7 +398,7 @@ namespace Datadog.Trace.Agent.MessagePack
             var settings = new JsonSerializerSettings { Converters = new List<JsonConverter> { new SpanEventConverter() }, Formatting = Formatting.None };
             var eventsJson = JsonHelper.SerializeObject(spanModel.Span.SpanEvents, settings);
 
-            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, EventBytes);
+            offset += MessagePackBinary.WriteRaw(ref bytes, offset, MessagePackConstants.EventsBytes);
             offset += MessagePackBinary.WriteString(ref bytes, offset, eventsJson);
 
             return offset - originalOffset;
@@ -469,7 +407,7 @@ namespace Datadog.Trace.Agent.MessagePack
         private int WriteMetaStruct(ref byte[] bytes, int offset, in SpanModel model)
         {
             int originalOffset = offset;
-            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, MetaStructBytes);
+            offset += MessagePackBinary.WriteRaw(ref bytes, offset, MessagePackConstants.MetaStructBytes);
 
             // We don't know the final count yet, depending on it, a different amount of bytes will be used for the header
             // of the dictionary, so we need a temporary buffer
@@ -500,7 +438,7 @@ namespace Datadog.Trace.Agent.MessagePack
             int originalOffset = offset;
 
             // Start of "meta" dictionary. Do not add any string tags before this line.
-            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, MetaBytes);
+            offset += MessagePackBinary.WriteRaw(ref bytes, offset, MessagePackConstants.MetaBytes);
 
             int count = 0;
 
@@ -542,7 +480,7 @@ namespace Datadog.Trace.Agent.MessagePack
             if (!string.IsNullOrEmpty(span.Context.LastParentId))
             {
                 count++;
-                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, LastParentIdBytes);
+                offset += MessagePackBinary.WriteRaw(ref bytes, offset, MessagePackConstants.LastParentIdBytes);
                 offset += MessagePackBinary.WriteString(ref bytes, offset, span.Context.LastParentId);
             }
 
@@ -551,8 +489,8 @@ namespace Datadog.Trace.Agent.MessagePack
             if (span.IsTopLevel && (!testOptimization.IsRunning || !testOptimization.Settings.Agentless))
             {
                 count++;
-                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, RuntimeIdNameBytes);
-                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _runtimeIdValueBytes);
+                offset += MessagePackBinary.WriteRaw(ref bytes, offset, MessagePackConstants.RuntimeIdBytes);
+                offset += MessagePackBinary.WriteRaw(ref bytes, offset, _runtimeIdValueBytes);
             }
 
             // add "_dd.origin" tag to all spans
@@ -561,7 +499,7 @@ namespace Datadog.Trace.Agent.MessagePack
             if (originRawBytes is not null)
             {
                 count++;
-                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, OriginNameBytes);
+                offset += MessagePackBinary.WriteRaw(ref bytes, offset, MessagePackConstants.OriginBytes);
                 offset += MessagePackBinary.WriteRaw(ref bytes, offset, originRawBytes);
             }
 
@@ -571,14 +509,14 @@ namespace Datadog.Trace.Agent.MessagePack
             if (envRawBytes is not null)
             {
                 count++;
-                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, EnvironmentNameBytes);
+                offset += MessagePackBinary.WriteRaw(ref bytes, offset, MessagePackConstants.EnvBytes);
                 offset += MessagePackBinary.WriteRaw(ref bytes, offset, envRawBytes);
             }
 
             // add "language=dotnet" tag to all spans
             count++;
-            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, LanguageNameBytes);
-            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, LanguageValueBytes);
+            offset += MessagePackBinary.WriteRaw(ref bytes, offset, MessagePackConstants.LanguageBytes);
+            offset += MessagePackBinary.WriteRaw(ref bytes, offset, MessagePackConstants.DotnetLanguageValueBytes);
 
             // add "version" tags to all spans whose service name is the default service name
             var serviceNameEqualsDefault = string.Equals(span.Context.ServiceName, model.TraceChunk.DefaultServiceName, StringComparison.OrdinalIgnoreCase);
@@ -589,7 +527,7 @@ namespace Datadog.Trace.Agent.MessagePack
                 if (versionRawBytes is not null)
                 {
                     count++;
-                    offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, VersionNameBytes);
+                    offset += MessagePackBinary.WriteRaw(ref bytes, offset, MessagePackConstants.VersionBytes);
                     offset += MessagePackBinary.WriteRaw(ref bytes, offset, versionRawBytes);
                 }
             }
@@ -602,7 +540,7 @@ namespace Datadog.Trace.Agent.MessagePack
                 if (serviceNameRawBytes is not null)
                 {
                     count++;
-                    offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, BaseServiceNameBytes);
+                    offset += MessagePackBinary.WriteRaw(ref bytes, offset, MessagePackConstants.BaseServiceBytes);
                     offset += MessagePackBinary.WriteRaw(ref bytes, offset, serviceNameRawBytes);
                 }
             }
@@ -631,7 +569,7 @@ namespace Datadog.Trace.Agent.MessagePack
                 if (processTagsRawBytes is not null)
                 {
                     count++;
-                    offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, ProcessTagsNameBytes);
+                    offset += MessagePackBinary.WriteRaw(ref bytes, offset, MessagePackConstants.ProcessTagsBytes);
                     offset += MessagePackBinary.WriteRaw(ref bytes, offset, processTagsRawBytes);
                 }
             }
@@ -639,31 +577,31 @@ namespace Datadog.Trace.Agent.MessagePack
             // SCI tags will be sent only once per trace
             if (model.IsFirstSpanInChunk)
             {
-                var gitCommitShaRawBytes = MessagePackStringCache.GetGitCommitShaBytes(model.TraceChunk.GitCommitSha);
-                if (gitCommitShaRawBytes is not null)
+                var gitCommitShaBytes = MessagePackStringCache.GetGitCommitShaBytes(model.TraceChunk.GitCommitSha);
+                if (gitCommitShaBytes is not null)
                 {
                     count++;
-                    offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, GitCommitShaNameBytes);
-                    offset += MessagePackBinary.WriteRaw(ref bytes, offset, gitCommitShaRawBytes);
+                    offset += MessagePackBinary.WriteRaw(ref bytes, offset, MessagePackConstants.GitCommitShaBytes);
+                    offset += MessagePackBinary.WriteRaw(ref bytes, offset, gitCommitShaBytes);
                 }
 
-                var gitRepositoryUrlRawBytes = MessagePackStringCache.GetGitRepositoryUrlBytes(model.TraceChunk.GitRepositoryUrl);
-                if (gitRepositoryUrlRawBytes is not null)
+                var gitRepositoryUrlBytes = MessagePackStringCache.GetGitRepositoryUrlBytes(model.TraceChunk.GitRepositoryUrl);
+                if (gitRepositoryUrlBytes is not null)
                 {
                     count++;
-                    offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, GitRepositoryUrlNameBytes);
-                    offset += MessagePackBinary.WriteRaw(ref bytes, offset, gitRepositoryUrlRawBytes);
+                    offset += MessagePackBinary.WriteRaw(ref bytes, offset, MessagePackConstants.GitRepositoryUrlBytes);
+                    offset += MessagePackBinary.WriteRaw(ref bytes, offset, gitRepositoryUrlBytes);
                 }
             }
 
             if (Security.Instance.AppsecEnabled && model.IsLocalRoot && span.Context.TraceContext?.WafExecuted is true)
             {
                 count++;
-                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, RuntimeFamilyBytes);
-                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, LanguageValueBytes);
+                offset += MessagePackBinary.WriteRaw(ref bytes, offset, MessagePackConstants.RuntimeFamilyBytes);
+                offset += MessagePackBinary.WriteRaw(ref bytes, offset, MessagePackConstants.DotnetLanguageValueBytes);
 
                 count++;
-                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, WafRuleFileVersionBytes);
+                offset += MessagePackBinary.WriteRaw(ref bytes, offset, MessagePackConstants.AppSecRuleFileVersionBytes);
                 offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, GetAppSecRulesetVersion(Security.Instance.WafRuleFileVersion));
             }
 
@@ -702,99 +640,88 @@ namespace Datadog.Trace.Agent.MessagePack
                 model.TraceChunk.AzureAppServiceSettings is { } azureAppServiceSettings &&
                 span.Tags is not InferredProxyTags { InferredSpan: 1.0 })
             {
-                byte[] tagBytes;
+                // Done here to avoid initializing in most cases
+                var aasTags = _aasTagValues.GetValue(azureAppServiceSettings, static settings => new AasTagValues(settings));
 
                 if (model.IsLocalRoot || model.IsChunkOrphan)
                 {
-                    tagBytes = MessagePackStringCache.GetAzureAppServiceKeyBytes(Datadog.Trace.Tags.AzureAppServicesSiteKind, azureAppServiceSettings.SiteKind);
-                    if (tagBytes is not null)
+                    if (aasTags.SiteKind is not null)
                     {
                         count++;
-                        offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, AasSiteKindTagNameBytes);
-                        offset += MessagePackBinary.WriteRaw(ref bytes, offset, tagBytes);
+                        offset += MessagePackBinary.WriteRaw(ref bytes, offset, MessagePackConstants.AzureAppServicesSiteKindBytes);
+                        offset += MessagePackBinary.WriteRaw(ref bytes, offset, aasTags.SiteKind);
                     }
 
-                    tagBytes = MessagePackStringCache.GetAzureAppServiceKeyBytes(Datadog.Trace.Tags.AzureAppServicesResourceGroup, azureAppServiceSettings.ResourceGroup);
-                    if (tagBytes is not null)
+                    if (aasTags.ResourceGroup is not null)
                     {
                         count++;
-                        offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, AasResourceGroupTagNameBytes);
-                        offset += MessagePackBinary.WriteRaw(ref bytes, offset, tagBytes);
+                        offset += MessagePackBinary.WriteRaw(ref bytes, offset, MessagePackConstants.AzureAppServicesResourceGroupBytes);
+                        offset += MessagePackBinary.WriteRaw(ref bytes, offset, aasTags.ResourceGroup);
                     }
 
-                    tagBytes = MessagePackStringCache.GetAzureAppServiceKeyBytes(Datadog.Trace.Tags.AzureAppServicesSubscriptionId, azureAppServiceSettings.SubscriptionId);
-                    if (tagBytes is not null)
+                    if (aasTags.SubscriptionId is not null)
                     {
                         count++;
-                        offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, AasSubscriptionIdTagNameBytes);
-                        offset += MessagePackBinary.WriteRaw(ref bytes, offset, tagBytes);
+                        offset += MessagePackBinary.WriteRaw(ref bytes, offset, MessagePackConstants.AzureAppServicesSubscriptionIdBytes);
+                        offset += MessagePackBinary.WriteRaw(ref bytes, offset, aasTags.SubscriptionId);
                     }
 
-                    tagBytes = MessagePackStringCache.GetAzureAppServiceKeyBytes(Datadog.Trace.Tags.AzureAppServicesResourceId, azureAppServiceSettings.ResourceId);
-                    if (tagBytes is not null)
+                    if (aasTags.ResourceId is not null)
                     {
                         count++;
-                        offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, AasResourceIdTagNameBytes);
-                        offset += MessagePackBinary.WriteRaw(ref bytes, offset, tagBytes);
+                        offset += MessagePackBinary.WriteRaw(ref bytes, offset, MessagePackConstants.AzureAppServicesResourceIdBytes);
+                        offset += MessagePackBinary.WriteRaw(ref bytes, offset, aasTags.ResourceId);
                     }
 
-                    tagBytes = MessagePackStringCache.GetAzureAppServiceKeyBytes(Datadog.Trace.Tags.AzureAppServicesInstanceId, azureAppServiceSettings.InstanceId);
-                    if (tagBytes is not null)
+                    if (aasTags.InstanceId is not null)
                     {
                         count++;
-                        offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, AasInstanceIdTagNameBytes);
-                        offset += MessagePackBinary.WriteRaw(ref bytes, offset, tagBytes);
+                        offset += MessagePackBinary.WriteRaw(ref bytes, offset, MessagePackConstants.AzureAppServicesInstanceIdBytes);
+                        offset += MessagePackBinary.WriteRaw(ref bytes, offset, aasTags.InstanceId);
                     }
 
-                    tagBytes = MessagePackStringCache.GetAzureAppServiceKeyBytes(Datadog.Trace.Tags.AzureAppServicesInstanceName, azureAppServiceSettings.InstanceName);
-                    if (tagBytes is not null)
+                    if (aasTags.InstanceName is not null)
                     {
                         count++;
-                        offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, AasInstanceNameTagNameBytes);
-                        offset += MessagePackBinary.WriteRaw(ref bytes, offset, tagBytes);
+                        offset += MessagePackBinary.WriteRaw(ref bytes, offset, MessagePackConstants.AzureAppServicesInstanceNameBytes);
+                        offset += MessagePackBinary.WriteRaw(ref bytes, offset, aasTags.InstanceName);
                     }
 
-                    tagBytes = MessagePackStringCache.GetAzureAppServiceKeyBytes(Datadog.Trace.Tags.AzureAppServicesOperatingSystem, azureAppServiceSettings.OperatingSystem);
-                    if (tagBytes is not null)
+                    if (aasTags.OperatingSystem is not null)
                     {
                         count++;
-                        offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, AasOperatingSystemTagNameBytes);
-                        offset += MessagePackBinary.WriteRaw(ref bytes, offset, tagBytes);
+                        offset += MessagePackBinary.WriteRaw(ref bytes, offset, MessagePackConstants.AzureAppServicesOperatingSystemBytes);
+                        offset += MessagePackBinary.WriteRaw(ref bytes, offset, aasTags.OperatingSystem);
                     }
 
-                    tagBytes = MessagePackStringCache.GetAzureAppServiceKeyBytes(Datadog.Trace.Tags.AzureAppServicesRuntime, FrameworkDescription.Instance.Name);
-
-                    if (tagBytes is not null)
+                    if (aasTags.Runtime is not null)
                     {
                         count++;
-                        offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, AasRuntimeTagNameBytes);
-                        offset += MessagePackBinary.WriteRaw(ref bytes, offset, tagBytes);
+                        offset += MessagePackBinary.WriteRaw(ref bytes, offset, MessagePackConstants.AzureAppServicesRuntimeBytes);
+                        offset += MessagePackBinary.WriteRaw(ref bytes, offset, aasTags.Runtime);
                     }
 
-                    tagBytes = MessagePackStringCache.GetAzureAppServiceKeyBytes(Datadog.Trace.Tags.AzureAppServicesExtensionVersion, azureAppServiceSettings.SiteExtensionVersion);
-                    if (tagBytes is not null)
+                    if (aasTags.ExtensionVersion is not null)
                     {
                         count++;
-                        offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, AasExtensionVersionTagNameBytes);
-                        offset += MessagePackBinary.WriteRaw(ref bytes, offset, tagBytes);
+                        offset += MessagePackBinary.WriteRaw(ref bytes, offset, MessagePackConstants.AzureAppServicesExtensionVersionBytes);
+                        offset += MessagePackBinary.WriteRaw(ref bytes, offset, aasTags.ExtensionVersion);
                     }
                 }
 
-                tagBytes = MessagePackStringCache.GetAzureAppServiceKeyBytes(Datadog.Trace.Tags.AzureAppServicesSiteName, azureAppServiceSettings.SiteName);
                 // the front-end identify AAS spans using aas.site.name and aas.site.type, so we need them on all spans
-                if (tagBytes is not null)
+                if (aasTags.SiteName is not null)
                 {
                     count++;
-                    offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, AasSiteNameTagNameBytes);
-                    offset += MessagePackBinary.WriteRaw(ref bytes, offset, tagBytes);
+                    offset += MessagePackBinary.WriteRaw(ref bytes, offset, MessagePackConstants.AzureAppServicesSiteNameBytes);
+                    offset += MessagePackBinary.WriteRaw(ref bytes, offset, aasTags.SiteName);
                 }
 
-                tagBytes = MessagePackStringCache.GetAzureAppServiceKeyBytes(Datadog.Trace.Tags.AzureAppServicesSiteType, azureAppServiceSettings.SiteType);
-                if (tagBytes is not null)
+                if (aasTags.SiteType is not null)
                 {
                     count++;
-                    offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, AasSiteTypeTagNameBytes);
-                    offset += MessagePackBinary.WriteRaw(ref bytes, offset, tagBytes);
+                    offset += MessagePackBinary.WriteRaw(ref bytes, offset, MessagePackConstants.AzureAppServicesSiteTypeBytes);
+                    offset += MessagePackBinary.WriteRaw(ref bytes, offset, aasTags.SiteType);
                 }
             }
 
@@ -847,7 +774,7 @@ namespace Datadog.Trace.Agent.MessagePack
             int originalOffset = offset;
 
             // Start of "metrics" dictionary. Do not add any numeric tags before this line.
-            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, MetricsBytes);
+            offset += MessagePackBinary.WriteRaw(ref bytes, offset, MessagePackConstants.MetricsBytes);
 
             int count = 0;
 
@@ -870,27 +797,29 @@ namespace Datadog.Trace.Agent.MessagePack
                 if (processId != 0)
                 {
                     count++;
-                    offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, ProcessIdNameBytes); // "process_id"
+                    offset += MessagePackBinary.WriteRaw(ref bytes, offset, MessagePackConstants.ProcessIdBytes); // "process_id"
                     offset += MessagePackBinary.WriteDouble(ref bytes, offset, processId);
                 }
 
                 // add agent or rule sampling rate
                 if (model.TraceChunk is { AppliedSamplingRate: { } samplingRate, SamplingMechanism: { } samplingMechanism })
                 {
-                    ReadOnlySpan<byte> samplingRateTagName = samplingMechanism switch
+                    // Use the appropriate tag name based on sampling mechanism
+                    switch (samplingMechanism)
                     {
-                        SamplingMechanism.AgentRate => AgentSamplingRateNameBytes,                 // "_dd.agent_psr"
-                        SamplingMechanism.LocalTraceSamplingRule => RuleSamplingRateNameBytes,     // "_dd.rule_psr"
-                        SamplingMechanism.RemoteAdaptiveSamplingRule => RuleSamplingRateNameBytes, // "_dd.rule_psr"
-                        SamplingMechanism.RemoteUserSamplingRule => RuleSamplingRateNameBytes,     // "_dd.rule_psr"
-                        _ => default
-                    };
+                        case SamplingMechanism.AgentRate:
+                            count++;
+                            offset += MessagePackBinary.WriteRaw(ref bytes, offset, MessagePackConstants.SamplingAgentDecisionBytes); // "_dd.agent_psr"
+                            offset += MessagePackBinary.WriteDouble(ref bytes, offset, samplingRate);
+                            break;
 
-                    if (!samplingRateTagName.IsEmpty)
-                    {
-                        count++;
-                        offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, samplingRateTagName);
-                        offset += MessagePackBinary.WriteDouble(ref bytes, offset, samplingRate);
+                        case SamplingMechanism.LocalTraceSamplingRule:
+                        case SamplingMechanism.RemoteAdaptiveSamplingRule:
+                        case SamplingMechanism.RemoteUserSamplingRule:
+                            count++;
+                            offset += MessagePackBinary.WriteRaw(ref bytes, offset, MessagePackConstants.SamplingRuleDecisionBytes); // "_dd.rule_psr"
+                            offset += MessagePackBinary.WriteDouble(ref bytes, offset, samplingRate);
+                            break;
                     }
                 }
 
@@ -898,7 +827,7 @@ namespace Datadog.Trace.Agent.MessagePack
                 if (model.TraceChunk.RateLimiterRate is { } limitSamplingRate)
                 {
                     count++;
-                    offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, LimitSamplingRateNameBytes); // "_dd.limit_psr"
+                    offset += MessagePackBinary.WriteRaw(ref bytes, offset, MessagePackConstants.SamplingLimitDecisionBytes); // "_dd.limit_psr"
                     offset += MessagePackBinary.WriteDouble(ref bytes, offset, limitSamplingRate);
                 }
 
@@ -906,7 +835,7 @@ namespace Datadog.Trace.Agent.MessagePack
                 if (model.TraceChunk.TracesKeepRate is { } keepRate)
                 {
                     count++;
-                    offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, KeepRateNameBytes); // "_dd.tracer_kr"
+                    offset += MessagePackBinary.WriteRaw(ref bytes, offset, MessagePackConstants.TracesKeepRateBytes); // "_dd.tracer_kr"
                     offset += MessagePackBinary.WriteDouble(ref bytes, offset, keepRate);
                 }
             }
@@ -916,14 +845,14 @@ namespace Datadog.Trace.Agent.MessagePack
             if (!model.TraceChunk.IsApmEnabled)
             {
                 count++;
-                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, ApmEnabledNameBytes);
+                offset += MessagePackBinary.WriteRaw(ref bytes, offset, MessagePackConstants.ApmEnabledBytes);
                 offset += MessagePackBinary.WriteDouble(ref bytes, offset, 0);
             }
 
             if (Security.Instance.AppsecEnabled && model.IsLocalRoot && span.Context.TraceContext?.WafExecuted is true)
             {
                 count++;
-                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, AppSecEnabledBytes);
+                offset += MessagePackBinary.WriteRaw(ref bytes, offset, MessagePackConstants.AppSecEnabledBytes);
                 offset += MessagePackBinary.WriteDouble(ref bytes, offset, 1.0);
             }
 
@@ -932,7 +861,7 @@ namespace Datadog.Trace.Agent.MessagePack
             if (model is { IsChunkOrphan: true, TraceChunk.SamplingPriority: { } samplingPriority })
             {
                 count++;
-                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, SamplingPriorityNameBytes);
+                offset += MessagePackBinary.WriteRaw(ref bytes, offset, MessagePackConstants.SamplingPriorityBytes);
                 offset += MessagePackBinary.WriteDouble(ref bytes, offset, samplingPriority);
             }
 
@@ -941,7 +870,7 @@ namespace Datadog.Trace.Agent.MessagePack
             if (span.IsTopLevel && (!testOptimization.IsRunning || !testOptimization.Settings.Agentless))
             {
                 count++;
-                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, TopLevelSpanNameBytes); // "_dd.top_level"
+                offset += MessagePackBinary.WriteRaw(ref bytes, offset, MessagePackConstants.TopLevelSpanBytes); // "_dd.top_level"
                 offset += MessagePackBinary.WriteDouble(ref bytes, offset, 1);
             }
 
@@ -989,6 +918,11 @@ namespace Datadog.Trace.Agent.MessagePack
         TraceChunkModel IMessagePackFormatter<TraceChunkModel>.Deserialize(byte[] bytes, int offset, IFormatterResolver formatterResolver, out int readSize)
         {
             throw new NotSupportedException($"{nameof(SpanMessagePackFormatter)} does not support deserialization. For testing purposes, deserialize using the MessagePack NuGet package.");
+        }
+
+        private static byte[] SerializeIfNotNullOrWhiteSpace(string value)
+        {
+            return string.IsNullOrWhiteSpace(value) ? null : MessagePackSerializer.Serialize(value);
         }
 
         private byte[] GetAppSecRulesetVersion(string version)
@@ -1125,6 +1059,46 @@ namespace Datadog.Trace.Agent.MessagePack
                     Count++;
                 }
             }
+        }
+
+        private sealed class AasTagValues
+        {
+            public AasTagValues(ImmutableAzureAppServiceSettings settings)
+            {
+                SiteName = SerializeIfNotNullOrWhiteSpace(settings.SiteName);
+                SiteKind = SerializeIfNotNullOrWhiteSpace(settings.SiteKind);
+                SiteType = SerializeIfNotNullOrWhiteSpace(settings.SiteType);
+                ResourceGroup = SerializeIfNotNullOrWhiteSpace(settings.ResourceGroup);
+                SubscriptionId = SerializeIfNotNullOrWhiteSpace(settings.SubscriptionId);
+                ResourceId = SerializeIfNotNullOrWhiteSpace(settings.ResourceId);
+                InstanceId = SerializeIfNotNullOrWhiteSpace(settings.InstanceId);
+                InstanceName = SerializeIfNotNullOrWhiteSpace(settings.InstanceName);
+                OperatingSystem = SerializeIfNotNullOrWhiteSpace(settings.OperatingSystem);
+                Runtime = SerializeIfNotNullOrWhiteSpace(FrameworkDescription.Instance.Name);
+                ExtensionVersion = SerializeIfNotNullOrWhiteSpace(settings.SiteExtensionVersion);
+            }
+
+            public byte[] SiteName { get; }
+
+            public byte[] SiteKind { get; }
+
+            public byte[] SiteType { get; }
+
+            public byte[] ResourceGroup { get; }
+
+            public byte[] SubscriptionId { get; }
+
+            public byte[] ResourceId { get; }
+
+            public byte[] InstanceId { get; }
+
+            public byte[] InstanceName { get; }
+
+            public byte[] OperatingSystem { get; }
+
+            public byte[] Runtime { get; }
+
+            public byte[] ExtensionVersion { get; }
         }
     }
 }
