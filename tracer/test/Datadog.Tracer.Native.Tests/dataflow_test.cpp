@@ -5,6 +5,15 @@
 #include "../../src/Datadog.Tracer.Native/iast/dataflow.h"
 #include "../../src/Datadog.Tracer.Native/iast/module_info.h"
 
+#ifdef _WIN32
+#include "test_helpers.h"
+#include "../../src/Datadog.Tracer.Native/iast/dataflow_aspects.h"
+
+#include <chrono>
+#include <functional>
+#include <future>
+#endif
+
 using namespace trace;
 
 namespace
@@ -18,6 +27,76 @@ ModuleIDWithLifetime LiveModule(ModuleID moduleId)
 {
     return {moduleId, std::make_shared<ModuleLifetime>()};
 }
+
+#ifdef _WIN32
+constexpr mdMemberRef aspectTarget = 0x0A000001;
+
+// Resolves every module to the Samples.ExampleLibrary metadata and gives every method a body that calls
+// aspectTarget once.
+class RewritableMethodProfilerInfo : public MockCorProfilerInfo
+{
+public:
+    ComPtr<IMetaDataImport2> metadataImport;
+    // Tiny header for a 6-byte body: call aspectTarget; ret.
+    const BYTE methodBody[7] = {(6 << 2) | CorILMethod_TinyFormat, 0x28, 0x01, 0x00, 0x00, 0x0A, 0x2A};
+    std::function<void()> onRequestReJIT;
+
+    HRESULT STDMETHODCALLTYPE GetModuleMetaData(ModuleID moduleId, DWORD dwOpenFlags, const IID& riid,
+                                                IUnknown** ppOut) override
+    {
+        return metadataImport->QueryInterface(riid, reinterpret_cast<void**>(ppOut));
+    }
+
+    HRESULT STDMETHODCALLTYPE GetILFunctionBody(ModuleID moduleId, mdMethodDef methodId, LPCBYTE* ppMethodHeader,
+                                                ULONG* pcbMethodSize) override
+    {
+        *ppMethodHeader = methodBody;
+        if (pcbMethodSize != nullptr)
+        {
+            *pcbMethodSize = sizeof(methodBody);
+        }
+        return S_OK;
+    }
+
+    HRESULT STDMETHODCALLTYPE RequestReJIT(ULONG cFunctions, ModuleID moduleIds[], mdMethodDef methodIds[]) override
+    {
+        requestRejitCallCount++;
+        onRequestReJIT();
+        return S_OK;
+    }
+};
+
+class TestAspectClass : public iast::DataflowAspectClass
+{
+public:
+    explicit TestAspectClass(iast::Dataflow* dataflow) : DataflowAspectClass(dataflow)
+    {
+    }
+};
+
+// No parameter shifts, so Apply reports the target call as instrumented without importing an aspect method,
+// which would need the aspects module and the global profiler.
+class TestAspect : public iast::DataflowAspect
+{
+public:
+    explicit TestAspect(iast::DataflowAspectClass* aspectClass) : DataflowAspect(aspectClass)
+    {
+    }
+};
+
+class AspectInjectingDataflow : public iast::Dataflow
+{
+public:
+    using iast::Dataflow::Dataflow;
+
+    void AddAspect(ModuleID moduleId, iast::DataflowAspect* aspect, mdMemberRef target)
+    {
+        auto moduleAspects = new iast::ModuleAspects(this, GetModuleInfo(moduleId));
+        moduleAspects->_aspects.push_back(new iast::DataflowAspectReference(moduleAspects, aspect, target, 0, {}));
+        _moduleAspects[moduleId] = moduleAspects;
+    }
+};
+#endif
 } // namespace
 
 TEST(DataflowTests, PreloadedModulesAreNotResolvedFromTheConstructor)
@@ -108,6 +187,49 @@ TEST(DataflowTests, StaleGenerationDoesNotResolveModule)
 
     handler->Shutdown();
 }
+
+#ifdef _WIN32
+// Windows only: the metadata comes from the .NET Framework metadata dispenser (CLRHelperTestBase).
+class DataflowMetadataTests : public CLRHelperTestBase
+{
+};
+
+TEST_F(DataflowMetadataTests, InliningDecisionRequestsRejitAfterReleasingTheDataflowLock)
+{
+    // NotifyReJITParameters waits for Dataflow's lock while holding the module's lifetime lease. Requesting the
+    // ReJIT, which takes that lease, while still holding Dataflow's lock deadlocks once an unload queues for the
+    // lease: SRWLOCK makes the new reader wait behind the writer, which waits for the first lease holder.
+    RewritableMethodProfilerInfo mockProfiler;
+    mockProfiler.metadataImport = metadata_import_;
+    auto runtimeInfo = MakeTestRuntimeInformation();
+    auto offloader = std::make_shared<RejitWorkOffloader>(&mockProfiler);
+    auto handler =
+        std::make_shared<RejitHandler>(static_cast<ICorProfilerInfo7*>(&mockProfiler), offloader);
+    auto dataflow =
+        std::make_unique<AspectInjectingDataflow>(&mockProfiler, handler, std::vector<ModuleID>{}, runtimeInfo);
+
+    const auto module = handler->RegisterModule(99);
+    TestAspectClass aspectClass(dataflow.get());
+    TestAspect aspect(&aspectClass);
+    dataflow->AddAspect(module.id, &aspect, aspectTarget);
+
+    // _cs is recursive, so only another thread can tell whether the requesting thread still holds it. Declared
+    // after dataflow: its destructor waits for the probe, which may still be blocked on _cs when the check fails.
+    std::future<void> lockProbe;
+    bool lockFreeAtRequestReJIT = false;
+    mockProfiler.onRequestReJIT = [&] {
+        lockProbe = std::async(std::launch::async, [&] { dataflow->GetModuleInfo(module.id); });
+        lockFreeAtRequestReJIT = lockProbe.wait_for(std::chrono::seconds(1)) == std::future_status::ready;
+    };
+
+    const auto callee = FunctionToTest(WStr("Samples.ExampleLibrary.Class1"), WStr("Add"));
+    EXPECT_FALSE(dataflow->IsInlineEnabled(module.id, callee.id));
+    EXPECT_EQ(1, mockProfiler.requestRejitCallCount);
+    EXPECT_TRUE(lockFreeAtRequestReJIT);
+
+    handler->Shutdown();
+}
+#endif
 
 TEST(DataflowTests, UnresolvedModulesAreResolvedOnDemand)
 {
