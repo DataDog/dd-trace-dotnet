@@ -862,6 +862,7 @@
       <type fullname="System.Reflection.MethodBody" />
       <type fullname="System.Reflection.MethodImplAttributes" />
       <type fullname="System.Reflection.MethodInfo" />
+      <type fullname="System.Reflection.Missing" />
       <type fullname="System.Reflection.Module" />
       <type fullname="System.Reflection.ParameterAttributes" />
       <type fullname="System.Reflection.ParameterInfo" />
