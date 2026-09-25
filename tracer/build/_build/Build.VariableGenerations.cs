@@ -167,10 +167,10 @@ partial class Build : NukeBuild
 
             void GenerateUnitTestFrameworkMatrices()
             {
-                GenerateTfmsMatrix("unit_tests_windows_matrix", GetTestingFrameworks(PlatformFamily.Windows));
-                GenerateTfmsMatrix("unit_tests_macos_matrix", GetTestingFrameworks(PlatformFamily.OSX));
-                GenerateLinuxMatrix("x64", GetTestingFrameworks(PlatformFamily.Linux));
-                GenerateLinuxMatrix("arm64", GetTestingFrameworks(PlatformFamily.Linux, isArm64: true));
+                GenerateTfmsMatrix("unit_tests_windows_matrix", GetUnitTestFrameworks(PlatformFamily.Windows));
+                GenerateTfmsMatrix("unit_tests_macos_matrix", GetUnitTestFrameworks(PlatformFamily.OSX));
+                GenerateLinuxMatrix("x64", GetUnitTestFrameworks(PlatformFamily.Linux));
+                GenerateLinuxMatrix("arm64", GetUnitTestFrameworks(PlatformFamily.Linux, isArm64: true));
 
                 void GenerateTfmsMatrix(string name, IEnumerable<TargetFramework> frameworks)
                 {
