@@ -70,6 +70,9 @@ internal static class OtlpMapper
 
         writeKeyValue(ref state, new KeyValue(Trace.Tags.RuntimeId, Tracer.RuntimeId));
 
+        writeKeyValue(ref state, new KeyValue(Trace.Tags.SdkOtlpExport, "true"));
+        writeKeyValue(ref state, new KeyValue(Trace.Tags.SdkSemantics, traceChunk.OtelSemanticsEnabled ? "otel" : "datadog"));
+
         if (traceChunk.ClientComputedStats)
         {
             writeKeyValue(ref state, new KeyValue("_dd.stats_computed", "true"));
@@ -308,7 +311,9 @@ internal static class OtlpMapper
             // as span attributes. Silently drop them.
             if (key == "telemetry.sdk.name"
                 || key == "telemetry.sdk.language"
-                || key == "telemetry.sdk.version")
+                || key == "telemetry.sdk.version"
+                || key == Tags.SdkOtlpExport
+                || key == Tags.SdkSemantics)
             {
                 return;
             }

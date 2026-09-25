@@ -80,6 +80,8 @@ namespace Datadog.Trace.Agent.MessagePack
         private static ReadOnlySpan<byte> LastParentIdBytes => "_dd.parent_id"u8; // Tags.LastParentId
         private static ReadOnlySpan<byte> BaseServiceNameBytes => "_dd.base_service"u8; // Tags.BaseService
         private static ReadOnlySpan<byte> ServiceNameSourceNameBytes => "_dd.svc_src"u8; // Tags.ServiceNameSource
+        private static ReadOnlySpan<byte> SdkOtlpExportNameBytes => "_dd.sdk.otlp_export"u8; // Tags.SdkOtlpExport
+        private static ReadOnlySpan<byte> SdkOtlpExportValueBytes => "false"u8;
 
         // numeric tags
         private static ReadOnlySpan<byte> MetricsBytes => "metrics"u8;
@@ -623,16 +625,23 @@ namespace Datadog.Trace.Agent.MessagePack
                 offset += MessagePackBinary.WriteString(ref bytes, offset, serviceNameSource);
             }
 
-            // Process tags will be sent only once per buffer/payload (one payload can contain many chunks from different traces)
-            if (model.IsFirstSpanInChunk && model.TraceChunk.IsFirstChunkInPayload && model.TraceChunk.ProcessTags is not null)
+            // Payload-scoped tags will be sent only once per buffer/payload (one payload can contain many chunks from different traces)
+            if (model.IsFirstSpanInChunk && model.TraceChunk.IsFirstChunkInPayload)
             {
-                var processTagsRawBytes = MessagePackStringCache.GetProcessTagsBytes(model.TraceChunk.ProcessTags.SerializedTags);
+                count++;
+                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, SdkOtlpExportNameBytes);
+                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, SdkOtlpExportValueBytes);
 
-                if (processTagsRawBytes is not null)
+                if (model.TraceChunk.ProcessTags is not null)
                 {
-                    count++;
-                    offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, ProcessTagsNameBytes);
-                    offset += MessagePackBinary.WriteRaw(ref bytes, offset, processTagsRawBytes);
+                    var processTagsRawBytes = MessagePackStringCache.GetProcessTagsBytes(model.TraceChunk.ProcessTags.SerializedTags);
+
+                    if (processTagsRawBytes is not null)
+                    {
+                        count++;
+                        offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, ProcessTagsNameBytes);
+                        offset += MessagePackBinary.WriteRaw(ref bytes, offset, processTagsRawBytes);
+                    }
                 }
             }
 
