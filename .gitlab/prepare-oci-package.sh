@@ -38,6 +38,9 @@ if [ "$OS" == "linux" ]; then
   # extract the tarball, making sure to preserve the owner and permissions
   tar --same-owner -pxvzf $SRC_TAR -C sources
 
+  # This compatibility hook is only included in the lib-injection OCI package.
+  cp ../artifacts/OpenTelemetry.AutoInstrumentation.StartupHook.dll sources/net/
+
   cp ../artifacts/requirements.json sources/requirements.json
 
 elif [ "$OS" == "windows" ]; then

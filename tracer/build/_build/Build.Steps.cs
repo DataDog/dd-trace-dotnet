@@ -62,6 +62,7 @@ partial class Build
     AbsolutePath ReleaseArtifactsDirectory => BuildArtifactsDirectory / "release-artifacts";
     AbsolutePath SymbolsDirectory => BuildArtifactsDirectory / "native-symbols";
     AbsolutePath ArtifactsDirectory => Artifacts ?? (BuildArtifactsDirectory / "output");
+    AbsolutePath OpenTelemetryStartupHookDirectory => ArtifactsDirectory / "otel-operator-startup-hook";
     AbsolutePath WindowsTracerHomeZip => ArtifactsDirectory / "windows-tracer-home.zip";
     AbsolutePath WindowsSymbolsZip => ArtifactsDirectory / "windows-native-symbols.zip";
     AbsolutePath OsxTracerHomeZip => ArtifactsDirectory / "macOS-tracer-home.zip";
@@ -925,17 +926,16 @@ partial class Build
 
     Target PublishOpenTelemetryStartupHook => _ => _
         .Unlisted()
-        .After(CompileOpenTelemetryStartupHook)
+        .DependsOn(CompileOpenTelemetryStartupHook)
         .Executes(() =>
         {
-            DotNetPublish(s => s
-                .SetProject(Solution.GetProject(Projects.OpenTelemetryAutoInstrumentationStartupHook))
-                .SetConfiguration(BuildConfiguration)
-                .SetTargetPlatformAnyCPU()
-                .SetFramework(TargetFramework.NETCOREAPP3_1)
-                .SetOutput(MonitoringHomeDirectory / "net")
-                .EnableNoBuild()
-                .EnableNoRestore());
+            const string startupHookFileName = "OpenTelemetry.AutoInstrumentation.StartupHook.dll";
+            var source = GetProjectBinDirectory(Projects.OpenTelemetryAutoInstrumentationStartupHook, TargetFramework.NETCOREAPP3_1)
+                       / startupHookFileName;
+            var destination = OpenTelemetryStartupHookDirectory / startupHookFileName;
+
+            EnsureCleanDirectory(OpenTelemetryStartupHookDirectory);
+            CopyFile(source, destination);
         });
 
     Target PublishNativeSymbolsWindows => _ => _
@@ -1942,6 +1942,7 @@ partial class Build
         .After(CompileTrimmingSamples)
         .After(BuildIntegrationTests)
         .DependsOn(CleanTestLogs)
+        .DependsOn(PublishOpenTelemetryStartupHook)
         .Requires(() => Framework)
         .Triggers(PrintSnapshotsDiff)
         .Executes(() =>
@@ -1971,6 +1972,7 @@ partial class Build
                     .SetTestTargetPlatform(TargetPlatform)
                     .SetIsDebugRun(isDebugRun)
                     .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
+                    .SetProcessEnvironmentVariable("OpenTelemetryStartupHookPath", OpenTelemetryStartupHookDirectory / "OpenTelemetry.AutoInstrumentation.StartupHook.dll")
                     .SetProcessEnvironmentVariable("USE_FULL_TEST_CONFIG", RequiresThoroughTesting().ToString())
                     .SetLogsDirectory(TestLogsDirectory)
                     // Don't apply a custom filter to these tests, they should all be able to be run
@@ -1994,6 +1996,7 @@ partial class Build
                     .SetTestTargetPlatform(TargetPlatform)
                     .SetIsDebugRun(isDebugRun)
                     .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
+                    .SetProcessEnvironmentVariable("OpenTelemetryStartupHookPath", OpenTelemetryStartupHookDirectory / "OpenTelemetry.AutoInstrumentation.StartupHook.dll")
                     .SetProcessEnvironmentVariable("USE_FULL_TEST_CONFIG", RequiresThoroughTesting().ToString())
                     .SetLogsDirectory(TestLogsDirectory)
                     .When(!string.IsNullOrWhiteSpace(filter), c => c.SetFilter(filter))
