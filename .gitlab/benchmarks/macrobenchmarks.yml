@@ -63,7 +63,7 @@ check-azure-pipeline:
         echo "export buildId=$HARDCODED_BUILD_ID" > build-id.txt
         exit 0
       fi
-    - git clone --branch dd-trace-dotnet/macro https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/${GITLAB_GROUP}/benchmarking-platform platform && cd platform
+    - git clone --branch andrew/update-to-dotnet-11 https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/${GITLAB_GROUP}/benchmarking-platform platform && cd platform
     - ./wait-for-pipeline.sh
 
 
@@ -82,7 +82,7 @@ build-dd-trace-dotnet-macrobenchmarks-ami:
     AWS_REGION: "us-east-1"
 
     # Branch containing a provision for building the macrobenchmarks AMI
-    BP_INFRA_BENCHMARKING_PLATFORM_BRANCH: "dd-trace-dotnet/macro"
+    BP_INFRA_BENCHMARKING_PLATFORM_BRANCH: "andrew/update-to-dotnet-11"
 
     # Whether to cleanup instances after building the AMI, since the AMI is 
     # based on an instance that is created in this job
@@ -128,7 +128,7 @@ build-dd-trace-dotnet-macrobenchmarks-ami:
   script:
     - source build-id.txt
     - echo "Building for the following build https://dev.azure.com/datadoghq/dd-trace-dotnet/_build/results?buildId=$buildId&view=results"
-    - git clone --branch dd-trace-dotnet/macro https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/${GITLAB_GROUP}/benchmarking-platform platform && cd platform
+    - git clone --branch andrew/update-to-dotnet-11 https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/${GITLAB_GROUP}/benchmarking-platform platform && cd platform
     - ./steps/setup-sut.sh
     - bp-runner bp-runner.yml --debug
   after_script:
@@ -336,7 +336,7 @@ profiler_cpu_timer_create-x86:
   script:
     - source build-id.txt
     - echo "Building for the following build https://dev.azure.com/datadoghq/dd-trace-dotnet/_build/results?buildId=$buildId&view=results"
-    - git clone --branch dd-trace-dotnet/macro https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/${GITLAB_GROUP}/benchmarking-platform platform && cd platform
+    - git clone --branch andrew/update-to-dotnet-11 https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.ddbuild.io/${GITLAB_GROUP}/benchmarking-platform platform && cd platform
     - ./steps/setup-sut.sh
     - bp-runner bp-runner.arm.yml --debug
   after_script:
@@ -579,7 +579,7 @@ profiler_cpu_timer_create-arm64:
     # Branch containing 1. scripts to launch Windows benchmarks on ephemeral 
     # instances (to be used by GitLab CI runners) and 2. scripts to run Windows 
     # benchmarks (to be used by the ephemeral instances).
-    BP_INFRA_BENCHMARKING_PLATFORM_BRANCH: "dd-trace-dotnet/macro"
+    BP_INFRA_BENCHMARKING_PLATFORM_BRANCH: "andrew/update-to-dotnet-11"
 
     # Where benchmarking results will be stored
     BP_INFRA_ARTIFACTS_BUCKET_NAME: "windows-benchmarking-results-us-east-1"
