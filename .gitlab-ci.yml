@@ -502,10 +502,11 @@ macrobenchmarks:
     include: .gitlab/benchmarks/macrobenchmarks.yml
   allow_failure: true
   rules:
-    - if: '$CI_PIPELINE_SOURCE == "push" && ($CI_COMMIT_BRANCH == "master" || $CI_COMMIT_BRANCH =~ /^hotfix/)'
-      when: always
-    - if: '$CI_PIPELINE_SOURCE == "schedule" && $BENCHMARK_RUN == "true"'
-      when: always
+    # TEMPORARILY DISABLED FOR .NET 11 to avoid breaking other PRs: re-enable by uncommenting the following rules
+    # - if: '$CI_PIPELINE_SOURCE == "push" && ($CI_COMMIT_BRANCH == "master" || $CI_COMMIT_BRANCH =~ /^hotfix/)'
+    #   when: always
+    # - if: '$CI_PIPELINE_SOURCE == "schedule" && $BENCHMARK_RUN == "true"'
+    #   when: always
     - when: manual
 
 microbenchmarks:
@@ -528,10 +529,11 @@ dsm_throughput:
     include: .gitlab/benchmarks/dsm-throughput.yml
   allow_failure: true
   rules:
-    - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == "master"'
-      when: always
-    - if: '$CI_PIPELINE_SOURCE == "schedule" && $BENCHMARK_RUN == "true"'
-      when: always
+    # TEMPORARILY DISABLED FOR .NET 11 to avoid breaking other PRs: re-enable by uncommenting the following rules
+    # - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == "master"'
+    #   when: always
+    # - if: '$CI_PIPELINE_SOURCE == "schedule" && $BENCHMARK_RUN == "true"'
+    #   when: always
     - when: manual
 
 
