@@ -8,6 +8,7 @@ using System.IO;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Runtime.Loader;
+using System.Runtime.Versioning;
 using Datadog.Trace.PlatformHelpers;
 
 namespace Datadog.Trace.Tools.Runner;
@@ -63,14 +64,12 @@ internal static class PosixDirectoryAccess
     /// Attempts to create a directory with private POSIX permissions.
     /// </summary>
     /// <param name="path">The directory path to create.</param>
+#if NET5_0_OR_GREATER
+    [UnsupportedOSPlatform("windows")]
+#endif
     internal static void CreatePrivateDirectory(string path)
     {
 #if NET7_0_OR_GREATER
-        if (OperatingSystem.IsWindows())
-        {
-            throw new PlatformNotSupportedException("Private POSIX directory creation is unavailable on Windows.");
-        }
-
         Directory.CreateDirectory(path, (UnixFileMode)PrivateDirectoryMode);
 #else
         var result = Mkdir(path, PrivateDirectoryMode);
