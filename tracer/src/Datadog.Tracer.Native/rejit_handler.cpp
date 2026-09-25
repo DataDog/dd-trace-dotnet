@@ -495,6 +495,52 @@ bool RejitHandler::HasModuleAndMethod(ModuleID moduleId, mdMethodDef methodDef)
     return false;
 }
 
+void RejitHandler::NotifyModuleLoaded(ModuleID moduleId)
+{
+    if (IsShutdownRequested())
+    {
+        return;
+    }
+
+    Rejitter* prev = nullptr;
+    for (size_t x = 0; x < m_rejittersCount; x++)
+    {
+        const auto current = m_rejitters[x];
+        if (current != prev)
+        {
+            current->NotifyModuleLoaded(moduleId);
+        }
+    }
+}
+
+// No shutdown check here: it must stay paired with ReleaseInFlightRequest, otherwise a release
+// would decrement a count that was never taken.
+void RejitHandler::AcquireInFlightRequest()
+{
+    Rejitter* prev = nullptr;
+    for (size_t x = 0; x < m_rejittersCount; x++)
+    {
+        const auto current = m_rejitters[x];
+        if (current != prev)
+        {
+            current->AcquireInFlightRequest();
+        }
+    }
+}
+
+void RejitHandler::ReleaseInFlightRequest()
+{
+    Rejitter* prev = nullptr;
+    for (size_t x = 0; x < m_rejittersCount; x++)
+    {
+        const auto current = m_rejitters[x];
+        if (current != prev)
+        {
+            current->ReleaseInFlightRequest();
+        }
+    }
+}
+
 void RejitHandler::RemoveModule(ModuleID moduleId)
 {
     if (IsShutdownRequested())
