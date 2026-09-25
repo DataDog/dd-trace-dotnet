@@ -6,7 +6,7 @@ init_environment:
   # These versions are chosen to align with the dd-trace-dotnet repository's supported SDK versions: https://github.com/DataDog/dd-trace-dotnet/blob/a4a4ce0822735b3c8cf6862bcabce81fc0959753/tracer/build/_build/Build.cs#L598-L602
 
   # It includes the final End-of-Life (EOL) versions for .NET Core 3.1 and .NET 6.0 along with the latest .NET version.
-  DOTNET_SDK_VERSIONS: "6.0.428,3.1.426,10.0.100"
+  DOTNET_SDK_VERSIONS: "6.0.428,3.1.426,10.0.100,11.0.100-rc.1.26425.128"
 
 source_ami:
   # From https://github.com/DataDog/benchmarking-platform-tools/tree/main/bp-infra/src/provisions/windows/apm-windows-tweaked-metal.yaml

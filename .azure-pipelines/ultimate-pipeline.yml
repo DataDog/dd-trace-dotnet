@@ -72,17 +72,14 @@ schedules:
 # Global variables
 variables:
   buildConfiguration: Release
-  dotnetCoreSdkLatestVersion: 10.0.100
-  # This is required until we're out of rc.
-  # After GA we can do a find and replace and get rid of this
-  dotnetCoreSdkLatestVersionShort: 10.0.100
+  dotnetCoreSdkLatestVersion: 11.0.100-rc.1.26425.128
   nativeBuildDotnetSdkVersion: 7.0.306
   # These are the Managed DevOps pool names we use
   linuxTasksPool: azure-managed-linux-tasks
-  linuxX64SmokePool: azure-managed-linux-smoke-2
-  linuxX64Pool: azure-managed-linux-x64-2
-  linuxArm64Pool: azure-managed-linux-arm64-2
-  windowsX64Pool: azure-managed-windows-x64-2
+  linuxX64SmokePool: azure-managed-linux-smoke
+  linuxX64Pool: azure-managed-linux-x64-1
+  linuxArm64Pool: azure-managed-linux-arm64-1
+  windowsX64Pool: azure-managed-windows-x64-1
 
   relativeArtifacts: /artifacts/output
   monitoringHome: $(System.DefaultWorkingDirectory)/artifacts/monitoring-home
@@ -1635,6 +1632,8 @@ stages:
             framework: net9.0
           net10.0:
             framework: net10.0
+          net11.0:
+            framework: net11.0
       pool:
         name: $(windowsX64Pool)
       steps:
@@ -4709,7 +4708,7 @@ stages:
       timeoutInMinutes: 30
 
       pool:
-        vmImage: windows-2022
+        vmImage: windows-2025
 
       steps:
       - template: steps/clone-repo.yml
@@ -4834,7 +4833,7 @@ stages:
     variables:
       GITHUB_APP_TOKEN: $[ dependencies.create_github_token.outputs['retrieve_github_token.GITHUB_APP_TOKEN'] ]
     pool:
-      vmImage: windows-2022
+      vmImage: windows-2025
 
     steps:
     - template: steps/clone-repo.yml
@@ -5065,7 +5064,7 @@ stages:
   #   timeoutInMinutes: 60 #default value
   #   dependsOn: [Windows]
   #   pool:
-  #     vmImage: windows-2022
+  #     vmImage: windows-2025
 
   #   steps:
   #   - template: steps/clone-repo.yml
@@ -5517,7 +5516,7 @@ stages:
   condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true'), eq(variables.isDockerImageBumpPr, 'true')))
   dependsOn: [package_windows, generate_variables, merge_commit_id]
   pool:
-    vmImage: windows-2022
+    vmImage: windows-2025
   jobs:
   - template: steps/run-smoke-tests-windows.yml
     parameters:
@@ -5530,7 +5529,7 @@ stages:
   condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true'), eq(variables.isDockerImageBumpPr, 'true')))
   dependsOn: [dotnet_tool, package_windows, generate_variables, merge_commit_id]
   pool:
-    vmImage: windows-2022
+    vmImage: windows-2025
   jobs:
   - template: steps/run-smoke-tests-windows.yml
     parameters:
@@ -5544,7 +5543,7 @@ stages:
   condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true'), eq(variables.isDockerImageBumpPr, 'true')))
   dependsOn: [dotnet_tool, package_windows, generate_variables, merge_commit_id]
   pool:
-    vmImage: windows-2022
+    vmImage: windows-2025
   jobs:
   - template: steps/run-smoke-tests-windows.yml
     parameters:
@@ -5558,7 +5557,7 @@ stages:
   condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true'), eq(variables.isDockerImageBumpPr, 'true')))
   dependsOn: [dotnet_tool, generate_variables, merge_commit_id]
   pool:
-    vmImage: windows-2022
+    vmImage: windows-2025
   jobs:
   - template: steps/run-smoke-tests-windows.yml
     parameters:
@@ -5570,7 +5569,7 @@ stages:
 - stage: smoke_win_tracer_home_tests
   dependsOn: [package_windows, generate_variables, merge_commit_id]
   pool:
-    vmImage: windows-2022
+    vmImage: windows-2025
   jobs:
   - template: steps/run-smoke-tests-windows.yml
     parameters:
@@ -5582,7 +5581,7 @@ stages:
 - stage: smoke_win_fleet_tests
   dependsOn: [package_windows, generate_variables, merge_commit_id]
   pool:
-    vmImage: windows-2022
+    vmImage: windows-2025
   jobs:
   - template: steps/run-smoke-tests-windows.yml
     parameters:

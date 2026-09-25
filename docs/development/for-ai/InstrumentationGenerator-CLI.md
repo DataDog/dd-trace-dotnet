@@ -6,7 +6,7 @@
 
 ```bash
 # From repo root
-dotnet run --project tracer/src/Datadog.AutoInstrumentation.Generator.Cli/ --framework net10.0 -- <command> [options]
+dotnet run --project tracer/src/Datadog.AutoInstrumentation.Generator.Cli/ --framework net11.0 -- <command> [options]
 
 # Or, if installed as a global tool
 dd-autoinstrumentation <command> [options]

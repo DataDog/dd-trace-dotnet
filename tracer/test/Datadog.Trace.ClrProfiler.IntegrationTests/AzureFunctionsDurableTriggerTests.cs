@@ -3,7 +3,12 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-#if NET8_0_OR_GREATER
+// Like AzureFunctionsMessagingTriggerTests, these run on Linux in the DockerTest group 2 job with an
+// explicit --filter, which bypasses the default (Category!=AzureFunctions) exclusion, so the framework
+// upper bound has to be expressed here. Keep it in sync with the TargetFrameworks of
+// Samples.AzureFunctions.V4Isolated.Durable: Azure Functions doesn't support .NET 11 yet, so the sample
+// isn't built for it, and PackageVersions.AzureFunctionsDurable has no rows to feed the theory.
+#if NET8_0_OR_GREATER && !NET11_0_OR_GREATER
 
 using System;
 using System.Collections.Immutable;
