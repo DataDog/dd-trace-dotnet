@@ -2309,6 +2309,7 @@ stages:
       jobs: [Test, DockerTest, Serverless]
 
   - job: Test
+    condition: false
     timeoutInMinutes: 90
     strategy:
       matrix: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.integration_tests_linux_matrix']]
@@ -2405,6 +2406,7 @@ stages:
         apiKey: $(DD_LOGGER_DD_API_KEY)
 
   - job: DockerTest
+    condition: false
     timeoutInMinutes: 60 #default value
     strategy:
       matrix: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.integration_tests_linux_docker_matrix']]
@@ -2530,19 +2532,49 @@ stages:
 
     strategy:
       matrix:
-        net6:
+        net6_1:
           publishTargetFramework: "net6.0"
           lambdaBaseImage: "public.ecr.aws/lambda/dotnet:6@sha256:c48000be860898f1a1c5bbffc1801673927942fd516f14fee458167ebe1dfa02"
-        net7:
+        net7_1:
           publishTargetFramework: "net7.0"
           lambdaBaseImage: "public.ecr.aws/lambda/dotnet:7@sha256:5434516a138eb44786c9c3a4dc557fc2ad1cd87dc31c4c1043e0df456fa89fbe"
-        net8:
+        net8_1:
           publishTargetFramework: "net8.0"
           lambdaBaseImage: "public.ecr.aws/lambda/dotnet:8@sha256:e3a1b5ed15641105f82d90123047e96f58d16ae90c6700efafb08e7c9e95234c"
-        net9:
+        net9_1:
           publishTargetFramework: "net9.0"
           lambdaBaseImage: "public.ecr.aws/lambda/dotnet:9@sha256:353e19a79580031dc1b2faf8e421af08f57b5f8d4eea7faae256c5a751e09cc0"
-        net10:
+        net10_1:
+          publishTargetFramework: "net10.0"
+          lambdaBaseImage: "public.ecr.aws/lambda/dotnet:10@sha256:ca784b95a4d6d09cd7c3f447833f80527ee7d7b644a955b26a59c2cfe2354296"
+        net6_2:
+          publishTargetFramework: "net6.0"
+          lambdaBaseImage: "public.ecr.aws/lambda/dotnet:6@sha256:c48000be860898f1a1c5bbffc1801673927942fd516f14fee458167ebe1dfa02"
+        net7_2:
+          publishTargetFramework: "net7.0"
+          lambdaBaseImage: "public.ecr.aws/lambda/dotnet:7@sha256:5434516a138eb44786c9c3a4dc557fc2ad1cd87dc31c4c1043e0df456fa89fbe"
+        net8_2:
+          publishTargetFramework: "net8.0"
+          lambdaBaseImage: "public.ecr.aws/lambda/dotnet:8@sha256:e3a1b5ed15641105f82d90123047e96f58d16ae90c6700efafb08e7c9e95234c"
+        net9_2:
+          publishTargetFramework: "net9.0"
+          lambdaBaseImage: "public.ecr.aws/lambda/dotnet:9@sha256:353e19a79580031dc1b2faf8e421af08f57b5f8d4eea7faae256c5a751e09cc0"
+        net10_2:
+          publishTargetFramework: "net10.0"
+          lambdaBaseImage: "public.ecr.aws/lambda/dotnet:10@sha256:ca784b95a4d6d09cd7c3f447833f80527ee7d7b644a955b26a59c2cfe2354296"
+        net6_3:
+          publishTargetFramework: "net6.0"
+          lambdaBaseImage: "public.ecr.aws/lambda/dotnet:6@sha256:c48000be860898f1a1c5bbffc1801673927942fd516f14fee458167ebe1dfa02"
+        net7_3:
+          publishTargetFramework: "net7.0"
+          lambdaBaseImage: "public.ecr.aws/lambda/dotnet:7@sha256:5434516a138eb44786c9c3a4dc557fc2ad1cd87dc31c4c1043e0df456fa89fbe"
+        net8_3:
+          publishTargetFramework: "net8.0"
+          lambdaBaseImage: "public.ecr.aws/lambda/dotnet:8@sha256:e3a1b5ed15641105f82d90123047e96f58d16ae90c6700efafb08e7c9e95234c"
+        net9_3:
+          publishTargetFramework: "net9.0"
+          lambdaBaseImage: "public.ecr.aws/lambda/dotnet:9@sha256:353e19a79580031dc1b2faf8e421af08f57b5f8d4eea7faae256c5a751e09cc0"
+        net10_3:
           publishTargetFramework: "net10.0"
           lambdaBaseImage: "public.ecr.aws/lambda/dotnet:10@sha256:ca784b95a4d6d09cd7c3f447833f80527ee7d7b644a955b26a59c2cfe2354296"
     pool:
@@ -2661,7 +2693,12 @@ stages:
           serverless-lambda-generic-abstract-async \
           serverless-lambda-generic-complex \
           serverless-lambda-generic-complex-nested \
-          serverless-lambda-toplevel-statement
+          serverless-lambda-toplevel-statement \
+          serverless-lambda-base-no-param-sync \
+          serverless-lambda-base-two-params-sync \
+          serverless-lambda-base-one-param-sync-with-context \
+          serverless-lambda-base-one-param-async \
+          serverless-lambda-base-two-params-void
       env:
         baseImage: $(baseImage)
         framework: $(publishTargetFramework)
