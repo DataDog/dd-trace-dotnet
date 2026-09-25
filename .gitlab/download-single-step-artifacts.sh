@@ -20,6 +20,10 @@ if [ -n "$CI_COMMIT_TAG" ] || [ -n "$DOTNET_PACKAGE_VERSION" ]; then
       "https://github.com/DataDog/dd-trace-dotnet/releases/download/v${VERSION}/datadog-dotnet-apm-${VERSION}${SUFFIX}.tar.gz"
   done
 
+  startup_hook_artifact_dir=$(mktemp -d)
+  download_azure_artifacts_from_one_build "$startup_hook_artifact_dir" "otel-operator-startup-hook"
+  cp "$startup_hook_artifact_dir/otel-operator-startup-hook/OpenTelemetry.AutoInstrumentation.StartupHook.dll" "$target_dir/"
+
   if [ -n "$CI_COMMIT_SHA" ]; then
     # Put this in the same place the "build" stage does
     win_target_dir=artifacts-out
