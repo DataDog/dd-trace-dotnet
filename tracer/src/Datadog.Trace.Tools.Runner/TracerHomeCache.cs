@@ -7,7 +7,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Text;
@@ -28,6 +27,7 @@ internal static class TracerHomeCache
     private const string CacheLockFileExtension = ".lock";
     private const string CacheStagingDirectorySuffix = ".tmp.";
     private const int CacheKeyLength = 64;
+    private const int MaxCacheGenerations = 16;
     private const int CacheLockAcquireTimeoutMilliseconds = 10_000;
     private const int CacheLockRetryDelayMilliseconds = 50;
 
@@ -68,29 +68,22 @@ internal static class TracerHomeCache
     /// <returns>The cached tracer home path, or <paramref name="tracerHome"/> when caching is unnecessary or unsafe.</returns>
     internal static string GetOrCreateCachedTracerHomeIfShorter(string tracerHome, Action<int> cacheLockRetryDelay)
     {
-        string cachedTracerHome = null;
         try
         {
             var cacheRoot = GetCacheRoot();
-            if (Path.Combine(cacheRoot, new string('0', CacheKeyLength)).Length >= tracerHome.Length)
+            if (cacheRoot.Length + CacheKeyLength + 1 >= tracerHome.Length)
             {
                 return tracerHome;
             }
 
             var integrityManifest = CreateCacheIntegrityManifest(tracerHome);
-            cachedTracerHome = Path.Combine(cacheRoot, integrityManifest.CacheKey);
+            var cachedTracerHome = Path.Combine(cacheRoot, integrityManifest.CacheKey);
             PosixDirectoryAccess.ConfigureNativeFileMetadata(tracerHome);
-            Ensure(tracerHome, cachedTracerHome, integrityManifest, cacheLockRetryDelay);
-            return cachedTracerHome;
+            return Ensure(tracerHome, cachedTracerHome, integrityManifest, cacheLockRetryDelay);
         }
         catch (Exception ex)
         {
             Log.Debug(ex, "Unable to copy tracer home to a shorter temporary path.");
-            if (cachedTracerHome is not null && ex is not CacheLockUnavailableException)
-            {
-                TryDelete(cachedTracerHome);
-            }
-
             return tracerHome;
         }
     }
@@ -143,7 +136,7 @@ internal static class TracerHomeCache
     /// <param name="cachedTracerHome">The target cached tracer home path.</param>
     /// <param name="integrityManifest">The expected cache identity and content manifest.</param>
     /// <param name="cacheLockRetryDelay">The delay callback invoked between cache lock acquisition attempts.</param>
-    private static void Ensure(string tracerHome, string cachedTracerHome, CacheIntegrityManifest integrityManifest, Action<int> cacheLockRetryDelay)
+    private static string Ensure(string tracerHome, string cachedTracerHome, CacheIntegrityManifest integrityManifest, Action<int> cacheLockRetryDelay)
     {
         var cacheParent = Path.GetDirectoryName(Path.GetFullPath(cachedTracerHome));
         if (string.IsNullOrEmpty(cacheParent))
@@ -155,12 +148,40 @@ internal static class TracerHomeCache
         // in a shared writable directory and used as an attacker-controlled synchronization point.
         CreatePrivateDirectory(cacheParent);
         using var cacheLock = AcquireCacheLock(cachedTracerHome, cacheLockRetryDelay);
-        if (IsCachedTracerHomeReady(cachedTracerHome, integrityManifest))
+        for (var generation = 0; generation < MaxCacheGenerations; generation++)
         {
-            return;
+            var candidate = generation == 0 ? cachedTracerHome : cachedTracerHome + "." + generation;
+            if (candidate.Length >= tracerHome.Length)
+            {
+                break;
+            }
+
+            if (IsCachedTracerHomeReady(candidate, integrityManifest))
+            {
+                return candidate;
+            }
+
+            if (Directory.Exists(candidate))
+            {
+                // A process may already be configured to use this directory. Never replace a published path.
+                continue;
+            }
+
+            if (File.Exists(candidate))
+            {
+                throw new IOException($"Cached tracer home path '{candidate}' is not a directory.");
+            }
+
+            CreateCachedTracerHome(tracerHome, candidate, integrityManifest);
+            return candidate;
         }
 
-        var stagingTracerHome = cachedTracerHome + CacheStagingDirectorySuffix + Guid.NewGuid().ToString("N");
+        throw new IOException($"Unable to find an available shorter cache path for tracer home '{tracerHome}'.");
+    }
+
+    private static void CreateCachedTracerHome(string tracerHome, string cachedTracerHome, CacheIntegrityManifest integrityManifest)
+    {
+        var stagingTracerHome = cachedTracerHome + CacheStagingDirectorySuffix + Path.GetRandomFileName();
         try
         {
             TryDelete(stagingTracerHome);
@@ -176,12 +197,6 @@ internal static class TracerHomeCache
             File.WriteAllText(Path.Combine(stagingTracerHome, CacheIntegrityFileName), integrityManifest.Content);
             // The marker is written last so interrupted copies are not reused by later runs.
             File.WriteAllText(Path.Combine(stagingTracerHome, CacheMarkerFileName), integrityManifest.CacheKey);
-
-            TryDelete(cachedTracerHome);
-            if (Directory.Exists(cachedTracerHome))
-            {
-                throw new IOException($"Unable to replace cached tracer home '{cachedTracerHome}'.");
-            }
 
             Directory.Move(stagingTracerHome, cachedTracerHome);
         }
@@ -300,29 +315,6 @@ internal static class TracerHomeCache
     }
 
     /// <summary>
-    /// Reads the Datadog.Trace.dll assembly version used to separate caches for different tracer builds.
-    /// </summary>
-    /// <param name="tracerHome">The tracer home path.</param>
-    /// <returns>The assembly version string, or an empty string when it cannot be read.</returns>
-    private static string GetTracerHomeAssemblyVersion(string tracerHome)
-    {
-        var tracerAssemblyPath = Path.Combine(tracerHome, "netstandard2.0", "Datadog.Trace.dll");
-        if (!File.Exists(tracerAssemblyPath))
-        {
-            return string.Empty;
-        }
-
-        try
-        {
-            return AssemblyName.GetAssemblyName(tracerAssemblyPath).Version?.ToString() ?? string.Empty;
-        }
-        catch (Exception ex) when (ex is BadImageFormatException or FileLoadException or IOException or UnauthorizedAccessException)
-        {
-            Log.Debug(ex, "Unable to read Datadog.Trace.dll version from tracer home.");
-            return string.Empty;
-        }
-    }
-
     /// <summary>
     /// Creates the cache key and integrity manifest from the same enumerated source tracer home entries.
     /// </summary>
@@ -334,29 +326,10 @@ internal static class TracerHomeCache
         tracerHome = Path.GetFullPath(tracerHome);
         var entries = CreateCacheIntegrityEntries(tracerHome, ignoreRootCacheMetadata: false);
 
-        var cacheKeyBuilder = StringBuilderCache.Acquire();
-        cacheKeyBuilder.Append(tracerHome);
-        cacheKeyBuilder.Append('|');
-        cacheKeyBuilder.Append(GetTracerHomeAssemblyVersion(tracerHome));
-        cacheKeyBuilder.Append('|');
-
         var integrityBuilder = StringBuilderCache.Acquire();
         integrityBuilder.AppendLine(CacheIntegrityManifestVersion);
         foreach (var entry in entries)
         {
-            cacheKeyBuilder.Append(entry.RelativePath);
-            cacheKeyBuilder.Append('|');
-            cacheKeyBuilder.Append(entry.IsDirectory ? 'd' : 'f');
-            cacheKeyBuilder.Append('|');
-            if (!entry.IsDirectory)
-            {
-                cacheKeyBuilder.Append(entry.Length);
-                cacheKeyBuilder.Append('|');
-                cacheKeyBuilder.Append(entry.LastWriteTimeUtcTicks);
-            }
-
-            cacheKeyBuilder.Append(';');
-
             integrityBuilder.Append(Convert.ToBase64String(Encoding.UTF8.GetBytes(entry.RelativePath)));
             integrityBuilder.Append('|');
             integrityBuilder.Append(entry.IsDirectory ? 'd' : 'f');
@@ -368,9 +341,10 @@ internal static class TracerHomeCache
         }
 
         using var sha256 = SHA256.Create();
-        var cacheKeyHash = sha256.ComputeHash(Encoding.UTF8.GetBytes(StringBuilderCache.GetStringAndRelease(cacheKeyBuilder)));
+        var integrityContent = StringBuilderCache.GetStringAndRelease(integrityBuilder);
+        var cacheKeyHash = sha256.ComputeHash(Encoding.UTF8.GetBytes(tracerHome + "\0" + integrityContent));
         var cacheKey = BitConverter.ToString(cacheKeyHash).Replace("-", string.Empty).ToLowerInvariant();
-        return new CacheIntegrityManifest(cacheKey, entries, StringBuilderCache.GetStringAndRelease(integrityBuilder));
+        return new CacheIntegrityManifest(cacheKey, entries, integrityContent);
     }
 
     /// <summary>
@@ -379,23 +353,23 @@ internal static class TracerHomeCache
     /// <param name="tracerHome">The tracer home path to inspect.</param>
     /// <param name="ignoreRootCacheMetadata">Whether root cache metadata files should be ignored during cache validation.</param>
     /// <returns>The sorted integrity entries.</returns>
-    private static CacheIntegrityEntry[] CreateCacheIntegrityEntries(string tracerHome, bool ignoreRootCacheMetadata)
+    private static List<CacheIntegrityEntry> CreateCacheIntegrityEntries(string tracerHome, bool ignoreRootCacheMetadata)
     {
         var entries = new List<CacheIntegrityEntry>();
         foreach (var entry in EnumerateTracerHomeEntries(tracerHome, ignoreRootCacheMetadata))
         {
             if (entry.IsDirectory)
             {
-                entries.Add(new CacheIntegrityEntry(entry.RelativePath, true, 0, 0, string.Empty));
+                entries.Add(new CacheIntegrityEntry(entry.RelativePath, true, 0, string.Empty));
                 continue;
             }
 
             var fileInfo = new FileInfo(entry.FullPath);
-            entries.Add(new CacheIntegrityEntry(entry.RelativePath, false, fileInfo.Length, fileInfo.LastWriteTimeUtc.Ticks, ComputeSha256(entry.FullPath)));
+            entries.Add(new CacheIntegrityEntry(entry.RelativePath, false, fileInfo.Length, ComputeSha256(entry.FullPath)));
         }
 
         entries.Sort((left, right) => string.Compare(left.RelativePath, right.RelativePath, StringComparison.Ordinal));
-        return entries.ToArray();
+        return entries;
     }
 
     /// <summary>
@@ -406,7 +380,7 @@ internal static class TracerHomeCache
     /// <returns><c>true</c> when all expected entries exist and match their content metadata.</returns>
     private static bool ValidateCachedTracerHomeIntegrity(string cachedTracerHome, CacheIntegrityManifest integrityManifest)
     {
-        CacheIntegrityEntry[] actualEntries;
+        List<CacheIntegrityEntry> actualEntries;
         try
         {
             actualEntries = CreateCacheIntegrityEntries(cachedTracerHome, ignoreRootCacheMetadata: true);
@@ -416,7 +390,7 @@ internal static class TracerHomeCache
             return false;
         }
 
-        if (actualEntries.Length != integrityManifest.Entries.Length)
+        if (actualEntries.Count != integrityManifest.Entries.Count)
         {
             return false;
         }
@@ -646,8 +620,7 @@ internal static class TracerHomeCache
             return;
         }
 
-        // Directory.CreateDirectory does not let us request 0700 on all supported TFMs, so call mkdir(2)
-        // directly and then validate the resulting owner/mode before trusting the path.
+        // Use a mode-aware creation path for each TFM, then validate the resulting owner/mode before trusting it.
         PosixDirectoryAccess.CreatePrivateDirectory(path);
         ValidateExistingPrivateDirectory(path);
     }
@@ -766,9 +739,8 @@ internal static class TracerHomeCache
     /// <param name="RelativePath">The slash-normalized relative path.</param>
     /// <param name="IsDirectory">Whether the entry is a directory.</param>
     /// <param name="Length">The file length, or zero for directories.</param>
-    /// <param name="LastWriteTimeUtcTicks">The source file timestamp ticks used only for cache identity.</param>
     /// <param name="Sha256">The file content hash, or an empty string for directories.</param>
-    private readonly record struct CacheIntegrityEntry(string RelativePath, bool IsDirectory, long Length, long LastWriteTimeUtcTicks, string Sha256);
+    private readonly record struct CacheIntegrityEntry(string RelativePath, bool IsDirectory, long Length, string Sha256);
 
     /// <summary>
     /// Represents a discovered tracer home file-system entry.
@@ -781,10 +753,10 @@ internal static class TracerHomeCache
     /// <summary>
     /// Groups the cache key, expected entries, and serialized manifest for a source tracer home enumeration.
     /// </summary>
-    /// <param name="CacheKey">The cache directory key derived from source path, tracer version, paths, sizes, and timestamps.</param>
+    /// <param name="CacheKey">The cache directory key derived from the source path and full content manifest.</param>
     /// <param name="Entries">The sorted expected entries for copied-content validation.</param>
     /// <param name="Content">The serialized integrity manifest written into the cache.</param>
-    private sealed record CacheIntegrityManifest(string CacheKey, CacheIntegrityEntry[] Entries, string Content);
+    private sealed record CacheIntegrityManifest(string CacheKey, List<CacheIntegrityEntry> Entries, string Content);
 
     /// <summary>
     /// Signals that the cache lock could not be acquired because another runner kept it held.

@@ -123,8 +123,10 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
             File.WriteAllText(cachedMetadata, "cached");
 
             var secondEnvironmentVariables = setup.RunConfigureCi();
-            secondEnvironmentVariables["DD_DOTNET_TRACER_HOME"].Should().Be(configuredTracerHome);
-            File.ReadAllText(cachedMetadata).Should().Be("source");
+            var replacementTracerHome = secondEnvironmentVariables["DD_DOTNET_TRACER_HOME"];
+            replacementTracerHome.Should().NotBe(configuredTracerHome);
+            File.ReadAllText(cachedMetadata).Should().Be("cached");
+            File.ReadAllText(Path.Combine(replacementTracerHome, "metadata.txt")).Should().Be("source");
         }
 
         [SkippableTheory]
@@ -136,7 +138,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
         [InlineData("profiler-engine")]
         [InlineData("injected-file")]
         [EnvironmentRestorer("TMPDIR", "TMP", "TEMP", "XDG_CACHE_HOME")]
-        public void ConfigureCiRebuildsCachedTracerHomeWhenCachedContentIsModified(string cachedContent)
+        public void ConfigureCiPreservesPublishedTracerHomeWhenCachedContentIsModified(string cachedContent)
         {
             using var setup = ConfigureCiTestSetup.Create(output);
             setup.CreateTrustedCacheHome();
@@ -152,19 +154,29 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
             var cachedFilePath = GetCachedContentPath(cachedContent, environmentVariables);
             var expectedContent = cachedContent == "injected-file" ? null : File.ReadAllBytes(cachedFilePath);
 
+            if (cachedContent == "native-tracer" && !RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                // The metadata helper is loaded from this file. Keep its mapped inode intact while tampering with the path.
+                File.Move(cachedFilePath, cachedFilePath + ".original");
+            }
+
             File.WriteAllText(cachedFilePath, "tampered");
 
             var secondEnvironmentVariables = setup.RunConfigureCi();
-            secondEnvironmentVariables["DD_DOTNET_TRACER_HOME"].Should().Be(configuredTracerHome);
+            secondEnvironmentVariables["DD_DOTNET_TRACER_HOME"].Should().NotBe(configuredTracerHome);
+            File.ReadAllText(cachedFilePath).Should().Be("tampered");
+            var replacementPath = GetCachedContentPath(cachedContent, secondEnvironmentVariables);
 
             if (cachedContent == "injected-file")
             {
-                File.Exists(cachedFilePath).Should().BeFalse();
+                File.Exists(replacementPath).Should().BeFalse();
             }
             else
             {
-                File.ReadAllBytes(cachedFilePath).Should().Equal(expectedContent);
+                File.ReadAllBytes(replacementPath).Should().Equal(expectedContent);
             }
+
+            setup.RunConfigureCi()["DD_DOTNET_TRACER_HOME"].Should().Be(secondEnvironmentVariables["DD_DOTNET_TRACER_HOME"]);
         }
 
         [SkippableFact]
@@ -186,7 +198,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
         [SkippableFact]
         [Trait("RunOnWindows", "True")]
         [EnvironmentRestorer("TMPDIR", "TMP", "TEMP", "XDG_CACHE_HOME")]
-        public void ConfigureCiRebuildsCachedTracerHomeWhenCachedTracerHomeDirectoryWasPrecreated()
+        public void ConfigureCiPreservesPrecreatedCachedTracerHomeDirectory()
         {
             using var setup = ConfigureCiTestSetup.Create(output);
             var cachedTracerHome = setup.CreateReadyCachedTracerHome();
@@ -197,8 +209,9 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
             File.WriteAllText(Path.Combine(cachedTracerHome, "metadata.txt"), "tampered");
 
             var environmentVariables = setup.RunConfigureCi();
-            environmentVariables["DD_DOTNET_TRACER_HOME"].Should().Be(cachedTracerHome);
-            File.ReadAllText(Path.Combine(cachedTracerHome, "metadata.txt")).Should().Be("source");
+            environmentVariables["DD_DOTNET_TRACER_HOME"].Should().NotBe(cachedTracerHome);
+            File.ReadAllText(Path.Combine(cachedTracerHome, "metadata.txt")).Should().Be("tampered");
+            File.ReadAllText(Path.Combine(environmentVariables["DD_DOTNET_TRACER_HOME"], "metadata.txt")).Should().Be("source");
         }
 
         [SkippableFact]
@@ -339,7 +352,6 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
         public void ConfigureCiUsesHomeDotCacheWhenXdgCacheHomeIsEmptyOnPosix()
         {
             SkipOn.Platform(SkipOn.PlatformValue.Windows);
-            SkipIfNativeMetadataHelperUnavailableOnPosix();
 
             using var setup = ConfigureCiTestSetup.Create(output);
             setup.CreateTracerHome();
@@ -480,7 +492,30 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
             var secondCachedTracerAssembly = Path.Combine(secondConfiguredTracerHome, "netstandard2.0", "Datadog.Trace.dll");
 
             secondConfiguredTracerHome.Should().NotBe(firstConfiguredTracerHome);
+            Directory.Exists(firstConfiguredTracerHome).Should().BeTrue();
             AssemblyName.GetAssemblyName(secondCachedTracerAssembly).Version.Should().Be(new Version(2, 0, 0, 0));
+        }
+
+        [SkippableFact]
+        [Trait("RunOnWindows", "True")]
+        [EnvironmentRestorer("TMPDIR", "TMP", "TEMP", "XDG_CACHE_HOME")]
+        public void ConfigureCiPreservesPublishedTracerHomeWhenSourceContentChangesWithoutMetadataChange()
+        {
+            using var setup = ConfigureCiTestSetup.Create(output);
+            setup.CreateTrustedCacheHome();
+            setup.UseCacheHome();
+            setup.CreateTracerHome();
+
+            var firstCachedTracerHome = setup.RunConfigureCi()["DD_DOTNET_TRACER_HOME"];
+            var sourceMetadataPath = Path.Combine(setup.TracerHome, "metadata.txt");
+            var sourceLastWriteTime = File.GetLastWriteTimeUtc(sourceMetadataPath);
+            File.WriteAllText(sourceMetadataPath, "update");
+            File.SetLastWriteTimeUtc(sourceMetadataPath, sourceLastWriteTime);
+
+            var secondCachedTracerHome = setup.RunConfigureCi()["DD_DOTNET_TRACER_HOME"];
+            secondCachedTracerHome.Should().NotBe(firstCachedTracerHome);
+            File.ReadAllText(Path.Combine(firstCachedTracerHome, "metadata.txt")).Should().Be("source");
+            File.ReadAllText(Path.Combine(secondCachedTracerHome, "metadata.txt")).Should().Be("update");
         }
 
         [SkippableTheory]
@@ -620,15 +655,6 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
             File.Copy(sourcePath, destinationPath, overwrite: true);
         }
 
-        private static void SkipIfNativeMetadataHelperUnavailableOnPosix()
-        {
-#if !NETCOREAPP3_0_OR_GREATER
-            Skip.If(
-                !RuntimeInformation.IsOSPlatform(OSPlatform.Windows),
-                "Reduced tracer home cache validation on POSIX requires the native metadata helper.");
-#endif
-        }
-
         private static string GetCurrentPlatformNativeTracerPath(string tracerHome)
         {
             var nativeLoaderPath = EnvironmentHelper.GetNativeLoaderPath();
@@ -667,6 +693,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
             }
 
             Directory.CreateDirectory(path);
+            SetDirectoryMode(path, "700");
         }
 
         private static void CopyTracerAssembly(string tracerHome, string sourceAssemblyPath, DateTime? lastWriteTimeUtc)
@@ -832,6 +859,11 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
             {
                 _output = output;
                 TempRoot = Path.Combine(Path.GetTempPath(), $"dd-trace-runner-temp-{Guid.NewGuid():N}");
+                if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                {
+                    CreatePrivateCacheDirectory(TempRoot);
+                }
+
                 CacheHome = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
                                 ? Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData)
                                 : Path.Combine(TempRoot, cacheDirectoryName);
@@ -894,7 +926,6 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
             {
                 if (requireNativeMetadataHelper)
                 {
-                    SkipIfNativeMetadataHelperUnavailableOnPosix();
                     _copyCurrentPlatformNativeTracer = true;
                 }
 

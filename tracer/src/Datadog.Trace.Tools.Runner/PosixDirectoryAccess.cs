@@ -5,7 +5,9 @@
 
 using System;
 using System.IO;
+using System.Reflection;
 using System.Runtime.InteropServices;
+using System.Runtime.Loader;
 using Datadog.Trace.PlatformHelpers;
 
 namespace Datadog.Trace.Tools.Runner;
@@ -23,7 +25,6 @@ internal static class PosixDirectoryAccess
     private const uint PrivateDirectoryMode = 448; // 0700
     private const uint RootUserId = 0;
 
-#if NETCOREAPP3_0_OR_GREATER
     private static readonly object NativeFileMetadataLock = new();
     private static string _nativeFileMetadataLibraryPath;
     private static bool _nativeFileMetadataLoadAttempted;
@@ -36,7 +37,6 @@ internal static class PosixDirectoryAccess
         int followSymlinks,
         out uint mode,
         out uint userId);
-#endif
 
     /// <summary>
     /// Configures the native metadata helper used to inspect POSIX paths without shelling out to <c>stat(1)</c>.
@@ -44,7 +44,6 @@ internal static class PosixDirectoryAccess
     /// <param name="tracerHome">The source tracer home path containing the native tracer library.</param>
     internal static void ConfigureNativeFileMetadata(string tracerHome)
     {
-#if NETCOREAPP3_0_OR_GREATER
         var nativeLibraryPath = GetNativeFileMetadataLibraryPath(tracerHome);
         lock (NativeFileMetadataLock)
         {
@@ -58,7 +57,6 @@ internal static class PosixDirectoryAccess
             _nativeFileMetadataLibraryHandle = IntPtr.Zero;
             _getFileMetadataForPath = null;
         }
-#endif
     }
 
     /// <summary>
@@ -67,11 +65,21 @@ internal static class PosixDirectoryAccess
     /// <param name="path">The directory path to create.</param>
     internal static void CreatePrivateDirectory(string path)
     {
+#if NET7_0_OR_GREATER
+        if (OperatingSystem.IsWindows())
+        {
+            throw new PlatformNotSupportedException("Private POSIX directory creation is unavailable on Windows.");
+        }
+
+        Directory.CreateDirectory(path, (UnixFileMode)PrivateDirectoryMode);
+#else
         var result = Mkdir(path, PrivateDirectoryMode);
+        // Another invocation may have created the directory. The caller validates its owner and mode before use.
         if (result != 0 && !Directory.Exists(path))
         {
             throw new IOException($"Unable to create directory '{path}'. errno: {Marshal.GetLastWin32Error()}");
         }
+#endif
     }
 
     /// <summary>
@@ -160,7 +168,6 @@ internal static class PosixDirectoryAccess
     /// <returns>The POSIX directory metadata.</returns>
     private static PosixDirectoryInfo GetDirectoryInfo(string path, bool followSymlinks = false)
     {
-#if NETCOREAPP3_0_OR_GREATER
         var getFileMetadataForPath = GetNativeFileMetadataForPath();
         if (getFileMetadataForPath is null)
         {
@@ -181,12 +188,8 @@ internal static class PosixDirectoryAccess
         {
             throw new IOException($"Unable to inspect directory '{path}' using the native tracer metadata helper.", ex);
         }
-#else
-        throw new IOException($"Unable to inspect directory '{path}' because the native tracer metadata helper requires .NET Core 3.0 or greater.");
-#endif
     }
 
-#if NETCOREAPP3_0_OR_GREATER
     private static GetFileMetadataForPathDelegate GetNativeFileMetadataForPath()
     {
         lock (NativeFileMetadataLock)
@@ -204,11 +207,20 @@ internal static class PosixDirectoryAccess
 
             try
             {
+#if NETCOREAPP3_0_OR_GREATER
                 _nativeFileMetadataLibraryHandle = NativeLibrary.Load(_nativeFileMetadataLibraryPath);
                 if (!NativeLibrary.TryGetExport(_nativeFileMetadataLibraryHandle, "GetFileMetadataForPath", out var export))
                 {
                     return null;
                 }
+#else
+                _nativeFileMetadataLibraryHandle = LegacyNativeLibraryLoader.Instance.LoadNative(_nativeFileMetadataLibraryPath);
+                var export = GetLegacyExport(_nativeFileMetadataLibraryHandle);
+                if (export == IntPtr.Zero)
+                {
+                    return null;
+                }
+#endif
 
                 _getFileMetadataForPath = Marshal.GetDelegateForFunctionPointer<GetFileMetadataForPathDelegate>(export);
                 return _getFileMetadataForPath;
@@ -258,6 +270,27 @@ internal static class PosixDirectoryAccess
         };
     }
 
+#if !NETCOREAPP3_0_OR_GREATER
+    private static IntPtr GetLegacyExport(IntPtr handle)
+    {
+        const string exportName = "GetFileMetadataForPath";
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+        {
+            return MacDlsym(handle, exportName);
+        }
+
+        return Utils.IsAlpine() ? MuslDlsym(handle, exportName) : GlibcDlsym(handle, exportName);
+    }
+
+    [DllImport("libSystem.B.dylib", EntryPoint = "dlsym")]
+    private static extern IntPtr MacDlsym(IntPtr handle, string symbol);
+
+    [DllImport("libc", EntryPoint = "dlsym")]
+    private static extern IntPtr MuslDlsym(IntPtr handle, string symbol);
+
+    [DllImport("libdl.so.2", EntryPoint = "dlsym")]
+    private static extern IntPtr GlibcDlsym(IntPtr handle, string symbol);
+
 #endif
 
     /// <summary>
@@ -266,8 +299,10 @@ internal static class PosixDirectoryAccess
     /// <param name="path">The directory path to create.</param>
     /// <param name="mode">The requested POSIX mode.</param>
     /// <returns>Zero on success; otherwise a non-zero result with errno available through <c>Marshal.GetLastWin32Error()</c>.</returns>
+#if !NET7_0_OR_GREATER
     [DllImport("libc", EntryPoint = "mkdir", SetLastError = true)]
     private static extern int Mkdir(string path, uint mode);
+#endif
 
     /// <summary>
     /// Gets the current effective user id.
@@ -282,4 +317,15 @@ internal static class PosixDirectoryAccess
     /// <param name="Mode">The raw mode bits returned by stat.</param>
     /// <param name="UserId">The owner user id returned by stat.</param>
     private readonly record struct PosixDirectoryInfo(uint Mode, uint UserId);
+
+#if !NETCOREAPP3_0_OR_GREATER
+    private sealed class LegacyNativeLibraryLoader : AssemblyLoadContext
+    {
+        internal static readonly LegacyNativeLibraryLoader Instance = new();
+
+        internal IntPtr LoadNative(string path) => LoadUnmanagedDllFromPath(path);
+
+        protected override Assembly Load(AssemblyName assemblyName) => null;
+    }
+#endif
 }
