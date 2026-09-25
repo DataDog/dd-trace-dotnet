@@ -126,6 +126,7 @@ namespace Datadog.Trace
             {
                 var schema = new NamingSchema(settings.MetadataSchemaVersion, settings.PeerServiceTagsEnabled, settings.RemoveClientServiceNamesEnabled, mutableSettings.DefaultServiceName, mutableSettings.ServiceNameMappings, settings.PeerServiceNameMappings);
                 Interlocked.Exchange(ref _perTraceSettings, new(traceSampler, spanSampler, schema, mutableSettings));
+                DiagnosticsInfo.Update(serviceName: mutableSettings.DefaultServiceName, runtimeId: Util.RuntimeId.Get());
             }
         }
 
