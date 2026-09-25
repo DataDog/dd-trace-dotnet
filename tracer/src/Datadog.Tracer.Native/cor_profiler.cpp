@@ -4502,6 +4502,16 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCachedFunctionSearchStarted(FunctionID
     {
         // Process the current module to detect inliners.
         rejit_handler->AddNGenInlinerModule(module_id);
+
+        // The inliner ReJIT request is processed asynchronously, so the NGEN image could still run the
+        // uninstrumented inlinee. We reject the image; the JIT doesn't inline instrumented methods.
+        if (rejit_handler->IsNGenInliner(module_id, function_token))
+        {
+            Logger::Debug("JITCachedFunctionSearchStarted: Rejected (because NGEN inliner) [moduleId=", module_id,
+                          ", methodDef=", HexStr(function_token), "]");
+            *pbUseCachedFunction = false;
+            return S_OK;
+        }
     }
 
     // Check for Dataflow call site instrumentation

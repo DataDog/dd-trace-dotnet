@@ -4,6 +4,7 @@
 #include <memory>
 #include <mutex>
 #include <optional>
+#include <set>
 #include <shared_mutex>
 #include <string>
 #include <unordered_map>
@@ -181,6 +182,9 @@ private:
     Lock m_module_lifetimes_lock;
     std::unordered_map<ModuleID, std::shared_ptr<ModuleLifetime>> m_module_lifetimes;
 
+    Lock m_ngen_inliners_lock;
+    std::set<MethodIdentifier> m_ngen_inliners;
+
     bool enable_by_ref_instrumentation = false;
     bool enable_calltarget_state_by_ref = false;
 
@@ -229,6 +233,8 @@ public:
     bool HasModuleAndMethod(ModuleID moduleId, mdMethodDef methodDef);
     void RemoveModule(ModuleID moduleId);
     void AddNGenInlinerModule(ModuleID moduleId);
+    void AddNGenInliners(const std::vector<MethodIdentifier>& methods);
+    bool IsNGenInliner(ModuleID moduleId, mdMethodDef methodDef);
 
     void SetRejitTracking(bool enabled);
     bool HasBeenRejitted(ModuleID moduleId, mdMethodDef methodDef);

@@ -93,6 +93,7 @@ bool RejitHandlerModuleMethod::RequestRejitForInlinersInModule(ModuleID moduleId
 
             if (total > 0)
             {
+                handler->AddNGenInliners(methods);
                 auto requests = handler->GetRejitRequests(methods);
                 handler->EnqueueForRejit(std::move(requests));
                 Logger::Debug("NGEN:: Processed with ", total, " inliners [ModuleId=", currentModuleId,
@@ -705,6 +706,13 @@ void RejitHandler::RemoveModule(ModuleID moduleId)
             current->RemoveModule(moduleId);
         }
     }
+
+    // After the rejitters' RemoveModule, so an in-flight NGen inliner replay can't record this module again.
+    WriteLock inlinersLock(m_ngen_inliners_lock);
+    for (auto it = m_ngen_inliners.begin(); it != m_ngen_inliners.end();)
+    {
+        it = it->moduleId == moduleId ? m_ngen_inliners.erase(it) : std::next(it);
+    }
 }
 
 void RejitHandler::AddNGenInlinerModule(ModuleID moduleId)
@@ -723,6 +731,18 @@ void RejitHandler::AddNGenInlinerModule(ModuleID moduleId)
             current->AddNGenInlinerModule(moduleId);
         }
     }
+}
+
+void RejitHandler::AddNGenInliners(const std::vector<MethodIdentifier>& methods)
+{
+    WriteLock lock(m_ngen_inliners_lock);
+    m_ngen_inliners.insert(methods.begin(), methods.end());
+}
+
+bool RejitHandler::IsNGenInliner(ModuleID moduleId, mdMethodDef methodDef)
+{
+    ReadLock lock(m_ngen_inliners_lock);
+    return m_ngen_inliners.find(MethodIdentifier(moduleId, methodDef)) != m_ngen_inliners.end();
 }
 
 void RejitHandler::SetRejitTracking(bool enabled) {

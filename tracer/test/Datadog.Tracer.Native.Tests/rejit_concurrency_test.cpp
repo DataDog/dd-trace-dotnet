@@ -117,6 +117,48 @@ public:
     }
 };
 
+class SingleMethodEnum : public ICorProfilerMethodEnum
+{
+public:
+    COR_PRF_METHOD method{};
+    bool fetched = false;
+
+    HRESULT STDMETHODCALLTYPE QueryInterface(const IID& riid, void** ppvObject) override { return E_NOINTERFACE; }
+    ULONG STDMETHODCALLTYPE AddRef() override { return 1; }
+    ULONG STDMETHODCALLTYPE Release() override { return 1; }
+    HRESULT STDMETHODCALLTYPE Skip(ULONG celt) override { return E_FAIL; }
+    HRESULT STDMETHODCALLTYPE Reset() override { return E_FAIL; }
+    HRESULT STDMETHODCALLTYPE Clone(ICorProfilerMethodEnum** ppEnum) override { return E_FAIL; }
+    HRESULT STDMETHODCALLTYPE GetCount(ULONG* pcelt) override { return E_FAIL; }
+
+    HRESULT STDMETHODCALLTYPE Next(ULONG celt, COR_PRF_METHOD elements[], ULONG* pceltFetched) override
+    {
+        if (fetched)
+        {
+            return S_FALSE;
+        }
+
+        fetched = true;
+        elements[0] = method;
+        return S_OK;
+    }
+};
+
+class NGenInlinerProfilerInfo : public MockCorProfilerInfo
+{
+public:
+    SingleMethodEnum inliners;
+
+    HRESULT STDMETHODCALLTYPE EnumNgenModuleMethodsInliningThisMethod(
+        ModuleID inlinersModuleId, ModuleID inlineeModuleId, mdMethodDef inlineeMethodId, BOOL* incompleteData,
+        ICorProfilerMethodEnum** ppEnum) override
+    {
+        *incompleteData = false;
+        *ppEnum = &inliners;
+        return S_OK;
+    }
+};
+
 class ObservableTracerRejitPreprocessor : public TracerRejitPreprocessor
 {
 public:
@@ -398,6 +440,55 @@ TEST(RejitHandler, RequestRejitSkipsUnloadedGenerationAfterModuleIdReuse)
 
     handler->RequestRejit(oldRequests);
     EXPECT_EQ(0, context.profilerInfo.requestRejitCallCount);
+}
+
+TEST(RejitHandler, NGenInlinerIsKnownBeforeItsRejitIsProcessedUntilUnload)
+{
+    NGenInlinerProfilerInfo profilerInfo;
+    auto offloader = std::make_shared<RejitWorkOffloader>(&profilerInfo);
+    auto handler = std::make_shared<RejitHandler>(static_cast<ICorProfilerInfo7*>(&profilerInfo), offloader);
+    TracerRejitPreprocessor preprocessor(nullptr, handler);
+    constexpr ModuleID inlineeModuleId = 41;
+    constexpr ModuleID inlinersModuleId = 42;
+    constexpr mdMethodDef inlineeMethodId = 1;
+    constexpr mdMethodDef inlinerMethodId = 2;
+    profilerInfo.inliners.method = {inlinersModuleId, inlinerMethodId};
+    handler->RegisterModule(inlineeModuleId);
+    handler->RegisterModule(inlinersModuleId);
+
+    auto module = preprocessor.GetOrAddModule(inlineeModuleId);
+    module->CreateMethodIfNotExists(
+        inlineeMethodId,
+        [](mdMethodDef methodDef, RejitHandlerModule* moduleHandler)
+        {
+            return std::make_unique<RejitHandlerModuleMethod>(
+                methodDef, moduleHandler, FunctionInfo{}, std::unique_ptr<MethodRewriter>{});
+        },
+        [](RejitHandlerModuleMethod*) {});
+
+    // Keep the worker busy so the inliner ReJIT request stays queued.
+    std::promise<void> blockerEntered;
+    auto blockerEnteredFuture = blockerEntered.get_future();
+    std::promise<void> releaseBlocker;
+    auto releaseBlockerFuture = releaseBlocker.get_future().share();
+    offloader->Enqueue(std::make_unique<RejitWorkItem>(
+        [&]
+        {
+            blockerEntered.set_value();
+            releaseBlockerFuture.wait();
+        }));
+    blockerEnteredFuture.wait();
+
+    handler->AddNGenInlinerModule(inlinersModuleId);
+
+    EXPECT_TRUE(handler->IsNGenInliner(inlinersModuleId, inlinerMethodId));
+    EXPECT_EQ(0, profilerInfo.requestRejitCallCount);
+
+    handler->RemoveModule(inlinersModuleId);
+    EXPECT_FALSE(handler->IsNGenInliner(inlinersModuleId, inlinerMethodId));
+
+    releaseBlocker.set_value();
+    handler->Shutdown();
 }
 
 TEST(RejitHandler, RequestRejitKeepsAllModuleGenerationsAliveThroughClrCalls)
