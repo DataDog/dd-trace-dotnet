@@ -35,7 +35,7 @@ workflow:
     on_new_commit: interruptible
 
 variables:
-  MACROBENCHMARKS_CI_IMAGE: 486234852809.dkr.ecr.us-east-1.amazonaws.com/ci/benchmarking-platform:dotnet-throughput-8
+  MACROBENCHMARKS_CI_IMAGE: 486234852809.dkr.ecr.us-east-1.amazonaws.com/ci/benchmarking-platform:dotnet-throughput-9
 
 check-azure-pipeline:
   stage: check-azure-pipeline
