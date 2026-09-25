@@ -97,6 +97,13 @@ case "$test_suite" in
       fi
     fi
 
+    set -- BuildIntegrationTests CompileTrimmingSamples
+    if [ "$test_suite" = "integration" ] && [ "$area" = "CIVisibility" ]; then
+      # Shared samples are built on Windows; xUnit 4.x VSTest needs a native
+      # apphost built for this job's Linux architecture and libc.
+      set -- "$@" CompilePlatformSpecificSamples
+    fi
+
     echo "Building ${test_suite} integration tests for ${FRAMEWORK} (area=${area}, filter=${filter})"
     docker run --rm \
       --cap-add=SYS_PTRACE \
@@ -112,7 +119,7 @@ case "$test_suite" in
       --env NUGET_ENABLE_EXPERIMENTAL_HTTP_RETRY=true \
       "$tester_image" \
       dotnet /build/bin/Debug/_build.dll \
-      BuildIntegrationTests CompileTrimmingSamples \
+      "$@" \
       --framework "$FRAMEWORK" \
       --IncludeTestsRequiringDocker "$include_docker" \
       --TestAllPackageVersions true \
