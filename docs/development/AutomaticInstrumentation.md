@@ -286,8 +286,24 @@ There are some current limitations with what types/methods with our `CallTarget`
 3. Nested ValueTypes (struct) inside a Generic parent type will not expose the type instance (the instance willbe always null).
 4. Nested types (reference types) inside a Generic parent type will not expose the type instance (the instance will be casted as an `object` type).
 5. Methods in a Generic type will not expose the Generic type instance (the instance will be casted as a nongeneric base type or `object` type).
+6. An `OnAsyncMethodEnd` that is itself `async` (i.e. returns `Task<TReturn>`) will **not run** when the target is a .NET 11 runtime-async method. Write a synchronous `OnAsyncMethodEnd` if the integration may target one.
 
 Additional information regarding the specific limitations with these can be found in the `method_rewriter.cpp` class [here](https://github.com/DataDog/dd-trace-dotnet/blob/master/tracer/src/Datadog.Tracer.Native/method_rewriter.cpp#L239) and [here](https://github.com/DataDog/dd-trace-dotnet/blob/master/tracer/src/Datadog.Tracer.Native/method_rewriter.cpp#L203).
+
+#### .NET 11 runtime-async targets
+
+A [runtime-async](https://github.com/dotnet/runtime/blob/main/docs/design/specs/runtime-async.md) method has no compiler-generated state machine: it carries `MethodImplAttributes.Async` and the runtime drives suspension. Its body does not return the `Task` it declares — at `ret` the stack holds the unwrapped value, or nothing at all for a non-generic `Task`/`ValueTask`. The .NET 11 framework assemblies, including ASP.NET Core, are compiled this way, so an integration can meet one without the customer opting in.
+
+CallTarget handles this by substituting an *effective* return type in the rewriter and calling `CallTargetInvoker.EndMethodRuntimeAsync`, which invokes the callback directly rather than attaching a continuation. Two consequences for integration authors:
+
+- **`OnAsyncMethodEnd` must be synchronous** (limitation 6 above). The epilog runs inside a `finally`, and the runtime-async spec forbids suspension points in handler blocks, so the callback cannot be awaited. The first call logs an error and disables the integration for that target, so it is cleanly uninstrumented from then on rather than left half-live with an `OnMethodBegin` whose cleanup never runs.
+- **`OnMethodEnd` cannot replace the returned *task*.** It is still bound against the declared `Task`/`Task<T>` and receives an already-completed instance carrying the real result. A runtime-async body returns the unwrapped value and lets the runtime build the task, so there is no task slot for a replacement to go into. What happens to a replacement depends on the shape:
+  - `Task<T>`/`ValueTask<T>`: honoured if the replacement has **already completed successfully** — we take its result back out. This covers the ordinary case of returning `Task.FromResult(newValue)`.
+  - A still-running, faulted or cancelled replacement, or any replacement at all on a non-generic `Task`/`ValueTask`: cannot be honoured. The original result is kept and the attempt is logged as an error and reported to telemetry (the integration is *not* disabled).
+
+  Use `OnAsyncMethodEnd` to substitute a result; it is bound against the unwrapped `T` and works without restriction.
+
+Everything else — duck typing, generic constraints, proxy creation, the exception path, and running both callbacks when an integration declares both — behaves identically to a state-machine target. See `RuntimeAsyncEndMethodHandler` and its tests under `tracer/test/Datadog.Trace.Tests/CallTarget/`.
 
 ### AutoInstrumentation Generator
 

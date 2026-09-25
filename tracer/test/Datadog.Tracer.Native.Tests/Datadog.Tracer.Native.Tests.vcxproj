@@ -84,6 +84,7 @@
   </PropertyGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
+    <ClInclude Include="signature_test_helpers.h" />
     <ClInclude Include="test_helpers.h" />
     <ClInclude Include="mock_cor_profiler_info.h" />
   </ItemGroup>
@@ -102,6 +103,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="runtime_async_test.cpp" />
     <ClCompile Include="signature_builder_test.cpp" />
     <ClCompile Include="string_test.cpp" />
     <ClCompile Include="test_link_stubs.cpp" />

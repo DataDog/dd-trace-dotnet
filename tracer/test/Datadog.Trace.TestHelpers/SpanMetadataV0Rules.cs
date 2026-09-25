@@ -132,6 +132,21 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("http.status_code")
                 .IsPresent("http.useragent")
                 .IsPresent("http.url")
+                // OpenTelemetry names that ASP.NET Core (from .NET 11) or the OpenTelemetry SDK
+                // may add to the HttpRequestIn activity, and which we copy across whenever we
+                // haven't recorded a value for them under our own name
+                .IsOptional("client.address")
+                .IsOptional("http.request.method")
+                .IsOptional("http.request.method_original")
+                .IsOptional("http.response.status_code")
+                .IsOptional("network.peer.address")
+                .IsOptional("network.protocol.version")
+                .IsOptional("server.address")
+                .IsOptional("server.port")
+                .IsOptional("url.path")
+                .IsOptional("url.query")
+                .IsOptional("url.scheme")
+                .IsOptional("user_agent.original")
                 .IsOptional("_dd.base_service")
                 .IsOptional("_dd.tags.process")
                 .Matches("component", "aspnet_core")

@@ -13,6 +13,12 @@ namespace Datadog.InstrumentedAssemblyVerification
         private const BindingFlags Flags = BindingFlags.Static | BindingFlags.Instance | BindingFlags.Public |
                                            BindingFlags.NonPublic | BindingFlags.DeclaredOnly;
 
+        /// <summary>
+        /// MethodImplAttributes.Async, added in .NET 11 for runtime-async methods. Named locally
+        /// because this project targets runtimes whose MethodImplAttributes has no such member.
+        /// </summary>
+        private const MethodImplAttributes AsyncMethodImplAttribute = (MethodImplAttributes)0x2000;
+
         private readonly InstrumentationVerificationLogger _logger;
         private readonly string _assemblyLocation;
         // List of exception types that we want to notify about, that rest will ignore
@@ -115,7 +121,10 @@ namespace Datadog.InstrumentedAssemblyVerification
                         {
                             try
                             {
-                                if (mb.IsAbstract || mb.MethodImplementationFlags != MethodImplAttributes.IL)
+                                // .NET 11 runtime-async methods are still plain IL bodies, they just carry
+                                // MethodImplAttributes.Async (0x2000) as well. Mask it off so they are still
+                                // JIT-prepared.
+                                if (mb.IsAbstract || (mb.MethodImplementationFlags & ~AsyncMethodImplAttribute) != MethodImplAttributes.IL)
                                 {
                                     continue;
                                 }

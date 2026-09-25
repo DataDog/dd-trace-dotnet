@@ -13,9 +13,19 @@ internal readonly struct CreateAsyncEndMethodResult
     public readonly DynamicMethod? Method;
     public readonly bool PreserveContext;
 
-    public CreateAsyncEndMethodResult(DynamicMethod method, bool preserveContext)
+    /// <summary>
+    /// Whether the integration's OnAsyncMethodEnd is itself async, so <see cref="Method"/> returns
+    /// Task&lt;TReturn&gt; rather than TReturn. Recorded here because it cannot be recovered from
+    /// <see cref="Method"/>: when TReturn is itself task-like - the unwrapped T of a
+    /// <c>Task&lt;Task&gt;</c>-returning runtime-async target - a synchronous callback's dynamic
+    /// method also returns a Task, and the two are indistinguishable by return type alone.
+    /// </summary>
+    public readonly bool IsTaskReturn;
+
+    public CreateAsyncEndMethodResult(DynamicMethod method, bool preserveContext, bool isTaskReturn)
     {
         Method = method;
         PreserveContext = preserveContext;
+        IsTaskReturn = isTaskReturn;
     }
 }

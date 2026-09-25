@@ -1110,7 +1110,7 @@ stages:
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
-    targetFramework: net8.0
+    targetFramework: net10.0
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
@@ -1176,7 +1176,7 @@ stages:
         build: true
         target: builder
         baseImage: $(baseImage)
-        command: "Clean BuildDdDotnet --framework net8.0"
+        command: "Clean BuildDdDotnet --framework net10.0"
         retryCountForRunCommand: 1
         timeoutInMinutesForRunCommand: 10
 
@@ -1193,7 +1193,7 @@ stages:
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
-    targetFramework: net8.0
+    targetFramework: net10.0
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
