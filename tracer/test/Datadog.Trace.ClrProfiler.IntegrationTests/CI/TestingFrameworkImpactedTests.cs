@@ -182,6 +182,7 @@ public abstract class TestingFrameworkImpactedTests : TestingFrameworkTest
         try
         {
             ModifyFile();
+            SetEnvironmentVariable(ConfigurationKeys.CIVisibility.TestOptimizationRunId, Guid.NewGuid().ToString("n"));
 
             var tests = new List<MockCIVisibilityTest>();
             using var agent = GetAgent(tests, agentRequestProcessor);
