@@ -144,11 +144,11 @@ namespace Datadog.Trace.AspNet
             if (url is not null)
             {
                 var path = UriHelpers.GetCleanUriPath(url, httpRequest.ApplicationPath);
-                return $"{httpRequest.HttpMethod.ToUpperInvariant()} {path.ToLowerInvariant()}";
+                return $"{StringUtil.ToUpperInvariant(httpRequest.HttpMethod)} {StringUtil.ToLowerInvariant(path)}";
             }
             else
             {
-                return $"{httpRequest.HttpMethod.ToUpperInvariant()}";
+                return $"{StringUtil.ToUpperInvariant(httpRequest.HttpMethod)}";
             }
         }
 
@@ -285,7 +285,7 @@ namespace Datadog.Trace.AspNet
                 }
                 else
                 {
-                    var httpMethod = httpRequest.HttpMethod.ToUpperInvariant();
+                    var httpMethod = StringUtil.ToUpperInvariant(httpRequest.HttpMethod);
                     var url = httpContext.Request.GetUrlForSpan(tracer.TracerManager.QueryStringManager, tracer.Settings.BypassHttpRequestUrlCachingEnabled);
                     scope.Span.DecorateWebServerSpan(resourceName: resourceName, httpMethod, host, url, userAgent, tags);
                 }

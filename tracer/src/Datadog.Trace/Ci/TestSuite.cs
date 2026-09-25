@@ -38,7 +38,7 @@ public sealed class TestSuite
 
         var tags = new TestSuiteSpanTags(module.Tags, name);
         var span = Tracer.Instance.StartSpan(
-            string.IsNullOrEmpty(module.Framework) ? "test_suite" : $"{module.Framework!.ToLowerInvariant()}.test_suite",
+            string.IsNullOrEmpty(module.Framework) ? "test_suite" : $"{StringUtil.ToLowerInvariant(module.Framework)}.test_suite",
             tags: tags,
             startTime: startDate);
         TelemetryFactory.Metrics.RecordCountSpanCreated(MetricTags.IntegrationName.CiAppManual);

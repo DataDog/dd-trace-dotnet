@@ -198,12 +198,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                         _ when namespaceName.Contains(".") && commandTypeName == commandSuffix =>
                             // the + 1 could be dangerous and cause IndexOutOfRangeException, but this shouldn't happen
                             // a period should never be the last character in a namespace
-                            namespaceName.Substring(namespaceName.LastIndexOf('.') + 1).ToLowerInvariant(),
+                            StringUtil.ToLowerInvariant(namespaceName.Substring(namespaceName.LastIndexOf('.') + 1)),
                         _ when commandTypeName == commandSuffix =>
-                            namespaceName.ToLowerInvariant(),
+                            StringUtil.ToLowerInvariant(namespaceName),
                         _ when commandTypeName.EndsWith(commandSuffix) =>
-                            commandTypeName.Substring(0, commandTypeName.Length - commandSuffix.Length).ToLowerInvariant(),
-                        _ => commandTypeName.ToLowerInvariant()
+                            StringUtil.ToLowerInvariant(commandTypeName.Substring(0, commandTypeName.Length - commandSuffix.Length)),
+                        _ => StringUtil.ToLowerInvariant(commandTypeName)
                     };
                     return true;
             }

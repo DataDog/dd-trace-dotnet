@@ -4738,7 +4738,7 @@ internal readonly struct CoverageBackfillCommandLine
                 continue;
             }
 
-            var fileName = $"coverage.{normalizedFormat.ToLowerInvariant()}.xml";
+            var fileName = $"coverage.{StringUtil.ToLowerInvariant(normalizedFormat)}.xml";
             if (CoverletOutputPathsEqual(Path.Combine(outputPath, fileName), reportPath) ||
                 CoverletOutputDirectoryWithTargetFrameworkReferencesReportPath(outputPath, fileName, reportPath))
             {
@@ -4840,7 +4840,7 @@ internal readonly struct CoverageBackfillCommandLine
                 continue;
             }
 
-            var extension = $".{normalizedFormat.ToLowerInvariant()}.xml";
+            var extension = $".{StringUtil.ToLowerInvariant(normalizedFormat)}.xml";
             if (CoverletOutputPathsEqual($"{outputPath}{extension}", reportPath) ||
                 CoverletOutputFileWithTargetFrameworkReferencesReportPath(outputPath, extension, reportPath))
             {
