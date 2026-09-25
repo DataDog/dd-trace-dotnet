@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Text;
 using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.DataStreamsMonitoring.Hashes;
 using Datadog.Trace.ExtensionMethods;
@@ -62,6 +63,58 @@ public class PathwayContextEncoderTests
 
         var decoded = PathwayContextEncoder.Decode(bytes);
         decoded.Should().BeNull();
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void DecoderFailure_TrailingBytes(bool base64Text)
+    {
+        // The Base64 text contains two plausible one-byte timestamps at offsets 8 and 9.
+        // Ignoring the remaining bytes would accept it as a completely different pathway.
+        var bytes = base64Text ? Encoding.UTF8.GetBytes("AAAAAAAABBAAAA==") : new byte[11];
+
+        PathwayContextEncoder.Decode(bytes).Should().BeNull();
+#if NETCOREAPP3_1_OR_GREATER
+        PathwayContextEncoder.Decode(bytes.AsSpan()).Should().BeNull();
+#endif
+    }
+
+    [Theory]
+    [InlineData("AAAAAAAABBAAAAAAAAAAAAAAAAA=", 0, 0)]
+    [InlineData("AAAAAAAABBAC0K+r/vliAAAAAAA=", 1_000_000, 1_700_000_001_000_000_000)]
+    [InlineData("AAAAAAAABBCAgICACNCvq/75YgA=", 1_073_741_824_000_000, 1_700_000_001_000_000_000)]
+    public void DecoderAcceptsNodeJsPadding(string base64, long pathwayStartNs, long edgeStartNs)
+    {
+        // Node.js pads these 10-, 15-, and 19-byte encodings to 20 bytes.
+        var bytes = Convert.FromBase64String(base64);
+        var expected = new PathwayContext(new PathwayHash(0x1004000000000000), pathwayStartNs, edgeStartNs);
+
+        PathwayContextEncoder.Decode(bytes).Should().Be(expected);
+#if NETCOREAPP3_1_OR_GREATER
+        PathwayContextEncoder.Decode(bytes.AsSpan()).Should().Be(expected);
+#endif
+    }
+
+    [Theory]
+    [InlineData(19, -1)]
+    [InlineData(21, -1)]
+    [InlineData(20, 10)]
+    [InlineData(20, 14)]
+    [InlineData(20, 19)]
+    public void DecoderFailure_UnexpectedPadding(int byteCount, int nonZeroOffset)
+    {
+        // A zero hash and two zero timestamps occupy 10 bytes; the rest is padding.
+        var bytes = new byte[byteCount];
+        if (nonZeroOffset >= 0)
+        {
+            bytes[nonZeroOffset] = 1;
+        }
+
+        PathwayContextEncoder.Decode(bytes).Should().BeNull();
+#if NETCOREAPP3_1_OR_GREATER
+        PathwayContextEncoder.Decode(bytes.AsSpan()).Should().BeNull();
+#endif
     }
 
     [Fact]
