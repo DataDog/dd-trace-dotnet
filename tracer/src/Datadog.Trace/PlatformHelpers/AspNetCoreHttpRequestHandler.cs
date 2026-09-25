@@ -465,6 +465,7 @@ namespace Datadog.Trace.PlatformHelpers
                         Tags.UrlQuery => tags.UrlQuery is not null,
                         Tags.ServerAddress => tags.ServerAddress is not null,
                         Tags.ServerPort => tags.ServerPort is not null,
+                        Tags.NetworkProtocolVersion => tags.NetworkProtocolVersion is not null,
                         _ => false,
                     };
             }
