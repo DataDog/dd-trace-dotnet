@@ -73,7 +73,7 @@ internal static class RuntimeAsyncEndMethodHandler<TIntegration, TTarget, TRetur
             var asyncResult = IntegrationMapper.CreateAsyncEndMethodDelegate(typeof(TIntegration), typeof(TTarget), typeof(TReturn));
             if (asyncResult.Method is { } asyncMethod)
             {
-                if (RuntimeAsyncHelper.IsTaskReturning(asyncMethod.ReturnType))
+                if (asyncResult.IsTaskReturn)
                 {
                     // We cannot await here. The epilog runs inside the finally of the rewritten
                     // method, and the runtime-async spec forbids suspension points in handler

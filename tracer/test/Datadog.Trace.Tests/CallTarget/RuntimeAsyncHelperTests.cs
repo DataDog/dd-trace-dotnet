@@ -7,7 +7,6 @@
 // other target - the code paths they serve can never be reached there.
 #if NET10_0_OR_GREATER
 
-using System;
 using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.CallTarget.Handlers;
 using FluentAssertions;
@@ -17,24 +16,6 @@ namespace Datadog.Trace.Tests.CallTarget;
 
 public class RuntimeAsyncHelperTests
 {
-    // Only Task and Task<T> are listed as "async callback" shapes because IntegrationMapper
-    // normalises every async OnAsyncMethodEnd into a dynamic method returning Task<T>
-    // (see IntegrationMapper.CreateAsyncEndMethodDelegate) - a ValueTask never reaches this check.
-    [Theory]
-    [InlineData(typeof(Task), true)]
-    [InlineData(typeof(Task<int>), true)]
-    [InlineData(typeof(Task<object>), true)]
-    [InlineData(typeof(void), false)]
-    [InlineData(typeof(int), false)]
-    [InlineData(typeof(string), false)]
-    [InlineData(typeof(object), false)]
-    [InlineData(typeof(ValueTask), false)]
-    [InlineData(typeof(ValueTask<int>), false)]
-    public void IsTaskReturning_MatchesTaskShapesOnly(Type returnType, bool expected)
-    {
-        RuntimeAsyncHelper.IsTaskReturning(returnType).Should().Be(expected);
-    }
-
     [Fact]
     public void CreateCompleted_ForTask_ReturnsTheCachedCompletedTask()
     {

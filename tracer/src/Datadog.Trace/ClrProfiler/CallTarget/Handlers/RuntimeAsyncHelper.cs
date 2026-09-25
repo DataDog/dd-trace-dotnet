@@ -7,7 +7,6 @@
 // net6.0 is the only Datadog.Trace asset a .NET 10+ process can load, and Runtime-async is a .NET 10+ feature
 #if NET6_0_OR_GREATER // NET 10+ really
 
-using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
@@ -19,13 +18,6 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers;
 /// </summary>
 internal static class RuntimeAsyncHelper
 {
-    /// <summary>
-    /// Whether a callback is itself async. Such a callback cannot be used on a runtime-async
-    /// target, because the epilog is a finally block and the spec forbids suspending there.
-    /// </summary>
-    internal static bool IsTaskReturning(Type returnType)
-        => returnType == typeof(Task) || (returnType.IsGenericType && typeof(Task).IsAssignableFrom(returnType));
-
     /// <summary>
     /// Builds an already-completed value of a declared non-generic Task or ValueTask return type.
     /// </summary>
