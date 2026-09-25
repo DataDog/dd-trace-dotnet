@@ -53,7 +53,7 @@ internal class Program
 
             // It's... weird... but reflection doesn't work with the rewriting in r2r for some reason...
             var hasCorrectValueAfterRewrite = Environment.GetEnvironmentVariable("READY2RUN_ENABLED") != "1";
-            if (hasCorrectValueAfterRewrite)
+            if (hasCorrectValueAfterRewrite || true)
             {
                 Expect(isManualOnly != shouldBeAttached);
             }
