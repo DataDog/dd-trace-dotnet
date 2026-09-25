@@ -251,7 +251,7 @@ TEST(ModuleLifetime, UnloadWaitsForNGenReplayAfterShutdownStarts)
     auto enumerationEnteredFuture = profilerInfo.enumerationEntered.get_future();
     auto offloader = std::make_shared<RejitWorkOffloader>(&profilerInfo);
     auto handler = std::make_shared<RejitHandler>(static_cast<ICorProfilerInfo7*>(&profilerInfo), offloader);
-    ObservableTracerRejitPreprocessor preprocessor(nullptr, handler, offloader);
+    ObservableTracerRejitPreprocessor preprocessor(nullptr, handler);
     auto removeEnteredFuture = preprocessor.removeEntered.get_future();
     auto removeReturnedFuture = preprocessor.removeReturned.get_future();
     constexpr ModuleID inlineeModuleId = 41;

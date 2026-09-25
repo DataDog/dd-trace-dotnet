@@ -16,8 +16,7 @@ class DebuggerRejitPreprocessor : public RejitPreprocessor<std::shared_ptr<Metho
 public:
     using RejitPreprocessor::RejitPreprocessor;
 
-    DebuggerRejitPreprocessor(CorProfiler* corProfiler, std::shared_ptr<RejitHandler> rejit_handler,
-                            std::shared_ptr<RejitWorkOffloader> work_offloader);
+    DebuggerRejitPreprocessor(CorProfiler* corProfiler, std::shared_ptr<RejitHandler> rejit_handler);
 
     ULONG PreprocessLineProbes(const std::vector<ModuleIDWithLifetime>& modules, const std::vector<std::shared_ptr<LineProbeDefinition>>& lineProbes,
                                std::vector<RejitRequest>& rejitRequests);

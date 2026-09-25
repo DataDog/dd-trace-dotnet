@@ -344,7 +344,7 @@ DebuggerProbesInstrumentationRequester::DebuggerProbesInstrumentationRequester(
     std::shared_ptr<fault_tolerant::FaultTolerantMethodDuplicator> fault_tolerant_method_duplicator) :
     m_corProfiler(corProfiler),
     m_debugger_rejit_preprocessor(
-        std::make_unique<DebuggerRejitPreprocessor>(corProfiler, rejit_handler, work_offloader)),
+        std::make_unique<DebuggerRejitPreprocessor>(corProfiler, rejit_handler)),
     m_rejit_handler(rejit_handler),
     m_work_offloader(work_offloader),
     m_fault_tolerant_method_duplicator(fault_tolerant_method_duplicator)
@@ -716,7 +716,7 @@ void DebuggerProbesInstrumentationRequester::DetermineReInstrumentProbes(
     }
 }
 
-// Assumes `m_probes_mutex` is held
+// Assumes `m_instrumentation_mutex` is held
 bool DebuggerProbesInstrumentationRequester::ProbeIdExists(const WCHAR* probeId)
 {
     auto it = std::find_if(m_probes.begin(), m_probes.end(),
@@ -738,19 +738,16 @@ void DebuggerProbesInstrumentationRequester::InstrumentProbes(
     std::set<RejitRequest> rejitRequests{};
     std::set<RejitRequest> reInstrumentRequests{};
 
-    {
-        std::lock_guard lock(m_probes_mutex);
-
-        RemoveProbes(removeProbes, removeProbesLength, revertRequests);
-        AddMethodProbes(methodProbes, methodProbesLength, spanProbes, spanProbesLength, methodProbeDefinitions);
-        AddLineProbes(lineProbes, lineProbesLength, lineProbeDefinitions);
-        DetermineReInstrumentProbes(revertRequests, reInstrumentRequests);
-    }
+    RemoveProbes(removeProbes, removeProbesLength, revertRequests);
+    AddMethodProbes(methodProbes, methodProbesLength, spanProbes, spanProbesLength, methodProbeDefinitions);
+    AddLineProbes(lineProbes, lineProbesLength, lineProbeDefinitions);
+    DetermineReInstrumentProbes(revertRequests, reInstrumentRequests);
 
     std::vector<ModuleID> modulesCopy;
     if (!methodProbeDefinitions.empty() || !lineProbeDefinitions.empty())
     {
-        modulesCopy = m_corProfiler->module_ids.Copy();
+        auto modules = m_corProfiler->module_ids.Get();
+        modulesCopy = modules.Ref();
     }
 
     if (!methodProbeDefinitions.empty() && !modulesCopy.empty())
@@ -810,7 +807,7 @@ void DebuggerProbesInstrumentationRequester::InstrumentProbes(
 
     // We offload the actual `RequestRejit` & `RequestRevert` to a separate thread because they are not permitted
     // to be called from managed land. The transaction lock keeps concurrent add/remove operations ordered without
-    // holding module_ids or m_probes_mutex across the wait (APMS-20456).
+    // holding module_ids across the wait (APMS-20456).
     if (!revertRequests.empty())
     {
         Logger::Debug("About to RequestRevert for ", revertRequests.size(), " methods.");
@@ -885,11 +882,6 @@ int DebuggerProbesInstrumentationRequester::GetProbesStatuses(WCHAR** probeIds, 
     return probeStatusesCount;
 }
 
-const std::vector<std::shared_ptr<ProbeDefinition>>& DebuggerProbesInstrumentationRequester::GetProbes() const
-{
-    return m_probes;
-}
-
 DebuggerRejitPreprocessor* DebuggerProbesInstrumentationRequester::GetPreprocessor()
 {
     return m_debugger_rejit_preprocessor.get();
@@ -907,7 +899,6 @@ DebuggerProbesInstrumentationRequester::BeginModuleLoadProbeTransaction()
     // Serialize probe publication with module publication. CorProfiler acquires module_ids only after this
     // transaction starts, so InstrumentProbes and ModuleLoadFinished agree which path owns each probe/module pair.
     transaction.instrumentationLock = std::unique_lock(m_instrumentation_mutex);
-    std::lock_guard lock(m_probes_mutex);
     for (const auto& probe : m_probes)
     {
         const auto methodProbe = std::dynamic_pointer_cast<MethodProbeDefinition>(probe);

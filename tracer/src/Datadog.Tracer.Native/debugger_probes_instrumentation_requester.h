@@ -39,7 +39,6 @@ class DebuggerProbesInstrumentationRequester
 private:
     CorProfiler* m_corProfiler;
     std::mutex m_instrumentation_mutex;
-    std::recursive_mutex m_probes_mutex;
     std::vector<ProbeDefinition_S> m_probes;
     std::unique_ptr<DebuggerRejitPreprocessor> m_debugger_rejit_preprocessor = nullptr;
     std::shared_ptr<RejitHandler> m_rejit_handler = nullptr;
@@ -82,7 +81,6 @@ public:
     void PerformInstrumentAllIfNeeded(const ModuleIDWithLifetime& module, mdToken& function_token);
     void InitializeExplorationTestLineProbes(const WSTRING& filename);
     auto& GetExplorationTestLineProbes(const WSTRING& filename);
-    const std::vector<std::shared_ptr<ProbeDefinition>>& GetProbes() const;
     DebuggerRejitPreprocessor* GetPreprocessor();
     ModuleLoadProbeTransaction BeginModuleLoadProbeTransaction();
     void RequestRejitForLoadedModule(const ModuleIDWithLifetime& module, ModuleLoadProbeTransaction transaction);
