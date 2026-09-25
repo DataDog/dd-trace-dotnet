@@ -796,8 +796,7 @@ partial class Build
             {
                 Logger.Information("Copying native files for project {ProjectName}", projectName);
                 var project = Solution.GetProject(projectName);
-                var testDir = project!.Directory;
-                var frameworks = project.GetTargetFrameworks();
+                var frameworks = project.TryGetTargetFrameworks();
 
                 if (Framework is not null)
                 {
@@ -837,7 +836,7 @@ partial class Build
                 .Executes(async () =>
                 {
                     var project = Solution.GetProject(Projects.AppSecUnitTests);
-                    var frameworks = project.GetTargetFrameworks();
+                    var frameworks = project.TryGetTargetFrameworks();
 
                     // dotnet test runs under x86 for net461, even on x64 platforms
                     // so copy both, just to be safe
@@ -1038,7 +1037,7 @@ partial class Build
         {
             // Build the fleet installer project
             var project = SourceDirectory / "Datadog.FleetInstaller" / "Datadog.FleetInstaller.csproj";
-            var tfms = Solution.GetProject(project).GetTargetFrameworks();
+            var tfms = Solution.GetProject(project).TryGetTargetFrameworks();
             // we should only have a single tfm for fleet installer
             if (tfms.Count != 1)
             {
@@ -1624,7 +1623,7 @@ partial class Build
             var projects = TracerDirectory
                     .GlobFiles("test/*.IntegrationTests/*.csproj")
                     .Where(path => !((string)path).Contains(Projects.DebuggerIntegrationTests))
-                    .Where(project => Solution.GetProject(project).GetTargetFrameworks().Contains(Framework));
+                    .Where(project => Solution.GetProject(project).TryGetTargetFrameworks()?.Contains(Framework) == true);
 
             if (!IsWin)
             {

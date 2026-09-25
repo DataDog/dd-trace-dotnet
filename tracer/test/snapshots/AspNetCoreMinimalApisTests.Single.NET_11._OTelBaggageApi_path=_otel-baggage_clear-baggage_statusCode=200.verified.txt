@@ -1,0 +1,60 @@
+﻿[
+  {
+    TraceId: Id_1,
+    SpanId: Id_2,
+    Name: ClearBaggage,
+    Resource: ClearBaggage,
+    Service: Samples.AspNetCoreMinimalApis,
+    ParentId: Id_3,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      version: 1.0.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_3,
+    Name: aspnet_core.request,
+    Resource: GET /otel-baggage/clear-baggage,
+    Service: Samples.AspNetCoreMinimalApis,
+    Type: web,
+    Tags: {
+      aspnet_core.endpoint: Samples.AspNetCoreMvc.Controllers.OtelBaggageController.ClearBaggage (Samples.AspNetCoreMinimalApis),
+      aspnet_core.route: otel-baggage/clear-baggage,
+      component: aspnet_core,
+      datadog-header-tag: asp-net-core,
+      env: integration_tests,
+      http.method: GET,
+      http.request.headers.host: localhost:00000,
+      http.request.headers.sample_correlation_identifier: 0000-0000-0000,
+      http.response.headers.server: Kestrel,
+      http.route: otel-baggage/clear-baggage,
+      http.status_code: 200,
+      http.url: http://localhost:00000/otel-baggage/clear-baggage,
+      http.useragent: testhelper,
+      language: dotnet,
+      network.protocol.version: 1.1,
+      runtime-id: Guid_1,
+      server.address: localhost,
+      span.kind: server,
+      url.path: /otel-baggage/clear-baggage,
+      url.scheme: http,
+      version: 1.0.0,
+      _dd.code_origin.frames.0.column: 0,
+      _dd.code_origin.frames.0.file: tracer\test\test-applications\integrations\Samples.AspNetCoreMvc21\Controllers\OtelBaggageController.cs,
+      _dd.code_origin.frames.0.index: 0,
+      _dd.code_origin.frames.0.line: 0,
+      _dd.code_origin.frames.0.method: ClearBaggage,
+      _dd.code_origin.frames.0.type: Samples.AspNetCoreMvc.Controllers.OtelBaggageController,
+      _dd.code_origin.type: entry
+    },
+    Metrics: {
+      process_id: 0,
+      server.port: 00000,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  }
+]
