@@ -22,36 +22,26 @@ internal sealed class ConditionConfiguration
 
     public object? Value { get; set; }
 
+    internal bool HasValidRegex()
+    {
+        try
+        {
+            _ = GetOrCreateRegex();
+            return true;
+        }
+        catch (FormatException)
+        {
+            return false;
+        }
+    }
+
     internal bool MatchesRegex(object attributeValue)
     {
-        if (_regex == null)
-        {
-            var pattern = Value?.ToString() ?? string.Empty;
-            if (pattern is not { Length: > 0 })
-            {
-                throw new FormatException("Condition value can not be null nor empty");
-            }
-
-            if (pattern.StartsWith("(?u)", StringComparison.Ordinal))
-            {
-                pattern = pattern.Substring(4);
-            }
-
-            pattern = pattern.Replace("[:alnum:]", @"\p{L}\p{N}");
-
-            try
-            {
-                _regex = new Regex(pattern, RegexOptions.Compiled);
-            }
-            catch (ArgumentException ex)
-            {
-                throw new FormatException($"Invalid regex pattern: {pattern}", ex);
-            }
-        }
+        var regex = GetOrCreateRegex();
 
         try
         {
-            return _regex.IsMatch(ToString(attributeValue));
+            return regex.IsMatch(ToString(attributeValue));
         }
         catch
         {
@@ -63,6 +53,38 @@ internal sealed class ConditionConfiguration
             if (attributeValue is null) { return string.Empty; }
             if (attributeValue is bool boolValue) { return boolValue ? "true" : "false"; }
             return Convert.ToString(attributeValue, CultureInfo.InvariantCulture) ?? string.Empty;
+        }
+    }
+
+    private Regex GetOrCreateRegex()
+    {
+        if (_regex is not null)
+        {
+            return _regex;
+        }
+
+        var pattern = Value?.ToString() ?? string.Empty;
+        if (pattern is not { Length: > 0 })
+        {
+            throw new FormatException("Condition value can not be null nor empty");
+        }
+
+        if (pattern.StartsWith("(?u)", StringComparison.Ordinal))
+        {
+            pattern = pattern.Substring(4);
+        }
+
+        // Rust regex treats POSIX alnum as ASCII, so preserve the canonical semantics.
+        pattern = pattern.Replace("[:alnum:]", "0-9A-Za-z");
+
+        try
+        {
+            _regex = new Regex(pattern, RegexOptions.Compiled);
+            return _regex;
+        }
+        catch (ArgumentException ex)
+        {
+            throw new FormatException($"Invalid regex pattern: {pattern}", ex);
         }
     }
 }
