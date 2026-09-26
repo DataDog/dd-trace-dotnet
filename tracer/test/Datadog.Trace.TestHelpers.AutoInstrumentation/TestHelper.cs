@@ -265,6 +265,15 @@ namespace Datadog.Trace.TestHelpers
                                 .Replace("[RELATIVE_SAMPLE_PATH]", $".\\{EnvironmentHelper.GetSampleApplicationFileName()}")
                                 .Replace("[HOSTING_MODEL]", hostingModel);
             }
+            else
+            {
+                // Classic ASP.NET tests do not use ANCM, which is not included in standalone IIS Express installations.
+                configTemplate = configTemplate
+                                .Replace("""<add name="AspNetCoreModule" image="%IIS_BIN%\aspnetcore.dll" />""", string.Empty)
+                                .Replace("""<add name="AspNetCoreModuleV2" image="%IIS_BIN%\ASP.NET Core Module\V2\aspnetcorev2.dll" />""", string.Empty)
+                                .Replace("""<add name="AspNetCoreModule" lockItem="true" />""", string.Empty)
+                                .Replace("""<add name="AspNetCoreModuleV2" lockItem="true" />""", string.Empty);
+            }
 
             if (usePartialTrust || useLegacyCasModel)
             {
