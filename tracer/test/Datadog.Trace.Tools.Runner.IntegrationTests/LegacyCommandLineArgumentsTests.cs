@@ -107,7 +107,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
         [Trait("RunOnWindows", "True")]
         [InlineData(' ')]
         [InlineData('=')]
-        [EnvironmentRestorer(PlatformKeys.Ci.Azure.TFBuild)]
+        [EnvironmentRestorer(PlatformKeys.Ci.Azure.TFBuild, PlatformKeys.Ci.GitLab.Name)]
         public void SetCi(char separator)
         {
             Environment.SetEnvironmentVariable("TF_BUILD", "1");

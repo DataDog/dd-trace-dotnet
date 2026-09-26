@@ -19,6 +19,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
     // Note that ASP.NET Core 2.1 does not support in-process hosting
 
     [Collection("IisTests")]
+    [Trait("IISExpress", "True")]
     public class AspNetCoreIisMvc21TestsOutOfProcess : AspNetCoreIisMvc21Tests
     {
         public AspNetCoreIisMvc21TestsOutOfProcess(IisFixture fixture, ITestOutputHelper output)
@@ -28,6 +29,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
     }
 
     [Collection("IisTests")]
+    [Trait("IISExpress", "True")]
     public class AspNetCoreIisMvc21TestsOutOfProcessWithFeatureFlag : AspNetCoreIisMvc21Tests
     {
         public AspNetCoreIisMvc21TestsOutOfProcessWithFeatureFlag(IisFixture fixture, ITestOutputHelper output)

@@ -71,8 +71,10 @@ RUN wget https://apt.llvm.org/llvm.sh && \
     ln -s `which clang-tidy-16` /usr/bin/clang-tidy && \
     ln -s `which run-clang-tidy-16` /usr/bin/run-clang-tidy
 
-# Install the .NET SDK
-RUN curl -sSL https://github.com/dotnet/install-scripts/raw/2bdc7f2c6e00d60be57f552b8a8aab71512dbcb2/src/dotnet-install.sh --output dotnet-install.sh  \
+# Install the .NET SDK. Validate the pinned download so an HTML outage response
+# cannot be executed, and fall back to Microsoft's official short URL.
+RUN { curl -fsSL https://github.com/dotnet/install-scripts/raw/2bdc7f2c6e00d60be57f552b8a8aab71512dbcb2/src/dotnet-install.sh --output dotnet-install.sh && bash -n dotnet-install.sh; } \
+    || { rm -f dotnet-install.sh; curl -fsSL https://dot.net/v1/dotnet-install.sh --output dotnet-install.sh && bash -n dotnet-install.sh; } \
     && chmod +x ./dotnet-install.sh \
     && ./dotnet-install.sh --version $DOTNETSDK_VERSION --install-dir /usr/share/dotnet \
     && rm ./dotnet-install.sh \
@@ -105,7 +107,8 @@ RUN if [ "$(uname -m)" = "x86_64" ]; \
     then export NETCORERUNTIME2_1=aspnetcore; \
     else export NETCORERUNTIME2_1=dotnet; \
     fi \
-    && curl -sSL https://github.com/dotnet/install-scripts/raw/2bdc7f2c6e00d60be57f552b8a8aab71512dbcb2/src/dotnet-install.sh --output dotnet-install.sh \
+    && { curl -fsSL https://github.com/dotnet/install-scripts/raw/2bdc7f2c6e00d60be57f552b8a8aab71512dbcb2/src/dotnet-install.sh --output dotnet-install.sh && bash -n dotnet-install.sh \
+        || { rm -f dotnet-install.sh; curl -fsSL https://dot.net/v1/dotnet-install.sh --output dotnet-install.sh && bash -n dotnet-install.sh; }; } \
     && chmod +x ./dotnet-install.sh \
     && ./dotnet-install.sh --runtime $NETCORERUNTIME2_1 --channel 2.1 --install-dir /usr/share/dotnet --no-path \
     && ./dotnet-install.sh --runtime aspnetcore --channel 3.0 --install-dir /usr/share/dotnet --no-path \
@@ -120,7 +123,14 @@ RUN if [ "$(uname -m)" = "x86_64" ]; \
 ARG AZURE_FUNCTIONS_CORE_TOOLS_VERSION=4.11.0
 
 RUN if [ "$(uname -m)" = "x86_64" ]; \
-    then curl -fsSL "https://github.com/Azure/azure-functions-core-tools/releases/download/${AZURE_FUNCTIONS_CORE_TOOLS_VERSION}/Azure.Functions.Cli.linux-x64.${AZURE_FUNCTIONS_CORE_TOOLS_VERSION}.zip" --output azure-functions-core-tools.zip \
+    then attempt=1; \
+        until curl -fsSL --connect-timeout 30 "https://github.com/Azure/azure-functions-core-tools/releases/download/${AZURE_FUNCTIONS_CORE_TOOLS_VERSION}/Azure.Functions.Cli.linux-x64.${AZURE_FUNCTIONS_CORE_TOOLS_VERSION}.zip" --output azure-functions-core-tools.zip; do \
+            if [ "$attempt" -ge 5 ]; then exit 1; fi; \
+            echo "Azure Functions Core Tools download failed; retrying (attempt $((attempt + 1))/5)" >&2; \
+            rm -f azure-functions-core-tools.zip; \
+            sleep $((attempt * 5)); \
+            attempt=$((attempt + 1)); \
+        done \
         && mkdir -p /opt/azure-functions-core-tools \
         && unzip -q azure-functions-core-tools.zip -d /opt/azure-functions-core-tools \
         && chmod +x /opt/azure-functions-core-tools/func \

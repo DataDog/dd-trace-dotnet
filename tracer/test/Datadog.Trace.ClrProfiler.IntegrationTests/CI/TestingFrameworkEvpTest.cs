@@ -30,7 +30,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI;
 [Trait("Area", "CIVisibility")]
 public abstract class TestingFrameworkEvpTest : TestHelper
 {
-    private readonly GacFixture _gacFixture;
+    private readonly GacFixture? _gacFixture;
 
     protected TestingFrameworkEvpTest(string sampleAppName, string samplePathOverrides, ITestOutputHelper output)
         : base(sampleAppName, samplePathOverrides, output)
@@ -48,12 +48,15 @@ public abstract class TestingFrameworkEvpTest : TestHelper
         _gacFixture.AddAssembliesToGac();
     }
 
-    protected TestingFrameworkEvpTest(string sampleAppName, ITestOutputHelper output)
+    protected TestingFrameworkEvpTest(string sampleAppName, ITestOutputHelper output, bool setupGac = true)
         : base(sampleAppName, output)
     {
         SetCIEnvironmentValues();
-        _gacFixture = new GacFixture();
-        _gacFixture.AddAssembliesToGac();
+        if (setupGac)
+        {
+            _gacFixture = new GacFixture();
+            _gacFixture.AddAssembliesToGac();
+        }
     }
 
     protected TestingFrameworkEvpTest(EnvironmentHelper environmentHelper, ITestOutputHelper output)
@@ -68,7 +71,7 @@ public abstract class TestingFrameworkEvpTest : TestHelper
 
     public override void Dispose()
     {
-        _gacFixture.RemoveAssembliesFromGac();
+        _gacFixture?.RemoveAssembliesFromGac();
     }
 
     protected static bool IsMacOS()
@@ -346,6 +349,11 @@ public abstract class TestingFrameworkEvpTest : TestHelper
     protected void SetCIEnvironmentValues()
     {
         var current = GitInfo.GetCurrent();
+
+        // These tests simulate Azure Pipelines. Do not let the outer GitLab job override
+        // the mocked provider in the sample process.
+        SetEnvironmentVariable(PlatformKeys.Ci.GitLab.Name, string.Empty);
+
         var ciDictionaryValues = new Dictionary<string, string>
         {
             [PlatformKeys.Ci.Azure.TFBuild] = "1",

@@ -1,0 +1,88 @@
+.macos-unit-test-amd64:
+  stage: test
+  timeout: 90m
+  tags: ["macos:sonoma-amd64"]
+  needs:
+    - pipeline: "$PARENT_PIPELINE_ID"
+      job: build-macos-tracer-amd64
+      artifacts: true
+  variables:
+    DOTNET_SDK_VERSION: "10.0.100"
+    DOTNET_CLI_HOME: "$CI_PROJECT_DIR/.dotnet_cli_home"
+    NUGET_PACKAGES: "$CI_PROJECT_DIR/packages"
+    NUGET_ENABLE_EXPERIMENTAL_HTTP_RETRY: "true"
+    NUKE_TELEMETRY_OPTOUT: "1"
+    DD_LOGGER_ENABLED: "true"
+    DD_LOGGER_DD_SERVICE: dd-trace-dotnet
+    DD_LOGGER_DD_TRACE_LOG_PATH: "$CI_PROJECT_DIR/artifacts/build_data/infra_logs/ci-visibility.log"
+    DD_LOGGER_DD_TAGS: "test.configuration.job:$CI_JOB_NAME"
+  before_script:
+    - |
+      set -eu
+      export DOTNET_ROOT="${CI_PROJECT_DIR}/.dotnet"
+      export PATH="${DOTNET_ROOT}:${PATH}"
+      mkdir -p "$DOTNET_ROOT" "$DOTNET_CLI_HOME" "$NUGET_PACKAGES" artifacts/build_data/infra_logs
+
+      dotnet_install_script="${TMPDIR:-/tmp}/dd-trace-dotnet-${CI_JOB_ID}-dotnet-install.sh"
+      trap 'rm -f "$dotnet_install_script"' EXIT
+      if ! curl --fail --silent --show-error --location --retry 5 \
+          --output "$dotnet_install_script" \
+          https://github.com/dotnet/install-scripts/raw/2bdc7f2c6e00d60be57f552b8a8aab71512dbcb2/src/dotnet-install.sh \
+          || ! bash -n "$dotnet_install_script"; then
+        rm -f "$dotnet_install_script"
+        curl --fail --silent --show-error --location --retry 5 \
+          --output "$dotnet_install_script" \
+          https://dot.net/v1/dotnet-install.sh
+        bash -n "$dotnet_install_script"
+      fi
+      bash "$dotnet_install_script" \
+        --version "$DOTNET_SDK_VERSION" \
+        --install-dir "$DOTNET_ROOT" \
+        --no-path
+
+      runtime_channel=""
+      case "$FRAMEWORK" in
+        netcoreapp3.0) runtime_channel="3.0" ;;
+        netcoreapp3.1) runtime_channel="3.1" ;;
+        net5.0) runtime_channel="5.0" ;;
+        net6.0) runtime_channel="6.0" ;;
+        net7.0) runtime_channel="7.0" ;;
+        net8.0) runtime_channel="8.0" ;;
+        net9.0) runtime_channel="9.0" ;;
+        net10.0) ;;
+        *) echo "Unsupported macOS test framework: $FRAMEWORK" >&2; exit 1 ;;
+      esac
+
+      if [ -n "$runtime_channel" ]; then
+        echo "Installing the .NET ${runtime_channel} x64 runtime for ${FRAMEWORK}..."
+        bash "$dotnet_install_script" \
+          --architecture x64 \
+          --runtime dotnet \
+          --channel "$runtime_channel" \
+          --install-dir "$DOTNET_ROOT" \
+          --no-path
+      fi
+
+      dotnet --info
+      installed_runtimes="$(dotnet --list-runtimes)"
+      printf '%s\n' "$installed_runtimes"
+      if [ -n "$runtime_channel" ]; then
+        case "$installed_runtimes" in
+          *"Microsoft.NETCore.App ${runtime_channel}."*) ;;
+          *) echo "Failed to install the .NET ${runtime_channel} runtime" >&2; exit 1 ;;
+        esac
+      fi
+  script:
+    - ./tracer/build.sh BuildManagedUnitTests RunManagedUnitTests --framework "$FRAMEWORK" --IncludeAllTestFrameworks true --NugetPackageDirectory "$NUGET_PACKAGES"
+  artifacts:
+    when: always
+    expire_in: 2 weeks
+    name: "managed-unit-tests-macos-amd64-$FRAMEWORK"
+    paths:
+      - artifacts/build_data/results
+      - artifacts/build_data/logs
+      - artifacts/build_data/infra_logs
+      - artifacts/build_data/dumps
+  id_tokens:
+    DD_STS_OIDC_TOKEN:
+      aud: dd-sts

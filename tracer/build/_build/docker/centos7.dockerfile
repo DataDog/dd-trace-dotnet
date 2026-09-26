@@ -71,8 +71,10 @@ RUN curl -sSL https://apmdotnetbuildstorage.blob.core.windows.net/build-dependen
     && echo '7b1e2c6abf34cfbc9d542ea466f2fb752ec2cee2ef92297271c8c8325cf8d16e29d1c32784da0ccc6bc4e9bee8647b14daa8568f4e2d1fd1626a584dc4f2419a cppcheck-2.7-1.el7.x86_64.rpm' | sha512sum --check \
     && sudo yum localinstall -y cppcheck-2.7-1.el7.x86_64.rpm
 
-# Install the .NET SDK
-RUN curl -sSL https://github.com/dotnet/install-scripts/raw/2bdc7f2c6e00d60be57f552b8a8aab71512dbcb2/src/dotnet-install.sh --output dotnet-install.sh \
+# Install the .NET SDK. Validate the pinned download so an HTML outage response
+# cannot be executed, and fall back to Microsoft's official short URL.
+RUN { curl -fsSL https://github.com/dotnet/install-scripts/raw/2bdc7f2c6e00d60be57f552b8a8aab71512dbcb2/src/dotnet-install.sh --output dotnet-install.sh && bash -n dotnet-install.sh; } \
+    || { rm -f dotnet-install.sh; curl -fsSL https://dot.net/v1/dotnet-install.sh --output dotnet-install.sh && bash -n dotnet-install.sh; } \
     && chmod +x ./dotnet-install.sh \
     && ./dotnet-install.sh --version $DOTNETSDK_VERSION --install-dir /usr/share/dotnet \
     && rm ./dotnet-install.sh \

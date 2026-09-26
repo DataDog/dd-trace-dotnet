@@ -17,6 +17,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
     [Collection(nameof(ImpactedTestsCollection))]
     public class XUnitImpactedTests : TestingFrameworkImpactedTests
     {
+        private const string AlpineDetachedHeadSkipReason = "This test is currently flaky in alpine due to a Detached Head status. An issue has been opened to handle the situation. Meanwhile we are skipping it.";
         private const string IsModifiedTag = "test.is_modified";
 
         public XUnitImpactedTests(ITestOutputHelper output)
@@ -52,7 +53,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
         [Trait("Category", "TestIntegrations")]
         public Task EnabledBySettings(string packageVersion)
         {
-            Skip.If(EnvironmentHelper.IsAlpine(), "This test is currently flaky in alpine due to a Detached Head status. An issue has been opened to handle the situation. Meanwhile we are skipping it.");
+            Skip.If(EnvironmentHelper.IsAlpine(), AlpineDetachedHeadSkipReason);
 
             InjectGitHubActionsSession(true, null);
             return SubmitTests(packageVersion, 2, TestIsModified);
