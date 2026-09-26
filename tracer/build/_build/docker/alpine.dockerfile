@@ -68,7 +68,7 @@ RUN apk update \
 
 
 # Install the .NET SDK
-RUN curl -sSL https://github.com/dotnet/install-scripts/raw/2bdc7f2c6e00d60be57f552b8a8aab71512dbcb2/src/dotnet-install.sh --output dotnet-install.sh \
+RUN curl -fsSL --retry 5 --connect-timeout 15 --max-time 120 https://github.com/dotnet/install-scripts/raw/2bdc7f2c6e00d60be57f552b8a8aab71512dbcb2/src/dotnet-install.sh --output dotnet-install.sh \
     && chmod +x ./dotnet-install.sh \
     && ./dotnet-install.sh --version $DOTNETSDK_VERSION --install-dir /usr/share/dotnet \
     && rm dotnet-install.sh \
@@ -91,19 +91,33 @@ WORKDIR /project
 FROM base AS tester
 
 # Install .NET Core runtimes using install script (don't install 2.1 on ARM64, because it's not available)
-RUN curl -sSL https://github.com/dotnet/install-scripts/raw/2bdc7f2c6e00d60be57f552b8a8aab71512dbcb2/src/dotnet-install.sh --output dotnet-install.sh \
-    && chmod +x ./dotnet-install.sh \
-    && { if [ "$(uname -m)" != "aarch64" ]; then \
-        ./dotnet-install.sh --runtime aspnetcore --channel 2.1 --install-dir /usr/share/dotnet --no-path; \
-    fi; } \
-    && ./dotnet-install.sh --runtime aspnetcore --channel 3.0 --install-dir /usr/share/dotnet --no-path \
-    && ./dotnet-install.sh --runtime aspnetcore --channel 3.1 --install-dir /usr/share/dotnet --no-path \
-    && ./dotnet-install.sh --runtime aspnetcore --channel 5.0 --install-dir /usr/share/dotnet --no-path \
-    && ./dotnet-install.sh --runtime aspnetcore --channel 6.0 --install-dir /usr/share/dotnet --no-path \
-    && ./dotnet-install.sh --runtime aspnetcore --channel 7.0 --install-dir /usr/share/dotnet --no-path \
-    && ./dotnet-install.sh --runtime aspnetcore --channel 8.0 --install-dir /usr/share/dotnet --no-path \
-    && ./dotnet-install.sh --runtime aspnetcore --channel 9.0 --install-dir /usr/share/dotnet --no-path \
-    && rm dotnet-install.sh
+# Bound each install to five minutes, with a kill deadline and at most three attempts.
+RUN set -eu; \
+    curl -fsSL --retry 5 --connect-timeout 15 --max-time 120 https://github.com/dotnet/install-scripts/raw/2bdc7f2c6e00d60be57f552b8a8aab71512dbcb2/src/dotnet-install.sh --output dotnet-install.sh; \
+    chmod +x ./dotnet-install.sh; \
+    install_dotnet_with_retries() { \
+        attempt=1; \
+        while ! timeout -k 30 300 ./dotnet-install.sh "$@"; do \
+            if [ "$attempt" -ge 3 ]; then \
+                echo "dotnet-install failed after $attempt attempts" >&2; \
+                return 1; \
+            fi; \
+            echo "dotnet-install attempt $attempt failed or timed out; retrying" >&2; \
+            sleep $((attempt * 5)); \
+            attempt=$((attempt + 1)); \
+        done; \
+    }; \
+    if [ "$(uname -m)" != "aarch64" ]; then \
+        install_dotnet_with_retries --runtime aspnetcore --channel 2.1 --install-dir /usr/share/dotnet --no-path; \
+    fi; \
+    install_dotnet_with_retries --runtime aspnetcore --channel 3.0 --install-dir /usr/share/dotnet --no-path; \
+    install_dotnet_with_retries --runtime aspnetcore --channel 3.1 --install-dir /usr/share/dotnet --no-path; \
+    install_dotnet_with_retries --runtime aspnetcore --channel 5.0 --install-dir /usr/share/dotnet --no-path; \
+    install_dotnet_with_retries --runtime aspnetcore --channel 6.0 --install-dir /usr/share/dotnet --no-path; \
+    install_dotnet_with_retries --runtime aspnetcore --channel 7.0 --install-dir /usr/share/dotnet --no-path; \
+    install_dotnet_with_retries --runtime aspnetcore --channel 8.0 --install-dir /usr/share/dotnet --no-path; \
+    install_dotnet_with_retries --runtime aspnetcore --channel 9.0 --install-dir /usr/share/dotnet --no-path; \
+    rm dotnet-install.sh
 
 
 # Copy the build project in and build it
