@@ -31,10 +31,17 @@ public sealed class Test
     private static readonly HashSet<Test> OpenedTests = new();
     private readonly ITestOptimization _testOptimization;
     private readonly Scope _scope;
+    private readonly object _executionLock = new();
     private readonly Test? _priorTest;
     private Coverage.CoverageSessionHandle? _coverageSessionHandle;
     private int _finished;
-    private List<Action<Test>>? _onCloseActions;
+    private bool _finishingExecution;
+    private bool _executionFinished;
+    private bool _closeRequested;
+    private TimeSpan? _executionDuration;
+    // Execution callbacks (for example, Selenium RUM flush) must run before leaving the attempt context,
+    // even when MSTest keeps the span open until its retry policy selects the final result.
+    private List<Action<Test>>? _executionCompletedActions;
 
     internal Test(TestSuite suite, string name, DateTimeOffset? startDate)
         : this(suite, name, startDate, default, 0)
@@ -495,19 +502,154 @@ public sealed class Test
     /// <param name="duration">Duration of the test suite</param>
     /// <param name="skipReason">In case </param>
     public void Close(TestStatus status, TimeSpan? duration, string? skipReason)
+        => Close(status, duration, skipReason, beforeClose: null);
+
+    /// <summary>
+    /// Assigns remaining tags and closes the test under the same guard as shutdown.
+    /// The callback is skipped if another caller has already closed the test.
+    /// </summary>
+    internal void Close(TestStatus status, TimeSpan? duration, string? skipReason, Action<Test>? beforeClose)
     {
-        if (Interlocked.Exchange(ref _finished, 1) == 1)
+        lock (_executionLock)
         {
-            _testOptimization.Log.Warning("Test.Close() was already called before.");
+            if (IsClosed)
+            {
+                _testOptimization.Log.Warning("Test.Close() was already called before.");
+                return;
+            }
+
+            _closeRequested = true;
+            try
+            {
+                beforeClose?.Invoke(this);
+            }
+            finally
+            {
+                // A completion callback can request Close on this same thread. The outer
+                // execution completion will close the span after all callbacks have returned.
+                if (!_finishingExecution)
+                {
+                    try
+                    {
+                        FinishExecution(status, duration, skipReason);
+                    }
+                    finally
+                    {
+                        CompleteClose();
+                    }
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// Captures the attempt's duration and outcome and finishes its coverage and callbacks once.
+    /// The test remains open until Close is called with its final tags already assigned.
+    /// </summary>
+    /// <remarks>
+    /// Only instrumentation that owns the remaining test lifetime may call this method.
+    /// It must restore the active execution context and arrange a later Close, including error paths.
+    /// The scope is not disposed here. Shutdown can still find the test and use its captured duration.
+    /// </remarks>
+    internal void UnsafeFinishExecution(TestStatus status, TimeSpan duration, string? skipReason)
+    {
+        lock (_executionLock)
+        {
+            try
+            {
+                FinishExecution(status, duration, skipReason);
+            }
+            finally
+            {
+                if (_closeRequested && !_finishingExecution)
+                {
+                    CompleteClose();
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// Captures status and duration once and ends coverage and execution callbacks.
+    /// Requires the execution lock; reentrant Close waits until callbacks have completed.
+    /// </summary>
+    private void FinishExecution(TestStatus status, TimeSpan? duration, string? skipReason)
+    {
+        if (_executionFinished || _finishingExecution)
+        {
             return;
         }
 
+        _finishingExecution = true;
+        _executionDuration = duration ?? _scope.Span.Context.TraceContext.Clock.ElapsedSince(_scope.Span.StartTime);
+        var tags = (TestSpanTags)_scope.Span.Tags;
+        try
+        {
+            // Record the attempt outcome and update suite failure and skip accounting.
+            switch (status)
+            {
+                case TestStatus.Pass:
+                    tags.Status = TestTags.StatusPass;
+                    break;
+                case TestStatus.Fail:
+                    tags.Status = TestTags.StatusFail;
+                    Suite.Tags.Status = TestTags.StatusFail;
+                    break;
+                case TestStatus.Skip:
+                    tags.Status = TestTags.StatusSkip;
+                    tags.SkipReason = skipReason;
+                    if (tags.SkipReason == IntelligentTestRunnerTags.SkippedByReason)
+                    {
+                        tags.SkippedByIntelligentTestRunner = "true";
+                        var moduleName = tags.Bundle ?? tags.Module;
+                        _testOptimization.SkippableFeature?.RecordTestSkippedByItr(Suite.Module.Tags.SessionId, moduleName);
+                        Suite.Tags.AddIntelligentTestRunnerSkippingCount(1);
+                        TelemetryFactory.Metrics.RecordCountCIVisibilityITRSkipped(MetricTags.CIVisibilityTestingEventType.Test);
+                    }
+                    else
+                    {
+                        tags.SkippedByIntelligentTestRunner = "false";
+                    }
+
+                    break;
+            }
+
+            if (tags.Unskippable is not null && string.Equals(tags.Unskippable, "true", StringComparison.OrdinalIgnoreCase))
+            {
+                TelemetryFactory.Metrics.RecordCountCIVisibilityITRUnskippable(MetricTags.CIVisibilityTestingEventType.Test);
+            }
+
+            if (tags.ForcedRun is not null && string.Equals(tags.ForcedRun, "true", StringComparison.OrdinalIgnoreCase))
+            {
+                TelemetryFactory.Metrics.RecordCountCIVisibilityITRForcedRun(MetricTags.CIVisibilityTestingEventType.Test);
+            }
+
+            try
+            {
+                FinishCoverage(tags, status);
+            }
+            finally
+            {
+                RunCompletionCallbacks();
+            }
+        }
+        finally
+        {
+            _executionFinished = true;
+            _finishingExecution = false;
+            if (ReferenceEquals(Current, this))
+            {
+                Current = null;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Ends the exact coverage session captured at test creation, even after an async context switch.
+    /// </summary>
+    private void FinishCoverage(TestSpanTags tags, TestStatus status)
+    {
         var scope = _scope;
-        var tags = (TestSpanTags)scope.Span.Tags;
-
-        // Calculate duration beforehand
-        duration ??= scope.Span.Context.TraceContext.Clock.ElapsedSince(scope.Span.StartTime);
-
         // The immutable coverage handle must be claimed once because Close() may be called concurrently.
         var coverageSessionHandle = Interlocked.Exchange(ref _coverageSessionHandle, null);
         var coverageEnded = coverageSessionHandle is null || !coverageSessionHandle.IsValid;
@@ -541,91 +683,96 @@ public sealed class Test
                 coverageSessionHandle?.AbortIncomplete(Coverage.GlobalCoverageFailureReason.TestCloseBeforeCoverage);
             }
         }
+    }
 
-        // Set status
-        switch (status)
+    /// <summary>
+    /// Runs each execution callback once, allowing remaining callbacks to run if one fails.
+    /// </summary>
+    private void RunCompletionCallbacks()
+    {
+        var callbacks = _executionCompletedActions;
+        _executionCompletedActions = null;
+        if (callbacks is null)
         {
-            case TestStatus.Pass:
-                tags.Status = TestTags.StatusPass;
-                break;
-            case TestStatus.Fail:
-                tags.Status = TestTags.StatusFail;
-                Suite.Tags.Status = TestTags.StatusFail;
-                break;
-            case TestStatus.Skip:
-                tags.Status = TestTags.StatusSkip;
-                tags.SkipReason = skipReason;
-                if (tags.SkipReason == IntelligentTestRunnerTags.SkippedByReason)
-                {
-                    tags.SkippedByIntelligentTestRunner = "true";
-                    var moduleName = tags.Bundle ?? tags.Module;
-                    _testOptimization.SkippableFeature?.RecordTestSkippedByItr(Suite.Module.Tags.SessionId, moduleName);
-                    Suite.Tags.AddIntelligentTestRunnerSkippingCount(1);
-                    TelemetryFactory.Metrics.RecordCountCIVisibilityITRSkipped(MetricTags.CIVisibilityTestingEventType.Test);
-                }
-                else
-                {
-                    tags.SkippedByIntelligentTestRunner = "false";
-                }
-
-                break;
+            return;
         }
 
-        if (tags.Unskippable is not null && string.Equals(tags.Unskippable, "true", StringComparison.OrdinalIgnoreCase))
+        foreach (var callback in callbacks)
         {
-            TelemetryFactory.Metrics.RecordCountCIVisibilityITRUnskippable(MetricTags.CIVisibilityTestingEventType.Test);
-        }
-
-        if (tags.ForcedRun is not null && string.Equals(tags.ForcedRun, "true", StringComparison.OrdinalIgnoreCase))
-        {
-            TelemetryFactory.Metrics.RecordCountCIVisibilityITRForcedRun(MetricTags.CIVisibilityTestingEventType.Test);
-        }
-
-        if (_onCloseActions is not null)
-        {
-            foreach (var action in _onCloseActions)
+            try
             {
-                action(this);
+                callback(this);
+            }
+            catch (Exception ex)
+            {
+                _testOptimization.Log.Error(ex, "Error completing a test callback.");
+            }
+        }
+    }
+
+    /// <summary>
+    /// Finishes the span with its captured duration, disposes its scope, and removes the active test.
+    /// Requires the execution lock and completed execution callbacks.
+    /// </summary>
+    private void CompleteClose()
+    {
+        if (Interlocked.Exchange(ref _finished, 1) == 1)
+        {
+            return;
+        }
+
+        var tags = (TestSpanTags)_scope.Span.Tags;
+        try
+        {
+            try
+            {
+                _scope.Span.Finish(_executionDuration!.Value);
+            }
+            finally
+            {
+                _scope.Dispose();
             }
 
-            _onCloseActions.Clear();
-        }
-
-        scope.Span.Finish(duration.Value);
-        scope.Dispose();
-
-        if (TelemetryHelper.GetEventTypeWithCodeOwnerAndSupportedCiAndBenchmarkAndEarlyFlakeDetection(
-                MetricTags.CIVisibilityTestingEventType.Test,
-                tags.Type == TestTags.TypeBenchmark,
-                tags.TestIsNew == "true",
-                tags.EarlyFlakeDetectionTestAbortReason == "slow",
-                !StringUtil.IsNullOrEmpty(tags.BrowserDriver),
-                tags.IsRumActive == "true") is { } eventTypeWithMetadata)
-        {
-            var retryReasonTag = tags.TestRetryReason switch
+            // Record closure after final retry tags are available.
+            if (TelemetryHelper.GetEventTypeWithCodeOwnerAndSupportedCiAndBenchmarkAndEarlyFlakeDetection(
+                    MetricTags.CIVisibilityTestingEventType.Test,
+                    tags.Type == TestTags.TypeBenchmark,
+                    tags.TestIsNew == "true",
+                    tags.EarlyFlakeDetectionTestAbortReason == "slow",
+                    !StringUtil.IsNullOrEmpty(tags.BrowserDriver),
+                    tags.IsRumActive == "true") is { } eventTypeWithMetadata)
             {
-                TestTags.TestRetryReasonEfd => MetricTags.CIVisibilityTestingEventTypeRetryReason.EarlyFlakeDetection,
-                TestTags.TestRetryReasonAtr => MetricTags.CIVisibilityTestingEventTypeRetryReason.AutomaticTestRetry,
-                _ => MetricTags.CIVisibilityTestingEventTypeRetryReason.None
-            };
+                var retryReasonTag = tags.TestRetryReason switch
+                {
+                    TestTags.TestRetryReasonEfd => MetricTags.CIVisibilityTestingEventTypeRetryReason.EarlyFlakeDetection,
+                    TestTags.TestRetryReasonAtr => MetricTags.CIVisibilityTestingEventTypeRetryReason.AutomaticTestRetry,
+                    _ => MetricTags.CIVisibilityTestingEventTypeRetryReason.None
+                };
 
-            var quarantinedOrDisabled = tags.IsQuarantined == "true" ? MetricTags.CIVisibilityTestingEventTypeTestManagementQuarantinedOrDisabled.IsQuarantined :
-                                        tags.IsDisabled == "true" ? MetricTags.CIVisibilityTestingEventTypeTestManagementQuarantinedOrDisabled.IsDisabled :
-                                                                    MetricTags.CIVisibilityTestingEventTypeTestManagementQuarantinedOrDisabled.None;
-            var attemptToFix = tags.IsAttemptToFix == "true" ? (tags.HasFailedAllRetries == "true" ? MetricTags.CIVisibilityTestingEventTypeTestManagementAttemptToFix.AttemptToFixHasFailedAllRetries : MetricTags.CIVisibilityTestingEventTypeTestManagementAttemptToFix.IsAttemptToFix) : MetricTags.CIVisibilityTestingEventTypeTestManagementAttemptToFix.None;
+                var quarantinedOrDisabled = tags.IsQuarantined == "true" ? MetricTags.CIVisibilityTestingEventTypeTestManagementQuarantinedOrDisabled.IsQuarantined :
+                                            tags.IsDisabled == "true" ? MetricTags.CIVisibilityTestingEventTypeTestManagementQuarantinedOrDisabled.IsDisabled :
+                                                                        MetricTags.CIVisibilityTestingEventTypeTestManagementQuarantinedOrDisabled.None;
+                var attemptToFix = tags.IsAttemptToFix == "true" ? (tags.HasFailedAllRetries == "true" ? MetricTags.CIVisibilityTestingEventTypeTestManagementAttemptToFix.AttemptToFixHasFailedAllRetries : MetricTags.CIVisibilityTestingEventTypeTestManagementAttemptToFix.IsAttemptToFix) : MetricTags.CIVisibilityTestingEventTypeTestManagementAttemptToFix.None;
 
-            TelemetryFactory.Metrics.RecordCountCIVisibilityEventFinished(
-                TelemetryHelper.GetTelemetryTestingFrameworkEnum(tags.Framework),
-                eventTypeWithMetadata,
-                retryReasonTag,
-                quarantinedOrDisabled,
-                attemptToFix);
+                TelemetryFactory.Metrics.RecordCountCIVisibilityEventFinished(
+                    TelemetryHelper.GetTelemetryTestingFrameworkEnum(tags.Framework),
+                    eventTypeWithMetadata,
+                    retryReasonTag,
+                    quarantinedOrDisabled,
+                    attemptToFix);
+            }
         }
-
-        Current = null;
-        lock (OpenedTests)
+        finally
         {
-            OpenedTests.Remove(this);
+            if (ReferenceEquals(Current, this))
+            {
+                Current = null;
+            }
+
+            lock (OpenedTests)
+            {
+                OpenedTests.Remove(this);
+            }
         }
 
         _testOptimization.Log.Debug("######### Test Closed: {Name} ({Suite} | {Module}) | {Status}", Name, Suite.Name, Suite.Module.Name, tags.Status);
@@ -651,9 +798,22 @@ public sealed class Test
         ((TestSpanTags)_scope.Span.Tags).Name = name;
     }
 
-    internal void AddOnCloseAction(Action<Test> action)
+    /// <summary>
+    /// Registers a callback that runs once when execution finishes, before the span is closed.
+    /// Final retry tags may still be pending. Callbacks registered after execution finishes are rejected.
+    /// </summary>
+    internal void AddOnExecutionCompletedAction(Action<Test> action)
     {
-        _onCloseActions ??= [];
-        _onCloseActions.Add(action);
+        lock (_executionLock)
+        {
+            if (_executionFinished || _finishingExecution)
+            {
+                _testOptimization.Log.Warning("Cannot register a completion callback after test execution has finished.");
+                return;
+            }
+
+            _executionCompletedActions ??= [];
+            _executionCompletedActions.Add(action);
+        }
     }
 }
