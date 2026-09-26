@@ -66,6 +66,7 @@ mkdir
 nanosleep
 open
 poll
+posix_memalign
 prctl
 pthread_cond_broadcast
 pthread_cond_destroy
