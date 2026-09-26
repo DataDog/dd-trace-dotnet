@@ -12,6 +12,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.NetworkInformation;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
@@ -397,6 +398,21 @@ namespace Datadog.Trace.TestHelpers
             SetEnvironmentVariable("OTEL_EXPORTER_OTLP_PROTOCOL", protocol);
             SetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENDPOINT", otlpSession.GetExporterEndpoint(protocol));
             SetEnvironmentVariable("OTEL_EXPORTER_OTLP_HEADERS", $"X-Datadog-Test-Session-Token={otlpSession.SessionToken}");
+        }
+
+        protected void ClearCIEnvironmentVariables()
+        {
+            // Clear provider variables only; keep shared HOME and USERPROFILE values.
+            foreach (var provider in typeof(PlatformKeys.Ci).GetNestedTypes(BindingFlags.Public | BindingFlags.NonPublic))
+            {
+                foreach (var field in provider.GetFields(BindingFlags.Public | BindingFlags.Static))
+                {
+                    if (field.GetValue(null) is string key)
+                    {
+                        SetEnvironmentVariable(key, string.Empty);
+                    }
+                }
+            }
         }
 
         protected void ValidateSpans<T>(IEnumerable<MockSpan> spans, Func<MockSpan, T> mapper, IEnumerable<T> expected)
