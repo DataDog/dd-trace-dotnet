@@ -2432,7 +2432,7 @@ stages:
         if [ -z "$(IntegrationTestFilter)" ]; then
           newFilter="DockerGroup=$(dockerGroup)"
         else
-          newFilter="$(IntegrationTestFilter)&(DockerGroup=$(dockerGroup))"
+          newFilter="($(IntegrationTestFilter))&(DockerGroup=$(dockerGroup))"
         fi
         echo "##vso[task.setvariable variable=IntegrationTestFilter]$newFilter"
       displayName: "Calculate IntegrationTestFilter"
