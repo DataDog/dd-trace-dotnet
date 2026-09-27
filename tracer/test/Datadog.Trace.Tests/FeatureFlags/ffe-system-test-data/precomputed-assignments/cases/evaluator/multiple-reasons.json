@@ -1,0 +1,90 @@
+{
+  "name": "multiple-reasons",
+  "description": "Flags with different evaluation reasons in a single response: TARGETING_MATCH, DEFAULT, and SPLIT.",
+  "context": {
+    "targetingKey": "reason-user",
+    "attributes": {
+      "plan": "pro"
+    }
+  },
+  "response": {
+    "data": {
+      "attributes": {
+        "flags": {
+          "fixture.reason.targeted": {
+            "allocationKey": "alloc-target",
+            "variationKey": "targeted-on",
+            "variationType": "boolean",
+            "variationValue": true,
+            "reason": "TARGETING_MATCH",
+            "doLog": true
+          },
+          "fixture.reason.default": {
+            "allocationKey": "alloc-default",
+            "variationKey": "default-val",
+            "variationType": "string",
+            "variationValue": "baseline",
+            "reason": "DEFAULT",
+            "doLog": true
+          },
+          "fixture.reason.split": {
+            "allocationKey": "alloc-split",
+            "variationKey": "bucket-a",
+            "variationType": "integer",
+            "variationValue": 42,
+            "reason": "SPLIT",
+            "doLog": true
+          }
+        }
+      }
+    }
+  },
+  "evaluations": [
+    {
+      "flag": "fixture.reason.targeted",
+      "variationType": "boolean",
+      "defaultValue": false,
+      "expectedResult": {
+        "value": true,
+        "reason": "TARGETING_MATCH",
+        "errorCode": null,
+        "variantKey": "targeted-on"
+      }
+    },
+    {
+      "flag": "fixture.reason.default",
+      "variationType": "string",
+      "defaultValue": "fallback",
+      "expectedResult": {
+        "value": "baseline",
+        "reason": "DEFAULT",
+        "errorCode": null,
+        "variantKey": "default-val"
+      }
+    },
+    {
+      "flag": "fixture.reason.split",
+      "variationType": "integer",
+      "defaultValue": 0,
+      "expectedResult": {
+        "value": 42,
+        "reason": "SPLIT",
+        "errorCode": null,
+        "variantKey": "bucket-a"
+      }
+    }
+  ],
+  "expectations": {
+    "noUnmatchedEvents": true,
+    "exposures": [
+      {
+        "_count": 3
+      }
+    ],
+    "evaluationEvents": [
+      {
+        "_count": 3
+      }
+    ]
+  }
+}
