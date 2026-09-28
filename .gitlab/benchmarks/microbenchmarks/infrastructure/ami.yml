@@ -52,6 +52,7 @@ install_dotnet:
         }
     }
 
+    [Environment]::SetEnvironmentVariable("DOTNET_ROOT", "$installDir", [EnvironmentVariableTarget]::Machine)
     [Environment]::SetEnvironmentVariable("PATH", "$installDir;" + [Environment]::GetEnvironmentVariable("PATH", [EnvironmentVariableTarget]::Machine), [EnvironmentVariableTarget]::Machine)
 
     Write-Output "Installation completed for $env:DOTNET_SDK_VERSIONS."

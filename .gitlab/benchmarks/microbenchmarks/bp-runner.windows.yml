@@ -45,6 +45,7 @@
   git checkout $env:COMMIT_SHA
 
   # Add dotnet to PATH (installed at C:\dotnet on the AMI)
+  [Environment]::SetEnvironmentVariable("DOTNET_ROOT", "C:\dotnet", [EnvironmentVariableTarget]::Process)
   [Environment]::SetEnvironmentVariable("PATH", "C:\dotnet;" + [Environment]::GetEnvironmentVariable("PATH", [EnvironmentVariableTarget]::Process), [EnvironmentVariableTarget]::Process)
 
   # Build the tracer and benchmarks using Nuke targets
@@ -119,6 +120,7 @@
   Write-Output "ARTIFACTS_DIR: $env:ARTIFACTS_DIR"
 
   # Add dotnet to PATH
+  [Environment]::SetEnvironmentVariable("DOTNET_ROOT", "C:\dotnet", [EnvironmentVariableTarget]::Process)
   [Environment]::SetEnvironmentVariable("PATH", "C:\dotnet;" + [Environment]::GetEnvironmentVariable("PATH", [EnvironmentVariableTarget]::Process), [EnvironmentVariableTarget]::Process)
 
   # Run benchmarks - each parallel run gets unique artifacts dir via prefixed index
