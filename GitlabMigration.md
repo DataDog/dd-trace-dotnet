@@ -1,10 +1,10 @@
 # GitLab CI migration plan and findings
 
-Last updated: 2026-09-07
+Last updated: 2026-09-28
 
 ## Purpose
 
-Migrate `dd-trace-dotnet` CI from Azure DevOps to GitLab without rewriting the NUKE build system. The migration is additive: Azure DevOps remains unchanged and continues to run during a long parallel-validation period. Duplicated work is acceptable until GitLab demonstrates equivalent builds, tests, artifacts, and reliability.
+Migrate `dd-trace-dotnet` CI from Azure DevOps to GitLab without rewriting the NUKE build system. GitLab starts as non-blocking shadow execution while Azure remains authoritative. Each slice transfers authority only after satisfying the migration RFC's validation and promotion gates; the two providers are never simultaneously required for the same slice.
 
 This document combines:
 
@@ -30,7 +30,7 @@ This document combines:
 
 ## Current state
 
-CI is split across Azure DevOps and GitLab. The detailed measurements and failed experiments later in this document are historical evidence; the table below and the **Open decisions and risks** section are the authoritative status summaries.
+CI is split across Azure DevOps and GitLab. Unless explicitly identified as merged, the implementation and coverage described here refer to the experimental [PR #8964](https://github.com/DataDog/dd-trace-dotnet/pull/8964), not `master`. The detailed measurements and failed experiments later in this document are historical evidence, not a claim that the latest pipeline is green. The table below and the **Open decisions and risks** section summarize implementation progress; the migration RFC governs promotion and retirement.
 
 - `.azure-pipelines/ultimate-pipeline.yml` contains the full build and test matrix, with 80 top-level stages at the time of this update.
 - Azure DevOps covers Windows, Linux x64 and ARM64, glibc and musl, macOS, unit tests, integration tests, smoke tests, profiler tests, packaging, and publishing.
@@ -38,7 +38,7 @@ CI is split across Azure DevOps and GitLab. The detailed measurements and failed
 - Existing GitLab jobs import Azure artifacts through `.gitlab/download-single-step-artifacts.sh` and `.gitlab/download-serverless-artifacts.sh`.
 - The implementation uses generated child configurations under `.gitlab/generated` and reusable child templates under `.gitlab` instead of the originally proposed `.gitlab/ci/` layout.
 
-The long-term goal is to host the entire build and test pipeline in GitLab, remove the cross-CI artifact handoff, and retire Azure DevOps only after an extended period of demonstrated parity.
+The long-term goal is to host the entire build and test pipeline in GitLab, remove the cross-CI artifact handoff, and retire Azure DevOps as each slice satisfies the RFC's parity and rollback requirements.
 
 ### Status at a glance
 
@@ -49,7 +49,29 @@ The long-term goal is to host the entire build and test pipeline in GitLab, remo
 | Native unit tests | Windows and Linux x64 match the native suites Azure invokes; Azure and GitLab both omit explicit native suites on Linux ARM64 and macOS. | Preserve retry and artifact parity and validate newly changed Linux producer paths. |
 | Integration tests | Generated Windows x64/x86 and Linux x64/ARM64 matrices cover Tracer, ASM, Debugger, and the documented dependency-specific cases. | Add macOS and profiler integration tests. Windows Docker-dependent coverage remains deferred while Azure's equivalent setup is disabled. |
 | Packaging and publishing | Existing GitLab jobs build, sign, and publish selected artifacts while release workflows still consume some Azure outputs. | Establish complete artifact equivalence, migrate remaining packages and smoke-test consumers, then remove cross-CI download scripts. |
-| Switchover | Azure and GitLab run in parallel. | Measure agreement for at least four weeks, migrate status/reporting dependencies, and retire Azure incrementally. |
+| Switchover | Experimental GitLab execution exists alongside Azure; this is not yet a promoted replacement. | Apply the migration RFC's promotion gates, migrate status/reporting dependencies, and retire Azure incrementally. |
+
+### Standalone improvements extracted from the experiment
+
+These PRs can be reviewed independently of the migration. Status checked on 2026-09-28; open does not imply merged or validated by a green pipeline.
+
+| PR | Improvement | Status |
+| --- | --- | --- |
+| [#9316](https://github.com/DataDog/dd-trace-dotnet/pull/9316) | Bounded CI image download retries and installer timeouts, including child-process termination on Alpine. | Open |
+| [#9318](https://github.com/DataDog/dd-trace-dotnet/pull/9318) | Remove unnecessary ASP.NET Core module registrations from classic IIS test configurations. | Open |
+| [#9319](https://github.com/DataDog/dd-trace-dotnet/pull/9319) | Isolate impacted-test Git caches. | Open |
+| [#9320](https://github.com/DataDog/dd-trace-dotnet/pull/9320) | Isolate mocked CI-provider tests from the enclosing CI environment. | Open |
+| [#9322](https://github.com/DataDog/dd-trace-dotnet/pull/9322) | Build the managed runner with both `Platform` and `PlatformTarget` set to `AnyCPU`. | Open; shared-helper alternative under investigation |
+| [#9323](https://github.com/DataDog/dd-trace-dotnet/pull/9323) | Retry vcpkg downloads and automatically create changed Windows CI images before consumers run. | Open |
+
+When these merge, reconcile the experimental branch with `master` and retain the rationale below rather than maintaining duplicate fixes.
+
+### Why these fixes were needed
+
+- **Classic IIS and ANCM:** the GitLab container installed standalone IIS Express, but the shared `applicationHost.config` registered the ASP.NET Core Module (ANCM) even for classic ASP.NET tests. The [original fix](https://github.com/DataDog/dd-trace-dotnet/commit/3615eee34ba2c0224adf2563d2ca63f7769da783) removes those unnecessary registrations only for classic applications. ASP.NET Core IIS tests still require ANCM; installing the shared ASP.NET Core runtime alone does not supply the IIS module. The original failure log is not retained in this guide.
+- **Managed runner architecture:** the [original runner fix](https://github.com/DataDog/dd-trace-dotnet/commit/a806790b5319e1594cdf390656e00af9c211fc80) records that an inherited `PlatformTarget=x64` can survive `Platform=AnyCPU`, preventing the managed runner from being usable by both x86 and x64 test hosts. Local MSBuild property evaluation reproduced the inheritance behavior; the original test failure is not retained here. Changing all `SetTargetPlatformAnyCPU()` overloads remains under investigation because callers include RID-specific publishing.
+- **Download deadlines:** an Alpine runtime download previously exhausted the integration job's 90-minute timeout. Retry counts alone do not bound a hung attempt. #9316 uses GNU `timeout` to signal the installer's process group, including child downloaders, before retrying. Existing mock checks of the parent process alone did not validate that requirement. Image-layer reuse depends on the available Docker cache; a fresh runner is not guaranteed to avoid reinstalling dependencies.
+- **Windows image publication:** changing any hashed image input, including `install_vcpkg.ps1`, produces a new required image tag. #9323 initially failed with a missing manifest, before the installer could run. Its follow-up extracts automatic image creation from #8964; an image already published for the experimental branch is not necessarily the image required by the standalone PR.
 
 ## Runner guidance
 
@@ -72,8 +94,8 @@ The long-term goal is to host the entire build and test pipeline in GitLab, remo
 
 ## Migration principles
 
-- Keep Azure DevOps running during the migration.
-- Add GitLab jobs without changing existing Azure behavior.
+- Keep Azure authoritative until each replacement slice passes the RFC's promotion gates.
+- Add GitLab shadows without changing existing Azure behavior; cut over and retire slices independently.
 - Reuse NUKE targets as the unit of work.
 - Do not rewrite build logic in YAML.
 - Keep platform-specific setup in shared templates.
@@ -168,7 +190,7 @@ registry.ddbuild.io/ci/dd-trace-dotnet/dd-trace-dotnet-docker-build
 
 Do not treat a hash recorded in this document as authoritative. Run the script against the target commit and use its output consistently for the image build, consumers, and runner-AMI pre-pull. At this audit's checkout, the script produced `9eef46c69bf9`.
 
-The normal GitLab build verifies that the exact hash-tagged image exists. If it does not, the job fails with instructions to run the manual `build-windows-ci-image` job. That job builds and pushes both the content-addressed tag and `:latest`. Consumers always use the content-addressed tag.
+The normal GitLab build verifies that the exact hash-tagged image exists. In #8964, `build-windows-ci-image` runs automatically in `.pre` when `.gitlab-ci.yml` or Windows image files change; otherwise it remains an optional manual job. It skips existing images and builds and pushes missing images under both the content-addressed tag and `:latest`. Consumers use the content-addressed tag. #9323 extracts automatic creation for Windows image-file changes; until that change merges, `master` requires manually triggering the image job and retrying consumers when an image is missing.
 
 This deliberately prevents a Dockerfile change from silently running against an old image.
 
@@ -637,26 +659,11 @@ Start with approximately 10–12 job definitions and measure the expanded matrix
 
 ## Phase 5: validation and switchover
 
-Run Azure and GitLab in parallel for at least four weeks.
+Follow the migration RFC's **Validation and promotion**, **Cutover**, and **Completion criteria** sections rather than maintaining separate thresholds here. Experimental runs are not automatically promotion evidence. Record equivalent Azure/GitLab comparisons, classify disagreements, and use CI Visibility to check test counts, attribution, and results; matching failures do not qualify a slice for promotion.
 
-Proposed confidence requirement:
+Promote independent slices as soon as they satisfy those gates. Migrate and validate downstream artifact consumers before retiring their Azure producers. Transfer required-check authority through the reviewed One Pipeline configuration change, retaining Azure definitions and resources for the RFC's observation and rollback windows.
 
-- At least 95% of merge requests in the window have Azure and GitLab in agreement: both green or both red for equivalent work.
-- Classify disagreements as infrastructure, flaky test, configuration difference, artifact difference, or genuine product regression.
-- A comparison job or scheduled process should publish agreement and duration metrics to Datadog.
-
-Suggested removal order:
-
-1. Stop Azure packaging stages after artifact equivalence is established.
-2. Stop Azure build stages after GitLab artifacts are proven consumable.
-3. Stop Azure test stages incrementally: unit, integration, then smoke.
-4. Re-point OCI, serverless, and publishing jobs to GitLab artifacts.
-5. Remove `.gitlab/download-single-step-artifacts.sh` and `.gitlab/download-serverless-artifacts.sh`.
-6. Remove Azure status-reporting hooks.
-7. Delete `.azure-pipelines/`.
-8. Drop the temporary `gl-` prefixes after the new pipeline becomes authoritative.
-
-Do not create a test-stage outage between stopping Azure builds and migrating tests. Either keep Azure builds until their dependent tests move, or explicitly validate cross-CI artifact consumption first.
+After consumers no longer depend on them, remove the cross-CI download scripts, Azure status/reporting integrations, and Azure pipeline resources according to the RFC's decommissioning and retention requirements.
 
 ## Verification procedure
 
