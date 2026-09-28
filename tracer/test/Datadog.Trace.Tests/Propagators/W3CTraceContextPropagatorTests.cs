@@ -262,6 +262,31 @@ namespace Datadog.Trace.Tests.Propagators
             tracestate.Should().Be("dd=s:1;p:0000000000000002,ot=rv:ef284ace7a91e1,congo=t61rcWkgMzE");
         }
 
+        [Theory]
+        [InlineData(226, true)]
+        [InlineData(227, false)]
+        public void CreateTraceStateHeader_DropsOtSubkeyThatExceedsValueLimit(int vendorValueLength, bool includeVendor)
+        {
+            var rawOtValue = "vendor:" + new string('x', vendorValueLength);
+            var otelTraceState = OtelTraceState.Parse(rawOtValue)!;
+            otelTraceState.RandomValue = 1;
+            otelTraceState.Threshold = 0;
+            otelTraceState.IsModified = true;
+
+            var traceContext = new TraceContext(new StubDatadogTracer());
+            var spanContext = new SpanContext(parent: SpanContext.None, traceContext, serviceName: null, traceId: (TraceId)1, spanId: 2)
+            {
+                OtelTraceState = otelTraceState,
+                AdditionalW3CTraceState = $"congo=1,ot={rawOtValue},foo=2"
+            };
+
+            var tracestate = W3CTraceContextPropagator.CreateTraceStateHeader(spanContext);
+
+            tracestate.Should().Be(includeVendor
+                                       ? $"dd=s:1;p:0000000000000002,ot=rv:00000000000001;th:0;{rawOtValue},congo=1,foo=2"
+                                       : "dd=s:1;p:0000000000000002,ot=rv:00000000000001;th:0,congo=1,foo=2");
+        }
+
         [Fact]
         public void CreateTraceStateHeader_DoesNotEmitEmptySubKey_WhenOnlyUnknownOtItemsRemain()
         {
@@ -490,6 +515,19 @@ namespace Datadog.Trace.Tests.Propagators
             var traceState = W3CTraceContextPropagator.ParseTraceState(header);
             traceState.OtTraceState.Should().Be(expectedOtTraceState);
             traceState.AdditionalValues.Should().Be(expectedAdditionalValues);
+        }
+
+        [Theory]
+        [InlineData(256, true)]
+        [InlineData(257, false)]
+        public void ParseTraceState_DropsOversizeOtMember(int otValueLength, bool includeOt)
+        {
+            var otValue = "vendor:" + new string('x', otValueLength - "vendor:".Length);
+            var traceState = W3CTraceContextPropagator.ParseTraceState($"foo=bar,dd=s:1,ot={otValue},baz=qux");
+
+            traceState.SamplingPriority.Should().Be(1);
+            traceState.OtTraceState.Should().Be(includeOt ? otValue : null);
+            traceState.AdditionalValues.Should().Be(includeOt ? $"foo=bar,ot={otValue},baz=qux" : "foo=bar,baz=qux");
         }
 
         [Fact]

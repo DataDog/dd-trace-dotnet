@@ -20,6 +20,7 @@ namespace Datadog.Trace.Propagators
     /// </summary>
     internal static class OtelTraceStateHelpers
     {
+        internal const int MaxValueLength = 256;
         internal const int MaxHexDigits = 14;
         internal const ulong MaxOtelTraceStateValue = (1UL << (MaxHexDigits * 4)) - 1;
 
@@ -103,10 +104,14 @@ namespace Datadog.Trace.Propagators
                     var item = separatorIndex < 0 ? remaining : remaining.Slice(0, separatorIndex);
                     var colonIndex = item.IndexOf(':');
                     var key = colonIndex > 0 ? item.Slice(0, colonIndex) : item;
+                    var hasPreviousItem = sb.Length > startLength;
+                    var appendedLength = item.Length + (hasPreviousItem ? 1 : 0);
 
-                    if (!key.Equals("rv".AsSpan(), StringComparison.Ordinal) && !key.Equals("th".AsSpan(), StringComparison.Ordinal))
+                    if (!key.Equals("rv".AsSpan(), StringComparison.Ordinal) &&
+                        !key.Equals("th".AsSpan(), StringComparison.Ordinal) &&
+                        sb.Length - startLength + appendedLength <= MaxValueLength)
                     {
-                        if (sb.Length > startLength)
+                        if (hasPreviousItem)
                         {
                             sb.Append(';');
                         }

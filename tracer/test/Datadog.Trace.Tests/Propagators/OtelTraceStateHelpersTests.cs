@@ -83,6 +83,43 @@ namespace Datadog.Trace.Tests.Propagators
             sb.ToString().Should().Be(expected);
         }
 
+        [Theory]
+        [InlineData(226, true)]
+        [InlineData(227, false)]
+        public void ToHeaderString_DropsOtSubkeyThatExceedsValueLimit(int vendorValueLength, bool includeVendor)
+        {
+            var vendorItem = "vendor:" + new string('x', vendorValueLength);
+            var otelTraceState = OtelTraceState.Parse(vendorItem)!;
+            otelTraceState.RandomValue = 1;
+            otelTraceState.Threshold = 0;
+            otelTraceState.IsModified = true;
+
+            var header = otelTraceState.ToHeaderString();
+
+            if (includeVendor)
+            {
+                header.Should().Be($"rv:00000000000001;th:0;{vendorItem}");
+                header.Should().HaveLength(OtelTraceStateHelpers.MaxValueLength);
+            }
+            else
+            {
+                header.Should().Be("rv:00000000000001;th:0");
+            }
+        }
+
+        [Fact]
+        public void SetRvTh_DropsOnlySubkeysThatExceedValueLimit()
+        {
+            var keepItem = "keep:" + new string('x', 217);
+            var dropItem = "drop:" + new string('y', 20);
+            var raw = $"{keepItem};{dropItem};small:x";
+            var sb = new StringBuilder();
+
+            OtelTraceStateHelpers.SetRvTh(sb, raw, rv: 1, th: 0);
+
+            sb.ToString().Should().Be($"rv:00000000000001;th:0;{keepItem};small:x");
+        }
+
         // SetRvTh writes into the same StringBuilder that already holds "dd=...,ot=", so its
         // item separators must be relative to where it started appending, not to the whole builder.
         [Theory]
