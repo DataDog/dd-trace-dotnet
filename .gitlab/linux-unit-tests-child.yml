@@ -14,7 +14,7 @@
       mkdir -p artifacts/build_data/infra_logs
       echo "Building ${BASE_IMAGE} test image for ${FRAMEWORK}"
       docker build \
-        --build-arg DOTNETSDK_VERSION=10.0.100 \
+        --build-arg DOTNETSDK_VERSION=11.0.100-rc.1.26425.128 \
         --tag "$tester_image" \
         --target tester \
         --file "tracer/build/_build/docker/${BASE_IMAGE}.dockerfile" \

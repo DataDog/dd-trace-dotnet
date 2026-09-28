@@ -7,7 +7,7 @@
       job: build-macos-tracer-amd64
       artifacts: true
   variables:
-    DOTNET_SDK_VERSION: "10.0.100"
+    DOTNET_SDK_VERSION: "11.0.100-rc.1.26425.128"
     DOTNET_CLI_HOME: "$CI_PROJECT_DIR/.dotnet_cli_home"
     NUGET_PACKAGES: "$CI_PROJECT_DIR/packages"
     NUGET_ENABLE_EXPERIMENTAL_HTTP_RETRY: "true"
@@ -49,7 +49,8 @@
         net7.0) runtime_channel="7.0" ;;
         net8.0) runtime_channel="8.0" ;;
         net9.0) runtime_channel="9.0" ;;
-        net10.0) ;;
+        net10.0) runtime_channel="10.0" ;;
+        net11.0) ;;
         *) echo "Unsupported macOS test framework: $FRAMEWORK" >&2; exit 1 ;;
       esac
 
