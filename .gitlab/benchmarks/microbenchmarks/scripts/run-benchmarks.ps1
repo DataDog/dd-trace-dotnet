@@ -177,12 +177,57 @@ Write-Output "CustomAfterMicrosoftCommonTargets: $env:CustomAfterMicrosoftCommon
 Write-Output "BdnPrebuiltBinRoot: $env:BdnPrebuiltBinRoot"
 Write-Output ""
 
-# Run the benchmark
-& $benchmarkExe @arguments
+# Run the benchmark, retrying if BenchmarkDotNet failed to build.
+#
+# csc.exe intermittently dies with STATUS_HEAP_CORRUPTION (exit -1073740940) during BenchmarkDotNet's
+# build phase. BenchmarkDotNet still exits 0 in that case: it simply records the affected benchmarks as
+# having no results. Left unchecked that either produces an empty results file (which fails the
+# downstream converter and reds the pipeline) or a partial one that is silently published as real data.
+# So treat a build failure as a failure regardless of exit code.
+#
+# The backoff matters. Observed failure windows last two to three minutes and affect every build
+# partition of a job while they last, so an immediate retry lands in the same window.
+$resultsDir = "$localArtifactsDir\results"
+$maxAttempts = 3
+$attempt = 1
 
-if ($LASTEXITCODE -ne 0) {
-    Write-Error "Benchmark execution failed with exit code $LASTEXITCODE"
-    exit $LASTEXITCODE
+while ($true) {
+    if ($attempt -gt 1) {
+        $backoffSeconds = 60 * ($attempt - 1)
+        Write-Warning "Retrying benchmark run in $backoffSeconds seconds (attempt $attempt of $maxAttempts)"
+        Start-Sleep -Seconds $backoffSeconds
+    }
+
+    if (Test-Path $resultsDir) {
+        Remove-Item -Recurse -Force $resultsDir
+    }
+
+    $runLog = "$localArtifactsDir\benchmark-run-attempt-$attempt.log"
+    & $benchmarkExe @arguments 2>&1 | Tee-Object -FilePath $runLog
+    $exitCode = $LASTEXITCODE
+
+    $buildFailed = [bool](Select-String -Path $runLog -SimpleMatch "failed to build the auto-generated boilerplate code" -Quiet)
+
+    $measured = 0
+    if (Test-Path $resultsDir) {
+        foreach ($report in Get-ChildItem -Path $resultsDir -Filter "*-report-full-compressed.json" -Recurse) {
+            $measured += @((Get-Content $report.FullName -Raw | ConvertFrom-Json).Benchmarks).Count
+        }
+    }
+
+    if ($exitCode -eq 0 -and -not $buildFailed -and $measured -gt 0) {
+        Write-Output "Benchmark run succeeded on attempt $attempt ($measured result(s))"
+        break
+    }
+
+    Write-Warning "Benchmark run attempt $attempt failed (exit code: $exitCode, build failure: $buildFailed, results: $measured)"
+
+    if ($attempt -ge $maxAttempts) {
+        Write-Error "Benchmark run failed after $maxAttempts attempts. Refusing to publish incomplete results."
+        exit 1
+    }
+
+    $attempt++
 }
 
 # BenchmarkDotNet hides build output on success, so confirm after the fact whether the tracer closure
@@ -199,7 +244,6 @@ if ($rebuiltClosure.Count -gt 0) {
 
 # Copy results to ARTIFACTS_DIR with naming convention
 # Format: candidate.Trace.SpanBenchmark.json
-$resultsDir = "$localArtifactsDir\results"
 if (Test-Path $resultsDir) {
     $jsonFiles = Get-ChildItem -Path $resultsDir -Filter "*.json" -Recurse
     foreach ($file in $jsonFiles) {
