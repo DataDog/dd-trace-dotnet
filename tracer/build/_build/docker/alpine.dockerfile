@@ -90,6 +90,9 @@ WORKDIR /project
 
 FROM base AS tester
 
+# GNU timeout signals the installer's process group, including child downloaders.
+RUN apk add --no-cache coreutils
+
 # Install .NET Core runtimes using install script (don't install 2.1 on ARM64, because it's not available)
 # Bound each install to five minutes, with a kill deadline and at most three attempts.
 RUN set -eu; \
@@ -97,7 +100,7 @@ RUN set -eu; \
     chmod +x ./dotnet-install.sh; \
     install_dotnet_with_retries() { \
         attempt=1; \
-        while ! timeout -k 30 300 ./dotnet-install.sh "$@"; do \
+        while ! /usr/bin/timeout -k 30 300 ./dotnet-install.sh "$@"; do \
             if [ "$attempt" -ge 3 ]; then \
                 echo "dotnet-install failed after $attempt attempts" >&2; \
                 return 1; \
