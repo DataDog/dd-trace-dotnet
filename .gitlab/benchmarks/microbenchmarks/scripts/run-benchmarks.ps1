@@ -137,9 +137,13 @@ $arguments = @("-r") + $runtimes + @(
     # We change this manually on benchmark methods from 200 ms to 500 ms on 
     # less stable benchmarks with "[IterationTime(500)]"
     "--iterationTime", "200",
-    "--launchCount", "5",
-    "--warmupCount", "10",
-    "--iterationCount", "10",
+    # EXPERIMENT BRANCH - normally 5 / 10 / 10. Reduced to 1 so that running all 20 benchmarks
+    # sequentially fits inside the 2h job timeout. The csc.exe crash under investigation happens
+    # during BenchmarkDotNet's build phase, before any measurement, so this does not affect what is
+    # being tested - but it does make the numbers from this branch worthless. Restore before merging.
+    "--launchCount", "1",
+    "--warmupCount", "1",
+    "--iterationCount", "1",
     "--buildTimeout", "3600",
     "--keepFiles",
     "--artifacts", $localArtifactsDir
