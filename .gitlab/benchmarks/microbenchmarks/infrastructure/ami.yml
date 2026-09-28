@@ -87,6 +87,7 @@ test_setup:
             {
                 $dotnetPath = "C:\dotnet\dotnet.exe"
                 if (Test-Path $dotnetPath) {
+                    & $dotnetPath --info
                     $version = (& $dotnetPath --version)
                     "[PASS] .NET is installed (Version at $dotnetPath is $version. Multiple versions might be installed)"
                 }
