@@ -117,8 +117,8 @@ RUN set -eu; \
     install_dotnet_with_retries --runtime aspnetcore --channel 7.0 --install-dir /usr/share/dotnet --no-path; \
     install_dotnet_with_retries --runtime aspnetcore --channel 8.0 --install-dir /usr/share/dotnet --no-path; \
     install_dotnet_with_retries --runtime aspnetcore --channel 9.0 --install-dir /usr/share/dotnet --no-path; \
+    install_dotnet_with_retries --runtime aspnetcore --channel 10.0 --install-dir /usr/share/dotnet --no-path; \
     rm dotnet-install.sh
-
 
 # Copy the build project in and build it
 COPY *.csproj *.props *.targets /build/
