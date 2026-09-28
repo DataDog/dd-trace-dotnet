@@ -171,9 +171,23 @@ experiments:
         repo: DataDog/dd-trace-dotnet
         baseline_branch: ""
 
-        cpus: "1,0x3FFFFF"
+        # EXPERIMENT - do not merge. Widened from "1,0x3FFFFF" (22 cores) to the full 24 cores of NUMA
+        # node 1 so that cpus_per_item can be 4; bp-runner requires the core count to divide exactly by
+        # cpus_per_item, and 22 only divides by 1, 2, 11 and 22.
+        #
+        # csc.exe has crashed with STATUS_HEAP_CORRUPTION in this batch across three consecutive
+        # pipelines, only ever in items 2 and 3, while an unpinned 20-way parallel build of the same
+        # closure could not reproduce it locally. Each item is currently pinned to just 2 cores via
+        # `start /node 1 /affinity <mask>`, and every child - BenchmarkDotNet, dotnet build, csc -
+        # inherits that mask. This gives each item 4 cores instead of 2 to test whether the narrow mask
+        # is what provokes it.
+        #
+        # Deleting `cpus` entirely is not an option: execute_script_parallel raises
+        # "cpus cannot be None for parallel execution".
+        cpus: "1,0xFFFFFF"
         parallelize:
-          # 11 Benchmarks.Trace benchmarks on NUMA node 1, cores 0-21 (11 × 2 = 22 CPUs)
+          # 11 Benchmarks.Trace benchmarks on NUMA node 1, cores 0-23 (6 groups x 4 CPUs, so 6 items
+          # run concurrently and the 11 items complete in two waves)
           items: >-
             *AgentWriterBenchmark*
             *AppSecEncoderBenchmark*
@@ -186,7 +200,7 @@ experiments:
             *SerilogBenchmark*
             *StringAspectsBenchmark*
             *TraceAnnotationsBenchmark*
-          cpus_per_item: 2
+          cpus_per_item: 4
 
         env:
           BATCH_PREFIX: "trace-1"
