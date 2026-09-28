@@ -51,6 +51,17 @@ The long-term goal is to host the entire build and test pipeline in GitLab, remo
 | Packaging and publishing | Existing GitLab jobs build, sign, and publish selected artifacts while release workflows still consume some Azure outputs. | Establish complete artifact equivalence, migrate remaining packages and smoke-test consumers, then remove cross-CI download scripts. |
 | Switchover | Experimental GitLab execution exists alongside Azure; this is not yet a promoted replacement. | Apply the migration RFC's promotion gates, migrate status/reporting dependencies, and retire Azure incrementally. |
 
+### Post-rebase compatibility fixes (2026-09-28)
+
+Rebasing onto `master` exposed four integration gaps, now corrected in the experimental branch:
+
+- **SDK alignment:** Linux and macOS build/test settings now match `global.json` (`11.0.100-rc.1.26425.128`). The intentional SDK 7 native/universal paths remain unchanged. macOS accepts `net11.0` and installs the .NET 10 runtime separately for `net10.0` tests. Before this correction, Linux failed with `NETSDK1045` and macOS could not resolve the requested SDK. Keep the GitLab SDK pins synchronized when `global.json` changes.
+- **CI Visibility coverage:** dedicated `:ci-visibility` integration cells run with `Area=CIVisibility` for every selected Windows x64/x86 and Linux x64/ARM64 Debian/Alpine configuration. These are required because master's regular Tracer filter now explicitly excludes CI Visibility tests. Linux cells also invoke the existing `CompilePlatformSpecificSamples` setup; Selenium remains a separate job.
+- **Fixture restore:** GitLab restores both DuckTyping fixture projects before building them, preserving their `netstandard2.0` target and Shared-before-Target ordering. Azure's existing restore behavior is unchanged.
+- **Framework evaluation:** the five GitLab test-selection queries now use master's out-of-process `TryGetTargetFrameworks()` through `TargetsFramework`. An evaluation failure stops the build with the project name instead of silently omitting tests or reintroducing in-process MSBuild assembly conflicts.
+
+Local YAML, PowerShell, whitespace, SDK-consistency, and focused framework-helper checks passed. Full post-fix CI validation is still pending; SDK 11 was unavailable locally and Docker was stopped during validation. Confirm Linux/macOS builds, fixture restore on fresh consumers, and actual CI Visibility test counts/results before treating these fixes as validated coverage.
+
 ### Standalone improvements extracted from the experiment
 
 These PRs can be reviewed independently of the migration. Status checked on 2026-09-28; open does not imply merged or validated by a green pipeline.
@@ -288,9 +299,9 @@ The first generated Linux unit-test pipeline was green, and its framework artifa
 
 The first macOS PoC follows Azure's `build_macos` → `unit_tests_macos` boundary on the shared `macos:sonoma-amd64` runner. Azure builds the universal native tracer and the managed tracer/native loader in two parallel jobs, then merges their monitoring-home artifacts. GitLab initially runs the same target groups sequentially in one `build-macos-tracer-amd64` workspace, avoiding the intermediate merge while still publishing a combined producer artifact. The native targets continue to build universal `x86_64` and `arm64` dylibs. This producer experienced repeated Apple clang 15 `SIGSEGV` failures in unrelated translation units and in both target architectures while CMake used every reported processor. GitLab macOS native tracer and loader builds are therefore capped at four compiler processes; Azure and local builds retain their existing processor-count parallelism.
 
-The first consumer, `unit-tests-macos-amd64:net10.0`, was green. It validated access to the shared amd64 runner, job-local SDK installation, universal native compilation, the selective build-artifact handoff, and net10 managed-test execution. The static consumer has now been replaced by the same generated child-pipeline architecture used for Windows and Linux. `GenerateGitlabMacosUnitTestsPipeline` reads `GetTestingFrameworks(PlatformFamily.OSX)` and emits three jobs (`netcoreapp3.1`, `net9.0`, and `net10.0`) normally or all eight macOS-compatible frameworks for a thorough run. The parent `unit-tests-macos-amd64` bridge waits for the macOS producer and generator, and each child downloads the producer artifact with `needs:pipeline:job`.
+The first consumer, `unit-tests-macos-amd64:net10.0`, was green. It validated access to the shared amd64 runner, job-local SDK installation, universal native compilation, the selective build-artifact handoff, and net10 managed-test execution. The static consumer has now been replaced by the same generated child-pipeline architecture used for Windows and Linux. `GenerateGitlabMacosUnitTestsPipeline` reads `GetTestingFrameworks(PlatformFamily.OSX)` and selects the macOS framework matrix. At the time of that validation, it emitted three jobs (`netcoreapp3.1`, `net9.0`, and `net10.0`) normally or eight for a thorough run; the current matrix also includes `net11.0`. The parent `unit-tests-macos-amd64` bridge waits for the macOS producer and generator, and each child downloads the producer artifact with `needs:pipeline:job`.
 
-Each macOS child installs the pinned 10.0.100 SDK under the checkout's `.dotnet` directory and, for older TFMs, installs only the requested x64 runtime into that same directory. Checkout-local CLI home and NuGet package directories avoid modifying the persistent shared runner globally. Every child retains TRX results, tracer/CI Visibility logs, and dumps, and requests the same short-lived dd-sts API key used by the Windows and Linux unit jobs. Both the generated default matrix (`netcoreapp3.1`, `net9.0`, and `net10.0`) and the thorough eight-framework macOS matrix are green.
+Each macOS child installs the SDK version pinned to match `global.json` under the checkout's `.dotnet` directory and, for older TFMs, installs only the requested x64 runtime into that same directory. Checkout-local CLI home and NuGet package directories avoid modifying the persistent shared runner globally. Every child retains TRX results, tracer/CI Visibility logs, and dumps, and requests the same short-lived dd-sts API key used by the Windows and Linux unit jobs. The earlier SDK 10 default and thorough matrices passed; those results do not validate the post-rebase SDK 11 configuration.
 
 ### Unit-test parity with Azure
 
@@ -562,12 +573,12 @@ Azure's artifact is broader, while the tested GitLab artifact selected native tr
 
 | Job pattern | Matrix | Runner | Dependency | NUKE target |
 | --- | --- | --- | --- | --- |
-| `unit-tests-windows:*` | NUKE-selected Windows TFMs: 4 normally, 9 for thorough runs | `windows-v2:2022` | parent `build` via `needs:pipeline:job` | `BuildManagedUnitTests RunManagedUnitTests --framework $FRAMEWORK` |
-| `unit-tests-linux-x64:*` | NUKE-selected Linux x64 TFMs: 3 normally, 8 for thorough runs; Debian/glibc | `docker-in-docker:amd64` | parent `build-linux-tracer-x64` via `needs:pipeline:job` | `BuildManagedUnitTests RunManagedUnitTests --framework $FRAMEWORK` |
+| `unit-tests-windows:*` | NUKE-selected Windows TFMs: 5 normally, 10 for thorough runs | `windows-v2:2022` | parent `build` via `needs:pipeline:job` | `BuildManagedUnitTests RunManagedUnitTests --framework $FRAMEWORK` |
+| `unit-tests-linux-x64:*` | NUKE-selected Linux x64 TFMs: 4 normally, 9 for thorough runs; Debian/glibc | `docker-in-docker:amd64` | parent `build-linux-tracer-x64` via `needs:pipeline:job` | `BuildManagedUnitTests RunManagedUnitTests --framework $FRAMEWORK` |
 | `unit-tests-linux-musl-x64:*` | Same NUKE-selected TFMs; Alpine/musl | `docker-in-docker:amd64` | parent `build-linux-tracer-x64-musl` via `needs:pipeline:job` | `BuildManagedUnitTests RunManagedUnitTests --framework $FRAMEWORK` |
-| `unit-tests-linux-arm64:*` | NUKE-selected Linux ARM64 TFMs: 4 normally, 6 for thorough runs; Debian/glibc | `docker-in-docker:arm64` | parent `build-linux-tracer-arm64` via `needs:pipeline:job` | `BuildManagedUnitTests RunManagedUnitTests --framework $FRAMEWORK` |
+| `unit-tests-linux-arm64:*` | NUKE-selected Linux ARM64 TFMs: 5 normally, 7 for thorough runs; Debian/glibc | `docker-in-docker:arm64` | parent `build-linux-tracer-arm64` via `needs:pipeline:job` | `BuildManagedUnitTests RunManagedUnitTests --framework $FRAMEWORK` |
 | `unit-tests-linux-musl-arm64:*` | Same ARM64-selected TFMs; Alpine/musl | `docker-in-docker:arm64` | parent `build-linux-tracer-arm64-musl` via `needs:pipeline:job` | `BuildManagedUnitTests RunManagedUnitTests --framework $FRAMEWORK` |
-| `unit-tests-macos-amd64:*` | NUKE-selected macOS TFMs: 3 normally, 8 for thorough runs | `macos:sonoma-amd64` | parent `build-macos-tracer-amd64` via `needs:pipeline:job` | `BuildManagedUnitTests RunManagedUnitTests --framework $FRAMEWORK` |
+| `unit-tests-macos-amd64:*` | NUKE-selected macOS TFMs: 4 normally, 9 for thorough runs | `macos:sonoma-amd64` | parent `build-macos-tracer-amd64` via `needs:pipeline:job` | `BuildManagedUnitTests RunManagedUnitTests --framework $FRAMEWORK` |
 
 Native suites publish JUnit-compatible XML with `artifacts:reports:junit`. Managed suites currently retain TRX results as ordinary artifacts; converting them for GitLab's test-report UI remains follow-up work.
 
@@ -575,10 +586,10 @@ Current implemented build-and-unit-test slice:
 
 - 6 primary tracer/platform producers: Windows, Linux x64 glibc and musl, Linux ARM64 glibc and musl, and macOS amd64. Separate Linux profiler and universal loader/wrapper producers support integration-test consumers. Native tests run inside the relevant Windows and Linux x64 producers.
 - 1 matrix-generator job and 4 child-pipeline bridge jobs.
-- 4 Windows managed-unit-test jobs normally; 9 for thorough runs.
-- 6 Linux x64 managed-unit-test jobs normally; 16 for thorough runs.
-- 8 Linux ARM64 managed-unit-test jobs normally; 12 for thorough runs.
-- 3 macOS managed-unit-test jobs normally; 8 for thorough runs.
+- 5 Windows managed-unit-test jobs normally; 10 for thorough runs.
+- 8 Linux x64 managed-unit-test jobs normally; 18 for thorough runs.
+- 10 Linux ARM64 managed-unit-test jobs normally; 14 for thorough runs.
+- 4 macOS managed-unit-test jobs normally; 9 for thorough runs.
 - Continue validating the concurrency budget with the CI Infrastructure team because generated integration matrices and shared runner capacity make a single static job count misleading.
 
 ### Phase 1 validation criteria
@@ -607,10 +618,10 @@ The implementation uses the generated child pipelines and reusable templates und
 Current implementation:
 
 - Linux x64 integration jobs use `docker-in-docker:amd64` and cover both glibc and musl across the NUKE-selected frameworks. Dependency-free cells run the tester image directly; Docker-dependent cells reuse `docker-compose.yml`.
-- Tracer, ASM, two Docker dependency groups, and portable-PDB optimized/unoptimized Debugger cells are generated as separate Linux jobs.
-- Windows x64 and x86 generate Tracer and ASM cells. Debugger cells cover portable/full PDBs and optimized/unoptimized builds on both architectures, subject to the Azure-compatible x86 framework exclusions.
+- Tracer, ASM, CI Visibility, two Docker dependency groups, and portable-PDB optimized/unoptimized Debugger cells are generated as separate Linux x64 jobs.
+- Windows x64 and x86 generate Tracer, ASM, and CI Visibility cells. Debugger cells cover portable/full PDBs and optimized/unoptimized builds on both architectures, subject to the Azure-compatible x86 framework exclusions.
 - Windows IIS runs in separate `net48` x64/x86 Tracer and ASM cells. LocalDB has a dedicated `net48` x64 cell and MSMQ runs in eligible regular Tracer cells. Chrome runs in one blocking `net10.0` x64 host cell with checkout-local tools because Server Core lacks its runtime dependencies. Regular Tracer and ASM cells also run the Windows regression-test target used by Azure.
-- Linux ARM64 integration coverage is validated for Debian and Alpine, including Tracer, ASM, Docker-dependent, and optimized/unoptimized Debugger cells.
+- Linux ARM64 generates Debian and Alpine cells for Tracer, ASM, CI Visibility, Docker-dependent tests, and optimized/unoptimized Debugger tests. The newly added CI Visibility cells still require pipeline validation.
 - Windows Azure Functions has a dedicated x64 `net6.0`-`net10.0` matrix with pinned Functions Core Tools and Storage Emulator dependencies in the ephemeral test image.
 - Windows Docker-dependent coverage remains pending; Azure currently skips these tests too while its Windows Docker test-agent setup is disabled.
 
