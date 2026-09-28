@@ -207,15 +207,15 @@ partial class Build
     TargetFramework[] GetTestingFrameworks(PlatformFamily platform, bool isArm64 = false) => (platform, isArm64, IncludeAllTestFrameworks || RequiresThoroughTesting()) switch
     {
         // we only support linux-arm64 on .NET 5+, so we run a different subset of the TFMs for ARM64
-        (PlatformFamily.Linux, true, true) => new[] { TargetFramework.NET5_0, TargetFramework.NET6_0, TargetFramework.NET7_0, TargetFramework.NET8_0, TargetFramework.NET9_0, TargetFramework.NET10_0, },
-        (PlatformFamily.Linux, true, false) => new[] { TargetFramework.NET5_0, TargetFramework.NET6_0, TargetFramework.NET9_0, TargetFramework.NET10_0, },
+        (PlatformFamily.Linux, true, true) => new[] { TargetFramework.NET5_0, TargetFramework.NET6_0, TargetFramework.NET7_0, TargetFramework.NET8_0, TargetFramework.NET9_0, TargetFramework.NET10_0, TargetFramework.NET11_0, },
+        (PlatformFamily.Linux, true, false) => new[] { TargetFramework.NET5_0, TargetFramework.NET6_0, TargetFramework.NET9_0, TargetFramework.NET10_0, TargetFramework.NET11_0, },
         // Don't test 2.1 for now, as the build is broken on master. If/when that's resolved, re-enable
-        (PlatformFamily.Windows, _, true) => new[] { TargetFramework.NET48, TargetFramework.NETCOREAPP3_0, TargetFramework.NETCOREAPP3_1, TargetFramework.NET5_0, TargetFramework.NET6_0, TargetFramework.NET7_0, TargetFramework.NET8_0, TargetFramework.NET9_0, TargetFramework.NET10_0, },
-        (PlatformFamily.Windows, _, false) => new[] { TargetFramework.NET48, TargetFramework.NETCOREAPP3_1, TargetFramework.NET9_0, TargetFramework.NET10_0, },
+        (PlatformFamily.Windows, _, true) => new[] { TargetFramework.NET48, TargetFramework.NETCOREAPP3_0, TargetFramework.NETCOREAPP3_1, TargetFramework.NET5_0, TargetFramework.NET6_0, TargetFramework.NET7_0, TargetFramework.NET8_0, TargetFramework.NET9_0, TargetFramework.NET10_0, TargetFramework.NET11_0, },
+        (PlatformFamily.Windows, _, false) => new[] { TargetFramework.NET48, TargetFramework.NETCOREAPP3_1, TargetFramework.NET9_0, TargetFramework.NET10_0, TargetFramework.NET11_0, },
         // Everything else e.g. MaxOS, linux-x64 etc
         // Same as Windows just without the .NET FX
-        (_, _, true) => new[] { TargetFramework.NETCOREAPP3_0, TargetFramework.NETCOREAPP3_1, TargetFramework.NET5_0, TargetFramework.NET6_0, TargetFramework.NET7_0, TargetFramework.NET8_0, TargetFramework.NET9_0, TargetFramework.NET10_0, },
-        (_, _, false) => new[] { TargetFramework.NETCOREAPP3_1, TargetFramework.NET9_0, TargetFramework.NET10_0, },
+        (_, _, true) => new[] { TargetFramework.NETCOREAPP3_0, TargetFramework.NETCOREAPP3_1, TargetFramework.NET5_0, TargetFramework.NET6_0, TargetFramework.NET7_0, TargetFramework.NET8_0, TargetFramework.NET9_0, TargetFramework.NET10_0, TargetFramework.NET11_0, },
+        (_, _, false) => new[] { TargetFramework.NETCOREAPP3_1, TargetFramework.NET9_0, TargetFramework.NET10_0, TargetFramework.NET11_0, },
     };
 
     string ReleaseBranchForCurrentVersion() => new Version(Version).Major switch
@@ -2645,6 +2645,15 @@ partial class Build
                new(@".*Timeout occurred when flushing spans.*", RegexOptions.Compiled),
                new(@".*TestOptimization: .*", RegexOptions.Compiled),
                new(@".*TestOptimizationClient: .*", RegexOptions.Compiled),
+               // TODO: for the CI Visibility team to fix. Under the .NET 11 SDK a sample process exits while
+               // holding the CircularChannel mutex. CircularChannel.Reader.InternalPollForMessage catches the
+               // resulting AbandonedMutexException and returns _without_ releasing - but an abandoned wait still
+               // acquires - so the channel is poisoned and every subsequent poll logs an error. The same
+               // WaitOne-outside-try shape in CircularChannel.Writer.TryWrite and the CircularChannel ctor lets
+               // the exception escape entirely, which produces the third pattern. The tests themselves pass.
+               new(@".*CircularChannel\.(Reader|Writer): Mutex was abandoned.*", RegexOptions.Compiled),
+               new(@".*CircularChannel\.Reader: Error while polling for messages.*Object synchronization method was called from an unsynchronized block of code.*", RegexOptions.Compiled | RegexOptions.Singleline),
+               new(@".*Error enabling IPC client and sending coverage data.*AbandonedMutexException.*", RegexOptions.Compiled | RegexOptions.Singleline),
                // This one is annoying but we _think_ due to a dodgy named pipes implementation, so ignoring for now
                new(@".*An error occurred while sending data to the agent at \\\\\.\\pipe\\trace-.*The operation has timed out.*", RegexOptions.Compiled),
                new(@".*An error occurred while sending data to the agent at \\\\\.\\pipe\\metrics-.*The operation has timed out.*", RegexOptions.Compiled),
@@ -2718,6 +2727,12 @@ partial class Build
            if (RuntimeInformation.FrameworkDescription.StartsWith(".NET 10.0.0-"))
            {
                knownPatterns.Add(new(@".*SingleStepGuardRails::ShouldForceInstrumentationOverride: Found incompatible runtime .NET 10 or higher.*", RegexOptions.Compiled));
+           }
+
+           // Make sure we _only_ add this while .NET 11 is in preview (to make sure we don't forget in the final release)
+           if (RuntimeInformation.FrameworkDescription.StartsWith(".NET 11.0.0-"))
+           {
+               knownPatterns.Add(new(@".*SingleStepGuardRails::ShouldForceInstrumentationOverride: Found incompatible runtime .NET 11 or higher.*", RegexOptions.Compiled));
            }
 
            // CI Visibility known errors
