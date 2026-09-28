@@ -54,189 +54,9 @@ namespace Datadog.Trace.FeatureFlags
 
         public Evaluation Evaluate(string flagKey, ValueType resultType, object? defaultValue, EvaluationContext? context)
         {
-            try
-            {
-                var config = _config;
-                if (config == null)
-                {
-                    return new Evaluation(
-                        flagKey,
-                        defaultValue,
-                        EvaluationReason.Error,
-                        error: "PROVIDER_NOT_READY",
-                        metadata: new Dictionary<string, string>
-                        {
-                            ["errorCode"] = "PROVIDER_NOT_READY"
-                        });
-                }
-
-                Flag? flag = null;
-                var lookupResult = config.Flags?.Find(flagKey, out flag) ?? FlagLookupResult.NotFound;
-                if (lookupResult == FlagLookupResult.NotFound)
-                {
-                    return new Evaluation(
-                        flagKey,
-                        defaultValue,
-                        EvaluationReason.Error,
-                        error: "FLAG_NOT_FOUND",
-                        metadata: new Dictionary<string, string>
-                        {
-                            ["errorCode"] = "FLAG_NOT_FOUND"
-                        });
-                }
-
-                if (lookupResult == FlagLookupResult.Invalid || flag is null)
-                {
-                    return new Evaluation(
-                        flagKey,
-                        defaultValue,
-                        EvaluationReason.Error,
-                        error: "PARSE_ERROR",
-                        metadata: new Dictionary<string, string>
-                        {
-                            ["errorCode"] = "PARSE_ERROR"
-                        });
-                }
-
-                if (flag.Enabled != true)
-                {
-                    return new Evaluation(
-                        flagKey,
-                        defaultValue,
-                        EvaluationReason.Disabled);
-                }
-
-                if (flag.VariationType != resultType)
-                {
-                    return new Evaluation(
-                        flagKey,
-                        defaultValue,
-                        EvaluationReason.Error,
-                        error: "TYPE_MISMATCH",
-                        metadata: new Dictionary<string, string>
-                        {
-                            ["errorCode"] = "TYPE_MISMATCH"
-                        });
-                }
-
-                if (flag.Allocations is null or { Count: 0 })
-                {
-                    return new Evaluation(
-                        flagKey,
-                        defaultValue,
-                        EvaluationReason.Default);
-                }
-
-                var now = DateTime.UtcNow;
-                var targetingKey = context?.TargetingKey;
-
-                foreach (var allocation in flag.Allocations)
-                {
-                    if (!IsAllocationActive(allocation, now))
-                    {
-                        continue;
-                    }
-
-                    // Track whether this allocation has targeting rules
-                    var hadRules = allocation.Rules is { Count: > 0 };
-                    if (hadRules)
-                    {
-                        if (!EvaluateRules(allocation.Rules!, context))
-                        {
-                            continue;
-                        }
-                    }
-
-                    if (allocation.Splits is { Count: > 0 })
-                    {
-                        foreach (var split in allocation.Splits)
-                        {
-                            if (StringUtil.IsNullOrEmpty(split.VariationKey))
-                            {
-                                throw new FormatException($"Empty variation key in allocation {allocation.Key}");
-                            }
-
-                            var allShardsMatch = true;
-                            var hadShards = split.Shards is { Count: > 0 };
-                            if (hadShards)
-                            {
-                                foreach (var shard in split.Shards!)
-                                {
-                                    if (!MatchesShard(shard, targetingKey))
-                                    {
-                                        allShardsMatch = false;
-                                        break;
-                                    }
-                                }
-                            }
-
-                            if (allShardsMatch)
-                            {
-                                // Determine reason based on how the flag was resolved.
-                                // - TargetingMatch: Allocation had targeting rules that matched
-                                // - Default: A temporal allocation with one unsharded split matched
-                                // - Split: Resolved via percentage split without targeting rules
-                                // - Static: No rules, no shards - simple static value
-                                var isTemporalDefault = !hadRules &&
-                                                        !hadShards &&
-                                                        allocation.Splits.Count == 1 &&
-                                                        (!StringUtil.IsNullOrEmpty(allocation.StartAt) ||
-                                                         !StringUtil.IsNullOrEmpty(allocation.EndAt));
-                                var reason = hadRules ? EvaluationReason.TargetingMatch
-                                           : isTemporalDefault ? EvaluationReason.Default
-                                           : hadShards ? EvaluationReason.Split
-                                           : EvaluationReason.Static;
-
-                                return ResolveVariant(flagKey, resultType, defaultValue, flag, split, allocation, reason, now, context);
-                            }
-                        }
-                    }
-                }
-
-                // No allocation / split matched – use default
-                return new Evaluation(
-                    flagKey,
-                    defaultValue,
-                    EvaluationReason.Default);
-            }
-            catch (FormatException ex)
-            {
-                return new Evaluation(
-                    flagKey,
-                    defaultValue,
-                    EvaluationReason.Error,
-                    error: "PARSE_ERROR",
-                    metadata: new Dictionary<string, string>
-                    {
-                        ["errorCode"] = "PARSE_ERROR",
-                        ["message"] = ex.Message
-                    });
-            }
-            catch (MissingTargetingKeyException)
-            {
-                return new Evaluation(
-                    flagKey,
-                    defaultValue,
-                    EvaluationReason.Error,
-                    error: "TARGETING_KEY_MISSING",
-                    metadata: new Dictionary<string, string>
-                    {
-                        ["errorCode"] = "TARGETING_KEY_MISSING"
-                    });
-            }
-            catch (Exception ex)
-            {
-                return new Evaluation(
-                    flagKey,
-                    defaultValue,
-                    EvaluationReason.Error,
-                    error: ex.Message,
-                    metadata: new Dictionary<string, string>
-                    {
-                        ["errorCode"] = "GENERAL",
-                        ["message"] = ex.Message
-                    });
-            }
+            // Capture before evaluating: even an exception after a configuration update keeps this consent.
+            var consent = _config?.GetEvaluationConsent(flagKey) == true;
+            return EvaluateCore(flagKey, resultType, defaultValue, context).WithPrivacyConsent(consent);
         }
 
         private static bool IsAllocationActive(Allocation allocation, DateTime now)
@@ -661,6 +481,193 @@ namespace Datadog.Trace.FeatureFlags
             }
 
             return result;
+        }
+
+        private Evaluation EvaluateCore(string flagKey, ValueType resultType, object? defaultValue, EvaluationContext? context)
+        {
+            try
+            {
+                var config = _config;
+                if (config == null)
+                {
+                    return new Evaluation(
+                        flagKey,
+                        defaultValue,
+                        EvaluationReason.Error,
+                        error: "PROVIDER_NOT_READY",
+                        metadata: new Dictionary<string, string>
+                        {
+                            ["errorCode"] = "PROVIDER_NOT_READY"
+                        });
+                }
+
+                Flag? flag = null;
+                var lookupResult = config.Flags?.Find(flagKey, out flag) ?? FlagLookupResult.NotFound;
+                if (lookupResult == FlagLookupResult.NotFound)
+                {
+                    return new Evaluation(
+                        flagKey,
+                        defaultValue,
+                        EvaluationReason.Error,
+                        error: "FLAG_NOT_FOUND",
+                        metadata: new Dictionary<string, string>
+                        {
+                            ["errorCode"] = "FLAG_NOT_FOUND"
+                        });
+                }
+
+                if (lookupResult == FlagLookupResult.Invalid || flag is null)
+                {
+                    return new Evaluation(
+                        flagKey,
+                        defaultValue,
+                        EvaluationReason.Error,
+                        error: "PARSE_ERROR",
+                        metadata: new Dictionary<string, string>
+                        {
+                            ["errorCode"] = "PARSE_ERROR"
+                        });
+                }
+
+                if (flag.Enabled != true)
+                {
+                    return new Evaluation(
+                        flagKey,
+                        defaultValue,
+                        EvaluationReason.Disabled);
+                }
+
+                if (flag.VariationType != resultType)
+                {
+                    return new Evaluation(
+                        flagKey,
+                        defaultValue,
+                        EvaluationReason.Error,
+                        error: "TYPE_MISMATCH",
+                        metadata: new Dictionary<string, string>
+                        {
+                            ["errorCode"] = "TYPE_MISMATCH"
+                        });
+                }
+
+                if (flag.Allocations is null or { Count: 0 })
+                {
+                    return new Evaluation(
+                        flagKey,
+                        defaultValue,
+                        EvaluationReason.Default);
+                }
+
+                var now = DateTime.UtcNow;
+                var targetingKey = context?.TargetingKey;
+
+                foreach (var allocation in flag.Allocations)
+                {
+                    if (!IsAllocationActive(allocation, now))
+                    {
+                        continue;
+                    }
+
+                    // Track whether this allocation has targeting rules
+                    var hadRules = allocation.Rules is { Count: > 0 };
+                    if (hadRules)
+                    {
+                        if (!EvaluateRules(allocation.Rules!, context))
+                        {
+                            continue;
+                        }
+                    }
+
+                    if (allocation.Splits is { Count: > 0 })
+                    {
+                        foreach (var split in allocation.Splits)
+                        {
+                            if (StringUtil.IsNullOrEmpty(split.VariationKey))
+                            {
+                                throw new FormatException($"Empty variation key in allocation {allocation.Key}");
+                            }
+
+                            var allShardsMatch = true;
+                            var hadShards = split.Shards is { Count: > 0 };
+                            if (hadShards)
+                            {
+                                foreach (var shard in split.Shards!)
+                                {
+                                    if (!MatchesShard(shard, targetingKey))
+                                    {
+                                        allShardsMatch = false;
+                                        break;
+                                    }
+                                }
+                            }
+
+                            if (allShardsMatch)
+                            {
+                                // Determine reason based on how the flag was resolved.
+                                // - TargetingMatch: Allocation had targeting rules that matched
+                                // - Default: A temporal allocation with one unsharded split matched
+                                // - Split: Resolved via percentage split without targeting rules
+                                // - Static: No rules, no shards - simple static value
+                                var isTemporalDefault = !hadRules &&
+                                                        !hadShards &&
+                                                        allocation.Splits.Count == 1 &&
+                                                        (!StringUtil.IsNullOrEmpty(allocation.StartAt) ||
+                                                         !StringUtil.IsNullOrEmpty(allocation.EndAt));
+                                var reason = hadRules ? EvaluationReason.TargetingMatch
+                                           : isTemporalDefault ? EvaluationReason.Default
+                                           : hadShards ? EvaluationReason.Split
+                                           : EvaluationReason.Static;
+
+                                return ResolveVariant(flagKey, resultType, defaultValue, flag, split, allocation, reason, now, context);
+                            }
+                        }
+                    }
+                }
+
+                // No allocation / split matched – use default
+                return new Evaluation(
+                    flagKey,
+                    defaultValue,
+                    EvaluationReason.Default);
+            }
+            catch (FormatException ex)
+            {
+                return new Evaluation(
+                    flagKey,
+                    defaultValue,
+                    EvaluationReason.Error,
+                    error: "PARSE_ERROR",
+                    metadata: new Dictionary<string, string>
+                    {
+                        ["errorCode"] = "PARSE_ERROR",
+                        ["message"] = ex.Message
+                    });
+            }
+            catch (MissingTargetingKeyException)
+            {
+                return new Evaluation(
+                    flagKey,
+                    defaultValue,
+                    EvaluationReason.Error,
+                    error: "TARGETING_KEY_MISSING",
+                    metadata: new Dictionary<string, string>
+                    {
+                        ["errorCode"] = "TARGETING_KEY_MISSING"
+                    });
+            }
+            catch (Exception ex)
+            {
+                return new Evaluation(
+                    flagKey,
+                    defaultValue,
+                    EvaluationReason.Error,
+                    error: ex.Message,
+                    metadata: new Dictionary<string, string>
+                    {
+                        ["errorCode"] = "GENERAL",
+                        ["message"] = ex.Message
+                    });
+            }
         }
 
         private Evaluation ResolveVariant(

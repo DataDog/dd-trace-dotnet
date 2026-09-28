@@ -37,6 +37,31 @@ public class UfcConfigurationParserTests
         configuration.Should().NotBeNull();
         configuration!.Environment!.Name.Should().Be("production");
         configuration.Flags.Should().BeEmpty();
+        configuration.ObserveFullEvaluationData.Should().BeFalse();
+    }
+
+    [Theory]
+    [InlineData("true", true)]
+    [InlineData("false", false)]
+    [InlineData("null", false)]
+    [InlineData("1", false)]
+    [InlineData("1.0", false)]
+    [InlineData("\"true\"", false)]
+    [InlineData("\"TRUE\"", false)]
+    [InlineData("{}", false)]
+    [InlineData("[]", false)]
+    [InlineData("{\"nested\":[true]}", false)]
+    [InlineData("[true,{\"nested\":true}]", false)]
+    public void ConsentDoesNotRejectUsableConfiguration(string token, bool expected)
+    {
+        var body = ValidEnvelope.Replace("\"format\": \"SERVER\"", "\"observeFullEvaluationData\": " + token + ", \"format\": \"SERVER\"");
+
+        Parse(body, out var configuration, out var error).Should().BeTrue();
+
+        error.Should().BeNull();
+        configuration!.ObserveFullEvaluationData.Should().Be(expected);
+        configuration!.Format.Should().Be("SERVER");
+        configuration!.Environment!.Name.Should().Be("production");
     }
 
     [Theory]
