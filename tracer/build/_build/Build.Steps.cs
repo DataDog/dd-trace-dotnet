@@ -1921,7 +1921,8 @@ partial class Build
         .Executes(() =>
         {
             var isDebugRun = IsDebugRun();
-            var filter = AddAreaFilter(GetFilter());
+            var filter = AddAreaFilter(AddDockerFilter(GetFilter()));
+            var parallelFilter = AddAreaFilter(AddDockerFilter(Filter));
 
             try
             {
@@ -1947,8 +1948,8 @@ partial class Build
                     .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
                     .SetProcessEnvironmentVariable("USE_FULL_TEST_CONFIG", RequiresThoroughTesting().ToString())
                     .SetLogsDirectory(TestLogsDirectory)
-                    // Don't apply a custom filter to these tests, they should all be able to be run
-                    .When(!string.IsNullOrWhiteSpace(AddAreaFilter(Filter)), c => c.SetFilter(AddAreaFilter(Filter)))
+                    // Apply Docker and area restrictions without requiring the auto-instrumentation platform traits.
+                    .When(!string.IsNullOrWhiteSpace(parallelFilter), c => c.SetFilter(parallelFilter))
                     .When(TestAllPackageVersions, o => o.SetProcessEnvironmentVariable("TestAllPackageVersions", "true"))
                     .When(CodeCoverageEnabled, ConfigureCodeCoverage)
                     .CombineWith(parallelJobs, (s, project) => s
@@ -1985,19 +1986,12 @@ partial class Build
 
             string GetFilter()
             {
-                var dockerFilter = IncludeTestsRequiringDocker switch
-                {
-                    true => "&(RequiresDockerDependency=true)",
-                    false => "&(RequiresDockerDependency!=true)",
-                    null => string.Empty,
-                };
-
                 var armFilter = IsArm64 ? "&(Category!=ArmUnsupported)" : string.Empty;
 
                 var filter = (string.IsNullOrWhiteSpace(Filter), IsWin) switch
                 {
-                    (false, _) => $"({Filter})&(SkipInCI!=True){dockerFilter}{armFilter}",
-                    (true, false) => $"(Category!=LinuxUnsupported)&(Category!=Lambda)&(Category!=AzureFunctions)&(SkipInCI!=True){dockerFilter}{armFilter}",
+                    (false, _) => $"({Filter})&(SkipInCI!=True){armFilter}",
+                    (true, false) => $"(Category!=LinuxUnsupported)&(Category!=Lambda)&(Category!=AzureFunctions)&(SkipInCI!=True){armFilter}",
                     // TODO: I think we should change this filter to run on Windows by default, e.g.
                     // (RunOnWindows!=False|Category=Smoke)&LoadFromGAC!=True&IIS!=True
                     (true, true) => "(RunOnWindows=True)&(LoadFromGAC!=True)&(IIS!=True)&(Category!=AzureFunctions)&(SkipInCI!=True)",
@@ -2006,6 +2000,23 @@ partial class Build
                 return filter;
             }
         });
+
+    private string AddDockerFilter(string filter)
+    {
+        var dockerFilter = IncludeTestsRequiringDocker switch
+        {
+            true => "(RequiresDockerDependency=true)",
+            false => "(RequiresDockerDependency!=true)",
+            null => null,
+        };
+
+        if (dockerFilter is null)
+        {
+            return filter;
+        }
+
+        return string.IsNullOrWhiteSpace(filter) ? dockerFilter : $"({filter})&{dockerFilter}";
+    }
 
     private string AddAreaFilter(string filter)
     {
@@ -2027,7 +2038,7 @@ partial class Build
             return areaFilter;
         }
 
-        return filter + $"&{areaFilter}";
+        return $"({filter})&{areaFilter}";
     }
 
     Target CompileAzureFunctionsSamplesWindows => _ => _
