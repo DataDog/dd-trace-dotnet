@@ -79,15 +79,13 @@ public class AzureFunctionsDurableTriggerTests : AzureFunctionsTests
                    agent,
                    seedAsync: SeedViaHttpAsync,
                    expectedExitCode: ExpectedFuncKillExitCode,
-                   packageVersion: packageVersion))
+                   packageVersion: packageVersion,
+                   workerSpanPredicate: s => s.Resource == "DurableOrchestration DurableWorkflow"))
         {
             var spans = await WaitForDurableSpansAsync(agent);
 
             spans.Should().HaveCount(ExpectedDurableSpanCount);
             var orchestrationSpan = spans.Should().ContainSingle(s => s.Resource == "DurableOrchestration DurableWorkflow").Subject;
-
-            await WaitForWorkerShutdownAsync(agent, orchestrationSpan);
-
             orchestrationSpan.Error.Should().Be(0);
             var activitySpan = spans.Should().ContainSingle(s => s.Resource == "DurableActivity DurableActivity").Subject;
             spans.Should().ContainSingle(s => HasTrigger(s, "DurableEntity"));

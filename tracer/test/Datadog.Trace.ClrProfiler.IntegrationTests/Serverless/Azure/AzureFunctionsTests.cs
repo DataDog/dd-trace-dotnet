@@ -69,18 +69,13 @@ public abstract class AzureFunctionsTests : TestHelper
         return filteredSpans;
     }
 
-    protected static async Task WaitForWorkerShutdownAsync(MockTracerAgent agent, MockSpan workerSpan)
-    {
-        // func can exit before the isolated worker finishes its shutdown flush. App-closing
-        // telemetry is sent after the trace writer closes; keep the agent alive until then.
-        var workerRuntimeId = workerSpan.Tags[Tags.RuntimeId];
-        var appClosing = await agent.WaitForLatestTelemetryAsync(
-            x => x is TelemetryData data && data.RuntimeId == workerRuntimeId && data.IsRequestType(TelemetryRequestTypes.AppClosing),
-            timeoutInMilliseconds: 10_000);
-        appClosing.Should().NotBeNull("the worker must finish flushing before the mock agent is disposed");
-    }
-
-    protected async Task<ProcessResult> RunAzureFunctionAndWaitForExit(MockTracerAgent agent, Func<Task> seedAsync = null, string framework = null, int expectedExitCode = 0, string packageVersion = "")
+    protected async Task<ProcessResult> RunAzureFunctionAndWaitForExit(
+        MockTracerAgent agent,
+        Func<Task> seedAsync = null,
+        string framework = null,
+        int expectedExitCode = 0,
+        string packageVersion = "",
+        Func<MockSpan, bool> workerSpanPredicate = null)
     {
         // run the azure function
         var binFolder = EnvironmentHelper.GetSampleApplicationOutputDirectory(packageVersion, framework);
@@ -102,7 +97,13 @@ public abstract class AzureFunctionsTests : TestHelper
             await seedAsync();
         }
 
-        return WaitForProcessResult(helper, expectedExitCode);
+        var result = WaitForProcessResult(helper, expectedExitCode);
+        if (workerSpanPredicate is not null)
+        {
+            await WaitForWorkerShutdownAsync(agent, workerSpanPredicate);
+        }
+
+        return result;
     }
 
     protected async Task AssertInProcessSpans(IImmutableList<MockSpan> spans)
@@ -146,6 +147,29 @@ public abstract class AzureFunctionsTests : TestHelper
         await VerifyHelper.VerifySpans(spans, settings)
                           .UseFileName(filename)
                           .DisableRequireUniquePrefix();
+    }
+
+    // Waits for the isolated worker to finish its shutdown flush after func exits. App-closing
+    // telemetry is sent after the trace writer closes, so the agent must remain alive until then.
+    private static async Task WaitForWorkerShutdownAsync(MockTracerAgent agent, Func<MockSpan, bool> workerSpanPredicate)
+    {
+        // 1. Get a span from the worker so we can identify its runtime ID.
+        var deadline = DateTime.UtcNow.AddSeconds(10);
+        var workerSpan = agent.Spans.FirstOrDefault(workerSpanPredicate);
+        while (workerSpan is null && DateTime.UtcNow < deadline)
+        {
+            await Task.Delay(100);
+            workerSpan = agent.Spans.FirstOrDefault(workerSpanPredicate);
+        }
+
+        workerSpan.Should().NotBeNull("the worker span must be received before waiting for worker shutdown");
+        var workerRuntimeId = workerSpan.Tags[Tags.RuntimeId];
+
+        // 2. Wait for the app-closing event from that worker, not from the func host.
+        var appClosing = await agent.WaitForLatestTelemetryAsync(
+            x => x is TelemetryData data && data.RuntimeId == workerRuntimeId && data.IsRequestType(TelemetryRequestTypes.AppClosing),
+            timeoutInMilliseconds: 10_000);
+        appClosing.Should().NotBeNull("the worker must finish flushing before the mock agent is disposed");
     }
 
     private static async Task WaitForFunctionAppReadyAsync(int port = 7071, int timeoutSeconds = 60)
