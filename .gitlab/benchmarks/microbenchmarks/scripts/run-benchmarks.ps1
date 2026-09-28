@@ -124,6 +124,18 @@ $env:DD_TRACER_HOME = $monitoringHome
 $env:CustomAfterMicrosoftCommonTargets = "$tracerRoot\build\BenchmarkBootstrap.targets"
 $env:BdnPrebuiltBinRoot = "$env:CODE_SRC\artifacts\bin\$Project"
 
+# MSBuild imports CustomAfterMicrosoftCommonTargets only if the file Exists(), so a wrong path is
+# skipped silently and the run looks exactly like one without the change. Fail here instead.
+if (-not (Test-Path $env:CustomAfterMicrosoftCommonTargets)) {
+    Write-Error "BenchmarkBootstrap.targets not found at: $env:CustomAfterMicrosoftCommonTargets"
+    exit 1
+}
+
+if (-not (Test-Path $env:BdnPrebuiltBinRoot)) {
+    Write-Error "Prebuilt benchmark binaries not found at: $env:BdnPrebuiltBinRoot. Was BuildBenchmarks run?"
+    exit 1
+}
+
 # CI Visibility ships benchmark results to Datadog via the in-process tracer.
 # The ephemeral benchmarking VM does not run a Datadog Agent, so route directly
 # to intake via agentless mode. DD_API_KEY is forwarded from the GitLab job.
@@ -161,6 +173,8 @@ Write-Output "Runtimes: $($runtimes -join ' ')"
 Write-Output "Executable: $benchmarkExe"
 Write-Output "Artifacts: $localArtifactsDir"
 Write-Output "Arguments: $($arguments -join ' ')"
+Write-Output "CustomAfterMicrosoftCommonTargets: $env:CustomAfterMicrosoftCommonTargets"
+Write-Output "BdnPrebuiltBinRoot: $env:BdnPrebuiltBinRoot"
 Write-Output ""
 
 # Run the benchmark
@@ -169,6 +183,18 @@ Write-Output ""
 if ($LASTEXITCODE -ne 0) {
     Write-Error "Benchmark execution failed with exit code $LASTEXITCODE"
     exit $LASTEXITCODE
+}
+
+# BenchmarkDotNet hides build output on success, so confirm after the fact whether the tracer closure
+# was rebuilt. BenchmarkDotNet redirects ArtifactsPath into the per-job run directory, so an
+# obj\Datadog.Trace folder under $runDir means the ProjectReference chain was still being built and
+# BenchmarkBootstrap.targets did not take effect.
+$rebuiltClosure = @(Get-ChildItem -Path $runDir -Directory -Recurse -Filter "Datadog.Trace" -ErrorAction SilentlyContinue |
+                    Where-Object { $_.FullName -like "*\obj\*" })
+if ($rebuiltClosure.Count -gt 0) {
+    Write-Warning "BenchmarkBootstrap: tracer closure WAS rebuilt ($($rebuiltClosure.Count) intermediate dir(s)) - BenchmarkBootstrap.targets did NOT take effect"
+} else {
+    Write-Output "BenchmarkBootstrap: tracer closure was not rebuilt - prebuilt references are in effect"
 }
 
 # Copy results to ARTIFACTS_DIR with naming convention
