@@ -12,5 +12,6 @@ namespace Datadog.Trace.FeatureFlags
         internal const string SplitSerialId = "__dd_split_serial_id";
         internal const string DoLog = "__dd_do_log";
         internal const string ObserveFullEvaluationData = "__dd_observe_full_evaluation_data";
+        internal const string EvaluationTimestampMs = "__dd_eval_timestamp_ms";
     }
 }
