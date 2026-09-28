@@ -1468,8 +1468,8 @@ partial class Build
         {
             //we need to build in this exact order
             var framework = IsGitlab ? Framework : null;
-            DotnetBuild(TracerDirectory.GlobFiles("test/Datadog.Trace.DuckTyping.Tests.Fixtures/Shared/*.csproj"));
-            DotnetBuild(TracerDirectory.GlobFiles("test/Datadog.Trace.DuckTyping.Tests.Fixtures/Target/*.csproj"));
+            DotnetBuild(TracerDirectory.GlobFiles("test/Datadog.Trace.DuckTyping.Tests.Fixtures/Shared/*.csproj"), noRestore: !IsGitlab);
+            DotnetBuild(TracerDirectory.GlobFiles("test/Datadog.Trace.DuckTyping.Tests.Fixtures/Target/*.csproj"), noRestore: !IsGitlab);
             DotnetBuild(TracerDirectory.GlobFiles("test/**/*TestHelpers.csproj"), framework: framework, noRestore: !IsGitlab);
             DotnetBuild(TracerDirectory.GlobFiles("test/**/*TestHelpers.AutoInstrumentation.csproj"), framework: framework, noRestore: !IsGitlab);
         });
