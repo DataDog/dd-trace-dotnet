@@ -174,11 +174,19 @@ experiments:
         cpus: "1,0x3FFFFF"
         parallelize:
           # 11 Benchmarks.Trace benchmarks on NUMA node 1, cores 0-21 (11 × 2 = 22 CPUs)
+          #
+          # DELIBERATELY NOT ALPHABETICAL. bp-runner assigns CPUs to items by position, so item N gets
+          # a fixed pair of cores. Across three consecutive pipelines, csc.exe crashed with
+          # STATUS_HEAP_CORRUPTION in exactly items 2 and 3 and nowhere else, even though every item
+          # builds the identical project closure. AspNetCore and CharSlice occupied those two positions
+          # each time, so "the benchmark" and "the slot" could not be told apart. They are moved to the
+          # end here to separate the two: if the failures follow them to positions 9 and 10 it is
+          # benchmark-specific, and if they stay at positions 2 and 3 (now CIVisibility and
+          # Elasticsearch) it is the slot, i.e. the CPU assignment. Restore alphabetical order once
+          # that is settled.
           items: >-
             *AgentWriterBenchmark*
             *AppSecEncoderBenchmark*
-            *AspNetCoreBenchmark*
-            *CharSliceBenchmark*
             *CIVisibilityProtocolWriterBenchmark*
             *ElasticsearchBenchmark*
             *GraphQLBenchmark*
@@ -186,6 +194,8 @@ experiments:
             *SerilogBenchmark*
             *StringAspectsBenchmark*
             *TraceAnnotationsBenchmark*
+            *AspNetCoreBenchmark*
+            *CharSliceBenchmark*
           cpus_per_item: 2
 
         env:
