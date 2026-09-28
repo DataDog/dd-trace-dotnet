@@ -188,21 +188,6 @@ public class OtlpMapperTests
     }
 
     [Fact]
-    public void EmitAttributesFromSpan_DoesNotEmitAdoptionMarkersAsSpanAttributes()
-    {
-        var span = CreateSpan();
-        span.SetTag(Tags.SdkOtlpExport, "false");
-        span.SetTag(Tags.SdkSemantics, "otel");
-
-        var attributes = new List<KeyValue>();
-        OtlpMapper.EmitAttributesFromSpan(kv => attributes.Add(kv), CreateSpanModel(span), limit: 128);
-
-        // the markers are resource-scoped: a user tag of the same name must not contradict them
-        attributes.Should().NotContain(kv => kv.Key == Tags.SdkOtlpExport);
-        attributes.Should().NotContain(kv => kv.Key == Tags.SdkSemantics);
-    }
-
-    [Fact]
     public void EmitAttributesFromSpan_EmitsDatadogAttributes()
     {
         var span = CreateSpan();

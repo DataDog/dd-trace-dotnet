@@ -353,7 +353,8 @@ namespace Datadog.Trace.Tests.Tagging
             deserializedSpan.Tags.Should().Contain(Tags.Propagated.DecisionMaker, SamplingMechanism.Default);
             deserializedSpan.Tags.Should().Contain(Tags.Propagated.TraceIdUpper, hexStringTraceId);
             deserializedSpan.Tags.Should().ContainKey(Tags.ProcessTags);
-            ExcludePayloadScopedTags(deserializedSpan.Tags).Should().HaveCount(customTagCount + 6);
+            deserializedSpan.Tags.Should().ContainKey(Tags.SdkOtlpExport);
+            deserializedSpan.Tags.Should().HaveCount(customTagCount + 7);
 
             deserializedSpan.Metrics.Should().Contain(Metrics.SamplingPriority, 1);
             deserializedSpan.Metrics.Should().Contain(Metrics.SamplingLimitDecision, 0.75);
@@ -398,7 +399,8 @@ namespace Datadog.Trace.Tests.Tagging
             deserializedSpan.Tags.Should().ContainKey(Tags.BaseService);
             deserializedSpan.Tags[Tags.BaseService].Should().Be(_tracer.DefaultServiceName);
             deserializedSpan.Tags.Should().ContainKey(Tags.ProcessTags);
-            ExcludePayloadScopedTags(deserializedSpan.Tags).Should().HaveCount(customTagCount + 7);
+            deserializedSpan.Tags.Should().ContainKey(Tags.SdkOtlpExport);
+            deserializedSpan.Tags.Should().HaveCount(customTagCount + 8);
 
             deserializedSpan.Metrics.Should().Contain(Metrics.SamplingLimitDecision, 0.75);
             deserializedSpan.Metrics.Should().Contain(Metrics.TopLevelSpan, 1);
@@ -439,7 +441,8 @@ namespace Datadog.Trace.Tests.Tagging
             deserializedSpan.Tags.Should().ContainKey(Tags.BaseService);
             deserializedSpan.Tags[Tags.BaseService].Should().Be(_tracer.DefaultServiceName);
             deserializedSpan.Tags.Should().ContainKey(Tags.ProcessTags);
-            ExcludePayloadScopedTags(deserializedSpan.Tags).Should().HaveCount(customTagCount + 6);
+            deserializedSpan.Tags.Should().ContainKey(Tags.SdkOtlpExport);
+            deserializedSpan.Tags.Should().HaveCount(customTagCount + 7);
 
             deserializedSpan.Metrics.Should().Contain(Metrics.SamplingLimitDecision, 0.75);
             deserializedSpan.Metrics.Should().HaveCount(customTagCount + 1);
@@ -509,13 +512,6 @@ namespace Datadog.Trace.Tests.Tagging
             var deserializedSpan = traceChunks.Single().Single();
             deserializedSpan.Tags.Should().Contain(Tags.Language, TracerConstants.Language);
         }
-
-        /// <summary>
-        /// Removes the tags that the serializer writes once per payload instead of once per span,
-        /// so that tag-count assertions only cover the tags that belong to the span itself.
-        /// </summary>
-        private static IEnumerable<KeyValuePair<string, string>> ExcludePayloadScopedTags(Dictionary<string, string> tags)
-            => tags.Where(tag => tag.Key != Tags.SdkOtlpExport);
 
         private static void SetupForSerializationTest(Span span, int customTagCount)
         {

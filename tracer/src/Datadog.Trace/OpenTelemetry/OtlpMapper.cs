@@ -311,9 +311,7 @@ internal static class OtlpMapper
             // as span attributes. Silently drop them.
             if (key == "telemetry.sdk.name"
                 || key == "telemetry.sdk.language"
-                || key == "telemetry.sdk.version"
-                || key == Tags.SdkOtlpExport
-                || key == Tags.SdkSemantics)
+                || key == "telemetry.sdk.version")
             {
                 return;
             }
