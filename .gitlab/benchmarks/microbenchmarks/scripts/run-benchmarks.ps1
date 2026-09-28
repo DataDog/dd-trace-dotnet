@@ -116,6 +116,14 @@ $env:DD_ENV = "CI"
 $env:DD_DOTNET_TRACER_HOME = $monitoringHome
 $env:DD_TRACER_HOME = $monitoringHome
 
+# BenchmarkDotNet generates a bootstrap project per (benchmark class x runtime) and rebuilds the whole
+# tracer closure for each one (~60 redundant full builds per pipeline). BenchmarkBootstrap.targets points
+# those projects at the binaries BuildBenchmarks already produced instead. It is injected through
+# CustomAfterMicrosoftCommonTargets because BenchmarkDotNet sets ImportDirectoryBuildTargets=false on the
+# projects it generates. Both variables are inherited by the dotnet build processes it spawns.
+$env:CustomAfterMicrosoftCommonTargets = "$tracerRoot\build\BenchmarkBootstrap.targets"
+$env:BdnPrebuiltBinRoot = "$env:CODE_SRC\artifacts\bin\$Project"
+
 # CI Visibility ships benchmark results to Datadog via the in-process tracer.
 # The ephemeral benchmarking VM does not run a Datadog Agent, so route directly
 # to intake via agentless mode. DD_API_KEY is forwarded from the GitLab job.

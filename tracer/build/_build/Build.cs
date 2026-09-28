@@ -641,6 +641,10 @@ partial class Build : NukeBuild
                         .SetProcessEnvironmentVariable("DD_ENV", "CI")
                         .SetProcessEnvironmentVariable("DD_DOTNET_TRACER_HOME", MonitoringHome)
                         .SetProcessEnvironmentVariable("DD_TRACER_HOME", MonitoringHome)
+                        // Stops BenchmarkDotNet rebuilding the whole tracer closure once per
+                        // (benchmark class x runtime). See tracer/build/BenchmarkBootstrap.targets.
+                        .SetProcessEnvironmentVariable("CustomAfterMicrosoftCommonTargets", TracerDirectory / "build" / "BenchmarkBootstrap.targets")
+                        .SetProcessEnvironmentVariable("BdnPrebuiltBinRoot", BuildArtifactsDirectory / "bin" / benchmarkProjectName)
                         .ConfigureDotNetRunSettings(configureDotNetRunSettings)
 
                         .When(!string.IsNullOrEmpty(NugetPackageDirectory), o => o.SetPackageDirectory(NugetPackageDirectory))
