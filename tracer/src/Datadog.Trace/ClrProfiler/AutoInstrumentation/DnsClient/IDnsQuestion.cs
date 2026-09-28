@@ -6,13 +6,14 @@
 #nullable enable
 
 using System.Collections.Generic;
+using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.DnsClient
 {
     /// <summary>
     /// Duck type for DnsClient.DnsQuestion
     /// </summary>
-    internal interface IDnsQuestion
+    internal interface IDnsQuestion : IDuckType
     {
         /// <summary>
         /// Gets the query name (a DnsClient.DnsString, read as a string via ToString()).
@@ -31,41 +32,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.DnsClient
     }
 
     /// <summary>
-    /// Duck type for DnsClient.NameServer
-    /// </summary>
-    internal interface INameServer
-    {
-        /// <summary>
-        /// Gets the name server address.
-        /// </summary>
-        string? Address { get; }
-
-        /// <summary>
-        /// Gets the name server port.
-        /// </summary>
-        int Port { get; }
-    }
-
-    /// <summary>
-    /// Duck type for DnsClient.DnsResponseHeader
-    /// </summary>
-    internal interface IDnsResponseHeader
-    {
-        /// <summary>
-        /// Gets the response code (a DnsClient.DnsHeaderResponseCode enum).
-        /// </summary>
-        object? ResponseCode { get; }
-    }
-
-    /// <summary>
     /// Duck type for DnsClient.IDnsQueryResponse
     /// </summary>
-    internal interface IDnsQueryResponse
+    internal interface IDnsQueryResponse : IDuckType
     {
         /// <summary>
         /// Gets the response header.
         /// </summary>
-        IDnsResponseHeader? Header { get; }
+        DnsResponseHeaderStruct? Header { get; }
 
         /// <summary>
         /// Gets the answer records.
@@ -75,6 +49,35 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.DnsClient
         /// <summary>
         /// Gets the name server that answered the query (a DnsClient.NameServer).
         /// </summary>
-        object? NameServer { get; }
+        NameServerStruct? NameServer { get; }
+    }
+
+    /// <summary>
+    /// Duck type for DnsClient.NameServer
+    /// </summary>
+    [DuckCopy]
+    internal struct NameServerStruct
+    {
+        /// <summary>
+        /// The name server address.
+        /// </summary>
+        public string? Address;
+
+        /// <summary>
+        /// The name server port.
+        /// </summary>
+        public int Port;
+    }
+
+    /// <summary>
+    /// Duck type for DnsClient.DnsResponseHeader
+    /// </summary>
+    [DuckCopy]
+    internal struct DnsResponseHeaderStruct
+    {
+        /// <summary>
+        /// The response code (a DnsClient.DnsHeaderResponseCode enum).
+        /// </summary>
+        public object? ResponseCode;
     }
 }

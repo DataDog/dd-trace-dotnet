@@ -25,7 +25,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.DnsClient
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DnsClientCommon));
 
-        public static Scope? CreateScope(Tracer tracer, object? question, object? servers)
+        public static Scope? CreateScope<TQuestion>(Tracer tracer, TQuestion question, IEnumerable? servers)
+            where TQuestion : IDnsQuestion
         {
             var perTraceSettings = tracer.CurrentTraceSettings;
             if (!perTraceSettings.Settings.IsIntegrationEnabled(IntegrationId))
@@ -46,21 +47,21 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.DnsClient
                 span.Type = SpanTypes.Dns;
 
                 string? questionName = null;
-                if (question is not null && question.TryDuckCast<IDnsQuestion>(out var dnsQuestion))
+                if (question.Instance is not null)
                 {
-                    questionName = dnsQuestion.QueryName?.ToString();
+                    questionName = question.QueryName?.ToString();
                     tags.QuestionName = questionName;
-                    tags.QuestionType = dnsQuestion.QuestionType?.ToString();
-                    tags.QuestionClass = dnsQuestion.QuestionClass?.ToString();
+                    tags.QuestionType = question.QuestionType?.ToString();
+                    tags.QuestionClass = question.QuestionClass?.ToString();
                 }
 
                 // Capture the target name server so we still have out.host on error paths
                 // (where no response is available to read the answering server from).
-                if (servers is IEnumerable serversEnumerable)
+                if (servers is not null)
                 {
-                    foreach (var server in serversEnumerable)
+                    foreach (var server in servers)
                     {
-                        if (server is not null && server.TryDuckCast<INameServer>(out var nameServer))
+                        if (server is not null && server.TryDuckCast<NameServerStruct>(out var nameServer))
                         {
                             tags.OutHost = nameServer.Address;
                             tags.DestinationPort = nameServer.Port.ToString(CultureInfo.InvariantCulture);
@@ -84,31 +85,27 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.DnsClient
             return scope;
         }
 
-        public static void PopulateResponseTags(Scope? scope, object? response)
+        public static void PopulateResponseTags<TResponse>(Scope? scope, TResponse response)
+            where TResponse : IDnsQueryResponse
         {
-            if (scope is null || response is null)
+            if (scope is null || response.Instance is null)
             {
                 return;
             }
 
             try
             {
-                if (!response.TryDuckCast<IDnsQueryResponse>(out var dnsResponse))
-                {
-                    return;
-                }
-
                 if (scope.Span.Tags is DnsClientTags tags)
                 {
-                    var responseCode = dnsResponse.Header?.ResponseCode;
+                    var responseCode = response.Header?.ResponseCode;
                     tags.ResponseCode = responseCode?.ToString();
 
-                    if (dnsResponse.Answers is not null)
+                    if (response.Answers is { } answers)
                     {
-                        tags.AnswerCount = dnsResponse.Answers.Count.ToString(CultureInfo.InvariantCulture);
+                        tags.AnswerCount = answers.Count.ToString(CultureInfo.InvariantCulture);
                     }
 
-                    if (dnsResponse.NameServer is not null && dnsResponse.NameServer.TryDuckCast<INameServer>(out var nameServer))
+                    if (response.NameServer is { } nameServer)
                     {
                         tags.OutHost = nameServer.Address;
                         tags.DestinationPort = nameServer.Port.ToString(CultureInfo.InvariantCulture);

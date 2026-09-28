@@ -6,6 +6,7 @@
 #nullable enable
 
 using System;
+using System.Collections;
 using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
@@ -29,13 +30,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.DnsClient
     [EditorBrowsable(EditorBrowsableState.Never)]
     public sealed class QueryInternalIntegration
     {
-        internal static CallTargetState OnMethodBegin<TTarget, TQuestion, TSettings, TServers>(TTarget instance, TQuestion question, TSettings settings, TServers servers)
+        internal static CallTargetState OnMethodBegin<TTarget, TQuestion, TSettings>(TTarget instance, TQuestion question, TSettings settings, IEnumerable? servers)
+            where TQuestion : IDnsQuestion
         {
             var scope = DnsClientCommon.CreateScope(Tracer.Instance, question, servers);
             return new CallTargetState(scope);
         }
 
         internal static CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception? exception, in CallTargetState state)
+            where TReturn : IDnsQueryResponse
         {
             if (exception is null)
             {
