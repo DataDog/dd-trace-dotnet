@@ -9,7 +9,8 @@
 #
 # Three experiments run in parallel:
 #   - trace-0: Benchmarks.Trace (9 benchmarks) on NUMA node 0, cores 0-17
-#   - trace-1: Benchmarks.Trace (11 benchmarks) on NUMA node 1, cores 0-21
+#   - trace-1: Benchmarks.Trace (11 benchmarks) on NUMA node 1, cores 0-3 and 8-23 (see the cpus
+#              comment on that experiment for why 4-7 are excluded)
 #   - otel:    OpenTelemetry benchmarks on NUMA node 0, cores 18-23
 #     - This experiment has two experiment steps that run sequentially (because we don't have enough CPUs): 
 #         - Step 1: InstrumentedApi (always);
@@ -171,24 +172,16 @@ experiments:
         repo: DataDog/dd-trace-dotnet
         baseline_branch: ""
 
-        # Node 1 cores 4-7 are excluded (0xFFFFFF minus bits 4-7 = 0xFFFF0F, so 20 of the 24 cores).
+        # Node 1 CPUs 4-7 are deliberately excluded: 0xFFFFFF (all 24 cores) minus bits 4-7.
         #
-        # csc.exe has crashed with STATUS_HEAP_CORRUPTION during the benchmark builds in four
-        # consecutive pipelines, always in items 2 and 3 of this batch and nowhere else. bp-runner
-        # assigns cores by position, and those two items get node 1 CPUs 4,5 and 6,7:
-        #     Assigned CPUs 4,5 in node 1 for the step trace-1-candidate-2
-        #     Assigned CPUs 6,7 in node 1 for the step trace-1-candidate-3
-        # Reordering the item list moved AspNetCore and CharSlice to positions 9 and 10 and the
-        # failures stayed at 2 and 3 (by then CIVisibility and Elasticsearch), so it is the position,
-        # not the benchmark. trace-0 hands out node 0 CPUs 4,5 and 6,7 to its own items 2 and 3 and has
-        # never failed, so it is specific to node 1.
+        # Builds pinned to those four CPUs crash csc.exe with STATUS_HEAP_CORRUPTION. It reproduced in
+        # four consecutive pipelines, on a fresh EC2 instance each time, always in whichever items
+        # bp-runner assigned CPUs 4,5 and 6,7 - reordering the item list moved the benchmarks but not
+        # the failures. Node 0 hands out its own CPUs 4-7 and has never failed, so it is specific to
+        # node 1. Excluding them fixed it. Needs investigation
         #
-        # Excluding those four cores separates the last remaining confound: position and core
-        # assignment have been perfectly correlated until now. If the failures disappear it is the
-        # cores; if they reappear at whatever now runs 3rd and 4th it is ordinal.
-        #
-        # Costs a second wave: 20 cores / 2 = 10 groups for 11 items, so the benchmark phase roughly
-        # doubles (~40 min rather than ~21). Still well inside the 2h job timeout.
+        # Costs a second wave: 20 cores / 2 = 10 groups for 11 items, so the benchmark phase takes
+        # roughly 40 min rather than 21. Well inside the 2h job timeout.
         cpus: "1,0xFFFF0F"
         parallelize:
           # 11 Benchmarks.Trace benchmarks on NUMA node 1 (10 x 2 CPUs, run in two waves)
