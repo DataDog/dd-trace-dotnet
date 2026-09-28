@@ -1,6 +1,8 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <RequiresDockerDependency>All</RequiresDockerDependency>
+    <ExtensionsVersions>3.1.15</ExtensionsVersions>
+    <ExtensionsVersions Condition="$([MSBuild]::IsTargetFrameworkCompatible($(TargetFramework), 'net11.0'))">11.0.0-rc.1.26425.128</ExtensionsVersions>
   </PropertyGroup>
 
   <ItemGroup>
@@ -10,15 +12,15 @@
     <PackageReference Include="MassTransit.Extensions.DependencyInjection" Version="7.0.0" />
     <PackageReference Include="MassTransit.Quartz" Version="7.0.0" />
     <PackageReference Include="MassTransit.RabbitMQ" Version="7.0.0" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="3.1.15" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="3.1.15" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.CommandLine" Version="3.1.15" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="3.1.15" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="3.1.15" />
-    <PackageReference Include="Microsoft.Extensions.Hosting" Version="3.1.15" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Configuration" Version="3.1.15" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="3.1.15" />
-    <PackageReference Include="Microsoft.Extensions.Options" Version="3.1.15" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="$(ExtensionsVersions)" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="$(ExtensionsVersions)" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.CommandLine" Version="$(ExtensionsVersions)" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="$(ExtensionsVersions)" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="$(ExtensionsVersions)" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="$(ExtensionsVersions)" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Configuration" Version="$(ExtensionsVersions)" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="$(ExtensionsVersions)" />
+    <PackageReference Include="Microsoft.Extensions.Options" Version="$(ExtensionsVersions)" />
   </ItemGroup>
 
 </Project>
