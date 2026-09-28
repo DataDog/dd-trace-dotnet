@@ -315,13 +315,13 @@ namespace Datadog.Trace.FeatureFlags
             InvokeConfigurationHandler(replay, "RegisterOnNewConfigEventHandler");
         }
 
-        internal Evaluation Evaluate(string flagKey, ValueType resultType, object? defaultValue, string targetingKey, IDictionary<string, object?>? attributes)
+        internal Evaluation Evaluate(string flagKey, ValueType resultType, object? defaultValue, string? targetingKey, IDictionary<string, object?>? attributes)
         {
             var evaluator = Volatile.Read(ref _evaluator);
             if (evaluator is null)
             {
                 Log.Debug("FeatureFlagsModule::Evaluate -> Evaluator is null (no config received)");
-                return new Evaluation(flagKey, null, EvaluationReason.Error, null, "PROVIDER_NOT_READY");
+                return new Evaluation(flagKey, defaultValue, EvaluationReason.Error, null, "PROVIDER_NOT_READY");
             }
 
             Log.Debug("FeatureFlagsModule::Evaluate -> Returning Evaluation");

@@ -1,0 +1,176 @@
+{
+  "resourceSpans": [
+    {
+      "resource": {
+        "attributes": [
+          {
+            "key": "service.name",
+            "value": {
+              "stringValue": "Samples.Owin.WebApi2"
+            }
+          },
+          {
+            "key": "service.version",
+            "value": {
+              "stringValue": "1.0.0"
+            }
+          },
+          {
+            "key": "deployment.environment.name",
+            "value": {
+              "stringValue": "integration_tests"
+            }
+          },
+          {
+            "key": "telemetry.sdk.name",
+            "value": {
+              "stringValue": "sdk-name"
+            }
+          },
+          {
+            "key": "telemetry.sdk.language",
+            "value": {
+              "stringValue": "dotnet"
+            }
+          },
+          {
+            "key": "telemetry.sdk.version",
+            "value": {
+              "stringValue": "sdk-version"
+            }
+          },
+          {
+            "key": "git.commit.sha",
+            "value": {
+              "stringValue": "normalized-git-commit-sha"
+            }
+          },
+          {
+            "key": "git.repository_url",
+            "value": {
+              "stringValue": "https://github.com/DataDog/dd-trace-dotnet"
+            }
+          },
+          {
+            "key": "runtime-id",
+            "value": {
+              "stringValue": "Guid_1"
+            }
+          }
+        ]
+      },
+      "scopeSpans": [
+        {
+          "spans": [
+            {
+              "traceId": "normalized-trace-id",
+              "spanId": "normalized-span-id",
+              "name": "GET /api2/delay/{value}",
+              "kind": 2,
+              "startTimeUnixNano": "0",
+              "endTimeUnixNano": "0",
+              "attributes": [
+                {
+                  "key": "aspnet.action",
+                  "value": {
+                    "stringValue": "delay"
+                  }
+                },
+                {
+                  "key": "aspnet.controller",
+                  "value": {
+                    "stringValue": "conventions"
+                  }
+                },
+                {
+                  "key": "aspnet.route",
+                  "value": {
+                    "stringValue": "api2/{action}/{value}"
+                  }
+                },
+                {
+                  "key": "component",
+                  "value": {
+                    "stringValue": "aspnet"
+                  }
+                },
+                {
+                  "key": "http.method",
+                  "value": {
+                    "stringValue": "GET"
+                  }
+                },
+                {
+                  "key": "http.request.headers.host",
+                  "value": {
+                    "stringValue": "localhost:00000"
+                  }
+                },
+                {
+                  "key": "http.route",
+                  "value": {
+                    "stringValue": "api2/{action}/{value}"
+                  }
+                },
+                {
+                  "key": "http.status_code",
+                  "value": {
+                    "intValue": "200"
+                  }
+                },
+                {
+                  "key": "http.url",
+                  "value": {
+                    "stringValue": "http://localhost:00000/api2/delay/0"
+                  }
+                },
+                {
+                  "key": "http.useragent",
+                  "value": {
+                    "stringValue": "testhelper"
+                  }
+                },
+                {
+                  "key": "operation.name",
+                  "value": {
+                    "stringValue": "aspnet_webapi.request"
+                  }
+                },
+                {
+                  "key": "resource.name",
+                  "value": {
+                    "stringValue": "GET /api2/delay/{value}"
+                  }
+                },
+                {
+                  "key": "runtime-id",
+                  "value": {
+                    "stringValue": "Guid_1"
+                  }
+                },
+                {
+                  "key": "service.name",
+                  "value": {
+                    "stringValue": "samples.owin.webapi2"
+                  }
+                },
+                {
+                  "key": "span.kind",
+                  "value": {
+                    "stringValue": "server"
+                  }
+                },
+                {
+                  "key": "span.type",
+                  "value": {
+                    "stringValue": "web"
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

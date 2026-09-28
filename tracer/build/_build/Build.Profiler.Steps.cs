@@ -20,7 +20,7 @@ using Logger = Serilog.Log;
 
 partial class Build
 {
-    const string ClangTidyChecks = "-clang-analyzer-osx*,-clang-analyzer-optin.osx*,-cppcoreguidelines-avoid-magic-numbers,-cppcoreguidelines-pro-type-vararg,-readability-braces-around-statements";
+    const string ClangTidyChecks = "clang-analyzer-*,-clang-analyzer-osx*,-clang-analyzer-optin.osx*,-cppcoreguidelines-avoid-magic-numbers,-cppcoreguidelines-pro-type-vararg,-readability-braces-around-statements";
 
     AbsolutePath ProfilerDeployDirectory => ProfilerOutputDirectory / "DDProf-Deploy";
 

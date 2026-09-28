@@ -29,6 +29,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Helpers
             ("scope_spans", "scopeSpans"),
             ("trace_id", "traceId"),
             ("span_id", "spanId"),
+            ("trace_state", "traceState"),
             ("parent_span_id", "parentSpanId"),
             ("start_time_unix_nano", "startTimeUnixNano"),
             ("end_time_unix_nano", "endTimeUnixNano"),
@@ -67,6 +68,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Helpers
         public string TraceId => Get("trace_id");
 
         public string SpanId => Get("span_id");
+
+        public string TraceState => Get("trace_state");
 
         public string ParentSpanId => Get("parent_span_id");
 

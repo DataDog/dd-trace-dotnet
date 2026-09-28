@@ -59,6 +59,7 @@
             {
               "traceId": "normalized-trace-id",
               "spanId": "normalized-span-id",
+              "traceState": "ot=rv:normalized-random-value;th:0",
               "parentSpanId": "normalized-parent-span-id",
               "name": "DeprecatedHttpStatusTagName",
               "kind": 1,
@@ -142,6 +143,7 @@
             {
               "traceId": "normalized-trace-id",
               "spanId": "normalized-span-id",
+              "traceState": "ot=rv:normalized-random-value;th:0",
               "parentSpanId": "normalized-parent-span-id",
               "name": "InnerSpanError",
               "kind": 1,
@@ -235,6 +237,7 @@
             {
               "traceId": "normalized-trace-id",
               "spanId": "normalized-span-id",
+              "traceState": "ot=rv:normalized-random-value;th:0",
               "parentSpanId": "normalized-parent-span-id",
               "name": "InnerSpanOk",
               "kind": 1,
@@ -315,6 +318,7 @@
             {
               "traceId": "normalized-trace-id",
               "spanId": "normalized-span-id",
+              "traceState": "ot=rv:normalized-random-value;th:0",
               "parentSpanId": "normalized-parent-span-id",
               "name": "InnerSpanUpdated",
               "kind": 1,
@@ -446,6 +450,7 @@
             {
               "traceId": "normalized-trace-id",
               "spanId": "normalized-span-id",
+              "traceState": "ot=rv:normalized-random-value;th:0",
               "name": "OperationNameRootSpan",
               "kind": 1,
               "startTimeUnixNano": "0",
@@ -528,6 +533,7 @@
             {
               "traceId": "normalized-trace-id",
               "spanId": "normalized-span-id",
+              "traceState": "ot=rv:normalized-random-value;th:0",
               "parentSpanId": "normalized-parent-span-id",
               "name": "ResourceName",
               "kind": 2,
@@ -611,6 +617,7 @@
             {
               "traceId": "normalized-trace-id",
               "spanId": "normalized-span-id",
+              "traceState": "ot=rv:normalized-random-value;th:0",
               "parentSpanId": "normalized-parent-span-id",
               "name": "ResourceName",
               "kind": 3,
@@ -694,6 +701,7 @@
             {
               "traceId": "normalized-trace-id",
               "spanId": "normalized-span-id",
+              "traceState": "ot=rv:normalized-random-value;th:0",
               "parentSpanId": "normalized-parent-span-id",
               "name": "ResourceName",
               "kind": 3,
@@ -777,6 +785,7 @@
             {
               "traceId": "normalized-trace-id",
               "spanId": "normalized-span-id",
+              "traceState": "ot=rv:normalized-random-value;th:0",
               "parentSpanId": "normalized-parent-span-id",
               "name": "ResourceName",
               "kind": 3,
@@ -866,6 +875,7 @@
             {
               "traceId": "normalized-trace-id",
               "spanId": "normalized-span-id",
+              "traceState": "ot=rv:normalized-random-value;th:0",
               "parentSpanId": "normalized-parent-span-id",
               "name": "ResourceName",
               "kind": 2,
@@ -955,6 +965,7 @@
             {
               "traceId": "normalized-trace-id",
               "spanId": "normalized-span-id",
+              "traceState": "ot=rv:normalized-random-value;th:0",
               "parentSpanId": "normalized-parent-span-id",
               "name": "ResourceName",
               "kind": 4,
@@ -1044,6 +1055,7 @@
             {
               "traceId": "normalized-trace-id",
               "spanId": "normalized-span-id",
+              "traceState": "ot=rv:normalized-random-value;th:0",
               "parentSpanId": "normalized-parent-span-id",
               "name": "ResourceName",
               "kind": 5,
@@ -1133,6 +1145,7 @@
             {
               "traceId": "normalized-trace-id",
               "spanId": "normalized-span-id",
+              "traceState": "ot=rv:normalized-random-value;th:0",
               "parentSpanId": "normalized-parent-span-id",
               "name": "ResourceName",
               "kind": 3,
@@ -1222,6 +1235,7 @@
             {
               "traceId": "normalized-trace-id",
               "spanId": "normalized-span-id",
+              "traceState": "ot=rv:normalized-random-value;th:0",
               "parentSpanId": "normalized-parent-span-id",
               "name": "ResourceName",
               "kind": 3,
@@ -1305,6 +1319,7 @@
             {
               "traceId": "normalized-trace-id",
               "spanId": "normalized-span-id",
+              "traceState": "ot=rv:normalized-random-value;th:0",
               "parentSpanId": "normalized-parent-span-id",
               "name": "ResourceName",
               "kind": 3,
@@ -1388,6 +1403,7 @@
             {
               "traceId": "normalized-trace-id",
               "spanId": "normalized-span-id",
+              "traceState": "ot=rv:normalized-random-value;th:0",
               "parentSpanId": "normalized-parent-span-id",
               "name": "ResourceName",
               "kind": 2,
@@ -1471,6 +1487,7 @@
             {
               "traceId": "normalized-trace-id",
               "spanId": "normalized-span-id",
+              "traceState": "ot=rv:normalized-random-value;th:0",
               "parentSpanId": "normalized-parent-span-id",
               "name": "ResourceName",
               "kind": 3,
@@ -1560,6 +1577,7 @@
             {
               "traceId": "normalized-trace-id",
               "spanId": "normalized-span-id",
+              "traceState": "ot=rv:normalized-random-value;th:0",
               "parentSpanId": "normalized-parent-span-id",
               "name": "ResourceName",
               "kind": 2,
@@ -1643,6 +1661,7 @@
             {
               "traceId": "normalized-trace-id",
               "spanId": "normalized-span-id",
+              "traceState": "ot=rv:normalized-random-value;th:0",
               "parentSpanId": "normalized-parent-span-id",
               "name": "ResourceName",
               "kind": 2,
@@ -1726,6 +1745,7 @@
             {
               "traceId": "normalized-trace-id",
               "spanId": "normalized-span-id",
+              "traceState": "ot=rv:normalized-random-value;th:0",
               "parentSpanId": "normalized-parent-span-id",
               "name": "ResourceName",
               "kind": 2,
@@ -1809,6 +1829,7 @@
             {
               "traceId": "normalized-trace-id",
               "spanId": "normalized-span-id",
+              "traceState": "ot=rv:normalized-random-value;th:0",
               "parentSpanId": "normalized-parent-span-id",
               "name": "ResourceName",
               "kind": 2,
@@ -1886,6 +1907,7 @@
             {
               "traceId": "normalized-trace-id",
               "spanId": "normalized-span-id",
+              "traceState": "ot=rv:normalized-random-value;th:0",
               "parentSpanId": "normalized-parent-span-id",
               "name": "ResourceName",
               "kind": 3,
@@ -1969,6 +1991,7 @@
             {
               "traceId": "normalized-trace-id",
               "spanId": "normalized-span-id",
+              "traceState": "ot=rv:normalized-random-value;th:0",
               "parentSpanId": "normalized-parent-span-id",
               "name": "ResourceName",
               "kind": 3,
@@ -2046,6 +2069,7 @@
             {
               "traceId": "normalized-trace-id",
               "spanId": "normalized-span-id",
+              "traceState": "ot=rv:normalized-random-value;th:0",
               "parentSpanId": "normalized-parent-span-id",
               "name": "ResourceName",
               "kind": 1,
@@ -2123,6 +2147,7 @@
             {
               "traceId": "normalized-trace-id",
               "spanId": "normalized-span-id",
+              "traceState": "ot=rv:normalized-random-value;th:0",
               "parentSpanId": "normalized-parent-span-id",
               "name": "ResourceName",
               "kind": 5,
@@ -2200,6 +2225,7 @@
             {
               "traceId": "normalized-trace-id",
               "spanId": "normalized-span-id",
+              "traceState": "ot=rv:normalized-random-value;th:0",
               "parentSpanId": "normalized-parent-span-id",
               "name": "ResourceName",
               "kind": 4,
@@ -2277,6 +2303,7 @@
             {
               "traceId": "normalized-trace-id",
               "spanId": "normalized-span-id",
+              "traceState": "ot=rv:normalized-random-value;th:0",
               "parentSpanId": "normalized-parent-span-id",
               "name": "ResourceNameOverride",
               "kind": 2,
@@ -2372,6 +2399,7 @@
             {
               "traceId": "normalized-trace-id",
               "spanId": "normalized-span-id",
+              "traceState": "ot=rv:normalized-random-value;th:0",
               "parentSpanId": "normalized-parent-span-id",
               "name": "Response",
               "kind": 1,
@@ -2455,6 +2483,7 @@
             {
               "traceId": "normalized-trace-id",
               "spanId": "normalized-span-id",
+              "traceState": "ot=rv:normalized-random-value;th:0",
               "name": "SayHello",
               "kind": 1,
               "startTimeUnixNano": "0",
@@ -2841,6 +2870,7 @@
             {
               "traceId": "normalized-trace-id",
               "spanId": "normalized-span-id",
+              "traceState": "ot=rv:normalized-random-value;th:0",
               "name": "SayHello2",
               "kind": 1,
               "startTimeUnixNano": "0",
@@ -2930,6 +2960,7 @@
             {
               "traceId": "normalized-trace-id",
               "spanId": "normalized-span-id",
+              "traceState": "ot=rv:normalized-random-value;th:0",
               "name": "SayHello3",
               "kind": 1,
               "startTimeUnixNano": "0",
@@ -3024,6 +3055,7 @@
             {
               "traceId": "normalized-trace-id",
               "spanId": "normalized-span-id",
+              "traceState": "ot=rv:normalized-random-value;th:0",
               "name": "service.name should be the DefaultServiceName value",
               "kind": 1,
               "startTimeUnixNano": "0",
@@ -3094,6 +3126,7 @@
             {
               "traceId": "normalized-trace-id",
               "spanId": "normalized-span-id",
+              "traceState": "ot=rv:normalized-random-value;th:0",
               "parentSpanId": "normalized-parent-span-id",
               "name": "SomeHttpSpan",
               "kind": 1,
@@ -3177,6 +3210,7 @@
             {
               "traceId": "normalized-trace-id",
               "spanId": "normalized-span-id",
+              "traceState": "ot=rv:normalized-random-value;th:0",
               "parentSpanId": "normalized-parent-span-id",
               "name": "StartActiveSpan.Child",
               "kind": 1,
@@ -3254,6 +3288,7 @@
             {
               "traceId": "normalized-trace-id",
               "spanId": "normalized-span-id",
+              "traceState": "ot=rv:normalized-random-value;th:0",
               "parentSpanId": "normalized-parent-span-id",
               "name": "StartRootSpan",
               "kind": 1,
@@ -3331,6 +3366,7 @@
             {
               "traceId": "normalized-trace-id",
               "spanId": "normalized-span-id",
+              "traceState": "ot=rv:normalized-random-value;th:0",
               "parentSpanId": "normalized-parent-span-id",
               "name": "StartSpan",
               "kind": 1,
@@ -3408,6 +3444,7 @@
             {
               "traceId": "normalized-trace-id",
               "spanId": "normalized-span-id",
+              "traceState": "ot=rv:normalized-random-value;th:0",
               "parentSpanId": "normalized-parent-span-id",
               "name": "StartSpan2",
               "kind": 1,
@@ -3485,6 +3522,7 @@
             {
               "traceId": "normalized-trace-id",
               "spanId": "normalized-span-id",
+              "traceState": "ot=rv:normalized-random-value;th:0",
               "name": "Transform",
               "kind": 1,
               "startTimeUnixNano": "0",

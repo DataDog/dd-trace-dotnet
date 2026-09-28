@@ -113,7 +113,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             var versionSuffix = GetSuffix(packageVersion);
 
             await VerifyHelper.VerifySpans(spans, settings)
-                              .UseFileName($"{_testName}{(usingWebsockets ? "Websockets" : string.Empty)}.SubmitsTraces.Schema{_metadataSchemaVersion.ToUpper()}{versionSuffix}")
+                              .UseFileName($"{_testName}{(usingWebsockets ? "Websockets" : string.Empty)}.SubmitsTraces.Schema{_metadataSchemaVersion.ToUpper()}{versionSuffix}{VerifyHelper.Net11SnapshotSuffix}")
                               .DisableRequireUniquePrefix(); // all package versions should be the same
 
             VerifyInstrumentation(fixture.Process);

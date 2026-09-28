@@ -234,6 +234,7 @@ public class IastInstrumentationUnitTests : TestHelper
             "void Encrypt(System.String)",
             "void Decrypt(System.String)",
             "System.IO.FileSystemInfo CreateSymbolicLink(System.String, System.String)",
+            "System.IO.FileSystemInfo CreateHardLink(System.String, System.String)",
             "System.IO.FileSystemInfo ResolveLinkTarget(System.String, Boolean)",
             "System.IO.UnixFileMode GetUnixFileMode(System.String)",
             "void SetUnixFileMode(System.String, System.IO.UnixFileMode)",
@@ -347,6 +348,7 @@ public class IastInstrumentationUnitTests : TestHelper
         var overloadsToExclude = new List<string>()
         {
             "void CreateAsSymbolicLink(System.String)",
+            "void CreateAsHardLink(System.String)",
 #if NETCOREAPP3_0
             // special case
             "void MoveTo(System.String, Boolean)"

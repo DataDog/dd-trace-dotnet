@@ -68,14 +68,17 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
 
         protected string GetTestName(string testName)
         {
+            var flagsSuffix = _flags switch
+            {
+                AspNetCoreFeatureFlags.RouteTemplateResourceNames => ".WithFF",
+                AspNetCoreFeatureFlags.SingleSpan => ".Single",
+                _ => ".NoFF",
+            };
+
             return testName
                  + (InProcess ? ".InProcess" : ".OutOfProcess")
-                 + _flags switch
-                   {
-                       AspNetCoreFeatureFlags.RouteTemplateResourceNames => ".WithFF",
-                       AspNetCoreFeatureFlags.SingleSpan => ".Single",
-                       _ => ".NoFF",
-                   };
+                 + flagsSuffix
+                 + VerifyHelper.Net11SnapshotSuffix;
         }
     }
 }

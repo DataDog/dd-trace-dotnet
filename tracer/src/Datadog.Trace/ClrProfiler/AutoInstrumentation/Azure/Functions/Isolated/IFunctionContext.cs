@@ -20,6 +20,8 @@ internal interface IFunctionContext
     IEnumerable<KeyValuePair<Type, object?>>? Features { get; }
 
     IDictionary<object, object?>? Items { get; }
+
+    IWorkerTraceContext? TraceContext { get; }
 }
 
 #endif

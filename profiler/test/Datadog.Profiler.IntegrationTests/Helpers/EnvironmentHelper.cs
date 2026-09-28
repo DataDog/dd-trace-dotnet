@@ -112,6 +112,28 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
             DisableDefaultProfilers(runner.EnvironmentHelper);
         }
 
+        /// <summary>
+        /// Must be called by any test that enables single step instrumentation (<see cref="EnvironmentVariables.SsiDeployed"/>).
+        /// The single step guard rails abort instrumentation on preview runtimes, so we have to force injection there,
+        /// otherwise the profiler is never loaded and nothing is exported.
+        /// </summary>
+        internal static void ForceInjectionIfRequired(TestApplicationRunner runner, string framework)
+        {
+            // For preview and old runtimes we have to force injection
+            // after .NET 11 preview, can remove this
+            if (framework == "net11.0")
+            {
+                runner.Environment.SetVariable(EnvironmentVariables.SsiInjectionForced, "1");
+            }
+
+            if (IsRunningOnWindows())
+            {
+                // in SSI on Windows log buffering is enabled, which means we don't write
+                // any logs unless we inject, which makes debugging issues harder
+                runner.Environment.SetVariable(EnvironmentVariables.SsiLogBufferingEnabled, "0");
+            }
+        }
+
         internal void EnableTracer()
         {
             AddTracerEnvironmentVariables();

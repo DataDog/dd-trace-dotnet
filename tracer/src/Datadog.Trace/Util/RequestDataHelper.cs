@@ -150,6 +150,36 @@ internal static class RequestDataHelper
 #endif
 
 #if NETFRAMEWORK
+    // Get the protocol from a HttpRequest, e.g. "HTTP/1.1".
+    internal static string? GetServerProtocol(HttpRequest request)
+    {
+        try
+        {
+            return request.ServerVariables["SERVER_PROTOCOL"];
+        }
+        catch (Exception ex) when (ex is HttpRequestValidationException or PlatformNotSupportedException)
+        {
+            Log.Debug("Error reading SERVER_PROTOCOL from the request.");
+            return null;
+        }
+    }
+
+    // Get the protocol from a HttpRequestBase, e.g. "HTTP/1.1", for the abstraction ASP.NET MVC hands its filters.
+    internal static string? GetServerProtocol(HttpRequestBase request)
+    {
+        try
+        {
+            return request.ServerVariables["SERVER_PROTOCOL"];
+        }
+        catch (Exception ex) when (ex is HttpRequestValidationException or PlatformNotSupportedException or NotImplementedException)
+        {
+            Log.Debug("Error reading SERVER_PROTOCOL from the request.");
+            return null;
+        }
+    }
+#endif
+
+#if NETFRAMEWORK
     /// <summary>
     /// Gets the Uri from the <paramref name="request"/>.
     /// <para>

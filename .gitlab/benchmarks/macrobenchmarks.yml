@@ -120,7 +120,6 @@ build-dd-trace-dotnet-macrobenchmarks-ami:
       - runner_system_failure
       - scheduler_failure
       - api_failure
-      - script_failure
   rules:
     - if: $CI_COMMIT_REF_NAME == "master"
       interruptible: false
@@ -329,7 +328,6 @@ profiler_cpu_timer_create-x86:
       - runner_system_failure
       - scheduler_failure
       - api_failure
-      - script_failure
   rules:
     - if: $CI_COMMIT_REF_NAME == "master"
       interruptible: false
@@ -554,7 +552,6 @@ profiler_cpu_timer_create-arm64:
       - runner_system_failure
       - scheduler_failure
       - api_failure
-      - script_failure
   rules:
     - if: $CI_COMMIT_REF_NAME == "master"
       interruptible: false

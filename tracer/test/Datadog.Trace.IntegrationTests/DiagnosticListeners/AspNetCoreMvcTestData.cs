@@ -42,7 +42,7 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
             { $"{ExceptionPagePrefix}/throws", 500, true, $"GET {ExceptionPagePrefix}/throws", EmptyTags() },
             // The below is the ideal behaviour, but we can't achieve that currently
             // { $"{ReExecuteHandlerPrefix}/Home/Error", 500, true, "GET Home/Error", EmptyTags() },
-            // { $"{ReExecuteHandlerPrefix}/Home/BadHttpRequest", 500, true, "GET Home/BadHttpRequest", EmptyTags() },
+            // { $"{ReExecuteHandlerPrefix}/Home/BadHttpRequest", ReExecuteBadRequestStatusCode, ReExecuteBadRequestIsError, "GET Home/BadHttpRequest", EmptyTags() },
             // { $"{ReExecuteHandlerPrefix}/throws", 500, true, $"GET {ReExecuteHandlerPrefix}/throws", EmptyTags() },
         };
 
@@ -77,7 +77,7 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
             { $"{ExceptionPagePrefix}/Home/BadHttpRequest", 400, true, $"GET {ExceptionPagePrefix}/home/badhttprequest", ConventionalParentTags(), 2, null, ConventionalChildTags(action: "badhttprequest"), null, null },
             { $"{ExceptionPagePrefix}/throws", 500, true, $"GET {ExceptionPagePrefix}/throws", EmptyTags(), 1, null, null, null, null },
             { $"{ReExecuteHandlerPrefix}/Home/Error", 500, true, $"GET {ReExecuteHandlerPrefix}/home/error", ConventionalParentTags(), 3, null, ConventionalChildTags(action: "error"), $"GET {ReExecuteHandlerPrefix}/home/index", ConventionalChildTags() },
-            { $"{ReExecuteHandlerPrefix}/Home/BadHttpRequest", 500, true, $"GET {ReExecuteHandlerPrefix}/home/badhttprequest", ConventionalParentTags(), 3, null, ConventionalChildTags(action: "badhttprequest"), $"GET {ReExecuteHandlerPrefix}/home/index", ConventionalChildTags() },
+            { $"{ReExecuteHandlerPrefix}/Home/BadHttpRequest", ReExecuteBadRequestStatusCode, ReExecuteBadRequestIsError, $"GET {ReExecuteHandlerPrefix}/home/badhttprequest", ConventionalParentTags(), 3, null, ConventionalChildTags(action: "badhttprequest"), $"GET {ReExecuteHandlerPrefix}/home/index", ConventionalChildTags() },
             { $"{ReExecuteHandlerPrefix}/throws", 500, true, $"GET {ReExecuteHandlerPrefix}/throws", EmptyTags(), 2, $"GET {ReExecuteHandlerPrefix}/home/index", ConventionalChildTags(), null, null },
             { $"{StatusCodeReExecutePrefix}/I/dont/123/exist/", 404, false, $"GET {StatusCodeReExecutePrefix}/i/dont/?/exist/", EmptyTags(), 2, $"GET {StatusCodeReExecutePrefix}/home/index", ConventionalChildTags(), null, null },
         };
@@ -122,7 +122,7 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
             { $"{ExceptionPagePrefix}/Home/BadHttpRequest", 400, true, $"GET {ExceptionPagePrefix}/home/badhttprequest", ConventionalParentTags(), 2, null, ConventionalChildTags(action: "badhttprequest"), null, null },
             { $"{ExceptionPagePrefix}/throws", 500, true, $"GET {ExceptionPagePrefix}/throws", EmptyTags(), 1, null, null, null, null },
             { $"{ReExecuteHandlerPrefix}/Home/Error", 500, true, $"GET {ReExecuteHandlerPrefix}/home/error", ConventionalParentTags(), 3, null, ConventionalChildTags(action: "error"), $"GET {ReExecuteHandlerPrefix}/home/index", ConventionalChildTags() },
-            { $"{ReExecuteHandlerPrefix}/Home/BadHttpRequest", 500, true, $"GET {ReExecuteHandlerPrefix}/home/badhttprequest", ConventionalParentTags(), 3, null, ConventionalChildTags(action: "badhttprequest"), $"GET {ReExecuteHandlerPrefix}/home/index", ConventionalChildTags() },
+            { $"{ReExecuteHandlerPrefix}/Home/BadHttpRequest", ReExecuteBadRequestStatusCode, ReExecuteBadRequestIsError, $"GET {ReExecuteHandlerPrefix}/home/badhttprequest", ConventionalParentTags(), 3, null, ConventionalChildTags(action: "badhttprequest"), $"GET {ReExecuteHandlerPrefix}/home/index", ConventionalChildTags() },
             { $"{ReExecuteHandlerPrefix}/throws", 500, true, $"GET {ReExecuteHandlerPrefix}/throws", EmptyTags(), 2, $"GET {ReExecuteHandlerPrefix}/home/index", ConventionalChildTags(), null, null },
             { $"{StatusCodeReExecutePrefix}/I/dont/123/exist/", 404, false, $"GET {StatusCodeReExecutePrefix}/i/dont/?/exist/", EmptyTags(), 2, $"GET {StatusCodeReExecutePrefix}/home/index", ConventionalChildTags(), null, null },
         };

@@ -200,6 +200,8 @@ namespace Datadog.Trace.Debugger.Snapshots
                 {
                     DebuggerGuardrailMetrics.MarkCaptureIncomplete(ref incompleteReasons, MetricTags.DebuggerCaptureIncompleteReason.StringLength);
                     jsonWriter.WriteValue(stringValue.Substring(0, limitInfo.MaxLength));
+                    jsonWriter.WritePropertyName("truncated");
+                    jsonWriter.WriteValue(true);
                 }
                 else
                 {

@@ -1,0 +1,265 @@
+﻿[
+  {
+    TraceId: Id_1,
+    SpanId: Id_2,
+    Name: azure_functions.invoke,
+    Resource: DurableActivity DurableActivity,
+    Service: AzureFunctionsDurableTriggerTests,
+    Type: serverless,
+    ParentId: Id_3,
+    Tags: {
+      aas.environment.extension_version: unknown,
+      aas.environment.instance_id: unknown,
+      aas.environment.instance_name: IntegrationTestHost,
+      aas.environment.os: unknown,
+      aas.environment.runtime: .NET,
+      aas.function.method: Samples.AzureFunctions.Durable.DurableFunctions.DurableActivity,
+      aas.function.name: DurableActivity,
+      aas.function.trigger: DurableActivity,
+      aas.site.kind: functionapp,
+      aas.site.name: AzureFunctionsDurableTriggerTests,
+      aas.site.type: function,
+      component: AzureFunctions,
+      env: integration_tests,
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: server
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_4,
+    Name: Manual inside DurableActivity,
+    Resource: Manual inside DurableActivity,
+    Service: AzureFunctionsDurableTriggerTests,
+    ParentId: Id_2,
+    Tags: {
+      aas.site.name: AzureFunctionsDurableTriggerTests,
+      aas.site.type: function,
+      env: integration_tests,
+      language: dotnet
+    }
+  },
+  {
+    TraceId: Id_5,
+    SpanId: Id_6,
+    Name: azure_functions.invoke,
+    Resource: DurableActivity FailingDurableActivity,
+    Service: AzureFunctionsDurableTriggerTests,
+    Type: serverless,
+    ParentId: Id_7,
+    Error: 1,
+    Tags: {
+      aas.environment.extension_version: unknown,
+      aas.environment.instance_id: unknown,
+      aas.environment.instance_name: IntegrationTestHost,
+      aas.environment.os: unknown,
+      aas.environment.runtime: .NET,
+      aas.function.method: Samples.AzureFunctions.Durable.DurableFunctions.FailingDurableActivity,
+      aas.function.name: FailingDurableActivity,
+      aas.function.trigger: DurableActivity,
+      aas.site.kind: functionapp,
+      aas.site.name: AzureFunctionsDurableTriggerTests,
+      aas.site.type: function,
+      component: AzureFunctions,
+      env: integration_tests,
+      error.msg: Unable to greet World.,
+      error.stack:
+System.InvalidOperationException: Unable to greet World.
+at Samples.AzureFunctions.Durable.DurableFunctions.FailingDurableActivity(String name),
+      error.type: System.InvalidOperationException,
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: server
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_8,
+    SpanId: Id_9,
+    Name: azure_functions.invoke,
+    Resource: DurableEntity DurableCounter,
+    Service: AzureFunctionsDurableTriggerTests,
+    Type: serverless,
+    Tags: {
+      aas.environment.extension_version: unknown,
+      aas.environment.instance_id: unknown,
+      aas.environment.instance_name: IntegrationTestHost,
+      aas.environment.os: unknown,
+      aas.environment.runtime: .NET,
+      aas.function.method: Samples.AzureFunctions.Durable.DurableCounter.Run,
+      aas.function.name: DurableCounter,
+      aas.function.trigger: DurableEntity,
+      aas.site.kind: functionapp,
+      aas.site.name: AzureFunctionsDurableTriggerTests,
+      aas.site.type: function,
+      component: AzureFunctions,
+      env: integration_tests,
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: server
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_10,
+    Name: azure_functions.invoke,
+    Resource: DurableOrchestration DurableWorkflow,
+    Service: AzureFunctionsDurableTriggerTests,
+    Type: serverless,
+    ParentId: Id_11,
+    Tags: {
+      aas.environment.extension_version: unknown,
+      aas.environment.instance_id: unknown,
+      aas.environment.instance_name: IntegrationTestHost,
+      aas.environment.os: unknown,
+      aas.environment.runtime: .NET,
+      aas.function.method: Samples.AzureFunctions.Durable.DurableFunctions.DurableWorkflow,
+      aas.function.name: DurableWorkflow,
+      aas.function.trigger: DurableOrchestration,
+      aas.site.kind: functionapp,
+      aas.site.name: AzureFunctionsDurableTriggerTests,
+      aas.site.type: function,
+      component: AzureFunctions,
+      env: integration_tests,
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: server
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_5,
+    SpanId: Id_12,
+    Name: azure_functions.invoke,
+    Resource: DurableOrchestration FailingDurableWorkflow,
+    Service: AzureFunctionsDurableTriggerTests,
+    Type: serverless,
+    ParentId: Id_13,
+    Tags: {
+      aas.environment.extension_version: unknown,
+      aas.environment.instance_id: unknown,
+      aas.environment.instance_name: IntegrationTestHost,
+      aas.environment.os: unknown,
+      aas.environment.runtime: .NET,
+      aas.function.method: Samples.AzureFunctions.Durable.DurableFunctions.FailingDurableWorkflow,
+      aas.function.name: FailingDurableWorkflow,
+      aas.function.trigger: DurableOrchestration,
+      aas.site.kind: functionapp,
+      aas.site.name: AzureFunctionsDurableTriggerTests,
+      aas.site.type: function,
+      component: AzureFunctions,
+      env: integration_tests,
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: server
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_5,
+    SpanId: Id_14,
+    Name: azure_functions.invoke,
+    Resource: DurableOrchestration FailingDurableWorkflow,
+    Service: AzureFunctionsDurableTriggerTests,
+    Type: serverless,
+    ParentId: Id_13,
+    Error: 1,
+    Tags: {
+      aas.environment.extension_version: unknown,
+      aas.environment.instance_id: unknown,
+      aas.environment.instance_name: IntegrationTestHost,
+      aas.environment.os: unknown,
+      aas.environment.runtime: .NET,
+      aas.function.method: Samples.AzureFunctions.Durable.DurableFunctions.FailingDurableWorkflow,
+      aas.function.name: FailingDurableWorkflow,
+      aas.function.trigger: DurableOrchestration,
+      aas.site.kind: functionapp,
+      aas.site.name: AzureFunctionsDurableTriggerTests,
+      aas.site.type: function,
+      component: AzureFunctions,
+      env: integration_tests,
+      error.msg: Task 'FailingDurableActivity' (#0) failed with an unhandled exception: Unable to greet World.,
+      error.stack:
+Microsoft.DurableTask.TaskFailedException: Task 'FailingDurableActivity' (#0) failed with an unhandled exception: Unable to greet World.
+---> DurableTask.Core.Exceptions.TaskFailedException: Exception of type 'DurableTask.Core.Exceptions.TaskFailedException' was thrown.
+at DurableTask.Core.TaskOrchestrationContext.ScheduleTaskInternal(String name, String version, String taskList, Type resultType, Object[] parameters),
+      error.type: Microsoft.DurableTask.TaskFailedException,
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: server
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_15,
+    SpanId: Id_16,
+    Name: azure_functions.invoke,
+    Resource: DurableOrchestration ImmediatelyFailingDurableWorkflow,
+    Service: AzureFunctionsDurableTriggerTests,
+    Type: serverless,
+    ParentId: Id_17,
+    Error: 1,
+    Tags: {
+      aas.environment.extension_version: unknown,
+      aas.environment.instance_id: unknown,
+      aas.environment.instance_name: IntegrationTestHost,
+      aas.environment.os: unknown,
+      aas.environment.runtime: .NET,
+      aas.function.method: Samples.AzureFunctions.Durable.DurableFunctions.ImmediatelyFailingDurableWorkflow,
+      aas.function.name: ImmediatelyFailingDurableWorkflow,
+      aas.function.trigger: DurableOrchestration,
+      aas.site.kind: functionapp,
+      aas.site.name: AzureFunctionsDurableTriggerTests,
+      aas.site.type: function,
+      component: AzureFunctions,
+      env: integration_tests,
+      error.msg: Unable to start orchestration.,
+      error.stack:
+System.InvalidOperationException: Unable to start orchestration.
+at Samples.AzureFunctions.V4Isolated.Durable.DirectFunctionExecutor.ExecuteAsync(FunctionContext context),
+      error.type: System.InvalidOperationException,
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: server
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  }
+]

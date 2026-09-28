@@ -494,13 +494,16 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 var formattedJson = new JArray(collapsed).ToString(Formatting.Indented);
                 var settings = VerifyHelper.GetSpanVerifierSettings();
-                // Single snapshot for all TFMs: the OTel SDK sample transitively references
+                // One snapshot covers .NET 6-10: the OTel SDK sample transitively references
                 // System.Diagnostics.DiagnosticSource 9.0+, which gets loaded into the host process
                 // even on .NET 6. Reflection in MeterObservableUpDownCounterReflection then resolves
                 // CreateObservableUpDownCounter on every TFM, so the polyfill produces identical wire
-                // output across .NET 6/7/8/9/10+.
+                // output across .NET 6/7/8/9/10.
+                // .NET 11 changed dotnet.thread_pool.thread.count and dotnet.thread_pool.queue.length
+                // in the runtime's own System.Runtime meter from ObservableCounter to
+                // ObservableUpDownCounter, so net11 needs its own snapshot.
                 await Verifier.Verify(formattedJson, settings)
-                              .UseFileName($"{nameof(OpenTelemetrySdkTests)}.{nameof(SubmitsOtlpRuntimeMetrics)}")
+                              .UseFileName($"{nameof(OpenTelemetrySdkTests)}.{nameof(SubmitsOtlpRuntimeMetrics)}{VerifyHelper.Net11SnapshotSuffix}")
                               .DisableRequireUniquePrefix();
 
                 agent.StatsdRequests.Should().BeEmpty(

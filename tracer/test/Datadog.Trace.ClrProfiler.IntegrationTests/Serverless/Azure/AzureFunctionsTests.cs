@@ -68,10 +68,10 @@ public abstract class AzureFunctionsTests : TestHelper
         return filteredSpans;
     }
 
-    protected async Task<ProcessResult> RunAzureFunctionAndWaitForExit(MockTracerAgent agent, Func<Task> seedAsync = null, string framework = null, int expectedExitCode = 0)
+    protected async Task<ProcessResult> RunAzureFunctionAndWaitForExit(MockTracerAgent agent, Func<Task> seedAsync = null, string framework = null, int expectedExitCode = 0, string packageVersion = "")
     {
         // run the azure function
-        var binFolder = EnvironmentHelper.GetSampleApplicationOutputDirectory(packageVersion: string.Empty, framework);
+        var binFolder = EnvironmentHelper.GetSampleApplicationOutputDirectory(packageVersion, framework);
         Output.WriteLine("Using binFolder: " + binFolder);
         var process = await ProfilerHelper.StartProcessWithProfiler(
             executable: "func",

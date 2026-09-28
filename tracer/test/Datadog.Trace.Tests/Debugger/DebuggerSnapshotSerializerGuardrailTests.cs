@@ -42,7 +42,18 @@ public class DebuggerSnapshotSerializerGuardrailTests
         var (snapshot, incompleteReasons) = Capture(new string('f', 50), maxLength: 4);
 
         Assert.Contains("\"value\":\"ffff\"", snapshot);
+        Assert.Contains("\"truncated\":true", snapshot);
         Assert.True(HasReason(incompleteReasons, MetricTags.DebuggerCaptureIncompleteReason.StringLength));
+    }
+
+    [Fact]
+    public void Capture_WhenStringFitsMaxLength_DoesNotMarkTruncated()
+    {
+        var (snapshot, incompleteReasons) = Capture("abcd", maxLength: 4);
+
+        Assert.Contains("\"value\":\"abcd\"", snapshot);
+        Assert.DoesNotContain("\"truncated\"", snapshot);
+        Assert.False(HasReason(incompleteReasons, MetricTags.DebuggerCaptureIncompleteReason.StringLength));
     }
 
     [Fact]

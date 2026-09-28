@@ -56,7 +56,7 @@ public partial class FeatureFlagsEvaluatorTests
         Assert.NotNull(testCase.Result);
 
         var evaluator = new FeatureFlagsEvaluator(null, _config);
-        var ctx = new EvaluationContext(testCase.TargetingKey ?? string.Empty, testCase.Attributes);
+        var ctx = new EvaluationContext(testCase.TargetingKey, testCase.Attributes);
 
         var type = GetVariationType(testCase.VariationType);
 
