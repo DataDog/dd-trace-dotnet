@@ -116,26 +116,6 @@ $env:DD_ENV = "CI"
 $env:DD_DOTNET_TRACER_HOME = $monitoringHome
 $env:DD_TRACER_HOME = $monitoringHome
 
-# BenchmarkDotNet generates a bootstrap project per (benchmark class x runtime) and rebuilds the whole
-# tracer closure for each one (~60 redundant full builds per pipeline). BenchmarkBootstrap.targets points
-# those projects at the binaries BuildBenchmarks already produced instead. It is injected through
-# CustomAfterMicrosoftCommonTargets because BenchmarkDotNet sets ImportDirectoryBuildTargets=false on the
-# projects it generates. Both variables are inherited by the dotnet build processes it spawns.
-$env:CustomAfterMicrosoftCommonTargets = "$tracerRoot\build\BenchmarkBootstrap.targets"
-$env:BdnPrebuiltBinRoot = "$env:CODE_SRC\artifacts\bin\$Project"
-
-# MSBuild imports CustomAfterMicrosoftCommonTargets only if the file Exists(), so a wrong path is
-# skipped silently and the run looks exactly like one without the change. Fail here instead.
-if (-not (Test-Path $env:CustomAfterMicrosoftCommonTargets)) {
-    Write-Error "BenchmarkBootstrap.targets not found at: $env:CustomAfterMicrosoftCommonTargets"
-    exit 1
-}
-
-if (-not (Test-Path $env:BdnPrebuiltBinRoot)) {
-    Write-Error "Prebuilt benchmark binaries not found at: $env:BdnPrebuiltBinRoot. Was BuildBenchmarks run?"
-    exit 1
-}
-
 # CI Visibility ships benchmark results to Datadog via the in-process tracer.
 # The ephemeral benchmarking VM does not run a Datadog Agent, so route directly
 # to intake via agentless mode. DD_API_KEY is forwarded from the GitLab job.
@@ -173,8 +153,6 @@ Write-Output "Runtimes: $($runtimes -join ' ')"
 Write-Output "Executable: $benchmarkExe"
 Write-Output "Artifacts: $localArtifactsDir"
 Write-Output "Arguments: $($arguments -join ' ')"
-Write-Output "CustomAfterMicrosoftCommonTargets: $env:CustomAfterMicrosoftCommonTargets"
-Write-Output "BdnPrebuiltBinRoot: $env:BdnPrebuiltBinRoot"
 Write-Output ""
 
 # Run the benchmark, retrying if BenchmarkDotNet failed to build.
@@ -208,19 +186,31 @@ while ($true) {
 
     $buildFailed = [bool](Select-String -Path $runLog -SimpleMatch "failed to build the auto-generated boilerplate code" -Quiet)
 
+    # Count benchmarks that actually produced measurements, and report files that produced none.
+    # BenchmarkDotNet writes an entry into Benchmarks[] for every case it attempted, including ones
+    # that threw in setup, so the entry count says nothing about whether there is any data. The
+    # downstream converter fails with "Failed to collect even one benchmark results" when a report
+    # has no measurements, so a per-file check is what matches its behaviour - summing across files
+    # would let a wholly empty report ride along with a healthy one.
     $measured = 0
+    $emptyReports = @()
     if (Test-Path $resultsDir) {
         foreach ($report in Get-ChildItem -Path $resultsDir -Filter "*-report-full-compressed.json" -Recurse) {
-            $measured += @((Get-Content $report.FullName -Raw | ConvertFrom-Json).Benchmarks).Count
+            $withData = @((Get-Content $report.FullName -Raw | ConvertFrom-Json).Benchmarks |
+                          Where-Object { $_.Measurements -and @($_.Measurements).Count -gt 0 })
+            if ($withData.Count -eq 0) {
+                $emptyReports += $report.Name
+            }
+            $measured += $withData.Count
         }
     }
 
-    if ($exitCode -eq 0 -and -not $buildFailed -and $measured -gt 0) {
-        Write-Output "Benchmark run succeeded on attempt $attempt ($measured result(s))"
+    if ($exitCode -eq 0 -and -not $buildFailed -and $measured -gt 0 -and $emptyReports.Count -eq 0) {
+        Write-Output "Benchmark run succeeded on attempt $attempt ($measured measured benchmark(s))"
         break
     }
 
-    Write-Warning "Benchmark run attempt $attempt failed (exit code: $exitCode, build failure: $buildFailed, results: $measured)"
+    Write-Warning "Benchmark run attempt $attempt failed (exit code: $exitCode, build failure: $buildFailed, measured: $measured, empty reports: $($emptyReports -join ', '))"
 
     if ($attempt -ge $maxAttempts) {
         Write-Error "Benchmark run failed after $maxAttempts attempts. Refusing to publish incomplete results."
@@ -228,18 +218,6 @@ while ($true) {
     }
 
     $attempt++
-}
-
-# BenchmarkDotNet hides build output on success, so confirm after the fact whether the tracer closure
-# was rebuilt. BenchmarkDotNet redirects ArtifactsPath into the per-job run directory, so an
-# obj\Datadog.Trace folder under $runDir means the ProjectReference chain was still being built and
-# BenchmarkBootstrap.targets did not take effect.
-$rebuiltClosure = @(Get-ChildItem -Path $runDir -Directory -Recurse -Filter "Datadog.Trace" -ErrorAction SilentlyContinue |
-                    Where-Object { $_.FullName -like "*\obj\*" })
-if ($rebuiltClosure.Count -gt 0) {
-    Write-Warning "BenchmarkBootstrap: tracer closure WAS rebuilt ($($rebuiltClosure.Count) intermediate dir(s)) - BenchmarkBootstrap.targets did NOT take effect"
-} else {
-    Write-Output "BenchmarkBootstrap: tracer closure was not rebuilt - prebuilt references are in effect"
 }
 
 # Copy results to ARTIFACTS_DIR with naming convention
