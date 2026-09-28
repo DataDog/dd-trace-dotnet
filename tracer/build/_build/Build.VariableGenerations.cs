@@ -147,6 +147,7 @@ partial class Build : NukeBuild
             {
                 AppendWindowsJob($"integration-tests-windows-{targetPlatform}:{framework}:tracer", framework, targetPlatform, "integration", TracerArea);
                 AppendWindowsJob($"integration-tests-windows-{targetPlatform}:{framework}:asm", framework, targetPlatform, "integration", AsmArea);
+                AppendWindowsJob($"integration-tests-windows-{targetPlatform}:{framework}:ci-visibility", framework, targetPlatform, "integration", CiVisibilityArea);
 
                 // These combinations fail in Azure because the x86 apphost is unavailable.
                 if (targetPlatform == "x86" && (framework.Equals(TargetFramework.NETCOREAPP3_1) || framework.Equals(TargetFramework.NET6_0)))
@@ -353,6 +354,7 @@ partial class Build : NukeBuild
 
             AppendLinuxJob($"integration-tests-{artifactSuffix}:{framework}:tracer", "integration", TracerArea);
             AppendLinuxJob($"integration-tests-{artifactSuffix}:{framework}:asm", "integration", AsmArea);
+            AppendLinuxJob($"integration-tests-{artifactSuffix}:{framework}:ci-visibility", "integration", CiVisibilityArea);
 
             if (isArm64)
             {
