@@ -1489,7 +1489,7 @@ partial class Build
             if (IsGitlab && Framework is not null)
             {
                 testProjects = testProjects
-                              .Where(path => Solution.GetProject(path).GetTargetFrameworks().Contains(Framework))
+                              .Where(path => TargetsFramework(Solution.GetProject(path), Framework))
                               .ToList();
             }
 
@@ -1507,7 +1507,7 @@ partial class Build
         {
             var testProjects = TracerDirectory.GlobFiles("test/**/*.Tests.csproj")
                 .Select(x => Solution.GetProject(x))
-                .Where(project => !IsGitlab || Framework is null || project.GetTargetFrameworks().Contains(Framework))
+                .Where(project => !IsGitlab || Framework is null || TargetsFramework(project, Framework))
                 .ToList();
 
             testProjects.ForEach(EnsureResultsDirectory);
@@ -2061,7 +2061,7 @@ partial class Build
             {
                 // filter out fleet installer tests unless we're on netframework and x64
                 var parallelJobs = ParallelIntegrationTests
-                   .Where(project => !IsGitlab || project.GetTargetFrameworks().Contains(Framework))
+                   .Where(project => !IsGitlab || TargetsFramework(project, Framework))
                    .Where(project => project.Name switch
                     {
                         Projects.FleetInstallerTests => Framework == TargetFramework.NET48 && TargetPlatform == MSBuildTargetPlatform.x64,
@@ -2069,7 +2069,7 @@ partial class Build
                     });
 
                 var clrProfilerIntegrationTests = ClrProfilerIntegrationTests
-                                                  .Where(project => !IsGitlab || project.GetTargetFrameworks().Contains(Framework));
+                                                  .Where(project => !IsGitlab || TargetsFramework(project, Framework));
 
                 DotNetTest(config => config
                     .SetDotnetPath(TargetPlatform)
@@ -2387,7 +2387,7 @@ partial class Build
         .Executes(() =>
         {
             var project = Solution.GetProject(Projects.DdDotnetIntegrationTests);
-            if (IsGitlab && !project.GetTargetFrameworks().Contains(Framework))
+            if (IsGitlab && !TargetsFramework(project, Framework))
             {
                 Logger.Information("Skipping {Project} because it does not target {Framework}", project.Name, Framework);
                 return;
@@ -3061,6 +3061,13 @@ partial class Build
         }
     }
 
+
+    private static bool TargetsFramework(Project project, TargetFramework framework)
+    {
+        var frameworks = project.TryGetTargetFrameworks()
+                      ?? throw new InvalidOperationException($"Could not determine target frameworks for project {project.Name}");
+        return frameworks.Contains(framework);
+    }
 
     private void DotnetBuild(
         Project project,
