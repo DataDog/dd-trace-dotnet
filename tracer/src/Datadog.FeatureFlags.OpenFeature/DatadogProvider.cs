@@ -22,7 +22,7 @@ namespace Datadog.FeatureFlags.OpenFeature;
 /// <summary>
 /// OpenFeature V2.0.0+ Provider for Datadog
 /// </summary>
-public sealed class DatadogProvider : global::OpenFeature.FeatureProvider, IDisposable
+public sealed partial class DatadogProvider : global::OpenFeature.FeatureProvider, IDisposable
 {
     // The status this provider last reported, which decides the transitions it owns. The first ready
     // event is not one of them: OpenFeature synthesizes one as soon as InitializeAsync returns, so

@@ -72,7 +72,64 @@ RUN /<APP_DIRECTORY>/datadog/createLogPath.sh
 
 Docker examples are available [here](https://github.com/DataDog/dd-trace-dotnet/tree/master/tracer/samples/NugetDeployment)
 
+## Experimental synchronous resolution (POC)
+
+This worktree proposes five synchronous methods on `DatadogProvider`:
+`ResolveBooleanValue`, `ResolveIntegerValue`, `ResolveDoubleValue`,
+`ResolveStringValue`, and `ResolveStructureValue`. Each returns OpenFeature
+`ResolutionDetails<T>` and calls the same local evaluator as its async counterpart.
+Evaluation does not wait for configuration or perform a network fetch. Provider
+initialization and configuration delivery remain asynchronous.
+
+```csharp
+using Datadog.FeatureFlags.OpenFeature;
+using OpenFeature.Model;
+
+var provider = new DatadogProvider();
+await OpenFeature.Api.Instance.SetProviderAsync(provider);
+var context = EvaluationContext.Builder().SetTargetingKey("customer-123").Build();
+
+#pragma warning disable DDFF001 // Explicit opt-in to experimental sync resolution.
+var result = provider.ResolveBooleanValue("new-checkout", false, context);
+#pragma warning restore DDFF001
+
+bool enabled = result.Value;
+```
+
+These are Datadog extensions, not methods on OpenFeature's `IFeatureClient`.
+They use only the supplied context: global, client, and transaction context are
+not merged. They bypass the OpenFeature client pipeline, including hooks,
+client lifecycle checks, evaluation metrics, and span enrichment. Evaluator-owned
+exposure recording remains on the shared evaluation path. Missing configuration
+returns the supplied default and `ProviderNotReady`; a canceled token and a null
+flag key retain the direct async provider methods' exception behavior. Callers
+should inspect the returned error details when a default is unsuitable.
+
+This POC marks only the new methods with `ExperimentalAttribute` and diagnostic
+`DDFF001`. The attribute is a C# convention introduced in C# 12, not an existing
+dd-trace-dotnet API convention. An internal compatibility definition keeps the
+annotation on the `net462` and `netstandard2.0` assets without raising their runtime
+requirements. Older compilers may not report the diagnostic. Existing async API
+calls require no opt-in.
+
+The proposed lifecycle is experimental at introduction, then warning-level
+`Obsolete` once this package supports an equivalent stable OpenFeature API with
+migration instructions. Deprecation and removal are separate: publish a migration
+window before removal. Adding an obsolete warning can affect applications that
+treat warnings as errors. There is no upstream replacement version or removal
+date promised by this POC.
+
+The focused tests can be run with:
+
+```sh
+dotnet test tracer/test/Datadog.FeatureFlags.OpenFeature.Tests/Datadog.FeatureFlags.OpenFeature.Tests.csproj -f net8.0 -c Release -p:GeneratePackageOnBuild=false
+```
+
+These tests exercise the public provider without native instrumentation. They
+cover defaults, error details, cancellation, and API annotations; they do not
+establish successful configuration delivery or telemetry parity. Client-pipeline
+support and instrumented end-to-end validation remain work before release.
+
 ## Get in touch
 
 If you have questions, feedback, or feature requests, reach our [support](https://docs.datadoghq.com/help).
-
