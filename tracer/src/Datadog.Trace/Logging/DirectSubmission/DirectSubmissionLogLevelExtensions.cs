@@ -4,6 +4,8 @@
 // </copyright>
 #nullable enable
 
+using System;
+
 namespace Datadog.Trace.Logging.DirectSubmission
 {
     internal static class DirectSubmissionLogLevelExtensions
@@ -30,7 +32,7 @@ namespace Datadog.Trace.Logging.DirectSubmission
             };
 
         public static DirectSubmissionLogLevel? Parse(string? value)
-            => value?.ToUpperInvariant() switch
+            => StringUtil.ToUpperInvariant(value) switch
             {
                 "TRACE" => DirectSubmissionLogLevel.Verbose,
                 "VERBOSE" => DirectSubmissionLogLevel.Verbose,
