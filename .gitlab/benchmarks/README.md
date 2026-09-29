@@ -23,7 +23,7 @@ GitLab CI configuration for the benchmarks that run on the
     - Steps live in the `dd-trace-dotnet/data-streams-monitoring` branch of
       [benchmarking-platform](https://github.com/DataDog/benchmarking-platform).
 - `dotnet-aspnet-realworld-parallel` stages: included in the root `.gitlab-ci.yml` from
-  [apm-sdks-benchmarks](https://gitlab.ddbuild.io/DataDog/apm-reliability/apm-sdks-benchmarks).
+  [apm-sdks-benchmarks](https://github.com/DataDog/apm-sdks-benchmarks/tree/main/.gitlab).
     - Change them there.
 
 ## Marking a benchmark as flaky
