@@ -80,6 +80,11 @@ namespace Datadog.Trace.ClrProfiler
                 return;
             }
 
+            if (profilerSettings.WasDisabledByArm64Gate)
+            {
+                Log.Warning("The Continuous Profiler was requested but is disabled on Linux ARM64: set {Setting}=1 to enable it. On ARM64 the Continuous Profiler is gated behind this setting (default off).", ConfigurationKeys.ContinuousProfiler.InternalProfilingEnabledArm64);
+            }
+
             Log.Debug("Setting Stable Configuration in Continuous Profiler native library.");
             var tracer = Tracer.Instance;
             var tracerSettings = tracer.Settings;

@@ -21,7 +21,7 @@
     ],
     "VersionConditions": [{
       "MinVersion": "4.0.0",
-      "IncludeOnlyTargetFrameworks": ["net8.0","net9.0", "net10.0"]
+      "IncludeOnlyTargetFrameworks": ["net8.0","net9.0", "net10.0", "net11.0"]
     }]
   },
   {
@@ -93,7 +93,7 @@
       },
       {
         "MinVersion": "2.0.0",
-        "IncludeOnlyTargetFrameworks": ["net8.0", "net9.0", "net10.0"]
+        "IncludeOnlyTargetFrameworks": ["net8.0", "net9.0", "net10.0", "net11.0"]
       }
     ]
   },
@@ -633,7 +633,8 @@
       {
         "IncludeOnlyTargetFrameworks": [
           "net8.0",
-          "net10.0"
+          "net10.0",
+          "net11.0"
         ]
       }
     ]
