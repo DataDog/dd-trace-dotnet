@@ -9,6 +9,9 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
+#if NETSTANDARD2_0 || NETCOREAPP3_1
+using System.Security.Cryptography;
+#endif
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent.DiscoveryService;
@@ -17,7 +20,6 @@ using Datadog.Trace.Ci;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ContinuousProfiler;
 using Datadog.Trace.Debugger;
-using Datadog.Trace.Debugger.Helpers;
 using Datadog.Trace.DiagnosticListeners;
 using Datadog.Trace.Logging;
 using Datadog.Trace.PlatformHelpers;
@@ -209,9 +211,13 @@ namespace Datadog.Trace.ClrProfiler
                     // On .NET Core 2.0-3.0 we see an occasional hang caused by OpenSSL being loaded
                     // while the app is shutting down, which results in flaky tests due to the short-
                     // lived nature of our apps. This appears to be a bug in the runtime (although
-                    // we haven't yet confirmed that). Calling the `ToUuid()` method uses an MD5
-                    // hash which calls into the native library, triggering the load.
-                    _ = string.Empty.ToUUID();
+                    // we haven't yet confirmed that). Computing a SHA-256 hash forces the native
+                    // OpenSSL library to load during startup. SHA-256 is used instead of MD5 because
+                    // MD5 is not FIPS-approved: on FIPS-enabled OpenSSL it can throw or crash the process.
+                    using (var sha256 = SHA256.Create())
+                    {
+                        _ = sha256.ComputeHash(Array.Empty<byte>());
+                    }
                 }
                 catch (Exception ex)
                 {
