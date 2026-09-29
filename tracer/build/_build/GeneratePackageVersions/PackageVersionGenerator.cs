@@ -82,8 +82,8 @@ namespace GeneratePackageVersions
                 var mode = _getCooldownMode(entry.NugetPackageSearchName);
                 var project = solution.GetProject(entry.SampleProjectName);
 
-                var supportedTargetFrameworks = project
-                                               .GetTargetFrameworks()
+                var supportedTargetFrameworks = (project.TryGetTargetFrameworks()
+                                               ?? throw new Exception($"Could not determine target frameworks for sample project {entry.SampleProjectName}"))
                                                .Select(x => (TargetFramework)new TargetFramework.TargetFrameworkTypeConverter().ConvertFrom(x));
                 var requiresDockerDependency = project.RequiresDockerDependency().ToString();
 

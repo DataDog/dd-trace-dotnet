@@ -8,6 +8,7 @@
 #include "fault_tolerant_tracker.h"
 #include "il_rewriter_wrapper.h"
 #include "logger.h"
+#include "runtime_async.h"
 
 using namespace fault_tolerant;
 
@@ -492,6 +493,17 @@ HRESULT FaultTolerantRewriter::RewriteInternal(RejitHandlerModule* moduleHandler
                                                ICorProfilerInfo* pCorProfilerInfo)
 {
     if (!is_fault_tolerant_instrumentation_enabled)
+    {
+        return m_methodRewriter->Rewrite(moduleHandler, methodHandler, pFunctionControl, pCorProfilerInfo);
+    }
+
+    // A .NET 11 runtime-async method should never have been duplicated, so it cannot be a kickoff method
+    // and the branches below would not fire anyway. Going straight to the wrapped rewriter keeps that a
+    // property of this function rather than of a decision made elsewhere: whatever happens
+    // upstream, the fault-tolerant wrapper never builds a kickoff body from the declared Task of a
+    // method whose body does not return one.
+    const auto* functionInfo = methodHandler->GetFunctionInfo();
+    if (functionInfo != nullptr && trace::IsMiAsync(functionInfo->method_impl_flags))
     {
         return m_methodRewriter->Rewrite(moduleHandler, methodHandler, pFunctionControl, pCorProfilerInfo);
     }

@@ -82,8 +82,8 @@ internal static class FeatureFlagsSdk
     {
     }
 
-    public static ResolutionDetails<T> Resolve<T>(string flagKey, Trace.FeatureFlags.ValueType targetType, object? defaultValue, EvaluationContext? context) =>
-        GetResolutionDetails<T>(Evaluate(flagKey, targetType, defaultValue, context?.TargetingKey, GetContextAttributes(context)));
+    public static ResolutionDetails<T> Resolve<T>(string flagKey, Trace.FeatureFlags.ValueType targetType, T defaultValue, EvaluationContext? context) =>
+        GetResolutionDetails(flagKey, defaultValue, Evaluate(flagKey, targetType, defaultValue, context?.TargetingKey, GetContextAttributes(context)));
 
     private static IDictionary<string, object?>? GetContextAttributes(EvaluationContext? context)
     {
@@ -104,13 +104,15 @@ internal static class FeatureFlagsSdk
         _ => value.AsObject,
     };
 
-    private static ResolutionDetails<T> GetResolutionDetails<T>(Datadog.Trace.FeatureFlags.IEvaluation? evaluation)
+    private static ResolutionDetails<T> GetResolutionDetails<T>(string flagKey, T defaultValue, Datadog.Trace.FeatureFlags.IEvaluation? evaluation)
     {
+        // OpenFeature substitutes the caller's default only when a provider throws. This provider
+        // reports errors as details instead, so every error must carry the default itself.
         if (evaluation is null)
         {
             return new ResolutionDetails<T>(
-                        string.Empty,
-                        default!,
+                        flagKey,
+                        defaultValue,
                         ErrorType.ProviderNotReady,
                         default,
                         default,
@@ -118,11 +120,14 @@ internal static class FeatureFlagsSdk
                         null);
         }
 
-        var value = typeof(T) == typeof(Value) ? JsonToValue(evaluation.Value) : evaluation.Value!;
+        var errorType = ToErrorType(evaluation.Reason, evaluation.Error);
+        var value = errorType != ErrorType.None
+                        ? defaultValue
+                        : typeof(T) == typeof(Value) ? (T)(object)JsonToValue(evaluation.Value) : (T)evaluation.Value!;
         var res = new ResolutionDetails<T>(
             evaluation.FlagKey,
-            (T)value,
-            ToErrorType(evaluation.Reason, evaluation.Error),
+            value,
+            errorType,
             ReasonToLowerSnakeCase(evaluation.Reason),
             evaluation.Variant,
             evaluation.Error,

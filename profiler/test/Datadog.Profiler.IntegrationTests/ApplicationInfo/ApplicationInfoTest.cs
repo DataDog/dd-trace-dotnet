@@ -83,6 +83,7 @@ namespace Datadog.Profiler.IntegrationTests.ApplicationInfo
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: "--scenario 1", enableProfiler: true);
 
             runner.Environment.SetVariable(EnvironmentVariables.SsiDeployed, "tracer");
+            EnvironmentHelper.ForceInjectionIfRequired(runner, framework);
 
             using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
 

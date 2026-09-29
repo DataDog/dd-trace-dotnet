@@ -11,6 +11,7 @@
     <ClCompile Include="metadata_builder.cpp" />
     <ClCompile Include="rejit_handler.cpp" />
     <ClCompile Include="rejit_work_offloader.cpp" />
+    <ClCompile Include="runtime_async.cpp" />
     <ClCompile Include="rejit_preprocessor.cpp" />
     <ClCompile Include="debugger_rejit_preprocessor.cpp">
       <Filter>Debugger</Filter>
@@ -141,6 +142,7 @@
       <Filter>Debugger</Filter>
     </ClInclude>
     <ClInclude Include="rejit_work_offloader.h" />
+    <ClInclude Include="runtime_async.h" />
     <ClInclude Include="rejit_preprocessor.h" />
     <ClInclude Include="debugger_rejit_preprocessor.h">
       <Filter>Debugger</Filter>
