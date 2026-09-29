@@ -11,6 +11,7 @@
 #include "VisitedObjectSet.h"
 #include "ReferenceChainTypes.h"
 #include <chrono>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -43,7 +44,7 @@ public:
         TypeTreeNode* treeNode;
         uint32_t depth;
         ClassID classID;
-        SIZE_T objectSize;
+        SIZE_T layoutSize;
     };
 
     ReferenceChainTraverser(
@@ -51,7 +52,8 @@ public:
         IFrameStore* pFrameStore,
         TypeReferenceTree& tree,
         InlineVTCache& inlineVTCache,
-        size_t visitedSetInitialCapacity = 512);
+        size_t visitedSetInitialCapacity = 512,
+        bool benchmarkEnabled = false);
 
     // Traverse from a single root (called from OnBulkRoot* event handlers).
     // A fresh VisitedObjectSet is used per root for cycle detection within that root's graph.
@@ -61,6 +63,9 @@ public:
 
     size_t GetVisitedHighWatermark() const { return _visited.GetBucketCount(); }
     size_t GetVisitedPeakEntryCount() const { return _visited.GetPeakEntryCount(); }
+
+    // Benchmark-only accounting for size lookups performed before traversal starts.
+    void RecordRootObjectSizeCall(bool isStatic, bool failedOrZero);
 
     // Whether the GCDesc reader passed (or has not yet failed) its runtime
     // self-test. When false, GCDesc-based traversal is disabled for this
@@ -177,7 +182,7 @@ private:
         TypeTreeNode* treeNode,
         uint32_t depth,
         ClassID classID,
-        SIZE_T objectSize);
+        SIZE_T layoutSize);
 
     static bool IsValidObjectAddress(uintptr_t address);
     std::string GetClassName(ClassID classID) const;
@@ -196,6 +201,9 @@ private:
     // the fault guard because resolving a class name and logging both take locks that
     // a fault would leave held for good (siglongjmp does not unwind).
     void LogPendingSelfTestFailure();
+
+    uint64_t GetBenchmarkFirstVisitReferenceCount() const;
+    uint64_t GetBenchmarkEdgeCount() const;
 
     ICorProfilerInfo12* _pCorProfilerInfo;
     IFrameStore* _pFrameStore;
@@ -222,6 +230,37 @@ private:
     uint64_t _rootsProcessed;
     uint64_t _rootCategoryCounts[RootCategoryCount] = {};
     std::chrono::nanoseconds _totalTraversalDuration{0};
+
+    struct BenchmarkStats
+    {
+        struct RootWork
+        {
+            uint64_t objects = 0;
+            uint64_t edges = 0;
+            uint64_t durationNs = 0;
+            uint64_t maxObjects = 0;
+            uint64_t maxEdges = 0;
+            uint64_t maxDurationNs = 0;
+        };
+
+        uint64_t getObjectSizeRootCalls = 0;
+        uint64_t getObjectSizeStaticRootCalls = 0;
+        uint64_t getObjectSizeRootScannableCalls = 0;
+        uint64_t getObjectSizeRootLeafCalls = 0;
+        uint64_t getObjectSizeStaticRootScannableCalls = 0;
+        uint64_t getObjectSizeStaticRootLeafCalls = 0;
+        uint64_t getObjectSizeFirstVisitScannableCalls = 0;
+        uint64_t getObjectSizeFirstVisitLeafCalls = 0;
+        uint64_t getObjectSizeRevisitCalls = 0;
+        uint64_t getObjectSizeFailedOrZeroCalls = 0;
+        uint64_t getClassFromObjectFailedCalls = 0;
+        uint64_t firstVisitLeafReferences = 0;
+        uint64_t revisitReferences = 0;
+        RootWork rootWork[RootCategoryCount] = {};
+    };
+
+    // Null unless the runtime benchmark environment variable is enabled.
+    std::unique_ptr<BenchmarkStats> _benchmarkStats;
 
     static constexpr size_t MinStackReserve = 64;
     size_t _traversalStackHighWatermark = MinStackReserve;

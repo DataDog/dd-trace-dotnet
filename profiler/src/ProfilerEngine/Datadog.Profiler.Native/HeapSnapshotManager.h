@@ -4,8 +4,10 @@
 #pragma once
 
 #include <thread>
+#include <array>
 #include <memory>
 #include <unordered_map>
+#include <unordered_set>
 #include <chrono>
 
 #include "IHeapSnapshotManager.h"
@@ -17,6 +19,7 @@
 #include "MetricsRegistry.h"
 #include "ProxyMetric.h"
 #include "InlineVTCache.h"
+#include "ReferenceChainTypes.h"
 #include "SnapshotCooldown.h"
 
 #include "corprof.h"
@@ -28,7 +31,6 @@ class INativeThreadList;
 class IRuntimeInfo;
 class TypeReferenceTree;
 class ReferenceChainTraverser;
-struct RootInfo;
 
 using namespace std::chrono_literals;
 
@@ -152,6 +154,32 @@ private:
         }
     };
 
+    struct ReferenceChainBenchmarkStats
+    {
+        std::array<uint64_t, RootCategoryCount> observedRoots{};
+        uint64_t traversalCalls = 0;
+        uint64_t duplicateAddresses = 0;
+        uint64_t interiorSkipped = 0;
+        uint64_t weakObserved = 0;
+        uint64_t classLookupFailed = 0;
+        uint64_t sizeLookupFailed = 0;
+        uint64_t rootGetClassFromObjectCalls = 0;
+        std::unordered_set<uintptr_t> rootAddresses;
+
+        void Reset()
+        {
+            observedRoots.fill(0);
+            traversalCalls = 0;
+            duplicateAddresses = 0;
+            interiorSkipped = 0;
+            weakObserved = 0;
+            classLookupFailed = 0;
+            sizeLookupFailed = 0;
+            rootGetClassFromObjectCalls = 0;
+            rootAddresses.clear();
+        }
+    };
+
     MemoryStats ComputeMemoryStats() const;
 
     // Incremental memory tracking: track sum of item sizes
@@ -179,6 +207,8 @@ private:
     std::chrono::milliseconds _snapshotCheckInterval;
     uint32_t _memPressureThreshold;
     uint32_t _referenceTreeFormat;
+    bool _isReferenceChainBenchmarkEnabled;
+    std::unique_ptr<ReferenceChainBenchmarkStats> _pReferenceChainBenchmarkStats;
     bool _delayFirstSnapshot;
     uint64_t _runtimeSessionKeywords;
     uint32_t _runtimeSessionVerbosity;

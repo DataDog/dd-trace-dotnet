@@ -16,14 +16,16 @@ ReferenceChainTraverser::ReferenceChainTraverser(
     IFrameStore* pFrameStore,
     TypeReferenceTree& tree,
     InlineVTCache& inlineVTCache,
-    size_t visitedSetInitialCapacity)
+    size_t visitedSetInitialCapacity,
+    bool benchmarkEnabled)
     : _pCorProfilerInfo(pCorProfilerInfo),
       _pFrameStore(pFrameStore),
       _tree(tree),
       _inlineVTCache(inlineVTCache),
       _visited(visitedSetInitialCapacity),
       _objectsTraversed(0),
-      _rootsProcessed(0)
+      _rootsProcessed(0),
+      _benchmarkStats(benchmarkEnabled ? std::make_unique<BenchmarkStats>() : nullptr)
 {
 }
 
@@ -50,6 +52,16 @@ bool ReferenceChainTraverser::RunGuarded(TBody&& body)
 
 void ReferenceChainTraverser::TraverseFromSingleRoot(const RootInfo& root)
 {
+    uint64_t objectsBefore = 0;
+    uint64_t edgesBefore = 0;
+    std::chrono::nanoseconds benchmarkStart{0};
+    if (_benchmarkStats != nullptr)
+    {
+        objectsBefore = _objectsTraversed;
+        edgesBefore = GetBenchmarkEdgeCount();
+        benchmarkStart = OpSysTools::GetHighPrecisionTimestamp();
+    }
+
     // The guards below only recover from memory access faults. Anything else -- a
     // std::bad_alloc from the tree or the visited set, a CLR exception surfacing
     // through one of the profiling API calls -- would otherwise escape into the
@@ -65,6 +77,21 @@ void ReferenceChainTraverser::TraverseFromSingleRoot(const RootInfo& root)
 
     // Reported from here rather than from inside the guard: see LogPendingSelfTestFailure.
     LogPendingSelfTestFailure();
+
+    if (_benchmarkStats != nullptr)
+    {
+        auto duration = OpSysTools::GetHighPrecisionTimestamp() - benchmarkStart;
+        uint64_t durationNs = static_cast<uint64_t>(duration.count());
+        uint64_t objects = _objectsTraversed - objectsBefore;
+        uint64_t edges = GetBenchmarkEdgeCount() - edgesBefore;
+        auto& work = _benchmarkStats->rootWork[static_cast<size_t>(root.category)];
+        work.objects += objects;
+        work.edges += edges;
+        work.durationNs += durationNs;
+        work.maxObjects = (std::max)(work.maxObjects, objects);
+        work.maxEdges = (std::max)(work.maxEdges, edges);
+        work.maxDurationNs = (std::max)(work.maxDurationNs, durationNs);
+    }
 }
 
 void ReferenceChainTraverser::TraverseFromSingleRootCore(const RootInfo& root)
@@ -131,14 +158,41 @@ void ReferenceChainTraverser::SeedRoot(const RootInfo& root)
 {
     _rootCategoryCounts[static_cast<int>(root.category)]++;
 
-    TypeTreeNode* rootNode = _tree.AddRoot(root.classID, root.category, root.objectSize, root.fieldName);
+    TypeTreeNode* rootNode = _tree.AddRoot(root.classID, root.category, root.fieldName);
 
     _visited.Clear();
     _traversalStack.clear();
     _traversalStack.reserve(_traversalStackHighWatermark);
 
     _visited.MarkVisitedAndStore(root.address, root.classID);
-    PushTraversalFrameIfScannable(root.address, rootNode, 1, root.classID, root.objectSize);
+    size_t stackSizeBeforePush = _benchmarkStats != nullptr ? _traversalStack.size() : 0;
+    PushTraversalFrameIfScannable(root.address, rootNode, 1, root.classID, root.layoutSize);
+    if (_benchmarkStats != nullptr)
+    {
+        bool isScannable = _traversalStack.size() != stackSizeBeforePush;
+        if (root.category == RootCategory::StaticVariable)
+        {
+            if (isScannable)
+            {
+                _benchmarkStats->getObjectSizeStaticRootScannableCalls++;
+            }
+            else
+            {
+                _benchmarkStats->getObjectSizeStaticRootLeafCalls++;
+            }
+        }
+        else
+        {
+            if (isScannable)
+            {
+                _benchmarkStats->getObjectSizeRootScannableCalls++;
+            }
+            else
+            {
+                _benchmarkStats->getObjectSizeRootLeafCalls++;
+            }
+        }
+    }
 }
 
 void ReferenceChainTraverser::DrainTraversalStackGuarded()
@@ -229,6 +283,51 @@ void ReferenceChainTraverser::Test_ThrowUnderGuard()
 }
 #endif
 
+void ReferenceChainTraverser::RecordRootObjectSizeCall(bool isStatic, bool failedOrZero)
+{
+    if (_benchmarkStats == nullptr)
+    {
+        return;
+    }
+
+    if (isStatic)
+    {
+        _benchmarkStats->getObjectSizeStaticRootCalls++;
+    }
+    else
+    {
+        _benchmarkStats->getObjectSizeRootCalls++;
+    }
+
+    if (failedOrZero)
+    {
+        _benchmarkStats->getObjectSizeFailedOrZeroCalls++;
+    }
+}
+
+uint64_t ReferenceChainTraverser::GetBenchmarkFirstVisitReferenceCount() const
+{
+    if (_benchmarkStats == nullptr)
+    {
+        return 0;
+    }
+
+    return _benchmarkStats->getObjectSizeFirstVisitScannableCalls +
+           _benchmarkStats->firstVisitLeafReferences +
+           _benchmarkStats->getClassFromObjectFailedCalls;
+}
+
+uint64_t ReferenceChainTraverser::GetBenchmarkEdgeCount() const
+{
+    if (_benchmarkStats == nullptr)
+    {
+        return 0;
+    }
+
+    return GetBenchmarkFirstVisitReferenceCount() +
+           _benchmarkStats->revisitReferences;
+}
+
 void ReferenceChainTraverser::LogStats() const
 {
     // avoid calculation overhead when debug logging is not enabled
@@ -271,6 +370,80 @@ void ReferenceChainTraverser::LogStats() const
               "addresses: ", _visited.GetAddressesMemorySize() / 1024, " KB, ",
               "entries: ", _visited.GetEntriesMemorySize() / 1024, " KB, ",
               "dirty: ", _visited.GetDirtyIndicesMemorySize() / 1024, " KB)");
+
+    if (_benchmarkStats != nullptr)
+    {
+        uint64_t firstVisitReferences = GetBenchmarkFirstVisitReferenceCount();
+        uint64_t edgesExamined = GetBenchmarkEdgeCount();
+        const char* stopReason = "none";
+        switch (_stopReason)
+        {
+            case TraversalStopReason::FaultBudgetExhausted:
+                stopReason = "fault_budget_exhausted";
+                break;
+            case TraversalStopReason::UnexpectedException:
+                stopReason = "unexpected_exception";
+                break;
+            case TraversalStopReason::FaultGuardUnavailable:
+                stopReason = "fault_guard_unavailable";
+                break;
+            case TraversalStopReason::None:
+                break;
+        }
+
+        Log::Debug("Reference chain benchmark traversal: duration_ms=", durationMs,
+                   ", roots=", _rootsProcessed,
+                   ", objects=", _objectsTraversed,
+                   ", stack_capacity=", _traversalStackHighWatermark,
+                   ", faults=", _faultCount,
+                   ", stop_reason=", stopReason,
+                   ", visited_peak_entries=", _visited.GetPeakEntryCount(),
+                   ", visited_bytes=", _visited.GetMemorySize(),
+                   ", visited_buckets=", _visited.GetBucketCount(),
+                   ", visited_grows=", _visited.GetGrowCount(),
+                   ", edges=", edgesExamined,
+                   ", first_visit_refs=", firstVisitReferences,
+                   ", revisit_refs=", _benchmarkStats->revisitReferences,
+                   ", get_class_first_visit=", firstVisitReferences,
+                   ", get_class_revisit=", 0,
+                   ", raw_class_reads=", 0,
+                   ", tree_nodes=", _tree.GetNodeCount());
+
+        Log::Debug("Reference chain benchmark GetObjectSize2: root=", _benchmarkStats->getObjectSizeRootCalls,
+                   ", static_root=", _benchmarkStats->getObjectSizeStaticRootCalls,
+                   ", root_scannable=", _benchmarkStats->getObjectSizeRootScannableCalls,
+                   ", root_leaf=", _benchmarkStats->getObjectSizeRootLeafCalls,
+                   ", static_root_scannable=", _benchmarkStats->getObjectSizeStaticRootScannableCalls,
+                   ", static_root_leaf=", _benchmarkStats->getObjectSizeStaticRootLeafCalls,
+                   ", first_visit_scannable=", _benchmarkStats->getObjectSizeFirstVisitScannableCalls,
+                   ", first_visit_leaf=", _benchmarkStats->getObjectSizeFirstVisitLeafCalls,
+                   ", revisit=", _benchmarkStats->getObjectSizeRevisitCalls,
+                   ", failed_or_zero=", _benchmarkStats->getObjectSizeFailedOrZeroCalls);
+
+        Log::Debug("Reference chain benchmark roots: stack=", _rootCategoryCounts[static_cast<int>(RootCategory::Stack)],
+                   ", static=", _rootCategoryCounts[static_cast<int>(RootCategory::StaticVariable)],
+                   ", finalizer=", _rootCategoryCounts[static_cast<int>(RootCategory::Finalizer)],
+                   ", handle=", _rootCategoryCounts[static_cast<int>(RootCategory::Handle)],
+                   ", pinning=", _rootCategoryCounts[static_cast<int>(RootCategory::Pinning)],
+                   ", conditional_weak_table=", _rootCategoryCounts[static_cast<int>(RootCategory::ConditionalWeakTable)],
+                   ", com=", _rootCategoryCounts[static_cast<int>(RootCategory::COM)],
+                   ", other=", _rootCategoryCounts[static_cast<int>(RootCategory::Other)],
+                   ", unknown=", _rootCategoryCounts[static_cast<int>(RootCategory::Unknown)]);
+
+        for (size_t i = 0; i < RootCategoryCount; i++)
+        {
+            auto category = static_cast<RootCategory>(i);
+            const auto& work = _benchmarkStats->rootWork[i];
+            Log::Debug("Reference chain benchmark root work: category=", RootCategoryToString(category),
+                       ", roots=", _rootCategoryCounts[i],
+                       ", objects=", work.objects,
+                       ", edges=", work.edges,
+                       ", duration_ms=", work.durationNs / 1'000'000,
+                       ", max_objects=", work.maxObjects,
+                       ", max_edges=", work.maxEdges,
+                       ", max_duration_ms=", work.maxDurationNs / 1'000'000);
+        }
+    }
 
     if constexpr (VisitedObjectSet::AreDetailedStatsEnabled())
     {
@@ -333,7 +506,7 @@ void ReferenceChainTraverser::DrainTraversalStack()
         _objectsTraversed++;
 
         ClassID classID = frame.classID;
-        SIZE_T objectSize = frame.objectSize;
+        SIZE_T layoutSize = frame.layoutSize;
 
         if (!GCDesc::ContainsGCPointers(classID))
         {
@@ -347,7 +520,7 @@ void ReferenceChainTraverser::DrainTraversalStack()
         if (_selfTest == GCDesc::SelfTestResult::Pending && _selfTestObjectsChecked < MaxSelfTestObjects)
         {
             _selfTestObjectsChecked++;
-            GCDesc::SelfTestResult result = GCDesc::ValidateAgainstMetadata(_pCorProfilerInfo, classID, objectSize);
+            GCDesc::SelfTestResult result = GCDesc::ValidateAgainstMetadata(_pCorProfilerInfo, classID, layoutSize);
             if (result == GCDesc::SelfTestResult::Failed)
             {
                 _gcDescTrusted = false;
@@ -390,7 +563,7 @@ void ReferenceChainTraverser::DrainTraversalStack()
         if (vtInfo == nullptr)
         {
             // Common case: no inline VTs. All GCDesc refs belong to direct fields.
-            GCDesc::EnumerateObjectRefs(classID, frame.objectAddress, objectSize,
+            GCDesc::EnumerateObjectRefs(classID, frame.objectAddress, layoutSize,
                 [&](const uintptr_t* /*slot*/, uintptr_t refAddr, ULONG /*offset*/)
                 {
                     if (IsValidObjectAddress(refAddr))
@@ -405,7 +578,7 @@ void ReferenceChainTraverser::DrainTraversalStack()
             // object's GCDesc, then use InlineVTCache only to attribute refs to
             // the deepest inline VT range that owns their offset.
             AddInlineValueTypeInstances(frame.treeNode, *vtInfo);
-            GCDesc::EnumerateObjectRefs(classID, frame.objectAddress, objectSize,
+            GCDesc::EnumerateObjectRefs(classID, frame.objectAddress, layoutSize,
                 [&](const uintptr_t* /*slot*/, uintptr_t refAddr, ULONG offset)
                 {
                     if (!IsValidObjectAddress(refAddr))
@@ -501,36 +674,7 @@ void ReferenceChainTraverser::EnqueueValueTypeArrayChildren(
                 return;
             }
 
-            VisitedObjectSet::VisitedEntry* slot = nullptr;
-            if (_visited.TryInsert(refAddr, slot) == VisitedObjectSet::InsertResult::Inserted)
-            {
-                ClassID targetClassID = 0;
-                HRESULT hr = _pCorProfilerInfo->GetClassFromObject(refAddr, &targetClassID);
-                if (FAILED(hr) || targetClassID == 0)
-                {
-                    return;
-                }
-
-                SIZE_T targetSize = 0;
-                hr = _pCorProfilerInfo->GetObjectSize2(refAddr, &targetSize);
-                if (FAILED(hr) || targetSize == 0)
-                {
-                    return;
-                }
-
-                slot->classID = targetClassID;
-
-                TypeTreeNode* childNode = currentNode->GetOrCreateChild(targetClassID);
-                childNode->AddInstance(targetSize);
-                PushTraversalFrameIfScannable(refAddr, childNode, depth + 1, targetClassID, targetSize);
-            }
-            else if (slot->classID != 0)
-            {
-                SIZE_T revisitSize = 0;
-                _pCorProfilerInfo->GetObjectSize2(refAddr, &revisitSize);
-                TypeTreeNode* childNode = currentNode->GetOrCreateChild(slot->classID);
-                childNode->AddInstance(revisitSize);
-            }
+            ProcessDiscoveredRef(refAddr, currentNode, depth);
         });
 }
 
@@ -540,7 +684,7 @@ void ReferenceChainTraverser::AddInlineValueTypeInstances(TypeTreeNode* currentN
     {
         ClassID vtClassID = field.classID;
         TypeTreeNode* vtNode = currentNode->GetOrCreateChild(vtClassID);
-        vtNode->AddInstance(0);
+        vtNode->AddInstance();
 
         const InlineVTCache::InlineVTInfo* nestedInfo = _inlineVTCache.GetInlineVTInfo(vtClassID);
         if (nestedInfo != nullptr)
@@ -593,30 +737,55 @@ bool ReferenceChainTraverser::ProcessDiscoveredRef(uintptr_t refAddress, TypeTre
         HRESULT hr = _pCorProfilerInfo->GetClassFromObject(refAddress, &targetClassID);
         if (FAILED(hr) || targetClassID == 0)
         {
-            return false;
-        }
-
-        SIZE_T targetSize = 0;
-        hr = _pCorProfilerInfo->GetObjectSize2(refAddress, &targetSize);
-        if (FAILED(hr) || targetSize == 0)
-        {
+            if (_benchmarkStats != nullptr)
+            {
+                _benchmarkStats->getClassFromObjectFailedCalls++;
+            }
             return false;
         }
 
         slot->classID = targetClassID;
 
         TypeTreeNode* childNode = parentNode->GetOrCreateChild(targetClassID);
-        childNode->AddInstance(targetSize);
-        PushTraversalFrameIfScannable(refAddress, childNode, depth + 1, targetClassID, targetSize);
+        childNode->AddInstance();
+
+        if (!GCDesc::ContainsGCPointers(targetClassID))
+        {
+            if (_benchmarkStats != nullptr)
+            {
+                _benchmarkStats->firstVisitLeafReferences++;
+            }
+            return false;
+        }
+
+        if (_benchmarkStats != nullptr)
+        {
+            _benchmarkStats->getObjectSizeFirstVisitScannableCalls++;
+        }
+
+        SIZE_T layoutSize = 0;
+        hr = _pCorProfilerInfo->GetObjectSize2(refAddress, &layoutSize);
+        if (FAILED(hr) || layoutSize == 0)
+        {
+            if (_benchmarkStats != nullptr)
+            {
+                _benchmarkStats->getObjectSizeFailedOrZeroCalls++;
+            }
+            return false;
+        }
+
+        PushTraversalFrameIfScannable(refAddress, childNode, depth + 1, targetClassID, layoutSize);
         return true;
     }
 
     if (slot->classID != 0)
     {
-        SIZE_T revisitSize = 0;
-        _pCorProfilerInfo->GetObjectSize2(refAddress, &revisitSize);
+        if (_benchmarkStats != nullptr)
+        {
+            _benchmarkStats->revisitReferences++;
+        }
         TypeTreeNode* childNode = parentNode->GetOrCreateChild(slot->classID);
-        childNode->AddInstance(revisitSize);
+        childNode->AddInstance();
     }
 
     return false;
@@ -627,11 +796,11 @@ void ReferenceChainTraverser::PushTraversalFrameIfScannable(
     TypeTreeNode* treeNode,
     uint32_t depth,
     ClassID classID,
-    SIZE_T objectSize)
+    SIZE_T layoutSize)
 {
-    if (GCDesc::ContainsGCPointers(classID))
+    if (layoutSize != 0 && GCDesc::ContainsGCPointers(classID))
     {
-        _traversalStack.push_back({objectAddress, treeNode, depth, classID, objectSize});
+        _traversalStack.push_back({objectAddress, treeNode, depth, classID, layoutSize});
     }
 }
 

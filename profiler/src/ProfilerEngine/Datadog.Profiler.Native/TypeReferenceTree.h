@@ -25,7 +25,7 @@ struct TypeTreeNode
 {
     ClassID typeID;
     uint64_t instanceCount;  // How many instances at this tree position
-    uint64_t totalSize;      // Aggregate size of instances at this position
+    uint64_t totalSize;      // Reserved wire-format field; always 0 for reference trees
 
     // Children keyed by ClassID.
     // Multiple instances flowing through the same type path merge into one child node.
@@ -35,10 +35,9 @@ struct TypeTreeNode
     {
     }
 
-    void AddInstance(uint64_t size)
+    void AddInstance()
     {
         instanceCount++;
-        totalSize += size;
     }
 
     // Get or create a child node for the given type.
@@ -96,9 +95,9 @@ struct TypeRootNode
     {
     }
 
-    void AddInstance(uint64_t size, const WCHAR* field = nullptr)
+    void AddInstance(const WCHAR* field = nullptr)
     {
-        node.AddInstance(size);
+        node.AddInstance();
         if (field != nullptr && *field != L'\0' && fieldName.empty())
         {
             fieldName = shared::ToString(field);
@@ -117,7 +116,7 @@ public:
 
     // Add or update a root for the given (type, category).
     // Returns a pointer to the root's TypeTreeNode for use during traversal.
-    TypeTreeNode* AddRoot(ClassID typeID, RootCategory category, uint64_t size, const WCHAR* fieldName = nullptr)
+    TypeTreeNode* AddRoot(ClassID typeID, RootCategory category, const WCHAR* fieldName = nullptr)
     {
         RootKey key{typeID, category};
         auto [it, inserted] = _roots.try_emplace(key, nullptr);
@@ -125,7 +124,7 @@ public:
         {
             it->second = std::make_unique<TypeRootNode>(typeID, category);
         }
-        it->second->AddInstance(size, fieldName);
+        it->second->AddInstance(fieldName);
         return &it->second->node;
     }
 
@@ -134,8 +133,29 @@ public:
         return _roots.empty();
     }
 
+    size_t GetNodeCount() const
+    {
+        size_t count = 0;
+        for (const auto& rootEntry : _roots)
+        {
+            count += CountNode(rootEntry.second->node);
+        }
+        return count;
+    }
+
     void Clear()
     {
         _roots.clear();
+    }
+
+private:
+    static size_t CountNode(const TypeTreeNode& node)
+    {
+        size_t count = 1;
+        for (const auto& childEntry : node.children)
+        {
+            count += CountNode(*childEntry.second);
+        }
+        return count;
     }
 };

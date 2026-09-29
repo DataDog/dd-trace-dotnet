@@ -30,7 +30,8 @@ public class TypeSummary
 
     /// <summary>
     /// Build a list of <see cref="TypeSummary"/> by walking the entire forward tree
-    /// and aggregating instance counts and sizes per unique <see cref="ReferenceNode.TypeIndex"/>.
+    /// and aggregating instance counts per unique <see cref="ReferenceNode.TypeIndex"/>.
+    /// Size is retained only when loading an older reference-tree payload.
     /// </summary>
     public static IReadOnlyList<TypeSummary> BuildFromTree(ReferenceTree tree)
     {

@@ -17,6 +17,38 @@
 
 constexpr const WCHAR* ThreadName = WStr("DD_HeapSnapMgr");
 
+namespace
+{
+RootCategory GetRootCategory(const GCBulkRootEdgeValue& root)
+{
+    if (root.Kind == GCRootKind::Stack)
+    {
+        return RootCategory::Stack;
+    }
+
+    if (root.Kind == GCRootKind::Finalizer)
+    {
+        return RootCategory::Finalizer;
+    }
+
+    if (root.Kind == GCRootKind::Handle)
+    {
+        if ((static_cast<uint32_t>(root.Flags) & static_cast<uint32_t>(GCRootFlags::Pinning)) != 0)
+        {
+            return RootCategory::Pinning;
+        }
+        return RootCategory::Handle;
+    }
+
+    if (root.Kind == GCRootKind::Other)
+    {
+        return RootCategory::Other;
+    }
+
+    return RootCategory::Unknown;
+}
+} // namespace
+
 HeapSnapshotManager::HeapSnapshotManager(
     IConfiguration* pConfiguration,
     ICorProfilerInfo12* pCorProfilerInfo,
@@ -57,6 +89,11 @@ HeapSnapshotManager::HeapSnapshotManager(
     _memPressureThreshold = pConfiguration->GetHeapSnapshotMemoryPressureThreshold();
     _snapshotCheckInterval = pConfiguration->GetHeapSnapshotCheckInterval();
     _referenceTreeFormat = pConfiguration->GetReferenceTreeFormat();
+    _isReferenceChainBenchmarkEnabled = pConfiguration->IsHeapSnapshotReferenceChainBenchmarkEnabled();
+    if (_isReferenceChainBenchmarkEnabled)
+    {
+        _pReferenceChainBenchmarkStats = std::make_unique<ReferenceChainBenchmarkStats>();
+    }
 
     auto testInterval = pConfiguration->GetTestHeapSnapshotInterval();
     _delayFirstSnapshot = (testInterval.count() > 0);
@@ -382,71 +419,77 @@ void HeapSnapshotManager::OnBulkRootEdges(
     for (size_t i = 0; i < count; i++)
     {
         auto& root = pRoots[i];
+        RootCategory category = GetRootCategory(root);
+
+        if (_pReferenceChainBenchmarkStats != nullptr)
+        {
+            _pReferenceChainBenchmarkStats->observedRoots[static_cast<size_t>(category)]++;
+            if (!_pReferenceChainBenchmarkStats->rootAddresses.insert(root.RootedNodeAddress).second)
+            {
+                _pReferenceChainBenchmarkStats->duplicateAddresses++;
+            }
+            if ((static_cast<uint32_t>(root.Flags) & static_cast<uint32_t>(GCRootFlags::WeakRef)) != 0)
+            {
+                _pReferenceChainBenchmarkStats->weakObserved++;
+            }
+        }
 
         // GCRootFlags::Interior: address points inside an object, not at the ObjectID header.
         // GetClassFromObject expects a real ObjectID; resolving interior pointers to the containing
         // object is not implemented (would need bulk-node range index or CLR API support).
         if ((static_cast<uint32_t>(root.Flags) & static_cast<uint32_t>(GCRootFlags::Interior)) != 0)
         {
+            if (_pReferenceChainBenchmarkStats != nullptr)
+            {
+                _pReferenceChainBenchmarkStats->interiorSkipped++;
+            }
             continue;
         }
-
-        // Map GCRootKind to RootCategory
-        RootCategory category;
-        if (root.Kind == GCRootKind::Stack)
-        {
-            category = RootCategory::Stack;  // local variable
-        }
-        else if (root.Kind == GCRootKind::Finalizer)
-        {
-            category = RootCategory::Finalizer;
-        }
-        else if (root.Kind == GCRootKind::Handle)
-        {
-            if ((static_cast<uint32_t>(root.Flags) & static_cast<uint32_t>(GCRootFlags::Pinning)) != 0)
-            {
-                category = RootCategory::Pinning;
-            }
-            else
-            {
-                category = RootCategory::Handle;
-            }
-        }
-        else if (root.Kind == GCRootKind::Other)
-        {
-            category = RootCategory::Other;
-        }
-        else
-        {
-            category = RootCategory::Unknown;
-        }
-
 
         // GetClassFromObject/GetObjectSize2 can only be called from within ICorProfilerCallback methods
         // (i.e. NOT from another thread and NOT after a GC)
         ClassID rootClassID;
+        if (_pReferenceChainBenchmarkStats != nullptr)
+        {
+            _pReferenceChainBenchmarkStats->rootGetClassFromObjectCalls++;
+        }
         HRESULT hr = _pCorProfilerInfo->GetClassFromObject(root.RootedNodeAddress, &rootClassID);
         if (FAILED(hr))
         {
+            if (_pReferenceChainBenchmarkStats != nullptr)
+            {
+                _pReferenceChainBenchmarkStats->classLookupFailed++;
+            }
             failCount++;
             continue;
         }
 
-        SIZE_T size = 0;
-        hr = _pCorProfilerInfo->GetObjectSize2(root.RootedNodeAddress, &size);
+        SIZE_T layoutSize = 0;
+        hr = _pCorProfilerInfo->GetObjectSize2(root.RootedNodeAddress, &layoutSize);
+        if (_isReferenceChainBenchmarkEnabled && _pReferenceChainTraverser)
+        {
+            _pReferenceChainTraverser->RecordRootObjectSizeCall(false, FAILED(hr) || layoutSize == 0);
+        }
+        if (_pReferenceChainBenchmarkStats != nullptr && (FAILED(hr) || layoutSize == 0))
+        {
+            _pReferenceChainBenchmarkStats->sizeLookupFailed++;
+        }
         if (FAILED(hr))
         {
             failCount++;
-
-            continue;
+            layoutSize = 0;
         }
 
         successCount++;
-        RootInfo rootInfo(root.RootedNodeAddress, category, rootClassID, size);
+        RootInfo rootInfo(root.RootedNodeAddress, category, rootClassID, layoutSize);
 
         // Traverse the object graph from this root immediately (while still in GC callback context)
         if (_pReferenceChainTraverser)
         {
+            if (_pReferenceChainBenchmarkStats != nullptr)
+            {
+                _pReferenceChainBenchmarkStats->traversalCalls++;
+            }
             _pReferenceChainTraverser->TraverseFromSingleRoot(rootInfo);
         }
     }
@@ -458,11 +501,29 @@ void HeapSnapshotManager::OnBulkRootStaticVar(const GCBulkRootStaticVarValue& ro
 {
     std::lock_guard lock(_histogramLock);
 
-    // GetClassFromObject/GetObjectSize2 can only be called from within ICorProfilerCallback methods
-    SIZE_T size = 0;
-    HRESULT hr = _pCorProfilerInfo->GetObjectSize2(root.ObjectID, &size);
+    if (_pReferenceChainBenchmarkStats != nullptr)
+    {
+        _pReferenceChainBenchmarkStats->observedRoots[static_cast<size_t>(RootCategory::StaticVariable)]++;
+        if (!_pReferenceChainBenchmarkStats->rootAddresses.insert(static_cast<uintptr_t>(root.ObjectID)).second)
+        {
+            _pReferenceChainBenchmarkStats->duplicateAddresses++;
+        }
+    }
+
+    // GetObjectSize2 can only be called from within ICorProfilerCallback methods.
+    SIZE_T layoutSize = 0;
+    HRESULT hr = _pCorProfilerInfo->GetObjectSize2(root.ObjectID, &layoutSize);
+    if (_isReferenceChainBenchmarkEnabled && _pReferenceChainTraverser)
+    {
+        _pReferenceChainTraverser->RecordRootObjectSizeCall(true, FAILED(hr) || layoutSize == 0);
+    }
+    if (_pReferenceChainBenchmarkStats != nullptr && (FAILED(hr) || layoutSize == 0))
+    {
+        _pReferenceChainBenchmarkStats->sizeLookupFailed++;
+    }
     if (FAILED(hr))
     {
+        layoutSize = 0;
         if (Log::IsDebugEnabled())
         {
             std::string typeName;
@@ -470,14 +531,22 @@ void HeapSnapshotManager::OnBulkRootStaticVar(const GCBulkRootStaticVarValue& ro
             Log::Debug("[STATIC_ROOT] GetObjectSize2 failed for field='", shared::ToString(fieldName),
                        "' type='", typeName, "' hr=", hr);
         }
-        return;
     }
 
-    RootInfo rootInfo(root.ObjectID, RootCategory::StaticVariable, root.TypeID, size, fieldName);
+    RootInfo rootInfo(
+        static_cast<uintptr_t>(root.ObjectID),
+        RootCategory::StaticVariable,
+        static_cast<ClassID>(root.TypeID),
+        layoutSize,
+        fieldName);
 
     // Traverse the object graph from this root immediately (while still in GC callback context)
     if (_pReferenceChainTraverser)
     {
+        if (_pReferenceChainBenchmarkStats != nullptr)
+        {
+            _pReferenceChainBenchmarkStats->traversalCalls++;
+        }
         _pReferenceChainTraverser->TraverseFromSingleRoot(rootInfo);
     }
 }
@@ -665,6 +734,11 @@ void HeapSnapshotManager::StartGCDump()
 
     LogRuntimeVersionRangeOnce();
 
+    if (_pReferenceChainBenchmarkStats != nullptr)
+    {
+        _pReferenceChainBenchmarkStats->Reset();
+    }
+
     // The cache outlives a dump, so a module unloaded since the last one leaves it with
     // ClassIDs pointing to freed MethodTables. Dropping them here, before any traversal
     // can look one up, also avoids attributing a freshly loaded type to whatever used
@@ -709,7 +783,7 @@ void HeapSnapshotManager::StartGCDump()
         {
             _pReferenceChainTraverser = std::make_unique<ReferenceChainTraverser>(
                 _pCorProfilerInfo, _pFrameStore, *_typeReferenceTree, *_pInlineVTCache,
-                _visitedSetHighWatermark);
+                _visitedSetHighWatermark, _isReferenceChainBenchmarkEnabled);
         }
 
         _cachedItemsSize.store(0, std::memory_order_relaxed);
@@ -753,6 +827,37 @@ void HeapSnapshotManager::OnEndGCDump()
     std::cout << _objectCount << " objects for " << _totalSize / (1024 * 1024) << " MB during " << _duration << "ms" << std::endl
               << std::endl;
 #endif
+
+    if (_isReferenceChainBenchmarkEnabled)
+    {
+        Log::Debug("Reference chain benchmark heap: duration_ms=", _duration,
+                   ", objects=", _objectCount,
+                   ", bytes=", _totalSize);
+
+        if (_pReferenceChainBenchmarkStats != nullptr)
+        {
+            const auto& observed = _pReferenceChainBenchmarkStats->observedRoots;
+            Log::Debug("Reference chain benchmark roots observed: stack=", observed[static_cast<size_t>(RootCategory::Stack)],
+                       ", static=", observed[static_cast<size_t>(RootCategory::StaticVariable)],
+                       ", finalizer=", observed[static_cast<size_t>(RootCategory::Finalizer)],
+                       ", handle=", observed[static_cast<size_t>(RootCategory::Handle)],
+                       ", pinning=", observed[static_cast<size_t>(RootCategory::Pinning)],
+                       ", conditional_weak_table=", observed[static_cast<size_t>(RootCategory::ConditionalWeakTable)],
+                       ", com=", observed[static_cast<size_t>(RootCategory::COM)],
+                       ", other=", observed[static_cast<size_t>(RootCategory::Other)],
+                       ", unknown=", observed[static_cast<size_t>(RootCategory::Unknown)]);
+
+            Log::Debug("Reference chain benchmark root decisions: observed=",
+                       _pReferenceChainBenchmarkStats->rootAddresses.size() + _pReferenceChainBenchmarkStats->duplicateAddresses,
+                       ", traversal_calls=", _pReferenceChainBenchmarkStats->traversalCalls,
+                       ", duplicate_addresses=", _pReferenceChainBenchmarkStats->duplicateAddresses,
+                       ", interior_skipped=", _pReferenceChainBenchmarkStats->interiorSkipped,
+                       ", weak_observed=", _pReferenceChainBenchmarkStats->weakObserved,
+                       ", class_lookup_failed=", _pReferenceChainBenchmarkStats->classLookupFailed,
+                       ", size_lookup_failed=", _pReferenceChainBenchmarkStats->sizeLookupFailed,
+                       ", root_get_class_calls=", _pReferenceChainBenchmarkStats->rootGetClassFromObjectCalls);
+        }
+    }
 
     // Log traversal statistics and persist high-water-mark for next dump's pre-sizing.
     // Traversal itself was done incrementally during OnBulkRoot* callbacks.

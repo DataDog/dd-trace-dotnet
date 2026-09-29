@@ -51,7 +51,7 @@ public static class ForwardTreeBuilder
         {
             if (groups.TryGetValue(code, out var roots) && roots.Count > 0)
             {
-                var childNodes = roots.OrderByDescending(r => r.TotalSize)
+                var childNodes = roots.OrderByDescending(r => r.InstanceCount)
                     .Select(r => WrapRoot(r, matchingTypes))
                     .ToList();
                 result.Add(new ForwardTreeNode(
@@ -69,7 +69,7 @@ public static class ForwardTreeBuilder
         {
             if (!orderedCodes.Contains(code))
             {
-                var childNodes = roots.OrderByDescending(r => r.TotalSize)
+                var childNodes = roots.OrderByDescending(r => r.InstanceCount)
                     .Select(r => WrapRoot(r, matchingTypes))
                     .ToList();
                 result.Add(new ForwardTreeNode(
