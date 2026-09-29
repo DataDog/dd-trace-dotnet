@@ -1,11 +1,18 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFrameworks>net8.0;net9.0</TargetFrameworks>
-    <SignAssembly>false</SignAssembly>
+    <!-- The test assembly must be signed to access tracer internals; OpenFeature and its provider are unsigned. -->
+    <NoWarn>$(NoWarn);CS8002</NoWarn>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="OpenFeature" Version="2.3.0" />
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="5.0.0" />
     <ProjectReference Include="../../src/Datadog.FeatureFlags.OpenFeature/Datadog.FeatureFlags.OpenFeature.csproj" />
+    <ProjectReference Include="../../src/Datadog.Trace/Datadog.Trace.csproj" Aliases="Tracer" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- Link the canonical snapshot already used by FeatureFlagsEvaluatorTests; do not copy it. -->
+    <EmbeddedResource Include="../Datadog.Trace.Tests/FeatureFlags/ffe-system-test-data/ufc-config.json" LogicalName="Fixtures.ufc-config.json" />
+    <EmbeddedResource Include="../Datadog.Trace.Tests/FeatureFlags/ffe-system-test-data/evaluation-cases/*.json" LogicalName="Fixtures.evaluation-cases.%(Filename)%(Extension)" />
   </ItemGroup>
 </Project>

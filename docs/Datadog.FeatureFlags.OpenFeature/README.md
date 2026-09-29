@@ -125,10 +125,18 @@ The focused tests can be run with:
 dotnet test tracer/test/Datadog.FeatureFlags.OpenFeature.Tests/Datadog.FeatureFlags.OpenFeature.Tests.csproj -f net8.0 -c Release -p:GeneratePackageOnBuild=false
 ```
 
-These tests exercise the public provider without native instrumentation. They
-cover defaults, error details, cancellation, and API annotations; they do not
-establish successful configuration delivery or telemetry parity. Client-pipeline
-support and instrumented end-to-end validation remain work before release.
+These tests link the same `ufc-config.json` and `evaluation-cases/*.json` snapshot
+used by `FeatureFlagsEvaluatorTests`. Every case runs through both the public
+synchronous and asynchronous provider methods, checking values, reasons, and
+error codes against the JSON expectations. They connect the provider to the real
+tracer evaluator through an internal constructor, retaining the production
+context and result conversions without requiring native instrumentation. The
+fixture files are neither copied nor modified, so snapshot updates apply to both
+suites. Additional tests cover cancellation and API annotations.
+
+This validates provider evaluation behavior; it does not establish successful
+configuration delivery or telemetry parity. Client-pipeline support and
+instrumented end-to-end validation remain work before release.
 
 ## Get in touch
 

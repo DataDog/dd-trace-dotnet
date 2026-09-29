@@ -32,6 +32,7 @@ public sealed partial class DatadogProvider : global::OpenFeature.FeatureProvide
     private const int StatusError = 2;
 
     private static Action? _onNewConfig = null;
+    private readonly FeatureFlagsSdk.EvaluationCallback? _evaluate;
     private readonly Metadata _metadata = new Metadata("datadog-openfeature-provider");
 #if NET6_0_OR_GREATER
     private readonly FlagEvalMetricsHook _metricsHook;
@@ -54,6 +55,14 @@ public sealed partial class DatadogProvider : global::OpenFeature.FeatureProvide
         {
             _spanEnrichmentHook = new SpanEnrichmentHook();
         }
+    }
+
+    // The native profiler normally connects FeatureFlagsSdk.Evaluate to the tracer. Unit tests
+    // can supply the real tracer evaluator directly while retaining provider argument/result mapping.
+    internal DatadogProvider(FeatureFlagsSdk.EvaluationCallback evaluate)
+        : this()
+    {
+        _evaluate = evaluate ?? throw new ArgumentNullException(nameof(evaluate));
     }
 
     /// <summary> Gets a value indicating whether the Datadog's provider is instrumented and available  </summary>
@@ -212,7 +221,7 @@ public sealed partial class DatadogProvider : global::OpenFeature.FeatureProvide
     public override Task<ResolutionDetails<bool>> ResolveBooleanValueAsync(string flagKey, bool defaultValue, EvaluationContext? context = null, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        var res = FeatureFlagsSdk.Resolve<bool>(flagKey, Trace.FeatureFlags.ValueType.Boolean, defaultValue, context);
+        var res = FeatureFlagsSdk.Resolve<bool>(flagKey, Trace.FeatureFlags.ValueType.Boolean, defaultValue, context, _evaluate);
         return Task.FromResult(res);
     }
 
@@ -225,7 +234,7 @@ public sealed partial class DatadogProvider : global::OpenFeature.FeatureProvide
     public override Task<ResolutionDetails<double>> ResolveDoubleValueAsync(string flagKey, double defaultValue, EvaluationContext? context = null, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        var res = FeatureFlagsSdk.Resolve<double>(flagKey, Trace.FeatureFlags.ValueType.Numeric, defaultValue, context);
+        var res = FeatureFlagsSdk.Resolve<double>(flagKey, Trace.FeatureFlags.ValueType.Numeric, defaultValue, context, _evaluate);
         return Task.FromResult(res);
     }
 
@@ -238,7 +247,7 @@ public sealed partial class DatadogProvider : global::OpenFeature.FeatureProvide
     public override Task<ResolutionDetails<int>> ResolveIntegerValueAsync(string flagKey, int defaultValue, EvaluationContext? context = null, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        var res = FeatureFlagsSdk.Resolve<int>(flagKey, Trace.FeatureFlags.ValueType.Integer, defaultValue, context);
+        var res = FeatureFlagsSdk.Resolve<int>(flagKey, Trace.FeatureFlags.ValueType.Integer, defaultValue, context, _evaluate);
         return Task.FromResult(res);
     }
 
@@ -251,7 +260,7 @@ public sealed partial class DatadogProvider : global::OpenFeature.FeatureProvide
     public override Task<ResolutionDetails<string>> ResolveStringValueAsync(string flagKey, string defaultValue, EvaluationContext? context = null, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        var res = FeatureFlagsSdk.Resolve<string>(flagKey, Trace.FeatureFlags.ValueType.String, defaultValue, context);
+        var res = FeatureFlagsSdk.Resolve<string>(flagKey, Trace.FeatureFlags.ValueType.String, defaultValue, context, _evaluate);
         return Task.FromResult(res);
     }
 
@@ -264,7 +273,7 @@ public sealed partial class DatadogProvider : global::OpenFeature.FeatureProvide
     public override Task<ResolutionDetails<Value>> ResolveStructureValueAsync(string flagKey, Value defaultValue, EvaluationContext? context = null, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        var res = FeatureFlagsSdk.Resolve<Value>(flagKey, Trace.FeatureFlags.ValueType.Json, defaultValue, context);
+        var res = FeatureFlagsSdk.Resolve<Value>(flagKey, Trace.FeatureFlags.ValueType.Json, defaultValue, context, _evaluate);
         return Task.FromResult(res);
     }
 

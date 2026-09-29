@@ -30,7 +30,7 @@ public sealed partial class DatadogProvider
     public ResolutionDetails<bool> ResolveBooleanValue(string flagKey, bool defaultValue, EvaluationContext? context = null, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        return FeatureFlagsSdk.Resolve<bool>(flagKey, Trace.FeatureFlags.ValueType.Boolean, defaultValue, context);
+        return FeatureFlagsSdk.Resolve<bool>(flagKey, Trace.FeatureFlags.ValueType.Boolean, defaultValue, context, _evaluate);
     }
 
     /// <summary>Synchronously resolves a flag as double. Experimental Datadog extension.</summary>
@@ -49,7 +49,7 @@ public sealed partial class DatadogProvider
     public ResolutionDetails<double> ResolveDoubleValue(string flagKey, double defaultValue, EvaluationContext? context = null, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        return FeatureFlagsSdk.Resolve<double>(flagKey, Trace.FeatureFlags.ValueType.Numeric, defaultValue, context);
+        return FeatureFlagsSdk.Resolve<double>(flagKey, Trace.FeatureFlags.ValueType.Numeric, defaultValue, context, _evaluate);
     }
 
     /// <summary>Synchronously resolves a flag as int. Experimental Datadog extension.</summary>
@@ -68,7 +68,7 @@ public sealed partial class DatadogProvider
     public ResolutionDetails<int> ResolveIntegerValue(string flagKey, int defaultValue, EvaluationContext? context = null, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        return FeatureFlagsSdk.Resolve<int>(flagKey, Trace.FeatureFlags.ValueType.Integer, defaultValue, context);
+        return FeatureFlagsSdk.Resolve<int>(flagKey, Trace.FeatureFlags.ValueType.Integer, defaultValue, context, _evaluate);
     }
 
     /// <summary>Synchronously resolves a flag as string. Experimental Datadog extension.</summary>
@@ -87,7 +87,7 @@ public sealed partial class DatadogProvider
     public ResolutionDetails<string> ResolveStringValue(string flagKey, string defaultValue, EvaluationContext? context = null, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        return FeatureFlagsSdk.Resolve<string>(flagKey, Trace.FeatureFlags.ValueType.String, defaultValue, context);
+        return FeatureFlagsSdk.Resolve<string>(flagKey, Trace.FeatureFlags.ValueType.String, defaultValue, context, _evaluate);
     }
 
     /// <summary>Synchronously resolves a flag as Value. Experimental Datadog extension.</summary>
@@ -106,6 +106,6 @@ public sealed partial class DatadogProvider
     public ResolutionDetails<Value> ResolveStructureValue(string flagKey, Value defaultValue, EvaluationContext? context = null, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        return FeatureFlagsSdk.Resolve<Value>(flagKey, Trace.FeatureFlags.ValueType.Json, defaultValue, context);
+        return FeatureFlagsSdk.Resolve<Value>(flagKey, Trace.FeatureFlags.ValueType.Json, defaultValue, context, _evaluate);
     }
 }
