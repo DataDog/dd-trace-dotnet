@@ -198,9 +198,17 @@ internal sealed partial class CircularChannel : IChannel
         {
             // The mutex was disposed while we held it, nothing to do
         }
-        catch (ApplicationException)
+        catch (ApplicationException ex) when (Interlocked.Read(ref _disposed) == 1)
         {
-            // We are not the owner, which can happen if the channel was disposed underneath us. Nothing to do.
+            // The channel is being torn down underneath us, so losing ownership here is expected
+            Log.Debug(ex, "CircularChannel: Could not release the mutex while disposing.");
+        }
+        catch (ApplicationException ex)
+        {
+            // We acquired the mutex but could not give it back, so it stays held and every process using
+            // this channel will time out from now on. Never swallow this silently - it is the failure that
+            // makes a channel permanently unusable.
+            Log.Error(ex, "CircularChannel: Failed to release the mutex. The channel is now unusable.");
         }
     }
 }

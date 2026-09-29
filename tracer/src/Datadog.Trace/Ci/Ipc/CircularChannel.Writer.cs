@@ -5,6 +5,7 @@
 #nullable enable
 
 using System;
+using System.IO.MemoryMappedFiles;
 using System.Threading;
 
 namespace Datadog.Trace.Ci.Ipc;
@@ -14,12 +15,16 @@ internal partial class CircularChannel
     private sealed class Writer : IChannelWriter
     {
         private readonly CircularChannel _channel;
+
+        // Mapped once and reused, so we never map a view while holding the cross-process mutex.
+        private readonly MemoryMappedViewAccessor _accessor;
         private long _disposed;
 
         internal Writer(CircularChannel channel)
         {
             _disposed = 0;
             _channel = channel;
+            _accessor = channel._mmf.CreateViewAccessor();
         }
 
         public int GetMessageSize(in ArraySegment<byte> data) => data.Count + 2;
@@ -56,7 +61,7 @@ internal partial class CircularChannel
 
             try
             {
-                using var accessor = channel._mmf.CreateViewAccessor();
+                var accessor = _accessor;
                 var writePos = accessor.ReadUInt16(0);
                 var readPos = accessor.ReadUInt16(2);
 
@@ -152,7 +157,13 @@ internal partial class CircularChannel
 
         public void Dispose()
         {
-            Interlocked.Exchange(ref _disposed, 1);
+            if (Interlocked.Exchange(ref _disposed, 1) == 1)
+            {
+                return;
+            }
+
+            // Disposed before the channel drops the memory mapped file the view came from.
+            _accessor.Dispose();
         }
     }
 }
