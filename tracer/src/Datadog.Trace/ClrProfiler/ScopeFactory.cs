@@ -127,7 +127,7 @@ namespace Datadog.Trace.ClrProfiler
                     string resourceUrl = requestUri != null ? UriHelpers.CleanUri(requestUri, removeScheme: true, tryRemoveIds: true) : null;
                     span.ResourceName = $"{httpMethod} {resourceUrl}";
 
-                    tags.HttpMethod = httpMethod?.ToUpperInvariant();
+                    tags.HttpMethod = StringUtil.ToUpperInvariant(httpMethod);
                     if (requestUri is not null)
                     {
                         tags.HttpUrl = HttpRequestUtils.GetUrl(requestUri, tracer.TracerManager.QueryStringManager);

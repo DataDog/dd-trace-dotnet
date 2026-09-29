@@ -29,7 +29,7 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
             _output = output;
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net10.0" })]
+        [TestAppFact("Samples.Computer01", new[] { "net11.0" })]
         public void CheckSimpleChainScenario(string appName, string framework, string appAssembly)
         {
             // Scenario 1: Simple Chain (~1K objects)
@@ -70,7 +70,7 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
                 "Expected at least one snapshot to contain Stack root and Order->Customer->Address and Order->Product chains");
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net10.0" })]
+        [TestAppFact("Samples.Computer01", new[] { "net11.0" })]
         public void CheckReferenceTreeProducedAcrossConsecutiveSnapshots(string appName, string framework, string appAssembly)
         {
             // Regression guard for fault handling: a memory access fault during one
@@ -119,7 +119,7 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
                 "Expected at least one snapshot to still contain the Order->Customer->Address chain");
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net10.0" })]
+        [TestAppFact("Samples.Computer01", new[] { "net11.0" })]
         public void CheckSimpleChainBinaryFormat(string appName, string framework, string appAssembly)
         {
             // Same as CheckSimpleChainScenario but with binary serialization (format=1, the default).
@@ -155,7 +155,7 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
                 "Expected at least one binary snapshot to contain Stack root and Order->Customer->Address and Order->Product chains");
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net10.0" })]
+        [TestAppFact("Samples.Computer01", new[] { "net11.0" })]
         public void CheckSimpleChainBothFormats(string appName, string framework, string appAssembly)
         {
             // Format=3 emits both JSON and binary files for the same tree — useful for validation.
@@ -234,7 +234,7 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
             }
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net10.0" })]
+        [TestAppFact("Samples.Computer01", new[] { "net11.0" })]
         public void CheckReferenceTreeTypesAreInClassHistogramBinary(string appName, string framework, string appAssembly)
         {
             CheckReferenceTreeTypesAreInClassHistogram(appName, framework, appAssembly, referenceTreeFormat: "1", treeFileName: "reference_tree.bin", treeExtension: "bin");
@@ -242,13 +242,13 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
 
         // Run against JSON as well: the two serializers build their type table independently,
         // so a type/index mismatch in one of them would not show up in the other.
-        [TestAppFact("Samples.Computer01", new[] { "net10.0" })]
+        [TestAppFact("Samples.Computer01", new[] { "net11.0" })]
         public void CheckReferenceTreeTypesAreInClassHistogramJson(string appName, string framework, string appAssembly)
         {
             CheckReferenceTreeTypesAreInClassHistogram(appName, framework, appAssembly, referenceTreeFormat: "2", treeFileName: "reference_tree.json", treeExtension: "json");
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net10.0" })]
+        [TestAppFact("Samples.Computer01", new[] { "net11.0" })]
         public void CheckSkipTraversalProducesNoReferenceTree(string appName, string framework, string appAssembly)
         {
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: $"--scenario {ReferenceChainScenarioNumber} --param 1");
@@ -271,7 +271,7 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
             Assert.False(hasReferenceTree, "No reference tree should be sent when skip-traversal is enabled");
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net10.0" })]
+        [TestAppFact("Samples.Computer01", new[] { "net11.0" })]
         public void CheckCyclesScenario(string appName, string framework, string appAssembly)
         {
             // Scenario 3: Cycles - Parent -> Child -> Parent (bidirectional tree)
@@ -299,7 +299,7 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
                 "Expected at least one snapshot to contain TreeNode self-referencing chain with finite depth");
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net10.0" })]
+        [TestAppFact("Samples.Computer01", new[] { "net11.0" })]
         public void CheckDeepHierarchyScenario(string appName, string framework, string appAssembly)
         {
             // Scenario 4: Deep Hierarchy - Root -> Level0 -> Level1 -> ... -> Level9
@@ -326,7 +326,7 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
                 "Expected at least one snapshot to contain the full Level0->Level1->...->Level9 chain");
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net10.0" })]
+        [TestAppFact("Samples.Computer01", new[] { "net11.0" })]
         public void CheckMultipleRootsScenario(string appName, string framework, string appAssembly)
         {
             // Scenario 2: Multiple Roots
@@ -354,7 +354,7 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
                 "Expected at least one snapshot to contain Order->Customer chain and Product type");
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net10.0" })]
+        [TestAppFact("Samples.Computer01", new[] { "net11.0" })]
         public void CheckWideTreeScenario(string appName, string framework, string appAssembly)
         {
             // Scenario 5: Wide Tree - 100 branches x 50 leaves
@@ -379,7 +379,7 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
                 "Expected at least one snapshot to contain WideBranch->Leaf chain");
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net10.0" })]
+        [TestAppFact("Samples.Computer01", new[] { "net11.0" })]
         public void CheckMixedStructuresScenario(string appName, string framework, string appAssembly)
         {
             // Scenario 6: Mixed Structures - arrays of arrays, dictionaries, byte[] (value-type arrays skipped)
@@ -407,7 +407,7 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
                 "Expected at least one snapshot to contain Container->Payload->Metadata and Container->Leaf chains");
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net10.0" })]
+        [TestAppFact("Samples.Computer01", new[] { "net11.0" })]
         public void CheckSharedReferencesScenario(string appName, string framework, string appAssembly)
         {
             // Scenario 8: Shared References - multiple holders reference the same payload
@@ -434,7 +434,7 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
                 "Expected at least one snapshot to contain SharedHolder->SharedPayload chain with InstanceCount > 0");
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net10.0" })]
+        [TestAppFact("Samples.Computer01", new[] { "net11.0" })]
         public void CheckLinkedListScenario(string appName, string framework, string appAssembly)
         {
             // Scenario 9: Linked List - self-referencing type chain (LinkedNode -> LinkedNode -> ...)
@@ -461,7 +461,7 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
                 "Expected at least one snapshot to contain LinkedNode self-referencing chain with depth >= 2");
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net10.0" })]
+        [TestAppFact("Samples.Computer01", new[] { "net11.0" })]
         public void CheckNullFieldsScenario(string appName, string framework, string appAssembly)
         {
             // Scenario 10: Null Fields - objects with most reference fields intentionally null
@@ -501,7 +501,7 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
                 "Expected at least one snapshot to contain SparseObject->Customer without Product/Order as direct children");
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net10.0" })]
+        [TestAppFact("Samples.Computer01", new[] { "net11.0" })]
         public void CheckStructWithReferencesScenario(string appName, string framework, string appAssembly)
         {
             // Scenario 11: Value type array with embedded reference fields
@@ -531,7 +531,7 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
                 "Expected at least one snapshot to contain StructWithReferences[]->Customer->Address and StructWithReferences[]->Product chains");
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net10.0" })]
+        [TestAppFact("Samples.Computer01", new[] { "net11.0" })]
         public void CheckStaticRootScenario(string appName, string framework, string appAssembly)
         {
             // Scenario 12: Same simple chain as Scenario 1 but held by a static field.
@@ -564,7 +564,7 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
                 "Expected at least one snapshot to contain StaticVariable root with field name and Order->Customer->Address and Order->Product chains");
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net10.0" })]
+        [TestAppFact("Samples.Computer01", new[] { "net11.0" })]
         public void CheckEventHandlerLeakScenario(string appName, string framework, string appAssembly)
         {
             // Scenario 13: Event handler leak - publisher holds subscribers via event delegate
@@ -590,7 +590,7 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
                 "Expected at least one snapshot to contain EventSubscriber->LeakedPayload chain and EventPublisher type");
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net10.0" })]
+        [TestAppFact("Samples.Computer01", new[] { "net11.0" })]
         public void CheckClosureLeakScenario(string appName, string framework, string appAssembly)
         {
             // Scenario 14: Closure / captured variable leak - lambdas capturing expensive objects
@@ -614,7 +614,7 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
                 "Expected at least one snapshot to contain ClosureHolder->ExpensiveResource chain");
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net10.0" })]
+        [TestAppFact("Samples.Computer01", new[] { "net11.0" })]
         public void CheckTimerLeakScenario(string appName, string framework, string appAssembly)
         {
             // Scenario 15: Timer callback leak - Timer keeping callback targets alive
@@ -640,7 +640,7 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
                 "Expected at least one snapshot to contain MonitoredService->ServiceMetrics chain and TimerOwner type");
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net10.0" })]
+        [TestAppFact("Samples.Computer01", new[] { "net11.0" })]
         public void CheckGCHandleLeakScenario(string appName, string framework, string appAssembly)
         {
             // Scenario 16: Strong GCHandle leak - tests Handle root category
@@ -666,7 +666,7 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
                 "Expected at least one snapshot to contain Handle root and HandleTarget->InteropPayload chain");
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net10.0" })]
+        [TestAppFact("Samples.Computer01", new[] { "net11.0" })]
         public void CheckPinnedLeakScenario(string appName, string framework, string appAssembly)
         {
             // Scenario 18: Pinned handle - tests Pinning root category
@@ -690,7 +690,7 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
                 "Expected at least one snapshot to contain Pinning root");
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net10.0" })]
+        [TestAppFact("Samples.Computer01", new[] { "net11.0" })]
         public void CheckAsyncLeakScenario(string appName, string framework, string appAssembly)
         {
             // Scenario 19: Async state machine leak - never-completing Task capturing HeavyContext
@@ -716,7 +716,7 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
                 "Expected at least one snapshot to contain AsyncLeakSource and HeavyContext types");
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net10.0" })]
+        [TestAppFact("Samples.Computer01", new[] { "net11.0" })]
         public void CheckNestedValueTypeScenario(string appName, string framework, string appAssembly)
         {
             // Scenario 20: Nested inline value types - OuterHolder<InnerStruct> where InnerStruct
@@ -748,7 +748,7 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
                 "Expected at least one snapshot to contain OuterHolder, NestedVtTarget, and DeepVtTarget types");
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net10.0" })]
+        [TestAppFact("Samples.Computer01", new[] { "net11.0" })]
         public void CheckInheritanceMultiSeriesScenario(string appName, string framework, string appAssembly)
         {
             // Scenario 21: Inheritance with mixed ref/non-ref fields.
@@ -779,7 +779,7 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
                 "Expected at least one snapshot to contain DerivedAfterGap and RefTarget types");
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net10.0" })]
+        [TestAppFact("Samples.Computer01", new[] { "net11.0" })]
         public void CheckVtArrayWithRefsScenario(string appName, string framework, string appAssembly)
         {
             // Scenario 22: Value type array with reference fields.
@@ -806,7 +806,7 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
                 "Expected at least one snapshot to contain VtArrayTarget type (reachable via VT array element refs)");
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net10.0" })]
+        [TestAppFact("Samples.Computer01", new[] { "net11.0" })]
         public void CheckInlineVtNonGenericScenario(string appName, string framework, string appAssembly)
         {
             // Scenario 23: Non-generic inline VT with reference field.
@@ -834,7 +834,7 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
                 "Expected at least one snapshot to contain HolderWithInlineVt and InlineVtTarget types");
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net10.0" })]
+        [TestAppFact("Samples.Computer01", new[] { "net11.0" })]
         public void CheckInlineVtGenericWithPrimitivesScenario(string appName, string framework, string appAssembly)
         {
             // Scenario 24: Generic inline VT with primitive type arguments.

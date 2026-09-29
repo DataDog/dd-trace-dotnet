@@ -81,7 +81,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK
             {
                 if (state.State is IExecutionContext { RequestContext.Request: { } request })
                 {
-                    tags.HttpMethod = request.HttpMethod?.ToUpperInvariant();
+                    tags.HttpMethod = StringUtil.ToUpperInvariant(request.HttpMethod);
                     if (tags.HttpUrl is null)
                     {
                         var uri = request.Endpoint;

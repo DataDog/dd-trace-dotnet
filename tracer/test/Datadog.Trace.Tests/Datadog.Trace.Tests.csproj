@@ -66,6 +66,20 @@
     <PackageReference Include="Microsoft.AspNetCore.TestHost" Version="2.2.0" />
   </ItemGroup>
 
+  <ItemGroup Condition=" $(TargetFramework.StartsWith('net11')) ">
+    <!-- On net11.0, the base shared framework (Microsoft.NETCore.App, not just AspNetCore.App)
+         bundles Microsoft.Extensions.DependencyInjection.Abstractions, which now defines the
+         concrete ServiceCollection type itself (previously only the separate
+         Microsoft.Extensions.DependencyInjection package did). Microsoft.AspNetCore 2.2.0 above
+         transitively pulls in that old, differently-named Microsoft.Extensions.DependencyInjection
+         package, which still defines its own ServiceCollection - a genuine CS0433 duplicate-type
+         conflict between two distinct assembly identities, not a version mismatch NuGet's own
+         conflict resolution can unify. Exclude its compile-time assets so the framework-provided
+         type wins; its runtime assets are left alone since the old AspNetCore/TestHost binaries
+         were themselves compiled against it and still need it at runtime. -->
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="2.2.0" ExcludeAssets="compile" />
+  </ItemGroup>
+
   <ItemGroup>
     <Compile Include="..\Datadog.Trace.TestHelpers.SharedSource\VerifyHelper.cs" Link="Helpers\VerifyHelper.cs" />
     <PackageReference Include="Verify.Xunit" Version="14.13.1" />

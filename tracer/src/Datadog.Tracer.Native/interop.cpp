@@ -304,6 +304,36 @@ EXTERN_C u_long STDAPICALLTYPE GetInodeForPath(const WCHAR* path)
 #endif
 }
 
+EXTERN_C int STDAPICALLTYPE GetFileMetadataForPath(const WCHAR* path, const int followSymlinks, UINT32* mode, UINT32* userId)
+{
+#ifdef _WIN32
+    // We don't need to support this on Windows
+    return -1;
+#else
+    if (!path || !mode || !userId)
+    {
+        return -EINVAL;
+    }
+
+    const std::string str = ToString(path);
+    if (str.empty())
+    {
+        return -EINVAL;
+    }
+
+    struct stat st {};
+    const auto result = followSymlinks ? stat(str.c_str(), &st) : lstat(str.c_str(), &st);
+    if (result != 0)
+    {
+        return -errno;
+    }
+
+    *mode = static_cast<UINT32>(st.st_mode);
+    *userId = static_cast<UINT32>(st.st_uid);
+    return 0;
+#endif
+}
+
 #ifndef _WIN32
 
 EXTERN_C void *dddlopen (const char *__file, int __mode)
