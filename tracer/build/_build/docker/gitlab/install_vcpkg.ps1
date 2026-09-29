@@ -66,5 +66,13 @@ foreach ($tool in @('git', 'cmake', '7zip', 'powershell-core', 'ninja')) {
     if ($LASTEXITCODE -ne 0) { throw "vcpkg fetch $tool failed with exit code $LASTEXITCODE" }
 }
 
+# Tests invoke Git directly, outside vcpkg. Reuse the pinned copy already fetched above.
+$gitExecutable = (& "$InstallRoot\vcpkg.exe" fetch git | Select-Object -Last 1).Trim('"')
+if ($LASTEXITCODE -ne 0 -or -not (Test-Path -LiteralPath $gitExecutable -PathType Leaf)) {
+    throw 'Could not locate the Git executable fetched by vcpkg'
+}
+$gitDirectory = Split-Path -Parent $gitExecutable
+[Environment]::SetEnvironmentVariable('Path', [Environment]::GetEnvironmentVariable('Path', [EnvironmentVariableTarget]::Machine) + ";$gitDirectory", [EnvironmentVariableTarget]::Machine)
+
 Write-Host -ForegroundColor Green "Installed vcpkg $Version to $InstallRoot"
 & "$InstallRoot\vcpkg.exe" version
