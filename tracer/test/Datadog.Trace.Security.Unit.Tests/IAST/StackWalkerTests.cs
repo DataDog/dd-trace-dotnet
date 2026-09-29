@@ -7,6 +7,7 @@
 
 using System;
 using System.Diagnostics;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.Iast;
@@ -39,7 +40,7 @@ namespace Datadog.Trace.Security.Unit.Tests.IAST
             var stack = Capture();
 
             stack.Should().NotBeNull();
-            StackWalker.TryGetFrame(stack!, out var frame).Should().BeTrue();
+            StackWalker.TryGetFrame(stack!, out var frame, out _).Should().BeTrue();
             frame!.GetMethod()!.DeclaringType.Should().Be(typeof(StackWalkerTests));
             frame.GetMethod()!.Name.Should().Be(nameof(GivenAStack_WhenGetStackTrace_ThenTheTargetFrameIsTheFirstNonExcludedCaller));
         }
@@ -51,8 +52,36 @@ namespace Datadog.Trace.Security.Unit.Tests.IAST
             var stack = new Lazy<StackTrace?>(Capture).Value;
 
             stack.Should().NotBeNull();
-            StackWalker.TryGetFrame(stack!, out var frame).Should().BeTrue();
+            StackWalker.TryGetFrame(stack!, out var frame, out _).Should().BeTrue();
             frame!.GetMethod()!.Name.Should().Be(nameof(GivenExcludedFramesBeforeTheTarget_WhenTryGetFrame_ThenTheyAreSkipped));
+        }
+
+        [Fact]
+        public void GivenACallerWithoutDebugInfo_WhenTryGetFrame_ThenTheFirstCallerWithDebugInfoIsChosenButTheIdentityStaysOnTheFirstCaller()
+        {
+            var stack = new FakeStackTrace(
+                new FakeStackFrame(typeof(object).GetMethod(nameof(ToString))!, line: 10),
+                new FakeStackFrame(typeof(NoPdbCaller).GetMethod(nameof(NoPdbCaller.Call))!, line: 0),
+                new FakeStackFrame(typeof(PdbCaller).GetMethod(nameof(PdbCaller.Call))!, line: 42),
+                new FakeStackFrame(typeof(OtherPdbCaller).GetMethod(nameof(OtherPdbCaller.Call))!, line: 7));
+
+            StackWalker.TryGetFrame(stack, out var frame, out var identityFrame).Should().BeTrue();
+            frame!.GetMethod()!.DeclaringType.Should().Be(typeof(PdbCaller));
+            frame.GetFileLineNumber().Should().Be(42);
+            identityFrame!.GetMethod()!.DeclaringType.Should().Be(typeof(NoPdbCaller));
+        }
+
+        [Fact]
+        public void GivenNoCallerWithDebugInfo_WhenTryGetFrame_ThenTheFirstNonExcludedCallerIsKept()
+        {
+            var stack = new FakeStackTrace(
+                new FakeStackFrame(typeof(object).GetMethod(nameof(ToString))!, line: 10),
+                new FakeStackFrame(typeof(NoPdbCaller).GetMethod(nameof(NoPdbCaller.Call))!, line: 0),
+                new FakeStackFrame(typeof(PdbCaller).GetMethod(nameof(PdbCaller.Call))!, line: 0));
+
+            StackWalker.TryGetFrame(stack, out var frame, out var identityFrame).Should().BeTrue();
+            frame!.GetMethod()!.DeclaringType.Should().Be(typeof(NoPdbCaller));
+            identityFrame.Should().BeSameAs(frame);
         }
 
         [Fact]
@@ -75,6 +104,43 @@ namespace Datadog.Trace.Security.Unit.Tests.IAST
             }
 
             return StackWalker.GetStackTrace();
+        }
+
+        private sealed class NoPdbCaller
+        {
+            public void Call()
+            {
+            }
+        }
+
+        private sealed class PdbCaller
+        {
+            public void Call()
+            {
+            }
+        }
+
+        private sealed class OtherPdbCaller
+        {
+            public void Call()
+            {
+            }
+        }
+
+        private sealed class FakeStackTrace(params StackFrame[] frames) : StackTrace
+        {
+            public override int FrameCount => frames.Length;
+
+            public override StackFrame[] GetFrames() => frames;
+        }
+
+        private sealed class FakeStackFrame(MethodBase method, int line) : StackFrame
+        {
+            public override MethodBase GetMethod() => method;
+
+            public override int GetFileLineNumber() => line;
+
+            public override string? GetFileName() => line > 0 ? "File.cs" : null;
         }
     }
 }
