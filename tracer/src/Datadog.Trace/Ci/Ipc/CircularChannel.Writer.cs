@@ -40,8 +40,15 @@ internal partial class CircularChannel
                 return false;
             }
 
-            var hasHandle = channel._mutex.WaitOne(_channel._settings.MutexTimeout);
-            if (!hasHandle)
+            var acquisition = channel.WaitForMutex();
+            if (acquisition == MutexAcquisition.Abandoned)
+            {
+                // A previous owner died while holding the mutex. The wait still succeeded and we own the
+                // mutex now, so keep going and let the finally below release it. Letting the exception
+                // escape would leak ownership and stop every process from ever using this channel again.
+                Log.Warning("CircularChannel.Writer: Mutex was abandoned by a previous owner. Recovering ownership.");
+            }
+            else if (acquisition != MutexAcquisition.Acquired)
             {
                 Log.Error("CircularChannel.Writer: Failed to acquire mutex within the time limit.");
                 return false;
@@ -139,14 +146,7 @@ internal partial class CircularChannel
             }
             finally
             {
-                try
-                {
-                    channel._mutex.ReleaseMutex();
-                }
-                catch (ObjectDisposedException)
-                {
-                    // The mutex was disposed, nothing to do
-                }
+                channel.ReleaseMutex();
             }
         }
 

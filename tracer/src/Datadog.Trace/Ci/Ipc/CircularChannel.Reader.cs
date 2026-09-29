@@ -66,24 +66,23 @@ internal partial class CircularChannel
                 return;
             }
 
-            try
+            var acquisition = _channel.WaitForMutex();
+            if (acquisition == MutexAcquisition.Abandoned)
             {
-                var hasHandle = _channel._mutex.WaitOne(_channel._settings.MutexTimeout);
-                if (!hasHandle)
-                {
-                    Log.Error("CircularChannel.Reader: Failed to acquire mutex within the time limit.");
-                    return;
-                }
+                // A previous owner died while holding the mutex. The wait still succeeded and we own the
+                // mutex now, so keep going and let the finally below release it. Bailing out here would
+                // leak ownership and stop every process from ever using this channel again.
+                Log.Warning("CircularChannel.Reader: Mutex was abandoned by a previous owner. Recovering ownership.");
             }
-            catch (AbandonedMutexException ex)
-            {
-                Log.Error(ex, "CircularChannel.Reader: Mutex was abandoned.");
-                return;
-            }
-            catch (ObjectDisposedException ex)
+            else if (acquisition == MutexAcquisition.Disposed)
             {
                 // The mutex was disposed, nothing to do
-                Log.Error(ex, "CircularChannel.Reader: Mutex has been disposed.");
+                Log.Error("CircularChannel.Reader: Mutex has been disposed.");
+                return;
+            }
+            else if (acquisition != MutexAcquisition.Acquired)
+            {
+                Log.Error("CircularChannel.Reader: Failed to acquire mutex within the time limit.");
                 return;
             }
 
@@ -167,15 +166,7 @@ internal partial class CircularChannel
             }
             finally
             {
-                try
-                {
-                    _channel._mutex.ReleaseMutex();
-                }
-                catch (ObjectDisposedException ex)
-                {
-                    // The mutex was disposed, nothing to do
-                    Log.Error(ex, "CircularChannel.Reader: Mutex has been disposed.");
-                }
+                _channel.ReleaseMutex();
             }
 
             // Once we have released the mutex, we can safely handle the messages

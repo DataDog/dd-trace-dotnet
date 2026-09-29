@@ -72,12 +72,16 @@ internal sealed partial class CircularChannel : IChannel
         }
 
         _disposed = 0;
-        _mutex = new Mutex(
-            initiallyOwned: false,
-            FrameworkDescription.Instance.IsWindows() ? @$"Global\{Path.GetFileNameWithoutExtension(fileName)}" : $"{Path.GetFileNameWithoutExtension(fileName)}");
+        _mutex = new Mutex(initiallyOwned: false, GetMutexName(fileName));
 
-        var hasHandle = _mutex.WaitOne(_settings.MutexTimeout);
-        if (!hasHandle)
+        var acquisition = WaitForMutex();
+        if (acquisition == MutexAcquisition.Abandoned)
+        {
+            // A previous owner died while holding the mutex. The wait still succeeded and we own the
+            // mutex now, so carry on initializing the channel; the finally below releases it as usual.
+            Log.Warning("CircularChannel: Mutex was abandoned by a previous owner. Recovering ownership.");
+        }
+        else if (acquisition != MutexAcquisition.Acquired)
         {
             throw new TimeoutException("CircularChannel: Failed to acquire mutex within the time limit.");
         }
@@ -100,8 +104,29 @@ internal sealed partial class CircularChannel : IChannel
         }
         finally
         {
-            _mutex.ReleaseMutex();
+            ReleaseMutex();
         }
+    }
+
+    /// <summary>
+    /// The outcome of waiting for the channel mutex.
+    /// </summary>
+    private enum MutexAcquisition
+    {
+        /// <summary>The wait timed out. The mutex is not owned by the caller.</summary>
+        TimedOut,
+
+        /// <summary>The mutex was acquired normally.</summary>
+        Acquired,
+
+        /// <summary>
+        /// A previous owner exited without releasing. The wait still succeeded and ownership has
+        /// transferred to the caller, so it must be released like any other successful acquisition.
+        /// </summary>
+        Abandoned,
+
+        /// <summary>The mutex was disposed while waiting. The mutex is not owned by the caller.</summary>
+        Disposed,
     }
 
     private int BufferSize => _settings.BufferSize;
@@ -129,5 +154,53 @@ internal sealed partial class CircularChannel : IChannel
         _reader?.Dispose();
         _mmf.Dispose();
         _mutex.Dispose();
+    }
+
+    internal static string GetMutexName(string fileName)
+        => FrameworkDescription.Instance.IsWindows()
+               ? @$"Global\{Path.GetFileNameWithoutExtension(fileName)}"
+               : $"{Path.GetFileNameWithoutExtension(fileName)}";
+
+    /// <summary>
+    /// Waits for the channel mutex.
+    /// </summary>
+    /// <remarks>
+    /// <see cref="WaitHandle.WaitOne(int)"/> throws <see cref="AbandonedMutexException"/> when a previous owner
+    /// exited without releasing, but the wait itself still succeeds and ownership transfers to this thread.
+    /// Treating that as a failed acquisition leaks ownership and poisons the channel for every process using
+    /// it, so callers must release whenever this returns <see cref="MutexAcquisition.Acquired"/> or
+    /// <see cref="MutexAcquisition.Abandoned"/>.
+    /// </remarks>
+    /// <returns>The outcome of the wait.</returns>
+    private MutexAcquisition WaitForMutex()
+    {
+        try
+        {
+            return _mutex.WaitOne(_settings.MutexTimeout) ? MutexAcquisition.Acquired : MutexAcquisition.TimedOut;
+        }
+        catch (AbandonedMutexException)
+        {
+            return MutexAcquisition.Abandoned;
+        }
+        catch (ObjectDisposedException)
+        {
+            return MutexAcquisition.Disposed;
+        }
+    }
+
+    private void ReleaseMutex()
+    {
+        try
+        {
+            _mutex.ReleaseMutex();
+        }
+        catch (ObjectDisposedException)
+        {
+            // The mutex was disposed while we held it, nothing to do
+        }
+        catch (ApplicationException)
+        {
+            // We are not the owner, which can happen if the channel was disposed underneath us. Nothing to do.
+        }
     }
 }

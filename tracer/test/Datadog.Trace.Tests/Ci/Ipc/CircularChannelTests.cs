@@ -65,6 +65,52 @@ public class CircularChannelTests
         writer.TryWrite(in valueSegment).Should().BeFalse();
     }
 
+    [Fact]
+    public void AbandonedMutexIsRecoveredAndTheChannelKeepsWorking()
+    {
+        var name = nameof(AbandonedMutexIsRecoveredAndTheChannelKeepsWorking) + "-" + Guid.NewGuid().ToString("n");
+        using var channel = new CircularChannel(name, new CircularChannelSettings { BufferSize = BufferSize, PollingInterval = 50 });
+        using var writer = channel.GetWriter();
+        using var reader = channel.GetReader();
+
+        var received = new ManualResetEventSlim(false);
+        reader.SetCallback(_ => received.Set());
+
+        // A process that dies while writing to the channel leaves the mutex abandoned.
+        AbandonMutex(CircularChannel.GetMutexName(name));
+
+        // Whichever side waits next (the polling reader or the writer below) sees the abandoned mutex.
+        // An abandoned wait still transfers ownership, so that side has to release it - otherwise the
+        // channel is poisoned and no process can read from or write to it again.
+        var valueSegment = new ArraySegment<byte>([1, 2, 3, 4]);
+        writer.TryWrite(in valueSegment).Should().BeTrue();
+        received.Wait(10_000).Should().BeTrue("the message should still be delivered after the mutex was abandoned");
+    }
+
+    /// <summary>
+    /// Acquires the named mutex on a thread that exits without releasing it, which is what the OS
+    /// reports as an abandoned mutex to the next waiter.
+    /// </summary>
+    /// <param name="mutexName">The name of the mutex to abandon.</param>
+    private static void AbandonMutex(string mutexName)
+    {
+        // Deliberately never disposed: the handle has to stay open until the thread has exited, and
+        // it is released when the test process ends.
+        Mutex? mutex = null;
+        var acquired = false;
+        var thread = new Thread(() =>
+        {
+            mutex = new Mutex(initiallyOwned: false, mutexName);
+            acquired = mutex.WaitOne(5_000);
+        });
+
+        thread.Start();
+        thread.Join();
+
+        acquired.Should().BeTrue("the mutex has to be owned before it can be abandoned");
+        GC.KeepAlive(mutex);
+    }
+
     [Collection(nameof(HighConcurrencyTestCollection))]
     public class ConcurrencyTests
     {
