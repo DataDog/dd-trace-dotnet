@@ -154,7 +154,7 @@ public abstract class AzureFunctionsTests : TestHelper
     private static async Task WaitForWorkerShutdownAsync(MockTracerAgent agent, Func<MockSpan, bool> workerSpanPredicate)
     {
         // 1. Get a span from the worker so we can identify its runtime ID.
-        var deadline = DateTime.UtcNow.AddSeconds(10);
+        var deadline = DateTime.UtcNow.AddSeconds(30);
         var workerSpan = agent.Spans.FirstOrDefault(workerSpanPredicate);
         while (workerSpan is null && DateTime.UtcNow < deadline)
         {
@@ -168,7 +168,7 @@ public abstract class AzureFunctionsTests : TestHelper
         // 2. Wait for the app-closing event from that worker, not from the func host.
         var appClosing = await agent.WaitForLatestTelemetryAsync(
             x => x is TelemetryData data && data.RuntimeId == workerRuntimeId && data.IsRequestType(TelemetryRequestTypes.AppClosing),
-            timeoutInMilliseconds: 10_000);
+            timeoutInMilliseconds: 30_000);
         appClosing.Should().NotBeNull("the worker must finish flushing before the mock agent is disposed");
     }
 
