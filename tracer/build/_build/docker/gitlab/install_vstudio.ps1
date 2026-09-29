@@ -19,7 +19,11 @@ $out = "$($PSScriptRoot)\vs_buildtools.exe"
 
 Write-Host -ForegroundColor Green Downloading $Url to $out
 (New-Object System.Net.WebClient).DownloadFile($Url, $out)
-if ((Get-FileHash -Algorithm SHA256 $out).Hash -ne "$Sha256") { Write-Host \"Wrong hashsum for ${out}: got '$((Get-FileHash -Algorithm SHA256 $out).Hash)', expected '$Sha256'.\"; exit 1 }
+$actualVsHash = (Get-FileHash -Algorithm SHA256 $out).Hash
+if ($actualVsHash -ne "$Sha256") {
+    Write-Host -ForegroundColor Red "Wrong hashsum for ${out}: got '$actualVsHash', expected '$Sha256'."
+    exit 1
+}
 
 # write file size to make sure it worked
 Write-Host -ForegroundColor Green "File size is $((get-item $out).length)"
