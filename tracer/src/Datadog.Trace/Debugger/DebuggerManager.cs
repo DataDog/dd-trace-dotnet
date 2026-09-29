@@ -513,7 +513,7 @@ namespace Datadog.Trace.Debugger
         }
 
         [TestingAndPrivateOnly]
-        internal void SetExceptionReplayState(DebuggerSettings debuggerSettings, Action? md5Probe = null)
+        internal void SetExceptionReplayState(DebuggerSettings debuggerSettings)
         {
             try
             {
@@ -549,7 +549,7 @@ namespace Datadog.Trace.Debugger
                 {
                     EnsureSnapshotPipelineConfigured(debuggerSettings);
                     var exceptionReplay = ExceptionReplay.Create(ExceptionReplaySettings);
-                    if (exceptionReplay.Initialize(md5Probe))
+                    if (exceptionReplay.Initialize())
                     {
                         ExceptionReplay = exceptionReplay;
                     }

@@ -34,7 +34,7 @@ namespace Datadog.Trace.Debugger.Helpers
 
             try
             {
-                sb.Append(mb.Name + "_");
+                sb.Append(mb.Name).Append('_');
 
                 var declaringType = mb.DeclaringType;
                 var methodName = mb.Name;
