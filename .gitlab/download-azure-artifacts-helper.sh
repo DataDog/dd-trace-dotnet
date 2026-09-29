@@ -38,7 +38,7 @@
 
 AZDO_API="https://dev.azure.com/datadoghq/dd-trace-dotnet/_apis/build"
 AZDO_BUILD_DEFINITION=54
-ARTIFACT_TIMEOUT=2400 # 40 minutes
+ARTIFACT_TIMEOUT=7200 # 2 hours
 ARTIFACT_POLL_INTERVAL=100
 AZDO_BUILD_STATE_POLL_INTERVAL=300 # only re-check build status every 3rd artifact-poll tick
 AZDO_ARTIFACT_UNAVAILABLE=2 # download_azure_artifact: build finished, artifact never published
@@ -111,8 +111,8 @@ resolve_azure_build_id() {
   # 3. Last resort: any build carrying this commit, regardless of branch (prefer non-scheduled).
   # Unlike tiers 1-2 (which intentionally wait on an in-progress build for this exact branch),
   # tier 3's commit is already built elsewhere, so we prefer a completed-successful build to avoid
-  # locking onto a queued/canceled/failed newer build and polling it for 40 minutes; we still fall
-  # back to an in-progress build if no successful one is found.
+  # locking onto a queued/canceled/failed newer build and polling it until the artifact timeout; we
+  # still fall back to an in-progress build if no successful one is found.
   if [ -z "${AZDO_BUILD_ID}" ]; then
     echo "No build found on branch '$branchName' for commit '$CI_COMMIT_SHA'. Falling back to any build carrying this commit..."
     local allBuildsUrl="${AZDO_API}/builds?api-version=7.1&definitions=${AZDO_BUILD_DEFINITION}&\$top=200&queryOrder=queueTimeDescending"
@@ -191,6 +191,7 @@ download_azure_artifact() {
   local artifactsUrl="${AZDO_API}/builds/${buildId}/artifacts?api-version=7.1&artifactName=${artifactName}"
   local downloadUrl="" response="" elapsed=0
   AZDO_BUILD_STATUS="unknown"
+  AZDO_BUILD_RESULT="unknown"
 
   while true; do
     echo "Checking for artifacts at: ${artifactsUrl}"
@@ -220,7 +221,10 @@ download_azure_artifact() {
     fi
 
     if (( elapsed >= ARTIFACT_TIMEOUT )); then
-      echo "ERROR: No downloadUrl found after ${ARTIFACT_TIMEOUT}s for artifact '$artifactName' (commit '$CI_COMMIT_SHA' on branch 'refs/heads/$CI_COMMIT_BRANCH')"
+      echo "ERROR: No downloadUrl found after ${ARTIFACT_TIMEOUT}s for artifact '$artifactName' (commit '$CI_COMMIT_SHA' on branch 'refs/heads/$CI_COMMIT_BRANCH'). Last known build status: '$AZDO_BUILD_STATUS'; result: '$AZDO_BUILD_RESULT'."
+      if [ "$AZDO_BUILD_STATUS" = "inProgress" ]; then
+        echo "ERROR: Build $buildId was still running when artifact polling timed out."
+      fi
       echo "Last API response:"
       echo "$response" | jq '.'
       echo ""

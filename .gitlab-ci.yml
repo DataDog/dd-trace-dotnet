@@ -288,7 +288,9 @@ publish:
 download-nuget-packages-to-sign:
   stage: package
   image: registry.ddbuild.io/images/ci/images:1.2.6
-  timeout: 2h15m # based on 3 attempts x40min
+  # Allows one artifact poll up to 2h; retries only follow a completed build with no artifact,
+  # which the 5m build-state check detects without waiting for the artifact timeout.
+  timeout: 2h15m
   tags: [ "arch:amd64" ]
   needs:
     - job: build
@@ -369,7 +371,9 @@ sign-nuget-packages:
 download-single-step-artifacts:
   stage: package
   image: registry.ddbuild.io/images/ci/images:1.2.6
-  timeout: 2h15m # based on 3 attempts x40min
+  # Allows one artifact poll up to 2h; retries only follow a completed build with no artifact,
+  # which the 5m build-state check detects without waiting for the artifact timeout.
+  timeout: 2h15m
   tags: [ "arch:amd64" ]
   needs:
     - job: build
@@ -416,7 +420,9 @@ deploy_to_reliability_env:
 download-serverless-artifacts:
   stage: package
   image: registry.ddbuild.io/images/ci/images:1.2.6
-  timeout: 2h15m # based on 3 attempts x40min
+  # Allows one artifact poll up to 2h; retries only follow a completed build with no artifact,
+  # which the 5m build-state check detects without waiting for the artifact timeout.
+  timeout: 2h15m
   tags: [ "arch:amd64" ]
   needs: []
   rules:
