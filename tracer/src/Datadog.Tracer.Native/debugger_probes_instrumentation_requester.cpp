@@ -165,7 +165,7 @@ void DebuggerProbesInstrumentationRequester::PerformInstrumentAllIfNeeded(const 
             return;
         }
 
-        auto moduleLifetime = module.Acquire();
+        auto moduleLifetime = module.TryAcquire();
         if (!moduleLifetime.has_value())
         {
             return;
@@ -263,7 +263,7 @@ void DebuggerProbesInstrumentationRequester::PerformInstrumentAllIfNeeded(const 
             return;
         }
 
-        moduleLifetime = module.Acquire();
+        moduleLifetime = module.TryAcquire();
         if (!moduleLifetime.has_value())
         {
             return;
@@ -409,7 +409,7 @@ void DebuggerProbesInstrumentationRequester::RemoveProbes(debugger::DebuggerRemo
                 {
                     const auto method = methodToIndexPair.first;
                     auto module = m_rejit_handler->GetModuleWithLifetime(method.moduleId);
-                    auto moduleLifetime = module.Acquire();
+                    auto moduleLifetime = module.TryAcquire();
                     if (!moduleLifetime.has_value())
                     {
                         continue;
@@ -672,7 +672,7 @@ void DebuggerProbesInstrumentationRequester::DetermineReInstrumentProbes(
 
     for (const auto& request : revertRequests)
     {
-        auto moduleLifetime = request.Acquire();
+        auto moduleLifetime = request.TryAcquire();
         if (!moduleLifetime.has_value())
         {
             continue;
@@ -938,7 +938,7 @@ void DebuggerProbesInstrumentationRequester::ModuleLoadFinished_AddMetadataToMod
 
     // CorProfiler::ModuleLoadFinished registers the lifetime before calling us. Holding it keeps m_profilerInfo
     // and the rejitter state alive if Shutdown starts concurrently.
-    auto moduleLifetime = module.Acquire();
+    auto moduleLifetime = module.TryAcquire();
     if (!moduleLifetime.has_value())
     {
         return;

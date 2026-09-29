@@ -193,7 +193,7 @@ TEST(ModuleLifetime, UnloadWaitsForActiveLeaseAndInvalidatesSnapshots)
     const auto module = handler->RegisterModule(moduleId);
     EXPECT_EQ(module.lifetime, handler->RegisterModule(moduleId).lifetime);
 
-    auto moduleLifetime = module.Acquire();
+    auto moduleLifetime = module.TryAcquire();
     ASSERT_TRUE(moduleLifetime.has_value());
 
     std::promise<void> unloadFinished;
@@ -213,12 +213,12 @@ TEST(ModuleLifetime, UnloadWaitsForActiveLeaseAndInvalidatesSnapshots)
     moduleLifetime.reset();
     unload.join();
 
-    EXPECT_FALSE(module.Acquire().has_value());
+    EXPECT_FALSE(module.TryAcquire().has_value());
 
     handler->RegisterModule(moduleId);
     const auto reloadedModule = handler->GetModuleWithLifetime(moduleId);
     EXPECT_NE(module.lifetime, reloadedModule.lifetime);
-    EXPECT_TRUE(reloadedModule.Acquire().has_value());
+    EXPECT_TRUE(reloadedModule.TryAcquire().has_value());
 }
 
 TEST(ModuleLifetime, ShutdownWaitsForActiveLeaseAndInvalidatesModules)
@@ -229,7 +229,7 @@ TEST(ModuleLifetime, ShutdownWaitsForActiveLeaseAndInvalidatesModules)
     handler->RegisterModule(moduleId);
 
     const auto module = handler->GetModuleWithLifetime(moduleId);
-    auto moduleLifetime = module.Acquire();
+    auto moduleLifetime = module.TryAcquire();
     ASSERT_TRUE(moduleLifetime.has_value());
 
     std::promise<void> shutdownFinished;
@@ -253,8 +253,8 @@ TEST(ModuleLifetime, ShutdownWaitsForActiveLeaseAndInvalidatesModules)
     moduleLifetime.reset();
     shutdown.join();
 
-    EXPECT_FALSE(module.Acquire().has_value());
-    EXPECT_FALSE(handler->GetModuleWithLifetime(moduleId).Acquire().has_value());
+    EXPECT_FALSE(module.TryAcquire().has_value());
+    EXPECT_FALSE(handler->GetModuleWithLifetime(moduleId).TryAcquire().has_value());
 
     handler->RegisterModule(moduleId + 1);
     EXPECT_EQ(nullptr, handler->GetModuleWithLifetime(moduleId + 1).lifetime);
@@ -289,7 +289,7 @@ TEST(ModuleLifetime, UnloadInvalidatesGenerationWhileShutdownWaitsForWorker)
 
     handler->RemoveModule(moduleId);
     EXPECT_EQ(nullptr, handler->GetModuleWithLifetime(moduleId).lifetime);
-    EXPECT_FALSE(module.Acquire().has_value());
+    EXPECT_FALSE(module.TryAcquire().has_value());
 
     releaseBlocker.set_value();
     shutdown.join();
@@ -453,7 +453,7 @@ TEST(RejitHandler, RequestRejitSkipsUnloadedGenerationAfterModuleIdReuse)
     const auto newRequests = handler->GetRejitRequests(methods);
     ASSERT_EQ(1u, newRequests.size());
     EXPECT_NE(oldRequests[0].lifetime, newRequests[0].lifetime);
-    EXPECT_FALSE(oldRequests[0].Acquire().has_value());
+    EXPECT_FALSE(oldRequests[0].TryAcquire().has_value());
 
     handler->RequestRejit(oldRequests);
     EXPECT_EQ(0, context.profilerInfo.requestRejitCallCount);
@@ -485,7 +485,7 @@ TEST(RejitPreprocessor, NewMethodGetsNGenInlinersFromAlreadyCheckedModule)
         },
         [](RejitHandlerModuleMethod*) {});
 
-    auto moduleLifetime = inlineeModule.Acquire();
+    auto moduleLifetime = inlineeModule.TryAcquire();
     EXPECT_TRUE(moduleLifetime.has_value());
     std::vector<RejitRequest> requests;
     preprocessor.GetNGenInlinerRejitRequestsForNewMethods(inlineeModuleId, requests);
@@ -495,7 +495,7 @@ TEST(RejitPreprocessor, NewMethodGetsNGenInlinersFromAlreadyCheckedModule)
     {
         EXPECT_EQ(inlinersModuleId, request.moduleId);
         EXPECT_EQ(inlinerMethodId, request.methodToken);
-        EXPECT_TRUE(request.Acquire().has_value());
+        EXPECT_TRUE(request.TryAcquire().has_value());
     }
 
     // A method is checked only once.
@@ -533,7 +533,7 @@ TEST(RejitPreprocessor, IncompleteNGenDataForNewMethodIsRetriedByReplay)
         [](RejitHandlerModuleMethod*) {});
 
     {
-        auto moduleLifetime = inlineeModule.Acquire();
+        auto moduleLifetime = inlineeModule.TryAcquire();
         std::vector<RejitRequest> requests;
         preprocessor.GetNGenInlinerRejitRequestsForNewMethods(inlineeModuleId, requests);
         EXPECT_TRUE(requests.empty());
@@ -576,7 +576,7 @@ TEST(ModuleLifetime, UnloadWaitsForNewMethodNGenCheck)
     std::thread check(
         [&]
         {
-            auto moduleLifetime = inlineeModule.Acquire();
+            auto moduleLifetime = inlineeModule.TryAcquire();
             std::vector<RejitRequest> requests;
             preprocessor.GetNGenInlinerRejitRequestsForNewMethods(inlineeModuleId, requests);
         });

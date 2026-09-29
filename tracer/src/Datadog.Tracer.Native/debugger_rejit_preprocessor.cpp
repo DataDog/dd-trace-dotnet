@@ -34,7 +34,7 @@ ULONG DebuggerRejitPreprocessor::PreprocessLineProbes(
 
     for (const auto& moduleWithLifetime : modules)
     {
-        auto moduleLifetime = moduleWithLifetime.Acquire();
+        auto moduleLifetime = moduleWithLifetime.TryAcquire();
         if (!moduleLifetime.has_value())
         {
             continue;

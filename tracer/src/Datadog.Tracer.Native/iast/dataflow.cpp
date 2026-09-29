@@ -400,7 +400,7 @@ HRESULT Dataflow::AppDomainShutdown(AppDomainID appDomainId)
 
 HRESULT Dataflow::ModuleLoaded(const trace::ModuleIDWithLifetime& module, ModuleInfo** pModuleInfo)
 {
-    auto moduleLifetime = module.Acquire();
+    auto moduleLifetime = module.TryAcquire();
     if (!moduleLifetime.has_value())
     {
         return S_FALSE;
@@ -701,7 +701,7 @@ bool Dataflow::JITCompilationStarted(const trace::ModuleIDWithLifetime& module, 
     std::vector<RejitRequest> rejitRequests;
     MethodInfo* method;
     {
-        auto moduleLifetime = module.Acquire();
+        auto moduleLifetime = module.TryAcquire();
         if (!moduleLifetime.has_value())
         {
             return false;

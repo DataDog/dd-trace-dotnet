@@ -313,7 +313,7 @@ void RejitHandler::RequestRejit(const std::vector<RejitRequest>& rejitRequests, 
         const auto [lifetimeState, inserted] = lifetimeStates.emplace(request.lifetime.get(), false);
         if (inserted)
         {
-            auto lifetimeLock = request.Acquire();
+            auto lifetimeLock = request.TryAcquire();
             lifetimeState->second = lifetimeLock.has_value();
             if (lifetimeLock.has_value())
             {
@@ -546,7 +546,7 @@ HRESULT RejitHandler::NotifyReJITParameters(ModuleID moduleId, mdMethodDef metho
     // Nothing below this point may wait on the ReJIT worker, because the worker can be blocked behind an
     // unload that is waiting for this very lifetime (APMS-20456).
     auto module = GetModuleWithLifetime(moduleId);
-    auto moduleLifetime = module.Acquire();
+    auto moduleLifetime = module.TryAcquire();
     if (!moduleLifetime.has_value())
     {
         return S_FALSE;

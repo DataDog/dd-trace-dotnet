@@ -31,7 +31,7 @@ private:
     bool m_unloading = false;
 
 public:
-    std::optional<ReadLock> Acquire() const
+    [[nodiscard]] std::optional<ReadLock> TryAcquire() const
     {
         ReadLock lock(m_lock);
         if (m_unloading)
@@ -48,9 +48,9 @@ struct ModuleIDWithLifetime
     ModuleID id;
     std::shared_ptr<ModuleLifetime> lifetime;
 
-    std::optional<ReadLock> Acquire() const
+    [[nodiscard]] std::optional<ReadLock> TryAcquire() const
     {
-        return lifetime == nullptr ? std::nullopt : lifetime->Acquire();
+        return lifetime == nullptr ? std::nullopt : lifetime->TryAcquire();
     }
 };
 
@@ -65,9 +65,9 @@ struct RejitRequest
     {
     }
 
-    std::optional<ReadLock> Acquire() const
+    [[nodiscard]] std::optional<ReadLock> TryAcquire() const
     {
-        return lifetime == nullptr ? std::nullopt : lifetime->Acquire();
+        return lifetime == nullptr ? std::nullopt : lifetime->TryAcquire();
     }
 
     bool operator<(const RejitRequest& rhs) const
