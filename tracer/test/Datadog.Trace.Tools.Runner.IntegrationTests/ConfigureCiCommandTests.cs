@@ -813,10 +813,50 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
             return output;
         }
 
+        [Theory]
+        [Trait("RunOnWindows", "True")]
+        [InlineData(false)]
+        [InlineData(true)]
+        public void CleanupRemovesReadOnlyTemporaryFiles(bool nested)
+        {
+            using var setup = ConfigureCiTestSetup.Create(output);
+            var directory = nested ? Path.Combine(setup.TempRoot, "nested") : setup.TempRoot;
+            Directory.CreateDirectory(directory);
+            var file = Path.Combine(directory, "temporary.idx");
+            File.WriteAllText(file, "temporary git index");
+            File.SetAttributes(file, File.GetAttributes(file) | FileAttributes.ReadOnly);
+
+            setup.Dispose();
+
+            Directory.Exists(setup.TempRoot).Should().BeFalse();
+        }
+
         private static void DeleteDirectory(string path)
         {
             if (Directory.Exists(path))
             {
+                // Git uploads can leave read-only pack/index files in the test's TEMP directory.
+                // Do not traverse links: cache tests deliberately create them to external paths.
+                if ((File.GetAttributes(path) & FileAttributes.ReparsePoint) == 0)
+                {
+                    foreach (var entry in new DirectoryInfo(path).EnumerateFileSystemInfos())
+                    {
+                        if ((entry.Attributes & FileAttributes.ReparsePoint) != 0)
+                        {
+                            continue;
+                        }
+
+                        if (entry is DirectoryInfo)
+                        {
+                            DeleteDirectory(entry.FullName);
+                        }
+                        else if ((entry.Attributes & FileAttributes.ReadOnly) != 0)
+                        {
+                            entry.Attributes &= ~FileAttributes.ReadOnly;
+                        }
+                    }
+                }
+
                 Directory.Delete(path, recursive: true);
             }
         }
