@@ -49,6 +49,7 @@ add_executable(${TEST_EXECUTABLE_NAME}
 	util_test.cpp
     signature_builder_test.cpp
     runtime_async_test.cpp
+    rejit_concurrency_test.cpp
     test_link_stubs.cpp
 )
 
