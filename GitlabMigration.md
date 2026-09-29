@@ -1,6 +1,6 @@
 # GitLab CI migration plan and findings
 
-Last updated: 2026-09-28
+Last updated: 2026-09-29
 
 ## Purpose
 
@@ -60,7 +60,23 @@ Rebasing onto `master` exposed four integration gaps, now corrected in the exper
 - **Fixture restore:** GitLab restores both DuckTyping fixture projects before building them, preserving their `netstandard2.0` target and Shared-before-Target ordering. Azure's existing restore behavior is unchanged.
 - **Framework evaluation:** the five GitLab test-selection queries now use master's out-of-process `TryGetTargetFrameworks()` through `TargetsFramework`. An evaluation failure stops the build with the project name instead of silently omitting tests or reintroducing in-process MSBuild assembly conflicts.
 
-Local YAML, PowerShell, whitespace, SDK-consistency, and focused framework-helper checks passed. Full post-fix CI validation is still pending; SDK 11 was unavailable locally and Docker was stopped during validation. Confirm Linux/macOS builds, fixture restore on fresh consumers, and actual CI Visibility test counts/results before treating these fixes as validated coverage.
+Local YAML, PowerShell, whitespace, SDK-consistency, and focused framework-helper checks passed. The subsequent pipeline passed the platform builds and Linux/macOS unit tests, but full test validation remains incomplete as described below. SDK 11 was unavailable locally and Docker was stopped during local validation.
+
+### Latest reviewed CI results and follow-ups (2026-09-29)
+
+[Pipeline 140649168](https://gitlab.ddbuild.io/DataDog/apm-reliability/dd-trace-dotnet/-/pipelines/140649168), at commit `6c1cc4c826`, failed in test child pipelines. The Windows image, all parent build jobs, and Linux/macOS unit-test pipelines passed. This confirms the LocalDB download correction: the image now installs the checksum-pinned SQL Server 2022 standalone MSI instead of the bootstrapper URL that returned 404.
+
+Follow-up commit `79a5eee534` exposes vcpkg's existing Git executable on the Windows image's `PATH` for CODEOWNERS tests and installs the .NET 8 runtime required by the CI Visibility runner tool for each Windows job's architecture. PowerShell syntax and whitespace checks passed; these fixes still need CI validation.
+
+Consecutive pipelines `140838844` and `140839023` exposed an image-publication race: the second push had no image-file changes, so its consumers started before the first pipeline published image `31cc48ba2e20`. The image check now runs as a required `.pre` job in every pipeline, serialized across pipelines, and skips rebuilding existing hashes. Signing also explicitly depends on it. This ordering fix still needs CI validation.
+
+Local YAML and dependency checks passed. Validate the race fix with two consecutive pushes sharing a missing image hash: one job must publish the image, the other must subsequently find it and skip rebuilding, and Windows consumers must wait for their own image job to succeed. The shared `windows-ci-image` resource group serializes only image jobs, not all Windows builds; checks for other hashes can also wait behind an active image build. Documentation inside the image directory contributes to the hash, so updating `UPDATING_IMAGE.md` also produces a new image tag.
+
+Outstanding findings:
+
+- **Alpine IPC: deferred pending repeated runs.** In the reviewed musl x64 `net10.0` job, both test assemblies passed, but log validation failed on writer mutex timeouts. Retained logs show preceding abandoned-mutex errors, and the reader's exception path returns without releasing acquired ownership. Multiple occurrences within this run establish a pattern, but do not establish that every pipeline fails. Leave this issue unchanged for now and compare subsequent runs; investigate further if it keeps blocking CI. Do not add log exclusions or skip tests to hide it. The musl ARM64 missing-lockfile errors remain a separate unresolved symptom.
+- **Windows CI Visibility:** named-pipe tests are missing `test.command`; the cause remains unconfirmed.
+- **Windows x86 Tracer:** `net10.0` `dd-dotnet` tests cannot load `Datadog.Trace.Tools.Shared`; the cause remains unconfirmed.
 
 ### Standalone improvements extracted from the experiment
 
@@ -201,7 +217,7 @@ registry.ddbuild.io/ci/dd-trace-dotnet/dd-trace-dotnet-docker-build
 
 Do not treat a hash recorded in this document as authoritative. Run the script against the target commit and use its output consistently for the image build, consumers, and runner-AMI pre-pull. At this audit's checkout, the script produced `9eef46c69bf9`.
 
-The normal GitLab build verifies that the exact hash-tagged image exists. In #8964, `build-windows-ci-image` runs automatically in `.pre` when `.gitlab-ci.yml` or Windows image files change; otherwise it remains an optional manual job. It skips existing images and builds and pushes missing images under both the content-addressed tag and `:latest`. Consumers use the content-addressed tag. #9323 extracts automatic creation for Windows image-file changes; until that change merges, `master` requires manually triggering the image job and retrying consumers when an image is missing.
+The normal GitLab build verifies that the exact hash-tagged image exists. In #8964, `build-windows-ci-image` runs as a required `.pre` job in every pipeline, with publication serialized across pipelines. It skips existing images and builds and pushes missing images under both the content-addressed tag and `:latest`. Consumers use the content-addressed tag. Checking every pipeline also handles subsequent pushes while an earlier image build is still running. #9323 extracts automatic creation for Windows image-file changes; until that change merges, `master` requires manually triggering the image job and retrying consumers when an image is missing.
 
 This deliberately prevents a Dockerfile change from silently running against an old image.
 
@@ -283,7 +299,7 @@ Linux ARM64 integration coverage follows the same generated-child-pipeline model
 
 The Windows integration-test slice follows the same generated-child-pipeline pattern. `GenerateGitlabWindowsIntegrationTestsPipeline` uses the Windows framework selection from NUKE and emits x64 and x86 Tracer and ASM jobs for every selected TFM. Debugger coverage now spans both architectures, portable and full PDBs, and optimized and unoptimized builds; matching Azure, the x86 `netcoreapp3.1` and `net6.0` Debugger combinations are omitted because their apphosts are unavailable. The historically named IIS matrix is the dedicated GAC/IIS suite: it contains separate `net48` x64 and x86 Tracer and ASM cells, calls `RunWindowsTracerIisIntegrationTests`, and therefore runs both tracer and security integration projects with `LoadFromGAC=True`. Regular Windows cells use `LoadFromGAC!=True`, preventing duplicate execution. LocalDB uses a dedicated `net48` x64 Tracer cell.
 
-The content-addressed Windows build image derives from Microsoft's .NET Framework ASP.NET image and now includes IIS, SQL Server Express LocalDB, MSMQ, Azure Functions Core Tools, Azure Storage Emulator, Chrome for Testing, and the matching ChromeDriver while preserving the common build toolchain. Regular `net48` Tracer cells initialize MSMQ. Image-affecting changes automatically build and publish their new hash in the `.pre` stage before any consumer can inspect it; otherwise the image builder remains an optional manual job. Windows sample producers participate in stage ordering rather than declaring `needs: []`, so they cannot race a required image publication. Each child combines the parent `build` and `build-samples-standalone` artifacts, installs an end-of-life runtime on demand when required, and restores integration projects in the GitLab consumer workspace. The ordinary cells invoke their NUKE build/run targets inside the image; the Selenium exception is described below. Results, CI Visibility logs, tracer logs, dumps, snapshots, and debugger approvals are retained, and build logs are validated even when the test invocation fails.
+The content-addressed Windows build image derives from Microsoft's .NET Framework ASP.NET image and now includes IIS, SQL Server Express LocalDB, MSMQ, Azure Functions Core Tools, Azure Storage Emulator, Chrome for Testing, and the matching ChromeDriver while preserving the common build toolchain. Regular `net48` Tracer cells initialize MSMQ. Every pipeline verifies or publishes its image in a required `.pre` job, serialized across pipelines. Windows sample producers participate in stage ordering rather than declaring `needs: []`, so they cannot race image publication. Each child combines the parent `build` and `build-samples-standalone` artifacts, installs an end-of-life runtime on demand when required, and restores integration projects in the GitLab consumer workspace. The ordinary cells invoke their NUKE build/run targets inside the image; the Selenium exception is described below. Results, CI Visibility logs, tracer logs, dumps, snapshots, and debugger approvals are retained, and build logs are validated even when the test invocation fails.
 
 The dependency-expanded pipeline validated LocalDB, MSMQ, GAC/IIS, x86, and ASM coverage. All 28 Windows Debugger cells also passed, including x64/x86, portable/full PDB, and optimized/unoptimized variants. A dedicated x64 Azure Functions matrix covers `net6.0` through `net10.0` using the same pinned Functions Core Tools and Storage Emulator as Azure; both dependencies are installed in the content-addressed Windows image and the emulator is initialized inside each ephemeral test container. Selenium cannot create a ChromeDriver session inside the Windows Server Core container because the image omits Windows components such as Media Foundation. Its focused `net10.0` x64 cell therefore runs directly on the full Windows runner. Compilation remains inside the established image, while the job copies the checksum-verified portable Chrome and ChromeDriver binaries out of that image, installs the pinned .NET SDK under the checkout, and runs the already-built test on the host. CLI state, packages, and logs stay in the workspace, and the temporary tool container and copied browser files are removed afterward. The .NET 10 test explicitly opts out of `GacFixture`; the fixture is also a compile-time no-op outside .NET Framework. The corrected host execution path has completed successfully, so the Selenium cell is blocking. Regular Windows Tracer and ASM cells now build and run `BuildWindowsRegressionTests` and `RunWindowsRegressionTests` alongside the main integration suite, matching Azure. Docker-dependent Windows tests remain a follow-up dimension. ASM, Debugger, GAC/IIS, and dependency-specific cells currently run without Azure-style area-change gating while the matrix is being validated.
 
@@ -489,7 +505,7 @@ Packaging, publishing, integration tests, and smoke tests are tracked in their l
 Windows:
 
 - Reuse `tracer/build/_build/docker/gitlab/compute-image-hash.ps1`.
-- Keep the existing `build-windows-ci-image` behavior: run automatically for image-affecting changes, allow a manual fallback, and skip rebuilding an image that already exists.
+- Require the serialized `build-windows-ci-image` check in every pipeline, skipping rebuilds for existing hashes; do not rely on image-file changes to establish availability.
 - Continue failing consumers when their expected content-addressed image is absent.
 
 Linux follow-up:

@@ -64,13 +64,11 @@ build-windows-ci-image:
   stage: .pre
   timeout: 2h
   tags: ["windows-v2:2022"]
+  # Serialize publication across pipelines; recheck the manifest after acquiring the lock.
+  resource_group: windows-ci-image
   rules:
-    - changes:
-        - .gitlab-ci.yml
-        - tracer/build/_build/docker/gitlab/**/*
-      when: on_success
-    - when: manual
-      allow_failure: true
+    # A preceding pipeline may still be building this hash even when no image files changed.
+    - when: on_success
   hooks:
     pre_get_sources_script:
       - git config --system core.longpaths true
@@ -641,7 +639,7 @@ build:
       if ($LASTEXITCODE -ne 0) {
         Write-Host "ERROR: Windows build image not found at $env:WINDOWS_BUILD_IMAGE."
         Write-Host "The Dockerfile or install scripts under tracer/build/_build/docker/gitlab/ have changed."
-        Write-Host "Manually trigger the 'build-windows-ci-image' job in this pipeline, wait for it to finish, then re-run this job."
+        Write-Host "Check the 'build-windows-ci-image' job in this pipeline and retry it before retrying this job."
         exit 1
       }
     - |
@@ -1126,6 +1124,8 @@ sign-nuget-packages:
       when: never      # We don't need to build/publish when building a release tag
     - when: on_success
   needs:
+    - job: build-windows-ci-image
+      artifacts: false
     - job: build
       optional: true
       artifacts: false # only needed for timing reasons
