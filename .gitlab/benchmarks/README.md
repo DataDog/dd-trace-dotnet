@@ -14,12 +14,12 @@ GitLab CI configuration for the benchmarks that run on the
     - `infrastructure/`: `bp-infra` provision files.
     - `scripts/`: fetch, convert, upload and PR comment steps.
 - `macrobenchmarks.yml`: k6 load tests against a sample ASP.NET app on x86, arm64 and Windows.
-    - Runs on `master`, manual elsewhere.
+    - Runs on every pipeline, non-interruptible on `master`.
     - `check-slo-breaches` gates releases based on SLOs defined on `bp-runner.fail-on-breach.yml`.
     - Steps live in the `dd-trace-dotnet/macro` branch of
       [benchmarking-platform](https://github.com/DataDog/benchmarking-platform).
 - `dsm-throughput.yml`: Data Streams Monitoring throughput benchmark.
-    - Runs on `master`, manual elsewhere.
+    - Runs on every pipeline, non-interruptible on `master`.
     - Steps live in the `dd-trace-dotnet/data-streams-monitoring` branch of
       [benchmarking-platform](https://github.com/DataDog/benchmarking-platform).
 - `dotnet-aspnet-realworld-parallel` stages: included in the root `.gitlab-ci.yml` from
