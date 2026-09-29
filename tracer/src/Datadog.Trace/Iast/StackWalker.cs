@@ -63,27 +63,53 @@ internal static class StackWalker
         return ExecutionStackGuard.HasSufficientStack() ? new StackTrace(DefaultSkipFrames, true) : null;
     }
 
-    public static bool TryGetFrame(StackTrace stackTrace, out StackFrame? targetFrame)
+    /// <summary>
+    /// Picks the frame a vulnerability is reported at: the topmost non-excluded frame that has debug
+    /// information (file and line), or the topmost non-excluded frame when none of them has it.
+    /// <paramref name="identityFrame"/> is always the topmost non-excluded frame, so the vulnerability
+    /// hash does not depend on which frames have debug information.
+    /// </summary>
+    public static bool TryGetFrame(StackTrace stackTrace, out StackFrame? targetFrame, out StackFrame? identityFrame)
     {
         targetFrame = null;
+        identityFrame = null;
         var frames = stackTrace.GetFrames() ?? [];
         foreach (var frame in frames)
         {
+            var hasDebugInfo = frame?.GetFileLineNumber() > 0;
+
+            // once there is a fallback, only a frame with debug info can replace it, so don't pay
+            // for resolving the assembly of the others
+            if (targetFrame is not null && !hasDebugInfo)
+            {
+                continue;
+            }
+
             var declaringType = frame?.GetMethod()?.DeclaringType;
 
-            foreach (var excludeType in ExcludeSpanGenerationTypes)
+            // only the frames above the first candidate decide whether the vulnerability is reported
+            if (targetFrame is null)
             {
-                if (excludeType == declaringType?.FullName)
+                foreach (var excludeType in ExcludeSpanGenerationTypes)
                 {
-                    return false;
+                    if (excludeType == declaringType?.FullName)
+                    {
+                        return false;
+                    }
                 }
             }
 
             var assembly = declaringType?.Assembly.GetName().Name;
             if (assembly != null && !MustSkipAssembly(assembly))
             {
-                targetFrame = frame;
-                break;
+                identityFrame ??= frame;
+                if (hasDebugInfo)
+                {
+                    targetFrame = frame;
+                    break;
+                }
+
+                targetFrame ??= frame;
             }
         }
 
