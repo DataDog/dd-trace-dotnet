@@ -3,6 +3,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <stdarg.h>
+#include <stdio.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
@@ -119,10 +120,113 @@
         __dd_real_##cname = __dd_dlsym(RTLD_NEXT, asmname);                         \
     }
 
-/* Non-variadic wrappers */
+/*
+ * TEMPORARY diagnostic instrumentation to root-cause the OpenLDAP / wall-time-profiler
+ * interaction (see OpenLdapTests.CheckOpenLdapCrash). Remove once resolved.
+ *
+ * read/write are hand-written below (instead of going through WRAPPED_FUNCTION like
+ * the rest of this file) so we can log rc/errno/interrupted_by_profiler/retry for them
+ * specifically -- OpenLDAP's Linux stream I/O (liblber sockbuf.c) uses plain read()/
+ * write() rather than recv()/send() for its actual data transfer, so this is the only
+ * place that can show what happens on the wire during a bind.
+ *
+ * Logging safely from inside write()'s own wrapper is not as simple as calling
+ * fprintf: fprintf/fflush call write() internally, which -- since write() is
+ * interposed by us -- would recurse back into this same wrapper. __dd_trace_log
+ * avoids that by formatting into a stack buffer with snprintf (pure memory, no I/O)
+ * and emitting it via the REAL write(), resolved directly with dlsym so it bypasses
+ * our own interposition.
+ */
+static void __dd_trace_log(int fd, const char* name, ssize_t rc, int err, int interrupted_by_profiler, int retry)
+{
+    static __typeof(write)* real_write = NULL;
+    if (!real_write)
+    {
+        real_write = __dd_dlsym(RTLD_NEXT, "write");
+    }
+    if (!real_write)
+    {
+        return;
+    }
+    char buf[160];
+    int n = snprintf(buf, sizeof(buf),
+                      "[SystemCallsShield] %s(fd=%d): rc=%lld errno=%d interrupted_by_profiler=%d retry=%d\n",
+                      name, fd, (long long)rc, err, interrupted_by_profiler, retry);
+    if (n > 0)
+    {
+        size_t len = (size_t)n < sizeof(buf) ? (size_t)n : sizeof(buf) - 1;
+        real_write(1, buf, len);
+    }
+}
 
-WRAPPED_FUNCTION(ssize_t, read, (int, fd)(void*, buf)(size_t, count))
-WRAPPED_FUNCTION(ssize_t, write, (int, fd)(const void*, buf)(size_t, count))
+static ssize_t (*__dd_real_read)(int, void*, size_t) = NULL;
+
+static void load_symbols_read() __attribute__((constructor));
+void load_symbols_read()
+{
+    __dd_real_read = __dd_dlsym(RTLD_NEXT, "read");
+}
+
+ssize_t read(int fd, void* buf, size_t count)
+{
+    if (__dd_real_read == NULL)
+    {
+        __dd_real_read = __dd_dlsym(RTLD_NEXT, "read");
+    }
+    volatile int interrupted_by_profiler = 0;
+    __dd_set_shared_memory(&interrupted_by_profiler);
+    ssize_t rc;
+    int retry;
+    do
+    {
+        interrupted_by_profiler = 0;
+        rc = __dd_real_read(fd, buf, count);
+        int saved_errno = errno;
+        retry = is_interrupted_by_profiler(rc, saved_errno, interrupted_by_profiler);
+        if (DD_TRACE_SYSCALLS_SHIELD)
+        {
+            __dd_trace_log(fd, "read", rc, saved_errno, interrupted_by_profiler, retry);
+        }
+        errno = saved_errno;
+    } while (retry);
+    __dd_set_shared_memory(NULL);
+    return rc;
+}
+
+static ssize_t (*__dd_real_write)(int, const void*, size_t) = NULL;
+
+static void load_symbols_write() __attribute__((constructor));
+void load_symbols_write()
+{
+    __dd_real_write = __dd_dlsym(RTLD_NEXT, "write");
+}
+
+ssize_t write(int fd, const void* buf, size_t count)
+{
+    if (__dd_real_write == NULL)
+    {
+        __dd_real_write = __dd_dlsym(RTLD_NEXT, "write");
+    }
+    volatile int interrupted_by_profiler = 0;
+    __dd_set_shared_memory(&interrupted_by_profiler);
+    ssize_t rc;
+    int retry;
+    do
+    {
+        interrupted_by_profiler = 0;
+        rc = __dd_real_write(fd, buf, count);
+        int saved_errno = errno;
+        retry = is_interrupted_by_profiler(rc, saved_errno, interrupted_by_profiler);
+        if (DD_TRACE_SYSCALLS_SHIELD)
+        {
+            __dd_trace_log(fd, "write", rc, saved_errno, interrupted_by_profiler, retry);
+        }
+        errno = saved_errno;
+    } while (retry);
+    __dd_set_shared_memory(NULL);
+    return rc;
+}
+
 WRAPPED_FUNCTION(ssize_t, pread, (int, fd)(void*, buf)(size_t, count)(off_t, offset))
 WRAPPED_FUNCTION(ssize_t, pwrite, (int, fd)(const void*, buf)(size_t, count)(off_t, offset))
 
@@ -346,6 +450,61 @@ int __dd_openat64(int dirfd, const char* pathname, int flags, ...)
         interrupted_by_profiler = 0;
         rc = __dd_real_openat64(dirfd, pathname, flags, mode);
     } while (is_interrupted_by_profiler(rc, errno, interrupted_by_profiler));
+    __dd_set_shared_memory(NULL);
+    return rc;
+}
+
+/*
+ * TEMPORARY diagnostic instrumentation to root-cause the OpenLDAP / wall-time-profiler
+ * interaction (see OpenLdapTests.CheckOpenLdapCrash). Remove once resolved.
+ *
+ * fcntl is variadic (the 3rd argument's type depends on cmd), same reasoning as
+ * open/openat above -- handled manually rather than via WRAPPED_FUNCTION. The
+ * variadic argument is extracted as void*: on the SysV/AAPCS64 ABIs used here,
+ * variadic int and pointer arguments both occupy a full-width register slot, so
+ * this is safe regardless of which type the caller actually passed, and the
+ * real fcntl() reinterprets it correctly based on cmd.
+ *
+ * OpenLDAP's ldap_pvt_connect() toggles O_NONBLOCK via fcntl(F_GETFL)/fcntl(F_SETFL)
+ * around every connect() -- unlike connect()/poll()/read()/write(), this was
+ * completely unwrapped and untraced until now.
+ */
+static int (*__dd_real_fcntl)(int, int, ...) = NULL;
+
+static void load_symbols_fcntl() __attribute__((constructor));
+void load_symbols_fcntl()
+{
+    __dd_real_fcntl = (int (*)(int, int, ...))__dd_dlsym(RTLD_NEXT, "fcntl");
+}
+
+int fcntl(int fd, int cmd, ...)
+{
+    if (__dd_real_fcntl == NULL)
+    {
+        __dd_real_fcntl = (int (*)(int, int, ...))__dd_dlsym(RTLD_NEXT, "fcntl");
+    }
+
+    va_list args;
+    va_start(args, cmd);
+    void* arg = va_arg(args, void*);
+    va_end(args);
+
+    volatile int interrupted_by_profiler = 0;
+    __dd_set_shared_memory(&interrupted_by_profiler);
+    int rc;
+    int retry;
+    do
+    {
+        interrupted_by_profiler = 0;
+        rc = __dd_real_fcntl(fd, cmd, arg);
+        int saved_errno = errno;
+        retry = is_interrupted_by_profiler(rc, saved_errno, interrupted_by_profiler);
+        if (DD_TRACE_SYSCALLS_SHIELD)
+        {
+            __dd_trace_log(fd, "fcntl", rc, saved_errno, interrupted_by_profiler, retry);
+        }
+        errno = saved_errno;
+    } while (retry);
     __dd_set_shared_memory(NULL);
     return rc;
 }

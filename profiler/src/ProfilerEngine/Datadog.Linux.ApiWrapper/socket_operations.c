@@ -3,9 +3,13 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <poll.h>
+#include <stdio.h>
+#include <string.h>
 #include <sys/select.h>
 #include <sys/socket.h>
+#include <sys/syscall.h>
 #include <time.h>
+#include <unistd.h>
 
 #include "common.h"
 
@@ -24,6 +28,8 @@
  *   errno == EINTR), if the profiler interrupted the thread (interrupted_by_profiler != 0)
  *   we restart the system calls
  */
+// DD_TRACE_SYSCALLS_SHIELD is defined in common.h (shared with filesystem_operations.c).
+
 #define WRAPPED_FUNCTION(return_type, name, parameters)                           \
     static return_type (*__dd_real_##name)(END(PARAMS_LOOP_0 parameters)) = NULL; \
                                                                                   \
@@ -36,11 +42,28 @@
         volatile int interrupted_by_profiler = 0;                                 \
         __dd_set_shared_memory(&interrupted_by_profiler);                         \
         return_type rc;                                                           \
+        int __dd_retry;                                                           \
         do                                                                        \
         {                                                                         \
             interrupted_by_profiler = 0;                                          \
             rc = __dd_real_##name(END(VAR_LOOP_0 parameters));                    \
-        } while (is_interrupted_by_profiler(rc, errno, interrupted_by_profiler)); \
+            int __dd_errno = errno;                                              \
+            __dd_retry = is_interrupted_by_profiler(rc, __dd_errno, interrupted_by_profiler); \
+            if (DD_TRACE_SYSCALLS_SHIELD)                                          \
+            {                                                                     \
+                /* stdout, not stderr: the test harness only echoes stderr into  \
+                 * the xunit log when stderr itself contains "[Error]" - it      \
+                 * won't for our trace lines, so they'd be captured but never    \
+                 * surfaced. The real failure text goes to stdout, so put our    \
+                 * trace there too to guarantee it's interleaved and visible. */ \
+                fprintf(stdout,                                                   \
+                    "[SystemCallsShield][tid=%d] " #name ": rc=%lld errno=%d (%s) interrupted_by_profiler=%d retry=%d\n", \
+                    (int)syscall(SYS_gettid), (long long)rc, __dd_errno, strerror(__dd_errno), \
+                    interrupted_by_profiler, __dd_retry);                         \
+                fflush(stdout);                                                   \
+            }                                                                     \
+            errno = __dd_errno;                                                  \
+        } while (__dd_retry);                                                     \
         __dd_set_shared_memory(NULL);                                             \
         return rc;                                                                \
     }                                                                             \

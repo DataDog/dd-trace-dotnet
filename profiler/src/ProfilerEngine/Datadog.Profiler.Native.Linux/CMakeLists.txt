@@ -4,6 +4,9 @@
 
 project("Datadog.Profiler.Native.Linux" VERSION 3.55.0)
 
+# USE_GLIBC217_SYSROOT links glibc217-compat (not glibc-compat, which conflicts with real
+# glibc's strerror_r). See glibc217-compat.c.
+
 option(RUN_ASAN "Build with Clang Undefined-Behavior Sanitizer" OFF)
 option(RUN_UBSAN "Build with Clang Undefined-Behavior Sanitizer" OFF)
 option(RUN_TSAN "Build with Clang Thread Sanitizer" OFF)
@@ -32,19 +35,18 @@ endif()
 if (RUN_UBSAN)
     add_compile_options(-fsanitize=undefined -g -fno-omit-frame-pointer -fno-sanitize-recover=all -DDD_SANITIZERS)
 
-    # On arm64 Linux the CLR exports typeinfo for ProfToEEInterfaceImpl, so UBSAN's
-    # vptr check fires on every call through an ICorProfilerInfo* COM interface
-    # (QueryInterface, AddRef, Release, GetFunctionFromIP, ...). Those call sites
-    # are scattered across CorProfilerCallback, ManagedCodeCache, ManagedThreadList
-    # and most service ctors/dtors, so per-function __attribute__((no_sanitize("vptr")))
-    # turns into whack-a-mole and any missed site aborts under -fno-sanitize-recover=all.
-    # On x86_64 the CLR does not export that typeinfo, so the check is silently skipped
-    # and nothing is lost by disabling it globally. Scope the suppression to clang + arm64
-    # so x86_64 builds still benefit from the full UBSAN coverage.
-    if (ISARM64)
-        add_compile_options(-fno-sanitize=vptr)
-        add_link_options(-fno-sanitize=vptr)
-    endif()
+    # UBSAN's vptr check fires on calls through ICorProfilerInfo* / IUnknown* COM
+    # interfaces (QueryInterface, AddRef, Release, GetFunctionFromIP, ...). The
+    # object is a coreclr ProfToEEInterfaceImpl whose RTTI does not match the
+    # IUnknown compiled into this library. Call sites are scattered across
+    # CorProfilerCallback, ManagedCodeCache, ManagedThreadList and most service
+    # ctors/dtors, so per-function __attribute__((no_sanitize("vptr"))) turns
+    # into whack-a-mole and any missed site aborts under -fno-sanitize-recover=all.
+    # This used to be arm64-only (x86_64 historically skipped the check). The
+    # same diagnostic now also fires on x86_64 in the UBSAN sample run against
+    # .NET 10, so disable vptr sanitization on all architectures.
+    add_compile_options(-fno-sanitize=vptr)
+    add_link_options(-fno-sanitize=vptr)
 endif()
 
 if (RUN_TSAN)
@@ -57,7 +59,9 @@ if (RUN_TSAN)
 endif()
 
 if(ISLINUX)
-    add_compile_options(-stdlib=libstdc++ -DLINUX -Wno-pragmas)
+    # DD_CXX_STDLIB_COMPILE_OPTIONS is empty under USE_GLIBC217_SYSROOT - see the root
+    # CMakeLists.txt for why.
+    add_compile_options(${DD_CXX_STDLIB_COMPILE_OPTIONS} -DLINUX -Wno-pragmas)
 endif()
 
 if (BIT64)
@@ -172,6 +176,11 @@ target_link_libraries(${PROFILER_STATIC_LIB_NAME}
 )
 
 add_dependencies(${PROFILER_STATIC_LIB_NAME} libdatadog-lib libunwind-lib coreclr spdlog-headers PPDB)
+
+if (USE_GLIBC217_SYSROOT)
+    target_link_libraries(${PROFILER_STATIC_LIB_NAME} glibc217-compat)
+    add_dependencies(${PROFILER_STATIC_LIB_NAME} glibc217-compat)
+endif()
 
 # ******************************************************
 # Define shared target

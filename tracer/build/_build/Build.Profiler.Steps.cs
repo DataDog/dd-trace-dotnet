@@ -88,7 +88,7 @@ partial class Build
             EnsureExistingDirectory(NativeBuildDirectory);
 
             CMake.Value(
-                arguments: $"-DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang -B {NativeBuildDirectory} -S {RootDirectory} -DCMAKE_BUILD_TYPE={BuildConfiguration}");
+                arguments: $"-DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang -B {NativeBuildDirectory} -S {RootDirectory} -DCMAKE_BUILD_TYPE={BuildConfiguration}{Glibc217SysrootCMakeArgs}");
 
             CMake.Value(
                 arguments: $"--build {NativeBuildDirectory} --parallel {Environment.ProcessorCount} --target profiler-native-tests");
@@ -110,7 +110,7 @@ partial class Build
             EnsureExistingDirectory(NativeBuildDirectory);
 
             CMake.Value(
-                arguments: $"-DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang -B {NativeBuildDirectory} -S {RootDirectory} -DCMAKE_BUILD_TYPE={BuildConfiguration}");
+                arguments: $"-DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang -B {NativeBuildDirectory} -S {RootDirectory} -DCMAKE_BUILD_TYPE={BuildConfiguration}{Glibc217SysrootCMakeArgs}");
 
             CMake.Value(
                 arguments: $"--build {NativeBuildDirectory} --parallel {Environment.ProcessorCount} --target profiler");
@@ -136,6 +136,11 @@ partial class Build
             if (AsUniversal)
             {
                 additionalArgs += $" -DCMAKE_TOOLCHAIN_FILE=./build/cmake/Universal.cmake.{(IsArm64 ? "aarch64" : "x86_64")}";
+            }
+            else
+            {
+                // Must match the toolchain passed by CompileNativeLoaderLinux (shared build dir).
+                additionalArgs += Glibc217SysrootCMakeArgs;
             }
 
             CMake.Value(
@@ -167,8 +172,9 @@ partial class Build
         {
             EnsureExistingDirectory(NativeBuildDirectory);
 
+            // Must match the toolchain passed by CompileNativeLoaderLinux (shared build dir).
             CMake.Value(
-                arguments: $"-DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang -B {NativeBuildDirectory} -S {RootDirectory} -DCMAKE_BUILD_TYPE={BuildConfiguration}");
+                arguments: $"-DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang -B {NativeBuildDirectory} -S {RootDirectory} -DCMAKE_BUILD_TYPE={BuildConfiguration}{Glibc217SysrootCMakeArgs}");
 
             CMake.Value(
                 arguments: $"--build {NativeBuildDirectory} --parallel {Environment.ProcessorCount} --target wrapper-native-tests");
@@ -624,7 +630,7 @@ partial class Build
             EnsureExistingDirectory(ProfilerBuildDataDirectory);
 
             CMake.Value(
-                arguments: $"-DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang -DRUN_ASAN=1 -B {NativeBuildDirectory} -S {RootDirectory} -DCMAKE_BUILD_TYPE={BuildConfiguration}");
+                arguments: $"-DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang -DRUN_ASAN=1 -B {NativeBuildDirectory} -S {RootDirectory} -DCMAKE_BUILD_TYPE={BuildConfiguration}{Glibc217SysrootCMakeArgs}");
 
             CMake.Value(
                 arguments: $"--build {NativeBuildDirectory} --parallel {Environment.ProcessorCount} --target all-profiler");
@@ -770,7 +776,7 @@ partial class Build
             EnsureExistingDirectory(ProfilerBuildDataDirectory);
 
             CMake.Value(
-                arguments: $"-DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang -DRUN_UBSAN=1 -B {NativeBuildDirectory} -S {RootDirectory} -DCMAKE_BUILD_TYPE={BuildConfiguration}");
+                arguments: $"-DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang -DRUN_UBSAN=1 -B {NativeBuildDirectory} -S {RootDirectory} -DCMAKE_BUILD_TYPE={BuildConfiguration}{Glibc217SysrootCMakeArgs}");
 
             CMake.Value(
                 arguments: $"--build {NativeBuildDirectory} --parallel {Environment.ProcessorCount} --target all-profiler");
@@ -808,7 +814,7 @@ partial class Build
             EnsureExistingDirectory(ProfilerBuildDataDirectory);
 
             CMake.Value(
-                arguments: $"-DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang -DRUN_TSAN=1 -B {NativeBuildDirectory} -S {RootDirectory} -DCMAKE_BUILD_TYPE={BuildConfiguration}");
+                arguments: $"-DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang -DRUN_TSAN=1 -B {NativeBuildDirectory} -S {RootDirectory} -DCMAKE_BUILD_TYPE={BuildConfiguration}{Glibc217SysrootCMakeArgs}");
 
             CMake.Value(
                 arguments: $"--build {NativeBuildDirectory} --parallel {Environment.ProcessorCount} --target all-profiler");
@@ -896,7 +902,7 @@ partial class Build
             var libdatadogAllowedSymbols = IsArm64 && IsAlpine ? new[] { "__register_frame_info@GLIBC_2.0", "__deregister_frame_info@GLIBC_2.0" } : null;
             var filesAndVersion = new []
             {
-                (FileNames.NativeProfiler, IsArm64 ? new Version(2, 18) : new Version(2, 17), null, $"native-profiler-symbols-alpine-{UnixArchitectureIdentifier}"),
+                (FileNames.NativeProfiler, IsArm64 ? new Version(2, 17) : new Version(2, 17), null, $"native-profiler-symbols-alpine-{UnixArchitectureIdentifier}"),
                 ("libdatadog_profiling", IsArm64 ? new Version(2, 17) : new Version(2, 15), libdatadogAllowedSymbols, $"native-libdatadog-symbols-alpine-{UnixArchitectureIdentifier}")
             };
 
@@ -944,12 +950,12 @@ partial class Build
         {
             if (sanitizer is SanitizerKind.Asan)
             {
-                // libasan SONAME differs between the two ASAN CI images:
-                //   - arm64: older Ubuntu/Debian base shipping gcc 9 -> libasan.so.5.
-                //   - x64:   newer image shipping gcc 10+ -> libasan.so.6.
-                // If/when the arm64 image is upgraded to gcc 10+, this can be
-                // collapsed to libasan.so.6 unconditionally.
-                envVars["LD_PRELOAD"] = IsArm64 ? "libasan.so.5" : "libasan.so.6";
+                // Both x64 and arm64 ASAN images now build on ubuntu.dockerfile (Ubuntu 22.04,
+                // gcc 11), which ships libasan.so.6 on both architectures - confirmed present
+                // at /usr/lib/<triple>/libasan.so.6 in the actual container. Previously arm64
+                // ran on an older Ubuntu/Debian base shipping gcc 9 (libasan.so.5); that's no
+                // longer the case now that arm64 ASAN also uses ubuntu.dockerfile.
+                envVars["LD_PRELOAD"] = "libasan.so.6";
                 // detect_leaks set to 0 to avoid false positive since not all libs are compiled against ASAN (ex. CLR binaries)
                 envVars["ASAN_OPTIONS"] = "detect_leaks=0";
             }

@@ -31,6 +31,7 @@ if (ISMACOS)
     set_property(TARGET re2 PROPERTY JOB_SERVER_AWARE TRUE)
 
 elseif(ISLINUX)
+    # Pass CC/CXX explicitly — re2's Makefile doesn't inherit the compiler from CMake.
     ExternalProject_Add(re2
         DOWNLOAD_COMMAND ${DOWNLOAD_COMMAND}
         TIMEOUT 5
@@ -38,7 +39,7 @@ elseif(ISLINUX)
         CONFIGURE_COMMAND ""
         UPDATE_COMMAND ""
         BUILD_IN_SOURCE TRUE
-        BUILD_COMMAND ${CMAKE_COMMAND} -E env ARFLAGS=-r\ -s\ -c CXXFLAGS=-O3\ -g\ -fPIC\ -D_GLIBCXX_USE_CXX11_ABI=0 $(MAKE) -j
+        BUILD_COMMAND ${CMAKE_COMMAND} -E env CC=${CMAKE_C_COMPILER} CXX=${CMAKE_CXX_COMPILER} ARFLAGS=-r\ -s\ -c CXXFLAGS=-O3\ -g\ -fPIC\ -D_GLIBCXX_USE_CXX11_ABI=0 $(MAKE) -j
         BUILD_BYPRODUCTS ${CMAKE_CURRENT_BINARY_DIR}/re2-prefix/src/re2/obj/libre2.a
     )
 endif()

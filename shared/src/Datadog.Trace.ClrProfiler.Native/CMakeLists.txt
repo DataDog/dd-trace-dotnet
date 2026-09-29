@@ -14,10 +14,7 @@ endif()
 
 project("Datadog.Trace.ClrProfiler.Native" VERSION 3.55.0)
 
-if (UNIVERSAL)
-   find_package(GlibcCompat REQUIRED)
-   message(STATUS "Glibc Compat objects")
-endif()
+# glibc-compat is defined once at the root CMakeLists.txt (shared across subdirectories).
 
 # ******************************************************
 # Environment detection
@@ -124,7 +121,7 @@ if (UNIVERSAL)
 elseif (ISMACOS)
     add_compile_options(-stdlib=libc++ -DMACOS -Wno-pragma-pack -Wno-deprecated-declarations -fvisibility=hidden -Wno-deprecated-this-capture)
 else()
-    add_compile_options(-stdlib=libstdc++)
+    add_compile_options(${DD_CXX_STDLIB_COMPILE_OPTIONS})
 endif()
 
 if(ISLINUX)
@@ -253,4 +250,12 @@ if (UNIVERSAL)
         glibc-compat
         -flto
         )
+endif()
+
+# Provides __libc_single_threaded (not in glibc 2.17). See glibc217-compat.c.
+# Linked into the .static archive (not the shared lib) so test targets that consume the
+# archive directly also get the definition.
+if (USE_GLIBC217_SYSROOT)
+    target_link_libraries("Datadog.Trace.ClrProfiler.Native.static" glibc217-compat)
+    add_dependencies("Datadog.Trace.ClrProfiler.Native.static" glibc217-compat)
 endif()

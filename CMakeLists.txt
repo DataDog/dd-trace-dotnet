@@ -25,8 +25,39 @@ project("Datadog.APM.Native" VERSION 2.18.0)
 option(UNIVERSAL "Build as Universal binary" ON)
 message(STATUS "Building Native Loader and Wrapper as Universal binary: " ${UNIVERSAL})
 
+# UNIVERSAL (musl) and USE_GLIBC217_SYSROOT are mutually exclusive.
+if (UNIVERSAL AND USE_GLIBC217_SYSROOT)
+    message(FATAL_ERROR "UNIVERSAL and USE_GLIBC217_SYSROOT are mutually exclusive: the "
+                        "Universal build targets musl, the glibc217 sysroot build targets "
+                        "glibc 2.17. Pick one - drop -DUNIVERSAL=ON to build the native "
+                        "loader/wrapper against the glibc 2.17 sysroot, or drop "
+                        "-DCMAKE_TOOLCHAIN_FILE=build/cmake/Glibc217.cmake.x86_64 to build "
+                        "them as Universal/musl binaries.")
+endif()
+
+# Centralized C++ stdlib flag. Empty under USE_GLIBC217_SYSROOT (Glibc217.cmake.x86_64
+# already controls header search and linking; -stdlib=libstdc++ on top triggers warnings).
+if (USE_GLIBC217_SYSROOT)
+    set(DD_CXX_STDLIB_COMPILE_OPTIONS "")
+else()
+    set(DD_CXX_STDLIB_COMPILE_OPTIONS -stdlib=libstdc++)
+endif()
+
 if (CMAKE_TOOLCHAIN_FILE)
     message(STATUS "Using toolchain file ${CMAKE_TOOLCHAIN_FILE}")
+endif()
+
+# Detect stale build directory: CMake only sources a toolchain file on first configure.
+# Re-running with -DCMAKE_TOOLCHAIN_FILE on an existing cache silently ignores it.
+if (CMAKE_TOOLCHAIN_FILE MATCHES "Glibc217" AND NOT USE_GLIBC217_SYSROOT)
+    message(FATAL_ERROR
+        "CMAKE_TOOLCHAIN_FILE is set to '${CMAKE_TOOLCHAIN_FILE}' but that file was never "
+        "sourced, so NONE of its glibc-2.17 compile/link flags are in effect. This happens "
+        "when a toolchain file is added to a build directory that was already configured "
+        "without one - CMake accepts the variable but silently ignores the file. Left "
+        "unchecked this produces a binary that links against the build host's own glibc and "
+        "still builds successfully, so delete the build directory (${CMAKE_BINARY_DIR}) and "
+        "configure it again from scratch.")
 endif()
 
 SET(OSX_ARCH ${CMAKE_OSX_ARCHITECTURES})
@@ -99,6 +130,18 @@ message(STATUS "GoogleTest library")
 
 find_package(PPDB REQUIRED)
 message(STATUS "PPDB library")
+
+# Defined once here (not per-subdirectory) to avoid duplicate target names in a single configure.
+if (UNIVERSAL)
+    find_package(GlibcCompat REQUIRED)
+    message(STATUS "Glibc Compat objects")
+endif()
+
+# Separate from glibc-compat above (see FindGlibc217Compat.cmake). Same once-here pattern.
+if (USE_GLIBC217_SYSROOT)
+    find_package(Glibc217Compat REQUIRED)
+    message(STATUS "Glibc217 Compat objects")
+endif()
 
 add_subdirectory(tracer)
 
