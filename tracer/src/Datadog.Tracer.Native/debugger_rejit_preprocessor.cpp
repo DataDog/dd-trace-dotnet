@@ -221,11 +221,7 @@ void DebuggerRejitPreprocessor::EnqueuePreprocessLineProbes(
     };
 
     // Enqueue
-    if (!m_rejit_handler->Enqueue(std::make_unique<RejitWorkItem>(std::move(action), std::move(abandon))) &&
-        promise != nullptr)
-    {
-        promise->set_value(rejitRequests);
-    }
+    m_rejit_handler->Enqueue(std::make_unique<RejitWorkItem>(std::move(action), std::move(abandon)));
 }
 
 void DebuggerRejitPreprocessor::ProcessTypesForRejit(

@@ -21,10 +21,11 @@ struct RejitWorkItem
     const bool terminating = false;
     const std::function<void()> func = nullptr;
 
-    // Releases a caller blocked on this item's promise when func could not complete. Callers keep their own
-    // shared_ptr to the promise for the enqueue-refused path, so the promise object outlives the work item
-    // and an unresolved promise is a permanent hang rather than a broken_promise. Only set by enqueue paths
-    // that carry a promise.
+    // Releases a caller blocked on this item's promise when func can't complete: RejitHandler::Enqueue runs it
+    // when shutdown refuses the item, and the worker runs it when func throws. Callers usually keep their own
+    // shared_ptr to the promise while they wait, so the promise object outlives the work item and an
+    // unresolved promise is a permanent hang rather than a broken_promise. Set by every enqueue path that takes
+    // a promise, even when that promise is null.
     const std::function<void()> abandon = nullptr;
 
     RejitWorkItem();

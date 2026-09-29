@@ -549,11 +549,7 @@ void RejitPreprocessor<RejitRequestDefinition>::EnqueueRequestRejit(std::vector<
     };
 
     // Enqueue
-    if (!m_rejit_handler->Enqueue(std::make_unique<RejitWorkItem>(std::move(action), std::move(abandon))) &&
-        promise != nullptr)
-    {
-        promise->set_value();
-    }
+    m_rejit_handler->Enqueue(std::make_unique<RejitWorkItem>(std::move(action), std::move(abandon)));
 }
 
 template <class RejitRequestDefinition>
@@ -607,11 +603,7 @@ void RejitPreprocessor<RejitRequestDefinition>::EnqueueRequestRejitForLoadedModu
     };
 
     // Enqueue
-    if (!m_rejit_handler->Enqueue(std::make_unique<RejitWorkItem>(std::move(action), std::move(abandon))) &&
-        promise != nullptr)
-    {
-        promise->set_value(0);
-    }
+    m_rejit_handler->Enqueue(std::make_unique<RejitWorkItem>(std::move(action), std::move(abandon)));
 }
 
 template <class RejitRequestDefinition>
@@ -990,11 +982,7 @@ void RejitPreprocessor<RejitRequestDefinition>::EnqueuePreprocessRejitRequests(
     };
 
     // Enqueue
-    if (!m_rejit_handler->Enqueue(std::make_unique<RejitWorkItem>(std::move(action), std::move(abandon))) &&
-        promise != nullptr)
-    {
-        promise->set_value(rejitRequests);
-    }
+    m_rejit_handler->Enqueue(std::make_unique<RejitWorkItem>(std::move(action), std::move(abandon)));
 }
 
 template <class RejitRequestDefinition>

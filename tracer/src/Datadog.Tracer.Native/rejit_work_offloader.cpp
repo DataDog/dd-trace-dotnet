@@ -36,9 +36,8 @@ std::unique_ptr<RejitWorkItem> RejitWorkItem::CreateTerminatingWorkItem()
 namespace
 {
 // Releases anyone blocked on a failed work item's promise. Catching the exception is not enough on its
-// own: the caller keeps its own reference to the promise (it needs it for the enqueue-refused path), so
-// the promise object outlives the work item and an unresolved promise is a permanent hang rather than a
-// broken_promise.
+// own: callers usually keep their own reference to the promise while they wait, so the promise object
+// outlives the work item and an unresolved promise is a permanent hang rather than a broken_promise.
 //
 // This has to be the first thing the failure path does, and it must not throw. Logger::Error formats
 // through an ostringstream and therefore allocates, while the likeliest reason an item failed at all is
