@@ -142,6 +142,46 @@ void RejitPreprocessor<RejitRequestDefinition>::AddNGenInlinerModule(ModuleID mo
     }
 }
 
+// The AddNGenInlinerModule replay skips a module that was already checked against an NGen module, so it never
+// sees methods created afterwards. Their inliners are added to the caller's batch instead, so a method and its
+// precompiled callers are rejitted together.
+template <class RejitRequestDefinition>
+void RejitPreprocessor<RejitRequestDefinition>::GetNGenInlinerRejitRequestsForNewMethods(
+    ModuleID moduleId, std::vector<RejitRequest>& rejitRequests)
+{
+    RejitHandlerModule* moduleHandler = nullptr;
+    {
+        std::lock_guard<std::mutex> modulesGuard(m_modules_lock);
+        const auto find_res = m_modules.find(moduleId);
+        if (find_res == m_modules.end())
+        {
+            return;
+        }
+
+        moduleHandler = find_res->second.get();
+    }
+
+    const auto newMethods = moduleHandler->TakeNewMethods();
+    if (newMethods.empty())
+    {
+        return;
+    }
+
+    // RemoveModule erases an unloading ModuleID under this lock, so it has to be held across the CLR calls.
+    std::lock_guard<std::mutex> inlinersGuard(m_ngenInlinersModules_lock);
+    for (const auto method : newMethods)
+    {
+        for (const auto& inlinerModule : m_ngenInlinersModules)
+        {
+            if (!method->GetRejitRequestsForInlinersInModule(inlinerModule, rejitRequests))
+            {
+                // Let the next AddNGenInlinerModule replay retry the incomplete data.
+                moduleHandler->RemoveProcessedInlinerModule(inlinerModule);
+            }
+        }
+    }
+}
+
 template <class RejitRequestDefinition>
 HRESULT RejitPreprocessor<RejitRequestDefinition>::RejitMethod(FunctionControlWrapper& functionControl)
 {
@@ -569,6 +609,7 @@ ULONG RejitPreprocessor<RejitRequestDefinition>::PreprocessRejitRequests(
     }
 
     auto corProfilerInfo = m_rejit_handler->GetCorProfilerInfo();
+    std::vector<RejitRequest> ngenInlinerRequests;
 
     for (const auto& moduleWithLifetime : modules)
     {
@@ -870,9 +911,15 @@ ULONG RejitPreprocessor<RejitRequestDefinition>::PreprocessRejitRequests(
         {
             rejitRequests.emplace_back(moduleWithLifetime, request.methodToken);
         }
+
+        if (!moduleRejitRequests.empty())
+        {
+            GetNGenInlinerRejitRequestsForNewMethods(module, ngenInlinerRequests);
+        }
     }
 
     const auto rejitCount = (ULONG) rejitRequests.size();
+    rejitRequests.insert(rejitRequests.end(), ngenInlinerRequests.begin(), ngenInlinerRequests.end());
 
     return rejitCount;
 }

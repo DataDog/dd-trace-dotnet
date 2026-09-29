@@ -96,6 +96,9 @@ protected:
                                   const std::vector<RejitRequestDefinition>& definitions,
                                   std::vector<RejitRequest>& rejitRequests);
 
+    // The caller must hold the lifetime of moduleId.
+    void GetNGenInlinerRejitRequestsForNewMethods(ModuleID moduleId, std::vector<RejitRequest>& rejitRequests);
+
 protected:
     std::mutex m_modules_lock;
     std::unordered_map<ModuleID, std::unique_ptr<RejitHandlerModule>> m_modules;

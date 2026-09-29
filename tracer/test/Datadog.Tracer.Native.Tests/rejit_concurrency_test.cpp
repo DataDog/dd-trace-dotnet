@@ -117,10 +117,61 @@ public:
     }
 };
 
+class SingleMethodEnum : public ICorProfilerMethodEnum
+{
+public:
+    COR_PRF_METHOD method{};
+    bool fetched = false;
+
+    HRESULT STDMETHODCALLTYPE QueryInterface(const IID& riid, void** ppvObject) override { return E_NOINTERFACE; }
+    ULONG STDMETHODCALLTYPE AddRef() override { return 1; }
+    ULONG STDMETHODCALLTYPE Release() override { return 1; }
+    HRESULT STDMETHODCALLTYPE Skip(ULONG celt) override { return E_FAIL; }
+    HRESULT STDMETHODCALLTYPE Reset() override { return E_FAIL; }
+    HRESULT STDMETHODCALLTYPE Clone(ICorProfilerMethodEnum** ppEnum) override { return E_FAIL; }
+    HRESULT STDMETHODCALLTYPE GetCount(ULONG* pcelt) override { return E_FAIL; }
+
+    HRESULT STDMETHODCALLTYPE Next(ULONG celt, COR_PRF_METHOD elements[], ULONG* pceltFetched) override
+    {
+        if (fetched)
+        {
+            return S_FALSE;
+        }
+
+        fetched = true;
+        elements[0] = method;
+        return S_OK;
+    }
+};
+
+class NGenInlinerProfilerInfo : public MockCorProfilerInfo
+{
+public:
+    SingleMethodEnum inliners;
+    int enumerations = 0;
+    bool firstEnumerationIncomplete = false;
+
+    HRESULT STDMETHODCALLTYPE EnumNgenModuleMethodsInliningThisMethod(
+        ModuleID inlinersModuleId, ModuleID inlineeModuleId, mdMethodDef inlineeMethodId, BOOL* incompleteData,
+        ICorProfilerMethodEnum** ppEnum) override
+    {
+        enumerations++;
+        if (firstEnumerationIncomplete && enumerations == 1)
+        {
+            return CORPROF_E_DATAINCOMPLETE;
+        }
+
+        *incompleteData = false;
+        *ppEnum = &inliners;
+        return S_OK;
+    }
+};
+
 class ObservableTracerRejitPreprocessor : public TracerRejitPreprocessor
 {
 public:
     using TracerRejitPreprocessor::TracerRejitPreprocessor;
+    using TracerRejitPreprocessor::GetNGenInlinerRejitRequestsForNewMethods;
 
     std::promise<void> removeEntered;
     std::promise<void> removeReturned;
@@ -398,6 +449,150 @@ TEST(RejitHandler, RequestRejitSkipsUnloadedGenerationAfterModuleIdReuse)
 
     handler->RequestRejit(oldRequests);
     EXPECT_EQ(0, context.profilerInfo.requestRejitCallCount);
+}
+
+TEST(RejitPreprocessor, NewMethodGetsNGenInlinersFromAlreadyCheckedModule)
+{
+    NGenInlinerProfilerInfo profilerInfo;
+    auto offloader = std::make_shared<RejitWorkOffloader>(&profilerInfo);
+    auto handler = std::make_shared<RejitHandler>(static_cast<ICorProfilerInfo7*>(&profilerInfo), offloader);
+    ObservableTracerRejitPreprocessor preprocessor(nullptr, handler);
+    constexpr ModuleID inlineeModuleId = 41;
+    constexpr ModuleID inlinersModuleId = 42;
+    constexpr mdMethodDef inlineeMethodId = 1;
+    constexpr mdMethodDef inlinerMethodId = 2;
+    profilerInfo.inliners.method = {inlinersModuleId, inlinerMethodId};
+    const auto inlineeModule = handler->RegisterModule(inlineeModuleId);
+    handler->RegisterModule(inlinersModuleId);
+
+    // The module is checked against the NGen module while it has no methods yet.
+    auto module = preprocessor.GetOrAddModule(inlineeModuleId);
+    handler->AddNGenInlinerModule(inlinersModuleId);
+    module->CreateMethodIfNotExists(
+        inlineeMethodId,
+        [](mdMethodDef methodDef, RejitHandlerModule* moduleHandler)
+        {
+            return std::make_unique<RejitHandlerModuleMethod>(
+                methodDef, moduleHandler, FunctionInfo{}, std::unique_ptr<MethodRewriter>{});
+        },
+        [](RejitHandlerModuleMethod*) {});
+
+    auto moduleLifetime = inlineeModule.Acquire();
+    EXPECT_TRUE(moduleLifetime.has_value());
+    std::vector<RejitRequest> requests;
+    preprocessor.GetNGenInlinerRejitRequestsForNewMethods(inlineeModuleId, requests);
+
+    EXPECT_EQ(1u, requests.size());
+    for (const auto& request : requests)
+    {
+        EXPECT_EQ(inlinersModuleId, request.moduleId);
+        EXPECT_EQ(inlinerMethodId, request.methodToken);
+        EXPECT_TRUE(request.Acquire().has_value());
+    }
+
+    // A method is checked only once.
+    preprocessor.GetNGenInlinerRejitRequestsForNewMethods(inlineeModuleId, requests);
+    EXPECT_EQ(1, profilerInfo.enumerations);
+
+    moduleLifetime.reset();
+    handler->Shutdown();
+}
+
+TEST(RejitPreprocessor, IncompleteNGenDataForNewMethodIsRetriedByReplay)
+{
+    NGenInlinerProfilerInfo profilerInfo;
+    auto offloader = std::make_shared<RejitWorkOffloader>(&profilerInfo);
+    auto handler = std::make_shared<RejitHandler>(static_cast<ICorProfilerInfo7*>(&profilerInfo), offloader);
+    ObservableTracerRejitPreprocessor preprocessor(nullptr, handler);
+    constexpr ModuleID inlineeModuleId = 41;
+    constexpr ModuleID inlinersModuleId = 42;
+    constexpr mdMethodDef inlineeMethodId = 1;
+    constexpr mdMethodDef inlinerMethodId = 2;
+    profilerInfo.inliners.method = {inlinersModuleId, inlinerMethodId};
+    profilerInfo.firstEnumerationIncomplete = true;
+    const auto inlineeModule = handler->RegisterModule(inlineeModuleId);
+    handler->RegisterModule(inlinersModuleId);
+
+    auto module = preprocessor.GetOrAddModule(inlineeModuleId);
+    handler->AddNGenInlinerModule(inlinersModuleId);
+    module->CreateMethodIfNotExists(
+        inlineeMethodId,
+        [](mdMethodDef methodDef, RejitHandlerModule* moduleHandler)
+        {
+            return std::make_unique<RejitHandlerModuleMethod>(
+                methodDef, moduleHandler, FunctionInfo{}, std::unique_ptr<MethodRewriter>{});
+        },
+        [](RejitHandlerModuleMethod*) {});
+
+    {
+        auto moduleLifetime = inlineeModule.Acquire();
+        std::vector<RejitRequest> requests;
+        preprocessor.GetNGenInlinerRejitRequestsForNewMethods(inlineeModuleId, requests);
+        EXPECT_TRUE(requests.empty());
+    }
+
+    handler->AddNGenInlinerModule(inlinersModuleId);
+
+    EXPECT_EQ(2, profilerInfo.enumerations);
+
+    handler->Shutdown();
+}
+
+TEST(ModuleLifetime, UnloadWaitsForNewMethodNGenCheck)
+{
+    std::promise<void> releaseEnumeration;
+    BlockingNGenProfilerInfo profilerInfo(releaseEnumeration.get_future().share());
+    auto enumerationEnteredFuture = profilerInfo.enumerationEntered.get_future();
+    auto offloader = std::make_shared<RejitWorkOffloader>(&profilerInfo);
+    auto handler = std::make_shared<RejitHandler>(static_cast<ICorProfilerInfo7*>(&profilerInfo), offloader);
+    ObservableTracerRejitPreprocessor preprocessor(nullptr, handler);
+    auto removeEnteredFuture = preprocessor.removeEntered.get_future();
+    auto removeReturnedFuture = preprocessor.removeReturned.get_future();
+    constexpr ModuleID inlineeModuleId = 41;
+    constexpr ModuleID inlinersModuleId = 42;
+    constexpr mdMethodDef methodId = 1;
+    const auto inlineeModule = handler->RegisterModule(inlineeModuleId);
+    handler->RegisterModule(inlinersModuleId);
+
+    auto module = preprocessor.GetOrAddModule(inlineeModuleId);
+    handler->AddNGenInlinerModule(inlinersModuleId);
+    module->CreateMethodIfNotExists(
+        methodId,
+        [](mdMethodDef methodDef, RejitHandlerModule* moduleHandler)
+        {
+            return std::make_unique<RejitHandlerModuleMethod>(
+                methodDef, moduleHandler, FunctionInfo{}, std::unique_ptr<MethodRewriter>{});
+        },
+        [](RejitHandlerModuleMethod*) {});
+
+    std::thread check(
+        [&]
+        {
+            auto moduleLifetime = inlineeModule.Acquire();
+            std::vector<RejitRequest> requests;
+            preprocessor.GetNGenInlinerRejitRequestsForNewMethods(inlineeModuleId, requests);
+        });
+    const auto enumerationEntered = enumerationEnteredFuture.wait_for(1s) == std::future_status::ready;
+    EXPECT_TRUE(enumerationEntered);
+    if (!enumerationEntered)
+    {
+        releaseEnumeration.set_value();
+        check.join();
+        handler->Shutdown();
+        return;
+    }
+
+    std::thread unload([&] { handler->RemoveModule(inlinersModuleId); });
+
+    // ModuleUnloadStarted must remain blocked while the CLR can still dereference the NGen module.
+    EXPECT_EQ(std::future_status::ready, removeEnteredFuture.wait_for(1s));
+    EXPECT_EQ(std::future_status::timeout, removeReturnedFuture.wait_for(100ms));
+
+    releaseEnumeration.set_value();
+    check.join();
+    unload.join();
+
+    handler->Shutdown();
 }
 
 TEST(RejitHandler, RequestRejitKeepsAllModuleGenerationsAliveThroughClrCalls)

@@ -46,7 +46,16 @@ void RejitHandlerModuleMethod::SetFunctionInfo(const FunctionInfo& functionInfo)
 
 bool RejitHandlerModuleMethod::RequestRejitForInlinersInModule(ModuleID moduleId)
 {
-    // Enumerate all inliners and request rejit
+    std::vector<RejitRequest> requests;
+    const auto processed = GetRejitRequestsForInlinersInModule(moduleId, requests);
+    m_module->GetHandler()->EnqueueForRejit(std::move(requests));
+    return processed;
+}
+
+bool RejitHandlerModuleMethod::GetRejitRequestsForInlinersInModule(ModuleID moduleId,
+                                                                   std::vector<RejitRequest>& rejitRequests)
+{
+    // Enumerate all inliners
     ModuleID currentModuleId = m_module->GetModuleId();
     mdMethodDef currentMethodDef = m_methodDef;
 
@@ -93,8 +102,8 @@ bool RejitHandlerModuleMethod::RequestRejitForInlinersInModule(ModuleID moduleId
 
             if (total > 0)
             {
-                auto requests = handler->GetRejitRequests(methods);
-                handler->EnqueueForRejit(std::move(requests));
+                const auto requests = handler->GetRejitRequests(methods);
+                rejitRequests.insert(rejitRequests.end(), requests.begin(), requests.end());
                 Logger::Debug("NGEN:: Processed with ", total, " inliners [ModuleId=", currentModuleId,
                               ",MethodDef=", currentMethodDef, "]");
             }
@@ -197,6 +206,7 @@ bool RejitHandlerModule::CreateMethodIfNotExists(const mdMethodDef methodDef,
 
     auto newModuleInfo = creator(methodDef, this);
     updater(newModuleInfo.get());
+    m_newMethods.push_back(newModuleInfo.get());
     m_methods[methodDef] = std::move(newModuleInfo);
     return true;
 }
@@ -219,6 +229,14 @@ bool RejitHandlerModule::ContainsMethod(mdMethodDef methodDef)
 {
     std::lock_guard<std::mutex> guard(m_methods_lock);
     return m_methods.find(methodDef) != m_methods.end();
+}
+
+std::vector<RejitHandlerModuleMethod*> RejitHandlerModule::TakeNewMethods()
+{
+    std::vector<RejitHandlerModuleMethod*> newMethods;
+    std::lock_guard<std::mutex> guard(m_methods_lock);
+    newMethods.swap(m_newMethods);
+    return newMethods;
 }
 
 void RejitHandlerModule::RequestRejitForInlinersInModule(ModuleID moduleId)
@@ -249,6 +267,12 @@ void RejitHandlerModule::RequestRejitForInlinersInModule(ModuleID moduleId)
         // We mark module as processed.
         m_ngenProcessedInlinerModules[moduleId] = true;
     }
+}
+
+void RejitHandlerModule::RemoveProcessedInlinerModule(ModuleID moduleId)
+{
+    std::lock_guard<std::mutex> moduleGuard(m_ngenProcessedInlinerModulesLock);
+    m_ngenProcessedInlinerModules.erase(moduleId);
 }
 
 //

@@ -115,6 +115,7 @@ public:
     void SetFunctionInfo(const FunctionInfo& functionInfo);
 
     bool RequestRejitForInlinersInModule(ModuleID moduleId);
+    bool GetRejitRequestsForInlinersInModule(ModuleID moduleId, std::vector<RejitRequest>& rejitRequests);
     MethodRewriter* GetMethodRewriter();
 
     virtual ~RejitHandlerModuleMethod() = default;
@@ -136,6 +137,7 @@ private:
     std::unique_ptr<ModuleMetadata> m_metadata;
     std::mutex m_methods_lock;
     std::unordered_map<mdMethodDef, std::unique_ptr<RejitHandlerModuleMethod>> m_methods;
+    std::vector<RejitHandlerModuleMethod*> m_newMethods;
 
     std::mutex m_ngenProcessedInlinerModulesLock;
     std::unordered_map<ModuleID, bool> m_ngenProcessedInlinerModules;
@@ -154,8 +156,10 @@ public:
                                  RejitHandlerModuleMethodUpdaterFunc updater);
     bool ContainsMethod(mdMethodDef methodDef);
     bool TryGetMethod(mdMethodDef methodDef, /* OUT */ RejitHandlerModuleMethod** methodHandler);
+    std::vector<RejitHandlerModuleMethod*> TakeNewMethods();
 
     void RequestRejitForInlinersInModule(ModuleID moduleId);
+    void RemoveProcessedInlinerModule(ModuleID moduleId);
 };
 
 class Rejitter;
