@@ -399,33 +399,41 @@ TEST(RejitHandlerShutdown, EnqueueForRejitResolvesPromiseAfterShutdown)
 
 TEST(RejitHandlerShutdown, AcceptedWorkCompletesBeforeTerminator)
 {
-    RejitHandlerContext context;
-    const auto& offloader = context.offloader;
-    const auto& handler = context.handler;
+    constexpr int iterations = 200;
+    constexpr int producersCount = 4;
+    int lostItems = 0;
+    for (int iteration = 0; iteration < iterations; iteration++)
+    {
+        std::atomic<int> accepted{0};
+        std::atomic<int> completed{0};
+        RejitHandlerContext context;
+        const auto& handler = context.handler;
 
-    std::promise<void> blockerEntered;
-    auto blockerEnteredFuture = blockerEntered.get_future();
-    std::promise<void> releaseBlocker;
-    auto releaseBlockerFuture = releaseBlocker.get_future().share();
-    offloader->Enqueue(std::make_unique<RejitWorkItem>(
-        [&]
+        std::vector<std::thread> producers;
+        for (int producer = 0; producer < producersCount; producer++)
         {
-            blockerEntered.set_value();
-            releaseBlockerFuture.wait();
-        }));
-    blockerEnteredFuture.wait();
+            producers.emplace_back(
+                [&]
+                {
+                    while (handler->Enqueue(std::make_unique<RejitWorkItem>([&completed] { completed++; })))
+                    {
+                        accepted++;
+                    }
+                });
+        }
 
-    auto completed = std::make_shared<std::promise<void>>();
-    auto completedFuture = completed->get_future();
-    EXPECT_TRUE(handler->Enqueue(std::make_unique<RejitWorkItem>(
-        [completed]() mutable { completed->set_value(); })));
+        EXPECT_TRUE(WaitUntil([&] { return accepted > 0; }));
+        handler->Shutdown();
+        for (auto& producer : producers)
+        {
+            producer.join();
+        }
 
-    std::thread shutdown([&] { handler->Shutdown(); });
-    EXPECT_TRUE(WaitUntil([&] { return handler->IsShutdownRequested(); }));
+        // Shutdown joined the worker, so every item accepted ahead of the terminator has already run.
+        lostItems += accepted - completed;
+    }
 
-    releaseBlocker.set_value();
-    EXPECT_EQ(std::future_status::ready, completedFuture.wait_for(1s));
-    shutdown.join();
+    EXPECT_EQ(0, lostItems);
 }
 
 TEST(RejitHandler, RequestRejitSkipsUnloadedGenerationAfterModuleIdReuse)
