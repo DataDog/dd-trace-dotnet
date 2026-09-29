@@ -47,6 +47,7 @@ tracer/                                   @DataDog/apm-sdk-capabilities-dotnet @
 /tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/OpenTelemetry/                                @DataDog/apm-sdk-capabilities-dotnet @DataDog/tracing-dotnet
 /tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/ManualInstrumentation/                        @DataDog/apm-sdk-capabilities-dotnet @DataDog/tracing-dotnet
 /tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation/TraceAnnotations/                             @DataDog/apm-sdk-capabilities-dotnet @DataDog/tracing-dotnet
+/tracer/src/Datadog.Trace/OtelThreadContext/                                                            @DataDog/apm-sdk-capabilities-dotnet
 
 /tracer/test/test-applications/integrations/Samples.ManualInstrumentation/                              @DataDog/apm-sdk-capabilities-dotnet @DataDog/tracing-dotnet
 /tracer/test/test-applications/integrations/Samples.NetActivitySdk/                                     @DataDog/apm-sdk-capabilities-dotnet @DataDog/tracing-dotnet

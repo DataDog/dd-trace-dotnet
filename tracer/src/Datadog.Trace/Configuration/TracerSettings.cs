@@ -835,10 +835,6 @@ namespace Datadog.Trace.Configuration
             OtelTracesSpanMetricsEnabled = explicitSpanMetrics
                 ?? (string.Equals(otelTracesExporter, "otlp", StringComparison.OrdinalIgnoreCase) && OpenTelemetryMetricsEnabled);
 
-            OtelSemanticsEnabled = config
-                .WithKeys(ConfigurationKeys.OpenTelemetry.OtelSemanticsEnabled)
-                .AsBool(defaultValue: false);
-
             OtelThreadContextEnabled = config
                 .WithKeys(ConfigurationKeys.OpenTelemetry.OtelThreadContextEnabled)
                 .AsBool(defaultValue: false);
