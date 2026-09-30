@@ -288,8 +288,8 @@ publish:
 download-nuget-packages-to-sign:
   stage: package
   image: registry.ddbuild.io/images/ci/images:1.2.6
-  # Allows one artifact poll up to 2h; retries only follow a completed build with no artifact,
-  # which the 5m build-state check detects without waiting for the artifact timeout.
+  # Overall job cap across all artifact polls, downloads, and build retries; never resets.
+  # Each artifact poll allows up to 2h. A polling timeout exits the job without retrying.
   timeout: 2h15m
   tags: [ "arch:amd64" ]
   needs:
@@ -371,8 +371,8 @@ sign-nuget-packages:
 download-single-step-artifacts:
   stage: package
   image: registry.ddbuild.io/images/ci/images:1.2.6
-  # Allows one artifact poll up to 2h; retries only follow a completed build with no artifact,
-  # which the 5m build-state check detects without waiting for the artifact timeout.
+  # Overall job cap across all artifact polls, downloads, and build retries; never resets.
+  # Each artifact poll allows up to 2h. A polling timeout exits the job without retrying.
   timeout: 2h15m
   tags: [ "arch:amd64" ]
   needs:
@@ -420,8 +420,8 @@ deploy_to_reliability_env:
 download-serverless-artifacts:
   stage: package
   image: registry.ddbuild.io/images/ci/images:1.2.6
-  # Allows one artifact poll up to 2h; retries only follow a completed build with no artifact,
-  # which the 5m build-state check detects without waiting for the artifact timeout.
+  # Overall job cap across all artifact polls, downloads, and build retries; never resets.
+  # Each artifact poll allows up to 2h. A polling timeout exits the job without retrying.
   timeout: 2h15m
   tags: [ "arch:amd64" ]
   needs: []

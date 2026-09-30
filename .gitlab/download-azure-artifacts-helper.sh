@@ -38,7 +38,7 @@
 
 AZDO_API="https://dev.azure.com/datadoghq/dd-trace-dotnet/_apis/build"
 AZDO_BUILD_DEFINITION=54
-ARTIFACT_TIMEOUT=7200 # 2 hours
+ARTIFACT_TIMEOUT=7200 # 2 hours per artifact poll, subject to GitLab's overall job timeout
 ARTIFACT_POLL_INTERVAL=100
 AZDO_BUILD_STATE_POLL_INTERVAL=300 # only re-check build status every 3rd artifact-poll tick
 AZDO_ARTIFACT_UNAVAILABLE=2 # download_azure_artifact: build finished, artifact never published
@@ -266,6 +266,9 @@ download_azure_artifact() {
 #
 # resolve_azure_build_id exits 1 as soon as it has no untried build left to offer, so "there's no
 # better build available" fails fast instead of waiting out a doomed poll.
+# A polling timeout exits immediately without trying another build. Only a completed build
+# missing an artifact triggers build reselection. Each artifact poll starts a fresh local timer,
+# but GitLab's overall job timeout still caps the total time across all artifacts and attempts.
 download_azure_artifacts_from_one_build() {
   local targetDir="$1"
   shift
