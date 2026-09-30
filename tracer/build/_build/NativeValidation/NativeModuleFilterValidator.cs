@@ -36,6 +36,10 @@ public sealed class NativeModuleFilterValidator
     // nuget.org reserves the System and Microsoft prefixes for these owners, and search matches whole words of package IDs.
     private static readonly string[] Owners = { "aspnet", "dotnetframework", "Microsoft" };
 
+    // Applications load assemblies from Dependency packages and, when self-contained, from DotnetPlatform runtime packs.
+    // Searching each type separately keeps every query under MaxSearchResults.
+    private static readonly string[] PackageTypes = { "Dependency", "DotnetPlatform" };
+
     private static readonly Regex CallTargetDefinition = new(@"\{\(WCHAR\*\)WStr\(""(?<assembly>[^""]+)""\),\(WCHAR\*\)WStr\(""(?<type>[^""]+)""\),\(WCHAR\*\)WStr\(""[^""]+""\),sig\d+,[^}]*CallTargetKind::(?<kind>\w+)");
 
     /// <summary>
@@ -147,19 +151,22 @@ public sealed class NativeModuleFilterValidator
         var ids = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         foreach (var query in Owners.SelectMany(owner => words.Select(word => $"owner:{owner} id:{word}")))
         {
-            for (var skip = 0; skip < MaxSearchResults; skip += SearchPageSize)
+            foreach (var packageType in PackageTypes)
             {
-                var results = await GetJsonAsync(client, $"{searchService}?q={Uri.EscapeDataString(query)}&take={SearchPageSize}&skip={skip}&prerelease=false&semVerLevel=2.0.0");
-                if ((int)results["totalHits"] > MaxSearchResults)
+                for (var skip = 0; skip < MaxSearchResults; skip += SearchPageSize)
                 {
-                    throw new Exception($"nuget.org search can't return all the packages for '{query}'. Split the query in {nameof(NativeModuleFilterValidator)}.");
-                }
+                    var results = await GetJsonAsync(client, $"{searchService}?q={Uri.EscapeDataString(query)}&packageType={packageType}&take={SearchPageSize}&skip={skip}&prerelease=false&semVerLevel=2.0.0");
+                    if ((int)results["totalHits"] > MaxSearchResults)
+                    {
+                        throw new Exception($"nuget.org search can't return all the {packageType} packages for '{query}'. Split the query in {nameof(NativeModuleFilterValidator)}.");
+                    }
 
-                var packages = results["data"].AsArray();
-                ids.UnionWith(packages.Select(package => (string)package["id"]));
-                if (packages.Count < SearchPageSize)
-                {
-                    break;
+                    var packages = results["data"].AsArray();
+                    ids.UnionWith(packages.Select(package => (string)package["id"]));
+                    if (packages.Count < SearchPageSize)
+                    {
+                        break;
+                    }
                 }
             }
         }
