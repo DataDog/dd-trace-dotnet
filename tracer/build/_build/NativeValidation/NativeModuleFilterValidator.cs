@@ -29,7 +29,7 @@ namespace NativeValidation;
 /// </summary>
 public sealed class NativeModuleFilterValidator
 {
-    // nuget.org search returns at most 1,000 results per request and skips at most 3,000.
+    // nuget.org search and autocomplete return at most 1,000 results per request. Search skips at most 3,000, autocomplete has no limit.
     private const int SearchPageSize = 1000;
     private const int MaxSearchResults = 4000;
 
@@ -167,8 +167,15 @@ public sealed class NativeModuleFilterValidator
         // Packages from other owners that predate the prefix reservation.
         foreach (var name in skippedNames)
         {
-            var results = await GetJsonAsync(client, $"{autocompleteService}?q={Uri.EscapeDataString(name)}&take={SearchPageSize}&prerelease=false&semVerLevel=2.0.0");
-            ids.UnionWith(results["data"].AsArray().Select(id => (string)id).Where(id => id.StartsWith(name, StringComparison.OrdinalIgnoreCase)));
+            for (var skip = 0; ; skip += SearchPageSize)
+            {
+                var results = await GetJsonAsync(client, $"{autocompleteService}?q={Uri.EscapeDataString(name)}&take={SearchPageSize}&skip={skip}&prerelease=false&semVerLevel=2.0.0");
+                ids.UnionWith(results["data"].AsArray().Select(id => (string)id).Where(id => id.StartsWith(name, StringComparison.OrdinalIgnoreCase)));
+                if (skip + SearchPageSize >= (int)results["totalHits"])
+                {
+                    break;
+                }
+            }
         }
 
         return ids;
