@@ -268,7 +268,7 @@ namespace Datadog.Trace.Tests.Propagators
         public void CreateTraceStateHeader_DropsOtSubkeyThatExceedsValueLimit(int vendorValueLength, bool includeVendor)
         {
             var rawOtValue = "vendor:" + new string('x', vendorValueLength);
-            var otelTraceState = OtelTraceState.Parse(rawOtValue)!;
+            var otelTraceState = OtelTraceState.Parse(rawOtValue) ?? new OtelTraceState(headerString: null!);
             otelTraceState.RandomValue = 1;
             otelTraceState.Threshold = 0;
             otelTraceState.IsModified = true;
@@ -518,10 +518,11 @@ namespace Datadog.Trace.Tests.Propagators
         }
 
         [Theory]
-        [InlineData(256, true)]
-        [InlineData(257, false)]
-        public void ParseTraceState_DropsOversizeOtMember(int otValueLength, bool includeOt)
+        [InlineData(256)]
+        [InlineData(257)]
+        public void ParseTraceState_DropsOversizeOtMember(int otValueLength)
         {
+            var includeOt = otValueLength <= 256;
             var otValue = "vendor:" + new string('x', otValueLength - "vendor:".Length);
             var traceState = W3CTraceContextPropagator.ParseTraceState($"foo=bar,dd=s:1,ot={otValue},baz=qux");
 

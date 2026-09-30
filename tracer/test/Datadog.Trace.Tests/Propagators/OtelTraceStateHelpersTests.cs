@@ -84,9 +84,9 @@ namespace Datadog.Trace.Tests.Propagators
         }
 
         [Theory]
-        [InlineData(226, true)]
-        [InlineData(227, false)]
-        public void ToHeaderString_DropsOtSubkeyThatExceedsValueLimit(int vendorValueLength, bool includeVendor)
+        [InlineData(226)]
+        [InlineData(227)]
+        public void ToHeaderString_DropsOtSubkeyThatExceedsValueLimit(int vendorValueLength)
         {
             var vendorItem = "vendor:" + new string('x', vendorValueLength);
             var otelTraceState = OtelTraceState.Parse(vendorItem)!;
@@ -96,7 +96,7 @@ namespace Datadog.Trace.Tests.Propagators
 
             var header = otelTraceState.ToHeaderString();
 
-            if (includeVendor)
+            if ($"rv:00000000000001;th:0;{vendorItem}".Length <= 256)
             {
                 header.Should().Be($"rv:00000000000001;th:0;{vendorItem}");
                 header.Should().HaveLength(OtelTraceStateHelpers.MaxValueLength);
