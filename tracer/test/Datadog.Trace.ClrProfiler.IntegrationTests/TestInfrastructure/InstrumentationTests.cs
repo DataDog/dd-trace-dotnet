@@ -432,9 +432,7 @@ namespace Foo
         [Trait("RunOnWindows", "True")]
         public async Task WhenOpenTelemetryOperatorStartupHookIsConfigured_InstrumentsApp()
         {
-            var startupHookPath = Environment.GetEnvironmentVariable("OpenTelemetryStartupHookPath");
-            startupHookPath.Should().NotBeNullOrEmpty("the dedicated OpenTelemetry Operator startup hook path should be provided by the test runner with environment variable 'OpenTelemetryStartupHookPath'");
-            File.Exists(startupHookPath).Should().BeTrue($"the OpenTelemetry startup hook should exist at '{startupHookPath}'");
+            var startupHookPath = EnvironmentHelper.GetOpenTelemetryStartupHookPath();
 
             SetEnvironmentVariable("DOTNET_STARTUP_HOOKS", startupHookPath);
             SetEnvironmentVariable("DOTNET_ADDITIONAL_DEPS", Path.Combine(EnvironmentHelper.MonitoringHome, "AdditionalDeps")); // Set by the OpenTelemetry Operator, ignored when not present
