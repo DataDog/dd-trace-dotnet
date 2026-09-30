@@ -74,7 +74,18 @@ internal sealed partial class CircularChannel : IChannel
         _disposed = 0;
         _lock = CreateLock(fileName);
 
-        var acquisition = WaitForLock();
+        LockAcquisition acquisition;
+        try
+        {
+            acquisition = WaitForLock();
+        }
+        catch
+        {
+            // For example, the file system doesn't support the lock. This channel can't work at all then.
+            _lock.Dispose();
+            throw;
+        }
+
         if (acquisition == LockAcquisition.Abandoned)
         {
             // A previous owner died while holding the mutex. The wait still succeeded and we own the

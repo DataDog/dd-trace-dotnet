@@ -114,6 +114,67 @@ public class CircularChannelTests
         writer.TryWrite(in valueSegment).Should().BeTrue();
     }
 
+    [SkippableFact]
+    public void FileLockTimesOutWhileAnotherOwnerHoldsIt()
+    {
+        Skip.If(FrameworkDescription.Instance.IsWindows(), "The file lock is not used on Windows");
+
+        var lockPath = Path.Combine(Path.GetTempPath(), nameof(FileLockTimesOutWhileAnotherOwnerHoldsIt) + "-" + Guid.NewGuid().ToString("n") + ".lock");
+        try
+        {
+            using var owner = new CircularChannel.FileChannelLock(lockPath);
+            using var contender = new CircularChannel.FileChannelLock(lockPath);
+
+            // The contender opens the file first, so its next attempt reaches flock itself and must see the lock
+            // as busy (EWOULDBLOCK) rather than fail
+            contender.Acquire(1000).Should().Be(CircularChannel.LockAcquisition.Acquired);
+            contender.Release();
+
+            owner.Acquire(1000).Should().Be(CircularChannel.LockAcquisition.Acquired);
+            contender.Acquire(100).Should().Be(CircularChannel.LockAcquisition.TimedOut);
+
+            owner.Release();
+            contender.Acquire(1000).Should().Be(CircularChannel.LockAcquisition.Acquired);
+            contender.Release();
+        }
+        finally
+        {
+            File.Delete(lockPath);
+        }
+    }
+
+    [SkippableFact]
+    public void FileLockingSwitchDoesNotChangeTheLock()
+    {
+        Skip.If(FrameworkDescription.Instance.IsWindows(), "The file lock is not used on Windows");
+
+        // A process with file locking disabled still has to exclude every other process using the channel, so it must
+        // take the very same lock. The runtime reads this switch once at startup, so setting it here only affects code
+        // that checks it later, such as a lock choosing its mechanism from it.
+        const string disableFileLocking = "System.IO.DisableFileLocking";
+        AppContext.TryGetSwitch(disableFileLocking, out var previous);
+        AppContext.SetSwitch(disableFileLocking, true);
+        try
+        {
+            var path = Path.Combine(Path.GetTempPath(), "dd-trace-tests", nameof(FileLockingSwitchDoesNotChangeTheLock) + "-" + Guid.NewGuid().ToString("n"));
+            using var channel = new CircularChannel(path, new CircularChannelSettings { BufferSize = BufferSize, MutexTimeout = 200 });
+            using var writer = channel.GetWriter();
+            var valueSegment = new ArraySegment<byte>([1, 2, 3, 4]);
+
+            // Another owner of the lock, like a process with the default configuration
+            using var otherOwner = new CircularChannel.FileChannelLock(CircularChannel.GetLockFilePath(path));
+            otherOwner.Acquire(1000).Should().Be(CircularChannel.LockAcquisition.Acquired);
+            writer.TryWrite(in valueSegment).Should().BeFalse();
+
+            otherOwner.Release();
+            writer.TryWrite(in valueSegment).Should().BeTrue();
+        }
+        finally
+        {
+            AppContext.SetSwitch(disableFileLocking, previous);
+        }
+    }
+
     [Fact]
     public void OpeningAnExistingChannelKeepsUnreadMessages()
     {

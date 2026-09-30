@@ -47,7 +47,17 @@ internal partial class CircularChannel
                 return false;
             }
 
-            var acquisition = channel.WaitForLock();
+            LockAcquisition acquisition;
+            try
+            {
+                acquisition = channel.WaitForLock();
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "CircularChannel.Writer: Error while acquiring the channel lock");
+                return false;
+            }
+
             if (acquisition == LockAcquisition.Abandoned)
             {
                 // A previous owner died while holding the mutex. The wait still succeeded and we own the

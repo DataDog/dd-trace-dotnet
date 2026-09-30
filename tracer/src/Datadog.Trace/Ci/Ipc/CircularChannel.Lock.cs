@@ -7,9 +7,10 @@
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Threading;
-using Datadog.Trace.Configuration;
 using Datadog.Trace.Util;
+using Microsoft.Win32.SafeHandles;
 
 namespace Datadog.Trace.Ci.Ipc;
 
@@ -18,7 +19,7 @@ internal sealed partial class CircularChannel
     /// <summary>
     /// The outcome of waiting for the channel lock.
     /// </summary>
-    private enum LockAcquisition
+    internal enum LockAcquisition
     {
         /// <summary>The wait timed out. The lock is not owned by the caller.</summary>
         TimedOut,
@@ -40,7 +41,7 @@ internal sealed partial class CircularChannel
     /// <summary>
     /// Serializes access to the shared buffer across every process and thread using the channel.
     /// </summary>
-    private interface IChannelLock : IDisposable
+    internal interface IChannelLock : IDisposable
     {
         LockAcquisition Acquire(int timeout);
 
@@ -48,22 +49,9 @@ internal sealed partial class CircularChannel
     }
 
     private static IChannelLock CreateLock(string fileName)
-    {
-        if (FrameworkDescription.Instance.IsWindows())
-        {
-            return new MutexChannelLock(GetMutexName(fileName));
-        }
-
-        if (FileChannelLock.IsFileLockingDisabled())
-        {
-            // Without flock the file lock would not exclude anything, so fall back to the named mutex. That
-            // still works as long as every process using the channel runs on the same runtime major version.
-            Log.Debug("CircularChannel: File locking is disabled for this process, falling back to a named mutex.");
-            return new MutexChannelLock(GetMutexName(fileName));
-        }
-
-        return new FileChannelLock(GetLockFilePath(fileName));
-    }
+        => FrameworkDescription.Instance.IsWindows()
+               ? new MutexChannelLock(GetMutexName(fileName))
+               : new FileChannelLock(GetLockFilePath(fileName));
 
     /// <summary>
     /// Named mutex lock. Used on Windows, where it is a kernel object that behaves the same for every runtime.
@@ -107,36 +95,38 @@ internal sealed partial class CircularChannel
     /// Named mutexes can't be used on Unix because .NET 11 reimplemented them with a shared memory layout older runtimes
     /// don't understand (dotnet/runtime#134491). Processes on different runtimes, such as the VSTest data collector
     /// running on the SDK runtime and a test host targeting an older framework, then either see phantom abandoned
-    /// mutexes or don't exclude each other at all. Opening a file with <see cref="FileShare.None"/> takes an exclusive
-    /// <c>flock</c> instead, which every .NET runtime implements the same way and the kernel drops when the owner dies.
+    /// mutexes or don't exclude each other at all. An exclusive <c>flock</c> on a lock file works the same way on every
+    /// runtime, and the kernel drops it when the owner dies.
+    /// We call <c>flock</c> ourselves instead of relying on the one <see cref="FileStream"/> takes for
+    /// <see cref="FileShare.None"/>, because the runtime skips it when file locking is disabled
+    /// (<c>DOTNET_SYSTEM_IO_DISABLEFILELOCKING</c>) and ignores most errors taking it. That way every process uses the
+    /// same lock whatever its configuration, and a file system without <c>flock</c> fails loudly instead of silently
+    /// not excluding anything.
     /// </remarks>
-    private sealed class FileChannelLock : IChannelLock
+    internal sealed class FileChannelLock : IChannelLock
     {
         private const int MaxRetryDelay = 10;
 
+        // flock operations, the same on Linux and macOS
+        private const int LockExclusive = 2;
+        private const int LockNonBlocking = 4;
+        private const int LockUnlock = 8;
+
+        private const int ErrorInterrupted = 4; // EINTR
+
+        private static readonly int ErrorWouldBlock = FrameworkDescription.Instance.OSPlatform == OSPlatformName.Linux ? 11 : 35; // EWOULDBLOCK
+
         private readonly string _path;
 
-        // flock also excludes other channel instances in this process, but threads sharing this instance share
-        // _lockStream too, so they are serialized locally first.
+        // flock also excludes other channel instances in this process, because each one opens its own file description.
+        // Threads sharing this instance share its descriptor too, so they are serialized locally first.
         private readonly SemaphoreSlim _localLock = new(1, 1);
-        private FileStream? _lockStream;
+        private FileStream? _lockFile;
         private long _disposed;
 
         public FileChannelLock(string path)
         {
             _path = path;
-        }
-
-        public static bool IsFileLockingDisabled()
-        {
-            // Same precedence as the runtime: the AppContext switch wins over the environment variable
-            if (AppContext.TryGetSwitch(PlatformKeys.AppContextSystemIODisableFileLocking, out var disabled))
-            {
-                return disabled;
-            }
-
-            var value = EnvironmentHelpers.GetEnvironmentVariable(PlatformKeys.DotNetSystemIODisableFileLocking);
-            return value == "1" || string.Equals(value, "true", StringComparison.OrdinalIgnoreCase);
         }
 
         public LockAcquisition Acquire(int timeout)
@@ -165,13 +155,28 @@ internal sealed partial class CircularChannel
 
                 try
                 {
-                    _lockStream = new FileStream(_path, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None, bufferSize: 1);
-                    return LockAcquisition.Acquired;
+                    // Opened once and kept open, so taking the lock is a single syscall from then on
+                    var lockFile = _lockFile ??= OpenLockFile(_path);
+                    var error = Flock(lockFile.SafeFileHandle, LockExclusive | LockNonBlocking);
+                    if (error == 0)
+                    {
+                        return LockAcquisition.Acquired;
+                    }
+
+                    if (error != ErrorWouldBlock && error != ErrorInterrupted)
+                    {
+                        throw new IOException($"CircularChannel: Failed to lock {_path} (errno {error}). Inter-process communication needs a file system that supports flock.");
+                    }
                 }
-                catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+                catch (IOException ex) when (_lockFile is null)
                 {
-                    // Usually another process, or another channel instance in this process, holds the lock
+                    // Opening the file fails while another owner holds the lock, see OpenLockFile
                     lastException = ex;
+                }
+                catch (ObjectDisposedException)
+                {
+                    // Disposed while we were trying, which also closed the descriptor
+                    return LockAcquisition.Disposed;
                 }
                 catch
                 {
@@ -194,11 +199,14 @@ internal sealed partial class CircularChannel
 
         public void Release()
         {
-            var lockStream = _lockStream;
-            _lockStream = null;
             try
             {
-                lockStream?.Dispose();
+                if (_lockFile is { } lockFile && Flock(lockFile.SafeFileHandle, LockUnlock) != 0)
+                {
+                    // Closing the descriptor drops the lock as well. The next acquisition opens the file again.
+                    _lockFile = null;
+                    lockFile.Dispose();
+                }
             }
             finally
             {
@@ -213,8 +221,43 @@ internal sealed partial class CircularChannel
                 return;
             }
 
-            _lockStream?.Dispose();
+            _lockFile?.Dispose();
             _localLock.Dispose();
         }
+
+        private static FileStream OpenLockFile(string path)
+        {
+            // Unless file locking is disabled, the runtime takes a shared flock while opening the file. That makes the
+            // open fail while another owner holds the exclusive lock, and once open it would keep every other owner from
+            // ever taking the exclusive lock, so drop it straight away. The descriptor then only holds the locks we take.
+            var lockFile = new FileStream(path, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.ReadWrite, bufferSize: 1);
+            Flock(lockFile.SafeFileHandle, LockUnlock);
+            return lockFile;
+        }
+
+        /// <summary>
+        /// Calls <c>flock</c> on the descriptor behind <paramref name="handle"/>.
+        /// </summary>
+        /// <returns>Zero on success; otherwise the errno of the failure.</returns>
+        private static int Flock(SafeFileHandle handle, int operation)
+        {
+            var addedRef = false;
+            try
+            {
+                // Keeps the descriptor from being closed, and its number reused, while we use it
+                handle.DangerousAddRef(ref addedRef);
+                return NativeFlock((int)handle.DangerousGetHandle(), operation) == 0 ? 0 : Marshal.GetLastWin32Error();
+            }
+            finally
+            {
+                if (addedRef)
+                {
+                    handle.DangerousRelease();
+                }
+            }
+        }
+
+        [DllImport("libc", EntryPoint = "flock", SetLastError = true)]
+        private static extern int NativeFlock(int fd, int operation);
     }
 }

@@ -85,12 +85,4 @@ internal static partial class PlatformKeys
     public const string DotNetGCHeapHardLimitPOHPercent = "DOTNET_GCHeapHardLimitPOHPercent";
     public const string ComPlusGCHeapHardLimitPOHPercent = "COMPlus_GCHeapHardLimitPOHPercent";
     public const string AppContextGCHeapHardLimitPOHPercent = "System.GC.HeapHardLimitPOHPercent";
-
-    /// <summary>
-    /// Disables the advisory <c>flock</c> that .NET takes on Unix for <see cref="System.IO.FileShare.None"/>, so
-    /// <see cref="System.IO.FileStream"/> can no longer be used as a cross-process lock. Enabled by <c>1</c> or
-    /// <c>true</c>. The <see cref="System.AppContext"/> switch takes precedence over the environment variable.
-    /// </summary>
-    public const string DotNetSystemIODisableFileLocking = "DOTNET_SYSTEM_IO_DISABLEFILELOCKING";
-    public const string AppContextSystemIODisableFileLocking = "System.IO.DisableFileLocking";
 }
