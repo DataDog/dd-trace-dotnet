@@ -366,6 +366,11 @@ namespace Datadog.Trace.FeatureFlags
 
         private void StartEvaluationWriter()
         {
+            if (!_settings.EvaluationEventsEnabled)
+            {
+                return;
+            }
+
             FlagEvaluationAgentSender? sender = null;
             FlagEvaluationWriter? writer = null;
             try

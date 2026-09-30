@@ -291,6 +291,8 @@ src/Datadog.Trace/Debugger/Snapshots/SnapshotPruner.cs
 src/Datadog.Trace/Debugger/Snapshots/SnapshotSerializerFieldsAndPropsSelector.cs
 src/Datadog.Trace/Debugger/Snapshots/SnapshotSummary.cs
 src/Datadog.Trace/Debugger/Snapshots/TaskSnapshotSerializerFieldsAndPropsSelector.cs
+src/Datadog.Trace/FeatureFlags/FlagEvaluation/ContextOmissionReason.cs
+src/Datadog.Trace/FeatureFlags/FlagEvaluation/FlagEvaluationAgentHeaderHelper.cs
 src/Datadog.Trace/Headers/Ip/ExtractedHeadersAndIpInfos.cs
 src/Datadog.Trace/Headers/Ip/IpInfo.cs
 src/Datadog.Trace/HttpOverStreams/HttpContent/BufferContent.cs

@@ -25,9 +25,39 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.Tests.FeatureFlags;
 
+[Collection(nameof(WebRequestCollection))]
 public class FlagEvaluationModuleTests(ITestOutputHelper output)
 {
     private readonly ITestOutputHelper _output = output;
+
+    [Theory]
+    [InlineData("remote_config")]
+    [InlineData("agentless")]
+    public async Task EventKillSwitchDoesNotDisableConfigurationOrExposure(string source)
+    {
+        var values = new NameValueCollection
+        {
+            [ConfigurationKeys.FeatureFlags.FeatureFlagsConfigurationSource] = source,
+            [ConfigurationKeys.FeatureFlags.FlaggingEvaluationCountsEnabled] = "false",
+        };
+        var delivery = new FakeDeliverySource();
+        var rcm = new MockRcmSubscriptionManager();
+        var module = FeatureFlagsModule.Create(new TracerSettings(new NameValueConfigurationSource(values)), rcm, _ => delivery)!;
+        try
+        {
+            module.Should().NotBeNull();
+            module.Activate();
+            module.EvaluationWriter.Should().BeNull("disabled events must not allocate a sender or background consumer");
+            delivery.Started.Should().Be(source == "agentless" ? 1 : 0);
+            rcm.HasAnySubscription.Should().Be(source == "remote_config");
+            module.GetExposureApi().Should().NotBeNull("explicit experiment exposures have a separate lifecycle");
+            await module.FlushAsync();
+        }
+        finally
+        {
+            await module.DisposeAsync();
+        }
+    }
 
     [Theory]
     [InlineData("remote_config")]
