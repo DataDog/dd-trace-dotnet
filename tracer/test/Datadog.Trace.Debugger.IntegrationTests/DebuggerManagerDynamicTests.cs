@@ -32,7 +32,8 @@ public class DebuggerManagerDynamicTests : TestHelper
     private const string LogFileNamePrefix = "dotnet-tracer-managed-";
 
     // Log messages to verify dynamic state changes
-    private const string DynamicInstrumentationEnabledLogEntry = "Initializing Dynamic Instrumentation";
+    // Logged by the DynamicInstrumentation constructor, so it does not prove that DI actually started. Wait for the initialization completion entry instead.
+    private const string DynamicInstrumentationInitializedLogEntry = "Dynamic Instrumentation initialization completed successfully";
     private const string ExceptionReplayEnabledLogEntry = "Initializing Exception Replay";
     private const string CodeOriginForSpansEnabledLogEntry = "Initializing Code Origin for Spans";
     private const string ApplyingDynamicDebuggerConfigLogEntry = "Applying new dynamic debugger configuration";
@@ -69,7 +70,7 @@ public class DebuggerManagerDynamicTests : TestHelper
                 memoryAssertions.ObjectsExist<SpanCodeOrigin.SpanCodeOrigin>();
             },
             remoteConfig: new { dynamic_instrumentation_enabled = true },
-            DynamicInstrumentationEnabledLogEntry,
+            DynamicInstrumentationInitializedLogEntry,
             finalMemoryAssertions: memoryAssertions =>
             {
                 memoryAssertions.NoObjectsExist<Symbols.SymbolsUploader>();
@@ -140,6 +141,7 @@ public class DebuggerManagerDynamicTests : TestHelper
                 code_origin_enabled = true
             },
             ExceptionReplayEnabledLogEntry,
+            additionalLogToWaitAfterRc: DynamicInstrumentationInitializedLogEntry,
             finalMemoryAssertions: memoryAssertions =>
             {
                 // After remote config, all objects should be created
@@ -230,6 +232,7 @@ public class DebuggerManagerDynamicTests : TestHelper
         object remoteConfig,
         string logToWaitAfterRc,
         Action<MemoryAssertions>? finalMemoryAssertions = null,
+        string? additionalLogToWaitAfterRc = null,
         [CallerMemberName] string? testName = null)
     {
 #if NET8_0_OR_GREATER
@@ -302,6 +305,12 @@ public class DebuggerManagerDynamicTests : TestHelper
             }
 
             await logEntryWatcher.WaitForLogEntry(logToWaitAfterRc);
+
+            if (additionalLogToWaitAfterRc != null)
+            {
+                // The log watcher reads sequentially, so this entry must be logged after logToWaitAfterRc.
+                await logEntryWatcher.WaitForLogEntry(additionalLogToWaitAfterRc);
+            }
         }
         finally
         {

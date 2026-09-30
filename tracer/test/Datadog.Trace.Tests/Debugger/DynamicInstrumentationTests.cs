@@ -264,6 +264,82 @@ public class DynamicInstrumentationTests
     }
 
     [Fact]
+    public async Task DynamicInstrumentationEnabledViaRemoteConfig_EnvUnset_ServicesCalled()
+    {
+        var settings = DebuggerSettings.FromSource(
+                            new NameValueConfigurationSource(new()),
+                            NullConfigurationTelemetry.Instance)
+                        with
+                        {
+                            DynamicSettings = new ImmutableDynamicDebuggerSettings { DynamicInstrumentationEnabled = true }
+                        };
+
+        var discoveryService = new DiscoveryServiceMock();
+        var rcmSubscriptionManagerMock = new RcmSubscriptionManagerMock();
+        var lineProbeResolver = new LineProbeResolverMock();
+        var snapshotUploader = new SnapshotUploaderMock();
+        var logUploader = new LogUploaderMock();
+        var diagnosticsUploader = new UploaderMock();
+        var probeStatusPoller = new ProbeStatusPollerMock();
+        var globalRateLimiter = new GlobalRateLimiterMock();
+        var updater = ConfigurationUpdater.Create("env", "version", 0, globalRateLimiter);
+
+        var debugger = new DynamicInstrumentation(settings, discoveryService, rcmSubscriptionManagerMock, lineProbeResolver, snapshotUploader, logUploader, diagnosticsUploader, probeStatusPoller, updater, NoOpStatsd.Instance, globalRateLimiter);
+        try
+        {
+            debugger.Initialize();
+            await WaitForInitializationAsync(debugger);
+
+            debugger.IsInitialized.Should().BeTrue("Dynamic instrumentation enabled by remote config should be initialized");
+            probeStatusPoller.Called.Should().BeTrue();
+            diagnosticsUploader.Called.Should().BeTrue();
+            rcmSubscriptionManagerMock.ProductKeys.Contains(RcmProducts.LiveDebugging).Should().BeTrue();
+        }
+        finally
+        {
+            debugger.Dispose();
+        }
+    }
+
+    [Fact]
+    public async Task DynamicInstrumentationEnabledViaRemoteConfig_EnvExplicitlyDisabled_ServicesNotCalled()
+    {
+        var settings = DebuggerSettings.FromSource(
+                            new NameValueConfigurationSource(new() { { ConfigurationKeys.Debugger.DynamicInstrumentationEnabled, "0" }, }),
+                            NullConfigurationTelemetry.Instance)
+                        with
+                        {
+                            DynamicSettings = new ImmutableDynamicDebuggerSettings { DynamicInstrumentationEnabled = true }
+                        };
+
+        var discoveryService = new DiscoveryServiceMock();
+        var rcmSubscriptionManagerMock = new RcmSubscriptionManagerMock();
+        var lineProbeResolver = new LineProbeResolverMock();
+        var snapshotUploader = new SnapshotUploaderMock();
+        var logUploader = new LogUploaderMock();
+        var diagnosticsUploader = new UploaderMock();
+        var probeStatusPoller = new ProbeStatusPollerMock();
+        var globalRateLimiter = new GlobalRateLimiterMock();
+        var updater = ConfigurationUpdater.Create("env", "version", 0, globalRateLimiter);
+
+        var debugger = new DynamicInstrumentation(settings, discoveryService, rcmSubscriptionManagerMock, lineProbeResolver, snapshotUploader, logUploader, diagnosticsUploader, probeStatusPoller, updater, NoOpStatsd.Instance, globalRateLimiter);
+        try
+        {
+            debugger.Initialize();
+            await debugger.GetInitializationTask();
+
+            debugger.IsInitialized.Should().BeFalse("an explicit environment variable opt-out wins over remote config");
+            probeStatusPoller.Called.Should().BeFalse();
+            diagnosticsUploader.Called.Should().BeFalse();
+            rcmSubscriptionManagerMock.ProductKeys.Contains(RcmProducts.LiveDebugging).Should().BeFalse();
+        }
+        finally
+        {
+            debugger.Dispose();
+        }
+    }
+
+    [Fact]
     public async Task DynamicInstrumentationEnabled_FailedInitializationCanRetry()
     {
         var settings = DebuggerSettings.FromSource(
