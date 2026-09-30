@@ -60,7 +60,8 @@ public sealed class NativeModuleFilterValidator
                                               .ToHashSet();
         var targetAssemblies = targetTypes.Select(key => key.Substring(0, key.IndexOf('|'))).ToHashSet();
 
-        using var client = new HttpClient(new HttpClientHandler { AutomaticDecompression = DecompressionMethods.GZip }) { Timeout = TimeSpan.FromMinutes(10) };
+        // Leaves time for 40 MB runtime packs on slow connections, while 6 stalled attempts stay within the workflow's 60-minute timeout.
+        using var client = new HttpClient(new HttpClientHandler { AutomaticDecompression = DecompressionMethods.GZip }) { Timeout = TimeSpan.FromMinutes(5) };
         var services = (await GetJsonAsync(client, "https://api.nuget.org/v3/index.json"))["resources"].AsArray();
         string GetService(string type) => (string)services.First(resource => (string)resource["@type"] == type)["@id"];
         var registrations = GetService("RegistrationsBaseUrl/3.6.0");
@@ -84,6 +85,12 @@ public sealed class NativeModuleFilterValidator
             await throttle.WaitAsync();
             try
             {
+                // Any failure fails the target, so don't retry the remaining packages through an outage.
+                if (!failures.IsEmpty)
+                {
+                    return;
+                }
+
                 var result = await ScanPackageAsync(client, $"{registrations}{id.ToLowerInvariant()}/index.json", IsSkippedAssembly, targetTypes, targetAssemblies);
                 Interlocked.Add(ref scanned, result.Scanned);
                 result.Matches.ForEach(matches.Add);
@@ -276,6 +283,7 @@ public sealed class NativeModuleFilterValidator
     private static async Task<JsonNode> GetJsonAsync(HttpClient client, string url)
         => JsonNode.Parse(await GetBytesAsync(client, url));
 
+    // Like the NuGet client, tries 6 times and backs off exponentially, so transient errors can last about a minute.
     private static async Task<byte[]> GetBytesAsync(HttpClient client, string url)
     {
         for (var attempt = 1; ; attempt++)
@@ -284,9 +292,9 @@ public sealed class NativeModuleFilterValidator
             {
                 return await client.GetByteArrayAsync(url);
             }
-            catch (Exception) when (attempt < 3)
+            catch (Exception) when (attempt < 6)
             {
-                await Task.Delay(TimeSpan.FromSeconds(attempt * 5));
+                await Task.Delay(TimeSpan.FromSeconds(Math.Pow(2, attempt)));
             }
         }
     }
