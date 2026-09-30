@@ -11,7 +11,7 @@ using System.Threading;
 namespace Datadog.Trace.Telemetry;
 internal sealed partial class MetricsTelemetryCollector
 {
-    private const int CountLength = 800;
+    private const int CountLength = 820;
 
     /// <summary>
     /// Creates the buffer for the <see cref="Datadog.Trace.Telemetry.Metrics.Count" /> values.
@@ -882,6 +882,32 @@ internal sealed partial class MetricsTelemetryCollector
             new(new[] { "vulnerability_type:directory_listing_leak" }),
             new(new[] { "vulnerability_type:session_timeout" }),
             new(new[] { "vulnerability_type:email_html_injection" }),
+            // flagevaluation.rows.dropped, index = 800
+            new(new[] { "reason:pre_queue_overflow" }),
+            new(new[] { "reason:queue_overflow" }),
+            new(new[] { "reason:closed" }),
+            new(new[] { "reason:degraded_cap" }),
+            new(new[] { "reason:payload_limit" }),
+            new(new[] { "reason:serialization_error" }),
+            // flagevaluation.rows.degraded, index = 806
+            new(new[] { "reason:cardinality_cap" }),
+            new(new[] { "reason:payload_limit" }),
+            // flagevaluation.payload.splits, index = 808
+            new(null),
+            // flagevaluation.context.truncated, index = 809
+            new(new[] { "reason:max_context_fields" }),
+            new(new[] { "reason:max_key_length" }),
+            new(new[] { "reason:max_value_length" }),
+            new(new[] { "reason:max_list_elements" }),
+            new(new[] { "reason:max_structure_properties" }),
+            new(new[] { "reason:max_snapshot_depth" }),
+            new(new[] { "reason:max_visited_nodes" }),
+            new(new[] { "reason:unsupported_value" }),
+            new(new[] { "reason:snapshot_error" }),
+            // flagevaluation.targeting_key.omitted, index = 818
+            new(new[] { "reason:invalid" }),
+            // flagevaluation.hook.errors, index = 819
+            new(null),
         };
 
     /// <summary>
@@ -890,7 +916,7 @@ internal sealed partial class MetricsTelemetryCollector
     /// It is equal to the cardinality of the tag combinations (or 1 if there are no tags)
     /// </summary>
     private static int[] CountEntryCounts { get; }
-        = new int[]{ 4, 85, 1, 3, 7, 2, 2, 7, 1, 1, 1, 22, 3, 2, 5, 5, 4, 1, 1, 22, 3, 34, 90, 90, 4, 4, 4, 4, 2, 44, 6, 1, 1, 85, 1, 22, 3, 8, 2, 10, 8, 4, 12, 4, 16, 2, 2, 10, 3, 4, 5, 15, 5, 20, 10, 4, 4, 5, 14, 1, 27, 1, 27, };
+        = new int[]{ 4, 85, 1, 3, 7, 2, 2, 7, 1, 1, 1, 22, 3, 2, 5, 5, 4, 1, 1, 22, 3, 34, 90, 90, 4, 4, 4, 4, 2, 44, 6, 1, 1, 85, 1, 22, 3, 8, 2, 10, 8, 4, 12, 4, 16, 2, 2, 10, 3, 4, 5, 15, 5, 20, 10, 4, 4, 5, 14, 1, 27, 1, 27, 6, 2, 1, 9, 1, 1, };
 
     public void RecordCountLogCreated(Datadog.Trace.Telemetry.Metrics.MetricTags.LogLevel tag, int increment = 1)
     {
@@ -1258,5 +1284,39 @@ internal sealed partial class MetricsTelemetryCollector
     {
         var index = 773 + (int)tag;
         Interlocked.Add(ref _buffer.Count[index], increment);
+    }
+
+    public void RecordCountFlagEvaluationRowsDropped(Datadog.Trace.Telemetry.Metrics.MetricTags.FlagEvaluationDropReason tag, int increment = 1)
+    {
+        var index = 800 + (int)tag;
+        Interlocked.Add(ref _buffer.Count[index], increment);
+    }
+
+    public void RecordCountFlagEvaluationRowsDegraded(Datadog.Trace.Telemetry.Metrics.MetricTags.FlagEvaluationDegradeReason tag, int increment = 1)
+    {
+        var index = 806 + (int)tag;
+        Interlocked.Add(ref _buffer.Count[index], increment);
+    }
+
+    public void RecordCountFlagEvaluationPayloadSplits(int increment = 1)
+    {
+        Interlocked.Add(ref _buffer.Count[808], increment);
+    }
+
+    public void RecordCountFlagEvaluationContextTruncated(Datadog.Trace.Telemetry.Metrics.MetricTags.FlagEvaluationContextReason tag, int increment = 1)
+    {
+        var index = 809 + (int)tag;
+        Interlocked.Add(ref _buffer.Count[index], increment);
+    }
+
+    public void RecordCountFlagEvaluationTargetingKeyOmitted(Datadog.Trace.Telemetry.Metrics.MetricTags.FlagEvaluationTargetingReason tag, int increment = 1)
+    {
+        var index = 818 + (int)tag;
+        Interlocked.Add(ref _buffer.Count[index], increment);
+    }
+
+    public void RecordCountFlagEvaluationHookErrors(int increment = 1)
+    {
+        Interlocked.Add(ref _buffer.Count[819], increment);
     }
 }
