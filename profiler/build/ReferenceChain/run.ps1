@@ -75,7 +75,7 @@ function Get-NativeDumpRecords
     param([string] $LogDirectory)
 
     $heapPattern = 'Reference chain benchmark heap: duration_ms=(?<duration>\d+), objects=(?<objects>\d+), bytes=(?<bytes>\d+)'
-    $traversalPattern = 'Reference chain benchmark traversal: duration_ms=(?<duration>\d+), roots=(?<roots>\d+), objects=(?<objects>\d+), stack_capacity=(?<stack>\d+), faults=(?<faults>\d+), stop_reason=(?<stop>[^,]+), visited_peak_entries=(?<peak>\d+), visited_bytes=(?<visited>\d+), visited_buckets=(?<buckets>\d+), visited_grows=(?<grows>\d+), edges=(?<edges>\d+), first_visit_refs=(?<firstVisitRefs>\d+), revisit_refs=(?<revisitRefs>\d+), get_class_first_visit=(?<getClassFirst>\d+), get_class_revisit=(?<getClassRevisit>\d+), raw_class_reads=(?<rawClassReads>\d+), tree_nodes=(?<treeNodes>\d+)'
+    $traversalPattern = 'Reference chain benchmark traversal: duration_ms=(?<duration>\d+), roots=(?<roots>\d+), objects=(?<objects>\d+), stack_capacity=(?<stack>\d+), faults=(?<faults>\d+), stop_reason=(?<stop>[^,]+), visited_peak_entries=(?<peak>\d+), visited_bytes=(?<visited>\d+), visited_buckets=(?<buckets>\d+), visited_grows=(?<grows>\d+), edges=(?<edges>\d+), first_visit_refs=(?<firstVisitRefs>\d+), revisit_refs=(?<revisitRefs>\d+), get_class_first_visit=(?<getClassFirst>\d+), get_class_revisit=(?<getClassRevisit>\d+), raw_class_reads=(?<rawClassReads>\d+), tree_nodes=(?<treeNodes>\d+), visited_kind=(?<visitedKind>[^,]+), visited_pages=(?<visitedPages>\d+), visited_capacity_exceeded=(?<visitedCapacityExceeded>\d+)'
     $sizeCallsPattern = 'Reference chain benchmark GetObjectSize2: root=(?<root>\d+), static_root=(?<staticRoot>\d+), root_scannable=(?<rootScannable>\d+), root_leaf=(?<rootLeaf>\d+), static_root_scannable=(?<staticRootScannable>\d+), static_root_leaf=(?<staticRootLeaf>\d+), first_visit_scannable=(?<firstScannable>\d+), first_visit_leaf=(?<firstLeaf>\d+), revisit=(?<revisit>\d+), failed_or_zero=(?<failed>\d+)'
     $rootsPattern = 'Reference chain benchmark roots: stack=(?<stack>\d+), static=(?<static>\d+), finalizer=(?<finalizer>\d+), handle=(?<handle>\d+), pinning=(?<pinning>\d+), conditional_weak_table=(?<cwt>\d+), com=(?<com>\d+), other=(?<other>\d+), unknown=(?<unknown>\d+)'
     $observedRootsPattern = 'Reference chain benchmark roots observed: stack=(?<stack>\d+), static=(?<static>\d+), finalizer=(?<finalizer>\d+), handle=(?<handle>\d+), pinning=(?<pinning>\d+), conditional_weak_table=(?<cwt>\d+), com=(?<com>\d+), other=(?<other>\d+), unknown=(?<unknown>\d+)'
@@ -127,6 +127,9 @@ function Get-NativeDumpRecords
                     GetClassFromObjectRevisitCalls = [uint64]$Matches.getClassRevisit
                     RawMethodTableClassReads = [uint64]$Matches.rawClassReads
                     TreeNodes = [uint64]$Matches.treeNodes
+                    VisitedKind = $Matches.visitedKind
+                    VisitedPages = [uint64]$Matches.visitedPages
+                    VisitedCapacityExceeded = [uint64]$Matches.visitedCapacityExceeded
                 }
             }
         }
@@ -278,10 +281,12 @@ function Get-NativeDumpRecords
             StopReason = $traversal[$index].StopReason
             TreeNodes = $traversal[$index].TreeNodes
             VisitedPeakEntries = $traversal[$index].VisitedPeakEntries
-            VisitedKind = "hash"
+            VisitedKind = $traversal[$index].VisitedKind
             VisitedBytes = $traversal[$index].VisitedBytes
             VisitedBuckets = $traversal[$index].VisitedBuckets
             VisitedGrows = $traversal[$index].VisitedGrows
+            VisitedPages = $traversal[$index].VisitedPages
+            VisitedCapacityExceeded = $traversal[$index].VisitedCapacityExceeded
             FirstVisitReferences = $traversal[$index].FirstVisitReferences
             RevisitReferences = $traversal[$index].RevisitReferences
             GetClassFromObjectFirstVisitCalls = $traversal[$index].GetClassFromObjectFirstVisitCalls
@@ -650,7 +655,10 @@ $flatRows = foreach ($run in $runs)
             TraversalEdges = $dump.TraversalEdges
             TraversalAmplification = $dump.TraversalAmplification
             TreeNodes = $dump.TreeNodes
+            VisitedKind = $dump.VisitedKind
             VisitedBytes = $dump.VisitedBytes
+            VisitedPages = $dump.VisitedPages
+            VisitedCapacityExceeded = $dump.VisitedCapacityExceeded
             TotalSizeCalls = $dump.TotalSizeCalls
             FirstVisitScannableSizeCalls = $dump.FirstVisitScannableSizeCalls
             FirstVisitLeafSizeCalls = $dump.FirstVisitLeafSizeCalls

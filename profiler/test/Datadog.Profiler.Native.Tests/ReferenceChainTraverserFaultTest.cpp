@@ -8,7 +8,7 @@
 #include "ReferenceChainTraverser.h"
 #include "ReferenceChainTypes.h"
 #include "TypeReferenceTree.h"
-#include "VisitedObjectSet.h"
+#include "VisitedAddressBitmap.h"
 #include "IFrameStore.h"
 #include "GCDescReader.h"
 #include "MemoryFaultGuard.h"
@@ -290,24 +290,32 @@ TEST(ReferenceChainTraverserFaultTest, SehGuardCatchesAccessViolation)
 }
 #endif
 
-// Pure VisitedObjectSet behaviour: after a possibly-interrupted insert is flagged,
-// the next Clear() must wipe the whole table so no stale "visited" address leaks.
-TEST(ReferenceChainTraverserFaultTest, VisitedSetIsFullyClearedAfterFault)
+// Pure VisitedAddressBitmap behaviour: after a possibly-interrupted mark is flagged,
+// the next ClearForRoot() must fully reset the bitmap so no stale visited bit leaks.
+TEST(ReferenceChainTraverserFaultTest, VisitedBitmapIsFullyResetAfterFault)
 {
-    VisitedObjectSet visited(16);
-    visited.MarkVisited(0x123000);
-    ASSERT_TRUE(visited.IsVisited(0x123000));
+    VisitedAddressBitmap visited(VisitedAddressBitmap::PageStorageBytes);
+    constexpr uintptr_t address = VisitedAddressBitmap::HeapBytesPerPage * 2;
+
+    ASSERT_EQ(
+        visited.TryMarkFirstVisit(address),
+        VisitedAddressBitmap::VisitResult::FirstVisit);
 
     visited.MarkPossiblyInconsistent();
-    visited.Clear();
+    visited.ClearForRoot();
 
-    ASSERT_FALSE(visited.IsVisited(0x123000));
     ASSERT_EQ(visited.Size(), 0u);
+    ASSERT_EQ(
+        visited.TryMarkFirstVisit(address),
+        VisitedAddressBitmap::VisitResult::FirstVisit);
+    ASSERT_EQ(
+        visited.TryMarkFirstVisit(address),
+        VisitedAddressBitmap::VisitResult::AlreadyVisited);
 
-    // The set must remain fully usable after a full wipe.
-    visited.MarkVisited(0x456000);
-    ASSERT_TRUE(visited.IsVisited(0x456000));
-    ASSERT_FALSE(visited.IsVisited(0x123000));
+    // The bitmap remains fully usable after the reset.
+    ASSERT_EQ(
+        visited.TryMarkFirstVisit(address + sizeof(void*)),
+        VisitedAddressBitmap::VisitResult::FirstVisit);
 }
 
 namespace
@@ -353,7 +361,12 @@ TEST(ReferenceChainTraverserFaultTest, ExceptionEscapingTheGuardAbortsTheDumpWit
     NullFrameStore frameStore;
     TypeReferenceTree tree;
     InlineVTCache vtCache(pInfo, nullptr);
-    ReferenceChainTraverser traverser(pInfo, &frameStore, tree, vtCache, 16);
+    ReferenceChainTraverser traverser(
+        pInfo,
+        &frameStore,
+        tree,
+        vtCache,
+        VisitedAddressBitmap::PageStorageBytes * 16);
 
     EXPECT_NO_THROW(traverser.TraverseFromSingleRoot(graph.GetRoot()));
 
@@ -394,7 +407,12 @@ TEST(ReferenceChainTraverserFaultTest, UnavailableFaultGuardStopsWithoutExecutin
     NullFrameStore frameStore;
     TypeReferenceTree tree;
     InlineVTCache vtCache(pInfo, nullptr);
-    ReferenceChainTraverser traverser(pInfo, &frameStore, tree, vtCache, 16);
+    ReferenceChainTraverser traverser(
+        pInfo,
+        &frameStore,
+        tree,
+        vtCache,
+        VisitedAddressBitmap::PageStorageBytes * 16);
 
     traverser.Test_FaultReadUnderGuard(nullptr);
 
@@ -430,7 +448,12 @@ TEST(ReferenceChainTraverserFaultTest, CachedInlineValueTypeSizeAvoidsTraversalL
     valueTypes.fields.push_back({0, valueTypeClass, static_cast<ULONG>(sizeof(void*))});
     vtCache.SetInlineVTInfoForTests(rootClass, std::move(valueTypes));
 
-    ReferenceChainTraverser traverser(pInfo, &frameStore, tree, vtCache, 16);
+    ReferenceChainTraverser traverser(
+        pInfo,
+        &frameStore,
+        tree,
+        vtCache,
+        VisitedAddressBitmap::PageStorageBytes * 16);
     RootInfo root(reinterpret_cast<uintptr_t>(rootObj), RootCategory::Stack, rootClass, sizeof(rootObj));
     traverser.TraverseFromSingleRoot(root);
 
@@ -458,7 +481,12 @@ TEST(ReferenceChainTraverserFaultTest, ExceptionUnderGuardPropagatesAndLeavesThe
     NullFrameStore frameStore;
     TypeReferenceTree tree;
     InlineVTCache vtCache(pInfo, nullptr);
-    ReferenceChainTraverser traverser(pInfo, &frameStore, tree, vtCache, 16);
+    ReferenceChainTraverser traverser(
+        pInfo,
+        &frameStore,
+        tree,
+        vtCache,
+        VisitedAddressBitmap::PageStorageBytes * 16);
 
     EXPECT_THROW(traverser.Test_ThrowUnderGuard(), std::runtime_error);
 
@@ -484,7 +512,12 @@ TEST(ReferenceChainTraverserFaultTest, TestFaultReadUnderGuardIncrementsFaultCou
     NullFrameStore frameStore;
     TypeReferenceTree tree;
     InlineVTCache vtCache(pInfo, nullptr);
-    ReferenceChainTraverser traverser(pInfo, &frameStore, tree, vtCache, 16);
+    ReferenceChainTraverser traverser(
+        pInfo,
+        &frameStore,
+        tree,
+        vtCache,
+        VisitedAddressBitmap::PageStorageBytes * 16);
 
     ASSERT_TRUE(traverser.IsGCDescTrusted());
     ASSERT_EQ(traverser.GetFaultCount(), 0u);
@@ -512,7 +545,12 @@ TEST(ReferenceChainTraverserFaultTest, TraverseFromSingleRootFaultKeepsGCDescTru
     NullFrameStore frameStore;
     TypeReferenceTree tree;
     InlineVTCache vtCache(pInfo, nullptr);
-    ReferenceChainTraverser traverser(pInfo, &frameStore, tree, vtCache, 16);
+    ReferenceChainTraverser traverser(
+        pInfo,
+        &frameStore,
+        tree,
+        vtCache,
+        VisitedAddressBitmap::PageStorageBytes * 16);
 
     RootInfo root(reinterpret_cast<uintptr_t>(badPage), RootCategory::Stack, fakeClass, 64);
     ASSERT_TRUE(traverser.IsGCDescTrusted());
@@ -570,7 +608,12 @@ TEST(ReferenceChainTraverserFaultTest, TraversalResumesAfterFault)
     NullFrameStore frameStore;
     TypeReferenceTree tree;
     InlineVTCache vtCache(pInfo, nullptr);
-    ReferenceChainTraverser traverser(pInfo, &frameStore, tree, vtCache, 16);
+    ReferenceChainTraverser traverser(
+        pInfo,
+        &frameStore,
+        tree,
+        vtCache,
+        VisitedAddressBitmap::PageStorageBytes * 16);
 
     RootInfo root(reinterpret_cast<uintptr_t>(rootObj), RootCategory::Stack, rootClass, 64);
     traverser.TraverseFromSingleRoot(root);
@@ -604,7 +647,12 @@ TEST(ReferenceChainTraverserFaultTest, FaultBudgetStopsDumpWithoutDistrustingGCD
     NullFrameStore frameStore;
     TypeReferenceTree tree;
     InlineVTCache vtCache(pInfo, nullptr);
-    ReferenceChainTraverser traverser(pInfo, &frameStore, tree, vtCache, 16);
+    ReferenceChainTraverser traverser(
+        pInfo,
+        &frameStore,
+        tree,
+        vtCache,
+        VisitedAddressBitmap::PageStorageBytes * 16);
 
     // Drive enough faults to exhaust the per-dump budget (MaxFaultsPerDump == 16).
     for (int i = 0; i < 16; i++)
@@ -636,7 +684,12 @@ TEST(ReferenceChainTraverserFaultTest, SelfTestFailureStillDisablesPermanently)
     NullFrameStore frameStore;
     TypeReferenceTree tree;
     InlineVTCache vtCache(pInfo, nullptr);
-    ReferenceChainTraverser traverser(pInfo, &frameStore, tree, vtCache, 16);
+    ReferenceChainTraverser traverser(
+        pInfo,
+        &frameStore,
+        tree,
+        vtCache,
+        VisitedAddressBitmap::PageStorageBytes * 16);
 
     ASSERT_TRUE(traverser.IsGCDescTrusted());
 

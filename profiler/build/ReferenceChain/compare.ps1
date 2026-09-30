@@ -1,9 +1,15 @@
+[CmdletBinding(DefaultParameterSetName = "Compare", PositionalBinding = $true)]
 param(
-    [Parameter(Mandatory = $true)]
-    [string] $BaselinePath,
+    [Parameter(Mandatory = $true, Position = 0, ParameterSetName = "Compare")]
+    [string] $BaselineLabel,
 
-    [Parameter(Mandatory = $true)]
-    [string] $CandidatePath,
+    [Parameter(Mandatory = $true, Position = 1, ParameterSetName = "Compare")]
+    [string] $CandidateLabel,
+
+    [Parameter(ParameterSetName = "ListLabels")]
+    [switch] $ListLabels,
+
+    [string] $OutputRoot,
 
     [string] $OutputPath,
 
@@ -128,8 +134,107 @@ document.getElementById('footer').textContent=`Baseline: ${data.BaselinePath} â€
     $template.Replace("__DATA__", $json) | Set-Content -LiteralPath $Path -Encoding UTF8
 }
 
-$baselineDirectory = (Resolve-Path -LiteralPath $BaselinePath).Path
-$candidateDirectory = (Resolve-Path -LiteralPath $CandidatePath).Path
+function Get-ReferenceChainLabelDirectory
+{
+    param(
+        [string] $Label,
+        [string] $Root
+    )
+
+    if ([string]::IsNullOrWhiteSpace($Label) -or
+        $Label -in @(".", "..") -or
+        $Label -ne [IO.Path]::GetFileName($Label))
+    {
+        throw "Label must be a single folder name."
+    }
+
+    $directory = Join-Path $Root $Label
+    if (-not (Test-Path -LiteralPath $directory -PathType Container))
+    {
+        throw "Label '$Label' does not exist at '$directory'. Run run.ps1 for this label first."
+    }
+
+    return (Resolve-Path -LiteralPath $directory).Path
+}
+
+function Get-ReferenceChainBenchmarkLabels
+{
+    param([string] $Root)
+
+    if (-not (Test-Path -LiteralPath $Root -PathType Container))
+    {
+        return @()
+    }
+
+    $entries = @(
+        foreach ($directory in @(Get-ChildItem -LiteralPath $Root -Directory))
+        {
+            $resultsPath = Join-Path $directory.FullName "results.json"
+            if (-not (Test-Path -LiteralPath $resultsPath -PathType Leaf))
+            {
+                continue
+            }
+
+            $createdUtc = $null
+            try
+            {
+                $results = Get-Content -LiteralPath $resultsPath -Raw | ConvertFrom-Json
+                if (-not [string]::IsNullOrWhiteSpace($results.CreatedUtc))
+                {
+                    $createdUtc = [DateTime]::Parse($results.CreatedUtc, [Globalization.CultureInfo]::InvariantCulture, [Globalization.DateTimeStyles]::RoundtripKind)
+                }
+            }
+            catch
+            {
+                # Fall back to directory timestamps when results.json cannot be read.
+            }
+
+            if ($null -eq $createdUtc)
+            {
+                $createdUtc = $directory.LastWriteTimeUtc
+            }
+
+            [pscustomobject]@{
+                Label = $directory.Name
+                CreatedUtc = $createdUtc
+            }
+        }
+    )
+
+    return @($entries | Sort-Object CreatedUtc, Label)
+}
+
+$repoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..\..\..")).Path
+if ([string]::IsNullOrWhiteSpace($OutputRoot))
+{
+    $OutputRoot = Join-Path $repoRoot "artifacts\reference-chain"
+}
+
+$OutputRoot = [IO.Path]::GetFullPath($OutputRoot)
+
+if ($ListLabels)
+{
+    $labels = Get-ReferenceChainBenchmarkLabels -Root $OutputRoot
+    if ($labels.Count -eq 0)
+    {
+        Write-Host "No reference-chain benchmarks found under '$OutputRoot'."
+        return
+    }
+
+    $dateFormat = "yyyy-MM-dd HH:mm:ss"
+    $dateColumnWidth = $dateFormat.Length
+
+    foreach ($entry in $labels)
+    {
+        $date = $entry.CreatedUtc.ToString($dateFormat)
+        Write-Host ("{0,-$dateColumnWidth}   {1}" -f $date, $entry.Label)
+    }
+
+    return
+}
+
+$baselineDirectory = Get-ReferenceChainLabelDirectory -Label $BaselineLabel -Root $OutputRoot
+$candidateDirectory = Get-ReferenceChainLabelDirectory -Label $CandidateLabel -Root $OutputRoot
 $baselineResultsPath = Join-Path $baselineDirectory "results.json"
 $candidateResultsPath = Join-Path $candidateDirectory "results.json"
 if (-not (Test-Path -LiteralPath $baselineResultsPath -PathType Leaf))
@@ -160,6 +265,8 @@ $definitions = @(
     [pscustomobject]@{ Name = "TraversalEdges"; Label = "Examined references"; Scope = "dump"; Property = "TraversalEdges"; Scale = 1; Unit = "references"; Better = "context" }
     [pscustomobject]@{ Name = "TreeNodes"; Label = "Reference-tree nodes"; Scope = "dump"; Property = "TreeNodes"; Scale = 1; Unit = "nodes"; Better = "context" }
     [pscustomobject]@{ Name = "VisitedMemory"; Label = "Visited-set memory"; Scope = "dump"; Property = "VisitedBytes"; Scale = (1 / 1MB); Unit = "MiB"; Better = "lower" }
+    [pscustomobject]@{ Name = "VisitedPages"; Label = "Visited bitmap pages"; Scope = "dump"; Property = "VisitedPages"; Scale = 1; Unit = "pages"; Better = "lower" }
+    [pscustomobject]@{ Name = "VisitedCapacityExceeded"; Label = "Visited capacity failures"; Scope = "dump"; Property = "VisitedCapacityExceeded"; Scale = 1; Unit = "failures"; Better = "lower" }
     [pscustomobject]@{ Name = "TotalSizeCalls"; Label = "GetObjectSize2 calls"; Scope = "dump"; Property = "TotalSizeCalls"; Scale = 1; Unit = "calls"; Better = "lower" }
     [pscustomobject]@{ Name = "ScannableSizeCalls"; Label = "Scannable first-visit size calls"; Scope = "dump"; Property = "FirstVisitScannableSizeCalls"; Scale = 1; Unit = "calls"; Better = "context" }
     [pscustomobject]@{ Name = "LeafSizeCalls"; Label = "Leaf size calls"; Scope = "dump"; Property = "FirstVisitLeafSizeCalls"; Scale = 1; Unit = "calls"; Better = "lower" }
@@ -221,7 +328,7 @@ foreach ($metricName in @("SurvivingObjects", "HeapBytes", $rootWorkloadMetric, 
 
 if ([string]::IsNullOrWhiteSpace($OutputPath))
 {
-    $safeBaselineLabel = $baseline.Label -replace '[^a-zA-Z0-9_.-]', '-'
+    $safeBaselineLabel = $BaselineLabel -replace '[^a-zA-Z0-9_.-]', '-'
     $OutputPath = Join-Path $candidateDirectory "comparison-vs-$safeBaselineLabel.html"
 }
 else

@@ -764,7 +764,7 @@ void HeapSnapshotManager::StartGCDump()
 
         // Create/reset the traverser so it is ready to process roots during GC callbacks.
         // InlineVTCache is persisted across dumps to avoid re-inspecting types for inline VTs.
-        // Visited set is pre-sized from the previous dump's high-water-mark to avoid Grow() storms.
+        // Visited bitmap pages are allocated lazily up to a fixed per-dump memory budget.
         //
         // If the GCDesc reader previously failed its self-test, do not create the
         // traverser: the reference tree is skipped while the class histogram still runs.
@@ -783,7 +783,8 @@ void HeapSnapshotManager::StartGCDump()
         {
             _pReferenceChainTraverser = std::make_unique<ReferenceChainTraverser>(
                 _pCorProfilerInfo, _pFrameStore, *_typeReferenceTree, *_pInlineVTCache,
-                _visitedSetHighWatermark, _isReferenceChainBenchmarkEnabled);
+                ReferenceChainTraverser::DefaultVisitedMemoryLimitBytes,
+                _isReferenceChainBenchmarkEnabled);
         }
 
         _cachedItemsSize.store(0, std::memory_order_relaxed);
@@ -859,20 +860,11 @@ void HeapSnapshotManager::OnEndGCDump()
         }
     }
 
-    // Log traversal statistics and persist high-water-mark for next dump's pre-sizing.
+    // Log traversal statistics.
     // Traversal itself was done incrementally during OnBulkRoot* callbacks.
     if (_pReferenceChainTraverser)
     {
         _pReferenceChainTraverser->LogStats();
-
-        size_t hwm = _pReferenceChainTraverser->GetVisitedHighWatermark();
-        size_t peakEntries = _pReferenceChainTraverser->GetVisitedPeakEntryCount();
-        if (hwm > _visitedSetHighWatermark)
-        {
-            _visitedSetHighWatermark = hwm;
-        }
-        Log::Debug("VisitedObjectSet high watermark for next dump: ", _visitedSetHighWatermark,
-                   " buckets (peak entries this dump: ", peakEntries, ")");
 
         _lastTraversalFaultCount = _pReferenceChainTraverser->GetFaultCount();
 
@@ -924,6 +916,14 @@ void HeapSnapshotManager::OnEndGCDump()
             _faultGuardUnavailable = true;
             Log::Error("Reference-chain traversal was cut short because memory fault recovery "
                        "became unavailable. Heap class histograms are unaffected.");
+        }
+        else if (_pReferenceChainTraverser->GetStopReason() ==
+                 ReferenceChainTraverser::TraversalStopReason::VisitedMemoryBudgetExhausted)
+        {
+            _consecutiveFaultyDumps = 0;
+            Log::Warn("Reference-chain traversal reached its visited-address memory budget. "
+                      "The reference tree for this dump is partial. "
+                      "Heap class histograms are unaffected.");
         }
         else
         {

@@ -3,7 +3,7 @@
 
 #include "gtest/gtest.h"
 
-#include "VisitedObjectSet.h"
+#include "VisitedAddressBitmap.h"
 #include "TypeReferenceTree.h"
 #include "TypeReferenceTreeJsonSerializer.h"
 #include "TypeReferenceTreeBinarySerializer.h"
@@ -102,260 +102,159 @@ private:
 };
 
 // ============================================================================
-// VisitedObjectSet Tests
+// VisitedAddressBitmap Tests
 // ============================================================================
 
-TEST(VisitedObjectSetTest, InitialStateIsEmpty)
+TEST(VisitedAddressBitmapTest, MarksFirstAndDuplicateVisits)
 {
-    VisitedObjectSet visited;
-    ASSERT_EQ(visited.Size(), 0);
-    ASSERT_FALSE(visited.IsVisited(0x1000));
+    VisitedAddressBitmap visited(VisitedAddressBitmap::PageStorageBytes);
+    constexpr uintptr_t address = 0x1000;
+
+    ASSERT_EQ(
+        visited.TryMarkFirstVisit(address),
+        VisitedAddressBitmap::VisitResult::FirstVisit);
+    ASSERT_EQ(
+        visited.TryMarkFirstVisit(address),
+        VisitedAddressBitmap::VisitResult::AlreadyVisited);
+    ASSERT_EQ(visited.Size(), 1u);
 }
 
-TEST(VisitedObjectSetTest, MarkAndCheckVisited)
+TEST(VisitedAddressBitmapTest, TracksAddressesInSameAndDifferentPages)
 {
-    VisitedObjectSet visited;
+    VisitedAddressBitmap visited(VisitedAddressBitmap::PageStorageBytes * 2);
+    constexpr uintptr_t firstPage = VisitedAddressBitmap::HeapBytesPerPage * 4;
+    constexpr uintptr_t samePage = firstPage + sizeof(void*);
+    constexpr uintptr_t differentPage = firstPage + VisitedAddressBitmap::HeapBytesPerPage;
 
-    visited.MarkVisited(0x1000);
-    ASSERT_TRUE(visited.IsVisited(0x1000));
-    ASSERT_FALSE(visited.IsVisited(0x2000));
-    ASSERT_EQ(visited.Size(), 1);
+    ASSERT_EQ(
+        visited.TryMarkFirstVisit(firstPage),
+        VisitedAddressBitmap::VisitResult::FirstVisit);
+    ASSERT_EQ(
+        visited.TryMarkFirstVisit(samePage),
+        VisitedAddressBitmap::VisitResult::FirstVisit);
+    ASSERT_EQ(
+        visited.TryMarkFirstVisit(differentPage),
+        VisitedAddressBitmap::VisitResult::FirstVisit);
+    ASSERT_EQ(visited.Size(), 3u);
+    ASSERT_EQ(visited.GetAllocatedPageCount(), 2u);
 }
 
-TEST(VisitedObjectSetTest, MarkMultipleAddresses)
+TEST(VisitedAddressBitmapTest, ClearForRootStartsNewEpoch)
 {
-    VisitedObjectSet visited;
+    VisitedAddressBitmap visited(VisitedAddressBitmap::PageStorageBytes);
+    constexpr uintptr_t address = VisitedAddressBitmap::HeapBytesPerPage * 8;
 
-    visited.MarkVisited(0x1000);
-    visited.MarkVisited(0x2000);
-    visited.MarkVisited(0x3000);
+    ASSERT_EQ(
+        visited.TryMarkFirstVisit(address),
+        VisitedAddressBitmap::VisitResult::FirstVisit);
 
-    ASSERT_TRUE(visited.IsVisited(0x1000));
-    ASSERT_TRUE(visited.IsVisited(0x2000));
-    ASSERT_TRUE(visited.IsVisited(0x3000));
-    ASSERT_FALSE(visited.IsVisited(0x4000));
-    ASSERT_EQ(visited.Size(), 3);
+    // ClearForRoot is an O(1) logical clear: old-epoch bits are ignored.
+    visited.ClearForRoot();
+
+    ASSERT_EQ(visited.Size(), 0u);
+    ASSERT_EQ(
+        visited.TryMarkFirstVisit(address),
+        VisitedAddressBitmap::VisitResult::FirstVisit);
+    ASSERT_EQ(
+        visited.TryMarkFirstVisit(address),
+        VisitedAddressBitmap::VisitResult::AlreadyVisited);
 }
 
-TEST(VisitedObjectSetTest, DuplicateMarkDoesNotIncreaseSize)
+TEST(VisitedAddressBitmapTest, ReusesAllocatedPagesAcrossRoots)
 {
-    VisitedObjectSet visited;
+    VisitedAddressBitmap visited(VisitedAddressBitmap::PageStorageBytes * 2);
+    constexpr uintptr_t firstPage = VisitedAddressBitmap::HeapBytesPerPage * 10;
+    constexpr uintptr_t secondPage = firstPage + VisitedAddressBitmap::HeapBytesPerPage;
 
-    visited.MarkVisited(0x1000);
-    visited.MarkVisited(0x1000);
+    ASSERT_EQ(
+        visited.TryMarkFirstVisit(firstPage),
+        VisitedAddressBitmap::VisitResult::FirstVisit);
+    ASSERT_EQ(
+        visited.TryMarkFirstVisit(secondPage),
+        VisitedAddressBitmap::VisitResult::FirstVisit);
+    ASSERT_EQ(visited.GetPageAllocationCount(), 2u);
 
-    ASSERT_TRUE(visited.IsVisited(0x1000));
-    ASSERT_EQ(visited.Size(), 1);
+    visited.ClearForRoot();
+
+    ASSERT_EQ(
+        visited.TryMarkFirstVisit(secondPage),
+        VisitedAddressBitmap::VisitResult::FirstVisit);
+    ASSERT_EQ(
+        visited.TryMarkFirstVisit(firstPage),
+        VisitedAddressBitmap::VisitResult::FirstVisit);
+    ASSERT_EQ(visited.GetPageAllocationCount(), 2u);
+    ASSERT_EQ(visited.GetAllocatedPageCount(), 2u);
 }
 
-TEST(VisitedObjectSetTest, ClearRemovesAll)
+TEST(VisitedAddressBitmapTest, RetainsPeakEntryCountAcrossRoots)
 {
-    VisitedObjectSet visited;
+    VisitedAddressBitmap visited(VisitedAddressBitmap::PageStorageBytes);
+    constexpr uintptr_t page = VisitedAddressBitmap::HeapBytesPerPage * 12;
 
-    visited.MarkVisited(0x1000);
-    visited.MarkVisited(0x2000);
-    ASSERT_EQ(visited.Size(), 2);
+    ASSERT_EQ(
+        visited.TryMarkFirstVisit(page),
+        VisitedAddressBitmap::VisitResult::FirstVisit);
+    ASSERT_EQ(
+        visited.TryMarkFirstVisit(page + sizeof(void*)),
+        VisitedAddressBitmap::VisitResult::FirstVisit);
+    ASSERT_EQ(
+        visited.TryMarkFirstVisit(page + (2 * sizeof(void*))),
+        VisitedAddressBitmap::VisitResult::FirstVisit);
+    ASSERT_EQ(visited.GetPeakEntryCount(), 3u);
 
-    visited.Clear();
-    ASSERT_EQ(visited.Size(), 0);
-    ASSERT_FALSE(visited.IsVisited(0x1000));
-    ASSERT_FALSE(visited.IsVisited(0x2000));
+    visited.ClearForRoot();
+    ASSERT_EQ(
+        visited.TryMarkFirstVisit(page),
+        VisitedAddressBitmap::VisitResult::FirstVisit);
+
+    ASSERT_EQ(visited.Size(), 1u);
+    ASSERT_EQ(visited.GetPeakEntryCount(), 3u);
 }
 
-TEST(VisitedObjectSetTest, StoreClassIDAndGetClassIDRoundTrip)
+TEST(VisitedAddressBitmapTest, MarkPossiblyInconsistentForcesFullReset)
 {
-    VisitedObjectSet visited;
+    VisitedAddressBitmap visited(VisitedAddressBitmap::PageStorageBytes * 2);
+    constexpr uintptr_t firstPage = VisitedAddressBitmap::HeapBytesPerPage * 14;
+    constexpr uintptr_t secondPage = firstPage + VisitedAddressBitmap::HeapBytesPerPage;
 
-    visited.MarkIfAbsent(0x1000);
-    visited.StoreClassID(0x1000, 42);
+    ASSERT_EQ(
+        visited.TryMarkFirstVisit(firstPage),
+        VisitedAddressBitmap::VisitResult::FirstVisit);
+    ASSERT_EQ(
+        visited.TryMarkFirstVisit(secondPage),
+        VisitedAddressBitmap::VisitResult::FirstVisit);
 
-    ClassID classID = 0;
-    ASSERT_TRUE(visited.GetClassID(0x1000, classID));
-    ASSERT_EQ(classID, 42);
+    visited.MarkPossiblyInconsistent();
+    visited.ClearForRoot();
+
+    ASSERT_EQ(visited.Size(), 0u);
+    ASSERT_EQ(
+        visited.TryMarkFirstVisit(firstPage),
+        VisitedAddressBitmap::VisitResult::FirstVisit);
+    ASSERT_EQ(
+        visited.TryMarkFirstVisit(secondPage),
+        VisitedAddressBitmap::VisitResult::FirstVisit);
+    ASSERT_EQ(visited.GetPageAllocationCount(), 2u);
 }
 
-TEST(VisitedObjectSetTest, GetClassIDReturnsDefaultBeforeStore)
+TEST(VisitedAddressBitmapTest, OnePageBudgetReportsCapacityExceeded)
 {
-    VisitedObjectSet visited;
+    VisitedAddressBitmap visited(VisitedAddressBitmap::PageStorageBytes);
+    constexpr uintptr_t firstPage = VisitedAddressBitmap::HeapBytesPerPage * 16;
+    constexpr uintptr_t secondPage = firstPage + VisitedAddressBitmap::HeapBytesPerPage;
 
-    visited.MarkIfAbsent(0x1000);
-
-    ClassID classID = 99;
-    ASSERT_TRUE(visited.GetClassID(0x1000, classID));
-    ASSERT_EQ(classID, 0);
-}
-
-TEST(VisitedObjectSetTest, GetClassIDReturnsFalseForUnknownAddress)
-{
-    VisitedObjectSet visited;
-
-    ClassID classID = 99;
-    ASSERT_FALSE(visited.GetClassID(0x1000, classID));
-}
-
-TEST(VisitedObjectSetTest, StoreClassIDOnUnknownAddressIsNoOp)
-{
-    VisitedObjectSet visited;
-
-    visited.StoreClassID(0x1000, 42);
-
-    ASSERT_FALSE(visited.IsVisited(0x1000));
-    ASSERT_EQ(visited.Size(), 0);
-
-    ClassID classID = 0;
-    ASSERT_FALSE(visited.GetClassID(0x1000, classID));
-}
-
-TEST(VisitedObjectSetTest, GrowPreservesAllEntriesAndClassID)
-{
-    VisitedObjectSet visited(16);
-
-    const size_t count = 1000;
-    for (size_t i = 1; i <= count; i++)
-    {
-        uintptr_t addr = i * 0x100;
-        visited.MarkIfAbsent(addr);
-        visited.StoreClassID(addr, static_cast<ClassID>(i));
-    }
-
-    ASSERT_EQ(visited.Size(), count);
-
-    for (size_t i = 1; i <= count; i++)
-    {
-        uintptr_t addr = i * 0x100;
-        ASSERT_TRUE(visited.IsVisited(addr));
-
-        ClassID classID = 0;
-        ASSERT_TRUE(visited.GetClassID(addr, classID));
-        ASSERT_EQ(classID, static_cast<ClassID>(i));
-    }
-}
-
-TEST(VisitedObjectSetTest, ClearResetsStoredClassID)
-{
-    VisitedObjectSet visited;
-
-    visited.MarkIfAbsent(0x1000);
-    visited.StoreClassID(0x1000, 42);
-
-    visited.Clear();
-
-    ASSERT_FALSE(visited.IsVisited(0x1000));
-
-    visited.MarkIfAbsent(0x1000);
-
-    ClassID classID = 99;
-    ASSERT_TRUE(visited.GetClassID(0x1000, classID));
-    ASSERT_EQ(classID, 0);
-}
-
-TEST(VisitedObjectSetTest, StoreClassIDAfterMarkVisited)
-{
-    VisitedObjectSet visited;
-
-    visited.MarkVisited(0x1000);
-    visited.StoreClassID(0x1000, 77);
-
-    ClassID classID = 0;
-    ASSERT_TRUE(visited.GetClassID(0x1000, classID));
-    ASSERT_EQ(classID, 77);
-}
-
-TEST(VisitedObjectSetTest, TryInsertNewAddress)
-{
-    VisitedObjectSet visited;
-
-    VisitedObjectSet::VisitedEntry* slot = nullptr;
-    auto result = visited.TryInsert(0x1000, slot);
-
-    ASSERT_EQ(result, VisitedObjectSet::InsertResult::Inserted);
-    ASSERT_NE(slot, nullptr);
-    ASSERT_EQ(slot->classID, 0);
-    ASSERT_EQ(visited.Size(), 1);
-}
-
-TEST(VisitedObjectSetTest, TryInsertExistingAddress)
-{
-    VisitedObjectSet visited;
-
-    VisitedObjectSet::VisitedEntry* slot1 = nullptr;
-    visited.TryInsert(0x1000, slot1);
-    slot1->classID = 42;
-
-    VisitedObjectSet::VisitedEntry* slot2 = nullptr;
-    auto result = visited.TryInsert(0x1000, slot2);
-
-    ASSERT_EQ(result, VisitedObjectSet::InsertResult::AlreadyPresent);
-    ASSERT_EQ(slot1, slot2);
-    ASSERT_EQ(slot2->classID, 42);
-    ASSERT_EQ(visited.Size(), 1);
-}
-
-TEST(VisitedObjectSetTest, TryInsertWriteSlotThenRevisit)
-{
-    VisitedObjectSet visited;
-
-    VisitedObjectSet::VisitedEntry* slot = nullptr;
-    visited.TryInsert(0x2000, slot);
-    slot->classID = 99;
-
-    ClassID classID = 0;
-    ASSERT_TRUE(visited.GetClassID(0x2000, classID));
-    ASSERT_EQ(classID, 99);
-}
-
-TEST(VisitedObjectSetTest, MarkVisitedAndStoreNewAddress)
-{
-    VisitedObjectSet visited;
-
-    visited.MarkVisitedAndStore(0x1000, 42);
-
-    ASSERT_TRUE(visited.IsVisited(0x1000));
-    ASSERT_EQ(visited.Size(), 1);
-
-    ClassID classID = 0;
-    ASSERT_TRUE(visited.GetClassID(0x1000, classID));
-    ASSERT_EQ(classID, 42);
-}
-
-TEST(VisitedObjectSetTest, MarkVisitedAndStoreOverwritesExisting)
-{
-    VisitedObjectSet visited;
-
-    visited.MarkVisitedAndStore(0x1000, 10);
-    visited.MarkVisitedAndStore(0x1000, 20);
-
-    ASSERT_EQ(visited.Size(), 1);
-
-    ClassID classID = 0;
-    ASSERT_TRUE(visited.GetClassID(0x1000, classID));
-    ASSERT_EQ(classID, 20);
-}
-
-TEST(VisitedObjectSetTest, TryInsertSurvivesGrow)
-{
-    VisitedObjectSet visited(16);
-
-    const size_t count = 200;
-    for (size_t i = 1; i <= count; i++)
-    {
-        uintptr_t addr = i * 0x100;
-        VisitedObjectSet::VisitedEntry* slot = nullptr;
-        auto result = visited.TryInsert(addr, slot);
-        ASSERT_EQ(result, VisitedObjectSet::InsertResult::Inserted);
-        slot->classID = static_cast<ClassID>(i);
-    }
-
-    ASSERT_EQ(visited.Size(), count);
-
-    for (size_t i = 1; i <= count; i++)
-    {
-        uintptr_t addr = i * 0x100;
-        VisitedObjectSet::VisitedEntry* slot = nullptr;
-        auto result = visited.TryInsert(addr, slot);
-        ASSERT_EQ(result, VisitedObjectSet::InsertResult::AlreadyPresent);
-        ASSERT_EQ(slot->classID, static_cast<ClassID>(i));
-    }
+    ASSERT_EQ(
+        visited.TryMarkFirstVisit(firstPage),
+        VisitedAddressBitmap::VisitResult::FirstVisit);
+    ASSERT_EQ(
+        visited.TryMarkFirstVisit(firstPage + sizeof(void*)),
+        VisitedAddressBitmap::VisitResult::FirstVisit);
+    ASSERT_EQ(
+        visited.TryMarkFirstVisit(secondPage),
+        VisitedAddressBitmap::VisitResult::CapacityExceeded);
+    ASSERT_EQ(visited.Size(), 2u);
+    ASSERT_EQ(visited.GetAllocatedPageCount(), 1u);
+    ASSERT_EQ(visited.GetCapacityExceededCount(), 1u);
 }
 
 // ============================================================================
@@ -910,7 +809,7 @@ TEST(TypeReferenceTreeJsonSerializerTest, TreeHasNoInfiniteRecursion)
     frameStore.RegisterType(typeB, "TypeB");
 
     // Build a tree: A (root) -> A -> B (simulates A1 -> A2 -> B,
-    // where A2 was stopped by VisitedObjectSet before cycling back)
+    // where A2 was stopped by VisitedAddressBitmap before cycling back)
     TypeTreeNode* rootA = tree.AddRoot(typeA, RootCategory::Handle);
     TypeTreeNode* childA = rootA->GetOrCreateChild(typeA);
     childA->AddInstance();
@@ -1029,8 +928,8 @@ TEST(TypeReferenceTreeTest, DiamondPattern)
 // Root -> List<SharedPayload> -> SharedPayload[] -> SharedPayload  (first visit)
 //
 // Because SharedPayload is visited first via _sharedPayloads, it's already in the
-// visited set when reached via SharedHolder. The traverser still records the
-// type-level edge SharedHolder -> SharedPayload using the cached ClassID.
+// visited bitmap when reached via SharedHolder. The traverser still records the
+// type-level edge SharedHolder -> SharedPayload using the object's MethodTable ClassID.
 TEST(TypeReferenceTreeTest, SharedObjectEdgeRecordedFromMultipleParents)
 {
     TypeReferenceTree tree;

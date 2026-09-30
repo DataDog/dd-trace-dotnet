@@ -289,9 +289,6 @@ private:
     // Persisted across heap dumps to avoid re-inspecting types for inline VT fields.
     std::unique_ptr<InlineVTCache> _pInlineVTCache;
 
-    // Persisted across dumps to pre-size the visited set, avoiding repeated Grow() calls.
-    size_t _visitedSetHighWatermark = 512;
-
     std::chrono::nanoseconds _startTimestamp;
 
     // timestamp of the last heap snapshot

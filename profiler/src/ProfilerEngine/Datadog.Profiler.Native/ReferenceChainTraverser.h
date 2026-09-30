@@ -8,7 +8,7 @@
 #include "InlineVTCache.h"
 #include "GCDescReader.h"
 #include "TypeReferenceTree.h"
-#include "VisitedObjectSet.h"
+#include "VisitedAddressBitmap.h"
 #include "ReferenceChainTypes.h"
 #include <chrono>
 #include <memory>
@@ -35,7 +35,8 @@ public:
         None,
         FaultBudgetExhausted,
         UnexpectedException,
-        FaultGuardUnavailable
+        FaultGuardUnavailable,
+        VisitedMemoryBudgetExhausted
     };
 
     struct TraversalFrame
@@ -47,22 +48,24 @@ public:
         SIZE_T layoutSize;
     };
 
+    static constexpr size_t DefaultVisitedMemoryLimitBytes = 256 * 1024 * 1024;
+
     ReferenceChainTraverser(
         ICorProfilerInfo12* pCorProfilerInfo,
         IFrameStore* pFrameStore,
         TypeReferenceTree& tree,
         InlineVTCache& inlineVTCache,
-        size_t visitedSetInitialCapacity = 512,
+        size_t visitedMemoryLimitBytes = DefaultVisitedMemoryLimitBytes,
         bool benchmarkEnabled = false);
 
     // Traverse from a single root (called from OnBulkRoot* event handlers).
-    // A fresh VisitedObjectSet is used per root for cycle detection within that root's graph.
+    // A fresh bitmap epoch is used per root for cycle detection within that root's graph.
     void TraverseFromSingleRoot(const RootInfo& root);
 
     void LogStats() const;
 
-    size_t GetVisitedHighWatermark() const { return _visited.GetBucketCount(); }
     size_t GetVisitedPeakEntryCount() const { return _visited.GetPeakEntryCount(); }
+    size_t GetVisitedPeakMemorySize() const { return _visited.GetPeakMemorySize(); }
 
     // Benchmark-only accounting for size lookups performed before traversal starts.
     void RecordRootObjectSizeCall(bool isStatic, bool failedOrZero);
@@ -210,9 +213,9 @@ private:
     TypeReferenceTree& _tree;
     InlineVTCache& _inlineVTCache;
 
-    // Per-root cycle detection.
-    // Cleared between roots to avoid reallocating the bucket array.
-    VisitedObjectSet _visited;
+    // Per-root cycle detection. Bitmap pages persist across roots while an epoch
+    // provides an O(1) logical clear.
+    VisitedAddressBitmap _visited;
 
     // Used to keep track of all objects to visit when starting from a root.
     // Reused across roots to avoid repeated heap allocations.
@@ -254,6 +257,7 @@ private:
         uint64_t getObjectSizeRevisitCalls = 0;
         uint64_t getObjectSizeFailedOrZeroCalls = 0;
         uint64_t getClassFromObjectFailedCalls = 0;
+        uint64_t rawMethodTableClassReads = 0;
         uint64_t firstVisitLeafReferences = 0;
         uint64_t revisitReferences = 0;
         RootWork rootWork[RootCategoryCount] = {};
@@ -274,6 +278,7 @@ private:
     bool _gcDescTrusted = true;
     GCDesc::SelfTestResult _selfTest = GCDesc::SelfTestResult::Pending;
     uint32_t _selfTestObjectsChecked = 0;
+    uint32_t _objectHeaderSelfTestObjectsChecked = 0;
 
     // Class that failed the self-test, reported once from outside the fault guard.
     ClassID _selfTestFailedClassID = 0;

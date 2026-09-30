@@ -98,6 +98,16 @@ inline bool ContainsGCPointers(ClassID classID)
     return (*flags & Flag_ContainsPointers) != 0;
 }
 
+// Read the MethodTable pointer stored at offset 0 of an object. In CoreCLR the
+// profiling API ClassID is that same MethodTable pointer.
+//
+// The caller must validate the object address and execute this read under
+// MemoryFaultGuard.
+inline ClassID GetClassIDFromObject(uintptr_t objectAddress)
+{
+    return static_cast<ClassID>(*reinterpret_cast<const uintptr_t*>(objectAddress));
+}
+
 // Read the GCDesc series count from the MethodTable.
 // Positive: regular objects and reference arrays (GCDescSeries encoding).
 // Negative: value type arrays (ValSerieItem encoding).

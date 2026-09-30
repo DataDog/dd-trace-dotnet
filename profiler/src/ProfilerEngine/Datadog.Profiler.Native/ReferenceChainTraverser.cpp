@@ -16,13 +16,13 @@ ReferenceChainTraverser::ReferenceChainTraverser(
     IFrameStore* pFrameStore,
     TypeReferenceTree& tree,
     InlineVTCache& inlineVTCache,
-    size_t visitedSetInitialCapacity,
+    size_t visitedMemoryLimitBytes,
     bool benchmarkEnabled)
     : _pCorProfilerInfo(pCorProfilerInfo),
       _pFrameStore(pFrameStore),
       _tree(tree),
       _inlineVTCache(inlineVTCache),
-      _visited(visitedSetInitialCapacity),
+      _visited(visitedMemoryLimitBytes),
       _objectsTraversed(0),
       _rootsProcessed(0),
       _benchmarkStats(benchmarkEnabled ? std::make_unique<BenchmarkStats>() : nullptr)
@@ -160,11 +160,16 @@ void ReferenceChainTraverser::SeedRoot(const RootInfo& root)
 
     TypeTreeNode* rootNode = _tree.AddRoot(root.classID, root.category, root.fieldName);
 
-    _visited.Clear();
+    _visited.ClearForRoot();
     _traversalStack.clear();
     _traversalStack.reserve(_traversalStackHighWatermark);
 
-    _visited.MarkVisitedAndStore(root.address, root.classID);
+    if (_visited.TryMarkFirstVisit(root.address) == VisitedAddressBitmap::VisitResult::CapacityExceeded)
+    {
+        _stopReason = TraversalStopReason::VisitedMemoryBudgetExhausted;
+        return;
+    }
+
     size_t stackSizeBeforePush = _benchmarkStats != nullptr ? _traversalStack.size() : 0;
     PushTraversalFrameIfScannable(root.address, rootNode, 1, root.classID, root.layoutSize);
     if (_benchmarkStats != nullptr)
@@ -260,8 +265,8 @@ void ReferenceChainTraverser::LogPendingSelfTestFailure()
 
     _selfTestFailureLogged = true;
 
-    Log::Warn("GCDesc reference-chain self-test failed for class ", GetClassName(_selfTestFailedClassID),
-              " (classID=", _selfTestFailedClassID, "): the CLR MethodTable/GCDesc layout does not match expectations. ",
+    Log::Warn("Reference-chain layout self-test failed for class ", GetClassName(_selfTestFailedClassID),
+              " (classID=", _selfTestFailedClassID, "): the CLR object/MethodTable/GCDesc layout does not match expectations. ",
               "Disabling reference-chain traversal for the rest of the process. ",
               "The class histogram is unaffected.");
 }
@@ -350,6 +355,9 @@ void ReferenceChainTraverser::LogStats() const
         case TraversalStopReason::FaultGuardUnavailable:
             stopDescription = " (memory fault recovery unavailable; traversal aborted for this dump)";
             break;
+        case TraversalStopReason::VisitedMemoryBudgetExhausted:
+            stopDescription = " (visited-address memory budget exhausted; traversal aborted for this dump)";
+            break;
         case TraversalStopReason::None:
             break;
     }
@@ -361,15 +369,13 @@ void ReferenceChainTraverser::LogStats() const
               "memory access faults: ", _faultCount,
               stopDescription);
 
-    Log::Debug("  VisitedObjectSet: ",
+    Log::Debug("  VisitedAddressBitmap: ",
               _visited.Size(), " current / ",
               _visited.GetPeakEntryCount(), " peak entries, ",
-              _visited.GetBucketCount(), " buckets, ",
-              _visited.GetGrowCount(), " grows, ",
-              _visited.GetMemorySize() / 1024, " KB total (",
-              "addresses: ", _visited.GetAddressesMemorySize() / 1024, " KB, ",
-              "entries: ", _visited.GetEntriesMemorySize() / 1024, " KB, ",
-              "dirty: ", _visited.GetDirtyIndicesMemorySize() / 1024, " KB)");
+              _visited.GetAllocatedPageCount(), " allocated pages, ",
+              _visited.GetMemorySize() / 1024, " KB current / ",
+              _visited.GetPeakMemorySize() / 1024, " KB peak, ",
+              _visited.GetCapacityExceededCount(), " capacity failures");
 
     if (_benchmarkStats != nullptr)
     {
@@ -387,6 +393,9 @@ void ReferenceChainTraverser::LogStats() const
             case TraversalStopReason::FaultGuardUnavailable:
                 stopReason = "fault_guard_unavailable";
                 break;
+            case TraversalStopReason::VisitedMemoryBudgetExhausted:
+                stopReason = "visited_memory_budget_exhausted";
+                break;
             case TraversalStopReason::None:
                 break;
         }
@@ -398,16 +407,19 @@ void ReferenceChainTraverser::LogStats() const
                    ", faults=", _faultCount,
                    ", stop_reason=", stopReason,
                    ", visited_peak_entries=", _visited.GetPeakEntryCount(),
-                   ", visited_bytes=", _visited.GetMemorySize(),
-                   ", visited_buckets=", _visited.GetBucketCount(),
-                   ", visited_grows=", _visited.GetGrowCount(),
+                   ", visited_bytes=", _visited.GetPeakMemorySize(),
+                   ", visited_buckets=", 0,
+                   ", visited_grows=", 0,
                    ", edges=", edgesExamined,
                    ", first_visit_refs=", firstVisitReferences,
                    ", revisit_refs=", _benchmarkStats->revisitReferences,
                    ", get_class_first_visit=", firstVisitReferences,
                    ", get_class_revisit=", 0,
-                   ", raw_class_reads=", 0,
-                   ", tree_nodes=", _tree.GetNodeCount());
+                   ", raw_class_reads=", _benchmarkStats->rawMethodTableClassReads,
+                   ", tree_nodes=", _tree.GetNodeCount(),
+                   ", visited_kind=bitmap",
+                   ", visited_pages=", _visited.GetAllocatedPageCount(),
+                   ", visited_capacity_exceeded=", _visited.GetCapacityExceededCount());
 
         Log::Debug("Reference chain benchmark GetObjectSize2: root=", _benchmarkStats->getObjectSizeRootCalls,
                    ", static_root=", _benchmarkStats->getObjectSizeStaticRootCalls,
@@ -443,35 +455,6 @@ void ReferenceChainTraverser::LogStats() const
                        ", max_edges=", work.maxEdges,
                        ", max_duration_ms=", work.maxDurationNs / 1'000'000);
         }
-    }
-
-    if constexpr (VisitedObjectSet::AreDetailedStatsEnabled())
-    {
-        size_t tryInsertCalls = _visited.GetTryInsertCalls();
-        size_t tryInsertAverageProbesX100 = tryInsertCalls == 0 ? 0 : (_visited.GetTryInsertProbeCount() * 100) / tryInsertCalls;
-        Log::Debug("  VisitedObjectSet TryInsert: ",
-                  tryInsertCalls, " calls, ",
-                  _visited.GetTryInsertInsertedCount(), " inserted, ",
-                  _visited.GetTryInsertAlreadyPresentCount(), " already present, ",
-                  _visited.GetTryInsertProbeCount(), " probes, avg ",
-                  tryInsertAverageProbesX100 / 100, ".",
-                  tryInsertAverageProbesX100 % 100, ", max ",
-                  _visited.GetTryInsertMaxProbeCount());
-
-        size_t markCalls = _visited.GetMarkVisitedAndStoreCalls();
-        size_t markAverageProbesX100 = markCalls == 0 ? 0 : (_visited.GetMarkVisitedAndStoreProbeCount() * 100) / markCalls;
-        Log::Debug("  VisitedObjectSet MarkVisitedAndStore: ",
-                  markCalls, " calls, ",
-                  _visited.GetMarkVisitedAndStoreInsertedCount(), " inserted, ",
-                  _visited.GetMarkVisitedAndStoreAlreadyPresentCount(), " already present, ",
-                  _visited.GetMarkVisitedAndStoreProbeCount(), " probes, avg ",
-                  markAverageProbesX100 / 100, ".",
-                  markAverageProbesX100 % 100, ", max ",
-                  _visited.GetMarkVisitedAndStoreMaxProbeCount());
-    }
-    else
-    {
-        Log::Debug("  VisitedObjectSet detailed probe stats: disabled");
     }
 
     for (int i = 0; i < static_cast<int>(RootCategoryCount); i++)
@@ -730,8 +713,19 @@ ReferenceChainTraverser::InlineVTOwner ReferenceChainTraverser::GetInlineValueTy
 
 bool ReferenceChainTraverser::ProcessDiscoveredRef(uintptr_t refAddress, TypeTreeNode* parentNode, uint32_t depth)
 {
-    VisitedObjectSet::VisitedEntry* slot = nullptr;
-    if (_visited.TryInsert(refAddress, slot) == VisitedObjectSet::InsertResult::Inserted)
+    if (_stopReason != TraversalStopReason::None)
+    {
+        return false;
+    }
+
+    auto visit = _visited.TryMarkFirstVisit(refAddress);
+    if (visit == VisitedAddressBitmap::VisitResult::CapacityExceeded)
+    {
+        _stopReason = TraversalStopReason::VisitedMemoryBudgetExhausted;
+        return false;
+    }
+
+    if (visit == VisitedAddressBitmap::VisitResult::FirstVisit)
     {
         ClassID targetClassID = 0;
         HRESULT hr = _pCorProfilerInfo->GetClassFromObject(refAddress, &targetClassID);
@@ -744,7 +738,22 @@ bool ReferenceChainTraverser::ProcessDiscoveredRef(uintptr_t refAddress, TypeTre
             return false;
         }
 
-        slot->classID = targetClassID;
+        if (_objectHeaderSelfTestObjectsChecked < MaxSelfTestObjects)
+        {
+            ClassID rawClassID = GCDesc::GetClassIDFromObject(refAddress);
+            if (_benchmarkStats != nullptr)
+            {
+                _benchmarkStats->rawMethodTableClassReads++;
+            }
+            _objectHeaderSelfTestObjectsChecked++;
+            if (rawClassID != targetClassID)
+            {
+                _gcDescTrusted = false;
+                _selfTest = GCDesc::SelfTestResult::Failed;
+                _selfTestFailedClassID = targetClassID;
+                return false;
+            }
+        }
 
         TypeTreeNode* childNode = parentNode->GetOrCreateChild(targetClassID);
         childNode->AddInstance();
@@ -778,13 +787,16 @@ bool ReferenceChainTraverser::ProcessDiscoveredRef(uintptr_t refAddress, TypeTre
         return true;
     }
 
-    if (slot->classID != 0)
+    ClassID targetClassID = GCDesc::GetClassIDFromObject(refAddress);
+    if (_benchmarkStats != nullptr)
     {
-        if (_benchmarkStats != nullptr)
-        {
-            _benchmarkStats->revisitReferences++;
-        }
-        TypeTreeNode* childNode = parentNode->GetOrCreateChild(slot->classID);
+        _benchmarkStats->rawMethodTableClassReads++;
+        _benchmarkStats->revisitReferences++;
+    }
+
+    if (targetClassID != 0)
+    {
+        TypeTreeNode* childNode = parentNode->GetOrCreateChild(targetClassID);
         childNode->AddInstance();
     }
 

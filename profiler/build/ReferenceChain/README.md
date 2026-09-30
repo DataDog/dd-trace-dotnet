@@ -34,9 +34,7 @@ changing traversal behavior:
 
 ```powershell
 .\run.ps1 -Label baseline-v2
-.\compare.ps1 `
-  -BaselinePath ..\..\..\artifacts\reference-chain\baseline `
-  -CandidatePath ..\..\..\artifacts\reference-chain\baseline-v2
+.\compare.ps1 baseline baseline-v2
 ```
 
 The runner uses:
@@ -67,13 +65,16 @@ Useful overrides:
 
 ## Compare implementations
 
+List recorded benchmark labels (oldest first, newest last):
+
+```powershell
+.\compare.ps1 -ListLabels
+```
+
 ```powershell
 .\run.ps1 -Label candidate
 
-.\compare.ps1 `
-  -BaselinePath ..\..\..\artifacts\reference-chain\baseline `
-  -CandidatePath ..\..\..\artifacts\reference-chain\candidate `
-  -OpenDashboard
+.\compare.ps1 baseline candidate -OpenDashboard
 ```
 
 The comparison dashboard is generated in the candidate directory. It shows
