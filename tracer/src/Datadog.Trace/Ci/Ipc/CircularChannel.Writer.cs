@@ -5,6 +5,7 @@
 #nullable enable
 
 using System;
+using System.IO.MemoryMappedFiles;
 using System.Threading;
 
 namespace Datadog.Trace.Ci.Ipc;
@@ -14,12 +15,16 @@ internal partial class CircularChannel
     private sealed class Writer : IChannelWriter
     {
         private readonly CircularChannel _channel;
+
+        // Mapped once and reused, so we never map a view while holding the cross-process lock.
+        private readonly MemoryMappedViewAccessor _accessor;
         private long _disposed;
 
         internal Writer(CircularChannel channel)
         {
             _disposed = 0;
             _channel = channel;
+            _accessor = channel._mmf.CreateViewAccessor();
         }
 
         public int GetMessageSize(in ArraySegment<byte> data) => data.Count + 2;
@@ -40,16 +45,23 @@ internal partial class CircularChannel
                 return false;
             }
 
-            var hasHandle = channel._mutex.WaitOne(_channel._settings.MutexTimeout);
-            if (!hasHandle)
+            var acquisition = channel.WaitForLock();
+            if (acquisition == LockAcquisition.Abandoned)
             {
-                Log.Error("CircularChannel.Writer: Failed to acquire mutex within the time limit.");
+                // A previous owner died while holding the mutex. The wait still succeeded and we own the
+                // mutex now, so keep going and let the finally below release it. Letting the exception
+                // escape would leak ownership and stop every process from ever using this channel again.
+                Log.Warning("CircularChannel.Writer: Mutex was abandoned by a previous owner. Recovering ownership.");
+            }
+            else if (acquisition != LockAcquisition.Acquired)
+            {
+                Log.Error("CircularChannel.Writer: Failed to acquire the channel lock within the time limit.");
                 return false;
             }
 
             try
             {
-                using var accessor = channel._mmf.CreateViewAccessor();
+                var accessor = _accessor;
                 var writePos = accessor.ReadUInt16(0);
                 var readPos = accessor.ReadUInt16(2);
 
@@ -139,20 +151,19 @@ internal partial class CircularChannel
             }
             finally
             {
-                try
-                {
-                    channel._mutex.ReleaseMutex();
-                }
-                catch (ObjectDisposedException)
-                {
-                    // The mutex was disposed, nothing to do
-                }
+                channel.ReleaseLock();
             }
         }
 
         public void Dispose()
         {
-            Interlocked.Exchange(ref _disposed, 1);
+            if (Interlocked.Exchange(ref _disposed, 1) == 1)
+            {
+                return;
+            }
+
+            // Disposed before the channel drops the memory mapped file the view came from.
+            _accessor.Dispose();
         }
     }
 }
