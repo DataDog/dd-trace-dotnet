@@ -6,7 +6,6 @@
 
 #include "FrameStore.h"
 #include "ManagedCodeCache.h"
-#include "MetricsRegistry.h"
 #include "MockProfilerInfo.h"
 
 #include <memory>
@@ -87,8 +86,7 @@ TEST(FrameStoreTest, GetFrame_WithCache_NativeIp_ReturnsNotResolvedAndDropped)
 
     // Empty cache => any IP resolves to InvalidFunctionId (there are no registered
     // JIT ranges and no R2R modules), which is exactly the "native IP" case.
-    MetricsRegistry metricsRegistry;
-    auto cache = std::make_unique<ManagedCodeCache>(&mockProfiler, metricsRegistry);
+    auto cache = std::make_unique<ManagedCodeCache>(&mockProfiler);
     cache->Initialize();
 
     FrameStore frameStore(
@@ -137,8 +135,7 @@ TEST(FrameStoreTest, GetFrame_WithCache_DynamicMethod_ReturnsNotResolvedAndDropp
             return S_OK;
         });
 
-    MetricsRegistry metricsRegistry;
-    auto cache = std::make_unique<ManagedCodeCache>(&mockProfiler, metricsRegistry);
+    auto cache = std::make_unique<ManagedCodeCache>(&mockProfiler);
     cache->Initialize();
     cache->AddFunction(dynamicFuncId, /*isDynamic*/ true);
 
@@ -206,8 +203,7 @@ TEST(FrameStoreTest, GetFrame_WithCache_CachedPathNullopt_ReturnsResolvedPlaceho
 {
     auto mockProfiler = MockProfilerInfo{};
 
-    MetricsRegistry metricsRegistry;
-    auto cache = std::make_unique<ManagedCodeCache>(&mockProfiler, metricsRegistry);
+    auto cache = std::make_unique<ManagedCodeCache>(&mockProfiler);
     cache->Initialize();
 
     // Register an R2R module range so GetFunctionInfo falls through to
