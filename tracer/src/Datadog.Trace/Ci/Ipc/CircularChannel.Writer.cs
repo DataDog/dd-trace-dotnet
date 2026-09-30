@@ -39,7 +39,9 @@ internal partial class CircularChannel
             }
 
             var dataSize = GetMessageSize(in data);
-            if (dataSize > channel.BufferBodySize)
+
+            // One byte of the buffer always stays free (see the space check below)
+            if (dataSize >= channel.BufferBodySize)
             {
                 Log.Error("CircularChannel.Writer: Message size exceeds maximum allowed size.");
                 return false;
@@ -65,10 +67,10 @@ internal partial class CircularChannel
                 var writePos = accessor.ReadUInt16(0);
                 var readPos = accessor.ReadUInt16(2);
 
-                // Check if we had to use a virtual write position outside the buffer to avoid blocking the read position
-                // condition for read is: writepos != readpos
-                // So if we detect that we have a writepos > buffersize, we use the modulus to check if is the same to the readpos
-                // and detect the buffer overflow.
+                // Older versions marked a completely full buffer with a virtual write position past the end of the buffer
+                // (BufferBodySize + writePos), because writePos == readPos means empty. That overflows the ushort once the
+                // body is larger than 32 KB, so we never write it anymore (see the space check below), but we still
+                // understand it in case an older version shares this channel.
                 if (writePos >= channel.BufferBodySize)
                 {
                     if (writePos % channel.BufferBodySize == readPos)
@@ -113,7 +115,10 @@ internal partial class CircularChannel
                 var spaceAvailable = writePos < readPos
                                          ? readPos - writePos
                                          : channel.BufferBodySize - (writePos - readPos);
-                if (spaceAvailable < dataSize)
+
+                // Always leave at least one byte free, so the write position never catches up with the read position.
+                // Otherwise a full buffer would look exactly like an empty one (writePos == readPos).
+                if (spaceAvailable <= dataSize)
                 {
                     Log.Warning("CircularChannel.Writer: Buffer overflow");
                     return false;
@@ -133,12 +138,6 @@ internal partial class CircularChannel
                 if (secondPartLength > 0)
                 {
                     accessor.WriteArray(HeaderSize, data.Array!, firstPartLength, secondPartLength);
-                }
-
-                if (nextWritePos == readPos)
-                {
-                    // This means that we will overwrite the data in the next write, so we need to virtually use a position outside the buffer
-                    nextWritePos = (ushort)(channel.BufferBodySize + nextWritePos);
                 }
 
                 accessor.Write(0, nextWritePos); // Update write pointer

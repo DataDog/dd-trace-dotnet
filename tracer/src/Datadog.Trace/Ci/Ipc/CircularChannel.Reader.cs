@@ -111,10 +111,8 @@ internal partial class CircularChannel
                 var readPos = accessor.ReadUInt16(2);
                 while (readPos != writePos)
                 {
-                    // Check if we had to use a virtual write position outside the buffer to avoid blocking the read position
-                    // condition for read is: writepos != readpos
-                    // So if we detect that we have a writepos > buffersize, we use the modulus to check if is the same to the readpos
-                    // and detect the buffer overflow.
+                    // Older versions marked a completely full buffer with a virtual write position past the end of the
+                    // buffer. The writer never does that anymore, but normalize it in case an older version shares this channel.
                     if (writePos >= _channel.BufferBodySize)
                     {
                         // This means that the read position moved to the next buffer, so we need to reset the write position

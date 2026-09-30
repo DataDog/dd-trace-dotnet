@@ -5,6 +5,7 @@
 #nullable enable
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -55,8 +56,9 @@ public class CircularChannelTests
         // Message size
         var messageSize = writer.GetMessageSize(in valueSegment);
 
-        // Calculate how many messages we can write
-        var messagesCount = AvailableBufferSize / messageSize;
+        // Calculate how many messages we can write. One byte always stays free, so a full buffer can be told
+        // apart from an empty one.
+        var messagesCount = (AvailableBufferSize - 1) / messageSize;
 
         using var scope = new AssertionScope();
         for (var i = 0; i < messagesCount; i++)
@@ -140,6 +142,55 @@ public class CircularChannelTests
 
         received.Wait(10_000).Should().BeTrue("the message written before the channel was reopened should still be delivered");
         receivedValue.Should().Equal(valueSegment);
+    }
+
+    [Fact]
+    public void BufferNeverFillsCompletelyWithTheDefaultSize()
+    {
+        // Older versions marked a completely full buffer with a virtual write position past the end of the buffer.
+        // With the default 64 KB buffer that overflowed the ushort write pointer, so the reader saw data that wasn't
+        // there and kept re-reading the same messages while holding the lock, until the process ran out of memory.
+        var name = nameof(BufferNeverFillsCompletelyWithTheDefaultSize) + "-" + Guid.NewGuid().ToString("n");
+        var settings = new CircularChannelSettings { PollingInterval = 50 };
+        using var writerChannel = new CircularChannel(name, settings);
+        using var writer = writerChannel.GetWriter();
+
+        // Write and read a first message, so the read position is no longer at the start of the buffer
+        var message = new ArraySegment<byte>(new byte[998]);
+        var messageSize = writer.GetMessageSize(in message);
+        using (var firstChannel = new CircularChannel(name, settings))
+        {
+            var firstReceived = new ManualResetEventSlim(false);
+            firstChannel.GetReader().SetCallback(_ => firstReceived.Set());
+            writer.TryWrite(in message).Should().BeTrue();
+            firstReceived.Wait(10_000).Should().BeTrue("the first message should be delivered");
+        }
+
+        var messagesCount = writerChannel.BufferBodySize / messageSize;
+        for (var i = 0; i < messagesCount; i++)
+        {
+            writer.TryWrite(in message).Should().BeTrue();
+        }
+
+        // Checked before any reader attaches, so a regression fails here instead of spinning the reader forever
+        var remainingSpace = writerChannel.BufferBodySize - (messagesCount * messageSize);
+        var exactFit = new ArraySegment<byte>(new byte[remainingSpace - 2]);
+        writer.TryWrite(in exactFit).Should().BeFalse("a message taking all the remaining space would leave no free byte");
+
+        var lastMessage = new ArraySegment<byte>(new byte[remainingSpace - 3]);
+        writer.TryWrite(in lastMessage).Should().BeTrue();
+
+        var receivedSizes = new ConcurrentQueue<int>();
+        using var readerChannel = new CircularChannel(name, settings);
+        using var reader = readerChannel.GetReader();
+        reader.SetCallback(bytes => receivedSizes.Enqueue(bytes.Count));
+
+        var expectedSizes = Enumerable.Repeat(message.Count, messagesCount).Append(lastMessage.Count).ToArray();
+        SpinWait.SpinUntil(() => receivedSizes.Count >= expectedSizes.Length, 10_000).Should().BeTrue("every message should be delivered");
+
+        // Give the reader a few more polls to deliver anything twice
+        Thread.Sleep(settings.PollingInterval * 10);
+        receivedSizes.Should().Equal(expectedSizes);
     }
 
     /// <summary>
