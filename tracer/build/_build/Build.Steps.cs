@@ -1726,6 +1726,21 @@ partial class Build
                                    .Where(path => !((string)path).Contains(Projects.DdDotnetIntegrationTests));
             }
 
+            if (IsWin && IsGitlab && projects.Any(path => ((string)path).Contains(Projects.DdDotnetIntegrationTests)))
+            {
+                // Publishing dd-dotnet for win-x64 can overwrite Tools.Shared's managed output with an
+                // x64 assembly. GitLab consumers reuse that output with --no-dependencies, so rebuild
+                // it as AnyCPU before compiling tests that also run in an x86 test host.
+                DotNetBuild(s => s
+                    .SetProjectFile(Solution.GetProject("Datadog.Trace.Tools.Shared"))
+                    .SetConfiguration(BuildConfiguration)
+                    .SetFramework(Framework)
+                    .SetTargetPlatformAnyCPU()
+                    .SetProperty("PlatformTarget", "AnyCPU")
+                    .EnableNoIncremental()
+                    .When(!string.IsNullOrEmpty(NugetPackageDirectory), o => o.SetPackageDirectory(NugetPackageDirectory)));
+            }
+
             DotnetBuild(projects, framework: Framework, noRestore: IsWin && !IsGitlab);
 
             IntegrationTestLinuxOrOsxProfilerDirFudge(Projects.ClrProfilerIntegrationTests);
