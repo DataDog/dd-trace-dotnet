@@ -117,6 +117,7 @@ namespace Datadog.Trace.Tests.CallTarget
 #endif
         }
 
+        // NativeModuleFilterValidator in tracer/build/_build applies the same rule to the assemblies in NuGet packages.
         private static List<string> GetTypesMatchingTargets(string path, HashSet<string> targetTypes, HashSet<string> targetAssemblies)
         {
             ModuleDefMD module;
