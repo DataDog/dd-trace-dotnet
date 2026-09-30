@@ -23,6 +23,14 @@ internal static partial class ConfigurationKeys
         public const string ActivityListenerEnabled = "DD_TRACE_ACTIVITY_LISTENER_ENABLED";
 
         /// <summary>
+        /// Enables publishing the active trace and span identifiers of each thread using the OpenTelemetry
+        /// thread context protocol (OTEP 4947), so out-of-process readers such as the OpenTelemetry eBPF
+        /// profiler can correlate their observations with the active trace. Linux x64 and arm64 only.
+        /// </summary>
+        /// <seealso cref="Datadog.Trace.Configuration.TracerSettings.OtelThreadContextEnabled"/>
+        public const string OtelThreadContextEnabled = "DD_TRACE_OTEL_CTX_ENABLED";
+
+        /// <summary>
         /// When enabled, suppresses all Datadog-specific data-point attributes from the traces and OTLP span metrics data points,
         /// emitting only OpenTelemetry semantic-convention attributes.
         /// </summary>

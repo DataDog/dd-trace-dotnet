@@ -27,6 +27,18 @@ namespace Datadog.Trace.ClrProfiler
             }
         }
 
+        public static bool IsLinux
+        {
+            get
+            {
+#if NETFRAMEWORK
+                return false;
+#else
+                return System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(OSPlatform.Linux);
+#endif
+            }
+        }
+
         /// <summary>
         /// Gets a value indicating whether Datadog's instrumentation library (aka CLR profiler) is attached to the current process.
         /// </summary>
@@ -261,6 +273,22 @@ namespace Datadog.Trace.ClrProfiler
             return true;
         }
 
+        /// <summary>
+        /// Gets the calling thread's OTEP 4947 Thread-Local Context Record, creating and publishing it on
+        /// first use, or <see cref="IntPtr.Zero"/> when the current platform cannot provide one.
+        /// See docs/OTelContextPropagation.md.
+        /// </summary>
+        public static IntPtr GetOrCreateOtelThreadContextRecord()
+        {
+            // the symbol is only defined on Linux, matching the scope of OTEP 4947
+            if (IsLinux)
+            {
+                return NonWindows.GetOrCreateOtelThreadContextRecord();
+            }
+
+            return IntPtr.Zero;
+        }
+
         public static bool TryGetFileMetadataForPath(string path, bool followSymlinks, out uint mode, out uint userId)
         {
             mode = 0;
@@ -379,6 +407,9 @@ namespace Datadog.Trace.ClrProfiler
 
             [DllImport("Datadog.Tracer.Native")]
             public static extern long GetInodeForPath([MarshalAs(UnmanagedType.LPWStr)]string path);
+
+            [DllImport("Datadog.Tracer.Native")]
+            public static extern IntPtr GetOrCreateOtelThreadContextRecord();
 
             [DllImport("Datadog.Tracer.Native")]
             public static extern int GetFileMetadataForPath([MarshalAs(UnmanagedType.LPWStr)] string path, int followSymlinks, out uint mode, out uint userId);

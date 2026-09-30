@@ -1,4 +1,4 @@
-﻿// <copyright file="AsyncLocalScopeManager.cs" company="Datadog">
+// <copyright file="AsyncLocalScopeManager.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -7,12 +7,33 @@ using System.Threading;
 using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.ContinuousProfiler;
 using Datadog.Trace.Logging;
+using Datadog.Trace.OtelThreadContext;
 
 namespace Datadog.Trace
 {
     internal sealed class AsyncLocalScopeManager : IScopeManager, IScopeRawAccess
     {
-        private readonly AsyncLocal<Scope> _activeScope = CreateScope();
+        // Consumers notified whenever the active scope changes on the current thread. Both the Continuous
+        // Profiler and the OpenTelemetry thread context need the context of the OS thread rather than of
+        // the logical call context, which is why they are driven from the AsyncLocal change callback: it
+        // fires on the thread performing the ExecutionContext restore, including async continuations and
+        // thread-pool hand-offs.
+        //
+        // Note these live in a single AsyncLocal callback on purpose. Registering a second AsyncLocal to
+        // observe the same value would double the cost of every ExecutionContext restore.
+        private readonly IOtelThreadContextPublisher _otelThreadContextPublisher;
+        private readonly AsyncLocal<Scope> _activeScope;
+
+        public AsyncLocalScopeManager()
+            : this(NullOtelThreadContextPublisher.Instance)
+        {
+        }
+
+        internal AsyncLocalScopeManager(IOtelThreadContextPublisher otelThreadContextPublisher)
+        {
+            _otelThreadContextPublisher = otelThreadContextPublisher;
+            _activeScope = CreateScope();
+        }
 
         public Scope Active
         {
@@ -55,9 +76,9 @@ namespace Datadog.Trace
             DistributedTracer.Instance.SetSpanContext(scope.Span.Context.Parent as SpanContext);
         }
 
-        private static AsyncLocal<Scope> CreateScope()
+        private AsyncLocal<Scope> CreateScope()
         {
-            if (Profiler.Instance.ContextTracker.IsEnabled)
+            if (Profiler.Instance.ContextTracker.IsEnabled || _otelThreadContextPublisher.IsEnabled)
             {
                 return new AsyncLocal<Scope>(OnScopeChanged);
             }
@@ -65,15 +86,18 @@ namespace Datadog.Trace
             return new AsyncLocal<Scope>();
         }
 
-        private static void OnScopeChanged(AsyncLocalValueChangedArgs<Scope> obj)
+        private void OnScopeChanged(AsyncLocalValueChangedArgs<Scope> obj)
         {
             if (obj.CurrentValue == null)
             {
                 Profiler.Instance.ContextTracker.Reset();
+                _otelThreadContextPublisher.Reset();
             }
             else
             {
-                Profiler.Instance.ContextTracker.Set(obj.CurrentValue.Span.RootSpanId, obj.CurrentValue.Span.SpanId);
+                var span = obj.CurrentValue.Span;
+                Profiler.Instance.ContextTracker.Set(span.RootSpanId, span.SpanId);
+                _otelThreadContextPublisher.Set(span);
             }
         }
     }
