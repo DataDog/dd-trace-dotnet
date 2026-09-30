@@ -44,10 +44,10 @@ GetIntegrationsFromTraceMethodsConfiguration(const TypeReference& integration_ty
         for (const shared::WSTRING& method_definition : method_definitions_array)
         {
             std::vector<shared::WSTRING> signatureTypes;
-            integrationDefinitions.push_back(IntegrationDefinition(
+            integrationDefinitions.emplace_back(
                 MethodReference(tracemethodintegration_assemblyname, type_name, method_definition, Version(0, 0, 0, 0),
                                 Version(USHRT_MAX, USHRT_MAX, USHRT_MAX, USHRT_MAX), signatureTypes),
-                integration_type, false, false, false));
+                integration_type, false, false, false);
 
             if (Logger::IsDebugEnabled())
             {

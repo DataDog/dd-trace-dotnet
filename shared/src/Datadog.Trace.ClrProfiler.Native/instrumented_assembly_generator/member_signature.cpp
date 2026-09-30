@@ -203,7 +203,6 @@ shared::WSTRING MemberSignature::GetTypeSigName(PCCOR_SIGNATURE& pSig, const Com
 
 shared::WSTRING MemberSignature::GetMethodSigName(PCCOR_SIGNATURE& pSig, const ComPtr<IMetaDataImport>& metadataImport)
 {
-    shared::WSTRING tokenName;
     if (*pSig == ELEMENT_TYPE_BYREF)
     {
         pSig++;

@@ -1,5 +1,7 @@
 #include "il_rewriter_wrapper.h"
 
+#include <array>
+
 ILRewriter* ILRewriterWrapper::GetILRewriter() const
 {
     return m_ILRewriter;
@@ -42,7 +44,7 @@ ILInstr* ILRewriterWrapper::LoadInt64(const INT64 value) const
 
 ILInstr* ILRewriterWrapper::LoadInt32(const INT32 value) const
 {
-    static const std::vector<OPCODE> opcodes = {
+    static constexpr std::array<OPCODE, 9> opcodes = {
         CEE_LDC_I4_0, CEE_LDC_I4_1, CEE_LDC_I4_2, CEE_LDC_I4_3, CEE_LDC_I4_4,
         CEE_LDC_I4_5, CEE_LDC_I4_6, CEE_LDC_I4_7, CEE_LDC_I4_8,
     };
@@ -70,7 +72,7 @@ ILInstr* ILRewriterWrapper::LoadInt32(const INT32 value) const
 
 ILInstr* ILRewriterWrapper::LoadArgument(const UINT16 index) const
 {
-    static const std::vector<OPCODE> opcodes = {
+    static constexpr std::array<OPCODE, 4> opcodes = {
         CEE_LDARG_0,
         CEE_LDARG_1,
         CEE_LDARG_2,
@@ -264,7 +266,7 @@ ILInstr* ILRewriterWrapper::LoadStr(mdString token) const
 
 ILInstr* ILRewriterWrapper::StLocal(unsigned index) const
 {
-    static const std::vector<OPCODE> opcodes = {
+    static constexpr std::array<OPCODE, 4> opcodes = {
         CEE_STLOC_0,
         CEE_STLOC_1,
         CEE_STLOC_2,
@@ -292,7 +294,7 @@ ILInstr* ILRewriterWrapper::StLocal(unsigned index) const
 
 ILInstr* ILRewriterWrapper::LoadLocal(unsigned index) const
 {
-    static const std::vector<OPCODE> opcodes = {
+    static constexpr std::array<OPCODE, 4> opcodes = {
         CEE_LDLOC_0,
         CEE_LDLOC_1,
         CEE_LDLOC_2,

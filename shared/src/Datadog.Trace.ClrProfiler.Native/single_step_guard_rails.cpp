@@ -51,8 +51,6 @@ HRESULT SingleStepGuardRails::CheckRuntime(const RuntimeInformation& runtimeInfo
     // We're doing single-step instrumentation, check if we're in an EOL environment
     
     IUnknown* tstVerProfilerInfo;
-    std::string unsupportedRuntimeVersion;
-    std::string unsupportedSummary;
 
     if (runtimeInformation.is_core())
     {

@@ -649,8 +649,8 @@ namespace iast
     {
         if (_signatureType == SignatureTypes::Method)
         {
-            auto paramsStr = GetParamsRepresentation();
-            return memberName.c_str() + paramsStr;
+            const auto &paramsStr = GetParamsRepresentation();
+            return memberName + paramsStr;
         }
         return memberName;
     }

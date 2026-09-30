@@ -88,7 +88,7 @@ inline Logger Logger::Create()
 
 inline std::string Logger::SanitizeProcessName(std::string const& processName)
 {
-    const auto process_name_without_extension = processName.substr(0, processName.find_last_of("."));
+    const auto process_name_without_extension = processName.substr(0, processName.find_last_of('.'));
     const std::regex dash_or_space_or_tab("-|\\s|\\t");
     return std::regex_replace(process_name_without_extension, dash_or_space_or_tab, "_");
 }
