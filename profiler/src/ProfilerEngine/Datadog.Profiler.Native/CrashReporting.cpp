@@ -325,16 +325,20 @@ int32_t CrashReporting::ResolveStacks(int32_t crashingThreadId, ResolveManagedCa
             CHECK_RESULT(ddog_crasht_StackTrace_set_complete(&stackTrace));
         }
 
-        auto threadIdStr = std::to_string(threadId);
         // stackTrace is consumed by the API, meaning that we *MUST* not use this handle
-        auto thread = ddog_crasht_ThreadData{
-            .crashed = currentIsCrashingThread,
-            .name = {threadIdStr.data(), threadIdStr.size()},
-            .stack = stackTrace,
-            .state = {nullptr, 0}
-        };
-
-        CHECK_RESULT(ddog_crasht_CrashInfoBuilder_with_thread(&_builder, thread));
+        if (currentIsCrashingThread)
+        {
+            CHECK_RESULT(ddog_crasht_CrashInfoBuilder_with_stack(&_builder, &stackTrace));
+        } else {
+            auto threadIdStr = std::to_string(threadId);
+            auto thread = ddog_crasht_ThreadData{
+                .crashed = false,
+                .name = {threadIdStr.data(), threadIdStr.size()},
+                .stack = stackTrace,
+                .state = {nullptr, 0}
+            };
+            CHECK_RESULT(ddog_crasht_CrashInfoBuilder_with_thread(&_builder, thread));
+        }
         successfulThreads++;
     }
 
