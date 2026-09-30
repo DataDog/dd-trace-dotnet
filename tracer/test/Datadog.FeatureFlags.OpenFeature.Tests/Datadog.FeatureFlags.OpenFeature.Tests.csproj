@@ -1,11 +1,11 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFrameworks>net8.0;net9.0</TargetFrameworks>
+    <!-- netcoreapp3.1 consumes the netstandard2.0 asset and exercises the ExperimentalAttribute polyfill. -->
+    <TargetFrameworks>netcoreapp3.1;net8.0;net9.0</TargetFrameworks>
     <!-- The test assembly must be signed to access tracer internals; OpenFeature and its provider are unsigned. -->
     <NoWarn>$(NoWarn);CS8002</NoWarn>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="OpenFeature" Version="2.3.0" />
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="5.0.0" />
     <ProjectReference Include="../../src/Datadog.FeatureFlags.OpenFeature/Datadog.FeatureFlags.OpenFeature.csproj" />
     <ProjectReference Include="../../src/Datadog.Trace/Datadog.Trace.csproj" Aliases="Tracer" />

@@ -72,14 +72,13 @@ RUN /<APP_DIRECTORY>/datadog/createLogPath.sh
 
 Docker examples are available [here](https://github.com/DataDog/dd-trace-dotnet/tree/master/tracer/samples/NugetDeployment)
 
-## Experimental synchronous resolution (POC)
+## Synchronous evaluation (experimental)
 
-This worktree proposes five synchronous methods on `DatadogProvider`:
-`ResolveBooleanValue`, `ResolveIntegerValue`, `ResolveDoubleValue`,
+`DatadogProvider` provides experimental synchronous methods for code that cannot
+await: `ResolveBooleanValue`, `ResolveIntegerValue`, `ResolveDoubleValue`,
 `ResolveStringValue`, and `ResolveStructureValue`. Each returns OpenFeature
-`ResolutionDetails<T>` and calls the same local evaluator as its async counterpart.
-Evaluation does not wait for configuration or perform a network fetch. Provider
-initialization and configuration delivery remain asynchronous.
+`ResolutionDetails<T>` from the local evaluator. Register the provider with
+`SetProviderAsync` first; initialization and configuration delivery remain asynchronous.
 
 ```csharp
 using Datadog.FeatureFlags.OpenFeature;
@@ -96,47 +95,20 @@ var result = provider.ResolveBooleanValue("new-checkout", false, context);
 bool enabled = result.Value;
 ```
 
-These are Datadog extensions, not methods on OpenFeature's `IFeatureClient`.
-They use only the supplied context: global, client, and transaction context are
-not merged. They bypass the OpenFeature client pipeline, including hooks,
-client lifecycle checks, evaluation metrics, and span enrichment. Evaluator-owned
-exposure recording remains on the shared evaluation path. Missing configuration
-returns the supplied default and `ProviderNotReady`; a canceled token and a null
-flag key retain the direct async provider methods' exception behavior. Callers
-should inspect the returned error details when a default is unsuitable.
+These methods are Datadog extensions, outside OpenFeature's `IFeatureClient` API.
+They use only the context you pass; global, client, and transaction context are
+not merged, and OpenFeature client lifecycle checks do not run. The provider's
+own hooks run before the call returns, recording evaluation metrics on supported
+frameworks and span enrichment when enabled. Hooks registered on the OpenFeature
+API or client do not run. Evaluator-owned exposure recording remains enabled.
 
-This POC marks only the new methods with `ExperimentalAttribute` and diagnostic
-`DDFF001`. The attribute is a C# convention introduced in C# 12, not an existing
-dd-trace-dotnet API convention. An internal compatibility definition keeps the
-annotation on the `net462` and `netstandard2.0` assets without raising their runtime
-requirements. Older compilers may not report the diagnostic. Existing async API
-calls require no opt-in.
+Until configuration arrives, a call returns your default value with
+`ProviderNotReady`. Inspect the error details when a default is unsuitable.
+Cancellation and invalid arguments retain the direct async provider methods'
+exception behavior.
 
-The proposed lifecycle is experimental at introduction, then warning-level
-`Obsolete` once this package supports an equivalent stable OpenFeature API with
-migration instructions. Deprecation and removal are separate: publish a migration
-window before removal. Adding an obsolete warning can affect applications that
-treat warnings as errors. There is no upstream replacement version or removal
-date promised by this POC.
-
-The focused tests can be run with:
-
-```sh
-dotnet test tracer/test/Datadog.FeatureFlags.OpenFeature.Tests/Datadog.FeatureFlags.OpenFeature.Tests.csproj -f net8.0 -c Release -p:GeneratePackageOnBuild=false
-```
-
-These tests link the same `ufc-config.json` and `evaluation-cases/*.json` snapshot
-used by `FeatureFlagsEvaluatorTests`. Every case runs through both the public
-synchronous and asynchronous provider methods, checking values, reasons, and
-error codes against the JSON expectations. They connect the provider to the real
-tracer evaluator through an internal constructor, retaining the production
-context and result conversions without requiring native instrumentation. The
-fixture files are neither copied nor modified, so snapshot updates apply to both
-suites. Additional tests cover cancellation and API annotations.
-
-This validates provider evaluation behavior; it does not establish successful
-configuration delivery or telemetry parity. Client-pipeline support and
-instrumented end-to-end validation remain work before release.
+These APIs report diagnostic `DDFF001`; suppress it explicitly to opt in. Older
+compilers may not enforce this diagnostic. Existing async calls require no opt-in.
 
 ## Get in touch
 

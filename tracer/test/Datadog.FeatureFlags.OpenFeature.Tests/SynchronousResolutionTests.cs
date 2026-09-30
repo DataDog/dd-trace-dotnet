@@ -8,6 +8,7 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using FluentAssertions;
 using OpenFeature.Constant;
 using OpenFeature.Model;
 using Xunit;
@@ -19,89 +20,34 @@ namespace Datadog.FeatureFlags.OpenFeature.Tests;
 
 public class SynchronousResolutionTests
 {
-    [Fact]
-    public async Task BooleanPreservesDefaultAndErrorWithoutInstrumentation()
+    public static TheoryData<string, object> Fallbacks => new()
+    {
+        { "Boolean", true },
+        { "Double", 12.5 },
+        { "Integer", 42 },
+        { "String", "fallback" },
+        { "Structure", new Value(Structure.Builder().Set("fallback", true).Build()) },
+    };
+
+    [Theory]
+    [MemberData(nameof(Fallbacks))]
+    public async Task SyncMatchesAsyncWithoutInstrumentation(string type, object fallback)
     {
         using var provider = new DatadogProvider();
-        var fallback = true;
         var context = EvaluationContext.Builder().SetTargetingKey("customer-123").Build();
-        var result = provider.ResolveBooleanValue("flag", fallback, context);
-        var asyncResult = await provider.ResolveBooleanValueAsync("flag", fallback, context);
 
-        Assert.Equal("flag", result.FlagKey);
-        Assert.Equal(fallback, result.Value);
-        Assert.Equal(ErrorType.ProviderNotReady, result.ErrorType);
-        Assert.Equal(asyncResult.Value, result.Value);
-        Assert.Equal(asyncResult.ErrorType, result.ErrorType);
-        Assert.Equal(asyncResult.ErrorMessage, result.ErrorMessage);
-    }
+        var (sync, asyncResult) = type switch
+        {
+            "Boolean" => ((object)provider.ResolveBooleanValue("flag", (bool)fallback, context), (object)await provider.ResolveBooleanValueAsync("flag", (bool)fallback, context)),
+            "Double" => (provider.ResolveDoubleValue("flag", (double)fallback, context), await provider.ResolveDoubleValueAsync("flag", (double)fallback, context)),
+            "Integer" => (provider.ResolveIntegerValue("flag", (int)fallback, context), await provider.ResolveIntegerValueAsync("flag", (int)fallback, context)),
+            "String" => (provider.ResolveStringValue("flag", (string)fallback, context), await provider.ResolveStringValueAsync("flag", (string)fallback, context)),
+            "Structure" => (provider.ResolveStructureValue("flag", (Value)fallback, context), await provider.ResolveStructureValueAsync("flag", (Value)fallback, context)),
+            _ => throw new ArgumentOutOfRangeException(nameof(type)),
+        };
 
-    [Fact]
-    public async Task DoublePreservesDefaultAndErrorWithoutInstrumentation()
-    {
-        using var provider = new DatadogProvider();
-        var fallback = 12.5;
-        var context = EvaluationContext.Builder().SetTargetingKey("customer-123").Build();
-        var result = provider.ResolveDoubleValue("flag", fallback, context);
-        var asyncResult = await provider.ResolveDoubleValueAsync("flag", fallback, context);
-
-        Assert.Equal("flag", result.FlagKey);
-        Assert.Equal(fallback, result.Value);
-        Assert.Equal(ErrorType.ProviderNotReady, result.ErrorType);
-        Assert.Equal(asyncResult.Value, result.Value);
-        Assert.Equal(asyncResult.ErrorType, result.ErrorType);
-        Assert.Equal(asyncResult.ErrorMessage, result.ErrorMessage);
-    }
-
-    [Fact]
-    public async Task IntegerPreservesDefaultAndErrorWithoutInstrumentation()
-    {
-        using var provider = new DatadogProvider();
-        var fallback = 42;
-        var context = EvaluationContext.Builder().SetTargetingKey("customer-123").Build();
-        var result = provider.ResolveIntegerValue("flag", fallback, context);
-        var asyncResult = await provider.ResolveIntegerValueAsync("flag", fallback, context);
-
-        Assert.Equal("flag", result.FlagKey);
-        Assert.Equal(fallback, result.Value);
-        Assert.Equal(ErrorType.ProviderNotReady, result.ErrorType);
-        Assert.Equal(asyncResult.Value, result.Value);
-        Assert.Equal(asyncResult.ErrorType, result.ErrorType);
-        Assert.Equal(asyncResult.ErrorMessage, result.ErrorMessage);
-    }
-
-    [Fact]
-    public async Task StringPreservesDefaultAndErrorWithoutInstrumentation()
-    {
-        using var provider = new DatadogProvider();
-        var fallback = "fallback";
-        var context = EvaluationContext.Builder().SetTargetingKey("customer-123").Build();
-        var result = provider.ResolveStringValue("flag", fallback, context);
-        var asyncResult = await provider.ResolveStringValueAsync("flag", fallback, context);
-
-        Assert.Equal("flag", result.FlagKey);
-        Assert.Equal(fallback, result.Value);
-        Assert.Equal(ErrorType.ProviderNotReady, result.ErrorType);
-        Assert.Equal(asyncResult.Value, result.Value);
-        Assert.Equal(asyncResult.ErrorType, result.ErrorType);
-        Assert.Equal(asyncResult.ErrorMessage, result.ErrorMessage);
-    }
-
-    [Fact]
-    public async Task StructurePreservesDefaultAndErrorWithoutInstrumentation()
-    {
-        using var provider = new DatadogProvider();
-        var fallback = new Value(Structure.Builder().Set("fallback", true).Build());
-        var context = EvaluationContext.Builder().SetTargetingKey("customer-123").Build();
-        var result = provider.ResolveStructureValue("flag", fallback, context);
-        var asyncResult = await provider.ResolveStructureValueAsync("flag", fallback, context);
-
-        Assert.Equal("flag", result.FlagKey);
-        Assert.Equal(fallback, result.Value);
-        Assert.Equal(ErrorType.ProviderNotReady, result.ErrorType);
-        Assert.Equal(asyncResult.Value, result.Value);
-        Assert.Equal(asyncResult.ErrorType, result.ErrorType);
-        Assert.Equal(asyncResult.ErrorMessage, result.ErrorMessage);
+        sync.Should().BeEquivalentTo(new { FlagKey = "flag", Value = fallback, ErrorType = ErrorType.ProviderNotReady }, o => o.ExcludingMissingMembers());
+        sync.Should().BeEquivalentTo(asyncResult, o => o.RespectingRuntimeTypes());
     }
 
     [Theory]
