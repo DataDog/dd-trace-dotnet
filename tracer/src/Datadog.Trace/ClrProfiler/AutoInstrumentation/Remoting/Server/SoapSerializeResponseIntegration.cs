@@ -14,7 +14,6 @@ using System.Runtime.Remoting.Channels;
 using System.Runtime.Remoting.Messaging;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.Logging;
 using Datadog.Trace.Tagging;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Remoting.Server
@@ -49,18 +48,37 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Remoting.Server
         /// <returns>Calltarget state value</returns>
         internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, IServerResponseChannelSinkStack sinkStack, IMessage msg, bool clientIsClr, ref ITransportHeaders headers, ref Stream stream)
         {
-            if (msg is IMethodReturnMessage methodReturnMessage)
+            if (msg is not IMethodReturnMessage methodReturnMessage)
             {
-                var scope = Tracer.Instance.InternalActiveScope;
-                if (scope?.Span.Tags is RemotingTags tags)
-                {
-                    if (methodReturnMessage.Exception is Exception exception)
-                    {
-                        scope.Span.SetException(exception);
-                    }
+                return CallTargetState.GetDefault();
+            }
 
-                    return new CallTargetState(scope);
+            Scope? scope = null;
+            if (sinkStack is not null)
+            {
+                RemotingIntegration.TryGetAndRemoveServerScope(sinkStack, out scope);
+            }
+
+            // Defensive fallback in case correlation is ever missing - still emit a (root) span rather
+            // than lose it entirely.
+            scope ??= RemotingIntegration.CreateServerScope(methodReturnMessage, default);
+
+            if (scope is not null)
+            {
+                if (scope.Span.Tags is RemotingTags { MethodName: null } tags)
+                {
+                    // ProcessMessage didn't have a request message to read the method name from.
+                    var methodName = (methodReturnMessage as IMethodMessage)?.MethodName;
+                    tags.MethodName = methodName;
+                    scope.Span.ResourceName ??= methodName;
                 }
+
+                if (methodReturnMessage.Exception is Exception exception)
+                {
+                    scope.Span.SetException(exception);
+                }
+
+                return new CallTargetState(scope);
             }
 
             return CallTargetState.GetDefault();
