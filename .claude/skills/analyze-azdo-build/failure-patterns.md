@@ -160,7 +160,7 @@ Failed to walk N stacks for sampled exception: E_FAIL
 |---------|--------|
 | net6.0 | Pass |
 | net8.0 | Pass |
-| net10.0 | **Fail** |
+| net11.0 | **Fail** |
 
 **Cause**: Timing-sensitive behavior, runtime-specific quirks, or transient environment issues affecting a single runtime variant.
 

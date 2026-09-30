@@ -670,6 +670,67 @@ public static class CallTargetInvoker
         return new CallTargetReturn<TReturn>(returnValue);
     }
 
+// net6.0 is the only Datadog.Trace asset a .NET 11 process can load, and the native side probes for
+// EndMethodRuntimeAsync by name before it will rewrite a runtime-async method; see RuntimeAsyncHelper.
+#if NET6_0_OR_GREATER
+
+    /// <summary>
+    /// End Method invoker for a .NET 11 runtime-async method declaring a non-generic Task or ValueTask.
+    /// </summary>
+    /// <remarks>
+    /// The body of such a method leaves nothing on the evaluation stack at <c>ret</c>, so the rewriter
+    /// treats its effective return type as void. Unlike the state-machine case there is no task to
+    /// attach a continuation to, and none is needed: the epilog already runs at true completion.
+    /// </remarks>
+    /// <typeparam name="TIntegration">Integration type</typeparam>
+    /// <typeparam name="TTarget">Target type</typeparam>
+    /// <typeparam name="TDeclaredReturn">The Task or ValueTask the method declares</typeparam>
+    /// <param name="instance">Instance value</param>
+    /// <param name="exception">Exception value</param>
+    /// <param name="state">CallTarget state</param>
+    /// <returns>CallTarget return structure</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static CallTargetReturn EndMethodRuntimeAsync<TIntegration, TTarget, TDeclaredReturn>(TTarget? instance, Exception? exception, in CallTargetState state)
+    {
+        if (CanExecuteCallTargetIntegration<TIntegration>() && IntegrationOptions<TIntegration, TTarget>.IsIntegrationEnabled)
+        {
+            IntegrationOptions<TIntegration, TTarget>.RecordTelemetry();
+            return RuntimeAsyncEndMethodHandler<TIntegration, TTarget, TDeclaredReturn>.Invoke(instance, exception, in state);
+        }
+
+        return CallTargetReturn.GetDefault();
+    }
+
+    /// <summary>
+    /// End Method invoker for a .NET 11 runtime-async method declaring Task&lt;T&gt; or ValueTask&lt;T&gt;.
+    /// </summary>
+    /// <remarks>
+    /// <typeparamref name="TReturn"/> is the unwrapped T, which is what the body actually leaves on the
+    /// evaluation stack at <c>ret</c>. The callback runs at true completion with the real result, so an
+    /// awaited failure arrives as a thrown exception rather than as a faulted task.
+    /// </remarks>
+    /// <typeparam name="TIntegration">Integration type</typeparam>
+    /// <typeparam name="TTarget">Target type</typeparam>
+    /// <typeparam name="TReturn">The unwrapped return type</typeparam>
+    /// <typeparam name="TDeclaredReturn">The Task&lt;T&gt; or ValueTask&lt;T&gt; the method declares</typeparam>
+    /// <param name="instance">Instance value</param>
+    /// <param name="returnValue">Return value</param>
+    /// <param name="exception">Exception value</param>
+    /// <param name="state">CallTarget state</param>
+    /// <returns>CallTarget return structure</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static CallTargetReturn<TReturn> EndMethodRuntimeAsync<TIntegration, TTarget, TReturn, TDeclaredReturn>(TTarget? instance, TReturn? returnValue, Exception? exception, in CallTargetState state)
+    {
+        if (CanExecuteCallTargetIntegration<TIntegration>() && IntegrationOptions<TIntegration, TTarget>.IsIntegrationEnabled)
+        {
+            IntegrationOptions<TIntegration, TTarget>.RecordTelemetry();
+            return RuntimeAsyncEndMethodHandler<TIntegration, TTarget, TReturn, TDeclaredReturn>.Invoke(instance, returnValue, exception, in state);
+        }
+
+        return new CallTargetReturn<TReturn>(returnValue);
+    }
+#endif
+
     /// <summary>
     /// Log integration exception
     /// </summary>

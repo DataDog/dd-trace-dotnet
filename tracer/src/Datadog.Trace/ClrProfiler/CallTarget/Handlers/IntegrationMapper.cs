@@ -802,7 +802,7 @@ internal static class IntegrationMapper
         ilWriter.Emit(OpCodes.Ret);
 
         Log.Debug("Created AsyncEndMethod Dynamic Method for '{IntegrationType}' integration. [Target={TargetType}, ReturnType={ReturnType}]", integrationType.FullName, targetType.FullName, returnType.FullName);
-        return new CreateAsyncEndMethodResult(callMethod, preserveContext);
+        return new CreateAsyncEndMethodResult(callMethod, preserveContext, isTaskReturn);
     }
 
     private static MethodInfo? GetOnMethodEndMethodInfo(Type integrationType, string returnTypeName)

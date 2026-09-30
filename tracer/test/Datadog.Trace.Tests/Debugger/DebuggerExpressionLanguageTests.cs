@@ -95,6 +95,15 @@ namespace Datadog.Trace.Tests.Debugger
             yield return [new Hashtable { { "password", secret }, { "public", "hello" } }];
         }
 
+        public static IEnumerable<object[]> IndexerArgumentsImplicitlyConvertibleToInt32()
+        {
+            yield return [(sbyte)1];
+            yield return [(byte)1];
+            yield return [(short)1];
+            yield return [(ushort)1];
+            yield return [(char)1];
+        }
+
         public static IEnumerable<object[]> SensitiveDictionaryValueOperations()
         {
             yield return
@@ -253,6 +262,96 @@ namespace Datadog.Trace.Tests.Debugger
             Assert.NotNull(result);
             Assert.IsType<TimeSpan>(result);
             Assert.True(compiled.Errors == null || compiled.Errors.Length == 0);
+        }
+
+        [Fact]
+        public void ProbeExpressionParser_IntKeyDictionaryIndex_ReturnsValue()
+        {
+            var scopeMembers = CreateScopeMembers();
+            var dictionary = new Dictionary<int, int> { { 1, 1 }, { 4, 4 } };
+            scopeMembers.AddMember(new ScopeMember("IntDictionaryLocal", dictionary.GetType(), dictionary, ScopeMemberKind.Local));
+
+            const string json = """
+                                {
+                                  "index": [
+                                    { "ref": "IntDictionaryLocal" },
+                                    4
+                                  ]
+                                }
+                                """;
+
+            var compiled = ProbeExpressionParser<int>.ParseExpression(json, scopeMembers);
+            var result = EvaluateCompiled(compiled, scopeMembers);
+
+            Assert.Equal(4, result);
+            Assert.True(compiled.Errors == null || compiled.Errors.Length == 0);
+        }
+
+        [Fact]
+        public void ProbeExpressionParser_MissingIntKeyDictionaryIndex_ReturnsNull()
+        {
+            var scopeMembers = CreateScopeMembers();
+            var dictionary = new Dictionary<int, int> { { 1, 1 } };
+            scopeMembers.AddMember(new ScopeMember("IntDictionaryLocal", dictionary.GetType(), dictionary, ScopeMemberKind.Local));
+
+            const string json = """
+                                {
+                                  "index": [
+                                    { "ref": "IntDictionaryLocal" },
+                                    4
+                                  ]
+                                }
+                                """;
+
+            var compiled = ProbeExpressionParser<object>.ParseExpression(json, scopeMembers);
+            var result = EvaluateCompiled(compiled, scopeMembers);
+
+            Assert.Null(result);
+            Assert.True(compiled.Errors == null || compiled.Errors.Length == 0);
+        }
+
+        [Theory]
+        [MemberData(nameof(IndexerArgumentsImplicitlyConvertibleToInt32))]
+        public void ProbeExpressionParser_ImplicitInt32ListIndex_ReturnsValue(object index)
+        {
+            var scopeMembers = CreateScopeMembers();
+            scopeMembers.AddMember(new ScopeMember("IndexLocal", index.GetType(), index, ScopeMemberKind.Local));
+
+            const string json = """
+                                {
+                                  "index": [
+                                    { "ref": "CollectionLocal" },
+                                    { "ref": "IndexLocal" }
+                                  ]
+                                }
+                                """;
+
+            var compiled = ProbeExpressionParser<string>.ParseExpression(json, scopeMembers);
+            var result = EvaluateCompiled(compiled, scopeMembers);
+
+            Assert.Equal("1st Item", result);
+            Assert.True(compiled.Errors == null || compiled.Errors.Length == 0);
+        }
+
+        [Fact]
+        public void ProbeExpressionParser_FractionalListIndex_ReturnsEvaluationError()
+        {
+            var scopeMembers = CreateScopeMembers();
+
+            const string json = """
+                                {
+                                  "index": [
+                                    { "ref": "CollectionLocal" },
+                                    1.9
+                                  ]
+                                }
+                                """;
+
+            var compiled = ProbeExpressionParser<object>.ParseExpression(json, scopeMembers);
+            var result = EvaluateCompiled(compiled, scopeMembers);
+
+            Assert.Same(UndefinedValue.Instance, result);
+            Assert.Single(compiled.Errors);
         }
 
         [Fact]

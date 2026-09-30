@@ -144,6 +144,45 @@ namespace Datadog.Trace.Tests.Agent
         }
 
         [Fact]
+        public void DatadogStatsBuffer_AlignsNextStartAndUsesConfiguredDuration()
+        {
+            const long secondNs = 1_000_000_000;
+            var payload = new ClientStatsPayload(MutableSettings.CreateForTesting(new(), []));
+            var current = CreateDatadogBuffer(payload, initialTimestampNs: 15 * secondNs);
+            var next = CreateDatadogBuffer(payload, initialTimestampNs: 15 * secondNs);
+
+            var nextStart = current.GetNextStart(boundaryNs: 27 * secondNs);
+            var duration = current.GetDuration(nextStart, configuredDurationNs: 10 * secondNs);
+            next.SetStart(nextStart);
+
+            current.Start.Should().Be(10 * secondNs);
+            next.Start.Should().Be(20 * secondNs);
+            duration.Should().Be(10 * secondNs);
+        }
+
+        [Fact]
+        public void OtlpStatsBuffer_UsesContiguousBoundaries()
+        {
+            const long secondNs = 1_000_000_000;
+            var payload = new ClientStatsPayload(MutableSettings.CreateForTesting(new(), []));
+            var current = CreateOtlpBuffer(payload, initialTimestampNs: 15 * secondNs);
+            var next = CreateOtlpBuffer(payload, initialTimestampNs: 15 * secondNs);
+
+            var nextStart = current.GetNextStart(boundaryNs: 27 * secondNs);
+            var duration = current.GetDuration(nextStart, configuredDurationNs: 10 * secondNs);
+            next.SetStart(nextStart);
+
+            duration.Should().Be(12 * secondNs);
+            next.Start.Should().Be(27 * secondNs);
+
+            nextStart = next.GetNextStart(boundaryNs: 26 * secondNs);
+            var backwardsDuration = next.GetDuration(nextStart, configuredDurationNs: 10 * secondNs);
+            current.SetStart(nextStart);
+            backwardsDuration.Should().Be(1);
+            current.Start.Should().Be((27 * secondNs) + 1);
+        }
+
+        [Fact]
         public void Reset_ResetsActiveBucketCount()
         {
             var buffer = CreateBuffer(new ClientStatsPayload(MutableSettings.CreateForTesting(new(), [])));
@@ -314,7 +353,13 @@ namespace Datadog.Trace.Tests.Agent
         }
 
         private static StatsBuffer CreateBuffer(ClientStatsPayload payload)
-            => new(payload, new StatsCardinalityLimiter(new TracerSettings()), new StatsCardinalityReporter(NullMetricsTelemetryCollector.Instance));
+            => CreateDatadogBuffer(payload, initialTimestampNs: 0);
+
+        private static StatsBuffer.DatadogStatsBuffer CreateDatadogBuffer(ClientStatsPayload payload, long initialTimestampNs)
+            => new(payload, new StatsCardinalityLimiter(new TracerSettings()), new StatsCardinalityReporter(NullMetricsTelemetryCollector.Instance), initialTimestampNs);
+
+        private static StatsBuffer.OtlpStatsBuffer CreateOtlpBuffer(ClientStatsPayload payload, long initialTimestampNs)
+            => new(payload, new StatsCardinalityLimiter(new TracerSettings()), new StatsCardinalityReporter(NullMetricsTelemetryCollector.Instance), initialTimestampNs);
 
         private static StatsAggregationKey CreateKey(
             string resource,
