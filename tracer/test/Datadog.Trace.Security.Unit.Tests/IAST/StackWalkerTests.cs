@@ -85,6 +85,18 @@ namespace Datadog.Trace.Security.Unit.Tests.IAST
         }
 
         [Fact]
+        public void GivenACallerWithALineButNoFileName_WhenTryGetFrame_ThenItIsNotConsideredToHaveDebugInfo()
+        {
+            var stack = new FakeStackTrace(
+                new FakeStackFrame(typeof(NoPdbCaller).GetMethod(nameof(NoPdbCaller.Call))!, line: 42, fileName: string.Empty),
+                new FakeStackFrame(typeof(PdbCaller).GetMethod(nameof(PdbCaller.Call))!, line: 7));
+
+            StackWalker.TryGetFrame(stack, out var frame, out var identityFrame).Should().BeTrue();
+            frame!.GetMethod()!.DeclaringType.Should().Be(typeof(PdbCaller));
+            identityFrame!.GetMethod()!.DeclaringType.Should().Be(typeof(NoPdbCaller));
+        }
+
+        [Fact]
         public void GivenANearlyExhaustedStack_WhenGetStackTrace_ThenItBailsOutInsteadOfWalking()
         {
             RecurseUntilTheStackIsNearlyExhausted().Should().BeNull();
@@ -134,13 +146,13 @@ namespace Datadog.Trace.Security.Unit.Tests.IAST
             public override StackFrame[] GetFrames() => frames;
         }
 
-        private sealed class FakeStackFrame(MethodBase method, int line) : StackFrame
+        private sealed class FakeStackFrame(MethodBase method, int line, string? fileName = "File.cs") : StackFrame
         {
             public override MethodBase GetMethod() => method;
 
             public override int GetFileLineNumber() => line;
 
-            public override string? GetFileName() => line > 0 ? "File.cs" : null;
+            public override string? GetFileName() => line > 0 ? fileName : null;
         }
     }
 }

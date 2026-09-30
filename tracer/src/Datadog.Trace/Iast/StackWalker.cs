@@ -12,6 +12,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using Datadog.Trace.AppSec;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Iast;
 
@@ -76,7 +77,7 @@ internal static class StackWalker
         var frames = stackTrace.GetFrames() ?? [];
         foreach (var frame in frames)
         {
-            var hasDebugInfo = frame?.GetFileLineNumber() > 0;
+            var hasDebugInfo = frame?.GetFileLineNumber() > 0 && !StringUtil.IsNullOrEmpty(frame.GetFileName());
 
             // once there is a fallback, only a frame with debug info can replace it, so don't pay
             // for resolving the assembly of the others
