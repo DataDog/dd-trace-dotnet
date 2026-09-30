@@ -8,6 +8,7 @@
 #nullable enable
 
 using System;
+using System.Runtime.CompilerServices;
 using System.Runtime.Remoting.Messaging;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
@@ -29,7 +30,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Remoting
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(RemotingIntegration));
 
-        internal static Scope? CreateServerScope(IMessage msg, PropagationContext context)
+        // sinkStack is stable across one request/response cycle regardless of the formatter chain shape,
+        // so it's a reliable key for correlating ProcessMessage's scope with the later SerializeResponse call.
+        private static readonly ConditionalWeakTable<object, Scope> ServerScopesBySinkStack = new();
+
+        internal static Scope? CreateServerScope(IMessage? msg, PropagationContext context)
         {
             var tracer = Tracer.Instance;
 
@@ -61,6 +66,41 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Remoting
             }
 
             return scope;
+        }
+
+        internal static void SetServerScope(object sinkStack, Scope? scope)
+        {
+            if (scope is not null)
+            {
+                // AddOrUpdate isn't available on the .NET Framework ConditionalWeakTable API surface
+                ServerScopesBySinkStack.Remove(sinkStack);
+                ServerScopesBySinkStack.Add(sinkStack, scope);
+            }
+        }
+
+        // A preceding sink that didn't recognize the content-type may have left a placeholder scope for
+        // this sinkStack. Discard it (without sending its span) before creating the real one, while it's
+        // still the active scope - disposing it later would leave the ambient scope chain unpoppable.
+        internal static void DiscardStalePlaceholderScope(object sinkStack)
+        {
+            if (ServerScopesBySinkStack.TryGetValue(sinkStack, out var previousScope) && previousScope is not null)
+            {
+                previousScope.SetFinishOnClose(false);
+                previousScope.Dispose();
+                ServerScopesBySinkStack.Remove(sinkStack);
+            }
+        }
+
+        internal static bool TryGetAndRemoveServerScope(object sinkStack, out Scope? scope)
+        {
+            if (ServerScopesBySinkStack.TryGetValue(sinkStack, out scope))
+            {
+                ServerScopesBySinkStack.Remove(sinkStack);
+                return true;
+            }
+
+            scope = null;
+            return false;
         }
 
         internal static Scope? CreateClientScope(IMessage msg)
