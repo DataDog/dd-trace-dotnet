@@ -11,6 +11,7 @@ on:
       - 'tracer/src/Datadog.Tracer.Native/dd_profiler_constants.h'
       - 'tracer/src/Datadog.Tracer.Native/Generated/generated_calltargets.g.cpp'
       - 'tracer/build/_build/NativeValidation/NativeModuleFilterValidator.cs'
+      - 'tracer/build/_build/Build.Shared.Steps.cs'
       - '.github/workflows/validate_native_module_filter.yml'
   schedule:
     - cron: '0 3 * * 1' # Every Monday at 3:00 AM UTC
