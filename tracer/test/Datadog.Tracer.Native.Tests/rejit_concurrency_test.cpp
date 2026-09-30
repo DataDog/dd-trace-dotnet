@@ -397,6 +397,19 @@ TEST(RejitHandlerShutdown, EnqueueForRejitResolvesPromiseAfterShutdown)
     EXPECT_EQ(std::future_status::ready, future.wait_for(1s));
 }
 
+TEST(RejitHandlerShutdown, RefusedWorkItemReleasesWaiter)
+{
+    RejitHandlerContext context;
+    const auto& handler = context.handler;
+    handler->Shutdown();
+
+    auto promise = std::make_shared<std::promise<void>>();
+    auto future = promise->get_future();
+    EXPECT_FALSE(handler->Enqueue(std::make_unique<RejitWorkItem>([] {}, [promise] { promise->set_value(); })));
+
+    EXPECT_EQ(std::future_status::ready, future.wait_for(0s));
+}
+
 TEST(RejitHandlerShutdown, AcceptedWorkCompletesBeforeTerminator)
 {
     constexpr int iterations = 200;
@@ -434,6 +447,62 @@ TEST(RejitHandlerShutdown, AcceptedWorkCompletesBeforeTerminator)
     }
 
     EXPECT_EQ(0, lostItems);
+}
+
+TEST(RejitHandlerShutdown, EnqueueForRejitRacingShutdownReleasesEveryWaiter)
+{
+    constexpr int iterations = 200;
+    constexpr int producersCount = 4;
+    constexpr ModuleID moduleId = 1;
+    const std::vector<MethodIdentifier> methods{{moduleId, 2}};
+    int unreleasedWaiters = 0;
+    for (int iteration = 0; iteration < iterations; iteration++)
+    {
+        std::atomic<int> enqueued{0};
+        // Each promise stays alive like the tracer's callers keep theirs, so a missed release is a hang rather
+        // than a broken_promise.
+        std::vector<std::vector<std::pair<std::shared_ptr<std::promise<void>>, std::future<void>>>> waiters(
+            producersCount);
+        RejitHandlerContext context;
+        const auto& handler = context.handler;
+        handler->RegisterModule(moduleId);
+
+        std::vector<std::thread> producers;
+        for (int producer = 0; producer < producersCount; producer++)
+        {
+            producers.emplace_back(
+                [&, producer]
+                {
+                    while (!handler->IsShutdownRequested())
+                    {
+                        auto promise = std::make_shared<std::promise<void>>();
+                        waiters[producer].emplace_back(promise, promise->get_future());
+                        handler->EnqueueForRejit(handler->GetRejitRequests(methods), promise);
+                        enqueued++;
+                    }
+                });
+        }
+
+        EXPECT_TRUE(WaitUntil([&] { return enqueued > 0; }));
+        handler->Shutdown();
+        for (auto& producer : producers)
+        {
+            producer.join();
+        }
+
+        for (const auto& producerWaiters : waiters)
+        {
+            for (const auto& waiter : producerWaiters)
+            {
+                if (waiter.second.wait_for(0s) != std::future_status::ready)
+                {
+                    unreleasedWaiters++;
+                }
+            }
+        }
+    }
+
+    EXPECT_EQ(0, unreleasedWaiters);
 }
 
 TEST(RejitHandler, RequestRejitSkipsUnloadedGenerationAfterModuleIdReuse)
@@ -654,6 +723,29 @@ TEST(RejitHandler, RequestRejitKeepsAllModuleGenerationsAliveThroughClrCalls)
     EXPECT_EQ((std::vector<mdMethodDef>{1, 2, 3}), profilerInfo.requestedMethods);
 
     handler->Shutdown();
+}
+
+TEST(RejitWorkOffloader, ThrowingWorkItemReleasesWaiterAndLoopSurvives)
+{
+    MockCorProfilerInfo profilerInfo;
+    RejitWorkOffloader offloader(&profilerInfo);
+
+    auto promise = std::make_shared<std::promise<void>>();
+    auto future = promise->get_future();
+    offloader.Enqueue(std::make_unique<RejitWorkItem>(
+        [] { throw std::runtime_error("boom"); },
+        [promise] { promise->set_value(); }));
+
+    EXPECT_EQ(std::future_status::ready, future.wait_for(5s));
+
+    auto laterItem = std::make_shared<std::promise<void>>();
+    auto laterItemFuture = laterItem->get_future();
+    offloader.Enqueue(std::make_unique<RejitWorkItem>([laterItem] { laterItem->set_value(); }));
+
+    EXPECT_EQ(std::future_status::ready, laterItemFuture.wait_for(5s));
+
+    offloader.Enqueue(RejitWorkItem::CreateTerminatingWorkItem());
+    offloader.WaitForTermination();
 }
 
 TEST(RejitHandlerModule, ConcurrentMetadataCreationPublishesExactlyOneInstance)

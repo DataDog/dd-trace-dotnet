@@ -213,11 +213,15 @@ void DebuggerRejitPreprocessor::EnqueuePreprocessLineProbes(
         }
     };
 
+    std::function<void()> abandon = [localPromise = promise, rejitRequests]() {
+        if (localPromise != nullptr)
+        {
+            localPromise->set_value(rejitRequests);
+        }
+    };
+
     // Enqueue
-    if (!m_rejit_handler->Enqueue(std::make_unique<RejitWorkItem>(std::move(action))) && promise != nullptr)
-    {
-        promise->set_value(rejitRequests);
-    }
+    m_rejit_handler->Enqueue(std::make_unique<RejitWorkItem>(std::move(action), std::move(abandon)));
 }
 
 void DebuggerRejitPreprocessor::ProcessTypesForRejit(

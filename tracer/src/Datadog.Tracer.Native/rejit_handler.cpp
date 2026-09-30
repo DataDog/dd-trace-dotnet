@@ -411,6 +411,11 @@ bool RejitHandler::Enqueue(std::unique_ptr<RejitWorkItem>&& item)
     ReadLock lock(m_shutdown_lock);
     if (m_shutdown)
     {
+        if (item->abandon != nullptr)
+        {
+            item->abandon();
+        }
+
         return false;
     }
 
@@ -445,11 +450,15 @@ void RejitHandler::EnqueueForRejit(std::vector<RejitRequest> rejitRequests,
         }
     };
 
+    std::function<void()> abandon = [localPromise = promise]() {
+        if (localPromise != nullptr)
+        {
+            localPromise->set_value();
+        }
+    };
+
     // Enqueue
-    if (!Enqueue(std::make_unique<RejitWorkItem>(std::move(action))) && promise != nullptr)
-    {
-        promise->set_value();
-    }
+    Enqueue(std::make_unique<RejitWorkItem>(std::move(action), std::move(abandon)));
 }
 
 void RejitHandler::Shutdown()
