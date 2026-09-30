@@ -68,6 +68,12 @@ public:
     MOCK_METHOD(int32_t, CpuThreadsThreshold, (), (const override));
     MOCK_METHOD(int32_t, CodeHotspotsThreadsThreshold, (), (const override));
     MOCK_METHOD(bool, IsGarbageCollectionProfilingEnabled, (), (const override));
+    bool IsGcLifecycleEventsProcessingSkipped() const override
+    {
+        return GcLifecycleEventsProcessingSkipped;
+    }
+
+    bool GcLifecycleEventsProcessingSkipped = false;
     MOCK_METHOD(bool, IsHeapProfilingEnabled, (), (const override));
     MOCK_METHOD(bool, IsAllocationRecorderEnabled, (), (const override));
     MOCK_METHOD(bool, IsDebugInfoEnabled, (), (const override));

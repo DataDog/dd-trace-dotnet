@@ -61,6 +61,12 @@ namespace Datadog.Trace.Agent
 
         private byte[] _temporaryBuffer = new byte[1024];
 
+        /// <summary>
+        /// The array handed to <see cref="SpanBuffer.Detach"/> to swap when grabbing the data to flush.
+        /// Only ever touched by the flush loop, which flushes buffers one at a time.
+        /// </summary>
+        private byte[]? _spareBuffer;
+
         private TaskCompletionSource<bool> _forceFlush;
         private TaskCompletionSource<bool>? _pendingFlushRequest;
         private bool _flushLoopStopped;
@@ -286,9 +292,18 @@ namespace Datadog.Trace.Agent
         }
 
         /// <summary>
+        /// Swaps the active buffer, so that a test can set up a buffer that holds traces but is
+        /// neither active nor full. In production that state is only produced by a
+        /// <see cref="SpanBuffer.WriteStatus.Locked"/> write.
+        /// </summary>
+        [TestingOnly]
+        internal void SwapActiveBufferForTests()
+            => Volatile.Write(ref _activeBuffer, _activeBuffer == _frontBuffer ? _backBuffer : _frontBuffer);
+
+        /// <summary>
         /// Asks the flush loop to flush both buffers, and waits for that flush to complete. Buffers are
-        /// only ever locked and flushed by the flush loop, so that at most one buffer is unavailable to
-        /// the serialization thread at a time. Concurrent requests share a single flush pass.
+        /// only ever flushed by the flush loop, so at most one payload is in flight at a time.
+        /// Concurrent requests share a single flush pass.
         /// </summary>
         private Task RequestFullFlushAsync()
         {
@@ -353,11 +368,11 @@ namespace Datadog.Trace.Agent
 
                     // Once serialization has stopped, nothing new can be written to the buffers
                     isFinalPass = _serializationTask.IsCompleted;
-                    var flushAllBuffers = flushRequest is not null;
+                    var hasFlushRequest = flushRequest is not null;
 
-                    if (flushAllBuffers || isFinalPass || _backgroundFlushEnabled)
+                    if (hasFlushRequest || isFinalPass || _backgroundFlushEnabled)
                     {
-                        await FlushBuffers(flushAllBuffers: flushAllBuffers || isFinalPass).ConfigureAwait(false);
+                        await FlushBuffers().ConfigureAwait(false);
                     }
 
                     flushRequest?.TrySetResult(true);
@@ -390,26 +405,39 @@ namespace Datadog.Trace.Agent
         }
 
         /// <summary>
-        /// Flush the active buffer, and the fallback buffer if full. Buffers are flushed (and so locked)
-        /// one at a time, and only from <see cref="FlushBuffersTaskLoopAsync"/>, so that the serialization
-        /// thread always has a buffer available to write to.
+        /// Flushes both buffers, oldest traces first.
         /// </summary>
-        /// <param name="flushAllBuffers">If set to true, then flush the back buffer even if not full</param>
         /// <returns>Async operation</returns>
-        private async Task FlushBuffers(bool flushAllBuffers = false)
+        private async Task FlushBuffers()
         {
             try
             {
+                // Report drop counts
+                var droppedTracesTooLarge = Interlocked.Exchange(ref _droppedTracesTooLarge, 0);
+                var droppedTracesBufferFull = Interlocked.Exchange(ref _droppedTracesBufferFull, 0);
+                var droppedTracesBufferFullAndLocked = Interlocked.Exchange(ref _droppedTracesBufferFullAndLocked, 0);
+                var droppedTracesBuffersLocked = Interlocked.Exchange(ref _droppedTracesBuffersLocked, 0);
+
+                if (droppedTracesTooLarge > 0 || droppedTracesBufferFull > 0 || droppedTracesBufferFullAndLocked > 0 || droppedTracesBuffersLocked > 0)
+                {
+                    Log.Warning(
+                        "Traces were dropped since the last flush operation: {TooLargeCount} exceeded the trace buffer limit of {MaxBufferSize} bytes, {BuffersFullCount} found both buffers full, {BufferFullAndLockedCount} found one buffer full and the other unavailable while being flushed, and {BuffersLockedCount} found both buffers unavailable while being flushed.",
+                        [
+                            droppedTracesTooLarge,
+                            _frontBuffer.MaxBufferSize,
+                            droppedTracesBufferFull,
+                            droppedTracesBufferFullAndLocked,
+                            droppedTracesBuffersLocked
+                        ]);
+                }
+
                 var activeBuffer = Volatile.Read(ref _activeBuffer);
                 var fallbackBuffer = activeBuffer == _frontBuffer ? _backBuffer : _frontBuffer;
 
-                // First, flush the back buffer if full
-                if (fallbackBuffer.IsFull || flushAllBuffers)
-                {
-                    await FlushBuffer(fallbackBuffer).ConfigureAwait(false);
-                }
-
-                // Then, flush the main buffer
+                // The fallback buffer holds the older traces. The read above can go stale
+                // if the serialization thread swaps while we are sending, but as that
+                // only changes which is flushed first, it's fine.
+                await FlushBuffer(fallbackBuffer).ConfigureAwait(false);
                 await FlushBuffer(activeBuffer).ConfigureAwait(false);
             }
             catch (Exception ex)
@@ -420,12 +448,30 @@ namespace Datadog.Trace.Agent
 
         private async Task FlushBuffer(SpanBuffer buffer)
         {
-            // Wait for write operations to complete, then prevent further modifications
-            if (!buffer.Lock())
+            if (buffer.TraceCount == 0)
             {
-                // The flush loop is the only thing that locks buffers, and it never runs two flushes
-                // at once, so this should be unreachable in production
+                // Nothing to send
                 return;
+            }
+
+            // Make sure the replacement array is big enough before taking the buffer's lock.
+            // This deliberately happens outside the critical section so that the serialization thread
+            // never waits on an allocation.
+            var requiredBufferLength = buffer.CurrentLength;
+            if (_spareBuffer is null || _spareBuffer.Length < requiredBufferLength)
+            {
+                _spareBuffer = new byte[requiredBufferLength];
+            }
+
+            // Take the payload and hand the buffer a fresh array, so that the serialization thread
+            // can keep writing to it for the whole of the send below. Nothing is ever locked across
+            // the network call, which is what makes "buffer unavailable" drops impossible.
+            var payload = buffer.Detach(_spareBuffer);
+
+            if (payload.Array is not null)
+            {
+                // The buffer took the spare, and we get it back once the payload has been sent
+                _spareBuffer = null;
             }
 
             try
@@ -435,31 +481,12 @@ namespace Datadog.Trace.Agent
                     using var lease = _statsd.TryGetClientLease();
                     if (lease.Client is { } statsd)
                     {
-                        statsd.Increment(TracerMetricNames.Queue.DequeuedTraces, buffer.TraceCount);
-                        statsd.Increment(TracerMetricNames.Queue.DequeuedSpans, buffer.SpanCount);
+                        statsd.Increment(TracerMetricNames.Queue.DequeuedTraces, payload.TraceCount);
+                        statsd.Increment(TracerMetricNames.Queue.DequeuedSpans, payload.SpanCount);
                     }
                 }
 
-                var droppedTracesTooLarge = Interlocked.Exchange(ref _droppedTracesTooLarge, 0);
-                var droppedTracesBufferFull = Interlocked.Exchange(ref _droppedTracesBufferFull, 0);
-                var droppedTracesBufferFullAndLocked = Interlocked.Exchange(ref _droppedTracesBufferFullAndLocked, 0);
-                var droppedTracesBuffersLocked = Interlocked.Exchange(ref _droppedTracesBuffersLocked, 0);
-
-                if (droppedTracesTooLarge > 0 || droppedTracesBufferFull > 0 || droppedTracesBufferFullAndLocked > 0 || droppedTracesBuffersLocked > 0)
-                {
-                    Log.Warning(
-                        "Traces were dropped since the last flush operation: {TooLargeCount} exceeded the trace buffer limit of {MaxBufferSize} bytes, {BuffersFullCount} found both buffers full, {BufferFullAndLockedCount} found one buffer full and the other unavailable while being flushed, and {BuffersLockedCount} found both buffers unavailable while being flushed.",
-                        new object?[]
-                        {
-                            droppedTracesTooLarge,
-                            _frontBuffer.MaxBufferSize,
-                            droppedTracesBufferFull,
-                            droppedTracesBufferFullAndLocked,
-                            droppedTracesBuffersLocked,
-                        });
-                }
-
-                if (buffer.TraceCount > 0)
+                if (payload.TraceCount > 0)
                 {
                     long droppedP0Traces = 0;
                     long droppedP0Spans = 0;
@@ -468,40 +495,45 @@ namespace Datadog.Trace.Agent
                     {
                         droppedP0Traces = Interlocked.Exchange(ref _droppedP0Traces, 0);
                         droppedP0Spans = Interlocked.Exchange(ref _droppedP0Spans, 0);
-                        Log.Debug("Flushing {Spans} spans across {Traces} traces. CanComputeStats is enabled with {DroppedP0Traces} droppedP0Traces and {DroppedP0Spans} droppedP0Spans", buffer.SpanCount, buffer.TraceCount, droppedP0Traces, droppedP0Spans);
+                        Log.Debug("Flushing {Spans} spans across {Traces} traces. CanComputeStats is enabled with {DroppedP0Traces} droppedP0Traces and {DroppedP0Spans} droppedP0Spans", payload.SpanCount, payload.TraceCount, droppedP0Traces, droppedP0Spans);
                         // Metrics for unsampled traces/spans already recorded
                     }
                     else
                     {
-                        Log.Debug<int, int>("Flushing {Spans} spans across {Traces} traces. CanComputeStats is disabled.", buffer.SpanCount, buffer.TraceCount);
+                        Log.Debug<int, int>("Flushing {Spans} spans across {Traces} traces. CanComputeStats is disabled.", payload.SpanCount, payload.TraceCount);
                     }
 
-                    var success = await _api.SendTracesAsync(buffer.Data, buffer.TraceCount, CanComputeStats, droppedP0Traces, droppedP0Spans, _apmTracingEnabled).ConfigureAwait(false);
+                    var success = await _api.SendTracesAsync(payload.Data, payload.TraceCount, CanComputeStats, droppedP0Traces, droppedP0Spans, _apmTracingEnabled).ConfigureAwait(false);
 
-                    TelemetryFactory.Metrics.RecordCountTraceChunkSent(buffer.TraceCount);
+                    TelemetryFactory.Metrics.RecordCountTraceChunkSent(payload.TraceCount);
                     if (success)
                     {
-                        _traceKeepRateCalculator.IncrementKeeps(buffer.TraceCount);
+                        _traceKeepRateCalculator.IncrementKeeps(payload.TraceCount);
                     }
                     else
                     {
-                        TelemetryFactory.Metrics.RecordCountTraceChunkDropped(MetricTags.DropReason.ApiError, buffer.TraceCount);
-                        TelemetryFactory.Metrics.RecordCountSpanDropped(MetricTags.DropReason.ApiError, buffer.SpanCount);
-                        _traceKeepRateCalculator.IncrementDrops(buffer.TraceCount);
+                        TelemetryFactory.Metrics.RecordCountTraceChunkDropped(MetricTags.DropReason.ApiError, payload.TraceCount);
+                        TelemetryFactory.Metrics.RecordCountSpanDropped(MetricTags.DropReason.ApiError, payload.SpanCount);
+                        _traceKeepRateCalculator.IncrementDrops(payload.TraceCount);
                     }
                 }
             }
             catch (Exception ex)
             {
                 Log.Error(ex, "An unhandled error occurred while flushing a buffer");
-                _traceKeepRateCalculator.IncrementDrops(buffer.TraceCount);
-                TelemetryFactory.Metrics.RecordCountTraceChunkDropped(MetricTags.DropReason.ApiError, buffer.TraceCount);
-                TelemetryFactory.Metrics.RecordCountSpanDropped(MetricTags.DropReason.ApiError, buffer.SpanCount);
+                _traceKeepRateCalculator.IncrementDrops(payload.TraceCount);
+                TelemetryFactory.Metrics.RecordCountTraceChunkDropped(MetricTags.DropReason.ApiError, payload.TraceCount);
+                TelemetryFactory.Metrics.RecordCountSpanDropped(MetricTags.DropReason.ApiError, payload.SpanCount);
             }
             finally
             {
-                // Clear and unlock the buffer
-                buffer.Clear();
+                if (payload.Array is { } sentBuffer)
+                {
+                    // Recycle the array we just sent as the next replacement. Safe only now that
+                    // the send has completed: the API retries re-send the same segment, so the
+                    // bytes have to stay untouched for the whole of the awaited call.
+                    _spareBuffer = sentBuffer;
+                }
             }
         }
 
@@ -652,11 +684,16 @@ namespace Datadog.Trace.Agent
 
                 if (writeStatus == SpanBuffer.WriteStatus.Locked)
                 {
+                    // Both probes wait the full timeout. Giving the second one a shorter deadline
+                    // would recreate the original bug, where a buffer that was merely busy for an
+                    // instant was reported as unavailable.
                     lockedBufferCount++;
                 }
             }
 
-            // Both buffers are full or at least one is locked, so drop the trace
+            // Both buffers are full, or a write waited out the lock timeout. The latter should not
+            // happen: flushing detaches the payload rather than holding the buffer across the send,
+            // so contention only ever lasts nanoseconds.
             var dropReason = lockedBufferCount switch
             {
                 0 => TraceDropReason.BuffersFull,

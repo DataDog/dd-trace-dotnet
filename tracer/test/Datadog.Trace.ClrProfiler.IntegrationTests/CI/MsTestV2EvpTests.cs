@@ -20,6 +20,7 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 {
+    [Trait("Area", "CIVisibility")]
     [UsesVerify]
     public class MsTestV2EvpTests : TestingFrameworkEvpTest
     {
@@ -44,7 +45,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             }
         }
 
-        public static IEnumerable<object[]> GetDataForParameterizedItrSkip()
+        public static IEnumerable<object[]> GetDataForItrSkip()
         {
             foreach (var version in PackageVersions.MSTest)
             {
@@ -52,7 +53,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                 if (string.IsNullOrEmpty(packageVersion) ||
                     packageVersion == "2.2.10" ||
                     packageVersion == "3.11.1" ||
-                    packageVersion == "4.3.3")
+                    packageVersion == "4.4.0")
                 {
                     yield return version.Concat("evp_proxy/v4", false);
                 }
@@ -285,10 +286,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
         }
 
         [SkippableTheory]
-        [MemberData(nameof(GetDataForParameterizedItrSkip))]
+        [MemberData(nameof(GetDataForItrSkip))]
         [Trait("Category", "EndToEnd")]
         [Trait("Category", "TestIntegrations")]
-        public async Task ItrSkipForOneParameterizedRowDoesNotSkipOtherRows(string packageVersion, string evpVersionToRemove, bool expectedGzip)
+        public async Task ItrSkipHandlesParameterizedRowsAndCustomTestMethodAttribute(string packageVersion, string evpVersionToRemove, bool expectedGzip)
         {
             const string correlationId = "2e8a36bda770b683345957cc6c15baf9";
             const string skippedRowParameters = "{\"metadata\":{},\"arguments\":{\"xValue\":\"1\",\"yValue\":\"1\",\"expectedResult\":\"2\"}}";
@@ -338,6 +339,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                                       "suite": "{{TestSuiteName}}",
                                       "name": "SimpleParameterizedTest",
                                       "parameters": "{{skippedRowParameters.Replace("\"", "\\\"")}}",
+                                      "_is_missing_line_code_coverage": false
+                                    }
+                                  },
+                                  {
+                                    "id": "Samples.MSTestTests.TestSuite.CustomTestMethodAttributeTest",
+                                    "type": "test",
+                                    "attributes": {
+                                      "suite": "{{TestSuiteName}}",
+                                      "name": "CustomTestMethodAttributeTest",
                                       "_missing_line_code_coverage": false
                                     }
                                   }
@@ -408,6 +418,16 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                 executedRows.Should().HaveCount(2);
                 executedRows.Should().OnlyContain(test => test.Meta.GetValueOrDefault(TestTags.Status) == TestTags.StatusPass);
                 executedRows.Should().OnlyContain(test => test.Meta.GetValueOrDefault(IntelligentTestRunnerTags.SkippedBy) != "true");
+
+                var skippedTest = receivedTests.Should()
+                                               .ContainSingle(test => test.Meta.GetValueOrDefault(TestTags.Name) == "CustomTestMethodAttributeTest")
+                                               .Subject;
+                skippedTest.Meta[TestTags.Status].Should().Be(TestTags.StatusSkip);
+                skippedTest.Meta[IntelligentTestRunnerTags.SkippedBy].Should().Be("true");
+                skippedTest.Meta[TestTags.SkipReason].Should().Be(IntelligentTestRunnerTags.SkippedByReason);
+                skippedTest.CorrelationId.Should().Be(correlationId);
+
+                receivedTests.Should().NotContain(test => test.Meta.GetValueOrDefault(TestTags.Name) == "My Custom: CustomTestMethodAttributeTest");
             }
             catch
             {
@@ -510,6 +530,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 
                         var testSuite = testSuites[0];
                         var testModule = testModules[0];
+
+                        ValidateTestSessionFingerprintInputs(testModule, testSuites, tests, sessionWorkingDirectory, gitRepositoryUrl);
 
                         // Check Suite
                         testSuites.Select(ts => ts.TestSuiteId)

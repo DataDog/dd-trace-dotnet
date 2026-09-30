@@ -102,12 +102,12 @@ namespace Datadog.Trace.Security.Unit.Tests
         {
             var initResult = CreateWaf(newEncoder);
             using var waf = initResult.Waf;
-            using var context = waf.CreateContext();
+            using var context = waf.CreateContext(out _);
 
             for (var i = 0; i < values.Length; i++)
             {
                 var args = MakeDictionary(address, values[i]);
-                var result = context.RunWithEphemeral(args, TimeoutMicroSeconds, false);
+                var result = context.RunWithEphemeral(args, TimeoutMicroSeconds, false, out _);
                 result.Timeout.Should().BeFalse("Timeout should be false");
 
                 // by convention attack is last item in the array

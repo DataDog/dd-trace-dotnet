@@ -182,7 +182,7 @@ internal static class NUnitIntegration
         var testSuite = testMethod.DeclaringType?.FullName ?? string.Empty;
         var module = GetTestModuleFrom(currentTest);
         var moduleName = module?.Tags.Bundle ?? module?.Tags.Module;
-        var itrShouldSkip = Common.ShouldSkip(testSuite, testMethod.Name, currentTest.Arguments, testMethod.GetParameters(), out var matchedSkippableTest, moduleName, currentTest.Name);
+        var itrShouldSkip = Common.ShouldSkip(testSuite, testMethod.Name, currentTest.Arguments, testMethod.GetParameters(), out var matchedSkippableTest, moduleName, currentTest.Name ?? string.Empty);
         if (traits is null)
         {
             ExtractTraits(currentTest, ref traits);
@@ -252,27 +252,7 @@ internal static class NUnitIntegration
         var methodParameters = testMethod.GetParameters();
         if (methodParameters?.Length > 0)
         {
-            var testParameters = new TestParameters
-            {
-                Metadata = new Dictionary<string, object?>(),
-                Arguments = new Dictionary<string, object?>()
-            };
-            testParameters.Metadata[TestTags.MetadataTestName] = currentTest.Name ?? string.Empty;
-
-            for (int i = 0; i < methodParameters.Length; i++)
-            {
-                var key = methodParameters[i].Name ?? string.Empty;
-                if (testMethodArguments != null && i < testMethodArguments.Length)
-                {
-                    testParameters.Arguments[key] = Common.GetParametersValueData(testMethodArguments[i]);
-                }
-                else
-                {
-                    testParameters.Arguments[key] = "(default)";
-                }
-            }
-
-            test.SetParameters(testParameters);
+            test.SetParameters(Common.CreateTestParameters(testMethodArguments, methodParameters, currentTest.Name ?? string.Empty));
         }
 
         // Get traits

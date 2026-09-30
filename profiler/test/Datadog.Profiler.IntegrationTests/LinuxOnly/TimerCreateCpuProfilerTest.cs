@@ -41,6 +41,8 @@ namespace Datadog.Profiler.IntegrationTests.LinuxOnly
 
             var logLines = File.ReadLines(logFile);
 
+            CpuProfilerHelper.SkipIfTimerCreateWasDowngraded(logLines);
+
             logLines.Should().ContainMatch("*timer_create Cpu profiler is enabled*");
             logLines.Should().NotContainMatch("*Manual Cpu profiler is enabled*");
 
@@ -89,6 +91,8 @@ namespace Datadog.Profiler.IntegrationTests.LinuxOnly
 
             var logLines = File.ReadLines(logFile);
 
+            CpuProfilerHelper.SkipIfTimerCreateWasDowngraded(logLines);
+
             logLines.Should().ContainMatch("*timer_create Cpu profiler is enabled*");
 
             logLines.Should().NotContainMatch("*Call to timer_create failed for thread 0*");
@@ -111,6 +115,8 @@ namespace Datadog.Profiler.IntegrationTests.LinuxOnly
             using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
 
             runner.Run(agent);
+
+            CpuProfilerHelper.SkipIfTimerCreateWasDowngraded(runner.Environment.LogDir);
 
             // only cpu  profiler enabled so should see 1 value per sample and
             var samples = SamplesHelper.GetSamples(runner.Environment.PprofDir);
@@ -138,6 +144,8 @@ namespace Datadog.Profiler.IntegrationTests.LinuxOnly
             using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
 
             runner.Run(agent);
+
+            CpuProfilerHelper.SkipIfTimerCreateWasDowngraded(runner.Environment.LogDir);
 
             var expectedInterval = long.Parse(samplingInterval) * 1_000_000;
             // only cpu  profiler enabled so should see 2 value per sample and

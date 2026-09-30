@@ -94,7 +94,7 @@ namespace Datadog.Trace.Security.Unit.Tests
         {
             var initResult = CreateWaf();
             using var waf = initResult.Waf!;
-            using var context = waf.CreateContext()!;
+            using var context = waf.CreateContext(out _)!;
 
             var result = context.Run(
                 new Dictionary<string, object>
@@ -346,7 +346,7 @@ namespace Datadog.Trace.Security.Unit.Tests
         {
             var initResult = CreateWaf(ruleFile: RuleFile);
             using var waf = initResult.Waf!;
-            using var context = waf.CreateContext()!;
+            using var context = waf.CreateContext(out _)!;
 
             var args = new Dictionary<string, object>
             {

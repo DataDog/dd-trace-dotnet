@@ -24,6 +24,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 
     public class MsTestV2Tests2(ITestOutputHelper output) : MsTestV2TestsBase("MSTestTests2", output, pre224TestCount: 19, post224TestCount: 21);
 
+    [Trait("Area", "CIVisibility")]
     [Collection("MsTestV2Tests")]
     [UsesVerify]
     public abstract class MsTestV2TestsBase : TestingFrameworkTest

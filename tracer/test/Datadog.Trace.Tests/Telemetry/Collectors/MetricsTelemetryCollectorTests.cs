@@ -110,6 +110,8 @@ public class MetricsTelemetryCollectorTests
         collector.RecordCountRaspRuleEval(MetricTags.RaspRuleType.Lfi, 5);
         collector.RecordCountRaspRuleMatch(MetricTags.RaspRuleTypeMatch.LfiSuccess, 3);
         collector.RecordCountRaspTimeout(MetricTags.RaspRuleType.Lfi, 2);
+        collector.RecordCountRaspError(MetricTags.RaspError.LfiInternal, 4);
+        collector.RecordCountRaspRuleSkipped(MetricTags.RaspRuleTypeSkipped.LfiAfterRequest, 6);
         collector.RecordGaugeStatsBuckets(234);
         collector.RecordDistributionSharedInitTime(MetricTags.InitializationComponent.Total, 23);
         collector.RecordDistributionSharedInitTime(MetricTags.InitializationComponent.Total, 46);
@@ -290,6 +292,25 @@ public class MetricsTelemetryCollectorTests
                 Points = new[] { new { Value = 2 } },
                 Type = TelemetryMetricType.Count,
                 Tags = new[] { expectedWafTag, expectedRulesetTag, "rule_type:lfi" },
+                Common = true,
+                Namespace = NS.ASM,
+            },
+            new
+            {
+                Metric = Count.RaspError.GetName(),
+                Points = new[] { new { Value = 4 } },
+                Type = TelemetryMetricType.Count,
+                Tags = new[] { expectedWafTag, expectedRulesetTag, "waf_error:-3", "rule_type:lfi" },
+                Common = true,
+                Namespace = NS.ASM,
+            },
+            new
+            {
+                // rasp.rule.skipped is specified without the version tags, so they must not be substituted in
+                Metric = Count.RaspRuleSkipped.GetName(),
+                Points = new[] { new { Value = 6 } },
+                Type = TelemetryMetricType.Count,
+                Tags = new[] { "reason:after-request", "rule_type:lfi" },
                 Common = true,
                 Namespace = NS.ASM,
             },

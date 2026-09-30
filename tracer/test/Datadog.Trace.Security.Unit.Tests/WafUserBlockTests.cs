@@ -36,7 +36,7 @@ namespace Datadog.Trace.Security.Unit.Tests
             var res = initResult.Waf!.Update(configurationStatus);
             res.Success.Should().BeTrue();
             res.HasRuleErrors.Should().BeFalse();
-            using var context = waf.CreateContext()!;
+            using var context = waf.CreateContext(out _)!;
             var result = context.Run(
                 new Dictionary<string, object> { { AddressesConstants.UserId, "user3" } },
                 WafTests.TimeoutMicroSeconds);

@@ -33,6 +33,10 @@
 using namespace std::chrono_literals;
 constexpr const WCHAR* ThreadName = WStr("DD_StackSampler");
 
+// Make sure the sampler thread does not hang Start() forever - mirrors
+// StackSamplerLoopManager::RunWatcher()'s WatcherStartupTimeout.
+constexpr std::chrono::seconds LoopStartupTimeout = 2s;
+
 StackSamplerLoop::StackSamplerLoop(
     ICorProfilerInfo4* pCorProfilerInfo,
     IConfiguration* pConfiguration,
@@ -110,21 +114,48 @@ const char* StackSamplerLoop::GetName()
 
 bool StackSamplerLoop::StartImpl()
 {
-    _pLoopThread = std::make_unique<std::thread>([this]
-        {
-            OpSysTools::SetNativeThreadName(ThreadName);
-            MainLoop();
-        });
+    std::promise<void> loopReadyPromise;
+    std::future<void> loopReadyFuture = loopReadyPromise.get_future();
 
-    return true;
+    try
+    {
+        _pLoopThread = std::make_unique<std::thread>(
+            [this, promise = std::move(loopReadyPromise)]() mutable
+            {
+                OpSysTools::SetNativeThreadName(ThreadName);
+                MainLoop(std::move(promise));
+            });
+    }
+    catch (const std::exception& ex)
+    {
+        Log::Error("StackSamplerLoop::StartImpl - Failed to create the sampler thread: ", ex.what());
+        return false;
+    }
+
+    if (loopReadyFuture.wait_for(LoopStartupTimeout) == std::future_status::ready)
+    {
+        return true;
+    }
+
+    Log::Error("StackSamplerLoop::StartImpl - Timed out after ", LoopStartupTimeout.count(),
+               " seconds waiting for the sampler thread to start.");
+
+    // Request the (possibly just slow, not necessarily stuck) thread to shut down as soon as it
+    // does get scheduled, instead of leaving it running unsupervised - mirrors
+    // StackSamplerLoopManager::RunWatcher()'s identical timeout handling. Not joined right here,
+    // deliberately: join() could itself hang on a genuinely stuck thread, which would just move
+    // the unbounded-wait problem this timeout exists to avoid onto the caller of Start() instead.
+    _shutdownRequested = true;
+
+    return false;
 }
 
 bool StackSamplerLoop::StopImpl()
 {
-    _shutdownRequested = true;
-
     if (_pLoopThread != nullptr)
     {
+        _shutdownRequested = true;
+
         try
         {
             _pLoopThread->join();
@@ -134,13 +165,18 @@ bool StackSamplerLoop::StopImpl()
         {
         }
     }
-
     return true;
 }
 
-void StackSamplerLoop::MainLoop()
+void StackSamplerLoop::MainLoop(std::promise<void> loopReadyPromise)
 {
     Log::Debug("StackSamplerLoop::MainLoop started.");
+
+    // Signal readiness before the InitializeCurrentThread() CLR call below: the promise only
+    // needs to prove the OS actually scheduled this thread - the invariant StartImpl()'s bounded
+    // wait exists to check - not that its own setup has finished, and it must not be gated on
+    // anything that could itself block, or a slow-but-fine CLR call could trip that timeout.
+    loopReadyPromise.set_value();
 
     HRESULT hr = _pCorProfilerInfo->InitializeCurrentThread();
     if (hr != S_OK)

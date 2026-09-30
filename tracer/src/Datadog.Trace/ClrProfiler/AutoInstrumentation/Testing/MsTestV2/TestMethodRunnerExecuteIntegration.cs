@@ -24,6 +24,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2;
     MinimumVersion = "14.0.0",
     MaximumVersion = "14.*.*",
     IntegrationName = MsTestIntegration.IntegrationName)]
+[InstrumentMethod(
+    AssemblyName = "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter",
+    TypeName = "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestMethodRunner",
+    MethodName = "Execute",
+    ReturnTypeName = "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.ObjectModel.UnitTestResult[]",
+    ParameterTypeNames = [ClrNames.String, ClrNames.String, ClrNames.String, ClrNames.String],
+    MinimumVersion = "14.0.0",
+    MaximumVersion = "14.*.*",
+    IntegrationName = MsTestIntegration.IntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
 public static class TestMethodRunnerExecuteIntegration
@@ -52,6 +61,17 @@ public static class TestMethodRunnerExecuteIntegration
             {
                 if (unitTestResultObject.TryDuckCast<UnitTestResultStruct>(out var unitTestResult))
                 {
+                    // Before MSTest 3.8, only the adapter's outcome supports Ignored.
+                    // Apply quarantine after conversion and retry aggregation so it cannot become an Error.
+                    if (TestOptimization.Instance.TestManagementFeature?.Enabled == true &&
+                        instance.TestMethodInfo is { } testMethod &&
+                        MsTestIntegration.GetTestProperties(testMethod) is { Quarantined: true } &&
+                        unitTestResultObject.DuckCast<IUnitTestResult>() is { } adapterResult)
+                    {
+                        adapterResult.Outcome = UnitTestResultOutcome.Ignored;
+                        continue;
+                    }
+
                     if (unitTestResult.Outcome is UnitTestResultOutcome.Inconclusive)
                     {
                         if (instance.TestMethodInfo is not null)

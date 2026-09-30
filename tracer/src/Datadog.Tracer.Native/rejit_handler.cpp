@@ -96,8 +96,8 @@ bool RejitHandlerModuleMethod::RequestRejitForInlinersInModule(ModuleID moduleId
             if (total > 0)
             {
                 handler->EnqueueForRejit(modules, methods);
-                Logger::Info("NGEN:: Processed with ", total, " inliners [ModuleId=", currentModuleId,
-                             ",MethodDef=", currentMethodDef, "]");
+                Logger::Debug("NGEN:: Processed with ", total, " inliners [ModuleId=", currentModuleId,
+                              ",MethodDef=", currentMethodDef, "]");
             }
 
             if (incompleteData)
@@ -162,12 +162,23 @@ RejitHandler* RejitHandlerModule::GetHandler()
 
 ModuleMetadata* RejitHandlerModule::GetModuleMetadata()
 {
+    std::lock_guard<std::mutex> guard(m_metadata_lock);
     return m_metadata.get();
 }
 
-void RejitHandlerModule::SetModuleMetadata(ModuleMetadata* metadata)
+// Several preprocessors can reach the same module concurrently. Creating the metadata has to be one atomic
+// create-if-absent operation: replacing it would delete the object while another rewrite may already be using it.
+bool RejitHandlerModule::CreateModuleMetadataIfNotExists(RejitHandlerModuleMetadataCreatorFunc creator)
 {
-    m_metadata = std::unique_ptr<ModuleMetadata>(metadata);
+    std::lock_guard<std::mutex> guard(m_metadata_lock);
+
+    if (m_metadata != nullptr)
+    {
+        return false;
+    }
+
+    m_metadata = creator();
+    return true;
 }
 
 bool RejitHandlerModule::CreateMethodIfNotExists(const mdMethodDef methodDef,
@@ -288,7 +299,7 @@ void RejitHandler::RequestRejit(std::vector<ModuleID>& modulesVector, std::vecto
         }
         if (SUCCEEDED(hr))
         {
-            Logger::Info("Request ReJIT done for ", modulesVector.size(), " methods");
+            Logger::Debug("Request ReJIT done for ", modulesVector.size(), " methods");
 
             if (enable_rejit_tracking)
             {

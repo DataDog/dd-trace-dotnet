@@ -70,6 +70,14 @@ run-benchmarks:
   id_tokens:
     DDOCTOSTS_ID_TOKEN:
       aud: dd-octo-sts
+  retry:
+    max: 2
+    when:
+      - unknown_failure
+      - data_integrity_failure
+      - runner_system_failure
+      - scheduler_failure
+      - api_failure
   rules:
     - if: $CI_COMMIT_REF_NAME =~ /^v[0-9]+\.[0-9]+\.[0-9]+(-prerelease)?$/
       when: never
@@ -89,6 +97,7 @@ run-benchmarks:
 
     # Benchmarks matching this regex are marked as flaky by benchmark_analyzer
     # and excluded from the check-big-regressions job.
+    # See https://datadoghq.atlassian.net/wiki/spaces/APMINT/pages/7223313012/Flaky+Benchmarks+Monitoring for more details.
     FLAKY_BENCHMARKS_REGEX: "ActivityBenchmark|SpanBenchmark|TraceAnnotationsBenchmark|StringAspectsBenchmark|CharSliceBenchmark|AppSecWafBenchmark|AppSecBodyBenchmark|AppSecEncoderBenchmark|CIVisibilityProtocolWriterBenchmark|AgentWriterBenchmark|AspNetCoreBenchmark|SingleSpanAspNetCoreBenchmark|ElasticsearchBenchmark|GraphQLBenchmark|Log4netBenchmark|SerilogBenchmark|RedisBenchmark|ILoggerBenchmark"
 
     # Scope for dd-octo-sts to get GitHub token for cloning dd-trace-dotnet
@@ -124,10 +133,11 @@ run-benchmarks:
         --env-regex "^(CI_|DD_|BP_|GITHUB_|ARTIFACTS_|PR_NUMBER)" \
         --bypass-stack-destroy \
         $CLEANUP_ARG
-    # Fetch results from S3, analyze, upload, and post PR comment
+    # Fetch results from S3, analyze, upload (external S3 + BP UI), and post PR comment
     - export ARTIFACTS_DIR="$(pwd)/artifacts"
     - .gitlab/benchmarks/microbenchmarks/scripts/fetch-results.sh
     - .gitlab/benchmarks/microbenchmarks/scripts/analyze-results.sh
+    - .gitlab/benchmarks/microbenchmarks/scripts/upload-to-external-s3.sh
     - .gitlab/benchmarks/microbenchmarks/scripts/upload-to-bp-ui.sh
     - .gitlab/benchmarks/microbenchmarks/scripts/post-pr-comment.sh
   after_script:

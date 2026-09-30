@@ -125,6 +125,42 @@ namespace Datadog.Trace.Tests.Configuration
             settings.MetadataSchemaVersion.Should().Be((SchemaVersion)expected);
         }
 
+#if NET6_0_OR_GREATER
+        [Theory]
+        [InlineData(null, true, true)]
+        [InlineData("false", true, true)]
+        [InlineData("true", true, true)]
+        [InlineData(null, false, false)]
+        [InlineData("true", false, true)]
+        [InlineData("false", false, false)]
+        public void SingleSpanAspNetCoreEnabled_IsForcedToTrueWhenOtelSemanticsEnabled(string singleSpanAspNetCoreEnabled, bool otelSemanticsEnabled, bool expected)
+        {
+            var source = CreateConfigurationSource(
+                (ConfigurationKeys.FeatureFlags.SingleSpanAspNetCoreEnabled, singleSpanAspNetCoreEnabled),
+                (ConfigurationKeys.OpenTelemetry.OtelSemanticsEnabled, otelSemanticsEnabled ? "true" : "false"));
+            var settings = new TracerSettings(source);
+
+            settings.SingleSpanAspNetCoreEnabled.Should().Be(expected);
+        }
+#endif
+
+        [Theory]
+        [InlineData(null, true, true)]
+        [InlineData("false", true, true)]
+        [InlineData("true", true, true)]
+        [InlineData(null, false, true)]
+        [InlineData("true", false, true)]
+        [InlineData("false", false, false)]
+        public void RouteTemplateResourceNamesEnabled_IsForcedToTrueWhenOtelSemanticsEnabled(string routeTemplateResourceNamesEnabled, bool otelSemanticsEnabled, bool expected)
+        {
+            var source = CreateConfigurationSource(
+                (ConfigurationKeys.FeatureFlags.RouteTemplateResourceNamesEnabled, routeTemplateResourceNamesEnabled),
+                (ConfigurationKeys.OpenTelemetry.OtelSemanticsEnabled, otelSemanticsEnabled ? "true" : "false"));
+            var settings = new TracerSettings(source);
+
+            settings.RouteTemplateResourceNamesEnabled.Should().Be(expected);
+        }
+
         [Theory]
         [InlineData("key1:value1,key2:value2", new[] { "key1:value1", "key2:value2" })]
         [InlineData("key1 :value1,invalid,key2: value2", new[] { "key1:value1", "key2:value2" })]

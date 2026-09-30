@@ -117,7 +117,7 @@ internal static class SourceLinkInformationExtractor
                     case AssemblyInformationalVersionAttribute { InformationalVersion: { } informationalVersion }:
                     {
                         var parts = informationalVersion.Split('+');
-                        if (parts.Length == 2)
+                        if (parts.Length == 2 && !StringUtil.IsNullOrEmpty(parts[1]))
                         {
                             commitSha = parts[1];
                         }

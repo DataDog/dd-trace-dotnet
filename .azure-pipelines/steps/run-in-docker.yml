@@ -31,6 +31,10 @@ parameters:
     type: number
     default: 0
 
+  - name: timeoutInMinutesForRunCommand
+    type: number
+    default: 0
+
 steps:
 - template: ensure-docker-ready.yml
 
@@ -135,6 +139,7 @@ steps:
         dd-trace-dotnet/${{ parameters.baseImage }}-${{ parameters.target }}:$sdkVersion \
         dotnet /build/bin/Debug/_build.dll ${{ parameters.command }}
   displayName: Run '${{ parameters.command }}' in Docker
+  timeoutInMinutes: ${{ parameters.timeoutInMinutesForRunCommand }}
   retryCountOnTaskFailure: ${{ parameters.retryCountForRunCommand }}
   env:
     DD_LOGGER_DD_API_KEY: ${{ parameters.apiKey }}

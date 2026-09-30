@@ -671,54 +671,6 @@ public class StatsdManagerTests
     }
 
     [Fact]
-    public async Task ConcurrentLeaseDisposalDuringClientRecreation_ThreadSafe()
-    {
-        var holders = new ConcurrentQueue<StatsdManager.StatsdClientHolder>();
-        var manager = new StatsdManager(new TracerSettings(), (_, _) =>
-        {
-            var client = new StatsdManager.StatsdClientHolder(new MockStatsdClient());
-            holders.Enqueue(client);
-            return client;
-        });
-
-        manager.SetRequired(StatsdConsumer.RuntimeMetricsWriter, true);
-
-        // Create a bunch of leases
-        var leases = Enumerable.Range(0, 10)
-            .Select(_ => manager.TryGetClientLease())
-            .ToList();
-
-        var random = new Random();
-
-        var mutex = new CountdownEvent(leases.Count + 1);
-        var tasks = leases.Select(lease => Task.Run(() =>
-        {
-            mutex.Signal(); // decrement
-            mutex.Wait(); // wait for count to hit zero
-            Thread.Sleep(random.Next(1, 10));
-            lease.Dispose();
-        })).ToList();
-
-        // Wait and then do everything at once
-        mutex.Signal();
-        mutex.Wait();
-
-        // Trigger recreation while leases are being disposed
-        manager.SetRequired(StatsdConsumer.RuntimeMetricsWriter, false);
-        manager.SetRequired(StatsdConsumer.RuntimeMetricsWriter, true);
-
-        await Task.WhenAll(tasks);
-
-        // We only recreated once
-        holders.Should().HaveCount(2);
-        holders.TryDequeue(out var client1).Should().BeTrue();
-        client1.IsDisposed.Should().BeTrue("old client should be disposed");
-        holders.TryDequeue(out var client2).Should().BeTrue();
-        client2.IsDisposed.Should().BeFalse("latest client should not be disposed");
-        await manager.DisposeAsync();
-    }
-
-    [Fact]
     public async Task MultipleTransitionsBetweenRequiredAndNotRequired()
     {
         var holders = new List<StatsdManager.StatsdClientHolder>();
@@ -811,6 +763,58 @@ public class StatsdManagerTests
         holder.IsDisposed.Should().BeTrue();
         statsdClient.DisposeCount.Should().BeLessThanOrEqualTo(1); // we dispose in the background, so may not have happened yet
         await manager.DisposeAsync();
+    }
+
+    [Collection(nameof(HighConcurrencyTestCollection))]
+    public class ConcurrencyTests
+    {
+        [Fact]
+        public async Task ConcurrentLeaseDisposalDuringClientRecreation_ThreadSafe()
+        {
+            var holders = new ConcurrentQueue<StatsdManager.StatsdClientHolder>();
+            var manager = new StatsdManager(new TracerSettings(), (_, _) =>
+            {
+                var client = new StatsdManager.StatsdClientHolder(new MockStatsdClient());
+                holders.Enqueue(client);
+                return client;
+            });
+
+            manager.SetRequired(StatsdConsumer.RuntimeMetricsWriter, true);
+
+            // Create a bunch of leases
+            var leases = Enumerable.Range(0, 10)
+                .Select(_ => manager.TryGetClientLease())
+                .ToList();
+
+            var random = new Random();
+
+            var mutex = new CountdownEvent(leases.Count + 1);
+            var tasks = leases.Select(lease => Task.Run(() =>
+            {
+                mutex.Signal(); // decrement
+                mutex.Wait(); // wait for count to hit zero
+                Thread.Sleep(random.Next(1, 10));
+                lease.Dispose();
+            })).ToList();
+
+            // Wait and then do everything at once
+            mutex.Signal();
+            mutex.Wait();
+
+            // Trigger recreation while leases are being disposed
+            manager.SetRequired(StatsdConsumer.RuntimeMetricsWriter, false);
+            manager.SetRequired(StatsdConsumer.RuntimeMetricsWriter, true);
+
+            await Task.WhenAll(tasks);
+
+            // We only recreated once
+            holders.Should().HaveCount(2);
+            holders.TryDequeue(out var client1).Should().BeTrue();
+            client1.IsDisposed.Should().BeTrue("old client should be disposed");
+            holders.TryDequeue(out var client2).Should().BeTrue();
+            client2.IsDisposed.Should().BeFalse("latest client should not be disposed");
+            await manager.DisposeAsync();
+        }
     }
 
     private class MockStatsdClient : IDogStatsd

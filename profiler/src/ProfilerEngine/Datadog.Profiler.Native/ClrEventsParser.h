@@ -364,6 +364,7 @@ private:
     std::vector<IGarbageCollectionsListener*> _pGarbageCollectionsListeners;
     IGCDumpListener* _pGCDumpListener = nullptr;
     bool _skipReferenceChain = false;
+    bool _skipGcLifecycleEvents = false;
 
     template <typename... Args>
     void LogGcEvent(Args const&... args);

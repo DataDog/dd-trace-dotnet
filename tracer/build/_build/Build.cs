@@ -65,7 +65,7 @@ partial class Build : NukeBuild
     const int LatestMajorVersion = 3;
 
     [Parameter("The current version of the source and build")]
-    readonly string Version = "3.52.0";
+    readonly string Version = "3.55.0";
 
     [Parameter("Whether the current build version is a prerelease(for packaging purposes)")]
     readonly bool IsPrerelease = false;
@@ -420,7 +420,7 @@ partial class Build : NukeBuild
         .Unlisted()
         .Executes(() =>
         {
-            var framework = Framework ?? TargetFramework.NET8_0;
+            var framework = Framework ?? TargetFramework.NET10_0;
 
             string rid;
 

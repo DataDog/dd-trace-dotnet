@@ -47,7 +47,7 @@ namespace Datadog.Trace.Tests.Ci
                 TestSuite.Current = null;
                 TestModule.Current = null;
                 var executor = new SkipTestMethodExecutor.SyncImpl(
-                    typeof(Microsoft.VisualStudio.TestTools.UnitTesting.TestResult).Assembly,
+                    typeof(Microsoft.VisualStudio.TestTools.UnitTesting.TestMethodAttribute),
                     skipReason: "Skipped by Intelligent Test Runner",
                     recordCoverageBackfillSkip: true);
 
@@ -101,7 +101,7 @@ namespace Datadog.Trace.Tests.Ci
                 TestSuite.Current = null;
                 TestModule.Current = null;
                 var executor = new SkipTestMethodExecutor.SyncImpl(
-                    typeof(Microsoft.VisualStudio.TestTools.UnitTesting.TestResult).Assembly,
+                    typeof(Microsoft.VisualStudio.TestTools.UnitTesting.TestMethodAttribute),
                     skipReason: "Skipped by Intelligent Test Runner",
                     recordCoverageBackfillSkip: true,
                     skippableTest: candidate);
@@ -157,7 +157,7 @@ namespace Datadog.Trace.Tests.Ci
                 TestSuite.Current = null;
                 TestModule.Current = null;
                 var executor = new SkipTestMethodExecutor.AsyncImpl(
-                    typeof(Microsoft.VisualStudio.TestTools.UnitTesting.TestResult).Assembly,
+                    typeof(Microsoft.VisualStudio.TestTools.UnitTesting.TestMethodAttribute),
                     skipReason: "Skipped by Intelligent Test Runner",
                     recordCoverageBackfillSkip: true,
                     skippableTest: candidate);
@@ -181,8 +181,10 @@ namespace Datadog.Trace.Tests.Ci
             }
         }
 
-        [Fact]
-        public async Task AsyncExecuteTestIntegrationReplacementExecutorRecordsExactCoverageBackfillCandidate()
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public async Task AsyncRunnerWithSyncExecutorApiRecordsExactCoverageBackfillCandidate(bool useSealedExecutor)
         {
             var skippableFeature = new Mock<ITestOptimizationSkippableFeature>();
             skippableFeature.Setup(x => x.IsCoverageBackfillRequired()).Returns(true);
@@ -211,7 +213,7 @@ namespace Datadog.Trace.Tests.Ci
                     }));
             var testMethodInfo = new TestMethodInfoV3_9Stub(method)
             {
-                Executor = new OriginalAsyncExecutorStub()
+                Executor = useSealedExecutor ? new SealedCustomTestMethodAttributeStub() : new DataTestMethodAttributeV3_9Stub()
             };
             var runner = new TestMethodRunnerV3_9Stub(testMethodInfo);
             var reason = string.Empty;
@@ -232,7 +234,8 @@ namespace Datadog.Trace.Tests.Ci
 
                 state.Should().NotBe(CallTargetState.GetDefault());
                 testMethodInfo.Executor.Should().NotBeSameAs(originalExecutor);
-                var replacementExecutor = testMethodInfo.Executor.Should().BeAssignableTo<OriginalAsyncExecutorStub>().Subject;
+                var replacementExecutor = testMethodInfo.Executor.Should().BeAssignableTo<Microsoft.VisualStudio.TestTools.UnitTesting.TestMethodAttribute>().Subject;
+                SkipTestMethodExecutor.IsReplacement(replacementExecutor).Should().BeTrue();
 
                 var result = await replacementExecutor.ExecuteAsync(testMethodInfo);
 
@@ -342,12 +345,13 @@ namespace Datadog.Trace.Tests.Ci
             }
         }
 
-        private class OriginalAsyncExecutorStub
+        private sealed class SealedCustomTestMethodAttributeStub : Microsoft.VisualStudio.TestTools.UnitTesting.TestMethodAttribute
         {
-            public virtual Task<Microsoft.VisualStudio.TestTools.UnitTesting.TestResult[]> ExecuteAsync(Microsoft.VisualStudio.TestTools.UnitTesting.ITestMethod testMethod)
-            {
-                return Task.FromResult(Array.Empty<Microsoft.VisualStudio.TestTools.UnitTesting.TestResult>());
-            }
+        }
+
+        private class DataTestMethodAttributeV3_9Stub : Microsoft.VisualStudio.TestTools.UnitTesting.TestMethodAttribute
+        {
+            private protected override bool UseAsync => true;
         }
     }
 }

@@ -12,6 +12,7 @@ using Datadog.Trace.Activity.DuckTypes;
 using Datadog.Trace.Activity.Helpers;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Coordinator;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.Http;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Proxy;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DataStreamsMonitoring;
@@ -20,6 +21,7 @@ using Datadog.Trace.DiagnosticListeners;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
+using Datadog.Trace.OpenTelemetry;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Serverless;
 using Datadog.Trace.Tagging;
@@ -49,8 +51,16 @@ namespace Datadog.Trace.PlatformHelpers
             _requestInOperationName = requestInOperationName;
         }
 
-        public string GetDefaultResourceName(HttpRequest request)
+        public string GetDefaultResourceName(HttpRequest request, bool otelSemanticsEnabled = false)
         {
+            if (otelSemanticsEnabled)
+            {
+                // The OpenTelemetry HTTP span specification requires the span name to be "{method} {http.route}",
+                // or just "{method}" when no route is available. Instrumentation MUST NOT fall back to the URI path.
+                HttpSemanticConventions.GetRequestMethodAttributeValues(request.Method, out string httpRequestMethod, out _);
+                return HttpSemanticConventions.GetResourceName(httpRequestMethod);
+            }
+
             string httpMethod = request.Method?.ToUpperInvariant() ?? "UNKNOWN";
 
             string absolutePath = request.PathBase.HasValue
@@ -103,8 +113,7 @@ namespace Datadog.Trace.PlatformHelpers
 
         public Scope StartAspNetCorePipelineScope(Tracer tracer, Security security, Iast.Iast iast, HttpContext httpContext, string resourceName)
         {
-            var routeTemplateResourceNames = tracer.Settings.RouteTemplateResourceNamesEnabled;
-            var tags = routeTemplateResourceNames ? new AspNetCoreEndpointTags() : new AspNetCoreTags();
+            var tags = tracer.Settings.RouteTemplateResourceNamesEnabled ? new AspNetCoreEndpointTags() : new AspNetCoreTags();
             return StartAspNetCorePipelineScope(tracer, security, iast, httpContext, resourceName, tags, useSingleSpanRequestTracking: false);
         }
 
@@ -116,12 +125,10 @@ namespace Datadog.Trace.PlatformHelpers
         private Scope StartAspNetCorePipelineScope(Tracer tracer, Security security, Iast.Iast iast, HttpContext httpContext, string resourceName, WebTags tags, bool useSingleSpanRequestTracking)
         {
             var request = httpContext.Request;
-            string host = request.Host.Value;
-            string httpMethod = request.Method?.ToUpperInvariant() ?? "UNKNOWN";
-            string url = request.GetUrlForSpan(tracer.TracerManager.QueryStringManager);
+            var otelSemanticsEnabled = tracer.Settings.OtelSemanticsEnabled;
             var userAgent = request.Headers[HttpHeaderNames.UserAgent];
 
-            resourceName ??= GetDefaultResourceName(request);
+            resourceName ??= GetDefaultResourceName(request, otelSemanticsEnabled);
             var extractedContext = ExtractPropagatedContext(tracer, request).MergeBaggageInto(Baggage.Current);
             InferredProxyScopePropagationContext? proxyContext = null;
 
@@ -135,7 +142,31 @@ namespace Datadog.Trace.PlatformHelpers
             }
 
             var scope = tracer.StartActiveInternal(_requestInOperationName, extractedContext.SpanContext, tags: tags, links: extractedContext.Links);
-            scope.Span.DecorateWebServerSpan(resourceName, httpMethod, host, url, userAgent, tags);
+
+            if (otelSemanticsEnabled)
+            {
+                HttpSemanticConventions.SetHttpServerRequestValues(
+                    scope.Span,
+                    tags,
+                    resourceName: resourceName,
+                    originalMethod: request.Method,
+                    userAgent: userAgent,
+                    protocol: null,
+                    scheme: request.Scheme,
+                    host: request.Host.Host,
+                    port: request.Host.Port,
+                    pathBase: request.PathBase.ToUriComponent(),
+                    path: request.Path.ToUriComponent(),
+                    queryString: RequestDataHelper.GetQueryString(request).Value,
+                    queryStringManager: tracer.TracerManager.QueryStringManager);
+            }
+            else
+            {
+                var httpMethod = request.Method?.ToUpperInvariant() ?? "UNKNOWN";
+                var host = request.Host.Value;
+                var url = request.GetUrlForSpan(tracer.TracerManager.QueryStringManager);
+                scope.Span.DecorateWebServerSpan(resourceName, httpMethod, host, url, userAgent, tags);
+            }
 
             var dataStreamsManager = tracer.TracerManager.DataStreamsManager;
             if (dataStreamsManager.IsTransactionTrackingEnabled)
@@ -233,7 +264,6 @@ namespace Datadog.Trace.PlatformHelpers
                 // Tracer.Instance.ActiveScope, but if a customer is not disposing a span somewhere,
                 // that will not necessarily be true, so make sure you use the RequestTrackingFeature.
                 var span = rootScope.Span;
-                CopyAspNetCoreActivityTagsIfRequired(span, tracer.Settings.OtelSemanticsEnabled);
                 var isMissingHttpStatusCode = !span.HasHttpStatusCode();
 
                 var settings = tracer.CurrentTraceSettings.Settings;
@@ -241,7 +271,7 @@ namespace Datadog.Trace.PlatformHelpers
                 {
                     if (string.IsNullOrEmpty(span.ResourceName))
                     {
-                        span.ResourceName = GetDefaultResourceName(httpContext.Request);
+                        span.ResourceName = GetDefaultResourceName(httpContext.Request, tracer.Settings.OtelSemanticsEnabled);
                     }
 
                     if (isMissingHttpStatusCode)
@@ -249,6 +279,9 @@ namespace Datadog.Trace.PlatformHelpers
                         span.SetHttpStatusCode(httpContext.Response.StatusCode, isServer: true, settings);
                     }
                 }
+
+                // Must run _after_ the status code has been recorded above
+                CopyAspNetCoreActivityTagsIfRequired(span, tracer.Settings.OtelSemanticsEnabled);
 
                 span.SetHeaderTags(new HeadersCollectionAdapter(httpContext.Response.Headers), settings.HeaderTags, defaultTagPrefix: SpanContextPropagator.HttpResponseHeadersTagPrefix);
 
@@ -261,6 +294,7 @@ namespace Datadog.Trace.PlatformHelpers
                 if (security.AppsecEnabled)
                 {
                     var securityCoordinator = SecurityCoordinator.Get(security, span, new SecurityCoordinator.HttpTransport(httpContext));
+                    securityCoordinator.CheckResponseAtRequestEnd(httpContext);
                     securityCoordinator.Reporter.AddResponseHeadersToSpan();
                 }
 
@@ -345,11 +379,12 @@ namespace Datadog.Trace.PlatformHelpers
                             ref state,
                             static (ref s, kvp) =>
                             {
-                                // We don't want to set know values to avoid conflicting scenarios
+                                // We don't want to set known values to avoid conflicting scenarios
                                 // with the status code, resource name, operation name etc that we set
-                                // by default on aspnetcore spans when _not_ using activities
-                                // We also don't want to override our standard aspnetcore/web tags.
-                                if (!IsKnownWebTag(kvp.Key))
+                                // by default on aspnetcore spans when _not_ using activities.
+                                // We also don't want to override any of our standard aspnetcore/web
+                                // tags that already have a value.
+                                if (!IsKnownWebTagWithValue(s.Span, kvp.Key))
                                 {
                                     OtlpHelpers.SetTagObject(s.Span, kvp.Key, kvp.Value, setKnownValues: false, remapOtelKeys: !s.OpenTelemetrySemanticsEnabled);
                                 }
@@ -367,11 +402,12 @@ namespace Datadog.Trace.PlatformHelpers
                             ref state,
                             static (ref s, kvp) =>
                             {
-                                // We don't want to set know values to avoid conflicting scenarios
+                                // We don't want to set known values to avoid conflicting scenarios
                                 // with the status code, resource name, operation name etc that we set
-                                // by default on aspnetcore spans when _not_ using activities
-                                // We also don't want to override our standard aspnetcore/web tags.
-                                if (!IsKnownWebTag(kvp.Key))
+                                // by default on aspnetcore spans when _not_ using activities.
+                                // We also don't want to override any of our standard aspnetcore/web
+                                // tags that already have a value.
+                                if (!IsKnownWebTagWithValue(s.Span, kvp.Key))
                                 {
                                     OtlpHelpers.SetTagObject(s.Span, kvp.Key, kvp.Value, setKnownValues: false, remapOtelKeys: !s.OpenTelemetrySemanticsEnabled);
                                 }
@@ -386,19 +422,53 @@ namespace Datadog.Trace.PlatformHelpers
                 }
             }
 
-            // Theoretically we should check
-            // for _all_ the tags we might set on aspnetcore root spans,
-            // but we only both to check tags that are likely to be set here
-            // (i.e. don't bother checking the aspnetcore. tags)
-            static bool IsKnownWebTag(string tagName) =>
-                tagName == Tags.HttpRoute
-             || tagName == Tags.HttpUserAgent
-             || tagName == Tags.HttpMethod
-             || tagName == Tags.HttpUrl
-             || tagName == Tags.HttpStatusCode
-             || tagName == Tags.HttpResponseStatusCode
-             || tagName == Tags.NetworkClientIp
-             || tagName == Tags.HttpClientIp;
+            // We never let the activity overwrite a tag that we have already given a value to, but
+            // we do let its value through when we haven't recorded one ourselves. That means a span
+            // looks the same whether the OpenTelemetry attributes were added by the OTel SDK's
+            // AddAspNetCoreInstrumentation() or (from .NET 11 onwards) by ASP.NET Core itself, at
+            // the cost of some "duplicate" OTel-named tags alongside our Datadog-named ones.
+            // Only the tags we might set on aspnetcore root spans are worth checking, so we don't
+            // bother with e.g. the aspnetcore.* tags, which the activity never carries.
+            static bool IsKnownWebTagWithValue(Span span, string tagName)
+            {
+                switch (tagName)
+                {
+                    // Read-only on the tag objects used for aspnet_core.request spans, so setting
+                    // them can never do anything except log "Attempted to set readonly tag".
+                    // We set error.type ourselves, either from the exception or (when using OTel
+                    // semantics) from the status code, and we don't want to risk polluting it from the activity.
+                    case Tags.HttpRoute:
+                    case Tags.SpanKind:
+                    case Tags.InstrumentationName:
+                    case Tags.ErrorType:
+                        return true;
+                    default:
+                        return span.Tags is WebTags tags && HasWebTagValue(tags, tagName);
+                }
+
+                // Note that the OpenTelemetry names that are aliases of a Datadog name (rather than
+                // OTel-only additions) share a single property, so checking it deduplicates the tag in
+                // both semantics modes.
+                static bool HasWebTagValue(WebTags tags, string tagName)
+                    => tagName switch
+                    {
+                        Tags.HttpUserAgent or Tags.UserAgentOriginal => tags.HttpUserAgent is not null,
+                        Tags.HttpMethod or Tags.HttpRequestMethod => tags.HttpMethod is not null,
+                        Tags.HttpRequestMethodOriginal => tags.HttpRequestMethodOriginal is not null,
+                        Tags.HttpUrl => tags.HttpUrl is not null,
+                        Tags.HttpRequestHeadersHost => tags.HttpRequestHeadersHost is not null,
+                        Tags.HttpStatusCode or Tags.HttpResponseStatusCode => tags.HttpStatusCode is not null,
+                        Tags.NetworkClientIp or Tags.NetworkPeerAddress => tags.NetworkClientIp is not null,
+                        Tags.HttpClientIp or Tags.ClientAddress => tags.HttpClientIp is not null,
+                        Tags.UrlScheme => tags.UrlScheme is not null,
+                        Tags.UrlPath => tags.UrlPath is not null,
+                        Tags.UrlQuery => tags.UrlQuery is not null,
+                        Tags.ServerAddress => tags.ServerAddress is not null,
+                        Tags.ServerPort => tags.ServerPort is not null,
+                        Tags.NetworkProtocolVersion => tags.NetworkProtocolVersion is not null,
+                        _ => false,
+                    };
+            }
         }
 
         /// <summary>

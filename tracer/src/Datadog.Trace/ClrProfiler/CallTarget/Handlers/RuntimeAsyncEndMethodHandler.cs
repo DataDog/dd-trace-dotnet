@@ -1,0 +1,183 @@
+// <copyright file="RuntimeAsyncEndMethodHandler.cs" company="Datadog">
+// Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
+// This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
+// </copyright>
+#nullable enable
+
+// net6.0 is the only Datadog.Trace asset a .NET 10+ process can load
+#if NET6_0_OR_GREATER // NET 10+ really
+
+using System;
+using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
+using Datadog.Trace.AppSec;
+using Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations;
+
+namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers;
+
+/// <summary>
+/// End-method handler for a .NET 11 runtime-async method declaring a non-generic
+/// <see cref="Task"/> or <c>ValueTask</c>.
+/// </summary>
+/// <remarks>
+/// Such a method's body leaves nothing on the evaluation stack at <c>ret</c>, so the rewriter
+/// treats its effective return type as void and there is no task to attach a continuation to.
+/// There is no need for one either: the runtime drives suspension inside the body, so by the time
+/// the epilog runs the method has genuinely completed, and an awaited failure has already
+/// surfaced as a thrown exception rather than as a faulted task.
+/// <para>
+/// Integrations must not have to care whether their target happens to be runtime-async, so both
+/// callbacks are bound against the type the method <em>declares</em>:
+/// <c>OnAsyncMethodEnd</c> exactly as <see cref="TaskContinuationGenerator{TIntegration, TTarget, TReturn}"/>
+/// binds it, and <c>OnMethodEnd</c> against <typeparamref name="TDeclaredReturn"/> with a
+/// synthesised already-completed value. A completed task is a faithful stand-in here - the
+/// operation really has finished by this point, unlike the in-flight task a state-machine target
+/// would hand over.
+/// </para>
+/// <para>
+/// An integration may declare both, and then both run, in the same order as
+/// <see cref="EndMethodHandler{TIntegration, TTarget, TReturn}"/> runs its continuation generator
+/// and its <c>OnMethodEnd</c>. <c>TraceAnnotationsIntegration</c> is the live example, and it
+/// relies on that: its <c>OnMethodEnd</c> only disposes the scope when the value it is handed is
+/// not task-like, so handing it a completed task correctly leaves disposal to
+/// <c>OnAsyncMethodEnd</c>.
+/// </para>
+/// </remarks>
+/// <typeparam name="TIntegration">Integration type</typeparam>
+/// <typeparam name="TTarget">Target type</typeparam>
+/// <typeparam name="TDeclaredReturn">The Task or ValueTask the method declares</typeparam>
+internal static class RuntimeAsyncEndMethodHandler<TIntegration, TTarget, TDeclaredReturn>
+{
+    private static readonly ContinuationGenerator<TTarget, object>.ObjectContinuationMethodDelegate? OnAsyncMethodEnd;
+    private static readonly EndMethodHandler<TIntegration, TTarget, TDeclaredReturn>.InvokeDelegate? OnMethodEnd;
+
+    /// <summary>
+    /// Non-null when the integration's OnAsyncMethodEnd is itself async, which cannot be honoured
+    /// on a runtime-async target. Recorded here rather than thrown from the static constructor,
+    /// because the CLR would wrap that in a TypeInitializationException and
+    /// <see cref="IntegrationOptions{TIntegration, TTarget}.LogException"/> only recognises a
+    /// <see cref="CallTargetInvokerException"/> as a reason to disable the integration.
+    /// </summary>
+    private static readonly Exception? UnsupportedAsyncCallback;
+
+    /// <summary>
+    /// An already-completed value of the declared type, handed to OnMethodEnd in place of the task
+    /// the body never materialises. Task.CompletedTask and default(ValueTask) are both free.
+    /// </summary>
+    private static readonly TDeclaredReturn? CompletedValue;
+
+    private static bool _reportedUnsupportedSubstitution;
+
+    static RuntimeAsyncEndMethodHandler()
+    {
+        try
+        {
+            var asyncResult = IntegrationMapper.CreateAsyncEndMethodDelegate(typeof(TIntegration), typeof(TTarget), typeof(object));
+            if (asyncResult.Method is { } asyncMethod)
+            {
+                if (asyncResult.IsTaskReturn)
+                {
+                    // We cannot await here. The epilog runs inside the finally of the rewritten
+                    // method, and the runtime-async spec forbids suspension points in handler
+                    // blocks; blocking instead would risk deadlock on a thread with a sync context.
+                    UnsupportedAsyncCallback = new NotSupportedException(
+                        $"Integration '{typeof(TIntegration).FullName}' has an async 'OnAsyncMethodEnd' returning {asyncMethod.ReturnType.FullName}, which cannot be invoked on the .NET 11 runtime-async target '{typeof(TTarget).FullName}' because the CallTarget epilog runs inside a finally block. The integration will be disabled for this target.");
+                }
+                else
+                {
+                    var delegateType = typeof(ContinuationGenerator<TTarget, object>.ObjectContinuationMethodDelegate);
+                    OnAsyncMethodEnd = (ContinuationGenerator<TTarget, object>.ObjectContinuationMethodDelegate)asyncMethod.CreateDelegate(delegateType);
+                }
+            }
+
+            // Not an else: an integration that declares both gets both, as it would from
+            // EndMethodHandler<TIntegration, TTarget, TDeclaredReturn>.
+            if (IntegrationMapper.CreateEndMethodDelegate(typeof(TIntegration), typeof(TTarget), typeof(TDeclaredReturn)) is { } endMethod)
+            {
+                var delegateType = typeof(EndMethodHandler<TIntegration, TTarget, TDeclaredReturn>.InvokeDelegate);
+                OnMethodEnd = (EndMethodHandler<TIntegration, TTarget, TDeclaredReturn>.InvokeDelegate)endMethod.CreateDelegate(delegateType);
+                CompletedValue = RuntimeAsyncHelper.CreateCompleted<TDeclaredReturn>();
+            }
+        }
+        catch (Exception ex) when (ex is not BlockException)
+        {
+            throw new CallTargetInvokerException(ex);
+        }
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal static CallTargetReturn Invoke(TTarget? instance, Exception? exception, in CallTargetState state)
+    {
+        // There is deliberately no IntegrationOptions.RestoreScopeFromAsyncExecution call here,
+        // unlike EndMethodHandler<TIntegration, TTarget, TReturn>. That one exists because
+        // CallTarget instruments a state-machine async method via its *stub*: OnMethodBegin runs
+        // before builder.Start(ref stateMachine), outside the ExecutionContext save/restore that
+        // AsyncMethodBuilderCore.Start performs, so its AsyncLocal write escapes to the caller and
+        // has to be undone by hand. A runtime-async method has no stub - the prologue runs inside
+        // the method, within the region the runtime already unwinds - so there is nothing to undo,
+        // and restoring here would clobber any distributed context the body legitimately set.
+        // RuntimeAsyncScopeRestoreTests pins both halves of this.
+        if (UnsupportedAsyncCallback is { } unsupported)
+        {
+            // Turn the integration off for this target rather than leave it half-live. OnMethodBegin
+            // has already run and created state that only the callback we cannot invoke would clean
+            // up, so every later call would leak the same way. LogException records telemetry and
+            // sets the flag that every BeginMethod and EndMethod overload on CallTargetInvoker gates
+            // on, so this runs exactly once: from the next call the target is cleanly uninstrumented.
+            IntegrationOptions<TIntegration, TTarget>.LogException(new CallTargetInvokerException(unsupported));
+            return CallTargetReturn.GetDefault();
+        }
+
+        if (OnAsyncMethodEnd is not null)
+        {
+            OnAsyncMethodEnd(instance, null, exception, in state);
+        }
+
+        if (OnMethodEnd is not null)
+        {
+            // On the exception path we pass the default value rather than a faulted task, matching
+            // what a state-machine target does when it throws before its first suspension: the
+            // exception is carried by the exception argument, not by the return value.
+            var handed = exception is null ? CompletedValue : default;
+            var returned = OnMethodEnd(instance, handed, exception, in state).GetReturnValue();
+
+            // When an exception is propagating the rewritten method rethrows it, so the return
+            // value never reaches the caller and there is nothing to honour.
+            if (exception is null && !RuntimeAsyncHelper.IsUnchanged(returned, handed))
+            {
+                ReportUnsupportedSubstitution();
+            }
+        }
+
+        return CallTargetReturn.GetDefault();
+    }
+
+    /// <summary>
+    /// Reports an OnMethodEnd that tried to replace the task, which this shape can never honour.
+    /// </summary>
+    /// <remarks>
+    /// Unlike the generic handler there is no partial support to offer: a method declaring a
+    /// non-generic Task or ValueTask leaves nothing on the evaluation stack, the epilog's
+    /// <see cref="CallTargetReturn"/> carries no value, and the runtime builds the task itself.
+    /// There is no slot a replacement could be written into, so all we can do is say so rather
+    /// than drop it in silence.
+    /// <para>
+    /// Not a disable - the callback did run, so only the substitution is lost. See the note on the
+    /// generic handler's equivalent for why the exception type matters.
+    /// </para>
+    /// </remarks>
+    private static void ReportUnsupportedSubstitution()
+    {
+        if (_reportedUnsupportedSubstitution)
+        {
+            return;
+        }
+
+        _reportedUnsupportedSubstitution = true;
+        IntegrationOptions<TIntegration, TTarget>.LogException(new NotSupportedException(
+            $"Integration '{typeof(TIntegration).FullName}' returned a replacement {typeof(TDeclaredReturn).FullName} from 'OnMethodEnd', which cannot be honoured. "
+          + $"The target '{typeof(TTarget).FullName}' is a .NET 11 runtime-async method declaring a non-generic Task or ValueTask: its body returns nothing and the runtime builds the task, so there is no task for the replacement to take the place of. "
+          + "The original task is used instead."));
+    }
+}
+#endif

@@ -435,7 +435,7 @@ namespace Datadog.Trace.FeatureFlags
         [TestingAndPrivateOnly]
         internal static int GetShard(string salt, string? targetingKey, int totalShards)
         {
-            if (StringUtil.IsNullOrEmpty(targetingKey))
+            if (targetingKey is null)
             {
                 throw new MissingTargetingKeyException();
             }
@@ -476,7 +476,7 @@ namespace Datadog.Trace.FeatureFlags
             // Special case "id": if not present, use targeting key
             if (name == "id" && !context.Attributes.ContainsKey(name))
             {
-                return StringUtil.IsNullOrEmpty(context.TargetingKey) ? null : context.TargetingKey;
+                return context.TargetingKey;
             }
 
             return context.GetAttribute(name);
@@ -720,7 +720,7 @@ namespace Datadog.Trace.FeatureFlags
 
             if (doLog)
             {
-                DispatchExposure(flagKey, evaluation, evalTime, context);
+                DispatchExposure(flagKey, evaluation, evalTime, context, split.SerialId);
             }
 
             return evaluation;
@@ -744,7 +744,8 @@ namespace Datadog.Trace.FeatureFlags
             string flagKey,
             Evaluation evaluation,
             DateTime evalTime,
-            EvaluationContext? context)
+            EvaluationContext? context,
+            long? serialId)
         {
             var allocationKey = AllocationKey(evaluation);
             var variantKey = evaluation.Variant;
@@ -759,7 +760,8 @@ namespace Datadog.Trace.FeatureFlags
                 new Exposure.Model.Allocation(allocationKey),
                 new Exposure.Model.Flag(flagKey),
                 new Exposure.Model.Variant(variantKey),
-                new Exposure.Model.Subject(context?.TargetingKey ?? string.Empty, FlattenContext(context)));
+                new Exposure.Model.Subject(context?.TargetingKey ?? string.Empty, FlattenContext(context)),
+                serialId);
 
             _onExposureEvent?.Invoke(in evt);
         }

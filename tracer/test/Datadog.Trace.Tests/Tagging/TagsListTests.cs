@@ -43,53 +43,6 @@ namespace Datadog.Trace.Tests.Tagging
         public async Task DisposeAsync() => await _tracer.DisposeAsync();
 
         [Fact]
-        [Flaky("This concurrency test can time out on saturated CI agents")]
-        public async Task SetTagAndSetTags_WhenCalledConcurrently_ShouldKeepSingleEntryPerKey()
-        {
-            var tags = new TagsList();
-
-            const int workerCount = 4;
-            const int iterationsPerWorker = 1_000;
-            var timeout = TimeSpan.FromSeconds(20);
-            var expectedKeys = new[] { "k1", "k2", "k3", "k4" };
-
-            using var startSignal = new ManualResetEventSlim(false);
-            var workers = Enumerable.Range(0, workerCount)
-                                    .Select(
-                                         workerId => Task.Run(
-                                             () =>
-                                             {
-                                                 startSignal.Wait();
-
-                                                 for (var i = 0; i < iterationsPerWorker; i++)
-                                                 {
-                                                     tags.SetTags(
-                                                         new("k1", workerId.ToString()),
-                                                         new("k2", i.ToString()),
-                                                         new("k3", "stable"));
-                                                     tags.SetTag("k4", workerId.ToString());
-                                                 }
-                                             }))
-                                    .ToArray();
-
-            startSignal.Set();
-
-            var allWorkers = Task.WhenAll(workers);
-            var completedTask = await Task.WhenAny(allWorkers, Task.Delay(timeout));
-            if (completedTask != allWorkers)
-            {
-                throw new TimeoutException($"Concurrent tag updates exceeded {timeout}. Worker statuses: {string.Join(", ", workers.Select(w => w.Status))}");
-            }
-
-            await allWorkers;
-
-            var snapshot = GetTagsSnapshot(tags);
-
-            snapshot.Select(x => x.Key).Should().BeEquivalentTo(expectedKeys);
-            snapshot.Select(x => x.Key).Should().OnlyHaveUniqueItems();
-        }
-
-        [Fact]
         public void SetTags_WithOnlyNullValues_DoesNotInitializeBackingTagsList()
         {
             var tags = new TagsList();
@@ -172,6 +125,77 @@ namespace Datadog.Trace.Tests.Tagging
                .Which
                .Should()
                .Be(new KeyValuePair<string, string>(expectedKey, "202"));
+        }
+
+        [Theory]
+        [InlineData(Tags.HttpMethod, Tags.HttpRequestMethod)]
+        [InlineData(Tags.HttpUserAgent, Tags.UserAgentOriginal)]
+        [InlineData(Tags.HttpClientIp, Tags.ClientAddress)]
+        [InlineData(Tags.NetworkClientIp, Tags.NetworkPeerAddress)]
+        public void WebTagsAliasesCanBeReadAndWrittenByEitherName(string datadogName, string otelName)
+        {
+            var tags = new WebTags();
+
+            tags.SetTag(datadogName, "first");
+            tags.GetTag(otelName).Should().Be("first");
+
+            tags.SetTag(otelName, "second");
+            tags.GetTag(datadogName).Should().Be("second");
+
+            // clearing via either name clears the single backing value
+            tags.SetTag(otelName, null);
+            tags.GetTag(datadogName).Should().BeNull();
+        }
+
+        [Theory]
+        [InlineData(false, Tags.HttpMethod, Tags.HttpRequestMethod)]
+        [InlineData(true, Tags.HttpRequestMethod, Tags.HttpMethod)]
+        public void WebTagsAliasesEnumerateExactlyOneName(bool openTelemetrySemanticsEnabled, string expectedKey, string unexpectedKey)
+        {
+            var tags = new WebTags { HttpMethod = "GET", HttpUserAgent = "ua", HttpClientIp = "1.2.3.4", NetworkClientIp = "5.6.7.8" };
+
+            var keys = GetTagsSnapshot(tags, openTelemetrySemanticsEnabled).Select(x => x.Key).ToList();
+
+            keys.Should().Contain(expectedKey).And.NotContain(unexpectedKey);
+
+            // the other three aliases follow the same flag
+            var otelKeys = new[] { Tags.UserAgentOriginal, Tags.ClientAddress, Tags.NetworkPeerAddress };
+            var datadogKeys = new[] { Tags.HttpUserAgent, Tags.HttpClientIp, Tags.NetworkClientIp };
+            var expected = openTelemetrySemanticsEnabled ? otelKeys : datadogKeys;
+            var unexpected = openTelemetrySemanticsEnabled ? datadogKeys : otelKeys;
+
+            keys.Should().Contain(expected).And.NotContain(unexpected);
+        }
+
+        [Fact]
+        public void WebTagsOtelOnlyTagsAreEmittedUnderTheirOwnName()
+        {
+            // These have no Datadog equivalent, so they are emitted under the same name in both
+            // modes. The instrumentation only populates them when OTel semantics are enabled.
+            var tags = new WebTags
+            {
+                UrlScheme = "https",
+                UrlPath = "/api/value",
+                UrlQuery = "q=1",
+                ServerAddress = "example.com",
+                ServerPort = 8443,
+                HttpRequestMethodOriginal = "GeT",
+            };
+
+            foreach (var openTelemetrySemanticsEnabled in new[] { false, true })
+            {
+                GetTagsSnapshot(tags, openTelemetrySemanticsEnabled)
+                   .Should()
+                   .Contain(
+                    [
+                        new KeyValuePair<string, string>(Tags.UrlScheme, "https"),
+                        new KeyValuePair<string, string>(Tags.UrlPath, "/api/value"),
+                        new KeyValuePair<string, string>(Tags.UrlQuery, "q=1"),
+                        new KeyValuePair<string, string>(Tags.ServerAddress, "example.com"),
+                        new KeyValuePair<string, string>(Tags.ServerPort, "8443"),
+                        new KeyValuePair<string, string>(Tags.HttpRequestMethodOriginal, "GeT"),
+                    ]);
+            }
         }
 
         [Fact]
@@ -609,6 +633,57 @@ namespace Datadog.Trace.Tests.Tagging
             public void Process(TagItem<int> item)
             {
                 _items.Add(new(item.Key, item.Value.ToString(CultureInfo.InvariantCulture)));
+            }
+        }
+
+        [Collection(nameof(HighConcurrencyTestCollection))]
+        public class ConcurrencyTests
+        {
+            [Fact]
+            [Flaky("This concurrency test can time out on saturated CI agents")]
+            public async Task SetTagAndSetTags_WhenCalledConcurrently_ShouldKeepSingleEntryPerKey()
+            {
+                var tags = new TagsList();
+
+                const int workerCount = 4;
+                const int iterationsPerWorker = 1_000;
+                var timeout = TimeSpan.FromSeconds(20);
+                var expectedKeys = new[] { "k1", "k2", "k3", "k4" };
+
+                using var startSignal = new ManualResetEventSlim(false);
+                var workers = Enumerable.Range(0, workerCount)
+                                        .Select(
+                                             workerId => Task.Run(
+                                                 () =>
+                                                 {
+                                                     startSignal.Wait();
+
+                                                     for (var i = 0; i < iterationsPerWorker; i++)
+                                                     {
+                                                         tags.SetTags(
+                                                             new("k1", workerId.ToString()),
+                                                             new("k2", i.ToString()),
+                                                             new("k3", "stable"));
+                                                         tags.SetTag("k4", workerId.ToString());
+                                                     }
+                                                 }))
+                                        .ToArray();
+
+                startSignal.Set();
+
+                var allWorkers = Task.WhenAll(workers);
+                var completedTask = await Task.WhenAny(allWorkers, Task.Delay(timeout));
+                if (completedTask != allWorkers)
+                {
+                    throw new TimeoutException($"Concurrent tag updates exceeded {timeout}. Worker statuses: {string.Join(", ", workers.Select(w => w.Status))}");
+                }
+
+                await allWorkers;
+
+                var snapshot = GetTagsSnapshot(tags);
+
+                snapshot.Select(x => x.Key).Should().BeEquivalentTo(expectedKeys);
+                snapshot.Select(x => x.Key).Should().OnlyHaveUniqueItems();
             }
         }
     }

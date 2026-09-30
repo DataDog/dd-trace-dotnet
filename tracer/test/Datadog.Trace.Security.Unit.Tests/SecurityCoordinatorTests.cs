@@ -81,7 +81,7 @@ namespace Datadog.Trace.Security.Unit.Tests
             waf.Should().NotBeNull();
             var security = new AppSec.Security(waf: waf);
             var securityCoordinator = TryGet(security, span);
-            var result = securityCoordinator.Value.RunWaf(new Dictionary<string, object> { { AddressesConstants.RequestMethod, "GET" } }, runWithEphemeral: true, isRasp: true);
+            var result = securityCoordinator.Value.RunWaf(new Dictionary<string, object> { { AddressesConstants.RequestMethod, "GET" } }, runWithEphemeral: true, raspAddress: AddressesConstants.DBStatement);
             result.Should().BeNull();
         }
 
@@ -137,7 +137,7 @@ namespace Datadog.Trace.Security.Unit.Tests
 
             using var security = new AppSec.Security();
             var securityCoordinator = SecurityCoordinator.Get(security, rootTestScope.Span, new HttpTransport(contextMoq.Object));
-            var result = securityCoordinator.RunWaf(new(), runWithEphemeral: true, isRasp: true);
+            var result = securityCoordinator.RunWaf(new(), runWithEphemeral: true, raspAddress: AddressesConstants.DBStatement);
             result.Should().BeNull();
         }
 
@@ -160,7 +160,7 @@ namespace Datadog.Trace.Security.Unit.Tests
             waf.Should().NotBeNull();
             var security = new AppSec.Security(waf: waf);
             var securityCoordinator = Get(security, span, httpTransport);
-            var result = securityCoordinator.RunWaf(new Dictionary<string, object> { { AddressesConstants.RequestMethod, "GET" } }, runWithEphemeral: true, isRasp: true);
+            var result = securityCoordinator.RunWaf(new Dictionary<string, object> { { AddressesConstants.RequestMethod, "GET" } }, runWithEphemeral: true, raspAddress: AddressesConstants.DBStatement);
             result.Should().NotBeNull();
         }
 #endif

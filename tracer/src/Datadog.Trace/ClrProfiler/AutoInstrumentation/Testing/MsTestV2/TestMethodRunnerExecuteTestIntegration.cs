@@ -40,20 +40,21 @@ public static class TestMethodRunnerExecuteTestIntegration
         if (MsTestIntegration.IsEnabled &&
             instance.TestMethodInfo is { TestMethodOptions: { Executor: { } executor } } testMethodInfo)
         {
+            var executorType = executor.GetType();
             SkipTestMethodExecutor? newExecutor = null;
             SkippableTest? skippableTest = null;
             var testManagementProperties = MsTestIntegration.GetTestProperties(testMethod);
 
             if (Common.IsDisabledByTestManagement(testManagementProperties))
             {
-                _disabledSkipTestMethodExecutor ??= new SkipTestMethodExecutor.SyncImpl(executor.GetType().Assembly, "Flaky test is disabled by Datadog.");
+                _disabledSkipTestMethodExecutor ??= new SkipTestMethodExecutor.SyncImpl(executorType, "Flaky test is disabled by Datadog.");
                 newExecutor = _disabledSkipTestMethodExecutor;
             }
             else if (Common.CanApplyItrSkip(testManagementProperties) &&
                      MsTestIntegration.ShouldSkip(testMethod, out _, out _, out skippableTest))
             {
                 newExecutor = new SkipTestMethodExecutor.SyncImpl(
-                    executor.GetType().Assembly,
+                    executorType,
                     IntelligentTestRunnerTags.SkippedByReason,
                     recordCoverageBackfillSkip: true,
                     skippableTest: skippableTest);
@@ -61,7 +62,7 @@ public static class TestMethodRunnerExecuteTestIntegration
 
             if (newExecutor is not null)
             {
-                var replacementExecutor = DuckType.CreateReverse(executor.GetType(), newExecutor);
+                var replacementExecutor = DuckType.CreateReverse(newExecutor.TestMethodAttributeType, newExecutor);
                 testMethodInfo.TestMethodOptions.Executor = replacementExecutor;
                 return TestMethodExecutorRestore.Create(testMethodInfo.TestMethodOptions, executor, replacementExecutor);
             }
@@ -115,20 +116,21 @@ public static class TestMethodRunnerExecuteTestIntegrationV3_9
         if (MsTestIntegration.IsEnabled &&
             instance.TestMethodInfo is { Executor: { } executor } testMethodInfo)
         {
+            var executorType = executor.GetType();
             SkipTestMethodExecutor? newExecutor = null;
             SkippableTest? skippableTest = null;
             var testManagementProperties = MsTestIntegration.GetTestProperties(testMethod);
 
             if (Common.IsDisabledByTestManagement(testManagementProperties))
             {
-                _disabledSkipTestMethodExecutor ??= new SkipTestMethodExecutor.AsyncImpl(executor.GetType().Assembly, "Flaky test is disabled by Datadog.");
+                _disabledSkipTestMethodExecutor ??= SkipTestMethodExecutor.Create(executorType, "Flaky test is disabled by Datadog.");
                 newExecutor = _disabledSkipTestMethodExecutor;
             }
             else if (Common.CanApplyItrSkip(testManagementProperties) &&
                      MsTestIntegration.ShouldSkip(testMethod, out _, out _, out skippableTest))
             {
-                newExecutor = new SkipTestMethodExecutor.AsyncImpl(
-                    executor.GetType().Assembly,
+                newExecutor = SkipTestMethodExecutor.Create(
+                    executorType,
                     IntelligentTestRunnerTags.SkippedByReason,
                     recordCoverageBackfillSkip: true,
                     skippableTest: skippableTest);
@@ -136,7 +138,7 @@ public static class TestMethodRunnerExecuteTestIntegrationV3_9
 
             if (newExecutor is not null)
             {
-                var replacementExecutor = DuckType.CreateReverse(executor.GetType(), newExecutor);
+                var replacementExecutor = DuckType.CreateReverse(newExecutor.TestMethodAttributeType, newExecutor);
                 testMethodInfo.Executor = replacementExecutor;
                 return TestMethodExecutorRestore.Create(testMethodInfo, executor, replacementExecutor);
             }

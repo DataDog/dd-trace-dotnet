@@ -718,7 +718,7 @@ void DebuggerProbesInstrumentationRequester::DetermineReInstrumentProbes(
             continue;
         }
 
-        if (!debuggerMethodHandler->GetProbes().empty())
+        if (debuggerMethodHandler->HasProbes())
         {
             reInstrumentRequests.emplace(request);
         }

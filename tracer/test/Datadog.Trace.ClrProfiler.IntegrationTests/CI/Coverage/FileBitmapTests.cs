@@ -10,6 +10,7 @@ using Xunit;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI.Coverage;
 
+[Trait("Area", "CIVisibility")]
 public class FileBitmapTests
 {
     [Fact]

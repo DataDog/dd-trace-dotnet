@@ -264,14 +264,15 @@ namespace Datadog.Trace.DuckTyping
         /// <param name="il">LazyILGenerator instance</param>
         /// <param name="actualType">Actual type</param>
         /// <param name="expectedType">Expected type</param>
-        internal static void WriteTypeConversion(this LazyILGenerator il, Type actualType, Type expectedType)
+        /// <returns><c>null</c> if the methor call succeeded, or the incompatibility that prevents the conversion</returns>
+        internal static DuckTypeInvalidTypeConversionException? WriteTypeConversion(this LazyILGenerator il, Type actualType, Type expectedType)
         {
             var actualUnderlyingType = actualType.IsEnum ? Enum.GetUnderlyingType(actualType) : actualType;
             var expectedUnderlyingType = expectedType.IsEnum ? Enum.GetUnderlyingType(expectedType) : expectedType;
 
             if (actualUnderlyingType == expectedUnderlyingType)
             {
-                return;
+                return null;
             }
 
             if (actualUnderlyingType.IsValueType)
@@ -279,7 +280,7 @@ namespace Datadog.Trace.DuckTyping
                 if (expectedUnderlyingType.IsValueType)
                 {
                     // If both underlying types are value types then both must be of the same type.
-                    DuckTypeInvalidTypeConversionException.Throw(actualType, expectedType);
+                    return DuckTypeInvalidTypeConversionException.Create(actualType, expectedType);
                 }
                 else
                 {
@@ -301,7 +302,7 @@ namespace Datadog.Trace.DuckTyping
                         // If the expected type can't be assigned from the actual value type.
                         // Means if the expected type is an interface the actual type doesn't implement it.
                         // So no possible conversion or casting can be made here.
-                        DuckTypeInvalidTypeConversionException.Throw(actualType, expectedType);
+                        return DuckTypeInvalidTypeConversionException.Create(actualType, expectedType);
                     }
                 }
             }
@@ -338,7 +339,7 @@ namespace Datadog.Trace.DuckTyping
                     }
                     else
                     {
-                        DuckTypeInvalidTypeConversionException.Throw(actualType, expectedType);
+                        return DuckTypeInvalidTypeConversionException.Create(actualType, expectedType);
                     }
                 }
                 else if (expectedUnderlyingType != typeof(object))
@@ -348,18 +349,20 @@ namespace Datadog.Trace.DuckTyping
                     il.Emit(OpCodes.Castclass, expectedUnderlyingType);
                 }
             }
+
+            return null;
         }
 
         // WARNING: This method is a slim version of the WriteTypeConversion method without IL
         // Checks in both method must match! if you change either, you need to change both
-        internal static void CheckTypeConversion(Type actualType, Type expectedType)
+        internal static DuckTypeInvalidTypeConversionException? CheckTypeConversion(Type actualType, Type expectedType)
         {
             var actualUnderlyingType = actualType.IsEnum ? Enum.GetUnderlyingType(actualType) : actualType;
             var expectedUnderlyingType = expectedType.IsEnum ? Enum.GetUnderlyingType(expectedType) : expectedType;
 
             if (actualUnderlyingType == expectedUnderlyingType)
             {
-                return;
+                return null;
             }
 
             if (actualUnderlyingType.IsValueType)
@@ -367,23 +370,25 @@ namespace Datadog.Trace.DuckTyping
                 if (expectedUnderlyingType.IsValueType)
                 {
                     // If both underlying types are value types then both must be of the same type.
-                    DuckTypeInvalidTypeConversionException.Throw(actualType, expectedType);
+                    return DuckTypeInvalidTypeConversionException.Create(actualType, expectedType);
                 }
                 else if (expectedUnderlyingType != typeof(object) && !expectedUnderlyingType.IsAssignableFrom(actualUnderlyingType))
                 {
                     // If the expected type can't be assigned from the actual value type.
                     // Means if the expected type is an interface the actual type doesn't implement it.
                     // So no possible conversion or casting can be made here.
-                    DuckTypeInvalidTypeConversionException.Throw(actualType, expectedType);
+                    return DuckTypeInvalidTypeConversionException.Create(actualType, expectedType);
                 }
             }
             else if (expectedUnderlyingType.IsValueType)
             {
                 if (actualUnderlyingType != typeof(object) && !actualUnderlyingType.IsAssignableFrom(expectedUnderlyingType))
                 {
-                    DuckTypeInvalidTypeConversionException.Throw(actualType, expectedType);
+                    return DuckTypeInvalidTypeConversionException.Create(actualType, expectedType);
                 }
             }
+
+            return null;
         }
 
         /// <summary>

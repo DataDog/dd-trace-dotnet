@@ -45,7 +45,7 @@ internal sealed class ApiSecurity
             if (_enabled && lastWafCall && (!_apmTracingEnabled || SamplingPriorityValues.IsKeep(samplingPriority)))
             {
                 var httpRouteTag = localRootSpan.GetTag(Tags.AspNetCoreEndpoint) ?? localRootSpan.GetTag(Tags.HttpRoute);
-                var httpMethod = localRootSpan.GetTag(Tags.HttpMethod);
+                var httpMethod = localRootSpan.GetHttpMethod();
                 statusCode ??= localRootSpan.GetHttpStatusCode();
                 if (httpRouteTag == null || httpMethod == null || statusCode == null)
                 {

@@ -80,7 +80,7 @@ const shared::WSTRING system_private_corelib_assemblyName = WStr("System.Private
 const shared::WSTRING datadog_trace_clrprofiler_managed_loader_assemblyName = WStr("Datadog.Trace.ClrProfiler.Managed.Loader");
 
 const shared::WSTRING managed_profiler_full_assembly_version =
-    WStr("Datadog.Trace, Version=3.52.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb");
+    WStr("Datadog.Trace, Version=3.55.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb");
 
 const shared::WSTRING managed_profiler_name = WStr("Datadog.Trace");
 const shared::WSTRING manual_instrumentation_name = WStr("Datadog.Trace.Manual");
@@ -115,6 +115,8 @@ const shared::WSTRING libdatadog_libraryconfig_nativemethods_type = WStr("Datado
 
 const shared::WSTRING calltargetstate_type_name = WStr("Datadog.Trace.ClrProfiler.CallTarget.CallTargetState");
 const shared::WSTRING calltargetstate_skipmethodbody_function_name = WStr("GetSkipMethodBody");
+const shared::WSTRING calltargetinvoker_type_name = WStr("Datadog.Trace.ClrProfiler.CallTarget.CallTargetInvoker");
+const shared::WSTRING calltargetinvoker_endmethod_runtimeasync_function_name = WStr("EndMethodRuntimeAsync");
 
 // Also defined in `debugger_tokens.h` as `managed_profiler_debugger_async_method_invoker_type`
 const shared::WSTRING asyncmethoddebuggerinvokerv2_type_name = WStr("Datadog.Trace.Debugger.Instrumentation.AsyncMethodDebuggerInvokerV2");
@@ -138,7 +140,7 @@ const AssemblyProperty managed_profiler_assembly_property = AssemblyProperty(
                   49,  105, 236, 40,  21,  176, 12, 238, 238, 204, 141, 90,  27,  244, 61,  182, 125, 41,  97,  163,
                   233, 190, 161, 57,  127, 4,   62, 192, 116, 145, 112, 150, 73,  37,  47,  85,  101, 183, 86,  197},
     160, 32772, 1)
-        .WithVersion(3, 52, 0, 0);
+        .WithVersion(3, 55, 0, 0);
 
 } // namespace trace
 

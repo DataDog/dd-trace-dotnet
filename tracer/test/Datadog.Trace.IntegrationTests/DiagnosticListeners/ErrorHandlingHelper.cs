@@ -19,6 +19,15 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
 {
     public static class ErrorHandlingHelper
     {
+        // The returned status code changed in .NET 11 https://github.com/dotnet/aspnetcore/pull/68632
+#if NET11_0_OR_GREATER
+        public const int ReExecuteBadRequestStatusCode = 400;
+        public const bool ReExecuteBadRequestIsError = false;
+#else
+        public const int ReExecuteBadRequestStatusCode = 500;
+        public const bool ReExecuteBadRequestIsError = true;
+#endif
+
         public const string CustomHandlerPrefix = "/custom";
         public const string ReExecuteHandlerPrefix = "/reexecute";
         public const string ExceptionPagePrefix = "/devexeceptions";

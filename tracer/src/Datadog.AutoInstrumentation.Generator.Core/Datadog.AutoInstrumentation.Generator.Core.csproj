@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
         <LangVersion>latest</LangVersion>
-        <TargetFrameworks>net10.0</TargetFrameworks>
+        <TargetFrameworks>net11.0</TargetFrameworks>
         <SignAssembly>false</SignAssembly>
         <Nullable>enable</Nullable>
         <!-- Suppress documentation warnings for internal tooling -->

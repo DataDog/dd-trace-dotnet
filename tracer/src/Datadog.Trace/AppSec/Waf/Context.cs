@@ -64,10 +64,10 @@ internal sealed class Context : IContext
     }
 
     public IResult? Run(IDictionary<string, object> addressData, ulong timeoutMicroSeconds)
-        => RunInternal(addressData, false, timeoutMicroSeconds);
+        => RunInternal(addressData, false, timeoutMicroSeconds, isRasp: false, out _);
 
-    public IResult? RunWithEphemeral(IDictionary<string, object> ephemeralAddressData, ulong timeoutMicroSeconds, bool isRasp)
-        => RunInternal(ephemeralAddressData, true, timeoutMicroSeconds, isRasp);
+    public IResult? RunWithEphemeral(IDictionary<string, object> ephemeralAddressData, ulong timeoutMicroSeconds, bool isRasp, out WafOutcome outcome)
+        => RunInternal(ephemeralAddressData, true, timeoutMicroSeconds, isRasp, out outcome);
 
     public Dictionary<string, object> FilterAddresses(IDatadogSecurity security, string? userId = null, string? userLogin = null, string? userSessionId = null, bool fromSdk = false)
     {
@@ -110,6 +110,8 @@ internal sealed class Context : IContext
         }
     }
 
+    // a RASP run reports its binding errors as rasp.error instead, which its caller does from the
+    // BindingFailed outcome the run returns
     private static void RecordBindingError(bool isRasp)
     {
         if (!isRasp)
@@ -144,13 +146,15 @@ internal sealed class Context : IContext
     /// effects don't outlive the call; this is what RASP relies on</param>
     /// <param name="timeoutMicroSeconds">the WAF budget for this run</param>
     /// <param name="isRasp">whether this run should be reported as a RASP run</param>
-    private unsafe Result? RunInternal(IDictionary<string, object>? addressData, bool ephemeral, ulong timeoutMicroSeconds, bool isRasp = false)
+    /// <param name="outcome">why the run produced no result</param>
+    private unsafe Result? RunInternal(IDictionary<string, object>? addressData, bool ephemeral, ulong timeoutMicroSeconds, bool isRasp, out WafOutcome outcome)
     {
         DdwafObjectStruct retNative = default;
 
         if (_waf.Disposed)
         {
             Log.Warning("Context can't run when waf handle has been disposed. This shouldn't have happened with the locks, check concurrency.");
+            outcome = WafOutcome.WafUnavailable;
             return null;
         }
 
@@ -171,7 +175,10 @@ internal sealed class Context : IContext
         {
             if (_disposed)
             {
+                // the context is disposed when the request it belongs to ends, so a run that gets here
+                // arrived too late rather than failed
                 Log.Information("Can't run WAF when context is disposed");
+                outcome = WafOutcome.RequestEnded;
                 return null;
             }
 
@@ -183,6 +190,7 @@ internal sealed class Context : IContext
             {
                 Log.Error("The WAF was called without any address data");
                 RecordBindingError(isRasp);
+                outcome = WafOutcome.BindingFailed;
                 return null;
             }
 
@@ -206,6 +214,7 @@ internal sealed class Context : IContext
 
                     // nothing ran, so don't let this call's wall clock leak into the aggregated runtime
                     _stopwatch.Stop();
+                    outcome = WafOutcome.BindingFailed;
                     return null;
                 }
 
@@ -235,6 +244,7 @@ internal sealed class Context : IContext
         }
 
         _stopwatch.Stop();
+        outcome = WafOutcome.Success;
         var result = new Result(ref retNative, code, ref _totalRuntimeOverRuns, (ulong)(_stopwatch.Elapsed.TotalMilliseconds * 1000), isRasp, truncated);
 
         // the result was allocated by the WAF with the output allocator given to ddwaf_context_init, which is the default one

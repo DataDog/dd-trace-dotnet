@@ -31,6 +31,7 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI;
 
+[Trait("Area", "CIVisibility")]
 [UsesVerify]
 public abstract class XUnitEvpTests : TestingFrameworkEvpTest
 {
@@ -530,6 +531,8 @@ public abstract class XUnitEvpTests : TestingFrameworkEvpTest
         var unskippableTestSuite = testSuites.First(suite => suite.Resource == UnSkippableSuiteName);
         var testModule = testModules[0];
 
+        ValidateTestSessionFingerprintInputs(testModule, testSuites, tests, sessionWorkingDirectory, gitRepositoryUrl);
+
         // Check Suite
         Assert.True(tests.All(t => t.TestSuiteId == testSuite.TestSuiteId || t.TestSuiteId == unskippableTestSuite.TestSuiteId));
         testSuite.TestModuleId.Should().Be(testModule.TestModuleId);
@@ -849,7 +852,7 @@ public abstract class XUnitEvpTests : TestingFrameworkEvpTest
                             "attributes": {
                               "suite": "{{TestSuiteName}}",
                               "name": "SimplePassTest",
-                              "_missing_line_code_coverage": false
+                              "_is_missing_line_code_coverage": false
                             }
                           }
                         ],
@@ -1384,7 +1387,7 @@ public abstract class XUnitEvpTests : TestingFrameworkEvpTest
             {
                 ["suite"] = TestSuiteName,
                 ["name"] = name,
-                ["_missing_line_code_coverage"] = missingLineCodeCoverage,
+                ["_is_missing_line_code_coverage"] = missingLineCodeCoverage,
                 ["configurations"] = configurations
             }
         };

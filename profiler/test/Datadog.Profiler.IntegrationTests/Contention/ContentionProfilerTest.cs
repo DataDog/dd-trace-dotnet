@@ -63,7 +63,7 @@ namespace Datadog.Profiler.IntegrationTests.Contention
             AssertContainWait(runner.Environment.PprofDir);
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net6.0", "net7.0", "net8.0", "net10.0" })]
+        [TestAppFact("Samples.Computer01", new[] { "net6.0", "net7.0", "net8.0", "net10.0", "net11.0" })]
         public void ShouldGetContentionSamples(string appName, string framework, string appAssembly)
         {
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: ScenarioContention);
@@ -84,7 +84,7 @@ namespace Datadog.Profiler.IntegrationTests.Contention
             }
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net6.0", "net7.0", "net8.0", "net10.0" })]
+        [TestAppFact("Samples.Computer01", new[] { "net6.0", "net7.0", "net8.0", "net10.0", "net11.0" })]
         public void ShouldContentionProfilerBeEnabledByDefault(string appName, string framework, string appAssembly)
         {
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: ScenarioContention);
@@ -111,7 +111,7 @@ namespace Datadog.Profiler.IntegrationTests.Contention
             }
         }
 
-        [TestAppFact("Samples.Computer01", new[] { "net6.0", "net7.0", "net8.0", "net10.0" })]
+        [TestAppFact("Samples.Computer01", new[] { "net6.0", "net7.0", "net8.0", "net10.0", "net11.0" })]
         public void ExplicitlyDisableContentionProfiler(string appName, string framework, string appAssembly)
         {
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: ScenarioContention);

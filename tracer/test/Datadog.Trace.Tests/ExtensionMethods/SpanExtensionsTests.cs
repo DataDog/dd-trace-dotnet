@@ -172,6 +172,31 @@ namespace Datadog.Trace.Tests.ExtensionMethods
             span.HasHttpStatusCode().Should().BeTrue();
         }
 
+        [Theory]
+        [InlineData(false, "GET")]
+        [InlineData(true, "GET")]
+        public void GetHttpMethod_ReadsTagMatchingCurrentSemantics(bool otelSemanticsEnabled, string httpMethod)
+        {
+            var span = CreateSpan(openTelemetrySemanticsEnabled: otelSemanticsEnabled);
+            span.SetTag(otelSemanticsEnabled ? Tags.HttpRequestMethod : Tags.HttpMethod, httpMethod);
+
+            span.GetHttpMethod().Should().Be(httpMethod);
+        }
+
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public void GetHttpMethod_DoesNotFallBackToTheOtherSemanticsTag(bool otelSemanticsEnabled)
+        {
+            var span = CreateSpan(openTelemetrySemanticsEnabled: otelSemanticsEnabled);
+            // Set only the tag for the *other* semantics mode - this is not a supported
+            // configuration (mirrors GetHttpStatusCodeString's policy), so the getter
+            // should not fall back to it.
+            span.SetTag(otelSemanticsEnabled ? Tags.HttpMethod : Tags.HttpRequestMethod, "GET");
+
+            span.GetHttpMethod().Should().BeNull();
+        }
+
         private static MutableSettings CreateMutableSettings(bool otelSemanticsEnabled = false)
         {
             // Keep the settings in lockstep with the span's own flag: Tracer always passes

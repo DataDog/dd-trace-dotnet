@@ -13,6 +13,14 @@ namespace Datadog.Trace.Agent
     {
         int HeaderSize { get; }
 
+        /// <summary>
+        /// Gets the number of bytes <see cref="FinishBody"/> may append when the payload is
+        /// finalized. <see cref="SpanBuffer"/> reserves this much room on every write, so that
+        /// finalizing can never need to grow the buffer - it runs while the buffer's lock is held,
+        /// and that critical section must stay allocation-free.
+        /// </summary>
+        int TrailerSize { get; }
+
         int SerializeSpans(ref byte[] bytes, int temporaryBufferOffset, TraceChunkModel traceChunk, int spanBufferOffset, int maxSize);
 
         void WriteHeader(ref byte[] bytes, int offset, int traceCount);

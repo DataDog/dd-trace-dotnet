@@ -15,6 +15,7 @@ using Xunit;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI.Agent
 {
+    [Trait("Area", "CIVisibility")]
     public class ApmAgentWriterTests : IAsyncLifetime
     {
         private readonly ApmAgentWriter _ciAgentWriter;

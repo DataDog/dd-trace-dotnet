@@ -1,0 +1,64 @@
+# .azure-pipelines/steps/upload-artifacts-to-azure-storage.yml
+#
+# Uploads the release assets staged in $(Build.ArtifactStagingDirectory) to a blob
+# container, keyed by commit SHA, and (on master only) refreshes the container-root
+# index blobs (index.txt / sha.txt / version.txt). Instantiated once per target
+# storage account so we can dual-write while migrating between Azure subscriptions.
+#
+# The caller must already have written index.txt / sha.txt / version.txt into the
+# working directory - they are shared between instantiations, so they are written
+# once by the caller rather than here.
+#
+# Both steps pass --overwrite true and retry on failure, so re-running a build for
+# the same commit is safe and transient upload failures self-heal.
+parameters:
+  - name: 'name' # display only, e.g. 'apmdotnetci'
+    type: string
+  - name: 'accountVariable' # e.g. 'AZURE_STORAGE_ACCOUNT_NAME'
+    type: string
+  - name: 'containerVariable'
+    type: string
+  - name: 'sasTokenVariable'
+    type: string
+
+steps:
+- bash: |
+    az storage blob upload-batch \
+      --destination "$AZURE_STORAGE_CONTAINER" \
+      --destination-path "$(Build.SourceVersion)" \
+      --source "$(Build.ArtifactStagingDirectory)" \
+      --overwrite true
+  displayName: Upload blobs to Azure (${{ parameters.name }})
+  retryCountOnTaskFailure: 3
+  condition: >
+    and(
+      succeeded(),
+      ne(variables['${{ parameters.accountVariable }}'], ''),
+      ne(variables['push_artifacts_to_azure_storage'], 'false'),
+      or(
+        eq(variables['push_artifacts_to_azure_storage'], 'true'),
+        eq(variables.isMainOrReleaseBranch, true)
+      )
+    )
+  env:
+    AZURE_STORAGE_ACCOUNT: $(${{ parameters.accountVariable }})
+    AZURE_STORAGE_SAS_TOKEN: $(${{ parameters.sasTokenVariable }})
+    AZURE_STORAGE_CONTAINER: $(${{ parameters.containerVariable }})
+
+- bash: |
+    set -e
+    az storage blob upload --container-name "$AZURE_STORAGE_CONTAINER" --file "index.txt" --name "index.txt" --overwrite true
+    az storage blob upload --container-name "$AZURE_STORAGE_CONTAINER" --file "sha.txt" --name "sha.txt" --overwrite true
+    az storage blob upload --container-name "$AZURE_STORAGE_CONTAINER" --file "version.txt" --name "version.txt" --overwrite true
+  displayName: Upload indexes to Azure (${{ parameters.name }})
+  retryCountOnTaskFailure: 3
+  condition: >
+    and(
+      succeeded(),
+      ne(variables['${{ parameters.accountVariable }}'], ''),
+      eq(variables.isMainBranch, true)
+    )
+  env:
+    AZURE_STORAGE_ACCOUNT: $(${{ parameters.accountVariable }})
+    AZURE_STORAGE_SAS_TOKEN: $(${{ parameters.sasTokenVariable }})
+    AZURE_STORAGE_CONTAINER: $(${{ parameters.containerVariable }})

@@ -477,22 +477,20 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                 return null;
             }
 
-            if (ClusterIdCache.TryGetValue(bootstrapServers, out var cached))
-            {
-                return cached;
-            }
-
             try
             {
                 var kafkaAssembly = clientInstance.GetType().Assembly;
-
-                // DescribeClusterAsync and DescribeClusterOptions were added in Confluent.Kafka 2.3.0
-                var describeClusterOptionsType = kafkaAssembly.GetType("Confluent.Kafka.Admin.DescribeClusterOptions");
+                var describeClusterOptionsType = KafkaClusterIdSupport.GetDescribeClusterOptionsType(kafkaAssembly);
                 if (describeClusterOptionsType is null)
                 {
-                    Log.Debug("Confluent.Kafka.Admin.DescribeClusterOptions not found; cluster_id tag requires Confluent.Kafka >= 2.3.0");
-                    ClusterIdCache.TryAdd(bootstrapServers, string.Empty);
-                    return string.Empty;
+                    // Capability failures belong to the assembly, not the bootstrap servers. Another
+                    // loaded Confluent.Kafka assembly may support discovery for these same servers.
+                    return null;
+                }
+
+                if (ClusterIdCache.TryGetValue(bootstrapServers, out var cached))
+                {
+                    return cached;
                 }
 
                 var builderType = kafkaAssembly.GetType("Confluent.Kafka.DependentAdminClientBuilder");
