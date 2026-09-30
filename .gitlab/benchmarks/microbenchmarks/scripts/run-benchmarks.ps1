@@ -110,6 +110,129 @@ $benchmarkExe = "$runDir\$Project.exe"
 # Ensure artifacts directory exists
 New-Item -ItemType Directory -Path $localArtifactsDir -Force | Out-Null
 
+$diagnosticsEnabled = $env:BENCHMARK_DIAGNOSTICS -eq "true" -and $Filter -like "*TraceAnnotationsBenchmark*"
+$diagnosticsJob = $null
+$diagnosticsDir = "$localArtifactsDir\diagnostics"
+
+if ($diagnosticsEnabled) {
+    $hostTraceDir = "$diagnosticsDir\host-traces"
+    New-Item -ItemType Directory -Path $hostTraceDir -Force | Out-Null
+
+    $env:DOTNET_HOST_TRACE = "1"
+    $env:DOTNET_HOST_TRACE_VERBOSITY = "4"
+    $env:DOTNET_HOST_TRACEFILE = $hostTraceDir
+    $env:COREHOST_TRACE = "1"
+    $env:COREHOST_TRACE_VERBOSITY = "4"
+    $env:COREHOST_TRACEFILE = "$diagnosticsDir\corehost.log"
+
+    $diagnosticLabel = if ($env:BENCHMARK_DIAGNOSTIC_LABEL) {
+        $env:BENCHMARK_DIAGNOSTIC_LABEL
+    } else {
+        $ArtifactsIndex
+    }
+
+    $context = [ordered]@{
+        label = $diagnosticLabel
+        timestamp_utc = (Get-Date).ToUniversalTime().ToString("o")
+        filter = $Filter
+        artifacts_index = $ArtifactsIndex
+        requested_cpus = $env:PARALLEL_CPUS
+        numa_node = $env:BENCHMARK_DIAGNOSTIC_NODE
+        attempt = $env:BENCHMARK_DIAGNOSTIC_ATTEMPT
+        order = $env:BENCHMARK_DIAGNOSTIC_ORDER
+        processor_affinity = (Get-Process -Id $PID).ProcessorAffinity.ToInt64()
+        computer_system = $null
+        operating_system = $null
+        page_files = $null
+        cim_error = $null
+    }
+
+    try {
+        $context.computer_system = Get-CimInstance Win32_ComputerSystem |
+            Select-Object TotalPhysicalMemory, NumberOfLogicalProcessors, NumberOfProcessors
+        $context.operating_system = Get-CimInstance Win32_OperatingSystem |
+            Select-Object Caption, Version, BuildNumber, FreePhysicalMemory, FreeVirtualMemory, TotalVirtualMemorySize
+        $context.page_files = Get-CimInstance Win32_PageFileUsage |
+            Select-Object Name, AllocatedBaseSize, CurrentUsage, PeakUsage
+    } catch {
+        $context.cim_error = $_.Exception.Message
+    }
+
+    $context | ConvertTo-Json -Depth 4 | Set-Content "$diagnosticsDir\context.json"
+
+    $samplesPath = "$diagnosticsDir\memory-samples.jsonl"
+    $diagnosticsJob = Start-Job -ArgumentList $samplesPath -ScriptBlock {
+        param($outputPath)
+
+        $processFilter = "Name = 'csc.exe' OR Name = 'dotnet.exe' OR Name = 'msbuild.exe' OR Name = 'vbcscompiler.exe' OR Name LIKE '%Benchmark%'"
+
+        while ($true) {
+            $sample = [ordered]@{
+                timestamp_utc = (Get-Date).ToUniversalTime().ToString("o")
+                counters = $null
+                processes = @()
+                error = $null
+            }
+
+            try {
+                $cimProcesses = @{}
+                Get-CimInstance Win32_Process -Filter $processFilter -ErrorAction Stop |
+                    ForEach-Object {
+                        $cimProcesses[[int]$_.ProcessId] = $_
+                    }
+
+                $counterSet = Get-Counter -Counter @(
+                    "\Memory\Committed Bytes",
+                    "\Memory\Commit Limit",
+                    "\Memory\Available Bytes",
+                    "\Paging File(_Total)\% Usage",
+                    "\Paging File(_Total)\% Usage Peak"
+                ) -ErrorAction Stop
+
+                $counterValues = [ordered]@{}
+                foreach ($counter in $counterSet.CounterSamples) {
+                    $counterValues[$counter.Path] = $counter.CookedValue
+                }
+                $sample.counters = $counterValues
+
+                $sample.processes = @(Get-Process -ErrorAction SilentlyContinue |
+                    Where-Object {
+                        $_.ProcessName -match "^(csc|dotnet|msbuild|vbcscompiler)$" -or
+                        $_.ProcessName -like "*Benchmark*"
+                    } |
+                    ForEach-Object {
+                        $processAffinity = $null
+                        $cimProcess = $cimProcesses[$_.Id]
+                        try {
+                            $processAffinity = $_.ProcessorAffinity.ToInt64()
+                        } catch {
+                            $processAffinity = "unavailable: $($_.Exception.Message)"
+                        }
+
+                        [ordered]@{
+                            id = $_.Id
+                            name = $_.ProcessName
+                            parent_process_id = $cimProcess.ParentProcessId
+                            processor_affinity = $processAffinity
+                            private_bytes = $_.PrivateMemorySize64
+                            virtual_bytes = $_.VirtualMemorySize64
+                            working_set_bytes = $_.WorkingSet64
+                        }
+                    })
+            } catch {
+                $sample.error = $_.Exception.Message
+            }
+
+            $sample | ConvertTo-Json -Compress -Depth 4 | Add-Content $outputPath
+            Start-Sleep -Seconds 1
+        }
+    }
+
+    Write-Output "Diagnostics enabled: $diagnosticLabel"
+    Write-Output "Host traces: $hostTraceDir"
+    Write-Output "Memory samples: $samplesPath"
+}
+
 # Set environment variables (mimics Build.cs)
 $env:DD_SERVICE = "dd-trace-dotnet"
 $env:DD_ENV = "CI"
@@ -156,17 +279,59 @@ Write-Output "Arguments: $($arguments -join ' ')"
 Write-Output ""
 
 # Run the benchmark
-& $benchmarkExe @arguments
+$benchmarkExitCode = 0
+$benchmarkError = $null
+try {
+    & $benchmarkExe @arguments
+    $benchmarkExitCode = $LASTEXITCODE
+} catch {
+    $benchmarkError = $_
+    $benchmarkExitCode = 1
+} finally {
+    if ($diagnosticsJob) {
+        Stop-Job $diagnosticsJob -ErrorAction SilentlyContinue
+        Wait-Job $diagnosticsJob -ErrorAction SilentlyContinue | Out-Null
+        $jobOutput = Receive-Job $diagnosticsJob -ErrorAction SilentlyContinue
+        if ($jobOutput) {
+            $jobOutput | Out-String | Set-Content "$diagnosticsDir\sampler-job.log"
+        }
+        Remove-Job $diagnosticsJob -Force -ErrorAction SilentlyContinue
 
-if ($LASTEXITCODE -ne 0) {
-    Write-Error "Benchmark execution failed with exit code $LASTEXITCODE"
-    exit $LASTEXITCODE
+        Set-Content "$localArtifactsDir\diagnostic-exit-code.txt" $benchmarkExitCode
+
+        $diagnosticsDestination = "$env:ARTIFACTS_DIR\diagnostics-$ArtifactsIndex"
+        if (Test-Path $diagnosticsDestination) {
+            Remove-Item -Recurse -Force $diagnosticsDestination
+        }
+        Copy-Item $localArtifactsDir $diagnosticsDestination -Recurse -Force
+        Write-Output "Copied diagnostics to $diagnosticsDestination"
+    }
+}
+
+if ($env:BENCHMARK_DIAGNOSTIC_ONLY -eq "true") {
+    Set-Content "$env:ARTIFACTS_DIR\diagnostic-exit-$ArtifactsIndex.txt" $benchmarkExitCode
+}
+
+if ($benchmarkExitCode -ne 0) {
+    $failureMessage = "$ArtifactsIndex exited with code $benchmarkExitCode"
+    Set-Content "$env:ARTIFACTS_DIR\benchmark-failure-$ArtifactsIndex.txt" $failureMessage
+
+    if ($env:BENCHMARK_DIAGNOSTIC_ONLY -eq "true" -or $env:BENCHMARK_CONTINUE_ON_FAILURE -eq "true") {
+        Write-Warning "Benchmark failed with exit code $benchmarkExitCode; continuing with remaining controls"
+    } elseif ($benchmarkError) {
+        throw $benchmarkError
+    } else {
+        Write-Error "Benchmark execution failed with exit code $benchmarkExitCode"
+        exit $benchmarkExitCode
+    }
 }
 
 # Copy results to ARTIFACTS_DIR with naming convention
 # Format: candidate.Trace.SpanBenchmark.json
 $resultsDir = "$localArtifactsDir\results"
-if (Test-Path $resultsDir) {
+if ($env:BENCHMARK_DIAGNOSTIC_ONLY -eq "true") {
+    Write-Output "Diagnostic-only run: retaining the normal parallel result as the candidate result"
+} elseif (Test-Path $resultsDir) {
     $jsonFiles = Get-ChildItem -Path $resultsDir -Filter "*.json" -Recurse
     foreach ($file in $jsonFiles) {
         # Extract benchmark name: Benchmarks.Trace.SpanBenchmark-report-full-compressed.json -> Trace.SpanBenchmark

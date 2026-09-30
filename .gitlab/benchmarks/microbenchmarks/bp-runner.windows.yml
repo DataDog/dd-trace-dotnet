@@ -180,12 +180,10 @@ experiments:
         # the failures. Node 0 hands out its own CPUs 4-7 and has never failed, so it is specific to
         # node 1. Excluding them fixed it. Needs investigation
         #
-        # Costs a second wave: 20 cores / 2 = 10 groups for 11 items, so the benchmark phase takes
-        # roughly 40 min rather than 21. Well inside the 2h job timeout.
         cpus: "1,0xFFFF0F"
         parallelize:
           # 11 Benchmarks.Trace benchmarks on NUMA node 1 (10 x 2 CPUs, run in two waves)
-          items: >-
+          items: &trace_1_items >-
             *AgentWriterBenchmark*
             *AppSecEncoderBenchmark*
             *AspNetCoreBenchmark*
@@ -202,6 +200,121 @@ experiments:
         env:
           BATCH_PREFIX: "trace-1"
           BENCHMARK_PROJECT: "Benchmarks.Trace"
+          BENCHMARK_CONTINUE_ON_FAILURE: "true"
+        how_to_fetch_release: *how_to_fetch_release_wait
+        how_to_run_benchmarks: *how_to_run_benchmarks
+
+      - name: trace-1-diagnostics
+        run: run_microbenchmarks
+        repo: DataDog/dd-trace-dotnet
+        baseline_branch: ""
+
+        cpus: "1,0xFFFF0F"
+        parallelize:
+          items: *trace_1_items
+          cpus_per_item: 2
+
+        env:
+          BATCH_PREFIX: "trace-1-diagnostics"
+          BENCHMARK_PROJECT: "Benchmarks.Trace"
+          BENCHMARK_DIAGNOSTICS: "true"
+          BENCHMARK_DIAGNOSTIC_LABEL: "parallel-node1"
+          BENCHMARK_DIAGNOSTIC_NODE: "1"
+          BENCHMARK_DIAGNOSTIC_ATTEMPT: "1"
+          BENCHMARK_DIAGNOSTIC_ORDER: "0"
+          BENCHMARK_DIAGNOSTIC_ONLY: "true"
+        how_to_fetch_release: *how_to_fetch_release_wait
+        how_to_run_benchmarks: *how_to_run_benchmarks
+
+      - name: traceannotations-node1-attempt1
+        run: run_microbenchmarks
+        repo: DataDog/dd-trace-dotnet
+        baseline_branch: ""
+
+        cpus: "1,0xC00"
+        parallelize:
+          items: >-
+            *TraceAnnotationsBenchmark*
+          cpus_per_item: 2
+
+        env:
+          BATCH_PREFIX: "traceannotations-node1-attempt1"
+          BENCHMARK_PROJECT: "Benchmarks.Trace"
+          BENCHMARK_DIAGNOSTICS: "true"
+          BENCHMARK_DIAGNOSTIC_LABEL: "isolated-node1-cpus10-11-attempt1"
+          BENCHMARK_DIAGNOSTIC_NODE: "1"
+          BENCHMARK_DIAGNOSTIC_ATTEMPT: "1"
+          BENCHMARK_DIAGNOSTIC_ORDER: "1"
+          BENCHMARK_DIAGNOSTIC_ONLY: "true"
+        how_to_fetch_release: *how_to_fetch_release_wait
+        how_to_run_benchmarks: *how_to_run_benchmarks
+
+      - name: traceannotations-node0-attempt1
+        run: run_microbenchmarks
+        repo: DataDog/dd-trace-dotnet
+        baseline_branch: ""
+
+        cpus: "0,0xC00"
+        parallelize:
+          items: >-
+            *TraceAnnotationsBenchmark*
+          cpus_per_item: 2
+
+        env:
+          BATCH_PREFIX: "traceannotations-node0-attempt1"
+          BENCHMARK_PROJECT: "Benchmarks.Trace"
+          BENCHMARK_DIAGNOSTICS: "true"
+          BENCHMARK_DIAGNOSTIC_LABEL: "isolated-node0-cpus10-11-attempt1"
+          BENCHMARK_DIAGNOSTIC_NODE: "0"
+          BENCHMARK_DIAGNOSTIC_ATTEMPT: "1"
+          BENCHMARK_DIAGNOSTIC_ORDER: "2"
+          BENCHMARK_DIAGNOSTIC_ONLY: "true"
+        how_to_fetch_release: *how_to_fetch_release_wait
+        how_to_run_benchmarks: *how_to_run_benchmarks
+
+      - name: traceannotations-node0-attempt2
+        run: run_microbenchmarks
+        repo: DataDog/dd-trace-dotnet
+        baseline_branch: ""
+
+        cpus: "0,0xC00"
+        parallelize:
+          items: >-
+            *TraceAnnotationsBenchmark*
+          cpus_per_item: 2
+
+        env:
+          BATCH_PREFIX: "traceannotations-node0-attempt2"
+          BENCHMARK_PROJECT: "Benchmarks.Trace"
+          BENCHMARK_DIAGNOSTICS: "true"
+          BENCHMARK_DIAGNOSTIC_LABEL: "isolated-node0-cpus10-11-attempt2"
+          BENCHMARK_DIAGNOSTIC_NODE: "0"
+          BENCHMARK_DIAGNOSTIC_ATTEMPT: "2"
+          BENCHMARK_DIAGNOSTIC_ORDER: "3"
+          BENCHMARK_DIAGNOSTIC_ONLY: "true"
+        how_to_fetch_release: *how_to_fetch_release_wait
+        how_to_run_benchmarks: *how_to_run_benchmarks
+
+      - name: traceannotations-node1-attempt2
+        run: run_microbenchmarks
+        repo: DataDog/dd-trace-dotnet
+        baseline_branch: ""
+
+        cpus: "1,0xC00"
+        parallelize:
+          items: >-
+            *TraceAnnotationsBenchmark*
+          cpus_per_item: 2
+
+        env:
+          BATCH_PREFIX: "traceannotations-node1-attempt2"
+          BENCHMARK_PROJECT: "Benchmarks.Trace"
+          BENCHMARK_DIAGNOSTICS: "true"
+          BENCHMARK_DIAGNOSTIC_LABEL: "isolated-node1-cpus10-11-attempt2"
+          BENCHMARK_DIAGNOSTIC_NODE: "1"
+          BENCHMARK_DIAGNOSTIC_ATTEMPT: "2"
+          BENCHMARK_DIAGNOSTIC_ORDER: "4"
+          BENCHMARK_DIAGNOSTIC_ONLY: "true"
         how_to_fetch_release: *how_to_fetch_release_wait
         how_to_run_benchmarks: *how_to_run_benchmarks
 

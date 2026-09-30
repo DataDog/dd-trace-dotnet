@@ -169,8 +169,8 @@ upload_results:
 
         Write-Output "Upload complete!"
 
-        # Also update _latest if on master branch
-        if ($env:CI_COMMIT_REF_NAME -eq "master") {
+        $failureMarkers = @(Get-ChildItem -Path $artifactsDir -Filter "benchmark-failure-*.txt" -ErrorAction SilentlyContinue)
+        if ($env:CI_COMMIT_REF_NAME -eq "master" -and $failureMarkers.Count -eq 0) {
             $latestPrefix = "$env:CI_PROJECT_NAME/_latest"
             Write-Output "=== Uploading latest benchmark results to S3 ==="
             Write-Output "Artifacts directory: $artifactsDir"
@@ -191,6 +191,8 @@ upload_results:
                 Write-Output "Stack trace: $($_.ScriptStackTrace)"
                 throw
             }
+        } elseif ($env:CI_COMMIT_REF_NAME -eq "master") {
+            Write-Warning "Skipping _latest because benchmark failures were recorded"
         }
     } else {
         Write-Warning "No files found in $artifactsDir"

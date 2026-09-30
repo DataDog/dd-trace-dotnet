@@ -65,7 +65,7 @@ build-dd-trace-dotnet-microbenchmarks-ami:
 run-benchmarks:
   stage: benchmarks
   tags: ["arch:amd64"]
-  timeout: 2h
+  timeout: 4h
   image: registry.ddbuild.io/images/benchmarking-platform-tools-ubuntu:newest
   id_tokens:
     DDOCTOSTS_ID_TOKEN:
@@ -135,6 +135,11 @@ run-benchmarks:
     # Fetch results from S3, analyze, upload (external S3 + BP UI), and post PR comment
     - export ARTIFACTS_DIR="$(pwd)/artifacts"
     - .gitlab/benchmarks/microbenchmarks/scripts/fetch-results.sh
+    - |
+      if compgen -G "$ARTIFACTS_DIR/benchmark-failure-*.txt" > /dev/null; then
+        cat "$ARTIFACTS_DIR"/benchmark-failure-*.txt
+        exit 1
+      fi
     - .gitlab/benchmarks/microbenchmarks/scripts/analyze-results.sh
     - .gitlab/benchmarks/microbenchmarks/scripts/upload-to-external-s3.sh
     - .gitlab/benchmarks/microbenchmarks/scripts/upload-to-bp-ui.sh
