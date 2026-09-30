@@ -43,6 +43,19 @@ AddressRegion Private(uintptr_t address, uint64_t size)
     return r;
 }
 
+AddressRegion Mapped(uintptr_t address, uint64_t size, MappedSectionType type, const std::string& name = {})
+{
+    AddressRegion r;
+    r.Address = address;
+    r.Size = size;
+    r.Committed = size;
+    r.Rss = size;
+    r.Category = RegionCategory::MappedFile;
+    r.MappedType = type;
+    r.ModuleName = name;
+    return r;
+}
+
 ClrNativeHeapInfo Segment(uintptr_t address, uint64_t size, int generation, int gcHeap)
 {
     ClrNativeHeapInfo h;
@@ -406,6 +419,63 @@ TEST(MemoryBreakdownProviderTest, ModuleProtectionRunsCollapseIntoOneSample)
     // The 3 protection runs (r-x/r--/rw-) collapse into exactly one clr.dll sample of 0x3000.
     EXPECT_EQ(clrModuleCount, 1);
     EXPECT_EQ(clrModuleMemory, 0x3000);
+}
+
+TEST(MemoryBreakdownProviderTest, MappedSectionsAlwaysHaveLeafAndGroupMissingFileNamesByType)
+{
+    std::vector<AddressRegion> regions{
+        Mapped(0x1000, 0x1000, MappedSectionType::DataFile, "cache.dat"),
+        Mapped(0x2000, 0x1000, MappedSectionType::DataFile),
+        Mapped(0x3000, 0x1000, MappedSectionType::PageFile),
+        Mapped(0x4000, 0x2000, MappedSectionType::PageFile),
+        Mapped(0x6000, 0x1000, MappedSectionType::Physical),
+        Mapped(0x7000, 0x1000, MappedSectionType::Unknown),
+    };
+    auto map = std::make_unique<AddressSpaceMap>(std::move(regions), /*committed*/ true, /*rss*/ true);
+    FakeClrNativeHeapSnapshot snapshot({}, /*available*/ true, "dac", map.get());
+
+    SampleValueTypeProvider valueTypeProvider;
+    MetricsRegistry registry;
+    MemoryBreakdownProvider provider(valueTypeProvider, &snapshot, registry);
+
+    auto samples = Collect(provider.GetSamples().get());
+    ASSERT_EQ(samples.size(), 5u);
+
+    struct Expected
+    {
+        std::string_view frame;
+        int64_t memory;
+        const char* mappedFile;
+    };
+    const Expected expected[] = {
+        {"fn:cache.dat ", 0x1000, "cache.dat"},
+        {"fn:Data File (name unavailable) ", 0x1000, nullptr},
+        {"fn:Pagefile-backed Mapping ", 0x3000, nullptr},
+        {"fn:Physical-memory Mapping ", 0x1000, nullptr},
+        {"fn:Unknown Mapped Section ", 0x1000, nullptr},
+    };
+
+    for (const auto& e : expected)
+    {
+        bool found = false;
+        for (const auto& sample : samples)
+        {
+            if (!FrameContains(sample, e.frame))
+            {
+                continue;
+            }
+
+            found = true;
+            EXPECT_EQ(MemoryBreakdown(sample), e.memory);
+            EXPECT_EQ(GetStringLabel(sample, "memory_source"), "mapped-file");
+            EXPECT_EQ(GetStringLabel(sample, "mapped_file"), e.mappedFile == nullptr ? "" : e.mappedFile);
+            EXPECT_EQ(FrameIndex(sample, e.frame), 0);
+            EXPECT_EQ(FrameIndex(sample, "fn:Mapped Sections "), 1);
+            EXPECT_EQ(FrameIndex(sample, "fn:Process Memory "), 2);
+            EXPECT_FALSE(FrameContains(sample, "fn:Mapped Files "));
+        }
+        EXPECT_TRUE(found) << "missing frame " << e.frame;
+    }
 }
 
 TEST(MemoryBreakdownProviderTest, PrivateRemainderIsAttributedToPrivateLeaf)

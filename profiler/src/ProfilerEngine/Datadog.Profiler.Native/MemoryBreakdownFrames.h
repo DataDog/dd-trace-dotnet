@@ -24,10 +24,16 @@ inline constexpr std::string_view Root = "|lm: |ns: |ct: |cg: |fn:Process Memory
 inline constexpr std::string_view Managed = "|lm: |ns: |ct: |cg: |fn:Managed Heap (GC) |fg: |sg:";
 inline constexpr std::string_view ClrNative = "|lm: |ns: |ct: |cg: |fn:CLR Native |fg: |sg:";
 inline constexpr std::string_view Modules = "|lm: |ns: |ct: |cg: |fn:Modules (Images) |fg: |sg:";
-inline constexpr std::string_view MappedFiles = "|lm: |ns: |ct: |cg: |fn:Mapped Files |fg: |sg:";
+inline constexpr std::string_view MappedSections = "|lm: |ns: |ct: |cg: |fn:Mapped Sections |fg: |sg:";
 inline constexpr std::string_view PrivateMem = "|lm: |ns: |ct: |cg: |fn:Native Heap / Private |fg: |sg:";
 inline constexpr std::string_view Stacks = "|lm: |ns: |ct: |cg: |fn:Thread Stacks |fg: |sg:";
 inline constexpr std::string_view ReservedMem = "|lm: |ns: |ct: |cg: |fn:Reserved / Free |fg: |sg:";
+
+// mapped-section leaves used when no filesystem filename is available
+inline constexpr std::string_view MappedDataFile = "|lm: |ns: |ct: |cg: |fn:Data File (name unavailable) |fg: |sg:";
+inline constexpr std::string_view MappedPageFile = "|lm: |ns: |ct: |cg: |fn:Pagefile-backed Mapping |fg: |sg:";
+inline constexpr std::string_view MappedPhysical = "|lm: |ns: |ct: |cg: |fn:Physical-memory Mapping |fg: |sg:";
+inline constexpr std::string_view MappedUnknown = "|lm: |ns: |ct: |cg: |fn:Unknown Mapped Section |fg: |sg:";
 
 // managed leaves (by generation / kind group)
 inline constexpr std::string_view Gen0 = "|lm: |ns: |ct: |cg: |fn:gen0 |fg: |sg:";

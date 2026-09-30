@@ -6,9 +6,17 @@
 #include "AddressRegion.h"
 #include "AddressSpaceMap.h"
 #include "OsSpecificApi.h"
+#ifdef _WINDOWS
+#include "ScopeFinalizer.h"
+#include "ScopedHandle.h"
+#endif
 
 #include <memory>
 #include <vector>
+
+#ifdef _WINDOWS
+#include <windows.h>
+#endif
 
 namespace
 {
@@ -145,12 +153,47 @@ TEST(AddressSpaceMapTest, ProvidesFlagsReflectConstruction)
 
 TEST(AddressSpaceMapTest, CaptureCurrentProcessIsNonEmptyWithImageModules)
 {
+#ifdef _WINDOWS
+    ScopedHandle pageFileMapping{
+        ::CreateFileMappingW(INVALID_HANDLE_VALUE, nullptr, PAGE_READWRITE, 0, 0x1000, nullptr)};
+    ASSERT_TRUE(pageFileMapping.IsValid());
+
+    void* pageFileView = ::MapViewOfFile(pageFileMapping, FILE_MAP_WRITE, 0, 0, 0);
+    ASSERT_NE(pageFileView, nullptr);
+    on_leave { ::UnmapViewOfFile(pageFileView); };
+#endif
+
     auto map = OsSpecificApi::CaptureAddressSpaceMap();
     ASSERT_NE(map, nullptr);
     ASSERT_TRUE(map->IsAvailable());
 #ifdef _WINDOWS
     EXPECT_TRUE(map->ProvidesCommitted());
     EXPECT_FALSE(map->ProvidesRss());
+
+    AddressRegion currentStackRegion;
+    int currentStackMarker = 0;
+    ASSERT_TRUE(map->TryGetRegion(reinterpret_cast<uintptr_t>(&currentStackMarker), currentStackRegion));
+    EXPECT_EQ(currentStackRegion.Category, RegionCategory::Stack);
+
+    MEMORY_BASIC_INFORMATION stackInformation{};
+    ASSERT_EQ(
+        ::VirtualQueryEx(
+            ::GetCurrentProcess(),
+            reinterpret_cast<LPCVOID>(&currentStackMarker),
+            &stackInformation,
+            sizeof(stackInformation)),
+        sizeof(stackInformation));
+    AddressRegion stackAllocationBaseRegion;
+    ASSERT_TRUE(map->TryGetRegion(
+        reinterpret_cast<uintptr_t>(stackInformation.AllocationBase), stackAllocationBaseRegion));
+    EXPECT_EQ(stackAllocationBaseRegion.Category, RegionCategory::Stack);
+    EXPECT_GT(stackAllocationBaseRegion.Committed, 0u);
+
+    AddressRegion pageFileRegion;
+    ASSERT_TRUE(map->TryGetRegion(reinterpret_cast<uintptr_t>(pageFileView), pageFileRegion));
+    EXPECT_EQ(pageFileRegion.Category, RegionCategory::MappedFile);
+    EXPECT_EQ(pageFileRegion.MappedType, MappedSectionType::PageFile);
+    EXPECT_TRUE(pageFileRegion.ModuleName.empty());
 #elif defined(LINUX)
     EXPECT_FALSE(map->ProvidesCommitted());
     EXPECT_TRUE(map->ProvidesRss());

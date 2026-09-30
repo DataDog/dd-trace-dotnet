@@ -12,13 +12,24 @@
 enum class RegionCategory
 {
     Image,       // a mapped PE/ELF module (dll/so/exe)
-    MappedFile,  // a non-image file mapping (data file / pagefile-backed section)
+    MappedFile,  // a non-image mapped section (data file, pagefile-backed, or physical)
     PrivateData, // anonymous private committed memory (native heap, etc.)
     Stack,       // a thread stack
     Heap,        // an OS/CRT heap region
     Reserved,    // reserved-but-not-committed address space
     Free,        // free address space
     Other,
+};
+
+// Detailed classification for Windows MEM_MAPPED allocations. VirtualQuery only reports
+// MEM_MAPPED, which covers all three kinds; QueryVirtualMemoryInformation distinguishes them.
+// Direct-mapped files are represented as DataFile.
+enum class MappedSectionType
+{
+    Unknown,
+    DataFile,
+    PageFile,
+    Physical,
 };
 
 // A single fine-grained OS memory run: one VirtualQuery run on Windows, one VMA on Linux. Kept
@@ -32,7 +43,8 @@ struct AddressRegion
     uint64_t Committed = 0; // Windows: Size when MEM_COMMIT else 0; Linux: accessible span (perms != ---p) else 0
     uint64_t Rss = 0;       // Linux: smaps Rss; always 0 on Windows
     RegionCategory Category = RegionCategory::Other;
-    std::string ModuleName; // dll/so leaf name for Image; full path for MappedFile; empty otherwise
+    MappedSectionType MappedType = MappedSectionType::Unknown;
+    std::string ModuleName; // dll/so or mapped-data-file leaf name; empty when no file name is available
     std::string Protection; // "r-x", "rw-", ... (diagnostics only; never surfaced as a sample label)
 
     uint64_t End() const
@@ -53,5 +65,16 @@ inline const char* ToString(RegionCategory category)
         case RegionCategory::Reserved: return "reserved";
         case RegionCategory::Free: return "free";
         default: return "other";
+    }
+}
+
+inline const char* ToString(MappedSectionType type)
+{
+    switch (type)
+    {
+        case MappedSectionType::DataFile: return "mapped-data-file";
+        case MappedSectionType::PageFile: return "mapped-page-file";
+        case MappedSectionType::Physical: return "mapped-physical";
+        default: return "unknown";
     }
 }

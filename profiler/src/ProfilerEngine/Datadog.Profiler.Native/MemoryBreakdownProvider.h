@@ -19,6 +19,7 @@ class IAddressSpaceMap;
 class MetricsRegistry;
 class ProxyMetric;
 struct AddressRegion;
+enum class MappedSectionType;
 
 // Process-level, once-per-export sample provider that reconciles the OS address-space map with the
 // CLR native/managed heap snapshot (DAC/cDAC) into a single non-double-counted memory flamegraph.
@@ -60,6 +61,7 @@ private:
         NativeHeapKind kind = NativeHeapKind::Unknown;
         NativeHeapState state = NativeHeapState::None;
         int generation = -1;
+        MappedSectionType mappedType{};
         std::string moduleName; // image module leaf / mapped-file name
         uint64_t committed = 0;
         uint64_t rss = 0;

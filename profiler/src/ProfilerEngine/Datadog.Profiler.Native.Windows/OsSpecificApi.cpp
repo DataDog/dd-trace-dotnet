@@ -23,8 +23,11 @@
 
 #include "shared/src/native-src/loader.h"
 
+#include <algorithm>
+#include <cstddef>
 #include <memory>
 #include <sstream>
+#include <utility>
 #include <vector>
 
 #include <psapi.h>
@@ -34,6 +37,124 @@
 class CallstackProvider;
 
 namespace OsSpecificApi {
+
+namespace
+{
+typedef NTSTATUS(WINAPI* QueryThreadInformation)(HANDLE, int, PVOID, ULONG, PULONG);
+
+struct THREAD_BASIC_INFORMATION
+{
+    NTSTATUS ExitStatus;
+    PVOID TebBaseAddress;
+    CLIENT_ID ClientId;
+    KAFFINITY AffinityMask;
+    KPRIORITY Priority;
+    KPRIORITY BasePriority;
+};
+
+constexpr int ThreadBasicInformation = 0;
+
+std::vector<std::pair<uintptr_t, uintptr_t>> GetThreadStackRanges()
+{
+    std::vector<std::pair<uintptr_t, uintptr_t>> ranges;
+
+    auto ntQueryInformationThread = reinterpret_cast<QueryThreadInformation>(
+        ::GetProcAddress(::GetModuleHandleA("ntdll.dll"), "NtQueryInformationThread"));
+    if (ntQueryInformationThread == nullptr)
+    {
+        return ranges;
+    }
+
+    auto snapshot = ScopedHandle(::CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, 0));
+    if (!snapshot.IsValid())
+    {
+        return ranges;
+    }
+
+    const auto processId = ::GetCurrentProcessId();
+    THREADENTRY32 entry{};
+    entry.dwSize = sizeof(entry);
+    if (!::Thread32First(snapshot, &entry))
+    {
+        return ranges;
+    }
+
+    do
+    {
+        if (entry.th32OwnerProcessID != processId || entry.th32ThreadID == 0)
+        {
+            entry.dwSize = sizeof(entry);
+            continue;
+        }
+
+        ScopedHandle thread{::OpenThread(THREAD_QUERY_INFORMATION, FALSE, entry.th32ThreadID)};
+        if (!thread.IsValid())
+        {
+            entry.dwSize = sizeof(entry);
+            continue;
+        }
+
+        THREAD_BASIC_INFORMATION information{};
+        ULONG returnedLength = 0;
+        if (ntQueryInformationThread(
+                thread, ThreadBasicInformation, &information, sizeof(information), &returnedLength) != 0 ||
+            information.TebBaseAddress == nullptr)
+        {
+            entry.dwSize = sizeof(entry);
+            continue;
+        }
+
+        NT_TIB tib{};
+        SIZE_T bytesRead = 0;
+        if (!::ReadProcessMemory(
+                ::GetCurrentProcess(), information.TebBaseAddress, &tib, sizeof(tib), &bytesRead) ||
+            bytesRead < offsetof(NT_TIB, StackLimit) + sizeof(tib.StackLimit))
+        {
+            entry.dwSize = sizeof(entry);
+            continue;
+        }
+
+        const auto stackBase = reinterpret_cast<uintptr_t>(tib.StackBase);
+        const auto stackLimit = reinterpret_cast<uintptr_t>(tib.StackLimit);
+        MEMORY_BASIC_INFORMATION stackRegion{};
+        if (stackLimit != 0 && stackLimit < stackBase &&
+            ::VirtualQueryEx(
+                ::GetCurrentProcess(),
+                reinterpret_cast<LPCVOID>(stackLimit),
+                &stackRegion,
+                sizeof(stackRegion)) == sizeof(stackRegion))
+        {
+            const auto allocationBase = reinterpret_cast<uintptr_t>(stackRegion.AllocationBase);
+            if (allocationBase != 0 && allocationBase < stackBase)
+            {
+                // StackLimit is the current lower limit of committed stack pages. AllocationBase
+                // identifies the start of the entire stack allocation, including guard and reserved
+                // runs, which is what must be matched against the address-space map.
+                ranges.emplace_back(allocationBase, stackBase);
+            }
+        }
+
+        entry.dwSize = sizeof(entry);
+    } while (::Thread32Next(snapshot, &entry));
+
+    std::sort(ranges.begin(), ranges.end());
+    return ranges;
+}
+
+bool OverlapsThreadStack(
+    uintptr_t regionStart,
+    uintptr_t regionEnd,
+    const std::vector<std::pair<uintptr_t, uintptr_t>>& stackRanges)
+{
+    const auto range = std::lower_bound(
+        stackRanges.begin(),
+        stackRanges.end(),
+        regionStart,
+        [](const auto& stackRange, uintptr_t address) { return stackRange.second <= address; });
+
+    return range != stackRanges.end() && range->first < regionEnd;
+}
+} // namespace
 
 void InitializeUnwinder(ManagedCodeCache*) {}
 
@@ -436,6 +557,80 @@ std::string GetMappedModuleName(HANDLE hProcess, const void* address)
     return LeafNameUtf8(name, length);
 }
 
+using QueryVirtualMemoryInformationCallback = BOOL(WINAPI*)(
+    HANDLE,
+    const VOID*,
+    WIN32_MEMORY_INFORMATION_CLASS,
+    PVOID,
+    SIZE_T,
+    PSIZE_T);
+
+QueryVirtualMemoryInformationCallback GetQueryVirtualMemoryInformationCallback()
+{
+    static const auto callback = []() -> QueryVirtualMemoryInformationCallback {
+        // Resolve dynamically so the profiler still loads when the API is unavailable. The query was
+        // introduced in Windows 10 version 1607.
+        HMODULE module = ::GetModuleHandleW(L"kernelbase.dll");
+        if (module == nullptr)
+        {
+            module = ::GetModuleHandleW(L"kernel32.dll");
+        }
+        return module == nullptr
+                   ? nullptr
+                   : reinterpret_cast<QueryVirtualMemoryInformationCallback>(
+                         ::GetProcAddress(module, "QueryVirtualMemoryInformation"));
+    }();
+
+    return callback;
+}
+
+MappedSectionType GetMappedSectionType(HANDLE hProcess, const void* address)
+{
+    const auto query = GetQueryVirtualMemoryInformationCallback();
+    if (query == nullptr)
+    {
+        return MappedSectionType::Unknown;
+    }
+
+#ifdef _WIN64
+    WIN32_MEMORY_REGION_INFORMATION info{};
+    if (!query(hProcess, address, MemoryRegionInfo, &info, sizeof(info), nullptr))
+    {
+        return MappedSectionType::Unknown;
+    }
+#else
+    // The 32-bit API expects eight bytes of trailing storage beyond the SDK structure. Keep the
+    // documented structure at offset zero and provide the additional space without reading it.
+    struct ExtendedMemoryRegionInformation
+    {
+        WIN32_MEMORY_REGION_INFORMATION Info{};
+        BYTE Padding[8]{};
+    };
+    static_assert(sizeof(ExtendedMemoryRegionInformation) == sizeof(WIN32_MEMORY_REGION_INFORMATION) + 8);
+
+    ExtendedMemoryRegionInformation extendedInfo{};
+    if (!query(hProcess, address, MemoryRegionInfo, &extendedInfo, sizeof(extendedInfo), nullptr))
+    {
+        return MappedSectionType::Unknown;
+    }
+    const auto& info = extendedInfo.Info;
+#endif
+
+    if (info.MappedPageFile)
+    {
+        return MappedSectionType::PageFile;
+    }
+    if (info.MappedPhysical)
+    {
+        return MappedSectionType::Physical;
+    }
+    if (info.MappedDataFile || info.DirectMapped)
+    {
+        return MappedSectionType::DataFile;
+    }
+    return MappedSectionType::Unknown;
+}
+
 RegionCategory CategorizeWindows(const MEMORY_BASIC_INFORMATION& mbi)
 {
     if (mbi.State == MEM_FREE)
@@ -461,6 +656,7 @@ RegionCategory CategorizeWindows(const MEMORY_BASIC_INFORMATION& mbi)
 std::unique_ptr<IAddressSpaceMap> CaptureAddressSpaceMap()
 {
     std::vector<AddressRegion> regions;
+    const auto threadStackRanges = GetThreadStackRanges();
 
     HANDLE hProcess = ::GetCurrentProcess();
     SYSTEM_INFO si{};
@@ -472,6 +668,8 @@ std::unique_ptr<IAddressSpaceMap> CaptureAddressSpaceMap()
     // Safety cap so a corrupt/pathological map cannot stall the walk.
     constexpr uint64_t MaxRegions = 1ull << 21;
     uint64_t walked = 0;
+    const void* lastMappedAllocation = nullptr;
+    MappedSectionType lastMappedType = MappedSectionType::Unknown;
 
     while (addr <= maxAddr && walked++ < MaxRegions)
     {
@@ -487,15 +685,38 @@ std::unique_ptr<IAddressSpaceMap> CaptureAddressSpaceMap()
         region.Address = reinterpret_cast<uintptr_t>(mbi.BaseAddress);
         region.Size = static_cast<uint64_t>(mbi.RegionSize);
         region.Category = CategorizeWindows(mbi);
+        if ((mbi.Type == MEM_PRIVATE || mbi.State == MEM_RESERVE) &&
+            OverlapsThreadStack(region.Address, regionEnd, threadStackRanges))
+        {
+            region.Category = RegionCategory::Stack;
+        }
         if (mbi.State == MEM_COMMIT)
         {
             region.Committed = static_cast<uint64_t>(mbi.RegionSize);
             region.Protection = ProtectionToString(mbi.Protect);
         }
 
-        if (region.Category == RegionCategory::Image || region.Category == RegionCategory::MappedFile)
+        if (region.Category == RegionCategory::Image)
         {
             region.ModuleName = GetMappedModuleName(hProcess, mbi.BaseAddress);
+        }
+        else if (region.Category == RegionCategory::MappedFile)
+        {
+            if (mbi.AllocationBase != lastMappedAllocation)
+            {
+                lastMappedAllocation = mbi.AllocationBase;
+                lastMappedType = GetMappedSectionType(hProcess, mbi.BaseAddress);
+            }
+            region.MappedType = lastMappedType;
+
+            // Pagefile-backed and physical mappings have no filesystem name. Keep trying the
+            // existing lookup for data-file and unclassified sections so named mappings still get
+            // their filename when the detailed query is unavailable.
+            if (region.MappedType == MappedSectionType::DataFile ||
+                region.MappedType == MappedSectionType::Unknown)
+            {
+                region.ModuleName = GetMappedModuleName(hProcess, mbi.BaseAddress);
+            }
         }
 
         regions.push_back(std::move(region));

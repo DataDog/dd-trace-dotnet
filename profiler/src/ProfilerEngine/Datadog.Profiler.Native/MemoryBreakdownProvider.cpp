@@ -146,7 +146,9 @@ std::string MemoryBreakdownProvider::LeafKeyForOs(const AddressRegion& region, S
 
         case RegionCategory::MappedFile:
             outSource = Source::MappedFile;
-            return std::string("F:") + region.ModuleName;
+            return region.ModuleName.empty()
+                       ? std::string("F:type:") + ToString(region.MappedType)
+                       : std::string("F:name:") + region.ModuleName;
 
         case RegionCategory::Stack:
             outSource = Source::Stack;
@@ -264,6 +266,7 @@ void MemoryBreakdownProvider::AccumulateOsRemainder(const AddressRegion& region,
 
     auto& leaf = _leaves[key];
     leaf.source = source;
+    leaf.mappedType = region.MappedType;
     if (leaf.moduleName.empty() && !region.ModuleName.empty())
     {
         leaf.moduleName = region.ModuleName;
@@ -483,7 +486,26 @@ std::unique_ptr<SamplesEnumerator> MemoryBreakdownProvider::GetSamples()
                     sample->AddFrame({membreakdown::Module, _frameStrings.back(), "", 0});
                     sample->AddLabel(StringLabel{MappedFileLabel, leaf.moduleName});
                 }
-                sample->AddFrame({membreakdown::Module, membreakdown::MappedFiles, "", 0});
+                else
+                {
+                    std::string_view leafFrame = membreakdown::MappedUnknown;
+                    switch (leaf.mappedType)
+                    {
+                        case MappedSectionType::DataFile:
+                            leafFrame = membreakdown::MappedDataFile;
+                            break;
+                        case MappedSectionType::PageFile:
+                            leafFrame = membreakdown::MappedPageFile;
+                            break;
+                        case MappedSectionType::Physical:
+                            leafFrame = membreakdown::MappedPhysical;
+                            break;
+                        default:
+                            break;
+                    }
+                    sample->AddFrame({membreakdown::Module, leafFrame, "", 0});
+                }
+                sample->AddFrame({membreakdown::Module, membreakdown::MappedSections, "", 0});
                 sample->AddLabel(StringLabel{MemorySourceLabel, SourceMappedFile});
                 break;
             }
