@@ -567,6 +567,24 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
             }
         }
 
+        [Theory]
+        [Trait("RunOnWindows", "True")]
+        [InlineData(false)]
+        [InlineData(true)]
+        public void CleanupRemovesReadOnlyTemporaryFiles(bool nested)
+        {
+            using var setup = ConfigureCiTestSetup.Create(output);
+            var directory = nested ? Path.Combine(setup.TempRoot, "nested") : setup.TempRoot;
+            Directory.CreateDirectory(directory);
+            var file = Path.Combine(directory, "temporary.idx");
+            File.WriteAllText(file, "temporary git index");
+            File.SetAttributes(file, File.GetAttributes(file) | FileAttributes.ReadOnly);
+
+            setup.Dispose();
+
+            Directory.Exists(setup.TempRoot).Should().BeFalse();
+        }
+
         private static string GetCachedContentPath(string cachedContent, Dictionary<string, string> environmentVariables)
         {
             var configuredTracerHome = environmentVariables["DD_DOTNET_TRACER_HOME"];
@@ -811,24 +829,6 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
             process.WaitForExit();
             process.ExitCode.Should().Be(0, output + error);
             return output;
-        }
-
-        [Theory]
-        [Trait("RunOnWindows", "True")]
-        [InlineData(false)]
-        [InlineData(true)]
-        public void CleanupRemovesReadOnlyTemporaryFiles(bool nested)
-        {
-            using var setup = ConfigureCiTestSetup.Create(output);
-            var directory = nested ? Path.Combine(setup.TempRoot, "nested") : setup.TempRoot;
-            Directory.CreateDirectory(directory);
-            var file = Path.Combine(directory, "temporary.idx");
-            File.WriteAllText(file, "temporary git index");
-            File.SetAttributes(file, File.GetAttributes(file) | FileAttributes.ReadOnly);
-
-            setup.Dispose();
-
-            Directory.Exists(setup.TempRoot).Should().BeFalse();
         }
 
         private static void DeleteDirectory(string path)
