@@ -570,6 +570,9 @@ public class CreatedumpTests : ConsoleTestHelper
         using var assertionScope = new AssertionScope();
         assertionScope.AddReportable("Report", report.ToString());
 
+        report["proc_info"]!["pid"]!.Value<int>().Should().Be(helper.Process.Id);
+        report["proc_info"]!["tid"]!.Value<int>().Should().Be(mainThreadId.Value);
+
         ValidateStacktrace(report["error"]["stack"]);
 
         void ValidateStacktrace(JToken callstack)

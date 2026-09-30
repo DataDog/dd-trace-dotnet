@@ -64,8 +64,6 @@ int32_t CrashReporting::Initialize()
 
     CHECK_RESULT(ddog_crasht_CrashInfoBuilder_with_timestamp_now(&_builder));
 
-    CHECK_RESULT(ddog_crasht_CrashInfoBuilder_with_proc_info(&_builder, {_pid}));
-
     CHECK_RESULT(ddog_crasht_CrashInfoBuilder_with_os_info_this_machine(&_builder));
 
 #ifdef _WINDOWS
@@ -253,6 +251,8 @@ int32_t CrashReporting::SetSignalInfo(int32_t signal, int32_t code)
 
 int32_t CrashReporting::ResolveStacks(int32_t crashingThreadId, ResolveManagedCallstack resolveCallback, void* context, bool* isSuspicious)
 {
+    CHECK_RESULT(ddog_crasht_CrashInfoBuilder_with_proc_info(&_builder, {_pid, static_cast<uint32_t>(crashingThreadId)}));
+
     auto threads = GetThreads();
 
     int32_t successfulThreads = 0;
