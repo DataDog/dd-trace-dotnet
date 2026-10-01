@@ -1,5 +1,9 @@
 $ErrorActionPreference = 'Stop'
 
+if ($env:TEST_SUITE -eq 'selenium') {
+    throw 'GitLab Selenium execution is temporarily disabled pending investigation of a container-based setup on supported GitLab runners. Azure coverage remains enabled.'
+}
+
 $hash = & tracer/build/_build/docker/gitlab/compute-image-hash.ps1
 if ($LASTEXITCODE -ne 0 -or $hash -notmatch '^[0-9a-f]{12}$') {
     throw "compute-image-hash.ps1 did not produce a valid hash (exit=$LASTEXITCODE, output='$hash')"
@@ -40,7 +44,7 @@ $testFilter = $null
 
 switch ($testSuite) {
     'integration' {
-        # LocalDB, GAC/IIS, Chrome, and Docker dependencies are covered by dedicated jobs.
+        # LocalDB and GAC/IIS use dedicated jobs; Chrome and Docker coverage remain deferred.
         # MSMQ is available in the Windows build image.
         $testFilter = '(RunOnWindows=True)&(LoadFromGAC!=True)&(IIS!=True)&(IISExpress!=True)&(Category!=AzureFunctions)&(SkipInCI!=True)&(RequiresDockerDependency!=true)&(RequiresLocalDb!=True)&(RequiresChrome!=True)'
         if ($area -eq 'ASM') {

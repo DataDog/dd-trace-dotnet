@@ -179,12 +179,9 @@ partial class Build : NukeBuild
             }
         }
 
-        if (frameworkList.Contains(TargetFramework.NET10_0))
-        {
-            // Chrome requires Windows components that are absent from Server Core,
-            // so this cell runs directly on the Windows runner with checkout-local tools.
-            AppendWindowsJob("integration-tests-windows-selenium-x64:net10.0:tracer", TargetFramework.NET10_0, "x64", "selenium", TracerArea);
-        }
+        // Selenium is temporarily omitted: its Chrome test runs on the shared Windows host,
+        // not in a container. Investigate and validate a container-based setup on supported
+        // GitLab runners before restoring this cell. Azure continues to provide Selenium coverage.
 
         // Match Azure's dedicated Windows Azure Functions matrix. These jobs are
         // always emitted because the specialized suite intentionally covers every
