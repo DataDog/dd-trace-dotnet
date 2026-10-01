@@ -25,10 +25,16 @@ public class AwsMessageAttributesHeadersAdaptersTests
     private const string ShortPathway = "AAAAAAAABBAAAA==";
     private const string Pathway = "AAAAAAAABBCAoKv++WLQr6v++WI=";
 
-    // Node.js pads contexts to 20 bytes, including when the timestamps need fewer bytes.
-    private const string PaddedShortPathway = "AAAAAAAABBAAAAAAAAAAAAAAAAA=";
-    private const string PaddedMixedPathway = "AAAAAAAABBAC0K+r/vliAAAAAAA=";
-    private const string PaddedLongPathway = "AAAAAAAABBCAgICACNCvq/75YgA=";
+    // Node.js pads these 10-, 15-, and 19-byte pathways to 20 bytes.
+    private const string TenBytePathwayPaddedToTwenty = "AAAAAAAABBAAAAAAAAAAAAAAAAA=";
+    private const string FifteenBytePathwayPaddedToTwenty = "AAAAAAAABBAC0K+r/vliAAAAAAA=";
+    private const string NineteenBytePathwayPaddedToTwenty = "AAAAAAAABBCAgICACNCvq/75YgA=";
+
+    private const string InvalidBase64 = "%%%";
+    private const string InsufficientPathwayBytes = "AAAA"; // Only three decoded bytes; a pathway needs at least ten.
+    private const string UnterminatedEdgeTimestamp = "AAAAAAAAAAAAgA=="; // The last byte is a varint continuation byte.
+    private const string NonZeroTrailingByte = "AAAAAAAAAAAAAAE="; // A ten-byte pathway followed by 0x01.
+    private const string NonZeroNodeJsPadding = "AAAAAAAABBAAAAAAAAAAAAAAAAE="; // The last padding byte is 0x01.
 
     [Theory]
     [CombinatorialData]
@@ -39,6 +45,8 @@ public class AwsMessageAttributesHeadersAdaptersTests
         [CombinatorialValues(0, 1, 6)] int paddingBytes)
     {
         var bytes = Convert.FromBase64String(shortPathway ? ShortPathway : Pathway);
+        // Exercise unpadded input, one trailing zero, and six trailing zeros. For the 20-byte
+        // Pathway fixture, six reaches the 26-byte limit. This covers zero padding beyond Node.js's format.
         Array.Resize(ref bytes, bytes.Length + paddingBytes);
         var value = Convert.ToBase64String(bytes);
         if (doubleEncoded)
@@ -62,33 +70,50 @@ public class AwsMessageAttributesHeadersAdaptersTests
         extracted.Should().Be(expected);
     }
 
-    [Theory]
-    [CombinatorialData]
-    public void Extract_AcceptsPaddedNodeJsPathways(
-        [CombinatorialValues(PaddedShortPathway, PaddedMixedPathway, PaddedLongPathway)] string value,
-        bool doubleEncoded,
-        bool binaryAttribute,
-        bool legacyHeadersEnabled)
+    [Fact]
+    public void Extract_DoubleEncodedShortPathway_DoesNotTreatBase64TextAsBinaryPathway()
     {
-        var pathwayStartNs = value switch
-        {
-            PaddedShortPathway => 0,
-            PaddedMixedPathway => 1_000_000,
-            _ => 1_073_741_824_000_000,
-        };
-        var edgeStartNs = value == PaddedShortPathway ? 0 : 1_700_000_001_000_000_000;
+        // After removing the outer Base64 layer, the bytes are the ASCII text "AAAAAAAABBAAAA==".
+        // A permissive binary decoder can mistake the first eight characters for a hash and the
+        // two 'B' characters for timestamps, ignoring the remaining text. Extract the inner pathway instead.
+        var attributes = CreateAttributes(
+            new Dictionary<string, string>
+            {
+                { DataStreamsPropagationHeaders.PropagationKeyBase64, EncodeAgain(ShortPathway) }
+            },
+            binaryAttribute: false);
+
+        var adapter = AwsMessageAttributesHeadersAdapters.GetExtractionAdapter(attributes);
+
+        DataStreamsContextPropagator.Instance.Extract(adapter, isDataStreamsLegacyHeadersEnabled: false)
+                                   .Should()
+                                   .Be(new PathwayContext(new PathwayHash(Hash), 0, 0));
+    }
+
+    [Theory]
+    [InlineData(TenBytePathwayPaddedToTwenty, 0, 0, false)]
+    [InlineData(TenBytePathwayPaddedToTwenty, 0, 0, true)]
+    [InlineData(FifteenBytePathwayPaddedToTwenty, 1_000_000, 1_700_000_001_000_000_000, false)]
+    [InlineData(FifteenBytePathwayPaddedToTwenty, 1_000_000, 1_700_000_001_000_000_000, true)]
+    [InlineData(NineteenBytePathwayPaddedToTwenty, 1_073_741_824_000_000, 1_700_000_001_000_000_000, false)]
+    [InlineData(NineteenBytePathwayPaddedToTwenty, 1_073_741_824_000_000, 1_700_000_001_000_000_000, true)]
+    public void Extract_AcceptsPaddedNodeJsPathways(
+        string value,
+        long pathwayStartNs,
+        long edgeStartNs,
+        bool doubleEncoded)
+    {
         var expected = new PathwayContext(new PathwayHash(Hash), pathwayStartNs, edgeStartNs);
         var attributes = CreateAttributes(
             new Dictionary<string, string>
             {
-                { DataStreamsPropagationHeaders.PropagationKeyBase64, doubleEncoded ? EncodeAgain(value) : value },
-                { DataStreamsPropagationHeaders.PropagationKey, Pathway }
+                { DataStreamsPropagationHeaders.PropagationKeyBase64, doubleEncoded ? EncodeAgain(value) : value }
             },
-            binaryAttribute);
+            binaryAttribute: true);
 
         var adapter = AwsMessageAttributesHeadersAdapters.GetExtractionAdapter(attributes);
 
-        DataStreamsContextPropagator.Instance.Extract(adapter, legacyHeadersEnabled).Should().Be(expected);
+        DataStreamsContextPropagator.Instance.Extract(adapter, isDataStreamsLegacyHeadersEnabled: false).Should().Be(expected);
     }
 
     [Theory]
@@ -113,10 +138,9 @@ public class AwsMessageAttributesHeadersAdaptersTests
     [Theory]
     [CombinatorialData]
     public void Extract_InvalidPreferredHeader_DoesNotFallBackToLegacyHeader(
-        [CombinatorialValues("%%%", "AAAA", "AAAAAAAAAAAAgA==", "AAAAAAAAAAAAAAE=", "AAAAAAAABBAAAAAAAAAAAAAAAAE=")] string value,
+        [CombinatorialValues(InvalidBase64, InsufficientPathwayBytes, UnterminatedEdgeTimestamp, NonZeroTrailingByte, NonZeroNodeJsPadding)] string value,
         bool doubleEncoded,
-        bool binaryAttribute,
-        bool legacyHeadersEnabled)
+        bool binaryAttribute)
     {
         var attributes = CreateAttributes(
             new Dictionary<string, string>
@@ -127,12 +151,12 @@ public class AwsMessageAttributesHeadersAdaptersTests
             binaryAttribute);
 
         var adapter = AwsMessageAttributesHeadersAdapters.GetExtractionAdapter(attributes);
-        DataStreamsContextPropagator.Instance.Extract(adapter, legacyHeadersEnabled).Should().BeNull();
+        DataStreamsContextPropagator.Instance.Extract(adapter, isDataStreamsLegacyHeadersEnabled: true).Should().BeNull();
     }
 
     [Theory]
     [CombinatorialData]
-    public void Extract_RejectsMoreThanTwoEncodingLayers(bool binaryAttribute, bool legacyHeadersEnabled)
+    public void Extract_RejectsMoreThanTwoEncodingLayers(bool binaryAttribute)
     {
         var attributes = CreateAttributes(
             new Dictionary<string, string>
@@ -144,7 +168,7 @@ public class AwsMessageAttributesHeadersAdaptersTests
 
         var adapter = AwsMessageAttributesHeadersAdapters.GetExtractionAdapter(attributes);
 
-        DataStreamsContextPropagator.Instance.Extract(adapter, legacyHeadersEnabled).Should().BeNull();
+        DataStreamsContextPropagator.Instance.Extract(adapter, isDataStreamsLegacyHeadersEnabled: true).Should().BeNull();
     }
 
     [Theory]
@@ -201,7 +225,7 @@ public class AwsMessageAttributesHeadersAdaptersTests
         var attributes = CreateAttributes(
             new Dictionary<string, string>
             {
-                { DataStreamsPropagationHeaders.PropagationKey, "%%%" }
+                { DataStreamsPropagationHeaders.PropagationKey, InvalidBase64 }
             },
             binaryAttribute);
 
