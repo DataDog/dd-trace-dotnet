@@ -257,6 +257,35 @@ TEST(VisitedAddressBitmapTest, OnePageBudgetReportsCapacityExceeded)
     ASSERT_EQ(visited.GetCapacityExceededCount(), 1u);
 }
 
+TEST(VisitedAddressBitmapTest, BenchmarkStatsDistinguishLastPageHitsFromIndexProbes)
+{
+    VisitedAddressBitmap visited(VisitedAddressBitmap::PageStorageBytes * 2, true);
+    constexpr uintptr_t firstPage = VisitedAddressBitmap::HeapBytesPerPage * 18;
+    constexpr uintptr_t secondPage = firstPage + VisitedAddressBitmap::HeapBytesPerPage;
+
+    visited.TryMarkFirstVisit(firstPage);
+    visited.TryMarkFirstVisit(firstPage + sizeof(void*));
+    visited.TryMarkFirstVisit(secondPage);
+    visited.TryMarkFirstVisit(firstPage);
+
+    ASSERT_EQ(visited.GetLastPageHitCount(), 1u);
+    ASSERT_EQ(visited.GetPageIndexLookupCount(), 3u);
+    ASSERT_GE(visited.GetPageIndexProbeCount(), visited.GetPageIndexLookupCount());
+}
+
+TEST(VisitedAddressBitmapTest, BenchmarkStatsAreDisabledByDefault)
+{
+    VisitedAddressBitmap visited(VisitedAddressBitmap::PageStorageBytes);
+    constexpr uintptr_t page = VisitedAddressBitmap::HeapBytesPerPage * 20;
+
+    visited.TryMarkFirstVisit(page);
+    visited.TryMarkFirstVisit(page + sizeof(void*));
+
+    ASSERT_EQ(visited.GetLastPageHitCount(), 0u);
+    ASSERT_EQ(visited.GetPageIndexLookupCount(), 0u);
+    ASSERT_EQ(visited.GetPageIndexProbeCount(), 0u);
+}
+
 // ============================================================================
 // TypeTreeNode Tests
 // ============================================================================
@@ -332,6 +361,31 @@ TEST(TypeTreeNodeTest, GetChildReturnsNullForMissing)
     TypeTreeNode node(100);
     const TypeTreeNode* child = node.GetChild(999);
     ASSERT_EQ(child, nullptr);
+}
+
+TEST(TypeReferenceTreeTest, StatisticsGroupNodesByChildFanout)
+{
+    TypeReferenceTree tree;
+    TypeTreeNode* root = tree.AddRoot(100, RootCategory::Stack);
+
+    TypeTreeNode* oneChild = root->GetOrCreateChild(200);
+    oneChild->GetOrCreateChild(201);
+
+    TypeTreeNode* fiveChildren = root->GetOrCreateChild(300);
+    for (ClassID classID = 301; classID <= 305; classID++)
+    {
+        fiveChildren->GetOrCreateChild(classID);
+    }
+
+    auto statistics = tree.GetStatistics();
+
+    ASSERT_EQ(statistics.nodeCount, 9u);
+    ASSERT_EQ(statistics.leafCount, 6u);
+    ASSERT_EQ(statistics.children1To4, 2u);
+    ASSERT_EQ(statistics.children5To8, 1u);
+    ASSERT_EQ(statistics.children9To16, 0u);
+    ASSERT_EQ(statistics.children17OrMore, 0u);
+    ASSERT_EQ(statistics.maxChildren, 5u);
 }
 
 // ============================================================================

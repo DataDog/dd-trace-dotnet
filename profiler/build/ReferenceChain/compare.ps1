@@ -273,6 +273,19 @@ $definitions = @(
     [pscustomobject]@{ Name = "RevisitSizeCalls"; Label = "Revisit size calls"; Scope = "dump"; Property = "RevisitSizeCalls"; Scale = 1; Unit = "calls"; Better = "lower" }
     [pscustomobject]@{ Name = "GetClassFirstVisit"; Label = "GetClassFromObject first-visit calls"; Scope = "dump"; Property = "GetClassFromObjectFirstVisitCalls"; Scale = 1; Unit = "calls"; Better = "lower" }
     [pscustomobject]@{ Name = "GetClassRevisit"; Label = "GetClassFromObject revisit calls"; Scope = "dump"; Property = "GetClassFromObjectRevisitCalls"; Scale = 1; Unit = "calls"; Better = "lower" }
+    [pscustomobject]@{ Name = "RawClassReads"; Label = "Raw MethodTable class reads"; Scope = "dump"; Property = "RawMethodTableClassReads"; Scale = 1; Unit = "reads"; Better = "context" }
+    [pscustomobject]@{ Name = "ObjectHeaderChecks"; Label = "Object-header cross-checks"; Scope = "dump"; Property = "ObjectHeaderChecks"; Scale = 1; Unit = "checks"; Better = "context" }
+    [pscustomobject]@{ Name = "InlineVtLookups"; Label = "Inline VT lookups"; Scope = "dump"; Property = "InlineVtLookups"; Scale = 1; Unit = "lookups"; Better = "lower" }
+    [pscustomobject]@{ Name = "InlineVtFoundPercent"; Label = "Inline VT positive lookup rate"; Scope = "dump"; Property = "InlineVtFoundPercent"; Scale = 1; Unit = "%"; Better = "context" }
+    [pscustomobject]@{ Name = "TerminalStopEdgeSkips"; Label = "Edges skipped after terminal stop"; Scope = "dump"; Property = "TerminalStopEdgeSkips"; Scale = 1; Unit = "edges"; Better = "lower" }
+    [pscustomobject]@{ Name = "VisitedLastPageHitPercent"; Label = "Visited last-page hit rate"; Scope = "dump"; Property = "VisitedLastPageHitPercent"; Scale = 1; Unit = "%"; Better = "higher" }
+    [pscustomobject]@{ Name = "VisitedPageIndexProbesPerLookup"; Label = "Visited page-index probes per lookup"; Scope = "dump"; Property = "VisitedPageIndexProbesPerLookup"; Scale = 1; Unit = "probes"; Better = "lower" }
+    [pscustomobject]@{ Name = "TreeLeaves"; Label = "Reference-tree leaves"; Scope = "dump"; Property = "TreeLeaves"; Scale = 1; Unit = "nodes"; Better = "context" }
+    [pscustomobject]@{ Name = "TreeChildren1To4"; Label = "Tree nodes with 1-4 children"; Scope = "dump"; Property = "TreeChildren1To4"; Scale = 1; Unit = "nodes"; Better = "context" }
+    [pscustomobject]@{ Name = "TreeChildren5To8"; Label = "Tree nodes with 5-8 children"; Scope = "dump"; Property = "TreeChildren5To8"; Scale = 1; Unit = "nodes"; Better = "context" }
+    [pscustomobject]@{ Name = "TreeChildren9To16"; Label = "Tree nodes with 9-16 children"; Scope = "dump"; Property = "TreeChildren9To16"; Scale = 1; Unit = "nodes"; Better = "context" }
+    [pscustomobject]@{ Name = "TreeChildren17Plus"; Label = "Tree nodes with 17+ children"; Scope = "dump"; Property = "TreeChildren17Plus"; Scale = 1; Unit = "nodes"; Better = "context" }
+    [pscustomobject]@{ Name = "TreeMaxChildren"; Label = "Maximum tree-node fan-out"; Scope = "dump"; Property = "TreeMaxChildren"; Scale = 1; Unit = "children"; Better = "context" }
     [pscustomobject]@{ Name = "DuplicateRoots"; Label = "Duplicate root addresses"; Scope = "dump"; Property = "DuplicateRootAddresses"; Scale = 1; Unit = "roots"; Better = "context" }
 )
 

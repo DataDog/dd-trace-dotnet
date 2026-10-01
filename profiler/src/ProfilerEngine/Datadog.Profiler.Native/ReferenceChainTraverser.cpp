@@ -22,7 +22,7 @@ ReferenceChainTraverser::ReferenceChainTraverser(
       _pFrameStore(pFrameStore),
       _tree(tree),
       _inlineVTCache(inlineVTCache),
-      _visited(visitedMemoryLimitBytes),
+      _visited(visitedMemoryLimitBytes, benchmarkEnabled),
       _objectsTraversed(0),
       _rootsProcessed(0),
       _benchmarkStats(benchmarkEnabled ? std::make_unique<BenchmarkStats>() : nullptr)
@@ -400,6 +400,7 @@ void ReferenceChainTraverser::LogStats() const
                 break;
         }
 
+        auto treeStatistics = _tree.GetStatistics();
         Log::Debug("Reference chain benchmark traversal: duration_ms=", durationMs,
                    ", roots=", _rootsProcessed,
                    ", objects=", _objectsTraversed,
@@ -413,13 +414,29 @@ void ReferenceChainTraverser::LogStats() const
                    ", edges=", edgesExamined,
                    ", first_visit_refs=", firstVisitReferences,
                    ", revisit_refs=", _benchmarkStats->revisitReferences,
-                   ", get_class_first_visit=", firstVisitReferences,
+                   ", get_class_first_visit=", _benchmarkStats->getClassFromObjectFirstVisitCalls,
                    ", get_class_revisit=", 0,
                    ", raw_class_reads=", _benchmarkStats->rawMethodTableClassReads,
-                   ", tree_nodes=", _tree.GetNodeCount(),
+                   ", tree_nodes=", treeStatistics.nodeCount,
                    ", visited_kind=bitmap",
                    ", visited_pages=", _visited.GetAllocatedPageCount(),
                    ", visited_capacity_exceeded=", _visited.GetCapacityExceededCount());
+
+        Log::Debug("Reference chain benchmark lookup stats: object_header_checks=",
+                   _objectHeaderSelfTestObjectsChecked,
+                   ", inline_vt_lookups=", _benchmarkStats->inlineVTLookupCalls,
+                   ", inline_vt_found=", _benchmarkStats->inlineVTFoundCalls,
+                   ", terminal_stop_edge_skips=", _benchmarkStats->terminalStopEdgeSkips,
+                   ", visited_last_page_hits=", _visited.GetLastPageHitCount(),
+                   ", visited_page_index_lookups=", _visited.GetPageIndexLookupCount(),
+                   ", visited_page_index_probes=", _visited.GetPageIndexProbeCount());
+
+        Log::Debug("Reference chain benchmark tree fanout: leaves=", treeStatistics.leafCount,
+                   ", children_1_4=", treeStatistics.children1To4,
+                   ", children_5_8=", treeStatistics.children5To8,
+                   ", children_9_16=", treeStatistics.children9To16,
+                   ", children_17_plus=", treeStatistics.children17OrMore,
+                   ", max_children=", treeStatistics.maxChildren);
 
         Log::Debug("Reference chain benchmark GetObjectSize2: root=", _benchmarkStats->getObjectSizeRootCalls,
                    ", static_root=", _benchmarkStats->getObjectSizeStaticRootCalls,
@@ -542,6 +559,14 @@ void ReferenceChainTraverser::DrainTraversalStack()
         // A type met for the first time is only known from the next snapshot on: it cannot be
         // inspected from here (see InlineVTCache::ResolvePendingTypes).
         const InlineVTCache::InlineVTInfo* vtInfo = _inlineVTCache.GetInlineVTInfo(classID);
+        if (_benchmarkStats != nullptr)
+        {
+            _benchmarkStats->inlineVTLookupCalls++;
+            if (vtInfo != nullptr)
+            {
+                _benchmarkStats->inlineVTFoundCalls++;
+            }
+        }
 
         if (vtInfo == nullptr)
         {
@@ -715,6 +740,10 @@ bool ReferenceChainTraverser::ProcessDiscoveredRef(uintptr_t refAddress, TypeTre
 {
     if (_stopReason != TraversalStopReason::None)
     {
+        if (_benchmarkStats != nullptr)
+        {
+            _benchmarkStats->terminalStopEdgeSkips++;
+        }
         return false;
     }
 
@@ -728,6 +757,10 @@ bool ReferenceChainTraverser::ProcessDiscoveredRef(uintptr_t refAddress, TypeTre
     if (visit == VisitedAddressBitmap::VisitResult::FirstVisit)
     {
         ClassID targetClassID = 0;
+        if (_benchmarkStats != nullptr)
+        {
+            _benchmarkStats->getClassFromObjectFirstVisitCalls++;
+        }
         HRESULT hr = _pCorProfilerInfo->GetClassFromObject(refAddress, &targetClassID);
         if (FAILED(hr) || targetClassID == 0)
         {

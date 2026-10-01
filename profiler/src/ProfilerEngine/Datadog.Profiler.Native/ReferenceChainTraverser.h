@@ -256,8 +256,12 @@ private:
         uint64_t getObjectSizeFirstVisitLeafCalls = 0;
         uint64_t getObjectSizeRevisitCalls = 0;
         uint64_t getObjectSizeFailedOrZeroCalls = 0;
+        uint64_t getClassFromObjectFirstVisitCalls = 0;
         uint64_t getClassFromObjectFailedCalls = 0;
         uint64_t rawMethodTableClassReads = 0;
+        uint64_t inlineVTLookupCalls = 0;
+        uint64_t inlineVTFoundCalls = 0;
+        uint64_t terminalStopEdgeSkips = 0;
         uint64_t firstVisitLeafReferences = 0;
         uint64_t revisitReferences = 0;
         RootWork rootWork[RootCategoryCount] = {};

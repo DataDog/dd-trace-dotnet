@@ -7,6 +7,7 @@
 #include "corprof.h"
 #include "ReferenceChainTypes.h"
 #include "shared/src/native-src/string.h"
+#include <algorithm>
 #include <unordered_map>
 #include <memory>
 #include <string>
@@ -112,6 +113,17 @@ struct TypeRootNode
 class TypeReferenceTree
 {
 public:
+    struct Statistics
+    {
+        size_t nodeCount = 0;
+        size_t leafCount = 0;
+        size_t children1To4 = 0;
+        size_t children5To8 = 0;
+        size_t children9To16 = 0;
+        size_t children17OrMore = 0;
+        size_t maxChildren = 0;
+    };
+
     std::unordered_map<RootKey, std::unique_ptr<TypeRootNode>, RootKeyHash> _roots;
 
     // Add or update a root for the given (type, category).
@@ -135,12 +147,17 @@ public:
 
     size_t GetNodeCount() const
     {
-        size_t count = 0;
+        return GetStatistics().nodeCount;
+    }
+
+    Statistics GetStatistics() const
+    {
+        Statistics statistics;
         for (const auto& rootEntry : _roots)
         {
-            count += CountNode(rootEntry.second->node);
+            AccumulateStatistics(rootEntry.second->node, statistics);
         }
-        return count;
+        return statistics;
     }
 
     void Clear()
@@ -149,13 +166,36 @@ public:
     }
 
 private:
-    static size_t CountNode(const TypeTreeNode& node)
+    static void AccumulateStatistics(const TypeTreeNode& node, Statistics& statistics)
     {
-        size_t count = 1;
+        statistics.nodeCount++;
+
+        size_t childCount = node.children.size();
+        statistics.maxChildren = (std::max)(statistics.maxChildren, childCount);
+        if (childCount == 0)
+        {
+            statistics.leafCount++;
+        }
+        else if (childCount <= 4)
+        {
+            statistics.children1To4++;
+        }
+        else if (childCount <= 8)
+        {
+            statistics.children5To8++;
+        }
+        else if (childCount <= 16)
+        {
+            statistics.children9To16++;
+        }
+        else
+        {
+            statistics.children17OrMore++;
+        }
+
         for (const auto& childEntry : node.children)
         {
-            count += CountNode(*childEntry.second);
+            AccumulateStatistics(*childEntry.second, statistics);
         }
-        return count;
     }
 };

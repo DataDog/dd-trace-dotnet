@@ -47,9 +47,10 @@ private:
 public:
     static constexpr size_t PageStorageBytes = sizeof(Page);
 
-    explicit VisitedAddressBitmap(size_t maxBytes)
+    explicit VisitedAddressBitmap(size_t maxBytes, bool collectBenchmarkStats = false)
         : _maxPages((std::max)(size_t{1}, maxBytes / PageStorageBytes)),
-          _pageIndex(GetIndexCapacity(_maxPages))
+          _pageIndex(GetIndexCapacity(_maxPages)),
+          _collectBenchmarkStats(collectBenchmarkStats)
     {
         _pages.reserve(_maxPages);
         UpdatePeakMemorySize();
@@ -154,6 +155,21 @@ public:
         return _capacityExceededCount;
     }
 
+    size_t GetLastPageHitCount() const
+    {
+        return _lastPageHitCount;
+    }
+
+    size_t GetPageIndexLookupCount() const
+    {
+        return _pageIndexLookupCount;
+    }
+
+    size_t GetPageIndexProbeCount() const
+    {
+        return _pageIndexProbeCount;
+    }
+
 private:
     static size_t GetIndexCapacity(size_t maxPages)
     {
@@ -183,7 +199,16 @@ private:
     {
         if (_lastPage != nullptr && _lastPageId == pageId)
         {
+            if (_collectBenchmarkStats)
+            {
+                _lastPageHitCount++;
+            }
             return _lastPage;
+        }
+
+        if (_collectBenchmarkStats)
+        {
+            _pageIndexLookupCount++;
         }
 
         size_t mask = _pageIndex.size() - 1;
@@ -191,6 +216,11 @@ private:
 
         while (true)
         {
+            if (_collectBenchmarkStats)
+            {
+                _pageIndexProbeCount++;
+            }
+
             PageIndexEntry& entry = _pageIndex[index];
             if (entry.page != nullptr)
             {
@@ -243,4 +273,8 @@ private:
     uintptr_t _lastPageId = 0;
     Page* _lastPage = nullptr;
     bool _needsFullReset = false;
+    bool _collectBenchmarkStats;
+    size_t _lastPageHitCount = 0;
+    size_t _pageIndexLookupCount = 0;
+    size_t _pageIndexProbeCount = 0;
 };

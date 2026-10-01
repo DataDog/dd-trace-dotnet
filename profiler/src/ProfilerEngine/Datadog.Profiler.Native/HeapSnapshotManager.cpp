@@ -411,6 +411,7 @@ void HeapSnapshotManager::OnBulkRootEdges(
     // the GC.
     std::lock_guard lock(_histogramLock);
 
+    // std::cout << "OnBulkEdges #" << index << " x" << count << std::endl;
     Log::Debug("OnBulkRootEdges: index=", index, " count=", count);
 
     uint32_t successCount = 0;
