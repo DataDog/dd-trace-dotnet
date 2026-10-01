@@ -440,6 +440,8 @@ void ReferenceChainTraverser::LogStats() const
                    ", inline_vt_cache_misses=", _benchmarkStats->inlineVTCacheMisses,
                    ", terminal_stop_edge_skips=", _benchmarkStats->terminalStopEdgeSkips,
                    ", visited_last_page_hits=", _visited.GetLastPageHitCount(),
+                   ", visited_recent_page_hits=", _visited.GetRecentPageHitCount(),
+                   ", visited_recent_page_slots=", VisitedAddressBitmap::RecentPageCacheSize,
                    ", visited_page_index_lookups=", _visited.GetPageIndexLookupCount(),
                    ", visited_page_index_probes=", _visited.GetPageIndexProbeCount());
 

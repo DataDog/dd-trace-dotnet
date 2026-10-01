@@ -19,7 +19,7 @@ Results are written to `artifacts\reference-chain\baseline`:
 - `results.csv` — flat data for spreadsheets
 - `run-NN` — raw logs and managed process metrics
 
-`results.json` schema version 4 records both stable workload metrics and
+`results.json` schema version 5 records both stable workload metrics and
 implementation-specific details:
 
 - observed and traversed roots, including duplicate/interior/weak counters
@@ -28,6 +28,7 @@ implementation-specific details:
 - `GetObjectSize2` and `GetClassFromObject` call breakdowns
 - visited representation and memory details
 - object-header checks, inline-value-type lookups, and visited page-index probes
+- MRU/secondary recent-page cache hit rates and configured slot count
 - reference-tree child fan-out distribution
 
 Older schema versions remain valid comparison inputs. `baseline-v3` contains the

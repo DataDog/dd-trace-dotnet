@@ -269,8 +269,34 @@ TEST(VisitedAddressBitmapTest, BenchmarkStatsDistinguishLastPageHitsFromIndexPro
     visited.TryMarkFirstVisit(firstPage);
 
     ASSERT_EQ(visited.GetLastPageHitCount(), 1u);
-    ASSERT_EQ(visited.GetPageIndexLookupCount(), 3u);
+    ASSERT_EQ(visited.GetRecentPageHitCount(), 1u);
+    ASSERT_EQ(visited.GetPageIndexLookupCount(), 2u);
     ASSERT_GE(visited.GetPageIndexProbeCount(), visited.GetPageIndexLookupCount());
+}
+
+TEST(VisitedAddressBitmapTest, RecentPageCacheAvoidsIndexLookupsAndEvictsOldEntries)
+{
+    constexpr size_t CacheSize = VisitedAddressBitmap::RecentPageCacheSize;
+    VisitedAddressBitmap visited(VisitedAddressBitmap::PageStorageBytes * (CacheSize + 1), true);
+    constexpr uintptr_t firstPage = VisitedAddressBitmap::HeapBytesPerPage * 32;
+
+    for (size_t i = 0; i < CacheSize; i++)
+    {
+        visited.TryMarkFirstVisit(firstPage + (i * VisitedAddressBitmap::HeapBytesPerPage));
+    }
+
+    for (size_t i = CacheSize - 1; i > 0; i--)
+    {
+        visited.TryMarkFirstVisit(firstPage + ((i - 1) * VisitedAddressBitmap::HeapBytesPerPage));
+    }
+
+    ASSERT_EQ(visited.GetRecentPageHitCount(), CacheSize - 1);
+    ASSERT_EQ(visited.GetPageIndexLookupCount(), CacheSize);
+
+    visited.TryMarkFirstVisit(firstPage + (CacheSize * VisitedAddressBitmap::HeapBytesPerPage));
+    visited.TryMarkFirstVisit(firstPage + VisitedAddressBitmap::HeapBytesPerPage);
+
+    ASSERT_EQ(visited.GetPageIndexLookupCount(), CacheSize + 2);
 }
 
 TEST(VisitedAddressBitmapTest, BenchmarkStatsAreDisabledByDefault)
@@ -282,6 +308,7 @@ TEST(VisitedAddressBitmapTest, BenchmarkStatsAreDisabledByDefault)
     visited.TryMarkFirstVisit(page + sizeof(void*));
 
     ASSERT_EQ(visited.GetLastPageHitCount(), 0u);
+    ASSERT_EQ(visited.GetRecentPageHitCount(), 0u);
     ASSERT_EQ(visited.GetPageIndexLookupCount(), 0u);
     ASSERT_EQ(visited.GetPageIndexProbeCount(), 0u);
 }

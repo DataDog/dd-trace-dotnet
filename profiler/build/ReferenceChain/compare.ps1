@@ -280,7 +280,11 @@ $definitions = @(
     [pscustomobject]@{ Name = "InlineVtCacheMisses"; Label = "Inline VT backing-map lookups"; Scope = "dump"; Property = "InlineVtCacheMisses"; Scale = 1; Unit = "lookups"; Better = "lower" }
     [pscustomobject]@{ Name = "InlineVtCacheHitPercent"; Label = "Inline VT local-cache hit rate"; Scope = "dump"; Property = "InlineVtCacheHitPercent"; Scale = 1; Unit = "%"; Better = "higher" }
     [pscustomobject]@{ Name = "TerminalStopEdgeSkips"; Label = "Edges skipped after terminal stop"; Scope = "dump"; Property = "TerminalStopEdgeSkips"; Scale = 1; Unit = "edges"; Better = "lower" }
-    [pscustomobject]@{ Name = "VisitedLastPageHitPercent"; Label = "Visited last-page hit rate"; Scope = "dump"; Property = "VisitedLastPageHitPercent"; Scale = 1; Unit = "%"; Better = "higher" }
+    [pscustomobject]@{ Name = "VisitedRecentPageSlots"; Label = "Visited recent-page slots"; Scope = "dump"; Property = "VisitedRecentPageSlots"; Scale = 1; Unit = "slots"; Better = "context" }
+    [pscustomobject]@{ Name = "VisitedLastPageHitPercent"; Label = "Visited MRU-page hit rate"; Scope = "dump"; Property = "VisitedLastPageHitPercent"; Scale = 1; Unit = "%"; Better = "context" }
+    [pscustomobject]@{ Name = "VisitedRecentPageHitPercent"; Label = "Visited secondary-page hit rate"; Scope = "dump"; Property = "VisitedRecentPageHitPercent"; Scale = 1; Unit = "%"; Better = "context" }
+    [pscustomobject]@{ Name = "VisitedPageCacheHitPercent"; Label = "Visited total page-cache hit rate"; Scope = "dump"; Property = "VisitedPageCacheHitPercent"; Scale = 1; Unit = "%"; Better = "higher" }
+    [pscustomobject]@{ Name = "VisitedPageIndexLookups"; Label = "Visited page-index lookups"; Scope = "dump"; Property = "VisitedPageIndexLookups"; Scale = 1; Unit = "lookups"; Better = "lower" }
     [pscustomobject]@{ Name = "VisitedPageIndexProbesPerLookup"; Label = "Visited page-index probes per lookup"; Scope = "dump"; Property = "VisitedPageIndexProbesPerLookup"; Scale = 1; Unit = "probes"; Better = "lower" }
     [pscustomobject]@{ Name = "TreeLeaves"; Label = "Reference-tree leaves"; Scope = "dump"; Property = "TreeLeaves"; Scale = 1; Unit = "nodes"; Better = "context" }
     [pscustomobject]@{ Name = "TreeChildren1To4"; Label = "Tree nodes with 1-4 children"; Scope = "dump"; Property = "TreeChildren1To4"; Scale = 1; Unit = "nodes"; Better = "context" }
