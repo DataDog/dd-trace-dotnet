@@ -200,18 +200,10 @@ namespace Datadog.Trace.Configuration
                 }
             }
 
-            // Phase 2: Handle new/updated configurations and implicit removals
+            // Phase 2: Handle new/updated configurations.
+            // Unchanged configurations are not sent again, so they stay active until they are explicitly removed.
             if (configByProduct.TryGetValue(ProductName, out var apmLibrary))
             {
-                // if we have some config, then we will "overwrite" everything that's currently active
-                if (Log.IsEnabled(LogEventLevel.Debug) && activeConfigurations.Count > 0)
-                {
-                    Log.Debug<int, int>("Implicitly removing {RemovedCount} APM_TRACING configurations and replacing with {AddedCount}", activeConfigurations.Count, apmLibrary.Count);
-                }
-
-                activeConfigurations.Clear();
-
-                // Add/update configurations
                 foreach (var config in apmLibrary)
                 {
                     activeConfigurations[config.Path.Id] = config;
