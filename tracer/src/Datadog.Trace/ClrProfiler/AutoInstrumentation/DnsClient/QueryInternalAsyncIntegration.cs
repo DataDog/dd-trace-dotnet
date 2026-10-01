@@ -24,7 +24,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.DnsClient
         MethodName = "QueryInternalAsync",
         ReturnTypeName = "System.Threading.Tasks.Task`1[DnsClient.IDnsQueryResponse]",
         ParameterTypeNames = ["DnsClient.DnsQuestion", "DnsClient.DnsQuerySettings", "System.Collections.Generic.IReadOnlyCollection`1[DnsClient.NameServer]", ClrNames.CancellationToken],
-        MinimumVersion = "1.0.0",
+        MinimumVersion = "1.3.0",
         MaximumVersion = "1.*.*",
         IntegrationName = DnsClientCommon.IntegrationName)]
     [Browsable(false)]

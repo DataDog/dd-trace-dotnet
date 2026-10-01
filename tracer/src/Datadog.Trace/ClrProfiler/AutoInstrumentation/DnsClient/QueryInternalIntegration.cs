@@ -23,7 +23,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.DnsClient
         MethodName = "QueryInternal",
         ReturnTypeName = "DnsClient.IDnsQueryResponse",
         ParameterTypeNames = ["DnsClient.DnsQuestion", "DnsClient.DnsQuerySettings", "System.Collections.Generic.IReadOnlyCollection`1[DnsClient.NameServer]"],
-        MinimumVersion = "1.0.0",
+        MinimumVersion = "1.3.0",
         MaximumVersion = "1.*.*",
         IntegrationName = DnsClientCommon.IntegrationName)]
     [Browsable(false)]

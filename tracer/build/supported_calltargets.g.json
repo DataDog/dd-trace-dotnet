@@ -7421,7 +7421,7 @@
     ],
     "MinimumVersion": {
       "Item1": 1,
-      "Item2": 0,
+      "Item2": 3,
       "Item3": 0
     },
     "MaximumVersion": {
@@ -7448,7 +7448,7 @@
     ],
     "MinimumVersion": {
       "Item1": 1,
-      "Item2": 0,
+      "Item2": 3,
       "Item3": 0
     },
     "MaximumVersion": {
