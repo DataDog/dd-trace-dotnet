@@ -10,6 +10,7 @@ class Threads
 {
 public:
     static bool SetNativeThreadName(const WCHAR* description);
+    static void RaiseThreadPriorityAboveNormal();
 
 private:
 #ifdef _WIN32
