@@ -40,12 +40,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.DnsClient
         internal static CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception? exception, in CallTargetState state)
             where TReturn : IDnsQueryResponse
         {
-            if (exception is null)
-            {
-                DnsClientCommon.PopulateResponseTags(state.Scope, returnValue);
-            }
-
-            state.Scope.DisposeWithException(exception);
+            DnsClientCommon.CompleteScope(state.Scope, returnValue, exception);
             return new CallTargetReturn<TReturn>(returnValue);
         }
     }

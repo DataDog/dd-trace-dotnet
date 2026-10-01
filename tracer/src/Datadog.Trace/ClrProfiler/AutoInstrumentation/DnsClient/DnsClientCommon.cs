@@ -74,7 +74,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.DnsClient
                 span.ResourceName = StringUtil.IsNullOrEmpty(questionName) ? OperationName : questionName;
 
                 tags.SetAnalyticsSampleRate(IntegrationId, tracer.CurrentTraceSettings.Settings, enabledWithGlobalSetting: false);
-                perTraceSettings.Schema.RemapPeerService(tags);
                 tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
             }
             catch (Exception ex)
@@ -85,10 +84,40 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.DnsClient
             return scope;
         }
 
-        public static void PopulateResponseTags<TResponse>(Scope? scope, TResponse response)
+        public static void CompleteScope<TResponse>(Scope? scope, TResponse response, Exception? exception)
             where TResponse : IDnsQueryResponse
         {
-            if (scope is null || response.Instance is null)
+            if (scope is null)
+            {
+                return;
+            }
+
+            try
+            {
+                if (exception is null)
+                {
+                    PopulateResponseTags(scope, response);
+                }
+
+                // The answering server can differ from the first candidate after failover
+                // or a cache hit. Map only after selecting the final endpoint, including on errors.
+                var span = scope.Span;
+                span.Context.TraceContext.CurrentTraceSettings.Schema.RemapPeerService(span.Tags);
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error completing DNS query scope.");
+            }
+            finally
+            {
+                scope.DisposeWithException(exception);
+            }
+        }
+
+        private static void PopulateResponseTags<TResponse>(Scope scope, TResponse response)
+            where TResponse : IDnsQueryResponse
+        {
+            if (response.Instance is null)
             {
                 return;
             }
