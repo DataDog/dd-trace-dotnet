@@ -7,6 +7,7 @@ using System;
 using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
@@ -48,8 +49,10 @@ namespace Datadog.Trace.Tests.Debugger
             yield return [new Stack<int>(new[] { 1 }), "Stack`1", 1];
             yield return [new ConcurrentQueue<int>(new[] { 1 }), "ConcurrentQueue`1", 1];
             yield return [new ConcurrentBag<int>(new[] { 1 }), "ConcurrentBag`1", 1];
-            yield return [new BlockingCollection<int>(new ConcurrentQueue<int>(new[] { 1 })), "BlockingCollection`1", 1];
             yield return [new SortedSet<int> { 1 }, "SortedSet`1", 1];
+            yield return [ImmutableList.Create(1), "ImmutableList`1", 1];
+            yield return [ImmutableHashSet.Create(1), "ImmutableHashSet`1", 1];
+            yield return [ImmutableSortedSet.Create(1), "ImmutableSortedSet`1", 1];
         }
 
         public static IEnumerable<object[]> SupportedDictionarySamples()
@@ -58,6 +61,8 @@ namespace Datadog.Trace.Tests.Debugger
             yield return [new SortedDictionary<string, int> { { "one", 1 } }, "SortedDictionary`2", 1];
             yield return [new ConcurrentDictionary<string, int>(new[] { new KeyValuePair<string, int>("one", 1) }), "ConcurrentDictionary`2", 1];
             yield return [new Hashtable { { "one", 1 } }, "Hashtable", 1];
+            yield return [ImmutableDictionary.CreateRange(new[] { new KeyValuePair<string, int>("one", 1) }), "ImmutableDictionary`2", 1];
+            yield return [ImmutableSortedDictionary.CreateRange(new[] { new KeyValuePair<string, int>("one", 1) }), "ImmutableSortedDictionary`2", 1];
         }
 
         [Fact]
@@ -412,6 +417,29 @@ namespace Datadog.Trace.Tests.Debugger
             Assert.Null(local["size"]);
             Assert.Null(local["elements"]);
             Assert.Null(local["entries"]);
+        }
+
+        [Fact]
+        public void ObjectStructure_BlockingCollection_DoesNotEnumerateUnderlyingCollection()
+        {
+            var underlying = new SideEffectProducerConsumerCollection();
+
+            var local = GetLocalToken(new BlockingCollection<int>(underlying));
+
+            Assert.Equal("BlockingCollection`1", local["type"]?.Value<string>());
+            Assert.Null(local["size"]);
+            Assert.Null(local["elements"]);
+            Assert.Null(local["entries"]);
+            Assert.Equal(0, underlying.GetEnumeratorCallCount);
+        }
+
+        [Fact]
+        public void ObjectStructure_DefaultImmutableArray_IsCapturedAsObject()
+        {
+            var local = GetLocalToken(default(ImmutableArray<int>));
+
+            Assert.Equal("ImmutableArray`1", local["type"]?.Value<string>());
+            Assert.Null(local["elements"]);
         }
 
         [Fact]
@@ -1075,6 +1103,43 @@ namespace Datadog.Trace.Tests.Debugger
                 {
                     _index = -1;
                 }
+            }
+        }
+
+        private sealed class SideEffectProducerConsumerCollection : IProducerConsumerCollection<int>
+        {
+            public int Count => 0;
+
+            public int GetEnumeratorCallCount { get; private set; }
+
+            public bool IsSynchronized => false;
+
+            public object SyncRoot => this;
+
+            public IEnumerator<int> GetEnumerator()
+            {
+                GetEnumeratorCallCount++;
+                return Enumerable.Empty<int>().GetEnumerator();
+            }
+
+            IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+
+            public void CopyTo(int[] array, int index)
+            {
+            }
+
+            public void CopyTo(Array array, int index)
+            {
+            }
+
+            public int[] ToArray() => [];
+
+            public bool TryAdd(int item) => false;
+
+            public bool TryTake(out int item)
+            {
+                item = 0;
+                return false;
             }
         }
 

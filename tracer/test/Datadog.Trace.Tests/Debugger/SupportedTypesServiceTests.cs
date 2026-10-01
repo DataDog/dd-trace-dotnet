@@ -5,7 +5,9 @@
 
 using System;
 using System.Collections;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 // ReSharper disable once RedundantUsingDirective
 using System.ComponentModel;
 using System.Linq;
@@ -56,6 +58,13 @@ namespace Datadog.Trace.Tests.Debugger
         [Theory]
         [InlineData(typeof(List<int>), true)]
         [InlineData(typeof(HashSet<int>), true)]
+        [InlineData(typeof(ImmutableArray<int>), false)]
+        [InlineData(typeof(ImmutableList<int>), true)]
+        [InlineData(typeof(ImmutableHashSet<int>), true)]
+        [InlineData(typeof(ImmutableSortedSet<int>), true)]
+        [InlineData(typeof(BlockingCollection<int>), false)]
+        [InlineData(typeof(CustomerList), false)]
+        [InlineData(typeof(ImmutableDictionary<string, int>), false)]
         [InlineData(typeof(SortedList), false)]
         [InlineData(typeof(SortedList<string, int>), false)]
         [InlineData(typeof(Dictionary<string, int>), false)]
@@ -71,11 +80,23 @@ namespace Datadog.Trace.Tests.Debugger
         [InlineData(typeof(SortedList), true)]
         [InlineData(typeof(SortedList<string, int>), true)]
         [InlineData(typeof(Hashtable), true)]
+        [InlineData(typeof(ImmutableDictionary<string, int>), true)]
+        [InlineData(typeof(ImmutableSortedDictionary<string, int>), true)]
+        [InlineData(typeof(CustomerDictionary), false)]
         [InlineData(typeof(List<int>), false)]
         [InlineData(typeof(HashSet<int>), false)]
+        [InlineData(typeof(ImmutableList<int>), false)]
         public void SupportedDictionaryTypes(Type type, bool expected)
         {
             Redaction.IsSupportedDictionary(type).Should().Be(expected);
+        }
+
+        private sealed class CustomerList : List<int>
+        {
+        }
+
+        private sealed class CustomerDictionary : Dictionary<string, int>
+        {
         }
     }
 }

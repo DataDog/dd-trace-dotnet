@@ -32,8 +32,12 @@ namespace Datadog.Trace.Debugger.Snapshots
     {
         private const int MaxStackAlloc = 512;
 
+        private const string ImmutableCollectionsNamespace = "System.Collections.Immutable";
+
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(Redaction));
 
+        // Only exact types whose enumeration and Count cannot reach customer code.
+        // BlockingCollection<T> is excluded because it enumerates a caller-supplied IProducerConsumerCollection<T>.
         private static readonly Type[] AllowedCollectionTypes =
         [
             typeof(List<>),
@@ -47,8 +51,7 @@ namespace Datadog.Trace.Debugger.Snapshots
             typeof(ConcurrentQueue<>),
             typeof(HashSet<>),
             typeof(SortedSet<>),
-            typeof(ConcurrentBag<>),
-            typeof(BlockingCollection<>)
+            typeof(ConcurrentBag<>)
         ];
 
         private static readonly Type[] AllowedDictionaryTypes =
@@ -59,6 +62,22 @@ namespace Datadog.Trace.Debugger.Snapshots
             typeof(SortedDictionary<,>),
             typeof(ConcurrentDictionary<,>),
             typeof(Hashtable)
+        ];
+
+        // System.Collections.Immutable is vendored into Datadog.Trace on some target frameworks,
+        // so the customer's immutable collections can only be matched by name.
+        // ImmutableArray<T> is excluded because Count throws on a default instance.
+        private static readonly string[] AllowedImmutableCollectionTypeNames =
+        [
+            "System.Collections.Immutable.ImmutableList`1",
+            "System.Collections.Immutable.ImmutableHashSet`1",
+            "System.Collections.Immutable.ImmutableSortedSet`1"
+        ];
+
+        private static readonly string[] AllowedImmutableDictionaryTypeNames =
+        [
+            "System.Collections.Immutable.ImmutableDictionary`2",
+            "System.Collections.Immutable.ImmutableSortedDictionary`2"
         ];
 
         private static readonly string[] AllowedSpecialCasedCollectionTypeNames = []; // "RangeIterator"
@@ -220,7 +239,8 @@ namespace Datadog.Trace.Debugger.Snapshots
                 return false;
             }
 
-            return IsSupportedType(type, AllowedDictionaryTypes);
+            return IsSupportedType(type, AllowedDictionaryTypes) ||
+                   IsSupportedImmutableType(type, AllowedImmutableDictionaryTypeNames);
         }
 
         internal static bool IsSupportedCollection(object? o)
@@ -245,7 +265,8 @@ namespace Datadog.Trace.Debugger.Snapshots
                 return true;
             }
 
-            if (IsSupportedType(type, AllowedCollectionTypes))
+            if (IsSupportedType(type, AllowedCollectionTypes) ||
+                IsSupportedImmutableType(type, AllowedImmutableCollectionTypeNames))
             {
                 return true;
             }
@@ -274,6 +295,31 @@ namespace Datadog.Trace.Debugger.Snapshots
                 var allowedType = allowedTypes[i];
                 if (allowedType == type ||
                     (genericDefinition != null && allowedType == genericDefinition))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static bool IsSupportedImmutableType(Type type, string[] allowedTypeNames)
+        {
+            if (!type.IsGenericType || type.Namespace != ImmutableCollectionsNamespace)
+            {
+                return false;
+            }
+
+            var genericDefinition = type.GetGenericTypeDefinition();
+            if (genericDefinition.Assembly.FullName?.StartsWith(ImmutableCollectionsNamespace + ",", StringComparison.Ordinal) != true)
+            {
+                return false;
+            }
+
+            var typeName = genericDefinition.FullName;
+            for (var i = 0; i < allowedTypeNames.Length; i++)
+            {
+                if (allowedTypeNames[i] == typeName)
                 {
                     return true;
                 }
