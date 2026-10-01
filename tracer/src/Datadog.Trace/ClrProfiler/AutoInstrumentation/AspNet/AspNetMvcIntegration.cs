@@ -277,8 +277,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                     tags.AspNetArea = areaName;
                     tags.AspNetController = controllerName;
                     tags.AspNetAction = actionName;
+                    tags.SetAnalyticsSampleRate(IntegrationId, tracer.CurrentTraceSettings.Settings, enabledWithGlobalSetting: true);
+
                     // A child action's route was generated outbound and doesn't describe the request,
-                    // so it must not become the request's http.route.
+                    // so it must not become the request's http.route or resource name.
                     if (!isChildAction)
                     {
                         var rootspanTags = span.Context.TraceContext?.RootSpan.Tags;
@@ -295,14 +297,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                         {
                             span.Context.TraceContext?.RootSpan.Tags.SetTag(Tags.HttpRoute, routeUrl);
                         }
-                    }
 
-                    tags.SetAnalyticsSampleRate(IntegrationId, tracer.CurrentTraceSettings.Settings, enabledWithGlobalSetting: true);
-
-                    if (newResourceNamesEnabled && !isChildAction && string.IsNullOrEmpty(httpContext.Items[SharedItems.HttpContextPropagatedResourceNameKey] as string))
-                    {
-                        // set the resource name in the HttpContext so TracingHttpModule can update root span
-                        httpContext.Items[SharedItems.HttpContextPropagatedResourceNameKey] = resourceName;
+                        if (newResourceNamesEnabled && string.IsNullOrEmpty(httpContext.Items[SharedItems.HttpContextPropagatedResourceNameKey] as string))
+                        {
+                            // set the resource name in the HttpContext so TracingHttpModule can update root span
+                            httpContext.Items[SharedItems.HttpContextPropagatedResourceNameKey] = resourceName;
+                        }
                     }
 
                     tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
