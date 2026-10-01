@@ -1695,6 +1695,14 @@ supportedConfigurations:
     product: Profiler
     documentation: |-
       Memory pressure percentage threshold that triggers an automatic heap snapshot.
+  DD_INTERNAL_PROFILING_HEAPSNAPSHOT_REFERENCE_CHAIN_BENCHMARK_ENABLED:
+  - implementation: A
+    scope: native
+    type: boolean
+    default: 'false'
+    product: Profiler
+    documentation: |-
+      When enabled, runs the heap snapshot reference-chain traversal in benchmark mode. Used for testing only. Default is false.
   DD_INTERNAL_PROFILING_HEAPSNAPSHOT_REFERENCE_TREE_FORMAT:
   - implementation: A
     scope: native
