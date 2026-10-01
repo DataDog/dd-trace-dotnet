@@ -318,6 +318,15 @@ TEST(ReferenceChainTraverserFaultTest, VisitedBitmapIsFullyResetAfterFault)
         VisitedAddressBitmap::VisitResult::FirstVisit);
 }
 
+TEST(ReferenceChainTraverserFaultTest, RawClassReadMasksMethodTableTagBits)
+{
+    alignas(16) uintptr_t objectHeader = uintptr_t{0x12345678} | (sizeof(void*) == 8 ? 7 : 3);
+
+    EXPECT_EQ(
+        GCDesc::GetClassIDFromObject(reinterpret_cast<uintptr_t>(&objectHeader)),
+        static_cast<ClassID>(0x12345678));
+}
+
 namespace
 {
 // root -> child through a single reference slot at offset 0. Returns the root's RootInfo;
@@ -428,8 +437,8 @@ TEST(ReferenceChainTraverserFaultTest, CachedInlineValueTypeSizeAvoidsTraversalL
     alignas(64) std::uint8_t rootMt[4096]{};
     alignas(64) std::uint8_t valueTypeMt[4096]{};
     alignas(64) std::uint8_t childMt[4096]{};
-    alignas(8) std::uint8_t rootObj[64]{};
-    alignas(8) std::uint8_t childObj[16]{};
+    alignas(16) std::uint8_t rootObj[64]{};
+    alignas(16) std::uint8_t childObj[16]{};
 
     ClassID rootClass = BuildFakeMethodTableWithRefs(rootMt, sizeof(rootMt), 1, 64);
     ClassID valueTypeClass = BuildFakeMethodTableWithRefs(valueTypeMt, sizeof(valueTypeMt), 1, sizeof(void*));
@@ -587,9 +596,9 @@ TEST(ReferenceChainTraverserFaultTest, TraversalResumesAfterFault)
     ClassID badClass = BuildFakeMethodTableWithRefs(badMt, sizeof(badMt), 1, 64);
     ClassID grandChildClass = BuildFakeMethodTableNoPointers(grandChildMt, sizeof(grandChildMt));
 
-    alignas(8) std::uint8_t rootObj[64]{};
-    alignas(8) std::uint8_t childObj[64]{};
-    alignas(8) std::uint8_t grandChildObj[16]{};
+    alignas(16) std::uint8_t rootObj[64]{};
+    alignas(16) std::uint8_t childObj[64]{};
+    alignas(16) std::uint8_t grandChildObj[16]{};
 
     uintptr_t childAddr = reinterpret_cast<uintptr_t>(childObj);
     uintptr_t grandChildAddr = reinterpret_cast<uintptr_t>(grandChildObj);

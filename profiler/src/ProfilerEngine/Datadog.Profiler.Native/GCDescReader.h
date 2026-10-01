@@ -105,7 +105,9 @@ inline bool ContainsGCPointers(ClassID classID)
 // MemoryFaultGuard.
 inline ClassID GetClassIDFromObject(uintptr_t objectAddress)
 {
-    return static_cast<ClassID>(*reinterpret_cast<const uintptr_t*>(objectAddress));
+    constexpr uintptr_t MethodTableTagMask = sizeof(void*) == 8 ? uintptr_t{7} : uintptr_t{3};
+    uintptr_t methodTable = *reinterpret_cast<const uintptr_t*>(objectAddress);
+    return static_cast<ClassID>(methodTable & ~MethodTableTagMask);
 }
 
 // Read the GCDesc series count from the MethodTable.

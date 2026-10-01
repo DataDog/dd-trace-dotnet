@@ -934,6 +934,11 @@ void HeapSnapshotManager::OnEndGCDump()
             }
             _consecutiveFaultyDumps = 0;
         }
+
+        // Traversal only runs during this dump's GC callbacks. All policy state
+        // needed by future dumps has now been copied to the manager, so release
+        // the dump-local visited bitmap and traversal stack promptly.
+        _pReferenceChainTraverser.reset();
     }
 
     if (_pInlineVTCache)
