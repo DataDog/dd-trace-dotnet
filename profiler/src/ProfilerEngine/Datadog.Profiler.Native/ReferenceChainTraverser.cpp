@@ -96,9 +96,9 @@ void ReferenceChainTraverser::TraverseFromSingleRoot(const RootInfo& root)
 
 void ReferenceChainTraverser::TraverseFromSingleRootCore(const RootInfo& root)
 {
-    // If the GCDesc reader failed its self-test, skip all GCDesc-based traversal
-    // (permanent). If faults have exhausted the per-dump budget, skip the rest of
-    // this dump (transient). The class histogram does not depend on this path.
+    // If a raw object-header/GCDesc reader failed its self-test, skip traversal
+    // permanently. If faults exhausted the per-dump budget, skip the rest of this
+    // dump transiently. The class histogram does not depend on this path.
     if (!_gcDescTrusted || _stopReason != TraversalStopReason::None)
     {
         return;
@@ -265,10 +265,20 @@ void ReferenceChainTraverser::LogPendingSelfTestFailure()
 
     _selfTestFailureLogged = true;
 
-    Log::Warn("Reference-chain layout self-test failed for class ", GetClassName(_selfTestFailedClassID),
-              " (classID=", _selfTestFailedClassID, "): the CLR object/MethodTable/GCDesc layout does not match expectations. ",
-              "Disabling reference-chain traversal for the rest of the process. ",
-              "The class histogram is unaffected.");
+    if (_selfTestFailureKind == SelfTestFailureKind::ObjectHeader)
+    {
+        Log::Warn("Reference-chain object-header self-test failed for class ", GetClassName(_selfTestFailedClassID),
+                  " (classID=", _selfTestFailedClassID, "): the raw MethodTable read disagrees with GetClassFromObject. ",
+                  "Disabling reference-chain traversal for the rest of the process. ",
+                  "The class histogram is unaffected.");
+    }
+    else
+    {
+        Log::Warn("Reference-chain layout self-test failed for class ", GetClassName(_selfTestFailedClassID),
+                  " (classID=", _selfTestFailedClassID, "): the CLR MethodTable/GCDesc layout does not match expectations. ",
+                  "Disabling reference-chain traversal for the rest of the process. ",
+                  "The class histogram is unaffected.");
+    }
 }
 
 #ifdef DD_TEST
@@ -426,6 +436,8 @@ void ReferenceChainTraverser::LogStats() const
                    _objectHeaderSelfTestObjectsChecked,
                    ", inline_vt_lookups=", _benchmarkStats->inlineVTLookupCalls,
                    ", inline_vt_found=", _benchmarkStats->inlineVTFoundCalls,
+                   ", inline_vt_cache_hits=", _benchmarkStats->inlineVTCacheHits,
+                   ", inline_vt_cache_misses=", _benchmarkStats->inlineVTCacheMisses,
                    ", terminal_stop_edge_skips=", _benchmarkStats->terminalStopEdgeSkips,
                    ", visited_last_page_hits=", _visited.GetLastPageHitCount(),
                    ", visited_page_index_lookups=", _visited.GetPageIndexLookupCount(),
@@ -487,8 +499,9 @@ void ReferenceChainTraverser::LogStats() const
 void ReferenceChainTraverser::DrainTraversalStack()
 {
     // Accepted residual risk: this runs under the fault guard and mutates the tree
-    // via TypeTreeNode::GetOrCreateChild (which allocates unordered_map nodes and can
-    // rehash). A fault landing mid-rehash could in theory leave the tree inconsistent.
+    // via TypeTreeNode::GetOrCreateChild (which allocates child nodes and, for nodes
+    // with more than four child types, can allocate/rehash an overflow map). A fault
+    // landing during a mutation could in theory leave the tree inconsistent.
     // In practice faults come from raw object/MethodTable reads (GCDesc slots,
     // GetClassFromObject), never from our own allocator, so this is not observed. The
     // airtight follow-up would be a harvest-then-process split (read slots under the
@@ -525,6 +538,7 @@ void ReferenceChainTraverser::DrainTraversalStack()
             {
                 _gcDescTrusted = false;
                 _selfTest = GCDesc::SelfTestResult::Failed;
+                _selfTestFailureKind = SelfTestFailureKind::GCDescLayout;
 
                 // Only record the class here. Resolving its name takes the FrameStore
                 // lock and logging takes the logger lock; a fault while either is held
@@ -558,15 +572,7 @@ void ReferenceChainTraverser::DrainTraversalStack()
         // Check if this type has inline VTs (slow path needed for tree attribution).
         // A type met for the first time is only known from the next snapshot on: it cannot be
         // inspected from here (see InlineVTCache::ResolvePendingTypes).
-        const InlineVTCache::InlineVTInfo* vtInfo = _inlineVTCache.GetInlineVTInfo(classID);
-        if (_benchmarkStats != nullptr)
-        {
-            _benchmarkStats->inlineVTLookupCalls++;
-            if (vtInfo != nullptr)
-            {
-                _benchmarkStats->inlineVTFoundCalls++;
-            }
-        }
+        const InlineVTCache::InlineVTInfo* vtInfo = GetInlineVTInfoCached(classID);
 
         if (vtInfo == nullptr)
         {
@@ -694,7 +700,7 @@ void ReferenceChainTraverser::AddInlineValueTypeInstances(TypeTreeNode* currentN
         TypeTreeNode* vtNode = currentNode->GetOrCreateChild(vtClassID);
         vtNode->AddInstance();
 
-        const InlineVTCache::InlineVTInfo* nestedInfo = _inlineVTCache.GetInlineVTInfo(vtClassID);
+        const InlineVTCache::InlineVTInfo* nestedInfo = GetInlineVTInfoCached(vtClassID);
         if (nestedInfo != nullptr)
         {
             AddInlineValueTypeInstances(vtNode, *nestedInfo);
@@ -724,7 +730,7 @@ ReferenceChainTraverser::InlineVTOwner ReferenceChainTraverser::GetInlineValueTy
 
         TypeTreeNode* vtNode = currentNode->GetOrCreateChild(field.classID);
 
-        const InlineVTCache::InlineVTInfo* nestedInfo = _inlineVTCache.GetInlineVTInfo(field.classID);
+        const InlineVTCache::InlineVTInfo* nestedInfo = GetInlineVTInfoCached(field.classID);
         if (nestedInfo != nullptr)
         {
             return GetInlineValueTypeOwner(vtNode, depth + 1, refOffset, *nestedInfo, vtStart);
@@ -734,6 +740,107 @@ ReferenceChainTraverser::InlineVTOwner ReferenceChainTraverser::GetInlineValueTy
     }
 
     return {currentNode, depth};
+}
+
+const InlineVTCache::InlineVTInfo* ReferenceChainTraverser::GetInlineVTInfoCached(ClassID classID)
+{
+    if (_benchmarkStats != nullptr)
+    {
+        _benchmarkStats->inlineVTLookupCalls++;
+    }
+
+    uint64_t hash = (static_cast<uint64_t>(classID) >> 3) * 0x9E3779B97F4A7C15ULL;
+    hash ^= hash >> 32;
+    size_t index = static_cast<size_t>(hash) & (InlineVTLookupCacheSize - 1);
+    InlineVTLookupCacheEntry& entry = _inlineVTLookupCache[index];
+    if (entry.classID == classID)
+    {
+        if (_benchmarkStats != nullptr)
+        {
+            _benchmarkStats->inlineVTCacheHits++;
+            if (entry.info != nullptr)
+            {
+                _benchmarkStats->inlineVTFoundCalls++;
+            }
+        }
+        return entry.info;
+    }
+
+    if (_benchmarkStats != nullptr)
+    {
+        _benchmarkStats->inlineVTCacheMisses++;
+    }
+
+    const InlineVTCache::InlineVTInfo* info = _inlineVTCache.GetInlineVTInfoForScannableType(classID);
+    entry.info = info;
+    entry.classID = classID;
+
+    if (_benchmarkStats != nullptr && info != nullptr)
+    {
+        _benchmarkStats->inlineVTFoundCalls++;
+    }
+    return info;
+}
+
+bool ReferenceChainTraverser::TryGetClassIDForFirstVisit(uintptr_t objectAddress, ClassID& classID)
+{
+    classID = 0;
+    if (_objectHeaderSelfTest == ObjectHeaderSelfTestResult::Failed)
+    {
+        return false;
+    }
+
+    if (_objectHeaderSelfTest == ObjectHeaderSelfTestResult::Passed)
+    {
+        classID = GCDesc::GetClassIDFromObject(objectAddress);
+        if (_benchmarkStats != nullptr)
+        {
+            _benchmarkStats->rawMethodTableClassReads++;
+            if (classID == 0)
+            {
+                _benchmarkStats->getClassFromObjectFailedCalls++;
+            }
+        }
+        return classID != 0;
+    }
+
+    if (_benchmarkStats != nullptr)
+    {
+        _benchmarkStats->getClassFromObjectFirstVisitCalls++;
+    }
+
+    HRESULT hr = _pCorProfilerInfo->GetClassFromObject(objectAddress, &classID);
+    if (FAILED(hr) || classID == 0)
+    {
+        if (_benchmarkStats != nullptr)
+        {
+            _benchmarkStats->getClassFromObjectFailedCalls++;
+        }
+        return false;
+    }
+
+    ClassID rawClassID = GCDesc::GetClassIDFromObject(objectAddress);
+    if (_benchmarkStats != nullptr)
+    {
+        _benchmarkStats->rawMethodTableClassReads++;
+    }
+
+    _objectHeaderSelfTestObjectsChecked++;
+    if (rawClassID != classID)
+    {
+        _gcDescTrusted = false;
+        _objectHeaderSelfTest = ObjectHeaderSelfTestResult::Failed;
+        _selfTestFailureKind = SelfTestFailureKind::ObjectHeader;
+        _selfTestFailedClassID = classID;
+        return false;
+    }
+
+    if (_objectHeaderSelfTestObjectsChecked >= MaxSelfTestObjects)
+    {
+        _objectHeaderSelfTest = ObjectHeaderSelfTestResult::Passed;
+    }
+
+    return true;
 }
 
 bool ReferenceChainTraverser::ProcessDiscoveredRef(uintptr_t refAddress, TypeTreeNode* parentNode, uint32_t depth)
@@ -757,35 +864,9 @@ bool ReferenceChainTraverser::ProcessDiscoveredRef(uintptr_t refAddress, TypeTre
     if (visit == VisitedAddressBitmap::VisitResult::FirstVisit)
     {
         ClassID targetClassID = 0;
-        if (_benchmarkStats != nullptr)
+        if (!TryGetClassIDForFirstVisit(refAddress, targetClassID))
         {
-            _benchmarkStats->getClassFromObjectFirstVisitCalls++;
-        }
-        HRESULT hr = _pCorProfilerInfo->GetClassFromObject(refAddress, &targetClassID);
-        if (FAILED(hr) || targetClassID == 0)
-        {
-            if (_benchmarkStats != nullptr)
-            {
-                _benchmarkStats->getClassFromObjectFailedCalls++;
-            }
             return false;
-        }
-
-        if (_objectHeaderSelfTestObjectsChecked < MaxSelfTestObjects)
-        {
-            ClassID rawClassID = GCDesc::GetClassIDFromObject(refAddress);
-            if (_benchmarkStats != nullptr)
-            {
-                _benchmarkStats->rawMethodTableClassReads++;
-            }
-            _objectHeaderSelfTestObjectsChecked++;
-            if (rawClassID != targetClassID)
-            {
-                _gcDescTrusted = false;
-                _selfTest = GCDesc::SelfTestResult::Failed;
-                _selfTestFailedClassID = targetClassID;
-                return false;
-            }
         }
 
         TypeTreeNode* childNode = parentNode->GetOrCreateChild(targetClassID);
@@ -806,7 +887,7 @@ bool ReferenceChainTraverser::ProcessDiscoveredRef(uintptr_t refAddress, TypeTre
         }
 
         SIZE_T layoutSize = 0;
-        hr = _pCorProfilerInfo->GetObjectSize2(refAddress, &layoutSize);
+        HRESULT hr = _pCorProfilerInfo->GetObjectSize2(refAddress, &layoutSize);
         if (FAILED(hr) || layoutSize == 0)
         {
             if (_benchmarkStats != nullptr)

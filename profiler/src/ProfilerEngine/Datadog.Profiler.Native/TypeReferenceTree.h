@@ -8,10 +8,11 @@
 #include "ReferenceChainTypes.h"
 #include "shared/src/native-src/string.h"
 #include <algorithm>
-#include <unordered_map>
+#include <array>
+#include <cstdint>
 #include <memory>
 #include <string>
-#include <cstdint>
+#include <unordered_map>
 
 // Maximum depth for tree traversal to prevent pathological cases
 // (e.g., million-element linked lists creating million-level trees).
@@ -24,13 +25,20 @@ static constexpr uint32_t MaxTreeDepth = 128;
 // For example: TypeA -> TypeB -> TypeA -> TypeC produces 4 nodes.
 struct TypeTreeNode
 {
+private:
+    struct InlineChild
+    {
+        ClassID typeID = 0;
+        std::unique_ptr<TypeTreeNode> node;
+    };
+
+    using OverflowChildren = std::unordered_map<ClassID, std::unique_ptr<TypeTreeNode>>;
+    static constexpr size_t InlineChildCapacity = 4;
+
+public:
     ClassID typeID;
     uint64_t instanceCount;  // How many instances at this tree position
     uint64_t totalSize;      // Reserved wire-format field; always 0 for reference trees
-
-    // Children keyed by ClassID.
-    // Multiple instances flowing through the same type path merge into one child node.
-    std::unordered_map<ClassID, std::unique_ptr<TypeTreeNode>> children;
 
     TypeTreeNode(ClassID id) : typeID(id), instanceCount(0), totalSize(0)
     {
@@ -44,20 +52,96 @@ struct TypeTreeNode
     // Get or create a child node for the given type.
     TypeTreeNode* GetOrCreateChild(ClassID childTypeID)
     {
-        auto [it, inserted] = children.try_emplace(childTypeID, nullptr);
-        if (inserted)
+        for (size_t i = 0; i < _inlineChildCount; i++)
         {
-            it->second = std::make_unique<TypeTreeNode>(childTypeID);
+            if (_inlineChildren[i].typeID == childTypeID)
+            {
+                return _inlineChildren[i].node.get();
+            }
         }
+
+        if (_overflowChildren != nullptr)
+        {
+            auto it = _overflowChildren->find(childTypeID);
+            if (it != _overflowChildren->end())
+            {
+                return it->second.get();
+            }
+        }
+
+        if (_inlineChildCount < InlineChildCapacity)
+        {
+            auto child = std::make_unique<TypeTreeNode>(childTypeID);
+            TypeTreeNode* childPtr = child.get();
+            InlineChild& entry = _inlineChildren[_inlineChildCount++];
+            entry.typeID = childTypeID;
+            entry.node = std::move(child);
+            return childPtr;
+        }
+
+        if (_overflowChildren == nullptr)
+        {
+            auto overflowChildren = std::make_unique<OverflowChildren>();
+            overflowChildren->reserve(InlineChildCapacity);
+            _overflowChildren = std::move(overflowChildren);
+        }
+
+        auto child = std::make_unique<TypeTreeNode>(childTypeID);
+        auto it = _overflowChildren->try_emplace(childTypeID, std::move(child)).first;
         return it->second.get();
     }
 
     // Get an existing child node (returns nullptr if not found).
     const TypeTreeNode* GetChild(ClassID childTypeID) const
     {
-        auto it = children.find(childTypeID);
-        return it != children.end() ? it->second.get() : nullptr;
+        for (size_t i = 0; i < _inlineChildCount; i++)
+        {
+            if (_inlineChildren[i].typeID == childTypeID)
+            {
+                return _inlineChildren[i].node.get();
+            }
+        }
+
+        if (_overflowChildren == nullptr)
+        {
+            return nullptr;
+        }
+
+        auto it = _overflowChildren->find(childTypeID);
+        return it != _overflowChildren->end() ? it->second.get() : nullptr;
     }
+
+    size_t GetChildCount() const
+    {
+        return _inlineChildCount + (_overflowChildren != nullptr ? _overflowChildren->size() : 0);
+    }
+
+    bool HasChildren() const
+    {
+        return GetChildCount() != 0;
+    }
+
+    template <typename TCallback>
+    void ForEachChild(TCallback&& callback) const
+    {
+        for (size_t i = 0; i < _inlineChildCount; i++)
+        {
+            callback(*_inlineChildren[i].node);
+        }
+
+        if (_overflowChildren != nullptr)
+        {
+            for (const auto& [_, childNode] : *_overflowChildren)
+            {
+                callback(*childNode);
+            }
+        }
+    }
+
+private:
+    std::array<InlineChild, InlineChildCapacity> _inlineChildren;
+    uint8_t _inlineChildCount = 0;
+    std::unique_ptr<OverflowChildren> _overflowChildren;
 };
 
 
@@ -170,7 +254,7 @@ private:
     {
         statistics.nodeCount++;
 
-        size_t childCount = node.children.size();
+        size_t childCount = node.GetChildCount();
         statistics.maxChildren = (std::max)(statistics.maxChildren, childCount);
         if (childCount == 0)
         {
@@ -193,9 +277,6 @@ private:
             statistics.children17OrMore++;
         }
 
-        for (const auto& childEntry : node.children)
-        {
-            AccumulateStatistics(*childEntry.second, statistics);
-        }
+        node.ForEachChild([&statistics](const TypeTreeNode& child) { AccumulateStatistics(child, statistics); });
     }
 };

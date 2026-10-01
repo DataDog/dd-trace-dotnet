@@ -70,9 +70,9 @@ public:
     // Benchmark-only accounting for size lookups performed before traversal starts.
     void RecordRootObjectSizeCall(bool isStatic, bool failedOrZero);
 
-    // Whether the GCDesc reader passed (or has not yet failed) its runtime
-    // self-test. When false, GCDesc-based traversal is disabled for this
-    // traverser; the class histogram (which does not use GCDesc) is unaffected.
+    // Whether the raw object-header and GCDesc readers passed (or have not yet
+    // failed) their runtime self-tests. When false, raw-layout traversal is
+    // disabled for this traverser; the class histogram is unaffected.
     //
     // This is the permanent, layout-level signal. A memory access fault (see
     // GetFaultCount/WasAbortedByFaults) is a data-level event and never flips it.
@@ -180,6 +180,9 @@ private:
     // Returns true if the reference was newly inserted and pushed onto the stack.
     bool ProcessDiscoveredRef(uintptr_t refAddress, TypeTreeNode* parentNode, uint32_t depth);
 
+    bool TryGetClassIDForFirstVisit(uintptr_t objectAddress, ClassID& classID);
+    const InlineVTCache::InlineVTInfo* GetInlineVTInfoCached(ClassID classID);
+
     void PushTraversalFrameIfScannable(
         uintptr_t objectAddress,
         TypeTreeNode* treeNode,
@@ -261,6 +264,8 @@ private:
         uint64_t rawMethodTableClassReads = 0;
         uint64_t inlineVTLookupCalls = 0;
         uint64_t inlineVTFoundCalls = 0;
+        uint64_t inlineVTCacheHits = 0;
+        uint64_t inlineVTCacheMisses = 0;
         uint64_t terminalStopEdgeSkips = 0;
         uint64_t firstVisitLeafReferences = 0;
         uint64_t revisitReferences = 0;
@@ -279,8 +284,24 @@ private:
     // layout against profiling-API metadata. On a clear contradiction the reader
     // is disabled (_gcDescTrusted = false) for the rest of this traverser's life.
     static constexpr uint32_t MaxSelfTestObjects = 8;
+    enum class SelfTestFailureKind : uint8_t
+    {
+        None,
+        GCDescLayout,
+        ObjectHeader
+    };
+
+    enum class ObjectHeaderSelfTestResult : uint8_t
+    {
+        Pending,
+        Passed,
+        Failed
+    };
+
     bool _gcDescTrusted = true;
     GCDesc::SelfTestResult _selfTest = GCDesc::SelfTestResult::Pending;
+    ObjectHeaderSelfTestResult _objectHeaderSelfTest = ObjectHeaderSelfTestResult::Pending;
+    SelfTestFailureKind _selfTestFailureKind = SelfTestFailureKind::None;
     uint32_t _selfTestObjectsChecked = 0;
     uint32_t _objectHeaderSelfTestObjectsChecked = 0;
 
@@ -295,4 +316,14 @@ private:
     static constexpr uint32_t MaxFaultsPerDump = 16;
     uint32_t _faultCount = 0;
     TraversalStopReason _stopReason = TraversalStopReason::None;
+
+    struct InlineVTLookupCacheEntry
+    {
+        ClassID classID = 0;
+        const InlineVTCache::InlineVTInfo* info = nullptr;
+    };
+
+    static constexpr size_t InlineVTLookupCacheSize = 256;
+    static_assert((InlineVTLookupCacheSize & (InlineVTLookupCacheSize - 1)) == 0);
+    InlineVTLookupCacheEntry _inlineVTLookupCache[InlineVTLookupCacheSize] = {};
 };

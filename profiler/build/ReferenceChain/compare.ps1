@@ -275,8 +275,10 @@ $definitions = @(
     [pscustomobject]@{ Name = "GetClassRevisit"; Label = "GetClassFromObject revisit calls"; Scope = "dump"; Property = "GetClassFromObjectRevisitCalls"; Scale = 1; Unit = "calls"; Better = "lower" }
     [pscustomobject]@{ Name = "RawClassReads"; Label = "Raw MethodTable class reads"; Scope = "dump"; Property = "RawMethodTableClassReads"; Scale = 1; Unit = "reads"; Better = "context" }
     [pscustomobject]@{ Name = "ObjectHeaderChecks"; Label = "Object-header cross-checks"; Scope = "dump"; Property = "ObjectHeaderChecks"; Scale = 1; Unit = "checks"; Better = "context" }
-    [pscustomobject]@{ Name = "InlineVtLookups"; Label = "Inline VT lookups"; Scope = "dump"; Property = "InlineVtLookups"; Scale = 1; Unit = "lookups"; Better = "lower" }
+    [pscustomobject]@{ Name = "InlineVtLookups"; Label = "Inline VT logical lookups"; Scope = "dump"; Property = "InlineVtLookups"; Scale = 1; Unit = "lookups"; Better = "context" }
     [pscustomobject]@{ Name = "InlineVtFoundPercent"; Label = "Inline VT positive lookup rate"; Scope = "dump"; Property = "InlineVtFoundPercent"; Scale = 1; Unit = "%"; Better = "context" }
+    [pscustomobject]@{ Name = "InlineVtCacheMisses"; Label = "Inline VT backing-map lookups"; Scope = "dump"; Property = "InlineVtCacheMisses"; Scale = 1; Unit = "lookups"; Better = "lower" }
+    [pscustomobject]@{ Name = "InlineVtCacheHitPercent"; Label = "Inline VT local-cache hit rate"; Scope = "dump"; Property = "InlineVtCacheHitPercent"; Scale = 1; Unit = "%"; Better = "higher" }
     [pscustomobject]@{ Name = "TerminalStopEdgeSkips"; Label = "Edges skipped after terminal stop"; Scope = "dump"; Property = "TerminalStopEdgeSkips"; Scale = 1; Unit = "edges"; Better = "lower" }
     [pscustomobject]@{ Name = "VisitedLastPageHitPercent"; Label = "Visited last-page hit rate"; Scope = "dump"; Property = "VisitedLastPageHitPercent"; Scale = 1; Unit = "%"; Better = "higher" }
     [pscustomobject]@{ Name = "VisitedPageIndexProbesPerLookup"; Label = "Visited page-index probes per lookup"; Scope = "dump"; Property = "VisitedPageIndexProbesPerLookup"; Scale = 1; Unit = "probes"; Better = "lower" }

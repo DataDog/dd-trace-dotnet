@@ -76,7 +76,7 @@ function Get-NativeDumpRecords
 
     $heapPattern = 'Reference chain benchmark heap: duration_ms=(?<duration>\d+), objects=(?<objects>\d+), bytes=(?<bytes>\d+)'
     $traversalPattern = 'Reference chain benchmark traversal: duration_ms=(?<duration>\d+), roots=(?<roots>\d+), objects=(?<objects>\d+), stack_capacity=(?<stack>\d+), faults=(?<faults>\d+), stop_reason=(?<stop>[^,]+), visited_peak_entries=(?<peak>\d+), visited_bytes=(?<visited>\d+), visited_buckets=(?<buckets>\d+), visited_grows=(?<grows>\d+), edges=(?<edges>\d+), first_visit_refs=(?<firstVisitRefs>\d+), revisit_refs=(?<revisitRefs>\d+), get_class_first_visit=(?<getClassFirst>\d+), get_class_revisit=(?<getClassRevisit>\d+), raw_class_reads=(?<rawClassReads>\d+), tree_nodes=(?<treeNodes>\d+), visited_kind=(?<visitedKind>[^,]+), visited_pages=(?<visitedPages>\d+), visited_capacity_exceeded=(?<visitedCapacityExceeded>\d+)'
-    $lookupStatsPattern = 'Reference chain benchmark lookup stats: object_header_checks=(?<objectHeaderChecks>\d+), inline_vt_lookups=(?<inlineVtLookups>\d+), inline_vt_found=(?<inlineVtFound>\d+), terminal_stop_edge_skips=(?<terminalStopEdgeSkips>\d+), visited_last_page_hits=(?<visitedLastPageHits>\d+), visited_page_index_lookups=(?<visitedPageIndexLookups>\d+), visited_page_index_probes=(?<visitedPageIndexProbes>\d+)'
+    $lookupStatsPattern = 'Reference chain benchmark lookup stats: object_header_checks=(?<objectHeaderChecks>\d+), inline_vt_lookups=(?<inlineVtLookups>\d+), inline_vt_found=(?<inlineVtFound>\d+), inline_vt_cache_hits=(?<inlineVtCacheHits>\d+), inline_vt_cache_misses=(?<inlineVtCacheMisses>\d+), terminal_stop_edge_skips=(?<terminalStopEdgeSkips>\d+), visited_last_page_hits=(?<visitedLastPageHits>\d+), visited_page_index_lookups=(?<visitedPageIndexLookups>\d+), visited_page_index_probes=(?<visitedPageIndexProbes>\d+)'
     $treeFanoutPattern = 'Reference chain benchmark tree fanout: leaves=(?<leaves>\d+), children_1_4=(?<children1To4>\d+), children_5_8=(?<children5To8>\d+), children_9_16=(?<children9To16>\d+), children_17_plus=(?<children17Plus>\d+), max_children=(?<maxChildren>\d+)'
     $sizeCallsPattern = 'Reference chain benchmark GetObjectSize2: root=(?<root>\d+), static_root=(?<staticRoot>\d+), root_scannable=(?<rootScannable>\d+), root_leaf=(?<rootLeaf>\d+), static_root_scannable=(?<staticRootScannable>\d+), static_root_leaf=(?<staticRootLeaf>\d+), first_visit_scannable=(?<firstScannable>\d+), first_visit_leaf=(?<firstLeaf>\d+), revisit=(?<revisit>\d+), failed_or_zero=(?<failed>\d+)'
     $rootsPattern = 'Reference chain benchmark roots: stack=(?<stack>\d+), static=(?<static>\d+), finalizer=(?<finalizer>\d+), handle=(?<handle>\d+), pinning=(?<pinning>\d+), conditional_weak_table=(?<cwt>\d+), com=(?<com>\d+), other=(?<other>\d+), unknown=(?<unknown>\d+)'
@@ -146,6 +146,8 @@ function Get-NativeDumpRecords
                     ObjectHeaderChecks = [uint64]$Matches.objectHeaderChecks
                     InlineVtLookups = [uint64]$Matches.inlineVtLookups
                     InlineVtFound = [uint64]$Matches.inlineVtFound
+                    InlineVtCacheHits = [uint64]$Matches.inlineVtCacheHits
+                    InlineVtCacheMisses = [uint64]$Matches.inlineVtCacheMisses
                     TerminalStopEdgeSkips = [uint64]$Matches.terminalStopEdgeSkips
                     VisitedLastPageHits = [uint64]$Matches.visitedLastPageHits
                     VisitedPageIndexLookups = [uint64]$Matches.visitedPageIndexLookups
@@ -333,6 +335,9 @@ function Get-NativeDumpRecords
             InlineVtLookups = $lookupStats[$index].InlineVtLookups
             InlineVtFound = $lookupStats[$index].InlineVtFound
             InlineVtFoundPercent = $(if ($lookupStats[$index].InlineVtLookups -eq 0) { 0 } else { [Math]::Round(($lookupStats[$index].InlineVtFound * 100) / $lookupStats[$index].InlineVtLookups, 2) })
+            InlineVtCacheHits = $lookupStats[$index].InlineVtCacheHits
+            InlineVtCacheMisses = $lookupStats[$index].InlineVtCacheMisses
+            InlineVtCacheHitPercent = $(if ($lookupStats[$index].InlineVtLookups -eq 0) { 0 } else { [Math]::Round(($lookupStats[$index].InlineVtCacheHits * 100) / $lookupStats[$index].InlineVtLookups, 2) })
             TerminalStopEdgeSkips = $lookupStats[$index].TerminalStopEdgeSkips
             VisitedLastPageHits = $lookupStats[$index].VisitedLastPageHits
             VisitedPageIndexLookups = $lookupStats[$index].VisitedPageIndexLookups
@@ -664,7 +669,7 @@ finally
 }
 
 $results = [pscustomobject][ordered]@{
-    SchemaVersion = 3
+    SchemaVersion = 4
     Label = $Label
     CreatedUtc = [DateTime]::UtcNow.ToString("O")
     Commit = $commit
@@ -723,6 +728,9 @@ $flatRows = foreach ($run in $runs)
             InlineVtLookups = $dump.InlineVtLookups
             InlineVtFound = $dump.InlineVtFound
             InlineVtFoundPercent = $dump.InlineVtFoundPercent
+            InlineVtCacheHits = $dump.InlineVtCacheHits
+            InlineVtCacheMisses = $dump.InlineVtCacheMisses
+            InlineVtCacheHitPercent = $dump.InlineVtCacheHitPercent
             TerminalStopEdgeSkips = $dump.TerminalStopEdgeSkips
             VisitedLastPageHits = $dump.VisitedLastPageHits
             VisitedPageIndexLookups = $dump.VisitedPageIndexLookups

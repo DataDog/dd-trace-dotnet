@@ -265,8 +265,9 @@ private:
     std::unique_ptr<TypeReferenceTree> _typeReferenceTree;
     std::unique_ptr<ReferenceChainTraverser> _pReferenceChainTraverser;
 
-    // Set to true once the GCDesc reader fails its runtime self-test during a dump,
-    // or once memory access faults exhaust the budget on several consecutive dumps.
+    // Set to true once a raw object-header/GCDesc reader fails its runtime self-test
+    // during a dump, or once memory access faults exhaust the budget on several
+    // consecutive dumps.
     // When set, subsequent dumps skip reference-chain traversal entirely (no
     // traverser is created) while the class histogram continues to work.
     bool _gcDescDisabled = false;

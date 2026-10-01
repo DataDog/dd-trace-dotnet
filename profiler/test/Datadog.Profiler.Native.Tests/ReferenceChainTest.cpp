@@ -296,7 +296,7 @@ TEST(TypeTreeNodeTest, InitialState)
     ASSERT_EQ(node.typeID, 100);
     ASSERT_EQ(node.instanceCount, 0);
     ASSERT_EQ(node.totalSize, 0);
-    ASSERT_TRUE(node.children.empty());
+    ASSERT_FALSE(node.HasChildren());
 }
 
 TEST(TypeTreeNodeTest, AddInstance)
@@ -317,7 +317,7 @@ TEST(TypeTreeNodeTest, GetOrCreateChildCreatesNew)
     ASSERT_NE(child, nullptr);
     ASSERT_EQ(child->typeID, 200);
     ASSERT_EQ(child->instanceCount, 0);
-    ASSERT_EQ(node.children.size(), 1);
+    ASSERT_EQ(node.GetChildCount(), 1);
 }
 
 TEST(TypeTreeNodeTest, GetOrCreateChildReturnsExisting)
@@ -330,7 +330,7 @@ TEST(TypeTreeNodeTest, GetOrCreateChildReturnsExisting)
 
     ASSERT_EQ(child1, child2); // Same pointer
     ASSERT_EQ(child2->instanceCount, 1); // Still has the instance we added
-    ASSERT_EQ(node.children.size(), 1); // Still only one child
+    ASSERT_EQ(node.GetChildCount(), 1); // Still only one child
 }
 
 TEST(TypeTreeNodeTest, MultipleChildrenCreated)
@@ -342,7 +342,24 @@ TEST(TypeTreeNodeTest, MultipleChildrenCreated)
     ASSERT_NE(childA, childB);
     ASSERT_EQ(childA->typeID, 200);
     ASSERT_EQ(childB->typeID, 300);
-    ASSERT_EQ(node.children.size(), 2);
+    ASSERT_EQ(node.GetChildCount(), 2);
+}
+
+TEST(TypeTreeNodeTest, OverflowChildrenPreserveInlineChildPointers)
+{
+    TypeTreeNode node(100);
+    TypeTreeNode* firstChild = node.GetOrCreateChild(200);
+
+    node.GetOrCreateChild(201);
+    node.GetOrCreateChild(202);
+    node.GetOrCreateChild(203);
+    TypeTreeNode* firstOverflowChild = node.GetOrCreateChild(204);
+    TypeTreeNode* secondOverflowChild = node.GetOrCreateChild(205);
+
+    ASSERT_EQ(node.GetChildCount(), 6);
+    ASSERT_EQ(node.GetOrCreateChild(200), firstChild);
+    ASSERT_EQ(node.GetOrCreateChild(204), firstOverflowChild);
+    ASSERT_EQ(node.GetOrCreateChild(205), secondOverflowChild);
 }
 
 TEST(TypeTreeNodeTest, GetChildReturnsExisting)
@@ -512,22 +529,22 @@ TEST(TypeReferenceTreeTest, TreeStructurePreservesPath)
     childC->AddInstance();
 
     // Verify the tree structure
-    ASSERT_EQ(rootA->children.size(), 1);
+    ASSERT_EQ(rootA->GetChildCount(), 1);
 
     const TypeTreeNode* b = rootA->GetChild(200);
     ASSERT_NE(b, nullptr);
     ASSERT_EQ(b->instanceCount, 1);
-    ASSERT_EQ(b->children.size(), 1);
+    ASSERT_EQ(b->GetChildCount(), 1);
 
     const TypeTreeNode* a2 = b->GetChild(100);
     ASSERT_NE(a2, nullptr);
     ASSERT_EQ(a2->instanceCount, 1);
-    ASSERT_EQ(a2->children.size(), 1);
+    ASSERT_EQ(a2->GetChildCount(), 1);
 
     const TypeTreeNode* c = a2->GetChild(300);
     ASSERT_NE(c, nullptr);
     ASSERT_EQ(c->instanceCount, 1);
-    ASSERT_TRUE(c->children.empty());
+    ASSERT_FALSE(c->HasChildren());
 }
 
 // ============================================================================
@@ -917,7 +934,7 @@ TEST(TypeReferenceTreeTest, MergedRootsShareChildren)
     ASSERT_EQ(rootA1->totalSize, 0);
     ASSERT_EQ(childB1->instanceCount, 2);
     ASSERT_EQ(childB1->totalSize, 0);
-    ASSERT_EQ(rootA1->children.size(), 1);
+    ASSERT_EQ(rootA1->GetChildCount(), 1);
 }
 
 // When two root instances of TypeA each add different child types,
@@ -934,7 +951,7 @@ TEST(TypeReferenceTreeTest, MergedRootsHaveDifferentChildren)
     TypeTreeNode* childC = rootA2->GetOrCreateChild(300);
     childC->AddInstance();
 
-    ASSERT_EQ(rootA1->children.size(), 2);
+    ASSERT_EQ(rootA1->GetChildCount(), 2);
     ASSERT_NE(rootA1->GetChild(200), nullptr);
     ASSERT_NE(rootA1->GetChild(300), nullptr);
 }
@@ -1056,9 +1073,9 @@ TEST(TypeReferenceTreeTest, SelfReferencingTypeChain)
     ASSERT_NE(rootA, a3);
 
     // Each has the correct structure
-    ASSERT_EQ(rootA->children.size(), 1);
-    ASSERT_EQ(a2->children.size(), 1);
-    ASSERT_TRUE(a3->children.empty());
+    ASSERT_EQ(rootA->GetChildCount(), 1);
+    ASSERT_EQ(a2->GetChildCount(), 1);
+    ASSERT_FALSE(a3->HasChildren());
 
     ASSERT_EQ(rootA->typeID, 100);
     ASSERT_EQ(a2->typeID, 100);
@@ -1085,7 +1102,7 @@ TEST(TypeReferenceTreeTest, DeepChainBeyondMaxTreeDepth)
     }
 
     // The tree should be fully built (no limit in the tree structure)
-    ASSERT_TRUE(current->children.empty());
+    ASSERT_FALSE(current->HasChildren());
     ASSERT_EQ(current->instanceCount, 1);
 }
 
@@ -1106,7 +1123,7 @@ TEST(TypeReferenceTreeTest, WideTreeWithManyChildren)
         child->AddInstance();
     }
 
-    ASSERT_EQ(root->children.size(), childCount);
+    ASSERT_EQ(root->GetChildCount(), childCount);
 
     for (int i = 0; i < childCount; i++)
     {

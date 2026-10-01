@@ -90,6 +90,7 @@ public:
 
     HRESULT STDMETHODCALLTYPE GetClassFromObject(ObjectID objectId, ClassID* pClassId) override
     {
+        GetClassFromObjectCallCount++;
         auto it = _objects.find(static_cast<uintptr_t>(objectId));
         if (it == _objects.end())
         {
@@ -101,6 +102,8 @@ public:
         }
         return S_OK;
     }
+
+    size_t GetClassFromObjectCallCount = 0;
 
     HRESULT STDMETHODCALLTYPE GetObjectSize2(ObjectID objectId, SIZE_T* pcSize) override
     {
@@ -241,7 +244,7 @@ void UnmapPage(void* p)
 #endif
 
 // Build a fake MethodTable + GCDesc in storage describing one positive series of
-// `refCount` consecutive reference slots starting at object offset 0.
+// `refCount` consecutive reference slots immediately after the object header.
 ClassID BuildFakeMethodTableWithRefs(std::uint8_t* storage, size_t storageSize, ptrdiff_t refCount, SIZE_T objectSize)
 {
     std::memset(storage, 0, storageSize);
@@ -259,7 +262,7 @@ ClassID BuildFakeMethodTableWithRefs(std::uint8_t* storage, size_t storageSize, 
     GCDesc::GCDescSeries& s = seriesBase[-1];
     // rangeSize = encodedSize + objectSize = refCount * sizeof(void*)
     s.encodedSize = refCount * static_cast<ptrdiff_t>(sizeof(void*)) - static_cast<ptrdiff_t>(objectSize);
-    s.offset = 0;
+    s.offset = sizeof(void*);
 
     return reinterpret_cast<ClassID>(mtBase);
 }
@@ -346,7 +349,9 @@ struct TwoObjectGraph
         rootClass = BuildFakeMethodTableWithRefs(rootMt, sizeof(rootMt), 1, 64);
         childClass = BuildFakeMethodTableNoPointers(childMt, sizeof(childMt));
 
-        *reinterpret_cast<uintptr_t*>(rootObj) = reinterpret_cast<uintptr_t>(childObj);
+        *reinterpret_cast<ClassID*>(rootObj) = rootClass;
+        *reinterpret_cast<uintptr_t*>(rootObj + sizeof(void*)) = reinterpret_cast<uintptr_t>(childObj);
+        *reinterpret_cast<ClassID*>(childObj) = childClass;
         profiler.AddObject(reinterpret_cast<uintptr_t>(childObj), childClass, 64);
     }
 
@@ -444,7 +449,9 @@ TEST(ReferenceChainTraverserFaultTest, CachedInlineValueTypeSizeAvoidsTraversalL
     ClassID valueTypeClass = BuildFakeMethodTableWithRefs(valueTypeMt, sizeof(valueTypeMt), 1, sizeof(void*));
     ClassID childClass = BuildFakeMethodTableNoPointers(childMt, sizeof(childMt));
     uintptr_t childAddress = reinterpret_cast<uintptr_t>(childObj);
-    *reinterpret_cast<uintptr_t*>(rootObj) = childAddress;
+    *reinterpret_cast<ClassID*>(rootObj) = rootClass;
+    *reinterpret_cast<uintptr_t*>(rootObj + sizeof(void*)) = childAddress;
+    *reinterpret_cast<ClassID*>(childObj) = childClass;
 
     LayoutCountingGraphMockProfiler profiler;
     profiler.AddObject(childAddress, childClass, sizeof(childObj));
@@ -454,7 +461,8 @@ TEST(ReferenceChainTraverserFaultTest, CachedInlineValueTypeSizeAvoidsTraversalL
     TypeReferenceTree tree;
     InlineVTCache vtCache(pInfo, nullptr);
     InlineVTCache::InlineVTInfo valueTypes;
-    valueTypes.fields.push_back({0, valueTypeClass, static_cast<ULONG>(sizeof(void*))});
+    valueTypes.fields.push_back(
+        {static_cast<ULONG>(sizeof(void*)), valueTypeClass, static_cast<ULONG>(sizeof(void*))});
     vtCache.SetInlineVTInfoForTests(rootClass, std::move(valueTypes));
 
     ReferenceChainTraverser traverser(
@@ -474,6 +482,127 @@ TEST(ReferenceChainTraverserFaultTest, CachedInlineValueTypeSizeAvoidsTraversalL
     const TypeTreeNode* valueTypeNode = rootIt->second->node.GetChild(valueTypeClass);
     ASSERT_NE(valueTypeNode, nullptr);
     ASSERT_NE(valueTypeNode->GetChild(childClass), nullptr);
+}
+
+TEST(ReferenceChainTraverserFaultTest, TrustedObjectHeaderAvoidsFurtherProfilerClassLookups)
+{
+    constexpr size_t ChildCount = 10;
+    constexpr SIZE_T RootSize = 128;
+    alignas(64) std::uint8_t rootMt[4096]{};
+    alignas(64) std::uint8_t childMt[4096]{};
+    alignas(16) std::uint8_t rootObj[RootSize]{};
+    alignas(16) std::uint8_t childObjects[ChildCount][16]{};
+
+    ClassID rootClass = BuildFakeMethodTableWithRefs(rootMt, sizeof(rootMt), ChildCount, RootSize);
+    ClassID childClass = BuildFakeMethodTableNoPointers(childMt, sizeof(childMt));
+    *reinterpret_cast<ClassID*>(rootObj) = rootClass;
+
+    GraphMockProfiler profiler;
+    for (size_t i = 0; i < ChildCount; i++)
+    {
+        uintptr_t childAddress = reinterpret_cast<uintptr_t>(childObjects[i]);
+        *reinterpret_cast<ClassID*>(childObjects[i]) = childClass;
+        *reinterpret_cast<uintptr_t*>(rootObj + ((i + 1) * sizeof(void*))) = childAddress;
+        profiler.AddObject(childAddress, childClass, sizeof(childObjects[i]));
+    }
+
+    ICorProfilerInfo12* pInfo = reinterpret_cast<ICorProfilerInfo12*>(static_cast<ICorProfilerInfo4*>(&profiler));
+    NullFrameStore frameStore;
+    TypeReferenceTree tree;
+    InlineVTCache vtCache(pInfo, nullptr);
+    ReferenceChainTraverser traverser(
+        pInfo,
+        &frameStore,
+        tree,
+        vtCache,
+        VisitedAddressBitmap::PageStorageBytes * 16);
+
+    traverser.TraverseFromSingleRoot(
+        RootInfo(reinterpret_cast<uintptr_t>(rootObj), RootCategory::Stack, rootClass, RootSize));
+
+    EXPECT_TRUE(traverser.IsGCDescTrusted());
+    EXPECT_EQ(profiler.GetClassFromObjectCallCount, 8u);
+
+    const TypeTreeNode* childNode = tree._roots.at({rootClass, RootCategory::Stack})->node.GetChild(childClass);
+    ASSERT_NE(childNode, nullptr);
+    EXPECT_EQ(childNode->instanceCount, ChildCount);
+}
+
+TEST(ReferenceChainTraverserFaultTest, InlineVTLookupCacheAvoidsPerObjectMapLookups)
+{
+    constexpr size_t ChildCount = 10;
+    constexpr SIZE_T RootSize = 128;
+    alignas(64) std::uint8_t rootMt[4096]{};
+    alignas(64) std::uint8_t childMt[4096]{};
+    alignas(16) std::uint8_t rootObj[RootSize]{};
+    alignas(16) std::uint8_t childObjects[ChildCount][16]{};
+
+    ClassID rootClass = BuildFakeMethodTableWithRefs(rootMt, sizeof(rootMt), ChildCount, RootSize);
+    ClassID childClass = BuildFakeMethodTableWithRefs(childMt, sizeof(childMt), 1, sizeof(childObjects[0]));
+    *reinterpret_cast<ClassID*>(rootObj) = rootClass;
+
+    GraphMockProfiler profiler;
+    for (size_t i = 0; i < ChildCount; i++)
+    {
+        uintptr_t childAddress = reinterpret_cast<uintptr_t>(childObjects[i]);
+        *reinterpret_cast<ClassID*>(childObjects[i]) = childClass;
+        *reinterpret_cast<uintptr_t*>(rootObj + ((i + 1) * sizeof(void*))) = childAddress;
+        profiler.AddObject(childAddress, childClass, sizeof(childObjects[i]));
+    }
+
+    ICorProfilerInfo12* pInfo = reinterpret_cast<ICorProfilerInfo12*>(static_cast<ICorProfilerInfo4*>(&profiler));
+    NullFrameStore frameStore;
+    TypeReferenceTree tree;
+    InlineVTCache vtCache(pInfo, nullptr);
+    ReferenceChainTraverser traverser(
+        pInfo,
+        &frameStore,
+        tree,
+        vtCache,
+        VisitedAddressBitmap::PageStorageBytes * 16);
+
+    traverser.TraverseFromSingleRoot(
+        RootInfo(reinterpret_cast<uintptr_t>(rootObj), RootCategory::Stack, rootClass, RootSize));
+
+    EXPECT_EQ(vtCache.GetLookupCountForTests(), 2u);
+}
+
+TEST(ReferenceChainTraverserFaultTest, ObjectHeaderMismatchDisablesTraversal)
+{
+    alignas(64) std::uint8_t rootMt[4096]{};
+    alignas(64) std::uint8_t childMt[4096]{};
+    alignas(64) std::uint8_t wrongMt[4096]{};
+    alignas(16) std::uint8_t rootObj[64]{};
+    alignas(16) std::uint8_t childObj[16]{};
+
+    ClassID rootClass = BuildFakeMethodTableWithRefs(rootMt, sizeof(rootMt), 1, sizeof(rootObj));
+    ClassID childClass = BuildFakeMethodTableNoPointers(childMt, sizeof(childMt));
+    ClassID wrongClass = BuildFakeMethodTableNoPointers(wrongMt, sizeof(wrongMt));
+    uintptr_t childAddress = reinterpret_cast<uintptr_t>(childObj);
+    *reinterpret_cast<ClassID*>(rootObj) = rootClass;
+    *reinterpret_cast<uintptr_t*>(rootObj + sizeof(void*)) = childAddress;
+    *reinterpret_cast<ClassID*>(childObj) = wrongClass;
+
+    GraphMockProfiler profiler;
+    profiler.AddObject(childAddress, childClass, sizeof(childObj));
+
+    ICorProfilerInfo12* pInfo = reinterpret_cast<ICorProfilerInfo12*>(static_cast<ICorProfilerInfo4*>(&profiler));
+    NullFrameStore frameStore;
+    TypeReferenceTree tree;
+    InlineVTCache vtCache(pInfo, nullptr);
+    ReferenceChainTraverser traverser(
+        pInfo,
+        &frameStore,
+        tree,
+        vtCache,
+        VisitedAddressBitmap::PageStorageBytes * 16);
+
+    traverser.TraverseFromSingleRoot(
+        RootInfo(reinterpret_cast<uintptr_t>(rootObj), RootCategory::Stack, rootClass, sizeof(rootObj)));
+
+    EXPECT_FALSE(traverser.IsGCDescTrusted());
+    EXPECT_EQ(traverser.GetFaultCount(), 0u);
+    EXPECT_EQ(profiler.GetClassFromObjectCallCount, 1u);
 }
 
 // The guard only recovers from memory access faults, so a C++ exception must pass straight
@@ -588,8 +717,8 @@ TEST(ReferenceChainTraverserFaultTest, TraversalResumesAfterFault)
     alignas(64) std::uint8_t badMt[4096]{};
     alignas(64) std::uint8_t grandChildMt[4096]{};
 
-    // root has two ref slots (offset 0 -> childA, offset 8 -> B on the bad page);
-    // childA has one ref slot (offset 0 -> grandChild); B faults when scanned;
+    // root has two ref slots after its header (childA, then B on the bad page);
+    // childA has one ref slot after its header (grandChild); B faults when inspected;
     // grandChild has no pointers (leaf).
     ClassID rootClass = BuildFakeMethodTableWithRefs(rootMt, sizeof(rootMt), 2, 64);
     ClassID childClass = BuildFakeMethodTableWithRefs(childMt, sizeof(childMt), 1, 64);
@@ -604,9 +733,12 @@ TEST(ReferenceChainTraverserFaultTest, TraversalResumesAfterFault)
     uintptr_t grandChildAddr = reinterpret_cast<uintptr_t>(grandChildObj);
     uintptr_t badAddr = reinterpret_cast<uintptr_t>(badPage);
 
-    *reinterpret_cast<uintptr_t*>(rootObj + 0) = childAddr;
-    *reinterpret_cast<uintptr_t*>(rootObj + sizeof(void*)) = badAddr;
-    *reinterpret_cast<uintptr_t*>(childObj + 0) = grandChildAddr;
+    *reinterpret_cast<ClassID*>(rootObj) = rootClass;
+    *reinterpret_cast<uintptr_t*>(rootObj + sizeof(void*)) = childAddr;
+    *reinterpret_cast<uintptr_t*>(rootObj + (2 * sizeof(void*))) = badAddr;
+    *reinterpret_cast<ClassID*>(childObj) = childClass;
+    *reinterpret_cast<uintptr_t*>(childObj + sizeof(void*)) = grandChildAddr;
+    *reinterpret_cast<ClassID*>(grandChildObj) = grandChildClass;
 
     GraphMockProfiler profiler;
     profiler.AddObject(childAddr, childClass, 64);

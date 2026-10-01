@@ -767,8 +767,8 @@ void HeapSnapshotManager::StartGCDump()
         // InlineVTCache is persisted across dumps to avoid re-inspecting types for inline VTs.
         // Visited bitmap pages are allocated lazily up to a fixed per-dump memory budget.
         //
-        // If the GCDesc reader previously failed its self-test, do not create the
-        // traverser: the reference tree is skipped while the class histogram still runs.
+        // If a raw object-header/GCDesc reader previously failed its self-test, do not
+        // create the traverser: the reference tree is skipped while the class histogram runs.
         if (!faultGuardAvailable)
         {
             // A skipped dump breaks a streak of dumps that exhausted their fault
@@ -884,7 +884,8 @@ void HeapSnapshotManager::OnEndGCDump()
         {
             _gcDescDisabled = true;
             Log::Warn("Reference-chain traversal has been disabled for the remainder of the process "
-                      "because the GCDesc reader failed its self-test. Heap class histograms are unaffected.");
+                      "because a raw CLR layout reader failed its self-test. "
+                      "Heap class histograms are unaffected.");
         }
         else if (_pReferenceChainTraverser->GetStopReason() ==
                  ReferenceChainTraverser::TraversalStopReason::FaultBudgetExhausted)

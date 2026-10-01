@@ -19,7 +19,7 @@ Results are written to `artifacts\reference-chain\baseline`:
 - `results.csv` — flat data for spreadsheets
 - `run-NN` — raw logs and managed process metrics
 
-`results.json` schema version 3 records both stable workload metrics and
+`results.json` schema version 4 records both stable workload metrics and
 implementation-specific details:
 
 - observed and traversed roots, including duplicate/interior/weak counters
@@ -30,13 +30,13 @@ implementation-specific details:
 - object-header checks, inline-value-type lookups, and visited page-index probes
 - reference-tree child fan-out distribution
 
-The original `baseline` label is schema version 1 and `baseline-v2` is schema
-version 2; both remain valid comparison inputs. After changing native benchmark
-instrumentation, record `baseline-v3` before changing traversal behavior:
+Older schema versions remain valid comparison inputs. `baseline-v3` contains the
+observability baseline before the bounded P1 lookup optimizations. Record each
+candidate under a new label and compare it with that baseline:
 
 ```powershell
-.\run.ps1 -Label baseline-v3
-.\compare.ps1 baseline-v2 baseline-v3
+.\run.ps1 -Label p1-candidate
+.\compare.ps1 baseline-v3 p1-candidate
 ```
 
 The runner uses:
