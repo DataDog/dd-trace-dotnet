@@ -3,43 +3,48 @@
 
 #pragma once
 
-#include <fstream>
-#include <string>
-
-#include "EncodedProfile.hpp"
+#include "EncodedPprof.h"
 #include "FfiHelper.h"
 #include "FileHelper.h"
-#include "OpSysTools.h"
 #include "Success.h"
 
 #include "shared/src/native-src/dd_filesystem.hpp"
 
-extern "C"
-{
-#include "datadog/common.h"
-#include "datadog/profiling.h"
-}
+#include <cassert>
+#include <cerrno>
+#include <cstdint>
+#include <cstring>
+#include <fstream>
+#include <sstream>
+#include <string>
+#include <utility>
+#include <vector>
 
-namespace libdatadog {
-
-class FileSaver
+// Writes the raw (uncompressed) pprof plus its companion files to disk when a
+// profiles output directory is configured (DD_PROFILING_OUTPUT_DIR). Replaces
+// the libdatadog-based FileSaver: the profile bytes are already available in
+// EncodedPprof, so there is no ddog_prof_EncodedProfile_bytes call.
+class DebugPprofWriter
 {
 public:
-    FileSaver(fs::path outputDirectory) :
-        _outputDirectory{outputDirectory}
+    explicit DebugPprofWriter(fs::path outputDirectory) :
+        _outputDirectory{std::move(outputDirectory)}
     {
     }
 
-    ~FileSaver() = default;
-
-    Success WriteToDisk(EncodedProfile& profile, std::string const& serviceName, std::vector<std::pair<std::string, std::vector<uint8_t>>> const& files, std::string const& metadata, std::string const& info)
+    libdatadog::Success WriteToDisk(
+        EncodedPprof& profile,
+        std::string const& serviceName,
+        std::vector<std::pair<std::string, std::vector<uint8_t>>> const& files,
+        std::string const& metadata,
+        std::string const& info)
     {
         auto const& profileId = profile.GetId();
-        auto success = WriteProfileToDisk(profile, serviceName, profileId);
 
         bool hasError = false;
-
         std::stringstream errorMessage;
+
+        auto success = WriteBinaryFileToDisk("", ".pprof", profile.Bytes, serviceName, profileId);
         if (!success)
         {
             hasError = true;
@@ -48,8 +53,8 @@ public:
 
         for (auto const& [filename, content] : files)
         {
-            success = WriteBinaryFileToDisk(filename, content, serviceName, profileId);
-
+            auto [name, extension] = SplitFilenameAndExtension(filename);
+            success = WriteBinaryFileToDisk(name, extension, content, serviceName, profileId);
             if (!success)
             {
                 errorMessage << success.message() << "\n";
@@ -59,9 +64,7 @@ public:
 
         if (!metadata.empty())
         {
-            static const std::string MetadataFilename = "metadata.json";
-            success = WriteTextFileToDisk(MetadataFilename, metadata, serviceName, profileId);
-
+            success = WriteTextFileToDisk("metadata.json", metadata, serviceName, profileId);
             if (!success)
             {
                 errorMessage << success.message() << "\n";
@@ -71,9 +74,7 @@ public:
 
         if (!info.empty())
         {
-            static const std::string InfoFilename = "info.json";
-            success = WriteTextFileToDisk(InfoFilename, info, serviceName, profileId);
-
+            success = WriteTextFileToDisk("info.json", info, serviceName, profileId);
             if (!success)
             {
                 errorMessage << success.message() << "\n";
@@ -83,30 +84,13 @@ public:
 
         if (hasError)
         {
-            return make_error(errorMessage.str());
+            return libdatadog::make_error(errorMessage.str());
         }
-        return make_success();
+        return libdatadog::make_success();
     }
 
 private:
-    Success WriteProfileToDisk(ddog_prof_EncodedProfile* profile, std::string const& serviceName, std::string const& uid)
-    {
-        // no specific filename for the pprof file
-        auto filepath = GenerateFilePath("", ".pprof", serviceName, uid);
-        auto resultBytes = ddog_prof_EncodedProfile_bytes(profile);
-
-        if (resultBytes.tag == DDOG_PROF_RESULT_BYTE_SLICE_ERR_BYTE_SLICE)
-        {
-            return make_error(resultBytes.err);
-        }
-
-        auto bufferPtr = resultBytes.ok.ptr;
-        auto bufferSize = static_cast<std::size_t>(resultBytes.ok.len);
-        
-        return WriteFileToDisk(filepath, (char const*)bufferPtr, bufferSize);
-    }
-
-    Success WriteTextFileToDisk(const std::string& filenameWithExt, const std::string& content, std::string const& serviceName, std::string const& uid)
+    libdatadog::Success WriteTextFileToDisk(const std::string& filenameWithExt, const std::string& content, std::string const& serviceName, std::string const& uid)
     {
         assert(fs::path(filenameWithExt).has_extension());
 
@@ -116,21 +100,20 @@ private:
         return WriteFileToDisk(filepath, content.c_str(), content.size());
     }
 
-    Success WriteBinaryFileToDisk(const std::string& filenameWithExt, const std::vector<uint8_t>& content, std::string const& serviceName, std::string const& uid)
+    libdatadog::Success WriteBinaryFileToDisk(const std::string& filename, const std::string& extension, const std::vector<uint8_t>& content, std::string const& serviceName, std::string const& uid)
     {
-        assert(fs::path(filenameWithExt).has_extension());
-
-        auto [filename, extension] = SplitFilenameAndExtension(filenameWithExt);
         auto filepath = GenerateFilePath(filename, extension, serviceName, uid);
-
         return WriteFileToDisk(filepath, reinterpret_cast<const char*>(content.data()), content.size());
     }
 
-    Success WriteFileToDisk(fs::path const& filePath, char const* ptr, std::size_t size)
+    libdatadog::Success WriteFileToDisk(fs::path const& filePath, char const* ptr, std::size_t size)
     {
         std::ofstream file{filePath, std::ios::out | std::ios::binary};
 
-        file.write(ptr, size);
+        if (size != 0 && ptr != nullptr)
+        {
+            file.write(ptr, size);
+        }
         file.close();
 
         if (file.fail())
@@ -142,10 +125,10 @@ private:
 #else
             strerror_r(errorCode, message, BufferMaxSize);
 #endif
-            return make_error(std::string("Unable to write file on disk: ") + filePath.string() + ". Message (code): " + message + " (" + std::to_string(errorCode) + ")");
+            return libdatadog::make_error(std::string("Unable to write file on disk: ") + filePath.string() + ". Message (code): " + message + " (" + std::to_string(errorCode) + ")");
         }
 
-        return make_success();
+        return libdatadog::make_success();
     }
 
     static std::pair<std::string, std::string> SplitFilenameAndExtension(std::string const& filename)
@@ -159,14 +142,10 @@ private:
     fs::path GenerateFilePath(std::string const& filename, std::string const& extension, std::string const& serviceName, std::string const& uid) const
     {
         auto generatedFilename = FileHelper::GenerateFilename(filename, extension, serviceName, uid);
-
         return _outputDirectory / generatedFilename;
     }
 
-private:
     static constexpr std::size_t BufferMaxSize = 512;
 
     fs::path _outputDirectory;
 };
-
-} // namespace libdatadog

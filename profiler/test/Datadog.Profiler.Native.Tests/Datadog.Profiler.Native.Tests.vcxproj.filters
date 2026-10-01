@@ -143,13 +143,13 @@
     <ClCompile Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native.Windows\EtwEventsManager.cpp">
       <Filter>External Sources</Filter>
     </ClCompile>
-    <ClCompile Include="ProfileTest.cpp">
+    <ClCompile Include="PprofBuilderTest.cpp">
+      <Filter>Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="ProtobufWriterTest.cpp">
       <Filter>Tests</Filter>
     </ClCompile>
     <ClCompile Include="TagsTest.cpp">
-      <Filter>Tests</Filter>
-    </ClCompile>
-    <ClCompile Include="ExporterTest.cpp">
       <Filter>Tests</Filter>
     </ClCompile>
     <ClCompile Include="ErrorCodeTest.cpp">
