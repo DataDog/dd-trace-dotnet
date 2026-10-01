@@ -25,8 +25,7 @@ class TracerRejitPreprocessor : public RejitPreprocessor<IntegrationDefinition>
 public:
     using RejitPreprocessor::RejitPreprocessor;
 
-    TracerRejitPreprocessor(CorProfiler* corProfiler, std::shared_ptr<RejitHandler> rejit_handler,
-                      std::shared_ptr<RejitWorkOffloader> work_offloader);
+    TracerRejitPreprocessor(CorProfiler* corProfiler, std::shared_ptr<RejitHandler> rejit_handler);
 
 protected:
     const MethodReference& GetTargetMethod(const IntegrationDefinition& integrationDefinition) final;
