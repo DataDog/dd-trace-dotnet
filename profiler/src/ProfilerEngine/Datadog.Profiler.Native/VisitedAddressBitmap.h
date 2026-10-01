@@ -15,8 +15,7 @@
 // One bitmap bit represents one pointer-aligned heap slot. Pages and the page index
 // are bounded at construction, while bitmap pages are committed only when first
 // touched. Clearing for a new root increments an epoch; a page is zeroed lazily the
-// next time that root touches it. A tiny fixed-size recent-page cache avoids probing
-// the page index for the working set without growing with the heap.
+// next time that root touches it.
 class VisitedAddressBitmap
 {
 public:
@@ -30,8 +29,6 @@ public:
     static constexpr size_t HeapBytesPerPage = 1u << 20; // 1 MiB of heap address space
     static constexpr size_t SlotsPerPage = HeapBytesPerPage / sizeof(void*);
     static constexpr size_t WordsPerPage = SlotsPerPage / 64;
-    static constexpr size_t RecentPageCacheSize = 8;
-    static_assert(RecentPageCacheSize >= 2);
 
 private:
     struct Page
@@ -42,12 +39,6 @@ private:
     };
 
     struct PageIndexEntry
-    {
-        uintptr_t pageId = 0;
-        Page* page = nullptr;
-    };
-
-    struct RecentPageEntry
     {
         uintptr_t pageId = 0;
         Page* page = nullptr;
@@ -174,11 +165,6 @@ public:
         return _pageIndexLookupCount;
     }
 
-    size_t GetRecentPageHitCount() const
-    {
-        return _recentPageHitCount;
-    }
-
     size_t GetPageIndexProbeCount() const
     {
         return _pageIndexProbeCount;
@@ -211,27 +197,13 @@ private:
 
     Page* GetOrCreatePage(uintptr_t pageId)
     {
-        if (_recentPages[0].page != nullptr && _recentPages[0].pageId == pageId)
+        if (_lastPage != nullptr && _lastPageId == pageId)
         {
             if (_collectBenchmarkStats)
             {
                 _lastPageHitCount++;
             }
-            return _recentPages[0].page;
-        }
-
-        for (size_t i = 1; i < RecentPageCacheSize; i++)
-        {
-            if (_recentPages[i].page != nullptr && _recentPages[i].pageId == pageId)
-            {
-                if (_collectBenchmarkStats)
-                {
-                    _recentPageHitCount++;
-                }
-
-                std::swap(_recentPages[0], _recentPages[i]);
-                return _recentPages[0].page;
-            }
+            return _lastPage;
         }
 
         if (_collectBenchmarkStats)
@@ -254,7 +226,8 @@ private:
             {
                 if (entry.pageId == pageId)
                 {
-                    RememberPage(pageId, entry.page);
+                    _lastPageId = pageId;
+                    _lastPage = entry.page;
                     return entry.page;
                 }
                 index = (index + 1) & mask;
@@ -275,7 +248,8 @@ private:
             // Publish the pointer last so a partially initialized entry is never visible.
             entry.pageId = pageId;
             entry.page = page;
-            RememberPage(pageId, page);
+            _lastPageId = pageId;
+            _lastPage = page;
             _pageAllocationCount++;
             UpdatePeakMemorySize();
             return page;
@@ -287,21 +261,6 @@ private:
         _peakMemorySize = (std::max)(_peakMemorySize, GetMemorySize());
     }
 
-    void RememberPage(uintptr_t pageId, Page* page)
-    {
-        if (_recentPages[0].page != nullptr)
-        {
-            _recentPages[_nextRecentPageSlot] = _recentPages[0];
-            _nextRecentPageSlot++;
-            if (_nextRecentPageSlot == RecentPageCacheSize)
-            {
-                _nextRecentPageSlot = 1;
-            }
-        }
-
-        _recentPages[0] = {pageId, page};
-    }
-
     size_t _maxPages;
     std::vector<std::unique_ptr<Page>> _pages;
     std::vector<PageIndexEntry> _pageIndex;
@@ -311,12 +270,11 @@ private:
     size_t _peakMemorySize = 0;
     size_t _pageAllocationCount = 0;
     size_t _capacityExceededCount = 0;
-    std::array<RecentPageEntry, RecentPageCacheSize> _recentPages{};
-    size_t _nextRecentPageSlot = 1;
+    uintptr_t _lastPageId = 0;
+    Page* _lastPage = nullptr;
     bool _needsFullReset = false;
     bool _collectBenchmarkStats;
     size_t _lastPageHitCount = 0;
-    size_t _recentPageHitCount = 0;
     size_t _pageIndexLookupCount = 0;
     size_t _pageIndexProbeCount = 0;
 };
