@@ -111,6 +111,7 @@
     <Compile Include="Controllers\ErrorController.cs" />
     <Compile Include="Controllers\GraphqlController.cs" />
     <Compile Include="Controllers\HomeController.cs" />
+    <Compile Include="Controllers\SyncParentController.cs" />
     <Compile Include="Data\Contact.cs" />
     <Compile Include="Data\SampleDbContext.cs" />
     <Compile Include="Global.asax.cs">
@@ -132,6 +133,7 @@
     <Content Include="Views\_ViewStart.cshtml" />
     <Content Include="Views\Home\Index.cshtml" />
     <Content Include="Views\Home\Delay.cshtml" />
+    <Content Include="Views\SyncParent\Index.cshtml" />
     <Content Include="Views\Contacts\Create.cshtml" />
     <Content Include="Views\Contacts\Delete.cshtml" />
     <Content Include="Views\Contacts\Details.cshtml" />
