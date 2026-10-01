@@ -92,7 +92,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Remoting.Server
                 RemotingIntegration.SetServerScope(sinkStack, scope);
             }
 
-            return new CallTargetState(scope);
+            return new CallTargetState(scope, sinkStack);
         }
 
         /// <summary>
@@ -107,8 +107,17 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Remoting.Server
         /// <returns>A response value</returns>
         internal static CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
         {
-            // Do not close the span here
-            // The span will be closed when the message response is written
+            // Normally the span is closed by SerializeResponse once the response is written (Complete),
+            // or later when it's written asynchronously (Async). If no response will ever be written
+            // (one-way call, or ProcessMessage threw), nothing else will close it - do it here.
+            if (state.Scope is { } scope
+                && state.State is { } sinkStack
+                && (exception is not null || (returnValue is ServerProcessing processing && processing == ServerProcessing.OneWay))
+                && RemotingIntegration.TryRemoveServerScope(sinkStack, scope))
+            {
+                scope.DisposeWithException(exception);
+            }
+
             return new CallTargetReturn<TReturn>(returnValue);
         }
     }
