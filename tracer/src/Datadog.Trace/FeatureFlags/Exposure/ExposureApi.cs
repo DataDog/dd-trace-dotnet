@@ -7,15 +7,11 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Datadog.Trace.Agent;
-using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.FeatureFlags.Evp;
 using Datadog.Trace.FeatureFlags.Exposure.Model;
-using Datadog.Trace.HttpOverStreams;
 using Datadog.Trace.Logging;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
@@ -28,7 +24,9 @@ internal sealed class ExposureApi : IDisposable
     internal static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ExposureApi));
 
     private const int DefaultCapacity = 1 << 16; // 65536 elements
-    public const string ExposurePath = "evp_proxy/v2/api/v2/exposures";
+    private static readonly TimeSpan DefaultSendInterval = TimeSpan.FromSeconds(10);
+    private static readonly TimeSpan DefaultShutdownTimeout = TimeSpan.FromSeconds(10);
+
     [TestingAndPrivateOnly]
     internal static readonly JsonSerializerSettings SerializerSettings = new()
     {
@@ -39,44 +37,37 @@ internal sealed class ExposureApi : IDisposable
         }
     };
 
-    private readonly TaskCompletionSource<bool> _processExit = new();
-    private readonly TimeSpan _sendInterval = TimeSpan.FromSeconds(10);
+    private readonly TaskCompletionSource<bool> _processExit = new(TaskCreationOptions.RunContinuationsAsynchronously);
+    private readonly object _lifecycleLock = new();
+    private readonly TimeSpan _sendInterval;
+    private readonly TimeSpan _shutdownTimeout;
     private readonly Queue<ExposureEvent> _exposures = new Queue<ExposureEvent>();
-
     private readonly ExposureCache _exposureCache = new ExposureCache(DefaultCapacity);
-    private IApiRequestFactory _apiRequestFactory;
-    private Dictionary<string, string> _context;
-    private int _started;
+    private readonly FeatureFlagsEvpTransport _transport;
+    private readonly IDisposable _settingsSubscription;
 
-    internal ExposureApi(TracerSettings tracerSettings)
+    private Dictionary<string, string> _context;
+    private Task? _sendLoopTask;
+    private bool _disposed;
+
+    internal ExposureApi(
+        TracerSettings tracerSettings,
+        FeatureFlagsEvpTransport transport,
+        TimeSpan? sendInterval = null,
+        TimeSpan? shutdownTimeout = null)
     {
-        UpdateApi(tracerSettings.Manager.InitialExporterSettings);
+        _transport = transport;
+        _sendInterval = sendInterval ?? DefaultSendInterval;
+        _shutdownTimeout = shutdownTimeout ?? DefaultShutdownTimeout;
         UpdateContext(tracerSettings.Manager.InitialMutableSettings);
 
-        tracerSettings.Manager.SubscribeToChanges(changes =>
+        _settingsSubscription = tracerSettings.Manager.SubscribeToChanges(changes =>
         {
-            if (changes.UpdatedExporter is { } exporter)
-            {
-                UpdateApi(exporter);
-            }
-
             if (changes.UpdatedMutable is { } mutable)
             {
                 UpdateContext(mutable);
             }
         });
-
-        [MemberNotNull(nameof(_apiRequestFactory))]
-        void UpdateApi(ExporterSettings exporterSettings)
-        {
-            Log.Debug("ExposureApi::UpdateApi-> Applying settings");
-            var apiRequestFactory = AgentTransportStrategy.Get(
-                exporterSettings,
-                productName: "FeatureFlags exposure",
-                tcpTimeout: TimeSpan.FromSeconds(5),
-                httpHeaderHelper: EventPlatformHeaderHelper.Instance);
-            Interlocked.Exchange(ref _apiRequestFactory!, apiRequestFactory);
-        }
 
         [MemberNotNull(nameof(_context))]
         void UpdateContext(MutableSettings settings)
@@ -94,17 +85,29 @@ internal sealed class ExposureApi : IDisposable
 
     public void Dispose()
     {
-        _processExit.TrySetResult(true);
-    }
-
-    public void TryToStartSendLoopIfNotStarted()
-    {
-        if (Interlocked.CompareExchange(ref _started, 1, 0) != 0)
+        Task? sendLoopTask;
+        lock (_lifecycleLock)
         {
-            return;
+            if (_disposed)
+            {
+                return;
+            }
+
+            _disposed = true;
+            _processExit.TrySetResult(true);
+            sendLoopTask = _sendLoopTask;
         }
 
-        _ = Task.Run(SendLoopAsync).ContinueWith(t => { Log.Error(t.Exception, "FeatureFlags Exposure send loop failed"); }, TaskContinuationOptions.OnlyOnFaulted);
+        if (sendLoopTask is not null)
+        {
+            var completed = Task.WhenAny(sendLoopTask, Task.Delay(_shutdownTimeout)).GetAwaiter().GetResult();
+            if (completed != sendLoopTask)
+            {
+                Log.Warning("Could not finish flushing Feature Flags exposures before process end");
+            }
+        }
+
+        _settingsSubscription.Dispose();
     }
 
     private async Task SendLoopAsync()
@@ -112,21 +115,7 @@ internal sealed class ExposureApi : IDisposable
         Log.Debug("ExposureApi::SendLoopAsync -> Enter");
         while (!_processExit.Task.IsCompleted)
         {
-            try
-            {
-                var apiRequestFactory = _apiRequestFactory;
-                var uri = apiRequestFactory.GetEndpoint(ExposurePath);
-                var payload = TryGetPayload();
-                if (payload is not null)
-                {
-                    var request = apiRequestFactory.Create(uri);
-                    using var response = await request.PostAsJsonAsync(payload, MultipartCompression.GZip, SerializerSettings).ConfigureAwait(false);
-                }
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Error while sending Feature Flags exposures to the agent");
-            }
+            await FlushAsync().ConfigureAwait(false);
 
             try
             {
@@ -136,8 +125,27 @@ internal sealed class ExposureApi : IDisposable
             {
                 // We are shutting down, so don't do anything about it
             }
+        }
 
-            Log.Debug("ExposureApi::SendLoopAsync -> Exit");
+        // Dispose signals the loop and then waits for this bounded final flush. This prevents the
+        // common short-lived-process loss mode without allowing shutdown to hang indefinitely.
+        await FlushAsync().ConfigureAwait(false);
+        Log.Debug("ExposureApi::SendLoopAsync -> Exit");
+    }
+
+    private async Task FlushAsync()
+    {
+        try
+        {
+            var payload = TryGetPayload();
+            if (payload is not null)
+            {
+                await _transport.SendAsync(payload, FeatureFlagsEvpTransport.ExposureIntakePath, SerializerSettings).ConfigureAwait(false);
+            }
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Error while sending Feature Flags exposures");
         }
     }
 
@@ -161,15 +169,31 @@ internal sealed class ExposureApi : IDisposable
 
     public void SendExposure(in ExposureEvent exposure)
     {
-        if (_exposureCache.Add(exposure))
+        lock (_lifecycleLock)
         {
-            lock (_exposures)
+            if (_disposed)
             {
-                _exposures.Enqueue(exposure);
+                return;
+            }
+
+            if (_exposureCache.Add(exposure))
+            {
+                lock (_exposures)
+                {
+                    _exposures.Enqueue(exposure);
+                }
+            }
+
+            if (_sendLoopTask is null)
+            {
+                _sendLoopTask = Task.Run(SendLoopAsync);
+                _sendLoopTask.ContinueWith(
+                    t => Log.Error(t.Exception, "FeatureFlags Exposure send loop failed"),
+                    CancellationToken.None,
+                    TaskContinuationOptions.OnlyOnFaulted,
+                    TaskScheduler.Default);
             }
         }
-
-        TryToStartSendLoopIfNotStarted();
     }
 
     private sealed class ExposuresRequest(Dictionary<string, string> context, List<ExposureEvent> exposures)

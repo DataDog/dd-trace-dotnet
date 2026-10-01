@@ -11,6 +11,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.FeatureFlags.Agentless;
+using Datadog.Trace.FeatureFlags.Evp;
 using Datadog.Trace.FeatureFlags.Exposure;
 using Datadog.Trace.FeatureFlags.Exposure.Model;
 using Datadog.Trace.FeatureFlags.Rcm;
@@ -24,6 +25,8 @@ namespace Datadog.Trace.FeatureFlags
     internal sealed class FeatureFlagsModule : IDisposable
     {
         internal static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(FeatureFlagsModule));
+
+        private readonly FeatureFlagsEvpTransport _evpTransport;
 
         // Activation, disposal and exposure-API creation all mutate the same state from different
         // threads, so they share one lock rather than individual interlocked flags: a flag set
@@ -83,6 +86,7 @@ namespace Datadog.Trace.FeatureFlags
             _agentlessSourceFactory = agentlessSourceFactory
                                    ?? (static module => AgentlessConfigurationSource.Create(module._settings, module._settingsManager, module.ApplyConfiguration));
             _rcmSubscriptionManager = rcmSubscriptionManager;
+            _evpTransport = new FeatureFlagsEvpTransport(settings);
 
             Log.Debug<FeatureFlagsSource>("FeatureFlagsModule ENABLED with source {Source}", _settings.Source);
         }
@@ -157,6 +161,7 @@ namespace Datadog.Trace.FeatureFlags
 
             agentlessSource?.Dispose();
             exposureApi?.Dispose();
+            _evpTransport.Dispose();
         }
 
         /// <summary>
@@ -501,7 +506,7 @@ namespace Datadog.Trace.FeatureFlags
                 exposureApi = _exposureApi;
                 if (exposureApi is null)
                 {
-                    exposureApi = new ExposureApi(_tracerSettings);
+                    exposureApi = new ExposureApi(_tracerSettings, _evpTransport);
                     Volatile.Write(ref _exposureApi, exposureApi);
                 }
 
