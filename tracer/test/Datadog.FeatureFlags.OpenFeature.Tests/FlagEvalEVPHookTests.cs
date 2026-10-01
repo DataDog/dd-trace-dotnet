@@ -20,6 +20,64 @@ namespace Datadog.FeatureFlags.OpenFeature.Tests;
 
 public class FlagEvalEVPHookTests
 {
+    [Theory]
+    [InlineData("GENERAL")]
+    [InlineData("PARSE_ERROR")]
+    public async Task EvaluatorErrorMetadataReachesEventsWithoutChangingProviderResult(string code)
+    {
+        var fixture = new Fixture();
+        // Evaluator failures carry a descriptive message separately from their stable code.
+        var resolution = FeatureFlagsSdk.GetResolutionDetails("flag", false, new FailedEvaluation(code), 1234);
+        var details = new FlagEvaluationDetails<bool>(
+            resolution.FlagKey,
+            resolution.Value,
+            resolution.ErrorType,
+            resolution.Reason,
+            resolution.Variant,
+            resolution.ErrorMessage,
+            resolution.FlagMetadata);
+
+        await fixture.Hook.FinallyAsync(Context(), details);
+
+        resolution.Value.Should().BeFalse();
+        resolution.ErrorType.Should().Be(ErrorType.None, "the EVP fix must not change existing provider results");
+        resolution.Reason.Should().Be("error");
+        resolution.ErrorMessage.Should().Be("private-evaluator-error");
+        fixture.Enqueues.Should().Be(1);
+        fixture.ErrorCode.Should().Be(code);
+    }
+
+    [Theory]
+    [InlineData(null, null)]
+    [InlineData("", null)]
+    [InlineData("FLAG_NOT_FOUND", "FLAG_NOT_FOUND")]
+    [InlineData("INVALID_CONTEXT", "INVALID_CONTEXT")]
+    [InlineData("PROVIDER_FATAL", "PROVIDER_FATAL")]
+    [InlineData("PROVIDER_NOT_READY", "PROVIDER_NOT_READY")]
+    [InlineData("TARGETING_KEY_MISSING", "TARGETING_KEY_MISSING")]
+    [InlineData("TYPE_MISMATCH", "TYPE_MISMATCH")]
+    [InlineData("private-evaluator-error", "GENERAL")]
+    [InlineData(123, null)]
+    public async Task MetadataErrorFallbackEmitsOnlyStableCodes(object? metadataError, string? expected)
+    {
+        var fixture = new Fixture();
+
+        await fixture.Hook.FinallyAsync(Context(), Details(false, metadataError: metadataError));
+
+        fixture.Enqueues.Should().Be(1);
+        fixture.ErrorCode.Should().Be(expected);
+    }
+
+    [Fact]
+    public async Task ExplicitErrorTypeTakesPrecedenceOverMetadata()
+    {
+        var fixture = new Fixture();
+
+        await fixture.Hook.FinallyAsync(Context(), Details(false, error: ErrorType.TypeMismatch, metadataError: "GENERAL"));
+
+        fixture.ErrorCode.Should().Be("TYPE_MISMATCH");
+    }
+
     [Fact]
     public async Task CapacityRejectionPrecedesSnapshot()
     {
@@ -222,7 +280,7 @@ public class FlagEvalEVPHookTests
         new Metadata("provider"),
         EvaluationContext.Builder().Set("targetingKey", "subject").Set("country", "US").Build());
 
-    private static FlagEvaluationDetails<bool> Details(object? consent, string? variant = "on", ErrorType error = ErrorType.None, object? timestamp = null)
+    private static FlagEvaluationDetails<bool> Details(object? consent, string? variant = "on", ErrorType error = ErrorType.None, object? timestamp = null, object? metadataError = null)
     {
         var metadata = new Dictionary<string, object> { ["__dd_allocation_key"] = "allocation" };
         if (consent is not null)
@@ -235,7 +293,27 @@ public class FlagEvalEVPHookTests
             metadata[FeatureFlagMetadataKeys.EvaluationTimestampMs] = timestamp;
         }
 
+        if (metadataError is not null)
+        {
+            metadata["errorCode"] = metadataError;
+        }
+
         return new FlagEvaluationDetails<bool>("flag", true, error, "static", variant, "pii-error-canary", new ImmutableMetadata(metadata));
+    }
+
+    private sealed class FailedEvaluation(string errorCode) : IEvaluation
+    {
+        public string FlagKey => "flag";
+
+        public object Value => false;
+
+        public EvaluationReason Reason => EvaluationReason.Error;
+
+        public string? Variant => null;
+
+        public string? Error => "private-evaluator-error";
+
+        public IDictionary<string, string>? FlagMetadata => new Dictionary<string, string> { ["errorCode"] = errorCode };
     }
 
     private sealed class Fixture

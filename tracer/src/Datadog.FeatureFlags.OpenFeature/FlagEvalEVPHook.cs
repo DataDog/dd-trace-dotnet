@@ -61,6 +61,13 @@ internal sealed class FlagEvalEVPHook : Hook
                                  ? (long)timestamp.Value
                                  : DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
             var errorCode = ToErrorCode(details.ErrorType);
+            if (errorCode is null)
+            {
+                // Some evaluator failures carry descriptive messages that the provider does not
+                // map to an enum. Use only their stable metadata code, never the message.
+                errorCode = ToMetadataErrorCode(metadata?.GetString("errorCode"));
+            }
+
             var targetingKey = context.EvaluationContext?.TargetingKey;
             IReadOnlyDictionary<string, object?>? attributes = null;
             var omissionReasons = 0;
@@ -93,6 +100,14 @@ internal sealed class FlagEvalEVPHook : Hook
 
         return default;
     }
+
+    private static string? ToMetadataErrorCode(string? code) => code switch
+    {
+        null or "" => null,
+        "FLAG_NOT_FOUND" or "INVALID_CONTEXT" or "PARSE_ERROR" or "PROVIDER_FATAL" or
+        "PROVIDER_NOT_READY" or "TARGETING_KEY_MISSING" or "TYPE_MISMATCH" or "GENERAL" => code,
+        _ => "GENERAL",
+    };
 
     private static string? ToErrorCode(ErrorType error) => error switch
     {

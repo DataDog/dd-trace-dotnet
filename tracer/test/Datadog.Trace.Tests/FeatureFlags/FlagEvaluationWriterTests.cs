@@ -377,6 +377,27 @@ public class FlagEvaluationWriterTests
         }
     }
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task IdleWorkerDoesNotRetainCallerExecutionContext(bool alreadySuppressed)
+    {
+        var writer = CreateWriterWithRequestState(alreadySuppressed, out var requestState);
+        try
+        {
+            // Complete a worker turn without closing it, then check retention while it is idle.
+            await Completes(writer.FlushAsync());
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
+            GC.Collect();
+            requestState.IsAlive.Should().BeFalse("the background writer must not retain the request that initialized it");
+        }
+        finally
+        {
+            await writer.CloseAsync(TimeSpan.FromSeconds(2));
+        }
+    }
+
     [Fact]
     public async Task RepeatedIdleWakeCyclesPreserveEveryObservationAndFlush()
     {
@@ -624,6 +645,33 @@ public class FlagEvaluationWriterTests
         {
             await writer.CloseAsync(TimeSpan.FromSeconds(2));
             await collector.DisposeAsync();
+        }
+    }
+
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static FlagEvaluationWriter CreateWriterWithRequestState(bool alreadySuppressed, out WeakReference requestState)
+    {
+        var ambient = new AsyncLocal<object?> { Value = new object() };
+        requestState = new WeakReference(ambient.Value);
+        try
+        {
+            if (alreadySuppressed)
+            {
+                using (ExecutionContext.SuppressFlow())
+                {
+                    var writer = new FlagEvaluationWriter(_ => Task.CompletedTask, Context);
+                    ExecutionContext.IsFlowSuppressed().Should().BeTrue("writer construction must preserve caller suppression");
+                    return writer;
+                }
+            }
+
+            var result = new FlagEvaluationWriter(_ => Task.CompletedTask, Context);
+            ExecutionContext.IsFlowSuppressed().Should().BeFalse("writer construction must restore caller context flow");
+            return result;
+        }
+        finally
+        {
+            ambient.Value = null;
         }
     }
 

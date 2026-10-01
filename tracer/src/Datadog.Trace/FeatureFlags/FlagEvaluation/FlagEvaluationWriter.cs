@@ -58,7 +58,19 @@ internal sealed class FlagEvaluationWriter
         _queue = new BoundedConcurrentQueue<FlagEvalEvent>(queueCap);
         _aggregator = new FlagEvaluationAggregator(globalCap, perFlagCap, degradedCap);
         _telemetry = new FlagEvaluationTelemetry(metrics ?? TelemetryFactory.Metrics);
-        _consumer = Task.Factory.StartNew(ProcessLoop, CancellationToken.None, TaskCreationOptions.LongRunning, TaskScheduler.Default);
+        // Provider initialization can run inside a request. Do not retain its ambient state
+        // for the lifetime of this worker, or change an already-suppressed caller context.
+        if (ExecutionContext.IsFlowSuppressed())
+        {
+            _consumer = Task.Factory.StartNew(ProcessLoop, CancellationToken.None, TaskCreationOptions.LongRunning, TaskScheduler.Default);
+        }
+        else
+        {
+            using (ExecutionContext.SuppressFlow())
+            {
+                _consumer = Task.Factory.StartNew(ProcessLoop, CancellationToken.None, TaskCreationOptions.LongRunning, TaskScheduler.Default);
+            }
+        }
     }
 
     internal bool HasCapacity()
