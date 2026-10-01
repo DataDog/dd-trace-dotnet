@@ -1,32 +1,33 @@
-// <copyright file="IDnsQuestion.cs" company="Datadog">
+// <copyright file="IDnsQueryResponse.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
 #nullable enable
 
+using System.Collections.Generic;
 using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.DnsClient
 {
     /// <summary>
-    /// Duck type for DnsClient.DnsQuestion
+    /// Duck type for DnsClient.IDnsQueryResponse
     /// </summary>
-    internal interface IDnsQuestion : IDuckType
+    internal interface IDnsQueryResponse : IDuckType
     {
         /// <summary>
-        /// Gets the query name (a DnsClient.DnsString, read as a string via ToString()).
+        /// Gets the response header.
         /// </summary>
-        object? QueryName { get; }
+        DnsResponseHeaderStruct? Header { get; }
 
         /// <summary>
-        /// Gets the query record type (a DnsClient.QueryType enum).
+        /// Gets the answer records.
         /// </summary>
-        object? QuestionType { get; }
+        IReadOnlyList<object>? Answers { get; }
 
         /// <summary>
-        /// Gets the query class (a DnsClient.QueryClass enum).
+        /// Gets the name server that answered the query (a DnsClient.NameServer).
         /// </summary>
-        object? QuestionClass { get; }
+        NameServerStruct? NameServer { get; }
     }
 }
