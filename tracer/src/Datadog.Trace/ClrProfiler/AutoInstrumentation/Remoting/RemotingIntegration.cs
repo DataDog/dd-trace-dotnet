@@ -91,6 +91,19 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Remoting
             }
         }
 
+        // True only if `scope` is still the one stored for this sinkStack, i.e. SerializeResponse hasn't
+        // taken it (and a later sink hasn't replaced it), so the caller is the one who must close it.
+        internal static bool TryRemoveServerScope(object sinkStack, Scope scope)
+        {
+            if (ServerScopesBySinkStack.TryGetValue(sinkStack, out var stored) && ReferenceEquals(stored, scope))
+            {
+                ServerScopesBySinkStack.Remove(sinkStack);
+                return true;
+            }
+
+            return false;
+        }
+
         internal static bool TryGetAndRemoveServerScope(object sinkStack, out Scope? scope)
         {
             if (ServerScopesBySinkStack.TryGetValue(sinkStack, out scope))
