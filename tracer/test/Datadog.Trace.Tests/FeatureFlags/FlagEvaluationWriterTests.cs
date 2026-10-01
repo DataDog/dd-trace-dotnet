@@ -378,6 +378,80 @@ public class FlagEvaluationWriterTests
     }
 
     [Fact]
+    public async Task RepeatedIdleWakeCyclesPreserveEveryObservationAndFlush()
+    {
+        long delivered = 0;
+        var writer = new FlagEvaluationWriter(
+            bytes =>
+            {
+                var rows = JObject.Parse(Encoding.UTF8.GetString(Decompress(bytes)))["flagEvaluations"]!;
+                Interlocked.Add(ref delivered, rows.Sum(row => row["evaluation_count"]!.Value<long>()));
+                return Task.CompletedTask;
+            },
+            Context,
+            queueCap: 1,
+            flushInterval: TimeSpan.FromHours(1));
+        try
+        {
+            for (var cycle = 0; cycle < 50; cycle++)
+            {
+                // Exercise both work arriving around a wait and a worker already asleep.
+                if (cycle % 2 == 0)
+                {
+                    await Task.Delay(1);
+                }
+
+                writer.TryEnqueue(Observation()).Should().BeTrue();
+                SpinWait.SpinUntil(writer.HasCapacity, TimeSpan.FromSeconds(5)).Should().BeTrue(
+                    "enqueue must wake the idle worker without an explicit flush or timer");
+                await Completes(writer.FlushAsync());
+                Volatile.Read(ref delivered).Should().Be(cycle + 1);
+                await Completes(writer.FlushAsync());
+                Volatile.Read(ref delivered).Should().Be(cycle + 1, "empty flushes must not resend observations");
+            }
+        }
+        finally
+        {
+            await writer.CloseAsync(TimeSpan.FromSeconds(2));
+        }
+    }
+
+    [Fact]
+    public async Task EmptyFlushRequestedDuringSendCompletesWithoutWaitingForTimer()
+    {
+        var entered = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var release = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var calls = 0;
+        var writer = new FlagEvaluationWriter(
+            _ =>
+            {
+                Interlocked.Increment(ref calls);
+                entered.TrySetResult(true);
+                return release.Task;
+            },
+            Context,
+            flushInterval: TimeSpan.FromHours(1));
+        try
+        {
+            writer.TryEnqueue(Observation()).Should().BeTrue();
+            var first = writer.FlushAsync();
+            await Completes(entered.Task);
+            var next = writer.FlushAsync();
+            next.Should().NotBeSameAs(first);
+            next.IsCompleted.Should().BeFalse();
+            release.TrySetResult(true);
+            await Completes(next);
+            await Completes(first);
+            Volatile.Read(ref calls).Should().Be(1);
+        }
+        finally
+        {
+            release.TrySetResult(true);
+            await writer.CloseAsync(TimeSpan.FromSeconds(2));
+        }
+    }
+
+    [Fact]
     public async Task ContinuousProducersDoNotStarvePeriodicFlushOrClose()
     {
         var sent = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
