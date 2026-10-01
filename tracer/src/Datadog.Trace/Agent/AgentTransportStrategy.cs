@@ -31,12 +31,14 @@ internal static class AgentTransportStrategy
     /// <param name="getBaseEndpoint">A func that returns the endpoint to send requests to for a given "base" endpoint.
     /// The base endpoint will be <see cref="ExporterSettings.AgentUri" /> for TCP requests and
     /// http://localhost/ for named pipes/UDS if null, the default base endpoint is used</param>
+    /// <param name="allowAutoRedirect">Whether HTTP handlers may follow redirects. Stream transports never follow them.</param>
     public static IApiRequestFactory Get(
         ExporterSettings settings,
         string productName,
         TimeSpan? tcpTimeout,
         HttpHeaderHelperBase httpHeaderHelper,
-        Func<Uri, Uri>? getBaseEndpoint = null)
+        Func<Uri, Uri>? getBaseEndpoint = null,
+        bool allowAutoRedirect = true)
     {
         var strategy = settings.TracesTransport;
 
@@ -56,7 +58,8 @@ internal static class AgentTransportStrategy
                 return new SocketHandlerRequestFactory(
                     new UnixDomainSocketStreamFactory(settings.TracesUnixDomainSocketPath),
                     httpHeaderHelper.DefaultHeaders,
-                    getBaseEndpoint?.Invoke(Localhost) ?? Localhost);
+                    getBaseEndpoint?.Invoke(Localhost) ?? Localhost,
+                    allowAutoRedirect: allowAutoRedirect);
 #elif NETCOREAPP3_1_OR_GREATER
                 Log.Information<string, string?, int>("Using " + nameof(UnixDomainSocketStreamFactory) + " for {ProductName} transport, with Unix Domain Sockets path {TracesUnixDomainSocketPath} and timeout {TracesPipeTimeoutMs}ms.", productName, settings.TracesUnixDomainSocketPath, settings.TracesPipeTimeoutMs);
                 return new HttpStreamRequestFactory(
@@ -74,13 +77,15 @@ internal static class AgentTransportStrategy
                 return new HttpClientRequestFactory(
                     getBaseEndpoint?.Invoke(settings.AgentUri) ?? settings.AgentUri,
                     httpHeaderHelper.DefaultHeaders,
-                    timeout: tcpTimeout);
+                    timeout: tcpTimeout,
+                    allowAutoRedirect: allowAutoRedirect);
 #else
                 Log.Information("Using " + nameof(ApiWebRequestFactory) + " for {ProductName} transport.", productName);
                 return new ApiWebRequestFactory(
                     getBaseEndpoint?.Invoke(settings.AgentUri) ?? settings.AgentUri,
                     httpHeaderHelper.DefaultHeaders,
-                    timeout: tcpTimeout);
+                    timeout: tcpTimeout,
+                    allowAutoRedirect: allowAutoRedirect);
 #endif
         }
     }

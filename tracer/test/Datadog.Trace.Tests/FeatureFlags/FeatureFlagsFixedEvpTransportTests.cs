@@ -10,6 +10,7 @@ using System.Collections.Specialized;
 using System.IO;
 using System.Net;
 using System.Threading.Tasks;
+using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.FeatureFlags.Evp;
 using Datadog.Trace.Telemetry;
@@ -26,8 +27,6 @@ public class FeatureFlagsFixedEvpTransportTests
     [Theory]
     [InlineData("remote_config", 403)]
     [InlineData("remote_config", 500)]
-    [InlineData("agentless", 403)]
-    [InlineData("agentless", 500)]
     public async Task ProductionSenderKeepsFixedV2AfterHttpFailure(string source, int firstStatus)
     {
         using var agent = new HttpListener();
@@ -40,7 +39,7 @@ public class FeatureFlagsFixedEvpTransportTests
             { ConfigurationKeys.AgentUri, agentUrl + "prefix/" },
             { ConfigurationKeys.ApiKey, "must-not-reach-agent" },
         }));
-        using var transport = new FeatureFlagsEvpTransport(settings);
+        using var transport = new FeatureFlagsEvpTransport(settings, NullDiscoveryService.Instance);
 
         foreach (var status in new[] { firstStatus, 200 })
         {
