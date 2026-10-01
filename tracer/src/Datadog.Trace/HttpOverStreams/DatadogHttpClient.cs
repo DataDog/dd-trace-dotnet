@@ -92,7 +92,8 @@ namespace Datadog.Trace.HttpOverStreams
                     ThrowHelper.ThrowInvalidOperationException($"Unexpected end of stream at position {streamPosition}");
                 }
 
-                currentChar = Encoding.ASCII.GetChars(chArray)[0];
+                // https://learn.microsoft.com/en-us/dotnet/api/system.text.asciiencoding.getchars?view=net-8.0
+                currentChar = chArray[0] is > 0 and <= 127 ? (char)chArray[0] : '?';
                 streamPosition++;
             }
 
@@ -118,7 +119,8 @@ namespace Datadog.Trace.HttpOverStreams
                     bytesRemaining -= lastBytesRead;
                 }
 
-                currentChar = Encoding.ASCII.GetChars(chArray)[lastBytesRead - 1];
+                // https://learn.microsoft.com/en-us/dotnet/api/system.text.asciiencoding.getchars?view=net-8.0
+                currentChar = chArray[lastBytesRead - 1] is > 0 and <= 127 ? (char)chArray[lastBytesRead - 1] : '?';
                 streamPosition += requiredBytes;
             }
 
