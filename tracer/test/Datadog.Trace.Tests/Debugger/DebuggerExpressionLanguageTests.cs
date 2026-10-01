@@ -7,6 +7,7 @@ using System;
 using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -2946,6 +2947,108 @@ namespace Datadog.Trace.Tests.Debugger
             Assert.True(compiled.Errors == null || compiled.Errors.Length == 0);
         }
 
+        [Theory]
+        [InlineData("""{"any": [{"getmember": [{"ref": "CustomerCollectionsLocal"}, "_items"]}, {"eq": ["@it", "a"]}]}""")]
+        [InlineData("""{"all": [{"getmember": [{"ref": "CustomerCollectionsLocal"}, "_items"]}, {"eq": ["@it", "a"]}]}""")]
+        [InlineData("""{"isEmpty": {"filter": [{"getmember": [{"ref": "CustomerCollectionsLocal"}, "_items"]}, {"eq": ["@it", "a"]}]}}""")]
+        [InlineData("""{"any": [{"getmember": [{"ref": "CustomerCollectionsLocal"}, "_readOnlyItems"]}, {"eq": ["@it", "a"]}]}""")]
+        [InlineData("""{"eq": [{"len": {"getmember": [{"ref": "CustomerCollectionsLocal"}, "_items"]}}, 2]}""")]
+        [InlineData("""{"eq": [{"index": [{"getmember": [{"ref": "CustomerCollectionsLocal"}, "_items"]}, 0]}, "a"]}""")]
+        [InlineData("""{"eq": [{"index": [{"getmember": [{"ref": "CustomerCollectionsLocal"}, "_headers"]}, "public"]}, "hello"]}""")]
+        [InlineData("""{"eq": [{"index": [{"getmember": [{"ref": "CustomerCollectionsLocal"}, "_objectKeys"]}, "public"]}, "hello"]}""")]
+        public void ProbeExpressionParser_CollectionOperations_DoNotInvokeCustomerCode(string json)
+        {
+            var counter = new CustomerCallCounter();
+            var scopeMembers = CreateScopeMembers();
+            scopeMembers.AddMember(new ScopeMember("CustomerCollectionsLocal", typeof(CustomerCollectionsHolder), new CustomerCollectionsHolder(counter), ScopeMemberKind.Local));
+
+            var compiled = ProbeExpressionParser<bool>.ParseExpression(json, scopeMembers);
+            counter.Calls = 0;
+
+            Assert.True(compiled.Errors == null || compiled.Errors.Length == 0);
+            Assert.Throws<InvalidOperationException>(() => EvaluateCompiled(compiled, scopeMembers));
+            counter.Calls.Should().Be(0);
+        }
+
+        [Fact]
+        public void ProbeExpressionEvaluator_CaptureExpressionRootFilter_DoesNotEnumerateCustomerCollection()
+        {
+            var counter = new CustomerCallCounter();
+            var scopeMembers = CreateScopeMembers();
+            scopeMembers.AddMember(new ScopeMember("CustomerCollectionsLocal", typeof(CustomerCollectionsHolder), new CustomerCollectionsHolder(counter), ScopeMemberKind.Local));
+            var evaluator = CreateEvaluator(
+                templates: null,
+                condition: null,
+                metric: null,
+                spanDecorations: null,
+                captureExpressions:
+                [
+                    new CaptureExpressionDefinition(
+                        "filtered",
+                        new DebuggerExpression(string.Empty, """{"filter": [{"getmember": [{"ref": "CustomerCollectionsLocal"}, "_items"]}, {"eq": ["@it", "a"]}]}""", null),
+                        new CaptureLimitInfo(MaxReferenceDepth: 5, MaxCollectionSize: 10, MaxLength: 255, MaxFieldCount: 20))
+                ]);
+            counter.Calls = 0;
+
+            ExpressionEvaluationResult result = default;
+            evaluator.EvaluateCaptureExpressions(ref result, scopeMembers);
+
+            result.Errors.Should().ContainSingle().Which.Message.Should().Contain("is not a supported collection type");
+            counter.Calls.Should().Be(0);
+        }
+
+        [Fact]
+        public void ProbeExpressionParser_DictionaryIndex_AllowsKnownStringComparer()
+        {
+            var scopeMembers = CreateScopeMembers();
+            var dictionary = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase) { { "hello", "world" } };
+            scopeMembers.AddMember(new ScopeMember("IgnoreCaseDictionaryLocal", dictionary.GetType(), dictionary, ScopeMemberKind.Local));
+
+            var compiled = ProbeExpressionParser<string>.ParseExpression("""{"index": [{"ref": "IgnoreCaseDictionaryLocal"}, "HELLO"]}""", scopeMembers);
+
+            EvaluateCompiled(compiled, scopeMembers).Should().Be("world");
+            Assert.True(compiled.Errors == null || compiled.Errors.Length == 0);
+        }
+
+        [Fact]
+        public void ProbeExpressionParser_ConcurrentDictionaryIndex_ReturnsValue()
+        {
+            var scopeMembers = CreateScopeMembers();
+            var dictionary = new ConcurrentDictionary<string, string>();
+            dictionary["hello"] = "world";
+            scopeMembers.AddMember(new ScopeMember("ConcurrentDictionaryLocal", dictionary.GetType(), dictionary, ScopeMemberKind.Local));
+
+            var compiled = ProbeExpressionParser<string>.ParseExpression("""{"index": [{"ref": "ConcurrentDictionaryLocal"}, "hello"]}""", scopeMembers);
+
+            EvaluateCompiled(compiled, scopeMembers).Should().Be("world");
+            Assert.True(compiled.Errors == null || compiled.Errors.Length == 0);
+        }
+
+        [Fact]
+        public void ProbeExpressionParser_NonGenericDictionaryIndex_IsNotSupported()
+        {
+            var scopeMembers = CreateScopeMembers();
+            var hashtable = new Hashtable { { "hello", "world" } };
+            scopeMembers.AddMember(new ScopeMember("HashtableLocal", typeof(Hashtable), hashtable, ScopeMemberKind.Local));
+
+            var compiled = ProbeExpressionParser<string>.ParseExpression("""{"index": [{"ref": "HashtableLocal"}, "hello"]}""", scopeMembers);
+
+            Assert.Throws<InvalidOperationException>(() => EvaluateCompiled(compiled, scopeMembers));
+        }
+
+        [Fact]
+        public void ProbeExpressionParser_ImmutableCollectionOperations_AreSupported()
+        {
+            var scopeMembers = CreateScopeMembers();
+            var list = ImmutableList.Create("a", "b");
+            scopeMembers.AddMember(new ScopeMember("ImmutableListLocal", list.GetType(), list, ScopeMemberKind.Local));
+
+            var compiled = ProbeExpressionParser<bool>.ParseExpression("""{"and": [{"any": [{"ref": "ImmutableListLocal"}, {"eq": ["@it", "b"]}]}, {"eq": [{"len": {"ref": "ImmutableListLocal"}}, 2]}]}""", scopeMembers);
+
+            EvaluateCompiled(compiled, scopeMembers).Should().BeTrue();
+            Assert.True(compiled.Errors == null || compiled.Errors.Length == 0);
+        }
+
         [Fact]
         public void ProbeExpressionParser_NonGenericDictionaryDump_AllowsNullValues()
         {
@@ -3683,12 +3786,12 @@ namespace Datadog.Trace.Tests.Debugger
             expression = Regex.Replace(expression, @"\bScopeMember\[\] scopeMemberArray\b", "scopeMemberArray");
             var filterLocalsReplacement =
                 "${indent}string @string;" + Environment.NewLine +
-                "${indent}var enumerable = (IEnumerable<string>)CollectionLocal;" + Environment.NewLine +
+                "${indent}var enumerable = (IEnumerable<string>)CollectionAccessHelpers.EnsureSupportedCollection(CollectionLocal);" + Environment.NewLine +
                 "${indent}var enumerator = enumerable.GetEnumerator();" + Environment.NewLine +
                 "${indent}var filterResult = new List<string>();";
             expression = Regex.Replace(
                 expression,
-                @"(?m)^(?<indent>[ \t]+)List<string> filterResult;\r?\n\k<indent>IEnumerable<string> enumerable;\r?\n\k<indent>IEnumerator<string> enumerator;\r?\n\k<indent>string @string;\r?\n\k<indent>enumerable = \(IEnumerable<string>\)CollectionLocal;\r?\n\k<indent>enumerator = enumerable\.GetEnumerator\(\);\r?\n\k<indent>filterResult = new List<string>\(\);",
+                @"(?m)^(?<indent>[ \t]+)List<string> filterResult;\r?\n\k<indent>IEnumerable<string> enumerable;\r?\n\k<indent>IEnumerator<string> enumerator;\r?\n\k<indent>string @string;\r?\n\k<indent>enumerable = \(IEnumerable<string>\)CollectionAccessHelpers\.EnsureSupportedCollection\(CollectionLocal\);\r?\n\k<indent>enumerator = enumerable\.GetEnumerator\(\);\r?\n\k<indent>filterResult = new List<string>\(\);",
                 filterLocalsReplacement);
             expression = Regex.Replace(expression, @"[ \t]+(?=\r?\n)", string.Empty);
             return expression;
@@ -3754,7 +3857,7 @@ namespace Datadog.Trace.Tests.Debugger
             }
 
             // The expression.ToString returns different string depend on runtime version
-            error.Expression = error.Expression.Replace("Convert(CollectionLocal.get_Item(100), String))", "Convert(CollectionLocal.get_Item(100)))");
+            error.Expression = error.Expression.Replace("Convert(EnsureSupportedCollection(CollectionLocal).get_Item(100), String))", "Convert(EnsureSupportedCollection(CollectionLocal).get_Item(100)))");
             error.Expression = error.Expression.Replace(", ref evaluationBudget", string.Empty);
             return error;
         }
@@ -4247,6 +4350,103 @@ namespace Datadog.Trace.Tests.Debugger
             {
                 _getterCalls = 0;
             }
+        }
+
+        private sealed class CustomerCallCounter
+        {
+            public int Calls { get; set; }
+        }
+
+        private sealed class CustomerCollectionsHolder
+        {
+            private readonly List<string> _items;
+            private readonly IReadOnlyList<string> _readOnlyItems;
+            private readonly Dictionary<string, string> _headers;
+            private readonly Dictionary<object, string> _objectKeys;
+
+            public CustomerCollectionsHolder(CustomerCallCounter counter)
+            {
+                _items = new CountingList(counter) { "a", "b" };
+                _readOnlyItems = new CountingReadOnlyList(counter, "a", "b");
+                _headers = new Dictionary<string, string>(new CountingEqualityComparer(counter)) { { "public", "hello" } };
+
+                // the key hashes like "public", so a lookup with that string reaches CountingKey.Equals
+                _objectKeys = new Dictionary<object, string> { { new CountingKey(counter, "public"), "hello" } };
+            }
+        }
+
+        private sealed class CountingList(CustomerCallCounter counter) : List<string>, IEnumerable<string>, IList
+        {
+            object IList.this[int index]
+            {
+                get
+                {
+                    counter.Calls++;
+                    return this[index];
+                }
+                set => this[index] = (string)value;
+            }
+
+            IEnumerator<string> IEnumerable<string>.GetEnumerator()
+            {
+                counter.Calls++;
+                return GetEnumerator();
+            }
+        }
+
+        private sealed class CountingReadOnlyList(CustomerCallCounter counter, params string[] items) : IReadOnlyList<string>
+        {
+            public int Count
+            {
+                get
+                {
+                    counter.Calls++;
+                    return items.Length;
+                }
+            }
+
+            public string this[int index]
+            {
+                get
+                {
+                    counter.Calls++;
+                    return items[index];
+                }
+            }
+
+            public IEnumerator<string> GetEnumerator()
+            {
+                counter.Calls++;
+                return ((IEnumerable<string>)items).GetEnumerator();
+            }
+
+            IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+        }
+
+        private sealed class CountingEqualityComparer(CustomerCallCounter counter) : IEqualityComparer<string>
+        {
+            public bool Equals(string x, string y)
+            {
+                counter.Calls++;
+                return string.Equals(x, y);
+            }
+
+            public int GetHashCode(string obj)
+            {
+                counter.Calls++;
+                return obj.GetHashCode();
+            }
+        }
+
+        private sealed class CountingKey(CustomerCallCounter counter, string value)
+        {
+            public override bool Equals(object obj)
+            {
+                counter.Calls++;
+                return obj is string other && other == value;
+            }
+
+            public override int GetHashCode() => value.GetHashCode();
         }
     }
 }

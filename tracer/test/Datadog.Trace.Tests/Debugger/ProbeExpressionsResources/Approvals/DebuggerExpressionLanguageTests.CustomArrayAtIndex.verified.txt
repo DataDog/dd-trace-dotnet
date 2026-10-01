@@ -46,12 +46,12 @@ Expressions: (
     var StringArg = (string)scopeMemberArray[18].Value;
     var CollectionArg = (List<string>)scopeMemberArray[19].Value;
     var NestedObjectArg = (DebuggerExpressionLanguageTests.TestStruct.NestedObject)scopeMemberArray[20].Value;
-    var $dd_el_result = (((DebuggerExpressionLanguageTests.TestStruct.NestedObject)CustomArrayLocal[0]) == null)
+    var $dd_el_result = (((DebuggerExpressionLanguageTests.TestStruct.NestedObject)CollectionAccessHelpers.EnsureSupportedCollection(CustomArrayLocal)[0]) == null)
         ? "null"
         : {
             fieldsArray = ProbeExpressionParser<string>
                 .GetSafeFieldsForDump(
-                    ((DebuggerExpressionLanguageTests.TestStruct.NestedObject)CustomArrayLocal[0]).GetType().GetFields(
+                    ((DebuggerExpressionLanguageTests.TestStruct.NestedObject)CollectionAccessHelpers.EnsureSupportedCollection(CustomArrayLocal)[0]).GetType().GetFields(
                         BindingFlags.DeclaredOnly | BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic))
                 .OrderBy(fieldInfo => fieldInfo.MetadataToken)
                 .ToArray();
@@ -65,7 +65,7 @@ Expressions: (
                         ProbeExpressionParser<string>.DumpObject(
                             ProbeExpressionParser<string>.GetFieldValueForDump(
                                 fieldsArray[index],
-                                (object)((DebuggerExpressionLanguageTests.TestStruct.NestedObject)CustomArrayLocal[0])),
+                                (object)((DebuggerExpressionLanguageTests.TestStruct.NestedObject)CollectionAccessHelpers.EnsureSupportedCollection(CustomArrayLocal)[0])),
                             fieldsArray[index].FieldType,
                             fieldsArray[index].Name,
                             0));

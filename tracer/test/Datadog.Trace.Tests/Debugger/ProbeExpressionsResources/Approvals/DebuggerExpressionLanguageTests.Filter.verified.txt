@@ -59,7 +59,7 @@ Expression: (
     var $dd_el_result =
     {
         string @string;
-        var enumerable = (IEnumerable<string>)CollectionLocal;
+        var enumerable = (IEnumerable<string>)CollectionAccessHelpers.EnsureSupportedCollection(CollectionLocal);
         var enumerator = enumerable.GetEnumerator();
         var filterResult = new List<string>();
         try

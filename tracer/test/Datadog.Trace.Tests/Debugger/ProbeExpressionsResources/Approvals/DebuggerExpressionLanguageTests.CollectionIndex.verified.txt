@@ -43,7 +43,7 @@ Expressions: (
     var StringArg = (string)scopeMemberArray[18].Value;
     var CollectionArg = (List<string>)scopeMemberArray[19].Value;
     var NestedObjectArg = (DebuggerExpressionLanguageTests.TestStruct.NestedObject)scopeMemberArray[20].Value;
-    var $dd_el_result = (string)CollectionLocal[0];
+    var $dd_el_result = (string)CollectionAccessHelpers.EnsureSupportedCollection(CollectionLocal)[0];
 
     return $dd_el_result;
 }

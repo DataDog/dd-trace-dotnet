@@ -50,7 +50,7 @@ Expression: (
     var $dd_el_result =
     {
         int @int;
-        var enumerable = (IEnumerable<int>)HashIntLocal;
+        var enumerable = (IEnumerable<int>)CollectionAccessHelpers.EnsureSupportedCollection(HashIntLocal);
         var enumerator = enumerable.GetEnumerator();
         var allResult = true;
         try

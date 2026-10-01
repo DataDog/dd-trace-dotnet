@@ -57,7 +57,7 @@ Expression: (
     var $dd_el_result =
     {
         DebuggerExpressionLanguageTests.TestStruct.NestedObject nestedObject;
-        var enumerable = (IEnumerable<DebuggerExpressionLanguageTests.TestStruct.NestedObject>)CustomArrayLocal;
+        var enumerable = (IEnumerable<DebuggerExpressionLanguageTests.TestStruct.NestedObject>)CollectionAccessHelpers.EnsureSupportedCollection(CustomArrayLocal);
         var enumerator = enumerable.GetEnumerator();
         var anyResult = false;
         try

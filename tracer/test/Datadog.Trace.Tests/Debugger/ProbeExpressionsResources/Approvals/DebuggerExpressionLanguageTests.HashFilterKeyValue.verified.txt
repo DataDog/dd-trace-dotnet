@@ -61,7 +61,7 @@ Expression: (
     var $dd_el_result =
     {
         KeyValuePair<string, string> stringStringKeyValuePair, iterator2;
-        var enumerable2 = (IEnumerable<KeyValuePair<string, string>>)DictionaryLocal;
+        var enumerable2 = (IEnumerable<KeyValuePair<string, string>>)CollectionAccessHelpers.EnsureSupportedCollection(DictionaryLocal);
         var enumerator2 = enumerable2.GetEnumerator();
         var filterResult = new List<KeyValuePair<string, string>>();
         try

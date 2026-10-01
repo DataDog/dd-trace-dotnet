@@ -91,10 +91,10 @@ Expression: (
     var StringArg = (string)scopeMemberArray[18].Value;
     var CollectionArg = (List<string>)scopeMemberArray[19].Value;
     var NestedObjectArg = (DebuggerExpressionLanguageTests.TestStruct.NestedObject)scopeMemberArray[20].Value;
-    var $dd_el_result = (this.String.Length > 2) && ((CollectionLocal.Count > 2) ||
+    var $dd_el_result = (this.String.Length > 2) && ((CollectionAccessHelpers.EnsureSupportedCollection(CollectionLocal).Count > 2) ||
     {
         string @string, iterator2;
-        var enumerable2 = (IEnumerable<string>)CollectionLocal;
+        var enumerable2 = (IEnumerable<string>)CollectionAccessHelpers.EnsureSupportedCollection(CollectionLocal);
         var enumerator2 = enumerable2.GetEnumerator();
         var filterResult = new List<string>();
         try

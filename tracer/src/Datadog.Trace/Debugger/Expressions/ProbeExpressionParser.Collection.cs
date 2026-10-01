@@ -460,7 +460,13 @@ internal partial class ProbeExpressionParser<T>
         }
 
         indexOrKey = ConvertIndexerArgument(indexOrKey, getItemMethod);
-        var getItemCall = Expression.Call(source, getItemMethod, indexOrKey);
+        var getItemCall = assignableFrom == typeof(IDictionary)
+                              ? Expression.Call(
+                                  null,
+                                  ProbeExpressionParserHelper.GetMethodByReflection(typeof(CollectionAccessHelpers), nameof(CollectionAccessHelpers.GetDictionaryItem), [typeof(IDictionary), typeof(object)]),
+                                  source,
+                                  indexOrKey)
+                              : Expression.Call(EnsureSupportedCollection(source), getItemMethod, indexOrKey);
         Expression result;
         if (getItemCall.Type == convertToType)
         {
@@ -530,7 +536,7 @@ internal partial class ProbeExpressionParser<T>
 
         var countOrLength = ProbeExpressionParserHelper.GetMethodByReflection(source.Type, source.Type.IsArray ? "get_Length" : "get_Count", Type.EmptyTypes);
 
-        return Expression.Call(source, countOrLength);
+        return Expression.Call(EnsureSupportedCollection(source), countOrLength);
     }
 
     private Type GetIteratorParameterType(Type sourceType)
@@ -568,6 +574,7 @@ internal partial class ProbeExpressionParser<T>
 
     private Expression PredicateSource(Expression source, Type itParameterType)
     {
+        source = EnsureSupportedCollection(source);
         if (itParameterType != typeof(DictionaryEntry) || !IsSafeNonGenericDictionary(source.Type))
         {
             return source;
@@ -575,6 +582,24 @@ internal partial class ProbeExpressionParser<T>
 
         var castMethod = ProbeExpressionParserHelper.GetMethodByReflection(typeof(Enumerable), nameof(Enumerable.Cast), [typeof(IEnumerable)], [typeof(DictionaryEntry)]);
         return Expression.Call(null, castMethod, source);
+    }
+
+    private Expression EnsureSupportedCollection(Expression source)
+    {
+        // A deferred filter is enumerated through its own source, which is the value to check.
+        if (source is FilterExpression filterExpression)
+        {
+            return new FilterExpression(EnsureSupportedCollection(filterExpression.Source), filterExpression.Predicate, filterExpression.IteratorType, filterExpression.IsDictionary);
+        }
+
+        // Blocks are built only by the parser, and the only collection-typed one is a materialized filter result, which is a new List<T>.
+        if (source is BlockExpression)
+        {
+            return source;
+        }
+
+        var ensureMethod = ProbeExpressionParserHelper.GetMethodByReflection(typeof(CollectionAccessHelpers), nameof(CollectionAccessHelpers.EnsureSupportedCollection), [source.Type], [source.Type]);
+        return Expression.Call(null, ensureMethod, source);
     }
 
     private bool TryGetCollectionIteratorProperty(ParameterExpression itParameter, string propertyName, out Expression propertyExpression)
