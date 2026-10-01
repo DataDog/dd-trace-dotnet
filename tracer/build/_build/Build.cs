@@ -41,7 +41,7 @@ partial class Build : NukeBuild
     [Parameter("Platform to build - x86, x64, ARM64. Defaults to the current platform.")]
     readonly MSBuildTargetPlatform TargetPlatform = GetDefaultTargetPlatform();
 
-    [Parameter("The TargetFramework to execute when running or building a sample app, or linux integration tests")]
+    [Parameter("The TargetFramework to use when building or running sample apps, unit tests, or integration tests")]
     readonly TargetFramework Framework;
 
     [Parameter("Should all versions of integration NuGet packages be tested")]
