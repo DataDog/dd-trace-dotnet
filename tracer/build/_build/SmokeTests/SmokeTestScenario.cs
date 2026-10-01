@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
 
 namespace SmokeTests;
 
@@ -36,16 +37,28 @@ public abstract record SmokeTestScenario
     public string RuntimeImage => $"{DockerImageRepo}:{RuntimeTag}";
     public bool IsWindows => Os == "windows";
 
-    public virtual Dictionary<string, string> GetEnvironment(bool isCrashTest) =>
-        isCrashTest
-            ? new()
+    public virtual Dictionary<string, string> GetEnvironment(bool isCrashTest)
+    {
+        if (isCrashTest)
+        {
+            return new()
             {
                 {"DD_PROFILING_ENABLED", "0"},
                 {"CRASH_APP_ON_STARTUP", "1"},
                 {"DD_CRASHTRACKING_INTERNAL_LOG_TO_CONSOLE", "1"},
                 {"COMPlus_DbgEnableMiniDump", "0"},
-            }
-            : new() {{"DD_PROFILING_ENABLED", "1"}};
+            };
+        }
+
+        var env = new Dictionary<string, string> {{"DD_PROFILING_ENABLED", "1"}};
+
+        if (RuntimeInformation.ProcessArchitecture == Architecture.Arm64)
+        {
+            env["DD_INTERNAL_PROFILING_ENABLED_ARM64"] = "1";
+        }
+
+        return env;
+    }
 
 }
 

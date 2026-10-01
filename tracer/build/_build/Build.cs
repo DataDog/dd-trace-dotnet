@@ -420,7 +420,7 @@ partial class Build : NukeBuild
         .Unlisted()
         .Executes(() =>
         {
-            var framework = Framework ?? TargetFramework.NET8_0;
+            var framework = Framework ?? TargetFramework.NET10_0;
 
             string rid;
 

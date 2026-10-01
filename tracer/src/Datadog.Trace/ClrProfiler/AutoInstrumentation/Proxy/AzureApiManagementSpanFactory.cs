@@ -25,7 +25,7 @@ internal sealed class AzureApiManagementSpanFactory : IInferredSpanFactory
     {
         try
         {
-            var resourceUrl = data.Path is null ? string.Empty : UriHelpers.GetCleanUriPath(data.Path).ToLowerInvariant();
+            var resourceUrl = data.Path is null ? string.Empty : StringUtil.ToLowerInvariant(UriHelpers.GetCleanUriPath(data.Path));
 
             var tags = new InferredProxyTags
             {

@@ -1,6 +1,7 @@
 using System;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -14,6 +15,9 @@ namespace Samples.Console_
 {
     internal static class Program
     {
+        private const string FileToWatchEnvironmentVariable = "DD_INTERNAL_TEST_FILE_TO_WATCH";
+        private const string OtelThreadContextTlsAddressFileEnvironmentVariable = "DD_INTERNAL_TEST_OTEL_THREAD_CONTEXT_TLS_ADDRESS_FILE";
+
         private static void Main(string[] args)
         {
             if (args.Length > 0 && args[0].StartsWith("crash"))
@@ -61,17 +65,12 @@ namespace Samples.Console_
                 AsyncMain(args).GetAwaiter().GetResult();
             }
 
-            var fileToWatch = Environment.GetEnvironmentVariable("DD_INTERNAL_TEST_FILE_TO_WATCH");
+            var fileToWatch = Environment.GetEnvironmentVariable(FileToWatchEnvironmentVariable);
 
             if (fileToWatch != null)
             {
                 // Wait for up to 1 minute for the file to be created
-                var start = DateTime.UtcNow;
-
-                while (!File.Exists(fileToWatch) && (DateTime.UtcNow - start) < TimeSpan.FromMinutes(1))
-                {
-                    Thread.Sleep(500);
-                }
+                WaitForFile(fileToWatch, TimeSpan.FromMinutes(1));
             }
         }
 
@@ -113,6 +112,13 @@ namespace Samples.Console_
                     return;
                 }
 
+                if (string.Equals(args[0], "otel-thread-context", StringComparison.OrdinalIgnoreCase))
+                {
+                    RunOtelThreadContextScenario();
+                    await SampleHelpers.ForceTracerFlushAsync();
+                    return;
+                }
+
                 if (string.Equals(args[0], "echo", StringComparison.OrdinalIgnoreCase))
                 {
                     Console.WriteLine("Ready");
@@ -136,6 +142,82 @@ namespace Samples.Console_
 #endif
                 }
             }
+        }
+
+        private static void RunOtelThreadContextScenario()
+        {
+            var tlsAddressFile = Environment.GetEnvironmentVariable(OtelThreadContextTlsAddressFileEnvironmentVariable)
+                              ?? throw new InvalidOperationException($"{OtelThreadContextTlsAddressFileEnvironmentVariable} is not set.");
+            var releaseFile = Environment.GetEnvironmentVariable(FileToWatchEnvironmentVariable)
+                           ?? throw new InvalidOperationException($"{FileToWatchEnvironmentVariable} is not set.");
+
+            using (SampleHelpers.CreateScope("otel-thread-context-root"))
+            {
+                // Decide sampling before activating the child so its record contains the expected trace flags.
+                if (!SampleHelpers.GetOrMakeSamplingDecision().HasValue)
+                {
+                    throw new InvalidOperationException("Could not make a sampling decision for the OTEP thread-context scenario.");
+                }
+
+                using (SampleHelpers.CreateScope("otel-thread-context-child"))
+                {
+                    var tlsAddress = GetOtelThreadContextTlsAddress();
+                    if (tlsAddress == IntPtr.Zero)
+                    {
+                        throw new InvalidOperationException("Could not resolve the otel_thread_ctx_v1 TLS symbol.");
+                    }
+
+                    if (Marshal.ReadIntPtr(tlsAddress) == IntPtr.Zero)
+                    {
+                        throw new InvalidOperationException("The otel_thread_ctx_v1 TLS slot does not point to a record.");
+                    }
+
+                    // Moving the completed file makes its appearance an atomic ready signal to the test process.
+                    var temporaryFile = tlsAddressFile + ".tmp";
+                    File.WriteAllText(temporaryFile, tlsAddress.ToInt64().ToString("x", CultureInfo.InvariantCulture));
+                    File.Move(temporaryFile, tlsAddressFile);
+
+                    // Stay synchronously blocked on this OS thread with both scopes active while the test
+                    // independently reads the TLS slot and record from this process.
+                    if (!WaitForFile(releaseFile, TimeSpan.FromMinutes(1)))
+                    {
+                        throw new TimeoutException("Timed out waiting for the OTEP thread-context test to release the sample.");
+                    }
+                }
+            }
+        }
+
+        private static IntPtr GetOtelThreadContextTlsAddress()
+        {
+            // The profiler loads Datadog.Tracer.Native.so with local visibility, so RTLD_DEFAULT cannot
+            // resolve its symbols. Open the already-loaded DSO explicitly, then dlsym returns this
+            // calling thread's address for the ELF TLS symbol. Keep the extra reference until process exit
+            // so the returned TLS address remains valid while the external test reader inspects it.
+            var nativeLibraryType = Type.GetType("Datadog.Trace.AppSec.Waf.NativeBindings.NativeLibrary, Datadog.Trace", throwOnError: true);
+            var tryLoad = nativeLibraryType.GetMethod("TryLoad", BindingFlags.NonPublic | BindingFlags.Static);
+            var getExport = nativeLibraryType.GetMethod("GetExport", BindingFlags.NonPublic | BindingFlags.Static);
+            var profilerPath = Environment.GetEnvironmentVariable("CORECLR_PROFILER_PATH");
+            var nativeTracerPath = Path.Combine(Path.GetDirectoryName(profilerPath), "Datadog.Tracer.Native.so");
+            var loadArguments = new object[] { nativeTracerPath, null };
+
+            if (tryLoad.Invoke(null, loadArguments) is not true)
+            {
+                return IntPtr.Zero;
+            }
+
+            var handle = (IntPtr)loadArguments[1];
+            return (IntPtr)getExport.Invoke(null, new object[] { handle, "otel_thread_ctx_v1" });
+        }
+
+        private static bool WaitForFile(string path, TimeSpan timeout)
+        {
+            var start = DateTime.UtcNow;
+            while (!File.Exists(path) && (DateTime.UtcNow - start) < timeout)
+            {
+                Thread.Sleep(50);
+            }
+
+            return File.Exists(path);
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
