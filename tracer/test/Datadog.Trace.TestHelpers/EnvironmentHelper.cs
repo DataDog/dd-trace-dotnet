@@ -99,15 +99,7 @@ namespace Datadog.Trace.TestHelpers
         public static string GetMonitoringHomePath()
         {
             var monitoringHomeDirectoryEnvVar = "MonitoringHomeDirectory";
-            var monitoringHome = Environment.GetEnvironmentVariable(monitoringHomeDirectoryEnvVar);
-            if (string.IsNullOrEmpty(monitoringHome))
-            {
-                // default
-                monitoringHome = Path.Combine(
-                    EnvironmentTools.GetSolutionDirectory(),
-                    "artifacts",
-                    "monitoring-home");
-            }
+            var monitoringHome = GetTestArtifactPath(monitoringHomeDirectoryEnvVar, "monitoring-home");
 
             if (!Directory.Exists(monitoringHome))
             {
@@ -123,6 +115,24 @@ namespace Datadog.Trace.TestHelpers
             }
 
             return monitoringHome;
+        }
+
+        public static string GetOpenTelemetryStartupHookPath()
+        {
+            const string startupHookPathEnvVar = "OpenTelemetryStartupHookPath";
+            var startupHookPath = GetTestArtifactPath(
+                startupHookPathEnvVar,
+                Path.Combine(
+                    "output",
+                    "otel-operator-startup-hook",
+                    "OpenTelemetry.AutoInstrumentation.StartupHook.dll"));
+
+            if (!File.Exists(startupHookPath))
+            {
+                throw new InvalidOperationException($"{startupHookPathEnvVar} was set to '{startupHookPath}', but file does not exist");
+            }
+
+            return startupHookPath;
         }
 
         public static string GetNativeLoaderPath()
@@ -635,6 +645,14 @@ namespace Datadog.Trace.TestHelpers
             }
 
             return Path.Combine(GetMonitoringHomePath(), archFolder, "Datadog.Linux.ApiWrapper.x64.so");
+        }
+
+        private static string GetTestArtifactPath(string environmentVariable, string relativeDefaultPath)
+        {
+            var path = Environment.GetEnvironmentVariable(environmentVariable);
+            return string.IsNullOrEmpty(path)
+                       ? Path.Combine(EnvironmentTools.GetSolutionDirectory(), "artifacts", relativeDefaultPath)
+                       : path;
         }
 
         private bool IsEnvironmentVariableSet(string ev)

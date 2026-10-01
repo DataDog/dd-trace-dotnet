@@ -170,6 +170,7 @@ public class ProfilerSettingsTests : SettingsTestsBase
         var source = CreateConfigurationSource((ConfigurationKeys.Profiler.ProfilingEnabled, "1"));
         var settings = new ProfilerSettings(source, source, NullConfigurationTelemetry.Instance);
         settings.ProfilerState.Should().Be(ProfilerState.Disabled);
+        settings.WasDisabledByArm64Gate.Should().BeTrue();
     }
 
     [SkippableFact]
@@ -182,6 +183,18 @@ public class ProfilerSettingsTests : SettingsTestsBase
             (ConfigurationKeys.ContinuousProfiler.InternalProfilingEnabledArm64, "true"));
         var settings = new ProfilerSettings(source, source, NullConfigurationTelemetry.Instance);
         settings.ProfilerState.Should().Be(ProfilerState.Enabled);
+        settings.WasDisabledByArm64Gate.Should().BeFalse();
+    }
+
+    [SkippableFact]
+    public void ProfilerState_OnLinuxArm64_NotGatedWhenProfilingExplicitlyDisabled()
+    {
+        SkipOn.AllExcept(SkipOn.PlatformValue.Linux, SkipOn.ArchitectureValue.ARM64);
+
+        var source = CreateConfigurationSource((ConfigurationKeys.Profiler.ProfilingEnabled, "false"));
+        var settings = new ProfilerSettings(source, source, NullConfigurationTelemetry.Instance);
+        settings.ProfilerState.Should().Be(ProfilerState.Disabled);
+        settings.WasDisabledByArm64Gate.Should().BeFalse();
     }
 
     /// <summary>

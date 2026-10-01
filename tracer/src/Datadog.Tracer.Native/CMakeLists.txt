@@ -93,6 +93,10 @@ else()
     message(STATUS "CLANG++ was found")
 endif()
 
+if (ISLINUX)
+    find_package(Threads REQUIRED)
+endif()
+
 # ******************************************************
 # Output folders
 # ******************************************************
@@ -265,15 +269,44 @@ if (ISMACOS)
     add_library("Datadog.Tracer.Native" SHARED
         dllmain.cpp
         interop.cpp
+        otel_thread_ctx.cpp
     )
 else()
     add_library("Datadog.Tracer.Native" SHARED
         dllmain.cpp
         interop.cpp
+        otel_thread_ctx.cpp
     )
+endif()
+
+# otel_thread_ctx.cpp defines the `otel_thread_ctx_v1` ELF TLS symbol and owns each
+# thread's record lifetime. It belongs to the SHARED target (not the static library) so
+# the definition can never be dropped as an unreferenced archive member. OTEP 4947
+# prefers the TLSDESC dialect but also supports traditional Global Dynamic, and requires
+# readers to handle initial-exec/local-exec relaxation - and we access the TLS slot only
+# while acquiring or destroying a record, so the dialect has no measurable cost either
+# way. Ask for TLSDESC when the toolchain understands it, and fall back silently
+# otherwise, since the flag depends on the clang version.
+if (ISLINUX)
+    include(CheckCXXCompilerFlag)
+    if (ISARM64)
+        SET(DD_TLS_DIALECT_FLAG "-mtls-dialect=desc")
+    else()
+        SET(DD_TLS_DIALECT_FLAG "-mtls-dialect=gnu2")
+    endif()
+    check_cxx_compiler_flag("${DD_TLS_DIALECT_FLAG}" DD_HAVE_TLS_DESC)
+    if (DD_HAVE_TLS_DESC)
+        message(STATUS "Using ${DD_TLS_DIALECT_FLAG} for otel_thread_ctx.cpp")
+        set_source_files_properties(otel_thread_ctx.cpp PROPERTIES COMPILE_OPTIONS "${DD_TLS_DIALECT_FLAG}")
+    else()
+        message(STATUS "${DD_TLS_DIALECT_FLAG} unsupported; otel_thread_ctx_v1 will use Global Dynamic TLS")
+    endif()
 endif()
   
 set_target_properties("Datadog.Tracer.Native" PROPERTIES PREFIX "")
 
 # Define linker libraries
 target_link_libraries("Datadog.Tracer.Native" "Datadog.Tracer.Native.static")
+if (ISLINUX)
+    target_link_libraries("Datadog.Tracer.Native" Threads::Threads)
+endif()
