@@ -101,14 +101,22 @@ namespace iast
 #undef assert
 #define assert(x)
 
-    ILRewriter::ILRewriter(MethodInfo* methodInfo) : m_fGenerateTinyHeader(false), m_pEH(nullptr), m_pOffsetToInstr(nullptr), m_pOutputBuffer(nullptr)
+    ILRewriter::ILRewriter(MethodInfo* methodInfo)
+        : m_methodInfo(methodInfo),
+        m_tkLocalVarSig(mdTokenNil),
+        m_maxStack(0),
+        m_flags(0),
+        m_fGenerateTinyHeader(false),
+        m_nEH(0),
+        m_pEH(nullptr),
+        m_pOffsetToInstr(nullptr),
+        m_nCodeSize(0),
+        m_nInstrs(0),
+        m_pOutputBuffer(nullptr)
     {
-        m_methodInfo = methodInfo;
-
         m_IL.m_pNext = &m_IL;
         m_IL.m_pPrev = &m_IL;
 
-        m_nInstrs = 0;
     }
 
     ILRewriter::~ILRewriter()

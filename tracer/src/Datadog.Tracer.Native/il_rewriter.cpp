@@ -115,6 +115,7 @@ ILRewriter::ILRewriter(ICorProfilerInfo* pICorProfilerInfo, ICorProfilerFunction
     m_pICorProfilerFunctionControl(pICorProfilerFunctionControl),
     m_moduleId(moduleID),
     m_tkMethod(tkMethod),
+    m_tkLocalVarSig(mdTokenNil),
     m_fGenerateTinyHeader(false),
     m_pEH(nullptr),
     m_pOffsetToInstr(nullptr),
