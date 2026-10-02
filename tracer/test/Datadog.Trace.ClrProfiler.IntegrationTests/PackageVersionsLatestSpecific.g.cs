@@ -26,6 +26,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #if DEFAULT_SAMPLES
                 new object[] { string.Empty },
 #else
+#if NET48
+                new object[] { "1.3.0" },
+                new object[] { "1.8.0" },
+#endif
 #if NETCOREAPP2_1
                 new object[] { "1.3.0" },
                 new object[] { "1.8.0" },
@@ -59,6 +63,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "1.8.0" },
 #endif
 #if NET10_0
+                new object[] { "1.3.0" },
+                new object[] { "1.8.0" },
+#endif
+#if NET11_0
                 new object[] { "1.3.0" },
                 new object[] { "1.8.0" },
 #endif
