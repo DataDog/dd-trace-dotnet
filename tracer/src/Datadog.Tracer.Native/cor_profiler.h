@@ -81,6 +81,7 @@ private:
     bool call_target_bubble_up_exception_available = false;
     bool call_target_bubble_up_exception_function_available = false;
     bool call_target_state_skip_method_body_function_available = false;
+    bool call_target_runtime_async_endmethod_available = false;
 
     //
     // Debugger Members
@@ -132,11 +133,12 @@ private:
     HRESULT RewriteForTelemetry(const ModuleMetadata& module_metadata, ModuleID module_id);
     HRESULT RewriteIsManualInstrumentationOnly(const ModuleMetadata& module_metadata, ModuleID module_id);
     HRESULT EmitDistributedTracerTargetMethod(const ModuleMetadata& module_metadata, ModuleID module_id);
-    HRESULT TryRejitModule(ModuleID module_id, std::vector<ModuleID>& modules);
+    HRESULT TryRejitModule(ModuleID module_id, std::vector<ModuleID>& modules, bool& enqueue_rejit);
     static bool TypeNameMatchesTraceAttribute(WCHAR type_name[], DWORD type_name_len);
     static bool EnsureCallTargetBubbleUpExceptionTypeAvailable(const ModuleMetadata& module_metadata, mdTypeDef* mdTypeDefToken);
     static bool EnsureIsCallTargetBubbleUpExceptionFunctionAvailable(const ModuleMetadata& module_metadata, mdTypeDef typeDef);
     static bool EnsureCallTargetStateSkipMethodBodyFunctionAvailable(const ModuleMetadata& module_metadata);
+    static bool EnsureCallTargetRuntimeAsyncEndMethodAvailable(const ModuleMetadata& module_metadata);
     //
     // Startup methods
     //

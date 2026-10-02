@@ -42,6 +42,9 @@ namespace Datadog.Trace.TestHelpers
             // OpenTelemetry semantic convention equivalents of the above (DD_TRACE_OTEL_SEMANTICS_ENABLED=true)
             (new(@"client.address: (.)*(?=,)", RegOptions), "client.address: 127.0.0.1"),
             (new(@"network.peer.address: (.)*(?=,)", RegOptions), "network.peer.address: 127.0.0.1"),
+            // the client's ephemeral socket port, so it changes between runs. The optional ".0"
+            // covers the spans that record the port as a metric rather than as a string tag
+            (new(@"network\.peer\.port: \d+(\.0)?", RegOptions), "network.peer.port: 00000"),
             (new(@"user_agent.original: grpc-dotnet\/(.)*(?=,)", RegOptions), "user_agent.original: grpc-dotnet/123"),
             (new(@"server.port: \d+", RegOptions), "server.port: 00000"),
             (new(@"git.commit.sha: [0-9a-f]{40}", RegOptions), "git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbb"),
