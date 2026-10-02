@@ -173,7 +173,20 @@ public class FlagEvaluationIntegrationTests : TestHelper
     public async Task UnavailableAgentDoesNotChangeCdnEvaluationsOrIntroduceFallback()
     {
         using var agent = EnvironmentHelper.GetMockAgent();
-        using var cdn = new FlagEvaluationConfigurationServer(Envelope(CreateConfiguration(false)));
+        var configuration = CreateConfiguration(false);
+        // Exercise flagevaluation delivery failure without unrelated trace/exposure senders
+        // producing expected connection errors that fail CI's error-log checks.
+        foreach (var flag in configuration.Flags.ValidFlags)
+        {
+            foreach (var allocation in flag.Value.Allocations)
+            {
+                allocation.DoLog = false;
+            }
+        }
+
+        using var cdn = new FlagEvaluationConfigurationServer(Envelope(configuration));
+        SetEnvironmentVariable(ConfigurationKeys.TraceEnabled, "false");
+        SetEnvironmentVariable(ConfigurationKeys.FeatureFlags.FlaggingEvaluationCountsEnabled, "true");
         SetEnvironmentVariable(ConfigurationKeys.FeatureFlags.FeatureFlagsConfigurationSource, "agentless");
         SetEnvironmentVariable(ConfigurationKeys.FeatureFlags.FeatureFlagsConfigurationSourceAgentlessBaseUrl, cdn.Url + "configuration");
         SetEnvironmentVariable("DD_TRACE_AGENT_URL", $"http://127.0.0.1:{TcpPortProvider.GetOpenPort()}");

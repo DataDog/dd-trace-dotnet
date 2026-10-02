@@ -19,6 +19,7 @@ internal sealed class FlagEvaluationConfigurationServer : IDisposable
     private readonly HttpListener _listener = new();
     private readonly Task _loop;
     private Tuple<byte[], string> _response;
+    private bool _stopping;
 
     public FlagEvaluationConfigurationServer(string response)
     {
@@ -39,6 +40,8 @@ internal sealed class FlagEvaluationConfigurationServer : IDisposable
 
     public void Dispose()
     {
+        // On Windows, Close can abort GetContextAsync before IsListening becomes false.
+        Volatile.Write(ref _stopping, true);
         _listener.Close();
         _loop.GetAwaiter().GetResult();
     }
@@ -76,10 +79,10 @@ internal sealed class FlagEvaluationConfigurationServer : IDisposable
                 context.Response.Close();
             }
         }
-        catch (HttpListenerException) when (!_listener.IsListening)
+        catch (HttpListenerException) when (Volatile.Read(ref _stopping))
         {
         }
-        catch (ObjectDisposedException)
+        catch (ObjectDisposedException) when (Volatile.Read(ref _stopping))
         {
         }
     }
