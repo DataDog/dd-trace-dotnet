@@ -66,3 +66,25 @@ dotnet_diagnostic.CA1870.severity = error # Use a cached SearchValues instance
 dotnet_diagnostic.CA1871.severity = error # Do not pass a nullable struct to ArgumentNullException.ThrowIfNull.
 dotnet_diagnostic.CA1872.severity = error # Prefer Convert.ToHexString over BitConverter.ToString
 
+# Roslyn built-in code-style analyzer (IDE02xx), escalated here to a build error.
+#
+# IDE0230: Use UTF-8 string literal.
+#
+# Why this rule exists:
+# Code review on this repo has repeatedly flagged manual byte-array construction for
+# fixed ASCII/UTF-8 payloads (e.g. Encoding.UTF8.GetBytes("literal"), or a hand-rolled
+# byte array / ReadOnlySpan<byte> property wrapping a string constant) as an avoidable
+# per-call (or, worse, per-request) heap allocation in code that is explicitly called
+# out as hot-path. The "..."u8 UTF-8 string literal syntax (C# 11+) produces the UTF-8
+# bytes at compile time with zero runtime allocation when read as a ReadOnlySpan<byte>,
+# and is a drop-in replacement wherever the original bytes were only ever read, never
+# mutated.
+#
+# This is a good candidate for mechanical enforcement: the diagnostic only fires for
+# syntactic patterns (encoding calls / byte-array literals) that are provably equivalent
+# to a UTF-8 string literal, with no semantic/business judgement required, and it ships
+# as a built-in Roslyn code-style analyzer (via the Microsoft.CodeAnalysis.CSharp.CodeStyle
+# package already referenced by this repo), so no new tooling is required - only raising
+# its severity here from the default "suggestion" to "error" so it fails CI builds rather
+# than only surfacing as an IDE lightbulb that is easy to ignore.
+dotnet_diagnostic.IDE0230.severity = error # Use UTF-8 string literal
