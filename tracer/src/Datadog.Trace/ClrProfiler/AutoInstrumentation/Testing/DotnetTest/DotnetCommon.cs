@@ -328,7 +328,16 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest
 
             FinalizeCoverageResultsBeforeSessionClose(session);
 
-            session.Close(exitCode == 0 ? TestStatus.Pass : TestStatus.Fail);
+            var status = exitCode == 0 ? TestStatus.Pass : TestStatus.Fail;
+            // Missing SDK events are not proof of an empty run: framework instrumentation may be disabled.
+            if (exitCode == 0 && exception is null && VSTestRunTracker.IsEmpty(session))
+            {
+                status = TestStatus.Skip;
+                session.SetTag(TestTags.SkipReason, "VSTest reported zero tests.");
+                session.SetTag(TestTags.SessionEmptyReason, "zero_tests");
+            }
+
+            session.Close(status);
         }
 
         private static void TryFinalizeDatadogInternalCoverage(TestSession? session, string codeCoveragePath)
