@@ -11,6 +11,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.FeatureFlags.Agentless;
+using Datadog.Trace.FeatureFlags.Evp;
 using Datadog.Trace.FeatureFlags.Exposure;
 using Datadog.Trace.FeatureFlags.Exposure.Model;
 using Datadog.Trace.FeatureFlags.Rcm;
@@ -65,6 +66,7 @@ namespace Datadog.Trace.FeatureFlags
         private FeatureFlagsEvaluator? _evaluator;
         private IFeatureFlagsDeliverySource? _agentlessSource;
         private ExposureApi? _exposureApi;
+        private FeatureFlagsEvpTransport? _evpTransport;
         private string? _deliveryUnavailableReason;
         private bool _activated;
         private bool _disposed;
@@ -129,6 +131,7 @@ namespace Datadog.Trace.FeatureFlags
             ISubscription? subscription;
             IFeatureFlagsDeliverySource? agentlessSource;
             ExposureApi? exposureApi;
+            FeatureFlagsEvpTransport? evpTransport;
 
             lock (_stateLock)
             {
@@ -142,10 +145,12 @@ namespace Datadog.Trace.FeatureFlags
                 subscription = _rcmSubscription;
                 agentlessSource = _agentlessSource;
                 exposureApi = _exposureApi;
+                evpTransport = _evpTransport;
 
                 _rcmSubscription = null;
                 _agentlessSource = null;
                 Volatile.Write(ref _exposureApi, null);
+                _evpTransport = null;
             }
 
             // Released the lock first: disposal is not state mutation, and holding it here would
@@ -157,6 +162,7 @@ namespace Datadog.Trace.FeatureFlags
 
             agentlessSource?.Dispose();
             exposureApi?.Dispose();
+            evpTransport?.Dispose();
         }
 
         /// <summary>
@@ -501,7 +507,9 @@ namespace Datadog.Trace.FeatureFlags
                 exposureApi = _exposureApi;
                 if (exposureApi is null)
                 {
-                    exposureApi = new ExposureApi(_tracerSettings);
+                    // Keep the HTTP client and its settings subscription lazy with the first exposure.
+                    _evpTransport = new FeatureFlagsEvpTransport(_tracerSettings);
+                    exposureApi = new ExposureApi(_tracerSettings, _evpTransport);
                     Volatile.Write(ref _exposureApi, exposureApi);
                 }
 
