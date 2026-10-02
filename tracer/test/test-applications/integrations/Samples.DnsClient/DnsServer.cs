@@ -7,6 +7,7 @@ using Ae.Dns.Protocol;
 using Ae.Dns.Protocol.Enums;
 using Ae.Dns.Protocol.Records;
 using Ae.Dns.Server;
+using DnsResponseCode = Ae.Dns.Protocol.Enums.DnsResponseCode;
 
 namespace Samples.DnsClient
 {

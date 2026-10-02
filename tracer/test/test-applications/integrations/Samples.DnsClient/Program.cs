@@ -4,6 +4,7 @@ using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using DnsClient;
+using DnsResponseCode = DnsClient.DnsResponseCode;
 
 namespace Samples.DnsClient
 {
