@@ -9,6 +9,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Diagnostics;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
@@ -27,6 +28,40 @@ namespace Datadog.Trace.Tests.FeatureFlags;
 
 public class FeatureFlagsModuleTests
 {
+    [Fact]
+    public void DefaultModuleDoesNotCreateExposureTransportUntilFirstUse()
+    {
+        var settings = new TracerSettings(new NameValueConfigurationSource(new NameValueCollection()));
+        using var module = FeatureFlagsModule.Create(settings, new MockRcmSubscriptionManager());
+        var transportField = typeof(FeatureFlagsModule).GetField("_evpTransport", BindingFlags.Instance | BindingFlags.NonPublic)!;
+
+        settings.FeatureFlags.Enabled.Should().BeTrue();
+        module.Should().NotBeNull();
+        transportField.GetValue(module).Should().BeNull("applications that never use exposures need no HTTP client or settings subscription");
+
+        var exposureApi = module!.GetExposureApi();
+        exposureApi.Should().NotBeNull();
+        transportField.GetValue(module).Should().NotBeNull();
+        module.GetExposureApi().Should().BeSameAs(exposureApi);
+
+        module.Dispose();
+        transportField.GetValue(module).Should().BeNull();
+        module.GetExposureApi().Should().BeNull();
+    }
+
+    [Fact]
+    public void DisposingUnusedModuleDoesNotCreateExposureTransport()
+    {
+        var settings = new TracerSettings(new NameValueConfigurationSource(new NameValueCollection()));
+        using var module = FeatureFlagsModule.Create(settings, new MockRcmSubscriptionManager());
+
+        module!.Dispose();
+
+        module.GetExposureApi().Should().BeNull();
+        typeof(FeatureFlagsModule).GetField("_evpTransport", BindingFlags.Instance | BindingFlags.NonPublic)!
+                                  .GetValue(module).Should().BeNull();
+    }
+
     [Fact]
     public void UpdateRemoteConfig_WithEmptyList_InvokesCallbackAndReturnsProviderNotReady()
     {
