@@ -22,6 +22,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
         internal const string AssemblyName = "Datadog.Trace, Version=3.55.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb";
         private const string AzureAppServicesSiteExtensionKey = "DD_AZURE_APP_SERVICES"; // only set when using the AAS site extension
         private const string TracerHomePathKey = "DD_DOTNET_TRACER_HOME";
+        private const string OpenTelemetryAutoHomePathKey = "OTEL_DOTNET_AUTO_HOME";
 
         private static int _startupCtorInitialized;
 
@@ -60,11 +61,11 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
 #endif
 
                 var envVars = new EnvironmentVariableProvider(logErrors: true);
-                var tracerHomeDirectory = envVars.GetEnvironmentVariable(TracerHomePathKey);
+                var tracerHomeDirectory = GetHomeDirectory(envVars);
 
                 if (tracerHomeDirectory is null)
                 {
-                    StartupLogger.Log("{0} not set. Datadog SDK will be disabled.", TracerHomePathKey);
+                    StartupLogger.Log("Neither {0} nor {1} is set. Datadog SDK will be disabled.", TracerHomePathKey, OpenTelemetryAutoHomePathKey);
                     return;
                 }
 
@@ -140,6 +141,19 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
         }
 
         internal static string? ManagedProfilerDirectory { get; }
+
+        internal static string? GetHomeDirectory<TEnvVars>(TEnvVars envVars)
+            where TEnvVars : IEnvironmentVariableProvider
+        {
+            var tracerHomeDirectory = envVars.GetEnvironmentVariable(TracerHomePathKey);
+            if (!string.IsNullOrEmpty(tracerHomeDirectory))
+            {
+                return tracerHomeDirectory;
+            }
+
+            var openTelemetryAutoHomeDirectory = envVars.GetEnvironmentVariable(OpenTelemetryAutoHomePathKey);
+            return string.IsNullOrEmpty(openTelemetryAutoHomeDirectory) ? null : openTelemetryAutoHomeDirectory;
+        }
 
         private static void TryInvokeManagedMethod(string typeName, string methodName, string? loaderHelperTypeName = null)
         {

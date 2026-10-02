@@ -12,6 +12,7 @@ namespace trace
 const shared::WSTRING env_vars_to_display[]{environment::tracing_enabled,
                                     environment::debug_enabled,
                                     environment::profiler_home_path,
+                                    environment::otel_dotnet_auto_home_path,
                                     environment::include_process_names,
                                     environment::exclude_process_names,
                                     environment::agent_host,

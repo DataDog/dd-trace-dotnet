@@ -37,6 +37,8 @@ public class ProcessBasicChecksTests : ConsoleTestHelper
     private const string CorProfilerPath64Key = "CORECLR_PROFILER_PATH_64";
     private const string CorEnableKey = "CORECLR_ENABLE_PROFILING";
     private const string LogDirectoryKey = "DD_TRACE_LOG_DIRECTORY";
+    private const string TracerHomeKey = "DD_DOTNET_TRACER_HOME";
+    private const string OpenTelemetryAutoHomeKey = "OTEL_DOTNET_AUTO_HOME";
 
     private static readonly string ProfilerPath = EnvironmentHelper.GetNativeLoaderPath();
 
@@ -120,7 +122,7 @@ public class ProcessBasicChecksTests : ConsoleTestHelper
             LoaderNotLoaded,
             NativeTracerNotLoaded,
             TracerNotLoaded,
-            EnvironmentVariableNotSet("DD_DOTNET_TRACER_HOME"),
+            TracerHomeNotSet(TracerHomeKey, OpenTelemetryAutoHomeKey),
             WrongEnvironmentVariableFormat(CorProfilerKey, Utils.Profilerid, null),
             WrongEnvironmentVariableFormat(CorEnableKey, "1", null));
 
@@ -163,7 +165,7 @@ public class ProcessBasicChecksTests : ConsoleTestHelper
             LoaderNotLoaded,
             NativeTracerNotLoaded,
             TracerNotLoaded,
-            TracerHomeNotFoundFormat("TheDirectoryDoesNotExist"),
+            TracerHomeNotFoundFormat(TracerHomeKey, "TheDirectoryDoesNotExist"),
             WrongEnvironmentVariableFormat(CorProfilerKey, Utils.Profilerid, Guid.Empty.ToString("B")),
             WrongEnvironmentVariableFormat(CorEnableKey, "1", "0"),
             MissingProfilerEnvironment(CorProfilerPathKey, "dummyPath"),
@@ -219,7 +221,7 @@ public class ProcessBasicChecksTests : ConsoleTestHelper
         console.Output.Should().NotContainAny(
             NativeTracerNotLoaded,
             TracerNotLoaded,
-            TracerHomeNotFoundFormat("DD_DOTNET_TRACER_HOME"));
+            TracerHomeNotSet(TracerHomeKey, OpenTelemetryAutoHomeKey));
 
         console.Output.Should().Contain(
             CorrectlySetupEnvironment(CorProfilerKey, Utils.Profilerid),
@@ -278,7 +280,7 @@ public class ProcessBasicChecksTests : ConsoleTestHelper
             ContinuousProfilerNotSet,
             ContinuousProfilerNotLoaded,
             "LD_PRELOAD",
-            TracerHomeNotFoundFormat("DD_DOTNET_TRACER_HOME"));
+            TracerHomeNotSet(TracerHomeKey, OpenTelemetryAutoHomeKey));
     }
 
     [SkippableFact]
