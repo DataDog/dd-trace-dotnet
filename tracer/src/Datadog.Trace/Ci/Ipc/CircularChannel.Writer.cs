@@ -5,6 +5,7 @@
 #nullable enable
 
 using System;
+using System.IO.MemoryMappedFiles;
 using System.Threading;
 
 namespace Datadog.Trace.Ci.Ipc;
@@ -14,12 +15,16 @@ internal partial class CircularChannel
     private sealed class Writer : IChannelWriter
     {
         private readonly CircularChannel _channel;
+
+        // Mapped once and reused, so we never map a view while holding the cross-process lock.
+        private readonly MemoryMappedViewAccessor _accessor;
         private long _disposed;
 
         internal Writer(CircularChannel channel)
         {
             _disposed = 0;
             _channel = channel;
+            _accessor = channel._mmf.CreateViewAccessor();
         }
 
         public int GetMessageSize(in ArraySegment<byte> data) => data.Count + 2;
@@ -34,29 +39,48 @@ internal partial class CircularChannel
             }
 
             var dataSize = GetMessageSize(in data);
-            if (dataSize > channel.BufferBodySize)
+
+            // One byte of the buffer always stays free (see the space check below)
+            if (dataSize >= channel.BufferBodySize)
             {
                 Log.Error("CircularChannel.Writer: Message size exceeds maximum allowed size.");
                 return false;
             }
 
-            var hasHandle = channel._mutex.WaitOne(_channel._settings.MutexTimeout);
-            if (!hasHandle)
+            LockAcquisition acquisition;
+            try
             {
-                Log.Error("CircularChannel.Writer: Failed to acquire mutex within the time limit.");
+                acquisition = channel.WaitForLock();
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "CircularChannel.Writer: Error while acquiring the channel lock");
+                return false;
+            }
+
+            if (acquisition == LockAcquisition.Abandoned)
+            {
+                // A previous owner died while holding the mutex. The wait still succeeded and we own the
+                // mutex now, so keep going and let the finally below release it. Letting the exception
+                // escape would leak ownership and stop every process from ever using this channel again.
+                Log.Warning("CircularChannel.Writer: Mutex was abandoned by a previous owner. Recovering ownership.");
+            }
+            else if (acquisition != LockAcquisition.Acquired)
+            {
+                Log.Error("CircularChannel.Writer: Failed to acquire the channel lock within the time limit.");
                 return false;
             }
 
             try
             {
-                using var accessor = channel._mmf.CreateViewAccessor();
+                var accessor = _accessor;
                 var writePos = accessor.ReadUInt16(0);
                 var readPos = accessor.ReadUInt16(2);
 
-                // Check if we had to use a virtual write position outside the buffer to avoid blocking the read position
-                // condition for read is: writepos != readpos
-                // So if we detect that we have a writepos > buffersize, we use the modulus to check if is the same to the readpos
-                // and detect the buffer overflow.
+                // Older versions marked a completely full buffer with a virtual write position past the end of the buffer
+                // (BufferBodySize + writePos), because writePos == readPos means empty. That overflows the ushort once the
+                // body is larger than 32 KB, so we never write it anymore (see the space check below), but we still
+                // understand it in case an older version shares this channel.
                 if (writePos >= channel.BufferBodySize)
                 {
                     if (writePos % channel.BufferBodySize == readPos)
@@ -101,7 +125,10 @@ internal partial class CircularChannel
                 var spaceAvailable = writePos < readPos
                                          ? readPos - writePos
                                          : channel.BufferBodySize - (writePos - readPos);
-                if (spaceAvailable < dataSize)
+
+                // Always leave at least one byte free, so the write position never catches up with the read position.
+                // Otherwise a full buffer would look exactly like an empty one (writePos == readPos).
+                if (spaceAvailable <= dataSize)
                 {
                     Log.Warning("CircularChannel.Writer: Buffer overflow");
                     return false;
@@ -123,12 +150,6 @@ internal partial class CircularChannel
                     accessor.WriteArray(HeaderSize, data.Array!, firstPartLength, secondPartLength);
                 }
 
-                if (nextWritePos == readPos)
-                {
-                    // This means that we will overwrite the data in the next write, so we need to virtually use a position outside the buffer
-                    nextWritePos = (ushort)(channel.BufferBodySize + nextWritePos);
-                }
-
                 accessor.Write(0, nextWritePos); // Update write pointer
                 return true;
             }
@@ -139,20 +160,19 @@ internal partial class CircularChannel
             }
             finally
             {
-                try
-                {
-                    channel._mutex.ReleaseMutex();
-                }
-                catch (ObjectDisposedException)
-                {
-                    // The mutex was disposed, nothing to do
-                }
+                channel.ReleaseLock();
             }
         }
 
         public void Dispose()
         {
-            Interlocked.Exchange(ref _disposed, 1);
+            if (Interlocked.Exchange(ref _disposed, 1) == 1)
+            {
+                return;
+            }
+
+            // Disposed before the channel drops the memory mapped file the view came from.
+            _accessor.Dispose();
         }
     }
 }
