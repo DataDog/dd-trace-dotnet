@@ -80,11 +80,23 @@ namespace Datadog.Trace.TestHelpers
 
             if (EnvironmentTools.IsWindows())
             {
+#if NET11_0_OR_GREATER
+                // .NET 11 supports suspended processes out of the box
+                startInfo.StartSuspended = true;
+                var process = Process.Start(startInfo);
+
+                await MemoryDumpHelper.MonitorCrashes(process.Id);
+
+                process.SafeHandle.Resume();
+
+                return process;
+#else
                 using var suspendedProcess = NativeProcess.CreateProcess.StartSuspendedProcess(startInfo);
 
                 await MemoryDumpHelper.MonitorCrashes(suspendedProcess.Id);
 
                 return suspendedProcess.ResumeProcess();
+#endif
             }
 
             return Process.Start(startInfo);

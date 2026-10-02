@@ -68,7 +68,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                     string host = httpContext.Request.Headers.Get("Host");
                     var userAgent = httpContext.Request.Headers.Get(HttpHeaderNames.UserAgent);
                     string httpMethod = httpContext.Request.HttpMethod;
-                    string datadogHttpMethod = httpMethod.ToUpperInvariant();
+                    string datadogHttpMethod = StringUtil.ToUpperInvariant(httpMethod);
                     string resourceName = null;
 
                     RouteData routeData = controllerContext.RouteData;
@@ -117,9 +117,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                     else
                     {
                         // just grab area/controller/action directly
-                        areaName = (routeValues?.GetValueOrDefault("area") as string)?.ToLowerInvariant();
-                        controllerName = (routeValues?.GetValueOrDefault("controller") as string)?.ToLowerInvariant();
-                        actionName = (routeValues?.GetValueOrDefault("action") as string)?.ToLowerInvariant();
+                        areaName = StringUtil.ToLowerInvariant(routeValues?.GetValueOrDefault("area") as string);
+                        controllerName = StringUtil.ToLowerInvariant(routeValues?.GetValueOrDefault("controller") as string);
+                        actionName = StringUtil.ToLowerInvariant(routeValues?.GetValueOrDefault("action") as string);
                     }
 
                     if (otelSemanticsEnabled)
@@ -138,7 +138,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                         if (string.IsNullOrEmpty(resourceName) && RequestDataHelper.GetUrl(httpContext.Request) is { } requestUrl)
                         {
                             var cleanUri = UriHelpers.GetCleanUriPath(httpContext.Request.Url, httpContext.Request.ApplicationPath);
-                            resourceName = $"{datadogHttpMethod} {cleanUri.ToLowerInvariant()}";
+                            resourceName = $"{datadogHttpMethod} {StringUtil.ToLowerInvariant(cleanUri)}";
                         }
 
                         if (string.IsNullOrEmpty(resourceName))

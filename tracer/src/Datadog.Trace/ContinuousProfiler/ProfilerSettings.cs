@@ -81,6 +81,7 @@ internal sealed class ProfilerSettings
             {
                 ProfilerState = ProfilerState.Disabled;
                 telemetry.Record(ConfigurationKeys.Profiler.ProfilingEnabled, "false", recordValue: true, ConfigurationOrigins.Calculated);
+                WasDisabledByArm64Gate = true;
             }
         }
     }
@@ -111,4 +112,6 @@ internal sealed class ProfilerSettings
     public bool IsProfilerEnabled => ProfilerState != ProfilerState.Disabled;
 
     public bool IsManagedActivationEnabled => _isManagedActivationEnabled;
+
+    public bool WasDisabledByArm64Gate { get; }
 }
