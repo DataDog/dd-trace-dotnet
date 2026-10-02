@@ -1,4 +1,4 @@
-﻿// <copyright file="DatadogHttpClient.cs" company="Datadog">
+// <copyright file="DatadogHttpClient.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -89,7 +89,7 @@ namespace Datadog.Trace.HttpOverStreams
                 var bytesRead = await responseStream.ReadAsync(chArray, offset: 0, count: 1).ConfigureAwait(false);
                 if (bytesRead == 0)
                 {
-                    ThrowHelper.ThrowInvalidOperationException($"Unexpected end of stream at position {streamPosition}");
+                    throw new EndOfStreamException($"Unexpected end of stream at position {streamPosition}");
                 }
 
                 currentChar = Encoding.ASCII.GetChars(chArray)[0];
@@ -112,7 +112,7 @@ namespace Datadog.Trace.HttpOverStreams
                     lastBytesRead = await responseStream.ReadAsync(chArray, offset: 0, count: bytesToRead).ConfigureAwait(false);
                     if (lastBytesRead == 0)
                     {
-                        ThrowHelper.ThrowInvalidOperationException($"Unexpected end of stream at position {streamPosition}");
+                        throw new EndOfStreamException($"Unexpected end of stream at position {streamPosition}");
                     }
 
                     bytesRemaining -= lastBytesRead;

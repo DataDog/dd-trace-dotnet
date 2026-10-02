@@ -1,4 +1,4 @@
-﻿// <copyright file="DatadogHttpClientTests.cs" company="Datadog">
+// <copyright file="DatadogHttpClientTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -18,6 +18,23 @@ namespace Datadog.Trace.Tests.HttpOverStreams
 {
     public class DatadogHttpClientTests
     {
+        [Theory]
+        [InlineData("")]
+        [InlineData("HTTP/1.1 ")]
+        [InlineData("HTTP/1.1 200 OK\r\nContent-Length:")]
+        public async Task TruncatedResponseThrowsEndOfStreamAfterSendingRequest(string response)
+        {
+            var client = new DatadogHttpClient(TraceAgentHttpHeaderHelper.Instance);
+            var request = new HttpRequest("POST", "localhost", "/test", new HttpHeaders(), null);
+            using var requestStream = new MemoryStream();
+            using var responseStream = new MemoryStream(Encoding.ASCII.GetBytes(response));
+
+            Func<Task> send = () => client.SendAsync(request, requestStream, responseStream);
+
+            await send.Should().ThrowAsync<EndOfStreamException>();
+            requestStream.Length.Should().BeGreaterThan(0, "response EOF does not prove a zero-byte send");
+        }
+
         [Fact]
         public async Task DatadogHttpClient_CanParseResponse()
         {
