@@ -30,6 +30,8 @@ class IRuntimeInfo;
 class ISsiManager;
 class IHeapSnapshotManager;
 class IGcSettingsProvider;
+class IEEHeapReporter;
+class IClrNativeHeapSnapshot;
 
 namespace libdatadog {
 class Exporter;
@@ -50,7 +52,9 @@ public:
         IMetadataProvider* metadataProvider,
         ISsiManager* ssiManager,
         IAllocationsRecorder* allocationsRecorder,
-        IHeapSnapshotManager* heapSnapshotManager);
+        IHeapSnapshotManager* heapSnapshotManager,
+        IEEHeapReporter* eeHeapReporter,
+        IClrNativeHeapSnapshot* clrNativeHeapSnapshot = nullptr);
     ~ProfileExporter() override;
 
     bool Export(bool lastCall = false) override;
@@ -173,6 +177,10 @@ private:
     IRuntimeInfo* _runtimeInfo;
     ISsiManager* _ssiManager;
     IHeapSnapshotManager* _heapSnapshotManager;
+    IEEHeapReporter* _eeHeapReporter = nullptr; // could be null when the eeheap feature is disabled
+    // Shared, per-export CLR native-heap + OS address-space snapshot; invalidated at the end of each
+    // Export() so the next cycle re-captures. Null when neither eeheap nor memory-breakdown is enabled.
+    IClrNativeHeapSnapshot* _clrNativeHeapSnapshot = nullptr;
     IGcSettingsProvider* _gcSettingsProvider = nullptr;  // could be null with .NET Framework
 
 public: // for tests

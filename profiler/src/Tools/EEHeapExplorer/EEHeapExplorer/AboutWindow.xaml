@@ -1,0 +1,42 @@
+<Window x:Class="EEHeapExplorer.AboutWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="About EEHeap Explorer"
+        Icon="eeheapCat.ico"
+        Width="420" Height="440"
+        ResizeMode="NoResize"
+        WindowStartupLocation="CenterOwner"
+        ShowInTaskbar="False">
+
+    <Grid Margin="16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="256" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <Image Grid.Row="0"
+               Source="eeheapCat.png"
+               Stretch="Uniform"
+               RenderOptions.BitmapScalingMode="HighQuality"
+               Margin="0,0,0,0" />
+
+        <TextBlock Grid.Row="1"
+                   TextWrapping="Wrap"
+                   TextAlignment="Center"
+                   Margin="0,0,0,12">
+            <Run Text="EEHeap Explorer" FontSize="16" FontWeight="SemiBold" />
+            <LineBreak /><LineBreak />
+            <Run Text="Visualizes eeheap.json reports produced by the Datadog native profiler (cDAC and DAC backends): CLR native heap regions grouped by kind, with reserved/committed sizes and per-GC-heap/generation breakdown." />
+        </TextBlock>
+
+        <Button Grid.Row="2"
+                Content="OK"
+                Width="80"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                IsDefault="True"
+                IsCancel="True"
+                Click="Ok_Click" />
+    </Grid>
+</Window>
