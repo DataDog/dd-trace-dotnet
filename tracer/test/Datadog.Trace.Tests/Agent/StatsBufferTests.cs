@@ -35,7 +35,6 @@ namespace Datadog.Trace.Tests.Agent
         public void Serialization(bool propagateProcessTags, bool setServiceName)
         {
             const long expectedDuration = 42;
-
             // For Tracer Settings, the non mutable one.
             var collection = new NameValueCollection
             {
