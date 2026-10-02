@@ -62,12 +62,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Remoting.Server
         /// <returns>Calltarget state value</returns>
         internal static CallTargetState OnMethodBegin<TTarget, TServerSinkStack>(TTarget instance, TServerSinkStack sinkStack, IMessage requestMsg, ITransportHeaders requestHeaders, Stream requestStream, ref IMessage responseMsg, ref ITransportHeaders responseHeaders, ref Stream responseStream)
         {
-            if (requestMsg is null)
-            {
-                return CallTargetState.GetDefault();
-            }
-
-            // Extract span context
+            // Extract span context. Headers are available regardless of whether requestMsg is populated.
             PropagationContext extractedContext = default;
 
             try
@@ -81,8 +76,23 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Remoting.Server
                 Log.Error(ex, "Error extracting propagated headers.");
             }
 
+            // requestMsg can be null here (single formatter, or a sink that doesn't recognize the
+            // content-type). Create the scope anyway, here and not in SerializeResponse: the customer's
+            // remote method runs in between, and it needs this to be the ambient scope so its own spans
+            // parent correctly. Discard any leftover placeholder scope from an earlier sink first.
+            if (sinkStack is not null)
+            {
+                RemotingIntegration.DiscardStalePlaceholderScope(sinkStack);
+            }
+
             var scope = RemotingIntegration.CreateServerScope(requestMsg, extractedContext);
-            return new CallTargetState(scope);
+
+            if (sinkStack is not null)
+            {
+                RemotingIntegration.SetServerScope(sinkStack, scope);
+            }
+
+            return new CallTargetState(scope, sinkStack);
         }
 
         /// <summary>
@@ -97,8 +107,17 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Remoting.Server
         /// <returns>A response value</returns>
         internal static CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
         {
-            // Do not close the span here
-            // The span will be closed when the message response is written
+            // Normally the span is closed by SerializeResponse once the response is written (Complete),
+            // or later when it's written asynchronously (Async). If no response will ever be written
+            // (one-way call, or ProcessMessage threw), nothing else will close it - do it here.
+            if (state.Scope is { } scope
+                && state.State is { } sinkStack
+                && (exception is not null || (returnValue is ServerProcessing processing && processing == ServerProcessing.OneWay))
+                && RemotingIntegration.TryRemoveServerScope(sinkStack, scope))
+            {
+                scope.DisposeWithException(exception);
+            }
+
             return new CallTargetReturn<TReturn>(returnValue);
         }
     }
