@@ -291,7 +291,7 @@ Debugger code runs inside customer processes while inspecting live customer obje
 
 - Do not commit secrets; prefer env vars (`DD_*`). `.env` should not contain credentials.
 - Use `global.json` SDK; confirm with `dotnet --version`.
-- Keep customer data out of pull requests. Do not include sensitive information or PII about a customer or their code in the diff, commit messages, or PR description, and do not mention the customer name.
+- Never mention a customer or user in a pull request. Do not include their name, any other identifying detail, PII, or their code in the diff, commit messages, or PR description.
 
 ## Glossary
 
