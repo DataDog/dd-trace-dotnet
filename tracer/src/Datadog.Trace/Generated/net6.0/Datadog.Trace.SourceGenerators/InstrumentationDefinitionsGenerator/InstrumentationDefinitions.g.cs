@@ -31,6 +31,7 @@ namespace Datadog.Trace.ClrProfiler
             || assemblyName.StartsWith("Confluent.Kafka,", StringComparison.Ordinal)
             || assemblyName.StartsWith("Couchbase.NetClient,", StringComparison.Ordinal)
             || assemblyName.StartsWith("coverlet.core,", StringComparison.Ordinal)
+            || assemblyName.StartsWith("DnsClient,", StringComparison.Ordinal)
             || assemblyName.StartsWith("dotnet,", StringComparison.Ordinal)
             || assemblyName.StartsWith("Elasticsearch.Net,", StringComparison.Ordinal)
             || assemblyName.StartsWith("Google.Protobuf,", StringComparison.Ordinal)
@@ -354,6 +355,9 @@ namespace Datadog.Trace.ClrProfiler
                     => Datadog.Trace.Configuration.IntegrationId.DatadogTraceManual,
                 "Datadog.Trace.ClrProfiler.AutoInstrumentation.VersionConflict.ProcessHelpersStartWithDoNotTraceIntegration"
                     => Datadog.Trace.Configuration.IntegrationId.DatadogTraceVersionConflict,
+                "Datadog.Trace.ClrProfiler.AutoInstrumentation.DnsClient.QueryInternalIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.DnsClient.QueryInternalAsyncIntegration"
+                    => Datadog.Trace.Configuration.IntegrationId.DnsClient,
                 "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest.CoverageGetCoverageResultIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest.TestCommand5ctorIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.DotnetTest.TestCommandctorIntegration"

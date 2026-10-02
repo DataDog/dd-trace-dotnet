@@ -15,6 +15,7 @@ namespace Datadog.Trace.Configuration.Schema
     {
         private const string HttpClientComponent = "http-client";
         private const string GrpcClientComponent = "grpc-client";
+        private const string DnsClientComponent = "dns";
 
         private readonly bool _useV0Tags;
         private readonly string[] _protocols;
@@ -42,6 +43,7 @@ namespace Datadog.Trace.Configuration.Schema
             [
                 ServiceNameMetadata.Resolve(HttpClientComponent, defaultServiceName, serviceNameMappings, useSuffix),
                 ServiceNameMetadata.Resolve(GrpcClientComponent, defaultServiceName, serviceNameMappings, useSuffix),
+                ServiceNameMetadata.Resolve(DnsClientComponent, defaultServiceName, serviceNameMappings, useSuffix),
             ];
         }
 
@@ -57,7 +59,8 @@ namespace Datadog.Trace.Configuration.Schema
         public enum Component
         {
             Http, // http-client
-            Grpc // grpc-client
+            Grpc, // grpc-client
+            DnsClient // dns
         }
 
         public string GetOperationNameForProtocol(Protocol protocol) => _protocols[(int)protocol];
@@ -80,6 +83,9 @@ namespace Datadog.Trace.Configuration.Schema
 
         public AzureServiceBusTags CreateAzureServiceBusTags()
             => _useV0Tags ? new AzureServiceBusTags() : new AzureServiceBusV1Tags();
+
+        public DnsClientTags CreateDnsClientTags()
+            => _useV0Tags ? new DnsClientTags() : new DnsClientV1Tags();
 
         private static class V0Values
         {

@@ -26,6 +26,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public static readonly bool IsAllMinorPackageVersions = false;
 #endif
 
+        public static IEnumerable<object[]> DnsClient => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.DnsClient : PackageVersionsLatestSpecific.DnsClient;
+
         public static IEnumerable<object[]> Hangfire => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.Hangfire : PackageVersionsLatestSpecific.Hangfire;
 
         public static IEnumerable<object[]> Quartz => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.Quartz : PackageVersionsLatestSpecific.Quartz;
