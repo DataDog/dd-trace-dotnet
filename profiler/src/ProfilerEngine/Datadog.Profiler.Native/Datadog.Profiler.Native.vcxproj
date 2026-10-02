@@ -116,7 +116,7 @@
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
-      <AdditionalIncludeDirectories>$(DOTNET-TRACER-REPO-ROOT-PATH);$(CORECLR-PATH)/pal/prebuilt/inc;$(CORECLR-PATH)/inc;$(SHARED-LIB-INCLUDES);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(DOTNET-TRACER-REPO-ROOT-PATH);$(DOTNET-TRACER-REPO-ROOT-PATH)shared\src\datadog-profiling-poc\include;$(DOTNET-TRACER-REPO-ROOT-PATH)shared\src\datadog-profiling-poc\vendor\zstd;$(CORECLR-PATH)/pal/prebuilt/inc;$(CORECLR-PATH)/inc;$(SHARED-LIB-INCLUDES);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>$(ENABLE_MULTIPROCESSOR_COMPILATION)</MultiProcessorCompilation>
       <MultiProcessorCompilation Condition=" '$(ENABLE_MULTIPROCESSOR_COMPILATION)' == '' ">true</MultiProcessorCompilation>
     </ClCompile>
@@ -147,7 +147,7 @@
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
-      <AdditionalIncludeDirectories>$(DOTNET-TRACER-REPO-ROOT-PATH);$(CORECLR-PATH)/pal/prebuilt/inc;$(CORECLR-PATH)/inc;$(SHARED-LIB-INCLUDES);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(DOTNET-TRACER-REPO-ROOT-PATH);$(DOTNET-TRACER-REPO-ROOT-PATH)shared\src\datadog-profiling-poc\include;$(DOTNET-TRACER-REPO-ROOT-PATH)shared\src\datadog-profiling-poc\vendor\zstd;$(CORECLR-PATH)/pal/prebuilt/inc;$(CORECLR-PATH)/inc;$(SHARED-LIB-INCLUDES);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>$(ENABLE_MULTIPROCESSOR_COMPILATION)</MultiProcessorCompilation>
       <MultiProcessorCompilation Condition=" '$(ENABLE_MULTIPROCESSOR_COMPILATION)' == '' ">true</MultiProcessorCompilation>
     </ClCompile>
@@ -178,7 +178,7 @@
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
-      <AdditionalIncludeDirectories>$(DOTNET-TRACER-REPO-ROOT-PATH);$(CORECLR-PATH)/pal/prebuilt/inc;$(CORECLR-PATH)/inc;$(SHARED-LIB-INCLUDES);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(DOTNET-TRACER-REPO-ROOT-PATH);$(DOTNET-TRACER-REPO-ROOT-PATH)shared\src\datadog-profiling-poc\include;$(DOTNET-TRACER-REPO-ROOT-PATH)shared\src\datadog-profiling-poc\vendor\zstd;$(CORECLR-PATH)/pal/prebuilt/inc;$(CORECLR-PATH)/inc;$(SHARED-LIB-INCLUDES);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>$(ENABLE_MULTIPROCESSOR_COMPILATION)</MultiProcessorCompilation>
       <MultiProcessorCompilation Condition=" '$(ENABLE_MULTIPROCESSOR_COMPILATION)' == '' ">true</MultiProcessorCompilation>
     </ClCompile>
@@ -211,7 +211,7 @@
       <UndefinePreprocessorDefinitions>
       </UndefinePreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
-      <AdditionalIncludeDirectories>$(DOTNET-TRACER-REPO-ROOT-PATH);$(CORECLR-PATH)/pal/prebuilt/inc;$(CORECLR-PATH)/inc;$(SHARED-LIB-INCLUDES);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(DOTNET-TRACER-REPO-ROOT-PATH);$(DOTNET-TRACER-REPO-ROOT-PATH)shared\src\datadog-profiling-poc\include;$(DOTNET-TRACER-REPO-ROOT-PATH)shared\src\datadog-profiling-poc\vendor\zstd;$(CORECLR-PATH)/pal/prebuilt/inc;$(CORECLR-PATH)/inc;$(SHARED-LIB-INCLUDES);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>$(ENABLE_MULTIPROCESSOR_COMPILATION)</MultiProcessorCompilation>
       <MultiProcessorCompilation Condition=" '$(ENABLE_MULTIPROCESSOR_COMPILATION)' == '' ">true</MultiProcessorCompilation>
     </ClCompile>
@@ -491,6 +491,69 @@
     <ClCompile Include="Timer.Linux.cpp" />
     <ClCompile Include="Timer.Windows.cpp" />
     <ClCompile Include="WallTimeProvider.cpp" />
+  </ItemGroup>
+  <!-- PoC C library replacing libdatadog's profile-upload path (see
+       shared/src/datadog-profiling-poc/README.md). Plain C, not C++ - each
+       file is forced to CompileAsC/stdc11 since this project's C++ settings
+       above (LanguageStandard=stdcpp20, ConformanceMode) don't apply to C.
+       No vcpkg/CMake dependency for either of this library's own
+       dependencies here: zstd.c is the official single-file amalgamation
+       (vendor/zstd, generated from zstd's own build/single_file_libs
+       tooling at the same 1.5.7 pinned on the Linux/CMake side) compiled
+       directly alongside the rest; exporter_win.c replaces libcurl with
+       WinHTTP (winhttp.lib, linked via #pragma comment in that file, no
+       AdditionalDependencies edit needed) - see both files' own comments. -->
+  <ItemGroup>
+    <ClCompile Include="..\..\..\..\shared\src\datadog-profiling-poc\src\internal.c">
+      <CompileAs>CompileAsC</CompileAs>
+      <LanguageStandard>Default</LanguageStandard>
+      <LanguageStandard_C>stdc11</LanguageStandard_C>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\shared\src\datadog-profiling-poc\src\tags.c">
+      <CompileAs>CompileAsC</CompileAs>
+      <LanguageStandard>Default</LanguageStandard>
+      <LanguageStandard_C>stdc11</LanguageStandard_C>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\shared\src\datadog-profiling-poc\src\profile.c">
+      <CompileAs>CompileAsC</CompileAs>
+      <LanguageStandard>Default</LanguageStandard>
+      <LanguageStandard_C>stdc11</LanguageStandard_C>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\shared\src\datadog-profiling-poc\src\pprof_encode.c">
+      <CompileAs>CompileAsC</CompileAs>
+      <LanguageStandard>Default</LanguageStandard>
+      <LanguageStandard_C>stdc11</LanguageStandard_C>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\shared\src\datadog-profiling-poc\src\zstd_compress.c">
+      <CompileAs>CompileAsC</CompileAs>
+      <LanguageStandard>Default</LanguageStandard>
+      <LanguageStandard_C>stdc11</LanguageStandard_C>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\shared\src\datadog-profiling-poc\vendor\zstd\zstd.c">
+      <CompileAs>CompileAsC</CompileAs>
+      <LanguageStandard>Default</LanguageStandard>
+      <LanguageStandard_C>stdc11</LanguageStandard_C>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\shared\src\datadog-profiling-poc\src\encoded_profile.c">
+      <CompileAs>CompileAsC</CompileAs>
+      <LanguageStandard>Default</LanguageStandard>
+      <LanguageStandard_C>stdc11</LanguageStandard_C>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\shared\src\datadog-profiling-poc\src\endpoint.c">
+      <CompileAs>CompileAsC</CompileAs>
+      <LanguageStandard>Default</LanguageStandard>
+      <LanguageStandard_C>stdc11</LanguageStandard_C>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\shared\src\datadog-profiling-poc\src\exporter_win.c">
+      <CompileAs>CompileAsC</CompileAs>
+      <LanguageStandard>Default</LanguageStandard>
+      <LanguageStandard_C>stdc11</LanguageStandard_C>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\shared\src\datadog-profiling-poc\src\json_min.c">
+      <CompileAs>CompileAsC</CompileAs>
+      <LanguageStandard>Default</LanguageStandard>
+      <LanguageStandard_C>stdc11</LanguageStandard_C>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\..\..\shared\src\native-lib\PPDB\PPDB.vcxproj">
