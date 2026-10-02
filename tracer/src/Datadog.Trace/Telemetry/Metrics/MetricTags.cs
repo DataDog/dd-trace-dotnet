@@ -13,6 +13,41 @@ namespace Datadog.Trace.Telemetry.Metrics;
 [SuppressMessage("StyleCop.CSharp.ReadabilityRules", "SA1134:Attributes should not share line", Justification = "It's easier to read")]
 internal static class MetricTags
 {
+    internal enum FlagEvaluationDropReason
+    {
+        [Description("reason:pre_queue_overflow")] PreQueueOverflow,
+        [Description("reason:queue_overflow")] QueueOverflow,
+        [Description("reason:closed")] Closed,
+        [Description("reason:degraded_cap")] DegradedCap,
+        [Description("reason:payload_limit")] PayloadLimit,
+        [Description("reason:serialization_error")] SerializationError,
+    }
+
+    internal enum FlagEvaluationDegradeReason
+    {
+        [Description("reason:cardinality_cap")] CardinalityCap,
+        [Description("reason:payload_limit")] PayloadLimit,
+    }
+
+    // Ordinals correspond to the bit positions in ContextOmissionReason.
+    internal enum FlagEvaluationContextReason
+    {
+        [Description("reason:max_context_fields")] MaxContextFields,
+        [Description("reason:max_key_length")] MaxKeyLength,
+        [Description("reason:max_value_length")] MaxValueLength,
+        [Description("reason:max_list_elements")] MaxListElements,
+        [Description("reason:max_structure_properties")] MaxStructureProperties,
+        [Description("reason:max_snapshot_depth")] MaxSnapshotDepth,
+        [Description("reason:max_visited_nodes")] MaxVisitedNodes,
+        [Description("reason:unsupported_value")] UnsupportedValue,
+        [Description("reason:snapshot_error")] SnapshotError,
+    }
+
+    internal enum FlagEvaluationTargetingReason
+    {
+        [Description("reason:invalid")] Invalid,
+    }
+
     internal enum LogLevel
     {
         [Description("level:debug")] Debug,

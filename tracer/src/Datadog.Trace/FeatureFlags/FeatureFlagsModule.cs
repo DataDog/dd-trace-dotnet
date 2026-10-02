@@ -13,6 +13,7 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.FeatureFlags.Agentless;
 using Datadog.Trace.FeatureFlags.Exposure;
 using Datadog.Trace.FeatureFlags.Exposure.Model;
+using Datadog.Trace.FeatureFlags.FlagEvaluation;
 using Datadog.Trace.FeatureFlags.Rcm;
 using Datadog.Trace.FeatureFlags.Rcm.Model;
 using Datadog.Trace.Logging;
@@ -52,6 +53,7 @@ namespace Datadog.Trace.FeatureFlags
         private readonly bool _spanEnrichmentEnabled;
         private readonly IRcmSubscriptionManager _rcmSubscriptionManager;
         private readonly TaskCompletionSource<bool> _firstConfigReceived = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        private readonly TaskCompletionSource<bool> _disposeCompletion = new(TaskCreationOptions.RunContinuationsAsynchronously);
         private ISubscription? _rcmSubscription;
 
         private Action? _onNewConfigEventHandler;
@@ -65,6 +67,10 @@ namespace Datadog.Trace.FeatureFlags
         private FeatureFlagsEvaluator? _evaluator;
         private IFeatureFlagsDeliverySource? _agentlessSource;
         private ExposureApi? _exposureApi;
+        private FlagEvaluationAgentSender? _evaluationSender;
+        private FlagEvaluationWriter? _evaluationWriter;
+        private IDisposable? _evaluationSettingsSubscription;
+        private IReadOnlyDictionary<string, string> _evaluationContext = new Dictionary<string, string>();
         private string? _deliveryUnavailableReason;
         private bool _activated;
         private bool _disposed;
@@ -102,6 +108,8 @@ namespace Datadog.Trace.FeatureFlags
         /// </summary>
         internal bool HasConfiguration => Volatile.Read(ref _evaluator) is not null;
 
+        internal FlagEvaluationWriter? EvaluationWriter => Volatile.Read(ref _evaluationWriter);
+
         public static FeatureFlagsModule? Create(
             TracerSettings settings,
             IRcmSubscriptionManager rcmSubscriptionManager,
@@ -124,17 +132,22 @@ namespace Datadog.Trace.FeatureFlags
             return module;
         }
 
-        public void Dispose()
+        public void Dispose() => _ = DisposeAsync();
+
+        internal Task DisposeAsync()
         {
             ISubscription? subscription;
             IFeatureFlagsDeliverySource? agentlessSource;
             ExposureApi? exposureApi;
+            FlagEvaluationWriter? writer;
+            FlagEvaluationAgentSender? sender;
+            IDisposable? settingsSubscription;
 
             lock (_stateLock)
             {
                 if (_disposed)
                 {
-                    return;
+                    return _disposeCompletion.Task;
                 }
 
                 _disposed = true;
@@ -142,22 +155,25 @@ namespace Datadog.Trace.FeatureFlags
                 subscription = _rcmSubscription;
                 agentlessSource = _agentlessSource;
                 exposureApi = _exposureApi;
+                writer = _evaluationWriter;
+                sender = _evaluationSender;
+                settingsSubscription = _evaluationSettingsSubscription;
 
                 _rcmSubscription = null;
                 _agentlessSource = null;
                 Volatile.Write(ref _exposureApi, null);
+                Volatile.Write(ref _evaluationWriter, null);
+                _evaluationSender = null;
+                _evaluationSettingsSubscription = null;
             }
 
-            // Released the lock first: disposal is not state mutation, and holding it here would
-            // block an activation or an exposure for the duration.
-            if (subscription is not null)
-            {
-                _rcmSubscriptionManager.Unsubscribe(subscription);
-            }
-
-            agentlessSource?.Dispose();
-            exposureApi?.Dispose();
+            // Close admission synchronously, then perform cleanup and bounded waiting outside the lock.
+            var close = writer?.CloseAsync(TimeSpan.FromSeconds(5)) ?? Task.CompletedTask;
+            _ = FinishDisposalAsync(close, sender, settingsSubscription, subscription, agentlessSource, exposureApi);
+            return _disposeCompletion.Task;
         }
+
+        internal Task FlushAsync() => EvaluationWriter?.FlushAsync() ?? Task.CompletedTask;
 
         /// <summary>
         /// Signals that application code initialized the provider. Idempotent.
@@ -187,7 +203,8 @@ namespace Datadog.Trace.FeatureFlags
                     return;
                 }
 
-                _activated = true;
+                StartEvaluationWriter();
+                Volatile.Write(ref _activated, true);
 
                 switch (_settings.Source)
                 {
@@ -321,7 +338,15 @@ namespace Datadog.Trace.FeatureFlags
             if (evaluator is null)
             {
                 Log.Debug("FeatureFlagsModule::Evaluate -> Evaluator is null (no config received)");
-                return new Evaluation(flagKey, defaultValue, EvaluationReason.Error, null, "PROVIDER_NOT_READY");
+                return new Evaluation(
+                    flagKey,
+                    defaultValue,
+                    EvaluationReason.Error,
+                    error: "PROVIDER_NOT_READY",
+                    metadata: new Dictionary<string, string>
+                    {
+                        [FeatureFlagMetadataKeys.ObserveFullEvaluationData] = "false"
+                    });
             }
 
             Log.Debug("FeatureFlagsModule::Evaluate -> Returning Evaluation");
@@ -345,6 +370,98 @@ namespace Datadog.Trace.FeatureFlags
             NotifyNewConfiguration("ApplyConfiguration");
 
             return true;
+        }
+
+        private void StartEvaluationWriter()
+        {
+            if (!_settings.EvaluationEventsEnabled)
+            {
+                return;
+            }
+
+            FlagEvaluationAgentSender? sender = null;
+            FlagEvaluationWriter? writer = null;
+            try
+            {
+                sender = new FlagEvaluationAgentSender(_settingsManager.InitialExporterSettings);
+                UpdateEvaluationContext(_settingsManager.InitialMutableSettings);
+                writer = new FlagEvaluationWriter(sender.SendCompressedAsync, () => Volatile.Read(ref _evaluationContext));
+                var currentSender = sender;
+                _evaluationSettingsSubscription = _settingsManager.SubscribeToChanges(changes =>
+                {
+                    if (changes.UpdatedExporter is { } exporter)
+                    {
+                        currentSender.UpdateExporterSettings(exporter);
+                    }
+
+                    if (changes.UpdatedMutable is { } mutable)
+                    {
+                        UpdateEvaluationContext(mutable);
+                    }
+                });
+                _evaluationSender = sender;
+                Volatile.Write(ref _evaluationWriter, writer);
+            }
+            catch (Exception)
+            {
+                // A telemetry setup failure must not prevent fetching flags or evaluating them.
+                _ = writer?.CloseAsync(TimeSpan.Zero);
+                sender?.Dispose();
+                Log.Debug("FeatureFlags flagevaluation writer could not be started.");
+            }
+        }
+
+        private void UpdateEvaluationContext(MutableSettings settings)
+        {
+            IReadOnlyDictionary<string, string> context = new Dictionary<string, string>
+            {
+                ["service"] = settings.DefaultServiceName,
+                ["env"] = settings.Environment ?? "unknown",
+                ["version"] = settings.ServiceVersion ?? "unknown",
+            };
+            Volatile.Write(ref _evaluationContext, context);
+        }
+
+        private async Task FinishDisposalAsync(
+            Task close,
+            FlagEvaluationAgentSender? sender,
+            IDisposable? settingsSubscription,
+            ISubscription? subscription,
+            IFeatureFlagsDeliverySource? agentlessSource,
+            ExposureApi? exposureApi)
+        {
+            try
+            {
+                settingsSubscription?.Dispose();
+                if (subscription is not null)
+                {
+                    _rcmSubscriptionManager.Unsubscribe(subscription);
+                }
+
+                agentlessSource?.Dispose();
+                exposureApi?.Dispose();
+            }
+            catch (Exception)
+            {
+                Log.Debug("FeatureFlags cleanup failed; continuing bounded flagevaluation shutdown.");
+            }
+            finally
+            {
+                try
+                {
+                    await close.ConfigureAwait(false);
+                }
+                catch (Exception)
+                {
+                    Log.Debug("FeatureFlags flagevaluation shutdown failed.");
+                }
+                finally
+                {
+                    // Dispose stops new sends but preserves any request still live after the deadline.
+                    sender?.Dispose();
+                    _disposeCompletion.TrySetResult(true);
+                }
+            }
         }
 
         /// <summary>

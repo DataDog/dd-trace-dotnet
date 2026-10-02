@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <!-- Match the unsigned provider; inherit the repository's test framework matrix. -->
+    <SignAssembly>false</SignAssembly>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Datadog.FeatureFlags.OpenFeature\Datadog.FeatureFlags.OpenFeature.csproj" />
+  </ItemGroup>
+</Project>

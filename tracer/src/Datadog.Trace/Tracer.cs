@@ -267,11 +267,16 @@ namespace Datadog.Trace
         }
 
         /// <summary>
-        /// Forces the tracer to immediately flush pending traces and send them to the agent.
+        /// Forces the tracer to immediately flush pending traces and feature-flag evaluation events to the agent.
         /// To be called when the appdomain or the process is about to be killed in a non-graceful way.
         /// </summary>
         /// <returns>Task used to track the async flush operation</returns>
-        public Task FlushAsync() => TracerManager.AgentWriter.FlushTracesAsync();
+        public Task FlushAsync()
+        {
+            var manager = TracerManager;
+            var traces = manager.AgentWriter.FlushTracesAsync();
+            return manager.FeatureFlags is { } flags ? Task.WhenAll(traces, flags.FlushAsync()) : traces;
+        }
 
         /// <summary>
         /// Writes the specified <see cref="Span"/> collection to the agent writer.

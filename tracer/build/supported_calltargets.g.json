@@ -14118,6 +14118,60 @@
     "IntegrationName": "OpenFeature",
     "AssemblyName": "Datadog.FeatureFlags.OpenFeature",
     "TargetTypeName": "Datadog.FeatureFlags.OpenFeature.FeatureFlagsSdk",
+    "TargetMethodName": "CanEnqueueEVP",
+    "TargetReturnType": "System.Boolean",
+    "TargetParameterTypes": [],
+    "MinimumVersion": {
+      "Item1": 2,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 2,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.OpenFeature.OpenFeatureSdkCanEnqueueEVPIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "OpenFeature",
+    "AssemblyName": "Datadog.FeatureFlags.OpenFeature",
+    "TargetTypeName": "Datadog.FeatureFlags.OpenFeature.FeatureFlagsSdk",
+    "TargetMethodName": "EnqueueEVP",
+    "TargetReturnType": "System.Void",
+    "TargetParameterTypes": [
+      "System.String",
+      "System.String",
+      "System.String",
+      "System.String",
+      "System.Int64",
+      "System.Boolean",
+      "System.String",
+      "System.Collections.Generic.IReadOnlyDictionary`2[System.String,System.Object]",
+      "System.Int32"
+    ],
+    "MinimumVersion": {
+      "Item1": 2,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 2,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.OpenFeature.OpenFeatureSdkEnqueueEVPIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "OpenFeature",
+    "AssemblyName": "Datadog.FeatureFlags.OpenFeature",
+    "TargetTypeName": "Datadog.FeatureFlags.OpenFeature.FeatureFlagsSdk",
     "TargetMethodName": "Evaluate",
     "TargetReturnType": "Datadog.Trace.FeatureFlags.IEvaluation",
     "TargetParameterTypes": [
@@ -14228,6 +14282,28 @@
       "Item3": 65535
     },
     "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.OpenFeature.OpenFeatureSdkIsSpanEnrichmentEnabledIntegration",
+    "IntegrationKind": 0,
+    "IsAdoNetIntegration": false,
+    "InstrumentationCategory": 1
+  },
+  {
+    "IntegrationName": "OpenFeature",
+    "AssemblyName": "Datadog.FeatureFlags.OpenFeature",
+    "TargetTypeName": "Datadog.FeatureFlags.OpenFeature.FeatureFlagsSdk",
+    "TargetMethodName": "RecordEVPHookError",
+    "TargetReturnType": "System.Void",
+    "TargetParameterTypes": [],
+    "MinimumVersion": {
+      "Item1": 2,
+      "Item2": 0,
+      "Item3": 0
+    },
+    "MaximumVersion": {
+      "Item1": 2,
+      "Item2": 65535,
+      "Item3": 65535
+    },
+    "InstrumentationTypeName": "Datadog.Trace.ClrProfiler.AutoInstrumentation.ManualInstrumentation.OpenFeature.OpenFeatureSdkRecordEVPHookErrorIntegration",
     "IntegrationKind": 0,
     "IsAdoNetIntegration": false,
     "InstrumentationCategory": 1

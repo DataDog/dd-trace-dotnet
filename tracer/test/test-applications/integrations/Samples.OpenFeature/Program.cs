@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -19,13 +20,31 @@ class Program
         int configUpdates = 0;
         Evaluator.RegisterOnNewConfigEventHandler(() => Interlocked.Increment(ref configUpdates));
 
+        var initialization = Stopwatch.StartNew();
         if (!await Evaluator.Init())
         {
             Console.WriteLine($"<NOT INSTRUMENTED>");
+            if (args.Contains("evp-uninstrumented"))
+            {
+                await EvaluationEventsSample.RunWithoutTracerAsync();
+            }
+
             return;
         }
 
         Console.WriteLine($"<INSTRUMENTED>");
+
+        if (args.Contains("evp-perf"))
+        {
+            await EvaluationPerformanceSample.RunAsync(initialization.Elapsed.TotalMilliseconds);
+            return;
+        }
+
+        if (args.Contains("evp"))
+        {
+            await EvaluationEventsSample.RunAsync();
+            return;
+        }
 
         // Init() has awaited InitializeAsync, so a known flag resolves now. If the CallTarget stops
         // substituting the real task, this prints NOT_READY.
