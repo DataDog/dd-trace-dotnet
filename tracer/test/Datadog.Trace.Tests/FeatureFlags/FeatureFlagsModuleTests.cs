@@ -9,6 +9,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Diagnostics;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
@@ -48,6 +49,7 @@ public class FeatureFlagsModuleTests
             module.Should().NotBeNull();
             source.Started.Should().Be(0);
             rcmManager.HasAnySubscription.Should().BeFalse();
+            discovery.Callbacks.Should().BeEmpty("event discovery subscriptions start with the first exposure");
             module!.GetExposureApi().Should().NotBeNull();
             discovery.Callbacks.Should().ContainSingle();
 
@@ -58,6 +60,40 @@ public class FeatureFlagsModuleTests
 
         discovery.Callbacks.Should().BeEmpty();
         source.Disposed.Should().Be(1);
+    }
+
+    [Fact]
+    public void DefaultModuleDoesNotCreateExposureTransportUntilFirstUse()
+    {
+        var settings = new TracerSettings(new NameValueConfigurationSource(new NameValueCollection()));
+        using var module = FeatureFlagsModule.Create(settings, new MockRcmSubscriptionManager());
+        var transportField = typeof(FeatureFlagsModule).GetField("_evpTransport", BindingFlags.Instance | BindingFlags.NonPublic)!;
+
+        settings.FeatureFlags.Enabled.Should().BeTrue();
+        module.Should().NotBeNull();
+        transportField.GetValue(module).Should().BeNull("applications that never use exposures need no HTTP client or settings subscription");
+
+        var exposureApi = module!.GetExposureApi();
+        exposureApi.Should().NotBeNull();
+        transportField.GetValue(module).Should().NotBeNull();
+        module.GetExposureApi().Should().BeSameAs(exposureApi);
+
+        module.Dispose();
+        transportField.GetValue(module).Should().BeNull();
+        module.GetExposureApi().Should().BeNull();
+    }
+
+    [Fact]
+    public void DisposingUnusedModuleDoesNotCreateExposureTransport()
+    {
+        var settings = new TracerSettings(new NameValueConfigurationSource(new NameValueCollection()));
+        using var module = FeatureFlagsModule.Create(settings, new MockRcmSubscriptionManager());
+
+        module!.Dispose();
+
+        module.GetExposureApi().Should().BeNull();
+        typeof(FeatureFlagsModule).GetField("_evpTransport", BindingFlags.Instance | BindingFlags.NonPublic)!
+                                  .GetValue(module).Should().BeNull();
     }
 
     [Fact]

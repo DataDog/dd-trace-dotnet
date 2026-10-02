@@ -27,8 +27,6 @@ namespace Datadog.Trace.FeatureFlags
     {
         internal static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(FeatureFlagsModule));
 
-        private readonly FeatureFlagsEvpTransport _evpTransport;
-
         // Activation, disposal and exposure-API creation all mutate the same state from different
         // threads, so they share one lock rather than individual interlocked flags: a flag set
         // before its accompanying setup completes lets a concurrent caller observe a half-activated
@@ -49,6 +47,7 @@ namespace Datadog.Trace.FeatureFlags
         // ExposureApi reads only settings.Manager but takes TracerSettings. Held so the API can be
         // built on the first exposure instead of at startup.
         private readonly TracerSettings _tracerSettings;
+        private readonly IDiscoveryService _discoveryService;
 
         // A factory rather than the static Create, so a test can supply a source that records what the
         // module does with it: whether it is started before activation, and whether it is disposed.
@@ -69,6 +68,7 @@ namespace Datadog.Trace.FeatureFlags
         private FeatureFlagsEvaluator? _evaluator;
         private IFeatureFlagsDeliverySource? _agentlessSource;
         private ExposureApi? _exposureApi;
+        private FeatureFlagsEvpTransport? _evpTransport;
         private string? _deliveryUnavailableReason;
         private bool _activated;
         private bool _disposed;
@@ -88,7 +88,7 @@ namespace Datadog.Trace.FeatureFlags
             _agentlessSourceFactory = agentlessSourceFactory
                                    ?? (static module => AgentlessConfigurationSource.Create(module._settings, module._settingsManager, module.ApplyConfiguration));
             _rcmSubscriptionManager = rcmSubscriptionManager;
-            _evpTransport = new FeatureFlagsEvpTransport(settings, discoveryService ?? NullDiscoveryService.Instance);
+            _discoveryService = discoveryService ?? NullDiscoveryService.Instance;
 
             Log.Debug<FeatureFlagsSource>("FeatureFlagsModule ENABLED with source {Source}", _settings.Source);
         }
@@ -136,6 +136,7 @@ namespace Datadog.Trace.FeatureFlags
             ISubscription? subscription;
             IFeatureFlagsDeliverySource? agentlessSource;
             ExposureApi? exposureApi;
+            FeatureFlagsEvpTransport? evpTransport;
 
             lock (_stateLock)
             {
@@ -149,10 +150,12 @@ namespace Datadog.Trace.FeatureFlags
                 subscription = _rcmSubscription;
                 agentlessSource = _agentlessSource;
                 exposureApi = _exposureApi;
+                evpTransport = _evpTransport;
 
                 _rcmSubscription = null;
                 _agentlessSource = null;
                 Volatile.Write(ref _exposureApi, null);
+                _evpTransport = null;
             }
 
             // Released the lock first: disposal is not state mutation, and holding it here would
@@ -164,7 +167,7 @@ namespace Datadog.Trace.FeatureFlags
 
             agentlessSource?.Dispose();
             exposureApi?.Dispose();
-            _evpTransport.Dispose();
+            evpTransport?.Dispose();
         }
 
         /// <summary>
@@ -509,6 +512,8 @@ namespace Datadog.Trace.FeatureFlags
                 exposureApi = _exposureApi;
                 if (exposureApi is null)
                 {
+                    // Keep the HTTP client and its settings subscription lazy with the first exposure.
+                    _evpTransport = new FeatureFlagsEvpTransport(_tracerSettings, _discoveryService);
                     exposureApi = new ExposureApi(_tracerSettings, _evpTransport);
                     Volatile.Write(ref _exposureApi, exposureApi);
                 }
