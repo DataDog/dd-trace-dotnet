@@ -15,6 +15,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
+using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.FeatureFlags.FlagEvaluation;
 using Datadog.Trace.HttpOverStreams;
@@ -185,8 +186,10 @@ public class FlagEvaluationAgentSenderTests(ITestOutputHelper output)
         received.Should().ContainSingle("exporter changes must not resurrect a disposed sender");
     }
 
-    [Fact]
-    public async Task SlowTcpAgentTimesOutWithoutReplayingBatch()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task SlowTcpAgentTimesOutWithoutReplayingBatch(bool useLegacyTransport)
     {
         using var release = new ManualResetEventSlim();
         using var agent = MockTracerAgent.Create(output);
@@ -196,7 +199,12 @@ public class FlagEvaluationAgentSenderTests(ITestOutputHelper output)
             Interlocked.Increment(ref requests);
             release.Wait(TimeSpan.FromSeconds(20));
         };
-        using var sender = new FlagEvaluationAgentSender(CreateSettings($"http://127.0.0.1:{agent.Port}").Manager.InitialExporterSettings);
+        var agentUri = new Uri($"http://127.0.0.1:{agent.Port}");
+        // Modern runtimes honor HttpWebRequest.Timeout, unlike .NET Framework's async path.
+        // Leave that property unset to verify the sender independently bounds legacy requests.
+        using var sender = useLegacyTransport
+                               ? new FlagEvaluationAgentSender(new ApiWebRequestFactory(agentUri, FlagEvaluationAgentHeaderHelper.Instance.DefaultHeaders))
+                               : new FlagEvaluationAgentSender(CreateSettings(agentUri.ToString()).Manager.InitialExporterSettings);
         var elapsed = Stopwatch.StartNew();
         var send = sender.SendCompressedAsync(Compress("{}"));
         try

@@ -9,6 +9,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
+using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 
@@ -17,6 +18,7 @@ namespace Datadog.Trace.FeatureFlags.FlagEvaluation;
 internal sealed class FlagEvaluationAgentSender : IDisposable
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<FlagEvaluationAgentSender>();
+    private static readonly TimeSpan TcpTimeout = TimeSpan.FromSeconds(5);
     private readonly object _settingsLock = new();
     private IApiRequestFactory? _factory;
 
@@ -53,7 +55,9 @@ internal sealed class FlagEvaluationAgentSender : IDisposable
         try
         {
             var request = factory.Create(factory.GetEndpoint("evp_proxy/v2/api/v2/flagevaluation"));
-            using var response = await request.PostAsync(payload, "application/json", "gzip").ConfigureAwait(false);
+            using var response = request is ApiWebRequest webRequest
+                                     ? await webRequest.PostAsync(payload, "application/json", "gzip", TcpTimeout).ConfigureAwait(false)
+                                     : await request.PostAsync(payload, "application/json", "gzip").ConfigureAwait(false);
             if (response.StatusCode is < 200 or >= 300)
             {
                 Log.Debug<int>("FeatureFlags flagevaluation Agent request failed with HTTP status {StatusCode}; dropping this batch without retry.", response.StatusCode);
@@ -79,6 +83,6 @@ internal sealed class FlagEvaluationAgentSender : IDisposable
     private static IApiRequestFactory CreateFactory(ExporterSettings settings) => AgentTransportStrategy.Get(
         settings,
         productName: "FeatureFlags flagevaluation",
-        tcpTimeout: TimeSpan.FromSeconds(5),
+        tcpTimeout: TcpTimeout,
         httpHeaderHelper: FlagEvaluationAgentHeaderHelper.Instance);
 }

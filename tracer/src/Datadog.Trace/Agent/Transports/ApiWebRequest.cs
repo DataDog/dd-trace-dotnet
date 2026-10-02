@@ -8,6 +8,7 @@ using System.IO;
 using System.IO.Compression;
 using System.Net;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
@@ -58,6 +59,15 @@ namespace Datadog.Trace.Agent.Transports
             }
 
             return await FinishAndGetResponse().ConfigureAwait(false);
+        }
+
+        public async Task<IApiResponse> PostAsync(ArraySegment<byte> bytes, string contentType, string contentEncoding, TimeSpan timeout)
+        {
+            // HttpWebRequest.Timeout does not bound asynchronous requests on .NET Framework.
+            // Abort the request itself instead of abandoning an in-flight send and its payload.
+            using var cancellation = new CancellationTokenSource(timeout);
+            using var registration = cancellation.Token.Register(static state => ((HttpWebRequest)state).Abort(), _request);
+            return await PostAsync(bytes, contentType, contentEncoding).ConfigureAwait(false);
         }
 
         public Task<IApiResponse> PostAsJsonAsync<T>(T payload, MultipartCompression compression)

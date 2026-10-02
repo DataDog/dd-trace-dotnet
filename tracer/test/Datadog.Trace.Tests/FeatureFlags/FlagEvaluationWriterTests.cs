@@ -495,16 +495,22 @@ public class FlagEvaluationWriterTests
             queueCap: 64,
             flushInterval: TimeSpan.FromMilliseconds(20));
         var observation = Observation();
-        var producers = Enumerable.Range(0, 4).Select(_ => Task.Run(() =>
-        {
-            while (!stop.IsCancellationRequested)
+        // These busy loops must not occupy the pool needed by the test's continuations.
+        // Keep intake continuous while testing the writer's flush and close behavior.
+        var producers = Enumerable.Range(0, 4).Select(_ => Task.Factory.StartNew(
+            () =>
             {
-                if (writer.TryEnqueue(observation))
+                while (!stop.IsCancellationRequested)
                 {
-                    Interlocked.Increment(ref accepted);
+                    if (writer.TryEnqueue(observation))
+                    {
+                        Interlocked.Increment(ref accepted);
+                    }
                 }
-            }
-        })).ToArray();
+            },
+            CancellationToken.None,
+            TaskCreationOptions.LongRunning,
+            TaskScheduler.Default)).ToArray();
         try
         {
             await Completes(sent.Task);
