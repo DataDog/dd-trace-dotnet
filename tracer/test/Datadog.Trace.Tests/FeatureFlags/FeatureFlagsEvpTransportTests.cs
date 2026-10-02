@@ -9,9 +9,13 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.IO;
+using System.IO.Pipes;
 using System.Linq;
 using System.Net;
+using System.Net.Http;
 using System.Net.Sockets;
+using System.Reflection;
+using System.Text;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.DiscoveryService;
@@ -610,7 +614,7 @@ public class FeatureFlagsEvpTransportTests
         var exporter = CreateSettings((ConfigurationKeys.AgentUri, agentUrl)).Manager.InitialExporterSettings;
         var agentless = FeatureFlagsEvpTransport.CreateLocalRequestFactory(exporter);
         var historical = FeatureFlagsEvpTransport.CreateLocalRequestFactory(exporter, allowAutoRedirect: true);
-#if NETCOREAPP
+#if NETCOREAPP3_1_OR_GREATER
         agentless.Should().BeAssignableTo<HttpClientRequestFactory>().Which.AllowAutoRedirect.Should().BeFalse();
         historical.Should().BeAssignableTo<HttpClientRequestFactory>().Which.AllowAutoRedirect.Should().BeTrue();
 #else
@@ -815,6 +819,118 @@ public class FeatureFlagsEvpTransportTests
         direct.RequestsSent.Should().BeEmpty();
     }
 
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task AcceptedNamedPipeEofDoesNotReplayAndChangesFutureRouting(bool hasDirectCredentials)
+    {
+        var pipeName = "evp" + Guid.NewGuid().ToString("N").Substring(0, 8);
+        var settings = CreateSettings((ConfigurationKeys.TracesPipeName, pipeName));
+        var local = FeatureFlagsEvpTransport.CreateLocalRequestFactory(settings.Manager.InitialExporterSettings);
+        var direct = CreateFactory("https://event-platform-intake.mock-intake.invalid/");
+        var now = new DateTimeOffset(2026, 10, 2, 0, 0, 0, TimeSpan.Zero);
+        using var transport = new FeatureFlagsEvpTransport(
+            FeatureFlagsSource.Agentless,
+            local,
+            hasDirectCredentials ? direct : null,
+            new DiscoveryServiceMock(),
+            initialLocalProxyEndpoint: FeatureFlagsEvpTransport.EventPlatformProxyV4,
+            routeRecoveryCooldown: TimeSpan.FromMinutes(1),
+            utcNow: () => now);
+        using var server = new NamedPipeServerStream(pipeName, PipeDirection.InOut, 1, PipeTransmissionMode.Byte, PipeOptions.Asynchronous);
+        var received = ReadPipeRequest(server);
+        var firstSend = transport.SendAsync(new { Batch = 1 }, FeatureFlagsEvpTransport.ExposureIntakePath, SerializerSettings);
+        (await Task.WhenAny(received, Task.Delay(TimeSpan.FromSeconds(5)))).Should().BeSameAs(received);
+        var request = await received;
+        request.PathAndQuery.Should().Be("/evp_proxy/v4/api/v2/exposures");
+        request.Headers.Contains("DD-API-KEY").Should().BeFalse();
+        server.Disconnect();
+
+        await firstSend;
+        direct.RequestsSent.Should().BeEmpty("an accepted batch must not be replayed after EOF");
+
+        var nextConnection = server.WaitForConnectionAsync();
+        await transport.SendAsync(new { Batch = 2 }, FeatureFlagsEvpTransport.ExposureIntakePath, SerializerSettings);
+        nextConnection.IsCompleted.Should().BeFalse("future batches use direct or wait for the unavailable cooldown");
+        direct.RequestsSent.Should().HaveCount(hasDirectCredentials ? 1 : 0);
+
+        if (!hasDirectCredentials)
+        {
+            now = now.AddMinutes(1);
+            var recovery = transport.SendAsync(new { Batch = 3 }, FeatureFlagsEvpTransport.ExposureIntakePath, SerializerSettings);
+            (await Task.WhenAny(nextConnection, Task.Delay(TimeSpan.FromSeconds(5)))).Should().BeSameAs(nextConnection);
+            await nextConnection;
+            var recoveredRequest = await MockHttpParser.ReadRequest(server);
+            recoveredRequest.ReadStreamBody().Should().NotBeEmpty();
+            var response = Encoding.ASCII.GetBytes("HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n");
+            await server.WriteAsync(response, 0, response.Length);
+            await recovery;
+            direct.RequestsSent.Should().BeEmpty();
+        }
+        else
+        {
+            server.Dispose();
+            await Record.ExceptionAsync(() => nextConnection);
+        }
+    }
+
+    [Theory]
+    [InlineData(404)]
+    [InlineData(405)]
+    [InlineData(0)]
+    public async Task DisposingTransportPreventsFallbackAfterLateLocalCompletion(int statusCode)
+    {
+        var started = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var release = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var local = CreateFactory("http://agent:8126/", uri => new DelayedFailureApiRequest(uri, statusCode, started, release));
+        var direct = CreateFactory("https://event-platform-intake.mock-intake.invalid/");
+        using var transport = CreateTransport(local, direct, initialLocalProxyEndpoint: FeatureFlagsEvpTransport.EventPlatformProxyV4);
+        var send = transport.SendAsync(new object(), FeatureFlagsEvpTransport.ExposureIntakePath, SerializerSettings);
+        await started.Task;
+
+        transport.Dispose();
+        release.TrySetResult(true);
+        await send;
+
+        local.RequestsSent.Should().ContainSingle();
+        direct.RequestsSent.Should().BeEmpty("a late response or pre-send failure must not start new egress after disposal");
+    }
+
+    [Fact]
+    public void ProductionDirectFactoryAttachesHeadersToItsRequest()
+    {
+        var settings = CreateSettings(
+            (ConfigurationKeys.ApiKey, "test-api-key"),
+            (ConfigurationKeys.Site, "mock-intake.invalid"));
+        var factory = FeatureFlagsEvpTransport.CreateDirectRequestFactory(settings.FeatureFlags)!;
+        var endpoint = factory.GetEndpoint(FeatureFlagsEvpTransport.ExposureIntakePath);
+        var request = factory.Create(endpoint);
+
+        // Inspect the real request/client, not GetDirectHeaders: omitting factory wiring must fail.
+        // No TLS bypass or outbound request is needed for this construction regression.
+#if NETCOREAPP3_1_OR_GREATER
+        using var client = (HttpClient)typeof(HttpClientRequest).GetField("_client", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(request)!;
+        var headers = client.DefaultRequestHeaders.ToDictionary(header => header.Key, header => header.Value.Single(), StringComparer.OrdinalIgnoreCase);
+#else
+        var webRequest = (HttpWebRequest)typeof(ApiWebRequest).GetField("_request", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(request)!;
+        var headers = webRequest.Headers.AllKeys.ToDictionary(name => name!, name => webRequest.Headers[name]!, StringComparer.OrdinalIgnoreCase);
+#endif
+        endpoint.Should().Be(new Uri("https://event-platform-intake.mock-intake.invalid/api/v2/exposures"));
+        headers.Should().Contain("DD-API-KEY", "test-api-key");
+        headers.Should().Contain("DD-EVP-ORIGIN", "dd-trace-dotnet");
+        headers.Should().Contain("DD-EVP-ORIGIN-VERSION", TracerConstants.ThreePartVersion);
+        headers.Should().Contain("x-datadog-tracing-enabled", "false");
+        headers.Should().NotContainKey("X-Datadog-EVP-Subdomain");
+    }
+
+    private static async Task<MockHttpRequest> ReadPipeRequest(NamedPipeServerStream server)
+    {
+        await server.WaitForConnectionAsync();
+        var request = await MockHttpParser.ReadRequest(server);
+        request.ReadStreamBody().Should().NotBeEmpty("the relay has accepted the full serialized batch before disconnecting");
+        return request;
+    }
+
     private static FeatureFlagsEvpTransport CreateTransport(
         TestRequestFactory local,
         TestRequestFactory? direct,
@@ -855,6 +971,27 @@ public class FeatureFlagsEvpTransportTests
     {
         public override Task<IApiResponse> PostAsJsonAsync<T>(T payload, MultipartCompression compression, JsonSerializerSettings settings)
             => Task.FromException<IApiResponse>(exception);
+    }
+
+    private sealed class DelayedFailureApiRequest(
+        Uri endpoint,
+        int statusCode,
+        TaskCompletionSource<bool> started,
+        TaskCompletionSource<bool> release) : TestApiRequest(endpoint, statusCode)
+    {
+        private readonly bool _failBeforeSend = statusCode == 0;
+
+        public override async Task<IApiResponse> PostAsJsonAsync<T>(T payload, MultipartCompression compression, JsonSerializerSettings settings)
+        {
+            started.TrySetResult(true);
+            await release.Task.ConfigureAwait(false);
+            if (_failBeforeSend)
+            {
+                throw new SocketException((int)SocketError.ConnectionRefused);
+            }
+
+            return await base.PostAsJsonAsync(payload, compression, settings).ConfigureAwait(false);
+        }
     }
 
     private sealed class BlockingApiRequest(

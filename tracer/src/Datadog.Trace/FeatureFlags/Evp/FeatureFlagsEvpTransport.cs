@@ -558,7 +558,9 @@ internal sealed class FeatureFlagsEvpTransport : IDisposable
     private async Task SendDirectAsync(string intakePath, Func<IApiRequest, Task<IApiResponse>> sendAsync)
     {
         var directFactory = _directRequestFactory;
-        if (directFactory is null)
+        // The local send can outlive the bounded shutdown wait. Its continuation must not
+        // start a new fallback request after the transport has been disposed.
+        if (Volatile.Read(ref _disposed) != 0 || directFactory is null)
         {
             return;
         }
