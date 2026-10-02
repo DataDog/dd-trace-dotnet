@@ -104,7 +104,7 @@ namespace Datadog.Trace.Configuration
             var result = sortedConfigs[0].LibConfig;
             for (int i = 1; i < sortedConfigs.Count; i++)
             {
-                result = MergeLibConfigs(result, sortedConfigs[i].LibConfig);
+                result = ApmTracingConfig.MergeLibConfigs(result, sortedConfigs[i].LibConfig);
 
                 // Early exit if all LibConfig properties are populated
                 if (IsLibConfigComplete(result))
@@ -137,27 +137,6 @@ namespace Datadog.Trace.Configuration
                 DynamicInstrumentationEnabled: not null,
                 ExceptionReplayEnabled: not null,
                 CodeOriginEnabled: not null
-            };
-        }
-
-        /// <summary>
-        /// Merges LibConfig objects, with higher priority config taking precedence
-        /// </summary>
-        private static LibConfig MergeLibConfigs(LibConfig higher, LibConfig lower)
-        {
-            return new LibConfig
-            {
-                TracingEnabled = higher.TracingEnabled ?? lower.TracingEnabled,
-                LogInjectionEnabled = higher.LogInjectionEnabled ?? lower.LogInjectionEnabled,
-                TracingSamplingRate = higher.TracingSamplingRate ?? lower.TracingSamplingRate,
-                TracingSamplingRules = higher.TracingSamplingRules ?? lower.TracingSamplingRules,
-                TracingHeaderTags = higher.TracingHeaderTags ?? lower.TracingHeaderTags,
-                TracingTags = higher.TracingTags ?? lower.TracingTags,
-                DebugEnabled = higher.DebugEnabled ?? lower.DebugEnabled,
-                RuntimeMetricsEnabled = higher.RuntimeMetricsEnabled ?? lower.RuntimeMetricsEnabled,
-                ServiceMapping = higher.ServiceMapping ?? lower.ServiceMapping,
-                DataStreamsEnabled = higher.DataStreamsEnabled ?? lower.DataStreamsEnabled,
-                SpanSamplingRules = higher.SpanSamplingRules ?? lower.SpanSamplingRules,
             };
         }
 

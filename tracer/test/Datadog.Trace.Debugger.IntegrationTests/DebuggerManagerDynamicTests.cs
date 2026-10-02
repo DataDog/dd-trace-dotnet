@@ -32,7 +32,8 @@ public class DebuggerManagerDynamicTests : TestHelper
     private const string LogFileNamePrefix = "dotnet-tracer-managed-";
 
     // Log messages to verify dynamic state changes
-    private const string DynamicInstrumentationEnabledLogEntry = "Initializing Dynamic Instrumentation";
+    // The constructor logs "Initializing Dynamic Instrumentation" even when DI never starts, so wait for the completion entry.
+    private const string DynamicInstrumentationInitializedLogEntry = "Dynamic Instrumentation initialization completed successfully";
     private const string ExceptionReplayEnabledLogEntry = "Initializing Exception Replay";
     private const string CodeOriginForSpansEnabledLogEntry = "Initializing Code Origin for Spans";
     private const string ApplyingDynamicDebuggerConfigLogEntry = "Applying new dynamic debugger configuration";
@@ -69,7 +70,7 @@ public class DebuggerManagerDynamicTests : TestHelper
                 memoryAssertions.ObjectsExist<SpanCodeOrigin.SpanCodeOrigin>();
             },
             remoteConfig: new { dynamic_instrumentation_enabled = true },
-            DynamicInstrumentationEnabledLogEntry,
+            [DynamicInstrumentationInitializedLogEntry],
             finalMemoryAssertions: memoryAssertions =>
             {
                 memoryAssertions.NoObjectsExist<Symbols.SymbolsUploader>();
@@ -107,7 +108,7 @@ public class DebuggerManagerDynamicTests : TestHelper
                 memoryAssertions.ObjectsExist<SpanCodeOrigin.SpanCodeOrigin>();
             },
             remoteConfig: new { exception_replay_enabled = true },
-            ExceptionReplayEnabledLogEntry);
+            [ExceptionReplayEnabledLogEntry]);
     }
 
     [SkippableFact]
@@ -139,7 +140,7 @@ public class DebuggerManagerDynamicTests : TestHelper
                 exception_replay_enabled = true,
                 code_origin_enabled = true
             },
-            ExceptionReplayEnabledLogEntry,
+            [ExceptionReplayEnabledLogEntry, DynamicInstrumentationInitializedLogEntry],
             finalMemoryAssertions: memoryAssertions =>
             {
                 // After remote config, all objects should be created
@@ -174,7 +175,7 @@ public class DebuggerManagerDynamicTests : TestHelper
                 memoryAssertions.NoObjectsExist<Symbols.SymbolsUploader>();
             },
             remoteConfig: new { dynamic_instrumentation_enabled = false },
-            $"Dynamic Instrumentation {DisabledByRemoteConfiguration}",
+            [$"Dynamic Instrumentation {DisabledByRemoteConfiguration}"],
             finalMemoryAssertions: memoryAssertions =>
             {
                 memoryAssertions.NoObjectsExist<Symbols.SymbolsUploader>();
@@ -200,7 +201,7 @@ public class DebuggerManagerDynamicTests : TestHelper
                 memoryAssertions.ObjectsExist<ExceptionAutoInstrumentation.ExceptionReplay>();
             },
             remoteConfig: new { exception_replay_enabled = false },
-            $"Exception Replay {DisabledByRemoteConfiguration}");
+            [$"Exception Replay {DisabledByRemoteConfiguration}"]);
     }
 
     [SkippableFact]
@@ -221,14 +222,14 @@ public class DebuggerManagerDynamicTests : TestHelper
                 memoryAssertions.ObjectsExist<SpanCodeOrigin.SpanCodeOrigin>();
             },
             remoteConfig: new { code_origin_enabled = false },
-            $"Code Origin for Spans {DisabledByRemoteConfiguration}");
+            [$"Code Origin for Spans {DisabledByRemoteConfiguration}"]);
     }
 
     private async Task RunDynamicConfigurationTest(
         bool debuggerStartEnabled,
         Action<MemoryAssertions> initialMemoryAssertions,
         object remoteConfig,
-        string logToWaitAfterRc,
+        string[] logsToWaitAfterRc,
         Action<MemoryAssertions>? finalMemoryAssertions = null,
         [CallerMemberName] string? testName = null)
     {
@@ -281,8 +282,8 @@ public class DebuggerManagerDynamicTests : TestHelper
             Output.WriteLine($"Sending remote config: {System.Text.Json.JsonSerializer.Serialize(remoteConfig)}");
             await agent.SetupRcmAndWait(Output, configurations);
 
-            // Wait for the configuration to be applied and log entry to appear
-            await logEntryWatcher.WaitForLogEntry(ApplyingDynamicDebuggerConfigLogEntry);
+            // Wait for the configuration to be applied and the expected entries to appear, in the order they are logged
+            await logEntryWatcher.WaitForLogEntries([ApplyingDynamicDebuggerConfigLogEntry, .. logsToWaitAfterRc]);
 
             // Verify final state
             if (finalMemoryAssertions != null)
@@ -300,8 +301,6 @@ public class DebuggerManagerDynamicTests : TestHelper
 
                 finalMemoryAssertions(finalMemorySnapshot);
             }
-
-            await logEntryWatcher.WaitForLogEntry(logToWaitAfterRc);
         }
         finally
         {
