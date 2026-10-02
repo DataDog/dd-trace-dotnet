@@ -27,12 +27,5 @@ internal sealed class Evaluation(string flagKey, object? value, EvaluationReason
 
     public string? Error { get; } = error;
 
-    public IDictionary<string, string>? FlagMetadata { get; private set; } = metadata;
-
-    internal Evaluation WithPrivacyConsent(bool consent)
-    {
-        var metadata = FlagMetadata ??= new Dictionary<string, string>();
-        metadata[FeatureFlagMetadataKeys.ObserveFullEvaluationData] = consent ? "true" : "false";
-        return this;
-    }
+    public IDictionary<string, string>? FlagMetadata { get; } = metadata;
 }
