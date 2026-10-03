@@ -87,6 +87,38 @@ namespace Datadog.Trace.Tests.Telemetry.Transports
 #endif
 
         [Fact]
+        public async Task ApiKeyTransportExceptionIsFatalAndDisablesSubsequentPushes()
+        {
+            var requestMock = new Mock<IApiRequest>();
+            requestMock.Setup(x => x.PostAsJsonAsync(It.IsAny<TelemetryData>(), It.IsAny<MultipartCompression>(), It.IsAny<JsonSerializerSettings>()))
+                       .ThrowsAsync(new ApiKeyHttpTransportException("unsafe endpoint"));
+            var requestFactoryMock = new Mock<IApiRequestFactory>();
+            requestFactoryMock.Setup(x => x.Create(It.IsAny<Uri>())).Returns(requestMock.Object);
+            var transport = new AgentlessTelemetryTransport(
+                requestFactoryMock.Object,
+                debugEnabled: false,
+                telemetryCompressionMethod: string.Empty,
+                containerMetadata: new ContainerMetadata(containerId: null, entityId: null));
+            var data = new TelemetryData(
+                "request-type",
+                tracerTime: 0,
+                string.Empty,
+                seqId: 0,
+                new ApplicationTelemetryData(string.Empty, string.Empty, string.Empty, string.Empty, string.Empty, string.Empty, string.Empty, string.Empty, string.Empty, string.Empty, string.Empty),
+                new HostTelemetryData(string.Empty, string.Empty, string.Empty),
+                payload: null);
+
+            var firstResult = await transport.PushTelemetry(data);
+            var secondResult = await transport.PushTelemetry(data);
+
+            firstResult.Should().Be(TelemetryPushResult.FatalError);
+            secondResult.Should().Be(TelemetryPushResult.FatalError);
+            requestMock.Verify(
+                x => x.PostAsJsonAsync(It.IsAny<TelemetryData>(), It.IsAny<MultipartCompression>(), It.IsAny<JsonSerializerSettings>()),
+                Times.Once);
+        }
+
+        [Fact]
         public void SerializedAppStartedShouldProduceJsonWithExpectedFormat()
         {
             var expectedJson = JToken.Parse(GetAppStartedData());

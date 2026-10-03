@@ -5,10 +5,17 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Text;
 using System.Threading.Tasks;
+using Datadog.Trace.Agent;
+using Datadog.Trace.Agent.Transports;
+using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.Telemetry;
+using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.Logging.DirectSubmission.Sink;
 using Datadog.Trace.TestHelpers.TransportHelpers;
 using FluentAssertions;
@@ -29,8 +36,8 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink
             = x => new FaultyApiRequest(x);
 
         [Theory]
-        [InlineData("http://http-intake.logs.datadoghq.com", "http://http-intake.logs.datadoghq.com/api/v2/logs")]
-        [InlineData("http://http-intake.logs.datadoghq.com/", "http://http-intake.logs.datadoghq.com/api/v2/logs")]
+        [InlineData("https://http-intake.logs.datadoghq.com", "https://http-intake.logs.datadoghq.com/api/v2/logs")]
+        [InlineData("https://http-intake.logs.datadoghq.com/", "https://http-intake.logs.datadoghq.com/api/v2/logs")]
         [InlineData("https://http-intake.logs.datadoghq.com:443", "https://http-intake.logs.datadoghq.com:443/api/v2/logs")]
         [InlineData("http://localhost:8080", "http://localhost:8080/api/v2/logs")]
         [InlineData("http://localhost:8080/sub-path", "http://localhost:8080/sub-path/api/v2/logs")]
@@ -40,7 +47,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink
             var baseEndpoint = new Uri(baseUri);
             var requestFactory = new TestRequestFactory(baseEndpoint);
 
-            var api = new LogsApi("SECR3TZ", requestFactory);
+            var api = new LogsApi(requestFactory);
             var result = await api.SendLogsAsync(Logs, NumberOfLogs);
 
             requestFactory.RequestsSent.Should()
@@ -50,13 +57,29 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink
         }
 
         [Fact]
+        public async Task RejectsUnsafeUrlWithProductionTransport()
+        {
+            var source = new NameValueConfigurationSource(
+                new NameValueCollection
+                {
+                    { ConfigurationKeys.ApiKey, "test-key" },
+                    { ConfigurationKeys.DirectLogSubmission.Url, "http://example.com" }
+                });
+            var settings = new DirectLogSubmissionSettings(source, NullConfigurationTelemetry.Instance);
+            var api = new LogsApi(LogsTransportStrategy.Get(settings));
+
+            var result = await api.SendLogsAsync(Logs, NumberOfLogs);
+
+            result.Should().BeFalse();
+        }
+
+        [Fact]
         public async Task ShouldRetryRequestsWhenTheyFail()
         {
             // two faults, then success
             var requestFactory = new TestRequestFactory(new Uri(DefaultIntake), SingleFaultyRequest, SingleFaultyRequest);
 
-            var apiKey = "SECR3TZ";
-            var api = new LogsApi(apiKey, requestFactory);
+            var api = new LogsApi(requestFactory);
             var result = await api.SendLogsAsync(Logs, NumberOfLogs);
 
             requestFactory.RequestsSent
@@ -72,18 +95,31 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink
         }
 
         [Fact]
-        public async Task ShouldAddApiKeyToAllRequests()
+        public async Task ShouldNotRetryAfterApiKeyTransportRejection()
         {
-            var requestFactory = new TestRequestFactory(new Uri(DefaultIntake), SingleFaultyRequest);
+            var requestFactory = new TestRequestFactory(new Uri(DefaultIntake), x => new UnsafeApiKeyTransportRequest(x));
+            var api = new LogsApi(requestFactory);
 
-            var apiKey = "SECR3TZ";
-            var api = new LogsApi(apiKey, requestFactory);
-            await api.SendLogsAsync(Logs, NumberOfLogs);
+            var firstResult = await api.SendLogsAsync(Logs, NumberOfLogs);
+            var secondResult = await api.SendLogsAsync(Logs, NumberOfLogs);
 
-            requestFactory.RequestsSent.Should()
-                          .NotBeEmpty()
-                          .And.OnlyContain(x => x.ExtraHeaders.ContainsKey(LogsApi.IntakeHeaderNameApiKey))
-                          .And.OnlyContain(x => x.ExtraHeaders[LogsApi.IntakeHeaderNameApiKey] == apiKey);
+            firstResult.Should().BeFalse();
+            secondResult.Should().BeFalse();
+            requestFactory.RequestsSent.Should().ContainSingle();
+        }
+
+        [Fact]
+        public async Task ShouldNotRetryAfterApiKeyTransportRejectionDuringRequestCreation()
+        {
+            var requestFactory = new RejectingRequestFactory(new Uri(DefaultIntake));
+            var api = new LogsApi(requestFactory);
+
+            var firstResult = await api.SendLogsAsync(Logs, NumberOfLogs);
+            var secondResult = await api.SendLogsAsync(Logs, NumberOfLogs);
+
+            firstResult.Should().BeFalse();
+            secondResult.Should().BeFalse();
+            requestFactory.CreationAttempts.Should().Be(1);
         }
 
         [Fact]
@@ -91,7 +127,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink
         {
             var requestFactory = new TestRequestFactory(new Uri(DefaultIntake), SingleFaultyRequest);
 
-            var api = new LogsApi("SECR3TZ", requestFactory);
+            var api = new LogsApi(requestFactory);
             await api.SendLogsAsync(Logs, NumberOfLogs);
 
             using var scope = new AssertionScope();
@@ -109,7 +145,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink
         {
             var requestFactory = new TestRequestFactory(new Uri(DefaultIntake), x => new FaultyApiRequest(x, statusCode: 400));
 
-            var api = new LogsApi("SECR3TZ", requestFactory);
+            var api = new LogsApi(requestFactory);
             var result = await api.SendLogsAsync(Logs, NumberOfLogs);
 
             using var scope = new AssertionScope();
@@ -117,6 +153,43 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink
             request.Responses.Should().ContainSingle().Which.StatusCode.Should().Be(400);
 
             result.Should().BeFalse();
+        }
+
+        private sealed class UnsafeApiKeyTransportRequest : TestApiRequest
+        {
+            public UnsafeApiKeyTransportRequest(Uri endpoint)
+                : base(endpoint)
+            {
+            }
+
+            public override Task<IApiResponse> PostAsync(ArraySegment<byte> bytes, string contentType, string contentEncoding)
+                => Task.FromException<IApiResponse>(new ApiKeyHttpTransportException("Unsafe API-key transport."));
+        }
+
+        private sealed class RejectingRequestFactory : IApiRequestFactory
+        {
+            private readonly Uri _baseEndpoint;
+
+            public RejectingRequestFactory(Uri baseEndpoint)
+            {
+                _baseEndpoint = baseEndpoint;
+            }
+
+            public int CreationAttempts { get; private set; }
+
+            public Uri GetEndpoint(string relativePath) => new(_baseEndpoint, relativePath);
+
+            public string Info(Uri endpoint) => endpoint.ToString();
+
+            public IApiRequest Create(Uri endpoint)
+            {
+                CreationAttempts++;
+                throw new ApiKeyHttpTransportException("Unsafe API-key transport.");
+            }
+
+            public void SetProxy(WebProxy proxy, NetworkCredential credential)
+            {
+            }
         }
     }
 }

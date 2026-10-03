@@ -152,6 +152,28 @@ public class SymbolUploadApiTests
     }
 
     [Fact]
+    public async Task SendBatchAsync_ApiKeyTransportFailureDisablesSubsequentUploads()
+    {
+        var metadata = new SymDbUploadMetadata(
+            Service: "benchmark-service",
+            Version: "1.0.0",
+            UploadId: Guid.Parse("11111111-2222-3333-4444-555555555555"),
+            BatchNum: 7,
+            Final: false);
+        var requestFactory = CapturingRequestFactory.RejectUnsafeApiKeyTransport();
+        var discoveryService = new DiscoveryServiceMock();
+        var api = SymbolUploadApi.Create(requestFactory, discoveryService, new NullGitMetadataProvider(), enableCompression: false);
+        discoveryService.TriggerChange(symbolDbEndpoint: "symdb/v1/input");
+
+        var firstResult = await api.SendBatchAsync(static (_, _) => Task.CompletedTask, state: 0, metadata: metadata);
+        var secondResult = await api.SendBatchAsync(static (_, _) => Task.CompletedTask, state: 0, metadata: metadata);
+
+        firstResult.Should().BeFalse();
+        secondResult.Should().BeFalse();
+        requestFactory.Requests.Should().ContainSingle();
+    }
+
+    [Fact]
     public async Task SendBatchAsync_DoesNotDelayAfterFinalRetry()
     {
         const string symbolsJson = """{"service":"benchmark","scopes":[{"name":"type"}]}""";
@@ -293,16 +315,26 @@ public class SymbolUploadApiTests
     private sealed class CapturingRequestFactory : IApiRequestFactory
     {
         private readonly Uri _baseEndpoint = new("http://localhost:8126/");
+        private readonly bool _rejectUnsafeApiKeyTransport;
         private readonly Queue<int> _statusCodes;
 
         public CapturingRequestFactory(params int[] statusCodes)
+            : this(rejectUnsafeApiKeyTransport: false, statusCodes: statusCodes)
         {
+        }
+
+        private CapturingRequestFactory(bool rejectUnsafeApiKeyTransport, params int[] statusCodes)
+        {
+            _rejectUnsafeApiKeyTransport = rejectUnsafeApiKeyTransport;
             _statusCodes = new Queue<int>(statusCodes.Length == 0 ? new[] { 200 } : statusCodes);
         }
 
         public List<CapturingRequest> Requests { get; } = new();
 
         public CapturingRequest Request => Requests[0];
+
+        public static CapturingRequestFactory RejectUnsafeApiKeyTransport()
+            => new(rejectUnsafeApiKeyTransport: true);
 
         public string Info(Uri endpoint)
             => endpoint.ToString();
@@ -313,7 +345,7 @@ public class SymbolUploadApiTests
         public IApiRequest Create(Uri endpoint)
         {
             var statusCode = _statusCodes.Count > 0 ? _statusCodes.Dequeue() : 200;
-            var request = new CapturingRequest(statusCode);
+            var request = new CapturingRequest(statusCode, _rejectUnsafeApiKeyTransport);
             Requests.Add(request);
             return request;
         }
@@ -326,10 +358,12 @@ public class SymbolUploadApiTests
     private sealed class CapturingRequest : IApiRequest
     {
         private readonly int _statusCode;
+        private readonly bool _rejectUnsafeApiKeyTransport;
 
-        public CapturingRequest(int statusCode)
+        public CapturingRequest(int statusCode, bool rejectUnsafeApiKeyTransport)
         {
             _statusCode = statusCode;
+            _rejectUnsafeApiKeyTransport = rejectUnsafeApiKeyTransport;
         }
 
         public byte[] Body { get; private set; } = [];
@@ -365,6 +399,11 @@ public class SymbolUploadApiTests
 
         public async Task<IApiResponse> PostAsync(Func<Stream, Task> writeToRequestStream, string contentType, string contentEncoding, string multipartBoundary)
         {
+            if (_rejectUnsafeApiKeyTransport)
+            {
+                throw new ApiKeyHttpTransportException("unsafe endpoint");
+            }
+
             using var stream = new MemoryStream();
             await writeToRequestStream(stream).ConfigureAwait(false);
             Body = stream.ToArray();
