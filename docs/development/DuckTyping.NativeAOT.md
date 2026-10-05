@@ -741,7 +741,10 @@ Do not run full-suite AOT tests with the Bible compatibility-gate registry artif
 
 ### AOT processor + NativeAOT integration test suite
 
+The NativeAOT publish test is skipped unless `DD_RUN_DUCKTYPE_AOT_NATIVEAOT_PUBLISH=1` is set:
+
 ```bash
+DD_RUN_DUCKTYPE_AOT_NATIVEAOT_PUBLISH=1 \
 dotnet test tracer/test/Datadog.Trace.Tools.Runner.Tests/Datadog.Trace.Tools.Runner.Tests.csproj \
   -c Release --framework net8.0 \
   --filter FullyQualifiedName~DuckTypeAot
@@ -812,7 +815,7 @@ For protected-branch validation, use the Nuke gate bundle:
 
 That bundle runs strict compatibility verification, full-suite dynamic-vs-AOT parity, and NativeAOT publish validation.
 
-`RunManagedUnitTests` depends on this bundle. In CI it only runs in the Linux x64 glibc shard that has the NativeAOT toolchain; locally it only runs when a DuckType AOT gate target is invoked explicitly.
+`RunManagedUnitTests` depends on this bundle. In CI it only runs in the Linux x64 glibc net9.0 shard, which has the NativeAOT toolchain; locally it only runs when a DuckType AOT gate target is invoked explicitly. Set `DD_DUCKTYPE_AOT_GATES=true` (or `false`) to force (or skip) the gates in any job.
 
 ## Compatibility Status and Diagnostics
 
@@ -856,7 +859,7 @@ Bible catalog `expectedStatus` overrides:
 
 1. `DD_DUCKTYPE_DISCOVERY_OUTPUT_PATH`
    1. Test/migration workflow output path for dynamic discovery map entries.
-   2. Every process that inherits the variable merges its mappings into the same file, so delete the file before a fresh discovery run.
+   2. Every process that inherits the variable merges its mappings into the same file (coordinated through a `<path>.lock` file next to it), so delete the file before a fresh discovery run.
 2. `DD_DUCKTYPE_TEST_MODE`
    1. `dynamic` or `aot` for test runtime bootstrap.
 3. `DD_DUCKTYPE_AOT_REGISTRY_PATH`
@@ -958,7 +961,7 @@ Use all of these gates together.
 2. Full parity orchestration gate:
    1. `DD_RUN_DUCKTYPE_AOT_FULL_SUITE_PARITY=1 ... DuckTypeAotFullSuiteParityIntegrationTests`
 3. AOT processor and NativeAOT integration:
-   1. `... --filter FullyQualifiedName~DuckTypeAot`
+   1. `DD_RUN_DUCKTYPE_AOT_NATIVEAOT_PUBLISH=1 ... --filter FullyQualifiedName~DuckTypeAot`
 4. AOT bootstrap performance guard:
    1. `DuckTypeAotRegistryBootstrapBenchmark`
 5. Optional explicit verify-compat step against generated artifacts.

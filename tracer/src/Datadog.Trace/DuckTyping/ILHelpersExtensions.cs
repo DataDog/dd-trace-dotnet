@@ -83,7 +83,7 @@ namespace Datadog.Trace.DuckTyping
                 il.DeclareLocal(expectedType);
                 il.Emit(OpCodes.Unbox_Any, expectedType);
                 il.Emit(OpCodes.Stloc_0);
-                il.Emit(OpCodes.Ldloca_S, 0);
+                il.Emit(OpCodes.Ldloca_S, (byte)0);
             }
             else
             {
@@ -119,7 +119,16 @@ namespace Datadog.Trace.DuckTyping
                     il.Emit(OpCodes.Ldarg_3);
                     break;
                 default:
-                    il.Emit(OpCodes.Ldarg_S, index);
+                    // The short form takes a 1-byte operand; ILGenerator writes 4 bytes for an int operand.
+                    if (index <= byte.MaxValue)
+                    {
+                        il.Emit(OpCodes.Ldarg_S, (byte)index);
+                    }
+                    else
+                    {
+                        il.Emit(OpCodes.Ldarg, unchecked((short)index));
+                    }
+
                     break;
             }
         }
@@ -146,7 +155,15 @@ namespace Datadog.Trace.DuckTyping
                     il.Emit(OpCodes.Ldloc_3);
                     break;
                 default:
-                    il.Emit(OpCodes.Ldloc_S, index);
+                    if (index <= byte.MaxValue)
+                    {
+                        il.Emit(OpCodes.Ldloc_S, (byte)index);
+                    }
+                    else
+                    {
+                        il.Emit(OpCodes.Ldloc, unchecked((short)index));
+                    }
+
                     break;
             }
         }
@@ -173,7 +190,15 @@ namespace Datadog.Trace.DuckTyping
                     il.Emit(OpCodes.Ldloc_3);
                     break;
                 default:
-                    il.Emit(OpCodes.Ldloc_S, index);
+                    if (index <= byte.MaxValue)
+                    {
+                        il.Emit(OpCodes.Ldloc_S, (byte)index);
+                    }
+                    else
+                    {
+                        il.Emit(OpCodes.Ldloc, unchecked((short)index));
+                    }
+
                     break;
             }
         }
@@ -200,8 +225,33 @@ namespace Datadog.Trace.DuckTyping
                     il.Emit(OpCodes.Stloc_3);
                     break;
                 default:
-                    il.Emit(OpCodes.Stloc_S, index);
+                    if (index <= byte.MaxValue)
+                    {
+                        il.Emit(OpCodes.Stloc_S, (byte)index);
+                    }
+                    else
+                    {
+                        il.Emit(OpCodes.Stloc, unchecked((short)index));
+                    }
+
                     break;
+            }
+        }
+
+        /// <summary>
+        /// Write load local address
+        /// </summary>
+        /// <param name="il">LazyILGenerator instance</param>
+        /// <param name="index">Local index</param>
+        internal static void WriteLoadLocalAddress(this LazyILGenerator il, int index)
+        {
+            if (index <= byte.MaxValue)
+            {
+                il.Emit(OpCodes.Ldloca_S, (byte)index);
+            }
+            else
+            {
+                il.Emit(OpCodes.Ldloca, unchecked((short)index));
             }
         }
 
@@ -248,9 +298,11 @@ namespace Datadog.Trace.DuckTyping
                         break;
                 }
             }
-            else if (value >= -128 && value <= 127)
+            else if (value >= sbyte.MinValue && value <= sbyte.MaxValue)
             {
-                il.Emit(OpCodes.Ldc_I4_S, value);
+                // ldc.i4.s takes a 1-byte operand: an int operand would be written as 4 bytes, which only happens to
+                // decode (as trailing nops) for small positive values and produces invalid IL for negative ones.
+                il.Emit(OpCodes.Ldc_I4_S, (sbyte)value);
             }
             else
             {

@@ -215,15 +215,6 @@ namespace Datadog.Trace.DuckTyping
         }
 
         /// <summary>
-        /// Returns true when DuckType is running in AOT mode.
-        /// </summary>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static bool IsAotMode()
-        {
-            return RuntimeMode == DuckTypeRuntimeMode.Aot;
-        }
-
-        /// <summary>
         /// Test-only reset for DuckType runtime mode and shared caches.
         /// </summary>
         internal static void ResetRuntimeModeForTests()

@@ -6,6 +6,7 @@
 #nullable enable
 
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -108,87 +109,104 @@ public class DuckTypeAotAdditionalParityTests
         DuckType.Create<IGenericOptionalProxy>(new GenericIntegerLeafTarget())!.DefaultValue(42).Should().Be(0);
     }
 
-    [Fact]
-    public void GeneratedRegistryShouldMatchOmittedOptionalConstants()
+    [Theory]
+    [InlineData(typeof(OptionalConstantsTarget), "7|text|Monday|3.75|9|True|9223372036854775807|1.25|2.5|True|0")]
+    [InlineData(typeof(NullableOptionalConstantsTarget), "5|Friday|3|True")]
+    [InlineData(typeof(NegativeOptionalConstantsTarget), "-5|-3|-100|4294967291|-2|-2|-1.5|-7|-9|200")]
+    [InlineData(typeof(VirtualInOptionalConstantsTarget), "3|text|00000000-0000-0000-0000-000000000000")]
+    [InlineData(typeof(MissingOptionalObjectTarget), "Type.Missing|0|null")]
+    public void GeneratedRegistryShouldMatchOmittedOptionalConstants(Type targetType, string expected)
     {
-        const string expected = "7|text|Monday|3.75|9|True|9223372036854775807|1.25|2.5|True|0";
         DuckType.ResetRuntimeModeForTests();
         Exercise().Should().Be(expected);
         WithGeneratedRegistry(
             () => Exercise().Should().Be(expected),
-            Mapping(typeof(IOptionalConstantsProxy), typeof(OptionalConstantsTarget)));
+            Mapping(typeof(IOptionalConstantsProxy), targetType));
 
-        string Exercise() => DuckType.Create<IOptionalConstantsProxy>(new OptionalConstantsTarget())!.Format();
+        string Exercise() => DuckType.Create<IOptionalConstantsProxy>(Activator.CreateInstance(targetType)!)!.Format();
     }
 
     [Fact]
-    public void GeneratedRegistryShouldMatchOmittedNullableAndInOptionalConstants()
+    public void GeneratedRegistryShouldMatchOmittedGenericInOptionalParameter()
     {
-        const string expected = "5|Friday|3";
+        const string expected = "0|null|0,0,null";
         DuckType.ResetRuntimeModeForTests();
         Exercise().Should().Be(expected);
         WithGeneratedRegistry(
             () => Exercise().Should().Be(expected),
-            Mapping(typeof(IOptionalConstantsProxy), typeof(NullableOptionalConstantsTarget)));
+            Mapping(typeof(IGenericInOptionalProxy), typeof(GenericInOptionalTarget)));
 
-        string Exercise() => DuckType.Create<IOptionalConstantsProxy>(new NullableOptionalConstantsTarget())!.Format();
+        string Exercise()
+        {
+            var proxy = DuckType.Create<IGenericInOptionalProxy>(new GenericInOptionalTarget())!;
+            return string.Join("|", proxy.Describe<int>(), proxy.Describe<string>(), proxy.Describe<MultiFieldStruct>());
+        }
     }
 
     [Fact]
     public void GeneratedRegistryShouldTreatExplicitInterfaceTypeNameAsSingleName()
     {
-        // Dynamic duck typing doesn't split ExplicitInterfaceTypeName on commas, so neither mode can bind
-        // the explicit implementation through a comma separated list.
+        // Dynamic duck typing doesn't split ExplicitInterfaceTypeName on commas, so neither mode can bind the explicit
+        // implementation through a comma separated list. The generator has to reject it itself: if it bound a split name,
+        // only the dynamic validation would reject the mapping, with a different status.
         DuckType.ResetRuntimeModeForTests();
         DuckType.GetOrCreateProxyType(typeof(ICommaSeparatedExplicitInterfaceProxy), typeof(ExplicitInterfaceTarget)).CanCreate().Should().BeFalse();
         WithGeneratedRegistry(
             () => DuckType.GetOrCreateProxyType(typeof(ICommaSeparatedExplicitInterfaceProxy), typeof(ExplicitInterfaceTarget)).CanCreate().Should().BeFalse(),
+            matrix => matrix.Mappings.Should().ContainSingle().Which.Status.Should().Be(DuckTypeAotCompatibilityStatuses.MissingTargetMethod),
             Mapping(typeof(ICommaSeparatedExplicitInterfaceProxy), typeof(ExplicitInterfaceTarget)));
     }
 
-    [Fact]
-    public void MappingResolverShouldIgnoreNativeLibrariesInTargetFolders()
+    [Theory]
+    // Type.GetMethod("Echo", [object]) doesn't match Echo(string), so the scan only accepts the explicit implementation.
+    [InlineData(typeof(IExplicitEchoObjectProxy), "explicit:value")]
+    // Type.GetMethod("Echo", [string]) finds the public method before ExplicitInterfaceTypeName is considered.
+    [InlineData(typeof(IExplicitEchoStringProxy), "public:value")]
+    public void GeneratedRegistryShouldMatchExplicitInterfaceTypeNameResolution(Type proxyType, string expected)
     {
-        var directory = Path.Combine(Path.GetTempPath(), "dd-trace-additional-aot-parity", Guid.NewGuid().ToString("N"));
-        Directory.CreateDirectory(directory);
+        DuckType.ResetRuntimeModeForTests();
+        Exercise().Should().Be(expected);
+        WithGeneratedRegistry(
+            () => Exercise().Should().Be(expected),
+            Mapping(proxyType, typeof(ExplicitAndPublicEchoTarget)));
+
+        string Exercise()
+            => proxyType == typeof(IExplicitEchoObjectProxy)
+                   ? DuckType.Create<IExplicitEchoObjectProxy>(new ExplicitAndPublicEchoTarget())!.Echo("value")
+                   : DuckType.Create<IExplicitEchoStringProxy>(new ExplicitAndPublicEchoTarget())!.Echo("value");
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void MappingResolverShouldSkipInvalidAssembliesInTargetFolders(bool truncatedManagedAssembly)
+    {
+        var directory = CreateTemporaryDirectory();
         try
         {
-            // RID-specific outputs contain native libraries that match the *.dll target filter.
-            File.WriteAllBytes(Path.Combine(directory, "e_sqlite3.dll"), [0x7F, 0x45, 0x4C, 0x46, 0x02, 0x01, 0x01, 0x00]);
-            var mapPath = Path.Combine(directory, "map.json");
-            var mapping = Mapping(typeof(IOptionalConstantsProxy), typeof(OptionalConstantsTarget));
-            File.WriteAllText(mapPath, JsonConvert.SerializeObject(new
-            {
-                mappings = new[]
-                {
-                    new
-                    {
-                        mode = "forward",
-                        proxyType = mapping.ProxyTypeName,
-                        proxyAssembly = mapping.ProxyAssemblyName,
-                        targetType = mapping.TargetTypeName,
-                        targetAssembly = mapping.TargetAssemblyName
-                    }
-                }
-            }));
-            var assemblyPath = typeof(DuckTypeAotAdditionalParityTests).Assembly.Location;
-            var outputPath = Path.Combine(directory, "Registry.dll");
-            var options = new DuckTypeAotGenerateOptions(
-                proxyAssemblies: new[] { assemblyPath },
-                targetAssemblies: new[] { assemblyPath },
-                targetFolders: new[] { directory },
-                targetFilters: new[] { "*.dll" },
-                mapFile: mapPath,
-                genericInstantiationsFile: null,
-                outputPath: outputPath,
-                assemblyName: "Registry",
-                trimmerDescriptorPath: outputPath + ".linker.xml",
-                propsPath: outputPath + ".props");
+            // Target folders (e.g. RID-specific outputs) contain files matched by the *.dll filter that aren't managed assemblies.
+            var targetFolder = Path.Combine(directory, "target");
+            Directory.CreateDirectory(targetFolder);
+            var invalidAssemblyPath = Path.Combine(targetFolder, truncatedManagedAssembly ? "Truncated.Managed.dll" : "e_sqlite3.dll");
+            File.WriteAllBytes(invalidAssemblyPath, truncatedManagedAssembly ? File.ReadAllBytes(TestAssemblyPath).Take(512).ToArray() : CreateNativePortableExecutable());
+            var options = CreateGenerateOptions(
+                directory,
+                WriteMapFile(directory, [Mapping(typeof(IOptionalConstantsProxy), typeof(OptionalConstantsTarget))]),
+                [targetFolder]);
 
             var result = DuckTypeAotMappingResolver.Resolve(options);
 
             result.Errors.Should().BeEmpty();
             result.Mappings.Should().ContainSingle();
+            if (truncatedManagedAssembly)
+            {
+                // A corrupt managed assembly is reported, so a mapping that needs it still shows the root cause.
+                result.Warnings.Should().ContainSingle(warning => warning.Contains(invalidAssemblyPath));
+            }
+            else
+            {
+                result.Warnings.Should().BeEmpty();
+            }
         }
         finally
         {
@@ -352,45 +370,29 @@ public class DuckTypeAotAdditionalParityTests
             reverse ? DuckTypeAotMappingMode.Reverse : DuckTypeAotMappingMode.Forward,
             DuckTypeAotMappingSource.MapFile);
 
+    private static string TestAssemblyPath => typeof(DuckTypeAotAdditionalParityTests).Assembly.Location;
+
     private static void WithGeneratedRegistry(Action assertions, params DuckTypeAotMapping[] mappings)
+        => WithGeneratedRegistry(assertions, compatibilityAssertions: null, mappings);
+
+    private static void WithGeneratedRegistry(Action assertions, Action<DuckTypeAotCompatibilityMatrix>? compatibilityAssertions, params DuckTypeAotMapping[] mappings)
     {
-        var directory = Path.Combine(Path.GetTempPath(), "dd-trace-additional-aot-parity", Guid.NewGuid().ToString("N"));
-        Directory.CreateDirectory(directory);
+        var directory = CreateTemporaryDirectory();
         var loadContext = new AssemblyLoadContext("AdditionalParity", isCollectible: true);
         try
         {
-            var mapPath = Path.Combine(directory, "map.json");
-            var outputPath = Path.Combine(directory, "Registry.dll");
-            File.WriteAllText(mapPath, JsonConvert.SerializeObject(new
-            {
-                mappings = mappings.Select(mapping => new
-                {
-                    mode = mapping.Mode.ToString().ToLowerInvariant(),
-                    proxyType = mapping.ProxyTypeName,
-                    proxyAssembly = mapping.ProxyAssemblyName,
-                    targetType = mapping.TargetTypeName,
-                    targetAssembly = mapping.TargetAssemblyName
-                })
-            }));
-            var assemblyPath = typeof(DuckTypeAotAdditionalParityTests).Assembly.Location;
-            var options = new DuckTypeAotGenerateOptions(
-                proxyAssemblies: new[] { assemblyPath },
-                targetAssemblies: new[] { assemblyPath },
-                targetFolders: Array.Empty<string>(),
-                targetFilters: new[] { "*.dll" },
-                mapFile: mapPath,
-                genericInstantiationsFile: null,
-                outputPath: outputPath,
-                assemblyName: "Registry",
-                trimmerDescriptorPath: outputPath + ".linker.xml",
-                propsPath: outputPath + ".props");
+            var options = CreateGenerateOptions(directory, WriteMapFile(directory, mappings), targetFolders: []);
             DuckTypeAotGenerateProcessor.Process(options).Should().Be(0);
+            if (compatibilityAssertions is not null)
+            {
+                compatibilityAssertions(JsonConvert.DeserializeObject<DuckTypeAotCompatibilityMatrix>(File.ReadAllText(options.OutputPath + ".compat.json"))!);
+            }
 
             DuckType.ResetRuntimeModeForTests();
 #if NETCOREAPP2_1
-            var registry = Assembly.Load(File.ReadAllBytes(outputPath));
+            var registry = Assembly.Load(File.ReadAllBytes(options.OutputPath));
 #else
-            using var registryStream = File.OpenRead(outputPath);
+            using var registryStream = File.OpenRead(options.OutputPath);
             var registry = loadContext.LoadFromStream(registryStream);
 #endif
             registry.GetType("Datadog.Trace.DuckTyping.Generated.DuckTypeAotRegistryBootstrap")!
@@ -403,6 +405,64 @@ public class DuckTypeAotAdditionalParityTests
             loadContext.Unload();
             Directory.Delete(directory, recursive: true);
         }
+    }
+
+    private static string CreateTemporaryDirectory()
+    {
+        var directory = Path.Combine(Path.GetTempPath(), "dd-trace-additional-aot-parity", Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(directory);
+        return directory;
+    }
+
+    private static string WriteMapFile(string directory, IEnumerable<DuckTypeAotMapping> mappings)
+    {
+        var mapPath = Path.Combine(directory, "map.json");
+        File.WriteAllText(mapPath, JsonConvert.SerializeObject(new
+        {
+            mappings = mappings.Select(mapping => new
+            {
+                mode = mapping.Mode.ToString().ToLowerInvariant(),
+                proxyType = mapping.ProxyTypeName,
+                proxyAssembly = mapping.ProxyAssemblyName,
+                targetType = mapping.TargetTypeName,
+                targetAssembly = mapping.TargetAssemblyName
+            })
+        }));
+        return mapPath;
+    }
+
+    private static DuckTypeAotGenerateOptions CreateGenerateOptions(string directory, string mapPath, IReadOnlyList<string> targetFolders)
+    {
+        var outputPath = Path.Combine(directory, "Registry.dll");
+        return new DuckTypeAotGenerateOptions(
+            proxyAssemblies: [TestAssemblyPath],
+            targetAssemblies: [TestAssemblyPath],
+            targetFolders: targetFolders,
+            targetFilters: ["*.dll"],
+            mapFile: mapPath,
+            genericInstantiationsFile: null,
+            outputPath: outputPath,
+            assemblyName: "Registry",
+            trimmerDescriptorPath: outputPath + ".linker.xml",
+            propsPath: outputPath + ".props");
+    }
+
+    private static byte[] CreateNativePortableExecutable()
+    {
+        // Smallest PE32 image with a DOS header, PE signature, COFF header and an optional header whose data directories
+        // are all empty: like a native library, it has no CLI header.
+        var image = new byte[0x40 + 4 + 20 + 224];
+        image[0] = (byte)'M';
+        image[1] = (byte)'Z';
+        BitConverter.GetBytes(0x40).CopyTo(image, 0x3C);
+        image[0x40] = (byte)'P';
+        image[0x41] = (byte)'E';
+        BitConverter.GetBytes((ushort)0x14C).CopyTo(image, 0x44); // Machine: i386
+        BitConverter.GetBytes((ushort)224).CopyTo(image, 0x54); // SizeOfOptionalHeader
+        BitConverter.GetBytes((ushort)0x2102).CopyTo(image, 0x56); // Characteristics: executable, 32-bit, DLL
+        BitConverter.GetBytes((ushort)0x10B).CopyTo(image, 0x58); // PE32 magic
+        BitConverter.GetBytes(16).CopyTo(image, 0x58 + 92); // NumberOfRvaAndSizes
+        return image;
     }
 
     public interface IGenericEchoProxy
@@ -475,10 +535,73 @@ public class DuckTypeAotAdditionalParityTests
         string IExplicitFirst.Explicit() => "first";
     }
 
+    public interface IExplicitEcho
+    {
+        string Echo(string value);
+    }
+
+    public interface IExplicitEchoObjectProxy
+    {
+        [Duck(ExplicitInterfaceTypeName = "Datadog.Trace.Tools.Runner.Tests.DuckTypeAotAdditionalParityTests+IExplicitEcho")]
+        string Echo(object value);
+    }
+
+    public interface IExplicitEchoStringProxy
+    {
+        [Duck(ExplicitInterfaceTypeName = "Datadog.Trace.Tools.Runner.Tests.DuckTypeAotAdditionalParityTests+IExplicitEcho")]
+        string Echo(string value);
+    }
+
+    public class ExplicitAndPublicEchoTarget : IExplicitEcho
+    {
+        public string Echo(string value) => "public:" + value;
+
+        string IExplicitEcho.Echo(string value) => "explicit:" + value;
+    }
+
     public class NullableOptionalConstantsTarget
     {
-        public string Format(int? count = 5, DayOfWeek? day = DayOfWeek.Friday, in int value = 3)
-            => string.Join("|", count, day, value);
+        public string Format(int? count = 5, DayOfWeek? day = DayOfWeek.Friday, in int value = 3, int? none = null)
+            => string.Join("|", count, day, value, none is null);
+    }
+
+    public class NegativeOptionalConstantsTarget
+    {
+        public string Format(
+            int number = -5,
+            sbyte small = -3,
+            short medium = -100,
+            uint large = 0xFFFFFFFB,
+            long wide = -2,
+            DayOfWeek day = (DayOfWeek)(-2),
+            decimal amount = -1.5m,
+            int? nullable = -7,
+            in int byRef = -9,
+            byte octet = 200)
+            => string.Join("|", number, small, medium, large, wide, (int)day, amount.ToString(CultureInfo.InvariantCulture), nullable, byRef, octet);
+    }
+
+    public class VirtualInOptionalConstantsTarget
+    {
+        // `in` parameters of virtual methods are by-refs wrapped in modreq(InAttribute).
+        public virtual string Format(in int value = 3, in string text = "text", in Guid id = default)
+            => string.Join("|", value, text, id);
+    }
+
+    public class MissingOptionalObjectTarget
+    {
+        public string Format([Optional] object? missing, [Optional] int number, [Optional] string? text)
+            => string.Join("|", ReferenceEquals(missing, Type.Missing) ? "Type.Missing" : missing?.ToString() ?? "null", number, text ?? "null");
+    }
+
+    public interface IGenericInOptionalProxy
+    {
+        string Describe<T>();
+    }
+
+    public class GenericInOptionalTarget
+    {
+        public string Describe<T>(in T value = default!) => value?.ToString() ?? "null";
     }
 
 #pragma warning disable SA1401 // Public fields are part of the tested DuckCopy and target contracts.
@@ -500,6 +623,15 @@ public class DuckTypeAotAdditionalParityTests
         public T Echo(T value) => value;
 
         public T DefaultValue(T value, T fallback = default!) => fallback;
+    }
+
+    public struct MultiFieldStruct
+    {
+        public long A;
+        public long B;
+        public string? C;
+
+        public override string ToString() => $"{A},{B},{C ?? "null"}";
     }
 #pragma warning restore SA1401
 

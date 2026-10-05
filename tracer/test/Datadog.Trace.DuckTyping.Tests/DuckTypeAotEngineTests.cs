@@ -42,14 +42,14 @@ namespace Datadog.Trace.DuckTyping.Tests
 
             Action enableAot = DuckType.EnableAotMode;
             enableAot.Should().Throw<DuckTypeRuntimeModeConflictException>();
-            DuckType.IsAotMode().Should().BeFalse();
+            DuckType.RuntimeMode.Should().Be(DuckTypeRuntimeMode.Dynamic);
         }
 
         [Fact]
         public void RuntimeModeShouldBeImmutableAfterAotInitialization()
         {
             DuckType.EnableAotMode();
-            DuckType.IsAotMode().Should().BeTrue();
+            DuckType.RuntimeMode.Should().Be(DuckTypeRuntimeMode.Aot);
 
             Action enableAotAgain = DuckType.EnableAotMode;
             enableAotAgain.Should().NotThrow();
@@ -115,7 +115,7 @@ namespace Datadog.Trace.DuckTyping.Tests
             await Task.WhenAll(tasks);
 
             exceptions.Should().BeEmpty();
-            DuckType.IsAotMode().Should().BeTrue();
+            DuckType.RuntimeMode.Should().Be(DuckTypeRuntimeMode.Aot);
         }
 
         [Fact]
@@ -165,7 +165,7 @@ namespace Datadog.Trace.DuckTyping.Tests
             var unexpectedExceptions = exceptions.Where(ex => ex is not DuckTypeRuntimeModeConflictException).ToList();
             unexpectedExceptions.Should().BeEmpty();
 
-            if (DuckType.IsAotMode())
+            if (DuckType.RuntimeMode == DuckTypeRuntimeMode.Aot)
             {
                 exceptions.Should().BeEmpty();
                 dynamicCanCreateResults.Should().OnlyContain(canCreate => canCreate == false);
@@ -757,19 +757,22 @@ namespace Datadog.Trace.DuckTyping.Tests
                        .WithMessage(expectedMessage);
         }
 
-        [Fact]
-        public void RegisterFailureUsingKnownExceptionTypeReplaysDescriptiveMessage()
+        [Theory]
+        [InlineData(typeof(DuckTypePropertyOrFieldNotFoundException))]
+        [InlineData(typeof(DuckTypePropertyCantBeWrittenException))]
+        [InlineData(typeof(DuckTypeFieldIsReadonlyException))]
+        public void RegisterFailureUsingKnownExceptionTypeReplaysDescriptiveMessage(Type exceptionType)
         {
             DuckTypeAotEngine.RegisterProxyFailure(
                 typeof(IMissingProxy),
                 typeof(MissingTarget),
-                typeof(DuckTypePropertyOrFieldNotFoundException));
+                exceptionType);
 
             var result = DuckTypeAotEngine.GetOrCreateProxyType(typeof(IMissingProxy), typeof(MissingTarget));
 
-            Action getProxyType = () => _ = result.ProxyType;
-            getProxyType.Should().Throw<DuckTypePropertyOrFieldNotFoundException>()
-                        .WithMessage($"*{typeof(IMissingProxy).FullName}*{typeof(MissingTarget).FullName}*");
+            var failure = Record.Exception(() => _ = result.ProxyType);
+            failure.Should().NotBeNull().And.BeOfType(exceptionType);
+            failure!.Message.Should().Contain(typeof(IMissingProxy).FullName).And.Contain(typeof(MissingTarget).FullName);
         }
 
         [Fact]

@@ -26,6 +26,12 @@ namespace Datadog.Trace.DuckTyping
     internal static class DuckTypeAotDiscoveryRecorder
     {
         /// <summary>
+        /// Number of new mappings after which they are flushed in the background, so a process that doesn't
+        /// shut down cleanly still leaves most of its mappings behind.
+        /// </summary>
+        private const int PeriodicFlushThreshold = 256;
+
+        /// <summary>
         /// Stores output path.
         /// </summary>
         /// <remarks>This field participates in shared runtime state and must remain thread-safe.</remarks>
@@ -39,16 +45,21 @@ namespace Datadog.Trace.DuckTyping
         private static readonly object FlushLock = new();
 
         /// <summary>
-        /// How long a flush waits for another process holding the output lock file.
+        /// How long an explicit flush waits for another process holding the output lock file.
+        /// Periodic flushes don't wait: a later flush picks their mappings up.
         /// </summary>
-        private static readonly TimeSpan OutputLockTimeout = TimeSpan.FromSeconds(2);
+        private static readonly TimeSpan ExplicitFlushLockTimeout = TimeSpan.FromSeconds(30);
 
         /// <summary>
         /// Stores process exit hook registered.
         /// </summary>
         /// <remarks>This field participates in shared runtime state and must remain thread-safe.</remarks>
         private static int _processExitHookRegistered;
-        private static int _recordsSinceLastFlush;
+
+        /// <summary>
+        /// Number of mappings recorded since the last successful flush.
+        /// </summary>
+        private static int _pendingMappings;
 
         /// <summary>
         /// Executes record.
@@ -108,9 +119,10 @@ namespace Datadog.Trace.DuckTyping
                 Record(proxyType, baseType, reverse: false);
             }
 
-            if ((Interlocked.Increment(ref _recordsSinceLastFlush) % 256) == 0)
+            // Merging into the shared map rereads it, so don't do it on the thread that is creating a proxy.
+            if ((Interlocked.Increment(ref _pendingMappings) % PeriodicFlushThreshold) == 0)
             {
-                Flush();
+                ThreadPool.UnsafeQueueUserWorkItem(static _ => Flush(isExplicit: false), null);
             }
         }
 
@@ -128,68 +140,92 @@ namespace Datadog.Trace.DuckTyping
         }
 
         /// <summary>
-        /// Persists recorded mappings before a controlled shutdown.
+        /// Persists recorded mappings before a controlled shutdown, merging them into the map that other processes
+        /// sharing the output path already wrote.
         /// </summary>
-        internal static void Flush()
+        internal static void Flush() => Flush(isExplicit: true);
+
+        private static void Flush(bool isExplicit)
         {
+            var outputPath = OutputPath;
+            // Branch: take this path when (StringUtil.IsNullOrWhiteSpace(outputPath)) evaluates to true.
+            if (StringUtil.IsNullOrWhiteSpace(outputPath))
+            {
+                return;
+            }
+
+            // A periodic flush is skipped while another flush of this process is running; an explicit one waits for it.
+            if (!Monitor.TryEnter(FlushLock, isExplicit ? Timeout.Infinite : 0))
+            {
+                return;
+            }
+
             try
             {
-                // Branch: take this path when (StringUtil.IsNullOrWhiteSpace(OutputPath)) evaluates to true.
-                if (StringUtil.IsNullOrWhiteSpace(OutputPath))
+                var pendingMappings = Volatile.Read(ref _pendingMappings);
+                // Branch: nothing was recorded since the last flush (e.g. the exit flush after the test framework one).
+                if (pendingMappings == 0)
                 {
                     return;
                 }
 
-                var directory = Path.GetDirectoryName(OutputPath);
+                var directory = Path.GetDirectoryName(outputPath);
                 // Branch: take this path when (!StringUtil.IsNullOrWhiteSpace(directory)) evaluates to true.
                 if (!StringUtil.IsNullOrWhiteSpace(directory))
                 {
                     Directory.CreateDirectory(directory);
                 }
 
-                lock (FlushLock)
+                // Child processes (e.g. one testhost per target framework) inherit the output path. A lock file
+                // serializes the read-merge-write of every process so none of them drops the others' mappings.
+                using var outputLock = AcquireOutputLock(outputPath, isExplicit ? ExplicitFlushLockTimeout : TimeSpan.Zero);
+                // Branch: a periodic flush doesn't wait for the lock. An explicit flush only gets here without the lock
+                // when it can't be acquired at all (timeout, or a lock file this process can't open) and writes anyway.
+                if (outputLock is null && !isExplicit)
                 {
-                    // Child processes (e.g. one testhost per target framework) inherit the output path, so several
-                    // processes can flush to the same file. Serialize them with a lock file and merge with whatever
-                    // the other processes already wrote instead of overwriting their mappings.
-                    using var outputLock = AcquireOutputLock(OutputPath);
-
-                    var mappings = new Dictionary<string, MapEntry>(StringComparer.Ordinal);
-                    foreach (var existingMapping in ReadExistingMappings(OutputPath))
-                    {
-                        mappings[GetKey(existingMapping)] = existingMapping;
-                    }
-
-                    foreach (var mapping in Mappings)
-                    {
-                        mappings[mapping.Key] = mapping.Value;
-                    }
-
-                    var document = new MapDocument
-                    {
-                        Mappings = mappings
-                                  .Values
-                                  .OrderBy(mapping => mapping.Mode, StringComparer.Ordinal)
-                                  .ThenBy(mapping => mapping.ProxyAssembly, StringComparer.Ordinal)
-                                  .ThenBy(mapping => mapping.ProxyType, StringComparer.Ordinal)
-                                  .ThenBy(mapping => mapping.TargetAssembly, StringComparer.Ordinal)
-                                  .ThenBy(mapping => mapping.TargetType, StringComparer.Ordinal)
-                                  .ToList()
-                    };
-
-                    var json = JsonHelper.SerializeObject(document, new JsonSerializerSettings { Formatting = Formatting.Indented });
-                    // Unique staging file, in case the lock couldn't be acquired and another process writes concurrently.
-                    var temporaryOutputPath = $"{OutputPath}.{Guid.NewGuid():N}.tmp";
-                    File.WriteAllText(temporaryOutputPath, json);
-                    File.Copy(temporaryOutputPath, OutputPath, overwrite: true);
-                    File.Delete(temporaryOutputPath);
-                    _ = Interlocked.Exchange(ref _recordsSinceLastFlush, 0);
+                    return;
                 }
+
+                // Branch: never overwrite a map that couldn't be read; a later flush retries.
+                if (!TryReadExistingMappings(outputPath, out var existingMappings))
+                {
+                    return;
+                }
+
+                var mappings = new Dictionary<string, MapEntry>(StringComparer.Ordinal);
+                foreach (var existingMapping in existingMappings)
+                {
+                    mappings[GetKey(existingMapping)] = existingMapping;
+                }
+
+                foreach (var mapping in Mappings)
+                {
+                    mappings[mapping.Key] = mapping.Value;
+                }
+
+                var document = new MapDocument
+                {
+                    Mappings = mappings
+                              .Values
+                              .OrderBy(mapping => mapping.Mode, StringComparer.Ordinal)
+                              .ThenBy(mapping => mapping.ProxyAssembly, StringComparer.Ordinal)
+                              .ThenBy(mapping => mapping.ProxyType, StringComparer.Ordinal)
+                              .ThenBy(mapping => mapping.TargetAssembly, StringComparer.Ordinal)
+                              .ThenBy(mapping => mapping.TargetType, StringComparer.Ordinal)
+                              .ToList()
+                };
+
+                WriteAtomically(outputPath, JsonHelper.SerializeObject(document, new JsonSerializerSettings { Formatting = Formatting.Indented }));
+                _ = Interlocked.Add(ref _pendingMappings, -pendingMappings);
             }
             catch
             {
                 // Branch: handles any exception that reaches this handler.
-                // Best effort recorder used only for testing workflows.
+                // Best effort recorder used only for testing workflows; the mappings stay pending for a later flush.
+            }
+            finally
+            {
+                Monitor.Exit(FlushLock);
             }
         }
 
@@ -198,46 +234,107 @@ namespace Datadog.Trace.DuckTyping
             return string.Concat(mapping.Mode, "|", mapping.ProxyType, "|", mapping.ProxyAssembly, "|", mapping.TargetType, "|", mapping.TargetAssembly);
         }
 
-        private static FileStream? AcquireOutputLock(string outputPath)
+        private static FileStream? AcquireOutputLock(string outputPath, TimeSpan timeout)
         {
-            // The lock file is intentionally left in place: deleting it on release would let two processes
-            // lock different files with the same path.
+            // The lock file is intentionally left in place: deleting it on release would let two processes lock
+            // different files with the same path. It's opened read-only, so a read-only lock file left behind by
+            // another user or container still works.
             var lockPath = outputPath + ".lock";
             var stopwatch = Stopwatch.StartNew();
             while (true)
             {
                 try
                 {
-                    return new FileStream(lockPath, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None);
+                    return new FileStream(lockPath, FileMode.OpenOrCreate, FileAccess.Read, FileShare.None);
                 }
-                catch (IOException) when (stopwatch.Elapsed < OutputLockTimeout)
+                catch (UnauthorizedAccessException)
+                {
+                    return null;
+                }
+                catch (IOException) when (stopwatch.Elapsed < timeout)
                 {
                     Thread.Sleep(10);
                 }
                 catch (IOException)
                 {
-                    // Best effort: write without the lock rather than dropping this process' mappings.
                     return null;
                 }
             }
         }
 
-        private static List<MapEntry> ReadExistingMappings(string outputPath)
+        private static bool TryReadExistingMappings(string outputPath, out List<MapEntry> mappings)
         {
+            mappings = [];
+            string json;
             try
             {
-                if (File.Exists(outputPath) &&
-                    JsonHelper.DeserializeObject<MapDocument>(File.ReadAllText(outputPath)) is { Mappings: { } existingMappings })
+                if (!File.Exists(outputPath))
                 {
-                    return existingMappings;
+                    return true;
+                }
+
+                json = File.ReadAllText(outputPath);
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                return false;
+            }
+
+            try
+            {
+                if (JsonHelper.DeserializeObject<MapDocument>(json) is { Mappings: { } existingMappings })
+                {
+                    mappings = existingMappings;
                 }
             }
             catch
             {
-                // An unreadable map (e.g. written by a process that crashed mid-write) is replaced by ours.
+                // A map that isn't valid JSON can't be merged: keep it next to the output for inspection rather than
+                // silently replacing it.
+                try
+                {
+                    File.Move(outputPath, $"{outputPath}.{Guid.NewGuid():N}.invalid");
+                }
+                catch
+                {
+                    return false;
+                }
             }
 
-            return [];
+            return true;
+        }
+
+        private static void WriteAtomically(string outputPath, string contents)
+        {
+            // Readers, and a process that writes without the lock, never see a partially written map.
+            var temporaryOutputPath = $"{outputPath}.{Guid.NewGuid():N}.tmp";
+            try
+            {
+                File.WriteAllText(temporaryOutputPath, contents);
+#if NETCOREAPP3_0_OR_GREATER
+                File.Move(temporaryOutputPath, outputPath, overwrite: true);
+#else
+                if (File.Exists(outputPath))
+                {
+                    File.Replace(temporaryOutputPath, outputPath, destinationBackupFileName: null);
+                }
+                else
+                {
+                    File.Move(temporaryOutputPath, outputPath);
+                }
+#endif
+            }
+            finally
+            {
+                try
+                {
+                    File.Delete(temporaryOutputPath);
+                }
+                catch
+                {
+                    // Best effort: the staging file normally no longer exists here.
+                }
+            }
         }
 
         /// <summary>

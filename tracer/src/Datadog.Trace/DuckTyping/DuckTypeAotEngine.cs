@@ -651,16 +651,6 @@ namespace Datadog.Trace.DuckTyping
         /// <returns>The resulting failure thrower.</returns>
         private static Action CreateRegisteredFailureThrower(Type exceptionType, Type proxyDefinitionType, Type targetType, bool reverse)
         {
-            if (exceptionType == typeof(DuckTypePropertyCantBeWrittenException))
-            {
-                return ThrowPropertyCantBeWrittenSentinelFailure;
-            }
-
-            if (exceptionType == typeof(DuckTypeFieldIsReadonlyException))
-            {
-                return ThrowFieldReadonlySentinelFailure;
-            }
-
             var failureTypeName = exceptionType.FullName ?? exceptionType.Name ?? "unknown";
             var detail = reverse
                              ? $"The AOT reverse proxy deriving from '{proxyDefinitionType.FullName}' cannot be created for delegation type '{targetType.FullName}'."
@@ -727,28 +717,6 @@ namespace Datadog.Trace.DuckTyping
                     nameof(throwerMethodHandle),
                     ex);
             }
-        }
-
-        private static void ThrowPropertyCantBeWrittenSentinelFailure()
-        {
-            var sentinelProperty = typeof(string).GetProperty(nameof(string.Length), BindingFlags.Public | BindingFlags.Instance);
-            if (sentinelProperty is null)
-            {
-                throw new InvalidOperationException("Unable to resolve sentinel property for DuckTypePropertyCantBeWrittenException.");
-            }
-
-            throw DuckTypePropertyCantBeWrittenException.Create(sentinelProperty);
-        }
-
-        private static void ThrowFieldReadonlySentinelFailure()
-        {
-            var sentinelField = typeof(string).GetField(nameof(string.Empty), BindingFlags.Public | BindingFlags.Static);
-            if (sentinelField is null)
-            {
-                throw new InvalidOperationException("Unable to resolve sentinel field for DuckTypeFieldIsReadonlyException.");
-            }
-
-            throw DuckTypeFieldIsReadonlyException.Create(sentinelField);
         }
 
         /// <summary>

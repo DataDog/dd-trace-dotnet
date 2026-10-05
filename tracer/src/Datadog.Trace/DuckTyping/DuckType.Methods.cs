@@ -1066,7 +1066,7 @@ namespace Datadog.Trace.DuckTyping
                                 outputAndRefParameters.Add(new OutputAndRefParameterData(localIndex, innerParamType, idx, outerParamType));
 
                                 // Load the local var ref (to be used in the target method param as output)
-                                il.Emit(OpCodes.Ldloca_S, localIndex);
+                                il.WriteLoadLocalAddress(localIndex);
                             }
                             else
                             {
@@ -1143,7 +1143,7 @@ namespace Datadog.Trace.DuckTyping
                                 il.WriteStoreLocal(localIndex);
 
                                 // Load the local var ref (to be used in the target method param)
-                                il.Emit(OpCodes.Ldloca_S, localIndex);
+                                il.WriteLoadLocalAddress(localIndex);
                             }
                             else
                             {
@@ -1199,43 +1199,78 @@ namespace Datadog.Trace.DuckTyping
                 var parameterType = parameter.ParameterType;
                 if (!parameterType.IsByRef)
                 {
-                    return AddIlToLoadOptionalValue(il, parameter, parameterType);
-                }
-
-                // Optional by-ref parameters (e.g. `in int value = 5`) need a storage location, not a null managed pointer.
-                var elementType = parameterType.GetElementType()!;
-                if (AddIlToLoadOptionalValue(il, parameter, elementType) is { } valueError)
-                {
-                    return valueError;
-                }
-
-                var valueLocal = il.DeclareLocal(elementType);
-                var valueLocalIndex = valueLocal?.LocalIndex ?? 0;
-                il.WriteStoreLocal(valueLocalIndex);
-                il.Emit(OpCodes.Ldloca, valueLocalIndex);
-                return null;
-            }
-
-            private static DuckTypeException? AddIlToLoadOptionalValue(LazyILGenerator il, ParameterInfo parameter, Type parameterType)
-            {
-                var value = parameter.DefaultValue;
-                if (value is null || value == Missing.Value || value == DBNull.Value)
-                {
-                    if (parameterType.IsValueType || parameterType.IsGenericParameter)
+                    if (AddIlToLoadOptionalValue(il, parameter, parameterType, out var valueLoaded) is { } error)
                     {
-                        var local = il.DeclareLocal(parameterType);
-                        var localIndex = local?.LocalIndex ?? 0;
-                        il.Emit(OpCodes.Ldloca, localIndex);
-                        il.Emit(OpCodes.Initobj, parameterType);
-                        il.WriteLoadLocal(localIndex);
+                        return error;
                     }
-                    else
+
+                    if (!valueLoaded)
                     {
-                        il.Emit(OpCodes.Ldnull);
+                        AddIlToLoadDefaultValue(il, parameterType);
                     }
 
                     return null;
                 }
+
+                // Optional by-ref parameters (e.g. `in int value = 5`) need a storage location, not a null managed pointer.
+                var elementType = parameterType.GetElementType()!;
+                var valueLocalIndex = il.DeclareLocal(elementType)?.LocalIndex ?? 0;
+                if (AddIlToLoadOptionalValue(il, parameter, elementType, out var byRefValueLoaded) is { } byRefValueError)
+                {
+                    return byRefValueError;
+                }
+
+                if (byRefValueLoaded)
+                {
+                    il.WriteStoreLocal(valueLocalIndex);
+                }
+                else
+                {
+                    il.WriteLoadLocalAddress(valueLocalIndex);
+                    il.Emit(OpCodes.Initobj, elementType);
+                }
+
+                il.WriteLoadLocalAddress(valueLocalIndex);
+                return null;
+            }
+
+            private static void AddIlToLoadDefaultValue(LazyILGenerator il, Type type)
+            {
+                if (type.IsValueType || type.IsGenericParameter)
+                {
+                    var localIndex = il.DeclareLocal(type)?.LocalIndex ?? 0;
+                    il.WriteLoadLocalAddress(localIndex);
+                    il.Emit(OpCodes.Initobj, type);
+                    il.WriteLoadLocal(localIndex);
+                }
+                else
+                {
+                    il.Emit(OpCodes.Ldnull);
+                }
+            }
+
+            /// <summary>
+            /// Loads the default value of an omitted optional parameter. <paramref name="valueLoaded"/> is false when the
+            /// value is default(T), which the caller materializes because it depends on how the value is passed.
+            /// </summary>
+            private static DuckTypeException? AddIlToLoadOptionalValue(LazyILGenerator il, ParameterInfo parameter, Type parameterType, out bool valueLoaded)
+            {
+                var value = parameter.DefaultValue;
+                if (value == Missing.Value && parameterType == typeof(object))
+                {
+                    // Like the C# compiler, an omitted [Optional] object parameter without a default value receives Type.Missing.
+                    il.Emit(OpCodes.Ldsfld, typeof(Type).GetField(nameof(Type.Missing))!);
+                    valueLoaded = true;
+                    return null;
+                }
+
+                if (value is null || value == Missing.Value || value == DBNull.Value)
+                {
+                    valueLoaded = false;
+                    return null;
+                }
+
+                valueLoaded = true;
 
                 var valueType = value.GetType();
                 if (valueType.IsEnum)

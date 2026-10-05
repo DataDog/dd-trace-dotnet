@@ -57,6 +57,11 @@ namespace Datadog.Trace.DuckTyping
         private static readonly Dictionary<Assembly, bool> AssembliesInDuckTypeLoadContext;
 #endif
 
+#if !NET6_0_OR_GREATER
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+        private static readonly MethodInfo MemberwiseCloneMethod = typeof(object).GetMethod("MemberwiseClone", BindingFlags.Instance | BindingFlags.NonPublic)!;
+#endif
+
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private static int _fastPathVersion;
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
@@ -381,15 +386,18 @@ namespace Datadog.Trace.DuckTyping
 
         private sealed class FastPathEntry
         {
+            // Fields, not properties: every DuckType.Create<T> fast path hit reads Result.TargetType, and reading the
+            // struct through a property copies it on JITs without physical promotion (.NET Framework, .NET 7 and older).
+#pragma warning disable SA1401 // Fields should be private
+            public readonly CreateTypeResult Result;
+            public readonly int Version;
+#pragma warning restore SA1401
+
             public FastPathEntry(CreateTypeResult result, int version)
             {
                 Result = result;
                 Version = version;
             }
-
-            public CreateTypeResult Result { get; }
-
-            public int Version { get; }
         }
     }
 }

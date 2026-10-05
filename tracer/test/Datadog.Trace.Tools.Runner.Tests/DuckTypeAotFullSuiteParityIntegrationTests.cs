@@ -47,24 +47,19 @@ public class DuckTypeAotFullSuiteParityIntegrationTests
     private static readonly Dictionary<string, DotNetRuntimeInventory> RuntimeInventories = new(StringComparer.Ordinal);
     private static readonly Dictionary<string, IReadOnlyDictionary<string, string>> RepositoryAssemblyIndexesByFramework = new(StringComparer.OrdinalIgnoreCase);
 
-    [Fact]
+    [SkippableFact]
     public void FullDuckTypingSuiteShouldHaveMatchingOutcomesBetweenDynamicAndAotModes()
     {
-        if (!string.Equals(Environment.GetEnvironmentVariable(EnableParityRunEnvironmentVariable), "1", StringComparison.Ordinal))
-        {
-            return;
-        }
+        // Runs the whole DuckTyping suite twice; RunDuckTypeAotFullSuiteParityGate opts in explicitly.
+        Skip.IfNot(IsEnvironmentVariableEnabled(EnableParityRunEnvironmentVariable), $"Set {EnableParityRunEnvironmentVariable}=1 to run the full-suite parity check.");
 
         RunFullSuiteParityForFramework("net8.0", ResolveDotNetExecutableOrThrow("net8.0"));
     }
 
-    [Fact]
+    [SkippableFact]
     public void FullDuckTypingSuiteMatrixShouldHaveMatchingOutcomesBetweenDynamicAndAotModes()
     {
-        if (!string.Equals(Environment.GetEnvironmentVariable(EnableParityMatrixRunEnvironmentVariable), "1", StringComparison.Ordinal))
-        {
-            return;
-        }
+        Skip.IfNot(IsEnvironmentVariableEnabled(EnableParityMatrixRunEnvironmentVariable), $"Set {EnableParityMatrixRunEnvironmentVariable}=1 to run the full-suite parity matrix.");
 
         var unresolvedFrameworks = new List<string>();
         var frameworkSelections = new List<(string Framework, string DotNetExecutable)>();
@@ -586,6 +581,13 @@ public class DuckTypeAotFullSuiteParityIntegrationTests
         return string.Equals(value, "1", StringComparison.OrdinalIgnoreCase) ||
                string.Equals(value, "true", StringComparison.OrdinalIgnoreCase) ||
                string.Equals(value, "yes", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool IsEnvironmentVariableEnabled(string name)
+    {
+        var value = Environment.GetEnvironmentVariable(name);
+        return string.Equals(value, "1", StringComparison.OrdinalIgnoreCase) ||
+               string.Equals(value, "true", StringComparison.OrdinalIgnoreCase);
     }
 
     private static string ResolveDotNetExecutableOrThrow(string framework)
