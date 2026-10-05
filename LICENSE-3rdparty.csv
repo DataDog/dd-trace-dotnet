@@ -17,4 +17,6 @@ Datadog.Trace.ClrProfiler.Native,https://github.com/gulrak/filesystem/,MIT,"Copy
 Datadog.Profiler.Native,https://github.com/dotnet/runtime,MIT,Copyright (c) .NET Foundation and contributors. All rights reserved.
 Datadog.Profiler.Native,https://github.com/gulrak/filesystem/,MIT,"Copyright (c) 2018, Steffen Schümann <s.schuemann@pobox.com>"
 Datadog.Profiler.Native,https://github.com/AaronRobinsonMSFT/PPDB,MIT,
+Datadog.Profiler.Native,https://github.com/facebook/zstd,BSD-3-Clause,"Copyright (c) Meta Platforms, Inc. and affiliates. All rights reserved."
+Datadog.Profiler.Native,https://github.com/curl/curl,curl,"Copyright (c) 1996 - 2026, Daniel Stenberg, <daniel@haxx.se>, and many contributors, see the THANKS file."
 (all),https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation,Apache-2.0,

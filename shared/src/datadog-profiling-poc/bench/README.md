@@ -43,9 +43,10 @@ Python 3 (`python` or `py` on `PATH`). From PowerShell:
 ```
 
 The script finds MSVC with `vswhere`, downloads the libdatadog Windows package
-(about 250 MB, only the headers and the release DLL are kept), downloads the
-zstd sources, compiles the PoC sources directly with `cl.exe` (WinHTTP
-exporter, as in the profiler's `.vcxproj`), and runs the same scenarios.
+(about 250 MB, only the headers and the release DLL are kept), compiles the
+PoC sources and the vendored zstd (`vendor/zstd/zstd.c`) directly with `cl.exe`
+- the same files as the profiler's `.vcxproj`, WinHTTP exporter included - and
+runs the same scenarios.
 
 ## Options
 
