@@ -57,11 +57,6 @@ namespace Datadog.Trace.DuckTyping
         private static readonly Dictionary<Assembly, bool> AssembliesInDuckTypeLoadContext;
 #endif
 
-#if !NET6_0_OR_GREATER
-        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private static readonly MethodInfo MemberwiseCloneMethod = typeof(object).GetMethod("MemberwiseClone", BindingFlags.Instance | BindingFlags.NonPublic)!;
-#endif
-
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private static int _fastPathVersion;
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
@@ -384,6 +379,16 @@ namespace Datadog.Trace.DuckTyping
             }
         }
 
+#if !NET6_0_OR_GREATER
+        /// <summary>
+        /// Resolved on first use: only exceptions created by hand-written AOT failure factories need to be cloned this way.
+        /// </summary>
+        private static class ExceptionCloner
+        {
+            public static MethodInfo MemberwiseCloneMethod { get; } = typeof(object).GetMethod("MemberwiseClone", BindingFlags.Instance | BindingFlags.NonPublic)!;
+        }
+
+#endif
         private sealed class FastPathEntry
         {
             // Fields, not properties: every DuckType.Create<T> fast path hit reads Result.TargetType, and reading the

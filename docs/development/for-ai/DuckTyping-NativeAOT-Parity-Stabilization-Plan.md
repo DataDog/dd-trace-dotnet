@@ -128,7 +128,7 @@ This plan is focused on parity correctness and test reliability, without changin
 2. Full isolated parity harness (Dynamic discovery -> AOT generation -> AOT run):
    1. `DD_RUN_DUCKTYPE_AOT_FULL_SUITE_PARITY=1 dotnet test tracer/test/Datadog.Trace.Tools.Runner.Tests/Datadog.Trace.Tools.Runner.Tests.csproj -c Release --framework net8.0 --filter FullyQualifiedName~DuckTypeAotFullSuiteParityIntegrationTests`
 3. AOT processor and NativeAOT integration gates:
-   1. `dotnet test tracer/test/Datadog.Trace.Tools.Runner.Tests/Datadog.Trace.Tools.Runner.Tests.csproj -c Release --framework net8.0 --filter FullyQualifiedName~DuckTypeAot`
+   1. `DD_RUN_DUCKTYPE_AOT_NATIVEAOT_PUBLISH=1 dotnet test tracer/test/Datadog.Trace.Tools.Runner.Tests/Datadog.Trace.Tools.Runner.Tests.csproj -c Release --framework net8.0 --filter FullyQualifiedName~DuckTypeAot`
 
 ### Runtime Mode Rules
 

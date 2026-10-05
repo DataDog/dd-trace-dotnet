@@ -672,9 +672,11 @@ This allows access to internals/private metadata in generated dynamic assembly c
 
 ### Generic fast path cache
 
-`CreateCache<T>` has static `_fastPath` (`StrongBox<CreateTypeResult>`):
+`CreateCache<T>` has static `_forwardFastPath` and `_reverseFastPath` entries (`FastPathEntry`):
 - Optimizes first-seen target type for proxy definition `T`.
 - Useful because many proxy definitions map to one dominant target type.
+- Each entry is stamped with the fast path version it was computed for; AOT registrations and test resets bump the
+  version (`DuckType.InvalidateFastPaths`), so an entry that raced with them is never served.
 
 ### CreateTypeResult lifecycle
 

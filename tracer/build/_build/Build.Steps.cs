@@ -3143,11 +3143,11 @@ partial class Build
 
     private bool ShouldRunDuckTypeAotGatesInCurrentJob()
     {
-        // Explicit override for a job (or developer) that has to run, or skip, the gates regardless of the defaults below.
-        var gatesOverride = Environment.GetEnvironmentVariable("DD_DUCKTYPE_AOT_GATES");
-        if (!string.IsNullOrWhiteSpace(gatesOverride))
+        // CI declares the job that runs the gates (GenerateLinuxMatrix sets it for every Linux x64 unit test job), and
+        // developers can force the gates on or off with --duck-type-aot-gates.
+        if (DuckTypeAotGates is { } runGates)
         {
-            return gatesOverride == "1" || string.Equals(gatesOverride, "true", StringComparison.OrdinalIgnoreCase);
+            return runGates;
         }
 
         if (!IsAzurePipelineEnvironment())
@@ -3157,9 +3157,9 @@ partial class Build
             return InvokedTargets.Any(target => target.Name.StartsWith("RunDuckTypeAot", StringComparison.Ordinal));
         }
 
-        // CI runs managed unit tests across OS, libc, architecture, and framework shards.
-        // The DuckType AOT gates are CI coverage gates, so run them once, in the Linux x64 glibc net9.0 shard,
-        // which has the full NativeAOT toolchain.
+        // Fallback for CI jobs that don't declare it: CI runs managed unit tests across OS, libc, architecture, and
+        // framework shards, and the DuckType AOT gates are coverage gates, so run them once, in the Linux x64 glibc net9.0
+        // shard, which has the full NativeAOT toolchain.
         return IsLinux && !IsRunningOnAlpine() && !IsArm64 && Framework == TargetFramework.NET9_0;
     }
 

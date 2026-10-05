@@ -3722,6 +3722,83 @@ public class DuckTypeAotProcessorsTests
     }
 
     [Fact]
+    public void GenerateProcessorShouldNotAliasOptionalObjectParametersWithDifferentOmittedValues()
+    {
+        // An omitted [Optional] object parameter without a default value receives Type.Missing, so an override that
+        // declares `= null` can't reuse the proxy generated for the base type.
+        var tempDirectory = CreateTempDirectory();
+        try
+        {
+            DuckType.ResetRuntimeModeForTests();
+            DuckType.Create<IOptionalObjectAliasProxy>(new OptionalObjectAliasBaseTarget())!.Describe().Should().Be("Type.Missing");
+            DuckType.Create<IOptionalObjectAliasProxy>(new OptionalObjectAliasNullDefaultTarget())!.Describe().Should().Be("null");
+            DuckType.ResetRuntimeModeForTests();
+
+            var sharedAssemblyPath = typeof(DuckTypeAotProcessorsTests).Assembly.Location;
+            var sharedAssemblyName = AssemblyName.GetAssemblyName(sharedAssemblyPath).Name;
+            var outputPath = Path.Combine(tempDirectory, "Datadog.Trace.DuckType.AotRegistry.OptionalObjectAlias.dll");
+            var mapFilePath = Path.Combine(tempDirectory, "ducktype-aot-map-optional-object-alias.json");
+            var mapDocument = new
+            {
+                mappings = new[]
+                {
+                    new
+                    {
+                        mode = "forward",
+                        proxyType = typeof(IOptionalObjectAliasProxy).FullName,
+                        proxyAssembly = sharedAssemblyName,
+                        targetType = typeof(OptionalObjectAliasBaseTarget).FullName,
+                        targetAssembly = sharedAssemblyName
+                    }
+                }
+            };
+            File.WriteAllText(mapFilePath, JsonConvert.SerializeObject(mapDocument, Formatting.Indented));
+
+            var options = new DuckTypeAotGenerateOptions(
+                proxyAssemblies: [sharedAssemblyPath],
+                targetAssemblies: [sharedAssemblyPath],
+                targetFolders: [],
+                targetFilters: ["*.dll"],
+                mapFile: mapFilePath,
+                mappingCatalog: null,
+                genericInstantiationsFile: null,
+                outputPath: outputPath,
+                assemblyName: "Datadog.Trace.DuckType.AotRegistry.OptionalObjectAlias",
+                trimmerDescriptorPath: Path.Combine(tempDirectory, "ducktype-aot-optional-object-alias.linker.xml"),
+                propsPath: Path.Combine(tempDirectory, "ducktype-aot-optional-object-alias.props"));
+
+            DuckTypeAotGenerateProcessor.Process(options).Should().Be(0);
+
+            var manifest = JsonConvert.DeserializeObject<DuckTypeAotManifest>(File.ReadAllText($"{outputPath}.manifest.json"));
+            manifest.Should().NotBeNull();
+            manifest!.AliasRegistrations.Should().Be(0);
+
+            var loadContext = new AssemblyLoadContext("DuckTypeAotProcessorsTests-OptionalObjectAlias", isCollectible: true);
+            try
+            {
+                var generatedAssembly = loadContext.LoadFromAssemblyPath(outputPath);
+                generatedAssembly.GetType("Datadog.Trace.DuckTyping.Generated.DuckTypeAotRegistryBootstrap")!
+                                 .GetMethod("Initialize", BindingFlags.Public | BindingFlags.Static)!
+                                 .Invoke(obj: null, parameters: null);
+
+                ((IOptionalObjectAliasProxy)DuckType.Create(typeof(IOptionalObjectAliasProxy), new OptionalObjectAliasBaseTarget())!).Describe().Should().Be("Type.Missing");
+                AssertPublicDuckTypeThrowsExactFailure<DuckTypeAotMissingProxyRegistrationException>(
+                    () => DuckType.Create(typeof(IOptionalObjectAliasProxy), new OptionalObjectAliasNullDefaultTarget()));
+            }
+            finally
+            {
+                DuckType.ResetRuntimeModeForTests();
+                DuckTypeAotEngine.ResetForTests();
+                loadContext.Unload();
+            }
+        }
+        finally
+        {
+            TryDeleteDirectory(tempDirectory);
+        }
+    }
+
+    [Fact]
     public void GenerateProcessorShouldSupportClosedGenericDuckTypeTaskContracts()
     {
         var tempDirectory = CreateTempDirectory();
@@ -14652,6 +14729,32 @@ public class DuckTypeAotProcessorsTests
         public override string Format(string? suffix = null)
         {
             return suffix ?? "none";
+        }
+    }
+
+    private interface IOptionalObjectAliasProxy
+    {
+        string Describe();
+    }
+
+    private class OptionalObjectAliasBaseTarget
+    {
+        public virtual string Describe([Optional] object? value)
+        {
+            return DescribeValue(value);
+        }
+
+        protected static string DescribeValue(object? value)
+        {
+            return ReferenceEquals(value, Type.Missing) ? "Type.Missing" : value?.ToString() ?? "null";
+        }
+    }
+
+    private sealed class OptionalObjectAliasNullDefaultTarget : OptionalObjectAliasBaseTarget
+    {
+        public override string Describe(object? value = null)
+        {
+            return DescribeValue(value);
         }
     }
 

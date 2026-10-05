@@ -1556,6 +1556,20 @@ namespace Datadog.Trace.DuckTyping
                     throwOnBindFailure: false) as Func<object?, object?>;
             }
 
+#if !NET6_0_OR_GREATER
+            // Kept out of line: ThrowCachedException is inlined into every DuckType.Create/DuckCast call site.
+            [MethodImpl(MethodImplOptions.NoInlining)]
+            private static void ThrowClonedException(ExceptionDispatchInfo exceptionInfo)
+            {
+                // AOT failure factories can register any exception type, so those are cloned through object.MemberwiseClone.
+                var sourceException = exceptionInfo.SourceException;
+                var exceptionToThrow = sourceException is DuckTypeException duckTypeException
+                                           ? duckTypeException.CloneForThrow()
+                                           : (Exception)ExceptionCloner.MemberwiseCloneMethod.Invoke(sourceException, null)!;
+                ExceptionDispatchInfo.Capture(exceptionToThrow).Throw();
+            }
+#endif
+
             /// <summary>
             /// Create a new proxy instance from a target instance
             /// </summary>
@@ -1656,13 +1670,7 @@ namespace Datadog.Trace.DuckTyping
                 // Instead, make a shallow copy of the cached DuckTypeException and capture that copy immediately
                 // before every throw. MemberwiseClone preserves the exact internal details, so concurrent
                 // throws no longer cause a crash. Fixed in .NET 6+.
-                //
-                // AOT failure factories can register any exception type, so those are cloned through object.MemberwiseClone.
-                var sourceException = exceptionInfo.SourceException;
-                var exceptionToThrow = sourceException is DuckTypeException duckTypeException
-                                           ? duckTypeException.CloneForThrow()
-                                           : (Exception)MemberwiseCloneMethod.Invoke(sourceException, null)!;
-                ExceptionDispatchInfo.Capture(exceptionToThrow).Throw();
+                ThrowClonedException(exceptionInfo);
 #endif
             }
 

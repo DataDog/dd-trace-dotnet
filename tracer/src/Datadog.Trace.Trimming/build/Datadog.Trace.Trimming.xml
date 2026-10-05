@@ -1219,6 +1219,7 @@
    </assembly>
    <assembly fullname="System.Threading.ThreadPool">
       <type fullname="System.Threading.ThreadPool" />
+      <type fullname="System.Threading.WaitCallback" />
    </assembly>
    <assembly fullname="System.Threading.Timer">
       <type fullname="System.Threading.Timer" />
