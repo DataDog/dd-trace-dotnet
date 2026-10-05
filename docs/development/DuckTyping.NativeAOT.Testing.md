@@ -63,7 +63,7 @@ The DuckTyping test framework flushes discovered mappings before reporting assem
 
 Use the build gate bundle for protected-branch validation. It runs strict compatibility verification, full-suite dynamic-vs-AOT parity, and NativeAOT publish validation.
 
-In CI, `RunManagedUnitTests` also runs this bundle, but only in the Linux x64 glibc net9.0 shard, which has the NativeAOT publish toolchain. Locally, `RunManagedUnitTests` skips it; invoke the bundle (or a single gate target) explicitly to run it. Set `DD_DUCKTYPE_AOT_GATES=true` (or `false`) to force (or skip) the gates in any job.
+In CI, `RunManagedUnitTests` also runs this bundle, but only in one Linux x64 glibc job, which has the NativeAOT publish toolchain: the unit test matrix declares it (`--duck-type-aot-gates`, net9.0 or the newest framework). Locally, `RunManagedUnitTests` skips it; invoke the bundle (or a single gate target) explicitly, or pass `--duck-type-aot-gates true`, to run it.
 
 ```bash
 ./tracer/build.sh RunDuckTypeAotGates
@@ -71,7 +71,10 @@ In CI, `RunManagedUnitTests` also runs this bundle, but only in the Linux x64 gl
 
 ### Runner AOT-focused test suite
 
+The NativeAOT publish test is skipped unless `DD_RUN_DUCKTYPE_AOT_NATIVEAOT_PUBLISH=1` is set:
+
 ```bash
+DD_RUN_DUCKTYPE_AOT_NATIVEAOT_PUBLISH=1 \
 dotnet test tracer/test/Datadog.Trace.Tools.Runner.Tests/Datadog.Trace.Tools.Runner.Tests.csproj \
   -c Release --framework net8.0 \
   --filter FullyQualifiedName~DuckTypeAot

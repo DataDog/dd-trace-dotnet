@@ -6,6 +6,8 @@
 #nullable enable
 
 using System;
+using System.Linq;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Threading;
 
@@ -212,6 +214,52 @@ namespace Datadog.Trace.DuckTyping
             DuckTypeAotEngine.ValidateContract(
                 new DuckTypeAotContract(schemaVersion, datadogTraceAssemblyVersion, datadogTraceAssemblyMvid),
                 new DuckTypeAotAssemblyMetadata(registryAssemblyFullName, registryAssemblyMvid));
+        }
+
+        /// <summary>
+        /// Selects the target method dynamic duck typing binds a forward proxy method to. The AOT registry generator uses it
+        /// to bind exactly the same method, instead of re-implementing the selection rules (Type.GetMethod lookups,
+        /// ExplicitInterfaceTypeName, ParameterTypeNames, overload resolution...).
+        /// </summary>
+        /// <param name="targetType">The target type.</param>
+        /// <param name="proxyMethod">The forward proxy method definition.</param>
+        /// <returns>The selected target method, or null when dynamic duck typing can't select one (proxy creation then fails).</returns>
+        internal static MethodInfo? SelectForwardTargetMethodForAot(Type targetType, MethodInfo proxyMethod)
+        {
+            try
+            {
+                // Same arguments as CreateMethods passes for every forward proxy method.
+                var proxyMethodParameters = proxyMethod.GetParameters();
+                var proxyMethodParametersTypes = proxyMethodParameters.Select(p => p.ParameterType).ToArray();
+                var allTargetMethods = targetType.GetMethods(DuckAttribute.DefaultFlags);
+                return SelectTargetMethod<DuckAttribute>(targetType, proxyMethod, proxyMethodParameters, proxyMethodParametersTypes, allTargetMethods, out var targetMethod) is null
+                           ? targetMethod
+                           : null;
+            }
+            catch (Exception)
+            {
+                // E.g. an ambiguous Type.GetMethod lookup: dynamic proxy creation fails as well.
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Determines whether dynamic duck typing can create a forward proxy, without creating it. Used by the AOT registry
+        /// generator to tell an engine difference from a mapping that fails in both engines.
+        /// </summary>
+        /// <param name="proxyDefinitionType">The proxy definition type.</param>
+        /// <param name="targetType">The target type.</param>
+        /// <returns>true if dynamic duck typing can create the proxy; otherwise, false.</returns>
+        internal static bool CanCreateForwardProxyForAot(Type proxyDefinitionType, Type targetType)
+        {
+            try
+            {
+                return CreateProxyType(proxyDefinitionType, targetType, dryRun: true).CanCreate();
+            }
+            catch (Exception)
+            {
+                return false;
+            }
         }
 
         /// <summary>

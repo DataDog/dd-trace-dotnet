@@ -177,6 +177,38 @@ public class DuckTypeAotAdditionalParityTests
     }
 
     [Theory]
+    // Type.GetMethod("Echo", [string]) picks the most specific assignable overload before ExplicitInterfaceTypeName applies.
+    [InlineData("assignable-overloads", "public-IComparable:value")]
+    // The default binder accepts an enum argument for a parameter of its underlying type.
+    [InlineData("enum-underlying-type", "public-int:1")]
+    // The "*" wildcard still prefers the exact plain method found by Type.GetMethod.
+    [InlineData("wildcard", "public:value")]
+    // Without ExplicitInterfaceTypeName the exact overload wins over a broader one.
+    [InlineData("exact-overload", "string:value")]
+    // Type.GetMethod with the ParameterTypeNames types finds the plain method with an extra optional parameter.
+    [InlineData("parameter-type-names", "plain:0")]
+    // Type.GetMethod matches the plain generic method before ExplicitInterfaceTypeName applies.
+    [InlineData("generic-method", "public:Int32:value")]
+    public void GeneratedRegistryShouldSelectTheSameTargetMethodAsDynamicMode(string scenario, string expected)
+    {
+        var (proxyType, targetType, exercise) = scenario switch
+        {
+            "assignable-overloads" => (typeof(IAssignableOverloadsProxy), typeof(AssignableOverloadsTarget), (Func<string>)(() => DuckType.Create<IAssignableOverloadsProxy>(new AssignableOverloadsTarget())!.Echo("value"))),
+            "enum-underlying-type" => (typeof(IEnumOverloadProxy), typeof(EnumOverloadTarget), () => DuckType.Create<IEnumOverloadProxy>(new EnumOverloadTarget())!.Echo(DayOfWeek.Monday)),
+            "wildcard" => (typeof(IWildcardEchoProxy), typeof(ExplicitAndPublicEchoTarget), () => DuckType.Create<IWildcardEchoProxy>(new ExplicitAndPublicEchoTarget())!.Echo("value")),
+            "exact-overload" => (typeof(IPlainEchoProxy), typeof(StringAndObjectOverloadsTarget), () => DuckType.Create<IPlainEchoProxy>(new StringAndObjectOverloadsTarget())!.Echo("value")),
+            "parameter-type-names" => (typeof(IParameterTypeNamesEchoProxy), typeof(ExplicitEchoWithOptionalOverloadTarget), () => DuckType.Create<IParameterTypeNamesEchoProxy>(new ExplicitEchoWithOptionalOverloadTarget())!.Echo("value")),
+            _ => (typeof(IExplicitGenericGetProxy), typeof(GenericGetTarget), () => DuckType.Create<IExplicitGenericGetProxy>(new GenericGetTarget())!.Get<int>("value")),
+        };
+
+        DuckType.ResetRuntimeModeForTests();
+        exercise().Should().Be(expected);
+        WithGeneratedRegistry(
+            () => exercise().Should().Be(expected),
+            Mapping(proxyType, targetType));
+    }
+
+    [Theory]
     [InlineData(false)]
     [InlineData(true)]
     public void MappingResolverShouldSkipInvalidAssembliesInTargetFolders(bool truncatedManagedAssembly)
@@ -559,10 +591,97 @@ public class DuckTypeAotAdditionalParityTests
         string IExplicitEcho.Echo(string value) => "explicit:" + value;
     }
 
+    public interface IEchoA
+    {
+        string Echo(string value);
+    }
+
+    public interface IAssignableOverloadsProxy
+    {
+        [Duck(ExplicitInterfaceTypeName = "Datadog.Trace.Tools.Runner.Tests.DuckTypeAotAdditionalParityTests+IEchoA")]
+        string Echo(string value);
+    }
+
+    public class AssignableOverloadsTarget : IEchoA
+    {
+        public string Echo(object value) => "public-object:" + value;
+
+        public string Echo(IComparable value) => "public-IComparable:" + value;
+
+        string IEchoA.Echo(string value) => "explicit:" + value;
+    }
+
+    public interface IEchoEnum
+    {
+        string Echo(DayOfWeek value);
+    }
+
+    public interface IEnumOverloadProxy
+    {
+        [Duck(ExplicitInterfaceTypeName = "Datadog.Trace.Tools.Runner.Tests.DuckTypeAotAdditionalParityTests+IEchoEnum")]
+        string Echo(DayOfWeek value);
+    }
+
+    public class EnumOverloadTarget : IEchoEnum
+    {
+        public string Echo(int value) => FormattableString.Invariant($"public-int:{value}");
+
+        string IEchoEnum.Echo(DayOfWeek value) => "explicit:" + value;
+    }
+
+    public interface IWildcardEchoProxy
+    {
+        [Duck(ExplicitInterfaceTypeName = "*")]
+        string Echo(string value);
+    }
+
+    public interface IPlainEchoProxy
+    {
+        string Echo(string value);
+    }
+
+    public class StringAndObjectOverloadsTarget
+    {
+        public string Echo(string value) => "string:" + value;
+
+        public string Echo(object value) => "object:" + value;
+    }
+
+    public interface IParameterTypeNamesEchoProxy
+    {
+        [Duck(ExplicitInterfaceTypeName = "Datadog.Trace.Tools.Runner.Tests.DuckTypeAotAdditionalParityTests+IExplicitEcho", ParameterTypeNames = new[] { "System.String", "System.Int32" })]
+        string Echo(string value);
+    }
+
+    public class ExplicitEchoWithOptionalOverloadTarget : IExplicitEcho
+    {
+        public string Echo(string value, int extra = 0) => FormattableString.Invariant($"plain:{extra}");
+
+        string IExplicitEcho.Echo(string value) => "explicit:" + value;
+    }
+
+    public interface IGenericGet
+    {
+        string Get<T>(string value);
+    }
+
+    public interface IExplicitGenericGetProxy
+    {
+        [Duck(ExplicitInterfaceTypeName = "Datadog.Trace.Tools.Runner.Tests.DuckTypeAotAdditionalParityTests+IGenericGet")]
+        string Get<T>(string value);
+    }
+
+    public class GenericGetTarget : IGenericGet
+    {
+        public string Get<T>(string value) => "public:" + typeof(T).Name + ":" + value;
+
+        string IGenericGet.Get<T>(string value) => "explicit:" + value;
+    }
+
     public class NullableOptionalConstantsTarget
     {
         public string Format(int? count = 5, DayOfWeek? day = DayOfWeek.Friday, in int value = 3, int? none = null)
-            => string.Join("|", count, day, value, none is null);
+            => FormattableString.Invariant($"{count}|{day}|{value}|{none is null}");
     }
 
     public class NegativeOptionalConstantsTarget
@@ -578,7 +697,7 @@ public class DuckTypeAotAdditionalParityTests
             int? nullable = -7,
             in int byRef = -9,
             byte octet = 200)
-            => string.Join("|", number, small, medium, large, wide, (int)day, amount.ToString(CultureInfo.InvariantCulture), nullable, byRef, octet);
+            => FormattableString.Invariant($"{number}|{small}|{medium}|{large}|{wide}|{(int)day}|{amount}|{nullable}|{byRef}|{octet}");
     }
 
     public class VirtualInOptionalConstantsTarget

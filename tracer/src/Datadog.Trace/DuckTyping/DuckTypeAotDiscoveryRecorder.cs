@@ -216,7 +216,13 @@ namespace Datadog.Trace.DuckTyping
                 };
 
                 WriteAtomically(outputPath, JsonHelper.SerializeObject(document, new JsonSerializerSettings { Formatting = Formatting.Indented }));
-                _ = Interlocked.Add(ref _pendingMappings, -pendingMappings);
+
+                // Branch: a write without the lock may still be overwritten by a process that read the map before it, so
+                // keep the mappings pending and let the next flush (e.g. the exit one) write them again.
+                if (outputLock is not null)
+                {
+                    _ = Interlocked.Add(ref _pendingMappings, -pendingMappings);
+                }
             }
             catch
             {
@@ -234,7 +240,7 @@ namespace Datadog.Trace.DuckTyping
             return string.Concat(mapping.Mode, "|", mapping.ProxyType, "|", mapping.ProxyAssembly, "|", mapping.TargetType, "|", mapping.TargetAssembly);
         }
 
-        private static FileStream? AcquireOutputLock(string outputPath, TimeSpan timeout)
+        internal static FileStream? AcquireOutputLock(string outputPath, TimeSpan timeout)
         {
             // The lock file is intentionally left in place: deleting it on release would let two processes lock
             // different files with the same path. It's opened read-only, so a read-only lock file left behind by
@@ -251,8 +257,10 @@ namespace Datadog.Trace.DuckTyping
                 {
                     return null;
                 }
-                catch (IOException) when (stopwatch.Elapsed < timeout)
+                catch (IOException) when (stopwatch.Elapsed < timeout && File.Exists(lockPath))
                 {
+                    // Held by another process. If the lock file doesn't even exist it couldn't be created
+                    // (read-only volume, invalid path...): waiting wouldn't help.
                     Thread.Sleep(10);
                 }
                 catch (IOException)
@@ -262,7 +270,7 @@ namespace Datadog.Trace.DuckTyping
             }
         }
 
-        private static bool TryReadExistingMappings(string outputPath, out List<MapEntry> mappings)
+        internal static bool TryReadExistingMappings(string outputPath, out List<MapEntry> mappings)
         {
             mappings = [];
             string json;
@@ -304,7 +312,7 @@ namespace Datadog.Trace.DuckTyping
             return true;
         }
 
-        private static void WriteAtomically(string outputPath, string contents)
+        internal static void WriteAtomically(string outputPath, string contents)
         {
             // Readers, and a process that writes without the lock, never see a partially written map.
             var temporaryOutputPath = $"{outputPath}.{Guid.NewGuid():N}.tmp";
@@ -316,7 +324,24 @@ namespace Datadog.Trace.DuckTyping
 #else
                 if (File.Exists(outputPath))
                 {
-                    File.Replace(temporaryOutputPath, outputPath, destinationBackupFileName: null);
+                    // Without a backup name, a failed rename step of ReplaceFile leaves no map at all. With one, the
+                    // previous map is either still in place or under the backup name, so it can always be restored.
+                    var backupPath = $"{outputPath}.{Guid.NewGuid():N}.bak";
+                    try
+                    {
+                        File.Replace(temporaryOutputPath, outputPath, backupPath);
+                    }
+                    finally
+                    {
+                        if (!File.Exists(outputPath) && File.Exists(backupPath))
+                        {
+                            File.Move(backupPath, outputPath);
+                        }
+                        else
+                        {
+                            File.Delete(backupPath);
+                        }
+                    }
                 }
                 else
                 {
@@ -340,7 +365,7 @@ namespace Datadog.Trace.DuckTyping
         /// <summary>
         /// Represents map document.
         /// </summary>
-        private sealed class MapDocument
+        internal sealed class MapDocument
         {
             /// <summary>
             /// Gets or sets mappings.
@@ -353,7 +378,7 @@ namespace Datadog.Trace.DuckTyping
         /// <summary>
         /// Represents map entry.
         /// </summary>
-        private sealed class MapEntry
+        internal sealed class MapEntry
         {
             /// <summary>
             /// Gets or sets mode.

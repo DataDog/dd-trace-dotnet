@@ -11,6 +11,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Reflection.PortableExecutable;
 
 #pragma warning disable SA1402 // File may only contain a single type
 
@@ -219,67 +220,14 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// <returns>true if the file is a native PE image; otherwise, false.</returns>
         internal static bool IsNativePortableExecutable(string path)
         {
-            const ushort DosSignature = 0x5A4D; // "MZ"
-            const uint PeSignature = 0x00004550; // "PE\0\0"
-            const ushort Pe32Magic = 0x10B;
-            const ushort Pe32PlusMagic = 0x20B;
-            const int CliHeaderDirectoryIndex = 14;
-
             try
             {
                 using var stream = File.OpenRead(path);
-                using var reader = new BinaryReader(stream);
-                if (stream.Length < 0x40 || reader.ReadUInt16() != DosSignature)
-                {
-                    return false;
-                }
-
-                stream.Position = 0x3C;
-                var peHeaderOffset = reader.ReadInt32();
-                // PE signature (4 bytes) + COFF header (20 bytes) + optional header magic (2 bytes).
-                if (peHeaderOffset <= 0 || peHeaderOffset > stream.Length - 26)
-                {
-                    return false;
-                }
-
-                stream.Position = peHeaderOffset;
-                if (reader.ReadUInt32() != PeSignature)
-                {
-                    return false;
-                }
-
-                var optionalHeaderOffset = peHeaderOffset + 24;
-                stream.Position = optionalHeaderOffset;
-                var magic = reader.ReadUInt16();
-                if (magic != Pe32Magic && magic != Pe32PlusMagic)
-                {
-                    return false;
-                }
-
-                // NumberOfRvaAndSizes is followed by the data directories (8 bytes each).
-                var numberOfRvaAndSizesOffset = optionalHeaderOffset + (magic == Pe32Magic ? 92 : 108);
-                if (numberOfRvaAndSizesOffset > stream.Length - 4)
-                {
-                    return false;
-                }
-
-                stream.Position = numberOfRvaAndSizesOffset;
-                var numberOfRvaAndSizes = reader.ReadUInt32();
-                if (numberOfRvaAndSizes <= CliHeaderDirectoryIndex)
-                {
-                    return true;
-                }
-
-                var cliHeaderDirectoryOffset = numberOfRvaAndSizesOffset + 4 + (CliHeaderDirectoryIndex * 8);
-                if (cliHeaderDirectoryOffset > stream.Length - 8)
-                {
-                    return false;
-                }
-
-                stream.Position = cliHeaderDirectoryOffset;
-                return reader.ReadUInt32() == 0 && reader.ReadUInt32() == 0;
+                var headers = new PEHeaders(stream);
+                // Files that aren't PE images at all (e.g. ELF) parse as COFF-only object files.
+                return !headers.IsCoffOnly && headers.CorHeader is null;
             }
-            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            catch (Exception ex) when (ex is BadImageFormatException or IOException or UnauthorizedAccessException)
             {
                 return false;
             }
