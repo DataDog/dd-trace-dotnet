@@ -11,6 +11,7 @@ using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
+using Datadog.Trace.Util;
 #pragma warning disable SA1649 // File name must match first type name
 #pragma warning disable SA1402 // File may only contain a single class
 
@@ -695,7 +696,7 @@ namespace Datadog.Trace.DuckTyping
     internal sealed class DuckTypeAotRegisteredFailureException : DuckTypeException
     {
         private DuckTypeAotRegisteredFailureException(string failureTypeName, string detail)
-            : base(string.IsNullOrWhiteSpace(detail)
+            : base(StringUtil.IsNullOrWhiteSpace(detail)
                        ? $"AOT duck typing registered failure '{failureTypeName}' was replayed."
                        : $"AOT duck typing registered failure '{failureTypeName}' was replayed. {detail}")
         {
@@ -703,34 +704,38 @@ namespace Datadog.Trace.DuckTyping
 
         internal static Exception Create(string failureTypeName, string detail)
         {
+            // Known DuckType exceptions use the detail as their whole message, so never replay them with an empty one.
+            var message = StringUtil.IsNullOrWhiteSpace(detail)
+                              ? $"AOT duck typing registered failure '{failureTypeName}' was replayed."
+                              : detail;
             return failureTypeName switch
             {
-                string name when name == typeof(DuckTypeException).FullName => DuckTypeException.Create(detail),
-                string name when name == typeof(DuckTypeInvalidTypeConversionException).FullName => DuckTypeInvalidTypeConversionException.CreateForAot(detail),
-                string name when name == typeof(DuckTypePropertyCantBeReadException).FullName => DuckTypePropertyCantBeReadException.CreateForAot(detail),
-                string name when name == typeof(DuckTypePropertyCantBeWrittenException).FullName => DuckTypePropertyCantBeWrittenException.CreateForAot(detail),
-                string name when name == typeof(DuckTypePropertyArgumentsLengthException).FullName => DuckTypePropertyArgumentsLengthException.CreateForAot(detail),
-                string name when name == typeof(DuckTypeFieldIsReadonlyException).FullName => DuckTypeFieldIsReadonlyException.CreateForAot(detail),
-                string name when name == typeof(DuckTypePropertyOrFieldNotFoundException).FullName => DuckTypePropertyOrFieldNotFoundException.CreateForAot(detail),
-                string name when name == typeof(DuckTypeStructMembersCannotBeChangedException).FullName => DuckTypeStructMembersCannotBeChangedException.CreateForAot(detail),
-                string name when name == typeof(DuckTypeTargetMethodNotFoundException).FullName => DuckTypeTargetMethodNotFoundException.CreateForAot(detail),
-                string name when name == typeof(DuckTypeProxyMethodParameterIsMissingException).FullName => DuckTypeProxyMethodParameterIsMissingException.CreateForAot(detail),
-                string name when name == typeof(DuckTypeProxyAndTargetMethodParameterSignatureMismatchException).FullName => DuckTypeProxyAndTargetMethodParameterSignatureMismatchException.CreateForAot(detail),
-                string name when name == typeof(DuckTypeProxyAndTargetMethodReturnTypeMismatchException).FullName => DuckTypeProxyAndTargetMethodReturnTypeMismatchException.CreateForAot(detail),
-                string name when name == typeof(DuckTypeProxyMethodsWithGenericParametersNotSupportedInNonPublicInstancesException).FullName => DuckTypeProxyMethodsWithGenericParametersNotSupportedInNonPublicInstancesException.CreateForAot(detail),
-                string name when name == typeof(DuckTypeTargetMethodAmbiguousMatchException).FullName => DuckTypeTargetMethodAmbiguousMatchException.CreateForAot(detail),
-                string name when name == typeof(DuckTypeTargetPropertyAmbiguousMatchException).FullName => DuckTypeTargetPropertyAmbiguousMatchException.CreateForAot(detail),
-                string name when name == typeof(DuckTypeReverseProxyBaseIsStructException).FullName => DuckTypeReverseProxyBaseIsStructException.CreateForAot(detail),
-                string name when name == typeof(DuckTypeReverseProxyImplementorIsAbstractOrInterfaceException).FullName => DuckTypeReverseProxyImplementorIsAbstractOrInterfaceException.CreateForAot(detail),
-                string name when name == typeof(DuckTypeReverseProxyPropertyCannotBeAbstractException).FullName => DuckTypeReverseProxyPropertyCannotBeAbstractException.CreateForAot(detail),
-                string name when name == typeof(DuckTypeIncorrectReverseMethodUsageException).FullName => DuckTypeIncorrectReverseMethodUsageException.CreateForAot(detail),
-                string name when name == typeof(DuckTypeIncorrectReversePropertyUsageException).FullName => DuckTypeIncorrectReversePropertyUsageException.CreateForAot(detail),
-                string name when name == typeof(DuckTypeReverseProxyMissingPropertyImplementationException).FullName => DuckTypeReverseProxyMissingPropertyImplementationException.CreateForAot(detail),
-                string name when name == typeof(DuckTypeReverseProxyMissingMethodImplementationException).FullName => DuckTypeReverseProxyMissingMethodImplementationException.CreateForAot(detail),
-                string name when name == typeof(DuckTypeReverseAttributeParameterNamesMismatchException).FullName => DuckTypeReverseAttributeParameterNamesMismatchException.CreateForAot(detail),
-                string name when name == typeof(DuckTypeReverseProxyMustImplementGenericMethodAsGenericException).FullName => DuckTypeReverseProxyMustImplementGenericMethodAsGenericException.CreateForAot(detail),
-                string name when name == typeof(DuckTypeCustomAttributeHasNamedArgumentsException).FullName => DuckTypeCustomAttributeHasNamedArgumentsException.CreateForAot(detail),
-                string name when name == typeof(DuckTypeDuckCopyStructDoesNotContainsAnyField).FullName => DuckTypeDuckCopyStructDoesNotContainsAnyField.CreateForAot(detail),
+                string name when name == typeof(DuckTypeException).FullName => DuckTypeException.Create(message),
+                string name when name == typeof(DuckTypeInvalidTypeConversionException).FullName => DuckTypeInvalidTypeConversionException.CreateForAot(message),
+                string name when name == typeof(DuckTypePropertyCantBeReadException).FullName => DuckTypePropertyCantBeReadException.CreateForAot(message),
+                string name when name == typeof(DuckTypePropertyCantBeWrittenException).FullName => DuckTypePropertyCantBeWrittenException.CreateForAot(message),
+                string name when name == typeof(DuckTypePropertyArgumentsLengthException).FullName => DuckTypePropertyArgumentsLengthException.CreateForAot(message),
+                string name when name == typeof(DuckTypeFieldIsReadonlyException).FullName => DuckTypeFieldIsReadonlyException.CreateForAot(message),
+                string name when name == typeof(DuckTypePropertyOrFieldNotFoundException).FullName => DuckTypePropertyOrFieldNotFoundException.CreateForAot(message),
+                string name when name == typeof(DuckTypeStructMembersCannotBeChangedException).FullName => DuckTypeStructMembersCannotBeChangedException.CreateForAot(message),
+                string name when name == typeof(DuckTypeTargetMethodNotFoundException).FullName => DuckTypeTargetMethodNotFoundException.CreateForAot(message),
+                string name when name == typeof(DuckTypeProxyMethodParameterIsMissingException).FullName => DuckTypeProxyMethodParameterIsMissingException.CreateForAot(message),
+                string name when name == typeof(DuckTypeProxyAndTargetMethodParameterSignatureMismatchException).FullName => DuckTypeProxyAndTargetMethodParameterSignatureMismatchException.CreateForAot(message),
+                string name when name == typeof(DuckTypeProxyAndTargetMethodReturnTypeMismatchException).FullName => DuckTypeProxyAndTargetMethodReturnTypeMismatchException.CreateForAot(message),
+                string name when name == typeof(DuckTypeProxyMethodsWithGenericParametersNotSupportedInNonPublicInstancesException).FullName => DuckTypeProxyMethodsWithGenericParametersNotSupportedInNonPublicInstancesException.CreateForAot(message),
+                string name when name == typeof(DuckTypeTargetMethodAmbiguousMatchException).FullName => DuckTypeTargetMethodAmbiguousMatchException.CreateForAot(message),
+                string name when name == typeof(DuckTypeTargetPropertyAmbiguousMatchException).FullName => DuckTypeTargetPropertyAmbiguousMatchException.CreateForAot(message),
+                string name when name == typeof(DuckTypeReverseProxyBaseIsStructException).FullName => DuckTypeReverseProxyBaseIsStructException.CreateForAot(message),
+                string name when name == typeof(DuckTypeReverseProxyImplementorIsAbstractOrInterfaceException).FullName => DuckTypeReverseProxyImplementorIsAbstractOrInterfaceException.CreateForAot(message),
+                string name when name == typeof(DuckTypeReverseProxyPropertyCannotBeAbstractException).FullName => DuckTypeReverseProxyPropertyCannotBeAbstractException.CreateForAot(message),
+                string name when name == typeof(DuckTypeIncorrectReverseMethodUsageException).FullName => DuckTypeIncorrectReverseMethodUsageException.CreateForAot(message),
+                string name when name == typeof(DuckTypeIncorrectReversePropertyUsageException).FullName => DuckTypeIncorrectReversePropertyUsageException.CreateForAot(message),
+                string name when name == typeof(DuckTypeReverseProxyMissingPropertyImplementationException).FullName => DuckTypeReverseProxyMissingPropertyImplementationException.CreateForAot(message),
+                string name when name == typeof(DuckTypeReverseProxyMissingMethodImplementationException).FullName => DuckTypeReverseProxyMissingMethodImplementationException.CreateForAot(message),
+                string name when name == typeof(DuckTypeReverseAttributeParameterNamesMismatchException).FullName => DuckTypeReverseAttributeParameterNamesMismatchException.CreateForAot(message),
+                string name when name == typeof(DuckTypeReverseProxyMustImplementGenericMethodAsGenericException).FullName => DuckTypeReverseProxyMustImplementGenericMethodAsGenericException.CreateForAot(message),
+                string name when name == typeof(DuckTypeCustomAttributeHasNamedArgumentsException).FullName => DuckTypeCustomAttributeHasNamedArgumentsException.CreateForAot(message),
+                string name when name == typeof(DuckTypeDuckCopyStructDoesNotContainsAnyField).FullName => DuckTypeDuckCopyStructDoesNotContainsAnyField.CreateForAot(message),
                 _ => new DuckTypeAotRegisteredFailureException(failureTypeName, detail)
             };
         }

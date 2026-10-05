@@ -1729,6 +1729,7 @@ partial class Build
                 .SetProjectFile(runnerTestsProjectPath)
                 .SetFramework("net8.0")
                 .SetFilter("FullyQualifiedName~DuckTypeAotNativeAotPublishIntegrationTests")
+                .SetProcessEnvironmentVariable("DD_RUN_DUCKTYPE_AOT_NATIVEAOT_PUBLISH", "1")
                 .When(IsAzurePipelineEnvironment(), o => o.SetProcessEnvironmentVariable("DD_DUCKTYPE_AOT_NATIVEAOT_REQUIRE_TOOLCHAIN", "1"))
                 .WithDatadogLogger());
         });
@@ -3144,7 +3145,9 @@ partial class Build
     {
         if (!IsAzurePipelineEnvironment())
         {
-            return true;
+            // Locally, the gates (NativeAOT publish and multi-TFM parity) are too slow to piggyback on every
+            // managed unit test run, so only run them when a DuckType AOT gate target is invoked explicitly.
+            return InvokedTargets.Any(target => target.Name.StartsWith("RunDuckTypeAot", StringComparison.Ordinal));
         }
 
         // CI runs managed unit tests across OS, libc, architecture, and framework shards.
@@ -3160,8 +3163,12 @@ partial class Build
 
     private static bool IsAzurePipelineEnvironment()
     {
+        // run-in-docker.yml doesn't forward TF_BUILD/BUILD_BUILDID into the container, only the DD_LOGGER_ copies.
+        // The PR-only variables below are empty on master and scheduled builds, so they can't be relied on alone.
         return IsTruthyEnvironmentVariable("TF_BUILD")
+            || IsTruthyEnvironmentVariable("DD_LOGGER_TF_BUILD")
             || HasEnvironmentVariable("BUILD_BUILDID")
+            || HasEnvironmentVariable("DD_LOGGER_BUILD_BUILDID")
             || HasEnvironmentVariable("SYSTEM_COLLECTIONID")
             || HasEnvironmentVariable("SYSTEM_TEAMFOUNDATIONCOLLECTIONURI")
             || HasEnvironmentVariable("DD_LOGGER_SYSTEM_PULLREQUEST_SOURCEBRANCH")

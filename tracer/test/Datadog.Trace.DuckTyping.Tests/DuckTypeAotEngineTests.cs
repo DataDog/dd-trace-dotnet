@@ -758,6 +758,38 @@ namespace Datadog.Trace.DuckTyping.Tests
         }
 
         [Fact]
+        public void RegisterFailureUsingKnownExceptionTypeReplaysDescriptiveMessage()
+        {
+            DuckTypeAotEngine.RegisterProxyFailure(
+                typeof(IMissingProxy),
+                typeof(MissingTarget),
+                typeof(DuckTypePropertyOrFieldNotFoundException));
+
+            var result = DuckTypeAotEngine.GetOrCreateProxyType(typeof(IMissingProxy), typeof(MissingTarget));
+
+            Action getProxyType = () => _ = result.ProxyType;
+            getProxyType.Should().Throw<DuckTypePropertyOrFieldNotFoundException>()
+                        .WithMessage($"*{typeof(IMissingProxy).FullName}*{typeof(MissingTarget).FullName}*");
+        }
+
+        [Fact]
+        public void RegisterFailureFactoryReplaysNonDuckTypeException()
+        {
+            DuckTypeAotEngine.RegisterProxyFailureFactory(
+                typeof(IForwardProxy),
+                typeof(ForwardTarget),
+                static () => new InvalidOperationException("factory failure"));
+
+            var result = DuckTypeAotEngine.GetOrCreateProxyType(typeof(IForwardProxy), typeof(ForwardTarget));
+
+            result.CanCreate().Should().BeFalse();
+            Action getProxyType = () => _ = result.ProxyType;
+            getProxyType.Should().Throw<InvalidOperationException>().WithMessage("factory failure");
+            Action createProxy = () => _ = result.CreateInstance<IForwardProxy>(new ForwardTarget("failure"));
+            createProxy.Should().Throw<InvalidOperationException>().WithMessage("factory failure");
+        }
+
+        [Fact]
         public void RegisterFailureUsingExceptionTypeDoesNotDefineRegistryAssemblyIdentity()
         {
             DuckTypeAotEngine.RegisterProxyFailure(

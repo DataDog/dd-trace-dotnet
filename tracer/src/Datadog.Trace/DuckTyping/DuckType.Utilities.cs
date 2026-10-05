@@ -9,6 +9,7 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Reflection.Emit;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.DuckTyping
 {
@@ -157,7 +158,7 @@ namespace Datadog.Trace.DuckTyping
             if (configuredName.IndexOf(',') == -1)
             {
                 var trimmedName = configuredName.Trim();
-                if (!string.IsNullOrEmpty(trimmedName))
+                if (!StringUtil.IsNullOrEmpty(trimmedName))
                 {
                     yield return trimmedName;
                 }
@@ -168,7 +169,7 @@ namespace Datadog.Trace.DuckTyping
             foreach (var name in configuredName.Split(','))
             {
                 var trimmedName = name.Trim();
-                if (!string.IsNullOrEmpty(trimmedName))
+                if (!StringUtil.IsNullOrEmpty(trimmedName))
                 {
                     yield return trimmedName;
                 }

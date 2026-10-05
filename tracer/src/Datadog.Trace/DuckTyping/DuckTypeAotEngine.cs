@@ -106,22 +106,10 @@ namespace Datadog.Trace.DuckTyping
         private static string? _validatedRegistryAssemblyIdentity;
 
         /// <summary>
-        /// Monotonic cache version used to invalidate fast paths after registration changes.
-        /// </summary>
-        /// <remarks>This field participates in shared runtime state and must remain thread-safe.</remarks>
-        private static int _cacheVersion;
-
-        /// <summary>
         /// Counts method-handle registrations that bind directly to object activators.
         /// </summary>
         /// <remarks>This field participates in shared runtime state and must remain thread-safe.</remarks>
         private static int _directObjectActivatorHandleCount;
-
-        /// <summary>
-        /// Gets cache version.
-        /// </summary>
-        /// <remarks>This field participates in shared runtime state and must remain thread-safe.</remarks>
-        internal static int CacheVersion => Volatile.Read(ref _cacheVersion);
 
         /// <summary>
         /// Gets the number of method-handle registrations that resolved directly to object activators.
@@ -306,27 +294,27 @@ namespace Datadog.Trace.DuckTyping
         internal static void ValidateContract(DuckTypeAotContract contract, DuckTypeAotAssemblyMetadata metadata)
         {
             // Contract fields must be present before any identity comparisons.
-            if (string.IsNullOrWhiteSpace(contract.SchemaVersion))
+            if (StringUtil.IsNullOrWhiteSpace(contract.SchemaVersion))
             {
                 DuckTypeAotRegistryContractValidationException.ThrowValidation("AOT contract schema version is missing.");
             }
 
-            if (string.IsNullOrWhiteSpace(contract.DatadogTraceAssemblyVersion))
+            if (StringUtil.IsNullOrWhiteSpace(contract.DatadogTraceAssemblyVersion))
             {
                 DuckTypeAotRegistryContractValidationException.ThrowValidation("AOT contract Datadog.Trace assembly version is missing.");
             }
 
-            if (string.IsNullOrWhiteSpace(contract.DatadogTraceAssemblyMvid))
+            if (StringUtil.IsNullOrWhiteSpace(contract.DatadogTraceAssemblyMvid))
             {
                 DuckTypeAotRegistryContractValidationException.ThrowValidation("AOT contract Datadog.Trace assembly MVID is missing.");
             }
 
-            if (string.IsNullOrWhiteSpace(metadata.RegistryAssemblyFullName))
+            if (StringUtil.IsNullOrWhiteSpace(metadata.RegistryAssemblyFullName))
             {
                 DuckTypeAotRegistryContractValidationException.ThrowValidation("AOT registry assembly full name is missing.");
             }
 
-            if (string.IsNullOrWhiteSpace(metadata.RegistryAssemblyMvid))
+            if (StringUtil.IsNullOrWhiteSpace(metadata.RegistryAssemblyMvid))
             {
                 DuckTypeAotRegistryContractValidationException.ThrowValidation("AOT registry assembly MVID is missing.");
             }
@@ -351,7 +339,7 @@ namespace Datadog.Trace.DuckTyping
                 var incomingRegistryAssemblyIdentity = NormalizeRegistryAssemblyIdentity(metadata.RegistryAssemblyFullName, metadata.RegistryAssemblyMvid);
                 var currentRegistryAssemblyIdentity = _registeredRegistryAssemblyIdentity ?? _validatedRegistryAssemblyIdentity;
                 // First validated registry identity wins for this process.
-                if (string.IsNullOrWhiteSpace(currentRegistryAssemblyIdentity))
+                if (StringUtil.IsNullOrWhiteSpace(currentRegistryAssemblyIdentity))
                 {
                     _validatedRegistryAssemblyIdentity = incomingRegistryAssemblyIdentity;
                     return;
@@ -381,7 +369,7 @@ namespace Datadog.Trace.DuckTyping
                 _registeredRegistryAssemblyIdentity = null;
                 _validatedRegistryAssemblyIdentity = null;
                 Volatile.Write(ref _directObjectActivatorHandleCount, 0);
-                Interlocked.Increment(ref _cacheVersion);
+                DuckType.InvalidateFastPaths();
             }
         }
 
@@ -391,7 +379,7 @@ namespace Datadog.Trace.DuckTyping
         /// <param name="snapshotKey">Stable snapshot key, typically the generated registry path.</param>
         internal static void CaptureSnapshotForTests(string snapshotKey)
         {
-            if (string.IsNullOrWhiteSpace(snapshotKey))
+            if (StringUtil.IsNullOrWhiteSpace(snapshotKey))
             {
                 ThrowHelper.ThrowArgumentNullException(nameof(snapshotKey));
             }
@@ -415,7 +403,7 @@ namespace Datadog.Trace.DuckTyping
         /// <returns>true if a snapshot existed and was restored; otherwise, false.</returns>
         internal static bool RestoreSnapshotForTests(string snapshotKey)
         {
-            if (string.IsNullOrWhiteSpace(snapshotKey))
+            if (StringUtil.IsNullOrWhiteSpace(snapshotKey))
             {
                 ThrowHelper.ThrowArgumentNullException(nameof(snapshotKey));
             }
@@ -457,7 +445,7 @@ namespace Datadog.Trace.DuckTyping
                 _registeredRegistryAssemblyIdentity = snapshot.RegisteredRegistryAssemblyIdentity;
                 _validatedRegistryAssemblyIdentity = snapshot.ValidatedRegistryAssemblyIdentity;
                 Volatile.Write(ref _directObjectActivatorHandleCount, 0);
-                Interlocked.Increment(ref _cacheVersion);
+                DuckType.InvalidateFastPaths();
             }
 
             return true;
@@ -550,7 +538,7 @@ namespace Datadog.Trace.DuckTyping
                 var missCache = reverse ? ReverseMissCache : ForwardMissCache;
                 _ = missCache.TryRemove(key, out _);
 
-                Interlocked.Increment(ref _cacheVersion);
+                DuckType.InvalidateFastPaths();
             }
         }
 
@@ -571,7 +559,7 @@ namespace Datadog.Trace.DuckTyping
                 throw new ArgumentException($"Failure exception type '{exceptionType}' must derive from Exception.", nameof(exceptionType));
             }
 
-            RegisterFailure(proxyDefinitionType, targetType, CreateRegisteredFailureThrower(exceptionType), reverse, enforceRegistryIdentity: false);
+            RegisterFailure(proxyDefinitionType, targetType, CreateRegisteredFailureThrower(exceptionType, proxyDefinitionType, targetType, reverse), reverse, enforceRegistryIdentity: false);
         }
 
         /// <summary>
@@ -649,7 +637,7 @@ namespace Datadog.Trace.DuckTyping
                 var missCache = reverse ? ReverseMissCache : ForwardMissCache;
                 _ = missCache.TryRemove(key, out _);
 
-                Interlocked.Increment(ref _cacheVersion);
+                DuckType.InvalidateFastPaths();
             }
         }
 
@@ -657,8 +645,11 @@ namespace Datadog.Trace.DuckTyping
         /// Creates an exception instance for a registered AOT failure mapping.
         /// </summary>
         /// <param name="exceptionType">The exception type value.</param>
+        /// <param name="proxyDefinitionType">The proxy definition type value, used to describe the failure.</param>
+        /// <param name="targetType">The target type value, used to describe the failure.</param>
+        /// <param name="reverse">Whether the failure belongs to the reverse registry.</param>
         /// <returns>The resulting failure thrower.</returns>
-        private static Action CreateRegisteredFailureThrower(Type exceptionType)
+        private static Action CreateRegisteredFailureThrower(Type exceptionType, Type proxyDefinitionType, Type targetType, bool reverse)
         {
             if (exceptionType == typeof(DuckTypePropertyCantBeWrittenException))
             {
@@ -671,7 +662,10 @@ namespace Datadog.Trace.DuckTyping
             }
 
             var failureTypeName = exceptionType.FullName ?? exceptionType.Name ?? "unknown";
-            return () => DuckTypeAotRegisteredFailureException.Throw(failureTypeName, detail: string.Empty);
+            var detail = reverse
+                             ? $"The AOT reverse proxy deriving from '{proxyDefinitionType.FullName}' cannot be created for delegation type '{targetType.FullName}'."
+                             : $"The AOT proxy for '{proxyDefinitionType.FullName}' cannot be created for target type '{targetType.FullName}'.";
+            return () => DuckTypeAotRegisteredFailureException.Throw(failureTypeName, detail);
         }
 
         /// <summary>
@@ -876,7 +870,7 @@ namespace Datadog.Trace.DuckTyping
             var incomingRegistryAssemblyIdentity = ResolveRegistryAssemblyIdentity(activator);
             var currentRegistryAssemblyIdentity = _registeredRegistryAssemblyIdentity ?? _validatedRegistryAssemblyIdentity;
             // The first registered identity defines the process-wide AOT registry boundary.
-            if (string.IsNullOrWhiteSpace(currentRegistryAssemblyIdentity))
+            if (StringUtil.IsNullOrWhiteSpace(currentRegistryAssemblyIdentity))
             {
                 _registeredRegistryAssemblyIdentity = incomingRegistryAssemblyIdentity;
                 return;
@@ -903,7 +897,7 @@ namespace Datadog.Trace.DuckTyping
 
             var assemblyFullName = assembly.FullName;
             // Fallback path for unusual runtime contexts where Assembly.FullName is unavailable.
-            if (string.IsNullOrWhiteSpace(assemblyFullName))
+            if (StringUtil.IsNullOrWhiteSpace(assemblyFullName))
             {
                 var assemblyName = assembly.GetName();
                 assemblyFullName = assemblyName.FullName ?? assemblyName.Name ?? "unknown";
@@ -932,7 +926,7 @@ namespace Datadog.Trace.DuckTyping
         /// <returns>Normalized assembly identity without culture/public key details.</returns>
         private static string NormalizeAssemblyIdentityName(string assemblyNameOrFullName)
         {
-            if (string.IsNullOrWhiteSpace(assemblyNameOrFullName))
+            if (StringUtil.IsNullOrWhiteSpace(assemblyNameOrFullName))
             {
                 return "unknown";
             }

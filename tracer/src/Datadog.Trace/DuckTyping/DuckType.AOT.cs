@@ -231,11 +231,6 @@ namespace Datadog.Trace.DuckTyping
             DuckTypeAotEngine.ResetForTests();
             DuckTypeCache.Clear();
             DuckTypeReverseCache.Clear();
-            Volatile.Write(ref _nonGenericForwardFastPath, null);
-            Volatile.Write(ref _nonGenericReverseFastPath, null);
-            Interlocked.Increment(ref _runtimeFastPathVersion);
-            Volatile.Write(ref _nonGenericFastPathRuntimeVersion, -1);
-            Volatile.Write(ref _nonGenericFastPathAotCacheVersion, -1);
             lock (Locker)
             {
                 ActiveBuilders.Clear();
@@ -245,6 +240,10 @@ namespace Datadog.Trace.DuckTyping
             }
 
             Volatile.Write(ref _runtimeModeState, RuntimeModeStateUninitialized);
+
+            // Invalidate after every cache and the runtime mode have been reset, so no fast path entry computed
+            // against the previous state can be stamped with the new version.
+            InvalidateFastPaths();
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
