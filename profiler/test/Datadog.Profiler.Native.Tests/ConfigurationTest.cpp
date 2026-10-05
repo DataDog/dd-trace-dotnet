@@ -1569,26 +1569,6 @@ TEST_F(ConfigurationTest, CheckHeapSnapshotSkipTraversalIsDisabledIfEnvVarSetToF
     ASSERT_THAT(configuration.IsHeapSnapshotSkipTraversal(), false);
 }
 
-TEST_F(ConfigurationTest, CheckHeapSnapshotReferenceChainBenchmarkIsDisabledByDefault)
-{
-    auto configuration = Configuration{};
-    ASSERT_THAT(configuration.IsHeapSnapshotReferenceChainBenchmarkEnabled(), false);
-}
-
-TEST_F(ConfigurationTest, CheckHeapSnapshotReferenceChainBenchmarkIsEnabledIfEnvVarSetToTrue)
-{
-    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::HeapSnapshotReferenceChainBenchmarkEnabled, WStr("1"));
-    auto configuration = Configuration{};
-    ASSERT_THAT(configuration.IsHeapSnapshotReferenceChainBenchmarkEnabled(), true);
-}
-
-TEST_F(ConfigurationTest, CheckHeapSnapshotReferenceChainBenchmarkIsDisabledIfEnvVarSetToFalse)
-{
-    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::HeapSnapshotReferenceChainBenchmarkEnabled, WStr("0"));
-    auto configuration = Configuration{};
-    ASSERT_THAT(configuration.IsHeapSnapshotReferenceChainBenchmarkEnabled(), false);
-}
-
 TEST_F(ConfigurationTest, CheckHeapHandleLimitIfNoValue)
 {
     auto configuration = Configuration{};
@@ -1718,11 +1698,11 @@ TEST_F(ConfigurationTest, CheckReferenceTreeFormatFallsBackToBinaryWhenEnvVarSet
     ASSERT_THAT(configuration.GetReferenceTreeFormat(), ReferenceTreeFormat_Binary);
 }
 
-TEST_F(ConfigurationTest, CheckReferenceTreeFormatFallsBackToBinaryWhenEnvVarHasValidAndInvalidBits)
+TEST_F(ConfigurationTest, CheckReferenceTreeFormatEnablesBenchmarkDiagnosticsWhenCombinedWithOutputFormat)
 {
     EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::HeapSnapshotReferenceTreeFormat, WStr("5"));
     auto configuration = Configuration{};
-    ASSERT_THAT(configuration.GetReferenceTreeFormat(), ReferenceTreeFormat_Binary);
+    ASSERT_THAT(configuration.GetReferenceTreeFormat(), ReferenceTreeFormat_Binary | ReferenceTreeFormat_BenchmarkDiagnostics);
 }
 
 TEST_F(ConfigurationTest, CheckReferenceTreeFormatFallsBackToBinaryWhenEnvVarSetToLargeValue)

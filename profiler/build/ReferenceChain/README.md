@@ -46,7 +46,7 @@ The runner uses:
 - five independent processes, 50 seconds each
 - heap snapshots every 10 seconds
 - three completed heap dumps per process with the current startup/cooldown behavior
-- `DD_INTERNAL_PROFILING_HEAPSNAPSHOT_REFERENCE_CHAIN_BENCHMARK_ENABLED=1`
+- `DD_INTERNAL_PROFILING_HEAPSNAPSHOT_REFERENCE_TREE_FORMAT=5` for binary output with benchmark diagnostics
 - `DD_PROFILING_METRICS_FILEPATH` for process CPU, GC, and memory metrics
 
 A label is immutable: `run.ps1` fails if its output directory already exists.

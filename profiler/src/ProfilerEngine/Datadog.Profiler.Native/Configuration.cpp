@@ -131,7 +131,6 @@ Configuration::Configuration()
     _isWaitHandleProfilingEnabled = GetEnvironmentValue(EnvironmentVariables::WaitHandleProfilingEnabled, false);
     _isHeapSnapshotEnabled = GetEnvironmentValue(EnvironmentVariables::HeapSnapshotEnabled, false);
     _isHeapSnapshotSkipTraversal = GetEnvironmentValue(EnvironmentVariables::HeapSnapshotSkipTraversal, false);
-    _isHeapSnapshotReferenceChainBenchmarkEnabled = GetEnvironmentValue(EnvironmentVariables::HeapSnapshotReferenceChainBenchmarkEnabled, false);
     _heapSnapshotInterval = ExtractHeapSnapshotInterval();
     _heapSnapshotCheckInterval = ExtractHeapSnapshotCheckInterval();
     _heapSnapshotMemoryPressureThreshold = GetEnvironmentValue(EnvironmentVariables::HeapSnapshotMemoryPressureThreshold, 50);
@@ -922,11 +921,6 @@ bool Configuration::IsHeapSnapshotSkipTraversal() const
     return _isHeapSnapshotSkipTraversal;
 }
 
-bool Configuration::IsHeapSnapshotReferenceChainBenchmarkEnabled() const
-{
-    return _isHeapSnapshotReferenceChainBenchmarkEnabled;
-}
-
 std::chrono::minutes Configuration::GetDefaultHeapSnapshotInterval() const
 {
     auto r = shared::GetEnvironmentValue(EnvironmentVariables::DevelopmentConfiguration);
@@ -1032,14 +1026,14 @@ uint32_t Configuration::GetHeapHandleLimit() const
 
 uint32_t Configuration::ExtractReferenceTreeFormat() const
 {
-    // The format is a bitfield combining ReferenceTreeFormat_Binary (1) and ReferenceTreeFormat_Json (2).
-    // Only 1 (Binary), 2 (Json) and 3 (Binary + Json) are valid; anything else falls back to the
-    // default binary format.
+    // At least one output format bit must be set. Benchmark diagnostics may be combined with either
+    // output format, but is not valid on its own.
     constexpr uint32_t defaultFormat = ReferenceTreeFormat_Binary;
-    constexpr uint32_t validMask = ReferenceTreeFormat_Binary | ReferenceTreeFormat_Json;
+    constexpr uint32_t outputMask = ReferenceTreeFormat_Binary | ReferenceTreeFormat_Json;
+    constexpr uint32_t validMask = outputMask | ReferenceTreeFormat_BenchmarkDiagnostics;
 
     uint32_t format = GetEnvironmentValue(EnvironmentVariables::HeapSnapshotReferenceTreeFormat, defaultFormat);
-    if (format == 0 || (format & ~validMask) != 0)
+    if ((format & outputMask) == 0 || (format & ~validMask) != 0)
     {
         return defaultFormat;
     }

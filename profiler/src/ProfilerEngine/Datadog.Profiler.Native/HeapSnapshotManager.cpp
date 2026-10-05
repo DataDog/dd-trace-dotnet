@@ -89,7 +89,7 @@ HeapSnapshotManager::HeapSnapshotManager(
     _memPressureThreshold = pConfiguration->GetHeapSnapshotMemoryPressureThreshold();
     _snapshotCheckInterval = pConfiguration->GetHeapSnapshotCheckInterval();
     _referenceTreeFormat = pConfiguration->GetReferenceTreeFormat();
-    _isReferenceChainBenchmarkEnabled = pConfiguration->IsHeapSnapshotReferenceChainBenchmarkEnabled();
+    _isReferenceChainBenchmarkEnabled = (_referenceTreeFormat & ReferenceTreeFormat_BenchmarkDiagnostics) != 0;
     if (_isReferenceChainBenchmarkEnabled)
     {
         _pReferenceChainBenchmarkStats = std::make_unique<ReferenceChainBenchmarkStats>();
