@@ -5,6 +5,7 @@
 #include "encoded_profile.h"
 #include "internal.h"
 #include "json_min.h"
+#include "zstd_compress.h"
 #include "tags.h"
 
 #include <curl/curl.h>
@@ -254,14 +255,18 @@ static bool append_json_string_from_buf(ddog__buf* out, const ddog__buf* value)
     return ddog__json_append_escaped_string(out, s);
 }
 
-// Builds the multipart "event" part - see plan doc "Exporter (libcurl)" for
-// the field list. internal/info JSON are intentionally omitted (matching
-// what the real wrapper does when it has nothing to say - see AgentProxy.hpp)
-// since no reachable test asserts on their structure.
+// Builds the multipart "event" part, with the same fields as libdatadog's
+// ProfileExporter::build_event_json (endpoint_counts, process_tags, internal
+// and info are appended by ddog__json_append_event_tail, shared with the
+// other exporter). internal/info must already have been validated.
 static bool build_event_json(const struct ddog_prof_exporter* exp, const struct ddog_prof_encoded_profile* encoded,
-                              const ddog_vec_tag* additional_tags, const ddog_charslice* process_tags, ddog__buf* out)
+                              const ddog_prof_exporter_file* files_to_compress, size_t files_to_compress_len,
+                              const ddog_vec_tag* additional_tags, const ddog_charslice* process_tags,
+                              const ddog_charslice* internal_json, const ddog_charslice* info_json, ddog__buf* out)
 {
-    if (!append_lit(out, "{\"attachments\":[\"auto.pprof\"],\"tags_profiler\":"))
+    if (!append_lit(out, "{\"attachments\":") ||
+        !ddog__json_append_attachments(out, files_to_compress, files_to_compress_len, "auto.pprof") ||
+        !append_lit(out, ",\"tags_profiler\":"))
     {
         return false;
     }
@@ -330,32 +335,44 @@ static bool build_event_json(const struct ddog_prof_exporter* exp, const struct 
         return false;
     }
 
-    if (process_tags != NULL && process_tags->len > 0)
-    {
-        if (!append_lit(out, ",\"process_tags\":"))
-        {
-            return false;
-        }
-        if (!ddog__json_append_escaped_string(out, *process_tags))
-        {
-            return false;
-        }
-    }
+    return ddog__json_append_event_tail(out, encoded->endpoint_counts, encoded->endpoint_counts_len, process_tags,
+                                        internal_json, info_json);
+}
 
-    return append_lit(out, "}");
+// Adds one multipart part. curl_mime_data copies the bytes, so `data` only
+// has to live for the duration of this call. No explicit type means libcurl
+// sends application/octet-stream for a part with a filename.
+static bool add_part(curl_mime* mime, const char* name, const char* filename, const char* type, const void* data,
+                     size_t len)
+{
+    curl_mimepart* part = curl_mime_addpart(mime);
+    if (part == NULL)
+    {
+        return false;
+    }
+    return curl_mime_name(part, name) == CURLE_OK && curl_mime_filename(part, filename) == CURLE_OK &&
+           (type == NULL || curl_mime_type(part, type) == CURLE_OK) &&
+           curl_mime_data(part, (const char*)data, len) == CURLE_OK;
+}
+
+// Like libdatadog, an additional file uses its name for both the form field
+// and the filename.
+static bool add_file_part(curl_mime* mime, ddog_charslice name, const void* data, size_t len)
+{
+    char name_buf[256];
+    size_t name_len = name.len < sizeof(name_buf) - 1 ? name.len : sizeof(name_buf) - 1;
+    memcpy(name_buf, name.ptr, name_len);
+    name_buf[name_len] = '\0';
+    return add_part(mime, name_buf, name_buf, NULL, data, len);
 }
 
 ddog_error_code ddog_prof_exporter_send_blocking(ddog_prof_exporter* exporter, ddog_prof_encoded_profile* profile,
-                                                  const ddog_prof_exporter_file* files, size_t files_len,
+                                                  const ddog_prof_exporter_file* files_to_compress, size_t files_to_compress_len,
                                                   const ddog_vec_tag* optional_additional_tags,
                                                   const ddog_charslice* optional_process_tags,
                                                   const ddog_charslice* optional_internal_metadata_json,
                                                   const ddog_charslice* optional_info_json, uint16_t* out_http_status)
 {
-    // Not required by any reachable test - see plan doc "Exporter (libcurl)".
-    (void)optional_internal_metadata_json;
-    (void)optional_info_json;
-
     struct ddog_prof_exporter* exp = (struct ddog_prof_exporter*)exporter;
     struct ddog_prof_encoded_profile* encoded = (struct ddog_prof_encoded_profile*)profile;
 
@@ -371,67 +388,63 @@ ddog_error_code ddog_prof_exporter_send_blocking(ddog_prof_exporter* exporter, d
     {
         return ddog__fail(DDOG_ERR_INVALID_ARGUMENT, "out_http_status is NULL");
     }
-    if (files == NULL && files_len > 0)
+    if (files_to_compress == NULL && files_to_compress_len > 0)
     {
-        return ddog__fail(DDOG_ERR_INVALID_ARGUMENT, "files is NULL but files_len > 0");
+        return ddog__fail(DDOG_ERR_INVALID_ARGUMENT, "files_to_compress is NULL but files_to_compress_len > 0");
+    }
+    // libdatadog parses both documents and fails the send if either is invalid
+    if (optional_internal_metadata_json != NULL && !ddog__json_is_valid(*optional_internal_metadata_json))
+    {
+        return ddog__fail(DDOG_ERR_INVALID_ARGUMENT, "Failed to parse contents of internal_metadata json string");
+    }
+    if (optional_info_json != NULL && !ddog__json_is_valid(*optional_info_json))
+    {
+        return ddog__fail(DDOG_ERR_INVALID_ARGUMENT, "Failed to parse contents of info json string");
     }
 
     ddog__buf event_json;
     ddog__buf_init(&event_json);
-    if (!build_event_json(exp, encoded, optional_additional_tags, optional_process_tags, &event_json))
+    if (!build_event_json(exp, encoded, files_to_compress, files_to_compress_len, optional_additional_tags,
+                          optional_process_tags,
+                          optional_internal_metadata_json, optional_info_json, &event_json))
     {
         ddog__buf_free(&event_json);
         return ddog__fail(DDOG_ERR_OUT_OF_MEMORY, "failed to build event.json");
     }
 
+    ddog__buf* compressed = NULL;
+    ddog_error_code compress_rc = ddog__compress_files(files_to_compress, files_to_compress_len, &compressed);
+    if (compress_rc != DDOG_OK)
+    {
+        ddog__buf_free(&event_json);
+        return compress_rc;
+    }
+
     curl_mime* mime = curl_mime_init(exp->curl);
     if (mime == NULL)
     {
+        ddog__free_compressed_files(compressed, files_to_compress_len);
         ddog__buf_free(&event_json);
         return ddog__fail(DDOG_ERR_OUT_OF_MEMORY, "curl_mime_init failed");
     }
 
-    curl_mimepart* event_part = curl_mime_addpart(mime);
-    curl_mimepart* profile_part = curl_mime_addpart(mime);
-    if (event_part == NULL || profile_part == NULL)
+    // Same part order as libdatadog: event, additional files, profile
+    bool parts_ok = add_part(mime, "event", "event.json", "application/json", event_json.data, event_json.len);
+    for (size_t i = 0; i < files_to_compress_len && parts_ok; i++)
+    {
+        parts_ok = add_file_part(mime, files_to_compress[i].name, compressed[i].data, compressed[i].len);
+    }
+    // "auto.pprof" for both the field name and filename (libdatadog v38 uses "profile.pprof", see README)
+    if (parts_ok)
+    {
+        parts_ok = add_part(mime, "auto.pprof", "auto.pprof", NULL, encoded->data, encoded->len);
+    }
+    if (!parts_ok)
     {
         curl_mime_free(mime);
+        ddog__free_compressed_files(compressed, files_to_compress_len);
         ddog__buf_free(&event_json);
-        return ddog__fail(DDOG_ERR_OUT_OF_MEMORY, "curl_mime_addpart failed");
-    }
-
-    curl_mime_name(event_part, "event");
-    curl_mime_filename(event_part, "event.json");
-    curl_mime_type(event_part, "application/json");
-    curl_mime_data(event_part, (const char*)event_json.data, event_json.len);
-
-    // "auto.pprof" for both the field name and filename - matches this
-    // repo's actually-pinned libdatadog version's wire format, see plan doc.
-    curl_mime_name(profile_part, "auto.pprof");
-    curl_mime_filename(profile_part, "auto.pprof");
-    curl_mime_data(profile_part, (const char*)encoded->data, encoded->len);
-
-    // Additional files (metrics.json etc). Sent uncompressed here, unlike
-    // real libdatadog which zstd-compresses each individually - no path
-    // exercised by M1-M4 sends a non-empty files list (files_len is always 0
-    // for a plain wall/cpu-time sample app), so this is untested; flagged as
-    // follow-up work rather than silently "supported".
-    for (size_t i = 0; i < files_len; i++)
-    {
-        curl_mimepart* part = curl_mime_addpart(mime);
-        if (part == NULL)
-        {
-            curl_mime_free(mime);
-            ddog__buf_free(&event_json);
-            return ddog__fail(DDOG_ERR_OUT_OF_MEMORY, "curl_mime_addpart failed for additional file");
-        }
-        char name_buf[256];
-        size_t name_len = files[i].name.len < sizeof(name_buf) - 1 ? files[i].name.len : sizeof(name_buf) - 1;
-        memcpy(name_buf, files[i].name.ptr, name_len);
-        name_buf[name_len] = '\0';
-        curl_mime_name(part, name_buf);
-        curl_mime_filename(part, name_buf);
-        curl_mime_data(part, (const char*)files[i].file.ptr, files[i].file.len);
+        return ddog__fail(DDOG_ERR_OUT_OF_MEMORY, "failed to build the multipart body");
     }
 
     struct curl_slist* headers = NULL;
@@ -474,6 +487,7 @@ ddog_error_code ddog_prof_exporter_send_blocking(ddog_prof_exporter* exporter, d
 
     curl_slist_free_all(headers);
     curl_mime_free(mime);
+    ddog__free_compressed_files(compressed, files_to_compress_len);
     ddog__buf_free(&event_json);
 
     return rc;

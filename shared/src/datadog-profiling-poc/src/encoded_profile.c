@@ -29,5 +29,10 @@ void ddog_prof_encoded_profile_drop(ddog_prof_encoded_profile* encoded)
         return;
     }
     free(impl->data);
+    for (size_t i = 0; i < impl->endpoint_counts_len; i++)
+    {
+        ddog__charslice_free(&impl->endpoint_counts[i].endpoint);
+    }
+    free(impl->endpoint_counts);
     free(impl);
 }

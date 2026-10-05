@@ -93,7 +93,7 @@ file(GLOB POC_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/src/*.c")
 list(REMOVE_ITEM POC_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/src/exporter_win.c")
 add_library(datadog_profiling_poc SHARED ${POC_SOURCES})
 target_include_directories(datadog_profiling_poc PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
-target_link_libraries(datadog_profiling_poc PRIVATE CURL::libcurl libzstd_static)
+target_link_libraries(datadog_profiling_poc PRIVATE CURL::libcurl libzstd_static m)
 
 # M1/M2 manual smoke-test driver - a local dev tool, not installed anywhere.
 add_executable(manual_smoke test/manual_smoke.c)

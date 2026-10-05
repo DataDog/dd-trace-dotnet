@@ -119,6 +119,9 @@ typedef struct {
 DDOG_API ddog_error_code ddog_prof_exporter_new(ddog_charslice profiling_library_name, ddog_charslice profiling_library_version,
                                                  ddog_charslice family, const ddog_vec_tag* tags, const ddog_prof_endpoint* endpoint,
                                                  ddog_prof_exporter** out_exporter);
+// Additional files are zstd-compressed (like libdatadog v38+, capped at
+// 10 MiB compressed), attached next to the profile and listed in the event's
+// "attachments".
 DDOG_API ddog_error_code ddog_prof_exporter_send_blocking(ddog_prof_exporter* exporter, ddog_prof_encoded_profile* profile,
                                                            const ddog_prof_exporter_file* files, size_t files_len,
                                                            const ddog_vec_tag* optional_additional_tags,
