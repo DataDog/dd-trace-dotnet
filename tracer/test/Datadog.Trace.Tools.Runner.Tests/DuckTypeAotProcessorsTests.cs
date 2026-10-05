@@ -64,6 +64,8 @@ public class DuckTypeAotProcessorsTests
     private const string TemporaryTargetAssemblyFramework = "net9.0";
 #elif NET10_0
     private const string TemporaryTargetAssemblyFramework = "net10.0";
+#elif NET11_0
+    private const string TemporaryTargetAssemblyFramework = "net11.0";
 #else
 #error Unsupported test target framework.
 #endif
