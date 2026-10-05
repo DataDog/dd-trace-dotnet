@@ -53,6 +53,12 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 return 1;
             }
 
+            if (!string.IsNullOrWhiteSpace(options.GenericInstantiationsPath) && !File.Exists(options.GenericInstantiationsPath))
+            {
+                Utils.WriteError($"--generic-instantiations file was not found: {options.GenericInstantiationsPath}");
+                return 1;
+            }
+
             if (!string.IsNullOrWhiteSpace(options.MappingCatalogPath) && !File.Exists(options.MappingCatalogPath))
             {
                 Utils.WriteError($"--mapping-catalog file was not found: {options.MappingCatalogPath}");
@@ -133,7 +139,36 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                     return 1;
                 }
 
-                if (!ValidateMapFileContract(matrix, mapFileResult.Mappings))
+                var expectedMappings = mapFileResult.Mappings.ToDictionary(mapping => mapping.Key, StringComparer.Ordinal);
+                var expansionErrors = new List<string>();
+                IEnumerable<DuckTypeAotTypeReference> genericRoots;
+                if (!string.IsNullOrWhiteSpace(options.GenericInstantiationsPath))
+                {
+                    var rootsResult = DuckTypeAotGenericInstantiationsParser.Parse(options.GenericInstantiationsPath!);
+                    expansionErrors.AddRange(rootsResult.Errors);
+                    genericRoots = rootsResult.TypeRoots;
+                }
+                else
+                {
+                    genericRoots = manifest?.GenericInstantiations?
+                                           .Where(root => !string.IsNullOrWhiteSpace(root.Type) && !string.IsNullOrWhiteSpace(root.Assembly))
+                                           .Select(root => new DuckTypeAotTypeReference(root.Type!, root.Assembly!))
+                                ?? Enumerable.Empty<DuckTypeAotTypeReference>();
+                }
+
+                DuckTypeAotMappingResolver.ExpandOpenGenericMappings(expectedMappings, genericRoots, expansionErrors);
+                DuckTypeAotMappingResolver.ValidateGenericClosure(expectedMappings.Values, expansionErrors);
+                if (expansionErrors.Count > 0)
+                {
+                    foreach (var error in expansionErrors)
+                    {
+                        Utils.WriteError(error);
+                    }
+
+                    return 1;
+                }
+
+                if (!ValidateMapFileContract(matrix, expectedMappings.Values.ToList()))
                 {
                     return 1;
                 }

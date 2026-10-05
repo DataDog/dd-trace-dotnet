@@ -57,6 +57,8 @@ DD_DUCKTYPE_AOT_FULL_SUITE_PARITY_SEED=20260301 \
   --filter FullyQualifiedName~DuckTypeAotFullSuiteParityIntegrationTests
 ```
 
+The DuckTyping test framework flushes discovered mappings before reporting assembly completion. Testhost termination can interrupt a process-exit flush, so the parity harness must receive a complete map before the host begins shutting down.
+
 ### Managed DuckTyping AOT gate bundle
 
 Use the build gate bundle for protected-branch validation. It runs strict compatibility verification, full-suite dynamic-vs-AOT parity, and NativeAOT publish validation.
@@ -80,7 +82,7 @@ dotnet test tracer/test/Datadog.Trace.Tools.Runner.Tests/Datadog.Trace.Tools.Run
 Run strict verification for contract gating:
 
 ```bash
-dotnet tracer/src/Datadog.Trace.Tools.Runner/bin/Release/Tool/net8.0/Datadog.Trace.Tools.Runner.dll \
+dotnet artifacts/bin/Datadog.Trace.Tools.Runner.Tool/release_net8.0/Datadog.Trace.Tools.Runner.dll \
   ducktype-aot verify-compat \
   --compat-report /abs/path/Datadog.Trace.DuckType.AotRegistry.dll.compat.md \
   --compat-matrix /abs/path/Datadog.Trace.DuckType.AotRegistry.dll.compat.json \
@@ -156,6 +158,10 @@ When a gate fails, triage in this order:
 1. Do not mix dynamic and AOT mode in the same process unless tests explicitly verify conflict behavior.
 2. Ensure registry path environment variable points to the registry generated for the same runtime build.
 3. Reset or isolate process state for mode-sensitive tests.
+
+Managed parity tests also cover separate `AssemblyLoadContext` instances. Load and initialize the same generated registry in each target context so registrations use that context's target type identities. Shared contracts and `Datadog.Trace` remain in the default context. The tests check private field access, returned values, proxy caching and context isolation in both modes; dynamic proxies use emitted assemblies and AOT proxies use the loaded registry assembly. The NativeAOT executable exercises compiled registrations without assembly loading or dynamic emission. It also verifies cached failure identity and class proxies that skip a base constructor requiring arguments. Explicit interface property naming and writes are compared directly with the dynamic engine.
+
+The full-suite matrix defaults to .NET 11 through .NET 6. It includes the current dynamic regression tests for first-chance exceptions, cached concurrent failures, generic signature validation and ref/out storage preservation. The generator checks successful metadata plans against dynamic dry-run validation when the referenced runtime types and duck attribute identities are compatible. Standalone contracts that declare metadata equivalents of the tracer's internal attributes use metadata validation, because dynamic reflection cannot bind those attribute types.
 
 ## Performance and Flakiness Guardrails
 

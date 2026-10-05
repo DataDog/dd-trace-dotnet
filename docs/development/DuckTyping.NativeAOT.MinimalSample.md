@@ -65,7 +65,7 @@ public static class Program
         DuckTypeAotRegistryBootstrap.Initialize();
 
         var person = new Person { Name = "Alice" };
-        var proxy = person.DuckCast<IPersonProxy>();
+        var proxy = DuckType.Create<IPersonProxy>(person)!;
 
         Console.WriteLine(proxy.Name);
     }
@@ -111,6 +111,7 @@ Notes:
 2. `DuckTypeAotPropsPath` is passed on the publish command line.
 3. The app can reference `Datadog.Trace.DuckTyping.Generated` only after the generated registry props are imported during publish.
 4. This sample uses a repo `ProjectReference` because it is meant for local development in this repository.
+5. The app resolves that reference to the full `net6.0` tracer. Include its output folder and `Datadog.Trace.dll` filter during generation: the generated registry validates its version and module ID at startup.
 
 ## Build the Runner Tool First
 
@@ -120,13 +121,14 @@ The generator lives in `Datadog.Trace.Tools.Runner`.
 export REPO_ROOT=/abs/path/to/dd-trace-dotnet
 export SAMPLE_ROOT=/abs/path/to/NativeAotDuckSample
 
-dotnet build "$REPO_ROOT/tracer/src/Datadog.Trace.Tools.Runner/Datadog.Trace.Tools.Runner.csproj" -c Release --no-restore
+dotnet build "$REPO_ROOT/tracer/src/Datadog.Trace.Tools.Runner/Datadog.Trace.Tools.Runner.csproj" -c Release -f net10.0
+dotnet build "$REPO_ROOT/tracer/src/Datadog.Trace/Datadog.Trace.csproj" -c Release -f net6.0
 ```
 
 Runner path:
 
 ```text
-$REPO_ROOT/tracer/src/Datadog.Trace.Tools.Runner/bin/Release/Tool/net10.0/Datadog.Trace.Tools.Runner.dll
+$REPO_ROOT/artifacts/bin/Datadog.Trace.Tools.Runner.Tool/release_net10.0/Datadog.Trace.Tools.Runner.dll
 ```
 
 ## Build the Contract Assembly Once
@@ -175,13 +177,15 @@ This creates:
 5. The trimmer descriptor.
 
 ```bash
-export RUNNER="$REPO_ROOT/tracer/src/Datadog.Trace.Tools.Runner/bin/Release/Tool/net10.0/Datadog.Trace.Tools.Runner.dll"
+export RUNNER="$REPO_ROOT/artifacts/bin/Datadog.Trace.Tools.Runner.Tool/release_net10.0/Datadog.Trace.Tools.Runner.dll"
 mkdir -p "$SAMPLE_ROOT/artifacts"
 
 dotnet "$RUNNER" ducktype-aot generate \
   --proxy-assembly "$SAMPLE_ROOT/NativeAotDuckContracts/bin/Release/net10.0/NativeAotDuckContracts.dll" \
   --target-folder "$SAMPLE_ROOT/NativeAotDuckContracts/bin/Release/net10.0" \
+  --target-folder "$REPO_ROOT/artifacts/bin/Datadog.Trace/release_net6.0" \
   --target-filter NativeAotDuckContracts.dll \
+  --target-filter Datadog.Trace.dll \
   --map-file "$SAMPLE_ROOT/ducktype-aot-map.json" \
   --assembly-name Datadog.Trace.DuckType.AotRegistry.NativeAotDuckSample \
   --emit-trimmer-descriptor "$SAMPLE_ROOT/artifacts/Datadog.Trace.DuckType.AotRegistry.NativeAotDuckSample.linker.xml" \
@@ -211,7 +215,7 @@ At startup:
 1. `DuckTypeAotRegistryBootstrap.Initialize()` enables AOT mode.
 2. It validates the generated registry against the `Datadog.Trace` runtime contract.
 3. It registers all generated mappings.
-4. `person.DuckCast<IPersonProxy>()` uses the pre-registered AOT mapping.
+4. `DuckType.Create<IPersonProxy>(person)` uses the pre-registered AOT mapping.
 
 There is no runtime IL emit fallback in this path.
 

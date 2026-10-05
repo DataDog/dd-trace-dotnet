@@ -3,13 +3,17 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using Datadog.Trace.DuckTyping;
+
 namespace Datadog.Trace.Tools.Runner.Tests;
 
 internal class TestDuckReverseChainTarget
 {
-    public TestDuckReverseChainInnerTarget Value { get; set; }
+    [DuckReverseMethod]
+    public ITestDuckReverseChainInnerProxy Value { get; set; }
 
-    public TestDuckReverseChainInnerTarget Roundtrip(TestDuckReverseChainInnerTarget value)
+    [DuckReverseMethod]
+    public ITestDuckReverseChainInnerProxy Roundtrip(ITestDuckReverseChainInnerProxy value)
     {
         Value = value;
         return value;

@@ -95,6 +95,22 @@ public class DuckTypeAotNativeAotPublishIntegrationTests
                     new
                     {
                         mode = "forward",
+                        proxyType = "SampleDuckContracts.NoDefaultConstructorProxy",
+                        proxyAssembly = "SampleDuckContracts",
+                        targetType = "SampleDuckContracts.ValueTarget",
+                        targetAssembly = "SampleDuckContracts"
+                    },
+                    new
+                    {
+                        mode = "forward",
+                        proxyType = "SampleDuckContracts.IMissingMemberProxy",
+                        proxyAssembly = "SampleDuckContracts",
+                        targetType = "SampleDuckContracts.ValueTarget",
+                        targetAssembly = "SampleDuckContracts"
+                    },
+                    new
+                    {
+                        mode = "forward",
                         proxyType = "SampleDuckContracts.IValueProxy",
                         proxyAssembly = "SampleDuckContracts",
                         targetType = "SampleDuckContracts.ValueTarget",
@@ -154,6 +170,54 @@ public class DuckTypeAotNativeAotPublishIntegrationTests
                         proxyType = "SampleDuckContracts.IReverseFailureProxy",
                         proxyAssembly = "SampleDuckContracts",
                         targetType = "SampleDuckContracts.ReverseFailureDelegation",
+                        targetAssembly = "SampleDuckContracts"
+                    },
+                    new
+                    {
+                        mode = "reverse",
+                        proxyType = "SampleDuckContracts.ReverseFormatterBase",
+                        proxyAssembly = "SampleDuckContracts",
+                        targetType = "SampleDuckContracts.ReverseFormatterDelegation",
+                        targetAssembly = "SampleDuckContracts"
+                    },
+                    new
+                    {
+                        mode = "forward",
+                        proxyType = "SampleDuckContracts.IReverseFormatterProxy",
+                        proxyAssembly = "SampleDuckContracts",
+                        targetType = "SampleDuckContracts.ReverseFormatterAncestor",
+                        targetAssembly = "SampleDuckContracts"
+                    },
+                    new
+                    {
+                        mode = "forward",
+                        proxyType = "SampleDuckContracts.IInheritedGenericProxy",
+                        proxyAssembly = "SampleDuckContracts",
+                        targetType = "SampleDuckContracts.InheritedGenericTarget",
+                        targetAssembly = "SampleDuckContracts"
+                    },
+                    new
+                    {
+                        mode = "forward",
+                        proxyType = "SampleDuckContracts.InheritedGenericCopy",
+                        proxyAssembly = "SampleDuckContracts",
+                        targetType = "SampleDuckContracts.InheritedGenericTarget",
+                        targetAssembly = "SampleDuckContracts"
+                    },
+                    new
+                    {
+                        mode = "reverse",
+                        proxyType = "SampleDuckContracts.IReverseRefProxy",
+                        proxyAssembly = "SampleDuckContracts",
+                        targetType = "SampleDuckContracts.ReverseRefDelegation",
+                        targetAssembly = "SampleDuckContracts"
+                    },
+                    new
+                    {
+                        mode = "reverse",
+                        proxyType = "SampleDuckContracts.IReverseReturnProxy",
+                        proxyAssembly = "SampleDuckContracts",
+                        targetType = "SampleDuckContracts.ReverseReturnDelegation",
                         targetAssembly = "SampleDuckContracts"
                     }
                 }
@@ -282,6 +346,14 @@ public class DuckTypeAotNativeAotPublishIntegrationTests
             runResult.StandardOutput.Should().Contain("VALUE:42");
             runResult.StandardOutput.Should().Contain("CAN_CREATE_REVERSE:True");
             runResult.StandardOutput.Should().Contain("REVERSE_VALUE:42");
+            runResult.StandardOutput.Should().Contain("GENERIC_REVERSE:reverse:native");
+            runResult.StandardOutput.Should().Contain("REVERSE_TARGET_CAST:reverse:alias");
+            runResult.StandardOutput.Should().Contain("GENERIC_TARGET:7:42:21:42:21:0");
+            runResult.StandardOutput.Should().Contain("REVERSE_REF:22:99");
+            runResult.StandardOutput.Should().Contain("REVERSE_RETURN:42:True");
+            runResult.StandardOutput.Should().Contain("NO_DEFAULT_CTOR_VALUE:42");
+            runResult.StandardOutput.Should().Contain("CACHED_FAILURE:True");
+            runResult.StandardOutput.Should().Contain("INVALID_CAN_CREATE:False");
             runResult.StandardOutput.Should().Contain("CAN_CREATE_COPY:True");
             runResult.StandardOutput.Should().Contain("COPY_VALUE:42");
             runResult.StandardOutput.Should().Contain("CAN_CREATE_CHAIN:True");
@@ -351,11 +423,83 @@ public class DuckTypeAotNativeAotPublishIntegrationTests
                        "    }",
                        "}",
                        string.Empty,
+                       "namespace Datadog.Trace.DuckTyping",
+                       "{",
+                       "    [AttributeUsage(AttributeTargets.Method)]",
+                       "    public sealed class DuckReverseMethodAttribute : Attribute",
+                       "    {",
+                       "        public string? Name { get; set; }",
+                       "    }",
+                       "}",
+                       string.Empty,
                        "namespace SampleDuckContracts",
                        "{",
+                       "    public abstract class GenericVisitor<TState, TResult>",
+                       "    {",
+                       "        protected abstract TResult Visit(TState state);",
+                       "        public TResult Apply(TState state) => Visit(state);",
+                       "    }",
+                       "    public abstract class ReverseFormatterAncestor : GenericVisitor<string, string>",
+                       "    {",
+                       "        public string Format(string state) => Apply(state);",
+                       "    }",
+                       "    public class ReverseFormatterBase : ReverseFormatterAncestor",
+                       "    {",
+                       "        public ReverseFormatterBase(string? ignored = null) { }",
+                       "        protected override string Visit(string state) => state;",
+                       "    }",
+                       "    public class ReverseFormatterDelegation",
+                       "    {",
+                       "        [DuckReverseMethod(Name = \"Visit\")]",
+                       "        protected string Rewrite(string state) => \"reverse:\" + state;",
+                       "    }",
+                       "    public interface IReverseFormatterProxy",
+                       "    {",
+                       "        string Format(string state);",
+                       "    }",
+                       string.Empty,
+                       "    public interface IInheritedGenericProxy",
+                       "    {",
+                       "        int Value { get; set; }",
+                       "        [DuckField] int Field { get; set; }",
+                       "        int Echo(int value);",
+                       "        int DefaultValue(int value);",
+                       "    }",
+                       "    public class GenericTarget<T>",
+                       "    {",
+                       "        public T Value { get; set; } = default!;",
+                       "        public T Field = default!;",
+                       "        public T Echo(T value) => value;",
+                       "        public T DefaultValue(T value, T fallback = default!) => fallback;",
+                       "    }",
+                       "    public class InheritedGenericTarget : GenericTarget<int> { }",
+                       "    [DuckCopy] public struct InheritedGenericCopy",
+                       "    {",
+                       "        public int Value;",
+                       "        [DuckField] public int Field;",
+                       "    }",
+                       string.Empty,
                        "    public interface IValueProxy",
                        "    {",
                        "        int GetValue();",
+                       "    }",
+                       "    public abstract class NoDefaultConstructorProxy",
+                       "    {",
+                       "        protected NoDefaultConstructorProxy(int ignored) => throw new InvalidOperationException(\"Must not call a constructor requiring arguments.\");",
+                       "        public abstract int GetValue();",
+                       "    }",
+                       "    public interface IMissingMemberProxy { int Missing(); }",
+                       "    public interface IReverseRefProxy { void Increment(ref int value); }",
+                       "    public class ReverseRefDelegation",
+                       "    {",
+                       "        [DuckReverseMethod] public void Increment(ref object value) => value = (int)value + 1;",
+                       "    }",
+                       "    public interface IReverseReturnProxy { ValueTarget GetTarget(); }",
+                       "    public class ReverseReturnDelegation",
+                       "    {",
+                       "        private readonly ValueTarget _target;",
+                       "        public ReverseReturnDelegation(ValueTarget target) => _target = target;",
+                       "        [DuckReverseMethod] public IValueProxy GetTarget() => DuckType.Create<IValueProxy>(_target)!;",
                        "    }",
                        string.Empty,
                        "    public interface IReverseValueProxy",
@@ -431,6 +575,7 @@ public class DuckTypeAotNativeAotPublishIntegrationTests
                        string.Empty,
                        "    public sealed class ReverseValueDelegation",
                        "    {",
+                       "        [DuckReverseMethod]",
                        "        public int DoubleValue(int value)",
                        "        {",
                        "            return value * 2;",
@@ -632,6 +777,32 @@ public class DuckTypeAotNativeAotPublishIntegrationTests
             Environment.NewLine +
             "var proxy = createTypeResult.CreateInstance<IValueProxy>(new ValueTarget(42));" + Environment.NewLine +
             "var reverseProxy = (IReverseValueProxy)DuckType.CreateReverse(typeof(IReverseValueProxy), new ReverseValueDelegation());" + Environment.NewLine +
+            "var formatter = (ReverseFormatterBase)DuckType.CreateReverse(typeof(ReverseFormatterBase), new ReverseFormatterDelegation());" + Environment.NewLine +
+            "Console.WriteLine($\"GENERIC_REVERSE:{formatter.Format(\"native\")}\");" + Environment.NewLine +
+            "var formatterProxy = DuckType.Create<IReverseFormatterProxy>(formatter)!;" + Environment.NewLine +
+            "Console.WriteLine($\"REVERSE_TARGET_CAST:{formatterProxy.Format(\"alias\")}\");" + Environment.NewLine +
+            "var inheritedTarget = new InheritedGenericTarget();" + Environment.NewLine +
+            "var inheritedProxy = DuckType.Create<IInheritedGenericProxy>(inheritedTarget)!;" + Environment.NewLine +
+            "inheritedProxy.Value = 42;" + Environment.NewLine +
+            "inheritedProxy.Field = 21;" + Environment.NewLine +
+            "var inheritedCopy = DuckType.Create<InheritedGenericCopy>(inheritedTarget);" + Environment.NewLine +
+            "Console.WriteLine($\"GENERIC_TARGET:{inheritedProxy.Echo(7)}:{inheritedProxy.Value}:{inheritedProxy.Field}:{inheritedCopy.Value}:{inheritedCopy.Field}:{inheritedProxy.DefaultValue(42)}\");" + Environment.NewLine +
+            "var reverseRefProxy = (IReverseRefProxy)DuckType.CreateReverse(typeof(IReverseRefProxy), new ReverseRefDelegation());" + Environment.NewLine +
+            "int[] reverseRefValues = [21, 99];" + Environment.NewLine +
+            "reverseRefProxy.Increment(ref reverseRefValues[0]);" + Environment.NewLine +
+            "Console.WriteLine($\"REVERSE_REF:{reverseRefValues[0]}:{reverseRefValues[1]}\");" + Environment.NewLine +
+            "var reverseReturnTarget = new ValueTarget(42);" + Environment.NewLine +
+            "var reverseReturnProxy = (IReverseReturnProxy)DuckType.CreateReverse(typeof(IReverseReturnProxy), new ReverseReturnDelegation(reverseReturnTarget));" + Environment.NewLine +
+            "var returnedTarget = reverseReturnProxy.GetTarget();" + Environment.NewLine +
+            "Console.WriteLine($\"REVERSE_RETURN:{returnedTarget.GetValue()}:{object.ReferenceEquals(returnedTarget, reverseReturnTarget)}\");" + Environment.NewLine +
+            "Console.WriteLine($\"NO_DEFAULT_CTOR_VALUE:{DuckType.Create<NoDefaultConstructorProxy>(reverseReturnTarget)!.GetValue()}\");" + Environment.NewLine +
+            "var invalidResult = DuckType.GetOrCreateProxyType(typeof(IMissingMemberProxy), typeof(ValueTarget));" + Environment.NewLine +
+            "Console.WriteLine($\"INVALID_CAN_CREATE:{invalidResult.CanCreate()}\");" + Environment.NewLine +
+            "Exception? firstFailure = null;" + Environment.NewLine +
+            "Exception? secondFailure = null;" + Environment.NewLine +
+            "try { DuckType.Create<IMissingMemberProxy>(reverseReturnTarget); } catch (Exception exception) { firstFailure = exception; }" + Environment.NewLine +
+            "try { DuckType.Create<IMissingMemberProxy>(reverseReturnTarget); } catch (Exception exception) { secondFailure = exception; }" + Environment.NewLine +
+            "Console.WriteLine($\"CACHED_FAILURE:{firstFailure?.GetType().FullName == \"Datadog.Trace.DuckTyping.DuckTypeTargetMethodNotFoundException\" && object.ReferenceEquals(firstFailure, secondFailure)}\");" + Environment.NewLine +
             "var copyProxy = createCopyTypeResult.CreateInstance<ValueCopyProxy>(new ValueCopyTarget(42));" + Environment.NewLine +
             "var chainTarget = new ChainTarget();" + Environment.NewLine +
             "var chainProxy = createChainTypeResult.CreateInstance<IChainProxy>(chainTarget);" + Environment.NewLine +

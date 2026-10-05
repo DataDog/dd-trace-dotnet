@@ -25,7 +25,7 @@ public class DuckTypeTaskTests
         var proxy = task.DuckCast<IDuckTypeTask>();
         var awaiter = proxy.GetAwaiter();
 
-        proxy.IsCompletedSuccessfully.Should().BeTrue();
+        ((Task)((IDuckType)proxy).Instance!).Status.Should().Be(TaskStatus.RanToCompletion);
         awaiter.IsCompleted.Should().BeTrue();
         awaiter.GetResult();
 
@@ -41,7 +41,7 @@ public class DuckTypeTaskTests
         var proxy = task.DuckCast<IDuckTypeTask<string>>();
         var awaiter = proxy.GetAwaiter();
 
-        proxy.IsCompletedSuccessfully.Should().BeTrue();
+        ((Task)((IDuckType)proxy).Instance!).Status.Should().Be(TaskStatus.RanToCompletion);
         proxy.Result.Should().Be("completed");
         awaiter.IsCompleted.Should().BeTrue();
         awaiter.GetResult().Should().Be("completed");

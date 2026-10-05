@@ -38,11 +38,13 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             string? expectedOutcomesPath,
             string? knownLimitationsPath,
             bool strictAssemblyFingerprintValidation,
-            DuckTypeAotFailureMode failureMode)
+            DuckTypeAotFailureMode failureMode,
+            string? genericInstantiationsPath = null)
         {
             CompatReportPath = compatReportPath;
             CompatMatrixPath = compatMatrixPath;
             MapFilePath = mapFilePath;
+            GenericInstantiationsPath = genericInstantiationsPath;
             ManifestPath = manifestPath;
             MappingCatalogPath = mappingCatalogPath;
             ScenarioInventoryPath = scenarioInventoryPath;
@@ -69,6 +71,11 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// </summary>
         /// <value>The map file path value.</value>
         public string MapFilePath { get; }
+
+        /// <summary>
+        /// Gets the closed generic roots used to expand the canonical map.
+        /// </summary>
+        public string? GenericInstantiationsPath { get; }
 
         /// <summary>
         /// Gets manifest path.
@@ -119,6 +126,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// <param name="scenarioInventoryPath">The scenario inventory path value.</param>
         /// <param name="strictAssemblyFingerprintValidation">The strict assembly fingerprint validation value.</param>
         /// <param name="failureMode">The failure mode value.</param>
+        /// <param name="genericInstantiationsPath">The closed generic roots path; defaults to the manifest roots.</param>
         public static DuckTypeAotVerifyCompatOptions CreateCanonicalMapContract(
             string compatReportPath,
             string compatMatrixPath,
@@ -127,7 +135,8 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             string? manifestPath = null,
             string? scenarioInventoryPath = null,
             bool strictAssemblyFingerprintValidation = false,
-            DuckTypeAotFailureMode failureMode = DuckTypeAotFailureMode.Default)
+            DuckTypeAotFailureMode failureMode = DuckTypeAotFailureMode.Default,
+            string? genericInstantiationsPath = null)
             => new(
                 compatReportPath,
                 compatMatrixPath,
@@ -138,7 +147,8 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 expectedOutcomesPath: null,
                 knownLimitationsPath: null,
                 strictAssemblyFingerprintValidation,
-                failureMode);
+                failureMode,
+                genericInstantiationsPath);
 
         /// <summary>
         /// Creates options for the legacy compatibility contract retained for migration and focused compatibility tests.

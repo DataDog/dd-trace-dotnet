@@ -6,7 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.Reflection;
-using Datadog.Trace.Ci;
+using Datadog.Trace.DuckTyping;
 using FluentAssertions;
 using Xunit;
 
@@ -15,20 +15,30 @@ namespace Datadog.Trace.DuckTyping.Tests
     [Collection(nameof(GetAssemblyTestsCollection))]
     public class GetAssemblyTests
     {
-        private const string TestModeEnvironmentVariable = "DD_DUCKTYPE_TEST_MODE";
-        private const string AotModeValue = "aot";
-        private const string DynamicModeValue = "dynamic";
+        private interface IAssemblyEnumerationProxy
+        {
+            int Value { get; }
+        }
 
         [Fact]
         [Trait("SkipInCI", "True")]
         public void GetAssemblyTest()
         {
+            // Validate a known proxy so filtered runs exercise type enumeration too. The global assembly
+            // count varies with the test inventory, execution order, and CI Visibility instrumentation.
+            var proxy = DuckType.Create<IAssemblyEnumerationProxy>(new AssemblyEnumerationTarget());
+            proxy!.Value.Should().Be(42);
+            var proxyType = proxy.GetType();
+            var proxyAssembly = proxyType.Assembly;
             var asmDuckTypes = 0;
+            var proxyAssemblyEnumerated = false;
             var lstExceptions = new List<Exception>();
             var assemblies = System.AppDomain.CurrentDomain.GetAssemblies();
+            assemblies.Should().Contain(proxyAssembly);
             foreach (var assembly in assemblies)
             {
-                if (assembly.FullName!.StartsWith(DuckTypeConstants.DuckTypeAssemblyPrefix) ||
+                if (assembly == proxyAssembly ||
+                    assembly.FullName!.StartsWith(DuckTypeConstants.DuckTypeAssemblyPrefix) ||
                     assembly.FullName!.StartsWith(DuckTypeConstants.DuckTypeGenericTypeAssemblyPrefix) ||
                     assembly.FullName!.StartsWith(DuckTypeConstants.DuckTypeNotVisibleAssemblyPrefix))
                 {
@@ -36,7 +46,12 @@ namespace Datadog.Trace.DuckTyping.Tests
 
                     try
                     {
-                        assembly.GetTypes();
+                        var types = assembly.GetTypes();
+                        if (assembly == proxyAssembly)
+                        {
+                            types.Should().Contain(proxyType);
+                            proxyAssemblyEnumerated = true;
+                        }
                     }
                     catch (ReflectionTypeLoadException ex)
                     {
@@ -50,50 +65,13 @@ namespace Datadog.Trace.DuckTyping.Tests
                 throw new AggregateException(lstExceptions.ToArray());
             }
 
-            // This test is primarily meaningful after other tests have generated ducktype assemblies.
-            // In isolated/filter runs, or when it runs early in a randomized full-suite process, there may be none.
-            if (asmDuckTypes == 0)
-            {
-                return;
-            }
+            proxyAssemblyEnumerated.Should().BeTrue();
+            asmDuckTypes.Should().BeGreaterThan(0);
+        }
 
-            // In explicit AOT/dynamic parity modes the assembly count depends on the selected mode and
-            // randomized test order. The GetTypes() validation above is still useful for assemblies
-            // loaded so far, but the lower-bound assertion is not stable in these modes.
-            var testMode = Environment.GetEnvironmentVariable(TestModeEnvironmentVariable);
-            if (string.Equals(testMode, AotModeValue, StringComparison.OrdinalIgnoreCase) ||
-                string.Equals(testMode, DynamicModeValue, StringComparison.OrdinalIgnoreCase))
-            {
-                return;
-            }
-
-            /*****
-             * WARNING: This number is expected to change if you add
-             * another test to the ducktype assembly. Generic signature
-             * validation also lowers this count when an invalid proxy is
-             * rejected before its dynamic assembly is created.
-             */
-            if (!TestOptimization.Instance.IsRunning)
-            {
-#if NETFRAMEWORK
-                asmDuckTypes.Should().Be(1516);
-#elif NETCOREAPP2_1
-                asmDuckTypes.Should().Be(1526);
-#else
-                asmDuckTypes.Should().Be(1527);
-#endif
-            }
-            else
-            {
-                // When running inside CI Visibility, we will generate additional duck types
-#if NETFRAMEWORK
-                asmDuckTypes.Should().BeGreaterThan(1516);
-#elif NETCOREAPP2_1
-                asmDuckTypes.Should().BeGreaterThan(1526);
-#else
-                asmDuckTypes.Should().BeGreaterThan(1527);
-#endif
-            }
+        private sealed class AssemblyEnumerationTarget
+        {
+            public int Value => 42;
         }
     }
 }

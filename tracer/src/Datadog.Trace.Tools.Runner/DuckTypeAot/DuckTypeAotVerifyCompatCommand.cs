@@ -27,6 +27,8 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             IsRequired = true
         };
 
+        private readonly Option<string?> _genericInstantiationsOption = new("--generic-instantiations", "Closed generic roots used for generation. Defaults to roots recorded in --manifest.");
+
         private readonly Option<string?> _mappingCatalogOption = new("--mapping-catalog", "Optional mapping catalog used to validate required mapping coverage.");
 
         private readonly Option<string?> _scenarioInventoryOption = new("--scenario-inventory", "Optional scenario inventory used to validate required scenario coverage.");
@@ -55,6 +57,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             AddOption(_compatReportOption);
             AddOption(_compatMatrixOption);
             AddOption(_mapFileOption);
+            AddOption(_genericInstantiationsOption);
             AddOption(_mappingCatalogOption);
             AddOption(_scenarioInventoryOption);
             AddOption(_manifestOption);
@@ -125,7 +128,8 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 manifestPath: manifestPath,
                 scenarioInventoryPath: scenarioInventoryPath,
                 strictAssemblyFingerprintValidation: strictAssemblyFingerprints,
-                failureMode: failureMode);
+                failureMode: failureMode,
+                genericInstantiationsPath: _genericInstantiationsOption.GetValue(context));
             context.ExitCode = DuckTypeAotVerifyCompatProcessor.Process(options);
         }
     }

@@ -3,12 +3,15 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
+
 namespace Datadog.Trace.Tools.Runner.Tests;
 
 internal abstract class TestDuckClassProxyWithoutDefaultCtor
 {
     protected TestDuckClassProxyWithoutDefaultCtor(int ignored)
     {
+        throw new InvalidOperationException("A constructor requiring arguments must not be called by a duck proxy.");
     }
 
     public abstract string Echo(string value);

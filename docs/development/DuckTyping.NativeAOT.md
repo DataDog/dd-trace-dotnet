@@ -82,7 +82,8 @@ Current generated bootstrap behavior:
 
 1. It registers mappings by constructing direct `Func<object?, object?>` delegates for generated object bridge activators and calling the delegate overloads (`RegisterAotProxy(Type, Type, Type, Func<object?, object?>)` and `RegisterAotReverseProxy(Type, Type, Type, Func<object?, object?>)`).
 2. Failure registrations are emitted as generated throwers and registered through direct `Action` delegates.
-3. The `RuntimeMethodHandle` registration overloads remain for legacy/internal callers and focused engine tests. They accept object-bridge activator handles only; typed activator handles are rejected so NativeAOT does not depend on runtime generic binding or reflective invocation. The generated NativeAOT bootstrap intentionally does not use method handles.
+3. The `RuntimeMethodHandle` activator registration overloads remain for legacy/internal callers and focused engine tests. They accept object-bridge activator handles only; typed activator handles are rejected so NativeAOT does not depend on runtime generic binding or reflective invocation. The generated bootstrap uses direct delegates for proxy activators.
+4. Generated failure registrations use direct `Func<Exception>` delegates through `RegisterAotProxyFailureFactory` and `RegisterAotReverseProxyFailureFactory`. Registration creates and caches the exception without throwing. Later calls preserve the dynamic exception type and message, reuse the cached instance on .NET 6 and later, and clone it on older runtimes. Legacy `Action` and parameterless `void` method-handle throwers remain supported.
 4. The public manual registration overloads remain for compatibility but are deprecated for application code. The supported model is generated bootstrap only.
 
 ## Proxy Definition Authoring
@@ -200,6 +201,8 @@ Notes:
 
 Use `--generic-instantiations` to preserve additional closed generic roots.
 
+`verify-compat` expands the same open map rules using the closed roots recorded in `--manifest`. When verifying without a manifest, pass the same `--generic-instantiations` file used for generation. Every expanded closed mapping must be present in the compatibility matrix.
+
 Supported JSON forms:
 
 ```json
@@ -224,12 +227,12 @@ The command is currently hidden from root help, but callable directly.
 
 Runner assembly path (Release build):
 
-`tracer/src/Datadog.Trace.Tools.Runner/bin/Release/Tool/net8.0/Datadog.Trace.Tools.Runner.dll`
+`artifacts/bin/Datadog.Trace.Tools.Runner.Tool/release_net8.0/Datadog.Trace.Tools.Runner.dll`
 
 ### Minimal Command
 
 ```bash
-dotnet tracer/src/Datadog.Trace.Tools.Runner/bin/Release/Tool/net8.0/Datadog.Trace.Tools.Runner.dll \
+dotnet artifacts/bin/Datadog.Trace.Tools.Runner.Tool/release_net8.0/Datadog.Trace.Tools.Runner.dll \
   ducktype-aot generate \
   --proxy-assembly /abs/path/My.Proxy.Assembly.dll \
   --target-folder /abs/path/targets \
@@ -241,7 +244,7 @@ dotnet tracer/src/Datadog.Trace.Tools.Runner/bin/Release/Tool/net8.0/Datadog.Tra
 ### One-step Command (discover + generate)
 
 ```bash
-dotnet tracer/src/Datadog.Trace.Tools.Runner/bin/Release/Tool/net8.0/Datadog.Trace.Tools.Runner.dll \
+dotnet artifacts/bin/Datadog.Trace.Tools.Runner.Tool/release_net8.0/Datadog.Trace.Tools.Runner.dll \
   ducktype-aot generate \
   --discover-mappings \
   --proxy-assembly /abs/path/My.Proxy.Assembly.dll \
@@ -254,7 +257,7 @@ dotnet tracer/src/Datadog.Trace.Tools.Runner/bin/Release/Tool/net8.0/Datadog.Tra
 ### Full Command (recommended)
 
 ```bash
-dotnet tracer/src/Datadog.Trace.Tools.Runner/bin/Release/Tool/net8.0/Datadog.Trace.Tools.Runner.dll \
+dotnet artifacts/bin/Datadog.Trace.Tools.Runner.Tool/release_net8.0/Datadog.Trace.Tools.Runner.dll \
   ducktype-aot generate \
   --proxy-assembly /abs/path/My.Proxy.Assembly.dll \
   --target-folder /abs/path/targets \
@@ -358,7 +361,7 @@ This section is a full from-scratch example you can copy/paste.
 ### Prerequisites
 
 1. Repository root is available as `REPO_ROOT`.
-2. .NET 8 SDK is installed.
+2. The SDK required by the repository's `global.json` is installed, along with the .NET 8 runtime for the managed sample.
 3. NativeAOT toolchain prerequisites are installed for your OS (clang/Xcode build tools on macOS/Linux, C++ toolchain on Windows).
 
 ### 1. Build Datadog.Trace and Runner
@@ -377,8 +380,8 @@ rm -rf "$WORK_DIR"
 mkdir -p "$WORK_DIR"
 cd "$WORK_DIR"
 
-dotnet new classlib -n SampleDuckContracts -f net8.0
-dotnet new console -n SampleDuckApp -f net8.0
+dotnet new classlib -n SampleDuckContracts --no-restore
+dotnet new console -n SampleDuckApp --no-restore
 ```
 
 ### 3. Add Contracts/Targets/Proxies
@@ -386,6 +389,8 @@ dotnet new console -n SampleDuckApp -f net8.0
 Create `SampleDuckContracts/ValueContracts.cs`:
 
 ```csharp
+using Datadog.Trace.DuckTyping;
+
 namespace SampleDuckContracts;
 
 public interface IValueProxy
@@ -417,6 +422,7 @@ public sealed class ValueTarget
 
 public sealed class ReverseValueDelegation
 {
+    [DuckReverseMethod]
     public int DoubleValue(int value) => value * 2;
 }
 
@@ -429,6 +435,30 @@ public sealed class ValueCopyTarget
 
     public int Value { get; set; }
 }
+```
+
+Reverse implementations require `[DuckReverseMethod]`, matching dynamic duck typing. The tracer's attributes are internal. For this standalone AOT sample, create `SampleDuckContracts/DuckReverseMethodAttribute.cs` with metadata that the generator recognizes:
+
+```csharp
+namespace Datadog.Trace.DuckTyping;
+
+[System.AttributeUsage(System.AttributeTargets.Method)]
+public sealed class DuckReverseMethodAttribute : System.Attribute
+{
+    public string? Name { get; set; }
+}
+```
+
+Set `SampleDuckContracts/SampleDuckContracts.csproj` to target .NET 8 explicitly. New SDK templates only offer their current framework; the app project below also sets its framework explicitly.
+
+```xml
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+</Project>
 ```
 
 Build contracts:
@@ -473,7 +503,7 @@ Create `ducktype-aot-map.json`:
 
 ```bash
 CONTRACTS_DLL="$WORK_DIR/SampleDuckContracts/bin/Release/net8.0/SampleDuckContracts.dll"
-RUNNER_DLL="$REPO_ROOT/tracer/src/Datadog.Trace.Tools.Runner/bin/Release/Tool/net8.0/Datadog.Trace.Tools.Runner.dll"
+RUNNER_DLL="$REPO_ROOT/artifacts/bin/Datadog.Trace.Tools.Runner.Tool/release_net8.0/Datadog.Trace.Tools.Runner.dll"
 REGISTRY_DLL="$WORK_DIR/Datadog.Trace.DuckType.AotRegistry.Sample.dll"
 REGISTRY_PROPS="$WORK_DIR/Datadog.Trace.DuckType.AotRegistry.Sample.props"
 REGISTRY_LINKER="$WORK_DIR/Datadog.Trace.DuckType.AotRegistry.Sample.linker.xml"
@@ -481,6 +511,7 @@ REGISTRY_LINKER="$WORK_DIR/Datadog.Trace.DuckType.AotRegistry.Sample.linker.xml"
 dotnet "$RUNNER_DLL" ducktype-aot generate \
   --proxy-assembly "$CONTRACTS_DLL" \
   --target-folder "$(dirname "$CONTRACTS_DLL")" \
+  --target-folder "$REPO_ROOT/artifacts/bin/Datadog.Trace/release_net6.0" \
   --target-filter "*.dll" \
   --map-file "$WORK_DIR/ducktype-aot-map.json" \
   --assembly-name Datadog.Trace.DuckType.AotRegistry.Sample \
@@ -489,20 +520,7 @@ dotnet "$RUNNER_DLL" ducktype-aot generate \
   --output "$REGISTRY_DLL"
 ```
 
-Single-step alternative:
-
-```bash
-dotnet "$RUNNER_DLL" ducktype-aot generate \
-  --discover-mappings \
-  --proxy-assembly "$CONTRACTS_DLL" \
-  --target-folder "$(dirname "$CONTRACTS_DLL")" \
-  --target-filter "*.dll" \
-  --map-file "$WORK_DIR/ducktype-aot-map.json" \
-  --assembly-name Datadog.Trace.DuckType.AotRegistry.Sample \
-  --emit-props "$REGISTRY_PROPS" \
-  --emit-trimmer-descriptor "$REGISTRY_LINKER" \
-  --output "$REGISTRY_DLL"
-```
+This sample uses the explicit map file because its proxy types have no type-level discovery attributes. `--discover-mappings` requires that metadata; it cannot infer these mappings from the sample's member shapes.
 
 You should now have:
 
@@ -541,7 +559,9 @@ Create `SampleDuckApp/SampleDuckApp.csproj`:
 
 Replace `__DATADOG_TRACE_DLL__` with:
 
-`$REPO_ROOT/tracer/src/Datadog.Trace/bin/Release/net6.0/Datadog.Trace.dll`
+`$REPO_ROOT/artifacts/bin/Datadog.Trace/release_net6.0/Datadog.Trace.dll`
+
+Generation and the app must use this same DLL: the registry validates the tracer's version and module ID at startup.
 
 Create `SampleDuckApp/Program.cs`:
 
@@ -649,7 +669,7 @@ This sample mirrors the official integration test flow.
 ### 1. Generate registry
 
 ```bash
-dotnet tracer/src/Datadog.Trace.Tools.Runner/bin/Release/Tool/net8.0/Datadog.Trace.Tools.Runner.dll \
+dotnet artifacts/bin/Datadog.Trace.Tools.Runner.Tool/release_net8.0/Datadog.Trace.Tools.Runner.dll \
   ducktype-aot generate \
   --proxy-assembly /abs/path/SampleDuckContracts.dll \
   --target-folder /abs/path \
@@ -743,7 +763,7 @@ DD_DUCKTYPE_TEST_MODE=dynamic \
 ### 2. Feed discovered map into generator
 
 ```bash
-dotnet tracer/src/Datadog.Trace.Tools.Runner/bin/Release/Tool/net8.0/Datadog.Trace.Tools.Runner.dll \
+dotnet artifacts/bin/Datadog.Trace.Tools.Runner.Tool/release_net8.0/Datadog.Trace.Tools.Runner.dll \
   ducktype-aot generate \
   --proxy-assembly /abs/path/My.Proxy.Assembly.dll \
   --target-folder /abs/path \
@@ -761,7 +781,7 @@ Note: discovery may include runtime-generated dynamic assembly identities in som
 Use `verify-compat` as a contract gate in CI/release.
 
 ```bash
-dotnet tracer/src/Datadog.Trace.Tools.Runner/bin/Release/Tool/net8.0/Datadog.Trace.Tools.Runner.dll \
+dotnet artifacts/bin/Datadog.Trace.Tools.Runner.Tool/release_net8.0/Datadog.Trace.Tools.Runner.dll \
   ducktype-aot verify-compat \
   --compat-report /abs/path/Datadog.Trace.DuckType.AotRegistry.dll.compat.md \
   --compat-matrix /abs/path/Datadog.Trace.DuckType.AotRegistry.dll.compat.json \
@@ -779,6 +799,7 @@ dotnet tracer/src/Datadog.Trace.Tools.Runner/bin/Release/Tool/net8.0/Datadog.Tra
    1. `--manifest`
    2. `--mapping-catalog`
    3. `--scenario-inventory`
+   4. `--generic-instantiations` (when no manifest supplies the closed roots)
 3. `--failure-mode` values:
    1. `default`: manifest fingerprint drift warns.
    2. `strict`: manifest fingerprint drift fails.

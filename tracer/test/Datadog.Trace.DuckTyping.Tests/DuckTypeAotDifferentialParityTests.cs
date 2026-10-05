@@ -1010,7 +1010,7 @@ namespace Datadog.Trace.DuckTyping.Tests
             DuckTypeAotEngine.RegisterProxyFailure(
                 typeof(DuckCopyEmptyProjection),
                 typeof(DuckCopyEmptyTarget),
-                () => DuckTypeDuckCopyStructDoesNotContainsAnyField.Throw(typeof(DuckCopyEmptyProjection)));
+                () => throw DuckTypeDuckCopyStructDoesNotContainsAnyField.Create(typeof(DuckCopyEmptyProjection)));
 
             var dynamicResult = InvokeDynamicForward(typeof(DuckCopyEmptyProjection), typeof(DuckCopyEmptyTarget));
             var aotResult = DuckTypeAotEngine.GetOrCreateProxyType(typeof(DuckCopyEmptyProjection), typeof(DuckCopyEmptyTarget));
@@ -1240,7 +1240,7 @@ namespace Datadog.Trace.DuckTyping.Tests
             DuckTypeAotEngine.RegisterReverseProxyFailure(
                 typeof(ReverseStructBase),
                 typeof(ReverseStructDelegation),
-                () => DuckTypeReverseProxyBaseIsStructException.Throw(typeof(ReverseStructDelegation)));
+                () => throw DuckTypeReverseProxyBaseIsStructException.Create(typeof(ReverseStructDelegation)));
 
             var dynamicResult = InvokeDynamicReverse(typeof(ReverseStructBase), typeof(ReverseStructDelegation));
             var aotResult = DuckTypeAotEngine.GetOrCreateReverseProxyType(typeof(ReverseStructBase), typeof(ReverseStructDelegation));
@@ -1260,7 +1260,7 @@ namespace Datadog.Trace.DuckTyping.Tests
             DuckTypeAotEngine.RegisterReverseProxyFailure(
                 typeof(IReverseImplementorConstraintProxy),
                 typeof(ReverseAbstractImplementorDelegation),
-                () => DuckTypeReverseProxyImplementorIsAbstractOrInterfaceException.Throw(typeof(IReverseImplementorConstraintProxy)));
+                () => throw DuckTypeReverseProxyImplementorIsAbstractOrInterfaceException.Create(typeof(IReverseImplementorConstraintProxy)));
 
             var dynamicResult = InvokeDynamicReverse(typeof(IReverseImplementorConstraintProxy), typeof(ReverseAbstractImplementorDelegation));
             var aotResult = DuckTypeAotEngine.GetOrCreateReverseProxyType(typeof(IReverseImplementorConstraintProxy), typeof(ReverseAbstractImplementorDelegation));
@@ -1280,7 +1280,7 @@ namespace Datadog.Trace.DuckTyping.Tests
             DuckTypeAotEngine.RegisterReverseProxyFailure(
                 typeof(IReverseImplementorConstraintProxy),
                 typeof(IReverseInterfaceImplementorDelegation),
-                () => DuckTypeReverseProxyImplementorIsAbstractOrInterfaceException.Throw(typeof(IReverseImplementorConstraintProxy)));
+                () => throw DuckTypeReverseProxyImplementorIsAbstractOrInterfaceException.Create(typeof(IReverseImplementorConstraintProxy)));
 
             var dynamicResult = InvokeDynamicReverse(typeof(IReverseImplementorConstraintProxy), typeof(IReverseInterfaceImplementorDelegation));
             var aotResult = DuckTypeAotEngine.GetOrCreateReverseProxyType(typeof(IReverseImplementorConstraintProxy), typeof(IReverseInterfaceImplementorDelegation));
@@ -2234,7 +2234,7 @@ namespace Datadog.Trace.DuckTyping.Tests
         private static void ThrowReverseNamedAttributeCopyFailure()
         {
             var customAttribute = CustomAttributeData.GetCustomAttributes(typeof(ReverseNamedAttributeCopyDelegation))[0];
-            DuckTypeCustomAttributeHasNamedArgumentsException.Throw(typeof(IReverseNamedAttributeCopyProxy), customAttribute);
+            throw DuckTypeCustomAttributeHasNamedArgumentsException.Create(typeof(IReverseNamedAttributeCopyProxy), customAttribute);
         }
 
         [DuckType("Datadog.Trace.DuckTyping.Tests.DuckTypeAotDifferentialParityTests+ForwardValueTarget", "Datadog.Trace.DuckTyping.Tests")]

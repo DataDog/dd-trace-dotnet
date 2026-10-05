@@ -3,29 +3,35 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using Datadog.Trace.DuckTyping;
+
 namespace Datadog.Trace.Tools.Runner.Tests;
 
 internal class TestDuckByRefReverseConversionTarget
 {
-    private bool TryGetInner(out TestDuckByRefReverseConversionInnerTarget value)
+    [DuckReverseMethod]
+    private bool TryGetInner(out ITestDuckByRefReverseConversionInnerProxy value)
     {
-        value = new TestDuckByRefReverseConversionInnerTarget("from-out");
+        value = DuckType.Create<ITestDuckByRefReverseConversionInnerProxy>(new TestDuckByRefReverseConversionInnerTarget("from-out"));
         return true;
     }
 
-    private bool RoundtripInner(ref TestDuckByRefReverseConversionInnerTarget value)
+    [DuckReverseMethod]
+    private bool RoundtripInner(ref ITestDuckByRefReverseConversionInnerProxy value)
     {
         var currentName = value?.Name ?? "null";
-        value = new TestDuckByRefReverseConversionInnerTarget($"{currentName}-roundtrip");
+        value = DuckType.Create<ITestDuckByRefReverseConversionInnerProxy>(new TestDuckByRefReverseConversionInnerTarget($"{currentName}-roundtrip"));
         return true;
     }
 
-    private void Increment(ref int value)
+    [DuckReverseMethod]
+    private void Increment(ref object value)
     {
-        value++;
+        value = (int)value + 1;
     }
 
-    private void GetNumber(out int value)
+    [DuckReverseMethod]
+    private void GetNumber(out object value)
     {
         value = 42;
     }

@@ -1,4 +1,4 @@
-// <copyright file="DuckTypeExceptions.cs" company="Datadog">
+﻿// <copyright file="DuckTypeExceptions.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -88,13 +88,12 @@ namespace Datadog.Trace.DuckTyping
         {
         }
 
-        internal static DuckTypeInvalidTypeConversionException Create(Type actualType, Type expectedType) => new(actualType, expectedType);
-
         private DuckTypeInvalidTypeConversionException(string message, bool useRawMessage)
             : base(message)
         {
         }
 
+        internal static DuckTypeInvalidTypeConversionException Create(Type actualType, Type expectedType) => new(actualType, expectedType);
 
         internal static Exception CreateForAot(string message) => new DuckTypeInvalidTypeConversionException(message, true);
     }
@@ -109,13 +108,12 @@ namespace Datadog.Trace.DuckTyping
         {
         }
 
-        internal static DuckTypePropertyCantBeReadException Create(PropertyInfo property) => new(property);
-
         private DuckTypePropertyCantBeReadException(string message, bool useRawMessage)
             : base(message)
         {
         }
 
+        internal static DuckTypePropertyCantBeReadException Create(PropertyInfo property) => new(property);
 
         internal static Exception CreateForAot(string message) => new DuckTypePropertyCantBeReadException(message, true);
     }
@@ -130,13 +128,12 @@ namespace Datadog.Trace.DuckTyping
         {
         }
 
-        internal static DuckTypePropertyCantBeWrittenException Create(PropertyInfo property) => new(property);
-
         private DuckTypePropertyCantBeWrittenException(string message, bool useRawMessage)
             : base(message)
         {
         }
 
+        internal static DuckTypePropertyCantBeWrittenException Create(PropertyInfo property) => new(property);
 
         internal static Exception CreateForAot(string message) => new DuckTypePropertyCantBeWrittenException(message, true);
     }
@@ -151,13 +148,12 @@ namespace Datadog.Trace.DuckTyping
         {
         }
 
-        internal static DuckTypePropertyArgumentsLengthException Create(PropertyInfo property) => new(property);
-
         private DuckTypePropertyArgumentsLengthException(string message, bool useRawMessage)
             : base(message)
         {
         }
 
+        internal static DuckTypePropertyArgumentsLengthException Create(PropertyInfo property) => new(property);
 
         internal static Exception CreateForAot(string message) => new DuckTypePropertyArgumentsLengthException(message, true);
     }
@@ -172,13 +168,12 @@ namespace Datadog.Trace.DuckTyping
         {
         }
 
-        internal static DuckTypeFieldIsReadonlyException Create(FieldInfo field) => new(field);
-
         private DuckTypeFieldIsReadonlyException(string message, bool useRawMessage)
             : base(message)
         {
         }
 
+        internal static DuckTypeFieldIsReadonlyException Create(FieldInfo field) => new(field);
 
         internal static Exception CreateForAot(string message) => new DuckTypeFieldIsReadonlyException(message, true);
     }
@@ -193,14 +188,13 @@ namespace Datadog.Trace.DuckTyping
         {
         }
 
-        internal static DuckTypePropertyOrFieldNotFoundException Create(string name, string duckAttributeName, Type type)
-            => new(name, duckAttributeName, type?.FullName ?? type?.Name ?? "NULL");
-
         private DuckTypePropertyOrFieldNotFoundException(string message, bool useRawMessage)
             : base(message)
         {
         }
 
+        internal static DuckTypePropertyOrFieldNotFoundException Create(string name, string duckAttributeName, Type type)
+            => new(name, duckAttributeName, type?.FullName ?? type?.Name ?? "NULL");
 
         internal static Exception CreateForAot(string message) => new DuckTypePropertyOrFieldNotFoundException(message, true);
     }
@@ -215,13 +209,12 @@ namespace Datadog.Trace.DuckTyping
         {
         }
 
-        internal static DuckTypeStructMembersCannotBeChangedException Create(Type type) => new(type);
-
         private DuckTypeStructMembersCannotBeChangedException(string message, bool useRawMessage)
             : base(message)
         {
         }
 
+        internal static DuckTypeStructMembersCannotBeChangedException Create(Type type) => new(type);
 
         internal static Exception CreateForAot(string message) => new DuckTypeStructMembersCannotBeChangedException(message, true);
     }
@@ -236,13 +229,12 @@ namespace Datadog.Trace.DuckTyping
         {
         }
 
-        internal static DuckTypeTargetMethodNotFoundException Create(MethodInfo method) => new(method);
-
         private DuckTypeTargetMethodNotFoundException(string message, bool useRawMessage)
             : base(message)
         {
         }
 
+        internal static DuckTypeTargetMethodNotFoundException Create(MethodInfo method) => new(method);
 
         internal static Exception CreateForAot(string message) => new DuckTypeTargetMethodNotFoundException(message, true);
     }
@@ -257,14 +249,13 @@ namespace Datadog.Trace.DuckTyping
         {
         }
 
-        internal static DuckTypeProxyMethodParameterIsMissingException Create(MethodInfo proxyMethod, ParameterInfo targetParameterInfo)
-            => new(proxyMethod, targetParameterInfo);
-
         private DuckTypeProxyMethodParameterIsMissingException(string message, bool useRawMessage)
             : base(message)
         {
         }
 
+        internal static DuckTypeProxyMethodParameterIsMissingException Create(MethodInfo proxyMethod, ParameterInfo targetParameterInfo)
+            => new(proxyMethod, targetParameterInfo);
 
         internal static Exception CreateForAot(string message) => new DuckTypeProxyMethodParameterIsMissingException(message, true);
     }
@@ -279,13 +270,12 @@ namespace Datadog.Trace.DuckTyping
         {
         }
 
-        internal static DuckTypeProxyAndTargetMethodParameterSignatureMismatchException Create(MethodInfo proxyMethod, MethodInfo targetMethod) => new(proxyMethod, targetMethod);
-
         private DuckTypeProxyAndTargetMethodParameterSignatureMismatchException(string message, bool useRawMessage)
             : base(message)
         {
         }
 
+        internal static DuckTypeProxyAndTargetMethodParameterSignatureMismatchException Create(MethodInfo proxyMethod, MethodInfo targetMethod) => new(proxyMethod, targetMethod);
 
         internal static Exception CreateForAot(string message) => new DuckTypeProxyAndTargetMethodParameterSignatureMismatchException(message, true);
     }
@@ -300,13 +290,12 @@ namespace Datadog.Trace.DuckTyping
         {
         }
 
-        internal static DuckTypeProxyAndTargetMethodReturnTypeMismatchException Create(MethodInfo proxyMethod, MethodInfo targetMethod) => new(proxyMethod, targetMethod);
-
         private DuckTypeProxyAndTargetMethodReturnTypeMismatchException(string message, bool useRawMessage)
             : base(message)
         {
         }
 
+        internal static DuckTypeProxyAndTargetMethodReturnTypeMismatchException Create(MethodInfo proxyMethod, MethodInfo targetMethod) => new(proxyMethod, targetMethod);
 
         internal static Exception CreateForAot(string message) => new DuckTypeProxyAndTargetMethodReturnTypeMismatchException(message, true);
     }
@@ -321,13 +310,12 @@ namespace Datadog.Trace.DuckTyping
         {
         }
 
-        internal static DuckTypeProxyMethodsWithGenericParametersNotSupportedInNonPublicInstancesException Create(MethodInfo proxyMethod) => new(proxyMethod);
-
         private DuckTypeProxyMethodsWithGenericParametersNotSupportedInNonPublicInstancesException(string message, bool useRawMessage)
             : base(message)
         {
         }
 
+        internal static DuckTypeProxyMethodsWithGenericParametersNotSupportedInNonPublicInstancesException Create(MethodInfo proxyMethod) => new(proxyMethod);
 
         internal static Exception CreateForAot(string message) => new DuckTypeProxyMethodsWithGenericParametersNotSupportedInNonPublicInstancesException(message, true);
     }
@@ -342,7 +330,14 @@ namespace Datadog.Trace.DuckTyping
         {
         }
 
+        private DuckTypeTargetMethodAmbiguousMatchException(string message, bool useRawMessage)
+            : base(message)
+        {
+        }
+
         internal static DuckTypeTargetMethodAmbiguousMatchException Create(MethodInfo proxyMethod, MethodInfo targetMethod, MethodInfo targetMethod2) => new(proxyMethod, targetMethod, targetMethod2);
+
+        internal static Exception CreateForAot(string message) => new DuckTypeTargetMethodAmbiguousMatchException(message, true);
     }
 
     /// <summary>
@@ -352,22 +347,17 @@ namespace Datadog.Trace.DuckTyping
     {
         private DuckTypeTargetPropertyAmbiguousMatchException(Type targetType, string propertyName)
             : base($"The target type '{targetType.FullName ?? targetType.Name}' declares more than one property called '{propertyName}', so the one to copy from cannot be determined.")
-
-        private DuckTypeTargetMethodAmbiguousMatchException(string message, bool useRawMessage)
-            : base(message)
         {
         }
 
-        [DebuggerHidden]
-        [DoesNotReturn]
-        internal static void Throw(MethodInfo proxyMethod, MethodInfo targetMethod, MethodInfo targetMethod2)
-
-        internal static Exception CreateForAot(string message) => new DuckTypeTargetMethodAmbiguousMatchException(message, true);
+        private DuckTypeTargetPropertyAmbiguousMatchException(string message, bool useRawMessage)
+            : base(message)
         {
         }
 
         internal static DuckTypeTargetPropertyAmbiguousMatchException Create(Type targetType, string propertyName) => new(targetType, propertyName);
 
+        internal static Exception CreateForAot(string message) => new DuckTypeTargetPropertyAmbiguousMatchException(message, true);
     }
 
     /// <summary>
@@ -380,13 +370,12 @@ namespace Datadog.Trace.DuckTyping
         {
         }
 
-        internal static DuckTypeReverseProxyBaseIsStructException Create(Type type) => new(type);
-
         private DuckTypeReverseProxyBaseIsStructException(string message, bool useRawMessage)
             : base(message)
         {
         }
 
+        internal static DuckTypeReverseProxyBaseIsStructException Create(Type type) => new(type);
 
         internal static Exception CreateForAot(string message) => new DuckTypeReverseProxyBaseIsStructException(message, true);
     }
@@ -401,13 +390,12 @@ namespace Datadog.Trace.DuckTyping
         {
         }
 
-        internal static DuckTypeReverseProxyImplementorIsAbstractOrInterfaceException Create(Type type) => new(type);
-
         private DuckTypeReverseProxyImplementorIsAbstractOrInterfaceException(string message, bool useRawMessage)
             : base(message)
         {
         }
 
+        internal static DuckTypeReverseProxyImplementorIsAbstractOrInterfaceException Create(Type type) => new(type);
 
         internal static Exception CreateForAot(string message) => new DuckTypeReverseProxyImplementorIsAbstractOrInterfaceException(message, true);
     }
@@ -422,13 +410,12 @@ namespace Datadog.Trace.DuckTyping
         {
         }
 
-        internal static DuckTypeReverseProxyPropertyCannotBeAbstractException Create(PropertyInfo property) => new(property);
-
         private DuckTypeReverseProxyPropertyCannotBeAbstractException(string message, bool useRawMessage)
             : base(message)
         {
         }
 
+        internal static DuckTypeReverseProxyPropertyCannotBeAbstractException Create(PropertyInfo property) => new(property);
 
         internal static Exception CreateForAot(string message) => new DuckTypeReverseProxyPropertyCannotBeAbstractException(message, true);
     }
@@ -443,13 +430,12 @@ namespace Datadog.Trace.DuckTyping
         {
         }
 
-        internal static DuckTypeIncorrectReverseMethodUsageException Create(MethodInfo method) => new(method);
-
         private DuckTypeIncorrectReverseMethodUsageException(string message, bool useRawMessage)
             : base(message)
         {
         }
 
+        internal static DuckTypeIncorrectReverseMethodUsageException Create(MethodInfo method) => new(method);
 
         internal static Exception CreateForAot(string message) => new DuckTypeIncorrectReverseMethodUsageException(message, true);
     }
@@ -464,13 +450,12 @@ namespace Datadog.Trace.DuckTyping
         {
         }
 
-        internal static DuckTypeIncorrectReversePropertyUsageException Create(PropertyInfo property) => new(property);
-
         private DuckTypeIncorrectReversePropertyUsageException(string message, bool useRawMessage)
             : base(message)
         {
         }
 
+        internal static DuckTypeIncorrectReversePropertyUsageException Create(PropertyInfo property) => new(property);
 
         internal static Exception CreateForAot(string message) => new DuckTypeIncorrectReversePropertyUsageException(message, true);
     }
@@ -485,13 +470,12 @@ namespace Datadog.Trace.DuckTyping
         {
         }
 
-        internal static DuckTypeReverseProxyMissingPropertyImplementationException Create(IEnumerable<PropertyInfo> properties) => new(properties);
-
         private DuckTypeReverseProxyMissingPropertyImplementationException(string message, bool useRawMessage)
             : base(message)
         {
         }
 
+        internal static DuckTypeReverseProxyMissingPropertyImplementationException Create(IEnumerable<PropertyInfo> properties) => new(properties);
 
         internal static Exception CreateForAot(string message) => new DuckTypeReverseProxyMissingPropertyImplementationException(message, true);
     }
@@ -506,13 +490,12 @@ namespace Datadog.Trace.DuckTyping
         {
         }
 
-        internal static DuckTypeReverseProxyMissingMethodImplementationException Create(IEnumerable<MethodInfo> methods) => new(methods);
-
         private DuckTypeReverseProxyMissingMethodImplementationException(string message, bool useRawMessage)
             : base(message)
         {
         }
 
+        internal static DuckTypeReverseProxyMissingMethodImplementationException Create(IEnumerable<MethodInfo> methods) => new(methods);
 
         internal static Exception CreateForAot(string message) => new DuckTypeReverseProxyMissingMethodImplementationException(message, true);
     }
@@ -527,13 +510,12 @@ namespace Datadog.Trace.DuckTyping
         {
         }
 
-        internal static DuckTypeReverseAttributeParameterNamesMismatchException Create(MethodInfo method) => new(method);
-
         private DuckTypeReverseAttributeParameterNamesMismatchException(string message, bool useRawMessage)
             : base(message)
         {
         }
 
+        internal static DuckTypeReverseAttributeParameterNamesMismatchException Create(MethodInfo method) => new(method);
 
         internal static Exception CreateForAot(string message) => new DuckTypeReverseAttributeParameterNamesMismatchException(message, true);
     }
@@ -549,13 +531,12 @@ namespace Datadog.Trace.DuckTyping
         {
         }
 
-        internal static DuckTypeReverseProxyMustImplementGenericMethodAsGenericException Create(MethodInfo implementationMethod, MethodInfo targetMethod) => new(implementationMethod, targetMethod);
-
         private DuckTypeReverseProxyMustImplementGenericMethodAsGenericException(string message, bool useRawMessage)
             : base(message)
         {
         }
 
+        internal static DuckTypeReverseProxyMustImplementGenericMethodAsGenericException Create(MethodInfo implementationMethod, MethodInfo targetMethod) => new(implementationMethod, targetMethod);
 
         internal static Exception CreateForAot(string message) => new DuckTypeReverseProxyMustImplementGenericMethodAsGenericException(message, true);
     }
@@ -570,13 +551,12 @@ namespace Datadog.Trace.DuckTyping
         {
         }
 
-        internal static DuckTypeCustomAttributeHasNamedArgumentsException Create(Type type, CustomAttributeData attributeData) => new(attributeData.AttributeType?.FullName ?? "Null", type?.FullName ?? type?.Name ?? "NULL");
-
         private DuckTypeCustomAttributeHasNamedArgumentsException(string message, bool useRawMessage)
             : base(message)
         {
         }
 
+        internal static DuckTypeCustomAttributeHasNamedArgumentsException Create(Type type, CustomAttributeData attributeData) => new(attributeData.AttributeType?.FullName ?? "Null", type?.FullName ?? type?.Name ?? "NULL");
 
         internal static Exception CreateForAot(string message) => new DuckTypeCustomAttributeHasNamedArgumentsException(message, true);
     }
@@ -591,13 +571,12 @@ namespace Datadog.Trace.DuckTyping
         {
         }
 
-        internal static DuckTypeDuckCopyStructDoesNotContainsAnyField Create(Type type) => new(type?.FullName ?? type?.Name ?? "NULL");
-
         private DuckTypeDuckCopyStructDoesNotContainsAnyField(string message, bool useRawMessage)
             : base(message)
         {
         }
 
+        internal static DuckTypeDuckCopyStructDoesNotContainsAnyField Create(Type type) => new(type?.FullName ?? type?.Name ?? "NULL");
 
         internal static Exception CreateForAot(string message) => new DuckTypeDuckCopyStructDoesNotContainsAnyField(message, true);
     }
@@ -726,6 +705,7 @@ namespace Datadog.Trace.DuckTyping
         {
             return failureTypeName switch
             {
+                string name when name == typeof(DuckTypeException).FullName => DuckTypeException.Create(detail),
                 string name when name == typeof(DuckTypeInvalidTypeConversionException).FullName => DuckTypeInvalidTypeConversionException.CreateForAot(detail),
                 string name when name == typeof(DuckTypePropertyCantBeReadException).FullName => DuckTypePropertyCantBeReadException.CreateForAot(detail),
                 string name when name == typeof(DuckTypePropertyCantBeWrittenException).FullName => DuckTypePropertyCantBeWrittenException.CreateForAot(detail),
@@ -739,6 +719,7 @@ namespace Datadog.Trace.DuckTyping
                 string name when name == typeof(DuckTypeProxyAndTargetMethodReturnTypeMismatchException).FullName => DuckTypeProxyAndTargetMethodReturnTypeMismatchException.CreateForAot(detail),
                 string name when name == typeof(DuckTypeProxyMethodsWithGenericParametersNotSupportedInNonPublicInstancesException).FullName => DuckTypeProxyMethodsWithGenericParametersNotSupportedInNonPublicInstancesException.CreateForAot(detail),
                 string name when name == typeof(DuckTypeTargetMethodAmbiguousMatchException).FullName => DuckTypeTargetMethodAmbiguousMatchException.CreateForAot(detail),
+                string name when name == typeof(DuckTypeTargetPropertyAmbiguousMatchException).FullName => DuckTypeTargetPropertyAmbiguousMatchException.CreateForAot(detail),
                 string name when name == typeof(DuckTypeReverseProxyBaseIsStructException).FullName => DuckTypeReverseProxyBaseIsStructException.CreateForAot(detail),
                 string name when name == typeof(DuckTypeReverseProxyImplementorIsAbstractOrInterfaceException).FullName => DuckTypeReverseProxyImplementorIsAbstractOrInterfaceException.CreateForAot(detail),
                 string name when name == typeof(DuckTypeReverseProxyPropertyCannotBeAbstractException).FullName => DuckTypeReverseProxyPropertyCannotBeAbstractException.CreateForAot(detail),
