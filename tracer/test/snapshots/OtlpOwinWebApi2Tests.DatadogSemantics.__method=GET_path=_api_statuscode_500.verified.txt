@@ -1,0 +1,174 @@
+{
+  "resourceSpans": [
+    {
+      "resource": {
+        "attributes": [
+          {
+            "key": "service.name",
+            "value": {
+              "stringValue": "Samples.Owin.WebApi2"
+            }
+          },
+          {
+            "key": "service.version",
+            "value": {
+              "stringValue": "1.0.0"
+            }
+          },
+          {
+            "key": "deployment.environment.name",
+            "value": {
+              "stringValue": "integration_tests"
+            }
+          },
+          {
+            "key": "telemetry.sdk.name",
+            "value": {
+              "stringValue": "sdk-name"
+            }
+          },
+          {
+            "key": "telemetry.sdk.language",
+            "value": {
+              "stringValue": "dotnet"
+            }
+          },
+          {
+            "key": "telemetry.sdk.version",
+            "value": {
+              "stringValue": "sdk-version"
+            }
+          },
+          {
+            "key": "git.commit.sha",
+            "value": {
+              "stringValue": "normalized-git-commit-sha"
+            }
+          },
+          {
+            "key": "git.repository_url",
+            "value": {
+              "stringValue": "https://github.com/DataDog/dd-trace-dotnet"
+            }
+          },
+          {
+            "key": "runtime-id",
+            "value": {
+              "stringValue": "Guid_1"
+            }
+          }
+        ]
+      },
+      "scopeSpans": [
+        {
+          "spans": [
+            {
+              "traceId": "normalized-trace-id",
+              "spanId": "normalized-span-id",
+              "name": "GET /api/statuscode/{value}",
+              "kind": 2,
+              "startTimeUnixNano": "0",
+              "endTimeUnixNano": "0",
+              "attributes": [
+                {
+                  "key": "aspnet.route",
+                  "value": {
+                    "stringValue": "api/statuscode/{value}"
+                  }
+                },
+                {
+                  "key": "component",
+                  "value": {
+                    "stringValue": "aspnet"
+                  }
+                },
+                {
+                  "key": "error.msg",
+                  "value": {
+                    "stringValue": "The HTTP response has status code 500."
+                  }
+                },
+                {
+                  "key": "http.method",
+                  "value": {
+                    "stringValue": "GET"
+                  }
+                },
+                {
+                  "key": "http.request.headers.host",
+                  "value": {
+                    "stringValue": "localhost:00000"
+                  }
+                },
+                {
+                  "key": "http.route",
+                  "value": {
+                    "stringValue": "api/statuscode/{value}"
+                  }
+                },
+                {
+                  "key": "http.status_code",
+                  "value": {
+                    "intValue": "500"
+                  }
+                },
+                {
+                  "key": "http.url",
+                  "value": {
+                    "stringValue": "http://localhost:00000/api/statuscode/500"
+                  }
+                },
+                {
+                  "key": "http.useragent",
+                  "value": {
+                    "stringValue": "testhelper"
+                  }
+                },
+                {
+                  "key": "operation.name",
+                  "value": {
+                    "stringValue": "aspnet_webapi.request"
+                  }
+                },
+                {
+                  "key": "resource.name",
+                  "value": {
+                    "stringValue": "GET /api/statuscode/{value}"
+                  }
+                },
+                {
+                  "key": "runtime-id",
+                  "value": {
+                    "stringValue": "Guid_1"
+                  }
+                },
+                {
+                  "key": "service.name",
+                  "value": {
+                    "stringValue": "samples.owin.webapi2"
+                  }
+                },
+                {
+                  "key": "span.kind",
+                  "value": {
+                    "stringValue": "server"
+                  }
+                },
+                {
+                  "key": "span.type",
+                  "value": {
+                    "stringValue": "web"
+                  }
+                }
+              ],
+              "status": {
+                "message": "The HTTP response has status code 500.",
+                "code": 2
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

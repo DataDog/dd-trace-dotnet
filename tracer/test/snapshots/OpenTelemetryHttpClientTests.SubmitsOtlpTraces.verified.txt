@@ -1,4 +1,4 @@
-{
+﻿{
   "resourceSpans": [
     {
       "resource": {
@@ -56,6 +56,18 @@
             "value": {
               "stringValue": "Guid_1"
             }
+          },
+          {
+            "key": "_dd.sdk.otlp_export",
+            "value": {
+              "stringValue": "true"
+            }
+          },
+          {
+            "key": "datadog.sdk.semantics",
+            "value": {
+              "stringValue": "datadog"
+            }
           }
         ]
       },
@@ -65,6 +77,7 @@
             {
               "traceId": "normalized-trace-id",
               "spanId": "normalized-span-id",
+              "traceState": "ot=rv:normalized-random-value;th:0",
               "name": "HttpClientRequestAsync",
               "kind": 1,
               "startTimeUnixNano": "0",
@@ -103,6 +116,7 @@
             {
               "traceId": "normalized-trace-id",
               "spanId": "normalized-span-id",
+              "traceState": "ot=rv:normalized-random-value;th:0",
               "parentSpanId": "normalized-parent-span-id",
               "name": "GET localhost:00000/?/ok",
               "kind": 3,
@@ -186,6 +200,7 @@
             {
               "traceId": "normalized-trace-id",
               "spanId": "normalized-span-id",
+              "traceState": "ot=rv:normalized-random-value;th:0",
               "parentSpanId": "normalized-parent-span-id",
               "name": "GET localhost:00000/?/ok",
               "kind": 3,
@@ -269,6 +284,7 @@
             {
               "traceId": "normalized-trace-id",
               "spanId": "normalized-span-id",
+              "traceState": "ot=rv:normalized-random-value;th:0",
               "parentSpanId": "normalized-parent-span-id",
               "name": "FOO localhost:00000/?/ok",
               "kind": 3,
@@ -352,6 +368,7 @@
             {
               "traceId": "normalized-trace-id",
               "spanId": "normalized-span-id",
+              "traceState": "ot=rv:normalized-random-value;th:0",
               "parentSpanId": "normalized-parent-span-id",
               "name": "GET localhost:00000/?/redirect",
               "kind": 3,
@@ -435,6 +452,7 @@
             {
               "traceId": "normalized-trace-id",
               "spanId": "normalized-span-id",
+              "traceState": "ot=rv:normalized-random-value;th:0",
               "parentSpanId": "normalized-parent-span-id",
               "name": "GET localhost:00000/?/client-error",
               "kind": 3,
@@ -528,6 +546,7 @@
             {
               "traceId": "normalized-trace-id",
               "spanId": "normalized-span-id",
+              "traceState": "ot=rv:normalized-random-value;th:0",
               "parentSpanId": "normalized-parent-span-id",
               "name": "GET localhost:00000/?/server-error",
               "kind": 3,
@@ -611,6 +630,7 @@
             {
               "traceId": "normalized-trace-id",
               "spanId": "normalized-span-id",
+              "traceState": "ot=rv:normalized-random-value;th:0",
               "parentSpanId": "normalized-parent-span-id",
               "name": "GET localhost:00000/?/ok",
               "kind": 3,

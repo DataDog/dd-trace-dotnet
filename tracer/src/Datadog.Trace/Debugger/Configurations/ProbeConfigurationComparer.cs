@@ -31,7 +31,7 @@ namespace Datadog.Trace.Debugger.Configurations
                 (!currentConfiguration.ServiceConfiguration?.AllowList?.Equals(incomingConfiguration.ServiceConfiguration?.AllowList) ?? incomingConfiguration.ServiceConfiguration?.AllowList != null)
              || (!currentConfiguration.ServiceConfiguration?.DenyList?.Equals(incomingConfiguration.ServiceConfiguration?.DenyList) ?? incomingConfiguration.ServiceConfiguration?.DenyList != null);
 
-            HasProbeRelatedChanges = AddedDefinitions.Any() || isFilteredListChanged;
+            HasProbeRelatedChanges = AddedDefinitions.Count > 0 || isFilteredListChanged;
             HasRateLimitChanged =
                 (!currentConfiguration.ServiceConfiguration?.Sampling?.Equals(incomingConfiguration.ServiceConfiguration?.Sampling) ?? incomingConfiguration.ServiceConfiguration?.Sampling != null);
         }

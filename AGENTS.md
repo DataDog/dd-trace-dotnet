@@ -127,7 +127,7 @@ The full managed tracer (`Datadog.Trace.dll`) contains all auto-instrumentation 
 - Never manually edit generated files (`.g.` in the file extension). Read the file header for regeneration instructions instead.
 
 **C/C++ style:**
-- See `.clang-format`; keep consistent naming
+- See `.clang-format`; keep consistent naming.
 
 ## Windows Command Line Best Practices
 
@@ -291,6 +291,7 @@ Debugger code runs inside customer processes while inspecting live customer obje
 
 - Do not commit secrets; prefer env vars (`DD_*`). `.env` should not contain credentials.
 - Use `global.json` SDK; confirm with `dotnet --version`.
+- Never mention a customer or user in a pull request. Do not include their name, any other identifying detail, PII, or their code in the diff, commit messages, or PR description.
 
 ## Glossary
 

@@ -244,7 +244,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             // Ensures that we get nice file nesting in Solution Explorer
             var fxSuffix = EnvironmentHelper.IsCoreClr() ? string.Empty : ".netfx";
             await VerifyHelper.VerifySpans(spans, settings)
-                              .UseFileName($"{_testName}.{testName}{fxSuffix}.Schema{_metadataSchemaVersion.ToUpper()}")
+                              .UseFileName($"{_testName}.{testName}{fxSuffix}.Schema{_metadataSchemaVersion.ToUpper()}{VerifyHelper.Net11SnapshotSuffix}")
                               .DisableRequireUniquePrefix(); // all package versions should be the same
 
             VerifyInstrumentation(fixture.Process);
