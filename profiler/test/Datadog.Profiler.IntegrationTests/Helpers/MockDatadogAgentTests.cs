@@ -28,6 +28,23 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
             _output = output;
         }
 
+        [Theory]
+        [InlineData("gzip")]
+        [InlineData("GZIP")]
+        [InlineData(null)]
+        public void HttpRequestBodyReader_ReadBodyAsText_ReturnsOriginalJson(string contentEncodingHeader)
+        {
+            using var body = new MemoryStream(EncodeBody(SampleJson, contentEncodingHeader));
+            body.Position = 0;
+
+            var text = HttpRequestBodyReader.ReadBodyAsText(body, contentEncodingHeader, Encoding.UTF8);
+
+            text.Should().Be(SampleJson);
+            // The reader must leave the stream open on both the gzip and plain paths;
+            // HttpListener still owns the request stream.
+            body.CanRead.Should().BeTrue();
+        }
+
         [Fact]
         public async Task HttpAgent_SurvivesThrowingTelemetryHandler()
         {
@@ -47,6 +64,28 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
 
             agent.HandlerExceptions.Should().HaveCount(2);
             agent.HandlerExceptions.Should().OnlyContain(x => x is InvalidOperationException);
+        }
+
+        [Fact]
+        public async Task HttpAgent_GzipTelemetryHandler_ParsesJson()
+        {
+            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
+            agent.IsReady.Should().BeTrue();
+
+            var receivedBody = string.Empty;
+            agent.TelemetryMetricsRequestReceived += (_, ctx) =>
+            {
+                receivedBody = HttpRequestBodyReader.ReadBodyAsText(ctx.Value.Request);
+            };
+
+            using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(10) };
+            var content = new ByteArrayContent(EncodeBody(SampleJson, "gzip"));
+            content.Headers.Add("Content-Encoding", "gzip");
+            var response = await client.PostAsync($"http://127.0.0.1:{agent.Port}{TelemetryEndpoint}", content);
+            response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+            receivedBody.Should().Be(SampleJson);
+            agent.HandlerExceptions.Should().BeEmpty();
         }
 
         private static byte[] EncodeBody(string text, string contentEncodingHeader)
