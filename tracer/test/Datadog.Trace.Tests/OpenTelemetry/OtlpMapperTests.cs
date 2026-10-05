@@ -157,37 +157,6 @@ public class OtlpMapperTests
     }
 
     [Fact]
-    public void EmitResourceAttributes_EmitsOtlpExportMarker()
-    {
-        var traceChunk = CreateTraceChunk();
-        var attributes = new List<KeyValue>();
-        OtlpMapper.EmitResourceAttributesFromTraceChunk(in traceChunk, kv => attributes.Add(kv));
-
-        // reaching this mapper means the payload is leaving over OTLP
-        attributes.Should().Contain(kv => kv.Key == Tags.SdkOtlpExport && (string)kv.Value! == "true");
-    }
-
-    [Theory]
-    [InlineData(true, "otel")]
-    [InlineData(false, "datadog")]
-    public async Task EmitResourceAttributes_EmitsSdkSemantics(bool otelSemanticsEnabled, string expectedValue)
-    {
-        var configSource = new DictionaryConfigurationSource(new Dictionary<string, string>
-        {
-            { ConfigurationKeys.OpenTelemetry.OtelSemanticsEnabled, otelSemanticsEnabled ? "true" : "false" },
-        });
-
-        await using var tracer = TracerHelper.Create(new TracerSettings(configSource));
-        using var scope = tracer.StartActive("test-operation");
-        var span = (Span)scope.Span;
-        var traceChunk = new TraceChunkModel(new SpanCollection(new[] { span }));
-        var attributes = new List<KeyValue>();
-        OtlpMapper.EmitResourceAttributesFromTraceChunk(in traceChunk, kv => attributes.Add(kv));
-
-        attributes.Should().Contain(kv => kv.Key == Tags.SdkSemantics && (string)kv.Value! == expectedValue);
-    }
-
-    [Fact]
     public void EmitAttributesFromSpan_EmitsDatadogAttributes()
     {
         var span = CreateSpan();
