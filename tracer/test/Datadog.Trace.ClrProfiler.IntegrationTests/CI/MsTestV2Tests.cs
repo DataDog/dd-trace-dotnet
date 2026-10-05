@@ -104,9 +104,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                             // Remove process tags that get added to the first span of a payload
                             targetSpan.Tags.Remove(Tags.ProcessTags);
 
-                            // Remove the otlp export marker that gets added to the first span of a payload
-                            targetSpan.Tags.Remove(Tags.SdkOtlpExport);
-
                             // Remove EFD tags
                             targetSpan.Tags.Remove(TestTags.TestIsNew);
                             targetSpan.Tags.Remove(TestTags.TestIsRetry);

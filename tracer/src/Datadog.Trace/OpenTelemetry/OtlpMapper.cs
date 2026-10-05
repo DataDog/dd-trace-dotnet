@@ -70,9 +70,6 @@ internal static class OtlpMapper
 
         writeKeyValue(ref state, new KeyValue(Trace.Tags.RuntimeId, Tracer.RuntimeId));
 
-        writeKeyValue(ref state, new KeyValue(Trace.Tags.SdkOtlpExport, "true"));
-        writeKeyValue(ref state, new KeyValue(Trace.Tags.SdkSemantics, traceChunk.OtelSemanticsEnabled ? "otel" : "datadog"));
-
         if (traceChunk.ClientComputedStats)
         {
             writeKeyValue(ref state, new KeyValue("_dd.stats_computed", "true"));

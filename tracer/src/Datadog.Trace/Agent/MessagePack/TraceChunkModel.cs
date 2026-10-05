@@ -72,8 +72,6 @@ internal readonly struct TraceChunkModel
 
     public readonly bool ClientComputedStats = false;
 
-    public readonly bool OtelSemanticsEnabled = false;
-
     /// <summary>
     ///     Initializes a new instance of the <see cref="TraceChunkModel"/> struct.
     /// </summary>
@@ -121,7 +119,6 @@ internal readonly struct TraceChunkModel
                     AzureAppServiceSettings = settings.AzureAppServiceMetadata;
                     IsApmEnabled = settings.ApmTracingEnabled;
                     ClientComputedStats = settings.OtelTracesSpanMetricsEnabled;
-                    OtelSemanticsEnabled = settings.OtelSemanticsEnabled;
                 }
 
                 if (tracer.PerTraceSettings is { } perTraceSettings)

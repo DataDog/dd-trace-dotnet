@@ -232,9 +232,7 @@ namespace Datadog.Trace.Tests.Agent
                 .ReturnsAsync(true);
 
             var spans = CreateTraceChunk(1);
-
-            // each flush starts a new payload, so the chunk is always the first one in its payload
-            var traceChunk = new TraceChunkModel(spans, isFirstChunkInPayload: true);
+            var traceChunk = new TraceChunkModel(spans);
             var expectedData1 = Vendors.MessagePack.MessagePackSerializer.Serialize(traceChunk, SpanFormatterResolver.Instance);
 
             _agentWriter.WriteTrace(spans);
@@ -247,7 +245,7 @@ namespace Datadog.Trace.Tests.Agent
             actualPayload = [];
 
             spans = CreateTraceChunk(1, 2);
-            traceChunk = new TraceChunkModel(spans, isFirstChunkInPayload: true);
+            traceChunk = new TraceChunkModel(spans);
             var expectedData2 = Vendors.MessagePack.MessagePackSerializer.Serialize(traceChunk, SpanFormatterResolver.Instance);
 
             _agentWriter.WriteTrace(spans);
