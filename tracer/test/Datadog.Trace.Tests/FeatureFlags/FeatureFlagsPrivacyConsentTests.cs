@@ -12,6 +12,7 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.FeatureFlags;
 using Datadog.Trace.FeatureFlags.Rcm.Model;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Xunit;
 using ValueType = Datadog.Trace.FeatureFlags.ValueType;
 
@@ -142,26 +143,52 @@ public class FeatureFlagsPrivacyConsentTests
         }
     }
 
-    [Fact]
-    public void MergedFlagsKeepSourceConsentWithoutMutatingTheirOriginalConfigurations()
+    [Theory]
+    [InlineData(false, true, "true")]
+    [InlineData(true, false, "false")]
+    public void LastMergedConfigurationSetsConsentForAllFlagsWithoutMutatingSources(bool firstConsent, bool lastConsent, string expectedConsent)
     {
-        var consented = Configuration(true);
-        var protectedConfig = Configuration(false);
-        protectedConfig.Flags!.Add("protected", protectedConfig.Flags["flag"]);
-        protectedConfig.Flags.MarkInvalid("invalid");
+        var first = Configuration(firstConsent);
+        var last = Configuration(lastConsent);
+        first.Flags!.Add("first-only", first.Flags["flag"]);
+        first.Flags.MarkInvalid("invalid");
         var merged = new ServerConfiguration();
-        merged.Merge(protectedConfig);
-        merged.Merge(consented);
+        merged.Merge(first);
+        merged.Merge(last);
         var evaluator = new FeatureFlagsEvaluator(null, merged);
 
-        Assert.Equal("true", Evaluate("flag").FlagMetadata!["__dd_observe_full_evaluation_data"]);
-        Assert.Equal("false", Evaluate("protected").FlagMetadata!["__dd_observe_full_evaluation_data"]);
-        Assert.Equal("false", Evaluate("missing").FlagMetadata!["__dd_observe_full_evaluation_data"]);
-        Assert.Equal("false", Evaluate("invalid").FlagMetadata!["__dd_observe_full_evaluation_data"]);
-        Assert.Equal("true", new FeatureFlagsEvaluator(null, consented).Evaluate("flag", ValueType.String, "fallback", new EvaluationContext("user")).FlagMetadata!["__dd_observe_full_evaluation_data"]);
-        Assert.Equal("false", new FeatureFlagsEvaluator(null, protectedConfig).Evaluate("flag", ValueType.String, "fallback", new EvaluationContext("user")).FlagMetadata!["__dd_observe_full_evaluation_data"]);
+        foreach (var key in new[] { "flag", "first-only", "missing", "invalid" })
+        {
+            Assert.Equal(expectedConsent, Evaluate(key).FlagMetadata!["__dd_observe_full_evaluation_data"]);
+        }
+
+        Assert.Equal("tracked-value", Evaluate("flag").Value);
+        Assert.Equal("tracked-value", Evaluate("first-only").Value);
+        Assert.Equal("FLAG_NOT_FOUND", Evaluate("missing").FlagMetadata!["errorCode"]);
+        Assert.Equal("PARSE_ERROR", Evaluate("invalid").FlagMetadata!["errorCode"]);
+        Assert.Equal(firstConsent ? "true" : "false", new FeatureFlagsEvaluator(null, first).Evaluate("flag", ValueType.String, "fallback", new EvaluationContext("user")).FlagMetadata!["__dd_observe_full_evaluation_data"]);
+        Assert.Equal(expectedConsent, new FeatureFlagsEvaluator(null, last).Evaluate("flag", ValueType.String, "fallback", new EvaluationContext("user")).FlagMetadata!["__dd_observe_full_evaluation_data"]);
 
         Evaluation Evaluate(string key) => evaluator.Evaluate(key, ValueType.String, "fallback", new EvaluationContext("user"));
+    }
+
+    [Theory]
+    [InlineData("{}")]
+    [InlineData("{\"observeFullEvaluationData\": false}")]
+    [InlineData("{\"observeFullEvaluationData\": null}")]
+    [InlineData("{\"observeFullEvaluationData\": \"true\"}")]
+    [InlineData("{\"observeFullEvaluationData\": 1}")]
+    public void LastMergedConfigurationWithoutExplicitConsentProtectsRetainedFlags(string json)
+    {
+        var merged = new ServerConfiguration();
+        merged.Merge(Configuration(true));
+        merged.Merge(JsonConvert.DeserializeObject<ServerConfiguration>(json)!);
+
+        var evaluator = new FeatureFlagsEvaluator(null, merged);
+        var result = evaluator.Evaluate("flag", ValueType.String, "fallback", new EvaluationContext("user"));
+
+        Assert.Equal("tracked-value", result.Value);
+        Assert.Equal("false", result.FlagMetadata!["__dd_observe_full_evaluation_data"]);
     }
 
     private static ServerConfiguration Configuration(bool consent)

@@ -55,7 +55,7 @@ namespace Datadog.Trace.FeatureFlags
         public Evaluation Evaluate(string flagKey, ValueType resultType, object? defaultValue, EvaluationContext? context)
         {
             // Capture before evaluating: even an exception after a configuration update keeps this consent.
-            var consent = _config?.GetEvaluationConsent(flagKey) == true ? "true" : "false";
+            var consent = _config?.ObserveFullEvaluationData == true ? "true" : "false";
             try
             {
                 var config = _config;
