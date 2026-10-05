@@ -79,7 +79,8 @@ public class AzureFunctionsDurableTriggerTests : AzureFunctionsTests
                    agent,
                    seedAsync: SeedViaHttpAsync,
                    expectedExitCode: ExpectedFuncKillExitCode,
-                   packageVersion: packageVersion))
+                   packageVersion: packageVersion,
+                   workerSpanPredicate: s => s.Resource == "DurableOrchestration DurableWorkflow"))
         {
             var spans = await WaitForDurableSpansAsync(agent);
 

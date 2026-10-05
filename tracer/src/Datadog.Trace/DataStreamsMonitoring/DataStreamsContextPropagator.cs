@@ -105,69 +105,59 @@ internal sealed class DataStreamsContextPropagator
         if (headers is null) { ThrowHelper.ThrowArgumentNullException(nameof(headers)); }
 
         // Try to extract from the base64 header first
-        var base64Bytes = headers.TryGetLastBytes(DataStreamsPropagationHeaders.PropagationKeyBase64);
-        if (base64Bytes is { Length: > 0 })
+        try
         {
-            try
+            var base64Bytes = headers.TryGetLastBytes(DataStreamsPropagationHeaders.PropagationKeyBase64);
+            if (base64Bytes is { Length: > 0 })
             {
 #if NETCOREAPP3_1_OR_GREATER
                 // Decode directly into a stack buffer to avoid a heap allocation per consume.
                 Span<byte> decodedBytes = stackalloc byte[PathwayContextEncoder.MaxEncodedSize];
                 var status = Base64.DecodeFromUtf8(base64Bytes, decodedBytes, out _, out int bytesWritten);
-
-                if (status != OperationStatus.Done)
-                {
-                    Log.Error("Failed to decode Base64 data streams context. OperationStatus: {Status}", status);
-                    return null;
-                }
-
-                return PathwayContextEncoder.Decode(decodedBytes.Slice(0, bytesWritten));
 #else
-                // Calculate the maximum decoded length
-                // Base64 encoding encodes 3 bytes of data into 4 bytes of encoded data
-                // So the maximum decoded length is (base64Bytes.Length * 3) / 4
+                // Base64 encodes 3 bytes into 4 bytes, so this is sufficient for the decoded input.
                 int decodedLength = (base64Bytes.Length * 3) / 4;
                 byte[] decodedBytes = new byte[decodedLength];
-
                 var status = Base64.DecodeFromUtf8(base64Bytes, decodedBytes, out _, out int bytesWritten);
-
+#endif
                 if (status != OperationStatus.Done)
                 {
                     Log.Error("Failed to decode Base64 data streams context. OperationStatus: {Status}", status);
                     return null;
                 }
-                else
-                {
-                    if (bytesWritten == decodedBytes.Length)
-                    {
-                        return PathwayContextEncoder.Decode(decodedBytes);
-                    }
-                    else
-                    {
-                        return PathwayContextEncoder.Decode(decodedBytes.AsSpan(0, bytesWritten).ToArray());
-                    }
-                }
+
+#if NETCOREAPP3_1_OR_GREATER
+                return PathwayContextEncoder.Decode(decodedBytes.Slice(0, bytesWritten));
+#else
+                return PathwayContextEncoder.Decode(
+                    bytesWritten == decodedBytes.Length ? decodedBytes : decodedBytes.AsSpan(0, bytesWritten).ToArray());
 #endif
             }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Failed to decode base64 Data Streams context.");
-            }
+        }
+        catch (FormatException)
+        {
+            // AWS header adapters also decode Base64 while reading the header.
+            Log.Error("Failed to decode Base64 data streams context. OperationStatus: {Status}", OperationStatus.InvalidData);
+            return null;
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Failed to decode base64 Data Streams context.");
         }
 
         if (isDataStreamsLegacyHeadersEnabled)
         {
-            var binaryBytes = headers.TryGetLastBytes(DataStreamsPropagationHeaders.PropagationKey);
-            if (binaryBytes is { Length: > 0 })
+            try
             {
-                try
+                var binaryBytes = headers.TryGetLastBytes(DataStreamsPropagationHeaders.PropagationKey);
+                if (binaryBytes is { Length: > 0 })
                 {
                     return PathwayContextEncoder.Decode(binaryBytes);
                 }
-                catch (Exception ex)
-                {
-                    Log.Error(ex, "Failed to decode binary Data Streams context.");
-                }
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Failed to decode binary Data Streams context.");
             }
         }
 
