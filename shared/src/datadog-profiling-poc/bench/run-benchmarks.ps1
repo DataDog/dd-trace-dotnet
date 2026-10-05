@@ -4,8 +4,9 @@ Benchmarks the PoC C library against a given libdatadog release (Windows, no CMa
 
 .DESCRIPTION
 Downloads the libdatadog Windows release artifact, compiles the PoC sources
-of this checkout directly with MSVC (WinHTTP exporter, zstd compiled from its
-sources - same files as the profiler's .vcxproj), builds bench.c against both,
+of this checkout directly with MSVC (WinHTTP exporter, the vendored zstd
+amalgamation from vendor\zstd - same files as the profiler's .vcxproj), builds
+bench.c against both,
 runs the scenarios and writes <Out>\report.md and results.json.
 
 Requirements: Visual Studio 2019+ (or Build Tools) with the C++ workload,
@@ -29,7 +30,6 @@ $ErrorActionPreference = "Stop"
 $ProgressPreference = "SilentlyContinue" # Invoke-WebRequest is very slow with the progress bar
 if (-not $LibdatadogVersion.StartsWith("v")) { $LibdatadogVersion = "v$LibdatadogVersion" }
 $PocDir = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
-$ZstdVersion = "1.5.7" # same version as the PoC's CMakeLists.txt
 New-Item -ItemType Directory -Force -Path $Out | Out-Null
 $Out = (Resolve-Path $Out).Path
 $Cache = Join-Path $Out "cache"
@@ -105,24 +105,16 @@ $LddDll = Join-Path $LddDir "release\dynamic\datadog_profiling_ffi.dll"
 $LddLib = Join-Path $LddDir "release\dynamic\datadog_profiling_ffi.lib"
 if (-not (Test-Path $LddDll) -or -not (Test-Path $LddLib)) { throw "datadog_profiling_ffi.dll/.lib not found under $LddDir" }
 
-# ---- zstd sources (for the PoC) ----
-$ZstdRoot = Join-Path $Cache "zstd-$ZstdVersion"
-if (-not (Test-Path $ZstdRoot)) {
-    Write-Host "==> downloading zstd $ZstdVersion sources"
-    $zip = Join-Path $Cache "zstd-$ZstdVersion.zip"
-    if (-not (Invoke-Download "https://github.com/facebook/zstd/archive/refs/tags/v$ZstdVersion.zip" $zip)) { throw "zstd download failed" }
-    Expand-Entries $zip $Cache @("zstd-$ZstdVersion/lib/")
-    Remove-Item $zip
-}
-$ZstdLib = Join-Path $ZstdRoot "lib"
-
 # ---- build ----
 Write-Host "==> building the benchmarks"
 $Obj = Join-Path $Out "obj-$Arch"
-foreach ($d in @("poc", "zstd", "bench_poc", "bench_ldd")) { New-Item -ItemType Directory -Force -Path (Join-Path $Obj $d) | Out-Null }
+foreach ($d in @("poc", "bench_poc", "bench_ldd")) { New-Item -ItemType Directory -Force -Path (Join-Path $Obj $d) | Out-Null }
 $CFlags = @("/nologo", "/O2", "/std:c11", "/W3", "/D_CRT_SECURE_NO_WARNINGS", "/MD")
-$PocSources = Get-ChildItem (Join-Path $PocDir "src\*.c") | Where-Object { $_.Name -ne "exporter.c" } | ForEach-Object { $_.FullName }
-$ZstdSources = @(Get-ChildItem (Join-Path $ZstdLib "common\*.c")) + @(Get-ChildItem (Join-Path $ZstdLib "compress\*.c")) | ForEach-Object { $_.FullName }
+# same files as Datadog.Profiler.Native.vcxproj: the PoC sources (WinHTTP exporter, not
+# the libcurl one) and the vendored zstd single-file amalgamation
+$ZstdDir = Join-Path $PocDir "vendor\zstd"
+$PocSources = @(Get-ChildItem (Join-Path $PocDir "src\*.c") | Where-Object { $_.Name -ne "exporter.c" } | ForEach-Object { $_.FullName }) +
+              @(Join-Path $ZstdDir "zstd.c")
 
 function Invoke-Cl([string[]]$Arguments, [string]$What) {
     $log = Join-Path $Out "build-$What.log"
@@ -130,14 +122,11 @@ function Invoke-Cl([string[]]$Arguments, [string]$What) {
     if ($LASTEXITCODE -ne 0) { Get-Content $log -Tail 30; throw "build of $What failed (see $log)" }
 }
 
-# PoC and zstd compiled into separate object directories: both have a zstd_compress.c
-Invoke-Cl ($CFlags + @("/c", "/I$PocDir\include", "/I$PocDir\src", "/I$ZstdLib") + $PocSources + @("/Fo$Obj\poc\")) "poc"
-Invoke-Cl ($CFlags + @("/c", "/DZSTD_DISABLE_ASM") + $ZstdSources + @("/Fo$Obj\zstd\")) "zstd"
+Invoke-Cl ($CFlags + @("/c", "/I$PocDir\include", "/I$PocDir\src", "/I$ZstdDir") + $PocSources + @("/Fo$Obj\poc\")) "poc"
 $PocObjs = Get-ChildItem "$Obj\poc\*.obj" | ForEach-Object { $_.FullName }
-$ZstdObjs = Get-ChildItem "$Obj\zstd\*.obj" | ForEach-Object { $_.FullName }
 $BenchPoc = Join-Path $Out "bench_poc.exe"
 $BenchLdd = Join-Path $Out "bench_ldd.exe"
-Invoke-Cl ($CFlags + @("/DBACKEND_POC", "/I$PocDir\include", (Join-Path $PSScriptRoot "bench.c")) + $PocObjs + $ZstdObjs +
+Invoke-Cl ($CFlags + @("/DBACKEND_POC", "/I$PocDir\include", (Join-Path $PSScriptRoot "bench.c")) + $PocObjs +
            @("/Fo$Obj\bench_poc\", "/Fe$BenchPoc", "/link", "winhttp.lib", "psapi.lib")) "bench_poc"
 try {
     Invoke-Cl ($CFlags + @("/DBACKEND_LDD", "/I$LddDir\include", (Join-Path $PSScriptRoot "bench.c"),
