@@ -181,6 +181,7 @@ partial class Build : NukeBuild
                         .AddInclude("tracer/build/smoke_test_snapshots/smoke_test_snapshots_2_1.json")
                         .AddInclude("tracer/build/smoke_test_snapshots/smoke_test_azurefunctions_snapshots.json")
                         .AddInclude("tracer/build/_build/SmokeTests/SmokeTestScenario.cs")
+                        .AddInclude("tracer/build/_build/SmokeTests/SmokeTestScenarios.cs")
                         .AddInclude("tracer/test/test-applications/regression/AspNetCoreSmokeTest/**"); // <- this captures more than we need but in reality doesn't change often
 
                     isChanged = changedFiles.Any(file => matcher.Match(file).HasMatches);
