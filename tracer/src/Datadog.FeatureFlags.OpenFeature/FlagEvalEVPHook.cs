@@ -19,6 +19,9 @@ namespace Datadog.FeatureFlags.OpenFeature;
 
 internal sealed class FlagEvalEVPHook : Hook
 {
+    // DateTimeOffset.MaxValue expressed as whole Unix milliseconds.
+    private const double MaxUnixTimeMilliseconds = 253402300799999d;
+
     private readonly Func<bool> _canEnqueue;
     private readonly Action<string, string?, string?, string?, long, bool, string?, IReadOnlyDictionary<string, object?>?, int> _enqueue;
     private readonly Action _recordError;
@@ -57,7 +60,7 @@ internal sealed class FlagEvalEVPHook : Hook
             var allocationKey = metadata?.GetString("__dd_allocation_key");
             var timestamp = metadata?.GetDouble(FeatureFlagMetadataKeys.EvaluationTimestampMs);
             // Missing metadata is possible when OpenFeature terminates before provider resolution.
-            var evalTimeMs = timestamp is >= 0 and <= 253402300799999d && timestamp == Math.Truncate(timestamp.Value)
+            var evalTimeMs = timestamp is >= 0 and <= MaxUnixTimeMilliseconds && timestamp == Math.Truncate(timestamp.Value)
                                  ? (long)timestamp.Value
                                  : DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
             var errorCode = ToErrorCode(details.ErrorType);
@@ -101,6 +104,8 @@ internal sealed class FlagEvalEVPHook : Hook
         return default;
     }
 
+    // Keep this allowlist aligned with FlagEvaluationPrivacy.ErrorCodeForOutput in Datadog.Trace.
+    // The provider and tracer validate independently across their assembly boundary.
     private static string? ToMetadataErrorCode(string? code) => code switch
     {
         null or "" => null,

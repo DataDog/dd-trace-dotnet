@@ -15,10 +15,12 @@ namespace Datadog.Trace.FeatureFlags.FlagEvaluation;
 
 internal static class FlagEvaluationPayload
 {
+    private static readonly string[] ServiceContextKeys = ["service", "env", "version"];
+
     internal static FlagEvaluationPayloadResult Encode(DrainResult state, IReadOnlyDictionary<string, string> serviceContext, long flushTimeMs, int payloadLimitBytes)
     {
         var context = new Dictionary<string, string>();
-        foreach (var name in new[] { "service", "env", "version" })
+        foreach (var name in ServiceContextKeys)
         {
             if (serviceContext.TryGetValue(name, out var value) && value is not null)
             {

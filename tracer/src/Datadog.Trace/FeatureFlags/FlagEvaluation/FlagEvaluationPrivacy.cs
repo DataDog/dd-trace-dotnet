@@ -24,6 +24,8 @@ internal static class FlagEvaluationPrivacy
         return consent || key.Length == 0 ? key : "sha256_" + Sha256Helper.ComputeHashAsHexString(key);
     }
 
+    // Keep this allowlist aligned with FlagEvalEVPHook.ToMetadataErrorCode in Datadog.FeatureFlags.OpenFeature.
+    // The tracer validates output independently, even if the provider was bypassed.
     internal static string? ErrorCodeForOutput(string? code) => code switch
     {
         null or "" => null,
