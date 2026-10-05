@@ -51,10 +51,9 @@ public class DuckTypeAotNativeAotPublishIntegrationTests
     {
         // A full NativeAOT publish is too expensive for every managed unit test shard;
         // RunDuckTypeAotNativeAotPublishGate opts in explicitly.
-        if (!string.Equals(Environment.GetEnvironmentVariable(EnableNativeAotPublishRunEnvironmentVariable), "1", StringComparison.Ordinal))
-        {
-            return;
-        }
+        Skip.IfNot(
+            IsEnvironmentVariableEnabled(EnableNativeAotPublishRunEnvironmentVariable),
+            $"Set {EnableNativeAotPublishRunEnvironmentVariable}=1 to publish the NativeAOT sample app.");
 
         var runtimeIdentifier = ResolveRuntimeIdentifier();
         var tempDirectory = Path.Combine(Path.GetTempPath(), "dd-trace-ducktype-aot-nativeaot", Guid.NewGuid().ToString("N"));
@@ -987,9 +986,11 @@ public class DuckTypeAotNativeAotPublishIntegrationTests
         throw new SkipException(reason);
     }
 
-    private static bool IsNativeAotToolchainRequired()
+    private static bool IsNativeAotToolchainRequired() => IsEnvironmentVariableEnabled(RequireNativeAotToolchainEnvironmentVariable);
+
+    private static bool IsEnvironmentVariableEnabled(string name)
     {
-        var value = Environment.GetEnvironmentVariable(RequireNativeAotToolchainEnvironmentVariable);
+        var value = Environment.GetEnvironmentVariable(name);
         return string.Equals(value, "1", StringComparison.OrdinalIgnoreCase) ||
                string.Equals(value, "true", StringComparison.OrdinalIgnoreCase);
     }

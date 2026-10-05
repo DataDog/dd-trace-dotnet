@@ -13092,7 +13092,7 @@ public class DuckTypeAotProcessorsTests
                 var initializeMethod = bootstrapType!.GetMethod("Initialize", BindingFlags.Public | BindingFlags.Static);
                 initializeMethod.Should().NotBeNull();
                 _ = initializeMethod!.Invoke(obj: null, parameters: null);
-                DuckType.IsAotMode().Should().BeTrue("generated registry initialization must put the runtime into AOT mode before failure replay assertions");
+                DuckType.RuntimeMode.Should().Be(DuckTypeRuntimeMode.Aot, "generated registry initialization must put the runtime into AOT mode before failure replay assertions");
 
                 var aotFailureResult = DuckTypeAotEngine.GetOrCreateProxyType(typeof(IFailureReplayPropertyCantBeReadProxy), typeof(FailureReplayPropertyCantBeReadTarget));
                 aotFailureResult.CanCreate().Should().BeFalse();

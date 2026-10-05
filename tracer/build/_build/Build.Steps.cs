@@ -3136,13 +3136,20 @@ partial class Build
 
     private IReadOnlyList<string> BuildDuckTypeAotFrameworkPreferences()
     {
-        // The AOT gate runs as part of every managed-unit matrix job, including legacy TFMs.
+        // The gates run in a single CI shard (see ShouldRunDuckTypeAotGatesInCurrentJob) and locally on demand.
         // Keep the generator host on a modern runtime that exists on all CI platforms.
         return new[] { "net8.0" };
     }
 
     private bool ShouldRunDuckTypeAotGatesInCurrentJob()
     {
+        // Explicit override for a job (or developer) that has to run, or skip, the gates regardless of the defaults below.
+        var gatesOverride = Environment.GetEnvironmentVariable("DD_DUCKTYPE_AOT_GATES");
+        if (!string.IsNullOrWhiteSpace(gatesOverride))
+        {
+            return gatesOverride == "1" || string.Equals(gatesOverride, "true", StringComparison.OrdinalIgnoreCase);
+        }
+
         if (!IsAzurePipelineEnvironment())
         {
             // Locally, the gates (NativeAOT publish and multi-TFM parity) are too slow to piggyback on every
@@ -3151,8 +3158,8 @@ partial class Build
         }
 
         // CI runs managed unit tests across OS, libc, architecture, and framework shards.
-        // The DuckType AOT gates are CI coverage gates, so run them once in a stable shard
-        // with the full Linux x64 glibc NativeAOT toolchain.
+        // The DuckType AOT gates are CI coverage gates, so run them once, in the Linux x64 glibc net9.0 shard,
+        // which has the full NativeAOT toolchain.
         return IsLinux && !IsRunningOnAlpine() && !IsArm64 && Framework == TargetFramework.NET9_0;
     }
 

@@ -63,7 +63,7 @@ The DuckTyping test framework flushes discovered mappings before reporting assem
 
 Use the build gate bundle for protected-branch validation. It runs strict compatibility verification, full-suite dynamic-vs-AOT parity, and NativeAOT publish validation.
 
-In CI, `RunManagedUnitTests` also runs this bundle, but only in the Linux x64 glibc shard that has the NativeAOT publish toolchain. Locally, `RunManagedUnitTests` skips it; invoke the bundle (or a single gate target) explicitly to run it.
+In CI, `RunManagedUnitTests` also runs this bundle, but only in the Linux x64 glibc net9.0 shard, which has the NativeAOT publish toolchain. Locally, `RunManagedUnitTests` skips it; invoke the bundle (or a single gate target) explicitly to run it. Set `DD_DUCKTYPE_AOT_GATES=true` (or `false`) to force (or skip) the gates in any job.
 
 ```bash
 ./tracer/build.sh RunDuckTypeAotGates

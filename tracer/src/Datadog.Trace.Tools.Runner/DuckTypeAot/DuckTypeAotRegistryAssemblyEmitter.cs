@@ -381,6 +381,27 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// <summary>
         /// Defines named constants for method return conversion kind.
         /// </summary>
+        /// <summary>
+        /// Defines how a target method matches the Type.GetMethod lookup dynamic duck typing runs before scanning candidates.
+        /// </summary>
+        private enum GetMethodLookupMatch
+        {
+            /// <summary>
+            /// The default binder wouldn't select the method.
+            /// </summary>
+            None,
+
+            /// <summary>
+            /// Every argument type is accepted by the parameter (object, or an assignable reference type).
+            /// </summary>
+            Assignable,
+
+            /// <summary>
+            /// Every parameter type is equal to the lookup type.
+            /// </summary>
+            Exact
+        }
+
         private enum MethodReturnConversionKind
         {
             /// <summary>
@@ -514,7 +535,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             var canonicalMappingsByKey = mappingResolutionResult.Mappings.ToDictionary(mapping => mapping.Key, StringComparer.Ordinal);
             IReadOnlyCollection<string> requiredAccessCheckAssemblyNames = Array.Empty<string>();
             phaseStopwatch = StartProfilePhase();
-            _currentExecutionContext = new EmitterExecutionContext(runtimeTypeResolutionAssemblyPathsByName, targetTypeIndex);
+            _currentExecutionContext = new EmitterExecutionContext(targetTypeIndex);
             var runtimeRegistrations = BuildRuntimeRegistrations(
                 moduleDef,
                 mappingResolutionResult.Mappings,
@@ -2875,7 +2896,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 importedProxyType,
                 importedTargetType,
                 resolvedExceptionTypeName,
-                resolvedFailureMessage ?? failure.Detail ?? string.Empty);
+                GetFailureReplayDetail(mapping, proxyType, targetType, resolvedFailureMessage ?? failure.Detail));
 
             if (emissionWarnings is not null)
             {
@@ -2949,6 +2970,27 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             }
 
             return false;
+        }
+
+        /// <summary>
+        /// Gets the message replayed by a failure registration. Known DuckType exceptions use it as their whole message,
+        /// so it falls back to describing the mapping instead of replaying an empty message.
+        /// </summary>
+        /// <param name="mapping">The mapping value.</param>
+        /// <param name="proxyType">The proxy type value.</param>
+        /// <param name="targetType">The target type value.</param>
+        /// <param name="detail">The resolved failure detail value.</param>
+        /// <returns>The failure message to replay.</returns>
+        private static string GetFailureReplayDetail(DuckTypeAotMapping mapping, ITypeDefOrRef proxyType, ITypeDefOrRef targetType, string? detail)
+        {
+            if (!string.IsNullOrWhiteSpace(detail))
+            {
+                return detail!;
+            }
+
+            return mapping.Mode == DuckTypeAotMappingMode.Reverse
+                       ? $"The AOT reverse proxy deriving from '{proxyType.FullName}' cannot be created for delegation type '{targetType.FullName}'."
+                       : $"The AOT proxy for '{proxyType.FullName}' cannot be created for target type '{targetType.FullName}'.";
         }
 
         /// <summary>
@@ -8348,7 +8390,28 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                     var successfulMethodBinding = default(ForwardBinding);
                     MethodDef? successfulTargetMethod = null;
                     var successfulMethodNameOrdinal = -1;
-                    foreach (var targetMethodCandidate in FindForwardTargetMethodCandidates(mapping, targetType, proxyMethodPlan, closedGenericProxyTypeArguments, closedGenericTargetTypeArguments, closedGenericMethodArguments, allowPrivateBaseMethodCandidates))
+                    var forwardMethodCandidates = FindForwardTargetMethodCandidates(mapping, targetType, proxyMethodPlan, closedGenericProxyTypeArguments, closedGenericTargetTypeArguments, closedGenericMethodArguments, allowPrivateBaseMethodCandidates);
+                    if (!isReverseMapping && RequiresExplicitInterfaceName(proxyMethodPlan))
+                    {
+                        // Dynamic duck typing applies ExplicitInterfaceTypeName only while scanning candidates. Before that it
+                        // looks the method up by its plain name with Type.GetMethod, and a method found that way wins.
+                        var candidates = forwardMethodCandidates.ToList();
+                        if (TryResolveGetMethodLookupBinding(proxyMethodPlan, targetType, candidates, closedGenericProxyTypeArguments, closedGenericTargetTypeArguments, closedGenericMethodArguments, out var lookupBinding))
+                        {
+                            if (_currentProfile is not null)
+                            {
+                                _currentProfile.ForwardResolutionMethodSuccessCount++;
+                            }
+
+                            binding = lookupBinding;
+                            _currentExecutionContext?.CacheForwardBindingPlan(bindingPlanCacheKey, new ForwardBindingPlanCacheEntry(binding));
+                            return true;
+                        }
+
+                        forwardMethodCandidates = candidates.Where(candidate => !IsPlainNameCandidate(proxyMethodPlan, candidate));
+                    }
+
+                    foreach (var targetMethodCandidate in forwardMethodCandidates)
                     {
                         var targetMethod = targetMethodCandidate.Method;
                         var declaringTypeArguments = GetClassMethodGenericTypeArguments(targetType, targetMethod, closedGenericTargetTypeArguments);
@@ -9394,6 +9457,195 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         private static bool IsReverseImplementationPropertyVisibleToDynamic(PropertyDef property)
         {
             return property.GetMethod?.IsPublic == true || property.SetMethod?.IsPublic == true;
+        }
+
+        /// <summary>
+        /// Determines whether the proxy method only binds explicit interface implementations while scanning candidates,
+        /// which is the case for a configured ExplicitInterfaceTypeName other than the "*" wildcard.
+        /// </summary>
+        /// <param name="proxyMethodPlan">The proxy method plan value.</param>
+        /// <returns>true if plain-name candidates are only selected through the Type.GetMethod lookup; otherwise, false.</returns>
+        private static bool RequiresExplicitInterfaceName(ProxyMethodPlan proxyMethodPlan)
+            => proxyMethodPlan.ExplicitInterfaceTypeNames.Count > 0 && !proxyMethodPlan.UseRelaxedNameComparison;
+
+        private static bool IsPlainNameCandidate(ProxyMethodPlan proxyMethodPlan, ForwardMethodCandidate candidate)
+        {
+            var comparison = proxyMethodPlan.UseIgnoreCaseMemberMatching ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
+            return string.Equals(candidate.Method.Name.String, proxyMethodPlan.ForwardTargetMethodNames[candidate.NameOrdinal], comparison);
+        }
+
+        /// <summary>
+        /// Mirrors the Type.GetMethod lookups dynamic duck typing runs before scanning candidates: for each configured name it
+        /// looks a method up by its plain name with the ParameterTypeNames types, and then with the proxy parameter types.
+        /// </summary>
+        /// <param name="proxyMethodPlan">The proxy method plan value.</param>
+        /// <param name="targetType">The target type value.</param>
+        /// <param name="candidates">The forward candidates of the proxy method.</param>
+        /// <param name="closedGenericProxyTypeArguments">The closed generic proxy type arguments value.</param>
+        /// <param name="closedGenericTargetTypeArguments">The closed generic target type arguments value.</param>
+        /// <param name="closedGenericMethodArguments">The closed generic method arguments value.</param>
+        /// <param name="binding">The binding of the method the lookup selects.</param>
+        /// <returns>true if the lookup selects a method that binds; otherwise, false.</returns>
+        private static bool TryResolveGetMethodLookupBinding(
+            ProxyMethodPlan proxyMethodPlan,
+            TypeDef targetType,
+            IReadOnlyList<ForwardMethodCandidate> candidates,
+            IReadOnlyList<TypeSig>? closedGenericProxyTypeArguments,
+            IReadOnlyList<TypeSig>? closedGenericTargetTypeArguments,
+            IReadOnlyList<TypeSig>? closedGenericMethodArguments,
+            out ForwardBinding binding)
+        {
+            binding = default;
+            var proxyMethod = proxyMethodPlan.Method;
+            // Property accessors are resolved through the property, and Type.GetMethod can't match the open generic
+            // parameters of a generic proxy method.
+            if (proxyMethodPlan.DeclaringProperty is not null || proxyMethod.MethodSig.GenParamCount > 0)
+            {
+                return false;
+            }
+
+            var proxyParameterTypes = new TypeSig[proxyMethod.MethodSig.Params.Count];
+            for (var i = 0; i < proxyParameterTypes.Length; i++)
+            {
+                proxyParameterTypes[i] = SubstituteTypeAndMethodGenericTypeArguments(proxyMethod.MethodSig.Params[i], closedGenericProxyTypeArguments, closedGenericMethodArguments: null);
+                if (proxyParameterTypes[i].ContainsGenericParameter)
+                {
+                    return false;
+                }
+            }
+
+            var useConfiguredParameterTypeNames = proxyMethodPlan.ConfiguredParameterTypeNames.Count > 0;
+            while (true)
+            {
+                for (var nameOrdinal = 0; nameOrdinal < proxyMethodPlan.ForwardTargetMethodNames.Count; nameOrdinal++)
+                {
+                    MethodDef? selectedMethod = null;
+                    var selectedMatch = GetMethodLookupMatch.None;
+                    var isAmbiguous = false;
+                    foreach (var candidate in candidates)
+                    {
+                        var method = candidate.Method;
+                        if (candidate.NameOrdinal != nameOrdinal ||
+                            method.MethodSig.GenParamCount != 0 ||
+                            method.MethodSig.Params.Count != proxyParameterTypes.Length ||
+                            !IsPlainNameCandidate(proxyMethodPlan, candidate))
+                        {
+                            continue;
+                        }
+
+                        var declaringTypeArguments = GetClassMethodGenericTypeArguments(targetType, method, closedGenericTargetTypeArguments);
+                        var match = useConfiguredParameterTypeNames
+                                        ? IsForwardCandidateParameterTypeNameMatch(method, proxyMethodPlan.ConfiguredParameterTypeNames, declaringTypeArguments) ? GetMethodLookupMatch.Exact : GetMethodLookupMatch.None
+                                        : GetGetMethodLookupMatch(proxyParameterTypes, method, declaringTypeArguments, closedGenericMethodArguments);
+                        if (match == GetMethodLookupMatch.None || match < selectedMatch)
+                        {
+                            continue;
+                        }
+
+                        if (match > selectedMatch)
+                        {
+                            selectedMethod = method;
+                            selectedMatch = match;
+                            isAmbiguous = false;
+                            continue;
+                        }
+
+                        // Candidates are ordered from the most derived type, so an equivalent signature further down the
+                        // hierarchy is the overridden or hidden method that Type.GetMethod doesn't return.
+                        if (!HaveEquivalentParameterTypes(targetType, selectedMethod!, method, closedGenericTargetTypeArguments, closedGenericMethodArguments))
+                        {
+                            isAmbiguous = true;
+                        }
+                    }
+
+                    if (selectedMethod is null)
+                    {
+                        continue;
+                    }
+
+                    // The default binder would pick the most specific overload or throw; leave that to the regular resolution.
+                    if (isAmbiguous)
+                    {
+                        return false;
+                    }
+
+                    var selectedDeclaringTypeArguments = GetClassMethodGenericTypeArguments(targetType, selectedMethod, closedGenericTargetTypeArguments);
+                    if (!TryCreateForwardMethodBinding(proxyMethod, selectedMethod, closedGenericProxyTypeArguments, selectedDeclaringTypeArguments, closedGenericMethodArguments, isReverseMapping: false, out var methodBinding, out _) ||
+                        TryGetStructMemberMutationFailureDetail(proxyMethod, selectedMethod, out _))
+                    {
+                        return false;
+                    }
+
+                    binding = ForwardBinding.ForMethod(proxyMethod, selectedMethod, methodBinding);
+                    return true;
+                }
+
+                if (!useConfiguredParameterTypeNames)
+                {
+                    return false;
+                }
+
+                useConfiguredParameterTypeNames = false;
+            }
+        }
+
+        private static GetMethodLookupMatch GetGetMethodLookupMatch(
+            IReadOnlyList<TypeSig> lookupParameterTypes,
+            MethodDef method,
+            IReadOnlyList<TypeSig>? declaringTypeArguments,
+            IReadOnlyList<TypeSig>? closedGenericMethodArguments)
+        {
+            var match = GetMethodLookupMatch.Exact;
+            for (var i = 0; i < lookupParameterTypes.Count; i++)
+            {
+                var parameterType = SubstituteTypeAndMethodGenericTypeArguments(method.MethodSig.Params[i], declaringTypeArguments, closedGenericMethodArguments);
+                if (AreTypesEquivalent(lookupParameterTypes[i], parameterType))
+                {
+                    continue;
+                }
+
+                // Like Type.DefaultBinder: object parameters accept any argument, other reference type parameters accept
+                // assignable arguments, and primitive widening isn't modeled.
+                match = GetMethodLookupMatch.Assignable;
+                if (parameterType.ElementType == ElementType.Object)
+                {
+                    continue;
+                }
+
+                var argumentRuntimeType = TryResolveRuntimeType(lookupParameterTypes[i]);
+                var parameterRuntimeType = TryResolveRuntimeType(parameterType);
+                if (argumentRuntimeType is null ||
+                    parameterRuntimeType is null ||
+                    parameterRuntimeType.IsPrimitive ||
+                    !parameterRuntimeType.IsAssignableFrom(argumentRuntimeType))
+                {
+                    return GetMethodLookupMatch.None;
+                }
+            }
+
+            return match;
+        }
+
+        private static bool HaveEquivalentParameterTypes(
+            TypeDef targetType,
+            MethodDef first,
+            MethodDef second,
+            IReadOnlyList<TypeSig>? closedGenericTargetTypeArguments,
+            IReadOnlyList<TypeSig>? closedGenericMethodArguments)
+        {
+            var firstDeclaringTypeArguments = GetClassMethodGenericTypeArguments(targetType, first, closedGenericTargetTypeArguments);
+            var secondDeclaringTypeArguments = GetClassMethodGenericTypeArguments(targetType, second, closedGenericTargetTypeArguments);
+            for (var i = 0; i < first.MethodSig.Params.Count; i++)
+            {
+                if (!AreTypesEquivalent(
+                        SubstituteTypeAndMethodGenericTypeArguments(first.MethodSig.Params[i], firstDeclaringTypeArguments, closedGenericMethodArguments),
+                        SubstituteTypeAndMethodGenericTypeArguments(second.MethodSig.Params[i], secondDeclaringTypeArguments, closedGenericMethodArguments)))
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         /// <summary>
@@ -11040,47 +11292,95 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             int parameterIndex,
             TypeSig parameterType)
         {
-            if (parameterType is ByRefSig byRefSig)
+            var context = $"optional parameter '{parameterIndex.ToString(CultureInfo.InvariantCulture)}' of method '{targetMethod.FullName}'";
+
+            // Optional by-ref parameters (e.g. `in int value = 5`) need a storage location, not a null managed pointer.
+            // Roslyn wraps the by-ref of `in` parameters of virtual and interface methods in modreq(InAttribute), so look
+            // through modifiers; the call itself keeps the target method's original signature.
+            if (parameterType.RemoveModifiers() is ByRefSig byRefSig)
             {
-                // Optional by-ref parameters (e.g. `in int value = 5`) need a storage location, not a null managed pointer.
                 var elementType = byRefSig.Next;
-                var valueLocal = new Local(ImportTypeSigCached(moduleDef, elementType, $"optional by-ref parameter '{parameterIndex.ToString(CultureInfo.InvariantCulture)}' of method '{targetMethod.FullName}'"));
+                var valueLocal = new Local(ImportTypeSigCached(moduleDef, elementType, context));
                 body.Variables.Add(valueLocal);
-                body.InitLocals = true;
-                EmitOptionalParameterValue(moduleDef, body, targetMethod, parameterIndex, elementType);
-                body.Instructions.Add(OpCodes.Stloc.ToInstruction(valueLocal));
+                if (TryEmitOptionalParameterValue(moduleDef, body, targetMethod, parameterIndex, elementType))
+                {
+                    body.Instructions.Add(OpCodes.Stloc.ToInstruction(valueLocal));
+                }
+                else
+                {
+                    body.Instructions.Add(OpCodes.Ldloca.ToInstruction(valueLocal));
+                    body.Instructions.Add(OpCodes.Initobj.ToInstruction(ResolveImportedTypeForTypeToken(moduleDef, elementType, context)));
+                }
+
                 body.Instructions.Add(OpCodes.Ldloca.ToInstruction(valueLocal));
                 return;
             }
 
-            EmitOptionalParameterValue(moduleDef, body, targetMethod, parameterIndex, parameterType);
+            if (!TryEmitOptionalParameterValue(moduleDef, body, targetMethod, parameterIndex, parameterType))
+            {
+                EmitDefaultValue(moduleDef, body, parameterType, context);
+            }
         }
 
-        private static void EmitOptionalParameterValue(
+        /// <summary>
+        /// Emits the default value of an omitted optional parameter. Returns false when the value is default(T), which
+        /// the caller materializes because it depends on how the value is passed.
+        /// </summary>
+        private static bool TryEmitOptionalParameterValue(
             ModuleDef moduleDef,
             CilBody body,
             MethodDef targetMethod,
             int parameterIndex,
-            TypeSig parameterType)
+            TypeSig valueType)
         {
-            if (TryGetOptionalParameterConstant(targetMethod, parameterIndex, out var constantValue))
+            if (!TryGetOptionalParameterConstant(targetMethod, parameterIndex, out var constantValue))
             {
-                if (TryGetNullableElementType(parameterType, out var nullableElementType))
+                // Like the C# compiler and dynamic duck typing, an omitted [Optional] object parameter without a default
+                // value receives Type.Missing.
+                if (valueType.ElementType == ElementType.Object)
                 {
-                    // The metadata constant of a Nullable<T> parameter is the T value; wrap it instead of passing a raw T.
-                    if (constantValue is not null && TryEmitConstantValue(moduleDef, body, nullableElementType!, constantValue))
-                    {
-                        body.Instructions.Add(OpCodes.Newobj.ToInstruction(CreateNullableCtorRef(moduleDef, parameterType)));
-                        return;
-                    }
+                    body.Instructions.Add(OpCodes.Ldsfld.ToInstruction(ImportTypeMissingField(moduleDef)));
+                    return true;
                 }
-                else if (TryEmitConstantValue(moduleDef, body, parameterType, constantValue))
-                {
-                    return;
-                }
+
+                return false;
             }
 
-            EmitDefaultValue(moduleDef, body, parameterType, $"optional parameter '{parameterIndex.ToString(CultureInfo.InvariantCulture)}' of method '{targetMethod.FullName}'");
+            if (constantValue is null)
+            {
+                return false;
+            }
+
+            if (TryGetNullableElementType(valueType, out var nullableElementType))
+            {
+                // The metadata constant of a Nullable<T> parameter is the T value; wrap it instead of passing a raw T.
+                if (!TryEmitConstantValue(moduleDef, body, nullableElementType!, constantValue))
+                {
+                    return false;
+                }
+
+                body.Instructions.Add(OpCodes.Newobj.ToInstruction(CreateNullableCtorRef(moduleDef, valueType)));
+                return true;
+            }
+
+            return TryEmitConstantValue(moduleDef, body, valueType, constantValue);
+        }
+
+        private static IField ImportTypeMissingField(ModuleDef moduleDef)
+        {
+            if (_currentExecutionContext?.TypeMissingField is { } cachedField)
+            {
+                return cachedField;
+            }
+
+            var typeMissingField = moduleDef.Import(typeof(Type).GetField(nameof(Type.Missing))
+                                                    ?? throw new InvalidOperationException("Unable to resolve System.Type.Missing."));
+            if (_currentExecutionContext is not null)
+            {
+                _currentExecutionContext.TypeMissingField = typeMissingField;
+            }
+
+            return typeMissingField;
         }
 
         private static bool TryGetOptionalParameterConstant(MethodDef targetMethod, int parameterIndex, out object? constantValue)
@@ -11229,20 +11529,21 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 case bool boolValue:
                     body.Instructions.Add((boolValue ? OpCodes.Ldc_I4_1 : OpCodes.Ldc_I4_0).ToInstruction());
                     return true;
+                // Widen explicitly: dnlib's sbyte and byte ToInstruction overloads only accept short-form opcodes.
                 case char charValue:
-                    body.Instructions.Add(OpCodes.Ldc_I4.ToInstruction(charValue));
+                    body.Instructions.Add(OpCodes.Ldc_I4.ToInstruction((int)charValue));
                     return true;
                 case sbyte sbyteValue:
-                    body.Instructions.Add(OpCodes.Ldc_I4.ToInstruction(sbyteValue));
+                    body.Instructions.Add(OpCodes.Ldc_I4.ToInstruction((int)sbyteValue));
                     return true;
                 case byte byteValue:
-                    body.Instructions.Add(OpCodes.Ldc_I4.ToInstruction(byteValue));
+                    body.Instructions.Add(OpCodes.Ldc_I4.ToInstruction((int)byteValue));
                     return true;
                 case short shortValue:
-                    body.Instructions.Add(OpCodes.Ldc_I4.ToInstruction(shortValue));
+                    body.Instructions.Add(OpCodes.Ldc_I4.ToInstruction((int)shortValue));
                     return true;
                 case ushort ushortValue:
-                    body.Instructions.Add(OpCodes.Ldc_I4.ToInstruction(ushortValue));
+                    body.Instructions.Add(OpCodes.Ldc_I4.ToInstruction((int)ushortValue));
                     return true;
                 case int intValue:
                     body.Instructions.Add(OpCodes.Ldc_I4.ToInstruction(intValue));
@@ -11466,7 +11767,8 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
 
         private static void EmitDefaultValue(ModuleDef moduleDef, CilBody body, TypeSig typeSig, string context)
         {
-            if (!typeSig.IsValueType)
+            // Generic parameters can be instantiated with value types, so only known reference types can use ldnull.
+            if (!typeSig.IsValueType && typeSig.RemoveModifiers() is not GenericSig)
             {
                 body.Instructions.Add(OpCodes.Ldnull.ToInstruction());
                 return;
@@ -14990,14 +15292,13 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             private readonly Dictionary<TypeDef, IReadOnlyList<MethodDef>> _duckIncludeMethodsByTargetType = new();
             private readonly Dictionary<ICustomAttributeType, ICustomAttributeType> _importedCustomAttributeTypes = new(ReferenceIdentityComparer<ICustomAttributeType>.Instance);
 
-            internal EmitterExecutionContext(IReadOnlyDictionary<string, string> runtimeTypeResolutionAssemblyPathsByName, TargetTypeIndex targetTypeIndex)
+            internal EmitterExecutionContext(TargetTypeIndex targetTypeIndex)
             {
-                RuntimeTypeResolutionAssemblyPathsByName = runtimeTypeResolutionAssemblyPathsByName;
                 TargetTypeIndex = targetTypeIndex;
                 LoadedRuntimeAssemblies = AppDomain.CurrentDomain.GetAssemblies();
             }
 
-            internal IReadOnlyDictionary<string, string> RuntimeTypeResolutionAssemblyPathsByName { get; }
+            internal IField? TypeMissingField { get; set; }
 
             internal TargetTypeIndex TargetTypeIndex { get; }
 

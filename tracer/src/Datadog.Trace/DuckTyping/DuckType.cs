@@ -122,9 +122,7 @@ namespace Datadog.Trace.DuckTyping
             // Validate arguments
             EnsureArguments(typeToDeriveFrom, delegationInstance);
 
-            // Same unwrapping as CreateCache<T>.CreateReverse: a forward proxy over an instance that already derives
-            // from the requested type round-trips to the original instance.
-            if (delegationInstance is IDuckType { Instance: { } original } && typeToDeriveFrom.IsInstanceOfType(original))
+            if (TryUnwrapForwardProxy(delegationInstance, typeToDeriveFrom, out var original))
             {
                 return original;
             }
@@ -156,6 +154,27 @@ namespace Datadog.Trace.DuckTyping
             }
 
             return reverse ? GetOrCreateDynamicReverseProxyType(proxyType, targetType) : GetOrCreateDynamicProxyType(proxyType, targetType);
+        }
+
+        /// <summary>
+        /// Gets the original instance of a forward proxy when it already derives from <paramref name="typeToDeriveFrom"/>,
+        /// so creating a reverse proxy over a forward proxy round-trips to the original instance instead of wrapping it.
+        /// <see cref="CreateCache{T}.CreateReverse"/> applies the same rule through its generic type check.
+        /// </summary>
+        /// <param name="instance">The instance a reverse proxy is requested for.</param>
+        /// <param name="typeToDeriveFrom">The type the reverse proxy derives from.</param>
+        /// <param name="original">The original instance wrapped by the forward proxy.</param>
+        /// <returns>true if <paramref name="instance"/> is a forward proxy over an instance of <paramref name="typeToDeriveFrom"/>; otherwise, false.</returns>
+        internal static bool TryUnwrapForwardProxy(object? instance, Type typeToDeriveFrom, [NotNullWhen(true)] out object? original)
+        {
+            if (instance is IDuckType { Instance: { } wrapped } && typeToDeriveFrom.IsInstanceOfType(wrapped))
+            {
+                original = wrapped;
+                return true;
+            }
+
+            original = null;
+            return false;
         }
 
         /// <summary>
@@ -1170,7 +1189,7 @@ namespace Datadog.Trace.DuckTyping
             LocalBuilder structLocal = il.DeclareLocal(proxyDefinitionType);
 
             // We create an instance of the proxy type
-            il.Emit(OpCodes.Ldloca_S, proxyLocal.LocalIndex);
+            il.Emit(OpCodes.Ldloca_S, proxyLocal);
             il.Emit(OpCodes.Ldarg_0);
             if (UseDirectAccessTo(moduleBuilder, targetType))
             {
@@ -1180,7 +1199,7 @@ namespace Datadog.Trace.DuckTyping
             il.Emit(OpCodes.Call, ctor);
 
             // Create the destination structure
-            il.Emit(OpCodes.Ldloca_S, structLocal.LocalIndex);
+            il.Emit(OpCodes.Ldloca_S, structLocal);
             il.Emit(OpCodes.Initobj, proxyDefinitionType);
 
             // Start copy properties from the proxy to the structure
@@ -1201,8 +1220,8 @@ namespace Datadog.Trace.DuckTyping
 
                 if (proxyType.GetProperty(finfo.Name) is { GetMethod: { } propGetMethod })
                 {
-                    il.Emit(OpCodes.Ldloca_S, structLocal.LocalIndex);
-                    il.Emit(OpCodes.Ldloca_S, proxyLocal.LocalIndex);
+                    il.Emit(OpCodes.Ldloca_S, structLocal);
+                    il.Emit(OpCodes.Ldloca_S, proxyLocal);
                     il.EmitCall(OpCodes.Call, propGetMethod, null);
                     il.Emit(OpCodes.Stfld, finfo);
                     containsFields = true;
@@ -1638,13 +1657,12 @@ namespace Datadog.Trace.DuckTyping
                 // before every throw. MemberwiseClone preserves the exact internal details, so concurrent
                 // throws no longer cause a crash. Fixed in .NET 6+.
                 //
-                // AOT failure factories can register any exception type. Those can't be cloned, so rethrow them as-is.
-                if (exceptionInfo.SourceException is DuckTypeException duckTypeException)
-                {
-                    ExceptionDispatchInfo.Capture(duckTypeException.CloneForThrow()).Throw();
-                }
-
-                exceptionInfo.Throw();
+                // AOT failure factories can register any exception type, so those are cloned through object.MemberwiseClone.
+                var sourceException = exceptionInfo.SourceException;
+                var exceptionToThrow = sourceException is DuckTypeException duckTypeException
+                                           ? duckTypeException.CloneForThrow()
+                                           : (Exception)MemberwiseCloneMethod.Invoke(sourceException, null)!;
+                ExceptionDispatchInfo.Capture(exceptionToThrow).Throw();
 #endif
             }
 
@@ -1801,7 +1819,8 @@ namespace Datadog.Trace.DuckTyping
                     return default;
                 }
 
-                if (instance is IDuckType duckType && duckType.Instance is T original)
+                // Same rule as DuckType.TryUnwrapForwardProxy, using the generic type check.
+                if (instance is IDuckType { Instance: T original })
                 {
                     return original;
                 }
@@ -1836,7 +1855,7 @@ namespace Datadog.Trace.DuckTyping
                     // Read the version before computing, so a result that raced with a registration or reset is
                     // stamped with the old version and is never served from the fast path afterwards.
                     var version = Volatile.Read(ref _fastPathVersion);
-                    var result = reverse ? GetOrCreateReverseProxyType(Type, targetType) : GetOrCreateProxyType(Type, targetType);
+                    var result = DuckType.GetOrCreateProxyType(Type, targetType, reverse);
                     if (Volatile.Read(ref _fastPathVersion) != version)
                     {
                         // The runtime state changed while computing the result, so it may already be stale.

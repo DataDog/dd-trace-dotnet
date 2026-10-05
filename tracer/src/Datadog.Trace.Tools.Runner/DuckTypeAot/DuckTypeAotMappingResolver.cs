@@ -34,7 +34,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
 
             var targetAssemblyPaths = Measure(profile, static p => p.GetTargetAssemblyPathsSeconds, static (p, value) => p.GetTargetAssemblyPathsSeconds = value, () => GetTargetAssemblyPaths(options));
             var proxyAssemblyPathsByName = Measure(profile, static p => p.BuildProxyAssemblyPathIndexSeconds, static (p, value) => p.BuildProxyAssemblyPathIndexSeconds = value, () => BuildAssemblyPathIndex(options.ProxyAssemblies, "--proxy-assembly", errors));
-            var targetAssemblyPathsByName = Measure(profile, static p => p.BuildTargetAssemblyPathIndexSeconds, static (p, value) => p.BuildTargetAssemblyPathIndexSeconds = value, () => BuildAssemblyPathIndex(targetAssemblyPaths, "--target-folder", errors, skipNonManagedAssemblies: true));
+            var targetAssemblyPathsByName = Measure(profile, static p => p.BuildTargetAssemblyPathIndexSeconds, static (p, value) => p.BuildTargetAssemblyPathIndexSeconds = value, () => BuildAssemblyPathIndex(targetAssemblyPaths, "--target-folder", errors, warnings));
             var genericTypeRoots = new Dictionary<string, DuckTypeAotTypeReference>(StringComparer.Ordinal);
 
             var resolvedMappings = new Dictionary<string, DuckTypeAotMapping>(StringComparer.Ordinal);
@@ -159,10 +159,13 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// <param name="assemblyPaths">The assembly paths value.</param>
         /// <param name="sourceName">The source name value.</param>
         /// <param name="errors">The errors value.</param>
-        /// <param name="skipNonManagedAssemblies">Whether files without managed metadata (e.g. native libraries next to a RID-specific build) are skipped instead of reported.</param>
+        /// <param name="invalidAssemblyWarnings">
+        /// When set, files that aren't valid managed assemblies (target folders also contain native libraries matched by the
+        /// *.dll filter) are skipped: native libraries silently, anything else with a warning instead of an error.
+        /// </param>
         /// <returns>The result produced by this operation.</returns>
         /// <remarks>Emits or composes IL for generated duck-typing proxy operations.</remarks>
-        private static Dictionary<string, string> BuildAssemblyPathIndex(IReadOnlyList<string> assemblyPaths, string sourceName, ICollection<string> errors, bool skipNonManagedAssemblies = false)
+        private static Dictionary<string, string> BuildAssemblyPathIndex(IReadOnlyList<string> assemblyPaths, string sourceName, ICollection<string> errors, ICollection<string>? invalidAssemblyWarnings = null)
         {
             var assemblyPathByName = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
@@ -190,10 +193,14 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                         }
                     }
                 }
-                catch (BadImageFormatException) when (skipNonManagedAssemblies)
+                catch (BadImageFormatException ex) when (invalidAssemblyWarnings is not null)
                 {
-                    // Target folders can contain native libraries matched by the *.dll filter. They can't
-                    // contain duck typing targets; a mapping that needs one still fails assembly resolution.
+                    // Native libraries can't contain duck typing targets. Anything else (e.g. a truncated assembly) is
+                    // reported, so a mapping that fails to resolve its assembly still shows the root cause.
+                    if (!IsNativePortableExecutable(assemblyPath))
+                    {
+                        invalidAssemblyWarnings.Add($"{sourceName} skipped '{assemblyPath}' because it isn't a valid managed assembly: {ex.Message}");
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -203,6 +210,79 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             }
 
             return assemblyPathByName;
+        }
+
+        /// <summary>
+        /// Determines whether a file is a valid PE image without a CLI header, i.e. a native library.
+        /// </summary>
+        /// <param name="path">The file path value.</param>
+        /// <returns>true if the file is a native PE image; otherwise, false.</returns>
+        internal static bool IsNativePortableExecutable(string path)
+        {
+            const ushort DosSignature = 0x5A4D; // "MZ"
+            const uint PeSignature = 0x00004550; // "PE\0\0"
+            const ushort Pe32Magic = 0x10B;
+            const ushort Pe32PlusMagic = 0x20B;
+            const int CliHeaderDirectoryIndex = 14;
+
+            try
+            {
+                using var stream = File.OpenRead(path);
+                using var reader = new BinaryReader(stream);
+                if (stream.Length < 0x40 || reader.ReadUInt16() != DosSignature)
+                {
+                    return false;
+                }
+
+                stream.Position = 0x3C;
+                var peHeaderOffset = reader.ReadInt32();
+                // PE signature (4 bytes) + COFF header (20 bytes) + optional header magic (2 bytes).
+                if (peHeaderOffset <= 0 || peHeaderOffset > stream.Length - 26)
+                {
+                    return false;
+                }
+
+                stream.Position = peHeaderOffset;
+                if (reader.ReadUInt32() != PeSignature)
+                {
+                    return false;
+                }
+
+                var optionalHeaderOffset = peHeaderOffset + 24;
+                stream.Position = optionalHeaderOffset;
+                var magic = reader.ReadUInt16();
+                if (magic != Pe32Magic && magic != Pe32PlusMagic)
+                {
+                    return false;
+                }
+
+                // NumberOfRvaAndSizes is followed by the data directories (8 bytes each).
+                var numberOfRvaAndSizesOffset = optionalHeaderOffset + (magic == Pe32Magic ? 92 : 108);
+                if (numberOfRvaAndSizesOffset > stream.Length - 4)
+                {
+                    return false;
+                }
+
+                stream.Position = numberOfRvaAndSizesOffset;
+                var numberOfRvaAndSizes = reader.ReadUInt32();
+                if (numberOfRvaAndSizes <= CliHeaderDirectoryIndex)
+                {
+                    return true;
+                }
+
+                var cliHeaderDirectoryOffset = numberOfRvaAndSizesOffset + 4 + (CliHeaderDirectoryIndex * 8);
+                if (cliHeaderDirectoryOffset > stream.Length - 8)
+                {
+                    return false;
+                }
+
+                stream.Position = cliHeaderDirectoryOffset;
+                return reader.ReadUInt32() == 0 && reader.ReadUInt32() == 0;
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                return false;
+            }
         }
 
         /// <summary>
