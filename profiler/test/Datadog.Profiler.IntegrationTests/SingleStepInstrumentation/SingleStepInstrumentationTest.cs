@@ -43,6 +43,7 @@ namespace Datadog.Profiler.IntegrationTests.SingleStepInstrumentation
             };
 
             runner.Run(agent);
+            agent.HandlerExceptions.Should().BeEmpty();
 
             series.Should().BeEmpty();
 
@@ -65,6 +66,7 @@ namespace Datadog.Profiler.IntegrationTests.SingleStepInstrumentation
             };
 
             runner.Run(agent);
+            agent.HandlerExceptions.Should().BeEmpty();
 
             series.Should().BeEmpty();
 
@@ -87,6 +89,7 @@ namespace Datadog.Profiler.IntegrationTests.SingleStepInstrumentation
             };
 
             runner.Run(agent);
+            agent.HandlerExceptions.Should().BeEmpty();
 
             series.Should().BeEmpty();
 
@@ -164,6 +167,7 @@ namespace Datadog.Profiler.IntegrationTests.SingleStepInstrumentation
             };
 
             runner.Run(agent);
+            agent.HandlerExceptions.Should().BeEmpty();
 
             series.Should().BeEmpty();
 
@@ -420,6 +424,7 @@ namespace Datadog.Profiler.IntegrationTests.SingleStepInstrumentation
             };
 
             runner.Run(agent);
+            agent.HandlerExceptions.Should().BeEmpty();
             series.Should().BeEmpty();
             agent.NbCallsOnProfilingEndpoint.Should().NotBe(0);
 
@@ -487,13 +492,7 @@ namespace Datadog.Profiler.IntegrationTests.SingleStepInstrumentation
 
         private static string GetRequestText(HttpListenerRequest request)
         {
-            var text = string.Empty;
-            using (var reader = new StreamReader(request.InputStream, request.ContentEncoding))
-            {
-                text = reader.ReadToEnd();
-            }
-
-            return text;
+            return HttpRequestBodyReader.ReadBodyAsText(request);
         }
 
         private static List<Serie> GetSeries(string s)
