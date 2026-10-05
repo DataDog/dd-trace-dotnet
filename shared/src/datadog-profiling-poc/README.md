@@ -109,22 +109,39 @@ agent URL - see its `--help` / source for usage.
 
 ## Known simplifications (deliberate, not bugs)
 
-- **No content-based deduplication** of Mapping/Function/Location - every
-  occurrence gets a fresh pprof id. Valid pprof, just larger than necessary.
-  Only string interning (mandatory) is actually deduplicated, via a linear
-  scan (`pprof_encode.c`) - fine at the sample counts a PoC deals with, would
-  want a real hash map before this sees serious traffic.
-- **`ddog_prof_profile_set_endpoint`/`add_endpoint_count`** validate their
-  arguments and store the data, but it is **not yet reflected in the encoded
-  pprof output** - real libdatadog injects a derived label onto matching
-  samples / reports counts alongside the upload. See `profile.h`.
-- **`ddog_prof_profile_add_upscaling_rule_proportional`/`poisson`** validate
-  their arguments and return success, but the rule is **not stored or
-  applied anywhere** - sample values are never rescaled. See `profile.h`.
-- **Additional files** (`ddog_prof_exporter_send_blocking`'s `files` param)
-  are attached uncompressed; real libdatadog zstd-compresses each one
-  individually. Untested either way - nothing in the verification path
-  (M1-M4) sends a non-empty files list.
+- **Profile part name**: the pprof is sent as `auto.pprof` (part name,
+  filename and `attachments`); libdatadog v38 (the version this repo pins)
+  uses `profile.pprof`.
+- **`internal` metadata**: passed through verbatim; libdatadog also adds a
+  `libdatadog_version` key to it.
+
+Matched to libdatadog v38 (`libdd-profiling`):
+
+- Strings, functions, mappings, locations, stacks and label sets are
+  interned at `add` time (one generic byte-key -> dense-id hash table,
+  `profile.c`), so each is stored and encoded once and pprof ids are just
+  interner ids + 1. Samples are fixed-size records `(stack id, label set id,
+  timestamp, values)`. A callstack passed again at the same addresses is
+  resolved with one lookup in an internal stack cache, verified against the
+  interned content.
+
+- Samples without a timestamp are aggregated (values summed, saturating)
+  with an identical earlier sample (same labels in order, same stack);
+  timestamped samples are kept separate and get an `end_timestamp_ns` label.
+  Timestamped samples are written first.
+- Upscaling rules (proportional and Poisson, by label or by value) are
+  validated like libdatadog (offset range, collisions) and applied at
+  serialize time, in the same order, rounding half away from zero.
+- `set_endpoint` adds a `trace endpoint` label to samples whose
+  `local root span id` matches (latest mapping wins); `add_endpoint_count`
+  is summed per endpoint and sent as the event's `endpoint_counts`.
+- Rules, endpoint mappings and counts are reset on serialize.
+- The event's `internal` and `info` are the caller's JSON documents (`{}`
+  when absent), rejected if not valid JSON.
+- Additional files (e.g. the profiler's metrics JSON) are zstd-compressed
+  (level 1, at most 10 MiB compressed), listed in the event's `attachments`
+  (before the profile) and sent as their own parts (between the event and
+  the profile), like libdatadog v38 does for every file.
 - **Agentless mode** (`ddog_prof_endpoint_agentless`) is implemented (URL
   construction + `dd-api-key` header) but never exercised by any milestone -
   only agent mode is verified end to end.

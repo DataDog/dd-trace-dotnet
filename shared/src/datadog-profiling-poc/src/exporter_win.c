@@ -22,6 +22,7 @@
 #include "encoded_profile.h"
 #include "internal.h"
 #include "json_min.h"
+#include "zstd_compress.h"
 #include "tags.h"
 
 #include <windows.h>
@@ -285,14 +286,18 @@ static bool append_json_string_from_buf(ddog__buf* out, const ddog__buf* value)
     return ddog__json_append_escaped_string(out, s);
 }
 
-// Builds the multipart "event" part - see plan doc "Exporter (libcurl)" for
-// the field list. internal/info JSON are intentionally omitted (matching
-// what the real wrapper does when it has nothing to say - see AgentProxy.hpp)
-// since no reachable test asserts on their structure.
+// Builds the multipart "event" part, with the same fields as libdatadog's
+// ProfileExporter::build_event_json (endpoint_counts, process_tags, internal
+// and info are appended by ddog__json_append_event_tail, shared with the
+// other exporter). internal/info must already have been validated.
 static bool build_event_json(const struct ddog_prof_exporter* exp, const struct ddog_prof_encoded_profile* encoded,
-                              const ddog_vec_tag* additional_tags, const ddog_charslice* process_tags, ddog__buf* out)
+                              const ddog_prof_exporter_file* files_to_compress, size_t files_to_compress_len,
+                              const ddog_vec_tag* additional_tags, const ddog_charslice* process_tags,
+                              const ddog_charslice* internal_json, const ddog_charslice* info_json, ddog__buf* out)
 {
-    if (!append_lit(out, "{\"attachments\":[\"auto.pprof\"],\"tags_profiler\":"))
+    if (!append_lit(out, "{\"attachments\":") ||
+        !ddog__json_append_attachments(out, files_to_compress, files_to_compress_len, "auto.pprof") ||
+        !append_lit(out, ",\"tags_profiler\":"))
     {
         return false;
     }
@@ -361,19 +366,8 @@ static bool build_event_json(const struct ddog_prof_exporter* exp, const struct 
         return false;
     }
 
-    if (process_tags != NULL && process_tags->len > 0)
-    {
-        if (!append_lit(out, ",\"process_tags\":"))
-        {
-            return false;
-        }
-        if (!ddog__json_append_escaped_string(out, *process_tags))
-        {
-            return false;
-        }
-    }
-
-    return append_lit(out, "}");
+    return ddog__json_append_event_tail(out, encoded->endpoint_counts, encoded->endpoint_counts_len, process_tags,
+                                        internal_json, info_json);
 }
 
 // Hand-rolled multipart/form-data framing (RFC 7578) - WinHTTP has no
@@ -399,8 +393,22 @@ static bool append_multipart_part_data(ddog__buf* out, const void* data, size_t 
     return ddog__buf_append(out, data, len) && append_lit(out, "\r\n");
 }
 
+static bool append_file_part(ddog__buf* out, ddog_charslice name, const void* data, size_t len)
+{
+    // Like libdatadog, an additional file uses its name for both the form
+    // field and the filename.
+    char name_buf[256];
+    size_t name_len = name.len < sizeof(name_buf) - 1 ? name.len : sizeof(name_buf) - 1;
+    memcpy(name_buf, name.ptr, name_len);
+    name_buf[name_len] = '\0';
+    return append_multipart_part_header(out, name_buf, name_buf, "application/octet-stream") &&
+           append_multipart_part_data(out, data, len);
+}
+
+// Same part order as libdatadog (and exporter.c): event, additional files, profile
 static bool build_multipart_body(const ddog__buf* event_json, const struct ddog_prof_encoded_profile* encoded,
-                                  const ddog_prof_exporter_file* files, size_t files_len, ddog__buf* out)
+                                  const ddog_prof_exporter_file* files_to_compress, const ddog__buf* compressed,
+                                  size_t files_to_compress_len, ddog__buf* out)
 {
     if (!append_multipart_part_header(out, "event", "event.json", "application/json") ||
         !append_multipart_part_data(out, event_json->data, event_json->len))
@@ -408,10 +416,17 @@ static bool build_multipart_body(const ddog__buf* event_json, const struct ddog_
         return false;
     }
 
-    // "auto.pprof" for both the field name and filename - matches this
-    // repo's actually-pinned libdatadog version's wire format, see plan doc.
-    // application/octet-stream matches libcurl's own fallback for a part
-    // with a filename but no explicit type and no recognized extension
+    for (size_t i = 0; i < files_to_compress_len; i++)
+    {
+        if (!append_file_part(out, files_to_compress[i].name, compressed[i].data, compressed[i].len))
+        {
+            return false;
+        }
+    }
+
+    // "auto.pprof" for both the field name and filename (libdatadog v38 uses
+    // "profile.pprof", see README). application/octet-stream matches
+    // libcurl's own fallback for a part with a filename but no explicit type
     // (see curl_mime_type docs) - exporter.c never sets one explicitly
     // either, so this keeps both platforms' wire bytes identical.
     if (!append_multipart_part_header(out, "auto.pprof", "auto.pprof", "application/octet-stream") ||
@@ -420,38 +435,16 @@ static bool build_multipart_body(const ddog__buf* event_json, const struct ddog_
         return false;
     }
 
-    // Additional files (metrics.json etc). Sent uncompressed here, unlike
-    // real libdatadog which zstd-compresses each individually - no path
-    // exercised by M1-M4 sends a non-empty files list (files_len is always 0
-    // for a plain wall/cpu-time sample app), so this is untested; flagged as
-    // follow-up work rather than silently "supported" (see README).
-    for (size_t i = 0; i < files_len; i++)
-    {
-        char name_buf[256];
-        size_t name_len = files[i].name.len < sizeof(name_buf) - 1 ? files[i].name.len : sizeof(name_buf) - 1;
-        memcpy(name_buf, files[i].name.ptr, name_len);
-        name_buf[name_len] = '\0';
-        if (!append_multipart_part_header(out, name_buf, name_buf, "application/octet-stream") ||
-            !append_multipart_part_data(out, files[i].file.ptr, files[i].file.len))
-        {
-            return false;
-        }
-    }
-
     return append_lit(out, "--") && append_lit(out, MULTIPART_BOUNDARY) && append_lit(out, "--\r\n");
 }
 
 ddog_error_code ddog_prof_exporter_send_blocking(ddog_prof_exporter* exporter, ddog_prof_encoded_profile* profile,
-                                                  const ddog_prof_exporter_file* files, size_t files_len,
+                                                  const ddog_prof_exporter_file* files_to_compress, size_t files_to_compress_len,
                                                   const ddog_vec_tag* optional_additional_tags,
                                                   const ddog_charslice* optional_process_tags,
                                                   const ddog_charslice* optional_internal_metadata_json,
                                                   const ddog_charslice* optional_info_json, uint16_t* out_http_status)
 {
-    // Not required by any reachable test - see plan doc "Exporter (libcurl)".
-    (void)optional_internal_metadata_json;
-    (void)optional_info_json;
-
     struct ddog_prof_exporter* exp = (struct ddog_prof_exporter*)exporter;
     struct ddog_prof_encoded_profile* encoded = (struct ddog_prof_encoded_profile*)profile;
 
@@ -467,28 +460,48 @@ ddog_error_code ddog_prof_exporter_send_blocking(ddog_prof_exporter* exporter, d
     {
         return ddog__fail(DDOG_ERR_INVALID_ARGUMENT, "out_http_status is NULL");
     }
-    if (files == NULL && files_len > 0)
+    if (files_to_compress == NULL && files_to_compress_len > 0)
     {
-        return ddog__fail(DDOG_ERR_INVALID_ARGUMENT, "files is NULL but files_len > 0");
+        return ddog__fail(DDOG_ERR_INVALID_ARGUMENT, "files_to_compress is NULL but files_to_compress_len > 0");
+    }
+    // libdatadog parses both documents and fails the send if either is invalid
+    if (optional_internal_metadata_json != NULL && !ddog__json_is_valid(*optional_internal_metadata_json))
+    {
+        return ddog__fail(DDOG_ERR_INVALID_ARGUMENT, "Failed to parse contents of internal_metadata json string");
+    }
+    if (optional_info_json != NULL && !ddog__json_is_valid(*optional_info_json))
+    {
+        return ddog__fail(DDOG_ERR_INVALID_ARGUMENT, "Failed to parse contents of info json string");
     }
 
     ddog__buf event_json;
     ddog__buf_init(&event_json);
-    if (!build_event_json(exp, encoded, optional_additional_tags, optional_process_tags, &event_json))
+    if (!build_event_json(exp, encoded, files_to_compress, files_to_compress_len, optional_additional_tags,
+                          optional_process_tags,
+                          optional_internal_metadata_json, optional_info_json, &event_json))
     {
         ddog__buf_free(&event_json);
         return ddog__fail(DDOG_ERR_OUT_OF_MEMORY, "failed to build event.json");
     }
 
-    ddog__buf body;
-    ddog__buf_init(&body);
-    if (!build_multipart_body(&event_json, encoded, files, files_len, &body))
+    ddog__buf* compressed = NULL;
+    ddog_error_code compress_rc = ddog__compress_files(files_to_compress, files_to_compress_len, &compressed);
+    if (compress_rc != DDOG_OK)
     {
         ddog__buf_free(&event_json);
+        return compress_rc;
+    }
+
+    ddog__buf body;
+    ddog__buf_init(&body);
+    bool body_ok = build_multipart_body(&event_json, encoded, files_to_compress, compressed, files_to_compress_len, &body);
+    ddog__free_compressed_files(compressed, files_to_compress_len);
+    ddog__buf_free(&event_json);
+    if (!body_ok)
+    {
         ddog__buf_free(&body);
         return ddog__fail(DDOG_ERR_OUT_OF_MEMORY, "failed to build multipart body");
     }
-    ddog__buf_free(&event_json);
 
     wchar_t* url_w = narrow_to_wide(exp->url);
     if (url_w == NULL)

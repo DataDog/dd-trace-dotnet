@@ -1,5 +1,5 @@
-// Hand-rolled encoder for Google's pprof profile.proto (see plan doc). Field
-// numbers below are taken straight from that schema:
+// Hand-rolled encoder for Google's pprof profile.proto. Field numbers below
+// are taken straight from that schema:
 //
 //   Profile:   sample_type=1 (repeated ValueType), sample=2 (repeated Sample),
 //              mapping=3 (repeated Mapping), location=4 (repeated Location),
@@ -13,16 +13,14 @@
 //   Line:      function_id=1, line=2
 //   Function:  id=1, name=2 (string idx), system_name=3 (string idx), filename=4 (string idx)
 //
-// Every string field above is actually an int64 index into Profile.string_table
-// (index 0 must be ""). This is a hard wire-format requirement, not a style
-// choice - see plan doc.
-//
-// Deliberately NOT deduplicating Mapping/Function/Location by content (each
-// occurrence gets a fresh id) - only string interning is mandatory and is
-// done below via a simple linear-scan table (fine at PoC scale; see plan doc).
+// Everything is already interned in the profile (see profile.h), so this is
+// a walk over its tables: each Mapping, Location and Function is written
+// once, samples reference them by id (interner id + 1), and the string table
+// is the interned strings in id order (id 0 is "").
 
 #include "pprof_encode.h"
 
+#include <math.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
@@ -87,403 +85,428 @@ static bool write_message_field(ddog__buf* out, uint32_t field_number, const ddo
     return write_bytes_field(out, field_number, submessage->data, submessage->len);
 }
 
-// ---- string table (linear scan - fine at PoC scale, see file header) ----
-
-typedef struct {
-    const char** ptrs; // borrowed - valid strings are owned by `profile` for the duration of this encode() call
-    size_t* lens;
-    size_t count;
-    size_t capacity;
-} string_table_t;
-
-static void string_table_init(string_table_t* t)
-{
-    t->ptrs = NULL;
-    t->lens = NULL;
-    t->count = 0;
-    t->capacity = 0;
-}
-
-static void string_table_free(string_table_t* t)
-{
-    free(t->ptrs);
-    free(t->lens);
-}
-
-// Returns the index of `s`, inserting it if not already present. Returns
-// SIZE_MAX on allocation failure.
-static size_t string_table_intern(string_table_t* t, ddog_charslice s)
-{
-    for (size_t i = 0; i < t->count; i++)
-    {
-        if (t->lens[i] == s.len && (s.len == 0 || memcmp(t->ptrs[i], s.ptr, s.len) == 0))
-        {
-            return i;
-        }
-    }
-
-    if (t->count == t->capacity)
-    {
-        size_t new_capacity = t->capacity == 0 ? 64 : t->capacity * 2;
-        const char** new_ptrs = (const char**)realloc(t->ptrs, new_capacity * sizeof(const char*));
-        if (new_ptrs == NULL)
-        {
-            return SIZE_MAX;
-        }
-        t->ptrs = new_ptrs;
-
-        size_t* new_lens = (size_t*)realloc(t->lens, new_capacity * sizeof(size_t));
-        if (new_lens == NULL)
-        {
-            return SIZE_MAX;
-        }
-        t->lens = new_lens;
-        t->capacity = new_capacity;
-    }
-
-    t->ptrs[t->count] = s.ptr;
-    t->lens[t->count] = s.len;
-    return t->count++;
-}
-
 // ---- message encoders ----
 
-static bool encode_value_type(string_table_t* strs, const ddog_prof_value_type* vt, ddog__buf* out)
+static bool encode_value_type(struct ddog_prof_profile* profile, const ddog_prof_value_type* vt, ddog__buf* out)
 {
-    size_t type_idx = string_table_intern(strs, vt->type);
-    size_t unit_idx = string_table_intern(strs, vt->unit);
-    if (type_idx == SIZE_MAX || unit_idx == SIZE_MAX)
+    uint32_t type_id;
+    uint32_t unit_id;
+    if (!ddog__intern_string(profile, vt->type, &type_id) || !ddog__intern_string(profile, vt->unit, &unit_id))
     {
         return false;
     }
-    return write_varint_field(out, 1, (uint64_t)type_idx) && write_varint_field(out, 2, (uint64_t)unit_idx);
+    return write_varint_field(out, 1, type_id) && write_varint_field(out, 2, unit_id);
 }
 
-static bool encode_function(string_table_t* strs, uint64_t id, const ddog_prof_function* fn, ddog__buf* out)
+static bool encode_label(ddog__buf* out, uint32_t key, uint32_t str, int64_t num, uint32_t num_unit)
 {
-    size_t name_idx = string_table_intern(strs, fn->name);
-    size_t system_name_idx = string_table_intern(strs, fn->system_name);
-    size_t filename_idx = string_table_intern(strs, fn->filename);
-    if (name_idx == SIZE_MAX || system_name_idx == SIZE_MAX || filename_idx == SIZE_MAX)
-    {
-        return false;
-    }
-
-    return write_varint_field(out, 1, id) && write_varint_field(out, 2, (uint64_t)name_idx) &&
-           write_varint_field(out, 3, (uint64_t)system_name_idx) && write_varint_field(out, 4, (uint64_t)filename_idx);
+    return write_varint_field(out, 1, key) && (str == 0 || write_varint_field(out, 2, str)) &&
+           (num == 0 || write_varint_field(out, 3, (uint64_t)num)) && (num_unit == 0 || write_varint_field(out, 4, num_unit));
 }
 
-static bool encode_mapping(string_table_t* strs, uint64_t id, ddog_charslice filename, ddog__buf* out)
+static const ddog_label_key* labelset_labels(const struct ddog_prof_profile* profile, uint32_t id, size_t* out_len)
 {
-    size_t filename_idx = string_table_intern(strs, filename);
-    if (filename_idx == SIZE_MAX)
-    {
-        return false;
-    }
-    return write_varint_field(out, 1, id) && write_varint_field(out, 5, (uint64_t)filename_idx);
+    *out_len = profile->labelsets.key_lens[id] / sizeof(ddog_label_key);
+    return (const ddog_label_key*)profile->labelsets.keys[id]; // malloc'd, so suitably aligned
 }
 
-static bool encode_label(string_table_t* strs, const ddog_prof_label_owned* label, ddog__buf* out)
-{
-    size_t key_idx = string_table_intern(strs, label->key);
-    size_t str_idx = string_table_intern(strs, label->str);
-    size_t num_unit_idx = string_table_intern(strs, label->num_unit);
-    if (key_idx == SIZE_MAX || str_idx == SIZE_MAX || num_unit_idx == SIZE_MAX)
-    {
-        return false;
-    }
+// ---- upscaling (port of libdatadog's UpscalingRules::upscale_values) ----
 
-    if (!write_varint_field(out, 1, (uint64_t)key_idx))
-    {
-        return false;
-    }
-    if (label->str.len > 0 && !write_varint_field(out, 2, (uint64_t)str_idx))
-    {
-        return false;
-    }
-    if (label->num != 0 && !write_varint_field(out, 3, (uint64_t)label->num))
-    {
-        return false;
-    }
-    if (label->num_unit.len > 0 && !write_varint_field(out, 4, (uint64_t)num_unit_idx))
-    {
-        return false;
-    }
-    return true;
+static bool slice_eq(ddog_charslice a, ddog_charslice b)
+{
+    return a.len == b.len && (a.len == 0 || memcmp(a.ptr, b.ptr, a.len) == 0);
 }
 
-// Encodes one location (and, as a side effect, exactly one fresh Function and
-// at most one fresh Mapping into the Profile-level accumulators), and returns
-// the fresh Location id via *out_location_id.
-static bool encode_location(string_table_t* strs, uint64_t* next_id, const ddog_prof_location_owned* loc,
-                             ddog__buf* mappings_accum, ddog__buf* functions_accum, ddog__buf* locations_accum,
-                             uint64_t* out_location_id)
+// Rust's `f64 as i64`: saturating, NaN -> 0
+static int64_t f64_to_i64_saturating(double value)
 {
-    uint64_t location_id = (*next_id)++;
-    uint64_t function_id = (*next_id)++;
-
-    ddog__buf fn_buf;
-    ddog__buf_init(&fn_buf);
-    bool ok = encode_function(strs, function_id, &loc->function, &fn_buf);
-    if (ok)
+    if (isnan(value))
     {
-        ok = write_message_field(functions_accum, 5, &fn_buf);
+        return 0;
     }
-    ddog__buf_free(&fn_buf);
-    if (!ok)
+    if (value >= 9223372036854775807.0)
     {
-        return false;
+        return INT64_MAX;
     }
-
-    uint64_t mapping_id = 0;
-    if (loc->mapping_filename.len > 0)
+    if (value <= -9223372036854775808.0)
     {
-        mapping_id = (*next_id)++;
-        ddog__buf map_buf;
-        ddog__buf_init(&map_buf);
-        ok = encode_mapping(strs, mapping_id, loc->mapping_filename, &map_buf);
-        if (ok)
+        return INT64_MIN;
+    }
+    return (int64_t)value;
+}
+
+static double compute_scale(const ddog_upscaling_rule_owned* rule, const int64_t* values)
+{
+    if (rule->kind == DDOG_UPSCALING_PROPORTIONAL)
+    {
+        return rule->scale;
+    }
+    int64_t sum = values[rule->sum_value_offset];
+    int64_t count = values[rule->count_value_offset];
+    if (sum == 0 || count == 0)
+    {
+        return 1.0;
+    }
+    double avg = (double)sum / (double)count;
+    return 1.0 / (1.0 - exp(-avg / (double)rule->sampling_distance));
+}
+
+static void apply_rule(const ddog_upscaling_rule_owned* rule, int64_t* values)
+{
+    double scale = compute_scale(rule, values);
+    for (size_t i = 0; i < rule->offsets_len; i++)
+    {
+        size_t offset = rule->offsets[i];
+        // round() rounds half away from zero, like Rust's f64::round
+        values[offset] = f64_to_i64_saturating(round((double)values[offset] * scale));
+    }
+}
+
+// Applies the rules matching (label key, label value) for each label in
+// order - a numeric label matches with an empty value - then the by-value
+// rules (empty name and value). Within a group, rules apply in insertion
+// order, each computing its scale from the values as modified so far.
+static void apply_rules_for_label(const struct ddog_prof_profile* profile, ddog_charslice key, ddog_charslice value,
+                                  int64_t* values)
+{
+    for (size_t r = 0; r < profile->upscaling_rules_len; r++)
+    {
+        const ddog_upscaling_rule_owned* rule = &profile->upscaling_rules[r];
+        if (slice_eq(rule->label_name, key) && slice_eq(rule->label_value, value))
         {
-            ok = write_message_field(mappings_accum, 3, &map_buf);
-        }
-        ddog__buf_free(&map_buf);
-        if (!ok)
-        {
-            return false;
+            apply_rule(rule, values);
         }
     }
-
-    ddog__buf line_buf;
-    ddog__buf_init(&line_buf);
-    ok = write_varint_field(&line_buf, 1, function_id) && write_varint_field(&line_buf, 2, (uint64_t)loc->line);
-
-    ddog__buf loc_buf;
-    ddog__buf_init(&loc_buf);
-    if (ok)
-    {
-        ok = write_varint_field(&loc_buf, 1, location_id);
-    }
-    if (ok && mapping_id != 0)
-    {
-        ok = write_varint_field(&loc_buf, 2, mapping_id);
-    }
-    if (ok && loc->address != 0)
-    {
-        ok = write_varint_field(&loc_buf, 3, loc->address);
-    }
-    if (ok)
-    {
-        ok = write_message_field(&loc_buf, 4, &line_buf);
-    }
-    ddog__buf_free(&line_buf);
-
-    if (ok)
-    {
-        ok = write_message_field(locations_accum, 4, &loc_buf);
-    }
-    ddog__buf_free(&loc_buf);
-
-    if (!ok)
-    {
-        return false;
-    }
-
-    *out_location_id = location_id;
-    return true;
 }
 
-static bool encode_packed_uint64(const uint64_t* values, size_t len, ddog__buf* out, uint32_t field_number)
+static void upscale_values(const struct ddog_prof_profile* profile, const ddog_label_key* labels, size_t labels_len,
+                           const ddog_prof_endpoint_mapping_owned* endpoint, int64_t* values)
 {
-    if (len == 0)
+    if (profile->upscaling_rules_len == 0)
+    {
+        return;
+    }
+    for (size_t i = 0; i < labels_len; i++)
+    {
+        // a numeric label has str id 0, i.e. "": it matches a rule with an empty value
+        apply_rules_for_label(profile, ddog__string(profile, labels[i].key), ddog__string(profile, labels[i].str), values);
+    }
+    if (endpoint != NULL)
+    {
+        ddog_charslice key = {"trace endpoint", sizeof("trace endpoint") - 1};
+        apply_rules_for_label(profile, key, endpoint->endpoint, values);
+    }
+    ddog_charslice empty = {NULL, 0};
+    apply_rules_for_label(profile, empty, empty, values);
+}
+
+// ---- endpoints ("local root span id" -> "trace endpoint" label) ----
+
+typedef struct {
+    uint64_t local_root_span_id;
+    size_t mapping_index; // into profile->endpoint_mappings
+} endpoint_lookup_entry;
+
+static int compare_endpoint_lookup(const void* a, const void* b)
+{
+    const endpoint_lookup_entry* x = (const endpoint_lookup_entry*)a;
+    const endpoint_lookup_entry* y = (const endpoint_lookup_entry*)b;
+    if (x->local_root_span_id != y->local_root_span_id)
+    {
+        return x->local_root_span_id < y->local_root_span_id ? -1 : 1;
+    }
+    // keep insertion order among duplicates, so the last one can win
+    return x->mapping_index < y->mapping_index ? -1 : (x->mapping_index > y->mapping_index ? 1 : 0);
+}
+
+// Sorted by span id with only the latest mapping kept per span id (a later
+// set_endpoint replaces an earlier one, like libdatadog's HashMap insert).
+static bool build_endpoint_lookup(const struct ddog_prof_profile* profile, endpoint_lookup_entry** out, size_t* out_len)
+{
+    *out = NULL;
+    *out_len = 0;
+    if (profile->endpoint_mappings_len == 0)
     {
         return true;
     }
-    ddog__buf packed;
-    ddog__buf_init(&packed);
-    bool ok = true;
-    for (size_t i = 0; i < len && ok; i++)
+    endpoint_lookup_entry* entries =
+        (endpoint_lookup_entry*)malloc(profile->endpoint_mappings_len * sizeof(endpoint_lookup_entry));
+    if (entries == NULL)
     {
-        ok = write_varint(&packed, values[i]);
+        return false;
     }
-    if (ok)
+    for (size_t i = 0; i < profile->endpoint_mappings_len; i++)
     {
-        ok = write_message_field(out, field_number, &packed);
+        entries[i].local_root_span_id = profile->endpoint_mappings[i].local_root_span_id;
+        entries[i].mapping_index = i;
     }
-    ddog__buf_free(&packed);
-    return ok;
+    qsort(entries, profile->endpoint_mappings_len, sizeof(endpoint_lookup_entry), compare_endpoint_lookup);
+    size_t len = 0;
+    for (size_t i = 0; i < profile->endpoint_mappings_len; i++)
+    {
+        if (len > 0 && entries[len - 1].local_root_span_id == entries[i].local_root_span_id)
+        {
+            entries[len - 1] = entries[i];
+        }
+        else
+        {
+            entries[len++] = entries[i];
+        }
+    }
+    *out = entries;
+    *out_len = len;
+    return true;
 }
 
-static bool encode_sample(string_table_t* strs, uint64_t* next_id, const ddog_prof_sample_owned* sample,
-                           ddog__buf* mappings_accum, ddog__buf* functions_accum, ddog__buf* locations_accum,
-                           ddog__buf* samples_accum)
+static const ddog_prof_endpoint_mapping_owned* find_endpoint(const struct ddog_prof_profile* profile,
+                                                             const endpoint_lookup_entry* lookup, size_t lookup_len,
+                                                             const ddog_label_key* labels, size_t labels_len,
+                                                             uint32_t local_root_span_id_key)
 {
-    uint64_t* location_ids = NULL;
-    if (sample->locations_len > 0)
+    if (lookup_len == 0)
     {
-        location_ids = (uint64_t*)malloc(sample->locations_len * sizeof(uint64_t));
-        if (location_ids == NULL)
+        return NULL;
+    }
+    for (size_t i = 0; i < labels_len; i++)
+    {
+        if (labels[i].key != local_root_span_id_key)
+        {
+            continue;
+        }
+        // numeric (validated on add); the backend reads the i64 bits as u64
+        uint64_t span_id = (uint64_t)labels[i].num;
+        size_t lo = 0;
+        size_t hi = lookup_len;
+        while (lo < hi)
+        {
+            size_t mid = lo + (hi - lo) / 2;
+            if (lookup[mid].local_root_span_id < span_id)
+            {
+                lo = mid + 1;
+            }
+            else
+            {
+                hi = mid;
+            }
+        }
+        if (lo < lookup_len && lookup[lo].local_root_span_id == span_id)
+        {
+            return &profile->endpoint_mappings[lookup[lo].mapping_index];
+        }
+        return NULL;
+    }
+    return NULL;
+}
+
+// Reusable buffers, so that encoding a message does not allocate.
+typedef struct {
+    ddog__buf message;
+    ddog__buf packed;
+    ddog__buf field;
+    int64_t* values;
+    uint32_t trace_endpoint_key;
+    uint32_t timestamp_key;
+    uint32_t local_root_span_id_key;
+    endpoint_lookup_entry* endpoint_lookup;
+    size_t endpoint_lookup_len;
+} encode_state;
+
+// Labels are written like libdatadog: the sample's own labels, then the
+// "trace endpoint" label (if the sample's local root span id has an
+// endpoint), then the "end_timestamp_ns" label (if the sample has a timestamp).
+static bool encode_sample(struct ddog_prof_profile* profile, encode_state* st, const uint8_t* record, ddog__buf* out)
+{
+    ddog_sample_header header;
+    memcpy(&header, record, sizeof(header));
+    size_t labels_len;
+    const ddog_label_key* labels = labelset_labels(profile, header.labelset, &labels_len);
+    const ddog_prof_endpoint_mapping_owned* endpoint =
+        find_endpoint(profile, st->endpoint_lookup, st->endpoint_lookup_len, labels, labels_len, st->local_root_span_id_key);
+
+    st->message.len = 0;
+
+    // location ids (packed)
+    size_t frames = profile->stacks.key_lens[header.stack] / sizeof(uint32_t);
+    const uint8_t* stack = profile->stacks.keys[header.stack];
+    if (frames > 0)
+    {
+        st->packed.len = 0;
+        for (size_t i = 0; i < frames; i++)
+        {
+            uint32_t location_id;
+            memcpy(&location_id, stack + i * sizeof(uint32_t), sizeof(location_id));
+            if (!write_varint(&st->packed, (uint64_t)location_id + 1))
+            {
+                return false;
+            }
+        }
+        if (!write_message_field(&st->message, 1, &st->packed))
         {
             return false;
         }
     }
 
-    bool ok = true;
-    for (size_t i = 0; i < sample->locations_len && ok; i++)
+    // values (packed), upscaled
+    size_t values_len = profile->sample_types_len;
+    memcpy(st->values, record + sizeof(header), values_len * sizeof(int64_t));
+    upscale_values(profile, labels, labels_len, endpoint, st->values);
+    st->packed.len = 0;
+    for (size_t i = 0; i < values_len; i++)
     {
-        ok = encode_location(strs, next_id, &sample->locations[i], mappings_accum, functions_accum, locations_accum,
-                              &location_ids[i]);
-    }
-
-    ddog__buf sample_buf;
-    ddog__buf_init(&sample_buf);
-
-    if (ok)
-    {
-        ok = encode_packed_uint64(location_ids, sample->locations_len, &sample_buf, 1);
-    }
-    free(location_ids);
-
-    if (ok && sample->values_len > 0)
-    {
-        ddog__buf packed;
-        ddog__buf_init(&packed);
-        for (size_t i = 0; i < sample->values_len && ok; i++)
+        if (!write_varint(&st->packed, (uint64_t)st->values[i]))
         {
-            ok = write_varint(&packed, (uint64_t)sample->values[i]);
+            return false;
         }
-        if (ok)
-        {
-            ok = write_message_field(&sample_buf, 2, &packed);
-        }
-        ddog__buf_free(&packed);
     }
-
-    for (size_t i = 0; i < sample->labels_len && ok; i++)
+    if (!write_message_field(&st->message, 2, &st->packed))
     {
-        ddog__buf label_buf;
-        ddog__buf_init(&label_buf);
-        ok = encode_label(strs, &sample->labels[i], &label_buf);
-        if (ok)
-        {
-            ok = write_message_field(&sample_buf, 3, &label_buf);
-        }
-        ddog__buf_free(&label_buf);
-    }
-
-    if (ok)
-    {
-        ok = write_message_field(samples_accum, 2, &sample_buf);
-    }
-    ddog__buf_free(&sample_buf);
-    return ok;
-}
-
-bool ddog__pprof_encode(const struct ddog_prof_profile* profile, const ddog_timespec* start_time,
-                         const ddog_timespec* end_time, ddog__buf* out)
-{
-    string_table_t strs;
-    string_table_init(&strs);
-    ddog_charslice empty_string;
-    empty_string.ptr = NULL;
-    empty_string.len = 0;
-    if (string_table_intern(&strs, empty_string) != 0) // index 0 must be ""
-    {
-        string_table_free(&strs);
         return false;
     }
 
-    ddog__buf sample_types_accum, mappings_accum, functions_accum, locations_accum, samples_accum, period_type_buf;
-    ddog__buf_init(&sample_types_accum);
-    ddog__buf_init(&mappings_accum);
-    ddog__buf_init(&functions_accum);
-    ddog__buf_init(&locations_accum);
-    ddog__buf_init(&samples_accum);
-    ddog__buf_init(&period_type_buf);
+    // labels
+    for (size_t i = 0; i < labels_len; i++)
+    {
+        st->field.len = 0;
+        if (!encode_label(&st->field, labels[i].key, labels[i].str, labels[i].num, labels[i].num_unit) ||
+            !write_message_field(&st->message, 3, &st->field))
+        {
+            return false;
+        }
+    }
+    if (endpoint != NULL)
+    {
+        uint32_t endpoint_id;
+        st->field.len = 0;
+        if (!ddog__intern_string(profile, endpoint->endpoint, &endpoint_id) ||
+            !encode_label(&st->field, st->trace_endpoint_key, endpoint_id, 0, 0) ||
+            !write_message_field(&st->message, 3, &st->field))
+        {
+            return false;
+        }
+    }
+    if (header.timestamp != 0)
+    {
+        st->field.len = 0;
+        if (!encode_label(&st->field, st->timestamp_key, 0, header.timestamp, 0) ||
+            !write_message_field(&st->message, 3, &st->field))
+        {
+            return false;
+        }
+    }
 
-    uint64_t next_id = 1; // shared counter across Mapping/Location/Function ids - simple and still valid, see file header
+    return write_message_field(out, 2, &st->message);
+}
 
-    bool ok = true;
+static bool encode_samples(struct ddog_prof_profile* profile, encode_state* st, const ddog_sample_array* samples,
+                           ddog__buf* out)
+{
+    size_t record_size = ddog__sample_record_size(profile);
+    for (size_t i = 0; i < samples->len; i++)
+    {
+        if (!encode_sample(profile, st, samples->data + i * record_size, out))
+        {
+            return false;
+        }
+    }
+    return true;
+}
+
+static bool encode_tables(const struct ddog_prof_profile* profile, encode_state* st, ddog__buf* out)
+{
+    for (uint32_t id = 0; id < profile->mappings.len; id++)
+    {
+        uint32_t filename_id;
+        memcpy(&filename_id, profile->mappings.keys[id], sizeof(filename_id));
+        st->message.len = 0;
+        if (!write_varint_field(&st->message, 1, (uint64_t)id + 1) || !write_varint_field(&st->message, 5, filename_id) ||
+            !write_message_field(out, 3, &st->message))
+        {
+            return false;
+        }
+    }
+
+    for (uint32_t id = 0; id < profile->locations.len; id++)
+    {
+        ddog_location_key lk;
+        memcpy(&lk, profile->locations.keys[id], sizeof(lk));
+        st->field.len = 0;
+        st->message.len = 0;
+        if (!write_varint_field(&st->field, 1, (uint64_t)lk.function + 1) ||
+            !write_varint_field(&st->field, 2, (uint64_t)lk.line) || !write_varint_field(&st->message, 1, (uint64_t)id + 1) ||
+            (lk.mapping != 0 && !write_varint_field(&st->message, 2, lk.mapping)) ||
+            (lk.address != 0 && !write_varint_field(&st->message, 3, lk.address)) ||
+            !write_message_field(&st->message, 4, &st->field) || !write_message_field(out, 4, &st->message))
+        {
+            return false;
+        }
+    }
+
+    for (uint32_t id = 0; id < profile->functions.len; id++)
+    {
+        ddog_function_key fk;
+        memcpy(&fk, profile->functions.keys[id], sizeof(fk));
+        st->message.len = 0;
+        if (!write_varint_field(&st->message, 1, (uint64_t)id + 1) || !write_varint_field(&st->message, 2, fk.name) ||
+            !write_varint_field(&st->message, 3, fk.system_name) || !write_varint_field(&st->message, 4, fk.filename) ||
+            !write_message_field(out, 5, &st->message))
+        {
+            return false;
+        }
+    }
+    return true;
+}
+
+bool ddog__pprof_encode(struct ddog_prof_profile* profile, const ddog_timespec* start_time,
+                        const ddog_timespec* end_time, ddog__buf* out)
+{
+    encode_state st;
+    memset(&st, 0, sizeof(st));
+    ddog__buf_init(&st.message);
+    ddog__buf_init(&st.packed);
+    ddog__buf_init(&st.field);
+
+    // libdatadog interns these three when the profile is created
+    ddog_charslice trace_endpoint = {"trace endpoint", sizeof("trace endpoint") - 1};
+    ddog_charslice timestamp = {"end_timestamp_ns", sizeof("end_timestamp_ns") - 1};
+    ddog_charslice local_root_span_id = {"local root span id", sizeof("local root span id") - 1};
+    st.values = (int64_t*)malloc(profile->sample_types_len * sizeof(int64_t));
+    bool ok = st.values != NULL && ddog__intern_string(profile, trace_endpoint, &st.trace_endpoint_key) &&
+              ddog__intern_string(profile, timestamp, &st.timestamp_key) &&
+              ddog__intern_string(profile, local_root_span_id, &st.local_root_span_id_key) &&
+              build_endpoint_lookup(profile, &st.endpoint_lookup, &st.endpoint_lookup_len);
+
     for (size_t i = 0; i < profile->sample_types_len && ok; i++)
     {
-        ddog__buf vt_buf;
-        ddog__buf_init(&vt_buf);
-        ok = encode_value_type(&strs, &profile->sample_types[i], &vt_buf);
-        if (ok)
-        {
-            ok = write_message_field(&sample_types_accum, 1, &vt_buf);
-        }
-        ddog__buf_free(&vt_buf);
+        st.message.len = 0;
+        ok = encode_value_type(profile, &profile->sample_types[i], &st.message) && write_message_field(out, 1, &st.message);
     }
 
-    for (size_t i = 0; i < profile->samples_len && ok; i++)
-    {
-        ok = encode_sample(&strs, &next_id, &profile->samples[i], &mappings_accum, &functions_accum, &locations_accum,
-                            &samples_accum);
-    }
+    // libdatadog writes the timestamped samples first, then the aggregated ones
+    ok = ok && encode_samples(profile, &st, &profile->timestamped, out) &&
+         encode_samples(profile, &st, &profile->aggregated, out) && encode_tables(profile, &st, out);
 
-    // Must happen before we serialize the string table below - it interns
-    // period.type's strings too.
-    if (ok)
-    {
-        ok = encode_value_type(&strs, &profile->period.type, &period_type_buf);
-    }
+    // period type interns its strings: must happen before the string table is written
+    ddog__buf period_type;
+    ddog__buf_init(&period_type);
+    ok = ok && encode_value_type(profile, &profile->period.type, &period_type);
 
-    // All interning above must be finished before this point - the table
-    // written here has to be complete, see file header comment.
-    ddog__buf string_table_accum;
-    ddog__buf_init(&string_table_accum);
-    for (size_t i = 0; i < strs.count && ok; i++)
+    for (uint32_t id = 0; id < profile->strings.len && ok; id++)
     {
-        ok = write_bytes_field(&string_table_accum, 6, strs.ptrs[i], strs.lens[i]);
-    }
-
-    if (ok)
-    {
-        ok = ddog__buf_append(out, sample_types_accum.data, sample_types_accum.len);
-    }
-    if (ok)
-    {
-        ok = ddog__buf_append(out, samples_accum.data, samples_accum.len);
-    }
-    if (ok)
-    {
-        ok = ddog__buf_append(out, mappings_accum.data, mappings_accum.len);
-    }
-    if (ok)
-    {
-        ok = ddog__buf_append(out, locations_accum.data, locations_accum.len);
-    }
-    if (ok)
-    {
-        ok = ddog__buf_append(out, functions_accum.data, functions_accum.len);
-    }
-    if (ok)
-    {
-        ok = ddog__buf_append(out, string_table_accum.data, string_table_accum.len);
+        ok = write_bytes_field(out, 6, profile->strings.keys[id], profile->strings.key_lens[id]);
     }
     if (ok)
     {
         int64_t time_nanos = start_time->seconds * 1000000000LL + (int64_t)start_time->nanoseconds;
         int64_t end_nanos = end_time->seconds * 1000000000LL + (int64_t)end_time->nanoseconds;
-        ok = write_int64_field(out, 9, time_nanos) && write_int64_field(out, 10, end_nanos - time_nanos);
-    }
-    if (ok)
-    {
-        ok = write_message_field(out, 11, &period_type_buf);
-    }
-    if (ok)
-    {
-        ok = write_int64_field(out, 12, profile->period.value);
+        ok = write_int64_field(out, 9, time_nanos) && write_int64_field(out, 10, end_nanos - time_nanos) &&
+             write_message_field(out, 11, &period_type) && write_int64_field(out, 12, profile->period.value);
     }
 
-    ddog__buf_free(&sample_types_accum);
-    ddog__buf_free(&mappings_accum);
-    ddog__buf_free(&functions_accum);
-    ddog__buf_free(&locations_accum);
-    ddog__buf_free(&samples_accum);
-    ddog__buf_free(&period_type_buf);
-    ddog__buf_free(&string_table_accum);
-    string_table_free(&strs);
-
+    ddog__buf_free(&period_type);
+    ddog__buf_free(&st.message);
+    ddog__buf_free(&st.packed);
+    ddog__buf_free(&st.field);
+    free(st.values);
+    free(st.endpoint_lookup);
     return ok;
 }
