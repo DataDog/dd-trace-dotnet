@@ -15,6 +15,11 @@ namespace Datadog.Trace.DuckTyping.Tests
     [Collection(nameof(GetAssemblyTestsCollection))]
     public class GetAssemblyTests
     {
+        public interface IVisibleAssemblyEnumerationProxy
+        {
+            int Value { get; }
+        }
+
         private interface IAssemblyEnumerationProxy
         {
             int Value { get; }
@@ -67,6 +72,41 @@ namespace Datadog.Trace.DuckTyping.Tests
 
             proxyAssemblyEnumerated.Should().BeTrue();
             asmDuckTypes.Should().BeGreaterThan(0);
+        }
+
+        [Fact]
+        public void VisibleTargetsFromTheSameAssemblyShareTheDynamicModuleBuilder()
+        {
+            if (DuckType.RuntimeMode != DuckTypeRuntimeMode.Dynamic)
+            {
+                // AOT proxies come from the generated registry, no dynamic assembly is created.
+                return;
+            }
+
+            // Replaces the exact global assembly count, which depended on the whole test inventory:
+            // proxies for visible targets must reuse their target assembly's module builder instead of
+            // creating a dynamic assembly each.
+            var first = DuckType.Create<IVisibleAssemblyEnumerationProxy>(new VisibleAssemblyEnumerationTarget());
+            var assemblyCount = DuckType.AssemblyCount;
+
+            var second = DuckType.Create<IVisibleAssemblyEnumerationProxy>(new OtherVisibleAssemblyEnumerationTarget());
+            var firstAgain = DuckType.Create<IVisibleAssemblyEnumerationProxy>(new VisibleAssemblyEnumerationTarget());
+
+            first!.Value.Should().Be(1);
+            second!.Value.Should().Be(2);
+            DuckType.AssemblyCount.Should().Be(assemblyCount);
+            second.GetType().Assembly.Should().BeSameAs(first.GetType().Assembly);
+            firstAgain!.GetType().Should().Be(first.GetType());
+        }
+
+        public sealed class VisibleAssemblyEnumerationTarget
+        {
+            public int Value => 1;
+        }
+
+        public sealed class OtherVisibleAssemblyEnumerationTarget
+        {
+            public int Value => 2;
         }
 
         private sealed class AssemblyEnumerationTarget

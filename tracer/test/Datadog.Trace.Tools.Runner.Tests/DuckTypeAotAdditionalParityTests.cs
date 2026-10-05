@@ -122,6 +122,81 @@ public class DuckTypeAotAdditionalParityTests
     }
 
     [Fact]
+    public void GeneratedRegistryShouldMatchOmittedNullableAndInOptionalConstants()
+    {
+        const string expected = "5|Friday|3";
+        DuckType.ResetRuntimeModeForTests();
+        Exercise().Should().Be(expected);
+        WithGeneratedRegistry(
+            () => Exercise().Should().Be(expected),
+            Mapping(typeof(IOptionalConstantsProxy), typeof(NullableOptionalConstantsTarget)));
+
+        string Exercise() => DuckType.Create<IOptionalConstantsProxy>(new NullableOptionalConstantsTarget())!.Format();
+    }
+
+    [Fact]
+    public void GeneratedRegistryShouldTreatExplicitInterfaceTypeNameAsSingleName()
+    {
+        // Dynamic duck typing doesn't split ExplicitInterfaceTypeName on commas, so neither mode can bind
+        // the explicit implementation through a comma separated list.
+        DuckType.ResetRuntimeModeForTests();
+        DuckType.GetOrCreateProxyType(typeof(ICommaSeparatedExplicitInterfaceProxy), typeof(ExplicitInterfaceTarget)).CanCreate().Should().BeFalse();
+        WithGeneratedRegistry(
+            () => DuckType.GetOrCreateProxyType(typeof(ICommaSeparatedExplicitInterfaceProxy), typeof(ExplicitInterfaceTarget)).CanCreate().Should().BeFalse(),
+            Mapping(typeof(ICommaSeparatedExplicitInterfaceProxy), typeof(ExplicitInterfaceTarget)));
+    }
+
+    [Fact]
+    public void MappingResolverShouldIgnoreNativeLibrariesInTargetFolders()
+    {
+        var directory = Path.Combine(Path.GetTempPath(), "dd-trace-additional-aot-parity", Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(directory);
+        try
+        {
+            // RID-specific outputs contain native libraries that match the *.dll target filter.
+            File.WriteAllBytes(Path.Combine(directory, "e_sqlite3.dll"), [0x7F, 0x45, 0x4C, 0x46, 0x02, 0x01, 0x01, 0x00]);
+            var mapPath = Path.Combine(directory, "map.json");
+            var mapping = Mapping(typeof(IOptionalConstantsProxy), typeof(OptionalConstantsTarget));
+            File.WriteAllText(mapPath, JsonConvert.SerializeObject(new
+            {
+                mappings = new[]
+                {
+                    new
+                    {
+                        mode = "forward",
+                        proxyType = mapping.ProxyTypeName,
+                        proxyAssembly = mapping.ProxyAssemblyName,
+                        targetType = mapping.TargetTypeName,
+                        targetAssembly = mapping.TargetAssemblyName
+                    }
+                }
+            }));
+            var assemblyPath = typeof(DuckTypeAotAdditionalParityTests).Assembly.Location;
+            var outputPath = Path.Combine(directory, "Registry.dll");
+            var options = new DuckTypeAotGenerateOptions(
+                proxyAssemblies: new[] { assemblyPath },
+                targetAssemblies: new[] { assemblyPath },
+                targetFolders: new[] { directory },
+                targetFilters: new[] { "*.dll" },
+                mapFile: mapPath,
+                genericInstantiationsFile: null,
+                outputPath: outputPath,
+                assemblyName: "Registry",
+                trimmerDescriptorPath: outputPath + ".linker.xml",
+                propsPath: outputPath + ".props");
+
+            var result = DuckTypeAotMappingResolver.Resolve(options);
+
+            result.Errors.Should().BeEmpty();
+            result.Mappings.Should().ContainSingle();
+        }
+        finally
+        {
+            Directory.Delete(directory, recursive: true);
+        }
+    }
+
+    [Fact]
     public void GeneratedRegistryShouldCastReverseProxyThroughAncestorMapping()
     {
         DuckType.ResetRuntimeModeForTests();
@@ -377,6 +452,33 @@ public class DuckTypeAotAdditionalParityTests
             int? nullable = null,
             DateTime date = default)
             => string.Join("|", number, text, day, amount.ToString(CultureInfo.InvariantCulture), boxed, flag, large, single.ToString(CultureInfo.InvariantCulture), precision.ToString(CultureInfo.InvariantCulture), nullable is null, date.Ticks);
+    }
+
+    public interface ICommaSeparatedExplicitInterfaceProxy
+    {
+        [Duck(ExplicitInterfaceTypeName = "Datadog.Trace.Tools.Runner.Tests.DuckTypeAotAdditionalParityTests+IExplicitFirst,Datadog.Trace.Tools.Runner.Tests.DuckTypeAotAdditionalParityTests+IExplicitSecond")]
+        string Explicit();
+    }
+
+    public interface IExplicitFirst
+    {
+        string Explicit();
+    }
+
+    public interface IExplicitSecond
+    {
+        string Explicit();
+    }
+
+    public class ExplicitInterfaceTarget : IExplicitFirst
+    {
+        string IExplicitFirst.Explicit() => "first";
+    }
+
+    public class NullableOptionalConstantsTarget
+    {
+        public string Format(int? count = 5, DayOfWeek? day = DayOfWeek.Friday, in int value = 3)
+            => string.Join("|", count, day, value);
     }
 
 #pragma warning disable SA1401 // Public fields are part of the tested DuckCopy and target contracts.

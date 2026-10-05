@@ -58,15 +58,7 @@ namespace Datadog.Trace.DuckTyping
 #endif
 
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private static NonGenericFastPathEntry? _nonGenericForwardFastPath;
-        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private static NonGenericFastPathEntry? _nonGenericReverseFastPath;
-        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private static int _runtimeFastPathVersion;
-        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private static int _nonGenericFastPathRuntimeVersion = -1;
-        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private static int _nonGenericFastPathAotCacheVersion = -1;
+        private static int _fastPathVersion;
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private static long _assemblyCount;
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
@@ -353,19 +345,6 @@ namespace Datadog.Trace.DuckTyping
             }
         }
 
-        private readonly struct FastPathVersionSnapshot
-        {
-            public FastPathVersionSnapshot(int runtimeVersion, int aotCacheVersion)
-            {
-                RuntimeVersion = runtimeVersion;
-                AotCacheVersion = aotCacheVersion;
-            }
-
-            public int RuntimeVersion { get; }
-
-            public int AotCacheVersion { get; }
-        }
-
         /// <summary>
         /// DynamicMethods delegates cache
         /// </summary>
@@ -400,20 +379,17 @@ namespace Datadog.Trace.DuckTyping
             }
         }
 
-        private sealed class NonGenericFastPathEntry
+        private sealed class FastPathEntry
         {
-            public NonGenericFastPathEntry(Type proxyDefinitionType, Type targetType, CreateTypeResult result)
+            public FastPathEntry(CreateTypeResult result, int version)
             {
-                ProxyDefinitionType = proxyDefinitionType;
-                TargetType = targetType;
                 Result = result;
+                Version = version;
             }
 
-            public Type ProxyDefinitionType { get; }
-
-            public Type TargetType { get; }
-
             public CreateTypeResult Result { get; }
+
+            public int Version { get; }
         }
     }
 }

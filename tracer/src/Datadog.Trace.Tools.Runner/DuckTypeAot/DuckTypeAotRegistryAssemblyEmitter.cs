@@ -241,7 +241,9 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
 
         /// <summary>
         /// Stores runtime assembly paths used by metadata-to-runtime type resolution during emission.
+        /// Thread-static like the other per-emission state, so concurrent Emit calls don't clear each other's map.
         /// </summary>
+        [ThreadStatic]
         private static IReadOnlyDictionary<string, string>? runtimeTypeResolutionAssemblyPathsByName;
 
         [ThreadStatic]
@@ -9486,18 +9488,15 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                             continue;
                         }
 
-                        foreach (var candidateName in SplitDuckNames(configuredName!))
+                        // Dynamic duck typing treats ExplicitInterfaceTypeName as a single interface name (no comma
+                        // list, no trimming) and only an exact "*" as the wildcard, so mirror that for parity.
+                        if (string.Equals(configuredName, "*", StringComparison.Ordinal))
                         {
-                            if (string.Equals(candidateName, "*", StringComparison.Ordinal))
-                            {
-                                useRelaxed = true;
-                                continue;
-                            }
-
-                            if (!string.IsNullOrWhiteSpace(candidateName))
-                            {
-                                explicitInterfaceTypeNamesList.Add(candidateName);
-                            }
+                            useRelaxed = true;
+                        }
+                        else
+                        {
+                            explicitInterfaceTypeNamesList.Add(configuredName!);
                         }
                     }
                 }
@@ -11041,10 +11040,44 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             int parameterIndex,
             TypeSig parameterType)
         {
-            if (TryGetOptionalParameterConstant(targetMethod, parameterIndex, out var constantValue) &&
-                TryEmitConstantValue(moduleDef, body, parameterType, constantValue))
+            if (parameterType is ByRefSig byRefSig)
             {
+                // Optional by-ref parameters (e.g. `in int value = 5`) need a storage location, not a null managed pointer.
+                var elementType = byRefSig.Next;
+                var valueLocal = new Local(ImportTypeSigCached(moduleDef, elementType, $"optional by-ref parameter '{parameterIndex.ToString(CultureInfo.InvariantCulture)}' of method '{targetMethod.FullName}'"));
+                body.Variables.Add(valueLocal);
+                body.InitLocals = true;
+                EmitOptionalParameterValue(moduleDef, body, targetMethod, parameterIndex, elementType);
+                body.Instructions.Add(OpCodes.Stloc.ToInstruction(valueLocal));
+                body.Instructions.Add(OpCodes.Ldloca.ToInstruction(valueLocal));
                 return;
+            }
+
+            EmitOptionalParameterValue(moduleDef, body, targetMethod, parameterIndex, parameterType);
+        }
+
+        private static void EmitOptionalParameterValue(
+            ModuleDef moduleDef,
+            CilBody body,
+            MethodDef targetMethod,
+            int parameterIndex,
+            TypeSig parameterType)
+        {
+            if (TryGetOptionalParameterConstant(targetMethod, parameterIndex, out var constantValue))
+            {
+                if (TryGetNullableElementType(parameterType, out var nullableElementType))
+                {
+                    // The metadata constant of a Nullable<T> parameter is the T value; wrap it instead of passing a raw T.
+                    if (constantValue is not null && TryEmitConstantValue(moduleDef, body, nullableElementType!, constantValue))
+                    {
+                        body.Instructions.Add(OpCodes.Newobj.ToInstruction(CreateNullableCtorRef(moduleDef, parameterType)));
+                        return;
+                    }
+                }
+                else if (TryEmitConstantValue(moduleDef, body, parameterType, constantValue))
+                {
+                    return;
+                }
             }
 
             EmitDefaultValue(moduleDef, body, parameterType, $"optional parameter '{parameterIndex.ToString(CultureInfo.InvariantCulture)}' of method '{targetMethod.FullName}'");

@@ -11,6 +11,7 @@ using System.Globalization;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.DuckTyping
 {
@@ -718,7 +719,7 @@ namespace Datadog.Trace.DuckTyping
                 bool useRelaxedNameComparison = false;
 
                 // If there is an explicit interface type name we add it to the name
-                if (!string.IsNullOrEmpty(explicitInterfaceTypeName))
+                if (!StringUtil.IsNullOrEmpty(explicitInterfaceTypeName))
                 {
                     string interfaceTypeName = explicitInterfaceTypeName!;
 
@@ -1196,6 +1197,27 @@ namespace Datadog.Trace.DuckTyping
             internal static DuckTypeException? AddIlToLoadOptionalArgument(LazyILGenerator il, ParameterInfo parameter)
             {
                 var parameterType = parameter.ParameterType;
+                if (!parameterType.IsByRef)
+                {
+                    return AddIlToLoadOptionalValue(il, parameter, parameterType);
+                }
+
+                // Optional by-ref parameters (e.g. `in int value = 5`) need a storage location, not a null managed pointer.
+                var elementType = parameterType.GetElementType()!;
+                if (AddIlToLoadOptionalValue(il, parameter, elementType) is { } valueError)
+                {
+                    return valueError;
+                }
+
+                var valueLocal = il.DeclareLocal(elementType);
+                var valueLocalIndex = valueLocal?.LocalIndex ?? 0;
+                il.WriteStoreLocal(valueLocalIndex);
+                il.Emit(OpCodes.Ldloca, valueLocalIndex);
+                return null;
+            }
+
+            private static DuckTypeException? AddIlToLoadOptionalValue(LazyILGenerator il, ParameterInfo parameter, Type parameterType)
+            {
                 var value = parameter.DefaultValue;
                 if (value is null || value == Missing.Value || value == DBNull.Value)
                 {
@@ -1265,7 +1287,19 @@ namespace Datadog.Trace.DuckTyping
                         return DuckTypeException.Create($"Unsupported optional argument value for '{parameter.Name}'.");
                 }
 
-                return il.WriteSafeTypeConversion(valueType, parameterType);
+                // The default value of a Nullable<T> parameter is the T value, so it has to be wrapped.
+                if (Nullable.GetUnderlyingType(parameterType) is not { } nullableUnderlyingType)
+                {
+                    return il.WriteSafeTypeConversion(valueType, parameterType);
+                }
+
+                if (il.WriteSafeTypeConversion(valueType, nullableUnderlyingType) is { } nullableConversionError)
+                {
+                    return nullableConversionError;
+                }
+
+                il.Emit(OpCodes.Newobj, parameterType.GetConstructor([nullableUnderlyingType])!);
+                return null;
             }
 
             internal static MethodInfo AddIlForDirectMethodCall(

@@ -812,7 +812,7 @@ For protected-branch validation, use the Nuke gate bundle:
 
 That bundle runs strict compatibility verification, full-suite dynamic-vs-AOT parity, and NativeAOT publish validation.
 
-`RunManagedUnitTests` depends on this bundle, so managed-unit validation also exercises the NativeAOT publish test on runners where the NativeAOT toolchain is available.
+`RunManagedUnitTests` depends on this bundle. In CI it only runs in the Linux x64 glibc shard that has the NativeAOT toolchain; locally it only runs when a DuckType AOT gate target is invoked explicitly.
 
 ## Compatibility Status and Diagnostics
 
@@ -856,12 +856,15 @@ Bible catalog `expectedStatus` overrides:
 
 1. `DD_DUCKTYPE_DISCOVERY_OUTPUT_PATH`
    1. Test/migration workflow output path for dynamic discovery map entries.
+   2. Every process that inherits the variable merges its mappings into the same file, so delete the file before a fresh discovery run.
 2. `DD_DUCKTYPE_TEST_MODE`
    1. `dynamic` or `aot` for test runtime bootstrap.
 3. `DD_DUCKTYPE_AOT_REGISTRY_PATH`
    1. Test runtime path to generated registry assembly.
 4. `DD_RUN_DUCKTYPE_AOT_FULL_SUITE_PARITY`
    1. Enables full suite parity integration orchestration test.
+5. `DD_RUN_DUCKTYPE_AOT_NATIVEAOT_PUBLISH`
+   1. Enables the NativeAOT publish integration test (set by `RunDuckTypeAotNativeAotPublishGate`).
 
 ## Troubleshooting
 

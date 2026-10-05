@@ -122,6 +122,13 @@ namespace Datadog.Trace.DuckTyping
             // Validate arguments
             EnsureArguments(typeToDeriveFrom, delegationInstance);
 
+            // Same unwrapping as CreateCache<T>.CreateReverse: a forward proxy over an instance that already derives
+            // from the requested type round-trips to the original instance.
+            if (delegationInstance is IDuckType { Instance: { } original } && typeToDeriveFrom.IsInstanceOfType(original))
+            {
+                return original;
+            }
+
             // Create Type
             CreateTypeResult result = GetOrCreateReverseProxyType(typeToDeriveFrom, delegationInstance.GetType());
 
@@ -142,79 +149,22 @@ namespace Datadog.Trace.DuckTyping
 
         private static CreateTypeResult GetOrCreateProxyType(Type proxyType, Type targetType, bool reverse)
         {
-            while (true)
+            // The engines own their caches; per proxy definition fast paths live in CreateCache<T>.
+            if (EnsureRuntimeModeIsInitialized() == DuckTypeRuntimeMode.Aot)
             {
-                var runtimeMode = EnsureRuntimeModeIsInitialized();
-                var versionSnapshot = InvalidateNonGenericFastPathsForRuntimeStateChanges();
-
-                var fastPath = reverse ? Volatile.Read(ref _nonGenericReverseFastPath) : Volatile.Read(ref _nonGenericForwardFastPath);
-                if (fastPath is not null &&
-                    fastPath.ProxyDefinitionType == proxyType &&
-                    fastPath.TargetType == targetType &&
-                    IsCurrentFastPathVersion(versionSnapshot))
-                {
-                    return fastPath.Result;
-                }
-
-                var result = runtimeMode == DuckTypeRuntimeMode.Aot
-                                 ? reverse ? DuckTypeAotEngine.GetOrCreateReverseProxyType(proxyType, targetType) : DuckTypeAotEngine.GetOrCreateProxyType(proxyType, targetType)
-                                 : reverse ? GetOrCreateDynamicReverseProxyType(proxyType, targetType) : GetOrCreateDynamicProxyType(proxyType, targetType);
-                if (!IsCurrentFastPathVersion(versionSnapshot))
-                {
-                    continue;
-                }
-
-                // Keep the first pair as the fast path; replacing it on every hit allocates for polymorphic callers.
-                if (fastPath is null)
-                {
-                    if (reverse)
-                    {
-                        Interlocked.CompareExchange(ref _nonGenericReverseFastPath, new NonGenericFastPathEntry(proxyType, targetType, result), null);
-                    }
-                    else
-                    {
-                        Interlocked.CompareExchange(ref _nonGenericForwardFastPath, new NonGenericFastPathEntry(proxyType, targetType, result), null);
-                    }
-                }
-
-                if (IsCurrentFastPathVersion(versionSnapshot))
-                {
-                    return result;
-                }
-            }
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static FastPathVersionSnapshot InvalidateNonGenericFastPathsForRuntimeStateChanges()
-        {
-            var versionSnapshot = GetCurrentFastPathVersionSnapshot();
-            if (Volatile.Read(ref _nonGenericFastPathRuntimeVersion) == versionSnapshot.RuntimeVersion &&
-                Volatile.Read(ref _nonGenericFastPathAotCacheVersion) == versionSnapshot.AotCacheVersion)
-            {
-                return versionSnapshot;
+                return reverse ? DuckTypeAotEngine.GetOrCreateReverseProxyType(proxyType, targetType) : DuckTypeAotEngine.GetOrCreateProxyType(proxyType, targetType);
             }
 
-            Volatile.Write(ref _nonGenericForwardFastPath, null);
-            Volatile.Write(ref _nonGenericReverseFastPath, null);
-            Volatile.Write(ref _nonGenericFastPathRuntimeVersion, versionSnapshot.RuntimeVersion);
-            Volatile.Write(ref _nonGenericFastPathAotCacheVersion, versionSnapshot.AotCacheVersion);
-
-            return versionSnapshot;
+            return reverse ? GetOrCreateDynamicReverseProxyType(proxyType, targetType) : GetOrCreateDynamicProxyType(proxyType, targetType);
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static FastPathVersionSnapshot GetCurrentFastPathVersionSnapshot()
+        /// <summary>
+        /// Invalidates every <see cref="CreateCache{T}"/> fast path entry. Must be called after the state that produced
+        /// cached <see cref="CreateTypeResult"/> values changes (AOT registrations, test resets).
+        /// </summary>
+        internal static void InvalidateFastPaths()
         {
-            return new FastPathVersionSnapshot(
-                Volatile.Read(ref _runtimeFastPathVersion),
-                IsAotMode() ? DuckTypeAotEngine.CacheVersion : -1);
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static bool IsCurrentFastPathVersion(FastPathVersionSnapshot versionSnapshot)
-        {
-            return Volatile.Read(ref _runtimeFastPathVersion) == versionSnapshot.RuntimeVersion &&
-                   (!IsAotMode() || DuckTypeAotEngine.CacheVersion == versionSnapshot.AotCacheVersion);
+            Interlocked.Increment(ref _fastPathVersion);
         }
 
         private static CreateTypeResult CreateProxyType(Type proxyDefinitionType, Type targetType, bool dryRun)
@@ -1687,7 +1637,14 @@ namespace Datadog.Trace.DuckTyping
                 // Instead, make a shallow copy of the cached DuckTypeException and capture that copy immediately
                 // before every throw. MemberwiseClone preserves the exact internal details, so concurrent
                 // throws no longer cause a crash. Fixed in .NET 6+.
-                ExceptionDispatchInfo.Capture(((DuckTypeException)exceptionInfo.SourceException).CloneForThrow()).Throw();
+                //
+                // AOT failure factories can register any exception type. Those can't be cloned, so rethrow them as-is.
+                if (exceptionInfo.SourceException is DuckTypeException duckTypeException)
+                {
+                    ExceptionDispatchInfo.Capture(duckTypeException.CloneForThrow()).Throw();
+                }
+
+                exceptionInfo.Throw();
 #endif
             }
 
@@ -1748,11 +1705,11 @@ namespace Datadog.Trace.DuckTyping
         /// <typeparam name="T">Type of proxy definition</typeparam>
         public static class CreateCache<T>
         {
-            // Because CreateTypeResult is a struct, it needs to be boxed for safe concurrent access
-            private static StrongBox<CreateTypeResult>? _forwardFastPath;
-            private static StrongBox<CreateTypeResult>? _reverseFastPath;
-            private static int _fastPathRuntimeVersion = -1;
-            private static int _fastPathAotCacheVersion = -1;
+            // Because CreateTypeResult is a struct, it needs to be boxed for safe concurrent access.
+            // Each entry carries the fast path version it was computed for, so registrations or test resets
+            // that race with a lookup can never leave a stale entry that looks current.
+            private static FastPathEntry? _forwardFastPath;
+            private static FastPathEntry? _reverseFastPath;
 
             /// <summary>
             /// Gets the type of T
@@ -1767,37 +1724,16 @@ namespace Datadog.Trace.DuckTyping
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public static CreateTypeResult GetProxy(Type targetType)
             {
-                while (true)
+                // We set a fast path for the first proxy type for a proxy definition. (It's likely to have a proxy definition just for one target type)
+                var fastPath = Volatile.Read(ref _forwardFastPath);
+                if (fastPath is not null &&
+                    fastPath.Result.TargetType == targetType &&
+                    fastPath.Version == Volatile.Read(ref _fastPathVersion))
                 {
-                    var versionSnapshot = InvalidateFastPathForRuntimeStateChanges();
-
-                    // We set a fast path for the first proxy type for a proxy definition. (It's likely to have a proxy definition just for one target type)
-                    var fastPath = Volatile.Read(ref _forwardFastPath);
-                    if (fastPath?.Value.TargetType == targetType &&
-                        IsCurrentFastPathVersion(versionSnapshot))
-                    {
-                        return fastPath.Value;
-                    }
-
-                    CreateTypeResult result = GetOrCreateProxyType(Type, targetType);
-                    if (!IsCurrentFastPathVersion(versionSnapshot))
-                    {
-                        continue;
-                    }
-
-                    if (fastPath is null)
-                    {
-                        Interlocked.CompareExchange(
-                            ref _forwardFastPath,
-                            new StrongBox<CreateTypeResult>(result),
-                            null);
-                    }
-
-                    if (IsCurrentFastPathVersion(versionSnapshot))
-                    {
-                        return result;
-                    }
+                    return fastPath.Result;
                 }
+
+                return GetOrCreateAndCacheFastPath(ref _forwardFastPath, targetType, reverse: false);
             }
 
             /// <summary>
@@ -1881,55 +1817,41 @@ namespace Datadog.Trace.DuckTyping
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public static CreateTypeResult GetReverseProxy(Type targetType)
             {
+                // We set a fast path for the first proxy type for a proxy definition. (It's likely to have a proxy definition just for one target type)
+                var fastPath = Volatile.Read(ref _reverseFastPath);
+                if (fastPath is not null &&
+                    fastPath.Result.TargetType == targetType &&
+                    fastPath.Version == Volatile.Read(ref _fastPathVersion))
+                {
+                    return fastPath.Result;
+                }
+
+                return GetOrCreateAndCacheFastPath(ref _reverseFastPath, targetType, reverse: true);
+            }
+
+            private static CreateTypeResult GetOrCreateAndCacheFastPath(ref FastPathEntry? fastPathSlot, Type targetType, bool reverse)
+            {
                 while (true)
                 {
-                    var versionSnapshot = InvalidateFastPathForRuntimeStateChanges();
-
-                    // We set a fast path for the first proxy type for a proxy definition. (It's likely to have a proxy definition just for one target type)
-                    var fastPath = Volatile.Read(ref _reverseFastPath);
-                    if (fastPath?.Value.TargetType == targetType &&
-                        IsCurrentFastPathVersion(versionSnapshot))
+                    // Read the version before computing, so a result that raced with a registration or reset is
+                    // stamped with the old version and is never served from the fast path afterwards.
+                    var version = Volatile.Read(ref _fastPathVersion);
+                    var result = reverse ? GetOrCreateReverseProxyType(Type, targetType) : GetOrCreateProxyType(Type, targetType);
+                    if (Volatile.Read(ref _fastPathVersion) != version)
                     {
-                        return fastPath.Value;
-                    }
-
-                    CreateTypeResult result = GetOrCreateReverseProxyType(Type, targetType);
-                    if (!IsCurrentFastPathVersion(versionSnapshot))
-                    {
+                        // The runtime state changed while computing the result, so it may already be stale.
                         continue;
                     }
 
-                    if (fastPath is null)
+                    // Keep the first target type as the fast path, only replacing entries from an older version.
+                    var currentFastPath = Volatile.Read(ref fastPathSlot);
+                    if (currentFastPath is null || currentFastPath.Version != version)
                     {
-                        Interlocked.CompareExchange(
-                            ref _reverseFastPath,
-                            new StrongBox<CreateTypeResult>(result),
-                            null);
+                        Interlocked.CompareExchange(ref fastPathSlot, new FastPathEntry(result, version), currentFastPath);
                     }
 
-                    if (IsCurrentFastPathVersion(versionSnapshot))
-                    {
-                        return result;
-                    }
+                    return result;
                 }
-            }
-
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            private static FastPathVersionSnapshot InvalidateFastPathForRuntimeStateChanges()
-            {
-                var versionSnapshot = GetCurrentFastPathVersionSnapshot();
-                if (Volatile.Read(ref _fastPathRuntimeVersion) == versionSnapshot.RuntimeVersion &&
-                    Volatile.Read(ref _fastPathAotCacheVersion) == versionSnapshot.AotCacheVersion)
-                {
-                    return versionSnapshot;
-                }
-
-                Volatile.Write(ref _forwardFastPath, null);
-                Volatile.Write(ref _reverseFastPath, null);
-                Volatile.Write(ref _fastPathRuntimeVersion, versionSnapshot.RuntimeVersion);
-                Volatile.Write(ref _fastPathAotCacheVersion, versionSnapshot.AotCacheVersion);
-
-                return versionSnapshot;
             }
         }
     }

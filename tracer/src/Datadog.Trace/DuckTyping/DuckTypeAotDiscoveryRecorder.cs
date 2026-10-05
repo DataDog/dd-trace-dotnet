@@ -8,6 +8,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -38,6 +39,11 @@ namespace Datadog.Trace.DuckTyping
         private static readonly object FlushLock = new();
 
         /// <summary>
+        /// How long a flush waits for another process holding the output lock file.
+        /// </summary>
+        private static readonly TimeSpan OutputLockTimeout = TimeSpan.FromSeconds(2);
+
+        /// <summary>
         /// Stores process exit hook registered.
         /// </summary>
         /// <remarks>This field participates in shared runtime state and must remain thread-safe.</remarks>
@@ -52,8 +58,8 @@ namespace Datadog.Trace.DuckTyping
         /// <param name="reverse">The reverse value.</param>
         internal static void Record(Type proxyType, Type targetType, bool reverse)
         {
-            // Branch: take this path when (string.IsNullOrWhiteSpace(OutputPath)) evaluates to true.
-            if (string.IsNullOrWhiteSpace(OutputPath))
+            // Branch: take this path when (StringUtil.IsNullOrWhiteSpace(OutputPath)) evaluates to true.
+            if (StringUtil.IsNullOrWhiteSpace(OutputPath))
             {
                 return;
             }
@@ -69,29 +75,26 @@ namespace Datadog.Trace.DuckTyping
             var proxyAssembly = proxyType.Assembly.GetName().Name;
             var targetAssembly = targetType.Assembly.GetName().Name;
 
-            // Branch: take this path when (string.IsNullOrWhiteSpace(proxyTypeName) || evaluates to true.
-            if (string.IsNullOrWhiteSpace(proxyTypeName) ||
-                string.IsNullOrWhiteSpace(targetTypeName) ||
-                string.IsNullOrWhiteSpace(proxyAssembly) ||
-                string.IsNullOrWhiteSpace(targetAssembly))
+            // Branch: take this path when (StringUtil.IsNullOrWhiteSpace(proxyTypeName) || evaluates to true.
+            if (StringUtil.IsNullOrWhiteSpace(proxyTypeName) ||
+                StringUtil.IsNullOrWhiteSpace(targetTypeName) ||
+                StringUtil.IsNullOrWhiteSpace(proxyAssembly) ||
+                StringUtil.IsNullOrWhiteSpace(targetAssembly))
             {
                 return;
             }
 
             EnsureProcessExitHook();
 
-            var mode = reverse ? "reverse" : "forward";
-            var key = string.Concat(mode, "|", proxyTypeName, "|", proxyAssembly, "|", targetTypeName, "|", targetAssembly);
-            if (!Mappings.TryAdd(
-                key,
-                new MapEntry
-                {
-                    Mode = mode,
-                    ProxyType = proxyTypeName,
-                    ProxyAssembly = proxyAssembly,
-                    TargetType = targetTypeName,
-                    TargetAssembly = targetAssembly
-                }))
+            var mapEntry = new MapEntry
+            {
+                Mode = reverse ? "reverse" : "forward",
+                ProxyType = proxyTypeName,
+                ProxyAssembly = proxyAssembly,
+                TargetType = targetTypeName,
+                TargetAssembly = targetAssembly
+            };
+            if (!Mappings.TryAdd(GetKey(mapEntry), mapEntry))
             {
                 return;
             }
@@ -131,24 +134,40 @@ namespace Datadog.Trace.DuckTyping
         {
             try
             {
-                // Branch: take this path when (string.IsNullOrWhiteSpace(OutputPath)) evaluates to true.
-                if (string.IsNullOrWhiteSpace(OutputPath))
+                // Branch: take this path when (StringUtil.IsNullOrWhiteSpace(OutputPath)) evaluates to true.
+                if (StringUtil.IsNullOrWhiteSpace(OutputPath))
                 {
                     return;
                 }
 
                 var directory = Path.GetDirectoryName(OutputPath);
-                // Branch: take this path when (!string.IsNullOrWhiteSpace(directory)) evaluates to true.
-                if (!string.IsNullOrWhiteSpace(directory))
+                // Branch: take this path when (!StringUtil.IsNullOrWhiteSpace(directory)) evaluates to true.
+                if (!StringUtil.IsNullOrWhiteSpace(directory))
                 {
                     Directory.CreateDirectory(directory);
                 }
 
                 lock (FlushLock)
                 {
+                    // Child processes (e.g. one testhost per target framework) inherit the output path, so several
+                    // processes can flush to the same file. Serialize them with a lock file and merge with whatever
+                    // the other processes already wrote instead of overwriting their mappings.
+                    using var outputLock = AcquireOutputLock(OutputPath);
+
+                    var mappings = new Dictionary<string, MapEntry>(StringComparer.Ordinal);
+                    foreach (var existingMapping in ReadExistingMappings(OutputPath))
+                    {
+                        mappings[GetKey(existingMapping)] = existingMapping;
+                    }
+
+                    foreach (var mapping in Mappings)
+                    {
+                        mappings[mapping.Key] = mapping.Value;
+                    }
+
                     var document = new MapDocument
                     {
-                        Mappings = Mappings
+                        Mappings = mappings
                                   .Values
                                   .OrderBy(mapping => mapping.Mode, StringComparer.Ordinal)
                                   .ThenBy(mapping => mapping.ProxyAssembly, StringComparer.Ordinal)
@@ -159,7 +178,8 @@ namespace Datadog.Trace.DuckTyping
                     };
 
                     var json = JsonHelper.SerializeObject(document, new JsonSerializerSettings { Formatting = Formatting.Indented });
-                    var temporaryOutputPath = OutputPath + ".tmp";
+                    // Unique staging file, in case the lock couldn't be acquired and another process writes concurrently.
+                    var temporaryOutputPath = $"{OutputPath}.{Guid.NewGuid():N}.tmp";
                     File.WriteAllText(temporaryOutputPath, json);
                     File.Copy(temporaryOutputPath, OutputPath, overwrite: true);
                     File.Delete(temporaryOutputPath);
@@ -171,6 +191,53 @@ namespace Datadog.Trace.DuckTyping
                 // Branch: handles any exception that reaches this handler.
                 // Best effort recorder used only for testing workflows.
             }
+        }
+
+        private static string GetKey(MapEntry mapping)
+        {
+            return string.Concat(mapping.Mode, "|", mapping.ProxyType, "|", mapping.ProxyAssembly, "|", mapping.TargetType, "|", mapping.TargetAssembly);
+        }
+
+        private static FileStream? AcquireOutputLock(string outputPath)
+        {
+            // The lock file is intentionally left in place: deleting it on release would let two processes
+            // lock different files with the same path.
+            var lockPath = outputPath + ".lock";
+            var stopwatch = Stopwatch.StartNew();
+            while (true)
+            {
+                try
+                {
+                    return new FileStream(lockPath, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None);
+                }
+                catch (IOException) when (stopwatch.Elapsed < OutputLockTimeout)
+                {
+                    Thread.Sleep(10);
+                }
+                catch (IOException)
+                {
+                    // Best effort: write without the lock rather than dropping this process' mappings.
+                    return null;
+                }
+            }
+        }
+
+        private static List<MapEntry> ReadExistingMappings(string outputPath)
+        {
+            try
+            {
+                if (File.Exists(outputPath) &&
+                    JsonHelper.DeserializeObject<MapDocument>(File.ReadAllText(outputPath)) is { Mappings: { } existingMappings })
+                {
+                    return existingMappings;
+                }
+            }
+            catch
+            {
+                // An unreadable map (e.g. written by a process that crashed mid-write) is replaced by ours.
+            }
+
+            return [];
         }
 
         /// <summary>

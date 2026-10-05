@@ -20,6 +20,7 @@ namespace Datadog.Trace.Tools.Runner.Tests;
 
 public class DuckTypeAotNativeAotPublishIntegrationTests
 {
+    private const string EnableNativeAotPublishRunEnvironmentVariable = "DD_RUN_DUCKTYPE_AOT_NATIVEAOT_PUBLISH";
     private const string RequireNativeAotToolchainEnvironmentVariable = "DD_DUCKTYPE_AOT_NATIVEAOT_REQUIRE_TOOLCHAIN";
 
     [Fact]
@@ -45,9 +46,16 @@ public class DuckTypeAotNativeAotPublishIntegrationTests
         }
     }
 
-    [Fact]
+    [SkippableFact]
     public void NativeAotPublishShouldRunWithGeneratedDuckTypeRegistryAndWithoutDynamicEmit()
     {
+        // A full NativeAOT publish is too expensive for every managed unit test shard;
+        // RunDuckTypeAotNativeAotPublishGate opts in explicitly.
+        if (!string.Equals(Environment.GetEnvironmentVariable(EnableNativeAotPublishRunEnvironmentVariable), "1", StringComparison.Ordinal))
+        {
+            return;
+        }
+
         var runtimeIdentifier = ResolveRuntimeIdentifier();
         var tempDirectory = Path.Combine(Path.GetTempPath(), "dd-trace-ducktype-aot-nativeaot", Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(tempDirectory);

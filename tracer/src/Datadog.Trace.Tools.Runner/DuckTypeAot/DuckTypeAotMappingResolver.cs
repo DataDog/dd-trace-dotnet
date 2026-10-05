@@ -34,7 +34,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
 
             var targetAssemblyPaths = Measure(profile, static p => p.GetTargetAssemblyPathsSeconds, static (p, value) => p.GetTargetAssemblyPathsSeconds = value, () => GetTargetAssemblyPaths(options));
             var proxyAssemblyPathsByName = Measure(profile, static p => p.BuildProxyAssemblyPathIndexSeconds, static (p, value) => p.BuildProxyAssemblyPathIndexSeconds = value, () => BuildAssemblyPathIndex(options.ProxyAssemblies, "--proxy-assembly", errors));
-            var targetAssemblyPathsByName = Measure(profile, static p => p.BuildTargetAssemblyPathIndexSeconds, static (p, value) => p.BuildTargetAssemblyPathIndexSeconds = value, () => BuildAssemblyPathIndex(targetAssemblyPaths, "--target-folder", errors));
+            var targetAssemblyPathsByName = Measure(profile, static p => p.BuildTargetAssemblyPathIndexSeconds, static (p, value) => p.BuildTargetAssemblyPathIndexSeconds = value, () => BuildAssemblyPathIndex(targetAssemblyPaths, "--target-folder", errors, skipNonManagedAssemblies: true));
             var genericTypeRoots = new Dictionary<string, DuckTypeAotTypeReference>(StringComparer.Ordinal);
 
             var resolvedMappings = new Dictionary<string, DuckTypeAotMapping>(StringComparer.Ordinal);
@@ -159,9 +159,10 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// <param name="assemblyPaths">The assembly paths value.</param>
         /// <param name="sourceName">The source name value.</param>
         /// <param name="errors">The errors value.</param>
+        /// <param name="skipNonManagedAssemblies">Whether files without managed metadata (e.g. native libraries next to a RID-specific build) are skipped instead of reported.</param>
         /// <returns>The result produced by this operation.</returns>
         /// <remarks>Emits or composes IL for generated duck-typing proxy operations.</remarks>
-        private static Dictionary<string, string> BuildAssemblyPathIndex(IReadOnlyList<string> assemblyPaths, string sourceName, ICollection<string> errors)
+        private static Dictionary<string, string> BuildAssemblyPathIndex(IReadOnlyList<string> assemblyPaths, string sourceName, ICollection<string> errors, bool skipNonManagedAssemblies = false)
         {
             var assemblyPathByName = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
@@ -188,6 +189,11 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                             errors.Add($"{sourceName} has duplicate assembly identity '{normalizedAssemblyName}' with different paths: '{existingPath}' and '{assemblyPath}'.");
                         }
                     }
+                }
+                catch (BadImageFormatException) when (skipNonManagedAssemblies)
+                {
+                    // Target folders can contain native libraries matched by the *.dll filter. They can't
+                    // contain duck typing targets; a mapping that needs one still fails assembly resolution.
                 }
                 catch (Exception ex)
                 {
