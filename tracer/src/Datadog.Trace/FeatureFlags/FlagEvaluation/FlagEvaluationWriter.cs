@@ -21,6 +21,8 @@ namespace Datadog.Trace.FeatureFlags.FlagEvaluation;
 
 internal sealed class FlagEvaluationWriter
 {
+    internal const int DefaultQueueCapacity = 4096;
+
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<FlagEvaluationWriter>();
     private readonly object _gate = new();
     private readonly AutoResetEvent _wake = new(false);
@@ -42,7 +44,7 @@ internal sealed class FlagEvaluationWriter
     internal FlagEvaluationWriter(
         Func<ArraySegment<byte>, Task> send,
         Func<IReadOnlyDictionary<string, string>> getContext,
-        int queueCap = 16384,
+        int queueCap = DefaultQueueCapacity,
         int globalCap = 131072,
         int perFlagCap = 10000,
         int degradedCap = 32768,

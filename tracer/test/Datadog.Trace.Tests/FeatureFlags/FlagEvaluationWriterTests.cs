@@ -93,26 +93,31 @@ public class FlagEvaluationWriterTests
         }
     }
 
-    [Fact]
-    public async Task BlockedSenderDoesNotBlockAdmissionOrGrowQueueBeyondCapacity()
+    [Theory]
+    [InlineData(2)]
+    [InlineData(null)]
+    public async Task BlockedSenderDoesNotBlockAdmissionOrGrowQueueBeyondCapacity(int? queueCap)
     {
         var entered = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
         var release = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-        var writer = new FlagEvaluationWriter(
-            _ =>
-            {
-                entered.TrySetResult(true);
-                return release.Task;
-            },
-            Context,
-            queueCap: 2);
+        Func<ArraySegment<byte>, Task> send = _ =>
+        {
+            entered.TrySetResult(true);
+            return release.Task;
+        };
+        var writer = queueCap is { } capacity
+                         ? new FlagEvaluationWriter(send, Context, queueCap: capacity)
+                         : new FlagEvaluationWriter(send, Context);
         try
         {
             writer.TryEnqueue(Observation()).Should().BeTrue();
             var flush = writer.FlushAsync();
             await Completes(entered.Task);
-            writer.TryEnqueue(Observation()).Should().BeTrue();
-            writer.TryEnqueue(Observation()).Should().BeTrue();
+            for (var i = 0; i < (queueCap ?? 4096); i++)
+            {
+                writer.TryEnqueue(Observation()).Should().BeTrue();
+            }
+
             writer.HasCapacity().Should().BeFalse();
             var offers = Task.Run(() =>
             {

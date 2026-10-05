@@ -60,7 +60,7 @@ public class FlagEvaluationBenchmarks
                 return _release.Task;
             },
             () => context,
-            queueCap: Scenario == "Saturated" ? 1 : 16384,
+            queueCap: Scenario == "Saturated" ? 1 : FlagEvaluationWriter.DefaultQueueCapacity,
             metrics: NullMetricsTelemetryCollector.Instance);
 
         if (Scenario == "Saturated")
