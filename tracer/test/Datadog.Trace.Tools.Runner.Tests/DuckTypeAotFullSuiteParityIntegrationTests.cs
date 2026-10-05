@@ -34,6 +34,7 @@ public class DuckTypeAotFullSuiteParityIntegrationTests
 
     private static readonly string[] DefaultMatrixFrameworks =
     [
+        "net11.0",
         "net10.0",
         "net9.0",
         "net8.0",
@@ -116,7 +117,7 @@ public class DuckTypeAotFullSuiteParityIntegrationTests
     {
         DefaultMatrixFrameworks
            .Should()
-           .ContainInOrder("net10.0", "net9.0", "net8.0", "net7.0", "net6.0");
+           .ContainInOrder("net11.0", "net10.0", "net9.0", "net8.0", "net7.0", "net6.0");
     }
 
     private static void RunFullSuiteParityForFramework(string framework, string dotNetExecutable)
@@ -136,22 +137,17 @@ public class DuckTypeAotFullSuiteParityIntegrationTests
             "Datadog.Trace.Tools.Runner.csproj");
         var duckTypingTestsAssemblyPath = Path.Combine(
             repositoryRoot,
-            "tracer",
-            "test",
-            "Datadog.Trace.DuckTyping.Tests",
+            "artifacts",
             "bin",
-            "Release",
-            framework,
+            "Datadog.Trace.DuckTyping.Tests",
+            $"release_{framework}",
             "Datadog.Trace.DuckTyping.Tests.dll");
         var runnerAssemblyPath = Path.Combine(
             repositoryRoot,
-            "tracer",
-            "src",
-            "Datadog.Trace.Tools.Runner",
+            "artifacts",
             "bin",
-            "Release",
-            "Tool",
-            framework,
+            "Datadog.Trace.Tools.Runner.Tool",
+            $"release_{framework}",
             "Datadog.Trace.Tools.Runner.dll");
 
         File.Exists(duckTypingTestsProjectPath).Should().BeTrue("the full-suite parity harness requires the duck typing tests project");
@@ -1365,12 +1361,10 @@ public class DuckTypeAotFullSuiteParityIntegrationTests
         projectPath = Path.Combine(repositoryRoot, "tracer", "src", "Datadog.Trace.Manual", "Datadog.Trace.Manual.csproj");
         expectedAssemblyPath = Path.Combine(
             repositoryRoot,
-            "tracer",
-            "src",
-            "Datadog.Trace.Manual",
+            "artifacts",
             "bin",
-            "Release",
-            buildFramework,
+            "Datadog.Trace.Manual",
+            $"release_{buildFramework}",
             $"{normalizedAssemblyName}.dll");
         return true;
     }
@@ -1385,11 +1379,10 @@ public class DuckTypeAotFullSuiteParityIntegrationTests
                 return cachedIndex;
             }
 
-            var frameworkMarker = $"{Path.DirectorySeparatorChar}{framework}{Path.DirectorySeparatorChar}";
+            var frameworkMarker = $"{Path.DirectorySeparatorChar}release_{framework}{Path.DirectorySeparatorChar}";
             var rootSearchDirectories = new[]
             {
-                Path.Combine(repositoryRoot, "tracer", "src"),
-                Path.Combine(repositoryRoot, "tracer", "test")
+                Path.Combine(repositoryRoot, "artifacts", "bin")
             };
             var candidatePathsByAssemblyName = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
 
@@ -1402,7 +1395,7 @@ public class DuckTypeAotFullSuiteParityIntegrationTests
 
                 foreach (var candidatePath in Directory.EnumerateFiles(rootSearchDirectory, "*.dll", SearchOption.AllDirectories))
                 {
-                    if (candidatePath.Contains($"{Path.DirectorySeparatorChar}Console{Path.DirectorySeparatorChar}", StringComparison.OrdinalIgnoreCase))
+                    if (candidatePath.Contains($"{Path.DirectorySeparatorChar}Datadog.Trace.Tools.Runner.Console{Path.DirectorySeparatorChar}", StringComparison.OrdinalIgnoreCase))
                     {
                         continue;
                     }
@@ -1426,10 +1419,9 @@ public class DuckTypeAotFullSuiteParityIntegrationTests
             var resolvedIndex = candidatePathsByAssemblyName.ToDictionary(
                 entry => entry.Key,
                 entry => entry.Value
-                    .OrderByDescending(path => path.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}Release{Path.DirectorySeparatorChar}", StringComparison.OrdinalIgnoreCase))
-                    .ThenByDescending(path => path.Contains(frameworkMarker, StringComparison.OrdinalIgnoreCase))
-                    .ThenByDescending(path => path.Contains($"{Path.DirectorySeparatorChar}netstandard2.0{Path.DirectorySeparatorChar}", StringComparison.OrdinalIgnoreCase))
-                    .ThenByDescending(path => path.Contains($"{Path.DirectorySeparatorChar}net8.0{Path.DirectorySeparatorChar}", StringComparison.OrdinalIgnoreCase))
+                    .OrderByDescending(path => path.Contains(frameworkMarker, StringComparison.OrdinalIgnoreCase))
+                    .ThenByDescending(path => path.Contains($"{Path.DirectorySeparatorChar}release_netstandard2.0{Path.DirectorySeparatorChar}", StringComparison.OrdinalIgnoreCase))
+                    .ThenByDescending(path => path.Contains($"{Path.DirectorySeparatorChar}release_net8.0{Path.DirectorySeparatorChar}", StringComparison.OrdinalIgnoreCase))
                     .First(),
                 StringComparer.OrdinalIgnoreCase);
 

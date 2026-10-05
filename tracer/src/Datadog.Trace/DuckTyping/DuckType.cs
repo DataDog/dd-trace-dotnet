@@ -164,13 +164,17 @@ namespace Datadog.Trace.DuckTyping
                     continue;
                 }
 
-                if (reverse)
+                // Keep the first pair as the fast path; replacing it on every hit allocates for polymorphic callers.
+                if (fastPath is null)
                 {
-                    Volatile.Write(ref _nonGenericReverseFastPath, new NonGenericFastPathEntry(proxyType, targetType, result));
-                }
-                else
-                {
-                    Volatile.Write(ref _nonGenericForwardFastPath, new NonGenericFastPathEntry(proxyType, targetType, result));
+                    if (reverse)
+                    {
+                        Interlocked.CompareExchange(ref _nonGenericReverseFastPath, new NonGenericFastPathEntry(proxyType, targetType, result), null);
+                    }
+                    else
+                    {
+                        Interlocked.CompareExchange(ref _nonGenericForwardFastPath, new NonGenericFastPathEntry(proxyType, targetType, result), null);
+                    }
                 }
 
                 if (IsCurrentFastPathVersion(versionSnapshot))
@@ -737,7 +741,7 @@ namespace Datadog.Trace.DuckTyping
                 {
                     case DuckKind.Property:
                     case DuckKind.PropertyOrField:
-                        PropertyInfo? targetProperty = GetTargetPropertyOrIndex(targetType, duckAttribute.Name, duckAttribute.BindingFlags, proxyProperty);
+                        PropertyInfo? targetProperty = GetTargetPropertyOrIndex(targetType, duckAttribute.Name, duckAttribute.BindingFlags, proxyProperty, duckAttribute.ExplicitInterfaceTypeName);
 
                         if (duckAttribute.FallbackToBaseTypes)
                         {
@@ -745,7 +749,7 @@ namespace Datadog.Trace.DuckTyping
                             while (targetProperty is null && currentType is { IsValueType: false, BaseType: not null } && currentType.BaseType != typeof(object))
                             {
                                 currentType = currentType.BaseType;
-                                targetProperty = GetTargetPropertyOrIndex(currentType, duckAttribute.Name, duckAttribute.BindingFlags, proxyProperty);
+                                targetProperty = GetTargetPropertyOrIndex(currentType, duckAttribute.Name, duckAttribute.BindingFlags, proxyProperty, duckAttribute.ExplicitInterfaceTypeName);
                             }
                         }
 
@@ -943,7 +947,7 @@ namespace Datadog.Trace.DuckTyping
                     return DuckTypeReverseProxyPropertyCannotBeAbstractException.Create(implementationProperty);
                 }
 
-                PropertyInfo? overriddenProperty = GetTargetPropertyOrIndex(typeToDeriveFrom, duckAttribute.Name, duckAttribute.BindingFlags, implementationProperty);
+                PropertyInfo? overriddenProperty = GetTargetPropertyOrIndex(typeToDeriveFrom, duckAttribute.Name, duckAttribute.BindingFlags, implementationProperty, duckAttribute.ExplicitInterfaceTypeName);
                 if (overriddenProperty is null)
                 {
                     return DuckTypePropertyOrFieldNotFoundException.Create(implementationProperty.Name, duckAttribute.Name, typeToDeriveFrom);
@@ -1063,7 +1067,7 @@ namespace Datadog.Trace.DuckTyping
                 {
                     case DuckKind.Property:
                     case DuckKind.PropertyOrField:
-                        if (GetTargetProperty(targetType, duckAttribute.Name, duckAttribute.BindingFlags, out PropertyInfo? targetProperty) is { } propertyError)
+                        if (GetTargetProperty(targetType, duckAttribute.Name, duckAttribute.BindingFlags, out PropertyInfo? targetProperty, duckAttribute.ExplicitInterfaceTypeName) is { } propertyError)
                         {
                             return propertyError;
                         }
@@ -1074,7 +1078,7 @@ namespace Datadog.Trace.DuckTyping
                             while (targetProperty is null && currentType is { IsValueType: false, BaseType: not null } && currentType.BaseType != typeof(object))
                             {
                                 currentType = currentType.BaseType;
-                                if (GetTargetProperty(currentType, duckAttribute.Name, duckAttribute.BindingFlags, out targetProperty) is { } baseTypeError)
+                                if (GetTargetProperty(currentType, duckAttribute.Name, duckAttribute.BindingFlags, out targetProperty, duckAttribute.ExplicitInterfaceTypeName) is { } baseTypeError)
                                 {
                                     return baseTypeError;
                                 }
@@ -1271,17 +1275,17 @@ namespace Datadog.Trace.DuckTyping
             return null;
         }
 
-        private static PropertyInfo? GetTargetPropertyOrIndex(Type targetType, string propertyName, BindingFlags bindingFlags, PropertyInfo proxyPropertyInfo)
+        private static PropertyInfo? GetTargetPropertyOrIndex(Type targetType, string propertyName, BindingFlags bindingFlags, PropertyInfo proxyPropertyInfo, string? explicitInterfaceTypeName = null)
         {
             if (propertyName.IndexOf(',') == -1)
             {
-                return FindPropertyOrIndex(targetType, propertyName, bindingFlags, proxyPropertyInfo);
+                return FindPropertyOrIndex(targetType, propertyName, bindingFlags, proxyPropertyInfo, explicitInterfaceTypeName);
             }
 
             PropertyInfo? targetProperty = null;
             foreach (var name in GetDuckAttributeCandidateNames(propertyName))
             {
-                targetProperty = FindPropertyOrIndex(targetType, name, bindingFlags, proxyPropertyInfo);
+                targetProperty = FindPropertyOrIndex(targetType, name, bindingFlags, proxyPropertyInfo, explicitInterfaceTypeName);
 
                 if (targetProperty is not null)
                 {
@@ -1291,10 +1295,10 @@ namespace Datadog.Trace.DuckTyping
 
             return targetProperty;
 
-            static PropertyInfo? FindPropertyOrIndex(Type targetType, string propertyName, BindingFlags bindingFlags, PropertyInfo proxyPropertyInfo)
+            static PropertyInfo? FindPropertyOrIndex(Type targetType, string propertyName, BindingFlags bindingFlags, PropertyInfo proxyPropertyInfo, string? explicitInterfaceTypeName)
             {
                 // Avoid calling GetProperty(propertyName, bindingFlags) so that we avoid throwing when we have multiple indexers
-                var candidates = GetPropertyCandidates(targetType, propertyName, bindingFlags);
+                var candidates = GetPropertyCandidates(targetType, propertyName, bindingFlags, explicitInterfaceTypeName);
 
                 if (candidates.Length == 0)
                 {
@@ -1310,6 +1314,14 @@ namespace Datadog.Trace.DuckTyping
                 // up by throwing. Can happen if the target declares several indexers, or hides a base property with
                 // a different signature.
                 var indexParameters = proxyPropertyInfo.GetIndexParameters();
+                if (!StringUtil.IsNullOrEmpty(explicitInterfaceTypeName))
+                {
+                    // Wildcard interface names can select different properties with the same simple name.
+                    // Only an unambiguous exact signature is safe; do not throw during dry-run validation.
+                    var matchingProperties = candidates.Cast<PropertyInfo>().Where(property => SignatureMatches(property, proxyPropertyInfo.PropertyType, indexParameters)).ToArray();
+                    return matchingProperties.Length == 1 ? matchingProperties[0] : null;
+                }
+
                 if (indexParameters.Length == 0)
                 {
                     // fallback, could happen if you use "new", just accept the gap
@@ -1361,17 +1373,17 @@ namespace Datadog.Trace.DuckTyping
             }
         }
 
-        private static DuckTypeException? GetTargetProperty(Type targetType, string propertyName, BindingFlags bindingFlags, out PropertyInfo? targetProperty)
+        private static DuckTypeException? GetTargetProperty(Type targetType, string propertyName, BindingFlags bindingFlags, out PropertyInfo? targetProperty, string? explicitInterfaceTypeName = null)
         {
             if (propertyName.IndexOf(',') == -1)
             {
-                return FindProperty(targetType, propertyName, bindingFlags, out targetProperty);
+                return FindProperty(targetType, propertyName, bindingFlags, out targetProperty, explicitInterfaceTypeName);
             }
 
             targetProperty = null;
             foreach (var name in GetDuckAttributeCandidateNames(propertyName))
             {
-                if (FindProperty(targetType, name, bindingFlags, out targetProperty) is { } error)
+                if (FindProperty(targetType, name, bindingFlags, out targetProperty, explicitInterfaceTypeName) is { } error)
                 {
                     return error;
                 }
@@ -1384,9 +1396,9 @@ namespace Datadog.Trace.DuckTyping
 
             return null;
 
-            static DuckTypeException? FindProperty(Type targetType, string propertyName, BindingFlags bindingFlags, out PropertyInfo? property)
+            static DuckTypeException? FindProperty(Type targetType, string propertyName, BindingFlags bindingFlags, out PropertyInfo? property, string? explicitInterfaceTypeName)
             {
-                var candidates = GetPropertyCandidates(targetType, propertyName, bindingFlags);
+                var candidates = GetPropertyCandidates(targetType, propertyName, bindingFlags, explicitInterfaceTypeName);
 
                 if (candidates.Length > 1)
                 {
@@ -1399,13 +1411,27 @@ namespace Datadog.Trace.DuckTyping
             }
         }
 
-        private static MemberInfo[] GetPropertyCandidates(Type targetType, string propertyName, BindingFlags bindingFlags)
+        private static MemberInfo[] GetPropertyCandidates(Type targetType, string propertyName, BindingFlags bindingFlags, string? explicitInterfaceTypeName = null)
         {
             // A trailing '*' means "starts with" to GetMember, whereas Type.GetProperty compares the name literally.
             // We only support exact matches, so explicitly don't find these members
             if (propertyName.Length > 0 && propertyName[propertyName.Length - 1] == '*')
             {
                 return [];
+            }
+
+            if (!StringUtil.IsNullOrEmpty(explicitInterfaceTypeName))
+            {
+                if (explicitInterfaceTypeName == "*")
+                {
+                    var comparison = (bindingFlags & BindingFlags.IgnoreCase) != 0 ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
+                    return targetType.GetProperties(bindingFlags)
+                                     .Where(property => string.Equals(property.Name, propertyName, comparison) || property.Name.EndsWith("." + propertyName, comparison))
+                                     .Cast<MemberInfo>()
+                                     .ToArray();
+                }
+
+                propertyName = explicitInterfaceTypeName!.Replace("+", ".") + "." + propertyName;
             }
 
             return targetType.GetMember(propertyName, MemberTypes.Property, bindingFlags);
@@ -1546,17 +1572,19 @@ namespace Datadog.Trace.DuckTyping
 
             private static Func<object?, object?>? TryCreateObjectActivator(Delegate activator)
             {
-                try
-                {
-                    return (Func<object?, object?>)Delegate.CreateDelegate(
-                        typeof(Func<object?, object?>),
-                        activator.Target,
-                        activator.Method);
-                }
-                catch
+                // Dynamic methods have no declaring type and cannot be rebound through Delegate.CreateDelegate.
+                // Expected binding failures must not raise first-chance exceptions during CanCreate().
+                var method = activator.Method;
+                if (method.DeclaringType is null)
                 {
                     return null;
                 }
+
+                return Delegate.CreateDelegate(
+                    typeof(Func<object?, object?>),
+                    activator.Target,
+                    method,
+                    throwOnBindFailure: false) as Func<object?, object?>;
             }
 
             /// <summary>
@@ -1757,10 +1785,14 @@ namespace Datadog.Trace.DuckTyping
                         continue;
                     }
 
-                    Interlocked.CompareExchange(
-                        ref _forwardFastPath,
-                        new StrongBox<CreateTypeResult>(result),
-                        null);
+                    if (fastPath is null)
+                    {
+                        Interlocked.CompareExchange(
+                            ref _forwardFastPath,
+                            new StrongBox<CreateTypeResult>(result),
+                            null);
+                    }
+
                     if (IsCurrentFastPathVersion(versionSnapshot))
                     {
                         return result;
@@ -1833,6 +1865,11 @@ namespace Datadog.Trace.DuckTyping
                     return default;
                 }
 
+                if (instance is IDuckType duckType && duckType.Instance is T original)
+                {
+                    return original;
+                }
+
                 return GetReverseProxy(instance.GetType()).CreateInstance<T>(instance);
             }
 
@@ -1862,10 +1899,14 @@ namespace Datadog.Trace.DuckTyping
                         continue;
                     }
 
-                    Interlocked.CompareExchange(
-                        ref _reverseFastPath,
-                        new StrongBox<CreateTypeResult>(result),
-                        null);
+                    if (fastPath is null)
+                    {
+                        Interlocked.CompareExchange(
+                            ref _reverseFastPath,
+                            new StrongBox<CreateTypeResult>(result),
+                            null);
+                    }
+
                     if (IsCurrentFastPathVersion(versionSnapshot))
                     {
                         return result;

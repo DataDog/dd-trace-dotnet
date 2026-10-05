@@ -7,11 +7,11 @@ namespace Datadog.Trace.Tools.Runner.Tests;
 
 internal interface ITestDuckByRefReverseConversionProxy
 {
-    bool TryGetInner(out ITestDuckByRefReverseConversionInnerProxy value);
+    bool TryGetInner(out TestDuckByRefReverseConversionInnerTarget value);
 
-    bool RoundtripInner(ref ITestDuckByRefReverseConversionInnerProxy value);
+    bool RoundtripInner(ref TestDuckByRefReverseConversionInnerTarget value);
 
-    void Increment(ref object value);
+    void Increment(ref int value);
 
-    void GetNumber(out object value);
+    void GetNumber(out int value);
 }

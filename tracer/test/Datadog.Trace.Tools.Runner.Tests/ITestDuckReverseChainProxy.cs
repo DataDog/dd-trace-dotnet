@@ -7,7 +7,7 @@ namespace Datadog.Trace.Tools.Runner.Tests;
 
 internal interface ITestDuckReverseChainProxy
 {
-    ITestDuckReverseChainInnerProxy Value { get; set; }
+    TestDuckReverseChainInnerTarget Value { get; set; }
 
-    ITestDuckReverseChainInnerProxy Roundtrip(ITestDuckReverseChainInnerProxy value);
+    TestDuckReverseChainInnerTarget Roundtrip(TestDuckReverseChainInnerTarget value);
 }

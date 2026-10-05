@@ -10,6 +10,9 @@ using System.Collections.Concurrent;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+#if NETCOREAPP2_1_OR_GREATER
+using System.Runtime.Loader;
+#endif
 using System.Threading;
 using Datadog.Trace.DuckTyping;
 
@@ -26,6 +29,9 @@ namespace Datadog.Trace.DuckTyping.Tests
 
         private static readonly ConcurrentDictionary<string, Action> InitializeActionsByRegistryPath = new(StringComparer.Ordinal);
         private static int _initialized;
+#if NETCOREAPP2_1_OR_GREATER
+        private static int _fixtureResolverInitialized;
+#endif
 
         internal static void Initialize()
         {
@@ -66,6 +72,25 @@ namespace Datadog.Trace.DuckTyping.Tests
             InitializeAotRegistryFromEnvironmentPath();
         }
 
+#if NETCOREAPP2_1_OR_GREATER
+        internal static void InitializeInAssemblyLoadContext(AssemblyLoadContext context)
+        {
+            if (DuckType.RuntimeMode != DuckTypeRuntimeMode.Aot)
+            {
+                return;
+            }
+
+            var registryPath = Environment.GetEnvironmentVariable(AotRegistryPathEnvironmentVariable);
+            if (string.IsNullOrWhiteSpace(registryPath))
+            {
+                throw new InvalidOperationException("Assembly load context parity requires a generated AOT registry path.");
+            }
+
+            var registryAssembly = context.LoadFromAssemblyPath(Path.GetFullPath(registryPath));
+            CreateInitializeAction(registryAssembly)();
+        }
+#endif
+
         private static void InitializeAotRegistryFromEnvironmentPath()
         {
             var registryPath = Environment.GetEnvironmentVariable(AotRegistryPathEnvironmentVariable);
@@ -96,7 +121,18 @@ namespace Datadog.Trace.DuckTyping.Tests
 
         private static Action CreateInitializeAction(string fullRegistryPath)
         {
+#if NETCOREAPP2_1_OR_GREATER
+            if (Interlocked.CompareExchange(ref _fixtureResolverInitialized, 1, 0) == 0)
+            {
+                AssemblyLoadContext.Default.Resolving += ResolveAssemblyLoadContextFixture;
+            }
+#endif
             var registryAssembly = Assembly.LoadFrom(fullRegistryPath);
+            return CreateInitializeAction(registryAssembly);
+        }
+
+        private static Action CreateInitializeAction(Assembly registryAssembly)
+        {
             var bootstrapType = registryAssembly.GetType(AotBootstrapTypeFullName, throwOnError: false);
             if (bootstrapType is null)
             {
@@ -109,10 +145,23 @@ namespace Datadog.Trace.DuckTyping.Tests
             if (initializeMethod is null)
             {
                 throw new InvalidOperationException(
-                    $"AOT registry bootstrap type '{AotBootstrapTypeFullName}' in '{fullRegistryPath}' does not expose a public static '{AotBootstrapInitializeMethod}' method.");
+                    $"AOT registry bootstrap type '{AotBootstrapTypeFullName}' in '{registryAssembly.Location}' does not expose a public static '{AotBootstrapInitializeMethod}' method.");
             }
 
             return (Action)Delegate.CreateDelegate(typeof(Action), initializeMethod);
         }
+
+#if NETCOREAPP2_1_OR_GREATER
+        private static Assembly? ResolveAssemblyLoadContextFixture(AssemblyLoadContext context, AssemblyName name)
+        {
+            if (name.Name != "Datadog.Trace.DuckTyping.Tests.Fixtures.Target")
+            {
+                return null;
+            }
+
+            var fixturePath = Path.Combine(AppContext.BaseDirectory, "AssemblyLoadContextFixtures", name.Name + ".dll");
+            return context.LoadFromAssemblyPath(fixturePath);
+        }
+#endif
     }
 }

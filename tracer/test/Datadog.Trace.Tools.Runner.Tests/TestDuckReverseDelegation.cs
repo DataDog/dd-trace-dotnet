@@ -3,10 +3,13 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using Datadog.Trace.DuckTyping;
+
 namespace Datadog.Trace.Tools.Runner.Tests;
 
 internal class TestDuckReverseDelegation
 {
+    [DuckReverseMethod]
     public string Echo(string value)
     {
         return value;

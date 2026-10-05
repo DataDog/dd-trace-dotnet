@@ -90,6 +90,19 @@ namespace Datadog.Trace.DuckTyping
         }
 
         /// <summary>
+        /// Registers a forward AOT failure using a nonthrowing exception factory.
+        /// </summary>
+        /// <param name="proxyDefinitionType">Duck typing proxy definition type.</param>
+        /// <param name="targetType">Runtime target type.</param>
+        /// <param name="exceptionFactory">Static factory used once to create the cached failure exception.</param>
+        [Obsolete(ManualRegistrationObsoleteMessage, error: false)]
+        public static void RegisterAotProxyFailureFactory(Type proxyDefinitionType, Type targetType, Func<Exception> exceptionFactory)
+        {
+            EnsureRuntimeModeIsInitialized(DuckTypeRuntimeMode.Aot);
+            DuckTypeAotEngine.RegisterProxyFailureFactory(proxyDefinitionType, targetType, exceptionFactory);
+        }
+
+        /// <summary>
         /// Registers a forward mapping failure in AOT mode.
         /// </summary>
         /// <param name="proxyDefinitionType">Duck typing proxy definition type.</param>
@@ -126,6 +139,19 @@ namespace Datadog.Trace.DuckTyping
         {
             EnsureRuntimeModeIsInitialized(DuckTypeRuntimeMode.Aot);
             DuckTypeAotEngine.RegisterProxyFailure(proxyDefinitionType, targetType, throwerMethodHandle);
+        }
+
+        /// <summary>
+        /// Registers a reverse AOT failure using a nonthrowing exception factory.
+        /// </summary>
+        /// <param name="typeToDeriveFrom">Type to derive the reverse proxy from.</param>
+        /// <param name="delegationType">Type that provides delegated implementations.</param>
+        /// <param name="exceptionFactory">Static factory used once to create the cached failure exception.</param>
+        [Obsolete(ManualRegistrationObsoleteMessage, error: false)]
+        public static void RegisterAotReverseProxyFailureFactory(Type typeToDeriveFrom, Type delegationType, Func<Exception> exceptionFactory)
+        {
+            EnsureRuntimeModeIsInitialized(DuckTypeRuntimeMode.Aot);
+            DuckTypeAotEngine.RegisterReverseProxyFailureFactory(typeToDeriveFrom, delegationType, exceptionFactory);
         }
 
         /// <summary>
@@ -256,12 +282,11 @@ namespace Datadog.Trace.DuckTyping
 
         private static CreateTypeResult GetOrCreateDynamicProxyType(Type proxyType, Type targetType)
         {
-            DuckTypeAotDiscoveryRecorder.Record(proxyType, targetType, reverse: false);
-
             return DuckTypeCache.GetOrAdd(
                 new TypesTuple(proxyType, targetType),
                 key => new Lazy<CreateTypeResult>(() =>
                 {
+                    DuckTypeAotDiscoveryRecorder.Record(key.ProxyDefinitionType, key.TargetType, reverse: false);
                     var dryResult = CreateProxyType(key.ProxyDefinitionType, key.TargetType, true);
                     if (dryResult.CanCreate())
                     {
@@ -275,12 +300,11 @@ namespace Datadog.Trace.DuckTyping
 
         private static CreateTypeResult GetOrCreateDynamicReverseProxyType(Type typeToDeriveFrom, Type delegationType)
         {
-            DuckTypeAotDiscoveryRecorder.Record(typeToDeriveFrom, delegationType, reverse: true);
-
             return DuckTypeReverseCache.GetOrAdd(
                 new TypesTuple(typeToDeriveFrom, delegationType),
                 key => new Lazy<CreateTypeResult>(() =>
                 {
+                    DuckTypeAotDiscoveryRecorder.Record(key.ProxyDefinitionType, key.TargetType, reverse: true);
                     var dryResult = CreateReverseProxyType(key.ProxyDefinitionType, key.TargetType, true);
                     if (dryResult.CanCreate())
                     {

@@ -205,7 +205,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// <param name="resolvedMappings">The resolved mappings value.</param>
         /// <param name="genericTypeRoots">The closed generic type roots value.</param>
         /// <param name="errors">The errors value.</param>
-        private static void ExpandOpenGenericMappings(
+        internal static void ExpandOpenGenericMappings(
             IDictionary<string, DuckTypeAotMapping> resolvedMappings,
             IEnumerable<DuckTypeAotTypeReference> genericTypeRoots,
             ICollection<string> errors)
@@ -308,7 +308,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// </summary>
         /// <param name="mappings">The mappings value.</param>
         /// <param name="errors">The errors value.</param>
-        private static void ValidateGenericClosure(IEnumerable<DuckTypeAotMapping> mappings, ICollection<string> errors)
+        internal static void ValidateGenericClosure(IEnumerable<DuckTypeAotMapping> mappings, ICollection<string> errors)
         {
             foreach (var mapping in mappings)
             {

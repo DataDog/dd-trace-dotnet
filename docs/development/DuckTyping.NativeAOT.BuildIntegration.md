@@ -61,7 +61,7 @@ dotnet build /abs/path/My.Targets.csproj -c Release
 ### 2. Discover canonical mappings
 
 ```bash
-dotnet tracer/src/Datadog.Trace.Tools.Runner/bin/Release/Tool/net8.0/Datadog.Trace.Tools.Runner.dll \
+dotnet artifacts/bin/Datadog.Trace.Tools.Runner.Tool/release_net8.0/Datadog.Trace.Tools.Runner.dll \
   ducktype-aot discover-mappings \
   --proxy-assembly /abs/path/My.Proxy.Contracts.dll \
   --target-folder /abs/path \
@@ -72,7 +72,7 @@ dotnet tracer/src/Datadog.Trace.Tools.Runner/bin/Release/Tool/net8.0/Datadog.Tra
 ### 3. Generate registry
 
 ```bash
-dotnet tracer/src/Datadog.Trace.Tools.Runner/bin/Release/Tool/net8.0/Datadog.Trace.Tools.Runner.dll \
+dotnet artifacts/bin/Datadog.Trace.Tools.Runner.Tool/release_net8.0/Datadog.Trace.Tools.Runner.dll \
   ducktype-aot generate \
   --proxy-assembly /abs/path/My.Proxy.Contracts.dll \
   --target-folder /abs/path \
@@ -84,7 +84,7 @@ dotnet tracer/src/Datadog.Trace.Tools.Runner/bin/Release/Tool/net8.0/Datadog.Tra
 One-step alternative (discover + generate):
 
 ```bash
-dotnet tracer/src/Datadog.Trace.Tools.Runner/bin/Release/Tool/net8.0/Datadog.Trace.Tools.Runner.dll \
+dotnet artifacts/bin/Datadog.Trace.Tools.Runner.Tool/release_net8.0/Datadog.Trace.Tools.Runner.dll \
   ducktype-aot generate \
   --discover-mappings \
   --proxy-assembly /abs/path/My.Proxy.Contracts.dll \
@@ -97,7 +97,7 @@ dotnet tracer/src/Datadog.Trace.Tools.Runner/bin/Release/Tool/net8.0/Datadog.Tra
 ### 4. Validate compatibility
 
 ```bash
-dotnet tracer/src/Datadog.Trace.Tools.Runner/bin/Release/Tool/net8.0/Datadog.Trace.Tools.Runner.dll \
+dotnet artifacts/bin/Datadog.Trace.Tools.Runner.Tool/release_net8.0/Datadog.Trace.Tools.Runner.dll \
   ducktype-aot verify-compat \
   --compat-matrix /abs/path/Datadog.Trace.DuckType.AotRegistry.MyApp.dll.compat.json \
   --map-file /abs/path/ducktype-aot-map.json \

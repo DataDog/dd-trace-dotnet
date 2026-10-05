@@ -6,6 +6,7 @@
 using System;
 using System.IO;
 using System.Reflection;
+using System.Text;
 using System.Threading;
 using FluentAssertions;
 using Serilog;
@@ -99,11 +100,19 @@ namespace Datadog.Trace.DuckTyping.Tests
         {
             var expected = "Some random string";
 
-            var formatterInstance = new InternalVirtualFormatterImpl(expected);
+            var formatterInstance = new JsonValueFormatterImpl(expected);
 
-            var proxy = (InternalVirtualFormatterBase)formatterInstance.DuckImplement(typeof(InternalVirtualFormatterBase));
-            var actual = proxy.Format(new object());
+            var type = typeof(Datadog.Trace.Vendors.Serilog.Formatting.Json.JsonValueFormatter);
 
+            var proxy2 = formatterInstance.DuckImplement(type);
+
+            var value = new Vendors.Serilog.Events.ScalarValue("original");
+
+            var sb = new StringBuilder();
+            var sw = new StringWriter(sb);
+            ((Datadog.Trace.Vendors.Serilog.Formatting.Json.JsonValueFormatter)proxy2).Format(value, sw);
+
+            var actual = sb.ToString();
             Assert.Equal(expected, actual);
         }
 
@@ -261,32 +270,20 @@ namespace Datadog.Trace.DuckTyping.Tests
         // Types for InternalClassWithVirtualMembersReverseProxyTest
         // ***
 
-        public abstract class InternalVirtualFormatterBase
+        public class JsonValueFormatterImpl
         {
-            public string Format(object value)
+            private readonly string _valueToWrite;
+
+            public JsonValueFormatterImpl(string valueToWrite)
             {
-                return Visit(value);
+                _valueToWrite = valueToWrite;
             }
 
-            protected virtual string Visit(object value)
+            [DuckReverseMethod(ParameterTypeNames = new[] { "System.IO.TextWriter", "Datadog.Trace.Vendors.Serilog.Events.ScalarValue, Datadog.Trace" })]
+            protected bool VisitScalarValue(TextWriter state, object scalar)
             {
-                return value?.ToString() ?? string.Empty;
-            }
-        }
-
-        public class InternalVirtualFormatterImpl
-        {
-            private readonly string _result;
-
-            public InternalVirtualFormatterImpl(string result)
-            {
-                _result = result;
-            }
-
-            [DuckReverseMethod(Name = "Visit")]
-            protected string VisitCore(object value)
-            {
-                return _result;
+                state.Write(_valueToWrite);
+                return true;
             }
         }
 
@@ -460,18 +457,6 @@ namespace Datadog.Trace.DuckTyping.Tests
             [DuckIgnore]
             public void SetBaseInstance(object baseObject)
             {
-                if (baseObject is IBaseClass typedBase)
-                {
-                    _base = typedBase;
-                    return;
-                }
-
-                if (BaseClassAdapter.TryCreate(baseObject, out var adaptedBase))
-                {
-                    _base = adaptedBase;
-                    return;
-                }
-
                 _base = baseObject.DuckCast<IBaseClass>();
             }
 
@@ -491,46 +476,6 @@ namespace Datadog.Trace.DuckTyping.Tests
                 public string ToString();
 
                 public string ToString(string format, IFormatProvider formatProvider);
-            }
-
-            private sealed class BaseClassAdapter : IBaseClass
-            {
-                private readonly object _instance;
-                private readonly MethodInfo _formatToStringMethod;
-
-                private BaseClassAdapter(object instance, MethodInfo formatToStringMethod)
-                {
-                    _instance = instance;
-                    _formatToStringMethod = formatToStringMethod;
-                }
-
-                public static bool TryCreate(object instance, out IBaseClass adapter)
-                {
-                    var toStringWithFormat = instance.GetType().GetMethod(
-                        nameof(ToString),
-                        BindingFlags.Public | BindingFlags.Instance,
-                        binder: null,
-                        new[] { typeof(string), typeof(IFormatProvider) },
-                        modifiers: null);
-                    if (toStringWithFormat is null || toStringWithFormat.ReturnType != typeof(string))
-                    {
-                        adapter = null;
-                        return false;
-                    }
-
-                    adapter = new BaseClassAdapter(instance, toStringWithFormat);
-                    return true;
-                }
-
-                public override string ToString()
-                {
-                    return _instance.ToString();
-                }
-
-                public string ToString(string format, IFormatProvider formatProvider)
-                {
-                    return (string)_formatToStringMethod.Invoke(_instance, new object[] { format, formatProvider });
-                }
             }
         }
 

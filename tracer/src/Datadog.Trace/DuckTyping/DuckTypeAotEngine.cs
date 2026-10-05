@@ -1,4 +1,4 @@
-// <copyright file="DuckTypeAotEngine.cs" company="Datadog">
+﻿// <copyright file="DuckTypeAotEngine.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -215,6 +215,15 @@ namespace Datadog.Trace.DuckTyping
         }
 
         /// <summary>
+        /// Registers a forward AOT mapping failure with a cached exception.
+        /// </summary>
+        /// <param name="proxyDefinitionType">The proxy definition type.</param>
+        /// <param name="targetType">The target type.</param>
+        /// <param name="exceptionFactory">The nonthrowing exception factory.</param>
+        internal static void RegisterProxyFailureFactory(Type proxyDefinitionType, Type targetType, Func<Exception> exceptionFactory)
+            => RegisterFailureFactory(proxyDefinitionType, targetType, exceptionFactory, reverse: false);
+
+        /// <summary>
         /// Registers a forward AOT mapping failure that should rethrow a dynamic-equivalent ducktyping exception.
         /// </summary>
         /// <param name="proxyDefinitionType">The proxy definition type value.</param>
@@ -246,6 +255,15 @@ namespace Datadog.Trace.DuckTyping
         {
             RegisterFailure(proxyDefinitionType, targetType, failureThrower, reverse: false);
         }
+
+        /// <summary>
+        /// Registers a reverse AOT mapping failure with a cached exception.
+        /// </summary>
+        /// <param name="typeToDeriveFrom">The proxy definition type.</param>
+        /// <param name="delegationType">The target type.</param>
+        /// <param name="exceptionFactory">The nonthrowing exception factory.</param>
+        internal static void RegisterReverseProxyFailureFactory(Type typeToDeriveFrom, Type delegationType, Func<Exception> exceptionFactory)
+            => RegisterFailureFactory(typeToDeriveFrom, delegationType, exceptionFactory, reverse: true);
 
         /// <summary>
         /// Registers a reverse AOT mapping failure that should rethrow a dynamic-equivalent ducktyping exception.
@@ -468,7 +486,9 @@ namespace Datadog.Trace.DuckTyping
 
             // Misses are cached too, so unsupported mappings fail deterministically across threads and repeated calls.
             var missCache = reverse ? ReverseMissCache : ForwardMissCache;
-            return missCache.GetOrAdd(key, missingKey => CreateMissingResult(missingKey, reverse));
+            return reverse
+                       ? missCache.GetOrAdd(key, static missingKey => CreateMissingResult(missingKey, reverse: true))
+                       : missCache.GetOrAdd(key, static missingKey => CreateMissingResult(missingKey, reverse: false));
         }
 
         /// <summary>
@@ -585,14 +605,30 @@ namespace Datadog.Trace.DuckTyping
             if (targetType is null) { ThrowHelper.ThrowArgumentNullException(nameof(targetType)); }
             if (failureThrower is null) { ThrowHelper.ThrowArgumentNullException(nameof(failureThrower)); }
 
-            var key = new TypesTuple(proxyDefinitionType, targetType);
             var createTypeResult = new DuckType.CreateTypeResult(proxyDefinitionType, proxyType: null, targetType, activator: null, failureThrower, wrapNonGenericFailureInTargetInvocationException: true);
+            RegisterFailureResult(proxyDefinitionType, targetType, createTypeResult, failureThrower, reverse, enforceRegistryIdentity);
+        }
+
+        private static void RegisterFailureFactory(Type proxyDefinitionType, Type targetType, Func<Exception> exceptionFactory, bool reverse)
+        {
+            if (proxyDefinitionType is null) { ThrowHelper.ThrowArgumentNullException(nameof(proxyDefinitionType)); }
+            if (targetType is null) { ThrowHelper.ThrowArgumentNullException(nameof(targetType)); }
+            if (exceptionFactory is null) { ThrowHelper.ThrowArgumentNullException(nameof(exceptionFactory)); }
+
+            var exception = exceptionFactory() ?? throw new ArgumentException("AOT failure factory returned null.", nameof(exceptionFactory));
+            var result = new DuckType.CreateTypeResult(proxyDefinitionType, proxyType: null, targetType, activator: null, ExceptionDispatchInfo.Capture(exception), wrapNonGenericFailureInTargetInvocationException: true);
+            RegisterFailureResult(proxyDefinitionType, targetType, result, exceptionFactory, reverse, enforceRegistryIdentity: true);
+        }
+
+        private static void RegisterFailureResult(Type proxyDefinitionType, Type targetType, DuckType.CreateTypeResult createTypeResult, Delegate registrySource, bool reverse, bool enforceRegistryIdentity)
+        {
+            var key = new TypesTuple(proxyDefinitionType, targetType);
 
             lock (RegistrationLock)
             {
                 if (enforceRegistryIdentity)
                 {
-                    EnsureSingleRegistryAssemblyPerProcess(failureThrower);
+                    EnsureSingleRegistryAssemblyPerProcess(registrySource);
                 }
 
                 var registry = reverse ? ReverseRegistry : ForwardRegistry;
@@ -682,7 +718,7 @@ namespace Datadog.Trace.DuckTyping
             if (throwerMethod.ReturnType != typeof(void) || throwerMethod.GetParameters().Length != 0)
             {
                 throw new ArgumentException(
-                    $"AOT duck typing failure thrower method '{throwerMethod}' must declare no parameters and return void.",
+                    $"AOT duck typing failure thrower method '{throwerMethod}' must have signature 'void Method()'.",
                     nameof(throwerMethodHandle));
             }
 
@@ -693,7 +729,7 @@ namespace Datadog.Trace.DuckTyping
             catch (Exception ex)
             {
                 throw new ArgumentException(
-                    $"AOT duck typing failure thrower method '{throwerMethod}' could not be converted to delegate '{typeof(Action)}'.",
+                    $"AOT duck typing failure thrower method '{throwerMethod}' could not be converted to Action.",
                     nameof(throwerMethodHandle),
                     ex);
             }
@@ -707,7 +743,7 @@ namespace Datadog.Trace.DuckTyping
                 throw new InvalidOperationException("Unable to resolve sentinel property for DuckTypePropertyCantBeWrittenException.");
             }
 
-            DuckTypePropertyCantBeWrittenException.Throw(sentinelProperty);
+            throw DuckTypePropertyCantBeWrittenException.Create(sentinelProperty);
         }
 
         private static void ThrowFieldReadonlySentinelFailure()
@@ -718,7 +754,7 @@ namespace Datadog.Trace.DuckTyping
                 throw new InvalidOperationException("Unable to resolve sentinel field for DuckTypeFieldIsReadonlyException.");
             }
 
-            DuckTypeFieldIsReadonlyException.Throw(sentinelField);
+            throw DuckTypeFieldIsReadonlyException.Create(sentinelField);
         }
 
         /// <summary>

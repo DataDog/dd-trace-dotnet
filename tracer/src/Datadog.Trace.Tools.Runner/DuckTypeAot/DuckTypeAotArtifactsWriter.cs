@@ -503,13 +503,14 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// <remarks>Emits or composes IL for generated duck-typing proxy operations.</remarks>
         private static void WritePropsFile(string path, DuckTypeAotArtifactPaths artifactPaths, DuckTypeAotRegistryAssemblyInfo registryAssemblyInfo)
         {
-            var outputAssemblyPath = EscapeMsBuildPath(artifactPaths.OutputAssemblyPath);
-            var trimmerDescriptorPath = EscapeMsBuildPath(artifactPaths.TrimmerDescriptorPath);
+            var outputAssemblyPath = EscapeXml(EscapeMsBuildPath(artifactPaths.OutputAssemblyPath));
+            var trimmerDescriptorPath = EscapeXml(EscapeMsBuildPath(artifactPaths.TrimmerDescriptorPath));
+            var assemblyName = EscapeXml(EscapeMsBuildPath(registryAssemblyInfo.AssemblyName));
 
             var propsContent =
                 "<Project>" + Environment.NewLine +
                 "  <ItemGroup>" + Environment.NewLine +
-                $"    <Reference Include=\"{registryAssemblyInfo.AssemblyName}\">" + Environment.NewLine +
+                $"    <Reference Include=\"{assemblyName}\">" + Environment.NewLine +
                 $"      <HintPath>{outputAssemblyPath}</HintPath>" + Environment.NewLine +
                 "      <Private>true</Private>" + Environment.NewLine +
                 "    </Reference>" + Environment.NewLine +
@@ -530,7 +531,18 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// <remarks>Emits or composes IL for generated duck-typing proxy operations.</remarks>
         private static string EscapeMsBuildPath(string value)
         {
-            return value.Replace("$", "$$");
+            // MSBuild unescapes these after evaluating properties and item expressions.
+            // Escape '%' first so literal escape sequences are preserved too.
+            return value
+                .Replace("%", "%25")
+                .Replace("$", "%24")
+                .Replace("@", "%40")
+                .Replace(";", "%3B")
+                .Replace("'", "%27")
+                .Replace("(", "%28")
+                .Replace(")", "%29")
+                .Replace("?", "%3F")
+                .Replace("*", "%2A");
         }
 
         /// <summary>

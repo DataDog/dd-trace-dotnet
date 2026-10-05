@@ -5,6 +5,7 @@ using System.Linq;
 using System.Net.Http;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -1586,12 +1587,12 @@ partial class Build
             var frameworkPreferences = BuildDuckTypeAotFrameworkPreferences();
             var runnerToolAssemblyPath = ResolveBuiltAssemblyPath(
                 runnerToolProject,
-                runnerToolProject.Directory / "bin" / BuildConfiguration / "Tool",
+                "Datadog.Trace.Tools.Runner.Tool",
                 "Datadog.Trace.Tools.Runner.dll",
                 frameworkPreferences);
             var duckTypingTestsAssemblyPath = ResolveBuiltAssemblyPath(
                 duckTypingTestsProject,
-                duckTypingTestsProject.Directory / "bin" / BuildConfiguration,
+                "Datadog.Trace.DuckTyping.Tests",
                 "Datadog.Trace.DuckTyping.Tests.dll",
                 frameworkPreferences);
 
@@ -3179,35 +3180,23 @@ partial class Build
         }
     }
 
-    private static AbsolutePath ResolveBuiltAssemblyPath(
+    private AbsolutePath ResolveBuiltAssemblyPath(
         Project project,
-        AbsolutePath frameworkOutputBaseDirectory,
+        string artifactsProjectName,
         string assemblyFileName,
         IReadOnlyList<string> preferredFrameworks)
     {
         foreach (var framework in preferredFrameworks)
         {
-            var candidate = frameworkOutputBaseDirectory / framework / assemblyFileName;
+            var candidate = GetProjectBinDirectory(artifactsProjectName, framework) / assemblyFileName;
             if (File.Exists(candidate))
             {
                 return candidate;
             }
         }
 
-        if (Directory.Exists(frameworkOutputBaseDirectory))
-        {
-            foreach (var frameworkDirectory in Directory.EnumerateDirectories(frameworkOutputBaseDirectory))
-            {
-                var candidate = (AbsolutePath)Path.Combine(frameworkDirectory, assemblyFileName);
-                if (File.Exists(candidate))
-                {
-                    return candidate;
-                }
-            }
-        }
-
         throw new Exception(
-            $"Could not find built assembly '{assemblyFileName}' for project '{project.Name}' under '{frameworkOutputBaseDirectory}'. " +
+            $"Could not find built assembly '{assemblyFileName}' for project '{project.Name}' under '{ArtifactsBinDirectory / artifactsProjectName}'. " +
             $"Preferred frameworks searched: {string.Join(", ", preferredFrameworks)}.");
     }
 

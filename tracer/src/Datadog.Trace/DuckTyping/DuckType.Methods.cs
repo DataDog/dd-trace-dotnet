@@ -7,6 +7,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
@@ -447,7 +448,7 @@ namespace Datadog.Trace.DuckTyping
                 proxyMethodDuckAttribute is DuckAttribute { GenericParameterTypeNames: { Length: > 0 } }
              && !proxyMethod.IsGenericMethodDefinition;
 
-            MethodInfo? targetMethod;
+            MethodInfo? targetMethod = null;
 
             // Check if the duck attribute has the parameter type names to use for selecting the target method
             // If any of the parameter types can't be loaded (happens if it's a generic parameter for example)
@@ -472,8 +473,12 @@ namespace Datadog.Trace.DuckTyping
                     // all types were loaded
                     foreach (var methodName in proxyMethodDuckAttributeNames)
                     {
-                        selectedMethod = targetMethod;
-                        return null;
+                        targetMethod = targetType.GetMethod(methodName, proxyMethodDuckAttribute.BindingFlags, null, parameterTypes, null);
+                        if (targetMethod is not null)
+                        {
+                            selectedMethod = targetMethod;
+                            return null;
+                        }
                     }
                 }
             }
@@ -483,8 +488,12 @@ namespace Datadog.Trace.DuckTyping
             // First we try with the current proxy parameter types
             foreach (var methodName in proxyMethodDuckAttributeNames)
             {
-                selectedMethod = targetMethod;
-                return null;
+                targetMethod = targetType.GetMethod(methodName, proxyMethodDuckAttribute.BindingFlags, null, proxyMethodParametersTypes, null);
+                if (targetMethod is not null)
+                {
+                    selectedMethod = targetMethod;
+                    return null;
+                }
             }
 
             // If the method wasn't found could be because a DuckType interface is being use in the parameters or in the return value.
@@ -701,269 +710,39 @@ namespace Datadog.Trace.DuckTyping
             return null;
         }
 
-        private static MethodInfo? SelectTargetMethod<T>(
-            Type targetType,
-            MethodInfo proxyMethod,
-            ParameterInfo[] proxyMethodParameters,
-            Type[] proxyMethodParametersTypes,
-            IEnumerable<MethodInfo> allTargetMethods)
-            where T : DuckAttributeBase, new()
+        private static bool IsCandidateMethodNameMatch(MethodInfo candidateMethod, IEnumerable<string> methodNames, string? explicitInterfaceTypeName)
         {
-            T proxyMethodDuckAttribute = proxyMethod.GetCustomAttribute<T>(true) ?? new T();
-            var proxyMethodDuckAttributeName = proxyMethodDuckAttribute.Name ?? proxyMethod.Name;
-            var proxyMethodDuckAttributeNames = GetDuckAttributeCandidateNames(proxyMethodDuckAttributeName).ToArray();
-
-            MethodInfo? targetMethod = null;
-
-            // Check if the duck attribute has the parameter type names to use for selecting the target method
-            // If any of the parameter types can't be loaded (happens if it's a generic parameter for example)
-            // then carry on searching.
-            var proxyMethodDuckAttributeParameterTypeNames = proxyMethodDuckAttribute.ParameterTypeNames;
-            if (proxyMethodDuckAttributeParameterTypeNames is not null)
+            foreach (var methodName in methodNames)
             {
-                // Duck reverse attributes must never have a mismatch between the number of proxy method parameters
-                // and the number of parameters specified in the [DuckReverseMethod] attribute
-                if (typeof(T) == typeof(DuckReverseMethodAttribute)
-                        && (proxyMethodParameters.Length != proxyMethodDuckAttributeParameterTypeNames.Length))
+                string name = methodName;
+                bool useRelaxedNameComparison = false;
+
+                // If there is an explicit interface type name we add it to the name
+                if (!string.IsNullOrEmpty(explicitInterfaceTypeName))
                 {
-                    DuckTypeReverseAttributeParameterNamesMismatchException.Throw(proxyMethod);
+                    string interfaceTypeName = explicitInterfaceTypeName!;
+
+                    if (interfaceTypeName == "*")
+                    {
+                        // If a wildcard is use, then we relax the name comparison so it can be an implicit or explicity implementation
+                        useRelaxedNameComparison = true;
+                    }
+                    else
+                    {
+                        // Nested types are separated with a "." on explicit implementation.
+                        interfaceTypeName = interfaceTypeName.Replace("+", ".");
+
+                        name = interfaceTypeName + "." + name;
+                    }
                 }
 
-                Type[] parameterTypes = proxyMethodDuckAttributeParameterTypeNames
-                                                                .Select(pName => GetTypeFromPartialName(pName))
-                                                                .Where(type => type is not null)
-                                                                .ToArray()!;
-                if (parameterTypes.Length == proxyMethodDuckAttributeParameterTypeNames.Length)
+                if (candidateMethod.Name == name || (useRelaxedNameComparison && candidateMethod.Name.EndsWith("." + name)))
                 {
-                    // all types were loaded
-                    foreach (var methodName in proxyMethodDuckAttributeNames)
-                    {
-                        targetMethod = targetType.GetMethod(methodName, proxyMethodDuckAttribute.BindingFlags, null, parameterTypes, null);
-                        if (targetMethod is not null)
-                        {
-                            return targetMethod;
-                        }
-                    }
+                    return true;
                 }
             }
 
-            // If the duck attribute doesn't specify the parameters to use, we do the best effor to find a target method without any ambiguity.
-
-            // First we try with the current proxy parameter types
-            foreach (var methodName in proxyMethodDuckAttributeNames)
-            {
-                targetMethod = targetType.GetMethod(methodName, proxyMethodDuckAttribute.BindingFlags, null, proxyMethodParametersTypes, null);
-                if (targetMethod is not null)
-                {
-                    return targetMethod;
-                }
-            }
-
-            // If the method wasn't found could be because a DuckType interface is being use in the parameters or in the return value.
-            // Also this can happen if the proxy parameters type uses a base object (ex: System.Object) instead the type.
-            // In this case we try to find a method that we can match, in case of ambiguity (> 1 method found) we throw an exception.
-
-            foreach (MethodInfo candidateMethod in allTargetMethods)
-            {
-                // We omit target methods with different names.
-                if (!IsCandidateMethodNameMatch(candidateMethod, proxyMethodDuckAttributeNames, proxyMethodDuckAttribute.ExplicitInterfaceTypeName))
-                {
-                    continue;
-                }
-
-                // Check if the candidate method is a reverse mapped method
-                ParameterInfo[] candidateParameters = candidateMethod.GetParameters();
-                if (proxyMethodDuckAttributeParameterTypeNames is not null)
-                {
-                    string[] arguments = proxyMethodDuckAttributeParameterTypeNames;
-                    if (arguments.Length != candidateParameters.Length)
-                    {
-                        continue;
-                    }
-
-                    bool match = true;
-                    for (var i = 0; i < arguments.Length; i++)
-                    {
-                        var candidateParameter = candidateParameters[i].ParameterType;
-                        if (arguments[i] != candidateParameter.FullName &&
-                            arguments[i] != candidateParameter.Name &&
-                            arguments[i] != $"{candidateParameter.FullName}, {candidateParameter.Assembly.GetName().Name}")
-                        {
-                            match = false;
-                            break;
-                        }
-                    }
-
-                    if (match)
-                    {
-                        return candidateMethod;
-                    }
-                }
-
-                // The proxy must have the same or less parameters than the candidate ( less is due to possible optional parameters in the candidate ).
-                if (proxyMethodParameters.Length > candidateParameters.Length)
-                {
-                    continue;
-                }
-
-                // We compare the target method candidate parameter by parameter.
-                bool skip = false;
-                for (int i = 0; i < proxyMethodParametersTypes.Length; i++)
-                {
-                    ParameterInfo proxyParam = proxyMethodParameters[i];
-                    ParameterInfo candidateParam = candidateParameters[i];
-
-                    Type proxyParamType = proxyParam.ParameterType;
-                    Type candidateParamType = candidateParam.ParameterType;
-
-                    // both needs to have the same parameter direction
-                    if (proxyParam.IsOut != candidateParam.IsOut)
-                    {
-                        skip = true;
-                        break;
-                    }
-
-                    // Both need to have the same element type or byref type signature.
-                    if (proxyParamType.IsByRef != candidateParamType.IsByRef)
-                    {
-                        skip = true;
-                        break;
-                    }
-
-                    // If the parameters are by ref we unwrap them to have the actual type
-                    proxyParamType = proxyParamType.IsByRef ? proxyParamType.GetElementType()! : proxyParamType;
-                    candidateParamType = candidateParamType.IsByRef ? candidateParamType.GetElementType()! : candidateParamType;
-                    if (!proxyParam.ParameterType.IsByRef)
-                    {
-                        TryUnwrapValueWithType(proxyParamType, out proxyParamType);
-                    }
-
-                    // We can't compare generic parameters
-                    if (candidateParamType.IsGenericParameter)
-                    {
-                        continue;
-                    }
-
-                    // If the proxy parameter type is a value type (no ducktyping neither a base class) both types must match
-                    if (proxyParamType.IsValueType && !proxyParamType.IsEnum && proxyParamType != candidateParamType)
-                    {
-                        skip = true;
-                        break;
-                    }
-
-                    // If the proxy parameter is a class and not is an abstract class (only interface and abstract class can be used as ducktype base type)
-                    if (proxyParamType.IsClass && !proxyParamType.IsAbstract && proxyParamType != typeof(object))
-                    {
-                        if (!candidateParamType.IsAssignableFrom(proxyParamType))
-                        {
-                            // Check if the parameter type contains generic types before skipping
-                            if (!candidateParamType.IsGenericType || !proxyParamType.IsGenericType)
-                            {
-                                skip = true;
-                                break;
-                            }
-
-                            // if the string representation of the generic parameter types is not the same we need to analyze the
-                            // GenericTypeArguments array before skipping it
-                            if (candidateParamType.ToString() != proxyParamType.ToString())
-                            {
-                                if (candidateParamType.GenericTypeArguments.Length != proxyParamType.GenericTypeArguments.Length)
-                                {
-                                    skip = true;
-                                    break;
-                                }
-
-                                for (int paramIndex = 0; paramIndex < candidateParamType.GenericTypeArguments.Length; paramIndex++)
-                                {
-                                    Type candidateParamTypeGenericType = candidateParamType.GenericTypeArguments[paramIndex];
-                                    Type proxyParamTypeGenericType = proxyParamType.GenericTypeArguments[paramIndex];
-
-                                    // Both need to have the same element type or byref type signature.
-                                    if (proxyParamTypeGenericType.IsByRef != candidateParamTypeGenericType.IsByRef)
-                                    {
-                                        skip = true;
-                                        break;
-                                    }
-
-                                    // If the parameters are by ref we unwrap them to have the actual type
-                                    proxyParamTypeGenericType = proxyParamTypeGenericType.IsByRef ? proxyParamTypeGenericType.GetElementType()! : proxyParamTypeGenericType;
-                                    candidateParamTypeGenericType = candidateParamTypeGenericType.IsByRef ? candidateParamTypeGenericType.GetElementType()! : candidateParamTypeGenericType;
-
-                                    // We can't compare generic parameters
-                                    if (candidateParamTypeGenericType.IsGenericParameter)
-                                    {
-                                        continue;
-                                    }
-
-                                    // If the proxy parameter type is a value type (no ducktyping neither a base class) both types must match
-                                    if (proxyParamTypeGenericType.IsValueType && !proxyParamTypeGenericType.IsEnum && proxyParamTypeGenericType != candidateParamTypeGenericType)
-                                    {
-                                        skip = true;
-                                        break;
-                                    }
-
-                                    // If the proxy parameter is a class and not is an abstract class (only interface and abstract class can be used as ducktype base type)
-                                    if (proxyParamTypeGenericType.IsClass && !proxyParamTypeGenericType.IsAbstract && proxyParamTypeGenericType != typeof(object))
-                                    {
-                                        if (!candidateParamTypeGenericType.IsAssignableFrom(proxyParamTypeGenericType))
-                                        {
-                                            skip = true;
-                                            break;
-                                        }
-                                    }
-                                }
-
-                                if (skip)
-                                {
-                                    break;
-                                }
-                            }
-                        }
-                    }
-                }
-
-                if (skip)
-                {
-                    continue;
-                }
-
-                // The target method may have optional parameters with default values so we have to skip those
-                for (int i = proxyMethodParametersTypes.Length; i < candidateParameters.Length; i++)
-                {
-                    if (!candidateParameters[i].IsOptional)
-                    {
-                        skip = true;
-                        break;
-                    }
-                }
-
-                if (skip)
-                {
-                    continue;
-                }
-
-                if (targetMethod is null)
-                {
-                    targetMethod = candidateMethod;
-                }
-                else
-                {
-                    DuckTypeTargetMethodAmbiguousMatchException.Throw(proxyMethod, targetMethod, candidateMethod);
-                }
-            }
-
-            return targetMethod;
-        }
-
-        private static DuckTypeInvalidTypeConversionException? WriteSafeTypeConversion(this LazyILGenerator il, Type actualType, Type expectedType)
-        {
-            // If both types are generics, we expect that the generic parameter are the same type (passthrough)
-            if (actualType.IsGenericParameter && expectedType.IsGenericParameter)
-            {
-                return null;
-            }
-
-            return il.WriteTypeConversion(actualType, expectedType);
+            return false;
         }
 
         private static DuckTypeException? ValidateGenericMethodSignature(
@@ -1239,6 +1018,11 @@ namespace Datadog.Trace.DuckTyping
                             // The target method parameter is not optional.
                             return DuckTypeProxyMethodParameterIsMissingException.Create(outerMethod, innerParamInfo);
                         }
+
+                        if (AddIlToLoadOptionalArgument(il, innerParamInfo) is { } optionalArgumentError)
+                        {
+                            return optionalArgumentError;
+                        }
                     }
                     else
                     {
@@ -1407,6 +1191,81 @@ namespace Datadog.Trace.DuckTyping
                 }
 
                 return null;
+            }
+
+            internal static DuckTypeException? AddIlToLoadOptionalArgument(LazyILGenerator il, ParameterInfo parameter)
+            {
+                var parameterType = parameter.ParameterType;
+                var value = parameter.DefaultValue;
+                if (value is null || value == Missing.Value || value == DBNull.Value)
+                {
+                    if (parameterType.IsValueType || parameterType.IsGenericParameter)
+                    {
+                        var local = il.DeclareLocal(parameterType);
+                        var localIndex = local?.LocalIndex ?? 0;
+                        il.Emit(OpCodes.Ldloca, localIndex);
+                        il.Emit(OpCodes.Initobj, parameterType);
+                        il.WriteLoadLocal(localIndex);
+                    }
+                    else
+                    {
+                        il.Emit(OpCodes.Ldnull);
+                    }
+
+                    return null;
+                }
+
+                var valueType = value.GetType();
+                if (valueType.IsEnum)
+                {
+                    valueType = Enum.GetUnderlyingType(valueType);
+                    value = Convert.ChangeType(value, valueType, CultureInfo.InvariantCulture);
+                }
+
+                switch (value)
+                {
+                    case string text:
+                        il.Emit(OpCodes.Ldstr, text);
+                        break;
+                    case bool flag:
+                        il.WriteInt(flag ? 1 : 0);
+                        break;
+                    case char or byte or sbyte or short or ushort or int:
+                        il.WriteInt(Convert.ToInt32(value, CultureInfo.InvariantCulture));
+                        break;
+                    case uint number:
+                        il.WriteInt(unchecked((int)number));
+                        break;
+                    case long number:
+                        il.Emit(OpCodes.Ldc_I8, number);
+                        break;
+                    case ulong number:
+                        il.Emit(OpCodes.Ldc_I8, unchecked((long)number));
+                        break;
+                    case float number:
+                        il.Emit(OpCodes.Ldc_R4, number);
+                        break;
+                    case double number:
+                        il.Emit(OpCodes.Ldc_R8, number);
+                        break;
+                    case decimal number:
+                        var bits = decimal.GetBits(number);
+                        il.WriteInt(bits[0]);
+                        il.WriteInt(bits[1]);
+                        il.WriteInt(bits[2]);
+                        il.WriteInt((bits[3] & int.MinValue) != 0 ? 1 : 0);
+                        il.WriteInt((bits[3] >> 16) & 0xff);
+                        il.Emit(OpCodes.Newobj, typeof(decimal).GetConstructor([typeof(int), typeof(int), typeof(int), typeof(bool), typeof(byte)])!);
+                        break;
+                    case DateTime dateTime:
+                        il.Emit(OpCodes.Ldc_I8, dateTime.Ticks);
+                        il.Emit(OpCodes.Newobj, typeof(DateTime).GetConstructor([typeof(long)])!);
+                        break;
+                    default:
+                        return DuckTypeException.Create($"Unsupported optional argument value for '{parameter.Name}'.");
+                }
+
+                return il.WriteSafeTypeConversion(valueType, parameterType);
             }
 
             internal static MethodInfo AddIlForDirectMethodCall(

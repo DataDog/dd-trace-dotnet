@@ -13,6 +13,7 @@ using System.Linq;
 using System.Threading;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Util;
+using Datadog.Trace.Util.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.DuckTyping
@@ -95,6 +96,15 @@ namespace Datadog.Trace.DuckTyping
                 return;
             }
 
+            // A generated class proxy is also a target for forward duck casts. Preserve its
+            // stable base contract so generation can register the corresponding AOT proxy type.
+            if (!reverse && targetType.Assembly.IsDynamic &&
+                typeof(IDuckType).IsAssignableFrom(targetType) &&
+                targetType.BaseType is { } baseType && baseType != typeof(object) && baseType != typeof(ValueType))
+            {
+                Record(proxyType, baseType, reverse: false);
+            }
+
             if ((Interlocked.Increment(ref _recordsSinceLastFlush) % 256) == 0)
             {
                 Flush();
@@ -115,9 +125,9 @@ namespace Datadog.Trace.DuckTyping
         }
 
         /// <summary>
-        /// Executes flush.
+        /// Persists recorded mappings before a controlled shutdown.
         /// </summary>
-        private static void Flush()
+        internal static void Flush()
         {
             try
             {
@@ -148,7 +158,7 @@ namespace Datadog.Trace.DuckTyping
                                   .ToList()
                     };
 
-                    var json = JsonConvert.SerializeObject(document, Formatting.Indented);
+                    var json = JsonHelper.SerializeObject(document, new JsonSerializerSettings { Formatting = Formatting.Indented });
                     var temporaryOutputPath = OutputPath + ".tmp";
                     File.WriteAllText(temporaryOutputPath, json);
                     File.Copy(temporaryOutputPath, OutputPath, overwrite: true);

@@ -14,8 +14,24 @@ using Xunit;
 
 namespace Datadog.Trace.Tools.Runner.Tests;
 
+[Collection(nameof(DuckTypeAotProcessorConsoleCollection))]
 public class DuckTypeAotMultiTargetContractTests
 {
+    [Fact]
+    public void DiscoveredReverseTargetsShouldAlsoWorkDynamically()
+    {
+        DuckType.ResetRuntimeModeForTests();
+        try
+        {
+            ((TestContracts.IMultiReverseProxyContract)DuckType.CreateReverse(typeof(TestContracts.IMultiReverseProxyContract), new TestContracts.MultiReverseProxyTargetA())).Sum(41).Should().Be(42);
+            ((TestContracts.IMultiReverseProxyContract)DuckType.CreateReverse(typeof(TestContracts.IMultiReverseProxyContract), new TestContracts.MultiReverseProxyTargetB())).Sum(40).Should().Be(42);
+        }
+        finally
+        {
+            DuckType.ResetRuntimeModeForTests();
+        }
+    }
+
     [Fact]
     public void AttributeDiscoveryShouldSupportForwardReverseAndCopyMultiTargetMappings()
     {
@@ -64,7 +80,6 @@ public class DuckTypeAotMultiTargetContractTests
         [DuckReverse("Datadog.Trace.Tools.Runner.Tests.DuckTypeAotMultiTargetContractTests+TestContracts+MultiReverseProxyTargetB", "Datadog.Trace.Tools.Runner.Tests")]
         internal interface IMultiReverseProxyContract
         {
-            [DuckReverseMethod]
             int Sum(int value);
         }
 
@@ -96,11 +111,13 @@ public class DuckTypeAotMultiTargetContractTests
 
         internal class MultiReverseProxyTargetA
         {
+            [DuckReverseMethod]
             public int Sum(int value) => value + 1;
         }
 
         internal class MultiReverseProxyTargetB
         {
+            [DuckReverseMethod]
             public int Sum(int value) => value + 2;
         }
 

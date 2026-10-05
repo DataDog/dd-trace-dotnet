@@ -449,6 +449,59 @@ namespace Datadog.Trace.DuckTyping.Tests
             DuckType.CreateCache<ISharedForwardReverseProxy>.Create(target)!.Value.Should().Be("forward:cache");
         }
 
+#if NETCOREAPP
+        [Theory]
+        [InlineData(false, false, false)]
+        [InlineData(false, true, false)]
+        [InlineData(true, false, false)]
+        [InlineData(true, true, false)]
+        [InlineData(false, false, true)]
+        [InlineData(false, true, true)]
+        [InlineData(true, false, true)]
+        [InlineData(true, true, true)]
+        public void WarmMultiTargetCacheLookupsShouldNotAllocate(bool reverse, bool generic, bool aot)
+        {
+            var firstTarget = typeof(SharedForwardReverseTarget);
+            var secondTarget = typeof(SecondSharedForwardReverseTarget);
+            foreach (var targetType in aot ? new[] { firstTarget, secondTarget } : Array.Empty<Type>())
+            {
+                if (reverse)
+                {
+                    DuckType.RegisterAotReverseProxy(
+                        typeof(ISharedForwardReverseProxy),
+                        targetType,
+                        typeof(SharedReverseGeneratedProxy),
+                        instance => new SharedReverseGeneratedProxy((SharedForwardReverseTarget)instance!));
+                }
+                else
+                {
+                    DuckType.RegisterAotProxy(
+                        typeof(ISharedForwardReverseProxy),
+                        targetType,
+                        typeof(SharedForwardGeneratedProxy),
+                        instance => new SharedForwardGeneratedProxy((SharedForwardReverseTarget)instance!));
+                }
+            }
+
+            for (var i = 0; i < 10_000; i++)
+            {
+                Lookup((i & 1) == 0 ? firstTarget : secondTarget).CanCreate().Should().BeTrue();
+            }
+
+            var allocatedBefore = GC.GetAllocatedBytesForCurrentThread();
+            for (var i = 0; i < 10_000; i++)
+            {
+                _ = Lookup((i & 1) == 0 ? firstTarget : secondTarget);
+            }
+
+            (GC.GetAllocatedBytesForCurrentThread() - allocatedBefore).Should().Be(0);
+
+            DuckType.CreateTypeResult Lookup(Type targetType) => generic
+                ? reverse ? DuckType.CreateCache<ISharedForwardReverseProxy>.GetReverseProxy(targetType) : DuckType.CreateCache<ISharedForwardReverseProxy>.GetProxy(targetType)
+                : reverse ? DuckType.GetOrCreateReverseProxyType(typeof(ISharedForwardReverseProxy), targetType) : DuckType.GetOrCreateProxyType(typeof(ISharedForwardReverseProxy), targetType);
+        }
+#endif
+
         [Fact]
         public void RegisterForwardProxyUsingMethodHandleWithInvalidSignatureThrows()
         {
@@ -1131,7 +1184,16 @@ namespace Datadog.Trace.DuckTyping.Tests
                 Value = value;
             }
 
+            [DuckReverseMethod]
             public string Value { get; }
+        }
+
+        private class SecondSharedForwardReverseTarget : SharedForwardReverseTarget
+        {
+            public SecondSharedForwardReverseTarget(string value)
+                : base(value)
+            {
+            }
         }
 
         private class SharedForwardGeneratedProxy : ISharedForwardReverseProxy

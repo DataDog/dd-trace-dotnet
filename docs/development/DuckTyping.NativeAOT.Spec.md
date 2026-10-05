@@ -63,6 +63,8 @@ Mapping entry fields:
 
 Open generic proxy/target rules are accepted as map-file input only when generation can expand them into closed mappings from matching closed `--generic-instantiations` roots. Generated registries and compatibility artifacts contain closed mappings.
 
+`verify-compat` expands the same open map rules using the closed roots recorded in `--manifest`. When verifying without a manifest, pass the same `--generic-instantiations` file used for generation. Every expanded closed mapping must be present in the compatibility matrix.
+
 Example:
 
 ```json
@@ -131,8 +133,12 @@ The generated assembly must contain:
 7. Activator pair per mapping:
    1. typed activator (`CreateProxy_XXXX(<targetType>)`).
    2. object bridge activator (`ActivateProxy_XXXX(object)`).
-8. Generated failure throwers registered through direct `Action` delegates on `DuckType`.
+8. Generated nonthrowing exception factories registered through direct `Func<Exception>` delegates on `DuckType`, without reflective method binding. Registration caches the exception through `ExceptionDispatchInfo`; throwing uses the same cached-exception and pre-.NET 6 cloning rules as dynamic DuckTyping. Legacy `Action` failure registrations remain supported.
 9. Optional additional runtime registrations for compatible concrete alias types discovered during generation. These aliases are registry-internal and do not alter the canonical map contract.
+10. Inherited generic target methods, properties, and fields use the generic arguments of their declaring type, including configured parameter type names and omitted optional arguments.
+11. Reverse methods require `[DuckReverseMethod]`, including an attribute inherited by a virtual override. Unannotated concrete methods retain their base implementation; unimplemented abstract methods register the corresponding dynamic failure.
+12. A forward mapping to an ancestor of a generated reverse proxy may provide a generated target alias when its member bindings are equivalent. Runtime lookup remains exact.
+13. Reverse parameter selection uses the implementation-to-contract direction. Reverse returns preserve the original object when an implementation returns a forward proxy; adapted `ref`/`out` values are stored using the destination type.
 
 Consumers may still call `DuckTypeAotRegistryBootstrap.Initialize()` explicitly for deterministic startup.
 
@@ -183,6 +189,7 @@ Optional contract inputs:
 2. `--compat-report`
 3. `--mapping-catalog`
 4. `--scenario-inventory`
+5. `--generic-instantiations` (closed roots; defaults to manifest roots)
 
 Failure mode:
 
@@ -204,6 +211,7 @@ At runtime:
 3. One generated registry assembly identity is allowed per process.
 4. Lookup is exact-match only against the emitted registry. Compatibility widening must be represented as explicit generated registrations.
 5. Missing mappings result in explicit missing-registration failures rather than dynamic emit fallback.
+   Registered failures preserve the dynamic exception type and message. `CanCreate()` reads the cached failure without throwing.
 6. Boxing/cast operations at object/interface boundaries are expected and parity-valid:
    1. bridge activators can use `castclass`/`unbox.any` from `object` input.
    2. value-type proxy returned through interface/object contracts can require boxing.
