@@ -15,6 +15,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
+using Datadog.Trace.Agent.StreamFactories;
 using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.FeatureFlags.FlagEvaluation;
@@ -191,36 +192,34 @@ public class FlagEvaluationAgentSenderTests(ITestOutputHelper output)
     [InlineData(true)]
     public async Task SlowTcpAgentTimesOutWithoutReplayingBatch(bool useLegacyTransport)
     {
-        using var release = new ManualResetEventSlim();
         using var agent = MockTracerAgent.Create(output);
-        var requests = 0;
-        agent.EventPlatformProxyPayloadReceived += (_, _) =>
-        {
-            Interlocked.Increment(ref requests);
-            release.Wait(TimeSpan.FromSeconds(20));
-        };
         var agentUri = new Uri($"http://127.0.0.1:{agent.Port}");
         // Modern runtimes honor HttpWebRequest.Timeout, unlike .NET Framework's async path.
         // Leave that property unset to verify the sender independently bounds legacy requests.
         using var sender = useLegacyTransport
                                ? new FlagEvaluationAgentSender(new ApiWebRequestFactory(agentUri, FlagEvaluationAgentHeaderHelper.Instance.DefaultHeaders))
                                : new FlagEvaluationAgentSender(CreateSettings(agentUri.ToString()).Manager.InitialExporterSettings);
-        var elapsed = Stopwatch.StartNew();
-        var send = sender.SendCompressedAsync(Compress("{}"));
-        try
-        {
-            (await Task.WhenAny(send, Task.Delay(TimeSpan.FromSeconds(15)))).Should().BeSameAs(send);
-            await send;
-            elapsed.Elapsed.Should().BeGreaterThan(TimeSpan.FromSeconds(4)).And.BeLessThan(TimeSpan.FromSeconds(15));
-            Volatile.Read(ref requests).Should().Be(1);
-        }
-        finally
-        {
-            release.Set();
-        }
+        await AssertStalledAgentSendTimesOut(agent, sender);
     }
 
 #if NETCOREAPP3_1_OR_GREATER
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task SlowUnixSocketAgentTimesOutWithoutReplayingBatch(bool useLegacyTransport)
+    {
+        using var agent = MockTracerAgent.Create(output, new UnixDomainSocketConfig(Path.Combine(Path.GetTempPath(), Path.GetRandomFileName()), null));
+        // Exercise the stream transport on modern runtimes too: older .NET uses it for UDS,
+        // and Windows named pipes use the same request implementation.
+        using var sender = useLegacyTransport
+                               ? new FlagEvaluationAgentSender(new HttpStreamRequestFactory(
+                                   new UnixDomainSocketStreamFactory(agent.TracesUdsPath),
+                                   new DatadogHttpClient(FlagEvaluationAgentHeaderHelper.Instance),
+                                   new Uri("http://localhost")))
+                               : new FlagEvaluationAgentSender(CreateSettings("unix://" + agent.TracesUdsPath).Manager.InitialExporterSettings);
+        await AssertStalledAgentSendTimesOut(agent, sender);
+    }
+
     [Fact]
     public async Task ConfiguredUnixSocketReceivesAgentPayload()
     {
@@ -236,6 +235,20 @@ public class FlagEvaluationAgentSenderTests(ITestOutputHelper output)
         received[0].BodyInJson.Should().Be("{}");
     }
 #endif
+
+    [SkippableFact]
+    [Trait("Category", "LinuxUnsupported")]
+    public async Task SlowNamedPipeAgentTimesOutWithoutReplayingBatch()
+    {
+        SkipOn.AllExcept(SkipOn.PlatformValue.Windows);
+        using var agent = MockTracerAgent.Create(output, new WindowsPipesConfig($"trace-{Guid.NewGuid()}", null));
+        var settings = new TracerSettings(new NameValueConfigurationSource(new NameValueCollection
+        {
+            { "DD_TRACE_PIPE_NAME", agent.TracesWindowsPipeName },
+        }));
+        using var sender = new FlagEvaluationAgentSender(settings.Manager.InitialExporterSettings);
+        await AssertStalledAgentSendTimesOut(agent, sender);
+    }
 
     [SkippableFact]
     [Trait("Category", "LinuxUnsupported")]
@@ -256,6 +269,45 @@ public class FlagEvaluationAgentSenderTests(ITestOutputHelper output)
         received[0].Headers["DD-EVP-ORIGIN"].Should().Be("dd-trace-dotnet");
         received[0].Headers["DD-EVP-ORIGIN-VERSION"].Should().Be(TracerConstants.ThreePartVersion);
         received[0].BodyInJson.Should().Be("{}");
+    }
+
+    private static async Task AssertStalledAgentSendTimesOut(MockTracerAgent agent, FlagEvaluationAgentSender sender)
+    {
+        using var release = new ManualResetEventSlim();
+        var received = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var handlerExited = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var requests = 0;
+        agent.EventPlatformProxyPayloadReceived += (_, _) =>
+        {
+            Interlocked.Increment(ref requests);
+            received.TrySetResult(true);
+            // Keep the connection open without responding until the assertion or cleanup.
+            // A separate guard prevents a broken test from stranding the mock Agent.
+            release.Wait(TimeSpan.FromSeconds(45));
+            handlerExited.TrySetResult(true);
+        };
+        var elapsed = Stopwatch.StartNew();
+        var send = sender.SendCompressedAsync(Compress("{}"));
+        try
+        {
+            (await Task.WhenAny(received.Task, Task.Delay(TimeSpan.FromSeconds(10)))).Should().BeSameAs(received.Task, "the Agent must accept and read the payload before we test a stalled response");
+            (await Task.WhenAny(send, Task.Delay(TimeSpan.FromSeconds(15)))).Should().BeSameAs(send, "the sender must time out even when the Agent accepts the connection but never responds");
+            await send;
+            elapsed.Elapsed.Should().BeGreaterThan(TimeSpan.FromSeconds(4)).And.BeLessThan(TimeSpan.FromSeconds(15));
+            Volatile.Read(ref requests).Should().Be(1);
+        }
+        finally
+        {
+            release.Set();
+            // Release and join the in-flight request even when the timeout assertion fails.
+            // Dispose() alone deliberately does not cancel an admitted send.
+            (await Task.WhenAny(send, Task.Delay(TimeSpan.FromSeconds(15)))).Should().BeSameAs(send, "test cleanup must not leave a send running");
+            await send;
+            if (received.Task.IsCompleted)
+            {
+                (await Task.WhenAny(handlerExited.Task, Task.Delay(TimeSpan.FromSeconds(5)))).Should().BeSameAs(handlerExited.Task);
+            }
+        }
     }
 
     private static TracerSettings CreateSettings(string agentUrl, string source = "remote_config") => new(new NameValueConfigurationSource(new NameValueCollection
