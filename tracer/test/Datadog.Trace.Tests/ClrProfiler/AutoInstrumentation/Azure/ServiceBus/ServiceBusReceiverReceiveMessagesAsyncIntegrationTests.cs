@@ -13,25 +13,18 @@ namespace Datadog.Trace.Tests.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
 {
     public class ServiceBusReceiverReceiveMessagesAsyncIntegrationTests
     {
-        // Pins the reinjection decision for every combination of the three signals available at
-        // receive time. Reinjection is only wanted for the Azure Functions Service Bus trigger
-        // handoff paths that parent by reading the message context (a manual/non-processor receive,
-        // or the isolated Functions host process). A user-created ServiceBusProcessor and the
-        // in-process trigger must be excluded, so their producer context survives on the message.
+        // Preserve reinjection for manual/non-processor receives in every hosting environment
+        // and for the isolated Functions host handoff. Other processor receives keep the producer context.
         [Theory]
-        // isRunningInAzureFunctions, isProcessorReceive, isIsolatedFunctionHostProcess, expected
-        [InlineData(false, false, false, false)] // not Functions: never reinject
-        [InlineData(false, false, true,  false)] // not Functions: host flag is meaningless here
-        [InlineData(false, true,  false, false)] // not Functions: user processor keeps producer context
-        [InlineData(false, true,  true,  false)] // not Functions: host flag is meaningless here
-        [InlineData(true,  false, false, true)]  // Functions, manual/non-processor receive -> reinject
-        [InlineData(true,  false, true,  true)]  // isolated host, non-processor receive -> reinject
-        [InlineData(true,  true,  false, false)] // in-process user processor OR in-process trigger -> do NOT reinject
-        [InlineData(true,  true,  true,  true)]  // isolated host trigger handoff -> reinject
-        public void ShouldReinjectContext_ReturnsExpected(bool isRunningInAzureFunctions, bool isProcessorReceive, bool isIsolatedFunctionHostProcess, bool expected)
+        // isProcessorReceive, isIsolatedFunctionHostProcess, expected
+        [InlineData(false, false, true)]
+        [InlineData(false, true, true)]
+        [InlineData(true, false, false)]
+        [InlineData(true, true, true)]
+        public void ShouldReinjectContext_ReturnsExpected(bool isProcessorReceive, bool isIsolatedFunctionHostProcess, bool expected)
         {
             ServiceBusReceiverReceiveMessagesAsyncIntegration
-                .ShouldReinjectContext(isRunningInAzureFunctions, isProcessorReceive, isIsolatedFunctionHostProcess)
+                .ShouldReinjectContext(isProcessorReceive, isIsolatedFunctionHostProcess)
                 .Should().Be(expected);
         }
     }

@@ -71,13 +71,11 @@ public sealed class ServiceBusReceiverReceiveMessagesAsyncIntegration
 
         var isProcessorReceive = ReferenceEquals(state.State, ProcessorReceiveState);
         var shouldReinjectContext = ShouldReinjectContext(
-            tracer.Settings.IsRunningInAzureFunctions,
             isProcessorReceive,
             AzureInfo.Instance.IsIsolatedFunctionHostProcess);
 
-        // Re-inject the new span context into all messages so the Azure Functions trigger handoff
-        // parents to this receive span. See ShouldReinjectContext for why processor receives are
-        // excluded outside the isolated Functions host process.
+        // Preserve reinjection for non-processor receives and the isolated Functions trigger handoff.
+        // Other processor receives keep the producer context for the SDK's ProcessMessage activity.
         if (scope != null && messagesList != null && messageCount > 0 && shouldReinjectContext)
         {
             ReinjectContextIntoMessages(tracer, scope, messagesList);
@@ -92,12 +90,11 @@ public sealed class ServiceBusReceiverReceiveMessagesAsyncIntegration
     }
 
     // Decides whether the receive-span context should be written back into the received messages so a
-    // downstream reader parents to it. This is only wanted for the Azure Functions Service Bus trigger
-    // handoff, and only where the function invocation is parented by reading the message:
-    //   - Isolated model: the host process receives and serializes the message over gRPC; the worker
+    // downstream reader parents to it. Preserve the existing behavior for:
+    //   - Non-processor receives in any hosting environment, for backwards compatibility.
+    //   - Isolated Functions host: the host receives and serializes the message over gRPC; the worker
     //     parents its function span by extracting the context from UserProperties (see
     //     AzureFunctionsCommon.CreateIsolatedFunctionScope), so the host must reinject.
-    //   - Non-processor receives in Functions: kept for back-compat with manual receives.
     //
     // It must NOT run for a user-created ServiceBusProcessor: with the Azure activity source enabled the
     // SDK's ServiceBusProcessor.ProcessMessage activity parents to the message context, so overwriting it
@@ -106,8 +103,8 @@ public sealed class ServiceBusReceiverReceiveMessagesAsyncIntegration
     // The in-process Functions trigger is intentionally excluded too: its function span is created at
     // FunctionExecutor.TryExecuteAsync and parents to the active scope, not by reading the message, so it
     // does not depend on reinjection. Do not re-enable it for that case.
-    internal static bool ShouldReinjectContext(bool isRunningInAzureFunctions, bool isProcessorReceive, bool isIsolatedFunctionHostProcess)
-        => isRunningInAzureFunctions && (!isProcessorReceive || isIsolatedFunctionHostProcess);
+    internal static bool ShouldReinjectContext(bool isProcessorReceive, bool isIsolatedFunctionHostProcess)
+        => !isProcessorReceive || isIsolatedFunctionHostProcess;
 
     private static List<SpanLink>? ExtractSpanLinksFromMessages(Tracer tracer, System.Collections.IList? messagesList)
     {
