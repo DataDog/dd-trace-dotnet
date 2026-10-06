@@ -235,7 +235,7 @@ try {
             throw "Generated build script or source was missing or ambiguous"
         }
         $originalBuildScript = Get-Content $buildScripts[0].FullName -Raw
-        if ($originalBuildScript.Contains($shimPath) -or $originalBuildScript -notmatch "call dotnet restore") {
+        if ($originalBuildScript.Contains($shimPath) -or $originalBuildScript -notmatch "(?m)^call dotnet\s+restore\b") {
             throw "Generated script did not use the default CLI"
         }
         $buildLines = @($originalBuildScript -split "`r?`n" | Where-Object { $_.Trim() })
