@@ -389,6 +389,59 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure
             }
         }
 
+        [SkippableTheory]
+        [InlineData("continue")]
+        [InlineData("restart")]
+        [InlineData("ignore")]
+        [Trait("Category", "EndToEnd")]
+        public async Task TestProcessorExtractionBehavior(string extractionBehavior)
+        {
+            SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", "v1");
+            SetEnvironmentVariable("DD_TRACE_AZURESERVICEBUS_ENABLED", "true");
+            SetEnvironmentVariable("DD_TRACE_OTEL_ENABLED", "true");
+            SetEnvironmentVariable("DD_TRACE_PROPAGATION_BEHAVIOR_EXTRACT", extractionBehavior);
+            SetEnvironmentVariable("DD_TRACE_PROPAGATION_STYLE_INJECT", "datadog,tracecontext,baggage");
+            SetEnvironmentVariable("DD_TRACE_PROPAGATION_STYLE_EXTRACT", "datadog,tracecontext,baggage");
+            SetEnvironmentVariable("ASB_TEST_MODE", "Processor");
+
+            using var agent = EnvironmentHelper.GetMockAgent();
+            using var process = await RunSampleAndWaitForExit(agent);
+            var spans = await agent.WaitForSpansAsync(1, operationName: "servicebus.process", returnAllOperations: true, timeoutInMilliseconds: 30000);
+
+            foreach (var span in spans)
+            {
+                Output.WriteLine($"Behavior={extractionBehavior}, Name={span.Name}, TraceId={span.TraceId}, SpanId={span.SpanId}, ParentId={span.ParentId}");
+                foreach (var link in span.SpanLinks ?? [])
+                {
+                    Output.WriteLine($"  Link: TraceIdHigh={link.TraceIdHigh}, TraceIdLow={link.TraceIdLow}, SpanId={link.SpanId}");
+                }
+            }
+
+            var sendSpan = spans.Single(span => span.Name == "azure_servicebus.send");
+            var processSpan = spans.Single(span => span.Name == "servicebus.process");
+            var receiveSpan = spans.Single(span => span.Name == "azure_servicebus.receive");
+
+            using var assertions = new AssertionScope();
+            if (extractionBehavior == "continue")
+            {
+                processSpan.TraceId.Should().Be(sendSpan.TraceId);
+                processSpan.ParentId.Should().Be(sendSpan.SpanId);
+            }
+            else
+            {
+                processSpan.TraceId.Should().NotBe(sendSpan.TraceId, $"{extractionBehavior} must not continue the producer trace");
+                processSpan.TraceId.Should().Be(receiveSpan.TraceId);
+                processSpan.ParentId.Should().Be(receiveSpan.SpanId, "restart and ignore retain the existing receive context reinjection");
+                // Restart's missing producer link predates this fix and is a separate issue.
+                if (extractionBehavior == "ignore")
+                {
+                    spans.Where(span => span.TraceId == processSpan.TraceId)
+                         .SelectMany(span => span.SpanLinks ?? [])
+                         .Should().NotContain(link => link.TraceIdLow == sendSpan.TraceId, "ignore should discard the producer context");
+                }
+            }
+        }
+
         private static void ValidateSpanLinks(
             IList<MockSpan> sendSpans,
             IList<MockSpan> receiveSpans,

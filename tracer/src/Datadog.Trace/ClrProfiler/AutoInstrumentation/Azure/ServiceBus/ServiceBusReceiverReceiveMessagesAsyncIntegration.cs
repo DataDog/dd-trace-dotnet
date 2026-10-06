@@ -16,6 +16,7 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Schema;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Propagators;
 using Datadog.Trace.Serverless;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus;
@@ -72,10 +73,11 @@ public sealed class ServiceBusReceiverReceiveMessagesAsyncIntegration
         var isProcessorReceive = ReferenceEquals(state.State, ProcessorReceiveState);
         var shouldReinjectContext = ShouldReinjectContext(
             isProcessorReceive,
-            AzureInfo.Instance.IsIsolatedFunctionHostProcess);
+            AzureInfo.Instance.IsIsolatedFunctionHostProcess,
+            tracer.Settings.PropagationBehaviorExtract);
 
         // Preserve reinjection for non-processor receives and the isolated Functions trigger handoff.
-        // Other processor receives keep the producer context for the SDK's ProcessMessage activity.
+        // Other processor receives keep the producer context only when extraction continues the trace.
         if (scope != null && messagesList != null && messageCount > 0 && shouldReinjectContext)
         {
             ReinjectContextIntoMessages(tracer, scope, messagesList);
@@ -96,15 +98,16 @@ public sealed class ServiceBusReceiverReceiveMessagesAsyncIntegration
     //     parents its function span by extracting the context from UserProperties (see
     //     AzureFunctionsCommon.CreateIsolatedFunctionScope), so the host must reinject.
     //
-    // It must NOT run for a user-created ServiceBusProcessor: with the Azure activity source enabled the
+    // Restart and ignore also retain reinjection so the SDK does not continue the producer trace.
+    // With continue, it must NOT run for a user-created ServiceBusProcessor: with the Azure activity source enabled the
     // SDK's ServiceBusProcessor.ProcessMessage activity parents to the message context, so overwriting it
     // here splits the producer and consumer into separate traces.
     //
-    // The in-process Functions trigger is intentionally excluded too: its function span is created at
+    // With continue, the in-process Functions trigger is intentionally excluded too: its function span is created at
     // FunctionExecutor.TryExecuteAsync and parents to the active scope, not by reading the message, so it
     // does not depend on reinjection. Do not re-enable it for that case.
-    internal static bool ShouldReinjectContext(bool isProcessorReceive, bool isIsolatedFunctionHostProcess)
-        => !isProcessorReceive || isIsolatedFunctionHostProcess;
+    internal static bool ShouldReinjectContext(bool isProcessorReceive, bool isIsolatedFunctionHostProcess, ExtractBehavior extractionBehavior)
+        => !isProcessorReceive || isIsolatedFunctionHostProcess || extractionBehavior != ExtractBehavior.Continue;
 
     private static List<SpanLink>? ExtractSpanLinksFromMessages(Tracer tracer, System.Collections.IList? messagesList)
     {
