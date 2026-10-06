@@ -5,15 +5,12 @@
 
 #nullable enable
 
-using System.Text;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace.FeatureFlags.FlagEvaluation;
 
 internal static class FlagEvaluationPrivacy
 {
-    private static readonly Encoding StrictUtf8 = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false, throwOnInvalidBytes: true);
-
     internal static string? TargetingKeyForOutput(string? key, bool consent)
     {
         if (key is null || !IsValidText(key))
@@ -36,14 +33,21 @@ internal static class FlagEvaluationPrivacy
 
     internal static bool IsValidText(string text)
     {
-        try
+        for (var i = 0; i < text.Length; i++)
         {
-            StrictUtf8.GetByteCount(text);
-            return true;
+            var c = text[i];
+            if (!char.IsSurrogate(c))
+            {
+                continue;
+            }
+
+            // Reject unpaired surrogates without raising application-visible exceptions.
+            if (!char.IsHighSurrogate(c) || ++i == text.Length || !char.IsLowSurrogate(text[i]))
+            {
+                return false;
+            }
         }
-        catch (EncoderFallbackException)
-        {
-            return false;
-        }
+
+        return true;
     }
 }
