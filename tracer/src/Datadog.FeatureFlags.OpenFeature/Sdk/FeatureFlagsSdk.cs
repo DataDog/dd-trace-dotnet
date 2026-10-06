@@ -38,7 +38,7 @@ internal static class FeatureFlagsSdk
     internal static bool CanEnqueueEVP() => false;
 
     [MethodImpl(MethodImplOptions.NoInlining)]
-    internal static void EnqueueEVP(string flagKey, string? variant, string? allocationKey, string? targetingKey, long evalTimeMs, bool consent, string? errorCode, IReadOnlyDictionary<string, object?>? attrs, int omissionReasons)
+    internal static void EnqueueEVP(string flagKey, string? variant, string? allocationKey, string? targetingKey, long evalTimeMs, string? errorCode, IReadOnlyDictionary<string, object?>? attrs, int flags)
     {
     }
 

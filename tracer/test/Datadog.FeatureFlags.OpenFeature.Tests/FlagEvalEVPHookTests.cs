@@ -322,7 +322,7 @@ public class FlagEvalEVPHookTests
         {
             Hook = new FlagEvalEVPHook(
                 () => ThrowOnCapacity ? throw new InvalidOperationException("pii-canary") : Available,
-                (flag, variant, allocation, target, time, consent, error, attrs, reasons) =>
+                (flag, variant, allocation, target, time, error, attrs, flags) =>
                 {
                     if (ThrowOnEnqueue)
                     {
@@ -335,10 +335,10 @@ public class FlagEvalEVPHookTests
                     AllocationKey = allocation;
                     TargetingKey = target;
                     EvalTimeMs = time;
-                    Consent = consent;
+                    Consent = (flags & FlagEvaluationBridge.ObserveFullEvaluationData) != 0;
                     ErrorCode = error;
                     Attributes = attrs;
-                    OmissionReasons = reasons;
+                    OmissionReasons = flags & ~FlagEvaluationBridge.ObserveFullEvaluationData;
                 },
                 () =>
                 {

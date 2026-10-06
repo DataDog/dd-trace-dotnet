@@ -11,7 +11,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
-using System.Reflection;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -31,6 +30,8 @@ namespace Datadog.Trace.Tests.FeatureFlags;
 
 public class FlagEvaluationBridgeTests
 {
+    private delegate CallTargetState EnqueueCallback(object? target, ref string? flag, ref string? variant, ref string? allocation, ref string? subject, ref long time, ref string? error, ref IReadOnlyDictionary<string, object?>? attributes, ref int flags);
+
     [Theory]
     [InlineData(typeof(OpenFeatureSdkCanEnqueueEVPIntegration))]
     [InlineData(typeof(OpenFeatureSdkEnqueueEVPIntegration))]
@@ -39,14 +40,18 @@ public class FlagEvaluationBridgeTests
         => InstrumentationDefinitions.GetIntegrationId(integration.FullName!, typeof(object)).Should().Be(IntegrationId.OpenFeature);
 
     [Fact]
-    public void NineArgumentCallbackCanBindThroughExistingCallTargetSlowPath()
+    public void EnqueueCallbackBindsThroughCallTargetFastPath()
     {
         var integration = typeof(OpenFeatureSdkEnqueueEVPIntegration);
-        var callback = integration.GetMethod("OnMethodBegin", BindingFlags.Static | BindingFlags.NonPublic)!;
-        callback.GetParameters().Should().HaveCount(9).And.OnlyContain(parameter => !parameter.ParameterType.IsByRef);
-        var generated = IntegrationMapper.CreateSlowBeginMethodDelegate(integration, typeof(object))!;
-        var invoke = (Func<object, object[], CallTargetState>)generated.CreateDelegate(typeof(Func<object, object[], CallTargetState>));
-        Action call = () => invoke(new object(), ["flag", "on", null!, "subject", 1790000000000L, false, null!, null!, 0]);
+        Type[] arguments = [typeof(string), typeof(string), typeof(string), typeof(string), typeof(long), typeof(string), typeof(IReadOnlyDictionary<string, object?>), typeof(int)];
+        var generated = IntegrationMapper.CreateBeginMethodDelegate(integration, typeof(object), arguments.Select(type => type.MakeByRefType()).ToArray())!;
+        var invoke = (EnqueueCallback)generated.CreateDelegate(typeof(EnqueueCallback));
+        string? flag = "flag", variant = "on", subject = "subject";
+        string? allocation = null, error = null;
+        long time = 1790000000000L;
+        IReadOnlyDictionary<string, object?>? attributes = null;
+        var flags = 0;
+        Action call = () => invoke(null, ref flag, ref variant, ref allocation, ref subject, ref time, ref error, ref attributes, ref flags);
         call.Should().NotThrow();
     }
 
@@ -62,7 +67,7 @@ public class FlagEvaluationBridgeTests
         attributes.SetupGet(value => value.Count).Throws(new InvalidOperationException("private-snapshot-error"));
         try
         {
-            OpenFeatureSdkEnqueueEVPIntegration.Enqueue(writer, "flag", "on", "allocation", "private-subject", 1790000000000, consent, "private-error", attributes.Object, 0);
+            OpenFeatureSdkEnqueueEVPIntegration.Enqueue(writer, "flag", "on", "allocation", "private-subject", 1790000000000, "private-error", attributes.Object, consent ? FlagEvaluationBridge.ObserveFullEvaluationData : 0);
             await writer.FlushAsync();
             bodies.Should().ContainSingle();
             var body = bodies.Single();
@@ -105,7 +110,7 @@ public class FlagEvaluationBridgeTests
         var attributes = new Dictionary<string, object?> { ["country"] = "before", ["oversized"] = new string('x', 257) };
         try
         {
-            OpenFeatureSdkEnqueueEVPIntegration.Enqueue(writer, "flag", "on", null, "subject", 1790000000000, true, null, attributes, (int)ContextOmissionReason.MaxValueLength);
+            OpenFeatureSdkEnqueueEVPIntegration.Enqueue(writer, "flag", "on", null, "subject", 1790000000000, null, attributes, FlagEvaluationBridge.ObserveFullEvaluationData | (int)ContextOmissionReason.MaxValueLength);
             attributes["country"] = "after";
             await writer.FlushAsync();
             bodies.Should().ContainSingle();
@@ -127,8 +132,40 @@ public class FlagEvaluationBridgeTests
     public void MissingWriterNeverInspectsContext()
     {
         var attributes = new Mock<IReadOnlyDictionary<string, object?>>(MockBehavior.Strict);
-        OpenFeatureSdkEnqueueEVPIntegration.Enqueue(null, "flag", null, null, "subject", 1790000000000, true, null, attributes.Object, 0);
+        OpenFeatureSdkEnqueueEVPIntegration.Enqueue(null, "flag", null, null, "subject", 1790000000000, null, attributes.Object, FlagEvaluationBridge.ObserveFullEvaluationData);
         attributes.Invocations.Should().BeEmpty();
+    }
+
+    [Theory]
+    [InlineData(0, false)]
+    [InlineData(0x1ff, false)]
+    [InlineData(0x40000000, true)]
+    [InlineData(0x400001ff, true)]
+    public async Task BridgeConsentBitIsIndependentOfOmissionReasons(int flags, bool consent)
+    {
+        var collector = new MetricsTelemetryCollector(Timeout.InfiniteTimeSpan);
+        var bodies = new ConcurrentQueue<string>();
+        var writer = Writer(bodies, collector);
+        try
+        {
+            OpenFeatureSdkEnqueueEVPIntegration.Enqueue(writer, "flag", "on", null, "private-subject", 1790000000000, null, new Dictionary<string, object?> { ["country"] = "US" }, flags);
+            await writer.FlushAsync();
+            var row = JObject.Parse(bodies.Should().ContainSingle().Subject)["flagEvaluations"]![0]!;
+            row["targeting_key"]!.Value<string>().Should().Be(consent ? "private-subject" : FlagEvaluationPrivacy.TargetingKeyForOutput("private-subject", false));
+            if (consent)
+            {
+                row["context"]!["evaluation"]!["country"]!.Value<string>().Should().Be("US");
+            }
+            else
+            {
+                row["context"].Should().BeNull();
+            }
+        }
+        finally
+        {
+            await writer.CloseAsync(TimeSpan.FromSeconds(2));
+            await collector.DisposeAsync();
+        }
     }
 
     [Fact]

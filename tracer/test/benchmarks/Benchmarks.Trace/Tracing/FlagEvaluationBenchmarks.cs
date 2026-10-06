@@ -93,7 +93,7 @@ public class FlagEvaluationBenchmarks
             {
                 OpenFeatureSdkEnqueueEVPIntegration.Enqueue(
                     _writer, "flag", "on", "allocation", _subjects[Scenario == "ProtectedUnique" ? i : 0],
-                    DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(), _consent, null, _attributes, 0);
+                    DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(), null, _attributes, _consent ? FlagEvaluationBridge.ObserveFullEvaluationData : 0);
             }
         }
 

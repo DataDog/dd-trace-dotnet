@@ -23,7 +23,7 @@ internal sealed class FlagEvalEVPHook : Hook
     private const double MaxUnixTimeMilliseconds = 253402300799999d;
 
     private readonly Func<bool> _canEnqueue;
-    private readonly Action<string, string?, string?, string?, long, bool, string?, IReadOnlyDictionary<string, object?>?, int> _enqueue;
+    private readonly Action<string, string?, string?, string?, long, string?, IReadOnlyDictionary<string, object?>?, int> _enqueue;
     private readonly Action _recordError;
     private readonly CaptureSnapshot _capture;
 
@@ -34,7 +34,7 @@ internal sealed class FlagEvalEVPHook : Hook
 
     internal FlagEvalEVPHook(
         Func<bool> canEnqueue,
-        Action<string, string?, string?, string?, long, bool, string?, IReadOnlyDictionary<string, object?>?, int> enqueue,
+        Action<string, string?, string?, string?, long, string?, IReadOnlyDictionary<string, object?>?, int> enqueue,
         Action recordError,
         CaptureSnapshot capture)
     {
@@ -87,7 +87,8 @@ internal sealed class FlagEvalEVPHook : Hook
                 }
             }
 
-            _enqueue(context.FlagKey, details.Variant, allocationKey, targetingKey, evalTimeMs, consent, errorCode, attributes, omissionReasons);
+            var flags = omissionReasons | (consent ? FlagEvaluationBridge.ObserveFullEvaluationData : 0);
+            _enqueue(context.FlagKey, details.Variant, allocationKey, targetingKey, evalTimeMs, errorCode, attributes, flags);
         }
         catch (Exception)
         {
