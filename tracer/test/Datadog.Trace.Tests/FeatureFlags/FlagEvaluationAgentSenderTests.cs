@@ -21,7 +21,12 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.FeatureFlags.FlagEvaluation;
 using Datadog.Trace.HttpOverStreams;
 using Datadog.Trace.HttpOverStreams.HttpContent;
+using Datadog.Trace.Logging;
+using Datadog.Trace.Logging.Internal.Configuration;
+using Datadog.Trace.Telemetry;
+using Datadog.Trace.Telemetry.Collectors;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.Util;
 using FluentAssertions;
 using Moq;
 using Xunit;
@@ -33,27 +38,63 @@ namespace Datadog.Trace.Tests.FeatureFlags;
 public class FlagEvaluationAgentSenderTests(ITestOutputHelper output)
 {
     [Theory]
-    [InlineData(202)]
-    [InlineData(400)]
-    [InlineData(404)]
-    [InlineData(405)]
-    [InlineData(429)]
-    [InlineData(500)]
-    public async Task SendsEachBatchOnceAndDisposesResponse(int statusCode)
+    [InlineData(202, false)]
+    [InlineData(400, true)]
+    [InlineData(401, true)]
+    [InlineData(403, true)]
+    [InlineData(404, false)]
+    [InlineData(405, false)]
+    [InlineData(408, false)]
+    [InlineData(413, true)]
+    [InlineData(422, true)]
+    [InlineData(429, false)]
+    [InlineData(500, false)]
+    public async Task SendsEachBatchOnceAndLogsRejectionsWithoutResponseBody(int statusCode, bool emitsErrorTelemetry)
     {
+        using var logs = new StringWriter();
+        var collector = new RedactedErrorLogCollector();
+        var logger = CreateLogger(logs, collector);
         var factory = new Mock<IApiRequestFactory>(MockBehavior.Strict);
         var request = new Mock<IApiRequest>(MockBehavior.Strict);
         var response = new Mock<IApiResponse>(MockBehavior.Strict);
         response.SetupGet(x => x.StatusCode).Returns(statusCode);
         response.Setup(x => x.Dispose());
         var uri = new Uri("http://127.0.0.1:8126/evp_proxy/v2/api/v2/flagevaluation");
-        var payload = new ArraySegment<byte>(new byte[] { 1, 2, 3 });
+        var payload = new ArraySegment<byte>(Encoding.UTF8.GetBytes("payload-private-canary"));
         factory.Setup(x => x.GetEndpoint("evp_proxy/v2/api/v2/flagevaluation")).Returns(uri);
         factory.Setup(x => x.Create(uri)).Returns(request.Object);
         request.Setup(x => x.PostAsync(payload, "application/json", "gzip")).ReturnsAsync(response.Object);
 
-        using var sender = new FlagEvaluationAgentSender(factory.Object);
-        await sender.SendCompressedAsync(payload);
+        using var sender = new FlagEvaluationAgentSender(factory.Object, logger);
+        try
+        {
+            await sender.SendCompressedAsync(payload);
+        }
+        finally
+        {
+            logger.CloseAndFlush();
+        }
+
+        if (statusCode == 202)
+        {
+            logs.ToString().Should().BeEmpty();
+        }
+        else
+        {
+            logs.ToString().Should().Contain("ERR]").And.Contain(statusCode.ToString()).And.NotContain("private-canary");
+        }
+
+        if (emitsErrorTelemetry)
+        {
+            var error = collector.GetLogs().Should().ContainSingle().Which.Should().ContainSingle().Subject;
+            error.Level.Should().Be(TelemetryLogLevel.ERROR);
+            error.Message.Should().NotContain("private-canary");
+            error.StackTrace.Should().BeNull();
+        }
+        else
+        {
+            collector.GetLogs().Should().BeNull();
+        }
 
         request.Verify(x => x.PostAsync(payload, "application/json", "gzip"), Times.Once);
         response.Verify(x => x.Dispose(), Times.Once);
@@ -65,6 +106,9 @@ public class FlagEvaluationAgentSenderTests(ITestOutputHelper output)
     [InlineData(true)]
     public async Task FailedSendIsNotReplayedAndNextBatchStillWorks(bool timeout)
     {
+        using var logs = new StringWriter();
+        var collector = new RedactedErrorLogCollector();
+        var logger = CreateLogger(logs, collector);
         var factory = new Mock<IApiRequestFactory>();
         var request = new Mock<IApiRequest>();
         var response = new Mock<IApiResponse>();
@@ -77,11 +121,21 @@ public class FlagEvaluationAgentSenderTests(ITestOutputHelper output)
                .ThrowsAsync(error)
                .ReturnsAsync(response.Object);
 
-        using var sender = new FlagEvaluationAgentSender(factory.Object);
+        using var sender = new FlagEvaluationAgentSender(factory.Object, logger);
         var first = new ArraySegment<byte>(new byte[] { 1 });
         var second = new ArraySegment<byte>(new byte[] { 2 });
-        await sender.SendCompressedAsync(first);
-        await sender.SendCompressedAsync(second);
+        try
+        {
+            await sender.SendCompressedAsync(first);
+            await sender.SendCompressedAsync(second);
+        }
+        finally
+        {
+            logger.CloseAndFlush();
+        }
+
+        logs.ToString().Should().Contain("ERR]").And.NotContain("private-canary");
+        collector.GetLogs().Should().BeNull();
 
         request.Verify(x => x.PostAsync(first, "application/json", "gzip"), Times.Once);
         request.Verify(x => x.PostAsync(second, "application/json", "gzip"), Times.Once);
@@ -309,6 +363,16 @@ public class FlagEvaluationAgentSenderTests(ITestOutputHelper output)
                 (await Task.WhenAny(handlerExited.Task, Task.Delay(TimeSpan.FromSeconds(5)))).Should().BeSameAs(handlerExited.Task);
             }
         }
+    }
+
+    private static IDatadogLogger CreateLogger(TextWriter logs, RedactedErrorLogCollector collector)
+    {
+        var config = new DatadogLoggingConfiguration(
+            rateLimit: 0,
+            errorLogging: new RedactedErrorLoggingConfiguration(collector),
+            file: null,
+            console: new ConsoleLoggingConfiguration(DatadogLoggingFactory.DefaultConsoleQueueLimit, logs));
+        return DatadogLoggingFactory.CreateFromConfiguration(in config, DomainMetadata.Instance)!;
     }
 
     private static TracerSettings CreateSettings(string agentUrl, string source = "remote_config") => new(new NameValueConfigurationSource(new NameValueCollection

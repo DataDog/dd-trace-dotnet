@@ -16,8 +16,9 @@ namespace Datadog.Trace.FeatureFlags.FlagEvaluation;
 
 internal sealed class FlagEvaluationAgentSender : IDisposable
 {
-    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<FlagEvaluationAgentSender>();
+    private static readonly IDatadogLogger StaticLog = DatadogLogging.GetLoggerFor<FlagEvaluationAgentSender>();
     private static readonly TimeSpan RequestTimeout = TimeSpan.FromSeconds(5);
+    private readonly IDatadogLogger _log;
     private readonly object _settingsLock = new();
     private IApiRequestFactory? _factory;
 
@@ -26,9 +27,10 @@ internal sealed class FlagEvaluationAgentSender : IDisposable
     {
     }
 
-    internal FlagEvaluationAgentSender(IApiRequestFactory factory)
+    internal FlagEvaluationAgentSender(IApiRequestFactory factory, IDatadogLogger? log = null)
     {
         _factory = factory;
+        _log = log ?? StaticLog;
     }
 
     internal void UpdateExporterSettings(ExporterSettings settings)
@@ -57,13 +59,22 @@ internal sealed class FlagEvaluationAgentSender : IDisposable
             using var response = await request.PostAsync(payload, "application/json", "gzip").ConfigureAwait(false);
             if (response.StatusCode is < 200 or >= 300)
             {
-                Log.Debug<int>("FeatureFlags flagevaluation Agent request failed with HTTP status {StatusCode}; dropping this batch without retry.", response.StatusCode);
+                // Payload/client rejections need error telemetry. Missing Agent routes, timeouts,
+                // throttling and server failures are environmental, but still visible locally.
+                if (response.StatusCode is >= 400 and < 500 and not (404 or 405 or 408 or 429))
+                {
+                    _log.Error<int>("FeatureFlags flagevaluation Agent request rejected with HTTP status {StatusCode}; dropping this batch without retry.", response.StatusCode);
+                }
+                else
+                {
+                    _log.ErrorSkipTelemetry<int>("FeatureFlags flagevaluation Agent request to evp_proxy/v2/api/v2/flagevaluation failed with HTTP status {StatusCode} after 1 attempt; dropping this batch without retry. See https://docs.datadoghq.com/tracing/troubleshooting/connection_errors/?code-lang=dotnet", response.StatusCode);
+                }
             }
         }
         catch (Exception)
         {
             // Exception messages and response bodies can contain customer data.
-            Log.Debug("FeatureFlags flagevaluation Agent request failed; dropping this batch without retry.");
+            _log.ErrorSkipTelemetry("FeatureFlags flagevaluation Agent request to evp_proxy/v2/api/v2/flagevaluation failed after 1 attempt; dropping this batch without retry. See https://docs.datadoghq.com/tracing/troubleshooting/connection_errors/?code-lang=dotnet");
         }
     }
 
