@@ -111,7 +111,12 @@ run_benchmarks:
     # bp-runner will handle cloning the repo for benchmarks into C:\app\candidate
     Write-Output "Running bp-runner..."
     Set-Location $repoDir
-    bp-runner .gitlab\benchmarks\microbenchmarks\bp-runner.windows.yml --debug
+    $runnerConfig = if ($env:BP_TRACEANNOTATIONS_CSC_DIAGNOSTIC -eq "true") {
+        ".gitlab\benchmarks\microbenchmarks\bp-runner.traceannotations-build-diagnostic.windows.yml"
+    } else {
+        ".gitlab\benchmarks\microbenchmarks\bp-runner.windows.yml"
+    }
+    bp-runner $runnerConfig --debug
 
 upload_results:
   populate_env: true

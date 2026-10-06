@@ -136,10 +136,13 @@ run-benchmarks:
     # Fetch results from S3, analyze, upload (external S3 + BP UI), and post PR comment
     - export ARTIFACTS_DIR="$(pwd)/artifacts"
     - .gitlab/benchmarks/microbenchmarks/scripts/fetch-results.sh
-    - .gitlab/benchmarks/microbenchmarks/scripts/analyze-results.sh
-    - .gitlab/benchmarks/microbenchmarks/scripts/upload-to-external-s3.sh
-    - .gitlab/benchmarks/microbenchmarks/scripts/upload-to-bp-ui.sh
-    - .gitlab/benchmarks/microbenchmarks/scripts/post-pr-comment.sh
+    - |
+      if [ "$BP_TRACEANNOTATIONS_CSC_DIAGNOSTIC" != "true" ]; then
+        .gitlab/benchmarks/microbenchmarks/scripts/analyze-results.sh
+        .gitlab/benchmarks/microbenchmarks/scripts/upload-to-external-s3.sh
+        .gitlab/benchmarks/microbenchmarks/scripts/upload-to-bp-ui.sh
+        .gitlab/benchmarks/microbenchmarks/scripts/post-pr-comment.sh
+      fi
   after_script:
     - |
       if [ "$CLEANUP" == "true" ]; then
@@ -164,6 +167,8 @@ check-big-regressions:
   allow_failure: true
   # We set when: always when applicable to ensure the job runs even if the run-benchmarks job fails.
   rules:
+    - if: $BP_TRACEANNOTATIONS_CSC_DIAGNOSTIC == "true"
+      when: never
     - if: $CI_COMMIT_REF_NAME =~ /^v[0-9]+\.[0-9]+\.[0-9]+(-prerelease)?$/
       when: never
     - if: $CI_COMMIT_REF_NAME == "master"

@@ -1,0 +1,13 @@
+include:
+  - local: .gitlab/benchmarks/microbenchmarks.yml
+
+build-dd-trace-dotnet-microbenchmarks-ami:
+  rules:
+    - when: never
+
+run-benchmarks:
+  retry: 0
+  interruptible: false
+  rules:
+    - if: '$BP_TRACEANNOTATIONS_CSC_DIAGNOSTIC == "true"'
+      when: on_success

@@ -1,0 +1,99 @@
+.how_to_fetch_release_build: &how_to_fetch_release_build |
+  $ErrorActionPreference = "Stop"
+
+  if (Test-Path $env:CODE_SRC) {
+      Remove-Item -Recurse -Force $env:CODE_SRC
+  }
+  New-Item -ItemType Directory -Path $env:CODE_SRC -Force | Out-Null
+
+  git clone "https://github.com/$env:REPO.git" $env:CODE_SRC
+  if ($LASTEXITCODE -ne 0) { throw "Source clone failed with exit code $LASTEXITCODE" }
+
+  Set-Location $env:CODE_SRC
+  git checkout $env:COMMIT_SHA
+  if ($LASTEXITCODE -ne 0) { throw "Source checkout failed with exit code $LASTEXITCODE" }
+
+  [Environment]::SetEnvironmentVariable("DOTNET_ROOT", "C:\dotnet", [EnvironmentVariableTarget]::Process)
+  [Environment]::SetEnvironmentVariable("PATH", "C:\dotnet;" + [Environment]::GetEnvironmentVariable("PATH", [EnvironmentVariableTarget]::Process), [EnvironmentVariableTarget]::Process)
+
+  Set-Location "$env:CODE_SRC\tracer"
+  & .\build.cmd BuildTracerHome BuildBenchmarks
+  if ($LASTEXITCODE -ne 0) { throw "Benchmark setup build failed with exit code $LASTEXITCODE" }
+
+  $shimDir = "$env:CODE_SRC\tracer\diagnostic-generation-cli"
+  New-Item -ItemType Directory -Path $shimDir -Force | Out-Null
+  Add-Type -Path "$env:CODE_SRC\.gitlab\benchmarks\microbenchmarks\scripts\generation-cli.cs" `
+    -OutputAssembly "$shimDir\dotnet.exe" -OutputType ConsoleApplication
+
+  New-Item -ItemType File -Path "$env:CODE_SRC\tracer\.build-complete" -Force | Out-Null
+
+.how_to_fetch_release_wait: &how_to_fetch_release_wait |
+  $ErrorActionPreference = "Stop"
+  $markerPath = "$env:CODE_SRC\tracer\.build-complete"
+  $elapsed = 0
+
+  while (-not (Test-Path $markerPath)) {
+      if ($elapsed -ge 1800) {
+          throw "Timed out waiting for $markerPath"
+      }
+
+      Start-Sleep -Seconds 5
+      $elapsed += 5
+  }
+
+.how_to_run_setup: &how_to_run_setup |
+  Write-Output "Build setup completed"
+
+.how_to_run_diagnostic: &how_to_run_diagnostic |
+  $ErrorActionPreference = "Stop"
+  $artifactsIndex = "$env:BATCH_PREFIX-$env:PARALLEL_INDEX"
+
+  & "$env:CODE_SRC\.gitlab\benchmarks\microbenchmarks\scripts\run-traceannotations-build-diagnostic.ps1" `
+    -ArtifactsIndex $artifactsIndex `
+    -Label $env:DIAGNOSTIC_LABEL
+
+parallelize: false
+
+experiments:
+  - name: traceannotations-build-diagnostic
+    steps:
+      - name: setup
+        run: run_microbenchmarks
+        repo: DataDog/dd-trace-dotnet
+        baseline_branch: ""
+        cpus: "0,0x3"
+        parallelize:
+          items: setup
+          cpus_per_item: 2
+        env:
+          BATCH_PREFIX: "setup"
+        how_to_fetch_release: *how_to_fetch_release_build
+        how_to_run_benchmarks: *how_to_run_setup
+
+      - name: node1-cpus10-11
+        run: run_microbenchmarks
+        repo: DataDog/dd-trace-dotnet
+        baseline_branch: ""
+        cpus: "1,0xC00"
+        parallelize:
+          items: "*TraceAnnotationsBenchmark.RunOnMethodBegin*"
+          cpus_per_item: 2
+        env:
+          BATCH_PREFIX: "node1-cpus10-11"
+          DIAGNOSTIC_LABEL: "node1-cpus10-11"
+        how_to_fetch_release: *how_to_fetch_release_wait
+        how_to_run_benchmarks: *how_to_run_diagnostic
+
+      - name: node0-cpus10-11
+        run: run_microbenchmarks
+        repo: DataDog/dd-trace-dotnet
+        baseline_branch: ""
+        cpus: "0,0xC00"
+        parallelize:
+          items: "*TraceAnnotationsBenchmark.RunOnMethodBegin*"
+          cpus_per_item: 2
+        env:
+          BATCH_PREFIX: "node0-cpus10-11"
+          DIAGNOSTIC_LABEL: "node0-cpus10-11"
+        how_to_fetch_release: *how_to_fetch_release_wait
+        how_to_run_benchmarks: *how_to_run_diagnostic
