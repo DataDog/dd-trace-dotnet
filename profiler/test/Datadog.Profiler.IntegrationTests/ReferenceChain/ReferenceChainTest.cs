@@ -667,6 +667,33 @@ namespace Datadog.Profiler.IntegrationTests.ReferenceChain
         }
 
         [TestAppFact("Samples.Computer01", new[] { "net11.0" })]
+        public void CheckWeakGCHandleScenario(string appName, string framework, string appAssembly)
+        {
+            // Scenario 17: weak handles must not be treated as retention roots
+            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: $"--scenario {ReferenceChainScenarioNumber} --param 17");
+            runner.TestDurationInSeconds = 30;
+            runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotEnabled, "1");
+            runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotMemoryPressureThreshold, "0");
+            runner.Environment.SetVariable(EnvironmentVariables.TestHeapSnapshotInterval, "15");
+            runner.Environment.SetVariable(EnvironmentVariables.HeapSnapshotReferenceTreeFormat, "2"); // JSON
+
+            using var agent = MockDatadogAgent.CreateHttpAgent(runner.XUnitLogger);
+            runner.Run(agent);
+
+            var referenceTreeFiles = Directory.GetFiles(runner.Environment.PprofDir, "reference_tree_*.json");
+            Assert.True(referenceTreeFiles.Length > 0, "No reference tree JSON files were generated for weak GCHandle scenario");
+
+            var trees = LoadAndValidateAllTrees(referenceTreeFiles);
+
+            Assert.True(
+                trees.Any(tree => TypeExistsInTree(tree, "WeakHandleTarget")),
+                "Expected at least one snapshot to contain the strongly reachable WeakHandleTarget type");
+            Assert.DoesNotContain(
+                trees,
+                tree => HasRootOfCategoryAndType(tree, "H", "WeakHandleTarget"));
+        }
+
+        [TestAppFact("Samples.Computer01", new[] { "net11.0" })]
         public void CheckPinnedLeakScenario(string appName, string framework, string appAssembly)
         {
             // Scenario 18: Pinned handle - tests Pinning root category

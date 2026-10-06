@@ -420,6 +420,8 @@ void HeapSnapshotManager::OnBulkRootEdges(
     {
         auto& root = pRoots[i];
         RootCategory category = GetRootCategory(root);
+        const auto rootFlags = static_cast<uint32_t>(root.Flags);
+        const bool isWeakRoot = (rootFlags & static_cast<uint32_t>(GCRootFlags::WeakRef)) != 0;
 
         if (_pReferenceChainBenchmarkStats != nullptr)
         {
@@ -428,16 +430,22 @@ void HeapSnapshotManager::OnBulkRootEdges(
             {
                 _pReferenceChainBenchmarkStats->duplicateAddresses++;
             }
-            if ((static_cast<uint32_t>(root.Flags) & static_cast<uint32_t>(GCRootFlags::WeakRef)) != 0)
+            if (isWeakRoot)
             {
                 _pReferenceChainBenchmarkStats->weakObserved++;
             }
         }
 
+        // Weak handles do not keep their targets alive, so they are not retention roots.
+        if (isWeakRoot)
+        {
+            continue;
+        }
+
         // GCRootFlags::Interior: address points inside an object, not at the ObjectID header.
         // GetClassFromObject expects a real ObjectID; resolving interior pointers to the containing
         // object is not implemented (would need bulk-node range index or CLR API support).
-        if ((static_cast<uint32_t>(root.Flags) & static_cast<uint32_t>(GCRootFlags::Interior)) != 0)
+        if ((rootFlags & static_cast<uint32_t>(GCRootFlags::Interior)) != 0)
         {
             if (_pReferenceChainBenchmarkStats != nullptr)
             {
