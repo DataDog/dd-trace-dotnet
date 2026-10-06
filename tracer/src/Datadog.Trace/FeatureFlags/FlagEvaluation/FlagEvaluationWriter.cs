@@ -36,6 +36,7 @@ internal sealed class FlagEvaluationWriter
     private readonly TimeSpan _flushInterval;
     private readonly Task _consumer;
     private TaskCompletionSource<bool>? _flush;
+    private Task? _flushWait;
     private bool _closed;
     private bool _abandon;
     private long _accepted;
@@ -128,9 +129,14 @@ internal sealed class FlagEvaluationWriter
             }
 
             // Coalesce callers rather than queueing an unbounded list of control messages.
-            _flush ??= new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            if (_flush is null)
+            {
+                _flush = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+                _flushWait = WaitForFlushAsync(_flush.Task);
+            }
+
             _wake.Set();
-            return _flush.Task;
+            return _flushWait!;
         }
     }
 
@@ -153,6 +159,23 @@ internal sealed class FlagEvaluationWriter
         }
 
         await _consumer.ConfigureAwait(false);
+    }
+
+    private static async Task WaitForFlushAsync(Task flush)
+    {
+        using var cancellation = new CancellationTokenSource();
+        var deadline = Task.Delay(TimeSpan.FromSeconds(10), cancellation.Token);
+        if (await Task.WhenAny(flush, deadline).ConfigureAwait(false) == flush)
+        {
+            cancellation.Cancel();
+            await flush.ConfigureAwait(false);
+        }
+        else
+        {
+            // A snapshot can contain several requests. Bound the caller's total wait,
+            // while the sole consumer continues delivery with per-request deadlines.
+            Log.Debug("FeatureFlags flagevaluation flush wait timed out; background delivery continues.");
+        }
     }
 
     private static long EvaluationCount(DrainResult state)
@@ -192,6 +215,7 @@ internal sealed class FlagEvaluationWriter
                     if (flushDue)
                     {
                         _flush = null;
+                        _flushWait = null;
                     }
                 }
 
@@ -245,6 +269,7 @@ internal sealed class FlagEvaluationWriter
                 Volatile.Write(ref _closed, true);
                 _flush?.TrySetResult(true);
                 _flush = null;
+                _flushWait = null;
                 _wake.Dispose();
             }
 

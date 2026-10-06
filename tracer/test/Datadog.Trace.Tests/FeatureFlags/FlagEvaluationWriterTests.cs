@@ -139,6 +139,40 @@ public class FlagEvaluationWriterTests
     }
 
     [Fact]
+    public async Task ExplicitFlushReturnsAtDeadlineWithoutClosingAdmissionOrReplayingBatch()
+    {
+        var entered = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var release = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var calls = 0;
+        var writer = new FlagEvaluationWriter(
+            _ =>
+            {
+                Interlocked.Increment(ref calls);
+                entered.TrySetResult(true);
+                return release.Task;
+            },
+            Context);
+        try
+        {
+            writer.TryEnqueue(Observation()).Should().BeTrue();
+            var flush = writer.FlushAsync();
+            await Completes(entered.Task);
+            (await Task.WhenAny(flush, Task.Delay(TimeSpan.FromSeconds(15)))).Should().BeSameAs(flush, "an explicit flush must not wait indefinitely for the sender");
+            await flush;
+            release.Task.IsCompleted.Should().BeFalse("bounding the caller's wait must not pretend the send completed");
+            writer.TryEnqueue(Observation(flag: "next")).Should().BeTrue();
+            release.TrySetResult(true);
+            await Completes(writer.FlushAsync());
+            calls.Should().Be(2, "the timed-out flush must not replay its batch or prevent later delivery");
+        }
+        finally
+        {
+            release.TrySetResult(true);
+            await writer.CloseAsync(TimeSpan.FromSeconds(2));
+        }
+    }
+
+    [Fact]
     public async Task CloseReturnsAtDeadlineAndStopsAdmissionDuringBlockedSend()
     {
         var entered = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);

@@ -268,6 +268,7 @@ namespace Datadog.Trace
 
         /// <summary>
         /// Forces the tracer to immediately flush pending traces and feature-flag evaluation events to the agent.
+        /// The feature-flag flush waits up to ten seconds; delivery continues in the background if it times out.
         /// To be called when the appdomain or the process is about to be killed in a non-graceful way.
         /// </summary>
         /// <returns>Task used to track the async flush operation</returns>

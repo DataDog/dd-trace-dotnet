@@ -195,9 +195,9 @@ public class FlagEvaluationAgentSenderTests(ITestOutputHelper output)
         using var agent = MockTracerAgent.Create(output);
         var agentUri = new Uri($"http://127.0.0.1:{agent.Port}");
         // Modern runtimes honor HttpWebRequest.Timeout, unlike .NET Framework's async path.
-        // Leave that property unset to verify the sender independently bounds legacy requests.
+        // Leave that property unset to verify the factory independently bounds legacy requests.
         using var sender = useLegacyTransport
-                               ? new FlagEvaluationAgentSender(new ApiWebRequestFactory(agentUri, FlagEvaluationAgentHeaderHelper.Instance.DefaultHeaders))
+                               ? new FlagEvaluationAgentSender(new ApiWebRequestFactory(agentUri, FlagEvaluationAgentHeaderHelper.Instance.DefaultHeaders, asyncTimeout: TimeSpan.FromSeconds(5)))
                                : new FlagEvaluationAgentSender(CreateSettings(agentUri.ToString()).Manager.InitialExporterSettings);
         await AssertStalledAgentSendTimesOut(agent, sender);
     }
@@ -215,7 +215,8 @@ public class FlagEvaluationAgentSenderTests(ITestOutputHelper output)
                                ? new FlagEvaluationAgentSender(new HttpStreamRequestFactory(
                                    new UnixDomainSocketStreamFactory(agent.TracesUdsPath),
                                    new DatadogHttpClient(FlagEvaluationAgentHeaderHelper.Instance),
-                                   new Uri("http://localhost")))
+                                   new Uri("http://localhost"),
+                                   requestTimeout: TimeSpan.FromSeconds(5)))
                                : new FlagEvaluationAgentSender(CreateSettings("unix://" + agent.TracesUdsPath).Manager.InitialExporterSettings);
         await AssertStalledAgentSendTimesOut(agent, sender);
     }

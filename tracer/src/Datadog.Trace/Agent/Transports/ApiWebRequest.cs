@@ -25,13 +25,15 @@ namespace Datadog.Trace.Agent.Transports
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<ApiWebRequest>();
         private readonly HttpWebRequest _request;
+        private readonly TimeSpan? _asyncTimeout;
 
         private byte[] _boundarySeparatorInBytes;
         private byte[] _boundaryTrailerInBytes;
 
-        public ApiWebRequest(HttpWebRequest request)
+        public ApiWebRequest(HttpWebRequest request, TimeSpan? asyncTimeout = null)
         {
             _request = request;
+            _asyncTimeout = asyncTimeout;
         }
 
         public void AddHeader(string name, string value)
@@ -39,11 +41,13 @@ namespace Datadog.Trace.Agent.Transports
             _request.Headers.Add(name, value);
         }
 
-        public Task<IApiResponse> GetAsync()
+        public async Task<IApiResponse> GetAsync()
         {
+            using var cancellation = StartTimeout();
+            using var registration = cancellation?.Token.Register(static state => ((HttpWebRequest)state).Abort(), _request) ?? default;
             ResetRequest(method: "GET", contentType: null, contentEncoding: null);
 
-            return FinishAndGetResponse();
+            return await FinishAndGetResponse().ConfigureAwait(false);
         }
 
         public Task<IApiResponse> PostAsync(ArraySegment<byte> bytes, string contentType)
@@ -51,6 +55,8 @@ namespace Datadog.Trace.Agent.Transports
 
         public async Task<IApiResponse> PostAsync(ArraySegment<byte> bytes, string contentType, string contentEncoding)
         {
+            using var cancellation = StartTimeout();
+            using var registration = cancellation?.Token.Register(static state => ((HttpWebRequest)state).Abort(), _request) ?? default;
             ResetRequest(method: "POST", contentType, contentEncoding);
 
             using (var requestStream = await _request.GetRequestStreamAsync().ConfigureAwait(false))
@@ -61,20 +67,13 @@ namespace Datadog.Trace.Agent.Transports
             return await FinishAndGetResponse().ConfigureAwait(false);
         }
 
-        public async Task<IApiResponse> PostAsync(ArraySegment<byte> bytes, string contentType, string contentEncoding, TimeSpan timeout)
-        {
-            // HttpWebRequest.Timeout does not bound asynchronous requests on .NET Framework.
-            // Abort the request itself instead of abandoning an in-flight send and its payload.
-            using var cancellation = new CancellationTokenSource(timeout);
-            using var registration = cancellation.Token.Register(static state => ((HttpWebRequest)state).Abort(), _request);
-            return await PostAsync(bytes, contentType, contentEncoding).ConfigureAwait(false);
-        }
-
         public Task<IApiResponse> PostAsJsonAsync<T>(T payload, MultipartCompression compression)
             => PostAsJsonAsync(payload, compression, SerializationHelpers.DefaultJsonSettings);
 
         public async Task<IApiResponse> PostAsJsonAsync<T>(T payload, MultipartCompression compression, JsonSerializerSettings settings)
         {
+            using var cancellation = StartTimeout();
+            using var registration = cancellation?.Token.Register(static state => ((HttpWebRequest)state).Abort(), _request) ?? default;
             var contentEncoding = compression == MultipartCompression.GZip ? "gzip" : null;
             if (Log.IsEnabled(LogEventLevel.Debug))
             {
@@ -93,6 +92,8 @@ namespace Datadog.Trace.Agent.Transports
 
         public async Task<IApiResponse> PostAsync(Func<Stream, Task> writeToRequestStream, string contentType, string contentEncoding, string multipartBoundary)
         {
+            using var cancellation = StartTimeout();
+            using var registration = cancellation?.Token.Register(static state => ((HttpWebRequest)state).Abort(), _request) ?? default;
             ResetRequest(method: "POST", ContentTypeHelper.GetContentType(contentType, multipartBoundary), contentEncoding);
 
             using (var requestStream = await _request.GetRequestStreamAsync().ConfigureAwait(false))
@@ -112,6 +113,8 @@ namespace Datadog.Trace.Agent.Transports
         /// <returns>Task with the response</returns>
         public async Task<IApiResponse> PostAsync(MultipartFormItem[] items, MultipartCompression multipartCompression = MultipartCompression.None)
         {
+            using var cancellation = StartTimeout();
+            using var registration = cancellation?.Token.Register(static state => ((HttpWebRequest)state).Abort(), _request) ?? default;
             if (items is null)
             {
                 ThrowHelper.ThrowArgumentNullException(nameof(items));
@@ -191,6 +194,10 @@ namespace Datadog.Trace.Agent.Transports
                 await requestStream.WriteAsync(trailerBytes, 0, trailerBytes.Length).ConfigureAwait(false);
             }
         }
+
+        // HttpWebRequest.Timeout does not bound asynchronous requests on .NET Framework.
+        // Opted-in callers abort the actual request instead of abandoning its task and payload.
+        private CancellationTokenSource StartTimeout() => _asyncTimeout is { } timeout ? new CancellationTokenSource(timeout) : null;
 
         private void ResetRequest(string method, string contentType, string contentEncoding)
         {

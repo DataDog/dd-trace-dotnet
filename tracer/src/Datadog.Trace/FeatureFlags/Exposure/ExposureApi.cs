@@ -74,7 +74,8 @@ internal sealed class ExposureApi : IDisposable
                 exporterSettings,
                 productName: "FeatureFlags exposure",
                 tcpTimeout: TimeSpan.FromSeconds(5),
-                httpHeaderHelper: EventPlatformHeaderHelper.Instance);
+                httpHeaderHelper: EventPlatformHeaderHelper.Instance,
+                requestTimeout: TimeSpan.FromSeconds(5));
             Interlocked.Exchange(ref _apiRequestFactory!, apiRequestFactory);
         }
 
