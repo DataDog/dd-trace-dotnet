@@ -5,6 +5,7 @@
 
 #nullable enable
 
+using System;
 using System.Collections.Generic;
 
 #pragma warning disable SA1402 // File may only contain a single type
@@ -124,7 +125,9 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             string? diagnosticCode,
             string? detail,
             string? generatedProxyAssemblyName,
-            string? generatedProxyTypeName)
+            string? generatedProxyTypeName,
+            bool replaysDynamicFailure = false,
+            bool checkedAgainstMetadataOnly = false)
         {
             Mapping = mapping;
             Status = status;
@@ -132,6 +135,8 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             Detail = detail;
             GeneratedProxyAssemblyName = generatedProxyAssemblyName;
             GeneratedProxyTypeName = generatedProxyTypeName;
+            ReplaysDynamicFailure = replaysDynamicFailure;
+            CheckedAgainstMetadataOnly = checkedAgainstMetadataOnly;
         }
 
         /// <summary>
@@ -171,6 +176,27 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         public string? GeneratedProxyTypeName { get; }
 
         /// <summary>
+        /// Gets a value indicating whether the registry replays the failure dynamic duck typing has for this mapping: the
+        /// mapping fails, but exactly like in dynamic mode, so it isn't a parity gap.
+        /// </summary>
+        /// <value>true if the dynamic failure is replayed; otherwise, false.</value>
+        public bool ReplaysDynamicFailure { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether the mapping behaves like in dynamic duck typing: it's compatible, or the registry
+        /// replays the failure dynamic duck typing has.
+        /// </summary>
+        public bool BehavesLikeDynamicDuckTyping => string.Equals(Status, DuckTypeAotCompatibilityStatuses.Compatible, StringComparison.OrdinalIgnoreCase) || ReplaysDynamicFailure;
+
+        /// <summary>
+        /// Gets a value indicating whether the generator couldn't evaluate the mapping with dynamic duck typing (types it can't
+        /// load, contracts with their own duck attributes): it's checked against metadata only, which may differ from dynamic duck
+        /// typing.
+        /// </summary>
+        /// <value>true if the mapping is checked against metadata only; otherwise, false.</value>
+        public bool CheckedAgainstMetadataOnly { get; }
+
+        /// <summary>
         /// Executes compatible.
         /// </summary>
         /// <param name="mapping">The mapping value.</param>
@@ -208,6 +234,58 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 detail,
                 generatedProxyAssemblyName: null,
                 generatedProxyTypeName: null);
+        }
+
+        /// <summary>
+        /// Gets the same result for another spelling of the mapping (the same runtime types).
+        /// </summary>
+        /// <param name="mapping">The other mapping value.</param>
+        /// <returns>The result produced by this operation.</returns>
+        public DuckTypeAotMappingEmissionResult WithMapping(DuckTypeAotMapping mapping)
+        {
+            return new DuckTypeAotMappingEmissionResult(
+                mapping,
+                Status,
+                DiagnosticCode,
+                Detail,
+                GeneratedProxyAssemblyName,
+                GeneratedProxyTypeName,
+                ReplaysDynamicFailure,
+                CheckedAgainstMetadataOnly);
+        }
+
+        /// <summary>
+        /// Gets the same failure, marked as replaying the failure of dynamic duck typing.
+        /// </summary>
+        /// <returns>The result produced by this operation.</returns>
+        public DuckTypeAotMappingEmissionResult WithDynamicFailureReplayed()
+        {
+            return new DuckTypeAotMappingEmissionResult(
+                Mapping,
+                Status,
+                DiagnosticCode,
+                Detail,
+                GeneratedProxyAssemblyName,
+                GeneratedProxyTypeName,
+                replaysDynamicFailure: true,
+                CheckedAgainstMetadataOnly);
+        }
+
+        /// <summary>
+        /// Gets the same result, marked as checked against metadata only (see <see cref="CheckedAgainstMetadataOnly"/>).
+        /// </summary>
+        /// <returns>The result produced by this operation.</returns>
+        public DuckTypeAotMappingEmissionResult WithCheckedAgainstMetadataOnly()
+        {
+            return new DuckTypeAotMappingEmissionResult(
+                Mapping,
+                Status,
+                DiagnosticCode,
+                Detail,
+                GeneratedProxyAssemblyName,
+                GeneratedProxyTypeName,
+                ReplaysDynamicFailure,
+                checkedAgainstMetadataOnly: true);
         }
     }
 }

@@ -6,6 +6,8 @@
 #nullable enable
 
 using System;
+using System.Collections.Generic;
+using System.Text;
 
 #pragma warning disable SA1402 // File may only contain a single type
 #pragma warning disable SA1649 // File name should match first type name
@@ -90,9 +92,10 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             DuckTypeAotMappingSource source,
             string? scenarioId = null)
         {
-            ProxyTypeName = proxyTypeName;
+            // Canonical names make every spelling of a type pair (recorded, expanded from generic roots...) the same mapping.
+            ProxyTypeName = DuckTypeAotNameHelpers.CanonicalizeTypeName(proxyTypeName);
             ProxyAssemblyName = DuckTypeAotNameHelpers.NormalizeAssemblyName(proxyAssemblyName);
-            TargetTypeName = targetTypeName;
+            TargetTypeName = DuckTypeAotNameHelpers.CanonicalizeTypeName(targetTypeName);
             TargetAssemblyName = DuckTypeAotNameHelpers.NormalizeAssemblyName(targetAssemblyName);
             Mode = mode;
             Source = source;
@@ -250,6 +253,114 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         }
 
         /// <summary>
+        /// Gets the canonical spelling of a reflection type name: nested types are separated with '+', and the generic
+        /// arguments keep only their simple assembly name (Type.FullName adds Version, Culture and PublicKeyToken).
+        /// </summary>
+        /// <param name="typeName">The type name value.</param>
+        /// <returns>The canonical type name, or the trimmed name if it can't be parsed.</returns>
+        internal static string CanonicalizeTypeName(string typeName)
+        {
+            if (string.IsNullOrWhiteSpace(typeName))
+            {
+                return typeName ?? string.Empty;
+            }
+
+            var trimmedTypeName = typeName.Trim();
+            if (trimmedTypeName.IndexOf('[') < 0)
+            {
+                return trimmedTypeName.Replace('/', '+');
+            }
+
+            var index = 0;
+            return TryCanonicalizeTypeName(trimmedTypeName, ref index, out var canonicalTypeName) && index == trimmedTypeName.Length
+                       ? canonicalTypeName
+                       : trimmedTypeName;
+        }
+
+        /// <summary>
+        /// Gets the name Type.ToString() gives a type from its reflection name: '+' between nested types, and generic arguments
+        /// without their assemblies (e.g. "Ns.Box`1[System.Int32]"), like in the messages of dynamic duck typing.
+        /// </summary>
+        /// <param name="typeName">The reflection name of the type, with or without assembly qualified generic arguments.</param>
+        /// <returns>The name of the type as Type.ToString() writes it.</returns>
+        internal static string ToTypeToStringName(string typeName)
+        {
+            var index = 0;
+            var name = ReadTypeToStringName(typeName.Replace('/', '+'), ref index);
+            return index == typeName.Length ? name : typeName.Replace('/', '+');
+
+            static string ReadTypeToStringName(string text, ref int index)
+            {
+                var builder = new StringBuilder();
+                while (index < text.Length && text[index] != ',' && text[index] != ']')
+                {
+                    if (text[index] != '[')
+                    {
+                        builder.Append(text[index++]);
+                    }
+                    else if (index + 1 < text.Length && text[index + 1] == '[')
+                    {
+                        // Assembly qualified generic arguments: [[Type, Assembly],[Type, Assembly]].
+                        index++;
+                        builder.Append('[');
+                        while (index < text.Length && text[index] == '[')
+                        {
+                            index++;
+                            builder.Append(ReadTypeToStringName(text, ref index));
+                            var depth = 0;
+                            while (index < text.Length && (depth > 0 || text[index] != ']'))
+                            {
+                                depth += text[index] == '[' ? 1 : text[index] == ']' ? -1 : 0;
+                                index++;
+                            }
+
+                            index++;
+                            if (index < text.Length && text[index] == ',')
+                            {
+                                builder.Append(',');
+                                index++;
+                            }
+                        }
+
+                        builder.Append(']');
+                        index++;
+                    }
+                    else
+                    {
+                        // Array ranks ("[]", "[,]") and generic arguments written without assemblies.
+                        var depth = 0;
+                        do
+                        {
+                            depth += text[index] == '[' ? 1 : text[index] == ']' ? -1 : 0;
+                            builder.Append(text[index++]);
+                        }
+                        while (index < text.Length && depth > 0);
+                    }
+                }
+
+                return builder.ToString();
+            }
+        }
+
+        /// <summary>
+        /// Gets the name a trimmer descriptor roots a type with, with '/' between nested types. Descriptors only name type
+        /// definitions: closed generics and arrays don't resolve (IL2008), and rooting their definitions instead would preserve
+        /// every member of framework types (List`1, Int32...), so they aren't rooted. Their uses in the registry keep them.
+        /// </summary>
+        /// <param name="typeName">The type name value.</param>
+        /// <returns>The descriptor type name, or null when the type isn't rooted by name.</returns>
+        internal static string? GetTrimmerDescriptorTypeName(string typeName)
+        {
+            var trimmedTypeName = typeName.Trim();
+            if (trimmedTypeName.IndexOf('[') >= 0 || trimmedTypeName.EndsWith("*", StringComparison.Ordinal) || trimmedTypeName.EndsWith("&", StringComparison.Ordinal))
+            {
+                return null;
+            }
+
+            return trimmedTypeName.Replace('+', '/');
+        }
+
+        /// <summary>
         /// Parses a potentially assembly-qualified type name into type and assembly components.
         /// </summary>
         /// <param name="value">The raw type reference value.</param>
@@ -326,6 +437,36 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         }
 
         /// <summary>
+        /// Determines whether a reflection type name is an array type name ("System.Int32[]", "Foo[,]", "Box`1[[...]][]").
+        /// </summary>
+        /// <param name="typeName">The type name value.</param>
+        /// <returns>true if the type name ends with an array rank specifier; otherwise, false.</returns>
+        internal static bool IsArrayTypeName(string typeName)
+        {
+            if (string.IsNullOrWhiteSpace(typeName))
+            {
+                return false;
+            }
+
+            var trimmedTypeName = typeName.Trim();
+            var rankStart = trimmedTypeName.LastIndexOf('[');
+            if (rankStart <= 0 || trimmedTypeName[trimmedTypeName.Length - 1] != ']')
+            {
+                return false;
+            }
+
+            for (var i = rankStart + 1; i < trimmedTypeName.Length - 1; i++)
+            {
+                if (trimmedTypeName[i] != ',' && trimmedTypeName[i] != '*' && trimmedTypeName[i] != ' ')
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        /// <summary>
         /// Determines whether is closed generic type name.
         /// </summary>
         /// <param name="typeName">The type name value.</param>
@@ -389,6 +530,125 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             genericArgumentsSuffix = typeName.Substring(genericArgumentsStart);
             genericArgumentCount = CountTopLevelGenericArguments(typeName, genericArgumentsStart);
             return genericArgumentCount > 0;
+        }
+
+        private static bool TryCanonicalizeTypeName(string value, ref int index, out string canonicalTypeName)
+        {
+            canonicalTypeName = string.Empty;
+            var nameStart = index;
+            while (index < value.Length && value[index] != '[' && value[index] != ']' && value[index] != ',')
+            {
+                index++;
+            }
+
+            var builder = new StringBuilder(value.Substring(nameStart, index - nameStart).Trim().Replace('/', '+'));
+            if (builder.Length == 0)
+            {
+                return false;
+            }
+
+            // Generic arguments: "[[Type, Assembly...],[Type, Assembly...]]", or unqualified "[Type,Type]".
+            if (index + 1 < value.Length && value[index] == '[' && value[index + 1] != ']' && value[index + 1] != ',' && value[index + 1] != '*')
+            {
+                index++;
+                var arguments = new List<string>();
+                while (true)
+                {
+                    SkipSpaces(value, ref index);
+                    if (index >= value.Length)
+                    {
+                        return false;
+                    }
+
+                    string argument;
+                    if (value[index] == '[')
+                    {
+                        index++;
+                        if (!TryCanonicalizeTypeName(value, ref index, out var argumentTypeName))
+                        {
+                            return false;
+                        }
+
+                        SkipSpaces(value, ref index);
+                        var argumentAssemblyName = string.Empty;
+                        if (index < value.Length && value[index] == ',')
+                        {
+                            // Keep the simple assembly name only, and skip Version/Culture/PublicKeyToken.
+                            var assemblyStart = ++index;
+                            while (index < value.Length && value[index] != ']')
+                            {
+                                index++;
+                            }
+
+                            argumentAssemblyName = NormalizeAssemblyName(value.Substring(assemblyStart, index - assemblyStart));
+                        }
+
+                        if (index >= value.Length || value[index] != ']')
+                        {
+                            return false;
+                        }
+
+                        index++;
+                        argument = argumentAssemblyName.Length == 0 ? $"[{argumentTypeName}]" : $"[{argumentTypeName}, {argumentAssemblyName}]";
+                    }
+                    else if (!TryCanonicalizeTypeName(value, ref index, out argument))
+                    {
+                        return false;
+                    }
+
+                    arguments.Add(argument);
+                    SkipSpaces(value, ref index);
+                    if (index >= value.Length)
+                    {
+                        return false;
+                    }
+
+                    if (value[index] == ',')
+                    {
+                        index++;
+                        continue;
+                    }
+
+                    if (value[index] != ']')
+                    {
+                        return false;
+                    }
+
+                    index++;
+                    break;
+                }
+
+                builder.Append('[').Append(string.Join(",", arguments)).Append(']');
+            }
+
+            // Array suffixes ("[]", "[,]", "[*]") are kept as they are.
+            while (index < value.Length && value[index] == '[')
+            {
+                var suffixStart = index;
+                while (index < value.Length && value[index] != ']')
+                {
+                    index++;
+                }
+
+                if (index >= value.Length)
+                {
+                    return false;
+                }
+
+                index++;
+                builder.Append(value, suffixStart, index - suffixStart);
+            }
+
+            canonicalTypeName = builder.ToString();
+            return true;
+        }
+
+        private static void SkipSpaces(string value, ref int index)
+        {
+            while (index < value.Length && value[index] == ' ')
+            {
+                index++;
+            }
         }
 
         /// <summary>

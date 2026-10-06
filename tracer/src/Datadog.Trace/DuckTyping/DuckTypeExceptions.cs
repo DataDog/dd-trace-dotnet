@@ -610,12 +610,8 @@ namespace Datadog.Trace.DuckTyping
         {
         }
 
-        [DebuggerHidden]
-        [DoesNotReturn]
-        internal static void Throw(Type proxyDefinitionType, Type targetType, bool reverse)
-        {
-            throw new DuckTypeAotMissingProxyRegistrationException(proxyDefinitionType, targetType, reverse);
-        }
+        internal static DuckTypeAotMissingProxyRegistrationException Create(Type proxyDefinitionType, Type targetType, bool reverse)
+            => new(proxyDefinitionType, targetType, reverse);
     }
 
     /// <summary>

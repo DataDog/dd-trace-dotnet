@@ -27,11 +27,6 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
     internal static class DuckTypeAotArtifactsWriter
     {
         /// <summary>
-        /// Defines datadog trace assembly name constant.
-        /// </summary>
-        private const string DatadogTraceAssemblyName = "Datadog.Trace";
-
-        /// <summary>
         /// Defines the schema version constant.
         /// </summary>
         private const string SchemaVersion = "1";
@@ -72,6 +67,8 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                             Source = mapping.Source.ToString().ToLowerInvariant(),
                             Status = effectiveStatus,
                             DiagnosticCode = hasResult ? mappingResult!.DiagnosticCode : null,
+                            DynamicFailureReplayed = hasResult && mappingResult!.ReplaysDynamicFailure,
+                            CheckedAgainstMetadataOnly = hasResult && mappingResult!.CheckedAgainstMetadataOnly,
                             Details = BuildEffectiveCompatibilityDetails(hasResult ? mappingResult : null),
                             GeneratedProxyAssembly = hasResult ? mappingResult!.GeneratedProxyAssemblyName : null,
                             GeneratedProxyType = hasResult ? mappingResult!.GeneratedProxyTypeName : null
@@ -116,7 +113,8 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 artifactPaths.CompatibilityReportPath,
                 compatibilityMatrix.TotalMappings,
                 compatibilityMatrix.Mappings.Count(mapping => string.Equals(mapping.Status, DuckTypeAotCompatibilityStatuses.Compatible, StringComparison.Ordinal)),
-                compatibilityMatrix.Mappings.Count(mapping => !string.Equals(mapping.Status, DuckTypeAotCompatibilityStatuses.Compatible, StringComparison.Ordinal)));
+                compatibilityMatrix.Mappings.Count(mapping => !mapping.BehavesLikeDynamicDuckTyping),
+                compatibilityMatrix.Mappings.Count(mapping => !string.Equals(mapping.Status, DuckTypeAotCompatibilityStatuses.Compatible, StringComparison.Ordinal) && mapping.DynamicFailureReplayed));
         }
 
         /// <summary>
@@ -186,7 +184,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                     .ToList(),
                 ProxyAssemblies = Measure(profile, static p => p.CreateProxyAssemblyFingerprintsSeconds, static (p, value) => p.CreateProxyAssemblyFingerprintsSeconds = value, () => CreateAssemblyFingerprints(mappingResolutionResult.ProxyAssemblyPathsByName.Values)),
                 TargetAssemblies = Measure(profile, static p => p.CreateTargetAssemblyFingerprintsSeconds, static (p, value) => p.CreateTargetAssemblyFingerprintsSeconds = value, () => CreateAssemblyFingerprints(mappingResolutionResult.TargetAssemblyPathsByName.Values)),
-                DatadogTraceAssembly = Measure(profile, static p => p.CreateDatadogTraceAssemblyFingerprintSeconds, static (p, value) => p.CreateDatadogTraceAssemblyFingerprintSeconds = value, () => CreateAssemblyFingerprint(ResolveDatadogTraceAssemblyPath(mappingResolutionResult)))
+                DatadogTraceAssembly = Measure(profile, static p => p.CreateDatadogTraceAssemblyFingerprintSeconds, static (p, value) => p.CreateDatadogTraceAssemblyFingerprintSeconds = value, () => CreateAssemblyFingerprint(mappingResolutionResult.GetDatadogTraceAssemblyPath(out _)))
             };
 
             Measure(profile, static p => p.WriteManifestJsonSeconds, static (p, value) => p.WriteManifestJsonSeconds = value, () => WriteJson(manifestPath, manifest));
@@ -204,22 +202,6 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 .OrderBy(path => path, StringComparer.OrdinalIgnoreCase)
                 .Select(CreateAssemblyFingerprint)
                 .ToList();
-        }
-
-        /// <summary>
-        /// Resolves datadog trace assembly path for manifest fingerprints.
-        /// </summary>
-        /// <param name="mappingResolutionResult">The mapping resolution result value.</param>
-        /// <returns>The resulting string value.</returns>
-        private static string ResolveDatadogTraceAssemblyPath(DuckTypeAotMappingResolutionResult mappingResolutionResult)
-        {
-            if (mappingResolutionResult.TargetAssemblyPathsByName.TryGetValue(DatadogTraceAssemblyName, out var datadogTraceAssemblyPath) &&
-                File.Exists(datadogTraceAssemblyPath))
-            {
-                return datadogTraceAssemblyPath;
-            }
-
-            return typeof(Datadog.Trace.Tracer).Assembly.Location;
         }
 
         /// <summary>
@@ -301,6 +283,9 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 .AppendLine($"- Registry assembly: `{matrix.RegistryAssembly}`")
                 .AppendLine($"- Total mappings: `{matrix.TotalMappings}`")
                 .AppendLine()
+                .AppendLine("A status marked `(replayed)` is a failure dynamic duck typing has too, which the registry replays. One marked")
+                .AppendLine("`(metadata only)` couldn't be evaluated with dynamic duck typing in the generator, and may differ from it.")
+                .AppendLine()
                 .AppendLine("| Id | Mode | Source | Status | Diagnostic | Proxy | Target |")
                 .AppendLine("| --- | --- | --- | --- | --- | --- | --- |");
 
@@ -314,6 +299,8 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                     .Append(mapping.Source)
                     .Append(" | ")
                     .Append(mapping.Status)
+                    .Append(mapping.DynamicFailureReplayed ? " (replayed)" : string.Empty)
+                    .Append(mapping.CheckedAgainstMetadataOnly ? " (metadata only)" : string.Empty)
                     .Append(" | ")
                     .Append(mapping.DiagnosticCode ?? "-")
                     .Append(" | ")
@@ -455,7 +442,9 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         private static void AddTypeRoot(IDictionary<string, HashSet<string>> typesByAssembly, string assemblyName, string typeName)
         {
             // Branch: take this path when (string.IsNullOrWhiteSpace(assemblyName) || string.IsNullOrWhiteSpace(typeName)) evaluates to true.
-            if (string.IsNullOrWhiteSpace(assemblyName) || string.IsNullOrWhiteSpace(typeName))
+            if (string.IsNullOrWhiteSpace(assemblyName) ||
+                string.IsNullOrWhiteSpace(typeName) ||
+                DuckTypeAotNameHelpers.GetTrimmerDescriptorTypeName(typeName) is not { } descriptorTypeName)
             {
                 return;
             }
@@ -467,17 +456,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 typesByAssembly[assemblyName] = assemblyTypes;
             }
 
-            _ = assemblyTypes.Add(NormalizeTypeNameForLinker(typeName));
-        }
-
-        /// <summary>
-        /// Normalizes normalize type name for linker.
-        /// </summary>
-        /// <param name="typeName">The type name value.</param>
-        /// <returns>The resulting string value.</returns>
-        private static string NormalizeTypeNameForLinker(string typeName)
-        {
-            return typeName.Replace('+', '/');
+            _ = assemblyTypes.Add(descriptorTypeName);
         }
 
         /// <summary>
@@ -624,15 +603,17 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// <param name="reportPath">The report path value.</param>
         /// <param name="totalMappings">The total mappings value.</param>
         /// <param name="compatibleMappings">The compatible mappings value.</param>
-        /// <param name="nonCompatibleMappings">The non compatible mappings value.</param>
+        /// <param name="nonCompatibleMappings">The mappings that aren't compatible, without the ones that replay a dynamic failure.</param>
+        /// <param name="replayedDynamicFailureMappings">The mappings whose dynamic duck typing failure the registry replays.</param>
         /// <remarks>Emits or composes IL for generated duck-typing proxy operations.</remarks>
-        public DuckTypeAotCompatibilityArtifacts(string matrixPath, string reportPath, int totalMappings, int compatibleMappings, int nonCompatibleMappings)
+        public DuckTypeAotCompatibilityArtifacts(string matrixPath, string reportPath, int totalMappings, int compatibleMappings, int nonCompatibleMappings, int replayedDynamicFailureMappings)
         {
             MatrixPath = matrixPath;
             ReportPath = reportPath;
             TotalMappings = totalMappings;
             CompatibleMappings = compatibleMappings;
             NonCompatibleMappings = nonCompatibleMappings;
+            ReplayedDynamicFailureMappings = replayedDynamicFailureMappings;
         }
 
         /// <summary>
@@ -664,6 +645,12 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// </summary>
         /// <value>The non compatible mappings value.</value>
         public int NonCompatibleMappings { get; }
+
+        /// <summary>
+        /// Gets the mappings whose dynamic duck typing failure the registry replays.
+        /// </summary>
+        /// <value>The replayed dynamic failure mappings value.</value>
+        public int ReplayedDynamicFailureMappings { get; }
     }
 
     /// <summary>
@@ -781,6 +768,29 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// <value>The diagnostic code value.</value>
         [JsonProperty("diagnosticCode")]
         public string? DiagnosticCode { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether the registry replays the failure dynamic duck typing has for this mapping
+        /// (the mapping fails in both modes, the same way).
+        /// </summary>
+        /// <value>true if the dynamic failure is replayed; otherwise, false.</value>
+        [JsonProperty("dynamicFailureReplayed")]
+        public bool DynamicFailureReplayed { get; set; }
+
+        /// <summary>
+        /// Gets a value indicating whether the mapping behaves like in dynamic duck typing: it's compatible, or the registry
+        /// replays the failure dynamic duck typing has.
+        /// </summary>
+        [JsonIgnore]
+        public bool BehavesLikeDynamicDuckTyping => string.Equals(Status, DuckTypeAotCompatibilityStatuses.Compatible, StringComparison.OrdinalIgnoreCase) || DynamicFailureReplayed;
+
+        /// <summary>
+        /// Gets or sets a value indicating whether the generator couldn't evaluate the mapping with dynamic duck typing, so it's
+        /// checked against metadata only, which may differ from dynamic duck typing.
+        /// </summary>
+        /// <value>true if the mapping is checked against metadata only; otherwise, false.</value>
+        [JsonProperty("checkedAgainstMetadataOnly", DefaultValueHandling = DefaultValueHandling.Ignore)]
+        public bool CheckedAgainstMetadataOnly { get; set; }
 
         /// <summary>
         /// Gets or sets details.

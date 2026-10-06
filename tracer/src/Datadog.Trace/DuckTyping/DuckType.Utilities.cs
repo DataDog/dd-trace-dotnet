@@ -153,7 +153,12 @@ namespace Datadog.Trace.DuckTyping
             return false;
         }
 
-        private static IEnumerable<string> GetDuckAttributeCandidateNames(string configuredName)
+        /// <summary>
+        /// Splits a duck attribute name into its comma-separated fallback names. The AOT registry generator uses it too.
+        /// </summary>
+        /// <param name="configuredName">The configured name.</param>
+        /// <returns>The candidate names, in order.</returns>
+        internal static IEnumerable<string> GetDuckAttributeCandidateNames(string configuredName)
         {
             if (configuredName.IndexOf(',') == -1)
             {
@@ -166,12 +171,30 @@ namespace Datadog.Trace.DuckTyping
                 yield break;
             }
 
-            foreach (var name in configuredName.Split(','))
+            // A comma inside generic arguments is part of the name, e.g. the explicit implementation
+            // "System.Collections.Generic.IDictionary<System.String,System.Object>.TryGetValue".
+            var depth = 0;
+            var start = 0;
+            for (var i = 0; i <= configuredName.Length; i++)
             {
-                var trimmedName = name.Trim();
-                if (!StringUtil.IsNullOrEmpty(trimmedName))
+                var current = i < configuredName.Length ? configuredName[i] : ',';
+                if (current is '<' or '[')
                 {
-                    yield return trimmedName;
+                    depth++;
+                }
+                else if (current is '>' or ']')
+                {
+                    depth = Math.Max(0, depth - 1);
+                }
+                else if (current == ',' && (depth == 0 || i == configuredName.Length))
+                {
+                    var trimmedName = configuredName.Substring(start, i - start).Trim();
+                    if (!StringUtil.IsNullOrEmpty(trimmedName))
+                    {
+                        yield return trimmedName;
+                    }
+
+                    start = i + 1;
                 }
             }
         }

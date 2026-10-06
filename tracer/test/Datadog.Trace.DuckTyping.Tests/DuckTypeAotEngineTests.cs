@@ -10,6 +10,7 @@ using System.Collections.Concurrent;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
+using System.Runtime.ExceptionServices;
 using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
@@ -217,7 +218,7 @@ namespace Datadog.Trace.DuckTyping.Tests
             var result = DuckTypeAotEngine.GetOrCreateProxyType(typeof(IMissingProxy), typeof(MissingTarget));
 
             result.CanCreate().Should().BeFalse();
-            AssertFailureResultHasNoActivator(result);
+            AssertFailureResultHasNoProxyActivator(result);
             Action getProxyType = () => _ = result.ProxyType;
             getProxyType.Should().Throw<DuckTypeAotMissingProxyRegistrationException>();
             Action createProxy = () => _ = result.CreateInstance<IMissingProxy>(new MissingTarget());
@@ -234,7 +235,7 @@ namespace Datadog.Trace.DuckTyping.Tests
             var result = DuckTypeAotEngine.GetOrCreateReverseProxyType(typeof(IReverseProxy), typeof(ReverseTarget));
 
             result.CanCreate().Should().BeFalse();
-            AssertFailureResultHasNoActivator(result);
+            AssertFailureResultHasNoProxyActivator(result);
             Action getProxyType = () => _ = result.ProxyType;
             getProxyType.Should().Throw<DuckTypeAotMissingProxyRegistrationException>();
             Action createProxy = () => _ = result.CreateInstance<IReverseProxy>(new ReverseTarget("missing"));
@@ -246,12 +247,63 @@ namespace Datadog.Trace.DuckTyping.Tests
         }
 
         [Fact]
+        public void LookingUpAnUnregisteredPairShouldNotRaiseFirstChanceExceptions()
+        {
+            // Like dynamic failures, the missing registration exception is only thrown when a proxy is created: probing an
+            // unmapped pair (CanCreate, TryDuckCast...) must not show up as first-chance exceptions (e.g. in runtime metrics).
+            DuckType.EnableAotMode();
+            var testThreadId = Environment.CurrentManagedThreadId;
+            var firstChanceExceptions = 0;
+            void CountFirstChanceException(object? sender, FirstChanceExceptionEventArgs args)
+            {
+                if (args.Exception is DuckTypeAotMissingProxyRegistrationException && Environment.CurrentManagedThreadId == testThreadId)
+                {
+                    Interlocked.Increment(ref firstChanceExceptions);
+                }
+            }
+
+            AppDomain.CurrentDomain.FirstChanceException += CountFirstChanceException;
+            try
+            {
+                DuckType.CanCreate<IMissingProxy>(new MissingTarget()).Should().BeFalse();
+                new MissingTarget().TryDuckCast<IMissingProxy>(out _).Should().BeFalse();
+                DuckType.GetOrCreateProxyType(typeof(IMissingProxy), typeof(MissingTarget)).CanCreate().Should().BeFalse();
+            }
+            finally
+            {
+                AppDomain.CurrentDomain.FirstChanceException -= CountFirstChanceException;
+            }
+
+            firstChanceExceptions.Should().Be(0);
+            Action create = () => DuckType.Create<IMissingProxy>(new MissingTarget());
+            create.Should().Throw<DuckTypeAotMissingProxyRegistrationException>();
+        }
+
+        [Fact]
+        public void ObjectBasedCreationShouldWrapActivatorExceptionsLikeDynamicDuckTyping()
+        {
+            // Dynamic duck typing creates object-based proxies through DynamicInvoke, which wraps whatever the activator
+            // throws in a TargetInvocationException; the generic APIs call the activator directly in both modes.
+            DuckType.EnableAotMode();
+            DuckType.RegisterAotProxy(
+                typeof(IForwardProxy),
+                typeof(ForwardTarget),
+                typeof(ForwardGeneratedProxy),
+                (Func<object?, object?>)(_ => throw new InvalidOperationException("boom")));
+
+            Action createNonGeneric = () => DuckType.Create(typeof(IForwardProxy), new ForwardTarget("value"));
+            createNonGeneric.Should().Throw<TargetInvocationException>().WithInnerException<InvalidOperationException>();
+            Action createGeneric = () => DuckType.Create<IForwardProxy>(new ForwardTarget("value"));
+            createGeneric.Should().Throw<InvalidOperationException>().WithMessage("boom");
+        }
+
+        [Fact]
         public void DynamicNonGenericFailureKeepsTargetInvocationExceptionContractWithoutActivator()
         {
             var result = DuckType.GetOrCreateProxyType(typeof(IDynamicFailureProxy), typeof(DynamicFailureTarget));
 
             result.CanCreate().Should().BeFalse();
-            AssertFailureResultHasNoActivator(result);
+            AssertFailureResultHasNoProxyActivator(result);
             Action createGeneric = () => _ = result.CreateInstance<IDynamicFailureProxy>(new DynamicFailureTarget());
             createGeneric.Should().Throw<DuckTypeProxyAndTargetMethodReturnTypeMismatchException>();
             Action createNonGeneric = () => _ = DuckType.Create(typeof(IDynamicFailureProxy), new DynamicFailureTarget());
@@ -370,13 +422,12 @@ namespace Datadog.Trace.DuckTyping.Tests
             result.CreateInstance<IForwardProxy>(target).Value.Should().Be("hello");
             DuckTypeAotEngine.DirectObjectActivatorHandleCount.Should().Be(1);
 
+            // The method-handle activator is rebound once to an object-callable delegate over the same generated method.
             var activator = GetCreateTypeResultField<Delegate>(result, "_activator");
-            var untypedActivator = GetCreateTypeResultField<Func<object?, object?>>(result, "_untypedActivator");
             activator.Should().NotBeNull();
-            activator!.GetType().Should().Be(typeof(CreateProxyInstance<IForwardProxy>));
-            untypedActivator.Should().NotBeNull();
-            untypedActivator!.Method.Name.Should().Be(activator.Method.Name);
-            untypedActivator.Method.DeclaringType.Should().Be(activator.Method.DeclaringType);
+            activator!.GetType().Should().Be(typeof(Func<object?, object?>));
+            activator.Method.Name.Should().Be(activatorMethod.Name);
+            activator.Method.DeclaringType.Should().Be(activatorMethod.DeclaringType);
         }
 
         [Fact]
@@ -399,13 +450,12 @@ namespace Datadog.Trace.DuckTyping.Tests
             result.CreateInstance<IReverseProxy>(new ReverseTarget("reverse")).Value.Should().Be("reverse");
             DuckTypeAotEngine.DirectObjectActivatorHandleCount.Should().Be(1);
 
+            // The method-handle activator is rebound once to an object-callable delegate over the same generated method.
             var activator = GetCreateTypeResultField<Delegate>(result, "_activator");
-            var untypedActivator = GetCreateTypeResultField<Func<object?, object?>>(result, "_untypedActivator");
             activator.Should().NotBeNull();
-            activator!.GetType().Should().Be(typeof(CreateProxyInstance<IReverseProxy>));
-            untypedActivator.Should().NotBeNull();
-            untypedActivator!.Method.Name.Should().Be(activator.Method.Name);
-            untypedActivator.Method.DeclaringType.Should().Be(activator.Method.DeclaringType);
+            activator!.GetType().Should().Be(typeof(Func<object?, object?>));
+            activator.Method.Name.Should().Be(activatorMethod.Name);
+            activator.Method.DeclaringType.Should().Be(activatorMethod.DeclaringType);
         }
 
         [Fact]
@@ -663,7 +713,7 @@ namespace Datadog.Trace.DuckTyping.Tests
             var result = DuckTypeAotEngine.GetOrCreateProxyType(typeof(IForwardProxy), typeof(ForwardTarget));
 
             result.CanCreate().Should().BeFalse();
-            AssertFailureResultHasNoActivator(result);
+            AssertFailureResultHasNoProxyActivator(result);
             Action getProxyType = () => _ = result.ProxyType;
             getProxyType.Should().Throw<DuckTypeAotRegisteredFailureException>()
                         .WithMessage("*KnownDuckTypeFailure*missing-member*");
@@ -692,7 +742,7 @@ namespace Datadog.Trace.DuckTyping.Tests
             var result = DuckTypeAotEngine.GetOrCreateReverseProxyType(typeof(IReverseProxy), typeof(ReverseTarget));
 
             result.CanCreate().Should().BeFalse();
-            AssertFailureResultHasNoActivator(result);
+            AssertFailureResultHasNoProxyActivator(result);
             Action getProxyType = () => _ = result.ProxyType;
             getProxyType.Should().Throw<DuckTypeAotRegisteredFailureException>()
                         .WithMessage("*KnownDuckTypeFailure*missing-member*");
@@ -748,7 +798,7 @@ namespace Datadog.Trace.DuckTyping.Tests
             var result = DuckTypeAotEngine.GetOrCreateProxyType(typeof(IForwardProxy), typeof(ForwardTarget));
 
             result.CanCreate().Should().BeFalse();
-            AssertFailureResultHasNoActivator(result);
+            AssertFailureResultHasNoProxyActivator(result);
             Action getProxyType = () => _ = result.ProxyType;
             getProxyType.Should().Throw<DuckTypeTargetMethodNotFoundException>()
                         .WithMessage(expectedMessage);
@@ -1484,11 +1534,11 @@ namespace Datadog.Trace.DuckTyping.Tests
             return field!;
         }
 
-        private static void AssertFailureResultHasNoActivator(DuckType.CreateTypeResult result)
+        private static void AssertFailureResultHasNoProxyActivator(DuckType.CreateTypeResult result)
         {
+            // The activator slot of a failure only holds the Action that throws it (see CreateTypeResult).
             result.UsesDynamicInvokeFallback.Should().BeFalse();
-            GetCreateTypeResultField<Delegate>(result, "_activator").Should().BeNull();
-            GetCreateTypeResultField<Func<object?, object?>>(result, "_untypedActivator").Should().BeNull();
+            GetCreateTypeResultField<Delegate>(result, "_activator").Should().BeAssignableTo<Action>();
         }
 
         private static string CurrentDatadogTraceAssemblyVersion => typeof(DuckTypeAotEngine).Assembly.GetName().Version?.ToString() ?? "0.0.0.0";

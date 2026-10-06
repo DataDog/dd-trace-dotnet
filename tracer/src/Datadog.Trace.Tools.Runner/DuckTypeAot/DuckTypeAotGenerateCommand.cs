@@ -39,7 +39,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             IsRequired = true
         };
 
-        private readonly Option<bool> _discoverMappingsOption = new("--discover-mappings", "Discover compatible mappings and write --map-file before generating artifacts.");
+        private readonly Option<bool> _discoverMappingsOption = new("--discover-mappings", "Discover compatible mappings declared with attributes and add them to --map-file (created if missing) before generating artifacts.");
 
         /// <summary>
         /// Stores generic instantiations option.

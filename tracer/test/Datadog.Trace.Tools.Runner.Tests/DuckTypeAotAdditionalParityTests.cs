@@ -28,7 +28,7 @@ using Xunit;
 namespace Datadog.Trace.Tools.Runner.Tests;
 
 [Collection(nameof(DuckTypeAotProcessorConsoleCollection))]
-public class DuckTypeAotAdditionalParityTests
+public partial class DuckTypeAotAdditionalParityTests
 {
     [Theory]
     [InlineData("method")]
@@ -408,12 +408,15 @@ public class DuckTypeAotAdditionalParityTests
         => WithGeneratedRegistry(assertions, compatibilityAssertions: null, mappings);
 
     private static void WithGeneratedRegistry(Action assertions, Action<DuckTypeAotCompatibilityMatrix>? compatibilityAssertions, params DuckTypeAotMapping[] mappings)
+        => WithGeneratedRegistry(assertions, compatibilityAssertions, extraTargetAssemblies: [], mappings);
+
+    private static void WithGeneratedRegistry(Action assertions, Action<DuckTypeAotCompatibilityMatrix>? compatibilityAssertions, IReadOnlyList<string> extraTargetAssemblies, params DuckTypeAotMapping[] mappings)
     {
         var directory = CreateTemporaryDirectory();
         var loadContext = new AssemblyLoadContext("AdditionalParity", isCollectible: true);
         try
         {
-            var options = CreateGenerateOptions(directory, WriteMapFile(directory, mappings), targetFolders: []);
+            var options = CreateGenerateOptions(directory, WriteMapFile(directory, mappings), targetFolders: [], extraTargetAssemblies);
             DuckTypeAotGenerateProcessor.Process(options).Should().Be(0);
             if (compatibilityAssertions is not null)
             {
@@ -463,12 +466,12 @@ public class DuckTypeAotAdditionalParityTests
         return mapPath;
     }
 
-    private static DuckTypeAotGenerateOptions CreateGenerateOptions(string directory, string mapPath, IReadOnlyList<string> targetFolders)
+    private static DuckTypeAotGenerateOptions CreateGenerateOptions(string directory, string mapPath, IReadOnlyList<string> targetFolders, IReadOnlyList<string>? extraTargetAssemblies = null)
     {
         var outputPath = Path.Combine(directory, "Registry.dll");
         return new DuckTypeAotGenerateOptions(
             proxyAssemblies: [TestAssemblyPath],
-            targetAssemblies: [TestAssemblyPath],
+            targetAssemblies: [TestAssemblyPath, .. extraTargetAssemblies ?? Array.Empty<string>()],
             targetFolders: targetFolders,
             targetFilters: ["*.dll"],
             mapFile: mapPath,
