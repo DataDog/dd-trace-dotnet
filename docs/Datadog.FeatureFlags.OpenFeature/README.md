@@ -72,7 +72,44 @@ RUN /<APP_DIRECTORY>/datadog/createLogPath.sh
 
 Docker examples are available [here](https://github.com/DataDog/dd-trace-dotnet/tree/master/tracer/samples/NugetDeployment)
 
+## Synchronous evaluation (experimental)
+
+`DatadogProvider` provides experimental synchronous methods for code that cannot
+await: `ResolveBooleanValue`, `ResolveIntegerValue`, `ResolveDoubleValue`,
+`ResolveStringValue`, and `ResolveStructureValue`. Each returns OpenFeature
+`ResolutionDetails<T>` from the local evaluator. Register the provider with
+`SetProviderAsync` first; initialization and configuration delivery remain asynchronous.
+
+```csharp
+using Datadog.FeatureFlags.OpenFeature;
+using OpenFeature.Model;
+
+var provider = new DatadogProvider();
+await OpenFeature.Api.Instance.SetProviderAsync(provider);
+var context = EvaluationContext.Builder().SetTargetingKey("customer-123").Build();
+
+#pragma warning disable DDFF001 // Explicit opt-in to experimental sync resolution.
+var result = provider.ResolveBooleanValue("new-checkout", false, context);
+#pragma warning restore DDFF001
+
+bool enabled = result.Value;
+```
+
+These methods are Datadog extensions, outside OpenFeature's `IFeatureClient` API.
+They use only the context you pass; global, client, and transaction context are
+not merged, and OpenFeature client lifecycle checks do not run. The provider's
+own hooks run before the call returns, recording evaluation metrics on supported
+frameworks and span enrichment when enabled. Hooks registered on the OpenFeature
+API or client do not run. Evaluator-owned exposure recording remains enabled.
+
+Until configuration arrives, a call returns your default value with
+`ProviderNotReady`. Inspect the error details when a default is unsuitable.
+Cancellation and invalid arguments retain the direct async provider methods'
+exception behavior.
+
+These APIs report diagnostic `DDFF001`; suppress it explicitly to opt in. Older
+compilers may not enforce this diagnostic. Existing async calls require no opt-in.
+
 ## Get in touch
 
 If you have questions, feedback, or feature requests, reach our [support](https://docs.datadoghq.com/help).
-
