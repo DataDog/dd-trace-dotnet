@@ -502,57 +502,72 @@
        tooling at the same 1.5.7 pinned on the Linux/CMake side) compiled
        directly alongside the rest; exporter_win.c replaces libcurl with
        WinHTTP (winhttp.lib, linked via #pragma comment in that file, no
-       AdditionalDependencies edit needed) - see both files' own comments. -->
+       AdditionalDependencies edit needed) - see both files' own comments.
+       ObjectFileName: every object of this project lands in the same IntDir,
+       named after its source file, and file names are case-insensitive on
+       Windows - so profile.c/tags.c would overwrite Profile.cpp/Tags.cpp's
+       objects (unresolved libdatadog::Profile/Tags at link time). The poc_
+       prefix keeps the two sets apart. -->
   <ItemGroup>
     <ClCompile Include="..\..\..\..\shared\src\datadog-profiling-poc\src\internal.c">
       <CompileAs>CompileAsC</CompileAs>
       <LanguageStandard>Default</LanguageStandard>
       <LanguageStandard_C>stdc11</LanguageStandard_C>
+      <ObjectFileName>$(IntDir)poc_%(Filename).obj</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\..\..\shared\src\datadog-profiling-poc\src\tags.c">
       <CompileAs>CompileAsC</CompileAs>
       <LanguageStandard>Default</LanguageStandard>
       <LanguageStandard_C>stdc11</LanguageStandard_C>
+      <ObjectFileName>$(IntDir)poc_%(Filename).obj</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\..\..\shared\src\datadog-profiling-poc\src\profile.c">
       <CompileAs>CompileAsC</CompileAs>
       <LanguageStandard>Default</LanguageStandard>
       <LanguageStandard_C>stdc11</LanguageStandard_C>
+      <ObjectFileName>$(IntDir)poc_%(Filename).obj</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\..\..\shared\src\datadog-profiling-poc\src\pprof_encode.c">
       <CompileAs>CompileAsC</CompileAs>
       <LanguageStandard>Default</LanguageStandard>
       <LanguageStandard_C>stdc11</LanguageStandard_C>
+      <ObjectFileName>$(IntDir)poc_%(Filename).obj</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\..\..\shared\src\datadog-profiling-poc\src\zstd_compress.c">
       <CompileAs>CompileAsC</CompileAs>
       <LanguageStandard>Default</LanguageStandard>
       <LanguageStandard_C>stdc11</LanguageStandard_C>
+      <ObjectFileName>$(IntDir)poc_%(Filename).obj</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\..\..\shared\src\datadog-profiling-poc\vendor\zstd\zstd.c">
       <CompileAs>CompileAsC</CompileAs>
       <LanguageStandard>Default</LanguageStandard>
       <LanguageStandard_C>stdc11</LanguageStandard_C>
+      <ObjectFileName>$(IntDir)poc_%(Filename).obj</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\..\..\shared\src\datadog-profiling-poc\src\encoded_profile.c">
       <CompileAs>CompileAsC</CompileAs>
       <LanguageStandard>Default</LanguageStandard>
       <LanguageStandard_C>stdc11</LanguageStandard_C>
+      <ObjectFileName>$(IntDir)poc_%(Filename).obj</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\..\..\shared\src\datadog-profiling-poc\src\endpoint.c">
       <CompileAs>CompileAsC</CompileAs>
       <LanguageStandard>Default</LanguageStandard>
       <LanguageStandard_C>stdc11</LanguageStandard_C>
+      <ObjectFileName>$(IntDir)poc_%(Filename).obj</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\..\..\shared\src\datadog-profiling-poc\src\exporter_win.c">
       <CompileAs>CompileAsC</CompileAs>
       <LanguageStandard>Default</LanguageStandard>
       <LanguageStandard_C>stdc11</LanguageStandard_C>
+      <ObjectFileName>$(IntDir)poc_%(Filename).obj</ObjectFileName>
     </ClCompile>
     <ClCompile Include="..\..\..\..\shared\src\datadog-profiling-poc\src\json_min.c">
       <CompileAs>CompileAsC</CompileAs>
       <LanguageStandard>Default</LanguageStandard>
       <LanguageStandard_C>stdc11</LanguageStandard_C>
+      <ObjectFileName>$(IntDir)poc_%(Filename).obj</ObjectFileName>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
