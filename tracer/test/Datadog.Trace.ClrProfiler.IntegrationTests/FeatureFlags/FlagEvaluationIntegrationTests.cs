@@ -5,6 +5,7 @@
 
 using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
@@ -172,10 +173,13 @@ public class FlagEvaluationIntegrationTests : TestHelper
     [Trait("RunOnWindows", "True")]
     public async Task UnavailableAgentDoesNotChangeCdnEvaluationsOrIntroduceFallback()
     {
+        // Delivery failure intentionally logs an error. Keep this test's expected errors
+        // out of CI's CheckLogsForErrors scan, as in Telemetry_SendsRedactedErrorLogs.
+        SetEnvironmentVariable(ConfigurationKeys.LogDirectory, Path.GetTempPath());
         using var agent = EnvironmentHelper.GetMockAgent();
         var configuration = CreateConfiguration(false);
         // Exercise flagevaluation delivery failure without unrelated trace/exposure senders
-        // producing expected connection errors that fail CI's error-log checks.
+        // producing unrelated connection errors.
         foreach (var flag in configuration.Flags.ValidFlags)
         {
             foreach (var allocation in flag.Value.Allocations)
