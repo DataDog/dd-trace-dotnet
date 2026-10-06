@@ -122,6 +122,67 @@ public class FeatureFlagsModuleTests
     }
 
     [Fact]
+    public void UpdateRemoteConfig_RecomputesConsentFromActiveFilesAfterUpdatesAndRemovals()
+    {
+        var rcmManager = new MockRcmSubscriptionManager();
+        using var module = CreateModule(CreateSettings(), rcmManager);
+        var subscription = rcmManager.LastSubscription
+                        ?? throw new InvalidOperationException("Create did not register a Remote Configuration subscription.");
+        var firstPath = RemoteConfigurationPath.FromPath($"datadog/2/{RcmProducts.FfeFlags}/first/config");
+        var secondPath = RemoteConfigurationPath.FromPath($"datadog/2/{RcmProducts.FfeFlags}/second/config");
+
+        AssertConsent("false");
+        Update(firstPath, false);
+        Update(secondPath, true);
+        AssertConsent("false");
+
+        // Refreshing either path must not change consent just by changing merge order.
+        Update(firstPath, false);
+        AssertConsent("false");
+        Update(secondPath, true);
+        AssertConsent("false");
+
+        // Replacing the nonconsenting file must discard its old consent, not latch false.
+        Update(firstPath, true);
+        AssertConsent("true");
+
+        Update(firstPath, false);
+        AssertConsent("false");
+        Remove(firstPath);
+        AssertConsent("true");
+        Remove(secondPath);
+        AssertConsent("false");
+        module.Evaluate("flag", FeatureFlagsValueType.String, "fallback", "user", null)
+              .Error.Should().Be("PROVIDER_NOT_READY");
+
+        void AssertConsent(string expected)
+            => module.Evaluate("flag", FeatureFlagsValueType.String, "fallback", "user", null)
+                     .FlagMetadata![FeatureFlagMetadataKeys.ObserveFullEvaluationData].Should().Be(expected);
+
+        void Update(RemoteConfigurationPath path, bool consent)
+        {
+            var flag = FeatureFlagsHelpers.CreateExposureFlag();
+            flag.Allocations![0].DoLog = false;
+            var json = JsonConvert.SerializeObject(new ServerConfiguration
+            {
+                ObserveFullEvaluationData = consent,
+                Flags = new FlagCollection { ["flag"] = flag },
+            });
+            subscription.Invoke(
+                new Dictionary<string, List<RemoteConfiguration>>
+                {
+                    [RcmProducts.FfeFlags] = [new RemoteConfiguration(path, System.Text.Encoding.UTF8.GetBytes(json), json.Length, new Dictionary<string, string> { { "sha256", "dummy" } }, 1)],
+                },
+                null);
+            module.Evaluate("flag", FeatureFlagsValueType.String, "fallback", "user", null)
+                  .Value.Should().Be("tracked-value");
+        }
+
+        void Remove(RemoteConfigurationPath path)
+            => subscription.Invoke([], new Dictionary<string, List<RemoteConfigurationPath>> { [RcmProducts.FfeFlags] = [path] });
+    }
+
+    [Fact]
     public void Create_WithAgentlessSource_DoesNotSubscribeToRc()
     {
         var rcmManager = new MockRcmSubscriptionManager();

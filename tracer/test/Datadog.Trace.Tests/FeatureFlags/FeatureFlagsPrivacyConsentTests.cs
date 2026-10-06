@@ -144,15 +144,18 @@ public class FeatureFlagsPrivacyConsentTests
     }
 
     [Theory]
-    [InlineData(false, true, "true")]
+    [InlineData(false, false, "false")]
+    [InlineData(false, true, "false")]
     [InlineData(true, false, "false")]
-    public void LastMergedConfigurationSetsConsentForAllFlagsWithoutMutatingSources(bool firstConsent, bool lastConsent, string expectedConsent)
+    [InlineData(true, true, "true")]
+    public void EveryMergedConfigurationMustConsentWithoutMutatingSources(bool firstConsent, bool lastConsent, string expectedConsent)
     {
         var first = Configuration(firstConsent);
         var last = Configuration(lastConsent);
+        last.Flags!["flag"].Variations!["tracked"].Value = "last-value";
         first.Flags!.Add("first-only", first.Flags["flag"]);
         first.Flags.MarkInvalid("invalid");
-        var merged = new ServerConfiguration();
+        var merged = new ServerConfiguration { ObserveFullEvaluationData = first.ObserveFullEvaluationData };
         merged.Merge(first);
         merged.Merge(last);
         var evaluator = new FeatureFlagsEvaluator(null, merged);
@@ -162,12 +165,12 @@ public class FeatureFlagsPrivacyConsentTests
             Assert.Equal(expectedConsent, Evaluate(key).FlagMetadata!["__dd_observe_full_evaluation_data"]);
         }
 
-        Assert.Equal("tracked-value", Evaluate("flag").Value);
+        Assert.Equal("last-value", Evaluate("flag").Value);
         Assert.Equal("tracked-value", Evaluate("first-only").Value);
         Assert.Equal("FLAG_NOT_FOUND", Evaluate("missing").FlagMetadata!["errorCode"]);
         Assert.Equal("PARSE_ERROR", Evaluate("invalid").FlagMetadata!["errorCode"]);
         Assert.Equal(firstConsent ? "true" : "false", new FeatureFlagsEvaluator(null, first).Evaluate("flag", ValueType.String, "fallback", new EvaluationContext("user")).FlagMetadata!["__dd_observe_full_evaluation_data"]);
-        Assert.Equal(expectedConsent, new FeatureFlagsEvaluator(null, last).Evaluate("flag", ValueType.String, "fallback", new EvaluationContext("user")).FlagMetadata!["__dd_observe_full_evaluation_data"]);
+        Assert.Equal(lastConsent ? "true" : "false", new FeatureFlagsEvaluator(null, last).Evaluate("flag", ValueType.String, "fallback", new EvaluationContext("user")).FlagMetadata!["__dd_observe_full_evaluation_data"]);
 
         Evaluation Evaluate(string key) => evaluator.Evaluate(key, ValueType.String, "fallback", new EvaluationContext("user"));
     }
@@ -178,17 +181,24 @@ public class FeatureFlagsPrivacyConsentTests
     [InlineData("{\"observeFullEvaluationData\": null}")]
     [InlineData("{\"observeFullEvaluationData\": \"true\"}")]
     [InlineData("{\"observeFullEvaluationData\": 1}")]
-    public void LastMergedConfigurationWithoutExplicitConsentProtectsRetainedFlags(string json)
+    public void ConfigurationWithoutExplicitConsentProtectsRetainedFlagsInEitherOrder(string json)
     {
-        var merged = new ServerConfiguration();
-        merged.Merge(Configuration(true));
-        merged.Merge(JsonConvert.DeserializeObject<ServerConfiguration>(json)!);
+        var consented = Configuration(true);
+        var protectedConfig = JsonConvert.DeserializeObject<ServerConfiguration>(json)!;
+        foreach (var configs in new[] { new[] { consented, protectedConfig }, new[] { protectedConfig, consented } })
+        {
+            var merged = new ServerConfiguration { ObserveFullEvaluationData = configs[0].ObserveFullEvaluationData };
+            foreach (var config in configs)
+            {
+                merged.Merge(config);
+            }
 
-        var evaluator = new FeatureFlagsEvaluator(null, merged);
-        var result = evaluator.Evaluate("flag", ValueType.String, "fallback", new EvaluationContext("user"));
+            var evaluator = new FeatureFlagsEvaluator(null, merged);
+            var result = evaluator.Evaluate("flag", ValueType.String, "fallback", new EvaluationContext("user"));
 
-        Assert.Equal("tracked-value", result.Value);
-        Assert.Equal("false", result.FlagMetadata!["__dd_observe_full_evaluation_data"]);
+            Assert.Equal("tracked-value", result.Value);
+            Assert.Equal("false", result.FlagMetadata!["__dd_observe_full_evaluation_data"]);
+        }
     }
 
     private static ServerConfiguration Configuration(bool consent)

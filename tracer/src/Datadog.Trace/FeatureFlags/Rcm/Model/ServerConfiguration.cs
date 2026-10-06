@@ -25,8 +25,8 @@ internal sealed class ServerConfiguration
 
     internal void Merge(ServerConfiguration other)
     {
-        // Consent is configuration-wide: the last merged value wins, including false.
-        ObserveFullEvaluationData = other.ObserveFullEvaluationData;
+        // One nonconsenting file protects every flag retained in the merged configuration.
+        ObserveFullEvaluationData &= other.ObserveFullEvaluationData;
 
         if (other.CreatedAt is not null)
         {

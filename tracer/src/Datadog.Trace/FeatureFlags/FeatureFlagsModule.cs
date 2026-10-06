@@ -579,7 +579,9 @@ namespace Datadog.Trace.FeatureFlags
                     return list[0].Value;
                 }
 
-                var res = new ServerConfiguration();
+                // Recompute from the active files, not the previous merged result. Seeding
+                // from the first file keeps the configuration's default consent false.
+                var res = new ServerConfiguration { ObserveFullEvaluationData = list[0].Value.ObserveFullEvaluationData };
                 foreach (var conf in list)
                 {
                     res.Merge(conf.Value);
