@@ -57,6 +57,98 @@
 
 
 
+
+## [Release 3.55.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v3.55.0)
+
+## Summary
+* [Tracer] support OTel thread context propagation on Linux (#9147)
+* [Tracer] Add Azure Durable Functions tracing (#9217)
+* Fix cross-language DSM pathway extraction for AWS messages (#9289)
+
+## Changes
+
+### Tracer
+* fix(openfeature): accept empty string as valid targeting key (#8384)
+* [Tracer] support OTel thread context propagation on Linux (#9147)
+* [Tracer] Add Azure Durable Functions tracing (#9217)
+* Copy ASP.NET Core activity tags we haven't set, instead of filtering them (#9297)
+* Initial runtime-async support for .NET 11 (#9305)
+* Fix various minor issues identified in .NET 11 update (#9280)
+* Enforce ot tracestate value limit (#9324)
+* feat(otel): Emit OpenTelemetry HTTP semantic conventions on HTTP server spans (ASP.NET) (#9027)
+* feat(otel): Support the required startup hook for opentelemetry-operator installation (#9314)
+* [Docs] Keep customer data out of pull requests (#9356)
+
+### CI Visibility
+* [CI Visibility] Secure reduced tracer home cache (#8804)
+* [CI Visibility] Restore request configurations in skippable responses (#9339)
+
+### ASM
+* [AppSec] Report the WAF version when the WAF fails to initialize (#9308)
+* [AppSec] Disable instrumentation telemetry in managed unit tests (#9309)
+
+### Continuous Profiler
+* [Profiler] Log the ARM64 gate reason when the Continuous Profiler is disabled (#9258)
+
+### Debugger
+* [Debugger] Disable Exception Replay when FIPS blocks MD5 (#9176)
+* [Tracer] Synchronize ReJIT state access (#9254)
+* [Tracer] Keep ReJIT requests bound to module generations (#9255)
+* [Tracer] Harden ReJIT worker failures (#9256)
+* [Debugger] Coordinate snapshot sampling per trace (#9266)
+* [Debugger] Emit truncated:true when snapshot strings are clipped (#9272)
+* [Debugger] Box value-type keys when indexing IDictionary (#9274)
+* [Tracer] Forget processed NGen inliner modules when they unload (#9292)
+* [Debugger] Hash Exception Replay exceptions with FNV-1a instead of MD5 (#9328)
+
+### Serverless
+* [Serverless] Expand apm-serverless CODEOWNERS coverage (#9326)
+
+### Fixes
+* fix(otlp): emit non-overlapping trace metric windows (#9159)
+* [FeatureFlags] Return the caller's default value on every provider error (#9299)
+* [FeatureFlags] Stop serving flags removed from a modified Remote Configuration file (#9304)
+
+### Miscellaneous
+* Use `StringUtil.ToLowerInvariant()`/`StringUtil.ToUpperInvariant()` on .NET Framework (#9180)
+* Declare FLAKY_BENCHMARKS_REGEX and document benchmarks CI (#9306)
+* ci: update one-pipeline to 1.5.4 (#9312)
+* [Propagators] OTLP trace export carries `ot.th/rv`[APMAPI-2170] (#9062)
+
+### Build / Test
+* Rework CODEOWNERS tests to try and aim for exclusive ownership (#9155)
+* Isolate Git changes in impacted tests (#9195)
+* Disable Continuous Profiler in legacy security policy smoke test (#9197)
+* [Build] Disable libunwind clone progress output (#9198)
+* Produce snupkg for feature flags NuGet package (#9200)
+* Add team freeze guard workflow (#9220)
+* Prevent duplicate integration test runs and filter overlaps (#9269)
+* chore(codeowners): give FFE sole ownership of product paths (#9273)
+* [Test Package Versions Bump] Updating package versions (#9275)
+* [CI] Bump llm-validation to v0.1.4 (signed image) (#9281)
+* Upload microbenchmark results to BP_EXTERNAL_S3_URL (#9282)
+* Update retry on infra failures for benchmarks (#9283)
+* Change ownership of timeit benchmarks (#9284)
+* Fix token timing out (#9293)
+* Build updates in preparation for .NET 11 (#9294)
+* Update version of ClrMD used by dd-dotnet to support .NET 11 (#9295)
+* .NET 11 test/build prerequisites (#9302)
+* [Tests] Wait for app-closing telemetry before exiting func (#9315)
+* Update to building with .NET 11 RC1 (#9317)
+* Remove ASP.NET Core modules from classic IIS test configurations (#9318)
+* Isolate impacted-test Git caches (#9319)
+* Isolate mocked CI-provider tests (#9320)
+* Re-enable .NET 11 benchmarks (#9321)
+* Extend Azure artifact polling timeout (#9330)
+* Explicitly forward BP_EXTERNAL_S3_URL on benchmark triggers (#9337)
+* Bump the gh-actions-packages group across 2 directories with 7 updates (#9348)
+
+### Data Streams Monitoring
+* Fix cross-language DSM pathway extraction for AWS messages (#9289)
+
+
+[Changes since 3.54.0](https://github.com/DataDog/dd-trace-dotnet/compare/v3.54.0...v3.55.0)
+
 ## [Release 3.54.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v3.54.0)
 
 ## Summary
