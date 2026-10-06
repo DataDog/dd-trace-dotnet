@@ -21,6 +21,7 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
         private readonly string _framework;
         private readonly string _testOutputPath;
         private readonly bool _enableProfiler;
+        private bool _enableTracer;
 
         public EnvironmentHelper(string framework, bool enableTracer, bool enableProfiler)
         {
@@ -136,6 +137,7 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
 
         internal void EnableTracer()
         {
+            _enableTracer = true;
             AddTracerEnvironmentVariables();
         }
 
@@ -173,13 +175,17 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
         internal string GenerateLoaderConfigFile()
         {
             var profilerPath = GetProfilerNativeLibraryPath();
-            var tracerPath = GetTracerNativeLibraryPath();
 
             var loaderConfigFilePath = Path.GetTempFileName();
             using var sw = new StreamWriter(loaderConfigFilePath);
 
             sw.WriteLine($"PROFILER;{{BD1A650D-AC5D-4896-B64F-D6FA25D6B26A}};{GetArchitectureSubfolder(IsAlpine)};{profilerPath}");
-            sw.WriteLine($"TRACER;{{50DA5EED-F1ED-B00B-1055-5AFE55A1ADE5}};{GetArchitectureSubfolder(IsAlpine)};{tracerPath}");
+            if (_enableTracer)
+            {
+                var tracerPath = GetTracerNativeLibraryPath();
+                sw.WriteLine($"TRACER;{{50DA5EED-F1ED-B00B-1055-5AFE55A1ADE5}};{GetArchitectureSubfolder(IsAlpine)};{tracerPath}");
+            }
+
             return loaderConfigFilePath;
         }
 
