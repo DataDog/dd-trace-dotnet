@@ -387,17 +387,22 @@ namespace Datadog.Trace.FeatureFlags
                 UpdateEvaluationContext(_settingsManager.InitialMutableSettings);
                 writer = new FlagEvaluationWriter(sender.SendCompressedAsync, () => Volatile.Read(ref _evaluationContext));
                 var currentSender = sender;
+                var firstSettingsUpdate = true;
                 _evaluationSettingsSubscription = _settingsManager.SubscribeToChanges(changes =>
                 {
-                    if (changes.UpdatedExporter is { } exporter)
+                    // Subscription replays only the latest change. Restore both current
+                    // settings on the first callback, including values unchanged in that change.
+                    if (firstSettingsUpdate || changes.UpdatedExporter is not null)
                     {
-                        currentSender.UpdateExporterSettings(exporter);
+                        currentSender.UpdateExporterSettings(changes.UpdatedExporter ?? changes.PreviousExporter);
                     }
 
-                    if (changes.UpdatedMutable is { } mutable)
+                    if (firstSettingsUpdate || changes.UpdatedMutable is not null)
                     {
-                        UpdateEvaluationContext(mutable);
+                        UpdateEvaluationContext(changes.UpdatedMutable ?? changes.PreviousMutable);
                     }
+
+                    firstSettingsUpdate = false;
                 });
                 _evaluationSender = sender;
                 Volatile.Write(ref _evaluationWriter, writer);

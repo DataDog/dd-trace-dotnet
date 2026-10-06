@@ -103,8 +103,11 @@ public class FlagEvaluationModuleTests(ITestOutputHelper output)
         }
     }
 
-    [Fact]
-    public async Task ExporterAndServiceContextUpdatesApplyBeforeAndAfterActivation()
+    [Theory]
+    [InlineData("together")]
+    [InlineData("exporter-first")]
+    [InlineData("context-first")]
+    public async Task ExporterAndServiceContextUpdatesApplyBeforeAndAfterActivation(string updateOrder)
     {
         using var original = MockTracerAgent.Create(_output);
         using var updated = MockTracerAgent.Create(_output);
@@ -116,6 +119,22 @@ public class FlagEvaluationModuleTests(ITestOutputHelper output)
         var module = FeatureFlagsModule.Create(settings, new MockRcmSubscriptionManager())!;
         try
         {
+            if (updateOrder == "exporter-first")
+            {
+                settings.Manager.UpdateManualConfigurationSettings(
+                    new ManualInstrumentationConfigurationSource(
+                        new Dictionary<string, object?>
+                        {
+                            [TracerSettingKeyConstants.AgentUriKey] = new Uri($"http://127.0.0.1:{updated.Port}"),
+                        },
+                        useDefaultSources: true),
+                    NullConfigurationTelemetry.Instance);
+            }
+            else if (updateOrder == "context-first")
+            {
+                UpdateSettings(settings, original.Port, "before");
+            }
+
             UpdateSettings(settings, updated.Port, "before");
             module.Activate();
             var writer = module.EvaluationWriter!;
@@ -123,7 +142,10 @@ public class FlagEvaluationModuleTests(ITestOutputHelper output)
             await module.FlushAsync();
             originalRequests.Should().BeEmpty();
             updatedRequests.Should().ContainSingle();
-            JObject.Parse(updatedRequests.Single().BodyInJson)["context"]!["env"]!.Value<string>().Should().Be("before");
+            var initialContext = JObject.Parse(updatedRequests.Single().BodyInJson)["context"]!;
+            initialContext["env"]!.Value<string>().Should().Be("before");
+            initialContext["service"]!.Value<string>().Should().Be("updated-service");
+            initialContext["version"]!.Value<string>().Should().Be("2");
 
             UpdateSettings(settings, original.Port, "after");
             writer.TryEnqueue(Observation()).Should().BeTrue();
