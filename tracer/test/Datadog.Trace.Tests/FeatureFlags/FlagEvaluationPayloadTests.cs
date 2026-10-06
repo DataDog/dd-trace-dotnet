@@ -235,6 +235,89 @@ public class FlagEvaluationPayloadTests
         }
     }
 
+#if NETCOREAPP3_1_OR_GREATER
+    [Theory]
+    [InlineData("flag", false)]
+    [InlineData("variant", false)]
+    [InlineData("allocation", false)]
+    [InlineData("flag", true)]
+    [InlineData("target", false)]
+    public void ObviouslyOversizedKeysDoNotAllocateTheirSerializedRepresentation(string dimension, bool degraded)
+    {
+        var large = new string('x', 1024 * 1024);
+        var dimensions = new DegradedKey(dimension == "flag" ? large : "flag", dimension == "variant" ? large : "on", dimension == "allocation" ? large : null, null);
+        var entry = new EvaluationEntry(Epoch, true, null);
+        entry.Observe(Epoch, true);
+        var state = degraded
+                        ? new DrainResult([], new Dictionary<DegradedKey, EvaluationEntry> { [dimensions] = entry }, 0)
+                        : new DrainResult(new Dictionary<FullKey, EvaluationEntry> { [new(dimensions, dimension == "target" ? large : "subject", string.Empty, true)] = entry }, [], 0);
+        var warmup = new DrainResult(new Dictionary<FullKey, EvaluationEntry> { [new(new("flag", "on", null, null), "subject", string.Empty, true)] = new(Epoch, true, null) }, [], 0);
+        Encode(warmup, 512);
+
+        var before = GC.GetAllocatedBytesForCurrentThread();
+        var result = Encode(state, 512);
+        var allocated = GC.GetAllocatedBytesForCurrentThread() - before;
+
+        // Inputs and aggregation are outside this measurement. Encoding a row that can
+        // never fit must not create megabyte-sized JSON strings or UTF-8 arrays first.
+        allocated.Should().BeLessThan(64 * 1024);
+        result.SerializationDroppedEvaluations.Should().Be(0);
+        result.PayloadDroppedEvaluations.Should().Be(dimension == "target" ? 0 : 2);
+        result.PayloadDegradedEvaluations.Should().Be(dimension == "target" ? 2 : 0);
+        if (dimension == "target")
+        {
+            var row = Rows(result.Payloads.Single()).Single();
+            row["evaluation_count"]!.Value<long>().Should().Be(2);
+            row["targeting_key"].Should().BeNull();
+            row["context"].Should().BeNull();
+        }
+        else
+        {
+            result.Payloads.Should().BeEmpty();
+        }
+    }
+#endif
+
+    [Theory]
+    [InlineData(false, false, true)]
+    [InlineData(true, false, true)]
+    [InlineData(false, true, true)]
+    [InlineData(true, true, true)]
+    [InlineData(true, true, false)]
+    public void OversizedTargetPreservesPrivacyAndMalformedKeySemantics(bool keyConsent, bool entryConsent, bool valid)
+    {
+        var target = (valid ? string.Empty : "\uD800") + new string('x', 4096);
+        var entry = new EvaluationEntry(Epoch, entryConsent, new Dictionary<string, object?> { ["country"] = "US" });
+        var key = new FullKey(new("flag", "on", null, null), target, string.Empty, keyConsent);
+        var state = new DrainResult(new Dictionary<FullKey, EvaluationEntry> { [key] = entry }, [], 0);
+
+        var result = Encode(state, 512);
+        var row = Rows(result.Payloads.Single()).Single();
+
+        result.PayloadDroppedEvaluations.Should().Be(0);
+        result.SerializationDroppedEvaluations.Should().Be(0);
+        if (keyConsent && entryConsent && valid)
+        {
+            result.PayloadDegradedEvaluations.Should().Be(1);
+            row["targeting_key"].Should().BeNull();
+            row["context"].Should().BeNull();
+        }
+        else
+        {
+            result.PayloadDegradedEvaluations.Should().Be(0);
+            if (valid)
+            {
+                row["targeting_key"]!.Value<string>().Should().StartWith("sha256_").And.HaveLength(71);
+                row["context"].Should().BeNull();
+            }
+            else
+            {
+                row["targeting_key"].Should().BeNull();
+                row["context"]!["evaluation"]!["country"]!.Value<string>().Should().Be("US");
+            }
+        }
+    }
+
     [Fact]
     public void MalformedRowDoesNotPoisonOtherRows()
     {

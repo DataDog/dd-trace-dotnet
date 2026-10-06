@@ -29,6 +29,7 @@ internal static class FlagEvaluationPayload
         }
 
         var prefix = Encoding.UTF8.GetBytes("{\"context\":" + JsonHelper.SerializeObject(context) + ",\"flagEvaluations\":[");
+        var maxRowBytes = (long)payloadLimitBytes - prefix.Length - 2;
         var payloads = new List<byte[]>();
         long payloadDegraded = 0;
         long payloadDropped = 0;
@@ -53,14 +54,29 @@ internal static class FlagEvaluationPayload
             byte[] encoded;
             try
             {
-                encoded = EncodeRow(dimensions, entry, targetingKey, consent, degraded, flushTimeMs);
+                // UTF-16 length is a lower bound on JSON's UTF-8 size. Checking stored
+                // lengths avoids allocating huge rows that cannot fit even when degraded.
+                // Keep malformed rows on the existing serialization-error path.
+                if (dimensions.FlagKey is not null && entry.Count > 0 &&
+                    (long)dimensions.FlagKey.Length + (dimensions.Variant?.Length ?? 0) + (dimensions.AllocationKey?.Length ?? 0) > maxRowBytes)
+                {
+                    payloadDropped += entry.Count;
+                    return;
+                }
+
+                // Protected keys can still fit as a digest. Malformed keys are omitted,
+                // so neither should be degraded based on the original string's length.
+                var degradedForPayload = !degraded && consent && entry.ObserveFullEvaluationData &&
+                                         targetingKey is not null && targetingKey.Length > maxRowBytes && FlagEvaluationPrivacy.IsValidText(targetingKey);
+                encoded = EncodeRow(dimensions, entry, targetingKey, consent, degraded || degradedForPayload, flushTimeMs);
                 // Measure a row against an empty batch before adding it. Degradation is only
                 // needed when the row cannot fit by itself, not when the current batch is full.
                 if ((long)prefix.Length + encoded.Length + 2 > payloadLimitBytes)
                 {
-                    if (!degraded)
+                    if (!degraded && !degradedForPayload)
                     {
                         encoded = EncodeRow(dimensions, entry, null, false, degraded: true, flushTimeMs);
+                        degradedForPayload = true;
                     }
 
                     if ((long)prefix.Length + encoded.Length + 2 > payloadLimitBytes)
@@ -68,7 +84,10 @@ internal static class FlagEvaluationPayload
                         payloadDropped += entry.Count;
                         return;
                     }
+                }
 
+                if (degradedForPayload)
+                {
                     payloadDegraded += entry.Count;
                 }
             }
