@@ -16,6 +16,7 @@ using System.Threading.Tasks;
 using FluentAssertions;
 using OpenFeature;
 using OpenFeature.Constant;
+using OpenFeature.Error;
 using OpenFeature.Model;
 using Xunit;
 
@@ -49,8 +50,70 @@ public class SynchronousHookTests
         var result = DatadogProvider.RunProviderHooks(ImmutableList.Create<Hook>(hook), context, new ResolutionDetails<bool>("flag", true, ErrorType.None, "static"));
 
         // Same as FeatureClient: the default value, a general error, then the Error and Finally hooks.
-        result.Should().BeEquivalentTo(new { FlagKey = "flag", Value = false, ErrorType = ErrorType.General, Reason = Reason.Error, ErrorMessage = "after failed" }, o => o.ExcludingMissingMembers());
+        result.Should().BeEquivalentTo(new { FlagKey = "flag", Value = false, ErrorType = ErrorType.General, Reason = Reason.Error, ErrorMessage = "after failed" });
         hook.Completed.Should().Equal("Error", "Finally");
+    }
+
+    [Theory]
+    [InlineData("provider", ErrorType.ParseError)]
+    [InlineData("cast", ErrorType.TypeMismatch)]
+    [InlineData("other", ErrorType.General)]
+    public void SyncAfterHookFailureMapsErrorTypeLikeFeatureClient(string failure, ErrorType expected)
+    {
+        Exception exception = failure switch
+        {
+            "provider" => new FeatureProviderException(ErrorType.ParseError, "after failed"),
+            "cast" => new InvalidCastException("after failed"),
+            _ => new InvalidOperationException("after failed"),
+        };
+        var hook = new FaultingAfterHook(exception, faultAfterAwait: false);
+
+        var result = DatadogProvider.RunProviderHooks(ImmutableList.Create<Hook>(hook), BoolContext(), new ResolutionDetails<bool>("flag", true, ErrorType.None, "static"));
+
+        result.ErrorType.Should().Be(expected);
+        result.Value.Should().BeFalse();
+    }
+
+    [Fact]
+    public void SyncAfterHookFaultAfterAwaitIsHandledLikeSynchronousThrow()
+    {
+        var hook = new FaultingAfterHook(new InvalidOperationException("after failed"), faultAfterAwait: true);
+
+        var result = DatadogProvider.RunProviderHooks(ImmutableList.Create<Hook>(hook), BoolContext(), new ResolutionDetails<bool>("flag", true, ErrorType.None, "static"));
+
+        result.Should().BeEquivalentTo(new { Value = false, ErrorType = ErrorType.General, Reason = Reason.Error });
+    }
+
+    [Fact]
+    public void SyncFinallyReceivesTheErrorResultAfterAnAfterHookFailure()
+    {
+        var hook = new FaultingAfterHook(new InvalidOperationException("after failed"), faultAfterAwait: false);
+
+        DatadogProvider.RunProviderHooks(ImmutableList.Create<Hook>(hook), BoolContext(), new ResolutionDetails<bool>("flag", true, ErrorType.None, "static", "on"));
+
+        // Finally hooks must see the error result, not the discarded successful evaluation.
+        hook.FinallyDetails.Should().BeEquivalentTo(new { Value = false, ErrorType = ErrorType.General, Reason = Reason.Error, Variant = string.Empty });
+    }
+
+    [Fact]
+    public void BuiltInProviderHooksAreSafeForTheSyncPath()
+    {
+        // The sync path blocks on incomplete hook tasks and skips Before hooks.
+        var details = new FlagEvaluationDetails<bool>("flag", false, ErrorType.None, "static", "on");
+        foreach (var hook in BuiltInHooks())
+        {
+            try
+            {
+                hook.GetType().GetMethod(nameof(Hook.BeforeAsync))!.DeclaringType.Should().Be(typeof(Hook), hook.GetType().Name);
+                hook.AfterAsync(BoolContext(), details).IsCompletedSuccessfully.Should().BeTrue(hook.GetType().Name);
+                hook.ErrorAsync(BoolContext(), new InvalidOperationException()).IsCompletedSuccessfully.Should().BeTrue(hook.GetType().Name);
+                hook.FinallyAsync(BoolContext(), details).IsCompletedSuccessfully.Should().BeTrue(hook.GetType().Name);
+            }
+            finally
+            {
+                (hook as IDisposable)?.Dispose();
+            }
+        }
     }
 
     [Fact]
@@ -153,6 +216,20 @@ public class SynchronousHookTests
         metrics.ErrorTypes.Should().Equal("provider_not_ready");
     }
 
+#endif
+
+    private static HookContext<bool> BoolContext()
+        => new("flag", false, FlagValueType.Boolean, new ClientMetadata(null, null), new Metadata("test"), EvaluationContext.Empty);
+
+    private static IEnumerable<Hook> BuiltInHooks()
+    {
+        yield return new SpanEnrichmentHook();
+#if NET6_0_OR_GREATER
+        yield return new FlagEvalMetricsHook();
+#endif
+    }
+
+#if NET6_0_OR_GREATER
     private sealed class EvaluationMetrics : IDisposable
     {
         private readonly MeterListener _listener = new();
@@ -201,6 +278,26 @@ public class SynchronousHookTests
         public void Dispose() => _listener.Dispose();
     }
 #endif
+
+    private sealed class FaultingAfterHook(Exception exception, bool faultAfterAwait) : Hook
+    {
+        public FlagEvaluationDetails<bool>? FinallyDetails { get; private set; }
+
+        public override ValueTask AfterAsync<T>(HookContext<T> context, FlagEvaluationDetails<T> details, IReadOnlyDictionary<string, object>? hints = null, CancellationToken cancellationToken = default)
+            => faultAfterAwait ? FaultAfterDelayAsync() : throw exception;
+
+        public override ValueTask FinallyAsync<T>(HookContext<T> context, FlagEvaluationDetails<T> details, IReadOnlyDictionary<string, object>? hints = null, CancellationToken cancellationToken = default)
+        {
+            FinallyDetails = details as FlagEvaluationDetails<bool>;
+            return default;
+        }
+
+        private async ValueTask FaultAfterDelayAsync()
+        {
+            await Task.Delay(50).ConfigureAwait(false);
+            throw exception;
+        }
+    }
 
     private sealed class SlowRecordingHook(string name = "", List<string>? completed = null) : Hook
     {

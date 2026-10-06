@@ -15,7 +15,7 @@ using Xunit;
 
 namespace Datadog.FeatureFlags.OpenFeature.Tests;
 
-// These tests deliberately opt into the POC API. Production async callers need no suppression.
+// These tests opt into the experimental synchronous API. Production async callers need no suppression.
 #pragma warning disable DDFF001
 
 public class SynchronousResolutionTests
@@ -46,7 +46,7 @@ public class SynchronousResolutionTests
             _ => throw new ArgumentOutOfRangeException(nameof(type)),
         };
 
-        sync.Should().BeEquivalentTo(new { FlagKey = "flag", Value = fallback, ErrorType = ErrorType.ProviderNotReady }, o => o.ExcludingMissingMembers());
+        sync.Should().BeEquivalentTo(new { FlagKey = "flag", Value = fallback, ErrorType = ErrorType.ProviderNotReady });
         sync.Should().BeEquivalentTo(asyncResult, o => o.RespectingRuntimeTypes());
     }
 

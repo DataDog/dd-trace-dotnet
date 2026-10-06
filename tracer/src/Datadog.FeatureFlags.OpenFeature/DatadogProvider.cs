@@ -42,6 +42,9 @@ public sealed partial class DatadogProvider : global::OpenFeature.FeatureProvide
     // nothing is allocated/registered when the feature is disabled.
     private readonly SpanEnrichmentHook? _spanEnrichmentHook;
 
+    // Both hooks are fixed at construction, so the list is built once per provider and reused for every evaluation.
+    private readonly IImmutableList<Hook> _providerHooks;
+
     private int _status = StatusInitializing;
 
     /// <summary> Initializes a new instance of the <see cref="DatadogProvider"/> class. </summary>
@@ -55,6 +58,8 @@ public sealed partial class DatadogProvider : global::OpenFeature.FeatureProvide
         {
             _spanEnrichmentHook = new SpanEnrichmentHook();
         }
+
+        _providerHooks = CreateProviderHooks();
     }
 
     // The native profiler normally connects FeatureFlagsSdk.Evaluate to the tracer. Unit tests
@@ -279,7 +284,19 @@ public sealed partial class DatadogProvider : global::OpenFeature.FeatureProvide
 
     /// <summary> Gets provider hooks for flag evaluation metrics tracking. </summary>
     /// <returns> Returns the list of provider hooks. </returns>
-    public override IImmutableList<Hook> GetProviderHooks()
+    public override IImmutableList<Hook> GetProviderHooks() => _providerHooks;
+
+    /// <inheritdoc/>
+    public void Dispose()
+    {
+#if NET6_0_OR_GREATER
+        _metricsHook.Dispose();
+#endif
+        // The span-enrichment hook owns no resources and per-trace enrichment state is released with
+        // the trace context, so there's nothing to dispose on provider close.
+    }
+
+    private IImmutableList<Hook> CreateProviderHooks()
     {
 #if NET6_0_OR_GREATER
         if (_spanEnrichmentHook is not null)
@@ -296,15 +313,5 @@ public sealed partial class DatadogProvider : global::OpenFeature.FeatureProvide
 
         return ImmutableList<Hook>.Empty;
 #endif
-    }
-
-    /// <inheritdoc/>
-    public void Dispose()
-    {
-#if NET6_0_OR_GREATER
-        _metricsHook.Dispose();
-#endif
-        // The span-enrichment hook owns no resources and per-trace enrichment state is released with
-        // the trace context, so there's nothing to dispose on provider close.
     }
 }

@@ -37,11 +37,7 @@ public sealed partial class DatadogProvider
     /// <returns>The resolved value and details, including errors and the caller's default.</returns>
     [Experimental("DDFF001")]
     public ResolutionDetails<bool> ResolveBooleanValue(string flagKey, bool defaultValue, EvaluationContext? context = null, CancellationToken cancellationToken = default)
-    {
-        cancellationToken.ThrowIfCancellationRequested();
-        var resolution = FeatureFlagsSdk.Resolve<bool>(flagKey, Trace.FeatureFlags.ValueType.Boolean, defaultValue, context, _evaluate);
-        return RunProviderHooks(GetProviderHooks(), new HookContext<bool>(flagKey, defaultValue, FlagValueType.Boolean, DirectClientMetadata, _metadata, context ?? EvaluationContext.Empty), resolution);
-    }
+        => ResolveSync(flagKey, Trace.FeatureFlags.ValueType.Boolean, FlagValueType.Boolean, defaultValue, context, cancellationToken);
 
     /// <summary>Synchronously resolves a flag as double. Experimental Datadog extension.</summary>
     /// <remarks>
@@ -58,11 +54,7 @@ public sealed partial class DatadogProvider
     /// <returns>The resolved value and details, including errors and the caller's default.</returns>
     [Experimental("DDFF001")]
     public ResolutionDetails<double> ResolveDoubleValue(string flagKey, double defaultValue, EvaluationContext? context = null, CancellationToken cancellationToken = default)
-    {
-        cancellationToken.ThrowIfCancellationRequested();
-        var resolution = FeatureFlagsSdk.Resolve<double>(flagKey, Trace.FeatureFlags.ValueType.Numeric, defaultValue, context, _evaluate);
-        return RunProviderHooks(GetProviderHooks(), new HookContext<double>(flagKey, defaultValue, FlagValueType.Number, DirectClientMetadata, _metadata, context ?? EvaluationContext.Empty), resolution);
-    }
+        => ResolveSync(flagKey, Trace.FeatureFlags.ValueType.Numeric, FlagValueType.Number, defaultValue, context, cancellationToken);
 
     /// <summary>Synchronously resolves a flag as int. Experimental Datadog extension.</summary>
     /// <remarks>
@@ -79,11 +71,7 @@ public sealed partial class DatadogProvider
     /// <returns>The resolved value and details, including errors and the caller's default.</returns>
     [Experimental("DDFF001")]
     public ResolutionDetails<int> ResolveIntegerValue(string flagKey, int defaultValue, EvaluationContext? context = null, CancellationToken cancellationToken = default)
-    {
-        cancellationToken.ThrowIfCancellationRequested();
-        var resolution = FeatureFlagsSdk.Resolve<int>(flagKey, Trace.FeatureFlags.ValueType.Integer, defaultValue, context, _evaluate);
-        return RunProviderHooks(GetProviderHooks(), new HookContext<int>(flagKey, defaultValue, FlagValueType.Number, DirectClientMetadata, _metadata, context ?? EvaluationContext.Empty), resolution);
-    }
+        => ResolveSync(flagKey, Trace.FeatureFlags.ValueType.Integer, FlagValueType.Number, defaultValue, context, cancellationToken);
 
     /// <summary>Synchronously resolves a flag as string. Experimental Datadog extension.</summary>
     /// <remarks>
@@ -100,11 +88,7 @@ public sealed partial class DatadogProvider
     /// <returns>The resolved value and details, including errors and the caller's default.</returns>
     [Experimental("DDFF001")]
     public ResolutionDetails<string> ResolveStringValue(string flagKey, string defaultValue, EvaluationContext? context = null, CancellationToken cancellationToken = default)
-    {
-        cancellationToken.ThrowIfCancellationRequested();
-        var resolution = FeatureFlagsSdk.Resolve<string>(flagKey, Trace.FeatureFlags.ValueType.String, defaultValue, context, _evaluate);
-        return RunProviderHooks(GetProviderHooks(), new HookContext<string>(flagKey, defaultValue, FlagValueType.String, DirectClientMetadata, _metadata, context ?? EvaluationContext.Empty), resolution);
-    }
+        => ResolveSync(flagKey, Trace.FeatureFlags.ValueType.String, FlagValueType.String, defaultValue, context, cancellationToken);
 
     /// <summary>Synchronously resolves a flag as Value. Experimental Datadog extension.</summary>
     /// <remarks>
@@ -121,11 +105,7 @@ public sealed partial class DatadogProvider
     /// <returns>The resolved value and details, including errors and the caller's default.</returns>
     [Experimental("DDFF001")]
     public ResolutionDetails<Value> ResolveStructureValue(string flagKey, Value defaultValue, EvaluationContext? context = null, CancellationToken cancellationToken = default)
-    {
-        cancellationToken.ThrowIfCancellationRequested();
-        var resolution = FeatureFlagsSdk.Resolve<Value>(flagKey, Trace.FeatureFlags.ValueType.Json, defaultValue, context, _evaluate);
-        return RunProviderHooks(GetProviderHooks(), new HookContext<Value>(flagKey, defaultValue, FlagValueType.Object, DirectClientMetadata, _metadata, context ?? EvaluationContext.Empty), resolution);
-    }
+        => ResolveSync(flagKey, Trace.FeatureFlags.ValueType.Json, FlagValueType.Object, defaultValue, context, cancellationToken);
 
     // FeatureClient runs these hooks around the async methods. The sync methods bypass the client, so they run the
     // client's post-resolution stages here, in its order and with its failure handling, and return only after every
@@ -203,5 +183,14 @@ public sealed partial class DatadogProvider
         {
             task.AsTask().GetAwaiter().GetResult();
         }
+    }
+
+    private ResolutionDetails<T> ResolveSync<T>(string flagKey, Trace.FeatureFlags.ValueType valueType, FlagValueType flagValueType, T defaultValue, EvaluationContext? context, CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        var resolution = FeatureFlagsSdk.Resolve(flagKey, valueType, defaultValue, context, _evaluate);
+        return _providerHooks.Count == 0
+            ? resolution
+            : RunProviderHooks(_providerHooks, new HookContext<T>(flagKey, defaultValue, flagValueType, DirectClientMetadata, _metadata, context ?? EvaluationContext.Empty), resolution);
     }
 }

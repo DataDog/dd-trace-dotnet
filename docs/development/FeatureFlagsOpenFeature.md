@@ -4,8 +4,9 @@
 
 The experimental synchronous methods share `FeatureFlagsSdk.Resolve<T>` with the
 asynchronous provider methods. The synchronous path also runs the provider's
-post-resolution hooks in reverse order: After on success, Error on failure, and
-Finally in either case. An After failure produces the caller's default and error
+post-resolution hooks in reverse order: After on success, Error on an error result,
+and Finally for both. A canceled token or a null flag key throws before any hook
+runs. An After failure produces the caller's default and error
 details; Error and Finally failures do not prevent the remaining hooks from
 running. Each hook completes before resolution returns.
 
@@ -40,13 +41,17 @@ failure behavior, completion before return, and exactly-once evaluation metrics.
 
 ## Instrumented coverage
 
-`Samples.OpenFeature.Evaluator.ExtraChecks` compares synchronous string and JSON
-resolution against the asynchronous client after initialization.
+`Evaluator.ExtraChecks` in `Samples.OpenFeature` compares synchronous string resolution
+against the asynchronous client, and checks the synchronous JSON value, after initialization.
 `FeatureFlagsTests.FfeEnabled` runs that sample with native instrumentation and
 mock-agent remote configuration and requires successful completion. This covers
 the production evaluation connection that the fixture unit tests replace.
 Run the existing integration test with a built tracer home and the sample for the
 selected framework. This is local mock-agent coverage, not deployment evidence.
+
+`SpanEnrichmentIntegrationTests` runs the same sample with a root and child span.
+The sample resolves `simple-string` synchronously inside the root span, so the
+root-span serial-id assertion and span snapshot cover synchronous span enrichment.
 
 When adding a project to `Datadog.Trace.sln`, run
 `./tracer/build.sh RegenerateSolutions` and commit the generated build solution.

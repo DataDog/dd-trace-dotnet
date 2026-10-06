@@ -57,6 +57,20 @@ class Evaluator
         return (evaluation.Value, evaluation.ErrorMessage);
     }
 
+    public static void EvaluateSync(string key)
+    {
+        var context = EvaluationContext.Builder().Set("targetingKey", key).Build();
+#pragma warning disable DDFF001 // Exercises the experimental synchronous provider API.
+        var evaluation = provider.ResolveStringValue(key, "Not found", context);
+#pragma warning restore DDFF001
+        if (evaluation.ErrorType != ErrorType.None)
+        {
+            throw new InvalidOperationException($"Sync evaluation failed: {evaluation.ErrorMessage}");
+        }
+
+        Console.WriteLine($"EvalSync ({key}) : <OK: {evaluation.Value}>");
+    }
+
     public static void ExtraChecks()
     {
         var key = "simple-json";
