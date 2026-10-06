@@ -30,8 +30,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Remoting
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(RemotingIntegration));
 
-        // sinkStack is stable across one request/response cycle regardless of the formatter chain shape,
-        // so it's a reliable key for correlating ProcessMessage's scope with the later SerializeResponse call.
+        // One server scope per request, keyed by the sinkStack (stable across the whole request/response cycle,
+        // whatever the formatter chain looks like): the first ProcessMessage creates it, later sinks in the chain
+        // reuse it, and SerializeResponse (or the first ProcessMessage, if no response is serialized) closes it.
         private static readonly ConditionalWeakTable<object, Scope> ServerScopesBySinkStack = new();
 
         internal static Scope? CreateServerScope(IMessage? msg, PropagationContext context)
@@ -72,36 +73,24 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Remoting
         {
             if (scope is not null)
             {
-                // AddOrUpdate isn't available on the .NET Framework ConditionalWeakTable API surface
-                ServerScopesBySinkStack.Remove(sinkStack);
                 ServerScopesBySinkStack.Add(sinkStack, scope);
             }
         }
 
-        // A preceding sink that didn't recognize the content-type may have left a placeholder scope for
-        // this sinkStack. Discard it (without sending its span) before creating the real one, while it's
-        // still the active scope - disposing it later would leave the ambient scope chain unpoppable.
-        internal static void DiscardStalePlaceholderScope(object sinkStack)
+        internal static bool TryGetServerScope(object sinkStack, out Scope? scope)
         {
-            if (ServerScopesBySinkStack.TryGetValue(sinkStack, out var previousScope) && previousScope is not null)
-            {
-                previousScope.SetFinishOnClose(false);
-                previousScope.Dispose();
-                ServerScopesBySinkStack.Remove(sinkStack);
-            }
+            return ServerScopesBySinkStack.TryGetValue(sinkStack, out scope);
         }
 
-        // True only if `scope` is still the one stored for this sinkStack, i.e. SerializeResponse hasn't
-        // taken it (and a later sink hasn't replaced it), so the caller is the one who must close it.
-        internal static bool TryRemoveServerScope(object sinkStack, Scope scope)
+        // The request message isn't always available when the scope is created (a formatter that still has
+        // to deserialize the request is called without one), so fill in the method name once we have it.
+        internal static void SetMethodNameIfMissing(Scope scope, IMessage? msg)
         {
-            if (ServerScopesBySinkStack.TryGetValue(sinkStack, out var stored) && ReferenceEquals(stored, scope))
+            if (scope.Span.Tags is RemotingTags { MethodName: null } tags && msg is IMethodMessage { MethodName: { } methodName })
             {
-                ServerScopesBySinkStack.Remove(sinkStack);
-                return true;
+                tags.MethodName = methodName;
+                scope.Span.ResourceName ??= methodName;
             }
-
-            return false;
         }
 
         internal static bool TryGetAndRemoveServerScope(object sinkStack, out Scope? scope)
