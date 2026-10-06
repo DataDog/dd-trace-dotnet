@@ -183,7 +183,34 @@ namespace Datadog.Trace.DuckTyping
         /// </summary>
         internal static void InvalidateFastPaths()
         {
-            Interlocked.Increment(ref _fastPathVersion);
+            // Under the lock entries are stored with (see StoreFastPath): an entry computed before this invalidation is either
+            // cleared here or never stored, so a lookup that starts after it can't see a stale entry.
+            lock (FastPathResets)
+            {
+                Interlocked.Increment(ref _fastPathVersion);
+                foreach (var fastPathReset in FastPathResets)
+                {
+                    fastPathReset();
+                }
+            }
+        }
+
+        private static void StoreFastPath(ref FastPathEntry? fastPathSlot, ref bool resetRegistered, Action fastPathReset, CreateTypeResult result, int version)
+        {
+            lock (FastPathResets)
+            {
+                if (!resetRegistered)
+                {
+                    FastPathResets.Add(fastPathReset);
+                    resetRegistered = true;
+                }
+
+                // A result computed while an invalidation happened may be stale, so it isn't stored.
+                if (fastPathSlot is null && _fastPathVersion == version)
+                {
+                    Volatile.Write(ref fastPathSlot, new FastPathEntry(result));
+                }
+            }
         }
 
         private static CreateTypeResult CreateProxyType(Type proxyDefinitionType, Type targetType, bool dryRun)
@@ -278,7 +305,7 @@ namespace Datadog.Trace.DuckTyping
                 }
 
                 CreateTypeResult Failed(DuckTypeException error)
-                    => new(proxyDefinitionType, proxyType: null, targetType, activator: null, ExceptionDispatchInfo.Capture(error), wrapNonGenericFailureInTargetInvocationException: true);
+                    => new(proxyDefinitionType, proxyType: null, targetType, activator: null, ExceptionDispatchInfo.Capture(error));
             }
         }
 
@@ -354,7 +381,7 @@ namespace Datadog.Trace.DuckTyping
                 }
                 catch (DuckTypeException ex)
                 {
-                    return new CreateTypeResult(typeToDeriveFrom, null, typeToDelegateTo, null, ExceptionDispatchInfo.Capture(ex), wrapNonGenericFailureInTargetInvocationException: true);
+                    return new CreateTypeResult(typeToDeriveFrom, null, typeToDelegateTo, null, ExceptionDispatchInfo.Capture(ex));
                 }
                 catch (Exception ex)
                 {
@@ -365,7 +392,7 @@ namespace Datadog.Trace.DuckTyping
                 }
 
                 CreateTypeResult Failed(DuckTypeException error)
-                    => new CreateTypeResult(typeToDeriveFrom, null, typeToDelegateTo, null, ExceptionDispatchInfo.Capture(error), wrapNonGenericFailureInTargetInvocationException: true);
+                    => new CreateTypeResult(typeToDeriveFrom, null, typeToDelegateTo, null, ExceptionDispatchInfo.Capture(error));
             }
         }
 
@@ -404,28 +431,13 @@ namespace Datadog.Trace.DuckTyping
             EnsureTypeVisibility(moduleBuilder, typeToDelegateTo);
             EnsureTypeVisibility(moduleBuilder, typeToDeriveFrom);
 
-            string assembly = string.Empty;
-            if (typeToDelegateTo.Assembly is not null)
-            {
-                // Include target assembly name and public token.
-                AssemblyName asmName = typeToDelegateTo.Assembly.GetName();
-                assembly = asmName.Name ?? string.Empty;
-                var pbToken = asmName.GetPublicKeyToken();
-#if NET6_0_OR_GREATER
-                assembly += "__" + (pbToken is null ? string.Empty : Convert.ToHexString(pbToken));
-#else
-                assembly += "__" + (pbToken is null ? string.Empty : HexConverter.ToString(pbToken));
-#endif
-                assembly = assembly.Replace(".", "_").Replace("+", "__");
-            }
-
             // Create a "valid" type name (doesn't always hold) that can be used as a member of a class. (BenchmarkDotNet fails if is an invalid name)
             // The name we generate here is primarily for debugging purposes (stack traces etc), so we don't try too hard
             var proxyTypeNameSuffix = $"_{(++_typeCount).ToString(CultureInfo.InvariantCulture)}";
-            var proxyTypeNamePrefix = $"{assembly}.{typeToDelegateTo.FullName?.Replace(".", "_").Replace("+", "__")}.{typeToDeriveFrom.FullName?.Replace(".", "_").Replace("+", "__")}";
+            var proxyTypeNamePrefix = GetProxyTypeNamePrefix(typeToDeriveFrom, typeToDelegateTo);
 
             // the maximum length for an assembly-qualified type name is 1024, so we need to account for that
-            var maxPrefixSize = 1023 - proxyTypeNameSuffix.Length;
+            var maxPrefixSize = MaxProxyTypeNameLength - proxyTypeNameSuffix.Length;
             var proxyTypeName = (proxyTypeNamePrefix.Length > maxPrefixSize
                                      ? proxyTypeNamePrefix.Substring(0, maxPrefixSize)
                                      : proxyTypeNamePrefix)
@@ -487,6 +499,34 @@ namespace Datadog.Trace.DuckTyping
                 return false;
             }
         }
+
+        /// <summary>
+        /// Gets the name of the proxy types created for a pair, before the counter that makes it unique.
+        /// </summary>
+        private static string GetProxyTypeNamePrefix(Type typeToDeriveFrom, Type typeToDelegateTo)
+        {
+            string assembly = string.Empty;
+            if (typeToDelegateTo.Assembly is not null)
+            {
+                // Include target assembly name and public token.
+                AssemblyName asmName = typeToDelegateTo.Assembly.GetName();
+                assembly = asmName.Name ?? string.Empty;
+                var pbToken = asmName.GetPublicKeyToken();
+#if NET6_0_OR_GREATER
+                assembly += "__" + (pbToken is null ? string.Empty : Convert.ToHexString(pbToken));
+#else
+                assembly += "__" + (pbToken is null ? string.Empty : HexConverter.ToString(pbToken));
+#endif
+                assembly = assembly.Replace(".", "_").Replace("+", "__");
+            }
+
+            return $"{assembly}.{GetProxyTypeNamePart(typeToDelegateTo)}.{GetProxyTypeNamePart(typeToDeriveFrom)}";
+        }
+
+        /// <summary>
+        /// Gets how a type appears in the names of the proxy types created for it.
+        /// </summary>
+        private static string? GetProxyTypeNamePart(Type type) => type.FullName?.Replace(".", "_").Replace("+", "__");
 
         private static FieldBuilder CreateIDuckTypeImplementation(TypeBuilder proxyTypeBuilder, Type targetType)
         {
@@ -710,17 +750,7 @@ namespace Datadog.Trace.DuckTyping
                 {
                     case DuckKind.Property:
                     case DuckKind.PropertyOrField:
-                        PropertyInfo? targetProperty = GetTargetPropertyOrIndex(targetType, duckAttribute.Name, duckAttribute.BindingFlags, proxyProperty, duckAttribute.ExplicitInterfaceTypeName);
-
-                        if (duckAttribute.FallbackToBaseTypes)
-                        {
-                            var currentType = targetType;
-                            while (targetProperty is null && currentType is { IsValueType: false, BaseType: not null } && currentType.BaseType != typeof(object))
-                            {
-                                currentType = currentType.BaseType;
-                                targetProperty = GetTargetPropertyOrIndex(currentType, duckAttribute.Name, duckAttribute.BindingFlags, proxyProperty, duckAttribute.ExplicitInterfaceTypeName);
-                            }
-                        }
+                        PropertyInfo? targetProperty = FindForwardTargetProperty(targetType, duckAttribute, duckAttribute.Name, proxyProperty);
 
                         if (targetProperty is null)
                         {
@@ -815,17 +845,7 @@ namespace Datadog.Trace.DuckTyping
                         break;
 
                     case DuckKind.Field:
-                        FieldInfo? targetField = GetTargetField(targetType, duckAttribute.Name, duckAttribute.BindingFlags);
-
-                        if (duckAttribute.FallbackToBaseTypes)
-                        {
-                            var currentType = targetType;
-                            while (targetField is null && currentType is { IsValueType: false, BaseType: not null } && currentType.BaseType != typeof(object))
-                            {
-                                currentType = currentType.BaseType;
-                                targetField = GetTargetField(currentType, duckAttribute.Name, duckAttribute.BindingFlags);
-                            }
-                        }
+                        FieldInfo? targetField = FindTargetField(targetType, duckAttribute, duckAttribute.Name);
 
                         if (targetField is null)
                         {
@@ -1036,22 +1056,9 @@ namespace Datadog.Trace.DuckTyping
                 {
                     case DuckKind.Property:
                     case DuckKind.PropertyOrField:
-                        if (GetTargetProperty(targetType, duckAttribute.Name, duckAttribute.BindingFlags, out PropertyInfo? targetProperty, duckAttribute.ExplicitInterfaceTypeName) is { } propertyError)
+                        if (FindDuckCopyTargetProperty(targetType, duckAttribute, duckAttribute.Name, out PropertyInfo? targetProperty) is { } propertyError)
                         {
                             return propertyError;
-                        }
-
-                        if (duckAttribute.FallbackToBaseTypes)
-                        {
-                            var currentType = targetType;
-                            while (targetProperty is null && currentType is { IsValueType: false, BaseType: not null } && currentType.BaseType != typeof(object))
-                            {
-                                currentType = currentType.BaseType;
-                                if (GetTargetProperty(currentType, duckAttribute.Name, duckAttribute.BindingFlags, out targetProperty, duckAttribute.ExplicitInterfaceTypeName) is { } baseTypeError)
-                                {
-                                    return baseTypeError;
-                                }
-                            }
                         }
 
                         if (targetProperty is null)
@@ -1093,17 +1100,7 @@ namespace Datadog.Trace.DuckTyping
                         break;
 
                     case DuckKind.Field:
-                        FieldInfo? targetField = GetTargetField(targetType, duckAttribute.Name, duckAttribute.BindingFlags);
-
-                        if (duckAttribute.FallbackToBaseTypes)
-                        {
-                            var currentType = targetType;
-                            while (targetField is null && currentType is { IsValueType: false, BaseType: not null } && currentType.BaseType != typeof(object))
-                            {
-                                currentType = currentType.BaseType;
-                                targetField = GetTargetField(currentType, duckAttribute.Name, duckAttribute.BindingFlags);
-                            }
-                        }
+                        FieldInfo? targetField = FindTargetField(targetType, duckAttribute, duckAttribute.Name);
 
                         if (targetField is null)
                         {
@@ -1244,6 +1241,70 @@ namespace Datadog.Trace.DuckTyping
             return null;
         }
 
+        /// <summary>
+        /// Finds the target property a forward proxy property binds to, walking the base types with FallbackToBaseTypes.
+        /// </summary>
+        private static PropertyInfo? FindForwardTargetProperty(Type targetType, DuckAttribute duckAttribute, string name, PropertyInfo proxyProperty)
+        {
+            var targetProperty = GetTargetPropertyOrIndex(targetType, name, duckAttribute.BindingFlags, proxyProperty, duckAttribute.ExplicitInterfaceTypeName);
+            if (duckAttribute.FallbackToBaseTypes)
+            {
+                var currentType = targetType;
+                while (targetProperty is null && currentType is { IsValueType: false, BaseType: not null } && currentType.BaseType != typeof(object))
+                {
+                    currentType = currentType.BaseType;
+                    targetProperty = GetTargetPropertyOrIndex(currentType, name, duckAttribute.BindingFlags, proxyProperty, duckAttribute.ExplicitInterfaceTypeName);
+                }
+            }
+
+            return targetProperty;
+        }
+
+        /// <summary>
+        /// Finds the target property a [DuckCopy] struct field binds to, walking the base types with FallbackToBaseTypes.
+        /// </summary>
+        private static DuckTypeException? FindDuckCopyTargetProperty(Type targetType, DuckAttribute duckAttribute, string name, out PropertyInfo? targetProperty)
+        {
+            if (GetTargetProperty(targetType, name, duckAttribute.BindingFlags, out targetProperty, duckAttribute.ExplicitInterfaceTypeName) is { } propertyError)
+            {
+                return propertyError;
+            }
+
+            if (duckAttribute.FallbackToBaseTypes)
+            {
+                var currentType = targetType;
+                while (targetProperty is null && currentType is { IsValueType: false, BaseType: not null } && currentType.BaseType != typeof(object))
+                {
+                    currentType = currentType.BaseType;
+                    if (GetTargetProperty(currentType, name, duckAttribute.BindingFlags, out targetProperty, duckAttribute.ExplicitInterfaceTypeName) is { } baseTypeError)
+                    {
+                        return baseTypeError;
+                    }
+                }
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Finds the target field a proxy member binds to, walking the base types with FallbackToBaseTypes.
+        /// </summary>
+        private static FieldInfo? FindTargetField(Type targetType, DuckAttribute duckAttribute, string name)
+        {
+            var targetField = GetTargetField(targetType, name, duckAttribute.BindingFlags);
+            if (duckAttribute.FallbackToBaseTypes)
+            {
+                var currentType = targetType;
+                while (targetField is null && currentType is { IsValueType: false, BaseType: not null } && currentType.BaseType != typeof(object))
+                {
+                    currentType = currentType.BaseType;
+                    targetField = GetTargetField(currentType, name, duckAttribute.BindingFlags);
+                }
+            }
+
+            return targetField;
+        }
+
         private static PropertyInfo? GetTargetPropertyOrIndex(Type targetType, string propertyName, BindingFlags bindingFlags, PropertyInfo proxyPropertyInfo, string? explicitInterfaceTypeName = null)
         {
             if (propertyName.IndexOf(',') == -1)
@@ -1283,10 +1344,11 @@ namespace Datadog.Trace.DuckTyping
                 // up by throwing. Can happen if the target declares several indexers, or hides a base property with
                 // a different signature.
                 var indexParameters = proxyPropertyInfo.GetIndexParameters();
-                if (!StringUtil.IsNullOrEmpty(explicitInterfaceTypeName))
+                if (!StringUtil.IsNullOrEmpty(explicitInterfaceTypeName) && !string.Equals(candidates[0].Name, propertyName, StringComparison.OrdinalIgnoreCase))
                 {
-                    // Wildcard interface names can select different properties with the same simple name.
-                    // Only an unambiguous exact signature is safe; do not throw during dry-run validation.
+                    // Explicit implementations, named with their interface (properties with the plain name, in any case with
+                    // IgnoreCase, win and follow the rules below): wildcard interface names can select different properties with
+                    // the same simple name. Only an unambiguous exact signature is safe; do not throw during dry-run validation.
                     var matchingProperties = candidates.Cast<PropertyInfo>().Where(property => SignatureMatches(property, proxyPropertyInfo.PropertyType, indexParameters)).ToArray();
                     return matchingProperties.Length == 1 ? matchingProperties[0] : null;
                 }
@@ -1389,21 +1451,26 @@ namespace Datadog.Trace.DuckTyping
                 return [];
             }
 
-            if (!StringUtil.IsNullOrEmpty(explicitInterfaceTypeName))
+            // Like methods (Type.GetMethod runs before the explicit interface scan), a property with the plain name wins:
+            // ExplicitInterfaceTypeName only adds explicit implementations when there's none. Properties always bound that
+            // way, e.g. protoc messages bind their public static Descriptor, not pb::IMessage.Descriptor.
+            var candidates = targetType.GetMember(propertyName, MemberTypes.Property, bindingFlags);
+            if (candidates.Length > 0 || StringUtil.IsNullOrEmpty(explicitInterfaceTypeName))
             {
-                if (explicitInterfaceTypeName == "*")
-                {
-                    var comparison = (bindingFlags & BindingFlags.IgnoreCase) != 0 ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
-                    return targetType.GetProperties(bindingFlags)
-                                     .Where(property => string.Equals(property.Name, propertyName, comparison) || property.Name.EndsWith("." + propertyName, comparison))
-                                     .Cast<MemberInfo>()
-                                     .ToArray();
-                }
-
-                propertyName = explicitInterfaceTypeName!.Replace("+", ".") + "." + propertyName;
+                return candidates;
             }
 
-            return targetType.GetMember(propertyName, MemberTypes.Property, bindingFlags);
+            if (explicitInterfaceTypeName == "*")
+            {
+                var comparison = (bindingFlags & BindingFlags.IgnoreCase) != 0 ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
+                return targetType.GetProperties(bindingFlags)
+                                 .Where(property => property.Name.EndsWith("." + propertyName, comparison))
+                                 .Cast<MemberInfo>()
+                                 .ToArray();
+            }
+
+            // Nested types are separated with a "." on explicit implementations.
+            return targetType.GetMember(explicitInterfaceTypeName!.Replace("+", ".") + "." + propertyName, MemberTypes.Property, bindingFlags);
         }
 
         private static FieldInfo? GetTargetField(Type targetType, string fieldName, BindingFlags bindingFlags)
@@ -1443,11 +1510,10 @@ namespace Datadog.Trace.DuckTyping
 
             private readonly Type? _proxyType;
             private readonly Delegate? _activator;
-            private readonly Func<object?, object?>? _untypedActivator;
-            private readonly ExceptionDispatchInfo? _exceptionInfo;
-            private readonly Action? _failureThrower;
-            private readonly bool _usesDynamicInvokeFallback;
-            private readonly bool _wrapNonGenericFailureInTargetInvocationException;
+
+            // The failure, if any: an ExceptionDispatchInfo, or the Action an AOT failure registration throws with. One field
+            // keeps this struct as small as it was before AOT support. The activator holds it too (see the constructor).
+            private readonly object? _failure;
 
             /// <summary>
             /// Initializes a new instance of the <see cref="CreateTypeResult"/> struct.
@@ -1457,32 +1523,9 @@ namespace Datadog.Trace.DuckTyping
             /// <param name="targetType">Target type</param>
             /// <param name="activator">Proxy activator</param>
             /// <param name="exceptionInfo">Exception dispatch info instance</param>
-            /// <param name="wrapNonGenericFailureInTargetInvocationException">Whether object-based creation should preserve the dynamic reflection invocation failure contract.</param>
-            internal CreateTypeResult(Type proxyTypeDefinition, Type? proxyType, Type targetType, Delegate? activator, ExceptionDispatchInfo? exceptionInfo, bool wrapNonGenericFailureInTargetInvocationException = false)
+            internal CreateTypeResult(Type proxyTypeDefinition, Type? proxyType, Type targetType, Delegate? activator, ExceptionDispatchInfo? exceptionInfo)
+                : this(proxyType, targetType, activator, failure: exceptionInfo)
             {
-                _activator = activator;
-                _untypedActivator = activator as Func<object?, object?>;
-                _usesDynamicInvokeFallback = false;
-                _wrapNonGenericFailureInTargetInvocationException = wrapNonGenericFailureInTargetInvocationException;
-                if (_untypedActivator is null && activator is not null)
-                {
-                    var objectActivator = TryCreateObjectActivator(activator);
-                    if (objectActivator is not null)
-                    {
-                        _untypedActivator = objectActivator;
-                    }
-                    else
-                    {
-                        _usesDynamicInvokeFallback = true;
-                        _untypedActivator = instance => activator.DynamicInvoke(instance)!;
-                    }
-                }
-
-                _proxyType = proxyType;
-                _exceptionInfo = exceptionInfo;
-                _failureThrower = null;
-                TargetType = targetType;
-                Success = proxyType != null && exceptionInfo == null;
             }
 
             /// <summary>
@@ -1493,32 +1536,23 @@ namespace Datadog.Trace.DuckTyping
             /// <param name="targetType">Target type</param>
             /// <param name="activator">Proxy activator</param>
             /// <param name="failureThrower">Failure thrower instance</param>
-            /// <param name="wrapNonGenericFailureInTargetInvocationException">Whether object-based creation should preserve the dynamic reflection invocation failure contract.</param>
-            internal CreateTypeResult(Type proxyTypeDefinition, Type? proxyType, Type targetType, Delegate? activator, Action? failureThrower, bool wrapNonGenericFailureInTargetInvocationException = false)
+            internal CreateTypeResult(Type proxyTypeDefinition, Type? proxyType, Type targetType, Delegate? activator, Action? failureThrower)
+                : this(proxyType, targetType, activator, failure: failureThrower)
             {
-                _activator = activator;
-                _untypedActivator = activator as Func<object?, object?>;
-                _usesDynamicInvokeFallback = false;
-                _wrapNonGenericFailureInTargetInvocationException = wrapNonGenericFailureInTargetInvocationException;
-                if (_untypedActivator is null && activator is not null)
-                {
-                    var objectActivator = TryCreateObjectActivator(activator);
-                    if (objectActivator is not null)
-                    {
-                        _untypedActivator = objectActivator;
-                    }
-                    else
-                    {
-                        _usesDynamicInvokeFallback = true;
-                        _untypedActivator = instance => activator.DynamicInvoke(instance)!;
-                    }
-                }
+            }
 
+            private CreateTypeResult(Type? proxyType, Type targetType, Delegate? activator, object? failure)
+            {
+                // Generated (AOT) activators are rebound to Func<object, object> once, so object-based creation never needs
+                // DynamicInvoke, which NativeAOT may not support. Dynamic methods can't be rebound: they keep their typed delegate.
+                // A failure is also kept in the activator slot, as an Action that throws it: CreateInstance<T> then reads a single
+                // field, which lets the JIT read it from the fast path entry instead of copying this struct.
+                _activator = failure is not null ? failure as Action ?? CreateFailureThrower(failure)
+                           : activator is null or Func<object?, object?> ? activator : TryCreateObjectActivator(activator) ?? activator;
                 _proxyType = proxyType;
-                _exceptionInfo = null;
-                _failureThrower = failureThrower;
+                _failure = failure;
                 TargetType = targetType;
-                Success = proxyType != null && failureThrower == null;
+                Success = proxyType is not null && failure is null;
             }
 
             /// <summary>
@@ -1535,9 +1569,107 @@ namespace Datadog.Trace.DuckTyping
             }
 
             /// <summary>
-            /// Gets a value indicating whether object-based creation had to fall back to DynamicInvoke.
+            /// Gets a value indicating whether object-based creation has to fall back to DynamicInvoke.
             /// </summary>
-            internal bool UsesDynamicInvokeFallback => _usesDynamicInvokeFallback;
+            internal bool UsesDynamicInvokeFallback => _failure is null && _activator is not null and not Func<object?, object?>;
+
+            /// <summary>
+            /// Gets the exception creating a proxy throws, or null when the proxy type can be created.
+            /// </summary>
+            internal Exception? FailureException
+            {
+                get
+                {
+                    if (_failure is ExceptionDispatchInfo exceptionInfo)
+                    {
+                        return exceptionInfo.SourceException;
+                    }
+
+                    try
+                    {
+                        (_failure as Action)?.Invoke();
+                        return null;
+                    }
+                    catch (Exception ex)
+                    {
+                        return ex;
+                    }
+                }
+            }
+
+            /// <summary>
+            /// Create a new proxy instance from a target instance
+            /// </summary>
+            /// <typeparam name="T">Type of the return value</typeparam>
+            /// <param name="instance">Target instance value</param>
+            /// <returns>Proxy instance</returns>
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            [return: NotNull]
+            public T CreateInstance<T>(object? instance)
+            {
+                // Only the activator is read (a failure is an Action there, see the constructor): reading other fields, or an
+                // instance call, makes callers copy this struct out of the fast path entry on every call.
+                var activator = _activator;
+                if (activator is CreateProxyInstance<T> typedActivator)
+                {
+                    return typedActivator(instance);
+                }
+
+                return CreateInstanceSlow<T>(activator, instance);
+            }
+
+            /// <summary>
+            /// Create a new proxy instance from a target instance
+            /// </summary>
+            /// <typeparam name="T">Type of the return value</typeparam>
+            /// <typeparam name="TOriginal">Type of the original value</typeparam>
+            /// <param name="instance">Target instance value</param>
+            /// <returns>Proxy instance</returns>
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            [return: NotNull]
+            public T CreateInstance<T, TOriginal>(TOriginal instance)
+            {
+                var activator = _activator;
+                if (activator is CreateProxyInstance<T> typedActivator)
+                {
+                    return typedActivator(instance);
+                }
+
+                return CreateInstanceSlow<T>(activator, instance);
+            }
+
+            /// <summary>
+            /// Get if the proxy instance can be created
+            /// </summary>
+            /// <returns>true if the proxy can be created; otherwise, false.</returns>
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public bool CanCreate()
+            {
+                return _failure is null;
+            }
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            internal object CreateInstance(object instance)
+            {
+                // Dynamic duck typing creates object-based proxies through DynamicInvoke, so failures and activator exceptions
+                // surface wrapped in a TargetInvocationException: AOT results keep that contract.
+                if (_failure is not null)
+                {
+                    ThrowFailureAsTargetInvocationException();
+                }
+
+                if (_activator is Func<object?, object?> objectActivator)
+                {
+                    return InvokeObjectActivator(objectActivator, instance);
+                }
+
+                if (_activator is null)
+                {
+                    ThrowHelper.ThrowNullReferenceException("The activator for this proxy type is null, check if the type can be created by calling 'CanCreate()'");
+                }
+
+                return _activator.DynamicInvoke(instance)!;
+            }
 
             private static Func<object?, object?>? TryCreateObjectActivator(Delegate activator)
             {
@@ -1556,106 +1688,28 @@ namespace Datadog.Trace.DuckTyping
                     throwOnBindFailure: false) as Func<object?, object?>;
             }
 
-#if !NET6_0_OR_GREATER
-            // Kept out of line: ThrowCachedException is inlined into every DuckType.Create/DuckCast call site.
+            private static object InvokeObjectActivator(Func<object?, object?> activator, object instance)
+            {
+                try
+                {
+                    return activator(instance)!;
+                }
+                catch (Exception ex)
+                {
+                    throw new TargetInvocationException(ex);
+                }
+            }
+
             [MethodImpl(MethodImplOptions.NoInlining)]
-            private static void ThrowClonedException(ExceptionDispatchInfo exceptionInfo)
+            private static void ThrowFailure(object failure)
             {
-                // AOT failure factories can register any exception type, so those are cloned through object.MemberwiseClone.
-                var sourceException = exceptionInfo.SourceException;
-                var exceptionToThrow = sourceException is DuckTypeException duckTypeException
-                                           ? duckTypeException.CloneForThrow()
-                                           : (Exception)ExceptionCloner.MemberwiseCloneMethod.Invoke(sourceException, null)!;
-                ExceptionDispatchInfo.Capture(exceptionToThrow).Throw();
-            }
-#endif
-
-            /// <summary>
-            /// Create a new proxy instance from a target instance
-            /// </summary>
-            /// <typeparam name="T">Type of the return value</typeparam>
-            /// <param name="instance">Target instance value</param>
-            /// <returns>Proxy instance</returns>
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            [return: NotNull]
-            public T CreateInstance<T>(object? instance)
-            {
-                return CreateInstanceCore<T>(instance);
-            }
-
-            /// <summary>
-            /// Create a new proxy instance from a target instance
-            /// </summary>
-            /// <typeparam name="T">Type of the return value</typeparam>
-            /// <typeparam name="TOriginal">Type of the original value</typeparam>
-            /// <param name="instance">Target instance value</param>
-            /// <returns>Proxy instance</returns>
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            [return: NotNull]
-            public T CreateInstance<T, TOriginal>(TOriginal instance)
-            {
-                if (_activator is Func<TOriginal, T> typedActivator)
+                if (failure is Action failureThrower)
                 {
-#pragma warning disable CS8607
-                    return typedActivator(instance);
-#pragma warning restore CS8607
-                }
-
-                return CreateInstanceCore<T>(instance);
-            }
-
-            /// <summary>
-            /// Get if the proxy instance can be created
-            /// </summary>
-            /// <returns>true if the proxy can be created; otherwise, false.</returns>
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public bool CanCreate()
-            {
-                return _exceptionInfo == null && _failureThrower == null;
-            }
-
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            internal object CreateInstance(object instance)
-            {
-                if (_wrapNonGenericFailureInTargetInvocationException)
-                {
-                    ThrowFailureAsTargetInvocationException();
-                }
-                else
-                {
-                    ThrowFailureIfNeeded();
-                }
-
-                if (_untypedActivator is not null)
-                {
-                    return _untypedActivator(instance)!;
-                }
-
-                if (_activator is not null)
-                {
-                    return _activator.DynamicInvoke(instance)!;
-                }
-
-                ThrowHelper.ThrowNullReferenceException("The activator for this proxy type is null, check if the type can be created by calling 'CanCreate()'");
-                return null!;
-            }
-
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            private T? ThrowOnError<T>(object? instance)
-            {
-                ThrowFailureIfNeeded();
-                return default;
-            }
-
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            private void ThrowCachedException()
-            {
-                var exceptionInfo = _exceptionInfo;
-                if (exceptionInfo is null)
-                {
+                    failureThrower();
                     return;
                 }
 
+                var exceptionInfo = (ExceptionDispatchInfo)failure;
 #if NET6_0_OR_GREATER
                 exceptionInfo.Throw();
 #else
@@ -1667,21 +1721,58 @@ namespace Datadog.Trace.DuckTyping
                 // versions before .NET 6 have a confirmed race when that instance is rethrown concurrently,
                 // which can cause a crash.
                 //
-                // Instead, make a shallow copy of the cached DuckTypeException and capture that copy immediately
-                // before every throw. MemberwiseClone preserves the exact internal details, so concurrent
-                // throws no longer cause a crash. Fixed in .NET 6+.
-                ThrowClonedException(exceptionInfo);
+                // Instead, make a shallow copy of the cached exception and capture that copy immediately before every
+                // throw. MemberwiseClone preserves the exact internal details, so concurrent throws no longer cause a
+                // crash. Fixed in .NET 6+. AOT failure factories can register any exception type, so those are cloned
+                // through object.MemberwiseClone.
+                var sourceException = exceptionInfo.SourceException;
+                var exceptionToThrow = sourceException is DuckTypeException duckTypeException
+                                           ? duckTypeException.CloneForThrow()
+                                           : (Exception)ExceptionCloner.MemberwiseCloneMethod.Invoke(sourceException, null)!;
+                ExceptionDispatchInfo.Capture(exceptionToThrow).Throw();
 #endif
+            }
+
+            private static Action CreateFailureThrower(object failure) => () => ThrowFailure(failure);
+
+            [MethodImpl(MethodImplOptions.NoInlining)]
+            [return: NotNull]
+            private static T CreateInstanceSlow<T>(Delegate? activator, object? instance)
+            {
+                if (activator is Action failureThrower)
+                {
+                    failureThrower();
+                }
+
+                if (activator is Func<object?, object?> objectActivator)
+                {
+                    var value = objectActivator(instance);
+                    if (value is null)
+                    {
+                        ThrowHelper.ThrowNullReferenceException("AOT duck typing activator returned null.");
+                    }
+
+                    return (T)value;
+                }
+
+                if (activator is null)
+                {
+                    ThrowHelper.ThrowNullReferenceException("The activator for this proxy type is null, check if the type can be created by calling 'CanCreate()'");
+                }
+
+                return ((CreateProxyInstance<T>)activator)(instance);
             }
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             private void ThrowFailureIfNeeded()
             {
-                ThrowCachedException();
-                _failureThrower?.Invoke();
+                if (_failure is not null)
+                {
+                    ThrowFailure(_failure);
+                }
             }
 
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            [MethodImpl(MethodImplOptions.NoInlining)]
             private void ThrowFailureAsTargetInvocationException()
             {
                 try
@@ -1697,32 +1788,6 @@ namespace Datadog.Trace.DuckTyping
                     throw new TargetInvocationException(ex);
                 }
             }
-
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            [return: NotNull]
-            private T CreateInstanceCore<T>(object? instance)
-            {
-                ThrowFailureIfNeeded();
-
-                if (_activator is CreateProxyInstance<T> typedActivator)
-                {
-                    return typedActivator(instance);
-                }
-
-                if (_untypedActivator is not null)
-                {
-                    var value = _untypedActivator(instance);
-                    if (value is null)
-                    {
-                        ThrowHelper.ThrowNullReferenceException("AOT duck typing activator returned null.");
-                    }
-
-                    return (T)value;
-                }
-
-                ThrowHelper.ThrowNullReferenceException("The activator for this proxy type is null, check if the type can be created by calling 'CanCreate()'");
-                return default!;
-            }
         }
 
         /// <summary>
@@ -1731,11 +1796,12 @@ namespace Datadog.Trace.DuckTyping
         /// <typeparam name="T">Type of proxy definition</typeparam>
         public static class CreateCache<T>
         {
-            // Because CreateTypeResult is a struct, it needs to be boxed for safe concurrent access.
-            // Each entry carries the fast path version it was computed for, so registrations or test resets
-            // that race with a lookup can never leave a stale entry that looks current.
+            // Because CreateTypeResult is a struct, it needs to be boxed for safe concurrent access. The entries are cleared
+            // when the state that produced them changes (AOT registrations, test resets), see DuckType.InvalidateFastPaths, so
+            // the fast path itself only compares the target type.
             private static FastPathEntry? _forwardFastPath;
             private static FastPathEntry? _reverseFastPath;
+            private static bool _fastPathResetRegistered;
 
             /// <summary>
             /// Gets the type of T
@@ -1752,14 +1818,22 @@ namespace Datadog.Trace.DuckTyping
             {
                 // We set a fast path for the first proxy type for a proxy definition. (It's likely to have a proxy definition just for one target type)
                 var fastPath = Volatile.Read(ref _forwardFastPath);
-                if (fastPath is not null &&
-                    fastPath.Result.TargetType == targetType &&
-                    fastPath.Version == Volatile.Read(ref _fastPathVersion))
+                if (fastPath is not null && fastPath.Result.TargetType == targetType)
                 {
                     return fastPath.Result;
                 }
 
-                return GetOrCreateAndCacheFastPath(ref _forwardFastPath, targetType, reverse: false);
+                // Read the version before computing the result: if an invalidation happens meanwhile, the result may already be
+                // stale, and it isn't stored. The result is a local stored by a call: returning a call's result directly makes the
+                // JIT copy the struct on every fast path hit too.
+                var version = Volatile.Read(ref _fastPathVersion);
+                var result = GetOrCreateProxyType(Type, targetType);
+                if (Volatile.Read(ref _forwardFastPath) is null)
+                {
+                    StoreForwardFastPath(result, version);
+                }
+
+                return result;
             }
 
             /// <summary>
@@ -1846,39 +1920,35 @@ namespace Datadog.Trace.DuckTyping
             {
                 // We set a fast path for the first proxy type for a proxy definition. (It's likely to have a proxy definition just for one target type)
                 var fastPath = Volatile.Read(ref _reverseFastPath);
-                if (fastPath is not null &&
-                    fastPath.Result.TargetType == targetType &&
-                    fastPath.Version == Volatile.Read(ref _fastPathVersion))
+                if (fastPath is not null && fastPath.Result.TargetType == targetType)
                 {
                     return fastPath.Result;
                 }
 
-                return GetOrCreateAndCacheFastPath(ref _reverseFastPath, targetType, reverse: true);
+                // Same shape as GetProxy.
+                var version = Volatile.Read(ref _fastPathVersion);
+                var result = GetOrCreateReverseProxyType(Type, targetType);
+                if (Volatile.Read(ref _reverseFastPath) is null)
+                {
+                    StoreReverseFastPath(result, version);
+                }
+
+                return result;
             }
 
-            private static CreateTypeResult GetOrCreateAndCacheFastPath(ref FastPathEntry? fastPathSlot, Type targetType, bool reverse)
+            // Keep the first target type as the fast path: a proxy definition is likely used with a single target type.
+            [MethodImpl(MethodImplOptions.NoInlining)]
+            private static void StoreForwardFastPath(CreateTypeResult result, int version)
+                => StoreFastPath(ref _forwardFastPath, ref _fastPathResetRegistered, ResetFastPaths, result, version);
+
+            [MethodImpl(MethodImplOptions.NoInlining)]
+            private static void StoreReverseFastPath(CreateTypeResult result, int version)
+                => StoreFastPath(ref _reverseFastPath, ref _fastPathResetRegistered, ResetFastPaths, result, version);
+
+            private static void ResetFastPaths()
             {
-                while (true)
-                {
-                    // Read the version before computing, so a result that raced with a registration or reset is
-                    // stamped with the old version and is never served from the fast path afterwards.
-                    var version = Volatile.Read(ref _fastPathVersion);
-                    var result = DuckType.GetOrCreateProxyType(Type, targetType, reverse);
-                    if (Volatile.Read(ref _fastPathVersion) != version)
-                    {
-                        // The runtime state changed while computing the result, so it may already be stale.
-                        continue;
-                    }
-
-                    // Keep the first target type as the fast path, only replacing entries from an older version.
-                    var currentFastPath = Volatile.Read(ref fastPathSlot);
-                    if (currentFastPath is null || currentFastPath.Version != version)
-                    {
-                        Interlocked.CompareExchange(ref fastPathSlot, new FastPathEntry(result, version), currentFastPath);
-                    }
-
-                    return result;
-                }
+                Volatile.Write(ref _forwardFastPath, null);
+                Volatile.Write(ref _reverseFastPath, null);
             }
         }
     }

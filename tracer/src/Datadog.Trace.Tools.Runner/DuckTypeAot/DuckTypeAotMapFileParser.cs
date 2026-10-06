@@ -27,19 +27,39 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// <returns>The result produced by this operation.</returns>
         internal static DuckTypeAotMapFileParseResult Parse(string path)
         {
-            var errors = new List<string>();
-            var mappings = new Dictionary<string, DuckTypeAotMapping>(StringComparer.Ordinal);
-            var excludedKeys = new HashSet<string>(StringComparer.Ordinal);
-
             // Branch: take this path when (string.IsNullOrWhiteSpace(path)) evaluates to true.
             if (string.IsNullOrWhiteSpace(path))
             {
-                return new DuckTypeAotMapFileParseResult(Array.Empty<DuckTypeAotMapping>(), excludedKeys, errors);
+                return new DuckTypeAotMapFileParseResult(Array.Empty<DuckTypeAotMapping>(), new HashSet<string>(StringComparer.Ordinal), new List<string>());
             }
 
+            string json;
             try
             {
-                var json = File.ReadAllText(path);
+                json = File.ReadAllText(path);
+            }
+            catch (Exception ex)
+            {
+                return new DuckTypeAotMapFileParseResult(Array.Empty<DuckTypeAotMapping>(), new HashSet<string>(StringComparer.Ordinal), new List<string> { $"--map-file could not be parsed ({path}): {ex.Message}" });
+            }
+
+            return ParseText(json, path);
+        }
+
+        /// <summary>
+        /// Parses the content of a map file.
+        /// </summary>
+        /// <param name="json">The content of the map file.</param>
+        /// <param name="path">The path of the map file, for the messages.</param>
+        /// <param name="requireMappings">Whether a map without a 'mappings' array is an error.</param>
+        /// <returns>The result produced by this operation.</returns>
+        internal static DuckTypeAotMapFileParseResult ParseText(string json, string path, bool requireMappings = true)
+        {
+            var errors = new List<string>();
+            var mappings = new Dictionary<string, DuckTypeAotMapping>(StringComparer.Ordinal);
+            var excludedKeys = new HashSet<string>(StringComparer.Ordinal);
+            try
+            {
                 var parsedFile = JsonConvert.DeserializeObject<MapFileDocument>(json);
                 // Branch: take this path when (parsedFile is null) evaluates to true.
                 if (parsedFile is null)
@@ -56,7 +76,11 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
 
                 if (parsedFile.Mappings is null)
                 {
-                    errors.Add($"--map-file must contain a 'mappings' array: {path}");
+                    if (requireMappings)
+                    {
+                        errors.Add($"--map-file must contain a 'mappings' array: {path}");
+                    }
+
                     return new DuckTypeAotMapFileParseResult(Array.Empty<DuckTypeAotMapping>(), excludedKeys, errors);
                 }
 
@@ -93,6 +117,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 return;
             }
 
+            var entryKeys = new HashSet<string>(StringComparer.Ordinal);
             for (var i = 0; i < entries.Count; i++)
             {
                 var entry = entries[i];
@@ -101,12 +126,20 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                     continue;
                 }
 
+                // The same entry twice is an error. Another spelling of the same types (e.g. generic arguments with or
+                // without Version) has the same canonical key, and is the same mapping.
+                var entryKey = string.Join("|", entry.Mode, entry.ProxyAssembly, entry.ProxyType, entry.TargetAssembly, entry.TargetType);
                 if (mappings.ContainsKey(mapping.Key))
                 {
-                    errors.Add($"--map-file contains duplicate mappings for key '{mapping.Key}'.");
+                    if (!entryKeys.Add(entryKey))
+                    {
+                        errors.Add($"--map-file contains duplicate mappings for key '{mapping.Key}'.");
+                    }
+
                     continue;
                 }
 
+                entryKeys.Add(entryKey);
                 mappings.Add(mapping.Key, mapping);
             }
         }

@@ -98,9 +98,9 @@ dotnet artifacts/bin/Datadog.Trace.Tools.Runner.Tool/release_net8.0/Datadog.Trac
 
 ## Current Strict Bible-Gate Baseline
 
-Strict verification expects required Bible mappings to be `compatible` (no per-scenario `expectedStatus` overrides in current baseline).
+Strict verification expects required Bible mappings to be `compatible` (no per-scenario `expectedStatus` overrides in current baseline). The Bible failure scenarios (mappings dynamic duck typing can't create either) meet it with a failure the registry replays from dynamic duck typing (`dynamicFailureReplayed`).
 
-Any non-compatible status should be treated as a regression until explicitly reviewed and approved.
+Any other non-compatible status should be treated as a regression until explicitly reviewed and approved.
 
 ## Scenario Family Coverage Expectations
 

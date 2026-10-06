@@ -37,7 +37,7 @@ Key design rule for NativeAOT:
 
 ## Current Bible Compatibility-Gate Baseline
 
-For the repository Bible compatibility gate (`ducktype-aot discover-mappings` + `ducktype-aot generate` + `ducktype-aot verify-compat --failure-mode strict`), all canonical map mappings are expected to resolve to `compatible`.
+For the repository Bible compatibility gate (`ducktype-aot discover-mappings` + `ducktype-aot generate` + `ducktype-aot verify-compat --failure-mode strict`), all canonical map mappings are expected to behave like dynamic duck typing: `compatible`, or replaying the failure dynamic duck typing has too (`dynamicFailureReplayed: true`).
 
 The gate contract is a single checked-in canonical map file:
 
@@ -161,8 +161,28 @@ NativeAOT generation preserves the dynamic duck-typing `FallbackToBaseTypes` beh
 Discovery resolves target types from `--target-folder` inputs (plus `--target-filter`) and requires at least one `--target-folder`.
 
 `ducktype-aot generate` consumes only `--map-file`.
-When `--discover-mappings` is set, generate performs discovery first (same proxy/target inputs), writes `--map-file`, then continues generation in the same invocation.
-Generation may emit additional runtime registrations for known compatible concrete types, but those aliases are internal to the generated registry and do not change the canonical map file or compatibility matrix contract.
+When `--discover-mappings` is set, generate performs discovery first (same proxy/target inputs), adds the discovered mappings to `--map-file` (creating it if missing or empty; the mappings it already contains are kept, so remove the ones that no longer apply yourself), then continues generation in the same invocation. The map is updated under the lock a recording application takes (`<map>.lock`), atomically, and as text: its comments, formatting and encoding (UTF-8, or the one of its byte order mark) are kept. JSON the text edit doesn't handle (e.g. unquoted property names) is written back from its document, without its comments; a map the map parser rejects (e.g. content after its root object, another `schemaVersion`), or whose `mappings` isn't a single array, is left as it is, with an error. When the map exists and discovery fails, generate warns and uses the map as is.
+Generation also registers the other runtime types a mapped target can have: the target assembly types that derive from it (or implement it), and for generic ones the closed types of `--generic-instantiations` (no other instantiation is known at build time), the arrays of the types deriving from the element type of a mapped array (abstract classes and interfaces too, and arrays of arrays of them for a mapped array of arrays), the underlying type of a mapped `Nullable<T>` (a boxed nullable is a boxed `T`), and the reverse proxy types the registry generates for a mapped target. Like dynamic duck typing, which creates a proxy per runtime type, each of these aliases gets its own proxy, bound to its own members, or replays its own failure. Aliases are internal to the generated registry and do not change the canonical map file or compatibility matrix contract, except that an alias failing only in the registry makes its mapping not `compatible`.
+
+### How the Generator Matches Dynamic Duck Typing
+
+The generator runs the dynamic duck typing engine of its own Datadog.Trace on the application's types, and binds what it binds: the same target members, the same duck chaining decisions, the same reverse implementations (methods and properties). It creates the proxy types like dynamic duck typing does (once per proxy type shape: a forward proxy type takes its members from the proxy, and from the target only the attributes of its ToString and its `[DuckInclude]` methods): a mapping dynamic duck typing can't create fails the same way in the registry, even when the registry could have generated a proxy for it (events, members Reflection.Emit can't implement...).
+
+Like dynamic duck typing, a forward proxy implements the accessors of the properties `Type.GetProperties()` returns for the proxy type (for a class, the virtual ones: a property is hidden by an override, or by a more derived property with the same name and signature, not one of another signature or a private one of a base type), then those of its interfaces whose name isn't taken yet, and no event accessors: the others keep the implementation of the proxy type.
+
+A reverse proxy instance gets forward proxies too: dynamic duck typing creates them for its runtime type, the reverse proxy type the registry generates, so the registry registers the forward mappings of its ancestors for it (binding the members of the class contract when it hides members of the mapped target). The generator asks dynamic duck typing about the proxy of the reverse proxy type it creates: its failure is replayed (e.g. setting a member of a struct reverse proxy), and a proxy the registry can't create where dynamic duck typing does makes the forward mapping not `compatible`.
+
+That requires loading the application's assemblies in the generator process:
+
+1. Run the generator on a runtime that can load them (the application's runtime or a newer one). For a mapping whose types it can't load, generate warns and binds from metadata, which approximates dynamic duck typing.
+2. Use the generator of the application's Datadog.Trace build: proxies declared with another build, or contracts that declare their own duck typing attributes, are bound from metadata too.
+3. Generate loads the registry it wrote, when it can: a generated proxy type the runtime can't load would make the whole registry fail to load, so it is registered as a failure instead. When it can't (the generator can't load what the proxy types use), it warns.
+
+The compatibility matrix marks the mappings bound from metadata with `checkedAgainstMetadataOnly: true`.
+
+The registry only references the application's Datadog.Trace (the one passed as a target or proxy assembly), even for the members of Datadog.Trace it imports from the generator's own copy.
+
+A registry generated by a previous run is never used as a target assembly, even when `--output` is inside a `--target-folder`: generate skips it with a warning.
 
 ## Map File Schema
 
@@ -293,13 +313,14 @@ Given output `X.dll`, generator emits:
 1. `X.dll`:
    1. generated proxy types.
    2. bootstrap type `Datadog.Trace.DuckTyping.Generated.DuckTypeAotRegistryBootstrap`.
-   3. module initializer that calls bootstrap `Initialize()`.
+   3. module initializer that calls bootstrap `Initialize()` (the registration runs once: an explicit `Initialize()` call after the module initializer does nothing).
    4. typed activators (`CreateProxy_XXXX(<targetType>)`) plus object bridge activators (`ActivateProxy_XXXX(object)`) used for registration.
 2. `X.dll.manifest.json`: build metadata, assembly fingerprints, mapping snapshot.
 3. `X.dll.compat.json`: machine-readable compatibility matrix per mapping.
-4. `X.dll.compat.md`: human-readable compatibility report.
+4. `X.dll.compat.md`: human-readable compatibility report (statuses marked `(replayed)` replay a dynamic duck typing failure, and `(metadata only)` were bound from metadata).
 5. Linker descriptor:
    1. default `X.dll.linker.xml`, or `--emit-trimmer-descriptor` path.
+   2. roots the registry, and the proxy and target type definitions of compatible mappings, with `/` between nested types. Closed generics and arrays aren't rooted by name (descriptors can't name them, IL2008): the registry code keeps what it uses.
 6. Props file:
    1. default `X.dll.props`, or `--emit-props` path.
    2. adds registry reference + `TrimmerRootDescriptor`.
@@ -775,7 +796,7 @@ dotnet artifacts/bin/Datadog.Trace.Tools.Runner.Tool/release_net8.0/Datadog.Trac
   --output /abs/path/Datadog.Trace.DuckType.AotRegistry.dll
 ```
 
-Shortcut: use a single command by adding `--discover-mappings` to `ducktype-aot generate` and providing the same `--map-file` output path.
+Shortcut: add `--discover-mappings` to `ducktype-aot generate` to also include the mappings declared with attributes: they are added to the recorded `--map-file`, whose mappings are kept.
 
 Note: discovery may include runtime-generated dynamic assembly identities in some workloads. Sanitize those entries before generation if needed.
 
@@ -806,6 +827,7 @@ dotnet artifacts/bin/Datadog.Trace.Tools.Runner.Tool/release_net8.0/Datadog.Trac
 3. `--failure-mode` values:
    1. `default`: manifest fingerprint drift warns.
    2. `strict`: manifest fingerprint drift fails.
+4. Every `--map-file` mapping must be `compatible`, or replay the failure dynamic duck typing has for it (`dynamicFailureReplayed: true` in the compatibility matrix): such a mapping throws the same exception type, with the same message, in both modes (without the inner exception a failure of Reflection.Emit has in dynamic duck typing).
 
 For protected-branch validation, use the Nuke gate bundle:
 
@@ -843,10 +865,17 @@ Current diagnostic codes emitted by generator:
 7. `DTAOT0211` `unsupported_closed_generic_mapping`
 8. `DTAOT0212` `missing_target_method` for proxy setters targeting read-only properties
 9. `DTAOT0214` `incompatible_method_signature` for reverse custom attribute named arguments
+10. `DTAOT0215` `unsupported_proxy_kind` for proxy types Reflection.Emit can't create (a sealed base type, an abstract member left without implementation, an event...): the registry replays the `DuckTypeException` dynamic duck typing throws. Also for generated proxy types the runtime can't load.
+
+A mapping that isn't `compatible` is registered as a failure. When dynamic duck typing in the generator fails to create the proxy too, the registry throws its exception (type and message) and the compatibility matrix marks the mapping with `dynamicFailureReplayed: true`. A failure of the generator process (an assembly it can't load) isn't a dynamic duck typing failure: it isn't marked, and generate warns. Other failures (`dynamicFailureReplayed: false`) behave differently in the two modes, and verify-compat rejects them.
+
+Known limitations (reported as not `compatible`):
+
+1. The members the runtime only defines on array types (`Get`, `Set`, `Address`) can't be bound: such mappings are reported as not compatible. (Arrays of a type derived from a mapped array's element type are registered, like derived types.)
 
 Bible catalog `expectedStatus` overrides:
 
-1. none (all required mappings default to `compatible`).
+1. none (all required mappings default to `compatible`, which a mapping that replays its dynamic failure also meets: the Bible covers failure scenarios too).
 
 ## Environment Variables Summary
 
@@ -912,11 +941,13 @@ Actions:
 Cause:
 
 1. Registry was generated against different Datadog.Trace assembly version/MVID/schema.
+2. The application's Datadog.Trace.dll wasn't a generate input (through `--target-folder` or `--proxy-assembly`): the registry is then bound to the generator's own copy, and generate warns about it.
+3. The application is published with `PublishTrimmed=true` without NativeAOT: ILLink rewrites Datadog.Trace.dll with another MVID, which no generated registry can match. This configuration isn't supported.
 
 Actions:
 
-1. Regenerate registry with the same Datadog.Trace build used at runtime.
-2. Re-check manifest metadata.
+1. Regenerate registry with the same Datadog.Trace build used at runtime, passing that Datadog.Trace.dll to generate.
+2. Re-check manifest metadata (`datadogTraceAssembly`).
 
 ### `unsupported_closed_generic_mapping`
 

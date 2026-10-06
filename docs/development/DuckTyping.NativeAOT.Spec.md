@@ -134,10 +134,10 @@ The generated assembly must contain:
    1. typed activator (`CreateProxy_XXXX(<targetType>)`).
    2. object bridge activator (`ActivateProxy_XXXX(object)`).
 8. Generated nonthrowing exception factories registered through direct `Func<Exception>` delegates on `DuckType`, without reflective method binding. Registration caches the exception through `ExceptionDispatchInfo`; throwing uses the same cached-exception and pre-.NET 6 cloning rules as dynamic DuckTyping. Legacy `Action` failure registrations remain supported.
-9. Optional additional runtime registrations for compatible concrete alias types discovered during generation. These aliases are registry-internal and do not alter the canonical map contract.
+9. Additional runtime registrations for the other runtime types of a mapped target (derived types in the target assemblies, the closed types of `--generic-instantiations` for generic derived types, the arrays of derived element types for a mapped array (abstract classes and interfaces included, and arrays of arrays), the underlying type of a mapped `Nullable<T>`). Each alias gets its own proxy, bound like dynamic duck typing binds that runtime type, or its own failure. These aliases are registry-internal and do not alter the canonical map contract.
 10. Inherited generic target methods, properties, and fields use the generic arguments of their declaring type, including configured parameter type names and omitted optional arguments.
 11. Reverse methods require `[DuckReverseMethod]`, including an attribute inherited by a virtual override. Unannotated concrete methods retain their base implementation; unimplemented abstract methods register the corresponding dynamic failure.
-12. A forward mapping to an ancestor of a generated reverse proxy may provide a generated target alias when its member bindings are equivalent. Runtime lookup remains exact.
+12. A forward mapping to an ancestor of a generated reverse proxy registers a proxy for the generated reverse proxy type: it binds the members of the mapped ancestor (of the class contract, when it hides some of them), and its `IDuckType.Type` is the generated reverse proxy type, like the proxy dynamic duck typing creates for the runtime type of the instance. A failure of the forward mapping is registered for it too, and so is the failure dynamic duck typing has with the reverse proxy type it creates; a failure only the registry has makes the forward mapping not `compatible`. Other spellings of the same proxy type share its registration. Runtime lookup remains exact.
 13. Reverse parameter selection uses the implementation-to-contract direction. Reverse returns preserve the original object when an implementation returns a forward proxy; adapted `ref`/`out` values are stored using the destination type.
 
 Consumers may still call `DuckTypeAotRegistryBootstrap.Initialize()` explicitly for deterministic startup.
@@ -174,6 +174,8 @@ Status values include:
 9. `unsupported_proxy_constructor`
 10. `unsupported_closed_generic_mapping`
 
+Each JSON entry also has `dynamicFailureReplayed` (the mapping fails like in dynamic duck typing, which the registry replays) and, when set, `checkedAgainstMetadataOnly` (the generator couldn't evaluate it with dynamic duck typing). The markdown report marks those statuses with `(replayed)` and `(metadata only)`.
+
 The markdown report is human-oriented. The JSON matrix is machine-oriented for CI policy checks.
 
 ## Verify-Compat Inputs
@@ -200,7 +202,7 @@ Contract policy:
 
 1. Every `--map-file` entry must exist in `compat-matrix`.
 2. `compat-matrix` must not contain entries that are absent from `--map-file`.
-3. Every mapped entry status must be `compatible`.
+3. Every mapped entry status must be `compatible`, or replay the failure dynamic duck typing has (`dynamicFailureReplayed: true`).
 
 ## Runtime Contract Requirements
 

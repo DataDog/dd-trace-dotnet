@@ -11,6 +11,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Threading;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Util;
@@ -312,13 +313,21 @@ namespace Datadog.Trace.DuckTyping
             return true;
         }
 
-        internal static void WriteAtomically(string outputPath, string contents)
+        internal static void WriteAtomically(string outputPath, string contents, Encoding? encoding = null)
         {
             // Readers, and a process that writes without the lock, never see a partially written map.
             var temporaryOutputPath = $"{outputPath}.{Guid.NewGuid():N}.tmp";
             try
             {
-                File.WriteAllText(temporaryOutputPath, contents);
+                if (encoding is null)
+                {
+                    File.WriteAllText(temporaryOutputPath, contents);
+                }
+                else
+                {
+                    File.WriteAllText(temporaryOutputPath, contents, encoding);
+                }
+
 #if NETCOREAPP3_0_OR_GREATER
                 File.Move(temporaryOutputPath, outputPath, overwrite: true);
 #else

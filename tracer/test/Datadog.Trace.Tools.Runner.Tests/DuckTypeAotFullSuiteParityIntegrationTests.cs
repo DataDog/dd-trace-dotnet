@@ -12,6 +12,8 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Reflection.Metadata;
+using System.Reflection.PortableExecutable;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
@@ -174,7 +176,7 @@ public class DuckTypeAotFullSuiteParityIntegrationTests
 
         try
         {
-            if (!File.Exists(runnerAssemblyPath))
+            if (!File.Exists(runnerAssemblyPath) || IsOlderThanGeneratorSources(runnerAssemblyPath, repositoryRoot))
             {
                 var buildRunnerResult = RunProcess(
                     fileName: dotNetExecutable,
@@ -210,6 +212,14 @@ public class DuckTypeAotFullSuiteParityIntegrationTests
 
             File.Exists(runnerAssemblyPath).Should().BeTrue("the runner assembly should be available before registry generation");
             File.Exists(duckTypingTestsAssemblyPath).Should().BeTrue("the duck typing test assembly should already be built before full-suite parity execution");
+
+            // The generator resolves the test types through its own Datadog.Trace: a test build against another build of it (a
+            // stale build output) can't be generated for.
+            var runnerDatadogTracePath = Path.Combine(Path.GetDirectoryName(runnerAssemblyPath)!, "Datadog.Trace.dll");
+            var duckTypingTestsDatadogTracePath = Path.Combine(Path.GetDirectoryName(duckTypingTestsAssemblyPath)!, "Datadog.Trace.dll");
+            ReadModuleVersionId(duckTypingTestsDatadogTracePath).Should().Be(
+                ReadModuleVersionId(runnerDatadogTracePath),
+                $"the duck typing tests ('{duckTypingTestsDatadogTracePath}') and the runner ('{runnerDatadogTracePath}') should use the same Datadog.Trace build: rebuild the stale one");
 
             WriteRunSettingsFile(
                 dynamicRunSettingsPath,
@@ -433,6 +443,9 @@ public class DuckTypeAotFullSuiteParityIntegrationTests
 
             var dynamicOutcomes = ReadResults(dynamicTrxPath);
             var aotOutcomes = ReadResults(aotTrxPath);
+
+            // Both runs must execute the same test cases (checked below): an empty run would make them trivially equal.
+            dynamicOutcomes.Should().NotBeEmpty("the dynamic run should execute the duck typing suite");
 
             var dynamicFailedOrError = dynamicOutcomes
                                       .Where(entry => ShouldCompareAssertionMessage(entry.Value.Outcome))
@@ -1129,6 +1142,33 @@ public class DuckTypeAotFullSuiteParityIntegrationTests
         var targetFolders = new List<string> { isolatedTargetAssemblyDirectory };
 
         return new GenerateInput(sanitizedMapPath, proxyAssemblyPaths, targetFolders, targetFilters, excludedMappings);
+    }
+
+    private static Guid ReadModuleVersionId(string assemblyPath)
+    {
+        using var peReader = new PEReader(File.OpenRead(assemblyPath));
+        var metadataReader = peReader.GetMetadataReader();
+        return metadataReader.GetGuid(metadataReader.GetModuleDefinition().Mvid);
+    }
+
+    /// <summary>
+    /// Determines whether a runner build is older than the generator or duck typing sources: a stale runner generates a
+    /// registry that doesn't match the code under test.
+    /// </summary>
+    /// <param name="runnerAssemblyPath">The runner assembly path.</param>
+    /// <param name="repositoryRoot">The repository root.</param>
+    /// <returns>true if a source file changed after the runner was built; otherwise, false.</returns>
+    private static bool IsOlderThanGeneratorSources(string runnerAssemblyPath, string repositoryRoot)
+    {
+        var runnerWriteTimeUtc = File.GetLastWriteTimeUtc(runnerAssemblyPath);
+        return new[]
+               {
+                   Path.Combine(repositoryRoot, "tracer", "src", "Datadog.Trace.Tools.Runner"),
+                   Path.Combine(repositoryRoot, "tracer", "src", "Datadog.Trace", "DuckTyping"),
+               }
+              .Where(Directory.Exists)
+              .SelectMany(directory => Directory.EnumerateFiles(directory, "*.cs", SearchOption.AllDirectories))
+              .Any(sourcePath => File.GetLastWriteTimeUtc(sourcePath) > runnerWriteTimeUtc);
     }
 
     /// <summary>

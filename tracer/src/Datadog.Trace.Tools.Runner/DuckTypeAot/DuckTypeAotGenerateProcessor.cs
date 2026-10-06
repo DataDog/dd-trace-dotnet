@@ -8,7 +8,13 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
+using System.Linq;
+using System.Text;
+using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 using Spectre.Console;
 
 namespace Datadog.Trace.Tools.Runner.DuckTypeAot
@@ -44,18 +50,49 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             if (options.DiscoverMappings)
             {
                 AnsiConsole.MarkupLine("[green]Discover step:[/] discovering and filtering compatible mappings before generation.");
-                var discoveryExitCode = DuckTypeAotDiscoverMappingsProcessor.Process(
-                    new DuckTypeAotDiscoverMappingsOptions(
-                        options.ProxyAssemblies,
-                        options.TargetFolders,
-                        options.TargetFilters,
-                        options.MapFile,
-                        warningsReportPath: null,
-                        strict: false));
-                if (discoveryExitCode != 0)
+
+                // Discovery only finds the mappings declared with attributes: an existing --map-file (e.g. the map recorded at
+                // runtime) is kept, and the discovered mappings are added to it.
+                var mapFileExists = File.Exists(options.MapFile);
+                var discoveryOutputPath = mapFileExists ? $"{options.MapFile}.{Guid.NewGuid():N}.discovered.json" : options.MapFile;
+                try
                 {
-                    Utils.WriteError("ducktype-aot generate failed during discovery pre-step.");
-                    return 1;
+                    var discoveryExitCode = DuckTypeAotDiscoverMappingsProcessor.Process(
+                        new DuckTypeAotDiscoverMappingsOptions(
+                            options.ProxyAssemblies,
+                            options.TargetFolders,
+                            options.TargetFilters,
+                            discoveryOutputPath,
+                            warningsReportPath: null,
+                            strict: false));
+                    if (discoveryExitCode != 0)
+                    {
+                        if (!mapFileExists)
+                        {
+                            Utils.WriteError("ducktype-aot generate failed during discovery pre-step.");
+                            return 1;
+                        }
+
+                        // The existing map is still a valid input: generate it without the mappings declared with attributes.
+                        AnsiConsole.MarkupLine($"[yellow]Warning:[/] discovery failed, so no mapping declared with attributes was added to {options.MapFile!.EscapeMarkup()}.");
+                    }
+                    else if (mapFileExists)
+                    {
+                        if (!TryMergeDiscoveredMappings(options.MapFile!, discoveryOutputPath!, out var addedMappings, out var mergeError))
+                        {
+                            Utils.WriteError($"ducktype-aot generate failed to add the discovered mappings to --map-file: {mergeError}");
+                            return 1;
+                        }
+
+                        AnsiConsole.MarkupLine($"[green]Discover step:[/] added {addedMappings} discovered mapping(s) to {options.MapFile!.EscapeMarkup()}.");
+                    }
+                }
+                finally
+                {
+                    if (mapFileExists && File.Exists(discoveryOutputPath))
+                    {
+                        File.Delete(discoveryOutputPath);
+                    }
                 }
             }
 
@@ -153,6 +190,11 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 AnsiConsole.MarkupLine($"[green]Generated compatibility matrix:[/] {compatibilityArtifacts.MatrixPath.EscapeMarkup()}");
                 AnsiConsole.MarkupLine($"[green]Generated compatibility report:[/] {compatibilityArtifacts.ReportPath.EscapeMarkup()}");
 
+                if (compatibilityArtifacts.ReplayedDynamicFailureMappings > 0)
+                {
+                    AnsiConsole.MarkupLine($"[green]Compatibility status:[/] {compatibilityArtifacts.ReplayedDynamicFailureMappings}/{compatibilityArtifacts.TotalMappings} mappings fail in dynamic duck typing too, and the registry replays that failure.");
+                }
+
                 // Branch: take this path when (compatibilityArtifacts.NonCompatibleMappings > 0) evaluates to true.
                 if (compatibilityArtifacts.NonCompatibleMappings > 0)
                 {
@@ -172,6 +214,146 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 // Branch: handles exceptions that match Exception ex.
                 Utils.WriteError($"ducktype-aot generate failed: {ex.Message}");
                 return 1;
+            }
+        }
+
+        /// <summary>
+        /// Adds the mappings of a discovered map to an existing map file. The file is edited as text, so everything else in it
+        /// (its entries, comments, formatting, encoding) is kept.
+        /// </summary>
+        /// <param name="mapFilePath">The existing map file.</param>
+        /// <param name="discoveredMapPath">The discovered map file.</param>
+        /// <param name="addedMappings">The number of mappings added.</param>
+        /// <param name="error">Why the maps couldn't be merged.</param>
+        /// <returns>true if the map file was updated; otherwise, false.</returns>
+        internal static bool TryMergeDiscoveredMappings(string mapFilePath, string discoveredMapPath, out int addedMappings, out string? error)
+        {
+            addedMappings = 0;
+            error = null;
+
+            // An application recording mappings at runtime may update the same map: take the lock the recorder takes, and
+            // replace the map atomically like it does.
+            using var mapLock = DuckTypeAotDiscoveryRecorder.AcquireOutputLock(mapFilePath, TimeSpan.FromSeconds(30));
+            if (mapLock is null)
+            {
+                error = $"'{mapFilePath}' could not be locked ('{mapFilePath}.lock').";
+                return false;
+            }
+
+            var discoveredMap = DuckTypeAotMapFileParser.Parse(discoveredMapPath);
+            if (discoveredMap.Errors.Count > 0)
+            {
+                error = string.Join(" ", discoveredMap.Errors);
+                return false;
+            }
+
+            // Decoded like the map parser reads it, and written back with the same encoding.
+            string text;
+            Encoding encoding;
+            try
+            {
+                using var reader = new StreamReader(new MemoryStream(File.ReadAllBytes(mapFilePath)), new UTF8Encoding(encoderShouldEmitUTF8Identifier: false), detectEncodingFromByteOrderMarks: true);
+                text = reader.ReadToEnd();
+                encoding = reader.CurrentEncoding;
+            }
+            catch (Exception ex)
+            {
+                error = $"'{mapFilePath}' can't be read: {ex.Message}";
+                return false;
+            }
+
+            var newLine = text.IndexOf('\n') >= 0 ? (text.IndexOf("\r\n", StringComparison.Ordinal) >= 0 ? "\r\n" : "\n") : text.IndexOf('\r') >= 0 ? "\r" : "\n";
+            var expectedKeys = new HashSet<string>(StringComparer.Ordinal);
+            JObject? document = null;
+            JProperty? mappingsProperty = null;
+            if (!string.IsNullOrWhiteSpace(text))
+            {
+                // The map has to be one the map parser reads (a map without mappings yet gets a 'mappings' array).
+                var existingMap = DuckTypeAotMapFileParser.ParseText(text, mapFilePath, requireMappings: false);
+                if (existingMap.Errors.Count > 0)
+                {
+                    error = string.Join(" ", existingMap.Errors);
+                    return false;
+                }
+
+                expectedKeys.UnionWith(existingMap.Mappings.Select(mapping => mapping.Key));
+                try
+                {
+                    document = JObject.Load(
+                        new JsonTextReader(new StringReader(text)),
+                        new JsonLoadSettings { CommentHandling = CommentHandling.Ignore, DuplicatePropertyNameHandling = DuplicatePropertyNameHandling.Replace });
+                }
+                catch (Exception ex)
+                {
+                    error = $"'{mapFilePath}' can't be read: {ex.Message}";
+                    return false;
+                }
+
+                // The mappings are added to its 'mappings' array: one, which the parser reads whatever its casing.
+                var mappingsProperties = document.Properties().Where(property => string.Equals(property.Name, "mappings", StringComparison.OrdinalIgnoreCase)).ToList();
+                if (CountRootMappingsProperties(text) > 1 || mappingsProperties.Any(property => property.Value is not JArray))
+                {
+                    error = $"'{mapFilePath}' must have a single 'mappings' array.";
+                    return false;
+                }
+
+                mappingsProperty = mappingsProperties.FirstOrDefault();
+            }
+
+            var addedMappingsToWrite = discoveredMap.Mappings.Where(mapping => expectedKeys.Add(mapping.Key)).ToList();
+            addedMappings = addedMappingsToWrite.Count;
+            if (addedMappings == 0)
+            {
+                return true;
+            }
+
+            var addedEntries = addedMappingsToWrite.Select(
+                                                       mapping => JsonConvert.SerializeObject(new
+                                                       {
+                                                           mode = mapping.Mode == DuckTypeAotMappingMode.Reverse ? "reverse" : "forward",
+                                                           proxyType = mapping.ProxyTypeName,
+                                                           proxyAssembly = mapping.ProxyAssemblyName,
+                                                           targetType = mapping.TargetTypeName,
+                                                           targetAssembly = mapping.TargetAssemblyName
+                                                       }))
+                                                   .ToList();
+            string? newText;
+            if (document is null)
+            {
+                // An empty map (e.g. a file just created) is written as a new map.
+                newText = "{" + newLine + "  \"mappings\": [" + newLine + "    " + string.Join("," + newLine + "    ", addedEntries) + newLine + "  ]" + newLine + "}" + newLine;
+            }
+            else if (!MapFileInsertionPoint.TryFind(text, out var insertionPoint) || !IsMerged(newText = insertionPoint.Insert(text, addedEntries, newLine)))
+            {
+                // JSON the text edit doesn't handle (e.g. unquoted names): the map is written back from its document, which
+                // loses its comments.
+                if (mappingsProperty is null)
+                {
+                    mappingsProperty = new JProperty("mappings", new JArray());
+                    document.Add(mappingsProperty);
+                }
+
+                foreach (var addedEntry in addedEntries)
+                {
+                    ((JArray)mappingsProperty.Value).Add(JObject.Parse(addedEntry));
+                }
+
+                newText = document.ToString(Formatting.Indented);
+                if (!IsMerged(newText))
+                {
+                    error = $"The discovered mappings couldn't be added to '{mapFilePath}': add them to its 'mappings' array.";
+                    return false;
+                }
+            }
+
+            DuckTypeAotDiscoveryRecorder.WriteAtomically(mapFilePath, newText, encoding);
+            return true;
+
+            bool IsMerged(string candidate)
+            {
+                // The map has to read back as its mappings and the discovered ones.
+                var merged = DuckTypeAotMapFileParser.ParseText(candidate, mapFilePath);
+                return merged.Errors.Count == 0 && expectedKeys.SetEquals(merged.Mappings.Select(mapping => mapping.Key));
             }
         }
 
@@ -336,6 +518,293 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             if (!string.IsNullOrWhiteSpace(parent))
             {
                 Directory.CreateDirectory(parent);
+            }
+        }
+
+        /// <summary>
+        /// Counts the 'mappings' properties of the root object of a map, whatever their casing (duplicates included).
+        /// </summary>
+        /// <param name="text">The content of the map.</param>
+        /// <returns>The number of 'mappings' properties.</returns>
+        private static int CountRootMappingsProperties(string text)
+        {
+            var count = 0;
+            using var reader = new JsonTextReader(new StringReader(text));
+            while (reader.Read())
+            {
+                if (reader.TokenType == JsonToken.PropertyName && reader.Depth == 1 && string.Equals(reader.Value as string, "mappings", StringComparison.OrdinalIgnoreCase))
+                {
+                    count++;
+                }
+            }
+
+            return count;
+        }
+
+        /// <summary>
+        /// Where mappings are added to the text of a map file: after the last element of its 'mappings' array (in any casing,
+        /// like the map parser reads it), or in a new 'mappings' array after the last property of the root object.
+        /// </summary>
+        private sealed class MapFileInsertionPoint
+        {
+            private readonly int _index;
+            private readonly bool _afterMember;
+            private readonly string _indentation;
+
+            private MapFileInsertionPoint(int index, bool inMappingsArray, bool afterMember, string indentation)
+            {
+                _index = index;
+                InMappingsArray = inMappingsArray;
+                _afterMember = afterMember;
+                _indentation = indentation;
+            }
+
+            /// <summary>
+            /// Gets a value indicating whether the map has a 'mappings' array the entries are added to.
+            /// </summary>
+            public bool InMappingsArray { get; }
+
+            /// <summary>
+            /// Finds where the mappings are added to the text of a map file (a JSON object, with comments).
+            /// </summary>
+            /// <param name="text">The text of the map file.</param>
+            /// <param name="insertionPoint">The insertion point.</param>
+            /// <returns>true if the text is a JSON object; otherwise, false.</returns>
+            public static bool TryFind(string text, out MapFileInsertionPoint insertionPoint)
+            {
+                insertionPoint = null!;
+                var position = 0;
+                SkipTrivia(text, ref position);
+                if (position >= text.Length || text[position] != '{')
+                {
+                    return false;
+                }
+
+                var rootStart = position++;
+                var lastMemberEnd = -1;
+                while (true)
+                {
+                    SkipTrivia(text, ref position);
+                    if (position >= text.Length)
+                    {
+                        return false;
+                    }
+
+                    switch (text[position])
+                    {
+                        case '}':
+                            // No 'mappings' array: one is added after the last property.
+                            var propertyAnchor = lastMemberEnd >= 0 ? lastMemberEnd : rootStart;
+                            insertionPoint = new MapFileInsertionPoint(lastMemberEnd >= 0 ? lastMemberEnd : rootStart + 1, inMappingsArray: false, lastMemberEnd >= 0, lastMemberEnd >= 0 ? GetIndentation(text, propertyAnchor) : GetIndentation(text, rootStart) + "  ");
+                            return true;
+                        case ',':
+                            position++;
+                            continue;
+                        case '"':
+                            var name = ReadString(text, ref position);
+                            SkipTrivia(text, ref position);
+                            if (position >= text.Length || text[position] != ':')
+                            {
+                                return false;
+                            }
+
+                            position++;
+                            SkipTrivia(text, ref position);
+                            if (string.Equals(name, "mappings", StringComparison.OrdinalIgnoreCase) && position < text.Length && text[position] == '[')
+                            {
+                                var arrayStart = position++;
+                                var lastElementEnd = -1;
+                                while (true)
+                                {
+                                    SkipTrivia(text, ref position);
+                                    if (position >= text.Length)
+                                    {
+                                        return false;
+                                    }
+
+                                    if (text[position] == ']')
+                                    {
+                                        insertionPoint = lastElementEnd >= 0
+                                                             ? new MapFileInsertionPoint(lastElementEnd, inMappingsArray: true, afterMember: true, GetIndentation(text, lastElementEnd))
+                                                             : new MapFileInsertionPoint(arrayStart + 1, inMappingsArray: true, afterMember: false, GetIndentation(text, arrayStart) + "  ");
+                                        return true;
+                                    }
+
+                                    if (text[position] == ',')
+                                    {
+                                        position++;
+                                        continue;
+                                    }
+
+                                    if (!SkipValue(text, ref position))
+                                    {
+                                        return false;
+                                    }
+
+                                    lastElementEnd = position;
+                                }
+                            }
+
+                            if (!SkipValue(text, ref position))
+                            {
+                                return false;
+                            }
+
+                            lastMemberEnd = position;
+                            continue;
+                        default:
+                            return false;
+                    }
+                }
+            }
+
+            /// <summary>
+            /// Inserts mapping entries in the text of the map file.
+            /// </summary>
+            /// <param name="text">The text of the map file.</param>
+            /// <param name="entries">The JSON of the mappings to add.</param>
+            /// <param name="newLine">The new line of the map file.</param>
+            /// <returns>The text with the mappings added.</returns>
+            public string Insert(string text, IReadOnlyList<string> entries, string newLine)
+            {
+                string inserted;
+                if (InMappingsArray)
+                {
+                    var elements = string.Join("," + newLine + _indentation, entries);
+                    inserted = _afterMember
+                                   ? "," + newLine + _indentation + elements
+                                   : newLine + _indentation + elements + newLine + _indentation.Substring(0, Math.Max(0, _indentation.Length - 2));
+                }
+                else
+                {
+                    var elementIndentation = _indentation + "  ";
+                    var property = "\"mappings\": [" + newLine + elementIndentation + string.Join("," + newLine + elementIndentation, entries) + newLine + _indentation + "]";
+                    inserted = _afterMember
+                                   ? "," + newLine + _indentation + property
+                                   : newLine + _indentation + property + newLine;
+                }
+
+                return text.Substring(0, _index) + inserted + text.Substring(_index);
+            }
+
+            private static string GetIndentation(string text, int position)
+            {
+                var lineStart = position;
+                while (lineStart > 0 && text[lineStart - 1] != '\n' && text[lineStart - 1] != '\r')
+                {
+                    lineStart--;
+                }
+
+                var indentationEnd = lineStart;
+                while (indentationEnd < text.Length && (text[indentationEnd] == ' ' || text[indentationEnd] == '\t'))
+                {
+                    indentationEnd++;
+                }
+
+                return text.Substring(lineStart, indentationEnd - lineStart);
+            }
+
+            private static void SkipTrivia(string text, ref int position)
+            {
+                while (position < text.Length)
+                {
+                    if (char.IsWhiteSpace(text[position]))
+                    {
+                        position++;
+                    }
+                    else if (text[position] == '/' && position + 1 < text.Length && text[position + 1] == '/')
+                    {
+                        while (position < text.Length && text[position] != '\n' && text[position] != '\r')
+                        {
+                            position++;
+                        }
+                    }
+                    else if (text[position] == '/' && position + 1 < text.Length && text[position + 1] == '*')
+                    {
+                        var end = text.IndexOf("*/", position + 2, StringComparison.Ordinal);
+                        position = end < 0 ? text.Length : end + 2;
+                    }
+                    else
+                    {
+                        return;
+                    }
+                }
+            }
+
+            private static string ReadString(string text, ref int position)
+            {
+                var value = new StringBuilder();
+                position++;
+                while (position < text.Length && text[position] != '"')
+                {
+                    if (text[position] == '\\' && position + 1 < text.Length)
+                    {
+                        position++;
+                        if (text[position] == 'u' && position + 4 < text.Length &&
+                            int.TryParse(text.Substring(position + 1, 4), NumberStyles.HexNumber, CultureInfo.InvariantCulture, out var code))
+                        {
+                            value.Append((char)code);
+                            position += 5;
+                            continue;
+                        }
+                    }
+
+                    value.Append(text[position++]);
+                }
+
+                position++;
+                return value.ToString();
+            }
+
+            private static bool SkipValue(string text, ref int position)
+            {
+                if (position >= text.Length)
+                {
+                    return false;
+                }
+
+                switch (text[position])
+                {
+                    case '"':
+                        ReadString(text, ref position);
+                        return position <= text.Length;
+                    case '{':
+                    case '[':
+                        var closing = text[position] == '{' ? '}' : ']';
+                        position++;
+                        while (true)
+                        {
+                            SkipTrivia(text, ref position);
+                            if (position >= text.Length)
+                            {
+                                return false;
+                            }
+
+                            if (text[position] == closing)
+                            {
+                                position++;
+                                return true;
+                            }
+
+                            if (text[position] == ',' || text[position] == ':')
+                            {
+                                position++;
+                            }
+                            else if (!SkipValue(text, ref position))
+                            {
+                                return false;
+                            }
+                        }
+
+                    default:
+                        var start = position;
+                        while (position < text.Length && !char.IsWhiteSpace(text[position]) && text[position] != ',' && text[position] != ']' && text[position] != '}' && text[position] != '/')
+                        {
+                            position++;
+                        }
+
+                        return position > start;
+                }
             }
         }
     }

@@ -593,7 +593,7 @@ namespace Datadog.Trace.DuckTyping
             if (targetType is null) { ThrowHelper.ThrowArgumentNullException(nameof(targetType)); }
             if (failureThrower is null) { ThrowHelper.ThrowArgumentNullException(nameof(failureThrower)); }
 
-            var createTypeResult = new DuckType.CreateTypeResult(proxyDefinitionType, proxyType: null, targetType, activator: null, failureThrower, wrapNonGenericFailureInTargetInvocationException: true);
+            var createTypeResult = new DuckType.CreateTypeResult(proxyDefinitionType, proxyType: null, targetType, activator: null, failureThrower);
             RegisterFailureResult(proxyDefinitionType, targetType, createTypeResult, failureThrower, reverse, enforceRegistryIdentity);
         }
 
@@ -604,7 +604,7 @@ namespace Datadog.Trace.DuckTyping
             if (exceptionFactory is null) { ThrowHelper.ThrowArgumentNullException(nameof(exceptionFactory)); }
 
             var exception = exceptionFactory() ?? throw new ArgumentException("AOT failure factory returned null.", nameof(exceptionFactory));
-            var result = new DuckType.CreateTypeResult(proxyDefinitionType, proxyType: null, targetType, activator: null, ExceptionDispatchInfo.Capture(exception), wrapNonGenericFailureInTargetInvocationException: true);
+            var result = new DuckType.CreateTypeResult(proxyDefinitionType, proxyType: null, targetType, activator: null, ExceptionDispatchInfo.Capture(exception));
             RegisterFailureResult(proxyDefinitionType, targetType, result, exceptionFactory, reverse, enforceRegistryIdentity: true);
         }
 
@@ -921,22 +921,14 @@ namespace Datadog.Trace.DuckTyping
         /// <returns>The result produced by this operation.</returns>
         private static DuckType.CreateTypeResult CreateMissingResult(TypesTuple key, bool reverse)
         {
-            try
-            {
-                DuckTypeAotMissingProxyRegistrationException.Throw(key.ProxyDefinitionType, key.TargetType, reverse);
-                return default;
-            }
-            catch (Exception ex)
-            {
-                // Capture the thrown exception once and return a cached failing result for this mapping.
-                return new DuckType.CreateTypeResult(
-                    key.ProxyDefinitionType,
-                    proxyType: null,
-                    key.TargetType,
-                    activator: null,
-                    ExceptionDispatchInfo.Capture(ex),
-                    wrapNonGenericFailureInTargetInvocationException: true);
-            }
+            // Like dynamic failures, the exception is captured without being thrown: probing an unmapped pair (CanCreate,
+            // TryDuckCast...) must not raise first-chance exceptions. It's only thrown if the proxy is actually created.
+            return new DuckType.CreateTypeResult(
+                key.ProxyDefinitionType,
+                proxyType: null,
+                key.TargetType,
+                activator: null,
+                ExceptionDispatchInfo.Capture(DuckTypeAotMissingProxyRegistrationException.Create(key.ProxyDefinitionType, key.TargetType, reverse)));
         }
 
         /// <summary>

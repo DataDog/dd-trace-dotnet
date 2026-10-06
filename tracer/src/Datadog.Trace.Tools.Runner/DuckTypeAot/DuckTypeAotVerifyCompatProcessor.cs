@@ -305,8 +305,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             foreach (var mapping in matrix.Mappings)
             {
                 var status = mapping.Status ?? string.Empty;
-                // Branch: take this path when (string.Equals(status, DuckTypeAotCompatibilityStatuses.Compatible, StringComparison.OrdinalIgnoreCase)) evaluates to true.
-                if (string.Equals(status, DuckTypeAotCompatibilityStatuses.Compatible, StringComparison.OrdinalIgnoreCase))
+                if (mapping.BehavesLikeDynamicDuckTyping)
                 {
                     continue;
                 }
@@ -377,7 +376,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 }
 
                 var status = matrixMapping.Status ?? string.Empty;
-                if (!string.Equals(status, DuckTypeAotCompatibilityStatuses.Compatible, StringComparison.OrdinalIgnoreCase))
+                if (!matrixMapping.BehavesLikeDynamicDuckTyping)
                 {
                     errors.Add(
                         $"Mapped entry is not compatible: key='{mapEntry.Key}', status='{status}', " +
@@ -691,8 +690,10 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
 
                 var actualStatus = matrixMapping.Status ?? string.Empty;
                 var expectedStatus = requiredMappingExpectation.ExpectedStatus;
-                // Branch: take this path when (!string.Equals(actualStatus, expectedStatus, StringComparison.OrdinalIgnoreCase)) evaluates to true.
-                if (!string.Equals(actualStatus, expectedStatus, StringComparison.OrdinalIgnoreCase))
+                // A mapping expected to be compatible can also replay the failure dynamic duck typing has: it behaves the same in
+                // both modes.
+                if (!string.Equals(actualStatus, expectedStatus, StringComparison.OrdinalIgnoreCase) &&
+                    !(matrixMapping.DynamicFailureReplayed && string.Equals(expectedStatus, DuckTypeAotCompatibilityStatuses.Compatible, StringComparison.OrdinalIgnoreCase)))
                 {
                     errors.Add(
                         $"Required mapping status mismatch in strict parity mode: " +
@@ -1416,6 +1417,12 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             string context,
             ICollection<string> errors)
         {
+            // Closed generics and arrays aren't rooted by name (see GetTrimmerDescriptorTypeName).
+            if (DuckTypeAotNameHelpers.GetTrimmerDescriptorTypeName(typeName) is not { } normalizedTypeName)
+            {
+                return;
+            }
+
             // Branch: take this path when (!rootsByAssembly.TryGetValue(assemblyName, out var typeRoots)) evaluates to true.
             if (!rootsByAssembly.TryGetValue(assemblyName, out var typeRoots))
             {
@@ -1423,7 +1430,6 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 return;
             }
 
-            var normalizedTypeName = NormalizeTypeNameForLinker(typeName);
             // Branch: take this path when (!typeRoots.Contains(normalizedTypeName)) evaluates to true.
             if (!typeRoots.Contains(normalizedTypeName))
             {
@@ -1706,16 +1712,6 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             }
 
             return sb.ToString();
-        }
-
-        /// <summary>
-        /// Normalizes normalize type name for linker.
-        /// </summary>
-        /// <param name="typeName">The type name value.</param>
-        /// <returns>The resulting string value.</returns>
-        private static string NormalizeTypeNameForLinker(string typeName)
-        {
-            return typeName.Replace('+', '/');
         }
 
         /// <summary>

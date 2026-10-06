@@ -57,6 +57,12 @@ namespace Datadog.Trace.DuckTyping
         private static readonly Dictionary<Assembly, bool> AssembliesInDuckTypeLoadContext;
 #endif
 
+        /// <summary>
+        /// Clears the fast path entries of a <see cref="CreateCache{T}"/>, for each one that has used its fast path.
+        /// </summary>
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+        private static readonly List<Action> FastPathResets = new();
+
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private static int _fastPathVersion;
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
@@ -391,17 +397,15 @@ namespace Datadog.Trace.DuckTyping
 #endif
         private sealed class FastPathEntry
         {
-            // Fields, not properties: every DuckType.Create<T> fast path hit reads Result.TargetType, and reading the
+            // A field, not a property: every DuckType.Create<T> fast path hit reads Result.TargetType, and reading the
             // struct through a property copies it on JITs without physical promotion (.NET Framework, .NET 7 and older).
 #pragma warning disable SA1401 // Fields should be private
             public readonly CreateTypeResult Result;
-            public readonly int Version;
 #pragma warning restore SA1401
 
-            public FastPathEntry(CreateTypeResult result, int version)
+            public FastPathEntry(CreateTypeResult result)
             {
                 Result = result;
-                Version = version;
             }
         }
     }

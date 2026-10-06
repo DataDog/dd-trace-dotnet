@@ -82,7 +82,7 @@ Symptoms:
 Likely causes:
 
 1. `compat-matrix` and `--map-file` identity-set mismatch.
-2. One or more mapped entries are non-compatible.
+2. One or more mapped entries are non-compatible (and don't replay a dynamic duck typing failure).
 3. Manifest contract drift.
 
 Actions:
@@ -108,7 +108,7 @@ Actions:
 
 1. Check canonical map entries first.
 2. Confirm `verify-compat` is using the same `--map-file` as `generate`.
-3. Treat any non-compatible mapping as a regression until explicitly reviewed and approved.
+3. Treat any non-compatible mapping that doesn't replay a dynamic duck typing failure (`dynamicFailureReplayed: false`) as a regression until explicitly reviewed and approved. Check the generate warnings, and `checkedAgainstMetadataOnly`, for mappings the generator couldn't evaluate with dynamic duck typing.
 4. Re-run generation and verification with identical artifact inputs.
 
 ### open generic rule did not expand

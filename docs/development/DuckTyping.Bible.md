@@ -675,8 +675,8 @@ This allows access to internals/private metadata in generated dynamic assembly c
 `CreateCache<T>` has static `_forwardFastPath` and `_reverseFastPath` entries (`FastPathEntry`):
 - Optimizes first-seen target type for proxy definition `T`.
 - Useful because many proxy definitions map to one dominant target type.
-- Each entry is stamped with the fast path version it was computed for; AOT registrations and test resets bump the
-  version (`DuckType.InvalidateFastPaths`), so an entry that raced with them is never served.
+- AOT registrations and test resets clear the entries (`DuckType.InvalidateFastPaths`), and an entry computed while
+  they happen is discarded instead of stored: the fast path itself only compares the target type.
 
 ### CreateTypeResult lifecycle
 
@@ -685,7 +685,7 @@ This allows access to internals/private metadata in generated dynamic assembly c
 - `TargetType`
 - Generated `ProxyType` (if success)
 - Activator delegate (if success)
-- Captured `ExceptionDispatchInfo` (if failure)
+- Failure (if failure): a captured `ExceptionDispatchInfo`, or the thrower an AOT registry registered
 
 Failure behavior:
 - Result still cached.

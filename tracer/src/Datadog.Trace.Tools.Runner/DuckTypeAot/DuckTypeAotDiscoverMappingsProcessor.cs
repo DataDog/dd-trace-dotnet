@@ -114,7 +114,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                         continue;
                     }
 
-                    if (string.Equals(result.Status, DuckTypeAotCompatibilityStatuses.Compatible, StringComparison.OrdinalIgnoreCase))
+                    if (result.BehavesLikeDynamicDuckTyping)
                     {
                         compatibleMappings.Add(mapping);
                     }

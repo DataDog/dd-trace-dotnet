@@ -17,11 +17,11 @@ Current branch baseline:
 
 1. Differential parity coverage is implemented for Bible families, Bible examples, and excerpt suites.
 2. Strict compatibility verification is enforced against a single canonical map file contract.
-3. All canonical mappings are expected to be `compatible`.
+3. All canonical mappings are expected to behave like dynamic duck typing: `compatible`, or replaying the failure dynamic duck typing has too (`dynamicFailureReplayed: true`).
 
 ## Known Expected Non-Compatible Scenarios
 
-There are currently no expected non-compatible Bible scenarios.
+There are currently no expected non-compatible Bible scenarios. The Bible failure scenarios (mappings dynamic duck typing can't create either) replay the dynamic duck typing failure (`dynamicFailureReplayed: true`).
 
 ## Feature Family Matrix
 
@@ -47,7 +47,7 @@ The following are compatibility-sensitive constraints:
 2. Open generic rules must resolve from matching closed `--generic-instantiations` roots; runtime registry entries remain closed.
 3. Runtime must load one registry assembly identity per process.
 4. Registry/runtime contract fingerprints must match expected validation rules.
-5. Any non-compatible status in strict Bible gating is treated as a regression unless explicitly approved.
+5. Any non-compatible status in strict Bible gating is treated as a regression unless explicitly approved, or the registry replays the failure dynamic duck typing has (`dynamicFailureReplayed: true`).
 6. Some boxing/cast IL at object/interface boundaries is expected parity behavior (bridge activators, interface-return value-type proxies, `IDuckType.Instance` for value-type targets).
 
 These constraints are enforced by build-time generation and runtime contract checks.

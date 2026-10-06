@@ -186,7 +186,8 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// <param name="assemblyName">The assembly name value.</param>
         public DuckTypeAotTypeReference(string typeName, string assemblyName)
         {
-            TypeName = typeName;
+            // Spelled like mapping type names, so a root matches the open generic mappings it closes.
+            TypeName = DuckTypeAotNameHelpers.CanonicalizeTypeName(typeName);
             AssemblyName = DuckTypeAotNameHelpers.NormalizeAssemblyName(assemblyName);
         }
 
