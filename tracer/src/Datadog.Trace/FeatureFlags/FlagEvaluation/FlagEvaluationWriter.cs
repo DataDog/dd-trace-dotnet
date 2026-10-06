@@ -23,6 +23,8 @@ internal sealed class FlagEvaluationWriter
 {
     internal const int DefaultQueueCapacity = 4096;
 
+    private static readonly TimeSpan BatchDelay = TimeSpan.FromMilliseconds(50);
+
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<FlagEvaluationWriter>();
     private readonly object _gate = new();
     private readonly AutoResetEvent _wake = new(false);
@@ -32,6 +34,7 @@ internal sealed class FlagEvaluationWriter
     private readonly Func<ArraySegment<byte>, Task> _send;
     private readonly Func<IReadOnlyDictionary<string, string>> _getContext;
     private readonly int _queueCap;
+    private readonly int _wakeThreshold;
     private readonly int _payloadLimitBytes;
     private readonly TimeSpan _flushInterval;
     private readonly Task _consumer;
@@ -41,6 +44,7 @@ internal sealed class FlagEvaluationWriter
     private bool _abandon;
     private long _accepted;
     private long _processed;
+    private int _parked;
 
     internal FlagEvaluationWriter(
         Func<ArraySegment<byte>, Task> send,
@@ -56,6 +60,7 @@ internal sealed class FlagEvaluationWriter
         _send = send;
         _getContext = getContext;
         _queueCap = queueCap;
+        _wakeThreshold = Math.Max(1, queueCap / 8);
         _payloadLimitBytes = payloadLimitBytes;
         _flushInterval = flushInterval ?? TimeSpan.FromSeconds(10);
         _queue = new BoundedConcurrentQueue<FlagEvalEvent>(queueCap);
@@ -114,7 +119,13 @@ internal sealed class FlagEvaluationWriter
             }
 
             _accepted++;
-            _wake.Set();
+            // Wake once when idle, or early enough to drain a growing batch. The full
+            // fence pairs with the consumer's park/recheck so an enqueue cannot miss it.
+            if (Interlocked.CompareExchange(ref _parked, 0, 1) == 1 || _queue.Count >= _wakeThreshold)
+            {
+                _wake.Set();
+            }
+
             return true;
         }
     }
@@ -202,7 +213,7 @@ internal sealed class FlagEvaluationWriter
             while (!Volatile.Read(ref _abandon))
             {
                 // Continuous producers must not starve timer, explicit flush, or close checks.
-                Drain(256);
+                var drained = Drain(256);
                 TaskCompletionSource<bool>? completion;
                 long target;
                 bool closing;
@@ -254,7 +265,20 @@ internal sealed class FlagEvaluationWriter
                 var remaining = _flushInterval - sinceFlush.Elapsed;
                 if (_queue.IsEmpty && remaining > TimeSpan.Zero)
                 {
-                    _wake.WaitOne(remaining);
+                    if (drained > 0)
+                    {
+                        _wake.WaitOne(remaining < BatchDelay ? remaining : BatchDelay);
+                    }
+                    else
+                    {
+                        Interlocked.Exchange(ref _parked, 1);
+                        if (_queue.IsEmpty)
+                        {
+                            _wake.WaitOne(remaining);
+                        }
+
+                        Interlocked.Exchange(ref _parked, 0);
+                    }
                 }
             }
         }
@@ -285,10 +309,11 @@ internal sealed class FlagEvaluationWriter
         }
     }
 
-    private void Drain(int limit)
+    private int Drain(int limit)
     {
         // Keep the last observation in this short-lived frame, not the idle consumer loop.
-        for (var i = 0; i < limit && _queue.TryDequeue(out var observation); i++)
+        var i = 0;
+        for (; i < limit && _queue.TryDequeue(out var observation); i++)
         {
             _processed++;
             try
@@ -301,6 +326,8 @@ internal sealed class FlagEvaluationWriter
                 Log.Debug("FeatureFlags flagevaluation observation could not be aggregated.");
             }
         }
+
+        return i;
     }
 
     private void SendSnapshot()
