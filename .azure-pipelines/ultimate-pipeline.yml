@@ -159,7 +159,7 @@ variables:
   DD_LOGGER_DD_TAGS: test.configuration.job:$(System.JobDisplayName)
   DD_LOGGER_ENABLED: true
   DD_COLLECTOR_CPU_USAGE: true
-  ToolVersion: 3.55.0
+  ToolVersion: 3.56.0
   # .NET SDK performance optimization variables
   DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 1
   DOTNET_CLI_TELEMETRY_OPTOUT: 1
@@ -678,12 +678,17 @@ stages:
         build: true
         target: builder
         baseImage: $(baseImage)
-        command: "ZipMonitoringHome"
+        command: "ZipMonitoringHome PublishOpenTelemetryStartupHook"
         retryCountForRunCommand: 1
 
     - publish: $(artifacts)/linux-x64
       displayName: Upload linux-x64 packages
       artifact: linux-packages-$(artifactSuffix)
+
+    - publish: $(artifacts)/otel-operator-startup-hook
+      displayName: Upload OpenTelemetry Operator startup hook
+      artifact: otel-operator-startup-hook
+      condition: eq(variables['artifactSuffix'], 'linux-x64')
 
     - publish: $(monitoringHome)
       displayName: Upload linux-x64 monitoring home
@@ -4311,6 +4316,11 @@ stages:
             patterns: "*.tar.gz"
             path: $(Build.ArtifactStagingDirectory)
 
+        - template: steps/download-artifact.yml
+          parameters:
+            artifact: otel-operator-startup-hook
+            path: $(Build.ArtifactStagingDirectory)
+
         - bash: |
             TAR_NAME=$(basename $(Build.ArtifactStagingDirectory)/datadog-dotnet-apm-*.arm64.tar.gz)
             VERSION_NUMBER=${TAR_NAME:19:-13}
@@ -4318,7 +4328,7 @@ stages:
             echo "$VERSION_NUMBER" > $(Build.ArtifactStagingDirectory)/version.txt
           displayName: Write tracer version number to version.txt
 
-        # publish all tar files as single artifact
+        # publish all SSI inputs as a single artifact
         - publish: "$(Build.ArtifactStagingDirectory)"
           displayName: Publish ssi artifacts
           artifact: ssi-artifacts
@@ -5369,7 +5379,7 @@ stages:
 
 # NuGet x64 (LinuxNuGet)
 - stage: smoke_x64_nuget_tests
-  condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true'), eq(variables.isDockerImageBumpPr, 'true')))
+  condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true'), eq(variables.isDockerImageBumpPr, 'true'), eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.SmokeTestInputsChanged'], 'True')))
   dependsOn: [dotnet_tool, package_windows, generate_variables, merge_commit_id]
   pool:
     name: $(linuxX64SmokePool)
@@ -5383,7 +5393,7 @@ stages:
 
 # NuGet arm64 (LinuxNuGetArm64)
 - stage: smoke_arm64_nuget_tests
-  condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true'), eq(variables.isDockerImageBumpPr, 'true')))
+  condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true'), eq(variables.isDockerImageBumpPr, 'true'), eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.SmokeTestInputsChanged'], 'True')))
   dependsOn: [dotnet_tool, package_windows, generate_variables, merge_commit_id]
   pool:
     name: $(linuxArm64Pool)
@@ -5397,7 +5407,7 @@ stages:
 
   # AzureFunctions Nuget x64 (LinuxAzureFunctionsNuGet)
 - stage: smoke_x64_azurefunctions_tests
-  condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true'), eq(variables.isDockerImageBumpPr, 'true')))
+  condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true'), eq(variables.isDockerImageBumpPr, 'true'), eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.SmokeTestInputsChanged'], 'True')))
   dependsOn: [dotnet_tool, package_windows, generate_variables, merge_commit_id]
   pool:
     name: $(linuxX64SmokePool)
@@ -5411,7 +5421,7 @@ stages:
 
 # DotnetTool x64 (LinuxDotnetTool)
 - stage: smoke_x64_tool_tests
-  condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true'), eq(variables.isDockerImageBumpPr, 'true')))
+  condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true'), eq(variables.isDockerImageBumpPr, 'true'), eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.SmokeTestInputsChanged'], 'True')))
   dependsOn: [dotnet_tool, generate_variables, merge_commit_id]
   pool:
     name: $(linuxX64SmokePool)
@@ -5424,7 +5434,7 @@ stages:
 
 # DotnetTool arm64 (LinuxDotnetToolArm64)
 - stage: smoke_arm64_tool_tests
-  condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true'), eq(variables.isDockerImageBumpPr, 'true')))
+  condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true'), eq(variables.isDockerImageBumpPr, 'true'), eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.SmokeTestInputsChanged'], 'True')))
   dependsOn: [dotnet_tool, generate_variables, merge_commit_id]
   pool:
     name: $(linuxArm64Pool)
@@ -5437,7 +5447,7 @@ stages:
 
 # DotnetToolNuget (LinuxDotnetToolNuget)
 - stage: smoke_x64_tool_nuget_tests
-  condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true'), eq(variables.isDockerImageBumpPr, 'true')))
+  condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true'), eq(variables.isDockerImageBumpPr, 'true'), eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.SmokeTestInputsChanged'], 'True')))
   dependsOn: [dotnet_tool, generate_variables, merge_commit_id]
   pool:
     name: $(linuxX64SmokePool)
@@ -5450,7 +5460,7 @@ stages:
 
 # DotnetTool musl x64 (LinuxMuslDotnetTool)
 - stage: smoke_musl_x64_tool_tests
-  condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true'), eq(variables.isDockerImageBumpPr, 'true')))
+  condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true'), eq(variables.isDockerImageBumpPr, 'true'), eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.SmokeTestInputsChanged'], 'True')))
   dependsOn: [dotnet_tool, generate_variables, merge_commit_id]
   pool:
     name: $(linuxX64SmokePool)
@@ -5463,7 +5473,7 @@ stages:
 
 # DotnetTool musl arm64 (LinuxMuslDotnetToolArm64)
 - stage: smoke_musl_arm64_tool_tests
-  condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true'), eq(variables.isDockerImageBumpPr, 'true')))
+  condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true'), eq(variables.isDockerImageBumpPr, 'true'), eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.SmokeTestInputsChanged'], 'True')))
   dependsOn: [dotnet_tool, generate_variables, merge_commit_id]
   pool:
     name: $(linuxArm64Pool)
@@ -5502,7 +5512,7 @@ stages:
 
 # Self-instrument (LinuxSelfInstrument)
 - stage: smoke_x64_self_instrument_tests
-  condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true'), eq(variables.isDockerImageBumpPr, 'true')))
+  condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true'), eq(variables.isDockerImageBumpPr, 'true'), eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.SmokeTestInputsChanged'], 'True')))
   dependsOn: [package_linux, dotnet_tool, generate_variables, merge_commit_id]
   pool:
     name: $(linuxX64SmokePool)
@@ -5516,7 +5526,7 @@ stages:
 
 # Windows MSI (WindowsMsi)
 - stage: smoke_win_msi_tests
-  condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true'), eq(variables.isDockerImageBumpPr, 'true')))
+  condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true'), eq(variables.isDockerImageBumpPr, 'true'), eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.SmokeTestInputsChanged'], 'True')))
   dependsOn: [package_windows, generate_variables, merge_commit_id]
   pool:
     vmImage: windows-2025
@@ -5529,7 +5539,7 @@ stages:
 
 # Windows NuGet (WindowsNuGet)
 - stage: smoke_win_nuget_tests
-  condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true'), eq(variables.isDockerImageBumpPr, 'true')))
+  condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true'), eq(variables.isDockerImageBumpPr, 'true'), eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.SmokeTestInputsChanged'], 'True')))
   dependsOn: [dotnet_tool, package_windows, generate_variables, merge_commit_id]
   pool:
     vmImage: windows-2025
@@ -5543,7 +5553,7 @@ stages:
 
 # Windows Azure Functions NuGet (WindowsAzureFunctionsNuGet)
 - stage: smoke_win_azurefunctions_tests
-  condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true'), eq(variables.isDockerImageBumpPr, 'true')))
+  condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true'), eq(variables.isDockerImageBumpPr, 'true'), eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.SmokeTestInputsChanged'], 'True')))
   dependsOn: [dotnet_tool, package_windows, generate_variables, merge_commit_id]
   pool:
     vmImage: windows-2025
@@ -5557,7 +5567,7 @@ stages:
 
 # Windows DotnetTool (WindowsDotnetTool)
 - stage: smoke_win_tool_tests
-  condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true'), eq(variables.isDockerImageBumpPr, 'true')))
+  condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true'), eq(variables.isDockerImageBumpPr, 'true'), eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.SmokeTestInputsChanged'], 'True')))
   dependsOn: [dotnet_tool, generate_variables, merge_commit_id]
   pool:
     vmImage: windows-2025
@@ -5595,7 +5605,7 @@ stages:
         - fleet-installer-telemetry-forwarder
 
 - stage: smoke_macos_tool_tests
-  condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true'), eq(variables.isDockerImageBumpPr, 'true')))
+  condition: and(succeeded(), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true'), eq(variables.isDockerImageBumpPr, 'true'), eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.SmokeTestInputsChanged'], 'True')))
   dependsOn: [dotnet_tool, generate_variables, merge_commit_id]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
