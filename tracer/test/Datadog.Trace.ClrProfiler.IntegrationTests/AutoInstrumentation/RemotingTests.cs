@@ -115,6 +115,45 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
+        [SkippableFact]
+        public async Task SubmitTracesOverTcpWithSingleServerFormatter()
+        {
+            const string metadataSchemaVersion = "v0";
+            SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
+
+            int remotingPort = TcpPortProvider.GetOpenPort();
+
+            using var telemetry = this.ConfigureTelemetry();
+            using (var agent = EnvironmentHelper.GetMockAgent())
+            using (await RunSampleAndWaitForExit(agent, arguments: $"Port={remotingPort} Protocol=tcp Formatters=single"))
+            {
+                // Same spans as the default chain: the server sink chain only has BinaryServerFormatterSink,
+                // so the request is deserialized by the (only) formatter and the next sink is the dispatch sink
+                const int expectedSpanCount = 6;
+                var spans = await agent.WaitForSpansAsync(expectedSpanCount);
+
+                using var s = new AssertionScope();
+                spans.Count.Should().Be(expectedSpanCount);
+
+                var rpcClientSpans = spans.Where(IsRpcClientSpan).ToList();
+                var rpcServerSpans = spans.Where(IsRpcServerSpan).ToList();
+
+                rpcClientSpans.Should().HaveCount(2);
+                rpcServerSpans.Should().HaveCount(2);
+
+                ValidateIntegrationSpans(rpcServerSpans, metadataSchemaVersion, expectedServiceName: EnvironmentHelper.FullSampleName, isExternalSpan: false);
+                ValidateIntegrationSpans(rpcClientSpans, metadataSchemaVersion, expectedServiceName: $"{EnvironmentHelper.FullSampleName}-remoting", isExternalSpan: true);
+
+                var settings = VerifyHelper.GetSpanVerifierSettings();
+                await VerifyHelper.VerifySpans(spans, settings)
+                                  .UseFileName(nameof(RemotingTests) + ".tcpSingleFormatter" + $".Schema{metadataSchemaVersion.ToUpper()}");
+
+                await telemetry.AssertIntegrationEnabledAsync(IntegrationId.Remoting);
+            }
+        }
+
+        [Trait("Category", "EndToEnd")]
+        [Trait("RunOnWindows", "True")]
         [SkippableTheory]
         [InlineData("v0")]
         [InlineData("v1")]

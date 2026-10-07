@@ -32,7 +32,8 @@ internal sealed record AgentConfiguration
         int obfuscationVersion = 0,
         AgentTraceFilterConfig? traceFilterConfig = null,
         List<string>? featureFlags = null,
-        bool eventPlatformProxySupportsEvpOriginHeaders = false)
+        bool eventPlatformProxySupportsEvpOriginHeaders = false,
+        ExporterSettings? discoverySettings = null)
     {
         ConfigurationEndpoint = configurationEndpoint;
         DebuggerEndpoint = debuggerEndpoint;
@@ -54,6 +55,7 @@ internal sealed record AgentConfiguration
         TraceFilterConfig = traceFilterConfig ?? AgentTraceFilterConfig.Empty;
         FeatureFlags = featureFlags;
         EventPlatformProxySupportsEvpOriginHeaders = eventPlatformProxySupportsEvpOriginHeaders;
+        DiscoverySettings = discoverySettings;
     }
 
     public string? ConfigurationEndpoint { get; }
@@ -110,5 +112,5 @@ internal sealed record AgentConfiguration
 
     // Bind capabilities to the immutable exporter snapshot used for discovery, including UDS
     // and named pipes. Internal so record diagnostics do not print endpoint configuration.
-    internal ExporterSettings? DiscoverySettings { get; init; }
+    internal ExporterSettings? DiscoverySettings { get; }
 }
