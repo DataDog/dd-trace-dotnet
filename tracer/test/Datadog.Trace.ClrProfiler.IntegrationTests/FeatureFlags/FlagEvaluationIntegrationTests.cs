@@ -102,6 +102,7 @@ public class FlagEvaluationIntegrationTests : TestHelper
             payload.Headers["DD-API-KEY"].Should().BeNull();
             payload.Headers["Authorization"].Should().BeNull();
             // BodyInJson is the decompressed UTF-8 request body, before parsing/reserializing JSON.
+            payload.BodyInJson.Should().NotContain("original-subject@example.test").And.NotContain("original-private-attribute");
             if (!consent)
             {
                 payload.BodyInJson.Should().NotContain(Subject).And.NotContain(AttributeCanary);
@@ -119,6 +120,10 @@ public class FlagEvaluationIntegrationTests : TestHelper
             if (consent)
             {
                 ((string)row["context"]["evaluation"]["privateAttribute"]).Should().Be(AttributeCanary);
+                if (!synchronous)
+                {
+                    ((string)row["context"]["evaluation"]["country"]).Should().Be("GB", "the Before hook's context is the one evaluated");
+                }
             }
             else
             {

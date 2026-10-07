@@ -100,14 +100,16 @@ internal static class FeatureFlagsSdk
     {
     }
 
-    public static ResolutionDetails<T> Resolve<T>(string flagKey, Trace.FeatureFlags.ValueType targetType, T defaultValue, EvaluationContext? context, EvaluationCallback? evaluate = null, bool evaluationEvents = true)
+    public static ResolutionDetails<T> Resolve<T>(string flagKey, Trace.FeatureFlags.ValueType targetType, T defaultValue, EvaluationContext? context, EvaluationCallback? evaluate = null, FlagEvalEVPHook? evaluationEventsHook = null)
     {
-        long? evalTimeMs = evaluationEvents ? DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() : null;
+        long? evalTimeMs = evaluationEventsHook is not null ? DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() : null;
         var attributes = GetContextAttributes(context);
         var evaluation = evaluate is null
                              ? Evaluate(flagKey, targetType, defaultValue, context?.TargetingKey, attributes)
                              : evaluate(flagKey, targetType, defaultValue, context?.TargetingKey, attributes);
-        return GetResolutionDetails(flagKey, defaultValue, evaluation, evalTimeMs);
+        var resolution = GetResolutionDetails(flagKey, defaultValue, evaluation, evalTimeMs);
+        evaluationEventsHook?.CaptureEvaluation(context, resolution.FlagMetadata);
+        return resolution;
     }
 
     private static IDictionary<string, object?>? GetContextAttributes(EvaluationContext? context)

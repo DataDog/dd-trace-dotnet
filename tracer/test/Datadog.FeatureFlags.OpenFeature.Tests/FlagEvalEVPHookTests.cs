@@ -20,6 +20,50 @@ namespace Datadog.FeatureFlags.OpenFeature.Tests;
 
 public class FlagEvalEVPHookTests
 {
+    [Fact]
+    public async Task InterleavedEvaluationsKeepTheirOwnContextAndAreConsumedOnce()
+    {
+        var fixture = new Fixture();
+        var first = Details(true);
+        var second = Details(false);
+        fixture.Hook.CaptureEvaluation(EvaluationContext.Builder().Set("targetingKey", "first").Set("country", "GB").Build(), first.FlagMetadata);
+        fixture.Hook.CaptureEvaluation(EvaluationContext.Builder().Set("targetingKey", "second").Set("country", "FR").Build(), second.FlagMetadata);
+
+        // Finally receives the original, unrelated context; results can complete in either order.
+        await fixture.Hook.FinallyAsync(Context(), second);
+        fixture.TargetingKey.Should().Be("second");
+        fixture.Attributes.Should().BeNull();
+        fixture.Consent.Should().BeFalse();
+        await fixture.Hook.FinallyAsync(Context(), first);
+        fixture.TargetingKey.Should().Be("first");
+        fixture.Attributes.Should().BeEquivalentTo(new Dictionary<string, object?> { ["country"] = "GB" });
+        fixture.Consent.Should().BeTrue();
+        fixture.Captures.Should().Be(1, "protected evaluations must not snapshot attributes");
+        await fixture.Hook.FinallyAsync(Context(), first);
+        fixture.Enqueues.Should().Be(2, "the per-evaluation capture must be consumed once");
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task RejectedCaptureOrDeliveryCannotReuseTheOriginalContext(bool rejectDelivery)
+    {
+        var fixture = new Fixture { Available = rejectDelivery };
+        var details = Details(true);
+        fixture.Hook.CaptureEvaluation(Context().EvaluationContext, details.FlagMetadata);
+        if (rejectDelivery)
+        {
+            fixture.Available = false;
+            await fixture.Hook.FinallyAsync(Context(), details);
+        }
+
+        fixture.Available = true;
+        await fixture.Hook.FinallyAsync(Context(), details);
+
+        fixture.Enqueues.Should().Be(0);
+        fixture.Captures.Should().Be(rejectDelivery ? 1 : 0);
+    }
+
     [Theory]
     [InlineData("GENERAL")]
     [InlineData("PARSE_ERROR")]
@@ -37,7 +81,7 @@ public class FlagEvalEVPHookTests
             resolution.ErrorMessage,
             resolution.FlagMetadata);
 
-        await fixture.Hook.FinallyAsync(Context(), details);
+        await fixture.EvaluateAndCompleteAsync(Context(), details);
 
         resolution.Value.Should().BeFalse();
         resolution.ErrorType.Should().Be(ErrorType.None, "the EVP fix must not change existing provider results");
@@ -62,7 +106,7 @@ public class FlagEvalEVPHookTests
     {
         var fixture = new Fixture();
 
-        await fixture.Hook.FinallyAsync(Context(), Details(false, metadataError: metadataError));
+        await fixture.EvaluateAndCompleteAsync(Context(), Details(false, metadataError: metadataError));
 
         fixture.Enqueues.Should().Be(1);
         fixture.ErrorCode.Should().Be(expected);
@@ -73,7 +117,7 @@ public class FlagEvalEVPHookTests
     {
         var fixture = new Fixture();
 
-        await fixture.Hook.FinallyAsync(Context(), Details(false, error: ErrorType.TypeMismatch, metadataError: "GENERAL"));
+        await fixture.EvaluateAndCompleteAsync(Context(), Details(false, error: ErrorType.TypeMismatch, metadataError: "GENERAL"));
 
         fixture.ErrorCode.Should().Be("TYPE_MISMATCH");
     }
@@ -83,7 +127,7 @@ public class FlagEvalEVPHookTests
     {
         var fixture = new Fixture { Available = false, ThrowOnSnapshot = true };
 
-        await fixture.Hook.FinallyAsync(Context(), Details(true));
+        await fixture.EvaluateAndCompleteAsync(Context(), Details(true));
 
         fixture.Captures.Should().Be(0);
         fixture.Enqueues.Should().Be(0);
@@ -99,7 +143,7 @@ public class FlagEvalEVPHookTests
     {
         var fixture = new Fixture { ThrowOnSnapshot = true };
 
-        await fixture.Hook.FinallyAsync(Context(), Details(consent));
+        await fixture.EvaluateAndCompleteAsync(Context(), Details(consent));
 
         fixture.Captures.Should().Be(0);
         fixture.Enqueues.Should().Be(1);
@@ -113,7 +157,7 @@ public class FlagEvalEVPHookTests
     {
         var fixture = new Fixture();
 
-        await fixture.Hook.FinallyAsync(Context(), Details(true, timestamp: 1234d));
+        await fixture.EvaluateAndCompleteAsync(Context(), Details(true, timestamp: 1234d));
 
         fixture.Captures.Should().Be(1);
         fixture.Enqueues.Should().Be(1);
@@ -131,7 +175,7 @@ public class FlagEvalEVPHookTests
     {
         var fixture = new Fixture { ThrowOnSnapshot = true };
 
-        await fixture.Hook.FinallyAsync(Context(), Details(true));
+        await fixture.EvaluateAndCompleteAsync(Context(), Details(true));
 
         fixture.Enqueues.Should().Be(1);
         fixture.Attributes.Should().BeNull();
@@ -147,7 +191,7 @@ public class FlagEvalEVPHookTests
     {
         var fixture = new Fixture();
 
-        await fixture.Hook.FinallyAsync(Context(), Details(false, variant: variant));
+        await fixture.EvaluateAndCompleteAsync(Context(), Details(false, variant: variant));
 
         fixture.Variant.Should().Be(variant);
         fixture.Enqueues.Should().Be(1);
@@ -167,7 +211,7 @@ public class FlagEvalEVPHookTests
 
         var context = new HookContext<bool>("flag", false, FlagValueType.Boolean, new ClientMetadata("client", "1"), new Metadata("provider"), builder.Build());
 
-        await fixture.Hook.FinallyAsync(context, Details(false));
+        await fixture.EvaluateAndCompleteAsync(context, Details(false));
 
         fixture.TargetingKey.Should().Be(targetingKey);
         fixture.Enqueues.Should().Be(1);
@@ -185,7 +229,7 @@ public class FlagEvalEVPHookTests
             new Metadata("provider"),
             EvaluationContext.Builder().Set("oversized", new string('v', 257)).Build());
 
-        await fixture.Hook.FinallyAsync(context, Details(true));
+        await fixture.EvaluateAndCompleteAsync(context, Details(true));
 
         fixture.Enqueues.Should().Be(1);
         fixture.Attributes.Should().BeEmpty();
@@ -208,7 +252,7 @@ public class FlagEvalEVPHookTests
     {
         var fixture = new Fixture();
 
-        await fixture.Hook.FinallyAsync(Context(), Details(true, error: error));
+        await fixture.EvaluateAndCompleteAsync(Context(), Details(true, error: error));
 
         fixture.Enqueues.Should().Be(1);
         fixture.ErrorCode.Should().Be(expected);
@@ -227,7 +271,7 @@ public class FlagEvalEVPHookTests
         var fixture = new Fixture();
         var before = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
 
-        await fixture.Hook.FinallyAsync(Context(), Details(false, timestamp: timestamp));
+        await fixture.EvaluateAndCompleteAsync(Context(), Details(false, timestamp: timestamp));
 
         fixture.EvalTimeMs.Should().BeInRange(before, DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
         fixture.Enqueues.Should().Be(1);
@@ -239,7 +283,7 @@ public class FlagEvalEVPHookTests
         var fixture = new Fixture { ThrowOnSnapshot = true };
         var details = new FlagEvaluationDetails<bool>("flag", false, ErrorType.ProviderNotReady, null, null);
 
-        await fixture.Hook.FinallyAsync(Context(), details);
+        await fixture.EvaluateAndCompleteAsync(Context(), details);
 
         fixture.Enqueues.Should().Be(1);
         fixture.Consent.Should().BeFalse();
@@ -254,7 +298,7 @@ public class FlagEvalEVPHookTests
     {
         var fixture = new Fixture { ThrowOnCapacity = failCapacity, ThrowOnEnqueue = !failCapacity, ThrowOnError = true };
 
-        await fixture.Hook.FinallyAsync(Context(), Details(true));
+        await fixture.EvaluateAndCompleteAsync(Context(), Details(true));
 
         fixture.Errors.Should().Be(1);
     }
@@ -384,6 +428,12 @@ public class FlagEvalEVPHookTests
         public IReadOnlyDictionary<string, object?>? Attributes { get; private set; }
 
         public int OmissionReasons { get; private set; }
+
+        public ValueTask EvaluateAndCompleteAsync(HookContext<bool> context, FlagEvaluationDetails<bool> details)
+        {
+            Hook.CaptureEvaluation(context.EvaluationContext, details.FlagMetadata);
+            return Hook.FinallyAsync(context, details);
+        }
 
         private IReadOnlyDictionary<string, object?> Capture(EvaluationContext? context, out int reasons)
         {

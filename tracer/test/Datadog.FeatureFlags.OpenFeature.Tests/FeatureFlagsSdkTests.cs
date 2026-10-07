@@ -51,16 +51,13 @@ public class FeatureFlagsSdkTests
     }
 
     [Fact]
-    public void UninstrumentedProviderPreservesDefaultAndCapturesTimestamp()
+    public void ResolutionWithoutEventHookPreservesDefaultAndOmitsPrivateMetadata()
     {
-        var before = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
         var result = FeatureFlagsSdk.Resolve("flag", Trace.FeatureFlags.ValueType.Boolean, false, null);
-        var after = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
 
         result.Value.Should().BeFalse();
         result.ErrorType.Should().Be(ErrorType.ProviderNotReady);
-        result.FlagMetadata!.GetBool(FeatureFlagMetadataKeys.ObserveFullEvaluationData).Should().BeFalse();
-        result.FlagMetadata.GetDouble("__dd_eval_timestamp_ms").Should().BeInRange(before, after);
+        result.FlagMetadata.Should().BeNull();
     }
 
     [Theory]

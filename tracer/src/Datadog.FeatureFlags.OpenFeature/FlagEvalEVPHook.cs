@@ -7,6 +7,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.FeatureFlags;
@@ -26,6 +27,10 @@ internal sealed class FlagEvalEVPHook : Hook
     private readonly Action<string, string?, string?, string?, long, string?, IReadOnlyDictionary<string, object?>?, int> _enqueue;
     private readonly Action _recordError;
     private readonly CaptureSnapshot _capture;
+    // OpenFeature 2.3 passes the original context to Finally, not the context updated by Before.
+    // Associate only the bounded capture with the result; weak keys also release it if OpenFeature
+    // replaces that result after a hook exception. No customer context graph is retained.
+    private readonly ConditionalWeakTable<ImmutableMetadata, EvaluatedContext> _evaluatedContexts = new();
 
     internal FlagEvalEVPHook()
         : this(FeatureFlagsSdk.CanEnqueueEVP, FeatureFlagsSdk.EnqueueEVP, FeatureFlagsSdk.RecordEVPHookError, FlagEvaluationContextSnapshot.Capture)
@@ -46,16 +51,60 @@ internal sealed class FlagEvalEVPHook : Hook
 
     internal delegate IReadOnlyDictionary<string, object?> CaptureSnapshot(EvaluationContext? context, out int omissionReasons);
 
+    internal void CaptureEvaluation(EvaluationContext? context, ImmutableMetadata? metadata)
+    {
+        try
+        {
+            if (metadata is null || !_canEnqueue())
+            {
+                return;
+            }
+
+            IReadOnlyDictionary<string, object?>? attributes = null;
+            var omissionReasons = 0;
+            if (metadata.GetBool(FeatureFlagMetadataKeys.ObserveFullEvaluationData) == true)
+            {
+                try
+                {
+                    attributes = _capture(context, out omissionReasons);
+                }
+                catch (Exception)
+                {
+                    // Preserve the observation, but discard context and never expose exception text.
+                    omissionReasons = (int)ContextOmissionReason.SnapshotError;
+                }
+            }
+
+            _evaluatedContexts.Add(metadata, new EvaluatedContext(context?.TargetingKey, attributes, omissionReasons));
+        }
+        catch (Exception)
+        {
+            RecordError();
+        }
+    }
+
     public override ValueTask FinallyAsync<T>(HookContext<T> context, FlagEvaluationDetails<T> details, IReadOnlyDictionary<string, object>? hints = null, CancellationToken cancellationToken = default)
     {
         try
         {
+            var metadata = details.FlagMetadata;
+            EvaluatedContext? evaluated = null;
+            if (metadata is not null)
+            {
+                if (!_evaluatedContexts.TryGetValue(metadata, out evaluated))
+                {
+                    // Capture was rejected or failed. Never substitute the original hook context.
+                    return default;
+                }
+
+                _evaluatedContexts.Remove(metadata);
+            }
+
             if (!_canEnqueue())
             {
                 return default;
             }
 
-            var metadata = details.FlagMetadata;
             var consent = metadata?.GetBool(FeatureFlagMetadataKeys.ObserveFullEvaluationData) == true;
             var allocationKey = metadata?.GetString("__dd_allocation_key");
             var timestamp = metadata?.GetDouble(FeatureFlagMetadataKeys.EvaluationTimestampMs);
@@ -71,35 +120,17 @@ internal sealed class FlagEvalEVPHook : Hook
                 errorCode = ToMetadataErrorCode(metadata?.GetString("errorCode"));
             }
 
-            var targetingKey = context.EvaluationContext?.TargetingKey;
-            IReadOnlyDictionary<string, object?>? attributes = null;
-            var omissionReasons = 0;
-            if (consent)
-            {
-                try
-                {
-                    attributes = _capture(context.EvaluationContext, out omissionReasons);
-                }
-                catch (Exception)
-                {
-                    // Preserve the observation, but discard context and never expose exception text.
-                    omissionReasons = (int)ContextOmissionReason.SnapshotError;
-                }
-            }
-
+            // Without result metadata, OpenFeature produced an SDK-level error. Consent defaults
+            // to false, and the original invocation context is the only available context.
+            var targetingKey = evaluated is null ? context.EvaluationContext?.TargetingKey : evaluated.TargetingKey;
+            var attributes = evaluated?.Attributes;
+            var omissionReasons = evaluated?.OmissionReasons ?? 0;
             var flags = omissionReasons | (consent ? FlagEvaluationBridge.ObserveFullEvaluationData : 0);
             _enqueue(context.FlagKey, details.Variant, allocationKey, targetingKey, evalTimeMs, errorCode, attributes, flags);
         }
         catch (Exception)
         {
-            try
-            {
-                _recordError();
-            }
-            catch (Exception)
-            {
-                // Telemetry failures must not change the customer's evaluation.
-            }
+            RecordError();
         }
 
         return default;
@@ -127,4 +158,25 @@ internal sealed class FlagEvalEVPHook : Hook
         ErrorType.TypeMismatch => "TYPE_MISMATCH",
         _ => "GENERAL",
     };
+
+    private void RecordError()
+    {
+        try
+        {
+            _recordError();
+        }
+        catch (Exception)
+        {
+            // Telemetry failures must not change the customer's evaluation.
+        }
+    }
+
+    private sealed class EvaluatedContext(string? targetingKey, IReadOnlyDictionary<string, object?>? attributes, int omissionReasons)
+    {
+        internal string? TargetingKey { get; } = targetingKey;
+
+        internal IReadOnlyDictionary<string, object?>? Attributes { get; } = attributes;
+
+        internal int OmissionReasons { get; } = omissionReasons;
+    }
 }

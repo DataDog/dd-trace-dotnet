@@ -1,7 +1,9 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Reflection;
+using System.Threading;
 using System.Threading.Tasks;
 using OpenFeature.Constant;
 using OpenFeature.Model;
@@ -88,9 +90,11 @@ internal static class EvaluationEventsSample
     internal static async Task RunAsync()
     {
         var client = global::OpenFeature.Api.Instance.GetClient();
+        client.AddHooks(new EvaluationContextHook());
         var context = EvaluationContext.Builder()
-                                       .Set("targetingKey", "evp-subject-canary@example.test")
-                                       .Set("privateAttribute", "evp-private-attribute-canary")
+                                       .Set("targetingKey", "original-subject@example.test")
+                                       .Set("privateAttribute", "original-private-attribute")
+                                       .Set("country", "US")
                                        .Build();
         for (var i = 0; i < 3; i++)
         {
@@ -122,6 +126,16 @@ internal static class EvaluationEventsSample
 
         await SampleHelpers.ForceTracerFlushAsync();
         Console.WriteLine("<EVP: FLUSHED>");
+    }
+
+    private sealed class EvaluationContextHook : global::OpenFeature.Hook
+    {
+        public override ValueTask<EvaluationContext> BeforeAsync<T>(HookContext<T> context, IReadOnlyDictionary<string, object>? hints = null, CancellationToken cancellationToken = default)
+            => new(EvaluationContext.Builder()
+                                    .Set("targetingKey", "evp-subject-canary@example.test")
+                                    .Set("privateAttribute", "evp-private-attribute-canary")
+                                    .Set("country", "GB")
+                                    .Build());
     }
 
     private static void Check(bool condition, string description)
