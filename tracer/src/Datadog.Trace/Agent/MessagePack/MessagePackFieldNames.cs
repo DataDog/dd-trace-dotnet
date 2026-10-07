@@ -100,6 +100,77 @@ namespace Datadog.Trace.Agent.MessagePack
         [MessagePackField]
         public const string Metrics = "metrics";
 
+        // Tags.cs is also linked into projects without source generators.
+        // Keep the generation attributes here while using the original tag values.
+        [MessagePackField]
+        public const string Env = Tags.Env;
+
+        [MessagePackField]
+        public const string Version = Tags.Version;
+
+        [MessagePackField]
+        public const string Language = Tags.Language;
+
+        [MessagePackField]
+        public const string GitCommitSha = Tags.GitCommitSha;
+
+        [MessagePackField]
+        public const string GitRepositoryUrl = Tags.GitRepositoryUrl;
+
+        [MessagePackField]
+        public const string RuntimeFamily = Tags.RuntimeFamily;
+
+        [MessagePackField]
+        public const string ProcessTags = Tags.ProcessTags;
+
+        [MessagePackField]
+        public const string AzureAppServicesResourceId = Tags.AzureAppServicesResourceId;
+
+        [MessagePackField]
+        public const string AzureAppServicesResourceGroup = Tags.AzureAppServicesResourceGroup;
+
+        [MessagePackField]
+        public const string AzureAppServicesSiteName = Tags.AzureAppServicesSiteName;
+
+        [MessagePackField]
+        public const string AzureAppServicesExtensionVersion = Tags.AzureAppServicesExtensionVersion;
+
+        [MessagePackField]
+        public const string AzureAppServicesInstanceName = Tags.AzureAppServicesInstanceName;
+
+        [MessagePackField]
+        public const string AzureAppServicesInstanceId = Tags.AzureAppServicesInstanceId;
+
+        [MessagePackField]
+        public const string AzureAppServicesOperatingSystem = Tags.AzureAppServicesOperatingSystem;
+
+        [MessagePackField]
+        public const string AzureAppServicesRuntime = Tags.AzureAppServicesRuntime;
+
+        [MessagePackField]
+        public const string AzureAppServicesSiteKind = Tags.AzureAppServicesSiteKind;
+
+        [MessagePackField]
+        public const string AzureAppServicesSiteType = Tags.AzureAppServicesSiteType;
+
+        [MessagePackField]
+        public const string AzureAppServicesSubscriptionId = Tags.AzureAppServicesSubscriptionId;
+
+        [MessagePackField]
+        public const string Origin = Tags.Origin;
+
+        [MessagePackField]
+        public const string AppSecRuleFileVersion = Tags.AppSecRuleFileVersion;
+
+        [MessagePackField]
+        public const string RuntimeId = Tags.RuntimeId;
+
+        [MessagePackField]
+        public const string BaseService = Tags.BaseService;
+
+        [MessagePackField]
+        public const string LastParentId = Tags.LastParentId;
+
         // Note: Cannot use [MessagePackField] on TracerConstants.Language directly because TracerConstants.cs
         // is linked/shared with dd_dotnet tool which doesn't have access to source generator infrastructure
         // We thus duplicate the value here.

@@ -212,76 +212,6 @@ internal static class MessagePackConstants
     internal static readonly byte[] MetricsBytes = new byte[] { 167, 109, 101, 116, 114, 105, 99, 115 };
 #endif
 
-    // DotnetLanguageValueBytes = MessagePack.Serialize("dotnet");
-#if NETCOREAPP
-    internal static ReadOnlySpan<byte> DotnetLanguageValueBytes => new byte[] { 166, 100, 111, 116, 110, 101, 116 };
-#else
-    internal static readonly byte[] DotnetLanguageValueBytes = new byte[] { 166, 100, 111, 116, 110, 101, 116 };
-#endif
-
-    // SamplingPriorityBytes = MessagePack.Serialize("_sampling_priority_v1");
-#if NETCOREAPP
-    internal static ReadOnlySpan<byte> SamplingPriorityBytes => new byte[] { 181, 95, 115, 97, 109, 112, 108, 105, 110, 103, 95, 112, 114, 105, 111, 114, 105, 116, 121, 95, 118, 49 };
-#else
-    internal static readonly byte[] SamplingPriorityBytes = new byte[] { 181, 95, 115, 97, 109, 112, 108, 105, 110, 103, 95, 112, 114, 105, 111, 114, 105, 116, 121, 95, 118, 49 };
-#endif
-
-    // SamplingAgentDecisionBytes = MessagePack.Serialize("_dd.agent_psr");
-#if NETCOREAPP
-    internal static ReadOnlySpan<byte> SamplingAgentDecisionBytes => new byte[] { 173, 95, 100, 100, 46, 97, 103, 101, 110, 116, 95, 112, 115, 114 };
-#else
-    internal static readonly byte[] SamplingAgentDecisionBytes = new byte[] { 173, 95, 100, 100, 46, 97, 103, 101, 110, 116, 95, 112, 115, 114 };
-#endif
-
-    // SamplingRuleDecisionBytes = MessagePack.Serialize("_dd.rule_psr");
-#if NETCOREAPP
-    internal static ReadOnlySpan<byte> SamplingRuleDecisionBytes => new byte[] { 172, 95, 100, 100, 46, 114, 117, 108, 101, 95, 112, 115, 114 };
-#else
-    internal static readonly byte[] SamplingRuleDecisionBytes = new byte[] { 172, 95, 100, 100, 46, 114, 117, 108, 101, 95, 112, 115, 114 };
-#endif
-
-    // SamplingLimitDecisionBytes = MessagePack.Serialize("_dd.limit_psr");
-#if NETCOREAPP
-    internal static ReadOnlySpan<byte> SamplingLimitDecisionBytes => new byte[] { 173, 95, 100, 100, 46, 108, 105, 109, 105, 116, 95, 112, 115, 114 };
-#else
-    internal static readonly byte[] SamplingLimitDecisionBytes = new byte[] { 173, 95, 100, 100, 46, 108, 105, 109, 105, 116, 95, 112, 115, 114 };
-#endif
-
-    // TopLevelSpanBytes = MessagePack.Serialize("_dd.top_level");
-#if NETCOREAPP
-    internal static ReadOnlySpan<byte> TopLevelSpanBytes => new byte[] { 173, 95, 100, 100, 46, 116, 111, 112, 95, 108, 101, 118, 101, 108 };
-#else
-    internal static readonly byte[] TopLevelSpanBytes = new byte[] { 173, 95, 100, 100, 46, 116, 111, 112, 95, 108, 101, 118, 101, 108 };
-#endif
-
-    // TracesKeepRateBytes = MessagePack.Serialize("_dd.tracer_kr");
-#if NETCOREAPP
-    internal static ReadOnlySpan<byte> TracesKeepRateBytes => new byte[] { 173, 95, 100, 100, 46, 116, 114, 97, 99, 101, 114, 95, 107, 114 };
-#else
-    internal static readonly byte[] TracesKeepRateBytes = new byte[] { 173, 95, 100, 100, 46, 116, 114, 97, 99, 101, 114, 95, 107, 114 };
-#endif
-
-    // ProcessIdBytes = MessagePack.Serialize("process_id");
-#if NETCOREAPP
-    internal static ReadOnlySpan<byte> ProcessIdBytes => new byte[] { 170, 112, 114, 111, 99, 101, 115, 115, 95, 105, 100 };
-#else
-    internal static readonly byte[] ProcessIdBytes = new byte[] { 170, 112, 114, 111, 99, 101, 115, 115, 95, 105, 100 };
-#endif
-
-    // ApmEnabledBytes = MessagePack.Serialize("_dd.apm.enabled");
-#if NETCOREAPP
-    internal static ReadOnlySpan<byte> ApmEnabledBytes => new byte[] { 175, 95, 100, 100, 46, 97, 112, 109, 46, 101, 110, 97, 98, 108, 101, 100 };
-#else
-    internal static readonly byte[] ApmEnabledBytes = new byte[] { 175, 95, 100, 100, 46, 97, 112, 109, 46, 101, 110, 97, 98, 108, 101, 100 };
-#endif
-
-    // AppSecEnabledBytes = MessagePack.Serialize("_dd.appsec.enabled");
-#if NETCOREAPP
-    internal static ReadOnlySpan<byte> AppSecEnabledBytes => new byte[] { 178, 95, 100, 100, 46, 97, 112, 112, 115, 101, 99, 46, 101, 110, 97, 98, 108, 101, 100 };
-#else
-    internal static readonly byte[] AppSecEnabledBytes = new byte[] { 178, 95, 100, 100, 46, 97, 112, 112, 115, 101, 99, 46, 101, 110, 97, 98, 108, 101, 100 };
-#endif
-
     // EnvBytes = MessagePack.Serialize("env");
 #if NETCOREAPP
     internal static ReadOnlySpan<byte> EnvBytes => new byte[] { 163, 101, 110, 118 };
@@ -441,5 +371,75 @@ internal static class MessagePackConstants
     internal static ReadOnlySpan<byte> LastParentIdBytes => new byte[] { 173, 95, 100, 100, 46, 112, 97, 114, 101, 110, 116, 95, 105, 100 };
 #else
     internal static readonly byte[] LastParentIdBytes = new byte[] { 173, 95, 100, 100, 46, 112, 97, 114, 101, 110, 116, 95, 105, 100 };
+#endif
+
+    // DotnetLanguageValueBytes = MessagePack.Serialize("dotnet");
+#if NETCOREAPP
+    internal static ReadOnlySpan<byte> DotnetLanguageValueBytes => new byte[] { 166, 100, 111, 116, 110, 101, 116 };
+#else
+    internal static readonly byte[] DotnetLanguageValueBytes = new byte[] { 166, 100, 111, 116, 110, 101, 116 };
+#endif
+
+    // SamplingPriorityBytes = MessagePack.Serialize("_sampling_priority_v1");
+#if NETCOREAPP
+    internal static ReadOnlySpan<byte> SamplingPriorityBytes => new byte[] { 181, 95, 115, 97, 109, 112, 108, 105, 110, 103, 95, 112, 114, 105, 111, 114, 105, 116, 121, 95, 118, 49 };
+#else
+    internal static readonly byte[] SamplingPriorityBytes = new byte[] { 181, 95, 115, 97, 109, 112, 108, 105, 110, 103, 95, 112, 114, 105, 111, 114, 105, 116, 121, 95, 118, 49 };
+#endif
+
+    // SamplingAgentDecisionBytes = MessagePack.Serialize("_dd.agent_psr");
+#if NETCOREAPP
+    internal static ReadOnlySpan<byte> SamplingAgentDecisionBytes => new byte[] { 173, 95, 100, 100, 46, 97, 103, 101, 110, 116, 95, 112, 115, 114 };
+#else
+    internal static readonly byte[] SamplingAgentDecisionBytes = new byte[] { 173, 95, 100, 100, 46, 97, 103, 101, 110, 116, 95, 112, 115, 114 };
+#endif
+
+    // SamplingRuleDecisionBytes = MessagePack.Serialize("_dd.rule_psr");
+#if NETCOREAPP
+    internal static ReadOnlySpan<byte> SamplingRuleDecisionBytes => new byte[] { 172, 95, 100, 100, 46, 114, 117, 108, 101, 95, 112, 115, 114 };
+#else
+    internal static readonly byte[] SamplingRuleDecisionBytes = new byte[] { 172, 95, 100, 100, 46, 114, 117, 108, 101, 95, 112, 115, 114 };
+#endif
+
+    // SamplingLimitDecisionBytes = MessagePack.Serialize("_dd.limit_psr");
+#if NETCOREAPP
+    internal static ReadOnlySpan<byte> SamplingLimitDecisionBytes => new byte[] { 173, 95, 100, 100, 46, 108, 105, 109, 105, 116, 95, 112, 115, 114 };
+#else
+    internal static readonly byte[] SamplingLimitDecisionBytes = new byte[] { 173, 95, 100, 100, 46, 108, 105, 109, 105, 116, 95, 112, 115, 114 };
+#endif
+
+    // TopLevelSpanBytes = MessagePack.Serialize("_dd.top_level");
+#if NETCOREAPP
+    internal static ReadOnlySpan<byte> TopLevelSpanBytes => new byte[] { 173, 95, 100, 100, 46, 116, 111, 112, 95, 108, 101, 118, 101, 108 };
+#else
+    internal static readonly byte[] TopLevelSpanBytes = new byte[] { 173, 95, 100, 100, 46, 116, 111, 112, 95, 108, 101, 118, 101, 108 };
+#endif
+
+    // TracesKeepRateBytes = MessagePack.Serialize("_dd.tracer_kr");
+#if NETCOREAPP
+    internal static ReadOnlySpan<byte> TracesKeepRateBytes => new byte[] { 173, 95, 100, 100, 46, 116, 114, 97, 99, 101, 114, 95, 107, 114 };
+#else
+    internal static readonly byte[] TracesKeepRateBytes = new byte[] { 173, 95, 100, 100, 46, 116, 114, 97, 99, 101, 114, 95, 107, 114 };
+#endif
+
+    // ProcessIdBytes = MessagePack.Serialize("process_id");
+#if NETCOREAPP
+    internal static ReadOnlySpan<byte> ProcessIdBytes => new byte[] { 170, 112, 114, 111, 99, 101, 115, 115, 95, 105, 100 };
+#else
+    internal static readonly byte[] ProcessIdBytes = new byte[] { 170, 112, 114, 111, 99, 101, 115, 115, 95, 105, 100 };
+#endif
+
+    // ApmEnabledBytes = MessagePack.Serialize("_dd.apm.enabled");
+#if NETCOREAPP
+    internal static ReadOnlySpan<byte> ApmEnabledBytes => new byte[] { 175, 95, 100, 100, 46, 97, 112, 109, 46, 101, 110, 97, 98, 108, 101, 100 };
+#else
+    internal static readonly byte[] ApmEnabledBytes = new byte[] { 175, 95, 100, 100, 46, 97, 112, 109, 46, 101, 110, 97, 98, 108, 101, 100 };
+#endif
+
+    // AppSecEnabledBytes = MessagePack.Serialize("_dd.appsec.enabled");
+#if NETCOREAPP
+    internal static ReadOnlySpan<byte> AppSecEnabledBytes => new byte[] { 178, 95, 100, 100, 46, 97, 112, 112, 115, 101, 99, 46, 101, 110, 97, 98, 108, 101, 100 };
+#else
+    internal static readonly byte[] AppSecEnabledBytes = new byte[] { 178, 95, 100, 100, 46, 97, 112, 112, 115, 101, 99, 46, 101, 110, 97, 98, 108, 101, 100 };
 #endif
 }
