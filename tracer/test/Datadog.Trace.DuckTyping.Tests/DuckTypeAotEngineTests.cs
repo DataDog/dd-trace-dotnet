@@ -756,6 +756,41 @@ namespace Datadog.Trace.DuckTyping.Tests
         }
 
         [Fact]
+        public void RegisterFailureUsingAThrowerThatDoesNotThrowStillFails()
+        {
+            // A legacy failure registration is a thrower: one that returns must not make the failed result look usable.
+            DuckTypeAotEngine.RegisterProxyFailure(typeof(IForwardProxy), typeof(ForwardTarget), () => { });
+
+            var result = DuckTypeAotEngine.GetOrCreateProxyType(typeof(IForwardProxy), typeof(ForwardTarget));
+
+            result.CanCreate().Should().BeFalse();
+            Action createProxy = () => _ = result.CreateInstance<IForwardProxy>(new ForwardTarget("failure"));
+            createProxy.Should().Throw<DuckTypeException>().WithMessage("*didn't throw*");
+        }
+
+        [Fact]
+        public void ArrayProxyRegistrationServesEveryArrayType()
+        {
+            // One generated proxy per array mapping: it stores the instance as System.Array, and reports the looked-up type.
+            DuckTypeAotEngine.RegisterArrayProxy(
+                typeof(IArrayLengthProxy),
+                typeof(object[]),
+                typeof(ArrayLengthGeneratedProxy),
+                (instance, arrayType) => new ArrayLengthGeneratedProxy((Array)instance!, arrayType));
+
+            foreach (var array in new Array[] { new object[1], new string[2], new int[3][], new int[4] })
+            {
+                var result = DuckTypeAotEngine.GetOrCreateProxyType(typeof(IArrayLengthProxy), array.GetType());
+                result.CanCreate().Should().BeTrue();
+                var proxy = result.CreateInstance<IArrayLengthProxy>(array);
+                proxy.Length.Should().Be(array.Length);
+                ((IDuckType)proxy).Type.Should().Be(array.GetType());
+            }
+
+            DuckTypeAotEngine.GetOrCreateProxyType(typeof(IArrayLengthProxy), typeof(ForwardTarget)).CanCreate().Should().BeFalse();
+        }
+
+        [Fact]
         public void RegisterFailureUsingMethodHandleDoesNotInvokeThrowerDuringBootstrap()
         {
             knownFailureThrowerInvocationCount = 0;
@@ -1034,6 +1069,33 @@ namespace Datadog.Trace.DuckTyping.Tests
             public void GetValue()
             {
             }
+        }
+
+        private interface IArrayLengthProxy
+        {
+            int Length { get; }
+        }
+
+        private class ArrayLengthGeneratedProxy : IArrayLengthProxy, IDuckType
+        {
+            private readonly Array _instance;
+            private readonly Type _type;
+
+            public ArrayLengthGeneratedProxy(Array instance, Type type)
+            {
+                _instance = instance;
+                _type = type;
+            }
+
+            public int Length => _instance.Length;
+
+            public object Instance => _instance;
+
+            public Type Type => _type;
+
+            public ref TReturn? GetInternalDuckTypedInstance<TReturn>() => throw new NotSupportedException();
+
+            public override string ToString() => _instance.ToString()!;
         }
 
         private interface IForwardProxy

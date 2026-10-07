@@ -183,10 +183,34 @@ public partial class DuckTypeAotAdditionalParityTests
     // The reverse contract hides a member of the mapped target with `new`: like dynamic duck typing, which binds the members of
     // the runtime type, the proxy binds the contract's.
     [InlineData("hidden-member", "contract|e")]
+    // The reverse proxy type has members of its own: its IDuckType.Instance (the delegation instance) hides the contract's
+    // Instance property, and its ToString is the delegation's (a `new virtual` one included).
+    [InlineData("instance-of-class-contract", "delegation")]
+    [InlineData("tostring-of-plain-delegation", "AliasInstanceDelegation")]
+    [InlineData("tostring-of-new-virtual-delegation", "delegation-new-virtual")]
+    // A struct reverse proxy of an interface declaring `object Instance`.
+    [InlineData("instance-of-struct-reverse-proxy", "delegation|delegation-instance")]
     public void GeneratedRegistryShouldBindTheMembersOfReverseProxiesLikeDynamicMode(string scenario, string expected)
     {
         var (exercise, mappings) = scenario switch
         {
+            "instance-of-class-contract" => ((Func<object?>)(() =>
+            {
+                var delegation = new AliasInstanceDelegation();
+                return DescribeAliasValue(DuckType.Create<IAliasInstanceView>(DuckType.CreateReverse(typeof(AliasInstanceContract), delegation))!.Value, delegation);
+            }),
+            new[] { Mapping(typeof(AliasInstanceContract), typeof(AliasInstanceDelegation), reverse: true), Mapping(typeof(IAliasInstanceView), typeof(AliasInstanceContract)) }),
+            "tostring-of-plain-delegation" => (() => DuckType.Create<IAliasDescribeView>(DuckType.CreateReverse(typeof(AliasInstanceContract), new AliasInstanceDelegation()))!.Describe().Replace(typeof(DuckTypeAotAdditionalParityTests).FullName + "+", string.Empty),
+                                              new[] { Mapping(typeof(AliasInstanceContract), typeof(AliasInstanceDelegation), reverse: true), Mapping(typeof(IAliasDescribeView), typeof(AliasInstanceContract)) }),
+            "tostring-of-new-virtual-delegation" => (() => DuckType.Create<IAliasDescribeView>(DuckType.CreateReverse(typeof(AliasToStringContract), new AliasNewToStringInstanceDelegation()))!.Describe(),
+                                                    new[] { Mapping(typeof(AliasToStringContract), typeof(AliasNewToStringInstanceDelegation), reverse: true), Mapping(typeof(IAliasDescribeView), typeof(AliasToStringContract)) }),
+            "instance-of-struct-reverse-proxy" => (() =>
+            {
+                var delegation = new AliasInstanceMemberDelegation();
+                var reverse = DuckType.CreateReverse(typeof(IAliasInstanceMemberContract), delegation);
+                return DescribeAliasValue(((IAliasInstanceMemberContract)reverse).Instance, delegation) + "|" + DescribeAliasValue(DuckType.Create<IAliasInstanceView>(reverse)!.Value, delegation);
+            },
+            new[] { Mapping(typeof(IAliasInstanceMemberContract), typeof(AliasInstanceMemberDelegation), reverse: true), Mapping(typeof(IAliasInstanceView), typeof(IAliasInstanceMemberContract)) }),
             "intermediate-overload" => ((Func<object?>)(() => DuckType.Create<IAliasEchoForward>(DuckType.CreateReverse(typeof(AliasOverloadContract), new AliasOverloadDelegation()))!.Echo("x")),
                                         new[] { Mapping(typeof(AliasOverloadContract), typeof(AliasOverloadDelegation), reverse: true), Mapping(typeof(IAliasEchoForward), typeof(AliasOverloadBase)) }),
             _ => (() =>
@@ -198,6 +222,9 @@ public partial class DuckTypeAotAdditionalParityTests
         };
 
         AssertSameOutcome(expected, exercise, mappings);
+
+        static string DescribeAliasValue(object? value, object delegation)
+            => ReferenceEquals(value, delegation) ? "delegation" : Convert.ToString(value, System.Globalization.CultureInfo.InvariantCulture) ?? "null";
     }
 
     [Fact]
@@ -390,5 +417,61 @@ public partial class DuckTypeAotAdditionalParityTests
         string Name { get; }
 
         string Echo(string value);
+    }
+
+    public abstract class AliasInstanceContract
+    {
+        public abstract string Name { get; }
+
+        public virtual object Instance => "contract-instance";
+    }
+
+    public abstract class AliasToStringContract
+    {
+        public abstract string Name { get; }
+
+        public override string ToString() => "contract-tostring";
+    }
+
+    public class AliasInstanceDelegation
+    {
+        [DuckReverseMethod]
+        public string Name => "n";
+    }
+
+    public class AliasNewToStringInstanceDelegation
+    {
+        [DuckReverseMethod]
+        public string Name => "n";
+
+        public new virtual string ToString() => "delegation-new-virtual";
+    }
+
+    public interface IAliasInstanceMemberContract
+    {
+        object Instance { get; }
+
+        string Name { get; }
+    }
+
+    public class AliasInstanceMemberDelegation
+    {
+        [DuckReverseMethod]
+        public object Instance => "delegation-instance";
+
+        [DuckReverseMethod]
+        public string Name => "n";
+    }
+
+    public interface IAliasInstanceView
+    {
+        [Duck(Name = "Instance")]
+        object Value { get; }
+    }
+
+    public interface IAliasDescribeView
+    {
+        [Duck(Name = "ToString")]
+        string Describe();
     }
 }

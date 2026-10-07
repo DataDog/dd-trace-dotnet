@@ -52,19 +52,30 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 AnsiConsole.MarkupLine("[green]Discover step:[/] discovering and filtering compatible mappings before generation.");
 
                 // Discovery only finds the mappings declared with attributes: an existing --map-file (e.g. the map recorded at
-                // runtime) is kept, and the discovered mappings are added to it.
+                // runtime) is kept, and the discovered mappings are added to it, under the lock a recording application takes
+                // (a missing map is created like an empty one).
                 var mapFileExists = File.Exists(options.MapFile);
-                var discoveryOutputPath = mapFileExists ? $"{options.MapFile}.{Guid.NewGuid():N}.discovered.json" : options.MapFile;
+                var discoveryOutputPath = $"{options.MapFile}.{Guid.NewGuid():N}.discovered.json";
                 try
                 {
-                    var discoveryExitCode = DuckTypeAotDiscoverMappingsProcessor.Process(
-                        new DuckTypeAotDiscoverMappingsOptions(
-                            options.ProxyAssemblies,
-                            options.TargetFolders,
-                            options.TargetFilters,
-                            discoveryOutputPath,
-                            warningsReportPath: null,
-                            strict: false));
+                    int discoveryExitCode;
+                    try
+                    {
+                        discoveryExitCode = DuckTypeAotDiscoverMappingsProcessor.Process(
+                            new DuckTypeAotDiscoverMappingsOptions(
+                                options.ProxyAssemblies,
+                                options.TargetFolders,
+                                options.TargetFilters,
+                                discoveryOutputPath,
+                                warningsReportPath: null,
+                                strict: false));
+                    }
+                    catch (Exception ex)
+                    {
+                        AnsiConsole.MarkupLine($"[yellow]Warning:[/] discovery failed: {ex.Message.EscapeMarkup()}");
+                        discoveryExitCode = 1;
+                    }
+
                     if (discoveryExitCode != 0)
                     {
                         if (!mapFileExists)
@@ -76,7 +87,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                         // The existing map is still a valid input: generate it without the mappings declared with attributes.
                         AnsiConsole.MarkupLine($"[yellow]Warning:[/] discovery failed, so no mapping declared with attributes was added to {options.MapFile!.EscapeMarkup()}.");
                     }
-                    else if (mapFileExists)
+                    else
                     {
                         if (!TryMergeDiscoveredMappings(options.MapFile!, discoveryOutputPath!, out var addedMappings, out var mergeError))
                         {
@@ -89,9 +100,13 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 }
                 finally
                 {
-                    if (mapFileExists && File.Exists(discoveryOutputPath))
+                    try
                     {
                         File.Delete(discoveryOutputPath);
+                    }
+                    catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+                    {
+                        AnsiConsole.MarkupLine($"[yellow]Warning:[/] the discovery output {discoveryOutputPath.EscapeMarkup()} couldn't be deleted: {ex.Message.EscapeMarkup()}");
                     }
                 }
             }
@@ -247,14 +262,24 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 return false;
             }
 
-            // Decoded like the map parser reads it, and written back with the same encoding.
-            string text;
-            Encoding encoding;
+            // Decoded like the map parser reads it, and written back with the same encoding. A missing map is created.
+            var text = string.Empty;
+            Encoding encoding = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false);
             try
             {
-                using var reader = new StreamReader(new MemoryStream(File.ReadAllBytes(mapFilePath)), new UTF8Encoding(encoderShouldEmitUTF8Identifier: false), detectEncodingFromByteOrderMarks: true);
-                text = reader.ReadToEnd();
-                encoding = reader.CurrentEncoding;
+                if (File.Exists(mapFilePath) || Directory.Exists(mapFilePath))
+                {
+                    var bytes = File.ReadAllBytes(mapFilePath);
+                    using var reader = new StreamReader(new MemoryStream(bytes), new UTF8Encoding(encoderShouldEmitUTF8Identifier: false, throwOnInvalidBytes: true), detectEncodingFromByteOrderMarks: true);
+                    text = reader.ReadToEnd();
+                    encoding = reader.CurrentEncoding;
+                }
+            }
+            catch (DecoderFallbackException)
+            {
+                // Rewriting it would replace what isn't UTF-8 (e.g. UTF-16 without a byte order mark).
+                error = $"'{mapFilePath}' can't be read: it isn't UTF-8, and has no byte order mark telling its encoding.";
+                return false;
             }
             catch (Exception ex)
             {
@@ -270,6 +295,32 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             {
                 // The map has to be one the map parser reads (a map without mappings yet gets a 'mappings' array).
                 var existingMap = DuckTypeAotMapFileParser.ParseText(text, mapFilePath, requireMappings: false);
+                try
+                {
+                    // Dates and decimal numbers are kept as written when the map is written back from its document.
+                    document = JObject.Load(
+                        new JsonTextReader(new StringReader(text)) { DateParseHandling = DateParseHandling.None, FloatParseHandling = FloatParseHandling.Decimal },
+                        new JsonLoadSettings { CommentHandling = CommentHandling.Ignore, DuplicatePropertyNameHandling = DuplicatePropertyNameHandling.Replace });
+                }
+                catch (Exception ex) when (existingMap.Errors.Count == 0)
+                {
+                    error = $"'{mapFilePath}' can't be read: {ex.Message}";
+                    return false;
+                }
+                catch (Exception)
+                {
+                    document = null;
+                }
+
+                // The mappings are added to its 'mappings' array: one, which the parser reads whatever its casing.
+                var mappingsProperties = document?.Properties().Where(property => string.Equals(property.Name, "mappings", StringComparison.OrdinalIgnoreCase)).ToList();
+                if (mappingsProperties is not null &&
+                    (CountRootMappingsProperties(text) > 1 || mappingsProperties.Any(property => property.Value is not JArray)))
+                {
+                    error = $"'{mapFilePath}' must have a single 'mappings' array.";
+                    return false;
+                }
+
                 if (existingMap.Errors.Count > 0)
                 {
                     error = string.Join(" ", existingMap.Errors);
@@ -277,27 +328,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 }
 
                 expectedKeys.UnionWith(existingMap.Mappings.Select(mapping => mapping.Key));
-                try
-                {
-                    document = JObject.Load(
-                        new JsonTextReader(new StringReader(text)),
-                        new JsonLoadSettings { CommentHandling = CommentHandling.Ignore, DuplicatePropertyNameHandling = DuplicatePropertyNameHandling.Replace });
-                }
-                catch (Exception ex)
-                {
-                    error = $"'{mapFilePath}' can't be read: {ex.Message}";
-                    return false;
-                }
-
-                // The mappings are added to its 'mappings' array: one, which the parser reads whatever its casing.
-                var mappingsProperties = document.Properties().Where(property => string.Equals(property.Name, "mappings", StringComparison.OrdinalIgnoreCase)).ToList();
-                if (CountRootMappingsProperties(text) > 1 || mappingsProperties.Any(property => property.Value is not JArray))
-                {
-                    error = $"'{mapFilePath}' must have a single 'mappings' array.";
-                    return false;
-                }
-
-                mappingsProperty = mappingsProperties.FirstOrDefault();
+                mappingsProperty = mappingsProperties?.FirstOrDefault();
             }
 
             var addedMappingsToWrite = discoveredMap.Mappings.Where(mapping => expectedKeys.Add(mapping.Key)).ToList();
@@ -346,7 +377,16 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 }
             }
 
-            DuckTypeAotDiscoveryRecorder.WriteAtomically(mapFilePath, newText, encoding);
+            try
+            {
+                DuckTypeAotDiscoveryRecorder.WriteAtomically(mapFilePath, newText, encoding);
+            }
+            catch (Exception ex)
+            {
+                error = $"'{mapFilePath}' can't be written: {ex.Message}";
+                return false;
+            }
+
             return true;
 
             bool IsMerged(string candidate)
@@ -535,6 +575,11 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 if (reader.TokenType == JsonToken.PropertyName && reader.Depth == 1 && string.Equals(reader.Value as string, "mappings", StringComparison.OrdinalIgnoreCase))
                 {
                     count++;
+                }
+                else if (reader.TokenType == JsonToken.EndObject && reader.Depth == 0)
+                {
+                    // The root object ends: what follows is the parser's to reject.
+                    break;
                 }
             }
 

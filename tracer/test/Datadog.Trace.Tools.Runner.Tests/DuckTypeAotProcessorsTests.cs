@@ -37,6 +37,7 @@ using dnlib.DotNet.Emit;
 using FluentAssertions;
 using Spectre.Console;
 using Xunit;
+using FileAttributes = System.IO.FileAttributes;
 
 #pragma warning disable SA1201, SA1202 // Elements should appear in the correct order
 
@@ -12495,7 +12496,7 @@ public class DuckTypeAotProcessorsTests
             matrix.Should().NotBeNull();
             var mapping = matrix!.Mappings.Should().ContainSingle().Subject;
             mapping.Status.Should().Be(DuckTypeAotCompatibilityStatuses.IncompatibleMethodSignature);
-            mapping.Details.Should().Contain("belongs to value type");
+            mapping.Details.Should().Contain("Modifying struct members is not supported.");
             mapping.Details.Should().Contain(typeof(TestDuckStructFieldTarget).FullName!);
         }
         finally
@@ -13270,6 +13271,8 @@ public class DuckTypeAotProcessorsTests
     [InlineData("{ \"schemaVersion\": \"1\" }\n{ \"mappings\": [] }")]
     [InlineData("{ \"schemaVersion\": \"1\" }\ngarbage\n")]
     [InlineData("{ \"SchemaVersion\": \"2\" }")]
+    // A null mapping entry.
+    [InlineData("{ \"mappings\": [ null ] }")]
     public void MergingDiscoveredMappingsShouldRejectMapsWithoutASingleMappingsArray(string original)
     {
         var tempDirectory = CreateTempDirectory();
@@ -13310,6 +13313,105 @@ public class DuckTypeAotProcessorsTests
             TryDeleteDirectory(tempDirectory);
         }
     }
+
+    [Fact]
+    public void MergingDiscoveredMappingsShouldCreateAMissingMap()
+    {
+        var tempDirectory = CreateTempDirectory();
+        try
+        {
+            var mapFilePath = Path.Combine(tempDirectory, "map.json");
+            var discoveredMapPath = Path.Combine(tempDirectory, "discovered.json");
+            File.WriteAllText(discoveredMapPath, "{ \"mappings\": [ { \"mode\": \"forward\", \"proxyType\": \"Ns.IDiscovered\", \"proxyAssembly\": \"A\", \"targetType\": \"Ns.Discovered\", \"targetAssembly\": \"B\" } ] }");
+
+            DuckTypeAotGenerateProcessor.TryMergeDiscoveredMappings(mapFilePath, discoveredMapPath, out var addedMappings, out var error).Should().BeTrue(error);
+            addedMappings.Should().Be(1);
+            DuckTypeAotMapFileParser.Parse(mapFilePath).Mappings.Select(mapping => mapping.ProxyTypeName).Should().Equal("Ns.IDiscovered");
+            Directory.GetFiles(tempDirectory).Select(Path.GetFileName).Should().BeEquivalentTo(["map.json", "map.json.lock", "discovered.json"], "the map is written atomically, without leftovers");
+        }
+        finally
+        {
+            TryDeleteDirectory(tempDirectory);
+        }
+    }
+
+    [Fact]
+    public void MergingDiscoveredMappingsShouldRejectAMapThatIsNotUtf8()
+    {
+        var tempDirectory = CreateTempDirectory();
+        try
+        {
+            // Without a byte order mark, a map is read as UTF-8: rewriting bytes it can't decode (here, Latin-1) would lose them.
+            var mapFilePath = Path.Combine(tempDirectory, "map.json");
+            var original = Encoding.GetEncoding("ISO-8859-1").GetBytes("{ \"comment\": \"caf\u00e9\", \"mappings\": [] }");
+            File.WriteAllBytes(mapFilePath, original);
+            var discoveredMapPath = Path.Combine(tempDirectory, "discovered.json");
+            File.WriteAllText(discoveredMapPath, "{ \"mappings\": [ { \"mode\": \"forward\", \"proxyType\": \"Ns.IDiscovered\", \"proxyAssembly\": \"A\", \"targetType\": \"Ns.Discovered\", \"targetAssembly\": \"B\" } ] }");
+
+            DuckTypeAotGenerateProcessor.TryMergeDiscoveredMappings(mapFilePath, discoveredMapPath, out _, out var error).Should().BeFalse();
+            error.Should().NotBeNullOrEmpty();
+            File.ReadAllBytes(mapFilePath).Should().Equal(original);
+        }
+        finally
+        {
+            TryDeleteDirectory(tempDirectory);
+        }
+    }
+
+    [Fact]
+    public void MergingDiscoveredMappingsShouldNotReplaceAReadOnlyMap()
+    {
+        var tempDirectory = CreateTempDirectory();
+        var mapFilePath = Path.Combine(tempDirectory, "map.json");
+        try
+        {
+            const string Original = "{ \"mappings\": [] }";
+            File.WriteAllText(mapFilePath, Original);
+            File.SetAttributes(mapFilePath, File.GetAttributes(mapFilePath) | FileAttributes.ReadOnly);
+            var discoveredMapPath = Path.Combine(tempDirectory, "discovered.json");
+            File.WriteAllText(discoveredMapPath, "{ \"mappings\": [ { \"mode\": \"forward\", \"proxyType\": \"Ns.IDiscovered\", \"proxyAssembly\": \"A\", \"targetType\": \"Ns.Discovered\", \"targetAssembly\": \"B\" } ] }");
+
+            DuckTypeAotGenerateProcessor.TryMergeDiscoveredMappings(mapFilePath, discoveredMapPath, out _, out var error).Should().BeFalse();
+            error.Should().NotBeNullOrEmpty();
+            File.ReadAllText(mapFilePath).Should().Be(Original);
+        }
+        finally
+        {
+            if (File.Exists(mapFilePath))
+            {
+                File.SetAttributes(mapFilePath, FileAttributes.Normal);
+            }
+
+            TryDeleteDirectory(tempDirectory);
+        }
+    }
+
+#if NET6_0_OR_GREATER
+    [SkippableFact]
+    public void MergingDiscoveredMappingsShouldKeepASymbolicLinkToTheMap()
+    {
+        Skip.If(RuntimeInformation.IsOSPlatform(OSPlatform.Windows), "Creating symbolic links requires privileges on Windows.");
+        var tempDirectory = CreateTempDirectory();
+        try
+        {
+            var mapFilePath = Path.Combine(tempDirectory, "real-map.json");
+            File.WriteAllText(mapFilePath, "{ \"mappings\": [] }");
+            var linkPath = Path.Combine(tempDirectory, "map.json");
+            File.CreateSymbolicLink(linkPath, mapFilePath);
+            var discoveredMapPath = Path.Combine(tempDirectory, "discovered.json");
+            File.WriteAllText(discoveredMapPath, "{ \"mappings\": [ { \"mode\": \"forward\", \"proxyType\": \"Ns.IDiscovered\", \"proxyAssembly\": \"A\", \"targetType\": \"Ns.Discovered\", \"targetAssembly\": \"B\" } ] }");
+
+            DuckTypeAotGenerateProcessor.TryMergeDiscoveredMappings(linkPath, discoveredMapPath, out var addedMappings, out var error).Should().BeTrue(error);
+            addedMappings.Should().Be(1);
+            new FileInfo(linkPath).LinkTarget.Should().Be(mapFilePath, "the link keeps pointing to the map");
+            DuckTypeAotMapFileParser.Parse(mapFilePath).Mappings.Select(mapping => mapping.ProxyTypeName).Should().Equal("Ns.IDiscovered");
+        }
+        finally
+        {
+            TryDeleteDirectory(tempDirectory);
+        }
+    }
+#endif
 
     [Fact]
     public void DiscoverMappingsShouldKeepDeclaredMappingsThatReplayADynamicFailure()

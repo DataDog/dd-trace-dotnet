@@ -304,6 +304,63 @@ namespace Datadog.Trace.Tools.Runner.Tests
         /// Runs a scenario in dynamic mode and then with a generated registry, and checks both engines have the expected outcome:
         /// the returned value, or the exception types (outermost first) prefixed with "throws:".
         /// </summary>
+        [Theory]
+        // Like Type.GetMethod("ToString", Type.EmptyTypes), the proxy calls the most derived public ToString(). An override of a
+        // `new virtual` ToString doesn't override object.ToString: calling it through the object.ToString slot would call
+        // another method.
+        [InlineData("override-of-new-virtual", "n|target-override")]
+        [InlineData("override-of-new-virtual-class-proxy", "n|target-override")]
+        [InlineData("override-of-new-virtual-over-object-override", "n|leaf")]
+        public void GeneratedRegistryShouldCallTheTargetToStringLikeDynamicMode(string scenario, string expected)
+        {
+            var (exercise, mapping) = scenario switch
+            {
+                "override-of-new-virtual" => ((Func<object?>)(() =>
+                {
+                    var proxy = DuckType.Create<IToStringNameProxy>(new ToStringOverrideTarget())!;
+                    return proxy.Name + "|" + proxy.ToString();
+                }), Mapping(typeof(IToStringNameProxy), typeof(ToStringOverrideTarget))),
+                "override-of-new-virtual-class-proxy" => (() =>
+                {
+                    var proxy = DuckType.Create<IToStringNameClassProxy>(new ToStringOverrideTarget())!;
+                    return proxy.Name + "|" + proxy.ToString();
+                }, Mapping(typeof(IToStringNameClassProxy), typeof(ToStringOverrideTarget))),
+                _ => (() =>
+                {
+                    var proxy = DuckType.Create<IToStringNameProxy>(new ToStringLeafTarget())!;
+                    return proxy.Name + "|" + proxy.ToString();
+                }, Mapping(typeof(IToStringNameProxy), typeof(ToStringLeafTarget))),
+            };
+
+            AssertSameOutcome(expected, exercise, mapping);
+        }
+
+        [Theory]
+        // Dynamic duck typing implements the properties of a class proxy's interfaces too (AddInterfaceProperties): its public
+        // get_Name overrides the protected virtual Name with the same signature.
+        [InlineData("interface-property-over-protected-virtual", "t|target-name|explicit")]
+        // Derived<TBase, T> : Base<TBase> hides Base<T>'s `virtual T Value` with `new virtual T Value`: both are named T, but
+        // reflection compares the raw signatures (generic parameters by position), so both properties are implemented.
+        [InlineData("generic-parameter-position", "t|t")]
+        public void GeneratedRegistryShouldImplementTheProxyPropertiesLikeDynamicMode(string scenario, string expected)
+        {
+            var (exercise, mapping) = scenario switch
+            {
+                "interface-property-over-protected-virtual" => ((Func<object?>)(() =>
+                {
+                    var proxy = DuckType.Create<ProtectedNameClassProxy>(new NameValueTarget())!;
+                    return proxy.Value + "|" + proxy.ReadProtectedName() + "|" + ((IExplicitNameProxy)proxy).Name;
+                }), Mapping(typeof(ProtectedNameClassProxy), typeof(NameValueTarget))),
+                _ => (() =>
+                {
+                    var proxy = DuckType.Create<GenericPositionProxy>(new NameValueTarget())!;
+                    return ((GenericPositionDerived<object, string>)proxy).Value + "|" + (((GenericPositionBase<object>)proxy).Value ?? "null");
+                }, Mapping(typeof(GenericPositionProxy), typeof(NameValueTarget))),
+            };
+
+            AssertSameOutcome(expected, exercise, mapping);
+        }
+
         private static void AssertSameOutcome(string expected, Func<object?> exercise, params DuckTypeAotMapping[] mappings)
         {
             DuckType.ResetRuntimeModeForTests();
@@ -327,6 +384,83 @@ namespace Datadog.Trace.Tools.Runner.Tests
 
                 return "throws:" + string.Join(">", exceptionTypes);
             }
+        }
+
+        public interface IToStringNameProxy
+        {
+            string Name { get; }
+        }
+
+        [DuckAsClass]
+        public interface IToStringNameClassProxy
+        {
+            string Name { get; }
+        }
+
+        public class ToStringNewVirtualBase
+        {
+            public string Name => "n";
+
+            public new virtual string ToString() => "base-new";
+        }
+
+        public class ToStringOverrideTarget : ToStringNewVirtualBase
+        {
+            public override string ToString() => "target-override";
+        }
+
+        public class ToStringObjectOverrideBase
+        {
+            public string Name => "n";
+
+            public override string ToString() => "object-override";
+        }
+
+        public class ToStringNewVirtualMiddle : ToStringObjectOverrideBase
+        {
+            public new virtual string ToString() => "middle-new";
+        }
+
+        public class ToStringLeafTarget : ToStringNewVirtualMiddle
+        {
+            public override string ToString() => "leaf";
+        }
+
+        public interface IExplicitNameProxy
+        {
+            string Name { get; }
+        }
+
+        public abstract class ProtectedNameClassProxy : IExplicitNameProxy
+        {
+            public abstract string Value { get; }
+
+            string IExplicitNameProxy.Name => "explicit";
+
+            protected virtual string Name => "protected";
+
+            public string ReadProtectedName() => Name;
+        }
+
+        public class NameValueTarget
+        {
+            public string Name { get; set; } = "target-name";
+
+            public string Value { get; set; } = "t";
+        }
+
+        public class GenericPositionBase<T>
+        {
+            public virtual T Value => default!;
+        }
+
+        public class GenericPositionDerived<TBase, T> : GenericPositionBase<TBase>
+        {
+            public new virtual T Value => default!;
+        }
+
+        public abstract class GenericPositionProxy : GenericPositionDerived<object, string>
+        {
         }
 
         public interface IDescriptorProxy

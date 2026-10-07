@@ -1,4 +1,4 @@
-﻿// <copyright file="GetAssemblyTests.cs" company="Datadog">
+// <copyright file="GetAssemblyTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -6,7 +6,6 @@
 using System;
 using System.Collections.Generic;
 using System.Reflection;
-using Datadog.Trace.DuckTyping;
 using FluentAssertions;
 using Xunit;
 
@@ -26,7 +25,6 @@ namespace Datadog.Trace.DuckTyping.Tests
         }
 
         [Fact]
-        [Trait("SkipInCI", "True")]
         public void GetAssemblyTest()
         {
             // Validate a known proxy so filtered runs exercise type enumeration too. The global assembly

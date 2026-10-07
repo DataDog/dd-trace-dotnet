@@ -109,7 +109,9 @@ Actions:
 1. Check canonical map entries first.
 2. Confirm `verify-compat` is using the same `--map-file` as `generate`.
 3. Treat any non-compatible mapping that doesn't replay a dynamic duck typing failure (`dynamicFailureReplayed: false`) as a regression until explicitly reviewed and approved. Check the generate warnings, and `checkedAgainstMetadataOnly`, for mappings the generator couldn't evaluate with dynamic duck typing.
-4. Re-run generation and verification with identical artifact inputs.
+4. A mapping flagged `failsOnlyForOtherRuntimeTypes` works for its mapped target type: one of its aliases (a derived type, a generic instantiation, a generated reverse proxy type) fails only in the registry. Its `details` name the alias; map that type with its own mapping, or change the proxy so it binds the same way for it.
+5. `missing_target_method` (`DTAOT0207`) on an array mapping whose details mention a method "the runtime adds to array type": the proxy binds `Get`, `Set` or `Address`, which only exist at runtime. Bind `System.Array` members instead (e.g. `object GetValue(int index)` and `void SetValue(object value, int index)`).
+6. Re-run generation and verification with identical artifact inputs.
 
 ### open generic rule did not expand
 
@@ -159,7 +161,7 @@ Likely causes:
 
 Actions:
 
-1. Validate type and assembly names exactly.
+1. Validate type and assembly names exactly. Generic arguments can be assembly qualified (`Ns.Box`1[[System.String, System.Private.CoreLib]]`), unqualified (`Ns.Box`1[System.String]`, resolved in the assembly of the generic type, then in CoreLib, like `Type.GetType`), or mixed.
 2. Add missing assemblies explicitly.
 3. Use deterministic filters when scanning target folders.
 
