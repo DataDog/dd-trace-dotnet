@@ -8,7 +8,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Threading;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Processors;
 using Datadog.Trace.SourceGenerators;
@@ -25,7 +24,6 @@ internal sealed class ProcessTags
 
     private readonly bool _serviceNameUserDefined;
     private readonly string _autoServiceName;
-    private TagValues? _tags;
 
     // ProcessTags captures EntryAssemblyLocator.GetEntryAssembly() and Environment.CurrentDirectory
     // If initialization happens before the entry assembly is available (common in ASP.NET/IIS or some test hosts),
@@ -37,10 +35,13 @@ internal sealed class ProcessTags
         _autoServiceName = autoServiceName;
     }
 
-    public List<string> TagsList => GetTags().List;
+    // two views on the same data
+    public List<string> TagsList => field ??= GetTagsList(_serviceNameUserDefined, _autoServiceName);
 
-    // Don't forget to refresh the hash in ServiceRemappingHash if this value becomes mutable.
-    public string SerializedTags => GetTags().Serialized;
+    public string SerializedTags
+    {
+        get => field ??= string.Join(",", TagsList); // don't forget to refresh the hash in ServiceRemappingHash on write if this value becomes mutable
+    }
 
     private static List<string> GetTagsList(bool serviceNameUserDefined, string autoServiceName)
     {
@@ -104,31 +105,5 @@ internal sealed class ProcessTags
     private static string? GetEntryPointName()
     {
         return EntryAssemblyLocator.GetEntryAssembly()?.EntryPoint?.DeclaringType?.FullName;
-    }
-
-    // Publish both views together, preserving lazy capture of the entry assembly and working directory.
-    private TagValues GetTags()
-    {
-        var tags = Volatile.Read(ref _tags);
-        if (tags is not null)
-        {
-            return tags;
-        }
-
-        tags = new TagValues(GetTagsList(_serviceNameUserDefined, _autoServiceName));
-        return Interlocked.CompareExchange(ref _tags, tags, null) ?? tags;
-    }
-
-    private sealed class TagValues
-    {
-        public TagValues(List<string> list)
-        {
-            List = list;
-            Serialized = string.Join(",", list);
-        }
-
-        public List<string> List { get; }
-
-        public string Serialized { get; }
     }
 }
