@@ -198,6 +198,23 @@ public class FlagEvalEVPHookTests
     }
 
     [Theory]
+    [InlineData(false, ErrorType.General, "", null)]
+    [InlineData(false, ErrorType.ProviderNotReady, "", null)]
+    [InlineData(false, ErrorType.None, "", "")]
+    [InlineData(false, ErrorType.General, "on", "on")]
+    [InlineData(true, ErrorType.General, "", "")]
+    public async Task OnlySdkGeneratedErrorVariantsBecomeRuntimeDefaults(bool providerResult, ErrorType error, string variant, string? expected)
+    {
+        var fixture = new Fixture();
+        var details = providerResult ? Details(false, variant, error) : new FlagEvaluationDetails<bool>("flag", false, error, Reason.Error, variant);
+
+        await fixture.EvaluateAndCompleteAsync(Context(), details);
+
+        fixture.Variant.Should().Be(expected);
+        fixture.Enqueues.Should().Be(1);
+    }
+
+    [Theory]
     [InlineData(null)]
     [InlineData("")]
     public async Task MissingAndEmptyTargetingKeysRemainDistinct(string? targetingKey)

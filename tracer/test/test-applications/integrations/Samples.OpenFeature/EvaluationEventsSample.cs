@@ -13,6 +13,20 @@ namespace Samples.FeatureFlags;
 
 internal static class EvaluationEventsSample
 {
+    internal static async Task RunHookFailureAsync(bool after)
+    {
+        var client = global::OpenFeature.Api.Instance.GetClient();
+        client.AddHooks(new FailingHook(after));
+        var context = EvaluationContext.Builder()
+                                       .Set("targetingKey", "evp-subject-canary@example.test")
+                                       .Set("privateAttribute", "evp-private-attribute-canary")
+                                       .Build();
+        var result = await client.GetStringDetailsAsync("simple-string", "caller-default", context);
+        Check(result.Value == "caller-default" && result.ErrorType == ErrorType.General, "hook failure preserves caller default");
+        await SampleHelpers.ForceTracerFlushAsync();
+        Console.WriteLine("<EVP: HOOK DEFAULT FLUSHED>");
+    }
+
     internal static async Task RunStartupGateAsync()
     {
         using var original = new Datadog.FeatureFlags.OpenFeature.DatadogProvider();
@@ -136,6 +150,15 @@ internal static class EvaluationEventsSample
                                     .Set("privateAttribute", "evp-private-attribute-canary")
                                     .Set("country", "GB")
                                     .Build());
+    }
+
+    private sealed class FailingHook(bool after) : global::OpenFeature.Hook
+    {
+        public override ValueTask<EvaluationContext> BeforeAsync<T>(HookContext<T> context, IReadOnlyDictionary<string, object>? hints = null, CancellationToken cancellationToken = default)
+            => after ? default : throw new InvalidOperationException("evp-error-canary");
+
+        public override ValueTask AfterAsync<T>(HookContext<T> context, FlagEvaluationDetails<T> details, IReadOnlyDictionary<string, object>? hints = null, CancellationToken cancellationToken = default)
+            => after ? throw new InvalidOperationException("evp-error-canary") : default;
     }
 
     private static void Check(bool condition, string description)

@@ -126,7 +126,12 @@ internal sealed class FlagEvalEVPHook : Hook
             var attributes = evaluated?.Attributes;
             var omissionReasons = evaluated?.OmissionReasons ?? 0;
             var flags = omissionReasons | (consent ? FlagEvaluationBridge.ObserveFullEvaluationData : 0);
-            _enqueue(context.FlagKey, details.Variant, allocationKey, targetingKey, evalTimeMs, errorCode, attributes, flags);
+            // OpenFeature uses an empty variant for SDK-generated errors that return the caller's
+            // default. Preserve genuine empty variants from successful or provider-attributed results.
+            var variant = metadata is null && details.ErrorType != ErrorType.None && details.Variant == string.Empty
+                              ? null
+                              : details.Variant;
+            _enqueue(context.FlagKey, variant, allocationKey, targetingKey, evalTimeMs, errorCode, attributes, flags);
         }
         catch (Exception)
         {

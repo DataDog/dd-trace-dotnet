@@ -145,6 +145,43 @@ public class FlagEvaluationIntegrationTests : TestHelper
     [InlineData(false)]
     [InlineData(true)]
     [Trait("RunOnWindows", "True")]
+    public async Task OpenFeatureHookErrorsEmitRuntimeDefaults(bool after)
+    {
+        using var agent = EnvironmentHelper.GetMockAgent();
+        agent.SetupRcm(Output, [((object)CreateConfiguration(true), RcmProducts.FfeFlags, nameof(FlagEvaluationIntegrationTests))]);
+        var payloads = new ConcurrentQueue<string>();
+        agent.EventPlatformProxyPayloadReceived += (_, args) =>
+        {
+            if (args.Value.PathAndQuery.EndsWith("/flagevaluation"))
+            {
+                payloads.Enqueue(args.Value.BodyInJson);
+            }
+        };
+        SetEnvironmentVariable(ConfigurationKeys.Rcm.PollInterval, "0.1");
+        SetEnvironmentVariable(ConfigurationKeys.FeatureFlags.FeatureFlagsConfigurationSource, "remote_config");
+        SetEnvironmentVariable(ConfigurationKeys.FeatureFlags.FlaggingEvaluationCountsEnabled, "true");
+        using var telemetry = this.ConfigureTelemetry();
+        using var process = await RunSampleAndWaitForExit(agent, arguments: after ? "evp-after-error" : "evp-before-error");
+        process.StandardOutput.Should().Contain("<EVP: HOOK DEFAULT FLUSHED>");
+        foreach (var payload in payloads)
+        {
+            payload.Should().NotContain(Subject).And.NotContain(AttributeCanary).And.NotContain("evp-error-canary");
+        }
+
+        var rows = payloads.SelectMany(p => (JArray)JObject.Parse(p)["flagEvaluations"]).ToList();
+        var row = rows.Should().ContainSingle().Subject;
+        ((long)row["evaluation_count"]).Should().Be(1);
+        ((string)row["error"]["message"]).Should().Be("GENERAL");
+        ((bool?)row["runtime_default_used"]).Should().BeTrue();
+        row["variant"].Should().BeNull();
+        ((string)row["targeting_key"]).Should().Be(SubjectHash);
+        row["context"]?["evaluation"].Should().BeNull();
+    }
+
+    [SkippableTheory]
+    [InlineData(false)]
+    [InlineData(true)]
+    [Trait("RunOnWindows", "True")]
     public async Task ConfigurationChangeBeforeFlushPreservesEachEvaluationsConsent(bool initialConsent)
     {
         using var agent = EnvironmentHelper.GetMockAgent();

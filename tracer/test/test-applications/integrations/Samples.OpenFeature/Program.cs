@@ -52,6 +52,12 @@ class Program
             return;
         }
 
+        if (args.Contains("evp-before-error") || args.Contains("evp-after-error"))
+        {
+            await EvaluationEventsSample.RunHookFailureAsync(args.Contains("evp-after-error"));
+            return;
+        }
+
         if (args.Contains("evp"))
         {
             await EvaluationEventsSample.RunAsync();
