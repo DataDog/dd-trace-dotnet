@@ -57,6 +57,34 @@ internal static class EvaluationEventsSample
         Console.WriteLine("<EVP: UNINSTRUMENTED DEFAULT OK>");
     }
 
+    internal static async Task RunSynchronousAsync()
+    {
+        using var provider = new Datadog.FeatureFlags.OpenFeature.DatadogProvider();
+        var context = EvaluationContext.Builder()
+                                       .Set("targetingKey", "evp-subject-canary@example.test")
+                                       .Set("privateAttribute", "evp-private-attribute-canary")
+                                       .Build();
+        await provider.InitializeAsync(context);
+#pragma warning disable DDFF001 // Exercises EVP through the experimental synchronous provider API.
+        for (var i = 0; i < 3; i++)
+        {
+            var result = provider.ResolveStringValue("simple-string", "caller-default", context);
+            Check(result.Value == "test-value" && result.ErrorType == ErrorType.None, "sync simple-string result");
+        }
+
+        var exposure = provider.ResolveStringValue("exposure-flag", "caller-default", context);
+        Check(exposure.Value == "tracked-value" && exposure.ErrorType == ErrorType.None, "sync exposure-flag result");
+        var missing = provider.ResolveStringValue("missing-flag", "caller-default", context);
+        Check(missing.Value == "caller-default" && missing.ErrorType == ErrorType.FlagNotFound, "sync missing flag default");
+        var wrongType = provider.ResolveBooleanValue("simple-string", false, context);
+        Check(!wrongType.Value && wrongType.ErrorType == ErrorType.TypeMismatch, "sync wrong type default");
+#pragma warning restore DDFF001
+
+        Console.WriteLine("<EVP: VALUES AND DEFAULTS OK>");
+        await SampleHelpers.ForceTracerFlushAsync();
+        Console.WriteLine("<EVP: FLUSHED>");
+    }
+
     internal static async Task RunAsync()
     {
         var client = global::OpenFeature.Api.Instance.GetClient();

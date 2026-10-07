@@ -24,7 +24,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <InternalsVisibleTo Include="Datadog.FeatureFlags.OpenFeature.Tests" />
     <None Include="..\..\..\docs\Datadog.FeatureFlags.OpenFeature\README.md" Pack="true" PackagePath="\" />
   </ItemGroup>
 

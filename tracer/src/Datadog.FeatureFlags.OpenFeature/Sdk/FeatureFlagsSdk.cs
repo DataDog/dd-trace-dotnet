@@ -24,6 +24,8 @@ namespace Datadog.FeatureFlags.OpenFeature;
 [Browsable(false)]
 internal static class FeatureFlagsSdk
 {
+    internal delegate IEvaluation? EvaluationCallback(string flagKey, Trace.FeatureFlags.ValueType targetType, object? defaultValue, string? targetingKey, IDictionary<string, object?>? attributes);
+
     /// <summary> Gets a value indicating whether FeatureFlags framework is available or not </summary>
     /// <returns> True if FeatureFlagsSDK is instrumented </returns>
     [MethodImpl(MethodImplOptions.NoInlining)]
@@ -98,10 +100,13 @@ internal static class FeatureFlagsSdk
     {
     }
 
-    public static ResolutionDetails<T> Resolve<T>(string flagKey, Trace.FeatureFlags.ValueType targetType, T defaultValue, EvaluationContext? context, bool evaluationEvents = true)
+    public static ResolutionDetails<T> Resolve<T>(string flagKey, Trace.FeatureFlags.ValueType targetType, T defaultValue, EvaluationContext? context, EvaluationCallback? evaluate = null, bool evaluationEvents = true)
     {
         long? evalTimeMs = evaluationEvents ? DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() : null;
-        var evaluation = Evaluate(flagKey, targetType, defaultValue, context?.TargetingKey, GetContextAttributes(context));
+        var attributes = GetContextAttributes(context);
+        var evaluation = evaluate is null
+                             ? Evaluate(flagKey, targetType, defaultValue, context?.TargetingKey, attributes)
+                             : evaluate(flagKey, targetType, defaultValue, context?.TargetingKey, attributes);
         return GetResolutionDetails(flagKey, defaultValue, evaluation, evalTimeMs);
     }
 
@@ -230,6 +235,8 @@ internal static class FeatureFlagsSdk
 
     private static Value ConvertObject(object? obj) => obj switch
     {
+        // The evaluator can return the caller's JSON default, which is already an OpenFeature Value.
+        Value value => value,
         Dictionary<string, object?> dic => ConvertStructure(dic),
         object?[] arr => ConvertArray(arr),
         long intVal => new Value(intVal),

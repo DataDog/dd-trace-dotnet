@@ -35,16 +35,24 @@ public class FlagEvaluationIntegrationTests : TestHelper
     }
 
     [SkippableTheory]
-    [InlineData(false, true, false)]
-    [InlineData(true, true, false)]
-    [InlineData(false, false, false)]
-    [InlineData(true, false, false)]
-    [InlineData(false, true, true)]
-    [InlineData(true, true, true)]
-    [InlineData(false, false, true)]
-    [InlineData(true, false, true)]
+    [InlineData(false, true, false, false)]
+    [InlineData(true, true, false, false)]
+    [InlineData(false, false, false, false)]
+    [InlineData(true, false, false, false)]
+    [InlineData(false, true, true, false)]
+    [InlineData(true, true, true, false)]
+    [InlineData(false, false, true, false)]
+    [InlineData(true, false, true, false)]
+    [InlineData(false, true, false, true)]
+    [InlineData(true, true, false, true)]
+    [InlineData(false, false, false, true)]
+    [InlineData(true, false, false, true)]
+    [InlineData(false, true, true, true)]
+    [InlineData(true, true, true, true)]
+    [InlineData(false, false, true, true)]
+    [InlineData(true, false, true, true)]
     [Trait("RunOnWindows", "True")]
-    public async Task InstrumentedEvaluationsPreserveResultsAndRespectPrivacy(bool consent, bool enabled, bool agentless)
+    public async Task InstrumentedEvaluationsPreserveResultsAndRespectPrivacy(bool consent, bool enabled, bool agentless, bool synchronous)
     {
         using var agent = EnvironmentHelper.GetMockAgent();
         var configuration = CreateConfiguration(consent);
@@ -71,7 +79,7 @@ public class FlagEvaluationIntegrationTests : TestHelper
         SetEnvironmentVariable(ConfigurationKeys.FeatureFlags.FlaggingEvaluationCountsEnabled, enabled ? "true" : "false");
         SetEnvironmentVariable(ConfigurationKeys.ApiKey, "not-an-event-credential");
         using var telemetry = this.ConfigureTelemetry();
-        using var process = await RunSampleAndWaitForExit(agent, arguments: "evp");
+        using var process = await RunSampleAndWaitForExit(agent, arguments: synchronous ? "evp-sync" : "evp");
         process.StandardOutput.Should().Contain("<EVP: VALUES AND DEFAULTS OK>");
         process.StandardOutput.Should().Contain($"<EVP: HOOK BEFORE INITIALIZE {enabled}>");
         process.StandardOutput.Should().Contain("<EVP: FLUSHED>");
