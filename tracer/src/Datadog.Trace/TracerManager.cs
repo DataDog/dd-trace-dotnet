@@ -556,6 +556,25 @@ namespace Datadog.Trace
                     writer.WritePropertyName("activity_listener_enabled");
                     writer.WriteValue(instanceSettings.IsActivityListenerEnabled);
 
+                    writer.WritePropertyName("OTEL_ENABLED");
+                    writer.WriteValue(instanceSettings.IsActivityListenerEnabled
+                                  || instanceSettings.OpenTelemetryMetricsEnabled
+                                  || instanceSettings.OpenTelemetryLogsEnabled
+                                  || instanceSettings.OtelSemanticsEnabled
+                                  || exporterSettings.IsOtlpTraceExport);
+
+                    writer.WritePropertyName("DD_TRACE_OTEL_ENABLED");
+                    writer.WriteValue(instanceSettings.IsActivityListenerEnabled);
+
+                    writer.WritePropertyName("DD_METRICS_OTEL_ENABLED");
+                    writer.WriteValue(instanceSettings.OpenTelemetryMetricsEnabled);
+
+                    writer.WritePropertyName("DD_LOGS_OTEL_ENABLED");
+                    writer.WriteValue(instanceSettings.OpenTelemetryLogsEnabled);
+
+                    writer.WritePropertyName("DD_TRACE_OTEL_SEMANTICS_ENABLED");
+                    writer.WriteValue(instanceSettings.OtelSemanticsEnabled);
+
                     writer.WritePropertyName("profiler_enabled");
                     writer.WriteValue(Profiler.Instance.Status.IsProfilerReady);
 
