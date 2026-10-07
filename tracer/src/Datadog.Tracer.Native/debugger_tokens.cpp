@@ -1,12 +1,12 @@
 #include "debugger_tokens.h"
 
 #include <utility>
-#include <vector>
 
 #include "dd_profiler_constants.h"
 #include "il_rewriter_wrapper.h"
 #include "logger.h"
 #include "module_metadata.h"
+#include "signature_builder.h"
 
 using namespace shared;
 
@@ -109,8 +109,6 @@ HRESULT DebuggerTokens::WriteLogArgOrLocal(void* rewriterWrapperPtr, const TypeS
 
     mdMethodSpec logArgMethodSpec = mdMethodSpecNil;
 
-    auto signatureLength = 2;
-
     PCCOR_SIGNATURE argumentSignatureBuffer;
     ULONG argumentSignatureSize;
     const auto [elementType, argTypeFlags] = argOrLocal.GetElementTypeAndFlags();
@@ -122,39 +120,33 @@ HRESULT DebuggerTokens::WriteLogArgOrLocal(void* rewriterWrapperPtr, const TypeS
         {
             argumentSignatureBuffer = argSigBuff + 1;
             argumentSignatureSize = signatureSize - 1;
-            signatureLength += signatureSize - 1;
         }
         else if (argSigBuff[0] == ELEMENT_TYPE_PINNED)
         {
             argumentSignatureBuffer = argSigBuff + 2;
             argumentSignatureSize = signatureSize - 2;
-            signatureLength += signatureSize - 2;
         }
         else
         {
             argumentSignatureBuffer = argSigBuff;
             argumentSignatureSize = signatureSize;
-            signatureLength += signatureSize;
         }
     }
     else
     {
         auto signatureSize = argOrLocal.GetSignature(argumentSignatureBuffer);
         argumentSignatureSize = signatureSize;
-        signatureLength += signatureSize;
     }
 
-    // The argument/local signature is unbounded (e.g. an anonymous type with hundreds of properties)
-    std::vector<COR_SIGNATURE> signature(signatureLength);
-    unsigned offset = 0;
-    signature[offset++] = IMAGE_CEE_CS_CALLCONV_GENERICINST;
-    signature[offset++] = 0x01;
+    // SignatureBuilder rather than a fixed array: the argument/local signature is unbounded (e.g. an
+    // anonymous type with hundreds of properties). It stays on the stack for small signatures.
+    SignatureBuilder signature;
+    signature.Append(IMAGE_CEE_CS_CALLCONV_GENERICINST);
+    signature.Append(static_cast<COR_SIGNATURE>(0x01));
+    signature.Append(argumentSignatureBuffer, argumentSignatureSize);
 
-    memcpy(&signature[offset], argumentSignatureBuffer, argumentSignatureSize);
-    offset += argumentSignatureSize;
-
-    hr = module_metadata->metadata_emit->DefineMethodSpec(logArgOrLocalRef, signature.data(), signatureLength,
-                                                          &logArgMethodSpec);
+    hr = module_metadata->metadata_emit->DefineMethodSpec(logArgOrLocalRef, signature.GetSignature(),
+                                                          static_cast<ULONG>(signature.Size()), &logArgMethodSpec);
     if (FAILED(hr))
     {
         Logger::Warn("Error creating LogArg or LogLocal method spec.");
@@ -613,29 +605,15 @@ HRESULT DebuggerTokens::WriteEndReturnMemberRef(void* rewriterWrapperPtr, const 
     PCCOR_SIGNATURE returnSignatureBuffer;
     auto returnSignatureLength = returnArgument->GetSignature(returnSignatureBuffer);
 
-    const auto signatureLength = 3 + currentTypeSize + returnSignatureLength;
-    std::vector<COR_SIGNATURE> signature(signatureLength);
-    unsigned offset = 0;
+    SignatureBuilder signature;
+    signature.Append(IMAGE_CEE_CS_CALLCONV_GENERICINST);
+    signature.Append(static_cast<COR_SIGNATURE>(0x02));
+    signature.Append(isValueType ? ELEMENT_TYPE_VALUETYPE : ELEMENT_TYPE_CLASS);
+    signature.Append(&currentTypeBuffer, currentTypeSize);
+    signature.Append(returnSignatureBuffer, returnSignatureLength);
 
-    signature[offset++] = IMAGE_CEE_CS_CALLCONV_GENERICINST;
-    signature[offset++] = 0x02;
-
-    if (isValueType)
-    {
-        signature[offset++] = ELEMENT_TYPE_VALUETYPE;
-    }
-    else
-    {
-        signature[offset++] = ELEMENT_TYPE_CLASS;
-    }
-    memcpy(&signature[offset], &currentTypeBuffer, currentTypeSize);
-    offset += currentTypeSize;
-
-    memcpy(&signature[offset], returnSignatureBuffer, returnSignatureLength);
-    offset += returnSignatureLength;
-
-    hr = module_metadata->metadata_emit->DefineMethodSpec(endMethodMemberRef, signature.data(), signatureLength,
-                                                          &endMethodSpec);
+    hr = module_metadata->metadata_emit->DefineMethodSpec(endMethodMemberRef, signature.GetSignature(),
+                                                          static_cast<ULONG>(signature.Size()), &endMethodSpec);
     if (FAILED(hr))
     {
         Logger::Warn("Error creating end method member spec.");
@@ -1432,8 +1410,6 @@ HRESULT DebuggerTokens::WriteRentArray(void* rewriterWrapperPtr, const TypeSigna
 
     mdMethodSpec logArgMethodSpec = mdMethodSpecNil;
 
-    auto signatureLength = 2;
-
     PCCOR_SIGNATURE argumentSignatureBuffer;
     ULONG argumentSignatureSize;
     const auto [elementType, argTypeFlags] = type.GetElementTypeAndFlags();
@@ -1445,32 +1421,26 @@ HRESULT DebuggerTokens::WriteRentArray(void* rewriterWrapperPtr, const TypeSigna
         {
             argumentSignatureBuffer = argSigBuff + 1;
             argumentSignatureSize = signatureSize - 1;
-            signatureLength += signatureSize - 1;
         }
         else
         {
             argumentSignatureBuffer = argSigBuff;
             argumentSignatureSize = signatureSize;
-            signatureLength += signatureSize;
         }
     }
     else
     {
         auto signatureSize = type.GetSignature(argumentSignatureBuffer);
         argumentSignatureSize = signatureSize;
-        signatureLength += signatureSize;
     }
 
-    std::vector<COR_SIGNATURE> signature(signatureLength);
-    unsigned offset = 0;
-    signature[offset++] = IMAGE_CEE_CS_CALLCONV_GENERICINST;
-    signature[offset++] = 0x01;
+    SignatureBuilder signature;
+    signature.Append(IMAGE_CEE_CS_CALLCONV_GENERICINST);
+    signature.Append(static_cast<COR_SIGNATURE>(0x01));
+    signature.Append(argumentSignatureBuffer, argumentSignatureSize);
 
-    memcpy(&signature[offset], argumentSignatureBuffer, argumentSignatureSize);
-    offset += argumentSignatureSize;
-
-    hr = module_metadata->metadata_emit->DefineMethodSpec(rentArrayRef, signature.data(), signatureLength,
-                                                          &logArgMethodSpec);
+    hr = module_metadata->metadata_emit->DefineMethodSpec(rentArrayRef, signature.GetSignature(),
+                                                          static_cast<ULONG>(signature.Size()), &logArgMethodSpec);
     if (FAILED(hr))
     {
         Logger::Warn("Error creating RentArray method spec.");

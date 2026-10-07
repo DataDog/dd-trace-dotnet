@@ -8,6 +8,7 @@
 using System;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Debugger.ExceptionAutoInstrumentation;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using Samples.Probes.TestRuns;
@@ -26,6 +27,8 @@ namespace Datadog.Trace.Debugger.IntegrationTests.ExceptionReplay;
 [Collection(nameof(AspNetCore5ExceptionReplayLargeSignatureTests))]
 public class AspNetCore5ExceptionReplayLargeSignatureTests : AspNetBase, IClassFixture<AspNetCoreTestFixture>
 {
+    private const string ExceptionReplayPhaseTag = "_dd.di._er";
+    private const string DebugInfoCapturedTag = "error.debug_info_captured";
     private const int Attempts = 4;
 
     public AspNetCore5ExceptionReplayLargeSignatureTests(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
@@ -66,6 +69,7 @@ public class AspNetCore5ExceptionReplayLargeSignatureTests : AspNetBase, IClassF
         SetHttpPort(Fixture.HttpPort);
 
         var agent = Fixture.Agent;
+        var captured = false;
 
         try
         {
@@ -81,8 +85,13 @@ public class AspNetCore5ExceptionReplayLargeSignatureTests : AspNetBase, IClassF
                 var erroredSpan = spans.Should().Contain(x => x.Tags != null && x.Tags.ContainsKey(Tags.ErrorStack)).Which;
                 erroredSpan.GetTag(Tags.ErrorType).Should().Be(expectedErrorType);
 
+                captured |= erroredSpan.GetTag(ExceptionReplayPhaseTag) == ExceptionReplayDiagnosticTagNames.Eligible
+                         && erroredSpan.Tags.ContainsKey(DebugInfoCapturedTag);
+
                 await Task.Delay(250);
             }
+
+            captured.Should().BeTrue("the frame with the large local should be rewritten and captured, not just survive");
         }
         finally
         {
