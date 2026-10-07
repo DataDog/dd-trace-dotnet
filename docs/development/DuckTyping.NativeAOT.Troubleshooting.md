@@ -30,7 +30,9 @@ Likely causes:
 
 1. Mapping absent from canonical map file or dropped during discovery compatibility filtering.
 2. Wrong registry assembly loaded.
-3. Bootstrap initialization did not run before first use.
+3. Bootstrap initialization did not run before first use (under the JIT, only an explicit `Initialize()` call initializes the registry).
+4. The registration failed at startup: the message then names the number of registrations that failed and the first failure (a type the application's runtime can't load, e.g. a non-public type of the core library NativeAOT doesn't have, or an assembly the application doesn't ship).
+5. The runtime type is a class of the core library built on a non-public type that the registry doesn't register, and no mapped type of the core library it derives from or implements has a proxy (a failure of one isn't replayed for it).
 
 Actions:
 
@@ -38,6 +40,7 @@ Actions:
 2. Validate the canonical `--map-file` used in generation.
 3. Ensure generated registry assembly is referenced and initialized early.
 4. Ensure runtime process loads only the intended registry identity.
+5. Map public types of the core library (see the `DTAOT0216` warnings of generate).
 
 ### Runtime mode conflict
 
@@ -130,23 +133,6 @@ Actions:
 2. Use explicit closed map entries when the valid instantiations are known and fixed.
 3. Re-run generation and confirm the manifest contains closed mappings only.
 
-### unsupported_closed_generic_mapping
-
-Symptoms:
-
-1. Compatibility status indicates unsupported closed generic mapping.
-
-Likely causes:
-
-1. Mapping resolves to unsupported adaptation shape.
-2. Generic closure roots are incomplete.
-
-Actions:
-
-1. Add explicit generic instantiations where applicable.
-2. Refactor proxy/target shape to supported closed mapping pattern.
-3. Re-run generator and verify-compat.
-
 ### missing_target_type or missing_proxy_type
 
 Symptoms:
@@ -155,17 +141,17 @@ Symptoms:
 
 Likely causes:
 
-1. Required assembly not included in `--target-folder` scope or proxy list.
+1. Required assembly not included in `--target-folder` scope or proxy list (a type of the core library needs the application runtime's `System.Private.CoreLib.dll` in a `--target-folder`).
 2. Type identity typo in map file.
 3. Assembly-qualified name ambiguity.
 
 Actions:
 
-1. Validate type and assembly names exactly. Generic arguments can be assembly qualified (`Ns.Box`1[[System.String, System.Private.CoreLib]]`), unqualified (`Ns.Box`1[System.String]`, resolved in the assembly of the generic type, then in CoreLib, like `Type.GetType`), or mixed.
+1. Validate type and assembly names exactly. Generic arguments can be assembly qualified (`Ns.Box`1[[System.String, System.Private.CoreLib]]`), unqualified (`Ns.Box`1[System.String]`, resolved in the assembly of the generic type, then in CoreLib, like `Type.GetType`, then in the other input assemblies), or mixed.
 2. Add missing assemblies explicitly.
 3. Use deterministic filters when scanning target folders.
 
-### non_public_target_method or incompatible_method_signature
+### incompatible_method_signature
 
 Symptoms:
 

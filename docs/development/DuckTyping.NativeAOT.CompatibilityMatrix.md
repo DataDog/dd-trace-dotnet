@@ -9,7 +9,8 @@ It is intended as a quick status index, while detailed behavior and examples rem
 ## Status Legend
 
 1. `Compatible`: behavior parity validated by the AOT parity harness.
-2. `Not In Scope`: intentionally outside current DuckTyping scope.
+2. `Conditional`: compatible when the inputs meet the constraints in [Conditional Compatibility Notes](#conditional-compatibility-notes) (e.g. the closed generic roots of open map rules).
+3. `Not In Scope`: intentionally outside current DuckTyping scope.
 
 ## Current Baseline
 

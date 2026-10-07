@@ -42,7 +42,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
 
             var resolvedMappings = new Dictionary<string, DuckTypeAotMapping>(StringComparer.Ordinal);
 
-            if (!string.IsNullOrWhiteSpace(options.MapFile))
+            if (!StringUtil.IsNullOrWhiteSpace(options.MapFile))
             {
                 var mapFileResult = Measure(profile, static p => p.ParseMapFileSeconds, static (p, value) => p.ParseMapFileSeconds = value, () => DuckTypeAotMapFileParser.Parse(options.MapFile!));
                 errors.AddRange(mapFileResult.Errors);
@@ -52,8 +52,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 }
             }
 
-            // Branch: take this path when (!string.IsNullOrWhiteSpace(options.GenericInstantiationsFile)) evaluates to true.
-            if (!string.IsNullOrWhiteSpace(options.GenericInstantiationsFile))
+            if (!StringUtil.IsNullOrWhiteSpace(options.GenericInstantiationsFile))
             {
                 var genericInstantiationsResult = Measure(profile, static p => p.ParseGenericInstantiationsSeconds, static (p, value) => p.ParseGenericInstantiationsSeconds = value, () => DuckTypeAotGenericInstantiationsParser.Parse(options.GenericInstantiationsFile!));
                 errors.AddRange(genericInstantiationsResult.Errors);
@@ -70,13 +69,11 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             {
                 foreach (var mapping in resolvedMappings.Values)
                 {
-                    // Branch: take this path when (!proxyAssemblyPathsByName.ContainsKey(mapping.ProxyAssemblyName)) evaluates to true.
                     if (!proxyAssemblyPathsByName.ContainsKey(mapping.ProxyAssemblyName))
                     {
                         errors.Add($"Mapping proxy assembly '{mapping.ProxyAssemblyName}' could not be resolved from --proxy-assembly inputs.");
                     }
 
-                    // Branch: take this path when (!targetAssemblyPathsByName.ContainsKey(mapping.TargetAssemblyName)) evaluates to true.
                     if (!targetAssemblyPathsByName.ContainsKey(mapping.TargetAssemblyName))
                     {
                         errors.Add($"Mapping target assembly '{mapping.TargetAssemblyName}' could not be resolved from --target-folder inputs.");
@@ -110,7 +107,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         {
             var targetAssemblyPaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             var skippedRegistryPaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-            var outputPath = string.IsNullOrWhiteSpace(options.OutputPath) ? null : Path.GetFullPath(options.OutputPath);
+            var outputPath = StringUtil.IsNullOrWhiteSpace(options.OutputPath) ? null : Path.GetFullPath(options.OutputPath);
             foreach (var targetAssembly in options.TargetAssemblies)
             {
                 AddTargetAssembly(targetAssembly);
@@ -222,7 +219,6 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// *.dll filter) are skipped: native libraries silently, anything else with a warning instead of an error.
         /// </param>
         /// <returns>The result produced by this operation.</returns>
-        /// <remarks>Emits or composes IL for generated duck-typing proxy operations.</remarks>
         private static Dictionary<string, string> BuildAssemblyPathIndex(IReadOnlyList<string> assemblyPaths, string sourceName, ICollection<string> errors, ICollection<string>? invalidAssemblyWarnings = null)
         {
             var assemblyPathByName = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
@@ -233,18 +229,15 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 {
                     var assemblyName = AssemblyName.GetAssemblyName(assemblyPath);
                     var normalizedAssemblyName = DuckTypeAotNameHelpers.NormalizeAssemblyName(assemblyName.Name ?? string.Empty);
-                    // Branch: take this path when (string.IsNullOrWhiteSpace(normalizedAssemblyName)) evaluates to true.
-                    if (string.IsNullOrWhiteSpace(normalizedAssemblyName))
+                    if (StringUtil.IsNullOrWhiteSpace(normalizedAssemblyName))
                     {
                         errors.Add($"{sourceName} could not read assembly name from '{assemblyPath}'.");
                         continue;
                     }
 
-                    // Branch: take this path when (!assemblyPathByName.TryAdd(normalizedAssemblyName, assemblyPath)) evaluates to true.
                     if (!assemblyPathByName.TryAdd(normalizedAssemblyName, assemblyPath))
                     {
                         var existingPath = assemblyPathByName[normalizedAssemblyName];
-                        // Branch: take this path when (!string.Equals(existingPath, assemblyPath, StringComparison.OrdinalIgnoreCase)) evaluates to true.
                         if (!string.Equals(existingPath, assemblyPath, StringComparison.OrdinalIgnoreCase))
                         {
                             errors.Add($"{sourceName} has duplicate assembly identity '{normalizedAssemblyName}' with different paths: '{existingPath}' and '{assemblyPath}'.");
@@ -262,7 +255,6 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 }
                 catch (Exception ex)
                 {
-                    // Branch: handles exceptions that match Exception ex.
                     errors.Add($"{sourceName} failed to read assembly metadata for '{assemblyPath}': {ex.Message}");
                 }
             }
@@ -403,7 +395,6 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         {
             foreach (var mapping in mappings)
             {
-                // Branch: take this path when (!DuckTypeAotNameHelpers.IsOpenGenericTypeName(mapping.ProxyTypeName) && evaluates to true.
                 if (!DuckTypeAotNameHelpers.IsOpenGenericTypeName(mapping.ProxyTypeName) &&
                     !DuckTypeAotNameHelpers.IsOpenGenericTypeName(mapping.TargetTypeName))
                 {

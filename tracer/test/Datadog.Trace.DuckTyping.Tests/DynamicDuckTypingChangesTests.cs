@@ -6,6 +6,7 @@
 #pragma warning disable SA1201 // Elements must appear in the correct order
 
 using System;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using FluentAssertions;
@@ -37,9 +38,59 @@ namespace Datadog.Trace.DuckTyping.Tests
         }
 
         [Fact]
+        public void OmittedNullableNativeIntegerParametersShouldReceiveTheirDefaultValues()
+        {
+            DuckType.Create<IEchoProxy>(new NullableNativeIntegerDefaultTarget())!.Echo(1).Should().Be(12);
+        }
+
+        [Fact]
         public void OmittedUnknownConstantParameterShouldReceiveAWrapperOfNull()
         {
             DuckType.Create<IEchoProxy>(new UnknownConstantDefaultTarget())!.Echo(1).Should().Be(11);
+        }
+
+        [Fact]
+        public void GenericProxyMethodsShouldHaveTheConstraintsOfTheMethodTheyImplement()
+        {
+            // The target method has the same constraints: without them, calling it fails verification.
+            DuckType.Create<IConstrainedFactoryProxy>(new ConstrainedFactoryTarget())!.Create<NameTarget>().Name.Should().Be("name");
+            ((IConstrainedFactoryProxy)DuckType.CreateReverse(typeof(IConstrainedFactoryProxy), new ConstrainedFactoryDelegation())).Create<NameTarget>().Name.Should().Be("name");
+            ((IStructDescriberProxy)DuckType.CreateReverse(typeof(IStructDescriberProxy), new StructDescriberDelegation())).Describe(4).Should().Be("struct:4");
+        }
+
+        [Fact]
+        public void ProxyMethodsWithDefaultParameterValuesShouldBeCreated()
+        {
+            // The default value of each parameter is the one of that parameter (not of the previous one, nor of the return value).
+            var proxy = DuckType.Create<IDefaultValuesProxy>(new DefaultValuesTarget())!;
+            proxy.Format(3).Should().Be("3:x");
+            if (DuckType.RuntimeMode == DuckTypeRuntimeMode.Dynamic)
+            {
+                // The parameters of the proxy type's methods are only seen through reflection (callers bind to the proxy
+                // definition's): a registry doesn't name them.
+                var parameters = proxy.GetType().GetMethod(nameof(IDefaultValuesProxy.Format))!.GetParameters();
+                parameters.Select(parameter => parameter.Name).Should().Equal("value", "text");
+                parameters[1].DefaultValue.Should().Be("x");
+            }
+        }
+
+        [Fact]
+        public void ReversePropertiesShouldHaveTheTypeOfThePropertyTheyImplement()
+        {
+            // The property of the delegation type is a proxy of the contract property's type: the reverse proxy's property has the
+            // type of its getter (the contract's), so a forward duck cast over the reverse proxy duck chains it.
+            var reverse = DuckType.CreateReverse(typeof(ChainContract), new ChainDelegation());
+            reverse.GetType().GetProperty(nameof(ChainContract.Value))!.PropertyType.Should().Be(typeof(NameTarget));
+            DuckType.Create<IChainView>(reverse).Value.Name.Should().Be("name");
+        }
+
+        [Fact]
+        public void MethodFallbackNamesShouldBeTriedInOrderWhenArgumentsAreDuckChained()
+        {
+            // The argument is a proxy (duck chained): Type.GetMethod doesn't find the methods, the candidate scan does, for each
+            // name; the first name that has one wins.
+            var name = DuckType.Create<INameProxy>(new NameTarget());
+            DuckType.Create<IFallbackDescribeProxy>(new FallbackDescribeTarget()).Describe(name).Should().Be("primary:name");
         }
 
         [Fact]
@@ -54,6 +105,40 @@ namespace Datadog.Trace.DuckTyping.Tests
         public interface IEchoProxy
         {
             int Echo(int value);
+        }
+
+        public interface INameProxy
+        {
+            string Name { get; }
+        }
+
+        public interface IFallbackDescribeProxy
+        {
+            [Duck(Name = "Primary,Secondary")]
+            string Describe(INameProxy value);
+        }
+
+        public class FallbackDescribeTarget
+        {
+            public string Secondary(NameTarget value) => "secondary:" + value.Name;
+
+            public string Primary(NameTarget value) => "primary:" + value.Name;
+        }
+
+        public interface IChainView
+        {
+            INameProxy Value { get; }
+        }
+
+        public abstract class ChainContract
+        {
+            public abstract NameTarget Value { get; }
+        }
+
+        public class ChainDelegation
+        {
+            [DuckReverseMethod]
+            public INameProxy Value => DuckType.Create<INameProxy>(new NameTarget());
         }
 
         public interface ITrimmedMethodNameProxy
@@ -96,9 +181,59 @@ namespace Datadog.Trace.DuckTyping.Tests
             public override string ToString() => _staticCalls.ToString();
         }
 
+        public interface IConstrainedFactoryProxy
+        {
+            T Create<T>()
+                where T : class, new();
+        }
+
+        public interface IStructDescriberProxy
+        {
+            string Describe<T>(T value)
+                where T : struct;
+        }
+
+        public interface IDefaultValuesProxy
+        {
+            string Format(int value, string text = "x");
+        }
+
+        public class ConstrainedFactoryTarget
+        {
+            public T Create<T>()
+                where T : class, new()
+                => new T();
+        }
+
+        public class ConstrainedFactoryDelegation
+        {
+            [DuckReverseMethod]
+            public T Create<T>()
+                where T : class, new()
+                => new T();
+        }
+
+        public class StructDescriberDelegation
+        {
+            [DuckReverseMethod]
+            public string Describe<T>(T value)
+                where T : struct
+                => "struct:" + value;
+        }
+
+        public class DefaultValuesTarget
+        {
+            public string Format(int value, string text) => value + ":" + text;
+        }
+
         public class NativeIntegerDefaultTarget
         {
             public int Echo(int value, nint offset = 5) => value + (int)offset;
+        }
+
+        public class NullableNativeIntegerDefaultTarget
+        {
+            public int Echo(int value, nint? offset = 5, nuint? extra = 6) => value + (int)offset!.Value + (int)extra!.Value;
         }
 
         public class UnknownConstantDefaultTarget

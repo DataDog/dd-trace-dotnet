@@ -178,9 +178,33 @@ public class DuckTypeAotProcessorsTests
     [InlineData("Example.Outer`1+Inner`1[[System.String, System.Private.CoreLib],[System.Int32, System.Private.CoreLib]]", false)]
     [InlineData("Example.Outer`1+Inner`1[[System.String, System.Private.CoreLib]]", true)]
     [InlineData("Example.Container`1[!0]", true)]
+    [InlineData("Example.Container`2[[System.String, System.Private.CoreLib],!!0]", true)]
+    [InlineData("Example.Outer`1+Inner", true)]
+    // A backtick that isn't an arity, or a '!' in a name, doesn't make a type generic.
+    [InlineData("Example.A`B", false)]
+    [InlineData("Example.A`1x", false)]
+    [InlineData("Example.A!B", false)]
+    [InlineData("Example.Holder`1[[Example.A!B, Example]]", false)]
     public void OpenGenericNameDetectionShouldHandleNestedClosedGenericTypeNames(string typeName, bool expectedIsOpen)
     {
         DuckTypeAotNameHelpers.IsOpenGenericTypeName(typeName).Should().Be(expectedIsOpen);
+    }
+
+    [Theory]
+    [InlineData("Example.Outer+Inner", "Example.Outer/Inner")]
+    // Descriptor names aren't escaped: an escaped character is itself.
+    [InlineData("Example.A\\,B", "Example.A,B")]
+    [InlineData("Example.A\\+B", "Example.A+B")]
+    [InlineData("Example.A\\[B\\]", "Example.A[B]")]
+    [InlineData("Example.A\\\\B", "Example.A\\B")]
+    // Closed generics, arrays, pointers and by-ref types aren't rooted by name.
+    [InlineData("Example.Box`1[[System.Int32, System.Private.CoreLib]]", null)]
+    [InlineData("Example.A[]", null)]
+    [InlineData("Example.A*", null)]
+    [InlineData("Example.A&", null)]
+    public void TrimmerDescriptorTypeNamesShouldBeUnescaped(string typeName, string? expected)
+    {
+        DuckTypeAotNameHelpers.GetTrimmerDescriptorTypeName(typeName).Should().Be(expected);
     }
 
     [Fact]
@@ -488,10 +512,12 @@ public class DuckTypeAotProcessorsTests
             var trimmerDescriptorContent = File.ReadAllText(trimmerDescriptorPath);
             trimmerDescriptorContent.Should().Contain("<assembly fullname=\"Datadog.Trace.DuckType.AotRegistry\">");
             trimmerDescriptorContent.Should().Contain($"<assembly fullname=\"{proxyAssemblyName}\">");
-            trimmerDescriptorContent.Should().Contain($"<assembly fullname=\"{targetAssemblyName}\">");
             trimmerDescriptorContent.Should().Contain(typeof(ITestDuckProxy).FullName!.Replace('+', '/'));
-            trimmerDescriptorContent.Should().Contain(typeof(TestDuckTarget).FullName!.Replace('+', '/'));
-            trimmerDescriptorContent.Should().Contain("Datadog.Trace.DuckTyping.Generated.Proxies.DuckTypeProxy_");
+
+            // The bootstrap keeps the generated proxy types and the target members they use: a type the trimmer can't load
+            // (e.g. a CoreCLR-only type of the core library, for NativeAOT's compiler) fails its registration alone, not the build.
+            trimmerDescriptorContent.Should().NotContain(typeof(TestDuckTarget).FullName!.Replace('+', '/') + "\"");
+            trimmerDescriptorContent.Should().NotContain("Datadog.Trace.DuckTyping.Generated.Proxies.DuckTypeProxy_");
 
             using var generatedModule = ModuleDefMD.Load(outputPath);
             var bootstrapType = generatedModule.Find("Datadog.Trace.DuckTyping.Generated.DuckTypeAotRegistryBootstrap", isReflectionName: false);
@@ -537,12 +563,12 @@ public class DuckTypeAotProcessorsTests
                 instruction =>
                     instruction.OpCode == OpCodes.Call &&
                     instruction.Operand is IMethod method &&
-                    string.Equals(method.Name, "RegisterAotProxy", StringComparison.Ordinal));
+                    string.Equals(method.Name, "RegisterTypedProxy", StringComparison.Ordinal));
             registerAotProxyInstruction.Should().NotBeNull();
-            ((IMethod)registerAotProxyInstruction!.Operand).MethodSig.Params.Last().FullName.Should().StartWith("System.Func`2", "generated success registrations should pass direct delegates instead of RuntimeMethodHandle values");
-            AssertRegistrationLoadsGeneratedProxyType(bootstrapType, "RegisterAotProxy", generatedProxyType);
+            ((IMethod)registerAotProxyInstruction!.Operand).MethodSig.Params.Last().FullName.Should().Be("System.Delegate", "generated success registrations should pass direct delegates instead of RuntimeMethodHandle values");
+            AssertRegistrationLoadsGeneratedProxyType(bootstrapType, "RegisterTypedProxy", generatedProxyType);
             AssertBootstrapDoesNotUseReflectionForGeneratedRegistrations(bootstrapInstructions);
-            AssertDirectDelegateRegistrationCalls(bootstrapType, "RegisterAotProxy", "ActivateProxy_", "System.Func`2");
+            AssertTypedActivatorRegistrationCalls(bootstrapType, "RegisterTypedProxy");
 
             var initializesFuncDelegate = bootstrapInstructions.Any(
                 instruction =>
@@ -679,11 +705,13 @@ public class DuckTypeAotProcessorsTests
 
                 var createTypeResult = DuckType.GetOrCreateProxyType(typeof(IAliasForwardProxy), typeof(AliasForwardDerivedTarget));
                 createTypeResult.UsesDynamicInvokeFallback.Should().BeFalse();
-                // Non-generic Create uses the generated object-input, object-output activator directly, not a DynamicInvoke wrapper.
+                // CreateInstance<T> uses the generated typed activator (like dynamic duck typing's), and non-generic Create the
+                // object-input, object-output activator it's bound to directly, not a DynamicInvoke wrapper.
                 var activator = GetGeneratedObjectActivator(createTypeResult);
                 activator.Should().NotBeNull();
-                activator!.GetType().Should().Be(typeof(Func<object?, object?>));
-                activator.Method.Name.Should().StartWith("ActivateProxy_", "generated registries should register object-input, object-output activators directly");
+                activator!.GetType().Should().Be(typeof(CreateProxyInstance<IAliasForwardProxy>));
+                activator.Method.Name.Should().StartWith("ActivateTypedProxy_");
+                activator.Target.Should().BeOfType<Func<object?, object?>>().Which.Method.Name.Should().StartWith("ActivateProxy_", "generated registries should register object-input, object-output activators directly");
             }
             finally
             {
@@ -2209,7 +2237,7 @@ public class DuckTypeAotProcessorsTests
             // definitions instead would preserve every member of List`1 and Dictionary`2: instantiations aren't rooted by name.
             trimmerDescriptorContent.Should().NotContain($"<assembly fullname=\"{coreAssemblyName}\">");
             trimmerDescriptorContent.Should().NotContain("List`1").And.NotContain("Dictionary`2").And.NotContain("[[");
-            trimmerDescriptorContent.Should().Contain("<type fullname=\"Datadog.Trace.Tools.Runner.Tests.TestDuckTarget\" preserve=\"all\" />");
+            trimmerDescriptorContent.Should().Contain($"<type fullname=\"{typeof(ITestDuckProxy).FullName!.Replace('+', '/')}\" preserve=\"all\" />");
         }
         finally
         {
@@ -6714,15 +6742,15 @@ public class DuckTypeAotProcessorsTests
                     instruction =>
                         instruction.OpCode == OpCodes.Call &&
                         instruction.Operand is IMethod method &&
-                        string.Equals(method.Name, "RegisterAotReverseProxy", StringComparison.Ordinal));
+                        string.Equals(method.Name, "RegisterTypedReverseProxy", StringComparison.Ordinal));
                 registerAotReverseInstruction.Should().NotBeNull();
-                AssertRegistrationLoadsGeneratedProxyType(bootstrapType, "RegisterAotReverseProxy", generatedProxyType!);
+                AssertRegistrationLoadsGeneratedProxyType(bootstrapType, "RegisterTypedReverseProxy", generatedProxyType!);
                 AssertBootstrapDoesNotUseReflectionForGeneratedRegistrations(
                     bootstrapType.Methods
                                  .Where(method => method.Body is not null)
                                  .SelectMany(method => method.Body!.Instructions)
                                  .ToList());
-                AssertDirectDelegateRegistrationCalls(bootstrapType, "RegisterAotReverseProxy", "ActivateProxy_", "System.Func`2");
+                AssertTypedActivatorRegistrationCalls(bootstrapType, "RegisterTypedReverseProxy");
             }
 
             var loadContext = new AssemblyLoadContext("DuckTypeAotProcessorsTests-ReverseInterface", isCollectible: true);
@@ -7789,21 +7817,21 @@ public class DuckTypeAotProcessorsTests
                 instruction =>
                     instruction.OpCode == OpCodes.Call &&
                     instruction.Operand is IMethod method &&
-                    string.Equals(method.Name, "RegisterAotReverseProxy", StringComparison.Ordinal));
+                    string.Equals(method.Name, "RegisterTypedReverseProxy", StringComparison.Ordinal));
             registerAotReverseInstruction.Should().NotBeNull();
             AssertBootstrapDoesNotUseReflectionForGeneratedRegistrations(
                 bootstrapType.Methods
                              .Where(method => method.Body is not null)
                              .SelectMany(method => method.Body!.Instructions)
                              .ToList());
-            AssertDirectDelegateRegistrationCalls(bootstrapType, "RegisterAotReverseProxy", "ActivateProxy_", "System.Func`2");
+            AssertTypedActivatorRegistrationCalls(bootstrapType, "RegisterTypedReverseProxy");
 
             var runtimeRegistrationCount = bootstrapType.Methods
                 .Where(method => method.Body is not null)
                 .SelectMany(method => method.Body!.Instructions)
                 .Count(instruction => instruction.OpCode == OpCodes.Call &&
                                       instruction.Operand is IMethod method &&
-                                      (method.Name == "RegisterAotProxy" || method.Name == "RegisterAotReverseProxy"));
+                                      (method.Name == "RegisterTypedProxy" || method.Name == "RegisterTypedReverseProxy"));
             var manifest = JObject.Parse(File.ReadAllText($"{outputPath}.manifest.json"));
             manifest["totalRuntimeRegistrations"]!.Value<int>().Should().Be(runtimeRegistrationCount);
             manifest["aliasRegistrations"]!.Value<int>().Should().Be(runtimeRegistrationCount - matrix.Mappings.Count);
@@ -7920,7 +7948,7 @@ public class DuckTypeAotProcessorsTests
 
                 // Like dynamic duck typing's reverse proxy, the getter extracts the instance of the duck type the delegation
                 // returns: a null one throws.
-                var readInitialValue = () => getValueMethod!.Invoke(reverseProxyObject, Array.Empty<object>());
+                var readInitialValue = () => getValueMethod!.Invoke(reverseProxyObject, []);
                 readInitialValue.Should().Throw<TargetInvocationException>().WithInnerException<NullReferenceException>();
 
                 var innerTarget = new TestDuckReverseChainInnerTarget("alpha");
@@ -7940,7 +7968,7 @@ public class DuckTypeAotProcessorsTests
 
                 roundtripResult.Should().BeSameAs(innerTarget);
 
-                var afterSetValue = getValueMethod!.Invoke(reverseProxyObject, Array.Empty<object>());
+                var afterSetValue = getValueMethod!.Invoke(reverseProxyObject, []);
                 afterSetValue.Should().NotBeNull();
                 afterSetValue.Should().BeSameAs(innerTarget);
             }
@@ -13194,7 +13222,7 @@ public class DuckTypeAotProcessorsTests
     [InlineData("utf16")]
     // CR line endings, with a line comment.
     [InlineData("cr")]
-    // JSON the map parser reads, but the text edit doesn't (unquoted names): the map is written back from its document.
+    // Unquoted names (which the map parser reads too).
     [InlineData("unquoted-names")]
     // A property twice in an entry: the map parser reads the last one.
     [InlineData("duplicate-entry-property")]
@@ -13394,6 +13422,7 @@ public class DuckTypeAotProcessorsTests
     public void MergingDiscoveredMappingsShouldWriteAReadOnlyMapTheProcessCanWrite()
     {
         // E.g. root in a CI container: the ReadOnly attribute comes from the permission bits, but the process can write the map.
+        // (Skipped for other users, who can't write it: see MergingDiscoveredMappingsShouldNotReplaceAReadOnlyMap.)
         var tempDirectory = CreateTempDirectory();
         var mapFilePath = Path.Combine(tempDirectory, "map.json");
         try
@@ -13407,6 +13436,7 @@ public class DuckTypeAotProcessorsTests
             DuckTypeAotGenerateProcessor.TryMergeDiscoveredMappings(mapFilePath, discoveredMapPath, out var addedMappings, out var error).Should().BeTrue(error);
             addedMappings.Should().Be(1);
             DuckTypeAotMapFileParser.Parse(mapFilePath).Mappings.Select(mapping => mapping.ProxyTypeName).Should().Equal("Ns.IDiscovered");
+            File.GetAttributes(mapFilePath).Should().HaveFlag(FileAttributes.ReadOnly, "the map keeps its permissions");
         }
         finally
         {
@@ -13418,6 +13448,37 @@ public class DuckTypeAotProcessorsTests
             TryDeleteDirectory(tempDirectory);
         }
     }
+
+#if NET7_0_OR_GREATER
+    [SkippableFact]
+    public void MergingDiscoveredMappingsShouldKeepThePermissionsOfTheMap()
+    {
+        // The map is replaced by a new file, which gets the permissions of the one it replaces.
+        if (OperatingSystem.IsWindows())
+        {
+            throw new SkipException("Unix file modes.");
+        }
+
+        var tempDirectory = CreateTempDirectory();
+        try
+        {
+            var mapFilePath = Path.Combine(tempDirectory, "map.json");
+            File.WriteAllText(mapFilePath, "{ \"mappings\": [] }");
+            const UnixFileMode Mode = UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.GroupRead;
+            File.SetUnixFileMode(mapFilePath, Mode);
+            var discoveredMapPath = Path.Combine(tempDirectory, "discovered.json");
+            File.WriteAllText(discoveredMapPath, "{ \"mappings\": [ { \"mode\": \"forward\", \"proxyType\": \"Ns.IDiscovered\", \"proxyAssembly\": \"A\", \"targetType\": \"Ns.Discovered\", \"targetAssembly\": \"B\" } ] }");
+
+            DuckTypeAotGenerateProcessor.TryMergeDiscoveredMappings(mapFilePath, discoveredMapPath, out var addedMappings, out var error).Should().BeTrue(error);
+            addedMappings.Should().Be(1);
+            File.GetUnixFileMode(mapFilePath).Should().Be(Mode);
+        }
+        finally
+        {
+            TryDeleteDirectory(tempDirectory);
+        }
+    }
+#endif
 
 #if NET6_0_OR_GREATER
     [SkippableFact]
@@ -13534,6 +13595,81 @@ public class DuckTypeAotProcessorsTests
             TryDeleteDirectory(tempDirectory);
         }
     }
+
+    [Theory]
+    // JSON the text edit can't walk (a constructor value Json.NET reads): the map is written back from its document, which
+    // keeps its numbers as written...
+    [InlineData("{ \"when\": new Date(1234), \"ratio\": 1.50, \"count\": 3, \"mappings\": [ EXISTING ] }", true)]
+    // ... or else isn't written back: it would rewrite the numbers.
+    [InlineData("{ \"when\": new Date(1234), \"ratio\": 1.5e-40, \"mappings\": [ EXISTING ] }", false)]
+    [InlineData("{ \"when\": new Date(1234), \"huge\": 1e400, \"mappings\": [ EXISTING ] }", false)]
+    [InlineData("{ \"when\": new Date(1234), \"big\": 123456789012345678901234567890.123, \"mappings\": [ EXISTING ] }", false)]
+    public void MergingDiscoveredMappingsShouldWriteTheMapBackFromItsDocumentOnlyWithItsNumbers(string original, bool written)
+    {
+        original = original.Replace("EXISTING", "{ \"mode\": \"forward\", \"proxyType\": \"Ns.IExisting\", \"proxyAssembly\": \"A\", \"targetType\": \"Ns.Existing\", \"targetAssembly\": \"B\" }");
+        var tempDirectory = CreateTempDirectory();
+        try
+        {
+            var mapFilePath = Path.Combine(tempDirectory, "map.json");
+            File.WriteAllText(mapFilePath, original);
+            var discoveredMapPath = Path.Combine(tempDirectory, "discovered.json");
+            File.WriteAllText(discoveredMapPath, "{ \"mappings\": [ { \"mode\": \"forward\", \"proxyType\": \"Ns.IDiscovered\", \"proxyAssembly\": \"A\", \"targetType\": \"Ns.Discovered\", \"targetAssembly\": \"B\" } ] }");
+
+            var merged = DuckTypeAotGenerateProcessor.TryMergeDiscoveredMappings(mapFilePath, discoveredMapPath, out _, out var error);
+            if (written)
+            {
+                merged.Should().BeTrue(error);
+                var mergedText = File.ReadAllText(mapFilePath);
+                mergedText.Should().NotBe(original).And.Contain("1.50").And.Contain("1234");
+                DuckTypeAotGenerateProcessor.ReadNumberLiterals(mergedText).Should().Equal(DuckTypeAotGenerateProcessor.ReadNumberLiterals(original));
+                DuckTypeAotMapFileParser.Parse(mapFilePath).Mappings.Select(mapping => mapping.ProxyTypeName).Should().Equal("Ns.IExisting", "Ns.IDiscovered");
+            }
+            else
+            {
+                merged.Should().BeFalse();
+                error.Should().Contain("add them to its 'mappings' array");
+                File.ReadAllText(mapFilePath).Should().Be(original);
+            }
+        }
+        finally
+        {
+            TryDeleteDirectory(tempDirectory);
+        }
+    }
+
+    [Fact]
+    public void ReadNumberLiteralsShouldSkipStringsCommentsAndNames()
+    {
+        DuckTypeAotGenerateProcessor.ReadNumberLiterals("{ a1: -1.5e3, 'b\\'2': \"3\", /* 4 */ c: [ +5, .6, NaN, -Infinity, new Date(7) ] // 8\n, d: true }")
+                                    .Should().Equal("-1.5e3", "+5", ".6", "NaN", "-Infinity", "7");
+    }
+
+#if NET6_0_OR_GREATER
+    [SkippableFact]
+    public void MergingDiscoveredMappingsShouldNameTheLockFileOfTheFileASymbolicLinkPointsTo()
+    {
+        Skip.If(RuntimeInformation.IsOSPlatform(OSPlatform.Windows), "Creating symbolic links requires privileges on Windows.");
+        var tempDirectory = CreateTempDirectory();
+        try
+        {
+            var mapFilePath = Path.Combine(tempDirectory, "real-map.json");
+            File.WriteAllText(mapFilePath, "{ \"mappings\": [] }");
+            var linkPath = Path.Combine(tempDirectory, "map.json");
+            File.CreateSymbolicLink(linkPath, mapFilePath);
+            var discoveredMapPath = Path.Combine(tempDirectory, "discovered.json");
+            File.WriteAllText(discoveredMapPath, "{ \"mappings\": [] }");
+
+            // A directory where the lock file of the file the link points to would be: it can't be locked.
+            Directory.CreateDirectory(mapFilePath + ".lock");
+            DuckTypeAotGenerateProcessor.TryMergeDiscoveredMappings(linkPath, discoveredMapPath, out _, out var error).Should().BeFalse();
+            error.Should().Be($"'{linkPath}' could not be locked ('{mapFilePath}.lock').");
+        }
+        finally
+        {
+            TryDeleteDirectory(tempDirectory);
+        }
+    }
+#endif
 
     [Fact]
     public void DiscoverMappingsShouldKeepDeclaredMappingsThatReplayADynamicFailure()
@@ -13738,9 +13874,9 @@ public class DuckTypeAotProcessorsTests
             var datadogTraceCopyPath = Path.Combine(tempDirectory, "Datadog.Trace.dll");
             using (var datadogTraceModule = ModuleDefMD.Load(typeof(DuckType).Assembly.Location))
             {
-                var registerAotProxy = datadogTraceModule.Find(typeof(DuckType).FullName, isReflectionName: true)!.Methods.Single(
-                    method => method.Name == nameof(DuckType.RegisterAotProxy) && method.Parameters.Last().Type.FullName.StartsWith("System.Func", StringComparison.Ordinal));
-                registerAotProxy.Name = "RegisterAotProxyOfAnotherVersion";
+                var registerAotProxy = datadogTraceModule.Find(typeof(DuckTypeAotEngine).FullName, isReflectionName: true)!.Methods.Single(
+                    method => method.Name == nameof(DuckTypeAotEngine.RegisterTypedProxy));
+                registerAotProxy.Name = "RegisterTypedProxyOfAnotherVersion";
                 datadogTraceModule.Mvid = Guid.NewGuid();
                 datadogTraceModule.Write(datadogTraceCopyPath);
             }
@@ -13762,7 +13898,7 @@ public class DuckTypeAotProcessorsTests
                 propsPath: Path.Combine(tempDirectory, "ducktype-aot.props")));
 
             exitCode.Should().Be(1, output);
-            output.Should().Contain("doesn't define 1 types or members the registry uses").And.Contain("Datadog.Trace.DuckTyping.DuckType::RegisterAotProxy(");
+            output.Should().Contain("doesn't define 1 types or members the registry uses").And.Contain("Datadog.Trace.DuckTyping.DuckTypeAotEngine::RegisterTypedProxy(");
             File.Exists(outputPath).Should().BeFalse();
         }
         finally
@@ -13774,8 +13910,9 @@ public class DuckTypeAotProcessorsTests
     [Fact]
     public void MappingsThatFailOnlyForOtherRuntimeTypesShouldKeepTheirGeneratedProxyType()
     {
-        // The registry still registers the proxy of the mapped target itself: the result names it and the trimmer descriptor
-        // roots it, like for a compatible mapping.
+        // The registry still registers the proxy of the mapped target itself: the result names it, and the trimmer descriptor
+        // roots its proxy type like for a compatible mapping (not the target type nor the generated proxy type, see
+        // DuckTypeAotArtifactsWriter.WriteTrimmerDescriptor).
         var tempDirectory = CreateTempDirectory();
         try
         {
@@ -13807,7 +13944,7 @@ public class DuckTypeAotProcessorsTests
                     new Dictionary<string, DuckTypeAotMappingEmissionResult> { [mapping.Key] = result },
                     Array.Empty<DuckTypeAotRuntimeRegistration>()));
             var roots = XDocument.Load(descriptorPath).Descendants("type").Select(type => (string?)type.Attribute("fullname")).ToList();
-            roots.Should().Contain(GeneratedProxyTypeName).And.Contain(mapping.ProxyTypeName).And.Contain(mapping.TargetTypeName);
+            roots.Should().Contain(mapping.ProxyTypeName).And.NotContain(GeneratedProxyTypeName).And.NotContain(mapping.TargetTypeName);
         }
         finally
         {
@@ -13873,8 +14010,8 @@ public class DuckTypeAotProcessorsTests
     [Fact]
     public void GeneratedRegistryInitializeShouldRegisterTheMappingsOnce()
     {
-        // The module initializer already initializes the registry: the explicit Initialize() call the docs recommend doesn't
-        // register everything again (registrations cleared since then stay cleared).
+        // Initialize() registers the mappings once (the module initializer may have called it already, when dynamic code isn't
+        // supported): a second call doesn't register everything again (registrations cleared since then stay cleared).
         var tempDirectory = CreateTempDirectory();
 #if NETCOREAPP2_1
         var loadContext = (AssemblyLoadContext?)null;
@@ -13914,6 +14051,67 @@ public class DuckTypeAotProcessorsTests
             DuckTypeAotEngine.ResetForTests();
             initialize.Invoke(null, null);
             DuckType.GetOrCreateProxyType(typeof(ITestDuckProxy), typeof(TestDuckTarget)).CanCreate().Should().BeFalse();
+        }
+        finally
+        {
+            DuckType.ResetRuntimeModeForTests();
+            loadContext?.Unload();
+            TryDeleteDirectory(tempDirectory);
+        }
+    }
+
+    [Fact]
+    public void GeneratedRegistryModuleInitializerShouldNotInitializeTheRegistryWhenDynamicCodeIsSupported()
+    {
+        // Under the JIT, the module initializer runs as soon as a method referencing the registry is compiled (e.g. one calling
+        // Initialize() only when dynamic code isn't supported): it leaves the process in dynamic duck typing.
+        var tempDirectory = CreateTempDirectory();
+#if NETCOREAPP2_1
+        var loadContext = (AssemblyLoadContext?)null;
+#else
+        var loadContext = new AssemblyLoadContext("DuckTypeAotProcessorsTests-ModuleInitializer", isCollectible: true);
+#endif
+        try
+        {
+            var mapFilePath = Path.Combine(tempDirectory, "ducktype-aot-map-module-initializer.json");
+            File.WriteAllText(mapFilePath, JsonConvert.SerializeObject(new { mappings = new[] { CreateMappingDocumentEntry(typeof(ITestDuckProxy), typeof(TestDuckTarget)) } }));
+            var outputPath = Path.Combine(tempDirectory, "Datadog.Trace.DuckType.AotRegistry.ModuleInitializer.dll");
+            DuckTypeAotGenerateProcessor.Process(new DuckTypeAotGenerateOptions(
+                proxyAssemblies: new[] { typeof(DuckTypeAotProcessorsTests).Assembly.Location },
+                targetAssemblies: new[] { typeof(DuckTypeAotProcessorsTests).Assembly.Location },
+                targetFolders: Array.Empty<string>(),
+                targetFilters: new[] { "*.dll" },
+                mapFile: mapFilePath,
+                mappingCatalog: null,
+                genericInstantiationsFile: null,
+                outputPath: outputPath,
+                assemblyName: "Datadog.Trace.DuckType.AotRegistry.ModuleInitializer",
+                trimmerDescriptorPath: Path.Combine(tempDirectory, "ducktype-aot-module-initializer.linker.xml"),
+                propsPath: Path.Combine(tempDirectory, "ducktype-aot-module-initializer.props"))).Should().Be(0);
+
+            // The check is the one of Datadog.Trace: RuntimeFeature.IsDynamicCodeSupported isn't defined by every runtime the
+            // registry can run on under the JIT.
+            using (var generatedModule = ModuleDefMD.Load(outputPath))
+            {
+                var calledMethods = generatedModule.GlobalType.FindStaticConstructor()!.Body.Instructions
+                                                   .Where(instruction => instruction.OpCode == OpCodes.Call && instruction.Operand is IMethod)
+                                                   .Select(instruction => ((IMethod)instruction.Operand).FullName)
+                                                   .ToList();
+                calledMethods.Should().Equal(
+                    "System.Boolean Datadog.Trace.DuckTyping.DuckTypeAotEngine::get_IsDynamicCodeSupported()",
+                    "System.Void Datadog.Trace.DuckTyping.Generated.DuckTypeAotRegistryBootstrap::Initialize()");
+            }
+
+            DuckType.ResetRuntimeModeForTests();
+#if NETCOREAPP2_1
+            var registry = Assembly.Load(File.ReadAllBytes(outputPath));
+#else
+            using var registryStream = File.OpenRead(outputPath);
+            var registry = loadContext.LoadFromStream(registryStream);
+#endif
+            RuntimeHelpers.RunModuleConstructor(registry.ManifestModule.ModuleHandle);
+            DuckType.RuntimeMode.Should().Be(DuckTypeRuntimeMode.Dynamic);
+            DuckType.GetOrCreateProxyType(typeof(ITestDuckProxy), typeof(TestDuckTarget)).ProxyType!.Assembly.IsDynamic.Should().BeTrue();
         }
         finally
         {
@@ -16396,6 +16594,40 @@ public class DuckTypeAotProcessorsTests
                 method.MethodSig.Params.Any(parameter => string.Equals(parameter.FullName, "System.RuntimeMethodHandle", StringComparison.Ordinal)))
                              .Should()
                              .BeFalse("generated registry bootstrap should call delegate-based AOT registration overloads");
+    }
+
+    private static void AssertTypedActivatorRegistrationCalls(TypeDef bootstrapType, string registrationMethodName)
+    {
+        // ldnull; ldftn ActivateProxy_N; newobj Func<object, object>; ldftn ActivateTypedProxy_N; newobj CreateProxyInstance<TProxy>;
+        // call <registration>: the typed activator is bound to the object activator.
+        var matchedCalls = 0;
+        foreach (var bootstrapMethod in bootstrapType.Methods.Where(method => method.Body is not null))
+        {
+            var instructions = bootstrapMethod.Body!.Instructions;
+            for (var i = 0; i < instructions.Count; i++)
+            {
+                if (instructions[i].OpCode != OpCodes.Call ||
+                    instructions[i].Operand is not IMethod registrationMethod ||
+                    !string.Equals(registrationMethod.Name, registrationMethodName, StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                matchedCalls++;
+                i.Should().BeGreaterThanOrEqualTo(5, $"{registrationMethodName} should be preceded by delegate construction IL");
+                instructions[i - 5].OpCode.Should().Be(OpCodes.Ldnull);
+                instructions[i - 4].OpCode.Should().Be(OpCodes.Ldftn);
+                ((IMethod)instructions[i - 4].Operand).Name.String.Should().StartWith("ActivateProxy_");
+                instructions[i - 3].OpCode.Should().Be(OpCodes.Newobj);
+                ((IMethod)instructions[i - 3].Operand).DeclaringType.FullName.Should().StartWith("System.Func`2");
+                instructions[i - 2].OpCode.Should().Be(OpCodes.Ldftn);
+                ((IMethod)instructions[i - 2].Operand).Name.String.Should().StartWith("ActivateTypedProxy_");
+                instructions[i - 1].OpCode.Should().Be(OpCodes.Newobj);
+                ((IMethod)instructions[i - 1].Operand).DeclaringType.FullName.Should().StartWith("Datadog.Trace.DuckTyping.CreateProxyInstance`1");
+            }
+        }
+
+        matchedCalls.Should().BeGreaterThan(0, $"bootstrap should call {registrationMethodName}");
     }
 
     private static void AssertDirectDelegateRegistrationCalls(

@@ -416,7 +416,7 @@ public partial class DuckTypeAotAdditionalParityTests
 
             var descriptor = File.ReadAllText(options.TrimmerDescriptorPath);
             descriptor.Should().Contain("<type fullname=\"Datadog.Trace.Tools.Runner.Tests.DuckTypeAotAdditionalParityTests/INamedProxy\" preserve=\"all\" />");
-            descriptor.Should().Contain("<type fullname=\"Datadog.Trace.Tools.Runner.Tests.DuckTypeAotAdditionalParityTests/BaseNamedTarget\" preserve=\"all\" />");
+            descriptor.Should().NotContain("BaseNamedTarget", "target types aren't rooted");
             descriptor.Should().NotContain("Box`1").And.NotContain("[[").And.NotContain("+");
         }
         finally

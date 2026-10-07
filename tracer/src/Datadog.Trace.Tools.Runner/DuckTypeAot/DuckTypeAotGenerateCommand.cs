@@ -115,10 +115,10 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             var strongNameKeyFile = _strongNameKeyFileOption.GetValue(context);
 
             var options = new DuckTypeAotGenerateOptions(
-                proxyAssemblies.Where(p => !string.IsNullOrWhiteSpace(p)).ToList(),
+                proxyAssemblies.Where(p => !StringUtil.IsNullOrWhiteSpace(p)).ToList(),
                 Array.Empty<string>(),
-                targetFolders.Where(p => !string.IsNullOrWhiteSpace(p)).ToList(),
-                targetFilters.Where(p => !string.IsNullOrWhiteSpace(p)).ToList(),
+                targetFolders.Where(p => !StringUtil.IsNullOrWhiteSpace(p)).ToList(),
+                targetFilters.Where(p => !StringUtil.IsNullOrWhiteSpace(p)).ToList(),
                 mapFile: mapFile,
                 genericInstantiationsFile: genericInstantiations,
                 outputPath: outputPath,

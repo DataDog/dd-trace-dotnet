@@ -205,7 +205,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 errors.Add("At least one --target-filter must be provided.");
             }
 
-            if (string.IsNullOrWhiteSpace(options.OutputPath))
+            if (StringUtil.IsNullOrWhiteSpace(options.OutputPath))
             {
                 errors.Add("--output cannot be empty.");
             }
@@ -232,7 +232,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             };
 
             var outputDirectory = Path.GetDirectoryName(outputPath);
-            if (!string.IsNullOrWhiteSpace(outputDirectory))
+            if (!StringUtil.IsNullOrWhiteSpace(outputDirectory))
             {
                 Directory.CreateDirectory(outputDirectory);
             }
@@ -250,7 +250,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             IReadOnlyList<DiscoverDroppedMapping> droppedMappings,
             IReadOnlyList<string> warnings)
         {
-            if (string.IsNullOrWhiteSpace(warningsReportPath))
+            if (StringUtil.IsNullOrWhiteSpace(warningsReportPath))
             {
                 return;
             }
@@ -264,7 +264,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             };
 
             var directory = Path.GetDirectoryName(warningsReportPath);
-            if (!string.IsNullOrWhiteSpace(directory))
+            if (!StringUtil.IsNullOrWhiteSpace(directory))
             {
                 Directory.CreateDirectory(directory);
             }

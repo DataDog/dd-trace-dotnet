@@ -143,6 +143,16 @@ public class DuckTypeAotNativeAotPublishIntegrationTests
                     },
                     new
                     {
+                        // A type of CoreCLR's core library NativeAOT's doesn't define: its registration fails alone at runtime (the
+                        // trimmer descriptor doesn't root it, which would fail the NativeAOT compilation).
+                        mode = "forward",
+                        proxyType = "SampleDuckContracts.ITypeNameProxy",
+                        proxyAssembly = "SampleDuckContracts",
+                        targetType = "System.Reflection.RuntimeMethodInfo",
+                        targetAssembly = "System.Private.CoreLib"
+                    },
+                    new
+                    {
                         mode = "reverse",
                         proxyType = "SampleDuckContracts.IReverseValueProxy",
                         proxyAssembly = "SampleDuckContracts",
@@ -404,6 +414,8 @@ public class DuckTypeAotNativeAotPublishIntegrationTests
             runResult.StandardOutput.Should().Contain("MISS_REPLAY:TargetInvocationException:DuckTypeAotMissingProxyRegistrationException");
             runResult.StandardOutput.Should().Contain("ARRAY_FALLBACK:3:Int64[]");
             runResult.StandardOutput.Should().Contain("CORELIB_INTERNAL_FALLBACK:String:True");
+            runResult.StandardOutput.Should().Contain("CORECLR_ONLY_TARGET:");
+            runResult.StandardOutput.Should().Contain("ACTIVATOR_CAST:Unable to cast object of type 'System.String' to type 'SampleDuckContracts.ValueTarget'.");
             runResult.StandardOutput.Should().Contain("DYNAMIC_CODE:False");
             runResult.StandardOutput.Should().Contain("DYNAMIC_ASSEMBLIES:0");
         }
@@ -937,6 +949,22 @@ public class DuckTypeAotNativeAotPublishIntegrationTests
             "Console.WriteLine($\"ARRAY_FALLBACK:{arrayProxy.Length}:{((IDuckType)arrayProxy).Type.Name}\");" + Environment.NewLine +
             "var typeNameProxy = DuckType.Create<ITypeNameProxy>(typeof(string))!;" + Environment.NewLine +
             "Console.WriteLine($\"CORELIB_INTERNAL_FALLBACK:{typeNameProxy.Name}:{((IDuckType)typeNameProxy).Type == typeof(string).GetType()}\");" + Environment.NewLine +
+            "try" + Environment.NewLine +
+            "{" + Environment.NewLine +
+            "    DuckType.GetOrCreateProxyType(typeof(IValueProxy), typeof(ValueTarget)).CreateInstance<IValueProxy>(\"not a target\");" + Environment.NewLine +
+            "}" + Environment.NewLine +
+            "catch (InvalidCastException ex)" + Environment.NewLine +
+            "{" + Environment.NewLine +
+            "    Console.WriteLine($\"ACTIVATOR_CAST:{ex.Message}\");" + Environment.NewLine +
+            "}" + Environment.NewLine +
+            "try" + Environment.NewLine +
+            "{" + Environment.NewLine +
+            "    Console.WriteLine($\"CORECLR_ONLY_TARGET:{DuckType.Create<ITypeNameProxy>(typeof(object).GetMethod(\"ToString\")!)!.Name}\");" + Environment.NewLine +
+            "}" + Environment.NewLine +
+            "catch (Exception ex)" + Environment.NewLine +
+            "{" + Environment.NewLine +
+            "    Console.WriteLine($\"CORECLR_ONLY_TARGET:{ex.GetType().Name}\");" + Environment.NewLine +
+            "}" + Environment.NewLine +
             "Console.WriteLine($\"DYNAMIC_CODE:{RuntimeFeature.IsDynamicCodeSupported}\");" + Environment.NewLine +
             "Console.WriteLine($\"DYNAMIC_ASSEMBLIES:{dynamicAssemblyLoads}\");" + Environment.NewLine;
     }

@@ -809,8 +809,9 @@ supportedConfigurations:
     default: null
     const_name: DuckTypeAotDiscoveryOutputPath
     documentation: |-
-      Testing-only path of the ducktype-aot map file to which dynamic duck typing records the proxy mappings it creates,
-      used to discover the mappings an application needs in NativeAOT. Not set by default: nothing is recorded.
+      Path of the ducktype-aot map file to which dynamic duck typing records the proxy mappings it creates, to discover the
+      mappings an application needs in NativeAOT (a migration and testing workflow, not for production). Not set by default:
+      nothing is recorded.
   DD_DUMP_ILREWRITE_ENABLED:
   - implementation: A
     scope: native

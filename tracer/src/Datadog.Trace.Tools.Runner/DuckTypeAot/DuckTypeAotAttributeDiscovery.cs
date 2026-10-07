@@ -92,7 +92,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                                 continue;
                             }
 
-                            if (string.IsNullOrWhiteSpace(type.ReflectionFullName))
+                            if (StringUtil.IsNullOrWhiteSpace(type.ReflectionFullName))
                             {
                                 warnings.Add($"Skipping type-level mapping attribute '{attributeFullName}' in '{proxyAssemblyPath}' because the proxy type full name is empty.");
                                 continue;
@@ -119,7 +119,6 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 }
                 catch (Exception ex)
                 {
-                    // Branch: handles exceptions that match Exception ex.
                     errors.Add($"Unable to read proxy assembly '{proxyAssemblyPath}': {ex.Message}");
                 }
             }
@@ -173,8 +172,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             var (targetType, typeAssemblyFromQualifiedName) = DuckTypeAotNameHelpers.ParseTypeAndAssembly(namedTargetType ?? constructorTargetType ?? string.Empty);
             var targetAssembly = DuckTypeAotNameHelpers.NormalizeAssemblyName(namedTargetAssembly ?? constructorTargetAssembly ?? typeAssemblyFromQualifiedName ?? string.Empty);
 
-            // Branch: take this path when (string.IsNullOrWhiteSpace(targetType) || string.IsNullOrWhiteSpace(targetAssembly)) evaluates to true.
-            if (string.IsNullOrWhiteSpace(targetType) || string.IsNullOrWhiteSpace(targetAssembly))
+            if (StringUtil.IsNullOrWhiteSpace(targetType) || StringUtil.IsNullOrWhiteSpace(targetAssembly))
             {
                 return false;
             }
@@ -192,7 +190,6 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// <returns>The result produced by this operation.</returns>
         private static string? TryReadStringValue(CustomAttribute attribute, int constructorArgumentIndex)
         {
-            // Branch: take this path when (attribute.ConstructorArguments.Count <= constructorArgumentIndex) evaluates to true.
             if (attribute.ConstructorArguments.Count <= constructorArgumentIndex)
             {
                 return null;
@@ -211,7 +208,6 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         {
             foreach (var namedArgument in attribute.NamedArguments)
             {
-                // Branch: take this path when (!string.Equals(namedArgument.Name, propertyName, StringComparison.Ordinal)) evaluates to true.
                 if (!string.Equals(namedArgument.Name, propertyName, StringComparison.Ordinal))
                 {
                     continue;

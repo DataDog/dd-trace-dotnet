@@ -7,6 +7,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
 #pragma warning disable SA1402 // File may only contain a single type
@@ -181,8 +182,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         private static string? NormalizeScenarioId(string? scenarioId)
         {
             var trimmedScenarioId = scenarioId?.Trim();
-            // Branch: take this path when (string.IsNullOrWhiteSpace(trimmedScenarioId)) evaluates to true.
-            if (string.IsNullOrWhiteSpace(trimmedScenarioId))
+            if (StringUtil.IsNullOrWhiteSpace(trimmedScenarioId))
             {
                 return null;
             }
@@ -242,8 +242,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// <returns>The resulting string value.</returns>
         internal static string NormalizeAssemblyName(string assemblyName)
         {
-            // Branch: take this path when (string.IsNullOrWhiteSpace(assemblyName)) evaluates to true.
-            if (string.IsNullOrWhiteSpace(assemblyName))
+            if (StringUtil.IsNullOrWhiteSpace(assemblyName))
             {
                 return string.Empty;
             }
@@ -260,7 +259,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// <returns>The canonical type name, or the trimmed name if it can't be parsed.</returns>
         internal static string CanonicalizeTypeName(string typeName)
         {
-            if (string.IsNullOrWhiteSpace(typeName))
+            if (StringUtil.IsNullOrWhiteSpace(typeName))
             {
                 return typeName ?? string.Empty;
             }
@@ -301,13 +300,29 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// <returns>The descriptor type name, or null when the type isn't rooted by name.</returns>
         internal static string? GetTrimmerDescriptorTypeName(string typeName)
         {
+            // Descriptor names aren't escaped like reflection names: an escaped character is itself (e.g. '\,' a comma, '\+' a
+            // plus sign), and an unescaped '+' separates nested types ('/').
             var trimmedTypeName = typeName.Trim();
-            if (trimmedTypeName.IndexOf('[') >= 0 || trimmedTypeName.EndsWith("*", StringComparison.Ordinal) || trimmedTypeName.EndsWith("&", StringComparison.Ordinal))
+            var descriptorTypeName = new StringBuilder(trimmedTypeName.Length);
+            for (var index = 0; index < trimmedTypeName.Length; index++)
             {
-                return null;
+                var character = trimmedTypeName[index];
+                if (character == '\\' && index + 1 < trimmedTypeName.Length)
+                {
+                    descriptorTypeName.Append(trimmedTypeName[++index]);
+                }
+                else if (character is '[' or '*' or '&')
+                {
+                    // A closed generic, array, pointer or by-ref type.
+                    return null;
+                }
+                else
+                {
+                    descriptorTypeName.Append(character == '+' ? '/' : character);
+                }
             }
 
-            return trimmedTypeName.Replace('+', '/');
+            return descriptorTypeName.ToString();
         }
 
         /// <summary>
@@ -317,14 +332,12 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// <returns>The parsed type name and optional assembly name.</returns>
         internal static (string TypeName, string? AssemblyName) ParseTypeAndAssembly(string value)
         {
-            // Branch: take this path when (string.IsNullOrWhiteSpace(value)) evaluates to true.
-            if (string.IsNullOrWhiteSpace(value))
+            if (StringUtil.IsNullOrWhiteSpace(value))
             {
                 return (string.Empty, null);
             }
 
             var commaIndex = FindTopLevelComma(value);
-            // Branch: take this path when (commaIndex < 0) evaluates to true.
             if (commaIndex < 0)
             {
                 return (value.Trim(), null);
@@ -340,7 +353,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// <returns>true if the operation succeeds; otherwise, false.</returns>
         internal static bool IsGenericTypeName(string typeName)
         {
-            return !string.IsNullOrWhiteSpace(typeName) && typeName.IndexOf('`') >= 0;
+            return !StringUtil.IsNullOrWhiteSpace(typeName) && typeName.IndexOf('`') >= 0;
         }
 
         /// <summary>
@@ -350,40 +363,33 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// <returns>true if the operation succeeds; otherwise, false.</returns>
         internal static bool IsOpenGenericTypeName(string typeName)
         {
-            // Branch: take this path when (string.IsNullOrWhiteSpace(typeName)) evaluates to true.
-            if (string.IsNullOrWhiteSpace(typeName))
+            if (StringUtil.IsNullOrWhiteSpace(typeName) || typeName.IndexOf('`') < 0)
             {
                 return false;
             }
 
-            // Branch: take this path when (typeName.IndexOf('!') >= 0) evaluates to true.
-            if (typeName.IndexOf('!') >= 0)
-            {
-                return true;
-            }
-
-            // Branch: take this path when (typeName.IndexOf('`') < 0) evaluates to true.
-            if (typeName.IndexOf('`') < 0)
-            {
-                return false;
-            }
-
+            // A backtick that isn't a generic arity (e.g. "A`B", "A`1x"), or a '!' in a name (e.g. "A!B"), doesn't make a type
+            // generic: only the arity of a name (or of a nested name) does.
             var genericArgumentsStart = FindGenericArgumentsStart(typeName);
-            // Branch: take this path when (genericArgumentsStart < 0) evaluates to true.
-            if (genericArgumentsStart < 0)
-            {
-                return true;
-            }
-
-            var declaredArity = CountDeclaredGenericArity(typeName, genericArgumentsStart);
-            // Branch: take this path when (declaredArity <= 0) evaluates to true.
+            var declaredArity = CountDeclaredGenericArity(typeName, genericArgumentsStart < 0 ? typeName.Length : genericArgumentsStart);
             if (declaredArity <= 0)
             {
                 return false;
             }
 
-            var providedArguments = CountTopLevelGenericArguments(typeName, genericArgumentsStart);
-            return providedArguments < declaredArity;
+            if (genericArgumentsStart < 0)
+            {
+                return true;
+            }
+
+            // A generic parameter as an argument (e.g. "Container`1[!0]") leaves the type open.
+            if (TrySplitGenericArguments(typeName, genericArgumentsStart, out var genericArgumentTypeNames) &&
+                genericArgumentTypeNames.Any(argument => argument.TrimStart().StartsWith("!", StringComparison.Ordinal)))
+            {
+                return true;
+            }
+
+            return CountTopLevelGenericArguments(typeName, genericArgumentsStart) < declaredArity;
         }
 
         /// <summary>
@@ -393,7 +399,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// <returns>true if the type name ends with an array rank specifier; otherwise, false.</returns>
         internal static bool IsArrayTypeName(string typeName)
         {
-            if (string.IsNullOrWhiteSpace(typeName))
+            if (StringUtil.IsNullOrWhiteSpace(typeName))
             {
                 return false;
             }
@@ -433,7 +439,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// <returns>The declared generic arity.</returns>
         internal static int GetDeclaredGenericArity(string typeName)
         {
-            if (string.IsNullOrWhiteSpace(typeName))
+            if (StringUtil.IsNullOrWhiteSpace(typeName))
             {
                 return 0;
             }
@@ -738,19 +744,16 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                     continue;
                 }
 
-                // Branch: take this path when (c == '[') evaluates to true.
                 if (c == '[')
                 {
                     bracketDepth++;
                 }
                 else if (c == ']')
                 {
-                    // Branch: take this path when (c == ']') evaluates to true.
                     bracketDepth = Math.Max(0, bracketDepth - 1);
                 }
                 else if (c == ',' && bracketDepth == 0)
                 {
-                    // Branch: take this path when (c == ',' && bracketDepth == 0) evaluates to true.
                     return i;
                 }
             }
@@ -769,14 +772,12 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             var arity = 0;
             for (var i = 0; i < genericArgumentsStart; i++)
             {
-                // Branch: take this path when (typeName[i] != '`') evaluates to true.
                 if (typeName[i] != '`')
                 {
                     continue;
                 }
 
                 var digitsStart = i + 1;
-                // Branch: take this path when (digitsStart >= genericArgumentsStart || !char.IsDigit(typeName[digitsStart])) evaluates to true.
                 if (digitsStart >= genericArgumentsStart || !char.IsDigit(typeName[digitsStart]))
                 {
                     continue;
@@ -788,7 +789,13 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                     digitsEnd++;
                 }
 
-                // Branch: take this path when (int.TryParse(typeName.Substring(digitsStart, digitsEnd - digitsStart), out var parsedArity)) evaluates to true.
+                // The arity ends the name (or a nested name): other digits are part of it (e.g. "A`1x").
+                if (digitsEnd < genericArgumentsStart && typeName[digitsEnd] != '+')
+                {
+                    i = digitsEnd - 1;
+                    continue;
+                }
+
                 if (int.TryParse(typeName.Substring(digitsStart, digitsEnd - digitsStart), out var parsedArity))
                 {
                     arity += parsedArity;

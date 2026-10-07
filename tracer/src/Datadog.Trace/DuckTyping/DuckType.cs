@@ -198,7 +198,7 @@ namespace Datadog.Trace.DuckTyping
             }
         }
 
-        private static void StoreFastPath(ref FastPathEntry? fastPathSlot, ref bool resetRegistered, Action fastPathReset, CreateTypeResult result, int version)
+        private static void StoreFastPath(ref FastPathEntry? fastPathSlot, ref bool resetRegistered, Action fastPathReset, in CreateTypeResult result, int version)
         {
             lock (FastPathResets)
             {
@@ -946,7 +946,8 @@ namespace Datadog.Trace.DuckTyping
                     return DuckTypePropertyOrFieldNotFoundException.Create(implementationProperty.Name, duckAttribute.Name, typeToDeriveFrom);
                 }
 
-                propertyBuilder = proxyTypeBuilder?.DefineProperty(implementationProperty.Name, PropertyAttributes.None, implementationProperty.PropertyType, null);
+                // Named after the delegation's property, with the type of the property it implements (its accessors' type).
+                propertyBuilder = proxyTypeBuilder?.DefineProperty(implementationProperty.Name, PropertyAttributes.None, overriddenProperty.PropertyType, null);
 
                 if (implementationProperty.CanRead)
                 {
@@ -1551,8 +1552,9 @@ namespace Datadog.Trace.DuckTyping
                 // DynamicInvoke, which NativeAOT may not support. Dynamic methods can't be rebound: they keep their typed delegate.
                 // A failure is also kept in the activator slot, as an Action that throws it: CreateInstance<T> then reads a single
                 // field, which lets the JIT read it from the fast path entry instead of copying this struct.
+                // The typed activator of a registry, bound to its object activator, is kept: it serves both (see CreateInstance).
                 _activator = failure is not null ? CreateFailureThrower(failure)
-                           : activator is null or Func<object?, object?> ? activator : TryCreateObjectActivator(activator) ?? activator;
+                           : activator is null or Func<object?, object?> || activator.Target is Func<object?, object?> ? activator : TryCreateObjectActivator(activator) ?? activator;
 
                 // An object activator knows the proxy definition type, which CreateInstance<T> requires as T, like the typed
                 // activator of dynamic duck typing (see CreateInstanceSlow).
@@ -1583,7 +1585,7 @@ namespace Datadog.Trace.DuckTyping
             /// <summary>
             /// Gets a value indicating whether object-based creation has to fall back to DynamicInvoke.
             /// </summary>
-            internal bool UsesDynamicInvokeFallback => _failure is null && _activator is not null and not Func<object?, object?>;
+            internal bool UsesDynamicInvokeFallback => _failure is null && _activator is not null and not Func<object?, object?> && _activator.Target is not Func<object?, object?>;
 
             /// <summary>
             /// Gets the exception creating a proxy throws, or null when the proxy type can be created.
@@ -1622,7 +1624,7 @@ namespace Datadog.Trace.DuckTyping
             /// <param name="activator">The activator for the target type, or null to keep this one.</param>
             /// <returns>The result for the target type.</returns>
             internal CreateTypeResult WithTargetType(Type targetType, Delegate? activator)
-                => new(_proxyType, targetType, _failure is null ? activator ?? _activator : null, _failure, (_activator as Func<object?, object?>)?.Target is ObjectActivator objectActivator ? objectActivator.ProxyTypeDefinition : null);
+                => new(_proxyType, targetType, _failure is null ? activator ?? _activator : null, _failure, GetProxyTypeDefinition(_activator));
 
             /// <summary>
             /// Create a new proxy instance from a target instance
@@ -1675,7 +1677,9 @@ namespace Datadog.Trace.DuckTyping
                 return _failure is null;
             }
 
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            // Not inlined: its callers (Create(Type, object), DuckAs, TryDuckCast...) don't grow with the AOT cases, and the call
+            // is negligible next to DynamicInvoke.
+            [MethodImpl(MethodImplOptions.NoInlining)]
             internal object CreateInstance(object instance)
             {
                 // Dynamic duck typing creates object-based proxies through DynamicInvoke, so failures and activator exceptions
@@ -1690,6 +1694,12 @@ namespace Datadog.Trace.DuckTyping
                     return InvokeObjectActivator(objectActivator, instance);
                 }
 
+                // The typed activator of a registry is bound to its object activator.
+                if (_activator?.Target is Func<object?, object?> boundObjectActivator)
+                {
+                    return InvokeObjectActivator(boundObjectActivator, instance);
+                }
+
                 if (_activator is null)
                 {
                     ThrowHelper.ThrowNullReferenceException("The activator for this proxy type is null, check if the type can be created by calling 'CanCreate()'");
@@ -1697,6 +1707,20 @@ namespace Datadog.Trace.DuckTyping
 
                 return _activator.DynamicInvoke(instance)!;
             }
+
+            /// <summary>
+            /// Gets the proxy definition type an AOT activator creates proxies of: the one of its object activator, or of its typed
+            /// activator (CreateProxyInstance&lt;TProxyDefinition&gt;).
+            /// </summary>
+            /// <param name="activator">The activator.</param>
+            /// <returns>The proxy definition type, or null for another activator.</returns>
+            private static Type? GetProxyTypeDefinition(Delegate? activator)
+                => activator switch
+                {
+                    Func<object?, object?> { Target: ObjectActivator objectActivator } => objectActivator.ProxyTypeDefinition,
+                    { Target: Func<object?, object?> } typedActivator when typedActivator.GetType().IsGenericType => typedActivator.GetType().GetGenericArguments()[0],
+                    _ => null,
+                };
 
             private static Func<object?, object?>? TryCreateObjectActivator(Delegate activator)
             {
@@ -1800,6 +1824,12 @@ namespace Datadog.Trace.DuckTyping
                     ThrowHelper.ThrowNullReferenceException("The activator for this proxy type is null, check if the type can be created by calling 'CanCreate()'");
                 }
 
+                // The cast of the typed activator to CreateProxyInstance<T> (the message of CoreCLR's, which names both types).
+                if (activator is not CreateProxyInstance<T>)
+                {
+                    DuckTypeAotEngine.ThrowActivatorInvalidCast(activator, typeof(CreateProxyInstance<T>));
+                }
+
                 return ((CreateProxyInstance<T>)activator)(instance);
             }
 
@@ -1888,7 +1918,8 @@ namespace Datadog.Trace.DuckTyping
                 var result = GetOrCreateProxyType(Type, targetType);
                 if (Volatile.Read(ref _forwardFastPath) is null)
                 {
-                    StoreForwardFastPath(result, version);
+                    // By reference: the struct isn't copied at every call site the method is inlined in.
+                    StoreForwardFastPath(in result, version);
                 }
 
                 return result;
@@ -1988,7 +2019,7 @@ namespace Datadog.Trace.DuckTyping
                 var result = GetOrCreateReverseProxyType(Type, targetType);
                 if (Volatile.Read(ref _reverseFastPath) is null)
                 {
-                    StoreReverseFastPath(result, version);
+                    StoreReverseFastPath(in result, version);
                 }
 
                 return result;
@@ -1996,12 +2027,12 @@ namespace Datadog.Trace.DuckTyping
 
             // Keep the first target type as the fast path: a proxy definition is likely used with a single target type.
             [MethodImpl(MethodImplOptions.NoInlining)]
-            private static void StoreForwardFastPath(CreateTypeResult result, int version)
-                => StoreFastPath(ref _forwardFastPath, ref _fastPathResetRegistered, ResetFastPaths, result, version);
+            private static void StoreForwardFastPath(in CreateTypeResult result, int version)
+                => StoreFastPath(ref _forwardFastPath, ref _fastPathResetRegistered, ResetFastPaths, in result, version);
 
             [MethodImpl(MethodImplOptions.NoInlining)]
-            private static void StoreReverseFastPath(CreateTypeResult result, int version)
-                => StoreFastPath(ref _reverseFastPath, ref _fastPathResetRegistered, ResetFastPaths, result, version);
+            private static void StoreReverseFastPath(in CreateTypeResult result, int version)
+                => StoreFastPath(ref _reverseFastPath, ref _fastPathResetRegistered, ResetFastPaths, in result, version);
 
             private static void ResetFastPaths()
             {

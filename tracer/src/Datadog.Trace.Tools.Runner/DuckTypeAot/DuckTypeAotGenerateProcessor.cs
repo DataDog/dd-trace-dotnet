@@ -36,7 +36,6 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             var profilingEnabled = IsProfilingEnabled();
             var totalStopwatch = profilingEnabled ? Stopwatch.StartNew() : null;
             var validationErrors = Validate(options);
-            // Branch: take this path when (validationErrors.Count > 0) evaluates to true.
             if (validationErrors.Count > 0)
             {
                 foreach (var error in validationErrors)
@@ -124,7 +123,6 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 AnsiConsole.MarkupLine($"[yellow]Warning:[/] {warning.EscapeMarkup()}");
             }
 
-            // Branch: take this path when (mappingResolutionResult.Errors.Count > 0) evaluates to true.
             if (mappingResolutionResult.Errors.Count > 0)
             {
                 foreach (var error in mappingResolutionResult.Errors)
@@ -135,7 +133,6 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 return 1;
             }
 
-            // Branch: take this path when (mappingResolutionResult.Mappings.Count == 0) evaluates to true.
             if (mappingResolutionResult.Mappings.Count == 0)
             {
                 Utils.WriteError("No mappings were resolved from --map-file.");
@@ -143,14 +140,12 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             }
 
             var signingKeyFilePath = ResolveStrongNameKeyFilePath(options);
-            // Branch: take this path when (string.IsNullOrWhiteSpace(signingKeyFilePath)) evaluates to true.
-            if (string.IsNullOrWhiteSpace(signingKeyFilePath))
+            if (StringUtil.IsNullOrWhiteSpace(signingKeyFilePath))
             {
                 AnsiConsole.MarkupLine("[yellow]Warning:[/] No strong-name key configured. The generated registry assembly will be unsigned.");
             }
             else
             {
-                // Branch: fallback path when earlier branch conditions evaluate to false.
                 AnsiConsole.MarkupLine($"[green]Strong-name signing key:[/] {signingKeyFilePath.EscapeMarkup()}");
                 options = new DuckTypeAotGenerateOptions(
                     options.ProxyAssemblies,
@@ -210,7 +205,6 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                     AnsiConsole.MarkupLine($"[green]Compatibility status:[/] {compatibilityArtifacts.ReplayedDynamicFailureMappings}/{compatibilityArtifacts.TotalMappings} mappings fail in dynamic duck typing too, and the registry replays that failure.");
                 }
 
-                // Branch: take this path when (compatibilityArtifacts.NonCompatibleMappings > 0) evaluates to true.
                 if (compatibilityArtifacts.NonCompatibleMappings > 0)
                 {
                     AnsiConsole.MarkupLine($"[yellow]Compatibility status:[/] {compatibilityArtifacts.NonCompatibleMappings}/{compatibilityArtifacts.TotalMappings} mappings are not yet compatible.");
@@ -226,7 +220,6 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             }
             catch (Exception ex)
             {
-                // Branch: handles exceptions that match Exception ex.
                 Utils.WriteError($"ducktype-aot generate failed: {ex.Message}");
                 return 1;
             }
@@ -251,7 +244,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             using var mapLock = DuckTypeAotDiscoveryRecorder.AcquireOutputLock(mapFilePath, TimeSpan.FromSeconds(30));
             if (mapLock is null)
             {
-                error = $"'{mapFilePath}' could not be locked ('{mapFilePath}.lock').";
+                error = $"'{mapFilePath}' could not be locked ('{DuckTypeAotDiscoveryRecorder.GetOutputLockPath(mapFilePath)}').";
                 return false;
             }
 
@@ -299,7 +292,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             var expectedKeys = new HashSet<string>(StringComparer.Ordinal);
             JObject? document = null;
             JProperty? mappingsProperty = null;
-            if (!string.IsNullOrWhiteSpace(text))
+            if (!StringUtil.IsNullOrWhiteSpace(text))
             {
                 // The map has to be one the map parser reads (a map without mappings yet gets a 'mappings' array).
                 var existingMap = DuckTypeAotMapFileParser.ParseText(text, mapFilePath, requireMappings: false);
@@ -361,8 +354,8 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             }
             else if (!MapFileInsertionPoint.TryFind(text, out var insertionPoint) || !IsMerged(newText = insertionPoint.Insert(text, addedEntries, newLine)))
             {
-                // JSON the text edit doesn't handle (e.g. unquoted names): the map is written back from its document, which
-                // loses its comments.
+                // JSON the text edit doesn't handle (e.g. a constructor, like new Date(...), which Json.NET reads): the map is
+                // written back from its document, which loses its comments, and only when that keeps its numbers as written.
                 if (mappingsProperty is null)
                 {
                     mappingsProperty = new JProperty("mappings", new JArray());
@@ -375,12 +368,27 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 }
 
                 newText = document.ToString(Formatting.Indented);
-                if (!IsMerged(newText))
+                if (!IsMerged(newText) || !ReadNumberLiterals(text).SequenceEqual(ReadNumberLiterals(newText), StringComparer.Ordinal))
                 {
                     error = $"The discovered mappings couldn't be added to '{mapFilePath}': add them to its 'mappings' array.";
                     return false;
                 }
             }
+
+#if NET7_0_OR_GREATER
+            // The map is replaced by a new file: it keeps the permissions of the one it replaces (e.g. merged by root in a container).
+            UnixFileMode? fileMode = null;
+            if (!OperatingSystem.IsWindows() && File.Exists(mapFilePath))
+            {
+                try
+                {
+                    fileMode = File.GetUnixFileMode(DuckTypeAotDiscoveryRecorder.ResolveMapPath(mapFilePath));
+                }
+                catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+                {
+                }
+            }
+#endif
 
             try
             {
@@ -391,6 +399,19 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 error = $"'{mapFilePath}' can't be written: {ex.Message}";
                 return false;
             }
+
+#if NET7_0_OR_GREATER
+            if (fileMode is { } mode && !OperatingSystem.IsWindows())
+            {
+                try
+                {
+                    File.SetUnixFileMode(DuckTypeAotDiscoveryRecorder.ResolveMapPath(mapFilePath), mode);
+                }
+                catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+                {
+                }
+            }
+#endif
 
             return true;
 
@@ -421,6 +442,66 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                     new JsonLoadSettings { CommentHandling = CommentHandling.Ignore, DuplicatePropertyNameHandling = DuplicatePropertyNameHandling.Replace });
         }
 
+        /// <summary>
+        /// Reads the number literals of a JSON text, as Json.NET reads it (with comments, strings quoted with double or single
+        /// quotes, unquoted names, NaN and Infinity), in order.
+        /// </summary>
+        /// <param name="text">The JSON text.</param>
+        /// <returns>The number literals, as written.</returns>
+        internal static List<string> ReadNumberLiterals(string text)
+        {
+            var literals = new List<string>();
+            var position = 0;
+            while (position < text.Length)
+            {
+                var character = text[position];
+                if (character is '"' or '\'')
+                {
+                    position++;
+                    while (position < text.Length && text[position] != character)
+                    {
+                        position += text[position] == '\\' ? 2 : 1;
+                    }
+
+                    position++;
+                }
+                else if (character == '/' && position + 1 < text.Length && text[position + 1] == '/')
+                {
+                    while (position < text.Length && text[position] != '\n')
+                    {
+                        position++;
+                    }
+                }
+                else if (character == '/' && position + 1 < text.Length && text[position + 1] == '*')
+                {
+                    var end = text.IndexOf("*/", position + 2, StringComparison.Ordinal);
+                    position = end < 0 ? text.Length : end + 2;
+                }
+                else if (IsWordCharacter(character))
+                {
+                    var start = position;
+                    while (position < text.Length && IsWordCharacter(text[position]))
+                    {
+                        position++;
+                    }
+
+                    var word = text.Substring(start, position - start);
+                    if (char.IsDigit(word[0]) || word[0] is '-' or '+' or '.' || word is "NaN" or "Infinity")
+                    {
+                        literals.Add(word);
+                    }
+                }
+                else
+                {
+                    position++;
+                }
+            }
+
+            return literals;
+
+            static bool IsWordCharacter(char character) => char.IsLetterOrDigit(character) || character is '-' or '+' or '.' or '_' or '$';
+        }
+
         internal static bool IsProfilingEnabled()
         {
             var value = Environment.GetEnvironmentVariable(ProfilingEnvironmentVariable);
@@ -442,7 +523,6 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         {
             var errors = new List<string>();
 
-            // Branch: take this path when (options.ProxyAssemblies.Count == 0) evaluates to true.
             if (options.ProxyAssemblies.Count == 0)
             {
                 errors.Add("At least one --proxy-assembly must be provided.");
@@ -455,7 +535,6 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 errors.Add("At least one target resolution source must be provided (target folder).");
             }
 
-            // Branch: take this path when (options.TargetFilters.Count == 0) evaluates to true.
             if (options.TargetFilters.Count == 0)
             {
                 errors.Add("At least one --target-filter must be provided.");
@@ -464,7 +543,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             ValidateFileInputs(options.ProxyAssemblies, "--proxy-assembly", errors);
             ValidateFileInputs(options.TargetAssemblies, "target assembly", errors);
             ValidateDirectoryInputs(options.TargetFolders, "--target-folder", errors);
-            if (string.IsNullOrWhiteSpace(options.MapFile))
+            if (StringUtil.IsNullOrWhiteSpace(options.MapFile))
             {
                 errors.Add("--map-file is required.");
             }
@@ -476,16 +555,14 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             ValidateOptionalFile(options.GenericInstantiationsFile, "--generic-instantiations", errors);
             ValidateOptionalFile(options.StrongNameKeyFile, "--strong-name-key-file", errors);
 
-            // Branch: take this path when (string.IsNullOrWhiteSpace(options.OutputPath)) evaluates to true.
-            if (string.IsNullOrWhiteSpace(options.OutputPath))
+            if (StringUtil.IsNullOrWhiteSpace(options.OutputPath))
             {
                 errors.Add("--output cannot be empty.");
             }
 
             var environmentStrongNameKeyFile = Environment.GetEnvironmentVariable("DD_TRACE_DUCKTYPE_AOT_STRONG_NAME_KEY_FILE");
-            // Branch: take this path when (string.IsNullOrWhiteSpace(options.StrongNameKeyFile) && evaluates to true.
-            if (string.IsNullOrWhiteSpace(options.StrongNameKeyFile) &&
-                !string.IsNullOrWhiteSpace(environmentStrongNameKeyFile) &&
+            if (StringUtil.IsNullOrWhiteSpace(options.StrongNameKeyFile) &&
+                !StringUtil.IsNullOrWhiteSpace(environmentStrongNameKeyFile) &&
                 !File.Exists(environmentStrongNameKeyFile))
             {
                 errors.Add($"Strong-name key file from DD_TRACE_DUCKTYPE_AOT_STRONG_NAME_KEY_FILE was not found: {environmentStrongNameKeyFile}");
@@ -499,18 +576,15 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// </summary>
         /// <param name="options">The options value.</param>
         /// <returns>The result produced by this operation.</returns>
-        /// <remarks>Emits or composes IL for generated duck-typing proxy operations.</remarks>
         private static string? ResolveStrongNameKeyFilePath(DuckTypeAotGenerateOptions options)
         {
-            // Branch: take this path when (!string.IsNullOrWhiteSpace(options.StrongNameKeyFile)) evaluates to true.
-            if (!string.IsNullOrWhiteSpace(options.StrongNameKeyFile))
+            if (!StringUtil.IsNullOrWhiteSpace(options.StrongNameKeyFile))
             {
                 return Path.GetFullPath(options.StrongNameKeyFile!);
             }
 
             var environmentPath = Environment.GetEnvironmentVariable("DD_TRACE_DUCKTYPE_AOT_STRONG_NAME_KEY_FILE");
-            // Branch: take this path when (string.IsNullOrWhiteSpace(environmentPath)) evaluates to true.
-            if (string.IsNullOrWhiteSpace(environmentPath))
+            if (StringUtil.IsNullOrWhiteSpace(environmentPath))
             {
                 return null;
             }
@@ -524,12 +598,10 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// <param name="paths">The paths value.</param>
         /// <param name="optionName">The option name value.</param>
         /// <param name="errors">The errors value.</param>
-        /// <remarks>Emits or composes IL for generated duck-typing proxy operations.</remarks>
         private static void ValidateFileInputs(IReadOnlyList<string> paths, string optionName, List<string> errors)
         {
             foreach (var path in paths)
             {
-                // Branch: take this path when (!File.Exists(path)) evaluates to true.
                 if (!File.Exists(path))
                 {
                     errors.Add($"{optionName} file was not found: {path}");
@@ -547,7 +619,6 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         {
             foreach (var path in paths)
             {
-                // Branch: take this path when (!Directory.Exists(path)) evaluates to true.
                 if (!Directory.Exists(path))
                 {
                     errors.Add($"{optionName} directory was not found: {path}");
@@ -561,11 +632,9 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// <param name="path">The path value.</param>
         /// <param name="optionName">The option name value.</param>
         /// <param name="errors">The errors value.</param>
-        /// <remarks>Emits or composes IL for generated duck-typing proxy operations.</remarks>
         private static void ValidateOptionalFile(string? path, string optionName, List<string> errors)
         {
-            // Branch: take this path when (!string.IsNullOrWhiteSpace(path) && !File.Exists(path)) evaluates to true.
-            if (!string.IsNullOrWhiteSpace(path) && !File.Exists(path))
+            if (!StringUtil.IsNullOrWhiteSpace(path) && !File.Exists(path))
             {
                 errors.Add($"{optionName} file was not found: {path}");
             }
@@ -578,8 +647,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         private static void EnsureParentDirectoryExists(string path)
         {
             var parent = Path.GetDirectoryName(path);
-            // Branch: take this path when (!string.IsNullOrWhiteSpace(parent)) evaluates to true.
-            if (!string.IsNullOrWhiteSpace(parent))
+            if (!StringUtil.IsNullOrWhiteSpace(parent))
             {
                 Directory.CreateDirectory(parent);
             }

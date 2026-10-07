@@ -11,6 +11,9 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
+#if NETCOREAPP3_0_OR_GREATER
+using System.Runtime.CompilerServices;
+#endif
 using System.Runtime.ExceptionServices;
 using System.Threading;
 using Datadog.Trace.Util;
@@ -72,9 +75,9 @@ namespace Datadog.Trace.DuckTyping
         private static readonly ConcurrentDictionary<TypesTuple, DuckType.CreateTypeResult> ReverseMissCache = new();
 
         /// <summary>
-        /// The forward registrations that also serve runtime types a registry can't name, by proxy definition type (see
-        /// <see cref="TryGetFallbackResult"/>): those of array types, and those whose proxy receives the target type, for the
-        /// types of the runtime's own core library that aren't public. Failures of their target types serve them too.
+        /// The forward registrations that also serve runtime types a registry doesn't register, by proxy definition type (see
+        /// <see cref="TryGetFallbackResult"/>): those of array types, and those of core library types (the proxies that receive
+        /// the target type, and the failures of classes), for the types of the runtime's own core library a registry can't name.
         /// </summary>
         private static readonly ConcurrentDictionary<Type, FallbackRegistration[]> ForwardFallbackTargets = new();
 
@@ -129,6 +132,16 @@ namespace Datadog.Trace.DuckTyping
         private static int _fallbackTargetsVersion;
 
         /// <summary>
+        /// The number of registrations of the registry that failed (see <see cref="RecordRegistrationFailure"/>).
+        /// </summary>
+        private static int _failedRegistrationCount;
+
+        /// <summary>
+        /// The type and message of the exception of the first registration that failed.
+        /// </summary>
+        private static string? _firstRegistrationFailure;
+
+        /// <summary>
         /// The module of the last registration's activator, and its registry identity: a registry registers all its mappings
         /// from one module, so the identity is resolved once.
         /// </summary>
@@ -140,6 +153,18 @@ namespace Datadog.Trace.DuckTyping
         /// Gets the number of method-handle registrations that resolved directly to object activators.
         /// </summary>
         internal static int DirectObjectActivatorHandleCount => Volatile.Read(ref _directObjectActivatorHandleCount);
+
+        /// <summary>
+        /// Gets a value indicating whether the runtime supports dynamic code. The module initializer of a generated registry
+        /// initializes it only when it doesn't (NativeAOT): under the JIT, the application keeps dynamic duck typing unless it
+        /// calls the registry's Initialize(). Runtimes without RuntimeFeature.IsDynamicCodeSupported always support it.
+        /// </summary>
+        internal static bool IsDynamicCodeSupported
+#if NETCOREAPP3_0_OR_GREATER
+            => RuntimeFeature.IsDynamicCodeSupported;
+#else
+            => true;
+#endif
 
         /// <summary>
         /// Gets the cached forward AOT registration result for a proxy/target pair.
@@ -213,6 +238,28 @@ namespace Datadog.Trace.DuckTyping
         }
 
         /// <summary>
+        /// Registers a forward proxy of the generated registry with its typed activator: a CreateProxyInstance&lt;TProxy&gt; bound to
+        /// its object activator (Func&lt;object?, object?&gt;), so CreateInstance&lt;TProxy&gt; calls it like dynamic duck typing's,
+        /// and object-based creation calls the object activator (see DuckType.CreateTypeResult).
+        /// </summary>
+        /// <param name="proxyDefinitionType">The proxy definition type.</param>
+        /// <param name="targetType">The target type.</param>
+        /// <param name="generatedProxyType">The generated proxy type.</param>
+        /// <param name="typedActivator">The typed activator.</param>
+        internal static void RegisterTypedProxy(Type proxyDefinitionType, Type targetType, Type generatedProxyType, Delegate typedActivator)
+            => Register(proxyDefinitionType, targetType, generatedProxyType, typedActivator, reverse: false, fromValidatedRegistry: true);
+
+        /// <summary>
+        /// Registers a reverse proxy of the generated registry with its typed activator (see <see cref="RegisterTypedProxy"/>).
+        /// </summary>
+        /// <param name="typeToDeriveFrom">The type the reverse proxy derives from.</param>
+        /// <param name="delegationType">The delegation type.</param>
+        /// <param name="generatedProxyType">The generated proxy type.</param>
+        /// <param name="typedActivator">The typed activator.</param>
+        internal static void RegisterTypedReverseProxy(Type typeToDeriveFrom, Type delegationType, Type generatedProxyType, Delegate typedActivator)
+            => Register(typeToDeriveFrom, delegationType, generatedProxyType, typedActivator, reverse: true, fromValidatedRegistry: true);
+
+        /// <summary>
         /// Registers a reverse AOT proxy using a generated static activator method handle.
         /// </summary>
         /// <param name="typeToDeriveFrom">The type to derive from value.</param>
@@ -228,13 +275,13 @@ namespace Datadog.Trace.DuckTyping
         }
 
         /// <summary>
-        /// Registers the activator of a forward AOT proxy for the runtime types a registry can't name, besides its target type:
-        /// the other array types for an array target type (dynamic duck typing binds the members of System.Array for any of
-        /// them), and the types of the runtime's own core library that aren't public, for a target type they derive from or
-        /// implement. The activator receives the instance and the type the proxy reports as IDuckType.Type.
+        /// Registers the activator of a forward AOT proxy for the runtime types a registry doesn't register, besides its target
+        /// type: the other array types for an array target type (dynamic duck typing binds the members of System.Array for any of
+        /// them), and the classes of the runtime's own core library a registry can't name, for a core library target type they
+        /// derive from or implement. The activator receives the instance and the type the proxy reports as IDuckType.Type.
         /// </summary>
         /// <param name="proxyDefinitionType">The proxy definition type.</param>
-        /// <param name="targetType">The target type of the registration: an array type, an interface or a class that isn't sealed.</param>
+        /// <param name="targetType">The target type of the registration: an array type, or an interface or a class that isn't sealed of the core library.</param>
         /// <param name="generatedProxyType">The generated proxy type.</param>
         /// <param name="activator">The activator.</param>
         internal static void RegisterFallbackProxy(Type proxyDefinitionType, Type targetType, Type generatedProxyType, Func<object?, Type, object?> activator)
@@ -246,7 +293,7 @@ namespace Datadog.Trace.DuckTyping
 
             if (!IsFallbackTarget(targetType))
             {
-                throw new ArgumentException($"AOT duck typing fallback target type '{targetType}' must be an array type, an interface or a class that isn't sealed.", nameof(targetType));
+                throw new ArgumentException($"AOT duck typing fallback target type '{targetType}' must be an array type, or an interface or a class that isn't sealed of the core library.", nameof(targetType));
             }
 
             lock (RegistrationLock)
@@ -432,8 +479,28 @@ namespace Datadog.Trace.DuckTyping
                 _lastRegistryModule = null;
                 _lastRegistryModuleIdentity = null;
                 Volatile.Write(ref _directObjectActivatorHandleCount, 0);
+                Volatile.Write(ref _failedRegistrationCount, 0);
+                _firstRegistrationFailure = null;
                 DuckType.InvalidateFastPaths();
             }
+        }
+
+        /// <summary>
+        /// Records a registration of the generated registry that failed at startup: it references a type the application's runtime
+        /// can't load (e.g. a type of the generator's core library NativeAOT's doesn't define, or of an assembly the application
+        /// doesn't ship). The other registrations are made; a lookup without registration names this failure.
+        /// </summary>
+        /// <param name="exception">The exception of the registration.</param>
+        internal static void RecordRegistrationFailure(Exception exception)
+        {
+            if (Interlocked.Increment(ref _failedRegistrationCount) == 1)
+            {
+                Volatile.Write(ref _firstRegistrationFailure, $"{exception.GetType().FullName}: {exception.Message}");
+            }
+
+            // The lookups that missed may have been for it.
+            ForwardMissCache.Clear();
+            ReverseMissCache.Clear();
         }
 
         /// <summary>
@@ -564,7 +631,9 @@ namespace Datadog.Trace.DuckTyping
         /// <param name="generatedProxyType">The generated proxy type value.</param>
         /// <param name="activator">Activator delegate used to create proxy instances for this registration.</param>
         /// <param name="reverse">Whether the registration belongs to the reverse registry.</param>
-        private static void Register(Type proxyDefinitionType, Type targetType, Type generatedProxyType, Delegate activator, bool reverse)
+        /// <param name="fromValidatedRegistry">Whether the registration comes from the bootstrap of a generated registry, which
+        /// validates its contract first.</param>
+        private static void Register(Type proxyDefinitionType, Type targetType, Type generatedProxyType, Delegate activator, bool reverse, bool fromValidatedRegistry = false)
         {
             if (proxyDefinitionType is null) { ThrowHelper.ThrowArgumentNullException(nameof(proxyDefinitionType)); }
             if (targetType is null) { ThrowHelper.ThrowArgumentNullException(nameof(targetType)); }
@@ -592,7 +661,16 @@ namespace Datadog.Trace.DuckTyping
 
             lock (RegistrationLock)
             {
-                EnsureSingleRegistryAssemblyPerProcess(activator);
+                // The bootstrap of a generated registry validates its contract (and identity) before registering: its activators
+                // don't have to be inspected (Delegate.Method is reflection, slow under NativeAOT).
+                if (fromValidatedRegistry && _validatedRegistryAssemblyIdentity is { } validatedRegistryAssemblyIdentity)
+                {
+                    _registeredRegistryAssemblyIdentity ??= validatedRegistryAssemblyIdentity;
+                }
+                else
+                {
+                    EnsureSingleRegistryAssemblyPerProcess(activator);
+                }
 
                 var registry = reverse ? ReverseRegistry : ForwardRegistry;
                 if (registry.TryGetValue(key, out var currentRegistration))
@@ -715,7 +793,10 @@ namespace Datadog.Trace.DuckTyping
                 var missCache = reverse ? ReverseMissCache : ForwardMissCache;
                 _ = missCache.TryRemove(key, out _);
 
-                if (!reverse && IsFallbackTarget(targetType))
+                // Every array type has the members of System.Array, so the failure of an array type is the one of the others. The
+                // failure of a core library class prevents serving the classes deriving from it (see
+                // SelectCoreLibraryFallbackRegistration); the one of an interface doesn't.
+                if (!reverse && IsFallbackTarget(targetType) && !targetType.IsInterface)
                 {
                     SetFallbackTarget(proxyDefinitionType, targetType, createTypeResult, typedActivator: null);
                 }
@@ -909,7 +990,11 @@ namespace Datadog.Trace.DuckTyping
                 return true;
             }
 
-            return activator.GetType() == typeof(CreateProxyInstance<>).MakeGenericType(proxyDefinitionType);
+            // A CreateProxyInstance<TProxyDefinition> (the typed activator of a registry is bound to its object activator).
+            var activatorType = activator.GetType();
+            return activatorType.IsGenericType &&
+                   activatorType.GetGenericTypeDefinition() == typeof(CreateProxyInstance<>) &&
+                   activatorType.GetGenericArguments()[0] == proxyDefinitionType;
         }
 
         /// <summary>
@@ -1002,16 +1087,60 @@ namespace Datadog.Trace.DuckTyping
             }
         }
 
-        private static bool IsFallbackTarget(Type targetType) => targetType.IsArray || (!targetType.IsValueType && !targetType.IsSealed);
+        private static bool IsFallbackTarget(Type targetType)
+            => targetType.IsArray || (!targetType.IsValueType && !targetType.IsSealed && targetType.Assembly == typeof(object).Assembly);
 
         /// <summary>
-        /// Determines whether a type is one of the runtime's own core library that isn't public (e.g. the runtime's MethodInfo,
-        /// Stream or enumerator implementations): a registry can't name them, they differ between runtimes (NativeAOT's aren't
-        /// CoreCLR's), and instances have them.
+        /// Determines whether a type is a class of the runtime's own core library a registry can't name: a non-public type (e.g.
+        /// the runtime's MethodInfo, Stream or enumerator implementations), or a closed generic type over one (e.g. the
+        /// Task&lt;VoidTaskResult&gt; boxes of async methods). They differ between runtimes (NativeAOT's aren't CoreCLR's), and
+        /// instances have them. Value types aren't served: a proxy copies a value-type instance, which a proxy of a type it
+        /// derives from or implements would share.
         /// </summary>
         /// <param name="type">The type.</param>
-        /// <returns>true if the type is a non-public type of the core library; otherwise, false.</returns>
-        private static bool IsRuntimeInternalType(Type type) => !type.IsArray && type.Assembly == typeof(object).Assembly && !type.IsVisible;
+        /// <returns>true if the type is a class of the core library a registry can't name; otherwise, false.</returns>
+        internal static bool IsRuntimeInternalType(Type type)
+            => !type.IsArray && !type.IsValueType && type.Assembly == typeof(object).Assembly && IsUnnameableCoreLibraryType(type);
+
+        /// <summary>
+        /// Determines whether a type is, or is built on, a non-public type of the core library: its definition, a generic
+        /// argument, or the element type of an array, pointer or by-ref.
+        /// </summary>
+        /// <param name="type">The type.</param>
+        /// <returns>true if the type is built on a non-public type of the core library; otherwise, false.</returns>
+        private static bool IsUnnameableCoreLibraryType(Type type)
+        {
+            while (type.HasElementType)
+            {
+                type = type.GetElementType()!;
+            }
+
+            if (type.IsGenericParameter)
+            {
+                return false;
+            }
+
+            if (type.IsGenericType && !type.IsGenericTypeDefinition)
+            {
+                if (IsUnnameableCoreLibraryType(type.GetGenericTypeDefinition()))
+                {
+                    return true;
+                }
+
+                foreach (var argument in type.GetGenericArguments())
+                {
+                    if (IsUnnameableCoreLibraryType(argument))
+                    {
+                        return true;
+                    }
+                }
+
+                return false;
+            }
+
+            // The visibility of a generic type definition is the one of the definition and its declaring types.
+            return type.Assembly == typeof(object).Assembly && !type.IsVisible;
+        }
 
         /// <summary>
         /// Adds or updates the fallback registration of a proxy definition type. Must be called under the registration lock.
@@ -1060,22 +1189,32 @@ namespace Datadog.Trace.DuckTyping
         /// Gets the result for a runtime type without registration that a registry can't name, like dynamic duck typing creates a
         /// proxy for it:
         /// <list type="bullet">
-        /// <item>An array type: the registration of the most derived registered array type it is assignable to, or else of any
-        /// registered array type. Every array type has the members of System.Array, which their proxies bind, so they behave
-        /// the same.</item>
-        /// <item>A non-public type of the core library: the registration of the most derived registered type it derives from or
-        /// implements whose proxy receives the target type (or whose target fails).</item>
+        /// <item>An array type: the registration (or failure) of the most derived registered array type it is assignable to, or
+        /// else of any registered array type. Every array type has the members of System.Array, which their proxies bind, so
+        /// they behave the same. A failure names the runtime type like dynamic duck typing's.</item>
+        /// <item>A class of the core library a registry can't name (one the registry doesn't register, e.g. a type only
+        /// NativeAOT has): the proxy of a registered type it derives from or implements (see
+        /// <see cref="SelectCoreLibraryFallbackRegistration"/>), bound to the members of that type. A failure isn't replayed: it
+        /// would be the one of another type.</item>
         /// </list>
-        /// The proxy reports the runtime type as IDuckType.Type, and a failure names it like dynamic duck typing's.
+        /// The proxy reports the runtime type as IDuckType.Type.
         /// </summary>
         /// <param name="key">The proxy definition type and the runtime type.</param>
         /// <param name="result">The result for the runtime type.</param>
         /// <returns>true if a registration applies; otherwise, false.</returns>
         private static bool TryGetFallbackResult(TypesTuple key, out DuckType.CreateTypeResult result)
         {
+            // The version is read before the registrations, so a result computed from registrations replaced meanwhile isn't cached.
+            var version = Volatile.Read(ref _fallbackTargetsVersion);
+            if (!ForwardFallbackTargets.TryGetValue(key.ProxyDefinitionType, out var registrations))
+            {
+                result = default;
+                return false;
+            }
+
             var type = key.TargetType;
             var isArray = type.IsArray;
-            if ((!isArray && !IsRuntimeInternalType(type)) || !ForwardFallbackTargets.TryGetValue(key.ProxyDefinitionType, out var registrations))
+            if (!isArray && !IsRuntimeInternalType(type))
             {
                 result = default;
                 return false;
@@ -1086,31 +1225,7 @@ namespace Datadog.Trace.DuckTyping
                 return true;
             }
 
-            var version = Volatile.Read(ref _fallbackTargetsVersion);
-            FallbackRegistration? selected = null;
-            foreach (var registration in registrations)
-            {
-                if (registration.TargetType.IsArray == isArray &&
-                    registration.TargetType.IsAssignableFrom(type) &&
-                    (selected is null || selected.TargetType.IsAssignableFrom(registration.TargetType)))
-                {
-                    selected = registration;
-                }
-            }
-
-            if (selected is null && isArray)
-            {
-                // Another array type: the proxy of any array type, which stores the instance as System.Array, serves it.
-                foreach (var registration in registrations)
-                {
-                    if (registration.TargetType.IsArray)
-                    {
-                        selected = registration;
-                        break;
-                    }
-                }
-            }
-
+            var selected = isArray ? SelectArrayFallbackRegistration(registrations, type) : SelectCoreLibraryFallbackRegistration(registrations, type);
             if (selected is null)
             {
                 return false;
@@ -1125,7 +1240,7 @@ namespace Datadog.Trace.DuckTyping
                         // Like the activator dynamic duck typing creates for this type, which casts the instance to it.
                         if (instance is not null && !type.IsInstanceOfType(instance))
                         {
-                            ThrowInvalidCast(instance, type);
+                            ThrowActivatorInvalidCast(instance, type);
                         }
 
                         return typedActivator(instance, type);
@@ -1146,9 +1261,98 @@ namespace Datadog.Trace.DuckTyping
             }
 
             return true;
+        }
 
-            static void ThrowInvalidCast(object instance, Type type)
-                => throw new InvalidCastException($"Unable to cast object of type '{instance.GetType()}' to type '{type}'.");
+        /// <summary>
+        /// Throws the exception the activator of a proxy throws for an instance of another type: the InvalidCastException of
+        /// CoreCLR's cast, which names both types (NativeAOT's doesn't).
+        /// </summary>
+        /// <param name="instance">The instance.</param>
+        /// <param name="type">The type the activator casts the instance to.</param>
+        [DebuggerHidden]
+        [DoesNotReturn]
+        internal static void ThrowActivatorInvalidCast(object instance, Type type)
+            => throw new InvalidCastException($"Unable to cast object of type '{instance.GetType()}' to type '{type}'.");
+
+        /// <summary>
+        /// Selects the registration serving another array type: the one (or the failure) of the most derived registered array type
+        /// it is assignable to, or else of any registered array type (the proxy of an array type stores the instance as
+        /// System.Array).
+        /// </summary>
+        /// <param name="registrations">The fallback registrations of the proxy definition type.</param>
+        /// <param name="type">The array type.</param>
+        /// <returns>The registration, or null when no array type is registered.</returns>
+        private static FallbackRegistration? SelectArrayFallbackRegistration(FallbackRegistration[] registrations, Type type)
+        {
+            FallbackRegistration? selected = null;
+            FallbackRegistration? anyArray = null;
+            foreach (var registration in registrations)
+            {
+                if (!registration.TargetType.IsArray)
+                {
+                    continue;
+                }
+
+                anyArray ??= registration;
+                if (registration.TargetType.IsAssignableFrom(type) &&
+                    (selected is null || selected.TargetType.IsAssignableFrom(registration.TargetType)))
+                {
+                    selected = registration;
+                }
+            }
+
+            return selected ?? anyArray;
+        }
+
+        /// <summary>
+        /// Selects the registration serving a class of the core library a registry can't name, the closest to the proxy dynamic
+        /// duck typing creates for it, which binds the members of that class:
+        /// <list type="number">
+        /// <item>The most derived registered base class (other than System.Object): the class has its members. When it fails,
+        /// the class most likely fails too (it inherits the members that fail it), but differently: no registration.</item>
+        /// <item>Else the proxy of the most derived registered interface it implements. The failure of an interface isn't the
+        /// one of the class (reflection doesn't find the members of the base interfaces of an interface, a class has them).</item>
+        /// <item>Else the proxy of System.Object.</item>
+        /// </list>
+        /// </summary>
+        /// <param name="registrations">The fallback registrations of the proxy definition type.</param>
+        /// <param name="type">The class.</param>
+        /// <returns>The registration with a proxy, or null.</returns>
+        private static FallbackRegistration? SelectCoreLibraryFallbackRegistration(FallbackRegistration[] registrations, Type type)
+        {
+            for (var baseType = type.BaseType; baseType is not null && baseType != typeof(object); baseType = baseType.BaseType)
+            {
+                foreach (var registration in registrations)
+                {
+                    if (registration.TargetType == baseType)
+                    {
+                        return registration.TypedActivator is null ? null : registration;
+                    }
+                }
+            }
+
+            FallbackRegistration? selected = null;
+            FallbackRegistration? objectRegistration = null;
+            foreach (var registration in registrations)
+            {
+                if (registration.TypedActivator is null)
+                {
+                    continue;
+                }
+
+                if (registration.TargetType == typeof(object))
+                {
+                    objectRegistration = registration;
+                }
+                else if (registration.TargetType.IsInterface &&
+                         registration.TargetType.IsAssignableFrom(type) &&
+                         (selected is null || selected.TargetType.IsAssignableFrom(registration.TargetType)))
+                {
+                    selected = registration;
+                }
+            }
+
+            return selected ?? objectRegistration;
         }
 
         /// <summary>
@@ -1166,7 +1370,7 @@ namespace Datadog.Trace.DuckTyping
             {
                 var message = ReplaceQuotedTypeName(ReplaceQuotedTypeName(exception.Message, registeredType.FullName, key.TargetType.FullName), registeredType.ToString(), key.TargetType.ToString());
                 if (!string.Equals(message, exception.Message, StringComparison.Ordinal) &&
-                    DuckTypeAotRegisteredFailureException.Create(exceptionTypeName, message) is { } renamed &&
+                    DuckTypeAotRegisteredFailureException.Create(exceptionTypeName, message, exception.InnerException) is { } renamed &&
                     renamed.GetType() == exception.GetType())
                 {
                     return new DuckType.CreateTypeResult(key.ProxyDefinitionType, proxyType: null, key.TargetType, activator: null, ExceptionDispatchInfo.Capture(renamed));
@@ -1194,7 +1398,7 @@ namespace Datadog.Trace.DuckTyping
                 proxyType: null,
                 key.TargetType,
                 activator: null,
-                ExceptionDispatchInfo.Capture(DuckTypeAotMissingProxyRegistrationException.Create(key.ProxyDefinitionType, key.TargetType, reverse)));
+                ExceptionDispatchInfo.Capture(DuckTypeAotMissingProxyRegistrationException.Create(key.ProxyDefinitionType, key.TargetType, reverse, Volatile.Read(ref _failedRegistrationCount), Volatile.Read(ref _firstRegistrationFailure))));
         }
 
         /// <summary>

@@ -27,8 +27,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// <returns>The result produced by this operation.</returns>
         internal static DuckTypeAotMapFileParseResult Parse(string path)
         {
-            // Branch: take this path when (string.IsNullOrWhiteSpace(path)) evaluates to true.
-            if (string.IsNullOrWhiteSpace(path))
+            if (StringUtil.IsNullOrWhiteSpace(path))
             {
                 return new DuckTypeAotMapFileParseResult(Array.Empty<DuckTypeAotMapping>(), new HashSet<string>(StringComparer.Ordinal), new List<string>());
             }
@@ -61,14 +60,13 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             try
             {
                 var parsedFile = JsonConvert.DeserializeObject<MapFileDocument>(json);
-                // Branch: take this path when (parsedFile is null) evaluates to true.
                 if (parsedFile is null)
                 {
                     errors.Add($"--map-file content is empty or invalid JSON: {path}");
                     return new DuckTypeAotMapFileParseResult(Array.Empty<DuckTypeAotMapping>(), excludedKeys, errors);
                 }
 
-                if (!string.IsNullOrWhiteSpace(parsedFile.SchemaVersion) &&
+                if (!StringUtil.IsNullOrWhiteSpace(parsedFile.SchemaVersion) &&
                     !string.Equals(parsedFile.SchemaVersion, "1", StringComparison.Ordinal))
                 {
                     errors.Add($"--map-file schemaVersion must be '1'. Actual value: '{parsedFile.SchemaVersion}'.");
@@ -88,7 +86,6 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             }
             catch (Exception ex)
             {
-                // Branch: handles exceptions that match Exception ex.
                 errors.Add($"--map-file could not be parsed ({path}): {ex.Message}");
             }
 
@@ -111,7 +108,6 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             ISet<string> excludedKeys,
             ICollection<string> errors)
         {
-            // Branch: take this path when (entries is null) evaluates to true.
             if (entries is null)
             {
                 return;
@@ -169,7 +165,6 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             mapping = null!;
 
             var mode = ParseMode(entry.Mode, path, index, errors);
-            // Branch: take this path when (mode is null) evaluates to true.
             if (mode is null)
             {
                 return false;
@@ -180,14 +175,14 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
 
             var proxyType = proxyTypeFromQualifiedName;
             var targetType = targetTypeFromQualifiedName;
-            var proxyAssembly = DuckTypeAotNameHelpers.NormalizeAssemblyName(entry.ProxyAssembly ?? proxyAssemblyFromQualifiedName ?? string.Empty);
-            var targetAssembly = DuckTypeAotNameHelpers.NormalizeAssemblyName(entry.TargetAssembly ?? targetAssemblyFromQualifiedName ?? string.Empty);
+            // An empty assembly is a missing one (the assembly-qualified name tells it).
+            var proxyAssembly = DuckTypeAotNameHelpers.NormalizeAssemblyName((StringUtil.IsNullOrWhiteSpace(entry.ProxyAssembly) ? proxyAssemblyFromQualifiedName : entry.ProxyAssembly) ?? string.Empty);
+            var targetAssembly = DuckTypeAotNameHelpers.NormalizeAssemblyName((StringUtil.IsNullOrWhiteSpace(entry.TargetAssembly) ? targetAssemblyFromQualifiedName : entry.TargetAssembly) ?? string.Empty);
 
-            // Branch: take this path when (string.IsNullOrWhiteSpace(proxyType) || evaluates to true.
-            if (string.IsNullOrWhiteSpace(proxyType) ||
-                string.IsNullOrWhiteSpace(proxyAssembly) ||
-                string.IsNullOrWhiteSpace(targetType) ||
-                string.IsNullOrWhiteSpace(targetAssembly))
+            if (StringUtil.IsNullOrWhiteSpace(proxyType) ||
+                StringUtil.IsNullOrWhiteSpace(proxyAssembly) ||
+                StringUtil.IsNullOrWhiteSpace(targetType) ||
+                StringUtil.IsNullOrWhiteSpace(targetAssembly))
             {
                 errors.Add($"--map-file entry #{index + 1} in '{path}' must provide proxy/target type and assembly values.");
                 return false;
@@ -219,13 +214,11 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// <returns>The result produced by this operation.</returns>
         private static DuckTypeAotMappingMode? ParseMode(string? mode, string path, int index, ICollection<string> errors)
         {
-            // Branch: take this path when (string.IsNullOrWhiteSpace(mode) || string.Equals(mode, "forward", StringComparison.OrdinalIgnoreCase)) evaluates to true.
-            if (string.IsNullOrWhiteSpace(mode) || string.Equals(mode, "forward", StringComparison.OrdinalIgnoreCase))
+            if (StringUtil.IsNullOrWhiteSpace(mode) || string.Equals(mode, "forward", StringComparison.OrdinalIgnoreCase))
             {
                 return DuckTypeAotMappingMode.Forward;
             }
 
-            // Branch: take this path when (string.Equals(mode, "reverse", StringComparison.OrdinalIgnoreCase)) evaluates to true.
             if (string.Equals(mode, "reverse", StringComparison.OrdinalIgnoreCase))
             {
                 return DuckTypeAotMappingMode.Reverse;
@@ -351,8 +344,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             var errors = new List<string>();
             var requiredMappingExpectations = new Dictionary<string, DuckTypeAotCatalogRequiredMappingExpectation>(StringComparer.Ordinal);
 
-            // Branch: take this path when (string.IsNullOrWhiteSpace(path)) evaluates to true.
-            if (string.IsNullOrWhiteSpace(path))
+            if (StringUtil.IsNullOrWhiteSpace(path))
             {
                 return new DuckTypeAotMappingCatalogParseResult(Array.Empty<DuckTypeAotCatalogRequiredMappingExpectation>(), errors);
             }
@@ -361,7 +353,6 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             {
                 var json = File.ReadAllText(path);
                 var parsedFile = JsonConvert.DeserializeObject<MappingCatalogDocument>(json);
-                // Branch: take this path when (parsedFile?.RequiredMappings is null) evaluates to true.
                 if (parsedFile?.RequiredMappings is null)
                 {
                     errors.Add($"--mapping-catalog content is empty or invalid JSON: {path}");
@@ -371,7 +362,6 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 for (var i = 0; i < parsedFile.RequiredMappings.Count; i++)
                 {
                     var entry = parsedFile.RequiredMappings[i];
-                    // Branch: take this path when (!TryParseCatalogEntry(entry, path, i, errors, out var mapping, out var expectedStatus)) evaluates to true.
                     if (!TryParseCatalogEntry(entry, path, i, errors, out var mapping, out var expectedStatus))
                     {
                         continue;
@@ -382,7 +372,6 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             }
             catch (Exception ex)
             {
-                // Branch: handles exceptions that match Exception ex.
                 errors.Add($"--mapping-catalog could not be parsed ({path}): {ex.Message}");
             }
 
@@ -410,7 +399,6 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             expectedStatus = string.Empty;
 
             var mode = ParseMode(entry.Mode, path, index, errors);
-            // Branch: take this path when (mode is null) evaluates to true.
             if (mode is null)
             {
                 return false;
@@ -421,20 +409,19 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
 
             var proxyType = proxyTypeFromQualifiedName;
             var targetType = targetTypeFromQualifiedName;
-            var proxyAssembly = DuckTypeAotNameHelpers.NormalizeAssemblyName(entry.ProxyAssembly ?? proxyAssemblyFromQualifiedName ?? string.Empty);
-            var targetAssembly = DuckTypeAotNameHelpers.NormalizeAssemblyName(entry.TargetAssembly ?? targetAssemblyFromQualifiedName ?? string.Empty);
+            // An empty assembly is a missing one (the assembly-qualified name tells it).
+            var proxyAssembly = DuckTypeAotNameHelpers.NormalizeAssemblyName((StringUtil.IsNullOrWhiteSpace(entry.ProxyAssembly) ? proxyAssemblyFromQualifiedName : entry.ProxyAssembly) ?? string.Empty);
+            var targetAssembly = DuckTypeAotNameHelpers.NormalizeAssemblyName((StringUtil.IsNullOrWhiteSpace(entry.TargetAssembly) ? targetAssemblyFromQualifiedName : entry.TargetAssembly) ?? string.Empty);
 
-            // Branch: take this path when (string.IsNullOrWhiteSpace(proxyType) || evaluates to true.
-            if (string.IsNullOrWhiteSpace(proxyType) ||
-                string.IsNullOrWhiteSpace(proxyAssembly) ||
-                string.IsNullOrWhiteSpace(targetType) ||
-                string.IsNullOrWhiteSpace(targetAssembly))
+            if (StringUtil.IsNullOrWhiteSpace(proxyType) ||
+                StringUtil.IsNullOrWhiteSpace(proxyAssembly) ||
+                StringUtil.IsNullOrWhiteSpace(targetType) ||
+                StringUtil.IsNullOrWhiteSpace(targetAssembly))
             {
                 errors.Add($"--mapping-catalog entry #{index + 1} in '{path}' must provide proxy/target type and assembly values.");
                 return false;
             }
 
-            // Branch: take this path when (ContainsDeprecatedExpectCanCreate(entry.AdditionalProperties)) evaluates to true.
             if (ContainsDeprecatedExpectCanCreate(entry.AdditionalProperties))
             {
                 errors.Add($"--mapping-catalog entry #{index + 1} in '{path}' uses deprecated field 'expectCanCreate'. Strict parity mode requires removing this override field.");
@@ -442,7 +429,6 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             }
 
             var parsedExpectedStatus = ParseExpectedStatus(entry.ExpectedStatus, path, index, errors);
-            // Branch: take this path when (parsedExpectedStatus is null) evaluates to true.
             if (parsedExpectedStatus is null)
             {
                 return false;
@@ -470,13 +456,11 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// <returns>The result produced by this operation.</returns>
         private static DuckTypeAotMappingMode? ParseMode(string? mode, string path, int index, ICollection<string> errors)
         {
-            // Branch: take this path when (string.IsNullOrWhiteSpace(mode) || string.Equals(mode, "forward", StringComparison.OrdinalIgnoreCase)) evaluates to true.
-            if (string.IsNullOrWhiteSpace(mode) || string.Equals(mode, "forward", StringComparison.OrdinalIgnoreCase))
+            if (StringUtil.IsNullOrWhiteSpace(mode) || string.Equals(mode, "forward", StringComparison.OrdinalIgnoreCase))
             {
                 return DuckTypeAotMappingMode.Forward;
             }
 
-            // Branch: take this path when (string.Equals(mode, "reverse", StringComparison.OrdinalIgnoreCase)) evaluates to true.
             if (string.Equals(mode, "reverse", StringComparison.OrdinalIgnoreCase))
             {
                 return DuckTypeAotMappingMode.Reverse;
@@ -496,14 +480,12 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// <returns>The result produced by this operation.</returns>
         private static string? ParseExpectedStatus(string? expectedStatus, string path, int index, ICollection<string> errors)
         {
-            // Branch: take this path when (string.IsNullOrWhiteSpace(expectedStatus)) evaluates to true.
-            if (string.IsNullOrWhiteSpace(expectedStatus))
+            if (StringUtil.IsNullOrWhiteSpace(expectedStatus))
             {
                 return DuckTypeAotCompatibilityStatuses.Compatible;
             }
 
             var normalizedExpectedStatus = expectedStatus!.Trim();
-            // Branch: take this path when (TryNormalizeCompatibilityStatus(normalizedExpectedStatus, out var canonicalExpectedStatus)) evaluates to true.
             if (TryNormalizeCompatibilityStatus(normalizedExpectedStatus, out var canonicalExpectedStatus))
             {
                 return canonicalExpectedStatus;
@@ -523,70 +505,60 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// <returns>true if the operation succeeds; otherwise, false.</returns>
         private static bool TryNormalizeCompatibilityStatus(string status, out string normalizedStatus)
         {
-            // Branch: take this path when (string.Equals(status, DuckTypeAotCompatibilityStatuses.Compatible, StringComparison.OrdinalIgnoreCase)) evaluates to true.
             if (string.Equals(status, DuckTypeAotCompatibilityStatuses.Compatible, StringComparison.OrdinalIgnoreCase))
             {
                 normalizedStatus = DuckTypeAotCompatibilityStatuses.Compatible;
                 return true;
             }
 
-            // Branch: take this path when (string.Equals(status, DuckTypeAotCompatibilityStatuses.PendingProxyEmission, StringComparison.OrdinalIgnoreCase)) evaluates to true.
             if (string.Equals(status, DuckTypeAotCompatibilityStatuses.PendingProxyEmission, StringComparison.OrdinalIgnoreCase))
             {
                 normalizedStatus = DuckTypeAotCompatibilityStatuses.PendingProxyEmission;
                 return true;
             }
 
-            // Branch: take this path when (string.Equals(status, DuckTypeAotCompatibilityStatuses.UnsupportedProxyKind, StringComparison.OrdinalIgnoreCase)) evaluates to true.
             if (string.Equals(status, DuckTypeAotCompatibilityStatuses.UnsupportedProxyKind, StringComparison.OrdinalIgnoreCase))
             {
                 normalizedStatus = DuckTypeAotCompatibilityStatuses.UnsupportedProxyKind;
                 return true;
             }
 
-            // Branch: take this path when (string.Equals(status, DuckTypeAotCompatibilityStatuses.MissingProxyType, StringComparison.OrdinalIgnoreCase)) evaluates to true.
             if (string.Equals(status, DuckTypeAotCompatibilityStatuses.MissingProxyType, StringComparison.OrdinalIgnoreCase))
             {
                 normalizedStatus = DuckTypeAotCompatibilityStatuses.MissingProxyType;
                 return true;
             }
 
-            // Branch: take this path when (string.Equals(status, DuckTypeAotCompatibilityStatuses.MissingTargetType, StringComparison.OrdinalIgnoreCase)) evaluates to true.
             if (string.Equals(status, DuckTypeAotCompatibilityStatuses.MissingTargetType, StringComparison.OrdinalIgnoreCase))
             {
                 normalizedStatus = DuckTypeAotCompatibilityStatuses.MissingTargetType;
                 return true;
             }
 
-            // Branch: take this path when (string.Equals(status, DuckTypeAotCompatibilityStatuses.MissingTargetMethod, StringComparison.OrdinalIgnoreCase)) evaluates to true.
             if (string.Equals(status, DuckTypeAotCompatibilityStatuses.MissingTargetMethod, StringComparison.OrdinalIgnoreCase))
             {
                 normalizedStatus = DuckTypeAotCompatibilityStatuses.MissingTargetMethod;
                 return true;
             }
 
-            // Branch: take this path when (string.Equals(status, DuckTypeAotCompatibilityStatuses.NonPublicTargetMethod, StringComparison.OrdinalIgnoreCase)) evaluates to true.
             if (string.Equals(status, DuckTypeAotCompatibilityStatuses.NonPublicTargetMethod, StringComparison.OrdinalIgnoreCase))
             {
                 normalizedStatus = DuckTypeAotCompatibilityStatuses.NonPublicTargetMethod;
                 return true;
             }
 
-            // Branch: take this path when (string.Equals(status, DuckTypeAotCompatibilityStatuses.IncompatibleMethodSignature, StringComparison.OrdinalIgnoreCase)) evaluates to true.
             if (string.Equals(status, DuckTypeAotCompatibilityStatuses.IncompatibleMethodSignature, StringComparison.OrdinalIgnoreCase))
             {
                 normalizedStatus = DuckTypeAotCompatibilityStatuses.IncompatibleMethodSignature;
                 return true;
             }
 
-            // Branch: take this path when (string.Equals(status, DuckTypeAotCompatibilityStatuses.UnsupportedProxyConstructor, StringComparison.OrdinalIgnoreCase)) evaluates to true.
             if (string.Equals(status, DuckTypeAotCompatibilityStatuses.UnsupportedProxyConstructor, StringComparison.OrdinalIgnoreCase))
             {
                 normalizedStatus = DuckTypeAotCompatibilityStatuses.UnsupportedProxyConstructor;
                 return true;
             }
 
-            // Branch: take this path when (string.Equals(status, DuckTypeAotCompatibilityStatuses.UnsupportedClosedGenericMapping, StringComparison.OrdinalIgnoreCase)) evaluates to true.
             if (string.Equals(status, DuckTypeAotCompatibilityStatuses.UnsupportedClosedGenericMapping, StringComparison.OrdinalIgnoreCase))
             {
                 normalizedStatus = DuckTypeAotCompatibilityStatuses.UnsupportedClosedGenericMapping;
@@ -604,7 +576,6 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// <returns>true if the operation succeeds; otherwise, false.</returns>
         private static bool ContainsDeprecatedExpectCanCreate(IDictionary<string, JToken>? additionalProperties)
         {
-            // Branch: take this path when (additionalProperties is null || additionalProperties.Count == 0) evaluates to true.
             if (additionalProperties is null || additionalProperties.Count == 0)
             {
                 return false;
@@ -612,7 +583,6 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
 
             foreach (var key in additionalProperties.Keys)
             {
-                // Branch: take this path when (string.Equals(key, "expectCanCreate", StringComparison.OrdinalIgnoreCase)) evaluates to true.
                 if (string.Equals(key, "expectCanCreate", StringComparison.OrdinalIgnoreCase))
                 {
                     return true;
@@ -709,7 +679,6 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// <param name="mappings">The mappings value.</param>
         /// <param name="excludedKeys">The excluded keys value.</param>
         /// <param name="errors">The errors value.</param>
-        /// <remarks>Emits or composes IL for generated duck-typing proxy operations.</remarks>
         public DuckTypeAotMapFileParseResult(IEnumerable<DuckTypeAotMapping> mappings, HashSet<string> excludedKeys, IReadOnlyList<string> errors)
         {
             Mappings = new List<DuckTypeAotMapping>(mappings);
