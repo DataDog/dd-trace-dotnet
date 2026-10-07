@@ -38,7 +38,7 @@ public class FlagEvaluationWriterTests
                 bodies.Enqueue(Decompress(bytes));
                 return Task.CompletedTask;
             },
-            Context);
+            Context());
         try
         {
             writer.TryEnqueue(Observation(consent: consent)).Should().BeTrue();
@@ -79,7 +79,7 @@ public class FlagEvaluationWriterTests
                 sent.TrySetResult(Decompress(bytes));
                 return Task.CompletedTask;
             },
-            Context,
+            Context(),
             flushInterval: TimeSpan.FromMilliseconds(20));
         try
         {
@@ -106,8 +106,8 @@ public class FlagEvaluationWriterTests
             return release.Task;
         };
         var writer = queueCap is { } capacity
-                         ? new FlagEvaluationWriter(send, Context, queueCap: capacity)
-                         : new FlagEvaluationWriter(send, Context);
+                         ? new FlagEvaluationWriter(send, Context(), queueCap: capacity)
+                         : new FlagEvaluationWriter(send, Context());
         try
         {
             writer.TryEnqueue(Observation()).Should().BeTrue();
@@ -151,7 +151,7 @@ public class FlagEvaluationWriterTests
                 entered.TrySetResult(true);
                 return release.Task;
             },
-            Context);
+            Context());
         try
         {
             writer.TryEnqueue(Observation()).Should().BeTrue();
@@ -185,7 +185,7 @@ public class FlagEvaluationWriterTests
                 entered.TrySetResult(true);
                 return release.Task;
             },
-            Context);
+            Context());
         try
         {
             writer.TryEnqueue(Observation()).Should().BeTrue();
@@ -224,7 +224,7 @@ public class FlagEvaluationWriterTests
                 bodies.Enqueue(Decompress(bytes));
                 return Task.CompletedTask;
             },
-            Context);
+            Context());
         try
         {
             writer.TryEnqueue(Observation()).Should().BeTrue();
@@ -252,7 +252,7 @@ public class FlagEvaluationWriterTests
                 Interlocked.Increment(ref calls);
                 return Task.CompletedTask;
             },
-            Context);
+            Context());
         await Completes(writer.FlushAsync());
         await writer.CloseAsync(TimeSpan.FromSeconds(2));
         Volatile.Read(ref calls).Should().Be(0);
@@ -270,7 +270,7 @@ public class FlagEvaluationWriterTests
                 entered.TrySetResult(true);
                 return release.Task;
             },
-            Context,
+            Context(),
             queueCap: 1,
             metrics: collector);
         try
@@ -315,7 +315,7 @@ public class FlagEvaluationWriterTests
                 bodies.Enqueue(Decompress(bytes));
                 return Task.CompletedTask;
             },
-            Context,
+            Context(),
             globalCap: 0,
             degradedCap: 1,
             metrics: collector);
@@ -361,7 +361,7 @@ public class FlagEvaluationWriterTests
                 bodies.Enqueue(Decompress(bytes));
                 return Task.CompletedTask;
             },
-            Context,
+            Context(),
             metrics: brokenCollector.Object);
         try
         {
@@ -393,7 +393,7 @@ public class FlagEvaluationWriterTests
                 entered.TrySetResult(true);
                 return release.Task;
             },
-            Context);
+            Context());
         try
         {
             writer.TryEnqueue(Observation()).Should().BeTrue();
@@ -448,7 +448,7 @@ public class FlagEvaluationWriterTests
                 Interlocked.Add(ref delivered, rows.Sum(row => row["evaluation_count"]!.Value<long>()));
                 return Task.CompletedTask;
             },
-            Context,
+            Context(),
             queueCap: 1,
             flushInterval: TimeSpan.FromHours(1));
         try
@@ -489,7 +489,7 @@ public class FlagEvaluationWriterTests
                 entered.TrySetResult(true);
                 return release.Task;
             },
-            Context,
+            Context(),
             flushInterval: TimeSpan.FromHours(1));
         try
         {
@@ -530,7 +530,7 @@ public class FlagEvaluationWriterTests
                 sent.TrySetResult(true);
                 return Task.CompletedTask;
             },
-            Context,
+            Context(),
             queueCap: 64,
             flushInterval: TimeSpan.FromMilliseconds(20));
         var observation = Observation();
@@ -580,7 +580,7 @@ public class FlagEvaluationWriterTests
                 entered.TrySetResult(true);
                 return release.Task;
             },
-            Context,
+            Context(),
             metrics: collector);
         try
         {
@@ -614,7 +614,10 @@ public class FlagEvaluationWriterTests
     public async Task ContextFailureDropsTheBatchButDoesNotPoisonFollowingFlush()
     {
         var collector = new MetricsTelemetryCollector(Timeout.InfiniteTimeSpan);
-        var calls = 0;
+        var context = new Mock<IReadOnlyDictionary<string, string>>();
+        context.SetupSequence(value => value.TryGetValue(It.IsAny<string>(), out It.Ref<string?>.IsAny))
+               .Throws(new InvalidOperationException("private-context-error"))
+               .Returns(false);
         var bodies = new ConcurrentQueue<byte[]>();
         var writer = new FlagEvaluationWriter(
             bytes =>
@@ -622,7 +625,7 @@ public class FlagEvaluationWriterTests
                 bodies.Enqueue(Decompress(bytes));
                 return Task.CompletedTask;
             },
-            () => Interlocked.Increment(ref calls) == 1 ? throw new InvalidOperationException("private-context-error") : Context(),
+            context.Object,
             metrics: collector);
         try
         {
@@ -658,7 +661,7 @@ public class FlagEvaluationWriterTests
                 bodies.Enqueue(Decompress(bytes));
                 return Task.CompletedTask;
             },
-            Context,
+            Context(),
             payloadLimitBytes: 512,
             metrics: collector);
         try
@@ -704,13 +707,13 @@ public class FlagEvaluationWriterTests
             {
                 using (ExecutionContext.SuppressFlow())
                 {
-                    var writer = new FlagEvaluationWriter(_ => Task.CompletedTask, Context);
+                    var writer = new FlagEvaluationWriter(_ => Task.CompletedTask, Context());
                     ExecutionContext.IsFlowSuppressed().Should().BeTrue("writer construction must preserve caller suppression");
                     return writer;
                 }
             }
 
-            var result = new FlagEvaluationWriter(_ => Task.CompletedTask, Context);
+            var result = new FlagEvaluationWriter(_ => Task.CompletedTask, Context());
             ExecutionContext.IsFlowSuppressed().Should().BeFalse("writer construction must restore caller context flow");
             return result;
         }

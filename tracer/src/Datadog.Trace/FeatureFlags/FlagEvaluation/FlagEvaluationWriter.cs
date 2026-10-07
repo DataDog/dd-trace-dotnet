@@ -32,7 +32,7 @@ internal sealed class FlagEvaluationWriter
     private readonly FlagEvaluationAggregator _aggregator;
     private readonly FlagEvaluationTelemetry _telemetry;
     private readonly Func<ArraySegment<byte>, Task> _send;
-    private readonly Func<IReadOnlyDictionary<string, string>> _getContext;
+    private readonly IReadOnlyDictionary<string, string> _context;
     private readonly int _queueCap;
     private readonly int _wakeThreshold;
     private readonly int _payloadLimitBytes;
@@ -48,7 +48,7 @@ internal sealed class FlagEvaluationWriter
 
     internal FlagEvaluationWriter(
         Func<ArraySegment<byte>, Task> send,
-        Func<IReadOnlyDictionary<string, string>> getContext,
+        IReadOnlyDictionary<string, string> context,
         int queueCap = DefaultQueueCapacity,
         int globalCap = 131072,
         int perFlagCap = 10000,
@@ -58,7 +58,7 @@ internal sealed class FlagEvaluationWriter
         IMetricsTelemetryCollector? metrics = null)
     {
         _send = send;
-        _getContext = getContext;
+        _context = context;
         _queueCap = queueCap;
         _wakeThreshold = Math.Max(1, queueCap / 8);
         _payloadLimitBytes = payloadLimitBytes;
@@ -367,7 +367,7 @@ internal sealed class FlagEvaluationWriter
         {
             var result = state.Full.Count == 0 && state.Degraded.Count == 0
                              ? new FlagEvaluationPayloadResult(Array.Empty<byte[]>(), 0, 0, 0)
-                             : FlagEvaluationPayload.Encode(state, _getContext(), DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(), _payloadLimitBytes);
+                             : FlagEvaluationPayload.Encode(state, _context, DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(), _payloadLimitBytes);
             _telemetry.Degraded(MetricTags.FlagEvaluationDegradeReason.PayloadLimit, result.PayloadDegradedEvaluations);
             _telemetry.Dropped(MetricTags.FlagEvaluationDropReason.PayloadLimit, result.PayloadDroppedEvaluations);
             _telemetry.Dropped(MetricTags.FlagEvaluationDropReason.SerializationError, result.SerializationDroppedEvaluations);

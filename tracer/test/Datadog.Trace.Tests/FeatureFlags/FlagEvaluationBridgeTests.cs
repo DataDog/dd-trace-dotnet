@@ -186,6 +186,6 @@ public class FlagEvaluationBridgeTests
             bodies.Enqueue(reader.ReadToEnd());
             return Task.CompletedTask;
         },
-        () => new Dictionary<string, string> { ["service"] = "bridge-test" },
+        new Dictionary<string, string> { ["service"] = "bridge-test" },
         metrics: metrics);
 }

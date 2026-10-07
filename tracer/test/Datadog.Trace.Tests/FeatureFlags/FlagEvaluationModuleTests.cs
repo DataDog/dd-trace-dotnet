@@ -107,7 +107,7 @@ public class FlagEvaluationModuleTests(ITestOutputHelper output)
     [InlineData("together")]
     [InlineData("exporter-first")]
     [InlineData("context-first")]
-    public async Task ExporterAndServiceContextUpdatesApplyBeforeAndAfterActivation(string updateOrder)
+    public async Task WriterCapturesLatestServiceContextAtActivationButKeepsExporterUpdates(string updateOrder)
     {
         using var original = MockTracerAgent.Create(_output);
         using var updated = MockTracerAgent.Create(_output);
@@ -152,7 +152,7 @@ public class FlagEvaluationModuleTests(ITestOutputHelper output)
             await module.FlushAsync();
             originalRequests.Should().ContainSingle();
             var context = JObject.Parse(originalRequests.Single().BodyInJson)["context"]!;
-            context["env"]!.Value<string>().Should().Be("after");
+            context["env"]!.Value<string>().Should().Be("before", "service tags are fixed for the writer lifetime even when its Agent address changes");
             context["service"]!.Value<string>().Should().Be("updated-service");
             context["version"]!.Value<string>().Should().Be("2");
             await module.DisposeAsync();
@@ -164,6 +164,47 @@ public class FlagEvaluationModuleTests(ITestOutputHelper output)
         finally
         {
             await module.DisposeAsync();
+        }
+    }
+
+    [Fact]
+    public async Task ServiceContextIsFixedBeforeTheFirstEventAndAcrossFlushes()
+    {
+        using var agent = MockTracerAgent.Create(_output);
+        var received = new ConcurrentQueue<MockTracerAgent.EvpProxyPayload>();
+        agent.EventPlatformProxyPayloadReceived += (_, args) => received.Enqueue(args.Value);
+        var settings = Settings(agent.Port, "remote_config");
+        var module = FeatureFlagsModule.Create(settings, new MockRcmSubscriptionManager())!;
+        try
+        {
+            module.Activate();
+            var writer = module.EvaluationWriter!;
+            UpdateSettings(settings, agent.Port, "after-activation");
+            writer.TryEnqueue(Observation()).Should().BeTrue();
+            UpdateSettings(settings, agent.Port, "while-buffered");
+            writer.TryEnqueue(Observation()).Should().BeTrue();
+            await module.FlushAsync();
+            received.Should().ContainSingle();
+            AssertOriginalContext(received.Single(), 2);
+
+            UpdateSettings(settings, agent.Port, "after-flush");
+            writer.TryEnqueue(Observation()).Should().BeTrue();
+            await module.FlushAsync();
+            received.Should().HaveCount(2);
+            AssertOriginalContext(received.Last(), 1);
+        }
+        finally
+        {
+            await module.DisposeAsync();
+        }
+
+        static void AssertOriginalContext(MockTracerAgent.EvpProxyPayload request, int count)
+        {
+            var payload = JObject.Parse(request.BodyInJson);
+            payload["context"]!["service"]!.Value<string>().Should().Be("module-test");
+            payload["context"]!["env"]!.Value<string>().Should().Be("unknown");
+            payload["context"]!["version"]!.Value<string>().Should().Be("unknown");
+            payload["flagEvaluations"]![0]!["evaluation_count"]!.Value<int>().Should().Be(count);
         }
     }
 

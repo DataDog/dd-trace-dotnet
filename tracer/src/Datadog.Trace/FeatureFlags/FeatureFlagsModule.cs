@@ -70,7 +70,6 @@ namespace Datadog.Trace.FeatureFlags
         private FlagEvaluationAgentSender? _evaluationSender;
         private FlagEvaluationWriter? _evaluationWriter;
         private IDisposable? _evaluationSettingsSubscription;
-        private IReadOnlyDictionary<string, string> _evaluationContext = new Dictionary<string, string>();
         private string? _deliveryUnavailableReason;
         private bool _activated;
         private bool _disposed;
@@ -372,6 +371,16 @@ namespace Datadog.Trace.FeatureFlags
             return true;
         }
 
+        private static Dictionary<string, string> CreateEvaluationContext(MutableSettings settings)
+        {
+            return new Dictionary<string, string>
+            {
+                ["service"] = settings.DefaultServiceName,
+                ["env"] = settings.Environment ?? "unknown",
+                ["version"] = settings.ServiceVersion ?? "unknown",
+            };
+        }
+
         private void StartEvaluationWriter()
         {
             if (!_settings.EvaluationEventsEnabled)
@@ -384,8 +393,7 @@ namespace Datadog.Trace.FeatureFlags
             try
             {
                 sender = new FlagEvaluationAgentSender(_settingsManager.InitialExporterSettings);
-                UpdateEvaluationContext(_settingsManager.InitialMutableSettings);
-                writer = new FlagEvaluationWriter(sender.SendCompressedAsync, () => Volatile.Read(ref _evaluationContext));
+                var context = CreateEvaluationContext(_settingsManager.InitialMutableSettings);
                 var currentSender = sender;
                 var firstSettingsUpdate = true;
                 _evaluationSettingsSubscription = _settingsManager.SubscribeToChanges(changes =>
@@ -397,13 +405,17 @@ namespace Datadog.Trace.FeatureFlags
                         currentSender.UpdateExporterSettings(changes.UpdatedExporter ?? changes.PreviousExporter);
                     }
 
-                    if (firstSettingsUpdate || changes.UpdatedMutable is not null)
+                    if (firstSettingsUpdate)
                     {
-                        UpdateEvaluationContext(changes.UpdatedMutable ?? changes.PreviousMutable);
+                        Volatile.Write(ref context, CreateEvaluationContext(changes.UpdatedMutable ?? changes.PreviousMutable));
                     }
 
                     firstSettingsUpdate = false;
                 });
+                // Capture tags after the synchronous settings replay. Like the other SDKs,
+                // keep them for this writer's lifetime so later updates cannot relabel events.
+                // Agent address changes still flow to the sender independently.
+                writer = new FlagEvaluationWriter(sender.SendCompressedAsync, Volatile.Read(ref context));
                 _evaluationSender = sender;
                 Volatile.Write(ref _evaluationWriter, writer);
             }
@@ -414,17 +426,6 @@ namespace Datadog.Trace.FeatureFlags
                 sender?.Dispose();
                 Log.Debug("FeatureFlags flagevaluation writer could not be started.");
             }
-        }
-
-        private void UpdateEvaluationContext(MutableSettings settings)
-        {
-            IReadOnlyDictionary<string, string> context = new Dictionary<string, string>
-            {
-                ["service"] = settings.DefaultServiceName,
-                ["env"] = settings.Environment ?? "unknown",
-                ["version"] = settings.ServiceVersion ?? "unknown",
-            };
-            Volatile.Write(ref _evaluationContext, context);
         }
 
         private async Task FinishDisposalAsync(
