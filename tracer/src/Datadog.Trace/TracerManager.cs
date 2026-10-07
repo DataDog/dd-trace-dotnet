@@ -389,6 +389,31 @@ namespace Datadog.Trace
                         writer.WriteEndArray();
                     }
 
+                    void WriteOtlpExporterSettings(string signal, Uri endpoint, OtlpProtocol protocol, IEnumerable<KeyValuePair<string, string>> headers)
+                    {
+                        writer.WritePropertyName($"OTEL_EXPORTER_OTLP_{signal}_ENDPOINT");
+                        writer.WriteValue(endpoint);
+
+                        writer.WritePropertyName($"OTEL_EXPORTER_OTLP_{signal}_PROTOCOL");
+                        writer.WriteValue(protocol switch
+                        {
+                            OtlpProtocol.Grpc => "grpc",
+                            OtlpProtocol.HttpProtobuf => "http/protobuf",
+                            OtlpProtocol.HttpJson => "http/json",
+                            _ => null,
+                        });
+
+                        writer.WritePropertyName($"OTEL_EXPORTER_OTLP_{signal}_HEADERS");
+                        writer.WriteStartObject();
+                        foreach (var header in headers)
+                        {
+                            writer.WritePropertyName(header.Key);
+                            writer.WriteValue("<redacted>");
+                        }
+
+                        writer.WriteEndObject();
+                    }
+
                     // ReSharper disable MethodHasAsyncOverload
                     writer.WriteStartObject();
 
@@ -574,6 +599,21 @@ namespace Datadog.Trace
 
                     writer.WritePropertyName("DD_TRACE_OTEL_SEMANTICS_ENABLED");
                     writer.WriteValue(instanceSettings.OtelSemanticsEnabled);
+
+                    if (exporterSettings.IsOtlpTraceExport)
+                    {
+                        WriteOtlpExporterSettings("TRACES", exporterSettings.OtlpTracesEndpoint, exporterSettings.OtlpTracesProtocol, exporterSettings.OtlpTracesHeaders);
+                    }
+
+                    if (instanceSettings.OtlpMetricsExportEnabled)
+                    {
+                        WriteOtlpExporterSettings("METRICS", exporterSettings.OtlpMetricsEndpoint, exporterSettings.OtlpMetricsProtocol, exporterSettings.OtlpMetricsHeaders);
+                    }
+
+                    if (instanceSettings.OtlpLogsExportEnabled)
+                    {
+                        WriteOtlpExporterSettings("LOGS", instanceSettings.OtlpLogsEndpoint, instanceSettings.OtlpLogsProtocol, instanceSettings.OtlpLogsHeaders);
+                    }
 
                     writer.WritePropertyName("profiler_enabled");
                     writer.WriteValue(Profiler.Instance.Status.IsProfilerReady);
