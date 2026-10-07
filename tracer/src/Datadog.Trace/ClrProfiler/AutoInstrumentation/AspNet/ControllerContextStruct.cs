@@ -27,9 +27,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
         public RouteData RouteData;
 
         /// <summary>
-        /// Gets the ParentActionViewContext
+        /// Gets a value indicating whether the action is a child action (rendered with Html.Action / Html.RenderAction)
         /// </summary>
-        public ViewContextStruct ParentActionViewContext;
+        public bool IsChildAction;
     }
 }
 #endif

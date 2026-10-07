@@ -276,6 +276,7 @@ Debugger code runs inside customer processes while inspecting live customer obje
 - `docs/development/UpdatingTheSdk.md` — SDK updates
 - `docs/development/QueryingDatadogAPIs.md` — Querying Datadog APIs for debugging (spans, logs)
 - `docs/development/GitHubActionsSecurity.md` — GitHub Actions SHA-pinning policy, action allowlist, and reviewer checklist
+- `docs/development/FeatureFlagsOpenFeature.md` — OpenFeature provider sync APIs, provider hook rules, and focused tests
 
 **CI & Testing:**
 - `docs/development/CI/TroubleshootingCIFailures.md` — Investigating build/test failures in Azure DevOps
