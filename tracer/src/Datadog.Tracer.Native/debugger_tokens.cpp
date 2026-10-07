@@ -1,6 +1,7 @@
 #include "debugger_tokens.h"
 
 #include <utility>
+#include <vector>
 
 #include "dd_profiler_constants.h"
 #include "il_rewriter_wrapper.h"
@@ -143,7 +144,8 @@ HRESULT DebuggerTokens::WriteLogArgOrLocal(void* rewriterWrapperPtr, const TypeS
         signatureLength += signatureSize;
     }
 
-    COR_SIGNATURE signature[signatureBufferSize];
+    // The argument/local signature is unbounded (e.g. an anonymous type with hundreds of properties)
+    std::vector<COR_SIGNATURE> signature(signatureLength);
     unsigned offset = 0;
     signature[offset++] = IMAGE_CEE_CS_CALLCONV_GENERICINST;
     signature[offset++] = 0x01;
@@ -151,7 +153,7 @@ HRESULT DebuggerTokens::WriteLogArgOrLocal(void* rewriterWrapperPtr, const TypeS
     memcpy(&signature[offset], argumentSignatureBuffer, argumentSignatureSize);
     offset += argumentSignatureSize;
 
-    hr = module_metadata->metadata_emit->DefineMethodSpec(logArgOrLocalRef, signature, signatureLength,
+    hr = module_metadata->metadata_emit->DefineMethodSpec(logArgOrLocalRef, signature.data(), signatureLength,
                                                           &logArgMethodSpec);
     if (FAILED(hr))
     {
@@ -611,11 +613,9 @@ HRESULT DebuggerTokens::WriteEndReturnMemberRef(void* rewriterWrapperPtr, const 
     PCCOR_SIGNATURE returnSignatureBuffer;
     auto returnSignatureLength = returnArgument->GetSignature(returnSignatureBuffer);
 
-    COR_SIGNATURE signature[signatureBufferSize];
-    unsigned offset = 0;
-
     const auto signatureLength = 3 + currentTypeSize + returnSignatureLength;
-    offset = 0;
+    std::vector<COR_SIGNATURE> signature(signatureLength);
+    unsigned offset = 0;
 
     signature[offset++] = IMAGE_CEE_CS_CALLCONV_GENERICINST;
     signature[offset++] = 0x02;
@@ -634,7 +634,7 @@ HRESULT DebuggerTokens::WriteEndReturnMemberRef(void* rewriterWrapperPtr, const 
     memcpy(&signature[offset], returnSignatureBuffer, returnSignatureLength);
     offset += returnSignatureLength;
 
-    hr = module_metadata->metadata_emit->DefineMethodSpec(endMethodMemberRef, signature, signatureLength,
+    hr = module_metadata->metadata_emit->DefineMethodSpec(endMethodMemberRef, signature.data(), signatureLength,
                                                           &endMethodSpec);
     if (FAILED(hr))
     {
@@ -1461,7 +1461,7 @@ HRESULT DebuggerTokens::WriteRentArray(void* rewriterWrapperPtr, const TypeSigna
         signatureLength += signatureSize;
     }
 
-    COR_SIGNATURE signature[signatureBufferSize];
+    std::vector<COR_SIGNATURE> signature(signatureLength);
     unsigned offset = 0;
     signature[offset++] = IMAGE_CEE_CS_CALLCONV_GENERICINST;
     signature[offset++] = 0x01;
@@ -1469,7 +1469,7 @@ HRESULT DebuggerTokens::WriteRentArray(void* rewriterWrapperPtr, const TypeSigna
     memcpy(&signature[offset], argumentSignatureBuffer, argumentSignatureSize);
     offset += argumentSignatureSize;
 
-    hr = module_metadata->metadata_emit->DefineMethodSpec(rentArrayRef, signature, signatureLength,
+    hr = module_metadata->metadata_emit->DefineMethodSpec(rentArrayRef, signature.data(), signatureLength,
                                                           &logArgMethodSpec);
     if (FAILED(hr))
     {
