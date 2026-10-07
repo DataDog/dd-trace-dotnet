@@ -5,6 +5,7 @@
 
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
+using Datadog.Trace.TestHelpers;
 using Datadog.Trace.Util.Http;
 using FluentAssertions;
 using Moq;
@@ -32,12 +33,15 @@ namespace Datadog.Trace.Tests.Util.Http
             result.Should().Be(expectedResult);
         }
 
-        [Theory]
+        [SkippableTheory]
         [InlineData(true, "?jwt=<redacted>")]
         [InlineData(false, "?jwt<redacted>")]
-        public void CopiedDefaultPatternUsesLiteralReplacementWhenConfigured(bool useDefaultPattern, string expected)
+        public void DefaultPatternReplacementDependsOnWhetherPatternIsDefault(bool isDefaultPattern, string expected)
         {
-            var queryStringManager = new QueryStringManager(true, 200, 5000, TracerSettingsConstants.DefaultObfuscationQueryStringRegex, useDefaultPattern: useDefaultPattern);
+#if NETCOREAPP2_1
+            SkipOn.PlatformAndArchitecture(SkipOn.PlatformValue.Linux, SkipOn.ArchitectureValue.ARM64);
+#endif
+            var queryStringManager = new QueryStringManager(true, 200, 5000, TracerSettingsConstants.DefaultObfuscationQueryStringRegex, isDefaultPattern: isDefaultPattern);
 
             queryStringManager.TruncateAndObfuscate("?jwt=eyJabc.eyJdef").Should().Be(expected);
         }

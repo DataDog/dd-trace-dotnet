@@ -193,7 +193,7 @@ public class HttpRequestUtilsTests
         var uri = new Uri(url);
 #endif
         var queryStringManager = useQueryManager
-            ? new QueryStringManager(reportQueryString: true, timeout: 30_000, maxSizeBeforeObfuscation: 50, pattern: TracerSettingsConstants.DefaultObfuscationQueryStringRegex, useDefaultPattern: true)
+            ? new QueryStringManager(reportQueryString: true, timeout: 30_000, maxSizeBeforeObfuscation: 50, pattern: TracerSettingsConstants.DefaultObfuscationQueryStringRegex, isDefaultPattern: true)
             : null;
 
         var result = HttpRequestUtils.GetUrl(uri, queryStringManager);
@@ -244,7 +244,7 @@ public class HttpRequestUtilsTests
     {
         var uri = new Uri(url);
         var queryStringManager = useQueryManager
-            ? new QueryStringManager(reportQueryString: true, timeout: 30_000, maxSizeBeforeObfuscation: 50, pattern: TracerSettingsConstants.DefaultObfuscationQueryStringRegex, useDefaultPattern: true)
+            ? new QueryStringManager(reportQueryString: true, timeout: 30_000, maxSizeBeforeObfuscation: 50, pattern: TracerSettingsConstants.DefaultObfuscationQueryStringRegex, isDefaultPattern: true)
             : null;
 
         var result = HttpRequestUtils.GetUrlFull(uri, queryStringManager);

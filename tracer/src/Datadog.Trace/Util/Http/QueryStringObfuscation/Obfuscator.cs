@@ -12,13 +12,13 @@ namespace Datadog.Trace.Util.Http.QueryStringObfuscation
     internal sealed class Obfuscator : ObfuscatorBase
     {
         private const string ReplacementString = "<redacted>";
-        private const string DefaultReplacementString = "${1}<redacted>";
+        private const string DefaultPatternReplacementString = "${1}<redacted>";
         private readonly Regex _regex;
         private readonly string _replacement;
         private readonly TimeSpan _timeout;
         private readonly IDatadogLogger _logger;
 
-        internal Obfuscator(string pattern, TimeSpan timeout, IDatadogLogger logger, bool useDefaultPattern)
+        internal Obfuscator(string pattern, TimeSpan timeout, IDatadogLogger logger, bool isDefaultPattern)
         {
             _timeout = timeout;
             _logger = logger;
@@ -34,10 +34,18 @@ namespace Datadog.Trace.Util.Http.QueryStringObfuscation
                                          RegexOptions.CultureInvariant;
 
             _regex = new Regex(pattern, options, _timeout);
-            _replacement = useDefaultPattern ? DefaultReplacementString : ReplacementString;
+            _replacement = isDefaultPattern ? DefaultPatternReplacementString : ReplacementString;
 
-            // Can't use empty string, space, or dot, as they are optimized and don't actually trigger compilation.
-            _ = _regex.Match("o");
+            try
+            {
+                // Warmup the regex
+                // Can't use empty string, space, or dot, as they are optimized and don't actually trigger the compilation
+                _ = _regex.Match("o");
+            }
+            catch
+            {
+                // Nothing to log here
+            }
         }
 
         /// <summary>

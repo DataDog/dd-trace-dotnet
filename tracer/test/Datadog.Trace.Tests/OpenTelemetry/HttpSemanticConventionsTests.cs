@@ -20,7 +20,7 @@ public class HttpSemanticConventionsTests
         timeout: 30_000,
         maxSizeBeforeObfuscation: 5000,
         pattern: TracerSettingsConstants.DefaultObfuscationQueryStringRegex,
-        useDefaultPattern: true);
+        isDefaultPattern: true);
 
     public static TheoryData<string> AllKnownMethods() =>
         new() { "CONNECT", "DELETE", "GET", "HEAD", "OPTIONS", "PATCH", "POST", "PUT", "QUERY", "TRACE" };
