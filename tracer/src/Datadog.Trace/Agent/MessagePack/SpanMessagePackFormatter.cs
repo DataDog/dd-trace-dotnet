@@ -32,7 +32,7 @@ namespace Datadog.Trace.Agent.MessagePack
         // Azure App Service environment variables, and dynamically cached values).
 
         // Runtime values (determined at process startup)
-        private readonly byte[] _runtimeIdValueBytes = MessagePackSerializer.Serialize(Tracer.RuntimeId);
+        private readonly byte[] _runtimeIdValueBytes = MessagePackBinary.GetEncodedStringBytes(Tracer.RuntimeId);
         private readonly Dictionary<string, byte[]> _wafRuleFileVersionValues = new();
 
         // Settings are immutable. Cache an immutable snapshot per settings instance so concurrent
@@ -922,7 +922,7 @@ namespace Datadog.Trace.Agent.MessagePack
 
         private static byte[] SerializeIfNotNullOrWhiteSpace(string value)
         {
-            return string.IsNullOrWhiteSpace(value) ? null : MessagePackSerializer.Serialize(value);
+            return string.IsNullOrWhiteSpace(value) ? null : MessagePackBinary.GetEncodedStringBytes(value);
         }
 
         private byte[] GetAppSecRulesetVersion(string version)

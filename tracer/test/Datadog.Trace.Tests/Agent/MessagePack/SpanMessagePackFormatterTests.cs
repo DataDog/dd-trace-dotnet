@@ -25,6 +25,7 @@ using Datadog.Trace.TestHelpers.Stats;
 using Datadog.Trace.TestHelpers.TestTracer;
 using Datadog.Trace.Tests.Util;
 using Datadog.Trace.Util;
+using Datadog.Trace.Vendors.MessagePack;
 using FluentAssertions;
 using Moq;
 using Xunit;
@@ -670,8 +671,10 @@ public class SpanMessagePackFormatterTests
         serializedSpan.Metrics["_dd.inferred_span"].Should().Be(1.0);
     }
 
-    [Fact]
-    public async Task SerializationKeepsAzureAppServiceSettingsIsolated()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task SerializationKeepsAzureAppServiceSettingsIsolated(bool useSharedBuffer)
     {
         await using var firstTracer = TracerHelper.Create(CreateSettings("first", "first-instance"));
         await using var secondTracer = TracerHelper.Create(CreateSettings("second", " "));
@@ -691,11 +694,17 @@ public class SpanMessagePackFormatterTests
             { "WEBSITE_INSTANCE_ID", instance },
         }));
 
-        static Dictionary<string, string> SerializeTags(Tracer tracer)
+        Dictionary<string, string> SerializeTags(Tracer tracer)
         {
             var span = tracer.StartSpan("http.request");
             span.SetDuration(TimeSpan.FromMilliseconds(100));
             var chunk = new TraceChunkModel(new SpanCollection(new[] { span }));
+            if (useSharedBuffer)
+            {
+                var serialized = MessagePackSerializer.Serialize(chunk, SpanFormatterResolver.Instance);
+                return global::MessagePack.MessagePackSerializer.Deserialize<MockSpan[]>(serialized)[0].Tags;
+            }
+
             byte[] bytes = [];
             var length = SpanMessagePackFormatter.Instance.Serialize(ref bytes, 0, chunk, SpanFormatterResolver.Instance);
             return global::MessagePack.MessagePackSerializer.Deserialize<MockSpan[]>(new ArraySegment<byte>(bytes, 0, length))[0].Tags;
