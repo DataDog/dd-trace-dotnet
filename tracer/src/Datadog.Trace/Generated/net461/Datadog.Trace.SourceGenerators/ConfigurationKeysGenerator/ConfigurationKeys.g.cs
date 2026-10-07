@@ -596,6 +596,7 @@ internal static partial class ConfigurationKeys
 
     /// <summary>
     /// Configuration key for specifying a custom regex to obfuscate query strings.
+    /// Custom patterns run on untrusted query strings on the request path. Ensure they cannot backtrack excessively.
     /// Default value is in TracerSettingsConstants
     ///  WARNING: This regex cause crashes under netcoreapp2.1 / linux / arm64, dont use on manual instrumentation in this environment
     /// </summary>
