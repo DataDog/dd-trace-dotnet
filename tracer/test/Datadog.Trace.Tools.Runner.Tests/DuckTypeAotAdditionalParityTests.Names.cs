@@ -111,6 +111,26 @@ public partial class DuckTypeAotAdditionalParityTests
     }
 
     [Theory]
+    // A backtick that isn't a generic arity, or a '!', in the name of a target: it isn't an open generic type.
+    [InlineData("A`B")]
+    [InlineData("A`1x")]
+    [InlineData("A!B")]
+    public void GeneratedRegistryShouldMapTargetsWhoseNamesLookGeneric(string name)
+    {
+        var module = CreateNamesModule("NamesLookGeneric" + Guid.NewGuid().ToString("N"));
+        AddNamesClass(module, "NamesLookGeneric", name, module.CorLibTypes.Object.TypeDefOrRef, "named:" + name);
+        var directory = CreateTemporaryDirectory();
+        var path = Path.Combine(directory, module.Assembly.Name + ".dll");
+        module.Write(path);
+        var target = Assembly.LoadFrom(path).GetType("NamesLookGeneric." + name, throwOnError: true)!;
+        AssertSameOutcomeWithInputs(
+            () => DuckType.Create<INamesNameProxy>(Activator.CreateInstance(target)!)!.Name,
+            [TestAssemblyPath, path],
+            genericInstantiationsJson: null,
+            new DuckTypeAotMapping(typeof(INamesNameProxy).FullName!, typeof(INamesNameProxy).Assembly.GetName().Name!, target.FullName!, module.Assembly.Name!, DuckTypeAotMappingMode.Forward, DuckTypeAotMappingSource.MapFile));
+    }
+
+    [Theory]
     [InlineData("unqualified")]
     [InlineData("qualified")]
     public void GeneratedRegistryShouldExpandOpenGenericMappingsFromRootsWithUnqualifiedArguments(string spelling)

@@ -606,13 +606,30 @@ namespace Datadog.Trace.DuckTyping
     /// </summary>
     internal sealed class DuckTypeAotMissingProxyRegistrationException : DuckTypeException
     {
-        private DuckTypeAotMissingProxyRegistrationException(Type proxyDefinitionType, Type targetType, bool reverse)
-            : base($"AOT duck typing mapping not found for proxy '{proxyDefinitionType.FullName}' and target '{targetType.FullName}' (reverse={reverse}).")
+        private DuckTypeAotMissingProxyRegistrationException(string message)
+            : base(message)
         {
         }
 
         internal static DuckTypeAotMissingProxyRegistrationException Create(Type proxyDefinitionType, Type targetType, bool reverse)
-            => new(proxyDefinitionType, targetType, reverse);
+            => Create(proxyDefinitionType, targetType, reverse, failedRegistrationCount: 0, firstRegistrationFailure: null);
+
+        /// <summary>
+        /// Creates the exception, naming the registrations of the registry that failed at startup (one of them may be the missing one).
+        /// </summary>
+        /// <param name="proxyDefinitionType">The proxy definition type.</param>
+        /// <param name="targetType">The target type.</param>
+        /// <param name="reverse">Whether the mapping is a reverse one.</param>
+        /// <param name="failedRegistrationCount">The number of registrations that failed.</param>
+        /// <param name="firstRegistrationFailure">The exception of the first one.</param>
+        /// <returns>The exception.</returns>
+        internal static DuckTypeAotMissingProxyRegistrationException Create(Type proxyDefinitionType, Type targetType, bool reverse, int failedRegistrationCount, string? firstRegistrationFailure)
+        {
+            var message = $"AOT duck typing mapping not found for proxy '{proxyDefinitionType.FullName}' and target '{targetType.FullName}' (reverse={reverse}).";
+            return new(failedRegistrationCount > 0
+                           ? $"{message} {failedRegistrationCount} registration(s) of the AOT duck typing registry failed at startup, because they use types this runtime can't load (the first one: {firstRegistrationFailure})."
+                           : message);
+        }
     }
 
     /// <summary>
@@ -763,10 +780,20 @@ namespace Datadog.Trace.DuckTyping
                 _ => null
             };
 
-            return innerException is not null && failureTypeName == typeof(DuckTypeException).FullName
-                       ? DuckTypeException.Create(detail, innerException)
-                       : Create(failureTypeName, detail);
+            return Create(failureTypeName, detail, innerException);
         }
+
+        /// <summary>
+        /// Creates the exception dynamic duck typing throws, with the exception it wraps (only a DuckTypeException wraps one).
+        /// </summary>
+        /// <param name="failureTypeName">The full name of the exception type.</param>
+        /// <param name="detail">The message of the exception.</param>
+        /// <param name="innerException">The wrapped exception, or null.</param>
+        /// <returns>The exception.</returns>
+        internal static Exception Create(string failureTypeName, string detail, Exception? innerException)
+            => innerException is not null && failureTypeName == typeof(DuckTypeException).FullName
+                   ? DuckTypeException.Create(detail, innerException)
+                   : Create(failureTypeName, detail);
 
         [DebuggerHidden]
         [DoesNotReturn]

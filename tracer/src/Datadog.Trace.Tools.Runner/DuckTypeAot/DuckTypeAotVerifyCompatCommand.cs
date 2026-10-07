@@ -76,7 +76,6 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// <param name="value">The value value.</param>
         /// <param name="failureMode">The failure mode value.</param>
         /// <returns>true if the operation succeeds; otherwise, false.</returns>
-        /// <remarks>Emits or composes IL for generated duck-typing proxy operations.</remarks>
         private static bool TryParseFailureMode(string? value, out DuckTypeAotFailureMode failureMode)
         {
             if (string.Equals(value, "default", StringComparison.OrdinalIgnoreCase))

@@ -20,7 +20,7 @@ You need:
 1. A NativeAOT app project.
 2. A small contracts project containing the target type and proxy interface.
 3. A generated DuckTyping AOT registry assembly.
-4. A startup call to `DuckTypeAotRegistryBootstrap.Initialize()` (when dynamic code isn't supported, i.e. in NativeAOT).
+4. A reference to the registry: its module initializer initializes it when dynamic code isn't supported (NativeAOT). The sample also calls `DuckTypeAotRegistryBootstrap.Initialize()` at startup, which makes the startup order explicit.
 
 ## Minimal App Layout
 
@@ -63,7 +63,8 @@ public static class Program
 {
     public static void Main()
     {
-        // Only in NativeAOT: under the JIT, the application keeps dynamic duck typing.
+        // In NativeAOT, the module initializer of the registry already initialized it (this call does nothing more). Under the
+        // JIT, the application keeps dynamic duck typing: calling Initialize() would switch it to the registry.
         if (!RuntimeFeature.IsDynamicCodeSupported)
         {
             DuckTypeAotRegistryBootstrap.Initialize();
@@ -217,7 +218,7 @@ Replace `osx-arm64` with your RID when needed.
 
 At startup:
 
-1. `DuckTypeAotRegistryBootstrap.Initialize()` enables AOT mode.
+1. The module initializer of the registry calls `DuckTypeAotRegistryBootstrap.Initialize()`, which enables AOT mode (dynamic code isn't supported).
 2. It validates the generated registry against the `Datadog.Trace` runtime contract.
 3. It registers all generated mappings.
 4. `DuckType.Create<IPersonProxy>(person)` uses the pre-registered AOT mapping.
@@ -240,7 +241,7 @@ dotnet "$RUNNER" ducktype-aot verify-compat \
 ## Important Constraints
 
 1. The AOT runtime is closed-world. If you add new compatible target types later, regenerate the registry.
-2. Runtime lookups are exact-match only. Flexibility comes from generation-time registration expansion.
+2. Runtime lookups are exact-match, except for the runtime types a registry can't name (other array types, classes of the core library built on a non-public type), served by the proxy of a mapped type they derive from or implement. Flexibility comes from generation-time registration expansion.
 3. Generated bootstrap is the supported model. Manual AOT registration APIs exist for compatibility, but they are not the preferred integration path.
 
 ## Next Docs

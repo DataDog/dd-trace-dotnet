@@ -8,11 +8,17 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
+using System.Reflection;
+using System.Resources;
+using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Tools.Runner.DuckTypeAot;
 using FluentAssertions;
+using Newtonsoft.Json;
 using Xunit;
 
 #pragma warning disable SA1201 // Nested test fixtures follow the test methods.
@@ -21,8 +27,9 @@ namespace Datadog.Trace.Tools.Runner.Tests;
 
 /// <summary>
 /// The runtime types a registry can't name: the other array types of an array mapping, the arrays a mapping that isn't an
-/// array type is assignable from, and the non-public types of the core library. Every scenario runs each exercise in dynamic
-/// mode, then with the generated registry, and compares the outcomes (values, or exception types and messages).
+/// array type is assignable from, and the non-public types of the core library (registered as aliases when the generator knows
+/// them, else served by a registered type they derive from or implement). Every scenario runs each exercise in dynamic mode,
+/// then with the generated registry, and compares the outcomes (values, or exception types and messages).
 /// </summary>
 public partial class DuckTypeAotAdditionalParityTests
 {
@@ -49,6 +56,26 @@ public partial class DuckTypeAotAdditionalParityTests
     [InlineData("runtime-type")]
     [InlineData("runtime-type-failure")]
     [InlineData("async-method-task")]
+    // Members only the non-public type has, or that it hides, re-implements or overrides (aliases of the non-public types).
+    [InlineData("runtime-type-private-field")]
+    [InlineData("runtime-method-info-internal-property")]
+    [InlineData("runtime-method-info-to-string")]
+    [InlineData("runtime-property-info-covariant-return")]
+    [InlineData("sync-hashtable-explicit-reimplementation")]
+    [InlineData("runtime-resource-set-hidden-private-method")]
+    [InlineData("object-mapping-runtime-type")]
+    [InlineData("duck-copy-runtime-type")]
+    [InlineData("runtime-type-activator")]
+    // Types the generator can't know (closed over a type of the runtime): the proxy of the closest registered type they derive
+    // from or implement, whose failure isn't theirs.
+    [InlineData("array-enumerator-interface-failure-and-success")]
+    [InlineData("array-enumerator-derived-interface-failure")]
+    [InlineData("array-enumerator-interface-to-string")]
+    // Task<VoidTaskResult> (Task.CompletedTask, async methods returning Task) is an alias of Task mappings; the async boxes
+    // and the other tasks derived from Task are served by the closest of them.
+    [InlineData("completed-task")]
+    [InlineData("async-method-void-task")]
+    [InlineData("delay-task")]
     public void GeneratedRegistryShouldServeRuntimeTypesItCantNameLikeDynamicMode(string scenario)
     {
         var (exercises, mappings) = scenario switch
@@ -154,6 +181,124 @@ public partial class DuckTypeAotAdditionalParityTests
             "runtime-type-failure" => (
                 new Func<object?>[] { () => DuckType.Create<IFallbackMissingProxy>(typeof(string))!.Missing },
                 new[] { Mapping(typeof(IFallbackMissingProxy), typeof(Type)) }),
+            "runtime-type-private-field" => (
+                new Func<object?>[]
+                {
+                    () => DuckType.Create<IFallbackHandleProxy>(typeof(string))!.Handle != IntPtr.Zero,
+                    () => DuckType.CanCreate<IFallbackHandleProxy>(typeof(string)),
+                },
+                new[] { Mapping(typeof(IFallbackHandleProxy), typeof(Type)) }),
+            "runtime-method-info-internal-property" => (
+                new Func<object?>[] { () => DuckType.Create<IFallbackBindingFlagsProxy>(typeof(object).GetMethod("ToString")!)!.BindingFlags.ToString() },
+                new[] { Mapping(typeof(IFallbackBindingFlagsProxy), typeof(MethodInfo)) }),
+            "runtime-method-info-to-string" => (
+                new Func<object?>[]
+                {
+                    () => DuckType.Create<IFallbackNameProxy>(typeof(object).GetMethod("ToString")!)!.ToString(),
+                    () => ((IDuckType)DuckType.Create<IFallbackNameProxy>(typeof(object).GetMethod("ToString")!)!).ToString(),
+                    () => ((IDuckType)DuckType.Create<IFallbackIsDefinedProxy>(typeof(string))!).ToString(),
+                },
+                new[] { Mapping(typeof(IFallbackNameProxy), typeof(MethodInfo)), Mapping(typeof(IFallbackIsDefinedProxy), typeof(ICustomAttributeProvider)) }),
+            "runtime-property-info-covariant-return" => (
+                new Func<object?>[] { () => DuckType.Create<IFallbackGetGetMethodProxy>(typeof(string).GetProperty("Length")!)!.GetGetMethod(false)?.Name },
+                new[] { Mapping(typeof(IFallbackGetGetMethodProxy), typeof(PropertyInfo)) }),
+            "sync-hashtable-explicit-reimplementation" => (
+                new Func<object?>[]
+                {
+                    () => CountItems(DuckType.Create<IFallbackExplicitEnumerableProxy>(new Hashtable { { 1, 1 }, { 2, 2 } })!.GetEnumerator()),
+                    () => CountItems(DuckType.Create<IFallbackExplicitEnumerableProxy>(Hashtable.Synchronized(new Hashtable { { 1, 1 }, { 2, 2 } }))!.GetEnumerator()),
+                },
+                new[] { Mapping(typeof(IFallbackExplicitEnumerableProxy), typeof(Hashtable)) }),
+            "runtime-resource-set-hidden-private-method" => (
+                new Func<object?>[]
+                {
+                    () => GetCoreLibraryResourceSet().GetType().Name,
+                    () => DuckType.Create<IFallbackEnumeratorHelperProxy>(GetCoreLibraryResourceSet())!.GetEnumeratorHelper().MoveNext(),
+                },
+                new[] { Mapping(typeof(IFallbackEnumeratorHelperProxy), typeof(ResourceSet)) }),
+            "object-mapping-runtime-type" => (
+                new Func<object?>[]
+                {
+                    () => DuckType.Create<IFallbackNameProxy>(new object())!.Name,
+                    () => DuckType.Create<IFallbackNameProxy>(typeof(string))!.Name,
+                },
+                new[] { Mapping(typeof(IFallbackNameProxy), typeof(object)) }),
+            "duck-copy-runtime-type" => (
+                new Func<object?>[]
+                {
+                    () => DuckType.Create<FallbackNameCopy>(typeof(string)).Name,
+                    () => DuckType.GetOrCreateProxyType(typeof(FallbackNameCopy), typeof(string).GetType()).CreateInstance<FallbackNameCopy>("not a type").Name,
+                },
+                new[] { Mapping(typeof(FallbackNameCopy), typeof(Type)) }),
+            "runtime-type-activator" => (
+                new Func<object?>[]
+                {
+                    () => DuckType.GetOrCreateProxyType(typeof(IFallbackNameProxy), typeof(string).GetType()).CreateInstance<IFallbackNameProxy>("not a type").Name,
+                    () => DuckType.GetOrCreateProxyType(typeof(IFallbackNameProxy), typeof(string).GetType()).CreateInstance<IFallbackNameProxy>(typeof(Type).GetMethod("ToString")!).Name,
+                    () => ((IFallbackNameProxy)DuckType.Create(typeof(IFallbackNameProxy), typeof(string))!).Name,
+                    () => typeof(string).DuckAs<IFallbackNameProxy>()?.Name,
+                    () => typeof(string).TryDuckCast<IFallbackNameProxy>(out var proxy) + ":" + proxy?.Name,
+                },
+                new[] { Mapping(typeof(IFallbackNameProxy), typeof(Type)) }),
+            "array-enumerator-interface-failure-and-success" => (
+                new Func<object?>[]
+                {
+                    () =>
+                    {
+                        DuckType.Create<IFallbackDisposeProxy>(GetArrayEnumerator())!.Dispose();
+                        return "disposed";
+                    },
+                },
+                new[] { Mapping(typeof(IFallbackDisposeProxy), typeof(IEnumerator)), Mapping(typeof(IFallbackDisposeProxy), typeof(IDisposable)) }),
+            "array-enumerator-derived-interface-failure" => (
+                new Func<object?>[]
+                {
+                    () =>
+                    {
+                        DuckType.Create<IFallbackDisposeProxy>(GetArrayEnumerator())!.Dispose();
+                        return "disposed";
+                    },
+                },
+                new[] { Mapping(typeof(IFallbackDisposeProxy), typeof(IEnumerator<int>)), Mapping(typeof(IFallbackDisposeProxy), typeof(IDisposable)) }),
+            "array-enumerator-interface-to-string" => (
+                new Func<object?>[]
+                {
+                    () => DuckType.Create<IFallbackMoveNextProxy>(GetArrayEnumerator())!.MoveNext(),
+                    () => ((IDuckType)DuckType.Create<IFallbackMoveNextProxy>(GetArrayEnumerator())!).ToString(),
+                    () => ((IDuckType)DuckType.Create<IFallbackMoveNextProxy>(GetArrayEnumerator())!).Type == GetArrayEnumerator().GetType(),
+                },
+                new[] { Mapping(typeof(IFallbackMoveNextProxy), typeof(IEnumerator)) }),
+            "completed-task" => (
+                new Func<object?>[]
+                {
+                    () => DuckType.Create<IFallbackContinueWithProxy>(Task.CompletedTask)!.ContinueWith(_ => 1).Result,
+                    () => Convert.ToString(DuckType.Create<IFallbackObjectResultProxy>(Task.CompletedTask)!.Result, CultureInfo.InvariantCulture),
+                    () => DuckType.Create<IFallbackIntResultProxy>(Task.CompletedTask)!.Result,
+                },
+                new[]
+                {
+                    Mapping(typeof(IFallbackContinueWithProxy), typeof(Task)),
+                    Mapping(typeof(IFallbackObjectResultProxy), typeof(Task)),
+                    Mapping(typeof(IFallbackIntResultProxy), typeof(Task)),
+                }),
+            "async-method-void-task" => (
+                new Func<object?>[]
+                {
+                    () =>
+                    {
+                        var task = FallbackVoidAsync();
+                        return DuckType.Create<IFallbackContinueWithProxy>(task)!.ContinueWith(_ => 1).Result + "|" + (task.GetType().BaseType == Task.CompletedTask.GetType());
+                    },
+                    () => Convert.ToString(DuckType.Create<IFallbackObjectResultProxy>(FallbackVoidAsync())!.Result, CultureInfo.InvariantCulture),
+                },
+                new[] { Mapping(typeof(IFallbackContinueWithProxy), typeof(Task)), Mapping(typeof(IFallbackObjectResultProxy), typeof(Task)) }),
+            "delay-task" => (
+                new Func<object?>[]
+                {
+                    () => DuckType.Create<IFallbackContinueWithProxy>(Task.Delay(Timeout.Infinite, new CancellationTokenSource().Token)) is not null,
+                    () => DuckType.CanCreate<IFallbackContinueWithProxy>(Task.Delay(Timeout.Infinite, new CancellationTokenSource().Token)),
+                },
+                new[] { Mapping(typeof(IFallbackContinueWithProxy), typeof(Task)) }),
             _ => (
                 new Func<object?>[]
                 {
@@ -204,6 +349,107 @@ public partial class DuckTypeAotAdditionalParityTests
             Mapping(typeof(IFallbackEqualsProxy), typeof(object)));
     }
 
+    [Fact]
+    public void GeneratedRegistryShouldKeepTheWrappedExceptionOfFailuresOfOtherRuntimeTypes()
+    {
+        // Reflection.Emit can't create the proxy (an abstract event): the failure wraps a TypeLoadException, for the array type
+        // of the mapping, another array type, System.Type and System.RuntimeType.
+        var exercises = new Func<object?>[]
+        {
+            () => DuckType.Create<FallbackAbstractEventProxy>(new int[2])!.Length,
+            () => DuckType.Create<FallbackAbstractEventProxy>(new long[3])!.Length,
+            () => DuckType.Create<FallbackAbstractEventProxy>(typeof(Type))!.Length,
+            () => DuckType.Create<FallbackAbstractEventProxy>(typeof(string))!.Length,
+        };
+        DuckType.ResetRuntimeModeForTests();
+        var expected = exercises.Select(CaptureWithoutGeneratedNames).ToArray();
+        expected[1].Should().Contain("[inner TypeLoadException");
+        WithGeneratedRegistry(
+            () => exercises.Select(CaptureWithoutGeneratedNames).Should().Equal(expected, "AOT duck typing should behave like dynamic duck typing"),
+            compatibilityAssertions: null,
+            extraTargetAssemblies: [typeof(object).Assembly.Location],
+            Mapping(typeof(FallbackAbstractEventProxy), typeof(int[])),
+            Mapping(typeof(FallbackAbstractEventProxy), typeof(Type)));
+
+        // The names of the types dynamic duck typing generates for the core library's types, in the wrapped exception's message.
+        static string CaptureWithoutGeneratedNames(Func<object?> exercise)
+            => Regex.Replace(CaptureWithInnerException(exercise), @"System_Private_CoreLib__[0-9A-F]+[^' ]*", "<generated>");
+    }
+
+    [Fact]
+    public void GeneratedRegistryShouldNotServeRuntimeTypesWithTheFailureOfAnotherType()
+    {
+        // The registered types the runtime types derive from fail: the array enumerator (a closed generic type of the core
+        // library) and the box of an async method aren't served with that failure, which would be the one of another type (dynamic
+        // duck typing binds their own members). Without a registration of their own, they have none, named in the exception.
+        var enumeratorType = GetArrayEnumerator().GetType();
+        Func<object?> enumerator = () => DuckType.Create<IFallbackNameProxy>(GetArrayEnumerator())!.Name;
+        Func<object?> box = () => DuckType.Create<IFallbackIntResultProxy>(FallbackVoidAsync())!.Result;
+        DuckType.ResetRuntimeModeForTests();
+        CaptureFailure(enumerator).Should().StartWith("throws:DuckTypePropertyOrFieldNotFoundException:");
+        CaptureFailure(box).Should().StartWith("throws:DuckType");
+        WithGeneratedRegistry(
+            () =>
+            {
+                CaptureFailure(enumerator).Should().Be($"throws:DuckTypeAotMissingProxyRegistrationException:AOT duck typing mapping not found for proxy '{typeof(IFallbackNameProxy).FullName}' and target '{enumeratorType.FullName}' (reverse=False).");
+                CaptureFailure(box).Should().StartWith("throws:DuckTypeAotMissingProxyRegistrationException:");
+            },
+            compatibilityAssertions: null,
+            extraTargetAssemblies: [typeof(object).Assembly.Location],
+            Mapping(typeof(IFallbackNameProxy), typeof(object)),
+            Mapping(typeof(IFallbackIntResultProxy), typeof(Task)));
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void GeneratedRegistryShouldServeClosedGenericTypesOverApplicationTypesThatAreListed(bool listed)
+    {
+        // A closed generic type of the core library over a non-public type of the application isn't a type of the runtime: the
+        // registry names it when the generic instantiations list it, and has no registration for it otherwise.
+        Func<object?> exercise = () => DuckType.Create<IFallbackCountProxy>(new List<FallbackHidden> { new() })!.Count;
+        var mapping = Mapping(typeof(IFallbackCountProxy), typeof(IEnumerable<FallbackHidden>));
+        if (listed)
+        {
+            AssertSameOutcomeWithInputs(
+                exercise,
+                [TestAssemblyPath, typeof(object).Assembly.Location],
+                JsonConvert.SerializeObject(new[] { new { type = typeof(List<FallbackHidden>).FullName, assembly = typeof(List<>).Assembly.GetName().Name } }),
+                mapping);
+            return;
+        }
+
+        DuckType.ResetRuntimeModeForTests();
+        CaptureFailure(exercise).Should().Be("1");
+        WithGeneratedRegistry(
+            () => CaptureFailure(exercise).Should().StartWith("throws:DuckTypeAotMissingProxyRegistrationException:"),
+            compatibilityAssertions: null,
+            extraTargetAssemblies: [typeof(object).Assembly.Location],
+            mapping);
+    }
+
+    private static IEnumerator GetArrayEnumerator() => ((IEnumerable<int>)new[] { 1, 2 }).GetEnumerator();
+
+    private static int CountItems(IEnumerator enumerator)
+    {
+        var count = 0;
+        while (enumerator.MoveNext())
+        {
+            count++;
+        }
+
+        return count;
+    }
+
+    private static ResourceSet GetCoreLibraryResourceSet()
+    {
+        var resourceName = typeof(object).Assembly.GetManifestResourceNames().First(name => name.EndsWith(".resources", StringComparison.Ordinal));
+        var manager = new ResourceManager(resourceName.Substring(0, resourceName.Length - ".resources".Length), typeof(object).Assembly);
+        return manager.GetResourceSet(CultureInfo.InvariantCulture, createIfNotExists: true, tryParents: true)!;
+    }
+
+    private static async Task FallbackVoidAsync() => await Task.Delay(1).ConfigureAwait(false);
+
     private static string DescribeDuckType(object? proxy)
         => proxy is IDuckType duckType
                ? $"{duckType.Type.Name}|{duckType.Instance?.GetType().Name}|{(proxy is IFallbackLengthProxy lengthProxy ? lengthProxy.Length : -1)}"
@@ -253,6 +499,81 @@ public partial class DuckTypeAotAdditionalParityTests
         int Result { get; }
     }
 
+    public interface IFallbackHandleProxy
+    {
+        [DuckField(Name = "m_handle")]
+        IntPtr Handle { get; }
+    }
+
+    public interface IFallbackBindingFlagsProxy
+    {
+        BindingFlags BindingFlags { get; }
+    }
+
+    public interface IFallbackIsDefinedProxy
+    {
+        bool IsDefined(Type attributeType, bool inherit);
+    }
+
+    public interface IFallbackGetGetMethodProxy
+    {
+        MethodInfo? GetGetMethod(bool nonPublic);
+    }
+
+    public interface IFallbackExplicitEnumerableProxy
+    {
+        [Duck(ExplicitInterfaceTypeName = "System.Collections.IEnumerable")]
+        IEnumerator GetEnumerator();
+    }
+
+    public interface IFallbackEnumeratorHelperProxy
+    {
+        IDictionaryEnumerator GetEnumeratorHelper();
+    }
+
+    public interface IFallbackDisposeProxy
+    {
+        void Dispose();
+    }
+
+    public interface IFallbackMoveNextProxy
+    {
+        bool MoveNext();
+    }
+
+    public interface IFallbackContinueWithProxy
+    {
+        Task<TResult> ContinueWith<TResult>(Func<Task, TResult> continuationFunction);
+    }
+
+    public interface IFallbackObjectResultProxy
+    {
+        object? Result { get; }
+    }
+
+    public interface IFallbackIntResultProxy
+    {
+        int Result { get; }
+    }
+
+    public interface IFallbackCountProxy
+    {
+        int Count { get; }
+    }
+
+    public abstract class FallbackAbstractEventProxy
+    {
+        public abstract event EventHandler Changed;
+
+        public abstract int Length { get; }
+    }
+
+    [DuckCopy]
+    public struct FallbackNameCopy
+    {
+        public string Name;
+    }
+
     [DuckCopy]
     public struct FallbackLengthCopy
     {
@@ -271,5 +592,9 @@ public partial class DuckTypeAotAdditionalParityTests
     public class FallbackVirtualNameBase
     {
         public virtual string Name => "base";
+    }
+
+    internal class FallbackHidden
+    {
     }
 }

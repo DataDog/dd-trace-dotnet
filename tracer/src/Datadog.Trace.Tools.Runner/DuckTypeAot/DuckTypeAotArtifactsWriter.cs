@@ -70,6 +70,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                             DynamicFailureReplayed = hasResult && mappingResult!.ReplaysDynamicFailure,
                             CheckedAgainstMetadataOnly = hasResult && mappingResult!.CheckedAgainstMetadataOnly,
                             FailsOnlyForOtherRuntimeTypes = hasResult && mappingResult!.FailsOnlyForOtherRuntimeTypes,
+                            RuntimeSpecific = hasResult && mappingResult!.RuntimeSpecific,
                             Details = BuildEffectiveCompatibilityDetails(hasResult ? mappingResult : null),
                             GeneratedProxyAssembly = hasResult ? mappingResult!.GeneratedProxyAssemblyName : null,
                             GeneratedProxyType = hasResult ? mappingResult!.GeneratedProxyTypeName : null
@@ -153,7 +154,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 RegistryBootstrapType = registryAssemblyInfo.BootstrapTypeFullName,
                 RegistryMvid = registryAssemblyInfo.Mvid.ToString("D"),
                 RegistryAssemblySha256 = registryAssemblyFingerprint.Sha256,
-                RegistryStrongNameSigned = !string.IsNullOrWhiteSpace(registryAssemblyFingerprint.PublicKeyToken),
+                RegistryStrongNameSigned = !StringUtil.IsNullOrWhiteSpace(registryAssemblyFingerprint.PublicKeyToken),
                 RegistryPublicKeyToken = registryAssemblyFingerprint.PublicKeyToken,
                 TrimmerDescriptorPath = trimmerDescriptorPath,
                 TrimmerDescriptorSha256 = ComputeSha256(trimmerDescriptorPath),
@@ -273,7 +274,6 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// </summary>
         /// <param name="path">The path value.</param>
         /// <param name="matrix">The matrix value.</param>
-        /// <remarks>Emits or composes IL for generated duck-typing proxy operations.</remarks>
         private static void WriteCompatibilityMarkdown(string path, DuckTypeAotCompatibilityMatrix matrix)
         {
             var sb = new StringBuilder();
@@ -286,7 +286,9 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 .AppendLine()
                 .AppendLine("A status marked `(replayed)` is a failure dynamic duck typing has too, which the registry replays. One marked")
                 .AppendLine("`(metadata only)` couldn't be evaluated with dynamic duck typing in the generator, and may differ from it. One marked")
-                .AppendLine("`(other runtime types)` works for its target, but not for another runtime type of it (a derived type, a reverse proxy type...).")
+                .AppendLine("`(other runtime types)` behaves like dynamic duck typing for its target, but not for another runtime type of it (a derived type, a reverse")
+                .AppendLine("proxy type...). One marked `(runtime specific)` targets, or binds, a type or member of the core library that isn't public, which")
+                .AppendLine("other runtimes (e.g. NativeAOT) may not have.")
                 .AppendLine()
                 .AppendLine("| Id | Mode | Source | Status | Diagnostic | Proxy | Target |")
                 .AppendLine("| --- | --- | --- | --- | --- | --- | --- |");
@@ -304,6 +306,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                     .Append(mapping.DynamicFailureReplayed ? " (replayed)" : string.Empty)
                     .Append(mapping.CheckedAgainstMetadataOnly ? " (metadata only)" : string.Empty)
                     .Append(mapping.FailsOnlyForOtherRuntimeTypes ? " (other runtime types)" : string.Empty)
+                    .Append(mapping.RuntimeSpecific ? " (runtime specific)" : string.Empty)
                     .Append(" | ")
                     .Append(mapping.DiagnosticCode ?? "-")
                     .Append(" | ")
@@ -316,8 +319,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                     .Append(mapping.TargetAssembly)
                     .AppendLine(" |");
 
-                // Branch: take this path when (!string.IsNullOrWhiteSpace(mapping.GeneratedProxyType) || !string.IsNullOrWhiteSpace(mapping.GeneratedProxyAssembly)) evaluates to true.
-                if (!string.IsNullOrWhiteSpace(mapping.GeneratedProxyType) || !string.IsNullOrWhiteSpace(mapping.GeneratedProxyAssembly))
+                if (!StringUtil.IsNullOrWhiteSpace(mapping.GeneratedProxyType) || !StringUtil.IsNullOrWhiteSpace(mapping.GeneratedProxyAssembly))
                 {
                     _ = sb.Append("|  |  |  |  |  | generated: ")
                         .Append(mapping.GeneratedProxyType ?? "-")
@@ -326,8 +328,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                         .AppendLine(" |  |");
                 }
 
-                // Branch: take this path when (!string.IsNullOrWhiteSpace(mapping.Details)) evaluates to true.
-                if (!string.IsNullOrWhiteSpace(mapping.Details))
+                if (!StringUtil.IsNullOrWhiteSpace(mapping.Details))
                 {
                     var details = mapping.Details;
                     _ = sb.Append("|  |  |  |  |  | detail: ")
@@ -340,7 +341,10 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         }
 
         /// <summary>
-        /// Writes write trimmer descriptor.
+        /// Writes the trimmer descriptor: it roots the bootstrap type (which references the generated proxy types and the target
+        /// members they use) and the proxy types of the registered mappings. Target types and generated proxy types aren't
+        /// rooted: a type a trimmer or NativeAOT's compiler can't load (e.g. a type of the generator's core library NativeAOT's
+        /// doesn't define) would fail the whole build, where its registration only fails alone at runtime.
         /// </summary>
         /// <param name="path">The path value.</param>
         /// <param name="mappingResolutionResult">The mapping resolution result value.</param>
@@ -359,7 +363,6 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
 
             foreach (var mapping in mappingResolutionResult.Mappings.OrderBy(m => m.Key, StringComparer.Ordinal))
             {
-                // Branch: take this path when (!emissionResult.MappingResultsByKey.TryGetValue(mapping.Key, out var mappingResult)) evaluates to true.
                 if (!emissionResult.MappingResultsByKey.TryGetValue(mapping.Key, out var mappingResult))
                 {
                     continue;
@@ -373,14 +376,6 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 }
 
                 AddTypeRoot(typesByAssembly, mapping.ProxyAssemblyName, mapping.ProxyTypeName);
-                AddTypeRoot(typesByAssembly, mapping.TargetAssemblyName, mapping.TargetTypeName);
-
-                // Branch: take this path when (!string.IsNullOrWhiteSpace(mappingResult.GeneratedProxyAssemblyName) && evaluates to true.
-                if (!string.IsNullOrWhiteSpace(mappingResult.GeneratedProxyAssemblyName) &&
-                    !string.IsNullOrWhiteSpace(mappingResult.GeneratedProxyTypeName))
-                {
-                    AddTypeRoot(typesByAssembly, mappingResult.GeneratedProxyAssemblyName!, mappingResult.GeneratedProxyTypeName!);
-                }
             }
 
             foreach (var genericTypeRoot in mappingResolutionResult.GenericTypeRoots.OrderBy(root => root.Key, StringComparer.Ordinal))
@@ -417,7 +412,6 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// <returns>The resulting string value.</returns>
         private static string ResolveEffectiveCompatibilityStatus(DuckTypeAotMappingEmissionResult? mappingResult)
         {
-            // Branch: take this path when (mappingResult is null) evaluates to true.
             if (mappingResult is null)
             {
                 return DuckTypeAotCompatibilityStatuses.PendingProxyEmission;
@@ -444,15 +438,13 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// <param name="typeName">The type name value.</param>
         private static void AddTypeRoot(IDictionary<string, HashSet<string>> typesByAssembly, string assemblyName, string typeName)
         {
-            // Branch: take this path when (string.IsNullOrWhiteSpace(assemblyName) || string.IsNullOrWhiteSpace(typeName)) evaluates to true.
-            if (string.IsNullOrWhiteSpace(assemblyName) ||
-                string.IsNullOrWhiteSpace(typeName) ||
+            if (StringUtil.IsNullOrWhiteSpace(assemblyName) ||
+                StringUtil.IsNullOrWhiteSpace(typeName) ||
                 DuckTypeAotNameHelpers.GetTrimmerDescriptorTypeName(typeName) is not { } descriptorTypeName)
             {
                 return;
             }
 
-            // Branch: take this path when (!typesByAssembly.TryGetValue(assemblyName, out var assemblyTypes)) evaluates to true.
             if (!typesByAssembly.TryGetValue(assemblyName, out var assemblyTypes))
             {
                 assemblyTypes = new HashSet<string>(StringComparer.Ordinal);
@@ -482,7 +474,6 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// <param name="path">The path value.</param>
         /// <param name="artifactPaths">The artifact paths value.</param>
         /// <param name="registryAssemblyInfo">The registry assembly info value.</param>
-        /// <remarks>Emits or composes IL for generated duck-typing proxy operations.</remarks>
         private static void WritePropsFile(string path, DuckTypeAotArtifactPaths artifactPaths, DuckTypeAotRegistryAssemblyInfo registryAssemblyInfo)
         {
             var outputAssemblyPath = EscapeXml(EscapeMsBuildPath(artifactPaths.OutputAssemblyPath));
@@ -510,7 +501,6 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// </summary>
         /// <param name="value">The value value.</param>
         /// <returns>The resulting string value.</returns>
-        /// <remarks>Emits or composes IL for generated duck-typing proxy operations.</remarks>
         private static string EscapeMsBuildPath(string value)
         {
             // MSBuild unescapes these after evaluating properties and item expressions.
@@ -608,7 +598,6 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         /// <param name="compatibleMappings">The compatible mappings value.</param>
         /// <param name="nonCompatibleMappings">The mappings that aren't compatible, without the ones that replay a dynamic failure.</param>
         /// <param name="replayedDynamicFailureMappings">The mappings whose dynamic duck typing failure the registry replays.</param>
-        /// <remarks>Emits or composes IL for generated duck-typing proxy operations.</remarks>
         public DuckTypeAotCompatibilityArtifacts(string matrixPath, string reportPath, int totalMappings, int compatibleMappings, int nonCompatibleMappings, int replayedDynamicFailureMappings)
         {
             MatrixPath = matrixPath;
@@ -796,12 +785,21 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         public bool CheckedAgainstMetadataOnly { get; set; }
 
         /// <summary>
-        /// Gets or sets a value indicating whether the mapping works for its target, but the registry can't create the proxy of
-        /// another runtime type of it (a derived type, a reverse proxy type...) like dynamic duck typing does.
+        /// Gets or sets a value indicating whether the mapping behaves like dynamic duck typing for its target (it's compatible,
+        /// or replays the failure of dynamic duck typing), but the registry can't create the proxy of another runtime type of it
+        /// (a derived type, a reverse proxy type...) like dynamic duck typing does.
         /// </summary>
         /// <value>true if only other runtime types of the target fail; otherwise, false.</value>
         [JsonProperty("failsOnlyForOtherRuntimeTypes", DefaultValueHandling = DefaultValueHandling.Ignore)]
         public bool FailsOnlyForOtherRuntimeTypes { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether the mapping targets, or its proxy binds, a type or member of the core library
+        /// that isn't public (DTAOT0216): other runtimes (e.g. NativeAOT) may not have it, where the registration or the call fails.
+        /// </summary>
+        /// <value>true if the mapping is specific to the generator's runtime; otherwise, false.</value>
+        [JsonProperty("runtimeSpecific", DefaultValueHandling = DefaultValueHandling.Ignore)]
+        public bool RuntimeSpecific { get; set; }
 
         /// <summary>
         /// Gets or sets details.

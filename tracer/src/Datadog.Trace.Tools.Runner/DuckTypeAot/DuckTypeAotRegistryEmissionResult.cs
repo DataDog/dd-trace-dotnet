@@ -128,7 +128,8 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             string? generatedProxyTypeName,
             bool replaysDynamicFailure = false,
             bool checkedAgainstMetadataOnly = false,
-            bool failsOnlyForOtherRuntimeTypes = false)
+            bool failsOnlyForOtherRuntimeTypes = false,
+            bool runtimeSpecific = false)
         {
             Mapping = mapping;
             Status = status;
@@ -139,6 +140,7 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             ReplaysDynamicFailure = replaysDynamicFailure;
             CheckedAgainstMetadataOnly = checkedAgainstMetadataOnly;
             FailsOnlyForOtherRuntimeTypes = failsOnlyForOtherRuntimeTypes;
+            RuntimeSpecific = runtimeSpecific;
         }
 
         /// <summary>
@@ -206,6 +208,13 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
         public bool FailsOnlyForOtherRuntimeTypes { get; }
 
         /// <summary>
+        /// Gets a value indicating whether the mapping targets, or its proxy binds, a type or member of the core library that
+        /// isn't public: other runtimes (e.g. NativeAOT) may not have it.
+        /// </summary>
+        /// <value>true if the mapping is specific to the generator's runtime; otherwise, false.</value>
+        public bool RuntimeSpecific { get; }
+
+        /// <summary>
         /// Executes compatible.
         /// </summary>
         /// <param name="mapping">The mapping value.</param>
@@ -261,7 +270,8 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 GeneratedProxyTypeName,
                 ReplaysDynamicFailure,
                 CheckedAgainstMetadataOnly,
-                FailsOnlyForOtherRuntimeTypes);
+                FailsOnlyForOtherRuntimeTypes,
+                RuntimeSpecific);
         }
 
         /// <summary>
@@ -279,7 +289,8 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 GeneratedProxyTypeName,
                 replaysDynamicFailure: true,
                 CheckedAgainstMetadataOnly,
-                FailsOnlyForOtherRuntimeTypes);
+                FailsOnlyForOtherRuntimeTypes,
+                RuntimeSpecific);
         }
 
         /// <summary>
@@ -297,7 +308,27 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 GeneratedProxyTypeName,
                 ReplaysDynamicFailure,
                 checkedAgainstMetadataOnly: true,
-                FailsOnlyForOtherRuntimeTypes);
+                FailsOnlyForOtherRuntimeTypes,
+                RuntimeSpecific);
+        }
+
+        /// <summary>
+        /// Gets the same result, marked as specific to the generator's runtime (see <see cref="RuntimeSpecific"/>).
+        /// </summary>
+        /// <returns>The result produced by this operation.</returns>
+        public DuckTypeAotMappingEmissionResult WithRuntimeSpecific()
+        {
+            return new DuckTypeAotMappingEmissionResult(
+                Mapping,
+                Status,
+                DiagnosticCode,
+                Detail,
+                GeneratedProxyAssemblyName,
+                GeneratedProxyTypeName,
+                ReplaysDynamicFailure,
+                CheckedAgainstMetadataOnly,
+                FailsOnlyForOtherRuntimeTypes,
+                runtimeSpecific: true);
         }
 
         /// <summary>
@@ -318,7 +349,8 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
                 GeneratedProxyTypeName,
                 replaysDynamicFailure: false,
                 CheckedAgainstMetadataOnly || otherRuntimeTypeFailure.CheckedAgainstMetadataOnly,
-                failsOnlyForOtherRuntimeTypes: true);
+                failsOnlyForOtherRuntimeTypes: true,
+                RuntimeSpecific);
         }
     }
 }

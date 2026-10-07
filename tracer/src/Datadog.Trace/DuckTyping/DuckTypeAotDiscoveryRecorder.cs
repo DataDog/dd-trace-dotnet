@@ -17,6 +17,7 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.Util;
 using Datadog.Trace.Util.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 
 namespace Datadog.Trace.DuckTyping
 {
@@ -63,7 +64,6 @@ namespace Datadog.Trace.DuckTyping
         /// <param name="reverse">The reverse value.</param>
         internal static void Record(Type proxyType, Type targetType, bool reverse)
         {
-            // Branch: take this path when (StringUtil.IsNullOrWhiteSpace(OutputPath)) evaluates to true.
             if (StringUtil.IsNullOrWhiteSpace(OutputPath))
             {
                 return;
@@ -81,29 +81,114 @@ namespace Datadog.Trace.DuckTyping
 
         private static void RecordCore(Type proxyType, Type targetType, bool reverse)
         {
-            // Branch: take this path when (proxyType is null || targetType is null) evaluates to true.
             if (proxyType is null || targetType is null)
             {
                 return;
+            }
+
+            foreach (var mapEntry in GetMapEntries(proxyType, targetType, reverse))
+            {
+                EnsureProcessExitHook();
+                if (!RecorderState.Mappings.TryAdd(GetKey(mapEntry), mapEntry))
+                {
+                    continue;
+                }
+
+                // Merging into the shared map rereads it, so don't do it on the thread that is creating a proxy.
+                if ((Interlocked.Increment(ref _pendingMappings) % PeriodicFlushThreshold) == 0)
+                {
+                    ThreadPool.UnsafeQueueUserWorkItem(static _ => Flush(isExplicit: false), null);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Gets the map entries recorded for a mapping: its own (unless a registry can't name its types), and for a forward one,
+        /// the mapping of the type the registry serves the target type with:
+        /// <list type="bullet">
+        /// <item>A proxy type dynamic duck typing generated: for a reverse proxy, the type it was created for (a class it derives
+        /// from or an interface it implements); otherwise the base class of a generated class proxy.</item>
+        /// <item>A class of the core library a registry can't name (it may not exist on another runtime, e.g. NativeAOT): the
+        /// closest public class of the core library it derives from, whose proxy serves the classes other runtimes have instead
+        /// (see DuckTypeAotEngine.TryGetFallbackResult).</item>
+        /// </list>
+        /// </summary>
+        /// <param name="proxyType">The proxy type.</param>
+        /// <param name="targetType">The target type.</param>
+        /// <param name="reverse">Whether the mapping is a reverse one.</param>
+        /// <returns>The map entries.</returns>
+        internal static List<MapEntry> GetMapEntries(Type proxyType, Type targetType, bool reverse)
+        {
+            var mapEntries = new List<MapEntry>(2);
+            if (TryCreateMapEntry(proxyType, targetType, reverse, out var mapEntry))
+            {
+                mapEntries.Add(mapEntry);
+            }
+
+            if (reverse)
+            {
+                return mapEntries;
+            }
+
+            Type? servingType = null;
+            if (targetType.Assembly.IsDynamic)
+            {
+                if (typeof(IDuckType).IsAssignableFrom(targetType))
+                {
+                    servingType = DuckType.GetDynamicReverseProxyDefinitionType(targetType) ??
+                                  (targetType.BaseType is { } baseType && baseType != typeof(object) && baseType != typeof(ValueType) ? baseType : null);
+                }
+            }
+            else if (DuckTypeAotEngine.IsRuntimeInternalType(targetType))
+            {
+                for (servingType = targetType.BaseType; servingType is not null && DuckTypeAotEngine.IsRuntimeInternalType(servingType); servingType = servingType.BaseType)
+                {
+                }
+
+                if (servingType == typeof(object))
+                {
+                    servingType = null;
+                }
+            }
+
+            if (servingType is not null && TryCreateMapEntry(proxyType, servingType, reverse: false, out var servingMapEntry))
+            {
+                mapEntries.Add(servingMapEntry);
+            }
+
+            return mapEntries;
+        }
+
+        /// <summary>
+        /// Creates the map entry of a mapping. A type of a dynamic assembly (e.g. a proxy type dynamic duck typing generated)
+        /// has none: a registry can't reference it, and the generation would fail.
+        /// </summary>
+        /// <param name="proxyType">The proxy type.</param>
+        /// <param name="targetType">The target type.</param>
+        /// <param name="reverse">Whether the mapping is a reverse one.</param>
+        /// <param name="mapEntry">The map entry.</param>
+        /// <returns>true if the mapping has a map entry; otherwise, false.</returns>
+        internal static bool TryCreateMapEntry(Type proxyType, Type targetType, bool reverse, out MapEntry mapEntry)
+        {
+            mapEntry = null!;
+            if (proxyType.Assembly.IsDynamic || targetType.Assembly.IsDynamic)
+            {
+                return false;
             }
 
             var proxyTypeName = proxyType.FullName;
             var targetTypeName = targetType.FullName;
             var proxyAssembly = proxyType.Assembly.GetName().Name;
             var targetAssembly = targetType.Assembly.GetName().Name;
-
-            // Branch: take this path when (StringUtil.IsNullOrWhiteSpace(proxyTypeName) || evaluates to true.
             if (StringUtil.IsNullOrWhiteSpace(proxyTypeName) ||
                 StringUtil.IsNullOrWhiteSpace(targetTypeName) ||
                 StringUtil.IsNullOrWhiteSpace(proxyAssembly) ||
                 StringUtil.IsNullOrWhiteSpace(targetAssembly))
             {
-                return;
+                return false;
             }
 
-            EnsureProcessExitHook();
-
-            var mapEntry = new MapEntry
+            mapEntry = new MapEntry
             {
                 Mode = reverse ? "reverse" : "forward",
                 ProxyType = proxyTypeName,
@@ -111,27 +196,7 @@ namespace Datadog.Trace.DuckTyping
                 TargetType = targetTypeName,
                 TargetAssembly = targetAssembly
             };
-            if (!RecorderState.Mappings.TryAdd(GetKey(mapEntry), mapEntry))
-            {
-                return;
-            }
-
-            // A generated proxy is also a target for forward duck casts: record the stable type the registry serves it with. For a
-            // reverse proxy, the type it was created for (a class it derives from or an interface it implements); otherwise the
-            // base class of a generated class proxy.
-            if (!reverse && targetType.Assembly.IsDynamic &&
-                typeof(IDuckType).IsAssignableFrom(targetType) &&
-                (DuckType.GetDynamicReverseProxyDefinitionType(targetType) ??
-                 (targetType.BaseType is { } baseType && baseType != typeof(object) && baseType != typeof(ValueType) ? baseType : null)) is { } stableTargetType)
-            {
-                Record(proxyType, stableTargetType, reverse: false);
-            }
-
-            // Merging into the shared map rereads it, so don't do it on the thread that is creating a proxy.
-            if ((Interlocked.Increment(ref _pendingMappings) % PeriodicFlushThreshold) == 0)
-            {
-                ThreadPool.UnsafeQueueUserWorkItem(static _ => Flush(isExplicit: false), null);
-            }
+            return true;
         }
 
         /// <summary>
@@ -139,7 +204,6 @@ namespace Datadog.Trace.DuckTyping
         /// </summary>
         private static void EnsureProcessExitHook()
         {
-            // Branch: take this path when (Interlocked.CompareExchange(ref _processExitHookRegistered, 1, 0) == 0) evaluates to true.
             if (Interlocked.CompareExchange(ref _processExitHookRegistered, 1, 0) == 0)
             {
                 AppDomain.CurrentDomain.ProcessExit += (_, _) => Flush();
@@ -177,7 +241,6 @@ namespace Datadog.Trace.DuckTyping
         private static void Flush(bool isExplicit)
         {
             var outputPath = OutputPath;
-            // Branch: take this path when (StringUtil.IsNullOrWhiteSpace(outputPath)) evaluates to true.
             if (StringUtil.IsNullOrWhiteSpace(outputPath))
             {
                 return;
@@ -192,14 +255,13 @@ namespace Datadog.Trace.DuckTyping
             try
             {
                 var pendingMappings = Volatile.Read(ref _pendingMappings);
-                // Branch: nothing was recorded since the last flush (e.g. the exit flush after the test framework one).
+                // Nothing was recorded since the last flush (e.g. the exit flush after the test framework one).
                 if (pendingMappings == 0)
                 {
                     return;
                 }
 
                 var directory = Path.GetDirectoryName(outputPath);
-                // Branch: take this path when (!StringUtil.IsNullOrWhiteSpace(directory)) evaluates to true.
                 if (!StringUtil.IsNullOrWhiteSpace(directory))
                 {
                     Directory.CreateDirectory(directory);
@@ -208,45 +270,20 @@ namespace Datadog.Trace.DuckTyping
                 // Child processes (e.g. one testhost per target framework) inherit the output path. A lock file
                 // serializes the read-merge-write of every process so none of them drops the others' mappings.
                 using var outputLock = AcquireOutputLock(outputPath, isExplicit ? ExplicitFlushLockTimeout : TimeSpan.Zero);
-                // Branch: a periodic flush doesn't wait for the lock. An explicit flush only gets here without the lock
+                // A periodic flush doesn't wait for the lock. An explicit flush only gets here without the lock
                 // when it can't be acquired at all (timeout, or a lock file this process can't open) and writes anyway.
                 if (outputLock is null && !isExplicit)
                 {
                     return;
                 }
 
-                // Branch: never overwrite a map that couldn't be read; a later flush retries.
-                if (!TryReadExistingMappings(outputPath, out var existingMappings))
+                // Never overwrite a map that couldn't be read; a later flush retries.
+                if (!TryMergeIntoMap(outputPath, RecorderState.Mappings.Values))
                 {
                     return;
                 }
 
-                var mappings = new Dictionary<string, MapEntry>(StringComparer.Ordinal);
-                foreach (var existingMapping in existingMappings)
-                {
-                    mappings[GetKey(existingMapping)] = existingMapping;
-                }
-
-                foreach (var mapping in RecorderState.Mappings)
-                {
-                    mappings[mapping.Key] = mapping.Value;
-                }
-
-                var document = new MapDocument
-                {
-                    Mappings = mappings
-                              .Values
-                              .OrderBy(mapping => mapping.Mode, StringComparer.Ordinal)
-                              .ThenBy(mapping => mapping.ProxyAssembly, StringComparer.Ordinal)
-                              .ThenBy(mapping => mapping.ProxyType, StringComparer.Ordinal)
-                              .ThenBy(mapping => mapping.TargetAssembly, StringComparer.Ordinal)
-                              .ThenBy(mapping => mapping.TargetType, StringComparer.Ordinal)
-                              .ToList()
-                };
-
-                WriteAtomically(outputPath, JsonHelper.SerializeObject(document, new JsonSerializerSettings { Formatting = Formatting.Indented }));
-
-                // Branch: a write without the lock may still be overwritten by a process that read the map before it, so
+                // A write without the lock may still be overwritten by a process that read the map before it, so
                 // keep the mappings pending and let the next flush (e.g. the exit one) write them again.
                 if (outputLock is not null)
                 {
@@ -255,7 +292,6 @@ namespace Datadog.Trace.DuckTyping
             }
             catch
             {
-                // Branch: handles any exception that reaches this handler.
                 // Best effort recorder used only for testing workflows; the mappings stay pending for a later flush.
             }
             finally
@@ -269,13 +305,64 @@ namespace Datadog.Trace.DuckTyping
             return string.Concat(mapping.Mode, "|", mapping.ProxyType, "|", mapping.ProxyAssembly, "|", mapping.TargetType, "|", mapping.TargetAssembly);
         }
 
+        /// <summary>
+        /// Adds recorded mappings to a map: the mappings it doesn't have yet are added (sorted) after its own, and its other
+        /// properties are kept (not its comments).
+        /// </summary>
+        /// <param name="outputPath">The map path.</param>
+        /// <param name="recordedMappings">The recorded mappings.</param>
+        /// <returns>true if the map was written; false if it couldn't be read (it isn't replaced).</returns>
+        internal static bool TryMergeIntoMap(string outputPath, IEnumerable<MapEntry> recordedMappings)
+        {
+            if (!TryReadExistingMap(outputPath, out var document, out var existingMappings))
+            {
+                return false;
+            }
+
+            document ??= new JObject();
+            if (document["mappings"] is not JArray mappingsArray)
+            {
+                mappingsArray = new JArray();
+                document["mappings"] = mappingsArray;
+            }
+
+            var keys = new HashSet<string>(existingMappings.Select(GetKey), StringComparer.Ordinal);
+            foreach (var mapping in recordedMappings
+                                   .Where(mapping => keys.Add(GetKey(mapping)))
+                                   .OrderBy(mapping => mapping.Mode, StringComparer.Ordinal)
+                                   .ThenBy(mapping => mapping.ProxyAssembly, StringComparer.Ordinal)
+                                   .ThenBy(mapping => mapping.ProxyType, StringComparer.Ordinal)
+                                   .ThenBy(mapping => mapping.TargetAssembly, StringComparer.Ordinal)
+                                   .ThenBy(mapping => mapping.TargetType, StringComparer.Ordinal))
+            {
+                mappingsArray.Add(new JObject
+                {
+                    ["mode"] = mapping.Mode,
+                    ["proxyType"] = mapping.ProxyType,
+                    ["proxyAssembly"] = mapping.ProxyAssembly,
+                    ["targetType"] = mapping.TargetType,
+                    ["targetAssembly"] = mapping.TargetAssembly,
+                });
+            }
+
+            WriteAtomically(outputPath, JsonHelper.TokenToString(document, Formatting.Indented));
+            return true;
+        }
+
+        /// <summary>
+        /// Gets the path of the lock file of a map: the one of the file a symbolic link points to, which is the one written (see
+        /// WriteAtomically), so writers through the link and through the file share it.
+        /// </summary>
+        /// <param name="outputPath">The map path.</param>
+        /// <returns>The lock file path.</returns>
+        internal static string GetOutputLockPath(string outputPath) => ResolveMapPath(outputPath) + ".lock";
+
         internal static FileStream? AcquireOutputLock(string outputPath, TimeSpan timeout)
         {
             // The lock file is intentionally left in place: deleting it on release would let two processes lock
             // different files with the same path. It's opened read-only, so a read-only lock file left behind by
-            // another user or container still works. It's the one of the file a symbolic link points to, which is the one
-            // written (see WriteAtomically), so writers through the link and through the file share it.
-            var lockPath = ResolveMapPath(outputPath) + ".lock";
+            // another user or container still works.
+            var lockPath = GetOutputLockPath(outputPath);
             var stopwatch = Stopwatch.StartNew();
             while (true)
             {
@@ -301,34 +388,73 @@ namespace Datadog.Trace.DuckTyping
         }
 
         internal static bool TryReadExistingMappings(string outputPath, out List<MapEntry> mappings)
+            => TryReadExistingMap(outputPath, out _, out mappings);
+
+        /// <summary>
+        /// Reads the map of other processes (or of a user). A missing map (or one a dangling symbolic link points to) is empty; a
+        /// map that isn't JSON is set aside; a map that isn't UTF-8 without a byte order mark telling its encoding (e.g. UTF-16
+        /// without one) can't be read, and isn't replaced.
+        /// </summary>
+        /// <param name="outputPath">The map path.</param>
+        /// <param name="document">The map document, or null when there is none.</param>
+        /// <param name="mappings">The mappings of the map.</param>
+        /// <returns>true if the map can be replaced; otherwise, false.</returns>
+        private static bool TryReadExistingMap(string outputPath, out JObject? document, out List<MapEntry> mappings)
         {
+            document = null;
             mappings = [];
             string json;
             try
             {
-                if (!File.Exists(outputPath))
-                {
-                    return true;
-                }
-
-                json = File.ReadAllText(outputPath);
+                var bytes = File.ReadAllBytes(outputPath);
+                using var reader = new StreamReader(new MemoryStream(bytes), new UTF8Encoding(encoderShouldEmitUTF8Identifier: false, throwOnInvalidBytes: true), detectEncodingFromByteOrderMarks: true);
+                json = reader.ReadToEnd();
             }
-            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            catch (Exception ex) when (ex is FileNotFoundException or DirectoryNotFoundException)
+            {
+                return true;
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or DecoderFallbackException)
             {
                 return false;
             }
 
+            // ASCII text in UTF-16 or UTF-32 without a byte order mark is valid UTF-8 with NUL characters.
+            if (json.IndexOf('\0') >= 0)
+            {
+                return false;
+            }
+
+            if (StringUtil.IsNullOrWhiteSpace(json))
+            {
+                return true;
+            }
+
             try
             {
-                if (JsonHelper.DeserializeObject<MapDocument>(json) is { Mappings: { } existingMappings })
+                document = LoadDocument(json);
+                if (document["mappings"] is { } mappingsToken)
                 {
-                    mappings = existingMappings;
+                    foreach (var entry in (JArray)mappingsToken)
+                    {
+                        var mapping = (JObject)entry;
+                        mappings.Add(new MapEntry
+                        {
+                            Mode = (string?)mapping["mode"] ?? string.Empty,
+                            ProxyType = (string?)mapping["proxyType"] ?? string.Empty,
+                            ProxyAssembly = (string?)mapping["proxyAssembly"],
+                            TargetType = (string?)mapping["targetType"] ?? string.Empty,
+                            TargetAssembly = (string?)mapping["targetAssembly"],
+                        });
+                    }
                 }
             }
             catch
             {
-                // A map that isn't valid JSON can't be merged: keep it next to the output for inspection rather than
-                // silently replacing it.
+                // A map that isn't a JSON object with a 'mappings' array of objects can't be merged: keep it next to the output
+                // for inspection rather than silently replacing it.
+                document = null;
+                mappings = [];
                 try
                 {
                     File.Move(outputPath, $"{outputPath}.{Guid.NewGuid():N}.invalid");
@@ -340,6 +466,25 @@ namespace Datadog.Trace.DuckTyping
             }
 
             return true;
+
+            static JObject LoadDocument(string json)
+            {
+                // Dates and decimal numbers are written back as written; numbers beyond the range of decimal as doubles.
+                try
+                {
+                    return LoadDocumentWith(json, FloatParseHandling.Decimal);
+                }
+                catch (JsonReaderException)
+                {
+                    return LoadDocumentWith(json, FloatParseHandling.Double);
+                }
+            }
+
+            static JObject LoadDocumentWith(string json, FloatParseHandling floatParseHandling)
+            {
+                using var reader = new JsonTextReader(new StringReader(json)) { ArrayPool = JsonArrayPool.Shared, DateParseHandling = DateParseHandling.None, FloatParseHandling = floatParseHandling };
+                return JObject.Load(reader);
+            }
         }
 
         internal static void WriteAtomically(string outputPath, string contents, Encoding? encoding = null)
@@ -412,19 +557,6 @@ namespace Datadog.Trace.DuckTyping
         }
 
         /// <summary>
-        /// Represents map document.
-        /// </summary>
-        internal sealed class MapDocument
-        {
-            /// <summary>
-            /// Gets or sets mappings.
-            /// </summary>
-            /// <value>The mappings value.</value>
-            [JsonProperty("mappings")]
-            public List<MapEntry> Mappings { get; set; } = new();
-        }
-
-        /// <summary>
         /// Represents map entry.
         /// </summary>
         internal sealed class MapEntry
@@ -444,11 +576,11 @@ namespace Datadog.Trace.DuckTyping
             public string ProxyType { get; set; } = string.Empty;
 
             /// <summary>
-            /// Gets or sets proxy assembly.
+            /// Gets or sets proxy assembly (none for an assembly-qualified proxy type name).
             /// </summary>
             /// <value>The proxy assembly value.</value>
             [JsonProperty("proxyAssembly")]
-            public string ProxyAssembly { get; set; } = string.Empty;
+            public string? ProxyAssembly { get; set; }
 
             /// <summary>
             /// Gets or sets target type.
@@ -458,11 +590,11 @@ namespace Datadog.Trace.DuckTyping
             public string TargetType { get; set; } = string.Empty;
 
             /// <summary>
-            /// Gets or sets target assembly.
+            /// Gets or sets target assembly (none for an assembly-qualified target type name).
             /// </summary>
             /// <value>The target assembly value.</value>
             [JsonProperty("targetAssembly")]
-            public string TargetAssembly { get; set; } = string.Empty;
+            public string? TargetAssembly { get; set; }
         }
 
         /// <summary>

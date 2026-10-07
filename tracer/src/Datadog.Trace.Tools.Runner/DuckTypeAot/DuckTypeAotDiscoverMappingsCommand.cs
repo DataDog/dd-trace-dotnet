@@ -71,9 +71,9 @@ namespace Datadog.Trace.Tools.Runner.DuckTypeAot
             var strict = _strictOption.GetValue(context);
 
             var options = new DuckTypeAotDiscoverMappingsOptions(
-                proxyAssemblies.Where(p => !string.IsNullOrWhiteSpace(p)).ToList(),
-                targetFolders.Where(p => !string.IsNullOrWhiteSpace(p)).ToList(),
-                targetFilters.Where(p => !string.IsNullOrWhiteSpace(p)).ToList(),
+                proxyAssemblies.Where(p => !StringUtil.IsNullOrWhiteSpace(p)).ToList(),
+                targetFolders.Where(p => !StringUtil.IsNullOrWhiteSpace(p)).ToList(),
+                targetFilters.Where(p => !StringUtil.IsNullOrWhiteSpace(p)).ToList(),
                 output,
                 warningsReport,
                 strict);

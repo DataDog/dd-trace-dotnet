@@ -536,7 +536,6 @@ public class DuckTypeAotFullSuiteParityIntegrationTests
         }
         finally
         {
-            // Branch: take this path when (retainArtifacts) evaluates to true.
             if (retainArtifacts)
             {
                 Console.WriteLine($"DuckType AOT full-suite parity artifacts retained at: {tempDirectory}");

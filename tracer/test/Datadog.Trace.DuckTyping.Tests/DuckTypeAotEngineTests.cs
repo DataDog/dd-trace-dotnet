@@ -7,6 +7,7 @@
 
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
@@ -832,6 +833,154 @@ namespace Datadog.Trace.DuckTyping.Tests
         }
 
         [Fact]
+        public void FallbackFailureOfAnotherArrayTypeKeepsTheWrappedException()
+        {
+            DuckTypeAotEngine.RegisterProxyFailureFactory(
+                typeof(IArrayLengthProxy),
+                typeof(int[]),
+                () => DuckTypeAotRegisteredFailureException.Create(typeof(DuckTypeException).FullName!, "Error creating duck type for type: 'System.Int32[]'", typeof(TypeLoadException).FullName!, "Method 'get_Length' does not have an implementation."));
+
+            Action create = () => DuckTypeAotEngine.GetOrCreateProxyType(typeof(IArrayLengthProxy), typeof(long[])).CreateInstance<IArrayLengthProxy>(new long[1]);
+            create.Should().Throw<DuckTypeException>()
+                  .WithMessage("Error creating duck type for type: 'System.Int64[]'")
+                  .WithInnerException<TypeLoadException>()
+                  .WithMessage("Method 'get_Length' does not have an implementation.");
+        }
+
+        [Fact]
+        public void FallbackDoesNotServeTheFailureOfACoreLibraryTypeToTheTypesDerivingFromIt()
+        {
+            // System.RuntimeType can have the members System.Type misses: without a proxy, it has no registration (like any type
+            // the registry doesn't register), named in the exception.
+            DuckTypeAotEngine.RegisterProxyFailureFactory(
+                typeof(ITypeNameProxy),
+                typeof(Type),
+                () => DuckTypeAotRegisteredFailureException.Create(typeof(DuckTypePropertyOrFieldNotFoundException).FullName!, "The property or field 'Name' was not found in the instance of type 'System.Type'."));
+
+            var runtimeType = typeof(string).GetType();
+            var result = DuckTypeAotEngine.GetOrCreateProxyType(typeof(ITypeNameProxy), runtimeType);
+            result.CanCreate().Should().BeFalse();
+            Action create = () => result.CreateInstance<ITypeNameProxy>(typeof(string));
+            create.Should().Throw<DuckTypeAotMissingProxyRegistrationException>().WithMessage($"*'{runtimeType.FullName}'*");
+        }
+
+        [Fact]
+        public void FallbackServesTheMostDerivedCoreLibraryProxyAndIgnoresFailures()
+        {
+            // The enumerator of an array implements IEnumerator<int> (whose mapping fails) and IDisposable (whose proxy serves it).
+            var enumeratorType = ((IEnumerable<int>)new[] { 1 }).GetEnumerator().GetType();
+            enumeratorType.IsVisible.Should().BeFalse();
+            DuckTypeAotEngine.RegisterProxyFailureFactory(
+                typeof(ITypeNameProxy),
+                typeof(IEnumerator<int>),
+                () => DuckTypeAotRegisteredFailureException.Create(typeof(DuckTypePropertyOrFieldNotFoundException).FullName!, "The property or field 'Name' was not found."));
+            DuckTypeAotEngine.RegisterFallbackProxy(
+                typeof(ITypeNameProxy),
+                typeof(IDisposable),
+                typeof(DisposableNameGeneratedProxy),
+                (instance, type) => new DisposableNameGeneratedProxy(instance!, type));
+            DuckTypeAotEngine.RegisterFallbackProxy(
+                typeof(ITypeNameProxy),
+                typeof(object),
+                typeof(DisposableNameGeneratedProxy),
+                (instance, type) => new DisposableNameGeneratedProxy(instance!, type, "object"));
+
+            var proxy = DuckTypeAotEngine.GetOrCreateProxyType(typeof(ITypeNameProxy), enumeratorType).CreateInstance<ITypeNameProxy>(((IEnumerable<int>)new[] { 1 }).GetEnumerator());
+            proxy.Name.Should().Be("disposable");
+            ((IDuckType)proxy).Type.Should().Be(enumeratorType);
+        }
+
+        [Fact]
+        public void FallbackServesClosedGenericCoreLibraryTypesOverNonPublicCoreLibraryTypes()
+        {
+            // Task<VoidTaskResult> (Task.CompletedTask, the tasks of async methods) is built on a non-public type: the proxy of
+            // Task serves it when the registry doesn't register it.
+            var voidTaskResultTaskType = typeof(Task<>).MakeGenericType(typeof(Task).Assembly.GetType("System.Threading.Tasks.VoidTaskResult", throwOnError: true)!);
+            DuckTypeAotEngine.RegisterFallbackProxy(
+                typeof(ITypeNameProxy),
+                typeof(Task),
+                typeof(DisposableNameGeneratedProxy),
+                (instance, type) => new DisposableNameGeneratedProxy(instance!, type, "task"));
+
+            var result = DuckTypeAotEngine.GetOrCreateProxyType(typeof(ITypeNameProxy), voidTaskResultTaskType);
+            result.CanCreate().Should().BeTrue();
+            var proxy = result.CreateInstance<ITypeNameProxy>(Activator.CreateInstance(voidTaskResultTaskType, nonPublic: true)!);
+            proxy.Name.Should().Be("task");
+            ((IDuckType)proxy).Type.Should().Be(voidTaskResultTaskType);
+        }
+
+        [Fact]
+        public async Task FallbackServesTheClosestRegisteredBaseClassBeforeInterfaces()
+        {
+            // The box of an async method derives from Task<VoidTaskResult>, which derives from Task.
+            var box = DelayedAsync();
+            var boxType = box.GetType();
+            var voidTaskResultTaskType = typeof(Task<>).MakeGenericType(typeof(Task).Assembly.GetType("System.Threading.Tasks.VoidTaskResult", throwOnError: true)!);
+            boxType.BaseType.Should().Be(voidTaskResultTaskType);
+            DuckTypeAotEngine.RegisterFallbackProxy(
+                typeof(ITypeNameProxy),
+                typeof(IAsyncResult),
+                typeof(DisposableNameGeneratedProxy),
+                (instance, type) => new DisposableNameGeneratedProxy(instance!, type, "async-result"));
+            DuckTypeAotEngine.RegisterFallbackProxy(
+                typeof(ITypeNameProxy),
+                typeof(Task),
+                typeof(DisposableNameGeneratedProxy),
+                (instance, type) => new DisposableNameGeneratedProxy(instance!, type, "task"));
+
+            // A registered base class wins over an interface.
+            DuckTypeAotEngine.GetOrCreateProxyType(typeof(ITypeNameProxy), boxType).CreateInstance<ITypeNameProxy>(box).Name.Should().Be("task");
+
+            // The failure of a closer base class: the box inherits the members that fail it, so it isn't served by another proxy.
+            DuckTypeAotEngine.RegisterProxyFailureFactory(
+                typeof(ITypeNameProxy),
+                voidTaskResultTaskType,
+                () => DuckTypeAotRegisteredFailureException.Create(typeof(DuckTypeProxyAndTargetMethodReturnTypeMismatchException).FullName!, "Return type mismatch."));
+            var result = DuckTypeAotEngine.GetOrCreateProxyType(typeof(ITypeNameProxy), boxType);
+            result.CanCreate().Should().BeFalse();
+            Action create = () => result.CreateInstance<ITypeNameProxy>(box);
+            create.Should().Throw<DuckTypeAotMissingProxyRegistrationException>();
+            await box;
+
+            static async Task DelayedAsync() => await Task.Delay(1).ConfigureAwait(false);
+        }
+
+        [Fact]
+        public void FallbackDoesNotServeTypesARegistryCanName()
+        {
+            DuckTypeAotEngine.RegisterFallbackProxy(
+                typeof(ITypeNameProxy),
+                typeof(object),
+                typeof(DisposableNameGeneratedProxy),
+                (instance, type) => new DisposableNameGeneratedProxy(instance!, type, "object"));
+            DuckTypeAotEngine.RegisterFallbackProxy(
+                typeof(ITypeNameProxy),
+                typeof(ValueType),
+                typeof(DisposableNameGeneratedProxy),
+                (instance, type) => new DisposableNameGeneratedProxy(instance!, type, "value-type"));
+
+            // A public generic type of the core library closed over a type of another assembly, even a non-public one.
+            DuckTypeAotEngine.GetOrCreateProxyType(typeof(ITypeNameProxy), typeof(List<ForwardTarget>)).CanCreate().Should().BeFalse();
+
+            // A non-public value type of the core library: a proxy of a type it derives from would share the boxed instance,
+            // where dynamic duck typing's copies it.
+            var voidTaskResultType = typeof(Task).Assembly.GetType("System.Threading.Tasks.VoidTaskResult", throwOnError: true)!;
+            voidTaskResultType.IsValueType.Should().BeTrue();
+            DuckTypeAotEngine.GetOrCreateProxyType(typeof(ITypeNameProxy), voidTaskResultType).CanCreate().Should().BeFalse();
+        }
+
+        [Fact]
+        public void FallbackProxyRegistrationRequiresAnArrayOrACoreLibraryTargetType()
+        {
+            Action register = () => DuckTypeAotEngine.RegisterFallbackProxy(
+                typeof(ITypeNameProxy),
+                typeof(RecordedContract),
+                typeof(DisposableNameGeneratedProxy),
+                (instance, type) => new DisposableNameGeneratedProxy(instance!, type));
+            register.Should().Throw<ArgumentException>();
+        }
+
+        [Fact]
         public void ReplayedFailuresKeepTheExceptionDynamicDuckTypingWraps()
         {
             var failure = DuckTypeAotRegisteredFailureException.Create(typeof(DuckTypeException).FullName!, "Error creating duck type", typeof(TypeLoadException).FullName!, "Method 'get_Name' does not have an implementation.");
@@ -858,6 +1007,56 @@ namespace Datadog.Trace.DuckTyping.Tests
             var lookup = typeof(DuckType).GetMethod("GetOrCreateProxyType", BindingFlags.NonPublic | BindingFlags.Static, binder: null, [typeof(Type), typeof(Type), typeof(bool)], modifiers: null);
             lookup.Should().NotBeNull();
             lookup!.MethodImplementationFlags.Should().HaveFlag(MethodImplAttributes.NoInlining);
+
+            // Nor the creation of object-based proxies (Create(Type, object), DuckAs, TryDuckCast...).
+            var createInstance = typeof(DuckType.CreateTypeResult).GetMethod("CreateInstance", BindingFlags.NonPublic | BindingFlags.Instance, binder: null, [typeof(object)], modifiers: null);
+            createInstance.Should().NotBeNull();
+            createInstance!.MethodImplementationFlags.Should().HaveFlag(MethodImplAttributes.NoInlining);
+        }
+
+        [Fact]
+        public void TypedActivatorRegistrationsShouldServeTypedAndObjectCreation()
+        {
+            // The typed activator of a registry (CreateProxyInstance<TProxy>) is bound to its object activator: CreateInstance<T>
+            // calls it directly, like dynamic duck typing's, and object-based creation calls the object activator.
+            var objectActivatorCalls = 0;
+            Func<object?, object?> objectActivator = instance =>
+            {
+                objectActivatorCalls++;
+                return new ForwardGeneratedProxy((ForwardTarget)instance!);
+            };
+            var typedActivator = Delegate.CreateDelegate(
+                typeof(CreateProxyInstance<IForwardProxy>),
+                objectActivator,
+                typeof(DuckTypeAotEngineTests).GetMethod(nameof(CreateTypedForwardProxy), BindingFlags.NonPublic | BindingFlags.Static)!);
+            DuckTypeAotEngine.RegisterTypedProxy(typeof(IForwardProxy), typeof(ForwardTarget), typeof(ForwardGeneratedProxy), typedActivator);
+
+            var result = DuckTypeAotEngine.GetOrCreateProxyType(typeof(IForwardProxy), typeof(ForwardTarget));
+            result.UsesDynamicInvokeFallback.Should().BeFalse();
+            result.CreateInstance<IForwardProxy>(new ForwardTarget("typed")).Value.Should().Be("typed");
+            objectActivatorCalls.Should().Be(0);
+            ((IForwardProxy)result.CreateInstance(new ForwardTarget("object"))).Value.Should().Be("object");
+            objectActivatorCalls.Should().Be(1);
+
+            // Like the cast of dynamic duck typing's typed activator to CreateProxyInstance<T> for another T.
+            Action createOther = () => result.CreateInstance<object>(new ForwardTarget("other"));
+            createOther.Should().Throw<InvalidCastException>()
+                       .WithMessage($"Unable to cast object of type '{typeof(CreateProxyInstance<IForwardProxy>)}' to type '{typeof(CreateProxyInstance<object>)}'.");
+        }
+
+        [Fact]
+        public void FastPathStoresShouldTakeTheResultByReference()
+        {
+            // CreateCache<T>.GetProxy and GetReverseProxy are inlined into their callers: storing the fast path entry doesn't copy
+            // the CreateTypeResult at each of them.
+            foreach (var name in new[] { "StoreForwardFastPath", "StoreReverseFastPath" })
+            {
+                var store = typeof(DuckType.CreateCache<IForwardProxy>).GetMethod(name, BindingFlags.NonPublic | BindingFlags.Static);
+                store.Should().NotBeNull();
+                var parameter = store!.GetParameters()[0];
+                parameter.ParameterType.IsByRef.Should().BeTrue();
+                parameter.IsIn.Should().BeTrue();
+            }
         }
 
         [Fact]
@@ -1080,6 +1279,14 @@ namespace Datadog.Trace.DuckTyping.Tests
         }
 
         [Fact]
+        public void IsDynamicCodeSupportedIsTrueUnderTheJit()
+        {
+            // The module initializer of a generated registry doesn't initialize it then, on every runtime (some don't define
+            // RuntimeFeature.IsDynamicCodeSupported).
+            DuckTypeAotEngine.IsDynamicCodeSupported.Should().BeTrue();
+        }
+
+        [Fact]
         public void ValidateContractWithSchemaMismatchThrows()
         {
             Action validate = () => DuckTypeAotEngine.ValidateContract(
@@ -1211,6 +1418,29 @@ namespace Datadog.Trace.DuckTyping.Tests
             public override string ToString() => _instance.ToString();
         }
 
+        private class DisposableNameGeneratedProxy : ITypeNameProxy, IDuckType
+        {
+            private readonly object _instance;
+            private readonly Type _type;
+
+            public DisposableNameGeneratedProxy(object instance, Type type, string name = "disposable")
+            {
+                _instance = instance;
+                _type = type;
+                Name = name;
+            }
+
+            public string Name { get; }
+
+            public object Instance => _instance;
+
+            public Type Type => _type;
+
+            public ref TReturn? GetInternalDuckTypedInstance<TReturn>() => throw new NotSupportedException();
+
+            public override string ToString() => _instance.ToString()!;
+        }
+
         private interface IForwardProxy
         {
             string Value { get; }
@@ -1225,6 +1455,9 @@ namespace Datadog.Trace.DuckTyping.Tests
 
             public string Value { get; }
         }
+
+        private static IForwardProxy CreateTypedForwardProxy(Func<object?, object?> objectActivator, object? instance)
+            => new ForwardGeneratedProxy((ForwardTarget)instance!);
 
         private class ForwardGeneratedProxy : IForwardProxy
         {

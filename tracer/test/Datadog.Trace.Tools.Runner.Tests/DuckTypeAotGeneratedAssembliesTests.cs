@@ -48,6 +48,12 @@ public class DuckTypeAotGeneratedAssembliesTests
         string Name { get; }
     }
 
+    public interface IExceptionMessageField
+    {
+        [DuckField(Name = "_message")]
+        string? Message { get; }
+    }
+
     [Fact]
     public void GeneratedRegistryShouldRegisterTheFailureOfStandaloneContractsThatCantBeLoaded()
     {
@@ -100,7 +106,12 @@ public class DuckTypeAotGeneratedAssembliesTests
                 var target = Activator.CreateInstance(contracts.GetType($"{ContractsNamespace}.NamedTarget")!)!;
                 DuckType.GetOrCreateProxyType(contracts.GetType($"{ContractsNamespace}.INamedProxy")!, target.GetType()).CanCreate().Should().BeTrue();
                 var toStringTarget = contracts.GetType($"{ContractsNamespace}.ToStringTarget")!;
-                DuckType.GetOrCreateProxyType(contracts.GetType($"{ContractsNamespace}.SealedToStringProxy")!, toStringTarget).CanCreate().Should().BeFalse();
+                var failure = DuckType.GetOrCreateProxyType(contracts.GetType($"{ContractsNamespace}.SealedToStringProxy")!, toStringTarget);
+                failure.CanCreate().Should().BeFalse();
+
+                // Like the failure of dynamic duck typing to create the type, with the TypeLoadException it wraps.
+                Action create = () => failure.CreateInstance<object>(Activator.CreateInstance(toStringTarget)!);
+                create.Should().Throw<DuckTypeException>().WithInnerException<TypeLoadException>();
             });
         });
     }
@@ -263,6 +274,10 @@ public class DuckTypeAotGeneratedAssembliesTests
             {
                 var present = Activator.CreateInstance(targets.GetType("IsolationTargets.Present", throwOnError: true)!)!;
                 DuckType.Create<IStandaloneNameReader>(present)!.Name.Should().Be("present");
+
+                // A lookup without registration names the registrations that failed.
+                Action missing = () => DuckType.Create<IStandaloneNameReader>(new object());
+                missing.Should().Throw<DuckTypeException>().WithMessage("*2 registration(s) of the AOT duck typing registry failed at startup*(the first one: System.TypeLoadException: *");
             });
         }
         finally
@@ -272,6 +287,95 @@ public class DuckTypeAotGeneratedAssembliesTests
 
         static DuckTypeAotMapping IsolationMapping(string assemblyName, string targetTypeName)
             => new(typeof(IStandaloneNameReader).FullName!, typeof(IStandaloneNameReader).Assembly.GetName().Name!, "IsolationTargets." + targetTypeName, assemblyName, DuckTypeAotMappingMode.Forward, DuckTypeAotMappingSource.MapFile);
+    }
+
+    [Fact]
+    public void GeneratedRegistryShouldCallPublicOverridesOfNonPublicCoreLibraryTypesThroughTheirPublicMethod()
+    {
+        // System.RuntimeType (an alias of a System.Type mapping) overrides MemberInfo.Name: its proxy calls MemberInfo.get_Name
+        // virtually, which NativeAOT's RuntimeType implements too, whether or not it declares that override.
+        var directory = CreateTemporaryDirectory();
+        try
+        {
+            var outputPath = GenerateWithCoreLibrary(directory, (typeof(IStandaloneNameReader), "System.Type"));
+            using var registry = ModuleDefMD.Load(File.ReadAllBytes(outputPath));
+            var runtimeTypeProxy = registry.GetTypes().Should().ContainSingle(type => type.Fields.Any(field => field.Name == "_currentInstance" && field.FieldType.FullName == "System.RuntimeType")).Subject;
+            var calls = runtimeTypeProxy.Methods.Single(method => method.Name == "get_Name").Body.Instructions.Where(instruction => instruction.OpCode == OpCodes.Callvirt).ToList();
+            calls.Should().ContainSingle().Which.Operand.Should().BeAssignableTo<IMethod>().Which.FullName.Should().Be("System.String System.Reflection.MemberInfo::get_Name()");
+        }
+        finally
+        {
+            Directory.Delete(directory, recursive: true);
+        }
+    }
+
+    [Fact]
+    public void GeneratedRegistryShouldFlagMappingsThatUseNonPublicTypesOrMembersOfTheCoreLibrary()
+    {
+        // Other runtimes (e.g. NativeAOT) may not have them: the mapping is compatible, flagged as runtime specific (DTAOT0216).
+        // The aliases of the non-public types of a mapped type (here System.RuntimeType for System.Type) aren't flagged.
+        var directory = CreateTemporaryDirectory();
+        try
+        {
+            var outputPath = GenerateWithCoreLibrary(
+                directory,
+                (typeof(IStandaloneNameReader), "System.Reflection.RuntimeMethodInfo"),
+                (typeof(IExceptionMessageField), "System.Exception"),
+                (typeof(IStandaloneNameReader), "System.Type"));
+
+            var mappings = ReadMatrix(outputPath).Mappings;
+            mappings.Should().OnlyContain(mapping => mapping.Status == DuckTypeAotCompatibilityStatuses.Compatible);
+            mappings.Single(mapping => mapping.TargetType == "System.Reflection.RuntimeMethodInfo").RuntimeSpecific.Should().BeTrue();
+            mappings.Single(mapping => mapping.TargetType == "System.Exception").RuntimeSpecific.Should().BeTrue();
+            mappings.Single(mapping => mapping.TargetType == "System.Type").RuntimeSpecific.Should().BeFalse();
+            File.ReadAllText(outputPath + ".compat.md").Should().Contain("(runtime specific)");
+        }
+        finally
+        {
+            Directory.Delete(directory, recursive: true);
+        }
+    }
+
+    [Fact]
+    public void InterfaceTraversalShouldListEachInterfaceOnceLikeReflection()
+    {
+        // Baggage implements IDictionary<string, string>, whose base interfaces it also declares, through references of other
+        // assemblies (facades): each is listed once, like Type.GetInterfaces() does.
+        var resolver = new AssemblyResolver();
+        resolver.PreSearchPaths.Add(Path.GetDirectoryName(typeof(object).Assembly.Location)!);
+        resolver.PreSearchPaths.Add(Path.GetDirectoryName(typeof(Baggage).Assembly.Location)!);
+        var context = new ModuleContext(resolver);
+        resolver.DefaultModuleContext = context;
+        using var module = ModuleDefMD.Load(typeof(Baggage).Assembly.Location, context);
+        var enumerateInterfaces = typeof(DuckTypeAotRegistryAssemblyEmitter).GetNestedType("ProxyTypePlan", BindingFlags.NonPublic)!
+                                                                            .GetMethod("EnumerateInterfacesWithArguments", BindingFlags.NonPublic | BindingFlags.Static)!;
+        var interfaces = ((System.Collections.IEnumerable)enumerateInterfaces.Invoke(null, [module.Find(typeof(Baggage).FullName, isReflectionName: true)])!).Cast<object>().ToList();
+        interfaces.Should().HaveCount(typeof(Baggage).GetInterfaces().Length);
+    }
+
+    [Fact]
+    public void DatadogTraceApiCheckShouldIgnoreMembersOfArraysOfItsTypes()
+    {
+        // The Get method of IDuckType[] is the runtime's, not a member of IDuckType.
+        var module = new ModuleDefUser("ArrayMembers.dll", Guid.NewGuid(), new AssemblyRefUser(typeof(object).Assembly.GetName())) { Kind = ModuleKind.Dll };
+        new AssemblyDefUser("ArrayMembers", new Version(1, 0, 0, 0)).Modules.Add(module);
+        var datadogTrace = new AssemblyRefUser(typeof(IDuckType).Assembly.GetName());
+        var arrayOfDuckType = new TypeSpecUser(new ArraySig(new ClassSig(new TypeRefUser(module, typeof(IDuckType).Namespace, nameof(IDuckType), datadogTrace)), 2));
+        var type = new TypeDefUser("ArrayMembers", "User", module.CorLibTypes.Object.TypeDefOrRef) { Attributes = TypeAttributes.Public | TypeAttributes.Class };
+        module.Types.Add(type);
+        var method = new MethodDefUser("Read", MethodSig.CreateStatic(module.CorLibTypes.Object), MethodImplAttributes.IL | MethodImplAttributes.Managed, MethodAttributes.Public | MethodAttributes.Static) { Body = new CilBody() };
+        method.Body.Instructions.Add(OpCodes.Ldnull.ToInstruction());
+        method.Body.Instructions.Add(OpCodes.Ldc_I4_0.ToInstruction());
+        method.Body.Instructions.Add(OpCodes.Ldc_I4_0.ToInstruction());
+        method.Body.Instructions.Add(OpCodes.Call.ToInstruction(new MemberRefUser(module, "Get", MethodSig.CreateInstance(arrayOfDuckType.TypeSig.Next, module.CorLibTypes.Int32, module.CorLibTypes.Int32), arrayOfDuckType)));
+        method.Body.Instructions.Add(OpCodes.Ret.ToInstruction());
+        type.Methods.Add(method);
+        using var stream = new MemoryStream();
+        module.Write(stream);
+
+        var check = typeof(DuckTypeAotRegistryAssemblyEmitter).GetMethod("EnsureDatadogTraceDefinesRegistryReferences", BindingFlags.NonPublic | BindingFlags.Static)!;
+        Action run = () => check.Invoke(null, [stream.ToArray(), typeof(IDuckType).Assembly.Location]);
+        run.Should().NotThrow();
     }
 
     [Fact]
@@ -345,6 +449,28 @@ public class DuckTypeAotGeneratedAssembliesTests
         DuckTypeAotGenerateProcessor.Process(new DuckTypeAotGenerateOptions(
             proxyAssemblies: [extraAssemblyPath, testAssemblyPath],
             targetAssemblies: [extraAssemblyPath, typeof(object).Assembly.Location],
+            targetFolders: [],
+            targetFilters: ["*.dll"],
+            mapFile: mapPath,
+            genericInstantiationsFile: null,
+            outputPath: outputPath,
+            assemblyName: "Registry",
+            trimmerDescriptorPath: outputPath + ".linker.xml",
+            propsPath: outputPath + ".props")).Should().Be(0);
+        return outputPath;
+    }
+
+    private static string GenerateWithCoreLibrary(string directory, params (Type ProxyType, string TargetType)[] mappings)
+    {
+        var outputPath = Path.Combine(directory, "Registry.dll");
+        var mapPath = Path.Combine(directory, "map.json");
+        File.WriteAllText(mapPath, JsonConvert.SerializeObject(new
+        {
+            mappings = mappings.Select(mapping => new { mode = "forward", proxyType = mapping.ProxyType.FullName, proxyAssembly = mapping.ProxyType.Assembly.GetName().Name, targetType = mapping.TargetType, targetAssembly = "System.Private.CoreLib" }),
+        }));
+        DuckTypeAotGenerateProcessor.Process(new DuckTypeAotGenerateOptions(
+            proxyAssemblies: [typeof(DuckTypeAotGeneratedAssembliesTests).Assembly.Location],
+            targetAssemblies: [typeof(object).Assembly.Location],
             targetFolders: [],
             targetFilters: ["*.dll"],
             mapFile: mapPath,

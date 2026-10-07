@@ -7,6 +7,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -63,13 +64,13 @@ public class DuckTypeAotMetadataOnlyParityTests
                 targetEcho.Body.Instructions.Add(OpCodes.Ret.ToInstruction());
                 target.Methods.Add(targetEcho);
             },
-            new[] { ("IInEcho", "InTarget") },
+            [("IInEcho", "InTarget")],
             c => new Dictionary<string, Func<object?>>
             {
                 ["Echo(5)"] = () =>
                 {
                     var proxy = CreateProxy(c, "IInEcho", "InTarget");
-                    return c.GetType($"{ContractsNamespace}.IInEcho")!.GetMethod("Echo")!.Invoke(proxy, new object[] { 5 });
+                    return c.GetType($"{ContractsNamespace}.IInEcho")!.GetMethod("Echo")!.Invoke(proxy, [5]);
                 },
             });
 
@@ -90,7 +91,7 @@ public class DuckTypeAotMetadataOnlyParityTests
                 proxy.Properties.Add(new PropertyDefUser("Name", PropertySig.CreateInstance(module.CorLibTypes.String)) { GetMethod = getter, SetMethod = setter });
                 AddSettableTarget(module, "SettableTarget");
             },
-            new[] { ("IInitProxy", "SettableTarget") },
+            [("IInitProxy", "SettableTarget")],
             c => new Dictionary<string, Func<object?>>
             {
                 ["set Name=x then read proxy|target"] = () =>
@@ -153,7 +154,7 @@ public class DuckTypeAotMetadataOnlyParityTests
 
                 AddSettableTarget(module, "SettableTarget");
             },
-            new[] { ("InitProxy", "SettableTarget") },
+            [("InitProxy", "SettableTarget")],
             c => new Dictionary<string, Func<object?>>
             {
                 ["Value|Base.Name|init Name=x via interface then Base.Name"] = () =>
@@ -188,7 +189,7 @@ public class DuckTypeAotMetadataOnlyParityTests
                 proxy.Properties.Add(new PropertyDefUser("Name", PropertySig.CreateInstance(s)) { GetMethod = getter, SetMethod = setter });
                 AddTarget(module);
             },
-            new[] { ("IPrivSet", "Target") },
+            [("IPrivSet", "Target")],
             c => new Dictionary<string, Func<object?>>
             {
                 ["Name"] = () => ReadProperty(c, "IPrivSet", "Target", "IPrivSet", "Name"),
@@ -215,7 +216,7 @@ public class DuckTypeAotMetadataOnlyParityTests
                 target.Methods.Add(getValue);
                 target.Properties.Add(new PropertyDefUser("Value", PropertySig.CreateInstance(module.CorLibTypes.Object)) { GetMethod = getValue });
             },
-            new[] { ("IGenTwice", "ObjTarget") },
+            [("IGenTwice", "ObjTarget")],
             c => new Dictionary<string, Func<object?>>
             {
                 ["create"] = () => CreateProxy(c, "IGenTwice", "ObjTarget") is null ? "null" : "created",
@@ -246,7 +247,7 @@ public class DuckTypeAotMetadataOnlyParityTests
                 AddAbstractProperty(proxy, "Value", s);
                 AddTarget(module);
             },
-            new[] { ("MidProxy", "Target") },
+            [("MidProxy", "Target")],
             c => new Dictionary<string, Func<object?>>
             {
                 ["Value|Base.Name|get_Name()"] = () =>
@@ -275,7 +276,7 @@ public class DuckTypeAotMetadataOnlyParityTests
                 AddAbstractProperty(proxy, "Value", module.CorLibTypes.String);
                 AddTarget(module);
             },
-            new[] { ("IValueProxy", "Target") },
+            [("IValueProxy", "Target")],
             c => new Dictionary<string, Func<object?>>
             {
                 ["Value"] = () => ReadProperty(c, "IValueProxy", "Target", "IValueProxy", "Value"),
@@ -308,7 +309,7 @@ public class DuckTypeAotMetadataOnlyParityTests
                 AddAbstractProperty(proxy, "Value", s, newSlot: true);
                 AddTarget(module);
             },
-            new[] { ("ProtectedNameProxy", "Target") },
+            [("ProtectedNameProxy", "Target")],
             c => new Dictionary<string, Func<object?>>
             {
                 ["Value|protected Name|IName.Name"] = () =>
@@ -340,7 +341,7 @@ public class DuckTypeAotMetadataOnlyParityTests
                 toString.Body.Instructions.Add(OpCodes.Ret.ToInstruction());
                 target.Methods.Add(toString);
             },
-            new[] { ("INameOnly", "GenericToStringTarget") },
+            [("INameOnly", "GenericToStringTarget")],
             c => new Dictionary<string, Func<object?>>
             {
                 ["Name|IDuckType.ToString|object.ToString"] = () =>
@@ -375,7 +376,7 @@ public class DuckTypeAotMetadataOnlyParityTests
                 AddAbstractProperty(proxy, "Missing", module.CorLibTypes.String);
                 AddTarget(module);
             },
-            new[] { ("IMissingProxy", "Target") },
+            [("IMissingProxy", "Target")],
             c => new Dictionary<string, Func<object?>>
             {
                 ["create"] = () => CreateProxy(c, "IMissingProxy", "Target") is null ? "null" : "created",
@@ -393,7 +394,7 @@ public class DuckTypeAotMetadataOnlyParityTests
                 proxy.Methods.Add(new MethodDefUser("Missing", MethodSig.CreateInstance(module.CorLibTypes.String), MethodAttributes.Public | MethodAttributes.Abstract | MethodAttributes.Virtual | MethodAttributes.HideBySig | MethodAttributes.NewSlot));
                 AddTarget(module);
             },
-            new[] { ("IMissingMethodProxy", "Target") },
+            [("IMissingMethodProxy", "Target")],
             c => new Dictionary<string, Func<object?>>
             {
                 ["create"] = () => CreateProxy(c, "IMissingMethodProxy", "Target") is null ? "null" : "created",
@@ -416,7 +417,7 @@ public class DuckTypeAotMetadataOnlyParityTests
                 proxy.Properties.Add(new PropertyDefUser("Name", PropertySig.CreateInstance(s)) { GetMethod = getter, SetMethod = setter });
                 AddTarget(module);
             },
-            new[] { ("ISettableNameProxy", "Target") },
+            [("ISettableNameProxy", "Target")],
             c => new Dictionary<string, Func<object?>>
             {
                 ["create"] = () => CreateProxy(c, "ISettableNameProxy", "Target") is null ? "null" : "created",
@@ -435,7 +436,7 @@ public class DuckTypeAotMetadataOnlyParityTests
                 AddAbstractProperty(proxy, "Missing", module.CorLibTypes.String);
                 AddTarget(module);
             },
-            new[] { ("MissingClassProxy", "Target") },
+            [("MissingClassProxy", "Target")],
             c => new Dictionary<string, Func<object?>>
             {
                 ["create"] = () => CreateProxy(c, "MissingClassProxy", "Target") is null ? "null" : "created",
@@ -472,7 +473,7 @@ public class DuckTypeAotMetadataOnlyParityTests
                 proxy.Properties.Add(new PropertyDefUser($"{ContractsNamespace}.IGenValue<System.String>.Value", PropertySig.CreateInstance(s)) { GetMethod = explicitGetter });
                 AddTarget(module);
             },
-            new[] { ("GenericInterfaceClassProxy", "Target") },
+            [("GenericInterfaceClassProxy", "Target")],
             c => new Dictionary<string, Func<object?>>
             {
                 ["IGenValue<string>.Value"] = () =>
@@ -483,6 +484,108 @@ public class DuckTypeAotMetadataOnlyParityTests
             });
 
     // ===================================================================================================================
+
+    // M15: overloads the default binder of Type.GetMethod selects (dynamic duck typing asks it before its own candidate scan): the
+    // exact parameter types, the parameter count without optional parameters, boxing, the most specific, a wider primitive (which
+    // dynamic duck typing then fails to convert).
+    [Theory]
+    [InlineData("exact-string-over-object")]
+    [InlineData("object-over-string")]
+    [InlineData("exact-count-over-optional")]
+    [InlineData("boxing-to-object")]
+    [InlineData("base-object-over-derived-int")]
+    [InlineData("wider-primitive")]
+    public void OverloadsTheDefaultBinderSelectsShouldBehaveLikeDynamicMode(string scenario)
+    {
+        var (proxyName, parameterType, argument, targetName) = scenario switch
+        {
+            "exact-string-over-object" => ("IEchoString", "string", (object)"x", "OverloadTarget"),
+            "object-over-string" => ("IEchoObject", "object", "x", "OverloadTarget"),
+            "exact-count-over-optional" => ("IEchoInt", "int", 4, "OptionalTarget"),
+            "boxing-to-object" => ("IEchoInt", "int", 4, "ObjectTarget"),
+            "base-object-over-derived-int" => ("IEchoObject", "object", 4, "DerivedIntTarget"),
+            _ => ("IEchoInt", "int", 4, "LongTarget"),
+        };
+        RunScenario(
+            "MetadataOnlyM15",
+            module =>
+            {
+                var ignore = AddDuckIgnoreAttribute(module);
+                var types = new Dictionary<string, TypeSig> { ["string"] = module.CorLibTypes.String, ["object"] = module.CorLibTypes.Object, ["int"] = module.CorLibTypes.Int32 };
+                foreach (var proxy in new[] { ("IEchoString", "string"), ("IEchoObject", "object"), ("IEchoInt", "int") })
+                {
+                    AddInterface(module, proxy.Item1, ignore).Methods.Add(new MethodDefUser("Echo", MethodSig.CreateInstance(module.CorLibTypes.String, types[proxy.Item2]), MethodAttributes.Public | MethodAttributes.Abstract | MethodAttributes.Virtual | MethodAttributes.HideBySig | MethodAttributes.NewSlot));
+                }
+
+                var overloads = AddClass(module, "OverloadTarget", module.CorLibTypes.Object.TypeDefOrRef, out _);
+                AddConstantMethod(module, overloads, "Echo", "object", module.CorLibTypes.Object);
+                AddConstantMethod(module, overloads, "Echo", "string", module.CorLibTypes.String);
+
+                var optional = AddClass(module, "OptionalTarget", module.CorLibTypes.Object.TypeDefOrRef, out _);
+                AddConstantMethod(module, optional, "Echo", "exact", module.CorLibTypes.Int32);
+                var withOptional = AddConstantMethod(module, optional, "Echo", "optional", module.CorLibTypes.Int32, module.CorLibTypes.Int32);
+                withOptional.ParamDefs.Add(new ParamDefUser("extra", 2, ParamAttributes.Optional | ParamAttributes.HasDefault) { Constant = new ConstantUser(0) });
+
+                AddConstantMethod(module, AddClass(module, "ObjectTarget", module.CorLibTypes.Object.TypeDefOrRef, out _), "Echo", "object", module.CorLibTypes.Object);
+                AddConstantMethod(module, AddClass(module, "LongTarget", module.CorLibTypes.Object.TypeDefOrRef, out _), "Echo", "long", module.CorLibTypes.Int64);
+
+                var baseTarget = AddClass(module, "BaseObjectTarget", module.CorLibTypes.Object.TypeDefOrRef, out var baseCtor);
+                AddConstantMethod(module, baseTarget, "Echo", "base-object", module.CorLibTypes.Object);
+                AddConstantMethod(module, AddClass(module, "DerivedIntTarget", baseTarget, out _, baseCtor: baseCtor), "Echo", "derived-int", module.CorLibTypes.Int32);
+            },
+            [(proxyName, targetName)],
+            c => new Dictionary<string, Func<object?>>
+            {
+                [$"Echo({parameterType})"] = () => c.GetType($"{ContractsNamespace}.{proxyName}")!.GetMethod("Echo")!.Invoke(CreateProxy(c, proxyName, targetName), [argument]),
+            });
+    }
+
+    // M16: a property whose value dynamic duck typing can't convert (it selects the property by name): its failure.
+    [Theory]
+    [InlineData("int-to-long")]
+    [InlineData("int-to-nullable")]
+    [InlineData("string-to-int")]
+    public void PropertyConversionFailuresShouldBehaveLikeDynamicMode(string scenario)
+        => RunScenario(
+            "MetadataOnlyM16",
+            module =>
+            {
+                var ignore = AddDuckIgnoreAttribute(module);
+                var nullableInt = new GenericInstSig(new ValueTypeSig(module.CorLibTypes.GetTypeRef("System", "Nullable`1")), module.CorLibTypes.Int32);
+                AddAbstractProperty(AddInterface(module, "IValueProxy", ignore), "Value", scenario switch { "int-to-long" => module.CorLibTypes.Int64, "int-to-nullable" => nullableInt, _ => module.CorLibTypes.Int32 });
+                var target = AddClass(module, "ValueTarget", module.CorLibTypes.Object.TypeDefOrRef, out _);
+                var valueType = scenario == "string-to-int" ? module.CorLibTypes.String : module.CorLibTypes.Int32;
+                var getter = new MethodDefUser("get_Value", MethodSig.CreateInstance(valueType), MethodImplAttributes.IL | MethodImplAttributes.Managed, MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.SpecialName) { Body = new CilBody() };
+                getter.Body.Instructions.Add(scenario == "string-to-int" ? OpCodes.Ldstr.ToInstruction("v") : OpCodes.Ldc_I4_3.ToInstruction());
+                getter.Body.Instructions.Add(OpCodes.Ret.ToInstruction());
+                target.Methods.Add(getter);
+                target.Properties.Add(new PropertyDefUser("Value", PropertySig.CreateInstance(valueType)) { GetMethod = getter });
+            },
+            [("IValueProxy", "ValueTarget")],
+            c => new Dictionary<string, Func<object?>>
+            {
+                ["Value"] = () => ReadProperty(c, "IValueProxy", "ValueTarget", "IValueProxy", "Value"),
+            });
+
+    // M17: interface proxy method whose parameter has a custom modifier inside it (an array of int modreq(IsVolatile)): the
+    // methods dynamic duck typing defines have no custom modifiers at any depth.
+    [Fact]
+    public void InterfaceNestedCustomModifierShouldBehaveLikeDynamicMode()
+        => RunScenario(
+            "MetadataOnlyM17",
+            module =>
+            {
+                var ignore = AddDuckIgnoreAttribute(module);
+                var isVolatile = new TypeRefUser(module, "System.Runtime.CompilerServices", "IsVolatile", module.CorLibTypes.AssemblyRef);
+                var proxy = AddInterface(module, "IVolatileEcho", ignore);
+                proxy.Methods.Add(new MethodDefUser("Echo", MethodSig.CreateInstance(module.CorLibTypes.String, new SZArraySig(new CModReqdSig(isVolatile, module.CorLibTypes.Int32))), MethodAttributes.Public | MethodAttributes.Abstract | MethodAttributes.Virtual | MethodAttributes.HideBySig | MethodAttributes.NewSlot));
+                AddConstantMethod(module, AddClass(module, "ArrayTarget", module.CorLibTypes.Object.TypeDefOrRef, out _), "Echo", "array", new SZArraySig(module.CorLibTypes.Int32));
+            },
+            [("IVolatileEcho", "ArrayTarget")],
+            c => new Dictionary<string, Func<object?>>
+            {
+                ["Echo([1])"] = () => c.GetType($"{ContractsNamespace}.IVolatileEcho")!.GetMethod("Echo")!.Invoke(CreateProxy(c, "IVolatileEcho", "ArrayTarget"), [new[] { 1 }]),
+            });
 
     private static void RunScenario(
         string assemblyName,
@@ -584,7 +687,7 @@ public class DuckTypeAotMetadataOnlyParityTests
     {
         try
         {
-            return Convert.ToString(exercise(), System.Globalization.CultureInfo.InvariantCulture) ?? "null";
+            return Convert.ToString(exercise(), CultureInfo.InvariantCulture) ?? "null";
         }
         catch (Exception ex)
         {
@@ -692,6 +795,18 @@ public class DuckTypeAotMetadataOnlyParityTests
         getter.Body.Instructions.Add(OpCodes.Ret.ToInstruction());
         type.Methods.Add(getter);
         type.Properties.Add(new PropertyDefUser(name, PropertySig.CreateInstance(module.CorLibTypes.String)) { GetMethod = getter });
+    }
+
+    private static MethodDef AddConstantMethod(ModuleDef module, TypeDef type, string name, string value, params TypeSig[] parameterTypes)
+    {
+        var method = new MethodDefUser(name, MethodSig.CreateInstance(module.CorLibTypes.String, parameterTypes), MethodImplAttributes.IL | MethodImplAttributes.Managed, MethodAttributes.Public | MethodAttributes.HideBySig)
+        {
+            Body = new CilBody()
+        };
+        method.Body.Instructions.Add(OpCodes.Ldstr.ToInstruction(value));
+        method.Body.Instructions.Add(OpCodes.Ret.ToInstruction());
+        type.Methods.Add(method);
+        return method;
     }
 
     private static void AddTarget(ModuleDef module)
