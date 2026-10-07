@@ -65,22 +65,13 @@ internal static class MessagePackConstants
                   .Append(field.StringValue)
                   .Append(@""");");
 
+                // Match TagsListGenerator: constant byte spans are backed by static data on every target.
                 sb.Append(@"
-#if NETCOREAPP
     internal static ReadOnlySpan<byte> ")
                   .Append(field.FieldName)
-                  .Append(@"Bytes => new byte[] { ")
+                  .Append(@"Bytes => [")
                   .Append(tagByteArray)
-                  .Append(@" };")
-                  .Append(@"
-#else
-    internal static readonly byte[] ")
-                  .Append(field.FieldName)
-                  .Append(@"Bytes = new byte[] { ")
-                  .Append(tagByteArray)
-                  .Append(@" };")
-                  .Append(@"
-#endif");
+                  .Append(@"];");
             }
 
             sb.AppendLine(@"
