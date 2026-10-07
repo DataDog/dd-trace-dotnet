@@ -626,6 +626,8 @@ namespace Datadog.Trace
                         writer.WriteValue(string.Join(",", instance.SpanContextPropagator.InjectorNames));
                     }
 
+                    // Custom samplers may ignore the configured global rate; an unset or invalid rate
+                    // has no fixed-rate OTel sampler equivalent.
                     if (instance.PerTraceSettings.TraceSampler is ManagedTraceSampler && mutableSettings.EffectiveGlobalSamplingRate is { } sampleRate)
                     {
                         var sampler = sampleRate switch
