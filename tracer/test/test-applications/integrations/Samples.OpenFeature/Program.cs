@@ -11,6 +11,12 @@ class Program
 
     private async static Task Main(string[] args)
     {
+        if (args.Contains("evp-startup-gate"))
+        {
+            await EvaluationEventsSample.RunStartupGateAsync();
+            return;
+        }
+
         // When run with the "enrich" argument, the sample wraps flag evaluation in an APM root span
         // (plus a child span across an await) so the FFE span-enrichment integration test can assert
         // the ffe_* tags land on the root span and child spans across async continuations propagate

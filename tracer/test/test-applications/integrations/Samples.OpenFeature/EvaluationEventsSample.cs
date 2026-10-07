@@ -1,5 +1,7 @@
 using System;
+using System.Linq;
 using System.Net.Http;
+using System.Reflection;
 using System.Threading.Tasks;
 using OpenFeature.Constant;
 using OpenFeature.Model;
@@ -9,6 +11,42 @@ namespace Samples.FeatureFlags;
 
 internal static class EvaluationEventsSample
 {
+    internal static async Task RunStartupGateAsync()
+    {
+        using var original = new Datadog.FeatureFlags.OpenFeature.DatadogProvider();
+        Check(!HasEventHook(original), "disabled provider has no EVP hook");
+        await global::OpenFeature.Api.Instance.SetProviderAsync(original);
+        var client = global::OpenFeature.Api.Instance.GetClient();
+        var context = EvaluationContext.Builder().Set("targetingKey", "evp-startup-subject").Build();
+        var before = await client.GetStringDetailsAsync("simple-string", "caller-default", context);
+        Check(before.Value == "test-value", "disabled provider still evaluates");
+        Check(before.FlagMetadata?.GetDouble("__dd_eval_timestamp_ms") is null, "disabled provider omits EVP timestamp");
+
+        Environment.SetEnvironmentVariable("DD_FLAGGING_EVALUATION_COUNTS_ENABLED", "true");
+        // Reconfigure the automatic tracer explicitly: the shared helper targets the older public API.
+        var settingsType = Type.GetType("Datadog.Trace.Configuration.TracerSettings, Datadog.Trace", throwOnError: true)!;
+        var settings = settingsType.GetMethod("FromDefaultSourcesInternal", BindingFlags.NonPublic | BindingFlags.Static)!.Invoke(null, null);
+        var tracerType = Type.GetType("Datadog.Trace.Tracer, Datadog.Trace", throwOnError: true)!;
+        tracerType.GetMethod("Configure", BindingFlags.NonPublic | BindingFlags.Static)!.Invoke(null, new[] { settings });
+        await original.InitializeAsync(EvaluationContext.Builder().Build());
+        Check(!HasEventHook(original), "existing disabled provider keeps its startup decision");
+        var unchanged = await client.GetStringDetailsAsync("simple-string", "caller-default", context);
+        Check(unchanged.Value == "test-value", "existing provider still evaluates after tracer reconfiguration");
+        await SampleHelpers.ForceTracerFlushAsync();
+
+        using var replacement = new Datadog.FeatureFlags.OpenFeature.DatadogProvider();
+        Check(HasEventHook(replacement), "new provider sees enabled setting before initialization");
+        await global::OpenFeature.Api.Instance.SetProviderAsync(replacement);
+        var after = await client.GetStringDetailsAsync("simple-string", "caller-default", context);
+        Check(after.Value == "test-value", "replacement provider still evaluates");
+        Check(after.FlagMetadata?.GetDouble("__dd_eval_timestamp_ms") is not null, "enabled provider captures EVP timestamp");
+        await SampleHelpers.ForceTracerFlushAsync();
+        Console.WriteLine("<EVP: PROVIDER RECREATION OK>");
+
+        static bool HasEventHook(Datadog.FeatureFlags.OpenFeature.DatadogProvider provider)
+            => provider.GetProviderHooks().Any(hook => hook.GetType().Name == "FlagEvalEVPHook");
+    }
+
     internal static async Task RunWithoutTracerAsync()
     {
         await global::OpenFeature.Api.Instance.SetProviderAsync(new Datadog.FeatureFlags.OpenFeature.DatadogProvider());

@@ -36,6 +36,7 @@ public class FlagEvaluationBridgeTests
     [InlineData(typeof(OpenFeatureSdkCanEnqueueEVPIntegration))]
     [InlineData(typeof(OpenFeatureSdkEnqueueEVPIntegration))]
     [InlineData(typeof(OpenFeatureSdkRecordEVPHookErrorIntegration))]
+    [InlineData(typeof(OpenFeatureSdkIsEvaluationEventsEnabledIntegration))]
     public void GeneratedDefinitionsRegisterCallbacksAsOpenFeature(Type integration)
         => InstrumentationDefinitions.GetIntegrationId(integration.FullName!, typeof(object)).Should().Be(IntegrationId.OpenFeature);
 

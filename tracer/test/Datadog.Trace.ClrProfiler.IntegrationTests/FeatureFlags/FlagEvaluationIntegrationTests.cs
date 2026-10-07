@@ -73,6 +73,7 @@ public class FlagEvaluationIntegrationTests : TestHelper
         using var telemetry = this.ConfigureTelemetry();
         using var process = await RunSampleAndWaitForExit(agent, arguments: "evp");
         process.StandardOutput.Should().Contain("<EVP: VALUES AND DEFAULTS OK>");
+        process.StandardOutput.Should().Contain($"<EVP: HOOK BEFORE INITIALIZE {enabled}>");
         process.StandardOutput.Should().Contain("<EVP: FLUSHED>");
 
         if (!enabled)
@@ -201,6 +202,32 @@ public class FlagEvaluationIntegrationTests : TestHelper
         process.StandardOutput.Should().Contain("<EVP: VALUES AND DEFAULTS OK>").And.Contain("<EVP: FLUSHED>");
         elapsed.Elapsed.TotalSeconds.Should().BeLessThan(15, "a refused Agent must not block shutdown indefinitely");
         cdn.Requests.Should().NotBeEmpty().And.OnlyContain(path => path == "/configuration", "the configuration endpoint is not an event fallback");
+    }
+
+    [SkippableFact]
+    [Trait("RunOnWindows", "True")]
+    public async Task EnablingEventsAfterStartupRequiresProviderRecreation()
+    {
+        using var agent = EnvironmentHelper.GetMockAgent();
+        using var cdn = new FlagEvaluationConfigurationServer(Envelope(CreateConfiguration(false)));
+        var payloads = new ConcurrentQueue<string>();
+        agent.EventPlatformProxyPayloadReceived += (_, args) =>
+        {
+            if (args.Value.PathAndQuery.EndsWith("/flagevaluation"))
+            {
+                payloads.Enqueue(args.Value.BodyInJson);
+            }
+        };
+        SetEnvironmentVariable(ConfigurationKeys.FeatureFlags.FeatureFlagsConfigurationSource, "agentless");
+        SetEnvironmentVariable(ConfigurationKeys.FeatureFlags.FeatureFlagsConfigurationSourceAgentlessBaseUrl, cdn.Url + "configuration");
+        SetEnvironmentVariable(ConfigurationKeys.FeatureFlags.FlaggingEvaluationCountsEnabled, "false");
+        using var telemetry = this.ConfigureTelemetry();
+        using var process = await RunSampleAndWaitForExit(agent, arguments: "evp-startup-gate");
+
+        process.StandardOutput.Should().Contain("<EVP: PROVIDER RECREATION OK>");
+        var rows = payloads.SelectMany(body => (JArray)JObject.Parse(body)["flagEvaluations"]).ToList();
+        rows.Should().ContainSingle("only the replacement provider registers the event hook");
+        ((long)rows.Single()["evaluation_count"]).Should().Be(1);
     }
 
     private static ServerConfiguration CreateConfiguration(bool consent) => new()

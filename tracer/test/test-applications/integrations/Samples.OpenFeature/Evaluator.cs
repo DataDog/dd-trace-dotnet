@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics;
+using System.Linq;
 using System.Threading.Tasks;
 using OpenFeature.Model;
 
@@ -20,7 +21,10 @@ class Evaluator
 
         // SetProviderAsync awaits the provider's InitializeAsync, which starts agentless delivery
         // and waits for the first configuration.
-        await global::OpenFeature.Api.Instance.SetProviderAsync(new Datadog.FeatureFlags.OpenFeature.DatadogProvider());
+        var provider = new Datadog.FeatureFlags.OpenFeature.DatadogProvider();
+        // Observe hook registration before initialization starts the writer.
+        Console.WriteLine($"<EVP: HOOK BEFORE INITIALIZE {provider.GetProviderHooks().Any(hook => hook.GetType().Name == "FlagEvalEVPHook")}>");
+        await global::OpenFeature.Api.Instance.SetProviderAsync(provider);
         client = global::OpenFeature.Api.Instance.GetClient();
         Datadog.FeatureFlags.OpenFeature.DatadogProvider.RegisterOnNewConfigEventHandler(() => _onNewConfig?.Invoke());
         return true;

@@ -260,16 +260,14 @@ public class FlagEvalEVPHookTests
     }
 
     [Fact]
-    public async Task UninstrumentedProviderRegistersInertHook()
+    public async Task UninstrumentedProviderSkipsEvaluationEventHookAndMetadata()
     {
         using var provider = new DatadogProvider();
-        var hook = provider.GetProviderHooks().OfType<FlagEvalEVPHook>().Single();
-
-        FeatureFlagsSdk.CanEnqueueEVP().Should().BeFalse();
-        await hook.FinallyAsync(Context(), Details(true));
+        provider.GetProviderHooks().OfType<FlagEvalEVPHook>().Should().BeEmpty();
         var result = await provider.ResolveBooleanValueAsync("flag", false);
         result.Value.Should().BeFalse();
         result.ErrorType.Should().Be(ErrorType.ProviderNotReady);
+        result.FlagMetadata.Should().BeNull();
     }
 
     private static HookContext<bool> Context() => new(

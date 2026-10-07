@@ -109,6 +109,8 @@ namespace Datadog.Trace.FeatureFlags
 
         internal FlagEvaluationWriter? EvaluationWriter => Volatile.Read(ref _evaluationWriter);
 
+        internal bool EvaluationEventsEnabled => _settings.EvaluationEventsEnabled;
+
         public static FeatureFlagsModule? Create(
             TracerSettings settings,
             IRcmSubscriptionManager rcmSubscriptionManager,

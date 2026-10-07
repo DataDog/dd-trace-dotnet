@@ -46,6 +46,7 @@ public class FlagEvaluationModuleTests(ITestOutputHelper output)
         try
         {
             module.Should().NotBeNull();
+            module.EvaluationEventsEnabled.Should().BeFalse();
             module.Activate();
             module.EvaluationWriter.Should().BeNull("disabled events must not allocate a sender or background consumer");
             delivery.Started.Should().Be(source == "agentless" ? 1 : 0);
@@ -72,6 +73,7 @@ public class FlagEvaluationModuleTests(ITestOutputHelper output)
         try
         {
             module.EvaluationWriter.Should().BeNull("provider adoption activates the writer, not tracer startup");
+            module.EvaluationEventsEnabled.Should().BeTrue("the provider reads the setting before lazy writer activation");
             await Task.WhenAll(Enumerable.Range(0, 8).Select(_ => Task.Run(module.Activate)));
             var writer = module.EvaluationWriter!;
             writer.Should().NotBeNull();

@@ -83,6 +83,43 @@ public class FeatureFlagsSdkTests
         result.FlagMetadata.GetDouble("__dd_eval_timestamp_ms").Should().Be(1234);
     }
 
+    [Theory]
+    [InlineData(null)]
+    [InlineData("FLAG_NOT_FOUND")]
+    public void DisabledEventsOmitOnlyPrivateEvpMetadata(string? error)
+    {
+        var metadata = new Dictionary<string, string>
+        {
+            [FeatureFlagMetadataKeys.ObserveFullEvaluationData] = "true",
+            [FeatureFlagMetadataKeys.EvaluationTimestampMs] = "1234",
+            [FeatureFlagMetadataKeys.DoLog] = "true",
+            ["__dd_allocation_key"] = "allocation",
+            ["errorCode"] = error ?? string.Empty,
+        };
+
+        var result = FeatureFlagsSdk.GetResolutionDetails("flag", false, new TestEvaluation(metadata, error), null);
+
+        result.Value.Should().Be(error is null);
+        result.FlagMetadata!.GetString(FeatureFlagMetadataKeys.DoLog).Should().Be("true");
+        result.FlagMetadata.GetString("__dd_allocation_key").Should().Be("allocation");
+        result.FlagMetadata.GetString("errorCode").Should().Be(error ?? string.Empty);
+        result.FlagMetadata.GetBool(FeatureFlagMetadataKeys.ObserveFullEvaluationData).Should().BeNull();
+        result.FlagMetadata.GetString(FeatureFlagMetadataKeys.ObserveFullEvaluationData).Should().BeNull();
+        result.FlagMetadata.GetDouble(FeatureFlagMetadataKeys.EvaluationTimestampMs).Should().BeNull();
+        result.FlagMetadata.GetString(FeatureFlagMetadataKeys.EvaluationTimestampMs).Should().BeNull();
+        metadata[FeatureFlagMetadataKeys.ObserveFullEvaluationData].Should().Be("true");
+        metadata[FeatureFlagMetadataKeys.EvaluationTimestampMs].Should().Be("1234");
+    }
+
+    [Fact]
+    public void DisabledEventsDoNotInventMetadataForAnOldTracer()
+    {
+        var result = FeatureFlagsSdk.GetResolutionDetails("flag", false, new TestEvaluation(null), null);
+
+        result.Value.Should().BeTrue();
+        result.FlagMetadata.Should().BeNull();
+    }
+
     private sealed class TestEvaluation(IDictionary<string, string>? metadata, string? error = null) : IEvaluation
     {
         public string FlagKey => "flag";
